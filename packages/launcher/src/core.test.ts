@@ -931,6 +931,78 @@ describe("skills manifest and health (#1183)", () => {
   });
 });
 
+describe("preserved composed skills in the health report (#1473)", () => {
+  it("names an edited composed skill, leaves it as found, and marks the report degraded", () => {
+    const directory = tempDir();
+    const catalogue = seedSkillCatalogue(["advisor"]);
+    const applyOpts = composeApplyOptions(catalogue);
+    writeInventory(directory);
+    applyWorkspacePlan(host(directory), { action: "adopt", owner: "acme", repository: "hub", directory, advisorVersion: "0.1.5" }, skeletonRoot, applyOpts);
+    const skillPath = join(directory, ".agents", "skills", "clossys-advisor", "SKILL.md");
+    const edited = `${readFileSync(skillPath, "utf8")}\nClient's own note.\n`;
+    writeFileSync(skillPath, edited);
+
+    const result = applyWorkspacePlan(
+      host(directory),
+      { action: "resume", owner: "acme", repository: "hub", directory, clone: false },
+      skeletonRoot,
+      applyOpts,
+    );
+    expect(result.state).toBe("satisfied");
+    expect(result.health.degraded).toBe(true);
+    expect(result.health.skillComposition?.preserved).toEqual([
+      expect.objectContaining({ packageDir: "advisor", action: "rewrite" }),
+    ]);
+    expect(result.message).toMatch(/skill preserved \(clossys-advisor, not rewritten\): \.agents\/skills\/clossys-advisor\/SKILL\.md was edited since Launcher last wrote it/);
+    expect(result.message).toContain('"preserved":[');
+    expect(readFileSync(skillPath, "utf8")).toBe(edited);
+  });
+
+  it("tags a skill left as is in a sibling clone with that clone's inventory id", () => {
+    const parent = tempDir();
+    const hub = join(parent, "hub");
+    const app = join(parent, "app");
+    for (const directory of [hub, app]) mkdirSync(directory, { recursive: true });
+    mkdirSync(dirname(join(hub, WORKSPACE_MARKER_REL)), { recursive: true });
+    writeFileSync(
+      join(hub, WORKSPACE_MARKER_REL),
+      `${JSON.stringify({ schemaVersion: 1, kind: "account-hub", owner: "acme", repository: "acme/hub" }, null, 2)}\n`,
+    );
+    writeInventory(hub, [{ id: "acme/app" }]);
+    mkdirSync(join(app, ".git"), { recursive: true });
+    const base = host(hub);
+    const workspaceHost: WorkspaceHost = {
+      ...base,
+      run: (command, args, opts) => {
+        if (command === "git" && args[0] === "remote" && args[1] === "get-url" && opts?.cwd === app) {
+          return { status: 0, stdout: "git@github.com:acme/app.git\n", stderr: "" };
+        }
+        return base.run(command, args, opts);
+      },
+    };
+    const applyOpts = composeApplyOptions(seedSkillCatalogue(["advisor"]));
+    const resume = () =>
+      applyWorkspacePlan(
+        workspaceHost,
+        { action: "resume", owner: "acme", repository: "hub", directory: hub, clone: false },
+        skeletonRoot,
+        applyOpts,
+      );
+    resume();
+    const appSkill = join(app, ".agents", "skills", "clossys-advisor", "SKILL.md");
+    const edited = `${readFileSync(appSkill, "utf8")}\nClient's own note.\n`;
+    writeFileSync(appSkill, edited);
+
+    const result = resume();
+    expect(result.health.skillComposition?.preserved).toEqual([
+      expect.objectContaining({ target: "acme/app", packageDir: "advisor", action: "rewrite" }),
+    ]);
+    expect(result.message).toMatch(/skill preserved \(clossys-advisor in acme\/app, not rewritten\): /);
+    expect(result.health.degraded).toBe(true);
+    expect(readFileSync(appSkill, "utf8")).toBe(edited);
+  });
+});
+
 describe("generated clossys/README.md", () => {
   it("notes there is no engagement brief yet, then reflects clossys/brief.json once it exists", () => {
     const directory = tempDir();

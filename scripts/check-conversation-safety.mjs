@@ -8,6 +8,7 @@
 //   node scripts/check-conversation-safety.mjs --issue <n>  [options]
 //   node scripts/check-conversation-safety.mjs --pr <n>     [options]
 //   node scripts/check-conversation-safety.mjs --pr <n> --review <id>  [options]
+//   node scripts/check-conversation-safety.mjs --pr <n> --review-comment <id>  [options]
 //   node scripts/check-conversation-safety.mjs --all        [options]
 //   node scripts/check-conversation-safety.mjs --file <path>  (DRAFT mode)
 //   <text> | node scripts/check-conversation-safety.mjs        (DRAFT mode, stdin)
@@ -21,6 +22,14 @@
 //                            pull_request_review_comment for comments authored
 //                            inside the submitted review, so the event gate
 //                            uses this mode rather than a whole-PR --pr scan.
+//     --review-comment <id> with --pr: scan one inline review comment, fetched
+//                            by id; refused unless it belongs to that PR
+//     --edit-history        with --review or --review-comment: fetch the
+//                            review summary from the API (stdin is not read)
+//                            and also scan every earlier revision of the
+//                            summary and of each comment in scope, from
+//                            GraphQL userContentEdits. A revision history that
+//                            cannot be read is exit 2, never a pass.
 //     --all                 scan every issue and PR in the repository
 //     --since <iso>         only fetch/consider items updated (--all) or
 //                            comments/reviews UPDATED — not merely created;
@@ -151,6 +160,7 @@ Usage:
   node scripts/check-conversation-safety.mjs --issue <n>  [options]
   node scripts/check-conversation-safety.mjs --pr <n>     [options]
   node scripts/check-conversation-safety.mjs --pr <n> --review <id>  [options]
+  node scripts/check-conversation-safety.mjs --pr <n> --review-comment <id>  [options]
   node scripts/check-conversation-safety.mjs --all        [options]
   node scripts/check-conversation-safety.mjs --file <path>  (DRAFT mode)
   <text> | node scripts/check-conversation-safety.mjs        (DRAFT mode, stdin)
@@ -162,6 +172,11 @@ Options:
   --review <id>         with --pr: scan that review's summary (stdin, when
                          stdin is not a terminal) and its inline comments only
                          (not the whole pull request)
+  --review-comment <id> with --pr: scan one inline review comment, fetched by
+                         id; refused (exit 2) unless it belongs to that PR
+  --edit-history        with --review or --review-comment: fetch the review
+                         summary from the API instead of stdin, and also scan
+                         every earlier revision of each item in scope
   --all                 scan every issue and PR in the repository
   --since <iso>         only fetch/consider items updated (--all) or
                          comments/reviews updated at or after this ISO 8601
@@ -196,6 +211,8 @@ const KNOWN_FLAGS = new Set([
   "--denylist",
   "--require-denylist",
   "--review",
+  "--review-comment",
+  "--edit-history",
   "--json",
   "--help",
 ]);
@@ -221,6 +238,16 @@ if (flags.has("--review")) {
   if (flags.has("--issue") || flags.has("--all")) {
     die(`--review cannot be combined with ${flags.has("--issue") ? "--issue" : "--all"}`);
   }
+}
+
+if (flags.has("--review-comment")) {
+  if (!flags.has("--pr")) {
+    die("--review-comment requires --pr — the comment must be checked against the pull request it claims to belong to");
+  }
+  if (flags.has("--review")) die("--review-comment cannot be combined with --review");
+}
+if (flags.has("--edit-history") && !flags.has("--review") && !flags.has("--review-comment")) {
+  die("--edit-history requires --review or --review-comment");
 }
 
 const isDraftMode = flags.has("--file") || activeModeFlags.length === 0;
@@ -420,21 +447,111 @@ function fetchPr(repo, n, sinceTs) {
   return items;
 }
 
-// Narrow mode for conversation-safety.yml's pull_request_review event: one
-// submitted review's summary (passed by the caller — the event payload, not a
-// second copy fetched from the API) plus the inline comments on THAT review.
-// Inline comments attached to a submitted review are fetched here because
-// GitHub may not emit pull_request_review_comment for them. --pr would also
-// rescan the pull request body and every other comment and review.
+// EDIT HISTORY
+// ------------
+// A body fetched by id is the CURRENT text. Text that was posted with a
+// finding and edited clean before the scan ran is still public in GitHub's
+// edit-history dropdown, so the review modes can also scan every earlier
+// revision (--edit-history). GraphQL `userContentEdits` on a `Comment` node
+// (PullRequestReview and PullRequestReviewComment both implement it) lists
+// one entry per revision, newest first, including the original post. Its
+// `diff` field is documented as "a summary of the changes", but measured
+// against this repository it holds the FULL text of that revision: the
+// newest entry equals the current body byte for byte, and older entries are
+// complete bodies, not unified diffs. It is scanned as full text. An entry
+// with `deletedAt` set was removed from the public history by a maintainer
+// and has no text to scan. The node id comes from the REST response for the
+// object being scanned, never from a caller.
+const EDIT_HISTORY_QUERY =
+  "query($id: ID!, $cursor: String) { node(id: $id) { ... on Comment { " +
+  "userContentEdits(first: 100, after: $cursor) { pageInfo { hasNextPage endCursor } " +
+  "nodes { editedAt deletedAt diff } } } } }";
+const EDIT_HISTORY_MAX_PAGES = 50;
+
+function fetchEditHistory(nodeId, what) {
+  if (typeof nodeId !== "string" || !/^[A-Za-z0-9_=-]+$/.test(nodeId)) {
+    die(`could not read the edit history of ${what}: the API returned no usable node id. Refusing to report a pass.`);
+  }
+  const revisions = [];
+  let cursor = null;
+  for (let page = 0; ; page++) {
+    if (page >= EDIT_HISTORY_MAX_PAGES) {
+      die(`edit history of ${what} exceeds ${EDIT_HISTORY_MAX_PAGES} pages; refusing to report a pass over a partial read.`);
+    }
+    const args = ["api", "graphql", "-f", `query=${EDIT_HISTORY_QUERY}`, "-f", `id=${nodeId}`];
+    if (cursor) args.push("-f", `cursor=${cursor}`);
+    let response;
+    try {
+      response = JSON.parse(
+        execFileSync("gh", args, { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"], maxBuffer: 1 << 26 }),
+      );
+    } catch (error) {
+      die(
+        `could not read the edit history of ${what}: ${(error.stderr || error.message || "").toString().trim()}\n` +
+          "  Refusing to report a pass: an earlier revision may still be public in the edit history.",
+      );
+    }
+    const edits = response?.data?.node?.userContentEdits;
+    if (!edits || !Array.isArray(edits.nodes) || typeof edits.pageInfo?.hasNextPage !== "boolean") {
+      die(`could not read the edit history of ${what}: unexpected GraphQL response shape. Refusing to report a pass.`);
+    }
+    for (const edit of edits.nodes) {
+      if (edit?.deletedAt) continue;
+      revisions.push({ editedAt: typeof edit?.editedAt === "string" ? edit.editedAt : null, text: typeof edit?.diff === "string" ? edit.diff : "" });
+    }
+    if (!edits.pageInfo.hasNextPage) break;
+    cursor = edits.pageInfo.endCursor;
+    if (typeof cursor !== "string" || !cursor) {
+      die(`could not read the edit history of ${what}: pagination cursor missing. Refusing to report a pass.`);
+    }
+  }
+  return revisions;
+}
+
+// One item per earlier revision whose text differs from the current body and
+// from every revision already added (the newest revision IS the current body).
+function revisionItems(kind, number, id, url, currentBody, nodeId, what) {
+  const seen = new Set([typeof currentBody === "string" ? currentBody : ""]);
+  const items = [];
+  for (const revision of fetchEditHistory(nodeId, what)) {
+    if (seen.has(revision.text)) continue;
+    seen.add(revision.text);
+    items.push({ ...bodyItem(kind, number, id, url, revision.text), editedAt: revision.editedAt });
+  }
+  return items;
+}
+
+// Narrow mode for conversation-safety.yml's relayed pull_request_review
+// event: one submitted review's summary plus the inline comments on THAT
+// review. Inline comments attached to a submitted review are fetched here
+// because GitHub may not emit pull_request_review_comment for them. --pr
+// would also rescan the pull request body and every other comment and review.
+//
+// Where the summary comes from depends on the caller. With --edit-history
+// (what the workflow uses) it is fetched from the API by id — the endpoint is
+// scoped to this pull request, so a review id from another one is refused —
+// and every earlier revision of the summary and of each inline comment is
+// scanned too. Without it, the summary is read from stdin (a draft or a
+// by-hand run), and no API copy of it is fetched.
 //
 // The summary is included whenever it is non-empty, independent of --since,
 // the same way an issue or pull request body is. --since thins only the
 // inline comments. An empty summary plus no non-empty comment bodies stages
 // nothing; the caller then exits 0 (nothing to scan), which is a clean pass
 // rather than a failure.
-function fetchPullRequestReview(repo, prNumber, reviewId, summary, sinceTs) {
+function fetchPullRequestReview(repo, prNumber, reviewId, summary, sinceTs, withHistory) {
   const reviewUrl = `https://github.com/${repo}/pull/${prNumber}#pullrequestreview-${reviewId}`;
-  const items = [bodyItem("pr-review", prNumber, reviewId, reviewUrl, summary)];
+  const items = [];
+  if (withHistory) {
+    const review = ghApiOne(`repos/${repo}/pulls/${prNumber}/reviews/${reviewId}`);
+    if (!review.ok) {
+      die(`could not fetch review ${reviewId} on PR #${prNumber} from ${repo}: ${review.error}\n  Refusing to report a pass from a check that did not run.`);
+    }
+    items.push(bodyItem("pr-review", prNumber, reviewId, reviewUrl, review.data?.body));
+    items.push(...revisionItems("pr-review-revision", prNumber, reviewId, reviewUrl, review.data?.body, review.data?.node_id, `review ${reviewId}`));
+  } else {
+    items.push(bodyItem("pr-review", prNumber, reviewId, reviewUrl, summary));
+  }
   const rc = ghApiList(`repos/${repo}/pulls/${prNumber}/reviews/${reviewId}/comments`);
   if (!rc.ok) {
     die(
@@ -444,6 +561,35 @@ function fetchPullRequestReview(repo, prNumber, reviewId, summary, sinceTs) {
   }
   for (const c of rc.data.filter((c) => afterSince(c, sinceTs))) {
     items.push(bodyItem("pr-review-comment", prNumber, c.id, c.html_url, c.body));
+    if (withHistory) {
+      items.push(...revisionItems("pr-review-comment-revision", prNumber, c.id, c.html_url, c.body, c.node_id, `review comment ${c.id}`));
+    }
+  }
+  return items;
+}
+
+// Narrow mode for conversation-safety.yml's relayed
+// pull_request_review_comment event. The comment endpoint is repository-wide,
+// so the comment is refused (exit 2) unless the API's own pull_request_url
+// names this repository and --pr. The text always comes from the API.
+function fetchPullRequestReviewComment(repo, prNumber, commentId, withHistory) {
+  const res = ghApiOne(`repos/${repo}/pulls/comments/${commentId}`);
+  if (!res.ok) {
+    die(`could not fetch review comment ${commentId} from ${repo}: ${res.error}\n  Refusing to report a pass from a check that did not run.`);
+  }
+  const c = res.data ?? {};
+  let owner = null;
+  try {
+    owner = new URL(c.pull_request_url).pathname;
+  } catch {
+    owner = null;
+  }
+  if (owner !== `/repos/${repo}/pulls/${prNumber}`) {
+    die(`review comment ${commentId} does not belong to PR #${prNumber} in ${repo}; refusing to scan or report it.`);
+  }
+  const items = [bodyItem("pr-review-comment", prNumber, commentId, c.html_url, c.body)];
+  if (withHistory) {
+    items.push(...revisionItems("pr-review-comment-revision", prNumber, commentId, c.html_url, c.body, c.node_id, `review comment ${commentId}`));
   }
   return items;
 }
@@ -559,8 +705,14 @@ if (isDraftMode) {
     const n = requirePositiveInt("--pr");
     if (flags.has("--review")) {
       const reviewId = requirePositiveInt("--review");
-      items = fetchPullRequestReview(repo, n, reviewId, readReviewSummary(), sinceTs);
-      sourceLabel = `${repo} PR #${n} review ${reviewId}`;
+      const withHistory = flags.has("--edit-history");
+      items = fetchPullRequestReview(repo, n, reviewId, withHistory ? "" : readReviewSummary(), sinceTs, withHistory);
+      sourceLabel = `${repo} PR #${n} review ${reviewId}${withHistory ? " (with edit history)" : ""}`;
+    } else if (flags.has("--review-comment")) {
+      const commentId = requirePositiveInt("--review-comment");
+      const withHistory = flags.has("--edit-history");
+      items = fetchPullRequestReviewComment(repo, n, commentId, withHistory);
+      sourceLabel = `${repo} PR #${n} review comment ${commentId}${withHistory ? " (with edit history)" : ""}`;
     } else {
       items = fetchPr(repo, n, sinceTs);
       sourceLabel = `${repo} PR #${n}`;
@@ -592,6 +744,10 @@ function describeItem(item) {
       return `PR #${item.number} review comment ${item.id}`;
     case "pr-review":
       return `PR #${item.number} review ${item.id}`;
+    case "pr-review-comment-revision":
+      return `PR #${item.number} review comment ${item.id} (earlier revision${item.editedAt ? ` from ${item.editedAt}` : ""})`;
+    case "pr-review-revision":
+      return `PR #${item.number} review ${item.id} (earlier revision${item.editedAt ? ` from ${item.editedAt}` : ""})`;
     default:
       return item.kind;
   }

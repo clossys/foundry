@@ -28,12 +28,79 @@ import { readFileSync, readdirSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
+import { createHash } from "node:crypto";
 
 export const TIERS = Object.freeze(["tier-1", "tier-2"]);
 export const STATUSES = Object.freeze(["open", "decided", "expired"]);
 export const DECIDED_BY_VALUES = Object.freeze(["owner", "consensus"]);
 export const REVIEW_VERDICTS = Object.freeze(["approve", "reject", "changes"]);
 export const REVIEW_ROLES = Object.freeze(["author", "primary", "secondary", "owner"]);
+/**
+ * Where a `decidedBy` claim can be checked, per the owner-ratified
+ * escalation rule (governance/decisions/hitl-escalation-rule.json, Accepted
+ * item 1: "Your decisions should be recorded from a channel agents can't
+ * write to. That means this chat, or later commits signed with a hardware
+ * key only you hold."): `"owner-chat"` (a channel no agent can write to, not
+ * independently verifiable by anyone reading the git tree) and
+ * `"signed-commit"` (a future, hardware-key-signed commit, also not
+ * agent-writable, but NOT YET ACCEPTED -- see below) are both channels an
+ * agent cannot forge; `"github-comment"` is a channel every session in this
+ * repository can post to under the SAME shared account, so it is never, by
+ * itself, proof of owner intent (Accepted item 1: "Every agent posts as
+ * you, so an 'Owner sign-off' comment an agent wrote proves nothing").
+ */
+export const CHANNELS = Object.freeze(["owner-chat", "signed-commit", "github-comment"]);
+
+/**
+ * Records that predate the `channel` field entirely -- committed, decided,
+ * `decidedBy: "owner"` records this rule cannot reach back and invalidate,
+ * because they are immutable (docs/contracts/decision-record.json's own
+ * "DECIDED RECORDS ARE IMMUTABLE" rule). Each entry pins the record's exact
+ * CONTENT (a SHA-256 of its canonicalized JSON, via `computeContentHash`
+ * below), not just its `id` -- an id match alone would let a future edit to
+ * one of these three specific files (which the land-stack immutability gate
+ * should catch anyway, through the normal PR path) ALSO slip past this
+ * grandfather clause if the two checks were ever run independently. Every
+ * OTHER decided, `decidedBy: "owner"` record, at any tier, must carry a real
+ * `channel` -- this allowlist is deliberately not a general escape hatch,
+ * only a pin for the specific records that already existed before the rule
+ * did. #1187 escalation-rule round 2, both reviewers, blocking: "A decided
+ * owner record at ANY tier must carry channel: owner-chat or signed-commit
+ * ... Legacy records without a channel stay valid as history via a fixed
+ * allowlist pinned by content hash, but authorize nothing" (`evaluateTier2Decision`
+ * in scripts/land-stack.mjs separately never treats any of these three as
+ * tier-2 authority, channel or not -- see that function's own doc comment).
+ */
+export const LEGACY_CHANNEL_EXEMPT = Object.freeze({
+  "coderabbit-advisory-reviewer": "a4fb18234dc5632fded44060482ef7923fd9df499cc2004cff3d3e1a13274dc8",
+  "operation-interaction-role-authority": "5aa23dd8fd772db4784044377217220db886bc6e86eec42f6f80e52ec1b79b54",
+  "weekly-release-calendar": "bae56fb9d69c624bec9c0657f3ba78c27afd57d86641a9ecff460d0b205a8325",
+});
+
+/**
+ * A stable content hash for `LEGACY_CHANNEL_EXEMPT` above: recursively
+ * sorts every object's keys before hashing, so formatting differences
+ * (key order, whitespace) never change the hash, but any real value
+ * change does. Exported for the record itself to be re-pinned if a
+ * legitimate SUPERSEDING record is ever added under a NEW id (which needs
+ * its own real `channel`, not a grandfather entry) -- this function is
+ * never used to authorize anything by itself, only to detect whether a
+ * record's content still matches what was pinned.
+ * @param {unknown} record
+ * @returns {string}
+ */
+export function computeContentHash(record) {
+  const canonicalize = (value) => {
+    if (Array.isArray(value)) return value.map(canonicalize);
+    if (value !== null && typeof value === "object") {
+      const out = {};
+      for (const key of Object.keys(value).sort()) out[key] = canonicalize(value[key]);
+      return out;
+    }
+    return value;
+  };
+  return createHash("sha256").update(JSON.stringify(canonicalize(record))).digest("hex");
+}
 
 const KNOWN_FIELDS = Object.freeze([
   "schemaVersion",
@@ -45,6 +112,7 @@ const KNOWN_FIELDS = Object.freeze([
   "reviews",
   "status",
   "decidedBy",
+  "channel",
   "decision",
   "relaxesGateOrPolicy",
   "sunset",
@@ -126,6 +194,54 @@ export function validateDecisionRecordShape(record, idFromFilename) {
   } else {
     if (record.decidedBy !== null && record.decidedBy !== undefined && !DECIDED_BY_VALUES.includes(record.decidedBy)) {
       findings.push(`decidedBy must be one of ${DECIDED_BY_VALUES.join(", ")} or null/absent when status is not "decided"`);
+    }
+  }
+
+  // `channel` (#1187 escalation-rule round 2, both reviewers, blocking:
+  // "A decided owner record at ANY tier must carry channel: owner-chat or
+  // signed-commit"). This IMPLEMENTS Accepted item 1 strictly -- not just
+  // for tier-2, and not merely rejecting the one worst value.
+  //
+  // When present, `channel` must be one of `CHANNELS`. Two values are
+  // NEVER accepted for a `decidedBy: "owner"` record, for different
+  // reasons, both stated plainly here rather than left to be inferred:
+  //   - `"github-comment"`: never valid, full stop -- Accepted item 1's own
+  //     text ("Every agent posts as you, so an 'Owner sign-off' comment an
+  //     agent wrote proves nothing") makes no tier exception.
+  //   - `"signed-commit"`: not YET valid -- this repository has no
+  //     hardware-key signature verifier today, so a record claiming this
+  //     channel cannot actually be checked against anything; accepting the
+  //     CLAIM as though it were the verified fact it will eventually be
+  //     would defeat the entire point. Tracked as a future item (see
+  //     docs/HITL.md's "Before switching to enforce" checklist and #1350);
+  //     until a verifier exists, `"owner-chat"` is the only channel a
+  //     decided owner record can actually carry.
+  //
+  // `channel` is REQUIRED on every decided, `decidedBy: "owner"` record, at
+  // ANY tier -- UNLESS the record's exact content matches a pinned entry in
+  // `LEGACY_CHANNEL_EXEMPT` (a fixed, content-hashed allowlist of the
+  // records that already existed, immutably, before this field did; see
+  // that constant's own doc comment). A record NOT on that allowlist gets
+  // no grandfathering: it either declares a real channel or it is invalid.
+  if (record.channel !== undefined && !CHANNELS.includes(record.channel)) {
+    findings.push(`channel must be one of ${CHANNELS.join(", ")} when present, got ${JSON.stringify(record.channel)}`);
+  } else if (record.decidedBy === "owner") {
+    if (record.channel === "github-comment") {
+      findings.push(
+        'channel "github-comment" is never valid for decidedBy: "owner", at any tier -- a GitHub comment posted under the shared agent identity is never proof of owner intent (governance/decisions/hitl-escalation-rule.json, Accepted item 1); source it from owner-chat instead',
+      );
+    } else if (record.channel === "signed-commit") {
+      findings.push(
+        'channel "signed-commit" is not yet accepted for decidedBy: "owner": no hardware-key signature verifier exists in this repository yet, so the claim cannot be checked against anything (tracked as a future item; see docs/HITL.md\'s "Before switching to enforce" checklist). Use "owner-chat" until a verifier exists.',
+      );
+    } else if (record.channel === undefined && record.status === "decided") {
+      const pinnedHash = LEGACY_CHANNEL_EXEMPT[record.id];
+      const isGrandfathered = typeof pinnedHash === "string" && computeContentHash(record) === pinnedHash;
+      if (!isGrandfathered) {
+        findings.push(
+          'channel is required on a decided, decidedBy: "owner" record at any tier (governance/decisions/hitl-escalation-rule.json, Accepted item 1) -- this record is not on the fixed, content-hashed legacy allowlist (LEGACY_CHANNEL_EXEMPT), so it needs a real channel: "owner-chat"',
+        );
+      }
     }
   }
 
