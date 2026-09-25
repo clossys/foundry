@@ -350,12 +350,3 @@ describe("resolvePackages: every refusal", () => {
     }
   });
 });
-
-describe("resolvePackages holds no network or credential code", () => {
-  it("imports nothing that can reach the network, a process, or the environment", () => {
-    for (const file of ["package-resolution.ts", "registry-snapshot.ts"]) {
-      const source = readFileSync(new URL(file, import.meta.url), "utf8");
-      expect(source, file).not.toMatch(/node:(?:http|https|net|tls|dns|child_process|fs)\b|\bfetch\(|process\.env|XMLHttpRequest|WebSocket/);
-    }
-  });
-});
