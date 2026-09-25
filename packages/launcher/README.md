@@ -558,8 +558,10 @@ registry said; it decides nothing from it. Deciding is
   directory is written, flushed to disk and renamed over the target, so a
   reader sees the old file or the whole new one.
 
-Messages name packages and positions in the request, never the content of a
-response or of the request. Exit codes: `0` means the snapshot was written, or that `--help` printed
+A message names a package by its position in the request, `names[<n>]`,
+never by its name, and never quotes a response or the request: a name is
+request text, so the caller looks position `<n>` up in the request file it
+wrote. Exit codes: `0` means the snapshot was written, or that `--help` printed
 the usage;
 `2` means nothing was written, whether because of a usage error, an
 unreadable or refused request, or a registry answer this step cannot record.

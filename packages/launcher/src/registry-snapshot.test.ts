@@ -444,11 +444,12 @@ describe("failures write nothing (threats: redirect, oversize, slow, non-JSON)",
   ];
 
   for (const [name, answer, expected] of failures) {
-    it(`${name}: the step stops, names the package and position, and quotes nothing it received`, async () => {
+    it(`${name}: the step stops, names the package's position but not its name, and quotes nothing it received`, async () => {
       const { transport } = fakeRegistry(answer);
       const failure = await takeRegistrySnapshot([DESIGNER], options(transport)).then(() => undefined, (cause: unknown) => cause as Error);
       expect(failure).toBeInstanceOf(RegistrySnapshotError);
-      expect(failure?.message).toMatch(new RegExp(`^names\\[0\\] ${DESIGNER}: `));
+      expect(failure?.message).toMatch(/^names\[0\]: /);
+      expect(failure?.message).not.toContain(DESIGNER);
       expect(failure?.message).toMatch(expected);
       expect(failure?.message).not.toContain(BODY_MARKER);
     });
@@ -456,7 +457,7 @@ describe("failures write nothing (threats: redirect, oversize, slow, non-JSON)",
 
   it("stops at the first failure and fetches no further package", async () => {
     const { transport, calls } = fakeRegistry(() => jsonResponse("", 500));
-    await expect(takeRegistrySnapshot([STARTER, DESIGNER], options(transport))).rejects.toThrow(/^names\[1\] /);
+    await expect(takeRegistrySnapshot([STARTER, DESIGNER], options(transport))).rejects.toThrow(/^names\[1\]: /);
     expect(calls).toHaveLength(1);
   });
 

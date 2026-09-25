@@ -335,7 +335,8 @@ describe("launcher-apply-plan snapshot (#1178)", () => {
       const { hub } = hubWithRequest();
       expect(await snapshotMain(["--request", "request.json"], { transport: registry(answer).transport, cwd: hub, now: NOW })).toBe(2);
       const message = String(err.mock.calls.at(-1)?.[0]);
-      expect(message).toMatch(new RegExp(`^launcher-apply-plan snapshot: names\\[1\\] ${DESIGNER}: `));
+      expect(message).toMatch(/^launcher-apply-plan snapshot: names\[1\]: /);
+      expect(message).not.toContain(DESIGNER);
       expect(message).toMatch(expected);
       expect(message).not.toContain(MARKER);
       expect(existsSync(join(hub, "clossys"))).toBe(false);

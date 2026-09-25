@@ -126,8 +126,9 @@ the registry snapshot contract declares, validates the whole snapshot against
 that contract, and writes it atomically to --out, by default
 ${REGISTRY_SNAPSHOT_REL} under the current directory (the hub).
 
-This is the only step of applying a plan that reads the package registry. Messages
-name packages and positions only, never a response's content.
+This is the only step of applying a plan that reads the package registry. A
+message names a package by its position in the request, names[<n>], never by
+its name, and never quotes the request or a response.
 
 Exit codes: 0 = the snapshot was written (or --help was shown), 2 = no snapshot was written
 (a usage error, an unreadable or invalid request, or any registry answer

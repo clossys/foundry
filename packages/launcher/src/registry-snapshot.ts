@@ -83,7 +83,12 @@ export interface RegistrySnapshotViolation {
   readonly message: string;
 }
 
-/** Why the snapshot step stopped. The message names packages and positions only, never registry or request content. */
+/**
+ * Why the snapshot step stopped. The message names a package only by its
+ * position in the request (`names[<n>]`), never by its name: a name is
+ * request text, and a request is a file anyone could have written. It
+ * never carries registry content either.
+ */
 export class RegistrySnapshotError extends Error {}
 
 function loadContract(name: string): ContractSchema {
@@ -437,7 +442,8 @@ export async function takeRegistrySnapshot(names: readonly string[], options: Fe
   const ordered = names.map((name, index) => ({ name, index })).sort((left, right) => byCodeUnits(left.name, right.name));
   const packages: RegistrySnapshotPackage[] = [];
   for (const { name, index } of ordered) {
-    const where = `names[${index}] ${name}`;
+    // The position only: the name itself is request text.
+    const where = `names[${index}]`;
     const { status, bytes } = await fetchOne(transport, packumentUrl(registry, name), where, timeoutMs);
     const responseSha256 = `sha256:${createHash("sha256").update(bytes).digest("hex")}`;
     if (status === 404) {
