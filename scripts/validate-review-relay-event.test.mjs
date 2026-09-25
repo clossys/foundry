@@ -62,7 +62,7 @@ test("refuses missing, extra, or text-carrying keys", () => {
   const { comment_id: _omitted, ...missing } = review;
   refuses(missing, /exactly the keys/);
   refuses({ ...review, body: "text" }, /exactly the keys/);
-  refuses(JSON.stringify(review).replace("{", '{"__proto__":{"x":1},'), /exactly the keys/);
+  refuses(`{"__proto__":{"x":1},${JSON.stringify(review).slice(1)}`, /exactly the keys/);
 });
 
 test("refuses unknown events and another repository", () => {
@@ -87,7 +87,7 @@ test("refuses an id for the other event kind", () => {
 });
 
 test("refuses oversized records before parsing", () => {
-  const padded = JSON.stringify(review).replace("{", `{${" ".repeat(RELAY_RECORD_MAX_BYTES)}`);
+  const padded = `{${" ".repeat(RELAY_RECORD_MAX_BYTES)}${JSON.stringify(review).slice(1)}`;
   refuses(padded, /exceeds/);
 });
 
