@@ -3,9 +3,10 @@
 This folder is the account hub for Foundry packages.
 
 After `npx @clossys/launcher`, the `@clossys-*` team is composed in this
-hub. Talk with `@clossys-advisor` and `@clossys-<package>` here. A product
-repository receives the team with its setup pull request, not from a
-launcher run. A missing `@` mention is not how we signal incompatibility —
+hub. Talk with `@clossys-advisor` and `@clossys-<package>` here. A launcher
+run writes nothing into a product repository; once a repository is staffed
+in an approved plan, the team arrives there with that plan's setup pull
+request. A missing `@` mention is not how we signal incompatibility —
 `@clossys-advisor` is the hiring check.
 
 Run `npx @clossys/launcher` again for hub health and to refresh the voices

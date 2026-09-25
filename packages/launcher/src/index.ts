@@ -57,6 +57,8 @@ export type {
   CommandResult,
   CwdObservation,
   DependencyBucket,
+  EngineInstallFinding,
+  EnginePinChange,
   HubDocument,
   HubEnginePin,
   HubHealthReport,

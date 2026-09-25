@@ -90,15 +90,20 @@ against it: a pin older than live is a `stale pin` finding, named by package,
 and marks the report **degraded**. The report is also degraded when either
 engine is missing, dual-pinned, or present in any bucket other than
 `devDependencies`, when a composed skill in the hub was left as is because a
-client edited it (the `skill preserved` lines above), and when the hub's stored
-inventory fails its contract. Per-package
+client edited it (the `skill preserved` lines above), when the hub's stored
+inventory fails its contract, and when the hub's lockfile does not resolve the
+engine pins yet (an `install needed (engine-pins-changed-install-needed)` line;
+see "Engine pins and the lockfile" below). Per-package
 skill sources missing from the catalogue are noted but do not by themselves mark
 degraded. Each inventoried repository other than the hub gets a `sibling` line
 (and an entry in `skillComposition.siblings`) saying what the run found for it:
 a checkout beside the hub, one not cloned yet, another account's repository,
-the Foundry supplier tree, or a checkout whose git origin does not match; for a
-checkout beside the hub or one not cloned yet, the line says its `@clossys-*`
-team arrives with the setup pull request. A sibling line never marks the report
+the Foundry supplier tree, a folder that is not a git checkout, a checkout git
+refuses to read (dubious ownership), or a checkout whose git origin does not
+match. For a checkout beside the hub or one not cloned yet, the line says a hub
+run writes nothing there, and that once the repository is staffed in an
+approved plan, its `@clossys-*` team arrives with that plan's setup pull
+request. A sibling line never marks the report
 degraded, and a sibling's working tree, output an earlier release wrote into it,
 or its old pins do not change the hub run's result. Exit stays 0 on resume
 (the report is advisory); adopt prints the same report and an unparseable
@@ -106,6 +111,27 @@ pin-versus-live comparison is noted as indeterminate rather than stale.
 `checkInventoryEntries()` additionally validates hub inventory ids read-only,
 marking ids whose repository no longer resolves (skipped with a note when
 `gh` is unavailable).
+
+### Engine pins and the lockfile
+
+For engine pins, resume and appoint change only the hub's `package.json`, never its lockfile,
+and install nothing. A run that changes an engine pin says exactly what it
+changed (`engine pins changed in package.json: @clossys/advisor 0.2.6 -> 0.5.0;
+@clossys/integrator added at 0.8.2`, and `health.enginePins` in the JSON) and
+gives one next step: run the hub's package manager install (`npm install`,
+`pnpm install`, `yarn install` or `bun install`, by the lockfile present), then
+commit `package.json` together with its lockfile. Until then a frozen install
+(`npm ci`, `pnpm install --frozen-lockfile`, `yarn install --immutable`) refuses
+the hub. While a lockfile is present that does not resolve the pins yet, the
+report is degraded with an `engine-pins-changed-install-needed` finding
+(`health.installNeeded`): an npm lockfile (`package-lock.json` or
+`npm-shrinkwrap.json`) is read on every run, and each engine pinned to a plain
+version must resolve to that version in it; any other lockfile is not read, so
+it counts as unresolved for the engines the run changed. Resume and appoint
+only raise a pin: one older than live, or not a plain version, becomes the live version,
+and one newer than live is kept. Resume rewrites `package.json` as
+2-space-indented JSON with a final LF, only when a pin changes, and never
+changes its `name`.
 
 
 ## Install
@@ -145,15 +171,18 @@ appoint as the hub). After apply, the launcher composes the
 plus host discovery links). A launcher run writes no skills, skills manifest,
 discovery links, `AGENTS.md` or `CLAUDE.md` into an inventoried product
 repository, and changes nothing in its checkout beside the hub
-(`--clone-missing`, below, only clones a missing one); a product repository
-receives those files with its setup pull request. Composition is per checkout, not machine-wide, and is not a
+(`--clone-missing`, below, only clones a missing one). Once a product
+repository is staffed in an approved plan, it receives those files with that
+plan's setup pull request; an inventoried repository that is not staffed does
+not receive them. Composition is per checkout, not machine-wide, and is not a
 catalogue dump into `package.json`.
 
 Voices are how you talk in a coding agent; they are not engagement engines. The
 `@clossys/advisor` npm package is the engine that grades evidence;
 `@clossys-advisor` in chat is its hiring and compatibility voice. Use
 `@clossys-advisor` and `@clossys-<package>` in the hub, and in a product
-repository once its setup pull request has merged. Each voice can talk even when
+repository once the setup pull request of an approved plan that staffs it has
+merged. Each voice can talk even when
 that npm package is not pinned in that repo. When composing into the hub, the
 launcher reads each skill body from the hub's installed
 `@clossys/<package>/skill/SKILL.md` when present, then from the packed catalogue
@@ -169,7 +198,7 @@ not yet sitting beside the hub, using `cloneMissingInventoryRepositories()`,
 and only those -- an id skipped for any other reason (wrong account, the
 Foundry supplier tree, a mismatched git origin) is left exactly as skipped,
 never attempted. Cloning is not composing: a repository cloned this way
-receives its team with its setup pull request, like any other.
+receives its team only once it is staffed in an approved plan, like any other.
 
 ## How to run it
 
@@ -184,8 +213,8 @@ silent fallback.
 | Current directory | What happens |
 | --- | --- |
 | Empty | Creates `{owner}/workspace` from the in-package skeleton (package name `@owner/workspace`, pinning live `@clossys/advisor` and `@clossys/integrator` exactly in `devDependencies`), or clones that hub if it already exists. |
-| Already a hub (generated marker; packed template `skeleton/clossys/.state/workspace.json`) | Resumes. No new repository. `--repositories` writes the repositories the founder chose again into `clossys/.state/inventory.json` before skills are composed (see "Choosing the hub's repositories" below). `--inventory` here is refused, and the refusal points at choosing the repositories again on Advisor's repository card and running `launcher --repositories`, instead of at hand-editing the file. A legacy `.clossys/` hub state is migrated automatically; see "Layout" above. For each hub engine whose live version the registry returned, pins that version exactly in `devDependencies` of the hub's existing `package.json`: a frozen older pin is bumped, a missing Integrator pin is added, and a pin in another bucket is moved; other `@clossys/*` entries are left as they are, and the file is rewritten only when a pin changes. |
-| Any other GitHub repository you control | Appoints it as the account hub. Keeps existing product files. Refuses when the working tree has uncommitted changes (`git status --porcelain` non-empty) — the refusal names the offending remote host when the origin is not on github.com. Refuses when `CLOSSYS_OWNER` names a different account than the repository's github.com origin owner. Writes the hub marker. Pins live `@clossys/advisor` and `@clossys/integrator`, each exactly, in `devDependencies`, relocating and upgrading any pin left in another bucket and leaving other `@clossys/*` entries as they are. A dedicated `{owner}/workspace` checkout is named `@owner/workspace`; a product repository keeps its package name. Always reads the public Advisor and Integrator versions (needed to pin live, and to pin and grade health on resume); refuses as indeterminate when the registry returns either one unreadable. Refuses if the generated hub inventory is missing or empty (packed template `skeleton/clossys/.state/inventory.json`; that generated path does not ship), and the refusal points the founder at choosing the hub's repositories on Advisor's repository card and passing them to `--repositories`, which writes the inventory (see "Choosing the hub's repositories" below). `--inventory <path>` still supplies a populated document instead — and, when the on-disk inventory is already populated and `--inventory` is also supplied, merges the two by repository identity (on-disk order first, new repositories appended, the first occurrence of a repository kept, and every kept entry kept whole, its `packages` included). Does not rewrite the lockfile or dump the catalogue. Prints a read-only health report. |
+| Already a hub (generated marker; packed template `skeleton/clossys/.state/workspace.json`) | Resumes. No new repository. `--repositories` writes the repositories the founder chose again into `clossys/.state/inventory.json` before skills are composed (see "Choosing the hub's repositories" below). `--inventory` here is refused, and the refusal points at choosing the repositories again on Advisor's repository card and running `launcher --repositories`, instead of at hand-editing the file. A legacy `.clossys/` hub state is migrated automatically; see "Layout" above. For each hub engine whose live version the registry returned, pins that version exactly in `devDependencies` of the hub's existing `package.json`: a frozen older pin is bumped, a pin newer than live is kept, a missing Integrator pin is added, and a pin in another bucket is moved; other `@clossys/*` entries are left as they are, and the file is rewritten only when a pin changes. The report then names each change and the install to run next (see "Engine pins and the lockfile" above). |
+| Any other GitHub repository you control | Appoints it as the account hub. Keeps existing product files. Refuses when the working tree has uncommitted changes (`git status --porcelain` non-empty) — the refusal names the offending remote host when the origin is not on github.com. Refuses when `CLOSSYS_OWNER` names a different account than the repository's github.com origin owner. Writes the hub marker. Pins live `@clossys/advisor` and `@clossys/integrator`, each exactly, in `devDependencies`, relocating any pin left in another bucket, raising an older one (a pin newer than live is kept), and leaving other `@clossys/*` entries as they are; the report names each change and the install to run next. A dedicated `{owner}/workspace` checkout is named `@owner/workspace`; a product repository keeps its package name. Always reads the public Advisor and Integrator versions (needed to pin live, and to pin and grade health on resume); refuses as indeterminate when the registry returns either one unreadable. Refuses if the generated hub inventory is missing or empty (packed template `skeleton/clossys/.state/inventory.json`; that generated path does not ship), and the refusal points the founder at choosing the hub's repositories on Advisor's repository card and passing them to `--repositories`, which writes the inventory (see "Choosing the hub's repositories" below). `--inventory <path>` still supplies a populated document instead — and, when the on-disk inventory is already populated and `--inventory` is also supplied, merges the two by repository identity (on-disk order first, new repositories appended, the first occurrence of a repository kept, and every kept entry kept whole, its `packages` included). Does not rewrite the lockfile or dump the catalogue. Prints a read-only health report. |
 
 It does not have to be a brand-new exclusive repository, and it does not
 have to already match a Foundry layout. Informal "workspace-looking" trees
@@ -306,8 +335,8 @@ Exit codes preserve the ternary:
 | `WORKSPACE_INVENTORY_REL` | Relative path of the hub inventory. |
 | `CLOSSYS_README_REL` | Relative path of the generated index README at the root of `clossys/`. |
 | `LEGACY_STATE_DIR_REL` / `LEGACY_WORKSPACE_MARKER_REL` / `LEGACY_WORKSPACE_INVENTORY_REL` | Pre-#1171 `.clossys/` paths, kept only so resume can detect and migrate them. |
-| `CommandResult` / `ChosenInventory` / `CwdObservation` / `DependencyBucket` / `HubDocument` / `HubEnginePin` / `HubHealthReport` / `HubMigrationState` / `InventoryObservation` / `InventoryValidationEntry` / `InventoryValidationReport` / `InventoryReadOptions` / `PinFinding` / `PinGrade` / `PlanWorkspaceOptions` / `SkillManifestDocument` / `SkillManifestEntry` / `SkillsManifestSummary` / `ApplyWorkspaceOptions` / `WorkspaceApplyResult` / `WorkspaceDecision` / `WorkspaceHost` / `WorkspaceObservation` / `WorkspacePlan` / `WorkspaceRefusal` / `WorkspaceState` | Typed host, observation, plan, health, and outcome contracts. A `WorkspaceHost` reads and writes text and, for inventory files, exact bytes (`readBytes()` / `writeBytes()`). |
-| `cloneMissingInventoryRepositories()` | Explicit, approved action (#1179): clones every inventoried repository of the hub's account that is not cloned beside the hub, and only those; every other inventoried repository is reported as skipped or left out, never attempted. Returns a `CloneMissingOutcome[]`. |
+| `CommandResult` / `ChosenInventory` / `CwdObservation` / `DependencyBucket` / `EngineInstallFinding` / `EnginePinChange` / `HubDocument` / `HubEnginePin` / `HubHealthReport` / `HubMigrationState` / `InventoryObservation` / `InventoryValidationEntry` / `InventoryValidationReport` / `InventoryReadOptions` / `PinFinding` / `PinGrade` / `PlanWorkspaceOptions` / `SkillManifestDocument` / `SkillManifestEntry` / `SkillsManifestSummary` / `ApplyWorkspaceOptions` / `WorkspaceApplyResult` / `WorkspaceDecision` / `WorkspaceHost` / `WorkspaceObservation` / `WorkspacePlan` / `WorkspaceRefusal` / `WorkspaceState` | Typed host, observation, plan, health, and outcome contracts. A `WorkspaceHost` reads and writes text and, for inventory files, exact bytes (`readBytes()` / `writeBytes()`). |
+| `cloneMissingInventoryRepositories()` | Explicit, approved action (#1179): clones every inventoried repository of the hub's account that is not cloned beside the hub, and only those; a checkout already beside the hub is left out of the outcomes, and every other inventoried repository is reported as `skipped-other-reason`, never attempted. Returns a `CloneMissingOutcome[]`. |
 | `runDoctorChecks()` | Read-only prerequisite checks in fix-in-this-order sequence: git, `gh`, signed in, Node.js, npm, then the advisory coding-agent step. Returns a `DoctorReport`. |
 | `renderDoctorReport()` | Renders a `DoctorReport` one step at a time, the way `launcher-doctor` prints it. |
 | `checkCloudSessionBootstrap()` | Read-only: the three product-repository-layout.json cloud-session-bootstrap checks against a directory. Returns a `CloudBootstrapReport`. |
@@ -349,10 +378,10 @@ session needs: a resolvable `package.json` plus `package-lock.json` pair,
 an `AGENTS.md` that mentions `clossys/`, and a hub marker at the same
 relative path as the packed template `skeleton/clossys/.state/workspace.json`.
 It never runs `npm ci` itself and never mutates anything; it only reports
-which of the three is missing. Before a product repository's setup pull
-request merges, an unsatisfied `agents-pointer` check is the expected state:
-its note says `AGENTS.md` arrives with the setup pull request, since a
-launcher run in the hub writes nothing into a product repository.
+which of the three is missing. A launcher run in the hub writes nothing
+into a product repository, so until the repository is staffed in an approved
+plan and that plan's setup pull request merges, an unsatisfied
+`agents-pointer` check is the expected state; its note says so.
 
 ## Inventory: adopting an existing source
 
@@ -447,10 +476,12 @@ does not compute a brief's content (that is `@clossys/advisor`'s
 approved (that is Advisor's job); it only validates the two shapes and
 writes the one file. Multi-repository
 orchestration -- branch creation, exact package installs, adding Starter's
-caller workflow, and opening one pull request per repository -- is
-deferred: the landed contract does not yet specify how a plan's approved
-roles map to inventory repository ids or to install/remove/relocate work
-items.
+caller workflow, and opening one pull request per staffed repository,
+including the setup pull request that brings a staffed repository its
+`@clossys-*` team -- is not in this package yet, so until it ships no
+Launcher command puts the team into a product repository. The landed
+contract does not yet specify how a plan's approved roles map to inventory
+repository ids or to install/remove/relocate work items.
 
 ## Why this is not Advisor, Starter, Builder, installer, creator, or a connector
 

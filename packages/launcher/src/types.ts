@@ -137,6 +137,36 @@ export interface HubEnginePin {
   readonly live?: string;
 }
 
+/** One change a run made to a hub engine pin in the hub's `package.json`. */
+export interface EnginePinChange {
+  /** The engine package: `@clossys/advisor` or `@clossys/integrator`. */
+  readonly package: string;
+  /** The version pinned before the run; absent when the engine was not pinned at all. */
+  readonly from?: string;
+  /** The version pinned in `devDependencies` after the run. */
+  readonly to: string;
+  /** The dependency bucket the pin was moved out of, when it was not in `devDependencies`. */
+  readonly movedFrom?: DependencyBucket;
+}
+
+/**
+ * The hub's lockfile does not resolve its engine pins yet (`kind`
+ * `engine-pins-changed-install-needed`): the hub's package manager install
+ * has to run, and `package.json` be committed together with the lockfile,
+ * before a frozen install (`npm ci`, `pnpm install --frozen-lockfile`,
+ * `yarn install --immutable`) accepts the hub again. Marks the report degraded.
+ */
+export interface EngineInstallFinding {
+  readonly kind: "engine-pins-changed-install-needed";
+  /** The lockfile found in the hub, e.g. `package-lock.json`. */
+  readonly lockfile: string;
+  /** The install command for that lockfile's package manager, e.g. `npm install`. */
+  readonly command: string;
+  /** The engines the lockfile does not resolve at their pinned version, or, for a lockfile Launcher does not read, the engines this run changed. */
+  readonly packages: readonly string[];
+  readonly note: string;
+}
+
 /** Read-only pin and inventory report after adopt or resume. Never uninstalls. */
 export interface HubHealthReport {
   readonly marker: "present" | "missing";
@@ -147,6 +177,10 @@ export interface HubHealthReport {
   readonly dualPin: boolean;
   readonly extraClossys: readonly string[];
   readonly pinFindings: readonly PinFinding[];
+  /** Present when this run changed a hub engine pin in `package.json`: what changed, and the one next step (install, then commit `package.json` with its lockfile). */
+  readonly enginePins?: { readonly changed: readonly EnginePinChange[]; readonly nextStep: string };
+  /** Present when a lockfile in the hub does not resolve the engine pins yet; marks the report degraded. */
+  readonly installNeeded?: EngineInstallFinding;
   readonly degraded: boolean;
   /** Coding-agent hosts this apply found already linked for skill discovery here, recorded before compose ran (#1180). Always present after apply. */
   readonly linkedHosts?: readonly DiscoveredHost[];
@@ -159,8 +193,9 @@ export interface HubHealthReport {
     readonly rosterTargets?: readonly string[];
     /**
      * Each inventoried repository other than the hub, with what this run found
-     * for it (for example, a checkout beside the hub whose team arrives with
-     * its setup pull request). Report-only: a hub run never writes into one,
+     * for it (for example, a checkout beside the hub whose team arrives only
+     * once it is staffed in an approved plan, with that plan's setup pull
+     * request). Report-only: a hub run never writes into one,
      * and no entry marks the report degraded.
      */
     readonly siblings?: readonly { readonly inventoryId: string; readonly note: string }[];

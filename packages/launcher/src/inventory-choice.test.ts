@@ -595,7 +595,7 @@ describe("resume writes the chosen inventory before composing (#1179)", () => {
     expect(main(["--repositories", `${OWNER}/example-app`], siblingHost, skeletonRoot)).toBe(0);
     const message = String(log.mock.calls[0]?.[0]);
     expect(message).toMatch(/inventory: wrote the 1 repository you chose/);
-    expect(message).toMatch(/^sibling \(example-owner\/example-app\): checkout beside the hub; its @clossys-\* team arrives with the setup pull request$/m);
+    expect(message).toMatch(/^sibling \(example-owner\/example-app\): checkout beside the hub; a hub run writes nothing here; once this repository is staffed in an approved plan, its @clossys-\* team arrives with that plan's setup pull request$/m);
     expect(readdirSync(sibling)).toEqual([".git"]);
   });
 });
@@ -643,7 +643,7 @@ describe("one repository identity for the roster, the merge and drift (#1179)", 
     ).toBe(0);
     const message = String(log.mock.calls[0]?.[0]);
     expect(message).toMatch(/^skill roster written: example-owner\/example-hub$/m);
-    expect(message).toMatch(/^sibling \(EXAMPLE-OWNER\/example-app\): checkout beside the hub; its @clossys-\* team arrives with the setup pull request$/m);
+    expect(message).toMatch(/^sibling \(EXAMPLE-OWNER\/example-app\): checkout beside the hub; a hub run writes nothing here; once this repository is staffed in an approved plan, its @clossys-\* team arrives with that plan's setup pull request$/m);
     expect(message).not.toMatch(/other account|origin does not match/);
     expect(readdirSync(sibling)).toEqual([".git"]);
   });
