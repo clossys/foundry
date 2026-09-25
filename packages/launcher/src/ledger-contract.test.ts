@@ -84,7 +84,7 @@ describe("installed-ledger contract", () => {
       else expect(ruleIds(entry.ledger), entry.name).toEqual([...entry.rules!].sort());
     }
     const covered = new Set(CORPUS.ledgers.flatMap((entry) => entry.rules ?? []));
-    for (const rule of ["schema", "L1", "L2", "L3", "L4", "L5", "L6", "L7", "L8"]) expect(covered.has(rule), rule).toBe(true);
+    for (const rule of ["schema", "L1", "L2", "L3", "L4", "L5", "L6", "L7", "L8", "L9"]) expect(covered.has(rule), rule).toBe(true);
   });
 
   it("names positions, never values, in a refusal", () => {

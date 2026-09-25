@@ -120,6 +120,7 @@ export type RefusalReason =
   | "release-age-surface-conflict"
   | "release-age-surface-unparseable"
   | "root-vocabulary-unknown"
+  | "root-entry-prohibited"
   | "skills-root-is-link";
 
 export type ChangeSetRefusal =
@@ -262,6 +263,9 @@ export function skillPath(role: string): string {
 /** Where the composed-skill manifest is written: one per compose-skills item (code rule C9). */
 export const SKILLS_MANIFEST_PATH = "clossys/.state/skills.json";
 
+/** Controller's limit on a root entry name, in UTF-16 code units. */
+export const MAX_ROOT_NAME_UNITS = 255;
+
 /** The discovery roots, in canonical order. */
 export const DISCOVERY_ROOTS: readonly DiscoveryRoot[] = [".claude/skills", ".cursor/skills"];
 
@@ -308,6 +312,35 @@ export const EXEMPTION_SURFACES: Readonly<Record<ExemptionSurfaceKind, { readonl
   "pnpm-workspace": { path: "pnpm-workspace.yaml", key: "minimumReleaseAgeExclude", packageManager: "pnpm" },
   yarnrc: { path: ".yarnrc.yml", key: "npmPreapprovedPackages", packageManager: "yarn" },
 };
+
+/**
+ * How a whole file may change (the contract's WRITE KINDS, code rule C15).
+ * write: after is not null. link: after is not null, and before is null or
+ * equal to it. create-or-edit: after is not null and differs from before.
+ * edit: before and after are not null and differ. No act deletes a file.
+ */
+export type WriteKind = "write" | "link" | "create-or-edit" | "edit";
+
+/** The write kind of each act's whole files; null for an act that writes no whole file. A compose-skills discovery link is a link. */
+export const WRITE_KINDS: Readonly<Record<ChangeSetItem["act"], WriteKind | null>> = {
+  "write-record": "write",
+  "compose-skills": "write",
+  "add-caller-workflow": "write",
+  "write-starter-request": "write",
+  "add-ci-template": "write",
+  "add-path-scope-job": "write",
+  "exempt-release-age": "create-or-edit",
+  "declare-root-entry": "edit",
+  install: null,
+  "pin-starter": null,
+  "write-ledger": null,
+};
+
+/** The write kind a whole file at `path` has when `item` names it. */
+export function writeKindOf(item: ChangeSetItem, path: string): WriteKind | null {
+  if (item.act === "compose-skills" && discoveryLinkRole(path) !== null) return "link";
+  return WRITE_KINDS[item.act];
+}
 
 /** `sha256:` and the hex SHA-256 of a text's UTF-8 bytes: a file's content digest. */
 export function contentDigest(text: string): string {
@@ -403,7 +436,7 @@ export function worstVerdict(verdicts: readonly CheckVerdict[]): CheckVerdict {
 /** The rule a bundle check carries when its authorization is for another plan (code rule A4). */
 export const AUTHORIZATION_PLAN_MISMATCH = "authorization-plan-mismatch";
 
-export type ChangeSetRuleId = "C1" | "C2" | "C3" | "C4" | "C5" | "C6" | "C7" | "C8" | "C9" | "C10" | "C11" | "C12" | "C13" | "C14";
+export type ChangeSetRuleId = "C1" | "C2" | "C3" | "C4" | "C5" | "C6" | "C7" | "C8" | "C9" | "C10" | "C11" | "C12" | "C13" | "C14" | "C15";
 export type ApplyBundleRuleId = "A1" | "A2" | "A3" | "A4" | "A5" | "A6" | "A7";
 
 /** One reason a change set or bundle is refused: `rule` is "schema" for the contract's keywords, else the code rule's id. */
@@ -446,7 +479,7 @@ function firstOutOfOrder<T>(values: readonly T[], key: (value: T) => readonly st
   return undefined;
 }
 
-/** Code rules C1-C14 of repository-change-set.json, over a set whose schema already passes. Messages name positions, never values. */
+/** Code rules C1-C15 of repository-change-set.json, over a set whose schema already passes. Messages name positions, never values. */
 export function changeSetRuleViolations(set: RepositoryChangeSet): RuleViolation<ChangeSetRuleId>[] {
   const out: RuleViolation<ChangeSetRuleId>[] = [];
   const push = (rule: ChangeSetRuleId, path: string, message: string) => out.push({ rule, path, message });
@@ -609,10 +642,14 @@ export function changeSetRuleViolations(set: RepositoryChangeSet): RuleViolation
       if (!(keys.length === 0 && named.length <= 1 && named.every((path) => path === item.path))) push("C9", at, "must be named by at most one whole file or path refusal, at its own path, and by nothing else");
     } else if (item.act === "declare-root-entry") {
       if (!namedExactly([item.path])) push("C9", at, "must be named by exactly one whole file or path refusal, at its own path, and by nothing else");
+    } else if (item.act === "write-ledger") {
+      if (refusals.length > 0) push("C9", at, "is refused, but the ledger is always written");
     } else if (isPackageItem(item)) {
       const pointer = dependencyPointer(item.placement, item.package.name);
       if (files.some(({ file }) => !isDerived(file))) push("C9", at, "is named by a whole file");
       if (refusals.some(({ refusal }) => "path" in refusal)) push("C9", at, "is named by a path refusal");
+      const ownPointers = [dependencyPointer("dependencies", item.package.name), dependencyPointer("devDependencies", item.package.name)];
+      if (refusals.some(({ refusal }) => "pointer" in refusal && !ownPointers.includes(refusal.pointer))) push("C9", at, "is named by a key refusal for another package");
       if (keys.some((key) => key.pointer !== pointer || key.after !== item.package.version)) push("C9", at, "is named by a key whose pointer or value is not this item's");
       const pinned = (invariant: PackageInvariant | LedgerInvariant) =>
         isPackageInvariant(invariant) && invariant.name === item.package.name && invariant.version === item.package.version && invariant.integrity === item.package.integrity;
@@ -684,14 +721,12 @@ export function changeSetRuleViolations(set: RepositoryChangeSet): RuleViolation
       push("C13", "observed.repositoryProfile", "lists root names, but its root vocabulary is not checked");
     }
     if (profile.undeclaredRoots.some((name) => profile.prohibitedRoots.includes(name))) push("C13", "observed.repositoryProfile", "lists one root name as both undeclared and prohibited");
-    const roots = new Set([
-      ...set.files.map((file) => file.path),
-      ...set.keys.map((key) => key.file),
-      ...set.refused.map((refusal) => ("path" in refusal ? refusal.path : refusal.file)),
-    ].map((path) => path.split("/")[0]!));
+    // Only paths the set writes introduce a root name: a refused path is not written.
+    const roots = new Set([...set.files.map((file) => file.path), ...set.keys.map((key) => key.file)].map((path) => path.split("/")[0]!));
     for (const [name, list] of [["undeclaredRoots", profile.undeclaredRoots], ["prohibitedRoots", profile.prohibitedRoots]] as const) {
       list.forEach((root, at) => {
-        if (!roots.has(root)) push("C13", `observed.repositoryProfile.${name}[${at}]`, "is not the first segment of any path the set writes or refuses");
+        if (!roots.has(root)) push("C13", `observed.repositoryProfile.${name}[${at}]`, "is not the first segment of any path the set writes");
+        if (root.length > MAX_ROOT_NAME_UNITS) push("C13", `observed.repositoryProfile.${name}[${at}]`, "is longer than 255 UTF-16 code units");
       });
     }
   }
@@ -699,14 +734,17 @@ export function changeSetRuleViolations(set: RepositoryChangeSet): RuleViolation
     const { item, index } = declarers[0]! as { item: Extract<ChangeSetItem, { act: "declare-root-entry" }>; index: number };
     const at = `items[${index}]`;
     if (item.path !== profile.path) push("C13", `${at}.path`, "is not the observed repository profile's path");
+    item.entries.forEach((entry, position) => {
+      if (entry.name.length > MAX_ROOT_NAME_UNITS) push("C13", `${at}.entries[${position}].name`, "is longer than 255 UTF-16 code units");
+    });
     if (item.entries.length !== profile.undeclaredRoots.length || item.entries.some((entry, position) => entry.name !== profile.undeclaredRoots[position])) {
       push("C13", `${at}.entries`, "do not name exactly the observed undeclared root names, in their order");
     }
     const whole = set.files.find((file) => file.item === item.id && !isDerived(file));
     const refusal = set.refused.find((entry) => entry.item === item.id && "path" in entry);
-    const expected = profile.rootVocabulary === "unparseable" ? "root-vocabulary-unknown" : profile.prohibitedRoots.length > 0 ? "unowned-existing" : null;
+    const expected = profile.rootVocabulary === "unparseable" ? "root-vocabulary-unknown" : profile.prohibitedRoots.length > 0 ? "root-entry-prohibited" : null;
     if (expected === null) {
-      if (whole === undefined || ("before" in whole && whole.before === null)) push("C13", at, "must be named by a whole file that edits the profile the default branch has");
+      if (whole === undefined) push("C13", at, "must be named by a whole file that edits the profile");
     } else if (refusal === undefined || refusal.reason !== expected) {
       push("C13", at, `must be named by a path refusal with reason ${expected}`);
     }
@@ -733,6 +771,22 @@ export function changeSetRuleViolations(set: RepositoryChangeSet): RuleViolation
     if (shouldBe !== (refusal.reason === "skills-root-is-link")) {
       push("C14", `refused[${at}].reason`, shouldBe ? "is not skills-root-is-link, and this skill lies under a symbolic link" : "is skills-root-is-link, but this path is no skill under a symbolic link");
     }
+  });
+
+  // C15: every whole file obeys its item's write kind, checked here and nowhere else.
+  set.files.forEach((file, index) => {
+    const item = itemsById.get(file.item);
+    if (isDerived(file) || item === undefined) return;
+    const kind = writeKindOf(item, file.path);
+    if (kind === null) return; // an act that writes no whole file: code rule C9 refuses the file
+    const at = `files[${index}]`;
+    if (file.after === null) {
+      push("C15", `${at}.after`, `is null, but a ${kind} never deletes a file`);
+      return;
+    }
+    if (kind === "edit" && file.before === null) push("C15", `${at}.before`, "is null, but an edit changes a file the default branch has");
+    if ((kind === "edit" || kind === "create-or-edit") && file.after === file.before) push("C15", `${at}.after`, `equals before, but a ${kind} writes only a change`);
+    if (kind === "link" && file.before !== null && file.before !== file.after) push("C15", `${at}.before`, "is another target, but a discovery link is only created or kept");
   });
   return out;
 }

@@ -2453,7 +2453,7 @@
     },
     {
       "name": "ledger-path-in-other-case",
-      "note": "A files row for the ledger itself, spelled in other letter case.",
+      "note": "A files row for the ledger itself, spelled in other letter case under an owned pattern, so only the case-insensitive comparison refuses it.",
       "valid": false,
       "rules": [
         "L5"
@@ -2554,9 +2554,9 @@
             "changeSet": "sha256:3c79c63c9e69406df85c2f3b13d55c8465e85885fcee79009a14ffbc98bc8b8f"
           },
           {
-            "path": "Clossys/.state/Installed.json",
+            "path": "clossys/.state/Installed.json",
             "mode": "100644",
-            "after": "sha256:2befb28e1043630b5b246a09377c84e06b32185262a161685c11c5e0da57850c",
+            "after": "sha256:51f0523c283a2a96c252cd39951cc0b08995d1f69dd5793310e61ad17e9ec2b0",
             "changeSet": "sha256:3c79c63c9e69406df85c2f3b13d55c8465e85885fcee79009a14ffbc98bc8b8f"
           },
           {
@@ -6109,6 +6109,410 @@
             "file": "governance/repository-profile.json",
             "key": "rootEntries",
             "value": "clossys",
+            "changeSet": "sha256:c718a982bacebee93ca80e0b83fc0cda958972e5beafed182cd5699bfda01103"
+          }
+        ],
+        "packages": [
+          {
+            "planItem": "example-owner/site:@example/starter",
+            "act": "pin-starter",
+            "name": "@example/starter",
+            "version": "0.9.2",
+            "integrity": "sha512-hJiP5Qe0sBUnWOs7+hC2bcIg2ye4C0X3hmWVHIo4IfibnbGns3pFL8QPV4R3MuWxVlbU9dWJ/HeYE42ABQie/w==",
+            "placement": "devDependencies",
+            "changeSet": "sha256:c718a982bacebee93ca80e0b83fc0cda958972e5beafed182cd5699bfda01103"
+          }
+        ],
+        "deferred": [
+          {
+            "planItem": "example-owner/site:@example/strategist",
+            "act": "install",
+            "name": "@example/strategist",
+            "version": "1.4.0",
+            "integrity": "sha512-UWlOIr0jGHG4u420oMkUOeVW5r6Ab4kxuaUU4UWjjGebkzXM634IHDtxqLqMGCRebanNaxZBudK29XyAQgk5sQ==",
+            "placement": "devDependencies",
+            "reason": "after-setup",
+            "changeSet": "sha256:c718a982bacebee93ca80e0b83fc0cda958972e5beafed182cd5699bfda01103"
+          },
+          {
+            "planItem": "example-owner/site:@example/writer",
+            "act": "install",
+            "name": "@example/writer",
+            "version": "0.7.0",
+            "integrity": "sha512-GW995IgPwvbujjoIUYbT6dge9ZrLCEa1JOYNnU+LYrdaWcbU9wOs0vpm53wXR1kQBUbFftpxA8LkpD4AtU/dQQ==",
+            "placement": "devDependencies",
+            "reason": "after-setup",
+            "changeSet": "sha256:c718a982bacebee93ca80e0b83fc0cda958972e5beafed182cd5699bfda01103"
+          }
+        ]
+      }
+    },
+    {
+      "name": "root-entries-in-two-profiles",
+      "note": "rootEntries rows in two Controller profiles: the flow edits one.",
+      "valid": false,
+      "rules": [
+        "L9"
+      ],
+      "ledger": {
+        "schemaVersion": 1,
+        "kind": "clossys.installed-ledger",
+        "repository": {
+          "id": "example-owner/site",
+          "nodeId": "R_exampleSite1"
+        },
+        "generation": 1,
+        "history": [
+          {
+            "generation": 1,
+            "changeSet": "sha256:c718a982bacebee93ca80e0b83fc0cda958972e5beafed182cd5699bfda01103",
+            "phase": "setup",
+            "planDigest": "sha256:40e9c27d0c677c522f131e47740185d8182367c9f286fd4746e72c55b1275a18",
+            "bundle": "sha256:eb4d96f7e46201d417bf03bdfa8707ca18428727e1b75d1be4b278cc9f79f719",
+            "baseCommit": "b9943520d44a7c5584afd9cff2fb9f3ce9fbfd62",
+            "binding": {
+              "kind": "approved",
+              "subjectDigest": "sha256:eb4d96f7e46201d417bf03bdfa8707ca18428727e1b75d1be4b278cc9f79f719"
+            }
+          }
+        ],
+        "files": [
+          {
+            "path": ".agents/skills/clossys-strategist/SKILL.md",
+            "mode": "100644",
+            "after": "sha256:10a0edc2b0a6f35b6735a9423cbcf326138c80f0a152bb937b655ee278b26c1f",
+            "changeSet": "sha256:c718a982bacebee93ca80e0b83fc0cda958972e5beafed182cd5699bfda01103"
+          },
+          {
+            "path": ".agents/skills/clossys-writer/SKILL.md",
+            "mode": "100644",
+            "after": "sha256:e0d4b7ccb4dbdcf1f9e6e94ac05fa6f2d05c9cb3797ccde260ce3c9d59ea35b1",
+            "changeSet": "sha256:c718a982bacebee93ca80e0b83fc0cda958972e5beafed182cd5699bfda01103"
+          },
+          {
+            "path": ".claude/skills/clossys-strategist",
+            "mode": "120000",
+            "after": "sha256:6fcf44a7a74900e9b603bcd3fd1791faabb61295667fff05c16c3668e938fcb2",
+            "changeSet": "sha256:c718a982bacebee93ca80e0b83fc0cda958972e5beafed182cd5699bfda01103"
+          },
+          {
+            "path": ".claude/skills/clossys-writer",
+            "mode": "120000",
+            "after": "sha256:c321e19de7bbbe3ffa43bc4dcdab6d244be829275306f1011c9d5f66646c3b38",
+            "changeSet": "sha256:c718a982bacebee93ca80e0b83fc0cda958972e5beafed182cd5699bfda01103"
+          },
+          {
+            "path": ".cursor/skills/clossys-strategist",
+            "mode": "120000",
+            "after": "sha256:6fcf44a7a74900e9b603bcd3fd1791faabb61295667fff05c16c3668e938fcb2",
+            "changeSet": "sha256:c718a982bacebee93ca80e0b83fc0cda958972e5beafed182cd5699bfda01103"
+          },
+          {
+            "path": ".cursor/skills/clossys-writer",
+            "mode": "120000",
+            "after": "sha256:c321e19de7bbbe3ffa43bc4dcdab6d244be829275306f1011c9d5f66646c3b38",
+            "changeSet": "sha256:c718a982bacebee93ca80e0b83fc0cda958972e5beafed182cd5699bfda01103"
+          },
+          {
+            "path": ".github/scripts/clossys-collect-adoption-snapshot.mjs",
+            "mode": "100644",
+            "after": "sha256:b59b797434d58f8475861e3e1a59fc78e9e821cee7b238d3c912d16f2f6c766a",
+            "changeSet": "sha256:c718a982bacebee93ca80e0b83fc0cda958972e5beafed182cd5699bfda01103"
+          },
+          {
+            "path": ".github/workflows/clossys-adoption-decision.yml",
+            "mode": "100644",
+            "after": "sha256:6ec7773d47efe9a085cc4ae930a208db74d6ed06446e615905bc6171aa880652",
+            "changeSet": "sha256:c718a982bacebee93ca80e0b83fc0cda958972e5beafed182cd5699bfda01103"
+          },
+          {
+            "path": ".github/workflows/clossys-adoption-evidence.yml",
+            "mode": "100644",
+            "after": "sha256:f7e9765395d2391daf2c3cbc6d675001f25490482e413ca6d3a5e54ce2539cd4",
+            "changeSet": "sha256:c718a982bacebee93ca80e0b83fc0cda958972e5beafed182cd5699bfda01103"
+          },
+          {
+            "path": ".github/workflows/clossys-ci.yml",
+            "mode": "100644",
+            "after": "sha256:dc1be01dc993c80302834f6c1094a99a2a95e36d104139f12d92250174b132d9",
+            "changeSet": "sha256:c718a982bacebee93ca80e0b83fc0cda958972e5beafed182cd5699bfda01103"
+          },
+          {
+            "path": ".github/workflows/clossys-path-scope.yml",
+            "mode": "100644",
+            "after": "sha256:c6870928c2ffa1008ddbc5ed52d1b75833509c95dced7189c784dd4a2036c772",
+            "changeSet": "sha256:c718a982bacebee93ca80e0b83fc0cda958972e5beafed182cd5699bfda01103"
+          },
+          {
+            "path": ".starter/request.json",
+            "mode": "100644",
+            "after": "sha256:67d274123625780584078df3484b4961d254490674fcc0e4d1150ccf4442eae3",
+            "changeSet": "sha256:c718a982bacebee93ca80e0b83fc0cda958972e5beafed182cd5699bfda01103"
+          },
+          {
+            "path": "clossys/.state/skills.json",
+            "mode": "100644",
+            "after": "sha256:ac10d9424665550641c606987d4da2c554fd3e7f67b1845c4f96662e5220500e",
+            "changeSet": "sha256:c718a982bacebee93ca80e0b83fc0cda958972e5beafed182cd5699bfda01103"
+          },
+          {
+            "path": "clossys/brief.json",
+            "mode": "100644",
+            "after": "sha256:37b06d4c734195868d01085f7d356b70bebb72dd8de105ebb71091fd6bb06364",
+            "changeSet": "sha256:c718a982bacebee93ca80e0b83fc0cda958972e5beafed182cd5699bfda01103"
+          },
+          {
+            "path": "governance/repository-profile.json",
+            "mode": "100644",
+            "after": "sha256:9aeb9d8f5aa79de007de3bcef2175bcf565fe84251aeda2a7fddcba42854e13e",
+            "changeSet": "sha256:c718a982bacebee93ca80e0b83fc0cda958972e5beafed182cd5699bfda01103"
+          }
+        ],
+        "keys": [
+          {
+            "file": "package.json",
+            "pointer": "/devDependencies/@example~1starter",
+            "value": "0.9.2",
+            "changeSet": "sha256:c718a982bacebee93ca80e0b83fc0cda958972e5beafed182cd5699bfda01103"
+          }
+        ],
+        "entries": [
+          {
+            "file": "governance/repository-profile.json",
+            "key": "rootEntries",
+            "value": ".agents",
+            "changeSet": "sha256:c718a982bacebee93ca80e0b83fc0cda958972e5beafed182cd5699bfda01103"
+          },
+          {
+            "file": "governance/repository-profile.json",
+            "key": "rootEntries",
+            "value": ".claude",
+            "changeSet": "sha256:c718a982bacebee93ca80e0b83fc0cda958972e5beafed182cd5699bfda01103"
+          },
+          {
+            "file": "governance/repository-profile.json",
+            "key": "rootEntries",
+            "value": ".cursor",
+            "changeSet": "sha256:c718a982bacebee93ca80e0b83fc0cda958972e5beafed182cd5699bfda01103"
+          },
+          {
+            "file": "governance/repository-profile.json",
+            "key": "rootEntries",
+            "value": ".github",
+            "changeSet": "sha256:c718a982bacebee93ca80e0b83fc0cda958972e5beafed182cd5699bfda01103"
+          },
+          {
+            "file": "governance/repository-profile.json",
+            "key": "rootEntries",
+            "value": ".starter",
+            "changeSet": "sha256:c718a982bacebee93ca80e0b83fc0cda958972e5beafed182cd5699bfda01103"
+          },
+          {
+            "file": "other/repository-profile.json",
+            "key": "rootEntries",
+            "value": "clossys",
+            "changeSet": "sha256:c718a982bacebee93ca80e0b83fc0cda958972e5beafed182cd5699bfda01103"
+          }
+        ],
+        "packages": [
+          {
+            "planItem": "example-owner/site:@example/starter",
+            "act": "pin-starter",
+            "name": "@example/starter",
+            "version": "0.9.2",
+            "integrity": "sha512-hJiP5Qe0sBUnWOs7+hC2bcIg2ye4C0X3hmWVHIo4IfibnbGns3pFL8QPV4R3MuWxVlbU9dWJ/HeYE42ABQie/w==",
+            "placement": "devDependencies",
+            "changeSet": "sha256:c718a982bacebee93ca80e0b83fc0cda958972e5beafed182cd5699bfda01103"
+          }
+        ],
+        "deferred": [
+          {
+            "planItem": "example-owner/site:@example/strategist",
+            "act": "install",
+            "name": "@example/strategist",
+            "version": "1.4.0",
+            "integrity": "sha512-UWlOIr0jGHG4u420oMkUOeVW5r6Ab4kxuaUU4UWjjGebkzXM634IHDtxqLqMGCRebanNaxZBudK29XyAQgk5sQ==",
+            "placement": "devDependencies",
+            "reason": "after-setup",
+            "changeSet": "sha256:c718a982bacebee93ca80e0b83fc0cda958972e5beafed182cd5699bfda01103"
+          },
+          {
+            "planItem": "example-owner/site:@example/writer",
+            "act": "install",
+            "name": "@example/writer",
+            "version": "0.7.0",
+            "integrity": "sha512-GW995IgPwvbujjoIUYbT6dge9ZrLCEa1JOYNnU+LYrdaWcbU9wOs0vpm53wXR1kQBUbFftpxA8LkpD4AtU/dQQ==",
+            "placement": "devDependencies",
+            "reason": "after-setup",
+            "changeSet": "sha256:c718a982bacebee93ca80e0b83fc0cda958972e5beafed182cd5699bfda01103"
+          }
+        ]
+      }
+    },
+    {
+      "name": "root-entry-too-long",
+      "note": "A root entry of 200 astral characters: within the pattern's 255 code points, but 400 UTF-16 code units, over Controller's limit.",
+      "valid": false,
+      "rules": [
+        "L9"
+      ],
+      "ledger": {
+        "schemaVersion": 1,
+        "kind": "clossys.installed-ledger",
+        "repository": {
+          "id": "example-owner/site",
+          "nodeId": "R_exampleSite1"
+        },
+        "generation": 1,
+        "history": [
+          {
+            "generation": 1,
+            "changeSet": "sha256:c718a982bacebee93ca80e0b83fc0cda958972e5beafed182cd5699bfda01103",
+            "phase": "setup",
+            "planDigest": "sha256:40e9c27d0c677c522f131e47740185d8182367c9f286fd4746e72c55b1275a18",
+            "bundle": "sha256:eb4d96f7e46201d417bf03bdfa8707ca18428727e1b75d1be4b278cc9f79f719",
+            "baseCommit": "b9943520d44a7c5584afd9cff2fb9f3ce9fbfd62",
+            "binding": {
+              "kind": "approved",
+              "subjectDigest": "sha256:eb4d96f7e46201d417bf03bdfa8707ca18428727e1b75d1be4b278cc9f79f719"
+            }
+          }
+        ],
+        "files": [
+          {
+            "path": ".agents/skills/clossys-strategist/SKILL.md",
+            "mode": "100644",
+            "after": "sha256:10a0edc2b0a6f35b6735a9423cbcf326138c80f0a152bb937b655ee278b26c1f",
+            "changeSet": "sha256:c718a982bacebee93ca80e0b83fc0cda958972e5beafed182cd5699bfda01103"
+          },
+          {
+            "path": ".agents/skills/clossys-writer/SKILL.md",
+            "mode": "100644",
+            "after": "sha256:e0d4b7ccb4dbdcf1f9e6e94ac05fa6f2d05c9cb3797ccde260ce3c9d59ea35b1",
+            "changeSet": "sha256:c718a982bacebee93ca80e0b83fc0cda958972e5beafed182cd5699bfda01103"
+          },
+          {
+            "path": ".claude/skills/clossys-strategist",
+            "mode": "120000",
+            "after": "sha256:6fcf44a7a74900e9b603bcd3fd1791faabb61295667fff05c16c3668e938fcb2",
+            "changeSet": "sha256:c718a982bacebee93ca80e0b83fc0cda958972e5beafed182cd5699bfda01103"
+          },
+          {
+            "path": ".claude/skills/clossys-writer",
+            "mode": "120000",
+            "after": "sha256:c321e19de7bbbe3ffa43bc4dcdab6d244be829275306f1011c9d5f66646c3b38",
+            "changeSet": "sha256:c718a982bacebee93ca80e0b83fc0cda958972e5beafed182cd5699bfda01103"
+          },
+          {
+            "path": ".cursor/skills/clossys-strategist",
+            "mode": "120000",
+            "after": "sha256:6fcf44a7a74900e9b603bcd3fd1791faabb61295667fff05c16c3668e938fcb2",
+            "changeSet": "sha256:c718a982bacebee93ca80e0b83fc0cda958972e5beafed182cd5699bfda01103"
+          },
+          {
+            "path": ".cursor/skills/clossys-writer",
+            "mode": "120000",
+            "after": "sha256:c321e19de7bbbe3ffa43bc4dcdab6d244be829275306f1011c9d5f66646c3b38",
+            "changeSet": "sha256:c718a982bacebee93ca80e0b83fc0cda958972e5beafed182cd5699bfda01103"
+          },
+          {
+            "path": ".github/scripts/clossys-collect-adoption-snapshot.mjs",
+            "mode": "100644",
+            "after": "sha256:b59b797434d58f8475861e3e1a59fc78e9e821cee7b238d3c912d16f2f6c766a",
+            "changeSet": "sha256:c718a982bacebee93ca80e0b83fc0cda958972e5beafed182cd5699bfda01103"
+          },
+          {
+            "path": ".github/workflows/clossys-adoption-decision.yml",
+            "mode": "100644",
+            "after": "sha256:6ec7773d47efe9a085cc4ae930a208db74d6ed06446e615905bc6171aa880652",
+            "changeSet": "sha256:c718a982bacebee93ca80e0b83fc0cda958972e5beafed182cd5699bfda01103"
+          },
+          {
+            "path": ".github/workflows/clossys-adoption-evidence.yml",
+            "mode": "100644",
+            "after": "sha256:f7e9765395d2391daf2c3cbc6d675001f25490482e413ca6d3a5e54ce2539cd4",
+            "changeSet": "sha256:c718a982bacebee93ca80e0b83fc0cda958972e5beafed182cd5699bfda01103"
+          },
+          {
+            "path": ".github/workflows/clossys-ci.yml",
+            "mode": "100644",
+            "after": "sha256:dc1be01dc993c80302834f6c1094a99a2a95e36d104139f12d92250174b132d9",
+            "changeSet": "sha256:c718a982bacebee93ca80e0b83fc0cda958972e5beafed182cd5699bfda01103"
+          },
+          {
+            "path": ".github/workflows/clossys-path-scope.yml",
+            "mode": "100644",
+            "after": "sha256:c6870928c2ffa1008ddbc5ed52d1b75833509c95dced7189c784dd4a2036c772",
+            "changeSet": "sha256:c718a982bacebee93ca80e0b83fc0cda958972e5beafed182cd5699bfda01103"
+          },
+          {
+            "path": ".starter/request.json",
+            "mode": "100644",
+            "after": "sha256:67d274123625780584078df3484b4961d254490674fcc0e4d1150ccf4442eae3",
+            "changeSet": "sha256:c718a982bacebee93ca80e0b83fc0cda958972e5beafed182cd5699bfda01103"
+          },
+          {
+            "path": "clossys/.state/skills.json",
+            "mode": "100644",
+            "after": "sha256:ac10d9424665550641c606987d4da2c554fd3e7f67b1845c4f96662e5220500e",
+            "changeSet": "sha256:c718a982bacebee93ca80e0b83fc0cda958972e5beafed182cd5699bfda01103"
+          },
+          {
+            "path": "clossys/brief.json",
+            "mode": "100644",
+            "after": "sha256:37b06d4c734195868d01085f7d356b70bebb72dd8de105ebb71091fd6bb06364",
+            "changeSet": "sha256:c718a982bacebee93ca80e0b83fc0cda958972e5beafed182cd5699bfda01103"
+          },
+          {
+            "path": "governance/repository-profile.json",
+            "mode": "100644",
+            "after": "sha256:9aeb9d8f5aa79de007de3bcef2175bcf565fe84251aeda2a7fddcba42854e13e",
+            "changeSet": "sha256:c718a982bacebee93ca80e0b83fc0cda958972e5beafed182cd5699bfda01103"
+          }
+        ],
+        "keys": [
+          {
+            "file": "package.json",
+            "pointer": "/devDependencies/@example~1starter",
+            "value": "0.9.2",
+            "changeSet": "sha256:c718a982bacebee93ca80e0b83fc0cda958972e5beafed182cd5699bfda01103"
+          }
+        ],
+        "entries": [
+          {
+            "file": "governance/repository-profile.json",
+            "key": "rootEntries",
+            "value": ".agents",
+            "changeSet": "sha256:c718a982bacebee93ca80e0b83fc0cda958972e5beafed182cd5699bfda01103"
+          },
+          {
+            "file": "governance/repository-profile.json",
+            "key": "rootEntries",
+            "value": ".claude",
+            "changeSet": "sha256:c718a982bacebee93ca80e0b83fc0cda958972e5beafed182cd5699bfda01103"
+          },
+          {
+            "file": "governance/repository-profile.json",
+            "key": "rootEntries",
+            "value": ".cursor",
+            "changeSet": "sha256:c718a982bacebee93ca80e0b83fc0cda958972e5beafed182cd5699bfda01103"
+          },
+          {
+            "file": "governance/repository-profile.json",
+            "key": "rootEntries",
+            "value": ".github",
+            "changeSet": "sha256:c718a982bacebee93ca80e0b83fc0cda958972e5beafed182cd5699bfda01103"
+          },
+          {
+            "file": "governance/repository-profile.json",
+            "key": "rootEntries",
+            "value": ".starter",
+            "changeSet": "sha256:c718a982bacebee93ca80e0b83fc0cda958972e5beafed182cd5699bfda01103"
+          },
+          {
+            "file": "governance/repository-profile.json",
+            "key": "rootEntries",
+            "value": "𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳𝒳",
             "changeSet": "sha256:c718a982bacebee93ca80e0b83fc0cda958972e5beafed182cd5699bfda01103"
           }
         ],

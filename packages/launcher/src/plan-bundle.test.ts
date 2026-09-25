@@ -379,7 +379,7 @@ describe("planApplyBundle", () => {
   it("refuses the declaration of an unparseable profile, or of one that prohibits a root name the set introduces", () => {
     for (const [profile, reason] of [
       [{ path: "governance/repository-profile.json", rootVocabulary: "unparseable" as const, undeclaredRoots: [], prohibitedRoots: [] }, "root-vocabulary-unknown"],
-      [{ path: "governance/repository-profile.json", rootVocabulary: "checked" as const, undeclaredRoots: [".cursor"], prohibitedRoots: [".claude"] }, "unowned-existing"],
+      [{ path: "governance/repository-profile.json", rootVocabulary: "checked" as const, undeclaredRoots: [".cursor"], prohibitedRoots: [".claude"] }, "root-entry-prohibited"],
     ] as const) {
       const { bundle, changeSets } = run(withRepository({ repositoryProfile: profile }));
       const site = setFor(changeSets, SITE.id);

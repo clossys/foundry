@@ -24,6 +24,8 @@ const CLASSIFICATIONS = new Set(["canonical", "extension", "exception", "compati
 const DISPOSITIONS = new Set(["required", "allowed", "prohibited"]);
 const ENTRY_KEYS = new Set(["name", "classification", "disposition"]);
 const UNKNOWN: RootEntriesVerdict = { verdict: "indeterminate", reason: "root-vocabulary-unknown" };
+/** Controller refuses a profile collection of more entries than this. */
+const MAX_ROOT_ENTRIES = 10_000;
 
 function isPlainRecord(value: unknown): value is Record<string, unknown> {
   if (typeof value !== "object" || value === null || Array.isArray(value)) return false;
@@ -43,8 +45,11 @@ export function isRootEntryName(value: unknown): value is string {
  * Controller checks, so nothing is refused. A version 3 profile with entries
  * refuses a name it does not declare, or declares as prohibited. Anything
  * that is not a profile Controller could read this way -- not an object,
- * another schema version, a `rootEntries` on version 1 or 2, or a malformed
- * or repeated entry -- is indeterminate, never read as permissive. Throws
+ * another schema version, a `rootEntries` on version 1 or 2, more than
+ * 10,000 entries, or a malformed or repeated entry -- is indeterminate,
+ * never read as permissive. It judges the root vocabulary only: a profile
+ * whose other fields Controller refuses fails Controller's check whatever
+ * this returns. Throws
  * when a path is not a safe relative path, which is a caller defect.
  */
 export function wouldViolateRootEntries(profile: unknown, paths: readonly string[]): RootEntriesVerdict {
@@ -57,7 +62,7 @@ export function wouldViolateRootEntries(profile: unknown, paths: readonly string
   if (version === 1 || version === 2) return hasRoots ? UNKNOWN : { verdict: "satisfied", vocabulary: "none" };
   if (version !== 3 || !hasRoots) return UNKNOWN;
   const entries = profile.rootEntries;
-  if (!Array.isArray(entries) || Object.keys(entries).length !== entries.length) return UNKNOWN;
+  if (!Array.isArray(entries) || entries.length > MAX_ROOT_ENTRIES || Object.keys(entries).length !== entries.length) return UNKNOWN;
   const dispositions = new Map<string, string>();
   for (const entry of entries as unknown[]) {
     if (!isPlainRecord(entry) || !Object.keys(entry).every((key) => ENTRY_KEYS.has(key))) return UNKNOWN;

@@ -160,6 +160,13 @@ describe("path patterns", () => {
 });
 
 describe("change-set code rules C1-C14", () => {
+  it("refuse each invalid corpus set for exactly the rules it names", () => {
+    const all = (JSON.parse(read("docs/contracts/apply-change-set-digest.fixture.json")) as { changeSets: { name: string; valid: boolean; rules?: string[]; changeSet: unknown }[] }).changeSets;
+    for (const entry of all.filter((candidate) => !candidate.valid)) expect(ruleIds(entry.changeSet), entry.name).toEqual([...entry.rules!].sort());
+    const kinds = new Set(all.filter((entry) => entry.name.startsWith("kind-")).map((entry) => entry.name));
+    expect(kinds.size).toBe(14);
+  });
+
   it("accept the corpus sets", () => {
     expect(repositoryChangeSetViolations(SET)).toEqual([]);
     expect(repositoryChangeSetViolations(SETUP)).toEqual([]);
@@ -391,7 +398,7 @@ describe("change-set code rules C1-C14", () => {
       expect(rulesOf(reseal(target))).toEqual([`C9 files[${linkAt(target)}].after`]);
       const removed = loose(SET);
       fileAt(removed, ".claude/skills/clossys-writer").after = null;
-      expect(repositoryChangeSetViolations(reseal(removed))).toEqual([]);
+      expect(rulesOf(reseal(removed))).toEqual([`C15 files[${linkAt(removed)}].after`]);
     });
 
     it("refuses a missing discovery link, a link under a root observed as a symbolic link, and a missing manifest", () => {
@@ -590,7 +597,11 @@ describe("change-set code rules C1-C14", () => {
     it("requires a profile the base has, and the refusal reason the observation calls for", () => {
       const created = loose(ROOTS);
       fileAt(created, "governance/repository-profile.json").before = null;
-      expect(rulesOf(reseal(created))).toEqual([`C13 items[${rootItem(created)}]`]);
+      expect(rulesOf(reseal(created))).toEqual([`C15 files[${fileIndex(created, "governance/repository-profile.json")}].before`]);
+      const missing = loose(ROOTS);
+      missing.files = missing.files.filter((file: Loose) => file.path !== "governance/repository-profile.json");
+      missing.refused.push({ path: "governance/repository-profile.json", reason: "unowned-existing", item: "root-entries" });
+      expect(rulesOf(reseal(missing))).toEqual([`C13 items[${rootItem(missing)}]`]);
       const written = loose(corpus.changeSets.find((entry) => entry.name === "apply-profile-unparseable")!.changeSet);
       written.refused[0].reason = "unowned-existing";
       expect(rulesOf(reseal(written))).toEqual([`C13 items[${rootItem(written)}]`]);
@@ -672,7 +683,7 @@ describe("change-set code rules C1-C14", () => {
       itemAt(roles, "skills").roles.push("writer");
       expect(rulesOf(reseal(roles))).toEqual([`C9 items[${itemIndex(roles, "skills")}].roles[2]`]);
       const declared = loose(corpus.changeSets.find((entry) => entry.name === "setup-site-root-entries")!.changeSet);
-      declared.files.push({ path: "governance/repository-declaration.json", mode: "100644", before: SAMPLE, after: SAMPLE, item: "root-entries" });
+      declared.files.push({ path: "governance/repository-declaration.json", mode: "100644", before: SAMPLE, after: SET.planDigest, item: "root-entries" });
       declared.files.sort(byPath);
       declared.pathAllowList = [...declared.pathAllowList, "**/repository-declaration.json"].sort();
       expect(rulesOf(reseal(declared))).toEqual([`C9 items[${itemIndex(declared, "root-entries")}]`]);
@@ -684,6 +695,33 @@ describe("change-set code rules C1-C14", () => {
       const refusal = loose(SET);
       refusal.refused.push({ path: "clossys/extra.json", reason: "unowned-existing", item: STARTER });
       expect(messages(reseal(refusal))).toContain(`changeSet.items[${itemIndex(refusal, STARTER)}] is named by a path refusal (rule C9)`);
+    });
+
+    it("C9: refuses a key refusal for another package than its item's, and a refusal naming the ledger item", () => {
+      const other = loose(SET);
+      itemAt(other, WRITER).satisfiedInBase = false;
+      other.keys = other.keys.filter((key: Loose) => key.item !== WRITER);
+      const lock = fileAt(other, "package-lock.json");
+      lock.invariants = lock.invariants.filter((invariant: Loose) => invariant.item !== WRITER);
+      other.refused.push({ file: "package.json", pointer: "/devDependencies/@example~1strategist", reason: "unowned-existing", item: WRITER });
+      expect(repositoryChangeSetViolations(reseal(other)).map((violation) => violation.message)).toContain(`changeSet.items[${itemIndex(other, WRITER)}] is named by a key refusal for another package (rule C9)`);
+      const own = loose(other);
+      own.refused[0].pointer = "/dependencies/@example~1writer";
+      expect(repositoryChangeSetViolations(reseal(own))).toEqual([]);
+      const ledger = corpus.changeSets.find((entry) => entry.name === "apply-ledger-refused")!.changeSet;
+      expect(rulesOf(ledger)).toEqual([`C9 items[${itemIndex(ledger as unknown as Loose, "ledger")}]`]);
+    });
+
+    it("C13: refuses a root name longer than 255 UTF-16 code units, which the schema's code-point bound lets through", () => {
+      const long = "\u{1d4b3}".repeat(200);
+      const set = loose(corpus.changeSets.find((entry) => entry.name === "setup-site-root-entries")!.changeSet);
+      set.observed.repositoryProfile.undeclaredRoots = [...set.observed.repositoryProfile.undeclaredRoots, long];
+      itemAt(set, "root-entries").entries.push({ name: long, classification: "extension", disposition: "allowed" });
+      const messages = repositoryChangeSetViolations(reseal(set)).map((violation) => violation.message);
+      expect(messages).toEqual(expect.arrayContaining([
+        "changeSet.observed.repositoryProfile.undeclaredRoots[6] is longer than 255 UTF-16 code units (rule C13)",
+        `changeSet.items[${itemIndex(set, "root-entries")}].entries[6].name is longer than 255 UTF-16 code units (rule C13)`,
+      ]));
     });
 
     it("C9: refuses a key refusal, or a lockfile invariant, naming an item that is not a package item", () => {

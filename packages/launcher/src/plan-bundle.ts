@@ -319,7 +319,7 @@ function computeChangeSet(
       path: profile.path,
       entries: profile.rootVocabulary === "unparseable" ? [] : profile.undeclaredRoots.map((name) => ({ name, classification: "extension", disposition: "allowed" })),
     });
-    refused.push({ path: profile.path, reason: profile.rootVocabulary === "unparseable" ? "root-vocabulary-unknown" : "unowned-existing", item: ROOT_ENTRIES_ITEM });
+    refused.push({ path: profile.path, reason: profile.rootVocabulary === "unparseable" ? "root-vocabulary-unknown" : "root-entry-prohibited", item: ROOT_ENTRIES_ITEM });
   }
 
   const checks: ApplyCheck[] = [];
@@ -328,6 +328,7 @@ function computeChangeSet(
   if (reasons.has("unowned-existing")) checks.push({ check: "V6", verdict: "indeterminate", rule: "unowned-existing" });
   if (reasons.has("manifest-absent")) checks.push({ check: "V6", verdict: "indeterminate", rule: "manifest-absent" });
   if (reasons.has("root-vocabulary-unknown")) checks.push({ check: "V6", verdict: "indeterminate", rule: "root-vocabulary-unknown" });
+  if (reasons.has("root-entry-prohibited")) checks.push({ check: "V6", verdict: "indeterminate", rule: "root-entry-prohibited" });
   if (reasons.has("skills-root-is-link")) checks.push({ check: "V6", verdict: "indeterminate", rule: "skills-root-is-link" });
   if (checks.length === 0) checks.push({ check: "V6", verdict: "satisfied" });
 
@@ -398,7 +399,7 @@ function computeChangeSet(
  *   same reason: the edited profile's bytes are not computed yet. A profile
  *   that is unparseable, or that prohibits a root name the set introduces,
  *   gets a declare-root-entry item refused as `root-vocabulary-unknown` or
- *   `unowned-existing`.
+ *   `root-entry-prohibited`.
  * - A role's skill under a symbolic link (`.agents`, `.agents/skills` or its
  *   own directory) is refused as `skills-root-is-link`, never written.
  * - A package act the default branch already satisfies exactly is kept as an
