@@ -117,8 +117,9 @@ function section(title: string, body: readonly string[]): string {
 
 /**
  * Validates a candidate plan against the shared plan contract,
- * `docs/contracts/advisor-plan.json` (issue #1475), packed into this
- * package at build time. That contract is the one definition of this
+ * `docs/contracts/advisor-plan.json` (issue #1475; in the public repository, not shipped in this package).
+ * This package packs its content into a generated module at build time.
+ * That contract is the one definition of this
  * record: @clossys/launcher validates against the same file before it
  * applies an approved plan, so the two packages cannot drift apart. Every
  * object in it is closed, so an unknown field is refused, never ignored.

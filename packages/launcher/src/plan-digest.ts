@@ -4,7 +4,8 @@
 // names exactly which plan was approved. @clossys/advisor implements the same
 // definition separately; both packages are tested against the same fixture
 // corpus (docs/contracts/advisor-plan-digest.fixture.json), so they compute
-// identical digests. This implementation writes the RFC 8785 escaping out
+// identical digests. Both files are in the public repository, not shipped in this package.
+// This implementation writes the RFC 8785 escaping out
 // character by character rather than leaning on JSON.stringify, so the
 // corpus checks two genuinely separate readings of the definition.
 

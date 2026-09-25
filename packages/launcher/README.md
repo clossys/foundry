@@ -367,7 +367,8 @@ decisions that disagree.
 checks pass and the plan's digest is computed; only then does it write the brief byte-identically -- it never re-authors
 its prose -- and reports `planDigest()` of the plan it applied, which the
 CLI prints as `plan digest sha256:...`. That digest is defined once, in
-`docs/contracts/advisor-plan-digest.md`; this package and Advisor each
+`docs/contracts/advisor-plan-digest.md` (in the public repository, not shipped in this package);
+this package and Advisor each
 implement it and are tested against the same fixture corpus. This package
 does not compute a brief's content (that is `@clossys/advisor`'s
 `toEngagementBrief()`) and does not decide whether a plan should be
