@@ -3,7 +3,7 @@ import type { CapabilityCatalogue } from "./capability-catalogue.js";
 import { validateAgainstContract } from "./contract-schema.js";
 import { PACKAGE_SCOPE } from "./generated/package-scope.generated.js";
 import { loadPlanContract } from "./plan-contract.js";
-import { planRuleViolations } from "./plan-rules.js";
+import { HUB_ONLY_ROLES, planRuleViolations } from "./plan-rules.js";
 import { byCodeUnits, positionOnly, snapshotDigest, validateRegistrySnapshot } from "./registry-snapshot.js";
 import type { RegistrySnapshot, RegistrySnapshotVersion } from "./registry-snapshot.js";
 import type { AdvisorPlan, AdvisorPlanPackageAct, AdvisorPlanResolution } from "./status.js";
@@ -95,18 +95,6 @@ const SHA512_INTEGRITY = planPattern("sha512Integrity");
 const PRERELEASE_OR_BUILD = /[-+]/u;
 /** The directory name of the package every staffed repository pins to check its pull requests. */
 export const STARTER_PACKAGE_DIRECTORY = "starter";
-/**
- * Role packages that live in the engagement hub only and are never installed
- * in a product repository. The apply-approved-plan RFC (issue #1178) decides
- * this for two packages: decision D24 pins Advisor once, in the hub, and a
- * product repository runs its commands through `npx` at the hub's exact
- * version rather than installing it; decision D23 does the same for
- * Integrator, whose provenance check the hub runs and a product repository's
- * CI runs through `npx` at the hub's exact version, pinning nothing. The
- * capability catalogue carries no flag for this, so this one list is where it
- * is recorded.
- */
-export const HUB_ONLY_PACKAGE_DIRECTORIES: readonly string[] = ["advisor", "integrator"];
 /** Where every resolved act is placed in a repository's package.json. */
 export const RESOLVED_PLACEMENT = "devDependencies";
 
@@ -137,7 +125,7 @@ function planShapeFindings(plan: unknown): ResolutionFinding[] {
  * The package names a staffed plan needs, sorted and unique: `<scope>/<role>`
  * for every role any staffing entry names, and `<scope>/starter`. A role this
  * package's catalogue does not list is refused, as is a role whose package
- * lives in the hub only (`HUB_ONLY_PACKAGE_DIRECTORIES`) and a catalogue entry
+ * lives in the hub only (`HUB_ONLY_ROLES`) and a catalogue entry
  * whose own scoped name disagrees with the packed scope. Pure: no file, no
  * network.
  */
@@ -161,7 +149,8 @@ export function packageRequest(plan: unknown, options: ResolutionOptions = {}): 
         findings.push({ rule: "role-not-in-catalogue", verdict: "violated", path, message: `plan.${path} is not a role in this package's capability catalogue` });
         return;
       }
-      if (HUB_ONLY_PACKAGE_DIRECTORIES.includes(known.role)) {
+      // Defence in depth: code rule R11 already refuses a plan that staffs a hub-only role, so a plan that validates never reaches this.
+      if (HUB_ONLY_ROLES.includes(known.role)) {
         findings.push({ rule: "hub-only-package", verdict: "violated", path, message: `plan.${path} is a role whose package lives in the hub only and is never installed in a staffed repository` });
         return;
       }
@@ -277,7 +266,7 @@ export function resolvePackages(plan: unknown, snapshot: unknown, options: Resol
     .sort((left, right) => byCodeUnits(left.repository, right.repository) || byCodeUnits(left.name, right.name));
   const resolution = { snapshotDigest: snapshotDigest(read) };
 
-  // Fail closed: the resolved plan must itself satisfy the plan contract and R1-R10.
+  // Fail closed: the resolved plan must itself satisfy the plan contract and R1-R11.
   const resolved = { ...(plan as AdvisorPlan), packages, resolution };
   const invalid = planShapeFindings(resolved);
   if (invalid.length > 0) return { state: "violated", findings: invalid.map((finding) => ({ ...finding, rule: "resolved-plan-invalid" })) };

@@ -79,18 +79,7 @@ describe("packageRequest", () => {
     expect(packageRequest(plan, { catalogue })).toMatchObject({ state: "violated", findings: [{ rule: "role-not-in-catalogue", path: "staffing[0].roles[0]" }] });
   });
 
-  it("refuses a staffed role whose package lives in the hub only, and names no hub-only package", () => {
-    const plan = { ...PLAN, mandate: { ...PLAN.mandate, roles: [...PLAN.mandate.roles, "advisor"] }, staffing: [{ ...PLAN.staffing![0]!, roles: ["advisor", "writer", "designer"] }, PLAN.staffing![1]!] };
-    expect(packageRequest(plan)).toEqual({
-      state: "violated",
-      findings: [{
-        rule: "hub-only-package", verdict: "violated", path: "staffing[0].roles[0]",
-        message: "plan.staffing[0].roles[0] is a role whose package lives in the hub only and is never installed in a staffed repository",
-      }],
-    });
-  });
-
-  it("refuses Integrator as a staffed role too, at each position it is staffed, and names every hub-only role it finds", () => {
+  it("refuses a staffed hub-only role through the plan's rule R11, at each position it is staffed, never naming the role", () => {
     const plan = {
       ...PLAN,
       mandate: { ...PLAN.mandate, roles: [...PLAN.mandate.roles, "integrator", "advisor"] },
@@ -99,11 +88,17 @@ describe("packageRequest", () => {
     const result = packageRequest(plan);
     expect(result.state).toBe("violated");
     expect(result.findings.map(({ rule, path }) => ({ rule, path }))).toEqual([
-      { rule: "hub-only-package", path: "staffing[0].roles[1]" },
-      { rule: "hub-only-package", path: "staffing[1].roles[0]" },
-      { rule: "hub-only-package", path: "staffing[1].roles[3]" },
+      { rule: "plan-shape", path: "staffing[0].roles[1]" },
+      { rule: "plan-shape", path: "staffing[1].roles[0]" },
+      { rule: "plan-shape", path: "staffing[1].roles[3]" },
     ]);
+    for (const finding of result.findings) expect(finding.message).toMatch(/\(rule R11\)$/);
     expect(JSON.stringify(result)).not.toMatch(/integrator|advisor|example-owner/i);
+  });
+
+  it("names no package for a hub-only role in the mandate, which is left unstaffed", () => {
+    const plan = { ...PLAN, mandate: { ...PLAN.mandate, roles: [...PLAN.mandate.roles, "integrator", "advisor"] } };
+    expect(packageRequest(plan)).toEqual({ state: "satisfied", names: [`${SCOPE}/designer`, `${SCOPE}/starter`, `${SCOPE}/strategist`, `${SCOPE}/writer`], findings: [] });
   });
 
   it("refuses a catalogue entry whose scoped name is not in the packed scope", () => {

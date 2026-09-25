@@ -1,6 +1,7 @@
+import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { HUB_ONLY_PACKAGE_DIRECTORIES, planDigest, resolvePackages, snapshotDigest, validateAdvisorPlan } from "./index.js";
+import { HUB_ONLY_ROLES, KIT_PRESETS, planDigest, resolvePackages, snapshotDigest, validateAdvisorPlan } from "./index.js";
 import type { AdvisorPlan, PackageResolutionResult, RegistrySnapshot, RegistrySnapshotPackage, RegistrySnapshotVersion } from "./index.js";
 
 /*
@@ -137,6 +138,47 @@ describe("resolvePackages: a resolvable snapshot", () => {
   });
 });
 
+describe("resolvePackages: the ship-safely preset, whose integrator role is hub-only", () => {
+  const roles = KIT_PRESETS.find((preset) => preset.id === "ship-safely")!.roles;
+  const staffed = roles.filter((role) => !HUB_ONLY_ROLES.includes(role));
+  const plan: AdvisorPlan = {
+    ...PLAN,
+    mandate: { ...PLAN.mandate, roles: [...roles] },
+    kits: [{ id: "ship-safely", source: "preset", verdict: "recommended" }],
+    staffing: [{ repository: "example-owner/site", roles: staffed }],
+  };
+  /** The base snapshot's starter entry, plus one entry per staffed role, each at its own version and integrity. */
+  function shipSafelySnapshot(): RegistrySnapshot {
+    const snapshot = corpusSnapshot("base");
+    const template = snapshot.packages[S]!;
+    const entries = staffed.map((role, index) => {
+      const name = `${SCOPE}/${role}`;
+      const version = `1.${index}.0`;
+      const integrity = `sha512-${createHash("sha512").update(`${name}@${version}`).digest("base64")}`;
+      return { ...template, name, latest: version, versions: [{ ...template.versions[0]!, version, integrity, tarball: `${SCOPE_FILE.registry}/${name}/-/${role}-${version}.tgz` }] };
+    });
+    return { ...snapshot, packages: [template, ...entries] };
+  }
+
+  it("staffs every role but integrator, and the plan is valid", () => {
+    expect(roles).toContain("integrator");
+    expect(staffed).not.toContain("integrator");
+    expect(validateAdvisorPlan(plan)).toEqual([]);
+  });
+
+  it("resolves end to end, with a pin and an install for each staffed role and nothing for the hub-only role", () => {
+    const result = resolvePackages(plan, shipSafelySnapshot());
+    expect(result.state).toBe("satisfied");
+    if (result.state !== "satisfied") return;
+    expect(result.packages.map((act) => [act.act, act.name])).toEqual(
+      [...staffed.map((role) => ["install", `${SCOPE}/${role}`]), ["pin-starter", STARTER]].sort((left, right) => (left[1]! < right[1]! ? -1 : 1)),
+    );
+    expect(result.packages.some((act) => HUB_ONLY_ROLES.some((role) => act.name === `${SCOPE}/${role}`))).toBe(false);
+    expect(validateAdvisorPlan({ ...plan, packages: result.packages, resolution: result.resolution })).toEqual([]);
+    expect(JSON.stringify(resolvePackages(plan, shipSafelySnapshot()))).toBe(JSON.stringify(result));
+  });
+});
+
 describe("resolvePackages: every refusal", () => {
   it("snapshot fails its contract: violated snapshot-shape, by position", () => {
     const { kind: _kind, ...shapeless } = base;
@@ -219,12 +261,12 @@ describe("resolvePackages: every refusal", () => {
     expect(refusal(resolvePackages(PLAN, snapshot)).findings.map((finding) => finding.rule)).toEqual(["snapshot-shape", "snapshot-shape"]);
   });
 
-  it("a staffed role whose package lives in the hub only: violated hub-only-package, by position, before any snapshot is read", () => {
-    expect(HUB_ONLY_PACKAGE_DIRECTORIES).toEqual(["advisor", "integrator"]);
+  it("a staffed hub-only role: the plan itself is invalid (rule R11), refused by position before any snapshot is read", () => {
     const plan = { ...PLAN, mandate: { ...PLAN.mandate, roles: ["writer", "designer", "advisor"] }, staffing: [PLAN.staffing![0]!, { repository: "example-owner/docs", roles: ["writer", "advisor"] }] };
-    const expected = { state: "violated", findings: [{ rule: "hub-only-package", verdict: "violated", path: "staffing[1].roles[1]" }] };
+    const expected = { state: "violated", findings: [{ rule: "plan-shape", verdict: "violated", path: "staffing[1].roles[1]" }] };
     expect(refusal(resolvePackages(plan, base))).toEqual(expected);
     expect(refusal(resolvePackages(plan, { not: "a snapshot" }))).toEqual(expected);
+    expect(resolvePackages(plan, base).findings[0]!.message).toMatch(/\(rule R11\)$/);
     expect(JSON.stringify(resolvePackages(plan, base))).not.toMatch(/example-owner|FOUNDER/);
   });
 

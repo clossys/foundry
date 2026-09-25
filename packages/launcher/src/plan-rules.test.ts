@@ -3,11 +3,12 @@ import { describe, expect, it } from "vitest";
 import { validateInventoryDocument } from "./core.js";
 import { PLAN_CONTRACTS } from "./generated/plan-contracts.generated.js";
 import { advisorPlanViolations, engagementBriefViolations, validateAdvisorPlan } from "./plan-contract.js";
+import { HUB_ONLY_ROLES } from "./plan-rules.js";
 import type { AdvisorPlan, DocumentViolation } from "./plan-contract.js";
 import { planDigest } from "./plan-digest.js";
 
 /*
- * Issue #1178: the plan and brief contracts' code rules (R1-R10, B1-B2),
+ * Issue #1178: the plan and brief contracts' code rules (R1-R11, B1-B2),
  * defined once in the contracts' descriptions and implemented here
  * separately from @clossys/advisor. Both packages are tested against the one
  * corpus, docs/contracts/advisor-plan-rules.fixture.json, so they judge
@@ -40,7 +41,7 @@ function at(document: unknown, path: string): unknown {
 describe("the shared rules corpus", () => {
   it("covers every code rule with at least one refused case, and has accepted cases for plans and briefs", () => {
     const rules = new Set([...CORPUS.plans, ...CORPUS.briefs].flatMap((entry) => entry.violations.map((violation) => violation.rule)));
-    for (const rule of ["R1", "R2", "R3", "R4", "R5", "R6", "R7", "R8", "R9", "R10", "B1", "B2", "schema"]) expect(rules, rule).toContain(rule);
+    for (const rule of ["R1", "R2", "R3", "R4", "R5", "R6", "R7", "R8", "R9", "R10", "R11", "B1", "B2", "schema"]) expect(rules, rule).toContain(rule);
     expect(CORPUS.plans.some((entry) => entry.violations.length === 0)).toBe(true);
     expect(CORPUS.briefs.some((entry) => entry.violations.length === 0)).toBe(true);
   });
@@ -155,5 +156,13 @@ describe("the plan contract's repository id is the inventory's id rule (#1178)",
       const inventory = validateInventoryDocument(JSON.stringify({ schemaVersion: 1, repositories: [{ id }] }));
       expect(pattern.test(id), JSON.stringify(id)).toBe(inventory.valid);
     }
+  });
+});
+
+describe("hub-only roles (R2, R11)", () => {
+  it("are read from the packed plan contract's definitions.hubOnlyRoles, the list Advisor reads too", () => {
+    const definitions = PLAN_CONTRACTS["advisor-plan.json"]!.definitions as Record<string, { const: unknown }>;
+    expect(HUB_ONLY_ROLES).toEqual(definitions.hubOnlyRoles!.const);
+    expect(HUB_ONLY_ROLES).toEqual(["advisor", "integrator"]);
   });
 });

@@ -350,14 +350,22 @@ digits in each part and no prerelease or build suffix, and one canonical
 A decision (`AdvisorPlanDecision`) may carry `subjectDigest`.
 Once the schema passes, `validateAdvisorPlan()` applies the code rules the
 contract's description defines, each finding with the rule
-`advisor-plan-rule-r1` to `-r10` and a `path`: no repository staffed twice
-(ids compare case-insensitively); staffed roles and `mandate.roles` agree in
-both directions; every package act names a staffed repository, spelled
+`advisor-plan-rule-r1` to `-r11` and a `path`: no repository staffed twice
+(ids compare case-insensitively); every staffed role is in `mandate.roles`,
+and every `mandate.roles` entry is staffed somewhere unless it is a hub-only
+role; every package act names a staffed repository, spelled
 exactly the same; no `planItem` repeats; no package appears twice in one
 repository; `resolution` is present exactly when `packages` is; no kit id
 repeats; no role repeats within one staffing entry; no role is named twice
-in `mandate.roles`; and a repository has at most one `pin-starter` act,
-always placed in `devDependencies`. The rules read only a plan's own fields,
+in `mandate.roles`; a repository has at most one `pin-starter` act,
+always placed in `devDependencies`; and no hub-only role is staffed.
+`HUB_ONLY_ROLES` is that list, `["advisor", "integrator"]`, read from the
+plan contract's `definitions.hubOnlyRoles`, the same data Launcher reads:
+each is pinned once in the engagement hub and run in a product repository
+through `npx` at the hub's exact version, never installed there. A plan
+whose mandate names only hub-only roles does no work in a product
+repository, so it has no `staffing` (an empty one is refused) and no
+`packages`. The rules read only a plan's own fields,
 as the schema does, so an inherited one is ignored. A plan that breaks
 one has no digest. Launcher implements the same rules separately, and both
 packages are tested against one shared corpus,
@@ -417,12 +425,13 @@ this package's packed capability catalogue, plus the `starter` package
 its pull requests. The scope in each name comes from the publishing scope
 this package was built with, never a literal. It refuses a plan that fails
 the plan contract (`plan-shape`), a plan with no `staffing`
-(`plan-not-staffed`), a staffed role the catalogue does not list
-(`role-not-in-catalogue`), and a staffed role whose package lives in the
-engagement hub only and is never installed in a product repository
-(`hub-only-package`, listed in `HUB_ONLY_PACKAGE_DIRECTORIES`: Advisor
-itself and Integrator, each pinned once in the hub and run in a product
-repository through `npx` at the hub's exact version). Its result, a `PackageRequestResult`, is
+(`plan-not-staffed`), and a staffed role the catalogue does not list
+(`role-not-in-catalogue`). A hub-only role (`HUB_ONLY_ROLES`) is never
+staffed, so it gets no package here: a plan that staffs one breaks the
+plan contract's rule R11 and is refused as `plan-shape`. The same refusal
+is repeated for a staffed hub-only role (`hub-only-package`) in case a plan
+ever reaches this step without that rule, but a plan that validates never
+does. Its result, a `PackageRequestResult`, is
 `{ state: "satisfied", names, findings: [] }` or
 `{ state: "violated", findings }`.
 
@@ -462,7 +471,7 @@ version's `sha512-` integrity value and the placement `devDependencies`
 sorted by name, which is exactly what the sponsor's grant permits. The same
 plan and snapshot always give byte-identical output, and so does a re-fetch
 of the same selection. Before it returns, it checks the resolved plan with
-the plan contract and its rules R1 to R10 and refuses rather than return a
+the plan contract and its rules R1 to R11 and refuses rather than return a
 plan that fails them. Each `ResolutionFinding` has a `rule`, a `verdict`
 (`ResolutionVerdict`), a `path` and a message that names positions and, at
 most, a package name derived from the catalogue, never plan text, a
@@ -470,7 +479,6 @@ repository id or a value from the snapshot:
 
 | Condition | Verdict | Rule |
 | --- | --- | --- |
-| A staffed role's package lives in the hub only | violated | `hub-only-package` |
 | The snapshot fails its contract | violated | `snapshot-shape` |
 | Its registry is not the registry this package was built for | violated | `foreign-registry` |
 | A requested package has no entry | indeterminate | `package-not-in-snapshot` |

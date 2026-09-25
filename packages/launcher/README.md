@@ -248,7 +248,7 @@ Exit codes preserve the ternary:
 | `parsePreferences()` | Reads `clossys/preferences.json`'s budget stance; defaults to `"balanced"` on absence or malformed input. |
 | `readHostModelProfile()` | Reads a packed `model-profiles/<host>.json`; returns `undefined`, never throws, on a missing or malformed file. |
 | `resolveModelForTier()` | Resolves a tier and budget preference to one model name for a host, reporting `belowFloor` rather than silently substituting a weaker tier's model. |
-| `validateAdvisorPlan()` / `validateEngagementBrief()` | Validation of `clossys/advisor/plan.json` and `clossys/brief.json` (with its `context` snapshot) against the shared plan and brief contracts Advisor also validates against, including the contracts' code rules (R1-R10 for a plan, B1-B2 for a brief). Unknown fields are refused; the reason names every field at fault. |
+| `validateAdvisorPlan()` / `validateEngagementBrief()` | Validation of `clossys/advisor/plan.json` and `clossys/brief.json` (with its `context` snapshot) against the shared plan and brief contracts Advisor also validates against, including the contracts' code rules (R1-R11 for a plan, B1-B2 for a brief). Unknown fields are refused; the reason names every field at fault. |
 | `approvedSubject()` | What an approval binds: the `subjectDigest` of the plan's latest decision (by timestamp) when that decision has `chosen === "approved"`, else `null`. `null` when the approval has no `subjectDigest`, when decisions at the latest time disagree or name different subjects, when any decision time does not parse, or when the plan does not validate. Anything that applies a plan must use this; the one stated exception is the legacy brief-only path (`applyEngagementBrief()` and `launcher-apply-plan`), which predates the binding and uses `isPlanApproved()`. |
 | `isPlanApproved()` | True only when a plan's most recent decision (by timestamp) has `chosen === "approved"`. False when decisions at that latest time disagree, or when any decision time does not parse. It binds no bytes: it ignores `subjectDigest`, so it is also true for an approval that names no change. |
 | `applyEngagementBrief()` | Writes `clossys/brief.json` into a repository directory once the plan validates and is approved and the brief validates; refuses and writes nothing otherwise. Reports the plan's canonical digest. |
@@ -365,13 +365,16 @@ package acts are authorized (`packages`, each one exact version and one
 `sha512-` integrity value) and where those versions were resolved from
 (`resolution`) (#1178). Once the schema passes, the contract's code rules
 run: no repository is staffed twice (ids compare case-insensitively),
-staffed roles and the mandate's roles agree in both directions, every
+every staffed role is one of the mandate's roles and every mandate role is
+staffed somewhere unless it is a hub-only role, every
 package act names a staffed repository spelled exactly the same, no
 `planItem` repeats, no package appears twice in one repository,
 `resolution` is present exactly when `packages` is, no kit id repeats, no
 role repeats within one staffing entry, no role is named twice in
-`mandate.roles`, and a repository has at most one `pin-starter` act, always
-placed in `devDependencies`. The rules read only a document's own fields,
+`mandate.roles`, a repository has at most one `pin-starter` act, always
+placed in `devDependencies`, and no hub-only role is staffed. The hub-only
+roles, Advisor and Integrator, are read from the plan contract's
+`definitions.hubOnlyRoles`, the same data Advisor reads. The rules read only a document's own fields,
 as the schema does, so an inherited one is ignored. A brief's optional `staffedHere`
 must name only the brief's own roles, each once. This package implements
 those rules separately from Advisor, and both are tested against the same
