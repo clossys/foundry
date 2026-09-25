@@ -477,6 +477,52 @@ test("a release commit's consumed minor bump plus dependent-only patch bumps wit
   });
 });
 
+// Fix-round finding: evaluatePackage()'s issue #1389 "consumed changeset but
+// no changelog entry" return (the `not-release-shaped` case just above the
+// pass case) used to omit `...bumpFields` and `changesetConsumed: true`,
+// which every OTHER return from this function threads (see the comment at
+// this file's own `bumpFields` definition). main()'s `isReleaseDiff` test
+// reads exactly those two fields (`r.versionChanged === true && r.changesetConsumed
+// === true`) to decide whether this diff is a release commit at all, so a
+// package that fails ONLY the #1389 changelog check used to drop out of the
+// lockfile-shape judgement (issue #1439) entirely -- as if its bump had never
+// happened.
+test("a package failing the changelog-entry check (issue #1389) is still included in the lockfile-shape judgement (issue #1439)", () => {
+  withRepo((root) => {
+    const pkgDir = makeFixture(root);
+    writeChangelog(pkgDir, "# Changelog\n\n## 1.0.0\n\n- Initial release.\n");
+    pendingProbeChangeset(root);
+    writeFileSync(join(root, "package-lock.json"), lock("1.0.0"));
+    const base = gitCommit(root, "initial release at 1.0.0, one pending changeset");
+
+    // Bump and delete the changeset, exactly a release PR would -- but never
+    // write docs/changelogs/probe.md, so evaluatePackage() must return
+    // "not-release-shaped" via the #1389 path. The lockfile change is
+    // otherwise perfectly release-PR shaped (only probe's own version).
+    const manifest = readManifest(pkgDir);
+    manifest.version = "1.0.1";
+    writeManifest(pkgDir, manifest);
+    rmSync(join(root, ".changesets", "probe-fix.md"));
+    writeFileSync(join(root, "package-lock.json"), lock("1.0.1"));
+
+    const r = run(["--json", "--base", base], root);
+    const report = JSON.parse(r.out);
+    assert.equal(r.code, 1, r.out);
+    assert.equal(report.results[0].status, "not-release-shaped");
+    assert.match(report.results[0].detail, /has no entry for 1\.0\.1/);
+
+    // The bug: without ...bumpFields/changesetConsumed on that return,
+    // main()'s isReleaseDiff never becomes true for this diff, so no
+    // package-lock.json verdict is added at all -- probe's bump silently
+    // drops out of the lockfile-shape judgement instead of being covered by
+    // it.
+    const lockResult = report.results.find((x) => x.package === "package-lock.json");
+    assert.ok(lockResult, "expected a package-lock.json entry in the report -- probe's bump must still count toward the release diff");
+    assert.equal(lockResult.status, "pass", lockResult.detail);
+    assert.match(lockResult.detail, /release diff's bumped package\(s\) \(probe\)/);
+  });
+});
+
 test("a positional package subset with a changeset-consumed bump and a CHANGED lockfile refuses to judge it (exit 2) rather than judge it against a partial bump set", () => {
   withRepo((root) => {
     const pkgDir = makeFixture(root);

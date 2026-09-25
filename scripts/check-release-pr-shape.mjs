@@ -279,6 +279,8 @@ function evaluatePackage(pkgDir, requestedBase) {
         detail:
           `version bumped from ${baseVersion} to ${version} (${bumpLevel}), consuming changeset(s) ${consumed.map((c) => c.file).join(", ")}, ` +
           `but ${changelogRelPath(packageKey)} has no entry for ${version} -- a release PR must add or update the changelog entry in the same diff`,
+        ...bumpFields,
+        changesetConsumed: true,
       };
     }
 
