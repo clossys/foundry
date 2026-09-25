@@ -511,8 +511,8 @@ in this package).
   layout only: the part of V6 that regenerates the lockfile and checks its
   invariants is not run, so a set that changes a lockfile carries V6
   `indeterminate` with rule `lockfile-not-run`, and V6 is `satisfied` only
-  for a set with no lockfile change. A `setup` set is also `indeterminate`
-  until the setup template exists (`setup-template-unbuilt`). Two V3 checks
+  for a set with no lockfile change. A setup-phase repository is skipped
+  instead (see above). Two V3 checks
   need no observation: when the authorization names a different plan
   digest than the plan's, every computed repository gets a violated V3
   check (`authorization-plan-mismatch`), and when the plan has package acts
