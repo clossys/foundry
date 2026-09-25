@@ -228,6 +228,26 @@ describe("no key text in any contract message, path or error", () => {
     expect(validateAgainstContract(schema, value, () => schema)).toEqual([{ path: "", message: UNDECLARED(3) }]);
   });
 
+  it("also falls back to the object's own key order when a key is deleted from a value read from a file, without adding one back", () => {
+    // The other branch of the same guard (keyOrder()'s `written.length ===
+    // own.length` check): a plain delete, with nothing added back, changes
+    // the object's own length so it no longer matches the cached written
+    // length, and the length check alone must catch that and fall back to
+    // the object's own order -- distinct from the test above, where the
+    // lengths still match after a delete-and-add and it is the membership
+    // check, not the length check, that has to catch it. Without this
+    // guard the deleted key would still be counted and every ordinal after
+    // it would be off by one.
+    const schema: ContractSchema = { type: "object", additionalProperties: false, properties: { a: { type: "number" } } };
+    const value = readContractDocument(bytes(`{"zz":1,"a":2,"b":3,"c":4}`)) as Record<string, unknown>;
+    delete value.zz;
+    expect(Object.keys(value)).toEqual(["a", "b", "c"]);
+    expect(validateAgainstContract(schema, value, () => schema)).toEqual([
+      { path: "", message: UNDECLARED(2) },
+      { path: "", message: UNDECLARED(3) },
+    ]);
+  });
+
   it("gives every position as a 0-based UTF-16 code-unit index, not a byte offset", () => {
     // U+1F600 is 2 UTF-16 code units and 4 UTF-8 bytes, so each position below is 2 less than the byte offset.
     const emoji = String.fromCodePoint(0x1f600);
