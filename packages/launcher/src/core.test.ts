@@ -1120,10 +1120,13 @@ describe("applyWorkspacePlan", () => {
     expect(existsSync(join(other, ".agents/skills/clossys-advisor/SKILL.md"))).toBe(false);
     expect(existsSync(join(foundry, ".agents/skills/clossys-advisor/SKILL.md"))).toBe(false);
     expect(readFileSync(join(app, "AGENTS.md"), "utf8")).toContain("@clossys-advisor");
-    expect(result.health.skillComposition?.rosterTargets).toEqual(expect.arrayContaining(["acme/hub", "acme/app"]));
-    expect(result.message).toMatch(/skill roster skipped \(acme\/missing\)/);
-    expect(result.message).toMatch(/skill roster skipped \(acme\/other\).*origin does not match/);
-    expect(result.message).toMatch(/skill roster skipped \(acme\/foundry\).*foundry supplier/);
+    // "acme/app" (stored-inventory position 0) is the only sister composed into; every
+    // message below names a repository by that stored-inventory position, never by its
+    // id (#1179) -- "acme/missing", "acme/other" and "acme/foundry" sit at positions 1-3.
+    expect(result.health.skillComposition?.rosterTargets).toEqual(expect.arrayContaining(["acme/hub", "repositories[0] in the stored inventory"]));
+    expect(result.message).toMatch(/skill roster skipped \(repositories\[1\] in the stored inventory\)/);
+    expect(result.message).toMatch(/skill roster skipped \(repositories\[2\] in the stored inventory\).*origin does not match/);
+    expect(result.message).toMatch(/skill roster skipped \(repositories\[3\] in the stored inventory\).*foundry supplier/);
     expect(result.health.degraded).toBe(true);
     expect(formatHubHealth(result.health)).toMatch(/degraded: yes/);
     expect(result.state).toBe("satisfied");
@@ -1426,10 +1429,11 @@ describe("preserved composed skills in the health report (#1473)", () => {
     writeFileSync(appSkill, edited);
 
     const result = resume();
+    // "acme/app" sits at stored-inventory position 0; `target` names that position, never the id itself (#1179).
     expect(result.health.skillComposition?.preserved).toEqual([
-      expect.objectContaining({ target: "acme/app", packageDir: "advisor", action: "rewrite" }),
+      expect.objectContaining({ target: "repositories[0] in the stored inventory", packageDir: "advisor", action: "rewrite" }),
     ]);
-    expect(result.message).toMatch(/skill preserved \(clossys-advisor in acme\/app, not rewritten\): /);
+    expect(result.message).toMatch(/skill preserved \(clossys-advisor in repositories\[0\] in the stored inventory, not rewritten\): /);
     expect(result.health.degraded).toBe(true);
     expect(readFileSync(appSkill, "utf8")).toBe(edited);
   });
@@ -1527,7 +1531,7 @@ describe("cloneMissingInventoryRepositories (#1179)", () => {
       directory,
       "acme",
     );
-    expect(outcomes).toEqual([{ inventoryId: "app", result: "cloned", note: `cloned to ${siblingPath}` }]);
+    expect(outcomes).toEqual([{ inventoryId: "app", position: 0, result: "cloned", note: `cloned to ${siblingPath}` }]);
   });
 
   it("never attempts a clone for an id skipped for a DIFFERENT reason (wrong account)", () => {
@@ -1535,7 +1539,7 @@ describe("cloneMissingInventoryRepositories (#1179)", () => {
     mkdirSync(join(directory, ".git"));
     writeInventory(directory, [{ id: "other-org/app" }]);
     const outcomes = cloneMissingInventoryRepositories(host(directory, {}), directory, "acme");
-    expect(outcomes).toEqual([{ inventoryId: "other-org/app", result: "skipped-other-reason", note: "other account; not this roster" }]);
+    expect(outcomes).toEqual([{ inventoryId: "other-org/app", position: 0, result: "skipped-other-reason", note: "other account; not this roster" }]);
   });
 
   it("reports failed, not thrown, when gh repo clone itself fails", () => {
@@ -1551,7 +1555,7 @@ describe("cloneMissingInventoryRepositories (#1179)", () => {
       "acme",
     );
     expect(outcomes).toEqual([
-      { inventoryId: "app", result: "failed", note: "gh repo clone exited 1: repository not found" },
+      { inventoryId: "app", position: 0, result: "failed", note: "gh repo clone exited 1: repository not found" },
     ]);
   });
 

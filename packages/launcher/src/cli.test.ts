@@ -270,7 +270,8 @@ describe("launcher CLI", () => {
     );
     expect(code).toBe(0);
     const logged = log.mock.calls.map((call) => String(call[0])).join("\n");
-    expect(logged).toContain("clone-missing (app): cloned");
+    // "app" sits at stored-inventory position 0; the line names that position, never the id itself (#1179).
+    expect(logged).toContain("clone-missing (repositories[0] in the stored inventory): cloned");
   });
 
   it("the real `launcher` resume command writes clossys/.state/hosts.json, not just a library function nothing calls (#1180)", () => {

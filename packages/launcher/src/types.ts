@@ -148,13 +148,24 @@ export interface HubHealthReport {
   readonly skillComposition?: {
     readonly composed: readonly string[];
     readonly skipped: readonly { readonly packageDir: string; readonly note: string }[];
+    /**
+     * The hub's own id first (safe -- its own git origin or hub marker, not
+     * a document), then each sister repository named by stored-inventory
+     * position, never by its raw id: this whole report is JSON-dumped into
+     * the apply message (see `formatHubHealth`'s `health:` line), so a raw
+     * id kept here would still reach that message even though no prose
+     * line built from it names the id either.
+     */
     readonly rosterTargets?: readonly string[];
+    /** Each entry's `inventoryId` is already a stored-inventory position label, never the raw id -- same reason as `rosterTargets`. */
     readonly rosterSkipped?: readonly { readonly inventoryId: string; readonly note: string }[];
     readonly retired?: readonly string[];
     /**
      * Composed skills left exactly as found because their on-disk content is not
      * provably what Launcher last wrote (#1473) -- in the hub, or (with `target`
-     * naming the inventory id) in a sibling clone. Any entry marks the report degraded.
+     * naming the sibling by stored-inventory position, never by its raw id --
+     * same reason as `rosterTargets`) in a sibling clone. Any entry marks the
+     * report degraded.
      */
     readonly preserved?: readonly {
       readonly target?: string;
@@ -226,10 +237,14 @@ export type ChosenInventory =
       readonly count: number;
       /** Repositories the inventory listed before; 0 when there was none, it was empty, or it failed its contract. */
       readonly previousCount: number;
-      /** Chosen ids the previous inventory did not list. */
+      /** Chosen ids the previous inventory did not list. Never put in a message text; see `addedPositions`. */
       readonly added: readonly string[];
-      /** Previous ids the choice leaves out. */
+      /** Previous ids the choice leaves out. Never put in a message text; see `removedPositions`. */
       readonly removed: readonly string[];
+      /** Each `added` id's 0-based position in the `--repositories` argument, in the same order as `added`. What a message names instead of the id. */
+      readonly addedPositions: readonly number[];
+      /** Each `removed` id's 0-based position in the stored inventory's own `repositories` array, in the same order as `removed`. What a message names instead of the id. */
+      readonly removedPositions: readonly number[];
       /** What the write replaces: nothing (no inventory, or an empty one), a differing valid inventory, or one that failed its contract. The last two happen only with an explicit replace approval. */
       readonly replaced: "nothing" | "differing" | "invalid";
     };

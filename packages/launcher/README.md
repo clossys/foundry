@@ -234,9 +234,24 @@ same run composes into the repositories just chosen.
   as it is.
 - An inventory that lists a different set is never merged into or
   overwritten silently: the run is refused, stating how many repositories
-  each side has and which ids would be added and removed. Run again with
-  `--replace-inventory` to approve the replacement; a repository that stays
-  keeps its existing entry, `packages` included.
+  each side has and which positions would be added and removed --
+  `--repositories[<i>]` for an added id's position in the `--repositories`
+  argument, `repositories[<i>] in the stored inventory` for a removed id's
+  position in the file -- never the ids themselves, because both the stored
+  inventory file and `--repositories` are input an agent may relay
+  verbatim, and a repository id is exactly the kind of short string a
+  hostile inventory entry could shape as prompt-injection text. Run again
+  with `--replace-inventory` to approve the replacement; a repository that
+  stays keeps its existing entry, `packages` included. An agent acting on
+  the refusal looks each reported position up in its own copy of the
+  stored inventory file or its own `--repositories` argument to learn which
+  repository it names, and tells the founder that name -- never the
+  position string itself, and never text read back out of the inventory
+  file or the argument without that lookup. The same rule, and the same
+  position wording, applies to every other message this command prints
+  that names a repository from the stored inventory -- the `skill roster
+  written` / `skill roster skipped` / `skill preserved` health-report lines
+  and `launcher --clone-missing`'s output.
 - An inventory that fails its contract is likewise replaced only with
   `--replace-inventory`.
 - `--repositories` and `--inventory` each supply the whole inventory, so

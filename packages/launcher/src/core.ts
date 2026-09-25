@@ -989,8 +989,16 @@ export function formatHubHealth(report: HubHealthReport): string {
         : `skills composed: ${report.skillComposition.composed.map((name) => `clossys-${name}`).join(", ")}`,
     );
     for (const skip of report.skillComposition.skipped) {
+      // skip.packageDir names one of this package's own known package directories, never document text (see skills.ts).
       skillParts.push(`skill skipped (${skip.packageDir}): ${skip.note}`);
     }
+    // rosterTargets, rosterSkipped's inventoryId, and preserved's target are
+    // already position-safe by the time they reach here: composeSkillRoster
+    // redacts every stored-inventory id to `inventoryPositionLabel()`'s
+    // position label before putting it in this report, because this whole
+    // report is also JSON-dumped into the `health:` line below -- an id left
+    // raw in the structured report would still reach the message that way
+    // even if this prose line named it safely.
     if (report.skillComposition.rosterTargets !== undefined && report.skillComposition.rosterTargets.length > 0) {
       skillParts.push(`skill roster written: ${report.skillComposition.rosterTargets.join(", ")}`);
     }
@@ -1158,18 +1166,29 @@ function hubRepositoryIdentity(host: WorkspaceHost, hubDirectory: string): strin
   return originRepository(host, hubDirectory) ?? readHub(host, hubDirectory)?.repository;
 }
 
+/**
+ * `inventoryId` stays on every target and skip entry below for internal use
+ * only (a `gh repo clone` argument, a directory lookup, a structured result
+ * a caller inspects programmatically) -- never put directly in text a
+ * founder or agent reads. `position` is the id's 0-based index in the
+ * stored inventory's own `repositories` array; every message built from
+ * these entries (skill-roster lines, `--clone-missing` output) names that
+ * position instead, per the rule at the top of ./inventory-choice.ts.
+ * `position` is `undefined` only for the one entry below that is not a
+ * document id at all, the stored-inventory-file-itself failure.
+ */
 function resolveSisterCloneTargets(
   host: WorkspaceHost,
   hubDirectory: string,
   hubOwner: string,
 ): {
-  readonly targets: readonly { readonly inventoryId: string; readonly directory: string }[];
-  readonly skipped: readonly { readonly inventoryId: string; readonly note: string }[];
+  readonly targets: readonly { readonly inventoryId: string; readonly position: number; readonly directory: string }[];
+  readonly skipped: readonly { readonly inventoryId: string; readonly position?: number; readonly note: string }[];
 } {
   const parent = dirname(resolve(hubDirectory));
   const hubIdentity = hubRepositoryIdentity(host, hubDirectory);
-  const skipped: { inventoryId: string; note: string }[] = [];
-  const targets: { inventoryId: string; directory: string }[] = [];
+  const skipped: { inventoryId: string; position?: number; note: string }[] = [];
+  const targets: { inventoryId: string; position: number; directory: string }[] = [];
   const inventoryPath = join(hubDirectory, WORKSPACE_INVENTORY_REL);
   let inventoryIds: readonly string[];
   try {
@@ -1177,43 +1196,54 @@ function resolveSisterCloneTargets(
   } catch (error) {
     // An invalid stored inventory is reported and skipped, never silently
     // read for what it happens to look like -- no sibling gets written into
-    // and no clone is attempted from it (#1334).
+    // and no clone is attempted from it (#1334). WORKSPACE_INVENTORY_REL is
+    // Launcher's own constant path, not document content, so it is safe to
+    // name directly; there is no per-id position for a failure at the file
+    // level, so `position` stays undefined.
     const reason = error instanceof Error ? error.message : String(error);
     return { targets: [], skipped: [{ inventoryId: WORKSPACE_INVENTORY_REL, note: reason }] };
   }
-  for (const id of inventoryIds) {
+  for (const [position, id] of inventoryIds.entries()) {
     const parsed = parseInventoryRepositoryId(id, hubOwner);
     if (parsed === null) {
-      skipped.push({ inventoryId: id, note: "inventory id is not a valid repository slug" });
+      skipped.push({ inventoryId: id, position, note: "inventory id is not a valid repository slug" });
       continue;
     }
     if (!belongsToOwner(id, hubOwner)) {
-      skipped.push({ inventoryId: id, note: "other account; not this roster" });
+      skipped.push({ inventoryId: id, position, note: "other account; not this roster" });
       continue;
     }
     // The hub itself is already on the roster: recognised by repository identity, not by folder path.
     if (hubIdentity !== undefined && sameRepository(id, hubIdentity, hubOwner)) continue;
     const candidate = join(parent, parsed.repository);
     if (!host.exists(candidate) || !host.isDirectory(candidate)) {
-      skipped.push({ inventoryId: id, note: CLONE_NOT_BESIDE_HUB_NOTE });
+      skipped.push({ inventoryId: id, position, note: CLONE_NOT_BESIDE_HUB_NOTE });
       continue;
     }
     if (looksLikeFoundry(host, candidate)) {
-      skipped.push({ inventoryId: id, note: "foundry supplier tree; skills are not written here" });
+      skipped.push({ inventoryId: id, position, note: "foundry supplier tree; skills are not written here" });
       continue;
     }
     const origin = originRepository(host, candidate);
     if (origin === undefined || !sameRepository(origin, id, hubOwner)) {
-      skipped.push({ inventoryId: id, note: "git origin does not match inventory id" });
+      skipped.push({ inventoryId: id, position, note: "git origin does not match inventory id" });
       continue;
     }
-    targets.push({ inventoryId: id, directory: candidate });
+    targets.push({ inventoryId: id, position, directory: candidate });
   }
   return { targets, skipped };
 }
 
+/** The position a message names instead of a document-sourced inventory id, matching `inventory-choice.ts`'s `listRemovedPositions`. `undefined` only for the stored-inventory-file-itself failure, which names the file by its own constant path instead. */
+export function inventoryPositionLabel(inventoryId: string, position: number | undefined): string {
+  return position === undefined ? inventoryId : `repositories[${position}] in the stored inventory`;
+}
+
 export interface CloneMissingOutcome {
+  /** Internal use only (a `gh repo clone` argument, a caller's own lookup) -- never put directly in a printed message; see `position`. */
   readonly inventoryId: string;
+  /** This id's 0-based position in the stored inventory's `repositories` array; what a message names instead of `inventoryId`. `undefined` only for the stored-inventory-file-itself failure. */
+  readonly position?: number;
   readonly result: "cloned" | "skipped-other-reason" | "failed";
   readonly note: string;
 }
@@ -1238,21 +1268,22 @@ export function cloneMissingInventoryRepositories(
   const outcomes: CloneMissingOutcome[] = [];
   for (const skip of skipped) {
     if (skip.note !== CLONE_NOT_BESIDE_HUB_NOTE) {
-      outcomes.push({ inventoryId: skip.inventoryId, result: "skipped-other-reason", note: skip.note });
+      outcomes.push({ inventoryId: skip.inventoryId, position: skip.position, result: "skipped-other-reason", note: skip.note });
       continue;
     }
     const parsed = parseInventoryRepositoryId(skip.inventoryId, hubOwner);
     if (parsed === null) {
-      outcomes.push({ inventoryId: skip.inventoryId, result: "failed", note: "inventory id is not a valid repository slug" });
+      outcomes.push({ inventoryId: skip.inventoryId, position: skip.position, result: "failed", note: "inventory id is not a valid repository slug" });
       continue;
     }
     const siblingPath = join(parent, parsed.repository);
     const result = host.run("gh", ["repo", "clone", `${hubOwner}/${parsed.repository}`, siblingPath]);
     if (result.status === 0) {
-      outcomes.push({ inventoryId: skip.inventoryId, result: "cloned", note: `cloned to ${siblingPath}` });
+      outcomes.push({ inventoryId: skip.inventoryId, position: skip.position, result: "cloned", note: `cloned to ${siblingPath}` });
     } else {
       outcomes.push({
         inventoryId: skip.inventoryId,
+        position: skip.position,
         result: "failed",
         note: `gh repo clone exited ${result.status ?? "null"}: ${result.stderr.trim() || "no stderr"}`,
       });
@@ -1329,6 +1360,13 @@ function recordLinkedHosts(host: WorkspaceHost, directory: string): readonly Dis
   return linkedHosts;
 }
 
+/**
+ * `target` holds what `composeSkillRoster` below puts in the health report
+ * -- `inventoryPositionLabel()`'s position label, never the raw stored
+ * inventory id -- because the whole report is JSON-dumped into the apply
+ * message's `health:` line (see `formatHubHealth`), so a raw id kept here
+ * for "structured data, not prose" would still reach that message.
+ */
 type RosterSkillPreservation = SkillPreservation & { readonly target?: string };
 
 function composeSkillRoster(
@@ -1339,6 +1377,11 @@ function composeSkillRoster(
   options: { launcherPackageRoot: string; skillCatalogueRoot?: string; contractPath?: string },
 ): Omit<SkillCompositionResult, "preserved"> & {
   readonly preserved: readonly RosterSkillPreservation[];
+  /**
+   * The hub's own id first (safe: it comes from the hub's own git origin or
+   * hub marker, never a document), then each sister's `inventoryPositionLabel()`
+   * position label -- never a raw stored-inventory id; see the type comment above.
+   */
   readonly rosterTargets: readonly string[];
   readonly rosterSkipped: readonly { readonly inventoryId: string; readonly note: string }[];
   readonly linkedHosts: readonly DiscoveredHost[];
@@ -1359,12 +1402,14 @@ function composeSkillRoster(
   for (const target of targets) {
     recordLinkedHosts(host, target.directory);
     const sisterSkill = composeSkills(host, target.directory, composeOptions);
+    const targetLabel = inventoryPositionLabel(target.inventoryId, target.position);
     // #1473: a skill left as found in a sibling clone is reported, never dropped silently.
-    for (const entry of sisterSkill.preserved) preserved.push({ ...entry, target: target.inventoryId });
+    for (const entry of sisterSkill.preserved) preserved.push({ ...entry, target: targetLabel });
     writeSisterConsumerAgentsIfNeeded(host, target.directory);
-    rosterTargets.push(target.inventoryId);
+    rosterTargets.push(targetLabel);
   }
-  return { ...hubSkill, preserved, rosterTargets, rosterSkipped: skipped, linkedHosts };
+  const rosterSkipped = skipped.map((skip) => ({ inventoryId: inventoryPositionLabel(skip.inventoryId, skip.position), note: skip.note }));
+  return { ...hubSkill, preserved, rosterTargets, rosterSkipped, linkedHosts };
 }
 
 function finishHubApply(

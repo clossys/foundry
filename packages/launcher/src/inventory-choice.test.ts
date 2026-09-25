@@ -192,13 +192,15 @@ describe("resolveChosenInventory (#1179)", () => {
     });
   });
 
-  it("refuses to overwrite an existing inventory that differs, reporting counts and ids, and never merges", () => {
+  it("refuses to overwrite an existing inventory that differs, reporting counts and positions, never ids, and never merges", () => {
     const onDisk = inventoryText([{ id: `${OWNER}/example-app` }, { id: `${OWNER}/example-old` }]);
     const message = refusal(resolveChosenInventory(onDisk, [`${OWNER}/example-app`, `${OWNER}/example-new`, `${OWNER}/example-site`], OWNER, false));
+    // "example-new" and "example-site" sit at --repositories[1] and --repositories[2]; "example-old" sits at repositories[1] in the stored inventory (#1179).
     expect(message).toBe(
-      `the hub inventory already lists 2 repositories and the choice has 3: 2 to add (${OWNER}/example-new, ${OWNER}/example-site), 1 to remove (${OWNER}/example-old). ` +
+      "the hub inventory already lists 2 repositories and the choice has 3: 2 to add (--repositories[1], --repositories[2]), 1 to remove (repositories[1] in the stored inventory). " +
         "Launcher never merges or overwrites an inventory silently; to replace it with the choice, run again with --replace-inventory",
     );
+    expect(message).not.toMatch(/example-new|example-site|example-old/);
   });
 
   it("with --replace-inventory, replaces a differing inventory and keeps what it recorded about repositories that stay", () => {
@@ -211,9 +213,10 @@ describe("resolveChosenInventory (#1179)", () => {
     });
     if (result.kind !== "resolved" || result.chosen.kind !== "write") return;
     expect(JSON.parse(result.chosen.document).repositories).toEqual([{ id: `${OWNER}/example-new` }, kept]);
-    expect(describeChosenInventory(result.chosen)).toBe(
-      `inventory: replaced 2 with the 2 repositories you chose -- 1 added (${OWNER}/example-new), 1 removed (${OWNER}/example-old)`,
-    );
+    // "example-new" sits at --repositories[0]; "example-old" sits at repositories[1] in the stored inventory (#1179).
+    const describedLine = describeChosenInventory(result.chosen);
+    expect(describedLine).toBe("inventory: replaced 2 with the 2 repositories you chose -- 1 added (--repositories[0]), 1 removed (repositories[1] in the stored inventory)");
+    expect(describedLine).not.toMatch(/example-new|example-old/);
   });
 
   it("refuses to replace an inventory that fails its contract without --replace-inventory, and replaces it with it", () => {
@@ -299,14 +302,17 @@ describe("launcher --repositories (#1179)", () => {
     const err = vi.spyOn(console, "error").mockImplementation(() => {});
     const log = vi.spyOn(console, "log").mockImplementation(() => {});
     expect(main(["--repositories", `${OWNER}/example-app,${OWNER}/example-new`], host(directory), skeletonRoot)).toBe(1);
-    expect(String(err.mock.calls[0]?.[0])).toMatch(
-      /already lists 2 repositories and the choice has 2: 1 to add \(example-owner\/example-new\), 1 to remove \(example-owner\/example-old\)/,
-    );
+    // "example-new" sits at --repositories[1]; "example-old" sits at repositories[1] in the stored inventory (#1179).
+    const refusal = String(err.mock.calls[0]?.[0]);
+    expect(refusal).toMatch(/already lists 2 repositories and the choice has 2: 1 to add \(--repositories\[1\]\), 1 to remove \(repositories\[1\] in the stored inventory\)/);
+    expect(refusal).not.toMatch(/example-new|example-old/);
     expect(stored(directory)).toBe(before);
     expect(log).not.toHaveBeenCalled();
 
     expect(main(["--repositories", `${OWNER}/example-app,${OWNER}/example-new`, "--replace-inventory"], host(directory), skeletonRoot)).toBe(0);
-    expect(String(log.mock.calls[0]?.[0])).toMatch(/inventory: replaced 2 with the 2 repositories you chose -- 1 added/);
+    const successLine = String(log.mock.calls[0]?.[0]);
+    expect(successLine).toMatch(/inventory: replaced 2 with the 2 repositories you chose -- 1 added \(--repositories\[1\]\), 1 removed \(repositories\[1\] in the stored inventory\)/);
+    expect(successLine).not.toMatch(/example-new|example-old/);
     expect(readInventoryRepositories(host(directory), join(directory, WORKSPACE_INVENTORY_REL), "the hub inventory")).toEqual([
       `${OWNER}/example-app`,
       `${OWNER}/example-new`,
@@ -637,8 +643,9 @@ describe("one repository identity for the roster, the merge and drift (#1179)", 
       main([], withOrigins(host(hub), { [hub]: `${OWNER}/example-hub`, [sibling]: "Example-Owner/Example-App" }), skeletonRoot),
     ).toBe(0);
     const message = String(log.mock.calls[0]?.[0]);
-    expect(message).toMatch(/^skill roster written: example-owner\/example-hub, EXAMPLE-OWNER\/example-app$/m);
-    expect(message).not.toMatch(/other account|origin does not match/);
+    // "EXAMPLE-OWNER/example-app" sits at stored-inventory position 0; the line names that position, never the id itself (#1179).
+    expect(message).toMatch(/^skill roster written: example-owner\/example-hub, repositories\[0\] in the stored inventory$/m);
+    expect(message).not.toMatch(/other account|origin does not match|EXAMPLE-OWNER|Example-App/);
     expect(readFileSync(join(sibling, ".agents/skills/clossys-advisor/SKILL.md"), "utf8")).toContain("name: clossys-advisor");
   });
 

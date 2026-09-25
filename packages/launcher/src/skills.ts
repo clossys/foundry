@@ -6,6 +6,7 @@ import type { SkillManifestEntry, WorkspaceHost } from "./types.js";
 export interface SkillCompositionResult {
   readonly composed: readonly string[];
   readonly skipped: readonly { readonly packageDir: string; readonly note: string }[];
+  /** Populated by ./core.ts's composeSkillRoster with stored-inventory position labels, never raw ids -- see its own doc comment. */
   readonly rosterTargets?: readonly string[];
   readonly rosterSkipped?: readonly { readonly inventoryId: string; readonly note: string }[];
   /** Skills pruned this run: present in the directory's previous manifest, absent from this run's composed set. */
