@@ -114,6 +114,13 @@ const STRATEGIST_BRAND_NOT_KEEP = /\bnot keep\b/i;
 const STRATEGIST_OUTPUT_FILES =
   /facts\.json|audiences\.json|positioning\.json|claims\.json|constraints\.json|brand\.json|direction\.json/i;
 const STRATEGIST_HANDOFF_SUBCOMMAND = /strategist-check handoff/i;
+const ADVISOR_DEGRADED_HUB_MARKER = /clossys\/\.state\/workspace\.json/;
+const ADVISOR_DEGRADED_SIBLING_CASE = /hub checkout sits beside this repository/i;
+const ADVISOR_DEGRADED_NO_HUB_CASE = /No hub reachable/;
+const ADVISOR_DEGRADED_BRIEF_FALLBACK = /clossys\/brief\.json/;
+const ADVISOR_DEGRADED_REFUSAL_WORDING = /no hiring, no plan change, no approval/i;
+const ADVISOR_DEGRADED_RESOLVE_REFUSAL = /advisor-resolve-packages/;
+const ADVISOR_DEGRADED_NPX_INVOCATION = /npx --package=@clossys\/advisor@<hub version> <bin>/;
 
 function validateSkillBody(packageDir, text) {
   const findings = [];
@@ -159,6 +166,57 @@ function validateSkillBody(packageDir, text) {
         rule: "expression-customer-session",
         packageDir,
         message: "must name clossys-customer as the independent first-person inhabit session",
+      });
+    }
+  }
+  if (packageDir === "advisor") {
+    if (!ADVISOR_DEGRADED_HUB_MARKER.test(text)) {
+      findings.push({
+        rule: "advisor-degraded-hub-marker",
+        packageDir,
+        message: "advisor skill must name the hub marker (clossys/.state/workspace.json) for the in-the-hub case",
+      });
+    }
+    if (!ADVISOR_DEGRADED_SIBLING_CASE.test(text)) {
+      findings.push({
+        rule: "advisor-degraded-sibling-case",
+        packageDir,
+        message: 'advisor skill must state the "a hub checkout sits beside this repository" case',
+      });
+    }
+    if (!ADVISOR_DEGRADED_NO_HUB_CASE.test(text)) {
+      findings.push({
+        rule: "advisor-degraded-no-hub-case",
+        packageDir,
+        message: 'advisor skill must state the "No hub reachable" case',
+      });
+    }
+    if (!ADVISOR_DEGRADED_BRIEF_FALLBACK.test(text)) {
+      findings.push({
+        rule: "advisor-degraded-brief-fallback",
+        packageDir,
+        message: "advisor skill must name clossys/brief.json as the read-only report source with no hub reachable",
+      });
+    }
+    if (!ADVISOR_DEGRADED_REFUSAL_WORDING.test(text)) {
+      findings.push({
+        rule: "advisor-degraded-refusal-wording",
+        packageDir,
+        message: "advisor skill must refuse hiring, plan changes, and approvals with the fixed wording outside the hub",
+      });
+    }
+    if (!ADVISOR_DEGRADED_RESOLVE_REFUSAL.test(text)) {
+      findings.push({
+        rule: "advisor-degraded-resolve-refusal",
+        packageDir,
+        message: "advisor skill must name advisor-resolve-packages as refused outside the hub",
+      });
+    }
+    if (!ADVISOR_DEGRADED_NPX_INVOCATION.test(text)) {
+      findings.push({
+        rule: "advisor-degraded-npx-invocation",
+        packageDir,
+        message: "advisor skill must give the exact npx --package=@clossys/advisor@<hub version> <bin> invocation",
       });
     }
   }

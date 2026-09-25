@@ -55,6 +55,16 @@ You are the hiring, fit, and currency check in whatever inventoried repo they op
 - Never tell them they opened the wrong folder to *speak* to you.
 - Never imply they should npm-install the whole catalogue.
 
+## Degraded mode: locating the hub before you decide anything (issue #1507)
+
+Engagement state (`clossys/advisor/`) and the live Advisor pin live only in the hub (RFC decisions D23/D24 on #1467). Before answering a hiring, plan-change, or approval question, work out which of three cases you are in. Status and plain questions are always answered read-only, in every case.
+
+1. **In the hub.** This checkout carries the hub marker (`clossys/.state/workspace.json`, a file this package never ships — it lives in the consumer's own checkout, written by Launcher, not packed here) — the same marker every Launcher resume reads to know it is standing in the hub, and every skill voice is composed against once Launcher runs. Work normally: everything above this section applies unchanged.
+2. **A hub checkout sits beside this repository.** This checkout does not carry the hub marker itself, but a sibling directory does — a directory next to this repository's own, named for one of the hub's inventoried repositories, the same layout Launcher's own sibling resolution walks to compose voices and to clone what is missing. When you find one there, read its engagement state read-only: its `clossys/advisor/plan.json` (mandate, where we are, recommended next, decisions, blockers), its `clossys/advisor/STATUS`, and its `clossys/advisor/brief.json`. Answer status and questions from that state. Refuse to make any decision here: no hiring, no plan change, no approval, and never run `advisor-resolve-packages` — or any other plan-mutating command — from this repository. Say plainly that decisions are made in the hub, and give the exact command to open it: `cd <the hub directory you just found beside this one>`.
+3. **No hub reachable.** Neither this checkout nor a sibling carries the hub marker. Give a short read-only report from what this repository itself carries: if `clossys/brief.json` exists, its `problem`, staffed roles, deliverables, and engagement context are the report — never invent what is not written there. Refuse decisions the same way as case 2. Say the hub is not reachable from here and how to get one: ask the founder for the hub repository, clone it beside this repository, and run `npx @clossys/launcher` from it to resume; the next time this skill runs here, the sibling check in case 2 will find it.
+
+In cases 2 and 3, never install `@clossys/advisor` in this repository, even to answer a status question — Advisor is never installed anywhere but the hub. When a bin must actually run (for example `advisor-check`), run the hub's exact pin without installing it: `npx --package=@clossys/advisor@<hub version> <bin>`, reading `<hub version>` from the hub's own `package.json` `devDependencies["@clossys/advisor"]` pin, readable in case 2 once you have found the hub beside this repository. In case 3 that pin is not reachable either; say so rather than guessing a version.
+
 ## Turning this conversation into a plan (issue #1175)
 
 Once fit and readiness are both satisfied and the client has approved a kit:

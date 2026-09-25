@@ -24,6 +24,37 @@ ${disable ? "disable-model-invocation: true" : ""}
 Body.
 `;
 
+// One line per advisor degraded-mode check (issue #1507): the hub marker
+// (case 1), the sibling-hub case (case 2), the no-hub case (case 3), the
+// clossys/brief.json read-only fallback, the fixed refusal wording, the
+// advisor-resolve-packages refusal, and the exact npx pinned invocation.
+// advisorSkillBody(omitKey) drops one line so a test can show the gate
+// catches that one case missing without also failing every other check.
+const ADVISOR_DEGRADED_PARTS = {
+  hubMarker: "In the hub, this checkout carries the hub marker (clossys/.state/workspace.json) and everything above applies unchanged.",
+  siblingCase: "A hub checkout sits beside this repository: read its engagement state read-only.",
+  noHubCase: "No hub reachable: give a short read-only report instead of guessing.",
+  brief: "With no hub reachable, report read-only from clossys/brief.json.",
+  refusal: "Refuse to make any decision here: no hiring, no plan change, no approval.",
+  resolveRefusal: "Never run advisor-resolve-packages outside the hub.",
+  npx: "Run the hub's exact pin with npx --package=@clossys/advisor@<hub version> <bin>.",
+};
+
+function advisorSkillBody(omitKey) {
+  return Object.entries(ADVISOR_DEGRADED_PARTS)
+    .filter(([key]) => key !== omitKey)
+    .map(([, line]) => line)
+    .join("\n\n");
+}
+
+const advisorSkillText = (omitKey, description = "Receptionist skill.") => `---
+name: clossys-advisor
+description: ${description}
+---
+
+${advisorSkillBody(omitKey)}
+`;
+
 test("valid frontmatter passes", () => {
   const result = evaluatePackageSkills([
     {
@@ -88,16 +119,54 @@ test("advisor may omit disable-model-invocation", () => {
       packageDir: "advisor",
       skillPath: "/tmp/ignored",
       expectedName: "clossys-advisor",
-      skillText: `---
-name: clossys-advisor
-description: Receptionist skill.
----
-
-Body.`,
+      skillText: advisorSkillText(),
       files: ["skill"],
     },
   ]);
   assert.equal(result.exitCode, 0);
+});
+
+test("advisor skill passes with all three degraded-mode cases and the refusal wording present", () => {
+  const result = evaluatePackageSkills([
+    {
+      packageDir: "advisor",
+      skillPath: "/tmp/ignored",
+      expectedName: "clossys-advisor",
+      skillText: advisorSkillText(),
+      files: ["skill"],
+    },
+  ]);
+  assert.equal(result.exitCode, 0);
+  assert.equal(result.findings.length, 0);
+  assert.deepEqual(result.passed, [{ packageDir: "advisor", name: "clossys-advisor" }]);
+});
+
+test("advisor skill flags each missing degraded-mode case or refusal", () => {
+  const ruleByOmittedPart = {
+    hubMarker: "advisor-degraded-hub-marker",
+    siblingCase: "advisor-degraded-sibling-case",
+    noHubCase: "advisor-degraded-no-hub-case",
+    brief: "advisor-degraded-brief-fallback",
+    refusal: "advisor-degraded-refusal-wording",
+    resolveRefusal: "advisor-degraded-resolve-refusal",
+    npx: "advisor-degraded-npx-invocation",
+  };
+  for (const [omitKey, expectedRule] of Object.entries(ruleByOmittedPart)) {
+    const result = evaluatePackageSkills([
+      {
+        packageDir: "advisor",
+        skillPath: "/tmp/ignored",
+        expectedName: "clossys-advisor",
+        skillText: advisorSkillText(omitKey),
+        files: ["skill"],
+      },
+    ]);
+    assert.equal(result.exitCode, 1, `expected a finding when omitting ${omitKey}`);
+    assert.ok(
+      result.findings.some((f) => f.rule === expectedRule),
+      `expected rule ${expectedRule} when omitting ${omitKey}, got ${JSON.stringify(result.findings)}`,
+    );
+  }
 });
 
 test("skill without files entry is a finding", () => {

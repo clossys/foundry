@@ -102,6 +102,17 @@ and it does not replace `advisor-check` or `advisor-execution-readiness`.
 The plan commands `advisor-render-status`, `advisor-package-request` and
 `advisor-resolve-packages` are described with the plan record below.
 
+The skill runs in every inventoried repository (issue #1507), but engagement
+state and the live pin exist only in the hub. `skill/SKILL.md` states three
+cases the skill works out before answering a hiring, plan-change, or
+approval question: in the hub, everything runs as described above; with a
+hub checkout beside the current repository, it reads that hub's engagement
+state read-only and refuses to record a decision here; with no hub
+reachable, it gives a read-only report from `clossys/brief.json` and
+refuses decisions the same way. Outside the hub it never installs this
+package — a bin that must run does so unpinned through the hub's exact
+version, `npx --package=@clossys/advisor@<hub version> <bin>`.
+
 ```bash
 advisor-check assessment.json
 ```
