@@ -240,9 +240,11 @@ function readHub(host: WorkspaceHost, directory: string): HubDocument | undefine
 
 /**
  * The inventory document's shape lives in docs/contracts/repository-inventory.json
- * (in the public repository, not shipped in this package)
- * and is checked, on every read and write, by `validateInventoryDocument()`
- * through the shared contract checker (./inventory-contract.ts, #1334, #1179).
+ * (in the public repository; that exact path does not ship in this
+ * package, but this package's build packs and ships its own copy of the
+ * contract) and is checked, on every read and write, by
+ * `validateInventoryDocument()` through the shared contract checker
+ * (./inventory-contract.ts, #1334, #1179).
  */
 export { validateInventoryDocument } from "./inventory-contract.js";
 export type { InventoryValidation } from "./inventory-contract.js";
