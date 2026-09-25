@@ -33,6 +33,8 @@ export { nextProblemQuestion, applyProblemChoice } from "./problem-questions.js"
 export { ADVISOR_BLOCKER_KINDS, renderAdvisorStatus, validateAdvisorPlan } from "./status.js";
 export { PLAN_DIGEST_EXCLUDED_FIELDS, canonicalJson, planDigest } from "./plan-digest.js";
 export { recommendKit } from "./kit-verdicts.js";
+export { registrySnapshotRuleViolations, snapshotDigest, snapshotDigestSubject, validateRegistrySnapshot } from "./registry-snapshot.js";
+export { RESOLVED_PLACEMENT, STARTER_PACKAGE_DIRECTORY, packageRequest, resolvePackages } from "./package-resolution.js";
 export { nextStepInstruction } from "./next-step.js";
 export { validateManagedEngagement, proposalReadyForClient } from "./managed-engagement.js";
 export { BUDGET_PREFERENCE_CARD, applyBudgetPreferenceChoice, toPreferencesFile } from "./preferences.js";
@@ -63,6 +65,10 @@ export type {
   AdvisorBlockerKind, AdvisorBlockerNextAction, AdvisorPlan, AdvisorPlanBlocker, AdvisorPlanDecision, AdvisorPlanKit, AdvisorPlanMandate, AdvisorPlanNextAction, AdvisorPlanPackageAct,
   AdvisorPlanResolution, AdvisorPlanStaffing,
 } from "./status.js";
+export type { RegistrySnapshot, RegistrySnapshotPackage, RegistrySnapshotRuleId, RegistrySnapshotVersion, RegistrySnapshotViolation } from "./registry-snapshot.js";
+export type {
+  PackageRequestResult, PackageResolutionResult, PackageScope, ResolutionFinding, ResolutionOptions, ResolutionState, ResolutionVerdict,
+} from "./package-resolution.js";
 export type { KitVerdict, KitVerdictCitation, KitVerdictRole, KitVerdictState, RecommendKitInput } from "./kit-verdicts.js";
 export type { ClientTool, NextStepHostContext } from "./next-step.js";
 export type { ManagedEngagementInput, OperatorReview } from "./managed-engagement.js";

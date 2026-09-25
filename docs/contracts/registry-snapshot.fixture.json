@@ -1,0 +1,1901 @@
+{
+  "description": "Issue #1178: the shared corpus for the registry snapshot contract, docs/contracts/registry-snapshot.json: its shape, its code rules N1-N3, and its snapshot digest. Every package that reads or writes a registry snapshot is tested against every case here. digests holds valid snapshots with the canonical JSON of each one's digest subject and its expected digest; invalid holds snapshots every reader must refuse, with the rule ('schema' for the contract's keywords, else the code rule's id) and the position of each violation. The expected canonical strings and digests were produced independently of any package: a stand-alone Python 3 script built each subject from the contract's prose (registry, and each package's name, status, latest and versions, packages sorted by name and each package's versions sorted by version), serialized it with json.dumps(subject, ensure_ascii=False, sort_keys=True, separators=(',', ':')) -- which is RFC 8785 for these values, because every key and every sorted string is ASCII (so code-point order equals UTF-16 order) and the subject holds no number -- and hashed its UTF-8 bytes with hashlib.sha256. The integrity values are sha512 hashes of made-up text, not of any real tarball, and the responseSha256 values hash made-up text too.",
+  "digests": [
+    {
+      "name": "base",
+      "note": "Three packages, each found, with latest naming its one recorded version. The packages are written out of name order.",
+      "snapshot": {
+        "schemaVersion": 1,
+        "kind": "clossys.registry-snapshot",
+        "registry": "https://registry.npmjs.org",
+        "fetchedAt": "2026-09-24T12:00:00Z",
+        "fetchedBy": {
+          "name": "@clossys/launcher",
+          "version": "0.9.30"
+        },
+        "packages": [
+          {
+            "name": "@clossys/writer",
+            "status": "found",
+            "latest": "0.4.1",
+            "versions": [
+              {
+                "version": "0.4.1",
+                "integrity": "sha512-OlVVePUOypHOPe9dj/jjedb5ozGZwOXmAOHb8CGtvxm2YKEJgtBQ5TjI1RFRzNfDJVZGfpvVKhJOuzaDloCxrg==",
+                "tarball": "https://registry.npmjs.org/@clossys/writer/-/writer-0.4.1.tgz",
+                "deprecated": false,
+                "publishedAt": "2026-09-01T10:00:00.000Z",
+                "hasAttestations": true
+              }
+            ],
+            "responseSha256": "sha256:3fa8a0bf51ecc3d00f28c44c1012dc68c66ba0e87de94553bb2336fa6386e514"
+          },
+          {
+            "name": "@clossys/starter",
+            "status": "found",
+            "latest": "1.3.0",
+            "versions": [
+              {
+                "version": "1.3.0",
+                "integrity": "sha512-TJTam2EghNKkYT2BvJSMw73qkZAt5Sd/F9iI0gG5usyYfk5YuQTGgYGml+rmiaxQ4pPRjnXHOgJ452JQyFH88g==",
+                "tarball": "https://registry.npmjs.org/@clossys/starter/-/starter-1.3.0.tgz",
+                "deprecated": false,
+                "publishedAt": "2026-09-01T10:00:00.000Z",
+                "hasAttestations": true
+              }
+            ],
+            "responseSha256": "sha256:debfab461f064e5810e7a19a82abbb806e445ae23dfca55df7459b5f72be789e"
+          },
+          {
+            "name": "@clossys/designer",
+            "status": "found",
+            "latest": "0.2.7",
+            "versions": [
+              {
+                "version": "0.2.7",
+                "integrity": "sha512-KCYW7zKvm8K4VBmqoPXz2tm9eFV4AAd3lMue0lCN+bY1AV08rHx8g763ewcy42YQy99oVDmZBs+KQxzavBxzPA==",
+                "tarball": "https://registry.npmjs.org/@clossys/designer/-/designer-0.2.7.tgz",
+                "deprecated": false,
+                "publishedAt": "2026-09-01T10:00:00.000Z",
+                "hasAttestations": true
+              }
+            ],
+            "responseSha256": "sha256:e5330369529d184b0dcb35d69f0718f18587aa848af56c86e476336d1aef6b54"
+          }
+        ]
+      },
+      "canonical": "{\"packages\":[{\"latest\":\"0.2.7\",\"name\":\"@clossys/designer\",\"status\":\"found\",\"versions\":[{\"deprecated\":false,\"hasAttestations\":true,\"integrity\":\"sha512-KCYW7zKvm8K4VBmqoPXz2tm9eFV4AAd3lMue0lCN+bY1AV08rHx8g763ewcy42YQy99oVDmZBs+KQxzavBxzPA==\",\"publishedAt\":\"2026-09-01T10:00:00.000Z\",\"tarball\":\"https://registry.npmjs.org/@clossys/designer/-/designer-0.2.7.tgz\",\"version\":\"0.2.7\"}]},{\"latest\":\"1.3.0\",\"name\":\"@clossys/starter\",\"status\":\"found\",\"versions\":[{\"deprecated\":false,\"hasAttestations\":true,\"integrity\":\"sha512-TJTam2EghNKkYT2BvJSMw73qkZAt5Sd/F9iI0gG5usyYfk5YuQTGgYGml+rmiaxQ4pPRjnXHOgJ452JQyFH88g==\",\"publishedAt\":\"2026-09-01T10:00:00.000Z\",\"tarball\":\"https://registry.npmjs.org/@clossys/starter/-/starter-1.3.0.tgz\",\"version\":\"1.3.0\"}]},{\"latest\":\"0.4.1\",\"name\":\"@clossys/writer\",\"status\":\"found\",\"versions\":[{\"deprecated\":false,\"hasAttestations\":true,\"integrity\":\"sha512-OlVVePUOypHOPe9dj/jjedb5ozGZwOXmAOHb8CGtvxm2YKEJgtBQ5TjI1RFRzNfDJVZGfpvVKhJOuzaDloCxrg==\",\"publishedAt\":\"2026-09-01T10:00:00.000Z\",\"tarball\":\"https://registry.npmjs.org/@clossys/writer/-/writer-0.4.1.tgz\",\"version\":\"0.4.1\"}]}],\"registry\":\"https://registry.npmjs.org\"}",
+      "digest": "sha256:5d1d2c011dd782c853be31332640c0fd873be70f92080d80a3d91fb9100982fd"
+    },
+    {
+      "name": "base-refetched",
+      "note": "base fetched again later by a newer fetcher: fetchedAt, fetchedBy, every responseSha256 and the package order differ. Same digest as base.",
+      "snapshot": {
+        "schemaVersion": 1,
+        "kind": "clossys.registry-snapshot",
+        "registry": "https://registry.npmjs.org",
+        "fetchedAt": "2026-09-25T08:30:00Z",
+        "fetchedBy": {
+          "name": "@clossys/launcher",
+          "version": "0.9.31"
+        },
+        "packages": [
+          {
+            "name": "@clossys/designer",
+            "status": "found",
+            "latest": "0.2.7",
+            "versions": [
+              {
+                "version": "0.2.7",
+                "integrity": "sha512-KCYW7zKvm8K4VBmqoPXz2tm9eFV4AAd3lMue0lCN+bY1AV08rHx8g763ewcy42YQy99oVDmZBs+KQxzavBxzPA==",
+                "tarball": "https://registry.npmjs.org/@clossys/designer/-/designer-0.2.7.tgz",
+                "deprecated": false,
+                "publishedAt": "2026-09-01T10:00:00.000Z",
+                "hasAttestations": true
+              }
+            ],
+            "responseSha256": "sha256:1da5e996113584c73e9ccda943a4d8714af87ff354cccd1048d50d9ef056cc7f"
+          },
+          {
+            "name": "@clossys/starter",
+            "status": "found",
+            "latest": "1.3.0",
+            "versions": [
+              {
+                "version": "1.3.0",
+                "integrity": "sha512-TJTam2EghNKkYT2BvJSMw73qkZAt5Sd/F9iI0gG5usyYfk5YuQTGgYGml+rmiaxQ4pPRjnXHOgJ452JQyFH88g==",
+                "tarball": "https://registry.npmjs.org/@clossys/starter/-/starter-1.3.0.tgz",
+                "deprecated": false,
+                "publishedAt": "2026-09-01T10:00:00.000Z",
+                "hasAttestations": true
+              }
+            ],
+            "responseSha256": "sha256:5a6af98ae1070a6a900136b6e186cad315b9b12c7f14d63f9f2645d8a24661eb"
+          },
+          {
+            "name": "@clossys/writer",
+            "status": "found",
+            "latest": "0.4.1",
+            "versions": [
+              {
+                "version": "0.4.1",
+                "integrity": "sha512-OlVVePUOypHOPe9dj/jjedb5ozGZwOXmAOHb8CGtvxm2YKEJgtBQ5TjI1RFRzNfDJVZGfpvVKhJOuzaDloCxrg==",
+                "tarball": "https://registry.npmjs.org/@clossys/writer/-/writer-0.4.1.tgz",
+                "deprecated": false,
+                "publishedAt": "2026-09-01T10:00:00.000Z",
+                "hasAttestations": true
+              }
+            ],
+            "responseSha256": "sha256:15900e34cacdbb745fa24ce03fde86cde235162c9c1f542cc7e7595d7af0a27e"
+          }
+        ]
+      },
+      "canonical": "{\"packages\":[{\"latest\":\"0.2.7\",\"name\":\"@clossys/designer\",\"status\":\"found\",\"versions\":[{\"deprecated\":false,\"hasAttestations\":true,\"integrity\":\"sha512-KCYW7zKvm8K4VBmqoPXz2tm9eFV4AAd3lMue0lCN+bY1AV08rHx8g763ewcy42YQy99oVDmZBs+KQxzavBxzPA==\",\"publishedAt\":\"2026-09-01T10:00:00.000Z\",\"tarball\":\"https://registry.npmjs.org/@clossys/designer/-/designer-0.2.7.tgz\",\"version\":\"0.2.7\"}]},{\"latest\":\"1.3.0\",\"name\":\"@clossys/starter\",\"status\":\"found\",\"versions\":[{\"deprecated\":false,\"hasAttestations\":true,\"integrity\":\"sha512-TJTam2EghNKkYT2BvJSMw73qkZAt5Sd/F9iI0gG5usyYfk5YuQTGgYGml+rmiaxQ4pPRjnXHOgJ452JQyFH88g==\",\"publishedAt\":\"2026-09-01T10:00:00.000Z\",\"tarball\":\"https://registry.npmjs.org/@clossys/starter/-/starter-1.3.0.tgz\",\"version\":\"1.3.0\"}]},{\"latest\":\"0.4.1\",\"name\":\"@clossys/writer\",\"status\":\"found\",\"versions\":[{\"deprecated\":false,\"hasAttestations\":true,\"integrity\":\"sha512-OlVVePUOypHOPe9dj/jjedb5ozGZwOXmAOHb8CGtvxm2YKEJgtBQ5TjI1RFRzNfDJVZGfpvVKhJOuzaDloCxrg==\",\"publishedAt\":\"2026-09-01T10:00:00.000Z\",\"tarball\":\"https://registry.npmjs.org/@clossys/writer/-/writer-0.4.1.tgz\",\"version\":\"0.4.1\"}]}],\"registry\":\"https://registry.npmjs.org\"}",
+      "digest": "sha256:5d1d2c011dd782c853be31332640c0fd873be70f92080d80a3d91fb9100982fd"
+    },
+    {
+      "name": "two-versions",
+      "note": "base with a second, older writer version recorded after the one latest names.",
+      "snapshot": {
+        "schemaVersion": 1,
+        "kind": "clossys.registry-snapshot",
+        "registry": "https://registry.npmjs.org",
+        "fetchedAt": "2026-09-24T12:00:00Z",
+        "fetchedBy": {
+          "name": "@clossys/launcher",
+          "version": "0.9.30"
+        },
+        "packages": [
+          {
+            "name": "@clossys/writer",
+            "status": "found",
+            "latest": "0.4.1",
+            "versions": [
+              {
+                "version": "0.4.1",
+                "integrity": "sha512-OlVVePUOypHOPe9dj/jjedb5ozGZwOXmAOHb8CGtvxm2YKEJgtBQ5TjI1RFRzNfDJVZGfpvVKhJOuzaDloCxrg==",
+                "tarball": "https://registry.npmjs.org/@clossys/writer/-/writer-0.4.1.tgz",
+                "deprecated": false,
+                "publishedAt": "2026-09-01T10:00:00.000Z",
+                "hasAttestations": true
+              },
+              {
+                "version": "0.3.9",
+                "integrity": "sha512-FEUtDhyPXm7M7MhsQgQBbgPsXXjB0z8CX+rvZqKVqMhQhtfTPa3HCJtOoRzhy3uEHa4a0ZPhX+41jVPKznmXgA==",
+                "tarball": "https://registry.npmjs.org/@clossys/writer/-/writer-0.3.9.tgz",
+                "deprecated": false,
+                "publishedAt": "2026-08-01T10:00:00.000Z",
+                "hasAttestations": true
+              }
+            ],
+            "responseSha256": "sha256:3fa8a0bf51ecc3d00f28c44c1012dc68c66ba0e87de94553bb2336fa6386e514"
+          },
+          {
+            "name": "@clossys/starter",
+            "status": "found",
+            "latest": "1.3.0",
+            "versions": [
+              {
+                "version": "1.3.0",
+                "integrity": "sha512-TJTam2EghNKkYT2BvJSMw73qkZAt5Sd/F9iI0gG5usyYfk5YuQTGgYGml+rmiaxQ4pPRjnXHOgJ452JQyFH88g==",
+                "tarball": "https://registry.npmjs.org/@clossys/starter/-/starter-1.3.0.tgz",
+                "deprecated": false,
+                "publishedAt": "2026-09-01T10:00:00.000Z",
+                "hasAttestations": true
+              }
+            ],
+            "responseSha256": "sha256:debfab461f064e5810e7a19a82abbb806e445ae23dfca55df7459b5f72be789e"
+          },
+          {
+            "name": "@clossys/designer",
+            "status": "found",
+            "latest": "0.2.7",
+            "versions": [
+              {
+                "version": "0.2.7",
+                "integrity": "sha512-KCYW7zKvm8K4VBmqoPXz2tm9eFV4AAd3lMue0lCN+bY1AV08rHx8g763ewcy42YQy99oVDmZBs+KQxzavBxzPA==",
+                "tarball": "https://registry.npmjs.org/@clossys/designer/-/designer-0.2.7.tgz",
+                "deprecated": false,
+                "publishedAt": "2026-09-01T10:00:00.000Z",
+                "hasAttestations": true
+              }
+            ],
+            "responseSha256": "sha256:e5330369529d184b0dcb35d69f0718f18587aa848af56c86e476336d1aef6b54"
+          }
+        ]
+      },
+      "canonical": "{\"packages\":[{\"latest\":\"0.2.7\",\"name\":\"@clossys/designer\",\"status\":\"found\",\"versions\":[{\"deprecated\":false,\"hasAttestations\":true,\"integrity\":\"sha512-KCYW7zKvm8K4VBmqoPXz2tm9eFV4AAd3lMue0lCN+bY1AV08rHx8g763ewcy42YQy99oVDmZBs+KQxzavBxzPA==\",\"publishedAt\":\"2026-09-01T10:00:00.000Z\",\"tarball\":\"https://registry.npmjs.org/@clossys/designer/-/designer-0.2.7.tgz\",\"version\":\"0.2.7\"}]},{\"latest\":\"1.3.0\",\"name\":\"@clossys/starter\",\"status\":\"found\",\"versions\":[{\"deprecated\":false,\"hasAttestations\":true,\"integrity\":\"sha512-TJTam2EghNKkYT2BvJSMw73qkZAt5Sd/F9iI0gG5usyYfk5YuQTGgYGml+rmiaxQ4pPRjnXHOgJ452JQyFH88g==\",\"publishedAt\":\"2026-09-01T10:00:00.000Z\",\"tarball\":\"https://registry.npmjs.org/@clossys/starter/-/starter-1.3.0.tgz\",\"version\":\"1.3.0\"}]},{\"latest\":\"0.4.1\",\"name\":\"@clossys/writer\",\"status\":\"found\",\"versions\":[{\"deprecated\":false,\"hasAttestations\":true,\"integrity\":\"sha512-FEUtDhyPXm7M7MhsQgQBbgPsXXjB0z8CX+rvZqKVqMhQhtfTPa3HCJtOoRzhy3uEHa4a0ZPhX+41jVPKznmXgA==\",\"publishedAt\":\"2026-08-01T10:00:00.000Z\",\"tarball\":\"https://registry.npmjs.org/@clossys/writer/-/writer-0.3.9.tgz\",\"version\":\"0.3.9\"},{\"deprecated\":false,\"hasAttestations\":true,\"integrity\":\"sha512-OlVVePUOypHOPe9dj/jjedb5ozGZwOXmAOHb8CGtvxm2YKEJgtBQ5TjI1RFRzNfDJVZGfpvVKhJOuzaDloCxrg==\",\"publishedAt\":\"2026-09-01T10:00:00.000Z\",\"tarball\":\"https://registry.npmjs.org/@clossys/writer/-/writer-0.4.1.tgz\",\"version\":\"0.4.1\"}]}],\"registry\":\"https://registry.npmjs.org\"}",
+      "digest": "sha256:6c9e1126ca0e6513195821873c24485792db72003ebd30fd01e49f827f7618d6"
+    },
+    {
+      "name": "two-versions-reordered",
+      "note": "two-versions with writer's versions written in the other order. Same digest as two-versions.",
+      "snapshot": {
+        "schemaVersion": 1,
+        "kind": "clossys.registry-snapshot",
+        "registry": "https://registry.npmjs.org",
+        "fetchedAt": "2026-09-24T12:00:00Z",
+        "fetchedBy": {
+          "name": "@clossys/launcher",
+          "version": "0.9.30"
+        },
+        "packages": [
+          {
+            "name": "@clossys/writer",
+            "status": "found",
+            "latest": "0.4.1",
+            "versions": [
+              {
+                "version": "0.3.9",
+                "integrity": "sha512-FEUtDhyPXm7M7MhsQgQBbgPsXXjB0z8CX+rvZqKVqMhQhtfTPa3HCJtOoRzhy3uEHa4a0ZPhX+41jVPKznmXgA==",
+                "tarball": "https://registry.npmjs.org/@clossys/writer/-/writer-0.3.9.tgz",
+                "deprecated": false,
+                "publishedAt": "2026-08-01T10:00:00.000Z",
+                "hasAttestations": true
+              },
+              {
+                "version": "0.4.1",
+                "integrity": "sha512-OlVVePUOypHOPe9dj/jjedb5ozGZwOXmAOHb8CGtvxm2YKEJgtBQ5TjI1RFRzNfDJVZGfpvVKhJOuzaDloCxrg==",
+                "tarball": "https://registry.npmjs.org/@clossys/writer/-/writer-0.4.1.tgz",
+                "deprecated": false,
+                "publishedAt": "2026-09-01T10:00:00.000Z",
+                "hasAttestations": true
+              }
+            ],
+            "responseSha256": "sha256:3fa8a0bf51ecc3d00f28c44c1012dc68c66ba0e87de94553bb2336fa6386e514"
+          },
+          {
+            "name": "@clossys/starter",
+            "status": "found",
+            "latest": "1.3.0",
+            "versions": [
+              {
+                "version": "1.3.0",
+                "integrity": "sha512-TJTam2EghNKkYT2BvJSMw73qkZAt5Sd/F9iI0gG5usyYfk5YuQTGgYGml+rmiaxQ4pPRjnXHOgJ452JQyFH88g==",
+                "tarball": "https://registry.npmjs.org/@clossys/starter/-/starter-1.3.0.tgz",
+                "deprecated": false,
+                "publishedAt": "2026-09-01T10:00:00.000Z",
+                "hasAttestations": true
+              }
+            ],
+            "responseSha256": "sha256:debfab461f064e5810e7a19a82abbb806e445ae23dfca55df7459b5f72be789e"
+          },
+          {
+            "name": "@clossys/designer",
+            "status": "found",
+            "latest": "0.2.7",
+            "versions": [
+              {
+                "version": "0.2.7",
+                "integrity": "sha512-KCYW7zKvm8K4VBmqoPXz2tm9eFV4AAd3lMue0lCN+bY1AV08rHx8g763ewcy42YQy99oVDmZBs+KQxzavBxzPA==",
+                "tarball": "https://registry.npmjs.org/@clossys/designer/-/designer-0.2.7.tgz",
+                "deprecated": false,
+                "publishedAt": "2026-09-01T10:00:00.000Z",
+                "hasAttestations": true
+              }
+            ],
+            "responseSha256": "sha256:e5330369529d184b0dcb35d69f0718f18587aa848af56c86e476336d1aef6b54"
+          }
+        ]
+      },
+      "canonical": "{\"packages\":[{\"latest\":\"0.2.7\",\"name\":\"@clossys/designer\",\"status\":\"found\",\"versions\":[{\"deprecated\":false,\"hasAttestations\":true,\"integrity\":\"sha512-KCYW7zKvm8K4VBmqoPXz2tm9eFV4AAd3lMue0lCN+bY1AV08rHx8g763ewcy42YQy99oVDmZBs+KQxzavBxzPA==\",\"publishedAt\":\"2026-09-01T10:00:00.000Z\",\"tarball\":\"https://registry.npmjs.org/@clossys/designer/-/designer-0.2.7.tgz\",\"version\":\"0.2.7\"}]},{\"latest\":\"1.3.0\",\"name\":\"@clossys/starter\",\"status\":\"found\",\"versions\":[{\"deprecated\":false,\"hasAttestations\":true,\"integrity\":\"sha512-TJTam2EghNKkYT2BvJSMw73qkZAt5Sd/F9iI0gG5usyYfk5YuQTGgYGml+rmiaxQ4pPRjnXHOgJ452JQyFH88g==\",\"publishedAt\":\"2026-09-01T10:00:00.000Z\",\"tarball\":\"https://registry.npmjs.org/@clossys/starter/-/starter-1.3.0.tgz\",\"version\":\"1.3.0\"}]},{\"latest\":\"0.4.1\",\"name\":\"@clossys/writer\",\"status\":\"found\",\"versions\":[{\"deprecated\":false,\"hasAttestations\":true,\"integrity\":\"sha512-FEUtDhyPXm7M7MhsQgQBbgPsXXjB0z8CX+rvZqKVqMhQhtfTPa3HCJtOoRzhy3uEHa4a0ZPhX+41jVPKznmXgA==\",\"publishedAt\":\"2026-08-01T10:00:00.000Z\",\"tarball\":\"https://registry.npmjs.org/@clossys/writer/-/writer-0.3.9.tgz\",\"version\":\"0.3.9\"},{\"deprecated\":false,\"hasAttestations\":true,\"integrity\":\"sha512-OlVVePUOypHOPe9dj/jjedb5ozGZwOXmAOHb8CGtvxm2YKEJgtBQ5TjI1RFRzNfDJVZGfpvVKhJOuzaDloCxrg==\",\"publishedAt\":\"2026-09-01T10:00:00.000Z\",\"tarball\":\"https://registry.npmjs.org/@clossys/writer/-/writer-0.4.1.tgz\",\"version\":\"0.4.1\"}]}],\"registry\":\"https://registry.npmjs.org\"}",
+      "digest": "sha256:6c9e1126ca0e6513195821873c24485792db72003ebd30fd01e49f827f7618d6"
+    },
+    {
+      "name": "change-registry",
+      "note": "base with another registry. A different digest.",
+      "snapshot": {
+        "schemaVersion": 1,
+        "kind": "clossys.registry-snapshot",
+        "registry": "https://registry.example.com",
+        "fetchedAt": "2026-09-24T12:00:00Z",
+        "fetchedBy": {
+          "name": "@clossys/launcher",
+          "version": "0.9.30"
+        },
+        "packages": [
+          {
+            "name": "@clossys/writer",
+            "status": "found",
+            "latest": "0.4.1",
+            "versions": [
+              {
+                "version": "0.4.1",
+                "integrity": "sha512-OlVVePUOypHOPe9dj/jjedb5ozGZwOXmAOHb8CGtvxm2YKEJgtBQ5TjI1RFRzNfDJVZGfpvVKhJOuzaDloCxrg==",
+                "tarball": "https://registry.npmjs.org/@clossys/writer/-/writer-0.4.1.tgz",
+                "deprecated": false,
+                "publishedAt": "2026-09-01T10:00:00.000Z",
+                "hasAttestations": true
+              }
+            ],
+            "responseSha256": "sha256:3fa8a0bf51ecc3d00f28c44c1012dc68c66ba0e87de94553bb2336fa6386e514"
+          },
+          {
+            "name": "@clossys/starter",
+            "status": "found",
+            "latest": "1.3.0",
+            "versions": [
+              {
+                "version": "1.3.0",
+                "integrity": "sha512-TJTam2EghNKkYT2BvJSMw73qkZAt5Sd/F9iI0gG5usyYfk5YuQTGgYGml+rmiaxQ4pPRjnXHOgJ452JQyFH88g==",
+                "tarball": "https://registry.npmjs.org/@clossys/starter/-/starter-1.3.0.tgz",
+                "deprecated": false,
+                "publishedAt": "2026-09-01T10:00:00.000Z",
+                "hasAttestations": true
+              }
+            ],
+            "responseSha256": "sha256:debfab461f064e5810e7a19a82abbb806e445ae23dfca55df7459b5f72be789e"
+          },
+          {
+            "name": "@clossys/designer",
+            "status": "found",
+            "latest": "0.2.7",
+            "versions": [
+              {
+                "version": "0.2.7",
+                "integrity": "sha512-KCYW7zKvm8K4VBmqoPXz2tm9eFV4AAd3lMue0lCN+bY1AV08rHx8g763ewcy42YQy99oVDmZBs+KQxzavBxzPA==",
+                "tarball": "https://registry.npmjs.org/@clossys/designer/-/designer-0.2.7.tgz",
+                "deprecated": false,
+                "publishedAt": "2026-09-01T10:00:00.000Z",
+                "hasAttestations": true
+              }
+            ],
+            "responseSha256": "sha256:e5330369529d184b0dcb35d69f0718f18587aa848af56c86e476336d1aef6b54"
+          }
+        ]
+      },
+      "canonical": "{\"packages\":[{\"latest\":\"0.2.7\",\"name\":\"@clossys/designer\",\"status\":\"found\",\"versions\":[{\"deprecated\":false,\"hasAttestations\":true,\"integrity\":\"sha512-KCYW7zKvm8K4VBmqoPXz2tm9eFV4AAd3lMue0lCN+bY1AV08rHx8g763ewcy42YQy99oVDmZBs+KQxzavBxzPA==\",\"publishedAt\":\"2026-09-01T10:00:00.000Z\",\"tarball\":\"https://registry.npmjs.org/@clossys/designer/-/designer-0.2.7.tgz\",\"version\":\"0.2.7\"}]},{\"latest\":\"1.3.0\",\"name\":\"@clossys/starter\",\"status\":\"found\",\"versions\":[{\"deprecated\":false,\"hasAttestations\":true,\"integrity\":\"sha512-TJTam2EghNKkYT2BvJSMw73qkZAt5Sd/F9iI0gG5usyYfk5YuQTGgYGml+rmiaxQ4pPRjnXHOgJ452JQyFH88g==\",\"publishedAt\":\"2026-09-01T10:00:00.000Z\",\"tarball\":\"https://registry.npmjs.org/@clossys/starter/-/starter-1.3.0.tgz\",\"version\":\"1.3.0\"}]},{\"latest\":\"0.4.1\",\"name\":\"@clossys/writer\",\"status\":\"found\",\"versions\":[{\"deprecated\":false,\"hasAttestations\":true,\"integrity\":\"sha512-OlVVePUOypHOPe9dj/jjedb5ozGZwOXmAOHb8CGtvxm2YKEJgtBQ5TjI1RFRzNfDJVZGfpvVKhJOuzaDloCxrg==\",\"publishedAt\":\"2026-09-01T10:00:00.000Z\",\"tarball\":\"https://registry.npmjs.org/@clossys/writer/-/writer-0.4.1.tgz\",\"version\":\"0.4.1\"}]}],\"registry\":\"https://registry.example.com\"}",
+      "digest": "sha256:300c50eeeeeb1fcf5271ae0917e5e5dc26471be294571debd105d78f31686972"
+    },
+    {
+      "name": "change-latest",
+      "note": "base with writer's latest naming a version the snapshot does not record. A different digest.",
+      "snapshot": {
+        "schemaVersion": 1,
+        "kind": "clossys.registry-snapshot",
+        "registry": "https://registry.npmjs.org",
+        "fetchedAt": "2026-09-24T12:00:00Z",
+        "fetchedBy": {
+          "name": "@clossys/launcher",
+          "version": "0.9.30"
+        },
+        "packages": [
+          {
+            "name": "@clossys/writer",
+            "status": "found",
+            "latest": "0.4.2",
+            "versions": [
+              {
+                "version": "0.4.1",
+                "integrity": "sha512-OlVVePUOypHOPe9dj/jjedb5ozGZwOXmAOHb8CGtvxm2YKEJgtBQ5TjI1RFRzNfDJVZGfpvVKhJOuzaDloCxrg==",
+                "tarball": "https://registry.npmjs.org/@clossys/writer/-/writer-0.4.1.tgz",
+                "deprecated": false,
+                "publishedAt": "2026-09-01T10:00:00.000Z",
+                "hasAttestations": true
+              }
+            ],
+            "responseSha256": "sha256:3fa8a0bf51ecc3d00f28c44c1012dc68c66ba0e87de94553bb2336fa6386e514"
+          },
+          {
+            "name": "@clossys/starter",
+            "status": "found",
+            "latest": "1.3.0",
+            "versions": [
+              {
+                "version": "1.3.0",
+                "integrity": "sha512-TJTam2EghNKkYT2BvJSMw73qkZAt5Sd/F9iI0gG5usyYfk5YuQTGgYGml+rmiaxQ4pPRjnXHOgJ452JQyFH88g==",
+                "tarball": "https://registry.npmjs.org/@clossys/starter/-/starter-1.3.0.tgz",
+                "deprecated": false,
+                "publishedAt": "2026-09-01T10:00:00.000Z",
+                "hasAttestations": true
+              }
+            ],
+            "responseSha256": "sha256:debfab461f064e5810e7a19a82abbb806e445ae23dfca55df7459b5f72be789e"
+          },
+          {
+            "name": "@clossys/designer",
+            "status": "found",
+            "latest": "0.2.7",
+            "versions": [
+              {
+                "version": "0.2.7",
+                "integrity": "sha512-KCYW7zKvm8K4VBmqoPXz2tm9eFV4AAd3lMue0lCN+bY1AV08rHx8g763ewcy42YQy99oVDmZBs+KQxzavBxzPA==",
+                "tarball": "https://registry.npmjs.org/@clossys/designer/-/designer-0.2.7.tgz",
+                "deprecated": false,
+                "publishedAt": "2026-09-01T10:00:00.000Z",
+                "hasAttestations": true
+              }
+            ],
+            "responseSha256": "sha256:e5330369529d184b0dcb35d69f0718f18587aa848af56c86e476336d1aef6b54"
+          }
+        ]
+      },
+      "canonical": "{\"packages\":[{\"latest\":\"0.2.7\",\"name\":\"@clossys/designer\",\"status\":\"found\",\"versions\":[{\"deprecated\":false,\"hasAttestations\":true,\"integrity\":\"sha512-KCYW7zKvm8K4VBmqoPXz2tm9eFV4AAd3lMue0lCN+bY1AV08rHx8g763ewcy42YQy99oVDmZBs+KQxzavBxzPA==\",\"publishedAt\":\"2026-09-01T10:00:00.000Z\",\"tarball\":\"https://registry.npmjs.org/@clossys/designer/-/designer-0.2.7.tgz\",\"version\":\"0.2.7\"}]},{\"latest\":\"1.3.0\",\"name\":\"@clossys/starter\",\"status\":\"found\",\"versions\":[{\"deprecated\":false,\"hasAttestations\":true,\"integrity\":\"sha512-TJTam2EghNKkYT2BvJSMw73qkZAt5Sd/F9iI0gG5usyYfk5YuQTGgYGml+rmiaxQ4pPRjnXHOgJ452JQyFH88g==\",\"publishedAt\":\"2026-09-01T10:00:00.000Z\",\"tarball\":\"https://registry.npmjs.org/@clossys/starter/-/starter-1.3.0.tgz\",\"version\":\"1.3.0\"}]},{\"latest\":\"0.4.2\",\"name\":\"@clossys/writer\",\"status\":\"found\",\"versions\":[{\"deprecated\":false,\"hasAttestations\":true,\"integrity\":\"sha512-OlVVePUOypHOPe9dj/jjedb5ozGZwOXmAOHb8CGtvxm2YKEJgtBQ5TjI1RFRzNfDJVZGfpvVKhJOuzaDloCxrg==\",\"publishedAt\":\"2026-09-01T10:00:00.000Z\",\"tarball\":\"https://registry.npmjs.org/@clossys/writer/-/writer-0.4.1.tgz\",\"version\":\"0.4.1\"}]}],\"registry\":\"https://registry.npmjs.org\"}",
+      "digest": "sha256:1ffa5ef899e185938bd16723df75eb168fa2a5a5c2b822ed573f13fe8893a4c6"
+    },
+    {
+      "name": "change-version",
+      "note": "base with writer's latest and its version entry both 0.4.2, everything else kept. A different digest.",
+      "snapshot": {
+        "schemaVersion": 1,
+        "kind": "clossys.registry-snapshot",
+        "registry": "https://registry.npmjs.org",
+        "fetchedAt": "2026-09-24T12:00:00Z",
+        "fetchedBy": {
+          "name": "@clossys/launcher",
+          "version": "0.9.30"
+        },
+        "packages": [
+          {
+            "name": "@clossys/writer",
+            "status": "found",
+            "latest": "0.4.2",
+            "versions": [
+              {
+                "version": "0.4.2",
+                "integrity": "sha512-OlVVePUOypHOPe9dj/jjedb5ozGZwOXmAOHb8CGtvxm2YKEJgtBQ5TjI1RFRzNfDJVZGfpvVKhJOuzaDloCxrg==",
+                "tarball": "https://registry.npmjs.org/@clossys/writer/-/writer-0.4.1.tgz",
+                "deprecated": false,
+                "publishedAt": "2026-09-01T10:00:00.000Z",
+                "hasAttestations": true
+              }
+            ],
+            "responseSha256": "sha256:3fa8a0bf51ecc3d00f28c44c1012dc68c66ba0e87de94553bb2336fa6386e514"
+          },
+          {
+            "name": "@clossys/starter",
+            "status": "found",
+            "latest": "1.3.0",
+            "versions": [
+              {
+                "version": "1.3.0",
+                "integrity": "sha512-TJTam2EghNKkYT2BvJSMw73qkZAt5Sd/F9iI0gG5usyYfk5YuQTGgYGml+rmiaxQ4pPRjnXHOgJ452JQyFH88g==",
+                "tarball": "https://registry.npmjs.org/@clossys/starter/-/starter-1.3.0.tgz",
+                "deprecated": false,
+                "publishedAt": "2026-09-01T10:00:00.000Z",
+                "hasAttestations": true
+              }
+            ],
+            "responseSha256": "sha256:debfab461f064e5810e7a19a82abbb806e445ae23dfca55df7459b5f72be789e"
+          },
+          {
+            "name": "@clossys/designer",
+            "status": "found",
+            "latest": "0.2.7",
+            "versions": [
+              {
+                "version": "0.2.7",
+                "integrity": "sha512-KCYW7zKvm8K4VBmqoPXz2tm9eFV4AAd3lMue0lCN+bY1AV08rHx8g763ewcy42YQy99oVDmZBs+KQxzavBxzPA==",
+                "tarball": "https://registry.npmjs.org/@clossys/designer/-/designer-0.2.7.tgz",
+                "deprecated": false,
+                "publishedAt": "2026-09-01T10:00:00.000Z",
+                "hasAttestations": true
+              }
+            ],
+            "responseSha256": "sha256:e5330369529d184b0dcb35d69f0718f18587aa848af56c86e476336d1aef6b54"
+          }
+        ]
+      },
+      "canonical": "{\"packages\":[{\"latest\":\"0.2.7\",\"name\":\"@clossys/designer\",\"status\":\"found\",\"versions\":[{\"deprecated\":false,\"hasAttestations\":true,\"integrity\":\"sha512-KCYW7zKvm8K4VBmqoPXz2tm9eFV4AAd3lMue0lCN+bY1AV08rHx8g763ewcy42YQy99oVDmZBs+KQxzavBxzPA==\",\"publishedAt\":\"2026-09-01T10:00:00.000Z\",\"tarball\":\"https://registry.npmjs.org/@clossys/designer/-/designer-0.2.7.tgz\",\"version\":\"0.2.7\"}]},{\"latest\":\"1.3.0\",\"name\":\"@clossys/starter\",\"status\":\"found\",\"versions\":[{\"deprecated\":false,\"hasAttestations\":true,\"integrity\":\"sha512-TJTam2EghNKkYT2BvJSMw73qkZAt5Sd/F9iI0gG5usyYfk5YuQTGgYGml+rmiaxQ4pPRjnXHOgJ452JQyFH88g==\",\"publishedAt\":\"2026-09-01T10:00:00.000Z\",\"tarball\":\"https://registry.npmjs.org/@clossys/starter/-/starter-1.3.0.tgz\",\"version\":\"1.3.0\"}]},{\"latest\":\"0.4.2\",\"name\":\"@clossys/writer\",\"status\":\"found\",\"versions\":[{\"deprecated\":false,\"hasAttestations\":true,\"integrity\":\"sha512-OlVVePUOypHOPe9dj/jjedb5ozGZwOXmAOHb8CGtvxm2YKEJgtBQ5TjI1RFRzNfDJVZGfpvVKhJOuzaDloCxrg==\",\"publishedAt\":\"2026-09-01T10:00:00.000Z\",\"tarball\":\"https://registry.npmjs.org/@clossys/writer/-/writer-0.4.1.tgz\",\"version\":\"0.4.2\"}]}],\"registry\":\"https://registry.npmjs.org\"}",
+      "digest": "sha256:ad8bb430e6954e4eb3af0d1250b2b5ce9a227dc03607248d889fd889dd53d99c"
+    },
+    {
+      "name": "change-integrity",
+      "note": "base with another integrity value for writer. A different digest.",
+      "snapshot": {
+        "schemaVersion": 1,
+        "kind": "clossys.registry-snapshot",
+        "registry": "https://registry.npmjs.org",
+        "fetchedAt": "2026-09-24T12:00:00Z",
+        "fetchedBy": {
+          "name": "@clossys/launcher",
+          "version": "0.9.30"
+        },
+        "packages": [
+          {
+            "name": "@clossys/writer",
+            "status": "found",
+            "latest": "0.4.1",
+            "versions": [
+              {
+                "version": "0.4.1",
+                "integrity": "sha512-YQlUpVedr81Cqp/g2YQ8+WZG8/4AZ0WlacTY8C70fYz4YWEnQOo/0IPecsiibzYlnWpYyHwpKa4av9YZR8/T4w==",
+                "tarball": "https://registry.npmjs.org/@clossys/writer/-/writer-0.4.1.tgz",
+                "deprecated": false,
+                "publishedAt": "2026-09-01T10:00:00.000Z",
+                "hasAttestations": true
+              }
+            ],
+            "responseSha256": "sha256:3fa8a0bf51ecc3d00f28c44c1012dc68c66ba0e87de94553bb2336fa6386e514"
+          },
+          {
+            "name": "@clossys/starter",
+            "status": "found",
+            "latest": "1.3.0",
+            "versions": [
+              {
+                "version": "1.3.0",
+                "integrity": "sha512-TJTam2EghNKkYT2BvJSMw73qkZAt5Sd/F9iI0gG5usyYfk5YuQTGgYGml+rmiaxQ4pPRjnXHOgJ452JQyFH88g==",
+                "tarball": "https://registry.npmjs.org/@clossys/starter/-/starter-1.3.0.tgz",
+                "deprecated": false,
+                "publishedAt": "2026-09-01T10:00:00.000Z",
+                "hasAttestations": true
+              }
+            ],
+            "responseSha256": "sha256:debfab461f064e5810e7a19a82abbb806e445ae23dfca55df7459b5f72be789e"
+          },
+          {
+            "name": "@clossys/designer",
+            "status": "found",
+            "latest": "0.2.7",
+            "versions": [
+              {
+                "version": "0.2.7",
+                "integrity": "sha512-KCYW7zKvm8K4VBmqoPXz2tm9eFV4AAd3lMue0lCN+bY1AV08rHx8g763ewcy42YQy99oVDmZBs+KQxzavBxzPA==",
+                "tarball": "https://registry.npmjs.org/@clossys/designer/-/designer-0.2.7.tgz",
+                "deprecated": false,
+                "publishedAt": "2026-09-01T10:00:00.000Z",
+                "hasAttestations": true
+              }
+            ],
+            "responseSha256": "sha256:e5330369529d184b0dcb35d69f0718f18587aa848af56c86e476336d1aef6b54"
+          }
+        ]
+      },
+      "canonical": "{\"packages\":[{\"latest\":\"0.2.7\",\"name\":\"@clossys/designer\",\"status\":\"found\",\"versions\":[{\"deprecated\":false,\"hasAttestations\":true,\"integrity\":\"sha512-KCYW7zKvm8K4VBmqoPXz2tm9eFV4AAd3lMue0lCN+bY1AV08rHx8g763ewcy42YQy99oVDmZBs+KQxzavBxzPA==\",\"publishedAt\":\"2026-09-01T10:00:00.000Z\",\"tarball\":\"https://registry.npmjs.org/@clossys/designer/-/designer-0.2.7.tgz\",\"version\":\"0.2.7\"}]},{\"latest\":\"1.3.0\",\"name\":\"@clossys/starter\",\"status\":\"found\",\"versions\":[{\"deprecated\":false,\"hasAttestations\":true,\"integrity\":\"sha512-TJTam2EghNKkYT2BvJSMw73qkZAt5Sd/F9iI0gG5usyYfk5YuQTGgYGml+rmiaxQ4pPRjnXHOgJ452JQyFH88g==\",\"publishedAt\":\"2026-09-01T10:00:00.000Z\",\"tarball\":\"https://registry.npmjs.org/@clossys/starter/-/starter-1.3.0.tgz\",\"version\":\"1.3.0\"}]},{\"latest\":\"0.4.1\",\"name\":\"@clossys/writer\",\"status\":\"found\",\"versions\":[{\"deprecated\":false,\"hasAttestations\":true,\"integrity\":\"sha512-YQlUpVedr81Cqp/g2YQ8+WZG8/4AZ0WlacTY8C70fYz4YWEnQOo/0IPecsiibzYlnWpYyHwpKa4av9YZR8/T4w==\",\"publishedAt\":\"2026-09-01T10:00:00.000Z\",\"tarball\":\"https://registry.npmjs.org/@clossys/writer/-/writer-0.4.1.tgz\",\"version\":\"0.4.1\"}]}],\"registry\":\"https://registry.npmjs.org\"}",
+      "digest": "sha256:21463261a04d6063ccfd9d2316749be1064df5e8a1733f78618bdfec1f5537e6"
+    },
+    {
+      "name": "change-tarball",
+      "note": "base with another tarball URL for writer. A different digest.",
+      "snapshot": {
+        "schemaVersion": 1,
+        "kind": "clossys.registry-snapshot",
+        "registry": "https://registry.npmjs.org",
+        "fetchedAt": "2026-09-24T12:00:00Z",
+        "fetchedBy": {
+          "name": "@clossys/launcher",
+          "version": "0.9.30"
+        },
+        "packages": [
+          {
+            "name": "@clossys/writer",
+            "status": "found",
+            "latest": "0.4.1",
+            "versions": [
+              {
+                "version": "0.4.1",
+                "integrity": "sha512-OlVVePUOypHOPe9dj/jjedb5ozGZwOXmAOHb8CGtvxm2YKEJgtBQ5TjI1RFRzNfDJVZGfpvVKhJOuzaDloCxrg==",
+                "tarball": "https://registry.npmjs.org/@clossys/writer/-/writer-0.4.1-rebuilt.tgz",
+                "deprecated": false,
+                "publishedAt": "2026-09-01T10:00:00.000Z",
+                "hasAttestations": true
+              }
+            ],
+            "responseSha256": "sha256:3fa8a0bf51ecc3d00f28c44c1012dc68c66ba0e87de94553bb2336fa6386e514"
+          },
+          {
+            "name": "@clossys/starter",
+            "status": "found",
+            "latest": "1.3.0",
+            "versions": [
+              {
+                "version": "1.3.0",
+                "integrity": "sha512-TJTam2EghNKkYT2BvJSMw73qkZAt5Sd/F9iI0gG5usyYfk5YuQTGgYGml+rmiaxQ4pPRjnXHOgJ452JQyFH88g==",
+                "tarball": "https://registry.npmjs.org/@clossys/starter/-/starter-1.3.0.tgz",
+                "deprecated": false,
+                "publishedAt": "2026-09-01T10:00:00.000Z",
+                "hasAttestations": true
+              }
+            ],
+            "responseSha256": "sha256:debfab461f064e5810e7a19a82abbb806e445ae23dfca55df7459b5f72be789e"
+          },
+          {
+            "name": "@clossys/designer",
+            "status": "found",
+            "latest": "0.2.7",
+            "versions": [
+              {
+                "version": "0.2.7",
+                "integrity": "sha512-KCYW7zKvm8K4VBmqoPXz2tm9eFV4AAd3lMue0lCN+bY1AV08rHx8g763ewcy42YQy99oVDmZBs+KQxzavBxzPA==",
+                "tarball": "https://registry.npmjs.org/@clossys/designer/-/designer-0.2.7.tgz",
+                "deprecated": false,
+                "publishedAt": "2026-09-01T10:00:00.000Z",
+                "hasAttestations": true
+              }
+            ],
+            "responseSha256": "sha256:e5330369529d184b0dcb35d69f0718f18587aa848af56c86e476336d1aef6b54"
+          }
+        ]
+      },
+      "canonical": "{\"packages\":[{\"latest\":\"0.2.7\",\"name\":\"@clossys/designer\",\"status\":\"found\",\"versions\":[{\"deprecated\":false,\"hasAttestations\":true,\"integrity\":\"sha512-KCYW7zKvm8K4VBmqoPXz2tm9eFV4AAd3lMue0lCN+bY1AV08rHx8g763ewcy42YQy99oVDmZBs+KQxzavBxzPA==\",\"publishedAt\":\"2026-09-01T10:00:00.000Z\",\"tarball\":\"https://registry.npmjs.org/@clossys/designer/-/designer-0.2.7.tgz\",\"version\":\"0.2.7\"}]},{\"latest\":\"1.3.0\",\"name\":\"@clossys/starter\",\"status\":\"found\",\"versions\":[{\"deprecated\":false,\"hasAttestations\":true,\"integrity\":\"sha512-TJTam2EghNKkYT2BvJSMw73qkZAt5Sd/F9iI0gG5usyYfk5YuQTGgYGml+rmiaxQ4pPRjnXHOgJ452JQyFH88g==\",\"publishedAt\":\"2026-09-01T10:00:00.000Z\",\"tarball\":\"https://registry.npmjs.org/@clossys/starter/-/starter-1.3.0.tgz\",\"version\":\"1.3.0\"}]},{\"latest\":\"0.4.1\",\"name\":\"@clossys/writer\",\"status\":\"found\",\"versions\":[{\"deprecated\":false,\"hasAttestations\":true,\"integrity\":\"sha512-OlVVePUOypHOPe9dj/jjedb5ozGZwOXmAOHb8CGtvxm2YKEJgtBQ5TjI1RFRzNfDJVZGfpvVKhJOuzaDloCxrg==\",\"publishedAt\":\"2026-09-01T10:00:00.000Z\",\"tarball\":\"https://registry.npmjs.org/@clossys/writer/-/writer-0.4.1-rebuilt.tgz\",\"version\":\"0.4.1\"}]}],\"registry\":\"https://registry.npmjs.org\"}",
+      "digest": "sha256:afb696dcb5f5a5beb0f8cadd202e4ccd8b61d8c76e0803ae2d2c58beb47a185e"
+    },
+    {
+      "name": "change-deprecated",
+      "note": "base with writer's version deprecated. A different digest.",
+      "snapshot": {
+        "schemaVersion": 1,
+        "kind": "clossys.registry-snapshot",
+        "registry": "https://registry.npmjs.org",
+        "fetchedAt": "2026-09-24T12:00:00Z",
+        "fetchedBy": {
+          "name": "@clossys/launcher",
+          "version": "0.9.30"
+        },
+        "packages": [
+          {
+            "name": "@clossys/writer",
+            "status": "found",
+            "latest": "0.4.1",
+            "versions": [
+              {
+                "version": "0.4.1",
+                "integrity": "sha512-OlVVePUOypHOPe9dj/jjedb5ozGZwOXmAOHb8CGtvxm2YKEJgtBQ5TjI1RFRzNfDJVZGfpvVKhJOuzaDloCxrg==",
+                "tarball": "https://registry.npmjs.org/@clossys/writer/-/writer-0.4.1.tgz",
+                "deprecated": true,
+                "publishedAt": "2026-09-01T10:00:00.000Z",
+                "hasAttestations": true
+              }
+            ],
+            "responseSha256": "sha256:3fa8a0bf51ecc3d00f28c44c1012dc68c66ba0e87de94553bb2336fa6386e514"
+          },
+          {
+            "name": "@clossys/starter",
+            "status": "found",
+            "latest": "1.3.0",
+            "versions": [
+              {
+                "version": "1.3.0",
+                "integrity": "sha512-TJTam2EghNKkYT2BvJSMw73qkZAt5Sd/F9iI0gG5usyYfk5YuQTGgYGml+rmiaxQ4pPRjnXHOgJ452JQyFH88g==",
+                "tarball": "https://registry.npmjs.org/@clossys/starter/-/starter-1.3.0.tgz",
+                "deprecated": false,
+                "publishedAt": "2026-09-01T10:00:00.000Z",
+                "hasAttestations": true
+              }
+            ],
+            "responseSha256": "sha256:debfab461f064e5810e7a19a82abbb806e445ae23dfca55df7459b5f72be789e"
+          },
+          {
+            "name": "@clossys/designer",
+            "status": "found",
+            "latest": "0.2.7",
+            "versions": [
+              {
+                "version": "0.2.7",
+                "integrity": "sha512-KCYW7zKvm8K4VBmqoPXz2tm9eFV4AAd3lMue0lCN+bY1AV08rHx8g763ewcy42YQy99oVDmZBs+KQxzavBxzPA==",
+                "tarball": "https://registry.npmjs.org/@clossys/designer/-/designer-0.2.7.tgz",
+                "deprecated": false,
+                "publishedAt": "2026-09-01T10:00:00.000Z",
+                "hasAttestations": true
+              }
+            ],
+            "responseSha256": "sha256:e5330369529d184b0dcb35d69f0718f18587aa848af56c86e476336d1aef6b54"
+          }
+        ]
+      },
+      "canonical": "{\"packages\":[{\"latest\":\"0.2.7\",\"name\":\"@clossys/designer\",\"status\":\"found\",\"versions\":[{\"deprecated\":false,\"hasAttestations\":true,\"integrity\":\"sha512-KCYW7zKvm8K4VBmqoPXz2tm9eFV4AAd3lMue0lCN+bY1AV08rHx8g763ewcy42YQy99oVDmZBs+KQxzavBxzPA==\",\"publishedAt\":\"2026-09-01T10:00:00.000Z\",\"tarball\":\"https://registry.npmjs.org/@clossys/designer/-/designer-0.2.7.tgz\",\"version\":\"0.2.7\"}]},{\"latest\":\"1.3.0\",\"name\":\"@clossys/starter\",\"status\":\"found\",\"versions\":[{\"deprecated\":false,\"hasAttestations\":true,\"integrity\":\"sha512-TJTam2EghNKkYT2BvJSMw73qkZAt5Sd/F9iI0gG5usyYfk5YuQTGgYGml+rmiaxQ4pPRjnXHOgJ452JQyFH88g==\",\"publishedAt\":\"2026-09-01T10:00:00.000Z\",\"tarball\":\"https://registry.npmjs.org/@clossys/starter/-/starter-1.3.0.tgz\",\"version\":\"1.3.0\"}]},{\"latest\":\"0.4.1\",\"name\":\"@clossys/writer\",\"status\":\"found\",\"versions\":[{\"deprecated\":true,\"hasAttestations\":true,\"integrity\":\"sha512-OlVVePUOypHOPe9dj/jjedb5ozGZwOXmAOHb8CGtvxm2YKEJgtBQ5TjI1RFRzNfDJVZGfpvVKhJOuzaDloCxrg==\",\"publishedAt\":\"2026-09-01T10:00:00.000Z\",\"tarball\":\"https://registry.npmjs.org/@clossys/writer/-/writer-0.4.1.tgz\",\"version\":\"0.4.1\"}]}],\"registry\":\"https://registry.npmjs.org\"}",
+      "digest": "sha256:52a1899e92da32d041cf8c7a55da9c2d6c6a0cd6d7cd159ae7154bb7064d6cba"
+    },
+    {
+      "name": "change-published-at",
+      "note": "base with another publish time for writer. A different digest.",
+      "snapshot": {
+        "schemaVersion": 1,
+        "kind": "clossys.registry-snapshot",
+        "registry": "https://registry.npmjs.org",
+        "fetchedAt": "2026-09-24T12:00:00Z",
+        "fetchedBy": {
+          "name": "@clossys/launcher",
+          "version": "0.9.30"
+        },
+        "packages": [
+          {
+            "name": "@clossys/writer",
+            "status": "found",
+            "latest": "0.4.1",
+            "versions": [
+              {
+                "version": "0.4.1",
+                "integrity": "sha512-OlVVePUOypHOPe9dj/jjedb5ozGZwOXmAOHb8CGtvxm2YKEJgtBQ5TjI1RFRzNfDJVZGfpvVKhJOuzaDloCxrg==",
+                "tarball": "https://registry.npmjs.org/@clossys/writer/-/writer-0.4.1.tgz",
+                "deprecated": false,
+                "publishedAt": "2026-09-02T10:00:00.000Z",
+                "hasAttestations": true
+              }
+            ],
+            "responseSha256": "sha256:3fa8a0bf51ecc3d00f28c44c1012dc68c66ba0e87de94553bb2336fa6386e514"
+          },
+          {
+            "name": "@clossys/starter",
+            "status": "found",
+            "latest": "1.3.0",
+            "versions": [
+              {
+                "version": "1.3.0",
+                "integrity": "sha512-TJTam2EghNKkYT2BvJSMw73qkZAt5Sd/F9iI0gG5usyYfk5YuQTGgYGml+rmiaxQ4pPRjnXHOgJ452JQyFH88g==",
+                "tarball": "https://registry.npmjs.org/@clossys/starter/-/starter-1.3.0.tgz",
+                "deprecated": false,
+                "publishedAt": "2026-09-01T10:00:00.000Z",
+                "hasAttestations": true
+              }
+            ],
+            "responseSha256": "sha256:debfab461f064e5810e7a19a82abbb806e445ae23dfca55df7459b5f72be789e"
+          },
+          {
+            "name": "@clossys/designer",
+            "status": "found",
+            "latest": "0.2.7",
+            "versions": [
+              {
+                "version": "0.2.7",
+                "integrity": "sha512-KCYW7zKvm8K4VBmqoPXz2tm9eFV4AAd3lMue0lCN+bY1AV08rHx8g763ewcy42YQy99oVDmZBs+KQxzavBxzPA==",
+                "tarball": "https://registry.npmjs.org/@clossys/designer/-/designer-0.2.7.tgz",
+                "deprecated": false,
+                "publishedAt": "2026-09-01T10:00:00.000Z",
+                "hasAttestations": true
+              }
+            ],
+            "responseSha256": "sha256:e5330369529d184b0dcb35d69f0718f18587aa848af56c86e476336d1aef6b54"
+          }
+        ]
+      },
+      "canonical": "{\"packages\":[{\"latest\":\"0.2.7\",\"name\":\"@clossys/designer\",\"status\":\"found\",\"versions\":[{\"deprecated\":false,\"hasAttestations\":true,\"integrity\":\"sha512-KCYW7zKvm8K4VBmqoPXz2tm9eFV4AAd3lMue0lCN+bY1AV08rHx8g763ewcy42YQy99oVDmZBs+KQxzavBxzPA==\",\"publishedAt\":\"2026-09-01T10:00:00.000Z\",\"tarball\":\"https://registry.npmjs.org/@clossys/designer/-/designer-0.2.7.tgz\",\"version\":\"0.2.7\"}]},{\"latest\":\"1.3.0\",\"name\":\"@clossys/starter\",\"status\":\"found\",\"versions\":[{\"deprecated\":false,\"hasAttestations\":true,\"integrity\":\"sha512-TJTam2EghNKkYT2BvJSMw73qkZAt5Sd/F9iI0gG5usyYfk5YuQTGgYGml+rmiaxQ4pPRjnXHOgJ452JQyFH88g==\",\"publishedAt\":\"2026-09-01T10:00:00.000Z\",\"tarball\":\"https://registry.npmjs.org/@clossys/starter/-/starter-1.3.0.tgz\",\"version\":\"1.3.0\"}]},{\"latest\":\"0.4.1\",\"name\":\"@clossys/writer\",\"status\":\"found\",\"versions\":[{\"deprecated\":false,\"hasAttestations\":true,\"integrity\":\"sha512-OlVVePUOypHOPe9dj/jjedb5ozGZwOXmAOHb8CGtvxm2YKEJgtBQ5TjI1RFRzNfDJVZGfpvVKhJOuzaDloCxrg==\",\"publishedAt\":\"2026-09-02T10:00:00.000Z\",\"tarball\":\"https://registry.npmjs.org/@clossys/writer/-/writer-0.4.1.tgz\",\"version\":\"0.4.1\"}]}],\"registry\":\"https://registry.npmjs.org\"}",
+      "digest": "sha256:33ed3eb0b88a07175ec2e432771deadb994fd6531795a5500d9ef874971d1233"
+    },
+    {
+      "name": "change-attestations",
+      "note": "base with writer listing no attestations. A different digest.",
+      "snapshot": {
+        "schemaVersion": 1,
+        "kind": "clossys.registry-snapshot",
+        "registry": "https://registry.npmjs.org",
+        "fetchedAt": "2026-09-24T12:00:00Z",
+        "fetchedBy": {
+          "name": "@clossys/launcher",
+          "version": "0.9.30"
+        },
+        "packages": [
+          {
+            "name": "@clossys/writer",
+            "status": "found",
+            "latest": "0.4.1",
+            "versions": [
+              {
+                "version": "0.4.1",
+                "integrity": "sha512-OlVVePUOypHOPe9dj/jjedb5ozGZwOXmAOHb8CGtvxm2YKEJgtBQ5TjI1RFRzNfDJVZGfpvVKhJOuzaDloCxrg==",
+                "tarball": "https://registry.npmjs.org/@clossys/writer/-/writer-0.4.1.tgz",
+                "deprecated": false,
+                "publishedAt": "2026-09-01T10:00:00.000Z",
+                "hasAttestations": false
+              }
+            ],
+            "responseSha256": "sha256:3fa8a0bf51ecc3d00f28c44c1012dc68c66ba0e87de94553bb2336fa6386e514"
+          },
+          {
+            "name": "@clossys/starter",
+            "status": "found",
+            "latest": "1.3.0",
+            "versions": [
+              {
+                "version": "1.3.0",
+                "integrity": "sha512-TJTam2EghNKkYT2BvJSMw73qkZAt5Sd/F9iI0gG5usyYfk5YuQTGgYGml+rmiaxQ4pPRjnXHOgJ452JQyFH88g==",
+                "tarball": "https://registry.npmjs.org/@clossys/starter/-/starter-1.3.0.tgz",
+                "deprecated": false,
+                "publishedAt": "2026-09-01T10:00:00.000Z",
+                "hasAttestations": true
+              }
+            ],
+            "responseSha256": "sha256:debfab461f064e5810e7a19a82abbb806e445ae23dfca55df7459b5f72be789e"
+          },
+          {
+            "name": "@clossys/designer",
+            "status": "found",
+            "latest": "0.2.7",
+            "versions": [
+              {
+                "version": "0.2.7",
+                "integrity": "sha512-KCYW7zKvm8K4VBmqoPXz2tm9eFV4AAd3lMue0lCN+bY1AV08rHx8g763ewcy42YQy99oVDmZBs+KQxzavBxzPA==",
+                "tarball": "https://registry.npmjs.org/@clossys/designer/-/designer-0.2.7.tgz",
+                "deprecated": false,
+                "publishedAt": "2026-09-01T10:00:00.000Z",
+                "hasAttestations": true
+              }
+            ],
+            "responseSha256": "sha256:e5330369529d184b0dcb35d69f0718f18587aa848af56c86e476336d1aef6b54"
+          }
+        ]
+      },
+      "canonical": "{\"packages\":[{\"latest\":\"0.2.7\",\"name\":\"@clossys/designer\",\"status\":\"found\",\"versions\":[{\"deprecated\":false,\"hasAttestations\":true,\"integrity\":\"sha512-KCYW7zKvm8K4VBmqoPXz2tm9eFV4AAd3lMue0lCN+bY1AV08rHx8g763ewcy42YQy99oVDmZBs+KQxzavBxzPA==\",\"publishedAt\":\"2026-09-01T10:00:00.000Z\",\"tarball\":\"https://registry.npmjs.org/@clossys/designer/-/designer-0.2.7.tgz\",\"version\":\"0.2.7\"}]},{\"latest\":\"1.3.0\",\"name\":\"@clossys/starter\",\"status\":\"found\",\"versions\":[{\"deprecated\":false,\"hasAttestations\":true,\"integrity\":\"sha512-TJTam2EghNKkYT2BvJSMw73qkZAt5Sd/F9iI0gG5usyYfk5YuQTGgYGml+rmiaxQ4pPRjnXHOgJ452JQyFH88g==\",\"publishedAt\":\"2026-09-01T10:00:00.000Z\",\"tarball\":\"https://registry.npmjs.org/@clossys/starter/-/starter-1.3.0.tgz\",\"version\":\"1.3.0\"}]},{\"latest\":\"0.4.1\",\"name\":\"@clossys/writer\",\"status\":\"found\",\"versions\":[{\"deprecated\":false,\"hasAttestations\":false,\"integrity\":\"sha512-OlVVePUOypHOPe9dj/jjedb5ozGZwOXmAOHb8CGtvxm2YKEJgtBQ5TjI1RFRzNfDJVZGfpvVKhJOuzaDloCxrg==\",\"publishedAt\":\"2026-09-01T10:00:00.000Z\",\"tarball\":\"https://registry.npmjs.org/@clossys/writer/-/writer-0.4.1.tgz\",\"version\":\"0.4.1\"}]}],\"registry\":\"https://registry.npmjs.org\"}",
+      "digest": "sha256:af465daa564473793d94e0e87656baa4f2c78b9e926e79125f259780b3d1373e"
+    },
+    {
+      "name": "change-status",
+      "note": "base with designer not found. A different digest.",
+      "snapshot": {
+        "schemaVersion": 1,
+        "kind": "clossys.registry-snapshot",
+        "registry": "https://registry.npmjs.org",
+        "fetchedAt": "2026-09-24T12:00:00Z",
+        "fetchedBy": {
+          "name": "@clossys/launcher",
+          "version": "0.9.30"
+        },
+        "packages": [
+          {
+            "name": "@clossys/writer",
+            "status": "found",
+            "latest": "0.4.1",
+            "versions": [
+              {
+                "version": "0.4.1",
+                "integrity": "sha512-OlVVePUOypHOPe9dj/jjedb5ozGZwOXmAOHb8CGtvxm2YKEJgtBQ5TjI1RFRzNfDJVZGfpvVKhJOuzaDloCxrg==",
+                "tarball": "https://registry.npmjs.org/@clossys/writer/-/writer-0.4.1.tgz",
+                "deprecated": false,
+                "publishedAt": "2026-09-01T10:00:00.000Z",
+                "hasAttestations": true
+              }
+            ],
+            "responseSha256": "sha256:3fa8a0bf51ecc3d00f28c44c1012dc68c66ba0e87de94553bb2336fa6386e514"
+          },
+          {
+            "name": "@clossys/starter",
+            "status": "found",
+            "latest": "1.3.0",
+            "versions": [
+              {
+                "version": "1.3.0",
+                "integrity": "sha512-TJTam2EghNKkYT2BvJSMw73qkZAt5Sd/F9iI0gG5usyYfk5YuQTGgYGml+rmiaxQ4pPRjnXHOgJ452JQyFH88g==",
+                "tarball": "https://registry.npmjs.org/@clossys/starter/-/starter-1.3.0.tgz",
+                "deprecated": false,
+                "publishedAt": "2026-09-01T10:00:00.000Z",
+                "hasAttestations": true
+              }
+            ],
+            "responseSha256": "sha256:debfab461f064e5810e7a19a82abbb806e445ae23dfca55df7459b5f72be789e"
+          },
+          {
+            "name": "@clossys/designer",
+            "status": "not-found",
+            "latest": null,
+            "versions": [],
+            "responseSha256": "sha256:e5330369529d184b0dcb35d69f0718f18587aa848af56c86e476336d1aef6b54"
+          }
+        ]
+      },
+      "canonical": "{\"packages\":[{\"latest\":null,\"name\":\"@clossys/designer\",\"status\":\"not-found\",\"versions\":[]},{\"latest\":\"1.3.0\",\"name\":\"@clossys/starter\",\"status\":\"found\",\"versions\":[{\"deprecated\":false,\"hasAttestations\":true,\"integrity\":\"sha512-TJTam2EghNKkYT2BvJSMw73qkZAt5Sd/F9iI0gG5usyYfk5YuQTGgYGml+rmiaxQ4pPRjnXHOgJ452JQyFH88g==\",\"publishedAt\":\"2026-09-01T10:00:00.000Z\",\"tarball\":\"https://registry.npmjs.org/@clossys/starter/-/starter-1.3.0.tgz\",\"version\":\"1.3.0\"}]},{\"latest\":\"0.4.1\",\"name\":\"@clossys/writer\",\"status\":\"found\",\"versions\":[{\"deprecated\":false,\"hasAttestations\":true,\"integrity\":\"sha512-OlVVePUOypHOPe9dj/jjedb5ozGZwOXmAOHb8CGtvxm2YKEJgtBQ5TjI1RFRzNfDJVZGfpvVKhJOuzaDloCxrg==\",\"publishedAt\":\"2026-09-01T10:00:00.000Z\",\"tarball\":\"https://registry.npmjs.org/@clossys/writer/-/writer-0.4.1.tgz\",\"version\":\"0.4.1\"}]}],\"registry\":\"https://registry.npmjs.org\"}",
+      "digest": "sha256:a6558b2cd2b6efac4185ffd21f1635e41e4498cae317f3ced353650cc31f14dd"
+    },
+    {
+      "name": "change-name",
+      "note": "base with designer's entry naming another package. A different digest.",
+      "snapshot": {
+        "schemaVersion": 1,
+        "kind": "clossys.registry-snapshot",
+        "registry": "https://registry.npmjs.org",
+        "fetchedAt": "2026-09-24T12:00:00Z",
+        "fetchedBy": {
+          "name": "@clossys/launcher",
+          "version": "0.9.30"
+        },
+        "packages": [
+          {
+            "name": "@clossys/writer",
+            "status": "found",
+            "latest": "0.4.1",
+            "versions": [
+              {
+                "version": "0.4.1",
+                "integrity": "sha512-OlVVePUOypHOPe9dj/jjedb5ozGZwOXmAOHb8CGtvxm2YKEJgtBQ5TjI1RFRzNfDJVZGfpvVKhJOuzaDloCxrg==",
+                "tarball": "https://registry.npmjs.org/@clossys/writer/-/writer-0.4.1.tgz",
+                "deprecated": false,
+                "publishedAt": "2026-09-01T10:00:00.000Z",
+                "hasAttestations": true
+              }
+            ],
+            "responseSha256": "sha256:3fa8a0bf51ecc3d00f28c44c1012dc68c66ba0e87de94553bb2336fa6386e514"
+          },
+          {
+            "name": "@clossys/starter",
+            "status": "found",
+            "latest": "1.3.0",
+            "versions": [
+              {
+                "version": "1.3.0",
+                "integrity": "sha512-TJTam2EghNKkYT2BvJSMw73qkZAt5Sd/F9iI0gG5usyYfk5YuQTGgYGml+rmiaxQ4pPRjnXHOgJ452JQyFH88g==",
+                "tarball": "https://registry.npmjs.org/@clossys/starter/-/starter-1.3.0.tgz",
+                "deprecated": false,
+                "publishedAt": "2026-09-01T10:00:00.000Z",
+                "hasAttestations": true
+              }
+            ],
+            "responseSha256": "sha256:debfab461f064e5810e7a19a82abbb806e445ae23dfca55df7459b5f72be789e"
+          },
+          {
+            "name": "@clossys/publisher",
+            "status": "found",
+            "latest": "0.2.7",
+            "versions": [
+              {
+                "version": "0.2.7",
+                "integrity": "sha512-KCYW7zKvm8K4VBmqoPXz2tm9eFV4AAd3lMue0lCN+bY1AV08rHx8g763ewcy42YQy99oVDmZBs+KQxzavBxzPA==",
+                "tarball": "https://registry.npmjs.org/@clossys/designer/-/designer-0.2.7.tgz",
+                "deprecated": false,
+                "publishedAt": "2026-09-01T10:00:00.000Z",
+                "hasAttestations": true
+              }
+            ],
+            "responseSha256": "sha256:e5330369529d184b0dcb35d69f0718f18587aa848af56c86e476336d1aef6b54"
+          }
+        ]
+      },
+      "canonical": "{\"packages\":[{\"latest\":\"0.2.7\",\"name\":\"@clossys/publisher\",\"status\":\"found\",\"versions\":[{\"deprecated\":false,\"hasAttestations\":true,\"integrity\":\"sha512-KCYW7zKvm8K4VBmqoPXz2tm9eFV4AAd3lMue0lCN+bY1AV08rHx8g763ewcy42YQy99oVDmZBs+KQxzavBxzPA==\",\"publishedAt\":\"2026-09-01T10:00:00.000Z\",\"tarball\":\"https://registry.npmjs.org/@clossys/designer/-/designer-0.2.7.tgz\",\"version\":\"0.2.7\"}]},{\"latest\":\"1.3.0\",\"name\":\"@clossys/starter\",\"status\":\"found\",\"versions\":[{\"deprecated\":false,\"hasAttestations\":true,\"integrity\":\"sha512-TJTam2EghNKkYT2BvJSMw73qkZAt5Sd/F9iI0gG5usyYfk5YuQTGgYGml+rmiaxQ4pPRjnXHOgJ452JQyFH88g==\",\"publishedAt\":\"2026-09-01T10:00:00.000Z\",\"tarball\":\"https://registry.npmjs.org/@clossys/starter/-/starter-1.3.0.tgz\",\"version\":\"1.3.0\"}]},{\"latest\":\"0.4.1\",\"name\":\"@clossys/writer\",\"status\":\"found\",\"versions\":[{\"deprecated\":false,\"hasAttestations\":true,\"integrity\":\"sha512-OlVVePUOypHOPe9dj/jjedb5ozGZwOXmAOHb8CGtvxm2YKEJgtBQ5TjI1RFRzNfDJVZGfpvVKhJOuzaDloCxrg==\",\"publishedAt\":\"2026-09-01T10:00:00.000Z\",\"tarball\":\"https://registry.npmjs.org/@clossys/writer/-/writer-0.4.1.tgz\",\"version\":\"0.4.1\"}]}],\"registry\":\"https://registry.npmjs.org\"}",
+      "digest": "sha256:7c5b45691d19415162c92881669217402c3ea4f97b7c972126725959475c58e1"
+    },
+    {
+      "name": "odd-but-valid",
+      "note": "A snapshot that is valid in shape but that a resolver refuses: a prerelease latest, a sha1-only integrity value, no latest at all, a null publish time, and no integrity value.",
+      "snapshot": {
+        "schemaVersion": 1,
+        "kind": "clossys.registry-snapshot",
+        "registry": "https://registry.npmjs.org",
+        "fetchedAt": "2026-09-24T12:00:00Z",
+        "fetchedBy": {
+          "name": "@clossys/launcher",
+          "version": "0.9.30"
+        },
+        "packages": [
+          {
+            "name": "@clossys/writer",
+            "status": "found",
+            "latest": "0.5.0-rc.1",
+            "versions": [
+              {
+                "version": "0.5.0-rc.1",
+                "integrity": "sha512-ITMd7hvk4OMsXPRNYkogvFp2ZrT+x1jMYs5lEjMNnZ8mhEPjdg1jYWn7pzGGKrl5Pxz7muiSc0MD9HsAioH0KQ==",
+                "tarball": "https://registry.npmjs.org/@clossys/writer/-/writer-0.5.0-rc.1.tgz",
+                "deprecated": false,
+                "publishedAt": "2026-09-01T10:00:00.000Z",
+                "hasAttestations": true
+              }
+            ],
+            "responseSha256": "sha256:64f3ad59f385ccee80cf645437752cd3e8ff6f451da3d01880d86da22bc1653b"
+          },
+          {
+            "name": "@clossys/designer",
+            "status": "found",
+            "latest": "0.2.7",
+            "versions": [
+              {
+                "version": "0.2.7",
+                "integrity": "sha1-HsHjZlCdmoPITGQWaWgA1PEWqpI=",
+                "tarball": "https://registry.npmjs.org/@clossys/designer/-/designer-0.2.7.tgz",
+                "deprecated": false,
+                "publishedAt": null,
+                "hasAttestations": true
+              }
+            ],
+            "responseSha256": "sha256:e5330369529d184b0dcb35d69f0718f18587aa848af56c86e476336d1aef6b54"
+          },
+          {
+            "name": "@clossys/customer",
+            "status": "found",
+            "latest": null,
+            "versions": [],
+            "responseSha256": "sha256:0694e47eb0d48568759b6c0a9244ff19911b8697717291c513ec728191e9d5df"
+          },
+          {
+            "name": "@clossys/starter",
+            "status": "found",
+            "latest": "1.3.0",
+            "versions": [
+              {
+                "version": "1.3.0",
+                "integrity": null,
+                "tarball": "https://registry.npmjs.org/@clossys/starter/-/starter-1.3.0.tgz",
+                "deprecated": false,
+                "publishedAt": "2026-09-01T10:00:00.000Z",
+                "hasAttestations": true
+              }
+            ],
+            "responseSha256": "sha256:debfab461f064e5810e7a19a82abbb806e445ae23dfca55df7459b5f72be789e"
+          }
+        ]
+      },
+      "canonical": "{\"packages\":[{\"latest\":null,\"name\":\"@clossys/customer\",\"status\":\"found\",\"versions\":[]},{\"latest\":\"0.2.7\",\"name\":\"@clossys/designer\",\"status\":\"found\",\"versions\":[{\"deprecated\":false,\"hasAttestations\":true,\"integrity\":\"sha1-HsHjZlCdmoPITGQWaWgA1PEWqpI=\",\"publishedAt\":null,\"tarball\":\"https://registry.npmjs.org/@clossys/designer/-/designer-0.2.7.tgz\",\"version\":\"0.2.7\"}]},{\"latest\":\"1.3.0\",\"name\":\"@clossys/starter\",\"status\":\"found\",\"versions\":[{\"deprecated\":false,\"hasAttestations\":true,\"integrity\":null,\"publishedAt\":\"2026-09-01T10:00:00.000Z\",\"tarball\":\"https://registry.npmjs.org/@clossys/starter/-/starter-1.3.0.tgz\",\"version\":\"1.3.0\"}]},{\"latest\":\"0.5.0-rc.1\",\"name\":\"@clossys/writer\",\"status\":\"found\",\"versions\":[{\"deprecated\":false,\"hasAttestations\":true,\"integrity\":\"sha512-ITMd7hvk4OMsXPRNYkogvFp2ZrT+x1jMYs5lEjMNnZ8mhEPjdg1jYWn7pzGGKrl5Pxz7muiSc0MD9HsAioH0KQ==\",\"publishedAt\":\"2026-09-01T10:00:00.000Z\",\"tarball\":\"https://registry.npmjs.org/@clossys/writer/-/writer-0.5.0-rc.1.tgz\",\"version\":\"0.5.0-rc.1\"}]}],\"registry\":\"https://registry.npmjs.org\"}",
+      "digest": "sha256:08faa4c8ecdede78609cbebd7f88e91751daf9000641c69e753fdf821b2d0e6b"
+    }
+  ],
+  "invalid": [
+    {
+      "name": "n1-repeated-name",
+      "note": "Two entries for writer.",
+      "snapshot": {
+        "schemaVersion": 1,
+        "kind": "clossys.registry-snapshot",
+        "registry": "https://registry.npmjs.org",
+        "fetchedAt": "2026-09-24T12:00:00Z",
+        "fetchedBy": {
+          "name": "@clossys/launcher",
+          "version": "0.9.30"
+        },
+        "packages": [
+          {
+            "name": "@clossys/writer",
+            "status": "found",
+            "latest": "0.4.1",
+            "versions": [
+              {
+                "version": "0.4.1",
+                "integrity": "sha512-OlVVePUOypHOPe9dj/jjedb5ozGZwOXmAOHb8CGtvxm2YKEJgtBQ5TjI1RFRzNfDJVZGfpvVKhJOuzaDloCxrg==",
+                "tarball": "https://registry.npmjs.org/@clossys/writer/-/writer-0.4.1.tgz",
+                "deprecated": false,
+                "publishedAt": "2026-09-01T10:00:00.000Z",
+                "hasAttestations": true
+              }
+            ],
+            "responseSha256": "sha256:3fa8a0bf51ecc3d00f28c44c1012dc68c66ba0e87de94553bb2336fa6386e514"
+          },
+          {
+            "name": "@clossys/starter",
+            "status": "found",
+            "latest": "1.3.0",
+            "versions": [
+              {
+                "version": "1.3.0",
+                "integrity": "sha512-TJTam2EghNKkYT2BvJSMw73qkZAt5Sd/F9iI0gG5usyYfk5YuQTGgYGml+rmiaxQ4pPRjnXHOgJ452JQyFH88g==",
+                "tarball": "https://registry.npmjs.org/@clossys/starter/-/starter-1.3.0.tgz",
+                "deprecated": false,
+                "publishedAt": "2026-09-01T10:00:00.000Z",
+                "hasAttestations": true
+              }
+            ],
+            "responseSha256": "sha256:debfab461f064e5810e7a19a82abbb806e445ae23dfca55df7459b5f72be789e"
+          },
+          {
+            "name": "@clossys/designer",
+            "status": "found",
+            "latest": "0.2.7",
+            "versions": [
+              {
+                "version": "0.2.7",
+                "integrity": "sha512-KCYW7zKvm8K4VBmqoPXz2tm9eFV4AAd3lMue0lCN+bY1AV08rHx8g763ewcy42YQy99oVDmZBs+KQxzavBxzPA==",
+                "tarball": "https://registry.npmjs.org/@clossys/designer/-/designer-0.2.7.tgz",
+                "deprecated": false,
+                "publishedAt": "2026-09-01T10:00:00.000Z",
+                "hasAttestations": true
+              }
+            ],
+            "responseSha256": "sha256:e5330369529d184b0dcb35d69f0718f18587aa848af56c86e476336d1aef6b54"
+          },
+          {
+            "name": "@clossys/writer",
+            "status": "found",
+            "latest": "0.4.1",
+            "versions": [
+              {
+                "version": "0.4.1",
+                "integrity": "sha512-OlVVePUOypHOPe9dj/jjedb5ozGZwOXmAOHb8CGtvxm2YKEJgtBQ5TjI1RFRzNfDJVZGfpvVKhJOuzaDloCxrg==",
+                "tarball": "https://registry.npmjs.org/@clossys/writer/-/writer-0.4.1.tgz",
+                "deprecated": false,
+                "publishedAt": "2026-09-01T10:00:00.000Z",
+                "hasAttestations": true
+              }
+            ],
+            "responseSha256": "sha256:3fa8a0bf51ecc3d00f28c44c1012dc68c66ba0e87de94553bb2336fa6386e514"
+          }
+        ]
+      },
+      "violations": [
+        {
+          "rule": "N1",
+          "path": "packages[3].name"
+        }
+      ]
+    },
+    {
+      "name": "n2-repeated-version",
+      "note": "writer records 0.4.1 twice.",
+      "snapshot": {
+        "schemaVersion": 1,
+        "kind": "clossys.registry-snapshot",
+        "registry": "https://registry.npmjs.org",
+        "fetchedAt": "2026-09-24T12:00:00Z",
+        "fetchedBy": {
+          "name": "@clossys/launcher",
+          "version": "0.9.30"
+        },
+        "packages": [
+          {
+            "name": "@clossys/writer",
+            "status": "found",
+            "latest": "0.4.1",
+            "versions": [
+              {
+                "version": "0.4.1",
+                "integrity": "sha512-OlVVePUOypHOPe9dj/jjedb5ozGZwOXmAOHb8CGtvxm2YKEJgtBQ5TjI1RFRzNfDJVZGfpvVKhJOuzaDloCxrg==",
+                "tarball": "https://registry.npmjs.org/@clossys/writer/-/writer-0.4.1.tgz",
+                "deprecated": false,
+                "publishedAt": "2026-09-01T10:00:00.000Z",
+                "hasAttestations": true
+              },
+              {
+                "version": "0.4.1",
+                "integrity": "sha512-OlVVePUOypHOPe9dj/jjedb5ozGZwOXmAOHb8CGtvxm2YKEJgtBQ5TjI1RFRzNfDJVZGfpvVKhJOuzaDloCxrg==",
+                "tarball": "https://registry.npmjs.org/@clossys/writer/-/writer-0.4.1.tgz",
+                "deprecated": false,
+                "publishedAt": "2026-09-01T10:00:00.000Z",
+                "hasAttestations": true
+              }
+            ],
+            "responseSha256": "sha256:3fa8a0bf51ecc3d00f28c44c1012dc68c66ba0e87de94553bb2336fa6386e514"
+          },
+          {
+            "name": "@clossys/starter",
+            "status": "found",
+            "latest": "1.3.0",
+            "versions": [
+              {
+                "version": "1.3.0",
+                "integrity": "sha512-TJTam2EghNKkYT2BvJSMw73qkZAt5Sd/F9iI0gG5usyYfk5YuQTGgYGml+rmiaxQ4pPRjnXHOgJ452JQyFH88g==",
+                "tarball": "https://registry.npmjs.org/@clossys/starter/-/starter-1.3.0.tgz",
+                "deprecated": false,
+                "publishedAt": "2026-09-01T10:00:00.000Z",
+                "hasAttestations": true
+              }
+            ],
+            "responseSha256": "sha256:debfab461f064e5810e7a19a82abbb806e445ae23dfca55df7459b5f72be789e"
+          },
+          {
+            "name": "@clossys/designer",
+            "status": "found",
+            "latest": "0.2.7",
+            "versions": [
+              {
+                "version": "0.2.7",
+                "integrity": "sha512-KCYW7zKvm8K4VBmqoPXz2tm9eFV4AAd3lMue0lCN+bY1AV08rHx8g763ewcy42YQy99oVDmZBs+KQxzavBxzPA==",
+                "tarball": "https://registry.npmjs.org/@clossys/designer/-/designer-0.2.7.tgz",
+                "deprecated": false,
+                "publishedAt": "2026-09-01T10:00:00.000Z",
+                "hasAttestations": true
+              }
+            ],
+            "responseSha256": "sha256:e5330369529d184b0dcb35d69f0718f18587aa848af56c86e476336d1aef6b54"
+          }
+        ]
+      },
+      "violations": [
+        {
+          "rule": "N2",
+          "path": "packages[0].versions[1].version"
+        }
+      ]
+    },
+    {
+      "name": "n3-not-found-with-latest-and-versions",
+      "note": "designer not found, yet with a latest and a version.",
+      "snapshot": {
+        "schemaVersion": 1,
+        "kind": "clossys.registry-snapshot",
+        "registry": "https://registry.npmjs.org",
+        "fetchedAt": "2026-09-24T12:00:00Z",
+        "fetchedBy": {
+          "name": "@clossys/launcher",
+          "version": "0.9.30"
+        },
+        "packages": [
+          {
+            "name": "@clossys/writer",
+            "status": "found",
+            "latest": "0.4.1",
+            "versions": [
+              {
+                "version": "0.4.1",
+                "integrity": "sha512-OlVVePUOypHOPe9dj/jjedb5ozGZwOXmAOHb8CGtvxm2YKEJgtBQ5TjI1RFRzNfDJVZGfpvVKhJOuzaDloCxrg==",
+                "tarball": "https://registry.npmjs.org/@clossys/writer/-/writer-0.4.1.tgz",
+                "deprecated": false,
+                "publishedAt": "2026-09-01T10:00:00.000Z",
+                "hasAttestations": true
+              }
+            ],
+            "responseSha256": "sha256:3fa8a0bf51ecc3d00f28c44c1012dc68c66ba0e87de94553bb2336fa6386e514"
+          },
+          {
+            "name": "@clossys/starter",
+            "status": "found",
+            "latest": "1.3.0",
+            "versions": [
+              {
+                "version": "1.3.0",
+                "integrity": "sha512-TJTam2EghNKkYT2BvJSMw73qkZAt5Sd/F9iI0gG5usyYfk5YuQTGgYGml+rmiaxQ4pPRjnXHOgJ452JQyFH88g==",
+                "tarball": "https://registry.npmjs.org/@clossys/starter/-/starter-1.3.0.tgz",
+                "deprecated": false,
+                "publishedAt": "2026-09-01T10:00:00.000Z",
+                "hasAttestations": true
+              }
+            ],
+            "responseSha256": "sha256:debfab461f064e5810e7a19a82abbb806e445ae23dfca55df7459b5f72be789e"
+          },
+          {
+            "name": "@clossys/designer",
+            "status": "not-found",
+            "latest": "0.2.7",
+            "versions": [
+              {
+                "version": "0.2.7",
+                "integrity": "sha512-KCYW7zKvm8K4VBmqoPXz2tm9eFV4AAd3lMue0lCN+bY1AV08rHx8g763ewcy42YQy99oVDmZBs+KQxzavBxzPA==",
+                "tarball": "https://registry.npmjs.org/@clossys/designer/-/designer-0.2.7.tgz",
+                "deprecated": false,
+                "publishedAt": "2026-09-01T10:00:00.000Z",
+                "hasAttestations": true
+              }
+            ],
+            "responseSha256": "sha256:e5330369529d184b0dcb35d69f0718f18587aa848af56c86e476336d1aef6b54"
+          }
+        ]
+      },
+      "violations": [
+        {
+          "rule": "N3",
+          "path": "packages[2].latest"
+        },
+        {
+          "rule": "N3",
+          "path": "packages[2].versions"
+        }
+      ]
+    },
+    {
+      "name": "schema-unknown-top-level-field",
+      "note": "An undeclared top-level field, reported at the document, never by its name.",
+      "snapshot": {
+        "schemaVersion": 1,
+        "kind": "clossys.registry-snapshot",
+        "registry": "https://registry.npmjs.org",
+        "fetchedAt": "2026-09-24T12:00:00Z",
+        "fetchedBy": {
+          "name": "@clossys/launcher",
+          "version": "0.9.30"
+        },
+        "packages": [
+          {
+            "name": "@clossys/writer",
+            "status": "found",
+            "latest": "0.4.1",
+            "versions": [
+              {
+                "version": "0.4.1",
+                "integrity": "sha512-OlVVePUOypHOPe9dj/jjedb5ozGZwOXmAOHb8CGtvxm2YKEJgtBQ5TjI1RFRzNfDJVZGfpvVKhJOuzaDloCxrg==",
+                "tarball": "https://registry.npmjs.org/@clossys/writer/-/writer-0.4.1.tgz",
+                "deprecated": false,
+                "publishedAt": "2026-09-01T10:00:00.000Z",
+                "hasAttestations": true
+              }
+            ],
+            "responseSha256": "sha256:3fa8a0bf51ecc3d00f28c44c1012dc68c66ba0e87de94553bb2336fa6386e514"
+          },
+          {
+            "name": "@clossys/starter",
+            "status": "found",
+            "latest": "1.3.0",
+            "versions": [
+              {
+                "version": "1.3.0",
+                "integrity": "sha512-TJTam2EghNKkYT2BvJSMw73qkZAt5Sd/F9iI0gG5usyYfk5YuQTGgYGml+rmiaxQ4pPRjnXHOgJ452JQyFH88g==",
+                "tarball": "https://registry.npmjs.org/@clossys/starter/-/starter-1.3.0.tgz",
+                "deprecated": false,
+                "publishedAt": "2026-09-01T10:00:00.000Z",
+                "hasAttestations": true
+              }
+            ],
+            "responseSha256": "sha256:debfab461f064e5810e7a19a82abbb806e445ae23dfca55df7459b5f72be789e"
+          },
+          {
+            "name": "@clossys/designer",
+            "status": "found",
+            "latest": "0.2.7",
+            "versions": [
+              {
+                "version": "0.2.7",
+                "integrity": "sha512-KCYW7zKvm8K4VBmqoPXz2tm9eFV4AAd3lMue0lCN+bY1AV08rHx8g763ewcy42YQy99oVDmZBs+KQxzavBxzPA==",
+                "tarball": "https://registry.npmjs.org/@clossys/designer/-/designer-0.2.7.tgz",
+                "deprecated": false,
+                "publishedAt": "2026-09-01T10:00:00.000Z",
+                "hasAttestations": true
+              }
+            ],
+            "responseSha256": "sha256:e5330369529d184b0dcb35d69f0718f18587aa848af56c86e476336d1aef6b54"
+          }
+        ],
+        "founderNote": "text that must never be quoted"
+      },
+      "violations": [
+        {
+          "rule": "schema",
+          "path": ""
+        }
+      ]
+    },
+    {
+      "name": "schema-unknown-version-field",
+      "note": "An undeclared field in a version entry, reported at that entry, never by its name.",
+      "snapshot": {
+        "schemaVersion": 1,
+        "kind": "clossys.registry-snapshot",
+        "registry": "https://registry.npmjs.org",
+        "fetchedAt": "2026-09-24T12:00:00Z",
+        "fetchedBy": {
+          "name": "@clossys/launcher",
+          "version": "0.9.30"
+        },
+        "packages": [
+          {
+            "name": "@clossys/writer",
+            "status": "found",
+            "latest": "0.4.1",
+            "versions": [
+              {
+                "version": "0.4.1",
+                "integrity": "sha512-OlVVePUOypHOPe9dj/jjedb5ozGZwOXmAOHb8CGtvxm2YKEJgtBQ5TjI1RFRzNfDJVZGfpvVKhJOuzaDloCxrg==",
+                "tarball": "https://registry.npmjs.org/@clossys/writer/-/writer-0.4.1.tgz",
+                "deprecated": false,
+                "publishedAt": "2026-09-01T10:00:00.000Z",
+                "hasAttestations": true,
+                "private repository name": 1
+              }
+            ],
+            "responseSha256": "sha256:3fa8a0bf51ecc3d00f28c44c1012dc68c66ba0e87de94553bb2336fa6386e514"
+          },
+          {
+            "name": "@clossys/starter",
+            "status": "found",
+            "latest": "1.3.0",
+            "versions": [
+              {
+                "version": "1.3.0",
+                "integrity": "sha512-TJTam2EghNKkYT2BvJSMw73qkZAt5Sd/F9iI0gG5usyYfk5YuQTGgYGml+rmiaxQ4pPRjnXHOgJ452JQyFH88g==",
+                "tarball": "https://registry.npmjs.org/@clossys/starter/-/starter-1.3.0.tgz",
+                "deprecated": false,
+                "publishedAt": "2026-09-01T10:00:00.000Z",
+                "hasAttestations": true
+              }
+            ],
+            "responseSha256": "sha256:debfab461f064e5810e7a19a82abbb806e445ae23dfca55df7459b5f72be789e"
+          },
+          {
+            "name": "@clossys/designer",
+            "status": "found",
+            "latest": "0.2.7",
+            "versions": [
+              {
+                "version": "0.2.7",
+                "integrity": "sha512-KCYW7zKvm8K4VBmqoPXz2tm9eFV4AAd3lMue0lCN+bY1AV08rHx8g763ewcy42YQy99oVDmZBs+KQxzavBxzPA==",
+                "tarball": "https://registry.npmjs.org/@clossys/designer/-/designer-0.2.7.tgz",
+                "deprecated": false,
+                "publishedAt": "2026-09-01T10:00:00.000Z",
+                "hasAttestations": true
+              }
+            ],
+            "responseSha256": "sha256:e5330369529d184b0dcb35d69f0718f18587aa848af56c86e476336d1aef6b54"
+          }
+        ]
+      },
+      "violations": [
+        {
+          "rule": "schema",
+          "path": "packages[0].versions[0]"
+        }
+      ]
+    },
+    {
+      "name": "schema-http-registry",
+      "note": "A registry that is not https.",
+      "snapshot": {
+        "schemaVersion": 1,
+        "kind": "clossys.registry-snapshot",
+        "registry": "http://registry.npmjs.org",
+        "fetchedAt": "2026-09-24T12:00:00Z",
+        "fetchedBy": {
+          "name": "@clossys/launcher",
+          "version": "0.9.30"
+        },
+        "packages": [
+          {
+            "name": "@clossys/writer",
+            "status": "found",
+            "latest": "0.4.1",
+            "versions": [
+              {
+                "version": "0.4.1",
+                "integrity": "sha512-OlVVePUOypHOPe9dj/jjedb5ozGZwOXmAOHb8CGtvxm2YKEJgtBQ5TjI1RFRzNfDJVZGfpvVKhJOuzaDloCxrg==",
+                "tarball": "https://registry.npmjs.org/@clossys/writer/-/writer-0.4.1.tgz",
+                "deprecated": false,
+                "publishedAt": "2026-09-01T10:00:00.000Z",
+                "hasAttestations": true
+              }
+            ],
+            "responseSha256": "sha256:3fa8a0bf51ecc3d00f28c44c1012dc68c66ba0e87de94553bb2336fa6386e514"
+          },
+          {
+            "name": "@clossys/starter",
+            "status": "found",
+            "latest": "1.3.0",
+            "versions": [
+              {
+                "version": "1.3.0",
+                "integrity": "sha512-TJTam2EghNKkYT2BvJSMw73qkZAt5Sd/F9iI0gG5usyYfk5YuQTGgYGml+rmiaxQ4pPRjnXHOgJ452JQyFH88g==",
+                "tarball": "https://registry.npmjs.org/@clossys/starter/-/starter-1.3.0.tgz",
+                "deprecated": false,
+                "publishedAt": "2026-09-01T10:00:00.000Z",
+                "hasAttestations": true
+              }
+            ],
+            "responseSha256": "sha256:debfab461f064e5810e7a19a82abbb806e445ae23dfca55df7459b5f72be789e"
+          },
+          {
+            "name": "@clossys/designer",
+            "status": "found",
+            "latest": "0.2.7",
+            "versions": [
+              {
+                "version": "0.2.7",
+                "integrity": "sha512-KCYW7zKvm8K4VBmqoPXz2tm9eFV4AAd3lMue0lCN+bY1AV08rHx8g763ewcy42YQy99oVDmZBs+KQxzavBxzPA==",
+                "tarball": "https://registry.npmjs.org/@clossys/designer/-/designer-0.2.7.tgz",
+                "deprecated": false,
+                "publishedAt": "2026-09-01T10:00:00.000Z",
+                "hasAttestations": true
+              }
+            ],
+            "responseSha256": "sha256:e5330369529d184b0dcb35d69f0718f18587aa848af56c86e476336d1aef6b54"
+          }
+        ]
+      },
+      "violations": [
+        {
+          "rule": "schema",
+          "path": "registry"
+        }
+      ]
+    },
+    {
+      "name": "schema-registry-with-path",
+      "note": "A registry with a trailing slash.",
+      "snapshot": {
+        "schemaVersion": 1,
+        "kind": "clossys.registry-snapshot",
+        "registry": "https://registry.npmjs.org/",
+        "fetchedAt": "2026-09-24T12:00:00Z",
+        "fetchedBy": {
+          "name": "@clossys/launcher",
+          "version": "0.9.30"
+        },
+        "packages": [
+          {
+            "name": "@clossys/writer",
+            "status": "found",
+            "latest": "0.4.1",
+            "versions": [
+              {
+                "version": "0.4.1",
+                "integrity": "sha512-OlVVePUOypHOPe9dj/jjedb5ozGZwOXmAOHb8CGtvxm2YKEJgtBQ5TjI1RFRzNfDJVZGfpvVKhJOuzaDloCxrg==",
+                "tarball": "https://registry.npmjs.org/@clossys/writer/-/writer-0.4.1.tgz",
+                "deprecated": false,
+                "publishedAt": "2026-09-01T10:00:00.000Z",
+                "hasAttestations": true
+              }
+            ],
+            "responseSha256": "sha256:3fa8a0bf51ecc3d00f28c44c1012dc68c66ba0e87de94553bb2336fa6386e514"
+          },
+          {
+            "name": "@clossys/starter",
+            "status": "found",
+            "latest": "1.3.0",
+            "versions": [
+              {
+                "version": "1.3.0",
+                "integrity": "sha512-TJTam2EghNKkYT2BvJSMw73qkZAt5Sd/F9iI0gG5usyYfk5YuQTGgYGml+rmiaxQ4pPRjnXHOgJ452JQyFH88g==",
+                "tarball": "https://registry.npmjs.org/@clossys/starter/-/starter-1.3.0.tgz",
+                "deprecated": false,
+                "publishedAt": "2026-09-01T10:00:00.000Z",
+                "hasAttestations": true
+              }
+            ],
+            "responseSha256": "sha256:debfab461f064e5810e7a19a82abbb806e445ae23dfca55df7459b5f72be789e"
+          },
+          {
+            "name": "@clossys/designer",
+            "status": "found",
+            "latest": "0.2.7",
+            "versions": [
+              {
+                "version": "0.2.7",
+                "integrity": "sha512-KCYW7zKvm8K4VBmqoPXz2tm9eFV4AAd3lMue0lCN+bY1AV08rHx8g763ewcy42YQy99oVDmZBs+KQxzavBxzPA==",
+                "tarball": "https://registry.npmjs.org/@clossys/designer/-/designer-0.2.7.tgz",
+                "deprecated": false,
+                "publishedAt": "2026-09-01T10:00:00.000Z",
+                "hasAttestations": true
+              }
+            ],
+            "responseSha256": "sha256:e5330369529d184b0dcb35d69f0718f18587aa848af56c86e476336d1aef6b54"
+          }
+        ]
+      },
+      "violations": [
+        {
+          "rule": "schema",
+          "path": "registry"
+        }
+      ]
+    },
+    {
+      "name": "schema-wrong-kind",
+      "note": "Another kind of document.",
+      "snapshot": {
+        "schemaVersion": 1,
+        "kind": "clossys.registry-packument",
+        "registry": "https://registry.npmjs.org",
+        "fetchedAt": "2026-09-24T12:00:00Z",
+        "fetchedBy": {
+          "name": "@clossys/launcher",
+          "version": "0.9.30"
+        },
+        "packages": [
+          {
+            "name": "@clossys/writer",
+            "status": "found",
+            "latest": "0.4.1",
+            "versions": [
+              {
+                "version": "0.4.1",
+                "integrity": "sha512-OlVVePUOypHOPe9dj/jjedb5ozGZwOXmAOHb8CGtvxm2YKEJgtBQ5TjI1RFRzNfDJVZGfpvVKhJOuzaDloCxrg==",
+                "tarball": "https://registry.npmjs.org/@clossys/writer/-/writer-0.4.1.tgz",
+                "deprecated": false,
+                "publishedAt": "2026-09-01T10:00:00.000Z",
+                "hasAttestations": true
+              }
+            ],
+            "responseSha256": "sha256:3fa8a0bf51ecc3d00f28c44c1012dc68c66ba0e87de94553bb2336fa6386e514"
+          },
+          {
+            "name": "@clossys/starter",
+            "status": "found",
+            "latest": "1.3.0",
+            "versions": [
+              {
+                "version": "1.3.0",
+                "integrity": "sha512-TJTam2EghNKkYT2BvJSMw73qkZAt5Sd/F9iI0gG5usyYfk5YuQTGgYGml+rmiaxQ4pPRjnXHOgJ452JQyFH88g==",
+                "tarball": "https://registry.npmjs.org/@clossys/starter/-/starter-1.3.0.tgz",
+                "deprecated": false,
+                "publishedAt": "2026-09-01T10:00:00.000Z",
+                "hasAttestations": true
+              }
+            ],
+            "responseSha256": "sha256:debfab461f064e5810e7a19a82abbb806e445ae23dfca55df7459b5f72be789e"
+          },
+          {
+            "name": "@clossys/designer",
+            "status": "found",
+            "latest": "0.2.7",
+            "versions": [
+              {
+                "version": "0.2.7",
+                "integrity": "sha512-KCYW7zKvm8K4VBmqoPXz2tm9eFV4AAd3lMue0lCN+bY1AV08rHx8g763ewcy42YQy99oVDmZBs+KQxzavBxzPA==",
+                "tarball": "https://registry.npmjs.org/@clossys/designer/-/designer-0.2.7.tgz",
+                "deprecated": false,
+                "publishedAt": "2026-09-01T10:00:00.000Z",
+                "hasAttestations": true
+              }
+            ],
+            "responseSha256": "sha256:e5330369529d184b0dcb35d69f0718f18587aa848af56c86e476336d1aef6b54"
+          }
+        ]
+      },
+      "violations": [
+        {
+          "rule": "schema",
+          "path": "kind"
+        }
+      ]
+    },
+    {
+      "name": "schema-latest-not-a-version",
+      "note": "latest holding a dist-tag name, not a version.",
+      "snapshot": {
+        "schemaVersion": 1,
+        "kind": "clossys.registry-snapshot",
+        "registry": "https://registry.npmjs.org",
+        "fetchedAt": "2026-09-24T12:00:00Z",
+        "fetchedBy": {
+          "name": "@clossys/launcher",
+          "version": "0.9.30"
+        },
+        "packages": [
+          {
+            "name": "@clossys/writer",
+            "status": "found",
+            "latest": "latest",
+            "versions": [
+              {
+                "version": "0.4.1",
+                "integrity": "sha512-OlVVePUOypHOPe9dj/jjedb5ozGZwOXmAOHb8CGtvxm2YKEJgtBQ5TjI1RFRzNfDJVZGfpvVKhJOuzaDloCxrg==",
+                "tarball": "https://registry.npmjs.org/@clossys/writer/-/writer-0.4.1.tgz",
+                "deprecated": false,
+                "publishedAt": "2026-09-01T10:00:00.000Z",
+                "hasAttestations": true
+              }
+            ],
+            "responseSha256": "sha256:3fa8a0bf51ecc3d00f28c44c1012dc68c66ba0e87de94553bb2336fa6386e514"
+          },
+          {
+            "name": "@clossys/starter",
+            "status": "found",
+            "latest": "1.3.0",
+            "versions": [
+              {
+                "version": "1.3.0",
+                "integrity": "sha512-TJTam2EghNKkYT2BvJSMw73qkZAt5Sd/F9iI0gG5usyYfk5YuQTGgYGml+rmiaxQ4pPRjnXHOgJ452JQyFH88g==",
+                "tarball": "https://registry.npmjs.org/@clossys/starter/-/starter-1.3.0.tgz",
+                "deprecated": false,
+                "publishedAt": "2026-09-01T10:00:00.000Z",
+                "hasAttestations": true
+              }
+            ],
+            "responseSha256": "sha256:debfab461f064e5810e7a19a82abbb806e445ae23dfca55df7459b5f72be789e"
+          },
+          {
+            "name": "@clossys/designer",
+            "status": "found",
+            "latest": "0.2.7",
+            "versions": [
+              {
+                "version": "0.2.7",
+                "integrity": "sha512-KCYW7zKvm8K4VBmqoPXz2tm9eFV4AAd3lMue0lCN+bY1AV08rHx8g763ewcy42YQy99oVDmZBs+KQxzavBxzPA==",
+                "tarball": "https://registry.npmjs.org/@clossys/designer/-/designer-0.2.7.tgz",
+                "deprecated": false,
+                "publishedAt": "2026-09-01T10:00:00.000Z",
+                "hasAttestations": true
+              }
+            ],
+            "responseSha256": "sha256:e5330369529d184b0dcb35d69f0718f18587aa848af56c86e476336d1aef6b54"
+          }
+        ]
+      },
+      "violations": [
+        {
+          "rule": "schema",
+          "path": "packages[0].latest"
+        }
+      ]
+    },
+    {
+      "name": "schema-missing-response-hash",
+      "note": "A package entry without responseSha256.",
+      "snapshot": {
+        "schemaVersion": 1,
+        "kind": "clossys.registry-snapshot",
+        "registry": "https://registry.npmjs.org",
+        "fetchedAt": "2026-09-24T12:00:00Z",
+        "fetchedBy": {
+          "name": "@clossys/launcher",
+          "version": "0.9.30"
+        },
+        "packages": [
+          {
+            "name": "@clossys/writer",
+            "status": "found",
+            "latest": "0.4.1",
+            "versions": [
+              {
+                "version": "0.4.1",
+                "integrity": "sha512-OlVVePUOypHOPe9dj/jjedb5ozGZwOXmAOHb8CGtvxm2YKEJgtBQ5TjI1RFRzNfDJVZGfpvVKhJOuzaDloCxrg==",
+                "tarball": "https://registry.npmjs.org/@clossys/writer/-/writer-0.4.1.tgz",
+                "deprecated": false,
+                "publishedAt": "2026-09-01T10:00:00.000Z",
+                "hasAttestations": true
+              }
+            ]
+          },
+          {
+            "name": "@clossys/starter",
+            "status": "found",
+            "latest": "1.3.0",
+            "versions": [
+              {
+                "version": "1.3.0",
+                "integrity": "sha512-TJTam2EghNKkYT2BvJSMw73qkZAt5Sd/F9iI0gG5usyYfk5YuQTGgYGml+rmiaxQ4pPRjnXHOgJ452JQyFH88g==",
+                "tarball": "https://registry.npmjs.org/@clossys/starter/-/starter-1.3.0.tgz",
+                "deprecated": false,
+                "publishedAt": "2026-09-01T10:00:00.000Z",
+                "hasAttestations": true
+              }
+            ],
+            "responseSha256": "sha256:debfab461f064e5810e7a19a82abbb806e445ae23dfca55df7459b5f72be789e"
+          },
+          {
+            "name": "@clossys/designer",
+            "status": "found",
+            "latest": "0.2.7",
+            "versions": [
+              {
+                "version": "0.2.7",
+                "integrity": "sha512-KCYW7zKvm8K4VBmqoPXz2tm9eFV4AAd3lMue0lCN+bY1AV08rHx8g763ewcy42YQy99oVDmZBs+KQxzavBxzPA==",
+                "tarball": "https://registry.npmjs.org/@clossys/designer/-/designer-0.2.7.tgz",
+                "deprecated": false,
+                "publishedAt": "2026-09-01T10:00:00.000Z",
+                "hasAttestations": true
+              }
+            ],
+            "responseSha256": "sha256:e5330369529d184b0dcb35d69f0718f18587aa848af56c86e476336d1aef6b54"
+          }
+        ]
+      },
+      "violations": [
+        {
+          "rule": "schema",
+          "path": "packages[0].responseSha256"
+        }
+      ]
+    },
+    {
+      "name": "schema-deprecation-message",
+      "note": "deprecated holding the registry's message instead of true.",
+      "snapshot": {
+        "schemaVersion": 1,
+        "kind": "clossys.registry-snapshot",
+        "registry": "https://registry.npmjs.org",
+        "fetchedAt": "2026-09-24T12:00:00Z",
+        "fetchedBy": {
+          "name": "@clossys/launcher",
+          "version": "0.9.30"
+        },
+        "packages": [
+          {
+            "name": "@clossys/writer",
+            "status": "found",
+            "latest": "0.4.1",
+            "versions": [
+              {
+                "version": "0.4.1",
+                "integrity": "sha512-OlVVePUOypHOPe9dj/jjedb5ozGZwOXmAOHb8CGtvxm2YKEJgtBQ5TjI1RFRzNfDJVZGfpvVKhJOuzaDloCxrg==",
+                "tarball": "https://registry.npmjs.org/@clossys/writer/-/writer-0.4.1.tgz",
+                "deprecated": "use something else",
+                "publishedAt": "2026-09-01T10:00:00.000Z",
+                "hasAttestations": true
+              }
+            ],
+            "responseSha256": "sha256:3fa8a0bf51ecc3d00f28c44c1012dc68c66ba0e87de94553bb2336fa6386e514"
+          },
+          {
+            "name": "@clossys/starter",
+            "status": "found",
+            "latest": "1.3.0",
+            "versions": [
+              {
+                "version": "1.3.0",
+                "integrity": "sha512-TJTam2EghNKkYT2BvJSMw73qkZAt5Sd/F9iI0gG5usyYfk5YuQTGgYGml+rmiaxQ4pPRjnXHOgJ452JQyFH88g==",
+                "tarball": "https://registry.npmjs.org/@clossys/starter/-/starter-1.3.0.tgz",
+                "deprecated": false,
+                "publishedAt": "2026-09-01T10:00:00.000Z",
+                "hasAttestations": true
+              }
+            ],
+            "responseSha256": "sha256:debfab461f064e5810e7a19a82abbb806e445ae23dfca55df7459b5f72be789e"
+          },
+          {
+            "name": "@clossys/designer",
+            "status": "found",
+            "latest": "0.2.7",
+            "versions": [
+              {
+                "version": "0.2.7",
+                "integrity": "sha512-KCYW7zKvm8K4VBmqoPXz2tm9eFV4AAd3lMue0lCN+bY1AV08rHx8g763ewcy42YQy99oVDmZBs+KQxzavBxzPA==",
+                "tarball": "https://registry.npmjs.org/@clossys/designer/-/designer-0.2.7.tgz",
+                "deprecated": false,
+                "publishedAt": "2026-09-01T10:00:00.000Z",
+                "hasAttestations": true
+              }
+            ],
+            "responseSha256": "sha256:e5330369529d184b0dcb35d69f0718f18587aa848af56c86e476336d1aef6b54"
+          }
+        ]
+      },
+      "violations": [
+        {
+          "rule": "schema",
+          "path": "packages[0].versions[0].deprecated"
+        }
+      ]
+    },
+    {
+      "name": "schema-no-packages",
+      "note": "An empty package list.",
+      "snapshot": {
+        "schemaVersion": 1,
+        "kind": "clossys.registry-snapshot",
+        "registry": "https://registry.npmjs.org",
+        "fetchedAt": "2026-09-24T12:00:00Z",
+        "fetchedBy": {
+          "name": "@clossys/launcher",
+          "version": "0.9.30"
+        },
+        "packages": []
+      },
+      "violations": [
+        {
+          "rule": "schema",
+          "path": "packages"
+        }
+      ]
+    },
+    {
+      "name": "schema-bad-fetch-time",
+      "note": "A fetch time that is not a real date-time.",
+      "snapshot": {
+        "schemaVersion": 1,
+        "kind": "clossys.registry-snapshot",
+        "registry": "https://registry.npmjs.org",
+        "fetchedAt": "2026-02-30T00:00:00Z",
+        "fetchedBy": {
+          "name": "@clossys/launcher",
+          "version": "0.9.30"
+        },
+        "packages": [
+          {
+            "name": "@clossys/writer",
+            "status": "found",
+            "latest": "0.4.1",
+            "versions": [
+              {
+                "version": "0.4.1",
+                "integrity": "sha512-OlVVePUOypHOPe9dj/jjedb5ozGZwOXmAOHb8CGtvxm2YKEJgtBQ5TjI1RFRzNfDJVZGfpvVKhJOuzaDloCxrg==",
+                "tarball": "https://registry.npmjs.org/@clossys/writer/-/writer-0.4.1.tgz",
+                "deprecated": false,
+                "publishedAt": "2026-09-01T10:00:00.000Z",
+                "hasAttestations": true
+              }
+            ],
+            "responseSha256": "sha256:3fa8a0bf51ecc3d00f28c44c1012dc68c66ba0e87de94553bb2336fa6386e514"
+          },
+          {
+            "name": "@clossys/starter",
+            "status": "found",
+            "latest": "1.3.0",
+            "versions": [
+              {
+                "version": "1.3.0",
+                "integrity": "sha512-TJTam2EghNKkYT2BvJSMw73qkZAt5Sd/F9iI0gG5usyYfk5YuQTGgYGml+rmiaxQ4pPRjnXHOgJ452JQyFH88g==",
+                "tarball": "https://registry.npmjs.org/@clossys/starter/-/starter-1.3.0.tgz",
+                "deprecated": false,
+                "publishedAt": "2026-09-01T10:00:00.000Z",
+                "hasAttestations": true
+              }
+            ],
+            "responseSha256": "sha256:debfab461f064e5810e7a19a82abbb806e445ae23dfca55df7459b5f72be789e"
+          },
+          {
+            "name": "@clossys/designer",
+            "status": "found",
+            "latest": "0.2.7",
+            "versions": [
+              {
+                "version": "0.2.7",
+                "integrity": "sha512-KCYW7zKvm8K4VBmqoPXz2tm9eFV4AAd3lMue0lCN+bY1AV08rHx8g763ewcy42YQy99oVDmZBs+KQxzavBxzPA==",
+                "tarball": "https://registry.npmjs.org/@clossys/designer/-/designer-0.2.7.tgz",
+                "deprecated": false,
+                "publishedAt": "2026-09-01T10:00:00.000Z",
+                "hasAttestations": true
+              }
+            ],
+            "responseSha256": "sha256:e5330369529d184b0dcb35d69f0718f18587aa848af56c86e476336d1aef6b54"
+          }
+        ]
+      },
+      "violations": [
+        {
+          "rule": "schema",
+          "path": "fetchedAt"
+        }
+      ]
+    }
+  ]
+}

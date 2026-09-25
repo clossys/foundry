@@ -99,6 +99,8 @@ This package also ships the `clossys-advisor` Agent Skill at `skill/SKILL.md`.
 In Cursor, mention `@clossys-advisor` to talk to that receptionist voice next
 to the assessment bins below. The skill is a chat voice, not a second engine,
 and it does not replace `advisor-check` or `advisor-execution-readiness`.
+The plan commands `advisor-render-status`, `advisor-package-request` and
+`advisor-resolve-packages` are described with the plan record below.
 
 ```bash
 advisor-check assessment.json
@@ -399,6 +401,103 @@ that starts with a byte order mark. A syntax error is reported by position
 only, never quoting the file's text; a repeated key is named, as an escaped
 JSON string, so a control character in it is shown as `\u001b` rather than
 reaching the terminal (#1475).
+
+## Exact packages from a registry snapshot (issue #1178)
+
+A plan's `packages` and `resolution` are never written by hand. Two pure
+steps, on either side of one registry fetch that this package does not
+make, derive them from the plan's `staffing`. This package makes no
+network call and holds no credential: each step is a pure function, and
+its CLI reads only the files it is given.
+
+`packageRequest(plan)` names the packages a staffed plan needs, sorted and
+unique: the package of every role any `staffing` entry names, looked up in
+this package's packed capability catalogue, plus the `starter` package
+(`STARTER_PACKAGE_DIRECTORY`), which every staffed repository pins to check
+its pull requests. The scope in each name comes from the publishing scope
+this package was built with, never a literal. It refuses a plan that fails
+the plan contract (`plan-shape`), a plan with no `staffing`
+(`plan-not-staffed`), and a staffed role the catalogue does not list
+(`role-not-in-catalogue`). Its result, a `PackageRequestResult`, is
+`{ state: "satisfied", names, findings: [] }` or
+`{ state: "violated", findings }`.
+
+A registry snapshot records what the registry said about those names at one
+moment: for each package, whether it was found, the version its `latest`
+dist-tag named, and that version's integrity value, tarball URL,
+deprecation, publish time and whether it lists attestations. Its contract is
+[`docs/contracts/registry-snapshot.json`](https://github.com/clossys/foundry/blob/main/docs/contracts/registry-snapshot.json)
+(in the public repository, not shipped in this package; this package packs
+its content into a generated module at build time). `validateRegistrySnapshot(value)`
+checks a snapshot against it: the schema, then its code rules N1 to N3
+(`registrySnapshotRuleViolations()`: no package named twice, no version
+recorded twice for one package, and no `latest` or versions for a package
+that was not found). Each `RegistrySnapshotViolation` names a rule and a
+position, never a value or an undeclared key. `snapshotDigest(snapshot)` is
+the snapshot's canonical digest: `sha256:` and the hex SHA-256 of the RFC
+8785 canonical JSON of `snapshotDigestSubject(snapshot)`, which keeps the
+registry and each package's name, status, `latest` and versions, sorted,
+and leaves out when and by what the snapshot was fetched and the hash of
+each raw registry response. Fetching the same selection again gives the
+same digest; changing anything a resolution reads changes it. It throws for
+a snapshot that does not validate. The types are `RegistrySnapshot`,
+`RegistrySnapshotPackage`, `RegistrySnapshotVersion`,
+`RegistrySnapshotRuleId` and `RegistrySnapshotViolation`. The shared corpus
+[`docs/contracts/registry-snapshot.fixture.json`](https://github.com/clossys/foundry/blob/main/docs/contracts/registry-snapshot.fixture.json)
+(in the public repository, not shipped in this package) holds digests
+computed without this package, and this package is tested against it.
+
+`resolvePackages(plan, snapshot, options?)` reads the snapshot and returns a
+`PackageResolutionResult`. On `state: "satisfied"` it carries `packages`,
+one `pin-starter` act per staffed repository and one `install` act per
+staffed role, sorted by repository and then name, each with `planItem`
+`<repository>:<name>`, the version the registry's `latest` named, that
+version's `sha512-` integrity value and the placement `devDependencies`
+(`RESOLVED_PLACEMENT`); `resolution`, `{ snapshotDigest }`; and
+`permittedPackages`, each distinct `{ name, version, integrity }` once,
+sorted by name, which is exactly what the sponsor's grant permits. The same
+plan and snapshot always give byte-identical output, and so does a re-fetch
+of the same selection. Before it returns, it checks the resolved plan with
+the plan contract and its rules R1 to R9 and refuses rather than return a
+plan that fails them. Each `ResolutionFinding` has a `rule`, a `verdict`
+(`ResolutionVerdict`), a `path` and a message that names positions and, at
+most, a package name derived from the catalogue, never plan text, a
+repository id or a value from the snapshot:
+
+| Condition | Verdict | Rule |
+| --- | --- | --- |
+| The snapshot fails its contract | violated | `snapshot-shape` |
+| Its registry is not the registry this package was built for | violated | `foreign-registry` |
+| A requested package has no entry | indeterminate | `package-not-in-snapshot` |
+| The registry has no such package | violated | `package-not-published` |
+| `latest` names no version | indeterminate | `no-latest` |
+| `latest` names a prerelease or build version | violated | `prerelease-latest` |
+| `latest` names a version the snapshot does not record | indeterminate | `tag-points-at-missing-version` |
+| That version has no integrity value, or not exactly one `sha512-` value | violated | `no-sha512-integrity` |
+| That version is deprecated | violated | `deprecated-version` |
+| Its tarball is not served over the registry's own scheme and host, or its URL carries credentials | violated | `foreign-tarball-host` |
+| That version lists no attestations | warning | `no-attestation-yet` |
+
+Any violated finding makes the result `violated`; otherwise any
+indeterminate one makes it `indeterminate` (`ResolutionState`). A warning
+alone still resolves. A snapshot shows only which bytes were selected, not
+where they came from; the package's provenance has to be verified
+separately. `options` (`ResolutionOptions`) replaces the packed catalogue
+or the packed scope and registry (`PackageScope`), for tests.
+
+```bash
+advisor-package-request clossys/advisor/plan.json
+advisor-resolve-packages clossys/advisor/plan.json clossys/.state/apply/registry-snapshot.json
+```
+
+Both commands read their files as strict JSON, as `advisor-render-status`
+does, and print their result as JSON. `advisor-package-request` exits `0`
+with the names, or `1` for a plan it refuses. `advisor-resolve-packages`
+exits `0` when resolved (warnings included), `1` for a violation, and `2`
+for an indeterminate result. Both exit `2` for a usage error or an
+unreadable file; that message names the input (the plan file or the
+snapshot file) and, for a syntax error, the character position, never the
+file's path or text.
 
 ## Kit verdicts (issue #1177)
 

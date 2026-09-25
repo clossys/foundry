@@ -36,8 +36,8 @@ const BRIEF: EngagementBrief = {
 const messages = (findings: readonly { message: string }[]) => findings.map((finding) => finding.message);
 
 describe("packed plan and brief contracts", () => {
-  it("are the docs/contracts files, unchanged", () => {
-    expect(Object.keys(PLAN_CONTRACTS)).toEqual(["advisor-plan.json", "engagement-brief.json", "engagement-context.json"]);
+  it("are the docs/contracts files, unchanged, with the registry snapshot contract this package adds", () => {
+    expect(Object.keys(PLAN_CONTRACTS)).toEqual(["advisor-plan.json", "engagement-brief.json", "engagement-context.json", "registry-snapshot.json"]);
     for (const [name, contract] of Object.entries(PLAN_CONTRACTS)) expect(contract).toEqual(readJson(name));
   });
 
