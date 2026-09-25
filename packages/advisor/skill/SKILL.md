@@ -62,11 +62,21 @@ Once fit and readiness are both satisfied and the client has approved a kit:
 1. Assemble `clossys/advisor/assessment-input.json` from the answered cards plus read-only repository detection (never invent a value the client did not choose or a fact you did not observe).
 2. Run `advisor-check clossys/advisor/assessment-input.json`.
 3. Build `clossys/advisor/plan.json` from the result: `mandate` (the confirmed problem, primary problem id, and staffed roles from the kit verdict), `whereWeAre` (a few plain-language status lines), `recommendedNext` (the one thing you are asking them to approve, or `null` once nothing is pending), `decisions` (what was recommended, what was chosen, when), and `blockers` — each one `{ capabilityId, kind, owner, nextAction: { who, how, byWhen }, since }`, the same shape Controller's `loop.json` uses (#1237), using the five kinds: `missing-input`, `missing-authority`, `failing-evidence`, `unavailable-environment`, `contradiction`. Run `validateAdvisorPlan()` on the assembled record before rendering; do not write a blocker in any other shape, and add no field the plan contract does not declare -- Advisor and Launcher both refuse one. Times are ISO 8601 (`2026-09-24T12:00:00Z`); `recommendedNext.due` is optional and may be a plain date.
+   Also record who works where (#1178): `kits` (each `{ id, source: "preset" | "composed", verdict: "recommended" }`, one entry per kit you recommend) and `staffing` — one `{ repository, roles }` entry per repository, `repository` being its id in the hub's repository inventory (never a URL or a path), and `roles` drawn from `mandate.roles`. Every mandate role is staffed somewhere, no repository appears twice (ids compare case-insensitively), and no role appears twice in one entry. Beside the plan, write the hub brief `clossys/advisor/brief.json` from `toEngagementBrief()` without `staffedHere`; each staffed repository's own copy is derived from it later, never hand-written.
 4. Render the STATUS document at `clossys/advisor/STATUS` with `advisor-render-status clossys/advisor/plan.json` and write its output verbatim (saved with a `.md` extension) — never hand-edit the markdown.
+5. Bind the assessment to this plan: set `engagement.assessmentBasis.planDigest` in `clossys/advisor/assessment-input.json` to `planDigest()` of `clossys/advisor/plan.json`, and run `advisor-check` again.
+
+Exact package acts arrive with the registry resolution step, which this package does not ship yet: it will write the plan's `packages` (one exact version and one `sha512-` integrity value per act) and `resolution` from a registry snapshot, and the sponsor's grant will then permit exactly those packages. Until then, write no `packages` or `resolution` yourself — never a version you did not get from that step, and never a range or a tag.
 
 Each of these is one proposed step the client approves before you write it, and it lands as a pull request per #1171. `indeterminate` without a live grant is a rest state, not a failure (#1038).
 
 `clossys/brief.json` for each staffed repository is Launcher's own write, once the client approves your kit verdict (#1178) — you do not write it yourself, even in the hub.
+
+### Approval, and the freeze after it
+
+An approval is a decision you append — never an edit to an earlier one — with `chosen: "approved"` and `subjectDigest`: the digest of the exact change the client was shown. An approval without `subjectDigest` binds no bytes. Take that digest from the tool that showed the client the change, never from your own computation or memory; that tool arrives with the apply report step, and until it does, record the approval without one rather than invent it.
+
+From an approving decision until every repository it covers has been applied, or the client asks for a new plan, change nothing in `plan.json` that the plan digest covers: not `mandate`, `whereWeAre`, `recommendedNext`, `blockers`, `kits`, `staffing`, `packages` or `resolution`. Only appending a decision and updating `asOf` are allowed, because the digest excludes both; anything else changes the digest, and the approval no longer matches the plan. Report progress in conversation, not by editing the plan. If something covered must change, that is a new plan and a new approval.
 
 ## Kit verdicts (issue #1177)
 

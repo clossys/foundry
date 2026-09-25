@@ -360,7 +360,7 @@ exact change the approver was shown; an approval without one binds nothing.
 From an approving decision until apply completes, Advisor changes no field
 the plan digest covers: recording the approval appends a decision and may
 update `asOf`, which the digest excludes, so the digest at approval equals
-the digest at apply.
+the digest at apply. The Advisor skill follows this rule.
 
 `planDigest(plan)` is the canonical digest of a plan, the value the
 assessment basis's `planDigest` records and an execution authorization must

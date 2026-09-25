@@ -99,7 +99,7 @@ approval binding (issue #1178). The definition above does not change.
   so the digest at approval equals the digest at apply. Progress in
   between is reported elsewhere. It is not written into `whereWeAre`,
   `recommendedNext` or `blockers`, because each of those is covered. The
-  rule is stated in the contract's description.
+  rule is stated in the contract's description and in the Advisor skill.
 
 ## Why these choices
 
