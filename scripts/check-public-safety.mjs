@@ -139,7 +139,11 @@ function prefixedRel(rel) {
 // densest identity carriers measured. A changelog written fresh in this
 // repository is ordinary open-source furniture, so --allow-changelogs drops it
 // from the list and leans on content scanning instead — which is the correct
-// control once the file is authored here rather than copied in.
+// control once the file is authored here rather than copied in. This
+// repository's own package changelogs no longer carry that name: they live at
+// docs/changelogs/<dir>.md (scripts/lib/changelog-location.mjs), outside every
+// tarball, and a tree scan reads them as ordinary public text with or without
+// this flag. The flag only ever governs a file actually named CHANGELOG.md.
 const FORBIDDEN_NAMES = [
   "CLAUDE.md",
   "AGENTS.md",
@@ -182,6 +186,96 @@ const ARTIFACT_ALLOWED_DIRS = new Set(["dist", "build"]);
 // and content-scanned like everything else. The exemptions are exact paths;
 // nested agent instructions are still refused.
 const FORBIDDEN_EXEMPT_PATHS = new Set(["AGENTS.md", "CLAUDE.md"]);
+
+// MACHINE-LOCAL PATH NAMES
+// ------------------------
+// The name lists above are exact matches, and identity matching (the
+// denylist) only ever reads file CONTENTS. So a file or directory whose NAME
+// is a flattened absolute local path — the shape an agent's session or
+// scratchpad directory takes when it is copied into a tree — passed in FULL
+// and PARTIAL mode alike.
+//
+// These rules are structural and hardcoded, not denylist terms: they describe
+// a SHAPE, not a secret, so they are safe to publish here, and they fire in
+// PARTIAL mode too. They are deliberately limited to shapes ONLY a machine
+// produces. Three review rounds showed that any rule keyed on a home
+// directory followed by an ordinary word (`home`, `Users`, `code`, `work`,
+// `projects`, `Documents`, ...) either flags real frontend layouts or misses
+// real machine paths, and adding word lists only moved the boundary. So those
+// shapes are NOT refused here; they are listed as KNOWN-GAP rows in
+// scripts/test-gates.mjs ("# machine-local path names"), whose table measures
+// every rule below against realistic positives and ordinary negatives, and
+// explicit staging plus review covers them.
+//
+// A flattening tool substitutes ONE separator for every "/" (or "\"), so each
+// flattened rule is anchored at the start of the name on a leading separator
+// (the flattened root) and uses the same separator throughout (`\1`). The
+// five families:
+//   1. temp roots: `private` + `tmp`/`var`, `var` + `folders`, and
+//      `tmp` + `claude-<n>` (flattened, or mirrored as nested directories);
+//   2. URL-encoded absolute paths (`%2F`): never an ordinary name;
+//   3. Windows drive homes: a single letter then `--` (a flattened `C:\`)
+//      then `Users`, or a backslash written inside one name;
+//   4. WSL mounts: `mnt`, one drive letter, then `Users`;
+//   5. flattened macOS homes ONLY with a machine marker right after the
+//      name: a dot-directory (a flattened `.` makes a doubled separator, as
+//      in `-Users-<name>--claude-...`) or exactly `Library`, `Desktop` or
+//      `Downloads`; and a bare `-Users-<name>` (dash only, nothing after),
+//      the directory an agent keys a home-directory session by.
+const MP_SEP = "(-|_|\\\\)";
+const MP_NAME = "(?:(?!\\1)[^/])+";
+const MACHINE_PATH_SEGMENT_RULES = [
+  [new RegExp(`^${MP_SEP}private\\1(?:tmp|var)(?:\\1|$)`), "flattened macOS temp root (private/tmp or private/var)"],
+  [new RegExp(`^${MP_SEP}var\\1folders(?:\\1|$)`), "flattened macOS per-user temp root (var/folders)"],
+  [new RegExp(`^${MP_SEP}tmp\\1claude-\\d+(?:\\1|$)`), "flattened agent session temp root (tmp/claude-<uid>)"],
+  [
+    /^(?:file%3[Aa]%2[Ff]%2[Ff])?%2[Ff](?:Users|home|mnt|private|var|tmp)%2[Ff]/,
+    "URL-encoded absolute path (%2FUsers%2F..., %2Ftmp%2F...)",
+  ],
+  [/^[A-Za-z]--[Uu]sers-/, "flattened Windows drive home (C--Users-...)"],
+  [/^[A-Za-z]:?\\+[Uu]sers\\/, "Windows drive home written into one name (C:\\Users\\...)"],
+  [new RegExp(`^${MP_SEP}mnt\\1[a-z]\\1[Uu]sers\\1`), "flattened WSL mount home (mnt, drive letter, Users)"],
+  [
+    new RegExp(`^${MP_SEP}Users\\1${MP_NAME}\\1(?:\\1|(?:Library|Desktop|Downloads)(?:\\1|$))`),
+    "flattened macOS user home with a machine marker (a dot-directory, Library, Desktop or Downloads)",
+  ],
+  [/^-Users-[^-/.]+$/, "bare flattened macOS user home (an agent session key)"],
+];
+// Over the whole POSIX-joined relative path: the same temp roots and WSL
+// mount mirrored as nested directories, which no single segment shows. A
+// mirrored `Users/<name>/` or `home/<name>/` is NOT a rule (KNOWN-GAP): both
+// are ordinary feature and route folders in a web codebase.
+// Accepted trade-off: the mirrored temp-root rules match anywhere in the path,
+// so an ordinary layout such as a `private/tmp/` or `var/folders/` subfolder, or
+// `tmp/claude-<n>/`, is refused too. Those names are rare and cheap to rename;
+// a missed copied temp tree is not.
+const MACHINE_PATH_RELPATH_RULES = [
+  [/(?:^|\/)private\/tmp\//, "mirrored macOS temp root (private/tmp)"],
+  [/(?:^|\/)var\/folders\//, "mirrored macOS per-user temp root (var/folders)"],
+  [/(?:^|\/)tmp\/claude-\d+\//, "mirrored agent session temp root (tmp/claude-<uid>/)"],
+  [/(?:^|\/)mnt\/[a-z]\/Users\//, "mirrored WSL mount home (mnt, drive letter, Users)"],
+];
+
+// Every machine-local shape in one relative path, as `{ where, what }` —
+// `where` is the offending segment (or mirrored run of segments).
+function machinePathHits(relPosix) {
+  const hits = [];
+  for (const segment of relPosix.split("/")) {
+    // First matching rule only: one flattened segment is one finding.
+    const rule = MACHINE_PATH_SEGMENT_RULES.find(([re]) => re.test(segment));
+    if (rule) hits.push({ where: segment, what: rule[1] });
+  }
+  for (const [re, what] of MACHINE_PATH_RELPATH_RULES) {
+    const m = re.exec(relPosix);
+    if (m) hits.push({ where: m[0].replace(/^\//, ""), what });
+  }
+  return hits;
+}
+// The same shapes in file CONTENT are deliberately not matched here: slash-
+// form paths in content are the denylist's job in FULL mode, and a
+// structural content backstop measured 22 new findings on the current tree
+// (placeholder `/home/<name>/` test fixtures, prose naming the macOS temp
+// symlink), so it stays out until those have a principled exclusion.
 
 // OPAQUE FORMATS (issue #588)
 // ---------------------------
@@ -714,6 +808,19 @@ for (const file of files) {
   const segments = rel.split(sep);
   const base = basename(file);
 
+  // Structural, so it runs in PARTIAL mode too, and before every `continue`
+  // below: a machine-local path name is a finding whatever the file holds.
+  // Not a `continue` itself — the file's contents are still scanned.
+  for (const { where, what } of machinePathHits(toPosix(rel))) {
+    failures.push({
+      rel,
+      kind: "machine-path",
+      detail: `path segment "${where}" is a ${what}; machine-local paths must not be committed`,
+      severity: "high",
+      line: 0,
+    });
+  }
+
   if (!FORBIDDEN_EXEMPT_PATHS.has(rel)) {
     const badDir = segments
       .slice(0, -1)
@@ -963,7 +1070,7 @@ console.log(`mode: ${mode}${denylist ? ` (denylist v${denylist.version}, ${denyl
 if (!denylist) {
   console.log(
     `\n!! PARTIAL SCAN — identity checks were SKIPPED (denylist ${denylistError}).\n` +
-      `!! Secrets, forbidden files and structural rules were still enforced.\n` +
+      `!! Secrets, forbidden files, machine-local path names and structural rules were still enforced.\n` +
       `!! A pass here does NOT clear a tree for publication. Re-run in FULL mode\n` +
       `!! with --require-denylist before any push to a public remote.`,
   );
@@ -981,14 +1088,14 @@ const opaqueNote = opaqueScanned
 if (!failures.length) {
   console.log(
     (mode === "FULL"
-      ? "PASS — no private identity, forbidden file, or credential-shaped string found in readable content."
-      : "PASS (partial) — no forbidden file or credential-shaped string found in readable content.") + opaqueNote,
+      ? "PASS — no private identity, forbidden file, machine-local path name, or credential-shaped string found in readable content."
+      : "PASS (partial) — no forbidden file, machine-local path name, or credential-shaped string found in readable content.") + opaqueNote,
   );
   process.exit(0);
 }
 
 const RANK = { critical: 0, high: 1, medium: 2 };
-for (const kind of ["SECRET", "forbidden-file", "opaque-unacknowledged", "opaque-unreadable", "opaque-exemption-invalid", "manifest", "identity"]) {
+for (const kind of ["SECRET", "forbidden-file", "machine-path", "opaque-unacknowledged", "opaque-unreadable", "opaque-exemption-invalid", "manifest", "identity"]) {
   const rows = failures.filter((f) => f.kind === kind);
   if (!rows.length) continue;
   console.log(`## ${kind} — ${rows.length} finding(s)`);

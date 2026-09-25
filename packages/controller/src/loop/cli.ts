@@ -28,7 +28,12 @@ export function main(argv: readonly string[] = process.argv.slice(2)): number {
     return 0;
   }
   const positional = argv.filter((value, index) => !value.startsWith("--") && argv[index - 1] !== "--out");
-  if (positional.length !== 2) {
+  // Every `--out` needs a path after it, and `--out` may appear at most
+  // once: otherwise a trailing, operand-less `--out` after a valid one
+  // would be ignored and the first path written anyway.
+  const outIndexes = argv.flatMap((value, index) => (value === "--out" ? [index] : []));
+  const outInvalid = outIndexes.length > 1 || outIndexes.some((index) => argv[index + 1] === undefined || argv[index + 1]!.startsWith("--"));
+  if (positional.length !== 2 || outInvalid) {
     console.error(USAGE);
     return 2;
   }

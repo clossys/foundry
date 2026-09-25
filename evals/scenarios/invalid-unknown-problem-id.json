@@ -1,0 +1,11 @@
+{
+  "id": "invalid-unknown-problem-id",
+  "description": "Guardrail regression: a confirmed problem id that matches no role's solves entries must come back indeterminate rather than composing an empty or guessed kit. No real company; a synthetic client for regression coverage only.",
+  "confirmedProblems": [
+    { "id": "generic-nonexistent-problem-id", "primary": true }
+  ],
+  "expect": {
+    "state": "indeterminate",
+    "reasonIncludes": "no role's solves entries match any confirmed problem id"
+  }
+}

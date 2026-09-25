@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "recordId": "fixture-support-thread-001",
+  "kind": "support-thread",
+  "source": {
+    "description": "A client support thread about onboarding friction, summarized and redacted by the coding agent after the client's support lead shared it for this purpose.",
+    "collectedBy": "coding-agent",
+    "collectedAt": "2026-09-10T00:00:00.000Z",
+    "pointer": "client-support-system:thread/fixture-redacted-locator"
+  },
+  "consent": {
+    "basis": "existing-support-relationship-terms",
+    "confirmedBy": "butler",
+    "confirmedAt": "2026-09-10T00:00:00.000Z",
+    "scope": "Use in Strategist's evidence base and Customer's persona calibration; no further sharing."
+  },
+  "summary": "The client asked twice, in the same thread, how to find the generated pull request after approving a plan; both replies pointed them to the client's own repository Pull Requests tab.",
+  "lifecycle": {
+    "state": "verified",
+    "condition": "current",
+    "enteredAt": "2026-09-12T00:00:00.000Z",
+    "reason": ""
+  },
+  "weighting": {
+    "appliesTo": ["claim-onboarding-first-pr-is-findable"],
+    "weightClass": "primary",
+    "calibrationNote": "Customer's synthetic keep previously assumed a client would notice a new pull request without guidance; this record recalibrates that assumption and is cited in the claim's evidence base."
+  },
+  "retention": {
+    "holder": "keeper",
+    "scheduleRef": "keeper-retention:support-thread-90-day",
+    "reviewBy": "2026-12-10"
+  }
+}

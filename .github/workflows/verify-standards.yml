@@ -8,9 +8,9 @@
 # outside a guessed scope silently never runs this, and a check that never ran
 # is a check that never failed.
 #
-# This context is NOT required to merge. Adding it to a ruleset is a separate,
-# later step: a required context that has never reported wedges the
-# repository. Merge first, watch it report, then decide.
+# This context is a required status check on main (see the merge_group note
+# below). A context must report on real pull requests before it is made
+# required, or it wedges the repository; that is how this one was introduced.
 #
 # ---------------------------------------------------------------------------
 # WHY THIS FILE IS NOT THE TEMPLATE VERBATIM — read before copying it onward
@@ -34,6 +34,12 @@
 # The gate is likewise invoked as its own compiled entry point rather than
 # through a runner indirection, matching how this repository's other packaged
 # gates are already run against their own `dist/`.
+#
+# Its triggers also differ from the template: it adds `merge_group` (it is a
+# required context) and `pull_request_review` (#1470), and its policy file
+# lists `pull_request_review` in `applicableEventKinds` to match. A consumer
+# that copies the review trigger must copy that policy entry too, or every
+# review run reports task-record as not applicable.
 name: Verify standards
 
 # The task-record check reads the pull-request DESCRIPTION, so the description
@@ -46,6 +52,63 @@ name: Verify standards
 on:
   pull_request:
     types: [opened, synchronize, reopened, edited]
+  # `review-evidence` reads review threads and reviews live, so a review that
+  # lands after the last pull_request run changes the verdict without
+  # re-running it. Before this trigger, a thread opened after that run left
+  # this context green on the pull request, and the merge queue's own run
+  # ejected the pull request with `failed_checks` (#1470; measured on #1432:
+  # pull_request run 35982043999 passed at 09:34:55Z, an automated reviewer
+  # opened two threads at 09:43:55Z on the same head, merge-group run
+  # 36058946310 failed on both).
+  #
+  #   - `submitted` carries every new review comment, including a reply to a
+  #     thread (each reply is its own submitted review). It also carries a
+  #     new approval or changes-requested review.
+  #   - `dismissed` can clear a changes-requested review.
+  #   - `edited` is left out: editing a review's body changes no state this
+  #     check reads.
+  #
+  # Not subscribed, deliberately:
+  #   - `pull_request_review_comment` would add one run per inline comment
+  #     for the verdict `submitted` already re-evaluates, and GitHub does not
+  #     reliably emit it for comments bundled into a review (#944).
+  #   - `issue_comment` cannot open or resolve a review thread (#1471).
+  #   - Resolving or unresolving a thread has NO workflow trigger. GitHub
+  #     sends `pull_request_review_thread` only as a webhook, never to
+  #     Actions. Resolving a thread leaves a stale red result; re-run the
+  #     latest run, which re-reads threads live. Unresolving one after a
+  #     pass is still caught only by the merge-group run.
+  #
+  # There is no actor filter. Automated reviewers open the very threads this
+  # trigger exists for, the event payload does not say whether a review
+  # opened a thread, and a job-level `if:` would report this required
+  # context as skipped, which GitHub counts as passing.
+  #
+  # Plain `pull_request_review`, never a `_target` variant: this job runs the
+  # pull request's own code (npm ci, build, scripts), so it gets the same
+  # read-only, secret-free context a `pull_request` run does, fork or not.
+  # A review-triggered run shares the concurrency group below with the
+  # pull request's other runs (`github.ref` is `refs/pull/<n>/merge` for
+  # both), so a burst of reviews collapses to the newest run.
+  pull_request_review:
+    types: [submitted, dismissed]
+  # A merge-group run's whole point is to test the tree that will actually
+  # land -- the base plus every entry ahead of this one in the queue -- so
+  # `verify-standards` (a required context on main, ruleset 20924588) must
+  # also produce a result under `merge_group`, or a required check that
+  # never reports for a merge-group commit would wedge every queue. GitHub
+  # names one type today (`checks_requested`); left unqualified so a future
+  # type is not silently excluded.
+  #
+  # The review-evidence binding below assumes ONE pull request per queue
+  # entry, each with its own `gh-readonly-queue/<base>/pr-<N>-<sha>` ref and
+  # its own run, and a group commit whose SECOND PARENT is exactly that PR's
+  # head. Both hold only because main's ruleset sets the merge queue's
+  # `grouping_strategy` to ALLGREEN (every entry is checked, not just the
+  # group's head) and `merge_method` to MERGE (a true merge commit). Changing
+  # either makes the collector's second-parent check fail closed on every
+  # entry -- revisit this workflow before changing the ruleset.
+  merge_group:
 
 permissions:
   contents: read
@@ -146,19 +209,52 @@ jobs:
       # about making review itself mandatory — see
       # .github/verify-standards-review-policy.json's own header for that
       # decision and why `requiredChecks` there is empty for now too.
+      # `merge_group` names no `pull_request` object at all -- only its own
+      # synthetic `head_ref`, `gh-readonly-queue/<base>/pr-<number>-<sha>`,
+      # and the group commit it built, `head_sha`. The `<sha>` in that ref
+      # is the BASE the entry was queued onto, not the PR's head: reading it
+      # as the head is what made every merge-group run report
+      # `evidence-head-mismatch` against main's own tip (#1253, run
+      # 35929488634). So `--merge-group-head-ref` supplies only the PR
+      # number; the collector reads the PR's current head from the pull
+      # request itself and proves it EQUALS the second parent of
+      # `--merge-group-head-sha` (`git rev-parse --verify <group>^2`; this
+      # checkout's `fetch-depth: 0` is what makes that answerable locally).
+      # Mere ancestry is not enough: an older commit on the PR branch is an
+      # ancestor too, so a head read racing a push could bind an unreviewed
+      # head. See the trigger comment above for the ruleset this depends on. The inspector then requires both:
+      # the group merges exactly that head, and the evidence is bound to
+      # that head. A malformed ref or sha, an unreadable head, or an
+      # unreadable second parent refuses rather than guessing -- see
+      # that script's own header and `resolveMergeGroupHead`'s tests.
       - name: Collect review evidence
         id: review-evidence
         continue-on-error: true
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          node scripts/collect-review-evidence.mjs \
-            --pr "${{ github.event.pull_request.number }}" \
-            --head "${{ github.event.pull_request.head.sha }}" \
-            --repo "${{ github.repository }}" \
-            --branch "${{ github.event.pull_request.base.ref }}" \
-            --merge verify-inputs.json \
-            > verify-inputs.next.json
+          BASE_REF="${{ github.event.pull_request.base.ref }}"
+          if [ -z "$BASE_REF" ]; then
+            BASE_REF="${{ github.event.merge_group.base_ref }}"
+            BASE_REF="${BASE_REF#refs/heads/}"
+          fi
+          if [ "${{ github.event_name }}" = "merge_group" ]; then
+            node scripts/collect-review-evidence.mjs \
+              --merge-group-head-ref "${{ github.event.merge_group.head_ref }}" \
+              --merge-group-head-sha "${{ github.event.merge_group.head_sha }}" \
+              --repo "${{ github.repository }}" \
+              --branch "$BASE_REF" \
+              --merge verify-inputs.json \
+              > verify-inputs.next.json
+          else
+            node scripts/collect-review-evidence.mjs \
+              --pr "${{ github.event.pull_request.number }}" \
+              --head "${{ github.event.pull_request.head.sha }}" \
+              --repo "${{ github.repository }}" \
+              --branch "$BASE_REF" \
+              --merge verify-inputs.json \
+              > verify-inputs.next.json
+          fi
           mv verify-inputs.next.json verify-inputs.json
 
       # ---- DECIDE ----------------------------------------------------------
@@ -199,12 +295,36 @@ jobs:
           # re-raising that captured status. `exit "$status"` is load-bearing
           # too — without it the step's status is the last `cat`'s, which is
           # always 0.
+          #
+          # A `pull_request_review` run evaluates BOTH checks, like a
+          # `pull_request` run. Its payload carries the same pull request
+          # description, and the policy lists `pull_request_review` as
+          # applicable. Evaluating `review-evidence` alone there would let a
+          # review replace a task-record failure with a pass on the same
+          # head, and the merge queue never re-asks task-record.
+          #
+          # `task-record` is narrowed OUT for a `merge_group` run.
+          # `.github/verify-standards-policy.json`'s `applicableEventKinds`
+          # omits `merge_group`, so on a `merge_group` event that check
+          # would self-report `not-applicable-event` — which is
+          # INDETERMINATE, and bin.js treats indeterminate as exit 2, a hard
+          # failure ("An indeterminate result is a failure, not a warning").
+          # Evaluating it again here would wedge every merge-group run on a
+          # check that already ran, and passed or failed, when this exact PR
+          # was last opened/synchronized/edited — re-asking it here answers
+          # nothing new. `review-evidence` is the only check this workflow
+          # collects for that a merge-group run can usefully re-answer (see
+          # the "Collect review evidence" step above).
           set -o pipefail
           report="$RUNNER_TEMP/verify-standards-report.txt"
           status=0
+          CHECKS="task-record,review-evidence"
+          if [ "${{ github.event_name }}" = "merge_group" ]; then
+            CHECKS="review-evidence"
+          fi
           node packages/inspector/dist/bin.js \
             --inputs verify-inputs.json \
-            --checks task-record,review-evidence \
+            --checks "$CHECKS" \
             > "$report" || status=$?
           cat "$report"
           cat "$report" >> "$GITHUB_STEP_SUMMARY"

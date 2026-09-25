@@ -1,7 +1,7 @@
-import { mkdtempSync, writeFileSync } from "node:fs";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ArchitectCliInputError, main } from "./cli.js";
 
 let root: string;
@@ -34,6 +34,10 @@ beforeEach(() => {
   topologyFile = writeJson("topology.json", topology);
   observationsFile = writeJson("observations.json", [{ id: "one", observedAt: "2026-08-23T12:00:00Z", material: true, crossings: [{ from: "workspace", to: "product", responsibility: "product" }] }]);
   vi.spyOn(console, "log").mockImplementation(() => {});
+});
+
+afterEach(() => {
+  if (root) rmSync(root, { recursive: true, force: true });
 });
 
 describe("architect-check topology", () => {

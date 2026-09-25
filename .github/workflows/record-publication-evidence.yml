@@ -1,0 +1,680 @@
+name: Record publication evidence
+
+# Issue #1346: publish.yml's trusted-publisher OIDC lane uploads a version
+# with npm provenance but never writes the matching
+# governance/release-publications/later/<key>-<version>.json record --
+# nobody does, automatically. scripts/check-release-readiness.mjs's
+# hasLocalPublicationEvidence() reads exactly that directory to decide
+# whether a package's already-shipped current version can tolerate a
+# test-only tree change without demanding a needless version bump; without
+# this workflow, every trusted-publisher release stays invisible to that
+# relaxation until someone notices and backfills it by hand (see PR #1348,
+# which did exactly that for the 12 versions this gap had already produced).
+#
+# This file was revised once already, against two independent blind reviews
+# (2026-09-23, at commit fc9881c0) that between them found six blocking
+# defects in the first version. Each is called out by its finding ID (B1-B3
+# security, B1-B3 correctness, S1-S4 correctness, N1-N3 security) at the
+# exact step that fixes it, so a future change does not quietly reopen one.
+#
+# SEPARATION OF DUTIES, ON PURPOSE
+# ---------------------------------
+# This is a SEPARATE workflow from publish.yml, triggered only after it
+# completes, specifically so the upload job never gains the write
+# permissions this one needs. publish.yml's `publish` job keeps exactly
+# `contents: read` + `id-token: write` (for the npm OIDC exchange) and
+# nothing else; this workflow's `record-evidence` job carries only
+# `actions: read` (to read this run's own job/artifact metadata),
+# `contents: write`, and `pull-requests: write` -- read-only plus
+# version-control write, and NOTHING resembling `id-token: write` or a
+# registry credential. It never pushes to `main` -- it pushes a branch and
+# opens (or updates) a pull request, the same review-gated shape
+# qualify-candidate.yml and release-pr.yml already use for their own
+# automated pull requests. This owner-approved permission grant
+# (governance/decisions/publication-evidence-workflow-permissions.json) is
+# unchanged by the revision below; every fix here narrows the trust boundary
+# further, never widens it.
+#
+# BATCHED, BUT ONLY ONTO A BASE THAT CONTAINS THE SOURCE (#1346, #1468)
+# ---------------------------------------------------------------------
+# A run adds its record to the newest open evidence pull request only when
+# that branch verifiably belongs to this workflow AND its base already
+# contains the publish run's source commit; otherwise it cuts a fresh
+# branch from the default branch's current tip under a name no other run
+# uses. Either way the committed result must pass the default branch's
+# scripts/check-later-publications.mjs before it is pushed; an adopted
+# branch that fails it falls back to a fresh branch. If an open evidence
+# pull request already carries this record: byte-identical on a verified,
+# current branch is a no-op; different bytes (or an unverifiable branch)
+# FAILS the run without pushing anything, as does any open evidence pull
+# request carrying a record whose OWN source commit is not in its branch's
+# base (#1461's unrepairable ancestry). An open pull request that merely
+# predates THIS record's source gets a notice and stays open: it remains
+# valid for its own records and should be merged normally, while this record
+# goes to a new pull request. This workflow never closes a pull request or
+# force-pushes. See the "Push branch..." step for the full decision table.
+#
+# Batching relies on the merge queue creating MERGE commits, which keep each
+# record's introduction commit intact. If squash merging were ever enabled,
+# a pull request recreated from a branch after a mid-run merge could
+# introduce the same record a second time.
+#
+# MEASURED DATA ONLY, OR NO PR AT ALL
+# -------------------------------------
+# scripts/record-publication-evidence.mjs (via
+# scripts/lib/publication-evidence-run.mjs) builds the record from the
+# public npm registry, this exact GitHub Actions run's own metadata, and the
+# already-retained qualification record -- by calling
+# scripts/record-later-publication.mjs's own exported, self-validating
+# functions, the identical building blocks PR #1348 called by hand to
+# backfill this same evidence gap. EVERY provenance field the record claims
+# -- not only the source commit -- is independently cross-checked against
+# the version's own npm SLSA provenance attestation before anything is
+# written (scripts/lib/publication-evidence-run.mjs's
+# verifyPublicationProvenance; security review B2, correctness review B2). If
+# any field cannot be measured or does not match, that call throws, the
+# "Build publication evidence record" step fails, and every later step in
+# this job is skipped -- no file is written, no branch is pushed, no PR is
+# opened.
+#
+# WHICH RUN OF publish.yml THIS ACTUALLY FIRES FOR
+# ---------------------------------------------------
+# `workflow_run` fires for EVERY completed publish.yml run, including a
+# dry_run or verify_only dispatch that never reaches its `publish` job at
+# all (see that job's own `if:` gate), and regardless of the run's OVERALL
+# conclusion (correctness review S1: `publish (<key>)` can succeed while a
+# LATER job such as verify-published fails, and that version was still
+# genuinely uploaded). `determine-package` below therefore gates only on the
+# run's ORIGIN -- never on its conclusion -- and then asks the one question
+# that actually answers "did this run publish something": did a job
+# literally named `publish (<key>)` conclude `success`? Only publish.yml's
+# real upload job is ever named that way, and it only runs when
+# `!inputs.dry_run && !inputs.verify_only` on `refs/heads/main`
+# (`publish.yml`'s own `if:`) -- so a dry-run or verify-only dispatch
+# naturally yields no match, `package` stays empty, and `record-evidence`
+# never starts.
+#
+# TRUST BOUNDARY (security review B1; the sole earlier blocking finding).
+# ----------------------------------------------------------------------
+# The FIRST version of this workflow gated only on `conclusion == 'success'`
+# and matched `workflows: ["Publish"]` by DISPLAY NAME. Both are attacker-
+# controllable: any workflow file anywhere -- including one added by a fork
+# pull request -- can declare `name: Publish` and a job named
+# `publish (<key>)` that "succeeds" on its own terms, and `workflow_run`
+# fires for it regardless of which repository or branch it ran on. That
+# would hand a write-scoped GITHUB_TOKEN to code this repository never
+# reviewed (a "pwn request"). `determine-package`'s `if:` below refuses
+# anything that is not literally this repository's own `publish.yml`, run by
+# `workflow_dispatch` (its only real trigger), with its head on THIS
+# repository (not a fork) and on the default branch. Belt and braces:
+# `record-evidence`'s own first two steps independently re-verify that the
+# exact source commit is already reachable from this repository's own
+# reviewed default-branch history -- via `git merge-base --is-ancestor`, not
+# by trusting the event payload -- BEFORE checking out or running anything
+# from it, and check out ONLY that verified commit, never the event's `ref:`
+# directly.
+#
+# This workflow deliberately never uses actions/cache: a workflow_run job
+# runs in the DEFAULT BRANCH's cache scope regardless of its own
+# `permissions:`, so restoring or saving a cache entry here would be a
+# poisoning route into publish.yml's own qualify job, which restores a
+# `round-trip-npm-cache-*` prefix by name (security review B1). Nothing
+# below calls actions/cache, and it should stay that way.
+on:
+  workflow_run:
+    workflows: ["Publish"]
+    types: [completed]
+
+permissions: {}
+
+jobs:
+  determine-package:
+    # Trust boundary gate (security review B1; see the file header). Every
+    # clause is required, at the job level, before ANY step below can run —
+    # `record-evidence` cannot start unless this job actually ran and
+    # produced a non-empty `package` output.
+    #   - event: publish.yml's ONLY real trigger is workflow_dispatch; a
+    #     push- or pull_request-triggered run of some other workflow named
+    #     "Publish" (by DISPLAY NAME, which `workflows: ["Publish"]` above
+    #     matches) cannot satisfy this.
+    #   - path: pins the exact workflow FILE, not merely its display name —
+    #     a different file that happens to declare `name: Publish` cannot
+    #     satisfy this either.
+    #   - head_repository.full_name: refuses a fork. A fork can still name
+    #     its branch "main", so head_branch alone proves nothing without
+    #     this.
+    #   - head_branch: publish.yml's own `publish` job additionally requires
+    #     `github.ref == 'refs/heads/main'` before it uploads anything, so a
+    #     dispatch against any other branch can never produce a matching
+    #     `publish (<key>)` success below regardless.
+    # Deliberately NOT gated on `workflow_run.conclusion` (correctness review
+    # S1): the run's OVERALL conclusion can be `failure` (e.g. a later job
+    # like verify-published failed) while `publish (<key>)` itself still
+    # concluded `success` and genuinely uploaded a version. The job-name
+    # match below is the real signal.
+    if: >-
+      github.event.workflow_run.event == 'workflow_dispatch' &&
+      github.event.workflow_run.path == '.github/workflows/publish.yml' &&
+      github.event.workflow_run.head_repository.full_name == github.repository &&
+      github.event.workflow_run.head_branch == github.event.repository.default_branch
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      actions: read
+    outputs:
+      package: ${{ steps.package.outputs.package }}
+      run-attempt: ${{ steps.package.outputs.run-attempt }}
+    steps:
+      # The job's OWN run_attempt, not the run's (correctness review B2):
+      # `publish (<key>)` can succeed on attempt 1 while a later job (e.g.
+      # verify-published) fails and gets individually re-run, which advances
+      # the RUN's current attempt number without re-running `publish` at
+      # all. Using the run's attempt there would name an attempt the publish
+      # job never ran in, producing a record whose `invocation` URL is
+      # simply wrong (and, before this revision, self-validated anyway —
+      # verifyPublicationProvenance's independent attestation cross-check is
+      # the second, independent guard against exactly that).
+      - name: Find this run's exact published package and the attempt it ran in
+        id: package
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RUN_ID: ${{ github.event.workflow_run.id }}
+        run: |
+          set -euo pipefail
+          jobs_json="$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${RUN_ID}/jobs?per_page=100" --paginate --slurp | node -e '
+            let raw = "";
+            process.stdin.on("data", (chunk) => { raw += chunk; });
+            process.stdin.on("end", () => {
+              const pages = JSON.parse(raw);
+              const jobs = pages.flatMap((page) => page.jobs ?? []);
+              process.stdout.write(JSON.stringify({ jobs }));
+            });
+          ')"
+          result="$(node -e '
+            const jobs = JSON.parse(process.argv[1]).jobs ?? [];
+            const match = jobs.find((job) => job?.conclusion === "success" && /^publish \([a-z0-9_-]+\)$/.test(job?.name ?? ""));
+            const packageKey = match ? match.name.slice("publish (".length, -1) : "";
+            const runAttempt = match && Number.isSafeInteger(match.run_attempt) && match.run_attempt > 0 ? match.run_attempt : "";
+            process.stdout.write(JSON.stringify({ package: packageKey, runAttempt }));
+          ' "$jobs_json")"
+          package="$(node -e 'console.log(JSON.parse(process.argv[1]).package)' "$result")"
+          run_attempt="$(node -e 'console.log(JSON.parse(process.argv[1]).runAttempt)' "$result")"
+          if [ -n "$package" ] && [ -z "$run_attempt" ]; then
+            echo "::error title=Missing run_attempt on matched job::the matched publish ($package) job has no usable run_attempt field; refusing to guess."
+            exit 1
+          fi
+          echo "package=$package" >> "$GITHUB_OUTPUT"
+          echo "run-attempt=$run_attempt" >> "$GITHUB_OUTPUT"
+
+  record-evidence:
+    needs: determine-package
+    if: ${{ needs.determine-package.outputs.package != '' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      actions: read
+      contents: write
+      pull-requests: write
+    # Per-RUN, not workflow-wide (correctness review B1; security review
+    # N1). GitHub keeps at most one PENDING run per concurrency group and
+    # evicts the older pending one the instant a new one arrives —
+    # `cancel-in-progress: false` does not prevent that eviction, only
+    # cancellation of something already RUNNING. A workflow-wide group here
+    # silently dropped 8 of 10 records on a real measured day (ten
+    # publish.yml runs concluding within three minutes). Keying the group on
+    # `workflow_run.id` means only a genuine duplicate delivery of the exact
+    # same run can ever collide; two DIFFERENT publishes never compete for
+    # this slot at all. The actual point of mutual exclusion -- the shared
+    # batching branch concurrent runs may push to -- is instead a
+    # fetch/re-classify/retry loop in "Push branch..." below, never a
+    # concurrency group.
+    concurrency:
+      group: record-publication-evidence-${{ github.event.workflow_run.id }}
+      cancel-in-progress: false
+    steps:
+      # The TRUSTED base: the default branch's own tip, never the event's
+      # head_sha (security review B1). fetch-depth 0 is required for the
+      # ancestry proof in the next step and for record-later-
+      # publication.mjs's own git-ancestry joins.
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      # Belt and braces beyond determine-package's own event-payload gate
+      # (security review B1): prove, from this checkout's OWN git history —
+      # not from anything GitHub's webhook payload merely asserts — that the
+      # publish run's source commit is already part of this repository's
+      # reviewed default-branch history before running anything from it.
+      - name: Verify the publish run's source commit is part of this repository's reviewed history
+        id: ancestry
+        env:
+          SOURCE_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          set -euo pipefail
+          if ! [[ "$SOURCE_SHA" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "::error title=Malformed source commit::head_sha is not a 40-character commit hash."
+            exit 1
+          fi
+          if ! git cat-file -e "${SOURCE_SHA}^{commit}" 2>/dev/null; then
+            echo "::error title=Unknown source commit::${SOURCE_SHA} is not a commit this checkout's full history contains."
+            exit 1
+          fi
+          if ! git merge-base --is-ancestor "$SOURCE_SHA" HEAD; then
+            echo "::error title=Source commit is not reviewed history::${SOURCE_SHA} is not an ancestor of ${{ github.event.repository.default_branch }}. Refusing to check it out or run anything from it."
+            exit 1
+          fi
+
+      # Idempotency (correctness review S2): a re-delivery of the exact same
+      # workflow_run event (GitHub does occasionally redeliver webhooks) must
+      # be a clean no-op, not a red run or a duplicate PR. Read the package
+      # manifest AT THE VERIFIED SOURCE COMMIT (via `git show`, without
+      # switching HEAD) to compute the exact record path this run would
+      # produce, then check whether it is already on the default branch —
+      # meaning some earlier trigger's pull request already merged it.
+      - name: Check whether this version's evidence already exists
+        id: idempotency
+        env:
+          PKG: ${{ needs.determine-package.outputs.package }}
+          SOURCE_SHA: ${{ github.event.workflow_run.head_sha }}
+          GITHUB_BASE_REF_OR_DEFAULT: ${{ github.event.repository.default_branch }}
+        run: |
+          set -euo pipefail
+          manifest="$(git show "${SOURCE_SHA}:packages/${PKG}/package.json")"
+          version="$(node -e 'console.log(JSON.parse(process.argv[1]).version)' "$manifest")"
+          if ! [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error title=Unreadable package version::packages/${PKG}/package.json at ${SOURCE_SHA} has no readable semver version."
+            exit 1
+          fi
+          record_path="governance/release-publications/later/${PKG}-${version}.json"
+          already=false
+          if git cat-file -e "HEAD:${record_path}" 2>/dev/null; then
+            already=true
+          fi
+          {
+            echo "version=$version"
+            echo "record-path=$record_path"
+            echo "already-recorded=$already"
+          } >> "$GITHUB_OUTPUT"
+          if [ "$already" = true ]; then
+            echo "::notice title=Already recorded::${record_path} is already on ${GITHUB_BASE_REF_OR_DEFAULT}; nothing to do."
+          fi
+
+      # Everything from here only runs when the record is genuinely new.
+      - name: Check out the verified source commit
+        if: steps.idempotency.outputs.already-recorded != 'true'
+        env:
+          SOURCE_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: git checkout --detach "$SOURCE_SHA"
+
+      # Record construction runs createLaterPublicationRecord(), which calls
+      # record-later-publication.mjs's assertReleaseRuntime() unconditionally
+      # -- the exact pinned tuple qualify/publish already assert on this same
+      # publish run, reused here rather than relaxed. No cache: step is used
+      # here (see the file header, security review B1's cache note).
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        if: steps.idempotency.outputs.already-recorded != 'true'
+        with:
+          node-version: 24.19.0
+
+      - name: Assert release runtime
+        if: steps.idempotency.outputs.already-recorded != 'true'
+        run: |
+          test "$(node --version)" = 'v24.19.0'
+          test "$(npm --version)" = '11.17.0'
+          test "$(node -p 'process.versions.zlib')" = '1.3.2.1-motley-3246f1b'
+
+      # PUBLICATION_EVIDENCE_GITHUB_TOKEN (not GITHUB_TOKEN/GH_TOKEN — see
+      # scripts/record-publication-evidence.mjs's own header, security
+      # review N2) authenticates only this script's OWN GitHub API reads
+      # (the run's qualify-job artifact list, and the replay fallback's
+      # artifact download). It is never forwarded into
+      # createLaterPublicationRecord's `env`, which
+      # scripts/lib/candidate-runner.mjs's assertCredentialFree() requires
+      # to stay credential-free. --run-attempt is determine-package's own
+      # matched-JOB attempt, never the run's (correctness review B2) — and
+      # scripts/lib/publication-evidence-run.mjs's verifyPublicationProvenance
+      # independently re-derives and cross-checks it against the version's
+      # actual npm SLSA attestation regardless (security review B2,
+      # correctness review B2). This step writes
+      # governance/release-publications/later/<key>-<version>.json directly
+      # into the checked-out tree (record-later-publication.mjs's own
+      # no-overwrite writer) and nothing else -- no git, no push, no PR.
+      - name: Build publication evidence record
+        id: build
+        if: steps.idempotency.outputs.already-recorded != 'true'
+        env:
+          PUBLICATION_EVIDENCE_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PKG: ${{ needs.determine-package.outputs.package }}
+          RUN_ID: ${{ github.event.workflow_run.id }}
+          RUN_ATTEMPT: ${{ needs.determine-package.outputs.run-attempt }}
+          SOURCE_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: node scripts/record-publication-evidence.mjs --package "$PKG" --run-id "$RUN_ID" --run-attempt "$RUN_ATTEMPT" --source-sha "$SOURCE_SHA"
+
+      # BATCHING, GUARDED BY "THE BASE CONTAINS THE SOURCE" (issues #1346,
+      # #1468). publish.yml dispatches exactly one package per run, so N
+      # packages published close together means N separate, possibly
+      # CONCURRENT triggers of this workflow; issue #1346 wants them in ONE
+      # pull request. The first revision batched by adopting the newest open
+      # evidence branch unconditionally. That branch keeps the base it was
+      # first cut from, so a record whose qualification record merged AFTER
+      # that cut was introduced on a commit that did not descend from its
+      # qualification's introduction -- scripts/check-later-publications.mjs
+      # rejects exactly that, and no merge can repair ancestry (#1461, closed
+      # and rebuilt as #1466). The defect was never reuse itself; it was
+      # reusing a branch whose base did not contain the publish run's source
+      # commit.
+      #
+      # Every open, same-repository, bot-authored pull request on the
+      # reserved prefix is therefore classified first by
+      # scripts/lib/publication-evidence-branch.sh's
+      # classify_open_evidence_branch() (which calls verify_branch_is_ours --
+      # see that file's header for why path confinement, not the author
+      # check, is the real guard):
+      #   any `conflict` (this record with different bytes, or on an
+      #     unverifiable branch) or `broken` (a verified branch carrying a
+      #     record whose own source is not in its base -- the #1461 shape,
+      #     which no merge can repair) -> fail the run before anything is
+      #     pushed;
+      #   else any `duplicate` (identical bytes, verified, current base)
+      #     -> clean no-op (a redelivered or re-run event; correctness
+      #     review S2);
+      #   the NEWEST PR `adoptable` (verified, fork point contains the
+      #     source, no copy of this record) -> add this record on top of it
+      #     with an ordinary fast-forward push;
+      #   anything else -> a fresh branch from the default branch's current
+      #     tip, under a name no other run uses (run id + runner entropy;
+      #     security re-review B3-residual). Each `predates` PR (cut before
+      #     THIS record's source, every record it carries sourced in its own
+      #     base) gets a notice naming it: it remains valid for its own
+      #     records and should be merged normally; this record simply goes
+      #     to a new pull request. This workflow never edits a `predates`
+      #     PR, closes any PR, or force-pushes anything.
+      # An adopted branch is re-fetched and re-classified before EVERY
+      # attempt, including inside the retry loop (security re-review,
+      # finding B3-residual); one that no longer classifies adoptable is
+      # abandoned for a fresh branch, never built on.
+      #
+      # Before ANY push, the committed result must pass
+      # scripts/check-later-publications.mjs -- the default branch's own
+      # copy of it, run against the candidate commit, so the gate in force
+      # now judges the branch. Pull requests opened with this job's
+      # GITHUB_TOKEN do not trigger other workflows, so nothing else would
+      # run it before a human looks. If an ADOPTED branch fails it, this run
+      # falls back to a fresh branch rather than failing; if a fresh branch
+      # fails it, the run fails and nothing is pushed.
+      #
+      # The helpers and the gate come from the default branch's tip as
+      # fetched when this step starts (the `work` checkout and the gate
+      # worktree below) -- never from the publish run's older source commit.
+      # That tip can be newer than the revision this workflow file itself
+      # was loaded from, never older.
+      #
+      # Every PR this step touches is edited by NUMBER, looked up fresh --
+      # same-repository and bot-authored -- AFTER this run's own push lands,
+      # never resolved by branch name (security re-review B3-residual;
+      # fresh-final review S1: a PR that merged mid-run must never be
+      # mistaken for one still open).
+      - name: Push branch and open or update the publication-evidence pull request
+        if: steps.idempotency.outputs.already-recorded != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RECORD_PATH: ${{ steps.idempotency.outputs.record-path }}
+          PKG_NAME_VERSION: ${{ needs.determine-package.outputs.package }}@${{ steps.idempotency.outputs.version }}
+          RUN_ID: ${{ github.event.workflow_run.id }}
+          SOURCE_SHA: ${{ github.event.workflow_run.head_sha }}
+          GITHUB_BASE_REF_OR_DEFAULT: ${{ github.event.repository.default_branch }}
+        run: |
+          set -euo pipefail
+          BRANCH_PREFIX="automation/publication-evidence/"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          git fetch origin "+refs/heads/${GITHUB_BASE_REF_OR_DEFAULT}:refs/remotes/origin/${GITHUB_BASE_REF_OR_DEFAULT}"
+
+          # A safe, non-git copy of the exact bytes this run built. Every
+          # attempt below re-stages FROM this copy. The working-tree copy is
+          # REMOVED (not merely overwritten) before the first checkout: `git
+          # checkout -B` refuses to switch onto a tree that would need to
+          # create a path an untracked file already occupies (2026-09-23
+          # fresh-final review, S2).
+          safe_copy="$RUNNER_TEMP/publication-evidence-record.json"
+          cp "$RECORD_PATH" "$safe_copy"
+          rm -f "$RECORD_PATH"
+
+          git checkout -B work "origin/${GITHUB_BASE_REF_OR_DEFAULT}"
+          source scripts/lib/publication-evidence-branch.sh
+          # The default branch's own copy of the retained-record gate, run
+          # against whichever candidate commit is checked out as `work`.
+          gate_dir="$RUNNER_TEMP/default-branch-gate"
+          git worktree add -q --detach "$gate_dir" "origin/${GITHUB_BASE_REF_OR_DEFAULT}"
+
+          if ! git merge-base --is-ancestor "$SOURCE_SHA" "origin/${GITHUB_BASE_REF_OR_DEFAULT}"; then
+            echo "::error title=Default branch does not contain the publish source::${SOURCE_SHA} is not an ancestor of the freshly fetched ${GITHUB_BASE_REF_OR_DEFAULT}. Refusing to introduce ${RECORD_PATH} anywhere."
+            exit 1
+          fi
+          if git cat-file -e "origin/${GITHUB_BASE_REF_OR_DEFAULT}:${RECORD_PATH}" 2>/dev/null; then
+            # Merged to the default branch since the idempotency check ran.
+            if git show "origin/${GITHUB_BASE_REF_OR_DEFAULT}:${RECORD_PATH}" | cmp -s "$safe_copy" -; then
+              echo "::notice title=Already recorded::${RECORD_PATH} reached ${GITHUB_BASE_REF_OR_DEFAULT} during this run; nothing to do."
+              exit 0
+            fi
+            echo "::error title=Publication evidence collision::${GITHUB_BASE_REF_OR_DEFAULT} already carries a DIFFERENT ${RECORD_PATH} than the one this run built. Refusing to overwrite an existing record."
+            exit 1
+          fi
+
+          # Classify every open evidence PR, oldest first, so the last one
+          # seen is the newest.
+          open_evidence_prs="$(gh pr list --state open --base "$GITHUB_BASE_REF_OR_DEFAULT" --limit 500 \
+            --json number,headRefName,isCrossRepository,author \
+            --jq "[.[] | select(.isCrossRepository|not) | select(.author.login==\"app/github-actions\") | select(.headRefName|startswith(\"${BRANCH_PREFIX}\"))] | sort_by(.number) | .[] | \"\(.number) \(.headRefName)\"")"
+          conflict_pr=""
+          broken_pr=""
+          duplicate_pr=""
+          newest_pr=""
+          newest_branch=""
+          newest_verdict=""
+          while IFS=' ' read -r open_number open_branch; do
+            [ -n "${open_number:-}" ] || continue
+            if git fetch origin "+refs/heads/${open_branch}:refs/remotes/origin/${open_branch}" 2>/dev/null; then
+              verdict="$(classify_open_evidence_branch "origin/${open_branch}" "origin/${GITHUB_BASE_REF_OR_DEFAULT}" "$RECORD_PATH" "$safe_copy" "$SOURCE_SHA")"
+            else
+              verdict=missing # deleted since the listing (e.g. merged)
+            fi
+            case "$verdict" in
+              conflict) conflict_pr="${conflict_pr:-#${open_number} (${open_branch})}" ;;
+              broken) broken_pr="${broken_pr:-#${open_number} (${open_branch})}" ;;
+              duplicate) duplicate_pr="${duplicate_pr:-#${open_number}}" ;;
+              predates) echo "::notice title=Evidence pull request predates this record's source::open pull request #${open_number} (${open_branch}) was cut from ${GITHUB_BASE_REF_OR_DEFAULT} before ${SOURCE_SHA}, so this record goes to a new pull request. #${open_number} remains valid for its own records -- merge it normally." ;;
+            esac
+            newest_pr="$open_number"
+            newest_branch="$open_branch"
+            newest_verdict="$verdict"
+          done <<< "$open_evidence_prs"
+
+          if [ -n "$conflict_pr" ]; then
+            echo "::error title=Conflicting open evidence pull request::open pull request ${conflict_pr} already carries ${RECORD_PATH}, but with different bytes or on a branch this workflow cannot verify as its own. Refusing to push anything. Resolve that pull request, then re-run this workflow."
+            exit 1
+          fi
+          if [ -n "$broken_pr" ]; then
+            echo "::error title=Open evidence pull request cannot pass the retained-record gate::open pull request ${broken_pr} carries a record whose own publish source commit is not in its branch's base (the #1461 shape). scripts/check-later-publications.mjs will reject it and no merge can repair it. Refusing to push anything. Close that pull request, re-introduce its records on the current default branch, then re-run this workflow."
+            exit 1
+          fi
+          if [ -n "$duplicate_pr" ]; then
+            echo "::notice title=Already pending::open pull request ${duplicate_pr} already carries this exact ${RECORD_PATH} on a base containing ${SOURCE_SHA}. Nothing to do."
+            exit 0
+          fi
+
+          if [ "$newest_verdict" = adoptable ]; then
+            branch="$newest_branch"
+            reused=true
+            echo "Adding ${RECORD_PATH} to open pull request #${newest_pr} (${branch}), whose base contains ${SOURCE_SHA}."
+          else
+            case "$newest_verdict" in
+              foreign) echo "::warning title=Refusing to adopt an unverified branch::${newest_branch} (#${newest_pr}) matched the reserved prefix and filters but its history contains a non-bot commit or a path outside governance/release-publications/later/. Starting a fresh, unguessable branch instead." ;;
+              missing) echo "::notice title=Newest evidence branch could not be fetched::${newest_branch} (#${newest_pr}) no longer fetches (for example, deleted after a merge). Starting a fresh, unguessable branch instead." ;;
+            esac
+            branch="$(evidence_branch_name "$BRANCH_PREFIX" "$RUN_ID")"
+            reused=false
+          fi
+
+          message_file="$RUNNER_TEMP/publication-evidence-commit-message.txt"
+          {
+            printf '%s\n\n' "Record publication evidence for ${PKG_NAME_VERSION}"
+            printf '%s\n' "Built by scripts/record-publication-evidence.mjs from measured data"
+            printf '%s\n' "only -- the public npm registry, the SLSA provenance attestation, and"
+            printf '%s\n' "this exact GitHub Actions run's own metadata -- reusing"
+            printf '%s\n\n' "scripts/record-later-publication.mjs's own exported, self-validating builder."
+            printf '%s\n' "Publish run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${RUN_ID}"
+            printf '%s\n' "Ref: #1346"
+          } > "$message_file"
+
+          max_attempts=10
+          attempt=0
+          while :; do
+            attempt=$((attempt + 1))
+            if [ "$attempt" -gt "$max_attempts" ]; then
+              echo "::error title=Could not land publication evidence::exhausted $max_attempts attempts to push ${RECORD_PATH}."
+              exit 1
+            fi
+
+            if [ "$reused" = true ]; then
+              # Re-verified on EVERY attempt, never only at the initial
+              # lookup (security re-review, finding B3-residual).
+              verdict=missing
+              if git fetch origin "+refs/heads/${branch}:refs/remotes/origin/${branch}" 2>/dev/null; then
+                verdict="$(classify_open_evidence_branch "origin/${branch}" "origin/${GITHUB_BASE_REF_OR_DEFAULT}" "$RECORD_PATH" "$safe_copy" "$SOURCE_SHA")"
+              fi
+              case "$verdict" in
+                adoptable) base="origin/${branch}" ;;
+                duplicate)
+                  echo "::notice title=Already pending::${branch} already carries this exact ${RECORD_PATH}. Nothing to do."
+                  exit 0
+                  ;;
+                conflict)
+                  echo "::error title=Publication evidence collision::${branch} now carries a DIFFERENT ${RECORD_PATH}, or is no longer verifiable. Refusing to push anything."
+                  exit 1
+                  ;;
+                broken)
+                  echo "::error title=Open evidence pull request cannot pass the retained-record gate::${branch} now carries a record whose own publish source commit is not in its base (the #1461 shape). Refusing to push anything."
+                  exit 1
+                  ;;
+                missing)
+                  echo "::notice title=Adopted branch could not be fetched::${branch} no longer fetches (for example, deleted after a merge). Starting a fresh, unguessable branch instead."
+                  branch="$(evidence_branch_name "$BRANCH_PREFIX" "$RUN_ID")"
+                  reused=false
+                  continue
+                  ;;
+                *)
+                  echo "::warning title=Abandoning an unusable branch::${branch} no longer classifies adoptable (${verdict}). Starting a fresh, unguessable branch instead."
+                  branch="$(evidence_branch_name "$BRANCH_PREFIX" "$RUN_ID")"
+                  reused=false
+                  continue
+                  ;;
+              esac
+            else
+              base="origin/${GITHUB_BASE_REF_OR_DEFAULT}"
+            fi
+
+            git checkout -q -B work "$base"
+            mkdir -p "$(dirname "$RECORD_PATH")"
+            cp "$safe_copy" "$RECORD_PATH"
+            git add "$RECORD_PATH"
+            git commit -F "$message_file" -q
+
+            if ! node "$gate_dir/scripts/check-later-publications.mjs"; then
+              if [ "$reused" = true ]; then
+                echo "::notice title=Adopted branch fails the retained-record gate::${RECORD_PATH} on top of ${branch} fails scripts/check-later-publications.mjs. Nothing was pushed to it; starting a fresh branch from ${GITHUB_BASE_REF_OR_DEFAULT} instead."
+                branch="$(evidence_branch_name "$BRANCH_PREFIX" "$RUN_ID")"
+                reused=false
+                continue
+              fi
+              echo "::error title=Publication evidence fails the retained-record gate::${RECORD_PATH}, committed on ${GITHUB_BASE_REF_OR_DEFAULT}'s tip, fails scripts/check-later-publications.mjs. Nothing was pushed."
+              exit 1
+            fi
+
+            if git push origin "work:refs/heads/${branch}" 2>"$RUNNER_TEMP/publication-evidence-push-error.log"; then
+              break
+            fi
+            cat "$RUNNER_TEMP/publication-evidence-push-error.log" >&2
+            if [ "$reused" != true ]; then
+              # A fresh name only ever collides by chance; retry under a
+              # NEW name, never onto an existing branch.
+              branch="$(evidence_branch_name "$BRANCH_PREFIX" "$RUN_ID")"
+            fi
+            # An adopted branch that moved (a concurrent run won the race)
+            # is re-fetched and re-classified at the top of the next attempt.
+            sleep "$(( (RANDOM % 4) + attempt ))"
+          done
+
+          record_files="$(git diff --name-only "origin/${GITHUB_BASE_REF_OR_DEFAULT}...work" -- governance/release-publications/later/ | sort)"
+          record_count="$(printf '%s\n' "$record_files" | grep -c .)"
+          if [ "$record_count" -eq 1 ]; then
+            title="Record publication evidence for ${PKG_NAME_VERSION}"
+          else
+            title="Record publication evidence for ${record_count} packages ($(date -u +%Y-%m-%d))"
+          fi
+
+          body_file="$RUNNER_TEMP/publication-evidence-pr-body.txt"
+          {
+            printf '%s\n\n' "Publication evidence opened automatically after a successful \`publish.yml\` run -- issue #1346."
+            printf '%s\n' "## Records"
+            printf '%s\n' "$record_files" | while IFS= read -r record_file; do printf -- "- \`%s\`\n" "$record_file"; done
+            printf '\n%s\n' "Every field is measured, never invented, and independently cross-checked against the version's own npm SLSA provenance attestation before being written (scripts/lib/publication-evidence-run.mjs's verifyPublicationProvenance) -- the public npm registry (integrity, shasum, tarball, publish time), this repository's own GitHub Actions run/job/artifact metadata, and the attestation itself. The same sources, and the same \`scripts/record-later-publication.mjs\` builder, PR #1348 called directly by hand to backfill this identical evidence gap. Each record self-validates via \`validateLaterPublication()\` before being written; a record that cannot be fully measured or does not match its own attestation is never produced, and this pull request would not exist."
+            printf '\n%s\n' "Every record here was added only after its publish run's source commit was confirmed to be in this branch's base, and the branch passed \`${GITHUB_BASE_REF_OR_DEFAULT}\`'s own \`scripts/check-later-publications.mjs\` before each push (issue #1468)."
+            printf '\n%s\n' "This workflow never pushes to \`${GITHUB_BASE_REF_OR_DEFAULT}\` and carries no elevated permissions beyond \`actions: read\`/\`contents: write\`/\`pull-requests: write\` on this one follow-up job -- \`publish.yml\`'s own upload job is unchanged."
+            printf '%s\n' "Latest publish run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${RUN_ID}"
+            printf '%s\n' "Ref: #1346"
+          } > "$body_file"
+
+          open_pr="$(gh pr list --state open --base "$GITHUB_BASE_REF_OR_DEFAULT" --head "$branch" --limit 10 \
+            --json number,isCrossRepository,author \
+            --jq '[.[] | select(.isCrossRepository|not) | select(.author.login=="app/github-actions")] | first')"
+          pr_number=""
+          if [ -n "$open_pr" ] && [ "$open_pr" != "null" ]; then
+            pr_number="$(node -e 'console.log(JSON.parse(process.argv[1]).number)' "$open_pr")"
+          fi
+
+          # A transient gh failure must not strand the pushed branch silently
+          # (correctness review S3): retry a few times before failing loudly.
+          # "Actions may not open pull requests" is the one named exception
+          # this repository already documents and degrades from gracefully
+          # (qualify-candidate.yml, release-pr.yml).
+          gh_attempt=0
+          gh_max_attempts=3
+          while :; do
+            gh_attempt=$((gh_attempt + 1))
+            set +e
+            if [ -n "$pr_number" ]; then
+              pr_output="$(gh pr edit "$pr_number" --title "$title" --body-file "$body_file" 2>&1)"
+              pr_status=$?
+            else
+              pr_output="$(gh pr create --title "$title" --base "$GITHUB_BASE_REF_OR_DEFAULT" --head "$branch" --body-file "$body_file" 2>&1)"
+              pr_status=$?
+            fi
+            set -e
+
+            if [ "$pr_status" -eq 0 ]; then
+              echo "$pr_output"
+              break
+            fi
+            if printf '%s' "$pr_output" | grep -q "not permitted to create or approve pull requests"; then
+              {
+                echo "### Publication evidence pushed, PR not opened"
+                echo ""
+                echo "\`${RECORD_PATH}\` is committed on branch \`${branch}\`, but this repository does not permit GitHub Actions to open pull requests. A human must open it from the branch below — no later trigger of this workflow can do so automatically, since branch adoption only ever considers branches that already carry an open pull request."
+                echo ""
+                echo "Open it from: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/compare/${GITHUB_BASE_REF_OR_DEFAULT}...${branch}?expand=1"
+              } >> "$GITHUB_STEP_SUMMARY"
+              echo "PR creation was refused (Actions cannot create PRs on this repo); branch ${branch} is pushed and ready. See job summary for the compare URL."
+              break
+            fi
+            if [ "$gh_attempt" -ge "$gh_max_attempts" ]; then
+              echo "$pr_output" >&2
+              echo "::error title=Could not open or update the publication-evidence pull request::${RECORD_PATH} is committed and pushed to ${branch}, but gh pr create/edit failed ${gh_max_attempts} times. Failing loudly rather than leaving this silent -- if this branch carries no open pull request afterward, a human must open one from it directly; a later trigger of this workflow cannot discover or adopt a branch with no open PR by design (branch adoption only ever considers already-open, bot-authored, same-repository pull requests)."
+              exit "$pr_status"
+            fi
+            echo "$pr_output" >&2
+            sleep "$(( gh_attempt * 3 ))"
+          done

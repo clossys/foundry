@@ -1,0 +1,12 @@
+[
+  {
+    "id": "small-team-operations",
+    "name": "Small-team operations tooling",
+    "audienceIds": [
+      "ops-lead"
+    ],
+    "factRefs": [
+      "addressable-market"
+    ]
+  }
+]

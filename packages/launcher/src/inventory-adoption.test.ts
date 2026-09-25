@@ -12,6 +12,10 @@ function fakeHost(files: Record<string, string>): WorkspaceHost {
     isDirectory: () => false,
     isSymlink: () => false,
     readText: (p) => files[p] ?? null,
+    readBytes: (p) => (files[p] === undefined ? null : new TextEncoder().encode(files[p])),
+    writeBytes: () => {
+      throw new Error("read-only in this test");
+    },
     writeText: () => {
       throw new Error("read-only in this test");
     },

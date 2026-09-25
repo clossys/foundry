@@ -1,6 +1,6 @@
 {
   "name": "@clossys/launcher",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -28,7 +28,6 @@
     "skill-catalogue",
     "contracts",
     "README.md",
-    "CHANGELOG.md",
     "LICENSE",
     "skill"
   ],
@@ -57,8 +56,8 @@
   "scripts": {
     "build": "node scripts/pack-skills.mjs && tsc -p tsconfig.json",
     "prepublishOnly": "node ../../scripts/check-name-collision.mjs . && npm run build",
-    "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "vitest run"
+    "typecheck": "node scripts/pack-skills.mjs && tsc -p tsconfig.json --noEmit",
+    "test": "node scripts/pack-skills.mjs && vitest run"
   },
   "devDependencies": {
     "@types/node": "^26.5.1",

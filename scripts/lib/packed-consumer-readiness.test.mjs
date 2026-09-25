@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdtemp, mkdir, readFile, realpath, rm, symlink, writeFile } from "node:fs/promises";
+import { mkdtemp, mkdir, readdir, readFile, realpath, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
@@ -293,7 +293,30 @@ test("a new export subpath is a clearable optional-peer policy finding, not an u
 
 test("the repository omission matrix is closed against every current publishable manifest", async () => {
   const packages = await discoverPublishablePackages(process.cwd());
-  assert.equal(packages.length, 21);
+  // The count this asserted (issue #1504) tracked packages/ and had to be
+  // bumped on every new package, but a count alone is not what closes the
+  // gap: validateOptionalPeerPolicy's stale-policy-row direction only fires
+  // for a package OPTIONAL_PEER_POLICY still names, and most publishable
+  // packages have no row there at all (issue #1504 review). A
+  // discoverPublishablePackages bug that silently drops one of THOSE
+  // uncovered packages would produce zero findings below either. So the
+  // expected name set is read independently here -- every packages/*
+  // directory with a package.json whose "private" is not true, parsed
+  // straight off disk rather than through discoverPublishablePackages --
+  // and checked against what discovery actually returned.
+  const packagesDir = join(process.cwd(), "packages");
+  const expectedNames = [];
+  for (const entry of await readdir(packagesDir, { withFileTypes: true })) {
+    if (!entry.isDirectory()) continue;
+    let manifest;
+    try {
+      manifest = JSON.parse(await readFile(join(packagesDir, entry.name, "package.json"), "utf8"));
+    } catch {
+      continue;
+    }
+    if (manifest.private !== true) expectedNames.push(manifest.name);
+  }
+  assert.deepEqual(packages.map((entry) => entry.manifest.name).sort(), expectedNames.sort());
   assert.deepEqual(validateOptionalPeerPolicy(packages, OPTIONAL_PEER_POLICY), []);
 });
 
@@ -304,10 +327,14 @@ test("Publisher's optional-peer matrix binds both default and react-server web o
     "@clossys/publisher/document",
     "@clossys/publisher/email",
     "@clossys/publisher/image",
+    "@clossys/publisher/materials",
     "@clossys/publisher/media",
+    "@clossys/publisher/pack",
     "@clossys/publisher/print",
     "@clossys/publisher/record",
     "@clossys/publisher/slides",
+    "@clossys/publisher/surfaces",
+    "@clossys/publisher/templates",
     "@clossys/publisher/web",
   ];
   const expected = (rejected = [], web = { default: "imports", "react-server": "imports" }) => ({

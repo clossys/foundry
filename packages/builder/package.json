@@ -1,6 +1,6 @@
 {
   "name": "@clossys/builder",
-  "version": "0.10.0",
+  "version": "0.10.2",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -48,7 +48,6 @@
     "!src/**/*.test.ts",
     "!src/**/*.test-helper.ts",
     "documents",
-    "CHANGELOG.md",
     "README.md",
     "LICENSE",
     "skill"

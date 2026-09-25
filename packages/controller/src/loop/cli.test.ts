@@ -1,4 +1,4 @@
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -61,6 +61,29 @@ describe("foundry-loop-status CLI", () => {
     expect(main([loopPath, mandatePath, "--out", outPath])).toBe(0);
     expect(readFileSync(outPath, "utf8")).toContain("## Blockers");
     log.mockRestore();
+  });
+
+  it("exits 2 with usage when --out has no path following it, rather than silently printing to stdout only", () => {
+    const loopPath = writeLoopState(validState);
+    const mandatePath = writeMandate("Confirm client problems.");
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+    expect(main([loopPath, mandatePath, "--out"])).toBe(2);
+    expect(error.mock.calls[0]?.[0]).toContain("Usage: foundry-loop-status");
+    error.mockRestore();
+  });
+
+  it("exits 2 with usage, writing nothing, when --out is repeated -- even when the first one has a path", () => {
+    const loopPath = writeLoopState(validState);
+    const mandatePath = writeMandate("Confirm client problems.");
+    const firstPath = join(root, "first-STATUS.md");
+    const secondPath = join(root, "second-STATUS.md");
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+    expect(main([loopPath, mandatePath, "--out", firstPath, "--out"])).toBe(2);
+    expect(main([loopPath, mandatePath, "--out", firstPath, "--out", secondPath])).toBe(2);
+    expect(existsSync(firstPath)).toBe(false);
+    expect(existsSync(secondPath)).toBe(false);
+    expect(error.mock.calls[0]?.[0]).toContain("Usage: foundry-loop-status");
+    error.mockRestore();
   });
 
   it("exits 2 and names every finding for a malformed loop.json", () => {

@@ -1,0 +1,18 @@
+{
+  "speaker": "customer",
+  "inhabitedAs": "target-audience",
+  "audienceId": "audience-one",
+  "persona": {
+    "name": "Jordan"
+  },
+  "stance": "Once I got past the unclear offer, I could picture a peer in my spot using this.",
+  "intent": "refer",
+  "familiarity": "returning",
+  "topic": "whether I would pass this along",
+  "wouldITellAPeer": "yes",
+  "alreadyToldSomeone": "no",
+  "whatIdSay": "It is the first page that told me what to do next without a sales call.",
+  "whatStopsMe": "I would want to try it on a real project before I put my name behind it.",
+  "whatItWouldTake": "One week where it saved me time I could point to.",
+  "whoIdTell": "A peer who is also evaluating their first landing page."
+}

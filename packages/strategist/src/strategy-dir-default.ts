@@ -7,9 +7,9 @@
  *
  * #1171's owner decision (approved 2026-09-22): the consumer-facing
  * convention moves from a root `strategy/` directory to `clossys/strategist/`.
- * This package reads the retired `strategy/` location for exactly one
- * release as a migration bridge — see this package's CHANGELOG for the
- * release the fallback is removed in.
+ * This package still reads the retired `strategy/` location in this
+ * release as a migration bridge; its removal will be announced in a
+ * later minor release's CHANGELOG first — see this package's CHANGELOG.
  *
  * PURE, the same I/O split this package always draws (`facts-dir.ts`,
  * `scan.ts`): this function takes the two already-resolved candidate paths
@@ -26,7 +26,8 @@
  *     one — because the current convention is what a fresh consumer should
  *     create.
  *   - only `legacyDir` exists: read it, with a plain-language notice to
- *     move it. This is the one-release migration bridge.
+ *     move it. This is the migration bridge, still read in this release;
+ *     its removal will be announced beforehand in the CHANGELOG.
  *   - both exist: refuse to guess which is authoritative — silently
  *     preferring one risks acting on stale, superseded strategy records.
  *     Reported `indeterminate` with a notice, the same fail-closed
@@ -36,7 +37,7 @@
 
 /** Relative path segments (repository-root-anchored) for the current consumer convention. Join with the base directory using `node:path` `join`, the same way `readStrategy`'s callers always have. */
 export const CURRENT_STRATEGY_DIR_SEGMENTS = ["clossys", "strategist"] as const;
-/** Relative path segments for the retired convention, read for one release only. */
+/** Relative path segments for the retired convention, still read in this release; see this package's CHANGELOG for when it is removed. */
 export const LEGACY_STRATEGY_DIR_SEGMENTS = ["strategy"] as const;
 
 export type StrategyDirectoryDefault =
@@ -65,7 +66,8 @@ export function resolveDefaultStrategyDirectory(
       dir: legacyDir,
       notice:
         `Reading the retired "${legacyDir}" directory — move it to "${currentDir}". ` +
-        `This package reads the retired location for one release only; see this package's CHANGELOG.`,
+        `This package still reads the retired location in this release; its removal will be ` +
+        `announced beforehand in this package's CHANGELOG.`,
     };
   }
   return { reason: "current", dir: currentDir };

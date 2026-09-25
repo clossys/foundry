@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { existsSync, mkdtempSync, mkdirSync, readFileSync, writeFileSync, rmSync } from "node:fs";
+import { existsSync, mkdtempSync, mkdirSync, readFileSync, readdirSync, writeFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -25,7 +25,7 @@ import {
   stateIndex,
 } from "./check-package-evidence.mjs";
 import { TRIO_PUBLICATION_PATH, TRIO_PUBLICATION_TRANSITION_PATHS } from "./lib/release-publication-cohort.mjs";
-import { validateRetainedLaterPublications } from "./lib/release-later-publication.mjs";
+import { LATER_PUBLICATION_DIRECTORY, validateRetainedLaterPublications } from "./lib/release-later-publication.mjs";
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const script = join(repoRoot, "scripts/check-package-evidence.mjs");
@@ -87,73 +87,72 @@ const rules = (r) => r.findings.filter(isFailureFinding).map((f) => f.rule);
 // `readValidatedPublishedPackages` returns `name@version` IDENTITIES, never
 // bare names (#875) — every retained record in
 // governance/release-publications/later, plus the three Trio members sealed
-// at their own first-publication versions. Measured directly against this
-// repository's own tree; see the correction on issue #875 for how this list
-// was derived (`governance/release-publications/later/*.json` file names,
-// joined with `governance/release-publications/clossys-npmjs-trio.json`'s
-// three sealed qualification records).
-const CURRENT_PUBLISHED_IDENTITIES = [
-  "@clossys/advisor@0.1.3",
-  "@clossys/advisor@0.1.5",
-  "@clossys/advisor@0.1.6",
-  "@clossys/advisor@0.2.5",
-  "@clossys/advisor@0.2.6",
-  "@clossys/architect@0.1.2",
-  "@clossys/architect@0.1.3",
-  "@clossys/bouncer@0.1.1",
-  "@clossys/bouncer@0.1.2",
-  "@clossys/bouncer@0.1.9",
-  "@clossys/builder@0.7.3",
-  "@clossys/builder@0.7.4",
-  "@clossys/builder@0.8.0",
-  "@clossys/butler@0.1.1",
-  "@clossys/butler@0.1.2",
-  "@clossys/controller@0.8.21",
-  "@clossys/controller@0.8.23",
-  "@clossys/controller@0.8.24",
-  "@clossys/designer@0.2.4",
-  "@clossys/designer@0.2.7",
-  "@clossys/designer@0.4.7",
-  "@clossys/giver@0.1.2",
-  "@clossys/giver@0.1.3",
-  "@clossys/influencer@0.1.2",
-  "@clossys/influencer@0.1.3",
-  "@clossys/inspector@0.1.18",
-  "@clossys/inspector@0.1.19",
-  "@clossys/inspector@0.2.6",
-  "@clossys/integrator@0.6.10",
-  "@clossys/integrator@0.6.2",
-  "@clossys/integrator@0.6.3",
-  "@clossys/integrator@0.7.0",
-  "@clossys/keeper@0.1.2",
-  "@clossys/keeper@0.1.3",
-  "@clossys/launcher@0.1.2",
-  "@clossys/launcher@0.1.5",
-  "@clossys/locksmith@0.1.6",
-  "@clossys/locksmith@0.1.7",
-  "@clossys/messenger@0.1.2",
-  "@clossys/messenger@0.1.3",
-  "@clossys/observer@0.2.3",
-  "@clossys/observer@0.2.4",
-  "@clossys/observer@0.3.0",
-  "@clossys/publisher@0.1.10",
-  "@clossys/publisher@0.2.1",
-  "@clossys/starter@0.1.2",
-  "@clossys/starter@0.1.4",
-  "@clossys/starter@0.1.5",
-  "@clossys/starter@0.1.8",
-  "@clossys/strategist@0.1.1",
-  "@clossys/strategist@0.1.2",
-  "@clossys/strategist@0.2.0",
-  "@clossys/writer@0.3.2",
-  "@clossys/writer@0.3.3",
-];
+// at their own first-publication versions.
+//
+// The expected set is DERIVED from the tree, never pinned (#1489). A literal
+// snapshot had to be hand-edited in every pull request that retained a new
+// record — including the record-only pull requests the evidence workflow
+// opens, which could therefore never pass on their own. What the snapshot
+// actually protected is kept as invariants that still hold as records are
+// added:
+//   - every record present on disk validates (the validated set equals the
+//     set the records themselves name, so none is silently dropped, and one
+//     bad record zeroes the whole set, which cannot equal it);
+//   - no record was rewritten after its introduction (the validator's own
+//     `immutableSingleIntroduction`, surfaced through the same equality);
+//   - no record ever retained was deleted (`everRetainedPublicationPaths`
+//     below — the one property a tree-derived set cannot see on its own, so
+//     it is read from Git history instead);
+//   - identities are unique (a duplicate record cannot be absorbed by a set).
+// Adding a valid record changes none of these, so it needs no edit here.
+const PUBLICATION_DIRECTORY = dirname(TRIO_PUBLICATION_PATH);
 
-// None of the identities above matches any package's CURRENT manifest
-// version — that is the exact finding #875 measured. This is the load-bearing
-// consequence of version-keying: today, zero packages satisfy `published` at
-// their current version from retained-publication evidence alone.
-const CURRENT_PUBLISHED_PACKAGE_NAMES = [...new Set(CURRENT_PUBLISHED_IDENTITIES.map((identity) => identity.slice(0, identity.lastIndexOf("@"))))].sort();
+// The identities the retained later-publication records NAME, read straight
+// from their bytes without validating them — the independent side of the
+// equality the validator must reproduce. Sorted, duplicates kept (so a
+// duplicate shows up as a length mismatch rather than disappearing).
+function retainedLaterIdentities(root) {
+  const directory = join(root, LATER_PUBLICATION_DIRECTORY);
+  return readdirSync(directory)
+    .filter((file) => file.endsWith(".json"))
+    .map((file) => JSON.parse(readFileSync(join(directory, file), "utf8")).candidate)
+    .map((candidate) => identity(candidate.name, candidate.version))
+    .sort();
+}
+
+// The three Trio members' identities, read from the qualification records the
+// sealed first-publication record points at.
+function sealedTrioIdentities(root) {
+  return JSON.parse(readFileSync(join(root, TRIO_PUBLICATION_PATH), "utf8")).members
+    .map((member) => JSON.parse(readFileSync(join(root, member.qualification.path), "utf8")).candidate)
+    .map((candidate) => identity(candidate.name, candidate.version));
+}
+
+const recordedPublishedIdentities = (root) => [...sealedTrioIdentities(root), ...retainedLaterIdentities(root)].sort();
+const namesOf = (identities) => [...new Set(identities.map((item) => item.slice(0, item.lastIndexOf("@"))))].sort();
+
+// Every publication-record path ever introduced on HEAD's history. A retained
+// record is permanent, so each of these must still exist; the set only grows.
+// This needs full history: in a shallow clone the boundary commit reports
+// every file it holds as added, so "ever retained" would equal "present now"
+// and a deletion could never be seen. A shallow checkout is therefore refused
+// rather than passed (CI's gate job checks out with fetch-depth: 0). Any
+// rename or move under the directory, or a record added and removed within
+// one branch, also trips this check -- deliberately, since the validator
+// already ties each record's file name to its identity.
+function everRetainedPublicationPaths(root) {
+  const shallow = execFileSync("git", ["rev-parse", "--is-shallow-repository"], { cwd: root, encoding: "utf8" }).trim();
+  if (shallow !== "false") {
+    throw new Error("the retained-record deletion check needs full Git history, and this checkout is shallow; fetch it with fetch-depth: 0 (or git fetch --unshallow)");
+  }
+  return [...new Set(execFileSync(
+    "git",
+    ["log", "--full-history", "--diff-filter=A", "--name-only", "--format=", "HEAD", "--", PUBLICATION_DIRECTORY],
+    { cwd: root, encoding: "utf8" },
+  ).split("\n").filter(Boolean))].sort();
+}
+
+const missingRetainedPublicationPaths = (root) => everRetainedPublicationPaths(root).filter((path) => !existsSync(join(root, path)));
 
 test("the ladder is ordered and its derivable states are a prefix of it", () => {
   assert.deepEqual(STATES, ["designed", "implemented", "staged", "published", "adopted", "grounded", "closed"]);
@@ -171,8 +170,50 @@ test("current-scope publication requires the exact validated first-publication r
     { sites: ["fixture:1"], publication: false },
   );
   assert.ok(rules(withoutPublication).includes("state-ahead-of-evidence"));
-  assert.deepEqual([...readValidatedPublishedPackages(repoRoot)].sort(), CURRENT_PUBLISHED_IDENTITIES);
-  assert.deepEqual([...readValidatedPublishedPackageNames(repoRoot)].sort(), CURRENT_PUBLISHED_PACKAGE_NAMES);
+  const recorded = recordedPublishedIdentities(repoRoot);
+  assert.equal(new Set(recorded).size, recorded.length, "each recorded publication identity must be unique");
+  assert.deepEqual([...readValidatedPublishedPackages(repoRoot)].sort(), recorded);
+  assert.deepEqual([...readValidatedPublishedPackageNames(repoRoot)].sort(), namesOf(recorded));
+});
+
+test("no publication record retained on this history has been deleted", () => {
+  // The derived equality above cannot see a deletion — a record that is gone
+  // is simply not on either side of it — so this reads Git history instead.
+  const everRetained = everRetainedPublicationPaths(repoRoot);
+  assert.ok(everRetained.includes(TRIO_PUBLICATION_PATH), "the history read must reach the sealed Trio record");
+  assert.ok(everRetained.some((path) => path.startsWith(`${LATER_PUBLICATION_DIRECTORY}/`)), "the history read must reach the later records");
+  assert.deepEqual(missingRetainedPublicationPaths(repoRoot), []);
+});
+
+test("the retained-record deletion check refuses a shallow checkout instead of passing vacuously", () => {
+  const dir = mkdtempSync(join(tmpdir(), "shallow-later-publication-"));
+  const fixtureRoot = join(dir, "repository");
+  try {
+    execFileSync("git", ["clone", "--depth", "1", `file://${repoRoot}`, fixtureRoot], { stdio: "ignore" });
+    assert.throws(() => missingRetainedPublicationPaths(fixtureRoot), /needs full Git history, and this checkout is shallow/);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("deleting a retained publication record is caught even though the validated set stays self-consistent", () => {
+  const dir = mkdtempSync(join(tmpdir(), "deleted-later-publication-"));
+  const fixtureRoot = join(dir, "repository");
+  try {
+    execFileSync("git", ["clone", "--local", "--no-hardlinks", repoRoot, fixtureRoot], { stdio: "ignore" });
+    execFileSync("git", ["config", "user.name", "package evidence fixture"], { cwd: fixtureRoot });
+    execFileSync("git", ["config", "user.email", "fixture@invalid.example"], { cwd: fixtureRoot });
+    const before = retainedLaterIdentities(fixtureRoot);
+    assert.deepEqual(missingRetainedPublicationPaths(fixtureRoot), []);
+    const deleted = `${LATER_PUBLICATION_DIRECTORY}/${readdirSync(join(fixtureRoot, LATER_PUBLICATION_DIRECTORY)).filter((file) => file.endsWith(".json")).sort()[0]}`;
+    execFileSync("git", ["rm", "--quiet", deleted], { cwd: fixtureRoot });
+    execFileSync("git", ["commit", "-m", "fixture: delete a retained later-publication record"], { cwd: fixtureRoot, stdio: "ignore" });
+    // The tree-derived side no longer names it, so only history can say it existed.
+    assert.equal(retainedLaterIdentities(fixtureRoot).length, before.length - 1);
+    assert.deepEqual(missingRetainedPublicationPaths(fixtureRoot), [deleted]);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
 });
 
 // ------------------------------------------------------- #875 negative controls
@@ -246,6 +287,9 @@ test("(d) a malformed later-publication record fails closed rather than silently
       execFileSync("git", ["commit", "-m", "fixture: materialize publication transition"], { cwd: fixtureRoot, stdio: "ignore" });
     }
 
+    // Read before the malformed record exists: these are the genuine records.
+    const genuine = retainedLaterIdentities(fixtureRoot);
+    assert.ok(genuine.length > 0);
     const malformedPath = join(fixtureRoot, "governance/release-publications/later/strategist-9.9.9.json");
     writeFileSync(malformedPath, "{ this is not valid json");
     execFileSync("git", ["add", "governance/release-publications/later/strategist-9.9.9.json"], { cwd: fixtureRoot });
@@ -253,9 +297,9 @@ test("(d) a malformed later-publication record fails closed rather than silently
 
     const { names, identities, findings } = validateRetainedLaterPublications(fixtureRoot);
     assert.ok(findings.some((item) => item.rule === "retained-record"), "the malformed record must be reported, not skipped");
-    // The 51 genuine records still validate individually...
-    assert.equal(names.size, 20);
-    assert.equal(identities.size, 51);
+    // Every genuine record still validates individually...
+    assert.deepEqual([...identities].sort(), genuine);
+    assert.deepEqual([...names].sort(), namesOf(genuine));
     // ...but the gate is fail-closed as a whole: one invalid record among
     // many zeroes the entire published set rather than admitting the rest.
     assert.deepEqual([...readValidatedPublishedPackages(fixtureRoot)], []);
@@ -272,8 +316,10 @@ test("(e) the retained-record immutability and qualification joins still reject 
   // by a separate CLI invocation.
   const { findings, names, identities } = validateRetainedLaterPublications(repoRoot);
   assert.deepEqual(findings, []);
-  assert.equal(names.size, 20);
-  assert.equal(identities.size, 51);
+  const recorded = retainedLaterIdentities(repoRoot);
+  assert.ok(recorded.length > 0);
+  assert.deepEqual([...identities].sort(), recorded);
+  assert.deepEqual([...names].sort(), namesOf(recorded));
 });
 
 test("current-scope publication rejects coherent rewrites and rewrite-restore history", () => {
@@ -334,7 +380,7 @@ test("current-scope publication rejects coherent rewrites and rewrite-restore hi
     rewritten.members[0].publication.publishedAt = "2026-08-30T06:31:59.838Z";
     const rewrittenBytes = `${JSON.stringify(rewritten, null, 2)}\n`;
 
-    assert.deepEqual([...readValidatedPublishedPackages(fixtureRoot)].sort(), CURRENT_PUBLISHED_IDENTITIES);
+    assert.deepEqual([...readValidatedPublishedPackages(fixtureRoot)].sort(), recordedPublishedIdentities(fixtureRoot));
     writeFileSync(publicationPath, rewrittenBytes);
     assert.deepEqual([...readValidatedPublishedPackages(fixtureRoot)], []);
 

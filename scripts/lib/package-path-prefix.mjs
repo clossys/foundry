@@ -8,7 +8,7 @@
 // (a temp directory with no repository above it — a tarball extraction or an
 // equivalent staged copy) must restore the package's repository-relative
 // prefix explicitly, or a package-scoped neutralize rule and opaque exemption
-// (written against paths like "packages/foo/CHANGELOG.md") can never match
+// (written against paths like "packages/foo/README.md") can never match
 // there, because the extracted root strips that leading segment away. See the
 // "WHY --path-prefix EXISTS" section of check-public-safety.mjs for the full
 // mechanics.

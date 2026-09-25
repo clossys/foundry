@@ -13,13 +13,68 @@ on:
   pull_request:
   push:
     branches: [main]
+  # Every required context in ruleset 20924588 that this workflow produces
+  # must also report under `merge_group`, or a required check that never
+  # runs for a merge-group commit would wedge the queue (GitHub treats an
+  # unreported required check as blocking, never as a silent pass — the
+  # queue simply never advances). Left unqualified (no `types:`) so a
+  # future merge_group type GitHub adds is not silently excluded.
+  #
+  # Issue #1420's classify job (below) diffs EACH queue entry against
+  # `merge_group.base_sha`, which GitHub sets to the PREVIOUS queue entry's
+  # own head, not to main — so a prose-only PR queued behind a code PR
+  # classifies on its own small diff, `prose`, not on the code PR's changes
+  # too. That is NOT unsafe today only because this ruleset's merge_queue
+  # uses `grouping_strategy: ALLGREEN` (see the bottom of this file's
+  # ruleset reference, or `gh api repos/clossys/foundry/rulesets/20924588`):
+  # ALLGREEN requires every queued entry, including the code PR ahead of the
+  # prose one, to pass its OWN full run before ANY entry in the batch can
+  # merge — so the code PR's own `tier=full` run already re-validates
+  # everything the prose PR's `tier=prose` run skipped, on the same merge
+  # base, before the queue advances. Switching to `HEADGREEN` (which lets a
+  # later entry's green result vouch for an earlier one without an
+  # independent run) would break this: a prose entry's skipped heavy jobs
+  # would then be the ONLY signal standing in for the code PR ahead of it.
+  # Do not change `grouping_strategy` without re-deriving this classifier's
+  # merge_group safety from scratch.
+  merge_group:
 
 permissions:
   contents: read
 
 concurrency:
   group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  # `cancel-in-progress: true` unconditionally also cancelled an
+  # IN-PROGRESS run on `main` itself: every push to `main` shares the same
+  # group (`ci-refs/heads/main`), so a second merge landing while the first
+  # one's `main` run was still finishing killed it mid-flight -- of the
+  # three jobs this workflow reserves for `push` to `main` only ("Later
+  # publication records" runs on every event, but "Publish this repository's
+  # observation bundle" and its sibling round-trip step are push-to-main-only
+  # by design), a cancelled run reports nothing for either. Cancelling only
+  # a superseded PULL REQUEST run (a force-push or an amended commit on the
+  # same branch, `refs/pull/<N>/merge`) is correct and is what this
+  # workflow's own re-run-on-push behaviour has always relied on; cancelling
+  # a `main` run never made sense, because nothing ever supersedes it -- the
+  # next push to `main` is a DIFFERENT commit's own required-check run, not
+  # a newer version of the same one. `merge_group` runs are excluded the
+  # same way: each entry gets its own stable
+  # `gh-readonly-queue/<base>/pr-<N>-<sha>` ref for the run's lifetime, so
+  # there is no "superseded" merge-group run to cancel either.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  # #1276 review addendum: the ONE tunable controlling how many parallel
+  # legs `candidate-qualification-shard`'s matrix fans out to. Default 4,
+  # down from an original 8 -- the Free plan's 20-concurrent-job cap is the
+  # binding constraint under today's fleet-wide load
+  # (https://github.com/clossys/foundry/issues/1187#issuecomment-5790637876:
+  # 50 queued against 4 running), and this job's own share of that cap is
+  # directly CANDIDATE_QUALIFICATION_SHARDS + 1 (the fan-in). Raise it again
+  # once queue pressure eases -- a single edit here, no other job or script
+  # change needed: `push-tree` below derives the matrix's actual index list
+  # from this value, and the shard invocation step reads it directly.
+  CANDIDATE_QUALIFICATION_SHARDS: 4
 
 jobs:
   # After a merge-commit PR lands, GitHub pushes a merge commit whose tree
@@ -32,8 +87,10 @@ jobs:
   push-tree:
     name: push-tree identity
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     outputs:
       duplicate: ${{ steps.cmp.outputs.duplicate }}
+      shard-matrix: ${{ steps.shard-matrix.outputs.matrix }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -54,6 +111,80 @@ jobs:
             exit 0
           fi
           node scripts/push-tree-identical.mjs
+      # The single source `candidate-qualification-shard`'s matrix reads its
+      # index list from -- the workflow-level CANDIDATE_QUALIFICATION_SHARDS
+      # env var above is the one place to change the shard count; every
+      # `pull_request`/`push`/`merge_group` run derives its own matrix from
+      # it fresh, so there is never a second, driftable copy of the number.
+      - id: shard-matrix
+        run: |
+          node -e "console.log('matrix=' + JSON.stringify([...Array(Number(process.env.CANDIDATE_QUALIFICATION_SHARDS)).keys()]))" >> "$GITHUB_OUTPUT"
+
+  # Issue #1420: a pull_request or merge_group run whose diff touches only
+  # prose -- a `.changesets/*.md` file, anything under `docs/**` (including
+  # `docs/changelogs/**`), a root `*.md` file, or -- narrower still -- only a
+  # packed `packages/*/README.md` or `packages/*/skill/SKILL.md` -- cannot
+  # possibly be affected by the heavy jobs below it: build and test, packed
+  # consumer readiness, and the candidate-qualification shards. This job
+  # runs the classifier (scripts/classify-change-tier.mjs) once, up front,
+  # so every gated job's own `if:` can read its single `tier` output rather
+  # than each reimplementing the same diff. `tier` is one of `full`
+  # (default, and the only tier on any event other than pull_request/
+  # merge_group), `prose`, or `packed-prose`.
+  #
+  # TWO INDEPENDENT layers of fail-safety, not one:
+  #
+  #   1. The SCRIPT is fail-closed by construction (see its own header
+  #      comment): anything it cannot prove is prose-only reports 'full',
+  #      never a narrower tier -- a missing BASE_SHA, an unresolvable merge
+  #      base, or a single unrecognised changed path all report 'full'.
+  #
+  #   2. Every gated job below reads BOTH `needs.classify.result` and
+  #      `needs.classify.outputs.tier` -- never the tier alone -- and skips
+  #      only on `needs.classify.result == 'success'` AND a proven narrow
+  #      tier (`if: always() && ... && (needs.classify.result != 'success'
+  #      || needs.classify.outputs.tier == 'full')`, or `!= 'prose'` for the
+  #      handful of jobs packed-prose still needs). `always()` is mandatory
+  #      here for a reason layer 1 cannot cover: GitHub's UNWRITTEN default
+  #      for any job that `needs` another job is "skip unless every needed
+  #      job succeeded", evaluated BEFORE this job's own `if:` -- so a
+  #      classify job that FAILS outright (a lost runner, a checkout
+  #      failure, the 5-minute timeout, a module-load error) would silently
+  #      skip every job that needs it, and a skipped required context
+  #      reports as passing (see the `build` job's own `always()` comment
+  #      below for the identical mechanism against its OWN split jobs).
+  #      `always()` disables that implicit gate so the explicit `result !=
+  #      'success'` check can fail OPEN (run the job) instead. This is
+  #      issue #1420's own threat model turned back on the fix itself: a
+  #      classifier that can fail must never be trusted merely because it
+  #      ran; it must be trusted only when it PROVED an answer.
+  #
+  # Deliberately independent of `push-tree`: this job needs no dedup
+  # decision of its own, only the diff, so it starts immediately in
+  # parallel rather than waiting on that job's result.
+  classify:
+    name: classify change tier
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      tier: ${{ steps.classify.outputs.tier }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          # The classifier resolves a merge-base against BASE_SHA -- the
+          # same full-history requirement every other diff-scoped job in
+          # this file already carries (release-readiness,
+          # qualification-record-required, release-pr-shape,
+          # candidate-qualification-shard, prose, ...).
+          fetch-depth: 0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 20
+      - id: classify
+        env:
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}
+        run: node scripts/classify-change-tier.mjs
 
   # Direct tooling is part of the public-package supply chain even when it is
   # not shipped as a runtime dependency. Audit the complete locked graph and
@@ -61,9 +192,10 @@ jobs:
   # the command output and are handled through the security issue queue.
   dependency-audit:
     name: dependency audit
-    needs: [push-tree]
-    if: github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true'
+    needs: [push-tree, classify]
+    if: always() && (github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true') && (needs.classify.result != 'success' || (needs.classify.outputs.tier != 'prose' && needs.classify.outputs.tier != 'packed-prose'))
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
@@ -90,9 +222,10 @@ jobs:
   # lifecycle evidence does not depend on the job's own business outcome.
   credential-lifecycle:
     name: credential lifecycle (dependency-audit token)
-    needs: [push-tree, dependency-audit]
-    if: always() && (github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true')
+    needs: [push-tree, dependency-audit, classify]
+    if: always() && (github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true') && (needs.classify.result != 'success' || (needs.classify.outputs.tier != 'prose' && needs.classify.outputs.tier != 'packed-prose'))
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     permissions:
       # Job-level permissions REPLACE the workflow-level block for this job
       # alone, so both are named explicitly: `contents: read` for the
@@ -127,19 +260,52 @@ jobs:
   # The safety gate runs FIRST and everything else depends on it. A tree that
   # leaks private identity should never reach the point of being built or
   # tested — the interesting failure here is disclosure, not a broken build.
-  safety:
-    name: publish safety
+  # `publish safety` measured ~18-19 minutes (#1257): three independent
+  # facts about the SAME checkout -- tree/commit identity (denylist-backed),
+  # this repository's own gate regression suite, and a full-history secret
+  # scan -- ran as ten serial steps in one job. None of the three depends on
+  # either of the others' RESULT, only on the same source tree, so they now
+  # run as three parallel jobs behind a fan-in that keeps the required
+  # context's exact name, `publish safety` -- the same #1240 pattern `build`
+  # (`build and test`) already uses below: `needs:` every split job,
+  # `if: always()` so GitHub's implicit needs-must-succeed default cannot
+  # silently skip (and a skipped required check reports as passing), and an
+  # explicit step that fails closed on anything other than a clean success.
+  #
+  # One real behaviour change from this split, accepted deliberately, the
+  # same trade `build`'s own header already made: an identity failure no
+  # longer skips the gitleaks scan the way a failed step used to skip every
+  # step after it in one job. The three now run regardless of one another --
+  # that is the whole point of running them in parallel instead of in
+  # series.
+  safety-identity:
+    name: publish safety / identity
     needs: [push-tree]
     if: github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
-        with:
-          fetch-depth: 0 # gitleaks scans full history, not just the diff
-
+      # setup-node runs tools (node, npm, yarn) in the workspace, so it goes
+      # first, before any pull request content exists there. The pull
+      # request's tree is then checked out into pr/ as DATA: every step
+      # below that reads it runs a base-ref script from .trusted-scripts/
+      # (a sibling of pr/, never inside it) with pr/ as its working
+      # directory, and no action runs with the pull request's tree as its
+      # default working directory.
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 20
+
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          path: pr
+          # check-commit-messages below needs real ancestry back to this
+          # PR's own merge base, which an old or far-diverged branch can put
+          # well outside a shallow clone's single commit. It reads that
+          # history locally (git log / merge-base) and never fetches, so the
+          # checkout keeps no credential.
+          fetch-depth: 0
+          persist-credentials: false
 
       # Repository (Actions) secrets are unavailable in TWO distinct cases, not
       # one — see issue #269. Fork pull requests are the obvious case. The
@@ -190,17 +356,9 @@ jobs:
       # does not get to exercise its own fix in its own CI run — the same
       # trade every base-ref-pinned credentialed step makes.
       #
-      # actions/checkout refuses a destination outside $GITHUB_WORKSPACE (a
-      # deliberate guard of its own), so this lands at .trusted-scripts/
-      # INSIDE the checkout instead of beside it. That would make it part of
-      # what check-public-safety.mjs (and check-foreign-references.mjs,
-      # which shares its exact gitignore-aware walk) scans next — except
-      # .gitignore lists it, and both scripts already skip anything
-      # `git ls-files --others --ignored` reports, the same mechanism that
-      # keeps a local node_modules/ or dist/ out of every content scan. A
-      # gitignored directory is by definition never published, so a PR
-      # cannot smuggle a scanned finding into `.trusted-scripts/` to dodge
-      # the gate — the content in it is base-ref content regardless.
+      # .trusted-scripts/ is a sibling of pr/ in the workspace, not inside
+      # the scanned tree, so no content scan below ever walks it, and a pull
+      # request cannot place anything at that path.
       #
       # governance/commit-message-history-exceptions.json rides along in this
       # same sparse checkout for the same reason the scripts do: it is the
@@ -214,7 +372,7 @@ jobs:
       - name: Checkout trusted scripts (base ref only, never this PR's own copy)
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
-          ref: ${{ github.event.pull_request.base.sha || github.sha }}
+          ref: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha || github.sha }}
           path: .trusted-scripts
           sparse-checkout: |
             scripts
@@ -223,6 +381,7 @@ jobs:
           sparse-checkout-cone-mode: false
 
       - name: check-public-safety
+        working-directory: pr
         run: node "$GITHUB_WORKSPACE/.trusted-scripts/scripts/check-public-safety.mjs" . --allow-changelogs
 
       # On anything that is not a fork pull request the denylist must be
@@ -234,8 +393,17 @@ jobs:
       # not this step's job to quietly accept a degraded scan for a PR type
       # nobody reviews line by line (the option issue #269 explicitly
       # rejected).
+      # `github.event.pull_request` does not exist on a `merge_group` event, so
+      # `github.event.pull_request.head.repo.fork` reads `null` there, and
+      # `null != true` is `true` — every fork check in this job already
+      # treats a merge-group run as "not a fork" with no edit needed. That is
+      # the correct answer, not an accident: an entry only enters the queue
+      # after its own `pull_request` run already resolved fork/non-fork and
+      # ran this same job accordingly, and a merge-group run shares this
+      # repository's own Actions secrets the same way an internal PR does.
       - name: Require FULL mode on trunk and internal PRs
         if: github.event.pull_request.head.repo.fork != true
+        working-directory: pr
         run: node "$GITHUB_WORKSPACE/.trusted-scripts/scripts/check-public-safety.mjs" . --allow-changelogs --require-denylist
 
       # A commit message is exactly as public and exactly as permanent as any
@@ -250,10 +418,11 @@ jobs:
       - name: check-commit-messages
         env:
           PR_TITLE: ${{ github.event.pull_request.title }}
-          BASE_SHA: ${{ github.event.pull_request.base.sha }}
-          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.event.merge_group.head_sha }}
           BEFORE_SHA: ${{ github.event.before }}
           IS_FORK: ${{ github.event.pull_request.head.repo.fork }}
+        working-directory: pr
         run: |
           set -e
           if [ -n "$BASE_SHA" ]; then
@@ -276,46 +445,6 @@ jobs:
             node "$GITHUB_WORKSPACE/.trusted-scripts/scripts/check-commit-messages.mjs" "$range" "${extra[@]}" --require-denylist
           fi
 
-      # The inverse of the denylist scan above, and the reason it lives in this
-      # job rather than `prose`: it is an identity gate, so a tree that fails it
-      # should never reach build or test either. Needs no denylist and no
-      # credential — it derives this repository's own account and scope from
-      # package-scope.json and the manifests' own repository.url — so unlike the
-      # steps above it runs identically on a fork pull request, with no PARTIAL
-      # mode to fall back to.
-      - name: check-foreign-references
-        run: node scripts/check-foreign-references.mjs
-
-      # `npm run check:gates`, not `node scripts/test-gates.mjs` alone. The
-      # script is a compound -- the fixture-driven gate regressions AND ten
-      # node:test suites over this repository's own scripts -- and before
-      # #472 only the first half ran here. Nine of those ten suites ran in no
-      # workflow at all and the tenth only in a workflow_dispatch job, so all
-      # ten were enforced by `npm run check` and contributor discipline and
-      # nothing else. #468 passed every check on its pull request and turned
-      # main red at merge as a direct result: the suite that catches it exists,
-      # works, and could not run before the damage.
-      #
-      # Invoking by script name rather than by listing the file paths is
-      # deliberate -- a path list silently goes stale the moment a suite is
-      # added to `check:gates`, which is the same trap one command vouching for
-      # its siblings already set once.
-      #
-      # Runs in this dependency-free job because every suite in that list
-      # imports only node builtins and local scripts. Deliberately stated
-      # without a count, which the "ten" above has already outlived: the list
-      # has grown, and re-measuring is cheaper than trusting a number. The
-      # measurement is a transitive import walk from every entry, failing any
-      # specifier that is neither `node:`-prefixed nor relative -- 45 entries
-      # reaching 84 local files, none of which import a package. That
-      # invariant now covers `.github/scripts/` too: the one entry outside
-      # scripts/ is collect-credential-evidence.test.mjs, whose subject
-      # reaches scripts/lib/gh-api.mjs and node builtins and nothing else. See
-      # the `//check-gates` note in package.json for why that suite is here
-      # rather than in check:verify-inputs.
-      - name: gate regression tests
-        run: npm run check:gates
-
       # Grades the denylist rules themselves, which requires the real denylist
       # content — forks (and, until the gap above is closed, Dependabot)
       # never see it, so this only runs where one is available. Runs from
@@ -325,17 +454,110 @@ jobs:
       # explicitly (see the script's own header on why that flag exists).
       - name: denylist quality
         if: github.event.pull_request.head.repo.fork != true
-        run: node "$GITHUB_WORKSPACE/.trusted-scripts/scripts/check-denylist-quality.mjs" --scope-config "$GITHUB_WORKSPACE/package-scope.json"
+        run: node "$GITHUB_WORKSPACE/.trusted-scripts/scripts/check-denylist-quality.mjs" --scope-config "$GITHUB_WORKSPACE/pr/package-scope.json"
 
       - name: Redact denylist
         if: always()
         run: rm -f "$RUNNER_TEMP/denylist.json"
 
-      # gitleaks the TOOL is open source; gitleaks-action the WRAPPER requires a
-      # paid licence for organisation-owned repositories and fails the run
-      # without one. This repository is org-owned, so we invoke the binary
-      # directly instead of depending on the wrapper's licence requirement.
-      #
+  # `npm run check:gates`, not `node scripts/test-gates.mjs` alone. The
+  # script is a compound -- the fixture-driven gate regressions AND every
+  # node:test suite over this repository's own scripts -- and before #472
+  # only the first half ran here. Most of those suites ran in no workflow at
+  # all and one only in a workflow_dispatch job, so they were enforced by
+  # `npm run check` and contributor discipline and nothing else. #468 passed
+  # every check on its pull request and turned main red at merge as a direct
+  # result: the suite that catches it exists, works, and could not run
+  # before the damage.
+  #
+  # Invoking by script name rather than by listing the file paths is
+  # deliberate -- a path list silently goes stale the moment a suite is
+  # added to `check:gates`, which is the same trap one command vouching for
+  # its siblings already set once.
+  #
+  # A separate job from `safety-identity` (#1257): this is a fixed,
+  # independent cost regardless of what the identity steps find, dominated
+  # by ~70 suites run serially through one `node --test` invocation. Splitting
+  # it out means the wall clock is however long THIS takes, not the sum of
+  # this plus the identity checks plus gitleaks. Runs in a dependency-free
+  # job because every suite in check:gates imports only node builtins and
+  # local scripts (proven by "every suite in check:gates imports only node
+  # builtins and local scripts" in scripts/check-workflow-references.test.mjs)
+  # -- no npm ci, no build, no denylist secret: check:gates grades the gate
+  # SCRIPTS themselves against a synthetic fixture denylist
+  # (scripts/test-gates.mjs's own DL), never this repository's real one.
+  safety-gates:
+    name: publish safety / gate regression tests
+    needs: [push-tree]
+    if: github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true'
+    runs-on: ubuntu-latest
+    # `check:gates` now owns the ~70-suite node:test regression run the
+    # combined `publish safety` job used to run unbounded (no
+    # timeout-minutes on main): 14-24 minutes across recent successful PR
+    # runs (e.g. runs 35846913296, 35844706017, 35841178517), with the
+    # candidate-qualification-adjacent suites the slow part. 15 minutes was
+    # too tight for the real work this job does -- job 107156624117 (run
+    # 35851503439, T9 rebuild at d4105ce6) started 11:16:14, was still
+    # running past the 15-minute mark, and was cancelled at 11:31:30. Set
+    # from the measured max plus headroom, not a guess.
+    timeout-minutes: 30
+    steps:
+      # check:gates exercises check-contamination-classes.mjs's CLASS 4 rule
+      # against THIS repo's own real git history (see that script's own
+      # header), not a fixture -- its "genuinely foreign name still flagged"
+      # regression case needs reliable history to tell a real retired
+      # package from a fabricated one. Before this job was split out of the
+      # combined `publish safety` job it inherited that job's fetch-depth: 0
+      # (needed there for gitleaks); split into its own job it defaults back
+      # to a SHALLOW checkout, which silently makes CLASS 4 unable to trust
+      # its own history and both cases fall through untested.
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          fetch-depth: 0 # contamination-classes CLASS 4 reads full package-name history
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 20
+
+      # The inverse of the identity job's denylist scan, and still part of
+      # `publish safety` (this job is one of that fan-in's needs). Needs no
+      # denylist and no credential -- it derives this repository's own
+      # account and scope from package-scope.json and the manifests' own
+      # repository.url -- so it runs this pull request's own copy of the
+      # script here, in a job that holds no secret, rather than in
+      # `safety-identity`, where only base-ref scripts may execute once the
+      # denylist is on disk. Runs identically on a fork pull request, with no
+      # PARTIAL mode to fall back to. Runs before check:gates so it scans the
+      # tree exactly as checked out.
+      - name: check-foreign-references
+        run: node scripts/check-foreign-references.mjs
+
+      - name: gate regression tests
+        run: npm run check:gates
+
+  # gitleaks the TOOL is open source; gitleaks-action the WRAPPER requires a
+  # paid licence for organisation-owned repositories and fails the run
+  # without one. This repository is org-owned, so we invoke the binary
+  # directly instead of depending on the wrapper's licence requirement.
+  #
+  # A separate job from `safety-identity` (#1257): a full-history scan is its
+  # own fixed cost independent of the identity checks' own result, and the
+  # outputs below (gitleaks-exit-code, gitleaks-version) are what
+  # `secret-scan-judgment` actually needs -- that job now depends on THIS one
+  # directly, not on the `safety` fan-in, for the same reason its own header
+  # already gives: it must still judge a real finding when this job's
+  # conclusion is failure, which a fan-in's aggregated result cannot express
+  # (the fan-in only reports success/failure, not WHICH split failed or why).
+  safety-gitleaks:
+    name: publish safety / gitleaks
+    needs: [push-tree]
+    if: github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          fetch-depth: 0 # gitleaks scans full history, not just the diff
+
       # Pinned by version AND sha256: an unpinned download in a security gate
       # means the thing verifying the build is itself unverified.
       #
@@ -343,7 +565,7 @@ jobs:
       # whole gate (raise on `--exit-code 1`, nothing else). It still does
       # that -- the fail-fast behaviour below is unchanged -- but it now ALSO
       # writes a structured record of the attempt, which the
-      # "secret-scan (inspector judgment)" step further down feeds to
+      # "secret-scan (inspector judgment)" job further down feeds to
       # `@clossys/inspector`'s `checkSecretScan`. That judge asks questions
       # this raw exit code cannot: whether the tool identified itself, whether
       # it actually examined anything, and whether its own exit code and hit
@@ -426,30 +648,66 @@ jobs:
       gitleaks-exit-code: ${{ steps.gitleaks.outputs.exit-code }}
       gitleaks-version: ${{ steps.gitleaks.outputs.version }}
 
-  # A SEPARATE job, deliberately, not more steps appended to `safety` above.
-  # `safety`'s own ten steps were dependency-free -- every one of them a
-  # single `node scripts/...mjs` invocation -- and staying that way matters:
-  # a registry flake or an unrelated compile error in `packages/controller`
-  # or `packages/inspector` while installing and building for this judgment
-  # would otherwise turn the `safety` job red under the name "publish
-  # safety", which a human (or an automated reader of run history, like
-  # `scripts/check-gate-efficacy.mjs`) could misattribute to the identity or
-  # secret gate itself having found something. Splitting the job means a
-  # build problem here surfaces under ITS OWN name, and `safety`'s own
-  # conclusion is driven only by its original ten steps plus the raw
-  # gitleaks exit code, exactly as before this change.
-  #
-  # `needs: safety` + `if: always()`: this job must still run -- and still
-  # judge the real finding -- when `safety` itself failed (a real secret was
-  # found). See `safety`'s own gitleaks step comment for why the judgment
-  # steps must be exercised on a real failure to prove anything at all.
-  secret-scan-judgment:
-    name: secret-scan (inspector judgment)
-    needs: [push-tree, safety]
+  # The fan-in itself: no work of its own, just the required context's name
+  # (#1240 pattern -- see `build`'s own header below for the general shape).
+  # `always()` here, on both the job and its one step, is mandatory, not
+  # stylistic: GitHub's unwritten default for any job that `needs` other jobs
+  # is "skip unless every needed job succeeded", which applies underneath
+  # this job's own `if:` regardless of what that condition says. Without
+  # `always()`, a real failure in any of the three split jobs would make
+  # GitHub skip this job outright -- and a skipped required context reports
+  # as passing, silently erasing the failure it exists to catch.
+  safety:
+    name: publish safety
+    needs: [push-tree, safety-identity, safety-gates, safety-gitleaks]
     if: always() && (github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true')
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
-      # Full history, matching `safety`'s own checkout: `UNITS_SCANNED`
+      - name: Split publish-safety jobs must all succeed
+        if: always()
+        run: |
+          status=0
+          for pair in \
+            "safety-identity=${{ needs.safety-identity.result }}" \
+            "safety-gates=${{ needs.safety-gates.result }}" \
+            "safety-gitleaks=${{ needs.safety-gitleaks.result }}"; do
+            name="${pair%%=*}"
+            result="${pair#*=}"
+            if [ "$result" != "success" ]; then
+              echo "::error::split job '$name' did not succeed (result: $result)"
+              status=1
+            fi
+          done
+          exit "$status"
+
+  # A SEPARATE job, deliberately, not more steps appended to `safety-gitleaks`
+  # above. That job's steps are dependency-free -- checkout, download, and
+  # run the gitleaks binary directly -- and staying that way matters: a
+  # registry flake or an unrelated compile error in `packages/controller` or
+  # `packages/inspector` while installing and building for this judgment
+  # would otherwise turn `safety-gitleaks` red under a gitleaks-shaped name,
+  # which a human (or an automated reader of run history, like
+  # `scripts/check-gate-efficacy.mjs`) could misattribute to the secret gate
+  # itself having found something. Splitting the job means a build problem
+  # here surfaces under ITS OWN name.
+  #
+  # `needs: safety-gitleaks` (#1257: no longer the `safety` fan-in -- that
+  # job's own result is an aggregate of three splits and cannot tell this
+  # job WHICH one produced the gitleaks outputs it needs, or express "ran,
+  # but gitleaks found something" on its own) + `if: always()`: this job
+  # must still run -- and still judge the real finding -- when
+  # `safety-gitleaks` itself failed (a real secret was found). See that
+  # job's own gitleaks step comment for why the judgment steps must be
+  # exercised on a real failure to prove anything at all.
+  secret-scan-judgment:
+    name: secret-scan (inspector judgment)
+    needs: [push-tree, safety-gitleaks]
+    if: always() && (github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      # Full history, matching `safety-gitleaks`'s own checkout: `UNITS_SCANNED`
       # below is `git rev-list --all --count` on THIS checkout, which must
       # report the same universe gitleaks actually scanned in the other
       # job, not whatever a default shallow clone happens to contain.
@@ -465,11 +723,13 @@ jobs:
           npm run build --workspace=packages/inspector
 
       # `if-no-files-found: warn` on the upload side means this can
-      # legitimately come back empty -- for example if `safety` itself never
-      # reached the gitleaks step at all (an earlier step in that job, like
-      # the denylist scan, failed first). `continue-on-error` here so a
-      # missing artifact reaches the COLLECT step below as an absent report
-      # rather than aborting this job before it can report anything.
+      # legitimately come back empty -- for example if `safety-gitleaks`
+      # itself failed before the gitleaks step's own captured-status exit
+      # (the curl/sha256sum/tar download steps, each `command || exit 1`,
+      # abort the script before the report path is ever written).
+      # `continue-on-error` here so a missing artifact reaches the COLLECT
+      # step below as an absent report rather than aborting this job before
+      # it can report anything.
       - name: Download gitleaks report
         id: download-report
         continue-on-error: true
@@ -482,8 +742,8 @@ jobs:
       - name: Assemble the secret-scan observation
         id: secret-scan-observation
         env:
-          GITLEAKS_VERSION: ${{ needs.safety.outputs.gitleaks-version }}
-          GITLEAKS_EXIT_CODE: ${{ needs.safety.outputs.gitleaks-exit-code }}
+          GITLEAKS_VERSION: ${{ needs.safety-gitleaks.outputs.gitleaks-version }}
+          GITLEAKS_EXIT_CODE: ${{ needs.safety-gitleaks.outputs.gitleaks-exit-code }}
           GITLEAKS_REPORT_PATH: ${{ runner.temp }}/gitleaks-report/gitleaks-report.json
           REPORT_DOWNLOADED: ${{ steps.download-report.outcome == 'success' }}
         run: |
@@ -520,9 +780,10 @@ jobs:
 
   scope:
     name: scope drift
-    needs: [push-tree]
-    if: github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true'
+    needs: [push-tree, classify]
+    if: always() && (github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true') && (needs.classify.result != 'success' || (needs.classify.outputs.tier != 'prose' && needs.classify.outputs.tier != 'packed-prose'))
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
@@ -547,9 +808,10 @@ jobs:
   # workflow prose or ambient npm configuration.
   registry:
     name: registry drift
-    needs: [push-tree]
-    if: github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true'
+    needs: [push-tree, classify]
+    if: always() && (github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true') && (needs.classify.result != 'success' || (needs.classify.outputs.tier != 'prose' && needs.classify.outputs.tier != 'packed-prose'))
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
@@ -569,9 +831,10 @@ jobs:
   # a lifecycle script instead of a manifest field.
   prepublish-hook:
     name: prepublish hook drift
-    needs: [push-tree]
-    if: github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true'
+    needs: [push-tree, classify]
+    if: always() && (github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true') && (needs.classify.result != 'success' || (needs.classify.outputs.tier != 'prose' && needs.classify.outputs.tier != 'packed-prose'))
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
@@ -597,9 +860,10 @@ jobs:
   # added there are recommended for promotion and why).
   root-entry:
     name: root entry policy drift
-    needs: [push-tree]
-    if: github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true'
+    needs: [push-tree, classify]
+    if: always() && (github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true') && (needs.classify.result != 'success' || (needs.classify.outputs.tier != 'prose' && needs.classify.outputs.tier != 'packed-prose'))
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
@@ -625,9 +889,10 @@ jobs:
   # straight into `required_status_checks`.
   package-evidence:
     name: package state (declared vs. evidence)
-    needs: [push-tree]
-    if: github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true'
+    needs: [push-tree, classify]
+    if: always() && (github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true') && (needs.classify.result != 'success' || (needs.classify.outputs.tier != 'prose' && needs.classify.outputs.tier != 'packed-prose'))
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
@@ -648,9 +913,10 @@ jobs:
   # dependency-free, shallow-checkout class as package-evidence.
   role-loop-archetypes:
     name: role-loop archetypes
-    needs: [push-tree]
-    if: github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true'
+    needs: [push-tree, classify]
+    if: always() && (github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true') && (needs.classify.result != 'success' || needs.classify.outputs.tier != 'prose')
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
@@ -696,6 +962,15 @@ jobs:
       # is report-mode-only until --enforce. Same class again: manifest,
       # contract, and fixture reads only.
       - run: node scripts/check-loop-matrix.mjs
+      # Same class again: contract- and fixture-read only, no build.
+      # Validates docs/contracts/real-customer-evidence-contract.json (#1222)
+      # against the shared docs/contracts/lifecycle.json vocabulary (#1228),
+      # and the shipped fixture record against the contract.
+      - run: node scripts/check-real-customer-evidence.mjs
+      # Validates docs/contracts/permission-defaults-contract.json (#1225)
+      # and its fixture record, then scans docs/contracts/trust-statement.md
+      # for retired client-facing vocabulary (#1226).
+      - run: node scripts/check-permission-defaults.mjs
       # First-wave productization order: engagement, then operational integrity,
       # then expression. Distinct from the release-catalogue upload order.
       # Reads the sequence contract plus packages/*/package.json runtime edges.
@@ -705,6 +980,11 @@ jobs:
       # package is a blocking defect (#924). Missing public-npm claims are
       # printed and counted, never a silent pass. README text only, no build.
       - run: node scripts/check-install-docs.mjs
+      # check-changelog-location.mjs moved to `prose quality` (issue #1420
+      # review round 3, N1 reopened by #1429): it reads
+      # `docs/changelogs/<dir>.md`, a prose-tier path, and this job is
+      # SKIPPED on the `prose` tier -- exactly the tier a changelog-only
+      # change classifies as. See `prose quality`'s own comment.
       # Packed Agent Skills: every publishable package ships skill/SKILL.md with
       # valid frontmatter binding `name` to clossys-<pkg>. README and manifest
       # reads only, no build — same shallow-checkout class as the steps above.
@@ -720,6 +1000,26 @@ jobs:
       # doc reads only, no build, same dependency-free class as the steps
       # above.
       - run: node scripts/check-conversation-contract.mjs
+      # Issue #1185's deterministic regression gate: composition accuracy
+      # and repeatability over evals/scenarios/*.json, scored against the
+      # real, generated capability catalogue via
+      # scripts/lib/capability-catalogue.mjs (this repository's own
+      # dependency-free mirror of packages/advisor/src/composition.ts,
+      # already used by check-offering-kits.mjs above -- no build needed),
+      # plus static conversation-contract checks over every
+      # packages/*/skill/SKILL.md's own role content. Composition scenario
+      # findings always fail this step; conversation-contract static
+      # findings are report-mode only (see evals/README.md) unless
+      # --enforce-contract-statics is passed, which this step does not do.
+      # Same dependency-free, manifest/contract/source-read-only class as
+      # every step in this job. Its own unit tests run first, same
+      # compound-script pattern as check:public-npm-aggregate-canary.
+      #
+      # NOT added to this repository's `main-required-checks` ruleset by
+      # this change, same reasoning as the jobs elsewhere in this file with
+      # that same note: a status context with no reporting history wedges a
+      # repository if it lands straight into `required_status_checks`.
+      - run: npm run check:evals
 
   # Three gates over this repository's own tree that had never been invoked
   # by any workflow before this change, and that share one requirement: a
@@ -733,9 +1033,10 @@ jobs:
   # recommendation on each of the three.
   controller-gates:
     name: controller gates (catalog, neutrality, repository-profile)
-    needs: [push-tree]
-    if: github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true'
+    needs: [push-tree, classify]
+    if: always() && (github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true') && (needs.classify.result != 'success' || (needs.classify.outputs.tier != 'prose' && needs.classify.outputs.tier != 'packed-prose'))
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
@@ -769,13 +1070,18 @@ jobs:
       # cheap structural checks in `scope`/`registry`/`root-entry`.
       - name: Structural neutrality gate (check:neutrality)
         run: npm run check:neutrality
-      # An unresolved merge committed into a tracked file. Lives in this
-      # dependency-free job on purpose: it reads the git tree and nothing
-      # else, so it runs on fork pull requests too, and it is the cheapest
-      # possible check for a failure that reached main of a public
-      # repository once already.
-      - name: Conflict markers gate
-        run: npm run check:conflict-markers
+      # The conflict-markers and changeset-format gates that used to run
+      # here moved to `prose quality` (issue #1420 review round 2, finding
+      # N1): both are dependency-free, tree-only scripts that never needed
+      # this job's controller build, and this job is SKIPPED on the
+      # `prose`/`packed-prose` tiers -- exactly the tiers whose own changed
+      # files (`.changesets/*.md`, `docs/*.md`) those two gates exist to
+      # validate. `prose quality` runs on every tier, so that is where they
+      # belong now. See that job's own comment for the full reasoning.
+      # check-changeset-style.mjs (issue #1423) moved to `prose quality`
+      # too, for the identical reason (issue #1432's N1 join check): it
+      # reads the same pending .changesets/*.md summaries the format gate
+      # above already parses, a prose-tier path this job is skipped on.
 
       # repository-profile-check (dist/repository/run-bin.js) — the richer,
       # three-state evaluator over the SAME governance/repository-profile.json
@@ -813,9 +1119,10 @@ jobs:
   # checkout is fine.
   workspace-links:
     name: workspace link integrity
-    needs: [push-tree]
-    if: github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true'
+    needs: [push-tree, classify]
+    if: always() && (github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true') && (needs.classify.result != 'success' || (needs.classify.outputs.tier != 'prose' && needs.classify.outputs.tier != 'packed-prose'))
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
@@ -828,6 +1135,51 @@ jobs:
       # no npm ci, no build.
       - name: package-lock.json workspace versions match manifests
         run: node scripts/check-lock-workspace-versions.mjs
+
+  # check-attestation-freshness.mjs (issue #856, docs/ATTESTATION-FRESHNESS.md)
+  # is an early-warning SCANNER for time-boxed governance/strategy records
+  # (freshUntil, expiresAt, _stalenessBudgetDays, ...), never a merge gate:
+  # `run()` always exits 0 once it has produced a report, however urgent a
+  # finding is -- urgency lives in each finding's own field, never in the
+  # process exit code, precisely so this cannot be wired into a REQUIRED
+  # check by habit and reproduce the exact failure mode it exists to warn
+  # about (a time-boxed record lapsing with no warning and freezing every
+  # merge, including one carrying a live security fix). Exit 2 only if the
+  # scan itself could not run at all (see that script's own header).
+  #
+  # Deliberately its OWN job rather than an extra step bolted onto
+  # `workspace-links` (a REQUIRED context named "workspace link integrity")
+  # or `safety-gates` (documented as a fixed, atomic ~70-suite cost): this
+  # sweep exists to fix gates whose own name no longer describes everything
+  # they check (see #366, #1340), and folding an unrelated, always-green
+  # governance-record scan into either of those would be a new instance of
+  # exactly that. This job is intentionally NOT added to any ruleset's
+  # required-status-check list -- see verify-standards.yml's own header for
+  # why a context that has never reported should not be made required sight
+  # unseen; that is a separate, later, owner decision.
+  #
+  # This repository has no governance/attestation-registry.json of its own
+  # yet, so every record found here reports "unregistered" (declared, not
+  # yet audited) rather than "enforced" -- issue #856 scoped BUILDING the
+  # scanner to this repository; a registry and scheduled workflow for this
+  # repository as a CONSUMER of its own tool (the shape
+  # docs/ATTESTATION-FRESHNESS.md's "scheduled workflow" section describes)
+  # is a separate, repository-specific follow-up, same as for any other
+  # consuming repository. Plain file checks only (git ls-files over the
+  # tracked tree) -- no git history needed, no npm ci, no build.
+  attestation-freshness:
+    name: attestation freshness (early warning, non-blocking)
+    needs: [push-tree]
+    if: github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 20
+      - name: Attestation freshness early warning (check-attestation-freshness)
+        run: node scripts/check-attestation-freshness.mjs .
 
   # A merged source change with no version bump publishes nothing and says
   # nothing, whether the Publish workflow's discover job is asking "what did
@@ -859,8 +1211,9 @@ jobs:
   # real ancestry, not the default shallow fetch-depth: 1.
   release-readiness:
     name: release readiness (version bump vs. shipped content)
-    if: github.event_name == 'pull_request'
+    if: github.event_name == 'pull_request' || github.event_name == 'merge_group'
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
@@ -870,7 +1223,7 @@ jobs:
           node-version: 20
       - name: check-release-readiness (diffed against this PR's actual base)
         env:
-          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}
         run: node scripts/check-release-readiness.mjs --base "$BASE_SHA"
 
   # scripts/check-qualification-record-present.mjs already answers "does the
@@ -903,7 +1256,7 @@ jobs:
   # PR #848 shape: declining to bump mid publish-wave, or here, declining to
   # block a merge on a re-qualification the operator has explicitly decided
   # can follow) is not treated as a defect — it must be an ACKNOWLEDGED
-  # exception naming an issue, in governance/release-qualification-deferrals.json,
+  # exception naming an issue, in governance/release-qualification-deferrals/,
   # never silence. That acknowledgement cannot outlive its reason: once a
   # matching record exists, the same job fails until the deferral is removed
   # (see the script's own STALE DEFERRALS section).
@@ -918,8 +1271,10 @@ jobs:
   # solved here.
   qualification-record-required:
     name: qualification record required (version bump vs. retained record)
-    if: github.event_name == 'pull_request'
+    needs: [classify]
+    if: always() && (github.event_name == 'pull_request' || github.event_name == 'merge_group') && (needs.classify.result != 'success' || (needs.classify.outputs.tier != 'prose' && needs.classify.outputs.tier != 'packed-prose'))
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
@@ -929,8 +1284,33 @@ jobs:
           node-version: 20
       - name: check-qualification-record-required (diffed against this PR's actual base)
         env:
-          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}
         run: node scripts/check-qualification-record-required.mjs --base "$BASE_SHA"
+
+  # check-release-pr-shape.mjs -- for any package whose version this pull
+  # request bumped, is the bump shaped like #1255's release PR (a consumed
+  # changeset whose bump level matches), or does it at least carry the
+  # changelog entry (docs/changelogs/<dir>.md) docs/PUBLISHING.md section 4
+  # already documents as
+  # required? Deliberately its own job, for the same "two independently-
+  # true-or-false conditions, two different remedies" reason
+  # qualification-record-required above is its own job rather than folded
+  # into release-readiness.
+  release-pr-shape:
+    name: release PR shape (version bump vs. changeset/CHANGELOG)
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 20
+      - name: check-release-pr-shape (diffed against this PR's actual base)
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: node scripts/check-release-pr-shape.mjs --base "$BASE_SHA"
 
   # THE JOB NAME BELOW IS STILL DELIBERATELY NOT RENAMED (issue #497, phase
   # 1 of 3). It still reads "ui-contrast-check" while running designer's
@@ -964,9 +1344,10 @@ jobs:
   # needed and this job does.
   contrast:
     name: WCAG contrast gate (ui-contrast-check)
-    needs: [push-tree]
-    if: github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true'
+    needs: [push-tree, classify]
+    if: always() && (github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true') && (needs.classify.result != 'success' || (needs.classify.outputs.tier != 'prose' && needs.classify.outputs.tier != 'packed-prose'))
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
@@ -990,9 +1371,10 @@ jobs:
   # would mean the two contexts are no longer proof of the same thing.
   designer-contrast:
     name: WCAG contrast gate (designer-contrast-check)
-    needs: [push-tree]
-    if: github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true'
+    needs: [push-tree, classify]
+    if: always() && (github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true') && (needs.classify.result != 'success' || (needs.classify.outputs.tier != 'prose' && needs.classify.outputs.tier != 'packed-prose'))
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
@@ -1020,6 +1402,7 @@ jobs:
     needs: [push-tree]
     if: github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
@@ -1053,6 +1436,76 @@ jobs:
           for pkg in "${pkgs[@]}"; do
             node scripts/check-contamination-classes.mjs "${pkg%/}"
           done
+      # Moved here from `controller gates` (issue #1420 review round 2,
+      # finding N1): both gates below read only the git tree (no npm
+      # dependency, no build -- see each script's own header), and this job
+      # is the one place in this file that already runs unconditionally on
+      # every tier, including `prose` and `packed-prose`. Leaving them in
+      # `controller gates` -- which is skipped on those tiers -- meant a
+      # malformed `.changesets/*.md` file, or committed conflict markers in
+      # a `docs/*.md` file, each classified as pure prose by
+      # scripts/classify-change-tier.mjs, would merge with the ONE gate
+      # built to catch it silently skipped and reporting passing. Removed
+      # from `controller gates` entirely rather than duplicated there: same
+      # script, same tree-read, so running both there and here would only
+      # cost runner minutes twice for identical coverage.
+      #
+      # An unresolved merge committed into a tracked file. Reads the git
+      # tree and nothing else, so it runs on fork pull requests too, and it
+      # is the cheapest possible check for a failure that reached main of a
+      # public repository once already.
+      - name: Conflict markers gate
+        run: npm run check:conflict-markers
+      # collect-changesets.mjs -- are the pending .changesets/*.md files
+      # scripts/apply-release-changesets.mjs's release PR (issue #1255)
+      # will apply well-formed: each names a real packages/<dir> directory,
+      # a valid patch/minor/major bump level, and a non-empty summary?
+      - name: Changeset format gate
+        run: npm run check:changesets
+      # check-changeset-style.mjs (issue #1423) -- report-only prose lint
+      # over the same pending changeset summaries the format gate above
+      # already parses: absolute qualifiers, over-length entries, and
+      # negative-change phrasing. Never fails CI -- exit 0 with findings or
+      # not, exit 2 only if .changesets/ itself could not be read. Moved
+      # here from `controller gates` (issue #1432's N1 join check): that
+      # job is skipped on the `prose`/`packed-prose` tiers, exactly the
+      # tiers a `.changesets/*.md`-only PR falls into, which would have
+      # left this report silently skipped on the very PRs it reports on.
+      # `prose quality` runs on every tier, so that is where it belongs,
+      # same reasoning as the Conflict markers/Changeset format/Changelog
+      # location gates already here.
+      - name: Changeset style report (non-blocking)
+        run: npm run check:changeset-style
+      # Moved here from `role-loop archetypes` (issue #1420 review round 3:
+      # #1429 added this step reading `docs/changelogs/<dir>.md` -- a
+      # prose-tier path -- to that job, which the classifier already skips
+      # on the `prose` tier, reopening finding N1 the same way the two
+      # gates above originally triggered it). Release notes live in this
+      # public repository, never in a tarball: every package has
+      # `docs/changelogs/<dir>.md` with an entry for its current version,
+      # no in-package changelog, no changelog in "files", and a README link
+      # to the changelog's public URL. Manifest, README and docs reads
+      # only, no build -- same dependency-free class as the two gates
+      # above.
+      - name: Changelog location gate
+        run: npm run check:changelog-location
+      # Moved here from `build` (issue #1420 review round 3, found by the
+      # generic script-input wiring test below rather than by a reviewer):
+      # scripts/check-strategist-subject.mjs scans docs/*.md -- excluding
+      # docs/contracts/**, docs/changelogs/**, and every OTHER root-style
+      # docs/*.md filename (see the script's own exclude list) -- which in
+      # practice means only docs/PUBLISHING.md and docs/RELEASING.md, both
+      # prose-tier paths. `build` is skipped on the pure 'prose' tier, so a
+      # docs/PUBLISHING.md-only change would have merged with this gate
+      # silently skipped. Unlike the three gates above, this one needs the
+      # BUILT strategist CLI (packages/strategist/dist/cli.js) -- so, unlike
+      # them, this job pays a real `npm ci` and a single-workspace build for
+      # it, the same minimal-build shape `contrast`/`designer-contrast` use
+      # for packages/designer below.
+      - run: npm ci
+      - run: npm run build --workspace=packages/strategist
+      - name: Strategist facts subject (PUBLISHING.md)
+        run: npm run check:strategist-subject
 
   # Split out of `build and test` (issue: CI throughput). Measured on run
   # 35802156089 (job 106994736395, branch claude/strategist-clossys-layout):
@@ -1076,11 +1529,36 @@ jobs:
   # step is this job's own copy, not shared with `packed-consumer-readiness`
   # below -- each split job now decides independently whether the change it
   # is judging could have broken what it checks.
-  candidate-qualification:
-    name: candidate qualification records
-    needs: [push-tree]
-    if: github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true'
+  #
+  # #1257: sharded a second time, inside this one job. check-candidate-
+  # qualification.mjs's own real cost is per RECORD (governance/release-
+  # qualifications/*.json, one per package version, ~175 of them), each
+  # doing its own `git archive`/`npm pack --dry-run`/`git log --full-history`
+  # work -- 946-1060s measured, "serial over packages". `--shard-index`/
+  # `--shard-count` (scripts/lib/candidate-qualification-shard.mjs) split
+  # that specific per-record loop across a bounded matrix while every shard
+  # still runs the cheap, unsharded, cross-record checks (cohort/quarantine/
+  # publication consistency, the sealed-record-set check) in full -- see
+  # that file's own header for why splitting only the per-record loop is
+  # what makes this correct, not merely fast.
+  #
+  # #1276 review addendum: the shard count is bounded by the workflow-level
+  # CANDIDATE_QUALIFICATION_SHARDS env var (top of this file), not a literal
+  # here -- `push-tree`'s own `shard-matrix` output derives this matrix's
+  # index list from it fresh on every run, so raising or lowering the count
+  # (currently 4, down from an original 8 measured against today's
+  # fleet-wide concurrent-job pressure) is a single-line change, never a
+  # second hard-coded list to keep in sync.
+  candidate-qualification-shard:
+    name: candidate qualification records (shard ${{ matrix.shard }})
+    needs: [push-tree, classify]
+    if: always() && (github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true') && (needs.classify.result != 'success' || needs.classify.outputs.tier != 'prose')
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: ${{ fromJSON(needs.push-tree.outputs.shard-matrix) }}
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
@@ -1095,7 +1573,8 @@ jobs:
       # affect the expensive step below. A documentation-only or
       # other-workflow-only pull request cannot have broken it, so this lets
       # that step skip on such a PR (issue #887 has the measurement this is
-      # answering).
+      # answering). Each shard runs its own copy -- cheap (a git diff), and
+      # keeps every shard's own decision independent of the others'.
       #
       # `continue-on-error: true` plus the downstream step's own
       # `if: steps.touch.outputs.touches != 'false'` (never `== 'true'`) is
@@ -1112,16 +1591,43 @@ jobs:
         continue-on-error: true
         env:
           GITHUB_EVENT_NAME: ${{ github.event_name }}
-          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}
         run: node scripts/check-touches-packages.mjs
       # Fail before the expensive install/build when a retained qualification
       # record, its immutable history, or the pre-publication tail is invalid.
-      # This is deliberately in a job the `build and test` fan-in `needs`:
+      # This is deliberately in a job the `build and test` fan-in `needs`
+      # (transitively, through the `candidate-qualification` fan-in below):
       # a job whose result nothing required depended on would report without
       # ever blocking main.
-      - name: Candidate qualification records
-        run: npm run check:candidate-qualification
+      - name: Candidate qualification records (this shard's own slice)
         if: steps.touch.outputs.touches != 'false'
+        run: node scripts/check-candidate-qualification.mjs --shard-index ${{ matrix.shard }} --shard-count ${{ env.CANDIDATE_QUALIFICATION_SHARDS }}
+
+  # The fan-in over the matrix above. Unlike `safety` (which fans in to keep
+  # a RULESET-required context name reporting), `candidate-qualification`
+  # itself is not directly required -- `build` is, and its own "Split
+  # build-and-test jobs must all succeed" step already reads
+  # `needs.candidate-qualification.result`, unaffected by the shard split
+  # above becoming an implementation detail of THIS job. Kept explicit (the
+  # same `if: always()` plus a real check, not a bare `needs:`) rather than
+  # relying only on GitHub's own default matrix-aggregation semantics, for
+  # the same audit-ability reason the #1240 pattern uses it everywhere else
+  # in this file.
+  candidate-qualification:
+    name: candidate qualification records
+    needs: [push-tree, candidate-qualification-shard, classify]
+    if: always() && (github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true') && (needs.classify.result != 'success' || needs.classify.outputs.tier != 'prose')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: All candidate-qualification shards must succeed
+        if: always()
+        run: |
+          result="${{ needs.candidate-qualification-shard.result }}"
+          if [ "$result" != "success" ]; then
+            echo "::error::candidate-qualification-shard (the 8-way matrix) did not succeed (result: $result)"
+            exit 1
+          fi
 
   # See `candidate-qualification` above for the measurement and the overall
   # split reasoning. This job: needs `npm ci` and a real build --
@@ -1130,9 +1636,10 @@ jobs:
   # dependency it has) has actually been built (#908).
   readme-examples-typecheck:
     name: README code examples typecheck against shipped declarations
-    needs: [push-tree]
-    if: github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true'
+    needs: [push-tree, classify]
+    if: always() && (github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true') && (needs.classify.result != 'success' || needs.classify.outputs.tier != 'prose')
     runs-on: ubuntu-latest
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
@@ -1141,8 +1648,53 @@ jobs:
         with:
           node-version: 20
           cache: npm
+      # #1257: this job's own npm run build recompiles every package's
+      # dist/ from source, identically, on every run -- the same fixed cost
+      # the other jobs in this split also pay independently for the SAME
+      # commit's tree. A cache keyed on source and lockfile content lets a
+      # run that lands after another one already built this exact tree (a
+      # re-run, or a later trigger for the same commit -- a merge_group run
+      # following its own pull_request run, for example) skip recompiling
+      # entirely. A cache MISS -- new content, or nothing cached yet --
+      # always falls back to a full `npm run build`, never a skip: the build
+      # step below is gated on `cache-hit != 'true'`, the same fail-open-to-
+      # doing-the-work polarity `check-touches-packages.mjs` already uses
+      # elsewhere in this file.
+      #
+      # The key's own file list has to cover every input a `build` script
+      # can actually read, not just `src/**` -- issue #1324 item 2 (a real
+      # gap CodeRabbit found on #1297): `packages/launcher/scripts/
+      # pack-skills.mjs` and `packages/advisor/scripts/pack-capability-
+      # catalogue.mjs` are pre-tsc generation steps run BY `npm run build`
+      # itself, and neither reads only its own package's `src/`.
+      # pack-skills.mjs copies every OTHER package's `skill/SKILL.md` into
+      # launcher's own packed `skill-catalogue/`, and packs the shared
+      # `docs/contracts/conversation-contract.md` into `contracts/`;
+      # pack-capability-catalogue.mjs reads `docs/contracts/kit-presets.
+      # json` the same way. None of those paths were hashed, so a change to
+      # any of them -- another package's SKILL.md, the shared conversation
+      # contract, the shared kit-presets contract, or the prebuild script
+      # itself -- left the key unchanged, and a cache HIT then served
+      # `dist/` (and the ungenerated `skill-catalogue/`/`contracts/`
+      # siblings the same `npm run build` invocation was also responsible
+      # for) as if nothing had changed. Root `package.json` was missing
+      # too -- a build-script-affecting change there (a new build step, a
+      # changed script) wouldn't invalidate the cache either, only the
+      # lockfile's own dependency content would. `packages/*/scripts/**`
+      # and `docs/contracts/**` cover both known prebuild-script shapes
+      # (and any future one, generally, rather than naming today's two
+      # scripts specifically) without narrowing what a cache MISS already
+      # falls back to.
+      - name: Restore workspace build cache
+        id: workspace-build-cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: packages/*/dist
+          key: workspace-build-${{ runner.os }}-${{ hashFiles('package.json', 'package-lock.json', 'packages/*/src/**', 'packages/*/package.json', 'packages/*/tsconfig*.json', 'packages/*/scripts/**', 'scripts/lib/**', 'docs/contracts/**') }}
       - run: npm ci
-      - run: npm run build
+      - name: Build (skipped on an exact source+lockfile cache hit)
+        if: steps.workspace-build-cache.outputs.cache-hit != 'true'
+        run: npm run build
       # Every fenced ts/tsx block in a packages/*/README.md, compiled against
       # that package's own shipped declarations (#908).
       - name: README code examples typecheck against shipped declarations
@@ -1157,9 +1709,10 @@ jobs:
   # there.
   packed-consumer-readiness:
     name: packed consumer readiness
-    needs: [push-tree]
-    if: github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true'
+    needs: [push-tree, classify]
+    if: always() && (github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true') && (needs.classify.result != 'success' || needs.classify.outputs.tier != 'prose')
     runs-on: ubuntu-latest
+    timeout-minutes: 18
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
@@ -1168,8 +1721,53 @@ jobs:
         with:
           node-version: 20
           cache: npm
+      # #1257: this job's own npm run build recompiles every package's
+      # dist/ from source, identically, on every run -- the same fixed cost
+      # the other jobs in this split also pay independently for the SAME
+      # commit's tree. A cache keyed on source and lockfile content lets a
+      # run that lands after another one already built this exact tree (a
+      # re-run, or a later trigger for the same commit -- a merge_group run
+      # following its own pull_request run, for example) skip recompiling
+      # entirely. A cache MISS -- new content, or nothing cached yet --
+      # always falls back to a full `npm run build`, never a skip: the build
+      # step below is gated on `cache-hit != 'true'`, the same fail-open-to-
+      # doing-the-work polarity `check-touches-packages.mjs` already uses
+      # elsewhere in this file.
+      #
+      # The key's own file list has to cover every input a `build` script
+      # can actually read, not just `src/**` -- issue #1324 item 2 (a real
+      # gap CodeRabbit found on #1297): `packages/launcher/scripts/
+      # pack-skills.mjs` and `packages/advisor/scripts/pack-capability-
+      # catalogue.mjs` are pre-tsc generation steps run BY `npm run build`
+      # itself, and neither reads only its own package's `src/`.
+      # pack-skills.mjs copies every OTHER package's `skill/SKILL.md` into
+      # launcher's own packed `skill-catalogue/`, and packs the shared
+      # `docs/contracts/conversation-contract.md` into `contracts/`;
+      # pack-capability-catalogue.mjs reads `docs/contracts/kit-presets.
+      # json` the same way. None of those paths were hashed, so a change to
+      # any of them -- another package's SKILL.md, the shared conversation
+      # contract, the shared kit-presets contract, or the prebuild script
+      # itself -- left the key unchanged, and a cache HIT then served
+      # `dist/` (and the ungenerated `skill-catalogue/`/`contracts/`
+      # siblings the same `npm run build` invocation was also responsible
+      # for) as if nothing had changed. Root `package.json` was missing
+      # too -- a build-script-affecting change there (a new build step, a
+      # changed script) wouldn't invalidate the cache either, only the
+      # lockfile's own dependency content would. `packages/*/scripts/**`
+      # and `docs/contracts/**` cover both known prebuild-script shapes
+      # (and any future one, generally, rather than naming today's two
+      # scripts specifically) without narrowing what a cache MISS already
+      # falls back to.
+      - name: Restore workspace build cache
+        id: workspace-build-cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: packages/*/dist
+          key: workspace-build-${{ runner.os }}-${{ hashFiles('package.json', 'package-lock.json', 'packages/*/src/**', 'packages/*/package.json', 'packages/*/tsconfig*.json', 'packages/*/scripts/**', 'scripts/lib/**', 'docs/contracts/**') }}
       - run: npm ci
-      - run: npm run build
+      - name: Build (skipped on an exact source+lockfile cache hit)
+        if: steps.workspace-build-cache.outputs.cache-hit != 'true'
+        run: npm run build
       # See `candidate-qualification` above for the full reasoning behind
       # this gate (continue-on-error, fail-closed polarity, issue #887).
       - name: Detect whether this change touches packages
@@ -1177,7 +1775,7 @@ jobs:
         continue-on-error: true
         env:
           GITHUB_EVENT_NAME: ${{ github.event_name }}
-          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}
         run: node scripts/check-touches-packages.mjs
       # Install every exact local tarball together in a credentialless,
       # disposable consumer. This checks the packed public surface and the
@@ -1196,7 +1794,7 @@ jobs:
     # the required context, but it is now a genuine fan-in over their
     # results -- see the first step below for why `needs` alone is not
     # enough to make that fan-in honest.
-    needs: [push-tree, candidate-qualification, readme-examples-typecheck, packed-consumer-readiness]
+    needs: [push-tree, candidate-qualification, readme-examples-typecheck, packed-consumer-readiness, classify]
     # `always()` is mandatory, not stylistic: GitHub's UNWRITTEN default for
     # any job that `needs` other jobs is "skip unless every needed job
     # succeeded" -- that default applies underneath this job's own `if:`
@@ -1207,8 +1805,9 @@ jobs:
     # skipped required context reports as passing, silently erasing the
     # failure it exists to catch. `always()` forces this job to run so the
     # explicit check in its first step can fail it honestly instead.
-    if: always() && (github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true')
+    if: always() && (github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true') && (needs.classify.result != 'success' || needs.classify.outputs.tier != 'prose')
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       # The other half of the fan-in: `needs` only lets this job SEE the
       # three split jobs' results, it does not act on them -- GitHub's
@@ -1292,6 +1891,18 @@ jobs:
       # history join, and must fail in the already-required build context.
       - name: Later publication records
         run: npm run check:later-publications
+      # #1257: same workspace build cache as readme-examples-typecheck and
+      # packed-consumer-readiness (see either job's own comment for the full
+      # reasoning, including the issue #1324 item 2 key-completeness fix) --
+      # this job independently pays the same npm run build cost for the
+      # same commit's tree, and a cache hit lets it skip that here too. A
+      # miss always falls back to a full build, never a skip.
+      - name: Restore workspace build cache
+        id: workspace-build-cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: packages/*/dist
+          key: workspace-build-${{ runner.os }}-${{ hashFiles('package.json', 'package-lock.json', 'packages/*/src/**', 'packages/*/package.json', 'packages/*/tsconfig*.json', 'packages/*/scripts/**', 'scripts/lib/**', 'docs/contracts/**') }}
       - run: npm ci
       # Build first. dist/ is gitignored, so a fresh checkout has none, and
       # a package with a real internal dependency (gates on catalog and
@@ -1299,7 +1910,12 @@ jobs:
       # has been compiled. Running typecheck before build works only while
       # every package has zero internal dependencies, and silently stops
       # working the moment one gains its first -- so build stays first.
-      - run: npm run build
+      #
+      # Skipped only on an exact source+lockfile cache hit -- see the
+      # workspace build cache step above.
+      - name: Build
+        if: steps.workspace-build-cache.outputs.cache-hit != 'true'
+        run: npm run build
       # Every declared packages/*/package.json bin, invoked through a fresh
       # node_modules/.bin-shaped symlink, must produce output (#909). Needs
       # the build above: missing dist/ is exit 2, not a skip. Distinct from
@@ -1335,6 +1951,15 @@ jobs:
       # immediately above.
       - name: Review-evidence collector proves all three real verdicts
         run: node --test scripts/collect-review-evidence.integration.test.mjs
+      # scripts/lib/import-purity.mjs checks a module's import graph against
+      # an allowlist, and refuses a listed set of direct global references by
+      # syntax (not a proof: a global can be reached indirectly; its tests
+      # record those forms as known limits). It uses the TypeScript compiler
+      # API, so its own tests need `npm ci` (typescript) -- they do not belong
+      # in check:gates, which runs in the dependency-free `safety` job. They
+      # need no build.
+      - name: Import-graph and listed-global purity check
+        run: npm run check:import-purity
       # "Packed consumer readiness" used to run here. It now runs in the
       # `packed-consumer-readiness` job (see its own header for why, and for
       # the touch-detection reasoning that job's own copy of that step
@@ -1367,8 +1992,14 @@ jobs:
       # dependency-free safety job.
       - name: Launcher help
         run: npm run check:launcher-help
-      - name: Strategist facts subject (PUBLISHING.md)
-        run: npm run check:strategist-subject
+      # check:strategist-subject moved to `prose quality` (issue #1420
+      # review round 3): it scans docs/*.md (excluding docs/contracts/**,
+      # docs/changelogs/**, and every OTHER root-style docs/*.md file --
+      # see scripts/check-strategist-subject.mjs's own exclude list), which
+      # in practice means docs/PUBLISHING.md and docs/RELEASING.md, both
+      # prose-tier paths this job is SKIPPED for on the 'prose' tier. See
+      # `prose quality`'s own comment for where it moved to and why it
+      # needed its own minimal build there.
       - name: Supersession map
         run: npm run check:supersession
       # Schema versions and migrations for every clossys/ record (#1224):
@@ -1520,40 +2151,153 @@ jobs:
   # only comes into existence via `npm run build`, yet it ships to consumers
   # because each package's `files` field includes it. A secret or identity
   # string that only appears in compiled output would sail through `safety`
-  # untouched. So this job builds first and then scans the actual tarball
+  # untouched. So these two jobs build first and then scan the actual tarball
   # that `npm publish` would produce — the same check the publish workflow
   # runs, run here too so the gate fires on every PR, not just at publish
   # time when it is much more expensive to unwind.
-  artifact:
-    name: artifact safety (tarball)
-    needs: [push-tree]
-    if: github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true'
+  #
+  # Split in two so that a job holding the denylist secret runs only
+  # base-ref, install-free code, and a job that installs or builds holds no
+  # secret. `artifact-pack` installs, runs this pull request's own build, and
+  # packs each package with the exact command check-artifact-safety.mjs
+  # itself uses (`npm pack --ignore-scripts`, cwd = the package directory),
+  # with no secret in scope. `artifact` (the required context) then
+  # downloads those tarballs as data and scans them with base-ref scripts
+  # only: no install, no build, no cache restore, and --tarball on every
+  # scan so the scanner never shells out to npm inside this checkout.
+  artifact-pack:
+    name: artifact safety (tarball) / pack
+    needs: [push-tree, classify]
+    # Same classify gating as `artifact` below, so a proven prose-tier run
+    # skips both jobs together (see the `classify` job's header).
+    if: always() && (github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true') && (needs.classify.result != 'success' || needs.classify.outputs.tier != 'prose')
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
 
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 20
           cache: npm
 
-      - run: npm ci
+      # No dependency in the lockfile needs its install script for this
+      # build, so none runs.
+      - run: npm ci --ignore-scripts
 
-      # `npm run build` runs whatever build scripts this pull request's own
-      # package.json files declare. Materialising the denylist secret BEFORE
-      # that step (the previous order here) would put it in env for the
-      # duration of a build driven entirely by this PR's own manifests and
-      # source — i.e. PR-authored code executing with a credential in scope,
-      # on every internal PR, not just a Dependabot or fork one. Building
-      # first and materialising after closes that: nothing that runs with
-      # the secret present is something this PR gets to define the behaviour
-      # of.
       - run: npm run build
 
-      # Same materialisation as the `safety` job above (see its own comment
-      # for the two distinct secretless cases — fork PRs and Dependabot-
-      # triggered runs, issue #269): FULL mode when the secret is available,
-      # PARTIAL (no --require-denylist) when it is not.
+      # One tarball per non-private package, named <dir>.tgz. A private
+      # package is skipped here exactly as check-artifact-safety.mjs skips it;
+      # the scan job decides privacy again from its own checkout, and a
+      # non-private package with no tarball here fails that scan (closed).
+      - name: Pack every non-private package (lifecycle scripts never run)
+        run: |
+          set -eo pipefail
+          shopt -s nullglob
+          out="$RUNNER_TEMP/packed"
+          mkdir -p "$out"
+          for pkg in packages/*/; do
+            pkg="${pkg%/}"
+            dir="${pkg#packages/}"
+            if PKG="$pkg" node -e 'process.exit(JSON.parse(require("fs").readFileSync(process.env.PKG + "/package.json", "utf8")).private === true ? 0 : 1)'; then
+              echo "$pkg is private:true — not packed"
+              continue
+            fi
+            packed="$(cd "$pkg" && npm pack --ignore-scripts --pack-destination "$out")"
+            name="$(printf '%s\n' "$packed" | sed '/^$/d' | tail -n 1)"
+            [ -n "$name" ] && [ -f "$out/$name" ] || { echo "::error::npm pack reported no tarball for $pkg"; exit 1; }
+            mv "$out/$name" "$out/$dir.tgz"
+          done
+
+      # This pull request's OWN copy of the scanner, over the same tarballs,
+      # in PARTIAL mode (no denylist exists in this job). The required scan
+      # below runs the base-ref copy, so a pull request that changes the
+      # scanner is checked by both: the old scanner with the denylist, and
+      # the new one without it. Both must pass.
+      - name: check-artifact-safety (this pull request's scanner, PARTIAL)
+        run: |
+          set -e
+          shopt -s nullglob
+          for pkg in packages/*/; do
+            pkg="${pkg%/}"
+            dir="${pkg#packages/}"
+            node scripts/check-artifact-safety.mjs "$pkg" --tarball "$RUNNER_TEMP/packed/$dir.tgz"
+          done
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: artifact-safety-tarballs
+          path: ${{ runner.temp }}/packed
+          if-no-files-found: error
+          retention-days: 1
+
+  artifact:
+    name: artifact safety (tarball)
+    needs: [push-tree, artifact-pack, classify]
+    # always(): GitHub's implicit needs-must-succeed default would otherwise
+    # SKIP this required context when `artifact-pack` fails, and a skipped
+    # required check reports as passing. The first step fails closed instead.
+    # The job-level condition is identical to `artifact-pack`'s, so the two
+    # always run or skip together: a proven prose-tier run skips both here,
+    # before that step, exactly as the single job skipped under #1432.
+    if: always() && (github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true') && (needs.classify.result != 'success' || needs.classify.outputs.tier != 'prose')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Pack job must have succeeded
+        run: |
+          result="${{ needs.artifact-pack.result }}"
+          if [ "$result" != "success" ]; then
+            echo "::error::artifact-pack did not succeed (result: $result)"
+            exit 1
+          fi
+
+      # setup-node runs tools (node, npm, yarn) in the workspace, so it goes
+      # first, before any pull request content exists there -- the same
+      # order and layout as `safety-identity`.
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 20
+
+      # This pull request's tree, into pr/ as DATA only: the scan reads each
+      # package's package.json, the repository's package-scope.json and
+      # governance/opaque-content-exemptions.json from it, and executes
+      # nothing in it.
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          path: pr
+          persist-credentials: false
+
+      # Downloaded before anything this job executes is laid down, so the
+      # base-ref checkout below is written after any data.
+      - name: Download packed tarballs (data only)
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
+        with:
+          name: artifact-safety-tarballs
+          path: ${{ runner.temp }}/packed
+
+      # Same shape as the `safety-identity` job's identical step: every
+      # script that runs in this job is base-ref content from
+      # .trusted-scripts/ (a sibling of pr/), never this PR's own copy. check-artifact-safety.mjs shells out to its own sibling
+      # check-public-safety.mjs by relative path, so pointing at the trusted
+      # checkout here carries that sibling call along with it.
+      - name: Checkout trusted scripts (base ref only, never this PR's own copy)
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          ref: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha || github.sha }}
+          path: .trusted-scripts
+          sparse-checkout: |
+            scripts
+            package-scope.json
+          sparse-checkout-cone-mode: false
+
+      # Same materialisation as the `safety-identity` job (see its own
+      # comment for the two distinct secretless cases — fork PRs and
+      # Dependabot-triggered runs, issue #269): FULL mode when the secret is
+      # available, PARTIAL (no --require-denylist) when it is not.
       - name: Materialise denylist
         id: denylist
         env:
@@ -1568,32 +2312,12 @@ jobs:
             echo "mode=PARTIAL" >> "$GITHUB_OUTPUT"
           fi
 
-      # Same reasoning and shape as the `safety` job's identical step (see
-      # its comment for the full argument, including why this lands at
-      # .trusted-scripts/ inside the checkout rather than beside it):
-      # the secret is now present in this job's env, so the script that
-      # consumes it must be base-ref content, never this PR's own copy.
-      # check-artifact-safety.mjs itself shells out to its own sibling
-      # check-public-safety.mjs by relative path, so pointing at the
-      # trusted checkout here carries that sibling call along with it — no
-      # separate wiring needed. Unlike the `safety` job, nothing here scans
-      # this checkout's own tree for identity content (check-artifact-safety
-      # scans an extracted tarball in a temp directory instead), so
-      # .trusted-scripts/ never needs excluding from anything in THIS job —
-      # it is added to .gitignore purely for the `safety` job's sake.
-      - name: Checkout trusted scripts (base ref only, never this PR's own copy)
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
-        with:
-          ref: ${{ github.event.pull_request.base.sha || github.sha }}
-          path: .trusted-scripts
-          sparse-checkout: |
-            scripts
-            package-scope.json
-          sparse-checkout-cone-mode: false
-
       # Loop over every package directory so newly added packages get scanned
-      # automatically — nothing here needs updating when packages/ grows.
+      # automatically — nothing here needs updating when packages/ grows. A
+      # private package exits before its tarball is read; any other package
+      # whose tarball is missing fails the scan.
       - name: check-artifact-safety (per package)
+        working-directory: pr
         run: |
           set -e
           shopt -s nullglob
@@ -1604,10 +2328,11 @@ jobs:
           fi
           for pkg in "${pkgs[@]}"; do
             pkg="${pkg%/}"
+            tarball="$RUNNER_TEMP/packed/${pkg#packages/}.tgz"
             if [ "${{ github.event.pull_request.head.repo.fork }}" = "true" ]; then
-              node "$GITHUB_WORKSPACE/.trusted-scripts/scripts/check-artifact-safety.mjs" "$pkg"
+              node "$GITHUB_WORKSPACE/.trusted-scripts/scripts/check-artifact-safety.mjs" "$pkg" --tarball "$tarball"
             else
-              node "$GITHUB_WORKSPACE/.trusted-scripts/scripts/check-artifact-safety.mjs" "$pkg" --require-denylist
+              node "$GITHUB_WORKSPACE/.trusted-scripts/scripts/check-artifact-safety.mjs" "$pkg" --tarball "$tarball" --require-denylist
             fi
           done
 

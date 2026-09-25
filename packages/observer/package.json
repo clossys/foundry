@@ -1,6 +1,6 @@
 {
   "name": "@clossys/observer",
-  "version": "0.4.0",
+  "version": "0.4.2",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -21,7 +21,6 @@
     "dist",
     "src",
     "!src/**/*.test.ts",
-    "CHANGELOG.md",
     "README.md",
     "LICENSE",
     "skill"

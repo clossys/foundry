@@ -30,74 +30,94 @@ async function repositoryJson(path) {
 
 test("repository Trio policy, adapters, and current-candidate fixtures bind the selected @clossys identities", async () => {
   const policy = await repositoryJson("governance/release-qualification-policy.json");
-  const expected = [
-    ["advisor", "@clossys/advisor", "0.4.0"],
-    ["starter", "@clossys/starter", "0.1.9"],
-    ["controller", "@clossys/controller", "0.9.21"],
-  ];
+  // Derived from each package's own manifest (issue #1254), not a literal
+  // version pin: a real package version bump must not need a hand-edit here
+  // just to keep this list current. What this loop actually proves — the
+  // packages/<key> directory-to-name join, and the adapter's own binding to
+  // that name — does not depend on which version currently happens to sit
+  // in the manifest.
+  const keys = ["advisor", "starter", "controller"];
 
-  for (const [key, name, version] of expected) {
+  for (const key of keys) {
     const manifest = await repositoryJson(`packages/${key}/package.json`);
+    const { name } = manifest;
     const entry = policy.packages[name];
     const adapter = await repositoryJson(entry.adapterPath);
     assert.equal(entry.packageKey, key);
-    assert.deepEqual([manifest.name, manifest.version], [name, version]);
     assert.equal(adapter.package, name);
     assert.equal(adapter.retainRawCaseEvidence, key === "starter" ? true : undefined);
   }
 
-  for (const state of ["satisfied", "violated", "indeterminate"]) {
-    const request = await repositoryJson(`governance/release-qualification-fixtures/starter/current-direct/request-${state}.json`);
-    assert.deepEqual([request.advisor.name, request.advisor.version], ["@clossys/advisor", "0.1.5"]);
-  }
+  // The synthetic @clossys/advisor this current-direct fixture set exercises
+  // is a fixed input the fixture itself owns (issue #1504), not
+  // packages/advisor's real, currently-published version -- a real advisor
+  // release does not touch these files and must not need a hand-edit here.
+  // overlay/advisor-package.json is the file run-candidate-qualification.mjs
+  // actually installs into node_modules as @clossys/advisor, so it is that
+  // identity's record; what this proves is that the request fixtures, the
+  // overlay manifest, and the overlay lock all still agree with THAT record,
+  // not that any particular version string is currently in effect.
   const starterManifest = await repositoryJson("governance/release-qualification-fixtures/starter/current-direct/overlay/package.json");
   const starterLock = await repositoryJson("governance/release-qualification-fixtures/starter/current-direct/overlay/package-lock.json");
   const advisorManifest = await repositoryJson("governance/release-qualification-fixtures/starter/current-direct/overlay/advisor-package.json");
-  assert.equal(starterManifest.devDependencies["@clossys/advisor"], "0.1.5");
-  assert.equal(starterLock.packages[""].devDependencies["@clossys/advisor"], "0.1.5");
-  assert.equal(starterLock.packages["node_modules/@clossys/advisor"].version, "0.1.5");
-  assert.deepEqual([advisorManifest.name, advisorManifest.version], ["@clossys/advisor", "0.1.5"]);
+  assert.equal(advisorManifest.name, "@clossys/advisor");
+  for (const state of ["satisfied", "violated", "indeterminate"]) {
+    const request = await repositoryJson(`governance/release-qualification-fixtures/starter/current-direct/request-${state}.json`);
+    assert.deepEqual([request.advisor.name, request.advisor.version], [advisorManifest.name, advisorManifest.version]);
+  }
+  assert.equal(starterManifest.devDependencies["@clossys/advisor"], advisorManifest.version);
+  assert.equal(starterLock.packages[""].devDependencies["@clossys/advisor"], advisorManifest.version);
+  assert.equal(starterLock.packages["node_modules/@clossys/advisor"].version, advisorManifest.version);
 
   const declarations = await repositoryJson("governance/release-qualification-fixtures/controller/current-direct/authority-declarations.json");
   const validLock = await repositoryJson("governance/release-qualification-fixtures/controller/current-direct/authority-valid-package-lock.json");
   const duplicateLock = await repositoryJson("governance/release-qualification-fixtures/controller/current-direct/authority-duplicate-package-lock.json");
   assert.deepEqual(declarations.declarations, [{ packageName: "@clossys/controller", authority: "controller" }]);
-  assert.deepEqual(declarations.target, { authority: "controller", version: "0.8.23" });
-  assert.equal(validLock.packages["node_modules/@clossys/controller"].version, "0.8.23");
-  assert.equal(duplicateLock.packages["node_modules/@clossys/controller"].version, "0.8.23");
-  assert.equal(duplicateLock.packages["node_modules/@example/consumer/node_modules/@clossys/controller"].version, "0.8.22");
+  // declarations.target.version is likewise this fixture set's own fixed
+  // synthetic controller version (issue #1504), unrelated to
+  // packages/controller's real version. It is the authority-declarations.json
+  // record's own target, so the two lock fixtures below are checked against
+  // THAT record instead of a literal repeated a third time.
+  const controllerVersion = declarations.target.version;
+  assert.deepEqual(declarations.target, { authority: "controller", version: controllerVersion });
+  assert.equal(validLock.packages["node_modules/@clossys/controller"].version, controllerVersion);
+  assert.equal(duplicateLock.packages["node_modules/@clossys/controller"].version, controllerVersion);
+  // The nested entry's entire purpose is to be a second, conflicting
+  // @clossys/controller at a version that disagrees with the declared
+  // authority -- that mismatch is what duplicate-authority detection
+  // (exercised via this same fixture in accept-qualification-handoff.test.mjs
+  // and validate-candidate-publish.test.mjs) is for. Which exact off-version
+  // it uses is arbitrary, so the only thing worth asserting is that it still
+  // disagrees with the authority, not which literal value that is. notEqual
+  // alone passes vacuously if the entry has no "version" at all (undefined
+  // disagrees with anything) -- issue #1504 review -- so the shape is
+  // checked first: it must be an actual exact semver string, not merely
+  // "not this string".
+  const duplicateVersion = duplicateLock.packages["node_modules/@example/consumer/node_modules/@clossys/controller"].version;
+  assert.match(duplicateVersion, /^\d+\.\d+\.\d+$/);
+  assert.notEqual(duplicateVersion, controllerVersion);
 });
 
-test("all 21 publishable packages are exact-source bound to the catalogue and qualification policy", async () => {
+test("every publishable package is exact-source bound to the catalogue and qualification policy", async () => {
   const policy = await repositoryJson("governance/release-qualification-policy.json");
   const catalog = await repositoryJson("governance/release-catalog.json");
-  const expectedVersions = {
-    "@clossys/advisor": "0.4.0",
-    "@clossys/architect": "0.1.10",
-    "@clossys/bouncer": "0.1.10",
-    "@clossys/builder": "0.10.0",
-    "@clossys/butler": "0.1.9",
-    "@clossys/controller": "0.9.21",
-    "@clossys/customer": "0.1.1",
-    "@clossys/designer": "0.4.17",
-    "@clossys/giver": "0.1.8",
-    "@clossys/influencer": "0.1.7",
-    "@clossys/inspector": "0.2.8",
-    "@clossys/integrator": "0.8.0",
-    "@clossys/keeper": "0.1.9",
-    "@clossys/launcher": "0.3.0",
-    "@clossys/locksmith": "0.2.8",
-    "@clossys/messenger": "0.1.10",
-    "@clossys/observer": "0.4.0",
-    "@clossys/publisher": "0.4.24",
-    "@clossys/starter": "0.1.9",
-    "@clossys/strategist": "0.4.0",
-    "@clossys/writer": "0.3.16",
-  };
+
   const packageKeys = (await readdir(new URL("../packages", import.meta.url))).sort();
   const manifests = await Promise.all(packageKeys.map((key) => repositoryJson(`packages/${key}/package.json`)));
   const target = catalog.targets.find((item) => item.id === catalog.defaultTarget);
-  assert.equal(manifests.filter((manifest) => manifest.private !== true).length, 21);
+  // Derived from the packages/ manifests actually on disk (issue #1254), not
+  // a literal snapshot: a real package version bump must not need a
+  // hand-edit here. What this test proves is that `policy.packages` names
+  // exactly the set of non-private manifests, and that each policy entry's
+  // OWN packageDir (below) resolves to the SAME manifest this independent
+  // packages/ directory scan already found for that name — not that any
+  // particular version string is currently in effect.
+  const expectedVersions = Object.fromEntries(manifests.filter((manifest) => manifest.private !== true).map((manifest) => [manifest.name, manifest.version]));
+  // The count this line asserted (issue #1504) tracked packages/ and had to
+  // be bumped on every new package; the deepEqual right below already fails
+  // if policy.packages names anything other than exactly this scan's
+  // non-private manifests -- a package present in one set and not the other
+  // fails there regardless of how many there are on either side.
   assert.deepEqual(Object.keys(policy.packages).sort(), Object.keys(expectedVersions).sort());
   assert.deepEqual(validateReleaseQualificationPolicy(policy), []);
   assert.deepEqual(validateReleaseQualificationPortfolio({ policy, manifests, releasePackages: target.packages }), []);

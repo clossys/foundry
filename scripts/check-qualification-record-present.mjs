@@ -160,6 +160,60 @@ export function qualificationRecordPresenceForCandidate({ root = process.cwd(), 
   return { state: "present", candidate, path };
 }
 
+// Answers a DIFFERENT question from qualificationRecordPresenceForCandidate()
+// above: not "does the record for this candidate still match what's on disk
+// RIGHT NOW", but "was a qualification record ever retained for this EXACT
+// package@version, full stop." The two diverge precisely when `candidate`
+// names an OLD version the package has since moved past — which is exactly
+// what a deferral names (issue #1187, item 4; four real cases the same
+// night). qualificationRecordPresenceForCandidate() recomputes "current"
+// digests from the live WORKTREE via currentQualificationJoins(), which is
+// the right question for "is the candidate about to be published still
+// good" but the wrong one for "was this historical version qualified": the
+// package's package.json has long since bumped past that old version, so
+// its worktree digests describe a DIFFERENT candidate entirely, and the
+// comparison reports "stale" — never "present" — for every deferred version
+// except the one that happens to still equal the package's current version.
+// That is the exact gap that let a satisfied deferral for an old version
+// sit unremoved: scripts/check-qualification-record-required.mjs's
+// checkStaleDeferrals() re-checks EVERY declared deferral, independent of
+// whether its version is part of the current diff, but until this function
+// existed it asked qualificationRecordPresenceForCandidate() the wrong
+// question and could only ever answer "present" for the current version.
+//
+// The record for an old version does not need to be "still correct against
+// today's tree" to prove the deferral is satisfied — it only needs to
+// exist, at the expected path, and actually describe the deferral's own
+// candidate name+version (guarding against a stray or misnamed file sitting
+// at that path by coincidence). No WORKTREE recomputation is performed at
+// all.
+export function qualificationRecordRetainedForVersion({ root = process.cwd(), candidate } = {}) {
+  if (typeof candidate?.name !== "string" || typeof candidate?.version !== "string") {
+    return { state: "indeterminate", reason: "no candidate {name, version} pair was given" };
+  }
+  let path;
+  try {
+    path = qualificationPath(root, candidate);
+  } catch (error) {
+    return { state: "indeterminate", reason: error instanceof Error ? error.message : "qualification path could not be derived" };
+  }
+  if (!existsSync(resolve(root, path))) return { state: "missing", candidate, path };
+
+  let record;
+  try {
+    record = JSON.parse(readFileSync(resolve(root, path), "utf8"));
+  } catch (error) {
+    return { state: "indeterminate", reason: `${path} could not be read as JSON: ${error instanceof Error ? error.message : "unknown error"}` };
+  }
+  if (record?.candidate?.name !== candidate.name || record?.candidate?.version !== candidate.version) {
+    return {
+      state: "indeterminate",
+      reason: `${path} exists but its own candidate (${record?.candidate?.name ?? "?"}@${record?.candidate?.version ?? "?"}) does not match ${candidate.name}@${candidate.version}`,
+    };
+  }
+  return { state: "present", candidate, path };
+}
+
 if (process.argv[1] && process.argv[1].endsWith("check-qualification-record-present.mjs")) {
   const index = process.argv.indexOf("--package");
   const packageKey = index === -1 ? undefined : process.argv[index + 1];

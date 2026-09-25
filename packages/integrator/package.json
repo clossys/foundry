@@ -1,6 +1,6 @@
 {
   "name": "@clossys/integrator",
-  "version": "0.8.0",
+  "version": "0.8.2",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -23,7 +23,6 @@
     "src",
     "!src/**/*.test.ts",
     "!src/**/*.test-helper.ts",
-    "CHANGELOG.md",
     "README.md",
     "LICENSE",
     "skill"

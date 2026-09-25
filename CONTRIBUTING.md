@@ -25,9 +25,15 @@ declarations.
 
 1. Fork and branch from `main`.
 2. Keep the change focused — one concern per pull request.
-3. Add or update tests. Every package uses [Vitest](https://vitest.dev); run
+3. If the change touches an already-published package's packed content, add
+   a `.changesets/<slug>.md` file instead of bumping that package's version
+   yourself — see [`.changesets/README.md`](.changesets/README.md) for the
+   format, and its ["Style"](.changesets/README.md#style) section for the
+   one-factual-sentence, no-unproven-absolutes rule a changeset summary is
+   held to (it becomes a `docs/changelogs/<dir>.md` line verbatim).
+4. Add or update tests. Every package uses [Vitest](https://vitest.dev); run
    `npm test` from the repository root.
-4. Run the checks below before pushing.
+5. Run the checks below before pushing.
 
 ```bash
 npm run typecheck
@@ -91,12 +97,84 @@ scope change, registry change, or package publication.
 | `check:foreign-references` | The inverse of `check-public-safety`. That gate is a denylist and can only refuse names someone already listed; this one admits only this repository's own account and scope — derived from `package-scope.json` and the manifests' own `repository.url` — and fails every other account-shaped reference (`@scope/name`, and `owner/repo` in a GitHub URL, a workflow `uses:`, or a `gh --repo` argument) by shape. Foundry supplies planes that do not govern each other, so it must never name a consumer, a sibling repository, or any other account. Public infrastructure and fictional placeholders are admitted explicitly, and third-party npm scopes are derived from `package-lock.json` at run time. Runs on fork pull requests too — it needs no denylist. |
 | `check:readme` / `check:contamination` | Catch README/export drift and internal-convention leakage that no denylist string-match can see. Run unconditionally in CI, including on fork pull requests, since they read only the tree itself. |
 | `check:typechecked-assertions` | Fails if a `@ts-expect-error`, `@ts-ignore`, `expectTypeOf(...)`, or `assertType(...)` lives in a file `tsc` doesn't actually compile — see "Type-level assertions live in `.check.ts(x)` files" below. |
-| `check:workspace-links` (`workspace link integrity` in CI) | Every first-party `dependencies` range still covers its sibling's real on-disk version, and `package-lock.json` resolves every first-party package as a local workspace link, never a remote registry URL. See "0.x dependency ranges are minor-locked" below for the defect this exists to catch. |
+| `check:workspace-links` (`workspace link integrity` in CI) | Every first-party `dependencies`/`peerDependencies`/`optionalDependencies` range still covers its sibling's real on-disk version, `package-lock.json` resolves every first-party package as a local workspace link, never a remote registry URL, and `package-lock.json`'s own recorded version for each first-party package matches that package's manifest. See "0.x dependency ranges are minor-locked" below for the defect this exists to catch. |
 | `gitleaks` | Scans full git history, not just your diff. |
 
 On a pull request from a fork, the safety checks run in PARTIAL mode —
 repository secrets are unavailable to forks by design. This is expected and is
 not something you need to fix. A maintainer re-runs FULL mode before merge.
+
+## Merge queue
+
+`main` is protected by GitHub's native merge queue (ruleset `main-required-checks`),
+not by hand-merging or a bespoke merge train. Once your pull request has every
+required context green and an APPROVE with no later blocking review at its
+exact head, a maintainer adds it to the queue (the "Merge when ready" button,
+or `gh pr merge --queue`). From there:
+
+1. GitHub forms a merge group: your pull request's head merged with `main`
+   plus whatever else is already queued ahead of it, on a temporary ref
+   shaped `gh-readonly-queue/main/pr-<number>-<sha>` — `<sha>` there is your
+   pull request's own head commit, not the group's synthetic test commit.
+2. Every required context re-runs against that merge group, under the
+   `merge_group` event rather than `pull_request`. This is deliberately
+   stricter than a plain "branch is up to date" check: it tests the exact
+   tree that would land, including every entry ahead of yours, not just your
+   branch rebased in your head.
+3. `verify-standards`'s review-evidence check does not ask you to re-request
+   review for the merge group. It parses the merge group's own ref back into
+   your pull request's number and head sha (`scripts/collect-review-evidence.mjs
+   --merge-group-head-ref`) and evaluates the review recorded at THAT
+   commit — the same APPROVE-with-no-later-blocking-review requirement as an
+   ordinary pull request, just read from the right place. A review posted
+   against a different sha (a stale replay, or a push that landed in
+   between) does not count; a malformed or unrecognizable ref refuses to
+   collect evidence at all, rather than guessing.
+4. If everything is green, GitHub merges your commit into `main` with a
+   merge commit and your pull request is marked merged automatically. If
+   anything in the group fails, GitHub identifies which entry caused it,
+   drops that one, and re-forms the group from the rest — your own commit is
+   never touched or rewritten by this process.
+
+Nothing here changes what you do before the queue: push a head you've
+verified locally, post `Ready for independent review at <sha>.`, wait for an
+APPROVE, and let CI run. The queue only changes what happens after both of
+those are true.
+
+### A mechanical merge from `main` does not need a fresh review (#1428)
+
+If your pull request only needs a merge from `main` — GitHub flagged it
+stale, or a sibling entry landed first — you do not need to re-request
+review, and a maintainer does not need to hand-verify an empty `git show
+--remerge-diff` and post a carry-forward comment. `review-evidence`'s
+collector proves the merge is mechanical from this repository's own git
+history and carries the earlier approval forward on its own, by requiring
+every commit between your last-approved head and your current head, walking
+strict first parent, to be a plain two-parent merge whose:
+
+1. **second parent is an ancestor of `main`'s true tip** — resolved fresh
+   from this job's own fetched history, never from your pull request's own
+   claimed base, so retargeting your pull request's base branch does not
+   help route around this; and
+2. **`git show --remerge-diff` is EMPTY** — no hand-resolved conflict,
+   nothing added on top of the merge.
+
+Both must hold for every merge commit in the chain, or nothing carries: a
+side-branch merge, a hand-resolved conflict, an extra edit folded into the
+merge, or a genuine follow-up commit after the approved head all require a
+fresh review, exactly as before. (An earlier version of this design also
+compared `git patch-id` at both heads. It was dropped — condition 1 already
+proves a mechanical chain can only introduce content the target branch
+already carries, so patch-id was strictly redundant with that proof at
+best; at worst it was both a real hole, since `git patch-id` ignores
+whitespace and so missed a side-branch merge that only changed indentation,
+and a false-negative machine, since it failed closed on the great majority
+of this repository's own real clean merges from `main` — their nearby
+changeset and version-bump lines shifted the diff context even though
+nothing reviewed had changed.) When a carry does apply, the
+`verify-standards` job summary says so directly (`approval carried from
+<sha> (#1428 mechanical merge)`) — check there before assuming you need to
+ping a reviewer again.
 
 ## Conversation surface
 
@@ -327,7 +405,11 @@ equivalent fix after.
   regenerate — see `scripts/check-workspace-links.mjs`'s own header for the
   full failure mode.
 - **Changelogs** follow [Keep a Changelog](https://keepachangelog.com); packages
-  are versioned with [semver](https://semver.org).
+  are versioned with [semver](https://semver.org). A package's changelog is
+  `docs/changelogs/<dir>.md`, in this repository and never in the package
+  tarball, so a wrong release note is fixed with an ordinary docs pull
+  request — no changeset, no release. New entries come from changesets via
+  the release PR; see [docs/RELEASING.md](docs/RELEASING.md).
 - **Public API changes** need the README updated in the same pull request —
   `check-readme-parity.mjs` checks this mechanically for undocumented or
   stale exports.

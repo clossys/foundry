@@ -1,0 +1,39 @@
+{
+  "asOf": "2026-09-18T12:00:00Z",
+  "declaredIntents": [
+    {
+      "id": "intent-home"
+    },
+    {
+      "id": "intent-about"
+    }
+  ],
+  "observations": [
+    {
+      "intentId": "intent-home",
+      "independent": true,
+      "audienceReleased": true,
+      "matchingImmutableRecord": true,
+      "observerRef": "observer-a",
+      "evidence": [
+        {
+          "id": "evidence-intent-home",
+          "description": "Independent observation of the live surface."
+        }
+      ]
+    },
+    {
+      "intentId": "intent-about",
+      "independent": true,
+      "audienceReleased": true,
+      "matchingImmutableRecord": false,
+      "observerRef": "observer-a",
+      "evidence": [
+        {
+          "id": "evidence-intent-about",
+          "description": "Independent observation of the live surface."
+        }
+      ]
+    }
+  ]
+}

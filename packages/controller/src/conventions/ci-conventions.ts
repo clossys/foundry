@@ -27,12 +27,23 @@
  * shipped this envelope before this module -- see #1187's own coordination
  * comment on the normalization direction that makes this the shape to
  * match, not a parallel invention.
+ *
+ * `declaration.weeklyAdoption` (`./weekly-adoption.ts`) extends this
+ * evaluator with the weekly Sunday `@clossys/*` adoption convention for
+ * consuming repositories (#1187/#1259's cadence rule): grouped weekly
+ * Sunday dependency updates via Renovate or Dependabot, an immediate bypass
+ * for security advisories, no other automation touching `@clossys/*` on any
+ * other day, and `integrator-provenance-check` (#885/#1169) required on the
+ * adoption pull request. Omitted entirely -- this package's own declaration
+ * included, since it produces `@clossys/*` rather than consuming it -- the
+ * rule set is skipped as not applicable, never reported as a gap.
  */
 
 import type { GateNameOptions } from "./gates.js";
 import { validateGateName } from "./gates.js";
 import type { JobDefinition, RunnerConventions } from "./runner.js";
 import { validateRunnerLabel } from "./runner.js";
+import { evaluateWeeklyAdoption, type WeeklyAdoptionDeclaration } from "./weekly-adoption.js";
 import { YamlLiteParseError, parseYamlLite, type YamlValue } from "./yaml-lite.js";
 
 // ---------------------------------------------------------------------------
@@ -111,6 +122,15 @@ export interface CiConventionsDeclaration {
   /** A projected monthly minutes figure, supplied by the caller (e.g. Observer's run history, #484). Optional -- omitted, the budget rule is skipped, not reported as a gap. */
   readonly runHistoryMinutes?: number;
   readonly justifiedExceptions?: readonly JustifiedException[];
+  /**
+   * The weekly Sunday `@clossys/*` adoption convention declaration (`./
+   * weekly-adoption.ts`). Omitted entirely -- the default -- means every
+   * `ci/weekly-adoption-*` rule is skipped as not applicable, e.g. for a
+   * repository (this one included) that produces `@clossys/*` packages
+   * rather than consuming them. Present with `applies: true`, it is
+   * evaluated; see `checkWeeklyAdoption` below.
+   */
+  readonly weeklyAdoption?: WeeklyAdoptionDeclaration;
 }
 
 export interface EvaluateCiConventionsInput {
@@ -561,6 +581,27 @@ function checkProjectedMinutes(
 }
 
 // ---------------------------------------------------------------------------
+// Rule 12: weekly Sunday `@clossys/*` adoption convention for consuming
+// repositories (issue #1187/#1259's cadence rule)
+// ---------------------------------------------------------------------------
+
+function checkWeeklyAdoption(
+  ruleset: CiConventionsRuleset,
+  declaration: CiConventionsDeclaration,
+): CheckFinding[] {
+  const weeklyAdoption = declaration.weeklyAdoption;
+  if (!weeklyAdoption || !weeklyAdoption.applies) return [];
+
+  const requiredContexts = weeklyAdoption.adoptionPrRequiredContexts ?? ruleset.requiredContexts;
+  const findings: CheckFinding[] = [];
+  for (const result of evaluateWeeklyAdoption(weeklyAdoption, requiredContexts)) {
+    if (result.state === "satisfied") continue;
+    findings.push({ rule: result.rule, severity: "error", message: result.message });
+  }
+  return findings;
+}
+
+// ---------------------------------------------------------------------------
 // Exceptions
 // ---------------------------------------------------------------------------
 
@@ -607,6 +648,7 @@ export function evaluateCiConventions(input: EvaluateCiConventionsInput): CheckO
   findings.push(...checkRequiredContextTriggers(ruleset, declaration, byPath));
   findings.push(...checkGateNaming(ruleset));
   findings.push(...checkRunnerLabels(parsed, declaration));
+  findings.push(...checkWeeklyAdoption(ruleset, declaration));
 
   const { findings: minutesFindings, metric } = checkProjectedMinutes(declaration, pricing);
   findings.push(...minutesFindings);

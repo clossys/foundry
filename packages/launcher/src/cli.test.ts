@@ -36,6 +36,17 @@ function host(directory: string, commands: Record<string, CommandResult>): Works
         return null;
       }
     },
+    readBytes: (path) => {
+      try {
+        return readFileSync(path);
+      } catch {
+        return null;
+      }
+    },
+    writeBytes: (path, contents) => {
+      mkdirSync(dirname(path), { recursive: true });
+      writeFileSync(path, contents);
+    },
     writeText: (path, contents) => {
       mkdirSync(dirname(path), { recursive: true });
       writeFileSync(path, contents);
@@ -77,6 +88,30 @@ describe("launcher CLI", () => {
     expect(log.mock.calls[0]?.[0]).toBe(USAGE);
   });
 
+  it("refuses (exit 1), rather than printing usage, when --repositories is given in a non-empty non-git directory (#1179)", () => {
+    const directory = mkdtempSync(join(tmpdir(), "launcher-files-"));
+    roots.push(directory);
+    writeFileSync(join(directory, "notes.txt"), "keep\n");
+    const log = vi.spyOn(console, "log").mockImplementation(() => {});
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+    expect(main(["--repositories", "example-owner/example-app"], host(directory, {}), skeletonRoot)).toBe(1);
+    expect(String(error.mock.calls[0]?.[0])).toMatch(/not empty and is not a GitHub repository/);
+    expect(log).not.toHaveBeenCalled();
+  });
+
+  it("refuses (exit 1) for --inventory too, in the same non-empty non-git directory (#1179)", () => {
+    const directory = mkdtempSync(join(tmpdir(), "launcher-files-"));
+    roots.push(directory);
+    writeFileSync(join(directory, "notes.txt"), "keep\n");
+    const inventoryPath = join(directory, "inventory.json");
+    writeFileSync(inventoryPath, JSON.stringify({ schemaVersion: 1, repositories: [{ id: "example-owner/example-app" }] }));
+    const log = vi.spyOn(console, "log").mockImplementation(() => {});
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+    expect(main(["--inventory", inventoryPath], host(directory, {}), skeletonRoot)).toBe(1);
+    expect(String(error.mock.calls[0]?.[0])).toMatch(/not empty and is not a GitHub repository/);
+    expect(log).not.toHaveBeenCalled();
+  });
+
   it("creates a hub from an empty directory through the CLI", () => {
     const directory = mkdtempSync(join(tmpdir(), "launcher-cli-"));
     roots.push(directory);
@@ -90,6 +125,7 @@ describe("launcher CLI", () => {
         "gh org list": { status: 0, stdout: "", stderr: "" },
         "gh repo view acme/workspace --json name": { status: 1, stdout: "", stderr: "not found" },
         "npm view @clossys/advisor version": { status: 0, stdout: "0.1.5\n", stderr: "" },
+        "npm view @clossys/integrator version": { status: 0, stdout: "0.8.2\n", stderr: "" },
         [`gh repo create acme/workspace --private --source ${directory} --remote origin --push`]: {
           status: 0,
           stdout: "created\n",
@@ -123,8 +159,56 @@ describe("launcher CLI", () => {
     const err = vi.spyOn(console, "error").mockImplementation(() => {});
     const code = main(["--inventory", "elsewhere.json"], host(directory, {}), skeletonRoot);
     expect(code).toBe(1);
-    expect(String(err.mock.calls[0]?.[0])).toMatch(/already appointed; edit clossys\/\.state\/inventory\.json/);
+    expect(String(err.mock.calls[0]?.[0])).toMatch(/already appointed; to change the repositories it covers, choose them again .* launcher --repositories/);
     expect(String(err.mock.calls[0]?.[0])).not.toMatch(/only valid when appointing/);
+  });
+
+  it("refuses --inventory whose entries carry unrecognized fields and writes nothing (issue #1334 repro)", () => {
+    const directory = mkdtempSync(join(tmpdir(), "launcher-strict-inventory-"));
+    roots.push(directory);
+    mkdirSync(join(directory, ".git"), { recursive: true });
+    const source = join(directory, "governance-record.json");
+    // Shaped closely enough to look like an inventory -- a `repositories`
+    // array with `id`, `role`, `visibility`, `status`, `notes` -- but not
+    // actually a launcher inventory document (the exact #1334 repro).
+    writeFileSync(
+      source,
+      `${JSON.stringify(
+        {
+          schemaVersion: 1,
+          repositories: [
+            { id: "app", role: "product", visibility: "public", status: "active", notes: "primary surface" },
+            { id: "site", role: "marketing", visibility: "public", status: "active", notes: "" },
+            { id: "billing", role: "internal", visibility: "private", status: "active", notes: "" },
+            { id: "docs", role: "docs", visibility: "public", status: "retired", notes: "" },
+          ],
+        },
+        null,
+        2,
+      )}\n`,
+    );
+    const err = vi.spyOn(console, "error").mockImplementation(() => {});
+    const log = vi.spyOn(console, "log").mockImplementation(() => {});
+    const code = main(
+      ["--inventory", "governance-record.json"],
+      host(directory, {
+        "git --version": { status: 0, stdout: "git\n", stderr: "" },
+        "git remote get-url origin": { status: 0, stdout: "git@github.com:acme/central.git\n", stderr: "" },
+        "npm view @clossys/advisor version": { status: 0, stdout: "0.1.5\n", stderr: "" },
+        "npm view @clossys/integrator version": { status: 0, stdout: "0.8.2\n", stderr: "" },
+      }),
+      skeletonRoot,
+    );
+    expect(code).toBe(1);
+    expect(String(err.mock.calls[0]?.[0])).toMatch(/repositories\[0\] has a field the contract does not declare \(key \d+ of this object\)/);
+    // Refusal happens before any file is touched: no hub marker, no
+    // inventory, no clossys/ folder, no package.json, nothing beyond the
+    // two files this test itself seeded.
+    expect(existsSync(join(directory, WORKSPACE_MARKER_REL))).toBe(false);
+    expect(existsSync(join(directory, "clossys"))).toBe(false);
+    expect(existsSync(join(directory, "package.json"))).toBe(false);
+    expect(readdirSync(directory).sort()).toEqual([".git", "governance-record.json"]);
+    expect(log).not.toHaveBeenCalled();
   });
 
   it("resumes and migrates a legacy .clossys/ hub marker automatically, reporting the migration", () => {
@@ -160,6 +244,7 @@ describe("launcher CLI", () => {
         "gh org list": { status: 0, stdout: "", stderr: "" },
         "gh repo view acme/workspace --json name": { status: 1, stdout: "", stderr: "not found" },
         "npm view @clossys/advisor version": { status: 0, stdout: "0.2.6\n", stderr: "" },
+        "npm view @clossys/integrator version": { status: 0, stdout: "0.8.2\n", stderr: "" },
       }),
       skeletonRoot,
     );

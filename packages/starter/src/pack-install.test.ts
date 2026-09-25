@@ -163,7 +163,30 @@ function identities(starter: PackedPackage, advisor: PackedPackage, target: Pack
   };
 }
 
-function invoke(root: string, packageManager: "npm" | "pnpm", installed: ReturnType<typeof identities>, targetMode: string) {
+// #1333/#1341: spawnSync's synchronous capture is its own internal poll
+// loop outside Node's normal stream machinery, and that loop is what a
+// heavily loaded CI runner's scheduling can starve -- the exit status lands
+// but stdout comes back empty (or truncated, which here surfaces as a
+// `JSON.parse` failure on the report). spawn()'s stdout/stderr are ordinary
+// Readable streams whose contract guarantees every byte written is
+// delivered via `data` events before `end` fires, and the `close` handler
+// below fires only after the process has exited AND both stdio streams have
+// ended, so it cannot observe an exit code before the output that produced
+// it has been fully read.
+function spawnCapture(command: string, args: readonly string[], options: { cwd: string; env: NodeJS.ProcessEnv; timeout: number }): Promise<{ status: number | null; stdout: string; stderr: string }> {
+  return new Promise((resolvePromise, rejectPromise) => {
+    const child = spawn(command, args as string[], options);
+    let stdout = ""; let stderr = "";
+    child.stdout.setEncoding("utf8");
+    child.stderr.setEncoding("utf8");
+    child.stdout.on("data", (chunk: string) => { stdout += chunk; });
+    child.stderr.on("data", (chunk: string) => { stderr += chunk; });
+    child.on("error", rejectPromise);
+    child.on("close", (status) => { resolvePromise({ status, stdout, stderr }); });
+  });
+}
+
+async function invoke(root: string, packageManager: "npm" | "pnpm", installed: ReturnType<typeof identities>, targetMode: string) {
   const requestPath = join(root, "request.json"); const snapshotRoot = join(root, "snapshot"); const eventPath = join(root, "event.json"); const receiptPath = join(root, "receipt.json");
   mkdirSync(join(snapshotRoot, "evidence"), { recursive: true });
   writeJson(join(snapshotRoot, "evidence", "assessment.json"), assessment(installed.target, "consumer/repository"));
@@ -174,17 +197,17 @@ function invoke(root: string, packageManager: "npm" | "pnpm", installed: ReturnT
   writeJson(eventPath, { schemaVersion: 1, provider: "github-actions", eventName: "workflow_run", repository: "consumer/repository", baseSha: gitSha("b"), sourceWorkflowRunId: "1", sourceHeadSha: gitSha("c"), artifactName: "adoption-snapshot-1", sourceConclusion: "success" });
   writeJson(receiptPath, { schemaVersion: 1, packageManager, attempted: true, exitCode: 0 });
   const starterCli = join(root, "node_modules", "@clossys", "starter", "dist", "cli.js");
-  const result = spawnSync(process.execPath, [starterCli, "decide", requestPath, snapshotRoot, eventPath, receiptPath], { cwd: root, encoding: "utf8", env: consumerEnvironment(root), timeout: 15_000, maxBuffer: 4_000_000 });
+  const result = await spawnCapture(process.execPath, [starterCli, "decide", requestPath, snapshotRoot, eventPath, receiptPath], { cwd: root, env: consumerEnvironment(root), timeout: 15_000 });
   return { status: result.status, report: JSON.parse(result.stdout || "{}") as { state: string } };
 }
 
-function findingRules(result: ReturnType<typeof invoke>): string {
+function findingRules(result: Awaited<ReturnType<typeof invoke>>): string {
   const report = result.report as { findings?: unknown };
   if (!Array.isArray(report.findings)) return "none";
   const rules = report.findings.flatMap((entry) => typeof entry === "object" && entry !== null && "rule" in entry && typeof entry.rule === "string" && /^[a-z0-9-]+$/.test(entry.rule) ? [entry.rule] : []);
   return rules.length === 0 ? "none" : rules.join(", ");
 }
-function expectStarterOutcome(result: ReturnType<typeof invoke>, expectedStatus: number, expectedState: string): void {
+function expectStarterOutcome(result: Awaited<ReturnType<typeof invoke>>, expectedStatus: number, expectedState: string): void {
   const state = ["satisfied", "violated", "indeterminate"].includes(result.report.state) ? result.report.state : "unreadable";
   const diagnostic = `Starter report state=${state}; finding rules=${findingRules(result)}`;
   expect(result.status, diagnostic).toBe(expectedStatus);
@@ -239,19 +262,19 @@ describe("packed installed activation canaries", () => {
       try {
         const npmRoot = join(fixtureRoot, "npm-consumer"); mkdirSync(npmRoot);
         await installNpmConsumer(npmRoot, registry.url, installed);
-        const npmHelp = spawnSync(process.execPath, [join(npmRoot, "node_modules", "@clossys", "starter", "dist", "cli.js"), "--help"], { cwd: npmRoot, encoding: "utf8", env: consumerEnvironment(npmRoot) });
+        const npmHelp = await spawnCapture(process.execPath, [join(npmRoot, "node_modules", "@clossys", "starter", "dist", "cli.js"), "--help"], { cwd: npmRoot, env: consumerEnvironment(npmRoot), timeout: 15_000 });
         expect(npmHelp.status, "installed npm Starter help failed").toBe(0); expect(npmHelp.stdout).toContain("Usage: foundry-starter decide");
-        expectStarterOutcome(invoke(npmRoot, "npm", installed, "satisfied"), 0, "satisfied");
-        expectStarterOutcome(invoke(npmRoot, "npm", installed, "violated"), 1, "violated");
-        expectStarterOutcome(invoke(npmRoot, "npm", installed, "indeterminate"), 2, "indeterminate");
+        expectStarterOutcome(await invoke(npmRoot, "npm", installed, "satisfied"), 0, "satisfied");
+        expectStarterOutcome(await invoke(npmRoot, "npm", installed, "violated"), 1, "violated");
+        expectStarterOutcome(await invoke(npmRoot, "npm", installed, "indeterminate"), 2, "indeterminate");
 
         const pnpmRoot = join(fixtureRoot, "pnpm-consumer"); mkdirSync(pnpmRoot);
         await installPnpmConsumer(pnpmRoot, registry.url, installed);
-        const pnpmHelp = spawnSync(process.execPath, [join(pnpmRoot, "node_modules", "@clossys", "starter", "dist", "cli.js"), "--help"], { cwd: pnpmRoot, encoding: "utf8", env: consumerEnvironment(pnpmRoot) });
+        const pnpmHelp = await spawnCapture(process.execPath, [join(pnpmRoot, "node_modules", "@clossys", "starter", "dist", "cli.js"), "--help"], { cwd: pnpmRoot, env: consumerEnvironment(pnpmRoot), timeout: 15_000 });
         expect(pnpmHelp.status, "installed pnpm Starter help failed").toBe(0); expect(pnpmHelp.stdout).toContain("Usage: foundry-starter decide");
-        expectStarterOutcome(invoke(pnpmRoot, "pnpm", installed, "satisfied"), 0, "satisfied");
-        expectStarterOutcome(invoke(pnpmRoot, "pnpm", installed, "violated"), 1, "violated");
-        expectStarterOutcome(invoke(pnpmRoot, "pnpm", installed, "indeterminate"), 2, "indeterminate");
+        expectStarterOutcome(await invoke(pnpmRoot, "pnpm", installed, "satisfied"), 0, "satisfied");
+        expectStarterOutcome(await invoke(pnpmRoot, "pnpm", installed, "violated"), 1, "violated");
+        expectStarterOutcome(await invoke(pnpmRoot, "pnpm", installed, "indeterminate"), 2, "indeterminate");
       } finally { await registry.close(); }
     });
   }, 90_000);

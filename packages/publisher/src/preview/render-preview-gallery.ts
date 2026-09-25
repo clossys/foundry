@@ -26,6 +26,16 @@ import {
   previewMarketingGroups,
   previewSectionedDocument,
 } from "./fixture-documents.js";
+import {
+  LAUNCH_PACK_INDEX_FILENAME,
+  buildLaunchPackIndexHtml,
+  renderCardsSection,
+  renderEmailSection,
+  renderMaterialsSection,
+  renderSitePages,
+  type LaunchPackFile,
+  type LaunchPackSection,
+} from "./render-launch-pack-gallery.js";
 
 const require = createRequire(import.meta.url);
 
@@ -247,6 +257,52 @@ export interface WritePreviewGalleryResult {
   entryCount: number;
   guidePath?: string;
   auditPath?: string;
+  /** Path to the Launch-pack index (issue #1204's own "views branded ... rendered templates" ask) — links every file this call wrote. */
+  indexPath: string;
+  /** Every file this call wrote, as basenames relative to `outputDir`, in write order — `PREVIEW_GALLERY_FILENAME` first, `LAUNCH_PACK_INDEX_FILENAME` last. Does not include the three copied stylesheets. */
+  writtenFiles: string[];
+}
+
+/**
+ * Builds every Launch-pack section (site pages, materials, email kit,
+ * cards) from the SAME validated brand declarations `gallery.html` itself
+ * renders against, so the whole pack reflects one consistent brand — see
+ * `render-launch-pack-gallery.ts`'s own top comment for what each section
+ * covers and what deliberately isn't rendered (the two Next.js metadata
+ * route handlers).
+ */
+function buildLaunchPackFiles(declarations: Record<string, string>): { files: LaunchPackFile[]; sections: LaunchPackSection[] } {
+  const sitePages = renderSitePages();
+  const materials = renderMaterialsSection(declarations);
+  const email = renderEmailSection(declarations);
+  const cards = renderCardsSection(declarations);
+
+  const files: LaunchPackFile[] = [...sitePages, ...materials, ...email, ...cards];
+
+  const sections: LaunchPackSection[] = [
+    {
+      heading: "Site",
+      description: "templates/site's own routes, rendered through the same MarketingView/ErrorView templates that site uses.",
+      links: sitePages.map((entry) => ({ file: entry.file, label: entry.file })),
+    },
+    {
+      heading: "Materials",
+      description: "Company overviews (short/medium/long), the pitch deck (default and an investor audience variant), and the materials index.",
+      links: materials.map((entry) => ({ file: entry.file, label: entry.file })),
+    },
+    {
+      heading: "Email kit",
+      description: "The launch announcement, welcome, and follow-up emails, each in an email-width frame, plus a signature.",
+      links: email.map((entry) => ({ file: entry.file, label: entry.file })),
+    },
+    {
+      heading: "Share and social cards",
+      description: "One SVG per channel-spec image size (LinkedIn, X, Instagram, Facebook, YouTube, TikTok, GitHub), the Open Graph share card, and the three video-call backgrounds.",
+      links: cards.map((entry) => ({ file: entry.file, label: entry.label })),
+    },
+  ];
+
+  return { files, sections };
 }
 
 export function writePreviewGallery(options: WritePreviewGalleryOptions): WritePreviewGalleryResult {
@@ -265,12 +321,23 @@ export function writePreviewGallery(options: WritePreviewGalleryOptions): WriteP
   const entries = renderPreviewGalleryEntries();
   const galleryPath = join(outputDir, PREVIEW_GALLERY_FILENAME);
   writeFileSync(galleryPath, buildPreviewGalleryHtml(entries), "utf8");
+  const writtenFiles: string[] = [PREVIEW_GALLERY_FILENAME];
 
   const result: WritePreviewGalleryResult = {
     galleryPath,
     brandCssPath: validation.brandCssPath,
     entryCount: entries.length,
+    indexPath: join(outputDir, LAUNCH_PACK_INDEX_FILENAME),
+    writtenFiles,
   };
+
+  const indexSections: LaunchPackSection[] = [
+    {
+      heading: "Web views",
+      description: "Every shipped web view, rendered with fixture copy.",
+      links: [{ file: PREVIEW_GALLERY_FILENAME, label: PREVIEW_GALLERY_FILENAME }],
+    },
+  ];
 
   if (options.rosterPath !== undefined) {
     const roster = loadBrandAssetRoster(options.rosterPath);
@@ -284,7 +351,26 @@ export function writePreviewGallery(options: WritePreviewGalleryOptions): WriteP
     writeFileSync(auditPath, auditHtml, "utf8");
     result.guidePath = guidePath;
     result.auditPath = auditPath;
+    writtenFiles.push(BRAND_GUIDE_FILENAME, SYSTEM_AUDIT_FILENAME);
+    indexSections.push({
+      heading: "Brand",
+      description: "The public brand guide and the internal system audit, from the same brand.css and asset roster.",
+      links: [
+        { file: BRAND_GUIDE_FILENAME, label: BRAND_GUIDE_FILENAME },
+        { file: SYSTEM_AUDIT_FILENAME, label: SYSTEM_AUDIT_FILENAME },
+      ],
+    });
   }
+
+  const { files: launchPackFiles, sections: launchPackSections } = buildLaunchPackFiles(validation.declarations);
+  for (const entry of launchPackFiles) {
+    writeFileSync(join(outputDir, entry.file), entry.content, "utf8");
+    writtenFiles.push(entry.file);
+  }
+  indexSections.push(...launchPackSections);
+
+  writeFileSync(result.indexPath, buildLaunchPackIndexHtml(indexSections), "utf8");
+  writtenFiles.push(LAUNCH_PACK_INDEX_FILENAME);
 
   return result;
 }

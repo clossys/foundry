@@ -10,9 +10,14 @@
     "rather than guessed. A label listed that nobody writes finds nothing; a",
     "label omitted that people do write reports a missing record that is really",
     "present. This is the one part of this file worth re-reading whenever the",
-    "pull-request convention changes."
+    "pull-request convention changes.",
+    "",
+    "applicableEventKinds lists the events verify-standards.yml evaluates",
+    "task-record on. pull_request_review is here because",
+    "verify-standards.yml re-runs on submitted and dismissed reviews (#1470)",
+    "and must report task-record there too, not only review-evidence."
   ],
-  "applicableEventKinds": ["pull_request"],
+  "applicableEventKinds": ["pull_request", "pull_request_review"],
   "exemptLabels": [],
   "exemptAuthorSuffixes": ["[bot]"],
   "exemptHeadRefPrefixes": [],
