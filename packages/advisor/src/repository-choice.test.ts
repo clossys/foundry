@@ -79,24 +79,47 @@ describe("repositoryChoiceCard (#1179)", () => {
     ["an entry with no nameWithOwner", [{ description: "x" }], /^listing\[0\]\.nameWithOwner is required$/],
     ["an entry with an unknown field", [{ nameWithOwner: "example-owner/example-project", url: "x" }], /^listing\[0\]\.url is not a field the contract declares/],
     ["a description of the wrong type", [{ nameWithOwner: "example-owner/example-project", description: 7 }], /^listing\[0\]\.description must be a string or null$/],
-    ["a bare name, which GitHub never lists", [{ nameWithOwner: "example-project" }], /^listing\[0\]\.nameWithOwner must be owner\/name, as GitHub lists a repository$/],
-    ["more than one slash", [{ nameWithOwner: "example-owner/example-project/extra" }], /^listing\[0\]\.nameWithOwner must be a bare repository name or owner\/name/],
-    ["a dot-dot name", [{ nameWithOwner: "example-owner/.." }], /^listing\[0\]\.nameWithOwner must be a bare repository name or owner\/name/],
-    ["whitespace", [{ nameWithOwner: " example-owner/example-project" }], /^listing\[0\]\.nameWithOwner must be a bare repository name or owner\/name/],
-  ])("refuses a malformed list: %s", (_name, listing, message) => {
+    ["a nameWithOwner of the wrong type", [{ nameWithOwner: 7 }], /^listing\[0\]\.nameWithOwner must be a string, got integer$/],
+  ])("refuses a malformed list: %s (the shape is wrong, not just one entry's id)", (_name, listing, message) => {
     const result = repositoryChoiceCard(listing);
     expect(result.state).toBe("invalid");
     expect(messagesOf(result)).toEqual([expect.stringMatching(message)]);
     if (result.state === "invalid") expect(result.findings.every((finding) => finding.rule === "repository-listing" && finding.severity === "error")).toBe(true);
   });
 
-  it("names every malformed entry by position, and never echoes a repository name", () => {
+  it.each([
+    ["a bare name, which GitHub never lists", "example-project"],
+    ["more than one slash", "example-owner/example-project/extra"],
+    ["a dot-dot name", "example-owner/.."],
+    ["whitespace", " example-owner/example-project"],
+  ])("skips, rather than refuses, one entry whose id breaks the id rule: %s (#1179)", (_name, badId) => {
+    const result = repositoryChoiceCard([{ nameWithOwner: badId }, { nameWithOwner: "example-owner/example-project" }]);
+    expect(result.state).toBe("card");
+    if (result.state !== "card") return;
+    expect(result.card.choices.map((choice) => choice.id)).toEqual(["example-owner/example-project", REPOSITORY_SOMETHING_ELSE_ID]);
+    expect(result.card.skippedCount).toBe(1);
+  });
+
+  it("skips a malformed id and counts it, never echoing the repository name anywhere on the card (#1179)", () => {
     const secret = "example-owner/private-thing";
     const result = repositoryChoiceCard([{ nameWithOwner: `${secret}/extra` }, { nameWithOwner: "example-owner/example-project" }, { nameWithOwner: `${secret} ` }]);
-    expect(result.state).toBe("invalid");
-    if (result.state !== "invalid") return;
-    expect(result.findings.map((finding) => finding.path)).toEqual(["listing[0].nameWithOwner", "listing[2].nameWithOwner"]);
-    for (const finding of result.findings) expect(finding.message).not.toContain("private-thing");
+    expect(result.state).toBe("card");
+    if (result.state !== "card") return;
+    expect(result.card.choices.map((choice) => choice.id)).toEqual(["example-owner/example-project", REPOSITORY_SOMETHING_ELSE_ID]);
+    expect(result.card.skippedCount).toBe(2);
+    expect(JSON.stringify(result.card)).not.toContain("private-thing");
+  });
+
+  it("reports empty, with a skipped count, when every listed id breaks the id rule (#1179)", () => {
+    expect(repositoryChoiceCard([{ nameWithOwner: "example-project" }, { nameWithOwner: "example-owner/.." }])).toEqual({
+      state: "empty",
+      skippedCount: 2,
+    });
+  });
+
+  it("never reports skippedCount when nothing was skipped", () => {
+    expect(cardFor(LISTING)).not.toHaveProperty("skippedCount");
+    expect(repositoryChoiceCard([])).toEqual({ state: "empty" });
   });
 
   it("refuses a duplicate id, including one that differs only in letter case, by position only", () => {
@@ -205,6 +228,17 @@ describe("repository descriptions are untrusted data (#1179)", () => {
   it("removes other invisible characters without splitting the word around them", () => {
     for (const invisible of ["\u2060", "\u2061", "\u2064", "\u00ad", "\u180e", "\u034f", "\u200b", "\u200c", "\ufe0f", "\u3164", "\ue000", "\u{F0000}"]) {
       expect(cleanDescription(`Mark${invisible}eting`), JSON.stringify(invisible)).toBe("Marketing");
+    }
+  });
+
+  it("removes U+2800 (braille pattern blank), a printable character that renders as blank", () => {
+    expect(cleanDescription("Mark\u2800eting")).toBe("Marketing");
+    expect(cleanDescription("\u2800\u2800\u2800")).toBeUndefined();
+  });
+
+  it("removes noncharacters, permanently reserved code points with no assigned glyph", () => {
+    for (const noncharacter of ["\ufffe", "\uffff", "\ufdd0", "\ufdef", "\u{1fffe}", "\u{10fffe}"]) {
+      expect(cleanDescription(`Mark${noncharacter}eting`), JSON.stringify(noncharacter)).toBe("Marketing");
     }
   });
 

@@ -428,8 +428,9 @@ creates the file even when `gh` fails, and a page that fails partway
 leaves it partial, which nothing in the file shows. It then hands the
 entries to `repositoryChoiceCard(listing, { current? })`, which returns a
 `RepositoryChoiceCardResult`: `{ state: "card", card }`,
-`{ state: "empty" }` when the list given is empty -- which says nothing
-about any account -- or `{ state: "invalid", findings }`.
+`{ state: "empty", skippedCount? }` when the list given is empty, or every
+entry in it was skipped (below) -- which says nothing about any account --
+or `{ state: "invalid", findings }`.
 
 The `RepositoryChoiceCard` follows the intake card model
 ([`docs/contracts/intake-question-cards.json`](https://github.com/clossys/foundry/blob/main/docs/contracts/intake-question-cards.json)
@@ -447,8 +448,12 @@ example bidirectional marks and overrides, zero-width spaces and joiners,
 the word joiner, soft hyphen, the byte order mark, and the tag characters
 U+E0000-U+E007F that can carry hidden text), each default-ignorable code
 point (for example variation selectors and the combining grapheme joiner),
-and each private-use or surrogate code point is removed, not replaced, so
-it cannot split a word. Removing the zero-width joiner and non-joiner is
+each private-use or surrogate code point, each noncharacter
+(`\p{Noncharacter_Code_Point}`, permanently reserved and never assigned a
+glyph), and U+2800 (BRAILLE PATTERN BLANK, a real printable character that
+renders as blank, so no invisible-character property matches it) is
+removed, not replaced, so it cannot split a word. Removing the zero-width
+joiner and non-joiner is
 deliberate: an emoji sequence joined by U+200D shows as its separate emoji,
 and text that needs U+200C, such as some Persian, shows unjoined. Whitespace
 is then collapsed, the ends trimmed, and the result cut to 200 characters
@@ -463,17 +468,22 @@ founder's sign-in access to it, and makes no claim that the list is
 complete.
 
 Each `RepositoryListingEntry` must be `{ nameWithOwner, description? }`
-and nothing else, and each `nameWithOwner` must satisfy the repository
+and nothing else -- a listing that is not that shape refuses the whole
+list, by position, since that means the file was built wrong. Each
+`nameWithOwner` that is that shape must also satisfy the repository
 inventory contract's id rule
 ([`docs/contracts/repository-inventory.json`](https://github.com/clossys/foundry/blob/main/docs/contracts/repository-inventory.json)
 `definitions/repositoryId` -- in the public repository, not shipped in this package --
 which this package packs beside the plan and
 brief contracts and checks with the same contract checker) and be
-qualified by its owner, as GitHub lists it. So every id the card offers is
-one `@clossys/launcher` accepts. Two entries naming the same repository
-in any letter case are refused. Every finding, with the rule
-`repository-listing`, names a position (`listing[3].nameWithOwner`) and
-never a repository name.
+qualified by its owner, as GitHub lists it, so every id the card offers is
+one `@clossys/launcher` accepts -- but an id that does not is not a shape
+problem: that one entry is left off the card, not the rest of the list, and
+counted in `skippedCount` (present on the card, or on an empty result,
+only when at least one entry was skipped; #1179). Two entries naming the
+same repository in any letter case, once skipped entries are set aside,
+are refused. Every finding, with the rule `repository-listing`, names a
+position (`listing[3].nameWithOwner`) and never a repository name.
 
 `applyRepositoryChoice(card, chosen)` checks the founder's chosen ids
 against exactly the ids the card offered. It refuses an empty choice, an id
