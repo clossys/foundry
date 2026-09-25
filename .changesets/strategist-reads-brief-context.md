@@ -1,0 +1,5 @@
+---
+strategist: minor
+---
+
+Reads the shared engagement context (issue #1173) from a consumer's own `clossys/brief.json`: `readEngagementContext` and `readEngagementContextFromBriefData` parse it as data, dependency-free of `@clossys/advisor` at runtime, and read every field as unknown rather than invent one when the brief is absent, has no `context` property yet, or is malformed (with a note in the malformed case, never a thrown error). Adds `pendingAudienceIntakeQuestions`, which drops the audience-type question once the brief's `audience` field is known and otherwise asks the same four questions as before. Adds `seedAudienceFromContext`, which proposes a starting `audiences.json` entry from that same coarse `audience` field — its `situation` is Advisor's own recorded choice label, never founder prose — and refuses to seed anything once `audiences.json` already has an entry, so a detailed record is never overwritten by a coarse brief guess. Updates the package README and skill to describe reading the brief before asking.

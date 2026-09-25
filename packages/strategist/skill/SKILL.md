@@ -60,6 +60,8 @@ Author one directory. Bound fields must validate; room fields are prose storage 
 
 Retired filenames: `brand-essence.json`, `brand-attributes.json`, `brand-derivations.json` — use `brand.json`.
 
+Before interviewing for `audiences.json`, read `clossys/brief.json`'s engagement context (`readEngagementContext`/`audienceContextValue`, issue #1173) — the founder may have already told `@clossys-advisor` whether this is for everyday consumers or other businesses. When it's known, do not ask that again; go straight to the audience's specific name, situation, and pains (`pendingAudienceIntakeQuestions` names exactly what's still open). When it's unknown or there's no brief yet, ask as today. Never overwrite an audience already recorded in `audiences.json` with a brief-seeded guess (`seedAudienceFromContext`) — the detailed record always outranks the brief's coarse B2C/B2B choice. Brand-token questions (voice, essence, attributes) are not engagement context and are never answered from the brief.
+
 `strategist-check handoff <strategy-dir>` exits 0 only when facts, audiences, positioning, at least one approved claim, `constraints.json`, brand refs, and direction refs resolve. A facts-only directory still passes `readStrategy` and fails handoff.
 
 Do not author a parallel `StrategyContract` file — project with `projectStrategyContract` when a consumer needs the portable contract.

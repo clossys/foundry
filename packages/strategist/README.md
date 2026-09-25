@@ -290,6 +290,65 @@ facts to worry about" — it means there is no trustworthy ground truth at
 all, and the facts gate (below) is built to fail closed on exactly that
 case rather than silently passing.
 
+## Reading the engagement context before asking (issue #1173)
+
+A founder answers Advisor's engagement-context questions once — what kind
+of business this is, what it offers, who it's for, what stage it's at,
+what they want right now, and any constraints (`business`, `product`,
+`audience`, `stage`, `intent`, `constraints`). Every staffed repository
+carries a snapshot of that answer set in its own `clossys/brief.json`
+(`docs/contracts/engagement-brief.json`'s `context` property,
+`docs/DECISIONS.md` decision 28). `readEngagementContext` reads it as
+plain JSON — this package still has no `dependencies` entry in
+`package.json`, so this stays dependency-free of `@clossys/advisor` at
+runtime:
+
+```ts
+import { readEngagementContext, audienceContextValue } from "@clossys/strategist";
+
+const { context, note } = readEngagementContext(repositoryRoot); // default path: clossys/brief.json
+if (note) console.warn(note); // brief present but unreadable/malformed — asking everything, same as no brief
+audienceContextValue(context); // "consumers" | "businesses" | undefined
+```
+
+A missing `clossys/brief.json`, a brief with no `context` yet, and an
+individual field the brief doesn't carry all read as `unknown` — never
+invented — with no `note`. `note` appears only when the brief file itself
+could not be read as a brief at all (not JSON, wrong `schemaVersion`, or a
+`context` that doesn't match the contract's shape); the caller still
+treats every field as unknown, exactly as it would with no brief, and
+relays the note once.
+
+### Seeding the audience intake, never overwriting a detailed record
+
+The brief's `audience` field is a coarse fixed choice — everyday
+consumers, or other businesses — Advisor's own vocabulary, never founder
+prose. `clossys/strategist/audiences.json` is the detailed record
+(`id`, `name`, `situation`, `pains`). `pendingAudienceIntakeQuestions`
+drops only the one audience question the context already answers; the
+other three — a specific name, situation, and at least one pain — stay,
+because a B2C/B2B choice alone cannot honestly answer them without
+inventing founder words:
+
+```ts
+import { pendingAudienceIntakeQuestions, seedAudienceFromContext } from "@clossys/strategist";
+
+pendingAudienceIntakeQuestions(context); // audience-type dropped when context.audience is known
+seedAudienceFromContext(context, bundle.audiences ?? []);
+// { seeded: false, reason: "audiences-already-recorded" } — bundle.audiences already has entries; never overwritten
+// { seeded: false, reason: "no-audience-context" }         — context.audience is unknown
+// { seeded: true, audience: { id, name, situation, notes }, provenance: { audience: "brief" } }
+```
+
+A seeded entry's `situation` is Advisor's own recorded choice label, never
+prose the founder never said; it still lacks `pains` (`Audience`'s one
+required field this seed cannot fill), so it is not yet a valid
+`audiences.json` entry on its own — the pains question stays asked until
+it is. Only the `audience` field maps into a Strategist record today; the
+other five context fields are readable through the same
+`EngagementContextSnapshot` but are not wired into any
+`clossys/strategist/*.json` seed yet.
+
 ## The `Fact` entity
 
 ```ts
@@ -872,6 +931,24 @@ anyone extending this package with their own entity.
 | `StrategyBundle` | type | `{ root, facts, mission?, positioning?, markets?, audiences?, roadmap?, brandEssence?, brandAttributes?, brandDerivations?, issues, complete }`. |
 | `StrategyReadIssue` | type | `{ file, reason: StrategyReadIssueReason, detail }` — one file that did not become usable data. |
 | `StrategyReadIssueReason` | type | `"unreadable" \| "unparseable" \| "invalid-schema" \| "missing-required"`. |
+
+### Engagement context (`engagement-context.ts`, `audience-intake.ts`)
+
+See "Reading the engagement context before asking" above. Dependency-free
+of `@clossys/advisor`: these read `clossys/brief.json` as data against
+this repository's own contracts, never a typed import.
+
+| Export | Kind | Purpose |
+| --- | --- | --- |
+| `readEngagementContext(repositoryRoot, briefRelPath?)` | function | Reads `<repositoryRoot>/<briefRelPath>` (default `clossys/brief.json`). Never throws; a missing file reads as every field `unknown` with no `note`, an unreadable/malformed one the same but with a `note`. |
+| `readEngagementContextFromBriefData(rawBrief)` | function | The pure half of the above — takes an already-parsed `clossys/brief.json` value (or `undefined` for "no brief"). |
+| `engagementContextFieldById(context, id)` | function | The field with this id from a snapshot, or `undefined`. |
+| `audienceContextValue(context)` | function | The known `audience` field value (`"consumers" \| "businesses"`), or `undefined`. The one field id currently wired into a Strategist seed. |
+| `ENGAGEMENT_CONTEXT_FIELD_IDS` | const | `readonly EngagementContextFieldId[]` — `business`, `product`, `audience`, `stage`, `intent`, `constraints`, in the fixed field order. |
+| `EngagementContextSnapshot`, `EngagementContextField`, `EngagementContextFieldId`, `EngagementContextRead` | types | The snapshot shape — one entry per field id, `{ id, state: "known", value }` or `{ id, state: "unknown" }` — and the `{ context, note? }` read result. |
+| `pendingAudienceIntakeQuestions(context)` | function | The audience intake questions still worth asking, given the context — drops only `audience-type` when `context`'s `audience` field is known. |
+| `seedAudienceFromContext(context, existingAudiences)` | function | Proposes a starting `audiences.json` entry from the coarse `audience` field. Refuses (`seeded: false`) when `existingAudiences` already has entries, or when `audience` is unknown. Never fills `pains` — `Audience`'s one required field a coarse choice cannot honestly answer. |
+| `AudienceIntakeQuestion`, `AudienceIntakeQuestionId`, `AudienceSeedResult` | types | The question shape (`id`, `prompt`) and the seed result union. |
 
 ### Handoff (`handoff.ts`)
 
