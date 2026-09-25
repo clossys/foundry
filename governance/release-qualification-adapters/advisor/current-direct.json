@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "package": "@clossys/advisor",
   "archetype": "current-direct",
-  "bins": { "advisor-check": 0, "advisor-execution-readiness": 0, "advisor-render-status": 0 },
+  "bins": { "advisor-check": 0, "advisor-execution-readiness": 0, "advisor-render-status": 0, "advisor-repository-card": 0 },
   "fixtures": ["assessment-satisfied.json", "assessment-violated.json", "assessment-indeterminate.json"],
   "cases": [
     { "id": "assessment-satisfied", "bin": "advisor-check", "fixtureArgs": ["assessment-satisfied.json"], "exitCode": 0, "group": "assessment" },

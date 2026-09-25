@@ -11,6 +11,14 @@
     "recommendedChoiceId": "string -- must equal choices[0].id; explicit so a reordering by an editor cannot silently change the recommendation",
     "somethingElseFollowUp": "string -- the one-sentence follow-up prompt when none of the listed choices fit"
   },
+  "runtimeChoicesCard": {
+    "$comment": "Issue #1179: an extension for a card whose choices are only known at runtime, which a static intake file cannot express. Only an engine builds one; a role's static intake file never does, and scripts/check-package-framework.mjs's shape check does not accept these fields in one.",
+    "builtBy": "@clossys/advisor's repositoryChoiceCard() (packages/advisor/src/repository-choice.ts): the repositories a client's GitHub account can see, listed by the agent and handed to the engine, never typed by the client",
+    "selection": "\"many\" -- the client may choose any nonempty set of the choices, not exactly one. A card without `selection` is a single-choice card, as every static intake card is.",
+    "choices": "Each choice id is the stable id of the runtime value it stands for (for the repository card, the repository's owner/name, which must satisfy docs/contracts/repository-inventory.json definitions/repositoryId). The `something-else` choice is always last. Because the values are supplied at runtime, a card may offer a single value plus `something-else`.",
+    "recommendedChoiceId": "Present, and equal to choices[0].id, only when the engine has evidence for one choice (for the repository card, the repository the client is working in). Absent otherwise: an engine never invents a recommendation, and the remaining choices are sorted by id so the client is never asked to pick from an unordered list.",
+    "answer": "The client's answer is the list of chosen ids, checked against exactly the ids the card offered (applyRepositoryChoice()): an id the card did not offer, or one chosen twice, is refused by position, never echoed."
+  },
   "choiceShape": {
     "id": "string -- stable, unique within the card",
     "label": "string -- the client-facing option text"

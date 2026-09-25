@@ -1,15 +1,16 @@
 /**
- * The shared plan, brief and inventory contracts (issues #1475 and #1334),
+ * The shared plan, brief and inventory contracts (issues #1475, #1334 and #1179),
  * packed into each package that validates against them.
  *
  * `docs/contracts/advisor-plan.json`, `engagement-brief.json` and
  * `engagement-context.json` are the one definition of the plan record and
  * the engagement brief; `repository-inventory.json` is the one definition
  * of a hub's repository inventory. `@clossys/advisor` owns the plan and
- * brief shapes; `@clossys/launcher` reads all four, and neither package
- * depends on the other at runtime. So each
+ * brief shapes and checks the repository ids it offers against the
+ * inventory contract; `@clossys/launcher` reads all four, and neither
+ * package depends on the other at runtime. So each
  * package's own build step writes the same generated module into its
- * `src/generated/`: the three contracts as plain data, with no file I/O at
+ * `src/generated/`: the packed contracts as plain data, with no file I/O at
  * runtime. Both packages render it through this one function, so their
  * copies are byte-identical by construction.
  *

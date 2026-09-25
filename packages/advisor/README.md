@@ -406,6 +406,62 @@ produces the exact `clossys/preferences.json` shape. Advisor never names a
 model here or anywhere else in this package; a host maps the stance to
 models through its own per-host profile.
 
+## Choosing the hub's repositories (issue #1179)
+
+A founder chooses which repositories the team works on from a card; nobody
+types a repository name. This package holds no credentials and makes no
+network call: the agent lists the repositories the founder's GitHub account
+can see (for example `gh repo list --json nameWithOwner,description`) and
+hands that list to `repositoryChoiceCard(listing, { current? })`, which
+returns a `RepositoryChoiceCardResult`: `{ state: "card", card }` or
+`{ state: "invalid", findings }`.
+
+The `RepositoryChoiceCard` follows the intake card model
+([`docs/contracts/intake-question-cards.json`](https://github.com/clossys/foundry/blob/main/docs/contracts/intake-question-cards.json)),
+extended there for this card: `selection: "many"`, because the founder may
+choose several repositories, and choices supplied at runtime rather than
+from a static file. Its id is `REPOSITORY_CHOICE_CARD_ID` (`hub-repositories`).
+Each `RepositoryChoice` is a repository's `owner/name` as its id and label,
+with its description, when it has one, as `detail`. When `current` names
+the repository the founder is working in, it is the `recommendedChoiceId`
+and listed first; otherwise no recommendation is invented. The other
+repositories follow sorted by id, and `REPOSITORY_SOMETHING_ELSE_ID`
+(`something-else`, "a repository I need is not on this list") is last.
+
+Each `RepositoryListingEntry` must be `{ nameWithOwner, description? }`
+and nothing else, and each `nameWithOwner` must satisfy the repository
+inventory contract's id rule
+([`docs/contracts/repository-inventory.json`](https://github.com/clossys/foundry/blob/main/docs/contracts/repository-inventory.json)
+`definitions/repositoryId`, which this package packs beside the plan and
+brief contracts and checks with the same contract checker) and be
+qualified by its owner, as GitHub lists it. So every id the card offers is
+one `@clossys/launcher` accepts. Two entries naming the same repository
+in any letter case are refused. Every finding, with the rule
+`repository-listing`, names a position (`listing[3].nameWithOwner`) and
+never a repository name.
+
+`applyRepositoryChoice(card, chosen)` checks the founder's chosen ids
+against exactly the ids the card offered. It refuses an empty choice, an id
+the card did not offer, and an id chosen twice, by position only, with the
+rule `repository-choice`. Its `RepositoryChoiceApplyResult` is `chosen`
+(the repositories in the card's order, and `somethingElse` when the founder
+also said one is missing), `something-else` alone, or `refused`. This
+package does not write the choice anywhere: `@clossys/launcher` writes the
+chosen ids into the hub inventory with `launcher --repositories`.
+
+The `advisor-repository-card` CLI wraps both functions for an agent that
+has no hub yet, and so no pinned package to import:
+
+```bash
+advisor-repository-card repositories.json --current example-owner/example-app
+advisor-repository-card repositories.json --choose example-owner/example-app,example-owner/example-site
+```
+
+Without `--choose` it prints the card as JSON; with `--choose` it prints
+the checked choice as JSON. It reads the file as strict JSON, the same way
+`advisor-render-status` does, and exits `0` for a card or an accepted
+choice, `1` for a refused choice, and `2` for unreadable or invalid input.
+
 ## Evolution
 
 The package evolves through normal versioned releases. Keep source evidence and content-addressed bases in the consumer's durable control plane, then reassess when scope, evidence, initiatives, readiness observations, or cadence changes.
