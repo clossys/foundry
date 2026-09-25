@@ -1261,7 +1261,7 @@ export function formatHubHealth(report: HubHealthReport): string {
       ? undefined
       : report.inventoryDrift.status === "indeterminate"
         ? `inventory drift: indeterminate${report.inventoryDrift.note === undefined ? "" : ` -- ${report.inventoryDrift.note}`}`
-        : `inventory drift: external-only ${report.inventoryDrift.externalOnly.length}, launcher-only ${report.inventoryDrift.launcherOnly.length}, agreeing ${report.inventoryDrift.agreeing.length}`;
+        : `inventory drift: external-only ${report.inventoryDrift.externalOnly.count}, launcher-only ${report.inventoryDrift.launcherOnly.count}, agreeing ${report.inventoryDrift.agreeing.count}`;
   return [
     `hub marker: ${report.marker}`,
     `inventory: ${inventory}`,

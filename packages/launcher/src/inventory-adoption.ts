@@ -14,13 +14,31 @@ export interface ExternalInventoryDeclaration {
   readonly shape: "foundry" | "custom";
 }
 
+/**
+ * A count plus each disagreeing or agreeing id's position, never the ids
+ * themselves: `externalInventory` at `declaration.path` and Launcher's own
+ * stored inventory are both document content a hub declares or writes, and
+ * this whole report reaches `formatHubHealth`'s JSON-dumped `health:` line
+ * on every resume of a hub that declares `externalInventory`, so an id kept
+ * here would still reach that message (#1179). A position names the array
+ * it indexes into: `externalInventory[<i>]` for `declaration.path`'s
+ * `repositories[<i>].id`, `repositories[<j>]` for the hub's own stored
+ * inventory's `repositories[<j>].id`.
+ */
+export interface InventoryDriftPositions {
+  readonly count: number;
+  readonly positions: readonly string[];
+}
+
 export interface InventoryDriftReport {
   readonly status: "no-external-source" | "reconciled" | "indeterminate";
-  readonly externalOnly: readonly string[];
-  readonly launcherOnly: readonly string[];
-  readonly agreeing: readonly string[];
+  readonly externalOnly: InventoryDriftPositions;
+  readonly launcherOnly: InventoryDriftPositions;
+  readonly agreeing: InventoryDriftPositions;
   readonly note?: string;
 }
+
+const NO_DRIFT: InventoryDriftPositions = { count: 0, positions: [] };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -69,14 +87,14 @@ export function reportInventoryDrift(
   hubOwner?: string,
 ): InventoryDriftReport {
   if (declaration === undefined) {
-    return { status: "no-external-source", externalOnly: [], launcherOnly: [], agreeing: [] };
+    return { status: "no-external-source", externalOnly: NO_DRIFT, launcherOnly: NO_DRIFT, agreeing: NO_DRIFT };
   }
   if (declaration.shape === "custom") {
     return {
       status: "indeterminate",
-      externalOnly: [],
-      launcherOnly: [],
-      agreeing: [],
+      externalOnly: NO_DRIFT,
+      launcherOnly: NO_DRIFT,
+      agreeing: NO_DRIFT,
       note: `externalInventory at ${declaration.path} declares shape "custom"; launcher has no mapping for a non-foundry inventory shape yet and will not guess one. Reconcile by hand or file the mapping gap.`,
     };
   }
@@ -84,9 +102,9 @@ export function reportInventoryDrift(
   if (externalIds === null) {
     return {
       status: "indeterminate",
-      externalOnly: [],
-      launcherOnly: [],
-      agreeing: [],
+      externalOnly: NO_DRIFT,
+      launcherOnly: NO_DRIFT,
+      agreeing: NO_DRIFT,
       note: `externalInventory at ${declaration.path} could not be read as a populated schemaVersion:1 inventory document.`,
     };
   }
@@ -101,9 +119,9 @@ export function reportInventoryDrift(
     if (!launcher.valid) {
       return {
         status: "indeterminate",
-        externalOnly: [],
-        launcherOnly: [],
-        agreeing: [],
+        externalOnly: NO_DRIFT,
+        launcherOnly: NO_DRIFT,
+        agreeing: NO_DRIFT,
         note: `the hub's own inventory ${launcher.reason}, so it cannot be compared with externalInventory at ${declaration.path}.`,
       };
     }
@@ -111,8 +129,20 @@ export function reportInventoryDrift(
   }
   // One repository identity, as everywhere in Launcher (identity.ts): a bare id is the hub owner's, and case is ignored.
   const agrees = (id: string, others: readonly string[]) => others.some((other) => sameRepository(id, other, hubOwner));
-  const externalOnly = externalIds.filter((id) => !agrees(id, launcherIds));
-  const launcherOnly = launcherIds.filter((id) => !agrees(id, externalIds));
-  const agreeing = externalIds.filter((id) => agrees(id, launcherIds));
+  // Every position below is the id's own index in the array a caller can already read
+  // (externalIds from `externalInventory`'s document, launcherIds from the hub's own
+  // stored inventory) -- never the id, per InventoryDriftPositions' own doc comment.
+  const externalOnly = externalIds.reduce<{ count: number; positions: string[] }>(
+    (acc, id, index) => (agrees(id, launcherIds) ? acc : { count: acc.count + 1, positions: [...acc.positions, `externalInventory[${index}]`] }),
+    { count: 0, positions: [] },
+  );
+  const launcherOnly = launcherIds.reduce<{ count: number; positions: string[] }>(
+    (acc, id, index) => (agrees(id, externalIds) ? acc : { count: acc.count + 1, positions: [...acc.positions, `repositories[${index}]`] }),
+    { count: 0, positions: [] },
+  );
+  const agreeing = externalIds.reduce<{ count: number; positions: string[] }>(
+    (acc, id, index) => (agrees(id, launcherIds) ? { count: acc.count + 1, positions: [...acc.positions, `externalInventory[${index}]`] } : acc),
+    { count: 0, positions: [] },
+  );
   return { status: "reconciled", externalOnly, launcherOnly, agreeing };
 }

@@ -8,7 +8,15 @@ import { main as cliMain } from "./cli.js";
 import { readContractDocument } from "./generated/contract-schema.generated.js";
 import { PACKAGE_SCOPE } from "./generated/package-scope.generated.js";
 import { createNodeHost } from "./host.js";
-import { inspectInventory, validateAdvisorPlan, validateEngagementBrief, validateInventoryDocument } from "./index.js";
+import {
+  applyWorkspacePlan,
+  inspectInventory,
+  validateAdvisorPlan,
+  validateEngagementBrief,
+  validateInventoryDocument,
+  WORKSPACE_INVENTORY_REL,
+  WORKSPACE_MARKER_REL,
+} from "./index.js";
 import { INVENTORY_CONTRACT_POINTER } from "./inventory-contract.js";
 import { describeChosenInventory, resolveChosenInventory } from "./inventory-choice.js";
 import { registrySnapshotViolations, writeRegistrySnapshot, type RegistrySnapshot, type Transport } from "./registry-snapshot.js";
@@ -284,6 +292,61 @@ function inventoryHost(directory: string, commands: Record<string, CommandResult
     prompt: () => null,
   };
 }
+
+/*
+ * #1179's own defect extends past inventory-choice.ts: reportInventoryDrift()
+ * (inventory-adoption.ts) compares a hub's stored inventory against a
+ * declared `externalInventory` document and, before B3 of this fix,
+ * returned the disagreeing and agreeing ids themselves -- which reach a
+ * real resume's `health:` JSON dump and its `inventory drift: ...` message
+ * line on every resume of a hub that declares one. This exercises that
+ * whole path -- applyWorkspacePlan(), not the isolated function -- because
+ * the concern is exactly what a founder or agent reading a real resume's
+ * output would see.
+ */
+describe("no repository id text in inventory drift, through a real resume (#1179)", () => {
+  const roots: string[] = [];
+  afterEach(() => {
+    for (const root of roots.splice(0)) rmSync(root, { recursive: true, force: true });
+  });
+
+  const OWNER = "acme";
+
+  /** Resumes a hub whose stored inventory's second entry is `storedSecondId`, declaring an `externalInventory` that creates one external-only, one launcher-only, and one agreeing entry. Returns the printed message. */
+  function resumeMessage(storedSecondId: string): string {
+    const root = mkdtempSync(join(tmpdir(), "launcher-drift-hostile-"));
+    roots.push(root);
+    const directory = join(root, "hub");
+    const externalPath = join(root, "external.json");
+    mkdirSync(dirname(join(directory, WORKSPACE_MARKER_REL)), { recursive: true });
+    writeFileSync(
+      join(directory, WORKSPACE_MARKER_REL),
+      `${JSON.stringify(
+        { schemaVersion: 1, kind: "account-hub", owner: OWNER, repository: `${OWNER}/hub`, externalInventory: { path: externalPath, shape: "foundry" } },
+        null,
+        2,
+      )}\n`,
+    );
+    writeFileSync(join(directory, WORKSPACE_INVENTORY_REL), storedInventoryDocument([`${OWNER}/keep`, storedSecondId]));
+    writeFileSync(externalPath, storedInventoryDocument([`${OWNER}/keep`, `${OWNER}/example-extra`]));
+    const result = applyWorkspacePlan(
+      inventoryHost(directory, {}),
+      { action: "resume", owner: OWNER, repository: "hub", directory, clone: false },
+      skeletonRoot,
+    );
+    return result.message;
+  }
+
+  it("never prints a hostile stored-inventory id through inventory drift on resume, identical to a harmless id at the same position", () => {
+    const baseline = resumeMessage(`${OWNER}/example-old`);
+    expect(baseline).toMatch(/inventory drift: external-only 1, launcher-only 1, agreeing 1/);
+    expect(baseline).not.toMatch(/example-old|example-extra/);
+    for (const [name, id] of Object.entries(HOSTILE_REPOSITORY_IDS)) {
+      const hostile = resumeMessage(id);
+      expect(leaks(id, hostile, baseline), name).toEqual([]);
+    }
+  });
+});
 
 describe("no key text through launcher --inventory", () => {
   let root: string;

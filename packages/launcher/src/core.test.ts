@@ -2532,13 +2532,16 @@ describe("inventory drift reporting, wired into applyWorkspacePlan (#1216)", () 
       skeletonRoot,
       composeApplyOptions(catalogue),
     );
+    // external: "app"(0), "site"(1). stored (launcher): "site"(0), "legacy"(1). Every
+    // entry below is named by position, never by id (#1179).
     expect(result.health.inventoryDrift).toEqual({
       status: "reconciled",
-      externalOnly: ["app"],
-      launcherOnly: ["legacy"],
-      agreeing: ["site"],
+      externalOnly: { count: 1, positions: ["externalInventory[0]"] },
+      launcherOnly: { count: 1, positions: ["repositories[1]"] },
+      agreeing: { count: 1, positions: ["externalInventory[1]"] },
     });
     expect(result.message).toMatch(/inventory drift: external-only 1, launcher-only 1, agreeing 1/);
+    expect(result.message).not.toMatch(/"app"|"site"|"legacy"/);
   });
 
   it("reports indeterminate, surfaced in the message, for a declared custom-shape external inventory -- never a guessed mapping", () => {

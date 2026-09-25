@@ -50,26 +50,28 @@ describe("reportInventoryDrift", () => {
     expect(report.status).toBe("indeterminate");
   });
 
-  it("splits into external-only, launcher-only, and agreeing -- all three, even when one is empty", () => {
+  it("splits into external-only, launcher-only, and agreeing -- named by position, count plus positions, never the ids", () => {
+    // external: app(0), site(1), admin(2). stored (launcher): site(0), legacy(1).
     const host = fakeHost({
       "/hub/external.json": FOUNDRY_INVENTORY(["app", "site", "admin"]),
       "/hub/clossys/.state/inventory.json": FOUNDRY_INVENTORY(["site", "legacy"]),
     });
     const report = reportInventoryDrift(host, "/hub", { path: "/hub/external.json", shape: "foundry" }, "clossys/.state/inventory.json");
     expect(report.status).toBe("reconciled");
-    expect(report.externalOnly).toEqual(["app", "admin"]);
-    expect(report.launcherOnly).toEqual(["legacy"]);
-    expect(report.agreeing).toEqual(["site"]);
+    expect(report.externalOnly).toEqual({ count: 2, positions: ["externalInventory[0]", "externalInventory[2]"] });
+    expect(report.launcherOnly).toEqual({ count: 1, positions: ["repositories[1]"] });
+    expect(report.agreeing).toEqual({ count: 1, positions: ["externalInventory[1]"] });
+    expect(JSON.stringify(report)).not.toMatch(/app|site|admin|legacy/);
   });
 
-  it("perfect agreement reports empty external-only and launcher-only arrays, not their absence", () => {
+  it("perfect agreement reports zero-count external-only and launcher-only, not their absence", () => {
     const host = fakeHost({
       "/hub/external.json": FOUNDRY_INVENTORY(["app"]),
       "/hub/clossys/.state/inventory.json": FOUNDRY_INVENTORY(["app"]),
     });
     const report = reportInventoryDrift(host, "/hub", { path: "/hub/external.json", shape: "foundry" }, "clossys/.state/inventory.json");
-    expect(report.externalOnly).toEqual([]);
-    expect(report.launcherOnly).toEqual([]);
-    expect(report.agreeing).toEqual(["app"]);
+    expect(report.externalOnly).toEqual({ count: 0, positions: [] });
+    expect(report.launcherOnly).toEqual({ count: 0, positions: [] });
+    expect(report.agreeing).toEqual({ count: 1, positions: ["externalInventory[0]"] });
   });
 });
