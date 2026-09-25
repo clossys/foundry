@@ -2,4 +2,4 @@
 strategist: minor
 ---
 
-Adds `pendingAudienceIntakeQuestions` (issue #1173), which points the founder back to Advisor's own `audience` context card instead of asking a Strategist-owned rename of it when the brief's `audience` field is unknown, and otherwise asks Strategist's three questions specific to a named audience's situation and pains.
+Adds `pendingAudienceIntakeQuestions` (issue #1173). When the brief's `audience` field is unknown, it first points the founder back to Advisor's own `audience` context card rather than asking a Strategist-owned copy of that question; either way, it always asks Strategist's three questions about a named audience's name, situation, and pains.
