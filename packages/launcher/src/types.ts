@@ -75,8 +75,17 @@ export interface SkillsManifestSummary {
 }
 
 export interface InventoryObservation {
-  readonly status: "missing" | "empty" | "populated";
+  /**
+   * "invalid" means a document was found but does not conform to the
+   * inventory schema (bad JSON, wrong shape, an unrecognized field, or a
+   * duplicate repository id) -- distinct from "empty" (a well-formed,
+   * zero-entry document) so a malformed document is reported, never
+   * silently treated as if it were merely empty.
+   */
+  readonly status: "missing" | "empty" | "populated" | "invalid";
   readonly count: number;
+  /** Present only when status is "invalid"; names the offending field. */
+  readonly reason?: string;
 }
 
 /** A package.json dependency bucket scanned for the advisor pin. */

@@ -234,19 +234,87 @@ function readHub(host: WorkspaceHost, directory: string): HubDocument | undefine
   return locateHub(host, directory).document;
 }
 
-/** Classifies a generated hub inventory (packed template skeleton/clossys/.state/inventory.json; the generated path does not ship) without inventing repositories. */
+/**
+ * The inventory document's own schema (documented in docs/ADOPTION.md and the
+ * launcher README): `{ schemaVersion: 1, repositories: [{ id: <nonempty
+ * string> }, ...] }`, nothing more. No other top-level or per-entry field is
+ * part of this shape -- a document that merely happens to carry a
+ * `repositories` array of similarly-shaped objects (for example a
+ * governance record with `id`, `role`, `visibility`, `status`, and `notes`
+ * fields) is not a launcher inventory and must be refused, not adopted
+ * (#1334).
+ */
+export type InventoryValidation =
+  | { readonly valid: true; readonly ids: readonly string[] }
+  | { readonly valid: false; readonly reason: string };
+
+const INVENTORY_TOP_LEVEL_KEYS = new Set(["schemaVersion", "repositories"]);
+const INVENTORY_ENTRY_KEYS = new Set(["id"]);
+
+/**
+ * Strictly validates an inventory document's text against the schema above.
+ * Never partially accepts: any mismatch is reported as `{ valid: false,
+ * reason }`, naming the offending field, before a caller ever gets to a list
+ * of ids. This is the one place inventory documents -- supplied via
+ * `--inventory` or read back from `clossys/.state/inventory.json` -- are
+ * validated; both `inspectInventory` and the `--inventory` adopt path route
+ * through it so neither can silently accept a shape-alike document.
+ */
+export function validateInventoryDocument(raw: string): InventoryValidation {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    return { valid: false, reason: "is not valid JSON" };
+  }
+  if (!isRecord(parsed)) {
+    return { valid: false, reason: "must be a JSON object with schemaVersion and repositories" };
+  }
+  const unknownTopLevel = Object.keys(parsed).find((key) => !INVENTORY_TOP_LEVEL_KEYS.has(key));
+  if (unknownTopLevel !== undefined) {
+    return {
+      valid: false,
+      reason: `has an unrecognized field "${unknownTopLevel}" (only schemaVersion and repositories are allowed)`,
+    };
+  }
+  if (parsed.schemaVersion !== 1) {
+    return { valid: false, reason: `schemaVersion must be 1, got ${JSON.stringify(parsed.schemaVersion)}` };
+  }
+  if (!Array.isArray(parsed.repositories)) {
+    return { valid: false, reason: "repositories must be an array" };
+  }
+  const ids: string[] = [];
+  const seen = new Set<string>();
+  for (const [index, entry] of parsed.repositories.entries()) {
+    if (!isRecord(entry)) {
+      return { valid: false, reason: `repositories[${index}] must be an object` };
+    }
+    const unknownEntryKey = Object.keys(entry).find((key) => !INVENTORY_ENTRY_KEYS.has(key));
+    if (unknownEntryKey !== undefined) {
+      return {
+        valid: false,
+        reason: `repositories[${index}] has an unrecognized field "${unknownEntryKey}" (only id is allowed)`,
+      };
+    }
+    if (!isText(entry.id)) {
+      return { valid: false, reason: `repositories[${index}].id must be a nonempty string` };
+    }
+    const id = entry.id.trim();
+    if (seen.has(id)) {
+      return { valid: false, reason: `repositories[${index}].id "${id}" duplicates an earlier entry` };
+    }
+    seen.add(id);
+    ids.push(id);
+  }
+  return { valid: true, ids };
+}
+
+/** Classifies a generated hub inventory (packed template skeleton/clossys/.state/inventory.json; the generated path does not ship) without inventing repositories. Malformed input is "invalid", never silently folded into "empty" (#1334). */
 export function inspectInventory(raw: string | null): InventoryObservation {
   if (raw === null) return { status: "missing", count: 0 };
-  try {
-    const parsed: unknown = JSON.parse(raw);
-    if (!isRecord(parsed) || parsed.schemaVersion !== 1 || !Array.isArray(parsed.repositories)) {
-      return { status: "empty", count: 0 };
-    }
-    const count = parsed.repositories.length;
-    return { status: count > 0 ? "populated" : "empty", count };
-  } catch {
-    return { status: "empty", count: 0 };
-  }
+  const validated = validateInventoryDocument(raw);
+  if (!validated.valid) return { status: "invalid", count: 0, reason: validated.reason };
+  return { status: validated.ids.length > 0 ? "populated" : "empty", count: validated.ids.length };
 }
 
 function looksLikeFoundry(host: WorkspaceHost, directory: string): boolean {
@@ -431,24 +499,37 @@ function resolveAdoptInventory(
   }
   if (!trimmed) return {};
   const resolved = resolve(cwd.absolutePath, trimmed);
-  const imported = inspectInventory(host.readText(resolved));
-  if (imported.status !== "populated") {
+  const importedRaw = host.readText(resolved);
+  if (importedRaw === null) {
+    return refuse("violated", `--inventory does not point at a readable file: ${resolved}`);
+  }
+  const imported = validateInventoryDocument(importedRaw);
+  if (!imported.valid) {
+    return refuse("violated", `--inventory at ${resolved} ${imported.reason}`);
+  }
+  if (imported.ids.length === 0) {
     return refuse(
       "violated",
-      "--inventory must point at a populated inventory document (schemaVersion 1, nonempty repositories)",
+      `--inventory at ${resolved} must be a populated inventory document (nonempty repositories)`,
     );
   }
   if (!onDiskPopulated) return { inventorySource: resolved };
+  const onDiskRaw = host.readText(join(cwd.absolutePath, WORKSPACE_INVENTORY_REL));
+  const onDisk = onDiskRaw === null ? undefined : validateInventoryDocument(onDiskRaw);
+  if (onDisk !== undefined && !onDisk.valid) {
+    return refuse("violated", `the on-disk hub inventory ${onDisk.reason}`);
+  }
+  const onDiskIds: readonly string[] = onDisk !== undefined && onDisk.valid ? onDisk.ids : [];
   const merged: string[] = [];
   const seen = new Set<string>();
-  for (const id of readInventoryRepositories(host, join(cwd.absolutePath, WORKSPACE_INVENTORY_REL), "the on-disk hub inventory")) {
-    if (id !== "" && !seen.has(id)) {
+  for (const id of onDiskIds) {
+    if (!seen.has(id)) {
       seen.add(id);
       merged.push(id);
     }
   }
-  for (const id of readInventoryRepositories(host, resolved, "--inventory")) {
-    if (id !== "" && !seen.has(id)) {
+  for (const id of imported.ids) {
+    if (!seen.has(id)) {
       seen.add(id);
       merged.push(id);
     }
@@ -672,6 +753,26 @@ function assertCleanTree(host: WorkspaceHost, directory: string): void {
 
 function adoptHubFiles(host: WorkspaceHost, skeletonRoot: string, plan: WorkspacePlan & { advisorVersion: string }): void {
   assertCleanTree(host, plan.directory);
+  // Resolve and strictly re-validate the inventory document BEFORE writing
+  // anything, including the hub marker -- planWorkspace already validated it
+  // once, but re-checking here (rather than trusting the earlier result)
+  // means a document that changed on disk between plan and apply still
+  // cannot land a mismatched shape, and it means this function alone
+  // guarantees "fail before any file is touched" (#1334).
+  let inventoryDocument: string | undefined;
+  if ("mergedInventoryIds" in plan && Array.isArray(plan.mergedInventoryIds)) {
+    const document = { schemaVersion: 1, repositories: plan.mergedInventoryIds.map((id) => ({ id })) };
+    inventoryDocument = `${JSON.stringify(document, null, 2)}\n`;
+  } else if ("inventorySource" in plan && typeof plan.inventorySource === "string") {
+    const raw = host.readText(plan.inventorySource);
+    if (raw === null) throw new Error(`inventory source is not readable: ${plan.inventorySource}`);
+    const validated = validateInventoryDocument(raw);
+    if (!validated.valid) throw new Error(`inventory source at ${plan.inventorySource} ${validated.reason}`);
+    if (validated.ids.length === 0) {
+      throw new Error(`inventory source at ${plan.inventorySource} must be a populated inventory document`);
+    }
+    inventoryDocument = raw.endsWith("\n") ? raw : `${raw}\n`;
+  }
   const marker = {
     schemaVersion: 1,
     kind: "account-hub",
@@ -679,20 +780,8 @@ function adoptHubFiles(host: WorkspaceHost, skeletonRoot: string, plan: Workspac
     repository: `${plan.owner}/${plan.repository}`,
   };
   writeSkeletonFile(host, plan.directory, WORKSPACE_MARKER_REL, `${JSON.stringify(marker, null, 2)}\n`);
-  if ("mergedInventoryIds" in plan && Array.isArray(plan.mergedInventoryIds)) {
-    const document = { schemaVersion: 1, repositories: plan.mergedInventoryIds.map((id) => ({ id })) };
-    writeSkeletonFile(
-      host,
-      plan.directory,
-      WORKSPACE_INVENTORY_REL,
-      `${JSON.stringify(document, null, 2)}\n`,
-    );
-  } else if ("inventorySource" in plan && typeof plan.inventorySource === "string") {
-    const raw = host.readText(plan.inventorySource);
-    if (raw === null || inspectInventory(raw).status !== "populated") {
-      throw new Error("inventory source is not a populated inventory document");
-    }
-    writeSkeletonFile(host, plan.directory, WORKSPACE_INVENTORY_REL, raw.endsWith("\n") ? raw : `${raw}\n`);
+  if (inventoryDocument !== undefined) {
+    writeSkeletonFile(host, plan.directory, WORKSPACE_INVENTORY_REL, inventoryDocument);
   }
   if (host.readText(join(plan.directory, "AGENTS.md")) === null) {
     writeSkeletonFile(host, plan.directory, "AGENTS.md", CONSUMER_AGENTS_MD);
@@ -799,7 +888,11 @@ export function formatHubHealth(report: HubHealthReport): string {
   const live = report.advisorPin.live === undefined ? "" : `; live ${report.advisorPin.live}`;
   const extra = report.extraClossys.length === 0 ? "none" : report.extraClossys.join(", ");
   const inventory =
-    report.inventory.status === "populated" ? `populated (${report.inventory.count})` : report.inventory.status;
+    report.inventory.status === "populated"
+      ? `populated (${report.inventory.count})`
+      : report.inventory.status === "invalid"
+        ? `invalid${report.inventory.reason === undefined ? "" : ` -- ${report.inventory.reason}`}`
+        : report.inventory.status;
   const findings = report.pinFindings.map((finding) =>
     finding.note !== undefined ? `${finding.bucket} ${finding.note}` : `${finding.bucket} ${finding.grade}`,
   );

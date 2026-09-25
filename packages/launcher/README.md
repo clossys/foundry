@@ -224,7 +224,8 @@ Exit codes preserve the ternary:
 | `launcherPackageRootFromModule()` | Resolves this package's root from `import.meta.url` so apply can find the packed skill catalogue and contract. |
 | `parseGitHubRemote()` | Parses a github.com remote and rejects any other host. |
 | `isHubDocument()` | Type guard for the generated hub marker (packed template: `skeleton/clossys/.state/workspace.json`). |
-| `inspectInventory()` | Classifies inventory JSON as missing, empty, or populated. |
+| `inspectInventory()` | Classifies inventory JSON as missing, empty, populated, or invalid (malformed or schema-mismatched -- never silently folded into empty; see `validateInventoryDocument()`). |
+| `validateInventoryDocument()` | Strictly validates an inventory document's text against its schema (`schemaVersion: 1`, a `repositories` array of `{ id: <nonempty string> }` entries, no other top-level or per-entry field, no duplicate ids). Returns `{ valid: true, ids }` or `{ valid: false, reason }` naming the offending field. Both `--inventory` and the on-disk `clossys/.state/inventory.json` route through this; a document that merely resembles an inventory (for example a governance record whose entries also carry `role`, `visibility`, `status`, `notes`) is refused, never adopted (#1334). |
 | `reportHubHealth()` | Read-only pin, inventory, migration, and skills-manifest report. Does not install or uninstall. |
 | `formatHubHealth()` | Human lines plus a `health:` JSON line for the same report. |
 | `hasAdvisorPin()` | True when a manifest already pins Advisor in any dependency bucket. |
