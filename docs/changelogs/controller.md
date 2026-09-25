@@ -7,23 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## 0.9.23 - 2026-09-24
 
-- Implementation note: a caller's exact copy of a previously shipped
-role-loop-archetypes.json or installed-position-contract.json keeps
-validating, reporting a non-failing `legacy-contract-copy` advisory naming
-the matched version. The recognized historical canonical contracts ship
-as real, byte-identical files under
-`packages/controller/contracts/historical/<version>/` -- currently only
-0.9.10's `role-loop-archetypes.json` and `installed-position-contract.json`,
-captured verbatim from that published version via
-`git show 62d9dc570c0af76cd89e49bc40002fb5b36da2ca:packages/controller/contracts/<name>`
--- rather than a digest or a loosened comparison. `canonical.ts` exposes
-them through `readHistoricalRoleLoopContracts()` and
-`readHistoricalInstalledPositionContracts()`, each entry paired with the
-controller version it shipped in; `index.ts` matches a caller-supplied
-contract against that table with the same deep-equality `canonical()`
-helper already used for the current shipped snapshot, never a partial or
-key-subset match. Extend the table -- never replace or remove an entry --
-the next time either contract's content changes. Refs: #1394.
+- A caller that passes an exact copy of a previously shipped canonical
+`role-loop-archetypes.json` or `installed-position-contract.json` is
+accepted, not refused, and validates with a non-failing
+`legacy-contract-copy` advisory naming the matched version. Refs: #1394.
 - Reword the Designer and Publisher `boundary.owns` prose in
 `contracts/role-loop-archetypes.json` (packed content of this package) to
 reflect the brand kit and v0 Launch pack ownership split settled with the
@@ -33,9 +20,11 @@ owns the v0 Launch pack's definition, inventory, and readiness, plus the
 channel templates that place those assets. The reworded text carries no
 issue numbers or emphasis capitals, because Advisor copies it into
 client-facing deliverables. No schema or field change, but the shipped
-contract text did change: a caller that passes its own copy of the role
-contract must now match this reworded text exactly (see this release's
-Breaking note).
+contract text did change: this was made fully compatible rather than
+breaking, because a caller's exact copy of a previously shipped canonical
+contract keeps working, reported through the non-failing
+`legacy-contract-copy` advisory described in the bullet right after this
+one.
 - A caller-supplied role or position contract that exactly matches a
 previously shipped canonical contract keeps working across an upgrade to
 this version, in the same three call forms --

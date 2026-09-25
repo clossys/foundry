@@ -1,0 +1,128 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/clossys/foundry/blob/main/docs/contracts/apply-bundle.json",
+  "title": "Apply bundle",
+  "description": "Issue #1178: one attempt to apply an approved plan across the repositories it staffs -- which change set each repository would get, which repositories were skipped and why, and the one digest an approval binds. @clossys/launcher computes it (planApplyBundle()) and validates it against this file, which its build packs. mode is report, and only report: the bundle says what was computed and what the checks found, and claims nothing about any repository. It deliberately has no repository state field. A repository is planned only once the ledger and ownership check and the provenance check have both passed, and nothing that writes a report-mode bundle runs them, so a state written here would be claimed ahead of its evidence. A later mode that runs them adds a mode value and a state field together, and a reader that predates it refuses both. Every object is closed: a key this contract does not declare is refused. BUNDLE DIGEST. bundleDigest is defined in apply-change-set-digest.md, beside this file: the canonical digest of the plan digest and, sorted by id, the id and change-set digest of every repository that has a change set. It covers nothing else -- not the authorization, the time, the checks, the verdicts or the skipped repositories -- so it can be recomputed from digests alone, without the plan's text, and a plan's approval binds it through decisions[].subjectDigest. CODE RULES, checked in code after the schema passes. A refusal names the rule and the position of the field at fault, never its value. A1: no two repositories share an id; ids compare case-insensitively, as the repository inventory compares them. A2: bundleDigest is the digest apply-change-set-digest.md defines, over plan.digest and every repositories entry that has a changeSet. A3: each repository's verdict is the worst of its checks' verdicts (violated, then indeterminate, then satisfied); a computed repository with no checks is satisfied, and a skipped repository with no checks keeps its own verdict. A4: when authorization is not null and its planDigest is not plan.digest, the authorization is for another plan, and every computed repository carries the check V3 with verdict violated and rule authorization-plan-mismatch; when they are equal, or authorization is null, no repository carries that rule. When snapshot is not null and authorization is null, the plan has package acts (a snapshot is recorded exactly when it does, by the plan contract's R6) and nothing authorizes them, so every computed repository carries the check V3 with verdict violated and rule authorization-absent; otherwise no repository carries that rule.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "kind", "mode", "plan", "snapshot", "engine", "authorization", "computedAt", "repositories", "bundleDigest"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "kind": { "const": "clossys.apply-bundle" },
+    "mode": {
+      "enum": ["report"],
+      "description": "report: computed and checked, nothing written to any repository, and no repository state claimed."
+    },
+    "plan": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "digest", "committed"],
+      "properties": {
+        "path": { "const": "clossys/advisor/plan.json" },
+        "digest": { "$ref": "advisor-plan.json#/definitions/sha256Digest", "description": "The canonical plan digest (advisor-plan-digest.md)." },
+        "committed": { "type": "boolean", "description": "Whether the plan read was the one committed at the hub's default-branch head." }
+      }
+    },
+    "snapshot": {
+      "description": "The registry snapshot the plan's exact versions were resolved from, as the plan's resolution names it; null when the plan has no package acts.",
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["path", "digest"],
+          "properties": {
+            "path": { "const": "clossys/.state/apply/registry-snapshot.json" },
+            "digest": { "$ref": "advisor-plan.json#/definitions/sha256Digest" }
+          }
+        }
+      ]
+    },
+    "engine": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "version", "integrity"],
+      "description": "The exact Advisor package the hub pins.",
+      "properties": {
+        "name": { "$ref": "advisor-plan.json#/definitions/packageName" },
+        "version": { "$ref": "advisor-plan.json#/definitions/exactVersion" },
+        "integrity": { "$ref": "advisor-plan.json#/definitions/sha512Integrity" }
+      }
+    },
+    "authorization": {
+      "description": "The execution authorization that permits the plan's package acts; null when the bundle has none, as for a bundle that only writes briefs and skills. Excluded from bundleDigest: re-approving the same bytes keeps the same digest.",
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["planDigest", "expiresAt"],
+          "properties": {
+            "planDigest": { "$ref": "advisor-plan.json#/definitions/sha256Digest" },
+            "expiresAt": { "$ref": "advisor-plan.json#/definitions/dateTime" }
+          }
+        }
+      ]
+    },
+    "computedAt": {
+      "$ref": "advisor-plan.json#/definitions/dateTime",
+      "description": "When the bundle was computed. Excluded from bundleDigest."
+    },
+    "repositories": {
+      "type": "array",
+      "description": "One entry per repository the plan staffs, each id once (code rule A1). The planner writes them in the plan's staffing order; the bundle does not carry the plan's staffing, so this contract cannot check that order.",
+      "items": {
+        "oneOf": [
+          { "$ref": "#/definitions/computedRepository" },
+          { "$ref": "#/definitions/skippedRepository" }
+        ]
+      }
+    },
+    "bundleDigest": {
+      "$ref": "advisor-plan.json#/definitions/sha256Digest",
+      "description": "The digest an approval binds (code rule A2)."
+    }
+  },
+  "definitions": {
+    "idToken": {
+      "title": "a lowercase id such as not-in-inventory",
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+    },
+    "verdict": { "enum": ["satisfied", "violated", "indeterminate"] },
+    "check": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["check", "verdict"],
+      "properties": {
+        "check": { "enum": ["V1", "V2", "V3", "V4", "V5", "V6", "V7", "V8", "V9"], "description": "Which pre-apply validation this entry reports." },
+        "verdict": { "$ref": "#/definitions/verdict" },
+        "rule": { "$ref": "#/definitions/idToken", "description": "Optional. Why, as an id; never prose from the plan or the brief." }
+      }
+    },
+    "computedRepository": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "verdict", "phase", "changeSet", "checks"],
+      "properties": {
+        "id": { "$ref": "advisor-plan.json#/definitions/repositoryId" },
+        "verdict": { "$ref": "#/definitions/verdict", "description": "The worst verdict among checks: violated, then indeterminate, then satisfied; satisfied when there are none (code rule A3)." },
+        "phase": { "enum": ["setup", "apply"] },
+        "changeSet": { "$ref": "advisor-plan.json#/definitions/sha256Digest", "description": "That repository's changeSetDigest." },
+        "checks": { "type": "array", "items": { "$ref": "#/definitions/check" } }
+      }
+    },
+    "skippedRepository": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "verdict", "reason", "checks"],
+      "description": "A staffed repository no change set was computed for. It is not in bundleDigest.",
+      "properties": {
+        "id": { "$ref": "advisor-plan.json#/definitions/repositoryId" },
+        "verdict": { "enum": ["violated", "indeterminate"] },
+        "reason": { "$ref": "#/definitions/idToken" },
+        "checks": { "type": "array", "items": { "$ref": "#/definitions/check" } }
+      }
+    }
+  }
+}

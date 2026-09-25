@@ -34,13 +34,16 @@ function parseInventoryObservation(value: unknown): InventoryObservation | undef
   if (!isRecord(value)) {
     throw new LauncherCheckInputError("observation.cwd.inventory must be an object");
   }
-  if (value.status !== "missing" && value.status !== "empty" && value.status !== "populated") {
-    throw new LauncherCheckInputError("observation.cwd.inventory.status must be missing, empty, or populated");
+  if (value.status !== "missing" && value.status !== "empty" && value.status !== "populated" && value.status !== "invalid") {
+    throw new LauncherCheckInputError("observation.cwd.inventory.status must be missing, empty, populated, or invalid");
   }
   if (typeof value.count !== "number" || !Number.isInteger(value.count) || value.count < 0) {
     throw new LauncherCheckInputError("observation.cwd.inventory.count must be a nonnegative integer");
   }
-  return { status: value.status, count: value.count };
+  if (value.reason !== undefined && !isText(value.reason)) {
+    throw new LauncherCheckInputError("observation.cwd.inventory.reason must be a nonempty string when present");
+  }
+  return { status: value.status, count: value.count, ...(isText(value.reason) ? { reason: value.reason } : {}) };
 }
 
 function parseCwd(value: unknown): CwdObservation {
@@ -86,6 +89,9 @@ export function parseObservation(value: unknown): WorkspaceObservation {
   if (value.advisorVersion !== undefined && !isText(value.advisorVersion)) {
     throw new LauncherCheckInputError("observation.advisorVersion must be a string");
   }
+  if (value.integratorVersion !== undefined && !isText(value.integratorVersion)) {
+    throw new LauncherCheckInputError("observation.integratorVersion must be a string");
+  }
   return {
     cwd: parseCwd(value.cwd),
     ownerCandidates: value.ownerCandidates,
@@ -93,6 +99,7 @@ export function parseObservation(value: unknown): WorkspaceObservation {
     gitAvailable: value.gitAvailable,
     ...(isText(value.envOwner) ? { envOwner: value.envOwner } : {}),
     ...(isText(value.advisorVersion) ? { advisorVersion: value.advisorVersion } : {}),
+    ...(isText(value.integratorVersion) ? { integratorVersion: value.integratorVersion } : {}),
   };
 }
 
@@ -111,7 +118,11 @@ export function planningHost(): WorkspaceHost {
     isDirectory: () => false,
     isSymlink: () => false,
     readText: () => null,
+    readBytes: () => null,
     writeText: () => {
+      throw new Error("launcher-check does not write");
+    },
+    writeBytes: () => {
       throw new Error("launcher-check does not write");
     },
     mkdirp: () => {

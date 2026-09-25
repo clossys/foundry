@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "id": "coderabbit-advisory-reviewer",
+  "tier": "tier-1",
+  "question": "What standing is CodeRabbit's automated review given on this repository -- can it block a merge, and how are its findings tracked and acted on over time?",
+  "options": [
+    "CodeRabbit is advisory only: it never blocks a merge (verify-standards's requireApproval/requireSecondaryReview stay false for it, and the consensus approach at #1311 (not yet merged as of this record's writing -- see governance/decisions/verify-standards-stale-bot-reviews.json) carves a stale COMMENTED review out of the indeterminate path). Every CodeRabbit finding on a PR is still read by the independent reviewer and dispositioned as fixed (with the commit), not applicable (with the reason), or deferred (with an issue link); dispositions are logged in a running findings-log issue so usefulness can be assessed over time (monthly, or every 20 PRs).",
+    "Make CodeRabbit's approval merge-blocking (decisionUse: authoritative), matching AGENTS.md's 'Model-assisted code review is manually initiated' concern about a background model reviewer gating merges.",
+    "Disable CodeRabbit entirely; rely only on manually-initiated agent second opinions."
+  ],
+  "recommendation": "Option 1 -- CodeRabbit's findings have caught real gaps (see #1319's linked findings: #1320, #1321, #1322, #1323, #1324) worth taking seriously, but AGENTS.md's rule that no workflow waits on provider-specific review evidence rules out making any bot's verdict merge-blocking.",
+  "reviews": [],
+  "status": "decided",
+  "decidedBy": "owner",
+  "decision": "CodeRabbit is advisory and its findings are taken seriously. It never blocks a merge (per the verify-standards stale-review fix at #1311). Every CodeRabbit finding on a PR is read by the independent reviewer and dispositioned as fixed, not applicable, or deferred, logged in the running findings-log issue #1319 in the form '#<pr> @ <sha>: <n> findings -- fixed <a>, n/a <b>, deferred <c>; notable: <one line>'. Assessed monthly, or after 20 PRs, whichever comes first, to decide whether CodeRabbit stays enabled, changes configuration or plan, or is dropped.",
+  "relaxesGateOrPolicy": false,
+  "sunset": null,
+  "expiry": null,
+  "supersedes": [],
+  "links": {
+    "pullRequests": [],
+    "issues": [
+      "1319",
+      "1311",
+      "1187",
+      "1320",
+      "1321",
+      "1322",
+      "1323",
+      "1324"
+    ],
+    "paths": []
+  },
+  "notes": "Backfilled from the owner's standing-rules comment (#1187 comment 5800369031, item 3: 'CodeRabbit is advisory, and its findings are taken seriously... never blocks a merge, per #1311') and issue #1319, the running findings log it establishes. No reviews[] entries: this was a direct owner statement, not preceded by a recorded agent recommendation the owner then approved -- docs/contracts/decision-record.json explicitly permits an empty reviews[] for a decidedBy: owner record made this way. relaxesGateOrPolicy is false: CodeRabbit was never merge-blocking before this decision either (verify-standards's own policy already runs requireApproval: false, requireSecondaryReview: false, decisionUse: advisory per .github/verify-standards-review-policy.json), so nothing here loosens an existing control -- it formalizes and gives a review cadence to a standing that already existed in practice. Round 4 nit: the `options` entry previously said #1311 'already carves' its stale-review fix into the indeterminate path, stated as an accomplished fact. #1311 is a pull request, and it remains open and unmerged as of this record's writing (consensus was reached on the approach, not that the approach has landed on main) -- see governance/decisions/verify-standards-stale-bot-reviews.json's own correction for the same class of error. Corrected here to say the consensus approach, not yet merged."
+}

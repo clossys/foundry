@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 2,
+  "kind": "foundry-trusted-publication-v2",
+  "qualification": {
+    "path": "governance/release-qualifications/clossys-designer-0.6.0.json",
+    "sha256": "6d88ec342679a0f8fbb1e8273cb62f34ac4b433c09f00ffc09867682febbb783"
+  },
+  "candidate": {
+    "name": "@clossys/designer",
+    "version": "0.6.0",
+    "packageTreeSha1": "bae52dd74b2efe202d6150ac9d1e865bf7803016",
+    "packageManifestSha256": "b7055d0850064ca1019eca0e67fa85141d7153815196c3a60c12e119a5367ed4",
+    "tarball": {
+      "sha1": "36309df8843e8c45bf287d4fd71c3a3e73dd748c",
+      "sha256": "ce7a2ba1a5c8f74089bdbc886c6762ba91f0ae068fad37f8973a403693c63f05",
+      "sha512": "0460c5b75c5085790f9aa7f762bc178100f8a0b92cf5f2827bb049d2bf1a6b0da08dcd561acf75ad5502bba4514692452c170ce0e5194fcd67373a48f96b49eb"
+    }
+  },
+  "source": {
+    "reviewedCommit": "73ab01b6b5608179a32d979f95ae6b0744d22f05",
+    "rootPackageJsonSha256": "f1cfaa65c0e2bfddaba08efd503e65c66be1883c598c078424b0654325c6247f",
+    "rootPackageLockSha256": "612d68c110206276dabe1e55499bcc6adb9c17c27241a62c68cf06f49aa967f7",
+    "policySha256": "ef689e4f849243b8b691ef7c65ee53cdd887888af701a8882fe38cc923509470",
+    "adapterSha256": "544781ebda29aa5d00adf37a513ca0513dece3c6f788977d4c2a94bd790be32d",
+    "fixtureSetSha256": "6dedcd07ca70317f4fd432275cb8d1f7959815cac6da2668a1d64dab4d459873"
+  },
+  "catalog": {
+    "path": "governance/release-catalog.json",
+    "sha256": "a824af45322796c06a8e26f1069bd5d5b1271b60a5d9dc6b728ea480e7e4c82f",
+    "packageKey": "designer"
+  },
+  "publication": {
+    "mode": "trusted-publisher",
+    "publishedAt": "2026-09-24T18:39:51.511Z",
+    "reference": "https://github.com/clossys/foundry/actions/runs/36039239093",
+    "provenance": {
+      "repository": "https://github.com/clossys/foundry",
+      "workflow": ".github/workflows/publish.yml",
+      "ref": "refs/heads/main",
+      "event": "workflow_dispatch",
+      "sourceSha": "717212008de66a03caa4204dade66c08f882595d",
+      "builder": "https://github.com/actions/runner/github-hosted",
+      "invocation": "https://github.com/clossys/foundry/actions/runs/36039239093/attempts/1",
+      "attestationUrl": "https://registry.npmjs.org/-/npm/v1/attestations/%40clossys%2Fdesigner@0.6.0"
+    }
+  },
+  "registryProof": {
+    "schemaVersion": 2,
+    "kind": "public-npm-anonymous-registry-proof-v2",
+    "evidence": {
+      "registry": "https://registry.npmjs.org",
+      "access": "anonymous",
+      "name": "@clossys/designer",
+      "version": "0.6.0",
+      "metadataUrl": "https://registry.npmjs.org/%40clossys%2Fdesigner/0.6.0",
+      "repository": "clossys/foundry",
+      "tarballUrl": "https://registry.npmjs.org/@clossys/designer/-/designer-0.6.0.tgz",
+      "integrity": "sha512-BGDFt1xQhXkPmqf3YrwXgQD4oLks9fKCe7BJ0r8aaw2gjc1WGs91rVUCu6RRRpJFLBcM4OUZT81nNzpI+WtJ6w==",
+      "shasum": "36309df8843e8c45bf287d4fd71c3a3e73dd748c",
+      "sha256": "ce7a2ba1a5c8f74089bdbc886c6762ba91f0ae068fad37f8973a403693c63f05",
+      "sha512": "0460c5b75c5085790f9aa7f762bc178100f8a0b92cf5f2827bb049d2bf1a6b0da08dcd561acf75ad5502bba4514692452c170ce0e5194fcd67373a48f96b49eb",
+      "packedManifestSha256": "b7055d0850064ca1019eca0e67fa85141d7153815196c3a60c12e119a5367ed4",
+      "size": 839230
+    }
+  }
+}

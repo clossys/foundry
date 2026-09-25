@@ -59,7 +59,7 @@ export const GATE_TEST_EXCLUSIONS = Object.freeze({
   "scripts/check-fleet-coverage.test.mjs":
     "imports the real, built @clossys/observer package by bare specifier, same as gate-run-history.test.mjs above -- needs `npm run build` first (see the file's own header: 'it is not part of check:gates, which runs in the dependency-free safety job before any workspace build exists'). Wired as its own `node --test` step in ci.yml's build job.",
   "scripts/check-strategist-subject.test.mjs":
-    "runs the real, compiled packages/strategist/dist/cli.js against fixture docs trees -- needs `npm run build` first. Run by `npm run check:strategist-subject` itself (the test, then the gate), which ci.yml's build job invokes after build.",
+    "runs the real, compiled packages/strategist/dist/cli.js against fixture docs trees -- needs `npm run build` first. Run by `npm run check:strategist-subject` itself (the test, then the gate), which ci.yml's `prose quality` job invokes after its own minimal `npm run build --workspace=packages/strategist` (moved there from the build job in issue #1420 review round 3 -- it reads prose-tier docs/PUBLISHING.md, which the build job is skipped for on the 'prose' tier).",
   "scripts/check-publication-map.test.mjs":
     "imports packages/publisher's own built entry point -- needs `npm run build` first. Wired as its own `node --test` step in ci.yml's build job, after build.",
   "scripts/collect-review-evidence.integration.test.mjs":
@@ -70,6 +70,8 @@ export const GATE_TEST_EXCLUSIONS = Object.freeze({
     "already run transitively -- scripts/publish-workflow.test.mjs, which check:gates does run, imports this file directly (`import \"./check-public-npm-provenance.test.mjs\"`). Listing it again here would run its tests a second time.",
   "scripts/lib/public-npm-aggregate-canary.test.mjs":
     "already covered by its own check:public-npm-aggregate-canary script, which chains the canary/closure/transcript checks before this test (`node scripts/check-public-npm-aggregate-canary.mjs && ... && node --test scripts/lib/public-npm-aggregate-canary.test.mjs`). Running it again here would run it a second time, in isolation from that chain.",
+  "scripts/lib/import-purity.test.mjs":
+    "imports scripts/lib/import-purity.mjs, which parses sources with the TypeScript compiler API -- needs `npm ci` for typescript, which check:gates' dependency-free safety job never runs. Already covered by its own check:import-purity script, which ci.yml's build job runs after `npm ci`.",
   "scripts/lib/public-npm-aggregate-canary-v2.test.mjs":
     "already covered by its own check:public-npm-aggregate-canary-v2 script, same reason as the v1 canary test above.",
 });
