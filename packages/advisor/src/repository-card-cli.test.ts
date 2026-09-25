@@ -82,10 +82,10 @@ describe("advisor-repository-card (#1179)", () => {
   });
 
   it("exits 1 for a choice the card did not offer, naming its position and not the id", () => {
-    expect(main([write(JSON.stringify(LISTING)), "--choose", "example-owner/example-app,example-owner/unlisted-repo"])).toBe(1);
+    expect(main([write(JSON.stringify(LISTING)), "--choose", "example-owner/example-app,example-owner/unlisted-project"])).toBe(1);
     const message = String(error.mock.calls[0]?.[0]);
     expect(message).toMatch(/choice\[1\] is not one of the choices this card offered/);
-    expect(message).not.toContain("unlisted-repo");
+    expect(message).not.toContain("unlisted-project");
     expect(log).not.toHaveBeenCalled();
   });
 

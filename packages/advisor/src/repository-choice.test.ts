@@ -59,8 +59,8 @@ describe("repositoryChoiceCard (#1179)", () => {
   });
 
   it("offers a single repository (runtime choices may be one repository plus something-else)", () => {
-    expect(cardFor([{ nameWithOwner: "example-owner/example-repo" }]).choices.map((choice) => choice.id)).toEqual([
-      "example-owner/example-repo",
+    expect(cardFor([{ nameWithOwner: "example-owner/example-project" }]).choices.map((choice) => choice.id)).toEqual([
+      "example-owner/example-project",
       REPOSITORY_SOMETHING_ELSE_ID,
     ]);
   });
@@ -72,15 +72,15 @@ describe("repositoryChoiceCard (#1179)", () => {
   });
 
   it.each([
-    ["not an array", { nameWithOwner: "example-owner/example-repo" }, /^listing must be an array \(the list of repositories\), got object$/],
-    ["an entry that is not an object", ["example-owner/example-repo"], /^listing\[0\] must be an object \(the repository entry\), got string$/],
+    ["not an array", { nameWithOwner: "example-owner/example-project" }, /^listing must be an array \(the list of repositories\), got object$/],
+    ["an entry that is not an object", ["example-owner/example-project"], /^listing\[0\] must be an object \(the repository entry\), got string$/],
     ["an entry with no nameWithOwner", [{ description: "x" }], /^listing\[0\]\.nameWithOwner is required$/],
-    ["an entry with an unknown field", [{ nameWithOwner: "example-owner/example-repo", url: "x" }], /^listing\[0\]\.url is not a field the contract declares/],
-    ["a description of the wrong type", [{ nameWithOwner: "example-owner/example-repo", description: 7 }], /^listing\[0\]\.description must be a string or null$/],
-    ["a bare name, which GitHub never lists", [{ nameWithOwner: "example-repo" }], /^listing\[0\]\.nameWithOwner must be owner\/name, as GitHub lists a repository$/],
-    ["more than one slash", [{ nameWithOwner: "example-owner/example-repo/extra" }], /^listing\[0\]\.nameWithOwner must be a bare repository name or owner\/name/],
+    ["an entry with an unknown field", [{ nameWithOwner: "example-owner/example-project", url: "x" }], /^listing\[0\]\.url is not a field the contract declares/],
+    ["a description of the wrong type", [{ nameWithOwner: "example-owner/example-project", description: 7 }], /^listing\[0\]\.description must be a string or null$/],
+    ["a bare name, which GitHub never lists", [{ nameWithOwner: "example-project" }], /^listing\[0\]\.nameWithOwner must be owner\/name, as GitHub lists a repository$/],
+    ["more than one slash", [{ nameWithOwner: "example-owner/example-project/extra" }], /^listing\[0\]\.nameWithOwner must be a bare repository name or owner\/name/],
     ["a dot-dot name", [{ nameWithOwner: "example-owner/.." }], /^listing\[0\]\.nameWithOwner must be a bare repository name or owner\/name/],
-    ["whitespace", [{ nameWithOwner: " example-owner/example-repo" }], /^listing\[0\]\.nameWithOwner must be a bare repository name or owner\/name/],
+    ["whitespace", [{ nameWithOwner: " example-owner/example-project" }], /^listing\[0\]\.nameWithOwner must be a bare repository name or owner\/name/],
   ])("refuses a malformed list: %s", (_name, listing, message) => {
     const result = repositoryChoiceCard(listing);
     expect(result.state).toBe("invalid");
@@ -90,7 +90,7 @@ describe("repositoryChoiceCard (#1179)", () => {
 
   it("names every malformed entry by position, and never echoes a repository name", () => {
     const secret = "example-owner/private-thing";
-    const result = repositoryChoiceCard([{ nameWithOwner: `${secret}/extra` }, { nameWithOwner: "example-owner/example-repo" }, { nameWithOwner: `${secret} ` }]);
+    const result = repositoryChoiceCard([{ nameWithOwner: `${secret}/extra` }, { nameWithOwner: "example-owner/example-project" }, { nameWithOwner: `${secret} ` }]);
     expect(result.state).toBe("invalid");
     if (result.state !== "invalid") return;
     expect(result.findings.map((finding) => finding.path)).toEqual(["listing[0].nameWithOwner", "listing[2].nameWithOwner"]);
@@ -99,10 +99,10 @@ describe("repositoryChoiceCard (#1179)", () => {
 
   it("refuses a duplicate id, including one that differs only in letter case, by position only", () => {
     const result = repositoryChoiceCard([
-      { nameWithOwner: "example-owner/example-repo" },
-      { nameWithOwner: "example-owner/other-repo" },
-      { nameWithOwner: "Example-Owner/Example-Repo" },
-      { nameWithOwner: "example-owner/other-repo" },
+      { nameWithOwner: "example-owner/example-project" },
+      { nameWithOwner: "example-owner/other-project" },
+      { nameWithOwner: "Example-Owner/Example-Project" },
+      { nameWithOwner: "example-owner/other-project" },
     ]);
     expect(messagesOf(result)).toEqual([
       "listing[2].nameWithOwner names the same repository as listing[0].nameWithOwner (repository ids are compared case-insensitively)",
