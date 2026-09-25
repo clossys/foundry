@@ -47,10 +47,13 @@ export class AdvisorRepositoryCardCliInputError extends Error {}
 const STRICT_UTF8 = new TextDecoder("utf-8", { fatal: true, ignoreBOM: true });
 
 /**
- * A `ContractDocumentError`'s own message may quote a repeated key straight
- * from the file -- fine for a plan or brief, but this file can carry a
- * repository description an agent should not relay to a terminal. Rebuild
- * the message from `reason` and `position` only, never the message itself.
+ * `ContractDocumentError`'s own message is already position-only, never a
+ * key or any other document text (see contract-schema.ts). Rebuilt here
+ * from `reason` and `position` anyway, never read straight through: a
+ * fixed, hand-written phrase per `reason` cannot start echoing document
+ * text merely because the checker's own wording changes under it, and this
+ * file in particular can carry a repository description an agent should
+ * not relay to a terminal.
  */
 function describeContractDocumentError(cause: ContractDocumentError): string {
   switch (cause.reason) {
