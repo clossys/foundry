@@ -22,7 +22,7 @@
   "choiceShape": {
     "id": "string -- stable, unique within the card",
     "label": "string -- the client-facing option text",
-    "detail": "runtime-choices cards only (see runtimeChoicesCard): optional supporting text for the choice, for example a repository's own description, capped and stripped of control and bidirectional-formatting characters by the engine that builds the card; refused in a static intake file"
+    "detail": "runtime-choices cards only (see runtimeChoicesCard): optional supporting text for the choice, for example a repository's own description, cleaned by Unicode property class and capped by the engine that builds the card (@clossys/advisor's cleanDescription()); refused in a static intake file"
   },
   "engagementContext": {
     "contract": "docs/contracts/engagement-context.json",

@@ -437,9 +437,20 @@ choose several repositories, and choices supplied at runtime rather than
 from a static file. Its id is `REPOSITORY_CHOICE_CARD_ID` (`hub-repositories`).
 Each `RepositoryChoice` is a repository's `owner/name` as its id and label.
 Its description, when it has one, is the choice's `detail`: it is text
-written by whoever controls that repository, so control characters,
-bidirectional and invisible formatting characters are removed, and it is
-cut to 200 characters with a closing ellipsis. When `current` names the
+written by whoever controls that repository, so it is cleaned by Unicode
+property, not by a hand-kept list. Each control character (`\p{Cc}`, tab
+and line breaks included) and each line or paragraph separator (`\p{Zl}`,
+`\p{Zp}`) is replaced with a space. Each format character (`\p{Cf}`: for
+example bidirectional marks and overrides, zero-width spaces and joiners,
+the word joiner, soft hyphen, the byte order mark, and the tag characters
+U+E0000-U+E007F that can carry hidden text), each default-ignorable code
+point (for example variation selectors and the combining grapheme joiner),
+and each private-use or surrogate code point is removed, not replaced, so
+it cannot split a word. Removing the zero-width joiner and non-joiner is
+deliberate: an emoji sequence joined by U+200D shows as its separate emoji,
+and text that needs U+200C, such as some Persian, shows unjoined. Whitespace
+is then collapsed, the ends trimmed, and the result cut to 200 characters
+with a closing ellipsis. When `current` names the
 repository the founder is working in and that repository is on the list,
 it is the `recommendedChoiceId` and listed first. When it is not on the
 list, the card is built without a recommendation, never refused. The other

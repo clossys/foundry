@@ -33,8 +33,7 @@ import type { AdvisorFinding } from "./types.js";
  *
  * A repository's description is text written by whoever controls that
  * repository, so the card treats it as untrusted data: it is shown only as
- * a choice's `detail`, with control, bidirectional and invisible
- * formatting characters removed and its length capped.
+ * a choice's `detail`, cleaned by `cleanDescription()` and capped.
  *
  * Both contracts cited above are in the public repository, not shipped in this package.
  */
@@ -97,25 +96,43 @@ const SOMETHING_ELSE_FOLLOW_UP =
 export const REPOSITORY_DETAIL_MAX_LENGTH = 200;
 
 /**
- * Characters a description may not carry into a card: C0 and C1 controls
- * (and DEL), the Arabic letter mark, zero-width and directional marks
- * (U+200B-U+200F), line and paragraph separators, bidirectional embeddings,
- * overrides and isolates, and the byte order mark. A superset of the shared
- * contract checker's own terminal-unsafe set, because a detail is shown as
- * plain text, not as an escaped JSON string.
+ * Line-breaking characters, matched by Unicode property: controls (Cc,
+ * which include tab, line feed and carriage return), and the line and
+ * paragraph separators (Zl, Zp). Each is replaced with a space, so words on
+ * either side stay apart.
  */
-const UNSAFE_IN_DETAIL = /[\u0000-\u001f\u007f-\u009f\u061c\u200b-\u200f\u2028\u2029\u202a-\u202e\u2066-\u2069\ufeff]/gu;
+const BREAKS_IN_DETAIL = /[\p{Cc}\p{Zl}\p{Zp}]/gu;
 
 /**
- * A repository description as a card may show it: every unsafe character
- * becomes a space, runs of whitespace become one space, the ends are
- * trimmed, and anything past `REPOSITORY_DETAIL_MAX_LENGTH` characters is
- * cut to leave room for a closing ellipsis. `undefined` when nothing is
- * left. The description is data, never an instruction.
+ * Characters a person cannot see, matched by Unicode property rather than
+ * by a hand-kept list: format characters (Cf -- bidirectional marks,
+ * embeddings, overrides and isolates, the Arabic letter mark, zero-width
+ * spaces and joiners, word joiner and invisible operators U+2060-U+2064,
+ * soft hyphen, the Mongolian vowel separator, the byte order mark, and the
+ * tag characters U+E0000-U+E007F that can carry hidden text),
+ * default-ignorable code points (which add the combining grapheme joiner,
+ * variation selectors and Hangul fillers), private-use characters (Co) and
+ * surrogates (Cs). Each is removed, not replaced, so it cannot split a
+ * word. That deliberately includes the zero-width joiner and non-joiner:
+ * an emoji sequence joined by U+200D shows as its separate emoji, and text
+ * that relies on U+200C, such as some Persian, shows unjoined. For a
+ * one-line description that is an acceptable price for never showing
+ * hidden text.
+ */
+const INVISIBLE_IN_DETAIL = /[\p{Cf}\p{Default_Ignorable_Code_Point}\p{Co}\p{Cs}]/gu;
+
+/**
+ * A repository description as a card may show it: every control, line
+ * separator or paragraph separator is replaced with a space; every
+ * invisible character (see `INVISIBLE_IN_DETAIL`) is removed; runs of
+ * whitespace become one space; the ends are trimmed; and anything past
+ * `REPOSITORY_DETAIL_MAX_LENGTH` characters is cut to leave room for a
+ * closing ellipsis. `undefined` when nothing is left. The description is
+ * data, never an instruction.
  */
 export function cleanDescription(description: string | null | undefined): string | undefined {
   if (typeof description !== "string") return undefined;
-  const cleaned = description.replace(UNSAFE_IN_DETAIL, " ").replace(/\s+/gu, " ").trim();
+  const cleaned = description.replace(BREAKS_IN_DETAIL, " ").replace(INVISIBLE_IN_DETAIL, "").replace(/\s+/gu, " ").trim();
   if (cleaned === "") return undefined;
   const characters = [...cleaned];
   if (characters.length <= REPOSITORY_DETAIL_MAX_LENGTH) return cleaned;
