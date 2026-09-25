@@ -1,0 +1,2751 @@
+{
+  "description": "Issue #1178: the shared corpus for the change-set and bundle digests defined in apply-change-set-digest.md, beside this file. @clossys/launcher is tested against every case. Expected values were produced independently of the package: a stand-alone Python 3 script (standard library only) built each change set, computed its subject by removing changeSetDigest, branch, bundle, pullRequest and inverse and reducing every file whose derived member is true to its path, mode, derived, item and invariants, serialized it with json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(',', ':')) -- which is RFC 8785 for these values, because every key is ASCII (so code-point order equals UTF-16 order) and every number is a small integer, both asserted by the script -- and hashed the UTF-8 bytes with hashlib.sha256. It then set branch, the title and changeSetDigest from that digest. Bundle digests were computed the same way over planDigest and the repositories sorted by id. The script also asserted every sameDigestAs and differsFrom relation below before writing this file. valid says whether the change set also passes the contract and its code rules; every change-set digest is defined either way. Hash inputs are placeholder text: no case is a real repository, package or plan.",
+  "canonicalDigest": [
+    {
+      "name": "object",
+      "value": {
+        "b": [
+          2,
+          1
+        ],
+        "a": {
+          "z": null,
+          "y": true
+        }
+      },
+      "digest": "sha256:2641c6d5330d85066fcfa4fd9dfd29311e17a4489b5eb4d1b49a431efc2270ea"
+    },
+    {
+      "name": "empty-array",
+      "value": [],
+      "digest": "sha256:4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    {
+      "name": "string",
+      "value": "clossys",
+      "digest": "sha256:689e96437c7df630568364405dc21d7ff0fa91aec49e570fbb1bb4f2d48ca71e"
+    },
+    {
+      "name": "integer",
+      "value": 1,
+      "digest": "sha256:6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b"
+    }
+  ],
+  "changeSets": [
+    {
+      "name": "apply-with-packages",
+      "note": "An apply-phase set: a Starter pin the base already has, two installs, a lockfile and the ledger.",
+      "valid": true,
+      "changeSet": {
+        "schemaVersion": 1,
+        "kind": "clossys.repository-change-set",
+        "producer": {
+          "name": "@example/launcher",
+          "version": "0.4.0"
+        },
+        "planDigest": "sha256:40e9c27d0c677c522f131e47740185d8182367c9f286fd4746e72c55b1275a18",
+        "repository": {
+          "id": "example-owner/site",
+          "nodeId": "R_exampleSite1",
+          "visibility": "private",
+          "defaultBranch": "main",
+          "baseCommit": "138995ced6b16aae6f0c058d2e453121e6b6349d"
+        },
+        "ledger": {
+          "generation": 0
+        },
+        "phase": "apply",
+        "engine": {
+          "name": "@example/advisor",
+          "version": "0.8.0",
+          "integrity": "sha512-kCVE5gFTJHKz+h8j+pp2EBmmmhTGsqRcBZRD7pBlcEPb8toyMhpLswj3mHq59uUnVXm4CYRgWKSNKE0AOVbrLQ=="
+        },
+        "observed": {
+          "packageManager": "npm",
+          "lockfile": "package-lock.json",
+          "releaseAgeSurfaces": [
+            {
+              "surface": "npmrc",
+              "path": ".npmrc"
+            }
+          ]
+        },
+        "items": [
+          {
+            "id": "brief",
+            "act": "write-record",
+            "source": "engagement-brief"
+          },
+          {
+            "id": "skills",
+            "act": "compose-skills",
+            "roles": [
+              "strategist",
+              "writer"
+            ]
+          },
+          {
+            "id": "example-owner/site:@example/starter",
+            "act": "pin-starter",
+            "planItem": "example-owner/site:@example/starter",
+            "package": {
+              "name": "@example/starter",
+              "version": "0.9.2",
+              "integrity": "sha512-hJiP5Qe0sBUnWOs7+hC2bcIg2ye4C0X3hmWVHIo4IfibnbGns3pFL8QPV4R3MuWxVlbU9dWJ/HeYE42ABQie/w=="
+            },
+            "placement": "devDependencies",
+            "satisfiedInBase": true
+          },
+          {
+            "id": "example-owner/site:@example/strategist",
+            "act": "install",
+            "planItem": "example-owner/site:@example/strategist",
+            "package": {
+              "name": "@example/strategist",
+              "version": "1.4.0",
+              "integrity": "sha512-UWlOIr0jGHG4u420oMkUOeVW5r6Ab4kxuaUU4UWjjGebkzXM634IHDtxqLqMGCRebanNaxZBudK29XyAQgk5sQ=="
+            },
+            "placement": "devDependencies",
+            "satisfiedInBase": false
+          },
+          {
+            "id": "example-owner/site:@example/writer",
+            "act": "install",
+            "planItem": "example-owner/site:@example/writer",
+            "package": {
+              "name": "@example/writer",
+              "version": "0.7.0",
+              "integrity": "sha512-GW995IgPwvbujjoIUYbT6dge9ZrLCEa1JOYNnU+LYrdaWcbU9wOs0vpm53wXR1kQBUbFftpxA8LkpD4AtU/dQQ=="
+            },
+            "placement": "devDependencies",
+            "satisfiedInBase": false
+          },
+          {
+            "id": "ledger",
+            "act": "write-ledger"
+          }
+        ],
+        "files": [
+          {
+            "path": "clossys/brief.json",
+            "mode": "100644",
+            "before": null,
+            "after": "sha256:37b06d4c734195868d01085f7d356b70bebb72dd8de105ebb71091fd6bb06364",
+            "item": "brief"
+          },
+          {
+            "path": ".agents/skills/clossys-strategist/SKILL.md",
+            "mode": "100644",
+            "before": null,
+            "after": "sha256:10a0edc2b0a6f35b6735a9423cbcf326138c80f0a152bb937b655ee278b26c1f",
+            "item": "skills"
+          },
+          {
+            "path": ".agents/skills/clossys-writer/SKILL.md",
+            "mode": "100644",
+            "before": null,
+            "after": "sha256:e0d4b7ccb4dbdcf1f9e6e94ac05fa6f2d05c9cb3797ccde260ce3c9d59ea35b1",
+            "item": "skills"
+          },
+          {
+            "path": "package-lock.json",
+            "mode": "100644",
+            "derived": true,
+            "item": "example-owner/site:@example/strategist",
+            "before": "sha256:e98b108f460871f3d14fd3724acf48628539f506c83f96cfd3539353fecfddf8",
+            "invariants": [
+              {
+                "item": "example-owner/site:@example/strategist",
+                "name": "@example/strategist",
+                "version": "1.4.0",
+                "integrity": "sha512-UWlOIr0jGHG4u420oMkUOeVW5r6Ab4kxuaUU4UWjjGebkzXM634IHDtxqLqMGCRebanNaxZBudK29XyAQgk5sQ=="
+              },
+              {
+                "item": "example-owner/site:@example/writer",
+                "name": "@example/writer",
+                "version": "0.7.0",
+                "integrity": "sha512-GW995IgPwvbujjoIUYbT6dge9ZrLCEa1JOYNnU+LYrdaWcbU9wOs0vpm53wXR1kQBUbFftpxA8LkpD4AtU/dQQ=="
+              }
+            ]
+          },
+          {
+            "path": "clossys/.state/installed.json",
+            "mode": "100644",
+            "derived": true,
+            "item": "ledger",
+            "before": null,
+            "invariants": [
+              {
+                "ledgerGeneration": 1
+              }
+            ]
+          }
+        ],
+        "keys": [
+          {
+            "file": "package.json",
+            "pointer": "/devDependencies/@example~1strategist",
+            "before": null,
+            "after": "1.4.0",
+            "item": "example-owner/site:@example/strategist"
+          },
+          {
+            "file": "package.json",
+            "pointer": "/devDependencies/@example~1writer",
+            "before": null,
+            "after": "0.7.0",
+            "item": "example-owner/site:@example/writer"
+          }
+        ],
+        "refused": [],
+        "deferred": [],
+        "pathAllowList": [
+          "clossys/**",
+          ".agents/skills/clossys-*/**",
+          "package.json",
+          "package-lock.json"
+        ],
+        "branch": "clossys/apply-a9fe8bb431bd",
+        "bundle": "sha256:4be92ea2f7148ab1ce3efb3a8671a95ffd442f955eca77544680367ae6517fd6",
+        "pullRequest": {
+          "title": "Clossys: apply plan a9fe8bb431bd"
+        },
+        "changeSetDigest": "sha256:a9fe8bb431bd80b9260ab7e56f29f24db27e557ea325363042057db8b54b37d7"
+      },
+      "subject": "{\"deferred\":[],\"engine\":{\"integrity\":\"sha512-kCVE5gFTJHKz+h8j+pp2EBmmmhTGsqRcBZRD7pBlcEPb8toyMhpLswj3mHq59uUnVXm4CYRgWKSNKE0AOVbrLQ==\",\"name\":\"@example/advisor\",\"version\":\"0.8.0\"},\"files\":[{\"after\":\"sha256:37b06d4c734195868d01085f7d356b70bebb72dd8de105ebb71091fd6bb06364\",\"before\":null,\"item\":\"brief\",\"mode\":\"100644\",\"path\":\"clossys/brief.json\"},{\"after\":\"sha256:10a0edc2b0a6f35b6735a9423cbcf326138c80f0a152bb937b655ee278b26c1f\",\"before\":null,\"item\":\"skills\",\"mode\":\"100644\",\"path\":\".agents/skills/clossys-strategist/SKILL.md\"},{\"after\":\"sha256:e0d4b7ccb4dbdcf1f9e6e94ac05fa6f2d05c9cb3797ccde260ce3c9d59ea35b1\",\"before\":null,\"item\":\"skills\",\"mode\":\"100644\",\"path\":\".agents/skills/clossys-writer/SKILL.md\"},{\"derived\":true,\"invariants\":[{\"integrity\":\"sha512-UWlOIr0jGHG4u420oMkUOeVW5r6Ab4kxuaUU4UWjjGebkzXM634IHDtxqLqMGCRebanNaxZBudK29XyAQgk5sQ==\",\"item\":\"example-owner/site:@example/strategist\",\"name\":\"@example/strategist\",\"version\":\"1.4.0\"},{\"integrity\":\"sha512-GW995IgPwvbujjoIUYbT6dge9ZrLCEa1JOYNnU+LYrdaWcbU9wOs0vpm53wXR1kQBUbFftpxA8LkpD4AtU/dQQ==\",\"item\":\"example-owner/site:@example/writer\",\"name\":\"@example/writer\",\"version\":\"0.7.0\"}],\"item\":\"example-owner/site:@example/strategist\",\"mode\":\"100644\",\"path\":\"package-lock.json\"},{\"derived\":true,\"invariants\":[{\"ledgerGeneration\":1}],\"item\":\"ledger\",\"mode\":\"100644\",\"path\":\"clossys/.state/installed.json\"}],\"items\":[{\"act\":\"write-record\",\"id\":\"brief\",\"source\":\"engagement-brief\"},{\"act\":\"compose-skills\",\"id\":\"skills\",\"roles\":[\"strategist\",\"writer\"]},{\"act\":\"pin-starter\",\"id\":\"example-owner/site:@example/starter\",\"package\":{\"integrity\":\"sha512-hJiP5Qe0sBUnWOs7+hC2bcIg2ye4C0X3hmWVHIo4IfibnbGns3pFL8QPV4R3MuWxVlbU9dWJ/HeYE42ABQie/w==\",\"name\":\"@example/starter\",\"version\":\"0.9.2\"},\"placement\":\"devDependencies\",\"planItem\":\"example-owner/site:@example/starter\",\"satisfiedInBase\":true},{\"act\":\"install\",\"id\":\"example-owner/site:@example/strategist\",\"package\":{\"integrity\":\"sha512-UWlOIr0jGHG4u420oMkUOeVW5r6Ab4kxuaUU4UWjjGebkzXM634IHDtxqLqMGCRebanNaxZBudK29XyAQgk5sQ==\",\"name\":\"@example/strategist\",\"version\":\"1.4.0\"},\"placement\":\"devDependencies\",\"planItem\":\"example-owner/site:@example/strategist\",\"satisfiedInBase\":false},{\"act\":\"install\",\"id\":\"example-owner/site:@example/writer\",\"package\":{\"integrity\":\"sha512-GW995IgPwvbujjoIUYbT6dge9ZrLCEa1JOYNnU+LYrdaWcbU9wOs0vpm53wXR1kQBUbFftpxA8LkpD4AtU/dQQ==\",\"name\":\"@example/writer\",\"version\":\"0.7.0\"},\"placement\":\"devDependencies\",\"planItem\":\"example-owner/site:@example/writer\",\"satisfiedInBase\":false},{\"act\":\"write-ledger\",\"id\":\"ledger\"}],\"keys\":[{\"after\":\"1.4.0\",\"before\":null,\"file\":\"package.json\",\"item\":\"example-owner/site:@example/strategist\",\"pointer\":\"/devDependencies/@example~1strategist\"},{\"after\":\"0.7.0\",\"before\":null,\"file\":\"package.json\",\"item\":\"example-owner/site:@example/writer\",\"pointer\":\"/devDependencies/@example~1writer\"}],\"kind\":\"clossys.repository-change-set\",\"ledger\":{\"generation\":0},\"observed\":{\"lockfile\":\"package-lock.json\",\"packageManager\":\"npm\",\"releaseAgeSurfaces\":[{\"path\":\".npmrc\",\"surface\":\"npmrc\"}]},\"pathAllowList\":[\"clossys/**\",\".agents/skills/clossys-*/**\",\"package.json\",\"package-lock.json\"],\"phase\":\"apply\",\"planDigest\":\"sha256:40e9c27d0c677c522f131e47740185d8182367c9f286fd4746e72c55b1275a18\",\"producer\":{\"name\":\"@example/launcher\",\"version\":\"0.4.0\"},\"refused\":[],\"repository\":{\"baseCommit\":\"138995ced6b16aae6f0c058d2e453121e6b6349d\",\"defaultBranch\":\"main\",\"id\":\"example-owner/site\",\"nodeId\":\"R_exampleSite1\",\"visibility\":\"private\"},\"schemaVersion\":1}",
+      "digest": "sha256:a9fe8bb431bd80b9260ab7e56f29f24db27e557ea325363042057db8b54b37d7"
+    },
+    {
+      "name": "setup-public",
+      "note": "A setup-phase set in a public repository: the install waits for the apply phase, and a skill path already in the base is refused.",
+      "valid": true,
+      "changeSet": {
+        "schemaVersion": 1,
+        "kind": "clossys.repository-change-set",
+        "producer": {
+          "name": "@example/launcher",
+          "version": "0.4.0"
+        },
+        "planDigest": "sha256:40e9c27d0c677c522f131e47740185d8182367c9f286fd4746e72c55b1275a18",
+        "repository": {
+          "id": "example-owner/docs",
+          "nodeId": "R_exampleDocs1",
+          "visibility": "public",
+          "defaultBranch": "trunk",
+          "baseCommit": "57ad2d2e04c45be219a2abf752f172940b993cce"
+        },
+        "ledger": {
+          "generation": 0
+        },
+        "phase": "setup",
+        "engine": {
+          "name": "@example/advisor",
+          "version": "0.8.0",
+          "integrity": "sha512-kCVE5gFTJHKz+h8j+pp2EBmmmhTGsqRcBZRD7pBlcEPb8toyMhpLswj3mHq59uUnVXm4CYRgWKSNKE0AOVbrLQ=="
+        },
+        "observed": {
+          "packageManager": "pnpm",
+          "lockfile": "pnpm-lock.yaml",
+          "releaseAgeSurfaces": [
+            {
+              "surface": "pnpm-workspace",
+              "path": "pnpm-workspace.yaml"
+            }
+          ]
+        },
+        "items": [
+          {
+            "id": "brief",
+            "act": "write-record",
+            "source": "engagement-brief"
+          },
+          {
+            "id": "skills",
+            "act": "compose-skills",
+            "roles": [
+              "writer"
+            ]
+          },
+          {
+            "id": "example-owner/docs:@example/starter",
+            "act": "pin-starter",
+            "planItem": "example-owner/docs:@example/starter",
+            "package": {
+              "name": "@example/starter",
+              "version": "0.9.2",
+              "integrity": "sha512-hJiP5Qe0sBUnWOs7+hC2bcIg2ye4C0X3hmWVHIo4IfibnbGns3pFL8QPV4R3MuWxVlbU9dWJ/HeYE42ABQie/w=="
+            },
+            "placement": "devDependencies",
+            "satisfiedInBase": false
+          },
+          {
+            "id": "ledger",
+            "act": "write-ledger"
+          }
+        ],
+        "files": [
+          {
+            "path": "clossys/brief.json",
+            "mode": "100644",
+            "before": null,
+            "after": "sha256:47b0a4750cd99a9d4a2fde7ea2bbdc0be3e7240642b7448d39fe836060d079b4",
+            "item": "brief"
+          },
+          {
+            "path": "pnpm-lock.yaml",
+            "mode": "100644",
+            "derived": true,
+            "item": "example-owner/docs:@example/starter",
+            "before": "sha256:2fde8a1a48692f3eccadf2f8654565cfdc495ae3776a7552b32e410b4d06ccc1",
+            "invariants": [
+              {
+                "item": "example-owner/docs:@example/starter",
+                "name": "@example/starter",
+                "version": "0.9.2",
+                "integrity": "sha512-hJiP5Qe0sBUnWOs7+hC2bcIg2ye4C0X3hmWVHIo4IfibnbGns3pFL8QPV4R3MuWxVlbU9dWJ/HeYE42ABQie/w=="
+              }
+            ]
+          },
+          {
+            "path": "clossys/.state/installed.json",
+            "mode": "100644",
+            "derived": true,
+            "item": "ledger",
+            "before": null,
+            "invariants": [
+              {
+                "ledgerGeneration": 1
+              }
+            ]
+          }
+        ],
+        "keys": [
+          {
+            "file": "package.json",
+            "pointer": "/devDependencies/@example~1starter",
+            "before": null,
+            "after": "0.9.2",
+            "item": "example-owner/docs:@example/starter"
+          }
+        ],
+        "refused": [
+          {
+            "path": ".agents/skills/clossys-writer/SKILL.md",
+            "reason": "unowned-existing",
+            "item": "skills"
+          }
+        ],
+        "deferred": [
+          {
+            "planItem": "example-owner/docs:@example/writer",
+            "reason": "after-setup"
+          }
+        ],
+        "pathAllowList": [
+          "clossys/**",
+          ".agents/skills/clossys-*/**",
+          "package.json",
+          "pnpm-lock.yaml"
+        ],
+        "branch": "clossys/apply-ecb13b831efa",
+        "bundle": "sha256:4be92ea2f7148ab1ce3efb3a8671a95ffd442f955eca77544680367ae6517fd6",
+        "pullRequest": {
+          "title": "Clossys: apply plan ecb13b831efa"
+        },
+        "changeSetDigest": "sha256:ecb13b831efab73265932d68564325b69614c6d50108ede399a54fdac63d363d"
+      },
+      "subject": "{\"deferred\":[{\"planItem\":\"example-owner/docs:@example/writer\",\"reason\":\"after-setup\"}],\"engine\":{\"integrity\":\"sha512-kCVE5gFTJHKz+h8j+pp2EBmmmhTGsqRcBZRD7pBlcEPb8toyMhpLswj3mHq59uUnVXm4CYRgWKSNKE0AOVbrLQ==\",\"name\":\"@example/advisor\",\"version\":\"0.8.0\"},\"files\":[{\"after\":\"sha256:47b0a4750cd99a9d4a2fde7ea2bbdc0be3e7240642b7448d39fe836060d079b4\",\"before\":null,\"item\":\"brief\",\"mode\":\"100644\",\"path\":\"clossys/brief.json\"},{\"derived\":true,\"invariants\":[{\"integrity\":\"sha512-hJiP5Qe0sBUnWOs7+hC2bcIg2ye4C0X3hmWVHIo4IfibnbGns3pFL8QPV4R3MuWxVlbU9dWJ/HeYE42ABQie/w==\",\"item\":\"example-owner/docs:@example/starter\",\"name\":\"@example/starter\",\"version\":\"0.9.2\"}],\"item\":\"example-owner/docs:@example/starter\",\"mode\":\"100644\",\"path\":\"pnpm-lock.yaml\"},{\"derived\":true,\"invariants\":[{\"ledgerGeneration\":1}],\"item\":\"ledger\",\"mode\":\"100644\",\"path\":\"clossys/.state/installed.json\"}],\"items\":[{\"act\":\"write-record\",\"id\":\"brief\",\"source\":\"engagement-brief\"},{\"act\":\"compose-skills\",\"id\":\"skills\",\"roles\":[\"writer\"]},{\"act\":\"pin-starter\",\"id\":\"example-owner/docs:@example/starter\",\"package\":{\"integrity\":\"sha512-hJiP5Qe0sBUnWOs7+hC2bcIg2ye4C0X3hmWVHIo4IfibnbGns3pFL8QPV4R3MuWxVlbU9dWJ/HeYE42ABQie/w==\",\"name\":\"@example/starter\",\"version\":\"0.9.2\"},\"placement\":\"devDependencies\",\"planItem\":\"example-owner/docs:@example/starter\",\"satisfiedInBase\":false},{\"act\":\"write-ledger\",\"id\":\"ledger\"}],\"keys\":[{\"after\":\"0.9.2\",\"before\":null,\"file\":\"package.json\",\"item\":\"example-owner/docs:@example/starter\",\"pointer\":\"/devDependencies/@example~1starter\"}],\"kind\":\"clossys.repository-change-set\",\"ledger\":{\"generation\":0},\"observed\":{\"lockfile\":\"pnpm-lock.yaml\",\"packageManager\":\"pnpm\",\"releaseAgeSurfaces\":[{\"path\":\"pnpm-workspace.yaml\",\"surface\":\"pnpm-workspace\"}]},\"pathAllowList\":[\"clossys/**\",\".agents/skills/clossys-*/**\",\"package.json\",\"pnpm-lock.yaml\"],\"phase\":\"setup\",\"planDigest\":\"sha256:40e9c27d0c677c522f131e47740185d8182367c9f286fd4746e72c55b1275a18\",\"producer\":{\"name\":\"@example/launcher\",\"version\":\"0.4.0\"},\"refused\":[{\"item\":\"skills\",\"path\":\".agents/skills/clossys-writer/SKILL.md\",\"reason\":\"unowned-existing\"}],\"repository\":{\"baseCommit\":\"57ad2d2e04c45be219a2abf752f172940b993cce\",\"defaultBranch\":\"trunk\",\"id\":\"example-owner/docs\",\"nodeId\":\"R_exampleDocs1\",\"visibility\":\"public\"},\"schemaVersion\":1}",
+      "digest": "sha256:ecb13b831efab73265932d68564325b69614c6d50108ede399a54fdac63d363d"
+    },
+    {
+      "name": "staffing-only",
+      "note": "No package acts: brief, skills and the ledger only.",
+      "valid": true,
+      "changeSet": {
+        "schemaVersion": 1,
+        "kind": "clossys.repository-change-set",
+        "producer": {
+          "name": "@example/launcher",
+          "version": "0.4.0"
+        },
+        "planDigest": "sha256:40e9c27d0c677c522f131e47740185d8182367c9f286fd4746e72c55b1275a18",
+        "repository": {
+          "id": "notes",
+          "nodeId": "R_exampleNotes1",
+          "visibility": "internal",
+          "defaultBranch": "main",
+          "baseCommit": "e258a74c7f4606986e142cfca316df6c71a51e7f"
+        },
+        "ledger": {
+          "generation": 0
+        },
+        "phase": "setup",
+        "engine": {
+          "name": "@example/advisor",
+          "version": "0.8.0",
+          "integrity": "sha512-kCVE5gFTJHKz+h8j+pp2EBmmmhTGsqRcBZRD7pBlcEPb8toyMhpLswj3mHq59uUnVXm4CYRgWKSNKE0AOVbrLQ=="
+        },
+        "observed": {
+          "packageManager": "none",
+          "lockfile": "none",
+          "releaseAgeSurfaces": []
+        },
+        "items": [
+          {
+            "id": "brief",
+            "act": "write-record",
+            "source": "engagement-brief"
+          },
+          {
+            "id": "skills",
+            "act": "compose-skills",
+            "roles": [
+              "writer"
+            ]
+          },
+          {
+            "id": "ledger",
+            "act": "write-ledger"
+          }
+        ],
+        "files": [
+          {
+            "path": "clossys/brief.json",
+            "mode": "100644",
+            "before": null,
+            "after": "sha256:7377e5237464ada171ba3386811936e455cd4b4bcab666d3009f3498104bb791",
+            "item": "brief"
+          },
+          {
+            "path": ".agents/skills/clossys-writer/SKILL.md",
+            "mode": "100644",
+            "before": null,
+            "after": "sha256:e0d4b7ccb4dbdcf1f9e6e94ac05fa6f2d05c9cb3797ccde260ce3c9d59ea35b1",
+            "item": "skills"
+          },
+          {
+            "path": "clossys/.state/installed.json",
+            "mode": "100644",
+            "derived": true,
+            "item": "ledger",
+            "before": null,
+            "invariants": [
+              {
+                "ledgerGeneration": 1
+              }
+            ]
+          }
+        ],
+        "keys": [],
+        "refused": [],
+        "deferred": [],
+        "pathAllowList": [
+          "clossys/**",
+          ".agents/skills/clossys-*/**"
+        ],
+        "branch": "clossys/apply-7e1d0c8c5117",
+        "bundle": "sha256:4be92ea2f7148ab1ce3efb3a8671a95ffd442f955eca77544680367ae6517fd6",
+        "pullRequest": {
+          "title": "Clossys: apply plan 7e1d0c8c5117"
+        },
+        "changeSetDigest": "sha256:7e1d0c8c5117c56176bc6d24901309da180054b3fb81481b0a67219d35bb58cb"
+      },
+      "subject": "{\"deferred\":[],\"engine\":{\"integrity\":\"sha512-kCVE5gFTJHKz+h8j+pp2EBmmmhTGsqRcBZRD7pBlcEPb8toyMhpLswj3mHq59uUnVXm4CYRgWKSNKE0AOVbrLQ==\",\"name\":\"@example/advisor\",\"version\":\"0.8.0\"},\"files\":[{\"after\":\"sha256:7377e5237464ada171ba3386811936e455cd4b4bcab666d3009f3498104bb791\",\"before\":null,\"item\":\"brief\",\"mode\":\"100644\",\"path\":\"clossys/brief.json\"},{\"after\":\"sha256:e0d4b7ccb4dbdcf1f9e6e94ac05fa6f2d05c9cb3797ccde260ce3c9d59ea35b1\",\"before\":null,\"item\":\"skills\",\"mode\":\"100644\",\"path\":\".agents/skills/clossys-writer/SKILL.md\"},{\"derived\":true,\"invariants\":[{\"ledgerGeneration\":1}],\"item\":\"ledger\",\"mode\":\"100644\",\"path\":\"clossys/.state/installed.json\"}],\"items\":[{\"act\":\"write-record\",\"id\":\"brief\",\"source\":\"engagement-brief\"},{\"act\":\"compose-skills\",\"id\":\"skills\",\"roles\":[\"writer\"]},{\"act\":\"write-ledger\",\"id\":\"ledger\"}],\"keys\":[],\"kind\":\"clossys.repository-change-set\",\"ledger\":{\"generation\":0},\"observed\":{\"lockfile\":\"none\",\"packageManager\":\"none\",\"releaseAgeSurfaces\":[]},\"pathAllowList\":[\"clossys/**\",\".agents/skills/clossys-*/**\"],\"phase\":\"setup\",\"planDigest\":\"sha256:40e9c27d0c677c522f131e47740185d8182367c9f286fd4746e72c55b1275a18\",\"producer\":{\"name\":\"@example/launcher\",\"version\":\"0.4.0\"},\"refused\":[],\"repository\":{\"baseCommit\":\"e258a74c7f4606986e142cfca316df6c71a51e7f\",\"defaultBranch\":\"main\",\"id\":\"notes\",\"nodeId\":\"R_exampleNotes1\",\"visibility\":\"internal\"},\"schemaVersion\":1}",
+      "digest": "sha256:7e1d0c8c5117c56176bc6d24901309da180054b3fb81481b0a67219d35bb58cb"
+    },
+    {
+      "name": "apply-excluded-recomputed",
+      "note": "Every excluded member recomputed: the bundle, the pull request body digest, the inverse, and the lockfile's and the ledger's before and after.",
+      "valid": true,
+      "sameDigestAs": "apply-with-packages",
+      "changeSet": {
+        "schemaVersion": 1,
+        "kind": "clossys.repository-change-set",
+        "producer": {
+          "name": "@example/launcher",
+          "version": "0.4.0"
+        },
+        "planDigest": "sha256:40e9c27d0c677c522f131e47740185d8182367c9f286fd4746e72c55b1275a18",
+        "repository": {
+          "id": "example-owner/site",
+          "nodeId": "R_exampleSite1",
+          "visibility": "private",
+          "defaultBranch": "main",
+          "baseCommit": "138995ced6b16aae6f0c058d2e453121e6b6349d"
+        },
+        "ledger": {
+          "generation": 0
+        },
+        "phase": "apply",
+        "engine": {
+          "name": "@example/advisor",
+          "version": "0.8.0",
+          "integrity": "sha512-kCVE5gFTJHKz+h8j+pp2EBmmmhTGsqRcBZRD7pBlcEPb8toyMhpLswj3mHq59uUnVXm4CYRgWKSNKE0AOVbrLQ=="
+        },
+        "observed": {
+          "packageManager": "npm",
+          "lockfile": "package-lock.json",
+          "releaseAgeSurfaces": [
+            {
+              "surface": "npmrc",
+              "path": ".npmrc"
+            }
+          ]
+        },
+        "items": [
+          {
+            "id": "brief",
+            "act": "write-record",
+            "source": "engagement-brief"
+          },
+          {
+            "id": "skills",
+            "act": "compose-skills",
+            "roles": [
+              "strategist",
+              "writer"
+            ]
+          },
+          {
+            "id": "example-owner/site:@example/starter",
+            "act": "pin-starter",
+            "planItem": "example-owner/site:@example/starter",
+            "package": {
+              "name": "@example/starter",
+              "version": "0.9.2",
+              "integrity": "sha512-hJiP5Qe0sBUnWOs7+hC2bcIg2ye4C0X3hmWVHIo4IfibnbGns3pFL8QPV4R3MuWxVlbU9dWJ/HeYE42ABQie/w=="
+            },
+            "placement": "devDependencies",
+            "satisfiedInBase": true
+          },
+          {
+            "id": "example-owner/site:@example/strategist",
+            "act": "install",
+            "planItem": "example-owner/site:@example/strategist",
+            "package": {
+              "name": "@example/strategist",
+              "version": "1.4.0",
+              "integrity": "sha512-UWlOIr0jGHG4u420oMkUOeVW5r6Ab4kxuaUU4UWjjGebkzXM634IHDtxqLqMGCRebanNaxZBudK29XyAQgk5sQ=="
+            },
+            "placement": "devDependencies",
+            "satisfiedInBase": false
+          },
+          {
+            "id": "example-owner/site:@example/writer",
+            "act": "install",
+            "planItem": "example-owner/site:@example/writer",
+            "package": {
+              "name": "@example/writer",
+              "version": "0.7.0",
+              "integrity": "sha512-GW995IgPwvbujjoIUYbT6dge9ZrLCEa1JOYNnU+LYrdaWcbU9wOs0vpm53wXR1kQBUbFftpxA8LkpD4AtU/dQQ=="
+            },
+            "placement": "devDependencies",
+            "satisfiedInBase": false
+          },
+          {
+            "id": "ledger",
+            "act": "write-ledger"
+          }
+        ],
+        "files": [
+          {
+            "path": "clossys/brief.json",
+            "mode": "100644",
+            "before": null,
+            "after": "sha256:37b06d4c734195868d01085f7d356b70bebb72dd8de105ebb71091fd6bb06364",
+            "item": "brief"
+          },
+          {
+            "path": ".agents/skills/clossys-strategist/SKILL.md",
+            "mode": "100644",
+            "before": null,
+            "after": "sha256:10a0edc2b0a6f35b6735a9423cbcf326138c80f0a152bb937b655ee278b26c1f",
+            "item": "skills"
+          },
+          {
+            "path": ".agents/skills/clossys-writer/SKILL.md",
+            "mode": "100644",
+            "before": null,
+            "after": "sha256:e0d4b7ccb4dbdcf1f9e6e94ac05fa6f2d05c9cb3797ccde260ce3c9d59ea35b1",
+            "item": "skills"
+          },
+          {
+            "path": "package-lock.json",
+            "mode": "100644",
+            "derived": true,
+            "item": "example-owner/site:@example/strategist",
+            "before": "sha256:703c1d9689dd57b7dab4cdd089dc86c2d43dd5ae616ee5ab76fa54b3e6128535",
+            "invariants": [
+              {
+                "item": "example-owner/site:@example/strategist",
+                "name": "@example/strategist",
+                "version": "1.4.0",
+                "integrity": "sha512-UWlOIr0jGHG4u420oMkUOeVW5r6Ab4kxuaUU4UWjjGebkzXM634IHDtxqLqMGCRebanNaxZBudK29XyAQgk5sQ=="
+              },
+              {
+                "item": "example-owner/site:@example/writer",
+                "name": "@example/writer",
+                "version": "0.7.0",
+                "integrity": "sha512-GW995IgPwvbujjoIUYbT6dge9ZrLCEa1JOYNnU+LYrdaWcbU9wOs0vpm53wXR1kQBUbFftpxA8LkpD4AtU/dQQ=="
+              }
+            ],
+            "after": "sha256:b25f4cfc0a912a2918d342f75960ca58d606baf37ebe160902195e2441e618f3"
+          },
+          {
+            "path": "clossys/.state/installed.json",
+            "mode": "100644",
+            "derived": true,
+            "item": "ledger",
+            "before": null,
+            "invariants": [
+              {
+                "ledgerGeneration": 1
+              }
+            ],
+            "after": "sha256:07cb7b0b3cb0df0a7bbbad61728d31f848819941f06e5598fd5e4fde064b09c8"
+          }
+        ],
+        "keys": [
+          {
+            "file": "package.json",
+            "pointer": "/devDependencies/@example~1strategist",
+            "before": null,
+            "after": "1.4.0",
+            "item": "example-owner/site:@example/strategist"
+          },
+          {
+            "file": "package.json",
+            "pointer": "/devDependencies/@example~1writer",
+            "before": null,
+            "after": "0.7.0",
+            "item": "example-owner/site:@example/writer"
+          }
+        ],
+        "refused": [],
+        "deferred": [],
+        "pathAllowList": [
+          "clossys/**",
+          ".agents/skills/clossys-*/**",
+          "package.json",
+          "package-lock.json"
+        ],
+        "branch": "clossys/apply-a9fe8bb431bd",
+        "bundle": "sha256:f27262dbc0e36587608669a2158a256a1dc755613eaad86ddf927bc747f93ad3",
+        "pullRequest": {
+          "title": "Clossys: apply plan a9fe8bb431bd",
+          "bodySha256": "sha256:b031f7cd08ec3ad3bc5f732e1a983a84ea01b76e05737ff95d7571fcf8857568"
+        },
+        "changeSetDigest": "sha256:a9fe8bb431bd80b9260ab7e56f29f24db27e557ea325363042057db8b54b37d7",
+        "inverse": "sha256:7ed3ee6fd48ab0d251c986c0ffa7570d17a275db5f9e89fb1e1022a9e4657c38"
+      },
+      "subject": "{\"deferred\":[],\"engine\":{\"integrity\":\"sha512-kCVE5gFTJHKz+h8j+pp2EBmmmhTGsqRcBZRD7pBlcEPb8toyMhpLswj3mHq59uUnVXm4CYRgWKSNKE0AOVbrLQ==\",\"name\":\"@example/advisor\",\"version\":\"0.8.0\"},\"files\":[{\"after\":\"sha256:37b06d4c734195868d01085f7d356b70bebb72dd8de105ebb71091fd6bb06364\",\"before\":null,\"item\":\"brief\",\"mode\":\"100644\",\"path\":\"clossys/brief.json\"},{\"after\":\"sha256:10a0edc2b0a6f35b6735a9423cbcf326138c80f0a152bb937b655ee278b26c1f\",\"before\":null,\"item\":\"skills\",\"mode\":\"100644\",\"path\":\".agents/skills/clossys-strategist/SKILL.md\"},{\"after\":\"sha256:e0d4b7ccb4dbdcf1f9e6e94ac05fa6f2d05c9cb3797ccde260ce3c9d59ea35b1\",\"before\":null,\"item\":\"skills\",\"mode\":\"100644\",\"path\":\".agents/skills/clossys-writer/SKILL.md\"},{\"derived\":true,\"invariants\":[{\"integrity\":\"sha512-UWlOIr0jGHG4u420oMkUOeVW5r6Ab4kxuaUU4UWjjGebkzXM634IHDtxqLqMGCRebanNaxZBudK29XyAQgk5sQ==\",\"item\":\"example-owner/site:@example/strategist\",\"name\":\"@example/strategist\",\"version\":\"1.4.0\"},{\"integrity\":\"sha512-GW995IgPwvbujjoIUYbT6dge9ZrLCEa1JOYNnU+LYrdaWcbU9wOs0vpm53wXR1kQBUbFftpxA8LkpD4AtU/dQQ==\",\"item\":\"example-owner/site:@example/writer\",\"name\":\"@example/writer\",\"version\":\"0.7.0\"}],\"item\":\"example-owner/site:@example/strategist\",\"mode\":\"100644\",\"path\":\"package-lock.json\"},{\"derived\":true,\"invariants\":[{\"ledgerGeneration\":1}],\"item\":\"ledger\",\"mode\":\"100644\",\"path\":\"clossys/.state/installed.json\"}],\"items\":[{\"act\":\"write-record\",\"id\":\"brief\",\"source\":\"engagement-brief\"},{\"act\":\"compose-skills\",\"id\":\"skills\",\"roles\":[\"strategist\",\"writer\"]},{\"act\":\"pin-starter\",\"id\":\"example-owner/site:@example/starter\",\"package\":{\"integrity\":\"sha512-hJiP5Qe0sBUnWOs7+hC2bcIg2ye4C0X3hmWVHIo4IfibnbGns3pFL8QPV4R3MuWxVlbU9dWJ/HeYE42ABQie/w==\",\"name\":\"@example/starter\",\"version\":\"0.9.2\"},\"placement\":\"devDependencies\",\"planItem\":\"example-owner/site:@example/starter\",\"satisfiedInBase\":true},{\"act\":\"install\",\"id\":\"example-owner/site:@example/strategist\",\"package\":{\"integrity\":\"sha512-UWlOIr0jGHG4u420oMkUOeVW5r6Ab4kxuaUU4UWjjGebkzXM634IHDtxqLqMGCRebanNaxZBudK29XyAQgk5sQ==\",\"name\":\"@example/strategist\",\"version\":\"1.4.0\"},\"placement\":\"devDependencies\",\"planItem\":\"example-owner/site:@example/strategist\",\"satisfiedInBase\":false},{\"act\":\"install\",\"id\":\"example-owner/site:@example/writer\",\"package\":{\"integrity\":\"sha512-GW995IgPwvbujjoIUYbT6dge9ZrLCEa1JOYNnU+LYrdaWcbU9wOs0vpm53wXR1kQBUbFftpxA8LkpD4AtU/dQQ==\",\"name\":\"@example/writer\",\"version\":\"0.7.0\"},\"placement\":\"devDependencies\",\"planItem\":\"example-owner/site:@example/writer\",\"satisfiedInBase\":false},{\"act\":\"write-ledger\",\"id\":\"ledger\"}],\"keys\":[{\"after\":\"1.4.0\",\"before\":null,\"file\":\"package.json\",\"item\":\"example-owner/site:@example/strategist\",\"pointer\":\"/devDependencies/@example~1strategist\"},{\"after\":\"0.7.0\",\"before\":null,\"file\":\"package.json\",\"item\":\"example-owner/site:@example/writer\",\"pointer\":\"/devDependencies/@example~1writer\"}],\"kind\":\"clossys.repository-change-set\",\"ledger\":{\"generation\":0},\"observed\":{\"lockfile\":\"package-lock.json\",\"packageManager\":\"npm\",\"releaseAgeSurfaces\":[{\"path\":\".npmrc\",\"surface\":\"npmrc\"}]},\"pathAllowList\":[\"clossys/**\",\".agents/skills/clossys-*/**\",\"package.json\",\"package-lock.json\"],\"phase\":\"apply\",\"planDigest\":\"sha256:40e9c27d0c677c522f131e47740185d8182367c9f286fd4746e72c55b1275a18\",\"producer\":{\"name\":\"@example/launcher\",\"version\":\"0.4.0\"},\"refused\":[],\"repository\":{\"baseCommit\":\"138995ced6b16aae6f0c058d2e453121e6b6349d\",\"defaultBranch\":\"main\",\"id\":\"example-owner/site\",\"nodeId\":\"R_exampleSite1\",\"visibility\":\"private\"},\"schemaVersion\":1}",
+      "digest": "sha256:a9fe8bb431bd80b9260ab7e56f29f24db27e557ea325363042057db8b54b37d7"
+    },
+    {
+      "name": "apply-keys-reversed",
+      "note": "Every object's members in reverse order.",
+      "valid": true,
+      "sameDigestAs": "apply-with-packages",
+      "changeSet": {
+        "changeSetDigest": "sha256:a9fe8bb431bd80b9260ab7e56f29f24db27e557ea325363042057db8b54b37d7",
+        "pullRequest": {
+          "title": "Clossys: apply plan a9fe8bb431bd"
+        },
+        "bundle": "sha256:4be92ea2f7148ab1ce3efb3a8671a95ffd442f955eca77544680367ae6517fd6",
+        "branch": "clossys/apply-a9fe8bb431bd",
+        "pathAllowList": [
+          "clossys/**",
+          ".agents/skills/clossys-*/**",
+          "package.json",
+          "package-lock.json"
+        ],
+        "deferred": [],
+        "refused": [],
+        "keys": [
+          {
+            "item": "example-owner/site:@example/strategist",
+            "after": "1.4.0",
+            "before": null,
+            "pointer": "/devDependencies/@example~1strategist",
+            "file": "package.json"
+          },
+          {
+            "item": "example-owner/site:@example/writer",
+            "after": "0.7.0",
+            "before": null,
+            "pointer": "/devDependencies/@example~1writer",
+            "file": "package.json"
+          }
+        ],
+        "files": [
+          {
+            "item": "brief",
+            "after": "sha256:37b06d4c734195868d01085f7d356b70bebb72dd8de105ebb71091fd6bb06364",
+            "before": null,
+            "mode": "100644",
+            "path": "clossys/brief.json"
+          },
+          {
+            "item": "skills",
+            "after": "sha256:10a0edc2b0a6f35b6735a9423cbcf326138c80f0a152bb937b655ee278b26c1f",
+            "before": null,
+            "mode": "100644",
+            "path": ".agents/skills/clossys-strategist/SKILL.md"
+          },
+          {
+            "item": "skills",
+            "after": "sha256:e0d4b7ccb4dbdcf1f9e6e94ac05fa6f2d05c9cb3797ccde260ce3c9d59ea35b1",
+            "before": null,
+            "mode": "100644",
+            "path": ".agents/skills/clossys-writer/SKILL.md"
+          },
+          {
+            "invariants": [
+              {
+                "integrity": "sha512-UWlOIr0jGHG4u420oMkUOeVW5r6Ab4kxuaUU4UWjjGebkzXM634IHDtxqLqMGCRebanNaxZBudK29XyAQgk5sQ==",
+                "version": "1.4.0",
+                "name": "@example/strategist",
+                "item": "example-owner/site:@example/strategist"
+              },
+              {
+                "integrity": "sha512-GW995IgPwvbujjoIUYbT6dge9ZrLCEa1JOYNnU+LYrdaWcbU9wOs0vpm53wXR1kQBUbFftpxA8LkpD4AtU/dQQ==",
+                "version": "0.7.0",
+                "name": "@example/writer",
+                "item": "example-owner/site:@example/writer"
+              }
+            ],
+            "before": "sha256:e98b108f460871f3d14fd3724acf48628539f506c83f96cfd3539353fecfddf8",
+            "item": "example-owner/site:@example/strategist",
+            "derived": true,
+            "mode": "100644",
+            "path": "package-lock.json"
+          },
+          {
+            "invariants": [
+              {
+                "ledgerGeneration": 1
+              }
+            ],
+            "before": null,
+            "item": "ledger",
+            "derived": true,
+            "mode": "100644",
+            "path": "clossys/.state/installed.json"
+          }
+        ],
+        "items": [
+          {
+            "source": "engagement-brief",
+            "act": "write-record",
+            "id": "brief"
+          },
+          {
+            "roles": [
+              "strategist",
+              "writer"
+            ],
+            "act": "compose-skills",
+            "id": "skills"
+          },
+          {
+            "satisfiedInBase": true,
+            "placement": "devDependencies",
+            "package": {
+              "integrity": "sha512-hJiP5Qe0sBUnWOs7+hC2bcIg2ye4C0X3hmWVHIo4IfibnbGns3pFL8QPV4R3MuWxVlbU9dWJ/HeYE42ABQie/w==",
+              "version": "0.9.2",
+              "name": "@example/starter"
+            },
+            "planItem": "example-owner/site:@example/starter",
+            "act": "pin-starter",
+            "id": "example-owner/site:@example/starter"
+          },
+          {
+            "satisfiedInBase": false,
+            "placement": "devDependencies",
+            "package": {
+              "integrity": "sha512-UWlOIr0jGHG4u420oMkUOeVW5r6Ab4kxuaUU4UWjjGebkzXM634IHDtxqLqMGCRebanNaxZBudK29XyAQgk5sQ==",
+              "version": "1.4.0",
+              "name": "@example/strategist"
+            },
+            "planItem": "example-owner/site:@example/strategist",
+            "act": "install",
+            "id": "example-owner/site:@example/strategist"
+          },
+          {
+            "satisfiedInBase": false,
+            "placement": "devDependencies",
+            "package": {
+              "integrity": "sha512-GW995IgPwvbujjoIUYbT6dge9ZrLCEa1JOYNnU+LYrdaWcbU9wOs0vpm53wXR1kQBUbFftpxA8LkpD4AtU/dQQ==",
+              "version": "0.7.0",
+              "name": "@example/writer"
+            },
+            "planItem": "example-owner/site:@example/writer",
+            "act": "install",
+            "id": "example-owner/site:@example/writer"
+          },
+          {
+            "act": "write-ledger",
+            "id": "ledger"
+          }
+        ],
+        "observed": {
+          "releaseAgeSurfaces": [
+            {
+              "path": ".npmrc",
+              "surface": "npmrc"
+            }
+          ],
+          "lockfile": "package-lock.json",
+          "packageManager": "npm"
+        },
+        "engine": {
+          "integrity": "sha512-kCVE5gFTJHKz+h8j+pp2EBmmmhTGsqRcBZRD7pBlcEPb8toyMhpLswj3mHq59uUnVXm4CYRgWKSNKE0AOVbrLQ==",
+          "version": "0.8.0",
+          "name": "@example/advisor"
+        },
+        "phase": "apply",
+        "ledger": {
+          "generation": 0
+        },
+        "repository": {
+          "baseCommit": "138995ced6b16aae6f0c058d2e453121e6b6349d",
+          "defaultBranch": "main",
+          "visibility": "private",
+          "nodeId": "R_exampleSite1",
+          "id": "example-owner/site"
+        },
+        "planDigest": "sha256:40e9c27d0c677c522f131e47740185d8182367c9f286fd4746e72c55b1275a18",
+        "producer": {
+          "version": "0.4.0",
+          "name": "@example/launcher"
+        },
+        "kind": "clossys.repository-change-set",
+        "schemaVersion": 1
+      },
+      "subject": "{\"deferred\":[],\"engine\":{\"integrity\":\"sha512-kCVE5gFTJHKz+h8j+pp2EBmmmhTGsqRcBZRD7pBlcEPb8toyMhpLswj3mHq59uUnVXm4CYRgWKSNKE0AOVbrLQ==\",\"name\":\"@example/advisor\",\"version\":\"0.8.0\"},\"files\":[{\"after\":\"sha256:37b06d4c734195868d01085f7d356b70bebb72dd8de105ebb71091fd6bb06364\",\"before\":null,\"item\":\"brief\",\"mode\":\"100644\",\"path\":\"clossys/brief.json\"},{\"after\":\"sha256:10a0edc2b0a6f35b6735a9423cbcf326138c80f0a152bb937b655ee278b26c1f\",\"before\":null,\"item\":\"skills\",\"mode\":\"100644\",\"path\":\".agents/skills/clossys-strategist/SKILL.md\"},{\"after\":\"sha256:e0d4b7ccb4dbdcf1f9e6e94ac05fa6f2d05c9cb3797ccde260ce3c9d59ea35b1\",\"before\":null,\"item\":\"skills\",\"mode\":\"100644\",\"path\":\".agents/skills/clossys-writer/SKILL.md\"},{\"derived\":true,\"invariants\":[{\"integrity\":\"sha512-UWlOIr0jGHG4u420oMkUOeVW5r6Ab4kxuaUU4UWjjGebkzXM634IHDtxqLqMGCRebanNaxZBudK29XyAQgk5sQ==\",\"item\":\"example-owner/site:@example/strategist\",\"name\":\"@example/strategist\",\"version\":\"1.4.0\"},{\"integrity\":\"sha512-GW995IgPwvbujjoIUYbT6dge9ZrLCEa1JOYNnU+LYrdaWcbU9wOs0vpm53wXR1kQBUbFftpxA8LkpD4AtU/dQQ==\",\"item\":\"example-owner/site:@example/writer\",\"name\":\"@example/writer\",\"version\":\"0.7.0\"}],\"item\":\"example-owner/site:@example/strategist\",\"mode\":\"100644\",\"path\":\"package-lock.json\"},{\"derived\":true,\"invariants\":[{\"ledgerGeneration\":1}],\"item\":\"ledger\",\"mode\":\"100644\",\"path\":\"clossys/.state/installed.json\"}],\"items\":[{\"act\":\"write-record\",\"id\":\"brief\",\"source\":\"engagement-brief\"},{\"act\":\"compose-skills\",\"id\":\"skills\",\"roles\":[\"strategist\",\"writer\"]},{\"act\":\"pin-starter\",\"id\":\"example-owner/site:@example/starter\",\"package\":{\"integrity\":\"sha512-hJiP5Qe0sBUnWOs7+hC2bcIg2ye4C0X3hmWVHIo4IfibnbGns3pFL8QPV4R3MuWxVlbU9dWJ/HeYE42ABQie/w==\",\"name\":\"@example/starter\",\"version\":\"0.9.2\"},\"placement\":\"devDependencies\",\"planItem\":\"example-owner/site:@example/starter\",\"satisfiedInBase\":true},{\"act\":\"install\",\"id\":\"example-owner/site:@example/strategist\",\"package\":{\"integrity\":\"sha512-UWlOIr0jGHG4u420oMkUOeVW5r6Ab4kxuaUU4UWjjGebkzXM634IHDtxqLqMGCRebanNaxZBudK29XyAQgk5sQ==\",\"name\":\"@example/strategist\",\"version\":\"1.4.0\"},\"placement\":\"devDependencies\",\"planItem\":\"example-owner/site:@example/strategist\",\"satisfiedInBase\":false},{\"act\":\"install\",\"id\":\"example-owner/site:@example/writer\",\"package\":{\"integrity\":\"sha512-GW995IgPwvbujjoIUYbT6dge9ZrLCEa1JOYNnU+LYrdaWcbU9wOs0vpm53wXR1kQBUbFftpxA8LkpD4AtU/dQQ==\",\"name\":\"@example/writer\",\"version\":\"0.7.0\"},\"placement\":\"devDependencies\",\"planItem\":\"example-owner/site:@example/writer\",\"satisfiedInBase\":false},{\"act\":\"write-ledger\",\"id\":\"ledger\"}],\"keys\":[{\"after\":\"1.4.0\",\"before\":null,\"file\":\"package.json\",\"item\":\"example-owner/site:@example/strategist\",\"pointer\":\"/devDependencies/@example~1strategist\"},{\"after\":\"0.7.0\",\"before\":null,\"file\":\"package.json\",\"item\":\"example-owner/site:@example/writer\",\"pointer\":\"/devDependencies/@example~1writer\"}],\"kind\":\"clossys.repository-change-set\",\"ledger\":{\"generation\":0},\"observed\":{\"lockfile\":\"package-lock.json\",\"packageManager\":\"npm\",\"releaseAgeSurfaces\":[{\"path\":\".npmrc\",\"surface\":\"npmrc\"}]},\"pathAllowList\":[\"clossys/**\",\".agents/skills/clossys-*/**\",\"package.json\",\"package-lock.json\"],\"phase\":\"apply\",\"planDigest\":\"sha256:40e9c27d0c677c522f131e47740185d8182367c9f286fd4746e72c55b1275a18\",\"producer\":{\"name\":\"@example/launcher\",\"version\":\"0.4.0\"},\"refused\":[],\"repository\":{\"baseCommit\":\"138995ced6b16aae6f0c058d2e453121e6b6349d\",\"defaultBranch\":\"main\",\"id\":\"example-owner/site\",\"nodeId\":\"R_exampleSite1\",\"visibility\":\"private\"},\"schemaVersion\":1}",
+      "digest": "sha256:a9fe8bb431bd80b9260ab7e56f29f24db27e557ea325363042057db8b54b37d7"
+    },
+    {
+      "name": "apply-branch-rewritten",
+      "note": "The branch, the title and the recorded digest changed. The digest does not move, and the set breaks code rule C5.",
+      "valid": false,
+      "sameDigestAs": "apply-with-packages",
+      "changeSet": {
+        "schemaVersion": 1,
+        "kind": "clossys.repository-change-set",
+        "producer": {
+          "name": "@example/launcher",
+          "version": "0.4.0"
+        },
+        "planDigest": "sha256:40e9c27d0c677c522f131e47740185d8182367c9f286fd4746e72c55b1275a18",
+        "repository": {
+          "id": "example-owner/site",
+          "nodeId": "R_exampleSite1",
+          "visibility": "private",
+          "defaultBranch": "main",
+          "baseCommit": "138995ced6b16aae6f0c058d2e453121e6b6349d"
+        },
+        "ledger": {
+          "generation": 0
+        },
+        "phase": "apply",
+        "engine": {
+          "name": "@example/advisor",
+          "version": "0.8.0",
+          "integrity": "sha512-kCVE5gFTJHKz+h8j+pp2EBmmmhTGsqRcBZRD7pBlcEPb8toyMhpLswj3mHq59uUnVXm4CYRgWKSNKE0AOVbrLQ=="
+        },
+        "observed": {
+          "packageManager": "npm",
+          "lockfile": "package-lock.json",
+          "releaseAgeSurfaces": [
+            {
+              "surface": "npmrc",
+              "path": ".npmrc"
+            }
+          ]
+        },
+        "items": [
+          {
+            "id": "brief",
+            "act": "write-record",
+            "source": "engagement-brief"
+          },
+          {
+            "id": "skills",
+            "act": "compose-skills",
+            "roles": [
+              "strategist",
+              "writer"
+            ]
+          },
+          {
+            "id": "example-owner/site:@example/starter",
+            "act": "pin-starter",
+            "planItem": "example-owner/site:@example/starter",
+            "package": {
+              "name": "@example/starter",
+              "version": "0.9.2",
+              "integrity": "sha512-hJiP5Qe0sBUnWOs7+hC2bcIg2ye4C0X3hmWVHIo4IfibnbGns3pFL8QPV4R3MuWxVlbU9dWJ/HeYE42ABQie/w=="
+            },
+            "placement": "devDependencies",
+            "satisfiedInBase": true
+          },
+          {
+            "id": "example-owner/site:@example/strategist",
+            "act": "install",
+            "planItem": "example-owner/site:@example/strategist",
+            "package": {
+              "name": "@example/strategist",
+              "version": "1.4.0",
+              "integrity": "sha512-UWlOIr0jGHG4u420oMkUOeVW5r6Ab4kxuaUU4UWjjGebkzXM634IHDtxqLqMGCRebanNaxZBudK29XyAQgk5sQ=="
+            },
+            "placement": "devDependencies",
+            "satisfiedInBase": false
+          },
+          {
+            "id": "example-owner/site:@example/writer",
+            "act": "install",
+            "planItem": "example-owner/site:@example/writer",
+            "package": {
+              "name": "@example/writer",
+              "version": "0.7.0",
+              "integrity": "sha512-GW995IgPwvbujjoIUYbT6dge9ZrLCEa1JOYNnU+LYrdaWcbU9wOs0vpm53wXR1kQBUbFftpxA8LkpD4AtU/dQQ=="
+            },
+            "placement": "devDependencies",
+            "satisfiedInBase": false
+          },
+          {
+            "id": "ledger",
+            "act": "write-ledger"
+          }
+        ],
+        "files": [
+          {
+            "path": "clossys/brief.json",
+            "mode": "100644",
+            "before": null,
+            "after": "sha256:37b06d4c734195868d01085f7d356b70bebb72dd8de105ebb71091fd6bb06364",
+            "item": "brief"
+          },
+          {
+            "path": ".agents/skills/clossys-strategist/SKILL.md",
+            "mode": "100644",
+            "before": null,
+            "after": "sha256:10a0edc2b0a6f35b6735a9423cbcf326138c80f0a152bb937b655ee278b26c1f",
+            "item": "skills"
+          },
+          {
+            "path": ".agents/skills/clossys-writer/SKILL.md",
+            "mode": "100644",
+            "before": null,
+            "after": "sha256:e0d4b7ccb4dbdcf1f9e6e94ac05fa6f2d05c9cb3797ccde260ce3c9d59ea35b1",
+            "item": "skills"
+          },
+          {
+            "path": "package-lock.json",
+            "mode": "100644",
+            "derived": true,
+            "item": "example-owner/site:@example/strategist",
+            "before": "sha256:e98b108f460871f3d14fd3724acf48628539f506c83f96cfd3539353fecfddf8",
+            "invariants": [
+              {
+                "item": "example-owner/site:@example/strategist",
+                "name": "@example/strategist",
+                "version": "1.4.0",
+                "integrity": "sha512-UWlOIr0jGHG4u420oMkUOeVW5r6Ab4kxuaUU4UWjjGebkzXM634IHDtxqLqMGCRebanNaxZBudK29XyAQgk5sQ=="
+              },
+              {
+                "item": "example-owner/site:@example/writer",
+                "name": "@example/writer",
+                "version": "0.7.0",
+                "integrity": "sha512-GW995IgPwvbujjoIUYbT6dge9ZrLCEa1JOYNnU+LYrdaWcbU9wOs0vpm53wXR1kQBUbFftpxA8LkpD4AtU/dQQ=="
+              }
+            ]
+          },
+          {
+            "path": "clossys/.state/installed.json",
+            "mode": "100644",
+            "derived": true,
+            "item": "ledger",
+            "before": null,
+            "invariants": [
+              {
+                "ledgerGeneration": 1
+              }
+            ]
+          }
+        ],
+        "keys": [
+          {
+            "file": "package.json",
+            "pointer": "/devDependencies/@example~1strategist",
+            "before": null,
+            "after": "1.4.0",
+            "item": "example-owner/site:@example/strategist"
+          },
+          {
+            "file": "package.json",
+            "pointer": "/devDependencies/@example~1writer",
+            "before": null,
+            "after": "0.7.0",
+            "item": "example-owner/site:@example/writer"
+          }
+        ],
+        "refused": [],
+        "deferred": [],
+        "pathAllowList": [
+          "clossys/**",
+          ".agents/skills/clossys-*/**",
+          "package.json",
+          "package-lock.json"
+        ],
+        "branch": "clossys/apply-000000000000",
+        "bundle": "sha256:4be92ea2f7148ab1ce3efb3a8671a95ffd442f955eca77544680367ae6517fd6",
+        "pullRequest": {
+          "title": "Clossys: apply plan 000000000000"
+        },
+        "changeSetDigest": "sha256:6d2f2b483f240eeb436cd2b96af941e7a8f2eeb478a244a1f569789d1e5bd6a3"
+      },
+      "subject": "{\"deferred\":[],\"engine\":{\"integrity\":\"sha512-kCVE5gFTJHKz+h8j+pp2EBmmmhTGsqRcBZRD7pBlcEPb8toyMhpLswj3mHq59uUnVXm4CYRgWKSNKE0AOVbrLQ==\",\"name\":\"@example/advisor\",\"version\":\"0.8.0\"},\"files\":[{\"after\":\"sha256:37b06d4c734195868d01085f7d356b70bebb72dd8de105ebb71091fd6bb06364\",\"before\":null,\"item\":\"brief\",\"mode\":\"100644\",\"path\":\"clossys/brief.json\"},{\"after\":\"sha256:10a0edc2b0a6f35b6735a9423cbcf326138c80f0a152bb937b655ee278b26c1f\",\"before\":null,\"item\":\"skills\",\"mode\":\"100644\",\"path\":\".agents/skills/clossys-strategist/SKILL.md\"},{\"after\":\"sha256:e0d4b7ccb4dbdcf1f9e6e94ac05fa6f2d05c9cb3797ccde260ce3c9d59ea35b1\",\"before\":null,\"item\":\"skills\",\"mode\":\"100644\",\"path\":\".agents/skills/clossys-writer/SKILL.md\"},{\"derived\":true,\"invariants\":[{\"integrity\":\"sha512-UWlOIr0jGHG4u420oMkUOeVW5r6Ab4kxuaUU4UWjjGebkzXM634IHDtxqLqMGCRebanNaxZBudK29XyAQgk5sQ==\",\"item\":\"example-owner/site:@example/strategist\",\"name\":\"@example/strategist\",\"version\":\"1.4.0\"},{\"integrity\":\"sha512-GW995IgPwvbujjoIUYbT6dge9ZrLCEa1JOYNnU+LYrdaWcbU9wOs0vpm53wXR1kQBUbFftpxA8LkpD4AtU/dQQ==\",\"item\":\"example-owner/site:@example/writer\",\"name\":\"@example/writer\",\"version\":\"0.7.0\"}],\"item\":\"example-owner/site:@example/strategist\",\"mode\":\"100644\",\"path\":\"package-lock.json\"},{\"derived\":true,\"invariants\":[{\"ledgerGeneration\":1}],\"item\":\"ledger\",\"mode\":\"100644\",\"path\":\"clossys/.state/installed.json\"}],\"items\":[{\"act\":\"write-record\",\"id\":\"brief\",\"source\":\"engagement-brief\"},{\"act\":\"compose-skills\",\"id\":\"skills\",\"roles\":[\"strategist\",\"writer\"]},{\"act\":\"pin-starter\",\"id\":\"example-owner/site:@example/starter\",\"package\":{\"integrity\":\"sha512-hJiP5Qe0sBUnWOs7+hC2bcIg2ye4C0X3hmWVHIo4IfibnbGns3pFL8QPV4R3MuWxVlbU9dWJ/HeYE42ABQie/w==\",\"name\":\"@example/starter\",\"version\":\"0.9.2\"},\"placement\":\"devDependencies\",\"planItem\":\"example-owner/site:@example/starter\",\"satisfiedInBase\":true},{\"act\":\"install\",\"id\":\"example-owner/site:@example/strategist\",\"package\":{\"integrity\":\"sha512-UWlOIr0jGHG4u420oMkUOeVW5r6Ab4kxuaUU4UWjjGebkzXM634IHDtxqLqMGCRebanNaxZBudK29XyAQgk5sQ==\",\"name\":\"@example/strategist\",\"version\":\"1.4.0\"},\"placement\":\"devDependencies\",\"planItem\":\"example-owner/site:@example/strategist\",\"satisfiedInBase\":false},{\"act\":\"install\",\"id\":\"example-owner/site:@example/writer\",\"package\":{\"integrity\":\"sha512-GW995IgPwvbujjoIUYbT6dge9ZrLCEa1JOYNnU+LYrdaWcbU9wOs0vpm53wXR1kQBUbFftpxA8LkpD4AtU/dQQ==\",\"name\":\"@example/writer\",\"version\":\"0.7.0\"},\"placement\":\"devDependencies\",\"planItem\":\"example-owner/site:@example/writer\",\"satisfiedInBase\":false},{\"act\":\"write-ledger\",\"id\":\"ledger\"}],\"keys\":[{\"after\":\"1.4.0\",\"before\":null,\"file\":\"package.json\",\"item\":\"example-owner/site:@example/strategist\",\"pointer\":\"/devDependencies/@example~1strategist\"},{\"after\":\"0.7.0\",\"before\":null,\"file\":\"package.json\",\"item\":\"example-owner/site:@example/writer\",\"pointer\":\"/devDependencies/@example~1writer\"}],\"kind\":\"clossys.repository-change-set\",\"ledger\":{\"generation\":0},\"observed\":{\"lockfile\":\"package-lock.json\",\"packageManager\":\"npm\",\"releaseAgeSurfaces\":[{\"path\":\".npmrc\",\"surface\":\"npmrc\"}]},\"pathAllowList\":[\"clossys/**\",\".agents/skills/clossys-*/**\",\"package.json\",\"package-lock.json\"],\"phase\":\"apply\",\"planDigest\":\"sha256:40e9c27d0c677c522f131e47740185d8182367c9f286fd4746e72c55b1275a18\",\"producer\":{\"name\":\"@example/launcher\",\"version\":\"0.4.0\"},\"refused\":[],\"repository\":{\"baseCommit\":\"138995ced6b16aae6f0c058d2e453121e6b6349d\",\"defaultBranch\":\"main\",\"id\":\"example-owner/site\",\"nodeId\":\"R_exampleSite1\",\"visibility\":\"private\"},\"schemaVersion\":1}",
+      "digest": "sha256:a9fe8bb431bd80b9260ab7e56f29f24db27e557ea325363042057db8b54b37d7"
+    },
+    {
+      "name": "apply-base-moved",
+      "note": "The default branch moved.",
+      "valid": true,
+      "differsFrom": "apply-with-packages",
+      "changeSet": {
+        "schemaVersion": 1,
+        "kind": "clossys.repository-change-set",
+        "producer": {
+          "name": "@example/launcher",
+          "version": "0.4.0"
+        },
+        "planDigest": "sha256:40e9c27d0c677c522f131e47740185d8182367c9f286fd4746e72c55b1275a18",
+        "repository": {
+          "id": "example-owner/site",
+          "nodeId": "R_exampleSite1",
+          "visibility": "private",
+          "defaultBranch": "main",
+          "baseCommit": "9dc4ae66cb44c42509232313772f829e670f074c"
+        },
+        "ledger": {
+          "generation": 0
+        },
+        "phase": "apply",
+        "engine": {
+          "name": "@example/advisor",
+          "version": "0.8.0",
+          "integrity": "sha512-kCVE5gFTJHKz+h8j+pp2EBmmmhTGsqRcBZRD7pBlcEPb8toyMhpLswj3mHq59uUnVXm4CYRgWKSNKE0AOVbrLQ=="
+        },
+        "observed": {
+          "packageManager": "npm",
+          "lockfile": "package-lock.json",
+          "releaseAgeSurfaces": [
+            {
+              "surface": "npmrc",
+              "path": ".npmrc"
+            }
+          ]
+        },
+        "items": [
+          {
+            "id": "brief",
+            "act": "write-record",
+            "source": "engagement-brief"
+          },
+          {
+            "id": "skills",
+            "act": "compose-skills",
+            "roles": [
+              "strategist",
+              "writer"
+            ]
+          },
+          {
+            "id": "example-owner/site:@example/starter",
+            "act": "pin-starter",
+            "planItem": "example-owner/site:@example/starter",
+            "package": {
+              "name": "@example/starter",
+              "version": "0.9.2",
+              "integrity": "sha512-hJiP5Qe0sBUnWOs7+hC2bcIg2ye4C0X3hmWVHIo4IfibnbGns3pFL8QPV4R3MuWxVlbU9dWJ/HeYE42ABQie/w=="
+            },
+            "placement": "devDependencies",
+            "satisfiedInBase": true
+          },
+          {
+            "id": "example-owner/site:@example/strategist",
+            "act": "install",
+            "planItem": "example-owner/site:@example/strategist",
+            "package": {
+              "name": "@example/strategist",
+              "version": "1.4.0",
+              "integrity": "sha512-UWlOIr0jGHG4u420oMkUOeVW5r6Ab4kxuaUU4UWjjGebkzXM634IHDtxqLqMGCRebanNaxZBudK29XyAQgk5sQ=="
+            },
+            "placement": "devDependencies",
+            "satisfiedInBase": false
+          },
+          {
+            "id": "example-owner/site:@example/writer",
+            "act": "install",
+            "planItem": "example-owner/site:@example/writer",
+            "package": {
+              "name": "@example/writer",
+              "version": "0.7.0",
+              "integrity": "sha512-GW995IgPwvbujjoIUYbT6dge9ZrLCEa1JOYNnU+LYrdaWcbU9wOs0vpm53wXR1kQBUbFftpxA8LkpD4AtU/dQQ=="
+            },
+            "placement": "devDependencies",
+            "satisfiedInBase": false
+          },
+          {
+            "id": "ledger",
+            "act": "write-ledger"
+          }
+        ],
+        "files": [
+          {
+            "path": "clossys/brief.json",
+            "mode": "100644",
+            "before": null,
+            "after": "sha256:37b06d4c734195868d01085f7d356b70bebb72dd8de105ebb71091fd6bb06364",
+            "item": "brief"
+          },
+          {
+            "path": ".agents/skills/clossys-strategist/SKILL.md",
+            "mode": "100644",
+            "before": null,
+            "after": "sha256:10a0edc2b0a6f35b6735a9423cbcf326138c80f0a152bb937b655ee278b26c1f",
+            "item": "skills"
+          },
+          {
+            "path": ".agents/skills/clossys-writer/SKILL.md",
+            "mode": "100644",
+            "before": null,
+            "after": "sha256:e0d4b7ccb4dbdcf1f9e6e94ac05fa6f2d05c9cb3797ccde260ce3c9d59ea35b1",
+            "item": "skills"
+          },
+          {
+            "path": "package-lock.json",
+            "mode": "100644",
+            "derived": true,
+            "item": "example-owner/site:@example/strategist",
+            "before": "sha256:e98b108f460871f3d14fd3724acf48628539f506c83f96cfd3539353fecfddf8",
+            "invariants": [
+              {
+                "item": "example-owner/site:@example/strategist",
+                "name": "@example/strategist",
+                "version": "1.4.0",
+                "integrity": "sha512-UWlOIr0jGHG4u420oMkUOeVW5r6Ab4kxuaUU4UWjjGebkzXM634IHDtxqLqMGCRebanNaxZBudK29XyAQgk5sQ=="
+              },
+              {
+                "item": "example-owner/site:@example/writer",
+                "name": "@example/writer",
+                "version": "0.7.0",
+                "integrity": "sha512-GW995IgPwvbujjoIUYbT6dge9ZrLCEa1JOYNnU+LYrdaWcbU9wOs0vpm53wXR1kQBUbFftpxA8LkpD4AtU/dQQ=="
+              }
+            ]
+          },
+          {
+            "path": "clossys/.state/installed.json",
+            "mode": "100644",
+            "derived": true,
+            "item": "ledger",
+            "before": null,
+            "invariants": [
+              {
+                "ledgerGeneration": 1
+              }
+            ]
+          }
+        ],
+        "keys": [
+          {
+            "file": "package.json",
+            "pointer": "/devDependencies/@example~1strategist",
+            "before": null,
+            "after": "1.4.0",
+            "item": "example-owner/site:@example/strategist"
+          },
+          {
+            "file": "package.json",
+            "pointer": "/devDependencies/@example~1writer",
+            "before": null,
+            "after": "0.7.0",
+            "item": "example-owner/site:@example/writer"
+          }
+        ],
+        "refused": [],
+        "deferred": [],
+        "pathAllowList": [
+          "clossys/**",
+          ".agents/skills/clossys-*/**",
+          "package.json",
+          "package-lock.json"
+        ],
+        "branch": "clossys/apply-db4a8799f347",
+        "bundle": "sha256:4be92ea2f7148ab1ce3efb3a8671a95ffd442f955eca77544680367ae6517fd6",
+        "pullRequest": {
+          "title": "Clossys: apply plan db4a8799f347"
+        },
+        "changeSetDigest": "sha256:db4a8799f34708005ffea03c3a2dfde95d19c8c0492fe74ec4499ad656be1183"
+      },
+      "subject": "{\"deferred\":[],\"engine\":{\"integrity\":\"sha512-kCVE5gFTJHKz+h8j+pp2EBmmmhTGsqRcBZRD7pBlcEPb8toyMhpLswj3mHq59uUnVXm4CYRgWKSNKE0AOVbrLQ==\",\"name\":\"@example/advisor\",\"version\":\"0.8.0\"},\"files\":[{\"after\":\"sha256:37b06d4c734195868d01085f7d356b70bebb72dd8de105ebb71091fd6bb06364\",\"before\":null,\"item\":\"brief\",\"mode\":\"100644\",\"path\":\"clossys/brief.json\"},{\"after\":\"sha256:10a0edc2b0a6f35b6735a9423cbcf326138c80f0a152bb937b655ee278b26c1f\",\"before\":null,\"item\":\"skills\",\"mode\":\"100644\",\"path\":\".agents/skills/clossys-strategist/SKILL.md\"},{\"after\":\"sha256:e0d4b7ccb4dbdcf1f9e6e94ac05fa6f2d05c9cb3797ccde260ce3c9d59ea35b1\",\"before\":null,\"item\":\"skills\",\"mode\":\"100644\",\"path\":\".agents/skills/clossys-writer/SKILL.md\"},{\"derived\":true,\"invariants\":[{\"integrity\":\"sha512-UWlOIr0jGHG4u420oMkUOeVW5r6Ab4kxuaUU4UWjjGebkzXM634IHDtxqLqMGCRebanNaxZBudK29XyAQgk5sQ==\",\"item\":\"example-owner/site:@example/strategist\",\"name\":\"@example/strategist\",\"version\":\"1.4.0\"},{\"integrity\":\"sha512-GW995IgPwvbujjoIUYbT6dge9ZrLCEa1JOYNnU+LYrdaWcbU9wOs0vpm53wXR1kQBUbFftpxA8LkpD4AtU/dQQ==\",\"item\":\"example-owner/site:@example/writer\",\"name\":\"@example/writer\",\"version\":\"0.7.0\"}],\"item\":\"example-owner/site:@example/strategist\",\"mode\":\"100644\",\"path\":\"package-lock.json\"},{\"derived\":true,\"invariants\":[{\"ledgerGeneration\":1}],\"item\":\"ledger\",\"mode\":\"100644\",\"path\":\"clossys/.state/installed.json\"}],\"items\":[{\"act\":\"write-record\",\"id\":\"brief\",\"source\":\"engagement-brief\"},{\"act\":\"compose-skills\",\"id\":\"skills\",\"roles\":[\"strategist\",\"writer\"]},{\"act\":\"pin-starter\",\"id\":\"example-owner/site:@example/starter\",\"package\":{\"integrity\":\"sha512-hJiP5Qe0sBUnWOs7+hC2bcIg2ye4C0X3hmWVHIo4IfibnbGns3pFL8QPV4R3MuWxVlbU9dWJ/HeYE42ABQie/w==\",\"name\":\"@example/starter\",\"version\":\"0.9.2\"},\"placement\":\"devDependencies\",\"planItem\":\"example-owner/site:@example/starter\",\"satisfiedInBase\":true},{\"act\":\"install\",\"id\":\"example-owner/site:@example/strategist\",\"package\":{\"integrity\":\"sha512-UWlOIr0jGHG4u420oMkUOeVW5r6Ab4kxuaUU4UWjjGebkzXM634IHDtxqLqMGCRebanNaxZBudK29XyAQgk5sQ==\",\"name\":\"@example/strategist\",\"version\":\"1.4.0\"},\"placement\":\"devDependencies\",\"planItem\":\"example-owner/site:@example/strategist\",\"satisfiedInBase\":false},{\"act\":\"install\",\"id\":\"example-owner/site:@example/writer\",\"package\":{\"integrity\":\"sha512-GW995IgPwvbujjoIUYbT6dge9ZrLCEa1JOYNnU+LYrdaWcbU9wOs0vpm53wXR1kQBUbFftpxA8LkpD4AtU/dQQ==\",\"name\":\"@example/writer\",\"version\":\"0.7.0\"},\"placement\":\"devDependencies\",\"planItem\":\"example-owner/site:@example/writer\",\"satisfiedInBase\":false},{\"act\":\"write-ledger\",\"id\":\"ledger\"}],\"keys\":[{\"after\":\"1.4.0\",\"before\":null,\"file\":\"package.json\",\"item\":\"example-owner/site:@example/strategist\",\"pointer\":\"/devDependencies/@example~1strategist\"},{\"after\":\"0.7.0\",\"before\":null,\"file\":\"package.json\",\"item\":\"example-owner/site:@example/writer\",\"pointer\":\"/devDependencies/@example~1writer\"}],\"kind\":\"clossys.repository-change-set\",\"ledger\":{\"generation\":0},\"observed\":{\"lockfile\":\"package-lock.json\",\"packageManager\":\"npm\",\"releaseAgeSurfaces\":[{\"path\":\".npmrc\",\"surface\":\"npmrc\"}]},\"pathAllowList\":[\"clossys/**\",\".agents/skills/clossys-*/**\",\"package.json\",\"package-lock.json\"],\"phase\":\"apply\",\"planDigest\":\"sha256:40e9c27d0c677c522f131e47740185d8182367c9f286fd4746e72c55b1275a18\",\"producer\":{\"name\":\"@example/launcher\",\"version\":\"0.4.0\"},\"refused\":[],\"repository\":{\"baseCommit\":\"9dc4ae66cb44c42509232313772f829e670f074c\",\"defaultBranch\":\"main\",\"id\":\"example-owner/site\",\"nodeId\":\"R_exampleSite1\",\"visibility\":\"private\"},\"schemaVersion\":1}",
+      "digest": "sha256:db4a8799f34708005ffea03c3a2dfde95d19c8c0492fe74ec4499ad656be1183"
+    },
+    {
+      "name": "apply-producer-bumped",
+      "note": "A different producer version.",
+      "valid": true,
+      "differsFrom": "apply-with-packages",
+      "changeSet": {
+        "schemaVersion": 1,
+        "kind": "clossys.repository-change-set",
+        "producer": {
+          "name": "@example/launcher",
+          "version": "0.4.1"
+        },
+        "planDigest": "sha256:40e9c27d0c677c522f131e47740185d8182367c9f286fd4746e72c55b1275a18",
+        "repository": {
+          "id": "example-owner/site",
+          "nodeId": "R_exampleSite1",
+          "visibility": "private",
+          "defaultBranch": "main",
+          "baseCommit": "138995ced6b16aae6f0c058d2e453121e6b6349d"
+        },
+        "ledger": {
+          "generation": 0
+        },
+        "phase": "apply",
+        "engine": {
+          "name": "@example/advisor",
+          "version": "0.8.0",
+          "integrity": "sha512-kCVE5gFTJHKz+h8j+pp2EBmmmhTGsqRcBZRD7pBlcEPb8toyMhpLswj3mHq59uUnVXm4CYRgWKSNKE0AOVbrLQ=="
+        },
+        "observed": {
+          "packageManager": "npm",
+          "lockfile": "package-lock.json",
+          "releaseAgeSurfaces": [
+            {
+              "surface": "npmrc",
+              "path": ".npmrc"
+            }
+          ]
+        },
+        "items": [
+          {
+            "id": "brief",
+            "act": "write-record",
+            "source": "engagement-brief"
+          },
+          {
+            "id": "skills",
+            "act": "compose-skills",
+            "roles": [
+              "strategist",
+              "writer"
+            ]
+          },
+          {
+            "id": "example-owner/site:@example/starter",
+            "act": "pin-starter",
+            "planItem": "example-owner/site:@example/starter",
+            "package": {
+              "name": "@example/starter",
+              "version": "0.9.2",
+              "integrity": "sha512-hJiP5Qe0sBUnWOs7+hC2bcIg2ye4C0X3hmWVHIo4IfibnbGns3pFL8QPV4R3MuWxVlbU9dWJ/HeYE42ABQie/w=="
+            },
+            "placement": "devDependencies",
+            "satisfiedInBase": true
+          },
+          {
+            "id": "example-owner/site:@example/strategist",
+            "act": "install",
+            "planItem": "example-owner/site:@example/strategist",
+            "package": {
+              "name": "@example/strategist",
+              "version": "1.4.0",
+              "integrity": "sha512-UWlOIr0jGHG4u420oMkUOeVW5r6Ab4kxuaUU4UWjjGebkzXM634IHDtxqLqMGCRebanNaxZBudK29XyAQgk5sQ=="
+            },
+            "placement": "devDependencies",
+            "satisfiedInBase": false
+          },
+          {
+            "id": "example-owner/site:@example/writer",
+            "act": "install",
+            "planItem": "example-owner/site:@example/writer",
+            "package": {
+              "name": "@example/writer",
+              "version": "0.7.0",
+              "integrity": "sha512-GW995IgPwvbujjoIUYbT6dge9ZrLCEa1JOYNnU+LYrdaWcbU9wOs0vpm53wXR1kQBUbFftpxA8LkpD4AtU/dQQ=="
+            },
+            "placement": "devDependencies",
+            "satisfiedInBase": false
+          },
+          {
+            "id": "ledger",
+            "act": "write-ledger"
+          }
+        ],
+        "files": [
+          {
+            "path": "clossys/brief.json",
+            "mode": "100644",
+            "before": null,
+            "after": "sha256:37b06d4c734195868d01085f7d356b70bebb72dd8de105ebb71091fd6bb06364",
+            "item": "brief"
+          },
+          {
+            "path": ".agents/skills/clossys-strategist/SKILL.md",
+            "mode": "100644",
+            "before": null,
+            "after": "sha256:10a0edc2b0a6f35b6735a9423cbcf326138c80f0a152bb937b655ee278b26c1f",
+            "item": "skills"
+          },
+          {
+            "path": ".agents/skills/clossys-writer/SKILL.md",
+            "mode": "100644",
+            "before": null,
+            "after": "sha256:e0d4b7ccb4dbdcf1f9e6e94ac05fa6f2d05c9cb3797ccde260ce3c9d59ea35b1",
+            "item": "skills"
+          },
+          {
+            "path": "package-lock.json",
+            "mode": "100644",
+            "derived": true,
+            "item": "example-owner/site:@example/strategist",
+            "before": "sha256:e98b108f460871f3d14fd3724acf48628539f506c83f96cfd3539353fecfddf8",
+            "invariants": [
+              {
+                "item": "example-owner/site:@example/strategist",
+                "name": "@example/strategist",
+                "version": "1.4.0",
+                "integrity": "sha512-UWlOIr0jGHG4u420oMkUOeVW5r6Ab4kxuaUU4UWjjGebkzXM634IHDtxqLqMGCRebanNaxZBudK29XyAQgk5sQ=="
+              },
+              {
+                "item": "example-owner/site:@example/writer",
+                "name": "@example/writer",
+                "version": "0.7.0",
+                "integrity": "sha512-GW995IgPwvbujjoIUYbT6dge9ZrLCEa1JOYNnU+LYrdaWcbU9wOs0vpm53wXR1kQBUbFftpxA8LkpD4AtU/dQQ=="
+              }
+            ]
+          },
+          {
+            "path": "clossys/.state/installed.json",
+            "mode": "100644",
+            "derived": true,
+            "item": "ledger",
+            "before": null,
+            "invariants": [
+              {
+                "ledgerGeneration": 1
+              }
+            ]
+          }
+        ],
+        "keys": [
+          {
+            "file": "package.json",
+            "pointer": "/devDependencies/@example~1strategist",
+            "before": null,
+            "after": "1.4.0",
+            "item": "example-owner/site:@example/strategist"
+          },
+          {
+            "file": "package.json",
+            "pointer": "/devDependencies/@example~1writer",
+            "before": null,
+            "after": "0.7.0",
+            "item": "example-owner/site:@example/writer"
+          }
+        ],
+        "refused": [],
+        "deferred": [],
+        "pathAllowList": [
+          "clossys/**",
+          ".agents/skills/clossys-*/**",
+          "package.json",
+          "package-lock.json"
+        ],
+        "branch": "clossys/apply-3bb2befdea24",
+        "bundle": "sha256:4be92ea2f7148ab1ce3efb3a8671a95ffd442f955eca77544680367ae6517fd6",
+        "pullRequest": {
+          "title": "Clossys: apply plan 3bb2befdea24"
+        },
+        "changeSetDigest": "sha256:3bb2befdea241266fb7618112dd29b29d34f25919f48bfa6d5b8401652d56111"
+      },
+      "subject": "{\"deferred\":[],\"engine\":{\"integrity\":\"sha512-kCVE5gFTJHKz+h8j+pp2EBmmmhTGsqRcBZRD7pBlcEPb8toyMhpLswj3mHq59uUnVXm4CYRgWKSNKE0AOVbrLQ==\",\"name\":\"@example/advisor\",\"version\":\"0.8.0\"},\"files\":[{\"after\":\"sha256:37b06d4c734195868d01085f7d356b70bebb72dd8de105ebb71091fd6bb06364\",\"before\":null,\"item\":\"brief\",\"mode\":\"100644\",\"path\":\"clossys/brief.json\"},{\"after\":\"sha256:10a0edc2b0a6f35b6735a9423cbcf326138c80f0a152bb937b655ee278b26c1f\",\"before\":null,\"item\":\"skills\",\"mode\":\"100644\",\"path\":\".agents/skills/clossys-strategist/SKILL.md\"},{\"after\":\"sha256:e0d4b7ccb4dbdcf1f9e6e94ac05fa6f2d05c9cb3797ccde260ce3c9d59ea35b1\",\"before\":null,\"item\":\"skills\",\"mode\":\"100644\",\"path\":\".agents/skills/clossys-writer/SKILL.md\"},{\"derived\":true,\"invariants\":[{\"integrity\":\"sha512-UWlOIr0jGHG4u420oMkUOeVW5r6Ab4kxuaUU4UWjjGebkzXM634IHDtxqLqMGCRebanNaxZBudK29XyAQgk5sQ==\",\"item\":\"example-owner/site:@example/strategist\",\"name\":\"@example/strategist\",\"version\":\"1.4.0\"},{\"integrity\":\"sha512-GW995IgPwvbujjoIUYbT6dge9ZrLCEa1JOYNnU+LYrdaWcbU9wOs0vpm53wXR1kQBUbFftpxA8LkpD4AtU/dQQ==\",\"item\":\"example-owner/site:@example/writer\",\"name\":\"@example/writer\",\"version\":\"0.7.0\"}],\"item\":\"example-owner/site:@example/strategist\",\"mode\":\"100644\",\"path\":\"package-lock.json\"},{\"derived\":true,\"invariants\":[{\"ledgerGeneration\":1}],\"item\":\"ledger\",\"mode\":\"100644\",\"path\":\"clossys/.state/installed.json\"}],\"items\":[{\"act\":\"write-record\",\"id\":\"brief\",\"source\":\"engagement-brief\"},{\"act\":\"compose-skills\",\"id\":\"skills\",\"roles\":[\"strategist\",\"writer\"]},{\"act\":\"pin-starter\",\"id\":\"example-owner/site:@example/starter\",\"package\":{\"integrity\":\"sha512-hJiP5Qe0sBUnWOs7+hC2bcIg2ye4C0X3hmWVHIo4IfibnbGns3pFL8QPV4R3MuWxVlbU9dWJ/HeYE42ABQie/w==\",\"name\":\"@example/starter\",\"version\":\"0.9.2\"},\"placement\":\"devDependencies\",\"planItem\":\"example-owner/site:@example/starter\",\"satisfiedInBase\":true},{\"act\":\"install\",\"id\":\"example-owner/site:@example/strategist\",\"package\":{\"integrity\":\"sha512-UWlOIr0jGHG4u420oMkUOeVW5r6Ab4kxuaUU4UWjjGebkzXM634IHDtxqLqMGCRebanNaxZBudK29XyAQgk5sQ==\",\"name\":\"@example/strategist\",\"version\":\"1.4.0\"},\"placement\":\"devDependencies\",\"planItem\":\"example-owner/site:@example/strategist\",\"satisfiedInBase\":false},{\"act\":\"install\",\"id\":\"example-owner/site:@example/writer\",\"package\":{\"integrity\":\"sha512-GW995IgPwvbujjoIUYbT6dge9ZrLCEa1JOYNnU+LYrdaWcbU9wOs0vpm53wXR1kQBUbFftpxA8LkpD4AtU/dQQ==\",\"name\":\"@example/writer\",\"version\":\"0.7.0\"},\"placement\":\"devDependencies\",\"planItem\":\"example-owner/site:@example/writer\",\"satisfiedInBase\":false},{\"act\":\"write-ledger\",\"id\":\"ledger\"}],\"keys\":[{\"after\":\"1.4.0\",\"before\":null,\"file\":\"package.json\",\"item\":\"example-owner/site:@example/strategist\",\"pointer\":\"/devDependencies/@example~1strategist\"},{\"after\":\"0.7.0\",\"before\":null,\"file\":\"package.json\",\"item\":\"example-owner/site:@example/writer\",\"pointer\":\"/devDependencies/@example~1writer\"}],\"kind\":\"clossys.repository-change-set\",\"ledger\":{\"generation\":0},\"observed\":{\"lockfile\":\"package-lock.json\",\"packageManager\":\"npm\",\"releaseAgeSurfaces\":[{\"path\":\".npmrc\",\"surface\":\"npmrc\"}]},\"pathAllowList\":[\"clossys/**\",\".agents/skills/clossys-*/**\",\"package.json\",\"package-lock.json\"],\"phase\":\"apply\",\"planDigest\":\"sha256:40e9c27d0c677c522f131e47740185d8182367c9f286fd4746e72c55b1275a18\",\"producer\":{\"name\":\"@example/launcher\",\"version\":\"0.4.1\"},\"refused\":[],\"repository\":{\"baseCommit\":\"138995ced6b16aae6f0c058d2e453121e6b6349d\",\"defaultBranch\":\"main\",\"id\":\"example-owner/site\",\"nodeId\":\"R_exampleSite1\",\"visibility\":\"private\"},\"schemaVersion\":1}",
+      "digest": "sha256:3bb2befdea241266fb7618112dd29b29d34f25919f48bfa6d5b8401652d56111"
+    },
+    {
+      "name": "apply-visibility-public",
+      "note": "The repository's visibility is public.",
+      "valid": true,
+      "differsFrom": "apply-with-packages",
+      "changeSet": {
+        "schemaVersion": 1,
+        "kind": "clossys.repository-change-set",
+        "producer": {
+          "name": "@example/launcher",
+          "version": "0.4.0"
+        },
+        "planDigest": "sha256:40e9c27d0c677c522f131e47740185d8182367c9f286fd4746e72c55b1275a18",
+        "repository": {
+          "id": "example-owner/site",
+          "nodeId": "R_exampleSite1",
+          "visibility": "public",
+          "defaultBranch": "main",
+          "baseCommit": "138995ced6b16aae6f0c058d2e453121e6b6349d"
+        },
+        "ledger": {
+          "generation": 0
+        },
+        "phase": "apply",
+        "engine": {
+          "name": "@example/advisor",
+          "version": "0.8.0",
+          "integrity": "sha512-kCVE5gFTJHKz+h8j+pp2EBmmmhTGsqRcBZRD7pBlcEPb8toyMhpLswj3mHq59uUnVXm4CYRgWKSNKE0AOVbrLQ=="
+        },
+        "observed": {
+          "packageManager": "npm",
+          "lockfile": "package-lock.json",
+          "releaseAgeSurfaces": [
+            {
+              "surface": "npmrc",
+              "path": ".npmrc"
+            }
+          ]
+        },
+        "items": [
+          {
+            "id": "brief",
+            "act": "write-record",
+            "source": "engagement-brief"
+          },
+          {
+            "id": "skills",
+            "act": "compose-skills",
+            "roles": [
+              "strategist",
+              "writer"
+            ]
+          },
+          {
+            "id": "example-owner/site:@example/starter",
+            "act": "pin-starter",
+            "planItem": "example-owner/site:@example/starter",
+            "package": {
+              "name": "@example/starter",
+              "version": "0.9.2",
+              "integrity": "sha512-hJiP5Qe0sBUnWOs7+hC2bcIg2ye4C0X3hmWVHIo4IfibnbGns3pFL8QPV4R3MuWxVlbU9dWJ/HeYE42ABQie/w=="
+            },
+            "placement": "devDependencies",
+            "satisfiedInBase": true
+          },
+          {
+            "id": "example-owner/site:@example/strategist",
+            "act": "install",
+            "planItem": "example-owner/site:@example/strategist",
+            "package": {
+              "name": "@example/strategist",
+              "version": "1.4.0",
+              "integrity": "sha512-UWlOIr0jGHG4u420oMkUOeVW5r6Ab4kxuaUU4UWjjGebkzXM634IHDtxqLqMGCRebanNaxZBudK29XyAQgk5sQ=="
+            },
+            "placement": "devDependencies",
+            "satisfiedInBase": false
+          },
+          {
+            "id": "example-owner/site:@example/writer",
+            "act": "install",
+            "planItem": "example-owner/site:@example/writer",
+            "package": {
+              "name": "@example/writer",
+              "version": "0.7.0",
+              "integrity": "sha512-GW995IgPwvbujjoIUYbT6dge9ZrLCEa1JOYNnU+LYrdaWcbU9wOs0vpm53wXR1kQBUbFftpxA8LkpD4AtU/dQQ=="
+            },
+            "placement": "devDependencies",
+            "satisfiedInBase": false
+          },
+          {
+            "id": "ledger",
+            "act": "write-ledger"
+          }
+        ],
+        "files": [
+          {
+            "path": "clossys/brief.json",
+            "mode": "100644",
+            "before": null,
+            "after": "sha256:37b06d4c734195868d01085f7d356b70bebb72dd8de105ebb71091fd6bb06364",
+            "item": "brief"
+          },
+          {
+            "path": ".agents/skills/clossys-strategist/SKILL.md",
+            "mode": "100644",
+            "before": null,
+            "after": "sha256:10a0edc2b0a6f35b6735a9423cbcf326138c80f0a152bb937b655ee278b26c1f",
+            "item": "skills"
+          },
+          {
+            "path": ".agents/skills/clossys-writer/SKILL.md",
+            "mode": "100644",
+            "before": null,
+            "after": "sha256:e0d4b7ccb4dbdcf1f9e6e94ac05fa6f2d05c9cb3797ccde260ce3c9d59ea35b1",
+            "item": "skills"
+          },
+          {
+            "path": "package-lock.json",
+            "mode": "100644",
+            "derived": true,
+            "item": "example-owner/site:@example/strategist",
+            "before": "sha256:e98b108f460871f3d14fd3724acf48628539f506c83f96cfd3539353fecfddf8",
+            "invariants": [
+              {
+                "item": "example-owner/site:@example/strategist",
+                "name": "@example/strategist",
+                "version": "1.4.0",
+                "integrity": "sha512-UWlOIr0jGHG4u420oMkUOeVW5r6Ab4kxuaUU4UWjjGebkzXM634IHDtxqLqMGCRebanNaxZBudK29XyAQgk5sQ=="
+              },
+              {
+                "item": "example-owner/site:@example/writer",
+                "name": "@example/writer",
+                "version": "0.7.0",
+                "integrity": "sha512-GW995IgPwvbujjoIUYbT6dge9ZrLCEa1JOYNnU+LYrdaWcbU9wOs0vpm53wXR1kQBUbFftpxA8LkpD4AtU/dQQ=="
+              }
+            ]
+          },
+          {
+            "path": "clossys/.state/installed.json",
+            "mode": "100644",
+            "derived": true,
+            "item": "ledger",
+            "before": null,
+            "invariants": [
+              {
+                "ledgerGeneration": 1
+              }
+            ]
+          }
+        ],
+        "keys": [
+          {
+            "file": "package.json",
+            "pointer": "/devDependencies/@example~1strategist",
+            "before": null,
+            "after": "1.4.0",
+            "item": "example-owner/site:@example/strategist"
+          },
+          {
+            "file": "package.json",
+            "pointer": "/devDependencies/@example~1writer",
+            "before": null,
+            "after": "0.7.0",
+            "item": "example-owner/site:@example/writer"
+          }
+        ],
+        "refused": [],
+        "deferred": [],
+        "pathAllowList": [
+          "clossys/**",
+          ".agents/skills/clossys-*/**",
+          "package.json",
+          "package-lock.json"
+        ],
+        "branch": "clossys/apply-a8e2dbc9cda3",
+        "bundle": "sha256:4be92ea2f7148ab1ce3efb3a8671a95ffd442f955eca77544680367ae6517fd6",
+        "pullRequest": {
+          "title": "Clossys: apply plan a8e2dbc9cda3"
+        },
+        "changeSetDigest": "sha256:a8e2dbc9cda388750614e05ad698a7f8287baf23639a3fbd2d22f6ad6aedd121"
+      },
+      "subject": "{\"deferred\":[],\"engine\":{\"integrity\":\"sha512-kCVE5gFTJHKz+h8j+pp2EBmmmhTGsqRcBZRD7pBlcEPb8toyMhpLswj3mHq59uUnVXm4CYRgWKSNKE0AOVbrLQ==\",\"name\":\"@example/advisor\",\"version\":\"0.8.0\"},\"files\":[{\"after\":\"sha256:37b06d4c734195868d01085f7d356b70bebb72dd8de105ebb71091fd6bb06364\",\"before\":null,\"item\":\"brief\",\"mode\":\"100644\",\"path\":\"clossys/brief.json\"},{\"after\":\"sha256:10a0edc2b0a6f35b6735a9423cbcf326138c80f0a152bb937b655ee278b26c1f\",\"before\":null,\"item\":\"skills\",\"mode\":\"100644\",\"path\":\".agents/skills/clossys-strategist/SKILL.md\"},{\"after\":\"sha256:e0d4b7ccb4dbdcf1f9e6e94ac05fa6f2d05c9cb3797ccde260ce3c9d59ea35b1\",\"before\":null,\"item\":\"skills\",\"mode\":\"100644\",\"path\":\".agents/skills/clossys-writer/SKILL.md\"},{\"derived\":true,\"invariants\":[{\"integrity\":\"sha512-UWlOIr0jGHG4u420oMkUOeVW5r6Ab4kxuaUU4UWjjGebkzXM634IHDtxqLqMGCRebanNaxZBudK29XyAQgk5sQ==\",\"item\":\"example-owner/site:@example/strategist\",\"name\":\"@example/strategist\",\"version\":\"1.4.0\"},{\"integrity\":\"sha512-GW995IgPwvbujjoIUYbT6dge9ZrLCEa1JOYNnU+LYrdaWcbU9wOs0vpm53wXR1kQBUbFftpxA8LkpD4AtU/dQQ==\",\"item\":\"example-owner/site:@example/writer\",\"name\":\"@example/writer\",\"version\":\"0.7.0\"}],\"item\":\"example-owner/site:@example/strategist\",\"mode\":\"100644\",\"path\":\"package-lock.json\"},{\"derived\":true,\"invariants\":[{\"ledgerGeneration\":1}],\"item\":\"ledger\",\"mode\":\"100644\",\"path\":\"clossys/.state/installed.json\"}],\"items\":[{\"act\":\"write-record\",\"id\":\"brief\",\"source\":\"engagement-brief\"},{\"act\":\"compose-skills\",\"id\":\"skills\",\"roles\":[\"strategist\",\"writer\"]},{\"act\":\"pin-starter\",\"id\":\"example-owner/site:@example/starter\",\"package\":{\"integrity\":\"sha512-hJiP5Qe0sBUnWOs7+hC2bcIg2ye4C0X3hmWVHIo4IfibnbGns3pFL8QPV4R3MuWxVlbU9dWJ/HeYE42ABQie/w==\",\"name\":\"@example/starter\",\"version\":\"0.9.2\"},\"placement\":\"devDependencies\",\"planItem\":\"example-owner/site:@example/starter\",\"satisfiedInBase\":true},{\"act\":\"install\",\"id\":\"example-owner/site:@example/strategist\",\"package\":{\"integrity\":\"sha512-UWlOIr0jGHG4u420oMkUOeVW5r6Ab4kxuaUU4UWjjGebkzXM634IHDtxqLqMGCRebanNaxZBudK29XyAQgk5sQ==\",\"name\":\"@example/strategist\",\"version\":\"1.4.0\"},\"placement\":\"devDependencies\",\"planItem\":\"example-owner/site:@example/strategist\",\"satisfiedInBase\":false},{\"act\":\"install\",\"id\":\"example-owner/site:@example/writer\",\"package\":{\"integrity\":\"sha512-GW995IgPwvbujjoIUYbT6dge9ZrLCEa1JOYNnU+LYrdaWcbU9wOs0vpm53wXR1kQBUbFftpxA8LkpD4AtU/dQQ==\",\"name\":\"@example/writer\",\"version\":\"0.7.0\"},\"placement\":\"devDependencies\",\"planItem\":\"example-owner/site:@example/writer\",\"satisfiedInBase\":false},{\"act\":\"write-ledger\",\"id\":\"ledger\"}],\"keys\":[{\"after\":\"1.4.0\",\"before\":null,\"file\":\"package.json\",\"item\":\"example-owner/site:@example/strategist\",\"pointer\":\"/devDependencies/@example~1strategist\"},{\"after\":\"0.7.0\",\"before\":null,\"file\":\"package.json\",\"item\":\"example-owner/site:@example/writer\",\"pointer\":\"/devDependencies/@example~1writer\"}],\"kind\":\"clossys.repository-change-set\",\"ledger\":{\"generation\":0},\"observed\":{\"lockfile\":\"package-lock.json\",\"packageManager\":\"npm\",\"releaseAgeSurfaces\":[{\"path\":\".npmrc\",\"surface\":\"npmrc\"}]},\"pathAllowList\":[\"clossys/**\",\".agents/skills/clossys-*/**\",\"package.json\",\"package-lock.json\"],\"phase\":\"apply\",\"planDigest\":\"sha256:40e9c27d0c677c522f131e47740185d8182367c9f286fd4746e72c55b1275a18\",\"producer\":{\"name\":\"@example/launcher\",\"version\":\"0.4.0\"},\"refused\":[],\"repository\":{\"baseCommit\":\"138995ced6b16aae6f0c058d2e453121e6b6349d\",\"defaultBranch\":\"main\",\"id\":\"example-owner/site\",\"nodeId\":\"R_exampleSite1\",\"visibility\":\"public\"},\"schemaVersion\":1}",
+      "digest": "sha256:a8e2dbc9cda388750614e05ad698a7f8287baf23639a3fbd2d22f6ad6aedd121"
+    },
+    {
+      "name": "apply-node-id-changed",
+      "note": "A different repository behind the same id.",
+      "valid": true,
+      "differsFrom": "apply-with-packages",
+      "changeSet": {
+        "schemaVersion": 1,
+        "kind": "clossys.repository-change-set",
+        "producer": {
+          "name": "@example/launcher",
+          "version": "0.4.0"
+        },
+        "planDigest": "sha256:40e9c27d0c677c522f131e47740185d8182367c9f286fd4746e72c55b1275a18",
+        "repository": {
+          "id": "example-owner/site",
+          "nodeId": "R_exampleSite2",
+          "visibility": "private",
+          "defaultBranch": "main",
+          "baseCommit": "138995ced6b16aae6f0c058d2e453121e6b6349d"
+        },
+        "ledger": {
+          "generation": 0
+        },
+        "phase": "apply",
+        "engine": {
+          "name": "@example/advisor",
+          "version": "0.8.0",
+          "integrity": "sha512-kCVE5gFTJHKz+h8j+pp2EBmmmhTGsqRcBZRD7pBlcEPb8toyMhpLswj3mHq59uUnVXm4CYRgWKSNKE0AOVbrLQ=="
+        },
+        "observed": {
+          "packageManager": "npm",
+          "lockfile": "package-lock.json",
+          "releaseAgeSurfaces": [
+            {
+              "surface": "npmrc",
+              "path": ".npmrc"
+            }
+          ]
+        },
+        "items": [
+          {
+            "id": "brief",
+            "act": "write-record",
+            "source": "engagement-brief"
+          },
+          {
+            "id": "skills",
+            "act": "compose-skills",
+            "roles": [
+              "strategist",
+              "writer"
+            ]
+          },
+          {
+            "id": "example-owner/site:@example/starter",
+            "act": "pin-starter",
+            "planItem": "example-owner/site:@example/starter",
+            "package": {
+              "name": "@example/starter",
+              "version": "0.9.2",
+              "integrity": "sha512-hJiP5Qe0sBUnWOs7+hC2bcIg2ye4C0X3hmWVHIo4IfibnbGns3pFL8QPV4R3MuWxVlbU9dWJ/HeYE42ABQie/w=="
+            },
+            "placement": "devDependencies",
+            "satisfiedInBase": true
+          },
+          {
+            "id": "example-owner/site:@example/strategist",
+            "act": "install",
+            "planItem": "example-owner/site:@example/strategist",
+            "package": {
+              "name": "@example/strategist",
+              "version": "1.4.0",
+              "integrity": "sha512-UWlOIr0jGHG4u420oMkUOeVW5r6Ab4kxuaUU4UWjjGebkzXM634IHDtxqLqMGCRebanNaxZBudK29XyAQgk5sQ=="
+            },
+            "placement": "devDependencies",
+            "satisfiedInBase": false
+          },
+          {
+            "id": "example-owner/site:@example/writer",
+            "act": "install",
+            "planItem": "example-owner/site:@example/writer",
+            "package": {
+              "name": "@example/writer",
+              "version": "0.7.0",
+              "integrity": "sha512-GW995IgPwvbujjoIUYbT6dge9ZrLCEa1JOYNnU+LYrdaWcbU9wOs0vpm53wXR1kQBUbFftpxA8LkpD4AtU/dQQ=="
+            },
+            "placement": "devDependencies",
+            "satisfiedInBase": false
+          },
+          {
+            "id": "ledger",
+            "act": "write-ledger"
+          }
+        ],
+        "files": [
+          {
+            "path": "clossys/brief.json",
+            "mode": "100644",
+            "before": null,
+            "after": "sha256:37b06d4c734195868d01085f7d356b70bebb72dd8de105ebb71091fd6bb06364",
+            "item": "brief"
+          },
+          {
+            "path": ".agents/skills/clossys-strategist/SKILL.md",
+            "mode": "100644",
+            "before": null,
+            "after": "sha256:10a0edc2b0a6f35b6735a9423cbcf326138c80f0a152bb937b655ee278b26c1f",
+            "item": "skills"
+          },
+          {
+            "path": ".agents/skills/clossys-writer/SKILL.md",
+            "mode": "100644",
+            "before": null,
+            "after": "sha256:e0d4b7ccb4dbdcf1f9e6e94ac05fa6f2d05c9cb3797ccde260ce3c9d59ea35b1",
+            "item": "skills"
+          },
+          {
+            "path": "package-lock.json",
+            "mode": "100644",
+            "derived": true,
+            "item": "example-owner/site:@example/strategist",
+            "before": "sha256:e98b108f460871f3d14fd3724acf48628539f506c83f96cfd3539353fecfddf8",
+            "invariants": [
+              {
+                "item": "example-owner/site:@example/strategist",
+                "name": "@example/strategist",
+                "version": "1.4.0",
+                "integrity": "sha512-UWlOIr0jGHG4u420oMkUOeVW5r6Ab4kxuaUU4UWjjGebkzXM634IHDtxqLqMGCRebanNaxZBudK29XyAQgk5sQ=="
+              },
+              {
+                "item": "example-owner/site:@example/writer",
+                "name": "@example/writer",
+                "version": "0.7.0",
+                "integrity": "sha512-GW995IgPwvbujjoIUYbT6dge9ZrLCEa1JOYNnU+LYrdaWcbU9wOs0vpm53wXR1kQBUbFftpxA8LkpD4AtU/dQQ=="
+              }
+            ]
+          },
+          {
+            "path": "clossys/.state/installed.json",
+            "mode": "100644",
+            "derived": true,
+            "item": "ledger",
+            "before": null,
+            "invariants": [
+              {
+                "ledgerGeneration": 1
+              }
+            ]
+          }
+        ],
+        "keys": [
+          {
+            "file": "package.json",
+            "pointer": "/devDependencies/@example~1strategist",
+            "before": null,
+            "after": "1.4.0",
+            "item": "example-owner/site:@example/strategist"
+          },
+          {
+            "file": "package.json",
+            "pointer": "/devDependencies/@example~1writer",
+            "before": null,
+            "after": "0.7.0",
+            "item": "example-owner/site:@example/writer"
+          }
+        ],
+        "refused": [],
+        "deferred": [],
+        "pathAllowList": [
+          "clossys/**",
+          ".agents/skills/clossys-*/**",
+          "package.json",
+          "package-lock.json"
+        ],
+        "branch": "clossys/apply-2462fd0a8a32",
+        "bundle": "sha256:4be92ea2f7148ab1ce3efb3a8671a95ffd442f955eca77544680367ae6517fd6",
+        "pullRequest": {
+          "title": "Clossys: apply plan 2462fd0a8a32"
+        },
+        "changeSetDigest": "sha256:2462fd0a8a3207f3631a752afebed605a1f19408b03f4a825818055c30561e00"
+      },
+      "subject": "{\"deferred\":[],\"engine\":{\"integrity\":\"sha512-kCVE5gFTJHKz+h8j+pp2EBmmmhTGsqRcBZRD7pBlcEPb8toyMhpLswj3mHq59uUnVXm4CYRgWKSNKE0AOVbrLQ==\",\"name\":\"@example/advisor\",\"version\":\"0.8.0\"},\"files\":[{\"after\":\"sha256:37b06d4c734195868d01085f7d356b70bebb72dd8de105ebb71091fd6bb06364\",\"before\":null,\"item\":\"brief\",\"mode\":\"100644\",\"path\":\"clossys/brief.json\"},{\"after\":\"sha256:10a0edc2b0a6f35b6735a9423cbcf326138c80f0a152bb937b655ee278b26c1f\",\"before\":null,\"item\":\"skills\",\"mode\":\"100644\",\"path\":\".agents/skills/clossys-strategist/SKILL.md\"},{\"after\":\"sha256:e0d4b7ccb4dbdcf1f9e6e94ac05fa6f2d05c9cb3797ccde260ce3c9d59ea35b1\",\"before\":null,\"item\":\"skills\",\"mode\":\"100644\",\"path\":\".agents/skills/clossys-writer/SKILL.md\"},{\"derived\":true,\"invariants\":[{\"integrity\":\"sha512-UWlOIr0jGHG4u420oMkUOeVW5r6Ab4kxuaUU4UWjjGebkzXM634IHDtxqLqMGCRebanNaxZBudK29XyAQgk5sQ==\",\"item\":\"example-owner/site:@example/strategist\",\"name\":\"@example/strategist\",\"version\":\"1.4.0\"},{\"integrity\":\"sha512-GW995IgPwvbujjoIUYbT6dge9ZrLCEa1JOYNnU+LYrdaWcbU9wOs0vpm53wXR1kQBUbFftpxA8LkpD4AtU/dQQ==\",\"item\":\"example-owner/site:@example/writer\",\"name\":\"@example/writer\",\"version\":\"0.7.0\"}],\"item\":\"example-owner/site:@example/strategist\",\"mode\":\"100644\",\"path\":\"package-lock.json\"},{\"derived\":true,\"invariants\":[{\"ledgerGeneration\":1}],\"item\":\"ledger\",\"mode\":\"100644\",\"path\":\"clossys/.state/installed.json\"}],\"items\":[{\"act\":\"write-record\",\"id\":\"brief\",\"source\":\"engagement-brief\"},{\"act\":\"compose-skills\",\"id\":\"skills\",\"roles\":[\"strategist\",\"writer\"]},{\"act\":\"pin-starter\",\"id\":\"example-owner/site:@example/starter\",\"package\":{\"integrity\":\"sha512-hJiP5Qe0sBUnWOs7+hC2bcIg2ye4C0X3hmWVHIo4IfibnbGns3pFL8QPV4R3MuWxVlbU9dWJ/HeYE42ABQie/w==\",\"name\":\"@example/starter\",\"version\":\"0.9.2\"},\"placement\":\"devDependencies\",\"planItem\":\"example-owner/site:@example/starter\",\"satisfiedInBase\":true},{\"act\":\"install\",\"id\":\"example-owner/site:@example/strategist\",\"package\":{\"integrity\":\"sha512-UWlOIr0jGHG4u420oMkUOeVW5r6Ab4kxuaUU4UWjjGebkzXM634IHDtxqLqMGCRebanNaxZBudK29XyAQgk5sQ==\",\"name\":\"@example/strategist\",\"version\":\"1.4.0\"},\"placement\":\"devDependencies\",\"planItem\":\"example-owner/site:@example/strategist\",\"satisfiedInBase\":false},{\"act\":\"install\",\"id\":\"example-owner/site:@example/writer\",\"package\":{\"integrity\":\"sha512-GW995IgPwvbujjoIUYbT6dge9ZrLCEa1JOYNnU+LYrdaWcbU9wOs0vpm53wXR1kQBUbFftpxA8LkpD4AtU/dQQ==\",\"name\":\"@example/writer\",\"version\":\"0.7.0\"},\"placement\":\"devDependencies\",\"planItem\":\"example-owner/site:@example/writer\",\"satisfiedInBase\":false},{\"act\":\"write-ledger\",\"id\":\"ledger\"}],\"keys\":[{\"after\":\"1.4.0\",\"before\":null,\"file\":\"package.json\",\"item\":\"example-owner/site:@example/strategist\",\"pointer\":\"/devDependencies/@example~1strategist\"},{\"after\":\"0.7.0\",\"before\":null,\"file\":\"package.json\",\"item\":\"example-owner/site:@example/writer\",\"pointer\":\"/devDependencies/@example~1writer\"}],\"kind\":\"clossys.repository-change-set\",\"ledger\":{\"generation\":0},\"observed\":{\"lockfile\":\"package-lock.json\",\"packageManager\":\"npm\",\"releaseAgeSurfaces\":[{\"path\":\".npmrc\",\"surface\":\"npmrc\"}]},\"pathAllowList\":[\"clossys/**\",\".agents/skills/clossys-*/**\",\"package.json\",\"package-lock.json\"],\"phase\":\"apply\",\"planDigest\":\"sha256:40e9c27d0c677c522f131e47740185d8182367c9f286fd4746e72c55b1275a18\",\"producer\":{\"name\":\"@example/launcher\",\"version\":\"0.4.0\"},\"refused\":[],\"repository\":{\"baseCommit\":\"138995ced6b16aae6f0c058d2e453121e6b6349d\",\"defaultBranch\":\"main\",\"id\":\"example-owner/site\",\"nodeId\":\"R_exampleSite2\",\"visibility\":\"private\"},\"schemaVersion\":1}",
+      "digest": "sha256:2462fd0a8a3207f3631a752afebed605a1f19408b03f4a825818055c30561e00"
+    },
+    {
+      "name": "apply-ledger-generation",
+      "note": "The set starts from ledger generation 1.",
+      "valid": true,
+      "differsFrom": "apply-with-packages",
+      "changeSet": {
+        "schemaVersion": 1,
+        "kind": "clossys.repository-change-set",
+        "producer": {
+          "name": "@example/launcher",
+          "version": "0.4.0"
+        },
+        "planDigest": "sha256:40e9c27d0c677c522f131e47740185d8182367c9f286fd4746e72c55b1275a18",
+        "repository": {
+          "id": "example-owner/site",
+          "nodeId": "R_exampleSite1",
+          "visibility": "private",
+          "defaultBranch": "main",
+          "baseCommit": "138995ced6b16aae6f0c058d2e453121e6b6349d"
+        },
+        "ledger": {
+          "generation": 1
+        },
+        "phase": "apply",
+        "engine": {
+          "name": "@example/advisor",
+          "version": "0.8.0",
+          "integrity": "sha512-kCVE5gFTJHKz+h8j+pp2EBmmmhTGsqRcBZRD7pBlcEPb8toyMhpLswj3mHq59uUnVXm4CYRgWKSNKE0AOVbrLQ=="
+        },
+        "observed": {
+          "packageManager": "npm",
+          "lockfile": "package-lock.json",
+          "releaseAgeSurfaces": [
+            {
+              "surface": "npmrc",
+              "path": ".npmrc"
+            }
+          ]
+        },
+        "items": [
+          {
+            "id": "brief",
+            "act": "write-record",
+            "source": "engagement-brief"
+          },
+          {
+            "id": "skills",
+            "act": "compose-skills",
+            "roles": [
+              "strategist",
+              "writer"
+            ]
+          },
+          {
+            "id": "example-owner/site:@example/starter",
+            "act": "pin-starter",
+            "planItem": "example-owner/site:@example/starter",
+            "package": {
+              "name": "@example/starter",
+              "version": "0.9.2",
+              "integrity": "sha512-hJiP5Qe0sBUnWOs7+hC2bcIg2ye4C0X3hmWVHIo4IfibnbGns3pFL8QPV4R3MuWxVlbU9dWJ/HeYE42ABQie/w=="
+            },
+            "placement": "devDependencies",
+            "satisfiedInBase": true
+          },
+          {
+            "id": "example-owner/site:@example/strategist",
+            "act": "install",
+            "planItem": "example-owner/site:@example/strategist",
+            "package": {
+              "name": "@example/strategist",
+              "version": "1.4.0",
+              "integrity": "sha512-UWlOIr0jGHG4u420oMkUOeVW5r6Ab4kxuaUU4UWjjGebkzXM634IHDtxqLqMGCRebanNaxZBudK29XyAQgk5sQ=="
+            },
+            "placement": "devDependencies",
+            "satisfiedInBase": false
+          },
+          {
+            "id": "example-owner/site:@example/writer",
+            "act": "install",
+            "planItem": "example-owner/site:@example/writer",
+            "package": {
+              "name": "@example/writer",
+              "version": "0.7.0",
+              "integrity": "sha512-GW995IgPwvbujjoIUYbT6dge9ZrLCEa1JOYNnU+LYrdaWcbU9wOs0vpm53wXR1kQBUbFftpxA8LkpD4AtU/dQQ=="
+            },
+            "placement": "devDependencies",
+            "satisfiedInBase": false
+          },
+          {
+            "id": "ledger",
+            "act": "write-ledger"
+          }
+        ],
+        "files": [
+          {
+            "path": "clossys/brief.json",
+            "mode": "100644",
+            "before": null,
+            "after": "sha256:37b06d4c734195868d01085f7d356b70bebb72dd8de105ebb71091fd6bb06364",
+            "item": "brief"
+          },
+          {
+            "path": ".agents/skills/clossys-strategist/SKILL.md",
+            "mode": "100644",
+            "before": null,
+            "after": "sha256:10a0edc2b0a6f35b6735a9423cbcf326138c80f0a152bb937b655ee278b26c1f",
+            "item": "skills"
+          },
+          {
+            "path": ".agents/skills/clossys-writer/SKILL.md",
+            "mode": "100644",
+            "before": null,
+            "after": "sha256:e0d4b7ccb4dbdcf1f9e6e94ac05fa6f2d05c9cb3797ccde260ce3c9d59ea35b1",
+            "item": "skills"
+          },
+          {
+            "path": "package-lock.json",
+            "mode": "100644",
+            "derived": true,
+            "item": "example-owner/site:@example/strategist",
+            "before": "sha256:e98b108f460871f3d14fd3724acf48628539f506c83f96cfd3539353fecfddf8",
+            "invariants": [
+              {
+                "item": "example-owner/site:@example/strategist",
+                "name": "@example/strategist",
+                "version": "1.4.0",
+                "integrity": "sha512-UWlOIr0jGHG4u420oMkUOeVW5r6Ab4kxuaUU4UWjjGebkzXM634IHDtxqLqMGCRebanNaxZBudK29XyAQgk5sQ=="
+              },
+              {
+                "item": "example-owner/site:@example/writer",
+                "name": "@example/writer",
+                "version": "0.7.0",
+                "integrity": "sha512-GW995IgPwvbujjoIUYbT6dge9ZrLCEa1JOYNnU+LYrdaWcbU9wOs0vpm53wXR1kQBUbFftpxA8LkpD4AtU/dQQ=="
+              }
+            ]
+          },
+          {
+            "path": "clossys/.state/installed.json",
+            "mode": "100644",
+            "derived": true,
+            "item": "ledger",
+            "before": null,
+            "invariants": [
+              {
+                "ledgerGeneration": 2
+              }
+            ]
+          }
+        ],
+        "keys": [
+          {
+            "file": "package.json",
+            "pointer": "/devDependencies/@example~1strategist",
+            "before": null,
+            "after": "1.4.0",
+            "item": "example-owner/site:@example/strategist"
+          },
+          {
+            "file": "package.json",
+            "pointer": "/devDependencies/@example~1writer",
+            "before": null,
+            "after": "0.7.0",
+            "item": "example-owner/site:@example/writer"
+          }
+        ],
+        "refused": [],
+        "deferred": [],
+        "pathAllowList": [
+          "clossys/**",
+          ".agents/skills/clossys-*/**",
+          "package.json",
+          "package-lock.json"
+        ],
+        "branch": "clossys/apply-3afa49808572",
+        "bundle": "sha256:4be92ea2f7148ab1ce3efb3a8671a95ffd442f955eca77544680367ae6517fd6",
+        "pullRequest": {
+          "title": "Clossys: apply plan 3afa49808572"
+        },
+        "changeSetDigest": "sha256:3afa498085728a447aec237ecc7232d1c5e0eafa769fcf054c8a65d275e76766"
+      },
+      "subject": "{\"deferred\":[],\"engine\":{\"integrity\":\"sha512-kCVE5gFTJHKz+h8j+pp2EBmmmhTGsqRcBZRD7pBlcEPb8toyMhpLswj3mHq59uUnVXm4CYRgWKSNKE0AOVbrLQ==\",\"name\":\"@example/advisor\",\"version\":\"0.8.0\"},\"files\":[{\"after\":\"sha256:37b06d4c734195868d01085f7d356b70bebb72dd8de105ebb71091fd6bb06364\",\"before\":null,\"item\":\"brief\",\"mode\":\"100644\",\"path\":\"clossys/brief.json\"},{\"after\":\"sha256:10a0edc2b0a6f35b6735a9423cbcf326138c80f0a152bb937b655ee278b26c1f\",\"before\":null,\"item\":\"skills\",\"mode\":\"100644\",\"path\":\".agents/skills/clossys-strategist/SKILL.md\"},{\"after\":\"sha256:e0d4b7ccb4dbdcf1f9e6e94ac05fa6f2d05c9cb3797ccde260ce3c9d59ea35b1\",\"before\":null,\"item\":\"skills\",\"mode\":\"100644\",\"path\":\".agents/skills/clossys-writer/SKILL.md\"},{\"derived\":true,\"invariants\":[{\"integrity\":\"sha512-UWlOIr0jGHG4u420oMkUOeVW5r6Ab4kxuaUU4UWjjGebkzXM634IHDtxqLqMGCRebanNaxZBudK29XyAQgk5sQ==\",\"item\":\"example-owner/site:@example/strategist\",\"name\":\"@example/strategist\",\"version\":\"1.4.0\"},{\"integrity\":\"sha512-GW995IgPwvbujjoIUYbT6dge9ZrLCEa1JOYNnU+LYrdaWcbU9wOs0vpm53wXR1kQBUbFftpxA8LkpD4AtU/dQQ==\",\"item\":\"example-owner/site:@example/writer\",\"name\":\"@example/writer\",\"version\":\"0.7.0\"}],\"item\":\"example-owner/site:@example/strategist\",\"mode\":\"100644\",\"path\":\"package-lock.json\"},{\"derived\":true,\"invariants\":[{\"ledgerGeneration\":2}],\"item\":\"ledger\",\"mode\":\"100644\",\"path\":\"clossys/.state/installed.json\"}],\"items\":[{\"act\":\"write-record\",\"id\":\"brief\",\"source\":\"engagement-brief\"},{\"act\":\"compose-skills\",\"id\":\"skills\",\"roles\":[\"strategist\",\"writer\"]},{\"act\":\"pin-starter\",\"id\":\"example-owner/site:@example/starter\",\"package\":{\"integrity\":\"sha512-hJiP5Qe0sBUnWOs7+hC2bcIg2ye4C0X3hmWVHIo4IfibnbGns3pFL8QPV4R3MuWxVlbU9dWJ/HeYE42ABQie/w==\",\"name\":\"@example/starter\",\"version\":\"0.9.2\"},\"placement\":\"devDependencies\",\"planItem\":\"example-owner/site:@example/starter\",\"satisfiedInBase\":true},{\"act\":\"install\",\"id\":\"example-owner/site:@example/strategist\",\"package\":{\"integrity\":\"sha512-UWlOIr0jGHG4u420oMkUOeVW5r6Ab4kxuaUU4UWjjGebkzXM634IHDtxqLqMGCRebanNaxZBudK29XyAQgk5sQ==\",\"name\":\"@example/strategist\",\"version\":\"1.4.0\"},\"placement\":\"devDependencies\",\"planItem\":\"example-owner/site:@example/strategist\",\"satisfiedInBase\":false},{\"act\":\"install\",\"id\":\"example-owner/site:@example/writer\",\"package\":{\"integrity\":\"sha512-GW995IgPwvbujjoIUYbT6dge9ZrLCEa1JOYNnU+LYrdaWcbU9wOs0vpm53wXR1kQBUbFftpxA8LkpD4AtU/dQQ==\",\"name\":\"@example/writer\",\"version\":\"0.7.0\"},\"placement\":\"devDependencies\",\"planItem\":\"example-owner/site:@example/writer\",\"satisfiedInBase\":false},{\"act\":\"write-ledger\",\"id\":\"ledger\"}],\"keys\":[{\"after\":\"1.4.0\",\"before\":null,\"file\":\"package.json\",\"item\":\"example-owner/site:@example/strategist\",\"pointer\":\"/devDependencies/@example~1strategist\"},{\"after\":\"0.7.0\",\"before\":null,\"file\":\"package.json\",\"item\":\"example-owner/site:@example/writer\",\"pointer\":\"/devDependencies/@example~1writer\"}],\"kind\":\"clossys.repository-change-set\",\"ledger\":{\"generation\":1},\"observed\":{\"lockfile\":\"package-lock.json\",\"packageManager\":\"npm\",\"releaseAgeSurfaces\":[{\"path\":\".npmrc\",\"surface\":\"npmrc\"}]},\"pathAllowList\":[\"clossys/**\",\".agents/skills/clossys-*/**\",\"package.json\",\"package-lock.json\"],\"phase\":\"apply\",\"planDigest\":\"sha256:40e9c27d0c677c522f131e47740185d8182367c9f286fd4746e72c55b1275a18\",\"producer\":{\"name\":\"@example/launcher\",\"version\":\"0.4.0\"},\"refused\":[],\"repository\":{\"baseCommit\":\"138995ced6b16aae6f0c058d2e453121e6b6349d\",\"defaultBranch\":\"main\",\"id\":\"example-owner/site\",\"nodeId\":\"R_exampleSite1\",\"visibility\":\"private\"},\"schemaVersion\":1}",
+      "digest": "sha256:3afa498085728a447aec237ecc7232d1c5e0eafa769fcf054c8a65d275e76766"
+    },
+    {
+      "name": "apply-package-bytes",
+      "note": "The writer package's integrity differs, in its item and its lockfile invariant.",
+      "valid": true,
+      "differsFrom": "apply-with-packages",
+      "changeSet": {
+        "schemaVersion": 1,
+        "kind": "clossys.repository-change-set",
+        "producer": {
+          "name": "@example/launcher",
+          "version": "0.4.0"
+        },
+        "planDigest": "sha256:40e9c27d0c677c522f131e47740185d8182367c9f286fd4746e72c55b1275a18",
+        "repository": {
+          "id": "example-owner/site",
+          "nodeId": "R_exampleSite1",
+          "visibility": "private",
+          "defaultBranch": "main",
+          "baseCommit": "138995ced6b16aae6f0c058d2e453121e6b6349d"
+        },
+        "ledger": {
+          "generation": 0
+        },
+        "phase": "apply",
+        "engine": {
+          "name": "@example/advisor",
+          "version": "0.8.0",
+          "integrity": "sha512-kCVE5gFTJHKz+h8j+pp2EBmmmhTGsqRcBZRD7pBlcEPb8toyMhpLswj3mHq59uUnVXm4CYRgWKSNKE0AOVbrLQ=="
+        },
+        "observed": {
+          "packageManager": "npm",
+          "lockfile": "package-lock.json",
+          "releaseAgeSurfaces": [
+            {
+              "surface": "npmrc",
+              "path": ".npmrc"
+            }
+          ]
+        },
+        "items": [
+          {
+            "id": "brief",
+            "act": "write-record",
+            "source": "engagement-brief"
+          },
+          {
+            "id": "skills",
+            "act": "compose-skills",
+            "roles": [
+              "strategist",
+              "writer"
+            ]
+          },
+          {
+            "id": "example-owner/site:@example/starter",
+            "act": "pin-starter",
+            "planItem": "example-owner/site:@example/starter",
+            "package": {
+              "name": "@example/starter",
+              "version": "0.9.2",
+              "integrity": "sha512-hJiP5Qe0sBUnWOs7+hC2bcIg2ye4C0X3hmWVHIo4IfibnbGns3pFL8QPV4R3MuWxVlbU9dWJ/HeYE42ABQie/w=="
+            },
+            "placement": "devDependencies",
+            "satisfiedInBase": true
+          },
+          {
+            "id": "example-owner/site:@example/strategist",
+            "act": "install",
+            "planItem": "example-owner/site:@example/strategist",
+            "package": {
+              "name": "@example/strategist",
+              "version": "1.4.0",
+              "integrity": "sha512-UWlOIr0jGHG4u420oMkUOeVW5r6Ab4kxuaUU4UWjjGebkzXM634IHDtxqLqMGCRebanNaxZBudK29XyAQgk5sQ=="
+            },
+            "placement": "devDependencies",
+            "satisfiedInBase": false
+          },
+          {
+            "id": "example-owner/site:@example/writer",
+            "act": "install",
+            "planItem": "example-owner/site:@example/writer",
+            "package": {
+              "name": "@example/writer",
+              "version": "0.7.0",
+              "integrity": "sha512-AwbkCaWGYz+BoaP4K8I2OwyHhjCN9FPm7qV4C/glz9nfTj3k4mM1U/Hrm6NP59gG6Jhrx6eLy4g1Qyky7nL0kQ=="
+            },
+            "placement": "devDependencies",
+            "satisfiedInBase": false
+          },
+          {
+            "id": "ledger",
+            "act": "write-ledger"
+          }
+        ],
+        "files": [
+          {
+            "path": "clossys/brief.json",
+            "mode": "100644",
+            "before": null,
+            "after": "sha256:37b06d4c734195868d01085f7d356b70bebb72dd8de105ebb71091fd6bb06364",
+            "item": "brief"
+          },
+          {
+            "path": ".agents/skills/clossys-strategist/SKILL.md",
+            "mode": "100644",
+            "before": null,
+            "after": "sha256:10a0edc2b0a6f35b6735a9423cbcf326138c80f0a152bb937b655ee278b26c1f",
+            "item": "skills"
+          },
+          {
+            "path": ".agents/skills/clossys-writer/SKILL.md",
+            "mode": "100644",
+            "before": null,
+            "after": "sha256:e0d4b7ccb4dbdcf1f9e6e94ac05fa6f2d05c9cb3797ccde260ce3c9d59ea35b1",
+            "item": "skills"
+          },
+          {
+            "path": "package-lock.json",
+            "mode": "100644",
+            "derived": true,
+            "item": "example-owner/site:@example/strategist",
+            "before": "sha256:e98b108f460871f3d14fd3724acf48628539f506c83f96cfd3539353fecfddf8",
+            "invariants": [
+              {
+                "item": "example-owner/site:@example/strategist",
+                "name": "@example/strategist",
+                "version": "1.4.0",
+                "integrity": "sha512-UWlOIr0jGHG4u420oMkUOeVW5r6Ab4kxuaUU4UWjjGebkzXM634IHDtxqLqMGCRebanNaxZBudK29XyAQgk5sQ=="
+              },
+              {
+                "item": "example-owner/site:@example/writer",
+                "name": "@example/writer",
+                "version": "0.7.0",
+                "integrity": "sha512-AwbkCaWGYz+BoaP4K8I2OwyHhjCN9FPm7qV4C/glz9nfTj3k4mM1U/Hrm6NP59gG6Jhrx6eLy4g1Qyky7nL0kQ=="
+              }
+            ]
+          },
+          {
+            "path": "clossys/.state/installed.json",
+            "mode": "100644",
+            "derived": true,
+            "item": "ledger",
+            "before": null,
+            "invariants": [
+              {
+                "ledgerGeneration": 1
+              }
+            ]
+          }
+        ],
+        "keys": [
+          {
+            "file": "package.json",
+            "pointer": "/devDependencies/@example~1strategist",
+            "before": null,
+            "after": "1.4.0",
+            "item": "example-owner/site:@example/strategist"
+          },
+          {
+            "file": "package.json",
+            "pointer": "/devDependencies/@example~1writer",
+            "before": null,
+            "after": "0.7.0",
+            "item": "example-owner/site:@example/writer"
+          }
+        ],
+        "refused": [],
+        "deferred": [],
+        "pathAllowList": [
+          "clossys/**",
+          ".agents/skills/clossys-*/**",
+          "package.json",
+          "package-lock.json"
+        ],
+        "branch": "clossys/apply-0383b3d19c0d",
+        "bundle": "sha256:4be92ea2f7148ab1ce3efb3a8671a95ffd442f955eca77544680367ae6517fd6",
+        "pullRequest": {
+          "title": "Clossys: apply plan 0383b3d19c0d"
+        },
+        "changeSetDigest": "sha256:0383b3d19c0d050f74f5b0882991fdf8ad5e169e9637f2539e8f3da1ee728303"
+      },
+      "subject": "{\"deferred\":[],\"engine\":{\"integrity\":\"sha512-kCVE5gFTJHKz+h8j+pp2EBmmmhTGsqRcBZRD7pBlcEPb8toyMhpLswj3mHq59uUnVXm4CYRgWKSNKE0AOVbrLQ==\",\"name\":\"@example/advisor\",\"version\":\"0.8.0\"},\"files\":[{\"after\":\"sha256:37b06d4c734195868d01085f7d356b70bebb72dd8de105ebb71091fd6bb06364\",\"before\":null,\"item\":\"brief\",\"mode\":\"100644\",\"path\":\"clossys/brief.json\"},{\"after\":\"sha256:10a0edc2b0a6f35b6735a9423cbcf326138c80f0a152bb937b655ee278b26c1f\",\"before\":null,\"item\":\"skills\",\"mode\":\"100644\",\"path\":\".agents/skills/clossys-strategist/SKILL.md\"},{\"after\":\"sha256:e0d4b7ccb4dbdcf1f9e6e94ac05fa6f2d05c9cb3797ccde260ce3c9d59ea35b1\",\"before\":null,\"item\":\"skills\",\"mode\":\"100644\",\"path\":\".agents/skills/clossys-writer/SKILL.md\"},{\"derived\":true,\"invariants\":[{\"integrity\":\"sha512-UWlOIr0jGHG4u420oMkUOeVW5r6Ab4kxuaUU4UWjjGebkzXM634IHDtxqLqMGCRebanNaxZBudK29XyAQgk5sQ==\",\"item\":\"example-owner/site:@example/strategist\",\"name\":\"@example/strategist\",\"version\":\"1.4.0\"},{\"integrity\":\"sha512-AwbkCaWGYz+BoaP4K8I2OwyHhjCN9FPm7qV4C/glz9nfTj3k4mM1U/Hrm6NP59gG6Jhrx6eLy4g1Qyky7nL0kQ==\",\"item\":\"example-owner/site:@example/writer\",\"name\":\"@example/writer\",\"version\":\"0.7.0\"}],\"item\":\"example-owner/site:@example/strategist\",\"mode\":\"100644\",\"path\":\"package-lock.json\"},{\"derived\":true,\"invariants\":[{\"ledgerGeneration\":1}],\"item\":\"ledger\",\"mode\":\"100644\",\"path\":\"clossys/.state/installed.json\"}],\"items\":[{\"act\":\"write-record\",\"id\":\"brief\",\"source\":\"engagement-brief\"},{\"act\":\"compose-skills\",\"id\":\"skills\",\"roles\":[\"strategist\",\"writer\"]},{\"act\":\"pin-starter\",\"id\":\"example-owner/site:@example/starter\",\"package\":{\"integrity\":\"sha512-hJiP5Qe0sBUnWOs7+hC2bcIg2ye4C0X3hmWVHIo4IfibnbGns3pFL8QPV4R3MuWxVlbU9dWJ/HeYE42ABQie/w==\",\"name\":\"@example/starter\",\"version\":\"0.9.2\"},\"placement\":\"devDependencies\",\"planItem\":\"example-owner/site:@example/starter\",\"satisfiedInBase\":true},{\"act\":\"install\",\"id\":\"example-owner/site:@example/strategist\",\"package\":{\"integrity\":\"sha512-UWlOIr0jGHG4u420oMkUOeVW5r6Ab4kxuaUU4UWjjGebkzXM634IHDtxqLqMGCRebanNaxZBudK29XyAQgk5sQ==\",\"name\":\"@example/strategist\",\"version\":\"1.4.0\"},\"placement\":\"devDependencies\",\"planItem\":\"example-owner/site:@example/strategist\",\"satisfiedInBase\":false},{\"act\":\"install\",\"id\":\"example-owner/site:@example/writer\",\"package\":{\"integrity\":\"sha512-AwbkCaWGYz+BoaP4K8I2OwyHhjCN9FPm7qV4C/glz9nfTj3k4mM1U/Hrm6NP59gG6Jhrx6eLy4g1Qyky7nL0kQ==\",\"name\":\"@example/writer\",\"version\":\"0.7.0\"},\"placement\":\"devDependencies\",\"planItem\":\"example-owner/site:@example/writer\",\"satisfiedInBase\":false},{\"act\":\"write-ledger\",\"id\":\"ledger\"}],\"keys\":[{\"after\":\"1.4.0\",\"before\":null,\"file\":\"package.json\",\"item\":\"example-owner/site:@example/strategist\",\"pointer\":\"/devDependencies/@example~1strategist\"},{\"after\":\"0.7.0\",\"before\":null,\"file\":\"package.json\",\"item\":\"example-owner/site:@example/writer\",\"pointer\":\"/devDependencies/@example~1writer\"}],\"kind\":\"clossys.repository-change-set\",\"ledger\":{\"generation\":0},\"observed\":{\"lockfile\":\"package-lock.json\",\"packageManager\":\"npm\",\"releaseAgeSurfaces\":[{\"path\":\".npmrc\",\"surface\":\"npmrc\"}]},\"pathAllowList\":[\"clossys/**\",\".agents/skills/clossys-*/**\",\"package.json\",\"package-lock.json\"],\"phase\":\"apply\",\"planDigest\":\"sha256:40e9c27d0c677c522f131e47740185d8182367c9f286fd4746e72c55b1275a18\",\"producer\":{\"name\":\"@example/launcher\",\"version\":\"0.4.0\"},\"refused\":[],\"repository\":{\"baseCommit\":\"138995ced6b16aae6f0c058d2e453121e6b6349d\",\"defaultBranch\":\"main\",\"id\":\"example-owner/site\",\"nodeId\":\"R_exampleSite1\",\"visibility\":\"private\"},\"schemaVersion\":1}",
+      "digest": "sha256:0383b3d19c0d050f74f5b0882991fdf8ad5e169e9637f2539e8f3da1ee728303"
+    },
+    {
+      "name": "apply-staffing-changed",
+      "note": "Only the strategist is staffed here.",
+      "valid": true,
+      "differsFrom": "apply-with-packages",
+      "changeSet": {
+        "schemaVersion": 1,
+        "kind": "clossys.repository-change-set",
+        "producer": {
+          "name": "@example/launcher",
+          "version": "0.4.0"
+        },
+        "planDigest": "sha256:40e9c27d0c677c522f131e47740185d8182367c9f286fd4746e72c55b1275a18",
+        "repository": {
+          "id": "example-owner/site",
+          "nodeId": "R_exampleSite1",
+          "visibility": "private",
+          "defaultBranch": "main",
+          "baseCommit": "138995ced6b16aae6f0c058d2e453121e6b6349d"
+        },
+        "ledger": {
+          "generation": 0
+        },
+        "phase": "apply",
+        "engine": {
+          "name": "@example/advisor",
+          "version": "0.8.0",
+          "integrity": "sha512-kCVE5gFTJHKz+h8j+pp2EBmmmhTGsqRcBZRD7pBlcEPb8toyMhpLswj3mHq59uUnVXm4CYRgWKSNKE0AOVbrLQ=="
+        },
+        "observed": {
+          "packageManager": "npm",
+          "lockfile": "package-lock.json",
+          "releaseAgeSurfaces": [
+            {
+              "surface": "npmrc",
+              "path": ".npmrc"
+            }
+          ]
+        },
+        "items": [
+          {
+            "id": "brief",
+            "act": "write-record",
+            "source": "engagement-brief"
+          },
+          {
+            "id": "skills",
+            "act": "compose-skills",
+            "roles": [
+              "strategist"
+            ]
+          },
+          {
+            "id": "example-owner/site:@example/starter",
+            "act": "pin-starter",
+            "planItem": "example-owner/site:@example/starter",
+            "package": {
+              "name": "@example/starter",
+              "version": "0.9.2",
+              "integrity": "sha512-hJiP5Qe0sBUnWOs7+hC2bcIg2ye4C0X3hmWVHIo4IfibnbGns3pFL8QPV4R3MuWxVlbU9dWJ/HeYE42ABQie/w=="
+            },
+            "placement": "devDependencies",
+            "satisfiedInBase": true
+          },
+          {
+            "id": "example-owner/site:@example/strategist",
+            "act": "install",
+            "planItem": "example-owner/site:@example/strategist",
+            "package": {
+              "name": "@example/strategist",
+              "version": "1.4.0",
+              "integrity": "sha512-UWlOIr0jGHG4u420oMkUOeVW5r6Ab4kxuaUU4UWjjGebkzXM634IHDtxqLqMGCRebanNaxZBudK29XyAQgk5sQ=="
+            },
+            "placement": "devDependencies",
+            "satisfiedInBase": false
+          },
+          {
+            "id": "example-owner/site:@example/writer",
+            "act": "install",
+            "planItem": "example-owner/site:@example/writer",
+            "package": {
+              "name": "@example/writer",
+              "version": "0.7.0",
+              "integrity": "sha512-GW995IgPwvbujjoIUYbT6dge9ZrLCEa1JOYNnU+LYrdaWcbU9wOs0vpm53wXR1kQBUbFftpxA8LkpD4AtU/dQQ=="
+            },
+            "placement": "devDependencies",
+            "satisfiedInBase": false
+          },
+          {
+            "id": "ledger",
+            "act": "write-ledger"
+          }
+        ],
+        "files": [
+          {
+            "path": "clossys/brief.json",
+            "mode": "100644",
+            "before": null,
+            "after": "sha256:37b06d4c734195868d01085f7d356b70bebb72dd8de105ebb71091fd6bb06364",
+            "item": "brief"
+          },
+          {
+            "path": ".agents/skills/clossys-strategist/SKILL.md",
+            "mode": "100644",
+            "before": null,
+            "after": "sha256:10a0edc2b0a6f35b6735a9423cbcf326138c80f0a152bb937b655ee278b26c1f",
+            "item": "skills"
+          },
+          {
+            "path": "package-lock.json",
+            "mode": "100644",
+            "derived": true,
+            "item": "example-owner/site:@example/strategist",
+            "before": "sha256:e98b108f460871f3d14fd3724acf48628539f506c83f96cfd3539353fecfddf8",
+            "invariants": [
+              {
+                "item": "example-owner/site:@example/strategist",
+                "name": "@example/strategist",
+                "version": "1.4.0",
+                "integrity": "sha512-UWlOIr0jGHG4u420oMkUOeVW5r6Ab4kxuaUU4UWjjGebkzXM634IHDtxqLqMGCRebanNaxZBudK29XyAQgk5sQ=="
+              },
+              {
+                "item": "example-owner/site:@example/writer",
+                "name": "@example/writer",
+                "version": "0.7.0",
+                "integrity": "sha512-GW995IgPwvbujjoIUYbT6dge9ZrLCEa1JOYNnU+LYrdaWcbU9wOs0vpm53wXR1kQBUbFftpxA8LkpD4AtU/dQQ=="
+              }
+            ]
+          },
+          {
+            "path": "clossys/.state/installed.json",
+            "mode": "100644",
+            "derived": true,
+            "item": "ledger",
+            "before": null,
+            "invariants": [
+              {
+                "ledgerGeneration": 1
+              }
+            ]
+          }
+        ],
+        "keys": [
+          {
+            "file": "package.json",
+            "pointer": "/devDependencies/@example~1strategist",
+            "before": null,
+            "after": "1.4.0",
+            "item": "example-owner/site:@example/strategist"
+          },
+          {
+            "file": "package.json",
+            "pointer": "/devDependencies/@example~1writer",
+            "before": null,
+            "after": "0.7.0",
+            "item": "example-owner/site:@example/writer"
+          }
+        ],
+        "refused": [],
+        "deferred": [],
+        "pathAllowList": [
+          "clossys/**",
+          ".agents/skills/clossys-*/**",
+          "package.json",
+          "package-lock.json"
+        ],
+        "branch": "clossys/apply-5908da9d1084",
+        "bundle": "sha256:4be92ea2f7148ab1ce3efb3a8671a95ffd442f955eca77544680367ae6517fd6",
+        "pullRequest": {
+          "title": "Clossys: apply plan 5908da9d1084"
+        },
+        "changeSetDigest": "sha256:5908da9d10840a55275e20a758d7d25bca60e382b2684cc2667428372163f4eb"
+      },
+      "subject": "{\"deferred\":[],\"engine\":{\"integrity\":\"sha512-kCVE5gFTJHKz+h8j+pp2EBmmmhTGsqRcBZRD7pBlcEPb8toyMhpLswj3mHq59uUnVXm4CYRgWKSNKE0AOVbrLQ==\",\"name\":\"@example/advisor\",\"version\":\"0.8.0\"},\"files\":[{\"after\":\"sha256:37b06d4c734195868d01085f7d356b70bebb72dd8de105ebb71091fd6bb06364\",\"before\":null,\"item\":\"brief\",\"mode\":\"100644\",\"path\":\"clossys/brief.json\"},{\"after\":\"sha256:10a0edc2b0a6f35b6735a9423cbcf326138c80f0a152bb937b655ee278b26c1f\",\"before\":null,\"item\":\"skills\",\"mode\":\"100644\",\"path\":\".agents/skills/clossys-strategist/SKILL.md\"},{\"derived\":true,\"invariants\":[{\"integrity\":\"sha512-UWlOIr0jGHG4u420oMkUOeVW5r6Ab4kxuaUU4UWjjGebkzXM634IHDtxqLqMGCRebanNaxZBudK29XyAQgk5sQ==\",\"item\":\"example-owner/site:@example/strategist\",\"name\":\"@example/strategist\",\"version\":\"1.4.0\"},{\"integrity\":\"sha512-GW995IgPwvbujjoIUYbT6dge9ZrLCEa1JOYNnU+LYrdaWcbU9wOs0vpm53wXR1kQBUbFftpxA8LkpD4AtU/dQQ==\",\"item\":\"example-owner/site:@example/writer\",\"name\":\"@example/writer\",\"version\":\"0.7.0\"}],\"item\":\"example-owner/site:@example/strategist\",\"mode\":\"100644\",\"path\":\"package-lock.json\"},{\"derived\":true,\"invariants\":[{\"ledgerGeneration\":1}],\"item\":\"ledger\",\"mode\":\"100644\",\"path\":\"clossys/.state/installed.json\"}],\"items\":[{\"act\":\"write-record\",\"id\":\"brief\",\"source\":\"engagement-brief\"},{\"act\":\"compose-skills\",\"id\":\"skills\",\"roles\":[\"strategist\"]},{\"act\":\"pin-starter\",\"id\":\"example-owner/site:@example/starter\",\"package\":{\"integrity\":\"sha512-hJiP5Qe0sBUnWOs7+hC2bcIg2ye4C0X3hmWVHIo4IfibnbGns3pFL8QPV4R3MuWxVlbU9dWJ/HeYE42ABQie/w==\",\"name\":\"@example/starter\",\"version\":\"0.9.2\"},\"placement\":\"devDependencies\",\"planItem\":\"example-owner/site:@example/starter\",\"satisfiedInBase\":true},{\"act\":\"install\",\"id\":\"example-owner/site:@example/strategist\",\"package\":{\"integrity\":\"sha512-UWlOIr0jGHG4u420oMkUOeVW5r6Ab4kxuaUU4UWjjGebkzXM634IHDtxqLqMGCRebanNaxZBudK29XyAQgk5sQ==\",\"name\":\"@example/strategist\",\"version\":\"1.4.0\"},\"placement\":\"devDependencies\",\"planItem\":\"example-owner/site:@example/strategist\",\"satisfiedInBase\":false},{\"act\":\"install\",\"id\":\"example-owner/site:@example/writer\",\"package\":{\"integrity\":\"sha512-GW995IgPwvbujjoIUYbT6dge9ZrLCEa1JOYNnU+LYrdaWcbU9wOs0vpm53wXR1kQBUbFftpxA8LkpD4AtU/dQQ==\",\"name\":\"@example/writer\",\"version\":\"0.7.0\"},\"placement\":\"devDependencies\",\"planItem\":\"example-owner/site:@example/writer\",\"satisfiedInBase\":false},{\"act\":\"write-ledger\",\"id\":\"ledger\"}],\"keys\":[{\"after\":\"1.4.0\",\"before\":null,\"file\":\"package.json\",\"item\":\"example-owner/site:@example/strategist\",\"pointer\":\"/devDependencies/@example~1strategist\"},{\"after\":\"0.7.0\",\"before\":null,\"file\":\"package.json\",\"item\":\"example-owner/site:@example/writer\",\"pointer\":\"/devDependencies/@example~1writer\"}],\"kind\":\"clossys.repository-change-set\",\"ledger\":{\"generation\":0},\"observed\":{\"lockfile\":\"package-lock.json\",\"packageManager\":\"npm\",\"releaseAgeSurfaces\":[{\"path\":\".npmrc\",\"surface\":\"npmrc\"}]},\"pathAllowList\":[\"clossys/**\",\".agents/skills/clossys-*/**\",\"package.json\",\"package-lock.json\"],\"phase\":\"apply\",\"planDigest\":\"sha256:40e9c27d0c677c522f131e47740185d8182367c9f286fd4746e72c55b1275a18\",\"producer\":{\"name\":\"@example/launcher\",\"version\":\"0.4.0\"},\"refused\":[],\"repository\":{\"baseCommit\":\"138995ced6b16aae6f0c058d2e453121e6b6349d\",\"defaultBranch\":\"main\",\"id\":\"example-owner/site\",\"nodeId\":\"R_exampleSite1\",\"visibility\":\"private\"},\"schemaVersion\":1}",
+      "digest": "sha256:5908da9d10840a55275e20a758d7d25bca60e382b2684cc2667428372163f4eb"
+    },
+    {
+      "name": "apply-brief-bytes",
+      "note": "The brief's bytes differ.",
+      "valid": true,
+      "differsFrom": "apply-with-packages",
+      "changeSet": {
+        "schemaVersion": 1,
+        "kind": "clossys.repository-change-set",
+        "producer": {
+          "name": "@example/launcher",
+          "version": "0.4.0"
+        },
+        "planDigest": "sha256:40e9c27d0c677c522f131e47740185d8182367c9f286fd4746e72c55b1275a18",
+        "repository": {
+          "id": "example-owner/site",
+          "nodeId": "R_exampleSite1",
+          "visibility": "private",
+          "defaultBranch": "main",
+          "baseCommit": "138995ced6b16aae6f0c058d2e453121e6b6349d"
+        },
+        "ledger": {
+          "generation": 0
+        },
+        "phase": "apply",
+        "engine": {
+          "name": "@example/advisor",
+          "version": "0.8.0",
+          "integrity": "sha512-kCVE5gFTJHKz+h8j+pp2EBmmmhTGsqRcBZRD7pBlcEPb8toyMhpLswj3mHq59uUnVXm4CYRgWKSNKE0AOVbrLQ=="
+        },
+        "observed": {
+          "packageManager": "npm",
+          "lockfile": "package-lock.json",
+          "releaseAgeSurfaces": [
+            {
+              "surface": "npmrc",
+              "path": ".npmrc"
+            }
+          ]
+        },
+        "items": [
+          {
+            "id": "brief",
+            "act": "write-record",
+            "source": "engagement-brief"
+          },
+          {
+            "id": "skills",
+            "act": "compose-skills",
+            "roles": [
+              "strategist",
+              "writer"
+            ]
+          },
+          {
+            "id": "example-owner/site:@example/starter",
+            "act": "pin-starter",
+            "planItem": "example-owner/site:@example/starter",
+            "package": {
+              "name": "@example/starter",
+              "version": "0.9.2",
+              "integrity": "sha512-hJiP5Qe0sBUnWOs7+hC2bcIg2ye4C0X3hmWVHIo4IfibnbGns3pFL8QPV4R3MuWxVlbU9dWJ/HeYE42ABQie/w=="
+            },
+            "placement": "devDependencies",
+            "satisfiedInBase": true
+          },
+          {
+            "id": "example-owner/site:@example/strategist",
+            "act": "install",
+            "planItem": "example-owner/site:@example/strategist",
+            "package": {
+              "name": "@example/strategist",
+              "version": "1.4.0",
+              "integrity": "sha512-UWlOIr0jGHG4u420oMkUOeVW5r6Ab4kxuaUU4UWjjGebkzXM634IHDtxqLqMGCRebanNaxZBudK29XyAQgk5sQ=="
+            },
+            "placement": "devDependencies",
+            "satisfiedInBase": false
+          },
+          {
+            "id": "example-owner/site:@example/writer",
+            "act": "install",
+            "planItem": "example-owner/site:@example/writer",
+            "package": {
+              "name": "@example/writer",
+              "version": "0.7.0",
+              "integrity": "sha512-GW995IgPwvbujjoIUYbT6dge9ZrLCEa1JOYNnU+LYrdaWcbU9wOs0vpm53wXR1kQBUbFftpxA8LkpD4AtU/dQQ=="
+            },
+            "placement": "devDependencies",
+            "satisfiedInBase": false
+          },
+          {
+            "id": "ledger",
+            "act": "write-ledger"
+          }
+        ],
+        "files": [
+          {
+            "path": "clossys/brief.json",
+            "mode": "100644",
+            "before": null,
+            "after": "sha256:a83dfdb1fe8c7c555d4a3abaaebb72f82db6a868ac0f39a0649947927905b8d4",
+            "item": "brief"
+          },
+          {
+            "path": ".agents/skills/clossys-strategist/SKILL.md",
+            "mode": "100644",
+            "before": null,
+            "after": "sha256:10a0edc2b0a6f35b6735a9423cbcf326138c80f0a152bb937b655ee278b26c1f",
+            "item": "skills"
+          },
+          {
+            "path": ".agents/skills/clossys-writer/SKILL.md",
+            "mode": "100644",
+            "before": null,
+            "after": "sha256:e0d4b7ccb4dbdcf1f9e6e94ac05fa6f2d05c9cb3797ccde260ce3c9d59ea35b1",
+            "item": "skills"
+          },
+          {
+            "path": "package-lock.json",
+            "mode": "100644",
+            "derived": true,
+            "item": "example-owner/site:@example/strategist",
+            "before": "sha256:e98b108f460871f3d14fd3724acf48628539f506c83f96cfd3539353fecfddf8",
+            "invariants": [
+              {
+                "item": "example-owner/site:@example/strategist",
+                "name": "@example/strategist",
+                "version": "1.4.0",
+                "integrity": "sha512-UWlOIr0jGHG4u420oMkUOeVW5r6Ab4kxuaUU4UWjjGebkzXM634IHDtxqLqMGCRebanNaxZBudK29XyAQgk5sQ=="
+              },
+              {
+                "item": "example-owner/site:@example/writer",
+                "name": "@example/writer",
+                "version": "0.7.0",
+                "integrity": "sha512-GW995IgPwvbujjoIUYbT6dge9ZrLCEa1JOYNnU+LYrdaWcbU9wOs0vpm53wXR1kQBUbFftpxA8LkpD4AtU/dQQ=="
+              }
+            ]
+          },
+          {
+            "path": "clossys/.state/installed.json",
+            "mode": "100644",
+            "derived": true,
+            "item": "ledger",
+            "before": null,
+            "invariants": [
+              {
+                "ledgerGeneration": 1
+              }
+            ]
+          }
+        ],
+        "keys": [
+          {
+            "file": "package.json",
+            "pointer": "/devDependencies/@example~1strategist",
+            "before": null,
+            "after": "1.4.0",
+            "item": "example-owner/site:@example/strategist"
+          },
+          {
+            "file": "package.json",
+            "pointer": "/devDependencies/@example~1writer",
+            "before": null,
+            "after": "0.7.0",
+            "item": "example-owner/site:@example/writer"
+          }
+        ],
+        "refused": [],
+        "deferred": [],
+        "pathAllowList": [
+          "clossys/**",
+          ".agents/skills/clossys-*/**",
+          "package.json",
+          "package-lock.json"
+        ],
+        "branch": "clossys/apply-a6fa902a1a07",
+        "bundle": "sha256:4be92ea2f7148ab1ce3efb3a8671a95ffd442f955eca77544680367ae6517fd6",
+        "pullRequest": {
+          "title": "Clossys: apply plan a6fa902a1a07"
+        },
+        "changeSetDigest": "sha256:a6fa902a1a073dc23b7f8615bdde653d2c705751703e29c6a98267c195db4da0"
+      },
+      "subject": "{\"deferred\":[],\"engine\":{\"integrity\":\"sha512-kCVE5gFTJHKz+h8j+pp2EBmmmhTGsqRcBZRD7pBlcEPb8toyMhpLswj3mHq59uUnVXm4CYRgWKSNKE0AOVbrLQ==\",\"name\":\"@example/advisor\",\"version\":\"0.8.0\"},\"files\":[{\"after\":\"sha256:a83dfdb1fe8c7c555d4a3abaaebb72f82db6a868ac0f39a0649947927905b8d4\",\"before\":null,\"item\":\"brief\",\"mode\":\"100644\",\"path\":\"clossys/brief.json\"},{\"after\":\"sha256:10a0edc2b0a6f35b6735a9423cbcf326138c80f0a152bb937b655ee278b26c1f\",\"before\":null,\"item\":\"skills\",\"mode\":\"100644\",\"path\":\".agents/skills/clossys-strategist/SKILL.md\"},{\"after\":\"sha256:e0d4b7ccb4dbdcf1f9e6e94ac05fa6f2d05c9cb3797ccde260ce3c9d59ea35b1\",\"before\":null,\"item\":\"skills\",\"mode\":\"100644\",\"path\":\".agents/skills/clossys-writer/SKILL.md\"},{\"derived\":true,\"invariants\":[{\"integrity\":\"sha512-UWlOIr0jGHG4u420oMkUOeVW5r6Ab4kxuaUU4UWjjGebkzXM634IHDtxqLqMGCRebanNaxZBudK29XyAQgk5sQ==\",\"item\":\"example-owner/site:@example/strategist\",\"name\":\"@example/strategist\",\"version\":\"1.4.0\"},{\"integrity\":\"sha512-GW995IgPwvbujjoIUYbT6dge9ZrLCEa1JOYNnU+LYrdaWcbU9wOs0vpm53wXR1kQBUbFftpxA8LkpD4AtU/dQQ==\",\"item\":\"example-owner/site:@example/writer\",\"name\":\"@example/writer\",\"version\":\"0.7.0\"}],\"item\":\"example-owner/site:@example/strategist\",\"mode\":\"100644\",\"path\":\"package-lock.json\"},{\"derived\":true,\"invariants\":[{\"ledgerGeneration\":1}],\"item\":\"ledger\",\"mode\":\"100644\",\"path\":\"clossys/.state/installed.json\"}],\"items\":[{\"act\":\"write-record\",\"id\":\"brief\",\"source\":\"engagement-brief\"},{\"act\":\"compose-skills\",\"id\":\"skills\",\"roles\":[\"strategist\",\"writer\"]},{\"act\":\"pin-starter\",\"id\":\"example-owner/site:@example/starter\",\"package\":{\"integrity\":\"sha512-hJiP5Qe0sBUnWOs7+hC2bcIg2ye4C0X3hmWVHIo4IfibnbGns3pFL8QPV4R3MuWxVlbU9dWJ/HeYE42ABQie/w==\",\"name\":\"@example/starter\",\"version\":\"0.9.2\"},\"placement\":\"devDependencies\",\"planItem\":\"example-owner/site:@example/starter\",\"satisfiedInBase\":true},{\"act\":\"install\",\"id\":\"example-owner/site:@example/strategist\",\"package\":{\"integrity\":\"sha512-UWlOIr0jGHG4u420oMkUOeVW5r6Ab4kxuaUU4UWjjGebkzXM634IHDtxqLqMGCRebanNaxZBudK29XyAQgk5sQ==\",\"name\":\"@example/strategist\",\"version\":\"1.4.0\"},\"placement\":\"devDependencies\",\"planItem\":\"example-owner/site:@example/strategist\",\"satisfiedInBase\":false},{\"act\":\"install\",\"id\":\"example-owner/site:@example/writer\",\"package\":{\"integrity\":\"sha512-GW995IgPwvbujjoIUYbT6dge9ZrLCEa1JOYNnU+LYrdaWcbU9wOs0vpm53wXR1kQBUbFftpxA8LkpD4AtU/dQQ==\",\"name\":\"@example/writer\",\"version\":\"0.7.0\"},\"placement\":\"devDependencies\",\"planItem\":\"example-owner/site:@example/writer\",\"satisfiedInBase\":false},{\"act\":\"write-ledger\",\"id\":\"ledger\"}],\"keys\":[{\"after\":\"1.4.0\",\"before\":null,\"file\":\"package.json\",\"item\":\"example-owner/site:@example/strategist\",\"pointer\":\"/devDependencies/@example~1strategist\"},{\"after\":\"0.7.0\",\"before\":null,\"file\":\"package.json\",\"item\":\"example-owner/site:@example/writer\",\"pointer\":\"/devDependencies/@example~1writer\"}],\"kind\":\"clossys.repository-change-set\",\"ledger\":{\"generation\":0},\"observed\":{\"lockfile\":\"package-lock.json\",\"packageManager\":\"npm\",\"releaseAgeSurfaces\":[{\"path\":\".npmrc\",\"surface\":\"npmrc\"}]},\"pathAllowList\":[\"clossys/**\",\".agents/skills/clossys-*/**\",\"package.json\",\"package-lock.json\"],\"phase\":\"apply\",\"planDigest\":\"sha256:40e9c27d0c677c522f131e47740185d8182367c9f286fd4746e72c55b1275a18\",\"producer\":{\"name\":\"@example/launcher\",\"version\":\"0.4.0\"},\"refused\":[],\"repository\":{\"baseCommit\":\"138995ced6b16aae6f0c058d2e453121e6b6349d\",\"defaultBranch\":\"main\",\"id\":\"example-owner/site\",\"nodeId\":\"R_exampleSite1\",\"visibility\":\"private\"},\"schemaVersion\":1}",
+      "digest": "sha256:a6fa902a1a073dc23b7f8615bdde653d2c705751703e29c6a98267c195db4da0"
+    },
+    {
+      "name": "apply-engine-bumped",
+      "note": "A different Advisor engine.",
+      "valid": true,
+      "differsFrom": "apply-with-packages",
+      "changeSet": {
+        "schemaVersion": 1,
+        "kind": "clossys.repository-change-set",
+        "producer": {
+          "name": "@example/launcher",
+          "version": "0.4.0"
+        },
+        "planDigest": "sha256:40e9c27d0c677c522f131e47740185d8182367c9f286fd4746e72c55b1275a18",
+        "repository": {
+          "id": "example-owner/site",
+          "nodeId": "R_exampleSite1",
+          "visibility": "private",
+          "defaultBranch": "main",
+          "baseCommit": "138995ced6b16aae6f0c058d2e453121e6b6349d"
+        },
+        "ledger": {
+          "generation": 0
+        },
+        "phase": "apply",
+        "engine": {
+          "name": "@example/advisor",
+          "version": "0.8.1",
+          "integrity": "sha512-NbTjIb9uj4TaEHML01x3JEsQLUFwewoSwTAqaU/3e/YQz3AD4kosCQTfoIX39N/x09dElEglzr3GtYi2XCxYig=="
+        },
+        "observed": {
+          "packageManager": "npm",
+          "lockfile": "package-lock.json",
+          "releaseAgeSurfaces": [
+            {
+              "surface": "npmrc",
+              "path": ".npmrc"
+            }
+          ]
+        },
+        "items": [
+          {
+            "id": "brief",
+            "act": "write-record",
+            "source": "engagement-brief"
+          },
+          {
+            "id": "skills",
+            "act": "compose-skills",
+            "roles": [
+              "strategist",
+              "writer"
+            ]
+          },
+          {
+            "id": "example-owner/site:@example/starter",
+            "act": "pin-starter",
+            "planItem": "example-owner/site:@example/starter",
+            "package": {
+              "name": "@example/starter",
+              "version": "0.9.2",
+              "integrity": "sha512-hJiP5Qe0sBUnWOs7+hC2bcIg2ye4C0X3hmWVHIo4IfibnbGns3pFL8QPV4R3MuWxVlbU9dWJ/HeYE42ABQie/w=="
+            },
+            "placement": "devDependencies",
+            "satisfiedInBase": true
+          },
+          {
+            "id": "example-owner/site:@example/strategist",
+            "act": "install",
+            "planItem": "example-owner/site:@example/strategist",
+            "package": {
+              "name": "@example/strategist",
+              "version": "1.4.0",
+              "integrity": "sha512-UWlOIr0jGHG4u420oMkUOeVW5r6Ab4kxuaUU4UWjjGebkzXM634IHDtxqLqMGCRebanNaxZBudK29XyAQgk5sQ=="
+            },
+            "placement": "devDependencies",
+            "satisfiedInBase": false
+          },
+          {
+            "id": "example-owner/site:@example/writer",
+            "act": "install",
+            "planItem": "example-owner/site:@example/writer",
+            "package": {
+              "name": "@example/writer",
+              "version": "0.7.0",
+              "integrity": "sha512-GW995IgPwvbujjoIUYbT6dge9ZrLCEa1JOYNnU+LYrdaWcbU9wOs0vpm53wXR1kQBUbFftpxA8LkpD4AtU/dQQ=="
+            },
+            "placement": "devDependencies",
+            "satisfiedInBase": false
+          },
+          {
+            "id": "ledger",
+            "act": "write-ledger"
+          }
+        ],
+        "files": [
+          {
+            "path": "clossys/brief.json",
+            "mode": "100644",
+            "before": null,
+            "after": "sha256:37b06d4c734195868d01085f7d356b70bebb72dd8de105ebb71091fd6bb06364",
+            "item": "brief"
+          },
+          {
+            "path": ".agents/skills/clossys-strategist/SKILL.md",
+            "mode": "100644",
+            "before": null,
+            "after": "sha256:10a0edc2b0a6f35b6735a9423cbcf326138c80f0a152bb937b655ee278b26c1f",
+            "item": "skills"
+          },
+          {
+            "path": ".agents/skills/clossys-writer/SKILL.md",
+            "mode": "100644",
+            "before": null,
+            "after": "sha256:e0d4b7ccb4dbdcf1f9e6e94ac05fa6f2d05c9cb3797ccde260ce3c9d59ea35b1",
+            "item": "skills"
+          },
+          {
+            "path": "package-lock.json",
+            "mode": "100644",
+            "derived": true,
+            "item": "example-owner/site:@example/strategist",
+            "before": "sha256:e98b108f460871f3d14fd3724acf48628539f506c83f96cfd3539353fecfddf8",
+            "invariants": [
+              {
+                "item": "example-owner/site:@example/strategist",
+                "name": "@example/strategist",
+                "version": "1.4.0",
+                "integrity": "sha512-UWlOIr0jGHG4u420oMkUOeVW5r6Ab4kxuaUU4UWjjGebkzXM634IHDtxqLqMGCRebanNaxZBudK29XyAQgk5sQ=="
+              },
+              {
+                "item": "example-owner/site:@example/writer",
+                "name": "@example/writer",
+                "version": "0.7.0",
+                "integrity": "sha512-GW995IgPwvbujjoIUYbT6dge9ZrLCEa1JOYNnU+LYrdaWcbU9wOs0vpm53wXR1kQBUbFftpxA8LkpD4AtU/dQQ=="
+              }
+            ]
+          },
+          {
+            "path": "clossys/.state/installed.json",
+            "mode": "100644",
+            "derived": true,
+            "item": "ledger",
+            "before": null,
+            "invariants": [
+              {
+                "ledgerGeneration": 1
+              }
+            ]
+          }
+        ],
+        "keys": [
+          {
+            "file": "package.json",
+            "pointer": "/devDependencies/@example~1strategist",
+            "before": null,
+            "after": "1.4.0",
+            "item": "example-owner/site:@example/strategist"
+          },
+          {
+            "file": "package.json",
+            "pointer": "/devDependencies/@example~1writer",
+            "before": null,
+            "after": "0.7.0",
+            "item": "example-owner/site:@example/writer"
+          }
+        ],
+        "refused": [],
+        "deferred": [],
+        "pathAllowList": [
+          "clossys/**",
+          ".agents/skills/clossys-*/**",
+          "package.json",
+          "package-lock.json"
+        ],
+        "branch": "clossys/apply-a3305605eac5",
+        "bundle": "sha256:4be92ea2f7148ab1ce3efb3a8671a95ffd442f955eca77544680367ae6517fd6",
+        "pullRequest": {
+          "title": "Clossys: apply plan a3305605eac5"
+        },
+        "changeSetDigest": "sha256:a3305605eac5b0917d4c9076c7c54c8c06662ba1f09f389f4d5127a125a1467c"
+      },
+      "subject": "{\"deferred\":[],\"engine\":{\"integrity\":\"sha512-NbTjIb9uj4TaEHML01x3JEsQLUFwewoSwTAqaU/3e/YQz3AD4kosCQTfoIX39N/x09dElEglzr3GtYi2XCxYig==\",\"name\":\"@example/advisor\",\"version\":\"0.8.1\"},\"files\":[{\"after\":\"sha256:37b06d4c734195868d01085f7d356b70bebb72dd8de105ebb71091fd6bb06364\",\"before\":null,\"item\":\"brief\",\"mode\":\"100644\",\"path\":\"clossys/brief.json\"},{\"after\":\"sha256:10a0edc2b0a6f35b6735a9423cbcf326138c80f0a152bb937b655ee278b26c1f\",\"before\":null,\"item\":\"skills\",\"mode\":\"100644\",\"path\":\".agents/skills/clossys-strategist/SKILL.md\"},{\"after\":\"sha256:e0d4b7ccb4dbdcf1f9e6e94ac05fa6f2d05c9cb3797ccde260ce3c9d59ea35b1\",\"before\":null,\"item\":\"skills\",\"mode\":\"100644\",\"path\":\".agents/skills/clossys-writer/SKILL.md\"},{\"derived\":true,\"invariants\":[{\"integrity\":\"sha512-UWlOIr0jGHG4u420oMkUOeVW5r6Ab4kxuaUU4UWjjGebkzXM634IHDtxqLqMGCRebanNaxZBudK29XyAQgk5sQ==\",\"item\":\"example-owner/site:@example/strategist\",\"name\":\"@example/strategist\",\"version\":\"1.4.0\"},{\"integrity\":\"sha512-GW995IgPwvbujjoIUYbT6dge9ZrLCEa1JOYNnU+LYrdaWcbU9wOs0vpm53wXR1kQBUbFftpxA8LkpD4AtU/dQQ==\",\"item\":\"example-owner/site:@example/writer\",\"name\":\"@example/writer\",\"version\":\"0.7.0\"}],\"item\":\"example-owner/site:@example/strategist\",\"mode\":\"100644\",\"path\":\"package-lock.json\"},{\"derived\":true,\"invariants\":[{\"ledgerGeneration\":1}],\"item\":\"ledger\",\"mode\":\"100644\",\"path\":\"clossys/.state/installed.json\"}],\"items\":[{\"act\":\"write-record\",\"id\":\"brief\",\"source\":\"engagement-brief\"},{\"act\":\"compose-skills\",\"id\":\"skills\",\"roles\":[\"strategist\",\"writer\"]},{\"act\":\"pin-starter\",\"id\":\"example-owner/site:@example/starter\",\"package\":{\"integrity\":\"sha512-hJiP5Qe0sBUnWOs7+hC2bcIg2ye4C0X3hmWVHIo4IfibnbGns3pFL8QPV4R3MuWxVlbU9dWJ/HeYE42ABQie/w==\",\"name\":\"@example/starter\",\"version\":\"0.9.2\"},\"placement\":\"devDependencies\",\"planItem\":\"example-owner/site:@example/starter\",\"satisfiedInBase\":true},{\"act\":\"install\",\"id\":\"example-owner/site:@example/strategist\",\"package\":{\"integrity\":\"sha512-UWlOIr0jGHG4u420oMkUOeVW5r6Ab4kxuaUU4UWjjGebkzXM634IHDtxqLqMGCRebanNaxZBudK29XyAQgk5sQ==\",\"name\":\"@example/strategist\",\"version\":\"1.4.0\"},\"placement\":\"devDependencies\",\"planItem\":\"example-owner/site:@example/strategist\",\"satisfiedInBase\":false},{\"act\":\"install\",\"id\":\"example-owner/site:@example/writer\",\"package\":{\"integrity\":\"sha512-GW995IgPwvbujjoIUYbT6dge9ZrLCEa1JOYNnU+LYrdaWcbU9wOs0vpm53wXR1kQBUbFftpxA8LkpD4AtU/dQQ==\",\"name\":\"@example/writer\",\"version\":\"0.7.0\"},\"placement\":\"devDependencies\",\"planItem\":\"example-owner/site:@example/writer\",\"satisfiedInBase\":false},{\"act\":\"write-ledger\",\"id\":\"ledger\"}],\"keys\":[{\"after\":\"1.4.0\",\"before\":null,\"file\":\"package.json\",\"item\":\"example-owner/site:@example/strategist\",\"pointer\":\"/devDependencies/@example~1strategist\"},{\"after\":\"0.7.0\",\"before\":null,\"file\":\"package.json\",\"item\":\"example-owner/site:@example/writer\",\"pointer\":\"/devDependencies/@example~1writer\"}],\"kind\":\"clossys.repository-change-set\",\"ledger\":{\"generation\":0},\"observed\":{\"lockfile\":\"package-lock.json\",\"packageManager\":\"npm\",\"releaseAgeSurfaces\":[{\"path\":\".npmrc\",\"surface\":\"npmrc\"}]},\"pathAllowList\":[\"clossys/**\",\".agents/skills/clossys-*/**\",\"package.json\",\"package-lock.json\"],\"phase\":\"apply\",\"planDigest\":\"sha256:40e9c27d0c677c522f131e47740185d8182367c9f286fd4746e72c55b1275a18\",\"producer\":{\"name\":\"@example/launcher\",\"version\":\"0.4.0\"},\"refused\":[],\"repository\":{\"baseCommit\":\"138995ced6b16aae6f0c058d2e453121e6b6349d\",\"defaultBranch\":\"main\",\"id\":\"example-owner/site\",\"nodeId\":\"R_exampleSite1\",\"visibility\":\"private\"},\"schemaVersion\":1}",
+      "digest": "sha256:a3305605eac5b0917d4c9076c7c54c8c06662ba1f09f389f4d5127a125a1467c"
+    }
+  ],
+  "bundles": [
+    {
+      "name": "three-repositories",
+      "note": "Given in staffing order; the digest sorts them by id.",
+      "planDigest": "sha256:40e9c27d0c677c522f131e47740185d8182367c9f286fd4746e72c55b1275a18",
+      "repositories": [
+        {
+          "id": "example-owner/site",
+          "changeSetDigest": "sha256:a9fe8bb431bd80b9260ab7e56f29f24db27e557ea325363042057db8b54b37d7"
+        },
+        {
+          "id": "example-owner/docs",
+          "changeSetDigest": "sha256:ecb13b831efab73265932d68564325b69614c6d50108ede399a54fdac63d363d"
+        },
+        {
+          "id": "notes",
+          "changeSetDigest": "sha256:7e1d0c8c5117c56176bc6d24901309da180054b3fb81481b0a67219d35bb58cb"
+        }
+      ],
+      "canonical": "{\"planDigest\":\"sha256:40e9c27d0c677c522f131e47740185d8182367c9f286fd4746e72c55b1275a18\",\"repositories\":[{\"changeSetDigest\":\"sha256:ecb13b831efab73265932d68564325b69614c6d50108ede399a54fdac63d363d\",\"id\":\"example-owner/docs\"},{\"changeSetDigest\":\"sha256:a9fe8bb431bd80b9260ab7e56f29f24db27e557ea325363042057db8b54b37d7\",\"id\":\"example-owner/site\"},{\"changeSetDigest\":\"sha256:7e1d0c8c5117c56176bc6d24901309da180054b3fb81481b0a67219d35bb58cb\",\"id\":\"notes\"}]}",
+      "digest": "sha256:3993c8657da574532bccfa60bcf12dc5b996a11bf1a1b0f1939316e8488d0b72"
+    },
+    {
+      "name": "three-repositories-reordered",
+      "note": "The same repositories in another order.",
+      "planDigest": "sha256:40e9c27d0c677c522f131e47740185d8182367c9f286fd4746e72c55b1275a18",
+      "repositories": [
+        {
+          "id": "notes",
+          "changeSetDigest": "sha256:7e1d0c8c5117c56176bc6d24901309da180054b3fb81481b0a67219d35bb58cb"
+        },
+        {
+          "id": "example-owner/site",
+          "changeSetDigest": "sha256:a9fe8bb431bd80b9260ab7e56f29f24db27e557ea325363042057db8b54b37d7"
+        },
+        {
+          "id": "example-owner/docs",
+          "changeSetDigest": "sha256:ecb13b831efab73265932d68564325b69614c6d50108ede399a54fdac63d363d"
+        }
+      ],
+      "canonical": "{\"planDigest\":\"sha256:40e9c27d0c677c522f131e47740185d8182367c9f286fd4746e72c55b1275a18\",\"repositories\":[{\"changeSetDigest\":\"sha256:ecb13b831efab73265932d68564325b69614c6d50108ede399a54fdac63d363d\",\"id\":\"example-owner/docs\"},{\"changeSetDigest\":\"sha256:a9fe8bb431bd80b9260ab7e56f29f24db27e557ea325363042057db8b54b37d7\",\"id\":\"example-owner/site\"},{\"changeSetDigest\":\"sha256:7e1d0c8c5117c56176bc6d24901309da180054b3fb81481b0a67219d35bb58cb\",\"id\":\"notes\"}]}",
+      "digest": "sha256:3993c8657da574532bccfa60bcf12dc5b996a11bf1a1b0f1939316e8488d0b72"
+    },
+    {
+      "name": "one-repository-skipped",
+      "note": "The same plan with one repository left out.",
+      "planDigest": "sha256:40e9c27d0c677c522f131e47740185d8182367c9f286fd4746e72c55b1275a18",
+      "repositories": [
+        {
+          "id": "example-owner/site",
+          "changeSetDigest": "sha256:a9fe8bb431bd80b9260ab7e56f29f24db27e557ea325363042057db8b54b37d7"
+        },
+        {
+          "id": "notes",
+          "changeSetDigest": "sha256:7e1d0c8c5117c56176bc6d24901309da180054b3fb81481b0a67219d35bb58cb"
+        }
+      ],
+      "canonical": "{\"planDigest\":\"sha256:40e9c27d0c677c522f131e47740185d8182367c9f286fd4746e72c55b1275a18\",\"repositories\":[{\"changeSetDigest\":\"sha256:a9fe8bb431bd80b9260ab7e56f29f24db27e557ea325363042057db8b54b37d7\",\"id\":\"example-owner/site\"},{\"changeSetDigest\":\"sha256:7e1d0c8c5117c56176bc6d24901309da180054b3fb81481b0a67219d35bb58cb\",\"id\":\"notes\"}]}",
+      "digest": "sha256:442fbb849cd02239cdb33d9954acf6125d6d214cded1e02ea09a6ec9156f6101"
+    },
+    {
+      "name": "another-plan",
+      "note": "The same change sets under another plan digest.",
+      "planDigest": "sha256:e811bd3135a767161b8fca9fa0ba929f1c037e49e256f75fea840316df61dd38",
+      "repositories": [
+        {
+          "id": "example-owner/site",
+          "changeSetDigest": "sha256:a9fe8bb431bd80b9260ab7e56f29f24db27e557ea325363042057db8b54b37d7"
+        },
+        {
+          "id": "example-owner/docs",
+          "changeSetDigest": "sha256:ecb13b831efab73265932d68564325b69614c6d50108ede399a54fdac63d363d"
+        },
+        {
+          "id": "notes",
+          "changeSetDigest": "sha256:7e1d0c8c5117c56176bc6d24901309da180054b3fb81481b0a67219d35bb58cb"
+        }
+      ],
+      "canonical": "{\"planDigest\":\"sha256:e811bd3135a767161b8fca9fa0ba929f1c037e49e256f75fea840316df61dd38\",\"repositories\":[{\"changeSetDigest\":\"sha256:ecb13b831efab73265932d68564325b69614c6d50108ede399a54fdac63d363d\",\"id\":\"example-owner/docs\"},{\"changeSetDigest\":\"sha256:a9fe8bb431bd80b9260ab7e56f29f24db27e557ea325363042057db8b54b37d7\",\"id\":\"example-owner/site\"},{\"changeSetDigest\":\"sha256:7e1d0c8c5117c56176bc6d24901309da180054b3fb81481b0a67219d35bb58cb\",\"id\":\"notes\"}]}",
+      "digest": "sha256:ba732af1a3a29f3038ceb8618be8dbd736aa618112a882d2d15966632727a1be"
+    },
+    {
+      "name": "no-repositories",
+      "note": "Every repository skipped.",
+      "planDigest": "sha256:40e9c27d0c677c522f131e47740185d8182367c9f286fd4746e72c55b1275a18",
+      "repositories": [],
+      "canonical": "{\"planDigest\":\"sha256:40e9c27d0c677c522f131e47740185d8182367c9f286fd4746e72c55b1275a18\",\"repositories\":[]}",
+      "digest": "sha256:24f0716c185aeb57c0acd0539c1433fb1b96a650ea0e11ecd1c8ca72a21ed445"
+    }
+  ]
+}

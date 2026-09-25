@@ -115,7 +115,8 @@ export interface AdvisorPlan {
 /** `reason` lists every violation, separated by `; `, each naming the field at fault (for example `plan.blockers[0].capabilityId is required`). */
 export type ValidationResult = { readonly valid: true } | { readonly valid: false; readonly reason: string };
 
-function loadContract(name: string): ContractSchema {
+/** A contract this package packed, by its file name; throws for any other name. Internal: not exported from the package. */
+export function loadPackedContract(name: string): ContractSchema {
   const contract = Object.hasOwn(PLAN_CONTRACTS, name) ? PLAN_CONTRACTS[name] : undefined;
   if (contract === undefined) throw new Error(`no packed contract named ${JSON.stringify(name)}`);
   return contract;
@@ -131,7 +132,7 @@ export interface DocumentViolation {
 }
 
 function violationsOf<T>(contractName: string, label: string, value: unknown, rules: (document: T) => readonly { rule: ContractRuleId; path: string; message: string }[]): DocumentViolation[] {
-  const schema = validateAgainstContract(loadContract(contractName), value, loadContract);
+  const schema = validateAgainstContract(loadPackedContract(contractName), value, loadPackedContract);
   if (schema.length > 0) return schema.map((violation) => ({ rule: "schema", path: violation.path, message: formatContractViolation(label, violation) }));
   // The code rules relate fields to one another, so they run only on a document whose shape is known good.
   return rules(value as T).map((violation) => ({ rule: violation.rule, path: violation.path, message: `${label}.${violation.path} ${violation.message} (rule ${violation.rule})` }));

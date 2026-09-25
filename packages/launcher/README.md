@@ -252,8 +252,11 @@ Exit codes preserve the ternary:
 | `approvedSubject()` | What an approval binds: the `subjectDigest` of the plan's latest decision (by timestamp) when that decision has `chosen === "approved"`, else `null`. `null` when the approval has no `subjectDigest`, when decisions at the latest time disagree or name different subjects, when any decision time does not parse, or when the plan does not validate. Anything that applies a plan must use this; the one stated exception is the legacy brief-only path (`applyEngagementBrief()` and `launcher-apply-plan`), which predates the binding and uses `isPlanApproved()`. |
 | `isPlanApproved()` | True only when a plan's most recent decision (by timestamp) has `chosen === "approved"`. False when decisions at that latest time disagree, or when any decision time does not parse. It binds no bytes: it ignores `subjectDigest`, so it is also true for an approval that names no change. |
 | `applyEngagementBrief()` | Writes `clossys/brief.json` into a repository directory once the plan validates and is approved and the brief validates; refuses and writes nothing otherwise. Reports the plan's canonical digest. |
-| `planDigest()` / `canonicalJson()` / `PLAN_DIGEST_EXCLUDED_FIELDS` | The canonical plan digest: `sha256:` over the RFC 8785 canonical JSON of the plan without `asOf` and `decisions`. Identical to Advisor's for every plan. |
-| `CloneMissingOutcome` / `DoctorCheckHost` / `DoctorReport` / `DoctorStepId` / `DoctorStepResult` / `CloudBootstrapCheck` / `CloudBootstrapReport` / `ExternalInventoryDeclaration` / `InventoryDriftReport` / `DiscoveredHost` / `HostRecord` / `BudgetPreference` / `HostModelProfile` / `HostTierMapping` / `ModelResolution` / `PreferencesDocument` / `ReasoningTier` / `SupportedHost` / `AdvisorPlan` / `ApplyBriefResult` / `BlockerKind` / `EngagementBrief` / `EngagementBriefRole` / `EngagementContext` / `EngagementContextField` / `EngagementContextFieldId` / `GoalDirection` / `PlanBlocker` / `PlanDecision` / `PlanKit` / `PlanPackageAct` / `PlanStaffing` / `ValidationResult` | Typed contracts for the sections above. |
+| `planDigest()` / `canonicalJson()` / `canonicalDigest()` / `PLAN_DIGEST_EXCLUDED_FIELDS` | The canonical plan digest: `sha256:` over the RFC 8785 canonical JSON of the plan without `asOf` and `decisions`. Identical to Advisor's for every plan. `canonicalDigest()` is the shared step: `sha256:` over the canonical JSON of any value, which the plan, change-set and bundle digests all use. |
+| `changeSetDigest()` / `changeSetDigestSubject()` / `CHANGE_SET_DIGEST_EXCLUDED_FIELDS` / `DERIVED_FILE_DIGEST_FIELDS` | The change-set digest: `canonicalDigest()` of the change set without `changeSetDigest`, `branch`, `bundle`, `pullRequest` and `inverse`, with each derived file reduced to `path`, `mode`, `derived`, `item` and `invariants`. |
+| `bundleDigest()` | The bundle digest an approval binds: `canonicalDigest()` of the plan digest and, sorted by id, the id and change-set digest of each repository that has a change set. Nothing else. |
+| `validateRepositoryChangeSet()` / `validateApplyBundle()` | Validation of a change set and a bundle against the shared change-set and bundle contracts, including their code rules (C1-C6 for a change set, A1-A2 for a bundle). Unknown fields are refused; no reason echoes a value. |
+| `CloneMissingOutcome` / `DoctorCheckHost` / `DoctorReport` / `DoctorStepId` / `DoctorStepResult` / `CloudBootstrapCheck` / `CloudBootstrapReport` / `ExternalInventoryDeclaration` / `InventoryDriftReport` / `DiscoveredHost` / `HostRecord` / `BudgetPreference` / `HostModelProfile` / `HostTierMapping` / `ModelResolution` / `PreferencesDocument` / `ReasoningTier` / `SupportedHost` / `AdvisorPlan` / `ApplyBriefResult` / `BlockerKind` / `EngagementBrief` / `EngagementBriefRole` / `EngagementContext` / `EngagementContextField` / `EngagementContextFieldId` / `GoalDirection` / `PlanBlocker` / `PlanDecision` / `PlanKit` / `PlanPackageAct` / `PlanStaffing` / `ValidationResult` / `BundleDigestEntry` / `ApplyBundle` / `ApplyBundleRepository` / `ApplyCheck` / `ApplyCheckId` / `ChangeSetDeferral` / `ChangeSetItem` / `ChangeSetPhase` / `ChangeSetRefusal` / `CheckVerdict` / `ContentDigest` / `DependencyPlacement` / `DerivedFileChange` / `FileChange` / `KeyChange` / `LedgerInvariant` / `LockfileName` / `PackageInvariant` / `PackageManagerKind` / `PinnedPackage` / `RefusalReason` / `ReleaseAgeSurfaceKind` / `RepositoryChangeSet` / `RepositoryVisibility` / `WholeFileChange` | Typed contracts for the sections above. |
 
 ## Doctor
 
@@ -411,7 +414,13 @@ writes the one file. Multi-repository
 orchestration -- computing each repository's change from `staffing` and
 `packages`, branch creation, exact package installs, adding Starter's
 caller workflow, and opening one pull request per repository -- is not
-built yet.
+built yet. The shapes and digests that change will have are defined:
+`validateRepositoryChangeSet()` and `validateApplyBundle()` check a change
+set and a bundle against the shared contracts
+`docs/contracts/repository-change-set.json` and `apply-bundle.json`, which
+this package packs, and `changeSetDigest()` and `bundleDigest()` implement
+the digests defined in `docs/contracts/apply-change-set-digest.md` (in the
+public repository, not shipped in this package) (#1178).
 
 ## Why this is not Advisor, Starter, Builder, installer, creator, or a connector
 
