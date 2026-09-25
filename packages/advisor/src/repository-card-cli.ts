@@ -2,7 +2,7 @@
 import { existsSync, readFileSync, realpathSync, statSync } from "node:fs";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { readContractDocument } from "./contract-schema.js";
+import { ContractDocumentError, readContractDocument } from "./contract-schema.js";
 import { applyRepositoryChoice, repositoryChoiceCard } from "./repository-choice.js";
 
 /**
@@ -45,7 +45,25 @@ export class AdvisorRepositoryCardCliInputError extends Error {}
 
 const STRICT_UTF8 = new TextDecoder("utf-8", { fatal: true, ignoreBOM: true });
 
+/**
+ * A `ContractDocumentError`'s own message may quote a repeated key straight
+ * from the file -- fine for a plan or brief, but this file can carry a
+ * repository description an agent should not relay to a terminal. Rebuild
+ * the message from `reason` and `position` only, never the message itself.
+ */
+function describeContractDocumentError(cause: ContractDocumentError): string {
+  switch (cause.reason) {
+    case "repeated-key":
+      return "repeats a key; every key may appear once";
+    case "syntax":
+      return cause.position === undefined ? "is not valid JSON" : `is not valid JSON at position ${cause.position}`;
+    case "encoding":
+      return "is not valid UTF-8";
+  }
+}
+
 function describeCause(cause: unknown): string {
+  if (cause instanceof ContractDocumentError) return describeContractDocumentError(cause);
   return cause instanceof Error ? cause.message : String(cause);
 }
 
@@ -121,7 +139,13 @@ export function main(argv: readonly string[]): number {
     throw new AdvisorRepositoryCardCliInputError(`the repository list is invalid: ${built.findings.map((finding) => finding.message).join("; ")}`);
   }
   if (built.state === "empty") {
-    console.error("advisor-repository-card: the repository list given is empty, so there is nothing to choose from");
+    const skippedNote =
+      built.skippedCount === undefined
+        ? ""
+        : built.skippedCount === 1
+          ? " (1 listed entry was skipped: its id did not satisfy the repository id rule)"
+          : ` (${built.skippedCount} listed entries were skipped: their ids did not satisfy the repository id rule)`;
+    console.error(`advisor-repository-card: the repository list given is empty, so there is nothing to choose from${skippedNote}`);
     return 1;
   }
   if (args.choose === undefined) {

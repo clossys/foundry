@@ -60,6 +60,14 @@ describe("advisor-repository-card (#1179)", () => {
     }
   });
 
+  it("reports the skipped count when every entry is skipped, still exit 1 for empty", () => {
+    const path = write(JSON.stringify([{ nameWithOwner: "example-project" }]));
+    expect(main([path])).toBe(1);
+    expect(String(error.mock.calls[0]?.[0])).toBe(
+      "advisor-repository-card: the repository list given is empty, so there is nothing to choose from (1 listed entry was skipped: its id did not satisfy the repository id rule)",
+    );
+  });
+
   it("claims nothing about an account it cannot see, in its usage or its card", () => {
     expect(USAGE).not.toMatch(/account can see|every repository|sign-in can reach/);
     expect(USAGE).toMatch(/Use the file only when that command exits 0/);
@@ -98,14 +106,23 @@ describe("advisor-repository-card (#1179)", () => {
   });
 
   it("refuses a malformed list (exit 2 in the executable) by position only", () => {
-    const path = write(JSON.stringify([{ nameWithOwner: "example-owner/example-app" }, { nameWithOwner: "example-owner/hidden-name/x" }]));
+    const path = write(JSON.stringify([{ nameWithOwner: "example-owner/example-app" }, { nameWithOwner: "example-owner/hidden-name/x", url: "extra" }]));
     expect(() => main([path])).toThrow(AdvisorRepositoryCardCliInputError);
     try {
       main([path]);
     } catch (cause) {
-      expect(String(cause)).toMatch(/listing\[1\]\.nameWithOwner must be a bare repository name or owner\/name/);
+      expect(String(cause)).toMatch(/listing\[1\]\.url is not a field the contract declares/);
       expect(String(cause)).not.toContain("hidden-name");
     }
+  });
+
+  it("skips, rather than refuses, one entry whose id breaks the id rule, and reports the count (#1179)", () => {
+    const path = write(JSON.stringify([{ nameWithOwner: "example-owner/example-app" }, { nameWithOwner: "example-owner/hidden-name/x" }]));
+    expect(main([path])).toBe(0);
+    const card = JSON.parse(String(log.mock.calls[0]?.[0])) as { choices: { id: string }[]; skippedCount?: number };
+    expect(card.choices.map((choice) => choice.id)).toEqual(["example-owner/example-app", "something-else"]);
+    expect(card.skippedCount).toBe(1);
+    expect(String(log.mock.calls[0]?.[0])).not.toContain("hidden-name");
   });
 
   it("refuses a duplicate id in the list", () => {
@@ -113,10 +130,19 @@ describe("advisor-repository-card (#1179)", () => {
     expect(() => main([path])).toThrow(/listing\[2\]\.nameWithOwner names the same repository as listing\[0\]\.nameWithOwner/);
   });
 
-  it("reads the file as strict JSON: a syntax error by position only, and a repeated key", () => {
+  it("reads the file as strict JSON: a syntax error by position only, and a repeated key never quoted", () => {
     expect(() => main([write('[{"nameWithOwner": "example-owner/secret-name"')])).toThrow(/is not valid JSON at position \d+$/);
     expect(() => main([write('[{"nameWithOwner": "example-owner/secret-name"')])).not.toThrow(/secret-name/);
-    expect(() => main([write('[{"nameWithOwner": "example-owner/a", "nameWithOwner": "example-owner/b"}]')])).toThrow(/repeats the key "nameWithOwner"/);
+    expect(() => main([write('[{"nameWithOwner": "example-owner/a", "nameWithOwner": "example-owner/b"}]')])).toThrow(/repeats a key; every key may appear once/);
+  });
+
+  it("never relays a repeated key's text, even one shaped like a secret (#1179)", () => {
+    const text = '[{"nameWithOwner": "example-owner/a", "sk_live_should_never_appear_in_a_message": 1, "sk_live_should_never_appear_in_a_message": 2}]';
+    expect(() => main([write(text)])).toThrow(/repeats a key; every key may appear once/);
+    expect(() => main([write(text)])).not.toThrow(/sk_live/);
+    const lines = `${JSON.stringify(LISTING[0])}\n{"sk_live_should_never_appear_in_a_message": 1, "sk_live_should_never_appear_in_a_message": 2}\n`;
+    expect(() => main([write(lines)])).toThrow(/line 2 repeats a key; every key may appear once$/);
+    expect(() => main([write(lines)])).not.toThrow(/sk_live/);
   });
 
   it("refuses unknown or repeated flags and a missing file", () => {
