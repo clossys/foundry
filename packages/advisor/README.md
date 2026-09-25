@@ -469,7 +469,12 @@ complete.
 
 Each `RepositoryListingEntry` must be `{ nameWithOwner, description? }`
 and nothing else -- a listing that is not that shape refuses the whole
-list, by position, since that means the file was built wrong. Each
+list, since that means the file was built wrong. Each such finding names
+only `listing` or `listing[<i>]` and a fixed reason from a closed set
+("is missing a required field", "has a field the contract does not
+declare", ...); it never relays the shared checker's own message or path,
+either of which can otherwise carry an undeclared field's own name
+straight from the document (#1179). Each
 `nameWithOwner` that is that shape must also satisfy the repository
 inventory contract's id rule
 ([`docs/contracts/repository-inventory.json`](https://github.com/clossys/foundry/blob/main/docs/contracts/repository-inventory.json)
@@ -482,8 +487,10 @@ problem: that one entry is left off the card, not the rest of the list, and
 counted in `skippedCount` (present on the card, or on an empty result,
 only when at least one entry was skipped; #1179). Two entries naming the
 same repository in any letter case, once skipped entries are set aside,
-are refused. Every finding, with the rule `repository-listing`, names a
-position (`listing[3].nameWithOwner`) and never a repository name.
+are refused, naming both positions (`listing[3].nameWithOwner` and the
+earlier position it repeats) -- safe, since `nameWithOwner` is this
+contract's own field name, never the document's. Every finding carries
+the rule `repository-listing` and never a repository name.
 
 `applyRepositoryChoice(card, chosen)` checks the founder's chosen ids
 against exactly the ids the card offered. It refuses an empty choice, an id
@@ -510,8 +517,9 @@ above writes it. It is read with the same strict reader as
 `advisor-render-status`, and a bad line is named by its number and
 position, never quoted. It cannot tell a complete list from a partial one,
 so it claims neither. It exits `0` for a card or an accepted choice, `1`
-when the repository list given is empty or the choice is refused, and `2`
-for unreadable or invalid input.
+when the repository list given is empty, no listed repository has a
+usable id, or the choice is refused, and `2` for unreadable or invalid
+input.
 
 ## Evolution
 

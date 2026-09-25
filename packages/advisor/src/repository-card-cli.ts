@@ -39,7 +39,8 @@ no recommendation. Pass the same --current with --choose as when the card was
 shown, so the order matches.
 
 Exit codes: 0 = card built or choice accepted, 1 = the repository list given
-is empty or the choice is refused, 2 = unreadable or invalid input.`;
+is empty, no listed repository has a usable id, or the choice is refused,
+2 = unreadable or invalid input.`;
 
 export class AdvisorRepositoryCardCliInputError extends Error {}
 
@@ -139,13 +140,13 @@ export function main(argv: readonly string[]): number {
     throw new AdvisorRepositoryCardCliInputError(`the repository list is invalid: ${built.findings.map((finding) => finding.message).join("; ")}`);
   }
   if (built.state === "empty") {
-    const skippedNote =
-      built.skippedCount === undefined
-        ? ""
-        : built.skippedCount === 1
-          ? " (1 listed entry was skipped: its id did not satisfy the repository id rule)"
-          : ` (${built.skippedCount} listed entries were skipped: their ids did not satisfy the repository id rule)`;
-    console.error(`advisor-repository-card: the repository list given is empty, so there is nothing to choose from${skippedNote}`);
+    if (built.skippedCount === undefined) {
+      console.error("advisor-repository-card: the repository list given is empty, so there is nothing to choose from");
+    } else if (built.skippedCount === 1) {
+      console.error("advisor-repository-card: no usable repositories: 1 listed entry was skipped (its id did not satisfy the repository id rule)");
+    } else {
+      console.error(`advisor-repository-card: no usable repositories: ${built.skippedCount} listed entries were skipped (each id did not satisfy the repository id rule)`);
+    }
     return 1;
   }
   if (args.choose === undefined) {

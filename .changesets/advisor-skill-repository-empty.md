@@ -2,4 +2,4 @@
 advisor: minor
 ---
 
-The `clossys-advisor` skill says, when `gh` succeeded and the list is empty, that the client's sign-in has no repositories that are not archived -- not that GitHub returned none at all, since the listing command drops archived repositories -- and stops (#1179).
+The `clossys-advisor` skill says, when `gh` succeeded and the list is empty, that GitHub listed no repositories that are not archived for this sign-in -- not that the sign-in truly has none, since the listing command drops archived repositories and leaves out any organization whose SSO the token is not authorized for -- and stops (#1179).

@@ -28,9 +28,17 @@ import type { AdvisorFinding } from "./types.js";
  * (docs/contracts/repository-inventory.json), through the one shared
  * contract checker, so every id this card offers is one Launcher accepts.
  *
- * Findings name a position only (for example `listing[3].nameWithOwner`),
- * never a repository name: a repository list can include private names,
- * and a finding can end up in a log.
+ * Findings name a position only, never a repository name or any other text
+ * from the document: a repository list can include private names, and a
+ * finding can end up in a log or a terminal. A duplicate-repository finding
+ * names `listing[3].nameWithOwner` -- safe, since `nameWithOwner` is this
+ * contract's own field name, never the document's. A shape finding (the
+ * listing is not `{ nameWithOwner, description? }` throughout) names only
+ * `listing` or `listing[<i>]`, with a fixed reason from a closed set
+ * (`listingFindings()`) -- never the shared checker's own message or path,
+ * either of which can otherwise carry an undeclared field's name straight
+ * from the document (#1179; the shared checker itself will stop doing that
+ * in a follow-up, but this module does not wait on it).
  *
  * A repository's description is text written by whoever controls that
  * repository, so the card treats it as untrusted data: it is shown only as
@@ -211,6 +219,53 @@ function finding(rule: string, path: string, message: string): AdvisorFinding {
   return { rule, severity: "error", message: `${path} ${message}`, path };
 }
 
+/** The leading `[<digits>]` of a violation path, as the shared checker always writes an array index -- never quoted, never document text. */
+const LISTING_ITEM_INDEX_RE = /^\[(\d+)\]/;
+
+/**
+ * Classifies a `LISTING_SCHEMA` violation into one of a small, fixed set of
+ * reasons, by matching `violation.message` against the checker's own
+ * constant text for each rule it implements (#1179). The checker's message
+ * text never itself carries document content -- only `violation.path` can,
+ * via `childPath()` quoting an undeclared field's own name -- but this
+ * classifier still never returns `violation.message` itself: a fixed,
+ * hand-written phrase here cannot start echoing document text merely
+ * because the checker's wording changes under it.
+ */
+function classifyListingViolation(violation: ContractViolation): string {
+  const { message } = violation;
+  if (message === "is required") return "is missing a required field";
+  if (message.endsWith("is not a field the contract declares, and unknown fields are refused")) return "has a field the contract does not declare";
+  if (message.startsWith("must be an array")) return "must be an array of repository entries";
+  if (message.startsWith("must be an object")) return "must be an object with a nameWithOwner field";
+  if (message.startsWith("must be")) return "has a field of the wrong type";
+  if (message.includes("well-formed Unicode")) return "has a key that is not well-formed Unicode";
+  return "does not satisfy the repository listing contract";
+}
+
+/**
+ * Refusals for `LISTING_SCHEMA`, position only (#1179). Never
+ * `violation.path` or `violation.message`: `path` collapses to `listing`
+ * (the whole listing is the wrong shape) or `listing[<i>]` (one entry is),
+ * read only from the violation's own leading array index, which the shared
+ * checker always writes as a plain number -- and `message` pairs that
+ * position with `classifyListingViolation()`'s fixed reason, never the
+ * checker's own text. Deeper positions such as `listing[0].nameWithOwner`
+ * are deliberately not used here, even though that specific field name is
+ * safe (it is this contract's own, not the document's) -- one fixed shape
+ * for every listing finding, so a future violation kind added to the
+ * shared checker cannot start leaking document text through a path this
+ * module trusted by default.
+ */
+function listingFindings(violations: readonly ContractViolation[]): AdvisorFinding[] {
+  return violations.map((violation) => {
+    const match = LISTING_ITEM_INDEX_RE.exec(violation.path);
+    const path = match ? `listing[${match[1]}]` : "listing";
+    const message = `${path} ${classifyListingViolation(violation)}`;
+    return { rule: LISTING_RULE, severity: "error", message, path };
+  });
+}
+
 /** Case-insensitive, as GitHub compares owner and repository names (and as the inventory contract's duplicate rule does). */
 function repositoryKey(id: string): string {
   return id.toLowerCase();
@@ -248,7 +303,7 @@ function byId(left: RepositoryListingEntry, right: RepositoryListingEntry): numb
  */
 export function repositoryChoiceCard(listing: unknown, options: { readonly current?: string } = {}): RepositoryChoiceCardResult {
   const violations = validateAgainstContract(LISTING_SCHEMA, listing, loadPlanContract);
-  const problems = findings(LISTING_RULE, "listing", violations);
+  const problems = listingFindings(violations);
   if (problems.length > 0) return { state: "invalid", findings: problems };
 
   const shaped = listing as readonly RepositoryListingEntry[];
