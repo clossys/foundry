@@ -364,8 +364,8 @@ plan contract's `definitions.hubOnlyRoles`, the same data Launcher reads.
 The apply-approved-plan RFC places each of them in the engagement hub: its
 package is pinned once there and run in a product repository through `npx`
 at the hub's exact version, never installed in the repository. Launcher's
-appoint step pins Advisor in the hub today; no Launcher release pins
-Integrator there yet. A plan
+hub skeleton and resume pin both Advisor and Integrator, exactly, in the
+hub's devDependencies. A plan
 whose mandate names only hub-only roles does no work in a product
 repository, so it has no `staffing` (an empty one is refused) and no
 `packages`. The rules read only a plan's own fields,
