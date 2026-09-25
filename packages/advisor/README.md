@@ -219,14 +219,18 @@ JSON string.
 A brief may carry `staffedHere` (issue #1178): the roles staffed in the one
 repository it is written to, in plan order. `toEngagementBrief()` builds the
 hub brief only, which has none; this package never builds or writes a
-repository's own brief. Launcher's apply planner derives that from the hub
-brief and the plan, as the brief contract's description defines.
+repository's own brief. Launcher's apply planner, which is not built yet,
+will derive that from the hub brief and the plan, as the brief contract's
+description defines; today the only brief writer is Launcher's brief-only
+`applyEngagementBrief()`, which writes the brief it is given unchanged.
 `validateEngagementBrief()` checks a `staffedHere` wherever it appears, once
 the schema passes: every entry is one of `roles[].role` (rule
 `engagement-brief-rule-b1`) and none repeats (`engagement-brief-rule-b2`).
 `PUBLIC_PROBLEM_PLACEHOLDER` is the fixed text, read from the brief
-contract, that the apply planner writes in place of `problem` for a
-repository whose visibility is not private.
+contract, that the apply planner will write in place of `problem` for a
+repository whose visibility is not private, once that planner is built.
+Nothing writes it yet: `applyEngagementBrief()` commits `problem` unchanged,
+whatever the repository's visibility.
 
 ## Shared engagement context
 

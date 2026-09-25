@@ -112,3 +112,36 @@ describe("inherited members are ignored, as the schema ignores them (#1178)", ()
     expect(validateEngagementBrief(withPrototype({ staffedHere: ["designer", "designer"] }, brief))).toEqual([]);
   });
 });
+
+describe("arrays with holes are refused by the shared checker, before any rule runs (#1178)", () => {
+  // The same cases run in @clossys/launcher's plan-rules.test.ts. JSON never produces a hole; a caller building a value in code can.
+  const plan = () => structuredClone(CORPUS.plans.find((entry) => entry.name === "valid-staffed-with-packages")!.plan) as Record<string, any>;
+  const holey = <T>(items: T[], extra = 1): T[] => {
+    const copy = [...items];
+    copy.length += extra;
+    return copy;
+  };
+  const cases: [string, () => Record<string, any>, string][] = [
+    ["a hole in the middle of staffing", () => { const value = plan(); value.staffing = [value.staffing[0], , value.staffing[1]]; return value; }, "staffing"],
+    ["a trailing hole in packages", () => { const value = plan(); value.packages = holey(value.packages); return value; }, "packages"],
+    ["a hole in one staffing entry's roles", () => { const value = plan(); value.staffing[0].roles = holey(value.staffing[0].roles); return value; }, "staffing[0].roles"],
+    ["a hole in mandate.roles", () => { const value = plan(); value.mandate.roles = holey(value.mandate.roles); return value; }, "mandate.roles"],
+  ];
+
+  it("refuses each as a schema violation at the array itself, and never throws", () => {
+    for (const [name, build, path] of cases) {
+      expect(sorted(validateAdvisorPlan(build()).map(asExpected)), name).toEqual([{ rule: "schema", path }]);
+    }
+  });
+
+  it("names the array as sparse without quoting any value", () => {
+    const [, build] = cases[0]!;
+    expect(validateAdvisorPlan(build()).map((finding) => finding.message)).toEqual(["plan.staffing must be an array, got sparse array"]);
+  });
+
+  it("refuses a brief whose staffedHere has a hole", () => {
+    const brief = { ...(CORPUS.briefs.find((entry) => entry.name === "valid-per-repository-brief")!.brief as Record<string, unknown>) };
+    brief.staffedHere = holey(["writer"]);
+    expect(sorted(validateEngagementBrief(brief).map(asExpected))).toEqual([{ rule: "schema", path: "staffedHere" }]);
+  });
+});
