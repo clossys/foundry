@@ -27,6 +27,7 @@ afterEach(() => {
 });
 
 const NOTE_BRIEF_INVALID = "clossys/brief.json does not match docs/contracts/engagement-brief.json; asking every engagement-context question as usual.";
+const NOTE_UNPARSEABLE = "clossys/brief.json is not valid JSON; asking every engagement-context question as usual.";
 
 const validRole = {
   role: "strategist",
@@ -239,13 +240,49 @@ describe("readEngagementContext (filesystem)", () => {
     expect(audienceContextValue(result.context)).toBeUndefined();
   });
 
-  it("reports a fixed note, no file text, when brief.json repeats an object key (strict-JSON refuses it, not schema validation)", () => {
+  it("reports the fixed note, no file text, when brief.json repeats an object key (strict-JSON refuses it, not schema validation)", () => {
     const briefDir = join(dir, "clossys");
     mkdirSync(briefDir, { recursive: true });
     writeFileSync(join(briefDir, "brief.json"), '{ "schemaVersion": 1, "problem": "p", "problem": "sensitive-duplicate-key-payload" }');
     const result = readEngagementContext(dir);
-    expect(result.note).toEqual(expect.any(String));
+    expect(result.note).toBe(NOTE_UNPARSEABLE);
     expect(result.note).not.toContain("sensitive-duplicate-key-payload");
+    expect(audienceContextValue(result.context)).toBeUndefined();
+  });
+
+  // B1 regression (blind review of #1173): a repeated key's own message
+  // names that key, and the prior implementation extracted a note's
+  // "position" by regex-matching /position (\d+)/ anywhere in that
+  // message — so a repeated key literally named "position <digits>" made
+  // the note relay that key's text as if it were a real syntax position.
+  // The fix reads only ContractDocumentError's own structured `position`
+  // field, which repeated-key errors never set, so these can never regress.
+  it("reports the fixed note, not the repeated key's own text, when the repeated key is named 'position <digits>' at the top level", () => {
+    const briefDir = join(dir, "clossys");
+    mkdirSync(briefDir, { recursive: true });
+    writeFileSync(join(briefDir, "brief.json"), '{ "schemaVersion": 1, "position 5551234567": 1, "position 5551234567": 2 }');
+    const result = readEngagementContext(dir);
+    expect(result.note).toBe(NOTE_UNPARSEABLE);
+    expect(result.note).not.toContain("5551234567");
+    expect(result.note).not.toContain("position 5551234567");
+    expect(audienceContextValue(result.context)).toBeUndefined();
+  });
+
+  it("reports the fixed note, not the repeated key's own text, when the repeated key is named 'position <digits>' nested inside the brief", () => {
+    const briefDir = join(dir, "clossys");
+    mkdirSync(briefDir, { recursive: true });
+    // A JS object literal cannot itself carry a genuinely duplicate key (the
+    // second assignment would just overwrite the first), so the nested
+    // duplicate has to be written as JSON text directly.
+    const nestedDuplicate =
+      '{"schemaVersion":1,"problem":"p",' +
+      '"roles":[{"role":"strategist","why":"chosen","goal":{"metric":"m","direction":"increase"},"inputsFrom":[],"outputsTo":[]}],' +
+      '"sequence":[],"deliverables":[],' +
+      '"context":{"position 5551234567":1,"position 5551234567":2,"schemaVersion":1,"fields":[]}}';
+    writeFileSync(join(briefDir, "brief.json"), nestedDuplicate);
+    const result = readEngagementContext(dir);
+    expect(result.note).toBe(NOTE_UNPARSEABLE);
+    expect(result.note).not.toContain("5551234567");
     expect(audienceContextValue(result.context)).toBeUndefined();
   });
 

@@ -24,9 +24,9 @@
  * it.
  */
 
-import { existsSync, readFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { readContractDocument } from "./generated/contract-schema.generated.js";
+import { ContractDocumentError, readContractDocument } from "./generated/contract-schema.generated.js";
 import { validateEngagementBrief } from "./brief-contract.js";
 import { isPlainObject } from "./validation.js";
 
@@ -137,38 +137,48 @@ export function unreadableBriefNote(error: unknown): string {
 /**
  * The note text for a `clossys/brief.json` that exists but is not strict
  * JSON (`readContractDocument()`'s own rules: valid UTF-8, one JSON value,
- * no object that repeats a key). Its error message can be a syntax
- * position (safe — a number) or a repeated key's own name (not safe — a
- * key can be founder text), so only a position is ever relayed; anything
- * else falls back to a fixed note with no dynamic content at all.
+ * no object that repeats a key, no leading byte order mark). Reads only
+ * `ContractDocumentError`'s own structured `position` field — never the
+ * error's `message` string. That matters: a repeated-key message names the
+ * key itself, and a brief can name a key that looks like a position (for
+ * example a founder-authored `"position 5551234567"`), so parsing the
+ * message with a regular expression — this function's own prior
+ * implementation — could relay exactly the founder text this note exists
+ * to keep out. `position` is set only for a genuine syntax error or a
+ * leading BOM, never for a repeated key, so this can never make that
+ * mistake.
  */
 function unparseableBriefNote(error: unknown): string {
-  const message = error instanceof Error ? error.message : "";
-  const position = /position (\d+)/.exec(message)?.[1];
-  return position !== undefined
-    ? `clossys/brief.json is not valid JSON at position ${position}; asking every engagement-context question as usual.`
-    : NOTE_UNPARSEABLE;
+  if (error instanceof ContractDocumentError && error.position !== undefined) {
+    return `clossys/brief.json is not valid JSON at position ${error.position}; asking every engagement-context question as usual.`;
+  }
+  return NOTE_UNPARSEABLE;
 }
 
 /**
  * Reads `<repositoryRoot>/<briefRelPath>` (default `clossys/brief.json`,
  * the path every staffed repository carries it at) and returns its
- * engagement context. A missing file is the ordinary "no brief" case, not
- * a note. An unreadable file reports its OS error code via
- * {@link unreadableBriefNote}; a file that is not strict JSON
+ * engagement context. There is no `existsSync` pre-check: that would turn
+ * an error reading a PARENT directory (for example `EACCES` on
+ * `clossys/`) into a silent, wrong "no brief" too, the same way it would
+ * for the file itself, since `existsSync` swallows every error and
+ * returns `false`. Instead this reads directly and distinguishes `ENOENT`
+ * (no such file — the ordinary "no brief" case, no note) from every other
+ * read failure (a note with only the OS error code, via
+ * {@link unreadableBriefNote}). A file that is not strict JSON
  * (`readContractDocument`) reports a position or a fixed note via
  * {@link unparseableBriefNote}; a well-formed JSON value that does not
  * validate against the shared contract reports the same fixed note
  * `readEngagementContextFromBriefData` does. Every field reads unknown in
- * all three cases.
+ * all four cases but the first.
  */
 export function readEngagementContext(repositoryRoot: string, briefRelPath = "clossys/brief.json"): EngagementContextRead {
   const path = join(repositoryRoot, briefRelPath);
-  if (!existsSync(path)) return { context: allUnknown() };
   let bytes: Uint8Array;
   try {
     bytes = readFileSync(path);
   } catch (error) {
+    if (isPlainObject(error) && error.code === "ENOENT") return { context: allUnknown() };
     return { context: allUnknown(), note: unreadableBriefNote(error) };
   }
   let parsed: unknown;
