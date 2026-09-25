@@ -70,7 +70,7 @@ describe("canonical plan digest (docs/contracts/advisor-plan-digest.md)", () => 
 
   it("has no digest for an invalid plan", () => {
     const plan = { ...corpusPlan("blockers-without-due").plan, extra: true } as unknown as AdvisorPlan;
-    expect(() => planDigest(plan)).toThrow(/invalid plan has no digest: plan.extra is not a field/);
+    expect(() => planDigest(plan)).toThrow(/invalid plan has no digest: plan has a field the contract does not declare \(key \d+ of this object\)/);
   });
 });
 

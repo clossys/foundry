@@ -10,11 +10,14 @@
  * lookups use Object.hasOwn, so an inherited name (toString, constructor,
  * __proto__) is never mistaken for a declared or present property.
  *
- * Messages never echo a value from the document under test: a brief can
- * carry founder text, and a refusal message can end up in a log. They do
- * name keys, in paths and in a repeated-key refusal; a key that is not a
- * plain identifier is shown as a JSON string with every control character
- * escaped (quoteKey()), so it cannot act on a terminal.
+ * Messages, paths and errors never echo text from the document under test
+ * -- neither a value nor a key. A brief can carry founder text, a refusal
+ * can end up in a log, and these messages are read by agents: a hostile
+ * document can put prompt-injection text in a key name as easily as in a
+ * value. A path names only fields the contract declares (schema text, not
+ * document text) and array indices. A field the contract does not declare,
+ * or a repeated key, is reported at the object that holds it, by the key's
+ * 1-based position in that object ("key 3 of this object"), never by name.
  *
  * Every string, and every object key, must be well-formed Unicode: a lone
  * surrogate is refused whatever the contract says, because it has no UTF-8
@@ -33,7 +36,12 @@
 
 export type ContractSchema = Readonly<Record<string, unknown>>;
 
-/** One place a value breaks its contract. `path` is `""` for the document itself, else like `blockers[0].nextAction.who`. */
+/**
+ * One place a value breaks its contract. `path` is `""` for the document
+ * itself, else like `blockers[0].nextAction.who`: only names the contract
+ * declares, and array indices. Neither `path` nor `message` ever carries
+ * document text.
+ */
 export interface ContractViolation {
   readonly path: string;
   readonly message: string;
@@ -142,22 +150,39 @@ function typeOf(value: unknown): string {
 const LONE_SURROGATE = /[\uD800-\uDFFF]/u;
 const NOT_WELL_FORMED = "must be well-formed Unicode, and contains a lone surrogate";
 
-/** C1 controls, line and paragraph separators, and bidirectional overrides: JSON.stringify leaves these as they are, and a terminal may act on them. */
-const UNSAFE_FOR_TERMINAL = /[\u007f-\u009f\u2028\u2029\u061c\u200e\u200f\u202a-\u202e\u2066-\u2069]/g;
-
 /**
- * A key as it may appear in a message: a JSON string, with every control
- * character escaped (`\u001b`, not a raw escape sequence), so a key from a
- * file can never write to a terminal as anything but text.
+ * The path of a field the contract declares: `path.name`, or `path["name"]`
+ * for a name that is not identifier-like. `name` is always the contract's
+ * own text (a `properties` or `required` entry), never a key read only
+ * from the document: an undeclared key never reaches this function.
  */
-function quoteKey(name: string): string {
-  return JSON.stringify(name).replace(UNSAFE_FOR_TERMINAL, (character) => `\\u${character.charCodeAt(0).toString(16).padStart(4, "0")}`);
+function declaredPath(path: string, name: string): string {
+  if (!/^[A-Za-z_$][A-Za-z0-9_$-]*$/.test(name)) return `${path}[${JSON.stringify(name)}]`;
+  return path === "" ? name : `${path}.${name}`;
 }
 
-/** `path.name` for a plain identifier-like key; otherwise `path["..."]`, quoted by quoteKey(). */
-function childPath(path: string, name: string): string {
-  if (!/^[A-Za-z_$][A-Za-z0-9_$-]*$/.test(name)) return `${path}[${quoteKey(name)}]`;
-  return path === "" ? name : `${path}.${name}`;
+/**
+ * Each object's keys in the order the file wrote them, for a value
+ * `readContractDocument()` returned. A JavaScript object enumerates
+ * array-index keys ("0", "7") first, whatever order they were written in,
+ * so without this a key ordinal could differ from the file's.
+ */
+const WRITTEN_KEY_ORDER = new WeakMap<object, readonly string[]>();
+
+/**
+ * Each of `record`'s keys, mapped to its 1-based position: as the file
+ * wrote them when `record` came from `readContractDocument()` and still has
+ * exactly the keys it was read with, else in the object's own key order.
+ * Linear in the number of keys, however many of them are undeclared.
+ */
+function keyOrdinals(record: object): ReadonlyMap<string, number> {
+  const own = Object.keys(record);
+  const written = WRITTEN_KEY_ORDER.get(record);
+  if (written !== undefined && written.length === own.length) {
+    const ordinals = new Map(written.map((key, index) => [key, index + 1]));
+    if (own.every((key) => ordinals.has(key))) return ordinals;
+  }
+  return new Map(own.map((key, index) => [key, index + 1]));
 }
 
 const TYPE_NOUNS: Readonly<Record<string, string>> = {
@@ -199,6 +224,11 @@ function dereference(schema: ContractSchema, scope: Scope, at: string): { schema
   return current;
 }
 
+/** An undeclared field, by its 1-based position in its object -- never its name. */
+function undeclaredFieldMessage(ordinal: number): string {
+  return `has a field the contract does not declare (key ${ordinal} of this object), and unknown fields are refused`;
+}
+
 function check(input: ContractSchema, value: unknown, inputScope: Scope, path: string): ContractViolation[] {
   // Draft-07: $ref replaces every sibling keyword (siblings are annotations only).
   const { schema, scope } = dereference(input, inputScope, path);
@@ -237,17 +267,23 @@ function check(input: ContractSchema, value: unknown, inputScope: Scope, path: s
   if (kind === "object") {
     const record = value as Record<string, unknown>;
     const properties = (schema.properties ?? {}) as Record<string, ContractSchema>;
+    let ordinals: ReadonlyMap<string, number> | undefined;
     for (const name of (schema.required ?? []) as string[]) {
-      if (!Object.hasOwn(record, name)) violations.push({ path: childPath(path, name), message: "is required" });
+      if (!Object.hasOwn(record, name)) violations.push({ path: declaredPath(path, name), message: "is required" });
     }
     for (const [name, child] of Object.entries(record)) {
       if (LONE_SURROGATE.test(name)) {
-        // The key itself is not echoed: it cannot be written as UTF-8.
+        // The key itself is never echoed (see the header), and this one cannot even be written as UTF-8.
         violations.push({ path, message: `has a key that ${NOT_WELL_FORMED}` });
         continue;
       }
-      if (Object.hasOwn(properties, name)) violations.push(...check(properties[name] as ContractSchema, child, scope, childPath(path, name)));
-      else if (schema.additionalProperties === false) violations.push({ path: childPath(path, name), message: "is not a field the contract declares, and unknown fields are refused" });
+      if (Object.hasOwn(properties, name)) violations.push(...check(properties[name] as ContractSchema, child, scope, declaredPath(path, name)));
+      // The key is document text, so it is never named: the violation is
+      // placed at the object that holds it, with the key's position there.
+      else if (schema.additionalProperties === false) {
+        ordinals ??= keyOrdinals(record);
+        violations.push({ path, message: undeclaredFieldMessage(ordinals.get(name)!) });
+      }
     }
   }
   if (Array.isArray(schema.oneOf)) violations.push(...checkOneOf(schema.oneOf as ContractSchema[], value, scope, path, schema.title));
@@ -303,14 +339,13 @@ const JSON_WHITESPACE = " \t\n\r";
 const JSON_NUMBER = /-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?/y;
 const JSON_ESCAPE = /\\(?:["\\/bfnrt]|u[0-9a-fA-F]{4})/y;
 
-/** A document that is not strict JSON: `syntaxAt` is the offset of the first syntax error, else `duplicate` names a repeated key. */
 /**
  * Why `readContractDocument()` refused a file, as data a caller can act on
  * without parsing the message: `reason` says which rule failed, and
  * `position` (a character index, never file text) is set only for a syntax
- * error or a leading byte order mark. A repeated key's message names that
- * key, escaped, so a caller that must not relay file text should use
- * `reason` and `position` rather than the message.
+ * error or a leading byte order mark. The message carries no file text
+ * either: a repeated key is named by its 1-based position in its object,
+ * and that object by its character position, never by any key.
  */
 export class ContractDocumentError extends Error {
   constructor(
@@ -325,11 +360,15 @@ export class ContractDocumentError extends Error {
 /**
  * Checks that `text` is exactly one JSON value (RFC 8259 grammar) with no
  * object that repeats a key, at any depth. Keys are compared after
- * unescaping, so `"a"` and `"a"` are the same key. A syntax error is
- * reported by position only, never with a snippet of the text, because a
- * plan or brief can carry founder prose.
+ * unescaping, so `"a"` and `"\u0061"` are the same key. Every refusal is
+ * by position only, never with a snippet of the text or a key, because a
+ * plan or brief can carry founder prose and a key can carry anything.
+ *
+ * Returns every object's keys in the order written, one list per object in
+ * document (pre-)order, for `recordWrittenKeyOrder()`.
  */
-function checkStrictJson(text: string): void {
+function checkStrictJson(text: string): string[][] {
+  const keyOrders: string[][] = [];
   let index = 0;
   const syntaxError = (): never => {
     throw new ContractDocumentError(`is not valid JSON at position ${index}`, "syntax", index);
@@ -360,11 +399,14 @@ function checkStrictJson(text: string): void {
     index += 1;
     return JSON.parse(text.slice(start, index)) as string;
   };
-  const scan = (path: string): void => {
+  const scan = (topLevel: boolean): void => {
     skipWhitespace();
     const opening = text[index];
     if (opening === "{" || opening === "[") {
       const closing = opening === "{" ? "}" : "]";
+      const where = topLevel ? "the top-level object" : `the object at position ${index}`;
+      const keys: string[] = [];
+      if (opening === "{") keyOrders.push(keys);
       const seen = new Set<string>();
       index += 1;
       skipWhitespace();
@@ -372,20 +414,20 @@ function checkStrictJson(text: string): void {
         index += 1;
         return;
       }
-      for (let position = 0; ; position += 1) {
-        let at = `${path}[${position}]`;
+      for (;;) {
         if (opening === "{") {
           skipWhitespace();
           const key = readString();
+          keys.push(key);
           if (seen.has(key)) {
-            throw new ContractDocumentError(`repeats the key ${quoteKey(key)} in ${path === "" ? "the top-level object" : path}; every key may appear once`, "repeated-key");
+            // Never the key itself: it is document text, and may be written to be read as an instruction.
+            throw new ContractDocumentError(`repeats a key (key ${keys.length} of ${where}); every key may appear once`, "repeated-key");
           }
           seen.add(key);
-          at = childPath(path, key);
           skipWhitespace();
           expect(":");
         }
-        scan(at);
+        scan(false);
         skipWhitespace();
         if (text[index] === ",") {
           index += 1;
@@ -409,19 +451,44 @@ function checkStrictJson(text: string): void {
     if (!JSON_NUMBER.test(text)) syntaxError();
     index = JSON_NUMBER.lastIndex;
   };
-  scan("");
+  scan(true);
   skipWhitespace();
   if (index !== text.length) syntaxError();
+  return keyOrders;
+}
+
+/**
+ * Records, for each object in `value`, the key order `checkStrictJson()`
+ * read for it. `keyOrders` lists objects in document order, which is the
+ * order this walk meets them in: each object, then its members in the order
+ * written. Keys are unique (a repeat was already refused), so each names
+ * exactly one own property; `value[key]` reads an own `__proto__` too,
+ * because JSON.parse defines it as an own property that shadows the
+ * inherited accessor.
+ */
+function recordWrittenKeyOrder(value: unknown, keyOrders: readonly string[][], next: { index: number }): void {
+  if (typeof value !== "object" || value === null) return;
+  if (Array.isArray(value)) {
+    for (const item of value) recordWrittenKeyOrder(item, keyOrders, next);
+    return;
+  }
+  const keys = keyOrders[next.index]!;
+  next.index += 1;
+  WRITTEN_KEY_ORDER.set(value, keys);
+  for (const key of keys) recordWrittenKeyOrder((value as Record<string, unknown>)[key], keyOrders, next);
 }
 
 /**
  * Reads a plan or brief file's bytes as strict JSON: UTF-8 that decodes
  * without error (never silently replaced with U+FFFD) and does not start
  * with a byte order mark, exactly one JSON value, and no object that repeats a key at any depth -- the I-JSON rules
- * RFC 8785 canonicalization assumes. Throws an Error whose message says
- * which rule the bytes break: a syntax error by position only, a repeated
- * key by name and where it is. It does not validate the value against a
- * contract; call `validateAgainstContract()` next.
+ * RFC 8785 canonicalization assumes. Throws a ContractDocumentError whose
+ * message says which rule the bytes break, by position only: a syntax error
+ * by character position, a repeated key by its 1-based position in its
+ * object and that object's character position -- never any text from the
+ * file. It does not validate the value against a contract; call
+ * `validateAgainstContract()` next, which then numbers an undeclared field
+ * by its position as written in the file.
  */
 export function readContractDocument(bytes: Uint8Array): unknown {
   let text: string;
@@ -431,6 +498,8 @@ export function readContractDocument(bytes: Uint8Array): unknown {
     throw new ContractDocumentError("is not valid UTF-8", "encoding");
   }
   if (text.charCodeAt(0) === 0xfeff) throw new ContractDocumentError("is not valid JSON at position 0: it starts with a byte order mark, which strict JSON refuses", "syntax", 0);
-  checkStrictJson(text);
-  return JSON.parse(text) as unknown;
+  const keyOrders = checkStrictJson(text);
+  const value = JSON.parse(text) as unknown;
+  recordWrittenKeyOrder(value, keyOrders, { index: 0 });
+  return value;
 }

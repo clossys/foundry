@@ -82,8 +82,9 @@ describe("validateAdvisorPlan (blocker shape shared with Controller's loop.json 
     expect(paths).toContain("blockers[0].capabilityId");
     expect(paths).toContain("blockers[0].since");
     expect(paths).toContain("blockers[0].nextAction");
-    expect(paths).toContain("blockers[0].description");
-    expect(paths).toContain("blockers[0].dueDate");
+    // Each undeclared field is reported at the blocker that holds it, never by its name.
+    expect(paths.filter((path) => path === "blockers[0]")).toHaveLength(2);
+    expect(JSON.stringify(findings)).not.toMatch(/description|dueDate/);
   });
 
   it("rejects a nextAction missing who, how, or byWhen", () => {

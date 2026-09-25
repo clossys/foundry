@@ -22,7 +22,7 @@ import { createHash, randomBytes } from "node:crypto";
 import { closeSync, fsyncSync, mkdirSync, openSync, readFileSync, renameSync, rmSync, writeSync } from "node:fs";
 import { basename, dirname, join } from "node:path";
 import { ContractDocumentError, readContractDocument, validateAgainstContract } from "./generated/contract-schema.generated.js";
-import type { ContractSchema, ContractViolation } from "./generated/contract-schema.generated.js";
+import type { ContractSchema } from "./generated/contract-schema.generated.js";
 import { PACKAGE_SCOPE } from "./generated/package-scope.generated.js";
 import { PLAN_CONTRACTS } from "./generated/plan-contracts.generated.js";
 
@@ -92,20 +92,6 @@ function loadContract(name: string): ContractSchema {
   return contract;
 }
 
-const UNDECLARED_FIELD = "is not a field the contract declares, and unknown fields are refused";
-
-/**
- * A contract violation with no document text in it, as @clossys/advisor
- * reports one: the checker names an undeclared key in its path, and that key
- * is document text, so the violation is placed at the object holding it.
- */
-function positionOnly(violation: ContractViolation): { path: string; message: string } {
-  if (violation.message !== UNDECLARED_FIELD) return { path: violation.path, message: violation.message };
-  const { path } = violation;
-  const cut = path.endsWith('"]') ? path.lastIndexOf('["') : path.lastIndexOf(".");
-  return { path: cut === -1 ? "" : path.slice(0, cut), message: "has a field the contract does not declare, and unknown fields are refused" };
-}
-
 function eachRepeat<T>(items: readonly T[], key: (item: T) => string, onRepeat: (index: number, firstIndex: number) => void): void {
   const first = new Map<string, number>();
   items.forEach((item, index) => {
@@ -127,7 +113,8 @@ function eachRepeat<T>(items: readonly T[], key: (item: T) => string, onRepeat: 
  */
 export function registrySnapshotViolations(value: unknown): RegistrySnapshotViolation[] {
   const schema = validateAgainstContract(loadContract("registry-snapshot.json"), value, loadContract);
-  if (schema.length > 0) return schema.map((violation) => ({ rule: "schema", ...positionOnly(violation) }));
+  // The shared checker's path and message never carry document text: an undeclared field is placed at its object, by position.
+  if (schema.length > 0) return schema.map((violation) => ({ rule: "schema", path: violation.path, message: violation.message }));
   const snapshot = value as RegistrySnapshot;
   const violations: RegistrySnapshotViolation[] = [];
   eachRepeat(snapshot.packages, (entry) => entry.name, (index, first) =>

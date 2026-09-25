@@ -99,7 +99,7 @@ describe("packed change-set and bundle contracts", () => {
     expect(validateRepositoryChangeSet(act).valid).toBe(false);
     const key = loose(SET);
     key.state = "planned";
-    expect(validateRepositoryChangeSet(key)).toEqual({ valid: false, reason: "changeSet.state is not a field the contract declares, and unknown fields are refused" });
+    expect(validateRepositoryChangeSet(key)).toEqual({ valid: false, reason: `changeSet has a field the contract does not declare (key ${Object.keys(key).length} of this object), and unknown fields are refused` });
     const derived = loose(SET);
     fileAt(derived, "package-lock.json").derived = false;
     expect(validateRepositoryChangeSet(derived).valid).toBe(false);
