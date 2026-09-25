@@ -140,6 +140,19 @@ describe("apply-plan-cli main", () => {
     }
   });
 
+  it("exits 2 for malformed JSON with a position only, never quoting the file", () => {
+    const workDir = tempDir();
+    const planPath = join(workDir, "plan.json");
+    const briefPath = join(workDir, "brief.json");
+    writeFileSync(planPath, JSON.stringify(VALID_PLAN));
+    writeFileSync(briefPath, '{"problem":"our biggest client is leaving",}');
+    const err = vi.spyOn(console, "error").mockImplementation(() => {});
+    expect(main(["--plan", planPath, "--brief", briefPath, "--repo", workDir], createNodeHost())).toBe(2);
+    const message = String(err.mock.calls[0]?.[0]);
+    expect(message).toBe(`launcher-apply-plan: --brief is not valid JSON at position 43: ${briefPath}`);
+    expect(message).not.toContain("client");
+  });
+
   it("exits 2 when --plan is not valid UTF-8, instead of reading a replacement character (#1475)", () => {
     const workDir = tempDir();
     const planPath = join(workDir, "plan.json");

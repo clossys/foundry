@@ -127,7 +127,8 @@ function section(title: string, body: readonly string[]): string {
  * the first one, matching this package's other validators
  * (`validateAdvisorAssessmentInput`, `validateKitProposal`). Every finding
  * has the rule `advisor-plan-contract`; `path` names the field at fault
- * (for example `blockers[0].nextAction.byWhen`), and `message` says what is
+ * when there is one (for example `blockers[0].nextAction.byWhen`; a plan
+ * that is not an object has none), and `message` says what is
  * wrong with it without echoing its value.
  */
 export function validateAdvisorPlan(value: unknown): AdvisorFinding[] {

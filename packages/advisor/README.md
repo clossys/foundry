@@ -301,8 +301,9 @@ blocker's `nextAction.byWhen` may be a plain date), and every object is
 closed: a field the contract does not declare is refused, never ignored.
 It returns every finding it locates, the same pattern as this package's
 other validators; each finding has the rule `advisor-plan-contract`, a
-`path` naming the field at fault (for example
-`blockers[0].nextAction.byWhen`), and a message that never echoes the
+`path` naming the field at fault, when there is one (for example
+`blockers[0].nextAction.byWhen`; a plan that is not an object at all has
+none), and a message that never echoes the
 field's value. A string or object key containing a lone surrogate is
 refused too, so every plan that validates has a digest. This package still carries no runtime dependency on the
 Controller package: the blocker shape is duplicated structurally, never the
@@ -331,7 +332,8 @@ It prints the rendered STATUS document to stdout and exits `0`, or exits
 so a blocker in the old, local shape is rejected the same way). It reads
 the file as strict JSON: bytes that are not valid UTF-8, and an object
 that repeats a key at any depth, are refused rather than decoded with a
-replacement character or resolved to the last value (#1475).
+replacement character or resolved to the last value, and a syntax error
+is reported by position only, never quoting the file (#1475).
 
 ## Kit verdicts (issue #1177)
 

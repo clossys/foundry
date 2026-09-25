@@ -348,7 +348,8 @@ key containing a lone surrogate is refused, so every plan that validates has
 a digest. A refusal names each field at fault and never echoes its value.
 `launcher-apply-plan` reads both files as strict JSON: bytes that are not
 valid UTF-8, or an object that repeats a key at any depth, exit `2` with the
-repeated key named, so the value validated is exactly the one a reader of
+repeated key named (a syntax error is reported by position only, never
+quoting the file), so the value validated is exactly the one a reader of
 the file sees.
 `isPlanApproved()` reads a plan's most recent decision (by
 timestamp, not array position) and requires it to be `"approved"` --

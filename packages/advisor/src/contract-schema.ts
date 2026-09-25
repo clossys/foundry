@@ -84,6 +84,22 @@ function childPath(path: string, name: string): string {
   return path === "" ? name : `${path}.${name}`;
 }
 
+const TYPE_NOUNS: Readonly<Record<string, string>> = {
+  object: "an object", array: "an array", string: "a string", number: "a number", integer: "an integer", boolean: "a boolean", null: "null",
+};
+
+/**
+ * What a value must be, for a type mismatch. A `title` that is already a
+ * description ("a string with ...") is used as it is; one that names a
+ * document ("Advisor plan") is added after the type: "an object (the
+ * Advisor plan)".
+ */
+function describeType(type: string, title: unknown): string {
+  if (typeof title !== "string") return TYPE_NOUNS[type] ?? `of type ${type}`;
+  if (/^(a|an) /.test(title)) return title;
+  return `${TYPE_NOUNS[type] ?? `of type ${type}`} (the ${title})`;
+}
+
 interface Scope {
   readonly root: ContractSchema;
   readonly load: ContractLoader;
@@ -114,7 +130,7 @@ function check(input: ContractSchema, value: unknown, inputScope: Scope, path: s
   const kind = typeOf(value);
   const expected = schema.type;
   if (typeof expected === "string" && !(expected === kind || (expected === "number" && kind === "integer"))) {
-    return [{ path, message: `must be ${typeof schema.title === "string" ? schema.title : `of type ${expected}`}, got ${kind}` }];
+    return [{ path, message: `must be ${describeType(expected, schema.title)}, got ${kind}` }];
   }
   const violations: ContractViolation[] = [];
   if (Object.hasOwn(schema, "const") && JSON.stringify(schema.const) !== JSON.stringify(value)) violations.push({ path, message: `must equal ${JSON.stringify(schema.const)}` });
@@ -198,26 +214,51 @@ export function formatContractViolation(label: string, violation: ContractViolat
 
 const STRICT_UTF8 = new TextDecoder("utf-8", { fatal: true });
 const JSON_WHITESPACE = " \t\n\r";
+const JSON_NUMBER = /-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?/y;
+const JSON_ESCAPE = /\\(?:["\\/bfnrt]|u[0-9a-fA-F]{4})/y;
+
+/** A document that is not strict JSON: `syntaxAt` is the offset of the first syntax error, else `duplicate` names a repeated key. */
+class StrictJsonError extends Error {}
 
 /**
- * The first repeated object key in `text`, which must already be valid
- * JSON, with the path of the object that repeats it; `null` when no object
- * does. Keys are compared after unescaping, so `"a"` and `"\u0061"` are the
- * same key.
+ * Checks that `text` is exactly one JSON value (RFC 8259 grammar) with no
+ * object that repeats a key, at any depth. Keys are compared after
+ * unescaping, so `"a"` and `"a"` are the same key. A syntax error is
+ * reported by position only, never with a snippet of the text, because a
+ * plan or brief can carry founder prose.
  */
-function findDuplicateKey(text: string): { key: string; path: string } | null {
+function checkStrictJson(text: string): void {
   let index = 0;
+  const syntaxError = (): never => {
+    throw new StrictJsonError(`is not valid JSON at position ${index}`);
+  };
   const skipWhitespace = () => {
     while (index < text.length && JSON_WHITESPACE.includes(text[index]!)) index += 1;
   };
+  const expect = (character: string) => {
+    if (text[index] !== character) syntaxError();
+    index += 1;
+  };
   const readString = (): string => {
     const start = index;
-    index += 1;
-    while (text[index] !== '"') index += text[index] === "\\" ? 2 : 1;
+    expect('"');
+    for (;;) {
+      if (index >= text.length) syntaxError();
+      const unit = text.charCodeAt(index);
+      if (unit === 0x22) break;
+      if (unit < 0x20) syntaxError();
+      if (unit === 0x5c) {
+        JSON_ESCAPE.lastIndex = index;
+        if (!JSON_ESCAPE.test(text)) syntaxError();
+        index = JSON_ESCAPE.lastIndex;
+      } else {
+        index += 1;
+      }
+    }
     index += 1;
     return JSON.parse(text.slice(start, index)) as string;
   };
-  const scan = (path: string): { key: string; path: string } | null => {
+  const scan = (path: string): void => {
     skipWhitespace();
     const opening = text[index];
     if (opening === "{" || opening === "[") {
@@ -227,45 +268,58 @@ function findDuplicateKey(text: string): { key: string; path: string } | null {
       skipWhitespace();
       if (text[index] === closing) {
         index += 1;
-        return null;
+        return;
       }
       for (let position = 0; ; position += 1) {
         let at = `${path}[${position}]`;
         if (opening === "{") {
           skipWhitespace();
           const key = readString();
-          if (seen.has(key)) return { key, path };
+          if (seen.has(key)) {
+            throw new StrictJsonError(`repeats the key ${JSON.stringify(key)} in ${path === "" ? "the top-level object" : path}; every key may appear once`);
+          }
           seen.add(key);
           at = childPath(path, key);
           skipWhitespace();
-          index += 1; // the colon
+          expect(":");
         }
-        const found = scan(at);
-        if (found !== null) return found;
+        scan(at);
         skipWhitespace();
-        const separator = text[index];
-        index += 1;
-        if (separator === closing) return null;
+        if (text[index] === ",") {
+          index += 1;
+          continue;
+        }
+        expect(closing);
+        return;
       }
     }
     if (opening === '"') {
       readString();
-      return null;
+      return;
     }
-    while (index < text.length && !`,]}${JSON_WHITESPACE}`.includes(text[index]!)) index += 1;
-    return null;
+    for (const literal of ["true", "false", "null"]) {
+      if (text.startsWith(literal, index)) {
+        index += literal.length;
+        return;
+      }
+    }
+    JSON_NUMBER.lastIndex = index;
+    if (!JSON_NUMBER.test(text)) syntaxError();
+    index = JSON_NUMBER.lastIndex;
   };
-  return scan("");
+  scan("");
+  skipWhitespace();
+  if (index !== text.length) syntaxError();
 }
 
 /**
  * Reads a plan or brief file's bytes as strict JSON: UTF-8 that decodes
- * without error (never silently replaced with U+FFFD), JSON that parses,
- * and no object that repeats a key at any depth -- the I-JSON rules RFC 8785
- * canonicalization assumes. Throws an Error whose message says which rule
- * the bytes break and, for a repeated key, names the key and where it is.
- * It does not validate the value against a contract; call
- * `validateAgainstContract()` next.
+ * without error (never silently replaced with U+FFFD), exactly one JSON
+ * value, and no object that repeats a key at any depth -- the I-JSON rules
+ * RFC 8785 canonicalization assumes. Throws an Error whose message says
+ * which rule the bytes break: a syntax error by position only, a repeated
+ * key by name and where it is. It does not validate the value against a
+ * contract; call `validateAgainstContract()` next.
  */
 export function readContractDocument(bytes: Uint8Array): unknown {
   let text: string;
@@ -274,15 +328,11 @@ export function readContractDocument(bytes: Uint8Array): unknown {
   } catch {
     throw new Error("is not valid UTF-8");
   }
-  let value: unknown;
   try {
-    value = JSON.parse(text);
+    checkStrictJson(text);
   } catch (cause) {
-    throw new Error(`is not valid JSON: ${cause instanceof Error ? cause.message : String(cause)}`);
+    if (cause instanceof StrictJsonError) throw new Error(cause.message);
+    throw cause;
   }
-  const duplicate = findDuplicateKey(text);
-  if (duplicate !== null) {
-    throw new Error(`repeats the key ${JSON.stringify(duplicate.key)} in ${duplicate.path === "" ? "the top-level object" : duplicate.path}; every key may appear once`);
-  }
-  return value;
+  return JSON.parse(text) as unknown;
 }

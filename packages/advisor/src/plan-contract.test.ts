@@ -77,6 +77,12 @@ describe("validateAdvisorPlan against the plan contract", () => {
     expect(messages(badDate)).toEqual(["plan.decisions[0].at must be an ISO 8601 date-time with a time zone, such as 2026-09-24T12:00:00Z"]);
   });
 
+  it("says what a whole document must be in plain words, with no path", () => {
+    expect(validateAdvisorPlan(5)).toEqual([{ rule: "advisor-plan-contract", severity: "error", message: "plan must be an object (the Advisor plan), got integer" }]);
+    expect(messages(validateEngagementBrief([]))).toEqual(["brief must be an object (the Engagement brief), got array"]);
+    expect(messages(validateAdvisorPlan({ ...PLAN, whereWeAre: "x" }))).toEqual(["plan.whereWeAre must be an array, got string"]);
+  });
+
   it("names the field at fault inside recommendedNext rather than only saying no form matched", () => {
     expect(messages(validateAdvisorPlan({ ...PLAN, recommendedNext: { owner: "sponsor" } }))).toEqual(["plan.recommendedNext.action is required"]);
     expect(validateAdvisorPlan({ ...PLAN, recommendedNext: null })).toEqual([]);
@@ -127,8 +133,32 @@ describe("readContractDocument: strict JSON for plan and brief files (#1475)", (
     expect(() => readContractDocument(raw)).toThrow("is not valid UTF-8");
   });
 
-  it("refuses JSON that does not parse", () => {
-    expect(() => readContractDocument(bytes('{"a":'))).toThrow(/^is not valid JSON/);
+  it("refuses JSON that does not parse by position only, never quoting the text", () => {
+    const secret = "our biggest client is leaving";
+    const cases: [string, number][] = [
+      [`{"problem":"${secret}",}`, 43],
+      [`{"problem":"${secret}" x}`, 43],
+      [`{"problem":${secret}}`, 11],
+      [`{"problem":"${secret}"`, 42],
+      [`{"problem":"${secret}"} trailing`, 44],
+      [`{"problem":"${secret}\\u12"}`, 41],
+      [`["${secret}\n"]`, 31],
+    ];
+    for (const [text, position] of cases) {
+      let message = "";
+      try {
+        readContractDocument(bytes(text));
+      } catch (cause) {
+        message = (cause as Error).message;
+      }
+      expect(message, text).toBe(`is not valid JSON at position ${position}`);
+      expect(message, text).not.toContain("client");
+    }
+  });
+
+  it("accepts every JSON value form the grammar allows", () => {
+    const text = ' { "n" : [ -0 , 1.5e+3 , 2E-2 , 0.25 ] , "t" : true , "f" : false , "z" : null , "s" : "\\u00e9\\n\\/" } ';
+    expect(readContractDocument(bytes(text))).toEqual({ n: [-0, 1500, 0.02, 0.25], t: true, f: false, z: null, s: "\u00e9\n/" });
   });
 });
 
