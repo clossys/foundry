@@ -360,9 +360,12 @@ repeats; no role repeats within one staffing entry; no role is named twice
 in `mandate.roles`; a repository has at most one `pin-starter` act,
 always placed in `devDependencies`; and no hub-only role is staffed.
 `HUB_ONLY_ROLES` is that list, `["advisor", "integrator"]`, read from the
-plan contract's `definitions.hubOnlyRoles`, the same data Launcher reads:
-each is pinned once in the engagement hub and run in a product repository
-through `npx` at the hub's exact version, never installed there. A plan
+plan contract's `definitions.hubOnlyRoles`, the same data Launcher reads.
+The apply-approved-plan RFC places each of them in the engagement hub: its
+package is pinned once there and run in a product repository through `npx`
+at the hub's exact version, never installed in the repository. Launcher's
+appoint step pins Advisor in the hub today; no Launcher release pins
+Integrator there yet. A plan
 whose mandate names only hub-only roles does no work in a product
 repository, so it has no `staffing` (an empty one is refused) and no
 `packages`. The rules read only a plan's own fields,
@@ -496,6 +499,8 @@ repository id or a value from the snapshot:
 | That version is deprecated | violated | `deprecated-version` |
 | Its tarball is not served over the registry's own scheme and host, or its URL carries credentials | violated | `foreign-tarball-host` |
 | That version lists no attestations | warning | `no-attestation-yet` |
+| A staffed role's catalogue entry is not in the packed scope (a defect in this package) | violated | `catalogue-scope-mismatch` |
+| The resolved plan fails the plan contract or its rules (a defect in this package; never expected) | violated | `resolved-plan-invalid` |
 
 Any violated finding makes the result `violated`; otherwise any
 indeterminate one makes it `indeterminate` (`ResolutionState`). A warning
