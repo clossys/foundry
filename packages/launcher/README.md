@@ -200,6 +200,7 @@ launcher-check --help
 launcher-check --input observation.json
 launcher-doctor
 launcher-apply-plan --plan plan.json --brief brief.json --repo ./product-checkout
+launcher-apply-plan snapshot --request package-request.json
 ```
 
 Exit codes preserve the ternary:
@@ -209,6 +210,8 @@ Exit codes preserve the ternary:
 | `0` | `satisfied` | Created, resumed, or appointed the hub. The message includes a read-only health report. |
 | `1` | `violated` | Known refusal: not GitHub, not empty, missing appoint inventory, the supplier tree, uncommitted changes in the appoint tree, or a `CLOSSYS_OWNER` that disagrees with the origin owner. |
 | `2` | `indeterminate` | Missing `gh`, unreadable registry pin, or an owner that could not be inferred. |
+
+`launcher-apply-plan` has its own exit codes, described in [Applying an approved plan](#applying-an-approved-plan) and [Taking the registry snapshot](#taking-the-registry-snapshot).
 
 `launcher-check` grades a captured observation JSON through `planWorkspace` and does not create a hub. Same ternary: 0 is a create/resume/adopt plan, 1 is a known refusal, 2 could not run or could not decide. Appoint grades as a plan only when the observation already records a populated inventory; `--inventory` is a live CLI flag, not a check-cli input.
 
@@ -486,6 +489,70 @@ Nothing here writes to a repository, creates a branch or opens a pull
 request; reading the repositories, installing packages and opening one pull
 request per repository are not built yet.
 
+## Taking the registry snapshot
+
+`launcher-apply-plan snapshot --request <file> [--out <file>]` takes the
+registry snapshot a plan's exact packages are resolved from (#1178). It is
+the only step of applying a plan that reads the network. It records what the
+registry said; it decides nothing from it. Deciding is
+`advisor-resolve-packages`'s job, in `@clossys/advisor`.
+
+- **Request.** `<file>` holds the report `advisor-package-request` prints,
+  `{ "state": "satisfied", "names": [...], "findings": [] }`, or just
+  `{ "names": [...] }`, read as strict JSON (invalid UTF-8, a byte order
+  mark or a repeated key is refused). Every name must be a scoped package
+  name in the publishing scope this package was built with, and appear once.
+  A request with another field, another state or any finding is refused
+  before anything is fetched.
+- **Fetch.** For each name, in name order and one at a time, a `GET` of
+  the package's full registry document at `{registry}/{name}`, with the slash
+  in the name percent-encoded (`@scope%2Fname`), the same encoding
+  `@clossys/integrator` uses. The registry is the one in this repository's
+  `package-scope.json`, packed into this package at build time.
+- **Transport.** Node's own `fetch`. The only header sent is
+  `accept: application/json`, and never an `Authorization` header. The step
+  does not run the npm CLI, and reads no `.npmrc` and no token from the
+  environment. A redirect is refused, never followed. A response body is read as
+  a stream and abandoned as soon as it passes 10 MiB; a declared length over
+  that is refused before any of the body is read. Each request, body
+  included, is abandoned after 30 seconds.
+- **Answers.** A `200` is projected into the snapshot. A `404` is recorded
+  as `status: "not-found"`. Anything else stops the step at that package:
+  a transport error, a timeout, a redirect, any other status, an oversize
+  body, or a `200` body that is not strict JSON or is not that package's
+  registry document. Nothing further is fetched, no snapshot is written, and
+  the exit code is `2`. An earlier snapshot at the output path is left as it
+  was.
+- **Projection.** Only what the registry snapshot contract declares is
+  kept: the version the `latest` dist-tag names, or `null`, and, when the
+  document lists that version, that one version's integrity value and tarball
+  URL exactly as served, whether it is deprecated, when it was published, and
+  whether it lists attestations. Every other version, dist-tag and field is
+  ignored. The document must name the requested package, and the version's
+  own entry must carry the version number `latest` names; otherwise nothing
+  is written. `responseSha256` is the SHA-256 of the response body exactly as
+  the transport delivered it.
+- **Output.** The snapshot is written only after the exact text to be
+  written has been read back strictly and has passed
+  `docs/contracts/registry-snapshot.json`
+  (in the public repository, not shipped in this package; its content is
+  packed at build time), schema and code rules N1-N3 both. It goes to
+  `--out`, by default `clossys/.state/apply/registry-snapshot.json` under the
+  current directory, which should be the hub. It is two-space JSON with a
+  final newline, with packages sorted by name, so the same registry answers
+  give the same bytes apart from `fetchedAt`. `fetchedBy` is this package's
+  own name and version. The write is atomic: a temporary file in the same
+  directory is written, flushed to disk and renamed over the target, so a
+  reader sees the old file or the whole new one.
+
+Messages name packages and positions in the request, never the content of a
+response or of the request. Exit codes: `0` means the snapshot was written;
+`2` means nothing was written, whether because of a usage error, an
+unreadable or refused request, or a registry answer this step cannot record.
+A snapshot is a record of what the registry answered, not evidence of where
+a package came from; that is shown by verifying the package's provenance,
+which this step does not do.
+
 ## Why this is not Advisor, Starter, Builder, installer, creator, or a connector
 
 Advisor is the engagement engine: it grades evidence and names a next
@@ -519,7 +586,8 @@ intact.
 
 ## Requirements
 
-Node.js 20+, ESM, GitHub `gh`, and no runtime dependencies. Creating a new
+Node.js 20+, ESM, GitHub `gh`, and no runtime dependencies. The registry
+snapshot step needs HTTPS access to the public registry, and no credential. Creating a new
 hub needs permission to create a private repository under the inferred
 owner. Appointing uses the current checkout and does not create a second
 repository.
