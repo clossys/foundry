@@ -304,11 +304,12 @@ Exit codes preserve the ternary:
 | `parsePreferences()` | Reads `clossys/preferences.json`'s budget stance; defaults to `"balanced"` on absence or malformed input. |
 | `readHostModelProfile()` | Reads a packed `model-profiles/<host>.json`; returns `undefined`, never throws, on a missing or malformed file. |
 | `resolveModelForTier()` | Resolves a tier and budget preference to one model name for a host, reporting `belowFloor` rather than silently substituting a weaker tier's model. |
-| `validateAdvisorPlan()` / `validateEngagementBrief()` | Validation of `clossys/advisor/plan.json` and `clossys/brief.json` (with its `context` snapshot) against the shared plan and brief contracts Advisor also validates against. Unknown fields are refused; the reason names every field at fault. |
-| `isPlanApproved()` | True only when a plan's most recent decision (by timestamp) has `chosen === "approved"`. False when decisions at that latest time disagree, or when any decision time does not parse. |
+| `validateAdvisorPlan()` / `validateEngagementBrief()` | Validation of `clossys/advisor/plan.json` and `clossys/brief.json` (with its `context` snapshot) against the shared plan and brief contracts Advisor also validates against, including the contracts' code rules (R1-R10 for a plan, B1-B2 for a brief). Unknown fields are refused; the reason names every field at fault. |
+| `approvedSubject()` | What an approval binds: the `subjectDigest` of the plan's latest decision (by timestamp) when that decision has `chosen === "approved"`, else `null`. `null` when the approval has no `subjectDigest`, when decisions at the latest time disagree or name different subjects, when any decision time does not parse, or when the plan does not validate. Anything that applies a plan must use this; the one stated exception is the legacy brief-only path (`applyEngagementBrief()` and `launcher-apply-plan`), which predates the binding and uses `isPlanApproved()`. |
+| `isPlanApproved()` | True only when a plan's most recent decision (by timestamp) has `chosen === "approved"`. False when decisions at that latest time disagree, or when any decision time does not parse. It binds no bytes: it ignores `subjectDigest`, so it is also true for an approval that names no change. |
 | `applyEngagementBrief()` | Writes `clossys/brief.json` into a repository directory once the plan validates and is approved and the brief validates; refuses and writes nothing otherwise. Reports the plan's canonical digest. |
-| `planDigest()` / `canonicalJson()` / `PLAN_DIGEST_EXCLUDED_FIELDS` | The canonical plan digest an approval binds: `sha256:` over the RFC 8785 canonical JSON of the plan without `asOf` and `decisions`. Identical to Advisor's for every plan. |
-| `CloneMissingOutcome` / `DoctorCheckHost` / `DoctorReport` / `DoctorStepId` / `DoctorStepResult` / `CloudBootstrapCheck` / `CloudBootstrapReport` / `ExternalInventoryDeclaration` / `InventoryDriftReport` / `DiscoveredHost` / `HostRecord` / `BudgetPreference` / `HostModelProfile` / `HostTierMapping` / `ModelResolution` / `PreferencesDocument` / `ReasoningTier` / `SupportedHost` / `AdvisorPlan` / `ApplyBriefResult` / `BlockerKind` / `EngagementBrief` / `EngagementBriefRole` / `EngagementContext` / `EngagementContextField` / `EngagementContextFieldId` / `GoalDirection` / `PlanBlocker` / `PlanDecision` / `ValidationResult` | Typed contracts for the sections above. |
+| `planDigest()` / `canonicalJson()` / `PLAN_DIGEST_EXCLUDED_FIELDS` | The canonical plan digest: `sha256:` over the RFC 8785 canonical JSON of the plan without `asOf` and `decisions`. Identical to Advisor's for every plan. |
+| `CloneMissingOutcome` / `DoctorCheckHost` / `DoctorReport` / `DoctorStepId` / `DoctorStepResult` / `CloudBootstrapCheck` / `CloudBootstrapReport` / `ExternalInventoryDeclaration` / `InventoryDriftReport` / `DiscoveredHost` / `HostRecord` / `BudgetPreference` / `HostModelProfile` / `HostTierMapping` / `ModelResolution` / `PreferencesDocument` / `ReasoningTier` / `SupportedHost` / `AdvisorPlan` / `ApplyBriefResult` / `BlockerKind` / `EngagementBrief` / `EngagementBriefRole` / `EngagementContext` / `EngagementContextField` / `EngagementContextFieldId` / `GoalDirection` / `PlanBlocker` / `PlanDecision` / `PlanKit` / `PlanPackageAct` / `PlanStaffing` / `ValidationResult` | Typed contracts for the sections above. |
 
 ## Doctor
 
@@ -414,11 +415,41 @@ valid UTF-8, a leading byte order mark, or an object that repeats a key at
 any depth exit `2`, with a repeated key named (escaped) and a syntax error
 reported by position only, never quoting the file's text, so the value
 validated is exactly the one a reader of the file sees.
-`isPlanApproved()` reads a plan's most recent decision (by
-timestamp, not array position) and requires it to be `"approved"` --
-absence of any decision is never treated as approval, and neither is a
-decision time that does not parse or a tie at the latest instant between
-decisions that disagree.
+A plan may say which roles work in which repository (`staffing`, by
+repository inventory id), which kits were recommended (`kits`), which exact
+package acts are authorized (`packages`, each one exact version and one
+`sha512-` integrity value) and where those versions were resolved from
+(`resolution`) (#1178). Once the schema passes, the contract's code rules
+run: no repository is staffed twice (ids compare case-insensitively),
+staffed roles and the mandate's roles agree in both directions, every
+package act names a staffed repository spelled exactly the same, no
+`planItem` repeats, no package appears twice in one repository,
+`resolution` is present exactly when `packages` is, no kit id repeats, no
+role repeats within one staffing entry, no role is named twice in
+`mandate.roles`, and a repository has at most one `pin-starter` act, always
+placed in `devDependencies`. The rules read only a document's own fields,
+as the schema does, so an inherited one is ignored. A brief's optional `staffedHere`
+must name only the brief's own roles, each once. This package implements
+those rules separately from Advisor, and both are tested against the same
+corpus, `docs/contracts/advisor-plan-rules.fixture.json` (in the public
+repository, not shipped in this package).
+`approvedSubject()` says what an approval binds: the `subjectDigest` of the
+plan's most recent decision (by timestamp, not array position) when it is
+`"approved"`. It validates the plan itself first and returns null for one
+that does not validate. An approval with no `subjectDigest` binds nothing,
+and so does no decision at all, a decision time that does not parse, or a tie at
+the latest instant between decisions that disagree or name different
+subjects. It says what was approved, not that it matches: a caller must
+recompute the digest of the change it holds and compare.
+`isPlanApproved()` reads the same most recent decision and is true when it
+is `"approved"`, with the same rules for ties and unreadable times, but it
+binds no bytes: it ignores `subjectDigest`, so it is also true for an
+approval that names no change. Anything that applies a plan must use
+`approvedSubject()` instead.
+`applyEngagementBrief()` and `launcher-apply-plan` are the brief-only path,
+which predates that binding and is kept as it was, not extended: they
+require `isPlanApproved()` and accept an approval with or without a
+`subjectDigest`, checking no binding.
 `applyEngagementBrief()` refuses, and writes nothing, unless all three
 checks pass and the plan's digest is computed; only then does it write the brief byte-identically -- it never re-authors
 its prose -- and reports `planDigest()` of the plan it applied, which the
@@ -430,11 +461,10 @@ does not compute a brief's content (that is `@clossys/advisor`'s
 `toEngagementBrief()`) and does not decide whether a plan should be
 approved (that is Advisor's job); it only validates the two shapes and
 writes the one file. Multi-repository
-orchestration -- branch creation, exact package installs, adding Starter's
-caller workflow, and opening one pull request per repository -- is
-deferred: the landed contract does not yet specify how a plan's approved
-roles map to inventory repository ids or to install/remove/relocate work
-items.
+orchestration -- computing each repository's change from `staffing` and
+`packages`, branch creation, exact package installs, adding Starter's
+caller workflow, and opening one pull request per repository -- is not
+built yet.
 
 ## Why this is not Advisor, Starter, Builder, installer, creator, or a connector
 
