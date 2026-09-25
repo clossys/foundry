@@ -194,8 +194,8 @@ command resumes later.
 A founder never writes the inventory by hand (#1179). Advisor's repository
 card (`@clossys/advisor`'s `repositoryChoiceCard()`, or its
 `advisor-repository-card` bin before the hub exists) offers the
-repositories the founder's GitHub account can see, as the agent listed
-them; the founder chooses; and the agent passes the chosen ids to Launcher:
+repositories the agent listed from GitHub for the founder's sign-in; the
+founder chooses; and the agent passes the chosen ids to Launcher:
 
 ```bash
 launcher --repositories example-owner/example-app,example-owner/example-site

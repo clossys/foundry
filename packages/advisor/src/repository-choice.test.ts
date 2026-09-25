@@ -38,6 +38,8 @@ describe("repositoryChoiceCard (#1179)", () => {
     ]);
     expect(card).not.toHaveProperty("recommendedChoiceId");
     expect(card.somethingElseFollowUp).toMatch(/\?/);
+    // The card has only the list it was given: it never says that list is complete.
+    expect(card.somethingElseFollowUp).not.toMatch(/every|all of|can reach|can see/i);
   });
 
   it("labels each repository by owner/name and carries a non-blank description as detail only", () => {

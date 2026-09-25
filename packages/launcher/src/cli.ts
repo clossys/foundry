@@ -24,8 +24,8 @@ hub to appoint it — it does not have to be a new exclusive repo, and it keeps
 its current name and files.
 
 Appointing needs the repositories the hub covers. Choose them on Advisor's
-repository card (npx -p @clossys/advisor advisor-repository-card), which
-lists the repositories your GitHub account can see, then pass the chosen ids
+repository card (npx -p @clossys/advisor advisor-repository-card), built
+from the repositories GitHub lists for your sign-in, then pass the chosen ids
 to --repositories: Launcher writes clossys/.state/inventory.json for you,
 when appointing or on an existing hub. It never merges into or overwrites an
 inventory that lists a different set of repositories; it reports the

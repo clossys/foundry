@@ -433,8 +433,8 @@ export function readInventoryRepositories(host: WorkspaceHost, source: string, l
  */
 function chooseRepositoriesHint(extraFlag = ""): string {
   return (
-    "choose the repositories this hub covers on Advisor's repository card, which lists the ones your GitHub account can see " +
-    "(`npx -p @clossys/advisor advisor-repository-card`), then run " +
+    "choose the repositories this hub covers on Advisor's repository card " +
+    "(`npx -p @clossys/advisor advisor-repository-card`), built from the repositories GitHub lists for your sign-in, then run " +
     `\`launcher --repositories <owner/name>[,<owner/name>...]${extraFlag}\`, and Launcher writes the inventory for you`
   );
 }

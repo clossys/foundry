@@ -410,10 +410,10 @@ models through its own per-host profile.
 
 A founder chooses which repositories the team works on from a card; nobody
 types a repository name. This package holds no credentials and makes no
-network call: the agent lists every repository the founder's GitHub
-account can see -- the ones it owns, collaborates on, and reaches through
-an organization, on every page, archived ones left out -- with GitHub's
-`user/repos` API:
+network call, so it states only what the list it is given shows. The agent
+asks GitHub's `user/repos` API for the repositories the founder's sign-in
+owns, collaborates on, or reaches through an organization, on every page,
+archived ones left out:
 
 ```bash
 gh api --paginate 'user/repos?affiliation=owner,collaborator,organization_member&per_page=100' \
@@ -423,11 +423,13 @@ gh api --paginate 'user/repos?affiliation=owner,collaborator,organization_member
 (`gh api` refuses `--slurp` together with `--jq`, so each entry is printed
 as one JSON line.) The agent writes that list to a temporary directory
 outside the repository and deletes it afterwards, because it names private
-repositories, and hands the entries to
-`repositoryChoiceCard(listing, { current? })`, which returns a
+repositories. It uses the file only when that command exits 0: the shell
+creates the file even when `gh` fails, and a page that fails partway
+leaves it partial, which nothing in the file shows. It then hands the
+entries to `repositoryChoiceCard(listing, { current? })`, which returns a
 `RepositoryChoiceCardResult`: `{ state: "card", card }`,
-`{ state: "empty" }` when the account can see no repositories -- a fact to
-tell the founder, not a reading error -- or `{ state: "invalid", findings }`.
+`{ state: "empty" }` when the list given is empty -- which says nothing
+about any account -- or `{ state: "invalid", findings }`.
 
 The `RepositoryChoiceCard` follows the intake card model
 ([`docs/contracts/intake-question-cards.json`](https://github.com/clossys/foundry/blob/main/docs/contracts/intake-question-cards.json)
@@ -456,8 +458,9 @@ it is the `recommendedChoiceId` and listed first. When it is not on the
 list, the card is built without a recommendation, never refused. The other
 repositories follow sorted by id, and `REPOSITORY_SOMETHING_ELSE_ID`
 (`something-else`, "a repository I need is not on this list") is last; its
-follow-up asks whether the missing repository is one the founder has not
-been added to yet.
+follow-up asks whether the missing repository's owner has given the
+founder's sign-in access to it, and makes no claim that the list is
+complete.
 
 Each `RepositoryListingEntry` must be `{ nameWithOwner, description? }`
 and nothing else, and each `nameWithOwner` must satisfy the repository
@@ -495,9 +498,10 @@ order it returns matches the card the founder saw. The file is either one
 JSON array of entries or JSON Lines, one entry per line, as the command
 above writes it. It is read with the same strict reader as
 `advisor-render-status`, and a bad line is named by its number and
-position, never quoted. It exits `0` for a card or an accepted choice, `1`
-when the list is empty or the choice is refused, and `2` for unreadable or
-invalid input.
+position, never quoted. It cannot tell a complete list from a partial one,
+so it claims neither. It exits `0` for a card or an accepted choice, `1`
+when the repository list given is empty or the choice is refused, and `2`
+for unreadable or invalid input.
 
 ## Evolution
 

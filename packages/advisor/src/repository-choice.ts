@@ -5,14 +5,15 @@ import type { AdvisorFinding } from "./types.js";
 
 /**
  * The hub's repository-choice card (issue #1179): which repositories the
- * team works on, chosen from the repositories the client's GitHub account
- * can see -- the ones it owns, collaborates on, or reaches through an
- * organization -- so nobody types a repository name.
+ * team works on, chosen from a list of repositories, so nobody types a
+ * repository name.
  *
- * This package holds no credentials and makes no network call. The agent
- * gathers the list with GitHub's `user/repos` API, every page of it (the
- * package's skill gives the exact `gh api --paginate` command), and hands
- * it to `repositoryChoiceCard()`; `applyRepositoryChoice()` then
+ * This package holds no credentials and makes no network call, so it
+ * cannot know what a GitHub account can see: it states only what the list
+ * it is given shows. The agent gathers the list with GitHub's `user/repos`
+ * API (the package's skill gives the exact `gh api --paginate` command,
+ * and checks that command succeeded before using its output), and hands it
+ * to `repositoryChoiceCard()`; `applyRepositoryChoice()` then
  * checks the client's choice against the choices the card offered.
  * `@clossys/launcher` writes the chosen ids into the hub inventory
  * (`launcher --repositories`); this package writes nothing.
@@ -73,7 +74,7 @@ export interface RepositoryChoiceCard {
 
 export type RepositoryChoiceCardResult =
   | { readonly state: "card"; readonly card: RepositoryChoiceCard }
-  /** The list was well formed and empty: the account can see no repositories, so there is nothing to choose. */
+  /** The list given was well formed and empty, so there is nothing to choose. Says nothing about any account. */
   | { readonly state: "empty" }
   | { readonly state: "invalid"; readonly findings: readonly AdvisorFinding[] };
 
@@ -90,7 +91,7 @@ const CHOICE_RULE = "repository-choice";
 const PROMPT = "Which of these repositories should the team work on? Choose every one that applies.";
 const SOMETHING_ELSE_LABEL = "A repository I need is not on this list.";
 const SOMETHING_ELSE_FOLLOW_UP =
-  "This list has every repository your GitHub sign-in can reach: the ones you own, the ones you were added to as a collaborator, and your organizations' (archived ones are left out). Is the missing one somewhere you have not been added yet, or where your organization membership is still pending? If so, ask its owner to add you, and I will list the repositories again.";
+  "Has the owner of the missing repository given your GitHub sign-in access to it? If not, ask them to add you, and I will list the repositories again.";
 
 /** The longest `detail` shown, in characters; a longer description is cut and ends with an ellipsis. */
 export const REPOSITORY_DETAIL_MAX_LENGTH = 200;
@@ -194,20 +195,19 @@ function byId(left: RepositoryListingEntry, right: RepositoryListingEntry): numb
 }
 
 /**
- * Builds the repository-choice card from the repositories the client's
- * GitHub account can see, as the agent listed them. Refuses, with findings
+ * Builds the repository-choice card from the list of repositories the
+ * agent supplies. Refuses, with findings
  * that name positions only, a listing that is not an array of
  * `{ nameWithOwner, description? }` entries, an id that breaks the
  * inventory contract's id rule or is not `owner/name`, and two entries
  * naming the same repository (compared case-insensitively). A well-formed
- * empty list is `{ state: "empty" }`: the account can see no repositories,
- * which is a fact to tell the client, not a reading error.
+ * empty list is `{ state: "empty" }`: the list given has nothing to choose
+ * from. That is all it says; it is not a statement about any account.
  *
  * `options.current` is the repository the client is working in (for
  * example the one being appointed as the hub). It only ever adds a
  * recommendation: when it is on the list (compared case-insensitively) it
- * is the recommended choice, listed first; when it is not -- the client may
- * be in a repository the account cannot list -- the card is built without
+ * is the recommended choice, listed first; when it is not, the card is built without
  * a recommendation. It never refuses the card. The other repositories
  * follow sorted by id, so the list is never in an arbitrary order, and
  * `something-else` is always last.

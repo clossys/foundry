@@ -6,27 +6,30 @@ import { readContractDocument } from "./contract-schema.js";
 import { applyRepositoryChoice, repositoryChoiceCard } from "./repository-choice.js";
 
 /**
- * The command the skill uses to list every repository the signed-in
- * account can see -- owned, collaborator, and organization member -- on
- * every page, archived ones left out, as one JSON object per line.
- * `--slurp` cannot be combined with `--jq`, so each page's objects are
- * written with `tojson`, which gh prints as one compact line each.
+ * The command the skill uses to list the repositories GitHub's `user/repos`
+ * API returns for the signed-in account with the owner, collaborator and
+ * organization_member affiliations, on every page, archived ones left out,
+ * as one JSON object per line. `--slurp` cannot be combined with `--jq`, so
+ * each page's objects are written with `tojson`, which gh prints as one
+ * compact line each. Its output is usable only when it exits 0.
  */
 export const LIST_REPOSITORIES_COMMAND =
   "gh api --paginate 'user/repos?affiliation=owner,collaborator,organization_member&per_page=100' --jq '.[] | select(.archived | not) | {nameWithOwner: .full_name, description} | tojson'";
 
 export const USAGE = `Usage: advisor-repository-card <repositories-file> [--current <owner/name>] [--choose <id>[,<id>...]]
 
-Builds the hub's repository-choice card from the repositories a GitHub
-account can see, and checks a client's choice against it. It reads only the
-file it is given: no credentials, no network. The file is either a JSON array
-of { nameWithOwner, description } entries or one such entry per line, which
-is what this command writes:
+Builds the hub's repository-choice card from a list of repositories, and
+checks a client's choice against it. It reads only the file it is given: no
+credentials, no network, so it states only what that file shows and cannot
+tell a complete list from a partial one. The file is either a JSON array of
+{ nameWithOwner, description } entries or one such entry per line, which is
+what this command writes:
 
   ${LIST_REPOSITORIES_COMMAND} > "$TMPDIR/repositories.jsonl"
 
-Keep that file outside the repository and delete it afterwards: it lists
-private repository names.
+Use the file only when that command exits 0: the shell creates it even when
+gh fails, and a page that fails partway leaves it partial. Keep it outside
+the repository and delete it afterwards: it lists private repository names.
 
 Without --choose, prints the card as JSON. With --choose, prints the checked
 choice as JSON: the repositories to pass to \`launcher --repositories\`, in the
@@ -35,9 +38,8 @@ it is on the list it is recommended first, and when it is not, the card has
 no recommendation. Pass the same --current with --choose as when the card was
 shown, so the order matches.
 
-Exit codes: 0 = card built or choice accepted, 1 = the list is empty (the
-account can see no repositories) or the choice is refused, 2 = unreadable or
-invalid input.`;
+Exit codes: 0 = card built or choice accepted, 1 = the repository list given
+is empty or the choice is refused, 2 = unreadable or invalid input.`;
 
 export class AdvisorRepositoryCardCliInputError extends Error {}
 
@@ -119,7 +121,7 @@ export function main(argv: readonly string[]): number {
     throw new AdvisorRepositoryCardCliInputError(`the repository list is invalid: ${built.findings.map((finding) => finding.message).join("; ")}`);
   }
   if (built.state === "empty") {
-    console.error("advisor-repository-card: the list is empty: this GitHub account can see no repositories, so there is nothing to choose from");
+    console.error("advisor-repository-card: the repository list given is empty, so there is nothing to choose from");
     return 1;
   }
   if (args.choose === undefined) {

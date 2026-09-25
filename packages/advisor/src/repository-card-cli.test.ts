@@ -52,12 +52,20 @@ describe("advisor-repository-card (#1179)", () => {
     expect(() => main([write(new Uint8Array([0x7b, 0xff, 0x7d, 0x0a]))])).toThrow(/is not valid UTF-8/);
   });
 
-  it("says an empty list is empty (exit 1), for an empty file or an empty array", () => {
+  it("says only that the list given is empty (exit 1), for an empty file or an empty array, never what an account can see", () => {
     for (const contents of ["", "[]"]) {
       error.mockClear();
       expect(main([write(contents)])).toBe(1);
-      expect(String(error.mock.calls[0]?.[0])).toMatch(/the list is empty: this GitHub account can see no repositories/);
+      expect(String(error.mock.calls[0]?.[0])).toBe("advisor-repository-card: the repository list given is empty, so there is nothing to choose from");
     }
+  });
+
+  it("claims nothing about an account it cannot see, in its usage or its card", () => {
+    expect(USAGE).not.toMatch(/account can see|every repository|sign-in can reach/);
+    expect(USAGE).toMatch(/Use the file only when that command exits 0/);
+    expect(main([write(JSON.stringify(LISTING))])).toBe(0);
+    const card = JSON.parse(String(log.mock.calls[0]?.[0])) as { somethingElseFollowUp: string };
+    expect(card.somethingElseFollowUp).not.toMatch(/every|all of|can reach|can see/i);
   });
 
   it("builds the card without a recommendation when --current is not on the list", () => {
