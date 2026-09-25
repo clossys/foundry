@@ -493,7 +493,7 @@ request per repository are not built yet.
 
 `launcher-apply-plan snapshot --request <file> [--out <file>]` takes the
 registry snapshot a plan's exact packages are resolved from (#1178). It is
-the only step of applying a plan that reads the network. It records what the
+the only step of applying a plan that reads the package registry. It records what the
 registry said; it decides nothing from it. Deciding is
 `advisor-resolve-packages`'s job, in `@clossys/advisor`.
 
@@ -594,9 +594,9 @@ intact.
 ## Requirements
 
 Node.js 20+, ESM, GitHub `gh`, and no runtime dependencies. The registry
-snapshot step needs HTTPS access to the public registry, and no credential. Creating a new
-hub needs permission to create a private repository under the inferred
-owner. Appointing uses the current checkout and does not create a second
+snapshot step needs HTTPS access to the public registry, and no credential.
+Creating a new hub needs permission to create a private repository under the
+inferred owner. Appointing uses the current checkout and does not create a second
 repository.
 
 ## Licence

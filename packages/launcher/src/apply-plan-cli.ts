@@ -126,7 +126,7 @@ the registry snapshot contract declares, validates the whole snapshot against
 that contract, and writes it atomically to --out, by default
 ${REGISTRY_SNAPSHOT_REL} under the current directory (the hub).
 
-This is the only step of applying a plan that reads the network. Messages
+This is the only step of applying a plan that reads the package registry. Messages
 name packages and positions only, never a response's content.
 
 Exit codes: 0 = the snapshot was written, 2 = no snapshot was written
