@@ -58,8 +58,18 @@ export function createNodeHost(cwd = process.cwd(), env: NodeJS.ProcessEnv = pro
         return null;
       }
     },
+    readBytes: (path) => {
+      try {
+        return readFileSync(path);
+      } catch {
+        return null;
+      }
+    },
     writeText: (path, contents) => {
       writeFileSync(path, contents, "utf8");
+    },
+    writeBytes: (path, contents) => {
+      writeFileSync(path, contents);
     },
     mkdirp: (path) => {
       mkdirSync(path, { recursive: true });

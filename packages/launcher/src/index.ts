@@ -25,7 +25,8 @@ export {
   WORKSPACE_INVENTORY_REL,
   WORKSPACE_MARKER_REL,
 } from "./core.js";
-export type { CloneMissingOutcome, InventoryValidation } from "./core.js";
+export type { CloneMissingOutcome, InventoryValidation, PlanWorkspaceOptions } from "./core.js";
+export type { InventoryReadOptions } from "./inventory-contract.js";
 export { runDoctorChecks, renderDoctorReport } from "./doctor.js";
 export { applyEngagementBrief, approvedSubject, isPlanApproved, validateAdvisorPlan, validateEngagementBrief } from "./apply-plan.js";
 export type {
@@ -67,6 +68,7 @@ export type {
 } from "./model-profile.js";
 export type {
   ApplyWorkspaceOptions,
+  ChosenInventory,
   CommandResult,
   CwdObservation,
   DependencyBucket,

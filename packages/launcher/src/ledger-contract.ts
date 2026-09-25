@@ -11,7 +11,7 @@
 import { formatContractViolation, validateAgainstContract } from "./generated/contract-schema.generated.js";
 import { ID_TOKEN, INTRODUCIBLE_ROOTS, LEDGER_PATH, LOCKFILE_NAMES, compareTuples, derivedPlanItem, dependencyPointer, discoveryLinkRole, matchesPathPattern } from "./change-set-contract.js";
 import type { ApprovalBinding, ChangeSetPhase, DependencyPlacement } from "./change-set-contract.js";
-import { loadPackedContract } from "./plan-contract.js";
+import { loadContract } from "./plan-contract.js";
 import type { ValidationResult } from "./plan-contract.js";
 
 /** One generation: the change set that wrote it, and on what authority. */
@@ -105,7 +105,7 @@ const CONTRACT = "installed-ledger.json";
 
 /** The owned path patterns, read from the packed ledger contract. */
 const OWNED_PATTERNS: readonly string[] = (() => {
-  const definitions = loadPackedContract(CONTRACT).definitions as Record<string, { enum?: unknown }> | undefined;
+  const definitions = loadContract(CONTRACT).definitions as Record<string, { enum?: unknown }> | undefined;
   const list = definitions?.ownedPattern?.enum;
   if (!Array.isArray(list) || !list.every((entry) => typeof entry === "string")) throw new Error("the packed ledger contract has no ownedPattern list");
   return list as string[];
@@ -257,7 +257,7 @@ export function ledgerRuleViolations(ledger: InstalledLedger): RuleViolation[] {
 
 function contractViolations(value: unknown, label: string, side?: "base" | "head"): LedgerViolation[] {
   const where = side === undefined ? {} : { side };
-  const schema = validateAgainstContract(loadPackedContract(CONTRACT), value, loadPackedContract);
+  const schema = validateAgainstContract(loadContract(CONTRACT), value, loadContract);
   if (schema.length > 0) return schema.map((violation) => ({ rule: "schema", ...where, path: violation.path, message: formatContractViolation(label, violation) }));
   return ledgerRuleViolations(value as InstalledLedger).map((violation) => ({
     ...violation,

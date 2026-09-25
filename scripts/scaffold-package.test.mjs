@@ -15,6 +15,7 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { validateIntakeCardsShape } from "./check-package-framework.mjs";
 import { buildScaffold } from "./scaffold-package.mjs";
 import { ENVELOPE_COPY_PATH, renderEnvelopeCopyFromRoot } from "./sync-envelope-copies.mjs";
 
@@ -186,4 +187,10 @@ test("scaffold-package.mjs keeps an existing docs/changelogs/<shortName>.md -- r
   execFileSync(process.execPath, [join(scriptDir, "scaffold-package.mjs"), "customer", "--root", root], { stdio: "pipe" });
   assert.equal(readFileSync(join(root, "docs", "changelogs", "customer.md"), "utf8"), history);
   assert.equal(existsSync(join(root, "packages", "customer", "CHANGELOG.md")), false);
+});
+
+test("#1179: the scaffolded intake file passes the closed intake-card shape check", () => {
+  const { packageFiles } = buildScaffold({ role: "@clossys/customer", shortName: "customer", roleDefinition: {}, stageActivities, envelopeCopy: renderEnvelopeCopyFromRoot(repoRoot) });
+  const cards = JSON.parse(packageFiles.get("intake-question-cards.json"));
+  assert.deepEqual(validateIntakeCardsShape(cards, "@clossys/customer"), []);
 });

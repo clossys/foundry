@@ -14,7 +14,7 @@ import {
 import { createNodeHost } from "./host.js";
 import type { WorkspaceHost } from "./types.js";
 
-export const USAGE = `Usage: launcher [--inventory <path>] [--clone-missing]
+export const USAGE = `Usage: launcher [--repositories <owner/name>[,<owner/name>...] [--replace-inventory]] [--inventory <path>] [--clone-missing]
 
 Create, resume, or appoint a GitHub repository as the account workspace hub.
 
@@ -23,11 +23,17 @@ hub to resume. Run from any GitHub repository you want to own the account-level
 hub to appoint it — it does not have to be a new exclusive repo, and it keeps
 its current name and files.
 
-Appointing requires a populated generated hub inventory (packed template
-skeleton/clossys/.state/inventory.json; the generated path does not ship), or
---inventory <path> pointing at one. Resume refreshes composed skills and
-stale hub guidance, and migrates a legacy .clossys/ hub state to
-clossys/.state/ automatically. Create may write an empty inventory.
+Appointing needs the repositories the hub covers. Choose them on Advisor's
+repository card (npx -p @clossys/advisor advisor-repository-card), built
+from the repositories GitHub lists for your sign-in, then pass the chosen ids
+to --repositories: Launcher writes clossys/.state/inventory.json for you,
+when appointing or on an existing hub. It never merges into or overwrites an
+inventory that lists a different set of repositories; it reports the
+difference, and --replace-inventory is the explicit approval to replace it.
+--inventory <path> still accepts a prepared inventory document when
+appointing. Resume refreshes composed skills and stale hub guidance, and
+migrates a legacy .clossys/ hub state to clossys/.state/ automatically.
+Create may write an empty inventory.
 
 By default launcher never \`gh repo clone\`s a missing inventory entry --
 that is not how you talk to the team. --clone-missing is the one explicit,
@@ -45,20 +51,57 @@ function exitCodeFor(state: "satisfied" | "violated" | "indeterminate"): number 
   return state === "satisfied" ? 0 : state === "violated" ? 1 : 2;
 }
 
-export function parseLauncherArgs(argv: readonly string[]): { help: boolean; inventoryPath?: string; cloneMissing: boolean } {
-  if (argv.length === 1 && (argv[0] === "--help" || argv[0] === "-h")) return { help: true, cloneMissing: false };
-  const rest = [...argv];
+export interface LauncherArgs {
+  readonly help: boolean;
+  readonly inventoryPath?: string;
+  /** `--repositories`: the comma-separated ids, split but not yet validated (planWorkspace validates them against the inventory contract). */
+  readonly repositories?: readonly string[];
+  readonly replaceInventory: boolean;
+  readonly cloneMissing: boolean;
+}
+
+const ARGUMENT_ERROR =
+  "launcher takes no arguments except optional --inventory <path>, --repositories <owner/name>[,<owner/name>...], --replace-inventory, and --clone-missing, each at most once; run it from the directory to create or appoint";
+
+/**
+ * Parses launcher's flags. Each flag may appear once, in any order; a
+ * value flag takes the next argument. `--repositories` is one argument of
+ * comma-separated ids -- a repository id never contains a comma -- so an
+ * empty id (a doubled or trailing comma) reaches the contract check as an
+ * empty string and is refused there, by position.
+ */
+export function parseLauncherArgs(argv: readonly string[]): LauncherArgs {
+  if (argv.length === 1 && (argv[0] === "--help" || argv[0] === "-h")) return { help: true, replaceInventory: false, cloneMissing: false };
+  const seen = new Set<string>();
+  let inventoryPath: string | undefined;
+  let repositories: readonly string[] | undefined;
+  let replaceInventory = false;
   let cloneMissing = false;
-  const cloneIndex = rest.indexOf("--clone-missing");
-  if (cloneIndex !== -1) {
-    cloneMissing = true;
-    rest.splice(cloneIndex, 1);
+  for (let index = 0; index < argv.length; index += 1) {
+    const flag = argv[index];
+    if (flag === undefined || seen.has(flag)) throw new LauncherInputError(ARGUMENT_ERROR);
+    seen.add(flag);
+    if (flag === "--clone-missing") {
+      cloneMissing = true;
+    } else if (flag === "--replace-inventory") {
+      replaceInventory = true;
+    } else if (flag === "--inventory" || flag === "--repositories") {
+      const value = argv[index + 1];
+      if (!value || value.startsWith("--")) throw new LauncherInputError(ARGUMENT_ERROR);
+      index += 1;
+      if (flag === "--inventory") inventoryPath = value;
+      else repositories = value.split(",");
+    } else {
+      throw new LauncherInputError(ARGUMENT_ERROR);
+    }
   }
-  if (rest.length === 0) return { help: false, cloneMissing };
-  if (rest.length === 2 && rest[0] === "--inventory" && rest[1]) return { help: false, inventoryPath: rest[1], cloneMissing };
-  throw new LauncherInputError(
-    "launcher takes no arguments except optional --inventory <path> and/or --clone-missing; run it from the directory to create or appoint",
-  );
+  return {
+    help: false,
+    ...(inventoryPath === undefined ? {} : { inventoryPath }),
+    ...(repositories === undefined ? {} : { repositories }),
+    replaceInventory,
+    cloneMissing,
+  };
 }
 
 /** Testable CLI dispatcher. Unknown arguments throw; the executable maps them to exit 2. */
@@ -69,7 +112,16 @@ export function main(argv: readonly string[], host: WorkspaceHost, skeletonRoot:
     return 0;
   }
   const observation = observeWorkspace(host);
+  // A bare `launcher`, with no flags at all, in a directory that is none of
+  // empty, a git repository, an existing hub, or the Foundry supplier tree
+  // itself: there is nothing to plan, so show usage and exit 0 -- that is
+  // someone finding out what this command does, not a refused request. But
+  // when a flag IS present (--inventory, --repositories, ...), the caller
+  // asked for something specific here; fall through to planWorkspace()
+  // instead, which refuses it with exit 1 and says why, the same as any
+  // other unsatisfiable request (#1179).
   if (
+    argv.length === 0 &&
     !observation.cwd.empty &&
     !observation.cwd.git &&
     observation.cwd.hub === undefined &&
@@ -78,14 +130,20 @@ export function main(argv: readonly string[], host: WorkspaceHost, skeletonRoot:
     console.log(USAGE);
     return 0;
   }
-  const decision = planWorkspace(observation, host, { inventoryPath: parsed.inventoryPath });
+  const decision = planWorkspace(observation, host, {
+    ...(parsed.inventoryPath === undefined ? {} : { inventoryPath: parsed.inventoryPath }),
+    ...(parsed.repositories === undefined ? {} : { repositories: parsed.repositories }),
+    ...(parsed.replaceInventory ? { replaceInventory: true } : {}),
+  });
   if (decision.action === "refuse") {
     console.error(`launcher: ${decision.message}`);
     return exitCodeFor(decision.state);
   }
   if (parsed.inventoryPath !== undefined && decision.action !== "adopt") {
     if (decision.action === "resume") {
-      console.error("launcher: this hub is already appointed; edit clossys/.state/inventory.json to change its inventory");
+      console.error(
+        "launcher: this hub is already appointed; to change the repositories it covers, choose them again on Advisor's repository card and run launcher --repositories <owner/name>[,<owner/name>...] -- never hand-edit clossys/.state/inventory.json",
+      );
     } else {
       console.error("launcher: --inventory is only valid when appointing a GitHub repository");
     }

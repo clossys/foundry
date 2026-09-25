@@ -18,6 +18,7 @@
     "advisor-execution-readiness": "dist/execution-readiness-cli.js",
     "advisor-package-request": "dist/package-request-cli.js",
     "advisor-render-status": "dist/render-status-cli.js",
+    "advisor-repository-card": "dist/repository-card-cli.js",
     "advisor-resolve-packages": "dist/resolve-packages-cli.js"
   },
   "files": [

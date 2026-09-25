@@ -16,9 +16,9 @@
  * without writing the generated file.
  *
  * It also writes src/generated/plan-contracts.generated.ts (issue #1475):
- * the shared plan and brief contracts as plain data, rendered by the same
- * function @clossys/launcher's own packer uses, so both packages validate
- * against byte-identical contracts. This package's copy adds the registry
+ * the shared plan, brief and repository-inventory contracts as plain data,
+ * rendered by the same function @clossys/launcher's own packer uses, so both
+ * packages validate against byte-identical contracts. This package's copy adds the registry
  * snapshot contract (issue #1178), and src/generated/package-scope.generated.ts
  * carries the publishing scope and registry, so package names and the
  * expected registry are never hardcoded in this package's source.
@@ -76,7 +76,7 @@ function main() {
   writeFileSync(join(advisorRoot, ...PACKAGE_SCOPE_MODULE_PATH.split("/")), renderPackageScopeModule(repoRoot));
 
   console.log(
-    `pack-capability-catalogue: wrote ${catalogue.roles.length} role(s), ${presets.length} preset(s), and ${clientProblems.length} client problem(s) to src/generated/offering.generated.ts, and the plan, brief and registry snapshot contracts to ${PLAN_CONTRACTS_MODULE_PATH}, and the publishing scope and registry to ${PACKAGE_SCOPE_MODULE_PATH}`,
+    `pack-capability-catalogue: wrote ${catalogue.roles.length} role(s), ${presets.length} preset(s), and ${clientProblems.length} client problem(s) to src/generated/offering.generated.ts, and the plan, brief, repository-inventory and registry snapshot contracts to ${PLAN_CONTRACTS_MODULE_PATH}, and the publishing scope and registry to ${PACKAGE_SCOPE_MODULE_PATH}`,
   );
 }
 

@@ -2,6 +2,7 @@ import { dirname, join, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import type {
   ApplyWorkspaceOptions,
+  ChosenInventory,
   CommandResult,
   CwdObservation,
   DependencyBucket,
@@ -23,6 +24,9 @@ import { composeSkills, SKILLS_MANIFEST_REL, type SkillCompositionResult, type S
 import { parseSkillManifest, summarizeSkillsManifest } from "./manifest.js";
 import { detectLinkedHosts, serializeHostRecord, HOSTS_REL, type DiscoveredHost } from "./hosts.js";
 import { reportInventoryDrift } from "./inventory-adoption.js";
+import { belongsToOwner, distinctOwners, sameOwner, sameRepository } from "./identity.js";
+import { isValidInventoryId, readInventoryDocument, renderInventoryDocument, validateInventoryDocument, type InventoryEntry } from "./inventory-contract.js";
+import { describeChosenInventory, resolveChosenInventory } from "./inventory-choice.js";
 
 export const DEFAULT_REPOSITORY_NAME = "workspace";
 /** The one visible, per-repository Clossys folder (#1171). Every role's output lives under it. */
@@ -195,7 +199,7 @@ export function isHubDocument(value: unknown): value is HubDocument {
   const parsed = value.repository.includes("/")
     ? { owner: value.repository.split("/")[0], repository: value.repository.split("/")[1] }
     : null;
-  if (!parsed?.owner || !parsed.repository || parsed.owner !== value.owner || !REPO.test(parsed.repository)) return false;
+  if (!parsed?.owner || !parsed.repository || !sameOwner(parsed.owner, value.owner) || !REPO.test(parsed.repository)) return false;
   return true;
 }
 
@@ -235,181 +239,23 @@ function readHub(host: WorkspaceHost, directory: string): HubDocument | undefine
 }
 
 /**
- * The inventory document's own schema: the inventory contract, which ships
- * with this package, v1 (#996, #1334). `{ schemaVersion: 1, repositories: [{ id, packages? },
- * ...] }`, nothing more. No other top-level or per-entry field is part of
- * this shape -- a document that merely happens to carry a `repositories`
- * array of similarly-shaped objects (for example a governance record whose
- * entries also carry `role`, `visibility`, `status`, and `notes` fields) is
- * not a launcher inventory and must be refused, not adopted. This function
- * IS that contract's implementation; the two must never diverge (see the
- * contract's own "shape.rule").
+ * The inventory document's shape lives in docs/contracts/repository-inventory.json
+ * (in the public repository; that exact path does not ship in this
+ * package, but this package's build packs and ships its own copy of the
+ * contract) and is checked, on every read and write, by
+ * `validateInventoryDocument()` through the shared contract checker
+ * (./inventory-contract.ts, #1334, #1179).
  */
-export type InventoryValidation =
-  | { readonly valid: true; readonly ids: readonly string[] }
-  | { readonly valid: false; readonly reason: string };
-
-/** Points a validation failure at the one place the shape is written down. */
-const INVENTORY_CONTRACT_POINTER = "see docs/contracts/repository-inventory.json";
-
-const INVENTORY_TOP_LEVEL_KEYS = new Set(["schemaVersion", "repositories"]);
-const INVENTORY_ENTRY_KEYS = new Set(["id", "packages"]);
-/** Exactly @clossys/integrator's InventoryPackageEntry keys (#996). */
-const INVENTORY_PACKAGE_ENTRY_KEYS = new Set(["name", "version", "wiring"]);
-/** Exactly @clossys/integrator's InventoryPackageWiring (#996). */
-const INVENTORY_PACKAGE_WIRINGS = new Set(["dependencies", "devDependencies", "optionalDependencies", "peerDependencies", "unknown"]);
+export { validateInventoryDocument } from "./inventory-contract.js";
+export type { InventoryValidation } from "./inventory-contract.js";
 
 /**
- * The `id` format the inventory schema and Launcher's own sibling/clone
- * resolution (`parseInventoryRepositoryId`, below) both enforce: a bare
- * repository name, or `owner/name`, using the exact same GitHub owner and
- * repository name rules (`OWNER` / `REPO`) Launcher already applies when it
- * resolves a sibling clone target beside the hub. Neither `.` nor `..` is
- * ever a valid segment (regardless of what OWNER/REPO's own character
- * classes would otherwise allow), an id may carry at most one `/`, no
- * segment may be empty, and no whitespace is tolerated anywhere in the id
- * (OWNER/REPO's character classes already exclude it, and this function
- * does not trim before checking, so leading/trailing whitespace is refused
- * rather than silently dropped). `parseInventoryRepositoryId` trusts a
- * caller that already ran this check rather than re-deriving the rule, so
- * the two can never drift apart.
+ * Classifies a generated hub inventory (packed template skeleton/clossys/.state/inventory.json; the generated path does not ship) without inventing repositories. Malformed input is "invalid", never silently folded into "empty" (#1334).
+ * Pass the file's exact bytes (`WorkspaceHost.readBytes()`), and the hub's owner when it is known, so a bare id and `<owner>/<id>` count as one repository (#1179).
  */
-function isValidInventoryId(id: string): boolean {
-  if (id.length === 0) return false;
-  const segments = id.split("/");
-  if (segments.length > 2) return false;
-  if (segments.some((segment) => segment === "" || segment === "." || segment === "..")) return false;
-  if (segments.length === 2) {
-    const owner = segments[0] ?? "";
-    const repository = segments[1] ?? "";
-    return OWNER.test(owner) && REPO.test(repository);
-  }
-  return REPO.test(id);
-}
-
-function validateInventoryPackages(value: unknown, entryIndex: number): { valid: true } | { valid: false; reason: string } {
-  if (!Array.isArray(value)) {
-    return { valid: false, reason: `repositories[${entryIndex}].packages must be an array (${INVENTORY_CONTRACT_POINTER})` };
-  }
-  for (const [packageIndex, entry] of value.entries()) {
-    const where = `repositories[${entryIndex}].packages[${packageIndex}]`;
-    if (!isRecord(entry)) {
-      return { valid: false, reason: `${where} must be an object (${INVENTORY_CONTRACT_POINTER})` };
-    }
-    const unknownKey = Object.keys(entry).find((key) => !INVENTORY_PACKAGE_ENTRY_KEYS.has(key));
-    if (unknownKey !== undefined) {
-      return {
-        valid: false,
-        reason: `${where} has an unrecognized field "${unknownKey}" (only name, version, and wiring are allowed; ${INVENTORY_CONTRACT_POINTER})`,
-      };
-    }
-    if (!isText(entry.name)) {
-      return { valid: false, reason: `${where}.name must be a nonempty string (${INVENTORY_CONTRACT_POINTER})` };
-    }
-    if (entry.version !== undefined && !isText(entry.version)) {
-      return { valid: false, reason: `${where}.version must be a nonempty string when present (${INVENTORY_CONTRACT_POINTER})` };
-    }
-    if (entry.wiring !== undefined && (typeof entry.wiring !== "string" || !INVENTORY_PACKAGE_WIRINGS.has(entry.wiring))) {
-      return {
-        valid: false,
-        reason: `${where}.wiring must be one of dependencies/devDependencies/optionalDependencies/peerDependencies/unknown when present (${INVENTORY_CONTRACT_POINTER})`,
-      };
-    }
-  }
-  return { valid: true };
-}
-
-/**
- * Strictly validates an inventory document's text against the schema above.
- * Never partially accepts: any mismatch is reported as `{ valid: false,
- * reason }`, naming the offending field, before a caller ever gets to a list
- * of ids. This is the one place inventory documents -- supplied via
- * `--inventory` or read back from the hub's `clossys/.state/inventory.json`
- * (a generated hub path, not shipped in this package) -- are
- * validated; `inspectInventory`, the `--inventory` adopt path, and every
- * other read of the stored inventory (`readInventoryRepositories`, and
- * through it resume's sibling composition and `--clone-missing`) route
- * through it so nothing can silently accept a shape-alike document (#1334).
- */
-export function validateInventoryDocument(raw: string): InventoryValidation {
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(raw);
-  } catch {
-    return { valid: false, reason: `is not valid JSON (${INVENTORY_CONTRACT_POINTER})` };
-  }
-  if (!isRecord(parsed)) {
-    return { valid: false, reason: `must be a JSON object with schemaVersion and repositories (${INVENTORY_CONTRACT_POINTER})` };
-  }
-  const unknownTopLevel = Object.keys(parsed).find((key) => !INVENTORY_TOP_LEVEL_KEYS.has(key));
-  if (unknownTopLevel !== undefined) {
-    return {
-      valid: false,
-      reason: `has an unrecognized field "${unknownTopLevel}" (only schemaVersion and repositories are allowed; ${INVENTORY_CONTRACT_POINTER})`,
-    };
-  }
-  if (parsed.schemaVersion !== 1) {
-    return { valid: false, reason: `schemaVersion must be 1, got ${JSON.stringify(parsed.schemaVersion)} (${INVENTORY_CONTRACT_POINTER})` };
-  }
-  if (!Array.isArray(parsed.repositories)) {
-    return { valid: false, reason: `repositories must be an array (${INVENTORY_CONTRACT_POINTER})` };
-  }
-  const ids: string[] = [];
-  const seen = new Set<string>();
-  for (const [index, entry] of parsed.repositories.entries()) {
-    if (!isRecord(entry)) {
-      return { valid: false, reason: `repositories[${index}] must be an object (${INVENTORY_CONTRACT_POINTER})` };
-    }
-    const unknownEntryKey = Object.keys(entry).find((key) => !INVENTORY_ENTRY_KEYS.has(key));
-    if (unknownEntryKey !== undefined) {
-      return {
-        valid: false,
-        reason: `repositories[${index}] has an unrecognized field "${unknownEntryKey}" (entries allow only id and packages; ${INVENTORY_CONTRACT_POINTER})`,
-      };
-    }
-    if (!isText(entry.id)) {
-      return { valid: false, reason: `repositories[${index}].id must be a nonempty string (${INVENTORY_CONTRACT_POINTER})` };
-    }
-    const id = entry.id;
-    if (!isValidInventoryId(id)) {
-      return {
-        valid: false,
-        reason: `repositories[${index}].id "${id}" is not a valid repository id -- a bare name or "owner/name", with no ".", "..", empty segment, whitespace, or more than one "/" (${INVENTORY_CONTRACT_POINTER})`,
-      };
-    }
-    const key = id.toLowerCase();
-    if (seen.has(key)) {
-      return {
-        valid: false,
-        reason: `repositories[${index}].id "${id}" duplicates an earlier entry (repository ids are compared case-insensitively; ${INVENTORY_CONTRACT_POINTER})`,
-      };
-    }
-    seen.add(key);
-    if (entry.packages !== undefined) {
-      const packagesResult = validateInventoryPackages(entry.packages, index);
-      if (!packagesResult.valid) return packagesResult;
-    }
-    ids.push(id);
-  }
-  return { valid: true, ids };
-}
-
-/** One inventory entry as written: its id and, when present, its packages, carried whole. */
-export interface InventoryDocumentEntry {
-  readonly id: string;
-  readonly packages?: unknown;
-}
-
-/** The entries of an inventory document that validateInventoryDocument() has already accepted. */
-function inventoryEntriesOf(raw: string): InventoryDocumentEntry[] {
-  const parsed = JSON.parse(raw) as { repositories: { id: string; packages?: unknown }[] };
-  return parsed.repositories.map((entry) => (entry.packages === undefined ? { id: entry.id } : { id: entry.id, packages: entry.packages }));
-}
-
-/** Classifies a generated hub inventory (packed template skeleton/clossys/.state/inventory.json; the generated path does not ship) without inventing repositories. Malformed input is "invalid", never silently folded into "empty" (#1334). */
-export function inspectInventory(raw: string | null): InventoryObservation {
+export function inspectInventory(raw: string | Uint8Array | null, hubOwner?: string): InventoryObservation {
   if (raw === null) return { status: "missing", count: 0 };
-  const validated = validateInventoryDocument(raw);
+  const validated = validateInventoryDocument(raw, hubOwner === undefined ? {} : { hubOwner });
   if (!validated.valid) return { status: "invalid", count: 0, reason: validated.reason };
   return { status: validated.ids.length > 0 ? "populated" : "empty", count: validated.ids.length };
 }
@@ -480,18 +326,20 @@ export function observeWorkspace(host: WorkspaceHost): WorkspaceObservation {
       githubRepository = parsed.repository;
     }
   }
-  const candidates = new Set<string>();
+  // Owners are compared as GitHub compares them (identity.ts): two spellings of one account are one candidate.
+  const seenOwners: string[] = [];
   const envOwnerRaw = host.env.CLOSSYS_OWNER?.trim();
   const envOwner = envOwnerRaw && OWNER.test(envOwnerRaw) ? envOwnerRaw : undefined;
   if (ghAvailable) {
     const user = host.run("gh", ["api", "user", "--jq", ".login"]);
     const login = user.stdout.trim();
-    if (user.status === 0 && OWNER.test(login)) candidates.add(login);
+    if (user.status === 0 && OWNER.test(login)) seenOwners.push(login);
     for (const org of stdoutLines(host.run("gh", ["org", "list"]))) {
-      if (OWNER.test(org)) candidates.add(org);
+      if (OWNER.test(org)) seenOwners.push(org);
     }
   }
-  if (githubOwner) candidates.add(githubOwner);
+  if (githubOwner) seenOwners.push(githubOwner);
+  const candidates = new Set(distinctOwners(seenOwners));
 
   let remoteDefaultHub: WorkspaceObservation["remoteDefaultHub"];
   let advisorVersion: string | undefined;
@@ -507,10 +355,11 @@ export function observeWorkspace(host: WorkspaceHost): WorkspaceObservation {
   const hubLocation = locateHub(host, cwd);
   // While only the legacy `.clossys/` marker exists, its sibling inventory is
   // the one resume will migrate; read from there so planning sees it too.
-  const inventoryRaw =
+  const inventoryBytes =
     hubLocation.migration === "legacy"
-      ? host.readText(join(cwd, LEGACY_WORKSPACE_INVENTORY_REL))
-      : host.readText(join(cwd, WORKSPACE_INVENTORY_REL));
+      ? host.readBytes(join(cwd, LEGACY_WORKSPACE_INVENTORY_REL))
+      : host.readBytes(join(cwd, WORKSPACE_INVENTORY_REL));
+  const inventoryOwner = hubLocation.document?.owner ?? githubOwner;
 
   const cwdObservation: CwdObservation = {
     absolutePath: cwd,
@@ -521,7 +370,7 @@ export function observeWorkspace(host: WorkspaceHost): WorkspaceObservation {
     ...(hubLocation.document === undefined ? {} : { hub: hubLocation.document }),
     ...(hubLocation.migration === "none" ? {} : { hubMigration: hubLocation.migration }),
     looksLikeFoundry: looksLikeFoundry(host, cwd),
-    inventory: inspectInventory(inventoryRaw),
+    inventory: inspectInventory(inventoryBytes, inventoryOwner),
   };
 
   return {
@@ -565,14 +414,31 @@ function resolveOwner(observation: WorkspaceObservation, host: WorkspaceHost): {
  * document neither of those would have accepted (#1334). Throws, naming the
  * offending field, on anything present but invalid; a missing file is `[]`,
  * not a throw -- an absent inventory is a fact about the hub, not a
- * malformed one.
+ * malformed one. The file is read as bytes; `hubOwner`, when given, makes a
+ * bare id and `<hubOwner>/<id>` one repository, so a document listing both
+ * is refused.
  */
-export function readInventoryRepositories(host: WorkspaceHost, source: string, label: string): readonly string[] {
-  const raw = host.readText(source);
+export function readInventoryRepositories(host: WorkspaceHost, source: string, label: string, hubOwner?: string): readonly string[] {
+  const raw = host.readBytes(source);
   if (raw === null) return [];
-  const validated = validateInventoryDocument(raw);
+  const validated = validateInventoryDocument(raw, hubOwner === undefined ? {} : { hubOwner });
   if (!validated.valid) throw new Error(`${label} ${validated.reason}`);
   return validated.ids;
+}
+
+/**
+ * How a founder gives Launcher the repositories a hub covers (#1179): they
+ * choose them on Advisor's repository-choice card, and `--repositories`
+ * writes the inventory. Named by every refusal that needs an inventory,
+ * instead of `--inventory <path>`, which still works but asks for a
+ * document a founder will not write.
+ */
+function chooseRepositoriesHint(extraFlag = ""): string {
+  return (
+    "choose the repositories this hub covers on Advisor's repository card " +
+    "(`npx -p @clossys/advisor advisor-repository-card`), built from the repositories GitHub lists for your sign-in, then run " +
+    `\`launcher --repositories <owner/name>[,<owner/name>...]${extraFlag}\`, and Launcher writes the inventory for you`
+  );
 }
 
 /**
@@ -587,28 +453,37 @@ function resolveAdoptInventory(
   host: WorkspaceHost,
   cwd: CwdObservation,
   inventoryPath: string | undefined,
-): { inventorySource?: string; mergedInventoryIds?: readonly string[]; mergedInventoryRepositories?: readonly InventoryDocumentEntry[]; replacesInvalidInventory?: boolean } | WorkspaceRefusal {
+):
+  | {
+      inventorySource?: string;
+      mergedInventoryIds?: readonly string[];
+      mergedInventoryRepositories?: readonly InventoryEntry[];
+      mergedInventoryDocument?: string;
+      replacesInvalidInventory?: boolean;
+    }
+  | WorkspaceRefusal {
   const trimmed = inventoryPath?.trim();
   const onDiskPopulated = cwd.inventory?.status === "populated";
   if (!onDiskPopulated && !trimmed) {
     if (cwd.inventory?.status === "invalid") {
       return refuse(
         "violated",
-        `the on-disk hub inventory ${cwd.inventory.reason ?? "does not conform to the inventory contract"} -- fix it, or supply --inventory <path> to a populated inventory document to replace it`,
+        `the on-disk hub inventory ${cwd.inventory.reason ?? "does not conform to the inventory contract"} -- to replace it, ${chooseRepositoriesHint(" --replace-inventory")}`,
       );
     }
     return refuse(
       "violated",
-      "appointing requires a populated generated hub inventory (packed template skeleton/clossys/.state/inventory.json; the generated path does not ship), or --inventory <path> to a populated inventory document",
+      `appointing needs the repositories this hub covers, and it has no inventory yet: ${chooseRepositoriesHint()}`,
     );
   }
   if (!trimmed) return {};
   const resolved = resolve(cwd.absolutePath, trimmed);
-  const importedRaw = host.readText(resolved);
+  const importedRaw = host.readBytes(resolved);
   if (importedRaw === null) {
     return refuse("violated", `--inventory does not point at a readable file: ${resolved}`);
   }
-  const imported = validateInventoryDocument(importedRaw);
+  const owner = cwd.githubOwner === undefined ? {} : { hubOwner: cwd.githubOwner };
+  const imported = readInventoryDocument(importedRaw, owner);
   if (!imported.valid) {
     return refuse("violated", `--inventory at ${resolved} ${imported.reason}`);
   }
@@ -624,34 +499,65 @@ function resolveAdoptInventory(
       ...(cwd.inventory?.status === "invalid" ? { replacesInvalidInventory: true } : {}),
     };
   }
-  const onDiskRaw = host.readText(join(cwd.absolutePath, WORKSPACE_INVENTORY_REL));
-  const onDisk = onDiskRaw === null ? undefined : validateInventoryDocument(onDiskRaw);
+  const onDiskRaw = host.readBytes(join(cwd.absolutePath, WORKSPACE_INVENTORY_REL));
+  const onDisk = onDiskRaw === null ? undefined : readInventoryDocument(onDiskRaw, owner);
   if (onDisk !== undefined && !onDisk.valid) {
     return refuse("violated", `the on-disk hub inventory ${onDisk.reason}`);
   }
+  const onDiskEntries: readonly InventoryEntry[] = onDisk !== undefined && onDisk.valid ? onDisk.entries : [];
   // Merge whole entries, not ids: an entry's `packages` travels with it.
-  // Entries are keyed exactly as validateInventoryDocument() compares ids
-  // (case-insensitively), so the merge can never write a document the
-  // validator then refuses; the on-disk spelling and entry win (#1334).
-  const onDiskEntries = onDisk !== undefined && onDisk.valid && onDiskRaw !== null ? inventoryEntriesOf(onDiskRaw) : [];
-  const mergedEntries: InventoryDocumentEntry[] = [];
-  const seen = new Set<string>();
-  for (const entry of [...onDiskEntries, ...inventoryEntriesOf(importedRaw)]) {
-    const key = entry.id.toLowerCase();
-    if (!seen.has(key)) {
-      seen.add(key);
-      mergedEntries.push(entry);
-    }
+  // Entries are keyed by Launcher's one repository identity (identity.ts),
+  // the same rule validateInventoryDocument() applies to ids, so the merge
+  // can never write a document the validator then refuses; the first
+  // occurrence -- the on-disk spelling and entry -- wins (#1334, #1179).
+  const merged: InventoryEntry[] = [];
+  for (const entry of [...onDiskEntries, ...imported.entries]) {
+    if (!merged.some((kept) => sameRepository(kept.id, entry.id, cwd.githubOwner))) merged.push(entry);
   }
-  return { mergedInventoryIds: mergedEntries.map((entry) => entry.id), mergedInventoryRepositories: mergedEntries };
+  return {
+    mergedInventoryIds: merged.map((entry) => entry.id),
+    mergedInventoryRepositories: merged,
+    mergedInventoryDocument: renderInventoryDocument(merged),
+  };
+}
+
+/**
+ * Resolves `--repositories` against the inventory stored in `directory`, or
+ * returns a refusal. See `resolveChosenInventory()`.
+ */
+function resolveChosenRepositories(
+  host: WorkspaceHost,
+  directory: string,
+  owner: string,
+  repositories: readonly string[],
+  replaceInventory: boolean,
+): { chosenInventory: ChosenInventory } | WorkspaceRefusal {
+  const resolution = resolveChosenInventory(host.readBytes(join(directory, WORKSPACE_INVENTORY_REL)), repositories, owner, replaceInventory);
+  if (resolution.kind === "refuse") return refuse("violated", resolution.message);
+  return { chosenInventory: resolution.chosen };
+}
+
+export interface PlanWorkspaceOptions {
+  /** `--inventory <path>`: a prepared inventory document, appoint only. */
+  readonly inventoryPath?: string;
+  /** `--repositories`: the repository ids a founder chose on Advisor's repository card (#1179). Appoint or resume of a hub checkout. */
+  readonly repositories?: readonly string[];
+  /** `--replace-inventory`: explicit approval for `repositories` to replace a stored inventory that lists a different set, or one that fails its contract. */
+  readonly replaceInventory?: boolean;
 }
 
 export function planWorkspace(
   observation: WorkspaceObservation,
   host: WorkspaceHost,
-  options: { inventoryPath?: string } = {},
+  options: PlanWorkspaceOptions = {},
 ): WorkspaceDecision {
   const { cwd } = observation;
+  if (options.repositories !== undefined && options.inventoryPath !== undefined) {
+    return refuse("violated", "--repositories and --inventory each supply the whole inventory; use one, not both");
+  }
+  if (options.replaceInventory === true && options.repositories === undefined) {
+    return refuse("violated", "--replace-inventory approves replacing the inventory with --repositories, and means nothing without it");
+  }
   if (cwd.hubMigration === "indeterminate") {
     return refuse(
       "indeterminate",
@@ -665,7 +571,7 @@ export function planWorkspace(
     cwd.hub === undefined &&
     cwd.git &&
     cwd.githubOwner !== undefined &&
-    cwd.githubOwner !== envOwner
+    !sameOwner(cwd.githubOwner, envOwner)
   ) {
     return refuse(
       "violated",
@@ -679,6 +585,18 @@ export function planWorkspace(
     );
   }
   if (cwd.hub) {
+    let chosen: { chosenInventory: ChosenInventory } | undefined;
+    if (options.repositories !== undefined) {
+      if (cwd.hubMigration === "legacy") {
+        return refuse(
+          "violated",
+          "this hub's state is still in the legacy .clossys/ folder; run launcher once without --repositories to move it to clossys/.state/, then choose the repositories again",
+        );
+      }
+      const resolved = resolveChosenRepositories(host, cwd.absolutePath, cwd.hub.owner, options.repositories, options.replaceInventory === true);
+      if ("action" in resolved) return resolved;
+      chosen = resolved;
+    }
     return {
       action: "resume",
       owner: cwd.hub.owner,
@@ -687,11 +605,24 @@ export function planWorkspace(
       clone: false,
       ...(observation.advisorVersion === undefined ? {} : { advisorVersion: observation.advisorVersion }),
       ...(cwd.hubMigration === "legacy" ? { migrateFrom: "legacy" as const } : {}),
+      ...(chosen ?? {}),
     };
   }
   if (cwd.git && cwd.githubOwner && cwd.githubRepository) {
     if (!observation.advisorVersion) {
       return refuse("indeterminate", `cannot read a public ${ADVISOR_PACKAGE} version from the npm registry`);
+    }
+    if (options.repositories !== undefined) {
+      const resolved = resolveChosenRepositories(host, cwd.absolutePath, cwd.githubOwner, options.repositories, options.replaceInventory === true);
+      if ("action" in resolved) return resolved;
+      return {
+        action: "adopt",
+        owner: cwd.githubOwner,
+        repository: cwd.githubRepository,
+        directory: cwd.absolutePath,
+        advisorVersion: observation.advisorVersion,
+        chosenInventory: resolved.chosenInventory,
+      };
     }
     const imported = resolveAdoptInventory(host, cwd, options.inventoryPath);
     if ("action" in imported) return imported;
@@ -704,6 +635,7 @@ export function planWorkspace(
       ...(imported.inventorySource === undefined ? {} : { inventorySource: imported.inventorySource }),
       ...(imported.mergedInventoryIds === undefined ? {} : { mergedInventoryIds: imported.mergedInventoryIds }),
       ...(imported.mergedInventoryRepositories === undefined ? {} : { mergedInventoryRepositories: imported.mergedInventoryRepositories }),
+      ...(imported.mergedInventoryDocument === undefined ? {} : { mergedInventoryDocument: imported.mergedInventoryDocument }),
       ...(imported.replacesInvalidInventory === undefined ? {} : { replacesInvalidInventory: imported.replacesInvalidInventory }),
     };
   }
@@ -716,9 +648,15 @@ export function planWorkspace(
       "the current directory is not empty and is not a GitHub repository; run from the repo you want to appoint, or from an empty directory",
     );
   }
+  if (options.repositories !== undefined) {
+    return refuse(
+      "violated",
+      "--repositories writes the inventory of a hub checkout, and this directory is empty; run launcher here first to create or clone the hub, then choose its repositories from inside it",
+    );
+  }
   const ownerResult = resolveOwner(observation, host);
   if ("action" in ownerResult) return ownerResult;
-  if (observation.remoteDefaultHub && observation.remoteDefaultHub.owner === ownerResult.owner) {
+  if (observation.remoteDefaultHub && sameOwner(observation.remoteDefaultHub.owner, ownerResult.owner)) {
     return {
       action: "resume",
       owner: observation.remoteDefaultHub.owner,
@@ -763,6 +701,21 @@ function writeSkeletonFile(host: WorkspaceHost, directory: string, relativePath:
   const target = containedPath(directory, relativePath);
   host.mkdirp(dirname(target));
   host.writeText(target, contents);
+}
+
+/** Writes exact bytes, for a document copied rather than composed, so nothing is decoded and re-encoded on the way. */
+function writeSkeletonBytes(host: WorkspaceHost, directory: string, relativePath: string, contents: Uint8Array): void {
+  const target = containedPath(directory, relativePath);
+  host.mkdirp(dirname(target));
+  host.writeBytes(target, contents);
+}
+
+function withFinalNewline(bytes: Uint8Array): Uint8Array {
+  if (bytes.length > 0 && bytes[bytes.length - 1] === 0x0a) return bytes;
+  const out = new Uint8Array(bytes.length + 1);
+  out.set(bytes);
+  out[bytes.length] = 0x0a;
+  return out;
 }
 
 function pinString(value: unknown): string | undefined {
@@ -862,6 +815,17 @@ function assertCleanTree(host: WorkspaceHost, directory: string): void {
   }
 }
 
+/**
+ * An inventory document Launcher composed (from a choice, or a merge),
+ * checked again at write time by the same function every later read of it
+ * uses, so a document Launcher writes is always one Launcher reads back.
+ */
+function revalidatedDocument(document: string, hubOwner: string, label = "the chosen inventory"): string {
+  const validated = validateInventoryDocument(document, { hubOwner });
+  if (!validated.valid) throw new Error(`${label} ${validated.reason}`);
+  return document;
+}
+
 function adoptHubFiles(host: WorkspaceHost, skeletonRoot: string, plan: WorkspacePlan & { advisorVersion: string }): void {
   assertCleanTree(host, plan.directory);
   // Resolve and strictly re-validate the inventory document BEFORE writing
@@ -870,25 +834,29 @@ function adoptHubFiles(host: WorkspaceHost, skeletonRoot: string, plan: Workspac
   // means a document that changed on disk between plan and apply still
   // cannot land a mismatched shape, and it means this function alone
   // guarantees "fail before any file is touched" (#1334).
-  let inventoryDocument: string | undefined;
-  if ("mergedInventoryIds" in plan && Array.isArray(plan.mergedInventoryIds)) {
-    const repositories =
-      "mergedInventoryRepositories" in plan && Array.isArray(plan.mergedInventoryRepositories)
-        ? plan.mergedInventoryRepositories
-        : plan.mergedInventoryIds.map((id) => ({ id }));
-    const document = `${JSON.stringify({ schemaVersion: 1, repositories }, null, 2)}\n`;
-    const validated = validateInventoryDocument(document);
-    if (!validated.valid) throw new Error(`merged inventory ${validated.reason}`);
-    inventoryDocument = document;
+  let inventoryDocument: string | Uint8Array | undefined;
+  if (plan.action === "adopt" && plan.chosenInventory !== undefined) {
+    if (plan.chosenInventory.kind === "write") inventoryDocument = revalidatedDocument(plan.chosenInventory.document, plan.owner);
+  } else if (plan.action === "adopt" && plan.mergedInventoryDocument !== undefined) {
+    inventoryDocument = revalidatedDocument(plan.mergedInventoryDocument, plan.owner, "the merged inventory");
+  } else if (plan.action === "adopt" && plan.mergedInventoryRepositories !== undefined) {
+    // A plan carrying the merged entries without the rendered document: each entry is written whole, `packages`
+    // included, in the same layout renderInventoryDocument() writes; the contract check decides whether it is valid.
+    const repositories = plan.mergedInventoryRepositories;
+    inventoryDocument = revalidatedDocument(`${JSON.stringify({ schemaVersion: 1, repositories }, null, 2)}\n`, plan.owner, "the merged inventory");
+  } else if ("mergedInventoryIds" in plan && Array.isArray(plan.mergedInventoryIds)) {
+    // A plan built by hand with ids only: there are no entries to keep, so each id is written alone.
+    inventoryDocument = revalidatedDocument(renderInventoryDocument(plan.mergedInventoryIds.map((id) => ({ id }))), plan.owner, "the merged inventory");
   } else if ("inventorySource" in plan && typeof plan.inventorySource === "string") {
-    const raw = host.readText(plan.inventorySource);
+    const raw = host.readBytes(plan.inventorySource);
     if (raw === null) throw new Error(`inventory source is not readable: ${plan.inventorySource}`);
-    const validated = validateInventoryDocument(raw);
+    const validated = validateInventoryDocument(raw, { hubOwner: plan.owner });
     if (!validated.valid) throw new Error(`inventory source at ${plan.inventorySource} ${validated.reason}`);
     if (validated.ids.length === 0) {
       throw new Error(`inventory source at ${plan.inventorySource} must be a populated inventory document`);
     }
-    inventoryDocument = raw.endsWith("\n") ? raw : `${raw}\n`;
+    // Copied byte for byte: the bytes just validated are the bytes written.
+    inventoryDocument = withFinalNewline(raw);
   }
   const marker = {
     schemaVersion: 1,
@@ -897,9 +865,8 @@ function adoptHubFiles(host: WorkspaceHost, skeletonRoot: string, plan: Workspac
     repository: `${plan.owner}/${plan.repository}`,
   };
   writeSkeletonFile(host, plan.directory, WORKSPACE_MARKER_REL, `${JSON.stringify(marker, null, 2)}\n`);
-  if (inventoryDocument !== undefined) {
-    writeSkeletonFile(host, plan.directory, WORKSPACE_INVENTORY_REL, inventoryDocument);
-  }
+  if (typeof inventoryDocument === "string") writeSkeletonFile(host, plan.directory, WORKSPACE_INVENTORY_REL, inventoryDocument);
+  else if (inventoryDocument !== undefined) writeSkeletonBytes(host, plan.directory, WORKSPACE_INVENTORY_REL, inventoryDocument);
   if (host.readText(join(plan.directory, "AGENTS.md")) === null) {
     writeSkeletonFile(host, plan.directory, "AGENTS.md", CONSUMER_AGENTS_MD);
   } else {
@@ -972,7 +939,7 @@ export function reportHubHealth(
   );
   return {
     marker: readHub(host, directory) === undefined ? "missing" : "present",
-    inventory: inspectInventory(host.readText(join(directory, WORKSPACE_INVENTORY_REL))),
+    inventory: inspectInventory(host.readBytes(join(directory, WORKSPACE_INVENTORY_REL)), readHub(host, directory)?.owner),
     advisorPin: {
       ...(pins.dependencies === undefined ? {} : { dependencies: pins.dependencies }),
       ...(pins.devDependencies === undefined ? {} : { devDependencies: pins.devDependencies }),
@@ -1109,8 +1076,8 @@ function withHealth(
  * a note; marks ids whose check fails as unknown. Never mutates the inventory.
  */
 export function checkInventoryEntries(host: WorkspaceHost, directory: string): InventoryValidationReport {
-  const raw = host.readText(join(directory, WORKSPACE_INVENTORY_REL));
-  const observation = inspectInventory(raw);
+  const hubOwner = readHub(host, directory)?.owner;
+  const observation = inspectInventory(host.readBytes(join(directory, WORKSPACE_INVENTORY_REL)), hubOwner);
   if (observation.status !== "populated") {
     return { entries: [], skipped: true, note: `inventory is ${observation.status}; nothing to validate` };
   }
@@ -1118,7 +1085,7 @@ export function checkInventoryEntries(host: WorkspaceHost, directory: string): I
   if (!available) {
     return { entries: [], skipped: true, note: "`gh` is unavailable; inventory ids were not validated" };
   }
-  const ids = readInventoryRepositories(host, join(directory, WORKSPACE_INVENTORY_REL), "the hub inventory").filter(
+  const ids = readInventoryRepositories(host, join(directory, WORKSPACE_INVENTORY_REL), "the hub inventory", hubOwner).filter(
     (id) => id !== "",
   );
   const batch = 20;
@@ -1175,6 +1142,22 @@ function parseInventoryRepositoryId(id: string, hubOwner: string): { owner: stri
   return { owner: id.slice(0, slash), repository: id.slice(slash + 1) };
 }
 
+/** A checkout's origin as `owner/name`, when it is a github.com repository. */
+function originRepository(host: WorkspaceHost, directory: string): string | undefined {
+  const result = host.run("git", ["remote", "get-url", "origin"], { cwd: directory });
+  const remote = result.status === 0 ? parseGitHubRemote(result.stdout.trim()) : null;
+  return remote === null ? undefined : `${remote.owner}/${remote.repository}`;
+}
+
+/**
+ * The hub's own repository identity: its origin's `owner/name`, or, when
+ * the checkout has no github.com origin, the repository its hub marker
+ * records. Never its folder path (see identity.ts).
+ */
+function hubRepositoryIdentity(host: WorkspaceHost, hubDirectory: string): string | undefined {
+  return originRepository(host, hubDirectory) ?? readHub(host, hubDirectory)?.repository;
+}
+
 function resolveSisterCloneTargets(
   host: WorkspaceHost,
   hubDirectory: string,
@@ -1184,13 +1167,13 @@ function resolveSisterCloneTargets(
   readonly skipped: readonly { readonly inventoryId: string; readonly note: string }[];
 } {
   const parent = dirname(resolve(hubDirectory));
-  const hubResolved = resolve(hubDirectory);
+  const hubIdentity = hubRepositoryIdentity(host, hubDirectory);
   const skipped: { inventoryId: string; note: string }[] = [];
   const targets: { inventoryId: string; directory: string }[] = [];
   const inventoryPath = join(hubDirectory, WORKSPACE_INVENTORY_REL);
   let inventoryIds: readonly string[];
   try {
-    inventoryIds = readInventoryRepositories(host, inventoryPath, "the stored inventory");
+    inventoryIds = readInventoryRepositories(host, inventoryPath, "the stored inventory", hubOwner);
   } catch (error) {
     // An invalid stored inventory is reported and skipped, never silently
     // read for what it happens to look like -- no sibling gets written into
@@ -1204,13 +1187,13 @@ function resolveSisterCloneTargets(
       skipped.push({ inventoryId: id, note: "inventory id is not a valid repository slug" });
       continue;
     }
-    if (parsed.owner !== hubOwner) {
+    if (!belongsToOwner(id, hubOwner)) {
       skipped.push({ inventoryId: id, note: "other account; not this roster" });
       continue;
     }
+    // The hub itself is already on the roster: recognised by repository identity, not by folder path.
+    if (hubIdentity !== undefined && sameRepository(id, hubIdentity, hubOwner)) continue;
     const candidate = join(parent, parsed.repository);
-    const candidateResolved = resolve(candidate);
-    if (candidateResolved === hubResolved) continue;
     if (!host.exists(candidate) || !host.isDirectory(candidate)) {
       skipped.push({ inventoryId: id, note: CLONE_NOT_BESIDE_HUB_NOTE });
       continue;
@@ -1219,10 +1202,8 @@ function resolveSisterCloneTargets(
       skipped.push({ inventoryId: id, note: "foundry supplier tree; skills are not written here" });
       continue;
     }
-    const originResult = host.run("git", ["remote", "get-url", "origin"], { cwd: candidate });
-    const originUrl = originResult.status === 0 ? originResult.stdout.trim() : "";
-    const remote = originUrl === "" ? null : parseGitHubRemote(originUrl);
-    if (remote === null || remote.owner !== parsed.owner || remote.repository !== parsed.repository) {
+    const origin = originRepository(host, candidate);
+    if (origin === undefined || !sameRepository(origin, id, hubOwner)) {
       skipped.push({ inventoryId: id, note: "git origin does not match inventory id" });
       continue;
     }
@@ -1407,7 +1388,7 @@ function finishHubApply(
   // #1216: when the hub marker declares an external inventory, report drift against
   // it on every apply (create's fresh marker never declares one, so this is a no-op there).
   const hubDocument = readHub(host, directory);
-  const inventoryDrift = reportInventoryDrift(host, directory, hubDocument?.externalInventory, WORKSPACE_INVENTORY_REL);
+  const inventoryDrift = reportInventoryDrift(host, directory, hubDocument?.externalInventory, WORKSPACE_INVENTORY_REL, hubOwner);
   return withHealth(host, directory, headline, liveAdvisorVersion, skillComposition, liveLauncherVersion, migration, inventoryDrift);
 }
 
@@ -1423,12 +1404,16 @@ function migrateLegacyHubState(host: WorkspaceHost, directory: string): HubHealt
   const markerRaw = host.readText(join(directory, LEGACY_WORKSPACE_MARKER_REL));
   if (markerRaw === null) return undefined;
   writeSkeletonFile(host, directory, WORKSPACE_MARKER_REL, markerRaw.endsWith("\n") ? markerRaw : `${markerRaw}\n`);
-  const inventoryRaw = host.readText(join(directory, LEGACY_WORKSPACE_INVENTORY_REL));
-  if (inventoryRaw !== null) {
-    writeSkeletonFile(host, directory, WORKSPACE_INVENTORY_REL, inventoryRaw.endsWith("\n") ? inventoryRaw : `${inventoryRaw}\n`);
-  }
+  // Moved byte for byte, so bytes that are not valid UTF-8 are still refused when read from the new place.
+  const inventoryBytes = host.readBytes(join(directory, LEGACY_WORKSPACE_INVENTORY_REL));
+  if (inventoryBytes !== null) writeSkeletonBytes(host, directory, WORKSPACE_INVENTORY_REL, withFinalNewline(inventoryBytes));
   host.remove(join(directory, LEGACY_STATE_DIR_REL));
   return { status: "migrated", from: LEGACY_STATE_DIR_REL, to: STATE_DIR_REL };
+}
+
+/** The apply message's line saying what `--repositories` did to the inventory, or nothing without it. */
+function chosenInventoryNote(chosen: ChosenInventory | undefined): string {
+  return chosen === undefined ? "" : `\n${describeChosenInventory(chosen)}`;
 }
 
 /** Applies a create, resume, or adopt plan through the host. Resume refreshes composed skills and stale AGENTS.md guidance. */
@@ -1450,10 +1435,15 @@ export function applyWorkspacePlan(
       );
     }
     const migration = plan.migrateFrom === "legacy" ? migrateLegacyHubState(host, plan.directory) : undefined;
+    // --repositories (#1179): write the chosen inventory before composing, so
+    // this same run composes skills into the repositories just chosen.
+    if (plan.chosenInventory?.kind === "write") {
+      writeSkeletonFile(host, plan.directory, WORKSPACE_INVENTORY_REL, revalidatedDocument(plan.chosenInventory.document, plan.owner));
+    }
     return finishHubApply(
       host,
       plan.directory,
-      `resumed ${plan.owner}/${plan.repository} as the account hub\nOpen this folder in your coding agent. Advisor stays read-only until you approve a next action.`,
+      `resumed ${plan.owner}/${plan.repository} as the account hub\nOpen this folder in your coding agent. Advisor stays read-only until you approve a next action.${chosenInventoryNote(plan.chosenInventory)}`,
       launcherPackageRoot,
       plan.owner,
       plan.repository,
@@ -1494,7 +1484,7 @@ export function applyWorkspacePlan(
   return finishHubApply(
     host,
     plan.directory,
-    `appointed ${plan.owner}/${plan.repository} as the account hub\nExisting project files were kept. This hub inventories engagement; it does not install the catalogue into the repo.${inventoryReplacedNote}`,
+    `appointed ${plan.owner}/${plan.repository} as the account hub\nExisting project files were kept. This hub inventories engagement; it does not install the catalogue into the repo.${inventoryReplacedNote}${chosenInventoryNote(plan.chosenInventory)}`,
     launcherPackageRoot,
     plan.owner,
     plan.repository,

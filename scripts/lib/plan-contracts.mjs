@@ -1,37 +1,40 @@
 /**
- * The shared plan and brief contracts (issue #1475), packed into each
- * package that validates against them. Launcher also packs the registry
- * snapshot contract, which its snapshot step writes, and the repository
- * change-set and apply-bundle contracts (issue #1178), which only it
- * computes, and the installed-state ledger contract they refer to; see
- * LAUNCHER_CONTRACT_FILES.
+ * The shared plan, brief and inventory contracts (issues #1475, #1334 and
+ * #1179), packed into each package that validates against them. Launcher
+ * also packs the registry snapshot contract, which its snapshot step
+ * writes, and the repository change-set and apply-bundle contracts (issue
+ * #1178), which only it computes, and the installed-state ledger contract
+ * they refer to; see LAUNCHER_CONTRACT_FILES.
  *
  * `docs/contracts/advisor-plan.json`, `engagement-brief.json` and
  * `engagement-context.json` are the one definition of the plan record and
- * the engagement brief. `@clossys/advisor` owns those shapes and
- * `@clossys/launcher` reads them, and neither package depends on the
- * other at runtime. So each package's own build step writes a generated
- * module into its `src/generated/`, with no file I/O at runtime:
+ * the engagement brief; `repository-inventory.json` is the one definition
+ * of a hub's repository inventory. `@clossys/advisor` owns the plan and
+ * brief shapes and checks the repository ids it offers against the
+ * inventory contract; `@clossys/launcher` reads all four, and neither
+ * package depends on the other at runtime. So each package's own build
+ * step writes a generated module into its `src/generated/`, with no file
+ * I/O at runtime:
  *
- * - `@clossys/advisor` packs ADVISOR_PLAN_CONTRACT_FILES, the three plan and
- *   brief contracts followed by `registry-snapshot.json` (issue #1178), the
- *   contract of the registry snapshot it resolves a plan's exact package
- *   acts from, under ADVISOR_DATA_BANNER. It also packs the scope and
- *   registry from this repository's `package-scope.json`, so it can name
- *   packages and check a snapshot's registry without hardcoding either.
- * - `@clossys/launcher` packs LAUNCHER_CONTRACT_FILES, the same three
- *   followed by `registry-snapshot.json`, in the same order as Advisor, and
- *   then the repository change-set, apply-bundle and installed-state ledger
- *   contracts (issue #1178), under LAUNCHER_DATA_BANNER. It
- *   also packs the scope and registry from `package-scope.json`, because
- *   its snapshot step fetches from that registry, refuses a package outside
+ * - `@clossys/advisor` packs ADVISOR_PLAN_CONTRACT_FILES, the four plan,
+ *   brief and inventory contracts followed by `registry-snapshot.json`
+ *   (issue #1178), the contract of the registry snapshot it resolves a
+ *   plan's exact package acts from, under ADVISOR_DATA_BANNER. It also
+ *   packs the scope and registry from this repository's
+ *   `package-scope.json`, so it can name packages and check a snapshot's
+ *   registry without hardcoding either.
+ * - `@clossys/launcher` packs LAUNCHER_CONTRACT_FILES, the same five
+ *   followed by the repository change-set, apply-bundle and installed-state
+ *   ledger contracts (issue #1178), under LAUNCHER_DATA_BANNER. It also
+ *   packs the scope and registry from `package-scope.json`, because its
+ *   snapshot step fetches from that registry, refuses a package outside
  *   that scope, and validates the snapshot it writes against that contract.
  *
  * Both render through renderPlanContractsModule(), which serializes each
- * contract the same way, so the three shared contracts are byte-identical
- * data in both packages, and so is the registry snapshot contract that both
- * pack fourth; the two modules differ only in their header and in the
- * entries Launcher adds after those four.
+ * contract the same way, so the shared contracts are byte-identical data
+ * in both packages, and so is the registry snapshot contract that both
+ * pack fifth; the two modules differ only in their header and in the
+ * entries Launcher adds after those five.
  *
  * The checker that interprets those contracts lives once, in
  * `packages/advisor/src/contract-schema.ts`. Launcher's build writes a
@@ -45,19 +48,20 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
 /** The contracts packed, in this order. `engagement-brief.json` refers to `engagement-context.json` by file name. */
-export const PLAN_CONTRACT_FILES = ["advisor-plan.json", "engagement-brief.json", "engagement-context.json"];
+export const PLAN_CONTRACT_FILES = ["advisor-plan.json", "engagement-brief.json", "engagement-context.json", "repository-inventory.json"];
 
 /** The contracts `@clossys/advisor` packs: the shared ones, then the registry snapshot it resolves packages from. */
 export const ADVISOR_PLAN_CONTRACT_FILES = [...PLAN_CONTRACT_FILES, "registry-snapshot.json"];
 
 /**
- * What `@clossys/launcher` packs (issue #1178): the plan and brief contracts
- * and the registry snapshot contract, in Advisor's order (the snapshot step
- * validates a snapshot against it before writing it), then the repository
- * change-set and apply-bundle contracts, which Launcher computes and Advisor
- * never reads (both refer to `advisor-plan.json`'s definitions by file name),
- * then the installed-state ledger contract, which the bundle contract refers
- * to by file name and which needs no other contract.
+ * What `@clossys/launcher` packs (issue #1178): the plan, brief and
+ * inventory contracts and the registry snapshot contract, in Advisor's
+ * order (the snapshot step validates a snapshot against it before writing
+ * it), then the repository change-set and apply-bundle contracts, which
+ * Launcher computes and Advisor never reads (both refer to
+ * `advisor-plan.json`'s definitions by file name), then the installed-state
+ * ledger contract, which the bundle contract refers to by file name and
+ * which needs no other contract.
  */
 export const LAUNCHER_CONTRACT_FILES = [...ADVISOR_PLAN_CONTRACT_FILES, "repository-change-set.json", "apply-bundle.json", "installed-ledger.json"];
 
@@ -71,26 +75,28 @@ export const CANONICAL_CONTRACT_SCHEMA_PATH = "packages/advisor/src/contract-sch
 
 const DATA_BANNER = `// AUTO-GENERATED by this package's build-time packer (issue #1475).
 // Do not edit by hand -- edits are overwritten on the next \`npm run build\`.
-// Source of truth: the shared plan and brief contracts in this package's
-// source repository (not shipped in this package). Every package that
-// validates a plan or a brief packs the same data for these contracts.
+// Source of truth: the shared plan, brief and inventory contracts in this
+// package's source repository (not shipped in this package). Every package
+// that validates a plan, a brief or an inventory packs this same module.
 `;
 
 const ADVISOR_DATA_BANNER = `// AUTO-GENERATED by this package's build-time packer (issues #1475, #1178).
 // Do not edit by hand -- edits are overwritten on the next \`npm run build\`.
-// Source of truth: the shared plan and brief contracts, and the registry
-// snapshot contract, in this package's source repository (not shipped in this
-// package). The plan and brief contracts here are the same data every
-// package that validates a plan or a brief packs.
+// Source of truth: the shared plan, brief and inventory contracts, and the
+// registry snapshot contract, in this package's source repository (not
+// shipped in this package). The plan, brief and inventory contracts here
+// are the same data every package that validates a plan, a brief or an
+// inventory packs.
 `;
 
 const LAUNCHER_DATA_BANNER = `// AUTO-GENERATED by this package's build-time packer (issues #1475, #1178).
 // Do not edit by hand -- edits are overwritten on the next \`npm run build\`.
-// Source of truth: the shared plan and brief contracts, the registry snapshot
-// contract, and the repository change-set, apply-bundle and installed-state
-// ledger contracts, in this package's source repository (not shipped in this
-// package). The plan and brief contracts here are the
-// same data every package that validates a plan or a brief packs.
+// Source of truth: the shared plan, brief and inventory contracts, the
+// registry snapshot contract, and the repository change-set, apply-bundle
+// and installed-state ledger contracts, in this package's source repository
+// (not shipped in this package). The plan, brief and inventory contracts
+// here are the same data every package that validates a plan, a brief or an
+// inventory packs.
 `;
 
 const COPY_BANNER = `// AUTO-GENERATED by this package's build-time packer (issue #1475).
@@ -120,9 +126,9 @@ export function renderPlanContractsModule(repoRoot, files = PLAN_CONTRACT_FILES)
     return `  ${JSON.stringify(name)}: ${JSON.stringify(contract, null, 2).replace(/\n/g, "\n  ")},`;
   });
   const what =
-    files === ADVISOR_PLAN_CONTRACT_FILES ? "The shared plan and brief contracts, and the registry snapshot contract"
-      : files === LAUNCHER_CONTRACT_FILES ? "The shared plan, brief and registry snapshot contracts, and the change-set, bundle and ledger contracts"
-        : "The shared plan and brief contracts";
+    files === ADVISOR_PLAN_CONTRACT_FILES ? "The shared plan, brief and inventory contracts, and the registry snapshot contract"
+      : files === LAUNCHER_CONTRACT_FILES ? "The shared plan, brief, inventory and registry snapshot contracts, and the change-set, bundle and ledger contracts"
+        : "The shared plan, brief and inventory contracts";
   return `${banner}
 /** ${what}, keyed by their file name in docs/contracts/. */
 export const PLAN_CONTRACTS: Readonly<Record<string, Readonly<Record<string, unknown>>>> = {

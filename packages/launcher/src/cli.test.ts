@@ -36,6 +36,17 @@ function host(directory: string, commands: Record<string, CommandResult>): Works
         return null;
       }
     },
+    readBytes: (path) => {
+      try {
+        return readFileSync(path);
+      } catch {
+        return null;
+      }
+    },
+    writeBytes: (path, contents) => {
+      mkdirSync(dirname(path), { recursive: true });
+      writeFileSync(path, contents);
+    },
     writeText: (path, contents) => {
       mkdirSync(dirname(path), { recursive: true });
       writeFileSync(path, contents);
@@ -75,6 +86,30 @@ describe("launcher CLI", () => {
     const log = vi.spyOn(console, "log").mockImplementation(() => {});
     expect(main([], host(directory, {}), skeletonRoot)).toBe(0);
     expect(log.mock.calls[0]?.[0]).toBe(USAGE);
+  });
+
+  it("refuses (exit 1), rather than printing usage, when --repositories is given in a non-empty non-git directory (#1179)", () => {
+    const directory = mkdtempSync(join(tmpdir(), "launcher-files-"));
+    roots.push(directory);
+    writeFileSync(join(directory, "notes.txt"), "keep\n");
+    const log = vi.spyOn(console, "log").mockImplementation(() => {});
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+    expect(main(["--repositories", "example-owner/example-app"], host(directory, {}), skeletonRoot)).toBe(1);
+    expect(String(error.mock.calls[0]?.[0])).toMatch(/not empty and is not a GitHub repository/);
+    expect(log).not.toHaveBeenCalled();
+  });
+
+  it("refuses (exit 1) for --inventory too, in the same non-empty non-git directory (#1179)", () => {
+    const directory = mkdtempSync(join(tmpdir(), "launcher-files-"));
+    roots.push(directory);
+    writeFileSync(join(directory, "notes.txt"), "keep\n");
+    const inventoryPath = join(directory, "inventory.json");
+    writeFileSync(inventoryPath, JSON.stringify({ schemaVersion: 1, repositories: [{ id: "example-owner/example-app" }] }));
+    const log = vi.spyOn(console, "log").mockImplementation(() => {});
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+    expect(main(["--inventory", inventoryPath], host(directory, {}), skeletonRoot)).toBe(1);
+    expect(String(error.mock.calls[0]?.[0])).toMatch(/not empty and is not a GitHub repository/);
+    expect(log).not.toHaveBeenCalled();
   });
 
   it("creates a hub from an empty directory through the CLI", () => {
@@ -123,7 +158,7 @@ describe("launcher CLI", () => {
     const err = vi.spyOn(console, "error").mockImplementation(() => {});
     const code = main(["--inventory", "elsewhere.json"], host(directory, {}), skeletonRoot);
     expect(code).toBe(1);
-    expect(String(err.mock.calls[0]?.[0])).toMatch(/already appointed; edit clossys\/\.state\/inventory\.json/);
+    expect(String(err.mock.calls[0]?.[0])).toMatch(/already appointed; to change the repositories it covers, choose them again .* launcher --repositories/);
     expect(String(err.mock.calls[0]?.[0])).not.toMatch(/only valid when appointing/);
   });
 
@@ -163,7 +198,7 @@ describe("launcher CLI", () => {
       skeletonRoot,
     );
     expect(code).toBe(1);
-    expect(String(err.mock.calls[0]?.[0])).toMatch(/unrecognized field "role"/);
+    expect(String(err.mock.calls[0]?.[0])).toMatch(/repositories\[0\] has a field the contract does not declare \(key \d+ of this object\)/);
     // Refusal happens before any file is touched: no hub marker, no
     // inventory, no clossys/ folder, no package.json, nothing beyond the
     // two files this test itself seeded.

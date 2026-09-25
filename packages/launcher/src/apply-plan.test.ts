@@ -36,6 +36,8 @@ function fakeHost(): WorkspaceHost & { written: Record<string, string> } {
     isDirectory: () => false,
     isSymlink: () => false,
     readText: () => null,
+    readBytes: () => null,
+    writeBytes: () => {},
     writeText: (path, contents) => {
       written[path] = contents;
     },

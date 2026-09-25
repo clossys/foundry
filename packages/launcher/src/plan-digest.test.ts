@@ -74,12 +74,13 @@ describe("canonical plan digest (docs/contracts/advisor-plan-digest.md)", () => 
   });
 });
 
-describe("packed plan and brief contracts", () => {
+describe("packed plan, brief and inventory contracts", () => {
   it("are the docs/contracts files, unchanged, with the registry snapshot, change-set, bundle and ledger contracts after them (#1178)", () => {
     expect(Object.keys(PLAN_CONTRACTS)).toEqual([
       "advisor-plan.json",
       "engagement-brief.json",
       "engagement-context.json",
+      "repository-inventory.json",
       "registry-snapshot.json",
       "repository-change-set.json",
       "apply-bundle.json",

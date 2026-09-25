@@ -39,6 +39,7 @@ export { RESOLVED_PLACEMENT, STARTER_PACKAGE_DIRECTORY, packageRequest, resolveP
 export { nextStepInstruction } from "./next-step.js";
 export { validateManagedEngagement, proposalReadyForClient } from "./managed-engagement.js";
 export { BUDGET_PREFERENCE_CARD, applyBudgetPreferenceChoice, toPreferencesFile } from "./preferences.js";
+export { REPOSITORY_CHOICE_CARD_ID, REPOSITORY_SOMETHING_ELSE_ID, applyRepositoryChoice, repositoryChoiceCard } from "./repository-choice.js";
 export type {
   AdvisorAssessment, AdvisorAssessmentInput, AdvisorCharter, AdvisorComponentAssessment, AdvisorFinding, AdvisorSession, AdvisorSessionEvent, AdvisorSessionState,
   AdvisorState, AdvisorToolContract, AdvisorToolRequest, AdvisorToolResponse, AssessmentBasis, AuthorityClearance, BaselineDefinition, CompletionDefinition, CriterionDefinition,
@@ -74,3 +75,4 @@ export type { KitVerdict, KitVerdictCitation, KitVerdictRole, KitVerdictState, R
 export type { ClientTool, NextStepHostContext } from "./next-step.js";
 export type { ManagedEngagementInput, OperatorReview } from "./managed-engagement.js";
 export type { AdvisorPreferences, BudgetPreference, BudgetPreferenceApplyResult, BudgetPreferenceCard, BudgetPreferenceChoice } from "./preferences.js";
+export type { RepositoryChoice, RepositoryChoiceApplyResult, RepositoryChoiceCard, RepositoryChoiceCardResult, RepositoryListingEntry } from "./repository-choice.js";

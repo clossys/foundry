@@ -3,13 +3,16 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AdvisorCliInputError, main as advisorCheckMain } from "./cli.js";
-import { ContractDocumentError, readContractDocument } from "./contract-schema.js";
+import { ContractDocumentError, readContractDocument, validateAgainstContract } from "./contract-schema.js";
+import type { ContractSchema } from "./contract-schema.js";
 import { main as executionReadinessMain } from "./execution-readiness-cli.js";
 import { packageRequest, resolvePackages, validateAdvisorPlan, validateEngagementBrief, validateRegistrySnapshot } from "./index.js";
 import type { AdvisorPlan, EngagementBrief, RegistrySnapshot } from "./index.js";
 import { main as packageRequestMain } from "./package-request-cli.js";
 import { main as renderStatusMain } from "./render-status-cli.js";
 import { main as resolvePackagesMain } from "./resolve-packages-cli.js";
+import { AdvisorRepositoryCardCliInputError, main as repositoryCardMain } from "./repository-card-cli.js";
+import { repositoryChoiceCard } from "./repository-choice.js";
 
 /*
  * The shared contract checker never echoes document text -- in particular an
@@ -137,6 +140,13 @@ const SCENARIOS: Readonly<Record<string, Scenario>> = {
     run: (key) => resolvePackages(PLAN, { [key]: 1, ...SNAPSHOT }),
     expected: () => ({ state: "violated", findings: [{ rule: "snapshot-shape", verdict: "violated", path: "", message: `snapshot ${UNDECLARED(1)}` }] }),
   },
+  "undeclared in a repository listing entry, through repositoryChoiceCard()": {
+    // repositoryChoiceCard() never uses the checker's own message: listingFindings()
+    // classifies it through classifyListingViolation() into a fixed phrase with no
+    // ordinal at all, so the same finding is expected whatever the key (#1179).
+    run: (key) => repositoryChoiceCard([{ nameWithOwner: "example-owner/example-app", [key]: 1 }]),
+    expected: () => ({ state: "invalid", findings: [{ rule: "repository-listing", severity: "error", message: "listing[0] has a field the contract does not declare", path: "listing[0]" }] }),
+  },
   "written first in a file, numbered as written": {
     run: (key) => messages(validateAdvisorPlan(readContractDocument(bytes(`{${q(key)}:true,${JSON.stringify(PLAN).slice(1)}`)))),
     expected: () => [`plan ${UNDECLARED(1)}`],
@@ -199,6 +209,23 @@ describe("no key text in any contract message, path or error", () => {
     expect(messages(validateAdvisorPlan(readContractDocument(bytes(text))))).toEqual([`plan ${UNDECLARED(1)}`, `plan ${UNDECLARED(written)}`]);
     // JavaScript lists "7" first and "zz" second, so that is the order, and the numbering, of a value not read from a file.
     expect(messages(validateAdvisorPlan(JSON.parse(text)))).toEqual([`plan ${UNDECLARED(1)}`, `plan ${UNDECLARED(2)}`]);
+  });
+
+  it("falls back to the object's own key order when a value read from a file is mutated afterward", () => {
+    // keyOrder()'s cache is keyed by object identity, not content: once a
+    // caller mutates an object readContractDocument() returned, the cached
+    // written order ("zz", "a", "b") no longer matches the object's own keys
+    // ("a", "b", "cc"), and the guard (same length, and every own key found
+    // in the written set) must detect that and fall back to the object's own
+    // order rather than keep numbering by a key order the file no longer has
+    // -- which would otherwise still count the now-deleted "zz" and miss the
+    // newly added "cc" entirely.
+    const schema: ContractSchema = { type: "object", additionalProperties: false, properties: { a: { type: "number" }, b: { type: "number" } } };
+    const value = readContractDocument(bytes(`{"zz":1,"a":2,"b":3}`)) as Record<string, unknown>;
+    delete value.zz;
+    value.cc = 4;
+    expect(Object.keys(value)).toEqual(["a", "b", "cc"]);
+    expect(validateAgainstContract(schema, value, () => schema)).toEqual([{ path: "", message: UNDECLARED(3) }]);
   });
 
   it("gives every position as a 0-based UTF-16 code-unit index, not a byte offset", () => {
@@ -271,6 +298,44 @@ describe("no key text through the bins", () => {
       expect(hostile.map((entry) => entry.renderStatus.thrown?.replace(/position \d+/, "position N")), name).toEqual(baseline.map((entry) => entry.renderStatus.thrown?.replace(/position \d+/, "position N")));
       expect(hostile.map((entry) => [entry.packageRequest, entry.resolvePackages]), name).toEqual(baseline.map((entry) => [entry.packageRequest, entry.resolvePackages]));
       expect(leaks(key, hostile, baseline), name).toEqual([]);
+    }
+  });
+});
+
+describe("no key text through advisor-repository-card", () => {
+  let root: string;
+  beforeEach(() => {
+    root = mkdtempSync(join(tmpdir(), "advisor-repository-card-hostile-"));
+    vi.spyOn(console, "log").mockImplementation(() => {});
+  });
+  afterEach(() => {
+    vi.restoreAllMocks();
+    rmSync(root, { recursive: true, force: true });
+  });
+
+  const write = (name: string, text: string) => {
+    const path = join(root, name);
+    writeFileSync(path, text);
+    return path;
+  };
+  /** What main() threw for a repositories file whose one entry also carries `key`, with the temporary root taken out. */
+  const refuse = (key: string): string => {
+    const path = write("repositories.json", JSON.stringify([{ nameWithOwner: "example-owner/example-app", [key]: 1 }]));
+    try {
+      repositoryCardMain([path]);
+    } catch (cause) {
+      expect(cause).toBeInstanceOf(AdvisorRepositoryCardCliInputError);
+      return (cause as Error).message.split(root).join("<root>");
+    }
+    throw new Error("expected a refusal");
+  };
+
+  it("refuses an undeclared field in the repository listing by position only", () => {
+    const baseline = refuse(HARMLESS);
+    expect(baseline).toBe("the repository list is invalid: listing[0] has a field the contract does not declare");
+    for (const [name, key] of Object.entries(HOSTILE)) {
+      expect(refuse(key), name).toBe(baseline);
+      expect(leaks(key, refuse(key), baseline), name).toEqual([]);
     }
   });
 });
