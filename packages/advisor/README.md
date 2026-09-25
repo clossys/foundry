@@ -216,6 +216,22 @@ must contain a non-whitespace character; an item of `inputsFrom`,
 fields, and a key that is not a plain identifier is shown as an escaped
 JSON string.
 
+A brief may carry `staffedHere` (issue #1178): the roles staffed in the one
+repository it is written to, in plan order. `toEngagementBrief()` builds the
+hub brief only, which has none; this package never builds or writes a
+repository's own brief. Launcher's apply planner, which is not built yet,
+will derive that from the hub brief and the plan, as the brief contract's
+description defines; today the only brief writer is Launcher's brief-only
+`applyEngagementBrief()`, which writes the brief it is given unchanged.
+`validateEngagementBrief()` checks a `staffedHere` wherever it appears, once
+the schema passes: every entry is one of `roles[].role` (rule
+`engagement-brief-rule-b1`) and none repeats (`engagement-brief-rule-b2`).
+`PUBLIC_PROBLEM_PLACEHOLDER` is the fixed text, read from the brief
+contract, that the apply planner will write in place of `problem` for a
+repository whose visibility is not private, once that planner is built.
+Nothing writes it yet: `applyEngagementBrief()` commits `problem` unchanged,
+whatever the repository's visibility.
+
 ## Shared engagement context
 
 `ENGAGEMENT_CONTEXT_FIELD_IDS` lists the shared engagement context fields
@@ -319,8 +335,43 @@ refused too, so every plan that validates has a digest. This package still carri
 Controller package: the blocker shape is duplicated structurally, never the
 owner-per-kind mapping, which stays owned by Controller.
 
-`planDigest(plan)` is the canonical digest of a plan, the value an
-approval binds so that it names exactly which plan was approved:
+A plan may also say who works where, and what exactly may be installed
+(issue #1178), in four optional fields: `kits` (each `{ id, source, verdict }`,
+with `verdict` only `"recommended"` for now), `staffing` (one
+`{ repository, roles }` entry per repository, by repository inventory id),
+`packages` (exact acts: `install` or `pin-starter`, each with a lowercase
+scoped name of at most 214 characters, one exact version with at most 16
+digits in each part and no prerelease or build suffix, and one canonical
+`sha512-` integrity value) and
+`resolution` (`{ snapshotDigest }`), typed as `AdvisorPlanKit`,
+`AdvisorPlanStaffing`, `AdvisorPlanPackageAct` and `AdvisorPlanResolution`.
+A decision (`AdvisorPlanDecision`) may carry `subjectDigest`.
+Once the schema passes, `validateAdvisorPlan()` applies the code rules the
+contract's description defines, each finding with the rule
+`advisor-plan-rule-r1` to `-r10` and a `path`: no repository staffed twice
+(ids compare case-insensitively); staffed roles and `mandate.roles` agree in
+both directions; every package act names a staffed repository, spelled
+exactly the same; no `planItem` repeats; no package appears twice in one
+repository; `resolution` is present exactly when `packages` is; no kit id
+repeats; no role repeats within one staffing entry; no role is named twice
+in `mandate.roles`; and a repository has at most one `pin-starter` act,
+always placed in `devDependencies`. The rules read only a plan's own fields,
+as the schema does, so an inherited one is ignored. A plan that breaks
+one has no digest. Launcher implements the same rules separately, and both
+packages are tested against one shared corpus,
+[`docs/contracts/advisor-plan-rules.fixture.json`](https://github.com/clossys/foundry/blob/main/docs/contracts/advisor-plan-rules.fixture.json)
+(in the public repository, not shipped in this package).
+
+An approval binds bytes only through its `subjectDigest`, the digest of the
+exact change the approver was shown; an approval without one binds nothing.
+From an approving decision until apply completes, Advisor changes no field
+the plan digest covers: recording the approval appends a decision and may
+update `asOf`, which the digest excludes, so the digest at approval equals
+the digest at apply. The Advisor skill follows this rule.
+
+`planDigest(plan)` is the canonical digest of a plan, the value the
+assessment basis's `planDigest` records and an execution authorization must
+equal, so that it names exactly which plan is meant:
 `sha256:` and the hex SHA-256 of the plan's RFC 8785 canonical JSON,
 leaving out `asOf` and `decisions` (`PLAN_DIGEST_EXCLUDED_FIELDS`), because
 an approval is itself recorded in `decisions`. It throws for a plan that
