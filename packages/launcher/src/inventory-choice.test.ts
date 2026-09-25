@@ -142,6 +142,7 @@ const APPOINT_COMMANDS: Record<string, CommandResult> = {
   "git remote get-url origin": { status: 0, stdout: `git@github.com:${OWNER}/example-hub.git\n`, stderr: "" },
   "git status --porcelain": { status: 0, stdout: "", stderr: "" },
   "npm view @clossys/advisor version": { status: 0, stdout: "0.5.0\n", stderr: "" },
+  "npm view @clossys/integrator version": { status: 0, stdout: "0.8.2\n", stderr: "" },
 };
 
 function appointCheckout(): string {
@@ -357,6 +358,7 @@ describe("launcher --repositories (#1179)", () => {
           repository: "example-hub",
           directory,
           advisorVersion: "0.5.0",
+          integratorVersion: "0.8.2",
           chosenInventory: {
             kind: "write",
             document: inventoryText([{ id: `${OWNER}/example-app`, role: "product" }]),
@@ -379,6 +381,7 @@ describe("launcher --repositories (#1179)", () => {
       ghAvailable: true,
       gitAvailable: true,
       advisorVersion: "0.5.0",
+      integratorVersion: "0.8.2",
       cwd: {
         absolutePath: tempDir(),
         empty: false,
@@ -653,6 +656,7 @@ describe("one repository identity for the roster, the merge and drift (#1179)", 
       {
         ownerCandidates: [OWNER],
         advisorVersion: "0.5.0",
+        integratorVersion: "0.8.2",
         ghAvailable: true,
         gitAvailable: true,
         cwd: {
@@ -708,6 +712,7 @@ describe("one account identity (#1179)", () => {
         ownerCandidates: [OWNER],
         envOwner: "Example-Owner",
         advisorVersion: "0.5.0",
+        integratorVersion: "0.8.2",
         ghAvailable: true,
         gitAvailable: true,
         cwd: {

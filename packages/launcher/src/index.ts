@@ -58,6 +58,7 @@ export type {
   CwdObservation,
   DependencyBucket,
   HubDocument,
+  HubEnginePin,
   HubHealthReport,
   HubMigrationState,
   InventoryObservation,

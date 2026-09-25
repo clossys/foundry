@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 import { afterEach, describe, expect, it } from "vitest";
 import {
   ADVISOR_PACKAGE,
+  INTEGRATOR_PACKAGE,
   CONSUMER_AGENTS_MD,
   LEGACY_CONSUMER_AGENTS_MD,
   applyWorkspacePlan,
@@ -147,6 +148,7 @@ function observation(overrides: Partial<WorkspaceObservation> = {}): WorkspaceOb
   return {
     ownerCandidates: ["acme"],
     advisorVersion: "0.1.5",
+    integratorVersion: "0.8.2",
     ghAvailable: true,
     gitAvailable: true,
     ...overrides,
@@ -201,6 +203,7 @@ describe("planWorkspace", () => {
       repository: "central",
       directory: "/tmp/central",
       advisorVersion: "0.1.5",
+    integratorVersion: "0.8.2",
     });
   });
 
@@ -230,6 +233,7 @@ describe("planWorkspace", () => {
       repository: DEFAULT_REPOSITORY_NAME,
       directory: "/tmp/hub",
       advisorVersion: "0.1.5",
+    integratorVersion: "0.8.2",
     });
   });
 
@@ -646,6 +650,200 @@ describe("hasAdvisorPin", () => {
   });
 });
 
+describe("hub engine pins: Advisor and Integrator (S3-0)", () => {
+  function writeHubMarker(directory: string): void {
+    mkdirSync(dirname(join(directory, WORKSPACE_MARKER_REL)), { recursive: true });
+    writeFileSync(
+      join(directory, WORKSPACE_MARKER_REL),
+      `${JSON.stringify({ schemaVersion: 1, kind: "account-hub", owner: "acme", repository: "acme/hub" }, null, 2)}\n`,
+    );
+    writeInventory(directory, [{ id: "acme/hub" }]);
+  }
+
+  function readManifest(directory: string): Record<string, Record<string, string> | string> {
+    return JSON.parse(readFileSync(join(directory, "package.json"), "utf8")) as Record<string, Record<string, string> | string>;
+  }
+
+  function resume(directory: string, versions: { advisorVersion?: string; integratorVersion?: string }) {
+    return applyWorkspacePlan(
+      host(directory),
+      { action: "resume", owner: "acme", repository: "hub", directory, clone: false, ...versions },
+      skeletonRoot,
+      composeApplyOptions(seedSkillCatalogue(["advisor"])),
+    );
+  }
+
+  it("a fresh skeleton pins both engines exactly, in devDependencies only", () => {
+    const directory = tempDir();
+    const result = applyWorkspacePlan(
+      host(directory, {
+        [`gh repo create acme/workspace --private --source ${directory} --remote origin --push`]: { status: 0, stdout: "created\n", stderr: "" },
+      }),
+      { action: "create", owner: "acme", repository: "workspace", directory, advisorVersion: "0.5.0", integratorVersion: "0.8.2" },
+      skeletonRoot,
+    );
+    const manifest = readManifest(directory);
+    expect(manifest.devDependencies).toEqual({ [ADVISOR_PACKAGE]: "0.5.0", [INTEGRATOR_PACKAGE]: "0.8.2" });
+    expect(manifest.dependencies).toBeUndefined();
+    expect(readFileSync(join(directory, "package.json"), "utf8")).not.toContain("__INTEGRATOR_VERSION__");
+    expect(result.health.advisorPin).toEqual({ devDependencies: "0.5.0", live: "0.5.0" });
+    expect(result.health.integratorPin).toEqual({ devDependencies: "0.8.2", live: "0.8.2" });
+    expect(result.health.extraClossys).toEqual([]);
+  });
+
+  it("an existing hub gains Integrator on resume, and on appoint", () => {
+    const resumed = tempDir();
+    writeHubMarker(resumed);
+    writeFileSync(join(resumed, "package.json"), `${JSON.stringify({ name: "hub", devDependencies: { [ADVISOR_PACKAGE]: "0.5.0" } }, null, 2)}\n`);
+    const result = resume(resumed, { advisorVersion: "0.5.0", integratorVersion: "0.8.2" });
+    expect(readManifest(resumed).devDependencies).toEqual({ [ADVISOR_PACKAGE]: "0.5.0", [INTEGRATOR_PACKAGE]: "0.8.2" });
+    expect(result.health.integratorPin).toEqual({ devDependencies: "0.8.2", live: "0.8.2" });
+    expect(result.health.degraded).toBe(false);
+    expect(result.message).toMatch(/integrator pin: devDependencies 0\.8\.2; live 0\.8\.2/);
+
+    const appointed = tempDir();
+    writeInventory(appointed);
+    writeFileSync(join(appointed, "package.json"), `${JSON.stringify({ name: "hub", devDependencies: { [ADVISOR_PACKAGE]: "0.5.0" } }, null, 2)}\n`);
+    applyWorkspacePlan(
+      host(appointed),
+      { action: "adopt", owner: "acme", repository: "hub", directory: appointed, advisorVersion: "0.5.0", integratorVersion: "0.8.2" },
+      skeletonRoot,
+    );
+    expect(readManifest(appointed).devDependencies).toEqual({ [ADVISOR_PACKAGE]: "0.5.0", [INTEGRATOR_PACKAGE]: "0.8.2" });
+  });
+
+  it("a frozen 0.2.6 Advisor is bumped to live on resume", () => {
+    const directory = tempDir();
+    writeHubMarker(directory);
+    writeFileSync(join(directory, "package.json"), `${JSON.stringify({ name: "hub", devDependencies: { [ADVISOR_PACKAGE]: "0.2.6" } }, null, 2)}\n`);
+    const result = resume(directory, { advisorVersion: "0.5.0", integratorVersion: "0.8.2" });
+    expect(readManifest(directory).devDependencies).toEqual({ [ADVISOR_PACKAGE]: "0.5.0", [INTEGRATOR_PACKAGE]: "0.8.2" });
+    expect(result.health.pinFindings).toEqual([]);
+  });
+
+  it("other @clossys/* entries are left exactly as found", () => {
+    const directory = tempDir();
+    writeHubMarker(directory);
+    writeFileSync(
+      join(directory, "package.json"),
+      `${JSON.stringify(
+        {
+          name: "hub",
+          dependencies: { "@clossys/starter": "0.1.5", react: "19.0.0" },
+          devDependencies: { "@clossys/writer": "^0.1.0", [ADVISOR_PACKAGE]: "0.2.6" },
+          peerDependencies: { "@clossys/controller": "0.9.0" },
+        },
+        null,
+        2,
+      )}\n`,
+    );
+    const result = resume(directory, { advisorVersion: "0.5.0", integratorVersion: "0.8.2" });
+    const manifest = readManifest(directory);
+    expect(manifest.dependencies).toEqual({ "@clossys/starter": "0.1.5", react: "19.0.0" });
+    expect(manifest.devDependencies).toEqual({ "@clossys/writer": "^0.1.0", [ADVISOR_PACKAGE]: "0.5.0", [INTEGRATOR_PACKAGE]: "0.8.2" });
+    expect(manifest.peerDependencies).toEqual({ "@clossys/controller": "0.9.0" });
+    expect(result.health.extraClossys).toEqual(["@clossys/controller", "@clossys/starter", "@clossys/writer"]);
+  });
+
+  it("a pin in dependencies is relocated to devDependencies, on resume and on appoint", () => {
+    const resumed = tempDir();
+    writeHubMarker(resumed);
+    writeFileSync(
+      join(resumed, "package.json"),
+      `${JSON.stringify({ name: "hub", dependencies: { [INTEGRATOR_PACKAGE]: "0.7.0" }, devDependencies: { [ADVISOR_PACKAGE]: "0.5.0" } }, null, 2)}\n`,
+    );
+    const result = resume(resumed, { advisorVersion: "0.5.0", integratorVersion: "0.8.2" });
+    const manifest = readManifest(resumed);
+    expect(manifest.dependencies).toBeUndefined();
+    expect(manifest.devDependencies).toEqual({ [ADVISOR_PACKAGE]: "0.5.0", [INTEGRATOR_PACKAGE]: "0.8.2" });
+    expect(result.health.dualPin).toBe(false);
+    expect(result.health.degraded).toBe(false);
+
+    const appointed = tempDir();
+    writeInventory(appointed);
+    writeFileSync(
+      join(appointed, "package.json"),
+      `${JSON.stringify({ name: "hub", optionalDependencies: { [INTEGRATOR_PACKAGE]: "0.7.0", left: "1.0.0" } }, null, 2)}\n`,
+    );
+    applyWorkspacePlan(
+      host(appointed),
+      { action: "adopt", owner: "acme", repository: "hub", directory: appointed, advisorVersion: "0.5.0", integratorVersion: "0.8.2" },
+      skeletonRoot,
+    );
+    expect(readManifest(appointed).optionalDependencies).toEqual({ left: "1.0.0" });
+    expect(readManifest(appointed).devDependencies).toEqual({ [ADVISOR_PACKAGE]: "0.5.0", [INTEGRATOR_PACKAGE]: "0.8.2" });
+  });
+
+  it("resume leaves package.json byte for byte when a pin is already live, when no live version was read, or when it is unreadable", () => {
+    const current = tempDir();
+    writeHubMarker(current);
+    const currentBytes = `{"name":"hub","devDependencies":{"${ADVISOR_PACKAGE}":"0.5.0","${INTEGRATOR_PACKAGE}":"0.8.2"}}`;
+    writeFileSync(join(current, "package.json"), currentBytes);
+    resume(current, { advisorVersion: "0.5.0", integratorVersion: "0.8.2" });
+    expect(readFileSync(join(current, "package.json"), "utf8")).toBe(currentBytes);
+
+    const unknown = tempDir();
+    writeHubMarker(unknown);
+    const frozenBytes = `${JSON.stringify({ name: "hub", devDependencies: { [ADVISOR_PACKAGE]: "0.2.6" } }, null, 2)}\n`;
+    writeFileSync(join(unknown, "package.json"), frozenBytes);
+    const unread = resume(unknown, {});
+    expect(readFileSync(join(unknown, "package.json"), "utf8")).toBe(frozenBytes);
+    expect(unread.health.integratorPin).toEqual({});
+    expect(unread.health.degraded).toBe(true);
+
+    const broken = tempDir();
+    writeHubMarker(broken);
+    writeFileSync(join(broken, "package.json"), "{ not json");
+    const brokenResult = resume(broken, { advisorVersion: "0.5.0", integratorVersion: "0.8.2" });
+    expect(readFileSync(join(broken, "package.json"), "utf8")).toBe("{ not json");
+    expect(brokenResult.state).toBe("satisfied");
+    expect(brokenResult.message).toMatch(/advisor pin: missing; live 0\.5\.0/);
+    expect(brokenResult.message).toMatch(/integrator pin: missing; live 0\.8\.2/);
+  });
+
+  it("health grades each engine against its own live version", () => {
+    const directory = tempDir();
+    writeFileSync(
+      join(directory, "package.json"),
+      `${JSON.stringify({ name: "hub", devDependencies: { [ADVISOR_PACKAGE]: "0.5.0", [INTEGRATOR_PACKAGE]: "0.7.0" } }, null, 2)}\n`,
+    );
+    const report = reportHubHealth(host(directory), directory, "0.5.0", undefined, [], undefined, "0.8.2");
+    expect(report.advisorPin).toEqual({ devDependencies: "0.5.0", live: "0.5.0" });
+    expect(report.integratorPin).toEqual({ devDependencies: "0.7.0", live: "0.8.2" });
+    expect(report.pinFindings).toEqual([
+      { package: INTEGRATOR_PACKAGE, bucket: "devDependencies", pinned: "0.7.0", grade: "stale", note: "pinned 0.7.0 is older than live 0.8.2" },
+    ]);
+    expect(report.degraded).toBe(true);
+    expect(formatHubHealth(report)).toMatch(/pin findings: @clossys\/integrator devDependencies pinned 0\.7\.0 is older than live 0\.8\.2/);
+  });
+
+  it("create and appoint refuse as indeterminate when the registry gives no Integrator version", () => {
+    const silent = host(tempDir());
+    expect(planWorkspace(observation({ integratorVersion: undefined }), silent)).toEqual({
+      action: "refuse",
+      state: "indeterminate",
+      message: `cannot read a public ${INTEGRATOR_PACKAGE} version from the npm registry`,
+    });
+    expect(
+      planWorkspace(
+        observation({
+          integratorVersion: undefined,
+          cwd: {
+            absolutePath: "/tmp/central",
+            empty: false,
+            git: true,
+            githubOwner: "acme",
+            githubRepository: "central",
+            looksLikeFoundry: false,
+            inventory: { status: "populated", count: 1 },
+          },
+        }),
+        silent,
+      ),
+    ).toMatchObject({ action: "refuse", state: "indeterminate" });
+  });
+});
+
 describe("applyWorkspacePlan", () => {
   it("copies the skeleton for create and does not pin the catalogue", () => {
     const directory = tempDir();
@@ -653,7 +851,7 @@ describe("applyWorkspacePlan", () => {
       host(directory, {
         [`gh repo create acme/workspace --private --source ${directory} --remote origin --push`]: { status: 0, stdout: "created\n", stderr: "" },
       }),
-      { action: "create", owner: "acme", repository: "workspace", directory, advisorVersion: "0.1.5" },
+      { action: "create", owner: "acme", repository: "workspace", directory, advisorVersion: "0.1.5", integratorVersion: "0.8.2" },
       skeletonRoot,
     );
     const manifest = JSON.parse(readFileSync(join(directory, "package.json"), "utf8")) as {
@@ -680,7 +878,7 @@ describe("applyWorkspacePlan", () => {
     writeInventory(directory);
     const result = applyWorkspacePlan(
       host(directory),
-      { action: "adopt", owner: "acme", repository: "product", directory, advisorVersion: "0.1.5" },
+      { action: "adopt", owner: "acme", repository: "product", directory, advisorVersion: "0.1.5", integratorVersion: "0.8.2" },
       skeletonRoot,
     );
     expect(readFileSync(join(directory, "README.md"), "utf8")).toBe("# Product\n");
@@ -694,7 +892,8 @@ describe("applyWorkspacePlan", () => {
     expect(manifest.private).toBe(false);
     expect(manifest.dependencies.react).toBe("19.0.0");
     expect(manifest.devDependencies[ADVISOR_PACKAGE]).toBe("0.1.5");
-    expect(Object.keys(manifest.devDependencies)).toEqual([ADVISOR_PACKAGE]);
+    expect(Object.keys(manifest.devDependencies)).toEqual([ADVISOR_PACKAGE, INTEGRATOR_PACKAGE]);
+    expect(manifest.devDependencies[INTEGRATOR_PACKAGE]).toBe("0.8.2");
     expect(JSON.parse(readFileSync(join(directory, WORKSPACE_MARKER_REL), "utf8"))).toEqual({
       schemaVersion: 1,
       kind: "account-hub",
@@ -714,7 +913,7 @@ describe("applyWorkspacePlan", () => {
     writeInventory(directory);
     applyWorkspacePlan(
       host(directory),
-      { action: "adopt", owner: "acme", repository: "hub", directory, advisorVersion: "0.2.3" },
+      { action: "adopt", owner: "acme", repository: "hub", directory, advisorVersion: "0.2.3", integratorVersion: "0.8.2" },
       skeletonRoot,
     );
     const manifest = JSON.parse(readFileSync(join(directory, "package.json"), "utf8")) as {
@@ -737,7 +936,7 @@ describe("applyWorkspacePlan", () => {
     writeInventory(directory);
     applyWorkspacePlan(
       host(directory),
-      { action: "adopt", owner: "acme", repository: "hub", directory, advisorVersion: "0.2.3" },
+      { action: "adopt", owner: "acme", repository: "hub", directory, advisorVersion: "0.2.3", integratorVersion: "0.8.2" },
       skeletonRoot,
     );
     const manifest = JSON.parse(readFileSync(join(directory, "package.json"), "utf8")) as {
@@ -755,7 +954,7 @@ describe("applyWorkspacePlan", () => {
     writeInventory(directory);
     applyWorkspacePlan(
       host(directory),
-      { action: "adopt", owner: "acme", repository: DEFAULT_REPOSITORY_NAME, directory, advisorVersion: "0.2.3" },
+      { action: "adopt", owner: "acme", repository: DEFAULT_REPOSITORY_NAME, directory, advisorVersion: "0.2.3", integratorVersion: "0.8.2" },
       skeletonRoot,
     );
     const manifest = JSON.parse(readFileSync(join(directory, "package.json"), "utf8")) as {
@@ -779,7 +978,7 @@ describe("applyWorkspacePlan", () => {
     );
     const result = applyWorkspacePlan(
       host(directory),
-      { action: "adopt", owner: "acme", repository: "hub", directory, advisorVersion: "0.2.3", inventorySource: source },
+      { action: "adopt", owner: "acme", repository: "hub", directory, advisorVersion: "0.2.3", integratorVersion: "0.8.2", inventorySource: source },
       skeletonRoot,
     );
     expect(inspectInventory(readFileSync(join(directory, WORKSPACE_INVENTORY_REL), "utf8"))).toEqual({
@@ -822,7 +1021,7 @@ describe("applyWorkspacePlan", () => {
     expect(() =>
       applyWorkspacePlan(
         host(directory),
-        { action: "adopt", owner: "acme", repository: "hub", directory, advisorVersion: "0.2.3", inventorySource: source },
+        { action: "adopt", owner: "acme", repository: "hub", directory, advisorVersion: "0.2.3", integratorVersion: "0.8.2", inventorySource: source },
         skeletonRoot,
       ),
     ).toThrow(/repositories\[0\]\.role is not a field the contract declares/);
@@ -844,7 +1043,7 @@ describe("applyWorkspacePlan", () => {
     expect(() =>
       applyWorkspacePlan(
         host(directory, commands),
-        { action: "adopt", owner: "acme", repository: "product", directory, advisorVersion: "0.2.3" },
+        { action: "adopt", owner: "acme", repository: "product", directory, advisorVersion: "0.2.3", integratorVersion: "0.8.2" },
         skeletonRoot,
       ),
     ).toThrow(/gitlab\.example\.net.*uncommitted changes/s);
@@ -864,7 +1063,7 @@ describe("applyWorkspacePlan", () => {
     expect(() =>
       applyWorkspacePlan(
         host(directory, commands),
-        { action: "adopt", owner: "acme", repository: "product", directory, advisorVersion: "0.2.3" },
+        { action: "adopt", owner: "acme", repository: "product", directory, advisorVersion: "0.2.3", integratorVersion: "0.8.2" },
         skeletonRoot,
       ),
     ).toThrow(/this checkout has uncommitted changes/);
@@ -883,6 +1082,7 @@ describe("applyWorkspacePlan", () => {
         repository: "hub",
         directory,
         advisorVersion: "0.2.3",
+        integratorVersion: "0.8.2",
         mergedInventoryIds: ["hub-a", "hub-c", "hub-b"],
       },
       skeletonRoot,
@@ -908,6 +1108,7 @@ describe("applyWorkspacePlan", () => {
         repository: "hub",
         directory,
         advisorVersion: "0.2.3",
+        integratorVersion: "0.8.2",
         mergedInventoryIds: ["hub-a", "hub-b"],
         mergedInventoryRepositories: [{ id: "hub-a", packages: kept }, { id: "hub-b" }],
       },
@@ -931,6 +1132,7 @@ describe("applyWorkspacePlan", () => {
           repository: "hub",
           directory,
           advisorVersion: "0.2.3",
+          integratorVersion: "0.8.2",
           mergedInventoryIds: ["hub-a", "acme/hub-a"],
           mergedInventoryRepositories: [{ id: "hub-a" }, { id: "acme/hub-a" }],
         },
@@ -1041,7 +1243,7 @@ describe("applyWorkspacePlan", () => {
     writeInventory(directory, [{ id: "acme/hub" }]);
     writeFileSync(
       join(directory, "package.json"),
-      `${JSON.stringify({ name: "hub", devDependencies: { [ADVISOR_PACKAGE]: "0.1.5" } }, null, 2)}\n`,
+      `${JSON.stringify({ name: "hub", devDependencies: { [ADVISOR_PACKAGE]: "0.1.5", [INTEGRATOR_PACKAGE]: "0.8.2" } }, null, 2)}\n`,
     );
     writeFileSync(join(directory, "AGENTS.md"), LEGACY_CONSUMER_AGENTS_MD);
     const catalogue = seedSkillCatalogue(["advisor", "designer"]);
@@ -1134,7 +1336,7 @@ describe("applyWorkspacePlan", () => {
       host(created, {
         [`gh repo create acme/workspace --private --source ${created} --remote origin --push`]: { status: 0, stdout: "created\n", stderr: "" },
       }),
-      { action: "create", owner: "acme", repository: "workspace", directory: created, advisorVersion: "0.1.5" },
+      { action: "create", owner: "acme", repository: "workspace", directory: created, advisorVersion: "0.1.5", integratorVersion: "0.8.2" },
       skeletonRoot,
       applyOpts,
     );
@@ -1145,7 +1347,7 @@ describe("applyWorkspacePlan", () => {
     writeInventory(adopted);
     applyWorkspacePlan(
       host(adopted),
-      { action: "adopt", owner: "acme", repository: "hub", directory: adopted, advisorVersion: "0.1.5" },
+      { action: "adopt", owner: "acme", repository: "hub", directory: adopted, advisorVersion: "0.1.5", integratorVersion: "0.8.2" },
       skeletonRoot,
       applyOpts,
     );
@@ -1156,15 +1358,15 @@ describe("applyWorkspacePlan", () => {
     const directory = tempDir();
     writeFileSync(
       join(directory, "package.json"),
-      `${JSON.stringify({ name: "hub", devDependencies: { [ADVISOR_PACKAGE]: "0.1.0" } }, null, 2)}\n`,
+      `${JSON.stringify({ name: "hub", devDependencies: { [ADVISOR_PACKAGE]: "0.1.0", [INTEGRATOR_PACKAGE]: "0.8.2" } }, null, 2)}\n`,
     );
     writeInventory(directory);
     const stale = reportHubHealth(host(directory), directory, "0.2.0");
     expect(stale.pinFindings).toEqual([
-      { bucket: "devDependencies", pinned: "0.1.0", grade: "stale", note: expect.stringContaining("older than live 0.2.0") },
+      { package: ADVISOR_PACKAGE, bucket: "devDependencies", pinned: "0.1.0", grade: "stale", note: expect.stringContaining("older than live 0.2.0") },
     ]);
     expect(stale.degraded).toBe(true);
-    expect(formatHubHealth(stale)).toMatch(/pin findings: devDependencies pinned 0\.1\.0 is older than live 0\.2\.0/);
+    expect(formatHubHealth(stale)).toMatch(/pin findings: @clossys\/advisor devDependencies pinned 0\.1\.0 is older than live 0\.2\.0/);
     expect(formatHubHealth(stale)).toMatch(/degraded: yes/);
     const current = reportHubHealth(host(directory), directory, "0.1.0");
     expect(current.pinFindings).toEqual([]);
@@ -1189,11 +1391,11 @@ describe("applyWorkspacePlan", () => {
     const directory = tempDir();
     writeFileSync(
       join(directory, "package.json"),
-      `${JSON.stringify({ name: "hub", devDependencies: { [ADVISOR_PACKAGE]: "next" } }, null, 2)}\n`,
+      `${JSON.stringify({ name: "hub", devDependencies: { [ADVISOR_PACKAGE]: "next", [INTEGRATOR_PACKAGE]: "0.8.2" } }, null, 2)}\n`,
     );
     const report = reportHubHealth(host(directory), directory, "0.2.0");
     expect(report.pinFindings).toEqual([
-      { bucket: "devDependencies", pinned: "next", grade: "indeterminate", note: expect.stringContaining("cannot compare") },
+      { package: ADVISOR_PACKAGE, bucket: "devDependencies", pinned: "next", grade: "indeterminate", note: expect.stringContaining("cannot compare") },
     ]);
     expect(report.degraded).toBe(false);
   });
@@ -1344,7 +1546,7 @@ describe("skills manifest and health (#1183)", () => {
     const catalogue = seedSkillCatalogue(["advisor", "designer"]);
     const applyOpts = composeApplyOptions(catalogue);
     writeInventory(directory);
-    applyWorkspacePlan(host(directory), { action: "adopt", owner: "acme", repository: "hub", directory, advisorVersion: "0.1.5" }, skeletonRoot, applyOpts);
+    applyWorkspacePlan(host(directory), { action: "adopt", owner: "acme", repository: "hub", directory, advisorVersion: "0.1.5", integratorVersion: "0.8.2" }, skeletonRoot, applyOpts);
 
     // designer's catalogue source disappears before the next resume.
     rmSync(join(applyOpts.skillCatalogueRoot, "designer"), { recursive: true, force: true });
@@ -1366,7 +1568,7 @@ describe("preserved composed skills in the health report (#1473)", () => {
     const catalogue = seedSkillCatalogue(["advisor"]);
     const applyOpts = composeApplyOptions(catalogue);
     writeInventory(directory);
-    applyWorkspacePlan(host(directory), { action: "adopt", owner: "acme", repository: "hub", directory, advisorVersion: "0.1.5" }, skeletonRoot, applyOpts);
+    applyWorkspacePlan(host(directory), { action: "adopt", owner: "acme", repository: "hub", directory, advisorVersion: "0.1.5", integratorVersion: "0.8.2" }, skeletonRoot, applyOpts);
     const skillPath = join(directory, ".agents", "skills", "clossys-advisor", "SKILL.md");
     const edited = `${readFileSync(skillPath, "utf8")}\nClient's own note.\n`;
     writeFileSync(skillPath, edited);
@@ -1439,7 +1641,7 @@ describe("generated clossys/README.md", () => {
     const applyOpts = composeApplyOptions(seedSkillCatalogue(["advisor"]));
     applyWorkspacePlan(
       host(directory),
-      { action: "adopt", owner: "acme", repository: "hub", directory, advisorVersion: "0.1.5" },
+      { action: "adopt", owner: "acme", repository: "hub", directory, advisorVersion: "0.1.5", integratorVersion: "0.8.2" },
       skeletonRoot,
       applyOpts,
     );
@@ -1503,11 +1705,13 @@ describe("observeWorkspace", () => {
         "gh org list": { status: 0, stdout: "", stderr: "" },
         "gh repo view acme/workspace --json name": { status: 1, stdout: "", stderr: "not found" },
         "npm view @clossys/advisor version": { status: 0, stdout: "0.2.6\n", stderr: "" },
+        "npm view @clossys/integrator version": { status: 0, stdout: "0.8.2\n", stderr: "" },
       }),
     );
     expect(seen.cwd.githubOwner).toBe("acme");
     expect(seen.cwd.inventory).toEqual({ status: "missing", count: 0 });
     expect(seen.advisorVersion).toBe("0.2.6");
+    expect(seen.integratorVersion).toBe("0.8.2");
   });
 });
 

@@ -31,8 +31,9 @@ when appointing or on an existing hub. It never merges into or overwrites an
 inventory that lists a different set of repositories; it reports the
 difference, and --replace-inventory is the explicit approval to replace it.
 --inventory <path> still accepts a prepared inventory document when
-appointing. Resume refreshes composed skills and stale hub guidance, and
-migrates a legacy .clossys/ hub state to clossys/.state/ automatically.
+appointing. Resume refreshes composed skills and stale hub guidance, pins
+the hub's @clossys/advisor and @clossys/integrator at their live versions,
+and migrates a legacy .clossys/ hub state to clossys/.state/ automatically.
 Create may write an empty inventory.
 
 By default launcher never \`gh repo clone\`s a missing inventory entry --

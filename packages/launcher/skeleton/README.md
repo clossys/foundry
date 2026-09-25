@@ -19,6 +19,7 @@ Advisor is read-only until the sponsor approves a next action.
 
 ## What this hub pins
 
-Exact `@clossys/advisor` is a development dependency so the engagement gate
-can run against evidence you own. Other roles are pinned in the repositories
-that actually do the work, not dumped into this hub.
+Exact `@clossys/advisor` and `@clossys/integrator` are development
+dependencies: the hub's two engines, each pinned once here, so the engagement
+gate can run against evidence you own. Other roles are pinned in the
+repositories that actually do the work, not dumped into this hub.

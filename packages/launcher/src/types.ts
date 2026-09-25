@@ -98,14 +98,16 @@ export interface InventoryObservation {
   readonly reason?: string;
 }
 
-/** A package.json dependency bucket scanned for the advisor pin. */
+/** A package.json dependency bucket scanned for the hub engine pins. */
 export type DependencyBucket = "dependencies" | "devDependencies" | "optionalDependencies" | "peerDependencies";
 
-/** Staleness verdict for one pinned advisor version against the live registry version. */
+/** Staleness verdict for one pinned engine version against the live registry version. */
 export type PinGrade = "stale" | "current" | "indeterminate";
 
-/** One graded advisor pin in one dependency bucket. */
+/** One graded hub engine pin (`@clossys/advisor` or `@clossys/integrator`) in one dependency bucket. */
 export interface PinFinding {
+  /** The engine package this finding grades. */
+  readonly package: string;
   readonly bucket: DependencyBucket;
   readonly pinned: string;
   readonly grade: PinGrade;
@@ -126,17 +128,22 @@ export interface InventoryValidationReport {
   readonly note?: string;
 }
 
+/** Where one hub engine is pinned, by dependency bucket, and its live registry version when known. */
+export interface HubEnginePin {
+  readonly dependencies?: string;
+  readonly devDependencies?: string;
+  readonly optionalDependencies?: string;
+  readonly peerDependencies?: string;
+  readonly live?: string;
+}
+
 /** Read-only pin and inventory report after adopt or resume. Never uninstalls. */
 export interface HubHealthReport {
   readonly marker: "present" | "missing";
   readonly inventory: InventoryObservation;
-  readonly advisorPin: {
-    readonly dependencies?: string;
-    readonly devDependencies?: string;
-    readonly optionalDependencies?: string;
-    readonly peerDependencies?: string;
-    readonly live?: string;
-  };
+  readonly advisorPin: HubEnginePin;
+  readonly integratorPin: HubEnginePin;
+  /** True when either engine is pinned in more than one dependency bucket. */
   readonly dualPin: boolean;
   readonly extraClossys: readonly string[];
   readonly pinFindings: readonly PinFinding[];
@@ -199,6 +206,8 @@ export interface WorkspaceObservation {
   readonly envOwner?: string;
   readonly remoteDefaultHub?: { readonly owner: string; readonly repository: string };
   readonly advisorVersion?: string;
+  /** The public `@clossys/integrator` registry version, read the same way as `advisorVersion`. */
+  readonly integratorVersion?: string;
   readonly ghAvailable: boolean;
   readonly gitAvailable: boolean;
 }
@@ -209,6 +218,7 @@ export interface WorkspacePlanCreate {
   readonly repository: string;
   readonly directory: string;
   readonly advisorVersion: string;
+  readonly integratorVersion: string;
 }
 
 /**
@@ -240,8 +250,10 @@ export interface WorkspacePlanResume {
   readonly repository: string;
   readonly directory: string;
   readonly clone: boolean;
-  /** Live registry Advisor version, when observeWorkspace could read one. Used only to grade health. */
+  /** Live registry Advisor version, when observeWorkspace could read one. Apply pins it in the hub and grades health against it. */
   readonly advisorVersion?: string;
+  /** Live registry Integrator version, when observeWorkspace could read one. Apply pins it in the hub and grades health against it. */
+  readonly integratorVersion?: string;
   /** Set when the hub marker was found only at the legacy `.clossys/` path; apply migrates it. */
   readonly migrateFrom?: "legacy";
   /** Set by `--repositories`: the inventory apply writes before it composes skills, or confirms is unchanged. */
@@ -254,6 +266,7 @@ export interface WorkspacePlanAdopt {
   readonly repository: string;
   readonly directory: string;
   readonly advisorVersion: string;
+  readonly integratorVersion: string;
   /** Absolute path of a populated inventory document to copy. Absent when cwd already has one. */
   readonly inventorySource?: string;
   /** Merged repository ids (on-disk first, then new ids from --inventory) written when both sources are populated. */
