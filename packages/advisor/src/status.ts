@@ -179,7 +179,7 @@ function section(title: string, body: readonly string[]): string {
  * plan that is not an object has none), and `message` says what is wrong
  * with it without echoing its value.
  *
- * Once the schema passes, the contract's code rules R1-R10 run too (issue
+ * Once the schema passes, the contract's code rules R1-R11 run too (issue
  * #1178; see `planRuleViolations()`): staffing and package entries that
  * repeat, a mandate role named twice, and joins between staffing, the mandate
  * and packages. Each of

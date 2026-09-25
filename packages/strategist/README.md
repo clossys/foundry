@@ -290,6 +290,90 @@ facts to worry about" — it means there is no trustworthy ground truth at
 all, and the facts gate (below) is built to fail closed on exactly that
 case rather than silently passing.
 
+## Reading the engagement context before asking (issue #1173)
+
+A founder answers Advisor's engagement-context questions once — what kind
+of business this is, what it offers, who it's for, what stage it's at,
+what they want right now, and any constraints (`business`, `product`,
+`audience`, `stage`, `intent`, `constraints`). Every staffed repository
+carries a snapshot of that answer set in its own `clossys/brief.json`
+(`docs/contracts/engagement-brief.json`'s `context` property,
+`docs/DECISIONS.md` decision 28). `readEngagementContext` reads it against
+the one shared brief contract (issue #1475: `docs/contracts/engagement-brief.json`
+with `engagement-context.json`) — the same definition `@clossys/advisor`
+and `@clossys/launcher` validate against. This package's own build
+(`scripts/pack-brief-contract.mjs`) packs a generated copy of those two
+contract files, and of their one checker implementation
+(`packages/advisor/src/contract-schema.ts`), into `src/generated/` (gitignored)
+at build time — this package still has no `dependencies` entry in
+`package.json`, so it stays dependency-free of `@clossys/advisor` at
+runtime even though it validates against the exact contract Advisor owns.
+Every path named in this paragraph is in the public repository, not shipped in this package:
+
+```ts
+import { readEngagementContext, audienceContextValue } from "@clossys/strategist";
+
+const { context, note } = readEngagementContext(repositoryRoot); // default path: clossys/brief.json
+if (note) console.warn(note); // brief present but unreadable or invalid — asking everything, same as no brief
+audienceContextValue(context); // "consumers" | "businesses" | undefined
+```
+
+**All-or-nothing.** A missing `clossys/brief.json`, and a brief with no
+`context` property yet, both read as every field `unknown` with no `note`
+— neither is an error. Anything else is validated against the shared
+contract as a whole; a brief that does not fully validate reads as every
+field `unknown` too, with a fixed `note`, even when only one field is at
+fault — for example a duplicate context field id (the contract's own
+`contains`/`maxItems` rule refuses that outright, so this reader has no
+separate duplicate-id rule of its own to drift from it), an unknown
+top-level key, or a field object carrying any key beyond `{id, state,
+value}`. Only a brief that fully validates seeds anything; nothing is
+ever read from a field that happened to look fine inside an otherwise
+invalid document. The `note` itself never carries file text or founder
+text — only a fixed reason, an OS error code (`readEngagementContext`'s
+own file read), or a JSON syntax position (`readContractDocument`'s
+own strict-JSON check, which also refuses invalid UTF-8 and a
+repeated object key at any depth).
+
+### Not a renamed context question
+
+The brief's `audience` field is Advisor's own coarse fixed choice —
+everyday consumers, or other businesses — never founder prose. Strategist
+does not ask "consumers or businesses" again under its own id: `docs/DECISIONS.md`
+(in the public repository, not shipped in this package)
+decision 28 reserves a genuine rename of a context question for review,
+and a Strategist-owned card with Advisor's own two choices would be
+exactly that. When `audience` is unknown, `pendingAudienceIntakeQuestions`
+leads with a pointer back to Advisor's own context card instead, followed
+by the three questions that are genuinely distinct from every context
+field — a specific name, situation, and at least one pain, none of which
+any of the six context fields answers:
+
+```ts
+import { pendingAudienceIntakeQuestions, seedAudienceFromContext } from "@clossys/strategist";
+
+pendingAudienceIntakeQuestions(context);
+// [{ kind: "context-pointer", fieldId: "audience", note }, ...the 3 questions]  — audience unknown
+// [...the 3 questions]                                                          — audience known
+
+seedAudienceFromContext(context, bundle.audiences ?? []);
+// { seeded: false, reason: "audiences-already-recorded" } — bundle.audiences already has entries; never overwritten
+// { seeded: false, reason: "no-audience-context" }         — context.audience is unknown
+// { seeded: true, audience: { id, name, situation, notes }, provenance: { audience: "brief" } }
+```
+
+A seeded entry's `situation` is a neutral sentence this package builds
+from the coarse choice id itself (`"Consumers, per the engagement brief's
+audience answer — situation not yet described."`), not a copy of
+Advisor's own card label text — copying it would need a cross-package
+test to keep two packages' strings in sync for words a founder never
+actually said. It still lacks `pains` (`Audience`'s one required field
+this seed cannot fill), so it is not yet a valid `audiences.json` entry on
+its own — `audience-pains` stays asked until it is. Only the `audience`
+field maps into a Strategist record today; the other five context fields
+are readable through the same `EngagementContextSnapshot` but are not
+wired into any `clossys/strategist/*.json` seed yet.
+
 ## The `Fact` entity
 
 ```ts
@@ -872,6 +956,27 @@ anyone extending this package with their own entity.
 | `StrategyBundle` | type | `{ root, facts, mission?, positioning?, markets?, audiences?, roadmap?, brandEssence?, brandAttributes?, brandDerivations?, issues, complete }`. |
 | `StrategyReadIssue` | type | `{ file, reason: StrategyReadIssueReason, detail }` — one file that did not become usable data. |
 | `StrategyReadIssueReason` | type | `"unreadable" \| "unparseable" \| "invalid-schema" \| "missing-required"`. |
+
+### Engagement context (`engagement-context.ts`, `audience-intake.ts`)
+
+See "Reading the engagement context before asking" above.
+`scripts/pack-brief-contract.mjs` (in the public repository, not shipped in this package)
+packs a generated copy of the shared
+brief contract and its checker into `src/generated/` at build time, and
+these read `clossys/brief.json` against that packed copy, so this package
+stays dependency-free of `@clossys/advisor` at runtime.
+
+| Export | Kind | Purpose |
+| --- | --- | --- |
+| `readEngagementContext(repositoryRoot, briefRelPath?)` | function | Reads `<repositoryRoot>/<briefRelPath>` (default `clossys/brief.json`) as strict JSON and validates it against the shared brief contract. Never throws; a missing file reads as every field `unknown` with no `note`; an unreadable file, a file that is not strict JSON, or one that does not validate reads the same but with a `note` (all-or-nothing — see above). |
+| `readEngagementContextFromBriefData(rawBrief)` | function | The pure half of the above — takes an already-parsed `clossys/brief.json` value (or `undefined` for "no brief"). |
+| `engagementContextFieldById(context, id)` | function | The field with this id from a snapshot, or `undefined`. |
+| `audienceContextValue(context)` | function | The known `audience` field value (`"consumers" \| "businesses"`), or `undefined`. The one field id currently wired into a Strategist seed. |
+| `ENGAGEMENT_CONTEXT_FIELD_IDS` | const | `readonly EngagementContextFieldId[]` — `business`, `product`, `audience`, `stage`, `intent`, `constraints`, in the fixed field order. |
+| `EngagementContextSnapshot`, `EngagementContextField`, `EngagementContextFieldId`, `EngagementContextRead` | types | The snapshot shape — one entry per field id, `{ id, state: "known", value }` or `{ id, state: "unknown" }` — and the `{ context, note? }` read result. |
+| `pendingAudienceIntakeQuestions(context)` | function | The audience intake steps still worth taking. When `context`'s `audience` field is unknown, the first step is a `context-pointer` back to Advisor's own card — never a Strategist question that duplicates it; the three genuinely distinct questions (`audience-name`, `audience-situation`, `audience-pains`) always follow. |
+| `seedAudienceFromContext(context, existingAudiences)` | function | Proposes a starting `audiences.json` entry from the coarse `audience` field. Refuses (`seeded: false`) when `existingAudiences` already has entries, or when `audience` is unknown. Never fills `pains` — `Audience`'s one required field a coarse choice cannot honestly answer. |
+| `AudienceIntakeQuestion`, `AudienceContextPointer`, `AudienceIntakeStep`, `AudienceIntakeQuestionId`, `AudienceSeedResult` | types | `AudienceIntakeStep` is `AudienceIntakeQuestion \| AudienceContextPointer` — a Strategist question (`kind: "question"`, `id`, `prompt`) or a pointer back to Advisor's context card (`kind: "context-pointer"`, `fieldId`, `note`) — and the seed result union. |
 
 ### Handoff (`handoff.ts`)
 
