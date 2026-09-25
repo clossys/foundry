@@ -14,6 +14,7 @@ export {
   readInventoryRepositories,
   readLiveLauncherVersion,
   reportHubHealth,
+  validateInventoryDocument,
   CLOSSYS_DIR_REL,
   CLOSSYS_README_REL,
   DEFAULT_REPOSITORY_NAME,
@@ -24,7 +25,7 @@ export {
   WORKSPACE_INVENTORY_REL,
   WORKSPACE_MARKER_REL,
 } from "./core.js";
-export type { CloneMissingOutcome } from "./core.js";
+export type { CloneMissingOutcome, InventoryValidation } from "./core.js";
 export { runDoctorChecks, renderDoctorReport } from "./doctor.js";
 export { applyEngagementBrief, isPlanApproved, validateAdvisorPlan, validateEngagementBrief } from "./apply-plan.js";
 export type { AdvisorPlan, ApplyBriefResult, BlockerKind, EngagementBrief, EngagementBriefRole, PlanBlocker, PlanDecision, ValidationResult } from "./apply-plan.js";

@@ -467,4 +467,69 @@ describe("evaluateCiConventions", () => {
     expect(result.verdict).toBe("violated");
     expect(result.findings.some((f) => f.severity === "error")).toBe(true);
   });
+
+  describe("declaration.weeklyAdoption (#1187/#1259 cadence rule)", () => {
+    it("is skipped entirely when weeklyAdoption is omitted -- e.g. this repository, a producer not a consumer", () => {
+      const result = evaluateCiConventions({
+        workflowFiles: [file(".github/workflows/ci.yml", CONFORMING_CI)],
+        ruleset: RULESET,
+        declaration: DECLARATION,
+        packageVersion: "0.9.15",
+      });
+      expect(result.findings.map((f) => f.rule)).not.toEqual(
+        expect.arrayContaining([expect.stringMatching(/^ci\/weekly-adoption-/)]),
+      );
+    });
+
+    it("is skipped entirely when weeklyAdoption.applies is false", () => {
+      const result = evaluateCiConventions({
+        workflowFiles: [file(".github/workflows/ci.yml", CONFORMING_CI)],
+        ruleset: RULESET,
+        declaration: { ...DECLARATION, weeklyAdoption: { applies: false } },
+        packageVersion: "0.9.15",
+      });
+      expect(result.findings.map((f) => f.rule)).not.toEqual(
+        expect.arrayContaining([expect.stringMatching(/^ci\/weekly-adoption-/)]),
+      );
+    });
+
+    it("reports findings for a consuming repository with no updater configured and no provenance check required", () => {
+      const result = evaluateCiConventions({
+        workflowFiles: [file(".github/workflows/ci.yml", CONFORMING_CI)],
+        ruleset: RULESET,
+        declaration: {
+          ...DECLARATION,
+          weeklyAdoption: { applies: true, timezone: "America/Los_Angeles" },
+        },
+        packageVersion: "0.9.15",
+      });
+      expect(result.findings.map((f) => f.rule)).toEqual(
+        expect.arrayContaining(["ci/weekly-adoption-no-updater-configured", "ci/weekly-adoption-provenance-check-required"]),
+      );
+      expect(result.verdict).toBe("violated");
+    });
+
+    it("is satisfied for a conforming Renovate config plus integrator-provenance-check in required contexts", () => {
+      const renovateConfig = JSON.stringify({
+        packageRules: [{ matchPackagePatterns: ["^@clossys/"], groupName: "clossys", schedule: ["on sunday"] }],
+      });
+      const result = evaluateCiConventions({
+        workflowFiles: [file(".github/workflows/ci.yml", CONFORMING_CI)],
+        ruleset: RULESET,
+        declaration: {
+          ...DECLARATION,
+          weeklyAdoption: {
+            applies: true,
+            timezone: "America/Los_Angeles",
+            adoptionPrRequiredContexts: ["verify-build", "integrator-provenance-check"],
+            updaterConfig: { path: ".github/renovate.json", kind: "renovate", content: renovateConfig },
+          },
+        },
+        packageVersion: "0.9.15",
+      });
+      expect(result.findings.map((f) => f.rule)).not.toEqual(
+        expect.arrayContaining([expect.stringMatching(/^ci\/weekly-adoption-/)]),
+      );
+    });
+  });
 });

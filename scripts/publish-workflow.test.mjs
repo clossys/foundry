@@ -147,6 +147,72 @@ test("qualification is least privilege and owns candidate execution", () => {
 });
 
 // ---------------------------------------------------------------------------
+// The qualify job re-derives only the dispatched package's retained record.
+// Every retained record is re-derived by required CI on every non-prose
+// merge-group commit, which is the commit main advances to; the unscoped
+// walk here repeated that for ~25 minutes per dispatch (writer run
+// 36038887231).
+// ---------------------------------------------------------------------------
+
+const executableLines = (text) => text.split("\n").filter((line) => !/^\s*#/.test(line));
+
+test("qualify re-derives only the dispatched package's qualification record, never every record", () => {
+  const qualify = job("qualify");
+  const executable = executableLines(qualify);
+  assert.equal(executable.filter((line) => /check:candidate-qualification/.test(line)).length, 0, "the unscoped npm script re-derives every retained record; required CI already did, on this commit or its nearest non-prose ancestor");
+  const invocations = executable.filter((line) => /check-candidate-qualification\.mjs/.test(line));
+  assert.equal(invocations.length, 2, "one invocation per dry_run branch");
+  for (const line of invocations) assert.match(line, /^\s+node scripts\/check-candidate-qualification\.mjs --package "\$PKG"( --allow-missing-record)?$/);
+
+  const rederive = step(qualify, "Re-derive the dispatched package's qualification record");
+  assert.match(rederive, /if: \$\{\{ !inputs\.verify_only \}\}/);
+  assert.match(rederive, /PKG: \$\{\{ matrix\.package \}\}/);
+  assert.match(rederive, /DRY_RUN: \$\{\{ inputs\.dry_run \}\}/);
+  assert.ok(rederive.includes([
+    "          set -euo pipefail",
+    '          if [ "$DRY_RUN" = true ]; then',
+    '            node scripts/check-candidate-qualification.mjs --package "$PKG" --allow-missing-record',
+    "          else",
+    '            node scripts/check-candidate-qualification.mjs --package "$PKG"',
+    "          fi",
+  ].join("\n")), "a missing record may be allowed only on a dry run, which is how a new version's record is produced");
+
+  // History and the pinned runtime are what the re-derivation reads; the
+  // package input must be validated before it is passed on.
+  assert.match(qualify, /fetch-depth: 0/);
+  assert.ok(position(qualify, "- name: Assert replay toolchain") < position(qualify, "- name: Re-derive the dispatched package's qualification record"));
+  assert.ok(position(qualify, "- name: Validate package input") < position(qualify, "- name: Re-derive the dispatched package's qualification record"));
+  assert.ok(position(qualify, "- name: Re-derive the dispatched package's qualification record") < position(qualify, "- name: Install repository dependencies without lifecycle scripts"), "fail before the install and build");
+});
+
+/** One top-level job of ci.yml, from its key to the next job key. */
+function ciJob(ci, name) {
+  const start = ci.indexOf(`\n  ${name}:\n`);
+  assert.notEqual(start, -1, `ci.yml is missing ${name} job`);
+  const rest = ci.slice(start + 1);
+  const next = rest.slice(1).search(/^  [a-z][a-z0-9-]*:\n/m);
+  return next === -1 ? rest : rest.slice(0, next + 1);
+}
+
+test("the records qualify no longer re-derives are still required on every non-prose merge-group commit", () => {
+  const ci = readFileSync(".github/workflows/ci.yml", "utf8");
+  assert.match(ci, /^  merge_group:$/m);
+  assert.match(ci, /run: node scripts\/check-candidate-qualification\.mjs --shard-index \$\{\{ matrix\.shard \}\} --shard-count \$\{\{ env\.CANDIDATE_QUALIFICATION_SHARDS \}\}/);
+  // The shards may skip for the `prose` tier (its paths are disjoint from the
+  // walk's inputs) and for a duplicate push, and for nothing else: never for
+  // `packed-prose`, whose README/SKILL.md paths are inside package trees.
+  const shardIf = ciJob(ci, "candidate-qualification-shard").split("\n").filter((line) => /^    if: /.test(line));
+  assert.deepEqual(shardIf, ["    if: always() && (github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true') && (needs.classify.result != 'success' || needs.classify.outputs.tier != 'prose')"]);
+  assert.doesNotMatch(shardIf[0], /packed-prose/);
+  const build = ciJob(ci, "build");
+  assert.match(build, /^    name: build and test$/m);
+  assert.match(build, /^    needs: \[[^\]]*\bcandidate-qualification\b[^\]]*\]$/m);
+  assert.match(build, /"candidate-qualification=\$\{\{ needs\.candidate-qualification\.result \}\}"/);
+  const touches = readFileSync("scripts/check-touches-packages.mjs", "utf8");
+  assert.match(touches, /if \(eventName !== "pull_request"\) \{\n\s+report\(true,/);
+});
+
+// ---------------------------------------------------------------------------
 // ISSUE #757 — the file's prose must not describe a trigger the file lacks.
 // ---------------------------------------------------------------------------
 

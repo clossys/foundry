@@ -33,9 +33,12 @@ gate runs.
 
 ## What the safety gate refuses
 
-Credential-shaped strings, committed build output, agent-instruction files, and
-private identity — names, domains, handles, internal paths, and client or
-personal names that must never become public. Read [SECURITY.md](SECURITY.md)
+Credential-shaped strings, committed build output, agent-instruction files,
+file and directory names in absolute-path shapes only a machine produces
+(temp roots, encoded paths, Windows, WSL and marked macOS homes; SECURITY.md
+lists the exact five families and their known gaps), and private identity —
+names, domains, handles, internal paths, and client or personal names that
+must never become public. Read [SECURITY.md](SECURITY.md)
 for the full rule set, the one deliberate exemption to it, and for why the
 denylist is stored outside this repository.
 

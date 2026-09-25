@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { dayTypeFor, evaluateReleaseCalendarGate, filterReleasePrBranchRefs, nextMergeWindowStart, shouldOpenReleasePr, zonedDateParts } from "./release-calendar.mjs";
+import { dayTypeFor, evaluateReleaseCalendarGate, filterReleasePrBranchRefs, inProgressReleaseBranches, isLeftoverReleaseBranch, nextMergeWindowStart, releaseBranchPrListArgs, shouldOpenReleasePr, zonedDateParts } from "./release-calendar.mjs";
 
 const TZ = "America/Los_Angeles";
 
@@ -173,4 +173,87 @@ test("filterReleasePrBranchRefs: empty, missing, or malformed input returns no m
   assert.deepEqual(filterReleasePrBranchRefs(""), []);
   assert.deepEqual(filterReleasePrBranchRefs(undefined), []);
   assert.deepEqual(filterReleasePrBranchRefs("not a git ls-remote line at all\n"), []);
+});
+
+// -------------------------------------------------- inProgressReleaseBranches
+//
+// Issue #1392: "a leftover release branch from a closed-but-unmerged
+// release PR blocks every subsequent Saturday". delete_branch_on_merge only
+// deletes the branch on a real MERGE, so a release PR closed without
+// merging (superseded, abandoned) leaves its branch matching
+// RELEASE_PR_BRANCH_PATTERN on the remote forever -- without this function,
+// the guard would read that branch as "a release is in progress" every
+// single Saturday from then on, silently, with no error.
+
+const B = "claude/release-2027-01-09-12";
+const same = (state) => ({ state, isCrossRepository: false });
+const fork = (state) => ({ state, isCrossRepository: true });
+
+test("inProgressReleaseBranches: a branch with no PR at all (the ordinary push-then-stop window) counts as in progress", () => {
+  assert.deepEqual(inProgressReleaseBranches([B], {}), [B]);
+  assert.deepEqual(inProgressReleaseBranches([B], { [B]: [] }), [B]);
+});
+
+test("inProgressReleaseBranches: a branch whose same-repository PR is still OPEN counts as in progress", () => {
+  assert.deepEqual(inProgressReleaseBranches([B], { [B]: [same("OPEN")] }), [B]);
+});
+
+test("inProgressReleaseBranches: a branch whose only same-repository PR was CLOSED without merging is a leftover -- excluded", () => {
+  assert.deepEqual(inProgressReleaseBranches([B], { [B]: [same("CLOSED")] }), []);
+});
+
+test("inProgressReleaseBranches: a branch whose only same-repository PR MERGED is a leftover too (delete_branch_on_merge just hasn't landed yet)", () => {
+  assert.deepEqual(inProgressReleaseBranches([B], { [B]: [same("MERGED")] }), []);
+});
+
+// Review B1: `gh pr list --head <branch>` matches by branch NAME, fork PRs
+// included. A same-named fork PR opened and closed must never turn a real,
+// pushed-but-not-yet-opened release branch into a "leftover".
+test("inProgressReleaseBranches: a cross-repository (fork) CLOSED PR alone never makes a branch leftover", () => {
+  assert.deepEqual(inProgressReleaseBranches([B], { [B]: [fork("CLOSED")] }), [B]);
+  assert.deepEqual(inProgressReleaseBranches([B], { [B]: [fork("MERGED"), fork("CLOSED")] }), [B]);
+});
+
+test("inProgressReleaseBranches: cross-repository CLOSED PRs are ignored even with no same-repository PR at all", () => {
+  assert.equal(isLeftoverReleaseBranch([fork("CLOSED")]), false);
+  assert.deepEqual(inProgressReleaseBranches([B], { [B]: [fork("CLOSED"), fork("CLOSED")] }), [B]);
+});
+
+test("inProgressReleaseBranches: ANY same-repository OPEN PR keeps the branch in progress, whatever the order", () => {
+  assert.deepEqual(inProgressReleaseBranches([B], { [B]: [same("CLOSED"), same("OPEN")] }), [B]);
+  assert.deepEqual(inProgressReleaseBranches([B], { [B]: [same("OPEN"), same("CLOSED")] }), [B]);
+  assert.deepEqual(inProgressReleaseBranches([B], { [B]: [fork("CLOSED"), same("MERGED"), same("OPEN")] }), [B]);
+});
+
+test("inProgressReleaseBranches: same-repository MERGED only (fork noise ignored) is leftover", () => {
+  assert.deepEqual(inProgressReleaseBranches([B], { [B]: [same("MERGED")] }), []);
+  assert.deepEqual(inProgressReleaseBranches([B], { [B]: [fork("OPEN"), same("MERGED")] }), [], "an open FORK PR does not decide either way");
+});
+
+test("inProgressReleaseBranches: an unknown state, or an entry without an explicit isCrossRepository, counts as in progress", () => {
+  assert.deepEqual(inProgressReleaseBranches([B], { [B]: [same("DRAFT")] }), [B]);
+  assert.deepEqual(inProgressReleaseBranches([B], { [B]: [same("CLOSED"), same(undefined)] }), [B]);
+  assert.deepEqual(inProgressReleaseBranches([B], { [B]: [{ state: "CLOSED" }] }), [B], "a response missing isCrossRepository is not trusted as same-repository");
+  assert.deepEqual(inProgressReleaseBranches([B], { [B]: { state: "CLOSED" } }), [B], "a non-array entry is not trusted");
+  assert.deepEqual(inProgressReleaseBranches([B], { [B]: [null] }), [B]);
+});
+
+test("inProgressReleaseBranches: a mix keeps only the genuinely in-progress branches", () => {
+  const branches = ["claude/release-2027-01-01-1", "claude/release-2027-01-08-2", "claude/release-2027-01-15-3", "claude/release-2027-01-22-4"];
+  const prsByBranch = {
+    "claude/release-2027-01-08-2": [same("CLOSED")], // leftover, abandoned
+    "claude/release-2027-01-15-3": [same("OPEN")], // real release PR, still under review
+    // 2027-01-01-1 has no entry at all: pushed, PR not opened yet
+    "claude/release-2027-01-22-4": [fork("CLOSED")], // pushed, PR not opened yet; a fork PR shares the name
+  };
+  assert.deepEqual(inProgressReleaseBranches(branches, prsByBranch), ["claude/release-2027-01-01-1", "claude/release-2027-01-15-3", "claude/release-2027-01-22-4"]);
+});
+
+test("releaseBranchPrListArgs: asks gh for every PR on the head name (not just the default 30), with the cross-repository flag", () => {
+  assert.deepEqual(releaseBranchPrListArgs("clossys/foundry", B), ["pr", "list", "--repo", "clossys/foundry", "--head", B, "--state", "all", "--limit", "1000", "--json", "state,isCrossRepository"]);
+});
+
+test("inProgressReleaseBranches: empty/missing inputs return no matches rather than throwing", () => {
+  assert.deepEqual(inProgressReleaseBranches([], {}), []);
+  assert.deepEqual(inProgressReleaseBranches(undefined, undefined), []);
 });

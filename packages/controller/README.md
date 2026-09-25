@@ -2104,6 +2104,7 @@ adapter can find the shared guidance without duplicating it.
 | `renderProductLoader` | function | Renders a small pointer file a consuming product installs to reach shared guidance without duplicating it. |
 | `sameSet` / `canonicalJson` / `sameCanonicalJson` / `nonEmptyString` / `sorted` | functions | Dependency-free comparison primitives: order-independent sequence equality, deep key-order-independent JSON equality, and a non-empty-string type guard. |
 | `evaluateCiConventions` | function | The pure evaluator for `conventions/documents/ci-conventions.md` (issue #1259) — see below. |
+| `evaluateWeeklyAdoption` | function | The pure evaluator for the weekly Sunday `@clossys/*` adoption convention — see below. |
 | `parseYamlLite` / `YamlLiteParseError` | function / class | A small, well-tested YAML subset parser for GitHub Actions workflow files — see below. |
 | `ConventionDocument` / `ConventionAdapter` / `RoutineDeclaration` / `RoutineRegistry` / `ScheduleDeclaration` / `ScheduleRegistry` / `Finding` / `Severity` | types | Shapes shared across the validators above. |
 | `LiveStateSurfaceDeclaration` / `LiveStateSurfaceFindingKind` / `LiveStateDriftKind` / `LiveStateFinding` / `LiveStateSubjectReport` / `LiveStateReconciliationResult` / `LiveStateReconciliationReason` / `LiveStateObservation` / `LiveStateDeclarationValue` / `ReconcileLiveStateInput` | types | The `liveStateSurface` declaration, its finding vocabulary, and the shapes `reconcileLiveState` reads and returns. |
@@ -2166,6 +2167,19 @@ straight through. `conventions/templates/ci-workflow.yml`, resolved by
 `templatePath("ci-workflow.yml")`, is a conforming skeleton a scaffold can
 compose into a new repository — a test in this package runs the real
 shipped file through `evaluateCiConventions` and asserts it passes.
+
+`ci-conventions.md`'s own **Weekly Sunday `@clossys/*` adoption** section
+(owner direction 2026-09-23, #1187/#1259's cadence rule) is a consuming
+repository's own dependency-update cadence: one grouped `@clossys/*` update
+pull request per week, scheduled for Sunday, via Renovate or Dependabot, with
+security advisories bypassing that schedule and `integrator-provenance-check`
+(#885/#1169) required on the adoption PR. `evaluateWeeklyAdoption`
+(`weekly-adoption.ts`) is its pure evaluator, reading an already-read
+Renovate (`JSON.parse`) or Dependabot (`parseYamlLite`) config; `declaration
+.weeklyAdoption` wires it into `evaluateCiConventions` itself. Omitted (or
+`applies: false`) — this package's own declaration included, since it
+produces `@clossys/*` rather than consuming it — every `ci/weekly-adoption-*`
+rule is skipped as not applicable, never reported as a gap.
 
 ### `./policy`: the content-addressed binding primitive
 

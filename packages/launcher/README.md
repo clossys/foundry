@@ -48,6 +48,35 @@ listed is no longer composed (its source disappeared), so launcher removes
 its composed output and host discovery links — and only that. It never
 touches a skill it did not itself write.
 
+The recorded digest is how launcher tells whether it still owns a composed
+skill. Before rewriting or retiring one, it compares the file on disk
+(`.agents/skills/clossys-<package>/SKILL.md`, and any real-directory copy
+at a host discovery path) with the digest it recorded when it last wrote
+that file:
+
+| On disk | Rewrite (skill still composed) | Retire (skill no longer composed) |
+| --- | --- | --- |
+| Matches the recorded digest | Rewritten | Removed, with its discovery links |
+| Edited since launcher wrote it | Left as is and reported | Left as is, with its discovery links, and reported |
+| Missing | Recreated | Retirement completes (discovery links removed) |
+| No recorded digest (first run, or an older install) | Adopted if it already equals what launcher would write; otherwise left as is and reported | Not touched: launcher only retires a skill its manifest records |
+
+A `SKILL.md` that exists but cannot be read (a permissions error, or a
+directory in its place) is treated like an edited one: left as is and
+reported. A retiring skill directory that holds files other than `SKILL.md`
+is also left as is and reported; a macOS `.DS_Store` file is ignored for
+this check. Each skill left as is appears in the health report as a
+`skill preserved` line naming the file or directory that failed the check,
+and in the report JSON under
+`skillComposition.preserved`; it marks the report degraded, and it is
+reported again on every run until resolved. Launcher recreates a missing
+composed skill because `.agents/skills` is launcher-generated output, so
+recreating it loses nothing a client wrote. That is also how to take
+launcher's version of a skill you edited: move your copy aside, delete the
+directory the `skill preserved` line names (usually
+`.agents/skills/clossys-<package>/`), and run launcher again. To keep your
+edit instead, leave the file as it is.
+
 ## Health report and staleness
 
 After create, resume, or appoint — and on every resume — the command prints
@@ -59,7 +88,9 @@ pin older than live is a `stale pin` finding and marks the report
 **degraded**. The report is also degraded when Advisor is missing, dual-pinned,
 or present in any bucket other than `devDependencies`, and when apply skipped
 one or more inventoried roster targets (missing sibling clone, origin mismatch,
-and similar — the same `skill roster skipped` lines in the report). Per-package
+and similar — the same `skill roster skipped` lines in the report), and when
+a composed skill was left as is because a client edited it (the
+`skill preserved` lines above, for the hub and every sibling clone). Per-package
 skill sources missing from the catalogue are noted but do not by themselves mark
 degraded. Exit stays 0 on resume
 (the report is advisory); adopt prints the same report and an unparseable
@@ -188,12 +219,13 @@ Exit codes preserve the ternary:
 | `planWorkspace()` | Decides create, resume, or adopt from a cwd observation. Optional `{ inventoryPath }` is the only way to appoint without a populated on-disk inventory. |
 | `applyWorkspacePlan()` | Copies the in-package skeleton or hub marker through a host port and returns a `WorkspaceApplyResult` with health. Composes the same skill voices (with the shared conversation contract injected) on the hub and on inventoried sibling checkouts beside it; refreshes stale hub guidance and the generated `clossys/` README on every path, including resume; migrates a legacy `.clossys/` hub state automatically. Optional `{ skillCatalogueRoot, launcherPackageRoot, contractPath, liveLauncherVersion }` selects where skill and contract bodies are read and grades skill-manifest staleness. |
 | `observeWorkspace()` | Reads `gh`, git remotes, cwd, inventory classification, hub-state migration status, and the public Advisor version. |
-| `readInventoryRepositories()` | Reads repository ids from a `schemaVersion: 1` inventory document. |
+| `readInventoryRepositories()` | Reads repository ids from an inventory document, routed through `validateInventoryDocument()` (a missing file reads as no ids; anything present but schema-invalid throws, naming the offending field -- never silently accepted or silently emptied). |
 | `readLiveLauncherVersion()` | Reads the public `@clossys/launcher` registry version, used only to grade catalogue-sourced skill staleness. |
 | `launcherPackageRootFromModule()` | Resolves this package's root from `import.meta.url` so apply can find the packed skill catalogue and contract. |
 | `parseGitHubRemote()` | Parses a github.com remote and rejects any other host. |
 | `isHubDocument()` | Type guard for the generated hub marker (packed template: `skeleton/clossys/.state/workspace.json`). |
-| `inspectInventory()` | Classifies inventory JSON as missing, empty, or populated. |
+| `inspectInventory()` | Classifies inventory JSON as missing, empty, populated, or invalid (malformed or schema-mismatched -- never silently folded into empty; see `validateInventoryDocument()`). |
+| `validateInventoryDocument()` | Strictly validates an inventory document's text against the inventory contract (#1334), which ships with this package (`schemaVersion: 1`, a `repositories` array of `{ id, packages? }` entries -- `id` a bare repository name or `owner/name` in the same format Launcher's own sibling/clone resolution requires, case-insensitively unique; `packages`, when present, shaped exactly as `@clossys/integrator`'s `InventoryPackageEntry`, no other key). Returns `{ valid: true, ids }` or `{ valid: false, reason }` naming the offending field. Every read of an inventory document -- `--inventory`, the on-disk `clossys/.state/inventory.json` (a hub path, not shipped in this package) on every resume, and `readInventoryRepositories()` -- routes through this; a document that merely resembles an inventory (for example a governance record whose entries also carry `role`, `visibility`, `status`, `notes`) is refused, never adopted or silently read as though it validated (#1334). |
 | `reportHubHealth()` | Read-only pin, inventory, migration, and skills-manifest report. Does not install or uninstall. |
 | `formatHubHealth()` | Human lines plus a `health:` JSON line for the same report. |
 | `hasAdvisorPin()` | True when a manifest already pins Advisor in any dependency bucket. |

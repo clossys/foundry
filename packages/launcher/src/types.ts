@@ -75,8 +75,17 @@ export interface SkillsManifestSummary {
 }
 
 export interface InventoryObservation {
-  readonly status: "missing" | "empty" | "populated";
+  /**
+   * "invalid" means a document was found but does not conform to the
+   * inventory schema (bad JSON, wrong shape, an unrecognized field, or a
+   * duplicate repository id) -- distinct from "empty" (a well-formed,
+   * zero-entry document) so a malformed document is reported, never
+   * silently treated as if it were merely empty.
+   */
+  readonly status: "missing" | "empty" | "populated" | "invalid";
   readonly count: number;
+  /** Present only when status is "invalid"; names the offending field. */
+  readonly reason?: string;
 }
 
 /** A package.json dependency bucket scanned for the advisor pin. */
@@ -132,6 +141,18 @@ export interface HubHealthReport {
     readonly rosterTargets?: readonly string[];
     readonly rosterSkipped?: readonly { readonly inventoryId: string; readonly note: string }[];
     readonly retired?: readonly string[];
+    /**
+     * Composed skills left exactly as found because their on-disk content is not
+     * provably what Launcher last wrote (#1473) -- in the hub, or (with `target`
+     * naming the inventory id) in a sibling clone. Any entry marks the report degraded.
+     */
+    readonly preserved?: readonly {
+      readonly target?: string;
+      readonly packageDir: string;
+      readonly action: "rewrite" | "retire";
+      readonly path: string;
+      readonly note: string;
+    }[];
   };
   /** Present only on the run that performed the `.clossys/` -> `clossys/.state/` migration. */
   readonly migration?: { readonly status: "migrated"; readonly from: string; readonly to: string };
@@ -202,6 +223,10 @@ export interface WorkspacePlanAdopt {
   readonly inventorySource?: string;
   /** Merged repository ids (on-disk first, then new ids from --inventory) written when both sources are populated. */
   readonly mergedInventoryIds?: readonly string[];
+  /** The merged entries themselves (each entry's `packages` kept), in the same order as `mergedInventoryIds`; what apply writes (#1334). */
+  readonly mergedInventoryRepositories?: readonly { readonly id: string; readonly packages?: unknown }[];
+  /** Set when `inventorySource` is about to replace an on-disk inventory that failed schema validation, so the apply message can say it was replaced rather than merely written (#1334). */
+  readonly replacesInvalidInventory?: boolean;
 }
 
 export type WorkspacePlan = WorkspacePlanCreate | WorkspacePlanResume | WorkspacePlanAdopt;

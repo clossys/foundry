@@ -127,6 +127,53 @@ describe("launcher CLI", () => {
     expect(String(err.mock.calls[0]?.[0])).not.toMatch(/only valid when appointing/);
   });
 
+  it("refuses --inventory whose entries carry unrecognized fields and writes nothing (issue #1334 repro)", () => {
+    const directory = mkdtempSync(join(tmpdir(), "launcher-strict-inventory-"));
+    roots.push(directory);
+    mkdirSync(join(directory, ".git"), { recursive: true });
+    const source = join(directory, "governance-record.json");
+    // Shaped closely enough to look like an inventory -- a `repositories`
+    // array with `id`, `role`, `visibility`, `status`, `notes` -- but not
+    // actually a launcher inventory document (the exact #1334 repro).
+    writeFileSync(
+      source,
+      `${JSON.stringify(
+        {
+          schemaVersion: 1,
+          repositories: [
+            { id: "app", role: "product", visibility: "public", status: "active", notes: "primary surface" },
+            { id: "site", role: "marketing", visibility: "public", status: "active", notes: "" },
+            { id: "billing", role: "internal", visibility: "private", status: "active", notes: "" },
+            { id: "docs", role: "docs", visibility: "public", status: "retired", notes: "" },
+          ],
+        },
+        null,
+        2,
+      )}\n`,
+    );
+    const err = vi.spyOn(console, "error").mockImplementation(() => {});
+    const log = vi.spyOn(console, "log").mockImplementation(() => {});
+    const code = main(
+      ["--inventory", "governance-record.json"],
+      host(directory, {
+        "git --version": { status: 0, stdout: "git\n", stderr: "" },
+        "git remote get-url origin": { status: 0, stdout: "git@github.com:acme/central.git\n", stderr: "" },
+        "npm view @clossys/advisor version": { status: 0, stdout: "0.1.5\n", stderr: "" },
+      }),
+      skeletonRoot,
+    );
+    expect(code).toBe(1);
+    expect(String(err.mock.calls[0]?.[0])).toMatch(/unrecognized field "role"/);
+    // Refusal happens before any file is touched: no hub marker, no
+    // inventory, no clossys/ folder, no package.json, nothing beyond the
+    // two files this test itself seeded.
+    expect(existsSync(join(directory, WORKSPACE_MARKER_REL))).toBe(false);
+    expect(existsSync(join(directory, "clossys"))).toBe(false);
+    expect(existsSync(join(directory, "package.json"))).toBe(false);
+    expect(readdirSync(directory).sort()).toEqual([".git", "governance-record.json"]);
+    expect(log).not.toHaveBeenCalled();
+  });
+
   it("resumes and migrates a legacy .clossys/ hub marker automatically, reporting the migration", () => {
     const directory = mkdtempSync(join(tmpdir(), "launcher-legacy-resume-"));
     roots.push(directory);
