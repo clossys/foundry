@@ -38,8 +38,10 @@ Advisor has three parts, and each has one home:
   source.
 - **The engine**, the `@clossys/advisor` package, is pinned in the hub. A
   repository that needs one of its bins can run
-  `npx @clossys/advisor@<the hub's exact version>` rather than pinning a
-  second copy that could reach a different verdict.
+  `npx --package=@clossys/advisor@<the hub's exact version> advisor-check`
+  rather than pinning a second copy that could reach a different verdict.
+  The package has no bin named after itself, so name the bin you need;
+  `advisor-execution-readiness` and `advisor-render-status` run the same way.
 - **The voice**, the `@clossys-advisor` skill, is composed by the launcher into
   every inventoried repository and needs no install there. That is where you
   talk to Advisor.
@@ -119,8 +121,9 @@ scope in `minimumReleaseAgeExclude` next to `minimumReleaseAge` (as
 `integrator-provenance-check` in CI after install. It exits 1 for a
 `@clossys` package whose provenance is missing or does not match, so a
 version from a package's first identity publication (the one exception
-above, which carries none) fails it until that package publishes again
-through `publish.yml`.
+above, which carries none) keeps failing it: provenance cannot be added
+to a version after it is published. The fix is to upgrade to a later
+version of that package published through `publish.yml`.
 
 **What "verifiable anonymously" means, exactly.** The public npm registry
 serves `GET https://registry.npmjs.org/-/npm/v1/attestations/<pkg>@<version>`
