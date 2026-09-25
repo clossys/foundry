@@ -1,0 +1,112 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/clossys/foundry/blob/main/docs/contracts/advisor-plan.json",
+  "title": "Advisor plan",
+  "description": "Issue #1175 and #1475: the plan record at clossys/advisor/plan.json that Advisor writes and renders into its STATUS document, and that Launcher reads before it applies an approved plan. packages/advisor/src/status.ts's AdvisorPlan type is the shape's owner; this file is the one definition both @clossys/advisor and @clossys/launcher validate against (each package packs it at build time, so neither depends on the other). Every object is closed: a key this contract does not declare is refused, never ignored, because an unknown key is either a typo or a field some other reader would silently drop. A later field is added here first, in the same change as its reader. Every time is a real calendar time, asserted field by field through `format` (see definitions.dateTime and definitions.date), never by shape alone, so each one parses and can be ordered. The canonical plan digest, which an approval binds, is defined in docs/contracts/advisor-plan-digest.md; its fixture corpus is docs/contracts/advisor-plan-digest.fixture.json.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "asOf", "mandate", "whereWeAre", "recommendedNext", "decisions", "blockers"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "asOf": { "$ref": "#/definitions/dateTime", "description": "When this plan record was last written. Excluded from the canonical plan digest." },
+    "mandate": { "$ref": "#/definitions/mandate" },
+    "whereWeAre": {
+      "type": "array",
+      "description": "A few plain-language status lines.",
+      "items": { "$ref": "#/definitions/nonBlankString" }
+    },
+    "recommendedNext": {
+      "description": "The one pending step for the whole plan, or null once nothing is pending.",
+      "oneOf": [{ "type": "null" }, { "$ref": "#/definitions/recommendedNext" }]
+    },
+    "decisions": {
+      "type": "array",
+      "description": "What was recommended, what was chosen, when, and by whom. The plan is approved when the most recent entry by `at` has chosen \"approved\". Excluded from the canonical plan digest, because an approval is itself recorded here.",
+      "items": { "$ref": "#/definitions/decision" }
+    },
+    "blockers": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/blocker" }
+    }
+  },
+  "definitions": {
+    "nonBlankString": {
+      "title": "a string with at least one non-whitespace character",
+      "type": "string",
+      "pattern": "\\S"
+    },
+    "dateTime": {
+      "title": "a real ISO 8601 date-time with a time zone, such as 2026-09-24T12:00:00Z",
+      "description": "format date-time, asserted field by field: YYYY-MM-DDThh:mm, optional :ss and fraction, then Z or +hh:mm/-hh:mm. Month 01-12; a day that exists in that month of that year (leap years included); hours 00-23; minutes and seconds 00-59 (no leap second); offset hours 00-23 and minutes 00-59; and Date.parse must give a finite time. So 2026-02-30, 2026-09-24T24:30:00Z and +24:00 are refused, and every accepted time can be ordered.",
+      "type": "string",
+      "format": "date-time"
+    },
+    "date": {
+      "title": "a real ISO 8601 date such as 2026-09-24",
+      "description": "format date, asserted field by field: YYYY-MM-DD with month 01-12 and a day that exists in that month of that year (leap years included), and a finite Date.parse.",
+      "type": "string",
+      "format": "date"
+    },
+    "dateOrDateTime": {
+      "title": "a real ISO 8601 date such as 2026-09-24, or a date-time with a time zone such as 2026-09-24T12:00:00Z",
+      "oneOf": [{ "$ref": "#/definitions/date" }, { "$ref": "#/definitions/dateTime" }]
+    },
+    "mandate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["problem", "primaryProblemId", "roles"],
+      "properties": {
+        "problem": { "$ref": "#/definitions/nonBlankString", "description": "The client's problem, in their own words." },
+        "primaryProblemId": { "$ref": "#/definitions/nonBlankString" },
+        "roles": { "type": "array", "items": { "$ref": "#/definitions/nonBlankString" } }
+      }
+    },
+    "recommendedNext": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["action", "owner"],
+      "properties": {
+        "action": { "$ref": "#/definitions/nonBlankString" },
+        "owner": { "$ref": "#/definitions/nonBlankString" },
+        "due": { "$ref": "#/definitions/dateOrDateTime", "description": "Optional." }
+      }
+    },
+    "decision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["at", "recommended", "chosen", "by"],
+      "properties": {
+        "at": { "$ref": "#/definitions/dateTime" },
+        "recommended": { "$ref": "#/definitions/nonBlankString" },
+        "chosen": { "$ref": "#/definitions/nonBlankString" },
+        "by": { "$ref": "#/definitions/nonBlankString" }
+      }
+    },
+    "blockerKind": {
+      "description": "The five blocker kinds of the Controller loop record (docs/contracts/loop.json), in their fixed order.",
+      "enum": ["missing-input", "missing-authority", "failing-evidence", "unavailable-environment", "contradiction"]
+    },
+    "blocker": {
+      "type": "object",
+      "description": "One capability at rest with exactly one next action. Field for field the same shape as the Controller loop record's Blocker.",
+      "additionalProperties": false,
+      "required": ["capabilityId", "kind", "owner", "nextAction", "since"],
+      "properties": {
+        "capabilityId": { "$ref": "#/definitions/nonBlankString" },
+        "kind": { "$ref": "#/definitions/blockerKind" },
+        "owner": { "$ref": "#/definitions/nonBlankString" },
+        "nextAction": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["who", "how", "byWhen"],
+          "properties": {
+            "who": { "$ref": "#/definitions/nonBlankString" },
+            "how": { "$ref": "#/definitions/nonBlankString" },
+            "byWhen": { "$ref": "#/definitions/dateOrDateTime" }
+          }
+        },
+        "since": { "$ref": "#/definitions/dateTime", "description": "When the blocker was recorded." }
+      }
+    }
+  }
+}

@@ -25,12 +25,13 @@ export { KIT_PRESETS } from "./kit-presets.js";
 export {
   composeKit, composeKitFromProblems, validateKitProposal, judgeNeedsCycles, needIsMet, FIRST_ENGAGEMENT_ROLE_CAP, EVIDENCE_LEVELS, evidenceAtLeast, presetEvidenceFindings,
 } from "./composition.js";
-export { contextFromBrief, toEngagementBrief } from "./engagement-brief.js";
+export { contextFromBrief, toEngagementBrief, validateEngagementBrief } from "./engagement-brief.js";
 export { ENGAGEMENT_CONTEXT_FIELD_IDS, fieldById } from "./context.js";
 export { nextContextQuestion, applyContextChoice } from "./context-questions.js";
 export { CLIENT_PROBLEMS } from "./client-problems.js";
 export { nextProblemQuestion, applyProblemChoice } from "./problem-questions.js";
 export { ADVISOR_BLOCKER_KINDS, renderAdvisorStatus, validateAdvisorPlan } from "./status.js";
+export { PLAN_DIGEST_EXCLUDED_FIELDS, canonicalJson, planDigest } from "./plan-digest.js";
 export { recommendKit } from "./kit-verdicts.js";
 export { nextStepInstruction } from "./next-step.js";
 export { validateManagedEngagement, proposalReadyForClient } from "./managed-engagement.js";

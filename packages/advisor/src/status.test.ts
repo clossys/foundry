@@ -67,34 +67,37 @@ describe("validateAdvisorPlan (blocker shape shared with Controller's loop.json 
   it("rejects a blocker missing capabilityId, owner, since, or nextAction", () => {
     const blocker = { kind: "missing-input" };
     const findings = validateAdvisorPlan({ ...BASE_PLAN, blockers: [blocker] });
-    const rules = findings.map((finding) => finding.rule);
-    expect(rules).toContain("blocker-capability-id");
-    expect(rules).toContain("blocker-owner");
-    expect(rules).toContain("blocker-since");
-    expect(rules).toContain("blocker-next-action");
+    const paths = findings.map((finding) => finding.path);
+    expect(paths).toContain("blockers[0].capabilityId");
+    expect(paths).toContain("blockers[0].owner");
+    expect(paths).toContain("blockers[0].since");
+    expect(paths).toContain("blockers[0].nextAction");
+    expect(findings.every((finding) => finding.rule === "advisor-plan-contract")).toBe(true);
   });
 
-  it("rejects an old-shape blocker (description/dueDate) the same way -- it has no capabilityId, owner is present but nextAction/since are missing", () => {
+  it("rejects an old-shape blocker (description/dueDate) the same way -- it has no capabilityId, owner is present but nextAction/since are missing, and its extra fields are refused", () => {
     const oldShapeBlocker = { kind: "missing-input", description: "no evidence yet", owner: "this-role", dueDate: "2026-09-25T00:00:00Z" };
     const findings = validateAdvisorPlan({ ...BASE_PLAN, blockers: [oldShapeBlocker] });
-    const rules = findings.map((finding) => finding.rule);
-    expect(rules).toContain("blocker-capability-id");
-    expect(rules).toContain("blocker-since");
-    expect(rules).toContain("blocker-next-action");
+    const paths = findings.map((finding) => finding.path);
+    expect(paths).toContain("blockers[0].capabilityId");
+    expect(paths).toContain("blockers[0].since");
+    expect(paths).toContain("blockers[0].nextAction");
+    expect(paths).toContain("blockers[0].description");
+    expect(paths).toContain("blockers[0].dueDate");
   });
 
   it("rejects a nextAction missing who, how, or byWhen", () => {
     const blocker = { ...BLOCKER, nextAction: { who: "sponsor" } };
     const findings = validateAdvisorPlan({ ...BASE_PLAN, blockers: [blocker] });
-    const rules = findings.map((finding) => finding.rule);
-    expect(rules).toContain("blocker-next-action-how");
-    expect(rules).toContain("blocker-next-action-by-when");
+    const paths = findings.map((finding) => finding.path);
+    expect(paths).toContain("blockers[0].nextAction.how");
+    expect(paths).toContain("blockers[0].nextAction.byWhen");
   });
 
   it("rejects a kind outside the five values #1195/#1237 declare", () => {
     const blocker = { ...BLOCKER, kind: "some-other-kind" };
     const findings = validateAdvisorPlan({ ...BASE_PLAN, blockers: [blocker] });
-    expect(findings.some((finding) => finding.rule === "blocker-kind")).toBe(true);
+    expect(findings.some((finding) => finding.path === "blockers[0].kind")).toBe(true);
   });
 
   it("ADVISOR_BLOCKER_KINDS is exactly Controller's own five, same order (kinds agree; only the record shape was locally divergent)", () => {
