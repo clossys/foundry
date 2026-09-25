@@ -1,12 +1,16 @@
-import { existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync, symlinkSync, writeFileSync } from "node:fs";
+import { execFileSync } from "node:child_process";
+import { createHash } from "node:crypto";
+import { existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, readlinkSync, rmSync, statSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, describe, expect, it } from "vitest";
 import {
   ADVISOR_PACKAGE,
+  INTEGRATOR_PACKAGE,
   CONSUMER_AGENTS_MD,
   LEGACY_CONSUMER_AGENTS_MD,
+  SIBLING_COMPOSING_CONSUMER_AGENTS_MD,
   applyWorkspacePlan,
   cloneMissingInventoryRepositories,
   checkInventoryEntries,
@@ -106,6 +110,24 @@ function writeInventory(directory: string, repositories: readonly unknown[] = [{
   );
 }
 
+/** An `acme/hub` hub marker. */
+function writeHubMarker(directory: string): void {
+  mkdirSync(dirname(join(directory, WORKSPACE_MARKER_REL)), { recursive: true });
+  writeFileSync(
+    join(directory, WORKSPACE_MARKER_REL),
+    `${JSON.stringify({ schemaVersion: 1, kind: "account-hub", owner: "acme", repository: "acme/hub" }, null, 2)}\n`,
+  );
+}
+
+/** A hub package.json pinning both engines in devDependencies, so the health report grades only what a test is about. */
+function writeEnginePins(directory: string, advisor = "0.5.0", integrator = "0.8.2"): void {
+  mkdirSync(directory, { recursive: true });
+  writeFileSync(
+    join(directory, "package.json"),
+    `${JSON.stringify({ name: "hub", devDependencies: { [ADVISOR_PACKAGE]: advisor, [INTEGRATOR_PACKAGE]: integrator } }, null, 2)}\n`,
+  );
+}
+
 function writeLegacyHub(directory: string, owner: string, repository: string, repositories: readonly unknown[] = [{ id: "app" }]): void {
   mkdirSync(join(directory, ".clossys"), { recursive: true });
   writeFileSync(
@@ -147,6 +169,7 @@ function observation(overrides: Partial<WorkspaceObservation> = {}): WorkspaceOb
   return {
     ownerCandidates: ["acme"],
     advisorVersion: "0.1.5",
+    integratorVersion: "0.8.2",
     ghAvailable: true,
     gitAvailable: true,
     ...overrides,
@@ -201,6 +224,7 @@ describe("planWorkspace", () => {
       repository: "central",
       directory: "/tmp/central",
       advisorVersion: "0.1.5",
+    integratorVersion: "0.8.2",
     });
   });
 
@@ -230,6 +254,7 @@ describe("planWorkspace", () => {
       repository: DEFAULT_REPOSITORY_NAME,
       directory: "/tmp/hub",
       advisorVersion: "0.1.5",
+    integratorVersion: "0.8.2",
     });
   });
 
@@ -649,6 +674,432 @@ describe("hasAdvisorPin", () => {
   });
 });
 
+describe("hub engine pins: Advisor and Integrator (S3-0)", () => {
+  function writeHubMarker(directory: string): void {
+    mkdirSync(dirname(join(directory, WORKSPACE_MARKER_REL)), { recursive: true });
+    writeFileSync(
+      join(directory, WORKSPACE_MARKER_REL),
+      `${JSON.stringify({ schemaVersion: 1, kind: "account-hub", owner: "acme", repository: "acme/hub" }, null, 2)}\n`,
+    );
+    writeInventory(directory, [{ id: "acme/hub" }]);
+  }
+
+  function readManifest(directory: string): Record<string, Record<string, string> | string> {
+    return JSON.parse(readFileSync(join(directory, "package.json"), "utf8")) as Record<string, Record<string, string> | string>;
+  }
+
+  function resume(directory: string, versions: { advisorVersion?: string; integratorVersion?: string }) {
+    return applyWorkspacePlan(
+      host(directory),
+      { action: "resume", owner: "acme", repository: "hub", directory, clone: false, ...versions },
+      skeletonRoot,
+      composeApplyOptions(seedSkillCatalogue(["advisor"])),
+    );
+  }
+
+  it("a fresh skeleton pins both engines exactly, in devDependencies only", () => {
+    const directory = tempDir();
+    const result = applyWorkspacePlan(
+      host(directory, {
+        [`gh repo create acme/workspace --private --source ${directory} --remote origin --push`]: { status: 0, stdout: "created\n", stderr: "" },
+      }),
+      { action: "create", owner: "acme", repository: "workspace", directory, advisorVersion: "0.5.0", integratorVersion: "0.8.2" },
+      skeletonRoot,
+    );
+    const manifest = readManifest(directory);
+    expect(manifest.devDependencies).toEqual({ [ADVISOR_PACKAGE]: "0.5.0", [INTEGRATOR_PACKAGE]: "0.8.2" });
+    expect(manifest.dependencies).toBeUndefined();
+    expect(readFileSync(join(directory, "package.json"), "utf8")).not.toContain("__INTEGRATOR_VERSION__");
+    expect(result.health.advisorPin).toEqual({ devDependencies: "0.5.0", live: "0.5.0" });
+    expect(result.health.integratorPin).toEqual({ devDependencies: "0.8.2", live: "0.8.2" });
+    expect(result.health.extraClossys).toEqual([]);
+  });
+
+  it("an existing hub gains Integrator on resume, and on appoint", () => {
+    const resumed = tempDir();
+    writeHubMarker(resumed);
+    writeFileSync(join(resumed, "package.json"), `${JSON.stringify({ name: "hub", devDependencies: { [ADVISOR_PACKAGE]: "0.5.0" } }, null, 2)}\n`);
+    const result = resume(resumed, { advisorVersion: "0.5.0", integratorVersion: "0.8.2" });
+    expect(readManifest(resumed).devDependencies).toEqual({ [ADVISOR_PACKAGE]: "0.5.0", [INTEGRATOR_PACKAGE]: "0.8.2" });
+    expect(result.health.integratorPin).toEqual({ devDependencies: "0.8.2", live: "0.8.2" });
+    expect(result.health.degraded).toBe(false);
+    expect(result.message).toMatch(/integrator pin: devDependencies 0\.8\.2; live 0\.8\.2/);
+
+    const appointed = tempDir();
+    writeInventory(appointed);
+    writeFileSync(join(appointed, "package.json"), `${JSON.stringify({ name: "hub", devDependencies: { [ADVISOR_PACKAGE]: "0.5.0" } }, null, 2)}\n`);
+    applyWorkspacePlan(
+      host(appointed),
+      { action: "adopt", owner: "acme", repository: "hub", directory: appointed, advisorVersion: "0.5.0", integratorVersion: "0.8.2" },
+      skeletonRoot,
+    );
+    expect(readManifest(appointed).devDependencies).toEqual({ [ADVISOR_PACKAGE]: "0.5.0", [INTEGRATOR_PACKAGE]: "0.8.2" });
+  });
+
+  it("a frozen 0.2.6 Advisor is bumped to live on resume", () => {
+    const directory = tempDir();
+    writeHubMarker(directory);
+    writeFileSync(join(directory, "package.json"), `${JSON.stringify({ name: "hub", devDependencies: { [ADVISOR_PACKAGE]: "0.2.6" } }, null, 2)}\n`);
+    const result = resume(directory, { advisorVersion: "0.5.0", integratorVersion: "0.8.2" });
+    expect(readManifest(directory).devDependencies).toEqual({ [ADVISOR_PACKAGE]: "0.5.0", [INTEGRATOR_PACKAGE]: "0.8.2" });
+    expect(result.health.pinFindings).toEqual([]);
+  });
+
+  it("other @clossys/* entries are left exactly as found", () => {
+    const directory = tempDir();
+    writeHubMarker(directory);
+    writeFileSync(
+      join(directory, "package.json"),
+      `${JSON.stringify(
+        {
+          name: "hub",
+          dependencies: { "@clossys/starter": "0.1.5", react: "19.0.0" },
+          devDependencies: { "@clossys/writer": "^0.1.0", [ADVISOR_PACKAGE]: "0.2.6" },
+          peerDependencies: { "@clossys/controller": "0.9.0" },
+        },
+        null,
+        2,
+      )}\n`,
+    );
+    const result = resume(directory, { advisorVersion: "0.5.0", integratorVersion: "0.8.2" });
+    const manifest = readManifest(directory);
+    expect(manifest.dependencies).toEqual({ "@clossys/starter": "0.1.5", react: "19.0.0" });
+    expect(manifest.devDependencies).toEqual({ "@clossys/writer": "^0.1.0", [ADVISOR_PACKAGE]: "0.5.0", [INTEGRATOR_PACKAGE]: "0.8.2" });
+    expect(manifest.peerDependencies).toEqual({ "@clossys/controller": "0.9.0" });
+    expect(result.health.extraClossys).toEqual(["@clossys/controller", "@clossys/starter", "@clossys/writer"]);
+  });
+
+  it("a pin in dependencies is relocated to devDependencies, on resume and on appoint", () => {
+    const resumed = tempDir();
+    writeHubMarker(resumed);
+    writeFileSync(
+      join(resumed, "package.json"),
+      `${JSON.stringify({ name: "hub", dependencies: { [INTEGRATOR_PACKAGE]: "0.7.0" }, devDependencies: { [ADVISOR_PACKAGE]: "0.5.0" } }, null, 2)}\n`,
+    );
+    const result = resume(resumed, { advisorVersion: "0.5.0", integratorVersion: "0.8.2" });
+    const manifest = readManifest(resumed);
+    expect(manifest.dependencies).toBeUndefined();
+    expect(manifest.devDependencies).toEqual({ [ADVISOR_PACKAGE]: "0.5.0", [INTEGRATOR_PACKAGE]: "0.8.2" });
+    expect(result.health.dualPin).toBe(false);
+    expect(result.health.degraded).toBe(false);
+
+    const appointed = tempDir();
+    writeInventory(appointed);
+    writeFileSync(
+      join(appointed, "package.json"),
+      `${JSON.stringify({ name: "hub", optionalDependencies: { [INTEGRATOR_PACKAGE]: "0.7.0", left: "1.0.0" } }, null, 2)}\n`,
+    );
+    applyWorkspacePlan(
+      host(appointed),
+      { action: "adopt", owner: "acme", repository: "hub", directory: appointed, advisorVersion: "0.5.0", integratorVersion: "0.8.2" },
+      skeletonRoot,
+    );
+    expect(readManifest(appointed).optionalDependencies).toEqual({ left: "1.0.0" });
+    expect(readManifest(appointed).devDependencies).toEqual({ [ADVISOR_PACKAGE]: "0.5.0", [INTEGRATOR_PACKAGE]: "0.8.2" });
+  });
+
+  it("resume leaves package.json byte for byte when a pin is already live, when no live version was read, or when it is unreadable", () => {
+    const current = tempDir();
+    writeHubMarker(current);
+    const currentBytes = `{"name":"hub","devDependencies":{"${ADVISOR_PACKAGE}":"0.5.0","${INTEGRATOR_PACKAGE}":"0.8.2"}}`;
+    writeFileSync(join(current, "package.json"), currentBytes);
+    resume(current, { advisorVersion: "0.5.0", integratorVersion: "0.8.2" });
+    expect(readFileSync(join(current, "package.json"), "utf8")).toBe(currentBytes);
+
+    const unknown = tempDir();
+    writeHubMarker(unknown);
+    const frozenBytes = `${JSON.stringify({ name: "hub", devDependencies: { [ADVISOR_PACKAGE]: "0.2.6" } }, null, 2)}\n`;
+    writeFileSync(join(unknown, "package.json"), frozenBytes);
+    const unread = resume(unknown, {});
+    expect(readFileSync(join(unknown, "package.json"), "utf8")).toBe(frozenBytes);
+    expect(unread.health.integratorPin).toEqual({});
+    expect(unread.health.degraded).toBe(true);
+
+    const broken = tempDir();
+    writeHubMarker(broken);
+    writeFileSync(join(broken, "package.json"), "{ not json");
+    const brokenResult = resume(broken, { advisorVersion: "0.5.0", integratorVersion: "0.8.2" });
+    expect(readFileSync(join(broken, "package.json"), "utf8")).toBe("{ not json");
+    expect(brokenResult.state).toBe("satisfied");
+    expect(brokenResult.message).toMatch(/advisor pin: missing; live 0\.5\.0/);
+    expect(brokenResult.message).toMatch(/integrator pin: missing; live 0\.8\.2/);
+  });
+
+  it("health grades each engine against its own live version", () => {
+    const directory = tempDir();
+    writeFileSync(
+      join(directory, "package.json"),
+      `${JSON.stringify({ name: "hub", devDependencies: { [ADVISOR_PACKAGE]: "0.5.0", [INTEGRATOR_PACKAGE]: "0.7.0" } }, null, 2)}\n`,
+    );
+    const report = reportHubHealth(host(directory), directory, "0.5.0", undefined, [], undefined, "0.8.2");
+    expect(report.advisorPin).toEqual({ devDependencies: "0.5.0", live: "0.5.0" });
+    expect(report.integratorPin).toEqual({ devDependencies: "0.7.0", live: "0.8.2" });
+    expect(report.pinFindings).toEqual([
+      { package: INTEGRATOR_PACKAGE, bucket: "devDependencies", pinned: "0.7.0", grade: "stale", note: "pinned 0.7.0 is older than live 0.8.2" },
+    ]);
+    expect(report.degraded).toBe(true);
+    expect(formatHubHealth(report)).toMatch(/pin findings: @clossys\/integrator devDependencies pinned 0\.7\.0 is older than live 0\.8\.2/);
+  });
+
+  it("create and appoint refuse as indeterminate when the registry gives no Integrator version", () => {
+    const silent = host(tempDir());
+    expect(planWorkspace(observation({ integratorVersion: undefined }), silent)).toEqual({
+      action: "refuse",
+      state: "indeterminate",
+      message: `cannot read a public ${INTEGRATOR_PACKAGE} version from the npm registry`,
+    });
+    expect(
+      planWorkspace(
+        observation({
+          integratorVersion: undefined,
+          cwd: {
+            absolutePath: "/tmp/central",
+            empty: false,
+            git: true,
+            githubOwner: "acme",
+            githubRepository: "central",
+            looksLikeFoundry: false,
+            inventory: { status: "populated", count: 1 },
+          },
+        }),
+        silent,
+      ),
+    ).toMatchObject({ action: "refuse", state: "indeterminate" });
+  });
+
+  const npmLock = (advisor: string, integrator?: string): string =>
+    `${JSON.stringify(
+      {
+        name: "hub",
+        lockfileVersion: 3,
+        packages: {
+          "": { name: "hub" },
+          [`node_modules/${ADVISOR_PACKAGE}`]: { version: advisor, dev: true },
+          ...(integrator === undefined ? {} : { [`node_modules/${INTEGRATOR_PACKAGE}`]: { version: integrator, dev: true } }),
+        },
+      },
+      null,
+      2,
+    )}\n`;
+
+  it("names each pin a resume changed, says to install and commit with the lockfile, and is degraded while package-lock.json does not resolve them", () => {
+    const directory = tempDir();
+    writeHubMarker(directory);
+    writeFileSync(join(directory, "package.json"), `${JSON.stringify({ name: "hub", devDependencies: { [ADVISOR_PACKAGE]: "0.2.6" } }, null, 2)}\n`);
+    const lock = npmLock("0.2.6");
+    writeFileSync(join(directory, "package-lock.json"), lock);
+    const result = resume(directory, { advisorVersion: "0.5.0", integratorVersion: "0.8.2" });
+    expect(result.health.enginePins).toEqual({
+      changed: [
+        { package: ADVISOR_PACKAGE, from: "0.2.6", to: "0.5.0" },
+        { package: INTEGRATOR_PACKAGE, to: "0.8.2" },
+      ],
+      nextStep: "run `npm install` in the hub, then commit package.json together with package-lock.json",
+    });
+    expect(result.message).toMatch(/^engine pins changed in package\.json: @clossys\/advisor 0\.2\.6 -> 0\.5\.0; @clossys\/integrator added at 0\.8\.2$/m);
+    expect(result.message).toMatch(/^next: run `npm install` in the hub, then commit package\.json together with package-lock\.json$/m);
+    expect(result.health.pinFindings).toEqual([]);
+    expect(result.health.installNeeded).toMatchObject({
+      kind: "engine-pins-changed-install-needed",
+      lockfile: "package-lock.json",
+      command: "npm install",
+      packages: [ADVISOR_PACKAGE, INTEGRATOR_PACKAGE],
+    });
+    expect(result.message).toMatch(/^install needed \(engine-pins-changed-install-needed\): package-lock\.json does not resolve/m);
+    expect(result.health.degraded).toBe(true);
+    // The lockfile is the founder's to update, with an install; Launcher never touches it.
+    expect(readFileSync(join(directory, "package-lock.json"), "utf8")).toBe(lock);
+
+    // Nothing changes on the next run, but the lockfile still does not resolve the pins.
+    const again = resume(directory, { advisorVersion: "0.5.0", integratorVersion: "0.8.2" });
+    expect(again.health.enginePins).toBeUndefined();
+    expect(again.health.installNeeded?.packages).toEqual([ADVISOR_PACKAGE, INTEGRATOR_PACKAGE]);
+    expect(again.health.degraded).toBe(true);
+
+    // After the install, the lockfile resolves both pins: no finding, not degraded.
+    writeFileSync(join(directory, "package-lock.json"), npmLock("0.5.0", "0.8.2"));
+    const installed = resume(directory, { advisorVersion: "0.5.0", integratorVersion: "0.8.2" });
+    expect(installed.health.installNeeded).toBeUndefined();
+    expect(installed.health.degraded).toBe(false);
+  });
+
+  it("with a lockfile it does not read, is degraded only on the run that changed a pin", () => {
+    const directory = tempDir();
+    writeHubMarker(directory);
+    writeFileSync(join(directory, "package.json"), `${JSON.stringify({ name: "hub", devDependencies: { [ADVISOR_PACKAGE]: "0.5.0" } }, null, 2)}\n`);
+    writeFileSync(join(directory, "pnpm-lock.yaml"), "lockfileVersion: '9.0'\n");
+    const changed = resume(directory, { advisorVersion: "0.5.0", integratorVersion: "0.8.2" });
+    expect(changed.health.enginePins?.changed).toEqual([{ package: INTEGRATOR_PACKAGE, to: "0.8.2" }]);
+    expect(changed.health.enginePins?.nextStep).toBe("run `pnpm install` in the hub, then commit package.json together with pnpm-lock.yaml");
+    expect(changed.health.installNeeded).toMatchObject({ lockfile: "pnpm-lock.yaml", command: "pnpm install", packages: [INTEGRATOR_PACKAGE] });
+    expect(changed.health.degraded).toBe(true);
+    const unchanged = resume(directory, { advisorVersion: "0.5.0", integratorVersion: "0.8.2" });
+    expect(unchanged.health.installNeeded).toBeUndefined();
+    expect(unchanged.health.degraded).toBe(false);
+  });
+
+  it("without a lockfile, names the change and the install but is not degraded", () => {
+    const directory = tempDir();
+    writeHubMarker(directory);
+    writeFileSync(join(directory, "package.json"), `${JSON.stringify({ name: "hub", dependencies: { [ADVISOR_PACKAGE]: "0.5.0" } }, null, 2)}\n`);
+    const result = resume(directory, { advisorVersion: "0.5.0", integratorVersion: "0.8.2" });
+    expect(result.health.enginePins?.changed).toEqual([
+      { package: ADVISOR_PACKAGE, from: "0.5.0", to: "0.5.0", movedFrom: "dependencies" },
+      { package: INTEGRATOR_PACKAGE, to: "0.8.2" },
+    ]);
+    expect(result.message).toMatch(/@clossys\/advisor 0\.5\.0 \(moved from dependencies to devDependencies\)/);
+    expect(result.message).toMatch(/^next: run your package manager's install in the hub, then commit package\.json together with the lockfile it writes$/m);
+    expect(result.health.installNeeded).toBeUndefined();
+    expect(result.health.degraded).toBe(false);
+  });
+
+  it("appoint names the pins it changed as well", () => {
+    const directory = tempDir();
+    writeInventory(directory);
+    writeFileSync(join(directory, "package.json"), `${JSON.stringify({ name: "hub", devDependencies: { [ADVISOR_PACKAGE]: "0.2.6" } }, null, 2)}\n`);
+    writeFileSync(join(directory, "package-lock.json"), npmLock("0.2.6"));
+    const result = applyWorkspacePlan(
+      host(directory),
+      { action: "adopt", owner: "acme", repository: "hub", directory, advisorVersion: "0.5.0", integratorVersion: "0.8.2" },
+      skeletonRoot,
+    );
+    expect(result.health.enginePins?.changed).toEqual([
+      { package: ADVISOR_PACKAGE, from: "0.2.6", to: "0.5.0" },
+      { package: INTEGRATOR_PACKAGE, to: "0.8.2" },
+    ]);
+    expect(result.health.installNeeded?.kind).toBe("engine-pins-changed-install-needed");
+    expect(result.health.degraded).toBe(true);
+  });
+
+  it("reads npm-shrinkwrap.json before package-lock.json when both exist, in either staleness order", () => {
+    const current = npmLock("0.5.0", "0.8.2");
+    const stale = npmLock("0.2.6");
+    const pinned = `${JSON.stringify({ name: "hub", devDependencies: { [ADVISOR_PACKAGE]: "0.5.0", [INTEGRATOR_PACKAGE]: "0.8.2" } }, null, 2)}\n`;
+
+    const shrinkwrapCurrent = tempDir();
+    writeHubMarker(shrinkwrapCurrent);
+    writeFileSync(join(shrinkwrapCurrent, "package.json"), pinned);
+    writeFileSync(join(shrinkwrapCurrent, "npm-shrinkwrap.json"), current);
+    writeFileSync(join(shrinkwrapCurrent, "package-lock.json"), stale);
+    const resolved = resume(shrinkwrapCurrent, { advisorVersion: "0.5.0", integratorVersion: "0.8.2" });
+    expect(resolved.health.installNeeded).toBeUndefined();
+    expect(resolved.health.degraded).toBe(false);
+
+    const shrinkwrapStale = tempDir();
+    writeHubMarker(shrinkwrapStale);
+    writeFileSync(join(shrinkwrapStale, "package.json"), pinned);
+    writeFileSync(join(shrinkwrapStale, "npm-shrinkwrap.json"), stale);
+    writeFileSync(join(shrinkwrapStale, "package-lock.json"), current);
+    const unresolved = resume(shrinkwrapStale, { advisorVersion: "0.5.0", integratorVersion: "0.8.2" });
+    expect(unresolved.health.installNeeded).toMatchObject({
+      lockfile: "npm-shrinkwrap.json",
+      command: "npm install",
+      packages: [ADVISOR_PACKAGE, INTEGRATOR_PACKAGE],
+    });
+    expect(unresolved.health.degraded).toBe(true);
+  });
+
+  it("reads a version 1 npm lockfile through its dependencies field", () => {
+    const v1 = (advisor: string, integrator: string): string =>
+      `${JSON.stringify({ name: "hub", lockfileVersion: 1, dependencies: { [ADVISOR_PACKAGE]: { version: advisor, dev: true }, [INTEGRATOR_PACKAGE]: { version: integrator, dev: true } } }, null, 2)}\n`;
+    const directory = tempDir();
+    writeHubMarker(directory);
+    writeEnginePins(directory);
+    writeFileSync(join(directory, "package-lock.json"), v1("0.5.0", "0.8.2"));
+    const current = resume(directory, { advisorVersion: "0.5.0", integratorVersion: "0.8.2" });
+    expect(current.health.installNeeded).toBeUndefined();
+    expect(current.health.degraded).toBe(false);
+    writeFileSync(join(directory, "package-lock.json"), v1("0.5.0", "0.7.0"));
+    expect(resume(directory, { advisorVersion: "0.5.0", integratorVersion: "0.8.2" }).health.installNeeded?.packages).toEqual([INTEGRATOR_PACKAGE]);
+  });
+
+  it("compares a pin with its locked version as versions, so a v-prefixed pin matches", () => {
+    const directory = tempDir();
+    writeHubMarker(directory);
+    writeFileSync(join(directory, "package.json"), `${JSON.stringify({ name: "hub", devDependencies: { [ADVISOR_PACKAGE]: "v0.6.0", [INTEGRATOR_PACKAGE]: "0.8.2" } }, null, 2)}\n`);
+    writeFileSync(join(directory, "package-lock.json"), npmLock("0.6.0", "0.8.2"));
+    const result = resume(directory, { advisorVersion: "0.5.0", integratorVersion: "0.8.2" });
+    expect(readManifest(directory).devDependencies).toEqual({ [ADVISOR_PACKAGE]: "v0.6.0", [INTEGRATOR_PACKAGE]: "0.8.2" });
+    expect(result.health.enginePins).toBeUndefined();
+    expect(result.health.installNeeded).toBeUndefined();
+    expect(result.health.degraded).toBe(false);
+  });
+
+  it("reports a pin that only moved between buckets, and with a pnpm lockfile marks the install needed", () => {
+    const directory = tempDir();
+    writeHubMarker(directory);
+    writeFileSync(
+      join(directory, "package.json"),
+      `${JSON.stringify({ name: "hub", dependencies: { [INTEGRATOR_PACKAGE]: "0.8.2" }, devDependencies: { [ADVISOR_PACKAGE]: "0.5.0" } }, null, 2)}\n`,
+    );
+    writeFileSync(join(directory, "pnpm-lock.yaml"), "lockfileVersion: '9.0'\n");
+    const result = resume(directory, { advisorVersion: "0.5.0", integratorVersion: "0.8.2" });
+    expect(result.health.enginePins?.changed).toEqual([{ package: INTEGRATOR_PACKAGE, from: "0.8.2", to: "0.8.2", movedFrom: "dependencies" }]);
+    expect(result.message).toMatch(/^engine pins changed in package\.json: @clossys\/integrator 0\.8\.2 \(moved from dependencies to devDependencies\)$/m);
+    expect(result.health.installNeeded).toMatchObject({ lockfile: "pnpm-lock.yaml", command: "pnpm install", packages: [INTEGRATOR_PACKAGE] });
+    expect(result.health.degraded).toBe(true);
+  });
+
+  it("only raises a pin: one newer than live is kept, one that is not a plain version becomes live", () => {
+    const directory = tempDir();
+    writeHubMarker(directory);
+    const bytes = `${JSON.stringify({ name: "hub", devDependencies: { [ADVISOR_PACKAGE]: "0.6.0", [INTEGRATOR_PACKAGE]: "^0.8.0" } }, null, 2)}\n`;
+    writeFileSync(join(directory, "package.json"), bytes);
+    const result = resume(directory, { advisorVersion: "0.5.0", integratorVersion: "0.8.2" });
+    expect(readManifest(directory).devDependencies).toEqual({ [ADVISOR_PACKAGE]: "0.6.0", [INTEGRATOR_PACKAGE]: "0.8.2" });
+    expect(result.health.enginePins?.changed).toEqual([{ package: INTEGRATOR_PACKAGE, from: "^0.8.0", to: "0.8.2" }]);
+    expect(result.health.pinFindings).toEqual([]);
+  });
+
+  it("resume writes no package.json into a hub that has none", () => {
+    const directory = tempDir();
+    writeHubMarker(directory);
+    const result = resume(directory, { advisorVersion: "0.5.0", integratorVersion: "0.8.2" });
+    expect(existsSync(join(directory, "package.json"))).toBe(false);
+    expect(result.health.enginePins).toBeUndefined();
+    expect(result.message).toMatch(/advisor pin: missing; live 0\.5\.0/);
+  });
+
+  it("resume never renames the hub package, even for a dedicated workspace hub", () => {
+    const directory = tempDir();
+    writeHubMarker(directory);
+    writeFileSync(join(directory, "package.json"), `${JSON.stringify({ name: "control-plane", devDependencies: { [ADVISOR_PACKAGE]: "0.2.6" } }, null, 2)}\n`);
+    applyWorkspacePlan(
+      host(directory),
+      { action: "resume", owner: "acme", repository: DEFAULT_REPOSITORY_NAME, directory, clone: false, advisorVersion: "0.5.0", integratorVersion: "0.8.2" },
+      skeletonRoot,
+      composeApplyOptions(seedSkillCatalogue(["advisor"])),
+    );
+    expect(readManifest(directory).name).toBe("control-plane");
+    expect(readManifest(directory).devDependencies).toEqual({ [ADVISOR_PACKAGE]: "0.5.0", [INTEGRATOR_PACKAGE]: "0.8.2" });
+  });
+
+  it("dualPin covers Integrator", () => {
+    const directory = tempDir();
+    writeFileSync(
+      join(directory, "package.json"),
+      `${JSON.stringify({ name: "hub", dependencies: { [INTEGRATOR_PACKAGE]: "0.8.2" }, devDependencies: { [ADVISOR_PACKAGE]: "0.5.0", [INTEGRATOR_PACKAGE]: "0.8.2" } }, null, 2)}\n`,
+    );
+    const report = reportHubHealth(host(directory), directory, "0.5.0", undefined, [], undefined, "0.8.2");
+    expect(report.dualPin).toBe(true);
+    expect(report.degraded).toBe(true);
+    expect(formatHubHealth(report)).toMatch(/^dual pin: yes$/m);
+  });
+
+  it("an invalid stored inventory marks reportHubHealth degraded", () => {
+    const directory = tempDir();
+    writeEnginePins(directory);
+    writeInventory(directory, [{ id: "acme/app", visibility: "public" }]);
+    const report = reportHubHealth(host(directory), directory);
+    expect(report.inventory.status).toBe("invalid");
+    expect(report.pinFindings).toEqual([]);
+    expect(report.dualPin).toBe(false);
+    expect(report.degraded).toBe(true);
+    writeInventory(directory, [{ id: "acme/app" }]);
+    expect(reportHubHealth(host(directory), directory).degraded).toBe(false);
+  });
+});
+
 describe("applyWorkspacePlan", () => {
   it("copies the skeleton for create and does not pin the catalogue", () => {
     const directory = tempDir();
@@ -656,7 +1107,7 @@ describe("applyWorkspacePlan", () => {
       host(directory, {
         [`gh repo create acme/workspace --private --source ${directory} --remote origin --push`]: { status: 0, stdout: "created\n", stderr: "" },
       }),
-      { action: "create", owner: "acme", repository: "workspace", directory, advisorVersion: "0.1.5" },
+      { action: "create", owner: "acme", repository: "workspace", directory, advisorVersion: "0.1.5", integratorVersion: "0.8.2" },
       skeletonRoot,
     );
     const manifest = JSON.parse(readFileSync(join(directory, "package.json"), "utf8")) as {
@@ -683,7 +1134,7 @@ describe("applyWorkspacePlan", () => {
     writeInventory(directory);
     const result = applyWorkspacePlan(
       host(directory),
-      { action: "adopt", owner: "acme", repository: "product", directory, advisorVersion: "0.1.5" },
+      { action: "adopt", owner: "acme", repository: "product", directory, advisorVersion: "0.1.5", integratorVersion: "0.8.2" },
       skeletonRoot,
     );
     expect(readFileSync(join(directory, "README.md"), "utf8")).toBe("# Product\n");
@@ -697,7 +1148,8 @@ describe("applyWorkspacePlan", () => {
     expect(manifest.private).toBe(false);
     expect(manifest.dependencies.react).toBe("19.0.0");
     expect(manifest.devDependencies[ADVISOR_PACKAGE]).toBe("0.1.5");
-    expect(Object.keys(manifest.devDependencies)).toEqual([ADVISOR_PACKAGE]);
+    expect(Object.keys(manifest.devDependencies)).toEqual([ADVISOR_PACKAGE, INTEGRATOR_PACKAGE]);
+    expect(manifest.devDependencies[INTEGRATOR_PACKAGE]).toBe("0.8.2");
     expect(JSON.parse(readFileSync(join(directory, WORKSPACE_MARKER_REL), "utf8"))).toEqual({
       schemaVersion: 1,
       kind: "account-hub",
@@ -717,7 +1169,7 @@ describe("applyWorkspacePlan", () => {
     writeInventory(directory);
     applyWorkspacePlan(
       host(directory),
-      { action: "adopt", owner: "acme", repository: "hub", directory, advisorVersion: "0.2.3" },
+      { action: "adopt", owner: "acme", repository: "hub", directory, advisorVersion: "0.2.3", integratorVersion: "0.8.2" },
       skeletonRoot,
     );
     const manifest = JSON.parse(readFileSync(join(directory, "package.json"), "utf8")) as {
@@ -740,7 +1192,7 @@ describe("applyWorkspacePlan", () => {
     writeInventory(directory);
     applyWorkspacePlan(
       host(directory),
-      { action: "adopt", owner: "acme", repository: "hub", directory, advisorVersion: "0.2.3" },
+      { action: "adopt", owner: "acme", repository: "hub", directory, advisorVersion: "0.2.3", integratorVersion: "0.8.2" },
       skeletonRoot,
     );
     const manifest = JSON.parse(readFileSync(join(directory, "package.json"), "utf8")) as {
@@ -758,7 +1210,7 @@ describe("applyWorkspacePlan", () => {
     writeInventory(directory);
     applyWorkspacePlan(
       host(directory),
-      { action: "adopt", owner: "acme", repository: DEFAULT_REPOSITORY_NAME, directory, advisorVersion: "0.2.3" },
+      { action: "adopt", owner: "acme", repository: DEFAULT_REPOSITORY_NAME, directory, advisorVersion: "0.2.3", integratorVersion: "0.8.2" },
       skeletonRoot,
     );
     const manifest = JSON.parse(readFileSync(join(directory, "package.json"), "utf8")) as {
@@ -782,7 +1234,7 @@ describe("applyWorkspacePlan", () => {
     );
     const result = applyWorkspacePlan(
       host(directory),
-      { action: "adopt", owner: "acme", repository: "hub", directory, advisorVersion: "0.2.3", inventorySource: source },
+      { action: "adopt", owner: "acme", repository: "hub", directory, advisorVersion: "0.2.3", integratorVersion: "0.8.2", inventorySource: source },
       skeletonRoot,
     );
     expect(inspectInventory(readFileSync(join(directory, WORKSPACE_INVENTORY_REL), "utf8"))).toEqual({
@@ -798,8 +1250,9 @@ describe("applyWorkspacePlan", () => {
     expect(manifest.devDependencies?.[ADVISOR_PACKAGE]).toBe("0.2.3");
     expect(result.health.extraClossys).toEqual(["@clossys/starter"]);
     expect(result.health.dualPin).toBe(false);
-    expect(result.health.degraded).toBe(true);
-    expect(result.message).toMatch(/skill roster skipped/);
+    // An inventoried repository not cloned beside the hub is reported, and is not a hub defect.
+    expect(result.message).toMatch(/sibling \(one\): not cloned beside the hub; a hub run writes nothing here; once this repository is staffed in an approved plan, @clossys-advisor and the voices of the roles staffed there arrive with that plan's setup pull request/);
+    expect(result.health.degraded).toBe(false);
     expect(result.message).toMatch(/health:/);
   });
 
@@ -825,7 +1278,7 @@ describe("applyWorkspacePlan", () => {
     expect(() =>
       applyWorkspacePlan(
         host(directory),
-        { action: "adopt", owner: "acme", repository: "hub", directory, advisorVersion: "0.2.3", inventorySource: source },
+        { action: "adopt", owner: "acme", repository: "hub", directory, advisorVersion: "0.2.3", integratorVersion: "0.8.2", inventorySource: source },
         skeletonRoot,
       ),
     ).toThrow(/repositories\[0\] has a field the contract does not declare \(key \d+ of this object\)/);
@@ -847,7 +1300,7 @@ describe("applyWorkspacePlan", () => {
     expect(() =>
       applyWorkspacePlan(
         host(directory, commands),
-        { action: "adopt", owner: "acme", repository: "product", directory, advisorVersion: "0.2.3" },
+        { action: "adopt", owner: "acme", repository: "product", directory, advisorVersion: "0.2.3", integratorVersion: "0.8.2" },
         skeletonRoot,
       ),
     ).toThrow(/gitlab\.example\.net.*uncommitted changes/s);
@@ -867,7 +1320,7 @@ describe("applyWorkspacePlan", () => {
     expect(() =>
       applyWorkspacePlan(
         host(directory, commands),
-        { action: "adopt", owner: "acme", repository: "product", directory, advisorVersion: "0.2.3" },
+        { action: "adopt", owner: "acme", repository: "product", directory, advisorVersion: "0.2.3", integratorVersion: "0.8.2" },
         skeletonRoot,
       ),
     ).toThrow(/this checkout has uncommitted changes/);
@@ -886,6 +1339,7 @@ describe("applyWorkspacePlan", () => {
         repository: "hub",
         directory,
         advisorVersion: "0.2.3",
+        integratorVersion: "0.8.2",
         mergedInventoryIds: ["hub-a", "hub-c", "hub-b"],
       },
       skeletonRoot,
@@ -911,6 +1365,7 @@ describe("applyWorkspacePlan", () => {
         repository: "hub",
         directory,
         advisorVersion: "0.2.3",
+        integratorVersion: "0.8.2",
         mergedInventoryIds: ["hub-a", "hub-b"],
         mergedInventoryRepositories: [{ id: "hub-a", packages: kept }, { id: "hub-b" }],
       },
@@ -934,6 +1389,7 @@ describe("applyWorkspacePlan", () => {
           repository: "hub",
           directory,
           advisorVersion: "0.2.3",
+          integratorVersion: "0.8.2",
           mergedInventoryIds: ["hub-a", "acme/hub-a"],
           mergedInventoryRepositories: [{ id: "hub-a" }, { id: "acme/hub-a" }],
         },
@@ -1008,9 +1464,8 @@ describe("applyWorkspacePlan", () => {
       composeApplyOptions(catalogue),
     );
     expect(result.health.inventory.status).toBe("invalid");
-    expect(result.health.skillComposition?.rosterSkipped).toEqual([
-      { inventoryId: WORKSPACE_INVENTORY_REL, note: expect.stringContaining("repositories[0] has a field the contract does not declare") },
-    ]);
+    expect(result.message).toMatch(/inventory: invalid -- .*repositories\[0\] has a field the contract does not declare \(key \d+ of this object\)/);
+    expect(result.health.skillComposition?.siblings).toEqual([]);
     expect(result.health.degraded).toBe(true);
     // Nothing was written into the sibling: its directory listing is exactly
     // what this test itself seeded, and no skill or guidance file landed.
@@ -1044,7 +1499,7 @@ describe("applyWorkspacePlan", () => {
     writeInventory(directory, [{ id: "acme/hub" }]);
     writeFileSync(
       join(directory, "package.json"),
-      `${JSON.stringify({ name: "hub", devDependencies: { [ADVISOR_PACKAGE]: "0.1.5" } }, null, 2)}\n`,
+      `${JSON.stringify({ name: "hub", devDependencies: { [ADVISOR_PACKAGE]: "0.1.5", [INTEGRATOR_PACKAGE]: "0.8.2" } }, null, 2)}\n`,
     );
     writeFileSync(join(directory, "AGENTS.md"), LEGACY_CONSUMER_AGENTS_MD);
     const catalogue = seedSkillCatalogue(["advisor", "designer"]);
@@ -1062,11 +1517,11 @@ describe("applyWorkspacePlan", () => {
     expect(agents).toContain("@clossys-advisor");
     expect(agents).not.toMatch(/again to resume/i);
     expect(result.health.degraded).toBe(false);
-    expect(result.message).not.toMatch(/skill roster skipped/);
+    expect(result.message).not.toMatch(/^sibling /m);
     expect(reportHubHealth(host(directory), directory).marker).toBe("present");
   });
 
-  it("composes skills into the hub and sibling clones resolved from inventory", () => {
+  it("composes skills into the hub only, and reports each inventoried sibling without degrading", () => {
     const parent = tempDir();
     const hub = join(parent, "hub");
     const app = join(parent, "app");
@@ -1108,6 +1563,7 @@ describe("applyWorkspacePlan", () => {
         return base.run(command, args, opts);
       },
     };
+    writeEnginePins(hub);
     const catalogue = seedSkillCatalogue(["advisor", "designer"]);
     const result = applyWorkspacePlan(
       workspaceHost,
@@ -1116,16 +1572,20 @@ describe("applyWorkspacePlan", () => {
       composeApplyOptions(catalogue),
     );
     expect(readFileSync(join(hub, ".agents/skills/clossys-advisor/SKILL.md"), "utf8")).toContain("clossys-advisor");
-    expect(readFileSync(join(app, ".agents/skills/clossys-advisor/SKILL.md"), "utf8")).toContain("clossys-advisor");
-    expect(existsSync(join(other, ".agents/skills/clossys-advisor/SKILL.md"))).toBe(false);
-    expect(existsSync(join(foundry, ".agents/skills/clossys-advisor/SKILL.md"))).toBe(false);
-    expect(readFileSync(join(app, "AGENTS.md"), "utf8")).toContain("@clossys-advisor");
-    expect(result.health.skillComposition?.rosterTargets).toEqual(expect.arrayContaining(["acme/hub", "acme/app"]));
-    expect(result.message).toMatch(/skill roster skipped \(acme\/missing\)/);
-    expect(result.message).toMatch(/skill roster skipped \(acme\/other\).*origin does not match/);
-    expect(result.message).toMatch(/skill roster skipped \(acme\/foundry\).*foundry supplier/);
-    expect(result.health.degraded).toBe(true);
-    expect(formatHubHealth(result.health)).toMatch(/degraded: yes/);
+    expect(readdirSync(app)).toEqual([".git"]);
+    expect(readdirSync(other)).toEqual([".git"]);
+    expect(existsSync(join(foundry, ".agents"))).toBe(false);
+    expect(result.health.skillComposition?.rosterTargets).toEqual(["acme/hub"]);
+    expect(result.health.skillComposition?.siblings).toEqual([
+      { inventoryId: "acme/app", note: "checkout beside the hub; a hub run writes nothing here; once this repository is staffed in an approved plan, @clossys-advisor and the voices of the roles staffed there arrive with that plan's setup pull request" },
+      { inventoryId: "acme/missing", note: "not cloned beside the hub; a hub run writes nothing here; once this repository is staffed in an approved plan, @clossys-advisor and the voices of the roles staffed there arrive with that plan's setup pull request" },
+      { inventoryId: "acme/other", note: "git origin does not match inventory id" },
+      { inventoryId: "acme/foundry", note: "foundry supplier tree; skills are not written here" },
+    ]);
+    expect(result.message).toMatch(/^skill roster written: acme\/hub$/m);
+    expect(result.message).toMatch(/^sibling \(acme\/app\): checkout beside the hub; a hub run writes nothing here; once this repository is staffed in an approved plan, @clossys-advisor and the voices of the roles staffed there arrive with that plan's setup pull request$/m);
+    expect(result.health.degraded).toBe(false);
+    expect(formatHubHealth(result.health)).toMatch(/degraded: no/);
     expect(result.state).toBe("satisfied");
   });
 
@@ -1137,7 +1597,7 @@ describe("applyWorkspacePlan", () => {
       host(created, {
         [`gh repo create acme/workspace --private --source ${created} --remote origin --push`]: { status: 0, stdout: "created\n", stderr: "" },
       }),
-      { action: "create", owner: "acme", repository: "workspace", directory: created, advisorVersion: "0.1.5" },
+      { action: "create", owner: "acme", repository: "workspace", directory: created, advisorVersion: "0.1.5", integratorVersion: "0.8.2" },
       skeletonRoot,
       applyOpts,
     );
@@ -1148,7 +1608,7 @@ describe("applyWorkspacePlan", () => {
     writeInventory(adopted);
     applyWorkspacePlan(
       host(adopted),
-      { action: "adopt", owner: "acme", repository: "hub", directory: adopted, advisorVersion: "0.1.5" },
+      { action: "adopt", owner: "acme", repository: "hub", directory: adopted, advisorVersion: "0.1.5", integratorVersion: "0.8.2" },
       skeletonRoot,
       applyOpts,
     );
@@ -1159,15 +1619,15 @@ describe("applyWorkspacePlan", () => {
     const directory = tempDir();
     writeFileSync(
       join(directory, "package.json"),
-      `${JSON.stringify({ name: "hub", devDependencies: { [ADVISOR_PACKAGE]: "0.1.0" } }, null, 2)}\n`,
+      `${JSON.stringify({ name: "hub", devDependencies: { [ADVISOR_PACKAGE]: "0.1.0", [INTEGRATOR_PACKAGE]: "0.8.2" } }, null, 2)}\n`,
     );
     writeInventory(directory);
     const stale = reportHubHealth(host(directory), directory, "0.2.0");
     expect(stale.pinFindings).toEqual([
-      { bucket: "devDependencies", pinned: "0.1.0", grade: "stale", note: expect.stringContaining("older than live 0.2.0") },
+      { package: ADVISOR_PACKAGE, bucket: "devDependencies", pinned: "0.1.0", grade: "stale", note: expect.stringContaining("older than live 0.2.0") },
     ]);
     expect(stale.degraded).toBe(true);
-    expect(formatHubHealth(stale)).toMatch(/pin findings: devDependencies pinned 0\.1\.0 is older than live 0\.2\.0/);
+    expect(formatHubHealth(stale)).toMatch(/pin findings: @clossys\/advisor devDependencies pinned 0\.1\.0 is older than live 0\.2\.0/);
     expect(formatHubHealth(stale)).toMatch(/degraded: yes/);
     const current = reportHubHealth(host(directory), directory, "0.1.0");
     expect(current.pinFindings).toEqual([]);
@@ -1192,11 +1652,11 @@ describe("applyWorkspacePlan", () => {
     const directory = tempDir();
     writeFileSync(
       join(directory, "package.json"),
-      `${JSON.stringify({ name: "hub", devDependencies: { [ADVISOR_PACKAGE]: "next" } }, null, 2)}\n`,
+      `${JSON.stringify({ name: "hub", devDependencies: { [ADVISOR_PACKAGE]: "next", [INTEGRATOR_PACKAGE]: "0.8.2" } }, null, 2)}\n`,
     );
     const report = reportHubHealth(host(directory), directory, "0.2.0");
     expect(report.pinFindings).toEqual([
-      { bucket: "devDependencies", pinned: "next", grade: "indeterminate", note: expect.stringContaining("cannot compare") },
+      { package: ADVISOR_PACKAGE, bucket: "devDependencies", pinned: "next", grade: "indeterminate", note: expect.stringContaining("cannot compare") },
     ]);
     expect(report.degraded).toBe(false);
   });
@@ -1347,7 +1807,7 @@ describe("skills manifest and health (#1183)", () => {
     const catalogue = seedSkillCatalogue(["advisor", "designer"]);
     const applyOpts = composeApplyOptions(catalogue);
     writeInventory(directory);
-    applyWorkspacePlan(host(directory), { action: "adopt", owner: "acme", repository: "hub", directory, advisorVersion: "0.1.5" }, skeletonRoot, applyOpts);
+    applyWorkspacePlan(host(directory), { action: "adopt", owner: "acme", repository: "hub", directory, advisorVersion: "0.1.5", integratorVersion: "0.8.2" }, skeletonRoot, applyOpts);
 
     // designer's catalogue source disappears before the next resume.
     rmSync(join(applyOpts.skillCatalogueRoot, "designer"), { recursive: true, force: true });
@@ -1369,7 +1829,7 @@ describe("preserved composed skills in the health report (#1473)", () => {
     const catalogue = seedSkillCatalogue(["advisor"]);
     const applyOpts = composeApplyOptions(catalogue);
     writeInventory(directory);
-    applyWorkspacePlan(host(directory), { action: "adopt", owner: "acme", repository: "hub", directory, advisorVersion: "0.1.5" }, skeletonRoot, applyOpts);
+    applyWorkspacePlan(host(directory), { action: "adopt", owner: "acme", repository: "hub", directory, advisorVersion: "0.1.5", integratorVersion: "0.8.2" }, skeletonRoot, applyOpts);
     const skillPath = join(directory, ".agents", "skills", "clossys-advisor", "SKILL.md");
     const edited = `${readFileSync(skillPath, "utf8")}\nClient's own note.\n`;
     writeFileSync(skillPath, edited);
@@ -1390,7 +1850,7 @@ describe("preserved composed skills in the health report (#1473)", () => {
     expect(readFileSync(skillPath, "utf8")).toBe(edited);
   });
 
-  it("tags a skill left as is in a sibling clone with that clone's inventory id", () => {
+  it("leaves a skill an earlier release composed into a sibling clone untouched, unreported, and not degrading", () => {
     const parent = tempDir();
     const hub = join(parent, "hub");
     const app = join(parent, "app");
@@ -1412,6 +1872,7 @@ describe("preserved composed skills in the health report (#1473)", () => {
         return base.run(command, args, opts);
       },
     };
+    writeEnginePins(hub);
     const applyOpts = composeApplyOptions(seedSkillCatalogue(["advisor"]));
     const resume = () =>
       applyWorkspacePlan(
@@ -1420,18 +1881,18 @@ describe("preserved composed skills in the health report (#1473)", () => {
         skeletonRoot,
         applyOpts,
       );
-    resume();
+    // Output an earlier Launcher release composed into the sibling, since edited by the client.
     const appSkill = join(app, ".agents", "skills", "clossys-advisor", "SKILL.md");
-    const edited = `${readFileSync(appSkill, "utf8")}\nClient's own note.\n`;
+    mkdirSync(dirname(appSkill), { recursive: true });
+    const edited = `${skillFixture("advisor")}\nClient's own note.\n`;
     writeFileSync(appSkill, edited);
 
     const result = resume();
-    expect(result.health.skillComposition?.preserved).toEqual([
-      expect.objectContaining({ target: "acme/app", packageDir: "advisor", action: "rewrite" }),
-    ]);
-    expect(result.message).toMatch(/skill preserved \(clossys-advisor in acme\/app, not rewritten\): /);
-    expect(result.health.degraded).toBe(true);
+    expect(result.health.skillComposition?.preserved).toEqual([]);
+    expect(result.message).not.toMatch(/skill preserved/);
+    expect(result.health.degraded).toBe(false);
     expect(readFileSync(appSkill, "utf8")).toBe(edited);
+    expect(readdirSync(app).sort()).toEqual([".agents", ".git"]);
   });
 });
 
@@ -1442,7 +1903,7 @@ describe("generated clossys/README.md", () => {
     const applyOpts = composeApplyOptions(seedSkillCatalogue(["advisor"]));
     applyWorkspacePlan(
       host(directory),
-      { action: "adopt", owner: "acme", repository: "hub", directory, advisorVersion: "0.1.5" },
+      { action: "adopt", owner: "acme", repository: "hub", directory, advisorVersion: "0.1.5", integratorVersion: "0.8.2" },
       skeletonRoot,
       applyOpts,
     );
@@ -1506,11 +1967,271 @@ describe("observeWorkspace", () => {
         "gh org list": { status: 0, stdout: "", stderr: "" },
         "gh repo view acme/workspace --json name": { status: 1, stdout: "", stderr: "not found" },
         "npm view @clossys/advisor version": { status: 0, stdout: "0.2.6\n", stderr: "" },
+        "npm view @clossys/integrator version": { status: 0, stdout: "0.8.2\n", stderr: "" },
       }),
     );
     expect(seen.cwd.githubOwner).toBe("acme");
     expect(seen.cwd.inventory).toEqual({ status: "missing", count: 0 });
     expect(seen.advisorVersion).toBe("0.2.6");
+    expect(seen.integratorVersion).toBe("0.8.2");
+  });
+});
+
+describe("a hub run writes nothing into any sibling checkout (S3-7a)", () => {
+  // Real git repositories, so each sibling's state is compared the way a
+  // person would see it: `git status --porcelain` plus a hash over every
+  // path in the working tree (type, mode, mtime, and bytes or link target).
+  const gitEnv = {
+    ...process.env,
+    GIT_CONFIG_GLOBAL: "/dev/null",
+    GIT_CONFIG_NOSYSTEM: "1",
+    GIT_AUTHOR_NAME: "Example Author",
+    GIT_AUTHOR_EMAIL: "author@example.com",
+    GIT_COMMITTER_NAME: "Example Author",
+    GIT_COMMITTER_EMAIL: "author@example.com",
+  };
+
+  function git(cwd: string, ...args: string[]): string {
+    return execFileSync("git", ["-c", "commit.gpgsign=false", "-c", "core.hooksPath=/dev/null", ...args], {
+      cwd,
+      env: gitEnv,
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "pipe"],
+    });
+  }
+
+  function treeHash(root: string): string {
+    const hash = createHash("sha256");
+    const walk = (directory: string, relative: string): void => {
+      for (const name of readdirSync(directory).sort()) {
+        if (relative === "" && name === ".git") continue;
+        const path = join(directory, name);
+        const rel = relative === "" ? name : `${relative}/${name}`;
+        const stat = lstatSync(path);
+        if (stat.isSymbolicLink()) {
+          hash.update(`link ${rel} ${readlinkSync(path)} ${stat.mtimeMs}\n`);
+        } else if (stat.isDirectory()) {
+          hash.update(`dir ${rel} ${stat.mode} ${stat.mtimeMs}\n`);
+          walk(path, rel);
+        } else {
+          hash.update(`file ${rel} ${stat.mode} ${stat.mtimeMs} ${stat.size}\n`);
+          hash.update(readFileSync(path));
+        }
+      }
+    };
+    walk(root, "");
+    return hash.digest("hex");
+  }
+
+  function checkoutState(directory: string): { status: string; head: string; tree: string } {
+    return {
+      status: git(directory, "status", "--porcelain", "--untracked-files=all", "--ignored"),
+      head: git(directory, "rev-parse", "HEAD"),
+      tree: treeHash(directory),
+    };
+  }
+
+  function write(root: string, relative: string, contents: string): void {
+    mkdirSync(dirname(join(root, relative)), { recursive: true });
+    writeFileSync(join(root, relative), contents);
+  }
+
+  function commitAll(directory: string, message: string): void {
+    git(directory, "add", "-A");
+    git(directory, "commit", "-q", "-m", message);
+  }
+
+  const legacyManifest = (skills: readonly string[]): string =>
+    `${JSON.stringify(
+      {
+        schemaVersion: 1,
+        generatedAt: "2026-01-01T00:00:00.000Z",
+        skills: skills.map((name) => ({ name: `clossys-${name}`, source: "catalogue", version: "0.1.0", sha256: createHash("sha256").update(skillFixture(name)).digest("hex") })),
+      },
+      null,
+      2,
+    )}\n`;
+
+  /** Four inventoried product checkouts beside a hub: one clean, three dirty with output and pins an earlier release left. */
+  function siblingsBeside(parent: string): Record<string, string> {
+    const siblings: Record<string, string> = {};
+    for (const name of ["clean-app", "dirty-app", "legacy-app", "pinned-app"]) {
+      const directory = join(parent, name);
+      mkdirSync(directory, { recursive: true });
+      git(directory, "init", "-q");
+      write(directory, "README.md", `# ${name}\n`);
+      write(directory, "package.json", `${JSON.stringify({ name, private: true }, null, 2)}\n`);
+      commitAll(directory, "initial");
+      siblings[name] = directory;
+    }
+    // dirty-app: untracked skills, discovery link and manifest from an earlier appoint, and edited guidance.
+    const dirty = siblings["dirty-app"] as string;
+    write(dirty, ".agents/skills/clossys-advisor/SKILL.md", skillFixture("advisor"));
+    mkdirSync(join(dirty, ".claude", "skills"), { recursive: true });
+    symlinkSync("../../.agents/skills/clossys-advisor", join(dirty, ".claude", "skills", "clossys-advisor"), "dir");
+    write(dirty, "clossys/.state/skills.json", legacyManifest(["advisor", "retired-role"]));
+    write(dirty, "AGENTS.md", "# Product repository\n\nEdited by the client.\n");
+    // legacy-app: a committed legacy hub-state folder and composed skills, then an uncommitted edit to one.
+    const legacy = siblings["legacy-app"] as string;
+    write(legacy, ".clossys/workspace.json", `${JSON.stringify({ schemaVersion: 1, kind: "account-hub", owner: "acme", repository: "acme/legacy-app" }, null, 2)}\n`);
+    write(legacy, ".agents/skills/clossys-designer/SKILL.md", skillFixture("designer"));
+    write(legacy, "clossys/.state/skills.json", legacyManifest(["designer"]));
+    write(legacy, "CLAUDE.md", "@AGENTS.md\n");
+    commitAll(legacy, "legacy output");
+    write(legacy, ".agents/skills/clossys-designer/SKILL.md", `${skillFixture("designer")}\nClient note.\n`);
+    // pinned-app: old engine pins, a staged change, a Cursor discovery link, and a hosts record.
+    const pinned = siblings["pinned-app"] as string;
+    write(pinned, "package.json", `${JSON.stringify({ name: "pinned-app", dependencies: { [INTEGRATOR_PACKAGE]: "0.1.0" }, devDependencies: { [ADVISOR_PACKAGE]: "0.2.6" } }, null, 2)}\n`);
+    commitAll(pinned, "old pins");
+    write(pinned, "src/staged.ts", "export {};\n");
+    git(pinned, "add", "src/staged.ts");
+    mkdirSync(join(pinned, ".cursor"), { recursive: true });
+    symlinkSync("../.agents/skills", join(pinned, ".cursor", "skills"), "dir");
+    write(pinned, "clossys/.state/hosts.json", `${JSON.stringify({ schemaVersion: 1, linkedHosts: ["cursor"], recordedAt: "2026-01-01T00:00:00.000Z" }, null, 2)}\n`);
+    return siblings;
+  }
+
+  /** Answers `git remote get-url origin` for the hub and each sibling; every other command from `commands`. */
+  function hubHost(hub: string, siblings: Record<string, string>, commands: Record<string, CommandResult> = {}): WorkspaceHost {
+    const base = host(hub, commands);
+    const origins = new Map<string, string>([[hub, "acme/hub"], ...Object.entries(siblings).map(([name, path]) => [path, `acme/${name}`] as const)]);
+    return {
+      ...base,
+      run: (command, args, options) => {
+        const origin = origins.get(options?.cwd ?? hub);
+        if (command === "git" && args.join(" ") === "remote get-url origin" && origin !== undefined) {
+          return { status: 0, stdout: `git@github.com:${origin}.git\n`, stderr: "" };
+        }
+        return base.run(command, args, options);
+      },
+    };
+  }
+
+  const inventory = [{ id: "acme/hub" }, { id: "acme/clean-app" }, { id: "acme/dirty-app" }, { id: "acme/legacy-app" }, { id: "acme/pinned-app" }];
+
+  function snapshot(siblings: Record<string, string>): Record<string, ReturnType<typeof checkoutState>> {
+    return Object.fromEntries(Object.entries(siblings).map(([name, path]) => [name, checkoutState(path)]));
+  }
+
+  it("D32: resume with four inventoried siblings, one clean and three dirty with legacy output, writes nothing into any of them and is neither failed nor degraded", () => {
+    const parent = tempDir();
+    const siblings = siblingsBeside(parent);
+    const hub = join(parent, "hub");
+    writeHubMarker(hub);
+    writeInventory(hub, inventory);
+    writeEnginePins(hub);
+    const before = snapshot(siblings);
+    expect(before["clean-app"]?.status).toBe("");
+    for (const name of ["dirty-app", "legacy-app", "pinned-app"]) expect(before[name]?.status).not.toBe("");
+
+    const result = applyWorkspacePlan(
+      hubHost(hub, siblings),
+      { action: "resume", owner: "acme", repository: "hub", directory: hub, clone: false, advisorVersion: "0.5.0", integratorVersion: "0.8.2" },
+      skeletonRoot,
+      composeApplyOptions(seedSkillCatalogue(["advisor", "designer"])),
+    );
+
+    expect(snapshot(siblings)).toEqual(before);
+    expect(result.state).toBe("satisfied");
+    expect(result.health.degraded).toBe(false);
+    expect(result.health.pinFindings).toEqual([]);
+    expect(result.health.skillComposition?.preserved).toEqual([]);
+    expect(result.health.skillComposition?.rosterTargets).toEqual(["acme/hub"]);
+    expect(result.health.skillComposition?.siblings).toEqual(
+      ["clean-app", "dirty-app", "legacy-app", "pinned-app"].map((name) => ({
+        inventoryId: `acme/${name}`,
+        note: "checkout beside the hub; a hub run writes nothing here; once this repository is staffed in an approved plan, @clossys-advisor and the voices of the roles staffed there arrive with that plan's setup pull request",
+      })),
+    );
+    expect(result.message).not.toMatch(/violated|failed/i);
+    // The hub's own team is still composed.
+    expect(readFileSync(join(hub, ".agents/skills/clossys-designer/SKILL.md"), "utf8")).toContain("name: clossys-designer");
+  });
+
+  it("writes nothing into a sibling on create, resume, or appoint", () => {
+    const catalogue = seedSkillCatalogue(["advisor"]);
+
+    // create: a new hub beside existing checkouts; its fresh inventory lists none of them.
+    const createParent = tempDir();
+    const createSiblings = siblingsBeside(createParent);
+    const created = join(createParent, "workspace");
+    mkdirSync(created);
+    const createBefore = snapshot(createSiblings);
+    const createdResult = applyWorkspacePlan(
+      hubHost(created, createSiblings, {
+        [`gh repo create acme/workspace --private --source ${created} --remote origin --push`]: { status: 0, stdout: "created\n", stderr: "" },
+      }),
+      { action: "create", owner: "acme", repository: "workspace", directory: created, advisorVersion: "0.5.0", integratorVersion: "0.8.2" },
+      skeletonRoot,
+      composeApplyOptions(catalogue),
+    );
+    expect(snapshot(createSiblings)).toEqual(createBefore);
+    expect(createdResult.health.skillComposition?.rosterTargets).toEqual(["acme/workspace"]);
+
+    // resume, with --repositories choosing all four siblings in the same run.
+    const resumeParent = tempDir();
+    const resumeSiblings = siblingsBeside(resumeParent);
+    const resumed = join(resumeParent, "hub");
+    writeHubMarker(resumed);
+    writeInventory(resumed, [{ id: "acme/hub" }]);
+    const resumeBefore = snapshot(resumeSiblings);
+    const resumeResult = applyWorkspacePlan(
+      hubHost(resumed, resumeSiblings),
+      {
+        action: "resume",
+        owner: "acme",
+        repository: "hub",
+        directory: resumed,
+        clone: false,
+        chosenInventory: {
+          kind: "write",
+          document: `${JSON.stringify({ schemaVersion: 1, repositories: inventory }, null, 2)}\n`,
+          count: 5,
+          previousCount: 1,
+          added: ["acme/clean-app", "acme/dirty-app", "acme/legacy-app", "acme/pinned-app"],
+          removed: [],
+          replaced: "nothing",
+        },
+      },
+      skeletonRoot,
+      composeApplyOptions(catalogue),
+    );
+    expect(snapshot(resumeSiblings)).toEqual(resumeBefore);
+    expect(resumeResult.health.skillComposition?.siblings).toHaveLength(4);
+
+    // appoint: the hub checkout is clean; its inventory lists all four siblings.
+    const appointParent = tempDir();
+    const appointSiblings = siblingsBeside(appointParent);
+    const appointed = join(appointParent, "hub");
+    mkdirSync(appointed);
+    writeInventory(appointed, inventory);
+    const appointBefore = snapshot(appointSiblings);
+    const appointResult = applyWorkspacePlan(
+      hubHost(appointed, appointSiblings, { "git status --porcelain": { status: 0, stdout: "", stderr: "" } }),
+      { action: "adopt", owner: "acme", repository: "hub", directory: appointed, advisorVersion: "0.5.0", integratorVersion: "0.8.2" },
+      skeletonRoot,
+      composeApplyOptions(catalogue),
+    );
+    expect(snapshot(appointSiblings)).toEqual(appointBefore);
+    expect(appointResult.state).toBe("satisfied");
+    expect(appointResult.health.degraded).toBe(false);
+    expect(appointResult.health.skillComposition?.siblings).toHaveLength(4);
+  });
+
+  it("resume refreshes hub guidance written when appoint still composed into siblings", () => {
+    const directory = tempDir();
+    writeHubMarker(directory);
+    writeInventory(directory, [{ id: "acme/hub" }]);
+    writeFileSync(join(directory, "AGENTS.md"), SIBLING_COMPOSING_CONSUMER_AGENTS_MD);
+    applyWorkspacePlan(
+      host(directory),
+      { action: "resume", owner: "acme", repository: "hub", directory, clone: false },
+      skeletonRoot,
+      composeApplyOptions(seedSkillCatalogue(["advisor"])),
+    );
+    const agents = readFileSync(join(directory, "AGENTS.md"), "utf8");
+    expect(agents).toBe(CONSUMER_AGENTS_MD);
+    expect(agents).toContain("it gets `@clossys-advisor` and the voices of the roles\nstaffed there, with that plan's setup pull request. A missing `@` mention\nis a bug only here in the hub");
   });
 });
 
@@ -1552,6 +2273,64 @@ describe("cloneMissingInventoryRepositories (#1179)", () => {
     );
     expect(outcomes).toEqual([
       { inventoryId: "app", result: "failed", note: "gh repo clone exited 1: repository not found" },
+    ]);
+  });
+
+  it("leaves a checkout already beside the hub out of its outcomes, and clones only the missing one", () => {
+    const parent = tempDir();
+    const hub = join(parent, "hub");
+    mkdirSync(join(hub, ".git"), { recursive: true });
+    writeInventory(hub, [{ id: "present" }, { id: "absent" }]);
+    const present = join(parent, "present");
+    mkdirSync(join(present, ".git"), { recursive: true });
+    const base = host(hub, {
+      [`gh repo clone acme/absent ${join(parent, "absent")}`]: { status: 0, stdout: "Cloning...\n", stderr: "" },
+    });
+    const cloneHost: WorkspaceHost = {
+      ...base,
+      run: (command, args, options) =>
+        command === "git" && args.join(" ") === "remote get-url origin" && options?.cwd === present
+          ? { status: 0, stdout: "git@github.com:acme/present.git\n", stderr: "" }
+          : base.run(command, args, options),
+    };
+    expect(cloneMissingInventoryRepositories(cloneHost, hub, "acme")).toEqual([
+      { inventoryId: "absent", result: "cloned", note: `cloned to ${join(parent, "absent")}` },
+    ]);
+  });
+
+  it("names a folder beside the hub that is not a git checkout, and one git refuses to read, each for what it is", () => {
+    const parent = tempDir();
+    const hub = join(parent, "hub");
+    mkdirSync(join(hub, ".git"), { recursive: true });
+    writeHubMarker(hub);
+    writeEnginePins(hub);
+    writeInventory(hub, [{ id: "plain" }, { id: "guarded" }]);
+    mkdirSync(join(parent, "plain"), { recursive: true });
+    const guarded = join(parent, "guarded");
+    mkdirSync(join(guarded, ".git"), { recursive: true });
+    const base = host(hub);
+    const refusingHost: WorkspaceHost = {
+      ...base,
+      run: (command, args, options) =>
+        command === "git" && args.join(" ") === "remote get-url origin" && options?.cwd === guarded
+          ? { status: 128, stdout: "", stderr: `fatal: detected dubious ownership in repository at '${guarded}'\n` }
+          : base.run(command, args, options),
+    };
+    const result = applyWorkspacePlan(
+      refusingHost,
+      { action: "resume", owner: "acme", repository: "hub", directory: hub, clone: false },
+      skeletonRoot,
+      composeApplyOptions(seedSkillCatalogue(["advisor"])),
+    );
+    expect(result.health.skillComposition?.siblings).toEqual([
+      { inventoryId: "plain", note: "the folder beside the hub with this name is not a git checkout, so it cannot be matched to this inventory id" },
+      { inventoryId: "guarded", note: "git refuses to read this checkout (it reports dubious ownership), so its origin could not be matched to this inventory id" },
+    ]);
+    expect(result.health.degraded).toBe(false);
+    expect(readdirSync(join(parent, "plain"))).toEqual([]);
+    expect(cloneMissingInventoryRepositories(refusingHost, hub, "acme").map((outcome) => outcome.result)).toEqual([
+      "skipped-other-reason",
+      "skipped-other-reason",
     ]);
   });
 
@@ -1612,7 +2391,7 @@ describe("host discovery recording, wired into applyWorkspacePlan (#1180)", () =
     expect(hostsRaw.linkedHosts).toEqual(["claude-code"]);
   });
 
-  it("records a hosts.json for a sibling clone too, not only the hub", () => {
+  it("records hosts.json for the hub only, never in a sibling clone", () => {
     const parent = tempDir();
     const hub = join(parent, "hub");
     const app = join(parent, "app");
@@ -1643,7 +2422,8 @@ describe("host discovery recording, wired into applyWorkspacePlan (#1180)", () =
       skeletonRoot,
       composeApplyOptions(catalogue),
     );
-    expect(existsSync(join(app, "clossys", ".state", "hosts.json"))).toBe(true);
+    expect(existsSync(join(hub, "clossys", ".state", "hosts.json"))).toBe(true);
+    expect(existsSync(join(app, "clossys"))).toBe(false);
   });
 });
 

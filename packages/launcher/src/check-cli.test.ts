@@ -5,6 +5,7 @@ const satisfied = {
   cwd: { absolutePath: "/tmp/empty", empty: true, git: false, looksLikeFoundry: false },
   ownerCandidates: ["acme"],
   advisorVersion: "0.2.2",
+  integratorVersion: "0.8.2",
   ghAvailable: true,
   gitAvailable: true,
 };
@@ -20,6 +21,7 @@ const indeterminate = {
   cwd: { absolutePath: "/tmp/empty", empty: true, git: false, looksLikeFoundry: false },
   ownerCandidates: [],
   advisorVersion: "0.2.2",
+  integratorVersion: "0.8.2",
   ghAvailable: true,
   gitAvailable: true,
 };
@@ -50,6 +52,36 @@ describe("launcher-check", () => {
     expect(checkMain(["--input", "/tmp/indeterminate.json"], read, () => {}, () => {})).toBe(2);
   });
 
+  it("grades create and appoint as indeterminate when the observation has no integratorVersion", () => {
+    const { integratorVersion: _omitted, ...withoutIntegrator } = satisfied;
+    const appoint = {
+      ...withoutIntegrator,
+      cwd: {
+        absolutePath: "/tmp/central",
+        empty: false,
+        git: true,
+        looksLikeFoundry: false,
+        githubOwner: "acme",
+        githubRepository: "central",
+        inventory: { status: "populated", count: 1 },
+      },
+    };
+    const files: Record<string, string> = {
+      "/tmp/create.json": JSON.stringify(withoutIntegrator),
+      "/tmp/appoint.json": JSON.stringify(appoint),
+    };
+    const read = (path: string) => {
+      const body = files[path];
+      if (body === undefined) throw new Error("missing");
+      return body;
+    };
+    const out: string[] = [];
+    const write = (text: string) => out.push(text);
+    expect(checkMain(["--input", "/tmp/create.json"], read, write, write)).toBe(2);
+    expect(checkMain(["--input", "/tmp/appoint.json"], read, write, write)).toBe(2);
+    expect(out.join("\n")).toContain("cannot read a public @clossys/integrator version");
+  });
+
   it("grades adopt only when the observation already has a populated inventory", () => {
     const files: Record<string, string> = {
       "/tmp/adopt.json": JSON.stringify({
@@ -64,6 +96,7 @@ describe("launcher-check", () => {
         },
         ownerCandidates: ["acme"],
         advisorVersion: "0.2.2",
+        integratorVersion: "0.8.2",
         ghAvailable: true,
         gitAvailable: true,
       }),
@@ -79,6 +112,7 @@ describe("launcher-check", () => {
         },
         ownerCandidates: ["acme"],
         advisorVersion: "0.2.2",
+        integratorVersion: "0.8.2",
         ghAvailable: true,
         gitAvailable: true,
       }),
@@ -117,6 +151,7 @@ describe("launcher-check", () => {
         },
         ownerCandidates: ["acme"],
         advisorVersion: "0.2.2",
+        integratorVersion: "0.8.2",
         ghAvailable: true,
         gitAvailable: true,
       }),

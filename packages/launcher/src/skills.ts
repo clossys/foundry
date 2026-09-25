@@ -6,8 +6,15 @@ import type { SkillManifestEntry, WorkspaceHost } from "./types.js";
 export interface SkillCompositionResult {
   readonly composed: readonly string[];
   readonly skipped: readonly { readonly packageDir: string; readonly note: string }[];
+  /** The checkouts this run composed skills into: the hub. */
   readonly rosterTargets?: readonly string[];
-  readonly rosterSkipped?: readonly { readonly inventoryId: string; readonly note: string }[];
+  /**
+   * Each inventoried repository other than the hub, with what a hub run
+   * found for it. A hub run never writes into one: a product repository's
+   * team arrives only once it is staffed in an approved plan, with that
+   * plan's setup pull request.
+   */
+  readonly siblings?: readonly { readonly inventoryId: string; readonly note: string }[];
   /** Skills pruned this run: present in the directory's previous manifest, absent from this run's composed set. */
   readonly retired: readonly string[];
   /**

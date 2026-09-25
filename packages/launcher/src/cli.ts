@@ -31,14 +31,22 @@ when appointing or on an existing hub. It never merges into or overwrites an
 inventory that lists a different set of repositories; it reports the
 difference, and --replace-inventory is the explicit approval to replace it.
 --inventory <path> still accepts a prepared inventory document when
-appointing. Resume refreshes composed skills and stale hub guidance, and
-migrates a legacy .clossys/ hub state to clossys/.state/ automatically.
-Create may write an empty inventory.
+appointing. Resume refreshes composed skills and stale hub guidance, pins
+the hub's @clossys/advisor and @clossys/integrator at their live versions,
+and migrates a legacy .clossys/ hub state to clossys/.state/ automatically.
+Create may write an empty inventory. A run composes skills into the hub only
+and changes nothing in an inventoried repository's checkout beside it: once
+a product repository is staffed in an approved plan, its team arrives with
+that plan's setup pull request. When a run changes an engine pin, it says
+what changed: run the hub's package manager install, then commit
+package.json together with its lockfile.
 
 By default launcher never \`gh repo clone\`s a missing inventory entry --
 that is not how you talk to the team. --clone-missing is the one explicit,
 approved exception (#1179): on resume only, it clones every inventoried
-repository not yet sitting beside the hub, and only those.
+repository not yet sitting beside the hub, and only those. Cloning is not
+composing: a cloned repository receives its team only once it is staffed in
+an approved plan, with that plan's setup pull request.
 
 GitHub-only. Owner is inferred from \`gh\` and git remotes. Public npm reads
 need no token.

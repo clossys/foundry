@@ -125,6 +125,7 @@ describe("launcher CLI", () => {
         "gh org list": { status: 0, stdout: "", stderr: "" },
         "gh repo view acme/workspace --json name": { status: 1, stdout: "", stderr: "not found" },
         "npm view @clossys/advisor version": { status: 0, stdout: "0.1.5\n", stderr: "" },
+        "npm view @clossys/integrator version": { status: 0, stdout: "0.8.2\n", stderr: "" },
         [`gh repo create acme/workspace --private --source ${directory} --remote origin --push`]: {
           status: 0,
           stdout: "created\n",
@@ -194,6 +195,7 @@ describe("launcher CLI", () => {
         "git --version": { status: 0, stdout: "git\n", stderr: "" },
         "git remote get-url origin": { status: 0, stdout: "git@github.com:acme/central.git\n", stderr: "" },
         "npm view @clossys/advisor version": { status: 0, stdout: "0.1.5\n", stderr: "" },
+        "npm view @clossys/integrator version": { status: 0, stdout: "0.8.2\n", stderr: "" },
       }),
       skeletonRoot,
     );
@@ -242,6 +244,7 @@ describe("launcher CLI", () => {
         "gh org list": { status: 0, stdout: "", stderr: "" },
         "gh repo view acme/workspace --json name": { status: 1, stdout: "", stderr: "not found" },
         "npm view @clossys/advisor version": { status: 0, stdout: "0.2.6\n", stderr: "" },
+        "npm view @clossys/integrator version": { status: 0, stdout: "0.8.2\n", stderr: "" },
       }),
       skeletonRoot,
     );
