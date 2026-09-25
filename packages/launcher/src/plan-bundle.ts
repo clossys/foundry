@@ -24,9 +24,12 @@ import type { AdvisorPlan, EngagementBrief, EngagementBriefRole, EngagementConte
 import { loadPackedContract, validateAdvisorPlan, validateEngagementBrief } from "./plan-contract.js";
 import { planDigest } from "./plan-digest.js";
 import { bundleDigest, changeSetDigest } from "./change-set-digest.js";
-import { LEDGER_PATH, isSafeRelativePath, matchesPathPattern, validateApplyBundle, validateRepositoryChangeSet } from "./change-set-contract.js";
+import {
+  AUTHORIZATION_PLAN_MISMATCH, BRIEF_PATH, CANONICAL_KEYS, LEDGER_PATH, canonicalOrder, dependencyPointer, isSafeRelativePath, lockfilePath,
+  matchesPathPattern, skillPath, validateApplyBundle, validateRepositoryChangeSet, worstVerdict,
+} from "./change-set-contract.js";
 import type {
-  ApplyBundle, ApplyBundleRepository, ApplyCheck, ChangeSetDeferral, ChangeSetItem, ChangeSetPhase, ChangeSetRefusal, CheckVerdict, DependencyPlacement,
+  ApplyBundle, ApplyBundleRepository, ApplyCheck, ChangeSetDeferral, ChangeSetItem, ChangeSetPhase, ChangeSetRefusal, DependencyPlacement,
   FileChange, KeyChange, LockfileName, PackageInvariant, PackageManagerKind, PinnedPackage, ReleaseAgeSurfaceKind, RepositoryChangeSet, RepositoryVisibility,
 } from "./change-set-contract.js";
 
@@ -102,14 +105,8 @@ export const PUBLIC_PROBLEM_PLACEHOLDER: string = (() => {
   return text;
 })();
 
-const BRIEF_PATH = "clossys/brief.json";
-const BASE_ALLOW_LIST = ["clossys/**", ".agents/skills/clossys-*/**"];
+const BASE_ALLOW_LIST = [".agents/skills/clossys-*/**", "clossys/**"];
 const RESERVED_ITEM_IDS = new Set(["brief", "skills", "ledger"]);
-const DEFAULT_LOCKFILE: Readonly<Record<Exclude<PackageManagerKind, "none">, Exclude<LockfileName, "none">>> = {
-  npm: "package-lock.json",
-  pnpm: "pnpm-lock.yaml",
-  yarn: "yarn.lock",
-};
 
 function projectRole(role: EngagementBriefRole): EngagementBriefRole {
   return {
@@ -158,18 +155,13 @@ function contentDigest(text: string): string {
   return `sha256:${createHash("sha256").update(Buffer.from(text, "utf8")).digest("hex")}`;
 }
 
-function pointerFor(placement: DependencyPlacement, name: string): string {
-  return `/${placement}/${name.replace(/~/g, "~0").replace(/\//g, "~1")}`;
-}
-
 function isSkipped(entry: RepositoryObservation | SkippedRepositoryObservation): entry is SkippedRepositoryObservation {
   return Object.hasOwn(entry, "skipped");
 }
 
-const VERDICT_RANK: Readonly<Record<CheckVerdict, number>> = { satisfied: 0, indeterminate: 1, violated: 2 };
-
-function worst(checks: readonly ApplyCheck[]): CheckVerdict {
-  return checks.reduce<CheckVerdict>((current, check) => (VERDICT_RANK[check.verdict] > VERDICT_RANK[current] ? check.verdict : current), "satisfied");
+/** Checks in one order, by check id, then rule. */
+function sortChecks(checks: readonly ApplyCheck[]): ApplyCheck[] {
+  return canonicalOrder(checks, (check) => [check.check, check.rule ?? ""]);
 }
 
 interface ComputedSet {
@@ -185,7 +177,9 @@ function computeChangeSet(
   acts: readonly PlanPackageAct[],
   skillContent: ReadonlyMap<string, string>,
 ): ComputedSet {
-  const existing = new Map(observation.files.map((file) => [file.path, file.sha256]));
+  // Paths compare case-insensitively (code rule C3): a base file that differs only in case is the same file on many checkouts.
+  const existing = new Map(observation.files.map((file) => [file.path.toLowerCase(), file.sha256]));
+  const existingAt = (path: string) => existing.get(path.toLowerCase());
   const items: ChangeSetItem[] = [];
   const files: FileChange[] = [];
   const keys: KeyChange[] = [];
@@ -197,7 +191,7 @@ function computeChangeSet(
       refused.push({ path, reason: "unsafe-path", item });
       return;
     }
-    if (existing.has(path)) {
+    if (existingAt(path) !== undefined) {
       // Empty ledger: nothing shows the flow wrote what is there, so it is not taken over.
       refused.push({ path, reason: "unowned-existing", item });
       return;
@@ -216,7 +210,7 @@ function computeChangeSet(
     const content = skillContent.get(role);
     if (content === undefined) throw new TypeError("a staffed role has no composed skill content in skills");
     // A role must be one path segment: `a/b` would still match the allow-list's `clossys-*/**`.
-    const path = `.agents/skills/clossys-${role}/SKILL.md`;
+    const path = skillPath(role);
     if (/[/\\]/.test(role)) refused.push({ path, reason: "unsafe-path", item: "skills" });
     else writeWhole(path, content, "skills");
   }
@@ -237,13 +231,14 @@ function computeChangeSet(
       observation.lockedPackages.some((locked) => locked.name === act.name && locked.version === act.version && locked.integrity === act.integrity);
     items.push({ id: act.planItem, act: act.act, planItem: act.planItem, package: pinned, placement: act.placement, satisfiedInBase });
     if (satisfiedInBase) continue;
-    const pointer = pointerFor(act.placement, act.name);
+    const pointer = dependencyPointer(act.placement, act.name);
     if (observation.packageManager === "none") {
       refused.push({ file: "package.json", pointer, reason: "manifest-absent", item: act.planItem });
       continue;
     }
     if (entries.length > 0) {
-      for (const entry of entries) refused.push({ file: "package.json", pointer: pointerFor(entry.placement, entry.name), reason: "unowned-existing", item: act.planItem });
+      const pointers = new Set(entries.map((entry) => dependencyPointer(entry.placement, entry.name)));
+      for (const existingPointer of pointers) refused.push({ file: "package.json", pointer: existingPointer, reason: "unowned-existing", item: act.planItem });
       continue;
     }
     keys.push({ file: "package.json", pointer, before: null, after: act.version, item: act.planItem });
@@ -251,10 +246,11 @@ function computeChangeSet(
   }
 
   const pathAllowList = [...BASE_ALLOW_LIST];
-  if (invariants.length > 0 && observation.packageManager !== "none") {
-    const lockfile = observation.lockfile === "none" ? DEFAULT_LOCKFILE[observation.packageManager] : observation.lockfile;
+  const lockfile = lockfilePath(observation);
+  if (invariants.length > 0 && lockfile !== null) {
     pathAllowList.push("package.json", lockfile);
-    files.push({ path: lockfile, mode: "100644", derived: true, item: invariants[0]!.item, invariants, before: existing.get(lockfile) ?? null });
+    const sorted = canonicalOrder(invariants, CANONICAL_KEYS.invariant);
+    files.push({ path: lockfile, mode: "100644", derived: true, item: sorted[0]!.item, invariants: sorted, before: existingAt(lockfile) ?? null });
   }
 
   items.push({ id: "ledger", act: "write-ledger" });
@@ -264,7 +260,7 @@ function computeChangeSet(
     derived: true,
     item: "ledger",
     invariants: [{ ledgerGeneration: observation.ledgerGeneration + 1 }],
-    before: existing.get(LEDGER_PATH) ?? null,
+    before: existingAt(LEDGER_PATH) ?? null,
   });
 
   const checks: ApplyCheck[] = [];
@@ -295,14 +291,18 @@ function computeChangeSet(
       observed: {
         packageManager: observation.packageManager,
         lockfile: observation.lockfile,
-        releaseAgeSurfaces: observation.releaseAgeSurfaces.map((surface) => ({ surface: surface.surface, path: surface.path })),
+        releaseAgeSurfaces: canonicalOrder(
+          observation.releaseAgeSurfaces.map((surface) => ({ surface: surface.surface, path: surface.path })),
+          CANONICAL_KEYS.surface,
+        ),
       },
-      items,
-      files,
-      keys,
-      refused,
-      deferred,
-      pathAllowList,
+      // Every array whose order carries no meaning is written in the contract's canonical order (code rule C8).
+      items: canonicalOrder(items, CANONICAL_KEYS.item),
+      files: canonicalOrder(files, CANONICAL_KEYS.file),
+      keys: canonicalOrder(keys, CANONICAL_KEYS.key),
+      refused: canonicalOrder(refused, CANONICAL_KEYS.refusal),
+      deferred: canonicalOrder(deferred, CANONICAL_KEYS.deferral),
+      pathAllowList: canonicalOrder(pathAllowList, CANONICAL_KEYS.pattern),
     },
     checks,
   };
@@ -377,6 +377,7 @@ export function planApplyBundle(inputs: PlanApplyBundleInputs): PlanApplyBundleR
     computed.push({ id: staffingEntry.repository, phase: observation.phase, set, checks });
   }
 
+  const authorizationMismatch = inputs.authorization !== null && inputs.authorization.planDigest !== digestOfPlan;
   const digestOfBundle = bundleDigest(digestOfPlan, computed.map((entry) => ({ id: entry.id, changeSetDigest: entry.set.changeSetDigest })));
   const changeSets: RepositoryChangeSet[] = computed.map((entry) => ({ ...entry.set, bundle: digestOfBundle }));
   changeSets.forEach((set, index) => {
@@ -395,8 +396,10 @@ export function planApplyBundle(inputs: PlanApplyBundleInputs): PlanApplyBundleR
     computedAt: inputs.computedAt,
     repositories: entries.map((entry) => {
       if (!("pending" in entry)) return entry;
-      const { id, phase, set, checks } = computed[entry.pending]!;
-      return { id, verdict: worst(checks), phase, changeSet: set.changeSetDigest, checks };
+      const { id, phase, set, checks: own } = computed[entry.pending]!;
+      // A pure check that needs no observation: an authorization issued for another plan permits none of this one (code rule A4).
+      const checks = sortChecks(authorizationMismatch ? [...own, { check: "V3", verdict: "violated", rule: AUTHORIZATION_PLAN_MISMATCH }] : own);
+      return { id, verdict: worstVerdict(checks.map((check) => check.verdict)), phase, changeSet: set.changeSetDigest, checks };
     }),
     bundleDigest: digestOfBundle,
   };

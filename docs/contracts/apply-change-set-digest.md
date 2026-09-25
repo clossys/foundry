@@ -29,9 +29,9 @@ The plan digest is `canonicalDigest` of the plan without `asOf` and
 `changeSetDigest(set)` is `canonicalDigest(subject(set))`, where
 `subject(set)` is the change set with two changes:
 
-1. **Five top-level members are removed:** `changeSetDigest`, `branch`,
-   `bundle`, `pullRequest` and `inverse`. Whether each is present or absent
-   makes no difference.
+1. **Six top-level members are removed:** `changeSetDigest`, `branch`,
+   `bundle`, `pullRequest`, `inverse` and `tooling`. Whether each is present
+   or absent makes no difference.
 2. **Every file whose `derived` member is `true` is reduced** to its
    `path`, `mode`, `derived`, `item` and `invariants` members. Any other
    member it has, which the contract allows to be only `before` and
@@ -42,10 +42,12 @@ the order of every array.
 
 ### What is excluded, and why
 
-Each exclusion removes something that is computed from the digest, or from
-something the digest already covers. Without it, the digest would have to
-contain its own result, and recomputing any of these would give the set a
-new digest, and so a new branch, on every run.
+Each exclusion removes something that is computed from the digest, from
+something the digest already covers, or from the machine rather than the
+change. Without it, the digest would have to contain its own result, or two
+machines would compute different digests for the same change, and
+recomputing any of these would give the set a new digest, and so a new
+branch, on every run.
 
 | Excluded | Why |
 | --- | --- |
@@ -54,6 +56,7 @@ new digest, and so a new branch, on every run.
 | `bundle` | It is the bundle digest, which covers this set's digest. |
 | `pullRequest` | Its title ends with the digest's first 12 hexadecimal digits, and its body carries the digest as a marker, so `bodySha256` changes with the digest. Both are rendered from ids and digests only. |
 | `inverse` | It is the digest of the change set that reverts this one, which is computed from this one. |
+| `tooling` | It records which tool versions regenerated the derived files, for diagnosis. It describes the machine, not the change, and the derived files' invariants, which stay covered, are what the set promises. |
 | the ledger file's `before` and `after` | The ledger (`clossys/.state/installed.json`) lists the digest of every change set that wrote it, this one included, so its bytes depend on this digest. Everything else in it follows from the members the digest covers. What stays covered is its invariant: the ledger generation this set writes. |
 | the lockfile's `before` and `after` | A lockfile's bytes depend on the package manager's version, not only on what is installed. Two runs with the same inputs could write different bytes for no difference that matters. What stays covered is its invariants: the exact version and integrity each package act resolves to. |
 
@@ -61,6 +64,19 @@ The two file rows are one rule, the derived-file reduction in step 2: a
 file is `derived` exactly when its bytes are checked by invariants instead
 of byte equality. A file whose bytes this set writes exactly is never
 derived, and its `before` and `after` stay covered.
+
+Because a derived file's bytes are outside the digest, the contract lets
+only two files be derived (its code rule C7): the ledger, whose only
+invariant is its generation, and the repository's own lockfile, whose only
+invariants are package versions and integrity values, each equal to the
+package item it belongs to (C9). Any other file marked derived, such as
+`package.json`, a brief or a skill, is refused, so no file's bytes can leave
+the digest by being relabelled.
+
+The contract also fixes the order of every array whose order carries no
+meaning (its code rule C8), so one change has one serialization and one
+digest; a set written in any other order is refused rather than given a
+second digest.
 
 ### What stays covered, deliberately
 
@@ -91,11 +107,25 @@ gives the same digest.
 
 A file's `before` and `after` are content digests: `sha256:` and the
 lowercase hexadecimal SHA-256 of the file's exact bytes, or `null` when the
-file is absent. For `clossys/brief.json` those bytes are the repository's
-projection of the hub brief, serialized as JSON with two-space indentation,
-members in the order the brief contract states, and one final newline. A
-composed skill's bytes are the `SKILL.md` text Launcher composes for that
-role, as UTF-8.
+file is absent. A composed skill's bytes are the `SKILL.md` text Launcher
+composes for that role, as UTF-8.
+
+For `clossys/brief.json` the bytes are the UTF-8 encoding of the
+repository's projection of the hub brief, serialized exactly as
+ECMAScript's `JSON.stringify(brief, null, 2)` followed by one line feed:
+
+- members in the order the brief contract's PER-REPOSITORY PROJECTION
+  states, at every depth, whatever order the hub brief's file used;
+- two spaces of indentation per level, a line feed after every `{`, `[` and
+  `,`, one space after each `:`, and an empty array or object written `[]`
+  or `{}`;
+- in strings, only what JSON requires is escaped: `"` as `\"`, `\` as
+  `\\`, U+0008, U+0009, U+000A, U+000C and U+000D as `\b`, `\t`, `\n`,
+  `\f` and `\r`, and every other code point below U+0020 as `\u00XX` with
+  lowercase hexadecimal digits. Everything else, including `/`, U+007F,
+  U+2028, U+2029 and all non-ASCII text such as `’`, is written as itself.
+  (A lone surrogate would be escaped, but the brief contract refuses one.)
+- the only number, `schemaVersion`, is written `1`.
 
 ## `bundleDigest`
 
@@ -144,7 +174,8 @@ The expected values in
 [`apply-change-set-digest.fixture.json`](apply-change-set-digest.fixture.json)
 were computed by a stand-alone Python 3 script that uses only the standard
 library and reads nothing from this repository's packages. It builds each
-change set, computes its subject as step 1 and step 2 above describe,
+change set in the canonical order the contract states, computes its
+subject as step 1 and step 2 above describe,
 serializes it with
 `json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"))`,
 and hashes the UTF-8 bytes with `hashlib.sha256`. For these values that
@@ -154,6 +185,14 @@ asserts both before it serializes anything. It then sets `branch`, the
 title and `changeSetDigest` from the digest, computes the bundle digests the
 same way, and asserts every `sameDigestAs` and `differsFrom` relation in
 the corpus before writing it.
+
+The same script builds each brief case from `hubBrief`, whose members are
+deliberately out of order and whose text includes `’`, an emoji, a quotation
+mark, a backslash, a tab, U+0007, U+007F and U+2028. It applies the brief
+contract's projection in its stated member order and serializes it with
+`json.dumps(value, ensure_ascii=False, indent=2)` and one line feed, which
+writes the same bytes as `JSON.stringify(value, null, 2)` for these values:
+both escape only what JSON requires and write everything else as itself.
 
 ## Why these choices
 

@@ -209,6 +209,14 @@ describe("planApplyBundle", () => {
     expect(setFor(flipped.changeSets, SITE.id).changeSetDigest).not.toBe(setFor(changeSets, SITE.id).changeSetDigest);
   });
 
+  it("records the independently computed brief bytes' digest for the corpus hub brief", () => {
+    const corpus = JSON.parse(read("docs/contracts/apply-change-set-digest.fixture.json")) as { hubBrief: EngagementBrief; briefs: { name: string; sha256: string }[] };
+    const { changeSets } = run({ ...INPUTS, hubBrief: corpus.hubBrief });
+    const briefAfter = (set: RepositoryChangeSet) => set.files.find((file) => file.path === "clossys/brief.json")!.after;
+    expect(briefAfter(setFor(changeSets, SITE.id))).toBe(corpus.briefs.find((entry) => entry.name === "private-non-ascii")!.sha256);
+    expect(briefAfter(setFor(changeSets, DOCS.id))).toBe(corpus.briefs.find((entry) => entry.name === "public-placeholder")!.sha256);
+  });
+
   it("writes the projected brief's members in one fixed order: the brief contract's", () => {
     const projected = projectEngagementBrief(HUB_BRIEF, ["writer"], "private");
     expect(Object.keys(projected)).toEqual(["schemaVersion", "problem", "roles", "sequence", "deliverables", "staffedHere"]);
@@ -233,7 +241,7 @@ describe("planApplyBundle", () => {
     const docs = setFor(changeSets, DOCS.id);
     expect(docs.deferred).toEqual([{ planItem: "example-owner/docs:@example/writer", reason: "after-setup" }]);
     expect(docs.keys).toEqual([{ file: "package.json", pointer: "/devDependencies/@example~1starter", before: null, after: "0.9.2", item: "example-owner/docs:@example/starter" }]);
-    expect(docs.pathAllowList).toEqual(["clossys/**", ".agents/skills/clossys-*/**", "package.json", "pnpm-lock.yaml"]);
+    expect(docs.pathAllowList).toEqual([".agents/skills/clossys-*/**", "clossys/**", "package.json", "pnpm-lock.yaml"]);
   });
 
   it("writes only brief, skills and the ledger for a plan with no package acts", () => {
@@ -242,9 +250,9 @@ describe("planApplyBundle", () => {
     delete plan.resolution;
     const { bundle, changeSets } = run({ ...INPUTS, plan: plan as unknown as AdvisorPlan, authorization: null });
     for (const set of changeSets) {
-      expect(set.items.map((item) => item.act)).toEqual(["write-record", "compose-skills", "write-ledger"]);
+      expect(set.items.map((item) => item.act)).toEqual(["write-record", "write-ledger", "compose-skills"]);
       expect(set.keys).toEqual([]);
-      expect(set.pathAllowList).toEqual(["clossys/**", ".agents/skills/clossys-*/**"]);
+      expect(set.pathAllowList).toEqual([".agents/skills/clossys-*/**", "clossys/**"]);
     }
     expect(bundle.snapshot).toBeNull();
     expect(bundle.authorization).toBeNull();
@@ -282,6 +290,82 @@ describe("planApplyBundle", () => {
       expect(String(error)).toMatch(/changeSet\.repository\.baseCommit/);
       expect(String(error)).not.toContain("not a commit");
     }
+  });
+});
+
+// TODO(#1178): the planner purity check moves to the shared scripts/lib/import-purity.mjs helper
+// (TypeScript compiler API over the real import graph, non-deterministic globals forbidden by AST)
+// once it lands; this source scan is known to be bypassable and is kept only until then.
+describe("canonical output", () => {
+  const rich: RepositoryObservation = {
+    ...SITE,
+    releaseAgeSurfaces: [
+      { surface: "pnpm-workspace", path: "pnpm-workspace.yaml" },
+      { surface: "npmrc", path: "packages/a/.npmrc" },
+      { surface: "npmrc", path: ".npmrc" },
+    ],
+    files: [
+      { path: "package-lock.json", sha256: sha("site lock") },
+      { path: ".agents/skills/clossys-writer/SKILL.md", sha256: sha("a writer skill") },
+      { path: "clossys/brief.json", sha256: sha("a brief") },
+      { path: ".agents/skills/clossys-strategist/SKILL.md", sha256: sha("a strategist skill") },
+    ],
+    manifestEntries: [
+      { placement: "dependencies", name: "@example/writer", value: "^0.6.0" },
+      { placement: "devDependencies", name: STARTER.name, value: STARTER.version },
+      { placement: "devDependencies", name: "@example/writer", value: "0.6.0" },
+    ],
+    lockedPackages: [
+      { name: "@example/writer", version: "0.6.0", integrity: STARTER.integrity },
+      { name: STARTER.name, version: STARTER.version, integrity: STARTER.integrity },
+    ],
+  };
+  const permutations = <T>(values: readonly T[]): T[][] => [[...values], [...values].reverse(), [...values.slice(1), ...values.slice(0, 1)]];
+
+  it("gives the same bytes for every order of every observation array, and of repositories and skills", () => {
+    const base = JSON.stringify(run({ ...INPUTS, repositories: [rich, DOCS] }));
+    for (const field of ["releaseAgeSurfaces", "files", "manifestEntries", "lockedPackages"] as const) {
+      for (const order of permutations(rich[field] as readonly unknown[])) {
+        const observation = { ...rich, [field]: order } as RepositoryObservation;
+        expect(JSON.stringify(run({ ...INPUTS, repositories: [observation, DOCS] })), field).toBe(base);
+      }
+    }
+    expect(JSON.stringify(run({ ...INPUTS, repositories: [DOCS, rich] }))).toBe(base);
+    expect(JSON.stringify(run({ ...INPUTS, repositories: [rich, DOCS], skills: [...INPUTS.skills].reverse() }))).toBe(base);
+  });
+
+  it("sorts release-age surfaces and refusals, and writes every array in the contract's canonical order", () => {
+    const site = setFor(run({ ...INPUTS, repositories: [rich, DOCS] }).changeSets, SITE.id);
+    expect(site.observed.releaseAgeSurfaces).toEqual([
+      { surface: "npmrc", path: ".npmrc" },
+      { surface: "npmrc", path: "packages/a/.npmrc" },
+      { surface: "pnpm-workspace", path: "pnpm-workspace.yaml" },
+    ]);
+    expect(site.refused.map((refusal) => ("path" in refusal ? refusal.path : refusal.pointer))).toEqual([
+      ".agents/skills/clossys-strategist/SKILL.md",
+      ".agents/skills/clossys-writer/SKILL.md",
+      "clossys/brief.json",
+      "/dependencies/@example~1writer",
+      "/devDependencies/@example~1writer",
+    ]);
+    expect(validateRepositoryChangeSet(site)).toEqual({ valid: true });
+  });
+
+  it("treats a base file that differs only in letter case as already there", () => {
+    const site = setFor(run(withRepository({ files: [...SITE.files, { path: "Clossys/Brief.json", sha256: sha("a brief") }] })).changeSets, SITE.id);
+    expect(site.refused).toContainEqual({ path: "clossys/brief.json", reason: "unowned-existing", item: "brief" });
+  });
+});
+
+describe("authorization for another plan", () => {
+  it("is reported as a violated V3 check on every computed repository, not passed through", () => {
+    const { bundle } = run({ ...INPUTS, authorization: { planDigest: sha("another plan"), expiresAt: "2026-10-01T00:00:00Z" } });
+    for (const entry of bundle.repositories) {
+      expect(entry.verdict).toBe("violated");
+      expect(entry.checks).toContainEqual({ check: "V3", verdict: "violated", rule: "authorization-plan-mismatch" });
+    }
+    expect(validateApplyBundle(bundle)).toEqual({ valid: true });
+    for (const entry of run().bundle.repositories) expect(entry.checks.map((check) => check.rule)).not.toContain("authorization-plan-mismatch");
   });
 });
 

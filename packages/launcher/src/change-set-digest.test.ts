@@ -6,7 +6,9 @@ import type { BundleDigestEntry } from "./change-set-digest.js";
 import { validateRepositoryChangeSet } from "./change-set-contract.js";
 import type { RepositoryChangeSet } from "./change-set-contract.js";
 import { PLAN_DIGEST_EXCLUDED_FIELDS, canonicalDigest, canonicalJson, planDigest } from "./plan-digest.js";
-import type { AdvisorPlan } from "./plan-contract.js";
+import type { AdvisorPlan, EngagementBrief } from "./plan-contract.js";
+import { projectEngagementBrief, serializeEngagementBrief } from "./plan-bundle.js";
+import type { RepositoryVisibility } from "./change-set-contract.js";
 
 /*
  * Issue #1178. The change-set and bundle digests, checked against the shared
@@ -18,6 +20,8 @@ const REPO = new URL("../../../", import.meta.url);
 const read = (path: string): string => readFileSync(new URL(path, REPO), "utf8");
 
 interface Corpus {
+  hubBrief: EngagementBrief;
+  briefs: { name: string; staffedHere: string[]; visibility: RepositoryVisibility; bytes: string; sha256: string }[];
   canonicalDigest: { name: string; value: unknown; digest: string }[];
   changeSets: { name: string; valid: boolean; sameDigestAs?: string; differsFrom?: string; changeSet: RepositoryChangeSet; subject: string; digest: string }[];
   bundles: { name: string; planDigest: string; repositories: BundleDigestEntry[]; canonical: string; digest: string }[];
@@ -47,8 +51,8 @@ describe("the shared digest step", () => {
 });
 
 describe("changeSetDigest (docs/contracts/apply-change-set-digest.md)", () => {
-  it("excludes exactly changeSetDigest, branch, bundle, pullRequest and inverse, and keeps five members of a derived file", () => {
-    expect(CHANGE_SET_DIGEST_EXCLUDED_FIELDS).toEqual(["changeSetDigest", "branch", "bundle", "pullRequest", "inverse"]);
+  it("excludes exactly changeSetDigest, branch, bundle, pullRequest, inverse and tooling, and keeps five members of a derived file", () => {
+    expect(CHANGE_SET_DIGEST_EXCLUDED_FIELDS).toEqual(["changeSetDigest", "branch", "bundle", "pullRequest", "inverse", "tooling"]);
     expect(DERIVED_FILE_DIGEST_FIELDS).toEqual(["path", "mode", "derived", "item", "invariants"]);
   });
 
@@ -79,6 +83,7 @@ describe("changeSetDigest (docs/contracts/apply-change-set-digest.md)", () => {
     ["pullRequest title", (set) => { set.pullRequest = { title: "Clossys: apply plan ffffffffffff" }; }],
     ["pullRequest bodySha256", (set) => { set.pullRequest = { ...set.pullRequest, bodySha256: sha("a body") }; }],
     ["inverse", (set) => { set.inverse = sha("the inverse set"); }],
+    ["tooling", (set) => { set.tooling = [{ tool: "npm", version: "11.6.1" }]; }],
     ["the ledger file's before", (set) => { fileAt(set, "clossys/.state/installed.json").before = sha("an older ledger"); }],
     ["the ledger file's after", (set) => { fileAt(set, "clossys/.state/installed.json").after = sha("the ledger this set writes"); }],
     ["the lockfile's before", (set) => { fileAt(set, "package-lock.json").before = null; }],
@@ -157,5 +162,21 @@ describe("bundleDigest (docs/contracts/apply-change-set-digest.md)", () => {
     const entry = CORPUS.bundles[0]!;
     const padded = entry.repositories.map((repository) => ({ ...repository, verdict: "violated", checks: [{ check: "V3" }] }));
     expect(bundleDigest(entry.planDigest, padded)).toBe(entry.digest);
+  });
+});
+
+describe("brief bytes (the brief contract's PER-REPOSITORY PROJECTION)", () => {
+  it("are the corpus's independently computed bytes, non-ASCII text and escapes included, whatever the hub brief's member order", () => {
+    expect(Object.keys(CORPUS.hubBrief)[0]).not.toBe("schemaVersion");
+    expect(CORPUS.hubBrief.problem).toContain("doesn\u2019t");
+    for (const entry of CORPUS.briefs) {
+      const bytes = serializeEngagementBrief(projectEngagementBrief(CORPUS.hubBrief, entry.staffedHere, entry.visibility));
+      expect(bytes, entry.name).toBe(entry.bytes);
+      expect(sha(bytes), entry.name).toBe(entry.sha256);
+    }
+    const privateBytes = CORPUS.briefs.find((entry) => entry.name === "private-non-ascii")!.bytes;
+    expect(privateBytes).toContain("doesn\u2019t");
+    expect(privateBytes).toContain("\\u0007");
+    expect(privateBytes).not.toContain("\\u2019");
   });
 });

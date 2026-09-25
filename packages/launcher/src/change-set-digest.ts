@@ -7,8 +7,8 @@
 
 import { canonicalDigest } from "./plan-digest.js";
 
-/** The top-level change-set members the digest leaves out, each because it is computed from the digest or from what the digest covers. */
-export const CHANGE_SET_DIGEST_EXCLUDED_FIELDS: readonly string[] = ["changeSetDigest", "branch", "bundle", "pullRequest", "inverse"];
+/** The top-level change-set members the digest leaves out: each is computed from the digest or from what it covers, or (tooling) records the machine rather than the change. */
+export const CHANGE_SET_DIGEST_EXCLUDED_FIELDS: readonly string[] = ["changeSetDigest", "branch", "bundle", "pullRequest", "inverse", "tooling"];
 
 /** The members a derived file keeps in the digest's subject; its `before` and `after` are left out. */
 export const DERIVED_FILE_DIGEST_FIELDS: readonly string[] = ["path", "mode", "derived", "item", "invariants"];
