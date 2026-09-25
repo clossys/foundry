@@ -107,6 +107,10 @@ advisor-check assessment.json
 ```
 
 The command prints JSON and exits `0` for satisfied, `1` for violated, and `2` for indeterminate, unreadable, or invalid input.
+It reads the assessment file as strict JSON, as `advisor-render-status`
+reads a plan (below): invalid UTF-8, a leading byte order mark, a key
+repeated in any object, and a syntax error are refused by position only,
+never quoting the file. `advisor-execution-readiness` reads it the same way.
 
 This package declares that command as its first-day assessment surface in its own manifest:
 
