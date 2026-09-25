@@ -809,6 +809,77 @@ test("ADVERSARIAL evaluateReleasePrFootprint: a deferral file that is not valid 
   assert.match(result.reason, /is not valid JSON/);
 });
 
+// N1 (fix-round non-blocking note): the admission above used to check only
+// `package`/`version` against the filename, so a deferral with no `reason`
+// at all, no `issue` at all, or an extra field beyond the producer's own
+// documented schema (`{ package, version, reason, issue }` -- this file's
+// module header, governance/release-qualification-deferrals/README.md)
+// still passed. Every real deferral file under
+// governance/release-qualification-deferrals/ carries exactly those four
+// keys (confirmed against every file currently in the repository), so
+// "nothing more than the producer's shape" -- this module's own stated rule
+// -- means requiring all four, and no more.
+
+test("ADVERSARIAL evaluateReleasePrFootprint: a deferral with no `reason` field is refused", () => {
+  const result = evaluateReleasePrFootprint({
+    files: releasePrFilesWithDeferral({
+      path: "governance/release-qualification-deferrals/alpha@1.0.1.json",
+      status: "added",
+      headContent: JSON.stringify({ package: "alpha", version: "1.0.1", issue: 948 }),
+    }),
+  });
+  assert.equal(result.ok, false);
+  assert.match(result.reason, /no non-empty "reason" string/);
+});
+
+test("ADVERSARIAL evaluateReleasePrFootprint: a deferral with an empty/blank `reason` field is refused", () => {
+  const result = evaluateReleasePrFootprint({
+    files: releasePrFilesWithDeferral({
+      path: "governance/release-qualification-deferrals/alpha@1.0.1.json",
+      status: "added",
+      headContent: JSON.stringify({ package: "alpha", version: "1.0.1", reason: "   ", issue: 948 }),
+    }),
+  });
+  assert.equal(result.ok, false);
+  assert.match(result.reason, /no non-empty "reason" string/);
+});
+
+test("ADVERSARIAL evaluateReleasePrFootprint: a deferral with no `issue` field is refused", () => {
+  const result = evaluateReleasePrFootprint({
+    files: releasePrFilesWithDeferral({
+      path: "governance/release-qualification-deferrals/alpha@1.0.1.json",
+      status: "added",
+      headContent: JSON.stringify({ package: "alpha", version: "1.0.1", reason: "Bumped by the release PR." }),
+    }),
+  });
+  assert.equal(result.ok, false);
+  assert.match(result.reason, /"issue" field must be a positive integer/);
+});
+
+test("ADVERSARIAL evaluateReleasePrFootprint: a deferral whose `issue` field is not a positive integer is refused", () => {
+  const result = evaluateReleasePrFootprint({
+    files: releasePrFilesWithDeferral({
+      path: "governance/release-qualification-deferrals/alpha@1.0.1.json",
+      status: "added",
+      headContent: JSON.stringify({ package: "alpha", version: "1.0.1", reason: "Bumped by the release PR.", issue: "948" }),
+    }),
+  });
+  assert.equal(result.ok, false);
+  assert.match(result.reason, /"issue" field must be a positive integer/);
+});
+
+test("ADVERSARIAL evaluateReleasePrFootprint: a deferral with an EXTRA field beyond package/version/reason/issue is refused", () => {
+  const result = evaluateReleasePrFootprint({
+    files: releasePrFilesWithDeferral({
+      path: "governance/release-qualification-deferrals/alpha@1.0.1.json",
+      status: "added",
+      headContent: JSON.stringify({ package: "alpha", version: "1.0.1", reason: "Bumped by the release PR.", issue: 948, approvedBy: "someone" }),
+    }),
+  });
+  assert.equal(result.ok, false);
+  assert.match(result.reason, /field\(s\) beyond the producer's documented shape \(approvedBy\)/);
+});
+
 test("ADVERSARIAL evaluateReleasePrFootprint: ANY other file under governance/ -- including the deferrals directory's own README.md -- is refused, never treated as a deferral", () => {
   for (const path of ["governance/release-qualification-deferrals/README.md", "governance/release-calendar.json", "governance/release-qualification-deferrals/nested/alpha@1.0.1.json"]) {
     const result = evaluateReleasePrFootprint({

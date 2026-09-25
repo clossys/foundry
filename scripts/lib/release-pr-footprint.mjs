@@ -1140,11 +1140,34 @@ export function evaluateReleasePrFootprint({ files }) {
       } catch {
         return { ok: false, reason: `"${file.path}" is not valid JSON` };
       }
-      if (!content || typeof content !== "object" || content.package !== pkg || content.version !== version) {
+      if (!content || typeof content !== "object" || Array.isArray(content)) {
+        return { ok: false, reason: `"${file.path}" is not a JSON object` };
+      }
+      // Nothing more than the producer's own documented schema (this file's
+      // header, and governance/release-qualification-deferrals/README.md's
+      // "Layout" section): exactly `package`, `version`, `reason`, `issue`,
+      // never an extra field -- the same "any single non-conforming aspect
+      // fails everything" discipline this function applies to every other
+      // file class.
+      const allowedDeferralKeys = ["package", "version", "reason", "issue"];
+      const extraDeferralKeys = Object.keys(content).filter((k) => !allowedDeferralKeys.includes(k));
+      if (extraDeferralKeys.length > 0) {
+        return {
+          ok: false,
+          reason: `"${file.path}" has field(s) beyond the producer's documented shape (${extraDeferralKeys.join(", ")}) -- only package/version/reason/issue are admitted`,
+        };
+      }
+      if (content.package !== pkg || content.version !== version) {
         return {
           ok: false,
           reason: `"${file.path}"'s own "package"/"version" fields do not name "${pkg}"/"${version}", matching its own filename`,
         };
+      }
+      if (typeof content.reason !== "string" || content.reason.trim().length === 0) {
+        return { ok: false, reason: `"${file.path}" has no non-empty "reason" string` };
+      }
+      if (!Number.isInteger(content.issue) || content.issue <= 0) {
+        return { ok: false, reason: `"${file.path}"'s "issue" field must be a positive integer` };
       }
       continue;
     }
