@@ -166,7 +166,7 @@
     },
     "hubOnlyRoles": {
       "title": "the roles whose package lives in the engagement hub only",
-      "description": "Data, not a schema that any field uses: the list code rules R2 and R11 read, so that every package that validates a plan reads the one list. The apply-approved-plan RFC (issue #1178) places each role here in the hub: its package is pinned exactly once, in the hub, and a product repository runs its commands through npx at the hub's exact version, pinning nothing. Advisor is placed there by decision D24, and Launcher's appoint step already pins it in the hub; Integrator is placed there by decision D23, and no Launcher release pins it in the hub yet. Such a role is never staffed in a repository (R11).",
+      "description": "Data, not a schema that any field uses: the list code rules R2 and R11 read, so that every package that validates a plan reads the one list. The apply-approved-plan RFC (issue #1178) places each role here in the hub: its package is pinned exactly once, in the hub, and a product repository runs its commands through npx at the hub's exact version, pinning nothing. Advisor is placed there by decision D24 and Integrator by decision D23; Launcher's hub skeleton and resume pin both Advisor and Integrator, exactly, in the hub's devDependencies. Such a role is never staffed in a repository (R11).",
       "const": ["advisor", "integrator"]
     },
     "packageAct": {

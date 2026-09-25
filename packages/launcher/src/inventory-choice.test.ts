@@ -142,6 +142,7 @@ const APPOINT_COMMANDS: Record<string, CommandResult> = {
   "git remote get-url origin": { status: 0, stdout: `git@github.com:${OWNER}/example-hub.git\n`, stderr: "" },
   "git status --porcelain": { status: 0, stdout: "", stderr: "" },
   "npm view @clossys/advisor version": { status: 0, stdout: "0.5.0\n", stderr: "" },
+  "npm view @clossys/integrator version": { status: 0, stdout: "0.8.2\n", stderr: "" },
 };
 
 function appointCheckout(): string {
@@ -357,6 +358,7 @@ describe("launcher --repositories (#1179)", () => {
           repository: "example-hub",
           directory,
           advisorVersion: "0.5.0",
+          integratorVersion: "0.8.2",
           chosenInventory: {
             kind: "write",
             document: inventoryText([{ id: `${OWNER}/example-app`, role: "product" }]),
@@ -379,6 +381,7 @@ describe("launcher --repositories (#1179)", () => {
       ghAvailable: true,
       gitAvailable: true,
       advisorVersion: "0.5.0",
+      integratorVersion: "0.8.2",
       cwd: {
         absolutePath: tempDir(),
         empty: false,
@@ -517,7 +520,7 @@ describe("one repository identity (#1179)", () => {
     }
   });
 
-  it("reports that stored inventory as invalid on resume, and composes nothing from it", () => {
+  it("reports that stored inventory as invalid on resume, and writes nothing into a sibling", () => {
     const parent = tempDir();
     const directory = join(parent, "example-hub");
     const sibling = join(parent, "example-app");
@@ -534,8 +537,10 @@ describe("one repository identity (#1179)", () => {
     expect(main([], withOrigins(host(directory), { [sibling]: `${OWNER}/example-app` }), skeletonRoot)).toBe(0);
     const message = String(log.mock.calls[0]?.[0]);
     expect(message).toMatch(/skill roster written: example-owner\/example-hub\n|skill roster written: example-owner\/example-hub$/m);
-    expect(message).toMatch(/skill roster skipped \(clossys\/\.state\/inventory\.json\): the stored inventory repositories\[1\]\.id names the same repository/);
-    // Nothing was composed into the sibling the invalid inventory names.
+    expect(message).toMatch(/^inventory: invalid -- repositories\[1\]\.id names the same repository/m);
+    expect(message).toMatch(/^degraded: yes$/m);
+    expect(message).not.toMatch(/^sibling /m);
+    // Nothing was written into the sibling the invalid inventory names.
     expect(readdirSync(sibling)).toEqual([".git"]);
   });
 
@@ -570,7 +575,7 @@ describe("one repository identity (#1179)", () => {
 });
 
 describe("resume writes the chosen inventory before composing (#1179)", () => {
-  it("composes skills, in the same run, into a sibling listed only in the inventory it just wrote", () => {
+  it("reports, in the same run, a sibling listed only in the inventory it just wrote, and writes nothing into it", () => {
     const parent = tempDir();
     const hub = join(parent, "example-hub");
     const sibling = join(parent, "example-app");
@@ -590,8 +595,8 @@ describe("resume writes the chosen inventory before composing (#1179)", () => {
     expect(main(["--repositories", `${OWNER}/example-app`], siblingHost, skeletonRoot)).toBe(0);
     const message = String(log.mock.calls[0]?.[0]);
     expect(message).toMatch(/inventory: wrote the 1 repository you chose/);
-    expect(message).not.toMatch(/skill roster skipped/);
-    expect(readFileSync(join(sibling, ".agents/skills/clossys-advisor/SKILL.md"), "utf8")).toContain("name: clossys-advisor");
+    expect(message).toMatch(/^sibling \(example-owner\/example-app\): checkout beside the hub; a hub run writes nothing here; once this repository is staffed in an approved plan, @clossys-advisor and the voices of the roles staffed there arrive with that plan's setup pull request$/m);
+    expect(readdirSync(sibling)).toEqual([".git"]);
   });
 });
 
@@ -624,7 +629,7 @@ describe("one repository identity for the roster, the merge and drift (#1179)", 
     expect(main([], host(hub), skeletonRoot)).toBe(0);
     const message = String(log.mock.calls[0]?.[0]);
     expect(message).toMatch(/^skill roster written: example-owner\/example-hub$/m);
-    expect(message).not.toMatch(/skill roster skipped/);
+    expect(message).not.toMatch(/^sibling /m);
   });
 
   it("matches a sibling's owner and origin without regard to letter case", () => {
@@ -637,9 +642,10 @@ describe("one repository identity for the roster, the merge and drift (#1179)", 
       main([], withOrigins(host(hub), { [hub]: `${OWNER}/example-hub`, [sibling]: "Example-Owner/Example-App" }), skeletonRoot),
     ).toBe(0);
     const message = String(log.mock.calls[0]?.[0]);
-    expect(message).toMatch(/^skill roster written: example-owner\/example-hub, EXAMPLE-OWNER\/example-app$/m);
+    expect(message).toMatch(/^skill roster written: example-owner\/example-hub$/m);
+    expect(message).toMatch(/^sibling \(EXAMPLE-OWNER\/example-app\): checkout beside the hub; a hub run writes nothing here; once this repository is staffed in an approved plan, @clossys-advisor and the voices of the roles staffed there arrive with that plan's setup pull request$/m);
     expect(message).not.toMatch(/other account|origin does not match/);
-    expect(readFileSync(join(sibling, ".agents/skills/clossys-advisor/SKILL.md"), "utf8")).toContain("name: clossys-advisor");
+    expect(readdirSync(sibling)).toEqual([".git"]);
   });
 
   it("merges an appoint --inventory by repository identity, keeping every kept entry whole, packages included", () => {
@@ -653,6 +659,7 @@ describe("one repository identity for the roster, the merge and drift (#1179)", 
       {
         ownerCandidates: [OWNER],
         advisorVersion: "0.5.0",
+        integratorVersion: "0.8.2",
         ghAvailable: true,
         gitAvailable: true,
         cwd: {
@@ -708,6 +715,7 @@ describe("one account identity (#1179)", () => {
         ownerCandidates: [OWNER],
         envOwner: "Example-Owner",
         advisorVersion: "0.5.0",
+        integratorVersion: "0.8.2",
         ghAvailable: true,
         gitAvailable: true,
         cwd: {
