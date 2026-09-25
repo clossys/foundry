@@ -815,11 +815,34 @@ export function isChangesetDeletionLegitimate(baseContent, bumpedPackageDirs) {
 // match, so extractChangelogDate() returns null, reconstruction never even
 // starts, and the whole diff is refused -- the same "no match, no trust"
 // discipline every other shape check in this module uses.
+//
+// THE SHAPE REGEX ALONE ADMITS A CALENDAR-IMPOSSIBLE DATE (CodeRabbit,
+// PRRT_kwDOTwgdmc6mKRmq) -- `\d{4}-\d{2}-\d{2}` matches "2026-99-99" just
+// as happily as a real date; it only constrains DIGIT COUNT, not calendar
+// validity. After the shape matches, the three captured parts are parsed
+// as integers and round-tripped through `Date.UTC()`: `getUTCFullYear()`/
+// `getUTCMonth() + 1`/`getUTCDate()` must read back exactly the year/
+// month/day that were parsed in (`Date.UTC` silently NORMALIZES an
+// out-of-range field -- e.g. month 13 rolls into the next year -- rather
+// than throwing, which is exactly why a plain "did this parse" check would
+// miss it). Deliberately no opinion on what the date IS beyond that: not
+// "must not be in the future", not "must match `today()`" -- the shape
+// check above has no such opinion either, and this stays a structural
+// validity check, not a freshness one. A round-trip mismatch is refused
+// the identical way a shape mismatch already is: `extractChangelogDate()`
+// returns `null`.
 function extractChangelogDate(headText, newVersion) {
   if (typeof headText !== "string") return null;
   const escapedVersion = newVersion.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  const match = new RegExp(`^## ${escapedVersion} - (\\d{4}-\\d{2}-\\d{2})$`, "m").exec(headText);
-  return match ? match[1] : null;
+  const match = new RegExp(`^## ${escapedVersion} - (\\d{4})-(\\d{2})-(\\d{2})$`, "m").exec(headText);
+  if (!match) return null;
+  const [, yearStr, monthStr, dayStr] = match;
+  const year = Number(yearStr);
+  const month = Number(monthStr);
+  const day = Number(dayStr);
+  const roundTrip = new Date(Date.UTC(year, month - 1, day));
+  if (roundTrip.getUTCFullYear() !== year || roundTrip.getUTCMonth() + 1 !== month || roundTrip.getUTCDate() !== day) return null;
+  return `${yearStr}-${monthStr}-${dayStr}`;
 }
 
 /**

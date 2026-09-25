@@ -576,6 +576,53 @@ test("evaluateReleasePrFootprint: a CHANGELOG heading whose date slot carries ar
   assert.match(result.reason, /byte-for-byte/);
 });
 
+// CodeRabbit, PRRT_kwDOTwgdmc6mKRmq: the `\d{4}-\d{2}-\d{2}` shape regex
+// above matches "2026-99-99" exactly as happily as a real date -- it only
+// constrains digit COUNT per field, not calendar validity. These four cases
+// (an out-of-range month AND day both at once, a day that doesn't exist for
+// its month, a month past 12, and a month of 00) must each still be refused
+// exactly like the arbitrary-text case just above -- and 2028-02-29 (a real
+// leap-year date) must still pass, proving this is a calendar-validity
+// check, not merely "reject everything different".
+for (const badDate of ["2026-99-99", "2026-02-30", "2026-13-01", "2026-00-10"]) {
+  test(`evaluateReleasePrFootprint: a CHANGELOG heading whose date slot is shaped like YYYY-MM-DD but is not a real calendar date (${badDate}) is refused (issue #1391)`, () => {
+    const [base, head] = manifestPair("1.0.0", "1.0.1", { name: "@clossys/alpha" });
+    const result = evaluateReleasePrFootprint({
+      files: [
+        { path: "packages/alpha/package.json", status: "modified", baseContent: base, headContent: head },
+        {
+          path: "docs/changelogs/alpha.md",
+          status: "modified",
+          baseContent: "# Changelog\n\n## 1.0.0\n\n- Initial.\n",
+          headContent: `# Changelog\n\n## 1.0.1 - ${badDate}\n\n- Fix.\n\n## 1.0.0\n\n- Initial.\n`,
+        },
+        { path: "package-lock.json", status: "modified", baseContent: LOCK_BASE, headContent: lockWithAlphaBumped("1.0.1") },
+        { path: ".changesets/alpha-fix.md", status: "removed", baseContent: "---\nalpha: patch\n---\n\nFix.\n" },
+      ],
+    });
+    assert.equal(result.ok, false);
+    assert.match(result.reason, /byte-for-byte/);
+  });
+}
+
+test("evaluateReleasePrFootprint: a CHANGELOG heading whose date slot is a real leap-year date (2028-02-29) passes (issue #1391)", () => {
+  const [base, head] = manifestPair("1.0.0", "1.0.1", { name: "@clossys/alpha" });
+  const result = evaluateReleasePrFootprint({
+    files: [
+      { path: "packages/alpha/package.json", status: "modified", baseContent: base, headContent: head },
+      {
+        path: "docs/changelogs/alpha.md",
+        status: "modified",
+        baseContent: "# Changelog\n\n## 1.0.0\n\n- Initial.\n",
+        headContent: "# Changelog\n\n## 1.0.1 - 2028-02-29\n\n- Fix.\n\n## 1.0.0\n\n- Initial.\n",
+      },
+      { path: "package-lock.json", status: "modified", baseContent: LOCK_BASE, headContent: lockWithAlphaBumped("1.0.1") },
+      { path: ".changesets/alpha-fix.md", status: "removed", baseContent: "---\nalpha: patch\n---\n\nFix.\n" },
+    ],
+  });
+  assert.equal(result.ok, true, result.reason);
+});
+
 test("evaluateReleasePrFootprint: fails closed on an empty file list", () => {
   assert.equal(evaluateReleasePrFootprint({ files: [] }).ok, false);
 });
