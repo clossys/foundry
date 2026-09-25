@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { readCanonicalRoleLoopContract, readInstalledPositionContract } from "./canonical.js";
+import { readCanonicalRoleLoopContract, readHistoricalInstalledPositionContracts, readHistoricalRoleLoopContracts, readInstalledPositionContract } from "./canonical.js";
 import { POSITION_FIELDS, POSITION_RECOMMENDATIONS, ROLE_DISPOSITIONS, SETPOINT_VALUE_SHAPES, WORKER_COMPONENT_KINDS, validateInstalledPositionContract, validateInstalledPositionLedger } from "./index.js";
 
 const packageRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
@@ -62,6 +62,16 @@ const legacyLedgerFixture090 = () => structuredClone({
     },
   ],
 }) as Record<string, unknown>;
+
+// The real 0.9.10 role-loop-archetypes.json and installed-position-contract.json,
+// shipped verbatim (captured via `git show 62d9dc570c0af76cd89e49bc40002fb5b36da2ca:
+// packages/controller/contracts/<name>`) under contracts/historical/0.9.10/ so this
+// package's own historical-contract table (canonical.ts) can recognize a caller's
+// exact copy of either one (audit finding A3). Read through that same table here,
+// rather than re-embedding the files a second time, so the test proves the table
+// the validator actually uses.
+const historicalRoleContract090 = () => structuredClone(readHistoricalRoleLoopContracts().find((entry) => entry.version === "0.9.10")!.contract as object) as Record<string, unknown>;
+const historicalInstalledPositionContract090 = () => structuredClone(readHistoricalInstalledPositionContracts().find((entry) => entry.version === "0.9.10")!.contract as object) as Record<string, unknown>;
 
 describe("installed positions", () => {
   it("accepts the complete fixture and proves shipped snapshot parity", () => {
@@ -255,6 +265,68 @@ describe("installed positions", () => {
       expect(result.findings).toEqual([]);
       expect(result.advisories).toContainEqual(expect.objectContaining({ rule: "missing-disposition-for-new-role", path: "@clossys/customer" }));
       expect(result.positions).toBe(0);
+    });
+  });
+
+  describe("caller's copy of a prior-version contract (A3)", () => {
+    it("accepts a caller's exact 0.9.10 role contract, validates a 0.9.10 ledger through it, and advises which version matched", () => {
+      const result = validateInstalledPositionLedger(legacyLedgerFixture090(), historicalRoleContract090());
+      expect(result.ok).toBe(true);
+      expect(result.findings).toEqual([]);
+      expect(result.advisories).toContainEqual(expect.objectContaining({ rule: "legacy-contract-copy", path: "roleContract", message: expect.stringContaining("0.9.10") }));
+      // The other two 0.9.10 migrations this ledger shape carries still advise, unaffected by which role contract was supplied.
+      expect(result.advisories).toContainEqual(expect.objectContaining({ rule: "legacy-stage-name" }));
+      expect(result.advisories).toContainEqual(expect.objectContaining({ rule: "missing-disposition-for-new-role" }));
+      expect(result.advisories).toHaveLength(3);
+      // Verdict and role/position counts match what 0.9.10 itself reported for this ledger.
+      const withCurrentContract = validateInstalledPositionLedger(legacyLedgerFixture090());
+      expect(result.ok).toBe(withCurrentContract.ok);
+      expect(result.openRoles).toBe(withCurrentContract.openRoles);
+      expect(result.positions).toBe(withCurrentContract.positions);
+    });
+
+    it("still rejects a 0.9.10 role contract with one field changed", () => {
+      const contract = historicalRoleContract090();
+      (contract.roles as Record<string, Record<string, unknown>>)["@clossys/architect"]!.closeCondition = "modified";
+      const result = validateInstalledPositionLedger(legacyLedgerFixture090(), contract);
+      expect(result.ok).toBe(false);
+      expect(result.findings).toEqual([{ rule: "noncanonical-role-contract", path: "roleContract", message: "must exactly match the immutable role-loop-archetypes snapshot shipped by @clossys/controller" }]);
+    });
+
+    it("accepts a caller's exact 0.9.10 installed-position contract and advises which version matched", () => {
+      const result = validateInstalledPositionContract(historicalInstalledPositionContract090());
+      expect(result).toHaveLength(0);
+      expect(result.advisories).toContainEqual(expect.objectContaining({ rule: "legacy-contract-copy", path: "installedPositionContract", message: expect.stringContaining("0.9.10") }));
+    });
+
+    it("keeps the 0.9.10 idiom of asserting a plain empty array, even with an advisory attached", () => {
+      // The `advisories` property is non-enumerable: every equality check a
+      // 0.9.10 caller could have written against a clean result -- Node's
+      // assert.deepEqual/deepStrictEqual and vitest's toEqual/toStrictEqual,
+      // all of which walk own enumerable properties -- still passes against
+      // a plain `[]`, exactly as it did in 0.9.10. `result.advisories` is
+      // still directly readable by a caller that knows to look.
+      const result = validateInstalledPositionContract(historicalInstalledPositionContract090());
+      expect(result).toEqual([]);
+      expect(result).toStrictEqual([]);
+      assert.deepEqual(result, []);
+      assert.deepStrictEqual(result, []);
+      expect(result.advisories).toContainEqual(expect.objectContaining({ rule: "legacy-contract-copy", path: "installedPositionContract", message: expect.stringContaining("0.9.10") }));
+    });
+
+    it("still rejects a 0.9.10 installed-position contract with one field changed", () => {
+      const contract = historicalInstalledPositionContract090();
+      (contract.position as Record<string, unknown>).setpointValueRule = "modified";
+      const result = validateInstalledPositionContract(contract);
+      expect(result).toEqual([{ rule: "noncanonical-installed-position-contract", path: "installedPositionContract", message: "must exactly match the immutable installed-position-contract snapshot shipped by @clossys/controller" }]);
+      expect(result.advisories).toBeUndefined();
+    });
+
+    it("still rejects an arbitrary, non-shipped contract exactly as before", () => {
+      const role = validateInstalledPositionLedger(legacyLedgerFixture090(), { schemaVersion: 4, notTheCurrentContract: true });
+      expect(role.findings).toEqual([{ rule: "noncanonical-role-contract", path: "roleContract", message: "must exactly match the immutable role-loop-archetypes snapshot shipped by @clossys/controller" }]);
+      const position = validateInstalledPositionContract({ schemaVersion: 1, notTheCurrentContract: true });
+      expect(position).toEqual([{ rule: "noncanonical-installed-position-contract", path: "installedPositionContract", message: "must exactly match the immutable installed-position-contract snapshot shipped by @clossys/controller" }]);
     });
   });
 

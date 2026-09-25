@@ -39,16 +39,39 @@
 // that widened `surface`'s `copy` and `ui` ranges after exactly this
 // happened) — a consumer integration is what first surfaced the pattern.
 //
-// This gate checks the same defect from two directions:
+// This gate checks the same defect from three directions:
 //   1. LINK CHECK — for every packages/*/package.json, for every
-//      `dependencies` entry naming a first-party sibling that exists in
-//      this workspace, does the sibling's real on-disk version satisfy the
-//      declared range?
+//      dependencies/peerDependencies/optionalDependencies entry (the three
+//      DEPENDENCY_RANGE_SECTIONS in scripts/lib/dependency-range-sections.mjs
+//      -- shared with apply-release-changesets.mjs's sibling-range rewriter
+//      so the two cannot silently diverge again, issue #1340) naming a
+//      first-party sibling that exists in this workspace, does the
+//      sibling's real on-disk version satisfy the declared range?
+//      devDependencies is deliberately excluded -- see that shared module's
+//      header for why.
 //   2. LOCKFILE CHECK — does package-lock.json resolve every first-party
 //      package as a local workspace link, never a remote registry URL? This
 //      catches the same defect from the other direction, and also catches a
 //      stale lockfile that a range fix forgot to regenerate (link check 1
 //      only reads package.json, so it cannot see that by itself).
+//   3. VERSION-RECORD CHECK — does package-lock.json's own "packages/<dir>"
+//      entry for each workspace package (the entry npm --workspaces writes
+//      to mirror that package's manifest) record the SAME version the
+//      manifest actually declares (issue #366)? Checks 1 and 2 above can
+//      both pass while this disagrees: a dependency RANGE can still be
+//      satisfied by a sibling's real version regardless of what the lock
+//      records for that sibling's OWN version entry, and a node_modules
+//      entry can still be a recognised local LINK no matter how stale the
+//      separate "packages/<dir>" version record is. Neither existing
+//      question reads that field at all, so a workspace package whose
+//      lock-recorded version has drifted from its manifest passed this gate
+//      cleanly, and the gate's own success message asserted exactly the
+//      property it never checked. See scripts/check-lock-workspace-
+//      versions.mjs (issue #917) for the sibling gate that catches the same
+//      drift independently, wired as a second step in the same "workspace
+//      link integrity" CI job -- this check adds the identical assertion
+//      directly to THIS gate too, since #366 is specifically about this
+//      gate's own blind spot and its own success message's own claim.
 //
 // RANGE FORMS THIS GATE UNDERSTANDS
 // ----------------------------------
@@ -68,18 +91,20 @@
 // EMPTY SCAN
 // ----------
 // Discovering zero packages, OR discovering packages but finding zero
-// first-party `dependencies` edges among them, is exit 2 — never a clean
-// 0. scripts/check-release-readiness.mjs shipped exactly the opposite
-// defect (fixed in commit 01bd520): an empty scan reported "every package
-// is release-ready" on the strength of having examined none. A check that
-// passes because it checked nothing is indistinguishable from a check that
-// cannot fail, and this repo's own packages/*/dependencies graph is never
-// actually empty, so an empty result here means the scan itself is broken,
-// not that the workspace has no first-party links.
+// first-party dependencies/peerDependencies/optionalDependencies edges
+// among them, is exit 2 — never a clean 0. scripts/check-release-readiness.mjs
+// shipped exactly the opposite defect (fixed in commit 01bd520): an empty
+// scan reported "every package is release-ready" on the strength of having
+// examined none. A check that passes because it checked nothing is
+// indistinguishable from a check that cannot fail, and this repo's own
+// packages/*/dependencies graph is never actually empty, so an empty result
+// here means the scan itself is broken, not that the workspace has no
+// first-party links.
 
 import { existsSync, readFileSync, readdirSync } from "node:fs";
-import { join, resolve } from "node:path";
+import { join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
+import { DEPENDENCY_RANGE_SECTIONS } from "./lib/dependency-range-sections.mjs";
 
 // ------------------------------------------------------------- range parsing
 
@@ -183,8 +208,12 @@ function loadManifest(pkgDir) {
 
 // LINK CHECK — see file header. `knownVersions` maps every successfully
 // loaded workspace package's name to its own on-disk version string; a
-// `dependencies` entry naming anything outside that map is not "a
-// first-party sibling that exists in this workspace" and is not evaluated.
+// dependency entry naming anything outside that map is not "a first-party
+// sibling that exists in this workspace" and is not evaluated. Scans every
+// section in DEPENDENCY_RANGE_SECTIONS (dependencies, peerDependencies,
+// optionalDependencies — issue #1340), not only `dependencies`; the same
+// depName can appear in more than one section with a different range, and
+// each occurrence is evaluated and reported independently.
 function evaluateLinks(loaded) {
   const results = [];
   const knownVersions = new Map();
@@ -198,55 +227,62 @@ function evaluateLinks(loaded) {
       continue;
     }
     const { manifest } = l;
-    const deps = manifest.dependencies;
-    if (!deps || typeof deps !== "object") continue;
 
-    for (const [depName, range] of Object.entries(deps)) {
-      if (depName === manifest.name) continue; // defensive: a package cannot depend on itself
-      if (!knownVersions.has(depName)) continue; // not a sibling that exists in this workspace scan
-      const actualVersion = knownVersions.get(depName);
-      const outcome = satisfies(actualVersion, range);
+    for (const section of DEPENDENCY_RANGE_SECTIONS) {
+      const deps = manifest[section];
+      if (!deps || typeof deps !== "object") continue;
 
-      if (!outcome.evaluated) {
-        results.push({
-          check: "link",
-          package: manifest.name,
-          dependency: depName,
-          range,
-          actualVersion,
-          status: "finding",
-          detail:
-            `${manifest.name} declares "${depName}": "${range}" — ${outcome.reason}. ` +
-            "A range this gate cannot evaluate is reported as a finding, not assumed satisfied.",
-        });
-      } else if (!outcome.ok) {
-        results.push({
-          check: "link",
-          package: manifest.name,
-          dependency: depName,
-          range,
-          actualVersion,
-          status: "finding",
-          detail:
-            `${manifest.name} declares "${depName}": "${range}", but ${depName}'s on-disk version is ` +
-            `${actualVersion}, which that range does not cover. In 0.x semver both ^ and ~ are minor-locked, ` +
-            `so a minor bump of ${depName} silently breaks this. npm will stop linking the local workspace ` +
-            `copy of ${depName} and fall back to resolving it from the registry instead — the tokenless CI ` +
-            "job then 401s, and an authenticated machine silently tests a stale published copy instead of " +
-            `the working tree. Fix: widen ${manifest.name}'s declared range to cover ${actualVersion} (or pin ` +
-            `${depName} back down), then bump ${manifest.name}'s own version too, since its package.json is ` +
-            "packed content and the release-readiness gate will demand it.",
-        });
-      } else {
-        results.push({
-          check: "link",
-          package: manifest.name,
-          dependency: depName,
-          range,
-          actualVersion,
-          status: "pass",
-          detail: `${manifest.name} declares "${depName}": "${range}" — satisfied by ${depName}@${actualVersion}`,
-        });
+      for (const [depName, range] of Object.entries(deps)) {
+        if (depName === manifest.name) continue; // defensive: a package cannot depend on itself
+        if (!knownVersions.has(depName)) continue; // not a sibling that exists in this workspace scan
+        const actualVersion = knownVersions.get(depName);
+        const outcome = satisfies(actualVersion, range);
+        const who = `${manifest.name} (${section})`;
+
+        if (!outcome.evaluated) {
+          results.push({
+            check: "link",
+            package: manifest.name,
+            section,
+            dependency: depName,
+            range,
+            actualVersion,
+            status: "finding",
+            detail:
+              `${who} declares "${depName}": "${range}" — ${outcome.reason}. ` +
+              "A range this gate cannot evaluate is reported as a finding, not assumed satisfied.",
+          });
+        } else if (!outcome.ok) {
+          results.push({
+            check: "link",
+            package: manifest.name,
+            section,
+            dependency: depName,
+            range,
+            actualVersion,
+            status: "finding",
+            detail:
+              `${who} declares "${depName}": "${range}", but ${depName}'s on-disk version is ` +
+              `${actualVersion}, which that range does not cover. In 0.x semver both ^ and ~ are minor-locked, ` +
+              `so a minor bump of ${depName} silently breaks this. npm will stop linking the local workspace ` +
+              `copy of ${depName} and fall back to resolving it from the registry instead — the tokenless CI ` +
+              "job then 401s, and an authenticated machine silently tests a stale published copy instead of " +
+              `the working tree. Fix: widen ${manifest.name}'s declared range to cover ${actualVersion} (or pin ` +
+              `${depName} back down), then bump ${manifest.name}'s own version too, since its package.json is ` +
+              "packed content and the release-readiness gate will demand it.",
+          });
+        } else {
+          results.push({
+            check: "link",
+            package: manifest.name,
+            section,
+            dependency: depName,
+            range,
+            actualVersion,
+            status: "pass",
+            detail: `${who} declares "${depName}": "${range}" — satisfied by ${depName}@${actualVersion}`,
+          });
+        }
       }
     }
   }
@@ -266,45 +302,42 @@ function isNodeModulesEntryFor(key, name) {
   return key === `node_modules/${name}` || key.endsWith(`/node_modules/${name}`);
 }
 
-// LOCKFILE CHECK — see file header. `knownNames` is every workspace
-// package's own name, from the same manifests the link check already
-// loaded (not re-derived from package-scope.json, so this stays correct
-// even for a first-party name that momentarily does not match the
-// configured scope).
-function checkLockfile(knownNames) {
+// Loads and minimally validates package-lock.json ONCE, shared by both the
+// lockfile-resolution check and the version-record check below (issue
+// #366) — both need the same parsed lock, and loading it twice would mean
+// two places that could disagree about what "unreadable" or "unparseable"
+// means. Returns { lock, lockPath } on success, or { error, lockPath } — the
+// caller reports `error` as a single "lockfile" result and skips the
+// version-record check entirely, since there is nothing to compare against.
+function loadLockfile() {
   const lockPath = join(process.cwd(), "package-lock.json");
   if (!existsSync(lockPath)) {
-    return [
-      {
-        check: "lockfile",
-        package: "package-lock.json",
-        status: "error",
-        detail: `no package-lock.json found at ${lockPath} — cannot verify first-party packages resolve locally`,
-      },
-    ];
+    return { error: `no package-lock.json found at ${lockPath} — cannot verify first-party packages resolve locally or that recorded versions match`, lockPath };
   }
 
   let lock;
   try {
     lock = JSON.parse(readFileSync(lockPath, "utf8"));
   } catch (error) {
-    return [
-      { check: "lockfile", package: "package-lock.json", status: "error", detail: `${lockPath} is not valid JSON: ${error.message}` },
-    ];
+    return { error: `${lockPath} is not valid JSON: ${error.message}`, lockPath };
   }
 
   const packages = lock.packages;
   if (!packages || typeof packages !== "object") {
-    return [
-      {
-        check: "lockfile",
-        package: "package-lock.json",
-        status: "error",
-        detail: `${lockPath} has no "packages" key — not an npm lockfile (v2/v3) this gate can read`,
-      },
-    ];
+    return { error: `${lockPath} has no "packages" key — not an npm lockfile (v2/v3) this gate can read`, lockPath };
   }
 
+  return { lock, lockPath };
+}
+
+// LOCKFILE CHECK — see file header. `knownNames` is every workspace
+// package's own name, from the same manifests the link check already
+// loaded (not re-derived from package-scope.json, so this stays correct
+// even for a first-party name that momentarily does not match the
+// configured scope). `lock` is the already-loaded, already-validated
+// package-lock.json from loadLockfile() above.
+function checkLockfile(knownNames, lock) {
+  const packages = lock.packages;
   const results = [];
   for (const [key, entry] of Object.entries(packages)) {
     const name = [...knownNames].find((n) => isNodeModulesEntryFor(key, n));
@@ -349,6 +382,89 @@ function checkLockfile(knownNames) {
   return results;
 }
 
+// -------------------------------------------------------------- version scan
+
+// VERSION-RECORD CHECK — see file header, direction 3. For every
+// successfully loaded workspace package, does package-lock.json's own
+// "packages/<dir>" entry (the entry npm --workspaces writes to mirror that
+// package's manifest — the SAME key check-lock-workspace-versions.mjs reads,
+// issue #917) record the same version the manifest actually declares?
+//
+// This is deliberately independent of both checks above: it never reads a
+// dependency range (so it fires even for a package nothing else in the
+// workspace depends on — exactly the `integrator` case #366 was filed
+// against) and never reads a node_modules resolution entry (so it fires
+// even when every first-party package resolves as a perfectly valid local
+// link). A stale recorded version is invisible to both existing checks by
+// construction; this is the only one of the three that reads it at all.
+//
+// `key` is derived from each package's own directory relative to the
+// current working directory (every caller runs this from the repository
+// root — see discoverPackages()'s comment), not re-derived from the
+// package's name, so this works whether or not a package's name currently
+// matches its directory name.
+function checkLockVersions(loaded, lock) {
+  const results = [];
+  const cwd = process.cwd();
+
+  for (const l of loaded) {
+    if (l.error) continue; // already reported by evaluateLinks() as a "link" error; not reported twice here
+    const { manifest, pkgDir } = l;
+    const key = relative(cwd, pkgDir).split(sep).join("/");
+    const entry = lock.packages[key];
+
+    if (!entry || typeof entry !== "object") {
+      results.push({
+        check: "version",
+        package: manifest.name,
+        status: "error",
+        detail:
+          `package-lock.json has no "${key}" entry — this workspace member is not represented in the lock at ` +
+          "all; run `npm install` to regenerate it.",
+      });
+      continue;
+    }
+
+    const lockVersion = entry.version;
+    if (typeof lockVersion !== "string" || lockVersion.length === 0) {
+      results.push({
+        check: "version",
+        package: manifest.name,
+        status: "error",
+        detail: `package-lock.json's "${key}" entry has no "version" field this gate can compare.`,
+      });
+      continue;
+    }
+
+    if (lockVersion === manifest.version) {
+      results.push({
+        check: "version",
+        package: manifest.name,
+        status: "pass",
+        detail: `package-lock.json's "${key}" records ${lockVersion}, matching ${manifest.name}'s manifest.`,
+      });
+      continue;
+    }
+
+    results.push({
+      check: "version",
+      package: manifest.name,
+      status: "finding",
+      detail:
+        `package-lock.json's "${key}" records version ${lockVersion}, but ${manifest.name}'s own manifest ` +
+        `(${key}/package.json) declares ${manifest.version}. Both the link check and the lockfile check above ` +
+        "can pass while this disagrees: a dependency range can still be satisfied by this package's real " +
+        "on-disk version no matter what stale number the lock records for the package's OWN version entry, and " +
+        "a node_modules resolution entry can still be a valid local link regardless of this. A fresh `npm ci` " +
+        "resolves workspace versions FROM the lock, so this is the exact command that trusts the stale number. " +
+        `Regenerate package-lock.json (a plain \`npm install\` at the repository root) in the same pull request ` +
+        `as whatever changed ${manifest.name}'s version.`,
+    });
+  }
+
+  return results;
+}
+
 // ------------------------------------------------------------------- main
 
 function main() {
@@ -371,25 +487,36 @@ function main() {
 
   const edgeCount = linkResults.filter((r) => r.status !== "error").length;
   if (edgeCount === 0) {
-    // Packages were discovered, but zero first-party `dependencies` edges
-    // were found among them (or every edge belonged to a package whose own
-    // manifest failed to load, in which case those errors already dominate
-    // the exit code below). This workspace's own packages/*/dependencies
-    // graph is never actually empty — see EMPTY SCAN in the header — so this
-    // is the same "the scan itself is broken" signal as zero packages.
+    // Packages were discovered, but zero first-party dependencies/
+    // peerDependencies/optionalDependencies edges were found among them (or
+    // every edge belonged to a package whose own manifest failed to load, in
+    // which case those errors already dominate the exit code below). This
+    // workspace's own packages/*/dependencies graph is never actually empty
+    // — see EMPTY SCAN in the header — so this is the same "the scan itself
+    // is broken" signal as zero packages.
     linkResults.push({
       check: "link",
       package: "(workspace)",
       status: "error",
       detail:
-        "discovered packages but found zero first-party dependency edges among their \"dependencies\" " +
-        "fields — refusing to report a clean pass on an empty scan (see this script's EMPTY SCAN header).",
+        "discovered packages but found zero first-party dependency edges among their dependencies/" +
+        "peerDependencies/optionalDependencies fields — refusing to report a clean pass on an empty scan " +
+        "(see this script's EMPTY SCAN header).",
     });
   }
 
-  const lockResults = checkLockfile(new Set(knownVersions.keys()));
+  const { lock, error: lockLoadError } = loadLockfile();
+  const lockResults = lockLoadError
+    ? [{ check: "lockfile", package: "package-lock.json", status: "error", detail: lockLoadError }]
+    : checkLockfile(new Set(knownVersions.keys()), lock);
+  // The version-record check (#366) needs the same parsed lock; when the
+  // lock itself could not be loaded, checkLockfile()'s single error result
+  // above already dominates the exit code, so there is nothing new for this
+  // check to add — skip it rather than reporting the same unreadable-lock
+  // fact a second time under a different check name.
+  const versionResults = lockLoadError ? [] : checkLockVersions(loaded, lock);
 
-  const results = [...linkResults, ...lockResults];
+  const results = [...linkResults, ...lockResults, ...versionResults];
 
   if (json) {
     console.log(JSON.stringify({ results }, null, 2));
@@ -409,10 +536,10 @@ function main() {
     console.log("");
     console.log(
       worst === 0
-        ? "WORKSPACE LINKS OK — every first-party dependency range is satisfied by its sibling's real version, and package-lock.json resolves every first-party package locally."
+        ? "WORKSPACE LINKS OK — every first-party dependency range is satisfied by its sibling's real version, package-lock.json resolves every first-party package locally, and every first-party package's own lock-recorded version matches its manifest."
         : worst === 2
           ? "WORKSPACE LINKS ERROR — could not evaluate at least one package or the lockfile (see ERROR lines above)."
-          : "WORKSPACE LINKS FAIL — the FIND lines above will silently stop resolving locally the moment npm re-links the tree (npm ci in particular): widen the declared range (and bump the declaring package's own version) or regenerate package-lock.json, then re-run this gate.",
+          : "WORKSPACE LINKS FAIL — the FIND lines above will silently stop resolving locally the moment npm re-links the tree (npm ci in particular), or mean package-lock.json is currently false about a workspace member's own version: widen the declared range (and bump the declaring package's own version), or regenerate package-lock.json, then re-run this gate.",
     );
   }
   process.exit(worst);
@@ -420,4 +547,4 @@ function main() {
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) main();
 
-export { checkLockfile, discoverPackages, evaluateLinks, loadManifest, parseRange, rangeBounds, satisfies };
+export { checkLockfile, checkLockVersions, discoverPackages, evaluateLinks, loadLockfile, loadManifest, parseRange, rangeBounds, satisfies };

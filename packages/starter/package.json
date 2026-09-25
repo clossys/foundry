@@ -1,6 +1,6 @@
 {
   "name": "@clossys/starter",
-  "version": "0.1.9",
+  "version": "0.1.10",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -30,7 +30,6 @@
     "!src/**/*.test.ts",
     "documents",
     "README.md",
-    "CHANGELOG.md",
     "LICENSE",
     "skill"
   ],

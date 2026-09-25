@@ -111,6 +111,55 @@ test("publishOnePackage: a publish failure is reported, and the packed candidate
   assert.equal(cleaned, true);
 });
 
+// -------------------------------------------------------------------- issue #1462: the owner-present preflight's
+// own three new failure messages, through this script's `publish` seam --
+// publish-qualified-set.mjs's `publishOnePackage` always calls the REAL
+// `publishQualifiedDirectory` (its own default for `publish`) for a genuine
+// run; these tests confirm this script's own error handling passes each of
+// those three new messages through to `outcome.detail` byte-for-byte, never
+// wrapping, truncating, or discarding the specific cause the way the
+// original bare "owner-present npm publish failed" already used to.
+
+test("publishOnePackage: a non-TTY refusal from publishQualifiedDirectory surfaces its own specific message, not the old generic one", async () => {
+  let cleaned = false;
+  const outcome = await publishOnePackage({
+    packageKey: "app",
+    recordPath: "governance/release-qualifications/clossys-app-1.0.0.json",
+    ...passingDeps({
+      packCandidate: () => ({ path: "/tmp/x.tgz", cleanup: () => { cleaned = true; } }),
+      publish: async () => { throw new Error("owner-present publication requires an interactive terminal: run this from an interactive terminal"); },
+    }),
+  });
+  assert.equal(outcome.status, "publish-failed");
+  assert.equal(outcome.detail, "owner-present publication requires an interactive terminal: run this from an interactive terminal");
+  assert.equal(cleaned, true, "the packed candidate must still be cleaned up even on this up-front refusal");
+});
+
+test("publishOnePackage: a failed npm whoami preflight surfaces \"not signed in to npm\", never npm's own ENEEDAUTH text", async () => {
+  const outcome = await publishOnePackage({
+    packageKey: "app",
+    recordPath: "governance/release-qualifications/clossys-app-1.0.0.json",
+    ...passingDeps({
+      publish: async () => { throw new Error("not signed in to npm: run `npm login` first"); },
+    }),
+  });
+  assert.equal(outcome.status, "publish-failed");
+  assert.equal(outcome.detail, "not signed in to npm: run `npm login` first");
+  assert.doesNotMatch(outcome.detail, /ENEEDAUTH/);
+});
+
+test("publishOnePackage: a failed owner-present publish relays npm's own error code in the outcome detail", async () => {
+  const outcome = await publishOnePackage({
+    packageKey: "app",
+    recordPath: "governance/release-qualifications/clossys-app-1.0.0.json",
+    ...passingDeps({
+      publish: async () => { throw new Error("owner-present npm publish failed (npm error code E404)"); },
+    }),
+  });
+  assert.equal(outcome.status, "publish-failed");
+  assert.equal(outcome.detail, "owner-present npm publish failed (npm error code E404)");
+});
+
 test("publishOnePackage: success hands the preflighted package's exact candidate, fresh transcript, and record path through the whole chain", async () => {
   const seen = [];
   const outcome = await publishOnePackage({

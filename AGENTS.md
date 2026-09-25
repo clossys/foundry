@@ -33,9 +33,12 @@ gate runs.
 
 ## What the safety gate refuses
 
-Credential-shaped strings, committed build output, agent-instruction files, and
-private identity — names, domains, handles, internal paths, and client or
-personal names that must never become public. Read [SECURITY.md](SECURITY.md)
+Credential-shaped strings, committed build output, agent-instruction files,
+file and directory names in absolute-path shapes only a machine produces
+(temp roots, encoded paths, Windows, WSL and marked macOS homes; SECURITY.md
+lists the exact five families and their known gaps), and private identity —
+names, domains, handles, internal paths, and client or personal names that
+must never become public. Read [SECURITY.md](SECURITY.md)
 for the full rule set, the one deliberate exemption to it, and for why the
 denylist is stored outside this repository.
 
@@ -144,12 +147,17 @@ sandbox of this class; #833 has the full measurement.
   can embed resolved local paths and other detail from wherever it was
   compiled, which is exactly why it's gitignored. Copy `src/` and rebuild
   here.
-- **Write a fresh `CHANGELOG.md` rather than reusing one written
-  elsewhere.** A changelog carried over from somewhere else can cite pull
-  requests, issues, and people that mean nothing — or worse, disclose
-  something private — to a reader here. Start fresh, at the package's real
-  version (see [docs/PUBLISHING.md](docs/PUBLISHING.md) — currently `0.1.0`
-  for every package here).
+- **Write a fresh changelog rather than reusing one written elsewhere, and
+  keep it at `docs/changelogs/<dir>.md`, never in the package.** A changelog
+  carried over from somewhere else can cite pull requests, issues, and
+  people that mean nothing — or worse, disclose something private — to a
+  reader here. Start fresh, at the package's real version (see
+  [docs/PUBLISHING.md](docs/PUBLISHING.md) — currently `0.1.0` for every
+  package here). A package's changelog lives in this public repository at
+  `docs/changelogs/<dir>.md` and is linked from its README; it is not in
+  the package's `files` and never ships in a tarball, so a release note can
+  be corrected at any time without a release
+  (see [docs/changelogs/README.md](docs/changelogs/README.md)).
 - **Never copy agent instructions from another repository.** Root `AGENTS.md`
   is the canonical public policy and root `CLAUDE.md` may only import it as a
   thin compatibility loader. Both are content-scanned. Nested agent instruction

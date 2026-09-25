@@ -129,10 +129,14 @@ returned output after that boundary succeeds.
   ranges (`~0.3.0` and `~0.7.0`) — this is a real version-coupling constraint
   in the dependency graph, not an install-ordering concern (a package manager
   resolves the whole graph regardless of the order packages are requested
-  in). A consumer whose own policy is to pin exact versions must pin `copy`
-  to a `0.3.x` patch and `ui` to a `0.7.x` patch that satisfy those ranges,
-  or npm/pnpm/yarn will report an unresolvable version conflict when
-  installing `surface`.
+  in). `copy` and `ui` are regular dependencies of `surface`, so a consumer
+  that pins either one to a version outside those ranges does not get an
+  install failure: npm/pnpm/yarn installs a second, nested copy that
+  satisfies `surface`'s declared range alongside the consumer's pinned copy.
+  A consumer whose own policy is to pin exact versions should still pin
+  `copy` to a `0.3.x` patch and `ui` to a `0.7.x` patch that satisfy those
+  ranges, to avoid that duplicate copy and to make sure the copy `surface`
+  actually uses is the one they pinned.
 - Replace former token imports/CSS paths with the `ui` token subpaths; replace
   former voice imports with `copy` or `copy/voice`.
 - Move page-level view imports to `surface/web`; keep reusable primitives in

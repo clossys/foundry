@@ -28,7 +28,10 @@
 //   checked against real relative-path resolution from the scanned directory
 //   only — deliberately NOT against "the enclosing repository", which would
 //   report a false clean bill while the package still sits inside the huge
-//   private monorepo it came from.
+//   private monorepo it came from. The two deliberate exceptions judge a file
+//   from where its text was written: a package changelog that moved to
+//   docs/changelogs/ (COMPANION_CHANGELOG_POSITION), and a verbatim copy the
+//   package's build declares it packs in from ANOTHER PACKAGE (PACKED COPIES).
 //
 // CLASS 2 — internal-convention DOM/data attributes.
 //   A fleet-wide internal tagging convention rendered straight into markup —
@@ -110,6 +113,8 @@ import { readFileSync, readdirSync, statSync, existsSync } from "node:fs";
 import { join, relative, extname, resolve, dirname, basename, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { execFileSync, spawnSync } from "node:child_process";
+import { changelogPathForPackageDir, changelogRelPath } from "./lib/changelog-location.mjs";
+import { PACKED_COPIES_FILE, loadPackedCopies } from "./lib/packed-copies.mjs";
 
 // Flags that consume a value, per this script's own usage banner below
 // (`--class N`, `--allowlist <file>`). Every other `--`-prefixed token
@@ -344,6 +349,54 @@ const rootAbs = resolve(root);
 const allFiles = walk(rootAbs);
 const scanFiles = allFiles.filter((f) => SCAN_EXT.has(extname(f).toLowerCase()));
 
+// THE PACKAGE CHANGELOG, WHICH NO LONGER SITS UNDER THE PACKAGE.
+//
+// A package's changelog lives at docs/changelogs/<dir>.md, in this public
+// repository, instead of at packages/<dir>/CHANGELOG.md inside the tarball
+// (scripts/lib/changelog-location.mjs). It is still public text, and every
+// CLASS here applied to it while it sat under the package, so moving it out
+// of the scanned directory must not quietly move it out of this gate too.
+// When the scanned directory is packages/<dir> and docs/changelogs/<dir>.md
+// exists, that file is scanned along with the package, and CLASS 1 judges it
+// EXACTLY as it judged packages/<dir>/CHANGELOG.md: citations resolve from
+// the package root against the package's own published file set, the
+// changelog-only rot exemption (CHANGELOG_FILE_RE) still applies to it, and
+// governance/known-dangling-citations.json keeps waiving its citations under
+// the same "CHANGELOG.md" key. That is what COMPANION_CHANGELOG_POSITION is:
+// the position it is judged from, never the path it is reported under --
+// findings name the real docs/changelogs/<dir>.md. It is always checked by
+// CLASS 1, even though it is not in the tarball: its reader is anyone reading
+// this repository, and a pointer at nothing misleads them just the same.
+//
+// A package that ALSO still carries its own packages/<dir>/CHANGELOG.md has
+// two files claiming that one position, so which one a waiver or finding
+// means is ambiguous -- refused as "cannot run" rather than guessed.
+const COMPANION_CHANGELOG_POSITION = join(rootAbs, "CHANGELOG.md");
+const companionChangelog = (() => {
+  if (basename(dirname(rootAbs)) !== "packages") return null;
+  const path = changelogPathForPackageDir(rootAbs);
+  return existsSync(path) ? path : null;
+})();
+if (companionChangelog) {
+  if (existsSync(COMPANION_CHANGELOG_POSITION)) {
+    console.error(
+      `check-contamination-classes: ${rootAbs} has both its own CHANGELOG.md and ${changelogRelPath(basename(rootAbs))} -- a package changelog lives only at the latter (scripts/lib/changelog-location.mjs); remove the in-package copy`,
+    );
+    process.exit(2);
+  }
+  scanFiles.push(companionChangelog);
+}
+
+// The path a finding is reported under: the real repository-relative
+// docs/changelogs/<dir>.md for the companion changelog (and for a stale
+// waiver keyed to its CHANGELOG.md position), package-relative otherwise.
+function shownPath(file) {
+  if (companionChangelog && (file === companionChangelog || file === COMPANION_CHANGELOG_POSITION)) {
+    return changelogRelPath(basename(rootAbs));
+  }
+  return relative(rootAbs, file);
+}
+
 // The repository root, found by walking up from the scanned directory looking
 // for `.git`. CLASS 1 needs it because a citation can be relative to either
 // the package being scanned or the repository that contains it, and a path
@@ -359,6 +412,89 @@ function findRepoRoot(startDir) {
   return resolve(startDir); // no .git found within range — fall back to itself
 }
 const repoRoot = findRepoRoot(rootAbs);
+
+// PACKED COPIES, JUDGED FROM WHERE THEY WERE WRITTEN (#1500).
+//
+// A package's build can copy a file in verbatim from another package -- that
+// package's own skill, say. Its citations were written to resolve from the
+// SOURCE's position: `templates/brand-type.template.json` in a skill is
+// right in the package whose tarball carries `templates/`, and wrong
+// nowhere. Judged from the copy's position instead, every such citation
+// reads as dangling once the package is built, and the only way to quiet it
+// would be to reword the source for a position it was never written for.
+//
+// So a declared copy of a PACKAGE's file is judged exactly as its source
+// would be, the same move COMPANION_CHANGELOG_POSITION makes for a changelog
+// that moved out of its package: paths resolve from the source's directory
+// up to the source's package root, and a resolved path must be in THAT
+// package's published file set. That is the same bar the source already
+// meets when its own package is scanned -- a citation that dangles at the
+// source still fails in the copy, and a waiver the source holds still
+// waives it.
+//
+// A copy of a file outside any package (a repository document such as a
+// contract under docs/contracts/) is NOT judged from its source. Its source
+// has no published file set, and no package scan ever runs CLASS 1 on it,
+// so "judged as its source" could only mean "exists somewhere in this
+// checkout" -- a bar lower than the one every other shipped file meets, and
+// one any package could route a citation through with a byte-identical
+// docs/ file and a declaration. Such a copy is an ordinary file of the
+// package that ships it, judged at its own position, as it was before
+// declarations existed; its source is worded for the reader who opens it
+// there.
+//
+// Which files are copies, and of what, is never guessed from a path. It is
+// the package's own declaration (scripts/lib/packed-copies.mjs), the same
+// data its pack step copies from, so the two cannot disagree. And the
+// declaration is checked, not trusted: when CLASS 1 reads a declared copy
+// (a shipped file with a scanned extension) and its bytes differ from its
+// declared source -- a wrong mapping, or a stale build -- that is a finding,
+// and the copy is judged at its own position. A declared copy CLASS 1 does
+// not read (for example a .json contract) is not compared here. A file merely sitting at a
+// copy-like path without being declared is an ordinary file of this package.
+//
+// A generated module (src/generated/*.generated.ts) is new text written at
+// its own position, not a copy, and is judged there.
+let declaredCopies;
+try {
+  declaredCopies = loadPackedCopies(rootAbs, repoRoot) ?? [];
+} catch (error) {
+  console.error(`check-contamination-classes: cannot read the copy declaration: ${error.message}`);
+  process.exit(2);
+}
+const copySourceByFile = new Map(declaredCopies.map(({ copy, source }) => [join(rootAbs, ...copy.split("/")), source]));
+
+// The position a declared copy of a package's file is judged from, or null
+// for any other file -- including a declared copy of a repository document,
+// which is judged at its own position (see above). `mismatch` is set when
+// the declaration is false for this file, whatever kind of source it names:
+// a stale or wrongly mapped copy of a docs/ file is as much a false
+// declaration as one of a package's file, even though both are then judged
+// where they ship.
+function copyPosition(file) {
+  const source = copySourceByFile.get(file);
+  if (source === undefined) return null;
+  const sourceAbs = join(repoRoot, ...source.split("/"));
+  let identical = false;
+  try {
+    identical = readFileSync(sourceAbs).equals(readFileSync(file));
+  } catch {
+    identical = false;
+  }
+  if (!identical) return { source, mismatch: existsSync(sourceAbs) ? "differs" : "missing" };
+  const pkg = /^packages\/([^/]+)\//.exec(source)?.[1];
+  if (!pkg) return null;
+  // A source under packages/ in a directory that is not a package has no
+  // published file set to be judged against either.
+  if (!existsSync(join(repoRoot, "packages", pkg, "package.json"))) return null;
+  const root = join(repoRoot, "packages", pkg);
+  return {
+    source,
+    sourceAbs,
+    position: { root, shipped: () => shippedFileSet(root) },
+    waiver: { package: pkg, file: relative(root, sourceAbs).split(sep).join("/") },
+  };
+}
 
 // The set of package names legitimately published from THIS repository — read
 // from the repo the script itself lives in, not the directory being scanned,
@@ -470,7 +606,7 @@ function report(cls, severity, file, line, snippet, detail) {
     class: cls,
     className: CLASS_NAMES[cls],
     severity,
-    file: relative(rootAbs, file),
+    file: shownPath(file),
     line,
     snippet: snippet.trim().slice(0, 100),
     detail,
@@ -491,7 +627,7 @@ function reportIndeterminate(cls, file, line, snippet, detail) {
   indeterminate.push({
     class: cls,
     className: CLASS_NAMES[cls],
-    file: relative(rootAbs, file),
+    file: shownPath(file),
     line,
     snippet: snippet.trim().slice(0, 100),
     detail,
@@ -643,38 +779,50 @@ function blockRangesFor(prose) {
 // `internal/peer-guard-coverage.test.ts` DID exist in `src/`, and was
 // excluded from the tarball by `"!src/**/*.test.ts"`, so an existence-only
 // check reports clean while the shipped `.d.ts` points a consumer at nothing.
-let shippedSetCache;
-function shippedFileSet() {
-  if (shippedSetCache !== undefined) return shippedSetCache;
-  if (!existsSync(join(rootAbs, "package.json"))) {
+//
+// Keyed by package root: the scanned package's own set is the usual question,
+// and a declared copy is judged against its SOURCE package's set instead (see
+// PACKED COPIES below).
+const NO_MANIFEST = { set: null, reason: "no-manifest" };
+const shippedSetCache = new Map();
+function shippedFileSet(root = rootAbs) {
+  if (shippedSetCache.has(root)) return shippedSetCache.get(root);
+  const answer = packedFileSet(root);
+  shippedSetCache.set(root, answer);
+  return answer;
+}
+function packedFileSet(root) {
+  if (!existsSync(join(root, "package.json"))) {
     // Not a package at all (a docs tree, a fixture). There is no "ships"
     // concept here, so resolution degrades honestly to existence — not to a
     // silent failure, and not to a fabricated tarball.
-    shippedSetCache = { set: null, reason: "no-manifest" };
-    return shippedSetCache;
+    return NO_MANIFEST;
   }
   let out;
   try {
     out = execFileSync("npm", ["pack", "--dry-run", "--json", "--ignore-scripts"], {
-      cwd: rootAbs,
+      cwd: root,
       encoding: "utf8",
       stdio: ["ignore", "pipe", "pipe"],
       maxBuffer: 64 * 1024 * 1024,
     });
   } catch {
-    shippedSetCache = { set: null, reason: "pack-failed" };
-    return shippedSetCache;
+    return { set: null, reason: "pack-failed" };
   }
   try {
     const parsed = JSON.parse(out);
     const files = parsed?.[0]?.files;
     if (!Array.isArray(files)) throw new Error("no files[]");
-    shippedSetCache = { set: new Set(files.map((f) => f.path)), reason: null };
+    return { set: new Set(files.map((f) => f.path)), reason: null };
   } catch {
-    shippedSetCache = { set: null, reason: "pack-failed" };
+    return { set: null, reason: "pack-failed" };
   }
-  return shippedSetCache;
 }
+
+// WHERE A CITATION IS JUDGED FROM: a root that its paths resolve up to, and
+// the published file set a resolved path must be in. For every scanned file
+// but a declared copy, that is the scanned package itself.
+const SCAN_POSITION = { root: rootAbs, shipped: () => shippedFileSet(rootAbs) };
 
 // WHOSE citations matter. A dangling reference inside a file that is itself
 // excluded from the tarball — a `*.test.ts`, a vitest config — reaches no
@@ -698,17 +846,17 @@ function shipsToAReader(file) {
 // enclosing repository": a citation copy-pasted while a package still sits
 // inside a large private origin monorepo would resolve against that
 // monorepo's tree, which is exactly the false negative that matters.
-function candidateBases(file) {
+function candidateBases(file, root = rootAbs) {
   const bases = [];
   let dir = dirname(file);
   for (let i = 0; i < 64; i++) {
     bases.push(dir);
-    if (dir === rootAbs) break;
+    if (dir === root) break;
     const parent = dirname(dir);
     if (parent === dir) break;
     dir = parent;
   }
-  if (!bases.includes(rootAbs)) bases.push(rootAbs);
+  if (!bases.includes(root)) bases.push(root);
   return bases;
 }
 
@@ -905,7 +1053,7 @@ function repositoryShapedness(citedPath) {
   return reliable ? "no" : "unverifiable";
 }
 
-function classifyCitation(citedPath, file) {
+function classifyCitation(citedPath, file, position = SCAN_POSITION) {
   // Tree scan ignores citations whose *target* is under dist/ or build/ —
   // those paths are gitignored, so CLASS 1 would otherwise report ROT for
   // prose that names a compiled invocation path. `--include-built` scans
@@ -914,10 +1062,10 @@ function classifyCitation(citedPath, file) {
   // #941 waivers already cover tsc-copied comments that name source paths.
   if (BUILT_SEGMENT_RE.test(citedPath)) return { state: CITATION_IGNORE };
 
-  const shipped = shippedFileSet();
+  const shipped = position.shipped();
   let reachedVia = null; // a real file this citation resolves to, if any
 
-  for (const base of candidateBases(file)) {
+  for (const base of candidateBases(file, position.root)) {
     for (const spelling of pathSpellings(citedPath)) {
       const abs = resolve(base, spelling);
       if (!existsSync(abs)) continue;
@@ -926,9 +1074,9 @@ function classifyCitation(citedPath, file) {
         // here, so resolution degrades honestly to existence — exactly as
         // this class behaved before #935.
         if (shipped.reason === "no-manifest") return { state: CITATION_SHIPS };
-        return { state: CITATION_UNKNOWN, where: relative(rootAbs, abs) };
+        return { state: CITATION_UNKNOWN, where: relative(position.root, abs) };
       }
-      const rel = relative(rootAbs, abs).split(sep).join("/");
+      const rel = relative(position.root, abs).split(sep).join("/");
       if (!rel.startsWith("..") && shipped.set.has(rel)) return { state: CITATION_SHIPS };
       // An EXPLICITLY relative link that walks out of the package
       // (`../../docs/DECISIONS.md`) is a deliberate, working cross-boundary
@@ -1043,9 +1191,13 @@ const UNAVAILABILITY_RE = new RegExp(
 //
 // So the exemption is bounded twice, and each bound is measured on this tree:
 //
-//   BY FILE. Only a Markdown changelog at one of two paths can carry it:
-//   `CHANGELOG.md` at the scanned repository root, or
-//   `packages/<name>/CHANGELOG.md` where `<name>` is a single path segment.
+//   BY FILE. Only a Markdown changelog at one of three paths can carry it:
+//   `CHANGELOG.md` at the scanned repository root,
+//   `packages/<name>/CHANGELOG.md` where `<name>` is a single path segment,
+//   or `docs/changelogs/<name>.md` (never that directory's README.md), where
+//   a package changelog now lives. A package changelog scanned along with
+//   its package is judged from its `CHANGELOG.md` position (see
+//   COMPANION_CHANGELOG_POSITION), so it matches the first form.
 //   A nested path (`src/CHANGELOG.md`, `packages/<name>/src/CHANGELOG.md`),
 //   a non-markdown extension (`CHANGELOG.ts`), and a bare `CHANGELOG` cannot.
 //   A changelog is a record of what changed, so a path named in one is
@@ -1072,7 +1224,7 @@ const UNAVAILABILITY_RE = new RegExp(
 // What it does guarantee is the property the block-wide search actually needs
 // — that a qualifier can never excuse a citation it is not about, and that
 // nothing a reader would follow as a live pointer can be muted by wording.
-const CHANGELOG_FILE_RE = /^(?:CHANGELOG\.md|packages\/[^/]+\/CHANGELOG\.md)$/;
+const CHANGELOG_FILE_RE = /^(?:CHANGELOG\.md|packages\/[^/]+\/CHANGELOG\.md|docs\/changelogs\/(?!README\.md$)[^/]+\.md)$/;
 
 // Split prose into sentences. A terminator counts only when it is followed by
 // whitespace, optionally through closing punctuation (`…gone."` / `…gone.**`),
@@ -1205,15 +1357,15 @@ function allowlistEntryFor(relFile, citedPath) {
   return undefined;
 }
 
-function classifyCitationViaSrcMirror(citedPath, relFile, citingFile) {
-  const primary = classifyCitation(citedPath, citingFile);
+function classifyCitationViaSrcMirror(citedPath, relFile, citingFile, position = SCAN_POSITION) {
+  const primary = classifyCitation(citedPath, citingFile, position);
   if (primary.state === CITATION_SHIPS || primary.state === CITATION_IGNORE) return primary;
   const srcCandidates = srcRelFilesForDistArtifact(relFile.split(sep).join("/"));
   if (!srcCandidates) return primary;
   for (const srcRel of srcCandidates) {
-    const srcAbs = join(rootAbs, srcRel);
+    const srcAbs = join(position.root, srcRel);
     if (!existsSync(srcAbs)) continue;
-    const asSrc = classifyCitation(citedPath, srcAbs);
+    const asSrc = classifyCitation(citedPath, srcAbs, position);
     if (asSrc.state === CITATION_SHIPS) return asSrc;
   }
   return primary;
@@ -1267,7 +1419,27 @@ function checkClass1(file, lines, ext) {
     const text = prose.slice(from, to + 1).join(" ");
     for (let i = from; i <= to; i++) blockText.set(i, text);
   }
-  const relFile = relative(rootAbs, file);
+  // The companion changelog is judged from its old in-package position --
+  // see COMPANION_CHANGELOG_POSITION above -- and a declared copy from its
+  // source's position -- see PACKED COPIES above.
+  const copy = copyPosition(file);
+  if (copy?.mismatch) {
+    report(
+      1,
+      "high",
+      file,
+      0,
+      "",
+      `is declared in ${PACKED_COPIES_FILE} as a verbatim copy of "${copy.source}", but ${copy.mismatch === "missing" ? "that file does not exist" : "its bytes differ from that file"}. A copy is judged from its source's position only while it IS its source's text, so this file is judged at its own position instead. Rebuild the package, or correct the declaration.`,
+    );
+  }
+  const asCopy = copy && !copy.mismatch ? copy : null;
+  const position = asCopy ? asCopy.position : SCAN_POSITION;
+  const citingFile = file === companionChangelog ? COMPANION_CHANGELOG_POSITION : asCopy ? asCopy.sourceAbs : file;
+  const relFile = relative(position.root, citingFile);
+  const judgedAs = asCopy
+    ? ` (Judged as its source, "${asCopy.source}", of which this file is a declared verbatim copy: paths resolve from there, against packages/${asCopy.waiver.package}'s published file set.)`
+    : "";
 
   prose.forEach((text, i) => {
     const matches = [];
@@ -1282,10 +1454,17 @@ function checkClass1(file, lines, ext) {
       }
     }
     if (!matches.length) return;
-    const state = new Map(matches.map((t) => [t, classifyCitationViaSrcMirror(t, relFile, file)]));
+    const state = new Map(matches.map((t) => [t, classifyCitationViaSrcMirror(t, relFile, citingFile, position)]));
     for (const t of matches) {
       const cited = state.get(t);
       if (cited.state === CITATION_SHIPS) continue;
+      // A package changelog naming the bare `CHANGELOG.md` is naming itself:
+      // its history was written while it sat at packages/<dir>/CHANGELOG.md,
+      // and the reader is already reading the file it means. Only the bare
+      // name, and only inside the companion changelog -- the same citation
+      // in shipped package text still points an installed-package reader at
+      // a file the tarball no longer carries, and still reports.
+      if (file === companionChangelog && t === "CHANGELOG.md") continue;
       // Only the BARE name is format vocabulary. A path-prefixed citation
       // (`docs/AGENTS.md`) is a real pointer at a real file, and a dangling one
       // is exactly this class's job regardless of what the file is called.
@@ -1306,7 +1485,7 @@ function checkClass1(file, lines, ext) {
           file,
           i + 1,
           lines[i] ?? text,
-          `cites "${t}", which resolves nowhere — and this run cannot tell whether "packages/${cited.dir}" is a package this repository retired (rot) or a placeholder naming the reader's own tree (not a defect). Its git history is unreliable here (a shallow clone, or no usable checkout), and those two read identically without it. A full-history run is required.`,
+          `cites "${t}", which resolves nowhere — and this run cannot tell whether "packages/${cited.dir}" is a package this repository retired (rot) or a placeholder naming the reader's own tree (not a defect). Its git history is unreliable here (a shallow clone, or no usable checkout), and those two read identically without it. A full-history run is required.${judgedAs}`,
         );
         continue;
       }
@@ -1317,7 +1496,7 @@ function checkClass1(file, lines, ext) {
           file,
           i + 1,
           lines[i] ?? text,
-          `cites "${t}", which exists at "${cited.where}" — but this run could not determine whether that path is in the published file set, because \`npm pack --dry-run\` failed here. Whether a reader can open it is exactly the question, so this is neither a pass nor a finding.`,
+          `cites "${t}", which exists at "${cited.where}" — but this run could not determine whether that path is in the published file set, because \`npm pack --dry-run\` failed here. Whether a reader can open it is exactly the question, so this is neither a pass nor a finding.${judgedAs}`,
         );
         continue;
       }
@@ -1333,10 +1512,14 @@ function checkClass1(file, lines, ext) {
       if (cited.state === CITATION_UNREACHABLE && UNAVAILABILITY_RE.test(blockText.get(i) ?? text)) continue;
       if (cited.state === CITATION_ROT && rotDisclosedInChangelog(relFile, blockText.get(i) ?? text, t)) continue;
 
-      const entry = allowlistEntryFor(relFile, t);
+      // A copy carries its source's waiver, keyed as the source is; a waiver
+      // keyed to the copy's own path in this package still applies too.
+      const entry = asCopy
+        ? copyWaiverFor(asCopy, t) ?? allowlistEntryFor(relative(rootAbs, file), t)
+        : allowlistEntryFor(relFile, t);
       if (entry) {
         allowlistUsed.add(entry);
-        waived.push({ file: relFile, line: i + 1, cited: t, issue: entry.issue, state: cited.state });
+        waived.push({ file: shownPath(file), line: i + 1, cited: t, issue: entry.issue, state: cited.state });
         continue;
       }
 
@@ -1347,7 +1530,7 @@ function checkClass1(file, lines, ext) {
           file,
           i + 1,
           lines[i] ?? text,
-          `cites "${t}" — no such path is tracked anywhere in this repository. A reader has nothing to open, in this package or any checkout of it.`,
+          `cites "${t}" — no such path is tracked anywhere in this repository. A reader has nothing to open, in this package or any checkout of it.${judgedAs}`,
         );
       } else {
         report(
@@ -1356,11 +1539,17 @@ function checkClass1(file, lines, ext) {
           file,
           i + 1,
           lines[i] ?? text,
-          `cites "${t}" — the nearest real file is "${cited.where}", which is NOT in this package's published file set, so a reader who installed this package cannot open it at the path cited. Either correct the path, drop the citation, or say inline that it does not ship.`,
+          `cites "${t}" — the nearest real file is "${cited.where}", which is NOT in this package's published file set, so a reader who installed this package cannot open it at the path cited. Either correct the path, drop the citation, or say inline that it does not ship.${judgedAs}`,
         );
       }
     }
   });
+}
+
+function copyWaiverFor(asCopy, citedPath) {
+  return allowlist.entries.find(
+    (e) => e.package === asCopy.waiver.package && e.file === asCopy.waiver.file && e.cited === citedPath,
+  );
 }
 
 function reportStaleAllowlistEntries() {
@@ -1659,7 +1848,7 @@ for (const file of scanFiles) {
   const lines = contents.split("\n");
   const ext = extname(file).toLowerCase();
 
-  if (wants(1) && shipsToAReader(file)) checkClass1(file, lines, ext);
+  if (wants(1) && (file === companionChangelog || shipsToAReader(file))) checkClass1(file, lines, ext);
   if (wants(2) && CLASS2_6_EXT.has(ext)) checkClass2(file, lines);
   if (wants(3)) checkClass3(file, lines);
   if (wants(4)) checkClass4(file, lines);

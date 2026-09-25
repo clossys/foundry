@@ -213,7 +213,7 @@ describe("packed Publisher web React-server boundary", () => {
     // does carry the current one. Tracks Designer's current minor — a Designer
     // minor bump updates this line too, the same way `expectedVersions` in
     // scripts/run-candidate-qualification.test.mjs tracks every package.
-    expect(legacyManifest.dependencies["@clossys/designer"]).toBe("^0.5.0");
+    expect(legacyManifest.dependencies["@clossys/designer"]).toBe("^0.6.0");
     legacyManifest.dependencies["@clossys/designer"] = "^0.2.0";
     writeFileSync(legacyManifestPath, `${JSON.stringify(legacyManifest, null, 2)}\n`);
     const legacyPublisherTarball = packPackage(legacyPublisherRoot, join(fixtureRoot, "legacy-packed"));

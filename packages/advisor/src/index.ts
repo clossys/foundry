@@ -25,16 +25,21 @@ export { KIT_PRESETS } from "./kit-presets.js";
 export {
   composeKit, composeKitFromProblems, validateKitProposal, judgeNeedsCycles, needIsMet, FIRST_ENGAGEMENT_ROLE_CAP, EVIDENCE_LEVELS, evidenceAtLeast, presetEvidenceFindings,
 } from "./composition.js";
-export { contextFromBrief, toEngagementBrief } from "./engagement-brief.js";
+export { PUBLIC_PROBLEM_PLACEHOLDER, contextFromBrief, toEngagementBrief, validateEngagementBrief } from "./engagement-brief.js";
 export { ENGAGEMENT_CONTEXT_FIELD_IDS, fieldById } from "./context.js";
 export { nextContextQuestion, applyContextChoice } from "./context-questions.js";
 export { CLIENT_PROBLEMS } from "./client-problems.js";
 export { nextProblemQuestion, applyProblemChoice } from "./problem-questions.js";
 export { ADVISOR_BLOCKER_KINDS, renderAdvisorStatus, validateAdvisorPlan } from "./status.js";
+export { PLAN_DIGEST_EXCLUDED_FIELDS, canonicalJson, planDigest } from "./plan-digest.js";
+export { HUB_ONLY_ROLES } from "./plan-rules.js";
 export { recommendKit } from "./kit-verdicts.js";
+export { canonicalSnapshot, registrySnapshotRuleViolations, snapshotDigest, snapshotDigestSubject, validateRegistrySnapshot } from "./registry-snapshot.js";
+export { RESOLVED_PLACEMENT, STARTER_PACKAGE_DIRECTORY, packageRequest, resolvePackages } from "./package-resolution.js";
 export { nextStepInstruction } from "./next-step.js";
 export { validateManagedEngagement, proposalReadyForClient } from "./managed-engagement.js";
 export { BUDGET_PREFERENCE_CARD, applyBudgetPreferenceChoice, toPreferencesFile } from "./preferences.js";
+export { REPOSITORY_CHOICE_CARD_ID, REPOSITORY_SOMETHING_ELSE_ID, applyRepositoryChoice, repositoryChoiceCard } from "./repository-choice.js";
 export type {
   AdvisorAssessment, AdvisorAssessmentInput, AdvisorCharter, AdvisorComponentAssessment, AdvisorFinding, AdvisorSession, AdvisorSessionEvent, AdvisorSessionState,
   AdvisorState, AdvisorToolContract, AdvisorToolRequest, AdvisorToolResponse, AssessmentBasis, AuthorityClearance, BaselineDefinition, CompletionDefinition, CriterionDefinition,
@@ -58,8 +63,16 @@ export type { EngagementContext, EngagementContextField, EngagementContextFieldI
 export type { ContextChoiceApplyResult, ContextQuestionCard, ContextQuestionChoice } from "./context-questions.js";
 export type { ClientProblem } from "./client-problems.js";
 export type { ProblemChoiceApplyResult, ProblemConfirmation, ProblemConfirmationState, ProblemQuestionCard, ProblemQuestionChoice } from "./problem-questions.js";
-export type { AdvisorBlockerKind, AdvisorBlockerNextAction, AdvisorPlan, AdvisorPlanBlocker, AdvisorPlanDecision, AdvisorPlanMandate, AdvisorPlanNextAction } from "./status.js";
+export type {
+  AdvisorBlockerKind, AdvisorBlockerNextAction, AdvisorPlan, AdvisorPlanBlocker, AdvisorPlanDecision, AdvisorPlanKit, AdvisorPlanMandate, AdvisorPlanNextAction, AdvisorPlanPackageAct,
+  AdvisorPlanResolution, AdvisorPlanStaffing,
+} from "./status.js";
+export type { RegistrySnapshot, RegistrySnapshotPackage, RegistrySnapshotRuleId, RegistrySnapshotVersion, RegistrySnapshotViolation } from "./registry-snapshot.js";
+export type {
+  PackageRequestResult, PackageResolutionResult, PackageScope, ResolutionFinding, ResolutionOptions, ResolutionState, ResolutionVerdict,
+} from "./package-resolution.js";
 export type { KitVerdict, KitVerdictCitation, KitVerdictRole, KitVerdictState, RecommendKitInput } from "./kit-verdicts.js";
 export type { ClientTool, NextStepHostContext } from "./next-step.js";
 export type { ManagedEngagementInput, OperatorReview } from "./managed-engagement.js";
 export type { AdvisorPreferences, BudgetPreference, BudgetPreferenceApplyResult, BudgetPreferenceCard, BudgetPreferenceChoice } from "./preferences.js";
+export type { RepositoryChoice, RepositoryChoiceApplyResult, RepositoryChoiceCard, RepositoryChoiceCardResult, RepositoryListingEntry } from "./repository-choice.js";

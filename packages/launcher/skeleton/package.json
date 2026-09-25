@@ -8,6 +8,7 @@
     "node": ">=20"
   },
   "devDependencies": {
-    "@clossys/advisor": "__ADVISOR_VERSION__"
+    "@clossys/advisor": "__ADVISOR_VERSION__",
+    "@clossys/integrator": "__INTEGRATOR_VERSION__"
   }
 }

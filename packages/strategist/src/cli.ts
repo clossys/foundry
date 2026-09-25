@@ -81,7 +81,7 @@ const USAGE = `Usage: strategist-check <strategy-dir> [scan-dir] [options]
    or: strategist-check handoff <strategy-dir>
    or: strategist-check apply <strategy-dir> <scan-dir> [options]
 
-  strategy-dir   Directory containing facts.json (and the rest of the strategy bundle). Optional — omit it and this command reads ./clossys/strategist by default (or the retired ./strategy directory when clossys/strategist does not exist yet, for one release only, with a notice; both existing at once is refused as indeterminate — see this package's CHANGELOG).
+  strategy-dir   Directory containing facts.json (and the rest of the strategy bundle). Optional — omit it and this command reads ./clossys/strategist by default (or the retired ./strategy directory when clossys/strategist does not exist yet, still read in this release, with a notice; its removal will be announced beforehand in this package's CHANGELOG; both existing at once is refused as indeterminate).
   scan-dir       Directory to scan for prose/copy claims. Defaults to the current working directory.
 
 Options:
@@ -128,7 +128,7 @@ Exit codes: 0 = both checks hold on non-empty inputs, 1 = either check found a r
 
 const HANDOFF_USAGE = `Usage: strategist-check handoff <strategy-dir>
 
-  strategy-dir   Directory containing the strategy bundle. Optional — defaults the same way the facts-check subcommand does (./clossys/strategist, falling back to the retired ./strategy for one release only — see the top-level usage and this package's CHANGELOG).
+  strategy-dir   Directory containing the strategy bundle. Optional — defaults the same way the facts-check subcommand does (./clossys/strategist, falling back to the retired ./strategy, still read in this release — see the top-level usage and this package's CHANGELOG for when it is removed).
 
 Options:
   --help         Print this message and exit 0.
@@ -138,7 +138,7 @@ Exit codes: 0 = handoff-ready, 1 = handoff findings, 2 = could not read the dire
 
 const APPLY_USAGE = `Usage: strategist-check apply <strategy-dir> <scan-dir> [options]
 
-  strategy-dir   Directory containing claims.json and constraints.json. Optional — defaults the same way the facts-check subcommand does (./clossys/strategist, falling back to the retired ./strategy for one release only — see the top-level usage and this package's CHANGELOG).
+  strategy-dir   Directory containing claims.json and constraints.json. Optional — defaults the same way the facts-check subcommand does (./clossys/strategist, falling back to the retired ./strategy, still read in this release — see the top-level usage and this package's CHANGELOG for when it is removed).
   scan-dir       Directory to scan for claim: and constraint: markers. Required.
 
 Options:
@@ -310,8 +310,9 @@ function isExistingDirectory(path: string): boolean {
  * (`undefined`), it falls back to `resolveDefaultStrategyDirectory`
  * (`strategy-dir-default.ts`) anchored at `process.cwd()`: the current
  * `clossys/strategist` convention when present, the retired `strategy`
- * directory alone for exactly one release (printed as a plain-language
- * notice), or a refusal — printed and mapped to exit `2`, this package's
+ * directory alone, still read in this release (printed as a plain-language
+ * notice; removal is announced beforehand in this package's CHANGELOG), or
+ * a refusal — printed and mapped to exit `2`, this package's
  * usual "could not run" state — when both are present at once. See
  * `strategy-dir-default.ts`'s own doc comment for why a silent pick between
  * the two is refused.

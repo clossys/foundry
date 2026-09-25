@@ -422,7 +422,9 @@ test("shallow history fails closed for wrong CI identity, origin, source SHA, or
 test("historical exceptions are exact line digests on closed path classes", () => {
   const lineSha256 = lineDigest(`old ${retiredScope}/advisor evidence`);
   assert.deepEqual(validateHistoryInventory({ $comment: "fixture", schemaVersion: 1, references: [{ path: "docs/DECISIONS.md", lineSha256 }] }, policy), []);
-  assert.deepEqual(validateHistoryInventory({ $comment: "fixture", schemaVersion: 1, references: [{ path: "packages/advisor/CHANGELOG.md", lineSha256 }] }, policy), []);
+  assert.deepEqual(validateHistoryInventory({ $comment: "fixture", schemaVersion: 1, references: [{ path: "docs/changelogs/advisor.md", lineSha256 }] }, policy), []);
+  // The package changelog moved out of the package; its old in-package path is no longer an admitted class.
+  assert.match(validateHistoryInventory({ $comment: "fixture", schemaVersion: 1, references: [{ path: "packages/advisor/CHANGELOG.md", lineSha256 }] }, policy)[0], /admitted relative path/);
   assert.match(validateHistoryInventory({ $comment: "fixture", schemaVersion: 1, references: [{ path: "packages/advisor/src/index.ts", lineSha256 }] }, policy)[0], /admitted relative path/);
   assert.match(validateHistoryInventory({ $comment: "fixture", schemaVersion: 1, references: [{ path: "docs/DECISIONS.md", lineSha256 }, { path: "docs/DECISIONS.md", lineSha256 }] }, policy)[0], /duplicate/);
 });

@@ -1,0 +1,56 @@
+{
+  "schemaVersion": 1,
+  "kind": "foundry-later-publication-v1",
+  "qualification": {
+    "path": "governance/release-qualifications/clossys-customer-0.2.0.json",
+    "sha256": "72c4136dcd42f5a38c3167d9cdd4c220caa7474b67b26324aefe4889fd0343eb"
+  },
+  "candidate": {
+    "name": "@clossys/customer",
+    "version": "0.2.0",
+    "packageTreeSha1": "12fe48da6ee12d9943017c47d4a688a4c2683e6b",
+    "packageManifestSha256": "bd25f3ecb5f323175b2b126fe9b3f244fd35db6673fcad2f436ffcafd4a45d84",
+    "tarball": {
+      "sha1": "2ef6e70cecbfe7b8b85cd9291306c4d6bc74bf88",
+      "sha256": "927fe0b68277384c546beef234648c3f84df73c890c43cf242c93765a102ec45",
+      "sha512": "121c44f99132cea21077db48a2fc8e0ec9eab6e20ff770e3192099185f0a1023bd26d0456e41b2b8836da7e836a07adf5af3944edb3b418f214efa38ffc496c0"
+    }
+  },
+  "source": {
+    "reviewedCommit": "73ab01b6b5608179a32d979f95ae6b0744d22f05",
+    "rootPackageJsonSha256": "f1cfaa65c0e2bfddaba08efd503e65c66be1883c598c078424b0654325c6247f",
+    "rootPackageLockSha256": "612d68c110206276dabe1e55499bcc6adb9c17c27241a62c68cf06f49aa967f7",
+    "policySha256": "f06d23a4876ecd34ca022e25d7fddeab60fd7939b3b8553006b164d05cff6a49",
+    "adapterSha256": "24de1a026b4b310421fe0a6452c2bb653dd24c34e8f9db83b97f5aaa69c2b346",
+    "fixtureSetSha256": "9c9faf33855dbf614d26afefbb3d976c2778228bfd9c20f59efa43ab037732b4"
+  },
+  "catalog": {
+    "path": "governance/release-catalog.json",
+    "sha256": "a824af45322796c06a8e26f1069bd5d5b1271b60a5d9dc6b728ea480e7e4c82f",
+    "packageKey": "customer"
+  },
+  "publication": {
+    "mode": "owner-present",
+    "publishedAt": "2026-09-24T18:47:29.612Z",
+    "reference": "https://www.npmjs.com/package/@clossys/customer/v/0.2.0"
+  },
+  "registryProof": {
+    "schemaVersion": 2,
+    "kind": "public-npm-anonymous-registry-proof-v2",
+    "evidence": {
+      "registry": "https://registry.npmjs.org",
+      "access": "anonymous",
+      "name": "@clossys/customer",
+      "version": "0.2.0",
+      "metadataUrl": "https://registry.npmjs.org/%40clossys%2Fcustomer/0.2.0",
+      "repository": "clossys/foundry",
+      "tarballUrl": "https://registry.npmjs.org/@clossys/customer/-/customer-0.2.0.tgz",
+      "integrity": "sha512-EhxE+ZEyzqIQd9tIovyODsnqtuIP93DjGSCZGF8KECO9JtBFbkGyuINtp+g2oHrfWvOUTts7QY8hTvo4/8SWwA==",
+      "shasum": "2ef6e70cecbfe7b8b85cd9291306c4d6bc74bf88",
+      "sha256": "927fe0b68277384c546beef234648c3f84df73c890c43cf242c93765a102ec45",
+      "sha512": "121c44f99132cea21077db48a2fc8e0ec9eab6e20ff770e3192099185f0a1023bd26d0456e41b2b8836da7e836a07adf5af3944edb3b418f214efa38ffc496c0",
+      "packedManifestSha256": "bd25f3ecb5f323175b2b126fe9b3f244fd35db6673fcad2f436ffcafd4a45d84",
+      "size": 35649
+    }
+  }
+}

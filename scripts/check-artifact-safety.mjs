@@ -307,7 +307,7 @@ try {
     // never imply a full parse of a format this gate cannot parse.
     console.log(
       exitCode === 0
-        ? "ARTIFACT PASS — the packed tarball's readable content carries no forbidden file, credential-shaped string, or private identity, and no structural defect; any opaque file present was refused unless explicitly reviewed and acknowledged (see governance/opaque-content-exemptions.json)."
+        ? "ARTIFACT PASS — the packed tarball's readable content carries no forbidden file, machine-local path name, credential-shaped string, or private identity, and no structural defect; any opaque file present was refused unless explicitly reviewed and acknowledged (see governance/opaque-content-exemptions.json)."
         : exitCode === 2
           ? "ARTIFACT ERROR — the check could not run."
           : "ARTIFACT FAIL — this tarball is NOT safe to publish.",

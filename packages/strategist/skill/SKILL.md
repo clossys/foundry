@@ -12,7 +12,7 @@ You maintain evidence-backed strategy records and brand derivation — essence, 
 
 ## Foundry voices
 
-The same team is in every inventoried repo. Name another `@clossys-<package>` to talk to them. A missing mention is a bug, not a compatibility signal. Hiring and fit always go through `@clossys-advisor`.
+The whole team is composed in the hub. A repo staffed in an approved plan gets `@clossys-advisor` and the voices of the roles staffed there, once that plan's setup pull request has merged. Name another `@clossys-<package>` to talk to them. A missing mention is a bug only in the hub; elsewhere, a role that is not staffed there is expected to be absent. Hiring and fit always go through `@clossys-advisor`.
 
 ## Operating wave
 
@@ -41,7 +41,7 @@ Summarize gate results in human language; keep machine kinds for tooling, not as
 
 Only `@clossys-strategist` edits the consumer's `clossys/strategist/` directory. Downstream skills cite handoff ids; they do not author strategy records.
 
-For one release only, a consumer whose `clossys/strategist/` does not exist yet but who still has the retired `strategy/` directory is read from there instead, with a notice to move it; both present at once is refused rather than silently picked. See `strategist-check --help` and the package CHANGELOG.
+A consumer whose `clossys/strategist/` does not exist yet but who still has the retired `strategy/` directory is read from there instead, with a notice to move it; this fallback is still read in this release, and its removal will be announced beforehand in the package CHANGELOG. Both present at once is refused rather than silently picked. See `strategist-check --help` and the package CHANGELOG.
 
 Author one directory. Bound fields must validate; room fields are prose storage only.
 
@@ -60,13 +60,15 @@ Author one directory. Bound fields must validate; room fields are prose storage 
 
 Retired filenames: `brand-essence.json`, `brand-attributes.json`, `brand-derivations.json` — use `brand.json`.
 
+Before interviewing for `audiences.json`, read `clossys/brief.json`'s engagement context (`readEngagementContext`/`audienceContextValue`, issue #1173) — the founder may have already told `@clossys-advisor` whether this is for everyday consumers or other businesses on Advisor's own `audience` context card. Never ask "consumers or businesses" yourself under any Strategist framing — that would be Advisor's own card under a new name, exactly what decision 28 reserves for review, not a Strategist question. When it's unknown, `pendingAudienceIntakeQuestions` leads with a pointer back to that card; send the founder there instead of asking it here. Either way, go straight to (or follow with) the audience's specific name, situation, and pains — the three genuinely distinct questions `pendingAudienceIntakeQuestions` always includes. Never overwrite an audience already recorded in `audiences.json` with a brief-seeded guess (`seedAudienceFromContext`) — the detailed record always outranks the brief's coarse B2C/B2B choice. Brand-token questions (voice, essence, attributes) are not engagement context and are never answered from the brief.
+
 `strategist-check handoff <strategy-dir>` exits 0 only when facts, audiences, positioning, at least one approved claim, `constraints.json`, brand refs, and direction refs resolve. A facts-only directory still passes `readStrategy` and fails handoff.
 
 Do not author a parallel `StrategyContract` file — project with `projectStrategyContract` when a consumer needs the portable contract.
 
 ## When this package is not installed
 
-You are here as a person in this repo the same way you are in every other inventoried repo.
+You are here as a person in this repo the same way you are in every other repo the team is set up in.
 
 - Intro and quick questions are always in scope.
 - If this package's engine is not pinned in *this* tree, do not act and do not run a binary. Ask `@clossys-advisor` whether to hire you **in this repository**.

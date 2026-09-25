@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 1,
+  "id": "verify-standards-stale-bot-reviews",
+  "tier": "tier-1",
+  "question": "verify-standards reports INDETERMINATE (a failing required check) whenever a pull request carries any formal review whose own commit is not the current head -- including a rate-limited CodeRabbit COMMENTED review left at an earlier head, which permanently wedged PRs #1297 and #1302 since a PR with no review at all passes cleanly. Should the review-evidence check's evaluability logic change, and if so, how?",
+  "options": [
+    "Carve stale reviews out of the evaluability set entirely; report them on a new ReviewEvidenceReport.staleReviews field instead of forcing the whole check to indeterminate. A stale check or thread finding is NOT carved out -- only a stale review-record finding.",
+    "Keep indeterminate, but only for a stale review whose state is APPROVED or CHANGES_REQUESTED; a stale COMMENTED review (CodeRabbit's actual shape) carries no verdict.",
+    "Keep as-is; treat CodeRabbit's quota as a throughput limit to buy more of, or drop verify-standards from the required-context ruleset until fixed."
+  ],
+  "recommendation": "Option 1 -- it is the most direct reading of the gate's own stated intent (a stale record folded into neither pass nor fail is indeterminate for that record, not for a run that has other, current evidence able to decide it on its own); option 2 still reproduces the exact CodeRabbit-COMMENTED failure mode and adds a second piece of state-dependent logic; option 3 fixes nothing structural and treats a defect in the check's own logic as an external capacity problem.",
+  "reviews": [
+    {
+      "role": "primary",
+      "instance": "unrecorded-predates-schema",
+      "provider": "unrecorded-predates-schema",
+      "model": "unrecorded-predates-schema",
+      "effort": "unrecorded-predates-schema",
+      "verdict": "approve",
+      "link": "https://github.com/clossys/foundry/pull/1311#issuecomment-5800389166"
+    },
+    {
+      "role": "secondary",
+      "instance": "unrecorded-predates-schema",
+      "provider": "anthropic",
+      "model": "opus",
+      "effort": "unrecorded-predates-schema",
+      "verdict": "approve",
+      "link": "https://github.com/clossys/foundry/pull/1311#issuecomment-5800364990"
+    }
+  ],
+  "status": "decided",
+  "decidedBy": "consensus",
+  "decision": "Consensus reached on option 1, on the branch carried by pull request #1311 (claude/review-evidence-stale-policy), scoped to packages/inspector/src/review-evidence.ts and verify.ts (the vendor-neutral validator in packages/controller is untouched). A stale review-record finding is excluded from checkReviewEvidence's evaluability list and surfaced on ReviewEvidenceReport.staleReviews instead; a stale APPROVED review still never counts toward requireApproval (it was already excluded from hasApproval); a stale check or thread finding is unaffected and still reports indeterminate. Tests were added in packages/inspector/src/review-evidence.test.ts, and the integration test in scripts/collect-review-evidence.integration.test.mjs was updated from asserting indeterminate to asserting satisfied for this exact scenario, AT THE CONSENSUS HEAD, 95f56d5b924bc64f850254b4337f7714cf4ceac4. packages/inspector was bumped 0.2.8 -> 0.2.10 on that same branch. PR #1311 ITSELF REMAINS OPEN, UNMERGED, as of this record's last edit -- its head has since moved past the consensus head, first to ca48accd (a further fix, per PR #1311's own thread) and then to 0fe689f2 (a merge from main), so the exact diff a reader finds on the PR today may carry more than what the consensus above covers. This record documents that consensus was reached on the approach at 95f56d5b; it is not a claim that #1311 has landed on main.",
+  "relaxesGateOrPolicy": false,
+  "sunset": null,
+  "expiry": null,
+  "supersedes": [],
+  "links": {
+    "pullRequests": [],
+    "issues": [
+      "1311",
+      "1187",
+      "1297",
+      "1302"
+    ],
+    "paths": [
+      "packages/inspector/src/review-evidence.ts",
+      "packages/inspector/src/verify.ts"
+    ]
+  },
+  "notes": "Backfilled from PR #1311's own body, which the recommendation/options/decision text above is drawn from almost verbatim, and its consensus-tally comment (https://github.com/clossys/foundry/pull/1311#issuecomment-5800664009: 'Tier-1 consensus reached at 95f56d5b ... first reviewer: RECOMMEND ACCEPT; second opinion (Opus): RECOMMEND ACCEPT, after two rounds of fixes'). The two reviews[] entries above cite the specific final-approval comments each reviewer posted at that same head (95f56d5b), not the tally comment itself. decidedBy is 'consensus' per the decision-tier rule's tier-1 path (a first reviewer plus a stronger-model second opinion, both recommending acceptance with no unresolved finding). The reviewing sessions' exact instanceId and effort were not captured at the time this decision was made (predates governance/review-tiers.json and docs/contracts/review-record.json); provider/model are reconstructed from the comments' own bylines ('Second opinion (Opus)') where stated, and left as unrecorded-predates-schema where not -- see docs/contracts/decision-record.json's note on backfilled reviews[] entries. relaxesGateOrPolicy is false, and this is not self-contradictory (#1187 review at 8e6d97ea, should-fix 14 flagged an earlier draft of this note that called the change 'gate-relaxing in shape' while also setting this field false): the change corrects a defect in the gate's OWN evaluability logic -- a stale, non-decisive review-record finding was forcing the whole check to indeterminate even when other, current evidence could decide it on its own -- rather than loosening any real safeguard a stale record ever actually provided. A stale APPROVED review could never grant clearance before this change and still cannot after it (validateReviews already excluded it from hasApproval); what changed is only whether an otherwise-decidable run is needlessly blocked by a record that was never going to count either way. No sunset: there is no safeguard being time-boxed away. CORRECTED AGAIN at #1187 review at df15ab87, should-fix 7: the `decision` field previously said 'Implemented', past tense, as a completed fact -- but PR #1311 was, and remains as of this edit, open and unmerged, with its head having moved past the consensus head (95f56d5b) to ca48accd and then to 0fe689f2 (a merge from main). `decision` now names the exact head the consensus covers and states plainly that the PR has not landed; `status: \"decided\"`/`decidedBy: \"consensus\"` are unchanged and remain correct, since the decision-tier rule's tier-1 path is about consensus being reached, not about the carrying PR having merged. Round 4 nit: the primary review's `provider` previously read \"anthropic\", but comment 5800389166 states no provider at all -- corrected to \"unrecorded-predates-schema\", matching this record's own stated convention for identity fields that were not actually captured (only the secondary/Opus review's byline states a provider)."
+}

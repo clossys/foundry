@@ -115,6 +115,126 @@ const STRATEGIST_OUTPUT_FILES =
   /facts\.json|audiences\.json|positioning\.json|claims\.json|constraints\.json|brand\.json|direction\.json/i;
 const STRATEGIST_HANDOFF_SUBCOMMAND = /strategist-check handoff/i;
 
+// Advisor's degraded-mode section (issue #1507): scoped extraction, not a
+// whole-file search. A whole-file search made two of the original checks
+// here vacuous -- `clossys/brief.json` and `advisor-resolve-packages` both
+// already appeared elsewhere in the skill before this section existed, so
+// those two regexes passed against the pre-#1507 file for reasons that had
+// nothing to do with degraded mode. Extracting just the section between its
+// own heading and the next `## ` heading, and checking every rule below
+// against that extract only, is what makes each rule prove something.
+const ADVISOR_DEGRADED_SECTION_HEADING_RE = /^## Degraded mode\b.*$/m;
+
+/** The text of Advisor's degraded-mode section, or null when it has none. */
+function advisorDegradedModeSection(text) {
+  const match = ADVISOR_DEGRADED_SECTION_HEADING_RE.exec(text);
+  if (!match) return null;
+  const rest = text.slice(match.index + match[0].length);
+  const next = /^## /m.exec(rest);
+  return next ? rest.slice(0, next.index) : rest;
+}
+
+// Positive rules: each must be present somewhere in the section text.
+const ADVISOR_DEGRADED_POSITIVE_RULES = [
+  { rule: "advisor-degraded-hub-case", re: /\*\*In the hub\.\*\*/, message: 'must state the "In the hub." case' },
+  {
+    rule: "advisor-degraded-sibling-case",
+    re: /\*\*A hub checkout sits beside this repository\.\*\*/,
+    message: 'must state the "A hub checkout sits beside this repository." case',
+  },
+  { rule: "advisor-degraded-no-hub-case", re: /\*\*No hub reachable\.\*\*/, message: 'must state the "No hub reachable." case' },
+  {
+    rule: "advisor-degraded-marker-kind",
+    re: /`kind` is `"account-hub"`/,
+    message: 'must require `kind` is `"account-hub"` before treating a checkout as the hub',
+  },
+  {
+    rule: "advisor-degraded-marker-schema",
+    re: /`schemaVersion` is `1`/,
+    message: "must require `schemaVersion` is `1` before treating a checkout as the hub",
+  },
+  {
+    rule: "advisor-degraded-marker-origin",
+    re: /this checkout's own git origin/,
+    message: "must require the marker's `repository` to match this checkout's own git origin",
+  },
+  {
+    rule: "advisor-degraded-legacy-marker",
+    re: /`\.clossys\/workspace\.json`/,
+    message: "must name the legacy `.clossys/workspace.json` marker and say an unmigrated hub still refuses decisions",
+  },
+  {
+    rule: "advisor-degraded-inventory-path",
+    re: /clossys\/\.state\/inventory\.json/,
+    message: "must name clossys/.state/inventory.json as the sibling hub's own inventory",
+  },
+  {
+    rule: "advisor-degraded-inventory-membership",
+    re: /lists this repository's id/,
+    message: "must require the candidate hub's inventory to list this repository's id before accepting it",
+  },
+  {
+    rule: "advisor-degraded-ambiguous-hubs",
+    re: /stop and report every one you found/,
+    message: "must refuse to guess when more than one sibling validates as a hub",
+  },
+  {
+    rule: "advisor-degraded-brief-fallback",
+    re: /clossys\/brief\.json/,
+    message: "must name clossys/brief.json as the read-only report source with no hub reachable",
+  },
+  {
+    rule: "advisor-degraded-refusal-sentence",
+    re: /Refuse every decision and every write outside the hub — never only hiring, a plan change, or an approval\./,
+    message: "must state the fixed refusal sentence covering every decision and every write, not only hiring, a plan change, or an approval",
+  },
+  {
+    rule: "advisor-degraded-write-nothing-sentence",
+    re: /Write nothing under `clossys\/`, here or in a hub checkout you found beside this one/,
+    message: 'must state the "write nothing under clossys/" sentence',
+  },
+  {
+    rule: "advisor-degraded-never-install-sentence",
+    re: /Never install `@clossys\/advisor` in this repository, even to answer a status question\./,
+    message: "must state the fixed never-install sentence",
+  },
+  {
+    rule: "advisor-degraded-npx-invocation",
+    re: /npx --package=@clossys\/advisor@<hub version> <bin>/,
+    message: "must give the exact npx --package=@clossys/advisor@<hub version> <bin> invocation",
+  },
+  {
+    rule: "advisor-degraded-devdeps-source",
+    re: /devDependencies\["@clossys\/advisor"\]/,
+    message: 'must source the hub version from devDependencies["@clossys/advisor"]',
+  },
+  {
+    rule: "advisor-degraded-next-step-phrasing",
+    re: /Open <hub repository> in Claude Code and type "\/clossys-advisor loop"/,
+    message: "must phrase opening the hub with the same nextStepInstruction() pattern used elsewhere in this skill",
+  },
+  {
+    rule: "advisor-degraded-no-continue-as-hub",
+    re: /Do not continue this conversation as though you were already standing in the hub/,
+    message: "must say the agent must not continue as though it were already in the hub",
+  },
+];
+
+// Negative rules: each must be ABSENT from the section text. These are
+// mutation-style guards -- a plausible-looking edit that quietly reverses
+// the meaning while leaving every positive rule above still matching (for
+// example widening a refusal to a permission, or naming an install
+// command the section elsewhere forbids).
+const ADVISOR_DEGRADED_NEGATOR_RULES = [
+  { rule: "advisor-degraded-negator-retired", re: /\bretired\b/i, message: 'must not say the hub marker or the inventory check is "retired"' },
+  { rule: "advisor-degraded-negator-may-run", re: /\bmay run\b/i, message: 'must not weaken a refusal to "may run"' },
+  {
+    rule: "advisor-degraded-negator-npm-install",
+    re: /npm install @clossys\/advisor/i,
+    message: "must not tell the reader to npm install @clossys/advisor outside the hub",
+  },
+];
+
 function validateSkillBody(packageDir, text) {
   const findings = [];
   if (packageDir === "customer") {
@@ -160,6 +280,23 @@ function validateSkillBody(packageDir, text) {
         packageDir,
         message: "must name clossys-customer as the independent first-person inhabit session",
       });
+    }
+  }
+  if (packageDir === "advisor") {
+    const section = advisorDegradedModeSection(text);
+    if (section === null) {
+      findings.push({
+        rule: "advisor-degraded-section-missing",
+        packageDir,
+        message: 'advisor skill must have a "## Degraded mode" section stating the hub-location cases (issue #1507)',
+      });
+    } else {
+      for (const { rule, re, message } of ADVISOR_DEGRADED_POSITIVE_RULES) {
+        if (!re.test(section)) findings.push({ rule, packageDir, message: `advisor skill's degraded-mode section ${message}` });
+      }
+      for (const { rule, re, message } of ADVISOR_DEGRADED_NEGATOR_RULES) {
+        if (re.test(section)) findings.push({ rule, packageDir, message: `advisor skill's degraded-mode section ${message}` });
+      }
     }
   }
   return findings;

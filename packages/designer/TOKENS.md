@@ -113,7 +113,7 @@ before your JS runs.
 
 **If you have a `brand.css`:** it needs dark bindings too, in the same
 shape — see `brand-template.css`'s own two dark blocks and the "What a
-brand needs to add" note in CHANGELOG.md. Skipping them doesn't error;
+brand needs to add" note in this package's changelog. Skipping them doesn't error;
 it silently ships a branded light theme next to an unbranded, greyscale
 dark theme.
 
@@ -234,7 +234,7 @@ spacing's `px`/`auto`/`full`; text's alignment/wrap/overflow/color
 keywords; font's weight keywords). A token whose suffix matches one of
 those names collides with Tailwind's own builtin utility of the same
 name — silently: nothing errors, but the compiled CSS is wrong (see
-CHANGELOG.md's `--radius-s` → `--radius-subtle` entry for the concrete,
+the changelog's `--radius-s` → `--radius-subtle` entry for the concrete,
 compiled-CSS evidence). `src/tailwind-builtin-collision.test.ts` enforces
 this for every token in this package and fails the build if a new token's
 suffix collides with one of Tailwind's reserved names.
