@@ -9,7 +9,8 @@ export const APPLY_PLAN_USAGE = `Usage: launcher-apply-plan --plan <plan.json> -
 
 Writes clossys/brief.json into <directory> from the given brief, once the
 given plan's most recent decision is "approved". Refuses, and writes
-nothing, otherwise.
+nothing, otherwise. This is the brief-only path: it does not check what an
+approval binds, so it accepts an approval with or without a subjectDigest.
 
 Deterministic mechanics only: this does not decide whether a plan should be
 approved (that is Advisor's job) and does not compute the brief's content

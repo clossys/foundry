@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://github.com/clossys/foundry/blob/main/docs/contracts/advisor-plan.json",
   "title": "Advisor plan",
-  "description": "Issue #1175 and #1475: the plan record at clossys/advisor/plan.json that Advisor writes and renders into its STATUS document, and that Launcher reads before it applies an approved plan. packages/advisor/src/status.ts's AdvisorPlan type is the shape's owner; this file is the one definition both @clossys/advisor and @clossys/launcher validate against (each package packs it at build time, so neither depends on the other). Every object is closed: a key this contract does not declare is refused, never ignored, because an unknown key is either a typo or a field some other reader would silently drop. A later field is added here first, in the same change as its reader. Every time is a real calendar time, asserted field by field through `format` (see definitions.dateTime and definitions.date), never by shape alone, so each one parses and can be ordered. The canonical plan digest, which an approval binds, is defined in docs/contracts/advisor-plan-digest.md; its fixture corpus is docs/contracts/advisor-plan-digest.fixture.json.",
+  "description": "Issue #1175 and #1475: the plan record at clossys/advisor/plan.json that Advisor writes and renders into its STATUS document, and that Launcher reads before it applies an approved plan. packages/advisor/src/status.ts's AdvisorPlan type is the shape's owner; this file is the one definition both @clossys/advisor and @clossys/launcher validate against (each package packs it at build time, so neither depends on the other). Every object is closed: a key this contract does not declare is refused, never ignored, because an unknown key is either a typo or a field some other reader would silently drop. A later field is added here first, in the same change as its reader. Every time is a real calendar time, asserted field by field through `format` (see definitions.dateTime and definitions.date), never by shape alone, so each one parses and can be ordered. The canonical plan digest, which an approval binds, is defined in docs/contracts/advisor-plan-digest.md; its fixture corpus is docs/contracts/advisor-plan-digest.fixture.json. CODE RULES (issue #1178). The keywords above cannot relate one field to another, so the rules below are defined here, once, and checked in code by both packages after the schema passes; a plan that breaks one is invalid exactly as a plan that breaks the schema is, and so has no digest. Their shared corpus is docs/contracts/advisor-plan-rules.fixture.json, and both packages are tested against every case in it. A refusal names the rule and the position of the field at fault (for example staffing[1].repository), never its value. R1: no two staffing entries name the same repository; repository ids compare case-insensitively, as the repository inventory compares them. R2: when staffing is present, every staffing[].roles entry is one of mandate.roles, and every mandate.roles entry appears in at least one staffing entry. R3: every packages[].repository is spelled exactly as some staffing[].repository. R4: no two packages share a planItem. R5: no two packages share both a repository (compared case-insensitively) and a name. R6: resolution is present exactly when packages is present. R7: no two kits share an id. R8: no role appears twice in one staffing entry's roles. APPROVAL BINDING. An approval binds bytes only through decisions[].subjectDigest. The latest decision is found by `at` as described under `decisions`; it approves something only when it has chosen \"approved\" and carries a subjectDigest, and the subject it approves is that digest, which names the exact change the approver was shown. When several decisions share the latest instant, they approve only if every one of them has chosen \"approved\" with the same subjectDigest; when any decision time does not parse, nothing is approved. An approval with no subjectDigest binds nothing. FREEZE. From an approving decision until every repository it covers has been applied, or a new plan replaces it, Advisor changes no field the plan digest covers. Recording the approval appends a decision and may update asOf, and the digest excludes both, so the digest at approval equals the digest at apply.",
   "type": "object",
   "additionalProperties": false,
   "required": ["schemaVersion", "asOf", "mandate", "whereWeAre", "recommendedNext", "decisions", "blockers"],
@@ -21,12 +21,34 @@
     },
     "decisions": {
       "type": "array",
-      "description": "What was recommended, what was chosen, when, and by whom. The plan is approved when the most recent entry by `at` has chosen \"approved\". Excluded from the canonical plan digest, because an approval is itself recorded here.",
+      "description": "What was recommended, what was chosen, when, and by whom. The latest decision is the entry with the latest `at`, never the last one in the array; it approves the plan only when it has chosen \"approved\", and it binds an approval to bytes only through its subjectDigest (see APPROVAL BINDING in this contract's description). Append a decision; never rewrite an earlier one. Excluded from the canonical plan digest, because an approval is itself recorded here.",
       "items": { "$ref": "#/definitions/decision" }
     },
     "blockers": {
       "type": "array",
       "items": { "$ref": "#/definitions/blocker" }
+    },
+    "kits": {
+      "type": "array",
+      "minItems": 1,
+      "description": "Optional. The kits Advisor recommends for this plan. Code rule R7.",
+      "items": { "$ref": "#/definitions/kit" }
+    },
+    "staffing": {
+      "type": "array",
+      "minItems": 1,
+      "description": "Optional. Which roles work in which repository: one entry per repository, named by its repository inventory id, never a URL or a path. Code rules R1, R2 and R8.",
+      "items": { "$ref": "#/definitions/staffingEntry" }
+    },
+    "packages": {
+      "type": "array",
+      "minItems": 1,
+      "description": "Optional. The exact package acts this plan authorizes, each one version and one integrity value, never a range or a tag. Code rules R3, R4, R5 and R6.",
+      "items": { "$ref": "#/definitions/packageAct" }
+    },
+    "resolution": {
+      "$ref": "#/definitions/resolution",
+      "description": "Optional. Where the exact versions in packages came from. Code rule R6."
     }
   },
   "definitions": {
@@ -79,7 +101,89 @@
         "at": { "$ref": "#/definitions/dateTime" },
         "recommended": { "$ref": "#/definitions/nonBlankString" },
         "chosen": { "$ref": "#/definitions/nonBlankString" },
-        "by": { "$ref": "#/definitions/nonBlankString" }
+        "by": { "$ref": "#/definitions/nonBlankString" },
+        "subjectDigest": {
+          "$ref": "#/definitions/sha256Digest",
+          "description": "Optional. On an approving decision, the digest of the exact change the approver was shown. An approval without it binds nothing (see APPROVAL BINDING in this contract's description)."
+        }
+      }
+    },
+    "sha256Digest": {
+      "title": "sha256: followed by 64 lowercase hexadecimal digits",
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "sha512Integrity": {
+      "title": "one sha512 integrity value: sha512- followed by the base64 of 64 bytes (86 characters and ==)",
+      "type": "string",
+      "pattern": "^sha512-[A-Za-z0-9+/]{86}==$"
+    },
+    "exactVersion": {
+      "title": "an exact release version such as 1.2.3, with no range, tag, prerelease or build suffix",
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$"
+    },
+    "repositoryId": {
+      "title": "a repository inventory id: a bare repository name, or owner/name",
+      "description": "The repository inventory's id rule (docs/contracts/repository-inventory.json) as one pattern: an optional GitHub owner (letters, digits and single inner hyphens, at most 39 characters) and a slash, then a repository name of letters, digits, '.', '_' and '-' that is not exactly '.' or '..'. No whitespace, no empty segment, at most one slash.",
+      "type": "string",
+      "pattern": "^(?:[A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?/)?(?!\\.\\.?$)[A-Za-z0-9._-]+$"
+    },
+    "packageName": {
+      "title": "a scoped package name in lowercase, such as @scope/name",
+      "type": "string",
+      "pattern": "^@[a-z0-9][a-z0-9._-]*/[a-z0-9][a-z0-9._-]*$"
+    },
+    "kit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "source", "verdict"],
+      "properties": {
+        "id": { "$ref": "#/definitions/nonBlankString", "description": "The kit's id: a curated preset's id, or the id Advisor gave a composed kit." },
+        "source": { "enum": ["preset", "composed"] },
+        "verdict": {
+          "enum": ["recommended"],
+          "description": "One value for now. A later verdict widens this list, and a reader that predates it refuses the new value rather than guessing its meaning."
+        }
+      }
+    },
+    "staffingEntry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["repository", "roles"],
+      "properties": {
+        "repository": { "$ref": "#/definitions/repositoryId" },
+        "roles": {
+          "type": "array",
+          "minItems": 1,
+          "description": "Role directories (short names) staffed in this repository, in the order the brief lists them.",
+          "items": { "$ref": "#/definitions/nonBlankString" }
+        }
+      }
+    },
+    "packageAct": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["planItem", "repository", "act", "name", "version", "integrity", "placement"],
+      "properties": {
+        "planItem": { "$ref": "#/definitions/nonBlankString", "description": "A stable id for this act, unique in the plan (R4)." },
+        "repository": { "$ref": "#/definitions/repositoryId", "description": "One of staffing[].repository, spelled exactly the same (R3)." },
+        "act": {
+          "enum": ["install", "pin-starter"],
+          "description": "install adds a role's package; pin-starter pins the package that checks this repository's pull requests. A later act widens this list, and a reader that predates it refuses the new value."
+        },
+        "name": { "$ref": "#/definitions/packageName" },
+        "version": { "$ref": "#/definitions/exactVersion" },
+        "integrity": { "$ref": "#/definitions/sha512Integrity" },
+        "placement": { "enum": ["dependencies", "devDependencies"] }
+      }
+    },
+    "resolution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["snapshotDigest"],
+      "properties": {
+        "snapshotDigest": { "$ref": "#/definitions/sha256Digest", "description": "The digest of the registry snapshot the exact versions and integrity values in packages were read from." }
       }
     },
     "blockerKind": {

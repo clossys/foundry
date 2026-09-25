@@ -2,7 +2,10 @@
 
 Issue #1475. The one definition of the digest of a plan record
 (`clossys/advisor/plan.json`, contract [`advisor-plan.json`](advisor-plan.json)).
-An approval binds this value, so it names exactly which plan was approved.
+It names exactly which plan is meant: the Advisor skill records it as the
+assessment basis's `planDigest`, which an execution authorization must
+equal. How a recorded approval binds bytes is
+set out under [Approval binding](#approval-binding) below.
 `@clossys/advisor` and `@clossys/launcher` each implement it once, from this
 page, as `planDigest()`. Both test their implementation against the shared
 corpus [`advisor-plan-digest.fixture.json`](advisor-plan-digest.fixture.json),
@@ -21,9 +24,13 @@ hexadecimal digits of the SHA-256 hash of the UTF-8 bytes of
    `JSON.parse` alone would keep the last of two repeated keys, so the value
    digested could differ from the one a reader of the file sees. The plan
    must then validate against `advisor-plan.json`, which also refuses a lone
-   surrogate in any string, so every valid plan has a digest. An
-   implementation refuses (throws) rather than digest a plan that does not
-   validate.
+   surrogate in any string, so every valid plan has a digest. Validating
+   includes the code rules R1 to R8 that the contract's description defines
+   (issue #1178). Each of them relates fields a plan without `kits`,
+   `staffing`, `packages` or `resolution` does not have, so they refuse no
+   such plan, and every plan that had a digest before they were added has
+   the same digest now. An implementation refuses (throws) rather than
+   digest a plan that does not validate.
 2. **`subject(plan)` is the plan without its top-level `asOf` and `decisions`
    members.** Every other member is kept exactly as it is, including every
    nested member: no trimming, no Unicode normalization, and array order
@@ -58,14 +65,41 @@ hexadecimal digits of the SHA-256 hash of the UTF-8 bytes of
      `schemaVersion`, which is `1`.)
    - **Literals:** `true`, `false` and `null`.
 
-## Open for the approval binding
+## Approval binding
 
-Two questions stay open until an approval record binds this digest (the
-next step of #1178): because `decisions` is excluded entirely, earlier
-decision entries can be rewritten without changing the digest, so the
-approval record must be made append-only or bound separately; and recording
-an approval must not change any covered field, such as `recommendedNext`,
-or the digest at approval will not equal the digest at apply.
+This section closes the two questions this page used to leave open for the
+approval binding (issue #1178). The definition above does not change.
+
+- **An approval binds bytes only through `subjectDigest`.** A decision that
+  has chosen `approved` may carry `subjectDigest`: the digest of the exact
+  change the approver was shown. The approval binds that value and nothing
+  else. A reader that applies the plan must recompute the digest of the
+  change it holds, and refuse unless the two are equal. An approval without
+  a `subjectDigest` binds nothing. No reader in this repository applies a
+  bound approval yet. Launcher's brief-only path (`launcher-apply-plan
+  --plan --brief --repo`) predates the binding and checks none: it still
+  accepts any approving decision, and it is kept as it is, not extended. `@clossys/launcher` reads it with
+  `approvedSubject()`. That function returns the `subjectDigest` of the
+  latest decision, by `at`, when that decision has chosen `approved`, and
+  otherwise returns null. It keeps the fail-closed rules for ties and
+  unreadable times: when any decision time does not parse, it returns null.
+  When several decisions share the latest instant, it returns their subject
+  only when every one of them has chosen `approved` with the same
+  `subjectDigest`.
+- **Earlier decisions.** `decisions` is still excluded from the digest, so
+  an earlier entry can be rewritten without changing it. That approves
+  nothing new, because only the latest decision is read, and it names the
+  bytes it approves. Whether the latest entry is itself genuine depends on
+  where the plan file is committed and who could commit it. Nothing inside
+  the file can show that.
+- **Freeze after approval.** From an approving decision until every
+  repository it covers has been applied, or a new plan replaces it,
+  Advisor changes no field the digest covers. Recording the approval
+  appends a decision and may update `asOf`, and the digest excludes both,
+  so the digest at approval equals the digest at apply. Progress in
+  between is reported elsewhere. It is not written into `whereWeAre`,
+  `recommendedNext` or `blockers`, because each of those is covered. The
+  rule is stated in the contract's description.
 
 ## Why these choices
 

@@ -10,6 +10,7 @@ import {
   contextFromBrief,
   nextContextQuestion,
   toEngagementBrief,
+  validateEngagementBrief,
 } from "./index.js";
 import type { ComposeKitResult, EngagementBrief, EngagementContext, EngagementContextField, EngagementContextFieldId } from "./index.js";
 
@@ -234,6 +235,46 @@ describe("toEngagementBrief() keeps founder text out of the committed brief", ()
     expect(snapshot?.fields.map((field) => field.id)).toEqual([...ENGAGEMENT_CONTEXT_FIELD_IDS]);
     expect(snapshot?.fields.filter((field) => field.state === "unknown")).toHaveLength(ENGAGEMENT_CONTEXT_FIELD_IDS.length - 2);
     expect(validateContext(JSON.parse(JSON.stringify(snapshot)))).toEqual([]);
+  });
+});
+
+describe("toEngagementBrief() with staffedHere (#1178)", () => {
+  const roles = composed.roles.map((role) => role.role);
+  const brief = (staffedHere: readonly string[]) => toEngagementBrief({ problem: PROBLEM, composed, catalogue: CAPABILITY_CATALOGUE, staffedHere });
+  const thrown = (run: () => unknown): string => {
+    try {
+      run();
+    } catch (error) {
+      return (error as Error).message;
+    }
+    throw new Error("expected a throw");
+  };
+
+  it("writes staffedHere in the order given, and the result validates, rules included", () => {
+    const staffedHere = [...roles].reverse();
+    const result = brief(staffedHere);
+    expect(result.staffedHere).toEqual(staffedHere);
+    expect(validateBrief(JSON.parse(JSON.stringify(result)))).toEqual([]);
+    expect(validateEngagementBrief(JSON.parse(JSON.stringify(result)))).toEqual([]);
+  });
+
+  it("leaves staffedHere out of the hub brief", () => {
+    expect(toEngagementBrief({ problem: PROBLEM, composed, catalogue: CAPABILITY_CATALOGUE })).not.toHaveProperty("staffedHere");
+  });
+
+  it("copies staffedHere rather than keeping the caller's array", () => {
+    const staffedHere = [roles[0]!];
+    const result = brief(staffedHere);
+    staffedHere.push("mutated");
+    expect(result.staffedHere).toEqual([roles[0]]);
+  });
+
+  it("throws on an empty list, a role the kit does not compose, and a repeat, naming the position and never the value", () => {
+    expect(thrown(() => brief([]))).toBe("staffedHere must name at least one role; omit it for the hub brief");
+    const outside = "a-role-this-kit-never-composes";
+    expect(thrown(() => brief([roles[0]!, outside]))).toBe("staffedHere[1] is not one of the composed kit's roles");
+    expect(thrown(() => brief([roles[0]!, roles[0]!]))).toBe("staffedHere[1] repeats an earlier entry");
+    for (const name of PROTOTYPE_KEYS) expect(() => brief([name])).toThrow(/staffedHere\[0\] is not one of/);
   });
 });
 

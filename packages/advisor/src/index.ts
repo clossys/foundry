@@ -25,7 +25,7 @@ export { KIT_PRESETS } from "./kit-presets.js";
 export {
   composeKit, composeKitFromProblems, validateKitProposal, judgeNeedsCycles, needIsMet, FIRST_ENGAGEMENT_ROLE_CAP, EVIDENCE_LEVELS, evidenceAtLeast, presetEvidenceFindings,
 } from "./composition.js";
-export { contextFromBrief, toEngagementBrief, validateEngagementBrief } from "./engagement-brief.js";
+export { PUBLIC_PROBLEM_PLACEHOLDER, contextFromBrief, toEngagementBrief, validateEngagementBrief } from "./engagement-brief.js";
 export { ENGAGEMENT_CONTEXT_FIELD_IDS, fieldById } from "./context.js";
 export { nextContextQuestion, applyContextChoice } from "./context-questions.js";
 export { CLIENT_PROBLEMS } from "./client-problems.js";
@@ -59,7 +59,10 @@ export type { EngagementContext, EngagementContextField, EngagementContextFieldI
 export type { ContextChoiceApplyResult, ContextQuestionCard, ContextQuestionChoice } from "./context-questions.js";
 export type { ClientProblem } from "./client-problems.js";
 export type { ProblemChoiceApplyResult, ProblemConfirmation, ProblemConfirmationState, ProblemQuestionCard, ProblemQuestionChoice } from "./problem-questions.js";
-export type { AdvisorBlockerKind, AdvisorBlockerNextAction, AdvisorPlan, AdvisorPlanBlocker, AdvisorPlanDecision, AdvisorPlanMandate, AdvisorPlanNextAction } from "./status.js";
+export type {
+  AdvisorBlockerKind, AdvisorBlockerNextAction, AdvisorPlan, AdvisorPlanBlocker, AdvisorPlanDecision, AdvisorPlanKit, AdvisorPlanMandate, AdvisorPlanNextAction, AdvisorPlanPackageAct,
+  AdvisorPlanResolution, AdvisorPlanStaffing,
+} from "./status.js";
 export type { KitVerdict, KitVerdictCitation, KitVerdictRole, KitVerdictState, RecommendKitInput } from "./kit-verdicts.js";
 export type { ClientTool, NextStepHostContext } from "./next-step.js";
 export type { ManagedEngagementInput, OperatorReview } from "./managed-engagement.js";

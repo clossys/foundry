@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
-import { applyEngagementBrief, isPlanApproved, validateAdvisorPlan, validateEngagementBrief, type AdvisorPlan, type EngagementBrief, type EngagementContext } from "./apply-plan.js";
+import { applyEngagementBrief, approvedSubject, validateAdvisorPlan, validateEngagementBrief, type AdvisorPlan, type EngagementBrief, type EngagementContext } from "./apply-plan.js";
 import type { WorkspaceHost } from "./types.js";
 
 /** The shared digest corpus (docs/contracts/advisor-plan-digest.fixture.json); @clossys/advisor is tested against the same file. */
@@ -63,6 +63,9 @@ const VALID_BRIEF: EngagementBrief = {
   sequence: ["strategist", "writer", "designer"],
   deliverables: ["A positioning brief every later role reads first."],
 };
+
+const SUBJECT = `sha256:${"ab".repeat(32)}`;
+const OTHER_SUBJECT = `sha256:${"cd".repeat(32)}`;
 
 const VALID_PLAN: AdvisorPlan = {
   schemaVersion: 1,
@@ -228,7 +231,7 @@ describe("plan times through Launcher's generated checker copy (#1475)", () => {
     expect(validateAdvisorPlan(withByWhen("2028-02-29"))).toEqual({ valid: true });
   });
 
-  it("refuses the NaN-ordering repro at validation, in isPlanApproved, and in applyEngagementBrief", () => {
+  it("refuses the NaN-ordering repro at validation, in approvedSubject, and in applyEngagementBrief", () => {
     const plan = {
       ...ADVISOR_SHAPED_PLAN,
       decisions: [
@@ -237,7 +240,7 @@ describe("plan times through Launcher's generated checker copy (#1475)", () => {
       ],
     };
     expect(validateAdvisorPlan(plan)).toEqual({ valid: false, reason: "plan.decisions[1].at must be a real ISO 8601 date-time with a time zone, such as 2026-09-24T12:00:00Z" });
-    expect(isPlanApproved(plan)).toBe(false);
+    expect(approvedSubject({ ...plan, decisions: plan.decisions.map((decision) => ({ ...decision, subjectDigest: SUBJECT })) })).toBeNull();
     const host = fakeHost();
     expect(applyEngagementBrief(host, "/repo", plan, VALID_BRIEF, "clossys/brief.json").state).toBe("refused");
     expect(Object.keys(host.written)).toHaveLength(0);
@@ -267,53 +270,59 @@ describe("whitespace-only brief strings and escaped keys (#1475)", () => {
   });
 });
 
-describe("isPlanApproved", () => {
-  it("is approved when the most recent decision's chosen is 'approved'", () => {
-    expect(isPlanApproved(VALID_PLAN)).toBe(true);
+describe("approvedSubject (#1178): what an approval binds, failing closed", () => {
+  const approve = (at: string, subjectDigest?: string, chosen = "approved") => ({ at, recommended: "x", chosen, by: "sponsor", ...(subjectDigest === undefined ? {} : { subjectDigest }) });
+  const withDecisions = (...decisions: ReturnType<typeof approve>[]): AdvisorPlan => ({ ...VALID_PLAN, decisions });
+
+  it("returns the subjectDigest of an approving latest decision", () => {
+    expect(approvedSubject(withDecisions(approve("2026-09-20T00:00:00Z", SUBJECT)))).toBe(SUBJECT);
   });
 
-  it("is not approved when there are no decisions -- never assumed from absence", () => {
-    expect(isPlanApproved({ ...VALID_PLAN, decisions: [] })).toBe(false);
+  it("binds nothing when the approval carries no subjectDigest", () => {
+    expect(approvedSubject(VALID_PLAN)).toBeNull();
+    expect(approvedSubject(withDecisions(approve("2026-09-20T00:00:00Z")))).toBeNull();
   });
 
-  it("is not approved when the most recent decision is something other than 'approved'", () => {
-    const plan = { ...VALID_PLAN, decisions: [{ at: "2026-09-20T00:00:00Z", recommended: "x", chosen: "deferred", by: "sponsor" }] };
-    expect(isPlanApproved(plan)).toBe(false);
+  it("binds nothing when there are no decisions -- never assumed from absence", () => {
+    expect(approvedSubject(withDecisions())).toBeNull();
   });
 
-  it("is not approved when any decision's time does not parse, whatever the array order", () => {
-    const plan = {
-      ...VALID_PLAN,
-      decisions: [
-        { at: "2026-09-25T00:00:00Z", recommended: "x", chosen: "rejected", by: "sponsor" },
-        { at: "not a time", recommended: "x", chosen: "approved", by: "sponsor" },
-      ],
-    };
-    expect(isPlanApproved(plan)).toBe(false);
+  it("binds nothing when the latest decision is not 'approved', even if an earlier approval named a subject", () => {
+    expect(approvedSubject(withDecisions(approve("2026-09-20T00:00:00Z", SUBJECT), approve("2026-09-21T00:00:00Z", SUBJECT, "deferred")))).toBeNull();
+    expect(approvedSubject(withDecisions(approve("2026-09-21T00:00:00Z", SUBJECT, "Approved")))).toBeNull();
   });
 
-  it("is not approved when two decisions share the latest instant and they disagree", () => {
-    const tied = (first: string, second: string) => ({
-      ...VALID_PLAN,
-      decisions: [
-        { at: "2026-09-25T02:00:00+02:00", recommended: "x", chosen: first, by: "sponsor" },
-        { at: "2026-09-25T00:00:00Z", recommended: "x", chosen: second, by: "sponsor" },
-      ],
-    });
-    expect(isPlanApproved(tied("rejected", "approved"))).toBe(false);
-    expect(isPlanApproved(tied("approved", "rejected"))).toBe(false);
-    expect(isPlanApproved(tied("approved", "approved"))).toBe(true);
+  it("uses the latest decision by time, not the array's last entry", () => {
+    expect(approvedSubject(withDecisions(approve("2026-09-22T00:00:00Z", SUBJECT), approve("2026-09-20T00:00:00Z", OTHER_SUBJECT)))).toBe(SUBJECT);
+    expect(approvedSubject(withDecisions(approve("2026-09-22T00:00:00Z", SUBJECT), approve("2026-09-20T00:00:00Z", undefined, "rejected")))).toBe(SUBJECT);
   });
 
-  it("uses the MOST RECENT decision by timestamp, not the array's last entry, when they differ", () => {
-    const plan = {
-      ...VALID_PLAN,
-      decisions: [
-        { at: "2026-09-22T00:00:00Z", recommended: "x", chosen: "approved", by: "sponsor" },
-        { at: "2026-09-20T00:00:00Z", recommended: "y", chosen: "deferred", by: "sponsor" },
-      ],
-    };
-    expect(isPlanApproved(plan)).toBe(true);
+  it("binds nothing when any decision time does not parse, whatever the array order", () => {
+    expect(approvedSubject(withDecisions(approve("2026-09-25T00:00:00Z", SUBJECT), approve("not a time", SUBJECT)))).toBeNull();
+    expect(approvedSubject(withDecisions(approve("2026-09-24T24:30:00Z", SUBJECT)))).toBeNull();
+  });
+
+  it("on a tie at the latest instant, binds only when every tied decision approves the same subject", () => {
+    const tied = (first: ReturnType<typeof approve>, second: ReturnType<typeof approve>) => withDecisions(first, second);
+    const early = "2026-09-25T02:00:00+02:00";
+    const late = "2026-09-25T00:00:00Z";
+    expect(approvedSubject(tied(approve(early, SUBJECT), approve(late, SUBJECT)))).toBe(SUBJECT);
+    expect(approvedSubject(tied(approve(early, SUBJECT), approve(late, OTHER_SUBJECT)))).toBeNull();
+    expect(approvedSubject(tied(approve(early, SUBJECT), approve(late)))).toBeNull();
+    expect(approvedSubject(tied(approve(early), approve(late, SUBJECT)))).toBeNull();
+    expect(approvedSubject(tied(approve(early, SUBJECT), approve(late, SUBJECT, "rejected")))).toBeNull();
+    expect(approvedSubject(tied(approve(early, SUBJECT, "rejected"), approve(late, SUBJECT)))).toBeNull();
+  });
+
+  it("binds nothing for a subjectDigest that is not a sha256 digest, even on a plan no one validated", () => {
+    for (const bad of ["", "sha256:", SUBJECT.toUpperCase(), SUBJECT.slice(0, -1), `${SUBJECT}0`, SUBJECT.replace("sha256:", "sha512:"), ` ${SUBJECT}`]) {
+      expect(approvedSubject(withDecisions(approve("2026-09-20T00:00:00Z", bad))), JSON.stringify(bad)).toBeNull();
+    }
+    expect(approvedSubject(withDecisions({ ...approve("2026-09-20T00:00:00Z"), subjectDigest: 5 } as unknown as ReturnType<typeof approve>))).toBeNull();
+  });
+
+  it("is what the plan contract accepts: an approving plan with a subjectDigest validates", () => {
+    expect(validateAdvisorPlan(withDecisions(approve("2026-09-20T00:00:00Z", SUBJECT)))).toEqual({ valid: true });
   });
 });
 
@@ -343,9 +352,37 @@ describe("applyEngagementBrief", () => {
 
   it("refuses, and writes nothing, when the plan does not validate, even if its latest decision is approved", () => {
     const host = fakeHost();
-    const result = applyEngagementBrief(host, "/repo", { ...VALID_PLAN, staffing: [] } as unknown as AdvisorPlan, VALID_BRIEF, "clossys/brief.json");
-    expect(result).toEqual({ state: "refused", reason: "plan does not validate: plan.staffing is not a field the contract declares, and unknown fields are refused" });
+    const result = applyEngagementBrief(host, "/repo", { ...VALID_PLAN, notes: [] } as unknown as AdvisorPlan, VALID_BRIEF, "clossys/brief.json");
+    expect(result).toEqual({ state: "refused", reason: "plan does not validate: plan.notes is not a field the contract declares, and unknown fields are refused" });
     expect(Object.keys(host.written)).toHaveLength(0);
+  });
+
+  it("refuses, and writes nothing, when the plan breaks a code rule", () => {
+    const host = fakeHost();
+    const plan = { ...VALID_PLAN, staffing: [{ repository: "example-owner/site", roles: ["strategist", "writer", "designer"] }, { repository: "Example-Owner/Site", roles: ["writer"] }] };
+    const result = applyEngagementBrief(host, "/repo", plan, VALID_BRIEF, "clossys/brief.json");
+    expect(result).toEqual({ state: "refused", reason: "plan does not validate: plan.staffing[1].repository names the same repository as staffing[0].repository (repository ids compare case-insensitively) (rule R1)" });
+    expect(Object.keys(host.written)).toHaveLength(0);
+  });
+
+  it("stays the legacy path: it still applies an approval that carries no subjectDigest, as it always has", () => {
+    expect(approvedSubject(VALID_PLAN)).toBeNull();
+    const host = fakeHost();
+    expect(applyEngagementBrief(host, "/repo", VALID_PLAN, VALID_BRIEF, "clossys/brief.json").state).toBe("applied");
+  });
+
+  it("keeps the legacy approval rule on a tie, with or without subjectDigest", () => {
+    const tied = (first: string, second: string): AdvisorPlan => ({
+      ...VALID_PLAN,
+      decisions: [
+        { at: "2026-09-25T02:00:00+02:00", recommended: "x", chosen: first, by: "sponsor" },
+        { at: "2026-09-25T00:00:00Z", recommended: "x", chosen: second, by: "sponsor", subjectDigest: SUBJECT },
+      ],
+    });
+    const state = (plan: AdvisorPlan) => applyEngagementBrief(fakeHost(), "/repo", plan, VALID_BRIEF, "clossys/brief.json").state;
+    expect(state(tied("approved", "approved"))).toBe("applied");
+    expect(state(tied("rejected", "approved"))).toBe("refused");
+    expect(state(tied("approved", "rejected"))).toBe("refused");
   });
 
   it("applies an Advisor-shaped plan with blockers and a brief with context, and reports the plan's canonical digest", () => {

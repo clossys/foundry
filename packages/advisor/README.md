@@ -216,6 +216,20 @@ must contain a non-whitespace character; an item of `inputsFrom`,
 fields, and a key that is not a plain identifier is shown as an escaped
 JSON string.
 
+A brief may carry `staffedHere` (issue #1178): the roles staffed in the one
+repository it is written to, in plan order. The hub brief has none;
+`toEngagementBrief({ ..., staffedHere })` writes it for one repository and
+throws, naming only the position, when the list is empty or an entry is not
+one of the composed roles or repeats. `validateEngagementBrief()` applies the
+same two rules, once the schema passes: every entry is one of `roles[].role`
+(rule `engagement-brief-rule-b1`) and none repeats
+(`engagement-brief-rule-b2`). `PUBLIC_PROBLEM_PLACEHOLDER` is the fixed
+text, read from the brief contract, that stands in for `problem` in a
+repository whose visibility is not private. The contract's description
+defines how a repository's brief is derived from the hub brief, so that
+every package derives it the same way; this package does not derive or
+write it.
+
 ## Shared engagement context
 
 `ENGAGEMENT_CONTEXT_FIELD_IDS` lists the shared engagement context fields
@@ -319,8 +333,38 @@ refused too, so every plan that validates has a digest. This package still carri
 Controller package: the blocker shape is duplicated structurally, never the
 owner-per-kind mapping, which stays owned by Controller.
 
-`planDigest(plan)` is the canonical digest of a plan, the value an
-approval binds so that it names exactly which plan was approved:
+A plan may also say who works where, and what exactly may be installed
+(issue #1178), in four optional fields: `kits` (each `{ id, source, verdict }`,
+with `verdict` only `"recommended"` for now), `staffing` (one
+`{ repository, roles }` entry per repository, by repository inventory id),
+`packages` (exact acts: `install` or `pin-starter`, one exact version with no
+prerelease or build suffix, and one `sha512-` integrity value each) and
+`resolution` (`{ snapshotDigest }`), typed as `AdvisorPlanKit`,
+`AdvisorPlanStaffing`, `AdvisorPlanPackageAct` and `AdvisorPlanResolution`.
+A decision (`AdvisorPlanDecision`) may carry `subjectDigest`.
+Once the schema passes, `validateAdvisorPlan()` applies the code rules the
+contract's description defines, each finding with the rule
+`advisor-plan-rule-r1` to `-r8` and a `path`: no repository staffed twice
+(ids compare case-insensitively); staffed roles and `mandate.roles` agree in
+both directions; every package act names a staffed repository, spelled
+exactly the same; no `planItem` repeats; no package appears twice in one
+repository; `resolution` is present exactly when `packages` is; no kit id
+repeats; and no role repeats within one staffing entry. A plan that breaks
+one has no digest. Launcher implements the same rules separately, and both
+packages are tested against one shared corpus,
+[`docs/contracts/advisor-plan-rules.fixture.json`](https://github.com/clossys/foundry/blob/main/docs/contracts/advisor-plan-rules.fixture.json)
+(in the public repository, not shipped in this package).
+
+An approval binds bytes only through its `subjectDigest`, the digest of the
+exact change the approver was shown; an approval without one binds nothing.
+From an approving decision until apply completes, Advisor changes no field
+the plan digest covers: recording the approval appends a decision and may
+update `asOf`, which the digest excludes, so the digest at approval equals
+the digest at apply.
+
+`planDigest(plan)` is the canonical digest of a plan, the value the
+assessment basis's `planDigest` records and an execution authorization must
+equal, so that it names exactly which plan is meant:
 `sha256:` and the hex SHA-256 of the plan's RFC 8785 canonical JSON,
 leaving out `asOf` and `decisions` (`PLAN_DIGEST_EXCLUDED_FIELDS`), because
 an approval is itself recorded in `decisions`. It throws for a plan that

@@ -6,13 +6,13 @@
 // this lands the mechanical, auditable core the landed contract fully
 // specifies -- reading clossys/advisor/plan.json, confirming it is
 // approved, validating an EngagementBrief, and writing clossys/brief.json
-// byte-identically. Multi-repository orchestration (branch creation, exact
-// package installs, Starter's caller workflow, opening one pull request
-// per repository) is deferred: the landed contract does not yet specify
-// how a plan's approved roles map to inventory repository ids or to
-// install/remove/relocate work items, and building that mapping now would
-// mean inventing an interface Advisor's still-open PR (#1193) might define
-// differently.
+// byte-identically. The plan contract now says which roles work in which
+// inventory repository (`staffing`) and which exact package acts are
+// authorized (`packages`), and approvedSubject() below says what an
+// approval binds (#1178). Multi-repository orchestration (computing each
+// repository's change, branch creation, exact package installs, Starter's
+// caller workflow, opening one pull request per repository) is not built
+// yet, and this module does not act on those fields.
 //
 // clossys/brief.json's shape is NOT re-derived here -- @clossys/advisor's
 // toEngagementBrief() is the one owner of that computation. This module
@@ -28,31 +28,66 @@
 // dependency on @clossys/advisor.
 
 import { validateAdvisorPlan, validateEngagementBrief } from "./plan-contract.js";
-import type { AdvisorPlan, EngagementBrief } from "./plan-contract.js";
+import type { AdvisorPlan, EngagementBrief, PlanDecision } from "./plan-contract.js";
 import { planDigest } from "./plan-digest.js";
 import type { WorkspaceHost } from "./types.js";
 
 export { validateAdvisorPlan, validateEngagementBrief } from "./plan-contract.js";
 export type {
   AdvisorPlan, BlockerKind, EngagementBrief, EngagementBriefRole, EngagementContext, EngagementContextField, EngagementContextFieldId, GoalDirection, PlanBlocker, PlanDecision,
-  ValidationResult,
+  PlanKit, PlanPackageAct, PlanStaffing, ValidationResult,
 } from "./plan-contract.js";
 
 /**
- * The plan is approved when its most recent decision (by `at`) records
- * chosen === "approved". No decisions, or a most-recent decision that
- * isn't "approved", is not approved -- this never assumes approval from
- * absence. Fails closed on anything that would let array order decide
- * instead of time: a decision whose `at` does not parse to a finite time
- * (the plan contract already refuses one; this does not rely on that), or
- * two decisions at the same latest instant that do not all say "approved".
+ * The decisions made at the latest instant, by `at` -- never by array
+ * position -- or null when there are none, or when any decision's `at` does
+ * not parse to a finite time (the plan contract already refuses one; this
+ * does not rely on that), because then time cannot say which is latest.
  */
-export function isPlanApproved(plan: AdvisorPlan): boolean {
-  if (plan.decisions.length === 0) return false;
+function latestDecisions(plan: AdvisorPlan): readonly PlanDecision[] | null {
+  if (plan.decisions.length === 0) return null;
   const times = plan.decisions.map((decision) => Date.parse(decision.at));
-  if (!times.every(Number.isFinite)) return false;
+  if (!times.every(Number.isFinite)) return null;
   const latest = Math.max(...times);
-  return plan.decisions.every((decision, index) => times[index] !== latest || decision.chosen === "approved");
+  return plan.decisions.filter((_, index) => times[index] === latest);
+}
+
+const SUBJECT_DIGEST = /^sha256:[0-9a-f]{64}$/;
+
+/**
+ * What an approval binds (#1178): the `subjectDigest` of the plan's latest
+ * decision, by `at`, when that decision has chosen "approved" -- the digest of
+ * the exact change the approver was shown. Otherwise null, and null binds
+ * nothing. Fails closed:
+ *
+ * - no decisions, or any decision time that does not parse: null;
+ * - a latest decision that is not "approved": null;
+ * - an approval with no `subjectDigest`, or one that is not a sha256 digest:
+ *   null -- an approval that names no bytes approves no bytes;
+ * - several decisions at the latest instant: their subject only when every
+ *   one of them is "approved" with the same `subjectDigest`, else null.
+ *
+ * It says what was approved, not whether that is what is about to be applied:
+ * the caller recomputes the digest of the change it holds and refuses unless
+ * the two are equal.
+ */
+export function approvedSubject(plan: AdvisorPlan): string | null {
+  const latest = latestDecisions(plan);
+  if (latest === null || !latest.every((decision) => decision.chosen === "approved")) return null;
+  const subject = latest[0]!.subjectDigest;
+  if (typeof subject !== "string" || !SUBJECT_DIGEST.test(subject)) return null;
+  return latest.every((decision) => decision.subjectDigest === subject) ? subject : null;
+}
+
+/**
+ * The legacy brief-only path's approval test, kept exactly as it was: the
+ * latest decision (every one at that instant) has chosen "approved", with or
+ * without a `subjectDigest`. It binds no bytes, which is why nothing but
+ * `applyEngagementBrief()` uses it and nothing new may.
+ */
+function latestDecisionApproves(plan: AdvisorPlan): boolean {
+  const latest = latestDecisions(plan);
+  return latest !== null && latest.every((decision) => decision.chosen === "approved");
 }
 
 export type ApplyBriefResult =
@@ -65,6 +100,11 @@ export type ApplyBriefResult =
  * not write) unless the plan validates and is approved and the brief,
  * including its context snapshot, validates. Reports the canonical digest
  * of the plan it applied.
+ *
+ * LEGACY (#1178): this path predates the approval binding. It accepts an
+ * approval whether or not it carries a `subjectDigest` and checks no
+ * binding, exactly as before; it is kept working, not extended. Anything
+ * that must know what an approval binds uses `approvedSubject()`.
  */
 export function applyEngagementBrief(
   host: WorkspaceHost,
@@ -77,7 +117,7 @@ export function applyEngagementBrief(
   if (!planValidation.valid) {
     return { state: "refused", reason: `plan does not validate: ${planValidation.reason}` };
   }
-  if (!isPlanApproved(plan)) {
+  if (!latestDecisionApproves(plan)) {
     return { state: "refused", reason: "the plan's most recent decision is not \"approved\", or decisions made at that same time disagree" };
   }
   const validation = validateEngagementBrief(brief);
