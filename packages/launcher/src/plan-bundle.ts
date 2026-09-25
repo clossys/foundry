@@ -450,9 +450,9 @@ export function planApplyBundle(inputs: PlanApplyBundleInputs): PlanApplyBundleR
   });
 
   const digestOfPlan = planDigest(inputs.plan);
-  const computed: { id: string; phase: ChangeSetPhase; set: Omit<RepositoryChangeSet, "bundle">; checks: readonly ApplyCheck[] }[] = [];
+  const computed: { id: string; staffingIndex: number; phase: ChangeSetPhase; set: Omit<RepositoryChangeSet, "bundle">; checks: readonly ApplyCheck[] }[] = [];
   const entries: (ApplyBundleRepository | { readonly pending: number })[] = [];
-  for (const staffingEntry of staffing) {
+  for (const [staffingIndex, staffingEntry] of staffing.entries()) {
     const observation = observations.get(staffingEntry.repository);
     if (observation === undefined || isSkipped(observation)) {
       entries.push({
@@ -480,7 +480,7 @@ export function planApplyBundle(inputs: PlanApplyBundleInputs): PlanApplyBundleR
     const short = digest.slice("sha256:".length, "sha256:".length + 12);
     const set = { ...changeSet, branch: `clossys/apply-${short}`, pullRequest: { title: `Clossys: apply plan ${short}` }, changeSetDigest: digest };
     entries.push({ pending: computed.length });
-    computed.push({ id: staffingEntry.repository, phase: observation.phase, set, checks });
+    computed.push({ id: staffingEntry.repository, staffingIndex, phase: observation.phase, set, checks });
   }
 
   const authorizationMismatch = inputs.authorization !== null && inputs.authorization.planDigest !== digestOfPlan;
@@ -490,7 +490,7 @@ export function planApplyBundle(inputs: PlanApplyBundleInputs): PlanApplyBundleR
   const changeSets: RepositoryChangeSet[] = computed.map((entry) => ({ ...entry.set, bundle: digestOfBundle }));
   changeSets.forEach((set, index) => {
     const validation = validateRepositoryChangeSet(set);
-    if (!validation.valid) throw new Error(`the change set computed for staffed repository ${index} does not validate: ${validation.reason}`);
+    if (!validation.valid) throw new Error(`the change set computed for staffed repository ${computed[index]!.staffingIndex} does not validate: ${validation.reason}`);
   });
 
   const bundle: ApplyBundle = {
