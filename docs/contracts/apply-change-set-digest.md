@@ -94,7 +94,16 @@ approval:
   different target.
 - `ledger.generation`: the set starts from that ledger generation, and
   writes the next one.
-- `engine`, `planDigest`, `phase`, `observed`, `items`, `files`, `keys`,
+- `integrator`: a product repository's CI runs the hub's exact Integrator
+  version, so that version is inside the digest as well as inside the
+  workflow's bytes.
+- `observed`, including `consumerCi`, `symlinkedSkillRoots`,
+  `repositoryProfile` and `linkedAgentsPaths`: whether the repository runs CI
+  of its own decides what the CI template writes, a discovery root that is a
+  symbolic link gets no discovery link, the repository's Controller profile
+  decides which root entries the set must declare, and a skill directory
+  behind a symbolic link is refused rather than written through.
+- `engine`, `planDigest`, `phase`, `items`, `files`, `keys`,
   `refused`, `deferred` and `pathAllowList`: what the set does, where, why
   it does not do something, and on whose authority. A staffing change moves
   `items` and `files`; different package bytes move an item's `integrity`
@@ -109,6 +118,20 @@ A file's `before` and `after` are content digests: `sha256:` and the
 lowercase hexadecimal SHA-256 of the file's exact bytes, or `null` when the
 file is absent. A composed skill's bytes are the `SKILL.md` text Launcher
 composes for that role, as UTF-8.
+
+A discovery link (mode `120000`) is a symbolic link as git stores it: its
+bytes are its target, as UTF-8, with no line feed. For a role, the target
+is `../../.agents/skills/clossys-<role>`, so the link's content digest is the
+SHA-256 of exactly that text, and a link's mode and target are both covered.
+
+For `clossys/.state/skills.json` the bytes are the UTF-8 encoding of
+`{ "schemaVersion": 1, "skills": [...] }`, serialized exactly as
+ECMAScript's `JSON.stringify(manifest, null, 2)` followed by one line feed,
+where `skills` holds one entry per role whose `SKILL.md` the set writes,
+sorted by name, each with the members `name` (the role), `source`
+(`catalogue`), `sha256` (the 64 hexadecimal digits of that `SKILL.md`'s
+content digest, without `sha256:`) and `version` (`producer.version`), in
+that order. It holds no time, so the same skills give the same bytes.
 
 For `clossys/brief.json` the bytes are the UTF-8 encoding of the
 repository's projection of the hub brief, serialized exactly as
@@ -141,7 +164,8 @@ and only those, sorted by `id` comparing UTF-16 code units. A skipped
 repository is not in it.
 
 It covers nothing else. The authorization and its expiry, the time the
-bundle was computed, the checks and their verdicts are all excluded, so:
+bundle was computed, the checks and their verdicts, and a planned bundle's
+states and bindings are all excluded, so:
 
 - re-approving the same bytes, or a new authorization with a later expiry,
   keeps the same digest;
@@ -162,12 +186,22 @@ Each value is computed only from values computed before it:
 2. That digest gives the set's `branch` and pull request title.
 3. The change-set digests and the plan digest give the `bundleDigest`, which
    is written into each set's `bundle`.
-4. Later steps compute the ledger's bytes, the pull request body and the
+4. The approving decision's `subjectDigest` names a bundle digest. A
+   planned bundle records, per repository, the binding that approval gives
+   (its `binding`), and the ledger each set writes records the same binding
+   in its history ([`installed-ledger.json`](installed-ledger.json)).
+5. Later steps compute the ledger's bytes, the pull request body and the
    inverse set from those digests.
 
-Nothing in steps 2 to 4 is part of step 1, so recomputing any of them
-leaves every digest unchanged. The corpus proves it: a set whose excluded
-members were all recomputed has the same digest as the original.
+Nothing in steps 2 to 5 is part of step 1, and nothing in steps 4 and 5 is
+part of step 3, so recomputing any of them leaves every digest unchanged.
+The corpus proves it: a set whose excluded members were all recomputed has
+the same digest as the original.
+
+No whole file a set writes carries an approval: every whole file's bytes
+are inside the change-set digest, and so inside the bundle digest the
+approval names, so a file carrying that approval would contain its own
+result. The ledger can carry it because it is derived, outside the digest.
 
 ## How the corpus was computed
 
@@ -187,7 +221,20 @@ title and `changeSetDigest` from the digest, computes the bundle digests the
 same way, and asserts every `sameDigestAs` and `differsFrom` relation in
 the corpus before writing it.
 
-The same script builds each brief case from `hubBrief`, whose members are
+The members the contract added later -- `integrator`,
+`observed.consumerCi`, `observed.symlinkedSkillRoots`,
+`observed.repositoryProfile`, `observed.linkedAgentsPaths`, each
+compose-skills item's discovery links and `clossys/.state/skills.json`, a
+setup set's template files, and declare-root-entry items with the profile
+they edit or the refusal that names it -- were added to each case by a second stand-alone script of
+the same kind, from the rules on this page and in the contract, before it
+recomputed every subject, digest, branch, title and bundle digest and
+asserted every relation again. The template files' bytes are placeholder
+text, and so are the repository profile's. The same script renders the ledger corpus
+([`installed-ledger.fixture.json`](installed-ledger.fixture.json)) from the
+`setup-site`, `setup-site-root-entries` and `apply-after-setup` cases.
+
+The first script builds each brief case from `hubBrief`, whose members are
 deliberately out of order and whose text includes `’`, an emoji, a quotation
 mark, a backslash, a tab, U+0007, U+007F and U+2028. It applies the brief
 contract's projection in its stated member order and serializes it with

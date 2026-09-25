@@ -18,19 +18,26 @@
 // has is refused (unowned-existing), never taken over. Reading a real
 // ledger and trusting it is a later check this module does not run, which
 // is also why the bundle claims no repository state.
+//
+// A setup-phase repository is skipped, not computed: the change-set
+// contract requires a setup set to carry the setup templates (code rule
+// C11), and this module does not compute them yet. So is a repository whose
+// Controller profile needs root entries added (code rule C13): this module
+// does not compute the edited profile's bytes yet.
 
-import { createHash } from "node:crypto";
 import type { AdvisorPlan, EngagementBrief, EngagementBriefRole, EngagementContext, PlanPackageAct } from "./plan-contract.js";
 import { loadContract, validateAdvisorPlan, validateEngagementBrief } from "./plan-contract.js";
 import { planDigest } from "./plan-digest.js";
 import { bundleDigest, changeSetDigest } from "./change-set-digest.js";
 import {
-  AUTHORIZATION_ABSENT, AUTHORIZATION_PLAN_MISMATCH, BRIEF_PATH, CANONICAL_KEYS, LEDGER_PATH, canonicalOrder, dependencyPointer, isSafeRelativePath, lockfilePath,
-  matchesPathPattern, skillPath, validateApplyBundle, validateRepositoryChangeSet, worstVerdict,
+  AUTHORIZATION_ABSENT, AUTHORIZATION_PLAN_MISMATCH, BRIEF_PATH, CANONICAL_KEYS, DISCOVERY_ROOTS, ID_TOKEN, LEDGER_PATH, derivedPlanItem, SKILLS_MANIFEST_PATH, canonicalOrder, contentDigest, dependencyPointer,
+  discoveryLinkPath, discoveryLinkTarget, isSafeRelativePath, lockfilePath, matchesPathPattern, skillPath, validateApplyBundle, validateRepositoryChangeSet,
+  worstVerdict,
 } from "./change-set-contract.js";
 import type {
-  ApplyBundle, ApplyBundleRepository, ApplyCheck, ChangeSetDeferral, ChangeSetItem, ChangeSetPhase, ChangeSetRefusal, DependencyPlacement,
-  FileChange, KeyChange, LockfileName, PackageInvariant, PackageManagerKind, PinnedPackage, ReleaseAgeSurfaceKind, RepositoryChangeSet, RepositoryVisibility,
+  ApplyBundle, ApplyBundleRepository, ApplyCheck, ChangeSetItem, ChangeSetPhase, ChangeSetRefusal, DependencyPlacement, DiscoveryRoot,
+  FileChange, KeyChange, LockfileName, PackageInvariant, PackageManagerKind, PinnedPackage, ReleaseAgeSurfaceKind, RepositoryChangeSet, RepositoryProfileObservation,
+  RepositoryVisibility,
 } from "./change-set-contract.js";
 
 /** What was read from one staffed repository's default branch. The planner trusts it as given. */
@@ -43,16 +50,30 @@ export interface RepositoryObservation {
   readonly defaultBranch: string;
   /** The default branch's head commit. */
   readonly baseCommit: string;
-  /** setup unless the base already carries what proves a later pull request; decided from the base by the caller. */
+  /** setup unless the base already carries what proves a later pull request; decided from the base by the caller. A setup repository is skipped for now. */
   readonly phase: ChangeSetPhase;
   readonly packageManager: PackageManagerKind;
   readonly lockfile: LockfileName;
   readonly releaseAgeSurfaces: readonly { readonly surface: ReleaseAgeSurfaceKind; readonly path: string }[];
+  /** Whether the default branch has a workflow of its own, one whose file name does not start with clossys-. */
+  readonly consumerCi: boolean;
+  /** The discovery roots that are, or lie under, a symbolic link on the default branch; no discovery link is written under them. */
+  readonly symlinkedSkillRoots: readonly DiscoveryRoot[];
+  /**
+   * The Controller repository profile the default branch declares, or null:
+   * its path, whether it has a root vocabulary Controller checks, and which
+   * root names this set introduces that it does not declare or prohibits
+   * (`wouldViolateRootEntries()` judges these from the profile).
+   */
+  readonly repositoryProfile: RepositoryProfileObservation | null;
+  /** Which of `.agents`, `.agents/skills` and `.agents/skills/clossys-<role>` is a symbolic link on the default branch. */
+  readonly linkedAgentsPaths: readonly string[];
   /**
    * Every file on the default branch that the apply flow may write -- under
-   * `clossys/`, under `.agents/skills/`, and the lockfile -- with its content
-   * digest (`sha256:` and 64 hex digits). A path not listed is read as absent,
-   * so this must be complete for those paths.
+   * `clossys/`, under `.agents/skills/`, under `.claude/skills/` and
+   * `.cursor/skills/`, and the lockfile -- with its content digest (`sha256:`
+   * and 64 hex digits; a symbolic link's content is its target). A path not
+   * listed is read as absent, so this must be complete for those paths.
    */
   readonly files: readonly { readonly path: string; readonly sha256: string }[];
   /** Every entry of the default branch's package.json `dependencies` and `devDependencies`: the name and its value as written. */
@@ -83,6 +104,8 @@ export interface PlanApplyBundleInputs {
   readonly producer: { readonly name: string; readonly version: string };
   /** The exact Advisor package the hub pins. */
   readonly engine: PinnedPackage;
+  /** The exact Integrator package the hub pins. */
+  readonly integrator: PinnedPackage;
   /** Whether the plan read is the one committed at the hub's default-branch head. */
   readonly planCommitted: boolean;
   /** The execution authorization for the plan's package acts, or null when there is none. */
@@ -106,7 +129,8 @@ export const PUBLIC_PROBLEM_PLACEHOLDER: string = (() => {
 })();
 
 const BASE_ALLOW_LIST = [".agents/skills/clossys-*/**", "clossys/**"];
-const RESERVED_ITEM_IDS = new Set(["brief", "skills", "ledger"]);
+const RESERVED_ITEM_IDS = new Set(["brief", "skills", "ledger", "root-entries"]);
+const ROOT_ENTRIES_ITEM = "root-entries";
 
 function projectRole(role: EngagementBriefRole): EngagementBriefRole {
   return {
@@ -150,9 +174,20 @@ export function serializeEngagementBrief(brief: EngagementBrief): string {
   return `${JSON.stringify(brief, null, 2)}\n`;
 }
 
-/** `sha256:` and the hex SHA-256 of a text's UTF-8 bytes: a file's content digest. */
-function contentDigest(text: string): string {
-  return `sha256:${createHash("sha256").update(Buffer.from(text, "utf8")).digest("hex")}`;
+/**
+ * The exact bytes of clossys/.state/skills.json for the skills a set writes:
+ * each role's name, source catalogue, the hex SHA-256 of its SKILL.md and the
+ * producer's version, sorted by name, as two-space JSON and one line feed,
+ * with no time in it (apply-change-set-digest.md, Content digests).
+ */
+export function serializeComposedSkillsManifest(skills: readonly { readonly role: string; readonly sha256: string }[], producerVersion: string): string {
+  const entries = canonicalOrder(skills, (skill) => [skill.role]).map((skill) => ({
+    name: skill.role,
+    source: "catalogue",
+    sha256: skill.sha256.slice("sha256:".length),
+    version: producerVersion,
+  }));
+  return `${JSON.stringify({ schemaVersion: 1, skills: entries }, null, 2)}\n`;
 }
 
 function isSkipped(entry: RepositoryObservation | SkippedRepositoryObservation): entry is SkippedRepositoryObservation {
@@ -184,19 +219,22 @@ function computeChangeSet(
   const files: FileChange[] = [];
   const keys: KeyChange[] = [];
   const refused: ChangeSetRefusal[] = [];
-  const deferred: ChangeSetDeferral[] = [];
+  const pathAllowList = [...BASE_ALLOW_LIST];
+  // A path is present when a file is there, or when it is a directory holding one.
+  const presentAt = (path: string) => existingAt(path) !== undefined || observation.files.some((file) => file.path.toLowerCase().startsWith(`${path.toLowerCase()}/`));
 
-  const writeWhole = (path: string, text: string, item: string) => {
-    if (!isSafeRelativePath(path) || !BASE_ALLOW_LIST.some((pattern) => matchesPathPattern(path, pattern))) {
+  const writeWhole = (path: string, text: string, item: string, mode: "100644" | "120000" = "100644") => {
+    if (!isSafeRelativePath(path) || !pathAllowList.some((pattern) => matchesPathPattern(path, pattern))) {
       refused.push({ path, reason: "unsafe-path", item });
-      return;
+      return false;
     }
-    if (existingAt(path) !== undefined) {
+    if (presentAt(path)) {
       // Empty ledger: nothing shows the flow wrote what is there, so it is not taken over.
       refused.push({ path, reason: "unowned-existing", item });
-      return;
+      return false;
     }
-    files.push({ path, mode: "100644", before: null, after: contentDigest(text), item });
+    files.push({ path, mode, before: null, after: contentDigest(text), item });
+    return true;
   };
 
   items.push({ id: "brief", act: "write-record", source: "engagement-brief" });
@@ -206,22 +244,27 @@ function computeChangeSet(
   writeWhole(BRIEF_PATH, serializeEngagementBrief(brief), "brief");
 
   items.push({ id: "skills", act: "compose-skills", roles: [...roles] });
+  // A discovery link is written under each root the base does not have as a symbolic link: a write through one would land where it points.
+  const linkedRoots = DISCOVERY_ROOTS.filter((root) => !observation.symlinkedSkillRoots.includes(root));
+  for (const root of linkedRoots) pathAllowList.push(`${root}/clossys-*`);
+  const composed: { role: string; sha256: string }[] = [];
   for (const role of roles) {
     const content = skillContent.get(role);
     if (content === undefined) throw new TypeError("a staffed role has no composed skill content in skills");
-    // A role must be one path segment: `a/b` would still match the allow-list's `clossys-*/**`.
-    const path = skillPath(role);
-    if (/[/\\]/.test(role)) refused.push({ path, reason: "unsafe-path", item: "skills" });
-    else writeWhole(path, content, "skills");
+    const skill = skillPath(role);
+    // Never write through a symbolic link: the bytes would land wherever it points.
+    if (observation.linkedAgentsPaths.some((link) => skill.startsWith(`${link}/`))) refused.push({ path: skill, reason: "skills-root-is-link", item: "skills" });
+    else if (writeWhole(skill, content, "skills")) {
+      composed.push({ role, sha256: contentDigest(content) });
+      // Links only to a skill the set writes: a link to a refused skill would expose one the flow does not own.
+      for (const root of linkedRoots) writeWhole(discoveryLinkPath(root, role), discoveryLinkTarget(role), "skills", "120000");
+    }
   }
+  writeWhole(SKILLS_MANIFEST_PATH, serializeComposedSkillsManifest(composed, inputs.producer.version), "skills");
 
   const invariants: PackageInvariant[] = [];
   for (const act of acts) {
-    if (RESERVED_ITEM_IDS.has(act.planItem)) throw new TypeError("a package act's planItem is an item id the change set reserves (brief, skills or ledger)");
-    if (observation.phase === "setup" && act.act === "install") {
-      deferred.push({ planItem: act.planItem, reason: "after-setup" });
-      continue;
-    }
+    if (RESERVED_ITEM_IDS.has(act.planItem)) throw new TypeError("a package act's planItem is an item id the change set reserves (brief, skills, ledger or root-entries)");
     const pinned: PinnedPackage = { name: act.name, version: act.version, integrity: act.integrity };
     const entries = observation.manifestEntries.filter((entry) => entry.name === act.name);
     const satisfiedInBase =
@@ -245,7 +288,6 @@ function computeChangeSet(
     invariants.push({ item: act.planItem, ...pinned });
   }
 
-  const pathAllowList = [...BASE_ALLOW_LIST];
   const lockfile = lockfilePath(observation);
   if (invariants.length > 0 && lockfile !== null) {
     pathAllowList.push("package.json", lockfile);
@@ -263,13 +305,26 @@ function computeChangeSet(
     before: existingAt(LEDGER_PATH) ?? null,
   });
 
+  // A profile that needs no new entry needs no item; one that needs entries added is skipped by the caller, so only a refused declaration is written here.
+  const profile = observation.repositoryProfile;
+  if (profile !== null && (profile.rootVocabulary === "unparseable" || profile.prohibitedRoots.length > 0)) {
+    items.push({
+      id: ROOT_ENTRIES_ITEM,
+      act: "declare-root-entry",
+      path: profile.path,
+      entries: profile.rootVocabulary === "unparseable" ? [] : profile.undeclaredRoots.map((name) => ({ name, classification: "extension", disposition: "allowed" })),
+    });
+    refused.push({ path: profile.path, reason: profile.rootVocabulary === "unparseable" ? "root-vocabulary-unknown" : "root-entry-prohibited", item: ROOT_ENTRIES_ITEM });
+  }
+
   const checks: ApplyCheck[] = [];
   const reasons = new Set(refused.map((refusal) => refusal.reason));
   if (reasons.has("unsafe-path")) checks.push({ check: "V6", verdict: "violated", rule: "unsafe-path" });
   if (reasons.has("unowned-existing")) checks.push({ check: "V6", verdict: "indeterminate", rule: "unowned-existing" });
   if (reasons.has("manifest-absent")) checks.push({ check: "V6", verdict: "indeterminate", rule: "manifest-absent" });
-  // The setup template (caller workflow, Starter request, CI) is not computed yet, so a setup set is incomplete.
-  if (observation.phase === "setup") checks.push({ check: "V6", verdict: "indeterminate", rule: "setup-template-unbuilt" });
+  if (reasons.has("root-vocabulary-unknown")) checks.push({ check: "V6", verdict: "indeterminate", rule: "root-vocabulary-unknown" });
+  if (reasons.has("root-entry-prohibited")) checks.push({ check: "V6", verdict: "indeterminate", rule: "root-entry-prohibited" });
+  if (reasons.has("skills-root-is-link")) checks.push({ check: "V6", verdict: "indeterminate", rule: "skills-root-is-link" });
   // V6 also regenerates the lockfile and checks its invariants; that part is not run here, so a set that changes a lockfile is not satisfied.
   if (files.some((file) => "derived" in file && file.path !== LEDGER_PATH)) checks.push({ check: "V6", verdict: "indeterminate", rule: "lockfile-not-run" });
   if (checks.length === 0) checks.push({ check: "V6", verdict: "satisfied" });
@@ -290,6 +345,7 @@ function computeChangeSet(
       ledger: { generation: observation.ledgerGeneration },
       phase: observation.phase,
       engine: { name: inputs.engine.name, version: inputs.engine.version, integrity: inputs.engine.integrity },
+      integrator: { name: inputs.integrator.name, version: inputs.integrator.version, integrity: inputs.integrator.integrity },
       observed: {
         packageManager: observation.packageManager,
         lockfile: observation.lockfile,
@@ -297,13 +353,26 @@ function computeChangeSet(
           observation.releaseAgeSurfaces.map((surface) => ({ surface: surface.surface, path: surface.path })),
           CANONICAL_KEYS.surface,
         ),
+        consumerCi: observation.consumerCi,
+        symlinkedSkillRoots: canonicalOrder([...new Set(observation.symlinkedSkillRoots)], CANONICAL_KEYS.root),
+        repositoryProfile:
+          profile === null
+            ? null
+            : {
+                path: profile.path,
+                rootVocabulary: profile.rootVocabulary,
+                undeclaredRoots: canonicalOrder([...new Set(profile.undeclaredRoots)], CANONICAL_KEYS.name),
+                prohibitedRoots: canonicalOrder([...new Set(profile.prohibitedRoots)], CANONICAL_KEYS.name),
+              },
+        linkedAgentsPaths: canonicalOrder([...new Set(observation.linkedAgentsPaths)], CANONICAL_KEYS.name),
       },
       // Every array whose order carries no meaning is written in the contract's canonical order (code rule C8).
       items: canonicalOrder(items, CANONICAL_KEYS.item),
       files: canonicalOrder(files, CANONICAL_KEYS.file),
       keys: canonicalOrder(keys, CANONICAL_KEYS.key),
       refused: canonicalOrder(refused, CANONICAL_KEYS.refusal),
-      deferred: canonicalOrder(deferred, CANONICAL_KEYS.deferral),
+      // Only an apply set is computed, and an apply set defers nothing (code rule C10).
+      deferred: [],
       pathAllowList: canonicalOrder(pathAllowList, CANONICAL_KEYS.pattern),
     },
     checks,
@@ -317,19 +386,31 @@ function computeChangeSet(
  *
  * - Each repository's items are the brief (its projection of the hub brief,
  *   with the public placeholder unless it is private), its staffed roles'
- *   skills, every package act the plan names for it, and the ledger. In a
- *   setup set, an `install` waits in `deferred` for the apply set, so every
- *   act the plan authorizes is either an item or deferred, never dropped,
- *   and no act the plan does not name is ever added.
+ *   skills with their discovery links and manifest, every package act the
+ *   plan names for it, and the ledger. Every act the plan authorizes is an
+ *   item, never dropped, and no act the plan does not name is ever added.
+ * - A setup-phase repository is skipped as `setup-template-unbuilt`, with
+ *   verdict indeterminate: a setup set must carry the setup templates, which
+ *   this planner does not compute yet. A repository whose Controller profile
+ *   needs root entries added is skipped as `root-entry-edit-unbuilt` for the
+ *   same reason: the edited profile's bytes are not computed yet. A profile
+ *   that is unparseable, or that prohibits a root name the set introduces,
+ *   gets a declare-root-entry item refused as `root-vocabulary-unknown` or
+ *   `root-entry-prohibited`.
+ * - A role's skill under a symbolic link (`.agents`, `.agents/skills` or its
+ *   own directory) is refused as `skills-root-is-link`, never written.
  * - A package act the default branch already satisfies exactly is kept as an
  *   item with `satisfiedInBase: true` and writes nothing.
  * - A path or key the default branch already has is refused as
  *   `unowned-existing` (the installed-state ledger is read as empty).
- * - A staffed repository with no observation, or with a skip reason, is
- *   skipped and left out of the bundle digest.
+ * - A staffed repository with no observation, with a skip reason, in the
+ *   setup phase, or whose profile needs root entries added is skipped and
+ *   left out of the bundle digest.
  *
  * Throws, naming positions and never values, when the plan or hub brief does
- * not validate, the plan has no staffing, the hub brief has `staffedHere`, an
+ * not validate, the plan has no staffing, a staffed role is not a lowercase id
+ * token (`role-not-an-id`), a package act's planItem is not its repository id,
+ * a colon and its package name (`plan-item-not-derived`), the hub brief has `staffedHere`, an
  * observation repeats or names an unstaffed repository, a staffed role has
  * no skill content, or a computed set or the bundle fails its contract.
  */
@@ -341,6 +422,18 @@ export function planApplyBundle(inputs: PlanApplyBundleInputs): PlanApplyBundleR
   const briefValidation = validateEngagementBrief(inputs.hubBrief);
   if (!briefValidation.valid) throw new TypeError(`the hub brief does not validate: ${briefValidation.reason}`);
   if (inputs.hubBrief.staffedHere !== undefined) throw new TypeError("the hub brief must not have staffedHere; each repository's brief is projected from it");
+
+  // Plan text never reaches a public ledger: a role becomes part of paths, and a planItem is written as it is (code rules C16, L5 and L10).
+  staffing.forEach((entry, index) => {
+    entry.roles.forEach((role, at) => {
+      if (!ID_TOKEN.test(role)) throw new TypeError(`staffing[${index}].roles[${at}] is not a lowercase id token (role-not-an-id)`);
+    });
+  });
+  (inputs.plan.packages ?? []).forEach((act, index) => {
+    if (act.planItem !== derivedPlanItem(act.repository, act.name)) {
+      throw new TypeError(`packages[${index}].planItem is not the repository id, a colon and the package name (plan-item-not-derived)`);
+    }
+  });
 
   const skillContent = new Map<string, string>();
   inputs.skills.forEach((skill, index) => {
@@ -368,6 +461,17 @@ export function planApplyBundle(inputs: PlanApplyBundleInputs): PlanApplyBundleR
         reason: observation === undefined ? "not-observed" : observation.skipped,
         checks: [],
       });
+      continue;
+    }
+    const profile = observation.repositoryProfile;
+    if (profile !== null && profile.rootVocabulary === "checked" && profile.undeclaredRoots.length > 0 && profile.prohibitedRoots.length === 0) {
+      // Adding the entries needs the edited profile's bytes (code rule C13), which this planner does not compute yet.
+      entries.push({ id: staffingEntry.repository, verdict: "indeterminate", reason: "root-entry-edit-unbuilt", checks: [] });
+      continue;
+    }
+    if (observation.phase === "setup") {
+      // A setup set must hold the setup templates (code rule C11), which this planner does not compute yet.
+      entries.push({ id: staffingEntry.repository, verdict: "indeterminate", reason: "setup-template-unbuilt", checks: [] });
       continue;
     }
     const acts = (inputs.plan.packages ?? []).filter((act) => act.repository === staffingEntry.repository);

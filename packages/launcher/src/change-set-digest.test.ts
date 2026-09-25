@@ -136,6 +136,27 @@ describe("changeSetDigest (docs/contracts/apply-change-set-digest.md)", () => {
     }
   });
 
+  it("covers the members the apply flow added: the Integrator pin, what was observed about CI and skill roots, and each discovery link's bytes and mode", () => {
+    for (const name of ["apply-integrator-bumped", "apply-no-consumer-ci", "apply-claude-skills-symlinked", "apply-link-target-other", "apply-link-regular-file"]) {
+      expect(byName(name).differsFrom, name).toBe("apply-with-packages");
+      expect(changeSetDigest(byName(name).changeSet), name).not.toBe(BASE.digest);
+    }
+    const link = BASE.changeSet.files.find((file) => file.path === ".claude/skills/clossys-writer")!;
+    expect(link).toMatchObject({ mode: "120000", after: sha("../../.agents/skills/clossys-writer") });
+    const subject = changeSetDigestSubject(BASE.changeSet) as { integrator: unknown; observed: Record<string, unknown> };
+    expect(subject.integrator).toEqual(BASE.changeSet.integrator);
+    expect(Object.keys(subject.observed).sort()).toEqual(["consumerCi", "linkedAgentsPaths", "lockfile", "packageManager", "releaseAgeSurfaces", "repositoryProfile", "symlinkedSkillRoots"]);
+  });
+
+  it("covers the repository profile the base declares, the root entries a set declares, and skill directories behind a symbolic link", () => {
+    for (const name of ["apply-profile-no-vocabulary", "apply-profile-declares-all", "apply-profile-unparseable", "apply-profile-prohibits", "apply-agents-skills-link"]) {
+      expect(changeSetDigest(byName(name).changeSet), name).not.toBe(BASE.digest);
+    }
+    expect(byName("setup-site-root-entries").digest).not.toBe(byName("setup-site").digest);
+    const none = changeSetDigest(byName("apply-profile-no-vocabulary").changeSet);
+    expect(changeSetDigest(byName("apply-profile-declares-all").changeSet)).not.toBe(none);
+  });
+
   it("refuses to digest what is not a change set", () => {
     expect(() => changeSetDigest(null)).toThrow(/must be an object/);
     expect(() => changeSetDigest({ files: [1] })).toThrow(/array of objects/);
