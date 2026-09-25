@@ -1,8 +1,10 @@
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
-import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
+// A build-time tool from this repository, not shipped code; an untyped .mjs
+// file that vitest transpiles without typechecking.
+import { checkImportPurity } from "../../../scripts/lib/import-purity.mjs";
 import { bundleDigest, changeSetDigest, changeSetDigestSubject } from "./change-set-digest.js";
 import { validateApplyBundle, validateRepositoryChangeSet } from "./change-set-contract.js";
 import type { RepositoryChangeSet } from "./change-set-contract.js";
@@ -16,7 +18,6 @@ import { planDigest } from "./plan-digest.js";
  * repository, computed from observations only. Reading repository files here
  * is test-only.
  */
-const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO = new URL("../../../", import.meta.url);
 const read = (path: string): string => readFileSync(new URL(path, REPO), "utf8");
 const sha = (text: string) => `sha256:${createHash("sha256").update(text, "utf8").digest("hex")}`;
@@ -293,9 +294,6 @@ describe("planApplyBundle", () => {
   });
 });
 
-// TODO(#1178): the planner purity check moves to the shared scripts/lib/import-purity.mjs helper
-// (TypeScript compiler API over the real import graph, non-deterministic globals forbidden by AST)
-// once it lands; this source scan is known to be bypassable and is kept only until then.
 describe("canonical output", () => {
   const rich: RepositoryObservation = {
     ...SITE,
@@ -369,34 +367,43 @@ describe("authorization for another plan", () => {
   });
 });
 
+/*
+ * The planner's purity, by the shared check in scripts/lib/import-purity.mjs
+ * (a build-time tool of this repository, not shipped code). Two checks, both
+ * on syntax trees read with the TypeScript compiler API: (a) the import graph
+ * of plan-bundle.ts -- every module it reaches, transitively -- imports no
+ * builtin but node:crypto (for hashing) and no package, and uses no dynamic
+ * import(); (b) none of those modules writes one of a listed set of globals
+ * directly (fetch, process, globalThis, the timers, Date.now, Math.random and
+ * the others the helper lists). (a) is the guarantee that the planner reads no
+ * file, network or process. (b) is not a proof: JavaScript can reach a global
+ * indirectly, in forms the check does not see, so that the planner reads no
+ * clock and no randomness rests on (a) plus review of its code.
+ */
+const repoRoot = fileURLToPath(new URL("../../../", import.meta.url));
+const at = (file: string) => `packages/launcher/src/${file}`;
+interface PurityResult {
+  findings: { file: string; line: number; rule: string; message: string }[];
+  visited: string[];
+}
+const purity = (entries: string[]): PurityResult => checkImportPurity({ entries, allowedBuiltins: ["node:crypto"], root: repoRoot }) as PurityResult;
+
 describe("the planner is pure", () => {
-  // Every module the planner loads, followed through relative imports: none may import a module that reads or writes anything.
-  const ALLOWED_BUILTINS = new Set(["node:crypto"]);
-  const FORBIDDEN_CALLS = [/\bprocess\./, /\bfetch\s*\(/, /\bDate\.now\s*\(/, /\bnew Date\s*\(/, /\brequire\s*\(/, /\bimport\s*\(/, /\bglobalThis\b/, /\bsetTimeout\s*\(/];
+  const result = purity([at("plan-bundle.ts")]);
 
-  function importsOf(file: string): string[] {
-    const source = readFileSync(file, "utf8");
-    return [...source.matchAll(/^\s*(?:import|export)\b[^;]*?\bfrom\s+"([^"]+)"/gms)].map((match) => match[1]!);
-  }
+  it("imports no builtin but node:crypto and no package, and writes none of the listed globals directly, across its whole import graph", () => {
+    expect(result.findings).toEqual([]);
+  });
 
-  it("imports no I/O module and calls no process, network, clock or timer", () => {
-    const seen = new Set<string>();
-    const queue = [join(HERE, "plan-bundle.ts")];
-    const builtins = new Set<string>();
-    while (queue.length > 0) {
-      const file = queue.pop()!;
-      if (seen.has(file)) continue;
-      seen.add(file);
-      const source = readFileSync(file, "utf8");
-      for (const pattern of FORBIDDEN_CALLS) expect(pattern.test(source.replace(/\/\/.*$/gm, "").replace(/\/\*[\s\S]*?\*\//g, "")), `${file} ${pattern}`).toBe(false);
-      for (const specifier of importsOf(file)) {
-        if (specifier.startsWith(".")) queue.push(resolve(dirname(file), specifier.replace(/\.js$/, ".ts")));
-        else builtins.add(specifier);
-      }
-    }
-    expect([...builtins].filter((specifier) => !ALLOWED_BUILTINS.has(specifier))).toEqual([]);
-    expect([...seen].map((file) => file.slice(HERE.length + 1)).sort()).toEqual(
-      ["change-set-contract.ts", "change-set-digest.ts", "generated/contract-schema.generated.ts", "generated/plan-contracts.generated.ts", "plan-bundle.ts", "plan-contract.ts", "plan-digest.ts", "plan-rules.ts"].sort(),
+  it("reaches exactly the planner, the contract and digest modules, and the generated contract data", () => {
+    expect([...result.visited].sort()).toEqual(
+      ["change-set-contract.ts", "change-set-digest.ts", "generated/contract-schema.generated.ts", "generated/plan-contracts.generated.ts", "plan-bundle.ts", "plan-contract.ts", "plan-digest.ts", "plan-rules.ts"]
+        .map(at)
+        .sort(),
     );
+  });
+
+  it("would catch a module that performs I/O", () => {
+    expect(purity([at("apply-plan-cli.ts")]).findings.map((finding) => finding.rule)).toContain("builtin-not-allowed");
   });
 });
