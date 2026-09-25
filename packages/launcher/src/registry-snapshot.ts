@@ -9,9 +9,12 @@
 // Credentials: every read goes through an injected `Transport` whose default
 // is Node's own `fetch`. Nothing here runs the npm CLI, reads an `.npmrc`,
 // reads an environment variable, or sets an `Authorization` header; the only
-// header sent is `accept`. Redirects are refused (`redirect: "error"`, and a
+// headers sent are `accept` and `accept-encoding: identity`, which asks for
+// the body uncompressed so its hash and the size cap apply to the bytes
+// received. Redirects are refused (`redirect: "error"`, and a
 // 3xx answer from any transport is refused too), each response is read as a
-// stream and abandoned the moment it passes MAX_RESPONSE_BYTES, and each
+// stream and abandoned the moment it passes MAX_RESPONSE_BYTES (counted after
+// any decoding, so a server that compresses anyway is still bounded), and each
 // request, body included, is abandoned after a timeout.
 
 import { createHash, randomBytes } from "node:crypto";
@@ -342,9 +345,13 @@ async function readCapped(body: ReadableStream<Uint8Array> | null, cap: number, 
   return bytes;
 }
 
-/** The request every registry read sends: one `accept` header, no credential, no redirect. */
+/**
+ * The request every registry read sends: `accept`, and `accept-encoding:
+ * identity` so the body arrives uncompressed and `responseSha256` and the
+ * size cap apply to the exact bytes received; no credential, no redirect.
+ */
 function requestInit(signal: AbortSignal): RequestInit {
-  return { method: "GET", headers: { accept: "application/json" }, redirect: "error", credentials: "omit", signal };
+  return { method: "GET", headers: { accept: "application/json", "accept-encoding": "identity" }, redirect: "error", credentials: "omit", signal };
 }
 
 export interface FetchSnapshotOptions {

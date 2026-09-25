@@ -134,7 +134,8 @@ Exit codes: 0 = the snapshot was written, 2 = no snapshot was written
 this step cannot record: a transport error, a timeout, a redirect, an
 answer other than 200 or 404, an oversize or non-JSON body, or a snapshot
 the contract refuses). A package the registry does not have (404) is
-recorded as not-found, not refused.`;
+recorded as not-found, not refused. On exit 2 an earlier snapshot at the
+output path is left untouched, and must not be used.`;
 
 export interface SnapshotCommandOptions extends FetchSnapshotOptions {
   /** The hub root the default --out is relative to, and --request and --out resolve against; the process's cwd by default. */

@@ -509,20 +509,26 @@ registry said; it decides nothing from it. Deciding is
   in the name percent-encoded (`@scope%2Fname`), the same encoding
   `@clossys/integrator` uses. The registry is the one in this repository's
   `package-scope.json`, packed into this package at build time.
-- **Transport.** Node's own `fetch`. The only header sent is
-  `accept: application/json`, and never an `Authorization` header. The step
-  does not run the npm CLI, and reads no `.npmrc` and no token from the
-  environment. A redirect is refused, never followed. A response body is read as
-  a stream and abandoned as soon as it passes 10 MiB; a declared length over
-  that is refused before any of the body is read. Each request, body
+- **Transport.** Node's own `fetch`. The only headers sent are
+  `accept: application/json` and `accept-encoding: identity`, and never an
+  `Authorization` header. The step does not run the npm CLI, and reads no
+  `.npmrc` and no token from the environment. If Node is started with an
+  environment proxy (`NODE_USE_ENV_PROXY`), requests go through that proxy;
+  no credential is sent either way. A redirect is refused, never followed.
+  `accept-encoding: identity` asks for the body uncompressed, so the size cap
+  and `responseSha256` apply to the exact bytes received. A response body is
+  read as a stream and abandoned as soon as it passes 10 MiB; a declared
+  length over that is refused before any of the body is read. If a server
+  compresses the body anyway, Node's `fetch` decodes it and the 10 MiB cap
+  counts the decoded bytes, so the read is still bounded. Each request, body
   included, is abandoned after 30 seconds.
 - **Answers.** A `200` is projected into the snapshot. A `404` is recorded
   as `status: "not-found"`. Anything else stops the step at that package:
   a transport error, a timeout, a redirect, any other status, an oversize
   body, or a `200` body that is not strict JSON or is not that package's
   registry document. Nothing further is fetched, no snapshot is written, and
-  the exit code is `2`. An earlier snapshot at the output path is left as it
-  was.
+  the exit code is `2`. An earlier snapshot at the output path is left
+  untouched, and must not be used: exit `2` means this run recorded nothing.
 - **Projection.** Only what the registry snapshot contract declares is
   kept: the version the `latest` dist-tag names, or `null`, and, when the
   document lists that version, that one version's integrity value and tarball
@@ -530,8 +536,9 @@ registry said; it decides nothing from it. Deciding is
   whether it lists attestations. Every other version, dist-tag and field is
   ignored. The document must name the requested package, and the version's
   own entry must carry the version number `latest` names; otherwise nothing
-  is written. `responseSha256` is the SHA-256 of the response body exactly as
-  the transport delivered it.
+  is written. `responseSha256` is the SHA-256 of the response body's bytes
+  as received; if a server compressed the body despite
+  `accept-encoding: identity`, it is the SHA-256 of the decoded body.
 - **Output.** The snapshot is written only after the exact text to be
   written has been read back strictly and has passed
   `docs/contracts/registry-snapshot.json`
