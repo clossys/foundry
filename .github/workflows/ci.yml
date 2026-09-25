@@ -544,26 +544,52 @@ jobs:
       matrix:
         shard: ${{ fromJSON(needs.push-tree.outputs.gate-shard-matrix) }}
     runs-on: ubuntu-latest
-    # ESTIMATE, to revisit once a full run's real per-shard times are in --
-    # not a measurement of this job itself. Derived from the UNSHARDED
-    # whole: 26m37s for the discovered-suite half alone (see this job's own
-    # header) plus 24s for the fixture suite this shard also repeats -- 27
-    # minutes total across ~24-25 files/shard at GATE_TEST_SHARDS: 4. 15
-    # minutes is headroom over a rough 1/4 split of that total, not a second
-    # independent guess.
+    # A full run (35964912842) proved the earlier 15-minute ESTIMATE wrong,
+    # not merely tight: shard 2 was CANCELLED by this very timeout after
+    # printing its last completed test at 06:39:16Z and then producing NO
+    # further output before the 06:49:24Z cancellation -- ten silent minutes,
+    # not a slow-but-progressing shard. Real evidence, not a second guess,
+    # for why and by how much:
     #
-    # Partial real evidence so far (run 35964067578, 3 of its 4 shards
-    # complete at review time, one still in progress): shard 1 ran 25/99
-    # files in ~8s of test time (449 tests, 447 pass, 2 skip), shard 0 ran
-    # 431 tests in ~46s, shard 3 ran 24 files / 365 tests in ~45s -- all
-    # three well under this budget, but three of four is not "this job has
-    # run for real" yet, and a fast partial sample is not a reason to lower
-    # a fail-closed timeout preemptively. Once a FULL run's real numbers
-    # exist for every shard, replace this comment (and reconsider the
-    # value) from that evidence, the same "state derived from evidence,
-    # never declared" rule this repository's package lifecycle already
-    # holds itself to (docs/LIFECYCLE.md) -- not from this partial sample.
-    timeout-minutes: 15
+    # scripts/lib/candidate-qualification.test.mjs's own test "transition-base
+    # predecessor records survive a fresh clone without dangling reviewed
+    # commits" (source: it clones this repo with `git clone --no-local`, then
+    # execFile's `scripts/check-candidate-qualification.mjs` with NEITHER
+    # `--shard-index` NOR `--shard-count` against that clone) reported
+    # duration_ms 1501217.5171 -- 25.02 minutes -- for that ONE test, in the
+    # last run that measured it end to end (35957368169, job 107498450966,
+    # the pre-split unsharded job; TAP output, not a derived estimate). That
+    # number is not noise: `candidate-qualification-shard` above runs this
+    # SAME script, already 4-way sharded, at a real measured ~5-6 minutes PER
+    # SHARD (see `gh pr checks` on this PR) -- an UNSHARDED invocation of the
+    # same work costing roughly 4x that, ~20-25 minutes, is exactly what this
+    # one test's own git-history-scale validation should cost, and 25.02
+    # minutes lands right in that band.
+    #
+    # This is why round-robin file rebalancing alone cannot fix this: the
+    # cost lives inside ONE test in ONE file, not spread across the ~24-25
+    # files any shard carries (the three shards that complete every run take
+    # well under 2 minutes combined -- see the partial-evidence note this
+    # comment replaces). Whichever shard's slice of
+    # discoverGateTestFiles() happens to contain
+    # scripts/lib/candidate-qualification.test.mjs needs headroom over
+    # ~25 minutes regardless of GATE_TEST_SHARDS' value; a per-shard
+    # matrix-index timeout would only chase whichever index draws that file
+    # today, and drifts wrong the moment a file is added or removed before it
+    # alphabetically. One timeout, applied to every shard, is the only
+    # version of this that stays correct as the discovered set changes.
+    #
+    # 35 minutes: the 25-minute measured worst case for that single test,
+    # plus ~10 minutes headroom for the rest of this shard's files (measured
+    # at well under 2 minutes combined elsewhere) and ordinary runner
+    # variance -- generous but bounded, and still below the pre-split job's
+    # own historical wall time (27m01s), so no shard can regress past what
+    # `check:gates` already cost before this PR. The deeper fix belongs in
+    # scripts/lib/candidate-qualification.test.mjs itself, not here: that
+    # test's unsharded, real invocation of check-candidate-qualification.mjs
+    # will keep costing more as governance/release-qualifications grows,
+    # independent of anything this workflow file can rebalance.
+    timeout-minutes: 35
     steps:
       # check:gates exercises check-contamination-classes.mjs's CLASS 4 rule
       # against THIS repo's own real git history (see that script's own
