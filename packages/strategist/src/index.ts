@@ -158,6 +158,29 @@ export {
 export type { StrategyDirectoryDefault } from "./strategy-dir-default.js";
 
 export {
+  ENGAGEMENT_CONTEXT_FIELD_IDS,
+  audienceContextValue,
+  fieldById as engagementContextFieldById,
+  readEngagementContext,
+  readEngagementContextFromBriefData,
+} from "./engagement-context.js";
+export type {
+  EngagementContextField,
+  EngagementContextFieldId,
+  EngagementContextRead,
+  EngagementContextSnapshot,
+} from "./engagement-context.js";
+
+export { pendingAudienceIntakeQuestions, seedAudienceFromContext } from "./audience-intake.js";
+export type {
+  AudienceContextPointer,
+  AudienceIntakeQuestion,
+  AudienceIntakeQuestionId,
+  AudienceIntakeStep,
+  AudienceSeedResult,
+} from "./audience-intake.js";
+
+export {
   STRATEGY_RECORD_KINDS,
   createStrategyProvenance,
   getApprovedClaims,

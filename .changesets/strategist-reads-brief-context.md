@@ -1,0 +1,5 @@
+---
+strategist: minor
+---
+
+Adds `readEngagementContext` and `readEngagementContextFromBriefData` (issue #1173), which read a consumer's `clossys/brief.json` validated against the shared brief contract (issue #1475: `docs/contracts/engagement-brief.json` with `engagement-context.json`) that `@clossys/advisor` and `@clossys/launcher` also validate against — this package's build (`scripts/pack-brief-contract.mjs`) packs a generated, gitignored copy of those two contract files and of their one checker (`packages/advisor/src/contract-schema.ts`) into `src/generated/`, so Strategist validates against the same definition with no `dependencies` entry on `@clossys/advisor`. Reading is all-or-nothing: a brief that does not fully validate reads as every field unknown, the same as no brief at all, and any note is a fixed reason, an OS error code, or a JSON syntax position only — never file text or founder text, and never a value read from a field that happened to look fine inside an otherwise invalid document.
