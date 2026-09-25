@@ -142,6 +142,16 @@ test("classify: an unevaluable first-party range does not block; it dispatches a
   assert.deepEqual(row.unevaluated, [{ name: "@clossys/controller", range: ">=0.9.0" }]);
 });
 
+test("classify: an unevaluable range is decided without a registry read -> dispatch, even when the lookup would fail", async () => {
+  const manifest = { name: "@clossys/alpha", version: "0.2.0", dependencies: { "@clossys/controller": ">=0.9.0" } };
+  const { lookupVersions, calls } = fakeRegistry({ "@clossys/controller": new Error("HTTP 503") });
+  const candidate = { package: "alpha", name: manifest.name, version: manifest.version };
+  const rows = await classifyCandidates({ unqualified: [candidate], pending: [candidate], scope: SCOPE, readManifest: manifestsFrom({ alpha: manifest }), lookupVersions });
+  assert.equal(rows[0].classification, "dispatch");
+  assert.deepEqual(rows[0].unevaluated, [{ name: "@clossys/controller", range: ">=0.9.0" }]);
+  assert.deepEqual(calls, [], "an unevaluable edge's range settles evaluability before any lookup is made");
+});
+
 test("classify: candidates missing from pending are skipped-already-recorded; unreadable manifests are indeterminate; lookups cached per sibling", async () => {
   const unqualified = [
     { package: "alpha", name: "@clossys/alpha", version: "1.0.0" },

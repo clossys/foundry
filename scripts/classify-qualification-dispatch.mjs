@@ -199,13 +199,21 @@ export async function classifyCandidates({ unqualified, pending, scope, readMani
     const uncertain = [];
     const unevaluated = [];
     for (const edge of firstPartyRuntimeRanges(manifest, scope)) {
+      // Evaluability is a property of the range alone (the same parse
+      // evaluateRange() itself gates on) — decide it before touching the
+      // registry, so an edge this classifier cannot evaluate anyway never
+      // costs a lookup, and a registry failure on it lands in `unevaluated`
+      // rather than `uncertain`/`indeterminate`.
+      if (parseRange(edge.range) === null) {
+        unevaluated.push(edge);
+        continue;
+      }
       const published = await lookup(edge.name);
       if (published.kind === "absent") {
         blockers.push({ ...edge, highest: null, detail: `no version of ${edge.name} is published` });
       } else if (published.kind === "found") {
         const verdict = evaluateRange(edge.range, published.versions);
         if (verdict.kind === "unsatisfied") blockers.push({ ...edge, highest: verdict.highest, detail: `highest published ${edge.name} is ${verdict.highest ?? "none (prerelease only)"}` });
-        else if (verdict.kind === "unevaluable") unevaluated.push(edge);
       } else {
         uncertain.push({ ...edge, detail: published.detail ?? "registry read failed" });
       }
