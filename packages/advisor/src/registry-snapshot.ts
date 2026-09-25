@@ -1,6 +1,5 @@
 import { createHash } from "node:crypto";
 import { validateAgainstContract } from "./contract-schema.js";
-import type { ContractViolation } from "./contract-schema.js";
 import { loadPlanContract } from "./plan-contract.js";
 import { canonicalJson } from "./plan-digest.js";
 
@@ -58,24 +57,6 @@ export interface RegistrySnapshotViolation {
   readonly message: string;
 }
 
-const UNDECLARED_FIELD = "is not a field the contract declares, and unknown fields are refused";
-
-/**
- * A contract violation with no document text in it. The shared checker names
- * an undeclared key in its path; that key is text from the document, so here
- * the violation is reported at the object that holds it instead.
- */
-export function positionOnly(violation: ContractViolation): { path: string; message: string } {
-  if (violation.message !== UNDECLARED_FIELD) return { path: violation.path, message: violation.message };
-  const { path } = violation;
-  // The checker writes an undeclared key as `parent.key` when it looks like an
-  // identifier (no `.`, `[` or `"` in it), else as `parent["key"]` with the key
-  // JSON-quoted, where a `"` inside the key is always escaped, so `["` opens
-  // only that final quoted key.
-  const cut = path.endsWith('"]') ? path.lastIndexOf('["') : path.lastIndexOf(".");
-  return { path: cut === -1 ? "" : path.slice(0, cut), message: "has a field the contract does not declare, and unknown fields are refused" };
-}
-
 function eachRepeat<T>(items: readonly T[], key: (item: T) => string, onRepeat: (index: number, firstIndex: number) => void): void {
   const first = new Map<string, number>();
   items.forEach((item, index) => {
@@ -111,7 +92,8 @@ export function registrySnapshotRuleViolations(snapshot: RegistrySnapshot): Regi
  */
 export function validateRegistrySnapshot(value: unknown): RegistrySnapshotViolation[] {
   const schema = validateAgainstContract(loadPlanContract("registry-snapshot.json"), value, loadPlanContract);
-  if (schema.length > 0) return schema.map((violation) => ({ rule: "schema", ...positionOnly(violation) }));
+  // The shared checker's path and message never carry document text: an undeclared field is placed at its object, by position.
+  if (schema.length > 0) return schema.map((violation) => ({ rule: "schema", path: violation.path, message: violation.message }));
   return registrySnapshotRuleViolations(value as RegistrySnapshot);
 }
 

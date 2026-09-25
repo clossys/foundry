@@ -106,10 +106,10 @@ describe("validateEngagementBrief", () => {
     }
   });
 
-  it("refuses a field the brief contract does not declare", () => {
+  it("refuses a field the brief contract does not declare, by its position, never its name", () => {
     expect(validateEngagementBrief({ ...VALID_BRIEF, notes: "x" })).toEqual({
       valid: false,
-      reason: "brief.notes is not a field the contract declares, and unknown fields are refused",
+      reason: `brief has a field the contract does not declare (key ${Object.keys(VALID_BRIEF).length + 1} of this object), and unknown fields are refused`,
     });
   });
 
@@ -167,9 +167,10 @@ describe("validateAdvisorPlan", () => {
       "plan.blockers[0].capabilityId is required",
       "plan.blockers[0].nextAction is required",
       "plan.blockers[0].since is required",
-      "plan.blockers[0].description is not a field the contract declares, and unknown fields are refused",
-      "plan.blockers[0].dueDate is not a field the contract declares, and unknown fields are refused",
+      "plan.blockers[0] has a field the contract does not declare (key 2 of this object), and unknown fields are refused",
+      "plan.blockers[0] has a field the contract does not declare (key 4 of this object), and unknown fields are refused",
     ]) expect(reason).toContain(expected);
+    expect(reason).not.toMatch(/description|dueDate/);
   });
 
   it("rejects a blocker with an unrecognized kind", () => {
@@ -180,9 +181,9 @@ describe("validateAdvisorPlan", () => {
     });
   });
 
-  it("refuses an unknown field nested in the plan", () => {
+  it("refuses an unknown field nested in the plan, at the object that holds it", () => {
     const plan = { ...VALID_PLAN, mandate: { ...VALID_PLAN.mandate, owner: "x" } };
-    expect(validateAdvisorPlan(plan)).toEqual({ valid: false, reason: "plan.mandate.owner is not a field the contract declares, and unknown fields are refused" });
+    expect(validateAdvisorPlan(plan)).toEqual({ valid: false, reason: `plan.mandate has a field the contract does not declare (key ${Object.keys(VALID_PLAN.mandate).length + 1} of this object), and unknown fields are refused` });
   });
 
   it("refuses a decision whose time is not an ISO 8601 date-time", () => {
@@ -267,9 +268,9 @@ describe("whitespace-only brief strings and escaped keys (#1475)", () => {
     expect(validateEngagementBrief({ ...VALID_BRIEF, deliverables: [""] })).toEqual({ valid: false, reason: "brief.deliverables[0] must be at least 1 character(s) long" });
   });
 
-  it("names an unknown key with control characters escaped, never raw", () => {
+  it("never shows an unknown key with control characters, escaped or raw", () => {
     const result = validateEngagementBrief({ ...VALID_BRIEF, "\u001b[2J": 1 });
-    expect(result).toEqual({ valid: false, reason: 'brief["\\u001b[2J"] is not a field the contract declares, and unknown fields are refused' });
+    expect(result).toEqual({ valid: false, reason: `brief has a field the contract does not declare (key ${Object.keys(VALID_BRIEF).length + 1} of this object), and unknown fields are refused` });
   });
 });
 
@@ -438,7 +439,7 @@ describe("applyEngagementBrief", () => {
   it("refuses, and writes nothing, when the plan does not validate, even if its latest decision is approved", () => {
     const host = fakeHost();
     const result = applyEngagementBrief(host, "/repo", { ...VALID_PLAN, notes: [] } as unknown as AdvisorPlan, VALID_BRIEF, "clossys/brief.json");
-    expect(result).toEqual({ state: "refused", reason: "plan does not validate: plan.notes is not a field the contract declares, and unknown fields are refused" });
+    expect(result).toEqual({ state: "refused", reason: `plan does not validate: plan has a field the contract does not declare (key ${Object.keys(VALID_PLAN).length + 1} of this object), and unknown fields are refused` });
     expect(Object.keys(host.written)).toHaveLength(0);
   });
 

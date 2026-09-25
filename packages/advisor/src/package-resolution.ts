@@ -4,7 +4,7 @@ import { validateAgainstContract } from "./contract-schema.js";
 import { PACKAGE_SCOPE } from "./generated/package-scope.generated.js";
 import { loadPlanContract } from "./plan-contract.js";
 import { HUB_ONLY_ROLES, planRuleViolations } from "./plan-rules.js";
-import { byCodeUnits, canonicalSnapshot, positionOnly, snapshotDigest, validateRegistrySnapshot } from "./registry-snapshot.js";
+import { byCodeUnits, canonicalSnapshot, snapshotDigest, validateRegistrySnapshot } from "./registry-snapshot.js";
 import type { RegistrySnapshot, RegistrySnapshotVersion } from "./registry-snapshot.js";
 import type { AdvisorPlan, AdvisorPlanPackageAct, AdvisorPlanResolution } from "./status.js";
 import type { ImmutablePackageRef } from "./types.js";
@@ -108,10 +108,8 @@ function stateOf(findings: readonly ResolutionFinding[]): ResolutionState {
 function planShapeFindings(plan: unknown): ResolutionFinding[] {
   const schema = validateAgainstContract(loadPlanContract("advisor-plan.json"), plan, loadPlanContract);
   if (schema.length > 0) {
-    return schema.map((violation) => {
-      const { path, message } = positionOnly(violation);
-      return { rule: "plan-shape", verdict: "violated", path, message: `plan${path === "" ? "" : path.startsWith("[") ? path : `.${path}`} ${message}` };
-    });
+    // The shared checker's path and message never carry document text: an undeclared field is placed at its object, by position.
+    return schema.map(({ path, message }) => ({ rule: "plan-shape", verdict: "violated", path, message: `plan${path === "" ? "" : path.startsWith("[") ? path : `.${path}`} ${message}` }));
   }
   return planRuleViolations(plan as AdvisorPlan).map((violation) => ({
     rule: "plan-shape",

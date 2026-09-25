@@ -18,7 +18,13 @@
  * a plan, a brief and an inventory against the same contracts Advisor does,
  * with no runtime dependency on Advisor. The rendering is shared with Advisor's own packer
  * (scripts/lib/plan-contracts.mjs in this repository), so both packages
- * carry byte-identical contract data.
+ * carry byte-identical plan and brief contract data. This package also packs
+ * the registry snapshot contract, as Advisor does, with the publishing scope
+ * and registry from package-scope.json: the snapshot step reads its registry
+ * from there, never from a hardcoded value, and validates what it writes
+ * against the contract. After those come the repository change-set and
+ * apply-bundle contracts (issue #1178), which it computes and Advisor never
+ * reads.
  */
 import { cpSync, existsSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -27,8 +33,11 @@ import { fileURLToPath } from "node:url";
 import { PACKED_COPIES_FILE, loadPackedCopies } from "../../../scripts/lib/packed-copies.mjs";
 import {
   CONTRACT_SCHEMA_COPY_PATH,
+  LAUNCHER_CONTRACT_FILES,
+  PACKAGE_SCOPE_MODULE_PATH,
   PLAN_CONTRACTS_MODULE_PATH,
   renderContractSchemaCopy,
+  renderPackageScopeModule,
   renderPlanContractsModule,
 } from "../../../scripts/lib/plan-contracts.mjs";
 
@@ -70,6 +79,7 @@ for (const { copy, source } of copies) {
 const generatedDir = join(launcherRoot, "src", "generated");
 if (existsSync(generatedDir)) rmSync(generatedDir, { recursive: true, force: true });
 mkdirSync(generatedDir, { recursive: true });
-writeFileSync(join(launcherRoot, ...PLAN_CONTRACTS_MODULE_PATH.split("/")), renderPlanContractsModule(repoRoot));
+writeFileSync(join(launcherRoot, ...PLAN_CONTRACTS_MODULE_PATH.split("/")), renderPlanContractsModule(repoRoot, LAUNCHER_CONTRACT_FILES));
 writeFileSync(join(launcherRoot, ...CONTRACT_SCHEMA_COPY_PATH.split("/")), renderContractSchemaCopy(repoRoot));
-console.log(`pack-skills: wrote the plan, brief and inventory contracts and the contract checker copy into src/generated/`);
+writeFileSync(join(launcherRoot, ...PACKAGE_SCOPE_MODULE_PATH.split("/")), renderPackageScopeModule(repoRoot));
+console.log(`pack-skills: wrote the plan, brief, inventory, registry snapshot, change-set and bundle contracts, the contract checker copy, and the publishing scope and registry into src/generated/`);

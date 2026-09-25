@@ -12,8 +12,18 @@
 //
 // An inventory already on disk that names a different set of repositories
 // is never merged into or overwritten silently: the choice is refused, with
-// the difference in counts and ids, unless the caller passes an explicit
-// replace approval (`--replace-inventory`).
+// the difference in counts and positions, unless the caller passes an
+// explicit replace approval (`--replace-inventory`).
+//
+// Every message this module builds -- the refusal and the success line
+// alike -- names a repository only by its position, never by its id: a
+// stored inventory file, and the `--repositories` argument, are both
+// document-shaped input an agent may relay verbatim, and a repository id is
+// exactly the kind of short string a hostile entry could shape as
+// prompt-injection text (see ./inventory-contract.ts's own header). The
+// caller looks the reported position up in its own copy of the inventory
+// file or its own `--repositories` argument to learn which repository it
+// names.
 
 import { inventoryKey } from "./identity.js";
 import { readInventoryDocument, renderInventoryDocument, validateInventoryDocument, validateInventoryValue, type InventoryEntry } from "./inventory-contract.js";
@@ -30,8 +40,23 @@ function repositories(count: number): string {
   return `${count} ${count === 1 ? "repository" : "repositories"}`;
 }
 
-function listIds(ids: readonly string[]): string {
-  return ids.length === 0 ? "" : ` (${ids.join(", ")})`;
+/** Added ids are named by their position in the `--repositories` argument, never by the id itself. */
+function listAddedPositions(positions: readonly number[]): string {
+  return positions.length === 0 ? "" : ` (${positions.map((index) => `--repositories[${index}]`).join(", ")})`;
+}
+
+/**
+ * Removed ids are named by their position in an inventory's `repositories`
+ * array, never by the id itself. `label` distinguishes which file that
+ * position indexes into: `"stored inventory"` for the refusal, where the
+ * file on disk is still the one the positions were computed against, and
+ * `"replaced inventory"` for the success line after `--replace-inventory`
+ * writes -- by the time that line prints, the file on disk is already the
+ * new one, so reusing "stored inventory" there would point a reader at the
+ * wrong document (#1179).
+ */
+function listRemovedPositions(positions: readonly number[], label: "stored inventory" | "replaced inventory"): string {
+  return positions.length === 0 ? "" : ` (${positions.map((index) => `repositories[${index}] in the ${label}`).join(", ")})`;
 }
 
 /**
@@ -52,9 +77,10 @@ function listIds(ids: readonly string[]): string {
  * - No inventory, or an empty one: the chosen repositories are written.
  * - An inventory naming exactly the same repositories: nothing is written.
  * - An inventory naming a different set: refused, reporting how many
- *   repositories each side has and which ids would be added and removed,
- *   unless `replace` is true. A replacement keeps each kept repository's
- *   existing entry as it was (its `packages` included).
+ *   repositories each side has and the positions that would be added and
+ *   removed (never the ids themselves), unless `replace` is true. A
+ *   replacement keeps each kept repository's existing entry as it was (its
+ *   `packages` included).
  *
  * The document to write is checked again by the same reader every later
  * read uses, before it is returned.
@@ -74,6 +100,8 @@ export function resolveChosenInventory(
   let entries: InventoryEntry[];
   let added: readonly string[] = chosenIds;
   let removed: readonly string[] = [];
+  let addedPositions: readonly number[] = chosenIds.map((_, index) => index);
+  let removedPositions: readonly number[] = [];
   let replaced: Extract<ChosenInventory, { kind: "write" }>["replaced"] = "nothing";
   let previousCount = 0;
   if (onDisk === null) {
@@ -96,6 +124,9 @@ export function resolveChosenInventory(
       const chosenKeys = new Set(chosenIds.map((id) => inventoryKey(id, hubOwner)));
       added = chosenIds.filter((id) => !storedByKey.has(inventoryKey(id, hubOwner)));
       removed = stored.ids.filter((id) => !chosenKeys.has(inventoryKey(id, hubOwner)));
+      // Positions, not ids: `added` indexes into the --repositories argument the caller passed; `removed` indexes into the stored inventory's own `repositories` array.
+      addedPositions = added.map((id) => chosenIds.indexOf(id));
+      removedPositions = removed.map((id) => stored.ids.indexOf(id));
       if (stored.ids.length > 0 && added.length === 0 && removed.length === 0) {
         return { kind: "resolved", chosen: { kind: "unchanged", count: stored.ids.length } };
       }
@@ -105,7 +136,7 @@ export function resolveChosenInventory(
             kind: "refuse",
             message:
               `the hub inventory already lists ${repositories(stored.ids.length)} and the choice has ${chosenIds.length}: ` +
-              `${added.length} to add${listIds(added)}, ${removed.length} to remove${listIds(removed)}. ` +
+              `${added.length} to add${listAddedPositions(addedPositions)}, ${removed.length} to remove${listRemovedPositions(removedPositions, "stored inventory")}. ` +
               `Launcher never merges or overwrites an inventory silently; to replace it with the choice, run again with ${REPLACE_INVENTORY_FLAG}`,
           };
         }
@@ -120,7 +151,7 @@ export function resolveChosenInventory(
   if (!written.valid) return { kind: "refuse", message: `the inventory to write ${written.reason}` };
   return {
     kind: "resolved",
-    chosen: { kind: "write", document, count: written.ids.length, previousCount, added, removed, replaced },
+    chosen: { kind: "write", document, count: written.ids.length, previousCount, added, removed, addedPositions, removedPositions, replaced },
   };
 }
 
@@ -132,7 +163,10 @@ export function describeChosenInventory(chosen: ChosenInventory): string {
   const count = repositories(chosen.count);
   if (chosen.replaced === "invalid") return `inventory: replaced one that failed its contract with the ${count} you chose`;
   if (chosen.replaced === "differing") {
-    return `inventory: replaced ${chosen.previousCount} with the ${count} you chose -- ${chosen.added.length} added${listIds(chosen.added)}, ${chosen.removed.length} removed${listIds(chosen.removed)}`;
+    return (
+      `inventory: replaced ${chosen.previousCount} with the ${count} you chose -- ` +
+      `${chosen.added.length} added${listAddedPositions(chosen.addedPositions)}, ${chosen.removed.length} removed${listRemovedPositions(chosen.removedPositions, "replaced inventory")}`
+    );
   }
   return `inventory: wrote the ${count} you chose`;
 }

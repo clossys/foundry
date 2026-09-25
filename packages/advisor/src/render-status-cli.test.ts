@@ -35,12 +35,15 @@ function writeRaw(contents: string | Uint8Array): string {
 }
 
 describe("advisor-render-status", () => {
-  it("refuses a plan file that repeats a key, at the top level or nested, naming the key (#1475)", () => {
+  it("refuses a plan file that repeats a key, at the top level or nested, by position, never naming the key (#1475)", () => {
     const text = JSON.stringify(BASE_PLAN);
     expect(() => main([writeRaw(text.replace('"schemaVersion":1', '"schemaVersion":1,"asOf":"2026-01-01T00:00:00Z"'))])).toThrow(
-      /repeats the key "asOf" in the top-level object/,
+      /it repeats a key \(key 3 of the top-level object\); every key may appear once$/,
     );
-    expect(() => main([writeRaw(text.replace('"problem":', '"problem":"EVIL","problem":'))])).toThrow(/repeats the key "problem" in mandate/);
+    const mandateAt = text.indexOf('"mandate":') + '"mandate":'.length;
+    expect(() => main([writeRaw(text.replace('"problem":', '"problem":"EVIL","problem":'))])).toThrow(
+      new RegExp(`it repeats a key \\(key 2 of the object at position ${mandateAt}\\); every key may appear once$`),
+    );
   });
 
   it("refuses a plan file that is not valid UTF-8 rather than replacing the byte (#1475)", () => {

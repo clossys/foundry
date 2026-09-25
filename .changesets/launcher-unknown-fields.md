@@ -2,4 +2,4 @@
 launcher: minor
 ---
 
-`validateAdvisorPlan()` and `validateEngagementBrief()` validate against the same shared contracts Advisor uses, refuse any field those contracts do not declare, and name every field at fault in their reason, showing a key that is not a plain identifier as an escaped JSON string (#1475).
+`validateAdvisorPlan()` and `validateEngagementBrief()` validate against the same shared contracts Advisor uses and refuse any field those contracts do not declare (#1475).
