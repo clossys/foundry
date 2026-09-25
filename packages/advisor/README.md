@@ -102,17 +102,6 @@ and it does not replace `advisor-check` or `advisor-execution-readiness`.
 The plan commands `advisor-render-status`, `advisor-package-request` and
 `advisor-resolve-packages` are described with the plan record below.
 
-The skill runs in every inventoried repository (issue #1507), but engagement
-state and the live pin exist only in the hub. `skill/SKILL.md` states three
-cases the skill works out before answering a hiring, plan-change, or
-approval question: in the hub, everything runs as described above; with a
-hub checkout beside the current repository, it reads that hub's engagement
-state read-only and refuses to record a decision here; with no hub
-reachable, it gives a read-only report from `clossys/brief.json` and
-refuses decisions the same way. Outside the hub it never installs this
-package — a bin that must run does so unpinned through the hub's exact
-version, `npx --package=@clossys/advisor@<hub version> <bin>`.
-
 ```bash
 advisor-check assessment.json
 ```
@@ -139,6 +128,22 @@ authorization exactly matches its plan, basis, repositories, packages, and
 mutation surfaces at that instant. It exits `1` for a concrete readiness or
 authorization violation, and `2` for unreadable, malformed, or indeterminate
 evidence.
+
+Launcher composes this skill into every inventoried repository (issues
+#1178, #1187), but engagement state and the live pin exist only in the hub.
+`skill/SKILL.md` states an explicit degraded mode for that gap (issue
+#1507): a checkout counts as the hub only once its marker file parses with
+`kind: "account-hub"`, `schemaVersion: 1`, and a `repository` matching this
+checkout's own git origin; a hub checkout found beside the current
+repository, validated the same way and confirmed by its own inventory,
+is read but never written to; and with no hub reachable, the skill gives
+a read-only report from `clossys/brief.json`. Outside the hub the skill writes nothing
+under `clossys/` and answers only status and plain questions — no card, no
+kit composition, no recorded approval, blocker, grant, or review, and no
+`advisor-check` run against a local assessment. It also never installs
+itself outside the hub: a bin that must run does so through the hub's exact
+pin, not installed in this repository, `npx --package=@clossys/advisor@<hub
+version> <bin>`.
 
 ## Capability catalogue and kit composition
 
