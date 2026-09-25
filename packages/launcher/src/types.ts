@@ -75,8 +75,17 @@ export interface SkillsManifestSummary {
 }
 
 export interface InventoryObservation {
-  readonly status: "missing" | "empty" | "populated";
+  /**
+   * "invalid" means a document was found but does not conform to the
+   * inventory schema (bad JSON, wrong shape, an unrecognized field, or a
+   * duplicate repository id) -- distinct from "empty" (a well-formed,
+   * zero-entry document) so a malformed document is reported, never
+   * silently treated as if it were merely empty.
+   */
+  readonly status: "missing" | "empty" | "populated" | "invalid";
   readonly count: number;
+  /** Present only when status is "invalid"; names the offending field. */
+  readonly reason?: string;
 }
 
 /** A package.json dependency bucket scanned for the advisor pin. */
@@ -214,6 +223,10 @@ export interface WorkspacePlanAdopt {
   readonly inventorySource?: string;
   /** Merged repository ids (on-disk first, then new ids from --inventory) written when both sources are populated. */
   readonly mergedInventoryIds?: readonly string[];
+  /** The merged entries themselves (each entry's `packages` kept), in the same order as `mergedInventoryIds`; what apply writes (#1334). */
+  readonly mergedInventoryRepositories?: readonly { readonly id: string; readonly packages?: unknown }[];
+  /** Set when `inventorySource` is about to replace an on-disk inventory that failed schema validation, so the apply message can say it was replaced rather than merely written (#1334). */
+  readonly replacesInvalidInventory?: boolean;
 }
 
 export type WorkspacePlan = WorkspacePlanCreate | WorkspacePlanResume | WorkspacePlanAdopt;

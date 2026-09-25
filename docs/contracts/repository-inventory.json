@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "kind": "foundry-repository-inventory",
+  "trackingIssues": [996, 1334],
+  "shape": {
+    "topLevelFields": ["schemaVersion", "repositories"],
+    "entryFields": ["id", "packages"],
+    "rule": "schemaVersion is exactly the integer 1; a document whose schemaVersion is anything else, or that carries any top-level field beyond schemaVersion and repositories, is refused, never partially read. repositories is an array (may be empty) of entries. Each entry carries id (required) and, optionally, packages -- no other key. An entry with any other key is refused. This is the one shape @clossys/launcher's validateInventoryDocument() parses (core.ts); this contract describes that function's existing rule, it does not define a second one, and the two must never diverge.",
+    "idField": {
+      "rule": "id is a nonempty string identifying one repository: either a bare repository name, or `owner/name`. Both segments follow the same GitHub owner and repository name rules @clossys/launcher already applies when it resolves a sibling clone target beside the hub (core.ts's OWNER/REPO patterns) -- so a document's ids and the repositories launcher actually clones or composes skills into are governed by exactly one rule, never two that could drift apart. Refused: an id with more than one `/`; an id with an empty segment (a leading, trailing, or doubled `/`); a segment that is exactly `.` or `..`; any leading, trailing, or internal whitespace. Two entries whose ids are the same repository under a different letter case (GitHub repository and owner names are case-insensitive) are a duplicate and are refused, not silently kept as two entries.",
+      "examples": {
+        "valid": ["app", "acme/app"],
+        "refused": ["", "  app", "app ", "acme/app/extra", "acme/", "/app", ".", "..", "acme/.."]
+      }
+    },
+    "packagesField": {
+      "rule": "Optional. When present, an array (may be empty) of entries shaped exactly as @clossys/integrator@0.7.0's InventoryPackageEntry (issue #996, packages/integrator/src/delta.ts, documented in packages/integrator/README.md's \"Per-repository currency delta\" section): name (required, nonempty string), version (optional, nonempty string -- present only where a currency judgment named a target version), wiring (optional, one of dependencies/devDependencies/optionalDependencies/peerDependencies/unknown). No other key. This is intentionally the exact same shape Integrator's emitCurrencyDelta() produces, not a second, launcher-owned approximation of it -- the two packages read one definition, never two that could silently drift apart the way #996 exists to prevent one level up (a launcher inventory entry and an installed-package entry)."
+    }
+  },
+  "declaredLocation": {
+    "path": "clossys/.state/inventory.json",
+    "rule": "Machine state, not a hand-edited record (see docs/contracts/consumer-layout.json's `clossys/.state/` entry). Written by @clossys/launcher on appoint, from a supplied --inventory document or a merge of one with the on-disk inventory; read back on every resume. A document at this path that fails this contract is reported as invalid, with the offending field named, never silently treated as though it were merely empty and never adopted as though it validated."
+  },
+  "provenance": {
+    "note": "Landed alongside issue #1334: launcher's --inventory accepted any JSON document that merely carried a repositories-shaped array (for example a governance record whose entries also carried role, visibility, status, and notes) and wrote it as the hub inventory with no schema check. This contract is the one shape launcher now validates every inventory document against, on write (--inventory) and on read (the stored clossys/.state/inventory.json, every time launcher reads it back -- not only on appoint)."
+  },
+  "future": {
+    "status": "Not built yet. The RFC referenced by issue #1178's apply-plan work wants a per-entry `status` field and a GitHub repository id (distinct from the human-chosen `id` string above) on a future inventory entry. Those arrive as a v2 of this contract (a new `schemaVersion` value, additive fields, or both -- not decided here) when that work lands; this v1 contract does not reserve or accept either field today, and a document that includes them now is refused under the entryFields rule above like any other unrecognized key."
+  }
+}
