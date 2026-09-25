@@ -1,4 +1,4 @@
-import { existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync, symlinkSync, writeFileSync } from "node:fs";
+import { existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, realpathSync, rmSync, statSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -7,8 +7,10 @@ import { main, parseLauncherArgs } from "./cli.js";
 import {
   applyWorkspacePlan,
   inspectInventory,
+  isHubDocument,
   LEGACY_WORKSPACE_INVENTORY_REL,
   LEGACY_WORKSPACE_MARKER_REL,
+  observeWorkspace,
   planWorkspace,
   readInventoryRepositories,
   reportHubHealth,
@@ -18,7 +20,8 @@ import {
 import { reportInventoryDrift } from "./inventory-adoption.js";
 import { validateAgainstContract } from "./generated/contract-schema.generated.js";
 import { describeChosenInventory, resolveChosenInventory } from "./inventory-choice.js";
-import { inventoryKey, validateInventoryDocument } from "./inventory-contract.js";
+import { belongsToOwner, distinctOwners, inventoryKey, sameOwner, sameRepository } from "./identity.js";
+import { validateInventoryDocument } from "./inventory-contract.js";
 import { loadContract } from "./plan-contract.js";
 import type { CommandResult, WorkspaceHost, WorkspaceObservation } from "./types.js";
 
@@ -87,6 +90,34 @@ function host(directory: string, commands: Record<string, CommandResult> = {}): 
     readDir: (path) => (existsSync(path) ? readdirSync(path) : []),
     run: (command, args) => commands[`${command} ${args.join(" ")}`] ?? { status: 1, stdout: "", stderr: "unmocked" },
     prompt: () => null,
+  };
+}
+
+/** A folder as the file system resolves it: on a case-insensitive file system, every spelling of one folder resolves alike. */
+function folderOf(path: string): string | undefined {
+  try {
+    return realpathSync.native(path);
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * The same host, answering `git remote get-url origin` for each listed
+ * checkout with that repository's github.com origin -- in whichever
+ * spelling of the folder git is run, as real git does.
+ */
+function withOrigins(base: WorkspaceHost, origins: Record<string, string>): WorkspaceHost {
+  const byFolder = new Map(Object.entries(origins).map(([path, origin]) => [folderOf(path), origin] as const));
+  return {
+    ...base,
+    run: (command, args, options) => {
+      const origin = options?.cwd === undefined ? undefined : byFolder.get(folderOf(options.cwd));
+      if (command === "git" && args.join(" ") === "remote get-url origin" && origin !== undefined) {
+        return { status: 0, stdout: `git@github.com:${origin}.git\n`, stderr: "" };
+      }
+      return base.run(command, args, options);
+    },
   };
 }
 
@@ -487,13 +518,25 @@ describe("one repository identity (#1179)", () => {
   });
 
   it("reports that stored inventory as invalid on resume, and composes nothing from it", () => {
-    const directory = resumableHub([{ id: "example-app" }, { id: `${OWNER}/Example-App` }]);
+    const parent = tempDir();
+    const directory = join(parent, "example-hub");
+    const sibling = join(parent, "example-app");
+    mkdirSync(join(sibling, ".git"), { recursive: true });
+    writeHubMarker(directory);
+    writeInventory(directory, [{ id: "example-app" }, { id: `${OWNER}/Example-App` }]);
     expect(reportHubHealth(host(directory), directory).inventory).toMatchObject({
       status: "invalid",
       reason: expect.stringMatching(/^repositories\[1\]\.id names the same repository as repositories\[0\]\.id/),
     });
     // The contract alone, with no owner to read a bare id against, cannot know they are the same repository.
     expect(validateInventoryDocument(stored(directory))).toEqual({ valid: true, ids: ["example-app", `${OWNER}/Example-App`] });
+    const log = vi.spyOn(console, "log").mockImplementation(() => {});
+    expect(main([], withOrigins(host(directory), { [sibling]: `${OWNER}/example-app` }), skeletonRoot)).toBe(0);
+    const message = String(log.mock.calls[0]?.[0]);
+    expect(message).toMatch(/skill roster written: example-owner\/example-hub\n|skill roster written: example-owner\/example-hub$/m);
+    expect(message).toMatch(/skill roster skipped \(clossys\/\.state\/inventory\.json\): the stored inventory repositories\[1\]\.id names the same repository/);
+    // Nothing was composed into the sibling the invalid inventory names.
+    expect(readdirSync(sibling)).toEqual([".git"]);
   });
 
   it("refuses --repositories app,<owner>/app as one repository chosen twice, by position", () => {
@@ -549,5 +592,164 @@ describe("resume writes the chosen inventory before composing (#1179)", () => {
     expect(message).toMatch(/inventory: wrote the 1 repository you chose/);
     expect(message).not.toMatch(/skill roster skipped/);
     expect(readFileSync(join(sibling, ".agents/skills/clossys-advisor/SKILL.md"), "utf8")).toContain("name: clossys-advisor");
+  });
+});
+
+describe("one repository identity for the roster, the merge and drift (#1179)", () => {
+  function hubBeside(parent: string, repositories: readonly unknown[]): string {
+    const hub = join(parent, "example-hub");
+    mkdirSync(join(hub, ".git"), { recursive: true });
+    writeHubMarker(hub);
+    writeInventory(hub, repositories);
+    return hub;
+  }
+
+  it("never composes the hub a second time as its own sibling when the inventory spells it in another case", () => {
+    const parent = tempDir();
+    const hub = hubBeside(parent, [{ id: `${OWNER}/Example-Hub` }]);
+    const log = vi.spyOn(console, "log").mockImplementation(() => {});
+    expect(main([], withOrigins(host(hub), { [hub]: `${OWNER}/example-hub` }), skeletonRoot)).toBe(0);
+    const message = String(log.mock.calls[0]?.[0]);
+    // On a case-insensitive file system `Example-Hub` beside the hub IS the hub's folder; on any file system it is the hub's repository.
+    expect(message).toMatch(/^skill roster written: example-owner\/example-hub$/m);
+    expect(message).not.toMatch(/Example-Hub|EXAMPLE-HUB/);
+  });
+
+  it("recognises the hub by the repository its marker records when the checkout has no github.com origin", () => {
+    const parent = tempDir();
+    const hub = join(parent, "example-hub");
+    writeHubMarker(hub);
+    writeInventory(hub, [{ id: `${OWNER}/EXAMPLE-HUB` }]);
+    const log = vi.spyOn(console, "log").mockImplementation(() => {});
+    expect(main([], host(hub), skeletonRoot)).toBe(0);
+    const message = String(log.mock.calls[0]?.[0]);
+    expect(message).toMatch(/^skill roster written: example-owner\/example-hub$/m);
+    expect(message).not.toMatch(/skill roster skipped/);
+  });
+
+  it("matches a sibling's owner and origin without regard to letter case", () => {
+    const parent = tempDir();
+    const sibling = join(parent, "example-app");
+    mkdirSync(join(sibling, ".git"), { recursive: true });
+    const hub = hubBeside(parent, [{ id: "EXAMPLE-OWNER/example-app" }]);
+    const log = vi.spyOn(console, "log").mockImplementation(() => {});
+    expect(
+      main([], withOrigins(host(hub), { [hub]: `${OWNER}/example-hub`, [sibling]: "Example-Owner/Example-App" }), skeletonRoot),
+    ).toBe(0);
+    const message = String(log.mock.calls[0]?.[0]);
+    expect(message).toMatch(/^skill roster written: example-owner\/example-hub, EXAMPLE-OWNER\/example-app$/m);
+    expect(message).not.toMatch(/other account|origin does not match/);
+    expect(readFileSync(join(sibling, ".agents/skills/clossys-advisor/SKILL.md"), "utf8")).toContain("name: clossys-advisor");
+  });
+
+  it("merges an appoint --inventory by repository identity, keeping every kept entry whole, packages included", () => {
+    const directory = appointCheckout();
+    const app = { id: "example-app", packages: [{ name: "@example-scope/one", version: "2.0.0", wiring: "devDependencies" }] };
+    const site = { id: `${OWNER}/example-site`, packages: [{ name: "@example-scope/two" }] };
+    writeInventory(directory, [app, site]);
+    const extra = { id: `${OWNER}/example-extra`, packages: [{ name: "@example-scope/three" }] };
+    writeFileSync(join(directory, "prepared.json"), inventoryText([{ id: `${OWNER}/Example-App`, packages: [] }, { id: "EXAMPLE-SITE" }, extra]));
+    const decision = planWorkspace(
+      {
+        ownerCandidates: [OWNER],
+        advisorVersion: "0.5.0",
+        ghAvailable: true,
+        gitAvailable: true,
+        cwd: {
+          absolutePath: directory,
+          empty: false,
+          git: true,
+          githubOwner: OWNER,
+          githubRepository: "example-hub",
+          looksLikeFoundry: false,
+          inventory: { status: "populated", count: 2 },
+        },
+      },
+      host(directory),
+      { inventoryPath: "prepared.json" },
+    );
+    expect(decision).toMatchObject({ action: "adopt", mergedInventoryIds: ["example-app", `${OWNER}/example-site`, `${OWNER}/example-extra`] });
+    vi.spyOn(console, "log").mockImplementation(() => {});
+    expect(main(["--inventory", "prepared.json"], host(directory, APPOINT_COMMANDS), skeletonRoot)).toBe(0);
+    expect(JSON.parse(stored(directory))).toEqual({ schemaVersion: 1, repositories: [app, site, extra] });
+  });
+
+  it("drift is indeterminate, not empty, when the hub's own inventory cannot be read", () => {
+    const directory = resumableHub([{ id: "example-app", role: "product" }]);
+    const external = join(directory, "external.json");
+    writeFileSync(external, inventoryText([{ id: `${OWNER}/example-app` }]));
+    const report = reportInventoryDrift(host(directory), directory, { path: external, shape: "foundry" }, WORKSPACE_INVENTORY_REL, OWNER);
+    expect(report).toMatchObject({ status: "indeterminate", externalOnly: [], launcherOnly: [], agreeing: [] });
+    expect(report.note).toMatch(/^the hub's own inventory repositories\[0\]\.role is not a field the contract declares/);
+    writeFileSync(join(directory, WORKSPACE_INVENTORY_REL), invalidUtf8Inventory());
+    expect(reportInventoryDrift(host(directory), directory, { path: external, shape: "foundry" }, WORKSPACE_INVENTORY_REL, OWNER).status).toBe("indeterminate");
+  });
+
+  it("drift compares against nothing when the hub has no inventory file at all", () => {
+    const directory = resumableHub([]);
+    rmSync(join(directory, WORKSPACE_INVENTORY_REL));
+    const external = join(directory, "external.json");
+    writeFileSync(external, inventoryText([{ id: `${OWNER}/example-app` }]));
+    expect(reportInventoryDrift(host(directory), directory, { path: external, shape: "foundry" }, WORKSPACE_INVENTORY_REL, OWNER)).toEqual({
+      status: "reconciled",
+      externalOnly: [`${OWNER}/example-app`],
+      launcherOnly: [],
+      agreeing: [],
+    });
+  });
+});
+
+describe("one account identity (#1179)", () => {
+  it("accepts CLOSSYS_OWNER that differs from the origin owner only in letter case", () => {
+    const directory = appointCheckout();
+    writeInventory(directory, [{ id: `${OWNER}/example-app` }]);
+    const decision = planWorkspace(
+      {
+        ownerCandidates: [OWNER],
+        envOwner: "Example-Owner",
+        advisorVersion: "0.5.0",
+        ghAvailable: true,
+        gitAvailable: true,
+        cwd: {
+          absolutePath: directory,
+          empty: false,
+          git: true,
+          githubOwner: OWNER,
+          githubRepository: "example-hub",
+          looksLikeFoundry: false,
+          inventory: { status: "populated", count: 1 },
+        },
+      },
+      host(directory),
+    );
+    expect(decision).toMatchObject({ action: "adopt", owner: OWNER });
+  });
+
+  it("counts two spellings of one account as one owner candidate", () => {
+    const directory = tempDir();
+    const observed = observeWorkspace(
+      host(directory, {
+        "gh --version": { status: 0, stdout: "gh\n", stderr: "" },
+        "git --version": { status: 0, stdout: "git\n", stderr: "" },
+        "gh api user --jq .login": { status: 0, stdout: "Example-Owner\n", stderr: "" },
+        "gh org list": { status: 0, stdout: `${OWNER}\nexample-org\n`, stderr: "" },
+      }),
+    );
+    expect(observed.ownerCandidates).toEqual(["Example-Owner", "example-org"]);
+  });
+
+  it("reads a hub marker whose repository names its owner in another letter case", () => {
+    expect(isHubDocument({ schemaVersion: 1, kind: "account-hub", owner: OWNER, repository: "Example-Owner/example-hub" })).toBe(true);
+    expect(isHubDocument({ schemaVersion: 1, kind: "account-hub", owner: OWNER, repository: "other-owner/example-hub" })).toBe(false);
+  });
+
+  it("the identity functions agree with each other", () => {
+    expect(sameRepository("Example-App", `${OWNER}/example-app`, OWNER)).toBe(true);
+    expect(sameRepository("example-app", `other-owner/example-app`, OWNER)).toBe(false);
+    expect(sameOwner("Example-Owner", OWNER)).toBe(true);
+    expect(belongsToOwner("example-app", OWNER)).toBe(true);
+    expect(belongsToOwner("EXAMPLE-OWNER/example-app", OWNER)).toBe(true);
+    expect(belongsToOwner("other-owner/example-app", OWNER)).toBe(false);
+    expect(distinctOwners(["Example-Owner", "example-org", OWNER])).toEqual(["Example-Owner", "example-org"]);
   });
 });

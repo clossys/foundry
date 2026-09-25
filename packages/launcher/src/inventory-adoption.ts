@@ -5,7 +5,8 @@
 // not this module) and reports drift instead of silently merging.
 
 import { readContractDocument } from "./generated/contract-schema.generated.js";
-import { inventoryKey } from "./inventory-contract.js";
+import { sameRepository } from "./identity.js";
+import { validateInventoryDocument } from "./inventory-contract.js";
 import type { WorkspaceHost } from "./types.js";
 
 export interface ExternalInventoryDeclaration {
@@ -55,8 +56,10 @@ function readForeignIds(host: WorkspaceHost, path: string): readonly string[] | 
  * inventory at `directory/launcherInventoryRelPath`. Read-only -- callers
  * decide whether and how to write the reconciled set, as an explicit,
  * approved apply step (same #1045 pattern as clone-on-approval). Ids are
- * compared with `inventoryKey()`: case-insensitively, and, when `hubOwner`
- * is given, with a bare id read as that owner's repository.
+ * compared with `sameRepository()` (identity.ts): case-insensitively, and,
+ * when `hubOwner` is given, with a bare id read as that owner's repository.
+ * The hub's own inventory is read by `validateInventoryDocument()`; when it
+ * is present but invalid the report is indeterminate.
  */
 export function reportInventoryDrift(
   host: WorkspaceHost,
@@ -87,13 +90,29 @@ export function reportInventoryDrift(
       note: `externalInventory at ${declaration.path} could not be read as a populated schemaVersion:1 inventory document.`,
     };
   }
-  const launcherIds = readForeignIds(host, `${directory}/${launcherInventoryRelPath}`) ?? [];
-  // One repository identity, as everywhere in Launcher: a bare id is the hub owner's, and case is ignored.
-  const key = (id: string) => inventoryKey(id, hubOwner);
-  const externalSet = new Set(externalIds.map(key));
-  const launcherSet = new Set(launcherIds.map(key));
-  const externalOnly = externalIds.filter((id) => !launcherSet.has(key(id)));
-  const launcherOnly = launcherIds.filter((id) => !externalSet.has(key(id)));
-  const agreeing = externalIds.filter((id) => launcherSet.has(key(id)));
+  // Launcher's own inventory is read by its own strict reader. A missing one
+  // lists nothing; one that is present but cannot be read makes the
+  // comparison indeterminate, never a comparison against an empty list.
+  const launcherPath = `${directory}/${launcherInventoryRelPath}`;
+  const launcherBytes = host.readBytes(launcherPath);
+  let launcherIds: readonly string[] = [];
+  if (launcherBytes !== null) {
+    const launcher = validateInventoryDocument(launcherBytes, hubOwner === undefined ? {} : { hubOwner });
+    if (!launcher.valid) {
+      return {
+        status: "indeterminate",
+        externalOnly: [],
+        launcherOnly: [],
+        agreeing: [],
+        note: `the hub's own inventory ${launcher.reason}, so it cannot be compared with externalInventory at ${declaration.path}.`,
+      };
+    }
+    launcherIds = launcher.ids;
+  }
+  // One repository identity, as everywhere in Launcher (identity.ts): a bare id is the hub owner's, and case is ignored.
+  const agrees = (id: string, others: readonly string[]) => others.some((other) => sameRepository(id, other, hubOwner));
+  const externalOnly = externalIds.filter((id) => !agrees(id, launcherIds));
+  const launcherOnly = launcherIds.filter((id) => !agrees(id, externalIds));
+  const agreeing = externalIds.filter((id) => agrees(id, launcherIds));
   return { status: "reconciled", externalOnly, launcherOnly, agreeing };
 }

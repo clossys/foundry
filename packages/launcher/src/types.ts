@@ -258,6 +258,12 @@ export interface WorkspacePlanAdopt {
   readonly inventorySource?: string;
   /** Merged repository ids (on-disk first, then new ids from --inventory) written when both sources are populated. */
   readonly mergedInventoryIds?: readonly string[];
+  /**
+   * The merged inventory document to write, when both sources are populated: every kept entry whole, its `packages`
+   * included, each repository once by Launcher's one identity rule (#1179). Preferred over `mergedInventoryIds`,
+   * which a hand-built plan may still carry alone, and then each id is written without packages.
+   */
+  readonly mergedInventoryDocument?: string;
   /** Set when `inventorySource` is about to replace an on-disk inventory that failed schema validation, so the apply message can say it was replaced rather than merely written (#1334). */
   readonly replacesInvalidInventory?: boolean;
   /** Set by `--repositories`: the inventory apply writes, or confirms is unchanged (#1179). */

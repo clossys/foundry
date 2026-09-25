@@ -14,6 +14,7 @@
 
 import { readContractDocument, validateAgainstContract } from "./generated/contract-schema.generated.js";
 import type { ContractViolation } from "./generated/contract-schema.generated.js";
+import { inventoryKey } from "./identity.js";
 import { loadContract } from "./plan-contract.js";
 
 /** The contract's file name, as packed. */
@@ -39,18 +40,6 @@ export interface InventoryEntry {
 
 function describeViolation(violation: ContractViolation): string {
   return violation.path === "" ? violation.message : `${violation.path} ${violation.message}`;
-}
-
-/**
- * The one identity of a repository id, and the only way Launcher compares
- * two ids: a bare id is qualified with the hub's owner when that owner is
- * known (a bare id means "this repository under the hub's own account", as
- * Launcher's sibling resolution reads it), and the result is lowercased,
- * because GitHub owner and repository names are case-insensitive. Without
- * an owner, a bare id stays bare and only letter case is folded.
- */
-export function inventoryKey(id: string, hubOwner?: string): string {
-  return (hubOwner !== undefined && !id.includes("/") ? `${hubOwner}/${id}` : id).toLowerCase();
 }
 
 /**

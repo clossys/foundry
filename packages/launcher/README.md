@@ -172,7 +172,7 @@ silent fallback.
 | --- | --- |
 | Empty | Creates `{owner}/workspace` from the in-package skeleton (package name `@owner/workspace`), or clones that hub if it already exists. |
 | Already a hub (generated marker; packed template `skeleton/clossys/.state/workspace.json`) | Resumes. No new repository. `--repositories` writes the repositories the founder chose again into `clossys/.state/inventory.json` before skills are composed (see "Choosing the hub's repositories" below). `--inventory` here is refused, and the refusal points at choosing the repositories again on Advisor's repository card and running `launcher --repositories`, instead of at hand-editing the file. A legacy `.clossys/` hub state is migrated automatically; see "Layout" above. |
-| Any other GitHub repository you control | Appoints it as the account hub. Keeps existing product files. Refuses when the working tree has uncommitted changes (`git status --porcelain` non-empty) — the refusal names the offending remote host when the origin is not on github.com. Refuses when `CLOSSYS_OWNER` names a different account than the repository's github.com origin owner. Writes the hub marker. Pins live `@clossys/advisor` in `devDependencies`, relocating and upgrading any pin left in another bucket. A dedicated `{owner}/workspace` checkout is named `@owner/workspace`; a product repository keeps its package name. Always reads the public Advisor version (needed to pin live and to grade resume health). Refuses if the generated hub inventory is missing or empty (packed template `skeleton/clossys/.state/inventory.json`; that generated path does not ship), and the refusal points the founder at choosing the hub's repositories on Advisor's repository card and passing them to `--repositories`, which writes the inventory (see "Choosing the hub's repositories" below). `--inventory <path>` still supplies a populated document instead — and, when the on-disk inventory is already populated and `--inventory` is also supplied, merges the two by repository id (on-disk order first, new ids appended, first occurrence of an id wins). Does not rewrite the lockfile or dump the catalogue. Prints a read-only health report. |
+| Any other GitHub repository you control | Appoints it as the account hub. Keeps existing product files. Refuses when the working tree has uncommitted changes (`git status --porcelain` non-empty) — the refusal names the offending remote host when the origin is not on github.com. Refuses when `CLOSSYS_OWNER` names a different account than the repository's github.com origin owner. Writes the hub marker. Pins live `@clossys/advisor` in `devDependencies`, relocating and upgrading any pin left in another bucket. A dedicated `{owner}/workspace` checkout is named `@owner/workspace`; a product repository keeps its package name. Always reads the public Advisor version (needed to pin live and to grade resume health). Refuses if the generated hub inventory is missing or empty (packed template `skeleton/clossys/.state/inventory.json`; that generated path does not ship), and the refusal points the founder at choosing the hub's repositories on Advisor's repository card and passing them to `--repositories`, which writes the inventory (see "Choosing the hub's repositories" below). `--inventory <path>` still supplies a populated document instead — and, when the on-disk inventory is already populated and `--inventory` is also supplied, merges the two by repository identity (on-disk order first, new repositories appended, the first occurrence of a repository kept, and every kept entry kept whole, its `packages` included). Does not rewrite the lockfile or dump the catalogue. Prints a read-only health report. |
 
 It does not have to be a brand-new exclusive repository, and it does not
 have to already match a Foundry layout. Informal "workspace-looking" trees
@@ -218,11 +218,15 @@ same run composes into the repositories just chosen.
 - A malformed choice -- an empty id, an id that is not a bare name or
   `owner/name`, or two ids naming the same repository -- is refused by
   position (`repositories[1].id ...`), never echoed, and nothing is written.
-- Launcher compares repository ids one way everywhere: a bare id names a
-  repository of the hub's own owner, and letter case is ignored, so `app`,
-  `App` and `<owner>/app` are one repository. A stored inventory, or a
-  choice, that lists one repository twice this way is refused, naming the
-  two positions; it is never merged.
+- Launcher decides "is this the same repository" one way everywhere: a
+  bare id names a repository of the hub's own owner, and letter case is
+  ignored, so `app`, `App` and `<owner>/app` are one repository. Owners are
+  compared the same way. A stored inventory, or a choice, that lists one
+  repository twice this way is refused, naming the two positions; it is
+  never merged. The hub itself is recognised by its origin's `owner/name`
+  (or, without a github.com origin, the repository its marker records),
+  never by its folder path, so an inventory that names the hub in another
+  letter case never composes it a second time as its own sibling.
 - An inventory that already lists exactly the chosen repositories, in any
   order or letter case, or with a bare id for the hub's own owner, is left
   as it is.
@@ -266,7 +270,7 @@ Exit codes preserve the ternary:
 
 | Export | Description |
 | --- | --- |
-| `planWorkspace()` | Decides create, resume, or adopt from a cwd observation. Optional `PlanWorkspaceOptions`: `{ repositories, replaceInventory }` (`--repositories` / `--replace-inventory`; appoint or resume) or `{ inventoryPath }` (`--inventory`; appoint only) are the ways to appoint without a populated on-disk inventory. A plan carrying `repositories` holds the resulting `ChosenInventory`: the exact document to write, or `unchanged`. |
+| `planWorkspace()` | Decides create, resume, or adopt from a cwd observation. Optional `PlanWorkspaceOptions`: `{ repositories, replaceInventory }` (`--repositories` / `--replace-inventory`; appoint or resume) or `{ inventoryPath }` (`--inventory`; appoint only) are the ways to appoint without a populated on-disk inventory. A plan carrying `repositories` holds the resulting `ChosenInventory`: the exact document to write, or `unchanged`. An appoint plan that merges `--inventory` into a populated stored inventory carries `mergedInventoryDocument`: the exact merged document, every kept entry whole. |
 | `applyWorkspacePlan()` | Copies the in-package skeleton or hub marker through a host port and returns a `WorkspaceApplyResult` with health. Composes the same skill voices (with the shared conversation contract injected) on the hub and on inventoried sibling checkouts beside it; refreshes stale hub guidance and the generated `clossys/` README on every path, including resume; migrates a legacy `.clossys/` hub state automatically. Optional `{ skillCatalogueRoot, launcherPackageRoot, contractPath, liveLauncherVersion }` selects where skill and contract bodies are read and grades skill-manifest staleness. |
 | `observeWorkspace()` | Reads `gh`, git remotes, cwd, inventory classification, hub-state migration status, and the public Advisor version. |
 | `readInventoryRepositories()` | Reads repository ids from an inventory file, as bytes, routed through `validateInventoryDocument()` (a missing file reads as no ids; anything present but invalid throws, naming the offending field by position -- never silently accepted or silently emptied). An optional fourth argument, the hub's owner, makes a bare id and `<owner>/<id>` one repository. |
@@ -292,7 +296,7 @@ Exit codes preserve the ternary:
 | `runDoctorChecks()` | Read-only prerequisite checks in fix-in-this-order sequence: git, `gh`, signed in, Node.js, npm, then the advisory coding-agent step. Returns a `DoctorReport`. |
 | `renderDoctorReport()` | Renders a `DoctorReport` one step at a time, the way `launcher-doctor` prints it. |
 | `checkCloudSessionBootstrap()` | Read-only: the three product-repository-layout.json cloud-session-bootstrap checks against a directory. Returns a `CloudBootstrapReport`. |
-| `reportInventoryDrift()` | Compares a declared external inventory against the launcher-written one; reports external-only, launcher-only, and agreeing repository ids. Both files are read as bytes by the strict reader. An optional fifth argument, the hub's owner, compares ids as every other Launcher comparison does (a bare id is that owner's; case is ignored). Returns an `InventoryDriftReport`. |
+| `reportInventoryDrift()` | Compares a declared external inventory against the launcher-written one; reports external-only, launcher-only, and agreeing repository ids. Both files are read as bytes by the strict reader. An optional fifth argument, the hub's owner, compares ids as every other Launcher comparison does (a bare id is that owner's; case is ignored). The hub's own inventory is read with `validateInventoryDocument()`: a missing one lists nothing, and one that is present but invalid makes the report `indeterminate`, never a comparison against an empty list. Returns an `InventoryDriftReport`. |
 | `detectLinkedHosts()` | Read-only: which of `claude-code`, `cursor`, `codex` can currently discover skills in a directory. |
 | `serializeHostRecord()` / `parseHostRecord()` | Round-trip `clossys/.state/hosts.json` (`HOSTS_REL`). |
 | `parsePreferences()` | Reads `clossys/preferences.json`'s budget stance; defaults to `"balanced"` on absence or malformed input. |

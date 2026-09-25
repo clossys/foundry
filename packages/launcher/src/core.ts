@@ -24,7 +24,8 @@ import { composeSkills, SKILLS_MANIFEST_REL, type SkillCompositionResult, type S
 import { parseSkillManifest, summarizeSkillsManifest } from "./manifest.js";
 import { detectLinkedHosts, serializeHostRecord, HOSTS_REL, type DiscoveredHost } from "./hosts.js";
 import { reportInventoryDrift } from "./inventory-adoption.js";
-import { inventoryKey, isValidInventoryId, validateInventoryDocument } from "./inventory-contract.js";
+import { belongsToOwner, distinctOwners, sameOwner, sameRepository } from "./identity.js";
+import { isValidInventoryId, readInventoryDocument, renderInventoryDocument, validateInventoryDocument, type InventoryEntry } from "./inventory-contract.js";
 import { describeChosenInventory, resolveChosenInventory } from "./inventory-choice.js";
 
 export const DEFAULT_REPOSITORY_NAME = "workspace";
@@ -198,7 +199,7 @@ export function isHubDocument(value: unknown): value is HubDocument {
   const parsed = value.repository.includes("/")
     ? { owner: value.repository.split("/")[0], repository: value.repository.split("/")[1] }
     : null;
-  if (!parsed?.owner || !parsed.repository || parsed.owner !== value.owner || !REPO.test(parsed.repository)) return false;
+  if (!parsed?.owner || !parsed.repository || !sameOwner(parsed.owner, value.owner) || !REPO.test(parsed.repository)) return false;
   return true;
 }
 
@@ -323,18 +324,20 @@ export function observeWorkspace(host: WorkspaceHost): WorkspaceObservation {
       githubRepository = parsed.repository;
     }
   }
-  const candidates = new Set<string>();
+  // Owners are compared as GitHub compares them (identity.ts): two spellings of one account are one candidate.
+  const seenOwners: string[] = [];
   const envOwnerRaw = host.env.CLOSSYS_OWNER?.trim();
   const envOwner = envOwnerRaw && OWNER.test(envOwnerRaw) ? envOwnerRaw : undefined;
   if (ghAvailable) {
     const user = host.run("gh", ["api", "user", "--jq", ".login"]);
     const login = user.stdout.trim();
-    if (user.status === 0 && OWNER.test(login)) candidates.add(login);
+    if (user.status === 0 && OWNER.test(login)) seenOwners.push(login);
     for (const org of stdoutLines(host.run("gh", ["org", "list"]))) {
-      if (OWNER.test(org)) candidates.add(org);
+      if (OWNER.test(org)) seenOwners.push(org);
     }
   }
-  if (githubOwner) candidates.add(githubOwner);
+  if (githubOwner) seenOwners.push(githubOwner);
+  const candidates = new Set(distinctOwners(seenOwners));
 
   let remoteDefaultHub: WorkspaceObservation["remoteDefaultHub"];
   let advisorVersion: string | undefined;
@@ -448,7 +451,7 @@ function resolveAdoptInventory(
   host: WorkspaceHost,
   cwd: CwdObservation,
   inventoryPath: string | undefined,
-): { inventorySource?: string; mergedInventoryIds?: readonly string[]; replacesInvalidInventory?: boolean } | WorkspaceRefusal {
+): { inventorySource?: string; mergedInventoryIds?: readonly string[]; mergedInventoryDocument?: string; replacesInvalidInventory?: boolean } | WorkspaceRefusal {
   const trimmed = inventoryPath?.trim();
   const onDiskPopulated = cwd.inventory?.status === "populated";
   if (!onDiskPopulated && !trimmed) {
@@ -470,7 +473,7 @@ function resolveAdoptInventory(
     return refuse("violated", `--inventory does not point at a readable file: ${resolved}`);
   }
   const owner = cwd.githubOwner === undefined ? {} : { hubOwner: cwd.githubOwner };
-  const imported = validateInventoryDocument(importedRaw, owner);
+  const imported = readInventoryDocument(importedRaw, owner);
   if (!imported.valid) {
     return refuse("violated", `--inventory at ${resolved} ${imported.reason}`);
   }
@@ -487,22 +490,18 @@ function resolveAdoptInventory(
     };
   }
   const onDiskRaw = host.readBytes(join(cwd.absolutePath, WORKSPACE_INVENTORY_REL));
-  const onDisk = onDiskRaw === null ? undefined : validateInventoryDocument(onDiskRaw, owner);
+  const onDisk = onDiskRaw === null ? undefined : readInventoryDocument(onDiskRaw, owner);
   if (onDisk !== undefined && !onDisk.valid) {
     return refuse("violated", `the on-disk hub inventory ${onDisk.reason}`);
   }
-  const onDiskIds: readonly string[] = onDisk !== undefined && onDisk.valid ? onDisk.ids : [];
-  // Same repository identity as every other comparison: inventoryKey().
-  const merged: string[] = [];
-  const seen = new Set<string>();
-  for (const id of [...onDiskIds, ...imported.ids]) {
-    const key = inventoryKey(id, cwd.githubOwner);
-    if (!seen.has(key)) {
-      seen.add(key);
-      merged.push(id);
-    }
+  const onDiskEntries: readonly InventoryEntry[] = onDisk !== undefined && onDisk.valid ? onDisk.entries : [];
+  // One repository identity (identity.ts), and every kept entry kept whole --
+  // its `packages` included -- the first occurrence of a repository winning.
+  const merged: InventoryEntry[] = [];
+  for (const entry of [...onDiskEntries, ...imported.entries]) {
+    if (!merged.some((kept) => sameRepository(kept.id, entry.id, cwd.githubOwner))) merged.push(entry);
   }
-  return { mergedInventoryIds: merged };
+  return { mergedInventoryIds: merged.map((entry) => entry.id), mergedInventoryDocument: renderInventoryDocument(merged) };
 }
 
 /**
@@ -555,7 +554,7 @@ export function planWorkspace(
     cwd.hub === undefined &&
     cwd.git &&
     cwd.githubOwner !== undefined &&
-    cwd.githubOwner !== envOwner
+    !sameOwner(cwd.githubOwner, envOwner)
   ) {
     return refuse(
       "violated",
@@ -618,6 +617,7 @@ export function planWorkspace(
       advisorVersion: observation.advisorVersion,
       ...(imported.inventorySource === undefined ? {} : { inventorySource: imported.inventorySource }),
       ...(imported.mergedInventoryIds === undefined ? {} : { mergedInventoryIds: imported.mergedInventoryIds }),
+      ...(imported.mergedInventoryDocument === undefined ? {} : { mergedInventoryDocument: imported.mergedInventoryDocument }),
       ...(imported.replacesInvalidInventory === undefined ? {} : { replacesInvalidInventory: imported.replacesInvalidInventory }),
     };
   }
@@ -638,7 +638,7 @@ export function planWorkspace(
   }
   const ownerResult = resolveOwner(observation, host);
   if ("action" in ownerResult) return ownerResult;
-  if (observation.remoteDefaultHub && observation.remoteDefaultHub.owner === ownerResult.owner) {
+  if (observation.remoteDefaultHub && sameOwner(observation.remoteDefaultHub.owner, ownerResult.owner)) {
     return {
       action: "resume",
       owner: observation.remoteDefaultHub.owner,
@@ -798,13 +798,13 @@ function assertCleanTree(host: WorkspaceHost, directory: string): void {
 }
 
 /**
- * The chosen inventory document, checked again at write time by the same
- * function every later read of it uses, so a document Launcher writes is
- * always one Launcher reads back.
+ * An inventory document Launcher composed (from a choice, or a merge),
+ * checked again at write time by the same function every later read of it
+ * uses, so a document Launcher writes is always one Launcher reads back.
  */
-function revalidatedChosenDocument(document: string, hubOwner: string): string {
+function revalidatedDocument(document: string, hubOwner: string, label = "the chosen inventory"): string {
   const validated = validateInventoryDocument(document, { hubOwner });
-  if (!validated.valid) throw new Error(`the chosen inventory ${validated.reason}`);
+  if (!validated.valid) throw new Error(`${label} ${validated.reason}`);
   return document;
 }
 
@@ -818,10 +818,12 @@ function adoptHubFiles(host: WorkspaceHost, skeletonRoot: string, plan: Workspac
   // guarantees "fail before any file is touched" (#1334).
   let inventoryDocument: string | Uint8Array | undefined;
   if (plan.action === "adopt" && plan.chosenInventory !== undefined) {
-    if (plan.chosenInventory.kind === "write") inventoryDocument = revalidatedChosenDocument(plan.chosenInventory.document, plan.owner);
+    if (plan.chosenInventory.kind === "write") inventoryDocument = revalidatedDocument(plan.chosenInventory.document, plan.owner);
+  } else if (plan.action === "adopt" && plan.mergedInventoryDocument !== undefined) {
+    inventoryDocument = revalidatedDocument(plan.mergedInventoryDocument, plan.owner, "the merged inventory");
   } else if ("mergedInventoryIds" in plan && Array.isArray(plan.mergedInventoryIds)) {
-    const document = { schemaVersion: 1, repositories: plan.mergedInventoryIds.map((id) => ({ id })) };
-    inventoryDocument = `${JSON.stringify(document, null, 2)}\n`;
+    // A plan built by hand with ids only: there are no entries to keep, so each id is written alone.
+    inventoryDocument = revalidatedDocument(renderInventoryDocument(plan.mergedInventoryIds.map((id) => ({ id }))), plan.owner, "the merged inventory");
   } else if ("inventorySource" in plan && typeof plan.inventorySource === "string") {
     const raw = host.readBytes(plan.inventorySource);
     if (raw === null) throw new Error(`inventory source is not readable: ${plan.inventorySource}`);
@@ -1117,6 +1119,22 @@ function parseInventoryRepositoryId(id: string, hubOwner: string): { owner: stri
   return { owner: id.slice(0, slash), repository: id.slice(slash + 1) };
 }
 
+/** A checkout's origin as `owner/name`, when it is a github.com repository. */
+function originRepository(host: WorkspaceHost, directory: string): string | undefined {
+  const result = host.run("git", ["remote", "get-url", "origin"], { cwd: directory });
+  const remote = result.status === 0 ? parseGitHubRemote(result.stdout.trim()) : null;
+  return remote === null ? undefined : `${remote.owner}/${remote.repository}`;
+}
+
+/**
+ * The hub's own repository identity: its origin's `owner/name`, or, when
+ * the checkout has no github.com origin, the repository its hub marker
+ * records. Never its folder path (see identity.ts).
+ */
+function hubRepositoryIdentity(host: WorkspaceHost, hubDirectory: string): string | undefined {
+  return originRepository(host, hubDirectory) ?? readHub(host, hubDirectory)?.repository;
+}
+
 function resolveSisterCloneTargets(
   host: WorkspaceHost,
   hubDirectory: string,
@@ -1126,7 +1144,7 @@ function resolveSisterCloneTargets(
   readonly skipped: readonly { readonly inventoryId: string; readonly note: string }[];
 } {
   const parent = dirname(resolve(hubDirectory));
-  const hubResolved = resolve(hubDirectory);
+  const hubIdentity = hubRepositoryIdentity(host, hubDirectory);
   const skipped: { inventoryId: string; note: string }[] = [];
   const targets: { inventoryId: string; directory: string }[] = [];
   const inventoryPath = join(hubDirectory, WORKSPACE_INVENTORY_REL);
@@ -1146,13 +1164,13 @@ function resolveSisterCloneTargets(
       skipped.push({ inventoryId: id, note: "inventory id is not a valid repository slug" });
       continue;
     }
-    if (!inventoryKey(id, hubOwner).startsWith(`${hubOwner.toLowerCase()}/`)) {
+    if (!belongsToOwner(id, hubOwner)) {
       skipped.push({ inventoryId: id, note: "other account; not this roster" });
       continue;
     }
+    // The hub itself is already on the roster: recognised by repository identity, not by folder path.
+    if (hubIdentity !== undefined && sameRepository(id, hubIdentity, hubOwner)) continue;
     const candidate = join(parent, parsed.repository);
-    const candidateResolved = resolve(candidate);
-    if (candidateResolved === hubResolved) continue;
     if (!host.exists(candidate) || !host.isDirectory(candidate)) {
       skipped.push({ inventoryId: id, note: CLONE_NOT_BESIDE_HUB_NOTE });
       continue;
@@ -1161,10 +1179,8 @@ function resolveSisterCloneTargets(
       skipped.push({ inventoryId: id, note: "foundry supplier tree; skills are not written here" });
       continue;
     }
-    const originResult = host.run("git", ["remote", "get-url", "origin"], { cwd: candidate });
-    const originUrl = originResult.status === 0 ? originResult.stdout.trim() : "";
-    const remote = originUrl === "" ? null : parseGitHubRemote(originUrl);
-    if (remote === null || inventoryKey(`${remote.owner}/${remote.repository}`) !== inventoryKey(id, hubOwner)) {
+    const origin = originRepository(host, candidate);
+    if (origin === undefined || !sameRepository(origin, id, hubOwner)) {
       skipped.push({ inventoryId: id, note: "git origin does not match inventory id" });
       continue;
     }
@@ -1399,7 +1415,7 @@ export function applyWorkspacePlan(
     // --repositories (#1179): write the chosen inventory before composing, so
     // this same run composes skills into the repositories just chosen.
     if (plan.chosenInventory?.kind === "write") {
-      writeSkeletonFile(host, plan.directory, WORKSPACE_INVENTORY_REL, revalidatedChosenDocument(plan.chosenInventory.document, plan.owner));
+      writeSkeletonFile(host, plan.directory, WORKSPACE_INVENTORY_REL, revalidatedDocument(plan.chosenInventory.document, plan.owner));
     }
     return finishHubApply(
       host,

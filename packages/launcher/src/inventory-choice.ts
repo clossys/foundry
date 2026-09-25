@@ -14,7 +14,8 @@
 // the difference in counts and ids, unless the caller passes an explicit
 // replace approval (`--replace-inventory`).
 
-import { inventoryKey, readInventoryDocument, renderInventoryDocument, validateInventoryDocument, validateInventoryValue, type InventoryEntry } from "./inventory-contract.js";
+import { inventoryKey } from "./identity.js";
+import { readInventoryDocument, renderInventoryDocument, validateInventoryDocument, validateInventoryValue, type InventoryEntry } from "./inventory-contract.js";
 import type { ChosenInventory } from "./types.js";
 
 export type ChosenInventoryResolution =
