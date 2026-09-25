@@ -17,7 +17,9 @@
  * context fields (`business`, `product`, `stage`, `intent`, `constraints`)
  * are readable through the same `EngagementContextSnapshot` for a future
  * intake surface but are not wired into any `clossys/strategist/*.json`
- * seed yet — wiring one is a separate change, not assumed here.
+ * seed yet — wiring one is a separate change, not assumed here. The
+ * contract and the decisions record cited above are in the public
+ * repository -- not shipped in this package.
  */
 
 import type { Audience } from "./schema.js";
@@ -88,7 +90,8 @@ const AUDIENCE_TYPE_NAME: Record<"consumers" | "businesses", string> = {
 /**
  * A neutral, package-owned seed sentence built from the coarse choice id —
  * deliberately not a copy of Advisor's own card label text
- * (`packages/advisor/src/context-questions.ts`'s `CHOICES`), which would
+ * (`packages/advisor/src/context-questions.ts`'s `CHOICES` -- in the public repository, not shipped in this package),
+ * which would
  * need a cross-package test to keep the two packages' strings in sync and
  * would blur which package owns the words a founder never actually said.
  * `pains` is still required and not seeded here — see

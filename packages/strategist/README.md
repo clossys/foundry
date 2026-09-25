@@ -307,7 +307,8 @@ contract files, and of their one checker implementation
 (`packages/advisor/src/contract-schema.ts`), into `src/generated/` (gitignored)
 at build time — this package still has no `dependencies` entry in
 `package.json`, so it stays dependency-free of `@clossys/advisor` at
-runtime even though it validates against the exact contract Advisor owns:
+runtime even though it validates against the exact contract Advisor owns.
+Every path named in this paragraph is in the public repository, not shipped in this package:
 
 ```ts
 import { readEngagementContext, audienceContextValue } from "@clossys/strategist";
@@ -339,6 +340,7 @@ repeated object key at any depth).
 The brief's `audience` field is Advisor's own coarse fixed choice —
 everyday consumers, or other businesses — never founder prose. Strategist
 does not ask "consumers or businesses" again under its own id: `docs/DECISIONS.md`
+(in the public repository, not shipped in this package)
 decision 28 reserves a genuine rename of a context question for review,
 and a Strategist-owned card with Advisor's own two choices would be
 exactly that. When `audience` is unknown, `pendingAudienceIntakeQuestions`
@@ -958,7 +960,8 @@ anyone extending this package with their own entity.
 ### Engagement context (`engagement-context.ts`, `audience-intake.ts`)
 
 See "Reading the engagement context before asking" above.
-`scripts/pack-brief-contract.mjs` packs a generated copy of the shared
+`scripts/pack-brief-contract.mjs` (in the public repository, not shipped in this package)
+packs a generated copy of the shared
 brief contract and its checker into `src/generated/` at build time, and
 these read `clossys/brief.json` against that packed copy, so this package
 stays dependency-free of `@clossys/advisor` at runtime.

@@ -9,7 +9,8 @@
  * `@clossys/advisor` and `@clossys/launcher` do, with no runtime dependency
  * on either. Strategist only reads a brief; it never writes one, and packs
  * only the two contracts it actually validates against -- not
- * `docs/contracts/advisor-plan.json`, which it never reads.
+ * `docs/contracts/advisor-plan.json`, which it never reads. All four paths
+ * cited above are in the public repository, not shipped in this package.
  */
 
 import { formatContractViolation, validateAgainstContract } from "./generated/contract-schema.generated.js";
@@ -35,7 +36,7 @@ function loadContract(name: string): ContractSchema {
  * echoes a value from the brief -- see `contract-schema.ts`'s own header;
  * this package's own callers (`engagement-context.ts`) do not relay
  * `reason` at all, only a fixed note, so even that path text never reaches
- * a caller.
+ * a caller. The contract cited above is in the public repository -- not shipped in this package.
  */
 export function validateEngagementBrief(value: unknown): ValidationResult {
   const violations = validateAgainstContract(loadContract("engagement-brief.json"), value, loadContract);

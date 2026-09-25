@@ -21,7 +21,8 @@
  * contract itself refuses -- for example, a duplicate context field id,
  * which the contract's own `contains`/`maxItems` rule refuses outright, so
  * this reader has no separate duplicate-id rule of its own to drift from
- * it.
+ * it. The two contract files, the packer script, and the checker cited
+ * above are all in the public repository, not shipped in this package.
  */
 
 import { readFileSync } from "node:fs";
@@ -71,7 +72,7 @@ export function fieldById(context: Pick<EngagementContextSnapshot, "fields">, id
   return context.fields.find((field) => field.id === id);
 }
 
-/** The known `audience` field value, or undefined when it is unknown. The one field id `packages/strategist/src/audience-intake.ts` currently maps into a Strategist record. */
+/** The known `audience` field value, or undefined when it is unknown. `audience` is the one field id that currently maps into a Strategist record (see `audience-intake.ts`). */
 export function audienceContextValue(context: Pick<EngagementContextSnapshot, "fields">): "consumers" | "businesses" | undefined {
   const field = fieldById(context, "audience");
   if (field?.state === "known" && (field.value === "consumers" || field.value === "businesses")) return field.value;
