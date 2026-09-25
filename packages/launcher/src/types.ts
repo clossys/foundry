@@ -21,8 +21,18 @@ export interface WorkspaceHost {
   isDirectory(path: string): boolean;
   /** True when path exists and is a symlink (lstat; does not follow). Missing path is false. */
   isSymlink(path: string): boolean;
+  /** Decodes a file as UTF-8 text. Missing or unreadable is null. Not for contract documents: invalid bytes are silently replaced. */
   readText(path: string): string | null;
+  /**
+   * A file's exact bytes, never decoded. Missing or unreadable is null. Every
+   * inventory document is read this way and handed to the shared strict
+   * reader, so bytes that are not valid UTF-8 are refused rather than
+   * silently replaced with U+FFFD before anything checks them (#1179).
+   */
+  readBytes(path: string): Uint8Array | null;
   writeText(path: string, contents: string): void;
+  /** Writes these exact bytes, so a copied document stays byte-identical. */
+  writeBytes(path: string, contents: Uint8Array): void;
   mkdirp(path: string): void;
   /** Creates a relative symlink at linkPath pointing at relativeTarget (directory link). */
   symlink(relativeTarget: string, linkPath: string): void;

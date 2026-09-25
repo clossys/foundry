@@ -26,6 +26,7 @@ export {
   WORKSPACE_MARKER_REL,
 } from "./core.js";
 export type { CloneMissingOutcome, InventoryValidation, PlanWorkspaceOptions } from "./core.js";
+export type { InventoryReadOptions } from "./inventory-contract.js";
 export { runDoctorChecks, renderDoctorReport } from "./doctor.js";
 export { applyEngagementBrief, isPlanApproved, validateAdvisorPlan, validateEngagementBrief } from "./apply-plan.js";
 export type {

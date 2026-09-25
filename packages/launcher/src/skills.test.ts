@@ -38,6 +38,17 @@ function host(directory: string): WorkspaceHost {
         return null;
       }
     },
+    readBytes: (path) => {
+      try {
+        return readFileSync(path);
+      } catch {
+        return null;
+      }
+    },
+    writeBytes: (path, contents) => {
+      mkdirSync(dirname(path), { recursive: true });
+      writeFileSync(path, contents);
+    },
     writeText: (path, contents) => {
       mkdirSync(dirname(path), { recursive: true });
       writeFileSync(path, contents);

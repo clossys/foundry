@@ -24,7 +24,7 @@ import { composeSkills, SKILLS_MANIFEST_REL, type SkillCompositionResult, type S
 import { parseSkillManifest, summarizeSkillsManifest } from "./manifest.js";
 import { detectLinkedHosts, serializeHostRecord, HOSTS_REL, type DiscoveredHost } from "./hosts.js";
 import { reportInventoryDrift } from "./inventory-adoption.js";
-import { isValidInventoryId, validateInventoryDocument } from "./inventory-contract.js";
+import { inventoryKey, isValidInventoryId, validateInventoryDocument } from "./inventory-contract.js";
 import { describeChosenInventory, resolveChosenInventory } from "./inventory-choice.js";
 
 export const DEFAULT_REPOSITORY_NAME = "workspace";
@@ -245,10 +245,13 @@ function readHub(host: WorkspaceHost, directory: string): HubDocument | undefine
 export { validateInventoryDocument } from "./inventory-contract.js";
 export type { InventoryValidation } from "./inventory-contract.js";
 
-/** Classifies a generated hub inventory (packed template skeleton/clossys/.state/inventory.json; the generated path does not ship) without inventing repositories. Malformed input is "invalid", never silently folded into "empty" (#1334). */
-export function inspectInventory(raw: string | null): InventoryObservation {
+/**
+ * Classifies a generated hub inventory (packed template skeleton/clossys/.state/inventory.json; the generated path does not ship) without inventing repositories. Malformed input is "invalid", never silently folded into "empty" (#1334).
+ * Pass the file's exact bytes (`WorkspaceHost.readBytes()`), and the hub's owner when it is known, so a bare id and `<owner>/<id>` count as one repository (#1179).
+ */
+export function inspectInventory(raw: string | Uint8Array | null, hubOwner?: string): InventoryObservation {
   if (raw === null) return { status: "missing", count: 0 };
-  const validated = validateInventoryDocument(raw);
+  const validated = validateInventoryDocument(raw, hubOwner === undefined ? {} : { hubOwner });
   if (!validated.valid) return { status: "invalid", count: 0, reason: validated.reason };
   return { status: validated.ids.length > 0 ? "populated" : "empty", count: validated.ids.length };
 }
@@ -346,10 +349,11 @@ export function observeWorkspace(host: WorkspaceHost): WorkspaceObservation {
   const hubLocation = locateHub(host, cwd);
   // While only the legacy `.clossys/` marker exists, its sibling inventory is
   // the one resume will migrate; read from there so planning sees it too.
-  const inventoryRaw =
+  const inventoryBytes =
     hubLocation.migration === "legacy"
-      ? host.readText(join(cwd, LEGACY_WORKSPACE_INVENTORY_REL))
-      : host.readText(join(cwd, WORKSPACE_INVENTORY_REL));
+      ? host.readBytes(join(cwd, LEGACY_WORKSPACE_INVENTORY_REL))
+      : host.readBytes(join(cwd, WORKSPACE_INVENTORY_REL));
+  const inventoryOwner = hubLocation.document?.owner ?? githubOwner;
 
   const cwdObservation: CwdObservation = {
     absolutePath: cwd,
@@ -360,7 +364,7 @@ export function observeWorkspace(host: WorkspaceHost): WorkspaceObservation {
     ...(hubLocation.document === undefined ? {} : { hub: hubLocation.document }),
     ...(hubLocation.migration === "none" ? {} : { hubMigration: hubLocation.migration }),
     looksLikeFoundry: looksLikeFoundry(host, cwd),
-    inventory: inspectInventory(inventoryRaw),
+    inventory: inspectInventory(inventoryBytes, inventoryOwner),
   };
 
   return {
@@ -404,12 +408,14 @@ function resolveOwner(observation: WorkspaceObservation, host: WorkspaceHost): {
  * document neither of those would have accepted (#1334). Throws, naming the
  * offending field, on anything present but invalid; a missing file is `[]`,
  * not a throw -- an absent inventory is a fact about the hub, not a
- * malformed one.
+ * malformed one. The file is read as bytes; `hubOwner`, when given, makes a
+ * bare id and `<hubOwner>/<id>` one repository, so a document listing both
+ * is refused.
  */
-export function readInventoryRepositories(host: WorkspaceHost, source: string, label: string): readonly string[] {
-  const raw = host.readText(source);
+export function readInventoryRepositories(host: WorkspaceHost, source: string, label: string, hubOwner?: string): readonly string[] {
+  const raw = host.readBytes(source);
   if (raw === null) return [];
-  const validated = validateInventoryDocument(raw);
+  const validated = validateInventoryDocument(raw, hubOwner === undefined ? {} : { hubOwner });
   if (!validated.valid) throw new Error(`${label} ${validated.reason}`);
   return validated.ids;
 }
@@ -458,11 +464,12 @@ function resolveAdoptInventory(
   }
   if (!trimmed) return {};
   const resolved = resolve(cwd.absolutePath, trimmed);
-  const importedRaw = host.readText(resolved);
+  const importedRaw = host.readBytes(resolved);
   if (importedRaw === null) {
     return refuse("violated", `--inventory does not point at a readable file: ${resolved}`);
   }
-  const imported = validateInventoryDocument(importedRaw);
+  const owner = cwd.githubOwner === undefined ? {} : { hubOwner: cwd.githubOwner };
+  const imported = validateInventoryDocument(importedRaw, owner);
   if (!imported.valid) {
     return refuse("violated", `--inventory at ${resolved} ${imported.reason}`);
   }
@@ -478,23 +485,19 @@ function resolveAdoptInventory(
       ...(cwd.inventory?.status === "invalid" ? { replacesInvalidInventory: true } : {}),
     };
   }
-  const onDiskRaw = host.readText(join(cwd.absolutePath, WORKSPACE_INVENTORY_REL));
-  const onDisk = onDiskRaw === null ? undefined : validateInventoryDocument(onDiskRaw);
+  const onDiskRaw = host.readBytes(join(cwd.absolutePath, WORKSPACE_INVENTORY_REL));
+  const onDisk = onDiskRaw === null ? undefined : validateInventoryDocument(onDiskRaw, owner);
   if (onDisk !== undefined && !onDisk.valid) {
     return refuse("violated", `the on-disk hub inventory ${onDisk.reason}`);
   }
   const onDiskIds: readonly string[] = onDisk !== undefined && onDisk.valid ? onDisk.ids : [];
+  // Same repository identity as every other comparison: inventoryKey().
   const merged: string[] = [];
   const seen = new Set<string>();
-  for (const id of onDiskIds) {
-    if (!seen.has(id)) {
-      seen.add(id);
-      merged.push(id);
-    }
-  }
-  for (const id of imported.ids) {
-    if (!seen.has(id)) {
-      seen.add(id);
+  for (const id of [...onDiskIds, ...imported.ids]) {
+    const key = inventoryKey(id, cwd.githubOwner);
+    if (!seen.has(key)) {
+      seen.add(key);
       merged.push(id);
     }
   }
@@ -512,7 +515,7 @@ function resolveChosenRepositories(
   repositories: readonly string[],
   replaceInventory: boolean,
 ): { chosenInventory: ChosenInventory } | WorkspaceRefusal {
-  const resolution = resolveChosenInventory(host.readText(join(directory, WORKSPACE_INVENTORY_REL)), repositories, owner, replaceInventory);
+  const resolution = resolveChosenInventory(host.readBytes(join(directory, WORKSPACE_INVENTORY_REL)), repositories, owner, replaceInventory);
   if (resolution.kind === "refuse") return refuse("violated", resolution.message);
   return { chosenInventory: resolution.chosen };
 }
@@ -681,6 +684,21 @@ function writeSkeletonFile(host: WorkspaceHost, directory: string, relativePath:
   host.writeText(target, contents);
 }
 
+/** Writes exact bytes, for a document copied rather than composed, so nothing is decoded and re-encoded on the way. */
+function writeSkeletonBytes(host: WorkspaceHost, directory: string, relativePath: string, contents: Uint8Array): void {
+  const target = containedPath(directory, relativePath);
+  host.mkdirp(dirname(target));
+  host.writeBytes(target, contents);
+}
+
+function withFinalNewline(bytes: Uint8Array): Uint8Array {
+  if (bytes.length > 0 && bytes[bytes.length - 1] === 0x0a) return bytes;
+  const out = new Uint8Array(bytes.length + 1);
+  out.set(bytes);
+  out[bytes.length] = 0x0a;
+  return out;
+}
+
 function pinString(value: unknown): string | undefined {
   return typeof value === "string" && value.trim() !== "" ? value.trim() : undefined;
 }
@@ -783,8 +801,8 @@ function assertCleanTree(host: WorkspaceHost, directory: string): void {
  * function every later read of it uses, so a document Launcher writes is
  * always one Launcher reads back.
  */
-function revalidatedChosenDocument(document: string): string {
-  const validated = validateInventoryDocument(document);
+function revalidatedChosenDocument(document: string, hubOwner: string): string {
+  const validated = validateInventoryDocument(document, { hubOwner });
   if (!validated.valid) throw new Error(`the chosen inventory ${validated.reason}`);
   return document;
 }
@@ -797,21 +815,22 @@ function adoptHubFiles(host: WorkspaceHost, skeletonRoot: string, plan: Workspac
   // means a document that changed on disk between plan and apply still
   // cannot land a mismatched shape, and it means this function alone
   // guarantees "fail before any file is touched" (#1334).
-  let inventoryDocument: string | undefined;
+  let inventoryDocument: string | Uint8Array | undefined;
   if (plan.action === "adopt" && plan.chosenInventory !== undefined) {
-    if (plan.chosenInventory.kind === "write") inventoryDocument = revalidatedChosenDocument(plan.chosenInventory.document);
+    if (plan.chosenInventory.kind === "write") inventoryDocument = revalidatedChosenDocument(plan.chosenInventory.document, plan.owner);
   } else if ("mergedInventoryIds" in plan && Array.isArray(plan.mergedInventoryIds)) {
     const document = { schemaVersion: 1, repositories: plan.mergedInventoryIds.map((id) => ({ id })) };
     inventoryDocument = `${JSON.stringify(document, null, 2)}\n`;
   } else if ("inventorySource" in plan && typeof plan.inventorySource === "string") {
-    const raw = host.readText(plan.inventorySource);
+    const raw = host.readBytes(plan.inventorySource);
     if (raw === null) throw new Error(`inventory source is not readable: ${plan.inventorySource}`);
-    const validated = validateInventoryDocument(raw);
+    const validated = validateInventoryDocument(raw, { hubOwner: plan.owner });
     if (!validated.valid) throw new Error(`inventory source at ${plan.inventorySource} ${validated.reason}`);
     if (validated.ids.length === 0) {
       throw new Error(`inventory source at ${plan.inventorySource} must be a populated inventory document`);
     }
-    inventoryDocument = raw.endsWith("\n") ? raw : `${raw}\n`;
+    // Copied byte for byte: the bytes just validated are the bytes written.
+    inventoryDocument = withFinalNewline(raw);
   }
   const marker = {
     schemaVersion: 1,
@@ -820,9 +839,8 @@ function adoptHubFiles(host: WorkspaceHost, skeletonRoot: string, plan: Workspac
     repository: `${plan.owner}/${plan.repository}`,
   };
   writeSkeletonFile(host, plan.directory, WORKSPACE_MARKER_REL, `${JSON.stringify(marker, null, 2)}\n`);
-  if (inventoryDocument !== undefined) {
-    writeSkeletonFile(host, plan.directory, WORKSPACE_INVENTORY_REL, inventoryDocument);
-  }
+  if (typeof inventoryDocument === "string") writeSkeletonFile(host, plan.directory, WORKSPACE_INVENTORY_REL, inventoryDocument);
+  else if (inventoryDocument !== undefined) writeSkeletonBytes(host, plan.directory, WORKSPACE_INVENTORY_REL, inventoryDocument);
   if (host.readText(join(plan.directory, "AGENTS.md")) === null) {
     writeSkeletonFile(host, plan.directory, "AGENTS.md", CONSUMER_AGENTS_MD);
   } else {
@@ -895,7 +913,7 @@ export function reportHubHealth(
   );
   return {
     marker: readHub(host, directory) === undefined ? "missing" : "present",
-    inventory: inspectInventory(host.readText(join(directory, WORKSPACE_INVENTORY_REL))),
+    inventory: inspectInventory(host.readBytes(join(directory, WORKSPACE_INVENTORY_REL)), readHub(host, directory)?.owner),
     advisorPin: {
       ...(pins.dependencies === undefined ? {} : { dependencies: pins.dependencies }),
       ...(pins.devDependencies === undefined ? {} : { devDependencies: pins.devDependencies }),
@@ -1032,8 +1050,8 @@ function withHealth(
  * a note; marks ids whose check fails as unknown. Never mutates the inventory.
  */
 export function checkInventoryEntries(host: WorkspaceHost, directory: string): InventoryValidationReport {
-  const raw = host.readText(join(directory, WORKSPACE_INVENTORY_REL));
-  const observation = inspectInventory(raw);
+  const hubOwner = readHub(host, directory)?.owner;
+  const observation = inspectInventory(host.readBytes(join(directory, WORKSPACE_INVENTORY_REL)), hubOwner);
   if (observation.status !== "populated") {
     return { entries: [], skipped: true, note: `inventory is ${observation.status}; nothing to validate` };
   }
@@ -1041,7 +1059,7 @@ export function checkInventoryEntries(host: WorkspaceHost, directory: string): I
   if (!available) {
     return { entries: [], skipped: true, note: "`gh` is unavailable; inventory ids were not validated" };
   }
-  const ids = readInventoryRepositories(host, join(directory, WORKSPACE_INVENTORY_REL), "the hub inventory").filter(
+  const ids = readInventoryRepositories(host, join(directory, WORKSPACE_INVENTORY_REL), "the hub inventory", hubOwner).filter(
     (id) => id !== "",
   );
   const batch = 20;
@@ -1113,7 +1131,7 @@ function resolveSisterCloneTargets(
   const inventoryPath = join(hubDirectory, WORKSPACE_INVENTORY_REL);
   let inventoryIds: readonly string[];
   try {
-    inventoryIds = readInventoryRepositories(host, inventoryPath, "the stored inventory");
+    inventoryIds = readInventoryRepositories(host, inventoryPath, "the stored inventory", hubOwner);
   } catch (error) {
     // An invalid stored inventory is reported and skipped, never silently
     // read for what it happens to look like -- no sibling gets written into
@@ -1127,7 +1145,7 @@ function resolveSisterCloneTargets(
       skipped.push({ inventoryId: id, note: "inventory id is not a valid repository slug" });
       continue;
     }
-    if (parsed.owner !== hubOwner) {
+    if (!inventoryKey(id, hubOwner).startsWith(`${hubOwner.toLowerCase()}/`)) {
       skipped.push({ inventoryId: id, note: "other account; not this roster" });
       continue;
     }
@@ -1145,7 +1163,7 @@ function resolveSisterCloneTargets(
     const originResult = host.run("git", ["remote", "get-url", "origin"], { cwd: candidate });
     const originUrl = originResult.status === 0 ? originResult.stdout.trim() : "";
     const remote = originUrl === "" ? null : parseGitHubRemote(originUrl);
-    if (remote === null || remote.owner !== parsed.owner || remote.repository !== parsed.repository) {
+    if (remote === null || inventoryKey(`${remote.owner}/${remote.repository}`) !== inventoryKey(id, hubOwner)) {
       skipped.push({ inventoryId: id, note: "git origin does not match inventory id" });
       continue;
     }
@@ -1330,7 +1348,7 @@ function finishHubApply(
   // #1216: when the hub marker declares an external inventory, report drift against
   // it on every apply (create's fresh marker never declares one, so this is a no-op there).
   const hubDocument = readHub(host, directory);
-  const inventoryDrift = reportInventoryDrift(host, directory, hubDocument?.externalInventory, WORKSPACE_INVENTORY_REL);
+  const inventoryDrift = reportInventoryDrift(host, directory, hubDocument?.externalInventory, WORKSPACE_INVENTORY_REL, hubOwner);
   return withHealth(host, directory, headline, liveAdvisorVersion, skillComposition, liveLauncherVersion, migration, inventoryDrift);
 }
 
@@ -1346,10 +1364,9 @@ function migrateLegacyHubState(host: WorkspaceHost, directory: string): HubHealt
   const markerRaw = host.readText(join(directory, LEGACY_WORKSPACE_MARKER_REL));
   if (markerRaw === null) return undefined;
   writeSkeletonFile(host, directory, WORKSPACE_MARKER_REL, markerRaw.endsWith("\n") ? markerRaw : `${markerRaw}\n`);
-  const inventoryRaw = host.readText(join(directory, LEGACY_WORKSPACE_INVENTORY_REL));
-  if (inventoryRaw !== null) {
-    writeSkeletonFile(host, directory, WORKSPACE_INVENTORY_REL, inventoryRaw.endsWith("\n") ? inventoryRaw : `${inventoryRaw}\n`);
-  }
+  // Moved byte for byte, so bytes that are not valid UTF-8 are still refused when read from the new place.
+  const inventoryBytes = host.readBytes(join(directory, LEGACY_WORKSPACE_INVENTORY_REL));
+  if (inventoryBytes !== null) writeSkeletonBytes(host, directory, WORKSPACE_INVENTORY_REL, withFinalNewline(inventoryBytes));
   host.remove(join(directory, LEGACY_STATE_DIR_REL));
   return { status: "migrated", from: LEGACY_STATE_DIR_REL, to: STATE_DIR_REL };
 }
@@ -1381,7 +1398,7 @@ export function applyWorkspacePlan(
     // --repositories (#1179): write the chosen inventory before composing, so
     // this same run composes skills into the repositories just chosen.
     if (plan.chosenInventory?.kind === "write") {
-      writeSkeletonFile(host, plan.directory, WORKSPACE_INVENTORY_REL, revalidatedChosenDocument(plan.chosenInventory.document));
+      writeSkeletonFile(host, plan.directory, WORKSPACE_INVENTORY_REL, revalidatedChosenDocument(plan.chosenInventory.document, plan.owner));
     }
     return finishHubApply(
       host,

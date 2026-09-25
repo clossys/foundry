@@ -4,10 +4,21 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { main, parseLauncherArgs } from "./cli.js";
-import { applyWorkspacePlan, inspectInventory, planWorkspace, readInventoryRepositories, WORKSPACE_INVENTORY_REL, WORKSPACE_MARKER_REL } from "./core.js";
+import {
+  applyWorkspacePlan,
+  inspectInventory,
+  LEGACY_WORKSPACE_INVENTORY_REL,
+  LEGACY_WORKSPACE_MARKER_REL,
+  planWorkspace,
+  readInventoryRepositories,
+  reportHubHealth,
+  WORKSPACE_INVENTORY_REL,
+  WORKSPACE_MARKER_REL,
+} from "./core.js";
+import { reportInventoryDrift } from "./inventory-adoption.js";
 import { validateAgainstContract } from "./generated/contract-schema.generated.js";
 import { describeChosenInventory, resolveChosenInventory } from "./inventory-choice.js";
-import { validateInventoryDocument } from "./inventory-contract.js";
+import { inventoryKey, validateInventoryDocument } from "./inventory-contract.js";
 import { loadContract } from "./plan-contract.js";
 import type { CommandResult, WorkspaceHost, WorkspaceObservation } from "./types.js";
 
@@ -46,6 +57,17 @@ function host(directory: string, commands: Record<string, CommandResult> = {}): 
       } catch {
         return null;
       }
+    },
+    readBytes: (path) => {
+      try {
+        return readFileSync(path);
+      } catch {
+        return null;
+      }
+    },
+    writeBytes: (path, contents) => {
+      mkdirSync(dirname(path), { recursive: true });
+      writeFileSync(path, contents);
     },
     writeText: (path, contents) => {
       mkdirSync(dirname(path), { recursive: true });
@@ -340,5 +362,192 @@ describe("launcher --repositories (#1179)", () => {
       state: "violated",
       message: expect.stringMatching(/legacy \.clossys\/ folder; run launcher once without --repositories/),
     });
+  });
+});
+
+/** An inventory file whose first package name holds the bytes FF FE C0, which are not UTF-8. */
+function invalidUtf8Inventory(): Uint8Array {
+  const text = inventoryText([{ id: `${OWNER}/example-app`, packages: [{ name: "@example-scope/XXX" }] }]);
+  const bytes = new TextEncoder().encode(text);
+  const at = text.indexOf("XXX");
+  bytes.set([0xff, 0xfe, 0xc0], at);
+  return bytes;
+}
+
+const REPLACEMENT_CHARACTER_BYTES = [0xef, 0xbf, 0xbd];
+
+function containsBytes(haystack: Uint8Array, needle: readonly number[]): boolean {
+  outer: for (let index = 0; index + needle.length <= haystack.length; index += 1) {
+    for (const [offset, byte] of needle.entries()) if (haystack[index + offset] !== byte) continue outer;
+    return true;
+  }
+  return false;
+}
+
+describe("inventory files are read as bytes (#1179)", () => {
+  it("reports a stored inventory whose bytes are not UTF-8 as invalid, never as populated", () => {
+    const directory = resumableHub([]);
+    writeFileSync(join(directory, WORKSPACE_INVENTORY_REL), invalidUtf8Inventory());
+    expect(reportHubHealth(host(directory), directory).inventory).toEqual({
+      status: "invalid",
+      count: 0,
+      reason: "is not valid UTF-8 (see docs/contracts/repository-inventory.json)",
+    });
+    expect(() => readInventoryRepositories(host(directory), join(directory, WORKSPACE_INVENTORY_REL), "the hub inventory")).toThrow(/is not valid UTF-8/);
+  });
+
+  it("refuses --repositories over it, and --replace-inventory never writes a U+FFFD back", () => {
+    const directory = resumableHub([]);
+    writeFileSync(join(directory, WORKSPACE_INVENTORY_REL), invalidUtf8Inventory());
+    const err = vi.spyOn(console, "error").mockImplementation(() => {});
+    vi.spyOn(console, "log").mockImplementation(() => {});
+    expect(main(["--repositories", `${OWNER}/example-app`], host(directory), skeletonRoot)).toBe(1);
+    expect(String(err.mock.calls[0]?.[0])).toMatch(/the hub inventory is not valid UTF-8 .*run again with --replace-inventory/);
+    expect(main(["--repositories", `${OWNER}/example-app`, "--replace-inventory"], host(directory), skeletonRoot)).toBe(0);
+    const written = readFileSync(join(directory, WORKSPACE_INVENTORY_REL));
+    expect(containsBytes(written, REPLACEMENT_CHARACTER_BYTES)).toBe(false);
+    expect(written.toString("utf8")).toBe(inventoryText([{ id: `${OWNER}/example-app` }]));
+  });
+
+  it("refuses --inventory whose bytes are not UTF-8 when appointing, and writes nothing", () => {
+    const directory = appointCheckout();
+    writeFileSync(join(directory, "prepared.json"), invalidUtf8Inventory());
+    const err = vi.spyOn(console, "error").mockImplementation(() => {});
+    expect(main(["--inventory", "prepared.json"], host(directory, APPOINT_COMMANDS), skeletonRoot)).toBe(1);
+    expect(String(err.mock.calls[0]?.[0])).toMatch(/--inventory at .* is not valid UTF-8/);
+    expect(existsSync(join(directory, "clossys"))).toBe(false);
+  });
+
+  it("copies a valid --inventory byte for byte, non-ASCII text included", () => {
+    const directory = appointCheckout();
+    const prepared = new TextEncoder().encode(`{"schemaVersion":1,"repositories":[{"id":"${OWNER}/example-app","packages":[{"name":"@example-scope/caf\u00e9-\u00e9"}]}]}`);
+    writeFileSync(join(directory, "prepared.json"), prepared);
+    vi.spyOn(console, "log").mockImplementation(() => {});
+    expect(main(["--inventory", "prepared.json"], host(directory, APPOINT_COMMANDS), skeletonRoot)).toBe(0);
+    expect([...readFileSync(join(directory, WORKSPACE_INVENTORY_REL))]).toEqual([...prepared, 0x0a]);
+  });
+
+  it("moves a legacy inventory byte for byte, so its invalid bytes are still refused afterwards", () => {
+    const directory = tempDir();
+    mkdirSync(dirname(join(directory, LEGACY_WORKSPACE_MARKER_REL)), { recursive: true });
+    writeFileSync(
+      join(directory, LEGACY_WORKSPACE_MARKER_REL),
+      `${JSON.stringify({ schemaVersion: 1, kind: "account-hub", owner: OWNER, repository: `${OWNER}/example-hub` }, null, 2)}\n`,
+    );
+    const legacy = invalidUtf8Inventory();
+    writeFileSync(join(directory, LEGACY_WORKSPACE_INVENTORY_REL), legacy);
+    vi.spyOn(console, "log").mockImplementation(() => {});
+    expect(main([], host(directory), skeletonRoot)).toBe(0);
+    expect([...readFileSync(join(directory, WORKSPACE_INVENTORY_REL))]).toEqual([...legacy]);
+    expect(reportHubHealth(host(directory), directory).inventory.status).toBe("invalid");
+  });
+
+  it("refuses a lone surrogate, escaped in the file or raw in a string, in a package name or version", () => {
+    for (const field of ["name", "version"]) {
+      const escaped = `{"schemaVersion":1,"repositories":[{"id":"app","packages":[{"name":"x","${field}":"\\ud800"}]}]}`.replace('"name":"x","name"', '"name"');
+      expect(validateInventoryDocument(new TextEncoder().encode(escaped))).toEqual({
+        valid: false,
+        reason: `repositories[0].packages[0].${field} must be well-formed Unicode, and contains a lone surrogate (see docs/contracts/repository-inventory.json)`,
+      });
+    }
+    // JSON.stringify would escape it; this string carries the raw surrogate itself.
+    expect(validateInventoryDocument(`{"schemaVersion":1,"repositories":[{"id":"app","packages":[{"name":"${"\ud800"}"}]}]}`)).toMatchObject({
+      valid: false,
+      reason: expect.stringMatching(/^is not well-formed Unicode: it contains a lone surrogate/),
+    });
+  });
+});
+
+describe("one repository identity (#1179)", () => {
+  it("inventoryKey qualifies a bare id with the hub's owner, then ignores letter case", () => {
+    expect(inventoryKey("Example-App", OWNER)).toBe("example-owner/example-app");
+    expect(inventoryKey("Example-Owner/Example-App", OWNER)).toBe("example-owner/example-app");
+    expect(inventoryKey("other-owner/example-app", OWNER)).toBe("other-owner/example-app");
+    expect(inventoryKey("Example-App")).toBe("example-app");
+  });
+
+  it("refuses a stored inventory listing app and <owner>/app, by position, instead of silently dropping app's packages", () => {
+    const onDisk = inventoryText([
+      { id: "example-app", packages: [{ name: "@example-scope/one" }] },
+      { id: `${OWNER}/example-app` },
+      { id: `${OWNER}/example-site` },
+    ]);
+    const message = refusal(resolveChosenInventory(onDisk, [`${OWNER}/example-app`, `${OWNER}/example-site`], OWNER, false));
+    expect(message).toBe(
+      "the hub inventory repositories[1].id names the same repository as repositories[0].id (repository ids are compared case-insensitively, " +
+        "and a bare id names a repository of the hub's own owner; see docs/contracts/repository-inventory.json); " +
+        "to replace it with the 2 repositories chosen, run again with --replace-inventory",
+    );
+    // Only an explicit replacement touches it, and then the choice is written as it stands: nothing is merged.
+    const replaced = resolveChosenInventory(onDisk, [`${OWNER}/example-app`], OWNER, true);
+    expect(replaced).toMatchObject({ kind: "resolved", chosen: { kind: "write", count: 1, replaced: "invalid" } });
+    if (replaced.kind === "resolved" && replaced.chosen.kind === "write") {
+      expect(JSON.parse(replaced.chosen.document).repositories).toEqual([{ id: `${OWNER}/example-app` }]);
+    }
+  });
+
+  it("reports that stored inventory as invalid on resume, and composes nothing from it", () => {
+    const directory = resumableHub([{ id: "example-app" }, { id: `${OWNER}/Example-App` }]);
+    expect(reportHubHealth(host(directory), directory).inventory).toMatchObject({
+      status: "invalid",
+      reason: expect.stringMatching(/^repositories\[1\]\.id names the same repository as repositories\[0\]\.id/),
+    });
+    // The contract alone, with no owner to read a bare id against, cannot know they are the same repository.
+    expect(validateInventoryDocument(stored(directory))).toEqual({ valid: true, ids: ["example-app", `${OWNER}/Example-App`] });
+  });
+
+  it("refuses --repositories app,<owner>/app as one repository chosen twice, by position", () => {
+    const text = refusal(resolveChosenInventory(null, ["example-app", `${OWNER}/example-app`], OWNER, false));
+    expect(text).toMatch(/^--repositories is not a valid inventory: repositories\[1\]\.id names the same repository as repositories\[0\]\.id/);
+    const directory = appointCheckout();
+    const err = vi.spyOn(console, "error").mockImplementation(() => {});
+    expect(main(["--repositories", `example-app,${OWNER}/example-app`], host(directory, APPOINT_COMMANDS), skeletonRoot)).toBe(1);
+    expect(String(err.mock.calls[0]?.[0])).toMatch(/repositories\[1\]\.id names the same repository as repositories\[0\]\.id/);
+    expect(existsSync(join(directory, "clossys"))).toBe(false);
+  });
+
+  it("drift compares an external bare id and the hub's qualified id as the same repository", () => {
+    const directory = resumableHub([{ id: `${OWNER}/example-app` }]);
+    const external = join(directory, "external.json");
+    writeFileSync(external, inventoryText([{ id: "Example-App" }, { id: "example-site" }]));
+    expect(reportInventoryDrift(host(directory), directory, { path: external, shape: "foundry" }, WORKSPACE_INVENTORY_REL, OWNER)).toEqual({
+      status: "reconciled",
+      externalOnly: ["example-site"],
+      launcherOnly: [],
+      agreeing: ["Example-App"],
+    });
+  });
+
+  it("drift cannot read an external inventory whose bytes are not UTF-8", () => {
+    const directory = resumableHub([{ id: `${OWNER}/example-app` }]);
+    const external = join(directory, "external.json");
+    writeFileSync(external, invalidUtf8Inventory());
+    expect(reportInventoryDrift(host(directory), directory, { path: external, shape: "foundry" }, WORKSPACE_INVENTORY_REL, OWNER).status).toBe("indeterminate");
+  });
+});
+
+describe("resume writes the chosen inventory before composing (#1179)", () => {
+  it("composes skills, in the same run, into a sibling listed only in the inventory it just wrote", () => {
+    const parent = tempDir();
+    const hub = join(parent, "example-hub");
+    const sibling = join(parent, "example-app");
+    mkdirSync(join(sibling, ".git"), { recursive: true });
+    writeHubMarker(hub);
+    writeInventory(hub, []);
+    const base = host(hub);
+    const siblingHost: WorkspaceHost = {
+      ...base,
+      run: (command, args, options) =>
+        command === "git" && args.join(" ") === "remote get-url origin" && options?.cwd === sibling
+          ? { status: 0, stdout: `git@github.com:${OWNER}/example-app.git\n`, stderr: "" }
+          : base.run(command, args, options),
+    };
+    const log = vi.spyOn(console, "log").mockImplementation(() => {});
+    expect(existsSync(join(sibling, ".agents"))).toBe(false);
+    expect(main(["--repositories", `${OWNER}/example-app`], siblingHost, skeletonRoot)).toBe(0);
+    const message = String(log.mock.calls[0]?.[0]);
+    expect(message).toMatch(/inventory: wrote the 1 repository you chose/);
+    expect(message).not.toMatch(/skill roster skipped/);
+    expect(readFileSync(join(sibling, ".agents/skills/clossys-advisor/SKILL.md"), "utf8")).toContain("name: clossys-advisor");
   });
 });

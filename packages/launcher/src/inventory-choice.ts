@@ -13,7 +13,7 @@
 // the difference in counts and ids, unless the caller passes an explicit
 // replace approval (`--replace-inventory`).
 
-import { renderInventoryDocument, validateInventoryDocument, validateInventoryValue, type InventoryEntry } from "./inventory-contract.js";
+import { inventoryKey, readInventoryDocument, renderInventoryDocument, validateInventoryDocument, validateInventoryValue, type InventoryEntry } from "./inventory-contract.js";
 import type { ChosenInventory } from "./types.js";
 
 export type ChosenInventoryResolution =
@@ -22,16 +22,6 @@ export type ChosenInventoryResolution =
 
 /** The command a refusal names for an explicit replace approval. */
 export const REPLACE_INVENTORY_FLAG = "--replace-inventory";
-
-/**
- * The repository an id names, for comparing two inventories: a bare id is
- * read as belonging to the hub's own owner (as Launcher's sibling
- * resolution reads it), and owner and repository names compare
- * case-insensitively, as GitHub compares them.
- */
-function repositoryKey(id: string, hubOwner: string): string {
-  return (id.includes("/") ? id : `${hubOwner}/${id}`).toLowerCase();
-}
 
 function repositories(count: number): string {
   return `${count} ${count === 1 ? "repository" : "repositories"}`;
@@ -43,27 +33,31 @@ function listIds(ids: readonly string[]): string {
 
 /**
  * Decides what `launcher --repositories` writes into a hub whose stored
- * inventory text is `onDiskRaw` (`null` when there is none).
+ * inventory is `onDisk` -- the file's exact bytes, or `null` when there is
+ * none.
+ *
+ * Every comparison uses `inventoryKey(id, hubOwner)`: a bare id names a
+ * repository of the hub's own owner, and letter case is ignored.
  *
  * - The chosen ids must form a valid inventory on their own: at least one
  *   id, each one satisfying the contract's repository id rule, and no two
  *   naming the same repository. A refusal names positions only.
+ * - The stored inventory is read by the same strict reader, with the same
+ *   owner: one that fails its contract, including one listing a repository
+ *   twice (for example `app` and `<hubOwner>/app`), is replaced only with
+ *   `replace`, and then with the chosen ids alone. It is never merged.
  * - No inventory, or an empty one: the chosen repositories are written.
- * - An inventory naming exactly the same repositories (in any order, a bare
- *   id matching `hubOwner/<id>`, case-insensitively): nothing is written.
+ * - An inventory naming exactly the same repositories: nothing is written.
  * - An inventory naming a different set: refused, reporting how many
  *   repositories each side has and which ids would be added and removed,
  *   unless `replace` is true. A replacement keeps each kept repository's
- *   existing entry as it was (its `packages` included), so replacing the
- *   set never discards what is recorded about a repository that stays.
- * - An inventory that fails its contract: refused unless `replace` is true;
- *   a replacement then writes the chosen ids alone.
+ *   existing entry as it was (its `packages` included).
  *
- * The document to write is validated again, as text, by the same function
- * every later read uses, before it is returned.
+ * The document to write is checked again by the same reader every later
+ * read uses, before it is returned.
  */
 export function resolveChosenInventory(
-  onDiskRaw: string | null,
+  onDisk: Uint8Array | string | null,
   chosenIds: readonly string[],
   hubOwner: string,
   replace: boolean,
@@ -71,7 +65,7 @@ export function resolveChosenInventory(
   if (chosenIds.length === 0) {
     return { kind: "refuse", message: "--repositories must name at least one repository" };
   }
-  const chosenCheck = validateInventoryValue({ schemaVersion: 1, repositories: chosenIds.map((id) => ({ id })) });
+  const chosenCheck = validateInventoryValue({ schemaVersion: 1, repositories: chosenIds.map((id) => ({ id })) }, { hubOwner });
   if (!chosenCheck.valid) return { kind: "refuse", message: `--repositories is not a valid inventory: ${chosenCheck.reason}` };
 
   let entries: InventoryEntry[];
@@ -79,47 +73,47 @@ export function resolveChosenInventory(
   let removed: readonly string[] = [];
   let replaced: Extract<ChosenInventory, { kind: "write" }>["replaced"] = "nothing";
   let previousCount = 0;
-  if (onDiskRaw === null) {
+  if (onDisk === null) {
     entries = chosenIds.map((id) => ({ id }));
   } else {
-    const onDisk = validateInventoryDocument(onDiskRaw);
-    if (!onDisk.valid) {
+    const stored = readInventoryDocument(onDisk, { hubOwner });
+    if (!stored.valid) {
       if (!replace) {
         return {
           kind: "refuse",
-          message: `the hub inventory ${onDisk.reason}; to replace it with the ${repositories(chosenIds.length)} chosen, run again with ${REPLACE_INVENTORY_FLAG}`,
+          message: `the hub inventory ${stored.reason}; to replace it with the ${repositories(chosenIds.length)} chosen, run again with ${REPLACE_INVENTORY_FLAG}`,
         };
       }
       entries = chosenIds.map((id) => ({ id }));
       replaced = "invalid";
     } else {
-      previousCount = onDisk.ids.length;
-      const existing = (JSON.parse(onDiskRaw) as { readonly repositories: readonly InventoryEntry[] }).repositories;
-      const existingByKey = new Map(existing.map((entry) => [repositoryKey(entry.id, hubOwner), entry] as const));
-      const chosenKeys = new Set(chosenIds.map((id) => repositoryKey(id, hubOwner)));
-      added = chosenIds.filter((id) => !existingByKey.has(repositoryKey(id, hubOwner)));
-      removed = onDisk.ids.filter((id) => !chosenKeys.has(repositoryKey(id, hubOwner)));
-      if (onDisk.ids.length > 0 && added.length === 0 && removed.length === 0) {
-        return { kind: "resolved", chosen: { kind: "unchanged", count: onDisk.ids.length } };
+      previousCount = stored.ids.length;
+      // Keys are unique on both sides: the reader and the chosen-id check above both refuse two ids with one key.
+      const storedByKey = new Map(stored.entries.map((entry) => [inventoryKey(entry.id, hubOwner), entry] as const));
+      const chosenKeys = new Set(chosenIds.map((id) => inventoryKey(id, hubOwner)));
+      added = chosenIds.filter((id) => !storedByKey.has(inventoryKey(id, hubOwner)));
+      removed = stored.ids.filter((id) => !chosenKeys.has(inventoryKey(id, hubOwner)));
+      if (stored.ids.length > 0 && added.length === 0 && removed.length === 0) {
+        return { kind: "resolved", chosen: { kind: "unchanged", count: stored.ids.length } };
       }
-      if (onDisk.ids.length > 0) {
+      if (stored.ids.length > 0) {
         if (!replace) {
           return {
             kind: "refuse",
             message:
-              `the hub inventory already lists ${repositories(onDisk.ids.length)} and the choice has ${chosenIds.length}: ` +
+              `the hub inventory already lists ${repositories(stored.ids.length)} and the choice has ${chosenIds.length}: ` +
               `${added.length} to add${listIds(added)}, ${removed.length} to remove${listIds(removed)}. ` +
               `Launcher never merges or overwrites an inventory silently; to replace it with the choice, run again with ${REPLACE_INVENTORY_FLAG}`,
           };
         }
         replaced = "differing";
       }
-      entries = chosenIds.map((id) => existingByKey.get(repositoryKey(id, hubOwner)) ?? { id });
+      entries = chosenIds.map((id) => storedByKey.get(inventoryKey(id, hubOwner)) ?? { id });
     }
   }
 
   const document = renderInventoryDocument(entries);
-  const written = validateInventoryDocument(document);
+  const written = validateInventoryDocument(document, { hubOwner });
   if (!written.valid) return { kind: "refuse", message: `the inventory to write ${written.reason}` };
   return {
     kind: "resolved",

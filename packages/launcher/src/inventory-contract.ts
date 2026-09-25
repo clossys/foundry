@@ -41,15 +41,28 @@ function describeViolation(violation: ContractViolation): string {
 }
 
 /**
- * The one rule the contract states but JSON Schema cannot express: two ids
- * that differ only in letter case name the same repository (GitHub owner and
- * repository names are case-insensitive). Returns the later position and the
- * earlier one it repeats, or undefined.
+ * The one identity of a repository id, and the only way Launcher compares
+ * two ids: a bare id is qualified with the hub's owner when that owner is
+ * known (a bare id means "this repository under the hub's own account", as
+ * Launcher's sibling resolution reads it), and the result is lowercased,
+ * because GitHub owner and repository names are case-insensitive. Without
+ * an owner, a bare id stays bare and only letter case is folded.
  */
-function firstRepeatedId(ids: readonly string[]): { readonly index: number; readonly earlier: number } | undefined {
+export function inventoryKey(id: string, hubOwner?: string): string {
+  return (hubOwner !== undefined && !id.includes("/") ? `${hubOwner}/${id}` : id).toLowerCase();
+}
+
+/**
+ * The first id, if any, that names the same repository as an earlier one
+ * under `inventoryKey()`: its position and the earlier position.
+ */
+export function firstRepeatedRepository(
+  ids: readonly string[],
+  hubOwner?: string,
+): { readonly index: number; readonly earlier: number } | undefined {
   const seen = new Map<string, number>();
   for (const [index, id] of ids.entries()) {
-    const key = id.toLowerCase();
+    const key = inventoryKey(id, hubOwner);
     const earlier = seen.get(key);
     if (earlier !== undefined) return { index, earlier };
     seen.set(key, index);
@@ -57,45 +70,91 @@ function firstRepeatedId(ids: readonly string[]): { readonly index: number; read
   return undefined;
 }
 
-/**
- * Validates an already-parsed value against the inventory contract through
- * the shared checker, then applies the contract's case-insensitive
- * duplicate rule. Never throws for a bad value.
- */
-export function validateInventoryValue(value: unknown): InventoryValidation {
+/** Options for reading an inventory document. */
+export interface InventoryReadOptions {
+  /**
+   * The hub's owner, whenever the caller knows it. A bare id and
+   * `<hubOwner>/<id>` then name the same repository, so a document listing
+   * both is refused instead of carrying two entries for one repository.
+   */
+  readonly hubOwner?: string;
+}
+
+/** A valid document's entries, as internal readers need them; `InventoryValidation` exposes only the ids. */
+export type InventoryRead =
+  | { readonly valid: true; readonly ids: readonly string[]; readonly entries: readonly InventoryEntry[] }
+  | { readonly valid: false; readonly reason: string };
+
+function checkInventoryValue(value: unknown, options: InventoryReadOptions): InventoryRead {
   const violations = validateAgainstContract(loadContract(INVENTORY_CONTRACT), value, loadContract);
   if (violations.length > 0) {
     return { valid: false, reason: `${violations.map(describeViolation).join("; ")} (${INVENTORY_CONTRACT_POINTER})` };
   }
-  const ids = (value as { readonly repositories: readonly InventoryEntry[] }).repositories.map((entry) => entry.id);
-  const repeated = firstRepeatedId(ids);
+  const entries = (value as { readonly repositories: readonly InventoryEntry[] }).repositories;
+  const ids = entries.map((entry) => entry.id);
+  const repeated = firstRepeatedRepository(ids, options.hubOwner);
   if (repeated !== undefined) {
+    const rule =
+      options.hubOwner === undefined
+        ? "repository ids are compared case-insensitively"
+        : "repository ids are compared case-insensitively, and a bare id names a repository of the hub's own owner";
     return {
       valid: false,
-      reason: `repositories[${repeated.index}].id names the same repository as repositories[${repeated.earlier}].id (repository ids are compared case-insensitively; ${INVENTORY_CONTRACT_POINTER})`,
+      reason: `repositories[${repeated.index}].id names the same repository as repositories[${repeated.earlier}].id (${rule}; ${INVENTORY_CONTRACT_POINTER})`,
     };
   }
-  return { valid: true, ids };
+  return { valid: true, ids, entries };
+}
+
+function withoutEntries(read: InventoryRead): InventoryValidation {
+  return read.valid ? { valid: true, ids: read.ids } : read;
 }
 
 /**
- * Strictly validates an inventory document's text against
- * docs/contracts/repository-inventory.json. The text is read as strict JSON
- * by the shared reader -- a syntax error (reported by position only), a key
- * repeated in any object, or a leading byte order mark is refused -- and
- * the value is then checked by the shared contract checker. Every read of
- * an inventory document goes through this: `--inventory`, the stored
- * `clossys/.state/inventory.json` on every resume, `readInventoryRepositories()`,
- * and the document `launcher --repositories` writes, before it writes it.
+ * Validates an already-parsed value against the inventory contract through
+ * the shared checker, then applies the duplicate rule. Never throws for a
+ * bad value.
  */
-export function validateInventoryDocument(raw: string): InventoryValidation {
+export function validateInventoryValue(value: unknown, options: InventoryReadOptions = {}): InventoryValidation {
+  return withoutEntries(checkInventoryValue(value, options));
+}
+
+/** A lone surrogate in a JS string, which has no UTF-8 encoding; TextEncoder would silently replace it. */
+const LONE_SURROGATE = /[\uD800-\uDFFF]/u;
+
+/**
+ * Reads and checks one inventory document. Bytes -- as every file read
+ * passes them, from `WorkspaceHost.readBytes()` -- go straight to the
+ * shared strict reader, so bytes that are not valid UTF-8 are refused
+ * rather than silently replaced. Text is accepted for a document built in
+ * memory, and one holding a lone surrogate is refused before encoding.
+ */
+export function readInventoryDocument(raw: string | Uint8Array, options: InventoryReadOptions = {}): InventoryRead {
+  if (typeof raw === "string" && LONE_SURROGATE.test(raw)) {
+    return { valid: false, reason: `is not well-formed Unicode: it contains a lone surrogate, which has no UTF-8 encoding (${INVENTORY_CONTRACT_POINTER})` };
+  }
   let value: unknown;
   try {
-    value = readContractDocument(new TextEncoder().encode(raw));
+    value = readContractDocument(typeof raw === "string" ? new TextEncoder().encode(raw) : raw);
   } catch (cause) {
     return { valid: false, reason: `${cause instanceof Error ? cause.message : String(cause)} (${INVENTORY_CONTRACT_POINTER})` };
   }
-  return validateInventoryValue(value);
+  return checkInventoryValue(value, options);
+}
+
+/**
+ * Strictly validates an inventory document against
+ * docs/contracts/repository-inventory.json. It is read as strict JSON by the
+ * shared reader -- bytes that are not valid UTF-8, a syntax error (reported
+ * by position only), a key repeated in any object, or a leading byte order
+ * mark is refused -- and the value is then checked by the shared contract
+ * checker and the duplicate rule. Every read of an inventory file passes
+ * its exact bytes: `--inventory`, the stored `clossys/.state/inventory.json`
+ * on every run, `readInventoryRepositories()`, and the document
+ * `launcher --repositories` writes, before it writes it.
+ */
+export function validateInventoryDocument(raw: string | Uint8Array, options: InventoryReadOptions = {}): InventoryValidation {
+  return withoutEntries(readInventoryDocument(raw, options));
 }
 
 /**
