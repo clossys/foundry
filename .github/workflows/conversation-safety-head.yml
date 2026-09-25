@@ -21,8 +21,10 @@ name: Conversation safety (head)
 # unreviewed head re-trigger a write-capable, secret-bearing run on every
 # push?), not a scheduling tweak, and this change deliberately does not make
 # that call. conversation-safety.yml's trigger, permissions, and behavior are
-# UNCHANGED by this file — it keeps scanning issue/PR/comment/review text on
-# `pull_request_target`, exactly as AGENTS.md's "Conversation surface"
+# UNCHANGED by this file — it keeps scanning PR title and body text on
+# `pull_request_target`, issue and comment text on `issues`/`issue_comment`,
+# and review text through conversation-safety-review-relay.yml and a
+# `workflow_run` trigger, exactly as AGENTS.md's "Conversation surface"
 # section describes.
 #
 # Instead, this is a NEW workflow on plain `pull_request` (never `_target`),

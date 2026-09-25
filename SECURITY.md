@@ -57,6 +57,28 @@ refuses a tree that contains:
   never echoed, so the gate cannot leak a secret into a CI log.
 - **Private identity** — names, domains, handles and internal paths that
   must never become public.
+- **Machine-local path names** — file and directory names in shapes only a
+  machine produces. A flattened name starts with a `-`, `_` or `\`
+  separator and uses it throughout. Five families are refused:
+  1. temp roots — `private` then `tmp` or `var`, `var` then `folders`, or
+     `tmp` then `claude-<n>`, flattened into one name or mirrored as nested
+     `private/tmp`, `var/folders` or `tmp/claude-<n>` directories;
+  2. URL-encoded absolute paths — a name starting with `%2F` (optionally
+     `file%3A%2F%2F`) then `Users`, `home`, `mnt`, `private`, `var` or `tmp`;
+  3. Windows drive homes — a drive letter, `--`, then `Users` (a flattened
+     `C:\Users`), or `C:\Users\` written with backslashes inside one name;
+  4. WSL mounts — `mnt`, a drive letter, then `Users`, flattened or nested;
+  5. flattened macOS homes only when a machine marker follows the name
+     directly: a dot-directory (a doubled separator) or exactly `Library`,
+     `Desktop` or `Downloads`; plus a bare `-Users-<name>` with nothing after.
+
+  Home-directory shapes spelled with ordinary words (a Linux `home/<name>`,
+  a `Users/<name>` directory, or a flattened home followed by `code`,
+  `projects` or similar) are **not** refused: they cannot be told apart from
+  ordinary app layouts. They are recorded as KNOWN-GAP cases in
+  `scripts/test-gates.mjs`, and explicit staging and review cover them. The
+  rule is structural and runs in PARTIAL mode too; the same paths inside
+  file contents are left to the denylist.
 
 A separate gate, `scripts/check-artifact-safety.mjs`, runs the same scan
 against the actual packed tarball rather than the git tree — `dist/` is
@@ -218,6 +240,27 @@ particular text holds something its author did not mean to publish, and,
 since editing never erases a revision, an arrow pointing at the edit-history
 dropdown where the original is still readable. The label and the failed
 check carry that information to maintainers without broadcasting it.
+
+No job that holds a write token or the denylist runs code or workflow
+definitions from a pull request's tree. Review summaries and inline review
+comments are the case that needs care: for those events GitHub loads the
+workflow from the pull request's merge commit. They therefore trigger only
+`.github/workflows/conversation-safety-review-relay.yml`, which holds no
+token scope or secret, checks nothing out, and records just the review or
+comment id. `conversation-safety.yml` picks that record up through
+`workflow_run`, runs from the default branch, validates the record as
+untrusted data, and fetches the text itself through the API. That fetch
+returns the current text, so it also scans every earlier revision in the
+object's edit history (for a review, the summary and each inline comment):
+text posted with a finding and edited clean before the scan ran is still
+public in that history and is still labelled, and an edit history that
+cannot be read fails the run rather than passing it. Its scan job holds the
+denylist with read-only scopes; a separate label job holds the write scopes
+and neither checks out code nor sees the denylist. A finding on review text
+shows as the label on the pull request and a failed run on the default
+branch. A pull request can edit its own copy of the relay and so stop its
+own review events being relayed; that gains it no credential, and the
+scheduled sweep below still reads that text.
 
 **This is detection, not prevention, and the workflow says so in its own
 header.** The text is public, and GitHub has already emailed it to every

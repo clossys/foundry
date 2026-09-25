@@ -1172,6 +1172,22 @@ export function evaluateTier2Decision({ decisionRecords, prNumber, patchId, tier
       if (!Number.isFinite(t) || t <= nowMs) return false; // unparseable or past -- both treated as expired
     }
     if (isRelaxationPastSunset(record, all, now)) return false;
+    // CHANNEL: only "owner-chat" counts as live tier-2 authority today
+    // (#1187 escalation-rule round 2, both reviewers, blocking: "land-stack
+    // counts tier-2 authority only from owner-chat records (and
+    // signed-commit once verified)"). `validateDecisionRecordShape` above
+    // already rejects an explicit `channel: "github-comment"` or
+    // `channel: "signed-commit"` outright for a decided owner record, so
+    // this line's only REAL effect is excluding the one shape it cannot
+    // reject: a record on `LEGACY_CHANNEL_EXEMPT` (no `channel` field at
+    // all, grandfathered so the validator stays green) -- that grandfather
+    // clause keeps a pre-existing record valid AS HISTORY; it was never
+    // meant to also make it authorize a tier-2 change. Once a
+    // `signed-commit` verifier exists, this becomes
+    // `record.channel === "owner-chat" || record.channel === "signed-commit"`
+    // and the validator's own rejection of `signed-commit` is lifted at
+    // the same time -- both changes belong together, not independently.
+    if (record.channel !== "owner-chat") return false;
     return true;
   });
 

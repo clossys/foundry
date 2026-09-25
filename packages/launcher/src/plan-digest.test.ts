@@ -58,6 +58,16 @@ describe("canonical plan digest (docs/contracts/advisor-plan-digest.md)", () => 
     expect(digest("unicode-decomposed")).not.toBe(digest("unicode-precomposed"));
   });
 
+  it("covers kits, staffing, packages and resolution, and excludes a decision's subjectDigest (#1178)", () => {
+    const digest = (name: string) => planDigest(corpusPlan(name).plan);
+    const base = digest("staffed-with-packages");
+    expect(digest("staffed-with-packages-keys-reversed")).toBe(base);
+    expect(digest("staffed-with-packages-new-subject-digest")).toBe(base);
+    for (const name of ["staffed-with-packages-version-changed", "staffed-with-packages-integrity-changed", "staffed-with-packages-staffing-reordered", "staffed-without-packages"]) {
+      expect(digest(name), name).not.toBe(base);
+    }
+  });
+
   it("has no digest for an invalid plan", () => {
     const plan = { ...corpusPlan("blockers-without-due").plan, extra: true } as unknown as AdvisorPlan;
     expect(() => planDigest(plan)).toThrow(/invalid plan has no digest: plan.extra is not a field/);

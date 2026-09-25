@@ -45,6 +45,10 @@ export const GATED_SCRIPT_PROSE_INPUTS = {
     prose: true,
     reason: "reads every .changesets/*.md file directly (issue #1420 review round 2, N1)",
   },
+  "node:scripts/check-changeset-style.mjs": {
+    prose: true,
+    reason: "reads every .changesets/*.md file via collect-changesets.mjs's loadChangesets (issue #1423)",
+  },
   "node:scripts/check-conflict-markers.mjs": {
     prose: true,
     reason: "scans the ENTIRE git tree for committed conflict markers, so every prose-tier path (and every other path) is in scope (issue #1420 review round 2, N1)",
@@ -124,6 +128,7 @@ export const GATED_SCRIPT_PROSE_INPUTS = {
       "as ci.yml invokes it (`node scripts/check-attestation-freshness.mjs .`, no --registry/--rulesets flags), it only scans tracked files matched by `git ls-files -- *.json` (trackedJsonFiles()) and skips any fixtures-segment path -- a glob that can never match .changesets/*.md, a root *.md file, or docs/**/*.md",
   },
   "node:scripts/check-qualification-record-required.mjs": { prose: false, reason: "reads governance/release-qualifications/** and package.json version fields only" },
+  "node:scripts/check-artifact-safety.mjs": { prose: false, reason: "scans one package's packed tarball (packages/<dir>/** content only -- packed-prose at most; docs/changelogs never ship) plus package-scope.json and governance/opaque-content-exemptions.json, no docs/ or .changesets/ read" },
   "node:scripts/check-readme-examples.mjs": { prose: false, reason: "typechecks fenced code blocks in packages/*/README.md against shipped .d.ts -- packed-prose, not prose" },
   "node:packages/designer/dist/tokens/contrast-cli.js": { prose: false, reason: "reads packages/designer/styles/tokens.css only" },
   "node:scripts/check-touches-packages.mjs": { prose: false, reason: "reads only the diff's own changed-path list (packages/, governance/, scripts/ prefixes) to decide whether to skip an expensive step -- reads no file content" },

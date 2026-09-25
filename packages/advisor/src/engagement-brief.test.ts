@@ -10,6 +10,7 @@ import {
   contextFromBrief,
   nextContextQuestion,
   toEngagementBrief,
+  validateEngagementBrief,
 } from "./index.js";
 import type { ComposeKitResult, EngagementBrief, EngagementContext, EngagementContextField, EngagementContextFieldId } from "./index.js";
 
@@ -234,6 +235,14 @@ describe("toEngagementBrief() keeps founder text out of the committed brief", ()
     expect(snapshot?.fields.map((field) => field.id)).toEqual([...ENGAGEMENT_CONTEXT_FIELD_IDS]);
     expect(snapshot?.fields.filter((field) => field.state === "unknown")).toHaveLength(ENGAGEMENT_CONTEXT_FIELD_IDS.length - 2);
     expect(validateContext(JSON.parse(JSON.stringify(snapshot)))).toEqual([]);
+  });
+});
+
+describe("toEngagementBrief() writes the hub brief only (#1178)", () => {
+  it("has no staffedHere option, and never writes staffedHere", () => {
+    const brief = toEngagementBrief({ problem: PROBLEM, composed, catalogue: CAPABILITY_CATALOGUE, staffedHere: ["writer"] } as unknown as Parameters<typeof toEngagementBrief>[0]);
+    expect(brief).not.toHaveProperty("staffedHere");
+    expect(validateEngagementBrief(JSON.parse(JSON.stringify(brief)))).toEqual([]);
   });
 });
 
