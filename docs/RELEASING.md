@@ -193,6 +193,14 @@ legitimate way a version moves — see
 [docs/PUBLISHING.md, section 4](PUBLISHING.md#4-write-the-furniture) for
 the day-to-day mechanics of adding a changeset.
 
+A changeset's summary becomes a `docs/changelogs/<dir>.md` line verbatim, so it is held
+to a style rule: one factual sentence per change, in consumer terms, no
+absolute qualifier unless a test proves it, and no description of what did
+NOT change. See [`.changesets/README.md`](../.changesets/README.md#style)
+for the rule, worked examples, and `scripts/check-changeset-style.mjs`
+(`npm run check:changeset-style`), the report-only lint over it (issue
+#1423).
+
 One addition on top of the pre-existing #1255 behavior: a `major`-level
 changeset now also requires the release's `docs/changelogs/<dir>.md` entry to carry a
 "### Breaking changes" subsection (`scripts/apply-release-changesets.mjs`

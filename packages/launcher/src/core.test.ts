@@ -18,6 +18,7 @@ import {
   parseGitHubRemote,
   planWorkspace,
   reportHubHealth,
+  validateInventoryDocument,
   DEFAULT_REPOSITORY_NAME,
   WORKSPACE_INVENTORY_REL,
   WORKSPACE_MARKER_REL,
@@ -371,6 +372,245 @@ describe("planWorkspace", () => {
     expect(decision).toMatchObject({ action: "adopt", mergedInventoryIds: ["hub-a", "hub-c", "hub-b", "hub-d"] });
     expect(decision).not.toHaveProperty("inventorySource");
   });
+
+  it("merges ids that differ only in letter case as one repository, keeping the on-disk entry and its packages, and writes a document the validator accepts", () => {
+    const directory = tempDir();
+    const kept = [{ name: "@example-scope/writer", version: "1.2.3", wiring: "devDependencies" }];
+    writeInventory(directory, [{ id: "Example-Owner/App", packages: kept }, { id: "hub-c" }]);
+    const source = join(directory, "supplied.json");
+    writeFileSync(source, `${JSON.stringify({ schemaVersion: 1, repositories: [{ id: "example-owner/app" }, { id: "hub-d", packages: [] }] }, null, 2)}\n`);
+    const decision = planWorkspace(
+      observation({
+        cwd: {
+          absolutePath: directory,
+          empty: false,
+          git: true,
+          githubOwner: "acme",
+          githubRepository: "central",
+          looksLikeFoundry: false,
+          inventory: { status: "populated", count: 2 },
+        },
+      }),
+      host(directory),
+      { inventoryPath: "supplied.json" },
+    );
+    expect(decision).toMatchObject({
+      action: "adopt",
+      mergedInventoryIds: ["Example-Owner/App", "hub-c", "hub-d"],
+      mergedInventoryRepositories: [{ id: "Example-Owner/App", packages: kept }, { id: "hub-c" }, { id: "hub-d", packages: [] }],
+    });
+    if (!("action" in decision) || decision.action !== "adopt") throw new Error("expected an adopt plan");
+    applyWorkspacePlan(host(directory), decision, skeletonRoot);
+    const written = readFileSync(join(directory, WORKSPACE_INVENTORY_REL), "utf8");
+    expect(validateInventoryDocument(written)).toEqual({ valid: true, ids: ["Example-Owner/App", "hub-c", "hub-d"] });
+    expect((JSON.parse(written) as { repositories: { packages?: unknown }[] }).repositories[0]?.packages).toEqual(kept);
+  });
+});
+
+describe("validateInventoryDocument (#1334)", () => {
+  it("accepts a well-formed populated document", () => {
+    expect(validateInventoryDocument(JSON.stringify({ schemaVersion: 1, repositories: [{ id: "app" }, { id: "site" }] }))).toEqual({
+      valid: true,
+      ids: ["app", "site"],
+    });
+  });
+
+  it("accepts a well-formed empty document", () => {
+    expect(validateInventoryDocument(JSON.stringify({ schemaVersion: 1, repositories: [] }))).toEqual({ valid: true, ids: [] });
+  });
+
+  it("refuses garbage that is not valid JSON", () => {
+    const result = validateInventoryDocument("not json at all {{{");
+    expect(result).toMatchObject({ valid: false });
+    if (!result.valid) expect(result.reason).toMatch(/not valid JSON/);
+  });
+
+  it("refuses an empty file", () => {
+    const result = validateInventoryDocument("");
+    expect(result).toMatchObject({ valid: false });
+    if (!result.valid) expect(result.reason).toMatch(/not valid JSON/);
+  });
+
+  it("refuses a document that is not a JSON object", () => {
+    const result = validateInventoryDocument(JSON.stringify(["app"]));
+    expect(result).toMatchObject({ valid: false });
+    if (!result.valid) expect(result.reason).toMatch(/must be a JSON object/);
+  });
+
+  it("refuses an unrecognized top-level field, naming it", () => {
+    const result = validateInventoryDocument(JSON.stringify({ schemaVersion: 1, repositories: [{ id: "app" }], generatedAt: "2026-01-01" }));
+    expect(result).toMatchObject({ valid: false });
+    if (!result.valid) expect(result.reason).toMatch(/"generatedAt"/);
+  });
+
+  it("refuses schemaVersion values other than 1 (wrong type)", () => {
+    const result = validateInventoryDocument(JSON.stringify({ schemaVersion: "1", repositories: [{ id: "app" }] }));
+    expect(result).toMatchObject({ valid: false });
+    if (!result.valid) expect(result.reason).toMatch(/schemaVersion must be 1/);
+  });
+
+  it("refuses a non-array repositories field (wrong type)", () => {
+    const result = validateInventoryDocument(JSON.stringify({ schemaVersion: 1, repositories: { app: true } }));
+    expect(result).toMatchObject({ valid: false });
+    if (!result.valid) expect(result.reason).toMatch(/repositories must be an array/);
+  });
+
+  it("refuses a repository entry that is not an object", () => {
+    const result = validateInventoryDocument(JSON.stringify({ schemaVersion: 1, repositories: ["app"] }));
+    expect(result).toMatchObject({ valid: false });
+    if (!result.valid) expect(result.reason).toMatch(/repositories\[0\] must be an object/);
+  });
+
+  it("refuses a repository entry missing its required id field", () => {
+    const result = validateInventoryDocument(JSON.stringify({ schemaVersion: 1, repositories: [{}] }));
+    expect(result).toMatchObject({ valid: false });
+    if (!result.valid) expect(result.reason).toMatch(/repositories\[0\]\.id must be a nonempty string/);
+  });
+
+  it("refuses a repository entry carrying an unrecognized field alongside a valid id", () => {
+    const result = validateInventoryDocument(JSON.stringify({ schemaVersion: 1, repositories: [{ id: "app", role: "product" }] }));
+    expect(result).toMatchObject({ valid: false });
+    if (!result.valid) expect(result.reason).toMatch(/repositories\[0\] has an unrecognized field "role"/);
+  });
+
+  it("refuses a repository entry whose id is not a string (wrong type)", () => {
+    const result = validateInventoryDocument(JSON.stringify({ schemaVersion: 1, repositories: [{ id: 42 }] }));
+    expect(result).toMatchObject({ valid: false });
+    if (!result.valid) expect(result.reason).toMatch(/repositories\[0\]\.id must be a nonempty string/);
+  });
+
+  it("refuses a governance-record-shaped entry carrying unrecognized fields (issue #1334 repro)", () => {
+    // The exact shape reported in #1334: entries close enough to look like an
+    // inventory (id, role, visibility, status, notes) but not actually one.
+    const result = validateInventoryDocument(
+      JSON.stringify({
+        schemaVersion: 1,
+        repositories: [
+          { id: "app", role: "product", visibility: "public", status: "active", notes: "primary surface" },
+          { id: "site", role: "marketing", visibility: "public", status: "active", notes: "" },
+        ],
+      }),
+    );
+    expect(result).toMatchObject({ valid: false });
+    if (!result.valid) expect(result.reason).toMatch(/repositories\[0\] has an unrecognized field "role"/);
+  });
+
+  it("refuses a duplicate repository id", () => {
+    const result = validateInventoryDocument(JSON.stringify({ schemaVersion: 1, repositories: [{ id: "app" }, { id: "app" }] }));
+    expect(result).toMatchObject({ valid: false });
+    if (!result.valid) expect(result.reason).toMatch(/repositories\[1\]\.id "app" duplicates an earlier entry/);
+  });
+
+  it("refuses two ids naming the same repository under a different letter case", () => {
+    const result = validateInventoryDocument(JSON.stringify({ schemaVersion: 1, repositories: [{ id: "Acme/App" }, { id: "acme/app" }] }));
+    expect(result).toMatchObject({ valid: false });
+    if (!result.valid) expect(result.reason).toMatch(/repositories\[1\]\.id "acme\/app" duplicates an earlier entry \(repository ids are compared case-insensitively/);
+  });
+
+  it("accepts a bare repository name and an owner/name id (ADOPTION.md's own example shape)", () => {
+    expect(validateInventoryDocument(JSON.stringify({ schemaVersion: 1, repositories: [{ id: "app" }, { id: "acme/site" }] }))).toEqual({
+      valid: true,
+      ids: ["app", "acme/site"],
+    });
+  });
+
+  it.each([
+    ["acme/app/extra", "more than one /"],
+    ["acme/", "empty segment"],
+    ["/app", "empty segment"],
+    [".", "\".\" segment"],
+    ["..", "\"..\" segment"],
+    ["acme/..", "\"..\" segment"],
+    [" app", "leading whitespace"],
+    ["app ", "trailing whitespace"],
+    ["ac me/app", "internal whitespace"],
+  ])("refuses id %j as not a valid repository id (%s)", (id) => {
+    const result = validateInventoryDocument(JSON.stringify({ schemaVersion: 1, repositories: [{ id }] }));
+    expect(result).toMatchObject({ valid: false });
+    if (!result.valid) expect(result.reason).toMatch(/is not a valid repository id/);
+  });
+
+  it("accepts a repository entry whose packages field matches Integrator's InventoryPackageEntry exactly (#996)", () => {
+    const result = validateInventoryDocument(
+      JSON.stringify({
+        schemaVersion: 1,
+        repositories: [
+          {
+            id: "app",
+            packages: [
+              { name: "@example-scope/one", version: "2.0.0" },
+              { name: "@example-scope/stray", wiring: "unknown" },
+              { name: "@example-scope/pinned" },
+            ],
+          },
+        ],
+      }),
+    );
+    expect(result).toEqual({ valid: true, ids: ["app"] });
+  });
+
+  it("accepts an empty packages array", () => {
+    expect(
+      validateInventoryDocument(JSON.stringify({ schemaVersion: 1, repositories: [{ id: "app", packages: [] }] })),
+    ).toEqual({ valid: true, ids: ["app"] });
+  });
+
+  it("refuses a non-array packages field", () => {
+    const result = validateInventoryDocument(JSON.stringify({ schemaVersion: 1, repositories: [{ id: "app", packages: { name: "x" } }] }));
+    expect(result).toMatchObject({ valid: false });
+    if (!result.valid) expect(result.reason).toMatch(/repositories\[0\]\.packages must be an array/);
+  });
+
+  it("refuses a packages entry carrying an unrecognized field", () => {
+    const result = validateInventoryDocument(
+      JSON.stringify({ schemaVersion: 1, repositories: [{ id: "app", packages: [{ name: "x", declaredRange: "^1.0.0" }] }] }),
+    );
+    expect(result).toMatchObject({ valid: false });
+    if (!result.valid) expect(result.reason).toMatch(/repositories\[0\]\.packages\[0\] has an unrecognized field "declaredRange"/);
+  });
+
+  it("refuses a packages entry missing its required name", () => {
+    const result = validateInventoryDocument(JSON.stringify({ schemaVersion: 1, repositories: [{ id: "app", packages: [{ version: "1.0.0" }] }] }));
+    expect(result).toMatchObject({ valid: false });
+    if (!result.valid) expect(result.reason).toMatch(/repositories\[0\]\.packages\[0\]\.name must be a nonempty string/);
+  });
+
+  it("refuses a packages entry with an invalid wiring value", () => {
+    const result = validateInventoryDocument(
+      JSON.stringify({ schemaVersion: 1, repositories: [{ id: "app", packages: [{ name: "x", wiring: "bundledDependencies" }] }] }),
+    );
+    expect(result).toMatchObject({ valid: false });
+    if (!result.valid) expect(result.reason).toMatch(/repositories\[0\]\.packages\[0\]\.wiring must be one of/);
+  });
+
+  it("every failure reason points at the contract", () => {
+    const result = validateInventoryDocument(JSON.stringify({ schemaVersion: 1, repositories: [{ id: "app", role: "product" }] }));
+    expect(result).toMatchObject({ valid: false });
+    if (!result.valid) expect(result.reason).toMatch(/repository-inventory\.json/);
+  });
+});
+
+describe("inspectInventory reports invalid documents distinctly from empty (#1334)", () => {
+  it("reports missing for no file", () => {
+    expect(inspectInventory(null)).toEqual({ status: "missing", count: 0 });
+  });
+
+  it("reports empty for a well-formed zero-entry document", () => {
+    expect(inspectInventory(JSON.stringify({ schemaVersion: 1, repositories: [] }))).toEqual({ status: "empty", count: 0 });
+  });
+
+  it("reports invalid, with a reason, for a malformed document instead of silently treating it as empty", () => {
+    const observation = inspectInventory(JSON.stringify({ schemaVersion: 1, repositories: [{ id: "app", role: "product" }] }));
+    expect(observation.status).toBe("invalid");
+    expect(observation.count).toBe(0);
+    expect(observation.reason).toMatch(/unrecognized field "role"/);
+  });
+
+  it("reports invalid for garbage JSON instead of silently treating it as empty", () => {
+    const observation = inspectInventory("{{{not json");
+    expect(observation.status).toBe("invalid");
+    expect(observation.reason).toMatch(/not valid JSON/);
+  });
 });
 
 describe("hasAdvisorPin", () => {
@@ -537,6 +777,38 @@ describe("applyWorkspacePlan", () => {
     expect(result.message).toMatch(/health:/);
   });
 
+  it("refuses adopt with a schema-invalid --inventory and writes nothing, even re-validated at apply time (#1334)", () => {
+    const directory = tempDir();
+    const source = join(directory, "governance-record.json");
+    // The exact #1334 repro shape: a repositories array whose entries look
+    // inventory-adjacent (id, role, visibility, status, notes) but are not.
+    writeFileSync(
+      source,
+      `${JSON.stringify(
+        {
+          schemaVersion: 1,
+          repositories: [
+            { id: "app", role: "product", visibility: "public", status: "active", notes: "primary" },
+            { id: "site", role: "marketing", visibility: "public", status: "active", notes: "" },
+          ],
+        },
+        null,
+        2,
+      )}\n`,
+    );
+    expect(() =>
+      applyWorkspacePlan(
+        host(directory),
+        { action: "adopt", owner: "acme", repository: "hub", directory, advisorVersion: "0.2.3", inventorySource: source },
+        skeletonRoot,
+      ),
+    ).toThrow(/unrecognized field "role"/);
+    expect(existsSync(join(directory, WORKSPACE_MARKER_REL))).toBe(false);
+    expect(existsSync(join(directory, WORKSPACE_INVENTORY_REL))).toBe(false);
+    expect(existsSync(join(directory, "clossys"))).toBe(false);
+    expect(existsSync(join(directory, "package.json"))).toBe(false);
+  });
+
   it("refuses adopt on a dirty tree and writes nothing", () => {
     const directory = tempDir();
     writeFileSync(join(directory, "package.json"), `${JSON.stringify({ name: "product" }, null, 2)}\n`);
@@ -599,6 +871,95 @@ describe("applyWorkspacePlan", () => {
     const ids = (JSON.parse(readFileSync(join(directory, WORKSPACE_INVENTORY_REL), "utf8")) as { repositories: { id: string }[] })
       .repositories.map((entry) => entry.id);
     expect(ids).toEqual(["hub-a", "hub-c", "hub-b"]);
+  });
+
+  it("reportHubHealth reports a corrupted stored inventory as invalid, not silently as empty (#1334)", () => {
+    // This exercises reportHubHealth directly, read-only -- not the full
+    // resume path (applyWorkspacePlan with action: "resume"); see the
+    // "resume with an invalid stored inventory" test below for that.
+    const directory = tempDir();
+    mkdirSync(dirname(join(directory, WORKSPACE_MARKER_REL)), { recursive: true });
+    writeFileSync(
+      join(directory, WORKSPACE_MARKER_REL),
+      `${JSON.stringify({ schemaVersion: 1, kind: "account-hub", owner: "acme", repository: "acme/hub" }, null, 2)}\n`,
+    );
+    // Corrupted in place -- e.g. hand-edited or overwritten by something
+    // else -- carrying fields the schema does not recognize.
+    mkdirSync(dirname(join(directory, WORKSPACE_INVENTORY_REL)), { recursive: true });
+    writeFileSync(
+      join(directory, WORKSPACE_INVENTORY_REL),
+      `${JSON.stringify({ schemaVersion: 1, repositories: [{ id: "acme/app", visibility: "public" }] }, null, 2)}\n`,
+    );
+    const report = reportHubHealth(host(directory), directory);
+    expect(report.inventory.status).toBe("invalid");
+    expect(report.inventory.count).toBe(0);
+    expect(report.inventory.reason).toMatch(/unrecognized field "visibility"/);
+    expect(report.inventory.reason).toMatch(/repository-inventory\.json/);
+    expect(formatHubHealth(report)).toMatch(/inventory: invalid -- .*unrecognized field "visibility"/);
+    // Read-only: reportHubHealth never rewrites clossys/.state/inventory.json,
+    // and the corrupted content is left exactly as is.
+    expect(readFileSync(join(directory, WORKSPACE_INVENTORY_REL), "utf8")).toContain("visibility");
+  });
+
+  it("resume with an invalid stored inventory writes nothing into a sibling checkout and clones nothing (#1334)", () => {
+    const parent = tempDir();
+    const hub = join(parent, "hub");
+    const app = join(parent, "app");
+    mkdirSync(dirname(join(hub, WORKSPACE_MARKER_REL)), { recursive: true });
+    writeFileSync(
+      join(hub, WORKSPACE_MARKER_REL),
+      `${JSON.stringify({ schemaVersion: 1, kind: "account-hub", owner: "acme", repository: "acme/hub" }, null, 2)}\n`,
+    );
+    // The exact B2 probe: entries that look inventory-shaped but carry a
+    // field the schema does not recognize -- the #1334 governance-record
+    // failure mode, this time sitting in the STORED inventory, read back on
+    // resume rather than supplied via --inventory.
+    writeInventory(hub, [
+      { id: "acme/app", role: "governance" },
+      { id: "acme/missing", role: "x" },
+    ]);
+    mkdirSync(join(app, ".git"), { recursive: true });
+    const before = readdirSync(app).sort();
+    const catalogue = tempDir();
+    const base = host(hub);
+    let cloneAttempted = false;
+    const workspaceHost: WorkspaceHost = {
+      ...base,
+      run: (command, args, opts) => {
+        if (command === "gh" && args[0] === "repo" && args[1] === "clone") cloneAttempted = true;
+        return base.run(command, args, opts);
+      },
+    };
+    const result = applyWorkspacePlan(
+      workspaceHost,
+      { action: "resume", owner: "acme", repository: "hub", directory: hub, clone: false },
+      skeletonRoot,
+      composeApplyOptions(catalogue),
+    );
+    expect(result.health.inventory.status).toBe("invalid");
+    expect(result.health.skillComposition?.rosterSkipped).toEqual([
+      { inventoryId: WORKSPACE_INVENTORY_REL, note: expect.stringContaining('unrecognized field "role"') },
+    ]);
+    expect(result.health.degraded).toBe(true);
+    // Nothing was written into the sibling: its directory listing is exactly
+    // what this test itself seeded, and no skill or guidance file landed.
+    expect(readdirSync(app).sort()).toEqual(before);
+    expect(existsSync(join(app, ".agents"))).toBe(false);
+    expect(existsSync(join(app, "AGENTS.md"))).toBe(false);
+    expect(cloneAttempted).toBe(false);
+
+    // The --clone-missing path (cloneMissingInventoryRepositories) refuses
+    // the same way: it reports the invalid stored inventory and skips,
+    // never reaching `gh repo clone`.
+    const outcomes = cloneMissingInventoryRepositories(workspaceHost, hub, "acme");
+    expect(outcomes).toEqual([
+      {
+        inventoryId: WORKSPACE_INVENTORY_REL,
+        result: "skipped-other-reason",
+        note: expect.stringContaining('unrecognized field "role"'),
+      },
+    ]);
+    expect(cloneAttempted).toBe(false);
   });
 
   it("reports health on resume and composes skills plus refreshed guidance", () => {
