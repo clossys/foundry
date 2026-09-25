@@ -80,7 +80,8 @@ export interface AdvisorPlan {
 /** `reason` lists every violation, separated by `; `, each naming the field at fault (for example `plan.blockers[0].capabilityId is required`). */
 export type ValidationResult = { readonly valid: true } | { readonly valid: false; readonly reason: string };
 
-function loadContract(name: string): ContractSchema {
+/** Resolves a packed shared contract by its docs/contracts/ file name. Throws for a name that was not packed. */
+export function loadContract(name: string): ContractSchema {
   const contract = Object.hasOwn(PLAN_CONTRACTS, name) ? PLAN_CONTRACTS[name] : undefined;
   if (contract === undefined) throw new Error(`no packed contract named ${JSON.stringify(name)}`);
   return contract;

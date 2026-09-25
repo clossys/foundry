@@ -16,9 +16,9 @@
  * without writing the generated file.
  *
  * It also writes src/generated/plan-contracts.generated.ts (issue #1475):
- * the shared plan and brief contracts as plain data, rendered by the same
- * function @clossys/launcher's own packer uses, so both packages validate
- * against byte-identical contracts.
+ * the shared plan, brief and repository-inventory contracts as plain data,
+ * rendered by the same function @clossys/launcher's own packer uses, so both
+ * packages validate against byte-identical contracts.
  */
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";

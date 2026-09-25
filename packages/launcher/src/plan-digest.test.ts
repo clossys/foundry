@@ -64,9 +64,9 @@ describe("canonical plan digest (docs/contracts/advisor-plan-digest.md)", () => 
   });
 });
 
-describe("packed plan and brief contracts", () => {
+describe("packed plan, brief and inventory contracts", () => {
   it("are the docs/contracts files, unchanged", () => {
-    expect(Object.keys(PLAN_CONTRACTS)).toEqual(["advisor-plan.json", "engagement-brief.json", "engagement-context.json"]);
+    expect(Object.keys(PLAN_CONTRACTS)).toEqual(["advisor-plan.json", "engagement-brief.json", "engagement-context.json", "repository-inventory.json"]);
     for (const [name, contract] of Object.entries(PLAN_CONTRACTS)) expect(contract).toEqual(JSON.parse(read(`docs/contracts/${name}`)));
   });
 

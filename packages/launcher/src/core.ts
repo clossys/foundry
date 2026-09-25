@@ -23,6 +23,7 @@ import { composeSkills, SKILLS_MANIFEST_REL, type SkillCompositionResult, type S
 import { parseSkillManifest, summarizeSkillsManifest } from "./manifest.js";
 import { detectLinkedHosts, serializeHostRecord, HOSTS_REL, type DiscoveredHost } from "./hosts.js";
 import { reportInventoryDrift } from "./inventory-adoption.js";
+import { isValidInventoryId, validateInventoryDocument } from "./inventory-contract.js";
 
 export const DEFAULT_REPOSITORY_NAME = "workspace";
 /** The one visible, per-repository Clossys folder (#1171). Every role's output lives under it. */
@@ -235,165 +236,12 @@ function readHub(host: WorkspaceHost, directory: string): HubDocument | undefine
 }
 
 /**
- * The inventory document's own schema: docs/contracts/repository-inventory.json
- * (in the public repository, not shipped in this package),
- * v1 (#996, #1334). `{ schemaVersion: 1, repositories: [{ id, packages? },
- * ...] }`, nothing more. No other top-level or per-entry field is part of
- * this shape -- a document that merely happens to carry a `repositories`
- * array of similarly-shaped objects (for example a governance record whose
- * entries also carry `role`, `visibility`, `status`, and `notes` fields) is
- * not a launcher inventory and must be refused, not adopted. This function
- * IS that contract's implementation; the two must never diverge (see the
- * contract's own "shape.rule").
+ * The inventory document's shape lives in docs/contracts/repository-inventory.json
+ * and is checked, on every read and write, by `validateInventoryDocument()`
+ * through the shared contract checker (./inventory-contract.ts, #1334, #1179).
  */
-export type InventoryValidation =
-  | { readonly valid: true; readonly ids: readonly string[] }
-  | { readonly valid: false; readonly reason: string };
-
-/** Points a validation failure at the one place the shape is written down. */
-const INVENTORY_CONTRACT_POINTER = "see docs/contracts/repository-inventory.json";
-
-const INVENTORY_TOP_LEVEL_KEYS = new Set(["schemaVersion", "repositories"]);
-const INVENTORY_ENTRY_KEYS = new Set(["id", "packages"]);
-/** Exactly @clossys/integrator's InventoryPackageEntry keys (#996). */
-const INVENTORY_PACKAGE_ENTRY_KEYS = new Set(["name", "version", "wiring"]);
-/** Exactly @clossys/integrator's InventoryPackageWiring (#996). */
-const INVENTORY_PACKAGE_WIRINGS = new Set(["dependencies", "devDependencies", "optionalDependencies", "peerDependencies", "unknown"]);
-
-/**
- * The `id` format the inventory schema and Launcher's own sibling/clone
- * resolution (`parseInventoryRepositoryId`, below) both enforce: a bare
- * repository name, or `owner/name`, using the exact same GitHub owner and
- * repository name rules (`OWNER` / `REPO`) Launcher already applies when it
- * resolves a sibling clone target beside the hub. Neither `.` nor `..` is
- * ever a valid segment (regardless of what OWNER/REPO's own character
- * classes would otherwise allow), an id may carry at most one `/`, no
- * segment may be empty, and no whitespace is tolerated anywhere in the id
- * (OWNER/REPO's character classes already exclude it, and this function
- * does not trim before checking, so leading/trailing whitespace is refused
- * rather than silently dropped). `parseInventoryRepositoryId` trusts a
- * caller that already ran this check rather than re-deriving the rule, so
- * the two can never drift apart.
- */
-function isValidInventoryId(id: string): boolean {
-  if (id.length === 0) return false;
-  const segments = id.split("/");
-  if (segments.length > 2) return false;
-  if (segments.some((segment) => segment === "" || segment === "." || segment === "..")) return false;
-  if (segments.length === 2) {
-    const owner = segments[0] ?? "";
-    const repository = segments[1] ?? "";
-    return OWNER.test(owner) && REPO.test(repository);
-  }
-  return REPO.test(id);
-}
-
-function validateInventoryPackages(value: unknown, entryIndex: number): { valid: true } | { valid: false; reason: string } {
-  if (!Array.isArray(value)) {
-    return { valid: false, reason: `repositories[${entryIndex}].packages must be an array (${INVENTORY_CONTRACT_POINTER})` };
-  }
-  for (const [packageIndex, entry] of value.entries()) {
-    const where = `repositories[${entryIndex}].packages[${packageIndex}]`;
-    if (!isRecord(entry)) {
-      return { valid: false, reason: `${where} must be an object (${INVENTORY_CONTRACT_POINTER})` };
-    }
-    const unknownKey = Object.keys(entry).find((key) => !INVENTORY_PACKAGE_ENTRY_KEYS.has(key));
-    if (unknownKey !== undefined) {
-      return {
-        valid: false,
-        reason: `${where} has an unrecognized field "${unknownKey}" (only name, version, and wiring are allowed; ${INVENTORY_CONTRACT_POINTER})`,
-      };
-    }
-    if (!isText(entry.name)) {
-      return { valid: false, reason: `${where}.name must be a nonempty string (${INVENTORY_CONTRACT_POINTER})` };
-    }
-    if (entry.version !== undefined && !isText(entry.version)) {
-      return { valid: false, reason: `${where}.version must be a nonempty string when present (${INVENTORY_CONTRACT_POINTER})` };
-    }
-    if (entry.wiring !== undefined && (typeof entry.wiring !== "string" || !INVENTORY_PACKAGE_WIRINGS.has(entry.wiring))) {
-      return {
-        valid: false,
-        reason: `${where}.wiring must be one of dependencies/devDependencies/optionalDependencies/peerDependencies/unknown when present (${INVENTORY_CONTRACT_POINTER})`,
-      };
-    }
-  }
-  return { valid: true };
-}
-
-/**
- * Strictly validates an inventory document's text against the schema above.
- * Never partially accepts: any mismatch is reported as `{ valid: false,
- * reason }`, naming the offending field, before a caller ever gets to a list
- * of ids. This is the one place inventory documents -- supplied via
- * `--inventory` or read back from the hub's `clossys/.state/inventory.json`
- * (a generated hub path, not shipped in this package) -- are
- * validated; `inspectInventory`, the `--inventory` adopt path, and every
- * other read of the stored inventory (`readInventoryRepositories`, and
- * through it resume's sibling composition and `--clone-missing`) route
- * through it so nothing can silently accept a shape-alike document (#1334).
- */
-export function validateInventoryDocument(raw: string): InventoryValidation {
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(raw);
-  } catch {
-    return { valid: false, reason: `is not valid JSON (${INVENTORY_CONTRACT_POINTER})` };
-  }
-  if (!isRecord(parsed)) {
-    return { valid: false, reason: `must be a JSON object with schemaVersion and repositories (${INVENTORY_CONTRACT_POINTER})` };
-  }
-  const unknownTopLevel = Object.keys(parsed).find((key) => !INVENTORY_TOP_LEVEL_KEYS.has(key));
-  if (unknownTopLevel !== undefined) {
-    return {
-      valid: false,
-      reason: `has an unrecognized field "${unknownTopLevel}" (only schemaVersion and repositories are allowed; ${INVENTORY_CONTRACT_POINTER})`,
-    };
-  }
-  if (parsed.schemaVersion !== 1) {
-    return { valid: false, reason: `schemaVersion must be 1, got ${JSON.stringify(parsed.schemaVersion)} (${INVENTORY_CONTRACT_POINTER})` };
-  }
-  if (!Array.isArray(parsed.repositories)) {
-    return { valid: false, reason: `repositories must be an array (${INVENTORY_CONTRACT_POINTER})` };
-  }
-  const ids: string[] = [];
-  const seen = new Set<string>();
-  for (const [index, entry] of parsed.repositories.entries()) {
-    if (!isRecord(entry)) {
-      return { valid: false, reason: `repositories[${index}] must be an object (${INVENTORY_CONTRACT_POINTER})` };
-    }
-    const unknownEntryKey = Object.keys(entry).find((key) => !INVENTORY_ENTRY_KEYS.has(key));
-    if (unknownEntryKey !== undefined) {
-      return {
-        valid: false,
-        reason: `repositories[${index}] has an unrecognized field "${unknownEntryKey}" (entries allow only id and packages; ${INVENTORY_CONTRACT_POINTER})`,
-      };
-    }
-    if (!isText(entry.id)) {
-      return { valid: false, reason: `repositories[${index}].id must be a nonempty string (${INVENTORY_CONTRACT_POINTER})` };
-    }
-    const id = entry.id;
-    if (!isValidInventoryId(id)) {
-      return {
-        valid: false,
-        reason: `repositories[${index}].id "${id}" is not a valid repository id -- a bare name or "owner/name", with no ".", "..", empty segment, whitespace, or more than one "/" (${INVENTORY_CONTRACT_POINTER})`,
-      };
-    }
-    const key = id.toLowerCase();
-    if (seen.has(key)) {
-      return {
-        valid: false,
-        reason: `repositories[${index}].id "${id}" duplicates an earlier entry (repository ids are compared case-insensitively; ${INVENTORY_CONTRACT_POINTER})`,
-      };
-    }
-    seen.add(key);
-    if (entry.packages !== undefined) {
-      const packagesResult = validateInventoryPackages(entry.packages, index);
-      if (!packagesResult.valid) return packagesResult;
-    }
-    ids.push(id);
-  }
-  return { valid: true, ids };
-}
+export { validateInventoryDocument } from "./inventory-contract.js";
+export type { InventoryValidation } from "./inventory-contract.js";
 
 /** Classifies a generated hub inventory (packed template skeleton/clossys/.state/inventory.json; the generated path does not ship) without inventing repositories. Malformed input is "invalid", never silently folded into "empty" (#1334). */
 export function inspectInventory(raw: string | null): InventoryObservation {

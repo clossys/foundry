@@ -401,19 +401,19 @@ describe("validateInventoryDocument (#1334)", () => {
   it("refuses a document that is not a JSON object", () => {
     const result = validateInventoryDocument(JSON.stringify(["app"]));
     expect(result).toMatchObject({ valid: false });
-    if (!result.valid) expect(result.reason).toMatch(/must be a JSON object/);
+    if (!result.valid) expect(result.reason).toMatch(/must be an object \(the hub repository inventory\), got array/);
   });
 
   it("refuses an unrecognized top-level field, naming it", () => {
     const result = validateInventoryDocument(JSON.stringify({ schemaVersion: 1, repositories: [{ id: "app" }], generatedAt: "2026-01-01" }));
     expect(result).toMatchObject({ valid: false });
-    if (!result.valid) expect(result.reason).toMatch(/"generatedAt"/);
+    if (!result.valid) expect(result.reason).toMatch(/^generatedAt is not a field the contract declares/);
   });
 
   it("refuses schemaVersion values other than 1 (wrong type)", () => {
     const result = validateInventoryDocument(JSON.stringify({ schemaVersion: "1", repositories: [{ id: "app" }] }));
     expect(result).toMatchObject({ valid: false });
-    if (!result.valid) expect(result.reason).toMatch(/schemaVersion must be 1/);
+    if (!result.valid) expect(result.reason).toMatch(/schemaVersion must equal 1/);
   });
 
   it("refuses a non-array repositories field (wrong type)", () => {
@@ -431,19 +431,19 @@ describe("validateInventoryDocument (#1334)", () => {
   it("refuses a repository entry missing its required id field", () => {
     const result = validateInventoryDocument(JSON.stringify({ schemaVersion: 1, repositories: [{}] }));
     expect(result).toMatchObject({ valid: false });
-    if (!result.valid) expect(result.reason).toMatch(/repositories\[0\]\.id must be a nonempty string/);
+    if (!result.valid) expect(result.reason).toMatch(/repositories\[0\]\.id is required/);
   });
 
   it("refuses a repository entry carrying an unrecognized field alongside a valid id", () => {
     const result = validateInventoryDocument(JSON.stringify({ schemaVersion: 1, repositories: [{ id: "app", role: "product" }] }));
     expect(result).toMatchObject({ valid: false });
-    if (!result.valid) expect(result.reason).toMatch(/repositories\[0\] has an unrecognized field "role"/);
+    if (!result.valid) expect(result.reason).toMatch(/repositories\[0\]\.role is not a field the contract declares, and unknown fields are refused/);
   });
 
   it("refuses a repository entry whose id is not a string (wrong type)", () => {
     const result = validateInventoryDocument(JSON.stringify({ schemaVersion: 1, repositories: [{ id: 42 }] }));
     expect(result).toMatchObject({ valid: false });
-    if (!result.valid) expect(result.reason).toMatch(/repositories\[0\]\.id must be a nonempty string/);
+    if (!result.valid) expect(result.reason).toMatch(/repositories\[0\]\.id must be a bare repository name or owner\/name.*, got integer/);
   });
 
   it("refuses a governance-record-shaped entry carrying unrecognized fields (issue #1334 repro)", () => {
@@ -459,19 +459,22 @@ describe("validateInventoryDocument (#1334)", () => {
       }),
     );
     expect(result).toMatchObject({ valid: false });
-    if (!result.valid) expect(result.reason).toMatch(/repositories\[0\] has an unrecognized field "role"/);
+    if (!result.valid) expect(result.reason).toMatch(/repositories\[0\]\.role is not a field the contract declares, and unknown fields are refused/);
   });
 
   it("refuses a duplicate repository id", () => {
     const result = validateInventoryDocument(JSON.stringify({ schemaVersion: 1, repositories: [{ id: "app" }, { id: "app" }] }));
     expect(result).toMatchObject({ valid: false });
-    if (!result.valid) expect(result.reason).toMatch(/repositories\[1\]\.id "app" duplicates an earlier entry/);
+    if (!result.valid) expect(result.reason).toMatch(/repositories\[1\]\.id names the same repository as repositories\[0\]\.id/);
   });
 
   it("refuses two ids naming the same repository under a different letter case", () => {
     const result = validateInventoryDocument(JSON.stringify({ schemaVersion: 1, repositories: [{ id: "Acme/App" }, { id: "acme/app" }] }));
     expect(result).toMatchObject({ valid: false });
-    if (!result.valid) expect(result.reason).toMatch(/repositories\[1\]\.id "acme\/app" duplicates an earlier entry \(repository ids are compared case-insensitively/);
+    if (!result.valid) {
+      expect(result.reason).toMatch(/repositories\[1\]\.id names the same repository as repositories\[0\]\.id \(repository ids are compared case-insensitively/);
+      expect(result.reason).not.toMatch(/acme/i);
+    }
   });
 
   it("accepts a bare repository name and an owner/name id (ADOPTION.md's own example shape)", () => {
@@ -494,7 +497,11 @@ describe("validateInventoryDocument (#1334)", () => {
   ])("refuses id %j as not a valid repository id (%s)", (id) => {
     const result = validateInventoryDocument(JSON.stringify({ schemaVersion: 1, repositories: [{ id }] }));
     expect(result).toMatchObject({ valid: false });
-    if (!result.valid) expect(result.reason).toMatch(/is not a valid repository id/);
+    if (!result.valid) {
+      expect(result.reason).toMatch(/^repositories\[0\]\.id must be a bare repository name or owner\/name/);
+      // Position only: the refused id itself is never echoed (#1179).
+      if (id.trim() !== "" && id.trim().length > 2) expect(result.reason).not.toContain(id.trim());
+    }
   });
 
   it("accepts a repository entry whose packages field matches Integrator's InventoryPackageEntry exactly (#996)", () => {
@@ -533,13 +540,13 @@ describe("validateInventoryDocument (#1334)", () => {
       JSON.stringify({ schemaVersion: 1, repositories: [{ id: "app", packages: [{ name: "x", declaredRange: "^1.0.0" }] }] }),
     );
     expect(result).toMatchObject({ valid: false });
-    if (!result.valid) expect(result.reason).toMatch(/repositories\[0\]\.packages\[0\] has an unrecognized field "declaredRange"/);
+    if (!result.valid) expect(result.reason).toMatch(/repositories\[0\]\.packages\[0\]\.declaredRange is not a field the contract declares/);
   });
 
   it("refuses a packages entry missing its required name", () => {
     const result = validateInventoryDocument(JSON.stringify({ schemaVersion: 1, repositories: [{ id: "app", packages: [{ version: "1.0.0" }] }] }));
     expect(result).toMatchObject({ valid: false });
-    if (!result.valid) expect(result.reason).toMatch(/repositories\[0\]\.packages\[0\]\.name must be a nonempty string/);
+    if (!result.valid) expect(result.reason).toMatch(/repositories\[0\]\.packages\[0\]\.name is required/);
   });
 
   it("refuses a packages entry with an invalid wiring value", () => {
@@ -570,7 +577,7 @@ describe("inspectInventory reports invalid documents distinctly from empty (#133
     const observation = inspectInventory(JSON.stringify({ schemaVersion: 1, repositories: [{ id: "app", role: "product" }] }));
     expect(observation.status).toBe("invalid");
     expect(observation.count).toBe(0);
-    expect(observation.reason).toMatch(/unrecognized field "role"/);
+    expect(observation.reason).toMatch(/repositories\[0\]\.role is not a field the contract declares/);
   });
 
   it("reports invalid for garbage JSON instead of silently treating it as empty", () => {
@@ -769,7 +776,7 @@ describe("applyWorkspacePlan", () => {
         { action: "adopt", owner: "acme", repository: "hub", directory, advisorVersion: "0.2.3", inventorySource: source },
         skeletonRoot,
       ),
-    ).toThrow(/unrecognized field "role"/);
+    ).toThrow(/repositories\[0\]\.role is not a field the contract declares/);
     expect(existsSync(join(directory, WORKSPACE_MARKER_REL))).toBe(false);
     expect(existsSync(join(directory, WORKSPACE_INVENTORY_REL))).toBe(false);
     expect(existsSync(join(directory, "clossys"))).toBe(false);
@@ -860,9 +867,9 @@ describe("applyWorkspacePlan", () => {
     const report = reportHubHealth(host(directory), directory);
     expect(report.inventory.status).toBe("invalid");
     expect(report.inventory.count).toBe(0);
-    expect(report.inventory.reason).toMatch(/unrecognized field "visibility"/);
+    expect(report.inventory.reason).toMatch(/repositories\[0\]\.visibility is not a field the contract declares/);
     expect(report.inventory.reason).toMatch(/repository-inventory\.json/);
-    expect(formatHubHealth(report)).toMatch(/inventory: invalid -- .*unrecognized field "visibility"/);
+    expect(formatHubHealth(report)).toMatch(/inventory: invalid -- .*repositories\[0\]\.visibility is not a field/);
     // Read-only: reportHubHealth never rewrites clossys/.state/inventory.json,
     // and the corrupted content is left exactly as is.
     expect(readFileSync(join(directory, WORKSPACE_INVENTORY_REL), "utf8")).toContain("visibility");
@@ -905,7 +912,7 @@ describe("applyWorkspacePlan", () => {
     );
     expect(result.health.inventory.status).toBe("invalid");
     expect(result.health.skillComposition?.rosterSkipped).toEqual([
-      { inventoryId: WORKSPACE_INVENTORY_REL, note: expect.stringContaining('unrecognized field "role"') },
+      { inventoryId: WORKSPACE_INVENTORY_REL, note: expect.stringContaining("repositories[0].role is not a field the contract declares") },
     ]);
     expect(result.health.degraded).toBe(true);
     // Nothing was written into the sibling: its directory listing is exactly
@@ -923,7 +930,7 @@ describe("applyWorkspacePlan", () => {
       {
         inventoryId: WORKSPACE_INVENTORY_REL,
         result: "skipped-other-reason",
-        note: expect.stringContaining('unrecognized field "role"'),
+        note: expect.stringContaining("repositories[0].role is not a field the contract declares"),
       },
     ]);
     expect(cloneAttempted).toBe(false);
