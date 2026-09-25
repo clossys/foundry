@@ -25,8 +25,8 @@ hexadecimal digits of the SHA-256 hash of the UTF-8 bytes of
    digested could differ from the one a reader of the file sees. The plan
    must then validate against `advisor-plan.json`, which also refuses a lone
    surrogate in any string, so every valid plan has a digest. Validating
-   includes the code rules R1 to R9 that the contract's description defines
-   (issue #1178). R1 to R8 relate fields a plan without `kits`, `staffing`,
+   includes the code rules R1 to R10 that the contract's description defines
+   (issue #1178). R1 to R8 and R10 relate fields a plan without `kits`, `staffing`,
    `packages` or `resolution` does not have, so they refuse no such plan.
    R9 refuses a plan that names one role twice in `mandate.roles`, which
    used to validate; such a plan no longer has a digest. Every other plan

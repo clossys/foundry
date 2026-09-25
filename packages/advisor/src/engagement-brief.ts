@@ -34,8 +34,10 @@ export interface EngagementBrief {
   deliverables: readonly string[];
   /**
    * The roles staffed in the repository this brief is written to, in plan
-   * order (issue #1178). Absent in the hub brief; set per repository. Every
-   * entry is one of `roles[].role`, and none repeats.
+   * order (issue #1178). Absent in the hub brief, which is the only brief
+   * this package builds: a repository's own brief is derived from it by
+   * Launcher's apply planner, as the brief contract's description defines.
+   * Every entry is one of `roles[].role`, and none repeats.
    */
   staffedHere?: readonly string[];
   /**
@@ -80,9 +82,10 @@ export function validateEngagementBrief(value: unknown): AdvisorFinding[] {
 /**
  * The fixed text a brief carries as its `problem` in a repository whose
  * visibility is not private (issue #1178), read from the shared brief
- * contract's `definitions.publicProblemPlaceholder`, so the client's own
- * words are never committed where the public can read them. It says where
- * the problem is kept, and nothing about what it is.
+ * contract's `definitions.publicProblemPlaceholder`. Launcher's apply
+ * planner writes it in place of the client's own words for such a
+ * repository. It says where the problem is kept, and nothing about what it
+ * is.
  */
 export const PUBLIC_PROBLEM_PLACEHOLDER: string = (() => {
   const definitions = loadPlanContract("engagement-brief.json").definitions as Record<string, { const?: unknown }> | undefined;
@@ -107,7 +110,6 @@ export function toEngagementBrief({
   composed,
   catalogue,
   context,
-  staffedHere,
 }: {
   problem: string;
   composed: Extract<ComposeKitResult, { state: "composed" }>;
@@ -123,15 +125,7 @@ export function toEngagementBrief({
    * it — ever goes in.
    */
   context?: EngagementContext;
-  /**
-   * The roles staffed in the one repository this brief is for, in plan order
-   * (issue #1178). Omit it for the hub brief. Throws when it is empty, or an
-   * entry is not one of the composed roles or repeats; the message names the
-   * position, never the value.
-   */
-  staffedHere?: readonly string[];
 }): EngagementBrief {
-  if (staffedHere !== undefined) checkStaffedHere(staffedHere, composed.roles);
   const byRole = new Map(catalogue.roles.map((role) => [role.role, role]));
   const deliverables = composed.roles
     .map((role) => byRole.get(role.role)?.boundary.owns)
@@ -143,21 +137,8 @@ export function toEngagementBrief({
     roles: composed.roles.map(toBriefRole),
     sequence: composed.sequence,
     deliverables,
-    ...(staffedHere === undefined ? {} : { staffedHere: [...staffedHere] }),
     ...(context === undefined ? {} : { context: snapshotContext(context) }),
   };
-}
-
-/** Refuses a staffedHere list the brief contract would refuse (minItems 1, B1, B2), naming positions only. */
-function checkStaffedHere(staffedHere: readonly string[], roles: readonly ComposedRole[]): void {
-  if (staffedHere.length === 0) throw new TypeError("staffedHere must name at least one role; omit it for the hub brief");
-  const composedRoles = new Set(roles.map((role) => role.role));
-  const seen = new Set<string>();
-  staffedHere.forEach((role, index) => {
-    if (typeof role !== "string" || !composedRoles.has(role)) throw new TypeError(`staffedHere[${index}] is not one of the composed kit's roles`);
-    if (seen.has(role)) throw new TypeError(`staffedHere[${index}] repeats an earlier entry`);
-    seen.add(role);
-  });
 }
 
 /**

@@ -377,6 +377,33 @@ describe("approvedSubject (#1178): what an approval binds, failing closed", () =
     expect(approvedSubject(withDecisions({ ...approve("2026-09-20T00:00:00Z"), subjectDigest: 5 } as unknown as ReturnType<typeof approve>))).toBeNull();
   });
 
+  it("binds nothing on a plan that does not validate, so the machine's time zone cannot pick the latest decision", () => {
+    const previous = process.env.TZ;
+    process.env.TZ = "America/Los_Angeles";
+    try {
+      // A time with no offset parses as local time: here 07:00Z, later than the 03:00Z rejection.
+      expect(Date.parse("2026-09-25T00:00:00")).toBe(Date.parse("2026-09-25T07:00:00Z"));
+      const plan = withDecisions(approve("2026-09-25T00:00:00", SUBJECT), approve("2026-09-25T03:00:00Z", SUBJECT, "rejected"));
+      expect(validateAdvisorPlan(plan).valid).toBe(false);
+      expect(approvedSubject(plan)).toBeNull();
+    } finally {
+      if (previous === undefined) delete process.env.TZ;
+      else process.env.TZ = previous;
+    }
+  });
+
+  it("handles 300,000 decisions without throwing, in both approvedSubject and isPlanApproved", () => {
+    const start = Date.parse("2026-01-01T00:00:00Z");
+    const decisions = Array.from({ length: 300_000 }, (_, index) => approve(new Date(start + index * 1000).toISOString(), SUBJECT));
+    // Built without spreading the list into a call's arguments, which would itself throw a RangeError.
+    const approved: AdvisorPlan = { ...VALID_PLAN, decisions };
+    expect(approvedSubject(approved)).toBe(SUBJECT);
+    expect(isPlanApproved(approved)).toBe(true);
+    const rejected: AdvisorPlan = { ...VALID_PLAN, decisions: [...decisions.slice(0, -1), approve(decisions.at(-1)!.at, SUBJECT, "rejected")] };
+    expect(approvedSubject(rejected)).toBeNull();
+    expect(isPlanApproved(rejected)).toBe(false);
+  }, 60_000);
+
   it("is what the plan contract accepts: an approving plan with a subjectDigest validates", () => {
     expect(validateAdvisorPlan(withDecisions(approve("2026-09-20T00:00:00Z", SUBJECT)))).toEqual({ valid: true });
   });

@@ -48,7 +48,9 @@ function latestDecisions(plan: AdvisorPlan): readonly PlanDecision[] | null {
   if (plan.decisions.length === 0) return null;
   const times = plan.decisions.map((decision) => Date.parse(decision.at));
   if (!times.every(Number.isFinite)) return null;
-  const latest = Math.max(...times);
+  // A reduce, not Math.max(...times): spreading a very long list into
+  // arguments throws a RangeError.
+  const latest = times.reduce((highest, time) => (time > highest ? time : highest), Number.NEGATIVE_INFINITY);
   return plan.decisions.filter((_, index) => times[index] === latest);
 }
 
@@ -60,6 +62,10 @@ const SUBJECT_DIGEST = /^sha256:[0-9a-f]{64}$/;
  * the exact change the approver was shown. Otherwise null, and null binds
  * nothing. Fails closed:
  *
+ * - a plan that does not validate against the plan contract, rules
+ *   included: null. It checks this itself rather than trusting its caller,
+ *   because on an unchecked plan a time with no offset parses as local time,
+ *   so the machine's time zone could decide which decision is latest;
  * - no decisions, or any decision time that does not parse: null;
  * - a latest decision that is not "approved": null;
  * - an approval with no `subjectDigest`, or one that is not a sha256 digest:
@@ -72,6 +78,7 @@ const SUBJECT_DIGEST = /^sha256:[0-9a-f]{64}$/;
  * the two are equal.
  */
 export function approvedSubject(plan: AdvisorPlan): string | null {
+  if (!validateAdvisorPlan(plan).valid) return null;
   const latest = latestDecisions(plan);
   if (latest === null || !latest.every((decision) => decision.chosen === "approved")) return null;
   const subject = latest[0]!.subjectDigest;
@@ -92,7 +99,8 @@ export function approvedSubject(plan: AdvisorPlan): string | null {
  * true for an approval that names no change at all. It says only that the
  * latest decision is an approval. Anything that applies a plan must use
  * `approvedSubject()` instead, and compare the subject it returns with the
- * digest of the change it holds.
+ * digest of the change it holds. The one stated exception is the legacy
+ * brief-only path, `applyEngagementBrief()`, which predates the binding.
  */
 export function isPlanApproved(plan: AdvisorPlan): boolean {
   const latest = latestDecisions(plan);

@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://github.com/clossys/foundry/blob/main/docs/contracts/advisor-plan.json",
   "title": "Advisor plan",
-  "description": "Issue #1175 and #1475: the plan record at clossys/advisor/plan.json that Advisor writes and renders into its STATUS document, and that Launcher reads before it applies an approved plan. packages/advisor/src/status.ts's AdvisorPlan type is the shape's owner; this file is the one definition both @clossys/advisor and @clossys/launcher validate against (each package packs it at build time, so neither depends on the other). Every object is closed: a key this contract does not declare is refused, never ignored, because an unknown key is either a typo or a field some other reader would silently drop. A later field is added here first, in the same change as its reader. Every time is a real calendar time, asserted field by field through `format` (see definitions.dateTime and definitions.date), never by shape alone, so each one parses and can be ordered. The canonical plan digest, which an approval binds, is defined in docs/contracts/advisor-plan-digest.md; its fixture corpus is docs/contracts/advisor-plan-digest.fixture.json. CODE RULES (issue #1178). The keywords above cannot relate one field to another, so the rules below are defined here, once, and checked in code by both packages after the schema passes; a plan that breaks one is invalid exactly as a plan that breaks the schema is, and so has no digest. Their shared corpus is docs/contracts/advisor-plan-rules.fixture.json, and both packages are tested against every case in it. A refusal names the rule and the position of the field at fault (for example staffing[1].repository), never its value. R1: no two staffing entries name the same repository; repository ids compare case-insensitively, as the repository inventory compares them. R2: when staffing is present, every staffing[].roles entry is one of mandate.roles, and every mandate.roles entry appears in at least one staffing entry. R3: every packages[].repository is spelled exactly as some staffing[].repository. R4: no two packages share a planItem. R5: no two packages share both a repository (compared case-insensitively) and a name; because R3 already requires a package's repository to be spelled exactly as in staffing, the case-insensitive comparison changes nothing when R3 holds, and it keeps R5 true on its own. R6: resolution is present exactly when packages is present. R7: no two kits share an id. R8: no role appears twice in one staffing entry's roles. R9: no role appears twice in mandate.roles. APPROVAL BINDING. An approval binds bytes only through decisions[].subjectDigest. The latest decision is found by `at` as described under `decisions`; it approves something only when it has chosen \"approved\" and carries a subjectDigest, and the subject it approves is that digest, which names the exact change the approver was shown. When several decisions share the latest instant, they approve only if every one of them has chosen \"approved\" with the same subjectDigest; when any decision time does not parse, nothing is approved. An approval with no subjectDigest binds nothing. FREEZE. From an approving decision until every repository it covers has been applied, or a new plan replaces it, Advisor changes no field the plan digest covers. Recording the approval appends a decision and may update asOf, and the digest excludes both, so the digest at approval equals the digest at apply.",
+  "description": "Issue #1175 and #1475: the plan record at clossys/advisor/plan.json that Advisor writes and renders into its STATUS document, and that Launcher reads before it applies an approved plan. packages/advisor/src/status.ts's AdvisorPlan type is the shape's owner; this file is the one definition both @clossys/advisor and @clossys/launcher validate against (each package packs it at build time, so neither depends on the other). Every object is closed: a key this contract does not declare is refused, never ignored, because an unknown key is either a typo or a field some other reader would silently drop. A later field is added here first, in the same change as its reader. Every time is a real calendar time, asserted field by field through `format` (see definitions.dateTime and definitions.date), never by shape alone, so each one parses and can be ordered. The canonical plan digest, which an approval binds, is defined in docs/contracts/advisor-plan-digest.md; its fixture corpus is docs/contracts/advisor-plan-digest.fixture.json. CODE RULES (issue #1178). The keywords above cannot relate one field to another, so the rules below are defined here, once, and checked in code by both packages after the schema passes; a plan that breaks one is invalid exactly as a plan that breaks the schema is, and so has no digest. Their shared corpus is docs/contracts/advisor-plan-rules.fixture.json, and both packages are tested against every case in it. A refusal names the rule and the position of the field at fault (for example staffing[1].repository), never its value. R1: no two staffing entries name the same repository; repository ids compare case-insensitively, as the repository inventory compares them. R2: when staffing is present, every staffing[].roles entry is one of mandate.roles, and every mandate.roles entry appears in at least one staffing entry. R3: every packages[].repository is spelled exactly as some staffing[].repository. R4: no two packages share a planItem. R5: no two packages share both a repository (compared case-insensitively) and a name; when R1 and R3 both hold (staffing ids are distinct case-insensitively, and every package's repository is spelled exactly as one of them), the case-insensitive comparison changes nothing, and it keeps R5 true on its own when either does not. R6: resolution is present exactly when packages is present. R7: no two kits share an id. R8: no role appears twice in one staffing entry's roles. R9: no role appears twice in mandate.roles. R10: a repository has at most one pin-starter act (repositories compared case-insensitively), and a pin-starter act's placement is devDependencies. APPROVAL BINDING. An approval binds bytes only through decisions[].subjectDigest. The latest decision is found by `at` as described under `decisions`; it approves something only when it has chosen \"approved\" and carries a subjectDigest, and the subject it approves is that digest, which names the exact change the approver was shown. When several decisions share the latest instant, they approve only if every one of them has chosen \"approved\" with the same subjectDigest; when any decision time does not parse, nothing is approved. An approval with no subjectDigest binds nothing. FREEZE. From an approving decision until every repository it covers has been applied, or a new plan replaces it, Advisor changes no field the plan digest covers. Recording the approval appends a decision and may update asOf, and the digest excludes both, so the digest at approval equals the digest at apply.",
   "type": "object",
   "additionalProperties": false,
   "required": ["schemaVersion", "asOf", "mandate", "whereWeAre", "recommendedNext", "decisions", "blockers"],
@@ -114,14 +114,16 @@
       "pattern": "^sha256:[0-9a-f]{64}$"
     },
     "sha512Integrity": {
-      "title": "one sha512 integrity value: sha512- followed by the base64 of 64 bytes (86 characters and ==)",
+      "title": "one sha512 integrity value: sha512- followed by the canonical base64 of 64 bytes (88 characters ending in ==)",
+      "description": "Canonical base64 only: the last character before == carries two bits of data and four zero bits, so it is one of A, Q, g or w. Any other character there would decode to the same bytes as one of those, so a second spelling of one value is refused.",
       "type": "string",
-      "pattern": "^sha512-[A-Za-z0-9+/]{86}==$"
+      "pattern": "^sha512-[A-Za-z0-9+/]{85}[AQgw]==$"
     },
     "exactVersion": {
-      "title": "an exact release version such as 1.2.3, with no range, tag, prerelease or build suffix",
+      "title": "an exact release version such as 1.2.3, with no range, tag, prerelease or build suffix, and at most 16 digits in each part",
+      "description": "Each part is 0 or has no leading zero, and has at most 16 digits, the longest numeric part semver accepts.",
       "type": "string",
-      "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$"
+      "pattern": "^(0|[1-9][0-9]{0,15})\\.(0|[1-9][0-9]{0,15})\\.(0|[1-9][0-9]{0,15})$"
     },
     "repositoryId": {
       "title": "a repository inventory id: a bare repository name, or owner/name",
@@ -130,9 +132,10 @@
       "pattern": "^(?:[A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?/)?(?!\\.\\.?$)[A-Za-z0-9._-]+$"
     },
     "packageName": {
-      "title": "a scoped package name in lowercase, such as @scope/name",
+      "title": "a scoped package name in lowercase, such as @scope/name, of at most 214 characters",
+      "description": "npm's limit is 214 characters, asserted by the lookahead because the checker has no maxLength. Neither the scope nor the name may start with '.', '_' or '-'.",
       "type": "string",
-      "pattern": "^@[a-z0-9][a-z0-9._-]*/[a-z0-9][a-z0-9._-]*$"
+      "pattern": "^(?=.{1,214}$)@[a-z0-9][a-z0-9._-]*/[a-z0-9][a-z0-9._-]*$"
     },
     "kit": {
       "type": "object",
@@ -170,7 +173,7 @@
         "repository": { "$ref": "#/definitions/repositoryId", "description": "One of staffing[].repository, spelled exactly the same (R3)." },
         "act": {
           "enum": ["install", "pin-starter"],
-          "description": "install adds a role's package; pin-starter pins the package that checks this repository's pull requests. A later act widens this list, and a reader that predates it refuses the new value."
+          "description": "install adds a role's package; pin-starter pins the package that checks this repository's pull requests, at most once per repository and always as a devDependency (R10). A later act widens this list, and a reader that predates it refuses the new value."
         },
         "name": { "$ref": "#/definitions/packageName" },
         "version": { "$ref": "#/definitions/exactVersion" },

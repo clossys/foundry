@@ -7,7 +7,7 @@ import type { AdvisorPlan, DocumentViolation } from "./plan-contract.js";
 import { planDigest } from "./plan-digest.js";
 
 /*
- * Issue #1178: the plan and brief contracts' code rules (R1-R9, B1-B2),
+ * Issue #1178: the plan and brief contracts' code rules (R1-R10, B1-B2),
  * defined once in the contracts' descriptions and implemented here
  * separately from @clossys/advisor. Both packages are tested against the one
  * corpus, docs/contracts/advisor-plan-rules.fixture.json, so they judge
@@ -40,7 +40,7 @@ function at(document: unknown, path: string): unknown {
 describe("the shared rules corpus", () => {
   it("covers every code rule with at least one refused case, and has accepted cases for plans and briefs", () => {
     const rules = new Set([...CORPUS.plans, ...CORPUS.briefs].flatMap((entry) => entry.violations.map((violation) => violation.rule)));
-    for (const rule of ["R1", "R2", "R3", "R4", "R5", "R6", "R7", "R8", "R9", "B1", "B2", "schema"]) expect(rules, rule).toContain(rule);
+    for (const rule of ["R1", "R2", "R3", "R4", "R5", "R6", "R7", "R8", "R9", "R10", "B1", "B2", "schema"]) expect(rules, rule).toContain(rule);
     expect(CORPUS.plans.some((entry) => entry.violations.length === 0)).toBe(true);
     expect(CORPUS.briefs.some((entry) => entry.violations.length === 0)).toBe(true);
   });
@@ -75,6 +75,36 @@ describe("the shared rules corpus", () => {
 
   it("has a digest for every plan the corpus accepts", () => {
     for (const entry of CORPUS.plans.filter((candidate) => candidate.violations.length === 0)) expect(planDigest(entry.plan as AdvisorPlan), entry.name).toMatch(/^sha256:[0-9a-f]{64}$/);
+  });
+});
+
+describe("inherited members are ignored, as the schema ignores them (#1178)", () => {
+  // The same cases run in @clossys/advisor's plan-rules.test.ts, so both packages judge them alike.
+  const corpusPlan = (name: string) => CORPUS.plans.find((entry) => entry.name === name)!.plan as Record<string, unknown>;
+  const withPrototype = (prototype: object, own: Record<string, unknown>) => Object.assign(Object.create(prototype) as Record<string, unknown>, own);
+  const full = corpusPlan("valid-staffed-with-packages");
+  const bare = corpusPlan("valid-without-new-fields");
+  const { resolution, ...withoutResolution } = full;
+
+  it("accepts a plan whose staffing, packages, resolution and kits are only inherited", () => {
+    const plan = withPrototype({ staffing: [], packages: [{}], resolution: {}, kits: [{}, {}] }, bare);
+    expect(advisorPlanViolations(plan)).toEqual([]);
+  });
+
+  it("does not count an inherited resolution as present (R6)", () => {
+    const plan = withPrototype({ resolution }, withoutResolution);
+    expect(sorted(advisorPlanViolations(plan).map(asExpected))).toEqual([{ rule: "R6", path: "resolution" }]);
+  });
+
+  it("does not count an inherited packages as present (R6)", () => {
+    const { packages, ...rest } = full;
+    const plan = withPrototype({ packages }, rest);
+    expect(sorted(advisorPlanViolations(plan).map(asExpected))).toEqual([{ rule: "R6", path: "resolution" }]);
+  });
+
+  it("ignores an inherited staffedHere on a brief", () => {
+    const brief = CORPUS.briefs.find((entry) => entry.name === "valid-hub-brief")!.brief as Record<string, unknown>;
+    expect(engagementBriefViolations(withPrototype({ staffedHere: ["designer", "designer"] }, brief))).toEqual([]);
   });
 });
 

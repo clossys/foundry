@@ -217,18 +217,16 @@ fields, and a key that is not a plain identifier is shown as an escaped
 JSON string.
 
 A brief may carry `staffedHere` (issue #1178): the roles staffed in the one
-repository it is written to, in plan order. The hub brief has none;
-`toEngagementBrief({ ..., staffedHere })` writes it for one repository and
-throws, naming only the position, when the list is empty or an entry is not
-one of the composed roles or repeats. `validateEngagementBrief()` applies the
-same two rules, once the schema passes: every entry is one of `roles[].role`
-(rule `engagement-brief-rule-b1`) and none repeats
-(`engagement-brief-rule-b2`). `PUBLIC_PROBLEM_PLACEHOLDER` is the fixed
-text, read from the brief contract, that stands in for `problem` in a
-repository whose visibility is not private. The contract's description
-defines how a repository's brief is derived from the hub brief, so that
-every package derives it the same way; this package does not derive or
-write it.
+repository it is written to, in plan order. `toEngagementBrief()` builds the
+hub brief only, which has none; this package never builds or writes a
+repository's own brief. Launcher's apply planner derives that from the hub
+brief and the plan, as the brief contract's description defines.
+`validateEngagementBrief()` checks a `staffedHere` wherever it appears, once
+the schema passes: every entry is one of `roles[].role` (rule
+`engagement-brief-rule-b1`) and none repeats (`engagement-brief-rule-b2`).
+`PUBLIC_PROBLEM_PLACEHOLDER` is the fixed text, read from the brief
+contract, that the apply planner writes in place of `problem` for a
+repository whose visibility is not private.
 
 ## Shared engagement context
 
@@ -337,20 +335,24 @@ A plan may also say who works where, and what exactly may be installed
 (issue #1178), in four optional fields: `kits` (each `{ id, source, verdict }`,
 with `verdict` only `"recommended"` for now), `staffing` (one
 `{ repository, roles }` entry per repository, by repository inventory id),
-`packages` (exact acts: `install` or `pin-starter`, one exact version with no
-prerelease or build suffix, and one `sha512-` integrity value each) and
+`packages` (exact acts: `install` or `pin-starter`, each with a lowercase
+scoped name of at most 214 characters, one exact version with at most 16
+digits in each part and no prerelease or build suffix, and one canonical
+`sha512-` integrity value) and
 `resolution` (`{ snapshotDigest }`), typed as `AdvisorPlanKit`,
 `AdvisorPlanStaffing`, `AdvisorPlanPackageAct` and `AdvisorPlanResolution`.
 A decision (`AdvisorPlanDecision`) may carry `subjectDigest`.
 Once the schema passes, `validateAdvisorPlan()` applies the code rules the
 contract's description defines, each finding with the rule
-`advisor-plan-rule-r1` to `-r9` and a `path`: no repository staffed twice
+`advisor-plan-rule-r1` to `-r10` and a `path`: no repository staffed twice
 (ids compare case-insensitively); staffed roles and `mandate.roles` agree in
 both directions; every package act names a staffed repository, spelled
 exactly the same; no `planItem` repeats; no package appears twice in one
 repository; `resolution` is present exactly when `packages` is; no kit id
-repeats; no role repeats within one staffing entry; and no role is named
-twice in `mandate.roles`. A plan that breaks
+repeats; no role repeats within one staffing entry; no role is named twice
+in `mandate.roles`; and a repository has at most one `pin-starter` act,
+always placed in `devDependencies`. The rules read only a plan's own fields,
+as the schema does, so an inherited one is ignored. A plan that breaks
 one has no digest. Launcher implements the same rules separately, and both
 packages are tested against one shared corpus,
 [`docs/contracts/advisor-plan-rules.fixture.json`](https://github.com/clossys/foundry/blob/main/docs/contracts/advisor-plan-rules.fixture.json)

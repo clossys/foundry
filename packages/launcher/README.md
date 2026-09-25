@@ -248,8 +248,8 @@ Exit codes preserve the ternary:
 | `parsePreferences()` | Reads `clossys/preferences.json`'s budget stance; defaults to `"balanced"` on absence or malformed input. |
 | `readHostModelProfile()` | Reads a packed `model-profiles/<host>.json`; returns `undefined`, never throws, on a missing or malformed file. |
 | `resolveModelForTier()` | Resolves a tier and budget preference to one model name for a host, reporting `belowFloor` rather than silently substituting a weaker tier's model. |
-| `validateAdvisorPlan()` / `validateEngagementBrief()` | Validation of `clossys/advisor/plan.json` and `clossys/brief.json` (with its `context` snapshot) against the shared plan and brief contracts Advisor also validates against, including the contracts' code rules (R1-R9 for a plan, B1-B2 for a brief). Unknown fields are refused; the reason names every field at fault. |
-| `approvedSubject()` | What an approval binds: the `subjectDigest` of the plan's latest decision (by timestamp) when that decision has `chosen === "approved"`, else `null`. `null` when the approval has no `subjectDigest`, when decisions at the latest time disagree or name different subjects, or when any decision time does not parse. Anything that applies a plan uses this, never `isPlanApproved()`. |
+| `validateAdvisorPlan()` / `validateEngagementBrief()` | Validation of `clossys/advisor/plan.json` and `clossys/brief.json` (with its `context` snapshot) against the shared plan and brief contracts Advisor also validates against, including the contracts' code rules (R1-R10 for a plan, B1-B2 for a brief). Unknown fields are refused; the reason names every field at fault. |
+| `approvedSubject()` | What an approval binds: the `subjectDigest` of the plan's latest decision (by timestamp) when that decision has `chosen === "approved"`, else `null`. `null` when the approval has no `subjectDigest`, when decisions at the latest time disagree or name different subjects, when any decision time does not parse, or when the plan does not validate. Anything that applies a plan must use this; the one stated exception is the legacy brief-only path (`applyEngagementBrief()` and `launcher-apply-plan`), which predates the binding and uses `isPlanApproved()`. |
 | `isPlanApproved()` | True only when a plan's most recent decision (by timestamp) has `chosen === "approved"`. False when decisions at that latest time disagree, or when any decision time does not parse. It binds no bytes: it ignores `subjectDigest`, so it is also true for an approval that names no change. |
 | `applyEngagementBrief()` | Writes `clossys/brief.json` into a repository directory once the plan validates and is approved and the brief validates; refuses and writes nothing otherwise. Reports the plan's canonical digest. |
 | `planDigest()` / `canonicalJson()` / `PLAN_DIGEST_EXCLUDED_FIELDS` | The canonical plan digest: `sha256:` over the RFC 8785 canonical JSON of the plan without `asOf` and `decisions`. Identical to Advisor's for every plan. |
@@ -369,16 +369,19 @@ staffed roles and the mandate's roles agree in both directions, every
 package act names a staffed repository spelled exactly the same, no
 `planItem` repeats, no package appears twice in one repository,
 `resolution` is present exactly when `packages` is, no kit id repeats, no
-role repeats within one staffing entry, and no role is named twice in
-`mandate.roles`. A brief's optional `staffedHere`
+role repeats within one staffing entry, no role is named twice in
+`mandate.roles`, and a repository has at most one `pin-starter` act, always
+placed in `devDependencies`. The rules read only a document's own fields,
+as the schema does, so an inherited one is ignored. A brief's optional `staffedHere`
 must name only the brief's own roles, each once. This package implements
 those rules separately from Advisor, and both are tested against the same
 corpus, `docs/contracts/advisor-plan-rules.fixture.json` (in the public
 repository, not shipped in this package).
 `approvedSubject()` says what an approval binds: the `subjectDigest` of the
 plan's most recent decision (by timestamp, not array position) when it is
-`"approved"`. An approval with no `subjectDigest` binds nothing, and so
-does no decision at all, a decision time that does not parse, or a tie at
+`"approved"`. It validates the plan itself first and returns null for one
+that does not validate. An approval with no `subjectDigest` binds nothing,
+and so does no decision at all, a decision time that does not parse, or a tie at
 the latest instant between decisions that disagree or name different
 subjects. It says what was approved, not that it matches: a caller must
 recompute the digest of the change it holds and compare.
