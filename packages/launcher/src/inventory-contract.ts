@@ -1,5 +1,6 @@
 // The hub repository inventory (issues #996, #1334 and #1179), validated
-// against the shared contract docs/contracts/repository-inventory.json.
+// against the shared contract docs/contracts/repository-inventory.json
+// (in the public repository, not shipped in this package).
 // This package's build packs that file into src/generated/ beside the plan
 // and brief contracts, and checks it with the generated copy of the one
 // contract checker @clossys/advisor also uses -- so an inventory Launcher
@@ -151,7 +152,9 @@ export function readInventoryDocument(raw: string | Uint8Array, options: Invento
  * checker and the duplicate rule. Every read of an inventory file passes
  * its exact bytes: `--inventory`, the stored `clossys/.state/inventory.json`
  * on every run, `readInventoryRepositories()`, and the document
- * `launcher --repositories` writes, before it writes it.
+ * `launcher --repositories` writes, before it writes it. Both the contract
+ * and the stored inventory path are in the public repository or generated
+ * on the hub -- not shipped in this package.
  */
 export function validateInventoryDocument(raw: string | Uint8Array, options: InventoryReadOptions = {}): InventoryValidation {
   return withoutEntries(readInventoryDocument(raw, options));

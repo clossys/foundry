@@ -35,6 +35,8 @@ import type { AdvisorFinding } from "./types.js";
  * repository, so the card treats it as untrusted data: it is shown only as
  * a choice's `detail`, with control, bidirectional and invisible
  * formatting characters removed and its length capped.
+ *
+ * Both contracts cited above are in the public repository, not shipped in this package.
  */
 
 /** Stable id of the repository-choice card. */
@@ -61,7 +63,7 @@ export interface RepositoryChoice {
 export interface RepositoryChoiceCard {
   readonly id: typeof REPOSITORY_CHOICE_CARD_ID;
   readonly prompt: string;
-  /** The client may choose any number of repositories (docs/contracts/intake-question-cards.json `selection`). */
+  /** The client may choose any number of repositories (docs/contracts/intake-question-cards.json `selection` -- in the public repository, not shipped in this package). */
   readonly selection: "many";
   /** The recommended repository first when there is one, then the rest by id, then `something-else` last. */
   readonly choices: readonly RepositoryChoice[];

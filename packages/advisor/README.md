@@ -430,7 +430,8 @@ repositories, and hands the entries to
 tell the founder, not a reading error -- or `{ state: "invalid", findings }`.
 
 The `RepositoryChoiceCard` follows the intake card model
-([`docs/contracts/intake-question-cards.json`](https://github.com/clossys/foundry/blob/main/docs/contracts/intake-question-cards.json)),
+([`docs/contracts/intake-question-cards.json`](https://github.com/clossys/foundry/blob/main/docs/contracts/intake-question-cards.json)
+-- in the public repository, not shipped in this package),
 extended there for this card: `selection: "many"`, because the founder may
 choose several repositories, and choices supplied at runtime rather than
 from a static file. Its id is `REPOSITORY_CHOICE_CARD_ID` (`hub-repositories`).
@@ -451,7 +452,8 @@ Each `RepositoryListingEntry` must be `{ nameWithOwner, description? }`
 and nothing else, and each `nameWithOwner` must satisfy the repository
 inventory contract's id rule
 ([`docs/contracts/repository-inventory.json`](https://github.com/clossys/foundry/blob/main/docs/contracts/repository-inventory.json)
-`definitions/repositoryId`, which this package packs beside the plan and
+`definitions/repositoryId` -- in the public repository, not shipped in this package --
+which this package packs beside the plan and
 brief contracts and checks with the same contract checker) and be
 qualified by its owner, as GitHub lists it. So every id the card offers is
 one `@clossys/launcher` accepts. Two entries naming the same repository

@@ -4,7 +4,8 @@
 // decides what that command may write, and never writes anything itself.
 //
 // The chosen ids and the document built from them are validated against
-// docs/contracts/repository-inventory.json through the shared contract
+// docs/contracts/repository-inventory.json (in the public repository, not shipped in this package)
+// through the shared contract
 // checker (./inventory-contract.ts) -- the same check every later read of
 // the stored inventory applies, so what this writes, Launcher reads back.
 //

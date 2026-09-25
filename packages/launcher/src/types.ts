@@ -220,7 +220,7 @@ export type ChosenInventory =
   | { readonly kind: "unchanged"; readonly count: number }
   | {
       readonly kind: "write";
-      /** The exact document text to write to `clossys/.state/inventory.json`, already validated against the inventory contract. */
+      /** The exact document text to write to `clossys/.state/inventory.json` (a generated hub path, not shipped in this package), already validated against the inventory contract. */
       readonly document: string;
       /** Repositories in the written document. */
       readonly count: number;

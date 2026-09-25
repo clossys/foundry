@@ -205,12 +205,13 @@ launcher --repositories example-owner/example-app,example-owner/example-site
 id never contains a comma). It works when appointing a repository as the
 hub and on an existing hub checkout; in an empty directory it is refused,
 because there is no hub to write into yet. Launcher writes the chosen ids to
-`clossys/.state/inventory.json` -- the one inventory location it reads on
+`clossys/.state/inventory.json` (a generated hub path, not shipped in this package)
+-- the one inventory location it reads on
 every later run -- and, on resume, writes it before composing skills, so the
 same run composes into the repositories just chosen.
 
 - The ids, and the document built from them, are checked against
-  `docs/contracts/repository-inventory.json` through the same shared
+  `docs/contracts/repository-inventory.json` (in the public repository, not shipped in this package) through the same shared
   contract checker every read of the inventory uses, and the document is
   checked again by that reader before it is written. What Launcher writes is
   what Launcher reads back.

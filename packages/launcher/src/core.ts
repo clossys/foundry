@@ -239,6 +239,7 @@ function readHub(host: WorkspaceHost, directory: string): HubDocument | undefine
 
 /**
  * The inventory document's shape lives in docs/contracts/repository-inventory.json
+ * (in the public repository, not shipped in this package)
  * and is checked, on every read and write, by `validateInventoryDocument()`
  * through the shared contract checker (./inventory-contract.ts, #1334, #1179).
  */
