@@ -33,7 +33,7 @@ The decided target makes the merged release commit **the** release:
    per-release evidence pull request carries the records and merges on a
    required mechanical re-derivation check.
 
-The first draft of this RFC (qualify in the publish run, write the record
+An earlier draft of this RFC (qualify in the publish run, write the record
 after upload) is **phase 1** of this design, not its end state. The
 qualification bar does not move. Qualification still runs in a separate job
 from the one that holds `id-token: write` (D2).
@@ -88,7 +88,7 @@ at run time, not from this count.
 
 ### 1.3 The 2026-09-24 release, measured
 
-The release pull request #1438 bumped 21 packages. Seven shipped that day.
+The release pull request #1438 bumped 21 package versions. Seven shipped that day.
 
 | Measure | Value | What it counts |
 | --- | --- | --- |
@@ -275,7 +275,7 @@ lookup read git. The record:
 
 - is written **after** a successful upload and gates nothing about
   publishing. By then the version is immutably public, so writing the record
-  is the only remedy for a missing one;
+  is the remedy for a missing one;
 - is self-contained. A new record kind (working name
   `foundry-run-qualified-publication-v1`) embeds today's later-publication
   fields (registry proof, provenance, run, job and artifact bindings) and adds
@@ -296,7 +296,7 @@ sweep. This fits the sealed-predecessor model already there
 
 ### 3.6 Deferred versions (R9)
 
-The rule: every deferral still current publishes in the first cohort run,
+The rule: every deferral still current publishes in the initial cohort run,
 and every deferral superseded is formally abandoned — never published, its
 file deleted at phase 5. The cohort run re-derives which deferrals are
 current from the manifest at run time; the rule does not depend on how many
@@ -331,9 +331,8 @@ required check) stays only if it is wanted for itself.
 | `governance/release-qualifications/` and `check-candidate-qualification.mjs` | **Frozen** (3.5). The history walk leaves `publish.yml` in phase 0 (#1479). | 0, 5 |
 | `docs/PUBLISHING.md` (`:78-80`, section 6 from `:346`), `docs/RELEASING.md:551-556`, `docs/LIFECYCLE.md:167-190`, `AGENTS.md` #833 paragraph | Rewritten in the same pull request as each behaviour change. `LIFECYCLE.md:167-190` needs a new staged site for `@clossys/starter`, whose site is a retained record today. | 2-5 |
 
-The 17 deleted workflow and script files (tests included) total 3,564 lines
-at `33891d02`, 2,242 without tests: `git show 33891d02:<file> | wc -l` per
-file.
+The 17 deleted workflow and script files (tests included) total 3,564 lines at `33891d02`. <!-- facts-gate:ignore -->
+Without tests they total 2,242 lines: `git show 33891d02:<file> | wc -l` per file. <!-- facts-gate:ignore -->
 
 **#833.** Release qualification runs only on GitHub-hosted runners, which
 reach `registry.npmjs.org` without interception. `sanitizedEnv()` stays a
@@ -445,10 +444,10 @@ publishable. "Gate" is the evidence that proves the phase works, recorded in
 | --- | --- | --- | --- | --- | --- |
 | **0. No-regret, in flight** | The qualify-candidate job split (#1480). Release-workflow fixes (#1481). A fresh evidence branch per batch (#1468). | The history re-walk from `publish.yml`'s `qualify` job (#1479). `auto-qualify.yml`'s blind re-dispatch of a candidate whose last run for that exact version failed (#1476). | Each PR's own tests. The next publish run's `qualify` job no longer contains `check:candidate-qualification`. | One PR each. | Closes #1480, #1481 (with #1439, #1392, #1462), #1468, #1479, #1476. |
 | **1. In-run evidence** (#1435's design) | `pack`, two `qualify` legs, `reproduce`, in-run validation behind `evidence: record \| in-run` (default `record`). The self-contained record kind. Then default `in-run`; `qualification record required` report-only under the same name; `publish-qualified-set.mjs` on in-run evidence. | `auto-qualify.yml` stops dispatching. | `dry_run: true` for every package and `verify_only: true` for published ones; one leaf package published with `evidence: in-run`, `verify-published` green; its record re-derived from a clone offline. | Set the default back to `record`. | Closes #948. Makes #1477 moot for qualify PRs. |
-| **2. Cohort** | Cohort-install mode and the integrity assertion. `publish.yml` takes a package set: one `publish` job, one approval, topological resumable upload, post-upload public-npm install of dependents. `PUBLISHING.md:78-80` amended. | Per-package dispatch and approval. | A `dry_run` of a set with a runtime edge; then the first cohort run publishes every deferral still current, re-derived from the manifest at run time (14 of 86, observed 2026-09-24; R9), every dependent's install green in `verify`. | Dispatch single packages. | Makes #1476 moot (no `ETARGET` rounds). |
+| **2. Cohort** | Cohort-install mode and the integrity assertion. `publish.yml` takes a package set: one `publish` job, one approval, topological resumable upload, post-upload public-npm install of dependents. `PUBLISHING.md:78-80` amended. | Per-package dispatch and approval. | A `dry_run` of a set with a runtime edge; then the initial cohort run publishes every deferral still current, re-derived from the manifest at run time (14 of 86, observed 2026-09-24; R9), every dependent's install green in `verify`. | Dispatch single packages. | Makes #1476 moot (no `ETARGET` rounds). |
 | **3. Anchor** | The anchor job, `plan`, runs on `release/*` tags. The release-PR cohort qualification in the `build and test` fan-in, report-only for one release. | Manual publish dispatch. | One release published from its tag; provenance names the tag commit; a merge landing between tag and approval does not change the uploaded bytes. | Remove the trigger; dispatch from `main` as in phase 2. | |
 | **4. Generator** | `release-pr.yml` bumps only shipping packages and writes no deferrals. The App opens release and evidence PRs. The evidence re-derivation check becomes required through the fan-in. | Hand-written deferrals. | A release PR opened by the App gets full CI on its first run; the evidence PR merges on the check alone. #1377 and #1390 land first. | Revert the PR; the workflow token opens PRs as today. | Closes #1477. Reshapes #941: a citation fix needs only a changeset, not its own record or deferral. |
-| **5. Delete and freeze** | Sealed digest for the 192 records, weekly full walk. Docs rewritten (section 4). | After one report-only release and the owner's ruleset change (R10): everything marked deleted in section 4, including `qualify-candidate.yml` (D6) and the 86 deferrals. The freeze as a correctness rule (R11). | CI green without the deleted files; the sweep finds a record for every registry version; CI no longer re-walks history per run. | Restore the files from history; the owner re-adds the context. | Makes #1331, #1389 and #1391 moot once the freeze ends. |
+| **5. Delete and freeze** | Sealed digest for the 192 records <!-- facts-gate:ignore -->, weekly full walk. Docs rewritten (section 4). | After one report-only release and the owner's ruleset change (R10): everything marked deleted in section 4, including `qualify-candidate.yml` (D6) and the 86 deferrals. The freeze as a correctness rule (R11). | CI green without the deleted files; the sweep finds a record for every registry version; CI no longer re-walks history per run. | Restore the files from history; the owner re-adds the context. | Makes #1331, #1389 and #1391 moot once the freeze ends. |
 | **6. Optional** | Artifact attestation, only if third-party verification is wanted. | Leg B, after 3 releases with zero disagreement. | The recorded leg-agreement measurement. | Remove the job; restore the leg. | |
 
 Estimated steady state, from today's measured job timings, not measured: about
@@ -473,7 +472,7 @@ The owner accepted every recommendation on 2026-09-24.
 | D4. Extend `assertCredentialFree()` | Adopted as defence in depth only: add the Actions token variables to the refused list. It makes the check stricter and nothing else; the job boundary (D2) stays the control. Its own pull request. | technical recommendation |
 | D5. Evidence carriers | The committed post-publish record only. No attestation until third-party verification is wanted. Release assets rejected. | R2; technical recommendation |
 | D6. Diagnostic qualification dispatch | Delete `qualify-candidate.yml` at the last phase. Diagnose with `publish.yml` and `dry_run: true`. | technical recommendation |
-| D7. Deferred versions | Rule: every deferral superseded is formally abandoned; every deferral still current publishes in the first cohort run. The cohort run re-derives the current list from the manifest at run time — the decision does not depend on a count. (Observed 2026-09-24: 72 of 86 superseded, 14 current — 1.2. The draft's earlier commit observed 72 files, 53 superseded and 19 current, on its own measurement date.) | R9 |
+| D7. Deferred versions | Rule: every deferral superseded is formally abandoned; every deferral still current publishes in the initial cohort run. The cohort run re-derives the current list from the manifest at run time — the decision does not depend on a count. (Observed 2026-09-24: 72 of 86 superseded, 14 current — 1.2. The draft's earlier commit observed 72 files, 53 superseded and 19 current, on its own measurement date.) | R9 |
 | D8. Record location | `governance/release-publications/later/`, one self-contained file per version. | R2 |
 
 ### 8.2 The owner's decisions
@@ -488,7 +487,7 @@ The owner accepted every recommendation on 2026-09-24.
 | R6 | One `npm-publish` approval per release set. | 2 |
 | R7 | Tag the merged release commit `release/<date>` and publish from the tag automatically, stopping at the approval. This reverses #757's "a merged bump is not a release" (`publish.yml:3-6`). | 3 |
 | R8 | A release publishes every version it bumps. Unready packages keep their changesets pending. | 4 |
-| R9 | Rule: every deferral still current publishes in the first cohort run; every deferral superseded is formally abandoned. The cohort run re-derives the current list from the manifest at run time, not from a recorded count. (Observed 2026-09-24: 14 current, 72 superseded, of 86 — 1.2.) | 2, 5 |
+| R9 | Rule: every deferral still current publishes in the initial cohort run; every deferral superseded is formally abandoned. The cohort run re-derives the current list from the manifest at run time, not from a recorded count. (Observed 2026-09-24: 14 current, 72 superseded, of 86 — 1.2.) | 2, 5 |
 | R10 | Remove `qualification record required` from the `main` ruleset at cutover, after one report-only release. | 5 |
 | R11 | End the weekend merge freeze as a correctness rule once publish reads the release tag. Keep the calendar cadence only if it is wanted for itself. | 5 |
 
