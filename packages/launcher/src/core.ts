@@ -235,7 +235,8 @@ function readHub(host: WorkspaceHost, directory: string): HubDocument | undefine
 }
 
 /**
- * The inventory document's own schema: docs/contracts/repository-inventory.json,
+ * The inventory document's own schema: docs/contracts/repository-inventory.json
+ * (in the public repository, not shipped in this package),
  * v1 (#996, #1334). `{ schemaVersion: 1, repositories: [{ id, packages? },
  * ...] }`, nothing more. No other top-level or per-entry field is part of
  * this shape -- a document that merely happens to carry a `repositories`
@@ -254,9 +255,9 @@ const INVENTORY_CONTRACT_POINTER = "see docs/contracts/repository-inventory.json
 
 const INVENTORY_TOP_LEVEL_KEYS = new Set(["schemaVersion", "repositories"]);
 const INVENTORY_ENTRY_KEYS = new Set(["id", "packages"]);
-/** Exactly @clossys/integrator's InventoryPackageEntry keys (packages/integrator/src/delta.ts, #996). */
+/** Exactly @clossys/integrator's InventoryPackageEntry keys (#996). */
 const INVENTORY_PACKAGE_ENTRY_KEYS = new Set(["name", "version", "wiring"]);
-/** Exactly @clossys/integrator's InventoryPackageWiring (packages/integrator/src/delta.ts, #996). */
+/** Exactly @clossys/integrator's InventoryPackageWiring (#996). */
 const INVENTORY_PACKAGE_WIRINGS = new Set(["dependencies", "devDependencies", "optionalDependencies", "peerDependencies", "unknown"]);
 
 /**
@@ -324,7 +325,8 @@ function validateInventoryPackages(value: unknown, entryIndex: number): { valid:
  * Never partially accepts: any mismatch is reported as `{ valid: false,
  * reason }`, naming the offending field, before a caller ever gets to a list
  * of ids. This is the one place inventory documents -- supplied via
- * `--inventory` or read back from `clossys/.state/inventory.json` -- are
+ * `--inventory` or read back from the hub's `clossys/.state/inventory.json`
+ * (a generated hub path, not shipped in this package) -- are
  * validated; `inspectInventory`, the `--inventory` adopt path, and every
  * other read of the stored inventory (`readInventoryRepositories`, and
  * through it resume's sibling composition and `--clone-missing`) route
