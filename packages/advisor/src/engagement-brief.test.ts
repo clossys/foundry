@@ -83,7 +83,7 @@ describe("minimal draft-07 contract checker", () => {
     for (const key of PROTOTYPE_KEYS) {
       const value = JSON.parse(`{"id":"x",${JSON.stringify(key)}:"free text"}`) as unknown;
       expect(Object.hasOwn(value as object, key)).toBe(true);
-      expect(validate(closed, value, closed, loadContract)).toContain(`$.${key} is not a field the contract declares, and unknown fields are refused`);
+      expect(validate(closed, value, closed, loadContract)).toEqual(["$ has a field the contract does not declare (key 2 of this object), and unknown fields are refused"]);
     }
     const needs: Schema = { type: "object", required: ["toString", "constructor"] };
     expect(validate(needs, {}, needs, loadContract)).toHaveLength(2);

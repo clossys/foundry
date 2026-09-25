@@ -304,6 +304,7 @@ launcher-check --help
 launcher-check --input observation.json
 launcher-doctor
 launcher-apply-plan --plan plan.json --brief brief.json --repo ./product-checkout
+launcher-apply-plan snapshot --request package-request.json
 ```
 
 Exit codes preserve the ternary:
@@ -313,6 +314,8 @@ Exit codes preserve the ternary:
 | `0` | `satisfied` | Created, resumed, or appointed the hub. The message includes a read-only health report. |
 | `1` | `violated` | Known refusal: not GitHub, not empty, missing appoint inventory, a malformed `--repositories` choice or one that differs from the stored inventory without `--replace-inventory`, the supplier tree, uncommitted changes in the appoint tree, or a `CLOSSYS_OWNER` that disagrees with the origin owner. |
 | `2` | `indeterminate` | Missing `gh`, an Advisor or Integrator registry version that could not be read when creating or appointing, or an owner that could not be inferred. |
+
+`launcher-apply-plan` has its own exit codes, described in [Applying an approved plan](#applying-an-approved-plan) and [Taking the registry snapshot](#taking-the-registry-snapshot).
 
 `launcher-check` grades a captured observation JSON through `planWorkspace` and does not create a hub. Same ternary: 0 is a create/resume/adopt plan, 1 is a known refusal, 2 could not run or could not decide. Appoint grades as a plan only when the observation already records a populated inventory; `--inventory` is a live CLI flag, not a check-cli input.
 
@@ -356,8 +359,13 @@ Exit codes preserve the ternary:
 | `approvedSubject()` | What an approval binds: the `subjectDigest` of the plan's latest decision (by timestamp) when that decision has `chosen === "approved"`, else `null`. `null` when the approval has no `subjectDigest`, when decisions at the latest time disagree or name different subjects, when any decision time does not parse, or when the plan does not validate. Anything that applies a plan must use this; the one stated exception is the legacy brief-only path (`applyEngagementBrief()` and `launcher-apply-plan`), which predates the binding and uses `isPlanApproved()`. |
 | `isPlanApproved()` | True only when a plan's most recent decision (by timestamp) has `chosen === "approved"`. False when decisions at that latest time disagree, or when any decision time does not parse. It binds no bytes: it ignores `subjectDigest`, so it is also true for an approval that names no change. |
 | `applyEngagementBrief()` | Writes `clossys/brief.json` into a repository directory once the plan validates and is approved and the brief validates; refuses and writes nothing otherwise. Reports the plan's canonical digest. |
-| `planDigest()` / `canonicalJson()` / `PLAN_DIGEST_EXCLUDED_FIELDS` | The canonical plan digest: `sha256:` over the RFC 8785 canonical JSON of the plan without `asOf` and `decisions`. Identical to Advisor's for every plan. |
-| `CloneMissingOutcome` / `DoctorCheckHost` / `DoctorReport` / `DoctorStepId` / `DoctorStepResult` / `CloudBootstrapCheck` / `CloudBootstrapReport` / `ExternalInventoryDeclaration` / `InventoryDriftReport` / `DiscoveredHost` / `HostRecord` / `BudgetPreference` / `HostModelProfile` / `HostTierMapping` / `ModelResolution` / `PreferencesDocument` / `ReasoningTier` / `SupportedHost` / `AdvisorPlan` / `ApplyBriefResult` / `BlockerKind` / `EngagementBrief` / `EngagementBriefRole` / `EngagementContext` / `EngagementContextField` / `EngagementContextFieldId` / `GoalDirection` / `PlanBlocker` / `PlanDecision` / `PlanKit` / `PlanPackageAct` / `PlanStaffing` / `ValidationResult` | Typed contracts for the sections above. |
+| `planDigest()` / `canonicalJson()` / `canonicalDigest()` / `PLAN_DIGEST_EXCLUDED_FIELDS` | The canonical plan digest: `sha256:` over the RFC 8785 canonical JSON of the plan without `asOf` and `decisions`. Identical to Advisor's for every plan. `canonicalDigest()` is the shared step: `sha256:` over the canonical JSON of any value, which the plan, change-set and bundle digests all use. |
+| `planApplyBundle()` | The pure apply planner: from a validated plan, the hub brief, observations of each staffed repository's default branch, the composed skill text, the producer version and the hub's Advisor pin, computes one change set per staffed repository and a report-mode bundle. Reads no file, network, process or clock; the same inputs give the same bytes. Throws, naming positions and never values, on inputs it cannot plan from. |
+| `projectEngagementBrief()` / `serializeEngagementBrief()` / `PUBLIC_PROBLEM_PLACEHOLDER` | One repository's brief: the hub brief with `staffedHere` set to that repository's roles in plan order, and `problem` replaced by the brief contract's fixed placeholder unless the repository is private, members in the brief contract's order at every depth; and the exact bytes written for it (two-space JSON and a final newline). |
+| `changeSetDigest()` / `changeSetDigestSubject()` / `CHANGE_SET_DIGEST_EXCLUDED_FIELDS` / `DERIVED_FILE_DIGEST_FIELDS` | The change-set digest: `canonicalDigest()` of the change set without `changeSetDigest`, `branch`, `bundle`, `pullRequest`, `inverse` and `tooling`, with each derived file reduced to `path`, `mode`, `derived`, `item` and `invariants`. |
+| `bundleDigest()` | The bundle digest an approval binds: `canonicalDigest()` of the plan digest and, sorted by id, the id and change-set digest of each repository that has a change set. Nothing else. |
+| `validateRepositoryChangeSet()` / `validateApplyBundle()` | Validation of a change set and a bundle against the shared change-set and bundle contracts, including their code rules (C1-C10 for a change set: references, allow-list and case-insensitive path rules, the ledger, the digest, only the ledger and lockfile derived, canonical order, each computed item's writes matching it, a pin-starter in devDependencies and at most once, and phase; A1-A4 for a bundle: unique ids, the digest, verdicts that are the worst of their checks, and the authorization-mismatch and authorization-absent checks). Unknown fields are refused; no reason echoes a value. |
+| `CloneMissingOutcome` / `DoctorCheckHost` / `DoctorReport` / `DoctorStepId` / `DoctorStepResult` / `CloudBootstrapCheck` / `CloudBootstrapReport` / `ExternalInventoryDeclaration` / `InventoryDriftReport` / `DiscoveredHost` / `HostRecord` / `BudgetPreference` / `HostModelProfile` / `HostTierMapping` / `ModelResolution` / `PreferencesDocument` / `ReasoningTier` / `SupportedHost` / `AdvisorPlan` / `ApplyBriefResult` / `BlockerKind` / `EngagementBrief` / `EngagementBriefRole` / `EngagementContext` / `EngagementContextField` / `EngagementContextFieldId` / `GoalDirection` / `PlanBlocker` / `PlanDecision` / `PlanKit` / `PlanPackageAct` / `PlanStaffing` / `ValidationResult` / `PlanApplyBundleInputs` / `PlanApplyBundleResult` / `RepositoryObservation` / `SkippedRepositoryObservation` / `BundleDigestEntry` / `ApplyBundle` / `ApplyBundleRepository` / `ApplyCheck` / `ApplyCheckId` / `ChangeSetDeferral` / `ChangeSetItem` / `ChangeSetPhase` / `ChangeSetRefusal` / `CheckVerdict` / `ContentDigest` / `DependencyPlacement` / `DerivedFileChange` / `FileChange` / `KeyChange` / `LedgerInvariant` / `LockfileName` / `PackageInvariant` / `PackageManagerKind` / `PinnedPackage` / `RefusalReason` / `ReleaseAgeSurfaceKind` / `RepositoryChangeSet` / `RepositoryVisibility` / `WholeFileChange` | Typed contracts for the sections above. |
 
 ## Doctor
 
@@ -458,14 +466,23 @@ ISO 8601 form, a date-time with `Z` or a `±hh:mm` offset, checked
 field by field (so `2026-02-30` or `T24:30` is refused). A brief's
 `problem`, `role`, `why` and `metric` must contain a non-whitespace
 character, and an item of `inputsFrom`, `outputsTo`, `sequence` or
-`deliverables` must not be empty. A refusal names each field at fault and
-never echoes its value; a key that is not a plain identifier is shown as an
-escaped JSON string, so a control character in it cannot reach a terminal.
+`deliverables` must not be empty. A refusal names each declared field at
+fault and never echoes its value, and never names a key the contracts do
+not declare: such a field is reported at the object that holds it, by its
+1-based position there (`plan.mandate has a field the contract does not
+declare (key 4 of this object), and unknown fields are refused`), counted
+in the order the file wrote the keys when `launcher-apply-plan` reads it; a
+value a caller passes to a validator directly is counted in JavaScript's
+own key order, which lists array-index keys such as `"7"` first.
 `launcher-apply-plan` reads both files as strict JSON: bytes that are not
 valid UTF-8, a leading byte order mark, or an object that repeats a key at
-any depth exit `2`, with a repeated key named (escaped) and a syntax error
-reported by position only, never quoting the file's text, so the value
-validated is exactly the one a reader of the file sees.
+any depth exit `2`, with a repeated key reported by its position in its
+object and, below the top level, that object's position, never by name,
+and a syntax error by position only, never quoting the file's text, so the
+value validated is exactly the one a reader of the file sees. A position is
+a 0-based index into the decoded text in UTF-16 code units (JavaScript's
+string index): the byte offset for ASCII text, with a character outside
+the Basic Multilingual Plane counting as two.
 A plan may say which roles work in which repository (`staffing`, by
 repository inventory id), which kits were recommended (`kits`), which exact
 package acts are authorized (`packages`, each one exact version and one
@@ -510,18 +527,164 @@ its prose -- and reports `planDigest()` of the plan it applied, which the
 CLI prints as `plan digest sha256:...`. That digest is defined once, in
 `docs/contracts/advisor-plan-digest.md` (in the public repository, not shipped in this package);
 this package and Advisor each
-implement it and are tested against the same fixture corpus. This package
-does not compute a brief's content (that is `@clossys/advisor`'s
-`toEngagementBrief()`) and does not decide whether a plan should be
-approved (that is Advisor's job); it only validates the two shapes and
-writes the one file. Multi-repository
-orchestration -- computing each repository's change from `staffing` and
-`packages`, branch creation, exact package installs, adding Starter's
-caller workflow, and opening one pull request per staffed repository,
-including the setup pull request that brings a staffed repository
-`@clossys-advisor` and the voices of the roles staffed there -- is not
-built yet, so until it ships no Launcher command puts those voices into a
-product repository.
+implement it and are tested against the same fixture corpus. On this
+brief-only path, this package does not compute the brief's content -- it
+writes the brief it is given, which `@clossys/advisor`'s
+`toEngagementBrief()` builds, and applies no per-repository projection --
+and it does not decide whether a plan should be approved (that is
+Advisor's job); it only validates the two shapes and writes the one file.
+The apply planner below is different: it projects each repository's brief
+from the hub brief itself.
+
+### Computing each repository's change
+
+`planApplyBundle()` computes, for each repository a plan staffs, the change
+set one pull request would make there, and a bundle that holds them (#1178).
+It is pure: it takes the plan, the hub brief (`clossys/advisor/brief.json`),
+what the caller observed on each repository's default branch, the composed
+skill text for each role, this package's version and the hub's Advisor pin,
+and it reads nothing itself. The shapes are the shared contracts
+`docs/contracts/repository-change-set.json` and `apply-bundle.json`, packed
+into this package, and every set and the bundle are validated against them,
+code rules included, before they are returned. The digests are defined in
+`docs/contracts/apply-change-set-digest.md`, with a corpus computed
+independently of this package (both in the public repository, not shipped
+in this package).
+
+- Each set describes the repository's brief, projected from the hub brief with
+  `staffedHere` set to its roles and, unless the repository is private, the
+  brief contract's fixed placeholder in place of the client's problem. It
+  holds each staffed role's skill, carries every package act the plan
+  names for that repository, and names the installed-state ledger as a
+  derived file. In a `setup` set an `install` is listed under `deferred`
+  for the later `apply` set, so no act the plan authorizes is dropped and no
+  other act is added. An act the default branch already satisfies exactly
+  is kept with `satisfiedInBase: true` and writes nothing.
+- A file the set would write whole, or a `package.json` key it would
+  change, that the default branch already has is refused as
+  `unowned-existing`: the planner treats the installed-state ledger as empty
+  and never takes over bytes it cannot show the flow wrote. The lockfile and
+  the ledger are derived files, checked by their invariants, and are not
+  refused this way.
+- The change-set digest leaves out what is computed from it or from what it
+  covers -- the digest itself, the branch, the bundle digest, the pull
+  request text and the inverse set -- and `tooling`, which records the
+  machine. It also leaves out a derived file's `before` and `after`, for two
+  different reasons: the ledger's bytes cite the digest, and a lockfile's
+  bytes depend on the package manager's version, so both are checked by
+  their invariants, which stay covered. Only those two files may be
+  derived. So a moved base, a different Launcher version, a visibility
+  change, a staffing change, different package bytes or a different ledger
+  generation is a new set, and recomputing any excluded value is not.
+- Every array whose order carries no meaning is written in one canonical
+  order, and the contract refuses any other order, so observing the same
+  repository twice, in any order, gives the same bytes and the same digest.
+  The contract's code rules also tie each kind of item the planner computes
+  to exactly what it writes; the acts nothing computes yet are declared but
+  not yet tied to their files.
+- The bundle digest covers only the plan digest and each computed
+  repository's id and change-set digest, so an approval can bind it and a
+  repository can recompute it from digests alone.
+- The bundle's `mode` is `report`, and it records no repository state. The
+  checks that would let a repository be called planned -- the installed-state
+  ledger and package provenance -- are not run here. The bundle reports the
+  planner's own dry-materialization check (V6), which covers the file
+  layout only: the part of V6 that regenerates the lockfile and checks its
+  invariants is not run, so a set that changes a lockfile carries V6
+  `indeterminate` with rule `lockfile-not-run`, and V6 is `satisfied` only
+  for a set with no lockfile change. A `setup` set is also `indeterminate`
+  until the setup template exists (`setup-template-unbuilt`). Two V3 checks
+  need no observation: when the authorization names a different plan
+  digest than the plan's, every computed repository gets a violated V3
+  check (`authorization-plan-mismatch`), and when the plan has package acts
+  and no authorization is given, every computed repository gets a violated
+  V3 check (`authorization-absent`). Each repository's verdict is the worst
+  of its checks.
+
+Nothing here writes to a repository, creates a branch or opens a pull
+request. Reading the repositories, branch creation, exact package installs,
+adding Starter's caller workflow, and opening one pull request per staffed
+repository -- including the setup pull request that brings a staffed
+repository `@clossys-advisor` and the voices of the roles staffed there --
+are not built yet, so until it ships no Launcher command puts those voices
+into a product repository.
+
+## Taking the registry snapshot
+
+`launcher-apply-plan snapshot --request <file> [--out <file>]` takes the
+registry snapshot a plan's exact packages are resolved from (#1178). It is
+the only step of applying a plan that reads the package registry. It records what the
+registry said; it decides nothing from it. Deciding is
+`advisor-resolve-packages`'s job, in `@clossys/advisor`.
+
+- **Request.** `<file>` holds the report `advisor-package-request` prints,
+  `{ "state": "satisfied", "names": [...], "findings": [] }`, or just
+  `{ "names": [...] }`, read as strict JSON (invalid UTF-8, a byte order
+  mark or a repeated key is refused). Every name must be a scoped package
+  name in the publishing scope this package was built with, and appear once.
+  A request with another field, another state or any finding is refused
+  before anything is fetched.
+- **Fetch.** For each name, in name order and one at a time, a `GET` of
+  the package's full registry document at `{registry}/{name}`, with the slash
+  in the name percent-encoded (`@scope%2Fname`), the same encoding
+  `@clossys/integrator` uses. The registry is the one in this repository's
+  `package-scope.json`, packed into this package at build time.
+- **Transport.** Node's own `fetch`. The only headers this step sets are
+  `accept: application/json` and `accept-encoding: identity`, and never an
+  `Authorization` header; Node's fetch adds its own default, non-credential
+  headers. The step does not run the npm CLI, and reads no
+  `.npmrc` and no token from the environment. If Node is started with an
+  environment proxy (`NODE_USE_ENV_PROXY`), requests go through that proxy.
+  No registry credential is ever sent; a username and password written in
+  the proxy URL itself are sent only to that proxy, as Node's fetch does. A redirect is refused, never followed.
+  `accept-encoding: identity` asks for the body uncompressed, so when the
+  server honours it the size cap and `responseSha256` apply to the exact
+  bytes received. A response body is
+  read as a stream and abandoned as soon as it passes 10 MiB; a declared
+  length over that is refused before any of the body is read. If a server
+  compresses the body anyway, Node's `fetch` decodes it and the 10 MiB cap
+  counts the decoded bytes, so the read is still bounded. Each request, body
+  included, is abandoned after 30 seconds.
+- **Answers.** A `200` is projected into the snapshot. A `404` is recorded
+  as `status: "not-found"`. Anything else stops the step at that package:
+  a transport error, a timeout, a redirect, any other status, an oversize
+  body, or a `200` body that is not strict JSON or is not that package's
+  registry document. Nothing further is fetched, no snapshot is written, and
+  the exit code is `2`. An earlier snapshot at the output path is left
+  untouched, and must not be used: exit `2` means this run recorded nothing.
+- **Projection.** Only what the registry snapshot contract declares is
+  kept: the version the `latest` dist-tag names, or `null`, and, when the
+  document lists that version, that one version's integrity value and tarball
+  URL exactly as served, whether it is deprecated, when it was published, and
+  whether it lists attestations. Every other version, dist-tag and field is
+  ignored. The document must name the requested package, and the version's
+  own entry must carry the version number `latest` names; otherwise nothing
+  is written. `responseSha256` is the SHA-256 of the response body's bytes
+  as received; if a server compressed the body despite
+  `accept-encoding: identity`, it is the SHA-256 of the decoded body.
+- **Output.** The snapshot is written only after the exact text to be
+  written has been read back strictly and has passed
+  `docs/contracts/registry-snapshot.json`
+  (in the public repository, not shipped in this package; its content is
+  packed at build time), schema and code rules N1-N3 both. It goes to
+  `--out`, by default `clossys/.state/apply/registry-snapshot.json` under the
+  current directory, which should be the hub. It is two-space JSON with a
+  final newline, with packages sorted by name, so the same registry answers
+  give the same bytes apart from `fetchedAt`. `fetchedBy` is this package's
+  own name and version. The write is atomic: a temporary file in the same
+  directory is written, flushed to disk and renamed over the target, so a
+  reader sees the old file or the whole new one.
+
+A message names a package by its position in the request, `names[<n>]`,
+never by its name, and never quotes a response or the request: a name is
+request text, so the caller looks position `<n>` up in the request file it
+wrote. Exit codes: `0` means the snapshot was written, or that `--help` printed
+the usage;
+`2` means nothing was written, whether because of a usage error, an
+unreadable or refused request, or a registry answer this step cannot record.
+A snapshot is a record of what the registry answered, not evidence of where
+a package came from; that is shown by verifying the package's provenance,
+which this step does not do.
 
 ## Why this is not Advisor, Starter, Builder, installer, creator, or a connector
 
@@ -556,9 +719,10 @@ intact.
 
 ## Requirements
 
-Node.js 20+, ESM, GitHub `gh`, and no runtime dependencies. Creating a new
-hub needs permission to create a private repository under the inferred
-owner. Appointing uses the current checkout and does not create a second
+Node.js 20+, ESM, GitHub `gh`, and no runtime dependencies. The registry
+snapshot step needs HTTPS access to the public registry, and no credential.
+Creating a new hub needs permission to create a private repository under the
+inferred owner. Appointing uses the current checkout and does not create a second
 repository.
 
 ## Licence

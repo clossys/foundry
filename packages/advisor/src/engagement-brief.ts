@@ -35,8 +35,8 @@ export interface EngagementBrief {
   /**
    * The roles staffed in the repository this brief is written to, in plan
    * order (issue #1178). Absent in the hub brief, which is the only brief
-   * this package builds. A repository's own brief will be derived from it by
-   * Launcher's apply planner, which is not built yet, as the brief contract's
+   * this package builds. A repository's own brief is derived from it by
+   * Launcher's apply planner, `planApplyBundle()`, as the brief contract's
    * description defines.
    * Every entry is one of `roles[].role`, and none repeats.
    */
@@ -81,13 +81,14 @@ export function validateEngagementBrief(value: unknown): AdvisorFinding[] {
 }
 
 /**
- * The fixed text a brief will carry as its `problem` in a repository whose
+ * The fixed text a brief carries as its `problem` in a repository whose
  * visibility is not private (issue #1178), read from the shared brief
  * contract's `definitions.publicProblemPlaceholder`. Launcher's apply
- * planner, which is not built yet, will write it in place of the client's
- * own words for such a repository. Nothing writes it today: Launcher's
- * brief-only `applyEngagementBrief()` commits `problem` unchanged. It says
- * where the problem is kept, and nothing about what it is.
+ * planner, `planApplyBundle()`, puts it in place of the client's own words
+ * for such a repository when it computes that repository's brief. The
+ * planner writes no file, and Launcher's brief-only `applyEngagementBrief()`,
+ * the only brief writer today, commits `problem` unchanged. It says where the
+ * problem is kept, and nothing about what it is.
  */
 export const PUBLIC_PROBLEM_PLACEHOLDER: string = (() => {
   const definitions = loadPlanContract("engagement-brief.json").definitions as Record<string, { const?: unknown }> | undefined;

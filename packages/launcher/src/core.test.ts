@@ -478,10 +478,13 @@ describe("validateInventoryDocument (#1334)", () => {
     if (!result.valid) expect(result.reason).toMatch(/must be an object \(the hub repository inventory\), got array/);
   });
 
-  it("refuses an unrecognized top-level field, naming it", () => {
+  it("refuses an unrecognized top-level field, by position", () => {
     const result = validateInventoryDocument(JSON.stringify({ schemaVersion: 1, repositories: [{ id: "app" }], generatedAt: "2026-01-01" }));
     expect(result).toMatchObject({ valid: false });
-    if (!result.valid) expect(result.reason).toMatch(/^generatedAt is not a field the contract declares/);
+    if (!result.valid) {
+      expect(result.reason).toMatch(/^has a field the contract does not declare \(key 3 of this object\)/);
+      expect(result.reason).not.toContain("generatedAt");
+    }
   });
 
   it("refuses schemaVersion values other than 1 (wrong type)", () => {
@@ -511,7 +514,7 @@ describe("validateInventoryDocument (#1334)", () => {
   it("refuses a repository entry carrying an unrecognized field alongside a valid id", () => {
     const result = validateInventoryDocument(JSON.stringify({ schemaVersion: 1, repositories: [{ id: "app", role: "product" }] }));
     expect(result).toMatchObject({ valid: false });
-    if (!result.valid) expect(result.reason).toMatch(/repositories\[0\]\.role is not a field the contract declares, and unknown fields are refused/);
+    if (!result.valid) expect(result.reason).toMatch(/repositories\[0\] has a field the contract does not declare \(key \d+ of this object\), and unknown fields are refused/);
   });
 
   it("refuses a repository entry whose id is not a string (wrong type)", () => {
@@ -533,7 +536,7 @@ describe("validateInventoryDocument (#1334)", () => {
       }),
     );
     expect(result).toMatchObject({ valid: false });
-    if (!result.valid) expect(result.reason).toMatch(/repositories\[0\]\.role is not a field the contract declares, and unknown fields are refused/);
+    if (!result.valid) expect(result.reason).toMatch(/repositories\[0\] has a field the contract does not declare \(key \d+ of this object\), and unknown fields are refused/);
   });
 
   it("refuses a duplicate repository id", () => {
@@ -614,7 +617,7 @@ describe("validateInventoryDocument (#1334)", () => {
       JSON.stringify({ schemaVersion: 1, repositories: [{ id: "app", packages: [{ name: "x", declaredRange: "^1.0.0" }] }] }),
     );
     expect(result).toMatchObject({ valid: false });
-    if (!result.valid) expect(result.reason).toMatch(/repositories\[0\]\.packages\[0\]\.declaredRange is not a field the contract declares/);
+    if (!result.valid) expect(result.reason).toMatch(/repositories\[0\]\.packages\[0\] has a field the contract does not declare \(key \d+ of this object\)/);
   });
 
   it("refuses a packages entry missing its required name", () => {
@@ -651,7 +654,7 @@ describe("inspectInventory reports invalid documents distinctly from empty (#133
     const observation = inspectInventory(JSON.stringify({ schemaVersion: 1, repositories: [{ id: "app", role: "product" }] }));
     expect(observation.status).toBe("invalid");
     expect(observation.count).toBe(0);
-    expect(observation.reason).toMatch(/repositories\[0\]\.role is not a field the contract declares/);
+    expect(observation.reason).toMatch(/repositories\[0\] has a field the contract does not declare \(key \d+ of this object\)/);
   });
 
   it("reports invalid for garbage JSON instead of silently treating it as empty", () => {
@@ -1278,7 +1281,7 @@ describe("applyWorkspacePlan", () => {
         { action: "adopt", owner: "acme", repository: "hub", directory, advisorVersion: "0.2.3", integratorVersion: "0.8.2", inventorySource: source },
         skeletonRoot,
       ),
-    ).toThrow(/repositories\[0\]\.role is not a field the contract declares/);
+    ).toThrow(/repositories\[0\] has a field the contract does not declare \(key \d+ of this object\)/);
     expect(existsSync(join(directory, WORKSPACE_MARKER_REL))).toBe(false);
     expect(existsSync(join(directory, WORKSPACE_INVENTORY_REL))).toBe(false);
     expect(existsSync(join(directory, "clossys"))).toBe(false);
@@ -1417,9 +1420,9 @@ describe("applyWorkspacePlan", () => {
     const report = reportHubHealth(host(directory), directory);
     expect(report.inventory.status).toBe("invalid");
     expect(report.inventory.count).toBe(0);
-    expect(report.inventory.reason).toMatch(/repositories\[0\]\.visibility is not a field the contract declares/);
+    expect(report.inventory.reason).toMatch(/repositories\[0\] has a field the contract does not declare \(key \d+ of this object\)/);
     expect(report.inventory.reason).toMatch(/repository-inventory\.json/);
-    expect(formatHubHealth(report)).toMatch(/inventory: invalid -- .*repositories\[0\]\.visibility is not a field/);
+    expect(formatHubHealth(report)).toMatch(/inventory: invalid -- .*repositories\[0\] has a field the contract does not declare/);
     // Read-only: reportHubHealth never rewrites clossys/.state/inventory.json,
     // and the corrupted content is left exactly as is.
     expect(readFileSync(join(directory, WORKSPACE_INVENTORY_REL), "utf8")).toContain("visibility");
@@ -1461,7 +1464,7 @@ describe("applyWorkspacePlan", () => {
       composeApplyOptions(catalogue),
     );
     expect(result.health.inventory.status).toBe("invalid");
-    expect(result.message).toMatch(/inventory: invalid -- .*repositories\[0\]\.role is not a field the contract declares/);
+    expect(result.message).toMatch(/inventory: invalid -- .*repositories\[0\] has a field the contract does not declare \(key \d+ of this object\)/);
     expect(result.health.skillComposition?.siblings).toEqual([]);
     expect(result.health.degraded).toBe(true);
     // Nothing was written into the sibling: its directory listing is exactly
@@ -1479,7 +1482,7 @@ describe("applyWorkspacePlan", () => {
       {
         inventoryId: WORKSPACE_INVENTORY_REL,
         result: "skipped-other-reason",
-        note: expect.stringContaining("repositories[0].role is not a field the contract declares"),
+        note: expect.stringContaining("repositories[0] has a field the contract does not declare"),
       },
     ]);
     expect(cloneAttempted).toBe(false);

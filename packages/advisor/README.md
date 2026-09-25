@@ -107,6 +107,10 @@ advisor-check assessment.json
 ```
 
 The command prints JSON and exits `0` for satisfied, `1` for violated, and `2` for indeterminate, unreadable, or invalid input.
+It reads the assessment file as strict JSON, as `advisor-render-status`
+reads a plan (below): invalid UTF-8, a leading byte order mark, a key
+repeated in any object, and a syntax error are refused by position only,
+never quoting the file. `advisor-execution-readiness` reads it the same way.
 
 This package declares that command as its first-day assessment surface in its own manifest:
 
@@ -128,6 +132,22 @@ authorization exactly matches its plan, basis, repositories, packages, and
 mutation surfaces at that instant. It exits `1` for a concrete readiness or
 authorization violation, and `2` for unreadable, malformed, or indeterminate
 evidence.
+
+Launcher composes this skill into every inventoried repository (issues
+#1178, #1187), but engagement state and the live pin exist only in the hub.
+`skill/SKILL.md` states an explicit degraded mode for that gap (issue
+#1507): a checkout counts as the hub only once its marker file parses with
+`kind: "account-hub"`, `schemaVersion: 1`, and a `repository` matching this
+checkout's own git origin; a hub checkout found beside the current
+repository, validated the same way and confirmed by its own inventory,
+is read but never written to; and with no hub reachable, the skill gives
+a read-only report from `clossys/brief.json`. Outside the hub the skill writes nothing
+under `clossys/` and answers only status and plain questions — no card, no
+kit composition, no recorded approval, blocker, grant, or review, and no
+`advisor-check` run against a local assessment. It also never installs
+itself outside the hub: a bin that must run does so through the hub's exact
+pin, not installed in this repository, `npx --package=@clossys/advisor@<hub
+version> <bin>`.
 
 ## Capability catalogue and kit composition
 
@@ -211,27 +231,35 @@ shared brief contract,
 `context` snapshot against `engagement-context.json` (issue #1475).
 Launcher validates against the same files where it writes the
 brief. Unknown fields are refused, and each finding has the rule
-`engagement-brief-contract` and a message that never echoes a value from
-the brief. `problem`, each role's `role` and `why`, and each goal's `metric`
+`engagement-brief-contract` and a message that never echoes a value or a
+key from the brief. `problem`, each role's `role` and `why`, and each goal's `metric`
 must contain a non-whitespace character; an item of `inputsFrom`,
 `outputsTo`, `sequence` or `deliverables` must not be empty. Messages name
-fields, and a key that is not a plain identifier is shown as an escaped
-JSON string.
+only the fields the contract declares: a field it does not declare is
+reported at the object that holds it, by its 1-based position there, as
+in `brief.roles[0].goal has a field the contract does not declare (key 3
+of this object), and unknown fields are refused`, never by its own name,
+because a key is document text and can carry anything. Keys are counted in
+the order the file wrote them when this package's plan or snapshot bins
+read the file; a value a caller passes to a validator directly is
+counted in JavaScript's own key order, which lists array-index keys such
+as `"7"` first.
 
 A brief may carry `staffedHere` (issue #1178): the roles staffed in the one
 repository it is written to, in plan order. `toEngagementBrief()` builds the
 hub brief only, which has none; this package never builds or writes a
-repository's own brief. Launcher's apply planner, which is not built yet,
-will derive that from the hub brief and the plan, as the brief contract's
-description defines; today the only brief writer is Launcher's brief-only
+repository's own brief. Launcher's apply planner, `planApplyBundle()`,
+derives that from the hub brief and the plan, as the brief contract's
+description defines, and records the digest of its bytes; it writes no
+file. The only brief writer today is Launcher's brief-only
 `applyEngagementBrief()`, which writes the brief it is given unchanged.
 `validateEngagementBrief()` checks a `staffedHere` wherever it appears, once
 the schema passes: every entry is one of `roles[].role` (rule
 `engagement-brief-rule-b1`) and none repeats (`engagement-brief-rule-b2`).
 `PUBLIC_PROBLEM_PLACEHOLDER` is the fixed text, read from the brief
-contract, that the apply planner will write in place of `problem` for a
-repository whose visibility is not private, once that planner is built.
-Nothing writes it yet: `applyEngagementBrief()` commits `problem` unchanged,
+contract, that the apply planner puts in place of `problem` when it
+computes the brief of a repository whose visibility is not private.
+`applyEngagementBrief()` does not apply it: it commits `problem` unchanged,
 whatever the repository's visibility.
 
 ## Shared engagement context
@@ -409,9 +437,14 @@ the file as strict JSON: bytes that are not valid UTF-8, and an object
 that repeats a key at any depth, are refused rather than decoded with a
 replacement character or resolved to the last value, and so is a file
 that starts with a byte order mark. A syntax error is reported by position
-only, never quoting the file's text; a repeated key is named, as an escaped
-JSON string, so a control character in it is shown as `\u001b` rather than
-reaching the terminal (#1475).
+only, never quoting the file's text, and a repeated key by position too,
+never by name: `repeats a key (key 2 of the object at position 57); every
+key may appear once` gives the key's 1-based position in its object and
+that object's position (a key repeated at the top level is in `the
+top-level object`) (#1475). A position, in this and every other strict-JSON
+message, is a 0-based index into the decoded text in UTF-16 code units
+(JavaScript's string index): it equals the byte offset only for ASCII
+text, and a character outside the Basic Multilingual Plane counts as two.
 
 ## Exact packages from a registry snapshot (issue #1178)
 
@@ -527,8 +560,8 @@ with the names, or `1` for a plan it refuses. `advisor-resolve-packages`
 exits `0` when resolved (warnings included), `1` for a violation, and `2`
 for an indeterminate result. Both exit `2` for a usage error or an
 unreadable file; that message names the input (the plan file or the
-snapshot file) and, for a syntax error, the character position, never the
-file's path or text.
+snapshot file) and, for a syntax error, the position (as defined above),
+never the file's path or text.
 
 ## Kit verdicts (issue #1177)
 

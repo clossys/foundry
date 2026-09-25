@@ -220,7 +220,7 @@ describe("resolveChosenInventory (#1179)", () => {
   it("refuses to replace an inventory that fails its contract without --replace-inventory, and replaces it with it", () => {
     const onDisk = inventoryText([{ id: `${OWNER}/example-app`, role: "product" }]);
     expect(refusal(resolveChosenInventory(onDisk, [`${OWNER}/example-app`], OWNER, false))).toMatch(
-      /^the hub inventory repositories\[0\]\.role is not a field the contract declares.*; to replace it with the 1 repository chosen, run again with --replace-inventory$/,
+      /^the hub inventory repositories\[0\] has a field the contract does not declare \(key \d+ of this object\).*; to replace it with the 1 repository chosen, run again with --replace-inventory$/,
     );
     expect(resolveChosenInventory(onDisk, [`${OWNER}/example-app`], OWNER, true)).toMatchObject({
       kind: "resolved",
@@ -280,7 +280,7 @@ describe("launcher --repositories (#1179)", () => {
     const err = vi.spyOn(console, "error").mockImplementation(() => {});
     expect(main([], host(directory, APPOINT_COMMANDS), skeletonRoot)).toBe(1);
     const message = String(err.mock.calls[0]?.[0]);
-    expect(message).toMatch(/repositories\[0\]\.role is not a field the contract declares/);
+    expect(message).toMatch(/repositories\[0\] has a field the contract does not declare \(key \d+ of this object\)/);
     expect(message).toMatch(/to replace it, choose the repositories this hub covers on Advisor's repository card/);
     expect(message).toMatch(/launcher --repositories <owner\/name>\[,<owner\/name>\.\.\.\] --replace-inventory/);
     expect(existsSync(join(directory, WORKSPACE_MARKER_REL))).toBe(false);
@@ -371,7 +371,7 @@ describe("launcher --repositories (#1179)", () => {
         },
         skeletonRoot,
       ),
-    ).toThrow(/the chosen inventory repositories\[0\]\.role is not a field/);
+    ).toThrow(/the chosen inventory repositories\[0\] has a field the contract does not declare \(key \d+ of this object\)/);
     expect(existsSync(join(directory, "clossys"))).toBe(false);
   });
 
@@ -687,7 +687,7 @@ describe("one repository identity for the roster, the merge and drift (#1179)", 
     writeFileSync(external, inventoryText([{ id: `${OWNER}/example-app` }]));
     const report = reportInventoryDrift(host(directory), directory, { path: external, shape: "foundry" }, WORKSPACE_INVENTORY_REL, OWNER);
     expect(report).toMatchObject({ status: "indeterminate", externalOnly: [], launcherOnly: [], agreeing: [] });
-    expect(report.note).toMatch(/^the hub's own inventory repositories\[0\]\.role is not a field the contract declares/);
+    expect(report.note).toMatch(/^the hub's own inventory repositories\[0\] has a field the contract does not declare \(key \d+ of this object\)/);
     writeFileSync(join(directory, WORKSPACE_INVENTORY_REL), invalidUtf8Inventory());
     expect(reportInventoryDrift(host(directory), directory, { path: external, shape: "foundry" }, WORKSPACE_INVENTORY_REL, OWNER).status).toBe("indeterminate");
   });

@@ -1,0 +1,5 @@
+---
+advisor: minor
+---
+
+`skill/SKILL.md` states an explicit degraded mode outside the hub (#1507): a checkout counts as the hub only once its marker file parses with `kind: "account-hub"`, `schemaVersion: 1`, and a `repository` matching this checkout's own git origin (the legacy `.clossys/workspace.json` marker counts the same way, and means the hub itself has not migrated yet); a hub checkout found beside the current repository is accepted only once its own inventory lists this repository's id under the same owner, and reading it beyond that is read-only; with no hub reachable, it gives a read-only report from `clossys/brief.json`. Outside the hub every write under `clossys/` is refused, not only hiring, a plan change, or an approval -- no card answer, no kit composition, no recorded approval, blocker, grant, or review, and no `advisor-check` run against a local assessment -- and this package is not installed in the repository; a bin that must run does so through the hub's exact pin instead, `npx --package=@clossys/advisor@<hub version> <bin>`.

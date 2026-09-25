@@ -200,7 +200,7 @@ describe("launcher CLI", () => {
       skeletonRoot,
     );
     expect(code).toBe(1);
-    expect(String(err.mock.calls[0]?.[0])).toMatch(/repositories\[0\]\.role is not a field the contract declares/);
+    expect(String(err.mock.calls[0]?.[0])).toMatch(/repositories\[0\] has a field the contract does not declare \(key \d+ of this object\)/);
     // Refusal happens before any file is touched: no hub marker, no
     // inventory, no clossys/ folder, no package.json, nothing beyond the
     // two files this test itself seeded.

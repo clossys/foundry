@@ -70,13 +70,13 @@ describe("canonical plan digest (docs/contracts/advisor-plan-digest.md)", () => 
 
   it("has no digest for an invalid plan", () => {
     const plan = { ...corpusPlan("blockers-without-due").plan, extra: true } as unknown as AdvisorPlan;
-    expect(() => planDigest(plan)).toThrow(/invalid plan has no digest: plan.extra is not a field/);
+    expect(() => planDigest(plan)).toThrow(/invalid plan has no digest: plan has a field the contract does not declare \(key \d+ of this object\)/);
   });
 });
 
 describe("packed plan, brief and inventory contracts", () => {
-  it("are the docs/contracts files, unchanged", () => {
-    expect(Object.keys(PLAN_CONTRACTS)).toEqual(["advisor-plan.json", "engagement-brief.json", "engagement-context.json", "repository-inventory.json"]);
+  it("are the docs/contracts files, unchanged, with the registry snapshot, change-set and bundle contracts after them (#1178)", () => {
+    expect(Object.keys(PLAN_CONTRACTS)).toEqual(["advisor-plan.json", "engagement-brief.json", "engagement-context.json", "repository-inventory.json", "registry-snapshot.json", "repository-change-set.json", "apply-bundle.json"]);
     for (const [name, contract] of Object.entries(PLAN_CONTRACTS)) expect(contract).toEqual(JSON.parse(read(`docs/contracts/${name}`)));
   });
 

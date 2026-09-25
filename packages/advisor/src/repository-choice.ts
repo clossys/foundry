@@ -235,7 +235,7 @@ const LISTING_ITEM_INDEX_RE = /^\[(\d+)\]/;
 function classifyListingViolation(violation: ContractViolation): string {
   const { message } = violation;
   if (message === "is required") return "is missing a required field";
-  if (message.endsWith("is not a field the contract declares, and unknown fields are refused")) return "has a field the contract does not declare";
+  if (message.startsWith("has a field the contract does not declare")) return "has a field the contract does not declare";
   if (message.startsWith("must be an array")) return "must be an array of repository entries";
   if (message.startsWith("must be an object")) return "must be an object with a nameWithOwner field";
   if (message.startsWith("must be")) return "has a field of the wrong type";

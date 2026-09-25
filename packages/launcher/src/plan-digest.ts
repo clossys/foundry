@@ -79,6 +79,16 @@ export function canonicalJson(value: unknown): string {
 }
 
 /**
+ * `sha256:` and the lowercase hex SHA-256 of the UTF-8 bytes of
+ * `canonicalJson(value)` (issue #1178). The one digest step the plan digest,
+ * the change-set digest and the bundle digest share; each decides only what
+ * `value` is. Throws whatever `canonicalJson()` throws.
+ */
+export function canonicalDigest(value: unknown): string {
+  return `sha256:${createHash("sha256").update(Buffer.from(canonicalJson(value), "utf8")).digest("hex")}`;
+}
+
+/**
  * `sha256:` and the lowercase hex SHA-256 of the canonical JSON of the plan
  * without `asOf` and `decisions`. Throws when the plan does not validate
  * against the plan contract: an invalid plan has no digest.
@@ -88,5 +98,5 @@ export function planDigest(plan: AdvisorPlan): string {
   if (!validation.valid) throw new TypeError(`an invalid plan has no digest: ${validation.reason}`);
   const subject: Record<string, unknown> = {};
   for (const [key, member] of Object.entries(plan)) if (!PLAN_DIGEST_EXCLUDED_FIELDS.includes(key)) subject[key] = member;
-  return `sha256:${createHash("sha256").update(Buffer.from(canonicalJson(subject), "utf8")).digest("hex")}`;
+  return canonicalDigest(subject);
 }

@@ -92,6 +92,6 @@ describe("invalid snapshots", () => {
 
   it("is read strictly: a snapshot file that repeats a key is refused before it is validated", () => {
     const text = JSON.stringify(CORPUS.digests[0]!.snapshot).replace('"registry":', '"registry":"https://registry.example.com","registry":');
-    expect(() => readContractDocument(new TextEncoder().encode(text))).toThrow(/repeats the key/);
+    expect(() => readContractDocument(new TextEncoder().encode(text))).toThrow(/^repeats a key \(key \d+ of the top-level object\); every key may appear once$/);
   });
 });
