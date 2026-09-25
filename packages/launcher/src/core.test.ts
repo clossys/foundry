@@ -968,6 +968,75 @@ describe("hub engine pins: Advisor and Integrator (S3-0)", () => {
     expect(result.health.degraded).toBe(true);
   });
 
+  it("reads npm-shrinkwrap.json before package-lock.json when both exist, in either staleness order", () => {
+    const current = npmLock("0.5.0", "0.8.2");
+    const stale = npmLock("0.2.6");
+    const pinned = `${JSON.stringify({ name: "hub", devDependencies: { [ADVISOR_PACKAGE]: "0.5.0", [INTEGRATOR_PACKAGE]: "0.8.2" } }, null, 2)}\n`;
+
+    const shrinkwrapCurrent = tempDir();
+    writeHubMarker(shrinkwrapCurrent);
+    writeFileSync(join(shrinkwrapCurrent, "package.json"), pinned);
+    writeFileSync(join(shrinkwrapCurrent, "npm-shrinkwrap.json"), current);
+    writeFileSync(join(shrinkwrapCurrent, "package-lock.json"), stale);
+    const resolved = resume(shrinkwrapCurrent, { advisorVersion: "0.5.0", integratorVersion: "0.8.2" });
+    expect(resolved.health.installNeeded).toBeUndefined();
+    expect(resolved.health.degraded).toBe(false);
+
+    const shrinkwrapStale = tempDir();
+    writeHubMarker(shrinkwrapStale);
+    writeFileSync(join(shrinkwrapStale, "package.json"), pinned);
+    writeFileSync(join(shrinkwrapStale, "npm-shrinkwrap.json"), stale);
+    writeFileSync(join(shrinkwrapStale, "package-lock.json"), current);
+    const unresolved = resume(shrinkwrapStale, { advisorVersion: "0.5.0", integratorVersion: "0.8.2" });
+    expect(unresolved.health.installNeeded).toMatchObject({
+      lockfile: "npm-shrinkwrap.json",
+      command: "npm install",
+      packages: [ADVISOR_PACKAGE, INTEGRATOR_PACKAGE],
+    });
+    expect(unresolved.health.degraded).toBe(true);
+  });
+
+  it("reads a version 1 npm lockfile through its dependencies field", () => {
+    const v1 = (advisor: string, integrator: string): string =>
+      `${JSON.stringify({ name: "hub", lockfileVersion: 1, dependencies: { [ADVISOR_PACKAGE]: { version: advisor, dev: true }, [INTEGRATOR_PACKAGE]: { version: integrator, dev: true } } }, null, 2)}\n`;
+    const directory = tempDir();
+    writeHubMarker(directory);
+    writeEnginePins(directory);
+    writeFileSync(join(directory, "package-lock.json"), v1("0.5.0", "0.8.2"));
+    const current = resume(directory, { advisorVersion: "0.5.0", integratorVersion: "0.8.2" });
+    expect(current.health.installNeeded).toBeUndefined();
+    expect(current.health.degraded).toBe(false);
+    writeFileSync(join(directory, "package-lock.json"), v1("0.5.0", "0.7.0"));
+    expect(resume(directory, { advisorVersion: "0.5.0", integratorVersion: "0.8.2" }).health.installNeeded?.packages).toEqual([INTEGRATOR_PACKAGE]);
+  });
+
+  it("compares a pin with its locked version as versions, so a v-prefixed pin matches", () => {
+    const directory = tempDir();
+    writeHubMarker(directory);
+    writeFileSync(join(directory, "package.json"), `${JSON.stringify({ name: "hub", devDependencies: { [ADVISOR_PACKAGE]: "v0.6.0", [INTEGRATOR_PACKAGE]: "0.8.2" } }, null, 2)}\n`);
+    writeFileSync(join(directory, "package-lock.json"), npmLock("0.6.0", "0.8.2"));
+    const result = resume(directory, { advisorVersion: "0.5.0", integratorVersion: "0.8.2" });
+    expect(readManifest(directory).devDependencies).toEqual({ [ADVISOR_PACKAGE]: "v0.6.0", [INTEGRATOR_PACKAGE]: "0.8.2" });
+    expect(result.health.enginePins).toBeUndefined();
+    expect(result.health.installNeeded).toBeUndefined();
+    expect(result.health.degraded).toBe(false);
+  });
+
+  it("reports a pin that only moved between buckets, and with a pnpm lockfile marks the install needed", () => {
+    const directory = tempDir();
+    writeHubMarker(directory);
+    writeFileSync(
+      join(directory, "package.json"),
+      `${JSON.stringify({ name: "hub", dependencies: { [INTEGRATOR_PACKAGE]: "0.8.2" }, devDependencies: { [ADVISOR_PACKAGE]: "0.5.0" } }, null, 2)}\n`,
+    );
+    writeFileSync(join(directory, "pnpm-lock.yaml"), "lockfileVersion: '9.0'\n");
+    const result = resume(directory, { advisorVersion: "0.5.0", integratorVersion: "0.8.2" });
+    expect(result.health.enginePins?.changed).toEqual([{ package: INTEGRATOR_PACKAGE, from: "0.8.2", to: "0.8.2", movedFrom: "dependencies" }]);
+    expect(result.message).toMatch(/^engine pins changed in package\.json: @clossys\/integrator 0\.8\.2 \(moved from dependencies to devDependencies\)$/m);
+    expect(result.health.installNeeded).toMatchObject({ lockfile: "pnpm-lock.yaml", command: "pnpm install", packages: [INTEGRATOR_PACKAGE] });
+    expect(result.health.degraded).toBe(true);
+  });
+
   it("only raises a pin: one newer than live is kept, one that is not a plain version becomes live", () => {
     const directory = tempDir();
     writeHubMarker(directory);

@@ -122,11 +122,15 @@ gives one next step: run the hub's package manager install (`npm install`,
 `pnpm install`, `yarn install` or `bun install`, by the lockfile present), then
 commit `package.json` together with its lockfile. Until then a frozen install
 (`npm ci`, `pnpm install --frozen-lockfile`, `yarn install --immutable`) refuses
-the hub. While a lockfile is present that does not resolve the pins yet, the
+the hub when a pin's version changed or an engine was added; when a pin only
+moved between dependency buckets, or a range became the exact version already
+locked, whether it refuses depends on the package manager (pnpm's frozen
+install does), so such a change is reported the same way. While a lockfile is present that does not resolve the pins yet, the
 report is degraded with an `engine-pins-changed-install-needed` finding
-(`health.installNeeded`): an npm lockfile (`package-lock.json` or
-`npm-shrinkwrap.json`) is read on every run, and each engine pinned to a plain
-version must resolve to that version in it; any other lockfile is not read, so
+(`health.installNeeded`): an npm lockfile (`npm-shrinkwrap.json`, which npm
+prefers when both exist, else `package-lock.json`) is read on every run, and
+each engine pinned to a plain version must resolve to that same version in it,
+compared as versions (a `v0.6.0` pin matches a locked `0.6.0`); any other lockfile is not read, so
 it counts as unresolved for the engines the run changed. Resume and appoint
 only raise a pin: one older than live, or not a plain version, becomes the live version,
 and one newer than live is kept. Resume rewrites `package.json` as

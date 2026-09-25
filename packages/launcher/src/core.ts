@@ -898,8 +898,9 @@ function mergeHubEnginePins(
 
 /** Lockfiles Launcher recognises in a hub, with the install command that updates each. */
 const HUB_LOCKFILES: readonly (readonly [string, string])[] = [
-  ["package-lock.json", "npm install"],
+  // npm reads npm-shrinkwrap.json instead of package-lock.json when both exist.
   ["npm-shrinkwrap.json", "npm install"],
+  ["package-lock.json", "npm install"],
   ["pnpm-lock.yaml", "pnpm install"],
   ["yarn.lock", "yarn install"],
   ["bun.lock", "bun install"],
@@ -949,7 +950,7 @@ function engineInstallFinding(
         const lockDependencies = isRecord(lock.dependencies) ? lock.dependencies : {};
         const entry = lockPackages[`node_modules/${engine}`] ?? lockDependencies[engine];
         const locked = isRecord(entry) ? pinString(entry.version) : undefined;
-        return locked !== pinned;
+        return locked === undefined || compareVersions(locked, pinned) !== 0;
       });
     }
   }
