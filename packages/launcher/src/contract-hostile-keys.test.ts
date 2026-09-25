@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { main, snapshotMain } from "./apply-plan-cli.js";
 import { main as cliMain } from "./cli.js";
+import { readContractDocument } from "./generated/contract-schema.generated.js";
 import { PACKAGE_SCOPE } from "./generated/package-scope.generated.js";
 import { createNodeHost } from "./host.js";
 import { inspectInventory, validateAdvisorPlan, validateEngagementBrief, validateInventoryDocument } from "./index.js";
@@ -59,6 +60,7 @@ const SNAPSHOT = SNAPSHOTS.digests.find((entry) => entry.name === "base")!.snaps
 
 const UNDECLARED = (ordinal: number) => `has a field the contract does not declare (key ${ordinal} of this object), and unknown fields are refused`;
 const q = (key: string) => JSON.stringify(key);
+const bytes = (text: string) => new TextEncoder().encode(text);
 
 function runsOf(text: string): Set<string> {
   const runs = new Set<string>();
@@ -136,6 +138,22 @@ describe("no key text in any contract message or reason", () => {
       }
     });
   }
+
+  it("numbers keys as the file wrote them, even array-index keys a JavaScript object lists first", () => {
+    const text = `${JSON.stringify(PLAN).slice(0, -1)},"7":1}`;
+    expect(Object.keys(JSON.parse(text) as object)[0]).toBe("7");
+    expect(validateAdvisorPlan(readContractDocument(bytes(text)))).toEqual({ valid: false, reason: `plan ${UNDECLARED(Object.keys(PLAN).length + 1)}` });
+    // The same value built in memory has no file order: its own key order is used.
+    expect(validateAdvisorPlan(JSON.parse(text))).toEqual({ valid: false, reason: `plan ${UNDECLARED(1)}` });
+  });
+
+  it("lists undeclared fields in the order the file wrote them, and in JavaScript's order for a value built in memory", () => {
+    const text = `{"zz":1,${JSON.stringify(PLAN).slice(1, -1)},"7":1}`;
+    const written = Object.keys(PLAN).length + 2;
+    expect(validateAdvisorPlan(readContractDocument(bytes(text)))).toEqual({ valid: false, reason: `plan ${UNDECLARED(1)}; plan ${UNDECLARED(written)}` });
+    // JavaScript lists "7" first and "zz" second, so that is the order, and the numbering, of a value not read from a file.
+    expect(validateAdvisorPlan(JSON.parse(text))).toEqual({ valid: false, reason: `plan ${UNDECLARED(1)}; plan ${UNDECLARED(2)}` });
+  });
 });
 
 function inventoryHost(directory: string, commands: Record<string, CommandResult>): WorkspaceHost {

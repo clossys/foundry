@@ -316,10 +316,13 @@ function checkOneOf(branches: readonly ContractSchema[], value: unknown, scope: 
 }
 
 /**
- * Every violation of `value` against `contract`; empty when it conforms.
- * Within an object, a missing required field comes first, then each
- * present key's violations in the order the keys were written (see
- * `keyOrder()`), then any from `oneOf`, `allOf` and `not`. Never throws for a bad value. Throws only when the
+ * Every violation of `value` against `contract`; empty when it conforms. A
+ * type mismatch stops there and returns alone, since every other keyword
+ * assumes the value is already the right type. Otherwise, on an object, any
+ * `const` or `enum` violation of the object itself comes before a missing
+ * required field, which comes before each present key's violations in the
+ * order the keys were written (see `keyOrder()`), then any from `oneOf`,
+ * `allOf` and `not`. Never throws for a bad value. Throws only when the
  * contract itself uses a keyword this checker does not implement, or a
  * `$ref` it cannot resolve -- a defect in the contract, not in the value.
  */
