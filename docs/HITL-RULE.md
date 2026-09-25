@@ -380,10 +380,11 @@ on how the record declares `relaxesGateOrPolicy` (Q2), and on recording
 deadline defaults (Q3).
 [`governance/decisions/hitl-review-convergence.json`](../governance/decisions/hitl-review-convergence.json)
 is the durable record. It quotes every question, answer and selected
-option's description, and the list, all verbatim, with `channel:
-"owner-chat"`, not independently verifiable, as the rule above requires
-of every owner-chat record. That record is the source of truth if this
-section and it ever disagree. It does not edit or replace
+option's description from the 2026-09-23 exchange, and the list, all
+verbatim, with `channel: "owner-chat"`, not independently verifiable, as
+the rule above requires of every owner-chat record, and the 2026-09-24
+answer, quoted as the answer only. That record is the source of truth if
+this section and it ever disagree. It does not edit or replace
 `governance/decisions/hitl-escalation-rule.json`: that record, and the
 rule quoted above, stay in force except for the two parts named below.
 
@@ -444,10 +445,10 @@ those govern.
   unless urgent" is superseded by item 5: an escalation ask goes out the
   same day, at most twice a day, with related items merged. Item 5 itself
   has no urgency exception, but on 2026-09-24 the owner separately
-  restored one for urgent asks that are not about a review: an ask that
-  is genuinely urgent and about credentials or publishing may be raised
-  at any time, outside the twice-a-day limit; every other ask stays under
-  it. The owner saw the timing change called out when ratifying: the
+  restored one: an ask that is genuinely urgent and about credentials or
+  publishing may be raised at any time, outside the twice-a-day limit;
+  every other ask stays under it. The owner saw the timing change called
+  out when ratifying: the
   amendment followed a red-team whose recommendations were adopted,
   except that asks go same-day rather than being batched to Friday.
 - **Everything else stands**, including the fresh strong-class final
