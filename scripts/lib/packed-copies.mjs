@@ -8,10 +8,14 @@
  *
  * - the package's pack step copies exactly what it declares, and nothing
  *   else, so the declaration cannot drift from what the build does; and
- * - `scripts/check-contamination-classes.mjs` judges each declared copy's
- *   citations from its SOURCE's position, because the text was written
- *   there and reads correctly there. It is held to the same bar as its
- *   source: a citation that dangles at the source still fails in the copy.
+ * - `scripts/check-contamination-classes.mjs` judges a declared copy of
+ *   ANOTHER PACKAGE's file from that source's position, because the text
+ *   was written there and reads correctly there. It is held to the same bar
+ *   as its source: a citation that dangles at the source still fails in the
+ *   copy. A copy of a repository document (a source outside `packages/`) is
+ *   judged at its own position, like any other file of the package that
+ *   ships it -- a repository document has no published file set to be
+ *   judged against.
  *
  * The declaration is plain data, not code, so the gate never executes a
  * package's build tooling to learn what it copies.

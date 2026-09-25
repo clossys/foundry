@@ -9,8 +9,8 @@
  * What it copies, and from where, is declared once, as data, in
  * scripts/packed-copies.json beside this file. This script copies exactly
  * that list, and the repository's contamination gate reads the same list to
- * judge each copy from its source's position (#1500), so the two cannot
- * disagree about what is a copy.
+ * judge each copy of another package's file from its source's position
+ * (#1500), so the two cannot disagree about what is a copy.
  *
  * It also writes src/generated/ (issue #1475): the shared plan and brief
  * contracts as a data module, and a copy of the one contract checker, which

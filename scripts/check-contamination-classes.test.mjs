@@ -309,10 +309,12 @@ test("check-contamination-classes: multi-directory / non-existent-path regressio
 
 // Issue #1500: a package's build copies files in verbatim from elsewhere in
 // the repository -- another package's skill, a shared contract -- and a
-// citation in one was written to resolve from its SOURCE's position. The
-// package declares its copies in scripts/packed-copies.json, the same data
-// its pack step copies from, and CLASS 1 judges a declared copy exactly as
-// its source would be judged.
+// citation in a package's skill was written to resolve from its SOURCE's
+// position. The package declares its copies in scripts/packed-copies.json,
+// the same data its pack step copies from, and CLASS 1 judges a declared
+// copy of another package's file exactly as its source would be judged. A
+// copy of a repository document has no source package to be judged as, and
+// is judged at its own position.
 test("check-contamination-classes: declared packed copies are judged from their source's position (#1500)", async (t) => {
   const work = mkdtempSync(join(tmpdir(), "contam-packed-copies-"));
   t.after(() => rmSync(work, { recursive: true, force: true }));
@@ -333,7 +335,15 @@ test("check-contamination-classes: declared packed copies are judged from their 
   // packages, and a repository-level contract. `designerSkill` is the skill
   // text under test; `designer` ships `skill/` and `templates/` but not
   // `internal/`, and `writer` ships only `skill/`.
-  function fixture(name, { designerSkill, writerSkill = "# writer\n\nNothing cited here.\n", declaration = TEMPLATE_DECLARATION }) {
+  function fixture(
+    name,
+    {
+      designerSkill,
+      writerSkill = "# writer\n\nNothing cited here.\n",
+      contract = "# Shared\n\nNothing cited here.\n",
+      declaration = TEMPLATE_DECLARATION,
+    },
+  ) {
     const repo = join(work, name);
     const launcher = join(repo, "packages", "launcher");
     const manifest = (pkg, files) => JSON.stringify({ name: `fixture-${pkg}`, version: "1.0.0", files }, null, 2) + "\n";
@@ -344,8 +354,10 @@ test("check-contamination-classes: declared packed copies are judged from their 
     write(join(repo, "packages", "designer", "internal", "notes.md"), "# notes\n");
     write(join(repo, "packages", "writer", "package.json"), manifest("writer", ["skill"]));
     write(join(repo, "packages", "writer", "skill", "SKILL.md"), writerSkill);
-    write(join(repo, "docs", "contracts", "shared.md"), "# Shared\n\nThe stages are in `contracts/sibling.json`.\n");
+    write(join(repo, "docs", "contracts", "shared.md"), contract);
     write(join(repo, "docs", "contracts", "sibling.json"), "{}\n");
+    write(join(repo, "docs", "LIFECYCLE.md"), "# Lifecycle\n");
+    write(join(repo, "scripts", "check-public-safety.mjs"), "export {};\n");
     // The build: copy what the TRUE declaration lists, as the pack step does.
     write(join(launcher, "scripts", "packed-copies.json"), JSON.stringify(TEMPLATE_DECLARATION, null, 2) + "\n");
     for (const { copy, source } of loadPackedCopies(launcher, repo)) {
@@ -360,8 +372,8 @@ test("check-contamination-classes: declared packed copies are judged from their 
     return { repo, launcher, designer: join(repo, "packages", "designer") };
   }
 
-  async function scan(dir) {
-    const r = await run([dir, "--class", "1", "--json"]);
+  async function scan(dir, extra = []) {
+    const r = await run([dir, "--class", "1", "--json", ...extra]);
     let report;
     try {
       report = JSON.parse(r.out);
@@ -381,10 +393,33 @@ test("check-contamination-classes: declared packed copies are judged from their 
     assert.deepEqual(r.report.findings, []);
   });
 
-  await t.test("a copied repository contract is judged from its source's directory", async () => {
-    const { launcher } = fixture("contract", { designerSkill: RESOLVING_SKILL });
+  // A repository document has no published file set, and no package scan
+  // runs CLASS 1 on it, so "judged as its source" would mean "exists
+  // somewhere in this checkout" -- a lower bar than any other shipped file
+  // meets. A copy of one is judged where it ships.
+  await t.test("a citation in a copied repository contract that resolves only beside its source fails at the copy's position", async () => {
+    const { launcher } = fixture("contract", {
+      designerSkill: RESOLVING_SKILL,
+      contract: "# Shared\n\nThe stages are in `contracts/sibling.json`.\n",
+    });
     const r = await scan(launcher);
-    assert.ok(!r.cites("contracts/shared.md", "contracts/sibling.json"), `judged at the copy's position: ${r.out}`);
+    assert.equal(r.code, 1, `expected exit 1, got ${r.code}: ${r.out}`);
+    assert.ok(r.cites("contracts/shared.md", "contracts/sibling.json"), `judged from the source's directory: ${r.out}`);
+    assert.ok(
+      r.report.findings.every((f) => !f.detail.includes("Judged as its source")),
+      `a copy of a repository document must not be reported as judged from its source: ${r.out}`,
+    );
+  });
+
+  await t.test("a byte-identical docs/ file plus a declaration cannot route repository paths past the gate", async () => {
+    const { launcher } = fixture("docs-route", {
+      designerSkill: RESOLVING_SKILL,
+      contract: "# Shared\n\nRun `scripts/check-public-safety.mjs` first, and read `docs/LIFECYCLE.md`.\n",
+    });
+    const r = await scan(launcher);
+    assert.equal(r.code, 1, `expected exit 1, got ${r.code}: ${r.out}`);
+    assert.ok(r.cites("contracts/shared.md", "scripts/check-public-safety.mjs"), r.out);
+    assert.ok(r.cites("contracts/shared.md", "docs/LIFECYCLE.md"), r.out);
   });
 
   await t.test("the same copy with a truly dangling citation still fails, as its source does", async () => {
@@ -426,7 +461,6 @@ test("check-contamination-classes: declared packed copies are judged from their 
     const r = await scan(launcher);
     assert.equal(r.code, 1, `expected exit 1, got ${r.code}: ${r.out}`);
     assert.ok(r.cites("skill-catalogue/designer/SKILL.md", "templates/brand-type.template.json"), r.out);
-    assert.ok(r.cites("contracts/shared.md", "contracts/sibling.json"), r.out);
   });
 
   await t.test("a declaration pointing a copy at the wrong source fails", async () => {
@@ -462,6 +496,30 @@ test("check-contamination-classes: declared packed copies are judged from their 
     const r3 = await scan(missing.launcher);
     assert.equal(r3.code, 1, `expected exit 1, got ${r3.code}: ${r3.out}`);
     assert.ok(r3.report.findings.some((f) => f.detail.includes("that file does not exist")), r3.out);
+  });
+
+  await t.test("a waiver the source holds carries over to its copy, keyed as the source is", async () => {
+    const skill = RESOLVING_SKILL + "\nThe checklist is `internal/notes.md`.\n";
+    const { launcher, designer } = fixture("waiver", { designerSkill: skill });
+    const allowlist = join(work, "waiver-allowlist.json");
+    writeFileSync(
+      allowlist,
+      JSON.stringify({ issue: "#1", packages: { designer: { "skill/SKILL.md": ["internal/notes.md"] } } }) + "\n",
+    );
+
+    const unwaived = await scan(launcher, ["--no-allowlist"]);
+    assert.equal(unwaived.code, 1, `sanity check: the citation is a live finding without the waiver: ${unwaived.out}`);
+    assert.ok(unwaived.cites("skill-catalogue/designer/SKILL.md", "internal/notes.md"), unwaived.out);
+
+    const copy = await scan(launcher, ["--allowlist", allowlist]);
+    assert.equal(copy.code, 0, `expected the source's waiver to apply to the copy, got ${copy.code}: ${copy.out}`);
+    assert.ok(
+      copy.report.waived.some((w) => w.file === "skill-catalogue/designer/SKILL.md" && w.cited === "internal/notes.md"),
+      `the copy's citation should be listed as waived under its own path: ${copy.out}`,
+    );
+
+    const source = await scan(designer, ["--allowlist", allowlist]);
+    assert.equal(source.code, 0, `the same waiver should still hold for the source: ${source.out}`);
   });
 
   await t.test("a malformed declaration cannot run (exit 2)", async () => {

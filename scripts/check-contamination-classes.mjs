@@ -31,7 +31,7 @@
 //   private monorepo it came from. The two deliberate exceptions judge a file
 //   from where its text was written: a package changelog that moved to
 //   docs/changelogs/ (COMPANION_CHANGELOG_POSITION), and a verbatim copy the
-//   package's build declares it packs in from elsewhere (PACKED COPIES).
+//   package's build declares it packs in from ANOTHER PACKAGE (PACKED COPIES).
 //
 // CLASS 2 — internal-convention DOM/data attributes.
 //   A fleet-wide internal tagging convention rendered straight into markup —
@@ -415,23 +415,33 @@ const repoRoot = findRepoRoot(rootAbs);
 
 // PACKED COPIES, JUDGED FROM WHERE THEY WERE WRITTEN (#1500).
 //
-// A package's build can copy a file in verbatim from elsewhere in this
-// repository -- a shared contract from docs/contracts/, or another package's
-// own skill. Its citations were written to resolve from the SOURCE's
-// position: `templates/brand-type.template.json` in a skill is right in the
-// package whose tarball carries `templates/`, and wrong nowhere. Judged from
-// the copy's position instead, every such citation reads as dangling once
-// the package is built, and the only way to quiet it would be to reword the
-// source for a position it was never written for.
+// A package's build can copy a file in verbatim from another package -- that
+// package's own skill, say. Its citations were written to resolve from the
+// SOURCE's position: `templates/brand-type.template.json` in a skill is
+// right in the package whose tarball carries `templates/`, and wrong
+// nowhere. Judged from the copy's position instead, every such citation
+// reads as dangling once the package is built, and the only way to quiet it
+// would be to reword the source for a position it was never written for.
 //
-// So a declared copy is judged exactly as its source would be, the same
-// move COMPANION_CHANGELOG_POSITION makes for a changelog that moved out of
-// its package: paths resolve from the source's directory up to the source's
-// package root, and a resolved path must be in THAT package's published file
-// set. A source outside any package (a repository document) is judged as the
-// repository reader meets it: existence in this checkout, the no-manifest
-// rule. The bar does not drop -- a citation that dangles at the source
-// still fails in the copy, and a waiver the source holds still waives it.
+// So a declared copy of a PACKAGE's file is judged exactly as its source
+// would be, the same move COMPANION_CHANGELOG_POSITION makes for a changelog
+// that moved out of its package: paths resolve from the source's directory
+// up to the source's package root, and a resolved path must be in THAT
+// package's published file set. That is the same bar the source already
+// meets when its own package is scanned -- a citation that dangles at the
+// source still fails in the copy, and a waiver the source holds still
+// waives it.
+//
+// A copy of a file outside any package (a repository document such as a
+// contract under docs/contracts/) is NOT judged from its source. Its source
+// has no published file set, and no package scan ever runs CLASS 1 on it,
+// so "judged as its source" could only mean "exists somewhere in this
+// checkout" -- a bar lower than the one every other shipped file meets, and
+// one any package could route a citation through with a byte-identical
+// docs/ file and a declaration. Such a copy is an ordinary file of the
+// package that ships it, judged at its own position, as it was before
+// declarations existed; its source is worded for the reader who opens it
+// there.
 //
 // Which files are copies, and of what, is never guessed from a path. It is
 // the package's own declaration (scripts/lib/packed-copies.mjs), the same
@@ -452,11 +462,15 @@ try {
 }
 const copySourceByFile = new Map(declaredCopies.map(({ copy, source }) => [join(rootAbs, ...copy.split("/")), source]));
 
-// The position a declared copy is judged from, or null for any other file.
-// `mismatch` is set when the declaration is false for this file.
+// The position a declared copy of a package's file is judged from, or null
+// for any other file -- including a declared copy of a repository document,
+// which is judged at its own position (see above). `mismatch` is set when
+// the declaration is false for this file.
 function copyPosition(file) {
   const source = copySourceByFile.get(file);
   if (source === undefined) return null;
+  const pkg = /^packages\/([^/]+)\//.exec(source)?.[1];
+  if (!pkg) return null;
   const sourceAbs = join(repoRoot, ...source.split("/"));
   let identical = false;
   try {
@@ -465,17 +479,16 @@ function copyPosition(file) {
     identical = false;
   }
   if (!identical) return { source, mismatch: existsSync(sourceAbs) ? "differs" : "missing" };
-  const pkg = /^packages\/([^/]+)\//.exec(source)?.[1];
-  if (pkg && existsSync(join(repoRoot, "packages", pkg, "package.json"))) {
-    const root = join(repoRoot, "packages", pkg);
-    return {
-      source,
-      sourceAbs,
-      position: { root, shipped: () => shippedFileSet(root) },
-      waiver: { package: pkg, file: relative(root, sourceAbs).split(sep).join("/") },
-    };
-  }
-  return { source, sourceAbs, position: { root: repoRoot, shipped: () => NO_MANIFEST }, waiver: null };
+  // A source under packages/ in a directory that is not a package has no
+  // published file set to be judged against either.
+  if (!existsSync(join(repoRoot, "packages", pkg, "package.json"))) return null;
+  const root = join(repoRoot, "packages", pkg);
+  return {
+    source,
+    sourceAbs,
+    position: { root, shipped: () => shippedFileSet(root) },
+    waiver: { package: pkg, file: relative(root, sourceAbs).split(sep).join("/") },
+  };
 }
 
 // The set of package names legitimately published from THIS repository — read
@@ -1420,7 +1433,7 @@ function checkClass1(file, lines, ext) {
   const citingFile = file === companionChangelog ? COMPANION_CHANGELOG_POSITION : asCopy ? asCopy.sourceAbs : file;
   const relFile = relative(position.root, citingFile);
   const judgedAs = asCopy
-    ? ` (Judged as its source, "${asCopy.source}", of which this file is a declared verbatim copy: paths resolve from there, against ${asCopy.waiver ? `packages/${asCopy.waiver.package}'s published file set` : "this repository's files"}.)`
+    ? ` (Judged as its source, "${asCopy.source}", of which this file is a declared verbatim copy: paths resolve from there, against packages/${asCopy.waiver.package}'s published file set.)`
     : "";
 
   prose.forEach((text, i) => {
@@ -1529,7 +1542,6 @@ function checkClass1(file, lines, ext) {
 }
 
 function copyWaiverFor(asCopy, citedPath) {
-  if (!asCopy.waiver) return undefined;
   return allowlist.entries.find(
     (e) => e.package === asCopy.waiver.package && e.file === asCopy.waiver.file && e.cited === citedPath,
   );
