@@ -12,7 +12,10 @@ export interface SkillCompositionResult {
    * Each inventoried repository other than the hub, with what a hub run
    * found for it. A hub run never writes into one: a product repository's
    * team arrives only once it is staffed in an approved plan, with that
-   * plan's setup pull request.
+   * plan's setup pull request. `inventoryId` is already a stored-inventory
+   * position label (e.g. `repositories[0] in the stored inventory`), never
+   * the raw id -- populated by ./core.ts's composeSkillRoster; see its own
+   * doc comment.
    */
   readonly siblings?: readonly { readonly inventoryId: string; readonly note: string }[];
   /** Skills pruned this run: present in the directory's previous manifest, absent from this run's composed set. */

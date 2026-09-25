@@ -1251,7 +1251,10 @@ describe("applyWorkspacePlan", () => {
     expect(result.health.extraClossys).toEqual(["@clossys/starter"]);
     expect(result.health.dualPin).toBe(false);
     // An inventoried repository not cloned beside the hub is reported, and is not a hub defect.
-    expect(result.message).toMatch(/sibling \(one\): not cloned beside the hub; a hub run writes nothing here; once this repository is staffed in an approved plan, @clossys-advisor and the voices of the roles staffed there arrive with that plan's setup pull request/);
+    // "one" sits at stored-inventory position 0; the line names that position, never the id itself (#1179).
+    expect(result.message).toMatch(
+      /sibling \(repositories\[0\] in the stored inventory\): not cloned beside the hub; a hub run writes nothing here; once this repository is staffed in an approved plan, @clossys-advisor and the voices of the roles staffed there arrive with that plan's setup pull request/,
+    );
     expect(result.health.degraded).toBe(false);
     expect(result.message).toMatch(/health:/);
   });
@@ -1575,15 +1578,27 @@ describe("applyWorkspacePlan", () => {
     expect(readdirSync(app)).toEqual([".git"]);
     expect(readdirSync(other)).toEqual([".git"]);
     expect(existsSync(join(foundry, ".agents"))).toBe(false);
+    // "acme/app" sits at stored-inventory position 0; every message below names a
+    // repository by that stored-inventory position, never by its id (#1179) --
+    // "acme/missing", "acme/other" and "acme/foundry" sit at positions 1-3.
     expect(result.health.skillComposition?.rosterTargets).toEqual(["acme/hub"]);
     expect(result.health.skillComposition?.siblings).toEqual([
-      { inventoryId: "acme/app", note: "checkout beside the hub; a hub run writes nothing here; once this repository is staffed in an approved plan, @clossys-advisor and the voices of the roles staffed there arrive with that plan's setup pull request" },
-      { inventoryId: "acme/missing", note: "not cloned beside the hub; a hub run writes nothing here; once this repository is staffed in an approved plan, @clossys-advisor and the voices of the roles staffed there arrive with that plan's setup pull request" },
-      { inventoryId: "acme/other", note: "git origin does not match inventory id" },
-      { inventoryId: "acme/foundry", note: "foundry supplier tree; skills are not written here" },
+      {
+        inventoryId: "repositories[0] in the stored inventory",
+        note: "checkout beside the hub; a hub run writes nothing here; once this repository is staffed in an approved plan, @clossys-advisor and the voices of the roles staffed there arrive with that plan's setup pull request",
+      },
+      {
+        inventoryId: "repositories[1] in the stored inventory",
+        note: "not cloned beside the hub; a hub run writes nothing here; once this repository is staffed in an approved plan, @clossys-advisor and the voices of the roles staffed there arrive with that plan's setup pull request",
+      },
+      { inventoryId: "repositories[2] in the stored inventory", note: "git origin does not match inventory id" },
+      { inventoryId: "repositories[3] in the stored inventory", note: "foundry supplier tree; skills are not written here" },
     ]);
     expect(result.message).toMatch(/^skill roster written: acme\/hub$/m);
-    expect(result.message).toMatch(/^sibling \(acme\/app\): checkout beside the hub; a hub run writes nothing here; once this repository is staffed in an approved plan, @clossys-advisor and the voices of the roles staffed there arrive with that plan's setup pull request$/m);
+    expect(result.message).toMatch(
+      /^sibling \(repositories\[0\] in the stored inventory\): checkout beside the hub; a hub run writes nothing here; once this repository is staffed in an approved plan, @clossys-advisor and the voices of the roles staffed there arrive with that plan's setup pull request$/m,
+    );
+    expect(result.message).not.toMatch(/acme\/app|acme\/missing|acme\/other|acme\/foundry/);
     expect(result.health.degraded).toBe(false);
     expect(formatHubHealth(result.health)).toMatch(/degraded: no/);
     expect(result.state).toBe("satisfied");
@@ -2137,9 +2152,12 @@ describe("a hub run writes nothing into any sibling checkout (S3-7a)", () => {
     expect(result.health.pinFindings).toEqual([]);
     expect(result.health.skillComposition?.preserved).toEqual([]);
     expect(result.health.skillComposition?.rosterTargets).toEqual(["acme/hub"]);
+    // The inventory is [hub, clean-app, dirty-app, legacy-app, pinned-app]; the hub is
+    // recognised by identity and never listed as a sibling, so the four siblings sit at
+    // stored-inventory positions 1-4 -- named that way, never by id (#1179).
     expect(result.health.skillComposition?.siblings).toEqual(
-      ["clean-app", "dirty-app", "legacy-app", "pinned-app"].map((name) => ({
-        inventoryId: `acme/${name}`,
+      [1, 2, 3, 4].map((position) => ({
+        inventoryId: `repositories[${position}] in the stored inventory`,
         note: "checkout beside the hub; a hub run writes nothing here; once this repository is staffed in an approved plan, @clossys-advisor and the voices of the roles staffed there arrive with that plan's setup pull request",
       })),
     );
@@ -2236,7 +2254,7 @@ describe("a hub run writes nothing into any sibling checkout (S3-7a)", () => {
 });
 
 describe("cloneMissingInventoryRepositories (#1179)", () => {
-  it("clones exactly the inventory ids that resolveSisterCloneTargets skipped for 'not beside the hub', and reports the clone path", () => {
+  it("clones exactly the inventory ids that classifyInventoriedSiblings found 'not beside the hub', and reports the clone path", () => {
     const directory = tempDir();
     mkdirSync(join(directory, ".git"));
     writeInventory(directory, [{ id: "app" }]);
@@ -2248,7 +2266,7 @@ describe("cloneMissingInventoryRepositories (#1179)", () => {
       directory,
       "acme",
     );
-    expect(outcomes).toEqual([{ inventoryId: "app", result: "cloned", note: `cloned to ${siblingPath}` }]);
+    expect(outcomes).toEqual([{ inventoryId: "app", position: 0, result: "cloned", note: "cloned beside the hub" }]);
   });
 
   it("never attempts a clone for an id skipped for a DIFFERENT reason (wrong account)", () => {
@@ -2256,7 +2274,7 @@ describe("cloneMissingInventoryRepositories (#1179)", () => {
     mkdirSync(join(directory, ".git"));
     writeInventory(directory, [{ id: "other-org/app" }]);
     const outcomes = cloneMissingInventoryRepositories(host(directory, {}), directory, "acme");
-    expect(outcomes).toEqual([{ inventoryId: "other-org/app", result: "skipped-other-reason", note: "other account; not this roster" }]);
+    expect(outcomes).toEqual([{ inventoryId: "other-org/app", position: 0, result: "skipped-other-reason", note: "other account; not this roster" }]);
   });
 
   it("reports failed, not thrown, when gh repo clone itself fails", () => {
@@ -2271,9 +2289,39 @@ describe("cloneMissingInventoryRepositories (#1179)", () => {
       directory,
       "acme",
     );
-    expect(outcomes).toEqual([
-      { inventoryId: "app", result: "failed", note: "gh repo clone exited 1: repository not found" },
-    ]);
+    expect(outcomes).toEqual([{ inventoryId: "app", position: 0, result: "failed", note: "gh repo clone exited 1" }]);
+  });
+
+  it("keeps the note fixed text on both success and failure, even for a hostile id (see cli.test.ts for the printed-output check)", () => {
+    // `note` never repeats the folder name (success) or `gh`'s own stderr (failure),
+    // which would otherwise carry the inventory id straight through (#1179).
+    // `inventoryId` itself stays on the outcome for internal use only -- see its own
+    // doc comment -- so cli.test.ts is what actually proves a hostile id never reaches
+    // printed --clone-missing output.
+    const hostileId = "acme/run.rm-rf-home-x";
+    const directory = tempDir();
+    mkdirSync(join(directory, ".git"));
+    writeInventory(directory, [{ id: hostileId }]);
+    const siblingPath = join(dirname(directory), "run.rm-rf-home-x");
+    const succeeded = cloneMissingInventoryRepositories(
+      host(directory, { [`gh repo clone ${hostileId} ${siblingPath}`]: { status: 0, stdout: "Cloning...\n", stderr: "" } }),
+      directory,
+      "acme",
+    );
+    expect(succeeded).toEqual([{ inventoryId: hostileId, position: 0, result: "cloned", note: "cloned beside the hub" }]);
+
+    const failed = cloneMissingInventoryRepositories(
+      host(directory, {
+        [`gh repo clone ${hostileId} ${siblingPath}`]: {
+          status: 1,
+          stdout: "",
+          stderr: `gh: repository ${hostileId} not found (or you do not have access)\n`,
+        },
+      }),
+      directory,
+      "acme",
+    );
+    expect(failed).toEqual([{ inventoryId: hostileId, position: 0, result: "failed", note: "gh repo clone exited 1" }]);
   });
 
   it("leaves a checkout already beside the hub out of its outcomes, and clones only the missing one", () => {
@@ -2294,7 +2342,7 @@ describe("cloneMissingInventoryRepositories (#1179)", () => {
           : base.run(command, args, options),
     };
     expect(cloneMissingInventoryRepositories(cloneHost, hub, "acme")).toEqual([
-      { inventoryId: "absent", result: "cloned", note: `cloned to ${join(parent, "absent")}` },
+      { inventoryId: "absent", position: 1, result: "cloned", note: "cloned beside the hub" },
     ]);
   });
 
@@ -2322,9 +2370,17 @@ describe("cloneMissingInventoryRepositories (#1179)", () => {
       skeletonRoot,
       composeApplyOptions(seedSkillCatalogue(["advisor"])),
     );
+    // "plain" and "guarded" sit at stored-inventory positions 0 and 1; each entry names
+    // that position, never the id itself (#1179).
     expect(result.health.skillComposition?.siblings).toEqual([
-      { inventoryId: "plain", note: "the folder beside the hub with this name is not a git checkout, so it cannot be matched to this inventory id" },
-      { inventoryId: "guarded", note: "git refuses to read this checkout (it reports dubious ownership), so its origin could not be matched to this inventory id" },
+      {
+        inventoryId: "repositories[0] in the stored inventory",
+        note: "the folder beside the hub with this name is not a git checkout, so it cannot be matched to this inventory id",
+      },
+      {
+        inventoryId: "repositories[1] in the stored inventory",
+        note: "git refuses to read this checkout (it reports dubious ownership), so its origin could not be matched to this inventory id",
+      },
     ]);
     expect(result.health.degraded).toBe(false);
     expect(readdirSync(join(parent, "plain"))).toEqual([]);
@@ -2476,13 +2532,16 @@ describe("inventory drift reporting, wired into applyWorkspacePlan (#1216)", () 
       skeletonRoot,
       composeApplyOptions(catalogue),
     );
+    // external: "app"(0), "site"(1). stored (launcher): "site"(0), "legacy"(1). Every
+    // entry below is named by position, never by id (#1179).
     expect(result.health.inventoryDrift).toEqual({
       status: "reconciled",
-      externalOnly: ["app"],
-      launcherOnly: ["legacy"],
-      agreeing: ["site"],
+      externalOnly: { count: 1, positions: ["externalInventory[0]"] },
+      launcherOnly: { count: 1, positions: ["repositories[1]"] },
+      agreeing: { count: 1, positions: ["externalInventory[1]"] },
     });
     expect(result.message).toMatch(/inventory drift: external-only 1, launcher-only 1, agreeing 1/);
+    expect(result.message).not.toMatch(/"app"|"site"|"legacy"/);
   });
 
   it("reports indeterminate, surfaced in the message, for a declared custom-shape external inventory -- never a guessed mapping", () => {

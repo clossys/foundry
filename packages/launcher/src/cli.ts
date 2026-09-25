@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 import {
   applyWorkspacePlan,
   cloneMissingInventoryRepositories,
+  inventoryPositionLabel,
   observeWorkspace,
   planWorkspace,
   launcherPackageRootFromModule,
@@ -170,7 +171,8 @@ export function main(argv: readonly string[], host: WorkspaceHost, skeletonRoot:
     const outcomes = cloneMissingInventoryRepositories(host, decision.directory, decision.owner);
     for (const outcome of outcomes) {
       if (outcome.result === "skipped-other-reason") continue;
-      console.log(`clone-missing (${outcome.inventoryId}): ${outcome.result} -- ${outcome.note}`);
+      // Named by position, never by outcome.inventoryId itself: that id came from the stored inventory, an agent-read document (see core.ts's classifyInventoriedSiblings).
+      console.log(`clone-missing (${inventoryPositionLabel(outcome.inventoryId, outcome.position)}): ${outcome.result} -- ${outcome.note}`);
     }
   }
   return 0;

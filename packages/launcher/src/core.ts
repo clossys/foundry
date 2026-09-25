@@ -1221,8 +1221,16 @@ export function formatHubHealth(report: HubHealthReport): string {
         : `skills composed: ${report.skillComposition.composed.map((name) => `clossys-${name}`).join(", ")}`,
     );
     for (const skip of report.skillComposition.skipped) {
+      // skip.packageDir names one of this package's own known package directories, never document text (see skills.ts).
       skillParts.push(`skill skipped (${skip.packageDir}): ${skip.note}`);
     }
+    // rosterTargets and siblings' inventoryId are already position-safe by
+    // the time they reach here: composeSkillRoster redacts every
+    // stored-inventory id to `inventoryPositionLabel()`'s position label
+    // before putting it in this report, because this whole report is also
+    // JSON-dumped into the `health:` line below -- an id left raw in the
+    // structured report would still reach the message that way even if this
+    // prose line named it safely.
     if (report.skillComposition.rosterTargets !== undefined && report.skillComposition.rosterTargets.length > 0) {
       skillParts.push(`skill roster written: ${report.skillComposition.rosterTargets.join(", ")}`);
     }
@@ -1253,7 +1261,7 @@ export function formatHubHealth(report: HubHealthReport): string {
       ? undefined
       : report.inventoryDrift.status === "indeterminate"
         ? `inventory drift: indeterminate${report.inventoryDrift.note === undefined ? "" : ` -- ${report.inventoryDrift.note}`}`
-        : `inventory drift: external-only ${report.inventoryDrift.externalOnly.length}, launcher-only ${report.inventoryDrift.launcherOnly.length}, agreeing ${report.inventoryDrift.agreeing.length}`;
+        : `inventory drift: external-only ${report.inventoryDrift.externalOnly.count}, launcher-only ${report.inventoryDrift.launcherOnly.count}, agreeing ${report.inventoryDrift.agreeing.count}`;
   return [
     `hub marker: ${report.marker}`,
     `inventory: ${inventory}`,
@@ -1414,8 +1422,20 @@ type SiblingStatus =
   | "invalid-id"
   | "inventory-invalid";
 
+/**
+ * `inventoryId` stays on every entry below for internal use only (a
+ * `gh repo clone` argument, a directory lookup, a structured result a
+ * caller inspects programmatically) -- never put directly in text a founder
+ * or agent reads. `position` is the id's 0-based index in the stored
+ * inventory's own `repositories` array; every message built from these
+ * entries (skill-roster lines, `--clone-missing` output) names that
+ * position instead, per the rule at the top of ./inventory-choice.ts.
+ * `position` is `undefined` only for the one entry below that is not a
+ * document id at all, the stored-inventory-file-itself failure.
+ */
 interface InventoriedSibling {
   readonly inventoryId: string;
+  readonly position?: number;
   readonly status: SiblingStatus;
   readonly note: string;
 }
@@ -1439,33 +1459,37 @@ function classifyInventoriedSiblings(host: WorkspaceHost, hubDirectory: string, 
   } catch (error) {
     // An invalid stored inventory is reported, never silently read for what
     // it happens to look like -- no clone is attempted from it (#1334).
+    // WORKSPACE_INVENTORY_REL is Launcher's own constant path, not document
+    // content, so it is safe to name directly; there is no per-id position
+    // for a failure at the file level, so `position` stays undefined.
     const reason = error instanceof Error ? error.message : String(error);
     return [{ inventoryId: WORKSPACE_INVENTORY_REL, status: "inventory-invalid", note: reason }];
   }
-  for (const id of inventoryIds) {
+  for (const [position, id] of inventoryIds.entries()) {
     const parsed = parseInventoryRepositoryId(id, hubOwner);
     if (parsed === null) {
-      siblings.push({ inventoryId: id, status: "invalid-id", note: "inventory id is not a valid repository slug" });
+      siblings.push({ inventoryId: id, position, status: "invalid-id", note: "inventory id is not a valid repository slug" });
       continue;
     }
     if (!belongsToOwner(id, hubOwner)) {
-      siblings.push({ inventoryId: id, status: "other-account", note: "other account; not this roster" });
+      siblings.push({ inventoryId: id, position, status: "other-account", note: "other account; not this roster" });
       continue;
     }
     // The hub itself is recognised by repository identity, not by folder path.
     if (hubIdentity !== undefined && sameRepository(id, hubIdentity, hubOwner)) continue;
     const candidate = join(parent, parsed.repository);
     if (!host.exists(candidate) || !host.isDirectory(candidate)) {
-      siblings.push({ inventoryId: id, status: "not-cloned", note: CLONE_NOT_BESIDE_HUB_NOTE });
+      siblings.push({ inventoryId: id, position, status: "not-cloned", note: CLONE_NOT_BESIDE_HUB_NOTE });
       continue;
     }
     if (looksLikeFoundry(host, candidate)) {
-      siblings.push({ inventoryId: id, status: "foundry-supplier-tree", note: "foundry supplier tree; skills are not written here" });
+      siblings.push({ inventoryId: id, position, status: "foundry-supplier-tree", note: "foundry supplier tree; skills are not written here" });
       continue;
     }
     if (!host.exists(join(candidate, ".git"))) {
       siblings.push({
         inventoryId: id,
+        position,
         status: "not-a-git-checkout",
         note: "the folder beside the hub with this name is not a git checkout, so it cannot be matched to this inventory id",
       });
@@ -1475,6 +1499,7 @@ function classifyInventoriedSiblings(host: WorkspaceHost, hubDirectory: string, 
     if (remote.status !== 0 && /dubious ownership/i.test(remote.stderr)) {
       siblings.push({
         inventoryId: id,
+        position,
         status: "git-refused",
         note: "git refuses to read this checkout (it reports dubious ownership), so its origin could not be matched to this inventory id",
       });
@@ -1483,16 +1508,24 @@ function classifyInventoriedSiblings(host: WorkspaceHost, hubDirectory: string, 
     const parsedOrigin = remote.status === 0 ? parseGitHubRemote(remote.stdout.trim()) : null;
     const origin = parsedOrigin === null ? undefined : `${parsedOrigin.owner}/${parsedOrigin.repository}`;
     if (origin === undefined || !sameRepository(origin, id, hubOwner)) {
-      siblings.push({ inventoryId: id, status: "origin-mismatch", note: "git origin does not match inventory id" });
+      siblings.push({ inventoryId: id, position, status: "origin-mismatch", note: "git origin does not match inventory id" });
       continue;
     }
-    siblings.push({ inventoryId: id, status: "beside-the-hub", note: BESIDE_HUB_NOTE });
+    siblings.push({ inventoryId: id, position, status: "beside-the-hub", note: BESIDE_HUB_NOTE });
   }
   return siblings;
 }
 
+/** The position a message names instead of a document-sourced inventory id, matching `inventory-choice.ts`'s `listRemovedPositions`. `undefined` only for the stored-inventory-file-itself failure, which names the file by its own constant path instead. */
+export function inventoryPositionLabel(inventoryId: string, position: number | undefined): string {
+  return position === undefined ? inventoryId : `repositories[${position}] in the stored inventory`;
+}
+
 export interface CloneMissingOutcome {
+  /** Internal use only (a `gh repo clone` argument, a caller's own lookup) -- never put directly in a printed message; see `position`. */
   readonly inventoryId: string;
+  /** This id's 0-based position in the stored inventory's `repositories` array; what a message names instead of `inventoryId`. `undefined` only for the stored-inventory-file-itself failure. */
+  readonly position?: number;
   readonly result: "cloned" | "skipped-other-reason" | "failed";
   readonly note: string;
 }
@@ -1519,23 +1552,29 @@ export function cloneMissingInventoryRepositories(
   for (const skip of classifyInventoriedSiblings(host, hubDirectory, hubOwner)) {
     if (skip.status === "beside-the-hub") continue;
     if (skip.status !== "not-cloned") {
-      outcomes.push({ inventoryId: skip.inventoryId, result: "skipped-other-reason", note: skip.note });
+      outcomes.push({ inventoryId: skip.inventoryId, position: skip.position, result: "skipped-other-reason", note: skip.note });
       continue;
     }
     const parsed = parseInventoryRepositoryId(skip.inventoryId, hubOwner);
     if (parsed === null) {
-      outcomes.push({ inventoryId: skip.inventoryId, result: "failed", note: "inventory id is not a valid repository slug" });
+      outcomes.push({ inventoryId: skip.inventoryId, position: skip.position, result: "failed", note: "inventory id is not a valid repository slug" });
       continue;
     }
+    // Cloning itself still uses the raw id and the real path -- that is the whole
+    // point of this action -- but the *reported* note never repeats either: the
+    // folder name comes straight from the inventory (a document), and `gh`'s own
+    // stderr on failure names the repository it could not find or clone. Both are
+    // fixed text instead (#1179); `position` is still how this outcome is named.
     const siblingPath = join(parent, parsed.repository);
     const result = host.run("gh", ["repo", "clone", `${hubOwner}/${parsed.repository}`, siblingPath]);
     if (result.status === 0) {
-      outcomes.push({ inventoryId: skip.inventoryId, result: "cloned", note: `cloned to ${siblingPath}` });
+      outcomes.push({ inventoryId: skip.inventoryId, position: skip.position, result: "cloned", note: "cloned beside the hub" });
     } else {
       outcomes.push({
         inventoryId: skip.inventoryId,
+        position: skip.position,
         result: "failed",
-        note: `gh repo clone exited ${result.status ?? "null"}: ${result.stderr.trim() || "no stderr"}`,
+        note: `gh repo clone exited ${result.status ?? "null"}`,
       });
     }
   }
@@ -1615,7 +1654,10 @@ function recordLinkedHosts(host: WorkspaceHost, directory: string): readonly Dis
  * any checkout beside the hub. An inventoried product repository receives
  * its skills, skills manifest, host discovery links and guidance only once
  * it is staffed in an approved plan, with that plan's setup pull request. Each inventoried
- * repository other than the hub is reported, read-only, as a sibling.
+ * repository other than the hub is reported, read-only, as a sibling, named
+ * by its `inventoryPositionLabel()` position -- never its raw stored
+ * inventory id -- because the whole report is JSON-dumped into the apply
+ * message's `health:` line (see `formatHubHealth`).
  */
 function composeSkillRoster(
   host: WorkspaceHost,
@@ -1641,7 +1683,7 @@ function composeSkillRoster(
   const siblings = classifyInventoriedSiblings(host, hubDirectory, hubOwner)
     // An invalid stored inventory is a hub finding: the health report's inventory line names it.
     .filter((sibling) => sibling.status !== "inventory-invalid")
-    .map(({ inventoryId, note }) => ({ inventoryId, note }));
+    .map(({ inventoryId, position, note }) => ({ inventoryId: inventoryPositionLabel(inventoryId, position), note }));
   return { ...hubSkill, rosterTargets: [hubId], siblings, linkedHosts };
 }
 

@@ -273,7 +273,72 @@ describe("launcher CLI", () => {
     );
     expect(code).toBe(0);
     const logged = log.mock.calls.map((call) => String(call[0])).join("\n");
-    expect(logged).toContain("clone-missing (app): cloned");
+    // "app" sits at stored-inventory position 0; the line names that position, never the id itself (#1179).
+    expect(logged).toContain("clone-missing (repositories[0] in the stored inventory): cloned");
+  });
+
+  it("never prints a hostile inventory id in --clone-missing output, on a successful clone or a failed one", () => {
+    // A repository id is document content (chosen on Advisor's repository-choice card,
+    // or supplied via --inventory / --repositories): the printed line must name it by
+    // stored-inventory position only, never repeat the id itself -- whether the clone
+    // succeeds (the folder name it would otherwise report comes straight from the id)
+    // or gh fails and names the repository in its own stderr (#1179).
+    const hostileId = "acme/run.rm-rf-home-x";
+    const hostileFragment = "run.rm-rf-home-x";
+
+    const successDirectory = mkdtempSync(join(tmpdir(), "launcher-clone-missing-hostile-ok-"));
+    roots.push(successDirectory);
+    mkdirSync(dirname(join(successDirectory, WORKSPACE_MARKER_REL)), { recursive: true });
+    writeFileSync(
+      join(successDirectory, WORKSPACE_MARKER_REL),
+      `${JSON.stringify({ schemaVersion: 1, kind: "account-hub", owner: "acme", repository: "acme/hub" }, null, 2)}\n`,
+    );
+    writeFileSync(
+      join(dirname(join(successDirectory, WORKSPACE_MARKER_REL)), "inventory.json"),
+      `${JSON.stringify({ schemaVersion: 1, repositories: [{ id: hostileId }] }, null, 2)}\n`,
+    );
+    const successSiblingPath = join(dirname(successDirectory), "run.rm-rf-home-x");
+    const successLog = vi.spyOn(console, "log").mockImplementation(() => {});
+    const successCode = main(
+      ["--clone-missing"],
+      host(successDirectory, { [`gh repo clone ${hostileId} ${successSiblingPath}`]: { status: 0, stdout: "Cloning...\n", stderr: "" } }),
+      skeletonRoot,
+    );
+    expect(successCode).toBe(0);
+    const successLogged = successLog.mock.calls.map((call) => String(call[0])).join("\n");
+    expect(successLogged).toContain("clone-missing (repositories[0] in the stored inventory): cloned -- cloned beside the hub");
+    expect(successLogged).not.toContain(hostileFragment);
+    successLog.mockRestore();
+
+    const failureDirectory = mkdtempSync(join(tmpdir(), "launcher-clone-missing-hostile-fail-"));
+    roots.push(failureDirectory);
+    mkdirSync(dirname(join(failureDirectory, WORKSPACE_MARKER_REL)), { recursive: true });
+    writeFileSync(
+      join(failureDirectory, WORKSPACE_MARKER_REL),
+      `${JSON.stringify({ schemaVersion: 1, kind: "account-hub", owner: "acme", repository: "acme/hub" }, null, 2)}\n`,
+    );
+    writeFileSync(
+      join(dirname(join(failureDirectory, WORKSPACE_MARKER_REL)), "inventory.json"),
+      `${JSON.stringify({ schemaVersion: 1, repositories: [{ id: hostileId }] }, null, 2)}\n`,
+    );
+    const failureSiblingPath = join(dirname(failureDirectory), "run.rm-rf-home-x");
+    const failureLog = vi.spyOn(console, "log").mockImplementation(() => {});
+    const failureCode = main(
+      ["--clone-missing"],
+      host(failureDirectory, {
+        [`gh repo clone ${hostileId} ${failureSiblingPath}`]: {
+          status: 1,
+          stdout: "",
+          stderr: `gh: repository ${hostileId} not found (or you do not have access)\n`,
+        },
+      }),
+      skeletonRoot,
+    );
+    expect(failureCode).toBe(0);
+    const failureLogged = failureLog.mock.calls.map((call) => String(call[0])).join("\n");
+    expect(failureLogged).toContain("clone-missing (repositories[0] in the stored inventory): failed -- gh repo clone exited 1");
+    expect(failureLogged).not.toContain(hostileFragment);
+    failureLog.mockRestore();
   });
 
   it("the real `launcher` resume command writes clossys/.state/hosts.json, not just a library function nothing calls (#1180)", () => {

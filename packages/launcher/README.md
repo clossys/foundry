@@ -100,10 +100,14 @@ degraded. Each inventoried repository other than the hub gets a `sibling` line
 a checkout beside the hub, one not cloned yet, another account's repository,
 the Foundry supplier tree, a folder that is not a git checkout, a checkout git
 refuses to read (dubious ownership), or a checkout whose git origin does not
-match. For a checkout beside the hub or one not cloned yet, the line says a hub
-run writes nothing there, and that once the repository is staffed in an
-approved plan, `@clossys-advisor` and the voices of the roles staffed there
-arrive with that plan's setup pull request. A sibling line never marks the report
+match. The line names that repository by its position in the stored
+inventory's `repositories` array (`repositories[<i>] in the stored
+inventory`), never by its id (#1179), because the whole health report is also
+JSON-dumped into the apply message's `health:` line. For a checkout beside the
+hub or one not cloned yet, the line says a hub run writes nothing there, and
+that once the repository is staffed in an approved plan, `@clossys-advisor`
+and the voices of the roles staffed there arrive with that plan's setup pull
+request. A sibling line never marks the report
 degraded, and a sibling's working tree, output an earlier release wrote into it,
 or its old pins do not change the hub run's result. Exit stays 0 on resume
 (the report is advisory); adopt prints the same report and an unparseable
@@ -282,9 +286,34 @@ built, so the same run lists the repositories just chosen as `sibling` lines.
   as it is.
 - An inventory that lists a different set is never merged into or
   overwritten silently: the run is refused, stating how many repositories
-  each side has and which ids would be added and removed. Run again with
-  `--replace-inventory` to approve the replacement; a repository that stays
-  keeps its existing entry, `packages` included.
+  each side has and which positions would be added and removed --
+  `--repositories[<i>]` for an added id's position in the `--repositories`
+  argument, `repositories[<i>] in the stored inventory` for a removed id's
+  position in the file -- never the ids themselves, because both the stored
+  inventory file and `--repositories` are input an agent may relay
+  verbatim, and a repository id is exactly the kind of short string a
+  hostile inventory entry could shape as prompt-injection text. Run again
+  with `--replace-inventory` to approve the replacement; a repository that
+  stays keeps its existing entry, `packages` included. An agent acting on
+  the refusal looks each reported position up in its own copy of the
+  stored inventory file or its own `--repositories` argument to learn which
+  repository it names, and tells the founder that name -- never the
+  position string itself, and never text read back out of the inventory
+  file or the argument without that lookup. That replacement run's own
+  success line reports the same removed positions again, distinctly
+  labeled `repositories[<i>] in the replaced inventory`: by the time that
+  line prints, `clossys/.state/inventory.json` is already the new file, so
+  reusing "in the stored inventory" there would point a reader at the
+  wrong document. The positions still index into the file as it stood
+  before this run -- the same one the refusal step already named -- so an
+  agent that already looked a position up there does not need to look it
+  up again. The same position-only rule, and the same "in the stored
+  inventory" wording, applies to every other message this command prints
+  that names a repository from the file currently on disk -- each
+  `sibling (...)` line and `launcher --clone-missing`'s output. (Since
+  #1511 the `skill roster written` health-report line names only the
+  hub's own id, never a stored-inventory position, so it is no longer on
+  this list.)
 - An inventory that fails its contract is likewise replaced only with
   `--replace-inventory`.
 - `--repositories` and `--inventory` each supply the whole inventory, so
@@ -349,7 +378,7 @@ Exit codes preserve the ternary:
 | `runDoctorChecks()` | Read-only prerequisite checks in fix-in-this-order sequence: git, `gh`, signed in, Node.js, npm, then the advisory coding-agent step. Returns a `DoctorReport`. |
 | `renderDoctorReport()` | Renders a `DoctorReport` one step at a time, the way `launcher-doctor` prints it. |
 | `checkCloudSessionBootstrap()` | Read-only: the three product-repository-layout.json cloud-session-bootstrap checks against a directory. Returns a `CloudBootstrapReport`. |
-| `reportInventoryDrift()` | Compares a declared external inventory against the launcher-written one; reports external-only, launcher-only, and agreeing repository ids. Both files are read as bytes by the strict reader. An optional fifth argument, the hub's owner, compares ids as every other Launcher comparison does (a bare id is that owner's; case is ignored). The hub's own inventory is read with `validateInventoryDocument()`: a missing one lists nothing, and one that is present but invalid makes the report `indeterminate`, never a comparison against an empty list. Returns an `InventoryDriftReport`. |
+| `reportInventoryDrift()` | Compares a declared external inventory against the launcher-written one; reports external-only, launcher-only, and agreeing repositories as a count plus each one's position, never its id (`externalInventory[<i>]` into the declared external document, `repositories[<j>]` into the hub's own stored inventory) -- both are document content, and this whole report is JSON-dumped into the apply message's `health:` line on every resume of a hub that declares `externalInventory`. Both files are read as bytes by the strict reader. An optional fifth argument, the hub's owner, compares ids as every other Launcher comparison does (a bare id is that owner's; case is ignored). The hub's own inventory is read with `validateInventoryDocument()`: a missing one lists nothing, and one that is present but invalid makes the report `indeterminate`, never a comparison against an empty list. Returns an `InventoryDriftReport`. |
 | `detectLinkedHosts()` | Read-only: which of `claude-code`, `cursor`, `codex` can currently discover skills in a directory. |
 | `serializeHostRecord()` / `parseHostRecord()` | Round-trip `clossys/.state/hosts.json` (`HOSTS_REL`). |
 | `parsePreferences()` | Reads `clossys/preferences.json`'s budget stance; defaults to `"balanced"` on absence or malformed input. |

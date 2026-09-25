@@ -195,8 +195,13 @@ export interface HubHealthReport {
      * Each inventoried repository other than the hub, with what this run found
      * for it (for example, a checkout beside the hub whose team arrives only
      * once it is staffed in an approved plan, with that plan's setup pull
-     * request). Report-only: a hub run never writes into one,
-     * and no entry marks the report degraded.
+     * request). Report-only: a hub run never writes into one, and no entry
+     * marks the report degraded. `inventoryId` is already a stored-inventory
+     * position label (e.g. `repositories[0] in the stored inventory`), never
+     * the raw id: this whole report is JSON-dumped into the apply message
+     * (see `formatHubHealth`'s `health:` line), so a raw id kept here would
+     * still reach that message even though no prose line built from it names
+     * the id either.
      */
     readonly siblings?: readonly { readonly inventoryId: string; readonly note: string }[];
     readonly retired?: readonly string[];
@@ -277,10 +282,14 @@ export type ChosenInventory =
       readonly count: number;
       /** Repositories the inventory listed before; 0 when there was none, it was empty, or it failed its contract. */
       readonly previousCount: number;
-      /** Chosen ids the previous inventory did not list. */
+      /** Chosen ids the previous inventory did not list. Never put in a message text; see `addedPositions`. */
       readonly added: readonly string[];
-      /** Previous ids the choice leaves out. */
+      /** Previous ids the choice leaves out. Never put in a message text; see `removedPositions`. */
       readonly removed: readonly string[];
+      /** Each `added` id's 0-based position in the `--repositories` argument, in the same order as `added`. What a message names instead of the id. */
+      readonly addedPositions: readonly number[];
+      /** Each `removed` id's 0-based position in the stored inventory's own `repositories` array, in the same order as `removed`. What a message names instead of the id. */
+      readonly removedPositions: readonly number[];
       /** What the write replaces: nothing (no inventory, or an empty one), a differing valid inventory, or one that failed its contract. The last two happen only with an explicit replace approval. */
       readonly replaced: "nothing" | "differing" | "invalid";
     };

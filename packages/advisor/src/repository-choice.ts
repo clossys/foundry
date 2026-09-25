@@ -35,10 +35,8 @@ import type { AdvisorFinding } from "./types.js";
  * contract's own field name, never the document's. A shape finding (the
  * listing is not `{ nameWithOwner, description? }` throughout) names only
  * `listing` or `listing[<i>]`, with a fixed reason from a closed set
- * (`listingFindings()`) -- never the shared checker's own message or path,
- * either of which can otherwise carry an undeclared field's name straight
- * from the document (#1179; the shared checker itself will stop doing that
- * in a follow-up, but this module does not wait on it).
+ * (`listingFindings()`) -- never the shared checker's own message or path
+ * (#1179).
  *
  * A repository's description is text written by whoever controls that
  * repository, so the card treats it as untrusted data: it is shown only as
@@ -225,12 +223,13 @@ const LISTING_ITEM_INDEX_RE = /^\[(\d+)\]/;
 /**
  * Classifies a `LISTING_SCHEMA` violation into one of a small, fixed set of
  * reasons, by matching `violation.message` against the checker's own
- * constant text for each rule it implements (#1179). The checker's message
- * text never itself carries document content -- only `violation.path` can,
- * via `childPath()` quoting an undeclared field's own name -- but this
- * classifier still never returns `violation.message` itself: a fixed,
- * hand-written phrase here cannot start echoing document text merely
- * because the checker's wording changes under it.
+ * constant text for each rule it implements (#1179). Neither the checker's
+ * message text nor its `violation.path` ever carries document content --
+ * `declaredPath()` only ever extends a path with a name the contract itself
+ * declares, never an undeclared field's own name -- but this classifier
+ * still never returns `violation.message` itself: a fixed, hand-written
+ * phrase here cannot start echoing document text merely because the
+ * checker's wording changes under it.
  */
 function classifyListingViolation(violation: ContractViolation): string {
   const { message } = violation;
