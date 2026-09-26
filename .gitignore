@@ -43,3 +43,7 @@ packages/advisor/src/generated/
 # Generated brief and engagement-context contracts with their checker
 # (packages/strategist/scripts/pack-brief-contract.mjs, issue #1173).
 packages/strategist/src/generated/
+
+# Generated installed-ledger contract with its checker
+# (packages/starter/scripts/pack-ledger-contract.mjs, issue #1178).
+packages/starter/src/generated/
