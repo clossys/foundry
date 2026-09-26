@@ -389,13 +389,15 @@ Exit codes preserve the ternary:
 | `isPlanApproved()` | True only when a plan's most recent decision (by timestamp) has `chosen === "approved"`. False when decisions at that latest time disagree, or when any decision time does not parse. It binds no bytes: it ignores `subjectDigest`, so it is also true for an approval that names no change. |
 | `applyEngagementBrief()` | Writes `clossys/brief.json` into a repository directory once the plan validates and is approved and the brief validates; refuses and writes nothing otherwise. Reports the plan's canonical digest. |
 | `planDigest()` / `canonicalJson()` / `canonicalDigest()` / `PLAN_DIGEST_EXCLUDED_FIELDS` | The canonical plan digest: `sha256:` over the RFC 8785 canonical JSON of the plan without `asOf` and `decisions`. Identical to Advisor's for every plan. `canonicalDigest()` is the shared step: `sha256:` over the canonical JSON of any value, which the plan, change-set and bundle digests all use. |
-| `planApplyBundle()` | The pure apply planner: from a validated plan, the hub brief, observations of each staffed repository's default branch, the composed skill text, the producer version and the hub's Advisor and Integrator pins, computes one change set per staffed repository in the apply phase, skips a repository in the setup phase (`setup-template-unbuilt`) or one whose Controller profile needs root entries added (`root-entry-edit-unbuilt`), and returns a report-mode bundle. Refuses, by throwing before computing anything, a staffed role that is not a lowercase id token (`role-not-an-id`) and a planItem that is not its repository id, a colon and its package name (`plan-item-not-derived`). Reads no file, network, process or clock; the same inputs give the same bytes. Throws, naming positions and never values, on inputs it cannot plan from. |
+| `planApplyBundle()` | The pure apply planner: from a validated plan, the hub brief, observations of each staffed repository's default branch (including the exact text of its installed-state ledger and its composed-skill manifest), the change sets the hub holds, the composed skill text, the producer version and the hub's Advisor and Integrator pins, computes one change set per staffed repository in the apply phase and returns a report-mode bundle. Trusts a repository's ledger only through held change sets, or skips the repository with the trust rule as its reason (`ledger-unreadable`, `identity`, `renamed`, `ledger-chain`, `ledger-foreign-row`); computes each owned path and key by compare-and-swap against the trusted ledger (add, keep, update, or a refusal: `unowned-existing`, `client-edited`, `deleted`), reported under V8; composes the Advisor voice with the staffed roles' voices; skips a repository in the setup phase (`setup-template-unbuilt`), one whose Controller profile needs root entries added (`root-entry-edit-unbuilt`), one whose owned package the lockfile no longer resolves to the recorded version and integrity (`integrity-mismatch`, violated), and one whose ledger holds only some of a setup template's files (`template-rows-partial`). Refuses, by throwing before computing anything, a staffed role that is not a lowercase id token (`role-not-an-id`) and a planItem that is not its repository id, a colon and its package name (`plan-item-not-derived`). Reads no file, network, process or clock; the same inputs give the same bytes. Throws, naming positions and never values, on inputs it cannot plan from. |
+| `trustInstalledLedger()` / `reconcileWholeFile()` | Whether a repository's ledger bytes may be trusted: exactly canonical and valid (`ledger-unreadable`), for the observed node id (`identity`) and id (`renamed`), every generation a held, valid change set whose digest recomputes and that agrees with its history entry (`ledger-chain`), and every row a write of the set it names (`ledger-foreign-row`); a refusal carries the rule only. `reconcileWholeFile()` is the compare-and-swap table for one whole file, with the generation-0 adoption pass allowed only in a setup set. Pure. Types: `LedgerTrust`, `LedgerTrustRule`, `WholeFileState`, `WholeFileOutcome`. |
 | `projectEngagementBrief()` / `serializeEngagementBrief()` / `PUBLIC_PROBLEM_PLACEHOLDER` | One repository's brief: the hub brief with `staffedHere` set to that repository's roles in plan order, and `problem` replaced by the brief contract's fixed placeholder unless the repository is private, members in the brief contract's order at every depth; and the exact bytes written for it (two-space JSON and a final newline). |
 | `changeSetDigest()` / `changeSetDigestSubject()` / `CHANGE_SET_DIGEST_EXCLUDED_FIELDS` / `DERIVED_FILE_DIGEST_FIELDS` | The change-set digest: `canonicalDigest()` of the change set without `changeSetDigest`, `branch`, `bundle`, `pullRequest`, `inverse` and `tooling`, with each derived file reduced to `path`, `mode`, `derived`, `item` and `invariants`. |
 | `bundleDigest()` | The bundle digest an approval binds: `canonicalDigest()` of the plan digest and, sorted by id, the id and change-set digest of each repository that has a change set. Nothing else. |
 | `validateRepositoryChangeSet()` / `validateApplyBundle()` | Validation of a change set and a bundle against the shared change-set and bundle contracts, including their code rules (C1-C16 for a change set: references, allow-list and case-insensitive path rules, the ledger, the digest, only the ledger and lockfile derived, canonical order, each item's writes matching it -- discovery links, the skills manifest, the pointer files and the setup templates included -- a pin-starter in devDependencies and at most once, phase, a complete setup set, the release-age exemption's surface and scope, the root entries a Controller profile needs, no skill written through a symbolic link, every refusal at a path or key its item binds, every whole file changed only as its act's write kind allows (none deletes), and each planItem derived from the repository id and package name; A1-A7 for a bundle: unique ids, the digest, verdicts that are the worst of their checks, the authorization-mismatch and authorization-absent checks, no state or binding in a report bundle, and in a planned bundle a state only where all nine checks passed and a binding exactly where V3 passed). Unknown fields are refused; no reason echoes a value. |
 | `wouldViolateRootEntries()` / `isRootEntryName()` | Whether the root names some paths introduce (each path's first segment) would fail a Controller repository profile's closed root vocabulary: `satisfied` when the profile has no vocabulary Controller checks (schema version 1 or 2, or an empty `rootEntries`) or declares every name allowed or required; `violated`, with the undeclared and the prohibited names, sorted; `indeterminate` (`root-vocabulary-unknown`) for anything Controller could not read as a root vocabulary. Reads only `schemaVersion` and `rootEntries`, by the rules Controller's README states; pure. `isRootEntryName()` is Controller's rule for one direct-child name. |
-| `validateInstalledLedger()` / `ledgerSuccession()` / `serializeInstalledLedger()` | The installed-state ledger (`clossys/.state/installed.json`): validation against the shared ledger contract and its code rules L1-L10 (history, each generation's approval binding, rows naming history, owned paths and link modes, keys matching packages, no act twice, canonical order, root entries in one Controller profile among fixed names, id-token roles in skill paths, and derived planItems); the contract's succession rules for a pull request's head ledger against its base's, each given as its exact bytes (both must be exactly canonical; then unchanged, or one next generation keeping the base's history, and an admitted generation installing exactly what the setup deferred and changing nothing else), reporting whether a next generation was proved `admitted` or only claims an approval (`approval-claimed`); and the exact bytes of a valid ledger. A valid ledger is well formed, not trusted: trusting a row needs the hub's change sets, which none of these read. Nothing in this package writes a ledger yet. |
+| `validateInstalledLedger()` / `readInstalledLedger()` / `ledgerSuccession()` / `serializeInstalledLedger()` / `renderInstalledLedger()` | The installed-state ledger (`clossys/.state/installed.json`): validation against the shared ledger contract and its code rules L1-L10 (history, each generation's approval binding, rows naming history, owned paths and link modes, keys matching packages, no act twice, canonical order, root entries in one Controller profile among fixed names, id-token roles in skill paths, and derived planItems); the contract's succession rules for a pull request's head ledger against its base's, each given as its exact bytes (both must be exactly canonical; then unchanged, or one next generation keeping the base's history, and an admitted generation installing exactly what the setup deferred and changing nothing else), reporting whether a next generation was proved `admitted` or only claims an approval (`approval-claimed`); the exact bytes of a valid ledger; a strict read of a ledger from its text (null unless valid and exactly canonical); and the bytes of the next generation a change set writes over the previous ledger, under the contract's RENDER section (each deferred row takes its identity from the plan's package acts, `LedgerPackageIdentity`), refusing a set computed from another generation or for another repository, and an apply set that would adopt a file. A valid ledger is well formed, not trusted: see `trustInstalledLedger()`. |
+| `storeChangeSet()` / `storeApplyBundle()` / `readStoredChangeSet()` / `readStoredApplyBundle()` / `CHANGE_SET_STORE_REL` / `BUNDLE_STORE_REL` | The hub's content-addressed stores under `clossys/.state/apply/change-sets/` and `clossys/.state/apply/bundles/`, one file per digest named by its 64 hex digits: a write validates first, does nothing when the file already holds the same bytes, and refuses different bytes; a read is strict, validated, and returns the document only when its recomputed digest matches its name, else null. A digest argument that is not `sha256:` and 64 lowercase hex digits is refused before any path is built. |
 | `CloneMissingOutcome` / `DoctorCheckHost` / `DoctorReport` / `DoctorStepId` / `DoctorStepResult` / `CloudBootstrapCheck` / `CloudBootstrapReport` / `ExternalInventoryDeclaration` / `InventoryDriftReport` / `DiscoveredHost` / `HostRecord` / `BudgetPreference` / `HostModelProfile` / `HostTierMapping` / `ModelResolution` / `PreferencesDocument` / `ReasoningTier` / `SupportedHost` / `AdvisorPlan` / `ApplyBriefResult` / `BlockerKind` / `EngagementBrief` / `EngagementBriefRole` / `EngagementContext` / `EngagementContextField` / `EngagementContextFieldId` / `GoalDirection` / `PlanBlocker` / `PlanDecision` / `PlanKit` / `PlanPackageAct` / `PlanStaffing` / `ValidationResult` / `PlanApplyBundleInputs` / `PlanApplyBundleResult` / `RepositoryObservation` / `SkippedRepositoryObservation` / `BundleDigestEntry` / `ApplyBundle` / `ApplyBundleRepository` / `ApplyCheck` / `ApplyCheckId` / `ChangeSetDeferral` / `ChangeSetItem` / `ChangeSetPhase` / `ChangeSetRefusal` / `CheckVerdict` / `ContentDigest` / `DependencyPlacement` / `DerivedFileChange` / `FileChange` / `KeyChange` / `LedgerInvariant` / `LockfileName` / `PackageInvariant` / `PackageManagerKind` / `PinnedPackage` / `RefusalReason` / `ReleaseAgeSurfaceKind` / `RepositoryChangeSet` / `RepositoryVisibility` / `WholeFileChange` / `ApprovalBinding` / `DiscoveryRoot` / `ExemptionSurfaceKind` / `WriteRecordSource` / `InstalledLedger` / `LedgerSuccession` / `LedgerViolation` / `RepositoryProfileObservation` / `RootEntryDeclaration` / `RootEntriesVerdict` | Typed contracts for the sections above. |
 
 ## Doctor
@@ -572,9 +574,11 @@ from the hub brief itself.
 `planApplyBundle()` computes, for each repository a plan staffs, the change
 set one pull request would make there, and a bundle that holds them (#1178).
 It is pure: it takes the plan, the hub brief (`clossys/advisor/brief.json`),
-what the caller observed on each repository's default branch, the composed
-skill text for each role, this package's version and the hub's Advisor and
-Integrator pins, and it reads nothing itself. The shapes are the shared contracts
+what the caller observed on each repository's default branch (including the
+exact text of its installed-state ledger and its composed-skill manifest),
+the change sets the hub holds, the composed skill text for each role and for
+Advisor, this package's version and the hub's Advisor and Integrator pins,
+and it reads nothing itself. The shapes are the shared contracts
 `docs/contracts/repository-change-set.json` and `apply-bundle.json`, packed
 into this package, and every set and the bundle are validated against them,
 code rules included, before they are returned. The digests are defined in
@@ -585,7 +589,9 @@ in this package).
 - Each set describes the repository's brief, projected from the hub brief with
   `staffedHere` set to its roles and, unless the repository is private, the
   brief contract's fixed placeholder in place of the client's problem. It
-  holds each staffed role's skill, a discovery link to it under
+  composes the Advisor voice together with each staffed role's voice (D33;
+  `staffedHere` still lists the staffed roles only), and holds each of those
+  skills, a discovery link to it under
   `.claude/skills` and `.cursor/skills` (none under a root the default
   branch has as a symbolic link), and `clossys/.state/skills.json` listing
   the skills it writes. It carries every package act the plan names for
@@ -612,12 +618,37 @@ in this package).
   templates (the caller workflows, the Starter request, the CI and
   path-scope workflows, the Starter pin and, for pnpm or Yarn, the
   release-age exemption), and the planner does not compute them yet.
-- A file the set would write whole, or a `package.json` key it would
-  change, that the default branch already has is refused as
-  `unowned-existing`: the planner treats the installed-state ledger as empty
-  and never takes over bytes it cannot show the flow wrote. The lockfile and
-  the ledger are derived files, checked by their invariants, and are not
-  refused this way.
+- The planner reads the repository's installed-state ledger at the base
+  and trusts it only through change sets the hub holds (see
+  `trustInstalledLedger()` above): every generation must be a held set whose
+  digest recomputes and that agrees with its history entry, and every row a
+  write of the set it names. A ledger that fails skips the repository,
+  `indeterminate`, with the trust rule as its reason (`ledger-unreadable`,
+  `identity`, `renamed`, `ledger-chain` or `ledger-foreign-row`), outside the
+  bundle digest. No ledger is generation 0. The set's `ledger.generation`
+  comes from the trusted ledger.
+- Each file the set writes whole is computed by compare-and-swap against
+  the trusted ledger's row at its path: with no row, an absent path is added
+  and a present one is refused as `unowned-existing`; with a row, a base that
+  still holds the row's bytes is kept (`before` equal to `after`) or updated,
+  a base with other bytes is refused as `client-edited`, and an absent one as
+  `deleted`, never folded into an update; other paths still proceed. Taking
+  over a present file with no row (the generation-0 adoption pass) is
+  allowed only in a setup set, never in an apply set. A `package.json` key
+  follows the same table against the ledger's key row; a key whose row, base
+  value and desired version agree while the lockfile does not resolve that
+  version and integrity skips the repository as `integrity-mismatch`,
+  `violated`, and is never repaired. The lockfile and the ledger are derived
+  files, checked by their invariants, and are not refused this way.
+- In an apply set, each setup template whose files all have ledger rows is
+  carried as a no-op item, one keep entry per file (or `client-edited` /
+  `deleted`); a template with only some of its files in the ledger skips the
+  repository as `template-rows-partial`. An apply set carries no release-age
+  or root-entry edit: their rows pass forward unchanged.
+- A trusted row the desired state no longer names (a role no longer
+  staffed, a package act the plan no longer names there) is left in place,
+  and the set reports V8 `indeterminate` with rule `removal-unbuilt`: removal
+  sets are not built.
 - The change-set digest leaves out what is computed from it or from what it
   covers -- the digest itself, the branch, the bundle digest, the pull
   request text and the inverse set -- and `tooling`, which records the
@@ -648,7 +679,9 @@ in this package).
   invariants is not run, so a set that changes a lockfile carries V6
   `indeterminate` with rule `lockfile-not-run`, and V6 is `satisfied` only
   for a set with no lockfile change. A setup-phase repository is skipped
-  instead (see above). Two V3 checks
+  instead (see above). Compare-and-swap outcomes are reported under V8:
+  `unowned-existing`, `client-edited`, `deleted` and `removal-unbuilt` each
+  give V8 `indeterminate`, and a set with none of them gives V8 `satisfied`. Two V3 checks
   need no observation: when the authorization names a different plan
   digest than the plan's, every computed repository gets a violated V3
   check (`authorization-plan-mismatch`), and when the plan has package acts
@@ -656,8 +689,10 @@ in this package).
   V3 check (`authorization-absent`). Each repository's verdict is the worst
   of its checks.
 
-Nothing here writes to a repository, creates a branch or opens a pull
-request. Reading the repositories, branch creation, exact package installs,
+Nothing here writes to a product repository, creates a branch or opens a
+pull request; the only files this part of the package writes are the hub's
+change-set and bundle stores (see the ledger section below). Reading the
+repositories, branch creation, exact package installs,
 adding Starter's caller workflow, and opening one pull request per staffed
 repository -- including the setup pull request that brings a staffed
 repository `@clossys-advisor` and the voices of the roles staffed there --
@@ -675,8 +710,11 @@ computed independently of this package (both in the public repository, not
 shipped in this package). This package validates a ledger against it
 (`validateInstalledLedger()`), compares a pull request's ledger with its
 base's from their exact bytes (`ledgerSuccession()`), and gives a valid ledger its exact bytes
-(`serializeInstalledLedger()`). Nothing here renders a ledger from a change
-set, reads one from a repository, or trusts one yet.
+(`serializeInstalledLedger()`), reads one strictly from its text
+(`readInstalledLedger()`), renders the next generation a change set writes
+(`renderInstalledLedger()`), and decides whether a ledger may be trusted
+against the change sets the hub holds (`trustInstalledLedger()`). Nothing
+here reads a ledger from a repository: the caller hands its text in.
 
 - Each generation records the change set that wrote it and its binding:
   `approved`, with the digest of the bundle the founder approved (which
@@ -689,9 +727,22 @@ set, reads one from a repository, or trusts one yet.
   the repository id, a colon and the package name, a role appears only as a
   lowercase id token in a skill path, and a root entry is one of the fixed
   names the flow's own paths can introduce.
-- A valid ledger is a claim, not evidence. Trusting a row needs the hub to
-  hold the change set it names, and the row's bytes to be in it; nothing in
-  this package checks that yet.
+- A valid ledger is a claim, not evidence. `trustInstalledLedger()` trusts
+  it only when every generation is a change set the hub holds, valid and
+  self-verifying, agreeing with its history entry, and every row is a write
+  of the set it names; one row it cannot account for refuses the whole
+  repository, because rendering the next generation would carry that row
+  forward.
+- `renderInstalledLedger()` gives the bytes of the generation a change set
+  writes over the previous ledger, and refuses a set computed from another
+  generation or for another repository, and an apply set that keeps a file
+  the previous ledger has no row for: an apply generation leaves the
+  ledger's files unchanged.
+- The hub keeps every change set and bundle it computes under
+  `clossys/.state/apply/change-sets/` and `clossys/.state/apply/bundles/`,
+  one file per digest (`storeChangeSet()`, `storeApplyBundle()`). A stored
+  file is never replaced, and a read returns it only when its recomputed
+  digest matches its name.
 - The succession rules compare what two ledgers claim, not the files: an
   admitted generation must install exactly the packages its setup deferred
   and change no other row, but whether the pull request's tree matches its

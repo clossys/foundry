@@ -13,32 +13,44 @@
 // contracts, code rules included, before they are returned; a planner
 // defect throws rather than returning a set that does not validate.
 //
-// Ownership follows the apply RFC's desired-minus-installed table with an
-// empty installed-state ledger: a path or key the default branch already
-// has is refused (unowned-existing), never taken over. Reading a real
-// ledger and trusting it is a later check this module does not run, which
-// is also why the bundle claims no repository state.
+// Ownership follows the apply RFC's desired-minus-installed table (§12.1)
+// over the installed-state ledger the base carries, and only once that
+// ledger is trusted (ledger-trust.ts): every generation it records must be a
+// change set the hub holds, and every row one of those sets' own writes;
+// anything less skips the whole repository. A whole file is written only by
+// compare-and-swap against the ledger's row: added where neither the ledger
+// nor the base has it, kept or updated where the base still holds the bytes
+// the flow last wrote, and refused otherwise (unowned-existing,
+// client-edited, deleted). An owned package key follows the same table. The
+// planner never removes what the ledger records and the desired state no
+// longer names; it reports that (removal-unbuilt) and leaves the row to be
+// carried forward. The bundle still claims no repository state.
 //
 // A setup-phase repository is skipped, not computed: the change-set
 // contract requires a setup set to carry the setup templates (code rule
 // C11), and this module does not compute them yet. So is a repository whose
 // Controller profile needs root entries added (code rule C13): this module
-// does not compute the edited profile's bytes yet.
+// does not compute the edited profile's bytes yet. The generation-0 adoption
+// pass, which only a setup set runs (§12.2), is therefore reached only
+// through reconcileWholeFile()'s own tests until setup sets are computed.
 
 import type { AdvisorPlan, EngagementBrief, EngagementBriefRole, EngagementContext, PlanPackageAct } from "./plan-contract.js";
 import { loadContract, validateAdvisorPlan, validateEngagementBrief } from "./plan-contract.js";
 import { planDigest } from "./plan-digest.js";
+import { HUB_ONLY_ROLES } from "./plan-rules.js";
 import { bundleDigest, changeSetDigest } from "./change-set-digest.js";
 import {
-  AUTHORIZATION_ABSENT, AUTHORIZATION_PLAN_MISMATCH, BRIEF_PATH, CANONICAL_KEYS, DISCOVERY_ROOTS, ID_TOKEN, LEDGER_PATH, derivedPlanItem, SKILLS_MANIFEST_PATH, canonicalOrder, contentDigest, dependencyPointer,
-  discoveryLinkPath, discoveryLinkTarget, isSafeRelativePath, lockfilePath, matchesPathPattern, skillPath, validateApplyBundle, validateRepositoryChangeSet,
+  AUTHORIZATION_ABSENT, AUTHORIZATION_PLAN_MISMATCH, BRIEF_PATH, CANONICAL_KEYS, DISCOVERY_ROOTS, ID_TOKEN, LEDGER_PATH, derivedPlanItem, SKILLS_MANIFEST_PATH, TEMPLATE_PATHS, canonicalOrder, contentDigest,
+  dependencyPointer, discoveryLinkPath, discoveryLinkTarget, isSafeRelativePath, lockfilePath, matchesPathPattern, skillPath, validateApplyBundle, validateRepositoryChangeSet,
   worstVerdict,
 } from "./change-set-contract.js";
 import type {
   ApplyBundle, ApplyBundleRepository, ApplyCheck, ChangeSetItem, ChangeSetPhase, ChangeSetRefusal, DependencyPlacement, DiscoveryRoot,
   FileChange, KeyChange, LockfileName, PackageInvariant, PackageManagerKind, PinnedPackage, ReleaseAgeSurfaceKind, RepositoryChangeSet, RepositoryProfileObservation,
-  RepositoryVisibility,
+  RepositoryVisibility, TemplateAct,
 } from "./change-set-contract.js";
+import type { InstalledLedger } from "./ledger-contract.js";
+import { reconcileWholeFile, trustInstalledLedger } from "./ledger-trust.js";
 
 /** What was read from one staffed repository's default branch. The planner trusts it as given. */
 export interface RepositoryObservation {
@@ -71,17 +83,32 @@ export interface RepositoryObservation {
   /**
    * Every file on the default branch that the apply flow may write -- under
    * `clossys/`, under `.agents/skills/`, under `.claude/skills/` and
-   * `.cursor/skills/`, and the lockfile -- with its content digest (`sha256:`
-   * and 64 hex digits; a symbolic link's content is its target). A path not
-   * listed is read as absent, so this must be complete for those paths.
+   * `.cursor/skills/`, the setup templates (`.github/workflows/clossys-*`,
+   * `.github/scripts/clossys-*` and `.starter/request.json`), and the
+   * lockfile -- with its content digest (`sha256:` and 64 hex digits; a
+   * symbolic link's content is its target). A path not listed is read as
+   * absent, so this must be complete for those paths.
    */
   readonly files: readonly { readonly path: string; readonly sha256: string }[];
   /** Every entry of the default branch's package.json `dependencies` and `devDependencies`: the name and its value as written. */
   readonly manifestEntries: readonly { readonly placement: DependencyPlacement; readonly name: string; readonly value: string }[];
   /** What the default branch's lockfile resolves each package to. */
   readonly lockedPackages: readonly PinnedPackage[];
-  /** The installed-state ledger's generation on the default branch; 0 when there is none. */
-  readonly ledgerGeneration: number;
+  /**
+   * The exact text of the installed-state ledger, clossys/.state/installed.json,
+   * at baseCommit, or null when the base has none. It is trusted only as
+   * trustInstalledLedger() allows, against `heldChangeSets`; its generation
+   * is the one the set is computed over.
+   */
+  readonly ledger: string | null;
+  /**
+   * The entries of the base's composed-skill manifest,
+   * clossys/.state/skills.json -- each skill's name and the 64 hex digits of
+   * its SKILL.md's SHA-256, with no `sha256:` prefix, as
+   * serializeComposedSkillsManifest() writes them -- or null when the base
+   * has none or it cannot be read. Only a setup set's adoption pass reads it.
+   */
+  readonly skillsManifest: readonly { readonly name: string; readonly sha256: string }[] | null;
 }
 
 /** A staffed repository no change set is computed for, and why, as an id such as `not-in-inventory`. */
@@ -98,7 +125,7 @@ export interface PlanApplyBundleInputs {
   readonly hubBrief: EngagementBrief;
   /** One entry per staffed repository; a staffed repository with no entry is skipped as `not-observed`. */
   readonly repositories: readonly (RepositoryObservation | SkippedRepositoryObservation)[];
-  /** The composed SKILL.md text for every staffed role. */
+  /** The composed SKILL.md text for every staffed role, and for the Advisor voice every staffed repository also gets (D33). */
   readonly skills: readonly { readonly role: string; readonly content: string }[];
   /** The package and exact version computing the sets. */
   readonly producer: { readonly name: string; readonly version: string };
@@ -112,6 +139,8 @@ export interface PlanApplyBundleInputs {
   readonly authorization: { readonly planDigest: string; readonly expiresAt: string } | null;
   /** When the bundle is computed, supplied by the caller: the planner reads no clock. */
   readonly computedAt: string;
+  /** Every change set the hub holds (clossys/.state/apply/change-sets/), read by the caller; a ledger is trusted only against these. */
+  readonly heldChangeSets: readonly RepositoryChangeSet[];
 }
 
 export interface PlanApplyBundleResult {
@@ -129,8 +158,27 @@ export const PUBLIC_PROBLEM_PLACEHOLDER: string = (() => {
 })();
 
 const BASE_ALLOW_LIST = [".agents/skills/clossys-*/**", "clossys/**"];
-const RESERVED_ITEM_IDS = new Set(["brief", "skills", "ledger", "root-entries"]);
 const ROOT_ENTRIES_ITEM = "root-entries";
+
+/** Each setup template act, with the item id a set gives it. */
+const TEMPLATE_ITEMS: readonly { readonly act: TemplateAct; readonly id: string }[] = [
+  { act: "add-caller-workflow", id: "caller-workflow" },
+  { act: "write-starter-request", id: "starter-request" },
+  { act: "add-ci-template", id: "ci-template" },
+  { act: "add-path-scope-job", id: "path-scope-job" },
+];
+/** The patterns a set that names the setup templates adds to its pathAllowList. */
+const TEMPLATE_ALLOW_LIST = [".github/scripts/clossys-*", ".github/workflows/clossys-*", ".starter/request.json"];
+const RESERVED_ITEM_IDS = new Set(["brief", "skills", "ledger", ROOT_ENTRIES_ITEM, ...TEMPLATE_ITEMS.map((template) => template.id)]);
+
+/**
+ * The Advisor voice (D33): every staffed repository gets it beside its
+ * staffed roles' voices. It is a hub-only role, never staffed itself (plan
+ * rule R11), so it can never repeat a staffed role; a packed plan contract
+ * that does not list it as hub-only is a build defect.
+ */
+const ADVISOR_VOICE = "advisor";
+if (!HUB_ONLY_ROLES.includes(ADVISOR_VOICE)) throw new Error("the packed plan contract's hub-only roles do not include the Advisor voice");
 
 function projectRole(role: EngagementBriefRole): EngagementBriefRole {
   return {
@@ -204,17 +252,27 @@ interface ComputedSet {
   readonly checks: readonly ApplyCheck[];
 }
 
+/** A repository computeChangeSet() does not give a set, and why: an id such as `integrity-mismatch`. */
+interface SkippedSet {
+  readonly skip: { readonly verdict: "violated" | "indeterminate"; readonly reason: string };
+}
+
 function computeChangeSet(
   inputs: PlanApplyBundleInputs,
   planDigestValue: string,
   observation: RepositoryObservation,
+  ledger: InstalledLedger | null,
   roles: readonly string[],
   acts: readonly PlanPackageAct[],
   skillContent: ReadonlyMap<string, string>,
-): ComputedSet {
+): ComputedSet | SkippedSet {
   // Paths compare case-insensitively (code rule C3): a base file that differs only in case is the same file on many checkouts.
   const existing = new Map(observation.files.map((file) => [file.path.toLowerCase(), file.sha256]));
   const existingAt = (path: string) => existing.get(path.toLowerCase());
+  // The trusted ledger's rows: files by path (case-insensitively, as C3 and L8 compare paths), keys by pointer.
+  const fileRows = new Map((ledger?.files ?? []).map((row) => [row.path.toLowerCase(), row.after]));
+  const fileRowAt = (path: string) => fileRows.get(path.toLowerCase()) ?? null;
+  const keyRows = new Map((ledger?.keys ?? []).map((row) => [row.pointer, row.value]));
   const items: ChangeSetItem[] = [];
   const files: FileChange[] = [];
   const keys: KeyChange[] = [];
@@ -222,39 +280,56 @@ function computeChangeSet(
   const pathAllowList = [...BASE_ALLOW_LIST];
   // A path is present when a file is there, or when it is a directory holding one.
   const presentAt = (path: string) => existingAt(path) !== undefined || observation.files.some((file) => file.path.toLowerCase().startsWith(`${path.toLowerCase()}/`));
+  // The one compare-and-swap table for a whole file (RFC §12.1); only a setup set may adopt what the base has (§12.2).
+  const reconcile = (path: string, desired: string) =>
+    reconcileWholeFile({
+      path,
+      desired,
+      row: fileRowAt(path),
+      base: existingAt(path) ?? null,
+      occupied: presentAt(path),
+      phase: observation.phase,
+      skillsManifest: observation.skillsManifest,
+    });
 
   const writeWhole = (path: string, text: string, item: string, mode: "100644" | "120000" = "100644") => {
     if (!isSafeRelativePath(path) || !pathAllowList.some((pattern) => matchesPathPattern(path, pattern))) {
       refused.push({ path, reason: "unsafe-path", item });
       return false;
     }
-    if (presentAt(path)) {
-      // Empty ledger: nothing shows the flow wrote what is there, so it is not taken over.
-      refused.push({ path, reason: "unowned-existing", item });
+    const desired = contentDigest(text);
+    const outcome = reconcile(path, desired);
+    if (!outcome.write) {
+      refused.push({ path, reason: outcome.reason, item });
       return false;
     }
-    files.push({ path, mode, before: null, after: contentDigest(text), item });
+    // before is null (add), the desired digest (keep), or the bytes the flow last wrote (update).
+    files.push({ path, mode, before: outcome.before, after: desired, item });
     return true;
   };
 
   items.push({ id: "brief", act: "write-record", source: "engagement-brief" });
+  // The brief's staffedHere names the staffed roles only; the Advisor voice is not staffed (D33).
   const brief = projectEngagementBrief(inputs.hubBrief, roles, observation.visibility);
   const briefValidation = validateEngagementBrief(brief);
   if (!briefValidation.valid) throw new TypeError(`a projected brief does not validate: ${briefValidation.reason}`);
   writeWhole(BRIEF_PATH, serializeEngagementBrief(brief), "brief");
 
-  items.push({ id: "skills", act: "compose-skills", roles: [...roles] });
+  // Every staffed repository gets the Advisor voice beside its staffed roles' voices (D33), first, then plan order.
+  const voices = [ADVISOR_VOICE, ...roles];
+  items.push({ id: "skills", act: "compose-skills", roles: voices });
   // A discovery link is written under each root the base does not have as a symbolic link: a write through one would land where it points.
   const linkedRoots = DISCOVERY_ROOTS.filter((root) => !observation.symlinkedSkillRoots.includes(root));
   for (const root of linkedRoots) pathAllowList.push(`${root}/clossys-*`);
   const composed: { role: string; sha256: string }[] = [];
-  for (const role of roles) {
+  for (const role of voices) {
     const content = skillContent.get(role);
     if (content === undefined) throw new TypeError("a staffed role has no composed skill content in skills");
     const skill = skillPath(role);
     // Never write through a symbolic link: the bytes would land wherever it points.
     if (observation.linkedAgentsPaths.some((link) => skill.startsWith(`${link}/`))) refused.push({ path: skill, reason: "skills-root-is-link", item: "skills" });
     else if (writeWhole(skill, content, "skills")) {
+      // Added, kept or updated: the skill is the flow's, so the manifest lists it and its links are written.
       composed.push({ role, sha256: contentDigest(content) });
       // Links only to a skill the set writes: a link to a refused skill would expose one the flow does not own.
       for (const root of linkedRoots) writeWhole(discoveryLinkPath(root, role), discoveryLinkTarget(role), "skills", "120000");
@@ -262,9 +337,28 @@ function computeChangeSet(
   }
   writeWhole(SKILLS_MANIFEST_PATH, serializeComposedSkillsManifest(composed, inputs.producer.version), "skills");
 
+  // The setup templates in an apply set (only an apply set reaches here) are no-ops: never written anew, only kept where
+  // the trusted ledger records them all. A template act the ledger records none of gets no item.
+  for (const { act, id } of TEMPLATE_ITEMS) {
+    const rows = TEMPLATE_PATHS[act].map((path) => ({ path, row: fileRowAt(path) }));
+    const recorded = rows.filter((entry) => entry.row !== null).length;
+    if (recorded === 0) continue;
+    // A ledger that records some of an act's files and not the others cannot be kept as that act, and nothing here writes the rest.
+    if (recorded < rows.length) return { skip: { verdict: "indeterminate", reason: "template-rows-partial" } };
+    items.push({ id, act });
+    for (const { path, row } of rows) {
+      const outcome = reconcile(path, row!);
+      if (outcome.write) files.push({ path, mode: "100644", before: row, after: row, item: id });
+      else refused.push({ path, reason: outcome.reason, item: id });
+    }
+  }
+  if (items.some((item) => TEMPLATE_ITEMS.some((template) => template.id === item.id))) pathAllowList.push(...TEMPLATE_ALLOW_LIST);
+
   const invariants: PackageInvariant[] = [];
   for (const act of acts) {
-    if (RESERVED_ITEM_IDS.has(act.planItem)) throw new TypeError("a package act's planItem is an item id the change set reserves (brief, skills, ledger or root-entries)");
+    if (RESERVED_ITEM_IDS.has(act.planItem)) {
+      throw new TypeError("a package act's planItem is an item id the change set reserves (brief, skills, ledger, root-entries, caller-workflow, starter-request, ci-template or path-scope-job)");
+    }
     const pinned: PinnedPackage = { name: act.name, version: act.version, integrity: act.integrity };
     const entries = observation.manifestEntries.filter((entry) => entry.name === act.name);
     const satisfiedInBase =
@@ -279,13 +373,31 @@ function computeChangeSet(
       refused.push({ file: "package.json", pointer, reason: "manifest-absent", item: act.planItem });
       continue;
     }
-    if (entries.length > 0) {
-      const pointers = new Set(entries.map((entry) => dependencyPointer(entry.placement, entry.name)));
-      for (const existingPointer of pointers) refused.push({ file: "package.json", pointer: existingPointer, reason: "unowned-existing", item: act.planItem });
+    // The owned key follows the same table as a whole file (RFC §12.1): no row and nothing there adds it; no row and a value
+    // there is unowned-existing; a row and nothing there is deleted; a row and another value there is client-edited; a row and
+    // its own value there is the flow's key, updated when the plan names another version.
+    const row = keyRows.get(pointer);
+    const baseAt = entries.find((entry) => entry.placement === act.placement);
+    const own = row === undefined ? (baseAt === undefined ? null : "unowned-existing") : baseAt === undefined ? "deleted" : baseAt.value !== row ? "client-edited" : null;
+    const others = new Set(entries.filter((entry) => entry.placement !== act.placement).map((entry) => dependencyPointer(entry.placement, entry.name)));
+    if (others.size > 0) {
+      // The package is also at the other placement, which the flow never wrote: nothing is written for it.
+      for (const other of others) refused.push({ file: "package.json", pointer: other, reason: "unowned-existing", item: act.planItem });
+      if (own !== null) refused.push({ file: "package.json", pointer, reason: own, item: act.planItem });
       continue;
     }
-    keys.push({ file: "package.json", pointer, before: null, after: act.version, item: act.planItem });
-    invariants.push({ item: act.planItem, ...pinned });
+    if (own !== null) {
+      refused.push({ file: "package.json", pointer, reason: own, item: act.planItem });
+      continue;
+    }
+    if (row === undefined || act.version !== row) {
+      keys.push({ file: "package.json", pointer, before: row ?? null, after: act.version, item: act.planItem });
+      invariants.push({ item: act.planItem, ...pinned });
+      continue;
+    }
+    // The key holds the desired version and the flow wrote it, yet the lockfile does not resolve that version at the plan's
+    // integrity: a supply-chain signal, never repaired (§12.6), so the repository gets no set.
+    return { skip: { verdict: "violated", reason: "integrity-mismatch" } };
   }
 
   const lockfile = lockfilePath(observation);
@@ -295,17 +407,21 @@ function computeChangeSet(
     files.push({ path: lockfile, mode: "100644", derived: true, item: sorted[0]!.item, invariants: sorted, before: existingAt(lockfile) ?? null });
   }
 
+  const generation = ledger?.generation ?? 0;
   items.push({ id: "ledger", act: "write-ledger" });
   files.push({
     path: LEDGER_PATH,
     mode: "100644",
     derived: true,
     item: "ledger",
-    invariants: [{ ledgerGeneration: observation.ledgerGeneration + 1 }],
+    invariants: [{ ledgerGeneration: generation + 1 }],
     before: existingAt(LEDGER_PATH) ?? null,
   });
 
-  // A profile that needs no new entry needs no item; one that needs entries added is skipped by the caller, so only a refused declaration is written here.
+  // A profile that needs no new entry needs no item; one that needs entries added is skipped by the caller, so only a refused
+  // declaration is written here. That refusal stays even over a ledger with rootEntries rows: code rule C13 requires the item
+  // whenever the observed profile needs one. No declare-root-entry is ever emitted to carry the ledger's entries rows, and no
+  // exempt-release-age either: RENDER carries entries rows forward unchanged.
   const profile = observation.repositoryProfile;
   if (profile !== null && (profile.rootVocabulary === "unparseable" || profile.prohibitedRoots.length > 0)) {
     items.push({
@@ -317,10 +433,24 @@ function computeChangeSet(
     refused.push({ path: profile.path, reason: profile.rootVocabulary === "unparseable" ? "root-vocabulary-unknown" : "root-entry-prohibited", item: ROOT_ENTRIES_ITEM });
   }
 
+  // A ledger row the desired state no longer names would be a removal, which this planner does not compute: it is reported,
+  // and RENDER carries the row forward. A files row where an entries row names its file is the compare-and-swap record of a
+  // file the flow edited (a release-age surface or the Controller profile), carried with its entries, not a removal.
+  let unnamed = false;
+  if (ledger !== null) {
+    const named = new Set([...files.map((file) => file.path), ...refused.flatMap((refusal) => ("path" in refusal ? [refusal.path] : []))].map((path) => path.toLowerCase()));
+    const edited = new Set(ledger.entries.map((row) => row.file.toLowerCase()));
+    const pointers = new Set(acts.map((act) => dependencyPointer(act.placement, act.name)));
+    const planItems = new Set(acts.map((act) => act.planItem));
+    unnamed =
+      ledger.files.some((row) => !named.has(row.path.toLowerCase()) && !edited.has(row.path.toLowerCase())) ||
+      ledger.keys.some((row) => !pointers.has(row.pointer)) ||
+      ledger.packages.some((row) => !planItems.has(row.planItem));
+  }
+
   const checks: ApplyCheck[] = [];
   const reasons = new Set(refused.map((refusal) => refusal.reason));
   if (reasons.has("unsafe-path")) checks.push({ check: "V6", verdict: "violated", rule: "unsafe-path" });
-  if (reasons.has("unowned-existing")) checks.push({ check: "V6", verdict: "indeterminate", rule: "unowned-existing" });
   if (reasons.has("manifest-absent")) checks.push({ check: "V6", verdict: "indeterminate", rule: "manifest-absent" });
   if (reasons.has("root-vocabulary-unknown")) checks.push({ check: "V6", verdict: "indeterminate", rule: "root-vocabulary-unknown" });
   if (reasons.has("root-entry-prohibited")) checks.push({ check: "V6", verdict: "indeterminate", rule: "root-entry-prohibited" });
@@ -328,6 +458,15 @@ function computeChangeSet(
   // V6 also regenerates the lockfile and checks its invariants; that part is not run here, so a set that changes a lockfile is not satisfied.
   if (files.some((file) => "derived" in file && file.path !== LEDGER_PATH)) checks.push({ check: "V6", verdict: "indeterminate", rule: "lockfile-not-run" });
   if (checks.length === 0) checks.push({ check: "V6", verdict: "satisfied" });
+  // V8, ledger and ownership (RFC §7): every write compare-and-swaps against the trusted ledger, and a refused path or key
+  // holds the repository. Computed independently of V6.
+  const ownership: ApplyCheck[] = [];
+  for (const rule of ["unowned-existing", "client-edited", "deleted"] as const) {
+    if (reasons.has(rule)) ownership.push({ check: "V8", verdict: "indeterminate", rule });
+  }
+  if (unnamed) ownership.push({ check: "V8", verdict: "indeterminate", rule: "removal-unbuilt" });
+  if (ownership.length === 0) ownership.push({ check: "V8", verdict: "satisfied" });
+  checks.push(...ownership);
 
   return {
     changeSet: {
@@ -342,7 +481,7 @@ function computeChangeSet(
         defaultBranch: observation.defaultBranch,
         baseCommit: observation.baseCommit,
       },
-      ledger: { generation: observation.ledgerGeneration },
+      ledger: { generation },
       phase: observation.phase,
       engine: { name: inputs.engine.name, version: inputs.engine.version, integrity: inputs.engine.integrity },
       integrator: { name: inputs.integrator.name, version: inputs.integrator.version, integrity: inputs.integrator.integrity },
@@ -385,10 +524,40 @@ function computeChangeSet(
  * network or process, and the same inputs give the same bytes.
  *
  * - Each repository's items are the brief (its projection of the hub brief,
- *   with the public placeholder unless it is private), its staffed roles'
- *   skills with their discovery links and manifest, every package act the
- *   plan names for it, and the ledger. Every act the plan authorizes is an
- *   item, never dropped, and no act the plan does not name is ever added.
+ *   with the public placeholder unless it is private), the skills of the
+ *   Advisor voice and of its staffed roles (D33: compose-skills roles are
+ *   `advisor` then the staffed roles in plan order; the brief's staffedHere
+ *   names the staffed roles only) with their discovery links and manifest,
+ *   every package act the plan names for it, and the ledger. Every act the
+ *   plan authorizes is an item, never dropped, and no act the plan does not
+ *   name is ever added.
+ * - Trust first: the base's ledger (`ledger`, null when absent) must pass
+ *   trustInstalledLedger() against `heldChangeSets`, or the repository is
+ *   skipped with the rule as its reason (`ledger-unreadable`, `identity`,
+ *   `renamed`, `ledger-chain` or `ledger-foreign-row`), verdict
+ *   indeterminate. The set is computed over the trusted ledger's generation
+ *   (0 without one).
+ * - Every whole file goes through reconcileWholeFile(), the compare-and-swap
+ *   table: add where neither the ledger nor the base has the path; keep or
+ *   update where the base holds the ledger's `after`; otherwise refuse the
+ *   path as `unowned-existing`, `client-edited` or `deleted`. Adoption of
+ *   bytes the base already has happens only in a setup set. A package key
+ *   follows the same table against the ledger's keys rows; a key that
+ *   already holds the desired version the flow wrote, while the lockfile
+ *   does not resolve it at the plan's integrity, skips the repository as
+ *   `integrity-mismatch`, verdict violated: never repaired.
+ * - In an apply set the setup templates are no-ops: a template act whose
+ *   files the trusted ledger records is an item whose files are kept (or
+ *   refused as `client-edited` or `deleted`); one it records none of has no
+ *   item; one it records only some of skips the repository as
+ *   `template-rows-partial`. No exempt-release-age or declare-root-entry item
+ *   is added to carry the ledger's entries rows.
+ * - A trusted ledger row the desired state no longer names is not removed:
+ *   V8 reports `removal-unbuilt`, and the row is carried forward.
+ * - V8 carries one indeterminate check per ownership refusal reason present
+ *   (`unowned-existing`, `client-edited`, `deleted`) and for
+ *   `removal-unbuilt`, and is satisfied otherwise; V6 is computed apart from
+ *   it.
  * - A setup-phase repository is skipped as `setup-template-unbuilt`, with
  *   verdict indeterminate: a setup set must carry the setup templates, which
  *   this planner does not compute yet. A repository whose Controller profile
@@ -401,18 +570,18 @@ function computeChangeSet(
  *   own directory) is refused as `skills-root-is-link`, never written.
  * - A package act the default branch already satisfies exactly is kept as an
  *   item with `satisfiedInBase: true` and writes nothing.
- * - A path or key the default branch already has is refused as
- *   `unowned-existing` (the installed-state ledger is read as empty).
- * - A staffed repository with no observation, with a skip reason, in the
- *   setup phase, or whose profile needs root entries added is skipped and
- *   left out of the bundle digest.
+ * - A staffed repository with no observation, with a skip reason, whose
+ *   ledger is not trusted, in the setup phase, whose profile needs root
+ *   entries added, or skipped for `integrity-mismatch` or
+ *   `template-rows-partial` is left out of the bundle digest.
  *
  * Throws, naming positions and never values, when the plan or hub brief does
  * not validate, the plan has no staffing, a staffed role is not a lowercase id
  * token (`role-not-an-id`), a package act's planItem is not its repository id,
  * a colon and its package name (`plan-item-not-derived`), the hub brief has `staffedHere`, an
- * observation repeats or names an unstaffed repository, a staffed role has
- * no skill content, or a computed set or the bundle fails its contract.
+ * observation repeats or names an unstaffed repository, a staffed role or
+ * the Advisor voice has no skill content, or a computed set or the bundle
+ * fails its contract.
  */
 export function planApplyBundle(inputs: PlanApplyBundleInputs): PlanApplyBundleResult {
   const planValidation = validateAdvisorPlan(inputs.plan);
@@ -440,6 +609,8 @@ export function planApplyBundle(inputs: PlanApplyBundleInputs): PlanApplyBundleR
     if (skillContent.has(skill.role)) throw new TypeError(`skills[${index}] repeats a role`);
     skillContent.set(skill.role, skill.content);
   });
+  // The hub carries every voice, whatever any one repository staffs (D33): a missing Advisor voice is a hub defect.
+  if (!skillContent.has(ADVISOR_VOICE)) throw new TypeError("the Advisor voice has no composed skill content in skills");
 
   const staffedIds = new Set(staffing.map((entry) => entry.repository));
   const observations = new Map<string, RepositoryObservation | SkippedRepositoryObservation>();
@@ -463,6 +634,12 @@ export function planApplyBundle(inputs: PlanApplyBundleInputs): PlanApplyBundleR
       });
       continue;
     }
+    // A ledger the hub cannot account for refuses the whole repository, and nothing is inferred from it (RFC §12.2, §12.6).
+    const trust = trustInstalledLedger(observation.ledger, { id: observation.id, nodeId: observation.nodeId }, inputs.heldChangeSets);
+    if (trust.state === "refused") {
+      entries.push({ id: staffingEntry.repository, verdict: "indeterminate", reason: trust.rule, checks: [] });
+      continue;
+    }
     const profile = observation.repositoryProfile;
     if (profile !== null && profile.rootVocabulary === "checked" && profile.undeclaredRoots.length > 0 && profile.prohibitedRoots.length === 0) {
       // Adding the entries needs the edited profile's bytes (code rule C13), which this planner does not compute yet.
@@ -475,7 +652,12 @@ export function planApplyBundle(inputs: PlanApplyBundleInputs): PlanApplyBundleR
       continue;
     }
     const acts = (inputs.plan.packages ?? []).filter((act) => act.repository === staffingEntry.repository);
-    const { changeSet, checks } = computeChangeSet(inputs, digestOfPlan, observation, staffingEntry.roles, acts, skillContent);
+    const result = computeChangeSet(inputs, digestOfPlan, observation, trust.ledger, staffingEntry.roles, acts, skillContent);
+    if ("skip" in result) {
+      entries.push({ id: staffingEntry.repository, verdict: result.skip.verdict, reason: result.skip.reason, checks: [] });
+      continue;
+    }
+    const { changeSet, checks } = result;
     const digest = changeSetDigest(changeSet);
     const short = digest.slice("sha256:".length, "sha256:".length + 12);
     const set = { ...changeSet, branch: `clossys/apply-${short}`, pullRequest: { title: `Clossys: apply plan ${short}` }, changeSetDigest: digest };

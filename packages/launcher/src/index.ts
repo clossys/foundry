@@ -43,10 +43,13 @@ export type {
   PinnedPackage, RefusalReason, ReleaseAgeSurfaceKind, RepositoryChangeSet, RepositoryProfileObservation, RepositoryVisibility, RootEntryDeclaration, WholeFileChange,
   WriteRecordSource,
 } from "./change-set-contract.js";
-export { ledgerSuccession, serializeInstalledLedger, validateInstalledLedger } from "./ledger-contract.js";
+export { ledgerSuccession, readInstalledLedger, renderInstalledLedger, serializeInstalledLedger, validateInstalledLedger } from "./ledger-contract.js";
+export { reconcileWholeFile, trustInstalledLedger } from "./ledger-trust.js";
+export type { LedgerTrust, LedgerTrustRule, WholeFileOutcome, WholeFileState } from "./ledger-trust.js";
+export { BUNDLE_STORE_REL, CHANGE_SET_STORE_REL, readStoredApplyBundle, readStoredChangeSet, storeApplyBundle, storeChangeSet } from "./apply-store.js";
 export { isRootEntryName, wouldViolateRootEntries } from "./root-entries.js";
 export type { RootEntriesVerdict } from "./root-entries.js";
-export type { InstalledLedger, LedgerSuccession, LedgerViolation } from "./ledger-contract.js";
+export type { InstalledLedger, LedgerPackageIdentity, LedgerSuccession, LedgerViolation } from "./ledger-contract.js";
 export { PUBLIC_PROBLEM_PLACEHOLDER, planApplyBundle, projectEngagementBrief, serializeEngagementBrief } from "./plan-bundle.js";
 export type { PlanApplyBundleInputs, PlanApplyBundleResult, RepositoryObservation, SkippedRepositoryObservation } from "./plan-bundle.js";
 export type { DoctorCheckHost, DoctorReport, DoctorStepId, DoctorStepResult } from "./doctor.js";
