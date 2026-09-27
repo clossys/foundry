@@ -3,7 +3,8 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { PLAN_CONTRACTS } from "./generated/plan-contracts.generated.js";
 import type { ApprovalBinding, RepositoryChangeSet } from "./change-set-contract.js";
-import { LEDGER_MEMBER_ORDER, installedLedgerViolations, ledgerSuccession, serializeInstalledLedger, validateInstalledLedger } from "./ledger-contract.js";
+import { LEDGER_MEMBER_ORDER, installedLedgerViolations, ledgerSuccession, readInstalledLedger, serializeInstalledLedger, validateInstalledLedger } from "./ledger-contract.js";
+import { trustInstalledLedger } from "./ledger-trust.js";
 import type { InstalledLedger } from "./ledger-contract.js";
 
 /*
@@ -35,7 +36,9 @@ const SETS = (JSON.parse(read("docs/contracts/apply-change-set-digest.fixture.js
 const ledger = (name: string) => CORPUS.ledgers.find((entry) => entry.name === name)!.ledger;
 /** A ledger's text as a pull request would carry it: the corpus stores members in the contract's order, so this is its RENDER bytes when it is valid. */
 const text = (value: unknown) => `${JSON.stringify(value, null, 2)}\n`;
-const bytesOf = (name: string) => text(ledger(name));
+/** UTF-8 bytes of `value`, as every reader in this module now takes them. */
+const toBytes = (value: string) => Buffer.from(value, "utf8");
+const bytesOf = (name: string) => toBytes(text(ledger(name)));
 const setNamed = (name: string) => SETS.find((entry) => entry.name === name)!.changeSet;
 const ruleIds = (value: unknown) => [...new Set(installedLedgerViolations(value).map((violation) => violation.rule))].sort();
 type Loose = Record<string, any>;
@@ -144,7 +147,7 @@ describe("ledger bytes (RENDER)", () => {
         const { planItem: _planItem, ...identity } = render.planPackages.find((entry) => entry.planItem === row.planItem)!;
         expect(row).toMatchObject(identity);
       }
-      expect(ledgerSuccession(previous === null ? null : serializeInstalledLedger(previous), serializeInstalledLedger(next)), render.name).toEqual({
+      expect(ledgerSuccession(previous === null ? null : toBytes(serializeInstalledLedger(previous)), toBytes(serializeInstalledLedger(next))), render.name).toEqual({
         change: "next-generation",
         admission: render.binding.kind === "admitted" ? "admitted" : "approval-claimed",
         violations: [],
@@ -191,26 +194,72 @@ describe("ledger succession (a pull request's head against its base)", () => {
   });
 
   it("refuses bytes that are not the ledger's exact RENDER bytes, and never reads them as unchanged", () => {
-    const canonical = bytesOf("setup-generation-1");
-    const spaced = canonical.replace('"schemaVersion": 1', '"schemaVersion":  1');
-    const repeated = canonical.replace('"schemaVersion": 1,', '"schemaVersion": 1,\n  "schemaVersion": 1,');
-    const bom = `\ufeff${canonical}`;
-    const noNewline = canonical.slice(0, -1);
-    for (const [name, bytes] of [["spaced", spaced], ["repeated key", repeated], ["byte order mark", bom], ["no final newline", noNewline]] as const) {
+    const canonicalText = text(ledger("setup-generation-1"));
+    const canonical = toBytes(canonicalText);
+    const spaced = canonicalText.replace('"schemaVersion": 1', '"schemaVersion":  1');
+    const repeated = canonicalText.replace('"schemaVersion": 1,', '"schemaVersion": 1,\n  "schemaVersion": 1,');
+    const bom = `\ufeff${canonicalText}`;
+    const noNewline = canonicalText.slice(0, -1);
+    for (const [name, variant] of [["spaced", spaced], ["repeated key", repeated], ["byte order mark", bom], ["no final newline", noNewline]] as const) {
+      const bytes = toBytes(variant);
       for (const result of [ledgerSuccession(canonical, bytes), ledgerSuccession(bytes, bytes), ledgerSuccession(null, bytes)]) {
         expect(result.change, name).toBe("next-generation");
         expect(result.admission, name).toBeNull();
         expect(result.violations.map(label), name).toContain("head.bytes");
       }
     }
-    expect(ledgerSuccession(canonical, "not json").violations.map(label)).toEqual(["head.bytes"]);
+    expect(ledgerSuccession(canonical, toBytes("not json")).violations.map(label)).toEqual(["head.bytes"]);
     expect(ledgerSuccession(canonical, canonical)).toEqual({ change: "none", admission: null, violations: [] });
+  });
+
+  it("refuses a non-Uint8Array argument under rule bytes, on either side", () => {
+    const canonical = bytesOf("setup-generation-1");
+    for (const bad of [text(ledger("setup-generation-1")), 42, {}]) {
+      expect(ledgerSuccession(bad as unknown as Uint8Array, canonical).violations.map(label)).toEqual(["base.bytes"]);
+      expect(ledgerSuccession(canonical, bad as unknown as Uint8Array).violations.map(label)).toEqual(["head.bytes"]);
+    }
+    expect(readInstalledLedger("not a Uint8Array" as unknown as Uint8Array)).toBeNull();
+  });
+
+  it("never folds two byte sequences together merely because they decode to the same replacement text", () => {
+    // 0xFF and 0xFE are each, alone, invalid UTF-8 continuation bytes: a lenient decode (Buffer#toString, or a non-fatal
+    // TextDecoder) replaces both with U+FFFD, so a naive text-based compare would read them as identical and as "no change".
+    // The strict reader here refuses each side outright, on its own bytes, and never as an unchanged ledger.
+    const generation1 = ledger("setup-generation-1");
+    const canonicalText = text(generation1);
+    const firstPath = generation1.files[0]!.path;
+    const marker = canonicalText.indexOf(firstPath) + 1; // inside the first files[].path string value
+    const withInvalidByte = (byte: number) => {
+      const prefix = Buffer.from(canonicalText.slice(0, marker), "utf8");
+      const suffix = Buffer.from(canonicalText.slice(marker), "utf8");
+      return Buffer.concat([prefix, Buffer.from([byte]), suffix]);
+    };
+    const ff = withInvalidByte(0xff);
+    const fe = withInvalidByte(0xfe);
+    expect(ff.equals(fe)).toBe(false);
+    for (const [base, head] of [[null, ff], [ff, ff], [ff, fe], [fe, ff]] as const) {
+      const result = ledgerSuccession(base, head);
+      expect(result.change).toBe("next-generation");
+      expect(result.admission).toBeNull();
+      expect(result.violations.map(label)).toContain("head.bytes");
+    }
+    expect(readInstalledLedger(ff)).toBeNull();
+    expect(readInstalledLedger(fe)).toBeNull();
+    expect(trustInstalledLedger(ff, { id: "x", nodeId: "R_x" }, [])).toEqual({ state: "refused", rule: "ledger-unreadable" });
+  });
+
+  it("refuses a byte order mark as ledger-unreadable from trustInstalledLedger, and null from readInstalledLedger", () => {
+    const canonicalText = text(ledger("setup-generation-1"));
+    const bom = toBytes(`\ufeff${canonicalText}`);
+    expect(readInstalledLedger(bom)).toBeNull();
+    expect(trustInstalledLedger(bom, { id: "example-owner/site", nodeId: "R_exampleSite1" }, [])).toEqual({ state: "refused", rule: "ledger-unreadable" });
+    expect(ledgerSuccession(null, bom).violations.map(label)).toContain("head.bytes");
   });
 
   it("admits a generation only when it installs exactly what the setup deferred and changes nothing else", () => {
     const base = ledger("setup-generation-1");
     const head = ledger("admitted-generation-2");
-    expect(ledgerSuccession(text(base), text(head))).toEqual({ change: "next-generation", admission: "admitted", violations: [] });
+    expect(ledgerSuccession(toBytes(text(base)), toBytes(text(head)))).toEqual({ change: "next-generation", admission: "admitted", violations: [] });
     const deferred = base.deferred.map(({ reason: _reason, changeSet: _changeSet, ...identity }) => identity);
     const added = head.packages.filter((row) => !base.packages.some((other) => JSON.stringify(other) === JSON.stringify(row))).map(({ changeSet: _changeSet, ...identity }) => identity);
     expect(added).toEqual(deferred);
@@ -223,7 +272,7 @@ describe("ledger succession (a pull request's head against its base)", () => {
     head.keys = head.keys.map((row: Loose) => (row.pointer === "/devDependencies/@example~1writer" ? { ...row, pointer: "/dependencies/@example~1writer" } : row));
     head.packages = head.packages.map((row: Loose) => (row.name === "@example/writer" ? { ...row, placement: "dependencies", changeSet: last } : row));
     head.keys.sort((a: Loose, b: Loose) => (a.pointer < b.pointer ? -1 : 1));
-    const result = ledgerSuccession(bytesOf("setup-generation-1"), text(head));
+    const result = ledgerSuccession(bytesOf("setup-generation-1"), toBytes(text(head)));
     expect(result.violations.map(label)).toContain("S3");
     expect(result.admission).toBeNull();
   });
