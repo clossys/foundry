@@ -31,7 +31,7 @@
 // change sets and bundles without touching a filesystem.
 
 import { randomBytes } from "node:crypto";
-import { closeSync, fsyncSync, linkSync, lstatSync, mkdirSync, openSync, readFileSync, realpathSync, rmSync, writeSync } from "node:fs";
+import { closeSync, fsyncSync, linkSync, lstatSync, mkdirSync, openSync, readFileSync, readdirSync, realpathSync, rmSync, writeSync } from "node:fs";
 import { isAbsolute, join, relative, sep } from "node:path";
 import { bundleDigest, changeSetDigest } from "./change-set-digest.js";
 import { validateApplyBundle, validateRepositoryChangeSet } from "./change-set-contract.js";
@@ -295,6 +295,24 @@ export function storeApplyBundle(hubDirectory: string, bundle: ApplyBundle): str
  * `changeSetDigest`, all read as `null`. A file can therefore never be read
  * back under a name, or with content, other than its own digest.
  */
+/**
+ * Every change set stored under `hubDirectory`/CHANGE_SET_STORE_REL whose file
+ * name is 64 lowercase hex digits and `.json`, in directory listing order.
+ * Entries that do not read back as a valid stored set are omitted.
+ */
+export function listStoredChangeSets(hubDirectory: string): RepositoryChangeSet[] {
+  assertHubDirectory(hubDirectory);
+  const directory = join(hubDirectory, CHANGE_SET_STORE_REL);
+  if (!ensureRealDirectory(hubDirectory, directory, "read")) return [];
+  const sets: RepositoryChangeSet[] = [];
+  for (const name of readdirSync(directory)) {
+    if (!/^[0-9a-f]{64}\.json$/u.test(name)) continue;
+    const set = readStoredChangeSet(hubDirectory, `sha256:${name.slice(0, 64)}`);
+    if (set !== null) sets.push(set);
+  }
+  return sets;
+}
+
 export function readStoredChangeSet(hubDirectory: string, digest: string): RepositoryChangeSet | null {
   assertDigestShape(digest);
   const document = readStoredBytes(hubDirectory, CHANGE_SET_STORE_REL, digestFileName(digest));
