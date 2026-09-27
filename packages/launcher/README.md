@@ -603,18 +603,6 @@ in this package).
   installed-state ledger as a derived file. No act the plan authorizes is
   dropped and no other act is added. An act the default branch already
   satisfies exactly is kept with `satisfiedInBase: true` and writes nothing.
-- A repository whose default branch declares a Controller repository
-  profile with a root vocabulary Controller checks gets a
-  `declare-root-entry` item that adds each root name the set introduces
-  and the vocabulary lacks, as an allowed extension, changing nothing else
-  in the profile. When the observation includes the profile text, the
-  planner edits it with `editJsonPointer` (the same editor materialize uses
-  for `package.json` keys) and the repository is not skipped; when that
-  text is absent, the repository is still skipped as `root-entry-edit-unbuilt`.
-  A profile it cannot read (`root-vocabulary-unknown`), or one that prohibits
-  a root name the set introduces (`root-entry-prohibited`), gets the item
-  refused instead; a profile that already declares every name, or checks
-  no root vocabulary, gets no item.
 - A skill under a symbolic link on the default branch (`.agents`,
   `.agents/skills` or the role's own skill directory) is refused as
   `skills-root-is-link`: the planner never writes through a link.
@@ -650,9 +638,17 @@ in this package).
   carried as a no-op item, one keep entry per file (or `client-edited` /
   `deleted`); a template with only some of its files in the ledger skips the
   repository as `template-rows-partial`. An apply set carries no release-age
-  item; its ledger rows for release age pass forward unchanged. It may still
-  edit the Controller repository profile when the observation carries its
-  text and the edit is stable, the same declare-root-entry path as setup.
+  item; its ledger rows for release age pass forward unchanged. Only apply
+  sets edit the Controller repository profile: when the observation carries
+  its text and the edit is stable, a `declare-root-entry` item adds each root
+  name the set introduces and the vocabulary lacks, as an allowed extension,
+  changing nothing else in the profile (`editJsonPointer`, the same editor
+  materialize uses for `package.json` keys). When that text is absent, the
+  repository is skipped as `root-entry-edit-unbuilt`. A profile it cannot read
+  (`root-vocabulary-unknown`), or one that prohibits a root name the set
+  introduces (`root-entry-prohibited`), gets the item refused instead; a
+  profile that already declares every name, or checks no root vocabulary,
+  gets no item.
 - A trusted row the desired state no longer names (a role no longer
   staffed, a package act the plan no longer names there) is left in place,
   and the set reports V8 `indeterminate` with rule `removal-unbuilt`: removal
