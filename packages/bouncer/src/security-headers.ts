@@ -17,21 +17,25 @@
  *     and is not emitted.
  *
  * Production also refuses `'unsafe-eval'`, `'wasm-unsafe-eval'`, a
- * scheme-only script source (`http:`, `https:`, `ws:`, `wss:`), a script
- * source containing `*`, and a `data:` or `blob:` script source. Style
+ * scheme-only source (`http:`, `https:`, `ws:`, `wss:`), a source
+ * containing `*`, and a `data:` or `blob:` source on every extension
+ * directive. Style
  * `'unsafe-inline'` is accepted only from an attributed package declaration
  * whose package name is non-empty. This module does not invent a package
  * declaration.
  *
- * A caller source string that contains whitespace or `;` is refused. That
- * string is not emitted.
+ * A caller source string that contains whitespace or `;`, including at
+ * either end of the raw string, is refused before trimming. That string is
+ * not emitted.
  *
  * A missing mode, a missing required directive (`object-src`, `base-uri`,
  * `frame-ancestors`), or a refused source returns `ok: false` and no header
  * map. The refused token is therefore absent from any emitted policy.
  *
- * A host source is emitted only from the caller's `extensions` list. The
- * same host in `scriptSources` is not copied into the policy. A style
+ * A host source — including a scheme-less host, `host:port`, `host/path`,
+ * or a bracketed IPv6 address — is emitted only from the caller's
+ * `extensions` list. The same host in `scriptSources` is not copied into the
+ * policy. A style
  * declaration source other than `'unsafe-inline'` is not copied into
  * `style-src` unless that exact source is also listed on `extensions`.
  */
@@ -205,7 +209,13 @@ function callerSourceHasSeparator(source: string): boolean {
 }
 
 function isHostSource(source: string): boolean {
-  return source.startsWith("*.") || source.includes("://");
+  if (isSchemeOnlyScriptSource(source)) return false;
+  if (source.startsWith("*.") || source.includes("://")) return true;
+  if (/^\[[^\]]+\](?::\d+)?(?:\/[^\s;]*)?$/.test(source)) return true;
+  if (/^(?:\d{1,3}\.){3}\d{1,3}(?::\d+)?(?:\/[^\s;]*)?$/.test(source)) return true;
+  return /^[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?)+(?::\d+)?(?:\/[^\s;]*)?$/.test(
+    source,
+  );
 }
 
 function isSchemeOnlyScriptSource(source: string): boolean {
@@ -216,20 +226,28 @@ function isWasmUnsafeEval(source: string): boolean {
   return source.toLowerCase() === "'wasm-unsafe-eval'";
 }
 
-function collectSeparatorRefusals(spec: {
-  readonly scriptSources: readonly string[];
-  readonly styleDeclarations: readonly StyleDeclaration[];
-  readonly extensions: readonly Extension[];
-}): string[] {
+function collectRawSeparatorRefusals(input: SiteSecurityHeadersInput): string[] {
   const refused: string[] = [];
-  for (const source of spec.scriptSources) {
-    if (callerSourceHasSeparator(source)) refused.push(source);
+  if (Array.isArray(input.scriptSources)) {
+    for (const entry of input.scriptSources) {
+      if (typeof entry === "string" && callerSourceHasSeparator(entry)) refused.push(entry);
+    }
   }
-  for (const declaration of spec.styleDeclarations) {
-    if (callerSourceHasSeparator(declaration.source)) refused.push(declaration.source);
+  if (Array.isArray(input.styleDeclarations)) {
+    for (const entry of input.styleDeclarations) {
+      if (entry !== null && typeof entry === "object") {
+        const source = (entry as { source?: unknown }).source;
+        if (typeof source === "string" && callerSourceHasSeparator(source)) refused.push(source);
+      }
+    }
   }
-  for (const extension of spec.extensions) {
-    if (callerSourceHasSeparator(extension.source)) refused.push(extension.source);
+  if (Array.isArray(input.extensions)) {
+    for (const entry of input.extensions) {
+      if (entry !== null && typeof entry === "object") {
+        const source = (entry as { source?: unknown }).source;
+        if (typeof source === "string" && callerSourceHasSeparator(source)) refused.push(source);
+      }
+    }
   }
   return dedupe(refused);
 }
@@ -282,6 +300,11 @@ function readExtensions(value: unknown): Extension[] | undefined {
 function readSpec(input: SiteSecurityHeadersInput): ReadResult {
   if (input === null || typeof input !== "object") {
     return { ok: false, reason: "missing-mode", refused: [] };
+  }
+
+  const rawSeparatorRefused = collectRawSeparatorRefusals(input);
+  if (rawSeparatorRefused.length > 0) {
+    return { ok: false, reason: "refused-source", refused: rawSeparatorRefused };
   }
 
   const scriptSources = readStringList(input.scriptSources);
@@ -440,23 +463,42 @@ function serialize(directives: ReadonlyMap<string, readonly string[]>): string {
   return parts.join("; ");
 }
 
-function productionScriptRefusal(sources: readonly string[], spec: ReadySpec): string | undefined {
+function productionForbiddenSource(source: string): string | undefined {
+  if (isUnsafeEval(source)) return "'unsafe-eval'";
+  if (isWasmUnsafeEval(source)) return "'wasm-unsafe-eval'";
+  if (isSchemeOnlyScriptSource(source)) return source;
+  if (isScriptWildcard(source)) return source;
+  if (isDataOrBlobScriptSource(source)) return source;
+  return undefined;
+}
+
+function productionScriptSourceRefusal(source: string, staticAttributed: boolean): string | undefined {
+  const forbidden = productionForbiddenSource(source);
+  if (forbidden !== undefined) return forbidden;
+  if (isUnsafeInline(source) && !staticAttributed) return "'unsafe-inline'";
+  return undefined;
+}
+
+function productionDirectiveMapRefusal(
+  directives: ReadonlyMap<string, readonly string[]>,
+  spec: ReadySpec,
+): string | undefined {
   const staticAttributed = spec.mode === "static" && spec.frameworkPackage !== undefined;
-  for (const source of sources) {
-    if (isUnsafeEval(source)) return "'unsafe-eval'";
-    if (isWasmUnsafeEval(source)) return "'wasm-unsafe-eval'";
-    if (isSchemeOnlyScriptSource(source)) return source;
-    if (isScriptWildcard(source)) return source;
-    if (isDataOrBlobScriptSource(source)) return source;
-    if (isUnsafeInline(source) && !staticAttributed) return "'unsafe-inline'";
+  for (const [directive, sources] of directives) {
+    for (const source of sources) {
+      if (directive === "script-src") {
+        const violated = productionScriptSourceRefusal(source, staticAttributed);
+        if (violated !== undefined) return violated;
+      } else {
+        const violated = productionForbiddenSource(source);
+        if (violated !== undefined) return violated;
+      }
+    }
   }
   return undefined;
 }
 
 function buildVariant(spec: ReadySpec, variant: Variant): SiteSecurityHeadersResult {
-  const separatorRefused = collectSeparatorRefusals(spec);
-  if (separatorRefused.length > 0) return refusal("refused-source", separatorRefused);
-
   const script = collectScriptSources(spec, variant);
   const style = collectStyleSources(spec);
   const refused = [...script.refused, ...style.refused];
@@ -486,8 +528,7 @@ function buildVariant(spec: ReadySpec, variant: Variant): SiteSecurityHeadersRes
   if (missing.length > 0) return refusal("missing-directive", missing);
 
   if (variant === "production") {
-    const scriptSources = directives.get("script-src") ?? [];
-    const violated = productionScriptRefusal(scriptSources, spec);
+    const violated = productionDirectiveMapRefusal(directives, spec);
     if (violated !== undefined) return refusal("refused-source", [violated]);
   }
 

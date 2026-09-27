@@ -204,9 +204,10 @@ Production script policy is one of two modes:
 
 An undeclared script `'unsafe-inline'` is a refusal, and that token is not in
 the emitted policy. Production refuses `'unsafe-eval'`, `'wasm-unsafe-eval'`,
-a scheme-only script source (`http:`, `https:`, `ws:`, `wss:`), a script
-source containing `*`, and a `data:` or `blob:` script source. A caller
-source string that contains whitespace or `;` is refused. The result is
+a scheme-only source (`http:`, `https:`, `ws:`, `wss:`), a source containing
+`*`, and a `data:` or `blob:` source on every extension directive. A caller
+source string that contains whitespace or `;`, including at either end of the
+raw string before trimming, is refused. The result is
 `ok: false` with reason `refused-source`, and the refused token is absent
 from the emitted policy.
 
@@ -226,8 +227,10 @@ value does not contain `preload`.
 
 `Permissions-Policy` is `camera=(), microphone=(), geolocation=(), payment=()`.
 
-A host source is emitted only when the caller lists it on `extensions`. The
-same host in `scriptSources` is not copied into the policy. A style
+A host source — including a scheme-less host, `host:port`, `host/path`, or a
+bracketed IPv6 address — is emitted only when the caller lists it on
+`extensions`. The same host in `scriptSources` is not copied into the policy.
+A style
 declaration source other than `'unsafe-inline'` is not copied into
 `style-src` unless that exact source is also on `extensions`.
 

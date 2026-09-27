@@ -265,6 +265,75 @@ describe("site security-headers baseline", () => {
     }
   });
 
+  it("does not copy scheme-less, port, path, IPv4, or IPv6 hosts from scriptSources", () => {
+    for (const host of [
+      "cdn.example",
+      "cdn.example:443",
+      "cdn.example/a.js",
+      "192.0.2.10",
+      "[2001:db8::1]",
+    ]) {
+      const absent = createSiteSecurityHeaders({
+        script: { mode: "nonce", nonce: "n" },
+        scriptSources: [host],
+      });
+
+      expect(absent.production.ok).toBe(true);
+      if (!absent.production.ok) return;
+      expect(absent.production.headers["Content-Security-Policy"]).toBe(PRODUCTION_NONCE_POLICY);
+      expect(absent.production.headers["Content-Security-Policy"]).not.toContain(host);
+
+      const present = createSiteSecurityHeaders({
+        script: { mode: "nonce", nonce: "n" },
+        extensions: [{ directive: "script-src", source: host }],
+      });
+
+      expect(present.production.ok).toBe(true);
+      if (!present.production.ok) return;
+      expect(present.production.headers["Content-Security-Policy"]).toContain(host);
+    }
+  });
+
+  it("refuses raw caller strings with leading or trailing whitespace before trim", () => {
+    for (const source of ["\thttps://cdn.example", " 'sha256-abc'", "\fhttps://fonts.example"]) {
+      const result = createSiteSecurityHeaders({
+        script: { mode: "nonce", nonce: "n" },
+        scriptSources: [source],
+      });
+
+      expect(result.production.ok).toBe(false);
+      if (!result.production.ok) {
+        expect(result.production.reason).toBe("refused-source");
+        expect(result.production.refused).toContain(source);
+      }
+      expect(emittedPolicy(result.production)).not.toContain("cdn.example");
+      expect(emittedPolicy(result.production)).not.toContain("fonts.example");
+    }
+  });
+
+  it("production refuses forbidden sources on worker-src and style-src extensions", () => {
+    for (const [directive, source] of [
+      ["worker-src", "https:"],
+      ["worker-src", "'wasm-unsafe-eval'"],
+      ["worker-src", "'unsafe-eval'"],
+      ["worker-src", "*"],
+      ["worker-src", "blob:"],
+      ["style-src", "https:"],
+    ] as const) {
+      const result = createSiteSecurityHeaders({
+        script: { mode: "nonce", nonce: "n" },
+        extensions: [{ directive, source }],
+      });
+
+      expect(result.production.ok).toBe(false);
+      if (!result.production.ok) {
+        expect(result.production.reason).toBe("refused-source");
+        expect(result.production.refused).toContain(source);
+      }
+      expect(emittedPolicy(result.production)).not.toContain(source);
+    }
+  });
+
   it("a host that is not on the extension list is absent", () => {
     const listed = "https://video.example.test";
     const absent = "https://other.example.test";
