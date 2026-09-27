@@ -227,8 +227,9 @@ value does not contain `preload`.
 
 `Permissions-Policy` is `camera=(), microphone=(), geolocation=(), payment=()`.
 
-A host source — including a scheme-less host, `host:port`, `host/path`, or a
-bracketed IPv6 address — is emitted only when the caller lists it on
+A host source — one or more DNS labels with an optional trailing dot,
+`host:port`, `host/path`, a scheme-less host, or a bracketed IPv6 address — is
+emitted only when the caller lists it on
 `extensions`. The same host in `scriptSources` is not copied into the policy.
 A style
 declaration source other than `'unsafe-inline'` is not copied into

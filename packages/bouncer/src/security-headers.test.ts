@@ -265,12 +265,18 @@ describe("site security-headers baseline", () => {
     }
   });
 
-  it("does not copy scheme-less, port, path, IPv4, or IPv6 hosts from scriptSources", () => {
+  it("does not copy single-label, trailing-dot, port, path, IPv4, or IPv6 hosts from scriptSources", () => {
     for (const host of [
+      "localhost",
+      "localhost:443",
+      "localhost/a.js",
       "cdn.example",
+      "cdn.example.",
+      "cdn.example.:443",
       "cdn.example:443",
       "cdn.example/a.js",
       "192.0.2.10",
+      "192.0.2.10.",
       "[2001:db8::1]",
     ]) {
       const absent = createSiteSecurityHeaders({
