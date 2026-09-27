@@ -20,6 +20,17 @@ export type {
 export { checkDeploymentSurfaceDevPort, devScriptPorts } from "./dev-port.js";
 export { verifyDeployRecord, DEPLOY_RECORD_INDETERMINATE_REASONS } from "./deploy-record.js";
 export type { DeployRecordIndeterminateReason } from "./deploy-record.js";
+export {
+  planProductionRefUpdate,
+  verifyProductionRefUpdate,
+  PRODUCTION_REF_UPDATE_INDETERMINATE_REASONS,
+} from "./production-ref-update.js";
+export type {
+  ProductionRefUpdateFindingRule,
+  ProductionRefUpdateIndeterminateReason,
+  ProductionRefUpdateObservation,
+  ProductionRefUpdatePlan,
+} from "./production-ref-update.js";
 export { isValidDeploymentManifest, validateDeploymentManifest } from "./validate.js";
 export type {
   DeploymentEnvironment,

@@ -176,6 +176,12 @@ export type DeployRecordEnvironmentObservation = {
  * Provider observation for `verifyDeployRecord`. Callers supply this from a
  * read-only adapter fixture or live read. It must never carry secret values.
  */
+export type DeployRecordCommitObservation =
+  | string
+  | {
+      readonly value?: unknown;
+    };
+
 export type DeployRecordObservation = {
   readonly productionBranch: string;
   readonly previewUrl: string;
@@ -183,6 +189,12 @@ export type DeployRecordObservation = {
   /** Branch names the provider has enabled for deployments. */
   readonly deployEnabledBranches?: readonly string[];
   readonly environmentNames: readonly DeployRecordEnvironmentObservation[];
+  /** Commit the production ref names. */
+  readonly productionCommit?: DeployRecordCommitObservation;
+  /** Commit the provider reports it built for production. */
+  readonly builtCommit?: DeployRecordCommitObservation;
+  /** Commit a read of the public page is serving. */
+  readonly publicCommit?: DeployRecordCommitObservation;
 };
 
 export type DeployRecordFindingRule =
@@ -193,4 +205,6 @@ export type DeployRecordFindingRule =
   | "deploy-record-environment-missing"
   | "deploy-record-environment-scope"
   | "deploy-record-environment-classification"
-  | "deploy-record-protection";
+  | "deploy-record-protection"
+  | "deploy-provider-build-mismatch"
+  | "deploy-public-cache-stale";
