@@ -58,64 +58,109 @@ function treeView(root: string, relative = ""): Record<string, string> {
 // ---------------------------------------------------------------------------
 
 describe("scanRepositoryConfig", () => {
-  const credential: readonly (readonly [string, string])[] = [
-    ["_auth", "_auth=dXNlcjpwYXNz\n"],
-    ["_authToken", "_authToken=fixture\n"],
-    ["_authToken upper case, spaced", "  _AUTHTOKEN =  fixture  \n"],
-    ["_password", "_password=fixture\n"],
-    ["username", "username=fixture\n"],
-    ["certfile", "certfile=/fixture/cert.pem\n"],
-    ["keyfile", "keyfile=/fixture/key.pem\n"],
-    ["host-prefixed _authToken", "//fixture.invalid/:_authToken=fixture\n"],
-    ["any host-prefixed key", "//fixture.invalid/:always-auth=true\n"],
-    ["scope-prefixed _authToken", `${scope}:_authToken=fixture\n`],
+  // -------------------------------------------------------------------------
+  // .npmrc: strict allow-list grammar that fails closed (fix 1).
+  // -------------------------------------------------------------------------
+
+  const npmrcRefusals: readonly (readonly [string, string])[] = [
+    ["git hidden by a lone CR", "color=false\rgit=./evil.sh\n"],
+    ["git hidden by an unescaped ;", "git;x=./evil.sh\n"],
+    ["git hidden by an unescaped #", "git#x=./evil.sh\n"],
+    ["git hidden by a quoted key", '"git"=./evil.sh\n'],
+    ["strict-ssl hidden by a lone CR", "a=b\rstrict-ssl=false\n"],
+    ["strict-ssl with a trailing ;", "strict-ssl=false ;x\n"],
+    ["a host-prefixed credential hidden by a lone CR", "a=b\r//registry.example/:_authToken=abc\n"],
+  ];
+  it.each(npmrcRefusals)(".npmrc %s is refused (never refused: false)", (_label, npmrc) => {
+    expect(scanRepositoryConfig({ npmrc })).toMatchObject({ refused: true });
+  });
+
+  const npmrcUnrecognized: readonly (readonly [string, string])[] = [
+    ["a non-ASCII byte", "registry=café\n"],
+    ["a section header", "[registry]\ngit=./evil.sh\n"],
+    ["a quoted key", '"cafile"=fixture.pem\n'],
+    ["a quoted value", 'color="true"\n'],
+    ["key[]=v", "ca[]=fixture\n"],
+    ["a bare key", "git\n"],
+    ["a duplicate key", "color=true\ncolor=false\n"],
     ["${ substitution", "registry=${FIXTURE_REGISTRY}\n"],
     ["${ substitution in a comment", "# ${FIXTURE}\n"],
+    ["an unlisted key", "registry=https://fixture.invalid/\n"],
+    ["a listed key with a bad value", "engine-strict=yes\n"],
+    ["_auth (fails the key grammar, not a recognized credential)", "_auth=dXNlcjpwYXNz\n"],
+    ["host-prefixed _authToken (fails the key grammar)", "//fixture.invalid/:_authToken=fixture\n"],
+    ["scope-prefixed _authToken (fails the key grammar)", `${scope}:_authToken=fixture\n`],
+    ["strict-ssl=true (not on the allow-list at all)", "strict-ssl=true\n"],
   ];
-  it.each(credential)(".npmrc %s needs a credential", (_label, npmrc) => {
+  it.each(npmrcUnrecognized)(".npmrc %s is package-manager-config-unrecognized", (_label, npmrc) => {
+    expect(scanRepositoryConfig({ npmrc })).toMatchObject({ refused: true, reason: "package-manager-config-unrecognized" });
+  });
+
+  const npmrcCredential: readonly (readonly [string, string])[] = [
+    ["username", "username=fixture\n"],
+    ["certfile", "certfile=cert.pem\n"],
+    ["keyfile", "keyfile=key.pem\n"],
+  ];
+  it.each(npmrcCredential)(".npmrc %s (inside the grammar, not on the allow-list) needs a credential", (_label, npmrc) => {
     expect(scanRepositoryConfig({ npmrc })).toMatchObject({ refused: true, reason: "registry-config-needs-credential" });
   });
 
-  const unsafe: readonly (readonly [string, string])[] = [
-    ["git", "git=/fixture/git\n"],
-    ["script-shell", "script-shell=/bin/sh\n"],
-    ["script_shell spelling", "script_shell=/bin/sh\n"],
-    ["shell", "shell=/bin/sh\n"],
-    ["node-options", "node-options=--require /fixture.cjs\n"],
-    ["onload-script", "onload-script=/fixture.js\n"],
-    ["pnpmfile", "pnpmfile=fixture.cjs\n"],
-    ["global-pnpmfile", "global-pnpmfile=/fixture.cjs\n"],
-    ["ca", "ca=fixture\n"],
-    ["ca[]", "ca[]=fixture\n"],
-    ["cafile", "cafile=/fixture.pem\n"],
-    ["proxy", "proxy=http://127.0.0.1:9/\n"],
-    ["https-proxy", "https-proxy=http://127.0.0.1:9/\n"],
-    ["strict-ssl=false", "strict-ssl = false\n"],
-    ["quoted key", '"cafile" = /fixture.pem\n'],
-  ];
-  it.each(unsafe)(".npmrc %s is unsafe", (_label, npmrc) => {
-    expect(scanRepositoryConfig({ npmrc })).toMatchObject({ refused: true, reason: "package-manager-config-unsafe" });
+  it(".npmrc accepts every allow-listed key with a valid value, plus blank and comment lines", () => {
+    const npmrc = [
+      "engine-strict=true",
+      "save-exact=false",
+      "save-prefix=^",
+      "legacy-peer-deps=true",
+      "strict-peer-deps=false",
+      "auto-install-peers=true",
+      "strict-peer-dependencies=false",
+      "fund=true",
+      "audit=false",
+      "update-notifier=true",
+      "progress=false",
+      "loglevel=info",
+      "color=always",
+      "min-release-age=7",
+      "before=2020-01-01",
+      "",
+      "# a comment",
+      "; another comment",
+      "",
+    ].join("\n");
+    expect(scanRepositoryConfig({ npmrc })).toEqual({ refused: false, minReleaseAge: true, before: true });
   });
 
-  it.each([
-    ["registry", "registry=https://fixture.invalid/\n"],
-    ["scope registry", `${scope}:registry=https://fixture.invalid/\n`],
-    ["strict-ssl=true", "strict-ssl=true\n"],
-    ["commented git", "# git=/fixture/git\n; shell=/bin/sh\n"],
-    ["empty", ""],
-  ])(".npmrc %s is accepted", (_label, npmrc) => {
+  it.each([["empty", ""]])(".npmrc %s is accepted", (_label, npmrc) => {
     expect(scanRepositoryConfig({ npmrc })).toEqual({ refused: false, minReleaseAge: false, before: false });
   });
 
   it("reports min-release-age and before, and not min-release-age-exclude", () => {
     expect(scanRepositoryConfig({ npmrc: "min-release-age=7\n" })).toEqual({ refused: false, minReleaseAge: true, before: false });
     expect(scanRepositoryConfig({ npmrc: "before=2020-01-01\n" })).toEqual({ refused: false, minReleaseAge: false, before: true });
-    expect(scanRepositoryConfig({ npmrc: `min-release-age-exclude=${scope}/*\n` })).toEqual({ refused: false, minReleaseAge: false, before: false });
+    expect(scanRepositoryConfig({ npmrc: `min-release-age-exclude=${scope}/*\n` })).toMatchObject({ refused: true, reason: "package-manager-config-unrecognized" });
   });
 
-  it("lets a credential finding win over an unsafe one, across files", () => {
-    expect(scanRepositoryConfig({ npmrc: "git=/fixture/git\n_authToken=fixture\n" })).toMatchObject({ reason: "registry-config-needs-credential" });
-    expect(scanRepositoryConfig({ pnpmWorkspace: "configDependencies:\n  fixture: 1.0.0\n", npmrc: "_auth=fixture\n" })).toMatchObject({ reason: "registry-config-needs-credential" });
+  it("lets a credential finding win over an unrecognized one, in one file and across files", () => {
+    expect(scanRepositoryConfig({ npmrc: "git=./evil.sh\nusername=fixture\n" })).toMatchObject({ reason: "registry-config-needs-credential" });
+    expect(scanRepositoryConfig({ pnpmWorkspace: "configDependencies:\n  fixture: 1.0.0\n", npmrc: "username=fixture\n" })).toMatchObject({ reason: "registry-config-needs-credential" });
+  });
+
+  it("lets an unrecognized .npmrc finding win over pnpm-workspace.yaml's unsafe one (file scan order)", () => {
+    expect(scanRepositoryConfig({ pnpmWorkspace: "configDependencies:\n  fixture: 1.0.0\n", npmrc: "registry=https://fixture.invalid/\n" })).toMatchObject({ reason: "package-manager-config-unrecognized" });
+  });
+
+  // -------------------------------------------------------------------------
+  // pnpm-workspace.yaml: restricted block-mapping grammar (fix 2).
+  // -------------------------------------------------------------------------
+
+  it.each([
+    ["document marker + flow mapping", "--- {configDependencies: {x: 1.0.0}}\n"],
+    ["%YAML directive + flow mapping", "%YAML 1.2\n---\n{configDependencies: {x: 1.0.0}}\n"],
+    ["!!str tag", "!!str configDependencies:\n  x: 1.0.0\n"],
+    ["quoted key with a hex escape", '"config\\x44ependencies":\n  x: 1.0.0\n'],
+    ["configDependencies hidden by a lone CR", "a: 1\rconfigDependencies:\r  x: 1.0.0\r"],
+  ])("pnpm-workspace.yaml bypass: %s is refused", (_label, pnpmWorkspace) => {
+    expect(scanRepositoryConfig({ pnpmWorkspace })).toMatchObject({ refused: true, reason: "package-manager-config-unsafe" });
   });
 
   it.each([
@@ -123,6 +168,13 @@ describe("scanRepositoryConfig", () => {
     ["quoted configDependencies", '"configDependencies": {}\n', true],
     ["flow-mapping configDependencies", "{packages: ['packages/*'], configDependencies: {}}\n", true],
     ["top-level merge key", "base: &base\n  x: 1\n<<: *base\n", true],
+    ["top-level quoted key", "'packages':\n  - 'a'\n", true],
+    ["tagged key", "!!str packages:\n  - 'a'\n", true],
+    ["trailing comment", "packages: # comment\n  - 'a'\n", true],
+    ["tab indent", "packages:\n\t- 'a'\n", true],
+    ["double-quoted value", 'packages:\n  - "a"\n', true],
+    ["flow-sequence packages", "packages: ['a']\n", true],
+    ["unlisted top-level key", "strictSsl: false\n", true],
     ["nested configDependencies", "catalog:\n  configDependencies: 1.0.0\n", false],
     ["commented configDependencies", "# configDependencies:\npackages:\n  - 'packages/*'\n", false],
     ["plain workspace", "packages:\n  - 'packages/*'\n", false],
@@ -132,14 +184,52 @@ describe("scanRepositoryConfig", () => {
     else expect(scan).toEqual({ refused: false, minReleaseAge: false, before: false });
   });
 
+  it("accepts a file pnpm itself writes: packages, catalog, catalogs, onlyBuiltDependencies and a minimumReleaseAgeExclude entry", () => {
+    const pnpmWorkspace = [
+      "packages:",
+      "  - 'packages/*'",
+      "  - '!**/test/**'",
+      "catalog:",
+      `  '${scope}/fixture-dep': ^1.0.0`,
+      "catalogs:",
+      "  legacy:",
+      `    '${scope}/fixture-dep': 1.0.0`,
+      "onlyBuiltDependencies:",
+      "  - esbuild",
+      "minimumReleaseAgeExclude:",
+      `  - '${scope}/*'`,
+      "",
+    ].join("\n");
+    expect(scanRepositoryConfig({ pnpmWorkspace })).toEqual({ refused: false, minReleaseAge: false, before: false });
+  });
+
+  // -------------------------------------------------------------------------
+  // .yarnrc.yml: the same restricted grammar as fix 2 (fix 3).
+  // -------------------------------------------------------------------------
+
+  it.each([
+    ["document marker + flow mapping", "--- {yarnPath: ./x.cjs}\n"],
+    ["!!str tag", "!!str yarnPath: ./x.cjs\n"],
+    ["quoted key with a hex escape", '"yarn\\x50ath": ./x.cjs\n'],
+    ["yarnPath hidden by a lone CR", "a: 1\ryarnPath: ./x.cjs\r"],
+  ])(".yarnrc.yml bypass: %s is refused", (_label, yarnrc) => {
+    expect(scanRepositoryConfig({ yarnrc })).toMatchObject({ refused: true });
+  });
+
   it.each([
     ["npmAuthToken", "npmAuthToken: fixture\n", "registry-config-needs-credential"],
     ["npmAuthIdent", "npmAuthIdent: fixture\n", "registry-config-needs-credential"],
     ["nested npmAuthToken", `npmScopes:\n  ${scope.slice(1)}:\n    npmAuthToken: fixture\n`, "registry-config-needs-credential"],
-    ["${ substitution", "npmRegistryServer: ${FIXTURE}\n", "registry-config-needs-credential"],
-    ["yarnPath", "yarnPath: .yarn/releases/fixture.cjs\n", "package-manager-config-unsafe"],
-    ["plugins", "plugins:\n  - path: fixture.cjs\n", "package-manager-config-unsafe"],
+    ["${ substitution (now unrecognized, same as .npmrc)", "npmRegistryServer: ${FIXTURE}\n", "package-manager-config-unrecognized"],
+    ["yarnPath", "yarnPath: .yarn/releases/fixture.cjs\n", "package-manager-config-unrecognized"],
+    ["plugins", "plugins:\n  - path: fixture.cjs\n", "package-manager-config-unrecognized"],
+    ["httpsProxy", "httpsProxy: http://127.0.0.1:9/\n", "package-manager-config-unrecognized"],
+    ["npmRegistryServer", "npmRegistryServer: https://fixture.invalid/\n", "package-manager-config-unrecognized"],
     ["nodeLinker", "nodeLinker: node-modules\n", null],
+    ["enableTelemetry: false", "enableTelemetry: false\n", null],
+    ["enableTelemetry: true (only false is allowed)", "enableTelemetry: true\n", "package-manager-config-unrecognized"],
+    ["enableGlobalCache", "enableGlobalCache: true\n", null],
+    ["npmPreapprovedPackages", `npmPreapprovedPackages:\n  - '${scope}/fixture-dep'\n`, null],
   ])(".yarnrc.yml %s", (_label, yarnrc, reason) => {
     const scan = scanRepositoryConfig({ yarnrc });
     if (reason === null) expect(scan).toEqual({ refused: false, minReleaseAge: false, before: false });
@@ -166,6 +256,37 @@ describe("spawnLockfileTool", () => {
     expect(result.status).toBeNull();
     expect(Date.now() - started).toBeLessThan(8_000);
   });
+
+  it("settles with failure timeout, after the grace period, when a detached grandchild keeps the pipe open", async () => {
+    const dir = tempDir("lockfile-regen-grace-");
+    const pidFile = join(dir, "gc.pid");
+    // The immediate child spawns a detached grandchild sharing its own stdout/stderr fds, then exits at once.
+    // The grandchild outlives it and is in a different process group, so SIGKILL to the child's group never
+    // reaches it and `close` never fires on the immediate child alone.
+    const script = [
+      'const { spawn } = require("node:child_process");',
+      'const fs = require("node:fs");',
+      'const gc = spawn(process.execPath, ["-e", "setInterval(()=>{}, 100000)"], { detached: true, stdio: ["ignore", 1, 2] });',
+      `fs.writeFileSync(${JSON.stringify(pidFile)}, String(gc.pid));`,
+      "gc.unref();",
+      "process.exit(0);",
+    ].join(" ");
+    const started = Date.now();
+    let result: LockfileSpawnResult | undefined;
+    try {
+      result = await spawnLockfileTool({ ...base, command: process.execPath, args: ["-e", script], timeoutMs: 200 });
+      expect(result.failure).toBe("timeout");
+      expect(result.status).toBeNull();
+      expect(Date.now() - started).toBeLessThan(8_000);
+    } finally {
+      try {
+        const pid = Number(readFileSync(pidFile, "utf8"));
+        if (Number.isInteger(pid)) process.kill(pid, "SIGKILL");
+      } catch {
+        // already gone
+      }
+    }
+  }, 15_000);
 
   it("reports a missing command as not-found", async () => {
     const result = await spawnLockfileTool({ ...base, command: "launcher-lockfile-no-such-command", args: [], timeoutMs: 30_000 });
@@ -290,11 +411,12 @@ describe("regenerateLockfile preconditions", () => {
   });
 
   it.each([
-    ["npm", "package-lock.json", ".npmrc", "//fixture.invalid/:_authToken=fixture\n", "registry-config-needs-credential"],
-    ["npm", "package-lock.json", ".npmrc", "script-shell=/bin/sh\n", "package-manager-config-unsafe"],
-    ["pnpm", "pnpm-lock.yaml", ".npmrc", "_auth=fixture\n", "registry-config-needs-credential"],
+    ["npm", "package-lock.json", ".npmrc", "//fixture.invalid/:_authToken=fixture\n", "package-manager-config-unrecognized"],
+    ["npm", "package-lock.json", ".npmrc", "username=fixture\n", "registry-config-needs-credential"],
+    ["npm", "package-lock.json", ".npmrc", "registry=https://fixture.invalid/\n", "package-manager-config-unrecognized"],
+    ["pnpm", "pnpm-lock.yaml", ".npmrc", "_auth=fixture\n", "package-manager-config-unrecognized"],
     ["pnpm", "pnpm-lock.yaml", "pnpm-workspace.yaml", "configDependencies:\n  fixture: 1.0.0\n", "package-manager-config-unsafe"],
-    ["yarn", "yarn.lock", ".yarnrc.yml", "yarnPath: .yarn/releases/fixture.cjs\n", "package-manager-config-unsafe"],
+    ["yarn", "yarn.lock", ".yarnrc.yml", "yarnPath: .yarn/releases/fixture.cjs\n", "package-manager-config-unrecognized"],
     ["yarn", "yarn.lock", ".yarnrc.yml", "npmAuthToken: fixture\n", "registry-config-needs-credential"],
   ] as const)("refuses %s with %s %s end to end without a launch", async (packageManager, lockfile, file, content, reason) => {
     const root = fakeRoot({ lockfile });
@@ -450,6 +572,26 @@ describe("regenerateLockfile with fake tools", () => {
     expect(output).toContain("$ROOT/package.json");
     expect(output.endsWith("error: $SCRATCH/home/.npm $ROOT\n")).toBe(true);
     expect(existsSync(scratch)).toBe(false);
+  });
+
+  it("redacts the home directory (and a non-empty parent COREPACK_HOME) from tool output", async () => {
+    const root = fakeRoot();
+    const { homedir } = await import("node:os");
+    const home = homedir();
+    const fixtureCorepackHome = "/fixture/corepack-home";
+    const recorder = fakeTool(() => ({ status: 1, stdout: "", stderr: `error: could not write ${home}/.npm/cache and ${fixtureCorepackHome}/pnpm\n` }));
+    process.env.COREPACK_HOME = fixtureCorepackHome;
+    try {
+      const result = await regenerateLockfile(npmInput(root), { spawn: recorder.spawn });
+      expect(result).toMatchObject({ verdict: "indeterminate", reason: "tool-failed" });
+      const output = (result as Extract<LockfileRegenResult, { verdict: "indeterminate" }>).output ?? "";
+      expect(output).not.toContain(home);
+      expect(output).not.toContain(fixtureCorepackHome);
+      expect(output).toContain("$HOME/.npm/cache");
+      expect(output).toContain("$COREPACK_HOME/pnpm");
+    } finally {
+      delete process.env.COREPACK_HOME;
+    }
   });
 
   it("removes the scratch directory when the tool succeeds and when the spawn port throws", async () => {
@@ -784,12 +926,19 @@ describe("regenerateLockfile with real npm and pnpm", () => {
     expect(registry.requests.slice(seen)).toContain(`/${FIXTURE.a.name}`);
   }, 60_000);
 
-  it.each(["npm", "pnpm"] as const)("%s: a repository .npmrc cannot redirect the scope", async (tool) => {
+  // `registry` and `@scope:registry` are not on the fix-1 allow-list at all (the command-line scope
+  // override made them harmless before; the allow-list now refuses the file outright instead), so a
+  // repository .npmrc naming either one is package-manager-config-unrecognized before any tool launches --
+  // it can no longer even attempt to redirect the scope.
+  it.each(["npm", "pnpm"] as const)("%s: a repository .npmrc naming registry or @scope:registry is refused, never launched", async (tool) => {
     if (tool === "pnpm" && pnpmMissing) return;
     const { root, input } = await scenario({ tool, prepare: (directory) => writeFileSync(join(directory, ".npmrc"), `${scope}:registry=${DEAD}\nregistry=${DEAD}\n`) });
     const seen = registry.requests.length;
-    expectSatisfied(await regenerateLockfile(input, portsFor(tool)), tool);
-    expect(registry.requests.slice(seen)).toEqual(expect.arrayContaining([`/${FIXTURE.a.name}`, `/${FIXTURE.dep.name}`]));
+    const record: LockfileSpawnRequest[] = [];
+    const result = await regenerateLockfile(input, { registry: registry.url, spawn: recordingSpawn(record) });
+    expect(result).toEqual({ verdict: "indeterminate", reason: "package-manager-config-unrecognized", tooling: null });
+    expect(record).toEqual([]);
+    expect(registry.requests.slice(seen)).toEqual([]);
     expect(readFileSync(join(root, ".npmrc"), "utf8")).toBe(`${scope}:registry=${DEAD}\nregistry=${DEAD}\n`);
   }, 60_000);
 
