@@ -1,5 +1,6 @@
 import { validateDeploymentConfigurationPlan } from "../configuration.js";
 import type { DeploymentConfigurationArtifact, DeploymentConfigurationPlan } from "../types.js";
+import { vercelHostingCommands } from "./hosting.js";
 
 function variableNames(plan: DeploymentConfigurationPlan): readonly string[] {
   return [...new Set(plan.requirements
@@ -16,8 +17,11 @@ export function renderVercelConfiguration(plan: DeploymentConfigurationPlan): De
   if (validateDeploymentConfigurationPlan(plan).length > 0) throw new TypeError("Invalid deployment configuration plan.");
   const requirement = plan.requirements.find((candidate) => plan.manifest.surfaces.some((surface) => surface.id === candidate.surfaceId && surface.provider === "vercel"));
   if (requirement === undefined) throw new TypeError("Deployment configuration plan has no vercel surface.");
+  const commands = vercelHostingCommands(requirement.surfaceId);
   const content = `${JSON.stringify({
     $schema: "https://openapi.vercel.sh/vercel.json",
+    installCommand: commands.installCommand,
+    ignoreCommand: commands.ignoreCommand,
     buildCommand: requirement.build.command,
     outputDirectory: requirement.build.outputDirectory,
     ...(requirement.routing.length === 0 ? {} : { rewrites: requirement.routing }),
@@ -34,6 +38,7 @@ export function renderVercelConfiguration(plan: DeploymentConfigurationPlan): De
       requiredEnvironmentVariables.length === 0
         ? "No provider environment-variable names are required by this plan."
         : `Set these names in the Vercel project settings or CI without committing values: ${requiredEnvironmentVariables.join(", ")}.`,
+      "The installCommand and ignoreCommand call builder hosting install and builder hosting should-build for this surface.",
       "Keep deployment triggering in the repository and provider integration; this artifact does not deploy or change provider settings.",
     ],
   };

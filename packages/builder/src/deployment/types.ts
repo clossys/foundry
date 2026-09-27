@@ -20,6 +20,10 @@ export type DeploymentSurfaceDefinition = {
   readonly environment: DeploymentEnvironment;
   readonly health: DeploymentHealthCheckDefinition;
   readonly label?: string;
+  /** TCP port the surface's dev script must pass. */
+  readonly localPort?: number;
+  /** Dev script checked against `localPort` when that port is declared. */
+  readonly devScript?: string;
 };
 
 export type DeploymentManifestDefinition = {
@@ -39,6 +43,8 @@ export type DeploymentSurface = {
   readonly environment: DeploymentEnvironment;
   readonly health: DeploymentHealthCheck;
   readonly label?: string;
+  readonly localPort?: number;
+  readonly devScript?: string;
 };
 
 export type DeploymentManifest = {

@@ -1,5 +1,7 @@
 export { VercelInspectionError } from "./errors.js";
 export { renderVercelConfiguration } from "./configuration.js";
+export { vercelHostingCommands } from "./hosting.js";
+export type { VercelHostingCommands } from "./hosting.js";
 export { createVercelInspector } from "./inspector.js";
 export type {
   VercelDeploymentState,

@@ -17,6 +17,7 @@ export type {
   DeploymentBranchBindingDefinition,
   DeploymentBranchBindingFindingRule,
 } from "./branch-binding.js";
+export { checkDeploymentSurfaceDevPort, devScriptPorts } from "./dev-port.js";
 export { isValidDeploymentManifest, validateDeploymentManifest } from "./validate.js";
 export type {
   DeploymentEnvironment,

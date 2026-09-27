@@ -35,9 +35,14 @@
     "./machine": {
       "types": "./dist/machine/index.d.ts",
       "import": "./dist/machine/index.js"
+    },
+    "./hosting": {
+      "types": "./dist/hosting/index.d.ts",
+      "import": "./dist/hosting/index.js"
     }
   },
   "bin": {
+    "builder": "dist/hosting/bin.js",
     "builder-verify-toolchain": "dist/ci/bin.js",
     "builder-verify-machine": "dist/machine/bin.js",
     "builder-check": "dist/desired-state-realization-cli.js"
