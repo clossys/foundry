@@ -330,6 +330,90 @@ describe("copy-read-without-resolver", () => {
     expect(gate.verdict).toBe("violated");
     expect(gate.findings).toEqual([expect.objectContaining({ rule: "copy-read-without-resolver", line: 5 })]);
   });
+
+  it("flags callee names that merely suffix an allowed resolver import", () => {
+    const deseret = "\u{10400}";
+    const cyrillicC = "\u{0441}";
+    const { gate: deseretGate } = scan({
+      "src/copy.ts": [
+        'import { createCopyResolver, parseCopyRegistry } from "@clossys/writer";',
+        'import registry from "../copy/registry.json";',
+        "function via(data: { entries: unknown[] }) {",
+        `  return ${deseret}createCopyResolver(parseCopyRegistry(registry)).entries;`,
+        "}",
+        "export const a = via({ entries: [] });",
+      ].join("\n"),
+    });
+    expect(deseretGate.verdict).toBe("violated");
+    const { gate: bmpGate } = scan({
+      "src/copy.ts": [
+        'import { createCopyResolver, parseCopyRegistry } from "@clossys/writer";',
+        'import registry from "../copy/registry.json";',
+        "function via(data: { entries: unknown[] }) {",
+        `  return λcreateCopyResolver(parseCopyRegistry(registry)).entries;`,
+        "}",
+        "export const a = via({ entries: [] });",
+      ].join("\n"),
+    });
+    expect(bmpGate.verdict).toBe("violated");
+    const { gate: cyrillicGate } = scan({
+      "src/copy.ts": [
+        'import { createCopyResolver, parseCopyRegistry } from "@clossys/writer";',
+        'import registry from "../copy/registry.json";',
+        "function via(data: { entries: unknown[] }) {",
+        `  return ${cyrillicC}createCopyResolver(parseCopyRegistry(registry)).entries;`,
+        "}",
+        "export const a = via({ entries: [] });",
+      ].join("\n"),
+    });
+    expect(cyrillicGate.verdict).toBe("violated");
+    const { gate: importGate } = scan({
+      "src/copy.ts": [
+        'import { createCopyResolver, parseCopyRegistry } from "@clossys/writer";',
+        'import registry from "../copy/registry.json";',
+        "export const resolver = createCopyResolver(parseCopyRegistry(registry));",
+      ].join("\n"),
+    });
+    expect(importGate.verdict).toBe("satisfied");
+  });
+
+  it("flags every same-file binding form that shadows an allowed import name", () => {
+    const body = (shadow: string, use: string) =>
+      [
+        'import { createCopyResolver, parseCopyRegistry } from "@clossys/writer";',
+        'import registry from "../copy/registry.json";',
+        shadow,
+        use,
+      ].join("\n");
+    for (const shadow of [
+      "function* createCopyResolver(data: { entries: unknown[] }) { return data.entries; }",
+      "function*createCopyResolver(data: { entries: unknown[] }) { return data.entries; }",
+      "async function* createCopyResolver(data: { entries: unknown[] }) { return data.entries; }",
+      "async function createCopyResolver(data: { entries: unknown[] }) { return data.entries; }",
+      "const createCopyResolver: (data: { entries: unknown[] }) => unknown = (data) => data.entries;",
+      "let createCopyResolver: (data: { entries: unknown[] }) => unknown = (data) => data.entries;",
+      "var createCopyResolver: (data: { entries: unknown[] }) => unknown = (data) => data.entries;",
+      "class createCopyResolver { constructor(public data: { entries: unknown[] }) {} entries() { return this.data.entries; } }",
+      "const { createCopyResolver } = { createCopyResolver: (data: { entries: unknown[] }) => data.entries };",
+      "const { other: createCopyResolver } = { other: (data: { entries: unknown[] }) => data.entries };",
+      "function load(createCopyResolver) { return createCopyResolver; }",
+      "function load(createCopyResolver = () => ({ entries: [] })) { return createCopyResolver; }",
+      "function load(...createCopyResolver) { return createCopyResolver; }",
+      "export function run() { try { throw 1; } catch (createCopyResolver) { return createCopyResolver; } }",
+    ]) {
+      const { gate } = scan({
+        "src/copy.ts": body(shadow, "export const out = createCopyResolver(parseCopyRegistry(registry)).entries;"),
+      });
+      expect(gate.verdict).toBe("violated");
+    }
+    const { gate: renamedGate } = scan({
+      "src/copy.ts": body(
+        "const { createCopyResolver: other } = { createCopyResolver: () => ({ entries: [] }) };",
+        "export const out = createCopyResolver(parseCopyRegistry(registry));",
+      ),
+    });
+    expect(renamedGate.verdict).toBe("satisfied");
+  });
 });
 
 describe("scope and masking", () => {

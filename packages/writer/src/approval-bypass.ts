@@ -271,19 +271,66 @@ function matchingClose(code: string, open: number): number {
 const ID_CONTINUE_RE = /[\p{ID_Continue}$]/u;
 const ID_START_RE = /[\p{ID_Start}$_]/u;
 
+function isHighSurrogateUnit(c: string): boolean {
+  const u = c.charCodeAt(0);
+  return u >= 0xd800 && u <= 0xdbff;
+}
+
+function isLowSurrogateUnit(c: string): boolean {
+  const u = c.charCodeAt(0);
+  return u >= 0xdc00 && u <= 0xdfff;
+}
+
+/** Index of the first UTF-16 code unit of the code point ending at `end`. */
+function codePointStartAt(code: string, end: number): number {
+  if (end > 0 && isLowSurrogateUnit(code[end]!) && isHighSurrogateUnit(code[end - 1]!)) return end - 1;
+  return end;
+}
+
+/** Index of the last UTF-16 code unit of the code point starting at `start`. */
+function codePointEndAt(code: string, start: number): number {
+  if (isHighSurrogateUnit(code[start]!) && start + 1 < code.length && isLowSurrogateUnit(code[start + 1]!)) return start + 1;
+  return start;
+}
+
+function codePointBefore(code: string, start: number): string | undefined {
+  if (start <= 0) return undefined;
+  const prevEnd = start - 1;
+  const prevStart = codePointStartAt(code, prevEnd);
+  return code.slice(prevStart, codePointEndAt(code, prevStart) + 1);
+}
+
+function codePointAt(code: string, start: number): string {
+  const end = codePointEndAt(code, start);
+  return code.slice(start, end + 1);
+}
+
+function isIdContinueCodePoint(cp: string): boolean {
+  return ID_CONTINUE_RE.test(cp);
+}
+
+function isIdStartCodePoint(cp: string): boolean {
+  return ID_START_RE.test(cp);
+}
+
 /** Reads the identifier immediately before `(` at `innerOpen`, or `undefined` when it is not a plain callee name. */
 function calleeBeforeOpenParen(code: string, innerOpen: number): string | undefined {
   let i = innerOpen - 1;
   while (i >= 0 && isWs(code[i])) i--;
   if (i < 0) return undefined;
-  const end = i;
-  while (i >= 0 && ID_CONTINUE_RE.test(code[i]!)) i--;
-  const start = i + 1;
-  const ident = code.slice(start, end + 1);
-  if (ident.length === 0 || !ID_START_RE.test(ident[0]!)) return undefined;
-  if (start > 0) {
-    const prev = code[start - 1]!;
-    if (prev === "." || prev === "$" || ID_CONTINUE_RE.test(prev)) return undefined;
+  const identEnd = i;
+  let end = i;
+  while (end >= 0) {
+    const cpStart = codePointStartAt(code, end);
+    if (!isIdContinueCodePoint(codePointAt(code, cpStart))) break;
+    end = cpStart - 1;
+  }
+  const start = end + 1;
+  const ident = code.slice(start, identEnd + 1);
+  if (ident.length === 0 || !isIdStartCodePoint(codePointAt(code, start))) return undefined;
+  const before = codePointBefore(code, start);
+  if (before !== undefined) {
+    if (before === "." || before === "$" || isIdContinueCodePoint(before)) return undefined;
   }
   return ident;
 }
@@ -417,12 +464,39 @@ function collectWriterCalleepNames(specifiers: Specifier[], isWriter: (s: string
   return names;
 }
 
+function destructuringPatternShadowsName(inner: string, name: string): boolean {
+  const esc = escapeRegExp(name);
+  const parts = inner.split(",");
+  for (const part of parts) {
+    const trimmed = part.trim();
+    if (!trimmed) continue;
+    if (new RegExp(`^${esc}$`, "u").test(trimmed)) return true;
+    if (new RegExp(`^${IDENT}\\s*:\\s*${esc}$`, "u").test(trimmed)) return true;
+  }
+  return false;
+}
+
 function collectLocalShadowedCalleepNames(code: string): Set<string> {
   const shadowed = new Set<string>();
   for (const name of WRITER_PACKAGE_CALLEES) {
     const esc = escapeRegExp(name);
-    if (new RegExp(`${CALLEE_BOUNDARY}function\\s+${esc}${NOT_ID_CONTINUE}`, "u").test(code)) shadowed.add(name);
-    if (new RegExp(`${CALLEE_BOUNDARY}(?:const|let|var)\\s+${esc}${NOT_ID_CONTINUE}\\s*=`, "u").test(code)) shadowed.add(name);
+    if (new RegExp(`${CALLEE_BOUNDARY}(?:async\\s+)?function\\s*(?:\\*\\s*)?${esc}${NOT_ID_CONTINUE}`, "u").test(code))
+      shadowed.add(name);
+    if (new RegExp(`${CALLEE_BOUNDARY}class\\s+${esc}${NOT_ID_CONTINUE}`, "u").test(code)) shadowed.add(name);
+    if (new RegExp(`${CALLEE_BOUNDARY}(?:const|let|var)\\s+${esc}(?:\\s*:[^=;]*)?\\s*=`, "u").test(code)) shadowed.add(name);
+    for (const m of code.matchAll(new RegExp(`${CALLEE_BOUNDARY}(?:const|let|var)\\s*\\{([^}]*)\\}`, "gu"))) {
+      if (destructuringPatternShadowsName(m[1]!, name)) shadowed.add(name);
+    }
+    if (new RegExp(`${CALLEE_BOUNDARY}(?:async\\s+)?function\\s*(?:\\*\\s*)?${IDENT}\\s*\\([^)]*\\.\\.\\.\\s*${esc}${NOT_ID_CONTINUE}`, "u").test(code))
+      shadowed.add(name);
+    if (
+      new RegExp(
+        `${CALLEE_BOUNDARY}(?:async\\s+)?function\\s*(?:\\*\\s*)?${IDENT}\\s*\\([^)]*(?<![\\w$.])${esc}(?![\\w$])\\s*(?:[,)=]|=[^=])`,
+        "u",
+      ).test(code)
+    )
+      shadowed.add(name);
+    if (new RegExp(`catch\\s*\\(\\s*${esc}\\s*\\)`, "u").test(code)) shadowed.add(name);
   }
   return shadowed;
 }
