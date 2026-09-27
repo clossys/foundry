@@ -1107,6 +1107,20 @@ function mergedEnvironmentFindings(state: LocationState, emit: (finding: SecretE
   });
 }
 
+/** A declared environment omitted from this location's environmentMap cannot be observed there. */
+function unmappedEnvironmentFindings(
+  state: LocationState,
+  declaredEnvironments: readonly DeclaredEnvironment[],
+  emit: (finding: SecretEnvironmentsFinding) => void,
+): void {
+  const { location } = state;
+  for (let index = 0; index < declaredEnvironments.length; index += 1) {
+    const environment = declaredEnvironments[index] as DeclaredEnvironment;
+    if (location.environmentMap.values.has(environment)) continue;
+    emit(finding("location-unobserved", `${location.id}/${environment}`));
+  }
+}
+
 /** Rules 2 and 3: per mapped environment, unobserved, or each delivered key's presence against its mode. */
 function presenceFindings(state: LocationState, emit: (finding: SecretEnvironmentsFinding) => void): void {
   const { location } = state;
@@ -1319,6 +1333,7 @@ function evaluateUnchecked(input: unknown): SecretEnvironmentsEvaluation {
   for (let index = 0; index < states.length; index += 1) {
     const state = states[index] as LocationState;
     mergedEnvironmentFindings(state, emit);
+    unmappedEnvironmentFindings(state, declaration.environments, emit);
     presenceFindings(state, emit);
     undeclaredNameFindings(state, emit);
     storageFindings(state, emit);

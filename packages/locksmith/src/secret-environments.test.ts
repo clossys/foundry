@@ -763,6 +763,85 @@ describe("evaluateSecretEnvironments", () => {
     expect(absentSpanEval.verdict).not.toBe("satisfied");
     expect(absentSpanEval.exitCode).not.toBe(0);
     expect(rulesOf(absentSpanEval.findings)).toContain("undeclared-name");
+
+    const absentPreviewUnmapped = declaration();
+    absentPreviewUnmapped.environments = ["preview", "production"];
+    absentPreviewUnmapped.entries[0].environments = {
+      preview: { mode: "absent", reason: "Preview must not hold production database credentials." },
+    };
+    absentPreviewUnmapped.deliveryTargets[0].environmentMap = { production: "production" };
+    const previewUnmappedTarget = targetSnapshot();
+    previewUnmappedTarget.environments = ["production"];
+    previewUnmappedTarget.entries = [previewUnmappedTarget.entries[2], previewUnmappedTarget.entries[3]];
+    const previewUnmappedEval = evaluateSecretEnvironments({
+      declaration: absentPreviewUnmapped,
+      inventories: [sourceSnapshot("staging"), sourceSnapshot("prod"), previewUnmappedTarget],
+    });
+    expect(previewUnmappedEval.verdict).not.toBe("satisfied");
+    expect(previewUnmappedEval.exitCode).not.toBe(0);
+    expect(pathsFor(previewUnmappedEval, "location-unobserved")).toContain("web-hosting/preview");
+
+    const optionalEmptyMaps = minimalDeclaration();
+    optionalEmptyMaps.entries[0].required = false;
+    optionalEmptyMaps.source.environmentMap = {};
+    const optionalEmptyInv = evaluateSecretEnvironments({
+      declaration: optionalEmptyMaps,
+      inventories: [
+        {
+          version: 1,
+          provider: "infisical",
+          location: "secret-manager",
+          observedAt: OBSERVED_AT,
+          environments: ["prod"],
+          entries: [],
+        },
+      ],
+    });
+    expect(optionalEmptyInv.verdict).not.toBe("satisfied");
+    expect(optionalEmptyInv.exitCode).not.toBe(0);
+
+    const sourceOmitsEnv = declaration();
+    sourceOmitsEnv.environments = ["preview", "production"];
+    sourceOmitsEnv.source.environmentMap = { production: "prod" };
+    const sourceOmitsEval = evaluateSecretEnvironments({
+      declaration: sourceOmitsEnv,
+      inventories: [sourceSnapshot("prod"), targetSnapshot()],
+    });
+    expect(sourceOmitsEval.verdict).not.toBe("satisfied");
+    expect(sourceOmitsEval.exitCode).not.toBe(0);
+    expect(pathsFor(sourceOmitsEval, "location-unobserved")).toContain("secret-manager/preview");
+
+    const twoTargets = declaration();
+    twoTargets.deliveryTargets.push({
+      id: "ci-deploy",
+      provider: "github-actions",
+      environmentMap: { development: "development", preview: "preview", production: "production" },
+      sync: "provider-integration",
+    });
+    twoTargets.entries[0].deliveryTargets = ["web-hosting", "ci-deploy"];
+    twoTargets.entries[1].deliveryTargets = ["web-hosting", "ci-deploy"];
+    twoTargets.deliveryTargets[0].environmentMap = { production: "production" };
+    const ciSnapshot = {
+      version: 1,
+      provider: "github-actions",
+      location: "ci-deploy",
+      observedAt: OBSERVED_AT,
+      environments: ["development", "preview", "production"],
+      entries: [
+        { name: "DATABASE_URL", environments: ["development"], storage: "sensitive" },
+        { name: "DATABASE_URL", environments: ["preview"], storage: "sensitive" },
+        { name: "DATABASE_URL", environments: ["production"], storage: "sensitive" },
+        { name: "NEXT_PUBLIC_SITE_URL", environments: ["development", "preview", "production"], storage: "readable" },
+      ],
+    };
+    const twoTargetEval = evaluateSecretEnvironments({
+      declaration: twoTargets,
+      inventories: [sourceSnapshot("dev"), sourceSnapshot("staging"), sourceSnapshot("prod"), targetSnapshot(), ciSnapshot],
+    });
+    expect(twoTargetEval.verdict).not.toBe("satisfied");
+    expect(pathsFor(twoTargetEval, "location-unobserved")).toEqual(
+      expect.arrayContaining(["web-hosting/development", "web-hosting/preview"]),
+    );
   });
 
   it("manual sync is a warning only", () => {
