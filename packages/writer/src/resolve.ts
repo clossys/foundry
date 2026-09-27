@@ -7,6 +7,13 @@
  * source provenance, and an approved entry. The result exposes every one of
  * those inputs so `@example/surface` can place them in its output
  * manifest without knowing how a consumer stores copy.
+ *
+ * Target policy: an owner-approved entry resolves on both `"preview"` and
+ * `"production"` (the default target). A delegate-approved entry resolves
+ * freely on `"preview"`, but on `"production"` is refused
+ * (`delegate-approval-refused`) unless the caller opts in with
+ * `acceptDelegateInProduction: true` — a delegate's sign-off is not, by
+ * itself, sufficient evidence to publish, only to preview.
  */
 
 import type {
@@ -17,6 +24,7 @@ import type {
   CopyValue,
 } from "./types.js";
 import { validateCopyRegistryShape } from "./schema.js";
+import { isApprovalExpired, isApprovalStale } from "./approval.js";
 
 export type CopyResolveIssueReason =
   | "invalid-registry"
@@ -25,7 +33,24 @@ export type CopyResolveIssueReason =
   | "unknown-copy-id"
   | "copy-not-approved"
   | "missing-placeholder-value"
-  | "unexpected-placeholder-value";
+  | "unexpected-placeholder-value"
+  | "invalid-options"
+  | "approval-stale"
+  | "approval-expired"
+  | "delegate-approval-refused";
+
+/** Which audience a resolution is for — see this file's top doc comment for the policy difference. */
+export type CopyResolveTarget = "preview" | "production";
+
+/** Options controlling how strictly `resolveCopyRef`/`createCopyResolver` treat an entry's approval record. */
+export interface CopyResolveOptions {
+  /** Defaults to `"production"`. */
+  target?: CopyResolveTarget;
+  /** Defaults to `false`. Only meaningful when `target` is `"production"`. */
+  acceptDelegateInProduction?: boolean;
+  /** Defaults to `new Date()`, evaluated per call. */
+  now?: Date;
+}
 
 export interface CopyResolveIssue {
   reason: CopyResolveIssueReason;
@@ -57,12 +82,42 @@ function interpolate(text: string, values: Readonly<Record<string, CopyValue>>):
 }
 
 /**
- * Resolves a `CopyRef` against one locale-specific registry. Any absence,
- * lifecycle failure, locale mismatch, or placeholder mismatch produces no
- * text and a non-complete result. Consumers may log `issues`; renderers must
- * treat a missing `resolution` as an unresolved required input.
+ * True when `value` is a well-formed `CopyResolveOptions` — checked before
+ * anything else so a malformed caller-supplied options object fails closed
+ * rather than silently falling back to defaults.
  */
-export function resolveCopyRef(registry: CopyRegistry | unknown, ref: CopyRef | unknown): CopyResolveResult {
+function isValidResolveOptions(value: unknown): value is CopyResolveOptions {
+  if (value === undefined) return true;
+  if (!isPlainObject(value)) return false;
+  const { target, acceptDelegateInProduction, now } = value;
+  if (target !== undefined && target !== "preview" && target !== "production") return false;
+  if (acceptDelegateInProduction !== undefined && typeof acceptDelegateInProduction !== "boolean") return false;
+  if (now !== undefined && !(now instanceof Date && Number.isFinite(now.getTime()))) return false;
+  return true;
+}
+
+/**
+ * Resolves a `CopyRef` against one locale-specific registry. Any absence,
+ * lifecycle failure, locale mismatch, staleness/expiry, delegate-in-production
+ * refusal, or placeholder mismatch produces no text and a non-complete
+ * result. Consumers may log `issues`; renderers must treat a missing
+ * `resolution` as an unresolved required input.
+ */
+export function resolveCopyRef(
+  registry: CopyRegistry | unknown,
+  ref: CopyRef | unknown,
+  options?: CopyResolveOptions | unknown,
+): CopyResolveResult {
+  if (!isValidResolveOptions(options)) {
+    return {
+      issues: [{ reason: "invalid-options", message: "CopyResolveOptions is malformed." }],
+      complete: false,
+    };
+  }
+  const target: CopyResolveTarget = options?.target ?? "production";
+  const acceptDelegateInProduction = options?.acceptDelegateInProduction ?? false;
+  const now = options?.now ?? new Date();
+
   const registryFindings = validateCopyRegistryShape(registry);
   if (registryFindings.length > 0) {
     return {
@@ -119,6 +174,46 @@ export function resolveCopyRef(registry: CopyRegistry | unknown, ref: CopyRef | 
     };
   }
 
+  const approval = entry.approval;
+  if (approval) {
+    if (isApprovalStale(entry)) {
+      return {
+        issues: [
+          {
+            reason: "approval-stale",
+            id: validRef.id,
+            message: `CopyRef "${validRef.id}"'s approval record no longer matches its current text.`,
+          },
+        ],
+        complete: false,
+      };
+    }
+    if (isApprovalExpired(approval, now)) {
+      return {
+        issues: [
+          {
+            reason: "approval-expired",
+            id: validRef.id,
+            message: `CopyRef "${validRef.id}"'s approval expired at ${approval.expiresAt}.`,
+          },
+        ],
+        complete: false,
+      };
+    }
+    if (approval.approvedBy === "delegate" && target === "production" && acceptDelegateInProduction !== true) {
+      return {
+        issues: [
+          {
+            reason: "delegate-approval-refused",
+            id: validRef.id,
+            message: `CopyRef "${validRef.id}" was approved by a delegate; production resolution requires acceptDelegateInProduction: true.`,
+          },
+        ],
+        complete: false,
+      };
+    }
+  }
+
   const values = validRef.values ?? {};
   const issues: CopyResolveIssue[] = [];
   const declared = new Set(entry.placeholders ?? []);
@@ -151,22 +246,26 @@ export function resolveCopyRef(registry: CopyRegistry | unknown, ref: CopyRef | 
   }
   if (issues.length > 0) return { issues, complete: false };
 
-  return {
-    resolution: {
-      ref: validRef as unknown as CopyRef,
-      text: interpolate(entry.text, values as Readonly<Record<string, CopyValue>>),
-      recordId: validRegistry.id,
-      revision: validRegistry.revision,
-      locale: validRegistry.locale,
-      source: validRegistry.source,
-      entryId: entry.id,
-    },
-    issues: [],
-    complete: true,
+  const resolution: CopyResolution = {
+    ref: validRef as unknown as CopyRef,
+    text: interpolate(entry.text, values as Readonly<Record<string, CopyValue>>),
+    recordId: validRegistry.id,
+    revision: validRegistry.revision,
+    locale: validRegistry.locale,
+    source: validRegistry.source,
+    entryId: entry.id,
   };
+  // Only set when the entry actually carries a record — an approved entry
+  // with no record resolves exactly as it did before this field existed,
+  // with no `approval` key on the resolution at all.
+  if (approval) {
+    resolution.approval = { approvedBy: approval.approvedBy, pendingOwnerReview: approval.pendingOwnerReview === true };
+  }
+
+  return { resolution, issues: [], complete: true };
 }
 
 /** Creates the narrow resolver callback for presentation code. */
-export function createCopyResolver(registry: CopyRegistry | unknown): CopyResolver {
-  return (ref) => resolveCopyRef(registry, ref).resolution;
+export function createCopyResolver(registry: CopyRegistry | unknown, options?: CopyResolveOptions | unknown): CopyResolver {
+  return (ref) => resolveCopyRef(registry, ref, options).resolution;
 }

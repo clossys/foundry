@@ -136,6 +136,42 @@ unknown ID, locale mismatch, draft/retired entry, missing placeholder value,
 or unexpected value. Locale fallback belongs to a consumer-owned registry
 selector, rather than an implicit package policy.
 
+Both `resolveCopyRef` and `createCopyResolver` take an optional third
+argument, `CopyResolveOptions`:
+
+```ts
+import { createCopyResolver, type CopyRegistry, type CopyResolveOptions } from "@clossys/writer";
+
+declare const registry: CopyRegistry;
+const options: CopyResolveOptions = { target: "preview", acceptDelegateInProduction: false, now: new Date() };
+const resolve = createCopyResolver(registry, options);
+```
+
+- `target` (`CopyResolveTarget`, `"preview" | "production"`, default
+  `"production"`) — which audience this resolution is for. An owner-approved
+  entry resolves on either target. A delegate-approved entry resolves freely
+  on `"preview"` but is refused on `"production"`
+  (`"delegate-approval-refused"`) unless the caller opts in.
+- `acceptDelegateInProduction` (default `false`) — only meaningful when
+  `target` is `"production"`; set it to `true` to accept a delegate's
+  sign-off as sufficient to publish, not just to preview.
+- `now` (default `new Date()`, evaluated per call) — the clock staleness and
+  expiry are measured against; a test fixes it to make an assertion
+  deterministic.
+
+Three new refusal reasons follow directly from an entry's approval record
+(see "Delegated approval" below for what the record itself contains):
+`"approval-stale"` (the recorded fingerprint no longer matches the entry's
+current text), `"approval-expired"` (a delegate record's `expiresAt` has
+passed), and `"delegate-approval-refused"` (a delegate record on
+`"production"` without `acceptDelegateInProduction: true`). A malformed
+`CopyResolveOptions` itself is `"invalid-options"`, checked and refused
+before anything else so a broken options object never silently falls back
+to defaults. An `approved` entry that carries no `approval` record at all
+resolves exactly as it always has, on either target, with no `approval` key
+on the returned `CopyResolution` — this is unchanged, on-by-default
+behavior, not an opt-in.
+
 The default `writer-check` command also runs two registry-only gates against
 the same `CopyRegistry` file a surface renders from:
 
@@ -149,6 +185,163 @@ the same `CopyRegistry` file a surface renders from:
   and optional `maxWords`. Approved copy that exceeds the budget fails the
   gate (built-in defaults for `display-heading`, `eyebrow`, and `button` when
   `maxWords` is omitted).
+
+## Delegated approval — who approved this copy, and is it still that text?
+
+`status: "approved"` says an entry may render. It does not say who decided
+that, when, or whether the sentence has since changed underneath the
+decision. `CopyRegistryEntry.approval` (`CopyApproval`) answers all three.
+`writer-check approve` writes the record, so nobody has to hand-edit it into
+a registry or into code; `writer-check approval-state` reports approval state
+set in source instead. `textFingerprint` is a content hash rather than a
+human-maintained counter for the same reason `fingerprint.ts` gives for
+translation provenance.
+
+```json
+{
+  "id": "site.home.title",
+  "text": "Home title copy.",
+  "context": "home hero",
+  "status": "approved",
+  "approval": {
+    "approvedBy": "delegate",
+    "approvedAt": "2026-09-27T00:00:00.000Z",
+    "textFingerprint": "bb46f6c7794911342f760f6e9e46f1f6ca31d0d306c9b301a1069f4b6ff6966c",
+    "fingerprintAlgorithm": "sha256",
+    "delegate": { "id": "delegate-a", "scope": ["site.home"] },
+    "pendingOwnerReview": true,
+    "expiresAt": "2026-10-27T00:00:00.000Z"
+  }
+}
+```
+
+(`textFingerprint` above is `computeCopyFingerprint("Home title copy.")` —
+a 64-character `sha256` hex digest of that entry's own `text`, computed by
+`writer-check approve`.)
+
+- **`approvedBy`** (`CopyApprover`, `"owner" | "delegate"`) — who recorded
+  this approval.
+- **`textFingerprint`**/**`fingerprintAlgorithm`** — pin the record to the
+  EXACT text that was approved. The moment `text` changes, a fresh
+  `computeCopyFingerprint(entry.text)` no longer matches, and the record is
+  `"approval-stale"` — an error, not a warning — until it is approved again.
+  This is the same content-derived-over-hand-maintained argument
+  `fingerprint.ts` already makes for translation staleness, applied to
+  approval staleness instead.
+- **`delegate`** (`CopyDelegateScope`, `{ id, scope }`) — required when
+  `approvedBy` is `"delegate"`, forbidden when it is `"owner"`. `id` is an
+  opaque identifier, never a personal name. `scope` is one or more
+  dot-separated entry-id namespaces the delegate may approve: an entry is in
+  scope when its id equals a scope item or starts with `item + "."` —
+  `["site.home"]` covers `site.home` and `site.home.title`, never
+  `site.homepage.title`. `isEntryInDelegateScope(entryId, scope)` is the
+  exported predicate.
+- **`pendingOwnerReview`** — required (and only meaningful) on a delegate
+  record. A delegate's approval is enough for the entry to resolve — see
+  `target`/`acceptDelegateInProduction` above — but it is a warning
+  (`"approval-pending-owner-review"`), not an error, until an owner durably
+  confirms it. Approving the SAME entry again with `--by owner` REPLACES the
+  delegate's record with the owner's own — that replacement, not a separate
+  "review" action, is how a pending delegate approval is durably confirmed.
+- **`expiresAt`** — delegate records only, an ISO 8601 UTC timestamp
+  strictly after `approvedAt`. Once `now` reaches it, the record is
+  `"approval-expired"` — an error, mutually exclusive with `"approval-stale"`
+  (staleness, the more fundamental problem, takes priority when a record is
+  somehow both).
+
+### `writer-check approve` — write or revoke a record
+
+```bash
+writer-check approve <registry-file> <entry-id>... --by owner
+writer-check approve <registry-file> <entry-id>... --by delegate --delegate <id> --scope <ns>[,<ns>...] [--expires <ISO>]
+writer-check approve <registry-file> <entry-id>... --revoke
+```
+
+Every field the command writes is either computed (`approvedAt` from the
+clock, `textFingerprint` from the entry's current `text`) or copied from an
+argument the command validated. Approving sets `status: "approved"`; a
+delegate record is written with `pendingOwnerReview: true`. Multiple entry
+ids are **all-or-nothing**: if any named id is unknown, retired, or (for a
+delegate approval) outside `--scope`, every problem is printed and nothing
+is written, including for the ids that would otherwise have succeeded. The
+command leaves every other field, the key order and `revision` as they
+were, and writes 2-space JSON to a temp file in the same directory before
+renaming it into place. `--revoke` returns every named entry to `"draft"`
+and removes its `approval` record.
+
+Exit codes: `0` written (every named entry approved or revoked, the file on
+disk now reflects it), `1` refused (an unknown, retired, or out-of-scope
+entry id was named; nothing written), `2` could not run (bad arguments, or
+the registry file is missing/unreadable/not valid JSON/fails schema
+validation; nothing written).
+
+### `writer-check approval-state` — is the registry current, and does source respect it?
+
+```bash
+writer-check approval-state <registry-file> <scan-dir> [--extensions <ext>[,<ext>...]] [--format json] [--now <ISO>]
+```
+
+Reports approval state from two independent angles in one run, because
+either can fail without the other noticing:
+
+- **Registry findings** (`assessCopyApprovals`, above): `"approval-stale"`
+  and `"approval-expired"` are errors; a missing record
+  (`"approval-record-missing"`) or a delegate record still
+  `pendingOwnerReview` (`"approval-pending-owner-review"`) is a warning —
+  legitimately approved for now, just not yet durably so.
+- **Source findings** (`scanApprovalBypass`/`checkApprovalBypass`,
+  `approval-bypass.ts`): does consumer code in `scan-dir` route copy through
+  the resolver, or around it? `"approval-set-in-code"` — the code itself
+  declares approval (`status: "approved"`, an `approvedBy`/
+  `pendingOwnerReview` property or member assignment) — and
+  `"copy-read-without-resolver"` — the code imports the registry file and
+  reads its content some way other than passing it whole to
+  `createCopyResolver`/`resolveCopyRef`/`parseCopyRegistry`/
+  `validateCopyRegistryShape` — are both errors. An unresolvable registry
+  load (a dynamic `import()`/`require()`, an unbound `require`, a
+  re-export) or a string that merely names the registry file is reported as
+  `unchecked`, not a finding: an incomplete picture, never assumed clean.
+
+**The coupled-file limit, stated plainly**: only files that import
+`@clossys/writer` (any subpath) or import the registry file itself are
+examined. A file that copies registry data without importing either —
+pasted JSON, data fetched at runtime, a registry handed in from an
+uncoupled module — is not examined by this gate. Other known gaps: specifier
+matching is exact (an extension-less or aliased specifier is not
+recognised) and the registry-file match is by basename, which is broad
+enough that a distinctive registry filename (not `index.json`) is worth
+choosing; there is no scope tracking, so a local variable that happens to
+share a flagged binding's name is flagged too; a cast like
+`createCopyResolver(registry as CopyRegistry)` counts as a genuine use
+(the resolver's signature accepts `unknown`, so the call needs no cast); and only a directly written `"approved"` string
+literal is caught — a value built at runtime is not.
+
+**Verdict precedence**: the same "a violation outranks an incomplete
+picture" ternary `checkAddressability` and `checkPassageComposition` both
+use. `"violated"` whenever at least one error-severity finding exists
+(registry or source), regardless of what is unchecked; `"indeterminate"`
+only with zero error findings and something left unchecked, unparseable, or
+zero files scanned; `"satisfied"` otherwise. Warnings are reported but do
+not change the verdict.
+
+Exit codes: `1` any error-severity finding (a registry error or any
+approval-bypass finding); else `2` any unchecked registry load/reference,
+any file that failed to parse, or zero files scanned; else `0`. Warnings
+never change the exit code.
+
+`--format json` prints exactly one object to stdout:
+
+```
+{
+  verdict: "violated" | "indeterminate" | "satisfied",
+  findings: Array<
+    | { source: "registry", rule, severity, entryId, message }
+    | { source: "source", rule, severity, file, line, message }
+  >,
+  unchecked: Array<{ file, line, kind, detail }>,
+  counts: { errors, warnings, unchecked, filesScanned, coupledFiles }
+}
+```
 
 ## Where this package sits on i18n
 
@@ -680,7 +873,8 @@ The root entry point exports the copy registry and traceability surface:
   `createCopyResolver`, `resolveCopyRef`, `checkCopyRecord`, `CopyRecord`,
   `CopyRegistry`, `CopyEntry`, `CopyRegistryEntry`, `CopyRef`, `CopyResolution`,
   `CopyResolver`, `CopySource`, `CopyLocale`, `CopyValue`, `CopyEntryStatus`,
-  `CopyResolveIssue`, `CopyResolveIssueReason`, `CopyResolveResult`,
+  `CopyResolveIssue`, `CopyResolveIssueReason`, `CopyResolveOptions`,
+  `CopyResolveResult`, `CopyResolveTarget`,
   `CopyEntryId`, `CopyFinding`, `CopyRegistryReadIssue`,
   `CopyRegistryReadIssueReason`, `CopyRegistryReadResult`,
   `CopyEntryCheckResult`, `CopyEntrySkip`, `CopyRecordCheckOptions`,
@@ -726,6 +920,16 @@ The root entry point exports the copy registry and traceability surface:
   `PassageRegistryReadResult`, `PassageTermReference`,
   `PassageUnclassifiedItem`, `PassageVerdict`, `PassageViolation`, and
   `PassageViolationRule`.
+- Delegated approval (see above): `CopyApproval`, `CopyApprover`,
+  `CopyDelegateScope`, `assessCopyApprovals`, `isEntryInDelegateScope`,
+  `CopyApprovalFinding`, `CopyApprovalFindingRule`, `checkApprovalBypass`,
+  `extractApprovalBypass`, `scanApprovalBypass`, `ApprovalBypassExtractResult`,
+  `ApprovalBypassFinding`, `ApprovalBypassGateResult`, `ApprovalBypassRule`,
+  `ApprovalBypassScanOptions`, `ApprovalBypassScanResult`,
+  `ApprovalBypassUncheckedItem`, and `ApprovalBypassVerdict`. The commands
+  that write and report on this state, `writer-check approve` and
+  `writer-check approval-state`, are CLI-only and not exported from
+  `index.ts`.
 
 The voice names described under Public entry points are re-exported from the
 root and from `@clossys/writer/voice`, including the rule-vocabulary

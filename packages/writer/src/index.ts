@@ -24,6 +24,9 @@
  */
 
 export type {
+  CopyApproval,
+  CopyApprover,
+  CopyDelegateScope,
   CopyEntry,
   CopyEntryId,
   CopyEntryStatus,
@@ -48,7 +51,33 @@ export { computeCopyFingerprint, COPY_FINGERPRINT_ALGORITHM } from "./fingerprin
 export { parseCopyRecord, parseCopyRegistry, validateCopyRecordShape, validateCopyRegistryShape } from "./schema.js";
 
 export { createCopyResolver, resolveCopyRef } from "./resolve.js";
-export type { CopyResolveIssue, CopyResolveIssueReason, CopyResolveResult } from "./resolve.js";
+export type {
+  CopyResolveIssue,
+  CopyResolveIssueReason,
+  CopyResolveOptions,
+  CopyResolveResult,
+  CopyResolveTarget,
+} from "./resolve.js";
+
+// Delegated approval: is a registry entry's approval record current, is a
+// delegate's approval within the scope it was granted, and does consumer
+// source route copy through the resolver rather than around it? See
+// approval.ts's and approval-bypass.ts's own top doc comments for the full
+// design; `writer-check approve`/`writer-check approval-state` (CLI-only,
+// not exported here) are the commands that write and report on this state.
+export { assessCopyApprovals, isEntryInDelegateScope } from "./approval.js";
+export type { CopyApprovalFinding, CopyApprovalFindingRule } from "./approval.js";
+export { checkApprovalBypass, extractApprovalBypass, scanApprovalBypass } from "./approval-bypass.js";
+export type {
+  ApprovalBypassExtractResult,
+  ApprovalBypassFinding,
+  ApprovalBypassGateResult,
+  ApprovalBypassRule,
+  ApprovalBypassScanOptions,
+  ApprovalBypassScanResult,
+  ApprovalBypassUncheckedItem,
+  ApprovalBypassVerdict,
+} from "./approval-bypass.js";
 
 export { readCopyRecord } from "./registry.js";
 export type { CopyRegistryReadIssue, CopyRegistryReadIssueReason, CopyRegistryReadResult } from "./registry.js";

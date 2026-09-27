@@ -222,6 +222,47 @@ export interface CopyTranslationProvenance {
   reviewedBy?: string;
 }
 
+// ---------------------------------------------------------------------------
+// CopyApproval — who approved an entry, and exactly which text they approved
+// ---------------------------------------------------------------------------
+
+/** Who recorded an approval: the copy owner, or a delegate acting for them. */
+export type CopyApprover = "owner" | "delegate";
+
+/**
+ * The delegate an approval was recorded by, and the entry-id namespaces they
+ * may approve. `id` is an opaque identifier, never a personal name. Each
+ * `scope` item is a dot-separated namespace with no wildcard; an entry is in
+ * scope when its id equals an item or starts with `item + "."`.
+ */
+export interface CopyDelegateScope {
+  id: string;
+  scope: string[];
+}
+
+/**
+ * The recorded approval of one registry entry, written by
+ * `writer-check approve` rather than by hand. `textFingerprint` pins the
+ * approval to the exact text that was approved: once `text` changes, the
+ * record no longer matches and the resolver refuses the entry
+ * (`approval-stale`) until it is approved again.
+ */
+export interface CopyApproval {
+  approvedBy: CopyApprover;
+  /** ISO 8601 UTC timestamp of the approval. */
+  approvedAt: string;
+  /** `computeCopyFingerprint(entry.text)` at the moment of approval. */
+  textFingerprint: string;
+  /** The algorithm `textFingerprint` was computed with — `COPY_FINGERPRINT_ALGORITHM`. */
+  fingerprintAlgorithm: string;
+  /** Required when `approvedBy` is `"delegate"`; forbidden for `"owner"`. */
+  delegate?: CopyDelegateScope;
+  /** Required when `approvedBy` is `"delegate"`; forbidden for `"owner"`. */
+  pendingOwnerReview?: boolean;
+  /** Delegate records only: ISO 8601 UTC expiry, strictly after `approvedAt`. */
+  expiresAt?: string;
+}
+
 /** A `CopyEntry` that is eligible to participate in a rendered registry. */
 export interface CopyRegistryEntry extends CopyEntry {
   status: CopyEntryStatus;
@@ -238,6 +279,12 @@ export interface CopyRegistryEntry extends CopyEntry {
    * never collapsed into one signal.
    */
   translation?: CopyTranslationProvenance;
+  /**
+   * The approval record, present only on an `approved` entry that has one.
+   * Optional: an `approved` entry without a record keeps resolving exactly
+   * as it did before this field existed. See `CopyApproval`.
+   */
+  approval?: CopyApproval;
 }
 
 // ---------------------------------------------------------------------------
@@ -277,6 +324,8 @@ export interface CopyResolution {
   locale: CopyLocale;
   source: CopySource;
   entryId: CopyEntryId;
+  /** Present only when the resolved entry carries an approval record. */
+  approval?: { approvedBy: CopyApprover; pendingOwnerReview: boolean };
 }
 
 /** Resolver shape for callers that need rendered audience text. */
