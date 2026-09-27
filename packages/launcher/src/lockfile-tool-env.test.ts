@@ -136,6 +136,18 @@ describe("lockfileToolEnv", () => {
     expect(env.PATH).toBe("/usr/bin:/bin");
   });
 
+  it.each([
+    [":/usr/bin", "/usr/bin"],
+    [".:/usr/bin", "/usr/bin"],
+    ["node_modules/.bin:/usr/bin", "/usr/bin"],
+    ["/usr/bin:node_modules/.bin:/opt/bin", "/usr/bin:/opt/bin"],
+    [".", "/usr/bin:/bin"],
+    ["", "/usr/bin:/bin"],
+  ])("keeps only absolute PATH entries, in order, for parent PATH %j", (parentPath, expected) => {
+    const env = lockfileToolEnv({ tool: "npm", scratch: SCRATCH, registry: REGISTRY, corepack: false, parent: { PATH: parentPath } });
+    expect(env.PATH).toBe(expected);
+  });
+
   it("omits COREPACK_HOME when corepack is true but the parent has none", () => {
     const env = lockfileToolEnv({ tool: "pnpm", scratch: SCRATCH, registry: REGISTRY, corepack: true, parent: { PATH: "/usr/bin" } });
     expect("COREPACK_HOME" in env).toBe(false);

@@ -1,6 +1,6 @@
 import { mkdir, mkdtemp, realpath, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { delimiter, isAbsolute, join } from "node:path";
 
 export type LockfileTool = "npm" | "pnpm" | "yarn";
 
@@ -48,6 +48,18 @@ export const LOCKFILE_TOOL_ENV_KEYS = Object.freeze([
 const nonEmptyString = (value: string | undefined): value is string => typeof value === "string" && value.length > 0;
 
 /**
+ * Keeps only absolute entries of a PATH-shaped string, in their original order.
+ * An empty, `.` or otherwise relative entry would resolve against the child's
+ * cwd (the regenerated repository root), letting a committed file shadow
+ * `npm`, `corepack`, or npm's own `git` lookup. Falls back to /usr/bin:/bin
+ * when nothing absolute remains.
+ */
+function absolutePathEntries(path: string): string {
+  const entries = path.split(delimiter).filter((entry) => entry.length > 0 && isAbsolute(entry));
+  return entries.length > 0 ? entries.join(delimiter) : "/usr/bin:/bin";
+}
+
+/**
  * Builds the child environment from a literal allow-list. Never spreads the
  * parent. Creates nothing on disk: the empty config files and cache paths it
  * names are made by prepareLockfileScratch. User and global config are two
@@ -58,7 +70,7 @@ export function lockfileToolEnv(input: LockfileToolEnvInput): Record<string, str
   const home = join(scratch, "home");
   const tmp = join(scratch, "tmp");
   const env: Record<string, string> = {
-    PATH: nonEmptyString(parent.PATH) ? parent.PATH : "/usr/bin:/bin",
+    PATH: absolutePathEntries(nonEmptyString(parent.PATH) ? parent.PATH : "/usr/bin:/bin"),
     HOME: home,
     USERPROFILE: home,
     TMPDIR: tmp,
