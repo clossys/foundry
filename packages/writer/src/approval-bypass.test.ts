@@ -414,6 +414,55 @@ describe("copy-read-without-resolver", () => {
     });
     expect(renamedGate.verdict).toBe("satisfied");
   });
+
+  it("flags loop heads and uninitialized bindings that shadow an import name", () => {
+    const importLine = 'import { createCopyResolver } from "@clossys/writer";';
+    const registryLine = 'import registry from "../copy/registry.json";';
+    const use = "createCopyResolver(registry);";
+    for (const body of [
+      "for (const createCopyResolver of [(data) => data.entries]) { createCopyResolver(registry); }",
+      "for (const createCopyResolver in { k: 1 }) { createCopyResolver(registry); }",
+      "for await (const createCopyResolver of [(data) => data.entries]) { createCopyResolver(registry); }",
+      "export function run() { let createCopyResolver; createCopyResolver = (data) => data.entries; createCopyResolver(registry); }",
+    ]) {
+      const { gate } = scan({ "src/copy.ts": [importLine, registryLine, body].join("\n") });
+      expect(gate.verdict).toBe("violated");
+    }
+  });
+
+  it("flags additional value-binding forms that shadow an import name", () => {
+    const head = [
+      'import { createCopyResolver } from "@clossys/writer";',
+      'import registry from "../copy/registry.json";',
+    ].join("\n");
+    const use = "export const out = createCopyResolver(registry);";
+    for (const shadow of [
+      "function load(createCopyResolver: (data: { entries: unknown[] }) => unknown) { return createCopyResolver(registry); }",
+      "function load<T>(createCopyResolver) { return createCopyResolver(registry); }",
+      "const load = (createCopyResolver) => createCopyResolver(registry);",
+      "const o = { load(createCopyResolver) { return createCopyResolver(registry); } };",
+      "class C { load(createCopyResolver) { return createCopyResolver(registry); } }",
+      "const [createCopyResolver] = [(data) => data.entries];",
+      "export function run() { try { throw 1; } catch (createCopyResolver: any) { createCopyResolver(registry); } }",
+      "export function run() { try { throw 1; } catch ({ createCopyResolver }) { createCopyResolver(registry); } }",
+    ]) {
+      const { gate } = scan({ "src/copy.ts": [head, shadow, use].join("\n") });
+      expect(gate.verdict).toBe("violated");
+    }
+  });
+
+  it("does not treat type-position mentions as value bindings", () => {
+    const { gate } = scan({
+      "src/copy.ts": [
+        'import { createCopyResolver } from "@clossys/writer";',
+        'import registry from "../copy/registry.json";',
+        "function load(x: createCopyResolver) { return x; }",
+        "export const resolver = createCopyResolver(registry);",
+        "export const t = typeof createCopyResolver;",
+      ].join("\n"),
+    });
+    expect(gate.verdict).toBe("satisfied");
+  });
 });
 
 describe("scope and masking", () => {

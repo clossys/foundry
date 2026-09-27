@@ -476,6 +476,16 @@ function destructuringPatternShadowsName(inner: string, name: string): boolean {
   return false;
 }
 
+function arrayPatternShadowsName(inner: string, name: string): boolean {
+  const esc = escapeRegExp(name);
+  for (const part of inner.split(",")) {
+    const trimmed = part.trim();
+    if (!trimmed) continue;
+    if (new RegExp(`^${esc}(?:\\s*=.*)?$`, "u").test(trimmed)) return true;
+  }
+  return false;
+}
+
 function collectLocalShadowedCalleepNames(code: string): Set<string> {
   const shadowed = new Set<string>();
   for (const name of WRITER_PACKAGE_CALLEES) {
@@ -484,19 +494,46 @@ function collectLocalShadowedCalleepNames(code: string): Set<string> {
       shadowed.add(name);
     if (new RegExp(`${CALLEE_BOUNDARY}class\\s+${esc}${NOT_ID_CONTINUE}`, "u").test(code)) shadowed.add(name);
     if (new RegExp(`${CALLEE_BOUNDARY}(?:const|let|var)\\s+${esc}(?:\\s*:[^=;]*)?\\s*=`, "u").test(code)) shadowed.add(name);
-    for (const m of code.matchAll(new RegExp(`${CALLEE_BOUNDARY}(?:const|let|var)\\s*\\{([^}]*)\\}`, "gu"))) {
-      if (destructuringPatternShadowsName(m[1]!, name)) shadowed.add(name);
-    }
-    if (new RegExp(`${CALLEE_BOUNDARY}(?:async\\s+)?function\\s*(?:\\*\\s*)?${IDENT}\\s*\\([^)]*\\.\\.\\.\\s*${esc}${NOT_ID_CONTINUE}`, "u").test(code))
-      shadowed.add(name);
+    if (new RegExp(`${CALLEE_BOUNDARY}(?:const|let|var)\\s+${esc}(?:\\s*:[^=;]+)?\\s*;`, "u").test(code)) shadowed.add(name);
     if (
       new RegExp(
-        `${CALLEE_BOUNDARY}(?:async\\s+)?function\\s*(?:\\*\\s*)?${IDENT}\\s*\\([^)]*(?<![\\w$.])${esc}(?![\\w$])\\s*(?:[,)=]|=[^=])`,
+        `${CALLEE_BOUNDARY}for\\s+(?:await\\s+)?\\(\\s*(?:const|let|var)\\s+${esc}(?:\\s*:[^;)]+)?\\s*(?:of|in)\\b`,
         "u",
       ).test(code)
     )
       shadowed.add(name);
-    if (new RegExp(`catch\\s*\\(\\s*${esc}\\s*\\)`, "u").test(code)) shadowed.add(name);
+    for (const m of code.matchAll(new RegExp(`${CALLEE_BOUNDARY}(?:const|let|var)\\s*\\{([^}]*)\\}`, "gu"))) {
+      if (destructuringPatternShadowsName(m[1]!, name)) shadowed.add(name);
+    }
+    for (const m of code.matchAll(new RegExp(`${CALLEE_BOUNDARY}(?:const|let|var)\\s*\\[([^\\]]*)\\]`, "gu"))) {
+      if (arrayPatternShadowsName(m[1]!, name)) shadowed.add(name);
+    }
+    if (new RegExp(`${CALLEE_BOUNDARY}(?:async\\s+)?function\\s*(?:\\*\\s*)?${IDENT}\\s*\\([^)]*\\.\\.\\.\\s*${esc}${NOT_ID_CONTINUE}`, "u").test(code))
+      shadowed.add(name);
+    const firstParamBind = `\\(\\s*(?:\\.\\.\\.\\s*)?${esc}(?![\\w$])\\s*(?:[,):]|=|:)`;
+    const laterParamBind = `,\\s*(?:\\.\\.\\.\\s*)?${esc}(?![\\w$])\\s*(?:[,):]|=|:)`;
+    const fnNamed = `${IDENT}\\s*(?:<[^>]*>)?\\s*${firstParamBind}`;
+    if (new RegExp(`${CALLEE_BOUNDARY}(?:async\\s+)?function\\s*(?:\\*\\s*)?${fnNamed}`, "u").test(code)) shadowed.add(name);
+    if (new RegExp(`${CALLEE_BOUNDARY}(?:async\\s+)?function\\s*(?:\\*\\s*)?${IDENT}\\s*(?:<[^>]*>)?\\s*\\([^)]*${laterParamBind}`, "u").test(code))
+      shadowed.add(name);
+    if (new RegExp(`${CALLEE_BOUNDARY}${fnNamed}\\s*\\{`, "u").test(code)) shadowed.add(name);
+    if (
+      new RegExp(`${CALLEE_BOUNDARY}${IDENT}\\s*(?:<[^>]*>)?\\s*\\([^)]*${laterParamBind}[^)]*\\)\\s*\\{`, "u").test(code)
+    )
+      shadowed.add(name);
+    if (new RegExp(`${CALLEE_BOUNDARY}(?:const|let|var)\\s+${IDENT}\\s*=\\s*${firstParamBind}\\s*=>`, "u").test(code))
+      shadowed.add(name);
+    if (
+      new RegExp(
+        `${CALLEE_BOUNDARY}(?:const|let|var)\\s+${IDENT}\\s*=\\s*\\([^)]*${laterParamBind}[^)]*\\)\\s*=>`,
+        "u",
+      ).test(code)
+    )
+      shadowed.add(name);
+    if (new RegExp(`catch\\s*\\(\\s*${esc}(?:\\s*:[^)]+)?\\s*\\)`, "u").test(code)) shadowed.add(name);
+    for (const m of code.matchAll(/catch\s*\(\s*\{([^}]*)\}/gu)) {
+      if (destructuringPatternShadowsName(m[1]!, name)) shadowed.add(name);
+    }
   }
   return shadowed;
 }
@@ -676,7 +713,7 @@ export function extractApprovalBypass(
         break; // a side-effect import binds nothing
       case "export-from": {
         if (/^\s*type\b/.test(code.slice(spec.stmtStart + "export".length, at))) break;
-        uncheckedAt("registry-reexport", at, `registry ${spec.lit.raw} is re-exported; whoever imports it is not traced by this gate`);
+        uncheckedAt("registry-reexport", at, "registry re-export is not traced by this gate");
         break;
       }
       case "static": {
@@ -728,12 +765,12 @@ export function extractApprovalBypass(
             fromParsedRegistry: false,
           });
         } else {
-          uncheckedAt("registry-require-unbound", at, `require of registry ${spec.lit.raw} is not bound to a plain identifier, so its use cannot be traced`);
+          uncheckedAt("registry-require-unbound", at, "require of registry is not bound to a plain identifier, so its use cannot be traced");
         }
         break;
       }
       case "dynamic":
-        uncheckedAt("registry-dynamic-import", at, `dynamic import of registry ${spec.lit.raw} — the loaded module's use is not traced by this gate`);
+        uncheckedAt("registry-dynamic-import", at, "dynamic import of registry — the loaded module's use is not traced by this gate");
         break;
     }
   }
@@ -865,7 +902,7 @@ export function extractApprovalBypass(
   for (const lit of literals) {
     if (specifierStarts.has(lit.start)) continue;
     if (!lit.text.includes(registryBase)) continue;
-    uncheckedAt("registry-path-string", lit.start, `string ${lit.raw} names the registry file; a load through it is not traced by this gate`);
+    uncheckedAt("registry-path-string", lit.start, "registry path string — a load through it is not traced by this gate");
   }
 
   findings.sort((a, b) => a.line - b.line);
