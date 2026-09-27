@@ -469,9 +469,21 @@ function analyzeRenderedLocals(
     return ts.isIdentifier(call.expression) && literalLocals.has(call.expression.text);
   }
 
+  function memberIsUndocumentedShippedProp(memberName: string): boolean {
+    return undocumentedPropNames.has(memberName) || fileUndocumentedPropNames.has(memberName);
+  }
+
   function expressionCarriesShippedMessage(expression: ts.Expression): boolean {
     if (localInitializerIsShippedCopy(expression)) return true;
-    if (ts.isCallExpression(expression) && callCarriesShippedMessage(expression)) return true;
+    if (ts.isPropertyAccessExpression(expression)) {
+      return memberIsUndocumentedShippedProp(expression.name.text);
+    }
+    if (ts.isCallExpression(expression)) {
+      if (callCarriesShippedMessage(expression)) return true;
+      if (ts.isPropertyAccessExpression(expression.expression)) {
+        return memberIsUndocumentedShippedProp(expression.expression.name.text);
+      }
+    }
     if (ts.isConditionalExpression(expression)) {
       return (
         expressionCarriesShippedMessage(expression.whenTrue) || expressionCarriesShippedMessage(expression.whenFalse)
@@ -502,7 +514,7 @@ function analyzeRenderedLocals(
   }
 
   function registerDestructuredProp(localName: string, propName: string | null, line: number): void {
-    if (propName !== null && undocumentedPropNames.has(propName)) {
+    if (propName !== null && memberIsUndocumentedShippedProp(propName)) {
       literalLocals.set(localName, line);
     }
   }
@@ -682,19 +694,40 @@ function checkRenderedLocalReferences(
     }
   }
 
-  function noteRenderedMessageExpression(expression: ts.Expression, node: ts.Node): void {
+  function noteRenderedMessageExpression(
+    expression: ts.Expression,
+    node: ts.Node,
+    literalBranches = false,
+  ): void {
     if (ts.isParenthesizedExpression(expression)) {
-      noteRenderedMessageExpression(expression.expression, node);
+      noteRenderedMessageExpression(expression.expression, node, literalBranches);
       return;
     }
     if (ts.isConditionalExpression(expression)) {
-      noteRenderedMessageReference(expression.whenTrue, node);
-      noteRenderedMessageReference(expression.whenFalse, node);
+      if (literalBranches) {
+        noteRenderedMessageExpression(expression.whenTrue, node, literalBranches);
+        noteRenderedMessageExpression(expression.whenFalse, node, literalBranches);
+      } else {
+        noteRenderedMessageReference(expression.whenTrue, node);
+        noteRenderedMessageReference(expression.whenFalse, node);
+      }
       return;
     }
     if (ts.isBinaryExpression(expression) && expression.operatorToken.kind === ts.SyntaxKind.QuestionQuestionToken) {
-      noteRenderedMessageReference(expression.left, node);
-      noteRenderedMessageReference(expression.right, node);
+      if (literalBranches) {
+        noteRenderedMessageExpression(expression.left, node, literalBranches);
+        noteRenderedMessageExpression(expression.right, node, literalBranches);
+      } else {
+        noteRenderedMessageReference(expression.left, node);
+        noteRenderedMessageReference(expression.right, node);
+      }
+      return;
+    }
+    if (ts.isBinaryExpression(expression) && expression.operatorToken.kind === ts.SyntaxKind.AmpersandAmpersandToken) {
+      if (literalBranches) {
+        noteRenderedMessageExpression(expression.left, node, literalBranches);
+        noteRenderedMessageExpression(expression.right, node, literalBranches);
+      }
       return;
     }
     const literal = staticLiteral(expression);
@@ -763,10 +796,10 @@ function checkRenderedLocalReferences(
             if (!ts.isPropertyAssignment(property)) continue;
             const propertyName = property.name.getText(source);
             if (!isMessageCreateElementProperty(propertyName)) continue;
-            noteRenderedMessageExpression(property.initializer, property);
+            noteRenderedMessageExpression(property.initializer, property, true);
           }
         } else {
-          noteRenderedMessageExpression(argument, node);
+          noteRenderedMessageExpression(argument, node, true);
         }
       }
     }
@@ -1114,6 +1147,53 @@ describe("shipped message lint", () => {
     }
   });
 
+  it("fails lettered copy inside createElement conditional, nullish, and logical-and children", () => {
+    const conditional = [
+      "import { createElement } from \"react\";",
+      "export function Example(block: { title?: string }) {",
+      "  return createElement(\"span\", { className: \"sr-only\" }, block.title === undefined ? \"Widget\" : block.title);",
+      "}",
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.ts", conditional)).toEqual([
+      expect.objectContaining({ kind: "jsx-text", text: "Widget" }),
+    ]);
+
+    const nullish = [
+      "import { createElement } from \"react\";",
+      "export function Example(props: { title?: string }) {",
+      "  return createElement(\"span\", null, props.title ?? \"Widget\");",
+      "}",
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.ts", nullish)).toEqual([
+      expect.objectContaining({ kind: "jsx-text", text: "Widget" }),
+    ]);
+
+    const logicalAndLiteral = [
+      "import { createElement } from \"react\";",
+      "export function Example({ show }: { show?: boolean }) {",
+      "  return createElement(\"span\", null, show && \"Save changes\");",
+      "}",
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.ts", logicalAndLiteral)).toEqual([
+      expect.objectContaining({ kind: "jsx-text", text: "Save changes" }),
+    ]);
+
+    const logicalAndProp = [
+      "import { createElement } from \"react\";",
+      "interface ExampleProps { saveLabel?: string; show?: boolean; }",
+      "export function Example({ show, saveLabel = \"Save changes\" }: ExampleProps) {",
+      "  return createElement(\"span\", null, show && saveLabel);",
+      "}",
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.ts", logicalAndProp)).toEqual([
+      expect.objectContaining({ kind: "rendered-local", text: "saveLabel" }),
+    ]);
+  });
+
   it("fails each expression form that renders an undocumented message prop", () => {
     const memberRead = [
       "interface ExampleProps { nodeChapterFallbackTitle?: string; }",
@@ -1342,6 +1422,34 @@ describe("shipped message lint", () => {
       "",
     ].join("\n");
     expect(findShippedMessageViolations("Pagination.tsx", source)).toEqual([]);
+  });
+
+  it("fails message props copied into locals in a function that does not own the defaults", () => {
+    const source = [
+      "import { createElement } from \"react\";",
+      "function defaultStatGridLabel(index: number): string { return `Stat ${index}`; }",
+      "function renderBlock(messages: { nodeChapterFallbackTitle: string; statGridLabel: (index: number) => string }) {",
+      "  const title = messages.nodeChapterFallbackTitle;",
+      "  const { statGridLabel: labelFor } = messages;",
+      "  const label = labelFor(1);",
+      "  return createElement(\"span\", { className: \"sr-only\" }, title, label);",
+      "}",
+      "export function compileConsumerTemplateBlocks({",
+      "  nodeChapterFallbackTitle = \"Widget\",",
+      "  statGridLabel = defaultStatGridLabel,",
+      "}: { nodeChapterFallbackTitle?: string; statGridLabel?: (index: number) => string }) {",
+      "  const messages = { nodeChapterFallbackTitle, statGridLabel };",
+      "  return () => renderBlock(messages);",
+      "}",
+      "",
+    ].join("\n");
+    const violations = findShippedMessageViolations("compileConsumerTemplateBlocks.ts", source);
+    expect(violations).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ kind: "rendered-local", text: "title" }),
+        expect.objectContaining({ kind: "rendered-local", text: "label" }),
+      ]),
+    );
   });
 
   it("fails message props whose defaults are declared in another function", () => {
