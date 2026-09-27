@@ -763,6 +763,12 @@ register their *own* page shapes against the same `web` renderer pipeline —
 the same validation, resolution, and provenance guarantees, extended to a
 template this package never shipped.
 
+Consumer templates may also pass `nodeChapterFallbackTitle` (screen-reader
+title for a `node-chapter` block with no title slot) and `statGridLabel`
+(screen-reader label factory for each `stat-grid` item). Both ship English
+defaults on `defineWebTemplate`; document each with `@default` on the
+options type when overriding.
+
 **This is still not composition.** `SurfaceDocument.template` remains a
 plain string the caller names explicitly on every document — extensibility
 here is about *who may add* a template (now: any caller, not just this
