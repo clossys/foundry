@@ -307,7 +307,8 @@ function ledgerInstallFindings(manager: StarterRequest["packageManager"], manife
  * Admission check for issue #1492. Calls `ledgerSuccession` on the two ledgers'
  * own bytes, so the comparison is the canonical spelling the succession reader
  * already requires. A proved match is an identical ledger or the admitted next
- * generation. A last generation labeled approved is a refusal. An unreadable
+ * generation. A next generation whose last entry is labeled approved is a
+ * refusal; an unchanged ledger is not. An unreadable
  * or absent head ledger is indeterminate. When the ledgers match, the frozen
  * base install must match the base ledger's packages, including integrity.
  */

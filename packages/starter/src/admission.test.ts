@@ -118,8 +118,17 @@ describe("admission request", () => {
 });
 
 describe("admission ledger comparison", () => {
-  it("exits 0 when the ledgers are identical", () => {
-    expect(exitOf("unchanged").code).toBe(0);
+  it("exits 0 when the ledgers are identical even though the last generation binding is approved", () => {
+    const setupLedger = ledger("setup-generation-1");
+    const last = setupLedger.history.at(-1)!;
+    expect(last.binding).toMatchObject({ kind: "approved" });
+    const report = evaluateAdmission({
+      request: request(),
+      baseLedger: bytesOf("setup-generation-1"),
+      headLedger: bytesOf("setup-generation-1"),
+      install: matchingInstall("setup-generation-1", "npm"),
+    });
+    expect(admissionExitCode(report)).toBe(0);
   });
 
   it("exits 0 for an admitted next generation", () => {
@@ -156,7 +165,7 @@ describe("admission ledger comparison", () => {
     expect(result.report.findings.map((entry) => entry.rule)).toContain("ledger-pair-S2");
   });
 
-  it("exits 1 when the head's last generation is labeled approved", () => {
+  it("exits 1 when the head is a next generation whose last entry is labeled approved", () => {
     const result = exitOf("approved-apply");
     expect(result.code).toBe(1);
     expect(result.report.findings.map((entry) => entry.rule)).toContain("approval-claimed");

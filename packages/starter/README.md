@@ -224,11 +224,12 @@ registry-spec grammar `prove-head` uses, which refuses a tarball filename.
 | Exit | State | Meaning |
 | --- | --- | --- |
 | `0` | `satisfied` | The head ledger's canonical bytes are the base ledger's, or the head is the admitted next generation, and the base's frozen install matches the base ledger's packages, including integrity. |
-| `1` | `violated` | The head ledger adds an act, names another plan digest or subject digest, leaves a deferral, breaks the history prefix, labels its last generation approved, or is another spelling of a ledger; or the frozen `npm ci` / `pnpm install --frozen-lockfile` result does not match a base ledger package. |
+| `1` | `violated` | The head ledger adds an act, names another plan digest or subject digest, leaves a deferral, breaks the history prefix, is a next generation whose last entry is labeled approved, or is another spelling of a ledger; or the frozen `npm ci` / `pnpm install --frozen-lockfile` result does not match a base ledger package. |
 | `2` | `indeterminate` | The head ledger is absent or its bytes are not a readable ledger document, or the frozen install could not be read. |
 
-A last generation labeled `approved` is a refusal. This comparison does not
-authenticate an approval.
+A next generation whose last entry is labeled approved is a refusal. An
+unchanged ledger, including a setup ledger whose last generation is approved,
+is not. This comparison does not authenticate an approval.
 
 ## Close condition
 

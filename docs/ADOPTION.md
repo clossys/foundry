@@ -59,9 +59,9 @@ ledger's, or when it is the next generation and the new entry is admitted:
 it names the base ledger's last approved setup entry, the plan digest and
 the subject digest are the same ones, the head's packages are the base
 packages plus the packages the base deferred, the head deferred list is
-empty, and every other row is unchanged. A head whose last generation is
-labeled `approved` is refused. The check compares the two ledgers; an
-approval is not an input. The request selects phase `admission` and has no
+empty, and every other row is unchanged. A next generation whose last entry
+is labeled approved is refused; canonical bytes that match the base are not.
+The check compares the two ledgers; an approval is not an input. The request selects phase `admission` and has no
 approval field and no ledger bytes. A frozen install from the base, `npm ci`
 or `pnpm install --frozen-lockfile`, has to match the base ledger's
 packages, including each package's integrity. An unreadable or absent head
