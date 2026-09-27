@@ -10,6 +10,7 @@ import { CANONICAL_KEYS, canonicalOrder, contentDigest, validateApplyBundle, val
 import type { ChangeSetItem, ChangeSetPhase, RepositoryChangeSet } from "./change-set-contract.js";
 import { readInstalledLedger, renderInstalledLedger, serializeInstalledLedger } from "./ledger-contract.js";
 import type { InstalledLedger } from "./ledger-contract.js";
+import { editJsonPointer } from "./key-editor.js";
 import { PUBLIC_PROBLEM_PLACEHOLDER, planApplyBundle, projectEngagementBrief, serializeComposedSkillsManifest, serializeEngagementBrief } from "./plan-bundle.js";
 import type { PlanApplyBundleInputs, RepositoryObservation } from "./plan-bundle.js";
 import type { AdvisorPlan, EngagementBrief } from "./plan-contract.js";
@@ -431,12 +432,26 @@ describe("planApplyBundle", () => {
     }
   });
 
-  it("skips a repository whose profile needs root entries added, because the edited profile's bytes are not computed yet", () => {
+  it("skips a repository whose profile needs root entries added when the profile text is absent, and edits it when the text is present", () => {
     const profile = { path: "governance/repository-profile.json", rootVocabulary: "checked" as const, undeclaredRoots: ["clossys"], prohibitedRoots: [] };
-    const { bundle, changeSets } = run(withRepository({ repositoryProfile: profile }));
-    expect(changeSets.map((set) => set.repository.id)).toEqual([DOCS.id]);
-    expect(bundle.repositories[0]).toEqual({ id: SITE.id, verdict: "indeterminate", reason: "root-entry-edit-unbuilt", checks: [] });
-    expect(validateApplyBundle(bundle)).toEqual({ valid: true });
+    const skipped = run(withRepository({ repositoryProfile: profile }));
+    expect(skipped.changeSets.map((set) => set.repository.id)).toEqual([DOCS.id]);
+    expect(skipped.bundle.repositories[0]).toEqual({ id: SITE.id, verdict: "indeterminate", reason: "root-entry-edit-unbuilt", checks: [] });
+    expect(validateApplyBundle(skipped.bundle)).toEqual({ valid: true });
+
+    const profileText = `${JSON.stringify({ schemaVersion: 1, rootEntries: [] }, null, 2)}\n`;
+    const { changeSets } = run(
+      withRepository({ repositoryProfile: profile, repositoryProfileText: profileText, files: [{ path: profile.path, sha256: sha(profileText) }] }),
+    );
+    const site = setFor(changeSets, SITE.id);
+    expect(validateRepositoryChangeSet(site)).toEqual({ valid: true });
+    expect(site.items.find((item) => item.act === "declare-root-entry")).toMatchObject({
+      act: "declare-root-entry",
+      entries: [{ name: "clossys", classification: "extension", disposition: "allowed" }],
+    });
+    const profileFile = site.files.find((file) => file.path === profile.path)!;
+    expect(profileFile.before).toBe(sha(profileText));
+    expect(profileFile.after).toBe(sha(editJsonPointer(profileText, [{ pointer: "/rootEntries/-", value: { name: "clossys", classification: "extension", disposition: "allowed" } }])));
   });
 
   it("refuses the declaration of an unparseable profile, or of one that prohibits a root name the set introduces", () => {
@@ -1186,6 +1201,7 @@ describe("the planner is pure", () => {
         "generated/contract-schema.generated.ts",
         "generated/package-scope.generated.ts",
         "generated/plan-contracts.generated.ts",
+        "key-editor.ts",
         "ledger-contract.ts",
         "ledger-trust.ts",
         "plan-bundle.ts",

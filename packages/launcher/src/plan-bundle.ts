@@ -28,11 +28,13 @@
 //
 // A setup-phase repository is skipped, not computed: the change-set
 // contract requires a setup set to carry the setup templates (code rule
-// C11), and this module does not compute them yet. So is a repository whose
-// Controller profile needs root entries added (code rule C13): this module
-// does not compute the edited profile's bytes yet. The generation-0 adoption
-// pass, which only a setup set runs (§12.2), is therefore reached only
-// through reconcileWholeFile()'s own tests until setup sets are computed.
+// C11), and this module does not compute them yet. A repository whose
+// Controller profile needs root entries added (code rule C13) is skipped as
+// root-entry-edit-unbuilt when the observation does not carry the profile
+// text; when repositoryProfileText is present, the profile is edited here.
+// The generation-0 adoption pass, which only a setup set runs (§12.2), is
+// therefore reached only through reconcileWholeFile()'s own tests until setup
+// sets are computed.
 
 import type { AdvisorPlan, EngagementBrief, EngagementBriefRole, EngagementContext, PlanPackageAct } from "./plan-contract.js";
 import { loadContract, validateAdvisorPlan, validateEngagementBrief } from "./plan-contract.js";
@@ -50,6 +52,7 @@ import type {
   RepositoryVisibility, TemplateAct,
 } from "./change-set-contract.js";
 import type { InstalledLedger } from "./ledger-contract.js";
+import { editJsonPointer } from "./key-editor.js";
 import { reconcileWholeFile, trustInstalledLedger } from "./ledger-trust.js";
 import type { PlanPackageActs } from "./ledger-trust.js";
 
@@ -110,6 +113,8 @@ export interface RepositoryObservation {
    * has none or it cannot be read. Only a setup set's adoption pass reads it.
    */
   readonly skillsManifest: readonly { readonly name: string; readonly sha256: string }[] | null;
+  /** Exact bytes of the Controller repository profile on the default branch, when the caller read them for declare-root-entry (code rule C13). */
+  readonly repositoryProfileText?: string | null;
 }
 
 /** A staffed repository no change set is computed for, and why, as an id such as `not-in-inventory`. */
@@ -162,6 +167,7 @@ export const PUBLIC_PROBLEM_PLACEHOLDER: string = (() => {
 
 const BASE_ALLOW_LIST = [".agents/skills/clossys-*/**", "clossys/**"];
 const ROOT_ENTRIES_ITEM = "root-entries";
+const PROFILE_ALLOW_PATTERNS = ["**/repository-profile.json", "**/repository-declaration.json"];
 
 /** Each setup template act, with the item id a set gives it. */
 const TEMPLATE_ITEMS: readonly { readonly act: TemplateAct; readonly id: string }[] = [
@@ -451,12 +457,32 @@ function computeChangeSet(
     before: existingAt(LEDGER_PATH) ?? null,
   });
 
-  // A profile that needs no new entry needs no item; one that needs entries added is skipped by the caller, so only a refused
-  // declaration is written here. That refusal stays even over a ledger with rootEntries rows: code rule C13 requires the item
-  // whenever the observed profile needs one. No declare-root-entry is ever emitted to carry the ledger's entries rows, and no
-  // exempt-release-age either: RENDER carries entries rows forward unchanged.
+  // A profile that needs no new entry needs no item; one that needs entries added is skipped by the caller when it did not
+  // supply the profile text, or edited here when it did. That refusal stays even over a ledger with rootEntries rows: code
+  // rule C13 requires the item whenever the observed profile needs one. No declare-root-entry is emitted to carry the
+  // ledger's entries rows, and no exempt-release-age either: RENDER carries entries rows forward unchanged.
   const profile = observation.repositoryProfile;
-  if (profile !== null && (profile.rootVocabulary === "unparseable" || profile.prohibitedRoots.length > 0)) {
+  if (
+    profile !== null &&
+    profile.rootVocabulary === "checked" &&
+    profile.undeclaredRoots.length > 0 &&
+    profile.prohibitedRoots.length === 0 &&
+    typeof observation.repositoryProfileText === "string"
+  ) {
+    const sortedRoots = canonicalOrder([...new Set(profile.undeclaredRoots)], CANONICAL_KEYS.name);
+    const entries = sortedRoots.map((name) => ({ name, classification: "extension" as const, disposition: "allowed" as const }));
+    const text = observation.repositoryProfileText;
+    const before = contentDigest(text);
+    if (existingAt(profile.path) !== before) throw new TypeError("repositoryProfileText does not match the observed profile file");
+    const edited = editJsonPointer(
+      text,
+      entries.map((entry) => ({ pointer: "/rootEntries/-", value: entry })),
+    );
+    const pattern = PROFILE_ALLOW_PATTERNS.find((candidate) => matchesPathPattern(profile.path, candidate));
+    if (pattern !== undefined && !pathAllowList.some((allowed) => matchesPathPattern(profile.path, allowed))) pathAllowList.push(pattern);
+    items.push({ id: ROOT_ENTRIES_ITEM, act: "declare-root-entry", path: profile.path, entries });
+    files.push({ path: profile.path, mode: "100644", before, after: contentDigest(edited), item: ROOT_ENTRIES_ITEM });
+  } else if (profile !== null && (profile.rootVocabulary === "unparseable" || profile.prohibitedRoots.length > 0)) {
     items.push({
       id: ROOT_ENTRIES_ITEM,
       act: "declare-root-entry",
@@ -601,11 +627,11 @@ function computeChangeSet(
  * - A setup-phase repository is skipped as `setup-template-unbuilt`, with
  *   verdict indeterminate: a setup set must carry the setup templates, which
  *   this planner does not compute yet. A repository whose Controller profile
- *   needs root entries added is skipped as `root-entry-edit-unbuilt` for the
- *   same reason: the edited profile's bytes are not computed yet. A profile
- *   that is unparseable, or that prohibits a root name the set introduces,
- *   gets a declare-root-entry item refused as `root-vocabulary-unknown` or
- *   `root-entry-prohibited`.
+ *   needs root entries added is edited when `repositoryProfileText` is present,
+ *   and skipped as `root-entry-edit-unbuilt` when that text is absent. A
+ *   profile that is unparseable, or that prohibits a root name the set
+ *   introduces, gets a declare-root-entry item refused as
+ *   `root-vocabulary-unknown` or `root-entry-prohibited`.
  * - A role's skill under a symbolic link (`.agents`, `.agents/skills` or its
  *   own directory) is refused as `skills-root-is-link`, never written.
  * - A package act the default branch already satisfies exactly is kept as an
@@ -685,8 +711,13 @@ export function planApplyBundle(inputs: PlanApplyBundleInputs): PlanApplyBundleR
       continue;
     }
     const profile = observation.repositoryProfile;
-    if (profile !== null && profile.rootVocabulary === "checked" && profile.undeclaredRoots.length > 0 && profile.prohibitedRoots.length === 0) {
-      // Adding the entries needs the edited profile's bytes (code rule C13), which this planner does not compute yet.
+    if (
+      profile !== null &&
+      profile.rootVocabulary === "checked" &&
+      profile.undeclaredRoots.length > 0 &&
+      profile.prohibitedRoots.length === 0 &&
+      (observation.repositoryProfileText === null || observation.repositoryProfileText === undefined)
+    ) {
       entries.push({ id: staffingEntry.repository, verdict: "indeterminate", reason: "root-entry-edit-unbuilt", checks: [] });
       continue;
     }

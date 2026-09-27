@@ -1,6 +1,8 @@
 #!/usr/bin/env node
+import { spawnSync } from "node:child_process";
 import { readFileSync, statSync } from "node:fs";
-import { resolve } from "node:path";
+import { realpathSync } from "node:fs";
+import { dirname, resolve } from "node:path";
 import { isDirectInvocation } from "./cli.js";
 import { ContractDocumentError, readContractDocument } from "./generated/contract-schema.generated.js";
 import { createNodeHost } from "./host.js";
@@ -14,8 +16,14 @@ import {
   writeRegistrySnapshot,
   type FetchSnapshotOptions,
 } from "./registry-snapshot.js";
+import { listStoredChangeSets } from "./apply-store.js";
+import { materializeRepository, verifyRepository, type ApplyStepResult } from "./materialize.js";
+import type { ApprovalBinding, RepositoryChangeSet } from "./change-set-contract.js";
+import type { LockfileSpawn } from "./lockfile-regen.js";
 
 export const APPLY_PLAN_USAGE = `Usage: launcher-apply-plan --plan <plan.json> --brief <brief.json> --repo <directory>
+       launcher-apply-plan materialize --repo <id>
+       launcher-apply-plan verify --repo <id>
        launcher-apply-plan snapshot --request <file> [--out <file>]
 
 The snapshot subcommand is described by launcher-apply-plan snapshot --help.
@@ -143,6 +151,141 @@ export interface SnapshotCommandOptions extends FetchSnapshotOptions {
   readonly cwd?: string;
 }
 
+export interface ApplyCommandOptions {
+  readonly cwd?: string;
+  readonly clone?: string;
+  readonly set?: RepositoryChangeSet;
+  readonly texts?: Readonly<Record<string, string>>;
+  readonly binding?: ApprovalBinding;
+  readonly heldChangeSets?: readonly RepositoryChangeSet[];
+  readonly spawn?: LockfileSpawn;
+  readonly now?: () => Date;
+  readonly toolVersion?: string | null;
+}
+
+const REPO_ID_SHAPE = /^[^/]+\/[^/]+$/u;
+
+function parseRepoSubcommand(argv: readonly string[], label: string): { help: true } | { help: false; id: string } {
+  if (argv.length === 1 && (argv[0] === "--help" || argv[0] === "-h")) return { help: true };
+  if (argv.length !== 2 || argv[0] !== "--repo") throw new ApplyPlanInputError(`usage: launcher-apply-plan ${label} --repo <id>`);
+  const id = argv[1]!;
+  const slash = id.indexOf("/");
+  const name = slash === -1 ? "" : id.slice(slash + 1);
+  if (!REPO_ID_SHAPE.test(id) || name === "." || name === "..") throw new ApplyPlanInputError(`usage: launcher-apply-plan ${label} --repo <id>`);
+  return { help: false, id };
+}
+
+function spawnGit(cwd: string, args: string[]): string | null {
+  const run = spawnSync("git", ["-c", "commit.gpgsign=false", "-c", "core.hooksPath=/dev/null", ...args], {
+    cwd,
+    encoding: "utf8",
+    stdio: ["ignore", "pipe", "ignore"],
+  });
+  if ((run.status ?? 1) !== 0) return null;
+  return (run.stdout ?? "").trim();
+}
+
+function resolveApplyInputs(
+  id: string,
+  options: ApplyCommandOptions,
+): { hub: string; clone: string; set: RepositoryChangeSet; binding: ApprovalBinding; held: RepositoryChangeSet[]; texts: Readonly<Record<string, string>> } | ApplyStepResult {
+  const hub = options.cwd ?? process.cwd();
+  if (options.set !== undefined && options.set.repository.id !== id) {
+    return { exitCode: 2, verdict: "indeterminate", reason: "change-set-absent" };
+  }
+  let held: RepositoryChangeSet[] = [];
+  try {
+    held = listStoredChangeSets(realpathSync(hub));
+  } catch {
+    held = [];
+  }
+  if (options.heldChangeSets !== undefined) held = [...options.heldChangeSets];
+  let set = options.set;
+  if (set === undefined) {
+    const matches = held.filter((entry) => entry.repository.id === id);
+    if (matches.length === 0) return { exitCode: 2, verdict: "indeterminate", reason: "change-set-absent" };
+    if (matches.length === 1) {
+      set = matches[0]!;
+    } else {
+      const clonePath = options.clone ?? resolve(dirname(realpathSync(hub)), id.slice(id.indexOf("/") + 1));
+      let root: string;
+      try {
+        root = realpathSync(clonePath);
+      } catch {
+        return { exitCode: 2, verdict: "indeterminate", reason: "change-set-absent" };
+      }
+      const branch = matches[0]!.repository.defaultBranch;
+      const tip = spawnGit(root, ["rev-parse", `refs/heads/${branch}`]);
+      if (tip === null) return { exitCode: 2, verdict: "indeterminate", reason: "change-set-absent" };
+      const filtered = matches.filter((entry) => entry.repository.baseCommit === tip);
+      if (filtered.length !== 1) return { exitCode: 2, verdict: "indeterminate", reason: "change-set-absent" };
+      set = filtered[0]!;
+    }
+  }
+  const binding = options.binding ?? { kind: "approved", subjectDigest: set.planDigest };
+  const clone = options.clone ?? resolve(dirname(realpathSync(hub)), id.slice(id.indexOf("/") + 1));
+  return { hub, clone, set, binding, held, texts: options.texts ?? {} };
+}
+
+const MATERIALIZE_HELP = `Usage: launcher-apply-plan materialize --repo <id>
+
+Writes a stored repository change set into the repository's local clone.`;
+const VERIFY_HELP = `Usage: launcher-apply-plan verify --repo <id>
+
+Reports whether the repository's local clone matches its stored change set.`;
+
+function printApplyOutcome(label: string, outcome: ApplyStepResult): number {
+  const suffix = outcome.exitCode === 0 ? outcome.verdict : `${outcome.verdict} (${outcome.reason})`;
+  const detail = outcome.detail === undefined ? "" : `; ${outcome.detail}`;
+  if (outcome.exitCode === 0) console.log(`launcher-apply-plan ${label}: ${suffix}${detail}`);
+  else console.error(`launcher-apply-plan ${label}: ${suffix}${detail}`);
+  return outcome.exitCode;
+}
+
+export async function materializeMain(argv: readonly string[], options: ApplyCommandOptions = {}): Promise<number> {
+  try {
+    const parsed = parseRepoSubcommand(argv, "materialize");
+    if (parsed.help) {
+      console.log(MATERIALIZE_HELP);
+      return 0;
+    }
+    const resolved = resolveApplyInputs(parsed.id, options);
+    if ("exitCode" in resolved) return printApplyOutcome("materialize", resolved);
+    const outcome = await materializeRepository({
+      clone: resolved.clone,
+      hub: resolved.hub,
+      set: resolved.set,
+      texts: resolved.texts,
+      binding: resolved.binding,
+      heldChangeSets: resolved.held,
+      spawn: options.spawn,
+      now: options.now,
+      toolVersion: options.toolVersion,
+    });
+    return printApplyOutcome("materialize", outcome);
+  } catch (cause) {
+    console.error(`launcher-apply-plan materialize: ${cause instanceof ApplyPlanInputError ? cause.message : "usage: launcher-apply-plan materialize --repo <id>"}`);
+    return 2;
+  }
+}
+
+export async function verifyMain(argv: readonly string[], options: ApplyCommandOptions = {}): Promise<number> {
+  try {
+    const parsed = parseRepoSubcommand(argv, "verify");
+    if (parsed.help) {
+      console.log(VERIFY_HELP);
+      return 0;
+    }
+    const resolved = resolveApplyInputs(parsed.id, options);
+    if ("exitCode" in resolved) return printApplyOutcome("verify", resolved);
+    const outcome = await verifyRepository({ clone: resolved.clone, set: resolved.set, binding: resolved.binding, heldChangeSets: resolved.held });
+    return printApplyOutcome("verify", outcome);
+  } catch (cause) {
+    console.error(`launcher-apply-plan verify: ${cause instanceof ApplyPlanInputError ? cause.message : "usage: launcher-apply-plan verify --repo <id>"}`);
+    return 2;
+  }
+}
+
 function parseSnapshotArgs(argv: readonly string[]): { help: true } | { help: false; requestPath: string; outPath?: string } {
   if (argv.length === 1 && (argv[0] === "--help" || argv[0] === "-h")) return { help: true };
   const flags = new Map<string, string>();
@@ -213,6 +356,14 @@ export async function snapshotMain(argv: readonly string[], options: SnapshotCom
 
 async function run(): Promise<void> {
   const argv = process.argv.slice(2);
+  if (argv[0] === "materialize") {
+    process.exitCode = await materializeMain(argv.slice(1));
+    return;
+  }
+  if (argv[0] === "verify") {
+    process.exitCode = await verifyMain(argv.slice(1));
+    return;
+  }
   if (argv[0] === "snapshot") {
     process.exitCode = await snapshotMain(argv.slice(1));
     return;
