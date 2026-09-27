@@ -45,7 +45,7 @@ export type {
 } from "./change-set-contract.js";
 export { ledgerSuccession, readInstalledLedger, renderInstalledLedger, serializeInstalledLedger, validateInstalledLedger } from "./ledger-contract.js";
 export { reconcileWholeFile, trustInstalledLedger } from "./ledger-trust.js";
-export type { LedgerTrust, LedgerTrustRule, WholeFileOutcome, WholeFileState } from "./ledger-trust.js";
+export type { LedgerTrust, LedgerTrustRule, PlanPackageActs, TrustInstalledLedgerOptions, WholeFileOutcome, WholeFileState } from "./ledger-trust.js";
 export { BUNDLE_STORE_REL, CHANGE_SET_STORE_REL, readStoredApplyBundle, readStoredChangeSet, storeApplyBundle, storeChangeSet } from "./apply-store.js";
 export { isRootEntryName, wouldViolateRootEntries } from "./root-entries.js";
 export type { RootEntriesVerdict } from "./root-entries.js";

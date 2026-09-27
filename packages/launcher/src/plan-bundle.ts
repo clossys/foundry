@@ -51,6 +51,7 @@ import type {
 } from "./change-set-contract.js";
 import type { InstalledLedger } from "./ledger-contract.js";
 import { reconcileWholeFile, trustInstalledLedger } from "./ledger-trust.js";
+import type { PlanPackageActs } from "./ledger-trust.js";
 
 /** What was read from one staffed repository's default branch. The planner trusts it as given. */
 export interface RepositoryObservation {
@@ -141,6 +142,8 @@ export interface PlanApplyBundleInputs {
   readonly computedAt: string;
   /** Every change set the hub holds (clossys/.state/apply/change-sets/), read by the caller; a ledger is trusted only against these. */
   readonly heldChangeSets: readonly RepositoryChangeSet[];
+  /** Package identities by plan digest for ledger history the held sets name; defaults to this plan's acts per staffed repository. */
+  readonly planPackageActs?: readonly PlanPackageActs[];
 }
 
 export interface PlanApplyBundleResult {
@@ -324,6 +327,11 @@ function computeChangeSet(
     const outcome = reconcile(path, desired);
     if (!outcome.write) {
       refused.push({ path, reason: outcome.reason, item });
+      return false;
+    }
+    // An apply set may keep or update only where the trusted ledger already has a row (issue #1545 fix 7).
+    if (observation.phase === "apply" && fileRowAt(path) === null && outcome.before === null) {
+      refused.push({ path, reason: "unowned-existing", item });
       return false;
     }
     // before is null (add), the desired digest (keep), or the bytes the flow last wrote (update).
@@ -667,7 +675,11 @@ export function planApplyBundle(inputs: PlanApplyBundleInputs): PlanApplyBundleR
       continue;
     }
     // A ledger the hub cannot account for refuses the whole repository, and nothing is inferred from it (RFC §12.2, §12.6).
-    const trust = trustInstalledLedger(observation.ledger, { id: observation.id, nodeId: observation.nodeId }, inputs.heldChangeSets);
+    const repositoryPackages = (inputs.plan.packages ?? [])
+      .filter((act) => act.repository === staffingEntry.repository)
+      .map(({ planItem, act, name, version, integrity, placement }) => ({ planItem, act, name, version, integrity, placement }));
+    const planPackageActs: PlanPackageActs[] = [{ planDigest: digestOfPlan, packages: repositoryPackages }, ...(inputs.planPackageActs ?? [])];
+    const trust = trustInstalledLedger(observation.ledger, { id: observation.id, nodeId: observation.nodeId }, inputs.heldChangeSets, { planPackageActs });
     if (trust.state === "refused") {
       entries.push({ id: staffingEntry.repository, verdict: "indeterminate", reason: trust.rule, checks: [] });
       continue;

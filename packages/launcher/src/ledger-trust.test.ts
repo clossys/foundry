@@ -36,12 +36,18 @@ const ROOTS = setNamed("setup-site-root-entries");
 const OBSERVED = { id: "example-owner/site", nodeId: "R_exampleSite1" };
 const TRUSTED: LedgerTrust = { state: "trusted", ledger: expect.anything() as unknown as InstalledLedger };
 const refused = (rule: string) => ({ state: "refused", rule });
+const RENDER_CORPUS = JSON.parse(read("docs/contracts/installed-ledger.fixture.json")) as {
+  renders: { name: string; planPackages: (import("./ledger-contract.js").LedgerPackageIdentity & { act: "install" | "pin-starter" })[] }[];
+};
+const SETUP_PLAN_PACKAGES = RENDER_CORPUS.renders.find((entry) => entry.name === "setup")!.planPackages;
+const trustOptions = (planDigest: string) => ({ planPackageActs: [{ planDigest, packages: SETUP_PLAN_PACKAGES }] as const });
 
 /** A ledger's exact bytes, as text; throws for a ledger the contract refuses, so every forged ledger below is still readable. */
 const bytes = (ledger: InstalledLedger | Loose) => serializeInstalledLedger(ledger as InstalledLedger);
 /** UTF-8 bytes of `text`, as `trustInstalledLedger()` now takes them. */
 const utf8 = (text: string) => Buffer.from(text, "utf8");
-const trust = (ledger: InstalledLedger | Loose, held: readonly RepositoryChangeSet[], observed = OBSERVED) => trustInstalledLedger(utf8(bytes(ledger)), observed, held);
+const trust = (ledger: InstalledLedger | Loose, held: readonly RepositoryChangeSet[], observed = OBSERVED, planDigest = SETUP.planDigest) =>
+  trustInstalledLedger(utf8(bytes(ledger)), observed, held, trustOptions(planDigest));
 const OTHER = `sha256:${"0".repeat(64)}`;
 const short = (digest: string) => digest.slice("sha256:".length, "sha256:".length + 12);
 
@@ -249,6 +255,14 @@ describe("trustInstalledLedger", () => {
       const row = forged.deferred[1];
       row.name = "@example/zeta";
       row.planItem = "example-owner/site:@example/zeta";
+      expect(trust(forged, [SETUP])).toEqual(refused("ledger-foreign-row"));
+    });
+
+    it("a deferred row whose version and integrity were rewritten to other canonical values while planItem and changeSet stay the same", () => {
+      const forged = base();
+      const row = forged.deferred[0]!;
+      row.version = SETUP_PLAN_PACKAGES.find((act) => act.planItem === "example-owner/site:@example/writer")!.version;
+      row.integrity = SETUP_PLAN_PACKAGES.find((act) => act.planItem === "example-owner/site:@example/writer")!.integrity;
       expect(trust(forged, [SETUP])).toEqual(refused("ledger-foreign-row"));
     });
   });

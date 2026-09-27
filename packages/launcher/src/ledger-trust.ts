@@ -17,7 +17,17 @@ import { EXEMPTION_SURFACES, validateRepositoryChangeSet } from "./change-set-co
 import type { ChangeSetItem, ChangeSetPhase, FileChange, RepositoryChangeSet, WholeFileChange } from "./change-set-contract.js";
 import { changeSetDigest } from "./change-set-digest.js";
 import { readInstalledLedger } from "./ledger-contract.js";
-import type { InstalledLedger, LedgerEntryRow, LedgerHistoryEntry } from "./ledger-contract.js";
+import type { InstalledLedger, LedgerDeferredRow, LedgerEntryRow, LedgerHistoryEntry, LedgerPackageIdentity } from "./ledger-contract.js";
+
+/** Plan package identities for one plan digest; deferred rows are trusted only against these acts. */
+export interface PlanPackageActs {
+  readonly planDigest: string;
+  readonly packages: readonly (LedgerPackageIdentity & { readonly act: "install" | "pin-starter" })[];
+}
+
+export interface TrustInstalledLedgerOptions {
+  readonly planPackageActs?: readonly PlanPackageActs[];
+}
 
 /**
  * Why a ledger is not trusted. ledger-unreadable: the bytes are not a valid,
@@ -93,8 +103,19 @@ function entryRowWritten(set: RepositoryChangeSet, row: LedgerEntryRow): boolean
   });
 }
 
+function deferredRowWritten(ledger: InstalledLedger, row: LedgerDeferredRow, set: RepositoryChangeSet, planPackageActs: readonly PlanPackageActs[] | undefined): boolean {
+  if (!set.deferred.some((deferral) => deferral.planItem === row.planItem)) return false;
+  const entry = ledger.history.find((history) => history.changeSet === row.changeSet);
+  if (entry === undefined) return false;
+  const bundle = planPackageActs?.find((acts) => acts.planDigest === entry.planDigest);
+  if (bundle === undefined) return false;
+  const act = bundle.packages.find((candidate) => candidate.planItem === row.planItem);
+  if (act === undefined) return false;
+  return row.act === act.act && row.name === act.name && row.version === act.version && row.integrity === act.integrity && row.placement === act.placement;
+}
+
 /** Whether every row of the ledger is a write of the change set it names (L4 makes each name a history entry's). */
-function rowsWritten(ledger: InstalledLedger, bySet: ReadonlyMap<string, RepositoryChangeSet>): boolean {
+function rowsWritten(ledger: InstalledLedger, bySet: ReadonlyMap<string, RepositoryChangeSet>, planPackageActs: readonly PlanPackageActs[] | undefined): boolean {
   const setOf = (changeSet: string) => bySet.get(changeSet);
   return (
     ledger.files.every((row) => {
@@ -128,7 +149,7 @@ function rowsWritten(ledger: InstalledLedger, bySet: ReadonlyMap<string, Reposit
     }) &&
     ledger.deferred.every((row) => {
       const set = setOf(row.changeSet);
-      return set !== undefined && set.deferred.some((deferral) => deferral.planItem === row.planItem);
+      return set !== undefined && deferredRowWritten(ledger, row, set, planPackageActs);
     })
   );
 }
@@ -146,7 +167,12 @@ function rowsWritten(ledger: InstalledLedger, bySet: ReadonlyMap<string, Reposit
  * over (ledger-chain); and every row a write of its matched set
  * (ledger-foreign-row). A refusal carries the rule only.
  */
-export function trustInstalledLedger(bytes: Uint8Array | null, observed: { readonly id: string; readonly nodeId: string }, held: readonly RepositoryChangeSet[]): LedgerTrust {
+export function trustInstalledLedger(
+  bytes: Uint8Array | null,
+  observed: { readonly id: string; readonly nodeId: string },
+  held: readonly RepositoryChangeSet[],
+  options?: TrustInstalledLedgerOptions,
+): LedgerTrust {
   const refuse = (rule: LedgerTrustRule): LedgerTrust => ({ state: "refused", rule });
   if (bytes === null) return { state: "trusted", ledger: null };
   const ledger = readInstalledLedger(bytes);
@@ -169,7 +195,7 @@ export function trustInstalledLedger(bytes: Uint8Array | null, observed: { reado
     if (set === undefined) return refuse("ledger-chain");
     bySet.set(entry.changeSet, set);
   }
-  if (!rowsWritten(ledger, bySet)) return refuse("ledger-foreign-row");
+  if (!rowsWritten(ledger, bySet, options?.planPackageActs)) return refuse("ledger-foreign-row");
   return { state: "trusted", ledger };
 }
 

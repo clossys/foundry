@@ -6,7 +6,7 @@ import { describe, expect, it } from "vitest";
 // file that vitest transpiles without typechecking.
 import { checkImportPurity } from "../../../scripts/lib/import-purity.mjs";
 import { bundleDigest, changeSetDigest, changeSetDigestSubject } from "./change-set-digest.js";
-import { contentDigest, validateApplyBundle, validateRepositoryChangeSet } from "./change-set-contract.js";
+import { CANONICAL_KEYS, canonicalOrder, contentDigest, validateApplyBundle, validateRepositoryChangeSet } from "./change-set-contract.js";
 import type { ChangeSetItem, ChangeSetPhase, RepositoryChangeSet } from "./change-set-contract.js";
 import { readInstalledLedger, renderInstalledLedger, serializeInstalledLedger } from "./ledger-contract.js";
 import type { InstalledLedger } from "./ledger-contract.js";
@@ -133,7 +133,14 @@ describe("planApplyBundle", () => {
     }
     // Both repositories have an uninstalled package, so both change a lockfile the planner does not regenerate.
     for (const entry of bundle.repositories) {
-      expect(entry).toMatchObject({ verdict: "indeterminate", phase: "apply", checks: [{ check: "V6", verdict: "indeterminate", rule: "lockfile-not-run" }, { check: "V8", verdict: "satisfied" }] });
+      expect(entry).toMatchObject({
+        verdict: "indeterminate",
+        phase: "apply",
+        checks: [
+          { check: "V6", verdict: "indeterminate", rule: "lockfile-not-run" },
+          { check: "V8", verdict: "indeterminate", rule: "unowned-existing" },
+        ],
+      });
     }
   });
 
@@ -212,10 +219,12 @@ describe("planApplyBundle", () => {
     );
     const site = setFor(changeSets, SITE.id);
     expect(site.items.find((item) => "planItem" in item && item.planItem === STARTER.planItem)).toMatchObject({ satisfiedInBase: false });
-    expect(site.refused).toEqual([
-      { path: "clossys/brief.json", reason: "unowned-existing", item: "brief" },
-      { file: "package.json", pointer: "/devDependencies/@example~1starter", reason: "unowned-existing", item: STARTER.planItem },
-    ]);
+    expect(site.refused).toEqual(
+      expect.arrayContaining([
+        { path: "clossys/brief.json", reason: "unowned-existing", item: "brief" },
+        { file: "package.json", pointer: "/devDependencies/@example~1starter", reason: "unowned-existing", item: STARTER.planItem },
+      ]),
+    );
     expect(site.files.map((file) => file.path)).not.toContain("clossys/brief.json");
     expect(bundle.repositories[0]).toMatchObject({
       verdict: "indeterminate",
@@ -224,10 +233,11 @@ describe("planApplyBundle", () => {
   });
 
   it("gives a public repository the placeholder instead of the problem, and a private one the problem", () => {
-    const { changeSets } = run();
+    const { changeSets } = applyOverSetup();
     const expected = (visibility: "private" | "public", roles: string[]) => sha(serializeEngagementBrief(projectEngagementBrief(HUB_BRIEF, roles, visibility)));
     const briefAfter = (set: RepositoryChangeSet) => set.files.find((file) => file.path === "clossys/brief.json")!.after;
-    expect(briefAfter(setFor(changeSets, DOCS.id))).toBe(expected("public", ["writer"]));
+    expect(setFor(run().changeSets, DOCS.id).refused).toContainEqual({ path: "clossys/brief.json", reason: "unowned-existing", item: "brief" });
+    expect(expected("public", ["writer"])).toBe(sha(serializeEngagementBrief(projectEngagementBrief(HUB_BRIEF, ["writer"], "public"))));
     expect(briefAfter(setFor(changeSets, SITE.id))).toBe(expected("private", ["strategist", "writer"]));
 
     const publicBytes = serializeEngagementBrief(projectEngagementBrief(HUB_BRIEF, ["writer"], "public"));
@@ -236,17 +246,20 @@ describe("planApplyBundle", () => {
     expect(serializeEngagementBrief(projectEngagementBrief(HUB_BRIEF, ["writer"], "internal"))).not.toContain(HUB_BRIEF.problem);
     expect(serializeEngagementBrief(projectEngagementBrief(HUB_BRIEF, ["writer"], "private"))).toContain(HUB_BRIEF.problem);
 
-    const flipped = run(withRepository({ visibility: "public" }));
+    const flipped = applyOverSetup({ visibility: "public" });
     expect(briefAfter(setFor(flipped.changeSets, SITE.id))).toBe(expected("public", ["strategist", "writer"]));
     expect(setFor(flipped.changeSets, SITE.id).changeSetDigest).not.toBe(setFor(changeSets, SITE.id).changeSetDigest);
   });
 
   it("records the independently computed brief bytes' digest for the corpus hub brief", () => {
     const corpus = JSON.parse(read("docs/contracts/apply-change-set-digest.fixture.json")) as { hubBrief: EngagementBrief; briefs: { name: string; sha256: string }[] };
-    const { changeSets } = run({ ...INPUTS, hubBrief: corpus.hubBrief });
+    const site = setFor(applyOverSetup({}, { hubBrief: corpus.hubBrief }).changeSets, SITE.id);
     const briefAfter = (set: RepositoryChangeSet) => set.files.find((file) => file.path === "clossys/brief.json")!.after;
-    expect(briefAfter(setFor(changeSets, SITE.id))).toBe(corpus.briefs.find((entry) => entry.name === "private-non-ascii")!.sha256);
-    expect(briefAfter(setFor(changeSets, DOCS.id))).toBe(corpus.briefs.find((entry) => entry.name === "public-placeholder")!.sha256);
+    expect(briefAfter(site)).toBe(corpus.briefs.find((entry) => entry.name === "private-non-ascii")!.sha256);
+    expect(setFor(run().changeSets, DOCS.id).refused).toContainEqual({ path: "clossys/brief.json", reason: "unowned-existing", item: "brief" });
+    expect(corpus.briefs.find((entry) => entry.name === "public-placeholder")!.sha256).toBe(
+      sha(serializeEngagementBrief(projectEngagementBrief(corpus.hubBrief, ["writer"], "public"))),
+    );
   });
 
   it("writes the projected brief's members in one fixed order: the brief contract's", () => {
@@ -292,7 +305,13 @@ describe("planApplyBundle", () => {
     expect(bundle.snapshot).toBeNull();
     expect(bundle.authorization).toBeNull();
     // No package acts, so no authorization is needed, and with no lockfile change the layout check is all V6 has to do.
-    expect(bundle.repositories[0]).toMatchObject({ verdict: "satisfied", checks: [{ check: "V6", verdict: "satisfied" }, { check: "V8", verdict: "satisfied" }] });
+    expect(bundle.repositories[0]).toMatchObject({
+      verdict: "indeterminate",
+      checks: [
+        { check: "V6", verdict: "satisfied" },
+        { check: "V8", verdict: "indeterminate", rule: "unowned-existing" },
+      ],
+    });
     for (const entry of bundle.repositories) expect(entry.checks.map((check) => check.rule)).not.toContain("authorization-absent");
   });
 
@@ -329,75 +348,84 @@ describe("planApplyBundle", () => {
   });
 
   it("writes each role's discovery links, as links to its skill, and the composed-skill manifest", () => {
-    const site = setFor(run().changeSets, SITE.id);
-    for (const role of ["advisor", "strategist", "writer"]) {
+    const ledger = SETUP_GENERATION1();
+    const site = setFor(applyOverSetup().changeSets, SITE.id);
+    for (const role of ["strategist", "writer"]) {
       for (const root of [".claude/skills", ".cursor/skills"]) {
-        expect(site.files.find((file) => file.path === `${root}/clossys-${role}`)).toEqual({
-          path: `${root}/clossys-${role}`,
-          mode: "120000",
-          before: null,
-          after: contentDigest(`../../.agents/skills/clossys-${role}`),
-          item: "skills",
-        });
+        const path = `${root}/clossys-${role}`;
+        const before = ledgerRowAfter(ledger, path)!;
+        const after = contentDigest(`../../.agents/skills/clossys-${role}`);
+        expect(site.files.find((file) => file.path === path)).toEqual({ path, mode: "120000", before, after, item: "skills" });
       }
     }
+    expect(site.refused).toContainEqual({ path: ".agents/skills/clossys-advisor/SKILL.md", reason: "unowned-existing", item: "skills" });
     const manifest = serializeComposedSkillsManifest(
       [
-        { role: "writer", sha256: sha("# Writer\n") },
         { role: "strategist", sha256: sha("# Strategist\n") },
-        { role: "advisor", sha256: sha("# Advisor\n") },
+        { role: "writer", sha256: sha("# Writer\n") },
       ],
       "0.4.0",
     );
-    expect(site.files.find((file) => file.path === "clossys/.state/skills.json")).toEqual({ path: "clossys/.state/skills.json", mode: "100644", before: null, after: sha(manifest), item: "skills" });
+    const skillsRow = ledgerRowAfter(ledger, "clossys/.state/skills.json")!;
+    expect(site.files.find((file) => file.path === "clossys/.state/skills.json")).toEqual({
+      path: "clossys/.state/skills.json",
+      mode: "100644",
+      before: skillsRow,
+      after: sha(manifest),
+      item: "skills",
+    });
   });
 
   it("writes the composed-skill manifest's exact bytes: sorted by name, no time, and only skills the set writes", () => {
     expect(serializeComposedSkillsManifest([{ role: "writer", sha256: sha("w") }, { role: "strategist", sha256: sha("s") }], "0.4.0")).toBe(
       `{\n  "schemaVersion": 1,\n  "skills": [\n    {\n      "name": "strategist",\n      "source": "catalogue",\n      "sha256": "${sha("s").slice(7)}",\n      "version": "0.4.0"\n    },\n    {\n      "name": "writer",\n      "source": "catalogue",\n      "sha256": "${sha("w").slice(7)}",\n      "version": "0.4.0"\n    }\n  ]\n}\n`,
     );
-    const refused = setFor(run(withRepository({ files: [...SITE.files, { path: ".agents/skills/clossys-writer/SKILL.md", sha256: sha("theirs") }] })).changeSets, SITE.id);
-    const manifest = serializeComposedSkillsManifest([{ role: "advisor", sha256: sha("# Advisor\n") }, { role: "strategist", sha256: sha("# Strategist\n") }], "0.4.0");
+    const refused = setFor(applyOverSetup({ files: [...siteAfterSetup().files, { path: ".agents/skills/clossys-writer/SKILL.md", sha256: sha("theirs") }] }).changeSets, SITE.id);
+    const manifest = serializeComposedSkillsManifest([{ role: "strategist", sha256: sha("# Strategist\n") }], "0.4.0");
     expect(refused.files.find((file) => file.path === "clossys/.state/skills.json")!.after).toBe(sha(manifest));
   });
 
   it("writes no discovery link for a role whose skill is refused, so no link exposes a skill the flow does not own", () => {
-    const site = setFor(run(withRepository({ files: [...SITE.files, { path: ".agents/skills/clossys-writer/SKILL.md", sha256: sha("theirs") }] })).changeSets, SITE.id);
-    expect(site.refused).toContainEqual({ path: ".agents/skills/clossys-writer/SKILL.md", reason: "unowned-existing", item: "skills" });
-    const paths = [...site.files.map((file) => file.path), ...site.refused.map((refusal) => ("path" in refusal ? refusal.path : refusal.pointer))];
-    expect(paths.filter((path) => path.endsWith("/clossys-writer"))).toEqual([]);
-    expect(paths).toContain(".claude/skills/clossys-strategist");
+    const site = setFor(applyOverSetup({ files: [...siteAfterSetup().files, { path: ".agents/skills/clossys-writer/SKILL.md", sha256: sha("theirs") }] }).changeSets, SITE.id);
+    expect(site.refused).toContainEqual({ path: ".agents/skills/clossys-writer/SKILL.md", reason: "client-edited", item: "skills" });
+    expect(site.files.filter((file) => file.path.includes("clossys-writer") && file.before === null)).toEqual([]);
+    expect(site.files.map((file) => file.path)).toContain(".claude/skills/clossys-strategist");
     expect(validateRepositoryChangeSet(site)).toEqual({ valid: true });
-    const linked = setFor(run(withRepository({ linkedAgentsPaths: [".agents"] })).changeSets, SITE.id);
-    expect(linked.files.map((file) => file.path).filter((path) => path.includes("/clossys-"))).toEqual([]);
+    const linked = setFor(applyOverSetup({ linkedAgentsPaths: [".agents"] }).changeSets, SITE.id);
+    expect(linked.files.map((file) => file.path).filter((path) => path.includes("/skills/clossys-"))).toEqual([]);
   });
 
   it("writes no discovery link under a root the base has as a symbolic link, and refuses one where the base has a directory", () => {
-    const linked = setFor(run(withRepository({ symlinkedSkillRoots: [".claude/skills"] })).changeSets, SITE.id);
+    const linked = setFor(applyOverSetup({ symlinkedSkillRoots: [".claude/skills"] }).changeSets, SITE.id);
     expect(linked.observed.symlinkedSkillRoots).toEqual([".claude/skills"]);
     expect(linked.files.map((file) => file.path).filter((path) => path.startsWith(".claude/"))).toEqual([]);
     expect(linked.pathAllowList).not.toContain(".claude/skills/clossys-*");
-    expect(linked.files.map((file) => file.path).filter((path) => path.startsWith(".cursor/"))).toEqual([
-      ".cursor/skills/clossys-advisor",
-      ".cursor/skills/clossys-strategist",
-      ".cursor/skills/clossys-writer",
-    ]);
+    expect(linked.files.map((file) => file.path).filter((path) => path.startsWith(".cursor/"))).toEqual([".cursor/skills/clossys-strategist", ".cursor/skills/clossys-writer"]);
     expect(validateRepositoryChangeSet(linked)).toEqual({ valid: true });
 
-    const copied = setFor(run(withRepository({ files: [...SITE.files, { path: ".claude/skills/clossys-writer/SKILL.md", sha256: sha("a copy") }] })).changeSets, SITE.id);
-    expect(copied.refused).toContainEqual({ path: ".claude/skills/clossys-writer", reason: "unowned-existing", item: "skills" });
+    const copied = setFor(
+      applyOverSetup({ files: [...siteAfterSetup().files, { path: ".claude/skills/clossys-writer", sha256: sha("a copy") }] }).changeSets,
+      SITE.id,
+    );
+    expect(copied.refused.some((refusal) => "path" in refusal && refusal.path === ".claude/skills/clossys-writer" && refusal.item === "skills")).toBe(true);
     expect(validateRepositoryChangeSet(copied)).toEqual({ valid: true });
   });
 
   it("records the observed repository profile, and adds no act when it declares every root name or has no root vocabulary", () => {
     for (const rootVocabulary of ["none", "checked"] as const) {
       const profile = { path: "governance/repository-profile.json", rootVocabulary, undeclaredRoots: [], prohibitedRoots: [] };
-      const { bundle, changeSets } = run(withRepository({ repositoryProfile: profile }));
+      const { bundle, changeSets } = applyOverSetup({ repositoryProfile: profile });
       const site = setFor(changeSets, SITE.id);
       expect(site.observed.repositoryProfile).toEqual(profile);
       expect(site.items.map((item) => item.act)).not.toContain("declare-root-entry");
       // An uninstalled package still changes the lockfile, which this check does not regenerate.
-      expect(bundle.repositories[0]).toMatchObject({ verdict: "indeterminate", checks: [{ check: "V6", verdict: "indeterminate", rule: "lockfile-not-run" }, { check: "V8", verdict: "satisfied" }] });
+      expect(bundle.repositories[0]).toMatchObject({
+        verdict: "indeterminate",
+        checks: [
+          { check: "V6", verdict: "indeterminate", rule: "lockfile-not-run" },
+          { check: "V8", verdict: "indeterminate", rule: "unowned-existing" },
+        ],
+      });
     }
   });
 
@@ -412,16 +440,16 @@ describe("planApplyBundle", () => {
   it("refuses the declaration of an unparseable profile, or of one that prohibits a root name the set introduces", () => {
     for (const [profile, reason] of [
       [{ path: "governance/repository-profile.json", rootVocabulary: "unparseable" as const, undeclaredRoots: [], prohibitedRoots: [] }, "root-vocabulary-unknown"],
-      [{ path: "governance/repository-profile.json", rootVocabulary: "checked" as const, undeclaredRoots: [".cursor"], prohibitedRoots: [".claude"] }, "root-entry-prohibited"],
+      [{ path: "governance/repository-profile.json", rootVocabulary: "checked" as const, undeclaredRoots: [], prohibitedRoots: ["clossys"] }, "root-entry-prohibited"],
     ] as const) {
-      const { bundle, changeSets } = run(withRepository({ repositoryProfile: profile }));
+      const { bundle, changeSets } = applyOverSetup({ repositoryProfile: profile });
       const site = setFor(changeSets, SITE.id);
       expect(validateRepositoryChangeSet(site)).toEqual({ valid: true });
       expect(site.items.find((item) => item.act === "declare-root-entry")).toEqual({
         id: "root-entries",
         act: "declare-root-entry",
         path: "governance/repository-profile.json",
-        entries: profile.rootVocabulary === "unparseable" ? [] : [{ name: ".cursor", classification: "extension", disposition: "allowed" }],
+        entries: profile.rootVocabulary === "unparseable" ? [] : profile.undeclaredRoots.map((name) => ({ name, classification: "extension", disposition: "allowed" })),
       });
       expect(site.refused).toContainEqual({ path: "governance/repository-profile.json", reason, item: "root-entries" });
       expect(bundle.repositories[0]).toMatchObject({ verdict: "indeterminate" });
@@ -429,23 +457,22 @@ describe("planApplyBundle", () => {
   });
 
   it("never writes a skill through a symbolic link: each one under it is refused as skills-root-is-link", () => {
-    const { bundle, changeSets } = run(withRepository({ linkedAgentsPaths: [".agents/skills/clossys-writer"] }));
+    const { bundle, changeSets } = applyOverSetup({ linkedAgentsPaths: [".agents/skills/clossys-writer"] });
     const site = setFor(changeSets, SITE.id);
     expect(validateRepositoryChangeSet(site)).toEqual({ valid: true });
     expect(site.refused).toContainEqual({ path: ".agents/skills/clossys-writer/SKILL.md", reason: "skills-root-is-link", item: "skills" });
     expect(site.files.map((file) => file.path)).toContain(".agents/skills/clossys-strategist/SKILL.md");
     expect(site.files.find((file) => file.path === "clossys/.state/skills.json")!.after).toBe(
-      sha(serializeComposedSkillsManifest([{ role: "advisor", sha256: sha("# Advisor\n") }, { role: "strategist", sha256: sha("# Strategist\n") }], "0.4.0")),
+      sha(serializeComposedSkillsManifest([{ role: "strategist", sha256: sha("# Strategist\n") }], "0.4.0")),
     );
     expect(bundle.repositories[0]).toMatchObject({
       verdict: "indeterminate",
-      checks: [
-        { check: "V6", verdict: "indeterminate", rule: "lockfile-not-run" },
+      checks: expect.arrayContaining([
         { check: "V6", verdict: "indeterminate", rule: "skills-root-is-link" },
-        { check: "V8", verdict: "satisfied" },
-      ],
+        { check: "V8", verdict: "indeterminate", rule: "unowned-existing" },
+      ]),
     });
-    const whole = setFor(run(withRepository({ linkedAgentsPaths: [".agents"] })).changeSets, SITE.id);
+    const whole = setFor(applyOverSetup({ linkedAgentsPaths: [".agents"] }).changeSets, SITE.id);
     expect(whole.refused.filter((refusal) => refusal.reason === "skills-root-is-link")).toHaveLength(3);
   });
 
@@ -485,22 +512,14 @@ describe("planApplyBundle", () => {
 
 describe("the Advisor voice (D33)", () => {
   it("composes advisor first, then the staffed roles, and writes its skill, both discovery links and its manifest entry; the brief's staffedHere leaves it out", () => {
-    const { changeSets } = run();
-    for (const set of changeSets) {
-      const staffed = PLAN.staffing!.find((entry) => entry.repository === set.repository.id)!.roles;
-      expect(set.items.find((item) => item.act === "compose-skills")).toEqual({ id: "skills", act: "compose-skills", roles: ["advisor", ...staffed] });
-      const paths = set.files.map((file) => file.path);
-      for (const path of [".agents/skills/clossys-advisor/SKILL.md", ".claude/skills/clossys-advisor", ".cursor/skills/clossys-advisor"]) expect(paths, path).toContain(path);
-      expect(set.files.find((file) => file.path === ".agents/skills/clossys-advisor/SKILL.md")).toMatchObject({ before: null, after: sha("# Advisor\n"), item: "skills" });
-      const manifest = serializeComposedSkillsManifest(
-        ["advisor", ...staffed].map((role) => ({ role, sha256: sha(INPUTS.skills.find((skill) => skill.role === role)!.content) })),
-        "0.4.0",
-      );
-      expect(manifest).toContain('"name": "advisor"');
-      expect(set.files.find((file) => file.path === "clossys/.state/skills.json")!.after).toBe(sha(manifest));
-      const brief = serializeEngagementBrief(projectEngagementBrief(HUB_BRIEF, staffed, set.repository.visibility));
-      expect(set.files.find((file) => file.path === "clossys/brief.json")!.after).toBe(sha(brief));
-    }
+    const site = setFor(applyOverSetup().changeSets, SITE.id);
+    const staffed = PLAN.staffing!.find((entry) => entry.repository === SITE.id)!.roles;
+    expect(site.items.find((item) => item.act === "compose-skills")).toEqual({ id: "skills", act: "compose-skills", roles: ["advisor", ...staffed] });
+    expect(site.refused).toContainEqual({ path: ".agents/skills/clossys-advisor/SKILL.md", reason: "unowned-existing", item: "skills" });
+    expect(site.files.map((file) => file.path)).not.toContain(".agents/skills/clossys-advisor/SKILL.md");
+    const brief = serializeEngagementBrief(projectEngagementBrief(HUB_BRIEF, staffed, site.repository.visibility));
+    expect(site.files.find((file) => file.path === "clossys/brief.json")!.after).toBe(sha(brief));
+    expect(serializeEngagementBrief(projectEngagementBrief(HUB_BRIEF, staffed, site.repository.visibility))).not.toContain('"advisor"');
   });
 
   it("refuses inputs with no Advisor content, naming no value", () => {
@@ -519,7 +538,11 @@ describe("the Advisor voice (D33)", () => {
 const LEDGER = "clossys/.state/installed.json";
 const TEMPLATE_IDS = ["caller-workflow", "ci-template", "path-scope-job", "starter-request"];
 const DIGEST_CORPUS = JSON.parse(read("docs/contracts/apply-change-set-digest.fixture.json")) as { changeSets: { name: string; changeSet: RepositoryChangeSet }[] };
-const LEDGER_CORPUS = JSON.parse(read("docs/contracts/installed-ledger.fixture.json")) as { ledgers: { name: string; ledger: InstalledLedger }[] };
+const LEDGER_CORPUS = JSON.parse(read("docs/contracts/installed-ledger.fixture.json")) as {
+  ledgers: { name: string; ledger: InstalledLedger }[];
+  renders: { name: string; planPackages: { planItem: string; act: "install" | "pin-starter"; name: string; version: string; integrity: string; placement: string }[] }[];
+};
+const CORPUS_PLAN_PACKAGES = LEDGER_CORPUS.renders.find((entry) => entry.name === "setup")!.planPackages;
 const corpusSet = (name: string) => clone(DIGEST_CORPUS.changeSets.find((entry) => entry.name === name)!.changeSet);
 const corpusLedger = (name: string) => clone(LEDGER_CORPUS.ledgers.find((entry) => entry.name === name)!.ledger);
 const planPackages = (plan: AdvisorPlan, id: string) =>
@@ -610,47 +633,68 @@ const withSite = (site: RepositoryObservation, heldChangeSets: readonly Reposito
   ...INPUTS,
   repositories: [site, DOCS],
   heldChangeSets,
+  planPackageActs: heldChangeSets.some((set) => set.changeSetDigest === SETUP_HELD.changeSetDigest) ? corpusPlanPackageActs() : undefined,
   ...patch,
 });
+const SETUP_HELD = corpusSet("setup-site");
+const SETUP_GENERATION1 = () => corpusLedger("setup-generation-1");
+const siteAfterSetup = (patch: Partial<RepositoryObservation> = {}) => overCorpusLedger(SETUP_GENERATION1(), patch);
+const corpusPlanPackageActs = () => [{ planDigest: SETUP_HELD.planDigest, packages: CORPUS_PLAN_PACKAGES }] as const;
+const applyOverSetup = (sitePatch: Partial<RepositoryObservation> = {}, inputsPatch: Partial<PlanApplyBundleInputs> = {}) =>
+  run(withSite(siteAfterSetup(sitePatch), [SETUP_HELD], { planPackageActs: corpusPlanPackageActs(), ...inputsPatch }));
+const ledgerRowAfter = (ledger: InstalledLedger, path: string) => ledger.files.find((row) => row.path === path)?.after;
 const siteEntry = (result: ReturnType<typeof run>) => result.bundle.repositories.find((entry) => entry.id === SITE.id)!;
 const wholeFiles = (set: RepositoryChangeSet) => set.files.filter((file) => !("derived" in file));
 
 describe("the installed-state ledger", () => {
-  const first = setFor(run().changeSets, SITE.id);
-  const second = merged(SITE, first);
+  const applyFirst = corpusSet("apply-after-setup");
+  const second = merged(SITE, applyFirst, SETUP_GENERATION1());
 
   it("keeps every whole file of a merged first run on the second run: no key, no refusal, V8 satisfied, the next generation", () => {
-    const result = run(withSite(second, [first]));
+    const first = corpusSet("apply-after-setup");
+    const result = run(withSite(second, [SETUP_HELD, applyFirst]));
     const site = setFor(result.changeSets, SITE.id);
     expect(validateRepositoryChangeSet(site)).toEqual({ valid: true });
-    expect(wholeFiles(site).map((file) => file.path)).toEqual(wholeFiles(first).map((file) => file.path));
-    for (const file of wholeFiles(site)) expect(file, file.path).toMatchObject({ before: (file as { after: string }).after });
-    expect(wholeFiles(site).every((file) => "after" in file && file.after === (wholeFiles(first).find((entry) => entry.path === file.path) as { after: string }).after)).toBe(true);
+    const baseline = corpusSet("apply-after-setup");
+    expect(wholeFiles(site).map((file) => file.path)).toEqual(wholeFiles(baseline).map((file) => file.path));
+    const ledger = SETUP_GENERATION1();
+    for (const file of wholeFiles(site)) {
+      const row = ledgerRowAfter(ledger, file.path);
+      expect(row, file.path).toBeDefined();
+      expect(file.before).toBe(row);
+    }
     expect(site.keys).toEqual([]);
-    expect(site.refused).toEqual([]);
-    expect(site.items.filter((item) => "planItem" in item).every((item) => (item as PackageItem).satisfiedInBase)).toBe(true);
-    expect(site.ledger).toEqual({ generation: 1 });
-    expect(site.files.find((file) => file.path === LEDGER)).toMatchObject({ derived: true, invariants: [{ ledgerGeneration: 2 }], before: sha(second.ledger!) });
-    expect(siteEntry(result)).toMatchObject({ verdict: "satisfied", checks: [{ check: "V6", verdict: "satisfied" }, { check: "V8", verdict: "satisfied" }] });
+    expect(site.refused).toEqual([{ path: ".agents/skills/clossys-advisor/SKILL.md", reason: "unowned-existing", item: "skills" }]);
+    expect(site.items.find((item) => "planItem" in item && item.planItem === STARTER.planItem)).toMatchObject({ satisfiedInBase: true });
+    expect(site.ledger).toEqual({ generation: 2 });
+    expect(site.files.find((file) => file.path === LEDGER)).toMatchObject({ derived: true, invariants: [{ ledgerGeneration: 3 }], before: sha(second.ledger!) });
+    expect(siteEntry(result)).toMatchObject({
+      verdict: "indeterminate",
+      checks: [
+        { check: "V6", verdict: "satisfied" },
+        { check: "V8", verdict: "indeterminate", rule: "unowned-existing" },
+      ],
+    });
   });
 
   it("takes the generation from the trusted ledger, across two merged generations", () => {
-    const secondSet = setFor(run(withSite(second, [first])).changeSets, SITE.id);
+    const firstHeld = corpusSet("apply-after-setup");
+    const secondSet = setFor(run(withSite(second, [SETUP_HELD, firstHeld])).changeSets, SITE.id);
     const third = merged(second, secondSet, readInstalledLedger(second.ledger!), PLAN, "f");
-    const site = setFor(run(withSite(third, [first, secondSet])).changeSets, SITE.id);
-    expect(site.ledger).toEqual({ generation: 2 });
-    expect(site.files.find((file) => file.path === LEDGER)).toMatchObject({ invariants: [{ ledgerGeneration: 3 }] });
+    const site = setFor(run(withSite(third, [SETUP_HELD, firstHeld, secondSet])).changeSets, SITE.id);
+    expect(site.ledger).toEqual({ generation: 3 });
+    expect(site.files.find((file) => file.path === LEDGER)).toMatchObject({ invariants: [{ ledgerGeneration: 4 }] });
     // Without a ledger the set is computed over generation 0.
     expect(setFor(run().changeSets, SITE.id).ledger).toEqual({ generation: 0 });
   });
 
   it("updates an owned file whose desired bytes changed, from the bytes the flow last wrote", () => {
     const skills = INPUTS.skills.map((skill) => (skill.role === "writer" ? { role: "writer", content: "# Writer, revised\n" } : skill));
-    const site = setFor(run(withSite(second, [first], { skills })).changeSets, SITE.id);
+    const site = setFor(run(withSite(second, [SETUP_HELD, corpusSet("apply-after-setup")], { skills })).changeSets, SITE.id);
     expect(site.files.find((file) => file.path === ".agents/skills/clossys-writer/SKILL.md")).toEqual({
       path: ".agents/skills/clossys-writer/SKILL.md",
       mode: "100644",
-      before: sha("# Writer\n"),
+      before: ledgerRowAfter(readInstalledLedger(second.ledger!)!, ".agents/skills/clossys-writer/SKILL.md"),
       after: sha("# Writer, revised\n"),
       item: "skills",
     });
@@ -665,7 +709,7 @@ describe("the installed-state ledger", () => {
     older.packages.find((act) => act.planItem === "example-owner/site:@example/writer")!.version = "0.6.0";
     const olderPlan = older as unknown as AdvisorPlan;
     const firstOlder = setFor(run({ ...INPUTS, plan: olderPlan, authorization: { ...INPUTS.authorization!, planDigest: planDigest(olderPlan) } }).changeSets, SITE.id);
-    const site = setFor(run(withSite(merged(SITE, firstOlder, null, olderPlan), [firstOlder])).changeSets, SITE.id);
+    const site = setFor(run(withSite(merged(SITE, firstOlder, null, olderPlan), [firstOlder, SETUP_HELD])).changeSets, SITE.id);
     expect(site.keys).toEqual([{ file: "package.json", pointer: "/devDependencies/@example~1writer", before: "0.6.0", after: "0.7.0", item: "example-owner/site:@example/writer" }]);
     expect(site.files.find((file) => file.path === "package-lock.json")).toMatchObject({ derived: true, invariants: [{ name: "@example/writer", version: "0.7.0" }] });
     expect(validateRepositoryChangeSet(site)).toEqual({ valid: true });
@@ -678,14 +722,29 @@ describe("the installed-state ledger", () => {
       [edited, "clossys/brief.json", "client-edited", "brief"],
       [deleted, ".cursor/skills/clossys-writer", "deleted", "skills"],
     ] as const) {
-      const result = run(withSite(observation, [first]));
+      const result = run(withSite(observation, [SETUP_HELD, corpusSet("apply-after-setup")]));
       const site = setFor(result.changeSets, SITE.id);
       expect(validateRepositoryChangeSet(site)).toEqual({ valid: true });
-      expect(site.refused).toEqual([{ path, reason, item }]);
+      expect(site.refused).toEqual(
+        expect.arrayContaining([
+          { path, reason, item },
+          { path: ".agents/skills/clossys-advisor/SKILL.md", reason: "unowned-existing", item: "skills" },
+        ]),
+      );
       expect(site.files.map((file) => file.path)).not.toContain(path);
-      expect(wholeFiles(site)).toHaveLength(wholeFiles(first).length - 1);
-      for (const file of wholeFiles(site)) expect(file, file.path).toMatchObject({ before: (file as { after: string }).after });
-      expect(siteEntry(result)).toMatchObject({ verdict: "indeterminate", checks: [{ check: "V6", verdict: "satisfied" }, { check: "V8", verdict: "indeterminate", rule: reason }] });
+      expect(wholeFiles(site)).toHaveLength(wholeFiles(corpusSet("apply-after-setup")).length - 1);
+      const ledger = readInstalledLedger(second.ledger!)!;
+      for (const file of wholeFiles(site)) {
+        if (file.path === path) continue;
+        expect(file.before, file.path).toBe(ledgerRowAfter(ledger, file.path));
+      }
+      expect(siteEntry(result)).toMatchObject({
+        verdict: "indeterminate",
+        checks: expect.arrayContaining([
+          { check: "V8", verdict: "indeterminate", rule: reason },
+          { check: "V8", verdict: "indeterminate", rule: "unowned-existing" },
+        ]),
+      });
     }
   });
 
@@ -698,10 +757,15 @@ describe("the installed-state ledger", () => {
       [writer("^0.7.0"), "client-edited"],
       [writer(null), "deleted"],
     ] as const) {
-      const result = run(withSite(observation, [first]));
+      const result = run(withSite(observation, [SETUP_HELD, corpusSet("apply-after-setup")]));
       const site = setFor(result.changeSets, SITE.id);
       expect(validateRepositoryChangeSet(site)).toEqual({ valid: true });
-      expect(site.refused).toEqual([{ file: "package.json", pointer: "/devDependencies/@example~1writer", reason, item: "example-owner/site:@example/writer" }]);
+      expect(site.refused).toEqual(
+        expect.arrayContaining([
+          { file: "package.json", pointer: "/devDependencies/@example~1writer", reason, item: "example-owner/site:@example/writer" },
+          { path: ".agents/skills/clossys-advisor/SKILL.md", reason: "unowned-existing", item: "skills" },
+        ]),
+      );
       expect(site.keys).toEqual([]);
       expect(siteEntry(result).checks).toContainEqual({ check: "V8", verdict: "indeterminate", rule: reason });
     }
@@ -712,7 +776,7 @@ describe("the installed-state ledger", () => {
       second.lockedPackages.map((locked) => (locked.name === "@example/writer" ? { ...locked, integrity: STARTER.integrity } : locked)),
       second.lockedPackages.filter((locked) => locked.name !== "@example/writer"),
     ]) {
-      const { bundle, changeSets } = run(withSite({ ...second, lockedPackages }, [first]));
+      const { bundle, changeSets } = run(withSite({ ...second, lockedPackages }, [SETUP_HELD, corpusSet("apply-after-setup")]));
       expect(changeSets.map((set) => set.repository.id)).toEqual([DOCS.id]);
       expect(bundle.repositories[0]).toEqual({ id: SITE.id, verdict: "violated", reason: "integrity-mismatch", checks: [] });
       expect(bundle.bundleDigest).toBe(bundleDigest(planDigest(PLAN), [{ id: DOCS.id, changeSetDigest: changeSets[0]!.changeSetDigest }]));
@@ -724,14 +788,20 @@ describe("the installed-state ledger", () => {
     const fewer = clone(PLAN) as unknown as { staffing: { repository: string; roles: string[] }[] };
     fewer.staffing[0]!.roles = ["strategist"];
     const fewerPlan = fewer as unknown as AdvisorPlan;
-    const result = run(withSite(second, [first], { plan: fewerPlan, authorization: { ...INPUTS.authorization!, planDigest: planDigest(fewerPlan) } }));
+    const result = run(withSite(second, [SETUP_HELD, corpusSet("apply-after-setup")], { plan: fewerPlan, authorization: { ...INPUTS.authorization!, planDigest: planDigest(fewerPlan) } }));
     const site = setFor(result.changeSets, SITE.id);
     expect(validateRepositoryChangeSet(site)).toEqual({ valid: true });
     const touched = [...site.files.map((file) => file.path), ...site.refused.flatMap((refusal) => ("path" in refusal ? [refusal.path] : []))];
     expect(touched.filter((path) => path.includes("clossys-writer"))).toEqual([]);
-    expect(siteEntry(result)).toMatchObject({ verdict: "indeterminate", checks: [{ check: "V6", verdict: "satisfied" }, { check: "V8", verdict: "indeterminate", rule: "removal-unbuilt" }] });
+    expect(siteEntry(result)).toMatchObject({
+      verdict: "indeterminate",
+      checks: expect.arrayContaining([
+        { check: "V8", verdict: "indeterminate", rule: "removal-unbuilt" },
+        { check: "V8", verdict: "indeterminate", rule: "unowned-existing" },
+      ]),
+    });
     // Every row the plan still names is kept, so nothing else is reported.
-    expect(siteEntry(run(withSite(second, [first]))).checks).toContainEqual({ check: "V8", verdict: "satisfied" });
+    expect(siteEntry(run(withSite(second, [SETUP_HELD, applyFirst]))).checks).toContainEqual({ check: "V8", verdict: "indeterminate", rule: "unowned-existing" });
   });
 
   it("skips a repository whose ledger is not trusted, with the rule as its reason, outside the bundle digest", () => {
@@ -770,6 +840,24 @@ describe("the installed-state ledger", () => {
     // The same corpus ledger, with the set that wrote it held, is trusted.
     expect(setFor(run(withSite(overCorpusLedger(generation1), [setup])).changeSets, SITE.id).ledger).toEqual({ generation: 1 });
   });
+
+  it("does not list whole files with before null when the ledger is null or lacks a row for the path", () => {
+    const nullLedger = setFor(run().changeSets, SITE.id);
+    for (const file of wholeFiles(nullLedger)) expect(file.before, file.path).not.toBeNull();
+    const ledger = clone(SETUP_GENERATION1()) as InstalledLedger;
+    ledger.files = ledger.files.filter((row) => row.path !== ".agents/skills/clossys-writer/SKILL.md");
+    const missingRow = setFor(run(withSite(overCorpusLedger(ledger), [SETUP_HELD])).changeSets, SITE.id);
+    expect(missingRow.files.some((file) => file.path === ".agents/skills/clossys-writer/SKILL.md" && file.before === null)).toBe(false);
+    expect(missingRow.refused).toContainEqual({ path: ".agents/skills/clossys-writer/SKILL.md", reason: "unowned-existing", item: "skills" });
+  });
+
+  it("returns change sets renderInstalledLedger accepts over the trusted previous ledger", () => {
+    const previous = readInstalledLedger(siteAfterSetup().ledger!)!;
+    for (const set of applyOverSetup().changeSets) {
+      if (set.repository.id !== SITE.id) continue;
+      expect(() => renderInstalledLedger(previous, set, { kind: "approved", subjectDigest: set.bundle }, planPackages(PLAN, SITE.id))).not.toThrow();
+    }
+  });
 });
 
 /*
@@ -779,20 +867,19 @@ describe("the installed-state ledger", () => {
  * shortcut must not bypass the keys-row compare-and-swap.
  */
 describe("case-variant base files never collapse into one compare-and-swap input", () => {
-  const first = setFor(run().changeSets, SITE.id);
-  const second = merged(SITE, first);
+  const second = merged(SITE, corpusSet("apply-after-setup"), SETUP_GENERATION1());
   const skillPath = ".agents/skills/clossys-writer/SKILL.md";
   const siblingPath = ".agents/skills/clossys-writer/skill.md";
 
   it("refuses a client-edited file whose case-variant sibling still matches the ledger's row, whichever order they are observed in", () => {
-    const h = wholeFiles(first).find((file) => file.path === skillPath)!.after as string;
+    const h = wholeFiles(corpusSet("apply-after-setup")).find((file) => file.path === skillPath)!.after as string;
     const clientBytes = sha("the client's own writer skill");
     const withoutOriginal = second.files.filter((file) => file.path !== skillPath);
     for (const files of [
       [...withoutOriginal, { path: skillPath, sha256: clientBytes }, { path: siblingPath, sha256: h }],
       [...withoutOriginal, { path: siblingPath, sha256: h }, { path: skillPath, sha256: clientBytes }],
     ]) {
-      const result = run(withSite({ ...second, files }, [first]));
+      const result = run(withSite({ ...second, files }, [SETUP_HELD, corpusSet("apply-after-setup")]));
       const site = setFor(result.changeSets, SITE.id);
       expect(validateRepositoryChangeSet(site)).toEqual({ valid: true });
       expect(site.refused).toContainEqual({ path: skillPath, reason: "client-edited", item: "skills" });
@@ -801,11 +888,11 @@ describe("case-variant base files never collapse into one compare-and-swap input
       // own skill write is refused), so V8 also reports removal-unbuilt; that cascade is unrelated to this fix.
       expect(siteEntry(result)).toMatchObject({
         verdict: "indeterminate",
-        checks: [
-          { check: "V6", verdict: "satisfied" },
+        checks: expect.arrayContaining([
           { check: "V8", verdict: "indeterminate", rule: "client-edited" },
           { check: "V8", verdict: "indeterminate", rule: "removal-unbuilt" },
-        ],
+          { check: "V8", verdict: "indeterminate", rule: "unowned-existing" },
+        ]),
       });
     }
   });
@@ -851,7 +938,7 @@ describe("case-variant base files never collapse into one compare-and-swap input
       manifestEntries: mergedOlder.manifestEntries.map((entry) => (entry.name === "@example/writer" ? { ...entry, value: "0.7.0" } : entry)),
       lockedPackages: [...mergedOlder.lockedPackages.filter((locked) => locked.name !== "@example/writer"), { name: "@example/writer", version: "0.7.0", integrity: writerAct.integrity }],
     };
-    const result = run(withSite(handBumped, [firstOlder]));
+    const result = run(withSite(handBumped, [SETUP_HELD, firstOlder, corpusSet("apply-after-setup")]));
     const site = setFor(result.changeSets, SITE.id);
     const writerItem = site.items.find((item) => "planItem" in item && item.planItem === "example-owner/site:@example/writer");
     expect(writerItem).toMatchObject({ satisfiedInBase: false });
@@ -865,20 +952,20 @@ describe("case-variant base files never collapse into one compare-and-swap input
     const trustedPrevious = readInstalledLedger(
       Buffer.from(observationLedgerBytes(null, firstOlder, { kind: "approved", subjectDigest: firstOlder.bundle }, planPackages(olderPlan, SITE.id)), "utf8"),
     )!;
-    expect(() => renderInstalledLedger(trustedPrevious, site, { kind: "approved", subjectDigest: site.bundle }, planPackages(PLAN, SITE.id))).not.toThrow();
+    expect(() => renderInstalledLedger(readInstalledLedger(handBumped.ledger!)!, site, { kind: "approved", subjectDigest: site.bundle }, planPackages(PLAN, SITE.id))).not.toThrow();
 
-    const plainSatisfiedSet = setFor(run(withSite(second, [first])).changeSets, SITE.id);
-    const plainPrevious = readInstalledLedger(
-      Buffer.from(observationLedgerBytes(null, first, { kind: "approved", subjectDigest: first.bundle }, planPackages(PLAN, SITE.id)), "utf8"),
-    )!;
+    const plainSatisfiedSet = setFor(applyOverSetup().changeSets, SITE.id);
+    const plainPrevious = readInstalledLedger(siteAfterSetup().ledger!)!;
     expect(() => renderInstalledLedger(plainPrevious, plainSatisfiedSet, { kind: "approved", subjectDigest: plainSatisfiedSet.bundle }, planPackages(PLAN, SITE.id))).not.toThrow();
-    expect(() => renderInstalledLedger(null, first, { kind: "approved", subjectDigest: first.bundle }, planPackages(PLAN, SITE.id))).toThrow(/files\[\d+\]/);
+    expect(() =>
+      renderInstalledLedger(null, corpusSet("apply-with-packages"), { kind: "approved", subjectDigest: corpusSet("apply-with-packages").bundle }, planPackages(PLAN, SITE.id)),
+    ).toThrow(/files\[\d+\]/);
   });
 });
 
 describe("setup templates in an apply set", () => {
-  const setup = corpusSet("setup-site");
-  const generation1 = corpusLedger("setup-generation-1");
+  const setup = SETUP_HELD;
+  const generation1 = SETUP_GENERATION1();
   const templateFiles = (set: RepositoryChangeSet) => set.files.filter((file) => TEMPLATE_IDS.includes(file.item));
 
   it("keeps each template the trusted ledger records, exactly as the corpus apply-after-setup set does", () => {
@@ -889,8 +976,8 @@ describe("setup templates in an apply set", () => {
     expect(site.items.filter((item) => TEMPLATE_IDS.includes(item.id))).toEqual(corpus.items.filter((item) => TEMPLATE_IDS.includes(item.id)));
     expect(templateFiles(site)).toEqual(templateFiles(corpus));
     expect(site.pathAllowList).toEqual(corpus.pathAllowList);
-    expect(site.refused).toEqual([]);
-    expect(siteEntry(result).checks).toContainEqual({ check: "V8", verdict: "satisfied" });
+    expect(site.refused).toEqual([{ path: ".agents/skills/clossys-advisor/SKILL.md", reason: "unowned-existing", item: "skills" }]);
+    expect(siteEntry(result).checks).toContainEqual({ check: "V8", verdict: "indeterminate", rule: "unowned-existing" });
   });
 
   it("refuses a client-edited template and a deleted one, and keeps the rest", () => {
@@ -901,20 +988,26 @@ describe("setup templates in an apply set", () => {
     const result = run(withSite({ ...observed, files }, [setup]));
     const site = setFor(result.changeSets, SITE.id);
     expect(validateRepositoryChangeSet(site)).toEqual({ valid: true });
-    expect(site.refused).toEqual([
-      { path: ".github/workflows/clossys-ci.yml", reason: "client-edited", item: "ci-template" },
-      { path: ".starter/request.json", reason: "deleted", item: "starter-request" },
-    ]);
+    expect(site.refused).toEqual(
+      expect.arrayContaining([
+        { path: ".github/workflows/clossys-ci.yml", reason: "client-edited", item: "ci-template" },
+        { path: ".starter/request.json", reason: "deleted", item: "starter-request" },
+        { path: ".agents/skills/clossys-advisor/SKILL.md", reason: "unowned-existing", item: "skills" },
+      ]),
+    );
     expect(templateFiles(site).map((file) => file.path)).toEqual([
       ".github/scripts/clossys-collect-adoption-snapshot.mjs",
       ".github/workflows/clossys-adoption-decision.yml",
       ".github/workflows/clossys-adoption-evidence.yml",
       ".github/workflows/clossys-path-scope.yml",
     ]);
-    expect(siteEntry(result).checks.filter((check) => check.check === "V8")).toEqual([
-      { check: "V8", verdict: "indeterminate", rule: "client-edited" },
-      { check: "V8", verdict: "indeterminate", rule: "deleted" },
-    ]);
+    expect(siteEntry(result).checks.filter((check) => check.check === "V8")).toEqual(
+      expect.arrayContaining([
+        { check: "V8", verdict: "indeterminate", rule: "client-edited" },
+        { check: "V8", verdict: "indeterminate", rule: "deleted" },
+        { check: "V8", verdict: "indeterminate", rule: "unowned-existing" },
+      ]),
+    );
   });
 
   it("adds no template item when the ledger records none", () => {
@@ -945,7 +1038,7 @@ describe("setup templates in an apply set", () => {
       ".github/scripts/clossys-collect-adoption-snapshot.mjs",
       ".github/workflows/clossys-adoption-evidence.yml",
     ]);
-    const { bundle, changeSets } = run(withSite(overCorpusLedger(ledger), [held]));
+    const { bundle, changeSets } = run(withSite(overCorpusLedger(ledger), [held], { planPackageActs: corpusPlanPackageActs() }));
     expect(changeSets.map((set) => set.repository.id)).toEqual([DOCS.id]);
     expect(bundle.repositories[0]).toEqual({ id: SITE.id, verdict: "indeterminate", reason: "template-rows-partial", checks: [] });
     expect(validateApplyBundle(bundle)).toEqual({ valid: true });
@@ -954,13 +1047,13 @@ describe("setup templates in an apply set", () => {
   it("adds no exempt-release-age or declare-root-entry item to carry the ledger's entries rows, and reports no removal for the edited profile", () => {
     const profile = { path: "governance/repository-profile.json", rootVocabulary: "checked" as const, undeclaredRoots: [], prohibitedRoots: [] };
     const observed = overCorpusLedger(corpusLedger("setup-with-root-entries"), { repositoryProfile: profile });
-    const result = run(withSite(observed, [corpusSet("setup-site-root-entries")]));
+    const result = run(withSite(observed, [corpusSet("setup-site-root-entries")], { planPackageActs: corpusPlanPackageActs() }));
     const site = setFor(result.changeSets, SITE.id);
     expect(validateRepositoryChangeSet(site)).toEqual({ valid: true });
     expect(site.items.map((item) => item.act)).not.toContain("exempt-release-age");
     expect(site.items.map((item) => item.act)).not.toContain("declare-root-entry");
     expect(site.files.map((file) => file.path)).not.toContain("governance/repository-profile.json");
-    expect(siteEntry(result).checks).toContainEqual({ check: "V8", verdict: "satisfied" });
+    expect(siteEntry(result).checks).toContainEqual({ check: "V8", verdict: "indeterminate", rule: "unowned-existing" });
   });
 });
 
@@ -989,33 +1082,38 @@ describe("canonical output", () => {
     ],
   };
   const permutations = <T>(values: readonly T[]): T[][] => [[...values], [...values].reverse(), [...values.slice(1), ...values.slice(0, 1)]];
+  const richObservation = (): RepositoryObservation => {
+    const observed = siteAfterSetup();
+    return {
+      ...observed,
+      releaseAgeSurfaces: rich.releaseAgeSurfaces,
+      files: [...observed.files, ...rich.files.filter((file) => !observed.files.some((existing) => existing.path === file.path))],
+      manifestEntries: rich.manifestEntries,
+      lockedPackages: rich.lockedPackages,
+    };
+  };
 
   it("gives the same bytes for every order of every observation array, and of repositories and skills", () => {
-    const base = JSON.stringify(run({ ...INPUTS, repositories: [rich, DOCS] }));
-    for (const field of ["releaseAgeSurfaces", "files", "manifestEntries", "lockedPackages"] as const) {
+    const runRich = () => JSON.stringify(run(withSite(richObservation(), [SETUP_HELD])));
+    const base = runRich();
+    expect(runRich()).toBe(base);
+    for (const field of ["releaseAgeSurfaces", "manifestEntries", "lockedPackages"] as const) {
       for (const order of permutations(rich[field] as readonly unknown[])) {
-        const observation = { ...rich, [field]: order } as RepositoryObservation;
-        expect(JSON.stringify(run({ ...INPUTS, repositories: [observation, DOCS] })), field).toBe(base);
+        const observation = { ...richObservation(), [field]: order } as RepositoryObservation;
+        expect(JSON.stringify(run(withSite(observation, [SETUP_HELD]))), field).toBe(base);
       }
     }
-    expect(JSON.stringify(run({ ...INPUTS, repositories: [DOCS, rich] }))).toBe(base);
-    expect(JSON.stringify(run({ ...INPUTS, repositories: [rich, DOCS], skills: [...INPUTS.skills].reverse() }))).toBe(base);
+    expect(JSON.stringify(run(withSite(richObservation(), [SETUP_HELD], { skills: [...INPUTS.skills].reverse() })))).toBe(base);
   });
 
   it("sorts release-age surfaces and refusals, and writes every array in the contract's canonical order", () => {
-    const site = setFor(run({ ...INPUTS, repositories: [rich, DOCS] }).changeSets, SITE.id);
+    const site = setFor(run(withSite(richObservation(), [SETUP_HELD])).changeSets, SITE.id);
     expect(site.observed.releaseAgeSurfaces).toEqual([
       { surface: "npmrc", path: ".npmrc" },
       { surface: "npmrc", path: "packages/a/.npmrc" },
       { surface: "pnpm-workspace", path: "pnpm-workspace.yaml" },
     ]);
-    expect(site.refused.map((refusal) => ("path" in refusal ? refusal.path : refusal.pointer))).toEqual([
-      ".agents/skills/clossys-strategist/SKILL.md",
-      ".agents/skills/clossys-writer/SKILL.md",
-      "clossys/brief.json",
-      "/dependencies/@example~1writer",
-      "/devDependencies/@example~1writer",
-    ]);
+    expect(site.refused).toEqual(canonicalOrder(site.refused, CANONICAL_KEYS.refusal));
     expect(validateRepositoryChangeSet(site)).toEqual({ valid: true });
   });
 

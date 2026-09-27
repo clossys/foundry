@@ -2,4 +2,4 @@
 launcher: minor
 ---
 
-planApplyBundle() now reads each repository's installed-state ledger, trusts its rows only against change sets the hub holds, and updates, keeps or refuses each owned path and key by compare-and-swap.
+planApplyBundle() reads each repository's installed-state ledger, trusts rows against hub-held change sets and plan package acts (including deferred identities), refuses apply whole-file adds without a ledger row, and compare-and-swaps owned paths and keys.
