@@ -108,6 +108,10 @@ describe("registry-spec grammar", () => {
       "slash path": "/x",
       "tilde path": "~/x",
       "alias onto a git target": "npm:x@git+https://example.invalid/x.git",
+      "tarball filename tgz": "x.tgz",
+      "tarball filename tar": "x.tar",
+      "tarball filename tar.gz": "x.tar.gz",
+      "semver with tarball suffix": "1.0.0-a.tgz",
     };
     for (const [label, spec] of Object.entries(forms)) {
       expect(isRegistrySpec(spec), label).toBe(false);

@@ -77,7 +77,12 @@ const RANGE_SET_RE = new RegExp(`^\\s*${ONE_RANGE}(?:\\s*\\|\\|\\s*${ONE_RANGE})
 const DIST_TAG_RE = /^[a-z][a-z0-9._-]*$/;
 const DOLLAR_REFERENCE_RE = new RegExp(`^\\$${PACKAGE_NAME}$`);
 
-function isRegistryVersionSpec(spec: string): boolean { return RANGE_SET_RE.test(spec) || DIST_TAG_RE.test(spec); }
+const TARBALL_FILENAME_SUFFIX_RE = /\.(?:tgz|tar\.gz|tar)$/i;
+
+function isRegistryVersionSpec(spec: string): boolean {
+  if (TARBALL_FILENAME_SUFFIX_RE.test(spec.trim())) return false;
+  return RANGE_SET_RE.test(spec) || DIST_TAG_RE.test(spec);
+}
 
 /**
  * Splits `name@spec` at the '@' that follows a scope's '/', never the
