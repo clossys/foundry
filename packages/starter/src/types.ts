@@ -1,7 +1,7 @@
 /** The three outcomes retained from the installed package and Advisor CLIs. */
 export type StarterState = "satisfied" | "violated" | "indeterminate";
 export type PackageManager = "npm" | "pnpm";
-export type StarterPhase = "foundation" | "activation";
+export type StarterPhase = "foundation" | "activation" | "admission";
 
 /** An exact public npm package identity; ranges, tags, and local paths have no shape here. */
 export interface ExactPackage {
@@ -156,6 +156,39 @@ export interface HeadInstallEvaluationInput {
   readonly sourceViolations: readonly StarterFinding[];
   readonly install?: HeadInstallObservation;
   readonly identityFindings?: readonly StarterFinding[];
+}
+
+/** The protected base's manifest and lockfile after `npm ci` or `pnpm install --frozen-lockfile`. */
+export interface AdmissionInstall {
+  readonly manifest: unknown;
+  readonly lock: unknown;
+}
+
+/**
+ * Inputs to the admission comparison. The request selects the phase and carries
+ * no approval and no ledger bytes; the ledgers arrive as the files' own bytes.
+ * `install` is null when the frozen base install could not be read.
+ */
+export interface AdmissionEvaluationInput {
+  readonly request: unknown;
+  /** Canonical bytes of the protected base ledger, or null when that file is absent. */
+  readonly baseLedger: Uint8Array | null;
+  /** Canonical bytes of the pull-request ledger, or null when that file is absent. */
+  readonly headLedger: Uint8Array | null;
+  /** The base ledger file was present but could not be read as a regular file. */
+  readonly baseUnreadable?: boolean;
+  /** The head ledger file was present but could not be read as a regular file. */
+  readonly headUnreadable?: boolean;
+  readonly install: AdmissionInstall | null;
+}
+
+/** The admission comparison of the two installed-state ledgers. */
+export interface AdmissionReport {
+  readonly schemaVersion: 1;
+  readonly kind: "admission";
+  readonly state: StarterState;
+  readonly phase: "admission" | null;
+  readonly findings: readonly StarterFinding[];
 }
 
 /** The separate head-install proof report; it never replaces the protected-base `StarterReport`. */

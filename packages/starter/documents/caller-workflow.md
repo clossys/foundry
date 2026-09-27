@@ -455,3 +455,16 @@ Foundation is not activation: a foundation request is deliberately `2` after
 it pins packages and proves the local caller can be installed. An activation
 change later supplies current evidence and must demonstrate a real production
 `0`, plus adjacent realistic `1` and `2` controls owned by that consumer.
+
+## Admission check
+
+When the protected-base request's `phase` is `admission`, run
+`foundry-starter admit` from the trusted job instead of treating that phase
+as activation. Pass the request, the protected base checkout, and a checkout
+of the pull-request head. The command reads `clossys/.state/installed.json`
+in each tree and compares those bytes. It also reads the base `package.json`
+and lockfile left by `npm ci` or `pnpm install --frozen-lockfile` and
+compares that install with the base ledger's packages, including integrity.
+The request carries no approval and no ledger bytes. Exit `0` is a match,
+exit `1` is a mismatch, and exit `2` means the head ledger was absent or
+unreadable. `prove-head` remains the separate head-install proof.

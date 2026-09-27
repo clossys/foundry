@@ -1,4 +1,10 @@
+import { ledgerSuccession } from "./ledger.js";
+import type { LedgerSuccession } from "./ledger.js";
+import { isRegistrySpec, validateNpmIdentity } from "./npm.js";
+import { validatePnpmIdentity } from "./pnpm.js";
 import type {
+  AdmissionEvaluationInput,
+  AdmissionReport,
   HeadInstallEvaluationInput,
   HeadInstallIdentity,
   HeadInstallReport,
@@ -72,7 +78,7 @@ function exactPackage(value: unknown, label: string, allowed: ReadonlySet<string
 export function validateStarterRequest(value: unknown): { request: StarterRequest | null; findings: StarterFinding[] } {
   const findings: StarterFinding[] = [];
   if (!record(value) || !exactKeys(value, ALLOWED_REQUEST)) return { request: null, findings: [find("request-shape", "Starter request is not an exact v1 object; commands, shells, arguments, and CLI paths are not accepted.")] };
-  if (value.schemaVersion !== 1 || (value.phase !== "foundation" && value.phase !== "activation") || (value.packageManager !== "npm" && value.packageManager !== "pnpm")) {
+  if (value.schemaVersion !== 1 || (value.phase !== "foundation" && value.phase !== "activation" && value.phase !== "admission") || (value.packageManager !== "npm" && value.packageManager !== "pnpm")) {
     findings.push(find("request-shape", "schemaVersion, phase, and packageManager are invalid."));
   }
   if (!record(value.snapshot) || !exactKeys(value.snapshot, new Set(["repository", "maxAgeMs"]))) {
@@ -171,6 +177,9 @@ export function evaluateStarter(input: StarterEvaluationInput): StarterReport {
     request.hub !== undefined && !request.hub.inventoried
       ? [find("not-hub-inventoried", "The caller-supplied hub evidence reports this repository as not hub-inventoried; activation proceeds, and this finding is reported for the hub's own reconciliation.")]
       : [];
+  if (request.phase === "admission") {
+    return report("indeterminate", request.phase, [find("admission-ledgers", "phase admission compares the protected base ledger with the pull-request ledger."), ...hubFindings], null, null);
+  }
   const snapshotResult = validateSnapshot(input.snapshot, request, input.now);
   const findings = [...snapshotResult.findings];
   if (!snapshotResult.snapshot) return report("indeterminate", request.phase, [...findings, ...hubFindings], null, null);
@@ -234,4 +243,95 @@ export function evaluateHeadInstall(input: HeadInstallEvaluationInput): HeadInst
   const headRequest = head.request as StarterRequest;
   const proved = HEAD_ROLES.map((role) => ({ role, name: headRequest[role].name, version: headRequest[role].version, integrity: headRequest[role].integrity, bin: headRequest[role].bin }));
   return headReport("satisfied", event, [], changedFromBase, proved);
+}
+
+type LedgerPlacement = "dependencies" | "devDependencies";
+interface LedgerPackage { readonly name: string; readonly version: string; readonly integrity: string; readonly placement: LedgerPlacement }
+
+function admissionReport(state: StarterState, phase: "admission" | null, findings: readonly StarterFinding[]): AdmissionReport {
+  return { schemaVersion: 1, kind: "admission", state, phase, findings };
+}
+
+/** Maps a report state to the admission check's exit code: 0 satisfied, 1 violated, 2 indeterminate. */
+export function admissionExitCode(report: AdmissionReport): number {
+  return report.state === "satisfied" ? 0 : report.state === "violated" ? 1 : 2;
+}
+
+function successionFindings(succession: LedgerSuccession): StarterFinding[] {
+  return succession.violations.map((violation) => find(`ledger-${violation.side ?? "pair"}-${violation.rule}`, violation.message));
+}
+
+/** A head the succession reader could not parse. A parsed ledger in another spelling is a mismatch, not this. */
+function headDocumentUnreadable(succession: LedgerSuccession): boolean {
+  return succession.violations.some((violation) => violation.side === "head" && violation.rule === "bytes" && !violation.message.includes("exact bytes the ledger contract's RENDER"));
+}
+
+function ledgerPackages(bytes: Uint8Array): readonly LedgerPackage[] | null {
+  let parsed: unknown;
+  try { parsed = JSON.parse(new TextDecoder().decode(bytes)); } catch { return null; }
+  if (!record(parsed) || !Array.isArray(parsed.packages)) return null;
+  const packages: LedgerPackage[] = [];
+  for (const row of parsed.packages) {
+    if (!record(row) || typeof row.name !== "string" || typeof row.version !== "string" || typeof row.integrity !== "string" || (row.placement !== "dependencies" && row.placement !== "devDependencies")) return null;
+    packages.push({ name: row.name, version: row.version, integrity: row.integrity, placement: row.placement });
+  }
+  return packages;
+}
+
+function manifestSpec(manifest: unknown, placement: LedgerPlacement, name: string): unknown {
+  if (!record(manifest)) return undefined;
+  const section = manifest[placement];
+  if (!record(section)) return undefined;
+  return section[name];
+}
+
+/**
+ * Compares the frozen base install with the base ledger's package rows.
+ * Each row's manifest spec must pass the registry-spec grammar (`isRegistrySpec`),
+ * and its name, version, and integrity must match the lockfile through the same
+ * identity check the install proofs use (`validateNpmIdentity` / `validatePnpmIdentity`).
+ */
+function ledgerInstallFindings(manager: StarterRequest["packageManager"], manifest: unknown, lock: unknown, packages: readonly LedgerPackage[]): StarterFinding[] {
+  const findings: StarterFinding[] = [];
+  packages.forEach((pkg, index) => {
+    const spec = manifestSpec(manifest, pkg.placement, pkg.name);
+    if (typeof spec !== "string" || !isRegistrySpec(spec)) findings.push(find("registry-spec", `package.json ${pkg.placement} spec for ledger package #${index + 1} is not a registry spec.`));
+    const expected = { name: pkg.name, version: pkg.version, integrity: pkg.integrity };
+    const messages = manager === "npm" ? validateNpmIdentity(manifest, lock, expected, pkg.placement) : validatePnpmIdentity(manifest, lock, expected, pkg.placement);
+    for (const message of messages) findings.push(find("ledger-install", message));
+  });
+  return findings;
+}
+
+/**
+ * Admission check for issue #1492. Calls `ledgerSuccession` on the two ledgers'
+ * own bytes, so the comparison is the canonical spelling the succession reader
+ * already requires. A proved match is an identical ledger or the admitted next
+ * generation. A last generation labeled approved is a refusal. An unreadable
+ * or absent head ledger is indeterminate. When the ledgers match, the frozen
+ * base install must match the base ledger's packages, including integrity.
+ */
+export function evaluateAdmission(input: AdmissionEvaluationInput): AdmissionReport {
+  const parsed = validateStarterRequest(input.request);
+  if (!parsed.request) return admissionReport("indeterminate", null, parsed.findings);
+  const request = parsed.request;
+  const hubFindings: StarterFinding[] = request.hub !== undefined && !request.hub.inventoried
+    ? [find("not-hub-inventoried", "The caller-supplied hub evidence reports this repository as not hub-inventoried; activation proceeds, and this finding is reported for the hub's own reconciliation.")]
+    : [];
+  if (request.phase !== "admission") return admissionReport("indeterminate", null, [find("admission-phase", "the admission check requires phase admission."), ...hubFindings]);
+  if (input.headUnreadable === true) return admissionReport("indeterminate", "admission", [find("head-ledger-unreadable", "the pull-request head ledger is not a readable ledger document."), ...hubFindings]);
+  if (input.headLedger === null) return admissionReport("indeterminate", "admission", [find("head-ledger-absent", "the pull-request head ledger is absent."), ...hubFindings]);
+  if (input.baseUnreadable === true) return admissionReport("indeterminate", "admission", [find("base-ledger-unreadable", "the protected base ledger is not a readable ledger document."), ...hubFindings]);
+  const succession = ledgerSuccession(input.baseLedger, input.headLedger);
+  if (headDocumentUnreadable(succession)) return admissionReport("indeterminate", "admission", [...successionFindings(succession), ...hubFindings]);
+  if (succession.violations.length > 0) return admissionReport("violated", "admission", [...successionFindings(succession), ...hubFindings]);
+  if (succession.admission === "approval-claimed") return admissionReport("violated", "admission", [find("approval-claimed", "the pull-request ledger's last generation is labeled approved, so the comparison refuses it."), ...hubFindings]);
+  if (succession.change !== "none" && succession.admission !== "admitted") return admissionReport("violated", "admission", [find("ledger-succession", "the pull-request ledger is not the protected base ledger and is not its admitted next generation."), ...hubFindings]);
+  if (input.baseLedger === null) return admissionReport("indeterminate", "admission", [find("base-ledger-absent", "the protected base ledger is absent, so its packages cannot be compared with the frozen install."), ...hubFindings]);
+  const packages = ledgerPackages(input.baseLedger);
+  if (packages === null) return admissionReport("indeterminate", "admission", [find("base-ledger-packages", "the protected base ledger's package rows could not be read."), ...hubFindings]);
+  if (input.install === null) return admissionReport("indeterminate", "admission", [find("ledger-install-absent", "the frozen base install could not be read, so it was not compared with the base ledger's packages."), ...hubFindings]);
+  const installFindings = ledgerInstallFindings(request.packageManager, input.install.manifest, input.install.lock, packages);
+  if (installFindings.length > 0) return admissionReport("violated", "admission", [...installFindings, ...hubFindings]);
+  return admissionReport("satisfied", "admission", hubFindings);
 }

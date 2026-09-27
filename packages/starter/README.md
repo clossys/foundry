@@ -86,7 +86,8 @@ claimed. It cannot claim activation, adoption, grounding, or closure.
 manifest/lock identity, contained snapshot file, Advisor result, and target
 result is satisfied. The returned `firstWavePlan.workItems` must authorize the
 same consumer repository, package version/integrity, installed bin, and fixed
-`single-json-input` invocation.
+`single-json-input` invocation. `admission` is a third phase on this same
+schema version 1 request; see [Admission](#admission).
 
 The pure evaluator preserves a supplied `InstallReceipt`'s `0`/`1`/`2` state
 for integrations that have already established an exact trusted Starter
@@ -199,6 +200,36 @@ result are still proved by `decide` one merge later. It does not cover
 lifecycle scripts, the merge result, workspaces, pnpm, or registry mirrors.
 `changedFromBase` names the pins the pull request changes.
 
+## Admission
+
+`phase` may be `admission` on the same schema version 1 request. The request
+still has no approval field and no ledger bytes. `decide` does not judge that
+phase. `foundry-starter admit` does:
+
+```bash
+foundry-starter admit \
+  .starter/request.json \
+  . \
+  .starter-head \
+  --report "$RUNNER_TEMP/admission-report.json"
+```
+
+It reads `clossys/.state/installed.json` from the protected base directory and
+from the pull-request head directory, and passes those bytes to the
+installed-ledger succession reader. The comparison is that reader's canonical
+bytes. A manifest spec for a ledger package must pass `isRegistrySpec()`, the
+registry-spec grammar `prove-head` uses, which refuses a tarball filename.
+`prove-head` itself stays the head-install proof.
+
+| Exit | State | Meaning |
+| --- | --- | --- |
+| `0` | `satisfied` | The head ledger's canonical bytes are the base ledger's, or the head is the admitted next generation, and the base's frozen install matches the base ledger's packages, including integrity. |
+| `1` | `violated` | The head ledger adds an act, names another plan digest or subject digest, leaves a deferral, breaks the history prefix, labels its last generation approved, or is another spelling of a ledger; or the frozen `npm ci` / `pnpm install --frozen-lockfile` result does not match a base ledger package. |
+| `2` | `indeterminate` | The head ledger is absent or its bytes are not a readable ledger document, or the frozen install could not be read. |
+
+A last generation labeled `approved` is a refusal. This comparison does not
+authenticate an approval.
+
 ## Close condition
 
 Starter is executable tooling, not a role. Adoption, grounding, and closure
@@ -215,12 +246,15 @@ tests is not that evidence.
 
 | Export | Description |
 | --- | --- |
+| `admissionExitCode()` | Maps an `AdmissionReport` to exit `0` (satisfied), `1` (violated), or `2` (indeterminate). |
+| `evaluateAdmission()` | Compares the protected base ledger with the pull-request ledger by canonical bytes, then compares the frozen base install with the base ledger's packages. |
 | `evaluateHeadInstall()` | Purely derives the separate head-install `HeadInstallReport` from the base and head requests, trusted event, head commit, lockfile findings, install observation, and identity findings. |
 | `evaluateStarter()` | Purely joins typed request, snapshot, trusted event, install, and raw CLI observations into a `StarterReport`. |
 | `evaluateProcessResult()` | Checks a raw JSON `state` and exit code retain the exact `0`/`1`/`2` mapping. |
 | `isNormalizedRelativePath()` | Tests the portable relative-path grammar accepted for captured evidence. |
 | `validateStarterRequest()` | Rejects malformed request data and every untyped command or CLI surface. |
 | `StarterEvaluationInput` / `StarterFinding` / `StarterPhase` / `StarterReport` / `StarterRequest` / `StarterState` | Typed core input, report, phase, and outcome contracts. |
+| `AdmissionEvaluationInput` / `AdmissionInstall` / `AdmissionReport` | Typed admission input, frozen-install record, and ledger-comparison report. |
 | `HeadInstallEvaluationInput` / `HeadInstallIdentity` / `HeadInstallObservation` / `HeadInstallReport` / `HeadInstallRole` | Typed head-install proof input, proved identity, npm observation, report, and request-role contracts. |
 | `StarterHubEvidence` | The optional caller-supplied `hub` request object: `{ owner, repository, inventoried }`. |
 | `ExactPackage` / `InstallReceipt` / `PackageManager` / `ProcessObservation` / `SnapshotFile` / `SnapshotManifest` / `TargetPackage` / `TrustedEvent` | Typed identity, receipt, snapshot, process, target, and authenticated-event contracts. |
