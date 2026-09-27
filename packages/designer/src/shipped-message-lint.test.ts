@@ -293,6 +293,27 @@ function collectDocumentedDefaultProps(sourceFile: ts.SourceFile): Set<string> {
   return names;
 }
 
+function collectUndocumentedMessageInterfaceProps(
+  sourceFile: ts.SourceFile,
+  documentedDefaults: Set<string>,
+): Set<string> {
+  const names = new Set<string>();
+  function visit(node: ts.Node): void {
+    if (ts.isInterfaceDeclaration(node)) {
+      for (const member of node.members) {
+        if (!ts.isPropertySignature(member) || member.name === undefined) continue;
+        const propName = member.name.getText(sourceFile);
+        if (MESSAGE_JSX_ATTRS.has(propName) && !documentedDefaults.has(propName)) {
+          names.add(propName);
+        }
+      }
+    }
+    ts.forEachChild(node, visit);
+  }
+  visit(sourceFile);
+  return names;
+}
+
 function localInitializerIsShippedCopy(node: ts.Expression): boolean {
   if (ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node)) {
     const literal = staticLiteral(node);
@@ -319,7 +340,11 @@ function localInitializerIsShippedCopy(node: ts.Expression): boolean {
   if (ts.isConditionalExpression(node)) {
     return localInitializerIsShippedCopy(node.whenTrue) || localInitializerIsShippedCopy(node.whenFalse);
   }
-  if (ts.isBinaryExpression(node) && node.operatorToken.kind === ts.SyntaxKind.QuestionQuestionToken) {
+  if (
+    ts.isBinaryExpression(node) &&
+    (node.operatorToken.kind === ts.SyntaxKind.QuestionQuestionToken ||
+      node.operatorToken.kind === ts.SyntaxKind.BarBarToken)
+  ) {
     return localInitializerIsShippedCopy(node.right);
   }
   return false;
@@ -345,7 +370,11 @@ function collectChildLiterals(expression: ts.Expression | undefined, out: string
     collectChildLiterals(expression.right, out);
     return;
   }
-  if (ts.isBinaryExpression(expression) && expression.operatorToken.kind === ts.SyntaxKind.QuestionQuestionToken) {
+  if (
+    ts.isBinaryExpression(expression) &&
+    (expression.operatorToken.kind === ts.SyntaxKind.QuestionQuestionToken ||
+      expression.operatorToken.kind === ts.SyntaxKind.BarBarToken)
+  ) {
     collectChildLiterals(expression.right, out);
   }
 }
@@ -489,6 +518,16 @@ function analyzeRenderedLocals(
         expressionCarriesShippedMessage(expression.whenTrue) || expressionCarriesShippedMessage(expression.whenFalse)
       );
     }
+    if (
+      ts.isBinaryExpression(expression) &&
+      (expression.operatorToken.kind === ts.SyntaxKind.QuestionQuestionToken ||
+        expression.operatorToken.kind === ts.SyntaxKind.BarBarToken ||
+        expression.operatorToken.kind === ts.SyntaxKind.AmpersandAmpersandToken)
+    ) {
+      return (
+        expressionCarriesShippedMessage(expression.left) || expressionCarriesShippedMessage(expression.right)
+      );
+    }
     if (ts.isParenthesizedExpression(expression)) return expressionCarriesShippedMessage(expression.expression);
     return false;
   }
@@ -610,6 +649,7 @@ function checkRenderedLocalReferences(
   body: ts.ConciseBody,
   literalLocals: Map<string, number>,
   undocumentedPropNames: Set<string>,
+  interfaceMessageProps: Set<string>,
   fileName: string,
   source: ts.SourceFile,
   violations: ShippedMessageViolation[],
@@ -632,6 +672,10 @@ function checkRenderedLocalReferences(
   function notePropertyAccess(node: ts.PropertyAccessExpression, reportAt: ts.Node): void {
     const member = node.name.text;
     if (undocumentedPropNames.has(member)) {
+      violations.push({ file: fileName, line: lineOf(reportAt), kind: "rendered-local", text: member });
+      return;
+    }
+    if (ts.isIdentifier(node.expression) && node.expression.text === "props" && interfaceMessageProps.has(member)) {
       violations.push({ file: fileName, line: lineOf(reportAt), kind: "rendered-local", text: member });
       return;
     }
@@ -658,7 +702,11 @@ function checkRenderedLocalReferences(
       noteRenderedMessageReference(expression.whenFalse, node);
       return;
     }
-    if (ts.isBinaryExpression(expression) && expression.operatorToken.kind === ts.SyntaxKind.QuestionQuestionToken) {
+    if (
+      ts.isBinaryExpression(expression) &&
+      (expression.operatorToken.kind === ts.SyntaxKind.QuestionQuestionToken ||
+        expression.operatorToken.kind === ts.SyntaxKind.BarBarToken)
+    ) {
       noteRenderedMessageReference(expression.left, node);
       noteRenderedMessageReference(expression.right, node);
       return;
@@ -713,7 +761,11 @@ function checkRenderedLocalReferences(
       }
       return;
     }
-    if (ts.isBinaryExpression(expression) && expression.operatorToken.kind === ts.SyntaxKind.QuestionQuestionToken) {
+    if (
+      ts.isBinaryExpression(expression) &&
+      (expression.operatorToken.kind === ts.SyntaxKind.QuestionQuestionToken ||
+        expression.operatorToken.kind === ts.SyntaxKind.BarBarToken)
+    ) {
       if (literalBranches) {
         noteRenderedMessageExpression(expression.left, node, literalBranches);
         noteRenderedMessageExpression(expression.right, node, literalBranches);
@@ -727,6 +779,9 @@ function checkRenderedLocalReferences(
       if (literalBranches) {
         noteRenderedMessageExpression(expression.left, node, literalBranches);
         noteRenderedMessageExpression(expression.right, node, literalBranches);
+      } else {
+        noteRenderedMessageReference(expression.left, node);
+        noteRenderedMessageReference(expression.right, node);
       }
       return;
     }
@@ -735,8 +790,14 @@ function checkRenderedLocalReferences(
       violations.push({ file: fileName, line: lineOf(node), kind: "jsx-text", text: literal });
       return;
     }
-    if (ts.isTemplateExpression(expression) && templateExpressionIsShippedCopy(expression)) {
-      violations.push({ file: fileName, line: lineOf(node), kind: "jsx-text", text: expression.getText(source) });
+    if (ts.isTemplateExpression(expression)) {
+      if (templateExpressionIsShippedCopy(expression)) {
+        violations.push({ file: fileName, line: lineOf(node), kind: "jsx-text", text: expression.getText(source) });
+        return;
+      }
+      for (const span of expression.templateSpans) {
+        noteRenderedMessageReference(span.expression, node);
+      }
       return;
     }
     if (ts.isCallExpression(expression)) {
@@ -817,6 +878,19 @@ function checkRenderedLocalReferences(
         noteRenderedMessageExpression(expression, node);
       }
     }
+    if (ts.isVariableStatement(node)) {
+      for (const declaration of node.declarationList.declarations) {
+        if (declaration.initializer === undefined || !ts.isExpression(declaration.initializer)) continue;
+        const initializer = declaration.initializer;
+        if (
+          ts.isBinaryExpression(initializer) &&
+          (initializer.operatorToken.kind === ts.SyntaxKind.QuestionQuestionToken ||
+            initializer.operatorToken.kind === ts.SyntaxKind.BarBarToken)
+        ) {
+          noteRenderedMessageExpression(initializer, declaration, true);
+        }
+      }
+    }
     ts.forEachChild(node, visit);
   }
 
@@ -881,6 +955,7 @@ export function findShippedMessageViolations(fileName: string, sourceText: strin
     moduleBindings,
     moduleFunctions,
   );
+  const interfaceMessageProps = collectUndocumentedMessageInterfaceProps(source, documentedDefaults);
 
   function lineOf(node: ts.Node): number {
     return source.getLineAndCharacterOfPosition(node.getStart(source)).line + 1;
@@ -903,6 +978,7 @@ export function findShippedMessageViolations(fileName: string, sourceText: strin
           node.body,
           literalBindings,
           mergedUndocumentedPropNames,
+          interfaceMessageProps,
           fileName,
           source,
           violations,
@@ -929,7 +1005,11 @@ export function findShippedMessageViolations(fileName: string, sourceText: strin
           violations.push({ file: fileName, line: lineOf(node), kind: "jsx-text", text: literal });
         }
       }
-      if (ts.isBinaryExpression(node.expression) && node.expression.operatorToken.kind === ts.SyntaxKind.QuestionQuestionToken) {
+      if (
+        ts.isBinaryExpression(node.expression) &&
+        (node.expression.operatorToken.kind === ts.SyntaxKind.QuestionQuestionToken ||
+          node.expression.operatorToken.kind === ts.SyntaxKind.BarBarToken)
+      ) {
         const fallback = staticLiteral(node.expression.right);
         if (fallback !== null && hasLetter(fallback)) {
           violations.push({ file: fileName, line: lineOf(node), kind: "nullish-fallback", text: fallback });
@@ -958,7 +1038,8 @@ export function findShippedMessageViolations(fileName: string, sourceText: strin
         ts.isJsxExpression(node.initializer) &&
         node.initializer.expression !== undefined &&
         ts.isBinaryExpression(node.initializer.expression) &&
-        node.initializer.expression.operatorToken.kind === ts.SyntaxKind.QuestionQuestionToken
+        (node.initializer.expression.operatorToken.kind === ts.SyntaxKind.QuestionQuestionToken ||
+          node.initializer.expression.operatorToken.kind === ts.SyntaxKind.BarBarToken)
       ) {
         const fallback = staticLiteral(node.initializer.expression.right);
         if (fallback !== null && hasLetter(fallback)) {
@@ -1450,6 +1531,136 @@ describe("shipped message lint", () => {
         expect.objectContaining({ kind: "rendered-local", text: "label" }),
       ]),
     );
+  });
+
+  it("fails logical-or fallback and member reads the same way as nullish coalescing", () => {
+    const createElementOr = [
+      "import { createElement } from \"react\";",
+      "interface ExampleProps { title?: string; }",
+      "export function Example(props: ExampleProps) {",
+      "  return createElement(\"span\", null, props.title || \"Widget\");",
+      "}",
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.ts", createElementOr)).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ kind: "jsx-text", text: "Widget" }),
+        expect.objectContaining({ kind: "rendered-local", text: "title" }),
+      ]),
+    );
+
+    const jsxOr = [
+      "interface ExampleProps { title?: string; }",
+      "export function Example(props: ExampleProps) {",
+      "  return <span>{props.title || \"Widget\"}</span>;",
+      "}",
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", jsxOr)).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ kind: "jsx-text", text: "Widget" }),
+        expect.objectContaining({ kind: "nullish-fallback", text: "Widget" }),
+        expect.objectContaining({ kind: "rendered-local", text: "title" }),
+      ]),
+    );
+
+    const localOrCreateElement = [
+      "import { createElement } from \"react\";",
+      "function renderBlock(messages: { nodeChapterFallbackTitle: string }) {",
+      "  const title = messages.nodeChapterFallbackTitle || \"Widget\";",
+      "  return createElement(\"span\", { className: \"sr-only\" }, title);",
+      "}",
+      "export function compileConsumerTemplateBlocks({",
+      "  nodeChapterFallbackTitle = \"Widget\",",
+      "}: { nodeChapterFallbackTitle?: string }) {",
+      "  const messages = { nodeChapterFallbackTitle };",
+      "  return () => renderBlock(messages);",
+      "}",
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("compileConsumerTemplateBlocks.ts", localOrCreateElement)).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ kind: "jsx-text", text: "Widget" }),
+        expect.objectContaining({ kind: "rendered-local", text: "title" }),
+        expect.objectContaining({ kind: "rendered-local", text: "nodeChapterFallbackTitle" }),
+      ]),
+    );
+  });
+
+  it("fails JSX logical-and branches that reference locals, members, and calls", () => {
+    const localAnd = [
+      "interface ExampleProps { saveLabel?: string; show?: boolean; }",
+      "export function Example({ show, saveLabel = \"Save changes\" }: ExampleProps) {",
+      "  return <span>{show && saveLabel}</span>;",
+      "}",
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", localAnd)).toEqual([
+      expect.objectContaining({ kind: "rendered-local", text: "saveLabel" }),
+    ]);
+
+    const memberAnd = [
+      "interface ExampleProps { nodeChapterFallbackTitle?: string; show?: boolean; }",
+      "export function Example({ show, nodeChapterFallbackTitle = \"Widget\" }: ExampleProps, messages: { nodeChapterFallbackTitle: string }) {",
+      "  return <span>{show && messages.nodeChapterFallbackTitle}</span>;",
+      "}",
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", memberAnd)).toEqual([
+      expect.objectContaining({ kind: "rendered-local", text: "nodeChapterFallbackTitle" }),
+    ]);
+
+    const callAnd = [
+      "function defaultStatGridLabel(index: number): string { return `Stat ${index}`; }",
+      "interface ExampleProps { statGridLabel?: (index: number) => string; show?: boolean; }",
+      "export function Example({ show, statGridLabel = defaultStatGridLabel }: ExampleProps, messages: { statGridLabel: (index: number) => string }) {",
+      "  return <span>{show && messages.statGridLabel(1)}</span>;",
+      "}",
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", callAnd)).toEqual([
+      expect.objectContaining({ kind: "rendered-local", text: "statGridLabel" }),
+    ]);
+
+    const createElementAndLocal = [
+      "import { createElement } from \"react\";",
+      "function defaultStatGridLabel(index: number): string { return `Stat ${index}`; }",
+      "function renderBlock(messages: { statGridLabel: (index: number) => string }, show: boolean) {",
+      "  const { statGridLabel: labelFor } = messages;",
+      "  const label = show && labelFor(1);",
+      "  return createElement(\"span\", null, label);",
+      "}",
+      "export function compileConsumerTemplateBlocks({",
+      "  statGridLabel = defaultStatGridLabel,",
+      "}: { statGridLabel?: (index: number) => string }) {",
+      "  const messages = { statGridLabel };",
+      "  return (show: boolean) => renderBlock(messages, show);",
+      "}",
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("compileConsumerTemplateBlocks.ts", createElementAndLocal)).toEqual([
+      expect.objectContaining({ kind: "rendered-local", text: "label" }),
+    ]);
+  });
+
+  it("fails a template expression that renders a shipped message local", () => {
+    const source = [
+      "import { createElement } from \"react\";",
+      "function renderBlock(messages: { nodeChapterFallbackTitle: string }) {",
+      "  const title = messages.nodeChapterFallbackTitle;",
+      "  return createElement(\"span\", null, `${title}`);",
+      "}",
+      "export function compileConsumerTemplateBlocks({",
+      "  nodeChapterFallbackTitle = \"Widget\",",
+      "}: { nodeChapterFallbackTitle?: string }) {",
+      "  const messages = { nodeChapterFallbackTitle };",
+      "  return () => renderBlock(messages);",
+      "}",
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("compileConsumerTemplateBlocks.ts", source)).toEqual([
+      expect.objectContaining({ kind: "rendered-local", text: "title" }),
+    ]);
   });
 
   it("fails message props whose defaults are declared in another function", () => {
