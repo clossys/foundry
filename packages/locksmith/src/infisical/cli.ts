@@ -2,11 +2,16 @@
 import { readFileSync, realpathSync } from "node:fs";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import type { InventorySnapshot } from "../secret-environments.js";
 import { createAccessTokenProvider, createOidcTokenProvider } from "./auth.js";
 import { parseValueFreeCatalog } from "./catalog.js";
 import { createInfisicalClient } from "./client.js";
 import { InfisicalError } from "./errors.js";
 import type { InfisicalAccessTokenProvider, InfisicalClientConfig } from "./types.js";
+
+const INVENTORY_NAME_PATTERN = /^[A-Za-z_][A-Za-z0-9_]*$/;
+/** The location-id shape a version-2 secret declaration accepts, so a snapshot can match its location. */
+const INVENTORY_LOCATION_PATTERN = /^[a-z0-9][a-z0-9._-]{0,63}$/;
 
 const USAGE = `Usage: clossys-secrets-infisical <command> [options]
 
@@ -18,13 +23,20 @@ Commands:
   list                      Print available secret names only.
   get <key>                 Report whether one key is present; never print its value.
   run -- <command...>       Inject secrets into a child process without writing a file.
+  inventory --location <id> Print a names-only secret inventory snapshot; never print values.
 
-Provider options for check, list, get, and run:
+Provider options for check, list, get, run, and inventory:
   --base-url <url>          Infisical API base URL. Or INFISICAL_API_URL.
   --project-id <id>         Consumer-provided project ID. Or INFISICAL_PROJECT_ID.
   --environment <slug>      Consumer-provided environment. Or INFISICAL_ENVIRONMENT.
   --path <path>             Consumer-provided secret path. Or INFISICAL_SECRET_PATH. Defaults to /.
   --auth <token|oidc>       Authentication mode. Defaults to token.
+
+Inventory-only option:
+  --location <id>           Location identifier recorded in the inventory snapshot.
+
+The inventory command lists secret names only (viewSecretValue=false) and never
+reads or prints a secret value.
 
 Token auth reads INFISICAL_TOKEN. OIDC auth reads INFISICAL_MACHINE_IDENTITY_ID
 and INFISICAL_JWT, exchanges the JWT in memory, and never prints either token.
@@ -171,6 +183,7 @@ function validateCommandArguments(args: ParsedArgs): void {
     list: providerFlags,
     get: providerFlags,
     run: providerFlags,
+    inventory: ["location", ...providerFlags],
   };
   const allowed = allowedByCommand[args.command];
   if (allowed === undefined) return;
@@ -230,6 +243,36 @@ async function main(): Promise<number> {
       const result = await createInfisicalClient(clientConfig(args)).run(args.childCommand);
       if (result.signal !== null) return 1;
       return result.exitCode === 0 ? 0 : 1;
+    }
+    case "inventory": {
+      const location = required(flag(args, "location"), "--location");
+      if (!INVENTORY_LOCATION_PATTERN.test(location)) {
+        throw new CliInputError("--location must be a lowercase slug matching the declared source or delivery-target id");
+      }
+      const config = clientConfig(args);
+      const names = await createInfisicalClient(config).listSecretNames();
+      for (const name of names) {
+        if (!INVENTORY_NAME_PATTERN.test(name)) {
+          throw new InfisicalError(
+            "INFISICAL_RESPONSE_INVALID",
+            "Infisical secret listing returned an invalid response.",
+          );
+        }
+      }
+      const snapshot: InventorySnapshot = {
+        version: 1,
+        provider: "infisical",
+        location,
+        observedAt: new Date().toISOString(),
+        environments: [config.environment],
+        entries: names.map((name) => ({
+          name,
+          environments: [config.environment],
+          storage: "managed",
+        })),
+      };
+      console.log(JSON.stringify(snapshot, null, 2));
+      return 0;
     }
     default:
       throw new CliInputError("unknown command");

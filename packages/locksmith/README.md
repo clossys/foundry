@@ -359,6 +359,175 @@ docs/contracts/check-output-envelope.json declares (that contract does not
 ship with this package), instead of the default human-readable lines; the
 default output is unchanged from before that contract existed.
 
+### Secret environments and sources
+
+Secret values have exactly one source of truth: the secret manager (today,
+`infisical`). A hosting provider (`vercel`) or CI system is a delivery
+target it is pushed to, never a place a value originates. A provider API
+token — the credential this package's own CI or an operator uses to reach
+that provider's own API — is never itself a delivery target for a build
+environment; declare it only against the operator or CI environments that
+actually need it, never the runtime environments it configures.
+
+`defineSecretDeclaration` accepts a version-2 declaration naming the
+environments a secret is deployed to, the source it lives in, zero or more
+delivery targets it is pushed to, and, per key, which of those targets
+receive it:
+
+```json
+{
+  "version": 2,
+  "environments": ["development", "preview", "production"],
+  "source": {
+    "id": "infisical-prod",
+    "provider": "infisical",
+    "role": "secret-manager",
+    "environmentMap": {
+      "development": "dev",
+      "preview": "staging",
+      "production": "prod"
+    }
+  },
+  "deliveryTargets": [
+    {
+      "id": "vercel-app",
+      "provider": "vercel",
+      "environmentMap": {
+        "development": "development",
+        "preview": "preview",
+        "production": "production"
+      },
+      "sync": "provider-integration"
+    }
+  ],
+  "entries": [
+    {
+      "key": "APP_SIGNING_KEY",
+      "required": true,
+      "class": "secret",
+      "purpose": "Signs outbound webhook payloads.",
+      "consumers": ["service-api"],
+      "deliveryTargets": ["vercel-app"]
+    },
+    {
+      "key": "PUBLIC_APP_URL",
+      "required": true,
+      "class": "public-config",
+      "purpose": "Base URL the client renders links against.",
+      "consumers": ["service-web"],
+      "deliveryTargets": ["vercel-app"]
+    }
+  ]
+}
+```
+
+Each source or delivery target's `environmentMap` names, per declared
+environment, that location's own environment name — the same declared
+`production` can be Infisical's `prod` and Vercel's `production` at once.
+`source.role` is `secret-manager` (the normal case, and only for the
+`infisical` provider) or `hosting-as-source` (a hosting provider holding a
+value with no secret-manager copy at all), which requires a non-empty
+`reason` and `migration` note — a recorded exception, never a default.
+
+Every level of the declaration is a closed field set: an unknown field makes
+the whole declaration unreadable (`indeterminate`) and is never echoed.
+Source and delivery-target ids are short lowercase slugs
+(`^[a-z0-9][a-z0-9._-]{0,63}$`) because they appear in finding paths, and
+entry keys and inventoried names are environment-variable names
+(`^[A-Za-z_][A-Za-z0-9_]*$`).
+
+An entry may set a per-environment policy under `environments`:
+
+```json
+"environments": { "production": { "mode": "separate" } }
+```
+
+`mode` is `separate` (a distinct value per environment; the default for
+`class: "secret"`), `shared` (the same value across every environment that
+maps to it; the default for `public-config` and `config`), or `absent`
+(deliberately not provisioned there). A `class: "secret"` entry that
+explicitly declares `shared` or `absent` must also give a non-empty
+`reason`; `public-config` and `config` entries never need one.
+
+`evaluateSecretEnvironments` reconciles a declaration against one or more
+names-only inventory snapshots — one per source or delivery target,
+version 1:
+
+```json
+{
+  "version": 1,
+  "provider": "vercel",
+  "location": "vercel-app",
+  "observedAt": "2026-09-01T00:00:00.000Z",
+  "environments": ["production"],
+  "entries": [
+    { "name": "APP_SIGNING_KEY", "environments": ["production"], "storage": "sensitive" }
+  ]
+}
+```
+
+`identity`, when present on an inventory entry, is an opaque provider-issued
+identifier — for example a provider environment-variable id or a provider
+key id — compared for equality only, to notice when records in different
+environments carry the same underlying value. It never appears in any
+finding, message, error, or other output this package produces, and it must
+never be a secret value or a locally computed digest of one.
+
+`evaluateSecretEnvironments`'s findings:
+
+| Rule | Meaning |
+| --- | --- |
+| **Violations** | |
+| `environment-not-declared` | An environment map or entry names an environment not in the declaration's top-level `environments`. |
+| `source-role-provider-mismatch` | `secret-manager` paired with a non-`infisical` provider, or `hosting-as-source` paired with `infisical`. |
+| `hosting-source-without-exception` | `hosting-as-source` without both a non-empty `reason` and `migration`. |
+| `unknown-delivery-target` | An entry names a delivery target id the declaration never declared. |
+| `missing-purpose` | An entry's `purpose` is missing or not a non-empty string. |
+| `missing-consumers` | An entry's `consumers` is missing, empty, or contains a non-string. |
+| `shared-without-reason` / `absent-without-reason` | A `class: "secret"` entry declares `shared`/`absent` without a `reason`. |
+| `location-merges-environments` | Two declared environments map to the same provider environment at a location, merging environments a `secret` entry expects kept separate. |
+| `declared-environment-missing` | A required key expected at a covered location and environment was not observed there. |
+| `absent-environment-present` | A key declared `absent` from an environment was observed there anyway. |
+| `undeclared-name` | An inventory record names something the declaration never declared for that location. |
+| `secret-stored-readable` | A `secret`-class key is observed with `readable` or `plain` storage. |
+| `separate-shares-identity` | Two records a `separate` policy expects to differ across environments turn out to be the same underlying value (the same record, or the same provider and identity). |
+| **Indeterminate** | |
+| `declaration-unreadable` | The declaration is not a structurally valid version-2 document. |
+| `inventory-unreadable` | One inventory snapshot is not a structurally valid version-1 snapshot; that snapshot is ignored. |
+| `inventory-unmatched` | A readable snapshot's `location` or `provider` does not match a declared source or target; ignored. |
+| `inventories-empty` | No inventory snapshots were given. |
+| `location-unobserved` | A declared location and environment has no matching inventory coverage. |
+| `storage-unobserved` | A secret's storage could not be classified as safe: `unknown` storage, or `managed` storage reported anywhere but the secret-manager source. |
+| **Warning** | |
+| `manual-sync` | A delivery target syncs `manual`ly rather than by `locksmith-push` or a provider integration. |
+
+An empty inventory set is never `satisfied`; warnings alone stay
+`satisfied`.
+
+#### `clossys-locksmith-secret-environments` CLI
+
+```text
+clossys-locksmith-secret-environments --declaration ./secret-declaration.json --inventory ./infisical-inventory.json --inventory ./vercel-inventory.json
+clossys-locksmith-secret-environments --declaration ./secret-declaration.json --inventory ./infisical-inventory.json --mode enforce
+clossys-locksmith-secret-environments --help
+```
+
+Reads one declaration and any number of `--inventory` snapshots, judges them
+with `evaluateSecretEnvironments`, and prints `secretEnvironmentsReport`'s
+envelope JSON. `--mode` defaults to `report`:
+
+| Mode | `satisfied` | `violated` | indeterminate or bad input |
+| --- | --- | --- | --- |
+| `report` (default) | `0` | `2` | `2` |
+| `enforce` | `0` | `1` | `2` |
+
+`report` mode never exits `1`: a caller that wants a violation to fail a
+build uses `--mode enforce`. In `report` mode, a `violated` verdict also
+prints a one-line stderr note. A file that cannot be read or does not parse
+as JSON is reported by its path only — never the parse error text or the
+file's contents — and exits `2`. The CLI makes no network call and reads
+only the files named on its own command line.
+
 ### Revocation
 
 ```ts
@@ -454,9 +623,11 @@ identity token in memory and caches the short-lived provider token only until
 shortly before expiry.
 
 `listSecretNames()` returns names only. `checkCatalog()` returns a value-free
-readiness report. `parseValueFreeCatalog()` accepts only strict version-1
-catalog metadata. `run()` injects values into one non-shell child process
-without writing a file or printing the environment.
+readiness report. `parseValueFreeCatalog()` accepts strict version-1 catalog
+metadata, or a valid version-2 secret declaration (`SecretDeclaration`), in
+which case it returns that declaration's version-1 catalog projection
+(`projectSecretCatalog()`) instead. `run()` injects values into one
+non-shell child process without writing a file or printing the environment.
 
 The provider-specific CLI installs as `clossys-secrets-infisical`. It is also
 still installed under its previous, now **deprecated** name, which will be
@@ -465,9 +636,9 @@ dropped a release cycle after the deprecation was announced — see the
 consumer already invoking the old one keeps working and can switch on its own
 schedule.
 
-Its `catalog`, `check`, `list`, `get`, and `run` commands never print secret
-values. `get` reports presence only, and the CLI exposes no mutation command.
-`qualify` is the one
+Its `catalog`, `check`, `list`, `get`, `inventory`, and `run` commands never
+print secret values. `get` reports presence only, and the CLI exposes no
+mutation command. `qualify` is the one
 offline readiness operation: it compares a value-free catalog to a names-only
 availability snapshot, without provider configuration, credentials, or network
 access. It exits `0` when every required name is available, `1` when one or
@@ -479,8 +650,17 @@ clossys-secrets-infisical qualify --catalog ./secret-catalog.json --available ./
 clossys-secrets-infisical check --catalog ./secret-catalog.json
 clossys-secrets-infisical list
 clossys-secrets-infisical get APP_SIGNING_KEY
+clossys-secrets-infisical inventory --location infisical-prod --environment production
 clossys-secrets-infisical run -- node server.js
 ```
+
+`inventory --location <id>` lists names only — a list request with
+`viewSecretValue=false` — for the one `--environment` given, and prints a
+version-1 inventory snapshot with `storage: "managed"` and no `identity`,
+for `evaluateSecretEnvironments` (see
+[Secret environments and sources](#secret-environments-and-sources) above)
+to reconcile against the source or delivery-target entry named `<id>` in a
+secret declaration.
 
 The availability snapshot is strict version-1 names-only metadata; fields
 other than `version` and `names` are rejected so a value cannot be accepted by
@@ -563,6 +743,16 @@ authority.
 | `keysFor(manifest, principal)` | function | Every key declared for a principal. |
 | `DistributionManifest` / `DistributionEntry` | types | Distribution manifest and per-key principal-list contracts. |
 | `Principal` | type | An opaque identifier for whoever may resolve a key. |
+| `validateSecretDeclaration(value)` | function | Every declaration problem found in an unknown value; empty when it is a valid version-2 declaration. Never throws. |
+| `defineSecretDeclaration(declaration)` | function | Returns a frozen, normalized declaration; throws `RangeError` (naming rule ids only) unless the declaration validates. |
+| `projectSecretCatalog(declaration)` | function | The version-1 `SecretCatalog` projection of a valid declaration (key/required/description/group only). |
+| `evaluateSecretEnvironments(input)` | function | Reconciles a declaration against names-only inventory snapshots: `satisfied` / `violated` / `indeterminate` with exit code `0`/`1`/`2`. Never throws. |
+| `secretEnvironmentsReport(input, version)` | function | Builds the docs/contracts/check-output-envelope.json report (not shipped with this package) for one secret-environments evaluation. |
+| `DeclaredEnvironment` / `SecretLocationProvider` / `SecretSourceRole` / `DeliverySync` / `SecretEntryClass` / `EnvironmentMode` | types | Closed vocabularies for declared environments, location provider, source role, delivery-target sync mode, entry class, and per-environment policy mode. |
+| `EnvironmentMap` | type | A declared-environment-to-provider-environment-name mapping used by a source or delivery target. |
+| `SecretDeclaration` / `SecretDeclarationEntry` / `SecretSource` / `SecretDeliveryTarget` / `SecretEnvironmentPolicy` | types | The version-2 declaration shape: declared environments, one source, delivery targets, and per-entry, per-environment policy. |
+| `InventorySnapshot` / `InventoryEntry` / `InventoryStorage` | types | A names-only, version-1 inventory of one location's observed entries and how each is stored. |
+| `SecretEnvironmentsInput` / `SecretEnvironmentsEvaluation` / `SecretEnvironmentsFinding` / `SecretEnvironmentsRule` / `SecretEnvironmentsVerdict` | types | Evaluator input, value-free ternary result, finding shape, the closed rule-id vocabulary, and the verdict vocabulary. |
 
 ### `@clossys/locksmith/infisical` API
 
@@ -571,7 +761,7 @@ authority.
 | `createInfisicalClient(config)` | function | Creates injected read, list, readiness, and child-process injection operations. |
 | `createAccessTokenProvider(tokenOrFactory)` | function | Supplies a late-bound access token. |
 | `createOidcTokenProvider(options)` | function | Exchanges an injected identity token for a short-lived provider token. |
-| `parseValueFreeCatalog(value)` | function | Parses strict non-empty version-1 catalog metadata. |
+| `parseValueFreeCatalog(value)` | function | Parses strict non-empty version-1 catalog metadata, or a valid version-2 secret declaration, returning that declaration's version-1 catalog projection. |
 | `createInfisicalMaintenanceClient(config, authorize)` | function | Creates a separately policy-gated replacement client. |
 | `InfisicalError` | class | Safe provider error with stable code, optional status, and optional key. |
 | `InfisicalClient` / `InfisicalClientConfig` | types | Provider read, list, readiness, run, and configuration contracts. |
@@ -586,8 +776,9 @@ authority.
 ## Ownership boundary
 
 The root entry owns resolution, custody, provider-token custody,
-rotation, credential-lifecycle judgement, and revocation record-keeping,
-and the distribution manifest. It has no provider SDK,
+rotation, credential-lifecycle judgement, revocation record-keeping,
+the distribution manifest, and secret-environment declaration and drift
+reporting. It has no provider SDK,
 network calls, authentication, global adapter registry, project identifier,
 folder convention, or repository topology. The explicit `./infisical`
 subpath owns provider integration and its value-safe operational CLI.
@@ -599,14 +790,16 @@ on it.
 ## Hard boundaries
 
 **This value-free guarantee is scoped, not package-wide.** It covers exactly
-the six verb modules `no-value-escapes.test.ts` proves it for --
-`custody`, `rotation`, `revocation`, `distribution`, `credential`, and
-`provider-custody` -- 6 of this package's non-test modules. Within that
-scope, and only within it: no code path reads, logs, prints, or transports a
-secret **value**. Those six modules handle names, owners, ages, stores,
-rotation policies, credential lifecycle metadata, revocation records,
-provider-custody rungs, and digests only, and the test enforces this two
-ways -- statically, by asserting none of the six imports the resolution
+the eight verb modules `no-value-escapes.test.ts` proves it for --
+`custody`, `rotation`, `controlled-key-rate`, `revocation`, `distribution`,
+`credential`, `provider-custody`, and `secret-environments` -- 8 of this
+package's non-test modules. Within that scope, and only within it: no code
+path reads, logs, prints, or transports a secret **value**. Those eight
+modules handle names, owners, ages, stores, rotation policies, credential
+lifecycle metadata, revocation records, provider-custody rungs, digests,
+declared environments, storage kinds, and opaque provider-issued
+identifiers compared for equality only, and the test enforces this two
+ways -- statically, by asserting none of the eight imports the resolution
 client/adapters, the Infisical subtree, or any other value-reading or I/O
 capability; and at runtime, by asserting every record these modules produce
 has a closed, exact field set that a decoy value-shaped string cannot ride

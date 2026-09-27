@@ -7,7 +7,8 @@
     "vespene-secrets-infisical": 0,
     "clossys-locksmith-credential": 0,
     "locksmith-check": 0,
-    "clossys-locksmith-provider-custody": 0
+    "clossys-locksmith-provider-custody": 0,
+    "clossys-locksmith-secret-environments": 0
   },
   "fixtures": [
     "catalog.json",
@@ -16,7 +17,12 @@
     "available-malformed.json",
     "credential-satisfied.json",
     "credential-violated.json",
-    "credential-indeterminate.json"
+    "credential-indeterminate.json",
+    "secret-declaration.json",
+    "secret-inventory-source.json",
+    "secret-inventory-target.json",
+    "secret-inventory-target-drift.json",
+    "secret-declaration-malformed.json"
   ],
   "cases": [
     {
@@ -129,6 +135,104 @@
       ],
       "exitCode": 2,
       "group": "credential-lifecycle"
+    },
+    {
+      "id": "secret-environments-satisfied",
+      "bin": "clossys-locksmith-secret-environments",
+      "args": [
+        {
+          "literal": "--declaration"
+        },
+        {
+          "fixture": "secret-declaration.json"
+        },
+        {
+          "literal": "--inventory"
+        },
+        {
+          "fixture": "secret-inventory-source.json"
+        },
+        {
+          "literal": "--inventory"
+        },
+        {
+          "fixture": "secret-inventory-target.json"
+        }
+      ],
+      "exitCode": 0,
+      "group": "secret-environments"
+    },
+    {
+      "id": "secret-environments-violated-enforce",
+      "bin": "clossys-locksmith-secret-environments",
+      "args": [
+        {
+          "literal": "--declaration"
+        },
+        {
+          "fixture": "secret-declaration.json"
+        },
+        {
+          "literal": "--inventory"
+        },
+        {
+          "fixture": "secret-inventory-source.json"
+        },
+        {
+          "literal": "--inventory"
+        },
+        {
+          "fixture": "secret-inventory-target-drift.json"
+        },
+        {
+          "literal": "--mode"
+        },
+        {
+          "literal": "enforce"
+        }
+      ],
+      "exitCode": 1,
+      "group": "secret-environments"
+    },
+    {
+      "id": "secret-environments-violated-report",
+      "bin": "clossys-locksmith-secret-environments",
+      "args": [
+        {
+          "literal": "--declaration"
+        },
+        {
+          "fixture": "secret-declaration.json"
+        },
+        {
+          "literal": "--inventory"
+        },
+        {
+          "fixture": "secret-inventory-source.json"
+        },
+        {
+          "literal": "--inventory"
+        },
+        {
+          "fixture": "secret-inventory-target-drift.json"
+        }
+      ],
+      "exitCode": 2,
+      "group": "secret-environments"
+    },
+    {
+      "id": "secret-environments-malformed",
+      "bin": "clossys-locksmith-secret-environments",
+      "args": [
+        {
+          "literal": "--declaration"
+        },
+        {
+          "fixture": "secret-declaration-malformed.json"
+        }
+      ],
+      "exitCode": 2,
+      "group": "secret-environments"
     }
   ],
   "dimensionEvidence": {

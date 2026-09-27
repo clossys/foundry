@@ -185,7 +185,9 @@ describe("clossys-secrets-infisical CLI", () => {
 
     const result = await runCli(["qualify", "--catalog", catalog, "--available", available]);
     expect(result.code).toBe(2);
-    expect(result.stderr).toContain("Secret catalog must be value-free version 1 metadata with unique keys.");
+    expect(result.stderr).toContain(
+      "Secret catalog must be value-free version 1 metadata with unique keys, or a valid version 2 secret declaration.",
+    );
     expect(result.stderr).not.toContain(decoy);
   });
 
@@ -254,6 +256,114 @@ describe("clossys-secrets-infisical CLI", () => {
     ]);
     expect(invalid.code).toBe(2);
     expect(invalid.stderr).not.toContain("attempted-sensitive-value");
+  });
+
+  it("prints a names-only inventory snapshot without ever requesting values", async () => {
+    const valueDecoy = "inventory-value-that-must-not-be-printed";
+    const tokenDecoy = "inventory-token-that-must-not-be-printed";
+    const requestUrls: string[] = [];
+    const server = createServer((request, response) => {
+      requestUrls.push(request.url ?? "");
+      if ((request.url ?? "").startsWith("/api/v4/secrets?")) {
+        response.writeHead(200, { "content-type": "application/json" });
+        response.end(
+          JSON.stringify({
+            secrets: [
+              { secretKey: "APP_SIGNING_KEY", secretValue: valueDecoy },
+              { secretKey: "DATABASE_URL", secretValue: valueDecoy },
+            ],
+            imports: [],
+          }),
+        );
+        return;
+      }
+      response.writeHead(500);
+      response.end();
+    });
+    server.listen(0, "127.0.0.1");
+    await once(server, "listening");
+    const address = server.address();
+    if (address === null || typeof address === "string") throw new Error("test server did not bind a TCP port");
+
+    try {
+      const result = await runCli(
+        [
+          "inventory",
+          "--location",
+          "infisical-main",
+          "--base-url",
+          `http://127.0.0.1:${address.port}`,
+          "--project-id",
+          "p",
+          "--environment",
+          "prod",
+        ],
+        { INFISICAL_TOKEN: tokenDecoy },
+      );
+      expect(result.code).toBe(0);
+      expect(requestUrls.length).toBeGreaterThan(0);
+      for (const url of requestUrls) {
+        expect(url).toContain("viewSecretValue=false");
+        expect(url).not.toMatch(/\/api\/v4\/secrets\/[^?]/);
+      }
+
+      const snapshot = JSON.parse(result.stdout);
+      expect(snapshot.version).toBe(1);
+      expect(snapshot.provider).toBe("infisical");
+      expect(snapshot.location).toBe("infisical-main");
+      expect(snapshot.environments).toEqual(["prod"]);
+      expect(new Date(snapshot.observedAt).toISOString()).toBe(snapshot.observedAt);
+      expect(snapshot.entries).toEqual([
+        { name: "APP_SIGNING_KEY", environments: ["prod"], storage: "managed" },
+        { name: "DATABASE_URL", environments: ["prod"], storage: "managed" },
+      ]);
+      for (const entry of snapshot.entries) {
+        expect(Object.prototype.hasOwnProperty.call(entry, "identity")).toBe(false);
+      }
+
+      expect(result.stdout).not.toContain(valueDecoy);
+      expect(result.stdout).not.toContain(tokenDecoy);
+      expect(result.stderr).not.toContain(valueDecoy);
+      expect(result.stderr).not.toContain(tokenDecoy);
+    } finally {
+      await new Promise<void>((resolveClose) => server.close(() => resolveClose()));
+    }
+  });
+
+  it("requires --location for inventory", async () => {
+    const result = await runCli([
+      "inventory",
+      "--base-url",
+      "https://secrets.example.test",
+      "--project-id",
+      "project-example",
+      "--environment",
+      "test",
+    ]);
+    expect(result.code).toBe(2);
+    expect(result.stderr).toContain("--location is required");
+  });
+
+  it("rejects an inventory location that no declaration could name", async () => {
+    const result = await runCli([
+      "inventory",
+      "--location",
+      "Infisical/Main",
+      "--base-url",
+      "https://secrets.example.test",
+      "--project-id",
+      "project-example",
+      "--environment",
+      "test",
+    ]);
+    expect(result.code).toBe(2);
+    expect(result.stderr).toContain("--location must be a lowercase slug");
+  });
+
+  it("rejects unknown options for inventory", async () => {
+    const result = await runCli(["inventory", "--location", "infisical-main", "--catalog", "irrelevant.json"]);
+    expect(result.code).toBe(2);
+    expect(result.stderr).toContain("unknown option --catalog");
   });
 
   it("normalizes every nonzero child exit to the child-failure code", async () => {

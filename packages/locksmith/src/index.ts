@@ -66,3 +66,33 @@ export type {
   ProviderCustodyVerdict,
   ProviderName,
 } from "./provider-custody.js";
+
+export {
+  defineSecretDeclaration,
+  evaluateSecretEnvironments,
+  projectSecretCatalog,
+  secretEnvironmentsReport,
+  validateSecretDeclaration,
+} from "./secret-environments.js";
+export type {
+  DeclaredEnvironment,
+  DeliverySync,
+  EnvironmentMap,
+  EnvironmentMode,
+  InventoryEntry,
+  InventorySnapshot,
+  InventoryStorage,
+  SecretDeclaration,
+  SecretDeclarationEntry,
+  SecretDeliveryTarget,
+  SecretEntryClass,
+  SecretEnvironmentPolicy,
+  SecretEnvironmentsEvaluation,
+  SecretEnvironmentsFinding,
+  SecretEnvironmentsInput,
+  SecretEnvironmentsRule,
+  SecretEnvironmentsVerdict,
+  SecretLocationProvider,
+  SecretSource,
+  SecretSourceRole,
+} from "./secret-environments.js";

@@ -1,9 +1,15 @@
+import type { SecretDeclaration } from "../secret-environments.js";
+import { projectSecretCatalog, validateSecretDeclaration } from "../secret-environments.js";
 import type { SecretCatalog, SecretCatalogEntry } from "../types.js";
 import { InfisicalError } from "./errors.js";
 
 export function parseValueFreeCatalog(value: unknown): SecretCatalog {
   if (value === null || typeof value !== "object" || Array.isArray(value)) return invalid();
   const object = value as Record<string, unknown>;
+  if (object.version === 2) {
+    if (validateSecretDeclaration(value).length > 0) return invalid();
+    return projectSecretCatalog(value as SecretDeclaration);
+  }
   const allowedTopLevel = new Set(["version", "entries"]);
   if (Object.keys(object).some((key) => !allowedTopLevel.has(key))) return invalid();
   if (object.version !== 1 || !Array.isArray(object.entries)) return invalid();
@@ -33,6 +39,6 @@ export function parseValueFreeCatalog(value: unknown): SecretCatalog {
 function invalid(): never {
   throw new InfisicalError(
     "INFISICAL_CONFIGURATION_INVALID",
-    "Secret catalog must be value-free version 1 metadata with unique keys.",
+    "Secret catalog must be value-free version 1 metadata with unique keys, or a valid version 2 secret declaration.",
   );
 }
