@@ -222,6 +222,19 @@ function returnExpressionIsDirectStringShippedCopy(expression: ts.Expression): b
       returnExpressionIsDirectStringShippedCopy(expression.right)
     );
   }
+  if (ts.isBinaryExpression(expression)) {
+    const kind = expression.operatorToken.kind;
+    if (
+      kind === ts.SyntaxKind.AmpersandAmpersandToken ||
+      kind === ts.SyntaxKind.BarBarToken ||
+      kind === ts.SyntaxKind.QuestionQuestionToken
+    ) {
+      return (
+        returnExpressionIsDirectStringShippedCopy(expression.left) ||
+        returnExpressionIsDirectStringShippedCopy(expression.right)
+      );
+    }
+  }
   return false;
 }
 
@@ -266,11 +279,21 @@ function functionBodyReturnsDirectStringShippedCopy(
 }
 
 function expressionIsShippedCopy(expression: ts.Expression): boolean {
+  expression = unwrapExpression(expression);
   if (localInitializerIsShippedCopy(expression)) return true;
   if (ts.isConditionalExpression(expression)) {
     return expressionIsShippedCopy(expression.whenTrue) || expressionIsShippedCopy(expression.whenFalse);
   }
-  if (ts.isParenthesizedExpression(expression)) return expressionIsShippedCopy(expression.expression);
+  if (ts.isBinaryExpression(expression)) {
+    const kind = expression.operatorToken.kind;
+    if (
+      kind === ts.SyntaxKind.AmpersandAmpersandToken ||
+      kind === ts.SyntaxKind.BarBarToken ||
+      kind === ts.SyntaxKind.QuestionQuestionToken
+    ) {
+      return expressionIsShippedCopy(expression.left) || expressionIsShippedCopy(expression.right);
+    }
+  }
   return false;
 }
 
@@ -291,9 +314,21 @@ function collectModuleLetteredBindings(sourceFile: ts.SourceFile): Set<string> {
 function collectModuleShippedFunctions(sourceFile: ts.SourceFile): Set<string> {
   const names = new Set<string>();
   for (const statement of sourceFile.statements) {
-    if (!ts.isFunctionDeclaration(statement) || statement.name === undefined || statement.body === undefined) continue;
-    if (functionBodyReturnsShippedCopy(statement)) {
-      names.add(statement.name.text);
+    if (ts.isFunctionDeclaration(statement) && statement.name !== undefined && statement.body !== undefined) {
+      if (functionBodyReturnsShippedCopy(statement)) {
+        names.add(statement.name.text);
+      }
+      continue;
+    }
+    if (!ts.isVariableStatement(statement)) continue;
+    for (const declaration of statement.declarationList.declarations) {
+      if (!ts.isIdentifier(declaration.name) || declaration.initializer === undefined) continue;
+      if (
+        (ts.isArrowFunction(declaration.initializer) || ts.isFunctionExpression(declaration.initializer)) &&
+        functionBodyReturnsShippedCopy(declaration.initializer)
+      ) {
+        names.add(declaration.name.text);
+      }
     }
   }
   return names;
@@ -302,9 +337,21 @@ function collectModuleShippedFunctions(sourceFile: ts.SourceFile): Set<string> {
 function collectModuleDirectStringShippedFunctions(sourceFile: ts.SourceFile): Set<string> {
   const names = new Set<string>();
   for (const statement of sourceFile.statements) {
-    if (!ts.isFunctionDeclaration(statement) || statement.name === undefined || statement.body === undefined) continue;
-    if (functionBodyReturnsDirectStringShippedCopy(statement)) {
-      names.add(statement.name.text);
+    if (ts.isFunctionDeclaration(statement) && statement.name !== undefined && statement.body !== undefined) {
+      if (functionBodyReturnsDirectStringShippedCopy(statement)) {
+        names.add(statement.name.text);
+      }
+      continue;
+    }
+    if (!ts.isVariableStatement(statement)) continue;
+    for (const declaration of statement.declarationList.declarations) {
+      if (!ts.isIdentifier(declaration.name) || declaration.initializer === undefined) continue;
+      if (
+        (ts.isArrowFunction(declaration.initializer) || ts.isFunctionExpression(declaration.initializer)) &&
+        functionBodyReturnsDirectStringShippedCopy(declaration.initializer)
+      ) {
+        names.add(declaration.name.text);
+      }
     }
   }
   return names;
@@ -375,6 +422,7 @@ function collectUndocumentedMessageInterfaceProps(
 }
 
 function localInitializerIsShippedCopy(node: ts.Expression): boolean {
+  node = unwrapExpression(node);
   if (ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node)) {
     const literal = staticLiteral(node);
     return literal !== null && hasLetter(literal);
@@ -400,12 +448,15 @@ function localInitializerIsShippedCopy(node: ts.Expression): boolean {
   if (ts.isConditionalExpression(node)) {
     return localInitializerIsShippedCopy(node.whenTrue) || localInitializerIsShippedCopy(node.whenFalse);
   }
-  if (
-    ts.isBinaryExpression(node) &&
-    (node.operatorToken.kind === ts.SyntaxKind.QuestionQuestionToken ||
-      node.operatorToken.kind === ts.SyntaxKind.BarBarToken)
-  ) {
-    return localInitializerIsShippedCopy(node.right);
+  if (ts.isBinaryExpression(node)) {
+    const kind = node.operatorToken.kind;
+    if (
+      kind === ts.SyntaxKind.QuestionQuestionToken ||
+      kind === ts.SyntaxKind.BarBarToken ||
+      kind === ts.SyntaxKind.AmpersandAmpersandToken
+    ) {
+      return localInitializerIsShippedCopy(node.left) || localInitializerIsShippedCopy(node.right);
+    }
   }
   return false;
 }
@@ -499,6 +550,19 @@ function isExcludedFile(fileName: string): boolean {
   return /\.(?:test|spec|check)\.[cm]?[jt]sx?$/.test(fileName);
 }
 
+function objectLiteralPropertyInitializer(
+  object: ts.ObjectLiteralExpression,
+  propName: string,
+  source: ts.SourceFile,
+): ts.Expression | undefined {
+  for (const property of object.properties) {
+    if (!ts.isPropertyAssignment(property)) continue;
+    const nameText = property.name.getText(source);
+    if (nameText === propName) return property.initializer;
+  }
+  return undefined;
+}
+
 function collectParameterLiteralDefaults(
   parameters: ts.NodeArray<ts.ParameterDeclaration>,
   source: ts.SourceFile,
@@ -508,26 +572,115 @@ function collectParameterLiteralDefaults(
 ): Map<string, number> {
   const literalParams = new Map<string, number>();
 
-  function walkBindingPattern(pattern: ts.ObjectBindingPattern, line: number): void {
+  function noteBindingDefault(
+    propName: string,
+    localName: string,
+    initializer: ts.Expression,
+    line: number,
+  ): void {
+    if (documentedDefaults.has(propName)) return;
+    if (!parameterDefaultIsShippedCopy(initializer, moduleBindings, moduleFunctions)) return;
+    literalParams.set(localName, line);
+  }
+
+  function walkBindingPattern(pattern: ts.ObjectBindingPattern, line: number, defaultExpr?: ts.Expression): void {
+    const defaultObject =
+      defaultExpr !== undefined && ts.isObjectLiteralExpression(unwrapExpression(defaultExpr))
+        ? (unwrapExpression(defaultExpr) as ts.ObjectLiteralExpression)
+        : undefined;
+
     for (const element of pattern.elements) {
+      if (ts.isObjectBindingPattern(element.name)) {
+        const nestedDefault =
+          element.initializer ??
+          (defaultObject !== undefined && element.propertyName !== undefined
+            ? objectLiteralPropertyInitializer(defaultObject, element.propertyName.getText(source), source)
+            : undefined);
+        if (nestedDefault !== undefined) {
+          walkBindingPattern(element.name, line, nestedDefault);
+        } else {
+          walkBindingPattern(element.name, line);
+        }
+        continue;
+      }
+      if (ts.isArrayBindingPattern(element.name)) {
+        walkArrayBindingPattern(element.name, line, defaultObject, element);
+        continue;
+      }
+      const propName = bindingElementPropertyName(element, source);
+      const localName = bindingElementLocalName(element);
+      if (propName === null || localName === null) continue;
+      const initializer =
+        element.initializer ??
+        (defaultObject !== undefined ? objectLiteralPropertyInitializer(defaultObject, propName, source) : undefined);
+      if (initializer === undefined) continue;
+      noteBindingDefault(propName, localName, initializer, line);
+    }
+  }
+
+  function walkArrayBindingPattern(
+    pattern: ts.ArrayBindingPattern,
+    line: number,
+    defaultObject?: ts.ObjectLiteralExpression,
+    parentElement?: ts.BindingElement,
+  ): void {
+    for (const element of pattern.elements) {
+      if (ts.isOmittedExpression(element)) continue;
       if (ts.isObjectBindingPattern(element.name)) {
         walkBindingPattern(element.name, line);
         continue;
       }
-      if (element.initializer === undefined) continue;
+      if (ts.isArrayBindingPattern(element.name)) {
+        walkArrayBindingPattern(element.name, line);
+        continue;
+      }
       const propName = bindingElementPropertyName(element, source);
       const localName = bindingElementLocalName(element);
-      if (propName === null || localName === null) continue;
-      if (documentedDefaults.has(propName)) continue;
-      if (!parameterDefaultIsShippedCopy(element.initializer, moduleBindings, moduleFunctions)) continue;
-      literalParams.set(localName, line);
+      if (localName === null) continue;
+      const resolvedPropName = propName ?? localName;
+      let initializer = element.initializer;
+      if (
+        initializer === undefined &&
+        defaultObject !== undefined &&
+        parentElement !== undefined &&
+        parentElement.propertyName !== undefined
+      ) {
+        const container = objectLiteralPropertyInitializer(
+          defaultObject,
+          parentElement.propertyName.getText(source),
+          source,
+        );
+        if (container !== undefined && ts.isArrayLiteralExpression(unwrapExpression(container))) {
+          const arrayLiteral = unwrapExpression(container) as ts.ArrayLiteralExpression;
+          const index = pattern.elements.indexOf(element);
+          const entry = arrayLiteral.elements[index];
+          if (entry !== undefined && ts.isExpression(entry)) {
+            initializer = entry;
+          }
+        }
+      }
+      if (initializer === undefined || !MESSAGE_JSX_ATTRS.has(resolvedPropName)) continue;
+      noteBindingDefault(resolvedPropName, localName, initializer, line);
     }
   }
 
   for (const parameter of parameters) {
-    if (!ts.isObjectBindingPattern(parameter.name)) continue;
     const line = source.getLineAndCharacterOfPosition(parameter.getStart(source)).line + 1;
-    walkBindingPattern(parameter.name, line);
+    if (ts.isObjectBindingPattern(parameter.name)) {
+      walkBindingPattern(parameter.name, line);
+      continue;
+    }
+    if (ts.isArrayBindingPattern(parameter.name)) {
+      walkArrayBindingPattern(parameter.name, line);
+      continue;
+    }
+    if (
+      ts.isIdentifier(parameter.name) &&
+      parameter.initializer !== undefined &&
+      MESSAGE_JSX_ATTRS.has(parameter.name.text)
+    ) {
+      noteBindingDefault(parameter.name.text, parameter.name.text, parameter.initializer, line);
+    }
   }
 
   return literalParams;
@@ -542,24 +695,108 @@ function collectUndocumentedShippedPropNames(
 ): Set<string> {
   const names = new Set<string>();
 
-  function walkBindingPattern(pattern: ts.ObjectBindingPattern): void {
+  function noteShippedProp(propName: string, initializer: ts.Expression): void {
+    if (documentedDefaults.has(propName)) return;
+    if (parameterDefaultIsShippedCopy(initializer, moduleBindings, moduleFunctions)) {
+      names.add(propName);
+    }
+  }
+
+  function walkBindingPattern(pattern: ts.ObjectBindingPattern, defaultExpr?: ts.Expression): void {
+    const defaultObject =
+      defaultExpr !== undefined && ts.isObjectLiteralExpression(unwrapExpression(defaultExpr))
+        ? (unwrapExpression(defaultExpr) as ts.ObjectLiteralExpression)
+        : undefined;
+
     for (const element of pattern.elements) {
+      if (ts.isObjectBindingPattern(element.name)) {
+        const nestedDefault =
+          element.initializer ??
+          (defaultObject !== undefined && element.propertyName !== undefined
+            ? objectLiteralPropertyInitializer(defaultObject, element.propertyName.getText(source), source)
+            : undefined);
+        if (nestedDefault !== undefined) {
+          walkBindingPattern(element.name, nestedDefault);
+        } else {
+          walkBindingPattern(element.name);
+        }
+        continue;
+      }
+      if (ts.isArrayBindingPattern(element.name)) {
+        walkArrayBindingPattern(element.name, defaultObject, element);
+        continue;
+      }
+      const propName = bindingElementPropertyName(element, source);
+      if (propName === null) continue;
+      const initializer =
+        element.initializer ??
+        (defaultObject !== undefined ? objectLiteralPropertyInitializer(defaultObject, propName, source) : undefined);
+      if (initializer === undefined) continue;
+      noteShippedProp(propName, initializer);
+    }
+  }
+
+  function walkArrayBindingPattern(
+    pattern: ts.ArrayBindingPattern,
+    defaultObject?: ts.ObjectLiteralExpression,
+    parentElement?: ts.BindingElement,
+  ): void {
+    for (const element of pattern.elements) {
+      if (ts.isOmittedExpression(element)) continue;
       if (ts.isObjectBindingPattern(element.name)) {
         walkBindingPattern(element.name);
         continue;
       }
-      const propName = bindingElementPropertyName(element, source);
-      if (propName === null || element.initializer === undefined) continue;
-      if (documentedDefaults.has(propName)) continue;
-      if (parameterDefaultIsShippedCopy(element.initializer, moduleBindings, moduleFunctions)) {
-        names.add(propName);
+      if (ts.isArrayBindingPattern(element.name)) {
+        walkArrayBindingPattern(element.name);
+        continue;
       }
+      const propName = bindingElementPropertyName(element, source);
+      const localName = bindingElementLocalName(element);
+      if (localName === null) continue;
+      const resolvedPropName = propName ?? localName;
+      let initializer = element.initializer;
+      if (
+        initializer === undefined &&
+        defaultObject !== undefined &&
+        parentElement !== undefined &&
+        parentElement.propertyName !== undefined
+      ) {
+        const container = objectLiteralPropertyInitializer(
+          defaultObject,
+          parentElement.propertyName.getText(source),
+          source,
+        );
+        if (container !== undefined && ts.isArrayLiteralExpression(unwrapExpression(container))) {
+          const arrayLiteral = unwrapExpression(container) as ts.ArrayLiteralExpression;
+          const index = pattern.elements.indexOf(element);
+          const entry = arrayLiteral.elements[index];
+          if (entry !== undefined && ts.isExpression(entry)) {
+            initializer = entry;
+          }
+        }
+      }
+      if (initializer === undefined || !MESSAGE_JSX_ATTRS.has(resolvedPropName)) continue;
+      noteShippedProp(resolvedPropName, initializer);
     }
   }
 
   for (const parameter of parameters) {
-    if (!ts.isObjectBindingPattern(parameter.name)) continue;
-    walkBindingPattern(parameter.name);
+    if (ts.isObjectBindingPattern(parameter.name)) {
+      walkBindingPattern(parameter.name);
+      continue;
+    }
+    if (ts.isArrayBindingPattern(parameter.name)) {
+      walkArrayBindingPattern(parameter.name);
+      continue;
+    }
+    if (
+      ts.isIdentifier(parameter.name) &&
+      parameter.initializer !== undefined &&
+      MESSAGE_JSX_ATTRS.has(parameter.name.text)
+    ) {
+      noteShippedProp(parameter.name.text, parameter.initializer);
+    }
   }
   return names;
 }
@@ -781,6 +1018,7 @@ function checkRenderedLocalReferences(
   literalLocals: Map<string, number>,
   undocumentedPropNames: Set<string>,
   interfaceMessageProps: Set<string>,
+  moduleDirectStringFunctions: Set<string>,
   fileName: string,
   source: ts.SourceFile,
   violations: ShippedMessageViolation[],
@@ -797,6 +1035,16 @@ function checkRenderedLocalReferences(
       line: lineOf(node),
       kind: "rendered-local",
       text: name,
+    });
+  }
+
+  function noteModuleDirectStringCall(callee: ts.Identifier, node: ts.Node): void {
+    if (!moduleDirectStringFunctions.has(callee.text)) return;
+    violations.push({
+      file: fileName,
+      line: lineOf(node),
+      kind: "rendered-local",
+      text: callee.text,
     });
   }
 
@@ -867,6 +1115,7 @@ function checkRenderedLocalReferences(
       if (ts.isPropertyAccessExpression(callee)) {
         notePropertyAccess(callee, node);
       } else if (ts.isIdentifier(callee)) {
+        noteModuleDirectStringCall(callee, node);
         noteReference(callee.text, node);
       }
       return;
@@ -912,12 +1161,49 @@ function checkRenderedLocalReferences(
     noteRenderedMessageExpression(expression, node, literalBranches);
   }
 
+  function walkMessagePropsInExpression(expression: ts.Expression, reportNode: ts.Node): void {
+    expression = unwrapExpression(expression);
+    if (ts.isObjectLiteralExpression(expression)) {
+      for (const property of expression.properties) {
+        if (ts.isSpreadAssignment(property)) {
+          walkMessagePropsInExpression(property.expression, reportNode);
+          continue;
+        }
+        if (!ts.isPropertyAssignment(property)) continue;
+        const propertyName = property.name.getText(source);
+        if (!isMessageCreateElementProperty(propertyName)) continue;
+        noteRenderedMessageExpression(property.initializer, property, true);
+      }
+      return;
+    }
+    if (ts.isConditionalExpression(expression)) {
+      walkMessagePropsInExpression(expression.whenTrue, reportNode);
+      walkMessagePropsInExpression(expression.whenFalse, reportNode);
+      return;
+    }
+    if (ts.isBinaryExpression(expression)) {
+      const kind = expression.operatorToken.kind;
+      if (
+        kind === ts.SyntaxKind.AmpersandAmpersandToken ||
+        kind === ts.SyntaxKind.BarBarToken ||
+        kind === ts.SyntaxKind.QuestionQuestionToken
+      ) {
+        walkMessagePropsInExpression(expression.left, reportNode);
+        walkMessagePropsInExpression(expression.right, reportNode);
+      }
+    }
+  }
+
   function noteRenderedMessageExpression(
     expression: ts.Expression,
     node: ts.Node,
     literalBranches = false,
   ): void {
     expression = unwrapExpression(expression);
+    if (literalBranches && ts.isObjectLiteralExpression(expression)) {
+      walkMessagePropsInExpression(expression, node);
+      return;
+    }
     if (ts.isConditionalExpression(expression)) {
       if (literalBranches) {
         noteRenderedMessageExpression(expression.whenTrue, node, literalBranches);
@@ -972,6 +1258,7 @@ function checkRenderedLocalReferences(
       if (ts.isPropertyAccessExpression(callee)) {
         notePropertyAccess(callee, node);
       } else if (ts.isIdentifier(callee)) {
+        noteModuleDirectStringCall(callee, node);
         noteReference(callee.text, node);
       }
       return;
@@ -1050,7 +1337,7 @@ function checkRenderedLocalReferences(
       if (NON_COPY_JSX_ATTRS.has(attrName) || attrName === "id") return;
       const expression = node.initializer.expression;
       if (expression !== undefined) {
-        const literalBranches = MESSAGE_JSX_ATTRS.has(attrName);
+        const literalBranches = MESSAGE_JSX_ATTRS.has(attrName) || NAMING_ARIA.has(attrName);
         noteRenderedMessageExpression(expression, node, literalBranches);
       }
     }
@@ -1066,6 +1353,9 @@ function checkRenderedLocalReferences(
           noteRenderedMessageExpression(initializer, declaration, true);
         }
       }
+    }
+    if (ts.isJsxSpreadAttribute(node)) {
+      walkMessagePropsInExpression(node.expression, node);
     }
     ts.forEachChild(node, visit);
   }
@@ -1162,6 +1452,7 @@ export function findShippedMessageViolations(fileName: string, sourceText: strin
         literalBindings,
         mergedUndocumentedPropNames,
         interfaceMessageProps,
+        moduleDirectStringFunctions,
         fileName,
         source,
         violations,
@@ -2050,6 +2341,153 @@ describe("shipped message lint", () => {
         expect.objectContaining({ kind: "jsx-text", text: "Search" }),
       ]),
     );
+  });
+
+  it("notes default unwrapping, binding forms, aria branches, spreads, and module helpers", () => {
+    const asConstDefault = [
+      "interface ExampleProps { placeholder?: string; }",
+      "export function Example({ placeholder = \"Search\" as const }: ExampleProps) {",
+      "  return <input placeholder={placeholder} />;",
+      "}",
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", asConstDefault)).toEqual([
+      expect.objectContaining({ kind: "rendered-local", text: "placeholder" }),
+    ]);
+
+    const nullishDefault = [
+      "interface ExampleProps { placeholder?: string; other?: string; }",
+      "export function Example({ placeholder = \"Search\" ?? other }: ExampleProps) {",
+      "  return <input placeholder={placeholder} />;",
+      "}",
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", nullishDefault)).toEqual([
+      expect.objectContaining({ kind: "rendered-local", text: "placeholder" }),
+    ]);
+
+    const moduleOrDefault = [
+      "const DEFAULT_LABEL = \"Search\" || \"Fallback\";",
+      "interface ExampleProps { label?: string; }",
+      "export function Example({ label = DEFAULT_LABEL }: ExampleProps) {",
+      "  return <span>{label}</span>;",
+      "}",
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", moduleOrDefault)).toEqual([
+      expect.objectContaining({ kind: "rendered-local", text: "label" }),
+    ]);
+
+    const nestedObjectDefault = [
+      "export function Example({ field: { placeholder } = { placeholder: \"Search\" } }: { field: { placeholder?: string } }) {",
+      "  return <input placeholder={placeholder} />;",
+      "}",
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", nestedObjectDefault)).toEqual([
+      expect.objectContaining({ kind: "rendered-local", text: "placeholder" }),
+    ]);
+
+    const identifierDefault = [
+      "export function Example(placeholder = \"Search\") {",
+      "  return <input placeholder={placeholder} />;",
+      "}",
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", identifierDefault)).toEqual([
+      expect.objectContaining({ kind: "rendered-local", text: "placeholder" }),
+    ]);
+
+    const arrayDefault = [
+      "export function Example({ items: [placeholder = \"Search\"] }: { items: [string?] }) {",
+      "  return <input placeholder={placeholder} />;",
+      "}",
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", arrayDefault)).toEqual([
+      expect.objectContaining({ kind: "rendered-local", text: "placeholder" }),
+    ]);
+
+    const ariaConditional = [
+      "export function Example({ ready }: { ready?: boolean }) {",
+      "  return <section aria-label={ready ? \"Capture form\" : \"Done\"} />;",
+      "}",
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", ariaConditional)).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ kind: "jsx-text", text: "Capture form" }),
+        expect.objectContaining({ kind: "jsx-text", text: "Done" }),
+      ]),
+    );
+
+    const ariaOr = [
+      "export function Example({ name }: { name?: string }) {",
+      "  return <section aria-label={\"Capture form\" || name} />;",
+      "}",
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", ariaOr)).toEqual(
+      expect.arrayContaining([expect.objectContaining({ kind: "jsx-text", text: "Capture form" })]),
+    );
+
+    const jsxSpread = [
+      "export function Example() {",
+      "  return <img {...{ alt: \"Diagram\" }} />;",
+      "}",
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", jsxSpread)).toEqual([
+      expect.objectContaining({ kind: "jsx-text", text: "Diagram" }),
+    ]);
+
+    const createElementConditional = [
+      "import { createElement } from \"react\";",
+      "export function Example({ ready }: { ready?: boolean }) {",
+      "  return createElement(\"img\", ready ? { alt: \"Diagram\" } : { alt: \"Chart\" });",
+      "}",
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.ts", createElementConditional)).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ kind: "jsx-text", text: "Diagram" }),
+        expect.objectContaining({ kind: "jsx-text", text: "Chart" }),
+      ]),
+    );
+
+    const moduleArrowHelper = [
+      "const helper = () => \"Save changes\";",
+      "export function Example() {",
+      "  const text = helper();",
+      "  return <button>{text}</button>;",
+      "}",
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", moduleArrowHelper)).toEqual([
+      expect.objectContaining({ kind: "rendered-local", text: "text" }),
+    ]);
+
+    const moduleFunctionRender = [
+      "function helper(){ return \"Save changes\"; }",
+      "export function Example() {",
+      "  return <button>{helper()}</button>;",
+      "}",
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", moduleFunctionRender)).toEqual([
+      expect.objectContaining({ kind: "rendered-local", text: "helper" }),
+    ]);
+
+    const logicalAndLocal = [
+      "export function Example({ show }: { show?: boolean }) {",
+      "  const text = show && \"Save changes\";",
+      "  return <button>{text}</button>;",
+      "}",
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", logicalAndLocal)).toEqual([
+      expect.objectContaining({ kind: "rendered-local", text: "text" }),
+    ]);
   });
 
   it("finds no shipped message literals under designer src", () => {
