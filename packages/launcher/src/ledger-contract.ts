@@ -8,7 +8,7 @@
 // in this package writes a ledger yet. The TypeScript types below describe
 // the contract's shapes for callers; they validate nothing.
 
-import { formatContractViolation, validateAgainstContract } from "./generated/contract-schema.generated.js";
+import { formatContractViolation, readContractDocument, validateAgainstContract } from "./generated/contract-schema.generated.js";
 import {
   EXEMPTION_SURFACES,
   ID_TOKEN,
@@ -342,53 +342,66 @@ function successionRuleViolations(base: InstalledLedger | null, head: InstalledL
   return out;
 }
 
-/** Reads one side's ledger from its bytes: valid under the contract, and exactly the bytes RENDER gives it. */
-function readLedgerBytes(text: unknown, side: "base" | "head"): { ledger: InstalledLedger | null; violations: LedgerViolation[] } {
+/**
+ * Reads one side's ledger from its bytes: decoded with the strict
+ * `readContractDocument()` (refuses a byte order mark, invalid UTF-8, a
+ * syntax error and a repeated key by position), then valid under the
+ * contract, then compared byte for byte with `serializeInstalledLedger()`'s
+ * own re-encoding of it. A caller's decode is never trusted: the bytes prove
+ * themselves. Any argument that is not a `Uint8Array` is refused under rule
+ * `bytes` before anything reads it.
+ */
+function readLedgerBytes(input: unknown, side: "base" | "head"): { ledger: InstalledLedger | null; violations: LedgerViolation[] } {
   const refuse = (message: string) => ({ ledger: null, violations: [{ rule: "bytes" as const, side, path: "", message: `${side} ${message} (rule bytes)` }] });
-  if (typeof text !== "string") return refuse("is not a ledger's bytes as text");
+  if (!(input instanceof Uint8Array)) return refuse("is not a ledger's bytes as a Uint8Array");
   let parsed: unknown;
   try {
-    parsed = JSON.parse(text);
+    parsed = readContractDocument(input);
   } catch {
-    return refuse("is not JSON");
+    return refuse("is not a ledger's exact bytes: not strict UTF-8 JSON, with no byte order mark and no repeated key");
   }
   const violations = contractViolations(parsed, side, side);
   if (violations.length > 0) return { ledger: null, violations };
-  if (serializeInstalledLedger(parsed as InstalledLedger) !== text) return refuse("is not the exact bytes the ledger contract's RENDER section gives this ledger");
+  const rendered = Buffer.from(serializeInstalledLedger(parsed as InstalledLedger), "utf8");
+  if (!rendered.equals(Buffer.from(input))) return refuse("is not the exact bytes the ledger contract's RENDER section gives this ledger");
   return { ledger: parsed as InstalledLedger, violations: [] };
 }
 
 /**
- * Reads a ledger from the exact text of clossys/.state/installed.json: the
- * ledger when the text is valid under the contract and exactly the bytes
- * RENDER gives it, else null. A repeated key, a byte order mark, other
- * spacing or member order, or any schema or code-rule refusal gives null,
- * never a partial ledger. Well formed is not trusted: see TRUST in the contract.
+ * Reads a ledger from the exact bytes of clossys/.state/installed.json: the
+ * ledger when the bytes are valid under the contract and exactly the bytes
+ * RENDER gives it, else null. A repeated key, a byte order mark, invalid
+ * UTF-8, other spacing or member order, or any schema or code-rule refusal
+ * gives null, never a partial ledger; a non-`Uint8Array` argument also gives
+ * null. Well formed is not trusted: see TRUST in the contract.
  */
-export function readInstalledLedger(text: string): InstalledLedger | null {
-  return readLedgerBytes(text, "head").ledger;
+export function readInstalledLedger(bytes: Uint8Array): InstalledLedger | null {
+  return readLedgerBytes(bytes, "head").ledger;
 }
 
 /**
  * Compares a pull request's head ledger with its base's, each given as the
- * exact text of clossys/.state/installed.json (base null when the base has
- * none), under the ledger contract's SUCCESSION rules. Each side must be
- * valid and exactly canonical, or only those reasons are returned: a repeated
- * key, a byte order mark or a second spelling is never read as an unchanged
- * ledger. Then the head is either byte-identical to the base, or one next
- * generation that keeps the base's history; and when that generation is
- * admitted, it installs exactly what the base's setup deferred and changes no
- * other row. An approved next generation is reported as approval-claimed: an
+ * exact bytes of clossys/.state/installed.json (base null when the base has
+ * none), under the ledger contract's SUCCESSION rules. Each side must be a
+ * `Uint8Array`, valid and exactly canonical, or only those reasons are
+ * returned: a repeated key, a byte order mark, invalid UTF-8 or a second
+ * spelling is never read as an unchanged ledger, and two sides that decode to
+ * the same replacement text but differ in their actual bytes are never
+ * folded together, because each side is read from its own bytes independently.
+ * Then the head is either byte-identical to the base, or one next generation
+ * that keeps the base's history; and when that generation is admitted, it
+ * installs exactly what the base's setup deferred and changes no other row.
+ * An approved next generation is reported as approval-claimed: an
  * unauthenticated claim, never an admission. It checks what the ledgers
  * claim, not the files: whether the tree matches the head ledger is a
  * separate check.
  */
-export function ledgerSuccession(baseBytes: string | null, headBytes: string): LedgerSuccession {
+export function ledgerSuccession(baseBytes: Uint8Array | null, headBytes: Uint8Array): LedgerSuccession {
   const base = baseBytes === null ? { ledger: null, violations: [] } : readLedgerBytes(baseBytes, "base");
   const head = readLedgerBytes(headBytes, "head");
   const invalid = [...base.violations, ...head.violations];
   if (invalid.length > 0 || head.ledger === null) return { change: "next-generation", admission: null, violations: invalid };
-  if (baseBytes !== null && baseBytes === headBytes) return { change: "none", admission: null, violations: [] };
+  if (baseBytes !== null && Buffer.from(baseBytes).equals(Buffer.from(headBytes))) return { change: "none", admission: null, violations: [] };
   const violations = successionRuleViolations(base.ledger, head.ledger).map((violation) => ({
     ...violation,
     message: `${violation.path} ${violation.message} (rule ${violation.rule})`,

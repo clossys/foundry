@@ -55,7 +55,7 @@ describe("renderInstalledLedger (RENDER)", () => {
     const previous = ledgerNamed(render.previous!);
     const set = setNamed(render.changeSet);
     const bytes = renderInstalledLedger(previous, set, render.binding, render.planPackages);
-    const result = ledgerSuccession(serializeInstalledLedger(previous), bytes);
+    const result = ledgerSuccession(Buffer.from(serializeInstalledLedger(previous), "utf8"), Buffer.from(bytes, "utf8"));
     expect(result).toEqual({ change: "next-generation", admission: "admitted", violations: [] });
   });
 
