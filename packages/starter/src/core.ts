@@ -5,6 +5,7 @@ import { validatePnpmIdentity } from "./pnpm.js";
 import type {
   AdmissionEvaluationInput,
   AdmissionReport,
+  ExactPackage,
   HeadInstallEvaluationInput,
   HeadInstallIdentity,
   HeadInstallReport,
@@ -25,6 +26,8 @@ type UnknownRecord = Record<string, unknown>;
 const GIT_COMMIT_SHA1 = /^[a-f0-9]{40}$/;
 /** Snapshot content commitments use canonical lowercase SHA-256 hex strings. */
 const SHA256_HEX = /^[a-f0-9]{64}$/;
+/** Canonical plan digest carried on authorization evidence and in the installed ledger. */
+const PLAN_DIGEST = /^sha256:[a-f0-9]{64}$/;
 /** One SHA-512 digest is exactly 64 bytes, canonically encoded as 86 base64 symbols plus ==. */
 const SHA512 = /^sha512-([A-Za-z0-9+/]{86})==$/;
 const SEMVER_NUMERIC = "(?:0|[1-9]\\d*)";
@@ -92,7 +95,7 @@ export function validateStarterRequest(value: unknown): { request: StarterReques
   if (!exactPackage(value.starter, "starter", STARTER_KEYS, findings) || !record(value.starter) || value.starter.name !== "@clossys/starter" || value.starter.bin !== "foundry-starter") {
     findings.push(find("starter-contract", "starter must be @clossys/starter and its fixed foundry-starter bin."));
   }
-  if (!exactPackage(value.advisor, "advisor", ADVISOR_KEYS, findings) || !record(value.advisor) || value.advisor.name !== "@clossys/advisor" || value.advisor.bin !== "advisor-execution-readiness") {
+  if (value.advisor !== undefined && (!exactPackage(value.advisor, "advisor", ADVISOR_KEYS, findings) || !record(value.advisor) || value.advisor.name !== "@clossys/advisor" || value.advisor.bin !== "advisor-execution-readiness")) {
     findings.push(find("advisor-contract", "advisor must be @clossys/advisor and its fixed advisor-execution-readiness bin."));
   }
   if (!exactPackage(value.target, "target", TARGET_KEYS, findings) || !record(value.target) || !SAFE_BIN.test(String(value.target.bin)) || value.target.invocation !== "single-json-input") {
@@ -161,6 +164,21 @@ export function evaluateProcessResult(value: ProcessObservation | undefined, lab
 
 function report(state: StarterState, phase: StarterRequest["phase"] | null, findings: readonly StarterFinding[], advisor: StarterState | null, target: StarterState | null): StarterReport { return { state, phase, findings, advisor, target }; }
 
+function wellFormedPlanDigest(value: unknown): value is string { return typeof value === "string" && PLAN_DIGEST.test(value); }
+
+/** Compare carried authorization and ledger plan digests without recomputing canonicalization. */
+export function evaluatePlanDigestMatch(carried: unknown, ledgerDigest: unknown): { state: StarterState; findings: StarterFinding[] } {
+  if (!wellFormedPlanDigest(carried) || !wellFormedPlanDigest(ledgerDigest)) {
+    return { state: "indeterminate", findings: [find("plan-digest-unreadable", "authorization.planDigest and the ledger entry plan digest must each be a sha256: prefix followed by 64 lowercase hex digits with no surrounding whitespace.")] };
+  }
+  if (carried !== ledgerDigest) return { state: "violated", findings: [find("plan-digest-mismatch", "the carried plan digest does not equal the ledger entry plan digest.")] };
+  return { state: "satisfied", findings: [] };
+}
+
+function headInstallRoles(request: StarterRequest): readonly HeadInstallRole[] {
+  return request.advisor === undefined ? (["starter", "target"] as const) : (["starter", "advisor", "target"] as const);
+}
+
 /**
  * Pure decision core. Node adapters collect files, manifests, locks, and raw
  * process output; this function never accepts or executes arbitrary commands.
@@ -189,6 +207,12 @@ export function evaluateStarter(input: StarterEvaluationInput): StarterReport {
   const installState = stateFromExit(installResult.install?.exitCode ?? 2) ?? "indeterminate";
   if (installState !== "satisfied") return report(installState, request.phase, [find("install-result", `Fixed ${request.packageManager} install exited ${installResult.install?.exitCode}.`), ...hubFindings], null, null);
   if (request.phase === "foundation") return report("indeterminate", request.phase, [find("foundation-only", "Foundation installs and records evidence but intentionally makes no activation claim."), ...hubFindings], null, null);
+  if (request.advisor === undefined) {
+    const plan = evaluatePlanDigestMatch(input.authorization?.planDigest, input.ledgerPlanDigest);
+    if (plan.state !== "satisfied") return report(plan.state, request.phase, [...plan.findings, ...hubFindings], null, null);
+    const target = evaluateProcessResult(input.target, "target");
+    return report(target.state, request.phase, [...target.findings, ...hubFindings], null, target.state);
+  }
   const advisor = evaluateProcessResult(input.advisor, "advisor", input.now);
   if (advisor.state !== "satisfied") return report(advisor.state, request.phase, [...advisor.findings, ...hubFindings], advisor.state, null);
   const target = evaluateProcessResult(input.target, "target");
@@ -228,7 +252,15 @@ export function evaluateHeadInstall(input: HeadInstallEvaluationInput): HeadInst
   if (!head.request) findings.push(...head.findings.map((entry) => find(`head-${entry.rule}`, `pull-request head request: ${entry.message}`)));
   else {
     const headRequest = head.request;
-    changedFromBase = HEAD_ROLES.filter((role) => !sameIdentity(request[role] as unknown as UnknownRecord, headRequest[role] as unknown as UnknownRecord));
+    const roleIncluded = (role: HeadInstallRole) => (role === "advisor" ? request.advisor !== undefined || headRequest.advisor !== undefined : true);
+    changedFromBase = HEAD_ROLES.filter((role) => {
+      if (!roleIncluded(role)) return false;
+      const left = request[role] as unknown as UnknownRecord | undefined;
+      const right = headRequest[role] as unknown as UnknownRecord | undefined;
+      if (left === undefined && right === undefined) return false;
+      if (left === undefined || right === undefined) return true;
+      return !sameIdentity(left, right);
+    });
     if (headRequest.packageManager !== "npm") findings.push(find("head-manager-unsupported", "head-install proof supports only npm; the pull-request head request names another package manager."));
     if (headRequest.snapshot.repository !== request.snapshot.repository) findings.push(find("head-request-join", "the pull-request head request names a different repository from the protected base."));
   }
@@ -241,7 +273,10 @@ export function evaluateHeadInstall(input: HeadInstallEvaluationInput): HeadInst
   const identityFindings = input.identityFindings ?? [];
   if (identityFindings.length > 0) return headReport("violated", event, identityFindings, changedFromBase);
   const headRequest = head.request as StarterRequest;
-  const proved = HEAD_ROLES.map((role) => ({ role, name: headRequest[role].name, version: headRequest[role].version, integrity: headRequest[role].integrity, bin: headRequest[role].bin }));
+  const proved = headInstallRoles(headRequest).map((role) => {
+    const pkg = headRequest[role] as ExactPackage & { readonly bin: string };
+    return { role, name: pkg.name, version: pkg.version, integrity: pkg.integrity, bin: pkg.bin };
+  });
   return headReport("satisfied", event, [], changedFromBase, proved);
 }
 

@@ -79,7 +79,8 @@ export function resolveInstalledBin(root: string, expected: ExactPackage & { rea
   return realBin;
 }
 
-function validateInstalledIdentity(root: string, request: StarterRequest): StarterFinding[] {
+/** Validates manifest, lock, and installed bins for the identities the request names. */
+export function validateInstalledIdentity(root: string, request: StarterRequest): StarterFinding[] {
   let manifest: unknown; let lock: unknown;
   try { manifest = readJsonFile(resolve(root, "package.json")); } catch (cause) { return [finding("root-manifest", cause instanceof Error ? cause.message : String(cause))]; }
   try {
@@ -87,8 +88,9 @@ function validateInstalledIdentity(root: string, request: StarterRequest): Start
     else lock = readFileSync(resolve(root, PNPM_INSTALL_FROZEN_IGNORE_SCRIPTS.lockPath), "utf8");
   } catch (cause) { return [finding("lockfile", cause instanceof Error ? cause.message : String(cause))]; }
   const validate = request.packageManager === "npm" ? validateNpmIdentity : validatePnpmIdentity;
-  const findings = [request.starter, request.advisor, request.target].flatMap((expected) => validate(manifest, lock, expected)).map((message) => finding("exact-install-identity", message));
-  for (const expected of [request.starter, request.advisor, request.target]) {
+  const expectedPackages = [request.starter, ...(request.advisor === undefined ? [] : [request.advisor]), request.target];
+  const findings = expectedPackages.flatMap((expected) => validate(manifest, lock, expected)).map((message) => finding("exact-install-identity", message));
+  for (const expected of expectedPackages) {
     try { resolveInstalledBin(root, expected); } catch (cause) { findings.push(finding("installed-bin", cause instanceof Error ? cause.message : String(cause))); }
   }
   return findings;
@@ -130,6 +132,31 @@ function advisorPlanBindsTarget(stdout: string, target: ExactPackage & { readonl
 
 function writeReport(path: string | undefined, report: StarterReport): void { if (path !== undefined) writeFileSync(path, `${JSON.stringify(report, null, 2)}\n`); }
 
+function authorizationPlanDigestFromAssessment(content: Buffer | undefined): unknown {
+  if (content === undefined) return undefined;
+  let parsed: unknown;
+  try { parsed = JSON.parse(content.toString("utf8")); } catch { return undefined; }
+  if (!record(parsed) || !record(parsed.engagement)) return undefined;
+  const authorization = parsed.engagement.executionAuthorization;
+  if (!record(authorization)) return undefined;
+  return authorization.planDigest;
+}
+
+function ledgerEntryPlanDigest(bytes: Uint8Array): unknown {
+  let parsed: unknown;
+  try { parsed = JSON.parse(new TextDecoder().decode(bytes)); } catch { return undefined; }
+  if (!record(parsed) || !Array.isArray(parsed.history) || parsed.history.length === 0) return undefined;
+  const entry = parsed.history[parsed.history.length - 1];
+  return record(entry) ? entry.planDigest : undefined;
+}
+
+function planDigestEvaluationFields(assessmentContent: Buffer | undefined, ledgerBytes: Uint8Array | null): { authorization: { planDigest: unknown }; ledgerPlanDigest: unknown } {
+  return {
+    authorization: { planDigest: authorizationPlanDigestFromAssessment(assessmentContent) },
+    ledgerPlanDigest: ledgerBytes === null ? undefined : ledgerEntryPlanDigest(ledgerBytes),
+  };
+}
+
 /** Executes only manifest-derived Advisor and target binaries after the pure joins pass. */
 export function decide(requestPath: string, snapshotRoot: string, trustedEventPath: string, installReceiptPath: string, reportPath?: string, invokedPath?: string): StarterReport {
   let requestRaw: unknown; let trustedEvent: unknown; let install: unknown;
@@ -141,13 +168,31 @@ export function decide(requestPath: string, snapshotRoot: string, trustedEventPa
   const request = parsedRequest.request;
   const snapshotData = snapshotFromDirectory(snapshotRoot, request);
   const now = new Date().toISOString();
-  const base = evaluateStarter({ request: requestRaw, snapshot: snapshotData.snapshot, trustedEvent, install, now, advisor: { attempted: true, exitCode: 0, stdout: '{"state":"satisfied"}', currentAsOf: now }, target: { attempted: true, exitCode: 0, stdout: '{"state":"satisfied"}' } });
+  const assessmentContent = snapshotData.evidence.get(request.evidence.assessment);
+  const ledgerRead = readLedgerFile(process.cwd());
+  const planDigestFields = request.advisor === undefined ? planDigestEvaluationFields(assessmentContent, ledgerRead.status === "present" ? ledgerRead.bytes : null) : null;
+  const satisfiedStub = { attempted: true as const, exitCode: 0 as const, stdout: '{"state":"satisfied"}' };
+  const base = evaluateStarter({
+    request: requestRaw,
+    snapshot: snapshotData.snapshot,
+    trustedEvent,
+    install,
+    now,
+    ...(request.advisor === undefined
+      ? planDigestFields ?? { authorization: { planDigest: undefined }, ledgerPlanDigest: undefined }
+      : { advisor: { ...satisfiedStub, currentAsOf: now } }),
+    target: satisfiedStub,
+  });
   const foundationOnly = request.phase === "foundation" && base.state === "indeterminate" && base.findings.length === 1 && base.findings[0]?.rule === "foundation-only";
   if ((!foundationOnly && base.state !== "satisfied") || snapshotData.findings.length > 0) { const report = snapshotData.findings.length === 0 ? base : { ...base, state: "indeterminate" as const, findings: [...base.findings, ...snapshotData.findings] }; writeReport(reportPath, report); return report; }
   const credential = credentialFindings(); const installed = validateInstalledIdentity(process.cwd(), request);
   if (credential.length > 0 || installed.length > 0) { const report: StarterReport = { state: "indeterminate", phase: request.phase, findings: [...credential, ...installed], advisor: null, target: null }; writeReport(reportPath, report); return report; }
-  let starterBin: string; let advisorBin: string; let targetBin: string;
-  try { starterBin = resolveInstalledBin(process.cwd(), request.starter); advisorBin = resolveInstalledBin(process.cwd(), request.advisor); targetBin = resolveInstalledBin(process.cwd(), request.target); } catch (cause) { const report: StarterReport = { state: "indeterminate", phase: request.phase, findings: [finding("installed-bin", cause instanceof Error ? cause.message : String(cause))], advisor: null, target: null }; writeReport(reportPath, report); return report; }
+  let starterBin: string; let advisorBin: string | undefined; let targetBin: string;
+  try {
+    starterBin = resolveInstalledBin(process.cwd(), request.starter);
+    if (request.advisor !== undefined) advisorBin = resolveInstalledBin(process.cwd(), request.advisor);
+    targetBin = resolveInstalledBin(process.cwd(), request.target);
+  } catch (cause) { const report: StarterReport = { state: "indeterminate", phase: request.phase, findings: [finding("installed-bin", cause instanceof Error ? cause.message : String(cause))], advisor: null, target: null }; writeReport(reportPath, report); return report; }
   if (invokedPath !== undefined) {
     try {
       if (realpathSync(resolve(invokedPath)) !== starterBin) throw new StarterInputError("the decision executable is not Starter's exact installed manifest-derived bin");
@@ -155,7 +200,20 @@ export function decide(requestPath: string, snapshotRoot: string, trustedEventPa
   }
   if (foundationOnly) { writeReport(reportPath, base); return base; }
   const assessment = resolve(snapshotRoot, request.evidence.assessment); const targetInput = resolve(snapshotRoot, request.evidence.targetInput);
-  const advisor = runNode(advisorBin, [assessment, now], now);
+  if (request.advisor === undefined) {
+    const target = runNode(targetBin, [targetInput]);
+    const report = evaluateStarter({
+      request: requestRaw,
+      snapshot: snapshotData.snapshot,
+      trustedEvent,
+      install,
+      now,
+      ...(planDigestFields ?? { authorization: { planDigest: undefined }, ledgerPlanDigest: undefined }),
+      target,
+    });
+    writeReport(reportPath, report); return report;
+  }
+  const advisor = runNode(advisorBin as string, [assessment, now], now);
   const advisorOutcome = evaluateProcessResult(advisor, "advisor", now);
   if (advisorOutcome.state !== "satisfied") { const report = evaluateStarter({ request: requestRaw, snapshot: snapshotData.snapshot, trustedEvent, install, now, advisor }); writeReport(reportPath, report); return report; }
   const binding = advisorPlanBindsTarget(advisor.stdout, request.target, request.snapshot.repository);
@@ -282,7 +340,7 @@ export function proveHeadInstall(requestPath: string, headRoot: string, trustedE
   const identityFindings: StarterFinding[] = [];
   const head = validateStarterRequest(headRequest).request as StarterRequest;
   if (install.exitCode === 0 && !timedOut) {
-    for (const expected of [head.starter, head.advisor, head.target]) {
+    for (const expected of [head.starter, ...(head.advisor === undefined ? [] : [head.advisor]), head.target]) {
       identityFindings.push(...validateNpmIdentity(staged.manifest, lock.value, expected).map((message) => finding("head-identity", message)));
       try { resolveInstalledBin(project, expected); } catch (cause) { identityFindings.push(finding("head-installed-bin", cause instanceof Error ? cause.message : String(cause))); }
     }
