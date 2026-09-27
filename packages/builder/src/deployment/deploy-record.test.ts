@@ -39,30 +39,67 @@ describe("verifyDeployRecord", () => {
     expect(result.findings.map((entry) => entry.rule)).toContain("deploy-record-production-branch");
   });
 
-  it("is violated under release-ref when main is deploy-enabled while production is not release", () => {
-    const result = verifyDeployRecord(declared, {
+  it("is satisfied under release-ref when production is release and main is deploy-enabled", () => {
+    expect(
+      verifyDeployRecord(declared, {
+        ...matchingObservation(),
+        productionBranch: "release",
+        deployEnabledBranches: ["main"],
+      }),
+    ).toMatchObject({ verdict: "satisfied" });
+  });
+
+  it.each([
+    { deployEnabledBranches: ["develop"] as const },
+    { deployEnabledBranches: [] as const },
+    { deployEnabledBranches: undefined },
+  ])(
+    "is violated under release-ref when declared and observed production are main (deployEnabledBranches $deployEnabledBranches)",
+    ({ deployEnabledBranches }) => {
+      const releaseRefMainDeclared: DeployRecordDefinition = {
+        ...declared,
+        productionBranch: "main",
+        previewBranches: deployEnabledBranches ?? [],
+      };
+      const result = verifyDeployRecord(releaseRefMainDeclared, {
+        ...matchingObservation(),
+        productionBranch: "main",
+        ...(deployEnabledBranches === undefined ? {} : { deployEnabledBranches: [...deployEnabledBranches] }),
+      });
+      expect(result.verdict).toBe("violated");
+      if (result.verdict !== "violated") return;
+      expect(result.findings.map((entry) => entry.rule)).toContain("deploy-record-release-ref-main-deploy");
+    },
+  );
+
+  it("is violated under release-ref when declared and observed production are staging", () => {
+    const releaseRefStagingDeclared: DeployRecordDefinition = {
+      ...declared,
+      productionBranch: "staging",
+      previewBranches: [],
+    };
+    const result = verifyDeployRecord(releaseRefStagingDeclared, {
       ...matchingObservation(),
-      productionBranch: "main",
-      deployEnabledBranches: ["main"],
+      productionBranch: "staging",
+      deployEnabledBranches: [],
     });
     expect(result.verdict).toBe("violated");
     if (result.verdict !== "violated") return;
     expect(result.findings.map((entry) => entry.rule)).toContain("deploy-record-release-ref-main-deploy");
   });
 
-  it("is violated under release-ref when declared and observed production are main with main deploy-enabled", () => {
-    const releaseRefMainDeclared: DeployRecordDefinition = {
-      ...declared,
-      productionBranch: "main",
-    };
-    const result = verifyDeployRecord(releaseRefMainDeclared, {
+  it("is violated when duplicate observed environment rows omit classification on a later row", () => {
+    const result = verifyDeployRecord(declared, {
       ...matchingObservation(),
-      productionBranch: "main",
-      deployEnabledBranches: ["main"],
+      environmentNames: [
+        { name: "CONTACT_TO", target: "preview", classification: "plain", scope: "project" },
+        { name: "CONTACT_TO", target: "preview", scope: "project" },
+        matchingObservation().environmentNames[1]!,
+      ],
     });
     expect(result.verdict).toBe("violated");
     if (result.verdict !== "violated") return;
-    expect(result.findings.map((entry) => entry.rule)).toContain("deploy-record-release-ref-main-deploy");
+    expect(result.findings.map((entry) => entry.rule)).toContain("deploy-record-environment-classification");
   });
 
   it("is violated when deploy-enabled branches do not match declared preview branches", () => {

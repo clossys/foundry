@@ -31,10 +31,6 @@ function observationCarriesSecretValue(observed: DeployRecordObservation): boole
   return false;
 }
 
-function branchDeployEnabled(observed: DeployRecordObservation, branch: string): boolean {
-  return observed.deployEnabledBranches?.includes(branch) ?? false;
-}
-
 function branchSetsMatch(
   declared: readonly string[],
   observed: readonly string[] | undefined,
@@ -46,11 +42,11 @@ function branchSetsMatch(
   return sortedDeclared.every((branch, index) => branch === sortedEnabled[index]);
 }
 
-function observedEnvironment(
+function observedEnvironments(
   observed: DeployRecordObservation,
   declared: DeployRecordEnvironmentNameDefinition,
-): DeployRecordObservation["environmentNames"][number] | undefined {
-  return observed.environmentNames.find((entry) => entry.name === declared.name && entry.target === declared.target);
+): DeployRecordObservation["environmentNames"][number][] {
+  return observed.environmentNames.filter((entry) => entry.name === declared.name && entry.target === declared.target);
 }
 
 function compareEnvironments(
@@ -61,9 +57,9 @@ function compareEnvironments(
   let evaluated = 0;
   for (const [index, env] of declared.environmentNames.entries()) {
     evaluated += 1;
-    const live = observedEnvironment(observed, env);
+    const liveEntries = observedEnvironments(observed, env);
     const path = `environmentNames[${index}]`;
-    if (live === undefined) {
+    if (liveEntries.length === 0) {
       findings.push(
         finding(
           "deploy-record-environment-missing",
@@ -73,31 +69,34 @@ function compareEnvironments(
       );
       continue;
     }
-    if (live.scope !== env.scope) {
-      findings.push(
-        finding(
-          "deploy-record-environment-scope",
-          `Environment name ${env.name} for target ${env.target} has scope ${live.scope}, not ${env.scope}.`,
-          path,
-        ),
-      );
-    }
-    if (live.classification === undefined) {
-      findings.push(
-        finding(
-          "deploy-record-environment-classification",
-          `Environment name ${env.name} for target ${env.target} has no observed classification; declared ${env.classification}.`,
-          path,
-        ),
-      );
-    } else if (live.classification !== env.classification) {
-      findings.push(
-        finding(
-          "deploy-record-environment-classification",
-          `Environment name ${env.name} for target ${env.target} is classified ${live.classification}, not ${env.classification}.`,
-          path,
-        ),
-      );
+    for (const [duplicateIndex, live] of liveEntries.entries()) {
+      const entryPath = liveEntries.length > 1 ? `${path}[${duplicateIndex}]` : path;
+      if (live.scope !== env.scope) {
+        findings.push(
+          finding(
+            "deploy-record-environment-scope",
+            `Environment name ${env.name} for target ${env.target} has scope ${live.scope}, not ${env.scope}.`,
+            entryPath,
+          ),
+        );
+      }
+      if (live.classification === undefined) {
+        findings.push(
+          finding(
+            "deploy-record-environment-classification",
+            `Environment name ${env.name} for target ${env.target} has no observed classification; declared ${env.classification}.`,
+            entryPath,
+          ),
+        );
+      } else if (live.classification !== env.classification) {
+        findings.push(
+          finding(
+            "deploy-record-environment-classification",
+            `Environment name ${env.name} for target ${env.target} is classified ${live.classification}, not ${env.classification}.`,
+            entryPath,
+          ),
+        );
+      }
     }
   }
   return evaluated;
@@ -133,11 +132,11 @@ export function verifyDeployRecord(
 
   if (declared.releaseRef === true) {
     evaluated += 1;
-    if (branchDeployEnabled(observed, "main") && observed.productionBranch !== "release") {
+    if (observed.productionBranch !== "release") {
       findings.push(
         finding(
           "deploy-record-release-ref-main-deploy",
-          "Branch main is enabled for deploys while production is not the release branch under the release-ref model.",
+          "Observed production branch is not release under the release-ref model.",
         ),
       );
     }
