@@ -312,9 +312,10 @@ matching is exact (an extension-less or aliased specifier is not
 recognised) and the registry-file match is by basename, which is broad
 enough that a distinctive registry filename (not `index.json`) is worth
 choosing; there is no scope tracking, so a local variable that happens to
-share a flagged binding's name is flagged too; a cast like
-`createCopyResolver(registry as CopyRegistry)` counts as a genuine use
-(the resolver's signature accepts `unknown`, so the call needs no cast); and only a directly written `"approved"` string
+share a flagged binding's name is flagged too; a type assertion or `satisfies`
+between the registry binding and the closing `)` of an allowed resolver call
+is refused (for example `createCopyResolver(registry as CopyRegistry)` is not
+a pass — the resolver accepts `unknown`, so no cast is needed); and only a directly written `"approved"` string
 literal is caught — a value built at runtime is not.
 
 **Verdict precedence**: the same "a violation outranks an incomplete

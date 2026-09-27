@@ -210,9 +210,12 @@ export function scanApprovalBypass(root: string, options: ApprovalBypassScanOpti
 // ------------------------------------------------------- code-text helpers
 
 const IDENT = "[A-Za-z_$][\\w$]*";
-const REGISTRY_WHOLE_PASS_RE = /(?<![\w$.])(?:createCopyResolver|resolveCopyRef|parseCopyRegistry|validateCopyRegistryShape)\s*\(\s*$/;
-const PARSED_REGISTRY_PASS_RE = /(?<![\w$.])(?:createCopyResolver|resolveCopyRef)\s*\(\s*$/;
-const PARSE_COPY_REG_CALL_RE = /(?<![\w$.])parseCopyRegistry\s*\(\s*$/;
+const ID_CONTINUE_IN_CLASS = "\\p{ID_Continue}$";
+/** Character before an allowed callee must not continue an identifier, `$`, or `.`. */
+const CALLEE_BOUNDARY = `(?<![${ID_CONTINUE_IN_CLASS}.])`;
+const NOT_ID_CONTINUE = `(?![${ID_CONTINUE_IN_CLASS}])`;
+const WRITER_PACKAGE_CALLEES = ["createCopyResolver", "resolveCopyRef", "parseCopyRegistry", "validateCopyRegistryShape"] as const;
+const WRITER_PACKAGE_CALLEE_SET = new Set<string>(WRITER_PACKAGE_CALLEES);
 const APPROVAL_KEYS = new Set(["approvedBy", "pendingOwnerReview"]);
 /** A plain or compound assignment operator, never a comparison or an arrow. */
 const ASSIGN_OP_RE = /^\s*(?:\?\?|\|\||&&)?=(?![=>])/;
@@ -265,6 +268,26 @@ function matchingClose(code: string, open: number): number {
   return -1;
 }
 
+const ID_CONTINUE_RE = /[\p{ID_Continue}$]/u;
+const ID_START_RE = /[\p{ID_Start}$_]/u;
+
+/** Reads the identifier immediately before `(` at `innerOpen`, or `undefined` when it is not a plain callee name. */
+function calleeBeforeOpenParen(code: string, innerOpen: number): string | undefined {
+  let i = innerOpen - 1;
+  while (i >= 0 && isWs(code[i])) i--;
+  if (i < 0) return undefined;
+  const end = i;
+  while (i >= 0 && ID_CONTINUE_RE.test(code[i]!)) i--;
+  const start = i + 1;
+  const ident = code.slice(start, end + 1);
+  if (ident.length === 0 || !ID_START_RE.test(ident[0]!)) return undefined;
+  if (start > 0) {
+    const prev = code[start - 1]!;
+    if (prev === "." || prev === "$" || ID_CONTINUE_RE.test(prev)) return undefined;
+  }
+  return ident;
+}
+
 /** Innermost `(` call whose argument list contains `idx`. `code` is masked. */
 function callContaining(code: string, idx: number): { open: number; close: number; callee: string } | undefined {
   let depth = 0;
@@ -283,10 +306,9 @@ function callContaining(code: string, idx: number): { open: number; close: numbe
   if (innerOpen === -1) return undefined;
   const close = matchingClose(code, innerOpen);
   if (close === -1 || idx > close) return undefined;
-  const before = code.slice(Math.max(0, innerOpen - 40), innerOpen);
-  const m = new RegExp(`(?<![\\w$.])(${IDENT})\\s*$`).exec(before);
-  if (!m) return undefined;
-  return { open: innerOpen, close, callee: m[1]! };
+  const callee = calleeBeforeOpenParen(code, innerOpen);
+  if (!callee) return undefined;
+  return { open: innerOpen, close, callee };
 }
 
 function isResolverCallee(name: string): boolean {
@@ -298,21 +320,39 @@ function isResolverCallee(name: string): boolean {
  * parse result must reach `createCopyResolver`/`resolveCopyRef` — not be
  * read inline (`parseCopyRegistry(registry).entries`) or passed elsewhere.
  */
-function parseCopyRegistryRegistryArgAllowed(code: string, argIdx: number): boolean {
+function writerCalleeAllowed(
+  callee: string,
+  writerCalleepNames: Set<string>,
+  localShadowedCalleepNames: Set<string>,
+): boolean {
+  return writerCalleepNames.has(callee) && !localShadowedCalleepNames.has(callee);
+}
+
+function parseCopyRegistryRegistryArgAllowed(
+  code: string,
+  argIdx: number,
+  writerCalleepNames: Set<string>,
+  localShadowedCalleepNames: Set<string>,
+): boolean {
   const call = callContaining(code, argIdx);
-  if (!call || call.callee !== "parseCopyRegistry") return true;
+  if (!call || call.callee !== "parseCopyRegistry") return false;
+  if (!writerCalleeAllowed("parseCopyRegistry", writerCalleepNames, localShadowedCalleepNames)) return false;
   const afterClose = nextNonWs(code, call.close + 1);
   const next = code[afterClose];
   if (next === "." || next === "[") return false;
   if (next === "," || next === ")") {
-    const outer = callContaining(code, call.open - 1);
-    return outer !== undefined && isResolverCallee(outer.callee);
+    const outer = callContaining(code, call.close);
+    if (!outer) return false;
+    return isResolverCallee(outer.callee) && writerCalleeAllowed(outer.callee, writerCalleepNames, localShadowedCalleepNames);
   }
   if (next === ";" || next === undefined) {
-    const calleeStart = code.lastIndexOf("parseCopyRegistry", call.open);
-    if (calleeStart === -1) return false;
-    const preDecl = code.slice(Math.max(0, calleeStart - 80), calleeStart);
-    return new RegExp(`(?<![\\w$.])(?:const|let|var)\\s+${IDENT}\\s*=\\s*$`).test(preDecl);
+    let nameEnd = call.open - 1;
+    while (nameEnd >= 0 && isWs(code[nameEnd]!)) nameEnd--;
+    let nameStart = nameEnd;
+    while (nameStart >= 0 && /[\w$]/.test(code[nameStart]!)) nameStart--;
+    nameStart++;
+    const preDecl = code.slice(Math.max(0, nameStart - 80), nameStart);
+    return new RegExp(`${CALLEE_BOUNDARY}(?:const|let|var)\\s+${IDENT}\\s*=\\s*$`, "u").test(preDecl);
   }
   return false;
 }
@@ -322,13 +362,69 @@ function registryBindingUseAllowed(
   bindIdx: number,
   bindNameLen: number,
   fromParsedRegistry: boolean,
+  writerCalleepNames: Set<string>,
+  localShadowedCalleepNames: Set<string>,
 ): boolean {
-  const beforeSlice = code.slice(Math.max(0, bindIdx - 80), bindIdx);
   const afterName = code.slice(bindIdx + bindNameLen, bindIdx + bindNameLen + 20);
   if (!/^\s*[,)]/.test(afterName)) return false;
-  if (fromParsedRegistry) return PARSED_REGISTRY_PASS_RE.test(beforeSlice);
-  if (PARSE_COPY_REG_CALL_RE.test(beforeSlice)) return parseCopyRegistryRegistryArgAllowed(code, bindIdx);
-  return REGISTRY_WHOLE_PASS_RE.test(beforeSlice);
+  const call = callContaining(code, bindIdx);
+  if (!call) return false;
+  if (!writerCalleeAllowed(call.callee, writerCalleepNames, localShadowedCalleepNames)) return false;
+  if (fromParsedRegistry) return isResolverCallee(call.callee);
+  if (call.callee === "parseCopyRegistry") {
+    return parseCopyRegistryRegistryArgAllowed(code, bindIdx, writerCalleepNames, localShadowedCalleepNames);
+  }
+  return call.callee === "createCopyResolver" || call.callee === "resolveCopyRef" || call.callee === "validateCopyRegistryShape";
+}
+
+function collectWriterCalleepNames(specifiers: Specifier[], isWriter: (s: string) => boolean, code: string): Set<string> {
+  const names = new Set<string>();
+  for (const spec of specifiers) {
+    if (!isWriter(spec.lit.text)) continue;
+    if (spec.form === "static") {
+      const clause = code.slice(spec.stmtStart + "import".length, spec.lit.start).replace(/\bfrom\s*$/, "").trim();
+      if (/^type\s+(?!,)/.test(clause) && clause !== "type") continue;
+      const named = /\{([^}]*)\}/.exec(clause);
+      if (named) {
+        for (const part of named[1]!.split(",")) {
+          const m = new RegExp(`^\\s*(type\\s+)?(${IDENT})?\\s*(?:as\\s+(${IDENT}))?\\s*$`, "u").exec(part);
+          if (!m || m[1]) continue;
+          const imported = m[2];
+          const local = m[3] ?? imported;
+          if (local === undefined || imported === undefined) continue;
+          if (WRITER_PACKAGE_CALLEE_SET.has(imported)) names.add(local);
+        }
+      }
+    } else if (spec.form === "import-equals") {
+      const m = new RegExp(`import\\s+(?:type\\s+)?(${IDENT})\\s*=`, "u").exec(code.slice(spec.stmtStart, spec.lit.start));
+      if (m && WRITER_PACKAGE_CALLEE_SET.has(m[1]!)) names.add(m[1]!);
+    } else if (spec.form === "require") {
+      const pre = code.slice(Math.max(0, spec.stmtStart - 400), spec.stmtStart);
+      const decl = new RegExp(`${CALLEE_BOUNDARY}(?:const|let|var)\\s+\\{([^}]*)\\}\\s*=\\s*$`, "u").exec(pre);
+      if (decl) {
+        for (const part of decl[1]!.split(",")) {
+          const trimmed = part.trim();
+          if (!trimmed) continue;
+          const m = new RegExp(`^(?:(${IDENT})|(${IDENT})\\s*:\\s*(${IDENT}))\\s*$`, "u").exec(trimmed);
+          if (!m) continue;
+          const local = m[1] ?? m[3];
+          const imported = m[2] ?? m[1];
+          if (local && imported && WRITER_PACKAGE_CALLEE_SET.has(imported)) names.add(local);
+        }
+      }
+    }
+  }
+  return names;
+}
+
+function collectLocalShadowedCalleepNames(code: string): Set<string> {
+  const shadowed = new Set<string>();
+  for (const name of WRITER_PACKAGE_CALLEES) {
+    const esc = escapeRegExp(name);
+    if (new RegExp(`${CALLEE_BOUNDARY}function\\s+${esc}${NOT_ID_CONTINUE}`, "u").test(code)) shadowed.add(name);
+    if (new RegExp(`${CALLEE_BOUNDARY}(?:const|let|var)\\s+${esc}${NOT_ID_CONTINUE}\\s*=`, "u").test(code)) shadowed.add(name);
+  }
+  return shadowed;
 }
 
 /**
@@ -484,6 +580,9 @@ export function extractApprovalBypass(
   const coupled = specifiers.some((s) => isWriter(s.lit.text) || isRegistry(s.lit.text));
   if (!coupled) return { coupled: false, findings: [], unchecked: [] };
 
+  const writerCalleepNames = collectWriterCalleepNames(specifiers, isWriter, code);
+  const localShadowedCalleepNames = collectLocalShadowedCalleepNames(code);
+
   const findings: ApprovalBypassFinding[] = [];
   const unchecked: ApprovalBypassUncheckedItem[] = [];
   const finding = (rule: ApprovalBypassRule, offset: number, detail: string): void => {
@@ -565,7 +664,7 @@ export function extractApprovalBypass(
     }
   }
 
-  for (const m of code.matchAll(new RegExp(`(?<![\\w$.])(?:const|let|var)\\s+(${IDENT})\\s*=\\s*(?<![\\w$.])parseCopyRegistry\\s*\\(`, "g"))) {
+  for (const m of code.matchAll(new RegExp(`${CALLEE_BOUNDARY}(?:const|let|var)\\s+(${IDENT})\\s*=\\s*${CALLEE_BOUNDARY}parseCopyRegistry\\s*\\(`, "gu"))) {
     const name = m[1]!;
     const declStart = m.index!;
     const openParen = code.indexOf("(", m.index + m[0].length - 1);
@@ -598,7 +697,8 @@ export function extractApprovalBypass(
       if (/(?<![\w$.])typeof\s+$/.test(code.slice(Math.max(0, i - 20), i))) continue; // a type query reads no content
       const afterName = code.slice(i + b.name.length, i + b.name.length + 20);
       if (/^\s*:(?!:)/.test(afterName) && isObjectKeyPosition(code, i)) continue; // `{ name: ... }` — a key, not the binding
-      if (registryBindingUseAllowed(code, i, b.name.length, b.fromParsedRegistry)) continue;
+      if (registryBindingUseAllowed(code, i, b.name.length, b.fromParsedRegistry, writerCalleepNames, localShadowedCalleepNames))
+        continue;
       finding(
         "copy-read-without-resolver",
         i,

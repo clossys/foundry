@@ -290,6 +290,46 @@ describe("copy-read-without-resolver", () => {
     expect(gate.findings.every((f) => f.rule === "copy-read-without-resolver")).toBe(true);
     expect(gate.findings.map((f) => f.line)).toEqual([3, 4]);
   });
+
+  it("flags parseCopyRegistry when a long gap or comment hides the callee name", () => {
+    const { gate } = scan({
+      "src/copy.ts": [
+        'import { parseCopyRegistry } from "@clossys/writer";',
+        'import registry from "../copy/registry.json";',
+        "export const a = parseCopyRegistry                        (registry).entries.map((e) => e.text);",
+        "export const b = parseCopyRegistry /* the copy registry file */ (registry).entries.map((e) => e.text);",
+      ].join("\n"),
+    });
+    expect(gate.verdict).toBe("violated");
+    expect(gate.findings.map((f) => f.line)).toEqual([3, 4]);
+  });
+
+  it("flags parseCopyRegistry passed to Object.keys and a Unicode-prefixed resolver callee", () => {
+    const { gate } = scan({
+      "src/copy.ts": [
+        'import { createCopyResolver, parseCopyRegistry } from "@clossys/writer";',
+        'import registry from "../copy/registry.json";',
+        "export const a = Object.keys(parseCopyRegistry /* comment */ (registry));",
+        "export const b = λcreateCopyResolver(parseCopyRegistry(registry)).entries.map((e) => e.text);",
+      ].join("\n"),
+    });
+    expect(gate.verdict).toBe("violated");
+    expect(gate.findings.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it("flags a local function that shadows an allowed resolver name", () => {
+    const { gate } = scan({
+      "src/copy.ts": [
+        'import registry from "../copy/registry.json";',
+        "function createCopyResolver(data: { entries: { text: string }[] }) {",
+        "  return data.entries.map((e) => e.text);",
+        "}",
+        "export const copy = createCopyResolver(registry);",
+      ].join("\n"),
+    });
+    expect(gate.verdict).toBe("violated");
+    expect(gate.findings).toEqual([expect.objectContaining({ rule: "copy-read-without-resolver", line: 5 })]);
+  });
 });
 
 describe("scope and masking", () => {
