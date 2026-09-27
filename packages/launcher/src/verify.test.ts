@@ -180,4 +180,37 @@ describe("verifyRepository", () => {
     mainSet.repository = { ...mainSet.repository, defaultBranch: "main" };
     expect((await verifyRepository({ clone: fixture.clone, set: mainSet, binding: fixture.binding })).reason).not.toBe("change-set-invalid");
   });
+
+  it("fetches the default branch into refs/remotes/origin only when origin.fetch maps heads onto heads", async () => {
+    const fixture = buildMaterializedFixture(roots);
+    execFileSync("git", ["-c", "commit.gpgsign=false", "-c", "core.hooksPath=/dev/null", "config", "remote.origin.fetch", "+refs/heads/*:refs/heads/*"], {
+      cwd: fixture.clone,
+      stdio: "ignore",
+    });
+    execFileSync("git", ["-c", "commit.gpgsign=false", "-c", "core.hooksPath=/dev/null", "branch", "other", "HEAD"], { cwd: fixture.clone, stdio: "ignore" });
+    const otherBefore = execFileSync("git", ["-c", "commit.gpgsign=false", "-c", "core.hooksPath=/dev/null", "rev-parse", "refs/heads/other"], {
+      cwd: fixture.clone,
+      encoding: "utf8",
+    }).trim();
+    const mainBefore = execFileSync("git", ["-c", "commit.gpgsign=false", "-c", "core.hooksPath=/dev/null", "rev-parse", "refs/heads/main"], {
+      cwd: fixture.clone,
+      encoding: "utf8",
+    }).trim();
+    await verifyRepository({ clone: fixture.clone, set: fixture.set, binding: fixture.binding });
+    expect(
+      execFileSync("git", ["-c", "commit.gpgsign=false", "-c", "core.hooksPath=/dev/null", "rev-parse", "refs/heads/other"], {
+        cwd: fixture.clone,
+        encoding: "utf8",
+      }).trim(),
+    ).toBe(otherBefore);
+
+    execFileSync("git", ["-c", "commit.gpgsign=false", "-c", "core.hooksPath=/dev/null", "checkout", "other"], { cwd: fixture.clone, stdio: "ignore" });
+    await verifyRepository({ clone: fixture.clone, set: fixture.set, binding: fixture.binding });
+    expect(
+      execFileSync("git", ["-c", "commit.gpgsign=false", "-c", "core.hooksPath=/dev/null", "rev-parse", "refs/heads/main"], {
+        cwd: fixture.clone,
+        encoding: "utf8",
+      }).trim(),
+    ).toBe(mainBefore);
+  }, 120_000);
 });
