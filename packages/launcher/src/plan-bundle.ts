@@ -52,7 +52,7 @@ import type {
   RepositoryVisibility, TemplateAct,
 } from "./change-set-contract.js";
 import type { InstalledLedger } from "./ledger-contract.js";
-import { editJsonPointer } from "./key-editor.js";
+import { JsonEditUnstableError, editJsonPointer } from "./key-editor.js";
 import { reconcileWholeFile, trustInstalledLedger } from "./ledger-trust.js";
 import type { PlanPackageActs } from "./ledger-trust.js";
 
@@ -474,10 +474,16 @@ function computeChangeSet(
     const text = observation.repositoryProfileText;
     const before = contentDigest(text);
     if (existingAt(profile.path) !== before) throw new TypeError("repositoryProfileText does not match the observed profile file");
-    const edited = editJsonPointer(
-      text,
-      entries.map((entry) => ({ pointer: "/rootEntries/-", value: entry })),
-    );
+    let edited: string;
+    try {
+      edited = editJsonPointer(
+        text,
+        entries.map((entry) => ({ pointer: "/rootEntries/-", value: entry })),
+      );
+    } catch (cause) {
+      if (cause instanceof JsonEditUnstableError) return { skip: { verdict: "indeterminate", reason: "json-edit-unstable" } };
+      throw cause;
+    }
     const pattern = PROFILE_ALLOW_PATTERNS.find((candidate) => matchesPathPattern(profile.path, candidate));
     if (pattern !== undefined && !pathAllowList.some((allowed) => matchesPathPattern(profile.path, allowed))) pathAllowList.push(pattern);
     items.push({ id: ROOT_ENTRIES_ITEM, act: "declare-root-entry", path: profile.path, entries });
@@ -710,6 +716,11 @@ export function planApplyBundle(inputs: PlanApplyBundleInputs): PlanApplyBundleR
       entries.push({ id: staffingEntry.repository, verdict: "indeterminate", reason: trust.rule, checks: [] });
       continue;
     }
+    if (observation.phase === "setup") {
+      // A setup set must hold the setup templates (code rule C11), which this planner does not compute yet.
+      entries.push({ id: staffingEntry.repository, verdict: "indeterminate", reason: "setup-template-unbuilt", checks: [] });
+      continue;
+    }
     const profile = observation.repositoryProfile;
     if (
       profile !== null &&
@@ -719,11 +730,6 @@ export function planApplyBundle(inputs: PlanApplyBundleInputs): PlanApplyBundleR
       (observation.repositoryProfileText === null || observation.repositoryProfileText === undefined)
     ) {
       entries.push({ id: staffingEntry.repository, verdict: "indeterminate", reason: "root-entry-edit-unbuilt", checks: [] });
-      continue;
-    }
-    if (observation.phase === "setup") {
-      // A setup set must hold the setup templates (code rule C11), which this planner does not compute yet.
-      entries.push({ id: staffingEntry.repository, verdict: "indeterminate", reason: "setup-template-unbuilt", checks: [] });
       continue;
     }
     const acts = (inputs.plan.packages ?? []).filter((act) => act.repository === staffingEntry.repository);

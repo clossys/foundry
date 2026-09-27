@@ -26,4 +26,13 @@ describe("editJsonPointer", () => {
     const text = '{ "a": 1 }\n';
     expect(editJsonPointer(text, [])).toBe(text);
   });
+
+  it("does not rewrite an unchanged numeric token when appending a root entry", () => {
+    const text = '{"schemaVersion":1.0,"rootEntries":[]}';
+    const edited = editJsonPointer(text, [
+      { pointer: "/rootEntries/-", value: { name: "clossys", classification: "extension", disposition: "allowed" } },
+    ]);
+    expect(edited).toContain("1.0");
+    expect(edited).not.toMatch(/"schemaVersion":1[^.]/u);
+  });
 });

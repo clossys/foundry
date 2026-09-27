@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 // A build-time tool from this repository, not shipped code; an untyped .mjs
 // file that vitest transpiles without typechecking.
 import { checkImportPurity } from "../../../scripts/lib/import-purity.mjs";
@@ -10,6 +10,7 @@ import { CANONICAL_KEYS, canonicalOrder, contentDigest, validateApplyBundle, val
 import type { ChangeSetItem, ChangeSetPhase, RepositoryChangeSet } from "./change-set-contract.js";
 import { readInstalledLedger, renderInstalledLedger, serializeInstalledLedger } from "./ledger-contract.js";
 import type { InstalledLedger } from "./ledger-contract.js";
+import * as keyEditor from "./key-editor.js";
 import { editJsonPointer } from "./key-editor.js";
 import { PUBLIC_PROBLEM_PLACEHOLDER, planApplyBundle, projectEngagementBrief, serializeComposedSkillsManifest, serializeEngagementBrief } from "./plan-bundle.js";
 import type { PlanApplyBundleInputs, RepositoryObservation } from "./plan-bundle.js";
@@ -151,6 +152,63 @@ describe("planApplyBundle", () => {
     expect(bundle.repositories[1]).toEqual({ id: DOCS.id, verdict: "indeterminate", reason: "setup-template-unbuilt", checks: [] });
     expect(bundle.bundleDigest).toBe(bundleDigest(planDigest(PLAN), [{ id: SITE.id, changeSetDigest: changeSets[0]!.changeSetDigest }]));
     expect(validateApplyBundle(bundle)).toEqual({ valid: true });
+  });
+
+  it("reports setup-template-unbuilt before root-entry-edit-unbuilt when a setup repository needs root entries and has no profile text", () => {
+    const profile = { path: "governance/repository-profile.json", rootVocabulary: "checked" as const, undeclaredRoots: ["clossys"], prohibitedRoots: [] };
+    const setup = run(withRepository({ phase: "setup", repositoryProfile: profile }));
+    expect(setup.bundle.repositories[0]).toEqual({ id: SITE.id, verdict: "indeterminate", reason: "setup-template-unbuilt", checks: [] });
+    expect(setup.changeSets.map((set) => set.repository.id)).toEqual([DOCS.id]);
+
+    const apply = run(withRepository({ phase: "apply", repositoryProfile: profile }));
+    expect(apply.bundle.repositories[0]).toEqual({ id: SITE.id, verdict: "indeterminate", reason: "root-entry-edit-unbuilt", checks: [] });
+    expect(apply.changeSets.map((set) => set.repository.id)).toEqual([DOCS.id]);
+
+    const profileText = `${JSON.stringify({ schemaVersion: 1, rootEntries: [] }, null, 2)}\n`;
+    const setupWithText = run(
+      withRepository({
+        phase: "setup",
+        repositoryProfile: profile,
+        repositoryProfileText: profileText,
+        files: [{ path: profile.path, sha256: sha(profileText) }],
+      }),
+    );
+    expect(setupWithText.bundle.repositories[0]).toEqual({ id: SITE.id, verdict: "indeterminate", reason: "setup-template-unbuilt", checks: [] });
+  });
+
+  it("records a profile after digest from a decimal schemaVersion without rewriting it to an integer token", () => {
+    const profile = { path: "governance/repository-profile.json", rootVocabulary: "checked" as const, undeclaredRoots: ["clossys"], prohibitedRoots: [] };
+    const profileText = '{"schemaVersion":1.0,"rootEntries":[]}';
+    const { changeSets } = run(
+      withRepository({
+        repositoryProfile: profile,
+        repositoryProfileText: profileText,
+        files: [{ path: profile.path, sha256: sha(profileText) }],
+      }),
+    );
+    const site = setFor(changeSets, SITE.id);
+    const profileFile = site.files.find((file) => file.path === profile.path)!;
+    const edited = editJsonPointer(profileText, [{ pointer: "/rootEntries/-", value: { name: "clossys", classification: "extension", disposition: "allowed" } }]);
+    expect(profileFile.after).toBe(sha(edited));
+    expect(edited).toContain("1.0");
+  });
+
+  it("skips a repository as json-edit-unstable when a profile edit is unstable", () => {
+    const profile = { path: "governance/repository-profile.json", rootVocabulary: "checked" as const, undeclaredRoots: ["clossys"], prohibitedRoots: [] };
+    const profileText = '{"schemaVersion":1.0,"rootEntries":[]}';
+    const unstable = vi.spyOn(keyEditor, "editJsonPointer").mockImplementation(() => {
+      throw new keyEditor.JsonEditUnstableError();
+    });
+    const { bundle, changeSets } = run(
+      withRepository({
+        repositoryProfile: profile,
+        repositoryProfileText: profileText,
+        files: [{ path: profile.path, sha256: sha(profileText) }],
+      }),
+    );
+    unstable.mockRestore();
+    expect(bundle.repositories[0]).toEqual({ id: SITE.id, verdict: "indeterminate", reason: "json-edit-unstable", checks: [] });
+    expect(changeSets.some((set) => set.repository.id === SITE.id)).toBe(false);
   });
 
   it("skips a repository with a skip reason or no observation, and leaves it out of the bundle digest", () => {

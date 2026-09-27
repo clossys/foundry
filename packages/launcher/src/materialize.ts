@@ -29,7 +29,7 @@ import {
   validateRepositoryChangeSet,
 } from "./change-set-contract.js";
 import type { ApprovalBinding, ChangeSetItem, FileChange, PackageInvariant, RepositoryChangeSet, WholeFileChange } from "./change-set-contract.js";
-import { editJsonPointer, valueAtJsonPointer } from "./key-editor.js";
+import { JsonEditUnstableError, editJsonPointer, valueAtJsonPointer } from "./key-editor.js";
 import { renderInstalledLedger } from "./ledger-contract.js";
 import type { InstalledLedger, LedgerPackageIdentity } from "./ledger-contract.js";
 import { trustInstalledLedger } from "./ledger-trust.js";
@@ -66,6 +66,7 @@ export interface ApplyStepResult {
 }
 
 const BRANCH_SHAPE = /^clossys\/apply-[0-9a-f]{12}$/u;
+const DEFAULT_BRANCH_SHAPE = /^[A-Za-z0-9][A-Za-z0-9._/-]*$/u;
 const COMMIT_SHAPE = /^[0-9a-f]{40}$/u;
 const TOOL_VERSION_SHAPE = /^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(?:-[0-9A-Za-z.-]+)?$/u;
 const LEFTOVER_SKILL = /^\.agents\/skills\/clossys-[^/]+(?:\/.*)?$/u;
@@ -89,7 +90,7 @@ function git(root: string, args: readonly string[]): { status: number; stdout: s
 }
 
 function safeDefaultBranch(branch: string): boolean {
-  return branch.length > 0 && !branch.startsWith("-") && !branch.includes("..") && !branch.includes(" ");
+  return DEFAULT_BRANCH_SHAPE.test(branch);
 }
 
 function planPackagesFromSet(set: RepositoryChangeSet): (LedgerPackageIdentity & { readonly act: "install" | "pin-starter" })[] {
@@ -152,8 +153,9 @@ function writePaths(set: RepositoryChangeSet): string[] {
 
 function hasSymlinkAncestor(root: string, relPath: string): boolean {
   const parts = relPath.split("/");
+  if (parts.length <= 1) return false;
   let current = root;
-  for (let index = 0; index < parts.length; index += 1) {
+  for (let index = 0; index < parts.length - 1; index += 1) {
     current = join(current, parts[index]!);
     try {
       if (lstatSync(current).isSymbolicLink()) return true;
@@ -317,7 +319,7 @@ function refuseReservedSymlinks(root: string, paths: readonly string[]): ApplySt
   return null;
 }
 
-function declareRootEntryText(root: string, set: RepositoryChangeSet, path: string): string | null {
+function declareRootEntryText(root: string, set: RepositoryChangeSet, path: string): string | ApplyStepResult | null {
   const item = set.items.find((entry) => entry.act === "declare-root-entry" && entry.path === path);
   if (item === undefined || item.act !== "declare-root-entry") return null;
   let onDisk: string;
@@ -326,10 +328,15 @@ function declareRootEntryText(root: string, set: RepositoryChangeSet, path: stri
   } catch {
     return null;
   }
-  return editJsonPointer(
-    onDisk,
-    item.entries.map((entry) => ({ pointer: "/rootEntries/-", value: { name: entry.name, classification: entry.classification, disposition: entry.disposition } })),
-  );
+  try {
+    return editJsonPointer(
+      onDisk,
+      item.entries.map((entry) => ({ pointer: "/rootEntries/-", value: { name: entry.name, classification: entry.classification, disposition: entry.disposition } })),
+    );
+  } catch (cause) {
+    if (cause instanceof JsonEditUnstableError) return result(2, "indeterminate", "json-edit-unstable");
+    throw cause;
+  }
 }
 
 function resolveFileText(root: string, set: RepositoryChangeSet, file: WholeFileChange, texts: Readonly<Record<string, string>>): string | ApplyStepResult {
@@ -342,6 +349,7 @@ function resolveFileText(root: string, set: RepositoryChangeSet, file: WholeFile
   if (item?.act === "declare-root-entry" && item.path === file.path) {
     const edited = declareRootEntryText(root, set, file.path);
     if (edited === null) return result(2, "indeterminate", "file-text-unavailable");
+    if (typeof edited !== "string") return edited;
     return edited;
   }
   return result(2, "indeterminate", "file-text-unavailable");
@@ -365,9 +373,11 @@ function derivedLockfile(set: RepositoryChangeSet): { path: string; invariants: 
   return { path: derived.path, invariants };
 }
 
-function porcelainPaths(root: string): string[] {
+type GitPathList = { readonly ok: true; readonly paths: readonly string[] } | { readonly ok: false };
+
+function porcelainPaths(root: string): GitPathList {
   const { status, stdout } = git(root, ["status", "--porcelain", "--untracked-files=all"]);
-  if (status !== 0) return [];
+  if (status !== 0) return { ok: false };
   const paths: string[] = [];
   for (const line of stdout.split("\n")) {
     if (line.length < 4) continue;
@@ -376,16 +386,26 @@ function porcelainPaths(root: string): string[] {
     if (arrow !== -1) path = path.slice(arrow + 4);
     if (path.length > 0) paths.push(path);
   }
-  return paths;
+  return { ok: true, paths };
 }
 
-function diffPaths(root: string, baseCommit: string): string[] {
+function diffPaths(root: string, baseCommit: string): GitPathList {
   const { status, stdout } = git(root, ["diff", "--name-only", baseCommit]);
-  if (status !== 0) return [];
-  return stdout
-    .split("\n")
-    .map((line) => line.trim())
-    .filter((line) => line.length > 0);
+  if (status !== 0) return { ok: false };
+  return {
+    ok: true,
+    paths: stdout
+      .split("\n")
+      .map((line) => line.trim())
+      .filter((line) => line.length > 0),
+  };
+}
+
+function symlinkBeforeRead(root: string, relPaths: readonly string[]): ApplyStepResult | null {
+  for (const relPath of relPaths) {
+    if (hasSymlinkAncestor(root, relPath)) return result(2, "indeterminate", "symlink-ancestor");
+  }
+  return null;
 }
 
 function expectedLedgerBytes(previous: InstalledLedger | null, set: RepositoryChangeSet, binding: ApprovalBinding): Buffer {
@@ -419,6 +439,19 @@ export async function verifyRepository(input: VerifyInput): Promise<ApplyStepRes
   const set = input.set;
   const allowed = (path: string) => set.pathAllowList.some((pattern) => matchesPathPattern(path, pattern));
   const declared = declaredPaths(set);
+
+  const head = git(root, ["rev-parse", "--abbrev-ref", "HEAD"]);
+  if (head.status !== 0 || head.stdout.trim() !== set.branch) return result(1, "violated", "diverged");
+
+  const porcelainEarly = porcelainPaths(root);
+  if (!porcelainEarly.ok) return result(2, "indeterminate", "status-unreadable");
+  const diffEarly = diffPaths(root, set.repository.baseCommit);
+  if (!diffEarly.ok) return result(2, "indeterminate", "status-unreadable");
+
+  const lockEarly = derivedLockfile(set);
+  const readPaths = [...declared, ...(lockEarly !== null ? [lockEarly.path] : [])];
+  const symlink = symlinkBeforeRead(root, readPaths);
+  if (symlink !== null) return symlink;
 
   for (const path of declared) {
     if (!allowed(path)) return result(1, "violated", "outside-allow-list");
@@ -488,11 +521,11 @@ export async function verifyRepository(input: VerifyInput): Promise<ApplyStepRes
   }
   if (!ledgerOnDisk.equals(expectedLedger)) return result(1, "violated", "ledger-mismatch");
 
-  for (const path of diffPaths(root, set.repository.baseCommit)) {
+  for (const path of diffEarly.paths) {
     if (!declared.has(path)) return result(1, "violated", "undeclared-path");
   }
 
-  for (const path of porcelainPaths(root)) {
+  for (const path of porcelainEarly.paths) {
     if (!declared.has(path)) {
       if (LEFTOVER_SKILL.test(path)) return result(1, "violated", "dirty", `${path} left by an earlier run`);
       return result(1, "violated", "dirty");
@@ -522,7 +555,8 @@ export async function materializeRepository(input: MaterializeInput): Promise<Ap
   }
 
   const porcelain = porcelainPaths(root);
-  if (porcelain.length > 0) return result(1, "violated", "dirty");
+  if (!porcelain.ok) return result(2, "indeterminate", "status-unreadable");
+  if (porcelain.paths.length > 0) return result(1, "violated", "dirty");
 
   const toWrite = set.files.filter(isWhole).filter((file) => file.before !== file.after);
   const resolvedTexts = new Map<string, string>();
@@ -537,10 +571,15 @@ export async function materializeRepository(input: MaterializeInput): Promise<Ap
   if (set.keys.length > 0) {
     const existing = gitShowUtf8(root, set.repository.baseCommit, "package.json");
     if (existing === null) return result(2, "indeterminate", "manifest-absent");
-    packageText = editJsonPointer(
-      existing,
-      set.keys.map((key) => (key.after === null ? { pointer: key.pointer, remove: true } : { pointer: key.pointer, value: key.after })),
-    );
+    try {
+      packageText = editJsonPointer(
+        existing,
+        set.keys.map((key) => (key.after === null ? { pointer: key.pointer, remove: true } : { pointer: key.pointer, value: key.after })),
+      );
+    } catch (cause) {
+      if (cause instanceof JsonEditUnstableError) return result(2, "indeterminate", "json-edit-unstable");
+      throw cause;
+    }
   }
 
   const pathsToTouch = writePaths(set);

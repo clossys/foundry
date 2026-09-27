@@ -1,3 +1,4 @@
+import { execFileSync } from "node:child_process";
 import { chmodSync, existsSync, mkdirSync, readFileSync, rmSync, symlinkSync, unlinkSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
@@ -26,7 +27,9 @@ async function materialized() {
 }
 
 describe("verifyRepository", () => {
-  it("reports violations for tampered files, links, modes, ledger, undeclared paths, and dirty trees", async () => {
+  it(
+    "reports violations for tampered files, links, modes, ledger, undeclared paths, and dirty trees",
+    async () => {
     let fixture = await materialized();
     const skill = skillPath("strategist");
     writeFileSync(join(fixture.clone, skill), "tampered\n");
@@ -65,7 +68,9 @@ describe("verifyRepository", () => {
     expect(leftover).toMatchObject({ exitCode: 1, reason: "dirty" });
     expect(leftover.detail).toContain("left by an earlier run");
     expect(existsSync(join(fixture.clone, ".agents/skills/clossys-leftover/NOTE"))).toBe(true);
-  });
+  },
+    120_000,
+  );
 
   it("reports a missing clone as indeterminate", async () => {
     const fixture = buildMaterializedFixture(roots);
@@ -81,5 +86,98 @@ describe("verifyRepository", () => {
     const { verifyMain } = await import("./apply-plan-cli.js");
     const code = await verifyMain(["--repo", SITE_ID], { cwd: fixture.hub, clone: fixture.clone, set: fixture.set, binding: fixture.binding });
     expect(code).toBe(1);
+  });
+
+  it("reports diverged when the clone matches the set but HEAD is not the apply branch", async () => {
+    const fixture = await materialized();
+    execFileSync("git", ["-c", "commit.gpgsign=false", "-c", "core.hooksPath=/dev/null", "checkout", "main"], { cwd: fixture.clone, stdio: "ignore" });
+    expect(await verifyRepository({ clone: fixture.clone, set: fixture.set, binding: fixture.binding })).toEqual({
+      exitCode: 1,
+      verdict: "violated",
+      reason: "diverged",
+    });
+  });
+
+  it("returns symlink-ancestor when clossys is a symlink whose target holds the set bytes", async () => {
+    const fixture = await materialized();
+    const realRoot = join(fixture.clone, "clossys-real");
+    mkdirSync(join(realRoot, ".state"), { recursive: true });
+    const ledger = readFileSync(join(fixture.clone, "clossys/.state/installed.json"));
+    writeFileSync(join(realRoot, ".state/installed.json"), ledger);
+    rmSync(join(fixture.clone, "clossys"), { recursive: true, force: true });
+    symlinkSync(realRoot, join(fixture.clone, "clossys"));
+    expect(await verifyRepository({ clone: fixture.clone, set: fixture.set, binding: fixture.binding })).toEqual({
+      exitCode: 2,
+      verdict: "indeterminate",
+      reason: "symlink-ancestor",
+    });
+  });
+
+  it("returns symlink-ancestor when a symlink ancestor lies outside clossys, .github, and .starter", async () => {
+    const fixture = await materialized();
+    const realAgents = join(fixture.clone, "agents-real");
+    mkdirSync(join(realAgents, "skills/clossys-strategist"), { recursive: true });
+    writeFileSync(join(realAgents, "skills/clossys-strategist/SKILL.md"), readFileSync(join(fixture.clone, skillPath("strategist")), "utf8"));
+    rmSync(join(fixture.clone, ".agents"), { recursive: true, force: true });
+    symlinkSync(realAgents, join(fixture.clone, ".agents"));
+    expect(await verifyRepository({ clone: fixture.clone, set: fixture.set, binding: fixture.binding })).toEqual({
+      exitCode: 2,
+      verdict: "indeterminate",
+      reason: "symlink-ancestor",
+    });
+  }, 120_000);
+
+  it("returns status-unreadable when git status fails and leaves an untracked file in place", async () => {
+    const fixture = await materialized();
+    const stray = join(fixture.clone, "stray-untracked.txt");
+    writeFileSync(stray, "keep\n");
+    const index = join(fixture.clone, ".git/index");
+    const mode = readFileSync(index); // touch to ensure exists
+    chmodSync(index, 0o000);
+    try {
+      expect(await verifyRepository({ clone: fixture.clone, set: fixture.set, binding: fixture.binding })).toEqual({
+        exitCode: 2,
+        verdict: "indeterminate",
+        reason: "status-unreadable",
+      });
+    } finally {
+      chmodSync(index, 0o644);
+    }
+    expect(existsSync(stray)).toBe(true);
+    expect(mode.length).toBeGreaterThan(0);
+  }, 120_000);
+
+  it("returns status-unreadable when git diff fails instead of reporting materialized", async () => {
+    const fixture = await materialized();
+    const index = join(fixture.clone, ".git/index");
+    chmodSync(index, 0o000);
+    try {
+      expect(await verifyRepository({ clone: fixture.clone, set: fixture.set, binding: fixture.binding })).toEqual({
+        exitCode: 2,
+        verdict: "indeterminate",
+        reason: "status-unreadable",
+      });
+    } finally {
+      chmodSync(index, 0o644);
+    }
+  }, 120_000);
+
+  it("rejects a default branch refspec before fetch and leaves a local other branch unchanged", async () => {
+    const fixture = buildMaterializedFixture(roots);
+    execFileSync("git", ["-c", "commit.gpgsign=false", "-c", "core.hooksPath=/dev/null", "branch", "other", "HEAD~0"], { cwd: fixture.clone, stdio: "ignore" });
+    const otherBefore = execFileSync("git", ["-c", "commit.gpgsign=false", "-c", "core.hooksPath=/dev/null", "rev-parse", "other"], { cwd: fixture.clone, encoding: "utf8" }).trim();
+    for (const defaultBranch of ["+refs/heads/main:refs/heads/other", "main:refs/heads/other", "refs/heads/*"] as const) {
+      const set = structuredClone(fixture.set);
+      set.repository = { ...set.repository, defaultBranch };
+      expect(await verifyRepository({ clone: fixture.clone, set, binding: fixture.binding })).toEqual({
+        exitCode: 2,
+        verdict: "indeterminate",
+        reason: "change-set-invalid",
+      });
+      expect(execFileSync("git", ["-c", "commit.gpgsign=false", "-c", "core.hooksPath=/dev/null", "rev-parse", "other"], { cwd: fixture.clone, encoding: "utf8" }).trim()).toBe(otherBefore);
+    }
+    const mainSet = structuredClone(fixture.set);
+    mainSet.repository = { ...mainSet.repository, defaultBranch: "main" };
+    expect((await verifyRepository({ clone: fixture.clone, set: mainSet, binding: fixture.binding })).reason).not.toBe("change-set-invalid");
   });
 });
