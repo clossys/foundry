@@ -13,6 +13,15 @@ export interface SystemAuditViewProps {
   brandSectionLabel?: string;
   /** Accessible name for the contrast section. @default "Contrast" */
   contrastLabel?: string;
+  /**
+   * Coverage status under the page title.
+   * @default "Brand file coverage passed." when brandOk is true, otherwise "Brand file coverage failed."
+   */
+  coverageDescription?: (brandOk: boolean) => string;
+}
+
+function defaultCoverageDescription(brandOk: boolean): string {
+  return brandOk ? "Brand file coverage passed." : "Brand file coverage failed.";
 }
 
 /** Internal audit: the preview gallery plus brand-file and contrast results. One map entry, not a hand-built admin page. */
@@ -25,10 +34,11 @@ export function SystemAuditView({
   galleryLabel = "Preview gallery",
   brandSectionLabel = "Brand file",
   contrastLabel = "Contrast",
+  coverageDescription = defaultCoverageDescription,
 }: SystemAuditViewProps): ReactNode {
   return (
     <main>
-      <PageHeader title={title} description={brandOk ? "Brand file coverage passed." : "Brand file coverage failed."} />
+      <PageHeader title={title} description={coverageDescription(brandOk)} />
       <p>
         <a href={galleryHref}>{galleryLabel}</a>
       </p>

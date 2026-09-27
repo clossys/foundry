@@ -744,7 +744,9 @@ entry list, each entry's tag list, and the pagination landmark.
 `typeLabel` (default "Type"), and `factsLabel` (default "Strategy facts").
 `SystemAuditView` names its gallery link and sections with `galleryLabel`
 (default "Preview gallery"), `brandSectionLabel` (default "Brand file"),
-and `contrastLabel` (default "Contrast").
+and `contrastLabel` (default "Contrast"), and its coverage status line with
+`coverageDescription` (default "Brand file coverage passed." /
+"Brand file coverage failed." from `brandOk`).
 
 There is intentionally no `EntryView`. A document-backed entry page uses
 `DocumentView`, with its optional header action linking back to the

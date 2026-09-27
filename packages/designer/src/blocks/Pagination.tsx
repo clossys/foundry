@@ -23,8 +23,30 @@ export interface PaginationProps extends Omit<HTMLAttributes<HTMLElement>, "onCh
   previousPageLabel?: string;
   /** Accessible name for the next-page control. @default "Next page" */
   nextPageLabel?: string;
+  /** Summary when there are no pages or no items. @default "No results" */
+  noResultsLabel?: string;
+  /**
+   * Range summary when `totalItems` and `pageSize` are set.
+   * @default `Showing ${start}–${end} of ${total}`
+   */
+  rangeSummaryMessage?: (start: number, end: number, total: number) => string;
+  /**
+   * Summary when the range summary inputs are omitted.
+   * @default `Page ${page} of ${pageCount}`
+   */
+  pageSummaryMessage?: (page: number, pageCount: number) => string;
+  /** Label on the optional page-size selector. @default "Rows per page" */
+  pageSizeLabel?: string;
   className?: string;
   style?: CSSProperties;
+}
+
+function defaultRangeSummaryMessage(start: number, end: number, total: number): string {
+  return `Showing ${start}–${end} of ${total}`;
+}
+
+function defaultPageSummaryMessage(page: number, pageCount: number): string {
+  return `Page ${page} of ${pageCount}`;
 }
 
 type PageItem = number | "ellipsis";
@@ -91,6 +113,10 @@ export function Pagination({
   siblingCount = 1,
   previousPageLabel = "Previous page",
   nextPageLabel = "Next page",
+  noResultsLabel = "No results",
+  rangeSummaryMessage = defaultRangeSummaryMessage,
+  pageSummaryMessage = defaultPageSummaryMessage,
+  pageSizeLabel = "Rows per page",
   className,
   style,
   "aria-label": ariaLabel = "Pagination",
@@ -103,13 +129,13 @@ export function Pagination({
 
   let rangeSummary: string;
   if (clampedCount === 0) {
-    rangeSummary = "No results";
+    rangeSummary = noResultsLabel;
   } else if (totalItems !== undefined && pageSize !== undefined) {
     const start = (page - 1) * pageSize + 1;
     const end = Math.min(page * pageSize, totalItems);
-    rangeSummary = totalItems === 0 ? "No results" : `Showing ${start}–${end} of ${totalItems}`;
+    rangeSummary = totalItems === 0 ? noResultsLabel : rangeSummaryMessage(start, end, totalItems);
   } else {
-    rangeSummary = `Page ${page} of ${clampedCount}`;
+    rangeSummary = pageSummaryMessage(page, clampedCount);
   }
 
   const showPageSizeSelector = Boolean(
@@ -163,7 +189,7 @@ export function Pagination({
       </div>
       {showPageSizeSelector ? (
         <Select
-          label="Rows per page"
+          label={pageSizeLabel}
           className="w-auto"
           options={(pageSizeOptions ?? []).map((size) => ({ id: String(size), label: String(size) }))}
           selectedKey={pageSize !== undefined ? String(pageSize) : null}

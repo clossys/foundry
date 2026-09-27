@@ -4005,7 +4005,7 @@ not a grab-bag).
 | `Switch` | component | On/off toggle built on react-aria-components' `Switch`. |
 | `SwitchProps` | type | Props for `Switch`: `children` (the visible label), plus everything react-aria-components' own `Switch` accepts. |
 | `Select` | component | Labeled single-choice dropdown built on react-aria-components' `Select`/`Button`/`Popover`/`ListBox`/`ListBoxItem`. |
-| `SelectProps` | type | Props for `Select`: `label`, `description`, `errorMessage`, `placeholder`, `options`, `className`, `triggerClassName`, plus everything react-aria-components' own `Select` accepts. |
+| `SelectProps` | type | Props for `Select`: `label`, `description`, `errorMessage`, `placeholder` (default `"Select an option"`), `options`, `className`, `triggerClassName`, plus everything react-aria-components' own `Select` accepts. |
 | `SelectOption` | type | One option: `id`, `label`, `isDisabled?`, `textValue?`. |
 | `Textarea` | component | Labeled multi-line text input built on react-aria-components' `TextField` + `Label` + `TextArea` + `FieldError`. |
 | `TextareaProps` | type | Props for `Textarea`: `label`, `description`, `errorMessage`, `placeholder`, `rows`, `className`, `textareaClassName`, plus everything react-aria-components' own `TextField` accepts. |
@@ -4082,9 +4082,9 @@ not a grab-bag).
 | `DetailViewProps` | type | Props for `DetailView`: `title`, `fields`, `actions`, `className`, `style`, plus every native `<section>` attribute. |
 | `DetailViewField` | type | One field: `label`, `value` (`ReactNode`), `span?` (`1 \| 2`). |
 | `Pagination` | component | Page navigation: range summary, page controls, optional page-size selector. |
-| `PaginationProps` | type | Props for `Pagination`: `page`, `pageCount`, `onPageChange`, `totalItems`, `pageSize`, `pageSizeOptions`, `onPageSizeChange`, `siblingCount`, `previousPageLabel`, `nextPageLabel`, `className`, `style`, plus every native `<nav>` attribute. |
+| `PaginationProps` | type | Props for `Pagination`: `page`, `pageCount`, `onPageChange`, `totalItems`, `pageSize`, `pageSizeOptions`, `onPageSizeChange`, `siblingCount`, `previousPageLabel`, `nextPageLabel`, `noResultsLabel` (default `"No results"`), `rangeSummaryMessage`, `pageSummaryMessage`, `pageSizeLabel` (default `"Rows per page"`), `className`, `style`, plus every native `<nav>` attribute. |
 | `Stat` | component | A single metric: label, value, optional delta/trend, optional description. |
-| `StatProps` | type | Props for `Stat`: `label`, `value`, `delta`, `trend`, `description`, `className`, `style`, plus every native `<div>` attribute. |
+| `StatProps` | type | Props for `Stat`: `label`, `value`, `delta`, `trend`, `trendLabels` (default Increase / Decrease / No change), `description`, `className`, `style`, plus every native `<div>` attribute. |
 | `StatTrend` | type | `"up" \| "down" \| "neutral"`. |
 | `Form` | component | Form layout: optional heading, fields region, error-summary region (focused/announced on failure), actions region. No validation logic. |
 | `FormProps` | type | Props for `Form`: `heading`, `children`, `errors`, `errorSummaryMessage` (default "There is 1 error" / "There are N errors"), `actions`, `onSubmit`, `className`, `style`, plus every native `<form>` attribute. |
@@ -4180,10 +4180,10 @@ not a grab-bag).
 | `ChartTableSpec` | type | `{ headers, rows }` — the table-view fallback's data. |
 | `PlotArea` | type | `{ x, y, width, height }` — the plot rectangle passed to `ChartFrame`'s `children` render prop. |
 | `BarChart` | component | Categorical magnitude: one bar per category, grouped by series. |
-| `BarChartProps` | type | Props for `BarChart`: `categories`, `series`, `colorDomain`, `title`, `description`, `width`, `height`, `valueFormat`, `barLabel` (default `"{series}, {category}: {value}"`), `tableFallbackLabel`, `className`, `style`. |
+| `BarChartProps` | type | Props for `BarChart`: `categories`, `series`, `colorDomain`, `title`, `description`, `width`, `height`, `valueFormat`, `barLabel` (default `"{series}, {category}: {value}"`), `categoryColumnLabel` (default `"Category"`), `tableFallbackLabel`, `className`, `style`. |
 | `BarChartSeries` | type | `{ name, values, color? }`. |
 | `LineChart` | component | Change over time: one line per series, one shared x/y scale, a crosshair + tooltip hover layer. |
-| `LineChartProps` | type | Props for `LineChart`: `x`, `series`, `colorDomain`, `title`, `description`, `width`, `height`, `valueFormat`, `xFormat`, `keyboardHintLabel` (default `"use arrow keys to inspect values"`), `overlayLabel` (default `"{title}: {hint}"`), `tableFallbackLabel`, `className`, `style`. |
+| `LineChartProps` | type | Props for `LineChart`: `x`, `series`, `colorDomain`, `title`, `description`, `width`, `height`, `valueFormat`, `xFormat`, `keyboardHintLabel` (default `"use arrow keys to inspect values"`), `overlayLabel` (default `"{title}: {hint}"`), `xColumnLabel` (default `"X"`), `tableFallbackLabel`, `className`, `style`. |
 | `LineChartSeries` | type | `{ name, values, color? }`. |
 | `Sparkline` | component | A bare inline trend — no axes/grid/legend/hover, still ships a table-view fallback. |
 | `SparklineProps` | type | Props for `Sparkline`: `values`, `title`, `width`, `height`, `color`, `valueFormat`, `tableFallbackLabel` (default `"View as table"`), `valueColumnLabel` (default `"Value"`), `className`, `style`. |
@@ -4198,7 +4198,7 @@ not a grab-bag).
 | `THEME_PREFERENCES` | value | `["system", "light", "dark"] as const` — the three valid preference strings. |
 | `DEFAULT_STORAGE_KEY` | value | `"ui-theme"` — the default `localStorage` key `ThemeProvider` and `getThemeInitScript` both use. |
 | `ThemeToggle` | component | Accessible control cycling System → Light → Dark → System, built from this package's own `Button`/`Icon` atoms. |
-| `ThemeToggleProps` | type | Props for `ThemeToggle`: everything `Button` accepts except `children`/`onPress`. |
+| `ThemeToggleProps` | type | Props for `ThemeToggle`: `preferenceLabels`, `toggleLabel`, `preferenceAnnouncement`, plus everything `Button` accepts except `children`/`onPress`. |
 
 ## Tests
 

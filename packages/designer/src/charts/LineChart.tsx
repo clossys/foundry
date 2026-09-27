@@ -41,6 +41,8 @@ export interface LineChartProps {
    * @default (chartTitle, hint) => `${chartTitle}: ${hint}`
    */
   overlayLabel?: (chartTitle: string, hint: string) => string;
+  /** Column heading for the x column in the table-view fallback. @default "X" */
+  xColumnLabel?: string;
   /**
    * Text of the disclosure that opens the table-view fallback.
    * Forwarded to `ChartFrame`, which defaults it to "View as table".
@@ -77,6 +79,7 @@ export function LineChart({
   xFormat = defaultXFormat,
   keyboardHintLabel = "use arrow keys to inspect values",
   overlayLabel = defaultOverlayLabel,
+  xColumnLabel = "X",
   tableFallbackLabel,
   className,
   style,
@@ -101,7 +104,7 @@ export function LineChart({
   const showDirectLabels = visibleSeries.length >= 2 && visibleSeries.length <= 4;
 
   const table: ChartTableSpec = {
-    headers: ["X", ...visibleSeries.map((s) => s.name)],
+    headers: [xColumnLabel, ...visibleSeries.map((s) => s.name)],
     rows: x.map((xv, i) => [xFormat(xv), ...visibleSeries.map((s) => valueFormat(s.values[i] ?? 0))]),
   };
 

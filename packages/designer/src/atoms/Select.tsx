@@ -53,7 +53,7 @@ export interface SelectProps
    * announces it.
    */
   errorMessage?: ReactNode | ((validation: ValidationResult) => ReactNode);
-  /** Shown in the trigger when nothing is selected yet. */
+  /** Shown in the trigger when nothing is selected yet. @default "Select an option" */
   placeholder?: string;
   /** The list of choices, in order. */
   options: readonly SelectOption[];
@@ -103,7 +103,7 @@ export function Select({
   label,
   description,
   errorMessage,
-  placeholder,
+  placeholder = "Select an option",
   options,
   className,
   triggerClassName,
@@ -136,7 +136,7 @@ export function Select({
       >
         <SelectValue className="truncate">
           {({ isPlaceholder, selectedText }) =>
-            isPlaceholder ? (placeholder ?? "Select an option") : selectedText
+            isPlaceholder ? placeholder : selectedText
           }
         </SelectValue>
         <span aria-hidden="true" className="text-ink-muted">

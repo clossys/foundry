@@ -19,12 +19,13 @@ const TREND_GLYPH: Record<StatTrend, string> = {
   neutral: "→",
 };
 
-// The screen-reader-only text companion to the glyph above — the SECOND,
-// independent non-colour signal, for anyone who can't see the glyph's
-// shape either. `aria-hidden` on the glyph plus this `sr-only` text means
-// assistive tech announces "Increase, +12%" rather than the bare "▲" a
-// screen reader would otherwise skip or read as a stray character.
-const TREND_LABEL: Record<StatTrend, string> = {
+export interface StatTrendLabels {
+  readonly up: string;
+  readonly down: string;
+  readonly neutral: string;
+}
+
+const DEFAULT_TREND_LABELS: StatTrendLabels = {
   up: "Increase",
   down: "Decrease",
   neutral: "No change",
@@ -45,6 +46,11 @@ export interface StatProps extends Omit<HTMLAttributes<HTMLDivElement>, "title">
    * greyscale. @default "neutral"
    */
   trend?: StatTrend;
+  /**
+   * Screen-reader-only trend direction beside `delta`.
+   * @default Increase / Decrease / No change for up / down / neutral
+   */
+  trendLabels?: StatTrendLabels;
   /** Supporting context below the value ("vs. last 30 days"). */
   description?: ReactNode;
   className?: string;
@@ -66,6 +72,7 @@ export function Stat({
   value,
   delta,
   trend = "neutral",
+  trendLabels = DEFAULT_TREND_LABELS,
   description,
   className,
   style,
@@ -83,7 +90,7 @@ export function Stat({
           )}
         >
           <span aria-hidden="true">{TREND_GLYPH[trend]}</span>
-          <span className="sr-only">{TREND_LABEL[trend]}, </span>
+          <span className="sr-only">{trendLabels[trend]}, </span>
           {delta}
         </span>
       ) : null}

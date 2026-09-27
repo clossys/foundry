@@ -127,6 +127,11 @@ describe("Select", () => {
     expect(wrapper.className).not.toContain("gap-xs");
   });
 
+  it("uses the documented default placeholder when placeholder is omitted", () => {
+    render(<Select label="Favorite fruit" options={FRUIT_OPTIONS} />);
+    expect(screen.getByRole("button", { name: /Select an option/ })).toBeInTheDocument();
+  });
+
   it("disabled: the trigger is disabled and does not open", async () => {
     const user = userEvent.setup();
     render(<Select label="Favorite fruit" options={FRUIT_OPTIONS} isDisabled />);
