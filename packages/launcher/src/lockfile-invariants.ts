@@ -94,10 +94,11 @@ function checkI1(input: LockfileInvariantInput, regenerated: LockfileView): Lock
   return violations;
 }
 
-/** Lockfile entry key for one root dependency's resolved package row, when it has a version. */
+/** Lockfile entry key for one root dependency's resolved package row. npm: always `node_modules/<name>` (versionless link entries included). pnpm: `name@version`, or null when version is absent. */
 function rootPackageEntryKey(format: LockfileFormat, dep: RootDependency): string | null {
+  if (format === "npm") return `node_modules/${dep.name}`;
   if (dep.version === null) return null;
-  return format === "npm" ? `node_modules/${dep.name}` : `${dep.name}@${dep.version}`;
+  return `${dep.name}@${dep.version}`;
 }
 
 /** I2: every root dep not among the input package names is unchanged, keyed by (placement, name). */

@@ -461,6 +461,36 @@ describe("npm lockfile invariants", () => {
     expect(result.verdict === "violated" && result.violations).toEqual([{ invariant: "I2", name: "left-pad" }]);
   });
 
+  it("I2: satisfied when an unchanged versionless npm root link matches the base packages entry (rootResolution, fix round 6)", () => {
+    const withVersionlessLink = (packages: Record<string, any>): Record<string, any> => {
+      packages[""].devDependencies["local-vendor"] = "file:../local-vendor";
+      packages["node_modules/local-vendor"] = { resolved: "vendor/local-vendor", link: true };
+      return packages;
+    };
+    const result = checkLockfileInvariants({
+      format: "npm",
+      base: npmLockfile(withVersionlessLink(npmBasePackages())),
+      regenerated: npmLockfile(withVersionlessLink(npmBasePackages())),
+      packages: [INPUT_PACKAGE],
+    });
+    expect(result).toMatchObject({ verdict: "satisfied" });
+  });
+
+  it("I2: violated when a versionless npm root link target changes (rootResolution, fix round 6)", () => {
+    const base = npmBasePackages();
+    base[""].devDependencies["local-vendor"] = "file:../local-vendor";
+    base["node_modules/local-vendor"] = { resolved: "vendor/local-vendor", link: true };
+    const regenerated = structuredClone(base);
+    regenerated["node_modules/local-vendor"] = { resolved: "vendor/evil", link: true };
+    const result = checkLockfileInvariants({
+      format: "npm",
+      base: npmLockfile(base),
+      regenerated: npmLockfile(regenerated),
+      packages: [INPUT_PACKAGE],
+    });
+    expect(result.verdict === "violated" && result.violations).toEqual([{ invariant: "I2", name: "local-vendor" }]);
+  });
+
   it("I5: a versioned scoped link already at the same key in the base is not a violation (nameVersionShortcut, fix round 4)", () => {
     const withVersionedLink = (packages: Record<string, any>): Record<string, any> => {
       packages[`node_modules/${SCOPE}/fixture-other`] = {
