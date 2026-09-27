@@ -68,13 +68,12 @@ function matchHistoryEntry(
   held: readonly RepositoryChangeSet[],
   verified: (set: RepositoryChangeSet) => boolean,
 ): RepositoryChangeSet | undefined {
-  // Several held sets may share a digest and differ in `bundle`, which is outside the digest: take one that matches everything.
+  // Several held sets may share a digest and differ in `bundle`, which is outside the digest and not compared here.
   return held.find(
     (set) =>
       set?.changeSetDigest === entry.changeSet &&
       set.phase === entry.phase &&
       set.planDigest === entry.planDigest &&
-      set.bundle === entry.bundle &&
       set.repository?.baseCommit === entry.baseCommit &&
       set.repository?.nodeId === nodeId &&
       set.ledger?.generation === index &&

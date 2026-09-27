@@ -154,7 +154,6 @@ describe("trustInstalledLedger", () => {
         forged.deferred = [];
       }],
       ["planDigest", (entry: Loose) => (entry.planDigest = OTHER)],
-      ["bundle", (entry: Loose) => (entry.bundle = OTHER)],
       ["baseCommit", (entry: Loose) => (entry.baseCommit = "0".repeat(40))],
     ] as const)("when the history entry's %s is not the held set's", (_name, edit) => {
       const forged = clone(ledger) as Loose;
@@ -162,9 +161,9 @@ describe("trustInstalledLedger", () => {
       expect(trust(forged, [SETUP])).toEqual(refused("ledger-chain"));
     });
 
-    it("picks, among held sets sharing a digest, the one whose bundle matches", () => {
+    it("trusts a held set that shares the ledger entry's digest and differs only in bundle", () => {
       const otherRun = { ...clone(SETUP), bundle: OTHER };
-      expect(trust(ledger, [otherRun])).toEqual(refused("ledger-chain"));
+      expect(trust(ledger, [otherRun])).toEqual(TRUSTED);
       expect(trust(ledger, [otherRun, SETUP])).toEqual(TRUSTED);
     });
 

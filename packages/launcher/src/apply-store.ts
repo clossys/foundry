@@ -131,11 +131,32 @@ function ensureRealDirectory(hubDirectory: string, directory: string, mode: "rea
  * hard-linked to the final name, so a name already taken fails the link with
  * EEXIST rather than overwriting it. On EEXIST the existing file is
  * lstat-ed -- a symbolic link there is refused -- then re-read: identical
- * bytes is a no-op, and different bytes is refused. The temporary file is
+ * bytes is a no-op; when `equivalent` says the existing and incoming
+ * documents validate to the same digest the name claims, that is a no-op
+ * too; and any other different bytes is refused. The temporary file is
  * always removed. Every store directory segment is a real directory, never a
  * symbolic link (see `ensureRealDirectory()`). Returns the final path.
  */
-function writeAppendOnly(hubDirectory: string, storeRel: string, fileName: string, bytes: Buffer): string {
+/** When both buffers are valid stored change sets for `digest`, true; when existing bytes do not validate to that digest, false. */
+function storedChangeSetsShareDigest(existing: Buffer, incoming: Buffer, digest: string): boolean {
+  const digestOf = (buf: Buffer): string | null => {
+    try {
+      const document = readContractDocument(buf);
+      if (!validateRepositoryChangeSet(document).valid) return null;
+      const set = document as RepositoryChangeSet;
+      const recomputed = changeSetDigest(set);
+      if (recomputed !== set.changeSetDigest || recomputed !== digest) return null;
+      return recomputed;
+    } catch {
+      return null;
+    }
+  };
+  const left = digestOf(existing);
+  const right = digestOf(incoming);
+  return left !== null && right !== null && left === right;
+}
+
+function writeAppendOnly(hubDirectory: string, storeRel: string, fileName: string, bytes: Buffer, equivalent?: (existing: Buffer, incoming: Buffer) => boolean): string {
   assertHubDirectory(hubDirectory);
   const directory = join(hubDirectory, storeRel);
   ensureRealDirectory(hubDirectory, directory, "write");
@@ -174,7 +195,9 @@ function writeAppendOnly(hubDirectory: string, storeRel: string, fileName: strin
       } catch (readCause) {
         throw wrapFsError("hub store write", readCause);
       }
-      if (!existing.equals(bytes)) throw new TypeError("this digest already names a stored document with different bytes; the store is append-only");
+      if (!existing.equals(bytes) && !equivalent?.(existing, bytes)) {
+        throw new TypeError("this digest already names a stored document with different bytes; the store is append-only");
+      }
     }
   } finally {
     if (descriptor !== undefined) {
@@ -228,14 +251,22 @@ function readStoredBytes(hubDirectory: string, storeRel: string, fileName: strin
  * the set does not validate against the change-set contract, when its
  * `changeSetDigest` is not `changeSetDigest(set)`, or when that name is
  * already taken by different bytes (the store is append-only). Storing the
- * same set again, byte for byte, is a no-op. Returns the file's path.
+ * same set again, byte for byte, is a no-op; so is storing another document
+ * that validates to the same changeSetDigest. Returns the file's path.
  */
 export function storeChangeSet(hubDirectory: string, set: RepositoryChangeSet): string {
   const validation = validateRepositoryChangeSet(set);
   if (!validation.valid) throw new TypeError(`a change set must validate against its contract before it can be stored: ${validation.reason}`);
   if (set.changeSetDigest !== changeSetDigest(set)) throw new TypeError("a change set's changeSetDigest must equal changeSetDigest(set) before it can be stored");
   assertDigestShape(set.changeSetDigest);
-  return writeAppendOnly(hubDirectory, CHANGE_SET_STORE_REL, digestFileName(set.changeSetDigest), serializeStoredDocument(set));
+  const digest = set.changeSetDigest;
+  return writeAppendOnly(
+    hubDirectory,
+    CHANGE_SET_STORE_REL,
+    digestFileName(digest),
+    serializeStoredDocument(set),
+    (existing, incoming) => storedChangeSetsShareDigest(existing, incoming, digest),
+  );
 }
 
 /**

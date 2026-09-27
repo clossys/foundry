@@ -98,16 +98,34 @@ describe("storeChangeSet / readStoredChangeSet", () => {
     expect(readFileSync(path, "utf8")).toBe(`${JSON.stringify(SET, null, 2)}\n`);
   });
 
-  it("refuses different bytes stored under the same digest name", () => {
+  it("is a no-op storing the same digest again with an extra tooling entry, leaving the first writer's bytes", () => {
     storeChangeSet(hub, SET);
     const path = join(hub, CHANGE_SET_STORE_REL, `${SET.changeSetDigest.slice("sha256:".length)}.json`);
     const before = readFileSync(path, "utf8");
-    // Same changeSetDigest field, but a document that is not byte-identical
-    // to what is already stored (an extra, contract-tolerated tooling entry).
+    const collided: RepositoryChangeSet = { ...SET, tooling: [{ tool: "node", version: "24.0.0" }] };
+    expect(() => storeChangeSet(hub, collided)).not.toThrow();
+    expect(readFileSync(path, "utf8")).toBe(before);
+  });
+
+  it("is a no-op storing the same digest again with a different bundle, leaving the first writer's bytes", () => {
+    storeChangeSet(hub, SET);
+    const path = join(hub, CHANGE_SET_STORE_REL, `${SET.changeSetDigest.slice("sha256:".length)}.json`);
+    const before = readFileSync(path, "utf8");
+    const collided: RepositoryChangeSet = { ...SET, bundle: OTHER_SET.bundle };
+    expect(() => storeChangeSet(hub, collided)).not.toThrow();
+    expect(readFileSync(path, "utf8")).toBe(before);
+  });
+
+  it("refuses different bytes under the same digest name when they do not validate to that digest", () => {
+    storeChangeSet(hub, SET);
+    const path = join(hub, CHANGE_SET_STORE_REL, `${SET.changeSetDigest.slice("sha256:".length)}.json`);
+    const before = readFileSync(path, "utf8");
+    const tampered: RepositoryChangeSet = { ...SET, repository: { ...SET.repository, baseCommit: "f".repeat(40) } };
+    writeFileSync(path, `${JSON.stringify(tampered, null, 2)}\n`);
     const collided: RepositoryChangeSet = { ...SET, tooling: [{ tool: "node", version: "24.0.0" }] };
     expect(() => storeChangeSet(hub, collided)).toThrow(TypeError);
-    expect(readFileSync(path, "utf8")).toBe(before);
-    // No leftover temporary file after the refusal.
+    expect(readFileSync(path, "utf8")).toContain("ffffffffffffffffffffffffffffffffffffffff");
+    expect(readStoredChangeSet(hub, SET.changeSetDigest)).toBeNull();
     expect(readdirSync(join(hub, CHANGE_SET_STORE_REL)).filter((name) => name.endsWith(".tmp"))).toEqual([]);
   });
 
