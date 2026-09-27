@@ -476,9 +476,11 @@ const sameIdentity = (left: LedgerPackageRow, right: LedgerPackageRow): boolean 
  * when: `set.changeSetDigest` is not this change set's own digest;
  * `set.ledger.generation` is not previous's generation (0 with no
  * previous); previous's repository differs from the set's; a deferred
- * row's planItem names no plan package; or an apply set keeps a whole file
+ * row's planItem names no plan package; an apply set keeps a whole file
  * (before equal to after) at a path previous holds no row for, which would
- * be an adoption row, and only a setup set may adopt one.
+ * be an adoption row and only a setup set may adopt one; or an apply set
+ * writes a whole file whose before does not match previous's after at that
+ * path, or at a path previous holds no row for.
  */
 export function renderInstalledLedger(
   previous: InstalledLedger | null,
@@ -516,6 +518,9 @@ export function renderInstalledLedger(
     const isKeep = file.before === file.after;
     if (isKeep && existing !== undefined && existing.after === file.after) return; // unchanged: previous's row already holds this after
     if (isKeep && set.phase === "apply") throw new TypeError(`files[${index}] keeps a file previous holds no row for, which only a setup set may adopt`);
+    if (previous !== null && set.phase === "apply" && !isKeep && (existing === undefined || existing.after !== file.before)) {
+      throw new TypeError(`files[${index}] has no matching previous row for an apply update`);
+    }
     filesByPath.set(key, { path: file.path, mode: file.mode, after: file.after, changeSet: d });
   });
   const files = canonicalOrder([...filesByPath.values()], (row) => [row.path]);

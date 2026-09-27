@@ -78,6 +78,29 @@ describe("renderInstalledLedger (RENDER)", () => {
     expect(() => renderInstalledLedger(previousNodeChanged, set, render.binding, render.planPackages)).toThrow(TypeError);
   });
 
+  it("throws when an apply set updates a whole file at a path previous holds no row for", () => {
+    const render = CORPUS.renders.find((entry) => entry.name === "admitted-apply")!;
+    const previous = ledgerNamed(render.previous!);
+    const base = setNamed(render.changeSet);
+    const adopted = clone(base);
+    const beforeDigest = base.files.find((file) => !("derived" in file))!.after as string;
+    const afterDigest = `sha256:${"a".repeat(64)}`;
+    adopted.files = [...adopted.files, { path: "clossys/unowned-note.txt", mode: "100644", before: beforeDigest, after: afterDigest, item: "brief" }];
+    adopted.changeSetDigest = changeSetDigest(adopted);
+    expect(() => renderInstalledLedger(previous, adopted, render.binding, render.planPackages)).toThrow(/files\[\d+\]/);
+  });
+
+  it("throws when an apply set's whole-file before is not previous's after at that path", () => {
+    const render = CORPUS.renders.find((entry) => entry.name === "admitted-apply")!;
+    const previous = ledgerNamed(render.previous!);
+    const base = setNamed(render.changeSet);
+    const mismatched = clone(base);
+    const whole = mismatched.files.find((file) => !("derived" in file) && file.path === "clossys/brief.json")!;
+    whole.before = `sha256:${"b".repeat(64)}`;
+    mismatched.changeSetDigest = changeSetDigest(mismatched);
+    expect(() => renderInstalledLedger(previous, mismatched, render.binding, render.planPackages)).toThrow(/files\[\d+\]/);
+  });
+
   it("throws when an apply set keeps a whole file at a path previous holds no row for -- an adoption row only a setup set may write", () => {
     const render = CORPUS.renders.find((entry) => entry.name === "admitted-apply")!;
     const previous = ledgerNamed(render.previous!);
