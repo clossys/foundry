@@ -11,19 +11,19 @@ export const NPM_CI_IGNORE_SCRIPTS = Object.freeze({
 type UnknownRecord = Record<string, unknown>;
 const ROOT_DEPENDENCY_SECTION = "devDependencies";
 function record(value: unknown): value is UnknownRecord { return typeof value === "object" && value !== null && !Array.isArray(value); }
-function declaredVersion(value: unknown, expected: ExactPackage): boolean {
+function declaredVersion(value: unknown, expected: ExactPackage, section: "dependencies" | "devDependencies" = ROOT_DEPENDENCY_SECTION): boolean {
   if (!record(value)) return false;
-  const dependencies = record(value[ROOT_DEPENDENCY_SECTION]) ? value[ROOT_DEPENDENCY_SECTION] : {};
+  const dependencies = record(value[section]) ? value[section] : {};
   return dependencies[expected.name] === expected.version;
 }
 
-/** Validates npm's root devDependency and lock-v3 package entry without accepting a range or a borrowed section. */
-export function validateNpmIdentity(manifest: unknown, lock: unknown, expected: ExactPackage): string[] {
+/** Validates npm's root dependency entry and lock-v3 package entry without accepting a range or a borrowed section. */
+export function validateNpmIdentity(manifest: unknown, lock: unknown, expected: ExactPackage, placement: "dependencies" | "devDependencies" = ROOT_DEPENDENCY_SECTION): string[] {
   const findings: string[] = [];
-  if (!declaredVersion(manifest, expected)) findings.push(`package.json ${ROOT_DEPENDENCY_SECTION} does not declare ${expected.name} at exact ${expected.version}`);
+  if (!declaredVersion(manifest, expected, placement)) findings.push(`package.json ${placement} does not declare ${expected.name} at exact ${expected.version}`);
   if (!record(lock) || !record(lock.packages)) return [...findings, "package-lock.json has no packages object"];
   const root = lock.packages[""];
-  if (!declaredVersion(root, expected)) findings.push(`package-lock root ${ROOT_DEPENDENCY_SECTION} does not declare ${expected.name} at exact ${expected.version}`);
+  if (!declaredVersion(root, expected, placement)) findings.push(`package-lock root ${placement} does not declare ${expected.name} at exact ${expected.version}`);
   const entry = lock.packages[`node_modules/${expected.name}`];
   if (!record(entry) || entry.version !== expected.version || entry.integrity !== expected.integrity) {
     findings.push(`package-lock entry for ${expected.name} does not match exact version and integrity`);
