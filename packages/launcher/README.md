@@ -333,6 +333,8 @@ launcher-check --help
 launcher-check --input observation.json
 launcher-doctor
 launcher-apply-plan --plan plan.json --brief brief.json --repo ./product-checkout
+launcher-apply-plan materialize --repo ./site-checkout
+launcher-apply-plan verify --repo ./site-checkout
 launcher-apply-plan snapshot --request package-request.json
 ```
 
@@ -389,10 +391,10 @@ Exit codes preserve the ternary:
 | `isPlanApproved()` | True only when a plan's most recent decision (by timestamp) has `chosen === "approved"`. False when decisions at that latest time disagree, or when any decision time does not parse. It binds no bytes: it ignores `subjectDigest`, so it is also true for an approval that names no change. |
 | `applyEngagementBrief()` | Writes `clossys/brief.json` into a repository directory once the plan validates and is approved and the brief validates; refuses and writes nothing otherwise. Reports the plan's canonical digest. |
 | `planDigest()` / `canonicalJson()` / `canonicalDigest()` / `PLAN_DIGEST_EXCLUDED_FIELDS` | The canonical plan digest: `sha256:` over the RFC 8785 canonical JSON of the plan without `asOf` and `decisions`. Identical to Advisor's for every plan. `canonicalDigest()` is the shared step: `sha256:` over the canonical JSON of any value, which the plan, change-set and bundle digests all use. |
-| `planApplyBundle()` | The pure apply planner: from a validated plan, the hub brief, observations of each staffed repository's default branch (including the exact bytes of its installed-state ledger and its composed-skill manifest), the change sets the hub holds, the composed skill text, the producer version and the hub's Advisor and Integrator pins, computes one change set per staffed repository in the apply phase and returns a report-mode bundle. Trusts a repository's ledger only through held change sets, or skips the repository with the trust rule as its reason (`ledger-unreadable`, `identity`, `renamed`, `ledger-chain`, `ledger-foreign-row`); computes each owned path and key by compare-and-swap against the trusted ledger (add, keep, update, or a refusal: `unowned-existing`, `client-edited`, `deleted`), reported under V8; composes the Advisor voice with the staffed roles' voices; skips a repository in the setup phase (`setup-template-unbuilt`), one whose Controller profile needs root entries added (`root-entry-edit-unbuilt`), one whose owned package the lockfile no longer resolves to the recorded version and integrity (`integrity-mismatch`, violated), one whose ledger holds only some of a setup template's files (`template-rows-partial`), and one whose lockfile or ledger path has a case variant among the observed files (`case-variant-path`). Two or more observed files at the same path, compared case-insensitively, have no single base digest between them, so that path is never kept, updated or adopted. Refuses, by throwing before computing anything, a staffed role that is not a lowercase id token (`role-not-an-id`) and a planItem that is not its repository id, a colon and its package name (`plan-item-not-derived`). Reads no file, network, process or clock; the same inputs give the same bytes. Throws, naming positions and never values, on inputs it cannot plan from. |
+| `planApplyBundle()` | The pure apply planner: from a validated plan, the hub brief, observations of each staffed repository's default branch (including the exact bytes of its installed-state ledger and its composed-skill manifest), the change sets the hub holds, the composed skill text, the producer version and the hub's Advisor and Integrator pins, computes one change set per staffed repository in the apply phase and returns a report-mode bundle. Trusts a repository's ledger only through held change sets, or skips the repository with the trust rule as its reason (`ledger-unreadable`, `identity`, `renamed`, `ledger-chain`, `ledger-foreign-row`); computes each owned path and key by compare-and-swap against the trusted ledger (add, keep, update, or a refusal: `unowned-existing`, `client-edited`, `deleted`), reported under V8; composes the Advisor voice with the staffed roles' voices; skips a repository in the setup phase (`setup-template-unbuilt`), one whose Controller profile needs root entries added when the observation omits the profile text (`root-entry-edit-unbuilt`), one whose owned package the lockfile no longer resolves to the recorded version and integrity (`integrity-mismatch`, violated), one whose ledger holds only some of a setup template's files (`template-rows-partial`), and one whose lockfile or ledger path has a case variant among the observed files (`case-variant-path`). Two or more observed files at the same path, compared case-insensitively, have no single base digest between them, so that path is never kept, updated or adopted. Refuses, by throwing before computing anything, a staffed role that is not a lowercase id token (`role-not-an-id`) and a planItem that is not its repository id, a colon and its package name (`plan-item-not-derived`). Reads no file, network, process or clock; the same inputs give the same bytes. Throws, naming positions and never values, on inputs it cannot plan from. |
 | `trustInstalledLedger()` / `reconcileWholeFile()` | Whether a repository's ledger bytes may be trusted: exactly canonical and valid (`ledger-unreadable`), for the observed node id (`identity`) and id, compared exactly -- a difference in letter case alone is still refused (`renamed`) -- every generation a held, valid change set whose digest recomputes and that agrees with its history entry (`ledger-chain`), and every row a write of the set it names (`ledger-foreign-row`); a refusal carries the rule only. `reconcileWholeFile()` is the compare-and-swap table for one whole file, with the generation-0 adoption pass allowed only in a setup set; `clossys/.state/skills.json` is adopted through that pass only when its base already holds the exact bytes the set would write, never merely because a skills manifest was read. Pure. Types: `LedgerTrust`, `LedgerTrustRule`, `WholeFileState`, `WholeFileOutcome`. |
 | `projectEngagementBrief()` / `serializeEngagementBrief()` / `PUBLIC_PROBLEM_PLACEHOLDER` | One repository's brief: the hub brief with `staffedHere` set to that repository's roles in plan order, and `problem` replaced by the brief contract's fixed placeholder unless the repository is private, members in the brief contract's order at every depth; and the exact bytes written for it (two-space JSON and a final newline). |
-| `changeSetDigest()` / `changeSetDigestSubject()` / `CHANGE_SET_DIGEST_EXCLUDED_FIELDS` / `DERIVED_FILE_DIGEST_FIELDS` | The change-set digest: `canonicalDigest()` of the change set without `changeSetDigest`, `branch`, `bundle`, `pullRequest`, `inverse` and `tooling`, with each derived file reduced to `path`, `mode`, `derived`, `item` and `invariants`. |
+| `changeSetDigest()` / `changeSetDigestSubject()` / `CHANGE_SET_DIGEST_EXCLUDED_FIELDS` / `DERIVED_FILE_DIGEST_FIELDS` | The change-set digest: `canonicalDigest()` of the change set without `changeSetDigest`, `branch`, `bundle`, `pullRequest`, `inverse`, `tooling` and `texts`, with each derived file reduced to `path`, `mode`, `derived`, `item` and `invariants`. |
 | `bundleDigest()` | The bundle digest an approval binds: `canonicalDigest()` of the plan digest and, sorted by id, the id and change-set digest of each repository that has a change set. Nothing else. |
 | `validateRepositoryChangeSet()` / `validateApplyBundle()` | Validation of a change set and a bundle against the shared change-set and bundle contracts, including their code rules (C1-C16 for a change set: references, allow-list and case-insensitive path rules, the ledger, the digest, only the ledger and lockfile derived, canonical order, each item's writes matching it -- discovery links, the skills manifest, the pointer files and the setup templates included -- a pin-starter in devDependencies and at most once, phase, a complete setup set, the release-age exemption's surface and scope, the root entries a Controller profile needs, no skill written through a symbolic link, every refusal at a path or key its item binds, every whole file changed only as its act's write kind allows (none deletes), and each planItem derived from the repository id and package name; A1-A7 for a bundle: unique ids, the digest, verdicts that are the worst of their checks, the authorization-mismatch and authorization-absent checks, no state or binding in a report bundle, and in a planned bundle a state only where all nine checks passed and a binding exactly where V3 passed). Unknown fields are refused; no reason echoes a value. |
 | `wouldViolateRootEntries()` / `isRootEntryName()` | Whether the root names some paths introduce (each path's first segment) would fail a Controller repository profile's closed root vocabulary: `satisfied` when the profile has no vocabulary Controller checks (schema version 1 or 2, or an empty `rootEntries`) or declares every name allowed or required; `violated`, with the undeclared and the prohibited names, sorted; `indeterminate` (`root-vocabulary-unknown`) for anything Controller could not read as a root vocabulary. Reads only `schemaVersion` and `rootEntries`, by the rules Controller's README states; pure. `isRootEntryName()` is Controller's rule for one direct-child name. |
@@ -601,16 +603,6 @@ in this package).
   installed-state ledger as a derived file. No act the plan authorizes is
   dropped and no other act is added. An act the default branch already
   satisfies exactly is kept with `satisfiedInBase: true` and writes nothing.
-- A repository whose default branch declares a Controller repository
-  profile with a root vocabulary Controller checks gets a
-  `declare-root-entry` item that adds each root name the set introduces
-  and the vocabulary lacks, as an allowed extension, changing nothing else
-  in the profile. The planner does not compute the edited profile's bytes
-  yet, so such a repository is skipped as `root-entry-edit-unbuilt`. A
-  profile it cannot read (`root-vocabulary-unknown`), or one that prohibits
-  a root name the set introduces (`root-entry-prohibited`), gets the item
-  refused instead; a profile that already declares every name, or checks
-  no root vocabulary, gets no item.
 - A skill under a symbolic link on the default branch (`.agents`,
   `.agents/skills` or the role's own skill directory) is refused as
   `skills-root-is-link`: the planner never writes through a link.
@@ -646,7 +638,17 @@ in this package).
   carried as a no-op item, one keep entry per file (or `client-edited` /
   `deleted`); a template with only some of its files in the ledger skips the
   repository as `template-rows-partial`. An apply set carries no release-age
-  or root-entry edit: their rows pass forward unchanged.
+  item; its ledger rows for release age pass forward unchanged. Only apply
+  sets edit the Controller repository profile: when the observation carries
+  its text and the edit is stable, a `declare-root-entry` item adds each root
+  name the set introduces and the vocabulary lacks, as an allowed extension,
+  changing nothing else in the profile (`editJsonPointer`, the same editor
+  materialize uses for `package.json` keys). When that text is absent, the
+  repository is skipped as `root-entry-edit-unbuilt`. A profile it cannot read
+  (`root-vocabulary-unknown`), or one that prohibits a root name the set
+  introduces (`root-entry-prohibited`), gets the item refused instead; a
+  profile that already declares every name, or checks no root vocabulary,
+  gets no item.
 - A trusted row the desired state no longer names (a role no longer
   staffed, a package act the plan no longer names there) is left in place,
   and the set reports V8 `indeterminate` with rule `removal-unbuilt`: removal
@@ -654,7 +656,8 @@ in this package).
 - The change-set digest leaves out what is computed from it or from what it
   covers -- the digest itself, the branch, the bundle digest, the pull
   request text and the inverse set -- and `tooling`, which records the
-  machine. It also leaves out a derived file's `before` and `after`, for two
+  machine, and `texts`, which holds whole-file bytes for materialize only.
+  It also leaves out a derived file's `before` and `after`, for two
   different reasons: the ledger's bytes cite the digest, and a lockfile's
   bytes depend on the package manager's version, so both are checked by
   their invariants, which stay covered. Only those two files may be
@@ -760,6 +763,17 @@ here reads a ledger from a repository: the caller hands its bytes in.
 - Each ledger is read from its bytes and must be exactly the bytes the
   contract renders for it: a repeated key, a byte order mark or any other
   spelling is refused (`bytes`), never read as an unchanged ledger.
+
+### Materializing and verifying a change set
+
+`launcher-apply-plan materialize --repo <id>` writes a stored repository
+change set into that repository's local clone on the branch the set names,
+including the installed-state ledger. `launcher-apply-plan verify --repo <id>`
+re-reads the clone and reports whether the working tree still matches the
+set. Both commands are step 3 in
+[`docs/rfcs/apply-approved-plan.md`](../../docs/rfcs/apply-approved-plan.md)
+(section 11); a successful verify corresponds to the `materialized` row in
+section 4.4 of that RFC.
 
 ## Taking the registry snapshot
 

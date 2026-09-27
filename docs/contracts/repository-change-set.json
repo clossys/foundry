@@ -150,6 +150,26 @@
       "$ref": "advisor-plan.json#/definitions/sha256Digest",
       "description": "Optional. The digest of the change set that reverts this one. Excluded from the digest: it is computed from this set."
     },
+    "texts": {
+      "type": "array",
+      "description": "Optional. The exact bytes of each whole file the set writes, recorded when the set is stored so materialize can write brief, skill and discovery-link files without recomputing them. Excluded from the digest: the set already names each file's after digest; texts carry the bytes those digests name. Sorted by path (code rule C8). Each path must name a whole file in files whose after digest equals the UTF-8 digest of the text (code rule C17).",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "path",
+          "text"
+        ],
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "text": {
+            "type": "string"
+          }
+        }
+      }
+    },
     "tooling": {
       "type": "array",
       "description": "Optional. The tool versions that materialized the set, recorded for diagnosis when a derived file's bytes are regenerated (for example the npm version that rewrote the lockfile). Excluded from the digest: tooling is expected to vary between machines, and the derived files' invariants, not their bytes, are what the set promises. Sorted by tool (code rule C8).",

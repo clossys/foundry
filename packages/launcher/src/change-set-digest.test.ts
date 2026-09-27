@@ -52,7 +52,7 @@ describe("the shared digest step", () => {
 
 describe("changeSetDigest (docs/contracts/apply-change-set-digest.md)", () => {
   it("excludes exactly changeSetDigest, branch, bundle, pullRequest, inverse and tooling, and keeps five members of a derived file", () => {
-    expect(CHANGE_SET_DIGEST_EXCLUDED_FIELDS).toEqual(["changeSetDigest", "branch", "bundle", "pullRequest", "inverse", "tooling"]);
+    expect(CHANGE_SET_DIGEST_EXCLUDED_FIELDS).toEqual(["changeSetDigest", "branch", "bundle", "pullRequest", "inverse", "tooling", "texts"]);
     expect(DERIVED_FILE_DIGEST_FIELDS).toEqual(["path", "mode", "derived", "item", "invariants"]);
   });
 

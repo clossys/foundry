@@ -175,6 +175,8 @@ export interface RepositoryChangeSet {
   readonly inverse?: string;
   /** Tool versions recorded for diagnosis when derived files are regenerated; outside the digest. */
   readonly tooling?: readonly { readonly tool: "node" | "npm" | "pnpm" | "yarn"; readonly version: string }[];
+  /** Whole-file bytes materialize reads when the set is stored; outside the digest. */
+  readonly texts?: readonly { readonly path: string; readonly text: string }[];
   readonly changeSetDigest: string;
 }
 
@@ -459,7 +461,7 @@ export const AUTHORIZATION_PLAN_MISMATCH = "authorization-plan-mismatch";
 /** The rule a bundle check carries when the plan has package acts and no authorization permits them (code rule A4). */
 export const AUTHORIZATION_ABSENT = "authorization-absent";
 
-export type ChangeSetRuleId = "C1" | "C2" | "C3" | "C4" | "C5" | "C6" | "C7" | "C8" | "C9" | "C10" | "C11" | "C12" | "C13" | "C14" | "C15" | "C16";
+export type ChangeSetRuleId = "C1" | "C2" | "C3" | "C4" | "C5" | "C6" | "C7" | "C8" | "C9" | "C10" | "C11" | "C12" | "C13" | "C14" | "C15" | "C16" | "C17";
 export type ApplyBundleRuleId = "A1" | "A2" | "A3" | "A4" | "A5" | "A6" | "A7";
 
 /** One reason a change set or bundle is refused: `rule` is "schema" for the contract's keywords, else the code rule's id. */
@@ -621,6 +623,7 @@ export function changeSetRuleViolations(set: RepositoryChangeSet): RuleViolation
     order("observed.repositoryProfile.prohibitedRoots", set.observed.repositoryProfile.prohibitedRoots, CANONICAL_KEYS.name, true);
   }
   if (set.tooling !== undefined) order("tooling", set.tooling, CANONICAL_KEYS.tool, true);
+  if (set.texts !== undefined) order("texts", set.texts, (row) => [row.path], true);
 
   // C9
   set.files.forEach((file, index) => {
@@ -824,6 +827,15 @@ export function changeSetRuleViolations(set: RepositoryChangeSet): RuleViolation
     const name = deferral.planItem.startsWith(prefix) ? deferral.planItem.slice(prefix.length) : "";
     if (!PACKAGE_NAME.test(name)) push("C16", `deferred[${index}].planItem`, "is not the repository id, a colon and a package name");
   });
+
+  if (set.texts !== undefined) {
+    const wholeByPath = new Map(set.files.filter((file): file is WholeFileChange => !("derived" in file)).map((file) => [file.path, file]));
+    set.texts.forEach((row, index) => {
+      const file = wholeByPath.get(row.path);
+      if (file === undefined) push("C17", `texts[${index}].path`, "names no whole file in files");
+      else if (file.after !== null && file.after !== contentDigest(row.text)) push("C17", `texts[${index}].text`, "is not the content digest of that whole file's after bytes");
+    });
+  }
   return out;
 }
 
