@@ -1,5 +1,5 @@
 import { randomBytes } from "node:crypto";
-import { existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, realpathSync, rmSync, statSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -49,7 +49,9 @@ if (!validateApplyBundle(BUNDLE).valid) throw new Error("this suite's own bundle
 let hub: string;
 
 beforeEach(() => {
-  hub = mkdtempSync(join(tmpdir(), "apply-store-"));
+  // Resolved to its own real path: writeAppendOnly()/readStoredBytes() now refuse a hubDirectory that is not its own
+  // realpath (issue #1545 fix 5), and on macOS os.tmpdir() itself sits behind a symbolic link (/var -> /private/var).
+  hub = realpathSync(mkdtempSync(join(tmpdir(), "apply-store-")));
 });
 
 afterEach(() => {
@@ -186,5 +188,58 @@ describe("storeApplyBundle / readStoredApplyBundle", () => {
     }
     expect(existsSync(hub)).toBe(true);
     expect(readdirSync(hub)).toEqual([]);
+  });
+});
+
+describe("hub store directory safety (issue #1545 fix 5)", () => {
+  let target: string;
+
+  beforeEach(() => {
+    target = realpathSync(mkdtempSync(join(tmpdir(), "apply-store-target-")));
+  });
+
+  afterEach(() => {
+    rmSync(target, { recursive: true, force: true });
+  });
+
+  it("throws instead of following a symlinked change-sets directory, and leaves the link's target empty", () => {
+    mkdirSync(join(hub, "clossys", ".state", "apply"), { recursive: true });
+    symlinkSync(target, join(hub, "clossys", ".state", "apply", "change-sets"), "dir");
+    expect(() => storeChangeSet(hub, SET)).toThrow(TypeError);
+    expect(readdirSync(target)).toEqual([]);
+  });
+
+  it("throws instead of following a symlinked apply parent directory", () => {
+    mkdirSync(join(hub, "clossys", ".state"), { recursive: true });
+    symlinkSync(target, join(hub, "clossys", ".state", "apply"), "dir");
+    expect(() => storeChangeSet(hub, SET)).toThrow(TypeError);
+    expect(readdirSync(target)).toEqual([]);
+  });
+
+  it("throws reading through a symlinked store directory, rather than following it", () => {
+    mkdirSync(join(hub, "clossys", ".state"), { recursive: true });
+    symlinkSync(target, join(hub, "clossys", ".state", "apply"), "dir");
+    expect(() => readStoredChangeSet(hub, SET.changeSetDigest)).toThrow(TypeError);
+  });
+
+  it("wraps a permission failure into a message that names no path, in particular not the hub directory", () => {
+    // No meaningful permission enforcement to test as root, or on Windows (chmod's mode bits do not gate access there).
+    if (process.platform === "win32" || (process.getuid?.() ?? 1) === 0) return;
+    const directory = join(hub, "clossys", ".state", "apply", "change-sets");
+    mkdirSync(directory, { recursive: true });
+    chmodSync(directory, 0o000);
+    try {
+      expect(() => storeChangeSet(hub, SET)).toThrow(/^hub store write failed \(EACCES\)$/);
+      let message = "";
+      try {
+        storeChangeSet(hub, SET);
+      } catch (error) {
+        message = String(error);
+      }
+      expect(message).not.toContain(hub);
+      expect(message).not.toContain(directory);
+    } finally {
+      chmodSync(directory, 0o755);
+    }
   });
 });

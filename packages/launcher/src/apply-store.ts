@@ -5,8 +5,11 @@
 // whatever is passed to it in memory.
 //
 // Both stores are append-only and content-addressed: a file's name is its
-// document's own digest, so the same digest can only ever name the same
-// bytes. Writing over an existing name with different bytes is refused
+// document's own digest, so a name is only ever bound to the first bytes
+// stored under it. A stored file's recomputed digest proves its integrity,
+// not its provenance: anyone who can write the hub directory can add a set
+// that verifies, the same way anyone who can write a git object store can add
+// a commit. Writing over an existing name with different bytes is refused
 // rather than silently replacing history a ledger or an approval may already
 // cite; writing the same bytes again is a no-op. A read never trusts a file
 // merely because it parses: the document must validate against its contract,
@@ -14,13 +17,22 @@
 // the digest the document itself carries -- so a renamed or hand-edited file
 // reads as absent rather than as something it no longer is.
 //
+// Every store directory segment, from the hub root down to change-sets/ or
+// bundles/, is walked one lstat at a time (issue #1545 fix 5): a symbolic
+// link anywhere in that chain is refused rather than followed, so a symlinked
+// clossys/, .state/, apply/, change-sets/ or bundles/ can never redirect a
+// write or a read outside the hub. Every filesystem error this module
+// rethrows, other than ENOENT (which a read turns into null, and a write
+// turns into directory creation), names only the failing operation and the
+// error's code -- never a path, digest or other value a `cause` might carry.
+//
 // This module does I/O (mkdirSync, open/write/link/read on the hub
 // directory) and so must never be imported by plan-bundle.ts, which computes
 // change sets and bundles without touching a filesystem.
 
 import { randomBytes } from "node:crypto";
-import { closeSync, fsyncSync, linkSync, mkdirSync, openSync, readFileSync, rmSync, writeSync } from "node:fs";
-import { join } from "node:path";
+import { closeSync, fsyncSync, linkSync, lstatSync, mkdirSync, openSync, readFileSync, realpathSync, rmSync, writeSync } from "node:fs";
+import { isAbsolute, join, relative, sep } from "node:path";
 import { bundleDigest, changeSetDigest } from "./change-set-digest.js";
 import { validateApplyBundle, validateRepositoryChangeSet } from "./change-set-contract.js";
 import type { ApplyBundle, ApplyBundleRepository, RepositoryChangeSet } from "./change-set-contract.js";
@@ -50,32 +62,118 @@ function serializeStoredDocument(value: unknown): Buffer {
   return Buffer.from(`${JSON.stringify(value, null, 2)}\n`, "utf8");
 }
 
+/** Wraps a filesystem error, other than ENOENT (handled by each caller), so its message names only the failing operation and the
+ * error's code -- never a path, digest or other value; the original error is never attached as `cause`. */
+function wrapFsError(operation: string, cause: unknown): Error {
+  const code = typeof cause === "object" && cause !== null && "code" in cause ? String((cause as NodeJS.ErrnoException).code) : "unknown";
+  return new Error(`${operation} failed (${code})`);
+}
+
 /**
- * Writes `bytes` under `fileName` in `directory` without ever replacing an
- * existing file: the bytes go to a temporary file in the same directory
- * (created exclusively, flushed to disk), which is then hard-linked to the
- * final name, so a name already taken fails the link with EEXIST rather than
- * overwriting it. On EEXIST the existing file is re-read: identical bytes is
- * a no-op, and different bytes is refused. The temporary file is always
- * removed. Returns the final path.
+ * `hubDirectory` must be an absolute path and its own real path: no symbolic
+ * link anywhere in it. Every store operation checks this first, before
+ * building any path under it.
  */
-function writeAppendOnly(directory: string, fileName: string, bytes: Buffer): string {
-  mkdirSync(directory, { recursive: true });
+function assertHubDirectory(hubDirectory: string): void {
+  if (!isAbsolute(hubDirectory)) throw new TypeError("hubDirectory must be an absolute path");
+  let real: string;
+  try {
+    real = realpathSync(hubDirectory);
+  } catch (cause) {
+    throw wrapFsError("hub directory resolve", cause);
+  }
+  if (real !== hubDirectory) throw new TypeError("hubDirectory must be its own real path, with no symbolic link in it");
+}
+
+/**
+ * Walks every path segment from `hubDirectory` down to `directory`
+ * (hubDirectory joined with a store's relative path), lstat-ing each one so a
+ * symbolic link anywhere in the chain is refused rather than followed. On a
+ * write (`mode: "write"`), a missing segment is created with a non-recursive
+ * `mkdirSync` and lstat-ed again; on a read (`mode: "read"`), a missing
+ * segment means the file being read is absent, and this returns `false`. A
+ * segment that is a symbolic link, or exists but is not a directory, throws a
+ * TypeError naming no path. Any other filesystem error is rethrown wrapped,
+ * naming only the operation and its code.
+ */
+function ensureRealDirectory(hubDirectory: string, directory: string, mode: "read" | "write"): boolean {
+  const relativePath = relative(hubDirectory, directory);
+  const segments = relativePath === "" ? [] : relativePath.split(sep);
+  let current = hubDirectory;
+  for (const segment of segments) {
+    current = join(current, segment);
+    let info;
+    try {
+      info = lstatSync(current);
+    } catch (cause) {
+      if ((cause as NodeJS.ErrnoException).code !== "ENOENT") throw wrapFsError("hub store directory stat", cause);
+      if (mode === "read") return false;
+      try {
+        mkdirSync(current);
+      } catch (createCause) {
+        if ((createCause as NodeJS.ErrnoException).code !== "EEXIST") throw wrapFsError("hub store directory create", createCause);
+      }
+      try {
+        info = lstatSync(current);
+      } catch (recheckCause) {
+        throw wrapFsError("hub store directory create", recheckCause);
+      }
+    }
+    if (!info.isDirectory()) throw new TypeError("a hub store directory segment is a symbolic link or not a directory");
+  }
+  return true;
+}
+
+/**
+ * Writes `bytes` under `fileName` in `hubDirectory`/`storeRel` without ever
+ * replacing an existing file: the bytes go to a temporary file in the same
+ * directory (created exclusively, flushed to disk), which is then
+ * hard-linked to the final name, so a name already taken fails the link with
+ * EEXIST rather than overwriting it. On EEXIST the existing file is
+ * lstat-ed -- a symbolic link there is refused -- then re-read: identical
+ * bytes is a no-op, and different bytes is refused. The temporary file is
+ * always removed. Every store directory segment is a real directory, never a
+ * symbolic link (see `ensureRealDirectory()`). Returns the final path.
+ */
+function writeAppendOnly(hubDirectory: string, storeRel: string, fileName: string, bytes: Buffer): string {
+  assertHubDirectory(hubDirectory);
+  const directory = join(hubDirectory, storeRel);
+  ensureRealDirectory(hubDirectory, directory, "write");
   const finalPath = join(directory, fileName);
   const temporaryPath = join(directory, `.${fileName}.${randomBytes(8).toString("hex")}.tmp`);
   let descriptor: number | undefined;
   try {
-    descriptor = openSync(temporaryPath, "wx", 0o644);
+    try {
+      descriptor = openSync(temporaryPath, "wx", 0o644);
+    } catch (cause) {
+      throw wrapFsError("hub store write", cause);
+    }
     let written = 0;
-    while (written < bytes.length) written += writeSync(descriptor, bytes, written, bytes.length - written);
-    fsyncSync(descriptor);
-    closeSync(descriptor);
+    try {
+      while (written < bytes.length) written += writeSync(descriptor, bytes, written, bytes.length - written);
+      fsyncSync(descriptor);
+      closeSync(descriptor);
+    } catch (cause) {
+      throw wrapFsError("hub store write", cause);
+    }
     descriptor = undefined;
     try {
       linkSync(temporaryPath, finalPath);
     } catch (cause) {
-      if ((cause as NodeJS.ErrnoException).code !== "EEXIST") throw cause;
-      const existing = readFileSync(finalPath);
+      if ((cause as NodeJS.ErrnoException).code !== "EEXIST") throw wrapFsError("hub store write", cause);
+      let info;
+      try {
+        info = lstatSync(finalPath);
+      } catch (statCause) {
+        throw wrapFsError("hub store write", statCause);
+      }
+      if (!info.isFile()) throw new TypeError("a hub store file name is occupied by a symbolic link or a non-regular file");
+      let existing: Buffer;
+      try {
+        existing = readFileSync(finalPath);
+      } catch (readCause) {
+        throw wrapFsError("hub store write", readCause);
+      }
       if (!existing.equals(bytes)) throw new TypeError("this digest already names a stored document with different bytes; the store is append-only");
     }
   } finally {
@@ -86,24 +184,36 @@ function writeAppendOnly(directory: string, fileName: string, bytes: Buffer): st
         // Already failing; the original error is the one reported.
       }
     }
-    rmSync(temporaryPath, { force: true });
+    try {
+      rmSync(temporaryPath, { force: true });
+    } catch {
+      // Best-effort cleanup; the original error (or success) is what is reported.
+    }
   }
   return finalPath;
 }
 
 /**
- * Reads and re-reads bytes stored at `path`, strictly: a missing file reads
- * as `null`, and bytes that are not exactly one strict-JSON value also read
- * as `null` (never thrown), because a store read never trusts a file merely
- * because something is there.
+ * Reads and re-reads bytes stored at `hubDirectory`/`storeRel`/`fileName`,
+ * strictly: a missing store directory or a missing file reads as `null`, and
+ * bytes that are not exactly one strict-JSON value also read as `null`
+ * (never thrown), because a store read never trusts a file merely because
+ * something is there. Every store directory segment down to `storeRel` is
+ * checked to be a real directory, never a symbolic link (see
+ * `ensureRealDirectory()`); a symbolic link found there throws rather than
+ * being followed.
  */
-function readStoredBytes(path: string): unknown | null {
+function readStoredBytes(hubDirectory: string, storeRel: string, fileName: string): unknown | null {
+  assertHubDirectory(hubDirectory);
+  const directory = join(hubDirectory, storeRel);
+  if (!ensureRealDirectory(hubDirectory, directory, "read")) return null;
+  const path = join(directory, fileName);
   let bytes: Buffer;
   try {
     bytes = readFileSync(path);
   } catch (cause) {
     if ((cause as NodeJS.ErrnoException).code === "ENOENT") return null;
-    throw cause;
+    throw wrapFsError("hub store read", cause);
   }
   try {
     return readContractDocument(bytes);
@@ -125,7 +235,7 @@ export function storeChangeSet(hubDirectory: string, set: RepositoryChangeSet): 
   if (!validation.valid) throw new TypeError(`a change set must validate against its contract before it can be stored: ${validation.reason}`);
   if (set.changeSetDigest !== changeSetDigest(set)) throw new TypeError("a change set's changeSetDigest must equal changeSetDigest(set) before it can be stored");
   assertDigestShape(set.changeSetDigest);
-  return writeAppendOnly(join(hubDirectory, CHANGE_SET_STORE_REL), digestFileName(set.changeSetDigest), serializeStoredDocument(set));
+  return writeAppendOnly(hubDirectory, CHANGE_SET_STORE_REL, digestFileName(set.changeSetDigest), serializeStoredDocument(set));
 }
 
 /**
@@ -140,7 +250,7 @@ export function storeApplyBundle(hubDirectory: string, bundle: ApplyBundle): str
   const validation = validateApplyBundle(bundle);
   if (!validation.valid) throw new TypeError(`an apply bundle must validate against its contract before it can be stored: ${validation.reason}`);
   assertDigestShape(bundle.bundleDigest);
-  return writeAppendOnly(join(hubDirectory, BUNDLE_STORE_REL), digestFileName(bundle.bundleDigest), serializeStoredDocument(bundle));
+  return writeAppendOnly(hubDirectory, BUNDLE_STORE_REL, digestFileName(bundle.bundleDigest), serializeStoredDocument(bundle));
 }
 
 /**
@@ -156,8 +266,7 @@ export function storeApplyBundle(hubDirectory: string, bundle: ApplyBundle): str
  */
 export function readStoredChangeSet(hubDirectory: string, digest: string): RepositoryChangeSet | null {
   assertDigestShape(digest);
-  const path = join(hubDirectory, CHANGE_SET_STORE_REL, digestFileName(digest));
-  const document = readStoredBytes(path);
+  const document = readStoredBytes(hubDirectory, CHANGE_SET_STORE_REL, digestFileName(digest));
   if (document === null) return null;
   if (!validateRepositoryChangeSet(document).valid) return null;
   const set = document as RepositoryChangeSet;
@@ -179,8 +288,7 @@ export function readStoredChangeSet(hubDirectory: string, digest: string): Repos
  */
 export function readStoredApplyBundle(hubDirectory: string, digest: string): ApplyBundle | null {
   assertDigestShape(digest);
-  const path = join(hubDirectory, BUNDLE_STORE_REL, digestFileName(digest));
-  const document = readStoredBytes(path);
+  const document = readStoredBytes(hubDirectory, BUNDLE_STORE_REL, digestFileName(digest));
   if (document === null) return null;
   if (!validateApplyBundle(document).valid) return null;
   const bundle = document as ApplyBundle;
