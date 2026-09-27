@@ -2,9 +2,10 @@ import { createHash } from "node:crypto";
 import { spawnSync } from "node:child_process";
 import { existsSync, lstatSync, mkdirSync, readFileSync, readdirSync, realpathSync, statSync, writeFileSync } from "node:fs";
 import { dirname, relative, resolve, sep } from "node:path";
-import { NPM_CI_IGNORE_SCRIPTS, PUBLIC_NPM_REGISTRY, stagedNpmManifest, validateNpmIdentity, validateNpmLockfileSources } from "./npm.js";
+import { compareHeadHiddenLockfile, NPM_CI_IGNORE_SCRIPTS, PUBLIC_NPM_REGISTRY, stagedNpmManifest, validateNpmIdentity, validateNpmLockfileSources, validateNpmManifestSources } from "./npm.js";
 import { PNPM_INSTALL_FROZEN_IGNORE_SCRIPTS, validatePnpmIdentity } from "./pnpm.js";
 import { evaluateHeadInstall, evaluateStarter, evaluateProcessResult, isNormalizedRelativePath, validateStarterRequest } from "./core.js";
+import { ContractDocumentError, readContractDocument } from "./generated/contract-schema.generated.js";
 import type { HeadInstallObservation, HeadInstallReport, StarterFinding, StarterReport, StarterRequest, ExactPackage, ProcessObservation } from "./types.js";
 
 const MAX_FILE_BYTES = 524_288;
@@ -203,8 +204,17 @@ export function headInstallEnvironment(stagingRoot: string, registry: string = P
   };
 }
 
+/** Parses head-supplied JSON bytes with a position-only refusal: never the native parser's own message, which quotes a snippet of the input. */
+function parseHeadJsonBytes(bytes: Buffer): unknown {
+  try { return readContractDocument(bytes); }
+  catch (cause) {
+    const position = cause instanceof ContractDocumentError ? cause.position : undefined;
+    throw new StarterInputError(`is not valid JSON${position === undefined ? "" : ` at position ${position}`}`);
+  }
+}
+
 function readHeadJson(root: string, path: string, maxBytes: number, findings: StarterFinding[], rule: string): { value: unknown; bytes: Buffer | null } {
-  try { const bytes = readContainedRegularFile(root, path, maxBytes); return { value: JSON.parse(bytes.toString("utf8")), bytes }; }
+  try { const bytes = readContainedRegularFile(root, path, maxBytes); return { value: parseHeadJsonBytes(bytes), bytes }; }
   catch (cause) { findings.push(finding(rule, `pull-request head ${path}: ${cause instanceof Error ? cause.message : String(cause)}`)); return { value: undefined, bytes: null }; }
 }
 
@@ -249,6 +259,8 @@ export function proveHeadInstall(requestPath: string, headRoot: string, trustedE
   const lock = readHeadJson(headRoot, NPM_CI_IGNORE_SCRIPTS.lockPath, HEAD_LOCKFILE_MAX_BYTES, inputFindings, "head-lockfile");
   const staged = stagedNpmManifest(manifest);
   if (manifest !== undefined) inputFindings.push(...staged.unsupported.map((message) => finding("head-manifest-unsupported", message)));
+  const manifestSources = validateNpmManifestSources(staged.manifest);
+  sourceViolations.push(...manifestSources.violations.map((message) => finding("head-manifest-source", message)));
   if (lock.bytes !== null) {
     const sources = validateNpmLockfileSources(lock.value, registry);
     inputFindings.push(...sources.unsupported.map((message) => finding("head-lockfile-unsupported", message)));
@@ -274,6 +286,15 @@ export function proveHeadInstall(requestPath: string, headRoot: string, trustedE
       identityFindings.push(...validateNpmIdentity(staged.manifest, lock.value, expected).map((message) => finding("head-identity", message)));
       try { resolveInstalledBin(project, expected); } catch (cause) { identityFindings.push(finding("head-installed-bin", cause instanceof Error ? cause.message : String(cause))); }
     }
+    // npm ci does not install straight from the lockfile when a spec disagrees with it: it re-resolves any
+    // edge the lock does not satisfy through pacote before ever comparing to the lockfile. The one record of
+    // what actually landed is npm's own hidden lockfile, written after the fact; a source violation caught
+    // above stops the job before this point, so this check catches only what pre-install grammar could not.
+    let hiddenLock: unknown = null;
+    try { hiddenLock = JSON.parse(readContainedRegularFile(project, "node_modules/.package-lock.json", HEAD_LOCKFILE_MAX_BYTES).toString("utf8")); } catch { hiddenLock = null; }
+    const hidden = compareHeadHiddenLockfile(lock.value, hiddenLock);
+    if (hidden.state === "indeterminate") inputFindings.push(finding("head-hidden-lockfile", "the head install's hidden lockfile node_modules/.package-lock.json could not be read."));
+    else identityFindings.push(...hidden.violations.map((message) => finding("head-hidden-lockfile", message)));
   }
   return done(evaluateHeadInstall({ request, headRequest, trustedEvent, headCommit, inputFindings, sourceViolations, install, identityFindings }));
 }
