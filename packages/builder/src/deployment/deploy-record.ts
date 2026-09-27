@@ -13,8 +13,13 @@ import type {
   DeploymentFinding,
 } from "./types.js";
 
-export const DEPLOY_RECORD_INDETERMINATE_REASONS = createGateReasons(["observation-carries-secret-value"] as const);
+export const DEPLOY_RECORD_INDETERMINATE_REASONS = createGateReasons([
+  "observation-carries-secret-value",
+  "deploy-observation-incomplete",
+] as const);
 export type DeployRecordIndeterminateReason = (typeof DEPLOY_RECORD_INDETERMINATE_REASONS.reasons)[number];
+
+const SHA40 = /^[0-9a-f]{40}$/;
 
 function finding(rule: DeployRecordFindingRule, message: string, path?: string): DeploymentFinding {
   return { rule, severity: "error", message, ...(path === undefined ? {} : { path }) };
@@ -24,11 +29,74 @@ function object(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
+function commitFieldCarriesSecretValue(field: unknown): boolean {
+  return object(field) && Object.prototype.hasOwnProperty.call(field, "value");
+}
+
+function commitSha(field: unknown): string | undefined {
+  if (typeof field === "string") return field;
+  return undefined;
+}
+
+function validCommitSha(field: unknown): field is string {
+  const sha = commitSha(field);
+  return sha !== undefined && sha.length > 0 && SHA40.test(sha);
+}
+
 function observationCarriesSecretValue(observed: DeployRecordObservation): boolean {
   for (const entry of observed.environmentNames) {
     if (object(entry) && Object.prototype.hasOwnProperty.call(entry, "value")) return true;
   }
+  if (
+    commitFieldCarriesSecretValue(observed.productionCommit) ||
+    commitFieldCarriesSecretValue(observed.builtCommit) ||
+    commitFieldCarriesSecretValue(observed.publicCommit)
+  ) {
+    return true;
+  }
   return false;
+}
+
+function deployCommitObservationResult(
+  observed: DeployRecordObservation,
+): GateResult<DeploymentFinding, DeployRecordIndeterminateReason> | null {
+  const productionCommit = observed.productionCommit;
+  const builtCommit = observed.builtCommit;
+  const publicCommit = observed.publicCommit;
+
+  if (
+    !validCommitSha(productionCommit) ||
+    !validCommitSha(builtCommit) ||
+    !validCommitSha(publicCommit)
+  ) {
+    return DEPLOY_RECORD_INDETERMINATE_REASONS.indeterminate(
+      "deploy-observation-incomplete",
+      "Production, built, and public commit SHAs must each be present 40-hex values.",
+    );
+  }
+
+  const prod = commitSha(productionCommit)!;
+  const built = commitSha(builtCommit)!;
+  const pub = commitSha(publicCommit)!;
+
+  if (built !== prod) {
+    return gateViolated([
+      finding(
+        "deploy-provider-build-mismatch",
+        "Provider built a different commit than the production ref names.",
+      ),
+    ]);
+  }
+  if (pub !== prod) {
+    return gateViolated([
+      finding(
+        "deploy-public-cache-stale",
+        "The public page is serving a different commit than the production ref names.",
+      ),
+    ]);
+  }
+
+  return null;
 }
 
 function branchSetsMatch(
@@ -113,9 +181,12 @@ export function verifyDeployRecord(
   if (observationCarriesSecretValue(observed)) {
     return DEPLOY_RECORD_INDETERMINATE_REASONS.indeterminate(
       "observation-carries-secret-value",
-      "An environment observation included a value field; secret values are not stored or compared.",
+      "An observation included a value field; secret values are not stored or compared.",
     );
   }
+
+  const commitResult = deployCommitObservationResult(observed);
+  if (commitResult !== null) return commitResult;
 
   const findings: DeploymentFinding[] = [];
   let evaluated = 0;
@@ -175,5 +246,5 @@ export function verifyDeployRecord(
   }
 
   if (findings.length > 0) return gateViolated(findings);
-  return gateSatisfied(evaluated);
+  return gateSatisfied(evaluated + 3);
 }

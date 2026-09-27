@@ -2,6 +2,10 @@ import { describe, expect, it } from "vitest";
 import { verifyDeployRecord } from "./deploy-record.js";
 import type { DeployRecordDefinition, DeployRecordObservation } from "./types.js";
 
+const releaseProductionSha = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+const otherSha = "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb";
+const stalePublicSha = "cccccccccccccccccccccccccccccccccccccccc";
+
 const declared: DeployRecordDefinition = {
   productionBranch: "release",
   previewBranches: ["main"],
@@ -20,6 +24,9 @@ function matchingObservation(): DeployRecordObservation {
     previewUrl: "https://example-git-main-team.example.invalid",
     protection: "none",
     deployEnabledBranches: ["main"],
+    productionCommit: releaseProductionSha,
+    builtCommit: releaseProductionSha,
+    publicCommit: releaseProductionSha,
     environmentNames: [
       { name: "CONTACT_TO", target: "preview", classification: "plain", scope: "project" },
       { name: "REGISTRY_TOKEN", target: "production", classification: "secret", scope: "shared" },
@@ -173,6 +180,79 @@ describe("verifyDeployRecord", () => {
       environmentNames: [
         { name: "CONTACT_TO", target: "preview", scope: "project", value: "redacted" },
       ],
+    } as DeployRecordObservation);
+    expect(result.verdict).toBe("indeterminate");
+    if (result.verdict !== "indeterminate") return;
+    expect(result.reason).toBe("observation-carries-secret-value");
+  });
+
+  it("is satisfied when production, built, and public commits match under release-ref", () => {
+    expect(
+      verifyDeployRecord(declared, {
+        ...matchingObservation(),
+        productionBranch: "release",
+        deployEnabledBranches: ["main"],
+        productionCommit: releaseProductionSha,
+        builtCommit: releaseProductionSha,
+        publicCommit: releaseProductionSha,
+      }),
+    ).toMatchObject({ verdict: "satisfied" });
+  });
+
+  it("is indeterminate when the production ref moved but builtCommit is absent", () => {
+    const result = verifyDeployRecord(declared, {
+      ...matchingObservation(),
+      productionCommit: otherSha,
+      builtCommit: undefined,
+      publicCommit: otherSha,
+    });
+    expect(result.verdict).toBe("indeterminate");
+    if (result.verdict !== "indeterminate") return;
+    expect(result.reason).toBe("deploy-observation-incomplete");
+  });
+
+  it("is violated when built matches production but publicCommit differs", () => {
+    const result = verifyDeployRecord(declared, {
+      ...matchingObservation(),
+      productionCommit: releaseProductionSha,
+      builtCommit: releaseProductionSha,
+      publicCommit: stalePublicSha,
+    });
+    expect(result.verdict).toBe("violated");
+    if (result.verdict !== "violated") return;
+    expect(result.findings.map((entry) => entry.rule)).toContain("deploy-public-cache-stale");
+  });
+
+  it("is violated when public matches production but builtCommit differs", () => {
+    const result = verifyDeployRecord(declared, {
+      ...matchingObservation(),
+      productionCommit: releaseProductionSha,
+      builtCommit: otherSha,
+      publicCommit: releaseProductionSha,
+    });
+    expect(result.verdict).toBe("violated");
+    if (result.verdict !== "violated") return;
+    expect(result.findings.map((entry) => entry.rule)).toContain("deploy-provider-build-mismatch");
+  });
+
+  it("is not satisfied on trunk when the three commit SHAs differ", () => {
+    const trunkDeclared: DeployRecordDefinition = {
+      ...declared,
+      releaseRef: undefined,
+    };
+    const result = verifyDeployRecord(trunkDeclared, {
+      ...matchingObservation(),
+      productionCommit: releaseProductionSha,
+      builtCommit: otherSha,
+      publicCommit: stalePublicSha,
+    });
+    expect(result.verdict).not.toBe("satisfied");
+  });
+
+  it("is indeterminate when builtCommit carries a value field", () => {
+    const result = verifyDeployRecord(declared, {
+      ...matchingObservation(),
+      builtCommit: { value: "redacted" },
     } as DeployRecordObservation);
     expect(result.verdict).toBe("indeterminate");
     if (result.verdict !== "indeterminate") return;

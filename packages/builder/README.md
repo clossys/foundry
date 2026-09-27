@@ -861,8 +861,21 @@ is a preview branch.
 `verifyDeployRecord(declared, observed)` compares that declaration to a
 caller-supplied provider observation (fixture or read-only adapter output).
 The observation carries names and settings only — never secret values — and
-the verifier reports `indeterminate` when an environment row includes a
-`value` field.
+must also name `productionCommit`, `builtCommit`, and `publicCommit` as
+40-hex SHAs. The verifier is `satisfied` only when all three are present,
+equal, and the rest of the declaration matches; it reports
+`deploy-observation-incomplete` when any commit field is missing or invalid,
+`deploy-provider-build-mismatch` when the provider build SHA differs from
+production, and `deploy-public-cache-stale` when the public page serves a
+different SHA. It reports `indeterminate` when an observation row includes a
+`value` field (including on commit fields).
+
+`planProductionRefUpdate({ productionIsAncestor })` returns the required
+production-ref advance (`fast-forward` or a single merge commit with
+production as first parent and integration as second). No git I/O.
+`verifyProductionRefUpdate(planned, observed)` rejects force and
+admin-bypass updates and reconciles fast-forward and merge observations
+against that plan.
 
 ```ts
 import { verifyDeployRecord } from "@clossys/builder/deployment";
@@ -874,8 +887,9 @@ const result = verifyDeployRecord(declared, observed);
 
 | Export | Kind | Purpose |
 | --- | --- | --- |
-| `verifyDeployRecord(declared, observed)` | function | Reconciles declared deploy settings against a provider observation; fails on branch, preview URL, environment, and protection drift. |
-| `DEPLOY_RECORD_INDETERMINATE_REASONS` | constant | Declared indeterminate vocabulary for deploy-record verification. |
+| `verifyDeployRecord(declared, observed)` | function | Reconciles declared deploy settings and production/built/public commit SHAs against a provider observation; fails on branch, preview URL, environment, protection, build, and cache drift. |
+| `planProductionRefUpdate(input)` / `verifyProductionRefUpdate(planned, observed)` | functions | Plan and verify fast-forward or merge production-ref updates without git I/O. |
+| `DEPLOY_RECORD_INDETERMINATE_REASONS` / `PRODUCTION_REF_UPDATE_INDETERMINATE_REASONS` | constants | Declared indeterminate vocabulary for deploy-record and production-ref verification. |
 | `DeployRecordDefinition` / `DeployRecordObservation` / related types | types | Declared and observed deploy-record shapes (names and settings only). |
 
 | Export | Kind | Purpose |
