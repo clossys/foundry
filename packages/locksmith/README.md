@@ -507,8 +507,8 @@ An empty inventory set is never `satisfied`; warnings alone stay
 #### `clossys-locksmith-secret-environments` CLI
 
 ```text
-clossys-locksmith-secret-environments --declaration ./secret-declaration.json --inventory ./infisical-inventory.json --inventory ./vercel-inventory.json
-clossys-locksmith-secret-environments --declaration ./secret-declaration.json --inventory ./infisical-inventory.json --mode enforce
+clossys-locksmith-secret-environments --declaration ./secrets.declaration.json --inventory ./infisical-inventory.json --inventory ./vercel-inventory.json
+clossys-locksmith-secret-environments --declaration ./secrets.declaration.json --inventory ./infisical-inventory.json --mode enforce
 clossys-locksmith-secret-environments --help
 ```
 
