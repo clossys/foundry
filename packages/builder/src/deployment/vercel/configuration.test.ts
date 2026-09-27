@@ -1,6 +1,15 @@
+import { readFileSync } from "node:fs";
+import { createRequire } from "node:module";
 import { describe, expect, it } from "vitest";
 import { defineDeploymentConfigurationPlan, defineDeploymentManifest } from "../index.js";
 import { renderVercelConfiguration } from "./index.js";
+
+const require = createRequire(import.meta.url);
+const builderVersion = (JSON.parse(
+  readFileSync(require.resolve("../../../package.json"), "utf8"),
+) as { version: string }).version;
+const installCommand = `npx @clossys/builder@${builderVersion} hosting install --surface web`;
+const ignoreCommand = `npx @clossys/builder@${builderVersion} hosting should-build --surface web`;
 
 describe("Vercel configuration renderer", () => {
   it("renders a deterministic repository-root vercel.json artifact", () => {
@@ -19,7 +28,7 @@ describe("Vercel configuration renderer", () => {
     expect(artifact).toEqual({
       provider: "vercel",
       path: "vercel.json",
-      content: "{\n  \"$schema\": \"https://openapi.vercel.sh/vercel.json\",\n  \"installCommand\": \"builder hosting install --surface web\",\n  \"ignoreCommand\": \"builder hosting should-build --surface web\",\n  \"buildCommand\": \"pnpm build\",\n  \"outputDirectory\": \"dist\",\n  \"rewrites\": [\n    {\n      \"source\": \"/*\",\n      \"destination\": \"/index.html\"\n    }\n  ]\n}\n",
+      content: `{\n  "$schema": "https://openapi.vercel.sh/vercel.json",\n  "installCommand": "${installCommand}",\n  "ignoreCommand": "${ignoreCommand}",\n  "buildCommand": "pnpm build",\n  "outputDirectory": "dist",\n  "rewrites": [\n    {\n      "source": "/*",\n      "destination": "/index.html"\n    }\n  ]\n}\n`,
       requiredEnvironmentVariables: ["PUBLIC_API_URL"],
       repositorySetup: [
         "Review the generated vercel.json and write it at the repository root.",

@@ -197,6 +197,37 @@ describe("builder hosting should-build", () => {
     expect(decision).toEqual({ build: true, changedInputs: [INSTALL_COMMAND_FILE] });
   });
 
+  it("builds when a git-root path ends with the install command reference", () => {
+    const decision = decideShouldBuild(surface(), ["packages/builder/src/hosting/install.ts"], true);
+    expect(decision).toEqual({ build: true, changedInputs: [INSTALL_COMMAND_FILE] });
+  });
+
+  it("builds when a git-root path ends with the environment or declaration modules", () => {
+    expect(decideShouldBuild(surface(), ["packages/builder/src/hosting/environment.ts"], true)).toEqual({
+      build: true,
+      changedInputs: ["src/hosting/environment.ts"],
+    });
+    expect(decideShouldBuild(surface(), ["packages/builder/src/hosting/declaration.ts"], true)).toEqual({
+      build: true,
+      changedInputs: ["src/hosting/declaration.ts"],
+    });
+  });
+
+  it("does not treat a path without a reference boundary as a hosting command change", () => {
+    expect(decideShouldBuild(surface(), ["notsrc/hosting/install.ts"], true)).toEqual({
+      build: false,
+      changedInputs: [],
+    });
+  });
+
+  it("builds when a declared input is already a git-root path equal to the change", () => {
+    const declared = surface({ inputs: ["packages/builder/src/hosting/install.ts"] });
+    expect(decideShouldBuild(declared, ["packages/builder/src/hosting/install.ts"], true)).toEqual({
+      build: true,
+      changedInputs: ["packages/builder/src/hosting/install.ts"],
+    });
+  });
+
   it("does not build when the changed path is outside the declared inputs and hosting command files", () => {
     expect(decideShouldBuild(surface(), ["README.md"], true)).toEqual({ build: false, changedInputs: [] });
   });

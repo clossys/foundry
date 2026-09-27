@@ -17,6 +17,8 @@ export function hostingCommandReferences(): readonly string[] {
     HOSTING_DECLARATION_FILE,
     HOSTING_ROUTE_FILE,
     INSTALL_COMMAND_FILE,
+    "src/hosting/declaration.ts",
+    "src/hosting/environment.ts",
     "src/hosting/should-build.ts",
     "src/hosting/cli.ts",
     "src/hosting/bin.ts",
@@ -37,7 +39,11 @@ function inputChanged(input: string, changedPaths: readonly string[]): boolean {
   const declared = normalizePath(input);
   return changedPaths.some((changed) => {
     const path = normalizePath(changed);
-    return path === declared || path.startsWith(`${declared}/`);
+    return (
+      path === declared
+      || path.startsWith(`${declared}/`)
+      || path.endsWith(`/${declared}`)
+    );
   });
 }
 

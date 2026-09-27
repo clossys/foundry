@@ -960,8 +960,8 @@ names them:
 import { vercelHostingCommands } from "@clossys/builder/deployment/vercel";
 
 vercelHostingCommands("web");
-// installCommand: builder hosting install --surface web
-// ignoreCommand: builder hosting should-build --surface web
+// installCommand: npx @clossys/builder@<version> hosting install --surface web
+// ignoreCommand: npx @clossys/builder@<version> hosting should-build --surface web
 ```
 
 `renderVercelConfiguration` writes those commands into `vercel.json` as
