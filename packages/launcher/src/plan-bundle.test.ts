@@ -7,7 +7,7 @@ import { describe, expect, it } from "vitest";
 import { checkImportPurity } from "../../../scripts/lib/import-purity.mjs";
 import { bundleDigest, changeSetDigest, changeSetDigestSubject } from "./change-set-digest.js";
 import { contentDigest, validateApplyBundle, validateRepositoryChangeSet } from "./change-set-contract.js";
-import type { ChangeSetItem, RepositoryChangeSet } from "./change-set-contract.js";
+import type { ChangeSetItem, ChangeSetPhase, RepositoryChangeSet } from "./change-set-contract.js";
 import { readInstalledLedger, renderInstalledLedger, serializeInstalledLedger } from "./ledger-contract.js";
 import type { InstalledLedger } from "./ledger-contract.js";
 import { PUBLIC_PROBLEM_PLACEHOLDER, planApplyBundle, projectEngagementBrief, serializeComposedSkillsManifest, serializeEngagementBrief } from "./plan-bundle.js";
@@ -526,9 +526,51 @@ const planPackages = (plan: AdvisorPlan, id: string) =>
   (plan.packages ?? []).filter((act) => act.repository === id).map(({ planItem, act, name, version, integrity, placement }) => ({ planItem, act, name, version, integrity, placement }));
 type PackageItem = Extract<ChangeSetItem, { planItem: string }>;
 
+const patchRowChangeSet = <T extends { changeSet: string }>(rows: readonly T[], digest: string): T[] => rows.map((row) => ({ ...row, changeSet: digest }));
+
+/**
+ * Ledger bytes for a merged observation. RENDER refuses a null-previous apply set; tests that simulate generation 0
+ * bootstrap render the same rows through a setup stand-in, then re-label history and rows with the apply set's digest.
+ */
+function observationLedgerBytes(
+  previous: InstalledLedger | null,
+  set: RepositoryChangeSet,
+  binding: ApprovalBinding,
+  packages: ReturnType<typeof planPackages>,
+): string {
+  if (previous === null && set.phase === "apply") {
+    const setupStandIn = clone(set);
+    setupStandIn.phase = "setup" as ChangeSetPhase;
+    setupStandIn.changeSetDigest = changeSetDigest(setupStandIn);
+    const rendered = readInstalledLedger(Buffer.from(renderInstalledLedger(null, setupStandIn, binding, packages), "utf8"))!;
+    const digest = set.changeSetDigest;
+    const ledger: InstalledLedger = {
+      ...rendered,
+      history: [
+        {
+          ...rendered.history[0]!,
+          changeSet: digest,
+          phase: set.phase,
+          planDigest: set.planDigest,
+          bundle: set.bundle,
+          baseCommit: set.repository.baseCommit,
+        },
+      ],
+      files: patchRowChangeSet(rendered.files, digest),
+      keys: patchRowChangeSet(rendered.keys, digest),
+      entries: patchRowChangeSet(rendered.entries, digest),
+      packages: patchRowChangeSet(rendered.packages, digest),
+      deferred: patchRowChangeSet(rendered.deferred, digest),
+    };
+    return serializeInstalledLedger(ledger);
+  }
+  return renderInstalledLedger(previous, set, binding, packages);
+}
+
 /** The observation of the repository once `set` has merged over `observation`, bound as approved by its own bundle. */
 function merged(observation: RepositoryObservation, set: RepositoryChangeSet, previous: InstalledLedger | null = null, plan: AdvisorPlan = PLAN, commit = "d"): RepositoryObservation {
-  const ledgerText = renderInstalledLedger(previous, set, { kind: "approved", subjectDigest: set.bundle }, planPackages(plan, set.repository.id));
+  const binding = { kind: "approved", subjectDigest: set.bundle } as const;
+  const ledgerText = observationLedgerBytes(previous, set, binding, planPackages(plan, set.repository.id));
   const ledgerBytes = Buffer.from(ledgerText, "utf8");
   const files = new Map(observation.files.map((file) => [file.path, file.sha256]));
   let manifestEntries = [...observation.manifestEntries];
@@ -703,7 +745,7 @@ describe("the installed-state ledger", () => {
     delete plain.resolution;
     const plainInputs = { ...INPUTS, plan: plain as unknown as AdvisorPlan, authorization: null };
     const plainSet = setFor(run(plainInputs).changeSets, SITE.id);
-    const plainLedgerText = renderInstalledLedger(null, plainSet, { kind: "approved", subjectDigest: plainSet.bundle }, []);
+    const plainLedgerText = observationLedgerBytes(null, plainSet, { kind: "approved", subjectDigest: plainSet.bundle }, []);
     const plainLedger = readInstalledLedger(Buffer.from(plainLedgerText, "utf8")) as unknown as { repository: { id: string } };
     const renamed = clone(plainLedger);
     renamed.repository.id = "example-owner/site-renamed";
@@ -820,13 +862,17 @@ describe("case-variant base files never collapse into one compare-and-swap input
 
     // Property: renderInstalledLedger() never throws over any change set the ledger-related planner tests compute here,
     // including generation 0 -> 1 -> 2, the case-variant cases above, this scenario, and a plain satisfied-in-base with no row.
-    const trustedPrevious = readInstalledLedger(Buffer.from(renderInstalledLedger(null, firstOlder, { kind: "approved", subjectDigest: firstOlder.bundle }, planPackages(olderPlan, SITE.id)), "utf8"))!;
+    const trustedPrevious = readInstalledLedger(
+      Buffer.from(observationLedgerBytes(null, firstOlder, { kind: "approved", subjectDigest: firstOlder.bundle }, planPackages(olderPlan, SITE.id)), "utf8"),
+    )!;
     expect(() => renderInstalledLedger(trustedPrevious, site, { kind: "approved", subjectDigest: site.bundle }, planPackages(PLAN, SITE.id))).not.toThrow();
 
     const plainSatisfiedSet = setFor(run(withSite(second, [first])).changeSets, SITE.id);
-    const plainPrevious = readInstalledLedger(Buffer.from(renderInstalledLedger(null, first, { kind: "approved", subjectDigest: first.bundle }, planPackages(PLAN, SITE.id)), "utf8"))!;
+    const plainPrevious = readInstalledLedger(
+      Buffer.from(observationLedgerBytes(null, first, { kind: "approved", subjectDigest: first.bundle }, planPackages(PLAN, SITE.id)), "utf8"),
+    )!;
     expect(() => renderInstalledLedger(plainPrevious, plainSatisfiedSet, { kind: "approved", subjectDigest: plainSatisfiedSet.bundle }, planPackages(PLAN, SITE.id))).not.toThrow();
-    expect(() => renderInstalledLedger(null, first, { kind: "approved", subjectDigest: first.bundle }, planPackages(PLAN, SITE.id))).not.toThrow();
+    expect(() => renderInstalledLedger(null, first, { kind: "approved", subjectDigest: first.bundle }, planPackages(PLAN, SITE.id))).toThrow(/files\[\d+\]/);
   });
 });
 

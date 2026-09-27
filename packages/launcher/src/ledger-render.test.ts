@@ -78,6 +78,15 @@ describe("renderInstalledLedger (RENDER)", () => {
     expect(() => renderInstalledLedger(previousNodeChanged, set, render.binding, render.planPackages)).toThrow(TypeError);
   });
 
+  it("throws when an apply set at generation 0 writes a whole file with no previous ledger", () => {
+    const render = CORPUS.renders.find((entry) => entry.name === "setup")!;
+    const set = setNamed("apply-with-packages");
+    expect(set.phase).toBe("apply");
+    expect(set.ledger.generation).toBe(0);
+    expect(set.files.some((file) => !("derived" in file) && file.after !== null)).toBe(true);
+    expect(() => renderInstalledLedger(null, set, render.binding, render.planPackages)).toThrow(/files\[\d+\]/);
+  });
+
   it("throws when an apply set updates a whole file at a path previous holds no row for", () => {
     const render = CORPUS.renders.find((entry) => entry.name === "admitted-apply")!;
     const previous = ledgerNamed(render.previous!);

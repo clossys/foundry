@@ -518,7 +518,7 @@ export function renderInstalledLedger(
     const isKeep = file.before === file.after;
     if (isKeep && existing !== undefined && existing.after === file.after) return; // unchanged: previous's row already holds this after
     if (isKeep && set.phase === "apply") throw new TypeError(`files[${index}] keeps a file previous holds no row for, which only a setup set may adopt`);
-    if (previous !== null && set.phase === "apply" && !isKeep && (existing === undefined || existing.after !== file.before)) {
+    if (set.phase === "apply" && !isKeep && (existing === undefined || existing.after !== file.before)) {
       throw new TypeError(`files[${index}] has no matching previous row for an apply update`);
     }
     filesByPath.set(key, { path: file.path, mode: file.mode, after: file.after, changeSet: d });
