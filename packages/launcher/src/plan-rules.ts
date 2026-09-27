@@ -1,7 +1,7 @@
 // The plan and brief contracts' code rules (issue #1178): the checks the
 // contracts' JSON Schema keywords cannot express, because each one relates one
 // field to another. They are defined once, as prose in the descriptions of
-// the shared contracts docs/contracts/advisor-plan.json (R1-R11) and
+// the shared contracts docs/contracts/advisor-plan.json (R1-R12) and
 // engagement-brief.json (B1-B2) -- in the public repository, not shipped in
 // this package. @clossys/advisor implements the same rules separately; both
 // packages are tested against one corpus,
@@ -16,8 +16,8 @@
 import { PLAN_CONTRACTS } from "./generated/plan-contracts.generated.js";
 import type { AdvisorPlan, EngagementBrief } from "./plan-contract.js";
 
-/** A code rule of the plan contract (R1-R11) or the brief contract (B1-B2). */
-export type ContractRuleId = "R1" | "R2" | "R3" | "R4" | "R5" | "R6" | "R7" | "R8" | "R9" | "R10" | "R11" | "B1" | "B2";
+/** A code rule of the plan contract (R1-R12) or the brief contract (B1-B2). */
+export type ContractRuleId = "R1" | "R2" | "R3" | "R4" | "R5" | "R6" | "R7" | "R8" | "R9" | "R10" | "R11" | "R12" | "B1" | "B2";
 
 /**
  * The roles whose package lives in the engagement hub only, read from the
@@ -61,7 +61,7 @@ function own<T extends object, K extends keyof T>(document: T, name: K): T[K] | 
   return Object.hasOwn(document, name) ? document[name] : undefined;
 }
 
-/** Every violation of R1-R11, for a plan that already passed the plan contract's schema. */
+/** Every violation of R1-R12, for a plan that already passed the plan contract's schema. */
 export function planRuleViolations(plan: AdvisorPlan): ContractRuleViolation[] {
   const out: ContractRuleViolation[] = [];
   const add = (rule: ContractRuleId, path: string, message: string): void => {
@@ -109,6 +109,11 @@ export function planRuleViolations(plan: AdvisorPlan): ContractRuleViolation[] {
     eachRepeat(packages, (act) => `${act.repository.toLowerCase()}\u0000${act.name}`, (index, first) => {
       add("R5", `packages[${index}].name`, `repeats the repository and name of packages[${first}] (repositories compare case-insensitively)`);
     });
+    // R12: every planItem is exactly its act's repository, a colon and its name, in the same letter case.
+    for (let index = 0; index < packages.length; index += 1) {
+      const act = packages[index]!;
+      if (act.planItem !== `${act.repository}:${act.name}`) add("R12", `packages[${index}].planItem`, "is not this act's repository, a colon and its name, in the same letter case");
+    }
   }
 
   // R6: resolution exactly when packages.

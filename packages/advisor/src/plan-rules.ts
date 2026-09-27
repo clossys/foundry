@@ -19,8 +19,8 @@ import type { AdvisorPlan } from "./status.js";
  * text.
  */
 
-/** A code rule of the plan contract (R1-R11) or the brief contract (B1-B2). */
-export type ContractRuleId = "R1" | "R2" | "R3" | "R4" | "R5" | "R6" | "R7" | "R8" | "R9" | "R10" | "R11" | "B1" | "B2";
+/** A code rule of the plan contract (R1-R12) or the brief contract (B1-B2). */
+export type ContractRuleId = "R1" | "R2" | "R3" | "R4" | "R5" | "R6" | "R7" | "R8" | "R9" | "R10" | "R11" | "R12" | "B1" | "B2";
 
 /**
  * The roles whose package lives in the engagement hub only, read from the
@@ -64,7 +64,7 @@ function own<T extends object, K extends keyof T>(document: T, name: K): T[K] | 
   return Object.hasOwn(document, name) ? document[name] : undefined;
 }
 
-/** Every violation of the plan contract's code rules R1-R11, for a plan that already passed the schema. */
+/** Every violation of the plan contract's code rules R1-R12, for a plan that already passed the schema. */
 export function planRuleViolations(plan: AdvisorPlan): ContractRuleViolation[] {
   const violations: ContractRuleViolation[] = [];
   const add = (rule: ContractRuleId, path: string, message: string) => violations.push({ rule, path, message });
@@ -106,6 +106,10 @@ export function planRuleViolations(plan: AdvisorPlan): ContractRuleViolation[] {
     eachRepeat(packages, (act) => JSON.stringify([act.repository.toLowerCase(), act.name]), (index, first) =>
       add("R5", `packages[${index}].name`, `repeats the repository and name of packages[${first}] (repositories compare case-insensitively)`),
     );
+    // R12: every planItem is exactly its act's repository, a colon and its name, in the same letter case.
+    packages.forEach((act, index) => {
+      if (act.planItem !== `${act.repository}:${act.name}`) add("R12", `packages[${index}].planItem`, "is not this act's repository, a colon and its name, in the same letter case");
+    });
   }
 
   // R6: resolution exactly when packages.

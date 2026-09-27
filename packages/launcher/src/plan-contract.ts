@@ -143,7 +143,7 @@ function result(violations: readonly DocumentViolation[]): ValidationResult {
   return { valid: false, reason: violations.map((violation) => violation.message).join("; ") };
 }
 
-/** Every reason a plan is refused: the plan contract's schema, then, once that passes, its code rules R1-R11. */
+/** Every reason a plan is refused: the plan contract's schema, then, once that passes, its code rules R1-R12. */
 export function advisorPlanViolations(value: unknown): DocumentViolation[] {
   return violationsOf<AdvisorPlan>("advisor-plan.json", "plan", value, planRuleViolations);
 }
@@ -168,9 +168,9 @@ export function validateEngagementBrief(value: unknown): ValidationResult {
 
 /**
  * Validates a plan against docs/contracts/advisor-plan.json (in the public repository, not shipped in this package):
- * its schema, then, once that passes, its code rules R1-R11 -- staffing and
- * package entries that repeat, and the joins between staffing, the mandate
- * and packages (#1178). No reason echoes a value from the plan.
+ * its schema, then, once that passes, its code rules R1-R12 -- staffing and
+ * package entries that repeat, the joins between staffing, the mandate
+ * and packages, and each planItem derived from its act (#1178). No reason echoes a value from the plan.
  */
 export function validateAdvisorPlan(value: unknown): ValidationResult {
   return result(advisorPlanViolations(value));

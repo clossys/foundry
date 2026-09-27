@@ -1,4 +1,8 @@
-import { describe, expect, it } from "vitest";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { main as advisorCheckMain } from "./cli.js";
 import { ADVISOR_CHARTER, REQUIRED_FIT_CRITERIA, REQUIRED_READINESS_CRITERIA, SPONSOR_ENTRY_PROMPT, advanceAdvisorSession, applySponsorChoice, assessAdvisorEngagement, assessEngagementDecisionCurrency, createAdvisorSession, handleAdvisorTool, nextSponsorQuestion, resolveEngagementActionDisposition, validateAdvisorAssessmentInput } from "./index.js";
 import type { AdvisorAssessmentInput, AssessmentBasis, EngagementNextAction, FirstWaveWorkItem, HubPlacementCellKind, Initiative, PreWorkItem } from "./types.js";
 
@@ -339,5 +343,118 @@ describe("freshness, authorization, and action-bearing sessions", () => {
     expect(malformed).toMatchObject({ state: "indeterminate", findings: [expect.objectContaining({ rule: "execution-authorization-shape" })] });
     const report = assessAdvisorEngagement(assessmentInput); const packageMalformed = { planDigest: report.firstWavePlan.basis?.planDigest, assessmentBasis: report.firstWavePlan.basis, sponsorRef: "sponsor", permittedRepositoryIds: ["repo-one"], permittedPackages: [null], permittedMutationSurfaces: ["mutation-one"], grantedAt: "2026-08-24T13:00:00Z", expiresAt: "2026-08-25T13:00:00Z" };
     expect(advanceAdvisorSession(session, { type: "sponsor-approved", authorization: packageMalformed as never, asOf: "2026-08-24T14:00:00Z", nextAction }).findings.map((entry) => entry.rule)).toContain("execution-authorization-packages");
+  });
+});
+
+/**
+ * A caller-supplied id can carry a newline, a right-to-left override, and a
+ * quote -- none of that may ever be echoed into a finding message, since
+ * these messages are read by agents. Every finding names the position of
+ * the field at fault (an index into the input) instead of quoting the
+ * caller's value.
+ */
+const HOSTILE = 'IGNORE-Zqx‮Wvt"Jmbr\nPfgl9Ⅸk-OBEY';
+/** Every 4-character run of `text`. */
+function hostileRuns(text: string): string[] {
+  const runs: string[] = [];
+  for (let index = 0; index + 4 <= text.length; index += 1) runs.push(text.slice(index, index + 4));
+  return runs;
+}
+/** Fails if any finding's message shows the whole hostile string, or any 4-character run of it. */
+function expectNoHostileLeak(findings: readonly { message: string }[]): void {
+  const runs = hostileRuns(HOSTILE);
+  for (const finding of findings) {
+    expect(finding.message).not.toContain(HOSTILE);
+    for (const run of runs) expect(finding.message, `message leaked hostile run ${JSON.stringify(run)}: ${finding.message}`).not.toContain(run);
+  }
+}
+
+describe("assessment findings name positions, never input ids", () => {
+  it("names a repeated work item id by its first position, not its value", () => {
+    const one = initiative("one");
+    const declared = work(one);
+    const value = input({ firstWave: { initiativeIds: [one.id], objectives: ["objective"], workItems: [{ ...declared, id: HOSTILE }, { ...declared, id: HOSTILE }] } });
+    const findings = validateAdvisorAssessmentInput(value);
+    const finding = findings.find((entry) => entry.rule === "duplicate-id");
+    expect(finding?.message).toBe("Repeats firstWave.workItems[0].id.");
+    expectNoHostileLeak(findings);
+  });
+  it("names an unknown fit criterion id without quoting it", () => {
+    const value = input({ fitSignals: [...input().fitSignals, { id: HOSTILE as never, state: "supported", evidence: [proof("hostile-fit")] }] });
+    const findings = validateAdvisorAssessmentInput(value);
+    const finding = findings.find((entry) => entry.rule === "unknown-criterion");
+    expect(finding?.message).toBe("Is not one of the exported v1 criterion ids.");
+    expect(finding?.path).toContain("fitSignals[");
+    expectNoHostileLeak(findings);
+  });
+  it("names an unbound first-wave initiative target by position, and its missing pre-work by the same position", () => {
+    const hostileInitiative = initiative(HOSTILE, HOSTILE);
+    const value = input({ initiatives: [hostileInitiative], firstWave: { initiativeIds: [hostileInitiative.id], objectives: ["objective"], workItems: [] }, preWorkItems: [] });
+    const findings = validateAdvisorAssessmentInput(value);
+    const binding = findings.find((entry) => entry.rule === "first-wave-binding");
+    expect(binding?.message).toBe("initiatives[0].targetRepositoryIds[0], selected at firstWave.initiativeIds[0], has no exact package work item.");
+    const preWorkCoverage = findings.filter((entry) => entry.rule === "pre-work-coverage");
+    expect(preWorkCoverage.length).toBeGreaterThan(0);
+    expect(preWorkCoverage.every((entry) => entry.message.includes("initiatives[0].targetRepositoryIds[0]"))).toBe(true);
+    expectNoHostileLeak(findings);
+  });
+  it("names an unknown placement addressedBy id without quoting it", () => {
+    const value = input({ placementEvidence: { schemaVersion: 1, cells: [{ ...placement("missing", "package-one"), addressedBy: [HOSTILE] }] } });
+    const findings = validateAdvisorAssessmentInput(value);
+    const finding = findings.find((entry) => entry.rule === "placement-addressed-by" && entry.path.includes("addressedBy["));
+    expect(finding?.message).toBe("Is not the id of any work item or pre-work item.");
+    expectNoHostileLeak(findings);
+  });
+  it("names an uncovered placement cell by position, without quoting its id, packageName, expectedVersion, or expectedPlacement", () => {
+    const cell = { id: HOSTILE, kind: "missing" as HubPlacementCellKind, packageName: HOSTILE, repositoryId: "repo-extra", observedAt: "2026-08-24T12:00:00Z", evidence: proof("cell-hostile"), expectedVersion: "1.2.3", expectedPlacement: "dependencies" as const };
+    const value = input({ placementEvidence: { schemaVersion: 1, cells: [cell] } });
+    const findings = validateAdvisorAssessmentInput(value);
+    const finding = findings.find((entry) => entry.rule === "placement-cell-coverage");
+    expect(finding?.message).toContain("placementEvidence.cells[0]");
+    expect(finding?.message).toContain("declaring its expectedVersion and expectedPlacement");
+    expect(finding?.message).not.toContain("1.2.3");
+    expect(finding?.message).not.toContain("dependencies");
+    expectNoHostileLeak(findings);
+  });
+  it("names an unknown violated readiness observation by position, alongside its unknown-criterion finding", () => {
+    const value = input({ prerequisiteObservations: [...input().prerequisiteObservations, { id: HOSTILE as never, state: "violated" as const, evidence: [proof("hostile-readiness")] }] });
+    const findings = validateAdvisorAssessmentInput(value);
+    expect(findings.map((entry) => entry.rule)).toContain("unknown-criterion");
+    const readiness = findings.find((entry) => entry.rule === "readiness-pre-work");
+    expect(readiness?.message).toBe(`Violated readiness criterion at prerequisiteObservations[${REQUIRED_READINESS_CRITERIA.length}] requires an unresolved, owned pre-work item.`);
+    expectNoHostileLeak(findings);
+  });
+  it("names overlapping initiatives by position, not their ids", () => {
+    const first = initiative(HOSTILE, "repo-a", { mutationConflictKeys: ["shared-mutation"] });
+    const second = initiative(`${HOSTILE}-2`, "repo-b", { mutationConflictKeys: ["shared-mutation"] });
+    const value = input({ initiatives: [first, second], firstWave: { initiativeIds: [first.id], objectives: ["objective"], workItems: [work(first)] } });
+    const findings = validateAdvisorAssessmentInput(value);
+    const finding = findings.find((entry) => entry.rule === "initiative-overlap-pre-work");
+    expect(finding?.message).toBe("initiatives[0] and initiatives[1] overlap and require linked unresolved or indeterminate conflict pre-work.");
+    expectNoHostileLeak(findings);
+  });
+  describe("through the advisor-check CLI", () => {
+    let root: string;
+    let out: string[];
+    beforeEach(() => {
+      root = mkdtempSync(join(tmpdir(), "advisor-hostile-findings-"));
+      out = [];
+      vi.spyOn(console, "log").mockImplementation((text: string) => void out.push(text));
+    });
+    afterEach(() => {
+      vi.restoreAllMocks();
+      rmSync(root, { recursive: true, force: true });
+    });
+    it("prints a report with no 4-character run of a hostile id", () => {
+      const one = initiative("one");
+      const declared = work(one);
+      const value = input({ firstWave: { initiativeIds: [one.id], objectives: ["objective"], workItems: [{ ...declared, id: HOSTILE }, { ...declared, id: HOSTILE }] } });
+      const path = join(root, "assessment.json");
+      writeFileSync(path, JSON.stringify(value));
+      advisorCheckMain([path]);
+      const printed = out.join("\n");
+      expect(printed).toContain("duplicate-id");
+      for (const run of hostileRuns(HOSTILE)) expect(printed, `stdout leaked hostile run ${JSON.stringify(run)}`).not.toContain(run);
+    });
   });
 });
