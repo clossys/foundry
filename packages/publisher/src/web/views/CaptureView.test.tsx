@@ -21,6 +21,14 @@ describe("CaptureView", () => {
     expect(html).not.toContain("Old error");
   });
 
+  it("names the form region Capture form unless formLabel is passed", () => {
+    const defaults = renderToStaticMarkup(<CaptureView brand="Acme" heading="Keep in touch" form="Fields" />);
+    expect(defaults).toContain('aria-label="Capture form"');
+    const custom = renderToStaticMarkup(<CaptureView brand="Acme" heading="Keep in touch" form="Fields" formLabel="Formulario" />);
+    expect(custom).toContain('aria-label="Formulario"');
+    expect(custom).not.toContain("Capture form");
+  });
+
   it("fails closed when the form-state or error-focus contract is incomplete", () => {
     expect(() => renderToStaticMarkup(<CaptureView brand="Acme" heading="Keep in touch" />)).toThrow(/requires form/);
     expect(() => renderToStaticMarkup(<CaptureView brand="Acme" heading="Keep in touch" form="Fields" errorSummary="Invalid" />)).toThrow(/errorSummary and errorSummaryId together/);

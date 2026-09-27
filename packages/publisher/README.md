@@ -704,7 +704,9 @@ and network effects. On a failed client-side submission, pass both
 before the form; the view makes it a focusable `role="alert"`. On success,
 pass `submitted`: it replaces the form in the same position in a polite live
 region. `CaptureView` intentionally does not choose a form library, add spam
-handling, or model submission state.
+handling, or model submission state. `formLabel` is the accessible name of
+the region that holds the form or the confirmation, and defaults to
+"Capture form".
 
 `DocumentView` accepts a `StructuredDocument` and an approved-copy resolver,
 then calls `renderStructuredDocument` itself. A caller cannot supply a
@@ -733,6 +735,16 @@ contains the view's `h1`); ordinary links retain normal browser route focus
 handling. Entry, empty-state, and pagination links accept only a fragment,
 a single-root-relative path (never `//`), `http(s)`, or non-empty `mailto:`;
 script, data, file, and protocol-relative URLs fail closed.
+`entriesLabel` (default "Collection entries"), `tagsLabel` (default
+"Tags"), and `paginationLabel` (default "Collection pagination") name the
+entry list, each entry's tag list, and the pagination landmark.
+
+`BrandGuideView` names its sections with `lockupLabel` (default "Lockup"),
+`downloadsLabel` (default "Downloads"), `colorLabel` (default "Color"),
+`typeLabel` (default "Type"), and `factsLabel` (default "Strategy facts").
+`SystemAuditView` names its gallery link and sections with `galleryLabel`
+(default "Preview gallery"), `brandSectionLabel` (default "Brand file"),
+and `contrastLabel` (default "Contrast").
 
 There is intentionally no `EntryView`. A document-backed entry page uses
 `DocumentView`, with its optional header action linking back to the

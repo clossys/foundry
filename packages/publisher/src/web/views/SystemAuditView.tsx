@@ -7,24 +7,39 @@ export interface SystemAuditViewProps {
   brandOk: boolean;
   brandFindings: readonly string[];
   contrastFindings: readonly string[];
+  /** Visible text of the preview-gallery link. @default "Preview gallery" */
+  galleryLabel?: string;
+  /** Accessible name for the brand-file section. @default "Brand file" */
+  brandSectionLabel?: string;
+  /** Accessible name for the contrast section. @default "Contrast" */
+  contrastLabel?: string;
 }
 
 /** Internal audit: the preview gallery plus brand-file and contrast results. One map entry, not a hand-built admin page. */
-export function SystemAuditView({ title, galleryHref, brandOk, brandFindings, contrastFindings }: SystemAuditViewProps): ReactNode {
+export function SystemAuditView({
+  title,
+  galleryHref,
+  brandOk,
+  brandFindings,
+  contrastFindings,
+  galleryLabel = "Preview gallery",
+  brandSectionLabel = "Brand file",
+  contrastLabel = "Contrast",
+}: SystemAuditViewProps): ReactNode {
   return (
     <main>
       <PageHeader title={title} description={brandOk ? "Brand file coverage passed." : "Brand file coverage failed."} />
       <p>
-        <a href={galleryHref}>Preview gallery</a>
+        <a href={galleryHref}>{galleryLabel}</a>
       </p>
-      <section aria-label="Brand file">
+      <section aria-label={brandSectionLabel}>
         <ul>
           {brandFindings.map((finding) => (
             <li key={finding}>{finding}</li>
           ))}
         </ul>
       </section>
-      <section aria-label="Contrast">
+      <section aria-label={contrastLabel}>
         <ul>
           {contrastFindings.map((finding) => (
             <li key={finding}>{finding}</li>

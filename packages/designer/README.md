@@ -2169,6 +2169,9 @@ wrong instead of discovering it field-by-field. Each entry is a real
 consumer-supplied `id`, matching react-aria-components' own convention of
 applying a supplied `id` to the field's real control, not a wrapper); a
 click or Enter on that link moves focus straight to the field.
+`errorSummaryMessage` is the summary heading. It is called with the number
+of entries in `errors` and defaults to "There is 1 error" when that count
+is 1 and "There are N errors" otherwise.
 
 `errors` is controlled: `Form` tracks no validation state of its own, so a
 NEW array reference is the only "a submission just failed" signal it has
@@ -3225,7 +3228,8 @@ Grid rather than relying on source order.
 `Shell` also renders a skip-to-content link — the first focusable element on
 the page, visually hidden until it receives keyboard focus — so a keyboard
 user landing on any route can jump straight past the header and side
-navigation to that route's actual content.
+navigation to that route's actual content. `skipLinkLabel` is that link's
+visible text and defaults to "Skip to content".
 
 `Shell.SideNav` is sized to `--ui-layout-sidebar-w` from the `tablet`
 breakpoint up, and collapses — CSS-only, no JavaScript breakpoint state — to
@@ -3530,9 +3534,12 @@ imports from `charts` — see `src/ladder.test.ts`.
   already names a single series) — `ChartFrame` enforces this itself, so
   no chart in this layer can accidentally ship a one-swatch legend box.
 - **A table-view fallback ships with every chart**, `Sparkline` included —
-  a `<details><summary>View as table</summary>` holding the same data as
-  an ordinary HTML `<table>`, always reachable, never gated behind a
-  screen reader or a hover.
+  a `<details>` whose summary text is `tableFallbackLabel` (default
+  "View as table") on `ChartFrame`, `BarChart`, `LineChart`, and
+  `Sparkline`, holding the same data as an ordinary HTML `<table>`,
+  always reachable, never gated behind a screen reader or a hover.
+  `Sparkline`'s value column heading is `valueColumnLabel` (default
+  "Value").
 - **A hover layer ships on every chart except `Sparkline`** — a crosshair
   + shared tooltip readout on `LineChart`, a per-mark tooltip on
   `BarChart` — with the same detail reachable on keyboard focus as on
@@ -4080,7 +4087,7 @@ not a grab-bag).
 | `StatProps` | type | Props for `Stat`: `label`, `value`, `delta`, `trend`, `description`, `className`, `style`, plus every native `<div>` attribute. |
 | `StatTrend` | type | `"up" \| "down" \| "neutral"`. |
 | `Form` | component | Form layout: optional heading, fields region, error-summary region (focused/announced on failure), actions region. No validation logic. |
-| `FormProps` | type | Props for `Form`: `heading`, `children`, `errors`, `actions`, `onSubmit`, `className`, `style`, plus every native `<form>` attribute. |
+| `FormProps` | type | Props for `Form`: `heading`, `children`, `errors`, `errorSummaryMessage` (default "There is 1 error" / "There are N errors"), `actions`, `onSubmit`, `className`, `style`, plus every native `<form>` attribute. |
 | `FormError` | type | One error-summary entry: `fieldId`, `message`. |
 | `FieldGroup` | component | A related set of fields under a shared `<fieldset>`/`<legend>`: legend, optional description, the fields. |
 | `FieldGroupProps` | type | Props for `FieldGroup`: `legend`, `description`, `layout`, `children`, `className`, `style`, plus every native `<fieldset>` attribute. |
@@ -4142,7 +4149,7 @@ not a grab-bag).
 | `SectionMeasure` | type | `"content" \| "wide" \| "prose"`. How wide `SectionFrame`'s inner column is: it maps to the `--ui-width-content-max`, `--ui-width-wide-max`, or `--ui-width-prose-max` token. |
 | `mergeUiClasses` | function | Merges token-aware Tailwind utility classes with last-argument precedence; used by surface-level compositions built from UI primitives. |
 | `Shell` | component | The persistent application frame. Carries `Shell.Header`, `Shell.SideNav`, `Shell.Main`, `Shell.Rail`, `Shell.Footer`. |
-| `ShellProps` | type | Props for `Shell`: `children` (any subset of the five slots above, in any order), plus every native `<div>` attribute. |
+| `ShellProps` | type | Props for `Shell`: `children` (any subset of the five slots above, in any order), `skipLinkLabel` (default `"Skip to content"`), plus every native `<div>` attribute. |
 | `ShellHeaderProps` | type | Props for `Shell.Header`: `children`, plus every native `<header>` attribute. |
 | `ShellSideNavProps` | type | Props for `Shell.SideNav`: `children`, plus every native `<nav>` attribute (including `aria-label`, default `"Primary"`). |
 | `ShellMainProps` | type | Props for `Shell.Main`: `children`, plus every native `<main>` attribute except `id` (fixed, for the skip link). |
@@ -4166,20 +4173,20 @@ not a grab-bag).
 | `ToastRecord` | type | The queued shape of one toast: `title`, `description?`, `variant`. |
 | `ToastVariant` | type | `"success" \| "danger" \| "info" \| "warning"`. |
 | `ChartFrame` | component | The shared plot/axes/grid/legend/table container `BarChart` and `LineChart` compose. |
-| `ChartFrameProps` | type | Props for `ChartFrame`: `title`, `description`, `width`, `height`, `margin`, `xTicks`, `yTicks`, `legend`, `table` (required), `className`, `style`, `children` (render prop receiving the resolved `PlotArea`). |
+| `ChartFrameProps` | type | Props for `ChartFrame`: `title`, `description`, `width`, `height`, `margin`, `xTicks`, `yTicks`, `legend`, `table` (required), `tableFallbackLabel` (default `"View as table"`), `className`, `style`, `children` (render prop receiving the resolved `PlotArea`). |
 | `ChartMargin` | type | `{ top, right, bottom, left }`, all `number`. |
 | `ChartAxisTick` | type | `{ position, label }` — a pre-scaled pixel position plus its label. |
 | `ChartLegendItem` | type | `{ label, color }`. |
 | `ChartTableSpec` | type | `{ headers, rows }` — the table-view fallback's data. |
 | `PlotArea` | type | `{ x, y, width, height }` — the plot rectangle passed to `ChartFrame`'s `children` render prop. |
 | `BarChart` | component | Categorical magnitude: one bar per category, grouped by series. |
-| `BarChartProps` | type | Props for `BarChart`: `categories`, `series`, `colorDomain`, `title`, `description`, `width`, `height`, `valueFormat`, `className`, `style`. |
+| `BarChartProps` | type | Props for `BarChart`: `categories`, `series`, `colorDomain`, `title`, `description`, `width`, `height`, `valueFormat`, `barLabel` (default `"{series}, {category}: {value}"`), `tableFallbackLabel`, `className`, `style`. |
 | `BarChartSeries` | type | `{ name, values, color? }`. |
 | `LineChart` | component | Change over time: one line per series, one shared x/y scale, a crosshair + tooltip hover layer. |
-| `LineChartProps` | type | Props for `LineChart`: `x`, `series`, `colorDomain`, `title`, `description`, `width`, `height`, `valueFormat`, `xFormat`, `keyboardHintLabel`, `className`, `style`. |
+| `LineChartProps` | type | Props for `LineChart`: `x`, `series`, `colorDomain`, `title`, `description`, `width`, `height`, `valueFormat`, `xFormat`, `keyboardHintLabel` (default `"use arrow keys to inspect values"`), `overlayLabel` (default `"{title}: {hint}"`), `tableFallbackLabel`, `className`, `style`. |
 | `LineChartSeries` | type | `{ name, values, color? }`. |
 | `Sparkline` | component | A bare inline trend — no axes/grid/legend/hover, still ships a table-view fallback. |
-| `SparklineProps` | type | Props for `Sparkline`: `values`, `title`, `width`, `height`, `color`, `valueFormat`, `className`, `style`. |
+| `SparklineProps` | type | Props for `Sparkline`: `values`, `title`, `width`, `height`, `color`, `valueFormat`, `tableFallbackLabel` (default `"View as table"`), `valueColumnLabel` (default `"Value"`), `className`, `style`. |
 | `getThemeInitScript` | function | Returns a self-contained head script (string) that stamps `data-theme` before first paint. Takes `{ storageKey? }`. |
 | `ThemeInitScriptOptions` | type | Options for `getThemeInitScript`: `storageKey?` (default `"ui-theme"`). |
 | `ThemeProvider` | component | Holds/persists the three-state theme preference and keeps `<html data-theme>`/`color-scheme` in sync. |

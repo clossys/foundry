@@ -35,6 +35,11 @@ export interface CaptureViewProps extends HTMLAttributes<HTMLDivElement> {
   secondaryAction?: ReactNode;
   /** Persistent footer content. */
   footerSecondary?: ReactNode;
+  /**
+   * Accessible name for the region that holds the form or the confirmation.
+   * @default "Capture form"
+   */
+  formLabel?: string;
   style?: CSSProperties;
 }
 
@@ -53,6 +58,7 @@ export function CaptureView({
   submitted,
   secondaryAction,
   footerSecondary,
+  formLabel = "Capture form",
   className,
   style,
   ...rest
@@ -88,7 +94,7 @@ export function CaptureView({
       <SiteHeader brand={brand} />
       <main className="mx-auto flex w-full flex-1 flex-col gap-xl px-lg py-2xl" style={{ maxWidth: "var(--ui-width-prose-max, 48rem)" }}>
         <PageHeader title={heading} description={description} />
-        <section aria-label="Capture form" className="flex flex-col">
+        <section aria-label={formLabel} className="flex flex-col">
           {activeContent}
           {secondaryAction === undefined ? null : <div className="mt-lg text-body-s text-ink-secondary">{secondaryAction}</div>}
         </section>

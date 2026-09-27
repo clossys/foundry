@@ -39,8 +39,22 @@ export interface BarChartProps {
   height?: number;
   /** @default thousands-comma formatting */
   valueFormat?: (value: number) => string;
+  /**
+   * Accessible name for one bar.
+   * @default (seriesName, category, formattedValue) => `${seriesName}, ${category}: ${formattedValue}`
+   */
+  barLabel?: (seriesName: string, category: string, formattedValue: string) => string;
+  /**
+   * Text of the disclosure that opens the table-view fallback.
+   * Forwarded to `ChartFrame`, which defaults it to "View as table".
+   */
+  tableFallbackLabel?: string;
   className?: string;
   style?: CSSProperties;
+}
+
+function defaultBarLabel(seriesName: string, category: string, formattedValue: string): string {
+  return `${seriesName}, ${category}: ${formattedValue}`;
 }
 
 const BAR_MAX_THICKNESS = 24; // marks-and-anatomy.md: bar/column ≤ 24px thick
@@ -65,6 +79,8 @@ export function BarChart({
   width = 480,
   height = 280,
   valueFormat = formatTickValue,
+  barLabel = defaultBarLabel,
+  tableFallbackLabel,
   className,
   style,
 }: BarChartProps) {
@@ -100,6 +116,7 @@ export function BarChart({
       height={height}
       legend={legend}
       table={table}
+      tableFallbackLabel={tableFallbackLabel}
       className={className}
       style={style}
       xTicks={[]}
@@ -164,7 +181,7 @@ export function BarChart({
                           strokeWidth={isHovered ? 2 : 0}
                           tabIndex={0}
                           role="img"
-                          aria-label={`${s.name}, ${cat}: ${valueFormat(value)}`}
+                          aria-label={barLabel(s.name, cat, valueFormat(value))}
                           onMouseEnter={() => setHovered(key)}
                           onMouseLeave={() => setHovered((cur) => (cur === key ? null : cur))}
                           onFocus={() => setHovered(key)}
