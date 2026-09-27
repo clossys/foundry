@@ -3,11 +3,13 @@ import { isUnreadable, readNpmLockfile, readPnpmLockfile } from "./lockfile-read
 import type { LockfileEntry, LockfileView, RootDependency } from "./lockfile-readers.js";
 
 function rootDep(placement: RootDependency["placement"], name: string, over: Partial<RootDependency> = {}): RootDependency {
-  return { placement, name, specifier: "1.0.0", version: null, integrity: null, link: false, ...over };
+  const merged = { placement, name, specifier: "1.0.0", version: null, integrity: null, link: false, ...over };
+  return { rawVersion: merged.version, ...merged };
 }
 
 function entry(key: string, over: Partial<LockfileEntry> = {}): LockfileEntry {
-  return { key, name: key, version: "1.0.0", integrity: null, tarball: null, link: false, otherResolutionKeys: [], ...over };
+  const merged = { key, name: key, version: "1.0.0", integrity: null, tarball: null, link: false, otherResolutionKeys: [], ...over };
+  return { installedName: merged.name, ...merged };
 }
 
 describe("readNpmLockfile", () => {
@@ -148,7 +150,7 @@ snapshots:
     expect(view.lockfileVersion).toBe("9.0");
     expect(view.root).toEqual([
       rootDep("dependencies", "@fixture/fixture-a", { specifier: "1.0.0", version: "1.0.0", integrity: "sha512-AAAA==" }),
-      rootDep("dependencies", "react-dom", { specifier: "^18.0.0", version: "18.2.0", integrity: "sha512-BBBB==" }),
+      rootDep("dependencies", "react-dom", { specifier: "^18.0.0", version: "18.2.0", rawVersion: "18.2.0(react@18.2.0)", integrity: "sha512-BBBB==" }),
       rootDep("devDependencies", "local-thing", { specifier: "link:../local", version: "link:../local", link: true }),
       rootDep("devDependencies", "other-thing", { specifier: "file:../other", version: "file:../other", link: true }),
     ]);
@@ -294,5 +296,71 @@ packages:
     expect(isUnreadable(result)).toBe(false);
     const view = result as LockfileView;
     expect(view.entries).toEqual([entry("some-git@1.0.0", { name: "some-git", integrity: null, tarball: null, otherResolutionKeys: ["commit", "repo", "type"] })]);
+  });
+
+  // ---------------------------------------------------------------------------
+  // Fix 9: the reader refuses what it cannot read exactly, rather than reading
+  // a disguised structural key as merely absent, an inline flow mapping as
+  // empty, a double-quoted escape literally, or a key's own colon as the
+  // key/value separator.
+  // ---------------------------------------------------------------------------
+
+  it("refuses an anchored 'importers' key rather than reading the section as absent (anchorKey, fix 9)", () => {
+    const doc = `
+lockfileVersion: '9.0'
+&a importers:
+  .:
+    dependencies: {}
+packages: {}
+`;
+    expect(readPnpmLockfile(doc)).toEqual({ unreadable: true, reason: "lockfile-unreadable" });
+  });
+
+  it("refuses a tagged 'packages' key rather than reading the section as absent (tagKey, fix 9)", () => {
+    const doc = `
+lockfileVersion: '9.0'
+importers:
+  .:
+    dependencies: {}
+!!str packages:
+  foo@1.0.0:
+    resolution: {integrity: sha512-AAAA==}
+`;
+    expect(readPnpmLockfile(doc)).toEqual({ unreadable: true, reason: "lockfile-unreadable" });
+  });
+
+  it("refuses 'packages' written entirely as an inline flow mapping rather than reading it as empty (inlineFlowPackages, fix 9)", () => {
+    const doc = `
+lockfileVersion: '9.0'
+importers:
+  .:
+    dependencies: {}
+packages: {'@fixture/x@2.0.0': {resolution: {integrity: sha512-XXXX==, tarball: 'https://evil.example/x.tgz'}}}
+`;
+    expect(readPnpmLockfile(doc)).toEqual({ unreadable: true, reason: "lockfile-unreadable" });
+  });
+
+  it("refuses a double-quoted packages key holding a hex escape rather than reading it literally (dqkey, fix 9)", () => {
+    const doc = `
+lockfileVersion: '9.0'
+packages:
+  "@fixture/\\x66oo@1.0.0":
+    resolution: {integrity: sha512-XXXX==}
+`;
+    expect(readPnpmLockfile(doc)).toEqual({ unreadable: true, reason: "lockfile-unreadable" });
+  });
+
+  it("splits a key holding its own colon at the line's final colon, not its first (urlKey, fix 9)", () => {
+    const doc = `
+lockfileVersion: '9.0'
+packages:
+  foo@https://codeload.example.invalid/fixture-owner/fixture-archive/tar.gz/abc:
+    resolution: {integrity: sha512-XXXX==}
+`;
+    const result = readPnpmLockfile(doc);
+    expect(isUnreadable(result)).toBe(false);
+    const view = result as LockfileView;
+    expect(view.entries.map((e) => e.key)).toEqual(["foo@https://codeload.example.invalid/fixture-owner/fixture-archive/tar.gz/abc"]);
+    expect(view.entries[0]?.name).toBe("foo");
   });
 });

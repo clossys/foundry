@@ -115,7 +115,7 @@ describe("npm lockfile invariants", () => {
     expect(result.verdict === "violated" && result.violations).toEqual([{ invariant: "I1", name: `${SCOPE}/fixture-a` }]);
   });
 
-  it("I1: violated when the input package resolves to a link", () => {
+  it("I1: violated when the input package resolves to a link (also I5: a new scoped link entry, fix 7)", () => {
     const regenerated = npmBasePackages();
     regenerated[`node_modules/${SCOPE}/fixture-a`] = { resolved: "../fixture-a", link: true };
     const result = checkLockfileInvariants({
@@ -124,7 +124,10 @@ describe("npm lockfile invariants", () => {
       regenerated: npmLockfile(regenerated),
       packages: [INPUT_PACKAGE],
     });
-    expect(result.verdict === "violated" && result.violations).toEqual([{ invariant: "I1", name: `${SCOPE}/fixture-a` }]);
+    expect(result.verdict === "violated" && result.violations).toEqual([
+      { invariant: "I1", name: `${SCOPE}/fixture-a` },
+      { invariant: "I5", name: `${SCOPE}/fixture-a` },
+    ]);
   });
 
   it("I2: violated when another root dep's specifier changes", () => {
@@ -248,6 +251,77 @@ describe("npm lockfile invariants", () => {
       packages: [INPUT_PACKAGE],
     });
     expect(result.verdict === "violated" && result.violations).toEqual([{ invariant: "I5", name: `${SCOPE}/fixture-git` }]);
+  });
+
+  it("I5: violated when a new entry's installed (key-derived) name is scoped even though its declared name is not (scopedAlias, fix 6)", () => {
+    const regenerated = npmBasePackages();
+    regenerated[`node_modules/${SCOPE}/fixture-a/node_modules/${SCOPE}/fixture-b`] = {
+      name: "evil",
+      version: "6.6.6",
+      resolved: "https://evil.example/evil-6.6.6.tgz",
+      integrity: "sha512-EEEE==",
+    };
+    const result = checkLockfileInvariants({
+      format: "npm",
+      base: npmLockfile(npmBasePackages()),
+      regenerated: npmLockfile(regenerated),
+      packages: [INPUT_PACKAGE],
+    });
+    expect(result.verdict === "violated" && result.violations).toEqual([{ invariant: "I5", name: "evil" }]);
+  });
+
+  it("I5: violated when a new link entry's installed name is under the scope (scopedLink, fix 7)", () => {
+    const regenerated = npmBasePackages();
+    regenerated[`node_modules/${SCOPE}/fixture-b`] = { resolved: "vendor/b", link: true };
+    const result = checkLockfileInvariants({
+      format: "npm",
+      base: npmLockfile(npmBasePackages()),
+      regenerated: npmLockfile(regenerated),
+      packages: [INPUT_PACKAGE],
+    });
+    expect(result.verdict === "violated" && result.violations).toEqual([{ invariant: "I5", name: `${SCOPE}/fixture-b` }]);
+  });
+
+  it("I5: the same link entry present identically in the base is not a violation (scopedLink, fix 7)", () => {
+    const withLink = (packages: Record<string, any>): Record<string, any> => {
+      packages[`node_modules/${SCOPE}/fixture-b`] = { resolved: "vendor/b", link: true };
+      return packages;
+    };
+    const result = checkLockfileInvariants({
+      format: "npm",
+      base: npmLockfile(withLink(npmBasePackages())),
+      regenerated: npmLockfile(withLink(npmBasePackages())),
+      packages: [INPUT_PACKAGE],
+    });
+    expect(result).toMatchObject({ verdict: "satisfied" });
+  });
+
+  it("I5: fails closed with a violation for every new scoped entry when the publishing registry is not a URL (fix 10)", () => {
+    const regenerated = npmBasePackages();
+    regenerated[`node_modules/${SCOPE}/fixture-new`] = {
+      version: "1.0.0",
+      resolved: tarball(`${SCOPE}/fixture-new`, "1.0.0"),
+      integrity: "sha512-FFFF==",
+    };
+    const result = checkLockfileInvariants({
+      format: "npm",
+      base: npmLockfile(npmBasePackages()),
+      regenerated: npmLockfile(regenerated),
+      packages: [INPUT_PACKAGE],
+      publishing: { scope: SCOPE, registry: "not a url" },
+    });
+    expect(result.verdict === "violated" && result.violations).toEqual([{ invariant: "I5", name: `${SCOPE}/fixture-new` }]);
+  });
+
+  it('I5: fails closed with a single violation named "" when the publishing registry is not a URL and nothing new is scoped (fix 10)', () => {
+    const result = checkLockfileInvariants({
+      format: "npm",
+      base: npmLockfile(npmBasePackages()),
+      regenerated: npmLockfile(npmBasePackages()),
+      packages: [INPUT_PACKAGE],
+      publishing: { scope: SCOPE, registry: "not a url" },
+    });
+    expect(result.verdict === "violated" && result.violations).toEqual([{ invariant: "I5", name: "" }]);
   });
 
   it("is indeterminate on the base side when the base lockfile is unreadable", () => {
@@ -398,7 +472,7 @@ describe("pnpm lockfile invariants", () => {
     expect(result.verdict === "violated" && result.violations).toEqual([{ invariant: "I1", name: `${SCOPE}/fixture-a` }]);
   });
 
-  it("I1: violated when the input package resolves via link:", () => {
+  it("I1: violated when the input package resolves via link: (also I5: a scoped root dependency turning into a link is itself new, fix 6)", () => {
     const root = pnpmBaseRoot().map((dep) =>
       dep.name === INPUT_PACKAGE.name ? { ...dep, specifier: "link:../fixture-a", version: "link:../fixture-a" } : dep,
     );
@@ -409,10 +483,13 @@ describe("pnpm lockfile invariants", () => {
       regenerated: pnpmLockfile({ root, packages }),
       packages: [INPUT_PACKAGE],
     });
-    expect(result.verdict === "violated" && result.violations).toEqual([{ invariant: "I1", name: `${SCOPE}/fixture-a` }]);
+    expect(result.verdict === "violated" && result.violations).toEqual([
+      { invariant: "I1", name: `${SCOPE}/fixture-a` },
+      { invariant: "I5", name: `${SCOPE}/fixture-a` },
+    ]);
   });
 
-  it("I1: violated when the input package resolves via file:", () => {
+  it("I1: violated when the input package resolves via file: (also I5: a scoped root dependency turning into a file: is itself new, fix 6)", () => {
     const root = pnpmBaseRoot().map((dep) =>
       dep.name === INPUT_PACKAGE.name
         ? { ...dep, specifier: "file:../fixture-a.tgz", version: "file:../fixture-a.tgz" }
@@ -425,7 +502,10 @@ describe("pnpm lockfile invariants", () => {
       regenerated: pnpmLockfile({ root, packages }),
       packages: [INPUT_PACKAGE],
     });
-    expect(result.verdict === "violated" && result.violations).toEqual([{ invariant: "I1", name: `${SCOPE}/fixture-a` }]);
+    expect(result.verdict === "violated" && result.violations).toEqual([
+      { invariant: "I1", name: `${SCOPE}/fixture-a` },
+      { invariant: "I5", name: `${SCOPE}/fixture-a` },
+    ]);
   });
 
   it("I2: violated when another root dep's specifier changes", () => {
@@ -559,6 +639,67 @@ describe("pnpm lockfile invariants", () => {
       packages: [INPUT_PACKAGE],
     });
     expect(result.verdict === "violated" && result.violations).toEqual([{ invariant: "I5", name: `${SCOPE}/fixture-dir` }]);
+  });
+
+  it("I1: a pnpm (patch_hash=...) suffix on an approved package's version fails I1 (patch, fix 8)", () => {
+    const target: LockfileInvariantPackage = { name: `${SCOPE}/fixture-x`, version: "2.0.0", integrity: "sha512-XXXX==", placement: "dependencies" };
+    const root: PnpmRootDep[] = [{ placement: "dependencies", name: target.name, specifier: "2.0.0", version: "2.0.0(patch_hash=deadbeef)" }];
+    const packages: PnpmPackage[] = [{ key: `${target.name}@${target.version}`, integrity: target.integrity }];
+    const lockfile = pnpmLockfile({ root, packages });
+    const result = checkLockfileInvariants({ format: "pnpm", base: lockfile, regenerated: lockfile, packages: [target] });
+    expect(result.verdict === "violated" && result.violations).toEqual([{ invariant: "I1", name: target.name }]);
+  });
+
+  it("I1: an existing peer-suffix ((name@version)(...)) on an approved package's version still passes", () => {
+    const target: LockfileInvariantPackage = { name: `${SCOPE}/fixture-x`, version: "2.0.0", integrity: "sha512-XXXX==", placement: "dependencies" };
+    const root: PnpmRootDep[] = [{ placement: "dependencies", name: target.name, specifier: "2.0.0", version: "2.0.0(react@18.2.0)(@types/react@18.0.0)" }];
+    const packages: PnpmPackage[] = [{ key: `${target.name}@${target.version}`, integrity: target.integrity }];
+    const lockfile = pnpmLockfile({ root, packages });
+    const result = checkLockfileInvariants({ format: "pnpm", base: lockfile, regenerated: lockfile, packages: [target] });
+    expect(result).toMatchObject({ verdict: "satisfied" });
+  });
+
+  it("I5: violated when a snapshot's dependency map aliases a scoped name to a foreign package (pnpmAlias, fix 6)", () => {
+    const fixtureATarball = tarball(`${SCOPE}/fixture-a`, "1.0.0");
+    function lockfileText(includeAlias: boolean): string {
+      const lines = [
+        "lockfileVersion: '9.0'",
+        "",
+        "importers:",
+        "",
+        "  .:",
+        "    dependencies:",
+        `      '${SCOPE}/fixture-a':`,
+        "        specifier: 1.0.0",
+        "        version: 1.0.0",
+        "",
+        "packages:",
+        "",
+        `  '${SCOPE}/fixture-a@1.0.0':`,
+        `    resolution: {integrity: sha512-AAAA==, tarball: ${fixtureATarball}}`,
+        "",
+      ];
+      if (includeAlias) {
+        lines.push(
+          "  'evil@6.6.6':",
+          "    resolution: {integrity: sha512-EEEE==, tarball: https://evil.example/evil-6.6.6.tgz}",
+          "",
+        );
+      }
+      lines.push("snapshots:", "", `  '${SCOPE}/fixture-a@1.0.0':`);
+      lines.push(includeAlias ? "    dependencies:" : "    dependencies: {}");
+      if (includeAlias) lines.push(`      '${SCOPE}/fixture-b': evil@6.6.6`);
+      lines.push("");
+      if (includeAlias) lines.push("  'evil@6.6.6': {}", "");
+      return lines.join("\n");
+    }
+    const result = checkLockfileInvariants({
+      format: "pnpm",
+      base: lockfileText(false),
+      regenerated: lockfileText(true),
+      packages: [INPUT_PACKAGE],
+    });
+    expect(result.verdict === "violated" && result.violations).toEqual([{ invariant: "I5", name: `${SCOPE}/fixture-b` }]);
   });
 
   it("is indeterminate on the base side when the base lockfile is unreadable", () => {

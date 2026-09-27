@@ -47,9 +47,14 @@ function entryKey(name: string, version: string): string {
   return `${name}\u0000${version}`;
 }
 
-/** Every distinct `name@version` in `entries`, as `entryKey` strings. */
+/**
+ * Every distinct `name@version` in `entries`, as `entryKey` strings. A versionless npm link entry (fix 7)
+ * is never a `name@version` and is excluded here; I5 inspects link entries separately, by key.
+ */
 function entryKeySet(entries: readonly LockfileEntry[]): Set<string> {
-  return new Set(entries.map((entry) => entryKey(entry.name, entry.version)));
+  const keys = new Set<string>();
+  for (const entry of entries) if (entry.version !== null) keys.add(entryKey(entry.name, entry.version));
+  return keys;
 }
 
 function setsEqual<T>(left: ReadonlySet<T>, right: ReadonlySet<T>): boolean {
@@ -69,14 +74,20 @@ function computeTransitiveCounts(base: LockfileView, regenerated: LockfileView):
   return { added, removed };
 }
 
-/** I1: every input package resolves in the regenerated root exactly, under its own placement and no other. */
+/**
+ * I1: every input package resolves in the regenerated root exactly, under its own placement and no other.
+ * A pnpm `(patch_hash=...)` group on the raw version is also a mismatch (fix 8): stripping it (as `version`
+ * already does, same as any peer-group suffix) would otherwise let a patched install through even though a
+ * patch changes the installed content.
+ */
 function checkI1(input: LockfileInvariantInput, regenerated: LockfileView): LockfileInvariantViolation[] {
   const violations: LockfileInvariantViolation[] = [];
   for (const pkg of input.packages) {
     const sameName = regenerated.root.filter((dep) => dep.name === pkg.name);
     const exact = sameName.find((dep) => dep.placement === pkg.placement);
+    const patched = exact?.rawVersion?.includes("patch_hash=") ?? false;
     const exactMismatch =
-      !exact || exact.specifier !== pkg.version || exact.version !== pkg.version || exact.integrity !== pkg.integrity || exact.link;
+      !exact || exact.specifier !== pkg.version || exact.version !== pkg.version || exact.integrity !== pkg.integrity || exact.link || patched;
     const otherPlacement = sameName.some((dep) => dep.placement !== pkg.placement);
     if (exactMismatch || otherPlacement) violations.push({ invariant: "I1", name: pkg.name });
   }
@@ -108,11 +119,15 @@ function checkI2(input: LockfileInvariantInput, base: LockfileView, regenerated:
   return violations;
 }
 
-/** I3: no `name@version` present in both entry lists changes its set of integrity strings. */
+/**
+ * I3: no `name@version` present in both entry lists changes its set of integrity strings. A versionless
+ * npm link entry (fix 7) never participates: it is not a `name@version`.
+ */
 function checkI3(base: LockfileView, regenerated: LockfileView): LockfileInvariantViolation[] {
   const violations: LockfileInvariantViolation[] = [];
   const baseByName = new Map<string, Map<string, Set<string | null>>>();
   for (const entry of base.entries) {
+    if (entry.version === null) continue;
     let versions = baseByName.get(entry.name);
     if (!versions) {
       versions = new Map();
@@ -127,6 +142,7 @@ function checkI3(base: LockfileView, regenerated: LockfileView): LockfileInvaria
   }
   const regeneratedByName = new Map<string, Map<string, Set<string | null>>>();
   for (const entry of regenerated.entries) {
+    if (entry.version === null) continue;
     let versions = regeneratedByName.get(entry.name);
     if (!versions) {
       versions = new Map();
@@ -172,7 +188,37 @@ function resolvesToRegistry(entry: LockfileEntry, format: LockfileFormat, regist
   }
 }
 
-/** I5: every regenerated entry newly resolving a scoped package name comes from the publishing registry. */
+/** Strips a trailing `(...)` peer-group (or patch-hash) suffix from a pnpm dependency-map value, the same way the reader strips a root dependency's `version`. */
+function stripParenSuffix(value: string): string {
+  const parenIndex = value.indexOf("(");
+  return parenIndex === -1 ? value : value.slice(0, parenIndex);
+}
+
+/**
+ * Whether a pnpm dependency-map value (after stripping any peer-group/patch-hash suffix) is an alias, a
+ * link, or a file reference (fix 6) rather than a plain resolved version. A plain version never contains
+ * `@`; an alias is exactly `<name>@<version>`, and even a scoped alias name's own leading `@` still leaves
+ * a second `@` as the name/version separator, so a bare `includes("@")` check is enough.
+ */
+function isSuspiciousPnpmDependencyValue(core: string): boolean {
+  return core.startsWith("link:") || core.startsWith("file:") || core.includes("@");
+}
+
+/**
+ * I5: every regenerated entry newly resolving a scoped package name comes from the publishing registry.
+ *
+ * Checks both the installed (alias) name and the declared name (fix 6): an entry that is new and scoped
+ * under either name must have the two agree, since an alias into or out of the scope is itself a
+ * violation, in addition to resolving to the publishing registry as before. A link entry under the scope
+ * (fix 7) is its own violation unless the base already holds an identical link at the same key. For pnpm,
+ * every importer's and snapshot's dependency-map value naming a scoped package is also checked directly
+ * (fix 6): a value that is an alias, a `link:` or a `file:` reference is a violation unless the base holds
+ * the identical name and value at the same place -- this catches an alias hidden inside a snapshot's
+ * dependency map, which never appears as its own `packages` entry under the scope.
+ *
+ * Fails closed when the publishing registry does not parse as a URL (fix 10): every new scoped entry is a
+ * violation, or, when there is none at all, a single violation named `""`.
+ */
 function checkI5(
   input: LockfileInvariantInput,
   base: LockfileView,
@@ -180,19 +226,53 @@ function checkI5(
   publishing: { readonly scope: string; readonly registry: string },
 ): LockfileInvariantViolation[] {
   const violations: LockfileInvariantViolation[] = [];
-  const baseKeys = entryKeySet(base.entries);
   const scopePrefix = `${publishing.scope}/`;
-  let registryOrigin: string;
+  const baseVersionedKeys = entryKeySet(base.entries);
+  const baseLinksByKey = new Map(base.entries.filter((entry) => entry.version === null).map((entry) => [entry.key, entry] as const));
+
+  let registryOrigin: string | undefined;
   try {
     registryOrigin = new URL(publishing.registry).origin;
   } catch {
-    return violations;
+    registryOrigin = undefined;
   }
+
+  let anyNewScoped = false;
   for (const entry of regenerated.entries) {
-    if (!entry.name.startsWith(scopePrefix)) continue;
-    if (baseKeys.has(entryKey(entry.name, entry.version))) continue;
+    const scoped = entry.name.startsWith(scopePrefix) || entry.installedName.startsWith(scopePrefix);
+    if (!scoped) continue;
+    if (entry.version === null) {
+      const baseLink = baseLinksByKey.get(entry.key);
+      if (baseLink !== undefined && baseLink.tarball === entry.tarball) continue; // the identical link already in base
+      anyNewScoped = true;
+      violations.push({ invariant: "I5", name: entry.name });
+      continue;
+    }
+    if (baseVersionedKeys.has(entryKey(entry.name, entry.version))) continue; // not new
+    anyNewScoped = true;
+    if (registryOrigin === undefined) {
+      violations.push({ invariant: "I5", name: entry.name });
+      continue;
+    }
+    if (entry.installedName !== entry.name) {
+      violations.push({ invariant: "I5", name: entry.name });
+      continue;
+    }
     if (!resolvesToRegistry(entry, input.format, registryOrigin)) violations.push({ invariant: "I5", name: entry.name });
   }
+
+  if (input.format === "pnpm") {
+    const baseRefs = new Map(base.dependencyRefs.map((ref) => [`${ref.place}\u0000${ref.name}`, ref.value] as const));
+    for (const ref of regenerated.dependencyRefs) {
+      if (!ref.name.startsWith(scopePrefix)) continue;
+      if (!isSuspiciousPnpmDependencyValue(stripParenSuffix(ref.value))) continue;
+      if (baseRefs.get(`${ref.place}\u0000${ref.name}`) === ref.value) continue; // identical name and value at the same place as the base
+      anyNewScoped = true;
+      violations.push({ invariant: "I5", name: ref.name });
+    }
+  }
+
+  if (registryOrigin === undefined && !anyNewScoped) violations.push({ invariant: "I5", name: "" });
   return violations;
 }
 
