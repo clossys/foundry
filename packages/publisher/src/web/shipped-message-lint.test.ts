@@ -1,4 +1,5 @@
-import { readdirSync, readFileSync } from "node:fs";
+import { mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import ts from "typescript";
@@ -11,10 +12,12 @@ import { describe, expect, it } from "vitest";
  * template literal used as a JSX child is the same kind of text. An aria
  * attribute set to a string literal fails when the attribute is an
  * accessible name, or when the literal is not an ARIA state token.
- * A message JSX attribute, a `??` fallback in JSX, or a local initializer
- * that is rendered fails the same way. A message prop does not fail: the
- * English is the parameter default documented with `@default`, and the JSX
- * or aria site reads that prop.
+ * A message JSX attribute, a `??` fallback in JSX, a local initializer, or
+ * a lettered parameter default that is rendered fails the same way when
+ * the prop has no `@default`. A module binding referenced by that default
+ * fails under the same rule. A message prop does not fail: the English is
+ * the parameter default documented with `@default`, and the JSX or aria
+ * site reads that prop.
  *
  * `*.test.*`, `*.spec.*`, and `*.check.*` are excluded. The `.check` files
  * in this tree are compile-time contract fixtures, not shipped components.
@@ -86,6 +89,9 @@ const NON_COPY_JSX_ATTRS = new Set([
   "role",
   "variant",
   "size",
+  "ground",
+  "composition",
+  "orientation",
   "slot",
   "as",
   "fill",
@@ -187,6 +193,38 @@ function staticLiteral(node: ts.Node): string | null {
   return null;
 }
 
+function collectModuleLetteredBindings(sourceFile: ts.SourceFile): Set<string> {
+  const names = new Set<string>();
+  for (const statement of sourceFile.statements) {
+    if (!ts.isVariableStatement(statement)) continue;
+    for (const declaration of statement.declarationList.declarations) {
+      if (!ts.isIdentifier(declaration.name) || declaration.initializer === undefined) continue;
+      if (localInitializerIsShippedCopy(declaration.initializer)) {
+        names.add(declaration.name.text);
+      }
+    }
+  }
+  return names;
+}
+
+function parameterDefaultIsShippedCopy(initializer: ts.Expression, moduleBindings: Set<string>): boolean {
+  const literal = staticLiteral(initializer);
+  if (literal !== null && ARIA_STATE_TOKENS.has(literal)) return false;
+  if (localInitializerIsShippedCopy(initializer)) return true;
+  return ts.isIdentifier(initializer) && moduleBindings.has(initializer.text);
+}
+
+function bindingElementPropertyName(element: ts.BindingElement, source: ts.SourceFile): string | null {
+  if (element.propertyName !== undefined) return element.propertyName.getText(source);
+  if (ts.isIdentifier(element.name)) return element.name.text;
+  return null;
+}
+
+function bindingElementLocalName(element: ts.BindingElement): string | null {
+  if (ts.isIdentifier(element.name)) return element.name.text;
+  return null;
+}
+
 function collectDocumentedDefaultProps(sourceFile: ts.SourceFile): Set<string> {
   const names = new Set<string>();
   function visit(node: ts.Node): void {
@@ -283,6 +321,31 @@ function isExcludedFile(fileName: string): boolean {
   return /\.(?:test|spec|check)\.[cm]?[jt]sx?$/.test(fileName);
 }
 
+function collectParameterLiteralDefaults(
+  parameters: ts.NodeArray<ts.ParameterDeclaration>,
+  source: ts.SourceFile,
+  documentedDefaults: Set<string>,
+  moduleBindings: Set<string>,
+): Map<string, number> {
+  const literalParams = new Map<string, number>();
+
+  for (const parameter of parameters) {
+    if (!ts.isObjectBindingPattern(parameter.name)) continue;
+    const line = source.getLineAndCharacterOfPosition(parameter.getStart(source)).line + 1;
+    for (const element of parameter.name.elements) {
+      if (element.initializer === undefined) continue;
+      const propName = bindingElementPropertyName(element, source);
+      const localName = bindingElementLocalName(element);
+      if (propName === null || localName === null) continue;
+      if (documentedDefaults.has(propName)) continue;
+      if (!parameterDefaultIsShippedCopy(element.initializer, moduleBindings)) continue;
+      literalParams.set(localName, line);
+    }
+  }
+
+  return literalParams;
+}
+
 function analyzeRenderedLocals(body: ts.ConciseBody, documentedDefaults: Set<string>): Map<string, number> {
   const literalLocals = new Map<string, number>();
 
@@ -293,24 +356,8 @@ function analyzeRenderedLocals(body: ts.ConciseBody, documentedDefaults: Set<str
     }
   }
 
-  function scanBindingPattern(pattern: ts.BindingPattern, line: number): void {
-    if (!ts.isObjectBindingPattern(pattern)) return;
-    for (const element of pattern.elements) {
-      if (!ts.isBindingElement(element) || !ts.isIdentifier(element.name) || element.initializer === undefined) continue;
-      const propName = element.name.text;
-      if (documentedDefaults.has(propName)) continue;
-      if (ts.isStringLiteral(element.initializer) || ts.isNoSubstitutionTemplateLiteral(element.initializer)) {
-        const text = staticLiteral(element.initializer);
-        if (text !== null && hasLetter(text)) literalLocals.set(propName, line);
-      }
-    }
-  }
-
   function scanNode(node: ts.Node): void {
     if (isDisplayNameAssignment(node)) return;
-    if (ts.isParameter(node) && node.initializer !== undefined && ts.isObjectBindingPattern(node.name)) {
-      scanBindingPattern(node.name, node.getStart());
-    }
     if (ts.isVariableStatement(node)) {
       for (const declaration of node.declarationList.declarations) {
         if (ts.isIdentifier(declaration.name) && declaration.initializer !== undefined) {
@@ -357,7 +404,10 @@ function checkRenderedLocalReferences(
 
   function visit(node: ts.Node): void {
     if (ts.isJsxExpression(node) && node.expression !== undefined && ts.isIdentifier(node.expression)) {
-      noteReference(node.expression.text, node);
+      const parent = node.parent;
+      if (parent === undefined || !ts.isJsxAttribute(parent)) {
+        noteReference(node.expression.text, node);
+      }
     }
     if (ts.isJsxAttribute(node) && node.initializer !== undefined && ts.isJsxExpression(node.initializer)) {
       const attrName = jsxAttributeName(node);
@@ -371,12 +421,30 @@ function checkRenderedLocalReferences(
   }
 
   if (ts.isBlock(body)) visit(body);
+  else visit(body);
+}
+
+function analyzeFunctionLiteralBindings(
+  parameters: ts.NodeArray<ts.ParameterDeclaration>,
+  body: ts.ConciseBody | undefined,
+  source: ts.SourceFile,
+  documentedDefaults: Set<string>,
+  moduleBindings: Set<string>,
+): Map<string, number> {
+  const literalBindings = collectParameterLiteralDefaults(parameters, source, documentedDefaults, moduleBindings);
+  if (body !== undefined) {
+    for (const [name, line] of analyzeRenderedLocals(body, documentedDefaults)) {
+      literalBindings.set(name, line);
+    }
+  }
+  return literalBindings;
 }
 
 function findShippedMessageViolations(fileName: string, sourceText: string): ShippedMessageViolation[] {
   const source = ts.createSourceFile(fileName, sourceText, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
   const violations: ShippedMessageViolation[] = [];
   const documentedDefaults = collectDocumentedDefaultProps(source);
+  const moduleBindings = collectModuleLetteredBindings(source);
 
   function lineOf(node: ts.Node): number {
     return source.getLineAndCharacterOfPosition(node.getStart(source)).line + 1;
@@ -384,8 +452,14 @@ function findShippedMessageViolations(fileName: string, sourceText: string): Shi
 
   function visit(node: ts.Node): void {
     if (ts.isFunctionDeclaration(node) || ts.isArrowFunction(node)) {
+      const literalLocals = analyzeFunctionLiteralBindings(
+        node.parameters,
+        node.body,
+        source,
+        documentedDefaults,
+        moduleBindings,
+      );
       if (node.body !== undefined) {
-        const literalLocals = analyzeRenderedLocals(node.body, documentedDefaults);
         checkRenderedLocalReferences(node.body, literalLocals, fileName, source, violations);
       }
     }
@@ -500,6 +574,94 @@ describe("shipped message lint", () => {
     ].join("\n");
     const kinds = findShippedMessageViolations("Example.tsx", source).map((violation) => violation.kind).sort();
     expect(kinds).toEqual(["jsx-attribute", "jsx-text", "nullish-fallback", "rendered-local"]);
+  });
+
+  it("fails a rendered parameter default without a documented @default", () => {
+    const source = [
+      "interface ExampleProps {",
+      "  saveLabel?: string;",
+      "}",
+      "export function Example({ saveLabel = \"Save changes\" }: ExampleProps) {",
+      "  return <button>{saveLabel}</button>;",
+      "}",
+      "",
+    ].join("\n");
+    const violations = findShippedMessageViolations("Example.tsx", source);
+    expect(violations).toEqual([
+      expect.objectContaining({ kind: "rendered-local", text: "saveLabel" }),
+    ]);
+  });
+
+  it("does not fail a rendered parameter default documented with @default", () => {
+    const source = [
+      "interface ExampleProps {",
+      "  /** @default \"Save changes\" */",
+      "  saveLabel?: string;",
+      "}",
+      "export function Example({ saveLabel = \"Save changes\" }: ExampleProps) {",
+      "  return <button>{saveLabel}</button>;",
+      "}",
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", source)).toEqual([]);
+  });
+
+  it("fails a rendered parameter default that references a module binding without @default", () => {
+    const source = [
+      "const DEFAULT_SAVE = \"Save changes\";",
+      "interface ExampleProps {",
+      "  saveLabel?: string;",
+      "}",
+      "export function Example({ saveLabel = DEFAULT_SAVE }: ExampleProps) {",
+      "  return <button>{saveLabel}</button>;",
+      "}",
+      "",
+    ].join("\n");
+    const violations = findShippedMessageViolations("Example.tsx", source);
+    expect(violations).toEqual([
+      expect.objectContaining({ kind: "rendered-local", text: "saveLabel" }),
+    ]);
+  });
+
+  it("scanShippedMessageTree fails saveLabel without @default and passes once documented", () => {
+    const directory = mkdtempSync(path.join(tmpdir(), "publisher-shipped-message-"));
+    const fixturePath = path.join(directory, "Fixture.tsx");
+    try {
+      writeFileSync(
+        fixturePath,
+        [
+          "interface ExampleProps {",
+          "  saveLabel?: string;",
+          "}",
+          "export function Example({ saveLabel = \"Save changes\" }: ExampleProps) {",
+          "  return <button>{saveLabel}</button>;",
+          "}",
+          "",
+        ].join("\n"),
+        "utf8",
+      );
+      expect(scanShippedMessageTree(directory)).toEqual([
+        expect.objectContaining({ kind: "rendered-local", text: "saveLabel" }),
+      ]);
+
+      writeFileSync(
+        fixturePath,
+        [
+          "interface ExampleProps {",
+          "  /** @default \"Save changes\" */",
+          "  saveLabel?: string;",
+          "}",
+          "export function Example({ saveLabel = \"Save changes\" }: ExampleProps) {",
+          "  return <button>{saveLabel}</button>;",
+          "}",
+          "",
+        ].join("\n"),
+        "utf8",
+      );
+      expect(scanShippedMessageTree(directory)).toEqual([]);
+    } finally {
+      rmSync(directory, { recursive: true, force: true });
+    }
   });
 
   it("does not fail a message prop", () => {
