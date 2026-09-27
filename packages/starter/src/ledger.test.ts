@@ -24,7 +24,8 @@ const CORPUS = JSON.parse(read("docs/contracts/installed-ledger.fixture.json")) 
 const ledger = (name: string) => CORPUS.ledgers.find((entry) => entry.name === name)!.ledger;
 /** The corpus stores members in the contract's order, so this is a valid ledger's RENDER bytes. */
 const text = (value: unknown) => `${JSON.stringify(value, null, 2)}\n`;
-const bytesOf = (name: string) => text(ledger(name));
+const utf8 = (value: string): Buffer => Buffer.from(value, "utf8");
+const bytesOf = (name: string): Buffer => utf8(text(ledger(name)));
 const ruleIds = (value: unknown) => [...new Set(installedLedgerViolations(value).map((violation) => violation.rule))].sort();
 const label = (violation: LedgerViolation) => (violation.side === undefined ? violation.rule : `${violation.side}.${violation.rule}`);
 type Loose = Record<string, any>;
@@ -72,7 +73,7 @@ describe("installed-state ledger", () => {
     schema.secretKey = "secret";
     const shaped = installedLedgerViolations(schema);
     expect(shaped.map((violation) => violation.rule)).toContain("schema");
-    const succession = ledgerSuccession(`${text(schema)}`, text(forged));
+    const succession = ledgerSuccession(utf8(text(schema)), utf8(text(forged)));
     expect(succession.violations.length).toBeGreaterThan(0);
     for (const violation of [...ruled, ...shaped, ...succession.violations]) {
       expect(violation.message, violation.message).not.toMatch(/secret/i);
@@ -141,25 +142,26 @@ describe("ledger succession", () => {
     const relabelled = loose(ledger("admitted-generation-2"));
     const last = relabelled.history.at(-1);
     last.binding = { kind: "approved", subjectDigest: last.binding.subjectDigest };
-    expect(ledgerSuccession(bytesOf("setup-generation-1"), text(relabelled)).admission).toBe("approval-claimed");
+    expect(ledgerSuccession(bytesOf("setup-generation-1"), utf8(text(relabelled))).admission).toBe("approval-claimed");
   });
 
   it("refuses non-canonical bytes and never reads them as unchanged", () => {
-    const canonical = bytesOf("setup-generation-1");
+    const canonicalText = text(ledger("setup-generation-1"));
+    const canonical = utf8(canonicalText);
     const variants: [string, string][] = [
-      ["spaced", canonical.replace('"schemaVersion": 1', '"schemaVersion":  1')],
-      ["repeated key", canonical.replace('"schemaVersion": 1,', '"schemaVersion": 1,\n  "schemaVersion": 1,')],
-      ["repeated key, other value first", canonical.replace('"schemaVersion": 1,', '"schemaVersion": 2,\n  "schemaVersion": 1,')],
-      ["byte order mark", `\uFEFF${canonical}`],
-      ["no final line feed", canonical.slice(0, -1)],
-      ["two final line feeds", `${canonical}\n`],
-      ["CRLF", canonical.replace(/\n/g, "\r\n")],
+      ["spaced", canonicalText.replace('"schemaVersion": 1', '"schemaVersion":  1')],
+      ["repeated key", canonicalText.replace('"schemaVersion": 1,', '"schemaVersion": 1,\n  "schemaVersion": 1,')],
+      ["repeated key, other value first", canonicalText.replace('"schemaVersion": 1,', '"schemaVersion": 2,\n  "schemaVersion": 1,')],
+      ["no final line feed", canonicalText.slice(0, -1)],
+      ["two final line feeds", `${canonicalText}\n`],
+      ["CRLF", canonicalText.replace(/\n/g, "\r\n")],
       ["compact", `${JSON.stringify(ledger("setup-generation-1"))}\n`],
       ["members reordered", text(Object.fromEntries(Object.entries(ledger("setup-generation-1")).reverse()))],
-      ["escaped spelling", canonical.replace('"clossys.installed-ledger"', '"clossys.installed-\\u006cedger"')],
+      ["escaped spelling", canonicalText.replace('"clossys.installed-ledger"', '"clossys.installed-\\u006cedger"')],
     ];
-    for (const [name, bytes] of variants) {
-      expect(bytes, name).not.toBe(canonical);
+    for (const [name, variantText] of variants) {
+      const bytes = utf8(variantText);
+      expect(bytes.equals(canonical), name).toBe(false);
       for (const result of [ledgerSuccession(canonical, bytes), ledgerSuccession(bytes, bytes), ledgerSuccession(null, bytes)]) {
         expect(result.change, name).toBe("next-generation");
         expect(result.admission, name).toBeNull();
@@ -167,8 +169,36 @@ describe("ledger succession", () => {
       }
       expect(ledgerSuccession(bytes, canonical).violations.map(label), name).toEqual(["base.bytes"]);
     }
-    expect(ledgerSuccession(canonical, "not json").violations.map(label)).toEqual(["head.bytes"]);
+    expect(ledgerSuccession(canonical, utf8("not json")).violations.map(label)).toEqual(["head.bytes"]);
     expect(ledgerSuccession(canonical, canonical)).toEqual({ change: "none", admission: null, violations: [] });
+  });
+
+  it("reads each side's raw bytes, never a prior decode: a byte order mark, invalid UTF-8, and same-position invalid bytes are all refused, never unchanged", () => {
+    const canonical = bytesOf("setup-generation-1");
+
+    // A leading byte order mark reaches readContractDocument() as bytes, unstripped by any prior TextDecoder.
+    const bom = Buffer.concat([Buffer.from([0xef, 0xbb, 0xbf]), canonical]);
+    expect(bom.equals(canonical)).toBe(false);
+    const bomResult = ledgerSuccession(canonical, bom);
+    expect(bomResult.change).toBe("next-generation");
+    expect(bomResult.admission).toBeNull();
+    expect(bomResult.violations.map(label)).toEqual(["head.bytes"]);
+
+    // A lone 0xFF byte is never valid UTF-8 at any position; it must be refused as bytes, not silently replaced.
+    const invalidHead = Buffer.from(canonical); invalidHead[40] = 0xff;
+    expect(invalidHead[40]).not.toBe(canonical[40]);
+    const invalidResult = ledgerSuccession(canonical, invalidHead);
+    expect(invalidResult.change).toBe("next-generation");
+    expect(invalidResult.admission).toBeNull();
+    expect(invalidResult.violations.map(label)).toEqual(["head.bytes"]);
+
+    // 0xFF and 0xFE at the same position both decode (lossily) to U+FFFD; the raw bytes differ and must never compare as unchanged.
+    const invalidBase = Buffer.from(canonical); invalidBase[40] = 0xff;
+    const invalidHead2 = Buffer.from(canonical); invalidHead2[40] = 0xfe;
+    const bothResult = ledgerSuccession(invalidBase, invalidHead2);
+    expect(bothResult.change).toBe("next-generation");
+    expect(bothResult.admission).toBeNull();
+    expect([...new Set(bothResult.violations.map(label))].sort()).toEqual(["base.bytes", "head.bytes"]);
   });
 
   it("reports only a refused side's own reasons", () => {

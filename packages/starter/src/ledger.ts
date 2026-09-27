@@ -147,6 +147,13 @@ function repeats<T>(values: readonly T[], key: (value: T) => string): { index: n
   });
   return out;
 }
+/** Whether two byte sequences hold the same bytes, in the same order. */
+function sameBytes(left: Uint8Array, right: Uint8Array): boolean {
+  if (left.length !== right.length) return false;
+  for (let index = 0; index < left.length; index += 1) if (left[index] !== right[index]) return false;
+  return true;
+}
+
 /** Whether two JSON values are equal member for member, whatever their members' order. */
 function sameValue(left: unknown, right: unknown): boolean {
   if (left === right) return true;
@@ -282,23 +289,26 @@ export function serializeInstalledLedger(ledger: InstalledLedger): string {
 }
 
 /**
- * Reads one side from its bytes. Strict JSON first, so a repeated key or a
- * byte order mark is refused by position before any value is judged; then the
- * contract; then the bytes must be exactly what RENDER gives the ledger they
- * hold, which refuses every other spelling (spacing, CRLF, member order, a
- * missing or extra final line feed).
+ * Reads one side from its raw bytes, unencoded and undecoded. Strict JSON
+ * first, so a repeated key or a byte order mark is refused by position before
+ * any value is judged (readContractDocument() refuses invalid UTF-8 and a
+ * leading byte order mark itself, reading the bytes it is given, not a prior
+ * decode); then the contract; then the bytes must be exactly what RENDER
+ * gives the ledger they hold, which refuses every other spelling (spacing,
+ * CRLF, member order, a missing or extra final line feed).
  */
 function readSide(bytes: unknown, side: "base" | "head"): { ledger: InstalledLedger | null; violations: LedgerViolation[] } {
   const refuse = (message: string) => ({ ledger: null, violations: [{ rule: "bytes" as const, side, path: "", message: `${side} ${message} (rule bytes)` }] });
-  if (typeof bytes !== "string") return refuse("is not a ledger's bytes as text");
+  if (!(bytes instanceof Uint8Array)) return refuse("is not a ledger's bytes as a Uint8Array");
   let parsed: unknown;
-  try { parsed = readContractDocument(new TextEncoder().encode(bytes)); } catch (error) {
+  try { parsed = readContractDocument(bytes); } catch (error) {
     if (error instanceof ContractDocumentError) return refuse(error.message);
     throw error;
   }
   const violations = contractViolations(parsed, side, side);
   if (violations.length > 0) return { ledger: null, violations };
-  if (serializeInstalledLedger(parsed as InstalledLedger) !== bytes) return refuse("is not the exact bytes the ledger contract's RENDER section gives this ledger");
+  const canonical = Buffer.from(serializeInstalledLedger(parsed as InstalledLedger), "utf8");
+  if (!sameBytes(canonical, bytes)) return refuse("is not the exact bytes the ledger contract's RENDER section gives this ledger");
   return { ledger: parsed as InstalledLedger, violations: [] };
 }
 
@@ -334,22 +344,23 @@ function successionRuleViolations(base: InstalledLedger | null, head: InstalledL
 
 /**
  * Compares a pull request's head ledger with its base's under the contract's
- * SUCCESSION rules, each given as the exact text of
- * clossys/.state/installed.json (base null when the base has none). A side
- * that is invalid or not exactly canonical returns only its own reasons, and
- * is never read as unchanged, even when both sides' bytes are identical.
- * Otherwise identical bytes are no change (S1); anything else must be one
- * next generation (S2), and an admitted one must install exactly what the
- * base's setup deferred and change no other row (S3). An approved next
- * generation is only ever approval-claimed. It checks what the ledgers claim,
- * not the tree.
+ * SUCCESSION rules, each given as the exact bytes of
+ * clossys/.state/installed.json (base null when the base has none). Each
+ * side's raw bytes reach readContractDocument() unchanged: no decode, and no
+ * re-encode of an already decoded string, happens first. A side that is
+ * invalid or not exactly canonical returns only its own reasons, and is never
+ * read as unchanged, even when both sides decode to the same text. Otherwise
+ * byte-identical sides are no change (S1); anything else must be one next
+ * generation (S2), and an admitted one must install exactly what the base's
+ * setup deferred and change no other row (S3). An approved next generation is
+ * only ever approval-claimed. It checks what the ledgers claim, not the tree.
  */
-export function ledgerSuccession(baseBytes: string | null, headBytes: string): LedgerSuccession {
+export function ledgerSuccession(baseBytes: Uint8Array | null, headBytes: Uint8Array): LedgerSuccession {
   const base = baseBytes === null ? { ledger: null, violations: [] } : readSide(baseBytes, "base");
   const head = readSide(headBytes, "head");
   const invalid = [...base.violations, ...head.violations];
   if (invalid.length > 0 || head.ledger === null) return { change: "next-generation", admission: null, violations: invalid };
-  if (baseBytes !== null && baseBytes === headBytes) return { change: "none", admission: null, violations: [] };
+  if (baseBytes !== null && sameBytes(baseBytes, headBytes)) return { change: "none", admission: null, violations: [] };
   const violations = successionRuleViolations(base.ledger, head.ledger).map((violation) => ({ ...violation, message: `${violation.path} ${violation.message} (rule ${violation.rule})` }));
   if (violations.length > 0) return { change: "next-generation", admission: null, violations };
   return { change: "next-generation", admission: head.ledger.history.at(-1)?.binding.kind === "admitted" ? "admitted" : "approval-claimed", violations: [] };
