@@ -440,6 +440,100 @@ describe("value-free catalog parser", () => {
       }),
     ).toThrow(/unique/);
   });
+
+  it("projects a valid version 2 secret declaration to a version 1 catalog", () => {
+    const declaration = {
+      version: 2,
+      environments: ["production"],
+      source: {
+        id: "primary-source",
+        provider: "infisical",
+        role: "secret-manager",
+        environmentMap: { production: "prod" },
+      },
+      deliveryTargets: [],
+      entries: [
+        {
+          key: "APP_SIGNING_KEY",
+          required: true,
+          class: "secret",
+          purpose: "sign outbound requests",
+          consumers: ["api-service"],
+          deliveryTargets: [],
+        },
+      ],
+    };
+    expect(parseValueFreeCatalog(declaration)).toEqual({
+      version: 1,
+      entries: [{ key: "APP_SIGNING_KEY", required: true }],
+    });
+  });
+
+  it("rejects an unreadable version 2 declaration without echoing an unknown field's content", () => {
+    const decoy = "declaration-decoy-value-that-must-not-be-printed";
+    const declarationWithUnknownField = {
+      version: 2,
+      environments: ["production"],
+      source: {
+        id: "primary-source",
+        provider: "infisical",
+        role: "secret-manager",
+        environmentMap: { production: "prod" },
+      },
+      deliveryTargets: [],
+      entries: [
+        {
+          key: "APP_SIGNING_KEY",
+          required: true,
+          class: "secret",
+          purpose: "sign outbound requests",
+          consumers: ["api-service"],
+          deliveryTargets: [],
+        },
+      ],
+      unexpectedField: decoy,
+    };
+    let caught: unknown;
+    try {
+      parseValueFreeCatalog(declarationWithUnknownField);
+    } catch (error) {
+      caught = error;
+    }
+    expect(caught).toBeInstanceOf(InfisicalError);
+    expect(String((caught as Error).message)).not.toContain(decoy);
+  });
+
+  it("rejects a version 2 declaration missing the required production environment", () => {
+    const declarationMissingProduction = {
+      version: 2,
+      environments: ["staging"],
+      source: {
+        id: "primary-source",
+        provider: "infisical",
+        role: "secret-manager",
+        environmentMap: { staging: "stage" },
+      },
+      deliveryTargets: [],
+      entries: [
+        {
+          key: "APP_SIGNING_KEY",
+          required: true,
+          class: "secret",
+          purpose: "sign outbound requests",
+          consumers: ["api-service"],
+          deliveryTargets: [],
+        },
+      ],
+    };
+    let caught: unknown;
+    try {
+      parseValueFreeCatalog(declarationMissingProduction);
+    } catch (error) {
+      caught = error;
+    }
+    expect(caught).toBeInstanceOf(InfisicalError);
+    expect(String((caught as Error).message)).toMatch(/value-free/);
+  });
 });
 
 describe("permission-gated maintenance", () => {

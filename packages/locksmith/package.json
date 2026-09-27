@@ -22,7 +22,8 @@
     "vespene-secrets-infisical": "dist/infisical/cli.js",
     "clossys-locksmith-credential": "dist/bin.js",
     "locksmith-check": "dist/controlled-key-rate-cli.js",
-    "clossys-locksmith-provider-custody": "dist/provider-custody-cli.js"
+    "clossys-locksmith-provider-custody": "dist/provider-custody-cli.js",
+    "clossys-locksmith-secret-environments": "dist/secret-environments-cli.js"
   },
   "files": [
     "dist",

@@ -31,6 +31,7 @@ import { evaluateCredential } from "./credential.js";
 import { recordRevocation } from "./revocation.js";
 import { evaluateRotation } from "./rotation.js";
 import { evaluateProviderCustody } from "./provider-custody.js";
+import { evaluateSecretEnvironments } from "./secret-environments.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 
@@ -163,5 +164,46 @@ describe("runtime: every produced record has a closed, exact field set", () => {
     expect(result.verdict).toBe("indeterminate");
     expect(JSON.stringify(result)).not.toContain(DECOY);
     expect(new Set(Object.keys(result))).toEqual(new Set(["key", "provider", "rung", "verdict", "exitCode", "findings"]));
+  });
+
+  it("secret-environments evaluation never echoes an identity, an unknown field's name, or its value", () => {
+    const declaration = {
+      version: 2,
+      environments: ["preview", "production"],
+      source: { id: "secret-manager", provider: "infisical", role: "secret-manager", environmentMap: { preview: "staging", production: "prod" } },
+      deliveryTargets: [],
+      entries: [{ key: "DATABASE_URL", required: true, class: "secret", purpose: "Database access.", consumers: ["web"], deliveryTargets: [] }],
+    };
+    const snapshot = (entries: readonly Record<string, unknown>[]) => ({
+      version: 1,
+      provider: "infisical",
+      location: "secret-manager",
+      observedAt: "2026-09-27T00:00:00.000Z",
+      environments: ["staging", "prod"],
+      entries,
+    });
+    // The decoy is the shared identity that produces a real violation.
+    const shared = evaluateSecretEnvironments({
+      declaration,
+      inventories: [
+        snapshot([
+          { name: "DATABASE_URL", environments: ["staging"], storage: "managed", identity: DECOY },
+          { name: "DATABASE_URL", environments: ["prod"], storage: "managed", identity: DECOY },
+        ]),
+      ],
+    });
+    expect(shared.verdict).toBe("violated");
+    expect(JSON.stringify(shared)).not.toContain(DECOY);
+    expect(new Set(Object.keys(shared))).toEqual(new Set(["verdict", "exitCode", "findings"]));
+    for (const finding of shared.findings) {
+      expect(new Set(Object.keys(finding))).toEqual(new Set(["rule", "severity", "message", "path"]));
+    }
+    // The decoy as an unknown field's name and value, in the inventory and in the declaration.
+    const unknown = evaluateSecretEnvironments({
+      declaration: { ...declaration, [DECOY]: DECOY },
+      inventories: [snapshot([{ name: "DATABASE_URL", environments: ["staging", "prod"], storage: "managed", [DECOY]: DECOY }])],
+    });
+    expect(unknown.verdict).toBe("indeterminate");
+    expect(JSON.stringify(unknown)).not.toContain(DECOY);
   });
 });
