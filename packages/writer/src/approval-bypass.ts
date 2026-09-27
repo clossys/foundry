@@ -217,6 +217,11 @@ function isWs(c: string | undefined): boolean {
   return c === " " || c === "\t" || c === "\n" || c === "\r" || c === "\f" || c === "\v";
 }
 
+/** Escapes every regular-expression metacharacter in `value`, backslash included. */
+function escapeRegExp(value: string): string {
+  return value.replace(/[\\^$.*+?()[\]{}|]/g, "\\$&");
+}
+
 function prevNonWs(code: string, idx: number): number {
   let i = idx - 1;
   while (i >= 0 && isWs(code[i])) i--;
@@ -500,7 +505,7 @@ export function extractApprovalBypass(
 
   // ---- 4. copy-read-without-resolver: every use of a registry binding
   for (const b of bindings) {
-    const re = new RegExp(`(?<![\\w$])${b.name.replace(/\$/g, "\\$")}(?![\\w$])`, "g");
+    const re = new RegExp(`(?<![\\w$])${escapeRegExp(b.name)}(?![\\w$])`, "g");
     for (const m of code.matchAll(re)) {
       const i = m.index;
       if (i >= b.declStart && i < b.declEnd) continue;
