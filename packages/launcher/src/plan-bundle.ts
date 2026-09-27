@@ -95,12 +95,12 @@ export interface RepositoryObservation {
   /** What the default branch's lockfile resolves each package to. */
   readonly lockedPackages: readonly PinnedPackage[];
   /**
-   * The exact text of the installed-state ledger, clossys/.state/installed.json,
+   * The exact bytes of the installed-state ledger, clossys/.state/installed.json,
    * at baseCommit, or null when the base has none. It is trusted only as
    * trustInstalledLedger() allows, against `heldChangeSets`; its generation
    * is the one the set is computed over.
    */
-  readonly ledger: string | null;
+  readonly ledger: Uint8Array | null;
   /**
    * The entries of the base's composed-skill manifest,
    * clossys/.state/skills.json -- each skill's name and the 64 hex digits of
@@ -267,8 +267,31 @@ function computeChangeSet(
   skillContent: ReadonlyMap<string, string>,
 ): ComputedSet | SkippedSet {
   // Paths compare case-insensitively (code rule C3): a base file that differs only in case is the same file on many checkouts.
-  const existing = new Map(observation.files.map((file) => [file.path.toLowerCase(), file.sha256]));
-  const existingAt = (path: string) => existing.get(path.toLowerCase());
+  // Two (or more) observed files at the same lowercase path -- distinct case variants, or a repeated entry -- have no single
+  // base digest between them: the path is occupied by other bytes than any one of them, so it can never be kept, updated or
+  // adopted, whatever the ledger says (fix for issue #1545). CASE_VARIANT_BASE is a sentinel that never equals a real content
+  // digest (those are always `sha256:` and 64 hex digits) or null, so it always reads as "occupied by bytes the flow does not
+  // own" wherever a base digest is compared.
+  const CASE_VARIANT_BASE = "case-variant";
+  const fileGroups = new Map<string, string[]>();
+  for (const file of observation.files) {
+    const key = file.path.toLowerCase();
+    const group = fileGroups.get(key);
+    if (group === undefined) fileGroups.set(key, [file.sha256]);
+    else group.push(file.sha256);
+  }
+  const isCaseVariant = (path: string) => (fileGroups.get(path.toLowerCase())?.length ?? 0) > 1;
+  const existingAt = (path: string): string | undefined => {
+    const group = fileGroups.get(path.toLowerCase());
+    if (group === undefined) return undefined;
+    return group.length > 1 ? CASE_VARIANT_BASE : group[0];
+  };
+  // The lockfile and the ledger are derived files this planner writes unconditionally; a case-variant there leaves no single
+  // base to compare-and-swap against, so the whole repository is skipped rather than guessing which variant is real.
+  const lockfile = lockfilePath(observation);
+  if (isCaseVariant(LEDGER_PATH) || (lockfile !== null && isCaseVariant(lockfile))) {
+    return { skip: { verdict: "indeterminate", reason: "case-variant-path" } };
+  }
   // The trusted ledger's rows: files by path (case-insensitively, as C3 and L8 compare paths), keys by pointer.
   const fileRows = new Map((ledger?.files ?? []).map((row) => [row.path.toLowerCase(), row.after]));
   const fileRowAt = (path: string) => fileRows.get(path.toLowerCase()) ?? null;
@@ -361,24 +384,27 @@ function computeChangeSet(
     }
     const pinned: PinnedPackage = { name: act.name, version: act.version, integrity: act.integrity };
     const entries = observation.manifestEntries.filter((entry) => entry.name === act.name);
+    const pointer = dependencyPointer(act.placement, act.name);
+    // The owned key follows the same table as a whole file (RFC §12.1): no row and nothing there adds it; no row and a value
+    // there is unowned-existing; a row and nothing there is deleted; a row and another value there is client-edited; a row and
+    // its own value there is the flow's key, updated when the plan names another version. This table is consulted before the
+    // satisfied-in-base shortcut below (fix for issue #1545): a trusted row the base no longer holds is a client edit even
+    // when the base happens to already carry the version the plan wants, so it is never waved through as satisfied.
+    const row = keyRows.get(pointer);
+    const baseAt = entries.find((entry) => entry.placement === act.placement);
+    const own = row === undefined ? (baseAt === undefined ? null : "unowned-existing") : baseAt === undefined ? "deleted" : baseAt.value !== row ? "client-edited" : null;
     const satisfiedInBase =
       entries.length === 1 &&
-      entries[0]!.placement === act.placement &&
-      entries[0]!.value === act.version &&
+      baseAt !== undefined &&
+      baseAt.value === act.version &&
+      (row === undefined || (row === baseAt.value && row === act.version)) &&
       observation.lockedPackages.some((locked) => locked.name === act.name && locked.version === act.version && locked.integrity === act.integrity);
     items.push({ id: act.planItem, act: act.act, planItem: act.planItem, package: pinned, placement: act.placement, satisfiedInBase });
     if (satisfiedInBase) continue;
-    const pointer = dependencyPointer(act.placement, act.name);
     if (observation.packageManager === "none") {
       refused.push({ file: "package.json", pointer, reason: "manifest-absent", item: act.planItem });
       continue;
     }
-    // The owned key follows the same table as a whole file (RFC §12.1): no row and nothing there adds it; no row and a value
-    // there is unowned-existing; a row and nothing there is deleted; a row and another value there is client-edited; a row and
-    // its own value there is the flow's key, updated when the plan names another version.
-    const row = keyRows.get(pointer);
-    const baseAt = entries.find((entry) => entry.placement === act.placement);
-    const own = row === undefined ? (baseAt === undefined ? null : "unowned-existing") : baseAt === undefined ? "deleted" : baseAt.value !== row ? "client-edited" : null;
     const others = new Set(entries.filter((entry) => entry.placement !== act.placement).map((entry) => dependencyPointer(entry.placement, entry.name)));
     if (others.size > 0) {
       // The package is also at the other placement, which the flow never wrote: nothing is written for it.
@@ -400,7 +426,6 @@ function computeChangeSet(
     return { skip: { verdict: "violated", reason: "integrity-mismatch" } };
   }
 
-  const lockfile = lockfilePath(observation);
   if (invariants.length > 0 && lockfile !== null) {
     pathAllowList.push("package.json", lockfile);
     const sorted = canonicalOrder(invariants, CANONICAL_KEYS.invariant);
@@ -552,6 +577,13 @@ function computeChangeSet(
  *   item; one it records only some of skips the repository as
  *   `template-rows-partial`. No exempt-release-age or declare-root-entry item
  *   is added to carry the ledger's entries rows.
+ * - Two or more observed files at the same path, compared case-insensitively
+ *   (or a repeated entry), have no single base digest between them: the path
+ *   is occupied by other bytes than any one of them, so it is never kept,
+ *   updated or adopted -- `client-edited` with a trusted row, `unowned-existing`
+ *   without one. When the lockfile's own path or the ledger's has a case
+ *   variant, the whole repository is skipped as `case-variant-path`, verdict
+ *   indeterminate, the same way as `template-rows-partial`.
  * - A trusted ledger row the desired state no longer names is not removed:
  *   V8 reports `removal-unbuilt`, and the row is carried forward.
  * - V8 carries one indeterminate check per ownership refusal reason present
@@ -572,8 +604,8 @@ function computeChangeSet(
  *   item with `satisfiedInBase: true` and writes nothing.
  * - A staffed repository with no observation, with a skip reason, whose
  *   ledger is not trusted, in the setup phase, whose profile needs root
- *   entries added, or skipped for `integrity-mismatch` or
- *   `template-rows-partial` is left out of the bundle digest.
+ *   entries added, or skipped for `integrity-mismatch`, `template-rows-partial`
+ *   or `case-variant-path` is left out of the bundle digest.
  *
  * Throws, naming positions and never values, when the plan or hub brief does
  * not validate, the plan has no staffing, a staffed role is not a lowercase id

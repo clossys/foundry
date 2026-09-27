@@ -22,7 +22,7 @@ import { planDigest } from "./plan-digest.js";
  */
 const REPO = new URL("../../../", import.meta.url);
 const read = (path: string): string => readFileSync(new URL(path, REPO), "utf8");
-const sha = (text: string) => `sha256:${createHash("sha256").update(text, "utf8").digest("hex")}`;
+const sha = (data: string | Uint8Array) => `sha256:${createHash("sha256").update(typeof data === "string" ? Buffer.from(data, "utf8") : data).digest("hex")}`;
 const clone = <T>(value: T): T => structuredClone(value);
 
 const PLAN = (JSON.parse(read("docs/contracts/advisor-plan-digest.fixture.json")) as { plans: { name: string; plan: AdvisorPlan }[] }).plans.find(
@@ -528,7 +528,8 @@ type PackageItem = Extract<ChangeSetItem, { planItem: string }>;
 
 /** The observation of the repository once `set` has merged over `observation`, bound as approved by its own bundle. */
 function merged(observation: RepositoryObservation, set: RepositoryChangeSet, previous: InstalledLedger | null = null, plan: AdvisorPlan = PLAN, commit = "d"): RepositoryObservation {
-  const ledger = renderInstalledLedger(previous, set, { kind: "approved", subjectDigest: set.bundle }, planPackages(plan, set.repository.id));
+  const ledgerText = renderInstalledLedger(previous, set, { kind: "approved", subjectDigest: set.bundle }, planPackages(plan, set.repository.id));
+  const ledgerBytes = Buffer.from(ledgerText, "utf8");
   const files = new Map(observation.files.map((file) => [file.path, file.sha256]));
   let manifestEntries = [...observation.manifestEntries];
   let lockedPackages = [...observation.lockedPackages];
@@ -547,8 +548,8 @@ function merged(observation: RepositoryObservation, set: RepositoryChangeSet, pr
     const item = set.items.find((entry) => entry.id === key.item) as PackageItem;
     manifestEntries = [...manifestEntries.filter((entry) => !(entry.placement === item.placement && entry.name === item.package.name)), { placement: item.placement, name: item.package.name, value: key.after! }];
   }
-  files.set(LEDGER, sha(ledger));
-  return { ...observation, baseCommit: commit.repeat(40), files: [...files].map(([path, sha256]) => ({ path, sha256 })), manifestEntries, lockedPackages, ledger };
+  files.set(LEDGER, sha(ledgerBytes));
+  return { ...observation, baseCommit: commit.repeat(40), files: [...files].map(([path, sha256]) => ({ path, sha256 })), manifestEntries, lockedPackages, ledger: ledgerBytes };
 }
 
 /** SITE observed over a ledger the corpus holds: every files row's bytes at its after, and the ledger's own bytes. */
@@ -558,7 +559,7 @@ function overCorpusLedger(ledger: InstalledLedger, patch: Partial<RepositoryObse
     ...SITE,
     baseCommit: "e".repeat(40),
     files: [...SITE.files, ...ledger.files.map((row) => ({ path: row.path, sha256: row.after })), { path: LEDGER, sha256: sha(text) }],
-    ledger: text,
+    ledger: Buffer.from(text, "utf8"),
     ...patch,
   };
 }
@@ -702,16 +703,23 @@ describe("the installed-state ledger", () => {
     delete plain.resolution;
     const plainInputs = { ...INPUTS, plan: plain as unknown as AdvisorPlan, authorization: null };
     const plainSet = setFor(run(plainInputs).changeSets, SITE.id);
-    const renamed = readInstalledLedger(renderInstalledLedger(null, plainSet, { kind: "approved", subjectDigest: plainSet.bundle }, [])) as unknown as { repository: { id: string } };
+    const plainLedgerText = renderInstalledLedger(null, plainSet, { kind: "approved", subjectDigest: plainSet.bundle }, []);
+    const plainLedger = readInstalledLedger(Buffer.from(plainLedgerText, "utf8")) as unknown as { repository: { id: string } };
+    const renamed = clone(plainLedger);
     renamed.repository.id = "example-owner/site-renamed";
+    // A rename that differs only in letter case is still refused as renamed (issue #1545 fix 3): a ledger generation can never
+    // change the id's case (SUCCESSION S2, code rule L10), so trusting it here would only be refused later, at RENDER.
+    const renamedCaseOnly = clone(plainLedger);
+    renamedCaseOnly.repository.id = "Example-Owner/Site";
     for (const [ledger, held, reason, inputs] of [
       ["not a ledger", [], "ledger-unreadable", INPUTS],
       [serializeInstalledLedger(generation1).replace("R_exampleSite1", "R_exampleOther1"), [setup], "identity", INPUTS],
       [serializeInstalledLedger(renamed as unknown as InstalledLedger), [plainSet], "renamed", plainInputs],
+      [serializeInstalledLedger(renamedCaseOnly as unknown as InstalledLedger), [plainSet], "renamed", plainInputs],
       [serializeInstalledLedger(generation1), [], "ledger-chain", INPUTS],
       [serializeInstalledLedger(forged as unknown as InstalledLedger), [setup], "ledger-foreign-row", INPUTS],
     ] as const) {
-      const { bundle, changeSets } = run({ ...inputs, repositories: [{ ...SITE, ledger }, DOCS], heldChangeSets: held });
+      const { bundle, changeSets } = run({ ...inputs, repositories: [{ ...SITE, ledger: Buffer.from(ledger, "utf8") }, DOCS], heldChangeSets: held });
       expect(changeSets.map((set) => set.repository.id), reason).toEqual([DOCS.id]);
       expect(bundle.repositories[0], reason).toEqual({ id: SITE.id, verdict: "indeterminate", reason, checks: [] });
       expect(bundle.bundleDigest, reason).toBe(bundleDigest(planDigest(inputs.plan), [{ id: DOCS.id, changeSetDigest: changeSets[0]!.changeSetDigest }]));
@@ -719,6 +727,106 @@ describe("the installed-state ledger", () => {
     }
     // The same corpus ledger, with the set that wrote it held, is trusted.
     expect(setFor(run(withSite(overCorpusLedger(generation1), [setup])).changeSets, SITE.id).ledger).toEqual({ generation: 1 });
+  });
+});
+
+/*
+ * Fix 1 (issue #1545): two observed files at the same lowercase path -- case
+ * variants, or a repeated entry -- collapse to one map key and have no
+ * single base digest between them. Fix 2 (issue #1545): the satisfied-in-base
+ * shortcut must not bypass the keys-row compare-and-swap.
+ */
+describe("case-variant base files never collapse into one compare-and-swap input", () => {
+  const first = setFor(run().changeSets, SITE.id);
+  const second = merged(SITE, first);
+  const skillPath = ".agents/skills/clossys-writer/SKILL.md";
+  const siblingPath = ".agents/skills/clossys-writer/skill.md";
+
+  it("refuses a client-edited file whose case-variant sibling still matches the ledger's row, whichever order they are observed in", () => {
+    const h = wholeFiles(first).find((file) => file.path === skillPath)!.after as string;
+    const clientBytes = sha("the client's own writer skill");
+    const withoutOriginal = second.files.filter((file) => file.path !== skillPath);
+    for (const files of [
+      [...withoutOriginal, { path: skillPath, sha256: clientBytes }, { path: siblingPath, sha256: h }],
+      [...withoutOriginal, { path: siblingPath, sha256: h }, { path: skillPath, sha256: clientBytes }],
+    ]) {
+      const result = run(withSite({ ...second, files }, [first]));
+      const site = setFor(result.changeSets, SITE.id);
+      expect(validateRepositoryChangeSet(site)).toEqual({ valid: true });
+      expect(site.refused).toContainEqual({ path: skillPath, reason: "client-edited", item: "skills" });
+      expect(site.files.map((file) => file.path)).not.toContain(skillPath);
+      // Refusing the skill also leaves its two discovery-link rows unnamed (the writer's links are never attempted once its
+      // own skill write is refused), so V8 also reports removal-unbuilt; that cascade is unrelated to this fix.
+      expect(siteEntry(result)).toMatchObject({
+        verdict: "indeterminate",
+        checks: [
+          { check: "V6", verdict: "satisfied" },
+          { check: "V8", verdict: "indeterminate", rule: "client-edited" },
+          { check: "V8", verdict: "indeterminate", rule: "removal-unbuilt" },
+        ],
+      });
+    }
+  });
+
+  it("refuses a path with two case variants and no ledger row as unowned-existing, whichever order they are observed in", () => {
+    for (const files of [
+      [...SITE.files, { path: "clossys/brief.json", sha256: sha("a") }, { path: "Clossys/Brief.json", sha256: sha("b") }],
+      [...SITE.files, { path: "Clossys/Brief.json", sha256: sha("b") }, { path: "clossys/brief.json", sha256: sha("a") }],
+    ]) {
+      const site = setFor(run(withRepository({ files })).changeSets, SITE.id);
+      expect(site.refused).toContainEqual({ path: "clossys/brief.json", reason: "unowned-existing", item: "brief" });
+      expect(site.files.map((file) => file.path)).not.toContain("clossys/brief.json");
+    }
+    // The single-case-variant test above (a file that differs only in case from the desired path, but is not itself
+    // duplicated) is unaffected by this fix and stays as its own test, under "canonical output".
+  });
+
+  it("skips the whole repository as case-variant-path when the lockfile's or the ledger's own path has a case variant", () => {
+    for (const files of [
+      [...SITE.files, { path: "Package-Lock.json", sha256: sha("other lock") }],
+      [...SITE.files, { path: "clossys/.state/installed.json", sha256: sha("ledger a") }, { path: "Clossys/.State/Installed.json", sha256: sha("ledger b") }],
+    ]) {
+      const { bundle, changeSets } = run(withRepository({ files }));
+      expect(changeSets.map((set) => set.repository.id)).toEqual([DOCS.id]);
+      expect(bundle.repositories[0]).toEqual({ id: SITE.id, verdict: "indeterminate", reason: "case-variant-path", checks: [] });
+      expect(bundle.bundleDigest).toBe(bundleDigest(planDigest(PLAN), [{ id: DOCS.id, changeSetDigest: changeSets[0]!.changeSetDigest }]));
+      expect(validateApplyBundle(bundle)).toEqual({ valid: true });
+    }
+  });
+
+  it("refuses a keys-row client edit even when the base already holds the plan's desired version, and never throws rendering the ledger over it", () => {
+    // The concrete failing input from the fix brief: generation 1 is computed from the corpus plan, merged, and the ledger
+    // now has a keys row for writer at "0.6.0". The client hand-bumps package.json and the lockfile to the plan's current
+    // writer version, "0.7.0" -- the same version the plan wants -- without the flow's own key write.
+    const older = clone(PLAN) as unknown as { packages: { planItem: string; version: string }[] };
+    older.packages.find((act) => act.planItem === "example-owner/site:@example/writer")!.version = "0.6.0";
+    const olderPlan = older as unknown as AdvisorPlan;
+    const firstOlder = setFor(run({ ...INPUTS, plan: olderPlan, authorization: { ...INPUTS.authorization!, planDigest: planDigest(olderPlan) } }).changeSets, SITE.id);
+    const mergedOlder = merged(SITE, firstOlder, null, olderPlan);
+    const writerAct = PLAN.packages!.find((act) => act.planItem === "example-owner/site:@example/writer")!;
+    const handBumped = {
+      ...mergedOlder,
+      manifestEntries: mergedOlder.manifestEntries.map((entry) => (entry.name === "@example/writer" ? { ...entry, value: "0.7.0" } : entry)),
+      lockedPackages: [...mergedOlder.lockedPackages.filter((locked) => locked.name !== "@example/writer"), { name: "@example/writer", version: "0.7.0", integrity: writerAct.integrity }],
+    };
+    const result = run(withSite(handBumped, [firstOlder]));
+    const site = setFor(result.changeSets, SITE.id);
+    const writerItem = site.items.find((item) => "planItem" in item && item.planItem === "example-owner/site:@example/writer");
+    expect(writerItem).toMatchObject({ satisfiedInBase: false });
+    expect(site.refused).toContainEqual({ file: "package.json", pointer: "/devDependencies/@example~1writer", reason: "client-edited", item: "example-owner/site:@example/writer" });
+    expect(site.keys.map((key) => key.item)).not.toContain("example-owner/site:@example/writer");
+    expect(siteEntry(result)).toMatchObject({ verdict: "indeterminate" });
+    expect(siteEntry(result).checks).toContainEqual({ check: "V8", verdict: "indeterminate", rule: "client-edited" });
+
+    // Property: renderInstalledLedger() never throws over any change set the ledger-related planner tests compute here,
+    // including generation 0 -> 1 -> 2, the case-variant cases above, this scenario, and a plain satisfied-in-base with no row.
+    const trustedPrevious = readInstalledLedger(Buffer.from(renderInstalledLedger(null, firstOlder, { kind: "approved", subjectDigest: firstOlder.bundle }, planPackages(olderPlan, SITE.id)), "utf8"))!;
+    expect(() => renderInstalledLedger(trustedPrevious, site, { kind: "approved", subjectDigest: site.bundle }, planPackages(PLAN, SITE.id))).not.toThrow();
+
+    const plainSatisfiedSet = setFor(run(withSite(second, [first])).changeSets, SITE.id);
+    const plainPrevious = readInstalledLedger(Buffer.from(renderInstalledLedger(null, first, { kind: "approved", subjectDigest: first.bundle }, planPackages(PLAN, SITE.id)), "utf8"))!;
+    expect(() => renderInstalledLedger(plainPrevious, plainSatisfiedSet, { kind: "approved", subjectDigest: plainSatisfiedSet.bundle }, planPackages(PLAN, SITE.id))).not.toThrow();
+    expect(() => renderInstalledLedger(null, first, { kind: "approved", subjectDigest: first.bundle }, planPackages(PLAN, SITE.id))).not.toThrow();
   });
 });
 
@@ -786,7 +894,7 @@ describe("setup templates in an apply set", () => {
       const act = PLAN.packages!.find((entry) => entry.planItem === deferral.planItem)!;
       return { planItem: act.planItem, act: act.act, name: act.name, version: act.version, integrity: act.integrity, placement: act.placement };
     });
-    const ledger = readInstalledLedger(renderInstalledLedger(null, held, { kind: "approved", subjectDigest: held.bundle }, [...setupPackages, ...deferred]))!;
+    const ledger = readInstalledLedger(Buffer.from(renderInstalledLedger(null, held, { kind: "approved", subjectDigest: held.bundle }, [...setupPackages, ...deferred]), "utf8"))!;
     expect(ledger.files.map((row) => row.path).filter((path) => path.includes("adoption"))).toEqual([
       ".github/scripts/clossys-collect-adoption-snapshot.mjs",
       ".github/workflows/clossys-adoption-evidence.yml",
