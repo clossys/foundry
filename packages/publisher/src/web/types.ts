@@ -339,6 +339,17 @@ export interface DefineWebTemplateOptions {
    * Required — `build` is not accepted on consumer templates (issue #1103).
    */
   blocks: WebTemplateBlockSpec[];
+  /**
+   * Screen-reader-only title for a `node-chapter` block with no title slot.
+   * @default "Widget"
+   */
+  nodeChapterFallbackTitle?: string;
+  /**
+   * Screen-reader-only label for each item in a `stat-grid`. Called with the
+   * 1-based stat index shown in the default English.
+   * @default `(index) => \`Stat ${index}\``
+   */
+  statGridLabel?: (index: number) => string;
 }
 
 /**

@@ -169,7 +169,7 @@ export function defineWebTemplate(options: DefineWebTemplateOptions): WebTemplat
     fail(`options must be an object, got ${JSON.stringify(options)}.`);
   }
 
-  const { name, flow, slotKinds, repeatingSlots, blocks } = options;
+  const { name, flow, slotKinds, repeatingSlots, blocks, nodeChapterFallbackTitle, statGridLabel } = options;
 
   if ("build" in options && (options as { build?: unknown }).build !== undefined) {
     fail(`build is not accepted on consumer templates — declare a non-empty "blocks" array of Designer block kinds instead.`);
@@ -283,7 +283,10 @@ export function defineWebTemplate(options: DefineWebTemplateOptions): WebTemplat
   const frozenSlotKinds =
     slotKinds === undefined ? undefined : Object.freeze(Object.fromEntries(Object.entries(slotKinds).map(([key, kinds]) => [key, Object.freeze([...kinds])])));
 
-  const build = compileConsumerTemplateBlocks(frozenBlocks);
+  const build = compileConsumerTemplateBlocks(frozenBlocks, {
+    ...(nodeChapterFallbackTitle === undefined ? {} : { nodeChapterFallbackTitle }),
+    ...(statGridLabel === undefined ? {} : { statGridLabel }),
+  });
 
   return Object.freeze({
     name,
