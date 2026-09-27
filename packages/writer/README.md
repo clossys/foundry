@@ -296,8 +296,9 @@ either can fail without the other noticing:
   `pendingOwnerReview` property or member assignment) — and
   `"copy-read-without-resolver"` — the code imports the registry file and
   reads its content some way other than passing it whole to
-  `createCopyResolver`/`resolveCopyRef`/`parseCopyRegistry`/
-  `validateCopyRegistryShape` — are both errors. An unresolvable registry
+  `createCopyResolver`/`resolveCopyRef`/`validateCopyRegistryShape`, or
+  calling `parseCopyRegistry` only when its return value is passed to
+  `createCopyResolver` or `resolveCopyRef` — are both errors. An unresolvable registry
   load (a dynamic `import()`/`require()`, an unbound `require`, a
   re-export) or a string that merely names the registry file is reported as
   `unchecked`, not a finding: an incomplete picture, never assumed clean.

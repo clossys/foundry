@@ -245,6 +245,51 @@ describe("copy-read-without-resolver", () => {
     const { gate } = scan({ "src/copy.ts": 'import registry from "../copy/registry.json";\nexport const n = 1;\n' });
     expect(gate.verdict).toBe("satisfied");
   });
+
+  it("allows parseCopyRegistry when its result reaches createCopyResolver", () => {
+    const { gate } = scan({
+      "src/copy.ts": [
+        'import { createCopyResolver, parseCopyRegistry } from "@clossys/writer";',
+        'import registry from "../copy/registry.json";',
+        "export const nested = createCopyResolver(parseCopyRegistry(registry));",
+        "const reg = parseCopyRegistry(registry);",
+        "export const bound = createCopyResolver(reg);",
+      ].join("\n"),
+    });
+    expect(gate.findings).toEqual([]);
+    expect(gate.verdict).toBe("satisfied");
+  });
+
+  it("flags parseCopyRegistry results read without the resolver", () => {
+    const { gate } = scan({
+      "src/copy.ts": [
+        'import { parseCopyRegistry } from "@clossys/writer";',
+        'import registry from "../copy/registry.json";',
+        "const reg = parseCopyRegistry(registry);",
+        "export const a = reg.entries;",
+        "export const b = parseCopyRegistry(registry).entries;",
+      ].join("\n"),
+    });
+    expect(gate.verdict).toBe("violated");
+    expect(gate.findings.map((f) => [f.rule, f.line])).toEqual([
+      ["copy-read-without-resolver", 4],
+      ["copy-read-without-resolver", 5],
+    ]);
+  });
+
+  it("flags a callee name that merely contains an allowed resolver name", () => {
+    const { gate } = scan({
+      "src/copy.ts": [
+        'import { createCopyResolver } from "@clossys/writer";',
+        'import registry from "../copy/registry.json";',
+        "export const a = myparseCopyRegistry(registry).entries;",
+        "export const b = x.createCopyResolver(registry);",
+      ].join("\n"),
+    });
+    expect(gate.verdict).toBe("violated");
+    expect(gate.findings.every((f) => f.rule === "copy-read-without-resolver")).toBe(true);
+    expect(gate.findings.map((f) => f.line)).toEqual([3, 4]);
+  });
 });
 
 describe("scope and masking", () => {

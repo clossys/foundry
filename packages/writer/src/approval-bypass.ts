@@ -12,7 +12,9 @@
  * 2. `copy-read-without-resolver` — the code imports the registry file and
  *    reads its content directly (`registry.entries.map(...)`, a spread, any
  *    use other than the first argument of `createCopyResolver`,
- *    `resolveCopyRef`, `parseCopyRegistry` or `validateCopyRegistryShape`).
+ *    `resolveCopyRef`, or `validateCopyRegistryShape`, or of
+ *    `parseCopyRegistry` only when its return value is passed to
+ *    `createCopyResolver` or `resolveCopyRef`).
  *    A raw map built from the registry skips every lifecycle, staleness and
  *    delegate check the resolver performs.
  *
@@ -208,7 +210,9 @@ export function scanApprovalBypass(root: string, options: ApprovalBypassScanOpti
 // ------------------------------------------------------- code-text helpers
 
 const IDENT = "[A-Za-z_$][\\w$]*";
-const RESOLVER_CALL_RE = /(?:createCopyResolver|resolveCopyRef|parseCopyRegistry|validateCopyRegistryShape)\s*\(\s*$/;
+const REGISTRY_WHOLE_PASS_RE = /(?<![\w$.])(?:createCopyResolver|resolveCopyRef|parseCopyRegistry|validateCopyRegistryShape)\s*\(\s*$/;
+const PARSED_REGISTRY_PASS_RE = /(?<![\w$.])(?:createCopyResolver|resolveCopyRef)\s*\(\s*$/;
+const PARSE_COPY_REG_CALL_RE = /(?<![\w$.])parseCopyRegistry\s*\(\s*$/;
 const APPROVAL_KEYS = new Set(["approvedBy", "pendingOwnerReview"]);
 /** A plain or compound assignment operator, never a comparison or an arrow. */
 const ASSIGN_OP_RE = /^\s*(?:\?\?|\|\||&&)?=(?![=>])/;
@@ -259,6 +263,72 @@ function matchingClose(code: string, open: number): number {
     }
   }
   return -1;
+}
+
+/** Innermost `(` call whose argument list contains `idx`. `code` is masked. */
+function callContaining(code: string, idx: number): { open: number; close: number; callee: string } | undefined {
+  let depth = 0;
+  let innerOpen = -1;
+  for (let k = idx; k >= 0; k--) {
+    const c = code[k];
+    if (c === ")") depth++;
+    else if (c === "(") {
+      if (depth === 0) {
+        innerOpen = k;
+        break;
+      }
+      depth--;
+    }
+  }
+  if (innerOpen === -1) return undefined;
+  const close = matchingClose(code, innerOpen);
+  if (close === -1 || idx > close) return undefined;
+  const before = code.slice(Math.max(0, innerOpen - 40), innerOpen);
+  const m = new RegExp(`(?<![\\w$.])(${IDENT})\\s*$`).exec(before);
+  if (!m) return undefined;
+  return { open: innerOpen, close, callee: m[1]! };
+}
+
+function isResolverCallee(name: string): boolean {
+  return name === "createCopyResolver" || name === "resolveCopyRef";
+}
+
+/**
+ * When a registry import binding is the argument to `parseCopyRegistry`, the
+ * parse result must reach `createCopyResolver`/`resolveCopyRef` — not be
+ * read inline (`parseCopyRegistry(registry).entries`) or passed elsewhere.
+ */
+function parseCopyRegistryRegistryArgAllowed(code: string, argIdx: number): boolean {
+  const call = callContaining(code, argIdx);
+  if (!call || call.callee !== "parseCopyRegistry") return true;
+  const afterClose = nextNonWs(code, call.close + 1);
+  const next = code[afterClose];
+  if (next === "." || next === "[") return false;
+  if (next === "," || next === ")") {
+    const outer = callContaining(code, call.open - 1);
+    return outer !== undefined && isResolverCallee(outer.callee);
+  }
+  if (next === ";" || next === undefined) {
+    const calleeStart = code.lastIndexOf("parseCopyRegistry", call.open);
+    if (calleeStart === -1) return false;
+    const preDecl = code.slice(Math.max(0, calleeStart - 80), calleeStart);
+    return new RegExp(`(?<![\\w$.])(?:const|let|var)\\s+${IDENT}\\s*=\\s*$`).test(preDecl);
+  }
+  return false;
+}
+
+function registryBindingUseAllowed(
+  code: string,
+  bindIdx: number,
+  bindNameLen: number,
+  fromParsedRegistry: boolean,
+): boolean {
+  const beforeSlice = code.slice(Math.max(0, bindIdx - 80), bindIdx);
+  const afterName = code.slice(bindIdx + bindNameLen, bindIdx + bindNameLen + 20);
+  if (!/^\s*[,)]/.test(afterName)) return false;
+  if (fromParsedRegistry) return PARSED_REGISTRY_PASS_RE.test(beforeSlice);
+  if (PARSE_COPY_REG_CALL_RE.test(beforeSlice)) return parseCopyRegistryRegistryArgAllowed(code, bindIdx);
+  return REGISTRY_WHOLE_PASS_RE.test(beforeSlice);
 }
 
 /**
@@ -424,7 +494,7 @@ export function extractApprovalBypass(
   };
 
   // ---- 2. registry loads: bindings to trace, and loads this gate cannot trace
-  const bindings: { name: string; declStart: number; declEnd: number }[] = [];
+  const bindings: { name: string; declStart: number; declEnd: number; fromParsedRegistry: boolean }[] = [];
   for (const spec of specifiers) {
     if (!isRegistry(spec.lit.text)) continue;
     const at = spec.lit.start;
@@ -441,9 +511,9 @@ export function extractApprovalBypass(
         if (/^type\s+(?!,)/.test(clause) && clause !== "type") break; // type-only import: no runtime data
         const decl = { declStart: spec.stmtStart, declEnd: spec.lit.end };
         const def = new RegExp(`^(${IDENT})\\s*(?:,|$)`).exec(clause);
-        if (def) bindings.push({ name: def[1]!, ...decl });
+        if (def) bindings.push({ name: def[1]!, ...decl, fromParsedRegistry: false });
         const ns = new RegExp(`\\*\\s*as\\s+(${IDENT})`).exec(clause);
-        if (ns) bindings.push({ name: ns[1]!, ...decl });
+        if (ns) bindings.push({ name: ns[1]!, ...decl, fromParsedRegistry: false });
         const named = /\{([^}]*)\}/.exec(clause);
         if (named) {
           for (const part of named[1]!.split(",")) {
@@ -454,7 +524,7 @@ export function extractApprovalBypass(
             const local = m[3] ?? imported;
             if (local === undefined) continue;
             if (imported === "default") {
-              bindings.push({ name: local, ...decl });
+              bindings.push({ name: local, ...decl, fromParsedRegistry: false });
             } else {
               finding(
                 "copy-read-without-resolver",
@@ -468,7 +538,7 @@ export function extractApprovalBypass(
       }
       case "import-equals": {
         const m = new RegExp(`import\\s+(?:type\\s+)?(${IDENT})\\s*=`).exec(code.slice(spec.stmtStart, at));
-        if (m) bindings.push({ name: m[1]!, declStart: spec.stmtStart, declEnd: spec.lit.end });
+        if (m) bindings.push({ name: m[1]!, declStart: spec.stmtStart, declEnd: spec.lit.end, fromParsedRegistry: false });
         break;
       }
       case "require": {
@@ -478,7 +548,12 @@ export function extractApprovalBypass(
         // Bound only when the call is the whole initializer: `const x = require("...")` followed by `;`, `,`, `}`, a line break or EOF.
         const bound = decl !== null && /^[ \t]*(?:[;,}\r\n]|$)/.test(code.slice(close + 1));
         if (decl !== null && bound) {
-          bindings.push({ name: decl[1]!, declStart: Math.max(0, spec.stmtStart - 200) + decl.index, declEnd: close + 1 });
+          bindings.push({
+            name: decl[1]!,
+            declStart: Math.max(0, spec.stmtStart - 200) + decl.index,
+            declEnd: close + 1,
+            fromParsedRegistry: false,
+          });
         } else {
           uncheckedAt("registry-require-unbound", at, `require of registry ${spec.lit.raw} is not bound to a plain identifier, so its use cannot be traced`);
         }
@@ -488,6 +563,15 @@ export function extractApprovalBypass(
         uncheckedAt("registry-dynamic-import", at, `dynamic import of registry ${spec.lit.raw} — the loaded module's use is not traced by this gate`);
         break;
     }
+  }
+
+  for (const m of code.matchAll(new RegExp(`(?<![\\w$.])(?:const|let|var)\\s+(${IDENT})\\s*=\\s*(?<![\\w$.])parseCopyRegistry\\s*\\(`, "g"))) {
+    const name = m[1]!;
+    const declStart = m.index!;
+    const openParen = code.indexOf("(", m.index + m[0].length - 1);
+    const close = matchingClose(code, openParen);
+    if (close === -1) continue;
+    bindings.push({ name, declStart, declEnd: close + 1, fromParsedRegistry: true });
   }
 
   // ---- 3. import(...) / require(...) calls whose argument is not a plain literal
@@ -514,7 +598,7 @@ export function extractApprovalBypass(
       if (/(?<![\w$.])typeof\s+$/.test(code.slice(Math.max(0, i - 20), i))) continue; // a type query reads no content
       const afterName = code.slice(i + b.name.length, i + b.name.length + 20);
       if (/^\s*:(?!:)/.test(afterName) && isObjectKeyPosition(code, i)) continue; // `{ name: ... }` — a key, not the binding
-      if (RESOLVER_CALL_RE.test(code.slice(Math.max(0, i - 80), i)) && /^\s*[,)]/.test(afterName)) continue;
+      if (registryBindingUseAllowed(code, i, b.name.length, b.fromParsedRegistry)) continue;
       finding(
         "copy-read-without-resolver",
         i,
