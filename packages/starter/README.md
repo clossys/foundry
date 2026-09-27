@@ -169,23 +169,30 @@ into `.starter-head`. It reads the head's copy of the request (at the same
 relative path), `package.json`, and `package-lock.json` as bounded data. It
 also checks the checkout's `.git/HEAD` against the trusted head commit.
 
-Starter refuses any lockfile entry that is not a single-SHA-512 tarball from
-`https://registry.npmjs.org/`. It stages only the manifest's dependency fields
-and the lockfile into a fresh directory. It runs `npm ci --ignore-scripts`
-there under a literal environment with no token, no npmrc, and a fixed
-registry. It then checks the head request's exact Starter, Advisor, and
-target identities from installed manifests and the lockfile. It never
-executes an installed head package. The command takes four positional paths
-and an optional `--report`, and no registry, command, or package-manager
-option.
+Starter refuses any manifest dependency spec, `overrides` entry, or lockfile
+entry that is not a registry spec: a semver version or range, a dist-tag, or
+an `npm:` alias to one (git, URL, file, link, workspace, portal, and path
+specs are all refused, in `dependencies`, `overrides` at any depth, and every
+lock entry's own dependency maps). Every lockfile entry must also be a
+single-SHA-512 tarball from `https://registry.npmjs.org/`, named for its own
+entry's name and version. It stages only the manifest's dependency fields and
+the lockfile into a fresh directory. It runs `npm ci --ignore-scripts` there
+under a literal environment with no token, no npmrc, and a fixed registry.
+Once that install exits `0`, it also checks npm's own hidden lockfile,
+`node_modules/.package-lock.json`, against the head's `package-lock.json`; an
+unreadable hidden lockfile keeps the proof indeterminate, never satisfied. It
+then checks the head request's exact Starter, Advisor, and target identities
+from installed manifests and the lockfile. It never executes an installed
+head package. The command takes four positional paths and an optional
+`--report`, and no registry, command, or package-manager option.
 
 The report is a separate `HeadInstallReport` (`kind: "head-install"`):
 
 | Exit | State | Meaning |
 | --- | --- | --- |
 | `0` | `satisfied` | The head's own install completed and holds the head request's exact identities (`proved`). |
-| `1` | `violated` | The head lockfile names a forbidden source, or the head request pins an identity its own install does not hold. |
-| `2` | `indeterminate` | A head file, the head commit, the base Starter's own identity, or the staging directory could not be established; the step carries a credential; the request names pnpm; or `npm ci` failed or timed out. |
+| `1` | `violated` | The head manifest or lockfile names a forbidden source, the post-install hidden lockfile disagrees with `package-lock.json`, or the head request pins an identity its own install does not hold. |
+| `2` | `indeterminate` | A head file, the head commit, the base Starter's own identity, the staging directory, or the post-install hidden lockfile could not be established; the step carries a credential; the request names pnpm; or `npm ci` failed or timed out. |
 
 A `0` proves the install only. The head's Advisor readiness and target
 result are still proved by `decide` one merge later. It does not cover
@@ -223,14 +230,19 @@ tests is not that evidence.
 `@clossys/starter/npm` exports `NPM_CI_IGNORE_SCRIPTS` and
 `validateNpmIdentity()`: the fixed `npm ci --ignore-scripts` adapter and exact
 npm manifest/lock identity checker. It also exports the head-install data
-checks: `PUBLIC_NPM_REGISTRY`, `validateNpmLockfileSources()` (returns
-`NpmHeadSourceFindings`), and `stagedNpmManifest()`. `@clossys/starter/pnpm`
-exports `PNPM_INSTALL_FROZEN_IGNORE_SCRIPTS` and `validatePnpmIdentity()` for
-the fixed `pnpm install --frozen-lockfile --ignore-scripts` path. Neither
-install adapter accepts a command, a package-manager path, or caller options.
-`validateNpmLockfileSources()` is a pure validator. Its optional registry
-argument defaults to the public registry, and `prove-head` never overrides
-it.
+checks: `PUBLIC_NPM_REGISTRY`, `validateNpmLockfileSources()` and
+`validateNpmManifestSources()` (both return `NpmHeadSourceFindings`),
+`stagedNpmManifest()`, `isRegistrySpec()` (the registry-spec grammar a
+dependency spec, an `overrides` value, or an `npm:` alias target must match),
+and `compareHeadHiddenLockfile()` (returns a `HiddenLockfileComparison`) for
+checking npm's post-install hidden lockfile against the head's
+`package-lock.json`. `@clossys/starter/pnpm` exports
+`PNPM_INSTALL_FROZEN_IGNORE_SCRIPTS` and `validatePnpmIdentity()` for the
+fixed `pnpm install --frozen-lockfile --ignore-scripts` path. Neither install
+adapter accepts a command, a package-manager path, or caller options.
+`validateNpmLockfileSources()` and `validateNpmManifestSources()` are pure
+validators. `validateNpmLockfileSources()`'s optional registry argument
+defaults to the public registry, and `prove-head` never overrides it.
 
 ## Requirements
 

@@ -40,6 +40,18 @@ public registry, and that the result holds the head request's exact Starter,
 Advisor, and target identities. It does not run the head's Advisor or target,
 so their behaviour still lags one merge.
 
+Because `npm ci` re-resolves any lockfile edge a manifest spec disagrees with,
+proving the install checks two things, not one. Before staging anything, it
+refuses a non-registry dependency spec anywhere it could redirect an install:
+in the manifest's `dependencies`, `devDependencies`, `optionalDependencies`,
+and `peerDependencies`, in `overrides` at every depth, and in every lock
+entry's own dependency maps (and the root entry's `devDependencies`). After a
+real `npm ci` exits `0`, it also reads npm's own hidden lockfile,
+`node_modules/.package-lock.json`, and checks every entry there against the
+head's `package-lock.json`; a mismatch or an extra entry is a violation, and
+an unreadable hidden lockfile keeps the proof indeterminate rather than
+satisfied.
+
 ## Repository files
 
 Keep the request in the protected base, for example at
@@ -369,11 +381,24 @@ Everything the pull request can influence is handled like this:
 - **`package.json`.** Starter stages only its dependency fields. `scripts`,
   `workspaces`, `packageManager`, `config`, and every other field are dropped.
   A manifest that declares workspaces is not proved.
+- **`package.json` dependency specs and `overrides`.** Every value in
+  `dependencies`, `devDependencies`, `optionalDependencies`, and
+  `peerDependencies`, and every `overrides` entry at any depth, must be a
+  registry spec (a semver version or range, a dist-tag, or an `npm:` alias to
+  one) or, inside `overrides`, a `$name` reference. Git, URL, file, link,
+  workspace, portal, and path specs are refused before anything installs,
+  whatever section or depth they appear in.
 - **`package-lock.json`.** It must be lockfile version 2 or 3. Every installed
-  entry must be a `https://registry.npmjs.org/` tarball with a single SHA-512
-  integrity. Git, file, link, directory, other-host, and SHA-1-only entries
-  are refused before anything installs. npm then checks every tarball against
-  that integrity.
+  entry must be a `https://registry.npmjs.org/` tarball, named for its own
+  entry's name and version, with a single SHA-512 integrity. Git, file, link,
+  directory, other-host, mis-named, and SHA-1-only entries are refused before
+  anything installs. Every entry's own dependency maps (and the root entry's
+  `devDependencies`) are held to the same registry-spec grammar. npm then
+  checks every tarball against that integrity. After the install exits `0`,
+  Starter also reads npm's own hidden lockfile,
+  `node_modules/.package-lock.json`, and refuses any entry there that
+  disagrees with `package-lock.json`'s version, resolved source, or
+  integrity.
 - **`.npmrc`, `.pnpmfile.cjs`, and other repository files.** The sparse
   checkout does not fetch them, and Starter stages only the two files above
   into a fresh directory.
@@ -390,13 +415,15 @@ The head-install report is separate from the decision report
 - `0`: the head's own install completed, and it holds exactly the Starter,
   Advisor, and target the head request pins. `proved` lists them.
   `changedFromBase` lists the pins that differ from the protected base.
-- `1`: a known violation. Either the lockfile names a source this proof
-  forbids, or the head request pins an identity its own lockfile or install
-  does not hold.
+- `1`: a known violation. Either the manifest or lockfile names a source this
+  proof forbids, the post-install hidden lockfile disagrees with
+  `package-lock.json`, or the head request pins an identity its own lockfile
+  or install does not hold.
 - `2`: the proof could not be established. Causes include an unreadable or
   foreign head file, a checkout not at the trusted head commit, workspaces,
-  pnpm, a credential in the step, a non-empty staging directory, and a failed
-  or timed-out `npm ci`.
+  pnpm, a credential in the step, a non-empty staging directory, an
+  unreadable post-install hidden lockfile, and a failed or timed-out
+  `npm ci`.
 
 It does not cover:
 
