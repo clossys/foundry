@@ -19,12 +19,13 @@ describe("Vercel configuration renderer", () => {
     expect(artifact).toEqual({
       provider: "vercel",
       path: "vercel.json",
-      content: "{\n  \"$schema\": \"https://openapi.vercel.sh/vercel.json\",\n  \"buildCommand\": \"pnpm build\",\n  \"outputDirectory\": \"dist\",\n  \"rewrites\": [\n    {\n      \"source\": \"/*\",\n      \"destination\": \"/index.html\"\n    }\n  ]\n}\n",
+      content: "{\n  \"$schema\": \"https://openapi.vercel.sh/vercel.json\",\n  \"installCommand\": \"builder hosting install --surface web\",\n  \"ignoreCommand\": \"builder hosting should-build --surface web\",\n  \"buildCommand\": \"pnpm build\",\n  \"outputDirectory\": \"dist\",\n  \"rewrites\": [\n    {\n      \"source\": \"/*\",\n      \"destination\": \"/index.html\"\n    }\n  ]\n}\n",
       requiredEnvironmentVariables: ["PUBLIC_API_URL"],
       repositorySetup: [
         "Review the generated vercel.json and write it at the repository root.",
         "Import the repository into one Vercel project with its Root Directory set to the repository root.",
         "Set these names in the Vercel project settings or CI without committing values: PUBLIC_API_URL.",
+        "The installCommand and ignoreCommand call builder hosting install and builder hosting should-build for this surface.",
         "Keep deployment triggering in the repository and provider integration; this artifact does not deploy or change provider settings.",
       ],
     });

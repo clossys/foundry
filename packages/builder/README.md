@@ -951,6 +951,86 @@ origin, so an exact match is never asserted for one.
 | `WebSurfaceLiveVerificationReport` / `WebSurfaceVerificationPorts` | types | The live-check aggregate and the ports it takes. |
 
 
+### Hosting commands and local dev ports (#1526, #1529)
+
+A surface's hosting config calls two package commands. The Vercel adapter
+names them:
+
+```ts
+import { vercelHostingCommands } from "@clossys/builder/deployment/vercel";
+
+vercelHostingCommands("web");
+// installCommand: builder hosting install --surface web
+// ignoreCommand: builder hosting should-build --surface web
+```
+
+`renderVercelConfiguration` writes those commands into `vercel.json` as
+`installCommand` and `ignoreCommand`.
+
+`builder hosting install --surface <id>` reads `builder.hosting.json`. For
+each private scope it checks that the repository route file sends that scope
+to the declared registry, then runs `npm ci`. A rejected credential, a
+missing credential, and a mis-routed scope are different errors, and each
+names the scope. The command's output does not include the credential. The
+credential is written to a user-level config outside the repository and that
+file is removed when the command exits. The install's child environment does
+not receive the credential value or `VERCEL_TOKEN`.
+
+The build environment is checked by name. A declared name is `present` or
+`absent`. `VERCEL_TOKEN` is not placed in that build environment.
+
+```json
+{
+  "schemaVersion": "1",
+  "surfaces": [{
+    "id": "web",
+    "inputs": ["apps/web"],
+    "privateScopes": [{
+      "scope": "@example",
+      "registry": "https://npm.example.test",
+      "credentialVariable": "EXAMPLE_REGISTRY_TOKEN"
+    }],
+    "buildEnvironment": ["EMAIL_PROVIDER_KEY"]
+  }]
+}
+```
+
+The route file line for that scope is
+`@example:registry=https://npm.example.test`.
+
+`builder hosting should-build --surface <id>` decides from the surface's
+declared inputs plus the files the hosting commands reference, including the
+install command's own file. When that file is the only change, the command
+prints `changed: src/hosting/install.ts` and exits 1. Exit 0 means no
+relevant input changed. Exit 1 is the exit Vercel's ignore command treats as
+"continue the build."
+
+A deployment surface record can declare `localPort`. The dev script is
+checked against that port: it must pass the same port with `--port` or `-p`.
+
+```ts
+import { defineDeploymentManifest, validateDeploymentManifest } from "@clossys/builder/deployment";
+
+const manifest = defineDeploymentManifest({
+  schemaVersion: "1",
+  surfaces: [{
+    id: "web",
+    provider: "vercel",
+    environment: "development",
+    localPort: 4321,
+    devScript: "next dev --port 4321",
+    health: { kind: "http", url: "https://example.test/health" },
+  }],
+});
+
+validateDeploymentManifest(manifest);
+```
+
+```bash
+builder hosting install --surface web
+builder hosting should-build --surface web
+```
+
 ## Toolchain
 
 The runtime pin, the package-manager pin, and the build order, expressed and

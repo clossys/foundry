@@ -1,7 +1,8 @@
+import { checkDeploymentSurfaceDevPort } from "./dev-port.js";
 import { DEPLOYMENT_ENVIRONMENTS, type DeploymentFinding, type DeploymentManifestDefinition } from "./types.js";
 
 const ID = /^[a-z][a-z0-9-]{0,63}$/;
-const SURFACE_KEYS = new Set(["id", "provider", "environment", "health", "label"]);
+const SURFACE_KEYS = new Set(["id", "provider", "environment", "health", "label", "localPort", "devScript"]);
 const HEALTH_KEYS = new Set(["kind", "url", "expectedStatus"]);
 const MANIFEST_KEYS = new Set(["schemaVersion", "surfaces"]);
 
@@ -68,6 +69,7 @@ function validate(value: unknown, findings: DeploymentFinding[]): void {
       }
     }
     if (surface.health.expectedStatus !== undefined && (typeof surface.health.expectedStatus !== "number" || !Number.isInteger(surface.health.expectedStatus) || surface.health.expectedStatus < 100 || surface.health.expectedStatus > 599)) record(findings, "health-status", "Expected status must be an integer from 100 through 599.", `${path}.health.expectedStatus`);
+    for (const finding of checkDeploymentSurfaceDevPort(surface, path)) findings.push(finding);
   }
 }
 
