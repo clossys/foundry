@@ -161,6 +161,11 @@ function ShellHeader({ children, className, style, ground = "base", ...rest }: S
 
 export interface ShellSideNavProps extends HTMLAttributes<HTMLElement> {
   children?: ReactNode;
+  /**
+   * Accessible name for the primary navigation landmark.
+   * @default "Primary"
+   */
+  "aria-label"?: string;
 }
 
 /**

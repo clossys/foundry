@@ -10,6 +10,11 @@ export interface ToolbarProps
   search?: ReactNode;
   /** Slot for the toolbar's trailing actions — typically one or more `Button`/`Menu` atoms. Pinned to the trailing edge when there's room. */
   trailing?: ReactNode;
+  /**
+   * Accessible name for the toolbar landmark.
+   * @default "Toolbar"
+   */
+  "aria-label"?: string;
   className?: string;
   style?: CSSProperties;
 }

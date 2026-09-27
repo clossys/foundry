@@ -37,6 +37,11 @@ export interface PaginationProps extends Omit<HTMLAttributes<HTMLElement>, "onCh
   pageSummaryMessage?: (page: number, pageCount: number) => string;
   /** Label on the optional page-size selector. @default "Rows per page" */
   pageSizeLabel?: string;
+  /**
+   * Accessible name for the pagination `<nav>` landmark.
+   * @default "Pagination"
+   */
+  "aria-label"?: string;
   className?: string;
   style?: CSSProperties;
 }

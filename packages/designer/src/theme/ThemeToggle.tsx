@@ -34,7 +34,7 @@ function nextPreference(current: ThemePreference): ThemePreference {
 
 export interface ThemeToggleProps extends Omit<ButtonProps, "children" | "onPress"> {
   /**
-   * Visible names for each theme preference.
+   * Spoken names for each theme preference.
    * @default System / Light / Dark
    */
   preferenceLabels?: ThemePreferenceLabels;
