@@ -35,6 +35,17 @@ function branchDeployEnabled(observed: DeployRecordObservation, branch: string):
   return observed.deployEnabledBranches?.includes(branch) ?? false;
 }
 
+function branchSetsMatch(
+  declared: readonly string[],
+  observed: readonly string[] | undefined,
+): boolean {
+  const enabled = observed ?? [];
+  if (declared.length !== enabled.length) return false;
+  const sortedDeclared = [...declared].sort();
+  const sortedEnabled = [...enabled].sort();
+  return sortedDeclared.every((branch, index) => branch === sortedEnabled[index]);
+}
+
 function observedEnvironment(
   observed: DeployRecordObservation,
   declared: DeployRecordEnvironmentNameDefinition,
@@ -71,7 +82,15 @@ function compareEnvironments(
         ),
       );
     }
-    if (live.classification !== undefined && live.classification !== env.classification) {
+    if (live.classification === undefined) {
+      findings.push(
+        finding(
+          "deploy-record-environment-classification",
+          `Environment name ${env.name} for target ${env.target} has no observed classification; declared ${env.classification}.`,
+          path,
+        ),
+      );
+    } else if (live.classification !== env.classification) {
       findings.push(
         finding(
           "deploy-record-environment-classification",
@@ -112,7 +131,7 @@ export function verifyDeployRecord(
     );
   }
 
-  if (declared.releaseRef === true && declared.productionBranch === "release") {
+  if (declared.releaseRef === true) {
     evaluated += 1;
     if (branchDeployEnabled(observed, "main") && observed.productionBranch !== "release") {
       findings.push(
@@ -122,6 +141,16 @@ export function verifyDeployRecord(
         ),
       );
     }
+  }
+
+  evaluated += 1;
+  if (!branchSetsMatch(declared.previewBranches, observed.deployEnabledBranches)) {
+    findings.push(
+      finding(
+        "deploy-record-preview-branches",
+        `Deploy-enabled branches do not match declared preview branches.`,
+      ),
+    );
   }
 
   evaluated += 1;

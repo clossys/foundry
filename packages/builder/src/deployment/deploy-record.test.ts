@@ -50,6 +50,48 @@ describe("verifyDeployRecord", () => {
     expect(result.findings.map((entry) => entry.rule)).toContain("deploy-record-release-ref-main-deploy");
   });
 
+  it("is violated under release-ref when declared and observed production are main with main deploy-enabled", () => {
+    const releaseRefMainDeclared: DeployRecordDefinition = {
+      ...declared,
+      productionBranch: "main",
+    };
+    const result = verifyDeployRecord(releaseRefMainDeclared, {
+      ...matchingObservation(),
+      productionBranch: "main",
+      deployEnabledBranches: ["main"],
+    });
+    expect(result.verdict).toBe("violated");
+    if (result.verdict !== "violated") return;
+    expect(result.findings.map((entry) => entry.rule)).toContain("deploy-record-release-ref-main-deploy");
+  });
+
+  it("is violated when deploy-enabled branches do not match declared preview branches", () => {
+    const result = verifyDeployRecord(declared, {
+      ...matchingObservation(),
+      deployEnabledBranches: ["other-branch"],
+    });
+    expect(result.verdict).toBe("violated");
+    if (result.verdict !== "violated") return;
+    expect(result.findings.map((entry) => entry.rule)).toContain("deploy-record-preview-branches");
+  });
+
+  it("is violated when a declared environment classification is absent from the observation", () => {
+    const result = verifyDeployRecord(declared, {
+      ...matchingObservation(),
+      environmentNames: [
+        { name: "CONTACT_TO", target: "preview", scope: "project" },
+        {
+          name: "REGISTRY_TOKEN",
+          target: "production",
+          scope: "shared",
+        },
+      ],
+    });
+    expect(result.verdict).toBe("violated");
+    if (result.verdict !== "violated") return;
+    expect(result.findings.map((entry) => entry.rule)).toContain("deploy-record-environment-classification");
+  });
+
   it("is violated when the observed preview URL differs", () => {
     const result = verifyDeployRecord(declared, {
       ...matchingObservation(),

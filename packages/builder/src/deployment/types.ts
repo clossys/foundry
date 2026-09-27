@@ -188,6 +188,7 @@ export type DeployRecordObservation = {
 export type DeployRecordFindingRule =
   | "deploy-record-production-branch"
   | "deploy-record-release-ref-main-deploy"
+  | "deploy-record-preview-branches"
   | "deploy-record-preview-url"
   | "deploy-record-environment-missing"
   | "deploy-record-environment-scope"
