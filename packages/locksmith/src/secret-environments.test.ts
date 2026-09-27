@@ -730,6 +730,39 @@ describe("evaluateSecretEnvironments", () => {
     });
     expect(crossEval.verdict).not.toBe("satisfied");
     expect(rulesOf(crossEval.findings)).toContain("undeclared-name");
+
+    const spanningUnmapped = declaration();
+    spanningUnmapped.deliveryTargets[0].environmentMap = { production: "production" };
+    const spanningTarget = targetSnapshot();
+    spanningTarget.environments = ["production", "qa-shadow"];
+    spanningTarget.entries = [
+      { name: "DATABASE_URL", environments: ["production", "qa-shadow"], storage: "sensitive", identity: "span-prod-shadow" },
+    ];
+    const spanningEval = evaluateSecretEnvironments({
+      declaration: spanningUnmapped,
+      inventories: [sourceSnapshot("dev"), sourceSnapshot("staging"), sourceSnapshot("prod"), spanningTarget],
+    });
+    expect(spanningEval.verdict).not.toBe("satisfied");
+    expect(spanningEval.exitCode).not.toBe(0);
+    expect(rulesOf(spanningEval.findings)).toContain("undeclared-name");
+
+    const absentPreviewSpan = declaration();
+    absentPreviewSpan.entries[0].environments = {
+      preview: { mode: "absent", reason: "Preview must not hold production database credentials." },
+    };
+    absentPreviewSpan.deliveryTargets[0].environmentMap = { production: "production" };
+    const absentSpanTarget = targetSnapshot();
+    absentSpanTarget.environments = ["preview", "production"];
+    absentSpanTarget.entries = [
+      { name: "DATABASE_URL", environments: ["production", "preview"], storage: "sensitive", identity: "prod-preview-span" },
+    ];
+    const absentSpanEval = evaluateSecretEnvironments({
+      declaration: absentPreviewSpan,
+      inventories: [sourceSnapshot("dev"), sourceSnapshot("staging"), sourceSnapshot("prod"), absentSpanTarget],
+    });
+    expect(absentSpanEval.verdict).not.toBe("satisfied");
+    expect(absentSpanEval.exitCode).not.toBe(0);
+    expect(rulesOf(absentSpanEval.findings)).toContain("undeclared-name");
   });
 
   it("manual sync is a warning only", () => {

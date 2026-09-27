@@ -1068,6 +1068,14 @@ function observedInMapped(record: ReadRecord, state: LocationState): boolean {
   return false;
 }
 
+/** Every provider environment on the record must appear in the location's environmentMap. */
+function allRecordEnvironmentsMapped(record: ReadRecord, state: LocationState): boolean {
+  for (let index = 0; index < record.environments.length; index += 1) {
+    if (!state.mappedProviderEnvironments.has(record.environments[index] as string)) return false;
+  }
+  return true;
+}
+
 function isPresent(state: LocationState, key: string, providerEnvironment: string): boolean {
   for (let index = 0; index < state.records.length; index += 1) {
     const record = state.records[index] as ReadRecord;
@@ -1131,8 +1139,7 @@ function presenceFindings(state: LocationState, emit: (finding: SecretEnvironmen
 function undeclaredNameFindings(state: LocationState, emit: (finding: SecretEnvironmentsFinding) => void): void {
   for (let index = 0; index < state.records.length; index += 1) {
     const record = state.records[index] as ReadRecord;
-    const inMapped = observedInMapped(record, state);
-    if (state.keyIndex.has(record.name) && inMapped) continue;
+    if (state.keyIndex.has(record.name) && allRecordEnvironmentsMapped(record, state)) continue;
     emit(finding("undeclared-name", `${state.location.id}/${record.name}`));
   }
 }
