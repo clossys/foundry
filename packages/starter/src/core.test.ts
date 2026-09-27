@@ -47,6 +47,12 @@ function snapshot(overrides: Record<string, unknown> = {}) {
 function event(overrides: Record<string, unknown> = {}) { return { schemaVersion: 1, provider: "github-actions", eventName: "workflow_run", repository: "consumer/repository", baseSha: gitSha("b"), sourceWorkflowRunId: "123", sourceHeadSha: gitSha("c"), artifactName: "adoption-snapshot-123", sourceConclusion: "success", ...overrides }; }
 function process(state: "satisfied" | "violated" | "indeterminate", at?: string) { return { attempted: true, exitCode: state === "satisfied" ? 0 : state === "violated" ? 1 : 2, stdout: JSON.stringify({ state }), ...(at === undefined ? {} : { currentAsOf: at }) }; }
 function input(overrides: Record<string, unknown> = {}) { return { request: request(), snapshot: snapshot(), trustedEvent: event(), install: { schemaVersion: 1, packageManager: "npm", attempted: true, exitCode: 0 }, now, advisor: process("satisfied", now), target: process("satisfied"), ...overrides }; }
+const planDigest = (character = "a") => `sha256:${sha256(character)}`;
+function inputWithoutAdvisor(overrides: Record<string, unknown> = {}) {
+  const { advisor: _advisor, ...baseRequest } = request();
+  const digest = planDigest("a");
+  return input({ request: baseRequest, authorization: { planDigest: digest }, ledgerPlanDigest: digest, advisor: undefined, ...overrides });
+}
 
 describe("request and event boundary", () => {
   it("accepts the clean activation control and preserves target 0/1/2", () => {
@@ -177,6 +183,44 @@ describe("request and event boundary", () => {
   it("recognizes only portable normalized relative paths", () => {
     expect(isNormalizedRelativePath("evidence/a.json")).toBe(true);
     for (const path of ["", "./a", "a//b", "a/../b", "C:\\a", "/a"]) expect(isNormalizedRelativePath(path)).toBe(false);
+  });
+});
+
+describe("plan digest activation without advisor", () => {
+  it("accepts a schemaVersion 1 request with no advisor block", () => {
+    const { advisor: _advisor, ...withoutAdvisor } = request();
+    expect(validateStarterRequest(withoutAdvisor).request).not.toBeNull();
+  });
+
+  it("satisfies activation when digests match and the target is satisfied, with advisor null in the report", () => {
+    const evaluation = inputWithoutAdvisor();
+    expect(evaluation.request).not.toHaveProperty("advisor");
+    const report = evaluateStarter(evaluation);
+    expect(report.findings.map((entry) => entry.rule)).toEqual([]);
+    expect(report).toMatchObject({ state: "satisfied", advisor: null, target: "satisfied" });
+  });
+
+  it("stays indeterminate when authorization or ledger digests are absent", () => {
+    expect(evaluateStarter(inputWithoutAdvisor({ authorization: undefined, ledgerPlanDigest: undefined })).state).toBe("indeterminate");
+    expect(evaluateStarter(inputWithoutAdvisor({ authorization: { planDigest: planDigest("a") }, ledgerPlanDigest: undefined })).state).toBe("indeterminate");
+    expect(evaluateStarter(inputWithoutAdvisor({ authorization: undefined, ledgerPlanDigest: planDigest("a") })).state).toBe("indeterminate");
+    expect(evaluateStarter(inputWithoutAdvisor({ authorization: undefined, ledgerPlanDigest: undefined })).state).not.toBe("satisfied");
+  });
+
+  it("violates when both digests are well formed but unequal", () => {
+    const report = evaluateStarter(inputWithoutAdvisor({ ledgerPlanDigest: planDigest("b") }));
+    expect(report).toMatchObject({ state: "violated" });
+    expect(report.findings.map((entry) => entry.rule)).toContain("plan-digest-mismatch");
+  });
+
+  it("treats a non-canonical digest prefix as unreadable", () => {
+    const bad = `SHA256:${sha256("a")}`;
+    expect(evaluateStarter(inputWithoutAdvisor({ authorization: { planDigest: bad }, ledgerPlanDigest: bad })).state).toBe("indeterminate");
+    expect(evaluateStarter(inputWithoutAdvisor({ authorization: { planDigest: bad }, ledgerPlanDigest: bad })).findings.map((entry) => entry.rule)).toContain("plan-digest-unreadable");
+  });
+
+  it("keeps a skipped advisor process indeterminate when the request includes advisor", () => {
+    expect(evaluateStarter(input({ advisor: undefined })).state).toBe("indeterminate");
   });
 });
 

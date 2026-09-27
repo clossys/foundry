@@ -6,13 +6,44 @@ import { join } from "node:path";
 import { performance } from "node:perf_hooks";
 import { afterEach, describe, expect, it } from "vitest";
 import { isDirectInvocation } from "./cli.js";
-import { StarterInputError, readContainedRegularFile, resolveInstalledBin, runNode } from "./node-runtime.js";
+import { StarterInputError, readContainedRegularFile, resolveInstalledBin, runNode, validateInstalledIdentity } from "./node-runtime.js";
+import type { StarterRequest } from "./types.js";
 import { evaluateProcessResult } from "./core.js";
 
 const roots: string[] = [];
 const integrity = `sha512-${"a".repeat(85)}A==`;
 function root(): string { const value = mkdtempSync(join(tmpdir(), "starter-")); roots.push(value); return value; }
 afterEach(() => { for (const path of roots.splice(0)) rmSync(path, { recursive: true, force: true }); });
+
+describe("installed identity without advisor", () => {
+  const starter = { name: "@clossys/starter", version: "0.1.0", integrity, bin: "foundry-starter" as const };
+  const target = { name: "@fixture/starter-target", version: "1.2.3", integrity, bin: "target-check", invocation: "single-json-input" as const };
+  it("does not require @clossys/advisor in the base install when the request omits advisor", () => {
+    const directory = root();
+    const manifest = { devDependencies: { [starter.name]: starter.version, [target.name]: target.version } };
+    const lock = { packages: { "": manifest, [`node_modules/${starter.name}`]: { version: starter.version, integrity }, [`node_modules/${target.name}`]: { version: target.version, integrity } } };
+    writeFileSync(join(directory, "package.json"), JSON.stringify(manifest));
+    writeFileSync(join(directory, "package-lock.json"), JSON.stringify(lock));
+    const starterRoot = join(directory, "node_modules", "@clossys", "starter");
+    const targetRoot = join(directory, "node_modules", "@fixture", "starter-target");
+    mkdirSync(join(starterRoot, "dist"), { recursive: true });
+    mkdirSync(join(targetRoot, "dist"), { recursive: true });
+    writeFileSync(join(starterRoot, "package.json"), JSON.stringify({ name: starter.name, version: starter.version, bin: { "foundry-starter": "./dist/cli.js" } }));
+    writeFileSync(join(starterRoot, "dist", "cli.js"), "export {};\n");
+    writeFileSync(join(targetRoot, "package.json"), JSON.stringify({ name: target.name, version: target.version, bin: { "target-check": "./dist/cli.js" } }));
+    writeFileSync(join(targetRoot, "dist", "cli.js"), "export {};\n");
+    const request = {
+      schemaVersion: 1,
+      phase: "activation",
+      packageManager: "npm",
+      snapshot: { repository: "consumer/repository", maxAgeMs: 60_000 },
+      starter,
+      target,
+      evidence: { assessment: "evidence/assessment.json", targetInput: "evidence/target.json" },
+    } satisfies StarterRequest;
+    expect(validateInstalledIdentity(directory, request)).toEqual([]);
+  });
+});
 
 describe("filesystem containment", () => {
   it("rejects symlinks, traversal, absolute paths, and oversize evidence", () => {

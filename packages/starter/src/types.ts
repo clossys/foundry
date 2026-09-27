@@ -33,7 +33,8 @@ export interface StarterRequest {
     readonly maxAgeMs: number;
   };
   readonly starter: ExactPackage & { readonly bin: "foundry-starter" };
-  readonly advisor: ExactPackage & { readonly bin: "advisor-execution-readiness" };
+  /** When omitted, activation compares carried and ledger plan digests instead of running Advisor. */
+  readonly advisor?: ExactPackage & { readonly bin: "advisor-execution-readiness" };
   readonly target: TargetPackage;
   readonly evidence: {
     readonly assessment: string;
@@ -114,6 +115,11 @@ export interface StarterReport {
   readonly target: StarterState | null;
 }
 
+/** Carried execution authorization facts for plan-digest activation (no Advisor install). */
+export interface StarterAuthorizationEvidence {
+  readonly planDigest?: unknown;
+}
+
 export interface StarterEvaluationInput {
   readonly request: unknown;
   readonly snapshot: unknown;
@@ -122,6 +128,9 @@ export interface StarterEvaluationInput {
   readonly now: string;
   readonly advisor?: ProcessObservation;
   readonly target?: ProcessObservation;
+  /** Compared with `ledgerPlanDigest` when the request omits `advisor`. */
+  readonly authorization?: StarterAuthorizationEvidence;
+  readonly ledgerPlanDigest?: unknown;
 }
 
 /** Which request identity a head-install proof names. */

@@ -67,10 +67,15 @@ or `pnpm install --frozen-lockfile`, has to match the base ledger's
 packages, including each package's integrity. An unreadable or absent head
 ledger is indeterminate. A mismatch is a violation.
 
-That check is the verification that takes the place of a per-repository
-`@clossys/advisor` pin. A repository whose CI still proves Advisor by
-installing it keeps that exact pin in `devDependencies` until that CI
-selects phase `admission`.
+The per-repository `@clossys/advisor` pin is sunset for new protected-base
+work: the hub still pins the engine, and a product repository's `decide`
+gate can verify the carried plan digest against its installed-state ledger
+without installing that package. The admission check above is the ledger
+comparison that replaces a per-repository Advisor install for apply pull
+requests. A repository whose CI still proves Advisor by installing it
+keeps that exact pin in `devDependencies` until that CI selects phase
+`admission` or omits the request's `advisor` block in favor of plan-digest
+activation.
 
 Appointing an existing tree also requires a populated inventory: the
 launcher refuses when the checkout has none, so point it at one:
