@@ -227,7 +227,8 @@ value does not contain `preload`.
 
 `Permissions-Policy` is `camera=(), microphone=(), geolocation=(), payment=()`.
 
-A host source — one or more DNS labels with an optional trailing dot,
+A host source — one or more DNS labels of ASCII letters, digits, and `-`
+(a label may start or end with `-`), with an optional trailing dot,
 `host:port`, `host/path`, a scheme-less host, or a bracketed IPv6 address — is
 emitted only when the caller lists it on
 `extensions`. The same host in `scriptSources` is not copied into the policy.

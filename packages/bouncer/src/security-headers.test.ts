@@ -265,8 +265,15 @@ describe("site security-headers baseline", () => {
     }
   });
 
-  it("does not copy single-label, trailing-dot, port, path, IPv4, or IPv6 hosts from scriptSources", () => {
+  it("does not copy label-edge-hyphen, single-label, trailing-dot, port, path, IPv4, or IPv6 hosts from scriptSources", () => {
     for (const host of [
+      "cdn-.example",
+      "-localhost",
+      "localhost-",
+      "cdn-.example.:443",
+      "cdn-.example/a.js",
+      "--localhost",
+      "local-host",
       "localhost",
       "localhost:443",
       "localhost/a.js",

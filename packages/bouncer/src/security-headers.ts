@@ -32,7 +32,8 @@
  * `frame-ancestors`), or a refused source returns `ok: false` and no header
  * map. The refused token is therefore absent from any emitted policy.
  *
- * A host source — one or more DNS labels with an optional trailing dot,
+ * A host source — one or more DNS labels of ASCII letters, digits, and `-`
+ * (a label may start or end with `-`), with an optional trailing dot,
  * optional `host:port` or `host/path`, a scheme-less multi-label host,
  * or a bracketed IPv6 address — is emitted only from the caller's
  * `extensions` list. The same host in `scriptSources` is not copied into the
@@ -209,7 +210,7 @@ function callerSourceHasSeparator(source: string): boolean {
   return /[\t\n\f\r ;]/.test(source);
 }
 
-const DNS_LABEL = "[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?";
+const DNS_LABEL = "[a-zA-Z0-9-]+";
 
 function isHostSource(source: string): boolean {
   if (isSchemeOnlyScriptSource(source)) return false;
