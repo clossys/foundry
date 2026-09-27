@@ -137,6 +137,134 @@ describe("site security-headers baseline", () => {
     expect(result.production.headers["Content-Security-Policy"]).not.toContain("'unsafe-eval'");
   });
 
+  it("refuses a script source string that embeds another token", () => {
+    const embeddedEval = createSiteSecurityHeaders({
+      script: { mode: "nonce", nonce: "n" },
+      scriptSources: ["https://cdn.example 'unsafe-eval'"],
+    });
+
+    expect(embeddedEval.production.ok).toBe(false);
+    if (!embeddedEval.production.ok) {
+      expect(embeddedEval.production.reason).toBe("refused-source");
+      expect(embeddedEval.production.refused).toContain("https://cdn.example 'unsafe-eval'");
+    }
+    expect(emittedPolicy(embeddedEval.production)).not.toContain("'unsafe-eval'");
+
+    const semicolonBreakout = createSiteSecurityHeaders({
+      script: { mode: "nonce", nonce: "n" },
+      scriptSources: ["https://cdn.example; script-src-elem 'unsafe-inline'"],
+    });
+
+    expect(semicolonBreakout.production.ok).toBe(false);
+    if (!semicolonBreakout.production.ok) {
+      expect(semicolonBreakout.production.refused).toContain(
+        "https://cdn.example; script-src-elem 'unsafe-inline'",
+      );
+    }
+    expect(emittedPolicy(semicolonBreakout.production)).not.toContain("script-src-elem");
+
+    for (const source of ["https://cdn.example\nevil", "https://cdn.example\tevil"]) {
+      const result = createSiteSecurityHeaders({
+        script: { mode: "nonce", nonce: "n" },
+        scriptSources: [source],
+      });
+
+      expect(result.production.ok).toBe(false);
+      if (!result.production.ok) {
+        expect(result.production.refused).toContain(source);
+      }
+    }
+  });
+
+  it("refuses an extension source string that embeds another directive", () => {
+    const result = createSiteSecurityHeaders({
+      script: { mode: "nonce", nonce: "n" },
+      extensions: [
+        {
+          directive: "frame-src",
+          source: "https://video.example; frame-ancestors https://evil.example",
+        },
+      ],
+    });
+
+    expect(result.production.ok).toBe(false);
+    if (!result.production.ok) {
+      expect(result.production.reason).toBe("refused-source");
+      expect(result.production.refused).toContain(
+        "https://video.example; frame-ancestors https://evil.example",
+      );
+    }
+    expect(emittedPolicy(result.production)).not.toContain("https://evil.example");
+    if (result.production.ok) return;
+    expect("headers" in result.production).toBe(false);
+  });
+
+  it("does not copy a script host from scriptSources; extensions still emit it", () => {
+    const host = "https://cdn.example";
+    const absent = createSiteSecurityHeaders({
+      script: { mode: "nonce", nonce: "n" },
+      scriptSources: [host],
+    });
+
+    expect(absent.production.ok).toBe(true);
+    if (!absent.production.ok) return;
+    expect(absent.production.headers["Content-Security-Policy"]).toBe(PRODUCTION_NONCE_POLICY);
+    expect(absent.production.headers["Content-Security-Policy"]).not.toContain(host);
+
+    const present = createSiteSecurityHeaders({
+      script: { mode: "nonce", nonce: "n" },
+      extensions: [{ directive: "script-src", source: host }],
+    });
+
+    expect(present.production.ok).toBe(true);
+    if (!present.production.ok) return;
+    expect(present.production.headers["Content-Security-Policy"]).toContain(`script-src 'nonce-n' 'strict-dynamic' ${host}`);
+  });
+
+  it("does not copy a style host from declarations unless it is also on extensions", () => {
+    const host = "https://fonts.example";
+    const fontsPackage = "example-fonts";
+    const withoutExtension = createSiteSecurityHeaders({
+      script: { mode: "nonce", nonce: "n" },
+      styleDeclarations: [{ packageName: fontsPackage, source: host }],
+    });
+
+    expect(withoutExtension.production.ok).toBe(true);
+    if (!withoutExtension.production.ok) return;
+    expect(withoutExtension.production.headers["Content-Security-Policy"]).toBe(PRODUCTION_NONCE_POLICY);
+    expect(withoutExtension.production.headers["Content-Security-Policy"]).not.toContain(host);
+
+    const withInline = createSiteSecurityHeaders({
+      script: { mode: "nonce", nonce: "n" },
+      styleDeclarations: [
+        { packageName: "example-ui", source: "'unsafe-inline'" },
+        { packageName: fontsPackage, source: host },
+      ],
+    });
+
+    expect(withInline.production.ok).toBe(true);
+    if (!withInline.production.ok) return;
+    expect(withInline.production.headers["Content-Security-Policy"]).toContain("style-src 'self' 'unsafe-inline'");
+    expect(withInline.production.headers["Content-Security-Policy"]).not.toContain(host);
+  });
+
+  it("production refuses scheme-only script sources and 'wasm-unsafe-eval'", () => {
+    for (const source of ["https:", "http:", "ws:", "wss:", "'wasm-unsafe-eval'"]) {
+      const result = createSiteSecurityHeaders({
+        script: { mode: "nonce", nonce: "n" },
+        scriptSources: [source],
+      });
+
+      expect(result.production.ok).toBe(false);
+      if (!result.production.ok) {
+        expect(result.production.reason).toBe("refused-source");
+        expect(result.production.refused).toContain(source);
+        expect("headers" in result.production).toBe(false);
+      }
+      expect(emittedPolicy(result.production)).not.toContain(source);
+    }
+  });
+
   it("a host that is not on the extension list is absent", () => {
     const listed = "https://video.example.test";
     const absent = "https://other.example.test";

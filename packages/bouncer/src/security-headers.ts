@@ -16,17 +16,24 @@
  *     exception as a warning. Without that exception the token is refused
  *     and is not emitted.
  *
- * Production also refuses `'unsafe-eval'`, a script source containing `*`,
- * and a `data:` or `blob:` script source. Style `'unsafe-inline'` is
- * accepted only from an attributed package declaration whose package name
- * is non-empty. This module does not invent a package declaration.
+ * Production also refuses `'unsafe-eval'`, `'wasm-unsafe-eval'`, a
+ * scheme-only script source (`http:`, `https:`, `ws:`, `wss:`), a script
+ * source containing `*`, and a `data:` or `blob:` script source. Style
+ * `'unsafe-inline'` is accepted only from an attributed package declaration
+ * whose package name is non-empty. This module does not invent a package
+ * declaration.
+ *
+ * A caller source string that contains whitespace or `;` is refused. That
+ * string is not emitted.
  *
  * A missing mode, a missing required directive (`object-src`, `base-uri`,
  * `frame-ancestors`), or a refused source returns `ok: false` and no header
  * map. The refused token is therefore absent from any emitted policy.
  *
- * Extra hosts are copied from the caller's `extensions` list. A host that
- * is not on that list is not added.
+ * A host source is emitted only from the caller's `extensions` list. The
+ * same host in `scriptSources` is not copied into the policy. A style
+ * declaration source other than `'unsafe-inline'` is not copied into
+ * `style-src` unless that exact source is also listed on `extensions`.
  */
 
 export interface SiteSecurityHeadersInput {
@@ -192,6 +199,41 @@ function isScriptWildcard(source: string): boolean {
   return source.includes("*");
 }
 
+/** Caller strings must be one CSP token; separators would split in serialize. */
+function callerSourceHasSeparator(source: string): boolean {
+  return /[\t\n\f\r ;]/.test(source);
+}
+
+function isHostSource(source: string): boolean {
+  return source.startsWith("*.") || source.includes("://");
+}
+
+function isSchemeOnlyScriptSource(source: string): boolean {
+  return /^(https?|wss?|ws):$/i.test(source);
+}
+
+function isWasmUnsafeEval(source: string): boolean {
+  return source.toLowerCase() === "'wasm-unsafe-eval'";
+}
+
+function collectSeparatorRefusals(spec: {
+  readonly scriptSources: readonly string[];
+  readonly styleDeclarations: readonly StyleDeclaration[];
+  readonly extensions: readonly Extension[];
+}): string[] {
+  const refused: string[] = [];
+  for (const source of spec.scriptSources) {
+    if (callerSourceHasSeparator(source)) refused.push(source);
+  }
+  for (const declaration of spec.styleDeclarations) {
+    if (callerSourceHasSeparator(declaration.source)) refused.push(declaration.source);
+  }
+  for (const extension of spec.extensions) {
+    if (callerSourceHasSeparator(extension.source)) refused.push(extension.source);
+  }
+  return dedupe(refused);
+}
+
 function readStringList(value: unknown): string[] | undefined {
   if (value === undefined) return [];
   if (!Array.isArray(value)) return undefined;
@@ -299,6 +341,8 @@ function classifyScriptSource(source: string, variant: Variant, staticAttributed
   if (isScriptWildcard(source)) return source;
   if (isDataOrBlobScriptSource(source)) return source;
   if (isUnsafeEval(source)) return variant === "production" ? "'unsafe-eval'" : "allow";
+  if (variant === "production" && isWasmUnsafeEval(source)) return "'wasm-unsafe-eval'";
+  if (variant === "production" && isSchemeOnlyScriptSource(source)) return source;
   if (isUnsafeInline(source)) return staticAttributed ? "allow" : "'unsafe-inline'";
   return "allow";
 }
@@ -317,6 +361,7 @@ function collectScriptSources(spec: ReadySpec, variant: Variant): { sources: str
   }
 
   for (const source of spec.scriptSources) {
+    if (isHostSource(source)) continue;
     const decision = classifyScriptSource(source, variant, staticAttributed);
     if (decision === "allow") sources.push(isUnsafeEval(source) ? "'unsafe-eval'" : isUnsafeInline(source) ? "'unsafe-inline'" : source);
     else refused.push(decision);
@@ -340,6 +385,11 @@ function collectScriptSources(spec: ReadySpec, variant: Variant): { sources: str
 function collectStyleSources(spec: ReadySpec): { sources: string[]; refused: string[] } {
   const sources = ["'self'"];
   const refused: string[] = [];
+  const extensionStyleSources = new Set(
+    spec.extensions
+      .filter((extension) => extension.directive === "style-src" && !isUnsafeInline(extension.source))
+      .map((extension) => extension.source),
+  );
   const inlineDeclarations = spec.styleDeclarations.filter((declaration) => isUnsafeInline(declaration.source));
   const attributed = inlineDeclarations.some((declaration) => declaration.packageName !== "");
   const unattributedDeclaration = inlineDeclarations.some((declaration) => declaration.packageName === "");
@@ -356,7 +406,7 @@ function collectStyleSources(spec: ReadySpec): { sources: string[]; refused: str
   for (const declaration of spec.styleDeclarations) {
     if (isUnsafeInline(declaration.source)) continue;
     if (declaration.packageName === "") refused.push(declaration.source);
-    else sources.push(declaration.source);
+    else if (extensionStyleSources.has(declaration.source)) sources.push(declaration.source);
   }
 
   for (const extension of spec.extensions) {
@@ -394,6 +444,8 @@ function productionScriptRefusal(sources: readonly string[], spec: ReadySpec): s
   const staticAttributed = spec.mode === "static" && spec.frameworkPackage !== undefined;
   for (const source of sources) {
     if (isUnsafeEval(source)) return "'unsafe-eval'";
+    if (isWasmUnsafeEval(source)) return "'wasm-unsafe-eval'";
+    if (isSchemeOnlyScriptSource(source)) return source;
     if (isScriptWildcard(source)) return source;
     if (isDataOrBlobScriptSource(source)) return source;
     if (isUnsafeInline(source) && !staticAttributed) return "'unsafe-inline'";
@@ -402,6 +454,9 @@ function productionScriptRefusal(sources: readonly string[], spec: ReadySpec): s
 }
 
 function buildVariant(spec: ReadySpec, variant: Variant): SiteSecurityHeadersResult {
+  const separatorRefused = collectSeparatorRefusals(spec);
+  if (separatorRefused.length > 0) return refusal("refused-source", separatorRefused);
+
   const script = collectScriptSources(spec, variant);
   const style = collectStyleSources(spec);
   const refused = [...script.refused, ...style.refused];
