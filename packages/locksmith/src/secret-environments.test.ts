@@ -480,12 +480,14 @@ describe("evaluateSecretEnvironments", () => {
     target.entries.push(
       { name: "HAND_SET_TOKEN", environments: ["production"], storage: "sensitive" },
       { name: "HAND_SET_TOKEN", environments: ["preview"], storage: "sensitive" },
-      // Observed only in a provider environment the declaration never maps: ignored.
       { name: "QA_ONLY_FLAG", environments: ["custom-qa"], storage: "plain" },
     );
     const evaluation = evaluateSecretEnvironments({ declaration: declaration(), inventories: inventories(target) });
     expect(evaluation.verdict).toBe("violated");
-    expect(evaluation.findings).toEqual([expect.objectContaining({ rule: "undeclared-name", path: "web-hosting/HAND_SET_TOKEN" })]);
+    expect(evaluation.findings).toEqual([
+      expect.objectContaining({ rule: "undeclared-name", path: "web-hosting/HAND_SET_TOKEN" }),
+      expect.objectContaining({ rule: "undeclared-name", path: "web-hosting/QA_ONLY_FLAG" }),
+    ]);
 
     // A name the declaration knows but does not deliver to this target is undeclared here too.
     const notDelivered = declaration();
@@ -592,7 +594,7 @@ describe("evaluateSecretEnvironments", () => {
     // Even a declaration with no mapped environment at all is never satisfied without an inventory.
     const unmapped = minimalDeclaration();
     unmapped.source.environmentMap = {};
-    expect(evaluateSecretEnvironments({ declaration: unmapped, inventories: [] }).verdict).toBe("indeterminate");
+    expect(evaluateSecretEnvironments({ declaration: unmapped, inventories: [] }).verdict).toBe("violated");
 
     for (const value of [undefined, null, "inventory.json", {}, [1, , 2]]) {
       const unreadable = evaluateSecretEnvironments({ declaration: declaration(), inventories: value });
@@ -677,6 +679,57 @@ describe("evaluateSecretEnvironments", () => {
       "hosting/preview/NEXT_PUBLIC_SITE_URL",
       "hosting/production/NEXT_PUBLIC_SITE_URL",
     ]);
+  });
+
+  it("rejects an empty or partial environmentMap and inventory in unmapped provider environments", () => {
+    const value = declaration();
+    value.deliveryTargets[0].environmentMap = {};
+    const target = targetSnapshot();
+    target.entries.push({ name: "HAND_SET_NAME", environments: ["preview"], storage: "plain" });
+    target.entries[0].storage = "plain";
+    target.entries[1].storage = "plain";
+    target.entries[2].storage = "plain";
+    const emptyMap = evaluateSecretEnvironments({
+      declaration: value,
+      inventories: [sourceSnapshot("dev"), sourceSnapshot("staging"), sourceSnapshot("prod"), target],
+    });
+    expect(emptyMap.verdict).not.toBe("satisfied");
+    expect(emptyMap.exitCode).not.toBe(0);
+    expect(rulesOf(emptyMap.findings)).toEqual(
+      expect.arrayContaining(["declared-environment-missing", "undeclared-name"]),
+    );
+
+    const sourceOnly = minimalDeclaration();
+    sourceOnly.source.environmentMap = {};
+    const noSourceInventory = evaluateSecretEnvironments({ declaration: sourceOnly, inventories: [] });
+    expect(noSourceInventory.verdict).not.toBe("satisfied");
+    expect(noSourceInventory.exitCode).not.toBe(0);
+
+    const partial = declaration();
+    partial.deliveryTargets[0].environmentMap = { production: "production" };
+    const partialTarget = targetSnapshot();
+    const partialEval = evaluateSecretEnvironments({
+      declaration: partial,
+      inventories: [sourceSnapshot("dev"), sourceSnapshot("staging"), sourceSnapshot("prod"), partialTarget],
+    });
+    expect(partialEval.verdict).not.toBe("satisfied");
+    expect(rulesOf(partialEval.findings)).toEqual(expect.arrayContaining(["declared-environment-missing", "undeclared-name"]));
+
+    const crossEnv = declaration();
+    crossEnv.deliveryTargets[0].environmentMap = { production: "production" };
+    const crossTarget = targetSnapshot();
+    crossTarget.entries = [
+      { name: "DATABASE_URL", environments: ["preview"], storage: "sensitive", identity: "preview-db" },
+      { name: "NEXT_PUBLIC_SITE_URL", environments: ["preview"], storage: "readable", identity: "preview-site" },
+      crossTarget.entries[2],
+    ];
+    crossTarget.environments = ["preview", "production"];
+    const crossEval = evaluateSecretEnvironments({
+      declaration: crossEnv,
+      inventories: [sourceSnapshot("dev"), sourceSnapshot("staging"), sourceSnapshot("prod"), crossTarget],
+    });
+    expect(crossEval.verdict).not.toBe("satisfied");
+    expect(rulesOf(crossEval.findings)).toContain("undeclared-name");
   });
 
   it("manual sync is a warning only", () => {

@@ -702,6 +702,35 @@ function mapEnvironmentsNotDeclared(
   }
 }
 
+function policyModeOf(entry: ReadEntry, environment: DeclaredEnvironment): EnvironmentMode {
+  const policy = entry.policies.get(environment);
+  if (policy !== undefined) return policy.mode;
+  return entry.entryClass === "secret" ? "separate" : "shared";
+}
+
+function entryExpectedAtLocation(location: ReadLocation, entry: ReadEntry, environment: DeclaredEnvironment): boolean {
+  if (policyModeOf(entry, environment) === "absent") return false;
+  return location.kind === "target" || entry.entryClass === "secret" || location.role === "hosting-as-source";
+}
+
+/** Every top-level declared environment must appear in each location's environmentMap. */
+function mapDeclaredEnvironmentsMissing(declaration: ReadDeclaration, findings: SecretEnvironmentsFinding[]): void {
+  const locations: ReadLocation[] = [declaration.source, ...declaration.targets];
+  for (let locationIndex = 0; locationIndex < locations.length; locationIndex += 1) {
+    const location = locations[locationIndex] as ReadLocation;
+    for (let environmentIndex = 0; environmentIndex < declaration.environments.length; environmentIndex += 1) {
+      const environment = declaration.environments[environmentIndex] as DeclaredEnvironment;
+      if (location.environmentMap.values.has(environment)) continue;
+      for (let entryIndex = 0; entryIndex < declaration.entries.length; entryIndex += 1) {
+        const entry = declaration.entries[entryIndex] as ReadEntry;
+        if (location.kind === "target" && !includesString(entry.deliveryTargets, location.id)) continue;
+        if (!entry.required || !entryExpectedAtLocation(location, entry, environment)) continue;
+        findings.push(finding("declared-environment-missing", `${location.id}/${environment}/${entry.key}`));
+      }
+    }
+  }
+}
+
 function semanticFindings(declaration: ReadDeclaration): SecretEnvironmentsFinding[] {
   const findings: SecretEnvironmentsFinding[] = [];
   const { source } = declaration;
@@ -717,6 +746,7 @@ function semanticFindings(declaration: ReadDeclaration): SecretEnvironmentsFindi
   }
 
   mapEnvironmentsNotDeclared(source, declaration.environments, findings);
+  mapDeclaredEnvironmentsMissing(declaration, findings);
   const targetIds = new Set<string>();
   for (let index = 0; index < declaration.targets.length; index += 1) {
     const target = declaration.targets[index] as ReadLocation;
@@ -1097,11 +1127,12 @@ function presenceFindings(state: LocationState, emit: (finding: SecretEnvironmen
   }
 }
 
-/** Rule 4: a name observed in a mapped environment that the declaration does not deliver here. */
+/** Rule 4: a name at this location that the declaration does not place here, including in unmapped provider environments. */
 function undeclaredNameFindings(state: LocationState, emit: (finding: SecretEnvironmentsFinding) => void): void {
   for (let index = 0; index < state.records.length; index += 1) {
     const record = state.records[index] as ReadRecord;
-    if (!observedInMapped(record, state) || state.keyIndex.has(record.name)) continue;
+    const inMapped = observedInMapped(record, state);
+    if (state.keyIndex.has(record.name) && inMapped) continue;
     emit(finding("undeclared-name", `${state.location.id}/${record.name}`));
   }
 }
