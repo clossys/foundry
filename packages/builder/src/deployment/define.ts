@@ -14,6 +14,8 @@ export function defineDeploymentManifest(definition: DeploymentManifestDefinitio
         expectedStatus: surface.health.expectedStatus ?? 200,
       },
       ...(surface.label === undefined ? {} : { label: surface.label }),
+      ...(surface.localPort === undefined ? {} : { localPort: surface.localPort }),
+      ...(surface.devScript === undefined ? {} : { devScript: surface.devScript }),
     })),
   };
 }

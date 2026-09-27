@@ -3,6 +3,7 @@
   "package": "@clossys/builder",
   "archetype": "current-direct",
   "bins": {
+    "builder": 0,
     "builder-verify-toolchain": 0,
     "builder-verify-machine": 0,
     "builder-check": 0
