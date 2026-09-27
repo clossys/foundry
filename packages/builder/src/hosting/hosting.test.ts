@@ -224,7 +224,10 @@ describe("builder hosting should-build", () => {
     const declared = surface({ inputs: ["packages/builder/src/hosting/install.ts"] });
     expect(decideShouldBuild(declared, ["packages/builder/src/hosting/install.ts"], true)).toEqual({
       build: true,
-      changedInputs: ["packages/builder/src/hosting/install.ts"],
+      changedInputs: [
+        "packages/builder/src/hosting/install.ts",
+        "src/hosting/install.ts",
+      ],
     });
   });
 
