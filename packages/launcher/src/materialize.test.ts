@@ -111,7 +111,7 @@ describe("materializeRepository", () => {
     } finally {
       chmodSync(index, 0o644);
     }
-    expect(outcome).toEqual({ exitCode: 2, verdict: "indeterminate", reason: "status-unreadable" });
+    expect(outcome).toEqual({ exitCode: 2, verdict: "indeterminate", reason: "remote-tip-unreadable" });
     expect(
       spawnSync("git", ["-c", "commit.gpgsign=false", "-c", "core.hooksPath=/dev/null", "show-ref", "--verify", `refs/heads/${branch}`], {
         cwd: fixture.clone,

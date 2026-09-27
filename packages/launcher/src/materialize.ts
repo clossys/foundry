@@ -263,7 +263,8 @@ function checkSymlinksSupported(root: string): ApplyStepResult | null {
 function checkRemoteTip(root: string, set: RepositoryChangeSet): ApplyStepResult | null {
   const branch = set.repository.defaultBranch;
   if (!safeDefaultBranch(branch)) return result(2, "indeterminate", "change-set-invalid");
-  git(root, ["fetch", "--no-tags", "--refmap=", "origin", `+refs/heads/${branch}:refs/remotes/origin/${branch}`]);
+  const fetched = git(root, ["fetch", "--no-tags", "--refmap=", "origin", `+refs/heads/${branch}:refs/remotes/origin/${branch}`]);
+  if (fetched.status !== 0) return result(2, "indeterminate", "remote-tip-unreadable");
   const local = git(root, ["rev-parse", `refs/heads/${branch}`]);
   const remote = git(root, ["rev-parse", `refs/remotes/origin/${branch}`]);
   if (local.status !== 0 || remote.status !== 0) return result(2, "indeterminate", "remote-tip-unreadable");

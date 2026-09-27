@@ -1,13 +1,55 @@
 import { execFileSync } from "node:child_process";
-import { chmodSync, existsSync, mkdirSync, readFileSync, rmSync, symlinkSync, unlinkSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import {
+  chmodSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  realpathSync,
+  rmSync,
+  symlinkSync,
+  unlinkSync,
+  writeFileSync,
+} from "node:fs";
+import { tmpdir } from "node:os";
+import { dirname, join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { buildMaterializedFixture } from "./apply-step-fixture.js";
 import { discoveryLinkPath, skillPath } from "./change-set-contract.js";
 import { materializeRepository, verifyRepository } from "./materialize.js";
 
 const SITE_ID = "example-owner/site";
+const GIT = ["-c", "commit.gpgsign=false", "-c", "core.hooksPath=/dev/null"] as const;
+const gitEnv = {
+  ...process.env,
+  GIT_CONFIG_GLOBAL: "/dev/null",
+  GIT_CONFIG_NOSYSTEM: "1",
+  GIT_AUTHOR_NAME: "Example Author",
+  GIT_AUTHOR_EMAIL: "author@example.com",
+  GIT_COMMITTER_NAME: "Example Author",
+  GIT_COMMITTER_EMAIL: "author@example.com",
+};
 const roots: string[] = [];
+
+function gitIn(cwd: string, ...args: string[]): string {
+  return execFileSync("git", [...GIT, ...args], { cwd, encoding: "utf8" }).trim();
+}
+
+function bareOriginForClone(clone: string): string {
+  return join(dirname(clone), "origin.git");
+}
+
+function advanceOriginBranch(origin: string, branch: string): string {
+  const bare = realpathSync(origin);
+  const workspace = mkdtempSync(join(tmpdir(), "launcher-origin-advance-"));
+  roots.push(workspace);
+  execFileSync("git", [...GIT, "clone", "--branch", branch, bare, workspace], { cwd: tmpdir(), env: gitEnv, stdio: "ignore" });
+  writeFileSync(join(workspace, `advance-${branch}.txt`), `${branch}\n`);
+  execFileSync("git", [...GIT, "add", `.`], { cwd: workspace, env: gitEnv, stdio: "ignore" });
+  execFileSync("git", [...GIT, "commit", "-m", `advance ${branch}`], { cwd: workspace, env: gitEnv, stdio: "ignore" });
+  execFileSync("git", [...GIT, "push", "origin", branch], { cwd: workspace, env: gitEnv, stdio: "ignore" });
+  return gitIn(origin, "rev-parse", `refs/heads/${branch}`);
+}
 afterEach(() => {
   for (const root of roots.splice(0)) rmSync(root, { recursive: true, force: true });
 });
@@ -127,7 +169,7 @@ describe("verifyRepository", () => {
     });
   }, 120_000);
 
-  it("returns status-unreadable when git status fails and leaves an untracked file in place", async () => {
+  it("returns remote-tip-unreadable when the index is unreadable before status runs", async () => {
     const fixture = await materialized();
     const stray = join(fixture.clone, "stray-untracked.txt");
     writeFileSync(stray, "keep\n");
@@ -138,7 +180,7 @@ describe("verifyRepository", () => {
       expect(await verifyRepository({ clone: fixture.clone, set: fixture.set, binding: fixture.binding })).toEqual({
         exitCode: 2,
         verdict: "indeterminate",
-        reason: "status-unreadable",
+        reason: "remote-tip-unreadable",
       });
     } finally {
       chmodSync(index, 0o644);
@@ -147,7 +189,7 @@ describe("verifyRepository", () => {
     expect(mode.length).toBeGreaterThan(0);
   }, 120_000);
 
-  it("returns status-unreadable when git diff fails instead of reporting materialized", async () => {
+  it("returns remote-tip-unreadable when the index is unreadable instead of reporting materialized", async () => {
     const fixture = await materialized();
     const index = join(fixture.clone, ".git/index");
     chmodSync(index, 0o000);
@@ -155,7 +197,7 @@ describe("verifyRepository", () => {
       expect(await verifyRepository({ clone: fixture.clone, set: fixture.set, binding: fixture.binding })).toEqual({
         exitCode: 2,
         verdict: "indeterminate",
-        reason: "status-unreadable",
+        reason: "remote-tip-unreadable",
       });
     } finally {
       chmodSync(index, 0o644);
@@ -183,34 +225,46 @@ describe("verifyRepository", () => {
 
   it("fetches the default branch into refs/remotes/origin only when origin.fetch maps heads onto heads", async () => {
     const fixture = buildMaterializedFixture(roots);
-    execFileSync("git", ["-c", "commit.gpgsign=false", "-c", "core.hooksPath=/dev/null", "config", "remote.origin.fetch", "+refs/heads/*:refs/heads/*"], {
+    const origin = bareOriginForClone(fixture.clone);
+    execFileSync("git", [...GIT, "config", "remote.origin.fetch", "+refs/heads/*:refs/heads/*"], {
       cwd: fixture.clone,
       stdio: "ignore",
     });
-    execFileSync("git", ["-c", "commit.gpgsign=false", "-c", "core.hooksPath=/dev/null", "branch", "other", "HEAD"], { cwd: fixture.clone, stdio: "ignore" });
-    const otherBefore = execFileSync("git", ["-c", "commit.gpgsign=false", "-c", "core.hooksPath=/dev/null", "rev-parse", "refs/heads/other"], {
-      cwd: fixture.clone,
-      encoding: "utf8",
-    }).trim();
-    const mainBefore = execFileSync("git", ["-c", "commit.gpgsign=false", "-c", "core.hooksPath=/dev/null", "rev-parse", "refs/heads/main"], {
-      cwd: fixture.clone,
-      encoding: "utf8",
-    }).trim();
+    execFileSync("git", [...GIT, "branch", "other", "HEAD"], { cwd: fixture.clone, stdio: "ignore" });
+    execFileSync("git", [...GIT, "push", "origin", "other"], { cwd: fixture.clone, stdio: "ignore" });
+    const otherBefore = gitIn(fixture.clone, "rev-parse", "refs/heads/other");
+    const mainBefore = gitIn(fixture.clone, "rev-parse", "refs/heads/main");
+    const mainTip = advanceOriginBranch(origin, "main");
+    advanceOriginBranch(origin, "other");
     await verifyRepository({ clone: fixture.clone, set: fixture.set, binding: fixture.binding });
-    expect(
-      execFileSync("git", ["-c", "commit.gpgsign=false", "-c", "core.hooksPath=/dev/null", "rev-parse", "refs/heads/other"], {
-        cwd: fixture.clone,
-        encoding: "utf8",
-      }).trim(),
-    ).toBe(otherBefore);
+    expect(gitIn(fixture.clone, "rev-parse", "refs/heads/other")).toBe(otherBefore);
+    expect(gitIn(fixture.clone, "rev-parse", "refs/heads/main")).toBe(mainBefore);
+    expect(gitIn(fixture.clone, "rev-parse", "refs/remotes/origin/main")).toBe(mainTip);
 
-    execFileSync("git", ["-c", "commit.gpgsign=false", "-c", "core.hooksPath=/dev/null", "checkout", "other"], { cwd: fixture.clone, stdio: "ignore" });
+    execFileSync("git", [...GIT, "checkout", "other"], { cwd: fixture.clone, stdio: "ignore" });
     await verifyRepository({ clone: fixture.clone, set: fixture.set, binding: fixture.binding });
+    expect(gitIn(fixture.clone, "rev-parse", "refs/heads/main")).toBe(mainBefore);
+    expect(gitIn(fixture.clone, "rev-parse", "refs/remotes/origin/main")).toBe(mainTip);
+  }, 120_000);
+
+  it("returns remote-tip-unreadable when fetch fails even if stale local and tracking refs still match", async () => {
+    const fixture = buildMaterializedFixture(roots);
+    const origin = bareOriginForClone(fixture.clone);
+    const stale = gitIn(fixture.clone, "rev-parse", "refs/heads/main");
+    execFileSync("git", [...GIT, "update-ref", "-d", "refs/heads/main"], { cwd: origin, stdio: "ignore" });
+    expect(gitIn(fixture.clone, "rev-parse", "refs/heads/main")).toBe(stale);
+    expect(gitIn(fixture.clone, "rev-parse", "refs/remotes/origin/main")).toBe(stale);
+    const unreadable = { exitCode: 2, verdict: "indeterminate", reason: "remote-tip-unreadable" } as const;
+    expect(await verifyRepository({ clone: fixture.clone, set: fixture.set, binding: fixture.binding })).toEqual(unreadable);
     expect(
-      execFileSync("git", ["-c", "commit.gpgsign=false", "-c", "core.hooksPath=/dev/null", "rev-parse", "refs/heads/main"], {
-        cwd: fixture.clone,
-        encoding: "utf8",
-      }).trim(),
-    ).toBe(mainBefore);
+      await materializeRepository({
+        clone: fixture.clone,
+        hub: fixture.hub,
+        set: fixture.set,
+        texts: fixture.texts,
+        binding: fixture.binding,
+        heldChangeSets: [],
+      }),
+    ).toEqual(unreadable);
   }, 120_000);
 });
