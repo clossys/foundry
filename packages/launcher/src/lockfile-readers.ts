@@ -664,14 +664,14 @@ function readPnpmLockfileInner(text: string): LockfileReadResult {
     const importersIndent = peekIndent(lines, importersEntry.bodyStart, importersEntry.bodyEnd);
     if (importersIndent === undefined) fail("lockfile-unreadable"); // importers present but no "." importer
     const importersMap = parseMappingLevel(lines, importersEntry.bodyStart, importersEntry.bodyEnd, importersIndent);
-    const rootImporter = importersMap.get(".");
-    if (rootImporter === undefined) fail("lockfile-unreadable");
-    requireStructuralInline(rootImporter);
-    const rootIndent = peekIndent(lines, rootImporter.bodyStart, rootImporter.bodyEnd);
-    if (rootIndent !== undefined) {
-      const rootMap = parseMappingLevel(lines, rootImporter.bodyStart, rootImporter.bodyEnd, rootIndent);
+    if (importersMap.get(".") === undefined) fail("lockfile-unreadable");
+    for (const [importerId, importerEntry] of importersMap) {
+      requireStructuralInline(importerEntry);
+      const importerIndent = peekIndent(lines, importerEntry.bodyStart, importerEntry.bodyEnd);
+      if (importerIndent === undefined) continue;
+      const importerMap = parseMappingLevel(lines, importerEntry.bodyStart, importerEntry.bodyEnd, importerIndent);
       for (const placement of PNPM_ROOT_PLACEMENTS) {
-        const block = rootMap.get(placement);
+        const block = importerMap.get(placement);
         requireStructuralInline(block);
         if (block === undefined) continue;
         const depIndent = peekIndent(lines, block.bodyStart, block.bodyEnd);
@@ -686,7 +686,8 @@ function readPnpmLockfileInner(text: string): LockfileReadResult {
           if (specifierField?.inlineValue === undefined || versionField?.inlineValue === undefined) fail("lockfile-unreadable");
           const specifier = unquoteYamlScalar(specifierField.inlineValue);
           const rawVersion = unquoteYamlScalar(versionField.inlineValue);
-          dependencyRefs.push({ place: `importers['.'].${placement}`, name, value: rawVersion });
+          dependencyRefs.push({ place: `importers['${importerId}'].${placement}`, name, value: rawVersion });
+          if (importerId !== ".") continue;
           const link = rawVersion.startsWith("link:") || rawVersion.startsWith("file:");
           const parenIndex = rawVersion.indexOf("(");
           const version = link || parenIndex === -1 ? rawVersion : rawVersion.slice(0, parenIndex);

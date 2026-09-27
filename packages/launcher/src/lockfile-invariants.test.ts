@@ -270,6 +270,23 @@ describe("npm lockfile invariants", () => {
     expect(result.verdict === "violated" && result.violations).toEqual([{ invariant: "I5", name: "evil" }]);
   });
 
+  it("I5: violated when a new scoped install aliases to a declared name@version already in the base (npmAliasReuse, fix round 3)", () => {
+    const regenerated = npmBasePackages();
+    regenerated[`node_modules/${SCOPE}/fixture-b`] = {
+      name: "nested-dep",
+      version: "1.0.0",
+      resolved: "https://registry.npmjs.org/nested-dep/-/nested-dep-1.0.0.tgz",
+      integrity: "sha512-CCCC==",
+    };
+    const result = checkLockfileInvariants({
+      format: "npm",
+      base: npmLockfile(npmBasePackages()),
+      regenerated: npmLockfile(regenerated),
+      packages: [INPUT_PACKAGE],
+    });
+    expect(result.verdict === "violated" && result.violations).toEqual([{ invariant: "I5", name: "nested-dep" }]);
+  });
+
   it("I5: violated when a new link entry's installed name is under the scope (scopedLink, fix 7)", () => {
     const regenerated = npmBasePackages();
     regenerated[`node_modules/${SCOPE}/fixture-b`] = { resolved: "vendor/b", link: true };
@@ -691,6 +708,68 @@ describe("pnpm lockfile invariants", () => {
       if (includeAlias) lines.push(`      '${SCOPE}/fixture-b': evil@6.6.6`);
       lines.push("");
       if (includeAlias) lines.push("  'evil@6.6.6': {}", "");
+      return lines.join("\n");
+    }
+    const result = checkLockfileInvariants({
+      format: "pnpm",
+      base: lockfileText(false),
+      regenerated: lockfileText(true),
+      packages: [INPUT_PACKAGE],
+    });
+    expect(result.verdict === "violated" && result.violations).toEqual([{ invariant: "I5", name: `${SCOPE}/fixture-b` }]);
+  });
+
+  it("I5: violated when a workspace importer's dependency map aliases a scoped name (pnpmImporterAlias, fix round 3)", () => {
+    const fixtureATarball = tarball(`${SCOPE}/fixture-a`, "1.0.0");
+    const fixtureOtherTarball = tarball(`${SCOPE}/fixture-other`, "2.1.0");
+    function lockfileText(includeAppAlias: boolean): string {
+      const lines = [
+        "lockfileVersion: '9.0'",
+        "",
+        "importers:",
+        "",
+        "  .:",
+        "    dependencies:",
+        `      '${SCOPE}/fixture-a':`,
+        "        specifier: 1.0.0",
+        "        version: 1.0.0",
+        "    devDependencies:",
+        `      '${SCOPE}/fixture-other':`,
+        "        specifier: ^2.0.0",
+        "        version: 2.1.0",
+      ];
+      if (includeAppAlias) {
+        lines.push(
+          "",
+          "  packages/app:",
+          "    dependencies:",
+          `      '${SCOPE}/fixture-b':`,
+          "        specifier: nested-dep@1.0.0",
+          "        version: nested-dep@1.0.0",
+        );
+      }
+      lines.push(
+        "",
+        "packages:",
+        "",
+        `  '${SCOPE}/fixture-a@1.0.0':`,
+        `    resolution: {integrity: sha512-AAAA==, tarball: ${fixtureATarball}}`,
+        "",
+        `  '${SCOPE}/fixture-other@2.1.0':`,
+        `    resolution: {integrity: sha512-BBBB==, tarball: ${fixtureOtherTarball}}`,
+        "",
+        "  'nested-dep@1.0.0':",
+        "    resolution: {integrity: sha512-CCCC==}",
+        "",
+        "snapshots:",
+        "",
+        `  '${SCOPE}/fixture-a@1.0.0': {}`,
+        "",
+        `  '${SCOPE}/fixture-other@2.1.0': {}`,
+        "",
+        "  'nested-dep@1.0.0': {}",
+        "",
+      );
       return lines.join("\n");
     }
     const result = checkLockfileInvariants({

@@ -204,6 +204,27 @@ function isSuspiciousPnpmDependencyValue(core: string): boolean {
   return core.startsWith("link:") || core.startsWith("file:") || core.includes("@");
 }
 
+/** Whether a versioned entry is already represented in the base (npm alias entries need key-level equality, fix round 3). */
+function isUnchangedVersionedEntry(
+  entry: LockfileEntry,
+  baseVersionedKeys: ReadonlySet<string>,
+  baseEntriesByKey: ReadonlyMap<string, LockfileEntry>,
+): boolean {
+  if (entry.version === null) return false;
+  if (entry.installedName !== entry.name) {
+    const baseEntry = baseEntriesByKey.get(entry.key);
+    if (baseEntry === undefined) return false;
+    return (
+      baseEntry.name === entry.name &&
+      baseEntry.installedName === entry.installedName &&
+      baseEntry.version === entry.version &&
+      baseEntry.integrity === entry.integrity &&
+      baseEntry.tarball === entry.tarball
+    );
+  }
+  return baseVersionedKeys.has(entryKey(entry.name, entry.version));
+}
+
 /**
  * I5: every regenerated entry newly resolving a scoped package name comes from the publishing registry.
  *
@@ -228,6 +249,7 @@ function checkI5(
   const violations: LockfileInvariantViolation[] = [];
   const scopePrefix = `${publishing.scope}/`;
   const baseVersionedKeys = entryKeySet(base.entries);
+  const baseEntriesByKey = new Map(base.entries.map((entry) => [entry.key, entry] as const));
   const baseLinksByKey = new Map(base.entries.filter((entry) => entry.version === null).map((entry) => [entry.key, entry] as const));
 
   let registryOrigin: string | undefined;
@@ -248,7 +270,7 @@ function checkI5(
       violations.push({ invariant: "I5", name: entry.name });
       continue;
     }
-    if (baseVersionedKeys.has(entryKey(entry.name, entry.version))) continue; // not new
+    if (isUnchangedVersionedEntry(entry, baseVersionedKeys, baseEntriesByKey)) continue; // not new
     anyNewScoped = true;
     if (registryOrigin === undefined) {
       violations.push({ invariant: "I5", name: entry.name });
