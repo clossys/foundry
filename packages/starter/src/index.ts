@@ -1,6 +1,9 @@
 /** Consumer-owned starter contracts and pure result validation. */
-export { evaluateHeadInstall, evaluateStarter, evaluateProcessResult, isNormalizedRelativePath, validateStarterRequest } from "./core.js";
+export { admissionExitCode, evaluateAdmission, evaluateHeadInstall, evaluateStarter, evaluateProcessResult, isNormalizedRelativePath, validateStarterRequest } from "./core.js";
 export type {
+  AdmissionEvaluationInput,
+  AdmissionInstall,
+  AdmissionReport,
   HeadInstallEvaluationInput,
   HeadInstallIdentity,
   HeadInstallObservation,

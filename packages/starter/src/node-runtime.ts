@@ -4,9 +4,9 @@ import { existsSync, lstatSync, mkdirSync, readFileSync, readdirSync, realpathSy
 import { dirname, relative, resolve, sep } from "node:path";
 import { compareHeadHiddenLockfile, NPM_CI_IGNORE_SCRIPTS, PUBLIC_NPM_REGISTRY, stagedNpmManifest, validateNpmIdentity, validateNpmLockfileSources, validateNpmManifestSources } from "./npm.js";
 import { PNPM_INSTALL_FROZEN_IGNORE_SCRIPTS, validatePnpmIdentity } from "./pnpm.js";
-import { evaluateHeadInstall, evaluateStarter, evaluateProcessResult, isNormalizedRelativePath, validateStarterRequest } from "./core.js";
+import { evaluateAdmission, evaluateHeadInstall, evaluateStarter, evaluateProcessResult, isNormalizedRelativePath, validateStarterRequest } from "./core.js";
 import { ContractDocumentError, readContractDocument } from "./generated/contract-schema.generated.js";
-import type { HeadInstallObservation, HeadInstallReport, StarterFinding, StarterReport, StarterRequest, ExactPackage, ProcessObservation } from "./types.js";
+import type { AdmissionReport, HeadInstallObservation, HeadInstallReport, StarterFinding, StarterReport, StarterRequest, ExactPackage, ProcessObservation } from "./types.js";
 
 const MAX_FILE_BYTES = 524_288;
 export const PROCESS_TIMEOUT_MS = 5_000;
@@ -301,3 +301,48 @@ export function proveHeadInstall(requestPath: string, headRoot: string, trustedE
 
 function writeHeadReport(path: string | undefined, report: HeadInstallReport): void { if (path !== undefined) writeFileSync(path, `${JSON.stringify(report, null, 2)}\n`); }
 export function headInstallExitCode(report: HeadInstallReport): number { return exitFor(report.state); }
+
+/** The installed-state ledger path the admission check reads in each checkout. */
+const INSTALLED_LEDGER_PATH = "clossys/.state/installed.json";
+
+function readLedgerFile(root: string): { status: "present"; bytes: Uint8Array } | { status: "absent" } | { status: "unreadable" } {
+  try { return { status: "present", bytes: readContainedRegularFile(root, INSTALLED_LEDGER_PATH) }; }
+  catch (cause) {
+    const code = cause instanceof Error && "code" in cause ? (cause as NodeJS.ErrnoException).code : undefined;
+    if (code === "ENOENT") return { status: "absent" };
+    return { status: "unreadable" };
+  }
+}
+
+function readFrozenInstall(root: string, manager: StarterRequest["packageManager"]): { manifest: unknown; lock: unknown } | null {
+  try {
+    const manifest = JSON.parse(readContainedRegularFile(root, "package.json").toString("utf8"));
+    if (manager === "npm") return { manifest, lock: JSON.parse(readContainedRegularFile(root, NPM_CI_IGNORE_SCRIPTS.lockPath).toString("utf8")) };
+    return { manifest, lock: readContainedRegularFile(root, PNPM_INSTALL_FROZEN_IGNORE_SCRIPTS.lockPath).toString("utf8") };
+  } catch { return null; }
+}
+
+/**
+ * Reads the protected base ledger, the pull-request ledger, and the base
+ * manifest and lockfile, then compares them with `evaluateAdmission`.
+ * The request file selects phase admission and carries no ledger bytes.
+ */
+export function checkAdmission(requestPath: string, baseRoot: string, headRoot: string, reportPath?: string): AdmissionReport {
+  const write = (report: AdmissionReport): AdmissionReport => { if (reportPath !== undefined) writeFileSync(reportPath, `${JSON.stringify(report, null, 2)}\n`); return report; };
+  let request: unknown;
+  try { request = readJsonFile(requestPath); } catch (cause) {
+    return write({ schemaVersion: 1, kind: "admission", state: "indeterminate", phase: null, findings: [finding("input", cause instanceof Error ? cause.message : String(cause))] });
+  }
+  const parsed = validateStarterRequest(request);
+  const base = readLedgerFile(baseRoot);
+  const head = readLedgerFile(headRoot);
+  const install = parsed.request?.phase === "admission" ? readFrozenInstall(baseRoot, parsed.request.packageManager) : null;
+  return write(evaluateAdmission({
+    request,
+    baseLedger: base.status === "present" ? base.bytes : null,
+    headLedger: head.status === "present" ? head.bytes : null,
+    baseUnreadable: base.status === "unreadable",
+    headUnreadable: head.status === "unreadable",
+    install,
+  }));
+}

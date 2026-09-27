@@ -49,13 +49,28 @@ Advisor has three parts, and each has one home:
   where you talk to Advisor.
 
 The design is that Advisor decides in the hub, the launcher applies the plan
-as pull requests, and each product repository verifies the change against the
-hub's approved plan rather than re-running the assessment. That last step is
-not built yet: `@clossys/starter`'s request validates Advisor's exact manifest
-and lockfile identity in the repository it proves, so today every
-Starter-proved repository keeps an exact `@clossys/advisor` pin in
-`devDependencies`. That pin is a transitional allowance, removed once Starter
-verifies the hub's approved plan instead (#1492).
+as pull requests, and each product repository's trusted CI runs
+`@clossys/starter`'s admission check on the apply pull request (#1492). The
+check reads two files: the protected base's `clossys/.state/installed.json`
+and the pull request's copy. It compares those bytes through the
+installed-ledger succession reader, so a spelling that merely validates is
+not a match. The head ledger matches when its canonical bytes are the base
+ledger's, or when it is the next generation and the new entry is admitted:
+it names the base ledger's last approved setup entry, the plan digest and
+the subject digest are the same ones, the head's packages are the base
+packages plus the packages the base deferred, the head deferred list is
+empty, and every other row is unchanged. A next generation whose last entry
+is labeled approved is refused; canonical bytes that match the base are not.
+The check compares the two ledgers; an approval is not an input. The request selects phase `admission` and has no
+approval field and no ledger bytes. A frozen install from the base, `npm ci`
+or `pnpm install --frozen-lockfile`, has to match the base ledger's
+packages, including each package's integrity. An unreadable or absent head
+ledger is indeterminate. A mismatch is a violation.
+
+That check is the verification that takes the place of a per-repository
+`@clossys/advisor` pin. A repository whose CI still proves Advisor by
+installing it keeps that exact pin in `devDependencies` until that CI
+selects phase `admission`.
 
 Appointing an existing tree also requires a populated inventory: the
 launcher refuses when the checkout has none, so point it at one:
@@ -77,7 +92,8 @@ above still covers the empty-directory create path, which needs no inventory.
 
 Launcher is executable tooling, not a role. Advisor stays the engagement
 engine. Starter stays the protected-base `decide` gate in CI after a hub
-exists. Positions still open in the repository that has the real job.
+exists, and its admission check compares the two installed-state ledgers
+there. Positions still open in the repository that has the real job.
 
 After the hub exists, talk with `@clossys-advisor` and `@clossys-<package>` in
 the hub or in any inventoried product repository—the launcher composes the same
@@ -376,8 +392,13 @@ Starter `0`/`1`/`2`, never use `pull_request_target` to execute untrusted code,
 and never make an unavailable phase a skipped green check. Artifact download
 and the initial native install happen before Starter can exist: if either fails,
 the workflow hard-fails with no Starter verdict rather than claiming Starter
-emitted `1` or `2`. The consumer still owns all position, policy, rollback,
-cadence, deliberate-control, and outcome evidence.
+emitted `1` or `2`. Phase `admission` is the ledger comparison above:
+`foundry-starter admit` reads the base and head copies of
+`clossys/.state/installed.json` and the base manifest and lockfile after
+the fixed install. It returns `0` when the ledgers match and that install
+matches the base ledger's packages, `1` when they do not, and `2` when the
+head ledger is absent or unreadable. The consumer still owns all position,
+policy, rollback, cadence, deliberate-control, and outcome evidence.
 
 Foundry does not own a consumer's business values, topology choices, provider
 resources, secret values, routes, customer data, approval decisions, or live
