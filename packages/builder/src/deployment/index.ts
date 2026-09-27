@@ -18,6 +18,8 @@ export type {
   DeploymentBranchBindingFindingRule,
 } from "./branch-binding.js";
 export { checkDeploymentSurfaceDevPort, devScriptPorts } from "./dev-port.js";
+export { verifyDeployRecord, DEPLOY_RECORD_INDETERMINATE_REASONS } from "./deploy-record.js";
+export type { DeployRecordIndeterminateReason } from "./deploy-record.js";
 export { isValidDeploymentManifest, validateDeploymentManifest } from "./validate.js";
 export type {
   DeploymentEnvironment,
@@ -40,4 +42,13 @@ export type {
   DeploymentSurfaceDefinition,
   DeploymentRoutingRequirement,
   DeploymentRoutingRequirementDefinition,
+  DeployRecordDefinition,
+  DeployRecordEnvironmentClassification,
+  DeployRecordEnvironmentNameDefinition,
+  DeployRecordEnvironmentObservation,
+  DeployRecordEnvironmentScope,
+  DeployRecordEnvironmentTarget,
+  DeployRecordFindingRule,
+  DeployRecordObservation,
+  DeployRecordProtection,
 } from "./types.js";
