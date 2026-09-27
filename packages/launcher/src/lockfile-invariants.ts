@@ -204,25 +204,66 @@ function isSuspiciousPnpmDependencyValue(core: string): boolean {
   return core.startsWith("link:") || core.startsWith("file:") || core.includes("@");
 }
 
-/** Whether a versioned entry is already represented in the base (npm alias entries need key-level equality, fix round 3). */
+function resolutionKeysEqual(left: readonly string[], right: readonly string[]): boolean {
+  if (left.length !== right.length) return false;
+  for (let index = 0; index < left.length; index += 1) if (left[index] !== right[index]) return false;
+  return true;
+}
+
+/** Whether one base entry at the same key matches every resolution field on `entry`. */
+function entryMatchesAtKey(baseEntry: LockfileEntry, entry: LockfileEntry): boolean {
+  return (
+    baseEntry.name === entry.name &&
+    baseEntry.installedName === entry.installedName &&
+    baseEntry.version === entry.version &&
+    baseEntry.integrity === entry.integrity &&
+    baseEntry.tarball === entry.tarball &&
+    baseEntry.link === entry.link &&
+    resolutionKeysEqual(baseEntry.otherResolutionKeys, entry.otherResolutionKeys)
+  );
+}
+
+/**
+ * Tarball from a base entry with this declared `name@version` that has no link and no extra pnpm resolution
+ * keys (fix round 4). Undefined when the base has no such entry.
+ */
+function canonicalBaseTarballForNameVersion(name: string, version: string, baseEntries: readonly LockfileEntry[]): string | null | undefined {
+  for (const baseEntry of baseEntries) {
+    if (baseEntry.version === null || baseEntry.installedName !== baseEntry.name) continue;
+    if (baseEntry.name !== name || baseEntry.version !== version) continue;
+    if (baseEntry.link || baseEntry.otherResolutionKeys.length > 0) continue;
+    return baseEntry.tarball;
+  }
+  return undefined;
+}
+
+/**
+ * Whether a versioned entry is already represented in the base. npm alias entries need key-level equality
+ * (fix round 3). The `name@version` shortcut (fix round 4) applies only for a plain registry tarball match.
+ */
 function isUnchangedVersionedEntry(
   entry: LockfileEntry,
   baseVersionedKeys: ReadonlySet<string>,
   baseEntriesByKey: ReadonlyMap<string, LockfileEntry>,
+  baseEntries: readonly LockfileEntry[],
 ): boolean {
   if (entry.version === null) return false;
   if (entry.installedName !== entry.name) {
     const baseEntry = baseEntriesByKey.get(entry.key);
     if (baseEntry === undefined) return false;
-    return (
-      baseEntry.name === entry.name &&
-      baseEntry.installedName === entry.installedName &&
-      baseEntry.version === entry.version &&
-      baseEntry.integrity === entry.integrity &&
-      baseEntry.tarball === entry.tarball
-    );
+    return entryMatchesAtKey(baseEntry, entry);
   }
-  return baseVersionedKeys.has(entryKey(entry.name, entry.version));
+  const baseAtKey = baseEntriesByKey.get(entry.key);
+  if (baseAtKey !== undefined && entryMatchesAtKey(baseAtKey, entry)) return true;
+  if (
+    !entry.link &&
+    entry.otherResolutionKeys.length === 0 &&
+    baseVersionedKeys.has(entryKey(entry.name, entry.version))
+  ) {
+    const canonicalTarball = canonicalBaseTarballForNameVersion(entry.name, entry.version, baseEntries);
+    if (canonicalTarball !== undefined && entry.tarball === canonicalTarball) return true;
+  }
+  return false;
 }
 
 /**
@@ -270,7 +311,7 @@ function checkI5(
       violations.push({ invariant: "I5", name: entry.name });
       continue;
     }
-    if (isUnchangedVersionedEntry(entry, baseVersionedKeys, baseEntriesByKey)) continue; // not new
+    if (isUnchangedVersionedEntry(entry, baseVersionedKeys, baseEntriesByKey, base.entries)) continue; // not new
     anyNewScoped = true;
     if (registryOrigin === undefined) {
       violations.push({ invariant: "I5", name: entry.name });

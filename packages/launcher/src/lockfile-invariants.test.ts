@@ -341,6 +341,87 @@ describe("npm lockfile invariants", () => {
     expect(result.verdict === "violated" && result.violations).toEqual([{ invariant: "I5", name: "" }]);
   });
 
+  it("I5: violated when a scoped name@version already in the base is rewritten to a link (nameVersionShortcut, fix round 4)", () => {
+    const regenerated = npmBasePackages();
+    regenerated[`node_modules/${SCOPE}/fixture-other`] = {
+      version: "2.1.0",
+      integrity: "sha512-BBBB==",
+      resolved: "vendor/evil",
+      link: true,
+    };
+    const result = checkLockfileInvariants({
+      format: "npm",
+      base: npmLockfile(npmBasePackages()),
+      regenerated: npmLockfile(regenerated),
+      packages: [INPUT_PACKAGE],
+    });
+    expect(result.verdict === "violated" && result.violations).toEqual([{ invariant: "I5", name: `${SCOPE}/fixture-other` }]);
+  });
+
+  it("I5: violated when a scoped name@version already in the base keeps integrity but uses a non-registry tarball (nameVersionShortcut, fix round 4)", () => {
+    const regenerated = npmBasePackages();
+    regenerated[`node_modules/${SCOPE}/fixture-other`].resolved = "https://evil.example/evil-2.1.0.tgz";
+    const result = checkLockfileInvariants({
+      format: "npm",
+      base: npmLockfile(npmBasePackages()),
+      regenerated: npmLockfile(regenerated),
+      packages: [INPUT_PACKAGE],
+    });
+    expect(result.verdict === "violated" && result.violations).toEqual([{ invariant: "I5", name: `${SCOPE}/fixture-other` }]);
+  });
+
+  it("I5: a second registry copy of an existing scoped name@version is not a violation (nameVersionShortcut, fix round 4)", () => {
+    const regenerated = npmBasePackages();
+    regenerated[`node_modules/${SCOPE}/fixture-a/node_modules/${SCOPE}/fixture-other`] = {
+      version: "2.1.0",
+      resolved: tarball(`${SCOPE}/fixture-other`, "2.1.0"),
+      integrity: "sha512-BBBB==",
+    };
+    const result = checkLockfileInvariants({
+      format: "npm",
+      base: npmLockfile(npmBasePackages()),
+      regenerated: npmLockfile(regenerated),
+      packages: [INPUT_PACKAGE],
+    });
+    expect(result).toMatchObject({ verdict: "satisfied" });
+  });
+
+  it("I5: a versioned scoped link already at the same key in the base is not a violation (nameVersionShortcut, fix round 4)", () => {
+    const withVersionedLink = (packages: Record<string, any>): Record<string, any> => {
+      packages[`node_modules/${SCOPE}/fixture-other`] = {
+        version: "2.1.0",
+        integrity: "sha512-BBBB==",
+        resolved: "vendor/local",
+        link: true,
+      };
+      return packages;
+    };
+    const result = checkLockfileInvariants({
+      format: "npm",
+      base: npmLockfile(withVersionedLink(npmBasePackages())),
+      regenerated: npmLockfile(withVersionedLink(npmBasePackages())),
+      packages: [INPUT_PACKAGE],
+    });
+    expect(result).toMatchObject({ verdict: "satisfied" });
+  });
+
+  it("I5: violated when a new scoped install aliases in the reverse direction to a name@version already in the base (npmAliasReuseReverse, fix round 4)", () => {
+    const regenerated = npmBasePackages();
+    regenerated[`node_modules/${SCOPE}/fixture-b`] = {
+      name: `${SCOPE}/fixture-a`,
+      version: "1.0.0",
+      resolved: tarball(`${SCOPE}/fixture-a`, "1.0.0"),
+      integrity: "sha512-AAAA==",
+    };
+    const result = checkLockfileInvariants({
+      format: "npm",
+      base: npmLockfile(npmBasePackages()),
+      regenerated: npmLockfile(regenerated),
+      packages: [INPUT_PACKAGE],
+    });
+    expect(result.verdict === "violated" && result.violations).toEqual([{ invariant: "I5", name: `${SCOPE}/fixture-a` }]);
+  });
+
   it("is indeterminate on the base side when the base lockfile is unreadable", () => {
     const result = checkLockfileInvariants({
       format: "npm",
@@ -717,6 +798,21 @@ describe("pnpm lockfile invariants", () => {
       packages: [INPUT_PACKAGE],
     });
     expect(result.verdict === "violated" && result.violations).toEqual([{ invariant: "I5", name: `${SCOPE}/fixture-b` }]);
+  });
+
+  it("I5: violated when a scoped packages entry switches from a registry tarball to a directory resolution while the importer version is unchanged (nameVersionShortcut, fix round 4)", () => {
+    const packages = pnpmBasePackages().map((pkg) =>
+      pkg.key === `${SCOPE}/fixture-other@2.1.0`
+        ? { key: pkg.key, integrity: "sha512-BBBB==", extraResolution: "type: directory, directory: ../evil" }
+        : pkg,
+    );
+    const result = checkLockfileInvariants({
+      format: "pnpm",
+      base: pnpmLockfile({ root: pnpmBaseRoot(), packages: pnpmBasePackages() }),
+      regenerated: pnpmLockfile({ root: pnpmBaseRoot(), packages }),
+      packages: [INPUT_PACKAGE],
+    });
+    expect(result.verdict === "violated" && result.violations).toEqual([{ invariant: "I5", name: `${SCOPE}/fixture-other` }]);
   });
 
   it("I5: violated when a workspace importer's dependency map aliases a scoped name (pnpmImporterAlias, fix round 3)", () => {
