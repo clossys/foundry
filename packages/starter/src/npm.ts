@@ -107,6 +107,7 @@ export function isRegistrySpec(spec: string): boolean {
   if (isRegistryVersionSpec(spec)) return true;
   if (!spec.startsWith("npm:")) return false;
   const { name, spec: version } = splitNameAndSpec(spec.slice("npm:".length));
+  if (TARBALL_FILENAME_SUFFIX_RE.test(name)) return false;
   return PACKAGE_NAME_RE.test(name) && (version === undefined || isRegistryVersionSpec(version));
 }
 
