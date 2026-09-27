@@ -37,9 +37,11 @@ const OBSERVED = { id: "example-owner/site", nodeId: "R_exampleSite1" };
 const TRUSTED: LedgerTrust = { state: "trusted", ledger: expect.anything() as unknown as InstalledLedger };
 const refused = (rule: string) => ({ state: "refused", rule });
 
-/** A ledger's exact bytes; throws for a ledger the contract refuses, so every forged ledger below is still readable. */
+/** A ledger's exact bytes, as text; throws for a ledger the contract refuses, so every forged ledger below is still readable. */
 const bytes = (ledger: InstalledLedger | Loose) => serializeInstalledLedger(ledger as InstalledLedger);
-const trust = (ledger: InstalledLedger | Loose, held: readonly RepositoryChangeSet[], observed = OBSERVED) => trustInstalledLedger(bytes(ledger), observed, held);
+/** UTF-8 bytes of `text`, as `trustInstalledLedger()` now takes them. */
+const utf8 = (text: string) => Buffer.from(text, "utf8");
+const trust = (ledger: InstalledLedger | Loose, held: readonly RepositoryChangeSet[], observed = OBSERVED) => trustInstalledLedger(utf8(bytes(ledger)), observed, held);
 const OTHER = `sha256:${"0".repeat(64)}`;
 const short = (digest: string) => digest.slice("sha256:".length, "sha256:".length + 12);
 
@@ -103,8 +105,14 @@ describe("trustInstalledLedger", () => {
       ["a code-rule refusal", `${JSON.stringify(ledgerNamed("generation-not-history-length"), null, 2)}\n`],
     ])("%s", (_name, value) => {
       expect(value).not.toBe(text);
-      expect(trustInstalledLedger(value, OBSERVED, [SETUP])).toEqual(refused("ledger-unreadable"));
+      expect(trustInstalledLedger(utf8(value), OBSERVED, [SETUP])).toEqual(refused("ledger-unreadable"));
     });
+  });
+
+  it("refuses a byte order mark as ledger-unreadable, and a non-Uint8Array argument the same way (issue #1545 fix 4)", () => {
+    const canonical = bytes(ledgerNamed("setup-generation-1"));
+    expect(trustInstalledLedger(utf8(`﻿${canonical}`), OBSERVED, [SETUP])).toEqual(refused("ledger-unreadable"));
+    expect(trustInstalledLedger(canonical as unknown as Uint8Array, OBSERVED, [SETUP])).toEqual(refused("ledger-unreadable"));
   });
 
   it("refuses another node id as identity, before anything else", () => {
@@ -112,9 +120,11 @@ describe("trustInstalledLedger", () => {
     expect(trust(ledgerNamed("setup-generation-1"), [], { id: "example-owner/other", nodeId: "R_other" })).toEqual(refused("identity"));
   });
 
-  it("refuses another id as renamed, but trusts an id that differs only in letter case", () => {
+  it("refuses any id difference, including one only in letter case, as renamed (issue #1545 fix 3)", () => {
     expect(trust(ledgerNamed("setup-generation-1"), [SETUP], { ...OBSERVED, id: "example-owner/other" })).toEqual(refused("renamed"));
-    expect(trust(ledgerNamed("setup-generation-1"), [SETUP], { ...OBSERVED, id: "Example-Owner/Site" })).toEqual(TRUSTED);
+    expect(trust(ledgerNamed("setup-generation-1"), [SETUP], { ...OBSERVED, id: "Example-Owner/Site" })).toEqual(refused("renamed"));
+    // Every letter case difference is refused, including one that swaps only a single character's case.
+    expect(trust(ledgerNamed("setup-generation-1"), [SETUP], { ...OBSERVED, id: "example-owner/sitE" })).toEqual(refused("renamed"));
   });
 
   describe("ledger-chain", () => {
@@ -319,12 +329,19 @@ describe("reconcileWholeFile", () => {
       expect(reconcileWholeFile(state({ path: "clossys/brief.json", base: X, occupied: true, skillsManifest: manifest }))).toEqual({ write: false, reason: "unowned-existing" });
     });
 
-    it("(c) adopts a readable skills manifest, in setup only", () => {
+    it("(c) never adopts clossys/.state/skills.json merely because a skills manifest was read: it is client controlled and proves nothing about its own bytes (issue #1545 fix 6)", () => {
       const path = "clossys/.state/skills.json";
-      expect(reconcileWholeFile(state({ path, base: X, occupied: true, skillsManifest: [] }))).toEqual({ write: true, before: X });
-      expect(reconcileWholeFile(state({ path: path.toUpperCase(), base: X, occupied: true, skillsManifest: [] }))).toEqual({ write: true, before: X });
+      // RFC §12.2: only a skill whose bytes match its skills.json digest, or an AGENTS.md shouldRefreshConsumerAgents()
+      // recognizes, is adopted from a readable manifest -- never the manifest file itself. Its base holding other bytes
+      // than what the set would write is refused as unowned-existing, whatever the manifest says and whatever its path's case.
+      expect(reconcileWholeFile(state({ path, base: X, occupied: true, skillsManifest: [] }))).toEqual({ write: false, reason: "unowned-existing" });
+      expect(reconcileWholeFile(state({ path: path.toUpperCase(), base: X, occupied: true, skillsManifest: [] }))).toEqual({ write: false, reason: "unowned-existing" });
       expect(reconcileWholeFile(state({ path, base: X, occupied: true, skillsManifest: null }))).toEqual({ write: false, reason: "unowned-existing" });
       expect(reconcileWholeFile(state({ path, base: X, occupied: true, skillsManifest: [], phase: "apply" }))).toEqual({ write: false, reason: "unowned-existing" });
+      // It is adopted only when its base already holds the exact bytes the set would write -- the same rule as any other
+      // whole file, which needs no manifest at all.
+      expect(reconcileWholeFile(state({ path, base: D, occupied: true, skillsManifest: [] }))).toEqual({ write: true, before: D });
+      expect(reconcileWholeFile(state({ path, base: D, occupied: true, skillsManifest: null }))).toEqual({ write: true, before: D });
     });
 
     it("never adopts a directory, where there is no file to adopt", () => {

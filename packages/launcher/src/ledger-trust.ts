@@ -13,7 +13,7 @@
 // and the held change sets; this module only compares them. A refusal carries
 // a rule id and nothing else, never a path, id, digest or other value.
 
-import { EXEMPTION_SURFACES, SKILLS_MANIFEST_PATH, validateRepositoryChangeSet } from "./change-set-contract.js";
+import { EXEMPTION_SURFACES, validateRepositoryChangeSet } from "./change-set-contract.js";
 import type { ChangeSetItem, ChangeSetPhase, FileChange, RepositoryChangeSet, WholeFileChange } from "./change-set-contract.js";
 import { changeSetDigest } from "./change-set-digest.js";
 import { readInstalledLedger } from "./ledger-contract.js";
@@ -22,8 +22,10 @@ import type { InstalledLedger, LedgerEntryRow, LedgerHistoryEntry } from "./ledg
 /**
  * Why a ledger is not trusted. ledger-unreadable: the bytes are not a valid,
  * exactly canonical ledger. identity: its repository.nodeId is not the
- * observed repository's (T11). renamed: its repository.id differs from the
- * observed id other than in letter case. ledger-chain: some history entry is
+ * observed repository's (T11). renamed: its repository.id is not exactly the
+ * observed id -- a difference in letter case alone is still a rename, because
+ * a ledger generation can never change the id's case (SUCCESSION S2 and code
+ * rule L10 both require an exact match). ledger-chain: some history entry is
  * not a held, self-verifying, valid change set that agrees with it. and
  * ledger-foreign-row: some row is not a write of the change set it names (T9).
  */
@@ -138,19 +140,20 @@ function rowsWritten(ledger: InstalledLedger, bySet: ReadonlyMap<string, Reposit
  * `observed` the repository's observed id and immutable node id, and `held`
  * the change sets the hub holds (any repository's; each is re-verified here).
  * Checks, in order: no ledger is trusted at generation 0; unreadable bytes;
- * node id (identity); id, compared case-insensitively (renamed); every history
- * entry matched by a held, valid, self-verifying set that agrees with it on
- * phase, planDigest, bundle, baseCommit, node id and the generation it was
- * computed over (ledger-chain); and every row a write of its matched set
+ * node id (identity); id, compared exactly -- a difference in letter case
+ * alone is still refused as renamed (ledger-trust.ts); every history entry
+ * matched by a held, valid, self-verifying set that agrees with it on phase,
+ * planDigest, bundle, baseCommit, node id and the generation it was computed
+ * over (ledger-chain); and every row a write of its matched set
  * (ledger-foreign-row). A refusal carries the rule only.
  */
-export function trustInstalledLedger(bytes: string | null, observed: { readonly id: string; readonly nodeId: string }, held: readonly RepositoryChangeSet[]): LedgerTrust {
+export function trustInstalledLedger(bytes: Uint8Array | null, observed: { readonly id: string; readonly nodeId: string }, held: readonly RepositoryChangeSet[]): LedgerTrust {
   const refuse = (rule: LedgerTrustRule): LedgerTrust => ({ state: "refused", rule });
   if (bytes === null) return { state: "trusted", ledger: null };
   const ledger = readInstalledLedger(bytes);
   if (ledger === null) return refuse("ledger-unreadable");
   if (ledger.repository.nodeId !== observed.nodeId) return refuse("identity");
-  if (ledger.repository.id.toLowerCase() !== observed.id.toLowerCase()) return refuse("renamed");
+  if (ledger.repository.id !== observed.id) return refuse("renamed");
 
   const checked = new Map<RepositoryChangeSet, boolean>();
   const verified = (set: RepositoryChangeSet) => {
@@ -197,8 +200,11 @@ const SKILL_FILE = /^\.agents\/skills\/clossys-([^/]+)\/skill\.md$/iu;
 /**
  * The generation-0 adoption pass (RFC §12.2): only in a setup set, only over
  * a file that is there, and only when its bytes provably are flow output --
- * the bytes the set would write, a composed skill whose digest the base's
- * skills manifest records, or a readable skills manifest itself.
+ * the bytes the set would write, or a composed skill whose digest the base's
+ * skills manifest records. clossys/.state/skills.json itself is client
+ * controlled and proves nothing about its own bytes, so it is adopted only
+ * through the first branch, when its base already holds the bytes the set
+ * would write; nothing else about it is ever adopted.
  */
 function adoptable(state: WholeFileState): boolean {
   const { base } = state;
@@ -206,7 +212,6 @@ function adoptable(state: WholeFileState): boolean {
   if (base === state.desired) return true;
   const manifest = state.skillsManifest;
   if (manifest === null) return false;
-  if (state.path.toLowerCase() === SKILLS_MANIFEST_PATH.toLowerCase()) return true;
   const role = SKILL_FILE.exec(state.path)?.[1]?.toLowerCase();
   return role !== undefined && manifest.some((entry) => entry.name === role && `sha256:${entry.sha256}` === base);
 }
