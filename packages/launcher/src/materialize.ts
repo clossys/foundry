@@ -535,12 +535,18 @@ export async function verifyRepository(input: VerifyInput): Promise<ApplyStepRes
   return result(0, "materialized");
 }
 
+function textsFromChangeSet(set: RepositoryChangeSet): Readonly<Record<string, string>> {
+  if (set.texts === undefined) return {};
+  return Object.fromEntries(set.texts.map((row) => [row.path, row.text] as const));
+}
+
 export async function materializeRepository(input: MaterializeInput): Promise<ApplyStepResult> {
   const held = input.heldChangeSets ?? [];
   const pre = await runPreconditions(input.clone, input.set, held);
   if ("exitCode" in pre) return pre;
   const { root, previousLedger } = pre;
   const set = input.set;
+  const texts = { ...textsFromChangeSet(set), ...input.texts };
 
   if (git(root, ["show-ref", "--verify", "--quiet", `refs/heads/${set.branch}`]).status === 0) {
     const verified = await verifyRepository({ clone: root, set, binding: input.binding, heldChangeSets: held });
@@ -561,7 +567,7 @@ export async function materializeRepository(input: MaterializeInput): Promise<Ap
   const toWrite = set.files.filter(isWhole).filter((file) => file.before !== file.after);
   const resolvedTexts = new Map<string, string>();
   for (const file of toWrite) {
-    const resolved = resolveFileText(root, set, file, input.texts);
+    const resolved = resolveFileText(root, set, file, texts);
     if (typeof resolved !== "string") return resolved;
     if (file.after !== null && contentDigest(resolved) !== file.after) return result(1, "violated", "content-mismatch");
     resolvedTexts.set(file.path, resolved);

@@ -56,6 +56,8 @@ function pointerFromTokens(tokens: readonly string[]): string {
 
 type ValueSpan = { readonly start: number; readonly end: number };
 
+type ObjectEntry = { readonly key: string; readonly keyRaw: string; readonly valuePointer: string };
+
 function skipWs(text: string, index: number): number {
   while (index < text.length && /\s/u.test(text[index]!)) index += 1;
   return index;
@@ -96,8 +98,13 @@ function parseLiteral(text: string, index: number): { end: number; value: unknow
   return { end: index, value };
 }
 
-function indexJsonSpans(text: string): { value: unknown; spans: Map<string, ValueSpan> } {
+function assertStableObjectKey(keyRaw: string, key: string): void {
+  if (keyRaw !== JSON.stringify(key)) throw new JsonEditUnstableError();
+}
+
+function indexJsonSpans(text: string): { value: unknown; spans: Map<string, ValueSpan>; objectEntries: Map<string, readonly ObjectEntry[]> } {
   const spans = new Map<string, ValueSpan>();
+  const objectEntries = new Map<string, readonly ObjectEntry[]>();
   function parseValue(index: number, pointer: string): { end: number; value: unknown } {
     index = skipWs(text, index);
     const start = index;
@@ -113,17 +120,24 @@ function indexJsonSpans(text: string): { value: unknown; spans: Map<string, Valu
       index = skipWs(text, index);
       if (text[index] === "}") {
         spans.set(pointer, { start, end: index + 1 });
+        objectEntries.set(pointer, []);
         return { end: index + 1, value: record };
       }
+      const entries: ObjectEntry[] = [];
       while (index < text.length) {
         index = skipWs(text, index);
+        const keyStart = index;
         const keyParsed = parseString(text, index);
+        assertStableObjectKey(text.slice(keyStart, keyParsed.end), keyParsed.value);
+        if (Object.hasOwn(record, keyParsed.value)) throw new JsonEditUnstableError();
         index = keyParsed.end;
         index = skipWs(text, index);
         if (text[index] !== ":") throw new TypeError("a json pointer edit was given text that is not JSON");
         index += 1;
-        const child = parseValue(index, pointerFromTokens([...tokensOf(pointer), keyParsed.value]));
+        const valuePointer = pointerFromTokens([...tokensOf(pointer), keyParsed.value]);
+        const child = parseValue(index, valuePointer);
         index = child.end;
+        entries.push({ key: keyParsed.value, keyRaw: text.slice(keyStart, keyParsed.end), valuePointer });
         record[keyParsed.value] = child.value;
         index = skipWs(text, index);
         if (text[index] === ",") {
@@ -132,6 +146,7 @@ function indexJsonSpans(text: string): { value: unknown; spans: Map<string, Valu
         }
         if (text[index] === "}") {
           spans.set(pointer, { start, end: index + 1 });
+          objectEntries.set(pointer, entries);
           return { end: index + 1, value: record };
         }
         throw new TypeError("a json pointer edit was given text that is not JSON");
@@ -171,7 +186,7 @@ function indexJsonSpans(text: string): { value: unknown; spans: Map<string, Valu
   }
   const parsed = parseValue(0, "");
   if (skipWs(text, parsed.end) !== text.length) throw new TypeError("a json pointer edit was given text that is not JSON");
-  return { value: parsed.value, spans };
+  return { value: parsed.value, spans, objectEntries };
 }
 
 function editTargets(edits: readonly JsonPointerEdit[]): Set<string> {
@@ -206,6 +221,7 @@ function renderPreserving(
   depth: number,
   spans: ReadonlyMap<string, ValueSpan>,
   modified: ReadonlySet<string>,
+  objectEntries: ReadonlyMap<string, readonly ObjectEntry[]>,
 ): string {
   if (!subtreeModified(pointer, modified)) {
     const span = spans.get(pointer);
@@ -216,7 +232,7 @@ function renderPreserving(
   if (Array.isArray(value)) {
     if (value.length === 0) return "[]";
     const rendered = value.map((entry, index) =>
-      renderPreserving(text, entry, pointerFromTokens([...tokensOf(pointer), String(index)]), style, depth + 1, spans, modified),
+      renderPreserving(text, entry, pointerFromTokens([...tokensOf(pointer), String(index)]), style, depth + 1, spans, modified, objectEntries),
     );
     if (style.indent === "") return `[${rendered.join(",")}]`;
     const pad = style.indent.repeat(depth + 1);
@@ -227,10 +243,30 @@ function renderPreserving(
     const record = value as Record<string, unknown>;
     const keys = Object.keys(record);
     if (keys.length === 0) return "{}";
-    const rendered = keys.map((key) => {
-      const childPointer = pointerFromTokens([...tokensOf(pointer), key]);
-      return `${JSON.stringify(key)}:${style.colon}${renderPreserving(text, record[key], childPointer, style, depth + 1, spans, modified)}`;
-    });
+    const sourceEntries = objectEntries.get(pointer);
+    const rendered =
+      sourceEntries === undefined
+        ? keys.map((key) => {
+            const childPointer = pointerFromTokens([...tokensOf(pointer), key]);
+            return `${JSON.stringify(key)}:${style.colon}${renderPreserving(text, record[key], childPointer, style, depth + 1, spans, modified, objectEntries)}`;
+          })
+        : (() => {
+            const written = new Set<string>();
+            const parts: string[] = [];
+            for (const entry of sourceEntries) {
+              if (!Object.hasOwn(record, entry.key)) continue;
+              written.add(entry.key);
+              parts.push(
+                `${entry.keyRaw}:${style.colon}${renderPreserving(text, record[entry.key], entry.valuePointer, style, depth + 1, spans, modified, objectEntries)}`,
+              );
+            }
+            for (const key of keys) {
+              if (written.has(key)) continue;
+              const childPointer = pointerFromTokens([...tokensOf(pointer), key]);
+              parts.push(`${JSON.stringify(key)}:${style.colon}${renderPreserving(text, record[key], childPointer, style, depth + 1, spans, modified, objectEntries)}`);
+            }
+            return parts;
+          })();
     if (style.indent === "") return `{${rendered.join(",")}}`;
     const pad = style.indent.repeat(depth + 1);
     const inner = rendered.map((entry) => `${pad}${entry}`).join(`,${style.newline}`);
@@ -384,23 +420,25 @@ export function valueAtJsonPointer(text: string, pointer: string): JsonPointerVa
  */
 export function editJsonPointer(text: string, edits: readonly JsonPointerEdit[]): string {
   if (edits.length === 0) return text;
-  let indexed: { value: unknown; spans: Map<string, ValueSpan> };
+  let indexed: { value: unknown; spans: Map<string, ValueSpan>; objectEntries: Map<string, readonly ObjectEntry[]> };
   try {
     indexed = indexJsonSpans(text);
-  } catch {
+  } catch (cause) {
+    if (cause instanceof JsonEditUnstableError) throw cause;
     throw new TypeError("a json pointer edit was given text that is not JSON");
   }
   let root = indexed.value;
   for (const edit of edits) root = applyOne(root, edit);
   const modified = editTargets(edits);
   const style = detectStyle(text);
-  const rendered = finish(renderPreserving(text, root, "", style, 0, indexed.spans, modified), style);
+  const rendered = finish(renderPreserving(text, root, "", style, 0, indexed.spans, modified, indexed.objectEntries), style);
   if (!unchangedBytesPreserved(text, rendered, indexed.spans, modified)) throw new JsonEditUnstableError();
   let again: string;
   try {
     const reread = indexJsonSpans(rendered);
-    again = finish(renderPreserving(rendered, reread.value, "", style, 0, reread.spans, new Set()), style);
-  } catch {
+    again = finish(renderPreserving(rendered, reread.value, "", style, 0, reread.spans, new Set(), reread.objectEntries), style);
+  } catch (cause) {
+    if (cause instanceof JsonEditUnstableError) throw cause;
     throw new JsonEditUnstableError();
   }
   if (rendered !== again) throw new JsonEditUnstableError();

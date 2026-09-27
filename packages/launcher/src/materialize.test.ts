@@ -3,7 +3,7 @@ import { chmodSync, existsSync, readFileSync, readlinkSync, rmSync, writeFileSyn
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { buildMaterializedFixture } from "./apply-step-fixture.js";
-import { CHANGE_SET_STORE_REL } from "./apply-store.js";
+import { CHANGE_SET_STORE_REL, storeChangeSet } from "./apply-store.js";
 import { skillPath } from "./change-set-contract.js";
 import { renderInstalledLedger } from "./ledger-contract.js";
 import { materializeRepository } from "./materialize.js";
@@ -62,6 +62,34 @@ describe("materializeRepository", () => {
     expect(diverged.exitCode).toBe(1);
     expect(diverged.reason).toBe("diverged");
     expect(readFileSync(join(fixture.clone, skill), "utf8")).toBe("tampered\n");
+  });
+
+  it("writes whole files from texts on the stored change set without a separate texts map", async () => {
+    const fixture = buildMaterializedFixture(roots);
+    const stored = {
+      ...fixture.set,
+      texts: Object.entries(fixture.texts)
+        .map(([path, text]) => ({ path, text }))
+        .sort((left, right) => left.path.localeCompare(right.path)),
+    };
+    storeChangeSet(fixture.hub, stored);
+    const outcome = await materializeRepository({
+      clone: fixture.clone,
+      hub: fixture.hub,
+      set: stored,
+      texts: {},
+      binding: fixture.binding,
+      heldChangeSets: [],
+    });
+    expect(outcome).toEqual({ exitCode: 0, verdict: "materialized" });
+    const briefPath = stored.files.find((file) => file.path === "clossys/brief.json");
+    if (briefPath !== undefined && "derived" in briefPath) throw new Error("unexpected derived brief");
+    const briefFile = stored.files.find((file) => file.path === "clossys/brief.json" && !("derived" in file));
+    if (briefFile !== undefined && briefFile.after !== null) {
+      expect(readFileSync(join(fixture.clone, "clossys/brief.json"), "utf8")).toBe(
+        stored.texts!.find((row) => row.path === "clossys/brief.json")!.text,
+      );
+    }
   });
 
   it("does not create the apply branch or write when git status fails", async () => {

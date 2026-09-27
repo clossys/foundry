@@ -224,7 +224,9 @@ function resolveApplyInputs(
   }
   const binding = options.binding ?? { kind: "approved", subjectDigest: set.planDigest };
   const clone = options.clone ?? resolve(dirname(realpathSync(hub)), id.slice(id.indexOf("/") + 1));
-  return { hub, clone, set, binding, held, texts: options.texts ?? {} };
+  const storedTexts =
+    set.texts === undefined ? {} : Object.fromEntries(set.texts.map((row) => [row.path, row.text] as const));
+  return { hub, clone, set, binding, held, texts: options.texts ?? storedTexts };
 }
 
 const MATERIALIZE_HELP = `Usage: launcher-apply-plan materialize --repo <id>

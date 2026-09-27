@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { dependencyPointer } from "./change-set-contract.js";
-import { editJsonPointer } from "./key-editor.js";
+import { JsonEditUnstableError, editJsonPointer } from "./key-editor.js";
 
 describe("editJsonPointer", () => {
   it("preserves two-space indent, key order, and a final newline", () => {
@@ -34,5 +34,20 @@ describe("editJsonPointer", () => {
     ]);
     expect(edited).toContain("1.0");
     expect(edited).not.toMatch(/"schemaVersion":1[^.]/u);
+  });
+
+  it("refuses an edit when a key escape does not round-trip in the source", () => {
+    const append = [{ pointer: "/rootEntries/-", value: { name: "clossys", classification: "extension", disposition: "allowed" } }] as const;
+    expect(() => editJsonPointer('{"sch\\u0065maVersion":1.0,"rootEntries":[]}', append)).toThrow(JsonEditUnstableError);
+    expect(() => editJsonPointer('{"na\\u006de":"pkg","version":"1.0.0"}', [{ pointer: "/private", value: true }])).toThrow(JsonEditUnstableError);
+    expect(() => editJsonPointer('{"a\\/b":1.0}', [{ pointer: "/a~1b", value: 2 }])).toThrow(JsonEditUnstableError);
+  });
+
+  it("refuses an edit when the source repeats an object key", () => {
+    expect(() =>
+      editJsonPointer('{"schemaVersion":1.0,"schemaVersion":2,"rootEntries":[]}', [
+        { pointer: "/rootEntries/-", value: { name: "clossys", classification: "extension", disposition: "allowed" } },
+      ]),
+    ).toThrow(JsonEditUnstableError);
   });
 });

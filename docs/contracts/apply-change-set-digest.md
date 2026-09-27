@@ -29,9 +29,9 @@ The plan digest is `canonicalDigest` of the plan without `asOf` and
 `changeSetDigest(set)` is `canonicalDigest(subject(set))`, where
 `subject(set)` is the change set with two changes:
 
-1. **Six top-level members are removed:** `changeSetDigest`, `branch`,
-   `bundle`, `pullRequest`, `inverse` and `tooling`. Whether each is present
-   or absent makes no difference.
+1. **Seven top-level members are removed:** `changeSetDigest`, `branch`,
+   `bundle`, `pullRequest`, `inverse`, `tooling` and `texts`. Whether each
+   is present or absent makes no difference.
 2. **Every file whose `derived` member is `true` is reduced** to its
    `path`, `mode`, `derived`, `item` and `invariants` members. Any other
    member it has, which the contract allows to be only `before` and
@@ -57,6 +57,7 @@ branch, on every run.
 | `pullRequest` | Its title ends with the digest's first 12 hexadecimal digits, and its body carries the digest as a marker, so `bodySha256` changes with the digest. Both are rendered from ids and digests only. |
 | `inverse` | It is the digest of the change set that reverts this one, which is computed from this one. |
 | `tooling` | It records which tool versions regenerated the derived files, for diagnosis. It describes the machine, not the change, and the derived files' invariants, which stay covered, are what the set promises. |
+| `texts` | It records the exact bytes of whole files the set writes so materialize can write them without recomputing brief, skill or link content. Each path's digest is already covered under `files[].after`. |
 | the ledger file's `before` and `after` | The ledger (`clossys/.state/installed.json`) lists the digest of every change set that wrote it, this one included, so its bytes depend on this digest. Everything else in it follows from the members the digest covers. What stays covered is its invariant: the ledger generation this set writes. |
 | the lockfile's `before` and `after` | A lockfile's bytes depend on the package manager's version, not only on what is installed. Two runs with the same inputs could write different bytes for no difference that matters. What stays covered is its invariants: the exact version and integrity each package act resolves to. |
 

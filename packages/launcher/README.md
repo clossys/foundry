@@ -333,8 +333,8 @@ launcher-check --help
 launcher-check --input observation.json
 launcher-doctor
 launcher-apply-plan --plan plan.json --brief brief.json --repo ./product-checkout
-launcher-apply-plan materialize --repo example-owner/site
-launcher-apply-plan verify --repo example-owner/site
+launcher-apply-plan materialize --repo ./site-checkout
+launcher-apply-plan verify --repo ./site-checkout
 launcher-apply-plan snapshot --request package-request.json
 ```
 

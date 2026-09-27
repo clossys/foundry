@@ -309,6 +309,7 @@ function computeChangeSet(
   const files: FileChange[] = [];
   const keys: KeyChange[] = [];
   const refused: ChangeSetRefusal[] = [];
+  const texts: Record<string, string> = {};
   const pathAllowList = [...BASE_ALLOW_LIST];
   // A path is present when a file is there, or when it is a directory holding one.
   const presentAt = (path: string) => existingAt(path) !== undefined || observation.files.some((file) => file.path.toLowerCase().startsWith(`${path.toLowerCase()}/`));
@@ -342,6 +343,7 @@ function computeChangeSet(
     }
     // before is null (add), the desired digest (keep), or the bytes the flow last wrote (update).
     files.push({ path, mode, before: outcome.before, after: desired, item });
+    texts[path] = text;
     return true;
   };
 
@@ -488,6 +490,7 @@ function computeChangeSet(
     if (pattern !== undefined && !pathAllowList.some((allowed) => matchesPathPattern(profile.path, allowed))) pathAllowList.push(pattern);
     items.push({ id: ROOT_ENTRIES_ITEM, act: "declare-root-entry", path: profile.path, entries });
     files.push({ path: profile.path, mode: "100644", before, after: contentDigest(edited), item: ROOT_ENTRIES_ITEM });
+    texts[profile.path] = edited;
   } else if (profile !== null && (profile.rootVocabulary === "unparseable" || profile.prohibitedRoots.length > 0)) {
     items.push({
       id: ROOT_ENTRIES_ITEM,
@@ -578,6 +581,9 @@ function computeChangeSet(
       // Only an apply set is computed, and an apply set defers nothing (code rule C10).
       deferred: [],
       pathAllowList: canonicalOrder(pathAllowList, CANONICAL_KEYS.pattern),
+      ...(Object.keys(texts).length > 0
+        ? { texts: canonicalOrder(Object.entries(texts).map(([path, text]) => ({ path, text })), (entry) => [entry.path]) }
+        : {}),
     },
     checks,
   };
