@@ -187,6 +187,71 @@ unobserved provider; a provider shape that was never supplied; and — a bare
 happened and prints its usage to stderr. An explicitly requested `--help` is
 the one argument-shaped `0`: a help that was asked for did what was asked.
 
+## Site security-headers baseline
+
+`createSiteSecurityHeaders` builds the HTTP security-header baseline for a
+site surface. One call returns `SiteSecurityHeadersVariants`: a `development`
+result and a `production` result, both `SiteSecurityHeadersResult`. The
+caller passes a `SiteSecurityHeadersInput` and applies the header map. This
+package does not invent a package declaration.
+
+Production script policy is one of two modes:
+
+| Mode | `script-src` | Result |
+| --- | --- | --- |
+| `nonce` | `'nonce-…'` and `'strict-dynamic'` | The policy has no `'unsafe-inline'`. `warnings` is empty. |
+| `static` | `'self'` and `'unsafe-inline'` | Emitted when the caller declares an attributed framework exception. The result reports that exception as a `SiteSecurityHeaderWarning`. |
+
+An undeclared script `'unsafe-inline'` is a refusal, and that token is not in
+the emitted policy. Production refuses `'unsafe-eval'`, `'wasm-unsafe-eval'`,
+a scheme-only source (`http:`, `https:`, `ws:`, `wss:`), a source containing
+`*`, and a `data:` or `blob:` source on every extension directive. A caller
+source string that contains whitespace or `;`, including at either end of the
+raw string before trimming, is refused. The result is
+`ok: false` with reason `refused-source`, and the refused token is absent
+from the emitted policy.
+
+The development variant adds `'unsafe-eval'` to `script-src`. The production
+variant from the same call does not contain it.
+
+A successful policy is a `SiteSecurityHeaders` map. Its
+`Content-Security-Policy` includes `object-src 'none'`, `base-uri 'self'`,
+and `frame-ancestors 'none'`. Style `'unsafe-inline'` is included when an
+attributed package declaration names the package on `styleDeclarations`. A
+declaration that does not name a package is refused.
+
+`Strict-Transport-Security` is `max-age=63072000; includeSubDomains`. The
+value does not contain `preload`.
+
+`Referrer-Policy` is `strict-origin-when-cross-origin`.
+
+`Permissions-Policy` is `camera=(), microphone=(), geolocation=(), payment=()`.
+
+A host source — one or more DNS labels of ASCII letters, digits, and `-`
+(a label may start or end with `-`), with an optional trailing dot,
+`host:port`, `host/path`, a scheme-less host, or a bracketed IPv6 address — is
+emitted only when the caller lists it on
+`extensions`. The same host in `scriptSources` is not copied into the policy.
+A style
+declaration source other than `'unsafe-inline'` is not copied into
+`style-src` unless that exact source is also on `extensions`.
+
+```ts
+import { createSiteSecurityHeaders } from "@clossys/bouncer";
+
+const variants = createSiteSecurityHeaders({
+  script: { mode: "nonce", nonce: "exampleNonce" },
+  extensions: [{ directive: "frame-src", source: "https://video.example.test" }],
+});
+
+if (variants.production.ok) {
+  variants.production.headers["Content-Security-Policy"];
+  variants.production.headers["Strict-Transport-Security"];
+  variants.production.headers["Referrer-Policy"];
+  variants.production.headers["Permissions-Policy"];
+}
+```
+
 ## Exports
 
 ### Root — `@clossys/bouncer`
@@ -252,6 +317,8 @@ answer.
 | `isQueryAdapter`, `isTransactionalQueryAdapter`, `requireTransactionalQueryAdapter` | Its guards, normalising a `withTransaction` pool without replacing its scoped query |
 | `createAllowedOriginPolicy`, `isAllowedOrigin`, `resolveSafeRedirect` | A strict redirect allowlist. Every rejection returns `undefined` rather than a caller-controlled fallback |
 | `AllowedOriginPolicy` | Its type |
+| `createSiteSecurityHeaders` | Site security-headers baseline. One call returns the development variant and the production variant |
+| `SiteSecurityHeadersInput`, `SiteSecurityHeadersVariants`, `SiteSecurityHeadersResult`, `SiteSecurityHeaders`, `SiteSecurityHeaderWarning` | Its input, the two variants, the acceptance-or-refusal result, the header map, and the static-mode warning |
 
 ### `./agent`
 

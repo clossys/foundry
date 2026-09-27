@@ -44,6 +44,12 @@
  *      the `0`/`1`/`2` exit contract without ever collapsing "could not run"
  *      into either "clean" or "findings".
  *
+ *   5. THE SITE SECURITY-HEADERS BASELINE (`security-headers.ts`).
+ *      `createSiteSecurityHeaders` builds the development variant and the
+ *      production variant from one call. Production script policy is `nonce`
+ *      or `static`. A refused source is omitted from the emitted policy.
+ *      Package declarations and extension hosts are caller-supplied.
+ *
  * THE GATE COUNT: unreconciled grant surface — authority live here that no
  * provider still backs. `checkAuthorityReconciliation` counts it. That count
  * is 0 on an empty set and is not the charter metric.
@@ -123,6 +129,15 @@ export {
   resolveSafeRedirect,
 } from "./redirect.js";
 export type { AllowedOriginPolicy } from "./redirect.js";
+
+export { createSiteSecurityHeaders } from "./security-headers.js";
+export type {
+  SiteSecurityHeaderWarning,
+  SiteSecurityHeaders,
+  SiteSecurityHeadersInput,
+  SiteSecurityHeadersResult,
+  SiteSecurityHeadersVariants,
+} from "./security-headers.js";
 
 export {
   BACKED_AUTHORITY_STATUSES,
