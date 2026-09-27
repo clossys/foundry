@@ -529,7 +529,9 @@ package act names a staffed repository spelled exactly the same, no
 `resolution` is present exactly when `packages` is, no kit id repeats, no
 role repeats within one staffing entry, no role is named twice in
 `mandate.roles`, a repository has at most one `pin-starter` act, always
-placed in `devDependencies`, and no hub-only role is staffed. The hub-only
+placed in `devDependencies`, no hub-only role is staffed, and every
+`planItem` is exactly its act's `repository`, a colon and its `name`, in the
+same letter case (R12). The hub-only
 roles, Advisor and Integrator, are read from the plan contract's
 `definitions.hubOnlyRoles`, the same data Advisor reads. The rules read only a document's own fields,
 as the schema does, so an inherited one is ignored. A brief's optional `staffedHere`

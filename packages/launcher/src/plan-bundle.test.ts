@@ -333,7 +333,9 @@ describe("planApplyBundle", () => {
         run({ ...INPUTS, plan: plan as unknown as AdvisorPlan });
         expect.unreachable();
       } catch (error) {
-        expect(String(error), planItem).toBe(`TypeError: packages[${index}].planItem is not the repository id, a colon and the package name (plan-item-not-derived)`);
+        expect(String(error), planItem).toBe(
+          `TypeError: the plan does not validate: plan.packages[${index}].planItem is not this act's repository, a colon and its name, in the same letter case (rule R12)`,
+        );
       }
     }
   });

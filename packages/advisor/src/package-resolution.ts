@@ -269,7 +269,7 @@ export function resolvePackages(plan: unknown, snapshot: unknown, options: Resol
     .sort((left, right) => byCodeUnits(left.repository, right.repository) || byCodeUnits(left.name, right.name));
   const resolution = { snapshotDigest: snapshotDigest(read) };
 
-  // Fail closed: the resolved plan must itself satisfy the plan contract and R1-R11.
+  // Fail closed: the resolved plan must itself satisfy the plan contract and R1-R12.
   const resolved = { ...(plan as AdvisorPlan), packages, resolution };
   const invalid = planShapeFindings(resolved);
   if (invalid.length > 0) return { state: "violated", findings: invalid.map((finding) => ({ ...finding, rule: "resolved-plan-invalid" })) };

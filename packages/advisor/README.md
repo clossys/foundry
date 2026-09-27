@@ -378,7 +378,7 @@ digits in each part and no prerelease or build suffix, and one canonical
 A decision (`AdvisorPlanDecision`) may carry `subjectDigest`.
 Once the schema passes, `validateAdvisorPlan()` applies the code rules the
 contract's description defines, each finding with the rule
-`advisor-plan-rule-r1` to `-r11` and a `path`: no repository staffed twice
+`advisor-plan-rule-r1` to `-r12` and a `path`: no repository staffed twice
 (ids compare case-insensitively); every staffed role is in `mandate.roles`,
 and every `mandate.roles` entry is staffed somewhere unless it is a hub-only
 role; every package act names a staffed repository, spelled
@@ -386,7 +386,9 @@ exactly the same; no `planItem` repeats; no package appears twice in one
 repository; `resolution` is present exactly when `packages` is; no kit id
 repeats; no role repeats within one staffing entry; no role is named twice
 in `mandate.roles`; a repository has at most one `pin-starter` act,
-always placed in `devDependencies`; and no hub-only role is staffed.
+always placed in `devDependencies`; no hub-only role is staffed; and every
+`planItem` is exactly its act's `repository`, a colon and its `name`, in the
+same letter case, the key the change set and the installed-state ledger use.
 `HUB_ONLY_ROLES` is that list, `["advisor", "integrator"]`, read from the
 plan contract's `definitions.hubOnlyRoles`, the same data Launcher reads.
 The apply-approved-plan RFC places each of them in the engagement hub: its
@@ -520,7 +522,7 @@ sorted by version), and every position a finding names, such as
 `packages[2].versions[0].hasAttestations`, is a position in that order. A
 `snapshot-shape` finding is the one exception: an invalid snapshot has no
 canonical order, so its positions are as the file lists them. Before it returns, it checks the resolved plan with
-the plan contract and its rules R1 to R11 and refuses rather than return a
+the plan contract and its rules R1 to R12 and refuses rather than return a
 plan that fails them. Each `ResolutionFinding` has a `rule`, a `verdict`
 (`ResolutionVerdict`), a `path` and a message that names positions and, at
 most, a package name derived from the catalogue, never plan text, a
