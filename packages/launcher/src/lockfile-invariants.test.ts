@@ -355,7 +355,10 @@ describe("npm lockfile invariants", () => {
       regenerated: npmLockfile(regenerated),
       packages: [INPUT_PACKAGE],
     });
-    expect(result.verdict === "violated" && result.violations).toEqual([{ invariant: "I5", name: `${SCOPE}/fixture-other` }]);
+    expect(result.verdict === "violated" && result.violations).toEqual([
+      { invariant: "I2", name: `${SCOPE}/fixture-other` },
+      { invariant: "I5", name: `${SCOPE}/fixture-other` },
+    ]);
   });
 
   it("I5: violated when a scoped name@version already in the base keeps integrity but uses a non-registry tarball (nameVersionShortcut, fix round 4)", () => {
@@ -367,7 +370,10 @@ describe("npm lockfile invariants", () => {
       regenerated: npmLockfile(regenerated),
       packages: [INPUT_PACKAGE],
     });
-    expect(result.verdict === "violated" && result.violations).toEqual([{ invariant: "I5", name: `${SCOPE}/fixture-other` }]);
+    expect(result.verdict === "violated" && result.violations).toEqual([
+      { invariant: "I2", name: `${SCOPE}/fixture-other` },
+      { invariant: "I5", name: `${SCOPE}/fixture-other` },
+    ]);
   });
 
   it("I5: a second registry copy of an existing scoped name@version is not a violation (nameVersionShortcut, fix round 4)", () => {
@@ -384,6 +390,75 @@ describe("npm lockfile invariants", () => {
       packages: [INPUT_PACKAGE],
     });
     expect(result).toMatchObject({ verdict: "satisfied" });
+  });
+
+  it("I5: violated when a non-registry base tarball sorts first but the root copy is rewritten to match it (nameVersionShortcut, fix round 5)", () => {
+    const evilTarball = "https://evil.example/evil-2.1.0.tgz";
+    const base = npmBasePackages();
+    base[`node_modules/${SCOPE}/fixture-a/node_modules/${SCOPE}/fixture-other`] = {
+      version: "2.1.0",
+      resolved: evilTarball,
+      integrity: "sha512-BBBB==",
+    };
+    const regenerated = structuredClone(base);
+    regenerated[`node_modules/${SCOPE}/fixture-other`].resolved = evilTarball;
+    const result = checkLockfileInvariants({
+      format: "npm",
+      base: npmLockfile(base),
+      regenerated: npmLockfile(regenerated),
+      packages: [INPUT_PACKAGE],
+    });
+    expect(result.verdict === "violated" && result.violations).toEqual([
+      { invariant: "I2", name: `${SCOPE}/fixture-other` },
+      { invariant: "I5", name: `${SCOPE}/fixture-other` },
+    ]);
+  });
+
+  it("I5: a non-registry-only base copy does not bless a second evil tarball via the name@version shortcut (nameVersionShortcut, fix round 5)", () => {
+    const evilTarball = "https://evil.example/evil-2.1.0.tgz";
+    const base = npmBasePackages();
+    base[`node_modules/${SCOPE}/fixture-other`] = {
+      version: "2.1.0",
+      resolved: evilTarball,
+      integrity: "sha512-BBBB==",
+    };
+    const regenerated = structuredClone(base);
+    regenerated[`node_modules/${SCOPE}/fixture-a/node_modules/${SCOPE}/fixture-other`] = {
+      version: "2.1.0",
+      resolved: evilTarball,
+      integrity: "sha512-BBBB==",
+    };
+    const result = checkLockfileInvariants({
+      format: "npm",
+      base: npmLockfile(base),
+      regenerated: npmLockfile(regenerated),
+      packages: [INPUT_PACKAGE],
+    });
+    expect(result.verdict === "violated" && result.violations).toEqual([{ invariant: "I5", name: `${SCOPE}/fixture-other` }]);
+  });
+
+  it("I2: violated when a root npm dependency keeps specifier, version, and integrity but resolves via link (rootResolution, fix round 5)", () => {
+    const base = npmBasePackages();
+    base[""].dependencies["left-pad"] = "^1.0.0";
+    base["node_modules/left-pad"] = {
+      version: "1.0.0",
+      resolved: "https://registry.npmjs.org/left-pad/-/left-pad-1.0.0.tgz",
+      integrity: "sha512-LLLL==",
+    };
+    const regenerated = structuredClone(base);
+    regenerated["node_modules/left-pad"] = {
+      version: "1.0.0",
+      integrity: "sha512-LLLL==",
+      resolved: "vendor/evil",
+      link: true,
+    };
+    const result = checkLockfileInvariants({
+      format: "npm",
+      base: npmLockfile(base),
+      regenerated: npmLockfile(regenerated),
+      packages: [INPUT_PACKAGE],
+    });
+    expect(result.verdict === "violated" && result.violations).toEqual([{ invariant: "I2", name: "left-pad" }]);
   });
 
   it("I5: a versioned scoped link already at the same key in the base is not a violation (nameVersionShortcut, fix round 4)", () => {
@@ -812,7 +887,38 @@ describe("pnpm lockfile invariants", () => {
       regenerated: pnpmLockfile({ root: pnpmBaseRoot(), packages }),
       packages: [INPUT_PACKAGE],
     });
-    expect(result.verdict === "violated" && result.violations).toEqual([{ invariant: "I5", name: `${SCOPE}/fixture-other` }]);
+    expect(result.verdict === "violated" && result.violations).toEqual([
+      { invariant: "I2", name: `${SCOPE}/fixture-other` },
+      { invariant: "I5", name: `${SCOPE}/fixture-other` },
+    ]);
+  });
+
+  it("I2: violated when a root pnpm dependency keeps importer version and integrity but the packages entry switches to directory resolution (rootResolution, fix round 5)", () => {
+    const packages = pnpmBasePackages().map((pkg) =>
+      pkg.key === `${SCOPE}/fixture-other@2.1.0`
+        ? { key: pkg.key, integrity: "sha512-BBBB==", extraResolution: "type: directory, directory: ../evil" }
+        : pkg,
+    );
+    const result = checkLockfileInvariants({
+      format: "pnpm",
+      base: pnpmLockfile({ root: pnpmBaseRoot(), packages: pnpmBasePackages() }),
+      regenerated: pnpmLockfile({ root: pnpmBaseRoot(), packages }),
+      packages: [INPUT_PACKAGE],
+    });
+    expect(result.verdict === "violated" && result.violations).toEqual([
+      { invariant: "I2", name: `${SCOPE}/fixture-other` },
+      { invariant: "I5", name: `${SCOPE}/fixture-other` },
+    ]);
+  });
+
+  it("I2: satisfied when a non-input root dependency is unchanged on specifier, version, integrity, link, and packages resolution (rootResolution, fix round 5)", () => {
+    const result = checkLockfileInvariants({
+      format: "pnpm",
+      base: pnpmLockfile({ root: pnpmBaseRoot(), packages: pnpmBasePackages() }),
+      regenerated: pnpmLockfile({ root: pnpmBaseRoot(), packages: pnpmBasePackages() }),
+      packages: [INPUT_PACKAGE],
+    });
+    expect(result).toMatchObject({ verdict: "satisfied" });
   });
 
   it("I5: violated when a workspace importer's dependency map aliases a scoped name (pnpmImporterAlias, fix round 3)", () => {

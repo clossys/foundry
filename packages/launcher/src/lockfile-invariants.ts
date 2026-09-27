@@ -94,6 +94,12 @@ function checkI1(input: LockfileInvariantInput, regenerated: LockfileView): Lock
   return violations;
 }
 
+/** Lockfile entry key for one root dependency's resolved package row, when it has a version. */
+function rootPackageEntryKey(format: LockfileFormat, dep: RootDependency): string | null {
+  if (dep.version === null) return null;
+  return format === "npm" ? `node_modules/${dep.name}` : `${dep.name}@${dep.version}`;
+}
+
 /** I2: every root dep not among the input package names is unchanged, keyed by (placement, name). */
 function checkI2(input: LockfileInvariantInput, base: LockfileView, regenerated: LockfileView): LockfileInvariantViolation[] {
   const inputNames = new Set(input.packages.map((pkg) => pkg.name));
@@ -102,6 +108,8 @@ function checkI2(input: LockfileInvariantInput, base: LockfileView, regenerated:
   const regeneratedRoot = new Map(
     regenerated.root.filter((dep) => !inputNames.has(dep.name)).map((dep) => [rootKey(dep), dep] as const),
   );
+  const baseEntriesByKey = new Map(base.entries.map((entry) => [entry.key, entry] as const));
+  const regeneratedEntriesByKey = new Map(regenerated.entries.map((entry) => [entry.key, entry] as const));
   const violations: LockfileInvariantViolation[] = [];
   const allKeys = new Set([...baseRoot.keys(), ...regeneratedRoot.keys()]);
   for (const key of allKeys) {
@@ -112,7 +120,24 @@ function checkI2(input: LockfileInvariantInput, base: LockfileView, regenerated:
       violations.push({ invariant: "I2", name });
       continue;
     }
-    if (beforeDep.specifier !== afterDep.specifier || beforeDep.version !== afterDep.version || beforeDep.integrity !== afterDep.integrity) {
+    if (
+      beforeDep.specifier !== afterDep.specifier ||
+      beforeDep.version !== afterDep.version ||
+      beforeDep.integrity !== afterDep.integrity ||
+      beforeDep.link !== afterDep.link
+    ) {
+      violations.push({ invariant: "I2", name });
+      continue;
+    }
+    const beforeEntryKey = rootPackageEntryKey(input.format, beforeDep);
+    const afterEntryKey = rootPackageEntryKey(input.format, afterDep);
+    if (beforeEntryKey === null || afterEntryKey === null || beforeEntryKey !== afterEntryKey) {
+      violations.push({ invariant: "I2", name });
+      continue;
+    }
+    const beforeEntry = baseEntriesByKey.get(beforeEntryKey);
+    const afterEntry = regeneratedEntriesByKey.get(afterEntryKey);
+    if (beforeEntry === undefined || afterEntry === undefined || !entryMatchesAtKey(beforeEntry, afterEntry)) {
       violations.push({ invariant: "I2", name });
     }
   }
@@ -227,11 +252,18 @@ function entryMatchesAtKey(baseEntry: LockfileEntry, entry: LockfileEntry): bool
  * Tarball from a base entry with this declared `name@version` that has no link and no extra pnpm resolution
  * keys (fix round 4). Undefined when the base has no such entry.
  */
-function canonicalBaseTarballForNameVersion(name: string, version: string, baseEntries: readonly LockfileEntry[]): string | null | undefined {
+function canonicalBaseTarballForNameVersion(
+  name: string,
+  version: string,
+  baseEntries: readonly LockfileEntry[],
+  format: LockfileFormat,
+  registryOrigin: string | undefined,
+): string | null | undefined {
   for (const baseEntry of baseEntries) {
     if (baseEntry.version === null || baseEntry.installedName !== baseEntry.name) continue;
     if (baseEntry.name !== name || baseEntry.version !== version) continue;
     if (baseEntry.link || baseEntry.otherResolutionKeys.length > 0) continue;
+    if (registryOrigin === undefined || !resolvesToRegistry(baseEntry, format, registryOrigin)) continue;
     return baseEntry.tarball;
   }
   return undefined;
@@ -246,6 +278,8 @@ function isUnchangedVersionedEntry(
   baseVersionedKeys: ReadonlySet<string>,
   baseEntriesByKey: ReadonlyMap<string, LockfileEntry>,
   baseEntries: readonly LockfileEntry[],
+  format: LockfileFormat,
+  registryOrigin: string | undefined,
 ): boolean {
   if (entry.version === null) return false;
   if (entry.installedName !== entry.name) {
@@ -260,7 +294,7 @@ function isUnchangedVersionedEntry(
     entry.otherResolutionKeys.length === 0 &&
     baseVersionedKeys.has(entryKey(entry.name, entry.version))
   ) {
-    const canonicalTarball = canonicalBaseTarballForNameVersion(entry.name, entry.version, baseEntries);
+    const canonicalTarball = canonicalBaseTarballForNameVersion(entry.name, entry.version, baseEntries, format, registryOrigin);
     if (canonicalTarball !== undefined && entry.tarball === canonicalTarball) return true;
   }
   return false;
@@ -311,7 +345,8 @@ function checkI5(
       violations.push({ invariant: "I5", name: entry.name });
       continue;
     }
-    if (isUnchangedVersionedEntry(entry, baseVersionedKeys, baseEntriesByKey, base.entries)) continue; // not new
+    if (isUnchangedVersionedEntry(entry, baseVersionedKeys, baseEntriesByKey, base.entries, input.format, registryOrigin))
+      continue; // not new
     anyNewScoped = true;
     if (registryOrigin === undefined) {
       violations.push({ invariant: "I5", name: entry.name });
