@@ -358,8 +358,13 @@ function callContaining(code: string, idx: number): { open: number; close: numbe
   return { open: innerOpen, close, callee };
 }
 
-function isResolverCallee(name: string): boolean {
-  return name === "createCopyResolver" || name === "resolveCopyRef";
+function isResolverExport(exportName: string): boolean {
+  return exportName === "createCopyResolver" || exportName === "resolveCopyRef";
+}
+
+interface WriterCalleeImports {
+  localNames: Set<string>;
+  localToExport: Map<string, string>;
 }
 
 /**
@@ -369,28 +374,31 @@ function isResolverCallee(name: string): boolean {
  */
 function writerCalleeAllowed(
   callee: string,
-  writerCalleepNames: Set<string>,
+  writerImports: WriterCalleeImports,
   localShadowedCalleepNames: Set<string>,
 ): boolean {
-  return writerCalleepNames.has(callee) && !localShadowedCalleepNames.has(callee);
+  return writerImports.localNames.has(callee) && !localShadowedCalleepNames.has(callee);
 }
 
 function parseCopyRegistryRegistryArgAllowed(
   code: string,
   argIdx: number,
-  writerCalleepNames: Set<string>,
+  writerImports: WriterCalleeImports,
   localShadowedCalleepNames: Set<string>,
 ): boolean {
   const call = callContaining(code, argIdx);
-  if (!call || call.callee !== "parseCopyRegistry") return false;
-  if (!writerCalleeAllowed("parseCopyRegistry", writerCalleepNames, localShadowedCalleepNames)) return false;
+  if (!call) return false;
+  const parseExport = writerImports.localToExport.get(call.callee);
+  if (parseExport !== "parseCopyRegistry") return false;
+  if (!writerCalleeAllowed(call.callee, writerImports, localShadowedCalleepNames)) return false;
   const afterClose = nextNonWs(code, call.close + 1);
   const next = code[afterClose];
   if (next === "." || next === "[") return false;
   if (next === "," || next === ")") {
     const outer = callContaining(code, call.close);
     if (!outer) return false;
-    return isResolverCallee(outer.callee) && writerCalleeAllowed(outer.callee, writerCalleepNames, localShadowedCalleepNames);
+    const outerExport = writerImports.localToExport.get(outer.callee);
+    return outerExport !== undefined && isResolverExport(outerExport) && writerCalleeAllowed(outer.callee, writerImports, localShadowedCalleepNames);
   }
   if (next === ";" || next === undefined) {
     let nameEnd = call.open - 1;
@@ -409,23 +417,30 @@ function registryBindingUseAllowed(
   bindIdx: number,
   bindNameLen: number,
   fromParsedRegistry: boolean,
-  writerCalleepNames: Set<string>,
+  writerImports: WriterCalleeImports,
   localShadowedCalleepNames: Set<string>,
 ): boolean {
   const afterName = code.slice(bindIdx + bindNameLen, bindIdx + bindNameLen + 20);
   if (!/^\s*[,)]/.test(afterName)) return false;
   const call = callContaining(code, bindIdx);
   if (!call) return false;
-  if (!writerCalleeAllowed(call.callee, writerCalleepNames, localShadowedCalleepNames)) return false;
-  if (fromParsedRegistry) return isResolverCallee(call.callee);
-  if (call.callee === "parseCopyRegistry") {
-    return parseCopyRegistryRegistryArgAllowed(code, bindIdx, writerCalleepNames, localShadowedCalleepNames);
+  if (!writerCalleeAllowed(call.callee, writerImports, localShadowedCalleepNames)) return false;
+  const exportName = writerImports.localToExport.get(call.callee);
+  if (exportName === undefined) return false;
+  if (fromParsedRegistry) return isResolverExport(exportName);
+  if (exportName === "parseCopyRegistry") {
+    return parseCopyRegistryRegistryArgAllowed(code, bindIdx, writerImports, localShadowedCalleepNames);
   }
-  return call.callee === "createCopyResolver" || call.callee === "resolveCopyRef" || call.callee === "validateCopyRegistryShape";
+  return isResolverExport(exportName) || exportName === "validateCopyRegistryShape";
 }
 
-function collectWriterCalleepNames(specifiers: Specifier[], isWriter: (s: string) => boolean, code: string): Set<string> {
-  const names = new Set<string>();
+function collectWriterCalleeImports(specifiers: Specifier[], isWriter: (s: string) => boolean, code: string): WriterCalleeImports {
+  const localNames = new Set<string>();
+  const localToExport = new Map<string, string>();
+  const note = (local: string, imported: string): void => {
+    localNames.add(local);
+    localToExport.set(local, imported);
+  };
   for (const spec of specifiers) {
     if (!isWriter(spec.lit.text)) continue;
     if (spec.form === "static") {
@@ -439,12 +454,12 @@ function collectWriterCalleepNames(specifiers: Specifier[], isWriter: (s: string
           const imported = m[2];
           const local = m[3] ?? imported;
           if (local === undefined || imported === undefined) continue;
-          if (WRITER_PACKAGE_CALLEE_SET.has(imported)) names.add(local);
+          if (WRITER_PACKAGE_CALLEE_SET.has(imported)) note(local, imported);
         }
       }
     } else if (spec.form === "import-equals") {
       const m = new RegExp(`import\\s+(?:type\\s+)?(${IDENT})\\s*=`, "u").exec(code.slice(spec.stmtStart, spec.lit.start));
-      if (m && WRITER_PACKAGE_CALLEE_SET.has(m[1]!)) names.add(m[1]!);
+      if (m && WRITER_PACKAGE_CALLEE_SET.has(m[1]!)) note(m[1]!, m[1]!);
     } else if (spec.form === "require") {
       const pre = code.slice(Math.max(0, spec.stmtStart - 400), spec.stmtStart);
       const decl = new RegExp(`${CALLEE_BOUNDARY}(?:const|let|var)\\s+\\{([^}]*)\\}\\s*=\\s*$`, "u").exec(pre);
@@ -456,12 +471,24 @@ function collectWriterCalleepNames(specifiers: Specifier[], isWriter: (s: string
           if (!m) continue;
           const local = m[1] ?? m[3];
           const imported = m[2] ?? m[1];
-          if (local && imported && WRITER_PACKAGE_CALLEE_SET.has(imported)) names.add(local);
+          if (local && imported && WRITER_PACKAGE_CALLEE_SET.has(imported)) note(local, imported);
         }
       }
     }
   }
-  return names;
+  return { localNames, localToExport };
+}
+
+function writerRequireDestructureSpans(specifiers: Specifier[], isWriter: (s: string) => boolean, code: string): { start: number; end: number }[] {
+  const spans: { start: number; end: number }[] = [];
+  for (const spec of specifiers) {
+    if (spec.form !== "require" || !isWriter(spec.lit.text)) continue;
+    const preStart = Math.max(0, spec.stmtStart - 400);
+    const pre = code.slice(preStart, spec.stmtStart);
+    const decl = new RegExp(`${CALLEE_BOUNDARY}(?:const|let|var)\\s+\\{([^}]*)\\}\\s*=\\s*$`, "u").exec(pre);
+    if (decl) spans.push({ start: preStart + decl.index!, end: spec.stmtStart });
+  }
+  return spans;
 }
 
 function destructuringPatternShadowsName(inner: string, name: string): boolean {
@@ -486,15 +513,22 @@ function arrayPatternShadowsName(inner: string, name: string): boolean {
   return false;
 }
 
-function collectLocalShadowedCalleepNames(code: string): Set<string> {
+function collectLocalShadowedCalleepNames(
+  code: string,
+  writerLocalNames: Set<string>,
+  writerRequireDestructureDeclSpans: { start: number; end: number }[],
+): Set<string> {
   const shadowed = new Set<string>();
-  for (const name of WRITER_PACKAGE_CALLEES) {
+  const fnDeclPrefix = `${CALLEE_BOUNDARY}(?:export\\s+default\\s+)?(?:async\\s+)?function\\s*(?:\\*\\s*)?`;
+  for (const name of writerLocalNames) {
     const esc = escapeRegExp(name);
-    if (new RegExp(`${CALLEE_BOUNDARY}(?:async\\s+)?function\\s*(?:\\*\\s*)?${esc}${NOT_ID_CONTINUE}`, "u").test(code))
-      shadowed.add(name);
+    if (new RegExp(`${fnDeclPrefix}${esc}${NOT_ID_CONTINUE}`, "u").test(code)) shadowed.add(name);
     if (new RegExp(`${CALLEE_BOUNDARY}class\\s+${esc}${NOT_ID_CONTINUE}`, "u").test(code)) shadowed.add(name);
     if (new RegExp(`${CALLEE_BOUNDARY}(?:const|let|var)\\s+${esc}(?:\\s*:[^=;]*)?\\s*=`, "u").test(code)) shadowed.add(name);
     if (new RegExp(`${CALLEE_BOUNDARY}(?:const|let|var)\\s+${esc}(?:\\s*:[^=;]+)?\\s*;`, "u").test(code)) shadowed.add(name);
+    if (new RegExp(`${CALLEE_BOUNDARY}(?:const|let|var)\\s+[^;]+?,\\s*${esc}(?:\\s*:[^=;]*)?\\s*=`, "u").test(code))
+      shadowed.add(name);
+    if (new RegExp(`${CALLEE_BOUNDARY}using\\s+${esc}(?:\\s*<[^>]*)?\\s*=`, "u").test(code)) shadowed.add(name);
     if (
       new RegExp(
         `${CALLEE_BOUNDARY}for\\s+(?:await\\s+)?\\(\\s*(?:const|let|var)\\s+${esc}(?:\\s*:[^;)]+)?\\s*(?:of|in)\\b`,
@@ -503,29 +537,41 @@ function collectLocalShadowedCalleepNames(code: string): Set<string> {
     )
       shadowed.add(name);
     for (const m of code.matchAll(new RegExp(`${CALLEE_BOUNDARY}(?:const|let|var)\\s*\\{([^}]*)\\}`, "gu"))) {
+      if (writerRequireDestructureDeclSpans.some((s) => m.index! >= s.start && m.index! < s.end)) continue;
       if (destructuringPatternShadowsName(m[1]!, name)) shadowed.add(name);
     }
     for (const m of code.matchAll(new RegExp(`${CALLEE_BOUNDARY}(?:const|let|var)\\s*\\[([^\\]]*)\\]`, "gu"))) {
       if (arrayPatternShadowsName(m[1]!, name)) shadowed.add(name);
     }
-    if (new RegExp(`${CALLEE_BOUNDARY}(?:async\\s+)?function\\s*(?:\\*\\s*)?${IDENT}\\s*\\([^)]*\\.\\.\\.\\s*${esc}${NOT_ID_CONTINUE}`, "u").test(code))
+    if (new RegExp(`${fnDeclPrefix}${IDENT}\\s*\\([^)]*\\.\\.\\.\\s*${esc}${NOT_ID_CONTINUE}`, "u").test(code))
       shadowed.add(name);
-    const firstParamBind = `\\(\\s*(?:\\.\\.\\.\\s*)?${esc}(?![\\w$])\\s*(?:[,):]|=|:)`;
-    const laterParamBind = `,\\s*(?:\\.\\.\\.\\s*)?${esc}(?![\\w$])\\s*(?:[,):]|=|:)`;
+    const boundParam = `(?:\\.\\.\\.\\s*)?${esc}(?:\\?(?:\\s*[,):]|=|:)|(?![\\w$])\\s*(?:[,):]|=|:))`;
+    const firstParamBind = `\\(\\s*${boundParam}`;
+    const laterParamBind = `,\\s*(?:\\.\\.\\.\\s*)?${esc}(?:\\?(?:\\s*[,):]|=|:)|(?![\\w$])\\s*(?:[,):]|=|:))`;
     const fnNamed = `${IDENT}\\s*(?:<[^>]*>)?\\s*${firstParamBind}`;
-    if (new RegExp(`${CALLEE_BOUNDARY}(?:async\\s+)?function\\s*(?:\\*\\s*)?${fnNamed}`, "u").test(code)) shadowed.add(name);
-    if (new RegExp(`${CALLEE_BOUNDARY}(?:async\\s+)?function\\s*(?:\\*\\s*)?${IDENT}\\s*(?:<[^>]*>)?\\s*\\([^)]*${laterParamBind}`, "u").test(code))
+    if (new RegExp(`${fnDeclPrefix}${fnNamed}`, "u").test(code)) shadowed.add(name);
+    if (new RegExp(`${fnDeclPrefix}\\s*${firstParamBind}`, "u").test(code)) shadowed.add(name);
+    if (new RegExp(`${fnDeclPrefix}${IDENT}\\s*(?:<[^>]*>)?\\s*\\([^)]*${laterParamBind}`, "u").test(code))
       shadowed.add(name);
-    if (new RegExp(`${CALLEE_BOUNDARY}${fnNamed}\\s*\\{`, "u").test(code)) shadowed.add(name);
+    if (new RegExp(`${fnDeclPrefix}\\s*\\([^)]*${laterParamBind}`, "u").test(code)) shadowed.add(name);
+    if (new RegExp(`${fnDeclPrefix}${IDENT}\\s*(?:<[^>]*>)?\\s*\\(\\s*\\{[^}]*${esc}`, "u").test(code)) shadowed.add(name);
+    if (new RegExp(`${fnDeclPrefix}${IDENT}\\s*(?:<[^>]*>)?\\s*\\(\\s*\\[[^\\]]*${esc}`, "u").test(code)) shadowed.add(name);
     if (
-      new RegExp(`${CALLEE_BOUNDARY}${IDENT}\\s*(?:<[^>]*>)?\\s*\\([^)]*${laterParamBind}[^)]*\\)\\s*\\{`, "u").test(code)
+      new RegExp(
+        `constructor\\s*\\([^)]*(?:public|private|protected|readonly\\s+)?${esc}(?:\\?(?:\\s*[,):]|=|:)|(?![\\w$])\\s*(?:[,):]|=|:))`,
+        "u",
+      ).test(code)
     )
       shadowed.add(name);
-    if (new RegExp(`${CALLEE_BOUNDARY}(?:const|let|var)\\s+${IDENT}\\s*=\\s*${firstParamBind}\\s*=>`, "u").test(code))
+    if (new RegExp(`\\{\\s*${IDENT}\\s*(?:<[^>]*>)?\\s*${firstParamBind}`, "u").test(code)) shadowed.add(name);
+    if (new RegExp(`\\{\\s*${IDENT}\\s*(?:<[^>]*>)?\\s*\\([^)]*${laterParamBind}`, "u").test(code)) shadowed.add(name);
+    if (new RegExp(`${CALLEE_BOUNDARY}(?:const|let|var)\\s+${IDENT}\\s*=\\s*(?:async\\s+)?${esc}\\s*=>`, "u").test(code))
+      shadowed.add(name);
+    if (new RegExp(`${CALLEE_BOUNDARY}(?:const|let|var)\\s+${IDENT}\\s*=\\s*(?:async\\s+)?${firstParamBind}\\s*=>`, "u").test(code))
       shadowed.add(name);
     if (
       new RegExp(
-        `${CALLEE_BOUNDARY}(?:const|let|var)\\s+${IDENT}\\s*=\\s*\\([^)]*${laterParamBind}[^)]*\\)\\s*=>`,
+        `${CALLEE_BOUNDARY}(?:const|let|var)\\s+${IDENT}\\s*=\\s*(?:async\\s+)?\\([^)]*${laterParamBind}[^)]*\\)\\s*=>`,
         "u",
       ).test(code)
     )
@@ -691,8 +737,13 @@ export function extractApprovalBypass(
   const coupled = specifiers.some((s) => isWriter(s.lit.text) || isRegistry(s.lit.text));
   if (!coupled) return { coupled: false, findings: [], unchecked: [] };
 
-  const writerCalleepNames = collectWriterCalleepNames(specifiers, isWriter, code);
-  const localShadowedCalleepNames = collectLocalShadowedCalleepNames(code);
+  const writerImports = collectWriterCalleeImports(specifiers, isWriter, code);
+  const writerRequireDestructureDeclSpans = writerRequireDestructureSpans(specifiers, isWriter, code);
+  const localShadowedCalleepNames = collectLocalShadowedCalleepNames(
+    code,
+    writerImports.localNames,
+    writerRequireDestructureDeclSpans,
+  );
 
   const findings: ApprovalBypassFinding[] = [];
   const unchecked: ApprovalBypassUncheckedItem[] = [];
@@ -808,7 +859,7 @@ export function extractApprovalBypass(
       if (/(?<![\w$.])typeof\s+$/.test(code.slice(Math.max(0, i - 20), i))) continue; // a type query reads no content
       const afterName = code.slice(i + b.name.length, i + b.name.length + 20);
       if (/^\s*:(?!:)/.test(afterName) && isObjectKeyPosition(code, i)) continue; // `{ name: ... }` — a key, not the binding
-      if (registryBindingUseAllowed(code, i, b.name.length, b.fromParsedRegistry, writerCalleepNames, localShadowedCalleepNames))
+      if (registryBindingUseAllowed(code, i, b.name.length, b.fromParsedRegistry, writerImports, localShadowedCalleepNames))
         continue;
       finding(
         "copy-read-without-resolver",
