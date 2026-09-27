@@ -442,6 +442,33 @@ describe("regenerateLockfile preconditions", () => {
     expect(await regenerateLockfile(npmInput(root), { spawn: recorder.spawn })).toMatchObject({ reason: "package-manager-config-unsafe" });
     expect(recorder.calls).toEqual([]);
   });
+
+  const COREPACK_ENV_FIXTURE = "FIXTURE_COREPACK_ENV_LINE=must-not-appear-in-refusal\n";
+
+  it.each([
+    ["npm", "package-lock.json", null],
+    ["pnpm", "pnpm-lock.yaml", "10.33.0"],
+    ["yarn", "yarn.lock", "4.5.0"],
+  ] as const)("refuses %s when the only extra root entry is .corepack.env, before launch", async (packageManager, lockfile, toolVersion) => {
+    const root = fakeRoot({ lockfile });
+    writeFileSync(join(root, ".corepack.env"), COREPACK_ENV_FIXTURE);
+    const recorder = fakeTool(() => ok);
+    const result = await regenerateLockfile(npmInput(root, { packageManager, lockfile, toolVersion }), { spawn: recorder.spawn });
+    expect(result).toEqual({ verdict: "indeterminate", reason: "package-manager-config-unsafe", tooling: null });
+    expect(recorder.calls).toEqual([]);
+    expect(JSON.stringify(result)).not.toContain("must-not-appear-in-refusal");
+  });
+
+  it("refuses when .corepack.env is a symlink, before launch", async () => {
+    const root = fakeRoot();
+    writeFileSync(join(root, "shared.corepack.env"), COREPACK_ENV_FIXTURE);
+    symlinkSync("shared.corepack.env", join(root, ".corepack.env"));
+    const recorder = fakeTool(() => ok);
+    const result = await regenerateLockfile(npmInput(root), { spawn: recorder.spawn });
+    expect(result).toMatchObject({ verdict: "indeterminate", reason: "package-manager-config-unsafe" });
+    expect(recorder.calls).toEqual([]);
+    expect(JSON.stringify(result)).not.toContain("must-not-appear-in-refusal");
+  });
 });
 
 describe("regenerateLockfile with fake tools", () => {

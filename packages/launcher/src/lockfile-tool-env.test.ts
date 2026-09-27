@@ -64,7 +64,8 @@ const BASE_KEYS = [
 ].sort();
 const PNPM_KEYS = ["pnpm_config_update_notifier"];
 const YARN_KEYS = ["YARN_ENABLE_SCRIPTS", "YARN_ENABLE_TELEMETRY", "YARN_ENABLE_GLOBAL_CACHE", "YARN_CACHE_FOLDER"].sort();
-const COREPACK_KEYS_WITH_HOME = ["COREPACK_ENABLE_DOWNLOAD_PROMPT", "COREPACK_NPM_REGISTRY", "COREPACK_HOME"].sort();
+const COREPACK_KEYS_WITH_HOME = ["COREPACK_ENABLE_DOWNLOAD_PROMPT", "COREPACK_ENV_FILE", "COREPACK_NPM_REGISTRY", "COREPACK_HOME"].sort();
+const COREPACK_KEYS_WITHOUT_HOME = ["COREPACK_ENABLE_DOWNLOAD_PROMPT", "COREPACK_ENV_FILE", "COREPACK_NPM_REGISTRY"].sort();
 
 const PATH_VALUED_KEYS = [
   "HOME",
@@ -146,6 +147,12 @@ describe("lockfileToolEnv", () => {
   ])("keeps only absolute PATH entries, in order, for parent PATH %j", (parentPath, expected) => {
     const env = lockfileToolEnv({ tool: "npm", scratch: SCRATCH, registry: REGISTRY, corepack: false, parent: { PATH: parentPath } });
     expect(env.PATH).toBe(expected);
+  });
+
+  it("sets COREPACK_ENV_FILE to 0 when corepack is true, including when the parent has no COREPACK_HOME", () => {
+    const env = lockfileToolEnv({ tool: "pnpm", scratch: SCRATCH, registry: REGISTRY, corepack: true, parent: { PATH: "/usr/bin" } });
+    expect(env.COREPACK_ENV_FILE).toBe("0");
+    expect(Object.keys(env).sort()).toEqual([...BASE_KEYS, ...PNPM_KEYS, ...COREPACK_KEYS_WITHOUT_HOME].sort());
   });
 
   it("omits COREPACK_HOME when corepack is true but the parent has none", () => {

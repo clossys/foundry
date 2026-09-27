@@ -43,6 +43,7 @@ export const LOCKFILE_TOOL_ENV_KEYS = Object.freeze([
   "COREPACK_ENABLE_DOWNLOAD_PROMPT",
   "COREPACK_NPM_REGISTRY",
   "COREPACK_HOME",
+  "COREPACK_ENV_FILE",
 ] as const);
 
 const nonEmptyString = (value: string | undefined): value is string => typeof value === "string" && value.length > 0;
@@ -99,6 +100,7 @@ export function lockfileToolEnv(input: LockfileToolEnvInput): Record<string, str
   if (corepack) {
     env.COREPACK_ENABLE_DOWNLOAD_PROMPT = "0";
     env.COREPACK_NPM_REGISTRY = registry;
+    env.COREPACK_ENV_FILE = "0";
     if (nonEmptyString(parent.COREPACK_HOME)) env.COREPACK_HOME = parent.COREPACK_HOME;
   }
   return env;

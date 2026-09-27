@@ -770,6 +770,7 @@ export async function regenerateLockfile(input: LockfileRegenInput, ports: Lockf
   if (tool === "yarn" && input.toolVersion?.split(".")[0] === "1") return indeterminate("package-manager-unsupported");
 
   // 3. Repository configuration.
+  if ((await lstatOrNull(join(root, ".corepack.env"))) !== null) return indeterminate("package-manager-config-unsafe");
   const files: { -readonly [key in keyof RepositoryConfigFiles]: string } = {};
   for (const [key, name] of CONFIG_FILES[tool]) {
     const stats = await lstatOrNull(join(root, name));
