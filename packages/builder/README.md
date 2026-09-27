@@ -849,6 +849,35 @@ manifest with no surfaces is a finding, never a vacuous pass, and
 was compared" and "everything agreed" can never be told apart by a caller who
 only glances at `ok`. `productionBranch` appears only on a clean result.
 
+### Provider-verified deploy record (issues #1518, #360)
+
+A deployment surface can declare production branch, preview branches, the
+standard preview URL, protection mode (`sso` or `none`), and required
+environment names per target (`preview` or `production`), each marked
+`secret` or `plain` and `project` or `shared`. Optional `releaseRef: true`
+names the release-ref model: production is the `release` branch and `main`
+is a preview branch.
+
+`verifyDeployRecord(declared, observed)` compares that declaration to a
+caller-supplied provider observation (fixture or read-only adapter output).
+The observation carries names and settings only — never secret values — and
+the verifier reports `indeterminate` when an environment row includes a
+`value` field.
+
+```ts
+import { verifyDeployRecord } from "@clossys/builder/deployment";
+
+const result = verifyDeployRecord(declared, observed);
+// => { verdict: "satisfied", evaluated: n } | { verdict: "violated", findings: [...] }
+//    | { verdict: "indeterminate", reason: "observation-carries-secret-value", ... }
+```
+
+| Export | Kind | Purpose |
+| --- | --- | --- |
+| `verifyDeployRecord(declared, observed)` | function | Reconciles declared deploy settings against a provider observation; fails on branch, preview URL, environment, and protection drift. |
+| `DEPLOY_RECORD_INDETERMINATE_REASONS` | constant | Declared indeterminate vocabulary for deploy-record verification. |
+| `DeployRecordDefinition` / `DeployRecordObservation` / related types | types | Declared and observed deploy-record shapes (names and settings only). |
+
 | Export | Kind | Purpose |
 | --- | --- | --- |
 | `validateDeploymentBranchBindings(value)` / `isValidDeploymentBranchBindings(value)` | functions | Strict structural validation of untyped authoring input; a throwing accessor reads as unreadable input, never as a pass. |

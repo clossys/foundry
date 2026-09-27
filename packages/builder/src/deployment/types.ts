@@ -126,3 +126,70 @@ export type DeploymentHealthSummary = {
   readonly unhealthy: number;
   readonly unknown: number;
 };
+
+/** Provider protection mode for preview deployments on one surface. */
+export type DeployRecordProtection = "sso" | "none";
+
+/** Which deployment target an environment name is bound to. */
+export type DeployRecordEnvironmentTarget = "preview" | "production";
+
+/** Declared sensitivity of an environment name — never a secret value. */
+export type DeployRecordEnvironmentClassification = "secret" | "plain";
+
+/** Whether an environment name is project-scoped or shared team-wide. */
+export type DeployRecordEnvironmentScope = "project" | "shared";
+
+/** One required environment name and how it is classified for one target. */
+export type DeployRecordEnvironmentNameDefinition = {
+  readonly name: string;
+  readonly target: DeployRecordEnvironmentTarget;
+  readonly classification: DeployRecordEnvironmentClassification;
+  readonly scope: DeployRecordEnvironmentScope;
+};
+
+/**
+ * Declared deploy settings for one deployment surface (#1518, #360).
+ * Names and settings only — no secret values.
+ */
+export type DeployRecordDefinition = {
+  readonly productionBranch: string;
+  readonly previewBranches: readonly string[];
+  readonly previewUrl: string;
+  readonly protection: DeployRecordProtection;
+  readonly environmentNames: readonly DeployRecordEnvironmentNameDefinition[];
+  /**
+   * When true, production is the `release` branch and `main` is a preview
+   * branch under the release-ref model.
+   */
+  readonly releaseRef?: boolean;
+};
+
+/** One environment name observed on the provider — names and settings only. */
+export type DeployRecordEnvironmentObservation = {
+  readonly name: string;
+  readonly target: DeployRecordEnvironmentTarget;
+  readonly scope: DeployRecordEnvironmentScope;
+  readonly classification?: DeployRecordEnvironmentClassification;
+};
+
+/**
+ * Provider observation for `verifyDeployRecord`. Callers supply this from a
+ * read-only adapter fixture or live read. It must never carry secret values.
+ */
+export type DeployRecordObservation = {
+  readonly productionBranch: string;
+  readonly previewUrl: string;
+  readonly protection: DeployRecordProtection;
+  /** Branch names the provider has enabled for deployments. */
+  readonly deployEnabledBranches?: readonly string[];
+  readonly environmentNames: readonly DeployRecordEnvironmentObservation[];
+};
+
+export type DeployRecordFindingRule =
+  | "deploy-record-production-branch"
+  | "deploy-record-release-ref-main-deploy"
+  | "deploy-record-preview-url"
+  | "deploy-record-environment-missing"
+  | "deploy-record-environment-scope"
+  | "deploy-record-environment-classification"
+  | "deploy-record-protection";
