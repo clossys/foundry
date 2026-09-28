@@ -729,21 +729,7 @@ function bindingPatternLocalNames(name: ts.BindingName): string[] {
   return names;
 }
 
-function isComponentIdentifier(name: string): boolean {
-  const first = name.charAt(0);
-  return first !== "" && first === first.toUpperCase() && first !== first.toLowerCase();
-}
-
 const NON_MESSAGE_PARAMETER_MEMBERS = new Set(["length", "toString", "valueOf"]);
-
-const INDIRECT_CALL_BUILTIN_CALLEES = new Set([
-  "Number",
-  "String",
-  "Boolean",
-  "parseInt",
-  "parseFloat",
-  "BigInt",
-]);
 
 const EXEMPT_RENDERED_MEMBER_NAMES = new Set(["glyph", "displayName", "d", "aria-hidden", "aria-live"]);
 
@@ -2049,6 +2035,12 @@ function directArgumentRenderSlices(expression: ts.Expression): ts.Expression[] 
 
 function argumentRenderOperands(expression: ts.Expression): ts.Expression[] {
   expression = unwrapExpression(expression);
+  if (ts.isConditionalExpression(expression)) {
+    return [
+      ...argumentRenderOperands(expression.whenTrue),
+      ...argumentRenderOperands(expression.whenFalse),
+    ];
+  }
   if (ts.isBinaryExpression(expression)) {
     const kind = expression.operatorToken.kind;
     if (
@@ -2067,6 +2059,115 @@ function argumentRenderOperands(expression: ts.Expression): ts.Expression[] {
   return [expression];
 }
 
+function objectLiteralInitializerForName(name: string, from: ts.Node): ts.ObjectLiteralExpression | undefined {
+  const initializer = localInitializerInScope(name, from);
+  if (initializer === undefined) return undefined;
+  const unwrapped = unwrapExpression(initializer);
+  return ts.isObjectLiteralExpression(unwrapped) ? unwrapped : undefined;
+}
+
+function objectLiteralMemberValue(
+  object: ts.ObjectLiteralExpression,
+  memberKey: string,
+  source: ts.SourceFile,
+): ts.Expression | ts.FunctionLikeDeclaration | undefined {
+  for (const property of object.properties) {
+    if (ts.isMethodDeclaration(property)) {
+      if (objectLiteralElementName(property, source) === memberKey) return property;
+      continue;
+    }
+    if (ts.isPropertyAssignment(property)) {
+      if (objectLiteralElementName(property, source) !== memberKey) continue;
+      const initializer = unwrapExpression(property.initializer);
+      if (ts.isArrowFunction(initializer) || ts.isFunctionExpression(initializer)) return initializer;
+      return property.initializer;
+    }
+    if (ts.isShorthandPropertyAssignment(property) && property.name.text === memberKey) {
+      return property.name;
+    }
+  }
+  return undefined;
+}
+
+function resolveObjectLiteralForExpression(
+  expression: ts.Expression | undefined,
+  source: ts.SourceFile,
+): ts.ObjectLiteralExpression | undefined {
+  if (expression === undefined) return undefined;
+  const unwrapped = unwrapExpression(expression);
+  if (ts.isObjectLiteralExpression(unwrapped)) return unwrapped;
+  if (ts.isIdentifier(unwrapped)) {
+    return objectLiteralInitializerForName(unwrapped.text, unwrapped);
+  }
+  return undefined;
+}
+
+function resolveMemberCalleeFunctionLike(
+  calleeExpr: ts.PropertyAccessExpression | ts.ElementAccessExpression,
+  source: ts.SourceFile,
+): ts.FunctionLikeDeclaration | undefined {
+  const chain = renderedMemberChain(calleeExpr);
+  if (chain === null) return undefined;
+  const segments = [chain.objectName, ...chain.memberKeys];
+  // Try every suffix: the leading identifiers may be namespaces or objects
+  // this file does not declare, while a later local object does resolve.
+  for (let start = 0; start + 1 < segments.length; start++) {
+    const rootName = segments[start];
+    if (rootName === undefined) continue;
+    const rootObject = objectLiteralInitializerForName(rootName, calleeExpr);
+    if (rootObject === undefined) continue;
+    let current: ts.ObjectLiteralExpression | undefined = rootObject;
+    for (let index = start + 1; index < segments.length && current !== undefined; index++) {
+      const key = segments[index];
+      if (key === undefined) {
+        current = undefined;
+        break;
+      }
+      const member = objectLiteralMemberValue(current, key, source);
+      if (member === undefined) {
+        current = undefined;
+        break;
+      }
+      if (index === segments.length - 1) {
+        if (ts.isFunctionLike(member)) return member;
+        if (ts.isIdentifier(member)) {
+          const resolved = resolveCallableFunctionLike(member.text, source);
+          if (resolved !== undefined) return resolved;
+        }
+        current = undefined;
+        break;
+      }
+      current = resolveObjectLiteralForExpression(member as ts.Expression, source);
+    }
+  }
+  return undefined;
+}
+
+function calleeFunctionLikeFromCall(
+  call: ts.CallExpression,
+  source: ts.SourceFile,
+): ts.FunctionLikeDeclaration | undefined {
+  const calleeExpr = unwrapExpression(call.expression);
+  if (ts.isIdentifier(calleeExpr)) {
+    return resolveCallableFunctionLike(calleeExpr.text, source);
+  }
+  if (ts.isPropertyAccessExpression(calleeExpr) || ts.isElementAccessExpression(calleeExpr)) {
+    return resolveMemberCalleeFunctionLike(calleeExpr, source);
+  }
+  return undefined;
+}
+
+function isGlobalConsoleCallee(call: ts.CallExpression, source: ts.SourceFile): boolean {
+  const calleeExpr = unwrapExpression(call.expression);
+  const baseName = ts.isIdentifier(calleeExpr)
+    ? calleeExpr.text
+    : ts.isPropertyAccessExpression(calleeExpr) || ts.isElementAccessExpression(calleeExpr)
+      ? renderedMemberChain(calleeExpr)?.objectName
+      : undefined;
+  if (baseName !== "console") return false;
+  return objectLiteralInitializerForName("console", calleeExpr) === undefined;
+}
+
 function indirectCallRendersArgument(
   call: ts.CallExpression,
   argIndex: number,
@@ -2083,22 +2184,21 @@ function indirectCallRendersArgument(
   moduleMessageArrayInitializers: Map<string, ts.Expression>,
 ): boolean {
   if (isCreateElementCall(call)) return argIndex >= 2;
+  if (isGlobalConsoleCallee(call, sourceFile)) return false;
   const calleeExpr = unwrapExpression(call.expression);
-  if (!ts.isIdentifier(calleeExpr)) return false;
-  const calleeName = calleeExpr.text;
-  if (INDIRECT_CALL_BUILTIN_CALLEES.has(calleeName)) return false;
-  if (isComponentIdentifier(calleeName)) return true;
-  let resolvedCalleeName = calleeName;
-  if (currentParameters !== undefined) {
-    const defaultInit = parameterDefaultInitializerForLocalName(calleeName, currentParameters);
+  let callee = calleeFunctionLikeFromCall(call, sourceFile);
+  if (callee === undefined && ts.isIdentifier(calleeExpr) && currentParameters !== undefined) {
+    const defaultInit = parameterDefaultInitializerForLocalName(calleeExpr.text, currentParameters);
     if (defaultInit !== undefined) {
       const init = unwrapExpression(defaultInit);
       if (ts.isIdentifier(init)) {
-        resolvedCalleeName = init.text;
+        callee = resolveCallableFunctionLike(init.text, sourceFile);
       }
     }
   }
-  const callee = resolveCallableFunctionLike(resolvedCalleeName, sourceFile);
+  // A callee that cannot be resolved in-file keeps the previous behaviour:
+  // the argument is not analysed, so an unknown callee never decides from its
+  // name or shape. Only the global `console` object is exempted explicitly.
   if (callee === undefined) return false;
   const param = callee.parameters[argIndex];
   if (param === undefined) return false;
@@ -4379,14 +4479,49 @@ function analyzeRenderedLocals(
           if (ts.isObjectLiteralExpression(unwrappedArgument)) {
             for (const property of unwrappedArgument.properties) {
               if (!ts.isPropertyAssignment(property)) continue;
-              const literal = staticLiteral(unwrapExpression(property.initializer));
+              const initializer = unwrapExpression(property.initializer);
+              const literal = staticLiteral(initializer);
               if (literal !== null && hasLetter(literal)) {
                 indirectArgumentViolations.push({ line, kind: "jsx-text", text: literal });
+                continue;
+              }
+              if (!ts.isTemplateExpression(initializer)) continue;
+              const shippedSlice = argumentRenderOperands(initializer)
+                .filter((slice) => {
+                  const operand = unwrapExpression(slice);
+                  return (
+                    !ts.isStringLiteral(operand) &&
+                    !ts.isNoSubstitutionTemplateLiteral(operand) &&
+                    !ts.isNumericLiteral(operand)
+                  );
+                })
+                .find((slice) =>
+                  renderSliceExpressionIsShipped(
+                    slice,
+                    moduleBindings,
+                    moduleFunctions,
+                    moduleDirectStringFunctions,
+                    fileModuleDirectStringAliases,
+                    parameterDefaultSearchParameters,
+                    source,
+                    moduleMessageObjectInitializers,
+                    moduleMessageArrayInitializers,
+                    messageCallParameters,
+                    mergedLiteralLocalInitializers,
+                  ),
+                );
+              if (shippedSlice !== undefined) {
+                indirectArgumentViolations.push({
+                  line,
+                  kind: "rendered-local",
+                  text: parameterSliceReportName(shippedSlice) ?? initializer.getText(source),
+                });
               }
             }
           } else if (
             ts.isBinaryExpression(unwrappedArgument) ||
             ts.isTemplateExpression(unwrappedArgument) ||
+            ts.isConditionalExpression(unwrappedArgument) ||
             ts.isElementAccessExpression(unwrappedArgument) ||
             ts.isPropertyAccessExpression(unwrappedArgument)
           ) {
@@ -4512,14 +4647,14 @@ function analyzeRenderedLocals(
       registerFromExpression(node.left.text, node.right, node.getStart());
     }
     if (ts.isCallExpression(node)) {
-      noteIndirectCallArguments(node);
-      if (ts.isIdentifier(node.expression)) {
-        const stateVar = setterToState.get(node.expression.text);
-        if (stateVar !== undefined && node.arguments.length > 0) {
-          const argument = node.arguments[0];
-          if (argument !== undefined && ts.isExpression(argument)) {
-            registerFromExpression(stateVar, argument, lineOf(node));
-          }
+      const setterStateVar = ts.isIdentifier(node.expression) ? setterToState.get(node.expression.text) : undefined;
+      if (setterStateVar === undefined) {
+        noteIndirectCallArguments(node);
+      }
+      if (setterStateVar !== undefined && node.arguments.length > 0) {
+        const argument = node.arguments[0];
+        if (argument !== undefined && ts.isExpression(argument)) {
+          registerFromExpression(setterStateVar, argument, lineOf(node));
         }
       }
     }
@@ -8695,6 +8830,187 @@ describe("shipped message lint", () => {
     expect(findShippedMessageViolations("Example.tsx", templateArgumentDefault)).toEqual([
       expect.objectContaining({ kind: "rendered-local", text: "caption" }),
     ]);
+  });
+
+  it("notes fix round 30 render-relationship callees and object-literal templates", () => {
+    const objectMemberTemplate = [
+      "function renderBlock(messages: { t: string }) { return <span>{messages.t}</span>; }",
+      'export function Example(caption = "Save changes") { renderBlock({ t: `${caption}` }); }',
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", objectMemberTemplate)).toEqual([
+      expect.objectContaining({ kind: "rendered-local", text: "caption" }),
+    ]);
+
+    const objectMemberTemplateDefault = objectMemberTemplate.replace(
+      'Example(caption = "Save changes")',
+      'Example(/** @default "Save changes" */ caption = "Save changes")',
+    );
+    expect(findShippedMessageViolations("Example.tsx", objectMemberTemplateDefault)).toEqual([
+      expect.objectContaining({ kind: "rendered-local", text: "caption" }),
+    ]);
+
+    const renderingStringCallee = [
+      "function String(value: string) { return <span>{value}</span>; }",
+      'export function Example(caption = "Save changes") { return String(caption + ""); }',
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", renderingStringCallee)).toEqual([
+      expect.objectContaining({ kind: "rendered-local", text: "caption" }),
+    ]);
+
+    const renderingNumberCallee = [
+      "function Number(value: string) { return <span>{value}</span>; }",
+      'export function Example(caption = "Save changes") { return Number(`${caption}`); }',
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", renderingNumberCallee)).toEqual([
+      expect.objectContaining({ kind: "rendered-local", text: "caption" }),
+    ]);
+
+    const renderingParseIntCallee = [
+      "function parseInt(value: string) { return <span>{value}</span>; }",
+      'export function Example(caption = "Save changes") { return parseInt(caption + ""); }',
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", renderingParseIntCallee)).toEqual([
+      expect.objectContaining({ kind: "rendered-local", text: "caption" }),
+    ]);
+
+    const renderingStringNested = [
+      "function String(value: string) { return <span>{value}</span>; }",
+      "function show(value: string) { return <span>{value}</span>; }",
+      'export function Example(caption = "Save changes") { return show(String(caption + "")); }',
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", renderingStringNested)).toEqual([
+      expect.objectContaining({ kind: "rendered-local", text: "caption" }),
+    ]);
+
+    const renderingStringAlias = [
+      "function String(value: string) { return <span>{value}</span>; }",
+      "const fmt = String;",
+      'export function Example(caption = "Save changes") { return fmt(caption + ""); }',
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", renderingStringAlias)).toEqual([
+      expect.objectContaining({ kind: "rendered-local", text: "caption" }),
+    ]);
+
+    const memberPoints = [
+      "const ui = { show(value: string) { return <span>{value}</span>; } };",
+      'export function Example(caption = "Save changes") { return ui.show(caption + ""); }',
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", memberPoints)).toEqual([
+      expect.objectContaining({ kind: "rendered-local", text: "caption" }),
+    ]);
+
+    const memberTemplate = [
+      "const ui = { show(value: string) { return <span>{value}</span>; } };",
+      'export function Example(caption = "Save changes") { return ui.show(`${caption}`); }',
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", memberTemplate)).toEqual([
+      expect.objectContaining({ kind: "rendered-local", text: "caption" }),
+    ]);
+
+    const memberNestedNamespace = [
+      "const ui = { show(value: string) { return <span>{value}</span>; } };",
+      'export function Example(caption = "Save changes") { return ns.ui.show(caption); }',
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", memberNestedNamespace)).toEqual([
+      expect.objectContaining({ kind: "rendered-local", text: "caption" }),
+    ]);
+
+    const memberSimpleObject = [
+      "const renderers = { show(value: string) { return <span>{value}</span>; } };",
+      'export function Example(caption = "Save changes") { return renderers.show(caption); }',
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", memberSimpleObject)).toEqual([
+      expect.objectContaining({ kind: "rendered-local", text: "caption" }),
+    ]);
+
+    const memberOptionalCall = [
+      "const ui = { show(value: string) { return <span>{value}</span>; } };",
+      'export function Example(caption = "Save changes") { return ui.show?.(caption); }',
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", memberOptionalCall)).toEqual([
+      expect.objectContaining({ kind: "rendered-local", text: "caption" }),
+    ]);
+
+    const nonRenderingLoggerPlus = [
+      "function Logger(v: string) { console.log(v); }",
+      'export function Example(caption = "Save changes") { Logger(caption + ""); }',
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", nonRenderingLoggerPlus)).toEqual([]);
+
+    const nonRenderingLoggerTemplate = [
+      "function Logger(v: string) { console.log(v); }",
+      'export function Example(caption = "Save changes") { Logger(`${caption}`); }',
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", nonRenderingLoggerTemplate)).toEqual([]);
+
+    const nonRenderingLoggerIndex = [
+      "function Logger(v: string) { console.log(v); }",
+      'export function Example(caption = "Save changes") { Logger(caption[0]); }',
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", nonRenderingLoggerIndex)).toEqual([]);
+
+    const nonRenderingLowercaseLogger = [
+      "function logger(v: string) { console.log(v); }",
+      'export function Example(caption = "Save changes") { logger(caption + ""); }',
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", nonRenderingLowercaseLogger)).toEqual([]);
+
+    const conditionalOperatorArgument = [
+      "function show(value: string) { return <span>{value}</span>; }",
+      'export function Example(on = true, caption = "Save changes") { return show(on ? caption + "" : "x"); }',
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", conditionalOperatorArgument)).toEqual([
+      expect.objectContaining({ kind: "rendered-local", text: "caption" }),
+    ]);
+
+    const conditionalPlainArgument = [
+      "function show(value: string) { return <span>{value}</span>; }",
+      'export function Example(on = true, caption = "Save changes") { return show(on ? caption : "x"); }',
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", conditionalPlainArgument)).toEqual([
+      expect.objectContaining({ kind: "rendered-local", text: "caption" }),
+    ]);
+
+    const consoleTemplate = [
+      'export function Example(caption = "Save changes") { console.log(`${caption}`); }',
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", consoleTemplate)).toEqual([]);
+
+    const consolePlus = [
+      'export function Example(caption = "Save changes") { console.log(caption + ""); }',
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", consolePlus)).toEqual([]);
+
+    const consoleNullish = [
+      'export function Example(caption = "Save changes") { console.log(caption ?? "1"); }',
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", consoleNullish)).toEqual([]);
+
+    const consoleIndex = [
+      'export function Example(caption = "Save changes") { console.log(caption[0]); }',
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", consoleIndex)).toEqual([]);
   });
 
 });
