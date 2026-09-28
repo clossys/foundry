@@ -361,6 +361,263 @@ function collectModuleMessageObjectInitializers(sourceFile: ts.SourceFile): Map<
   return initializers;
 }
 
+function collectModuleMessageArrayInitializers(sourceFile: ts.SourceFile): Map<string, ts.Expression> {
+  const initializers = new Map<string, ts.Expression>();
+  for (const statement of sourceFile.statements) {
+    if (!ts.isVariableStatement(statement)) continue;
+    for (const declaration of statement.declarationList.declarations) {
+      if (!ts.isIdentifier(declaration.name) || declaration.initializer === undefined) continue;
+      const init = unwrapExpression(declaration.initializer);
+      if (ts.isArrayLiteralExpression(init) && localInitializerIsShippedCopy(declaration.initializer)) {
+        initializers.set(declaration.name.text, declaration.initializer);
+      }
+    }
+  }
+  return initializers;
+}
+
+function resolveModulePatternDefault(
+  expr: ts.Expression,
+  moduleMessageObjectInitializers: Map<string, ts.Expression>,
+  moduleMessageArrayInitializers: Map<string, ts.Expression>,
+): ts.Expression {
+  const unwrapped = unwrapExpression(expr);
+  if (ts.isIdentifier(unwrapped)) {
+    const fromObject = moduleMessageObjectInitializers.get(unwrapped.text);
+    if (fromObject !== undefined) return fromObject;
+    const fromArray = moduleMessageArrayInitializers.get(unwrapped.text);
+    if (fromArray !== undefined) return fromArray;
+  }
+  return expr;
+}
+
+function arrayDefaultEntryAtIndex(
+  parameterDefault: ts.Expression | undefined,
+  index: number,
+  moduleMessageObjectInitializers: Map<string, ts.Expression>,
+  moduleMessageArrayInitializers: Map<string, ts.Expression>,
+): ts.Expression | undefined {
+  if (parameterDefault === undefined) return undefined;
+  const resolved = resolveModulePatternDefault(
+    parameterDefault,
+    moduleMessageObjectInitializers,
+    moduleMessageArrayInitializers,
+  );
+  const unwrapped = unwrapExpression(resolved);
+  if (!ts.isArrayLiteralExpression(unwrapped)) return undefined;
+  const entry = unwrapped.elements[index];
+  return entry !== undefined && ts.isExpression(entry) ? entry : undefined;
+}
+
+function bindingPatternLocalNames(name: ts.BindingName): string[] {
+  if (ts.isIdentifier(name)) return [name.text];
+  const names: string[] = [];
+  for (const element of name.elements) {
+    if (ts.isOmittedExpression(element)) continue;
+    names.push(...bindingPatternLocalNames(element.name));
+  }
+  return names;
+}
+
+function isComponentIdentifier(name: string): boolean {
+  const first = name.charAt(0);
+  return first !== "" && first === first.toUpperCase() && first !== first.toLowerCase();
+}
+
+const NON_MESSAGE_PARAMETER_MEMBERS = new Set(["length", "toString", "valueOf"]);
+
+function expressionReferencesParameterInRenderContext(expression: ts.Expression, paramName: string): boolean {
+  expression = unwrapExpression(expression);
+  if (ts.isIdentifier(expression) && expression.text === paramName) return true;
+  if (ts.isPropertyAccessExpression(expression)) {
+    if (ts.isIdentifier(expression.expression) && expression.expression.text === paramName) {
+      return !NON_MESSAGE_PARAMETER_MEMBERS.has(expression.name.text);
+    }
+  }
+  if (ts.isTemplateExpression(expression)) {
+    return expression.templateSpans.some((span) =>
+      expressionReferencesParameterInRenderContext(span.expression, paramName),
+    );
+  }
+  if (ts.isConditionalExpression(expression)) {
+    return (
+      expressionReferencesParameterInRenderContext(expression.whenTrue, paramName) ||
+      expressionReferencesParameterInRenderContext(expression.whenFalse, paramName)
+    );
+  }
+  if (ts.isBinaryExpression(expression)) {
+    const kind = expression.operatorToken.kind;
+    if (
+      kind === ts.SyntaxKind.PlusToken ||
+      kind === ts.SyntaxKind.QuestionQuestionToken ||
+      kind === ts.SyntaxKind.BarBarToken ||
+      kind === ts.SyntaxKind.AmpersandAmpersandToken
+    ) {
+      return (
+        expressionReferencesParameterInRenderContext(expression.left, paramName) ||
+        expressionReferencesParameterInRenderContext(expression.right, paramName)
+      );
+    }
+  }
+  if (ts.isParenthesizedExpression(expression) || ts.isNonNullExpression(expression) || ts.isAsExpression(expression)) {
+    return expressionReferencesParameterInRenderContext(expression.expression, paramName);
+  }
+  if (ts.isSatisfiesExpression(expression)) {
+    return expressionReferencesParameterInRenderContext(expression.expression, paramName);
+  }
+  return false;
+}
+
+function functionBodyRendersParameters(fn: ts.FunctionLikeDeclaration): Set<string> {
+  const paramNames = new Set<string>();
+  for (const parameter of fn.parameters) {
+    for (const name of bindingPatternLocalNames(parameter.name)) {
+      paramNames.add(name);
+    }
+  }
+  const rendered = new Set<string>();
+  const body = fn.body;
+  if (body === undefined) return rendered;
+
+  function noteInExpression(expression: ts.Expression): void {
+    for (const paramName of paramNames) {
+      if (expressionReferencesParameterInRenderContext(expression, paramName)) {
+        rendered.add(paramName);
+      }
+    }
+  }
+
+  function visit(node: ts.Node): void {
+    if (ts.isReturnStatement(node) && node.expression !== undefined) {
+      noteInExpression(node.expression);
+    }
+    if (ts.isCallExpression(node) && isCreateElementCall(node)) {
+      for (let index = 2; index < node.arguments.length; index++) {
+        const argument = node.arguments[index];
+        if (ts.isSpreadElement(argument)) {
+          noteInExpression(argument.expression);
+        } else if (ts.isExpression(argument)) {
+          noteInExpression(argument);
+        }
+      }
+      const propsArg = node.arguments[1];
+      if (propsArg !== undefined && ts.isObjectLiteralExpression(propsArg)) {
+        for (const property of propsArg.properties) {
+          if (ts.isShorthandPropertyAssignment(property)) {
+            noteInExpression(property.name);
+            continue;
+          }
+          if (ts.isPropertyAssignment(property)) {
+            noteInExpression(property.initializer);
+          }
+        }
+      }
+    }
+    if (ts.isJsxExpression(node) && node.expression !== undefined) {
+      const parent = node.parent;
+      if (parent === undefined || !ts.isJsxAttribute(parent)) {
+        noteInExpression(node.expression);
+      }
+    }
+    if (ts.isJsxAttribute(node) && node.initializer !== undefined && ts.isJsxExpression(node.initializer)) {
+      const attrName = jsxAttributeName(node);
+      if (!NON_COPY_JSX_ATTRS.has(attrName) && attrName !== "id" && node.initializer.expression !== undefined) {
+        noteInExpression(node.initializer.expression);
+      }
+    }
+    ts.forEachChild(node, visit);
+  }
+
+  if (ts.isBlock(body)) visit(body);
+  else noteInExpression(body);
+  return rendered;
+}
+
+function resolveCallableFunctionLike(
+  calleeName: string,
+  sourceFile: ts.SourceFile,
+): ts.FunctionLikeDeclaration | undefined {
+  let found: ts.FunctionLikeDeclaration | undefined;
+  function visit(node: ts.Node): void {
+    if (found !== undefined) return;
+    if (ts.isFunctionDeclaration(node) && node.name?.text === calleeName && node.body !== undefined) {
+      found = node;
+      return;
+    }
+    if (ts.isVariableStatement(node)) {
+      for (const declaration of node.declarationList.declarations) {
+        if (!ts.isIdentifier(declaration.name) || declaration.name.text !== calleeName) continue;
+        if (declaration.initializer === undefined) continue;
+        const init = declaration.initializer;
+        if ((ts.isArrowFunction(init) || ts.isFunctionExpression(init)) && init.body !== undefined) {
+          found = init;
+          return;
+        }
+      }
+    }
+    ts.forEachChild(node, visit);
+  }
+  visit(sourceFile);
+  return found;
+}
+
+function resolveCallableParameters(calleeName: string, sourceFile: ts.SourceFile): ts.ParameterDeclaration[] | undefined {
+  return resolveCallableFunctionLike(calleeName, sourceFile)?.parameters;
+}
+
+function parameterLocalNameAt(parameters: ts.ParameterDeclaration[], index: number): string | null {
+  const param = parameters[index];
+  if (param === undefined) return null;
+  if (ts.isIdentifier(param.name)) return param.name.text;
+  const names = bindingPatternLocalNames(param.name);
+  return names[0] ?? null;
+}
+
+function parameterDefaultInitializerForLocalName(
+  localName: string,
+  parameters: ts.ParameterDeclaration[],
+): ts.Expression | undefined {
+  for (const paramDecl of parameters) {
+    if (ts.isIdentifier(paramDecl.name)) {
+      if (paramDecl.name.text === localName) return paramDecl.initializer;
+      continue;
+    }
+    if (ts.isObjectBindingPattern(paramDecl.name)) {
+      for (const element of paramDecl.name.elements) {
+        if (bindingElementLocalName(element) === localName) return element.initializer;
+      }
+    }
+  }
+  return undefined;
+}
+
+function indirectCallRendersArgument(
+  call: ts.CallExpression,
+  argIndex: number,
+  sourceFile: ts.SourceFile,
+  currentParameters?: ts.ParameterDeclaration[],
+): boolean {
+  if (isCreateElementCall(call)) return argIndex >= 2;
+  if (!ts.isIdentifier(call.expression)) return false;
+  const calleeName = call.expression.text;
+  if (isComponentIdentifier(calleeName)) return true;
+  let resolvedCalleeName = calleeName;
+  if (currentParameters !== undefined) {
+    const defaultInit = parameterDefaultInitializerForLocalName(calleeName, currentParameters);
+    if (defaultInit !== undefined) {
+      const init = unwrapExpression(defaultInit);
+      if (ts.isIdentifier(init)) {
+        resolvedCalleeName = init.text;
+      }
+    }
+  }
+  const callee = resolveCallableFunctionLike(resolvedCalleeName, sourceFile);
+  if (callee === undefined) return false;
+  const paramName = parameterLocalNameAt(callee.parameters, argIndex);
+  if (paramName === null) return false;
+  return functionBodyRendersParameters(callee).has(paramName);
+}
+
 function collectModuleDirectStringFunctionAliases(sourceFile: ts.SourceFile): Map<string, string> {
   const moduleDirectStringFunctions = collectModuleDirectStringShippedFunctions(sourceFile);
   const aliases = new Map<string, string>();
@@ -694,6 +951,8 @@ function collectParameterLiteralDefaults(
   moduleFunctions: Set<string>,
   moduleDirectStringFunctions: Set<string>,
   moduleDirectStringAliases: Map<string, string>,
+  moduleMessageObjectInitializers: Map<string, ts.Expression>,
+  moduleMessageArrayInitializers: Map<string, ts.Expression>,
 ): Map<string, number> {
   const literalParams = new Map<string, number>();
 
@@ -719,6 +978,13 @@ function collectParameterLiteralDefaults(
   }
 
   function walkBindingPattern(pattern: ts.ObjectBindingPattern, line: number, defaultExpr?: ts.Expression): void {
+    if (defaultExpr !== undefined) {
+      defaultExpr = resolveModulePatternDefault(
+        defaultExpr,
+        moduleMessageObjectInitializers,
+        moduleMessageArrayInitializers,
+      );
+    }
     const defaultObject =
       defaultExpr !== undefined && ts.isObjectLiteralExpression(unwrapExpression(defaultExpr))
         ? (unwrapExpression(defaultExpr) as ts.ObjectLiteralExpression)
@@ -741,7 +1007,14 @@ function collectParameterLiteralDefaults(
         continue;
       }
       if (ts.isArrayBindingPattern(element.name)) {
-        walkArrayBindingPattern(element.name, line, defaultObject, element);
+        const propNameForNested =
+          element.propertyName !== undefined ? bindingElementPropertyName(element, source) : null;
+        const nestedDefault =
+          element.initializer ??
+          (defaultObject !== undefined && propNameForNested !== null
+            ? objectLiteralPropertyInitializer(defaultObject, propNameForNested, source)
+            : undefined);
+        walkArrayBindingPattern(element.name, line, defaultObject, element, nestedDefault);
         continue;
       }
       const propName = bindingElementPropertyName(element, source);
@@ -766,11 +1039,35 @@ function collectParameterLiteralDefaults(
     for (const element of pattern.elements) {
       if (ts.isOmittedExpression(element)) continue;
       if (ts.isObjectBindingPattern(element.name)) {
-        walkBindingPattern(element.name, line);
+        const index = pattern.elements.indexOf(element);
+        let nestedDefault = element.initializer;
+        if (nestedDefault === undefined) {
+          nestedDefault = arrayDefaultEntryAtIndex(
+            parameterDefault,
+            index,
+            moduleMessageObjectInitializers,
+            moduleMessageArrayInitializers,
+          );
+        }
+        if (nestedDefault !== undefined) {
+          walkBindingPattern(element.name, line, nestedDefault);
+        } else {
+          walkBindingPattern(element.name, line);
+        }
         continue;
       }
       if (ts.isArrayBindingPattern(element.name)) {
-        walkArrayBindingPattern(element.name, line, defaultObject, element, parameterDefault);
+        const index = pattern.elements.indexOf(element);
+        let childDefault = element.initializer;
+        if (childDefault === undefined) {
+          childDefault = arrayDefaultEntryAtIndex(
+            parameterDefault,
+            index,
+            moduleMessageObjectInitializers,
+            moduleMessageArrayInitializers,
+          );
+        }
+        walkArrayBindingPattern(element.name, line, defaultObject, element, childDefault ?? parameterDefault);
         continue;
       }
       const propName = bindingElementPropertyName(element, source);
@@ -789,13 +1086,15 @@ function collectParameterLiteralDefaults(
         }
       }
       if (initializer === undefined && parameterDefault !== undefined) {
-        const paramArray = unwrapExpression(parameterDefault);
-        if (ts.isArrayLiteralExpression(paramArray)) {
-          const index = pattern.elements.indexOf(element);
-          const entry = paramArray.elements[index];
-          if (entry !== undefined && ts.isExpression(entry)) {
-            initializer = entry;
-          }
+        const index = pattern.elements.indexOf(element);
+        const entry = arrayDefaultEntryAtIndex(
+          parameterDefault,
+          index,
+          moduleMessageObjectInitializers,
+          moduleMessageArrayInitializers,
+        );
+        if (entry !== undefined) {
+          initializer = entry;
         }
       }
       if (
@@ -826,11 +1125,27 @@ function collectParameterLiteralDefaults(
   for (const parameter of parameters) {
     const line = source.getLineAndCharacterOfPosition(parameter.getStart(source)).line + 1;
     if (ts.isObjectBindingPattern(parameter.name)) {
-      walkBindingPattern(parameter.name, line, parameter.initializer);
+      const resolvedInit =
+        parameter.initializer !== undefined
+          ? resolveModulePatternDefault(
+              parameter.initializer,
+              moduleMessageObjectInitializers,
+              moduleMessageArrayInitializers,
+            )
+          : undefined;
+      walkBindingPattern(parameter.name, line, resolvedInit);
       continue;
     }
     if (ts.isArrayBindingPattern(parameter.name)) {
-      walkArrayBindingPattern(parameter.name, line, undefined, undefined, parameter.initializer);
+      const resolvedInit =
+        parameter.initializer !== undefined
+          ? resolveModulePatternDefault(
+              parameter.initializer,
+              moduleMessageObjectInitializers,
+              moduleMessageArrayInitializers,
+            )
+          : undefined;
+      walkArrayBindingPattern(parameter.name, line, undefined, undefined, resolvedInit);
       continue;
     }
     if (ts.isIdentifier(parameter.name) && parameter.initializer !== undefined) {
@@ -849,6 +1164,8 @@ function collectUndocumentedShippedPropNames(
   moduleFunctions: Set<string>,
   moduleDirectStringFunctions: Set<string>,
   moduleDirectStringAliases: Map<string, string>,
+  moduleMessageObjectInitializers: Map<string, ts.Expression>,
+  moduleMessageArrayInitializers: Map<string, ts.Expression>,
 ): Set<string> {
   const names = new Set<string>();
 
@@ -868,6 +1185,13 @@ function collectUndocumentedShippedPropNames(
   }
 
   function walkBindingPattern(pattern: ts.ObjectBindingPattern, defaultExpr?: ts.Expression): void {
+    if (defaultExpr !== undefined) {
+      defaultExpr = resolveModulePatternDefault(
+        defaultExpr,
+        moduleMessageObjectInitializers,
+        moduleMessageArrayInitializers,
+      );
+    }
     const defaultObject =
       defaultExpr !== undefined && ts.isObjectLiteralExpression(unwrapExpression(defaultExpr))
         ? (unwrapExpression(defaultExpr) as ts.ObjectLiteralExpression)
@@ -890,7 +1214,14 @@ function collectUndocumentedShippedPropNames(
         continue;
       }
       if (ts.isArrayBindingPattern(element.name)) {
-        walkArrayBindingPattern(element.name, defaultObject, element);
+        const propNameForNested =
+          element.propertyName !== undefined ? bindingElementPropertyName(element, source) : null;
+        const nestedDefault =
+          element.initializer ??
+          (defaultObject !== undefined && propNameForNested !== null
+            ? objectLiteralPropertyInitializer(defaultObject, propNameForNested, source)
+            : undefined);
+        walkArrayBindingPattern(element.name, defaultObject, element, nestedDefault);
         continue;
       }
       const propName = bindingElementPropertyName(element, source);
@@ -913,11 +1244,35 @@ function collectUndocumentedShippedPropNames(
     for (const element of pattern.elements) {
       if (ts.isOmittedExpression(element)) continue;
       if (ts.isObjectBindingPattern(element.name)) {
-        walkBindingPattern(element.name);
+        const index = pattern.elements.indexOf(element);
+        let nestedDefault = element.initializer;
+        if (nestedDefault === undefined) {
+          nestedDefault = arrayDefaultEntryAtIndex(
+            parameterDefault,
+            index,
+            moduleMessageObjectInitializers,
+            moduleMessageArrayInitializers,
+          );
+        }
+        if (nestedDefault !== undefined) {
+          walkBindingPattern(element.name, nestedDefault);
+        } else {
+          walkBindingPattern(element.name);
+        }
         continue;
       }
       if (ts.isArrayBindingPattern(element.name)) {
-        walkArrayBindingPattern(element.name, defaultObject, parentElement, parameterDefault);
+        const index = pattern.elements.indexOf(element);
+        let childDefault = element.initializer;
+        if (childDefault === undefined) {
+          childDefault = arrayDefaultEntryAtIndex(
+            parameterDefault,
+            index,
+            moduleMessageObjectInitializers,
+            moduleMessageArrayInitializers,
+          );
+        }
+        walkArrayBindingPattern(element.name, defaultObject, element, childDefault ?? parameterDefault);
         continue;
       }
       const propName = bindingElementPropertyName(element, source);
@@ -936,13 +1291,15 @@ function collectUndocumentedShippedPropNames(
         }
       }
       if (initializer === undefined && parameterDefault !== undefined) {
-        const paramArray = unwrapExpression(parameterDefault);
-        if (ts.isArrayLiteralExpression(paramArray)) {
-          const index = pattern.elements.indexOf(element);
-          const entry = paramArray.elements[index];
-          if (entry !== undefined && ts.isExpression(entry)) {
-            initializer = entry;
-          }
+        const index = pattern.elements.indexOf(element);
+        const entry = arrayDefaultEntryAtIndex(
+          parameterDefault,
+          index,
+          moduleMessageObjectInitializers,
+          moduleMessageArrayInitializers,
+        );
+        if (entry !== undefined) {
+          initializer = entry;
         }
       }
       if (
@@ -972,11 +1329,27 @@ function collectUndocumentedShippedPropNames(
 
   for (const parameter of parameters) {
     if (ts.isObjectBindingPattern(parameter.name)) {
-      walkBindingPattern(parameter.name, parameter.initializer);
+      const resolvedInit =
+        parameter.initializer !== undefined
+          ? resolveModulePatternDefault(
+              parameter.initializer,
+              moduleMessageObjectInitializers,
+              moduleMessageArrayInitializers,
+            )
+          : undefined;
+      walkBindingPattern(parameter.name, resolvedInit);
       continue;
     }
     if (ts.isArrayBindingPattern(parameter.name)) {
-      walkArrayBindingPattern(parameter.name, undefined, undefined, parameter.initializer);
+      const resolvedInit =
+        parameter.initializer !== undefined
+          ? resolveModulePatternDefault(
+              parameter.initializer,
+              moduleMessageObjectInitializers,
+              moduleMessageArrayInitializers,
+            )
+          : undefined;
+      walkArrayBindingPattern(parameter.name, undefined, undefined, resolvedInit);
       continue;
     }
     if (ts.isIdentifier(parameter.name) && parameter.initializer !== undefined) {
@@ -991,6 +1364,8 @@ function collectFileUndocumentedShippedPropNames(
   documentedDefaults: Set<string>,
   moduleBindings: Set<string>,
   moduleFunctions: Set<string>,
+  moduleMessageObjectInitializers: Map<string, ts.Expression>,
+  moduleMessageArrayInitializers: Map<string, ts.Expression>,
 ): Set<string> {
   const names = new Set<string>();
   function visitFunctionLike(node: ts.FunctionLikeDeclaration): void {
@@ -1002,6 +1377,8 @@ function collectFileUndocumentedShippedPropNames(
       moduleFunctions,
       new Set<string>(),
       new Map<string, string>(),
+      moduleMessageObjectInitializers,
+      moduleMessageArrayInitializers,
     )) {
       names.add(propName);
     }
@@ -1031,6 +1408,7 @@ function analyzeRenderedLocals(
   moduleFunctions: Set<string>,
   moduleDirectStringFunctions: Set<string>,
   source: ts.SourceFile,
+  currentParameters: ts.ParameterDeclaration[],
 ): {
   indirectMessageProps: Map<string, number>;
   moduleDirectStringAliases: Map<string, string>;
@@ -1130,11 +1508,18 @@ function analyzeRenderedLocals(
   }
 
   function noteIndirectCallArguments(call: ts.CallExpression): void {
-    if (!ts.isIdentifier(call.expression)) return;
     const line = lineOf(call);
-    for (const argument of call.arguments) {
+    for (let argIndex = 0; argIndex < call.arguments.length; argIndex++) {
+      const argument = call.arguments[argIndex];
       if (!ts.isIdentifier(argument) || documentedDefaults.has(argument.text)) continue;
-      if (undocumentedPropNames.has(argument.text) || fileUndocumentedPropNames.has(argument.text)) {
+      if (
+        !undocumentedPropNames.has(argument.text) &&
+        !fileUndocumentedPropNames.has(argument.text) &&
+        !literalLocals.has(argument.text)
+      ) {
+        continue;
+      }
+      if (indirectCallRendersArgument(call, argIndex, source, currentParameters)) {
         indirectMessageProps.set(argument.text, line);
       }
     }
@@ -1645,6 +2030,8 @@ function analyzeFunctionLiteralBindings(
   moduleDirectStringFunctions: Set<string>,
   fileModuleDirectStringAliases: Map<string, string>,
   fileUndocumentedPropNames: Set<string>,
+  moduleMessageObjectInitializers: Map<string, ts.Expression>,
+  moduleMessageArrayInitializers: Map<string, ts.Expression>,
 ): {
   literalBindings: Map<string, number>;
   undocumentedPropNames: Set<string>;
@@ -1660,6 +2047,8 @@ function analyzeFunctionLiteralBindings(
     moduleFunctions,
     moduleDirectStringFunctions,
     fileModuleDirectStringAliases,
+    moduleMessageObjectInitializers,
+    moduleMessageArrayInitializers,
   );
   const undocumentedPropNames = collectUndocumentedShippedPropNames(
     parameters,
@@ -1669,6 +2058,8 @@ function analyzeFunctionLiteralBindings(
     moduleFunctions,
     moduleDirectStringFunctions,
     fileModuleDirectStringAliases,
+    moduleMessageObjectInitializers,
+    moduleMessageArrayInitializers,
   );
   let indirectMessageProps = new Map<string, number>();
   let moduleDirectStringAliases = new Map<string, string>();
@@ -1683,6 +2074,7 @@ function analyzeFunctionLiteralBindings(
       moduleFunctions,
       moduleDirectStringFunctions,
       source,
+      parameters,
     );
     indirectMessageProps = analyzed.indirectMessageProps;
     moduleDirectStringAliases = analyzed.moduleDirectStringAliases;
@@ -1711,11 +2103,14 @@ export function findShippedMessageViolations(fileName: string, sourceText: strin
   const moduleDirectStringFunctions = collectModuleDirectStringShippedFunctions(source);
   const fileModuleDirectStringAliases = collectModuleDirectStringFunctionAliases(source);
   const moduleMessageObjectInitializers = collectModuleMessageObjectInitializers(source);
+  const moduleMessageArrayInitializers = collectModuleMessageArrayInitializers(source);
   const fileUndocumentedPropNames = collectFileUndocumentedShippedPropNames(
     source,
     documentedDefaults,
     moduleBindings,
     moduleFunctions,
+    moduleMessageObjectInitializers,
+    moduleMessageArrayInitializers,
   );
   const interfaceMessageProps = collectUndocumentedMessageInterfaceProps(source, documentedDefaults);
 
@@ -1743,6 +2138,8 @@ export function findShippedMessageViolations(fileName: string, sourceText: strin
       moduleDirectStringFunctions,
       fileModuleDirectStringAliases,
       fileUndocumentedPropNames,
+      moduleMessageObjectInitializers,
+      moduleMessageArrayInitializers,
     );
     const mergedUndocumentedPropNames = new Set([...fileUndocumentedPropNames, ...undocumentedPropNames]);
     const mergedDirectStringAliases = new Map([...fileModuleDirectStringAliases, ...moduleDirectStringAliases]);
@@ -3146,13 +3543,23 @@ describe("shipped message lint", () => {
       'export function ExampleB(text = "Save changes") {',
       "  return <span>{text}</span>;",
       "}",
+      'export function E([{ caption }] = [{ caption: "Save changes" }]) { return <span>{caption}</span>; }',
+      'export function E({ items: [{ caption }] } = { items: [{ caption: "Save changes" }] }) { return <span>{caption}</span>; }',
+      'export function E([x, [caption]] = ["1", ["Save changes"]]) { return <span>{x}{caption}</span>; }',
+      'const D = { label: "Save changes" }; export function E({ label } = D) { return <span>{label}</span>; }',
+      'const ITEMS = ["Save changes"]; export function E([caption] = ITEMS) { return <span>{caption}</span>; }',
+      'export function f(mode = "strict mode") { return g(mode); } function g(x: string) { return x.length; }',
       "",
     ].join("\n");
     expect(findShippedMessageViolations("Example.tsx", nonMessageDefaults)).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ kind: "rendered-local", text: "caption" }),
         expect.objectContaining({ kind: "rendered-local", text: "text" }),
+        expect.objectContaining({ kind: "rendered-local", text: "label" }),
       ]),
+    );
+    expect(findShippedMessageViolations("Example.tsx", nonMessageDefaults)).not.toEqual(
+      expect.arrayContaining([expect.objectContaining({ kind: "rendered-local", text: "mode" })]),
     );
 
     const renderConcatenation = [
