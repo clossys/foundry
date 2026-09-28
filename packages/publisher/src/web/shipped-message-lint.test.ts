@@ -478,8 +478,20 @@ function functionBodyRendersParameters(fn: ts.FunctionLikeDeclaration): Set<stri
   const rendered = new Set<string>();
   const body = fn.body;
   if (body === undefined) return rendered;
+  const sourceFile = fn.getSourceFile();
 
   function noteInExpression(expression: ts.Expression): void {
+    expression = unwrapExpression(expression);
+    if (ts.isArrayLiteralExpression(expression)) {
+      for (const element of expression.elements) {
+        if (ts.isSpreadElement(element)) {
+          noteInExpression(element.expression);
+        } else if (ts.isExpression(element)) {
+          noteInExpression(element);
+        }
+      }
+      return;
+    }
     for (const paramName of paramNames) {
       if (expressionReferencesParameterInRenderContext(expression, paramName)) {
         rendered.add(paramName);
@@ -504,11 +516,16 @@ function functionBodyRendersParameters(fn: ts.FunctionLikeDeclaration): Set<stri
       if (propsArg !== undefined && ts.isObjectLiteralExpression(propsArg)) {
         for (const property of propsArg.properties) {
           if (ts.isShorthandPropertyAssignment(property)) {
-            noteInExpression(property.name);
+            if (isMessageCreateElementProperty(property.name.text)) {
+              noteInExpression(property.name);
+            }
             continue;
           }
           if (ts.isPropertyAssignment(property)) {
-            noteInExpression(property.initializer);
+            const propertyName = objectLiteralElementName(property, sourceFile);
+            if (propertyName !== null && isMessageCreateElementProperty(propertyName)) {
+              noteInExpression(property.initializer);
+            }
           }
         }
       }
@@ -613,9 +630,12 @@ function indirectCallRendersArgument(
   }
   const callee = resolveCallableFunctionLike(resolvedCalleeName, sourceFile);
   if (callee === undefined) return false;
-  const paramName = parameterLocalNameAt(callee.parameters, argIndex);
-  if (paramName === null) return false;
-  return functionBodyRendersParameters(callee).has(paramName);
+  const param = callee.parameters[argIndex];
+  if (param === undefined) return false;
+  const boundLocals = bindingPatternLocalNames(param.name);
+  if (boundLocals.length === 0) return false;
+  const renderedParams = functionBodyRendersParameters(callee);
+  return boundLocals.some((localName) => renderedParams.has(localName));
 }
 
 function collectModuleDirectStringFunctionAliases(sourceFile: ts.SourceFile): Map<string, string> {
@@ -1008,7 +1028,7 @@ function collectParameterLiteralDefaults(
       }
       if (ts.isArrayBindingPattern(element.name)) {
         const propNameForNested =
-          element.propertyName !== undefined ? bindingElementPropertyName(element, source) : null;
+          element.propertyName !== undefined ? bindingElementObjectKey(element, source) : null;
         const nestedDefault =
           element.initializer ??
           (defaultObject !== undefined && propNameForNested !== null
@@ -1067,7 +1087,7 @@ function collectParameterLiteralDefaults(
             moduleMessageArrayInitializers,
           );
         }
-        walkArrayBindingPattern(element.name, line, defaultObject, element, childDefault ?? parameterDefault);
+        walkArrayBindingPattern(element.name, line, defaultObject, element, childDefault);
         continue;
       }
       const propName = bindingElementPropertyName(element, source);
@@ -1215,7 +1235,7 @@ function collectUndocumentedShippedPropNames(
       }
       if (ts.isArrayBindingPattern(element.name)) {
         const propNameForNested =
-          element.propertyName !== undefined ? bindingElementPropertyName(element, source) : null;
+          element.propertyName !== undefined ? bindingElementObjectKey(element, source) : null;
         const nestedDefault =
           element.initializer ??
           (defaultObject !== undefined && propNameForNested !== null
@@ -1272,7 +1292,7 @@ function collectUndocumentedShippedPropNames(
             moduleMessageArrayInitializers,
           );
         }
-        walkArrayBindingPattern(element.name, defaultObject, element, childDefault ?? parameterDefault);
+        walkArrayBindingPattern(element.name, defaultObject, element, childDefault);
         continue;
       }
       const propName = bindingElementPropertyName(element, source);
