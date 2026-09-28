@@ -40,7 +40,8 @@ function renderBlock(
   block: WebTemplateBlockSpec,
   content: Record<string, ReactNode>,
   groups: Record<string, ResolvedWebGroupItem[]>,
-  messages: Required<CompileConsumerTemplateBlocksOptions>,
+  nodeChapterFallbackTitle: string,
+  statGridLabel: (index: number) => string,
 ): ReactNode {
   switch (block.kind) {
     case "page-header":
@@ -63,7 +64,7 @@ function renderBlock(
         {
           title:
             block.title === undefined
-              ? createElement("span", { className: "sr-only" }, messages.nodeChapterFallbackTitle)
+              ? createElement("span", { className: "sr-only" }, nodeChapterFallbackTitle)
               : content[block.title],
           ...(block.description === undefined ? {} : { description: content[block.description] }),
         },
@@ -76,7 +77,7 @@ function renderBlock(
         (groups[block.repeating] ?? []).map((item) =>
           createElement(Stat, {
             key: item.index,
-            label: createElement("span", { className: "sr-only" }, messages.statGridLabel(item.index + 1)),
+            label: createElement("span", { className: "sr-only" }, statGridLabel(item.index + 1)),
             value: firstResolvedValue(item),
           }),
         ),
@@ -98,14 +99,10 @@ export function compileConsumerTemplateBlocks(
   }: CompileConsumerTemplateBlocksOptions = {},
 ): (content: Record<string, ReactNode>, groups: Record<string, ResolvedWebGroupItem[]>) => ReactNode {
   const frozen = [...blocks];
-  const messages: Required<CompileConsumerTemplateBlocksOptions> = {
-    nodeChapterFallbackTitle,
-    statGridLabel,
-  };
   return (content, groups) =>
     createElement(
       "main",
       { className: "mx-auto flex w-full flex-col gap-xl px-lg py-2xl" },
-      ...frozen.map((block) => renderBlock(block, content, groups, messages)),
+      ...frozen.map((block) => renderBlock(block, content, groups, nodeChapterFallbackTitle, statGridLabel)),
     );
 }
