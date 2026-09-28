@@ -675,6 +675,56 @@ function arrayPatternShadowsName(inner: string, name: string): boolean {
 /** Statement keywords mistaken for shorthand object methods when `{ if (x)` opens a block. */
 const CONTROL_FLOW_BLOCK_KEYWORDS = new Set(["if", "while", "switch"]);
 
+const METHOD_HEADER_MODIFIER_WORDS = new Set([
+  "static",
+  "async",
+  "public",
+  "private",
+  "protected",
+  "readonly",
+  "override",
+]);
+
+/** Modifiers, optional `get`/`set`, and an optional generator `*` before the method name. */
+function skipMethodHeaderLead(code: string, i: number): number {
+  for (;;) {
+    i = skipWsCode(code, i);
+    const kwStart = i;
+    i = skipIdentCode(code, i);
+    if (i === kwStart) break;
+    const word = code.slice(kwStart, i);
+    if (METHOD_HEADER_MODIFIER_WORDS.has(word)) continue;
+    i = kwStart;
+    break;
+  }
+  i = skipWsCode(code, i);
+  if (isKeywordAt(code, i, "get") || isKeywordAt(code, i, "set")) {
+    i += 3;
+    i = skipWsCode(code, i);
+  }
+  if (code[i] === "*") {
+    i++;
+    i = skipWsCode(code, i);
+  }
+  return i;
+}
+
+/** Newline after a field initializer without `;`, inside a class or object literal. */
+function newlineMayStartClassOrObjectMember(code: string, nlIdx: number): boolean {
+  let k = nlIdx - 1;
+  while (k >= 0 && isWs(code[k]!)) k--;
+  if (k < 0) return false;
+  const prev = code[k]!;
+  if (prev === ";" || prev === "{" || prev === "}" || prev === ",") return false;
+  const open = enclosingOpener(code, nlIdx);
+  if (open === -1 || code[open] !== "{") return false;
+  if (objectMethodBraceIsTypeOnly(code, open)) return false;
+  const beforeOpen = code.slice(Math.max(0, open - 320), open);
+  if (new RegExp(`(?<![\\w$.])class(?![\\w$])(?:\\s+${IDENT})?[^{};()]*$`, "u").test(beforeOpen)) return true;
+  if (/[=,{]\s*$/.test(beforeOpen)) return true;
+  return false;
+}
+
 function isDeclareFunctionPrefix(code: string, fnKeywordIndex: number): boolean {
   let i = fnKeywordIndex - 1;
   while (i >= 0 && isWs(code[i])) i--;
@@ -1262,7 +1312,7 @@ function objectMethodContextIsTypeOnly(code: string, memberLeadIdx: number): boo
   return objectMethodBraceIsTypeOnly(code, open);
 }
 
-/** Each `{|,|;|}`-led method name, optional type params, and `(` — generic lists use full depth walk. */
+/** Each `{|,|;|}`- or newline-led method header through its parameter list. */
 function forEachObjectMethodParamList(
   code: string,
   onMethod: (parenOpen: number, memberLeadIdx: number) => boolean | void,
@@ -1271,13 +1321,33 @@ function forEachObjectMethodParamList(
     const c = code[lead];
     if (c !== "{" && c !== "," && c !== ";" && c !== "}") continue;
     let i = skipWsCode(code, lead + 1);
+    i = skipMethodHeaderLead(code, i);
     const methodStart = i;
     i = skipIdentCode(code, i);
     if (i === methodStart) continue;
     const methodName = code.slice(methodStart, i);
     if (CONTROL_FLOW_BLOCK_KEYWORDS.has(methodName)) continue;
     i = skipWsCode(code, i);
-    if (code[i] === "<" && ltAtIsGenericOpener(code, i)) {
+    if (code[i] === "<") {
+      i = indexAfterGenericTypeParamList(code, i);
+      i = skipWsCode(code, i);
+    }
+    if (code[i] !== "(") continue;
+    if (onMethod(i, lead) === true) return true;
+  }
+  for (let lead = 0; lead < code.length; lead++) {
+    const c = code[lead];
+    if (c !== "\n" && c !== "\r") continue;
+    if (!newlineMayStartClassOrObjectMember(code, lead)) continue;
+    let i = skipWsCode(code, lead + 1);
+    i = skipMethodHeaderLead(code, i);
+    const methodStart = i;
+    i = skipIdentCode(code, i);
+    if (i === methodStart) continue;
+    const methodName = code.slice(methodStart, i);
+    if (CONTROL_FLOW_BLOCK_KEYWORDS.has(methodName)) continue;
+    i = skipWsCode(code, i);
+    if (code[i] === "<") {
       i = indexAfterGenericTypeParamList(code, i);
       i = skipWsCode(code, i);
     }
