@@ -1361,6 +1361,70 @@ describe("copy-read-without-resolver", () => {
     }
   });
 
+  it("flags a separator between the class name and its type-parameter list (fix round 30)", () => {
+    const head = [
+      'import { createCopyResolver as make } from "@clossys/writer";',
+      'import registry from "../copy/registry.json";',
+    ].join("\n");
+    const use = "export const out = make(registry);";
+    const member = "x = 1\nload(make: Handler): void { make(registry); }";
+    for (const form of [
+      `class C <T> { ${member} }`,
+      `class C\t<T> { ${member} }`,
+      `class C\n<T> { ${member} }`,
+      `class C /*c*/<T> { ${member} }`,
+      `class C/*c*/<T> { ${member} }`,
+      `const X = class <T> { ${member} };`,
+      `export default class <T> { ${member} }`,
+      `const X = class /*c*/<T> { ${member} };`,
+      `class C implements I <T> { ${member} }`,
+    ]) {
+      const { gate } = scan({ "src/copy.ts": [head, form, use].join("\n") });
+      expect(gate.verdict).toBe("violated");
+      expect(gate.findings.every((f) => f.rule === "copy-read-without-resolver")).toBe(true);
+    }
+  });
+
+  it("flags a type-argument list on a heritage operand (fix round 30)", () => {
+    const head = [
+      'import { createCopyResolver as make } from "@clossys/writer";',
+      'import registry from "../copy/registry.json";',
+    ].join("\n");
+    const use = "export const out = make(registry);";
+    const member = "x = 1\nload(make: Handler): void { make(registry); }";
+    for (const form of [
+      `class C extends mixin(Base)<T> { ${member} }`,
+      `class C extends (B)<T> { ${member} }`,
+      `class extends m(B)<T> { ${member} }`,
+      `class C extends ns.mixin(Base)<T> { ${member} }`,
+      `class C extends Base<T> { ${member} }`,
+      `class C extends B.C<D><T> { ${member} }`,
+    ]) {
+      const { gate } = scan({ "src/copy.ts": [head, form, use].join("\n") });
+      expect(gate.verdict).toBe("violated");
+      expect(gate.findings.every((f) => f.rule === "copy-read-without-resolver")).toBe(true);
+    }
+  });
+
+  it("keeps heritage type-argument controls flagging (fix round 30)", () => {
+    const head = [
+      'import { createCopyResolver as make } from "@clossys/writer";',
+      'import registry from "../copy/registry.json";',
+    ].join("\n");
+    const use = "export const out = make(registry);";
+    const member = "x = 1\nload(make: Handler): void { make(registry); }";
+    for (const form of [
+      `class C extends mixin<T>(Base) { ${member} }`,
+      `class C extends B<T>() { ${member} }`,
+      `class C extends B.C<D> { ${member} }`,
+      `class C implements I<J>() { ${member} }`,
+    ]) {
+      const { gate } = scan({ "src/copy.ts": [head, form, use].join("\n") });
+      expect(gate.verdict).toBe("violated");
+      expect(gate.findings.every((f) => f.rule === "copy-read-without-resolver")).toBe(true);
+    }
+  });
+
   it("keeps anonymous ambient class headers type-only (fix round 28)", () => {
     const head = [
       'import { createCopyResolver as make } from "@clossys/writer";',

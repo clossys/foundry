@@ -1019,7 +1019,11 @@ function skipHeritageOperand(code: string, i: number): number {
   i = skipTypeOperand(code, i);
   for (;;) {
     i = skipWsCode(code, i);
-    if (code[i] === "<" && ltAtIsGenericOpener(code, i)) {
+    // A trailing type-argument list after a heritage operand follows a `)`
+    // (a call or parenthesized operand) or a dotted name, never an
+    // identifier, so `ltAtIsGenericOpener` cannot decide here. In this
+    // context a `<` is a type-argument list: consume the balanced list.
+    if (code[i] === "<") {
       i = indexAfterGenericTypeParamList(code, i);
       continue;
     }
@@ -1062,9 +1066,10 @@ function classBodyBraceAfterClassKeyword(code: string, classIdx: number): number
     if (word !== "extends" && word !== "implements") i = nameEnd;
   }
   // The optional `<…>` type-parameter list is skipped whether or not a name
-  // was read: an anonymous class (`class<T> { … }`) has none, and leaving the
-  // `<` at the cursor would hide the body brace from the walk below.
-  i = skipOptionalGenericTypeParams(code, i);
+  // was read: an anonymous class (`class<T> { … }`) has none, and a
+  // separator (space, tab, newline, comment) before `<` must not hide the
+  // body brace. `ltAtIsGenericOpener` is deliberately not consulted here.
+  i = skipClassHeaderTypeParams(code, i);
   i = skipWsCode(code, i);
   if (isExtendsKeywordAt(code, i)) {
     i += "extends".length;
@@ -1372,6 +1377,22 @@ function indexAfterGenericTypeParamList(code: string, ltIdx: number): number {
     }
   }
   return code.length;
+}
+
+/**
+ * Skips the optional `<…>` type-parameter list in a CLASS HEADER, after
+ * whitespace and comments, whether or not an identifier precedes the `<`.
+ * `skipOptionalGenericTypeParams` cannot be used here: `ltAtIsGenericOpener`
+ * requires an identifier immediately before the `<`, so a separator (a space,
+ * tab, newline or comment) or an anonymous `class` with no name at all
+ * defeats it. In the class-header context a `<` at the cursor is a
+ * type-parameter list (the header continues only with `extends`,
+ * `implements`, `<…>` or the body brace), so no identifier is needed.
+ */
+function skipClassHeaderTypeParams(code: string, i: number): number {
+  i = nextSignificant(code, i);
+  if (code[i] !== "<") return i;
+  return nextSignificant(code, indexAfterGenericTypeParamList(code, i));
 }
 
 function skipReturnTypeAfterParamList(code: string, i: number): number {
