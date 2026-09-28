@@ -2102,11 +2102,42 @@ function objectLiteralInitializerForName(name: string, from: ts.Node): ts.Object
   return ts.isObjectLiteralExpression(unwrapped) ? unwrapped : undefined;
 }
 
+// A spread source is followed when it is an inline object literal, or a name
+// whose in-file initializer is one, so `{ ...base }` resolves like
+// `{ ...{ show } }` and a chain of named spreads resolves too.
+function spreadSourceObjectLiteral(expression: ts.Expression): ts.ObjectLiteralExpression | undefined {
+  const spread = unwrapExpression(expression);
+  if (ts.isObjectLiteralExpression(spread)) return spread;
+  if (ts.isIdentifier(spread)) return objectLiteralInitializerForName(spread.text, spread);
+  return undefined;
+}
+
+// A spread whose source is not an in-file object literal (an import, a
+// parameter, a call, a missing initializer) leaves the object incomplete, so a
+// member this file cannot find may still have arrived through it.
+function objectLiteralHasUnresolvedSpread(
+  object: ts.ObjectLiteralExpression,
+  seen: Set<ts.ObjectLiteralExpression> = new Set(),
+): boolean {
+  if (seen.has(object)) return false;
+  seen.add(object);
+  for (const property of object.properties) {
+    if (!ts.isSpreadAssignment(property)) continue;
+    const spreadObject = spreadSourceObjectLiteral(property.expression);
+    if (spreadObject === undefined) return true;
+    if (objectLiteralHasUnresolvedSpread(spreadObject, seen)) return true;
+  }
+  return false;
+}
+
 function objectLiteralMemberValue(
   object: ts.ObjectLiteralExpression,
   memberKey: string,
   source: ts.SourceFile,
+  seen: Set<ts.ObjectLiteralExpression> = new Set(),
 ): ts.Expression | ts.FunctionLikeDeclaration | undefined {
+  if (seen.has(object)) return undefined;
+  seen.add(object);
   for (const property of object.properties) {
     if (ts.isMethodDeclaration(property)) {
       if (objectLiteralElementName(property, source) === memberKey) return property;
@@ -2124,9 +2155,9 @@ function objectLiteralMemberValue(
     // A spread member is resolved through the spread source, so
     // `{ ...{ show } }` and `{ ...base, show }` resolve like a direct member.
     if (ts.isSpreadAssignment(property)) {
-      const spread = unwrapExpression(property.expression);
-      if (!ts.isObjectLiteralExpression(spread)) continue;
-      const spreadValue = objectLiteralMemberValue(spread, memberKey, source);
+      const spreadObject = spreadSourceObjectLiteral(property.expression);
+      if (spreadObject === undefined) continue;
+      const spreadValue = objectLiteralMemberValue(spreadObject, memberKey, source, seen);
       if (spreadValue !== undefined) return spreadValue;
     }
   }
@@ -2315,6 +2346,49 @@ function assignedMemberValue(
   return found;
 }
 
+function containerObjectLiteral(
+  container: ts.Expression | ts.FunctionLikeDeclaration,
+  from: ts.Node,
+): ts.ObjectLiteralExpression | undefined {
+  if (ts.isFunctionLike(container)) return undefined;
+  const unwrapped = unwrapExpression(container);
+  if (ts.isObjectLiteralExpression(unwrapped)) return unwrapped;
+  if (ts.isIdentifier(unwrapped)) return objectLiteralInitializerForName(unwrapped.text, from);
+  return undefined;
+}
+
+// A member lookup that failed on an in-file object carrying an unresolved
+// spread is inconclusive, not a decision that the member is absent: the member
+// may live in the spread source this file cannot follow.
+function memberLookupBlockedByUnresolvedSpread(
+  calleeExpr: ts.PropertyAccessExpression | ts.ElementAccessExpression,
+  source: ts.SourceFile,
+): boolean {
+  const segments = memberChainSegments(calleeExpr);
+  if (segments === null) return false;
+  for (let start = 0; start + 1 < segments.length; start++) {
+    const rootName = segments[start];
+    if (rootName === undefined) continue;
+    let container: ts.Expression | ts.FunctionLikeDeclaration | undefined = inFileContainerValue(
+      rootName,
+      calleeExpr,
+    );
+    for (const memberKey of segments.slice(start + 1)) {
+      if (container === undefined) break;
+      const object = containerObjectLiteral(container, calleeExpr);
+      if (
+        object !== undefined &&
+        objectLiteralMemberValue(object, memberKey, source) === undefined &&
+        objectLiteralHasUnresolvedSpread(object)
+      ) {
+        return true;
+      }
+      container = memberValueOfContainer(container, memberKey, source, calleeExpr);
+    }
+  }
+  return false;
+}
+
 function numericMemberKey(memberKey: string): number | null {
   return /^(?:0|[1-9]\d*)$/.test(memberKey) ? Number(memberKey) : null;
 }
@@ -2481,6 +2555,10 @@ function indirectCalleeMayRender(
     // array, including a renderer, so a member or element that cannot be
     // resolved this way is analysed.
     if (hasNonConstantElementAccess(calleeExpr)) return true;
+    // An in-file object whose spread source cannot be followed is incomplete,
+    // so the member may be the spread source's renderer and the argument is
+    // analysed.
+    if (memberLookupBlockedByUnresolvedSpread(calleeExpr, sourceFile)) return true;
     // An in-file container whose member is absent (a builtin method such as
     // `findings.push`) is not a renderer. A base this file does not declare,
     // or imports, may carry one (`Math.max`, `Buffer.from`), so its argument
@@ -10077,6 +10155,63 @@ describe("shipped message lint", () => {
     expect(findShippedMessageViolations("Example.tsx", spreadObjectMember)).toEqual([
       expect.objectContaining({ kind: "rendered-local", text: "caption" }),
     ]);
+
+    // 5b. A member that arrives through a named spread, alone or beside others.
+    for (const spread of ["{ ...base }", "{ ...base, x: 1 }"]) {
+      const namedSpreadMember = [
+        "function show(value: string) { return <span>{value}</span>; }",
+        "const base = { show };",
+        `const o = ${spread};`,
+        'export function Example(caption = "Save changes") { return o.show(caption); }',
+        "",
+      ].join("\n");
+      expect(findShippedMessageViolations("Example.tsx", namedSpreadMember), spread).toEqual([
+        expect.objectContaining({ kind: "rendered-local", text: "caption" }),
+      ]);
+    }
+
+    // 5c. A method on the spread source counts like a method on an inline object.
+    const namedSpreadMethod = [
+      "const base = { show(v: string) { return <span>{v}</span>; } };",
+      "const o = { ...base };",
+      'export function Example(caption = "Save changes") { return o.show(caption); }',
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", namedSpreadMethod)).toEqual([
+      expect.objectContaining({ kind: "rendered-local", text: "caption" }),
+    ]);
+
+    // 5d. A chain of named spreads is followed to the end.
+    const chainedSpreadMember = [
+      "function show(value: string) { return <span>{value}</span>; }",
+      "const base = { show };",
+      "const mid = { ...base };",
+      "const o = { ...mid };",
+      'export function Example(caption = "Save changes") { return o.show(caption); }',
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", chainedSpreadMember)).toEqual([
+      expect.objectContaining({ kind: "rendered-local", text: "caption" }),
+    ]);
+
+    // 5e. A spread source this file cannot follow leaves the object incomplete.
+    const importedSpreadMember = [
+      'import { base } from "./ui";',
+      "const o = { ...base };",
+      'export function Example(caption = "Save changes") { return o.show(caption); }',
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", importedSpreadMember)).toEqual([
+      expect.objectContaining({ kind: "rendered-local", text: "caption" }),
+    ]);
+
+    // 5f. An object with no spread, whose member is simply absent, stays silent.
+    const absentMemberNoSpread = [
+      "const o = { x: 1 };",
+      'export function Example(caption = "Save changes") { return o.show(caption); }',
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", absentMemberNoSpread)).toEqual([]);
 
     // 6. A member assigned outside the literal.
     const assignedMember = [
