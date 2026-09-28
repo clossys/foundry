@@ -1514,6 +1514,93 @@ describe("copy-read-without-resolver", () => {
       }
     }
   });
+
+  it("flags an unparenthesized class expression as a heritage operand (fix round 32)", () => {
+    const head = [
+      'import { createCopyResolver as make } from "@clossys/writer";',
+      'import registry from "../copy/registry.json";',
+    ].join("\n");
+    const use = "export const out = make(registry);";
+    const member = "x = 1\nload(make: Handler): void { make(registry); }";
+    for (const form of [
+      `class C extends class D { x = 1 } { ${member} }`,
+      `class extends class D { x = 1 } { ${member} }`,
+      `const X = class extends class D { x = 1 } { ${member} };`,
+      `export default class extends class D { x = 1 } { ${member} }`,
+      `class C extends class D {} { ${member} }`,
+      `class C extends class D { x = 1 } implements I { ${member} }`,
+      `class C extends class { x = 1 } { ${member} }`,
+      `class C extends class D extends E {} { ${member} }`,
+      `class C extends class D<T> {} { ${member} }`,
+    ]) {
+      const { gate } = scan({ "src/copy.ts": [head, form, use].join("\n") });
+      expect(gate.verdict).toBe("violated");
+      expect(gate.findings.every((f) => f.rule === "copy-read-without-resolver")).toBe(true);
+    }
+  });
+
+  it("flags unparenthesized class-expression heritage in call, array, return and ternary positions (fix round 32)", () => {
+    const head = [
+      'import { createCopyResolver as make } from "@clossys/writer";',
+      'import registry from "../copy/registry.json";',
+    ].join("\n");
+    const use = "export const out = make(registry);";
+    const member = "x = 1\nload(make: Handler): void { make(registry); }";
+    const contexts: ((expr: string) => string)[] = [
+      (expr) => `consume(${expr});`,
+      (expr) => `const arr = [${expr}];`,
+      (expr) => `function f() { return ${expr}; }`,
+      (expr) => `const t = cond ? ${expr} : null;`,
+    ];
+    for (const expr of [
+      `class C extends class D { x = 1 } { ${member} }`,
+      `class extends class D { x = 1 } { ${member} }`,
+      `class extends class { x = 1 } { ${member} }`,
+      `class extends class D extends E {} { ${member} }`,
+    ]) {
+      for (const wrap of contexts) {
+        const { gate } = scan({ "src/copy.ts": [head, wrap(expr), use].join("\n") });
+        expect(gate.verdict).toBe("violated");
+        expect(gate.findings.every((f) => f.rule === "copy-read-without-resolver")).toBe(true);
+      }
+    }
+  });
+
+  it("keeps parenthesized class-expression heritage findings (fix round 32)", () => {
+    const head = [
+      'import { createCopyResolver as make } from "@clossys/writer";',
+      'import registry from "../copy/registry.json";',
+    ].join("\n");
+    const use = "export const out = make(registry);";
+    const member = "x = 1\nload(make: Handler): void { make(registry); }";
+    for (const form of [
+      `class C extends (class D) { ${member} }`,
+      `class C extends (class {}) { ${member} }`,
+      `class C extends (class D extends E {}) { ${member} }`,
+      `class C extends (class D extends (class E {})) { ${member} }`,
+      `class extends (class D) { ${member} }`,
+    ]) {
+      const { gate } = scan({ "src/copy.ts": [head, form, use].join("\n") });
+      expect(gate.verdict).toBe("violated");
+      expect(gate.findings.every((f) => f.rule === "copy-read-without-resolver")).toBe(true);
+    }
+  });
+
+  it("keeps a class expression in a type-parameter constraint or heritage type argument (fix round 32)", () => {
+    const head = [
+      'import { createCopyResolver as make } from "@clossys/writer";',
+      'import registry from "../copy/registry.json";',
+    ].join("\n");
+    const use = "export const out = make(registry);";
+    const member = "x = 1\nload(make: Handler): void { make(registry); }";
+    for (const form of [
+      `class C<T extends class {}> { ${member} }`,
+      `class C extends B<class D { x = 1 }> { ${member} }`,
+    ]) {
+      const { gate } = scan({ "src/copy.ts": [head, form, use].join("\n") });
+      expect(gate.verdict).toBe("violated");
+    }
+  });
 });
 
 describe("scope and masking", () => {

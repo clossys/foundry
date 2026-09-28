@@ -1016,6 +1016,19 @@ function declareClassBodyBraceAfterDeclareKeyword(code: string, declareIdx: numb
  */
 function skipHeritageOperand(code: string, i: number): number {
   i = skipWsCode(code, i);
+  // An unparenthesized `class` here is a class EXPRESSION operand, not a
+  // qualified type name: `extends class D { x = 1 } { … }`. Walking it as a
+  // type stops at its body brace, so the outer body would be misread. Walk
+  // the whole expression (its name, type parameters, its own
+  // `extends`/`implements` and its own balanced body) and continue after it —
+  // to the outer `implements` or the outer body brace.
+  if (isKeywordAt(code, i, "class")) {
+    const body = classBodyBraceAfterClassKeyword(code, i);
+    if (body !== -1) {
+      const close = matchingClose(code, body);
+      return close === -1 ? code.length : close + 1;
+    }
+  }
   i = skipTypeOperand(code, i);
   for (;;) {
     i = skipWsCode(code, i);
