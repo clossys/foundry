@@ -904,6 +904,34 @@ describe("main — brand-coverage — default brand/brand.css", () => {
   it("throws CliInputError when brand/brand.css is absent and no slots file is given", () => {
     const derivationsFile = writeDerivations(strategyDir, [derivation("Precise", ["--color-accent-primary"])]);
     expect(() => main(["brand-coverage", derivationsFile])).toThrow(CliInputError);
+    expect(() => main(["brand-coverage", derivationsFile])).toThrow(/brand\/brand\.css.*does not exist/);
+    expect(() => main(["brand-coverage", derivationsFile])).toThrow(/default when brandable-slots-file is omitted/);
+  });
+
+  it("names brand/brand.css, not brandable-slots-file, when a derivation names a slot the stylesheet lacks", () => {
+    writeBrandCss(":root { --color-surface: #000; }");
+    const derivationsFile = writeDerivations(strategyDir, [derivation("Precise", ["--color-surface", "--color-extra"])]);
+    expect(main(["brand-coverage", derivationsFile])).toBe(1);
+    const logged = vi.mocked(console.log).mock.calls.map((c) => String(c[0])).join("\n");
+    expect(logged).toContain("not in brand/brand.css");
+    expect(logged).not.toContain("not in brandable-slots-file");
+  });
+
+  it("names brandable-slots-file when an explicit slots file was read", () => {
+    writeBrandCss(":root { --color-surface: #000; --color-extra: #111; }");
+    const derivationsFile = writeDerivations(strategyDir, [derivation("Precise", ["--color-surface", "--color-extra"])]);
+    const slotsFile = writeBrandableSlots(strategyDir, ["--color-surface"]);
+    expect(main(["brand-coverage", derivationsFile, slotsFile])).toBe(1);
+    const logged = vi.mocked(console.log).mock.calls.map((c) => String(c[0])).join("\n");
+    expect(logged).toContain("not in brandable-slots-file");
+    expect(logged).not.toContain("not in brand/brand.css");
+  });
+
+  it("the top-level usage shows brandable-slots-file as optional", () => {
+    expect(main(["--help"])).toBe(0);
+    const logged = vi.mocked(console.log).mock.calls.map((c) => String(c[0])).join("\n");
+    expect(logged).toContain("strategist-check brand-coverage <derivations-file> [<brandable-slots-file>]");
+    expect(logged).not.toContain("<derivations-file> <brandable-slots-file>");
   });
 
   it("an explicit brandable-slots-file still wins over brand/brand.css", () => {

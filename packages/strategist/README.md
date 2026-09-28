@@ -636,8 +636,10 @@ writes it to a file this subcommand reads).
 When `brandable-slots-file` is omitted, the subcommand reads
 `brand/brand.css` under the working directory, takes every custom property
 declared there as a brandable slot, and prints `Brand stylesheet: <path>` so
-the report names the stylesheet it proved. The overlay bytes belong to
-Designer; `clossys/strategist/` still refuses hex values and type pairings. A
+the report names the stylesheet it proved. The path follows the repository
+layout in clossys/foundry#1581. The overlay bytes belong to Designer, and the
+layout requires that `clossys/strategist/` hold direction only, with no hex
+values or type pairings; this package does not yet enforce that rule. A
 missing `brand/brand.css` is a usage error, and a stylesheet declaring no
 custom properties is indeterminate (exit `2`).
 
@@ -1063,6 +1065,13 @@ function does no filesystem work of its own.
 | `BrandDerivation` | type | `{ attribute, tokenSlots: string[], voiceRules: string[], rationale }`. |
 | `BrandCoverageResult` | type | `{ ok, slotsChecked, derivationsChecked, slotsMissingDerivation: string[], unknownSlotsInDerivations: string[], reason? }`. |
 | `BrandCoverageFailureReason` | type | `"no-slots-provided" \| "no-derivations-provided" \| "coverage-gap"`. |
+
+### Brand stylesheet (`brand-css.ts`)
+
+| Export | Kind | Purpose |
+| --- | --- | --- |
+| `extractBrandCssSlots(css)` | function | Pure. Returns every custom property a stylesheet declares (`--name:`), once each, in source order, at any nesting depth. Comments and quoted strings are ignored, and `var(--name)` uses are not declarations. |
+| `BRAND_CSS_SEGMENTS` | constant | `["brand", "brand.css"]` — the path segments of the default brand stylesheet, relative to the working directory. Join with `node:path` `join`. |
 
 ### Direction invalidation (`direction-invalidation.ts`)
 

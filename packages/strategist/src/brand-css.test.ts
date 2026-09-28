@@ -1,0 +1,45 @@
+import { describe, expect, it } from "vitest";
+import { BRAND_CSS_SEGMENTS, extractBrandCssSlots } from "./brand-css.js";
+
+describe("BRAND_CSS_SEGMENTS", () => {
+  it("names brand/brand.css", () => {
+    expect([...BRAND_CSS_SEGMENTS]).toEqual(["brand", "brand.css"]);
+  });
+});
+
+describe("extractBrandCssSlots", () => {
+  it("collects each declared custom property once, in source order, at any depth", () => {
+    const css = ":root { --a: 1; --b: 2; }\n@media (prefers-color-scheme: dark) { :root { --b: 3; --c: 4; } }";
+    expect(extractBrandCssSlots(css)).toEqual(["--a", "--b", "--c"]);
+  });
+
+  it("does not collect var() uses, only declarations", () => {
+    const css = ":root { --a: 1; --b: var(--a, 0); color: var(--c, red); border: 1px solid var(--d, var(--e, 0)); }";
+    expect(extractBrandCssSlots(css)).toEqual(["--a", "--b"]);
+  });
+
+  it("collects declarations under a :root[data-brand-bound] selector and ignores attribute selectors", () => {
+    const css = ':root[data-brand-bound] { --a: 1; }\n[data-brand-bound="--x: y"] { --b: 2; }\n:root[data-brand-bound="true"] > .card { color: red; }';
+    expect(extractBrandCssSlots(css)).toEqual(["--a", "--b"]);
+  });
+
+  it("ignores custom-property text inside quoted strings", () => {
+    const css = [
+      ':root { --a: 1; }',
+      '.x::before { content: " --not-a-slot: 1"; }',
+      ".y::after { content: ' ; --also-not: 2'; }",
+      '.z { background: url("a.png;--nor-this:1"); }',
+    ].join("\n");
+    expect(extractBrandCssSlots(css)).toEqual(["--a"]);
+  });
+
+  it("ignores custom-property text inside comments, including a comment marker inside a string", () => {
+    const css = ':root { /* --a: 1; */ --b: 2; }\n.q::before { content: "/*"; }\n:root { --c: 3; }\n.r::before { content: "*/"; }';
+    expect(extractBrandCssSlots(css)).toEqual(["--b", "--c"]);
+  });
+
+  it("returns an empty list for a stylesheet declaring no custom properties", () => {
+    expect(extractBrandCssSlots("body { color: red; }")).toEqual([]);
+    expect(extractBrandCssSlots("")).toEqual([]);
+  });
+});

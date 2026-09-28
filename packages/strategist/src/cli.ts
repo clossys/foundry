@@ -77,7 +77,7 @@ import {
 } from "./strategy-dir-default.js";
 
 const USAGE = `Usage: strategist-check <strategy-dir> [scan-dir] [options]
-   or: strategist-check brand-coverage <derivations-file> <brandable-slots-file>
+   or: strategist-check brand-coverage <derivations-file> [<brandable-slots-file>]
    or: strategist-check direction <direction-entities-file> <reviewed-against-file>
    or: strategist-check handoff <strategy-dir>
    or: strategist-check apply <strategy-dir> <scan-dir> [options]
@@ -471,14 +471,14 @@ function readBrandableSlots(path: string): BrandableSlotsReadResult {
   return { ok: true, value };
 }
 
-function printBrandCoverageReport(result: BrandCoverageResult): void {
+function printBrandCoverageReport(result: BrandCoverageResult, slotsSource: string): void {
   console.log(`${result.slotsChecked} brandable slot(s) checked against ${result.derivationsChecked} derivation(s).`);
   if (result.slotsMissingDerivation.length > 0) {
     console.log(`${result.slotsMissingDerivation.length} brandable slot(s) named by no derivation:`);
     for (const slot of result.slotsMissingDerivation) console.log(`  ${slot}`);
   }
   if (result.unknownSlotsInDerivations.length > 0) {
-    console.log(`${result.unknownSlotsInDerivations.length} derivation-named slot(s) not in brandable-slots-file:`);
+    console.log(`${result.unknownSlotsInDerivations.length} derivation-named slot(s) not in ${slotsSource}:`);
     for (const slot of result.unknownSlotsInDerivations) console.log(`  ${slot}`);
   }
   if (result.ok) {
@@ -523,16 +523,24 @@ function runBrandCoverage(argv: string[]): number {
   console.log(`Derivations file: ${derivationsFile}`);
 
   let slotsRead: BrandableSlotsReadResult;
+  let slotsSource: string;
   if (args.brandableSlotsFile) {
     const brandableSlotsFile = resolve(args.brandableSlotsFile);
     requireFile("brandable-slots-file", brandableSlotsFile);
     console.log(`Brandable slots file: ${brandableSlotsFile}`);
     slotsRead = readBrandableSlots(brandableSlotsFile);
+    slotsSource = "brandable-slots-file";
   } else {
     const brandCssFile = resolve(process.cwd(), ...BRAND_CSS_SEGMENTS);
-    requireFile("brand stylesheet (default when brandable-slots-file is omitted)", brandCssFile);
+    if (!existsSync(brandCssFile)) {
+      throw new CliInputError(
+        `brand/brand.css "${brandCssFile}" does not exist; it is the default when brandable-slots-file is omitted, so create it or pass a brandable-slots-file`,
+      );
+    }
+    requireFile("brand/brand.css", brandCssFile);
     console.log(`Brand stylesheet: ${brandCssFile}`);
     slotsRead = { ok: true, value: extractBrandCssSlots(readFileSync(brandCssFile, "utf8")) };
+    slotsSource = BRAND_CSS_SEGMENTS.join("/");
   }
   if (!slotsRead.ok) {
     console.error(`\nBrandable slots could not be loaded: ${slotsRead.detail}`);
@@ -557,7 +565,7 @@ function runBrandCoverage(argv: string[]): number {
   const derivations: BrandDerivation[] = shape.value;
 
   const result = checkBrandCoverage(slotsRead.value, derivations);
-  printBrandCoverageReport(result);
+  printBrandCoverageReport(result, slotsSource);
 
   const surfaceTexts: { path: string; text: string }[] = [];
   for (const surfacePath of args.surfacePaths) {
