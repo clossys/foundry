@@ -44,6 +44,14 @@
  * existing `parseArgs` call and alongside the `brand-coverage` check —
  * every other first argument, including `brand-coverage` itself and any
  * real `strategy-dir` path, still falls through unchanged.
+ *
+ * `brand-facts` wires `checkBrandFactsDrift` (`./brand-facts-drift.ts`) in
+ * with `apply`'s shape: strategy-dir resolved the same way, the scan walked
+ * with the same flags, plus `--copy-registry` (defaulting to
+ * `<cwd>/clossys/writer/copy-registry.json` when that file exists). Its own
+ * default extensions are prose/markup/data only. The check's "indeterminate"
+ * state — nothing scanned, or taglines recorded with no copy registry to
+ * resolve them — maps to `2`, never `0`; see `runBrandFacts` below.
  */
 
 import { existsSync, readdirSync, readFileSync, realpathSync, statSync } from "node:fs";
@@ -55,6 +63,8 @@ import {
   type BrandCoverageResult,
   type BrandDerivation,
 } from "./brand-derivation.js";
+import { copyEntriesFromRegistry, readBrandFacts, type CopyEntryLike } from "./brand-facts.js";
+import { checkBrandFactsDrift, type BrandFactsDriftResult } from "./brand-facts-drift.js";
 import { checkBrandSurfaces } from "./brand-surfaces.js";
 import {
   checkDirectionCoverage,
@@ -80,6 +90,7 @@ const USAGE = `Usage: strategist-check <strategy-dir> [scan-dir] [options]
    or: strategist-check direction <direction-entities-file> <reviewed-against-file>
    or: strategist-check handoff <strategy-dir>
    or: strategist-check apply <strategy-dir> <scan-dir> [options]
+   or: strategist-check brand-facts <strategy-dir> <scan-dir> [options]
 
   strategy-dir   Directory containing facts.json (and the rest of the strategy bundle). Optional — omit it and this command reads ./clossys/strategist by default (or the retired ./strategy directory when clossys/strategist does not exist yet, still read in this release, with a notice; its removal will be announced beforehand in this package's CHANGELOG; both existing at once is refused as indeterminate).
   scan-dir       Directory to scan for prose/copy claims. Defaults to the current working directory.
@@ -94,7 +105,7 @@ Options:
 
 Exit codes: 0 = clean, 1 = at least one finding, 2 = could not run (bad input, missing/invalid facts.json, nothing matched to scan, or an unreadable directory).
 
-Run "strategist-check brand-coverage --help", "strategist-check direction --help", "strategist-check handoff --help", or "strategist-check apply --help" for those subcommands' own usage.
+Run "strategist-check brand-coverage --help", "strategist-check direction --help", "strategist-check handoff --help", "strategist-check apply --help", or "strategist-check brand-facts --help" for those subcommands' own usage.
 `;
 
 const BRAND_COVERAGE_USAGE = `Usage: strategist-check brand-coverage <derivations-file> <brandable-slots-file> [options]
@@ -149,6 +160,23 @@ Options:
   --surfaces <path>   Designer-facing surface file for surface-target constraints (repeatable).
 
 Exit codes: 0 = clean, 1 = at least one finding, 2 = could not run.
+`;
+
+const BRAND_FACTS_USAGE = `Usage: strategist-check brand-facts <strategy-dir> <scan-dir> [options]
+
+  strategy-dir   Directory containing brand-facts.json.
+  scan-dir       Directory to scan for surfaces that restate a brand fact.
+
+Options:
+  --help                   Print this message and exit 0.
+  --copy-registry <file>   Writer copy registry used to resolve tagline copy ids.
+  --extensions <ext>       File extension to scan (repeatable; include the leading dot).
+  --skip-dirs <name>       Directory name to skip during the walk (repeatable), added to the built-in skip list.
+  --exclude <glob>         Repo-relative path glob to omit (repeatable).
+
+Default extensions are .md, .mdx, .txt, .html, .htm, .json, .yml and .yaml; code files opt in through --extensions. When --copy-registry is not given and ./clossys/writer/copy-registry.json exists, that file is used.
+
+Exit codes: 0 = clean, 1 = drift (at least one scanned surface conflicts with the record), 2 = could not run (brand-facts.json missing/unreadable/invalid, a given copy registry unreadable/invalid, no files scanned, an unreadable directory, taglines recorded with no copy registry available, or bad arguments).
 `;
 
 /** Exported for `cli.test.ts` — anything wrong with the arguments themselves always maps to exit code 2, never 1. */
@@ -927,6 +955,167 @@ function runApply(argv: string[]): number {
   return 1;
 }
 
+// ---------------------------------------------------------------------
+// brand-facts — record-vs-surface drift. Same shape as `apply` above:
+// resolve strategy-dir, walk scan-dir, run the pure check, print, exit.
+// ---------------------------------------------------------------------
+
+/** Prose, markup, and data files — where brand facts get restated. Code files opt in via --extensions. */
+const BRAND_FACTS_DEFAULT_EXTENSIONS = [".md", ".mdx", ".txt", ".html", ".htm", ".json", ".yml", ".yaml"];
+
+/** Where the Writer keeps its copy registry, relative to cwd; used when --copy-registry is not given and it exists. */
+const DEFAULT_COPY_REGISTRY_SEGMENTS = ["clossys", "writer", "copy-registry.json"] as const;
+
+/**
+ * Pulls `--copy-registry <file>` / `--copy-registry=<file>` out of argv so
+ * the remainder can go through the shared `parseArgs` unchanged (which
+ * would otherwise refuse the flag as unknown). Given twice is refused —
+ * silently preferring one of two registries is the kind of pick this CLI
+ * never makes.
+ */
+function extractCopyRegistryFlag(argv: string[]): { copyRegistry?: string; rest: string[] } {
+  let copyRegistry: string | undefined;
+  const rest: string[] = [];
+  const set = (value: string | undefined): void => {
+    if (value === undefined || value.length === 0 || value.startsWith("-")) {
+      throw new CliInputError("--copy-registry requires a file argument, e.g. --copy-registry ./clossys/writer/copy-registry.json");
+    }
+    if (copyRegistry !== undefined) throw new CliInputError("--copy-registry given more than once; supply exactly one");
+    copyRegistry = value;
+  };
+  for (let i = 0; i < argv.length; i += 1) {
+    const arg = argv[i] as string;
+    if (arg === "--copy-registry") {
+      set(argv[i + 1]);
+      i += 1;
+      continue;
+    }
+    if (arg.startsWith("--copy-registry=")) {
+      set(arg.slice("--copy-registry=".length));
+      continue;
+    }
+    rest.push(arg);
+  }
+  return copyRegistry === undefined ? { rest } : { copyRegistry, rest };
+}
+
+type CopyRegistryLoad = { ok: true; entries: CopyEntryLike[] | undefined; path?: string } | { ok: false; detail: string };
+
+/**
+ * An explicit --copy-registry must load, or the run is "could not run".
+ * Without one, the default path is used only when it exists; a default that
+ * exists but is unreadable or invalid is refused the same way — it is the
+ * registry the operator would expect to be used. No registry at all yields
+ * `entries: undefined`, which `checkBrandFactsDrift` itself reports as
+ * indeterminate when the record has taglines.
+ */
+function loadCopyRegistry(explicit: string | undefined): CopyRegistryLoad {
+  let path: string;
+  if (explicit !== undefined) {
+    path = resolve(explicit);
+  } else {
+    path = join(process.cwd(), ...DEFAULT_COPY_REGISTRY_SEGMENTS);
+    if (!existsSync(path)) return { ok: true, entries: undefined };
+  }
+  const parsed = readJsonFile("copy registry", path);
+  if (!parsed.ok) return parsed;
+  const shape = copyEntriesFromRegistry(parsed.value);
+  if (!shape.ok) {
+    const issues = shape.issues.map((issue) => `${issue.path}: ${issue.message}`).join("; ");
+    return { ok: false, detail: `copy registry "${path}" is not a valid Writer copy registry: ${issues}` };
+  }
+  return { ok: true, entries: shape.value, path };
+}
+
+function printBrandFactsReport(result: BrandFactsDriftResult): void {
+  console.log(`Scanned ${result.filesScanned} file${result.filesScanned === 1 ? "" : "s"}.`);
+  if (result.ignored.length > 0) {
+    console.log(`${result.ignored.length} explicitly ignored via "brand-facts:ignore":`);
+    for (const ig of result.ignored) console.log(`  ${ig.file}:${ig.line}  ${ig.snippet}`);
+  }
+  if (result.findings.length > 0) {
+    console.log(`\n${result.findings.length} finding(s):`);
+    for (const f of result.findings) console.log(`  [${f.kind}] ${f.file}:${f.line}  ${f.message}`);
+  }
+  if (result.state === "clean") {
+    console.log("Brand facts: clean.");
+  } else if (result.state === "drift") {
+    console.log("Brand facts: drift.");
+  } else {
+    console.log("Brand facts: indeterminate.");
+    for (const reason of result.indeterminateReasons) console.error(`  ${reason}`);
+  }
+}
+
+/**
+ * `brand-facts`'s own `main`-equivalent. Everything that would make the
+ * check unable to speak — a missing/unreadable/invalid record, a copy
+ * registry that was asked for (or found) but will not load, zero files
+ * matched — is refused here with `2` before the pure check runs. The
+ * check's own "indeterminate" state (e.g. taglines recorded with no
+ * registry available) also maps to `2`, and wins over drift: "could not
+ * fully check" is never masked by findings from the part that did run.
+ */
+function runBrandFacts(argv: string[]): number {
+  const { copyRegistry, rest } = extractCopyRegistryFlag(argv);
+  const args = parseArgs(rest);
+  if (args.help) {
+    console.log(BRAND_FACTS_USAGE);
+    return 0;
+  }
+  if (args.factsDir !== undefined) throw new CliInputError('unknown flag "--facts-dir" for brand-facts');
+  if (!args.scanDir) throw new CliInputError("scan-dir is required");
+  const strategyDirResolution = resolveStrategyDirArgument(args.strategyDir);
+  if ("exitCode" in strategyDirResolution) return strategyDirResolution.exitCode;
+  const strategyDir = strategyDirResolution.dir;
+  const scanDir = resolve(args.scanDir);
+  requireDirectory("strategy-dir", strategyDir);
+  requireDirectory("scan-dir", scanDir);
+
+  console.log(`Strategy directory: ${strategyDir}`);
+  console.log(`Scan directory: ${scanDir}`);
+
+  const read = readBrandFacts(strategyDir);
+  if (read.status !== "ok") {
+    const detail = read.status === "missing" ? read.detail : `${read.issue.reason}: ${read.issue.detail}`;
+    console.error(`\nBrand facts could not be loaded (${detail}).`);
+    console.error("Refusing to report a pass with no trustworthy brand-facts record to check surfaces against.");
+    return 2;
+  }
+
+  const registry = loadCopyRegistry(copyRegistry);
+  if (!registry.ok) {
+    console.error(`\nCopy registry could not be loaded: ${registry.detail}`);
+    console.error("Refusing to report a pass with no trustworthy copy registry to resolve taglines against.");
+    return 2;
+  }
+  console.log(`Copy registry: ${registry.path ?? "(none)"}`);
+
+  const scanOptions: { extensions: string[]; skipDirs?: string[]; excludeGlobs?: string[] } = {
+    extensions: args.extensions.length > 0 ? args.extensions : BRAND_FACTS_DEFAULT_EXTENSIONS,
+  };
+  if (args.skipDirs.length > 0) scanOptions.skipDirs = [...DEFAULT_SKIP_DIRS, ...args.skipDirs];
+  if (args.excludeGlobs.length > 0) scanOptions.excludeGlobs = args.excludeGlobs;
+  const files = scanStrategyDirectory(scanDir, scanOptions); // throws (fail-closed) on an unreadable directory — caught by run()
+  if (files.length === 0) {
+    console.error(`\nNo files matched under "${scanDir}" — nothing was scanned.`);
+    console.error("Refusing to report a pass for a scan that checked nothing.");
+    return 2;
+  }
+
+  const result = checkBrandFactsDrift(
+    files,
+    read.facts,
+    registry.entries === undefined ? {} : { copyEntries: registry.entries },
+  );
+  printBrandFactsReport(result);
+  if (result.state === "indeterminate") {
+    console.error("Refusing to report a pass for a check that could not run in full.");
+    return 2;
+  }
+  return result.state === "drift" ? 1 : 0;
+}
+
 /**
  * Exported (unlike a typical CLI `main`) so `cli.test.ts` can exercise the
  * whole argv-to-exit-code contract directly, against a real `mkdtemp` temp
@@ -954,6 +1143,9 @@ export function main(argv: string[]): number {
   }
   if (argv[0] === "apply") {
     return runApply(argv.slice(1));
+  }
+  if (argv[0] === "brand-facts") {
+    return runBrandFacts(argv.slice(1));
   }
 
   const args = parseArgs(argv);
