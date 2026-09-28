@@ -584,6 +584,134 @@ describe("copy-read-without-resolver", () => {
     });
     expect(ctorGate.verdict).toBe("violated");
   });
+
+  it("treats finished parseCopyRegistry bindings as clean regardless of type annotation length", () => {
+    const head = [
+      'import { createCopyResolver, parseCopyRegistry } from "@clossys/writer";',
+      'import registry from "../copy/registry.json";',
+    ].join("\n");
+    const n387 = "T".repeat(387);
+    const n2500 = "U".repeat(2500);
+    const n1200a = "A".repeat(1200);
+    const n1200b = "B".repeat(1200);
+    for (const typeAnn of [
+      n387,
+      n2500,
+      `${n1200a} | ${n1200b}`,
+      `${n1200a} & ${n1200b}`,
+    ]) {
+      const { gate } = scan({
+        "src/copy.ts": [
+          head,
+          `const reg: ${typeAnn} = parseCopyRegistry(registry); createCopyResolver(reg);`,
+        ].join("\n"),
+      });
+      expect(gate.findings).toEqual([]);
+      expect(gate.verdict).toBe("satisfied");
+    }
+  });
+
+  it("flags parseCopyRegistry bindings continued by strict and inequality comparisons on a new line", () => {
+    const head = [
+      'import { createCopyResolver, parseCopyRegistry } from "@clossys/writer";',
+      'import registry from "../copy/registry.json";',
+    ].join("\n");
+    for (const cmp of ["=== 0", "!= 0", "!== 0"]) {
+      const { gate } = scan({
+        "src/copy.ts": [
+          head,
+          "const reg = parseCopyRegistry(registry)",
+          cmp,
+          "export const out = createCopyResolver(reg);",
+        ].join("\n"),
+      });
+      expect(gate.verdict).toBe("violated");
+    }
+  });
+
+  it("flags nested array destructuring that shadows a renamed import", () => {
+    const head = [
+      'import { createCopyResolver as make } from "@clossys/writer";',
+      'import registry from "../copy/registry.json";',
+    ].join("\n");
+    const use = "export const out = make(registry);";
+    for (const shadow of [
+      "const [[make]] = rows; make(registry);",
+      "const [ [ make ] ] = rows; make(registry);",
+    ]) {
+      const { gate } = scan({ "src/copy.ts": [head, shadow, use].join("\n") });
+      expect(gate.verdict).toBe("violated");
+    }
+  });
+
+  it("flags array rest destructuring that shadows a renamed import", () => {
+    const { gate } = scan({
+      "src/copy.ts": [
+        'import { createCopyResolver as make } from "@clossys/writer";',
+        'import registry from "../copy/registry.json";',
+        "const [...make] = rows; make(registry);",
+        "export const out = make(registry);",
+      ].join("\n"),
+    });
+    expect(gate.verdict).toBe("violated");
+  });
+
+  it("flags computed object destructuring with a nested binding", () => {
+    const { gate } = scan({
+      "src/copy.ts": [
+        'import { createCopyResolver as make } from "@clossys/writer";',
+        'import registry from "../copy/registry.json";',
+        "const { [key]: { make } } = row; make(registry);",
+        "export const out = make(registry);",
+      ].join("\n"),
+    });
+    expect(gate.verdict).toBe("violated");
+  });
+
+  it("flags namespace functions with a body when the return type is a qualified name", () => {
+    const head = [
+      'import { createCopyResolver as make } from "@clossys/writer";',
+      'import registry from "../copy/registry.json";',
+    ].join("\n");
+    const use = "export const out = make(registry);";
+    for (const ret of ["Foo.Bar", "Foo.Bar[]", "typeof Foo.Bar"]) {
+      const { gate } = scan({
+        "src/copy.ts": [
+          head,
+          `namespace N { function load(make: unknown): ${ret} { return make(registry); } }`,
+          use,
+        ].join("\n"),
+      });
+      expect(gate.verdict).toBe("violated");
+    }
+  });
+
+  it("flags object and class methods that are not the first member", () => {
+    const head = [
+      'import { createCopyResolver as make } from "@clossys/writer";',
+      'import registry from "../copy/registry.json";',
+    ].join("\n");
+    const use = "export const out = make(registry);";
+    for (const shadow of [
+      "class C { constructor() {} load(make: Handler): void { make(registry); } }",
+      "const obj = { x: 1, load(make: Handler): void { make(registry); } };",
+    ]) {
+      const { gate } = scan({ "src/copy.ts": [head, shadow, use].join("\n") });
+      expect(gate.verdict).toBe("violated");
+    }
+  });
+
+  it("flags an array-literal arrow parameter without parentheses", () => {
+    const { gate } = scan({
+      "src/copy.ts": [
+        'import { createCopyResolver as make } from "@clossys/writer";',
+        'import registry from "../copy/registry.json";',
+        "const f = [make => make(registry)];",
+        "export const out = make(registry);",
+      ].join("\n"),
+    });
+    expect(gate.verdict).toBe("violated");
+  });
 });
 
 describe("scope and masking", () => {

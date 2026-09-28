@@ -396,32 +396,62 @@ function writerCalleeAllowed(
   return writerImports.localNames.has(callee) && !localShadowedCalleepNames.has(callee);
 }
 
-function parseCopyRegistryBindingInitEndsAtCall(code: string, call: { open: number; close: number }): boolean {
-  let nameEnd = call.open - 1;
-  while (nameEnd >= 0 && isWs(code[nameEnd]!)) nameEnd--;
-  let nameStart = nameEnd;
-  while (nameStart >= 0 && /[\w$]/.test(code[nameStart]!)) nameStart--;
-  nameStart++;
-  const preStart = Math.max(0, nameStart - 400);
-  const preDecl = code.slice(preStart, nameStart);
-  const matches = [...preDecl.matchAll(new RegExp(`${CALLEE_BOUNDARY}(?:const|let|var)\\s+(${IDENT})`, "gu"))];
-  for (let d = matches.length - 1; d >= 0; d--) {
-    const decl = matches[d]!;
-    let i = preStart + decl.index! + decl[0].length;
+function declaratorListInitEndsAtCall(code: string, declKeywordEnd: number, call: { open: number; close: number }): boolean {
+  let i = skipWsCode(code, declKeywordEnd);
+  for (;;) {
+    const identStart = i;
+    i = skipIdentCode(code, i);
+    if (i === identStart) return false;
     i = skipWsCode(code, i);
     if (code[i] === ":") {
       i = skipTypeAnnotation(code, i + 1);
       i = skipWsCode(code, i);
     }
-    if (code[i] !== "=") continue;
-    i = skipWsCode(code, i + 1);
-    i = skipIdentCode(code, i);
+    if (code[i] === "=") {
+      i = skipWsCode(code, i + 1);
+      const initStart = i;
+      i = skipIdentCode(code, i);
+      i = skipWsCode(code, i);
+      if (initStart <= call.open && i === skipWsCode(code, call.open)) return true;
+      i = skipExpressionUntilCommaOrSemicolon(code, initStart);
+    }
     i = skipWsCode(code, i);
-    if (i === skipWsCode(code, call.open)) return true;
+    if (code[i] === ",") {
+      i = skipWsCode(code, i + 1);
+      continue;
+    }
+    return false;
   }
-  return new RegExp(`${CALLEE_BOUNDARY}(?:const|let|var)\\s+${IDENT}(?:\\s*:[^=;]+)?\\s*=\\s*$`, "u").test(
-    code.slice(Math.max(0, nameStart - 400), nameStart),
-  );
+}
+
+/** Skips one top-level declarator initializer (through nested calls and brackets). */
+function skipExpressionUntilCommaOrSemicolon(code: string, i: number): number {
+  let depthParen = 0;
+  let depthBrace = 0;
+  let depthBracket = 0;
+  while (i < code.length) {
+    const c = code[i]!;
+    if (depthParen === 0 && depthBrace === 0 && depthBracket === 0 && (c === "," || c === ";")) break;
+    if (c === "(") depthParen++;
+    else if (c === ")") depthParen = Math.max(0, depthParen - 1);
+    else if (c === "{") depthBrace++;
+    else if (c === "}") depthBrace = Math.max(0, depthBrace - 1);
+    else if (c === "[") depthBracket++;
+    else if (c === "]") depthBracket = Math.max(0, depthBracket - 1);
+    i++;
+  }
+  return i;
+}
+
+function parseCopyRegistryBindingInitEndsAtCall(code: string, call: { open: number; close: number }): boolean {
+  const prefix = code.slice(0, call.open);
+  const matches = [...prefix.matchAll(new RegExp(`${CALLEE_BOUNDARY}(?:const|let|var)\\s+`, "gu"))];
+  for (let d = matches.length - 1; d >= 0; d--) {
+    const decl = matches[d]!;
+    const kwEnd = decl.index! + decl[0].length;
+    if (declaratorListInitEndsAtCall(code, kwEnd, call)) return true;
+  }
+  return false;
 }
 
 /** Comma in `const a = x, b = y` starts the next declarator — not a continued expression. */
@@ -448,6 +478,9 @@ function postfixContinuesParseResult(code: string, idx: number): boolean {
   if (code.slice(idx, idx + 2) === "??") return true;
   if (code.slice(idx, idx + 2) === "||") return true;
   if (code.slice(idx, idx + 2) === "&&") return true;
+  if (code.slice(idx, idx + 3) === "===") return true;
+  if (code.slice(idx, idx + 3) === "!==") return true;
+  if (code.slice(idx, idx + 2) === "!=" && code[idx + 2] !== "=") return true;
   if (code.slice(idx, idx + 2) === "==" && code[idx + 2] !== "=") return true;
   return false;
 }
@@ -589,6 +622,12 @@ function destructuringPatternShadowsName(inner: string, name: string): boolean {
     if (new RegExp(`^${IDENT}\\s*:\\s*${esc}(?:\\s*=.*)?$`, "u").test(trimmed)) return true;
     if (new RegExp(`^\\.\\.\\.\\s*${esc}$`, "u").test(trimmed)) return true;
     if (new RegExp(`^\\[[^\\]]+\\]\\s*:\\s*${esc}(?:\\s*=.*)?$`, "u").test(trimmed)) return true;
+    const computedNested = new RegExp(`^\\[[^\\]]+\\]\\s*:\\s*\\{`, "u").exec(trimmed);
+    if (computedNested) {
+      const open = trimmed.indexOf("{", computedNested.index);
+      const close = matchingClose(trimmed, open);
+      if (close > open && destructuringPatternShadowsName(trimmed.slice(open + 1, close), name)) return true;
+    }
     const nestedObj = new RegExp(`^${IDENT}\\s*:\\s*\\{`, "u").exec(trimmed);
     if (nestedObj) {
       const open = trimmed.indexOf("{", nestedObj.index);
@@ -611,6 +650,7 @@ function arrayPatternShadowsName(inner: string, name: string): boolean {
     const trimmed = part.trim();
     if (!trimmed) continue;
     if (new RegExp(`^${esc}(?:\\s*=.*)?$`, "u").test(trimmed)) return true;
+    if (new RegExp(`^\\.\\.\\.\\s*${esc}(?:\\s*=.*)?$`, "u").test(trimmed)) return true;
     if (trimmed.startsWith("{")) {
       const close = matchingClose(trimmed, 0);
       if (close > 0 && destructuringPatternShadowsName(trimmed.slice(1, close), name)) return true;
@@ -712,13 +752,24 @@ function skipTypeOperand(code: string, i: number): number {
     return skipPostfixTypeArrayBrackets(code, i);
   }
   if (c === undefined) return i;
-  i = skipIdentCode(code, i);
-  i = skipWsCode(code, i);
-  if (code[i] === "<") {
-    i = indexAfterGenericTypeParamList(code, i);
-    i = skipWsCode(code, i);
-  }
+  i = skipQualifiedTypeName(code, i);
   return skipPostfixTypeArrayBrackets(code, i);
+}
+
+/** Consumes `Foo`, `Foo.Bar`, and `Foo.Bar<Baz>` in type positions. */
+function skipQualifiedTypeName(code: string, i: number): number {
+  i = skipIdentCode(code, i);
+  for (;;) {
+    i = skipWsCode(code, i);
+    if (code[i] === "<" && ltAtIsGenericOpener(code, i)) {
+      i = indexAfterGenericTypeParamList(code, i);
+      i = skipWsCode(code, i);
+    }
+    if (code[i] !== ".") break;
+    i++;
+    i = skipIdentCode(code, i);
+  }
+  return i;
 }
 
 function indexInsideDeclareBlock(code: string, idx: number, kind: "class" | "namespace"): boolean {
@@ -1121,8 +1172,11 @@ function collectLocalShadowedCalleepNames(
       if (close === -1) continue;
       if (destructuringPatternShadowsName(code.slice(open + 1, close), name)) shadowed.add(name);
     }
-    for (const m of code.matchAll(new RegExp(`${CALLEE_BOUNDARY}(?:const|let|var)\\s*\\[([^\\]]*)\\]`, "gu"))) {
-      if (arrayPatternShadowsName(m[1]!, name)) shadowed.add(name);
+    for (const m of code.matchAll(new RegExp(`${CALLEE_BOUNDARY}(?:const|let|var)\\s*\\[`, "gu"))) {
+      const open = m.index! + m[0].length - 1;
+      const close = matchingClose(code, open);
+      if (close === -1) continue;
+      if (arrayPatternShadowsName(code.slice(open + 1, close), name)) shadowed.add(name);
     }
     if (new RegExp(`${fnDeclPrefix}${IDENT}\\s*\\([^)]*\\.\\.\\.\\s*${esc}${NOT_ID_CONTINUE}`, "u").test(code))
       shadowed.add(name);
@@ -1171,7 +1225,8 @@ function collectLocalShadowedCalleepNames(
     ) {
       shadowed.add(name);
     }
-    for (const m of code.matchAll(new RegExp(`\\{\\s*(${IDENT})\\s*(?:<[^>]*>)?\\s*${firstParamBind}`, "gu"))) {
+    const objectMethodLead = `(?:\\{|,|\\})\\s*(${IDENT})\\s*(?:<[^>]*>)?\\s*`;
+    for (const m of code.matchAll(new RegExp(`${objectMethodLead}${firstParamBind}`, "gu"))) {
       if (CONTROL_FLOW_BLOCK_KEYWORDS.has(m[1]!)) continue;
       if (objectMethodBraceIsTypeOnly(code, m.index!)) continue;
       const parenRel = m[0].indexOf("(");
@@ -1184,7 +1239,7 @@ function collectLocalShadowedCalleepNames(
       break;
     }
     if (!shadowed.has(name)) {
-      for (const m of code.matchAll(new RegExp(`\\{\\s*(${IDENT})\\s*(?:<[^>]*>)?\\s*\\(`, "gu"))) {
+      for (const m of code.matchAll(new RegExp(`${objectMethodLead}\\(`, "gu"))) {
         if (CONTROL_FLOW_BLOCK_KEYWORDS.has(m[1]!)) continue;
         if (objectMethodBraceIsTypeOnly(code, m.index!)) continue;
         const parenRel = m[0].indexOf("(");
@@ -1258,6 +1313,8 @@ function collectLocalShadowedCalleepNames(
       shadowed.add(name);
     if (!shadowed.has(name) && forEachParenListShadows(code, name)) shadowed.add(name);
     if (new RegExp(`${CALLEE_BOUNDARY}(?:const|let|var)\\s+${IDENT}\\s*=\\s*(?:async\\s+)?\\(\\s*\\[\\s*${esc}`, "u").test(code))
+      shadowed.add(name);
+    if (new RegExp(`${CALLEE_BOUNDARY}(?:const|let|var)\\s+${IDENT}\\s*=\\s*(?:async\\s+)?\\[\\s*${esc}\\s*=>`, "u").test(code))
       shadowed.add(name);
     if (anyCatchBindingShadowsName(code, name)) shadowed.add(name);
   }
