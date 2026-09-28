@@ -482,6 +482,9 @@ function postfixContinuesParseResult(code: string, idx: number): boolean {
   if (code.slice(idx, idx + 3) === "!==") return true;
   if (code.slice(idx, idx + 2) === "!=" && code[idx + 2] !== "=") return true;
   if (code.slice(idx, idx + 2) === "==" && code[idx + 2] !== "=") return true;
+  if (code.slice(idx, idx + 2) === "<=" || code.slice(idx, idx + 2) === ">=") return true;
+  if (c === "<" && !ltAtIsGenericOpener(code, idx)) return true;
+  if (c === ">" && (idx === 0 || code[idx - 1] !== "=") && !ltAtIsGenericOpener(code, idx)) return true;
   return false;
 }
 
@@ -515,6 +518,13 @@ function parseCopyRegistryRegistryArgAllowed(
   return false;
 }
 
+function bindingNameAtCallArgument(code: string, bindIdx: number, bindNameLen: number): boolean {
+  let i = bindIdx + bindNameLen;
+  while (i < code.length && isWs(code[i])) i++;
+  const c = code[i];
+  return c === "," || c === ")";
+}
+
 function registryBindingUseAllowed(
   code: string,
   bindIdx: number,
@@ -524,8 +534,7 @@ function registryBindingUseAllowed(
   writerImports: WriterCalleeImports,
   localShadowedCalleepNames: Set<string>,
 ): boolean {
-  const afterName = code.slice(bindIdx + bindNameLen, bindIdx + bindNameLen + 20);
-  if (!/^\s*[,)]/.test(afterName)) return false;
+  if (!bindingNameAtCallArgument(code, bindIdx, bindNameLen)) return false;
   const call = callContaining(code, bindIdx);
   if (!call) return false;
   if (!writerCalleeAllowed(call.callee, writerImports, localShadowedCalleepNames)) return false;
@@ -667,8 +676,21 @@ function arrayPatternShadowsName(inner: string, name: string): boolean {
 const CONTROL_FLOW_BLOCK_KEYWORDS = new Set(["if", "while", "switch"]);
 
 function isDeclareFunctionPrefix(code: string, fnKeywordIndex: number): boolean {
-  const before = code.slice(Math.max(0, fnKeywordIndex - 12), fnKeywordIndex);
-  return /(?:^|\s)declare\s+$/.test(before);
+  let i = fnKeywordIndex - 1;
+  while (i >= 0 && isWs(code[i])) i--;
+  const wordEnd = i;
+  while (i >= 0) {
+    const cpStart = codePointStartAt(code, i);
+    if (!isIdContinueCodePoint(codePointAt(code, cpStart))) break;
+    i = cpStart - 1;
+  }
+  const wordStart = i + 1;
+  if (code.slice(wordStart, wordEnd + 1) !== "declare") return false;
+  if (wordStart > 0) {
+    const before = codePointBefore(code, wordStart);
+    if (before !== undefined && (isIdContinueCodePoint(before) || before === "$" || before === ".")) return false;
+  }
+  return true;
 }
 
 function skipWsCode(code: string, i: number): number {
@@ -889,9 +911,14 @@ function interfaceBodyBraceIndex(code: string, openBrace: number): boolean {
   return false;
 }
 
-function typeAliasRhsContainsBrace(code: string, openBrace: number): boolean {
-  for (const m of code.matchAll(new RegExp(`\\btype\\s+${IDENT}(?:\\s*<[^>]*>)?\\s*=\\s*`, "gu"))) {
+function indexInTypeAliasAssignmentRhs(code: string, idx: number): boolean {
+  for (const m of code.matchAll(new RegExp(`\\btype\\s+${IDENT}`, "gu"))) {
     let i = m.index! + m[0].length;
+    i = skipWsCode(code, i);
+    i = skipOptionalGenericTypeParams(code, i);
+    i = skipWsCode(code, i);
+    if (code[i] !== "=") continue;
+    i = skipWsCode(code, i + 1);
     const start = i;
     for (;;) {
       i = skipTypeOperand(code, i);
@@ -904,9 +931,13 @@ function typeAliasRhsContainsBrace(code: string, openBrace: number): boolean {
       if (c === ";" || c === undefined) break;
       break;
     }
-    if (openBrace >= start && openBrace < i) return true;
+    if (idx >= start && idx < i) return true;
   }
   return false;
+}
+
+function typeAliasRhsContainsBrace(code: string, openBrace: number): boolean {
+  return indexInTypeAliasAssignmentRhs(code, openBrace);
 }
 
 function openBraceIsTypeMemberContext(code: string, openBrace: number): boolean {
@@ -1014,8 +1045,8 @@ function commaBeforeOpenIsInTypeList(code: string, openIdx: number): boolean {
 
 /** A parenthesized parameter list in a type alias or similar — not a runtime callback. */
 function openParenIsTypeSyntax(code: string, openIdx: number): boolean {
+  if (indexInTypeAliasAssignmentRhs(code, openIdx)) return true;
   const before = code.slice(Math.max(0, openIdx - 400), openIdx);
-  if (new RegExp(`(?<![\\w$.])type\\s+${IDENT}(?:\\s*<[^>]*>)?\\s*=\\s*[^{;=]*$`, "u").test(before)) return true;
   if (new RegExp(`(?<![\\w$.])interface\\s+${IDENT}(?:\\s*<[^>]*>)?(?:\\s+extends\\s+[^{;]*)?\\s*$`, "u").test(before))
     return true;
   let p = prevNonWs(code, openIdx);

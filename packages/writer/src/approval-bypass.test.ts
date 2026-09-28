@@ -616,7 +616,7 @@ describe("copy-read-without-resolver", () => {
       'import { createCopyResolver, parseCopyRegistry } from "@clossys/writer";',
       'import registry from "../copy/registry.json";',
     ].join("\n");
-    for (const cmp of ["=== 0", "!= 0", "!== 0"]) {
+    for (const cmp of ["=== 0", "!= 0", "!== 0", "< 0", "> 0", "<= 0", ">= 0"]) {
       const { gate } = scan({
         "src/copy.ts": [
           head,
@@ -626,6 +626,70 @@ describe("copy-read-without-resolver", () => {
         ].join("\n"),
       });
       expect(gate.verdict).toBe("violated");
+    }
+  });
+
+  it("does not treat type-alias function types with long names as value bindings", () => {
+    const head = [
+      'import { createCopyResolver as make } from "@clossys/writer";',
+      'import registry from "../copy/registry.json";',
+    ].join("\n");
+    const use = "export const out = make(registry);";
+    for (const n of [386, 387, 500]) {
+      const name = "T".repeat(n);
+      const { gate } = scan({
+        "src/copy.ts": [head, `type Alias = ${name}<(make: unknown) => void>;`, use].join("\n"),
+      });
+      expect(gate.findings).toEqual([]);
+      expect(gate.verdict).toBe("satisfied");
+    }
+  });
+
+  it("does not treat type-alias object members with long generic constraints as value bindings", () => {
+    const head = [
+      'import { createCopyResolver as make } from "@clossys/writer";',
+      'import registry from "../copy/registry.json";',
+    ].join("\n");
+    const use = "export const out = make(registry);";
+    const long = "X".repeat(200);
+    for (const constraint of [`Foo<Bar>`, `${long}<Bar>`]) {
+      const { gate } = scan({
+        "src/copy.ts": [head, `type Alias<T extends ${constraint}> = { load(make: unknown): void };`, use].join("\n"),
+      });
+      expect(gate.findings).toEqual([]);
+      expect(gate.verdict).toBe("satisfied");
+    }
+  });
+
+  it("allows resolver calls when only whitespace separates the binding from the closing paren", () => {
+    const head = [
+      'import { createCopyResolver, parseCopyRegistry } from "@clossys/writer";',
+      'import registry from "../copy/registry.json";',
+    ].join("\n");
+    for (const gap of [19, 20]) {
+      const { gate } = scan({
+        "src/copy.ts": [
+          head,
+          `const reg = parseCopyRegistry(registry); createCopyResolver(reg${" ".repeat(gap)});`,
+        ].join("\n"),
+      });
+      expect(gate.findings).toEqual([]);
+      expect(gate.verdict).toBe("satisfied");
+    }
+  });
+
+  it("does not treat declare function with long whitespace gaps as value bindings", () => {
+    const head = [
+      'import { createCopyResolver as make } from "@clossys/writer";',
+      'import registry from "../copy/registry.json";',
+    ].join("\n");
+    const use = "export const out = make(registry);";
+    for (const gap of [5, 20]) {
+      const { gate } = scan({
+        "src/copy.ts": [head, `declare${" ".repeat(gap)}function load(make: unknown): void;`, use].join("\n"),
+      });
+      expect(gate.findings).toEqual([]);
+      expect(gate.verdict).toBe("satisfied");
     }
   });
 
