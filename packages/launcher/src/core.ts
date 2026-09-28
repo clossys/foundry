@@ -823,6 +823,31 @@ function engineVersionEntries(versions: HubEngineVersions): readonly (readonly [
   return entries;
 }
 
+/** A `package.json` body parsed to a JSON object, or `undefined` when it is unparseable, an array, or a primitive. */
+function parseManifestObject(raw: string): Record<string, unknown> | undefined {
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    return isRecord(parsed) ? parsed : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * The manifest refusals of `mergeHubEnginePins` in "appoint" mode, raised by
+ * `adoptHubFiles` before its first write so a refusal leaves the checkout
+ * untouched: a present `package.json` that is not a JSON object, or a missing
+ * one with no skeleton manifest to write in its place.
+ */
+function assertManifestAppointable(host: WorkspaceHost, directory: string, skeletonRoot: string): void {
+  const raw = host.readText(join(directory, "package.json"));
+  if (raw === null) {
+    if (host.readText(join(skeletonRoot, "package.json")) === null) throw new Error("missing skeleton package.json");
+    return;
+  }
+  if (parseManifestObject(raw) === undefined) throw new Error("existing package.json is unreadable JSON");
+}
+
 /**
  * Pins each hub engine (Advisor and Integrator) exactly, in `devDependencies`
  * only, and returns what it changed. It only raises a pin: one older than
@@ -859,12 +884,8 @@ function mergeHubEnginePins(
     writeSkeletonFile(host, directory, "package.json", substitute(skeleton, { owner, repository, ...versions }));
     return engineVersionEntries(versions).map(([engine, version]) => ({ package: engine, to: version }));
   }
-  let manifest: Record<string, unknown>;
-  try {
-    const parsed: unknown = JSON.parse(raw);
-    if (!isRecord(parsed)) throw new Error("package.json is not an object");
-    manifest = parsed;
-  } catch {
+  const manifest = parseManifestObject(raw);
+  if (manifest === undefined) {
     if (mode === "resume") return [];
     throw new Error("existing package.json is unreadable JSON");
   }
@@ -1053,6 +1074,9 @@ function adoptHubFiles(host: WorkspaceHost, skeletonRoot: string, plan: Workspac
     // Copied byte for byte: the bytes just validated are the bytes written.
     inventoryDocument = withFinalNewline(raw);
   }
+  // The manifest is read and checked here too, for the same reason: mergeHubEnginePins refuses it only after
+  // the marker and the composed files are written, which would leave a half-appointed checkout.
+  assertManifestAppointable(host, plan.directory, skeletonRoot);
   const marker = {
     schemaVersion: 1,
     kind: "account-hub",
@@ -1763,7 +1787,9 @@ function engineVersionsOf(plan: WorkspacePlan): HubEngineVersions {
  * Classifies a freshly cloned `{owner}/workspace` (a resume plan with
  * `clone: true`) by its marker, the way `planWorkspace` classifies a local
  * checkout, and returns how apply must continue (#1585). It only reads: every
- * refusal is thrown here, before apply writes anything into the clone.
+ * refusal it decides is thrown here, before apply writes anything into the
+ * clone, and the appoint path's own refusals (a `package.json` that is not a
+ * JSON object among them) are thrown by `adoptHubFiles` before its first write.
  *
  * - both markers: refused, as `planWorkspace` refuses them locally;
  * - a marker (current or legacy) for another owner: refused;
@@ -1773,7 +1799,8 @@ function engineVersionsOf(plan: WorkspacePlan): HubEngineVersions {
  *   appointed, so apply takes the adopt path, which keeps its files. That
  *   path needs both engine versions, refuses the Foundry supplier tree, and
  *   refuses an on-disk inventory that fails its contract (a missing or valid
- *   one is kept as it is; this path writes no inventory).
+ *   one is kept as it is; this path writes no inventory), and refuses a
+ *   `package.json` that is not a JSON object (checked by `adoptHubFiles`).
  */
 function classifyClonedHub(
   host: WorkspaceHost,

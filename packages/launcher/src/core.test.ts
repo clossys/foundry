@@ -2829,6 +2829,24 @@ describe("an existing unrelated repository appointed as the hub by cloning it (#
     expect(tree(directory)).toEqual(treeAfterClone(seed));
   });
 
+  it.each([
+    ["an array", "[1,2]\n"],
+    ["a primitive", "null\n"],
+    ["invalid JSON", "{ not json"],
+  ])("refuses, before writing anything, an unmarked clone whose package.json is %s", (_label, manifest) => {
+    const directory = tempDir();
+    const seed: CloneSeed = (dir) => {
+      unrelatedProject({ manifest: false })(dir);
+      writeFileSync(join(dir, "package.json"), manifest);
+    };
+    const workspaceHost = cloningHost(directory, seed);
+    const plan = plannedFromEmptyDirectory(workspaceHost);
+    expect(() => applyWorkspacePlan(workspaceHost, plan, skeletonRoot, composeApplyOptions(seedSkillCatalogue(["advisor"])))).toThrow(
+      /existing package\.json is unreadable JSON/,
+    );
+    expect(tree(directory)).toEqual(treeAfterClone(seed));
+  });
+
   it("refuses, before writing anything, an unmarked clone that is the Foundry supplier tree", () => {
     const directory = tempDir();
     const seed: CloneSeed = (dir) => {
