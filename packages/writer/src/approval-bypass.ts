@@ -641,10 +641,9 @@ function openParenIsTypeSyntax(code: string, openIdx: number): boolean {
   if (p >= 0 && code[p] === ":") return true;
   if (p >= 0 && code[p] === "(") {
     const q = prevNonWs(code, p);
-    if (q >= 0 && (code[q] === ":" || code[q] === "(" || code[q] === "|" || code[q] === "&" || code[q] === ",")) return true;
+    if (q >= 0 && code[q] === ":") return true;
     return openParenIsTypeSyntax(code, p);
   }
-  if (p >= 0 && (code[p] === "|" || code[p] === "&" || code[p] === ",")) return true;
   if (p >= 0 && /[\w$]/.test(code[p]!)) {
     let q = p;
     while (q >= 0 && /[\w$]/.test(code[q]!)) q--;
@@ -689,6 +688,7 @@ function paramListShadowsName(inner: string, name: string): boolean {
   return singleParamBindingShadows(inner.slice(start), name);
 }
 
+/** Arrows after an object-property `:` or a ternary `:` are not scanned (e.g. `{ load: (make) => ... }`, `c ? g : (make) => ...`). */
 function forEachParenListShadows(code: string, name: string): boolean {
   for (const m of code.matchAll(/(?:\(|,)\s*(?:async\s+)?(?:<[^>]*>\s*)?\(\s*/gu)) {
     const open = m.index! + m[0].length - 1;

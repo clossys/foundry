@@ -478,6 +478,10 @@ describe("copy-read-without-resolver", () => {
       "const items: unknown[] = [];\nitems.forEach((make) => { make(registry); });",
       "const load = ([make]: Array<(data: unknown) => unknown>) => make(registry);",
       "const load = (make) => make(registry);",
+      'emitter.on("load", (make) => make(registry));',
+      "run(opts, (make: Handler) => make(registry));",
+      "wrap(0, (make) => make(registry));",
+      "const f = g || ((make) => make(registry));",
     ]) {
       const { gate } = scan({ "src/copy.ts": [head, shadow, use].join("\n") });
       expect(gate.verdict).toBe("violated");
