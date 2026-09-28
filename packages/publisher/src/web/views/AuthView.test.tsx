@@ -1,9 +1,11 @@
 // @vitest-environment jsdom
 
 import "@testing-library/jest-dom/vitest";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import type { FormEvent } from "react";
 import { describe, expect, it, vi } from "vitest";
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, render, screen, within } from "@testing-library/react";
 import { afterEach } from "vitest";
 import userEvent from "@testing-library/user-event";
 import { AuthView } from "./AuthView.js";
@@ -36,9 +38,43 @@ describe("AuthView", () => {
     expect(screen.getByText("Welcome back.")).toBeInTheDocument();
   });
 
-  it("renders the brand slot's content", () => {
+  it("renders the brand slot's content inside the site header banner", () => {
     render(<AuthView heading="Sign in" brand={<span>Acme</span>} form={<div>form</div>} />);
-    expect(screen.getByText("Acme")).toBeInTheDocument();
+    // jsdom also maps PageHeader's <header> inside <main> to "banner"; the
+    // site header is the first one and sits outside <main>.
+    const siteHeader = screen.getAllByRole("banner")[0] as HTMLElement;
+    expect(siteHeader.closest("main")).toBeNull();
+    expect(within(siteHeader).getByText("Acme")).toBeInTheDocument();
+  });
+
+  it("has no mode prop: no mode attribute is rendered, and a stray mode changes no structure (the type error is asserted in AuthView.check.tsx)", () => {
+    const baseline = render(<AuthView brand="Acme" heading="Sign in" form={<div>form</div>} />).container;
+    expect(baseline.querySelector("[mode]")).toBeNull();
+    const baselineHtml = baseline.innerHTML;
+    cleanup();
+    const stray = { mode: "signin" } as object;
+    const { container } = render(<AuthView brand="Acme" heading="Sign in" form={<div>form</div>} {...stray} />);
+    // An unknown attribute is forwarded like any other rest prop; the view
+    // itself reads no mode, so nothing else about the shell changes.
+    (container.firstElementChild as HTMLElement).removeAttribute("mode");
+    expect(container.innerHTML).toBe(baselineHtml);
+  });
+
+  it("renders the footerSecondary slot's content inside the site footer", () => {
+    render(
+      <AuthView brand="Acme" heading="Sign in" form={<div>form</div>} footerSecondary={<span>Support line</span>} />,
+    );
+    expect(within(screen.getByRole("contentinfo")).getByText("Support line")).toBeInTheDocument();
+  });
+
+  it("imports only react and @clossys/designer/* (no auth provider)", () => {
+    const source = readFileSync(join(import.meta.dirname, "AuthView.tsx"), "utf8");
+    const specifiers = [...source.matchAll(/^import\s[^;]*?from\s+["']([^"']+)["']/gms)].map((m) => m[1]);
+    expect(specifiers.length).toBeGreaterThan(0);
+    for (const specifier of specifiers) {
+      expect(specifier).toMatch(/^(react|@clossys\/designer\/.+)$/);
+    }
+    expect(source).not.toMatch(/\brequire\(|import\(/);
   });
 
   it("renders the secondaryAction slot's content", () => {

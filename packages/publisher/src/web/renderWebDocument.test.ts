@@ -333,7 +333,7 @@ describe("renderWebDocument — module-level sugar is unaffected by defineWebTem
       bindings: [
         { slot: "brand", value: "Acme" },
         { slot: "heading", value: "Sign in" },
-        { slot: "form", value: "form" },
+        { slot: "form", value: "form-marker-7f3a" },
       ],
     };
     const html = renderToStaticMarkup(renderWebDocument(doc).element);
@@ -341,7 +341,27 @@ describe("renderWebDocument — module-level sugar is unaffected by defineWebTem
     expect(html).toContain("<header");
     expect(html).toContain("<footer");
     expect(html.indexOf("<h1")).toBeLessThan(html.indexOf("rounded-control"));
-    expect(html.indexOf("rounded-control")).toBeLessThan(html.indexOf("form"));
+    expect(html.indexOf("rounded-control")).toBeLessThan(html.indexOf("form-marker-7f3a"));
+  });
+
+  it("renders the AuthView footerSecondary slot inside the site footer, after the form", () => {
+    const doc: ComposeDocument = {
+      id: "acme-signin-footer",
+      channel: "web",
+      template: "AuthView",
+      meta: { channel: "web", title: "Sign in", description: "d" },
+      bindings: [
+        { slot: "brand", value: "Acme" },
+        { slot: "heading", value: "Sign in" },
+        { slot: "form", value: "form-marker-7f3a" },
+        { slot: "footerSecondary", value: "footer-secondary-marker-2c9d" },
+      ],
+    };
+    const html = renderToStaticMarkup(renderWebDocument(doc).element);
+    const footerStart = html.indexOf("<footer");
+    expect(footerStart).toBeGreaterThan(-1);
+    expect(html.indexOf("footer-secondary-marker-2c9d")).toBeGreaterThan(footerStart);
+    expect(html.indexOf("form-marker-7f3a")).toBeLessThan(footerStart);
   });
 });
 

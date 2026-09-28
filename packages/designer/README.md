@@ -3023,11 +3023,12 @@ function SignInPage() {
 ```
 
 A full-page authentication shell — sign-in, sign-up, password reset, email
-verification. A centered card (built on `atoms/Card`) with five named
-regions: `brand`, `heading` (+ optional `description`), the `form` slot,
-`secondaryAction`, and `footnote`. `heading` (required) renders as the
-page's `<h1>`; `form` (required) is rendered exactly as given, with no
-wrapper.
+verification. In order: a site header (`SiteHeader`, holding the required
+`brand`), a page header (`heading` plus optional `description`), a card
+(built on `atoms/Card`) holding the `form` slot and `secondaryAction`, an
+optional `footnote`, and a site footer (`SiteFooter`, fed by
+`footerSecondary`). `heading` (required) renders as the page's `<h1>`;
+`form` (required) is rendered exactly as given, with no wrapper.
 
 **`AuthView` implements no authentication of any kind** — no provider, no
 form state, no field validation, no submit handling. It renders whatever
@@ -3041,10 +3042,10 @@ same structural-difference-through-a-mode-prop failure "Placement rules"
 warns against, just scoped to authentication instead of visual styling.
 Composing that shape stays entirely the consumer's own job.
 
-`AuthView` also ships no `BrandLockup` — `brand` is a plain slot, for the
-same reason `Shell` ships no `SiteHeader`/`AppHeader` (see "Shell" below):
-a brand mark is per-product, and a pre-built one would recreate the
-`mode`-prop failure one layer up.
+`AuthView` also ships no `BrandLockup` — `brand` is required and supplied by
+the caller, for the same reason `Shell` ships no `SiteHeader`/`AppHeader`
+(see "Shell" below): a brand mark is per-product, and a pre-built one would
+recreate the `mode`-prop failure one layer up.
 
 ### `Pagination`
 
@@ -3131,11 +3132,12 @@ carry the same direction independently of color, so the delta reads
 correctly for a colorblind viewer, on a greyscale screen, or through a
 screen reader with no color channel at all.
 A full-page authentication shell — sign-in, sign-up, password reset, email
-verification. A centered card (built on `atoms/Card`) with five named
-regions: `brand`, `heading` (+ optional `description`), the `form` slot,
-`secondaryAction`, and `footnote`. `heading` (required) renders as the
-page's `<h1>`; `form` (required) is rendered exactly as given, with no
-wrapper.
+verification. In order: a site header (`SiteHeader`, holding the required
+`brand`), a page header (`heading` plus optional `description`), a card
+(built on `atoms/Card`) holding the `form` slot and `secondaryAction`, an
+optional `footnote`, and a site footer (`SiteFooter`, fed by
+`footerSecondary`). `heading` (required) renders as the page's `<h1>`;
+`form` (required) is rendered exactly as given, with no wrapper.
 
 **`AuthView` implements no authentication of any kind** — no provider, no
 form state, no field validation, no submit handling. It renders whatever
@@ -3149,10 +3151,10 @@ same structural-difference-through-a-mode-prop failure "Placement rules"
 warns against, just scoped to authentication instead of visual styling.
 Composing that shape stays entirely the consumer's own job.
 
-`AuthView` also ships no `BrandLockup` — `brand` is a plain slot, for the
-same reason `Shell` ships no `SiteHeader`/`AppHeader` (see "Shell" below):
-a brand mark is per-product, and a pre-built one would recreate the
-`mode`-prop failure one layer up.
+`AuthView` also ships no `BrandLockup` — `brand` is required and supplied by
+the caller, for the same reason `Shell` ships no `SiteHeader`/`AppHeader`
+(see "Shell" below): a brand mark is per-product, and a pre-built one would
+recreate the `mode`-prop failure one layer up.
 
 ## Shell
 

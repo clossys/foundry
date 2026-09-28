@@ -351,7 +351,10 @@ Name a shipped template when its slots cover the page:
   Designer's `Card`, and site footer. The form slot is filled with
   Designer's `Form` / `TextField` / `Button`. There is no mode prop, and
   the view does not call an auth provider.
-- **`ErrorView`** — error shell.
+- **`ErrorView`** — error shell, including the sign-in-boundary states: not
+  authorized (403), pending, revoked, and provider unavailable (503). It takes
+  the same props for each; the status, title, description, and recovery
+  action are the caller's copy.
 
 If a required band is not a slot on any shipped template and not one of the
 six `SectionedView` kinds, **do not flatten** it into a one-item
