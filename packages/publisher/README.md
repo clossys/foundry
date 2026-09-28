@@ -1274,16 +1274,115 @@ const { element: pageElement } = createWebRenderer({ templates: [HelpArticleView
 ```
 
 **Non-goals** (see issue #176 for the fuller argument for each): no
-legal-specific content types (no clause numbering, no defined-terms
-glossary, no citation/footnote-to-statute primitive — this contract
-describes document *structure*, never *what kind* of document it is); no
-arbitrary HTML passthrough; no pagination (a `StructuredDocument` is one
+clause numbering, no defined-terms glossary, and no
+citation/footnote-to-statute primitive — a legal document is a profile
+over this structure (see "Legal documents" below), not a separate content
+type; no arbitrary HTML passthrough; no pagination (a `StructuredDocument` is one
 document — a multi-page work is a caller-side concern composing an ordered
 sequence of them, the identical boundary this package's README already
 draws for `SurfaceDocument` and canvas channels); no automatic
 table-of-contents generation (this contract supplies the addressable
 section/anchor structure a TOC would be built from; generating and
 rendering the TOC itself is left to the caller).
+
+### Legal documents (Terms and Privacy profile)
+
+A Terms or Privacy page is a `StructuredDocument` with one extra field,
+`legal`. `LegalDocument` is `StructuredDocument & { legal: LegalProfile }`,
+and `validateLegalDocument` and `gateLegalDocument` check that profile on
+top of the ordinary document contract. The profile adds no block kinds and
+`renderStructuredDocument` renders a legal document the same way it renders
+any other.
+
+```ts
+import { LEGAL_SECTION_IDS, validateLegalDocument, gateLegalDocument } from "@clossys/publisher/document";
+import type { DocumentSection, LegalDocument } from "@clossys/publisher/document";
+
+const ref = (id: string) => ({ id });
+
+// One section per fixed id, in order. Every string is a CopyRef the caller's registry owns.
+const sections = LEGAL_SECTION_IDS.terms.map(
+  (id): DocumentSection => ({
+    kind: "section",
+    id,
+    level: 2,
+    heading: ref(`acme.terms.${id}.heading`),
+    blocks: [{ kind: "paragraph", content: [{ kind: "text", text: ref(id === "indemnity" ? "acme.terms.indemnity.not-applicable" : `acme.terms.${id}.p1`) }] }],
+  }),
+);
+
+const terms: LegalDocument = {
+  id: "acme.legal.terms",
+  title: ref("acme.terms.title"),
+  sections,
+  legal: {
+    kind: "terms",
+    status: "draft",
+    effectiveDate: "2026-01-15",
+    lastUpdated: "2026-01-10",
+    variables: { entity: "Acme Example Ltd", jurisdiction: "Exampleland", contact: "legal@acme.example" },
+    factsToConfirm: [ref("acme.terms.facts.entity-registration")], // a draft needs at least one
+    notApplicable: { indemnity: ref("acme.terms.indemnity.not-applicable") },
+  },
+};
+
+validateLegalDocument(terms); // [] when clean
+gateLegalDocument(terms, "preview"); // { ok: true, findings: [] }: a valid draft may be previewed
+gateLegalDocument(terms, "production"); // { ok: false, ... }: a draft is refused
+```
+
+**Section ids.** The top-level `sections` of a legal document carry these
+ids, in this order, with none missing, extra, renamed or reordered. Both
+lists are exported as `LEGAL_SECTION_IDS`, keyed by kind.
+
+- `terms`: `about`, `acceptance`, `eligibility`, `using-the-site`,
+  `acceptable-use`, `intellectual-property`, `your-submissions`,
+  `third-parties`, `no-professional-advice`, `disclaimers`, `liability`,
+  `indemnity`, `changes`, `suspension`, `governing-law`, `general`,
+  `contact`.
+- `privacy`: `about`, `scope`, `what-we-collect`, `how-we-use`,
+  `legal-bases`, `cookies`, `sharing`, `international-transfers`,
+  `retention`, `security`, `your-rights`, `children`, `changes`, `contact`.
+
+**The profile.** `LegalProfile` carries:
+
+- `kind`: `"terms"` or `"privacy"`, which selects the id list above.
+- `status`: `"draft"` or `"counsel-reviewed"`.
+- `effectiveDate` and `lastUpdated`: both required, `YYYY-MM-DD`, and
+  each must be a real calendar date (`2026-02-30` is refused).
+- `variables`: `entity`, `jurisdiction` and `contact`, each a required
+  non-empty string.
+- `factsToConfirm` (optional): a list of `CopyRef`s naming facts a person
+  still has to confirm. A draft needs a non-empty list. It is data only:
+  this package does not render it.
+- `notApplicable` (optional): a record from section id to a `CopyRef`. A
+  section that does not apply keeps its heading and states so through that
+  reference, and the section's only block is a paragraph carrying it.
+
+**Findings and the gate.** `validateLegalDocument(value: unknown)` returns
+the base `validateStructuredDocument` findings plus the legal-profile
+findings (a missing, extra, renamed or reordered section, the status, the
+dates, the variables, and the facts a draft needs). It takes an `unknown`
+value and returns findings instead of throwing.
+
+`gateLegalDocument(value: unknown, target: "preview" | "production")`
+returns `{ ok, findings }` and is pure. It refuses when the document is
+invalid or the target is not one of the two above. For `"production"` it
+accepts only a valid `counsel-reviewed` document; for `"preview"` it
+accepts any valid document, including a valid draft. It is a function a
+caller can call: this package does not wire it into any iteration or
+release process.
+
+**Soundness boundary.** The profile checks structure, status, dates and
+variables. It does not and cannot judge the legal adequacy of any text,
+and a `counsel-reviewed` status is a claim the caller makes, not something
+this package verifies. No legal wording ships in this package: every
+string in a legal document is a `CopyRef` that the consumer's own registry
+owns.
+
+**Not included yet:** a rendered `LegalView` and draft callout, a
+processor list derived from other content, variants of the `children`
+section, and reading the brand-facts record for the variables.
 
 ## `record` — the append-only publication ledger
 

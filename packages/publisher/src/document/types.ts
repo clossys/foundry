@@ -16,9 +16,11 @@
  *
  * See `render.ts` for the renderer and `validate.ts` for shape/heading-
  * order/link/table/anchor validation; see this package's README, "document"
- * for the full picture, including the deliberate non-goals (no legal-
- * specific content types, no arbitrary HTML passthrough, no pagination, no
- * automatic table-of-contents generation).
+ * for the full picture, including the deliberate non-goals (no clause
+ * numbering, defined-terms glossary or statute-citation primitive, no
+ * arbitrary HTML passthrough, no pagination, no automatic table-of-contents
+ * generation). A legal document is a profile over this shape, not a
+ * separate content type.
  */
 
 import type { CopyRef } from "@clossys/writer";

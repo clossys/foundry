@@ -7,8 +7,11 @@
  * `CopyResolution`/`CopyResolver`, the same way `surface/web` already
  * does. See this package's README, "document" for the full picture,
  * including the non-goals this subpath deliberately does not cover (no
- * legal-specific content types, no arbitrary HTML passthrough, no
- * pagination, no automatic table-of-contents generation).
+ * clause numbering, defined-terms glossary or statute-citation primitive,
+ * no arbitrary HTML passthrough, no pagination, no automatic
+ * table-of-contents generation). A Terms or Privacy document is a profile
+ * over `StructuredDocument` (see the README's "Legal documents" section),
+ * not a separate content type.
  *
  * Like `surface/web`, this subpath has an OPTIONAL `react` peer — a
  * consumer who never imports `@clossys/publisher/document` never
@@ -18,6 +21,9 @@
 export type { DocumentBlock, DocumentCallout, DocumentDefinitionList, DocumentInline, DocumentList, DocumentParagraph, DocumentSection, DocumentTable, StructuredDocument } from "./types.js";
 
 export { validateStructuredDocument } from "./validate.js";
+
+export { LEGAL_SECTION_IDS, validateLegalDocument, gateLegalDocument } from "./legal.js";
+export type { LegalDocument, LegalProfile, LegalContentVariables, LegalDocumentKind, LegalDocumentStatus, LegalGateTarget, LegalGateResult } from "./legal.js";
 
 export { renderStructuredDocument } from "./render.js";
 export type { RenderStructuredDocumentOptions, RenderStructuredDocumentResult } from "./render.js";
