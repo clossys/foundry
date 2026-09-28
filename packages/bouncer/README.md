@@ -331,6 +331,29 @@ subpath `delegation-ceiling` reads records for.
 `AgentLifecycleState`, `AgentAuthorizationFailureReason`,
 `BaseAgentAuditRecord`, `IsoDateTime`.
 
+### `./gate`
+
+One opt-in gate contract for gated application hosts. Framework-neutral: it
+takes a Fetch `Request` and a pass-through renderer and always returns a
+`Response`. The identity provider is a seam (`resolvePrincipal`); a throw is
+treated as unavailable and never answers 500.
+
+`createGatedHostGate`, `isNavigationRequest`, `resolveReturnUrl`,
+`buildProtectedResourceMetadata`, `PROTECTED_RESOURCE_METADATA_PATH`, and the
+types `GatedHostGate`, `GatedHostGateOptions`, `GatedHostNext`,
+`GatePrincipalState`, `ProtectedResourceMetadata`.
+
+A signed-out navigation (`Sec-Fetch-Mode: navigate`, `Accept: text/html`, or a
+Next.js `RSC` header / `_rsc` parameter) gets a 307 to the same host's sign-in
+route with a relative `redirect_url` and `Cache-Control: no-store`. A signed-out
+non-navigation or API request gets a 401 with an RFC 9728 `WWW-Authenticate`.
+Return URLs are relative or in an explicit sibling-origin allowlist, else `/`.
+A signed-in principal without permission is routed to a not-authorized route
+that answers 403. An unavailable provider fails gated routes closed to sign-in
+and lets the sign-in route render an unavailable state (503 with `Retry-After`
+when `production` is set). Every response carries `X-Robots-Tag: noindex,
+nofollow`.
+
 ### `./providers/clerk` and its subpaths
 
 Every provider adapter is isolated behind its own subpath, and the root never
