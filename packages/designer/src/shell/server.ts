@@ -49,4 +49,9 @@ export { SiteHeader } from "./SiteHeader.js";
 export type { SiteHeaderProps } from "./SiteHeader.js";
 
 export { SiteFooter } from "./SiteFooter.js";
-export type { SiteFooterProps, SiteFooterColumnProps } from "./SiteFooter.js";
+export type {
+  SiteFooterProps,
+  SiteFooterColumnProps,
+  SiteFooterLegalProps,
+  SiteFooterLegalLink,
+} from "./SiteFooter.js";
