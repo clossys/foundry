@@ -43,10 +43,11 @@ export interface UseFormValidationOptions<V extends Record<string, unknown>> {
   /**
    * Called with the current values only when every field is valid. A
    * returned promise holds the form in its pending state (`isSubmitting`)
-   * until it settles. Handle a send failure inside it (catch, then render
-   * the consumer's own message through `Form`'s `submitError`): a rejection
-   * is re-thrown from `handleSubmit`, and when `Form` is the caller nothing
-   * catches it.
+   * until it settles, and `isSubmitting` is cleared whether it resolves or
+   * rejects. A rejection is re-thrown from `handleSubmit`, so a caller that
+   * attaches `handleSubmit` to its own `<form>` must catch it. `Form`
+   * catches it and passes it to its `onSubmitError` prop. Either way, render
+   * the consumer's own message through `Form`'s `submitError`.
    */
   onSubmit: (values: V) => void | Promise<void>;
   /**

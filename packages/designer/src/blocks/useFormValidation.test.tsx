@@ -55,10 +55,11 @@ interface HarnessProps {
   errorSummaryMessage?: (count: number) => ReactNode;
   submitError?: ReactNode;
   formOnSubmit?: () => void;
+  onSubmitError?: (error: unknown) => void;
   capture?: (validation: FormValidation<Values>) => void;
 }
 
-function Harness({ onSubmit = () => {}, errorSummaryMessage, submitError, formOnSubmit, capture }: HarnessProps) {
+function Harness({ onSubmit = () => {}, errorSummaryMessage, submitError, formOnSubmit, onSubmitError, capture }: HarnessProps) {
   const v = useFormValidation<Values>({ initialValues: INITIAL, validators: VALIDATORS, onSubmit });
   capture?.(v);
   return (
@@ -67,6 +68,7 @@ function Harness({ onSubmit = () => {}, errorSummaryMessage, submitError, formOn
       errorSummaryMessage={errorSummaryMessage}
       submitError={submitError}
       onSubmit={formOnSubmit}
+      onSubmitError={onSubmitError}
       actions={
         <>
           <Button {...v.getSubmitButtonProps()}>Send</Button>
@@ -405,5 +407,81 @@ describe("useFormValidation — ids and field props", () => {
     await user.click(screen.getByRole("button", { name: "Go" }));
     expect(onSubmit).not.toHaveBeenCalled();
     await waitFor(() => expect(screen.getByLabelText("A")).toHaveFocus());
+  });
+});
+
+describe("Form with a rejecting onSubmit", () => {
+  // Node reports a rejection nobody handled on a later turn of the event
+  // loop, so the tests wait one macrotask after the rejection settles.
+  async function fillAndSubmit(user: ReturnType<typeof userEvent.setup>) {
+    await user.type(screen.getByLabelText("Name"), "Ada");
+    await user.type(screen.getByLabelText("Email"), "ada@example.com");
+    await user.type(screen.getByLabelText("Code"), "1234");
+    await user.click(screen.getByRole("button", { name: "Send" }));
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+  }
+
+  it("does not leave an unhandled rejection, and clears the pending state so the button works again", async () => {
+    const unhandled: unknown[] = [];
+    const listener = (reason: unknown) => {
+      unhandled.push(reason);
+    };
+    process.on("unhandledRejection", listener);
+    try {
+      const failure = new Error("send failed");
+      const onSubmit = vi.fn(() => Promise.reject(failure));
+      const user = userEvent.setup();
+      const { container } = render(<Harness onSubmit={onSubmit} />);
+      await fillAndSubmit(user);
+
+      expect(onSubmit).toHaveBeenCalledTimes(1);
+      expect(unhandled).toEqual([]);
+      const send = screen.getByRole("button", { name: "Send" });
+      expect(send).not.toHaveAttribute("data-pending");
+      expect(send).not.toHaveAttribute("disabled");
+      expect(container.querySelector("form")).not.toHaveAttribute("aria-busy");
+
+      await user.click(send);
+      expect(onSubmit).toHaveBeenCalledTimes(2);
+    } finally {
+      process.off("unhandledRejection", listener);
+    }
+  });
+
+  it("passes the rejection to onSubmitError, clears the pending state, and renders no text of its own", async () => {
+    const unhandled: unknown[] = [];
+    const listener = (reason: unknown) => {
+      unhandled.push(reason);
+    };
+    process.on("unhandledRejection", listener);
+    try {
+      const failure = new Error("send failed");
+      const onSubmitError = vi.fn();
+      const user = userEvent.setup();
+      render(<Harness onSubmit={() => Promise.reject(failure)} onSubmitError={onSubmitError} />);
+      await fillAndSubmit(user);
+
+      expect(onSubmitError).toHaveBeenCalledTimes(1);
+      expect(onSubmitError).toHaveBeenCalledWith(failure);
+      expect(unhandled).toEqual([]);
+      expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Send" })).not.toHaveAttribute("data-pending");
+    } finally {
+      process.off("unhandledRejection", listener);
+    }
+  });
+
+  it("does not call onSubmitError for a failed validation or a successful submit", async () => {
+    const onSubmitError = vi.fn();
+    const user = userEvent.setup();
+    render(<Harness onSubmitError={onSubmitError} />);
+    await user.click(screen.getByRole("button", { name: "Send" }));
+    await user.type(screen.getByLabelText("Name"), "Ada");
+    await user.type(screen.getByLabelText("Email"), "ada@example.com");
+    await user.type(screen.getByLabelText("Code"), "1234");
+    await user.click(screen.getByRole("button", { name: "Send" }));
+    expect(onSubmitError).not.toHaveBeenCalled();
   });
 });

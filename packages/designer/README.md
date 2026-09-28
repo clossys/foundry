@@ -2242,6 +2242,14 @@ what is wrong without visiting every field.
   not construct an equivalent new array on every unrelated render, or the
   summary steals focus back on every one of those too.
 
+**`onSubmitError` receives a rejected send.** With `validation`, if the
+promise returned by `onSubmit` rejects, `Form` catches it, so it never becomes
+an unhandled promise rejection, and calls `onSubmitError(error)`. The
+pending state clears either way. The prop is optional and does nothing when
+omitted. `Form` renders no error text for it: set your own state in the
+callback and pass the message through `submitError`. It is not called for
+field validation failures.
+
 **`submitError` is for send failures only.** It renders one `role="alert"`
 region above the actions while set, with consumer content: the network or
 server refused a submission that passed validation. Field-level problems
@@ -2302,8 +2310,11 @@ pending state that stays focusable and is announced by
 react-aria-components. A second submit while one is pending is ignored,
 including two submits in the same tick before a re-render. Handle a send
 failure inside `onSubmit` (catch, then render your own message through
-`Form`'s `submitError`); a rejection is re-thrown from `handleSubmit`, and
-when `Form` is the caller nothing catches it.
+`Form`'s `submitError`). `isSubmitting` is cleared whether `onSubmit`
+resolves or rejects, so the submit button is usable again. A rejection is
+re-thrown from `handleSubmit`: a caller that attaches `handleSubmit` to its
+own `<form>` must catch it, and `Form` catches it and passes it to its
+`onSubmitError` prop.
 
 **Error summary and `submitError`.** The summary is opt-in: it appears only
 when `errorSummaryMessage` is passed to `Form`. It shows the errors as of
@@ -4248,7 +4259,7 @@ not a grab-bag).
 | `StatProps` | type | Props for `Stat`: `label`, `value`, `delta`, `trend`, `trendLabels` (default Increase / Decrease / No change), `description`, `className`, `style`, plus every native `<div>` attribute. |
 | `StatTrend` | type | `"up" \| "down" \| "neutral"`. |
 | `Form` | component | Form layout: optional heading, fields region, opt-in error-summary region, submit-error region, actions region. Owns no validation logic; opts into `useFormValidation` through `validation`. |
-| `FormProps` | type | Props for `Form`: `heading`, `children`, `errors`, `errorSummaryMessage` (opt-in: the summary renders only when passed; no default text), `submitError`, `validation`, `actions`, `onSubmit` (ignored when `validation` is passed), `className`, `style`, plus every native `<form>` attribute. |
+| `FormProps` | type | Props for `Form`: `heading`, `children`, `errors`, `errorSummaryMessage` (opt-in: the summary renders only when passed; no default text), `submitError`, `validation`, `onSubmitError` (optional; receives a rejection from the validated `onSubmit`, and does nothing when omitted), `actions`, `onSubmit` (ignored when `validation` is passed), `className`, `style`, plus every native `<form>` attribute. |
 | `FormError` | type | One error-summary entry: `fieldId`, `message`. |
 | `FormValidationBinding` | type | What `Form` reads from a validation source: `handleSubmit`, `summaryErrors`, `isSubmitting`, `formRef`. `useFormValidation`'s return value satisfies it. |
 | `useFormValidation` | function | Hook for the form validation timing: validate on blur, re-validate on change once a field shows an error or after the first submit, focus the first invalid field on a failed submit, pending (never disabled) submit. Returns `FormValidation`. |
@@ -4385,7 +4396,7 @@ Beyond render/interaction/keyboard/ARIA tests per atom (`Button.test.tsx`,
 `Separator.test.tsx`, `Chip.test.tsx`), per block
 (`PageHeader.test.tsx`, `EmptyState.test.tsx`, `DataTable.test.tsx`,
 `DetailView.test.tsx`, `Pagination.test.tsx`, `Stat.test.tsx`,
-`Form.test.tsx`, `useFormValidation.test.tsx`, `FieldGroup.test.tsx`, `ConfirmDialog.test.tsx`,
+`Form.test.tsx`, `FieldGroup.test.tsx`, `ConfirmDialog.test.tsx`,
 `Toolbar.test.tsx`, `NavGrid.test.tsx`, `SectionHeader.test.tsx`,
 `Hero.test.tsx`, `FeatureGrid.test.tsx`, `Faq.test.tsx`,
 `PricingTable.test.tsx`, `Testimonial.test.tsx`, `ArticleBody.test.tsx`), per view

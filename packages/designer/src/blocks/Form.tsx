@@ -38,7 +38,8 @@ export interface FormValidationBinding {
   /**
    * Runs one submit attempt: prevents the native submission, validates, and
    * either moves focus to the first invalid field or calls the consumer's
-   * submit. `Form` calls it from the `<form>`'s own `onSubmit`.
+   * submit. `Form` calls it from the `<form>`'s own `onSubmit` and catches
+   * a rejection from the returned promise, passing it to `onSubmitError`.
    */
   handleSubmit: (event?: FormEvent) => Promise<void>;
   /**
@@ -110,6 +111,17 @@ export interface FormProps
    * unless `errors` is passed.
    */
   validation?: FormValidationBinding;
+  /**
+   * Called with the rejection when a valid submit's `onSubmit` promise
+   * rejects, only with `validation`. `Form` catches that rejection so it
+   * never becomes an unhandled promise rejection, and the validation source
+   * clears its pending state whether the promise resolves or rejects. Render
+   * the consumer's own message through `submitError`, for example by
+   * setting state here. `Form` renders no error text of its own. Optional:
+   * when omitted the rejection is dropped, so a caller that wants to know
+   * about a failed send passes this (or catches inside its own `onSubmit`).
+   */
+  onSubmitError?: (error: unknown) => void;
   /** Slot for the form's submit/cancel controls, rendered at the end. */
   actions?: ReactNode;
   /**
@@ -181,6 +193,7 @@ export function Form({
   errorSummaryMessage,
   submitError,
   validation,
+  onSubmitError,
   actions,
   onSubmit,
   className,
@@ -221,7 +234,9 @@ export function Form({
       onSubmit={
         validation
           ? (event) => {
-              void validation.handleSubmit(event);
+              validation.handleSubmit(event).catch((error: unknown) => {
+                onSubmitError?.(error);
+              });
             }
           : onSubmit
       }
