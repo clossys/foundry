@@ -346,7 +346,12 @@ Name a shipped template when its slots cover the page:
 - **`SectionedView`** — long public pages whose sections are exactly the
   closed six kinds (`hero`, `feature-grid`, `faq`, `ordered-step-sequence`,
   `status-list`, `stat-grid`).
-- **`AuthView`** / **`ErrorView`** — authentication and error shells.
+- **`AuthView`** — one shell for every authentication step (sign-in, sign-up,
+  password reset, verification): site header, page header, the form inside
+  Designer's `Card`, and site footer. The form slot is filled with
+  Designer's `Form` / `TextField` / `Button`. There is no mode prop, and
+  the view does not call an auth provider.
+- **`ErrorView`** — error shell.
 
 If a required band is not a slot on any shipped template and not one of the
 six `SectionedView` kinds, **do not flatten** it into a one-item
@@ -698,7 +703,7 @@ These exports are direct, server-safe page shells rather than new
 content, load a CMS, own a router, or add client state.
 
 `CaptureView` provides the site chrome, one heading, a consumer-owned form
-region, and a footer. The consumer owns form fields, submission, validation,
+inside Designer's `Card`, and a footer. The consumer owns form fields, submission, validation,
 and network effects. On a failed client-side submission, pass both
 `errorSummary` and `errorSummaryId`, focus that id, and keep the summary
 before the form; the view makes it a focusable `role="alert"`. On success,

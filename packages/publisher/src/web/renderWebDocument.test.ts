@@ -324,19 +324,24 @@ describe("renderWebDocument — module-level sugar is unaffected by defineWebTem
     expect(listWebTemplateNames().sort()).toEqual(["AuthView", "ErrorView", "MarketingView"]);
   });
 
-  it("renderWebDocument still renders AuthView exactly as before, with zero change to the call", () => {
+  it("renders AuthView from brand, heading, and form: a site header, the heading above a card, and a site footer", () => {
     const doc: ComposeDocument = {
       id: "acme-signin",
       channel: "web",
       template: "AuthView",
       meta: { channel: "web", title: "Sign in", description: "d" },
       bindings: [
+        { slot: "brand", value: "Acme" },
         { slot: "heading", value: "Sign in" },
         { slot: "form", value: "form" },
       ],
     };
-    const { element } = renderWebDocument(doc);
-    expect(renderToStaticMarkup(element)).toContain("Sign in");
+    const html = renderToStaticMarkup(renderWebDocument(doc).element);
+    expect(html).toContain("Sign in");
+    expect(html).toContain("<header");
+    expect(html).toContain("<footer");
+    expect(html.indexOf("<h1")).toBeLessThan(html.indexOf("rounded-control"));
+    expect(html.indexOf("rounded-control")).toBeLessThan(html.indexOf("form"));
   });
 });
 

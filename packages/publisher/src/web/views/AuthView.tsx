@@ -1,77 +1,64 @@
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
 import { Card, mergeUiClasses } from "@clossys/designer/atoms/server";
+import { PageHeader } from "@clossys/designer/blocks/server";
+import { SiteFooter, SiteHeader } from "@clossys/designer/shell/server";
 
 export interface AuthViewProps extends HTMLAttributes<HTMLDivElement> {
   /**
-   * Slot for a product's brand mark, rendered above the card. This package
-   * ships no `BrandLockup` of its own — a brand mark is per-product, the
-   * same reason `Shell` ships no `SiteHeader` (see the README, "Shell" →
-   * "How differing chrome is handled") — so this is a plain `ReactNode`
-   * slot, not a `logo`/`logoHref` prop pair this component would have to
-   * keep in sync with every product's actual mark.
+   * Persistent site identity, rendered in the page banner. Required:
+   * `SiteHeader` announces which site this is, and this package ships no
+   * brand mark of its own.
    */
-  brand?: ReactNode;
+  brand: ReactNode;
   /**
-   * The page's own name — "Sign in", "Create your account", "Reset your
-   * password". The only other required prop besides `form`. Renders as the
-   * page's `<h1>`.
+   * The page's own name — the words for sign-in, account creation,
+   * password reset, or verification. Renders as the page's `<h1>` through
+   * Designer's `PageHeader`, above the card. Copy is the caller's; this
+   * view has no mode that picks a heading.
    */
   heading: ReactNode;
   /** A line of supporting copy under `heading`. */
   description?: ReactNode;
   /**
-   * The form slot. **This component renders whatever is passed here
-   * exactly as given** — no `<form>` wrapper, no submit handling, no field
-   * state, no validation. Auth providers (their field set, their
-   * validation rules, their submit flow) differ per product; this view's
-   * whole job is to be the same shape everywhere while staying completely
-   * ignorant of how sign-in actually works. See this component's own doc
-   * comment below for why that boundary is one-way and non-negotiable.
+   * The form slot. Rendered inside Designer's `Card`, exactly as given —
+   * no `<form>` wrapper, no submit handling, no field state, no
+   * validation. Fill it with Designer's `Form`, `TextField`, and `Button`.
+   * Sign-in, sign-up, and password reset are three fillings of this slot,
+   * not three views. The submit handler is the caller's, and that is the
+   * only place an auth provider is called.
    */
   form: ReactNode;
   /**
-   * Slot for a secondary link below the form — "Don't have an account?
-   * Sign up", "Back to sign in". Typically a `Link` atom, but any
-   * `ReactNode` works, the same as every other slot here.
+   * Slot for a secondary link below the fields, still inside the card —
+   * the alternate step ("Create an account", "Back to sign in").
    */
   secondaryAction?: ReactNode;
   /**
-   * Slot for legal/footnote text below the card — terms-of-service and
-   * privacy-policy links, a copyright line. Rendered outside the card, the
-   * same visual position a page footer occupies.
+   * Slot for a short legal line under the card and above the site footer.
    */
   footnote?: ReactNode;
+  /** Persistent footer content, rendered by Designer's `SiteFooter`. */
+  footerSecondary?: ReactNode;
   /** Merged onto the outer element's inline style, after this component's own. */
   style?: CSSProperties;
 }
 
 /**
- * A full-page authentication shell — sign-in, sign-up, password reset,
- * email verification. A view, not a block: a page is an auth page or it
- * isn't (test 3, this package's README "Placement rules") — there is no
- * page that reasonably shows two sign-in forms side by side.
+ * One page shell for every authentication step: sign-in, sign-up,
+ * password reset, email verification. A view, not a block: a page is an
+ * auth page or it isn't — there is no page that reasonably shows two
+ * auth forms side by side.
  *
- * A centered card layout with five named regions: `brand`, `heading` (+
- * optional `description`), the `form` slot, `secondaryAction`, and
- * `footnote` — composed from this package's own `Card` atom, never
- * reimplemented as a bespoke bordered `<div>`.
+ * The shell is Designer's, in order: `SiteHeader`, `PageHeader`, `Card`
+ * around the form slot, `SiteFooter`. There is no `mode` prop. A step
+ * differs by the heading, the form slot, and the secondary link the
+ * caller passes in.
  *
  * **This component implements no authentication of any kind.** No
  * provider, no form state, no field validation, no submit handling — it
- * renders `form` exactly as given, the same way `Dialog` renders its
- * `trigger` and `EmptyState` renders its `action`: a slot the consumer
- * fills with their own composition, not a prop this component inspects or
- * wraps. This is deliberate and one-way: auth providers differ per
- * product (a magic link here, a password-plus-OAuth flow there, a
- * passkey flow somewhere else), and a shared UI package that tried to
- * absorb any one of them would immediately need an escape hatch for every
- * other one — the exact "variant/mode prop absorbing structural
- * differences" failure this package's README warns against, just scoped
- * to authentication instead of visual styling. Composing that shape stays
- * entirely the consumer's job; this component only supplies the page
- * chrome around it.
- *
- * Ships no `BrandLockup` — see `brand`'s own doc comment above.
+ * renders `form` exactly as given. An auth provider stays behind the
+ * caller's submit handler. A shared view that absorbed one provider's
+ * field set would immediately need an escape hatch for every other one.
  */
 export function AuthView({
   brand,
@@ -80,32 +67,26 @@ export function AuthView({
   form,
   secondaryAction,
   footnote,
+  footerSecondary,
   className,
   style,
   ...rest
 }: AuthViewProps) {
   return (
-    <div
-      {...rest}
-      className={mergeUiClasses("flex min-h-dvh flex-col items-center justify-center gap-lg p-xl", className)}
-      style={style}
-    >
-      {brand ? <div className="flex justify-center">{brand}</div> : null}
-      <Card className="flex w-full max-w-sm flex-col gap-lg">
-        <div className="flex flex-col gap-xs text-center">
-          <h1 className="text-h1 font-display text-ink-primary">{heading}</h1>
-          {description ? (
-            <p className="text-body text-ink-secondary">{description}</p>
-          ) : null}
-        </div>
-        {form}
-        {secondaryAction ? (
-          <div className="text-center text-body-s text-ink-secondary">{secondaryAction}</div>
-        ) : null}
-      </Card>
-      {footnote ? (
-        <p className="text-center text-body-s text-ink-muted">{footnote}</p>
-      ) : null}
+    <div {...rest} className={mergeUiClasses("flex min-h-dvh flex-col", className)} style={style}>
+      <SiteHeader brand={brand} />
+      <main
+        className="mx-auto flex w-full flex-1 flex-col gap-xl px-lg py-2xl"
+        style={{ maxWidth: "var(--ui-width-prose-max, 48rem)" }}
+      >
+        <PageHeader title={heading} description={description} />
+        <Card className="flex flex-col gap-lg">
+          {form}
+          {secondaryAction ? <div className="text-body-s text-ink-secondary">{secondaryAction}</div> : null}
+        </Card>
+        {footnote ? <p className="text-body-s text-ink-muted">{footnote}</p> : null}
+      </main>
+      <SiteFooter secondary={footerSecondary} />
     </div>
   );
 }

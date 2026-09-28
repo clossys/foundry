@@ -1,5 +1,5 @@
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
-import { mergeUiClasses } from "@clossys/designer/atoms/server";
+import { Card, mergeUiClasses } from "@clossys/designer/atoms/server";
 import { PageHeader } from "@clossys/designer/blocks/server";
 import { SiteFooter, SiteHeader } from "@clossys/designer/shell/server";
 
@@ -44,9 +44,11 @@ export interface CaptureViewProps extends HTMLAttributes<HTMLDivElement> {
 }
 
 /**
- * A page shell for a consumer-owned capture form. It owns neither network
- * submission nor validation state: the only state rule it applies is
- * presentational and fail-closed—`submitted` replaces the form in place.
+ * A page shell for a consumer-owned capture form. Site header, page
+ * header, the form inside Designer's `Card`, and site footer. It owns
+ * neither network submission nor validation state: the only state rule it
+ * applies is presentational and fail-closed—`submitted` replaces the form
+ * in place, still inside the card.
  */
 export function CaptureView({
   brand,
@@ -94,9 +96,11 @@ export function CaptureView({
       <SiteHeader brand={brand} />
       <main className="mx-auto flex w-full flex-1 flex-col gap-xl px-lg py-2xl" style={{ maxWidth: "var(--ui-width-prose-max, 48rem)" }}>
         <PageHeader title={heading} description={description} />
-        <section aria-label={formLabel} className="flex flex-col">
-          {activeContent}
-          {secondaryAction === undefined ? null : <div className="mt-lg text-body-s text-ink-secondary">{secondaryAction}</div>}
+        <section aria-label={formLabel}>
+          <Card className="flex flex-col gap-lg">
+            {activeContent}
+            {secondaryAction === undefined ? null : <div className="text-body-s text-ink-secondary">{secondaryAction}</div>}
+          </Card>
         </section>
       </main>
       <SiteFooter secondary={footerSecondary} />
