@@ -1245,6 +1245,84 @@ describe("copy-read-without-resolver", () => {
       expect(gate.verdict).toBe("violated");
     }
   });
+
+  it("flags anonymous class expressions whose header continues past `class` (fix round 28)", () => {
+    const head = [
+      'import { createCopyResolver as make } from "@clossys/writer";',
+      'import registry from "../copy/registry.json";',
+    ].join("\n");
+    const use = "export const out = make(registry);";
+    const member = "x = 1\nload(make: Handler): void { make(registry); }";
+    for (const form of [
+      `const X = class extends Base { ${member} };`,
+      `const X = class extends mixin(Base) { ${member} };`,
+      `export default class extends Base { ${member} }`,
+      `const X = class implements I { ${member} };`,
+      `const X = class extends B<{a:1}> { ${member} };`,
+    ]) {
+      const { gate } = scan({ "src/copy.ts": [head, form, use].join("\n") });
+      expect(gate.verdict).toBe("violated");
+      expect(gate.findings.every((f) => f.rule === "copy-read-without-resolver")).toBe(true);
+    }
+  });
+
+  it("flags anonymous class expressions in call, array, return and ternary positions (fix round 28)", () => {
+    const head = [
+      'import { createCopyResolver as make } from "@clossys/writer";',
+      'import registry from "../copy/registry.json";',
+    ].join("\n");
+    const use = "export const out = make(registry);";
+    const member = "x = 1\nload(make: Handler): void { make(registry); }";
+    const contexts: ((expr: string) => string)[] = [
+      (expr) => `consume(${expr});`,
+      (expr) => `const arr = [${expr}];`,
+      (expr) => `function f() { return ${expr}; }`,
+      (expr) => `const t = cond ? ${expr} : null;`,
+    ];
+    for (const expr of [
+      `class extends Base { ${member} }`,
+      `class extends mixin(Base) { ${member} }`,
+      `class implements I { ${member} }`,
+      `class extends B<{a:1}> { ${member} }`,
+    ]) {
+      for (const wrap of contexts) {
+        const { gate } = scan({ "src/copy.ts": [head, wrap(expr), use].join("\n") });
+        expect(gate.verdict).toBe("violated");
+        expect(gate.findings.every((f) => f.rule === "copy-read-without-resolver")).toBe(true);
+      }
+    }
+  });
+
+  it("keeps named, no-heritage and same-line class shapes as findings (fix round 28)", () => {
+    const head = [
+      'import { createCopyResolver as make } from "@clossys/writer";',
+      'import registry from "../copy/registry.json";',
+    ].join("\n");
+    const use = "export const out = make(registry);";
+    for (const form of [
+      "class C extends Base { x = 1\nload(make: Handler): void { make(registry); } }",
+      "const Y = class Y extends Base { x = 1\nload(make: Handler): void { make(registry); } };",
+      "const X = class { x = 1\nload(make: Handler): void { make(registry); } };",
+      "const X = class extends Base { x = 1; load(make: Handler): void { make(registry); } };",
+    ]) {
+      const { gate } = scan({ "src/copy.ts": [head, form, use].join("\n") });
+      expect(gate.verdict).toBe("violated");
+      expect(gate.findings.every((f) => f.rule === "copy-read-without-resolver")).toBe(true);
+    }
+  });
+
+  it("keeps anonymous ambient class headers type-only (fix round 28)", () => {
+    const head = [
+      'import { createCopyResolver as make } from "@clossys/writer";',
+      'import registry from "../copy/registry.json";',
+    ].join("\n");
+    const use = "export const out = make(registry);";
+    for (const header of ["declare class extends Base", "declare class extends mixin(Base)"]) {
+      const { gate } = scan({ "src/copy.ts": [head, `${header} { load(make: Handler): void }`, use].join("\n") });
+      expect(gate.findings).toEqual([]);
+      expect(gate.verdict).toBe("satisfied");
+    }
+  });
 });
 
 describe("scope and masking", () => {

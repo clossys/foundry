@@ -1050,10 +1050,17 @@ function skipHeritageOperand(code: string, i: number): number {
 function classBodyBraceAfterClassKeyword(code: string, classIdx: number): number {
   let i = classIdx + "class".length;
   i = skipWsCode(code, i);
+  // An anonymous class expression (`class extends Base { … }`) has no name:
+  // the `{` need not follow `class` immediately, so the header walk below
+  // runs whether or not a name is present. `extends`/`implements` are
+  // identifiers but are the clause that an anonymous header continues with,
+  // never the class name.
   const nameStart = i;
-  i = skipIdentCode(code, i);
-  if (i === nameStart) return code[i] === "{" ? i : -1; // anonymous class expression
-  i = skipOptionalGenericTypeParams(code, i);
+  const nameEnd = skipIdentCode(code, i);
+  if (nameEnd > nameStart) {
+    const word = code.slice(nameStart, nameEnd);
+    if (word !== "extends" && word !== "implements") i = skipOptionalGenericTypeParams(code, nameEnd);
+  }
   i = skipWsCode(code, i);
   if (isExtendsKeywordAt(code, i)) {
     i += "extends".length;
