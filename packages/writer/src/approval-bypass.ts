@@ -807,6 +807,27 @@ function indexInsideDeclareBlock(code: string, idx: number, kind: "class" | "nam
   return false;
 }
 
+/** Whether `{` at `openBrace` opens the body of a `declare class` (any class-name length). */
+function openBraceIsDeclareClassBody(code: string, openBrace: number): boolean {
+  if (code[openBrace] !== "{") return false;
+  for (const m of code.matchAll(new RegExp(`${CALLEE_BOUNDARY}declare\\s+class\\s+${IDENT}\\s*\\{`, "gu"))) {
+    if (m.index! + m[0].length - 1 === openBrace) return true;
+  }
+  return false;
+}
+
+/** `typeof` followed only by whitespace before the registry binding — a type query, not a read. */
+function bindingFollowsTypeofQuery(code: string, bindIdx: number): boolean {
+  let j = bindIdx - 1;
+  while (j >= 0 && isWs(code[j]!)) j--;
+  if (j < 5) return false;
+  if (code.slice(j - 5, j + 1) !== "typeof") return false;
+  const typeofStart = j - 5;
+  const before = codePointBefore(code, typeofStart);
+  if (before !== undefined && (isIdContinueCodePoint(before) || before === "$" || before === ".")) return false;
+  return true;
+}
+
 function functionInDeclareNamespace(code: string, fnKeywordIndex: number): boolean {
   return indexInsideDeclareBlock(code, fnKeywordIndex, "namespace");
 }
@@ -1045,6 +1066,10 @@ function commaBeforeOpenIsInTypeList(code: string, openIdx: number): boolean {
 
 /** A parenthesized parameter list in a type alias or similar — not a runtime callback. */
 function openParenIsTypeSyntax(code: string, openIdx: number): boolean {
+  if (indexInsideDeclareBlock(code, openIdx, "class")) {
+    const close = matchingClose(code, openIdx);
+    if (close !== -1 && parenListIsTypeMethodSignature(code, close)) return true;
+  }
   if (indexInTypeAliasAssignmentRhs(code, openIdx)) return true;
   const before = code.slice(Math.max(0, openIdx - 400), openIdx);
   if (new RegExp(`(?<![\\w$.])interface\\s+${IDENT}(?:\\s*<[^>]*>)?(?:\\s+extends\\s+[^{;]*)?\\s*$`, "u").test(before))
@@ -1159,9 +1184,10 @@ function forEachParenListShadows(code: string, name: string): boolean {
 
 /** Ambient or type-only `{ name(` forms — not class or object-literal methods. */
 function objectMethodBraceIsTypeOnly(code: string, openBrace: number): boolean {
-  const before = code.slice(Math.max(0, openBrace - 120), openBrace);
-  if (/(?:^|\s)declare\s+class\s+[\w$]*\s*$/.test(before)) return true;
+  if (openBraceIsDeclareClassBody(code, openBrace)) return true;
+  if (indexInsideDeclareBlock(code, openBrace, "class")) return true;
   if (openBraceIsTypeMemberContext(code, openBrace)) return true;
+  const before = code.slice(Math.max(0, openBrace - 120), openBrace);
   if (new RegExp(`(?<![\\w$.])interface\\s+${IDENT}(?:\\s*<[^>]*>)?(?:\\s+extends\\s+[^{;]*)?\\s*$`, "u").test(before))
     return true;
   if (new RegExp(`(?<![\\w$.])type\\s+${IDENT}(?:\\s*<[^{};]*)?\\s*=\\s*[^{;]*$`, "u").test(before)) return true;
@@ -1256,7 +1282,7 @@ function collectLocalShadowedCalleepNames(
     ) {
       shadowed.add(name);
     }
-    const objectMethodLead = `(?:\\{|,|\\})\\s*(${IDENT})\\s*(?:<[^>]*>)?\\s*`;
+    const objectMethodLead = `(?:\\{|,|\\}|;)\\s*(${IDENT})\\s*(?:<[^>]*>)?\\s*`;
     for (const m of code.matchAll(new RegExp(`${objectMethodLead}${firstParamBind}`, "gu"))) {
       if (CONTROL_FLOW_BLOCK_KEYWORDS.has(m[1]!)) continue;
       if (objectMethodBraceIsTypeOnly(code, m.index!)) continue;
@@ -1650,7 +1676,7 @@ export function extractApprovalBypass(
       if (i >= b.declStart && i < b.declEnd) continue;
       const prev = prevNonWs(code, i);
       if (prev >= 0 && code[prev] === "." && !(code[prev - 1] === "." && code[prev - 2] === ".")) continue; // `obj.name` — a property, not the binding
-      if (/(?<![\w$.])typeof\s+$/.test(code.slice(Math.max(0, i - 20), i))) continue; // a type query reads no content
+      if (bindingFollowsTypeofQuery(code, i)) continue; // a type query reads no content
       const afterName = code.slice(i + b.name.length, i + b.name.length + 20);
       if (/^\s*:(?!:)/.test(afterName) && isObjectKeyPosition(code, i)) continue; // `{ name: ... }` — a key, not the binding
       if (

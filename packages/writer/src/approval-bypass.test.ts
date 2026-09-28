@@ -765,6 +765,90 @@ describe("copy-read-without-resolver", () => {
     }
   });
 
+  it("does not treat ambient declare-class members as value bindings regardless of class-name length", () => {
+    const head = [
+      'import { createCopyResolver as make } from "@clossys/writer";',
+      'import registry from "../copy/registry.json";',
+    ].join("\n");
+    const use = "export const out = make(registry);";
+    const member = "load(make: Handler): void";
+    for (const nameLen of [105, 106, 120, 200]) {
+      const name = "C".repeat(nameLen);
+      for (const gap of [" ", ""]) {
+        const { gate } = scan({
+          "src/copy.ts": [head, `declare class ${name}${gap}{ ${member} }`, use].join("\n"),
+        });
+        expect(gate.findings).toEqual([]);
+        expect(gate.verdict).toBe("satisfied");
+      }
+    }
+  });
+
+  it("does not treat declare-class members as value bindings after long declare gaps", () => {
+    const head = [
+      'import { createCopyResolver as make } from "@clossys/writer";',
+      'import registry from "../copy/registry.json";',
+    ].join("\n");
+    const use = "export const out = make(registry);";
+    const body = "declare class C { load(make: Handler): void }";
+    for (const gap of [20, 100, 110, 200]) {
+      const { gate } = scan({
+        "src/copy.ts": [head, `declare${" ".repeat(gap)}class C { load(make: Handler): void }`, use].join("\n"),
+      });
+      expect(gate.findings).toEqual([]);
+      expect(gate.verdict).toBe("satisfied");
+    }
+  });
+
+  it("does not treat non-first ambient declare-class methods as value bindings", () => {
+    const head = [
+      'import { createCopyResolver as make } from "@clossys/writer";',
+      'import registry from "../copy/registry.json";',
+    ].join("\n");
+    const use = "export const out = make(registry);";
+    for (const decl of [
+      "declare class C { constructor() {} load(make: Handler): void }",
+      "declare class C { constructor() {}\nload(make: Handler): void }",
+    ]) {
+      const { gate } = scan({ "src/copy.ts": [head, decl, use].join("\n") });
+      expect(gate.findings).toEqual([]);
+      expect(gate.verdict).toBe("satisfied");
+    }
+  });
+
+  it("flags class methods that follow a field as value bindings", () => {
+    const head = [
+      'import { createCopyResolver as make } from "@clossys/writer";',
+      'import registry from "../copy/registry.json";',
+    ].join("\n");
+    const use = "export const out = make(registry);";
+    for (const shadow of [
+      "class C { x = 1; load(make: Handler): void { make(registry); } }",
+      "class C {\n  x = 1;\n  load(make: Handler): void { make(registry); }\n}",
+    ]) {
+      const { gate } = scan({ "src/copy.ts": [head, shadow, use].join("\n") });
+      expect(gate.verdict).toBe("violated");
+    }
+  });
+
+  it("does not flag typeof queries on the registry binding at long whitespace gaps", () => {
+    const head = [
+      'import { createCopyResolver } from "@clossys/writer";',
+      'import registry from "../copy/registry.json";',
+    ].join("\n");
+    for (const gap of [14, 15, 40]) {
+      const { gate } = scan({
+        "src/copy.ts": [
+          head,
+          `export const t = typeof${" ".repeat(gap)}registry;`,
+          "export const resolver = createCopyResolver(registry);",
+        ].join("\n"),
+      });
+      expect(gate.findings).toEqual([]);
+      expect(gate.verdict).toBe("satisfied");
+    }
+  });
+
   it("flags an array-literal arrow parameter without parentheses", () => {
     const { gate } = scan({
       "src/copy.ts": [
