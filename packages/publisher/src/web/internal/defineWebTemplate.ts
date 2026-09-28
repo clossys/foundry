@@ -283,6 +283,10 @@ export function defineWebTemplate(options: DefineWebTemplateOptions): WebTemplat
   const frozenSlotKinds =
     slotKinds === undefined ? undefined : Object.freeze(Object.fromEntries(Object.entries(slotKinds).map(([key, kinds]) => [key, Object.freeze([...kinds])])));
 
+  if (statGridLabel !== undefined && typeof statGridLabel !== "function") {
+    fail(`statGridLabel must be a function (index: number) => string when present, got ${JSON.stringify(statGridLabel)}.`);
+  }
+
   const build = compileConsumerTemplateBlocks(frozenBlocks, {
     ...(nodeChapterFallbackTitle === undefined ? {} : { nodeChapterFallbackTitle }),
     ...(statGridLabel === undefined ? {} : { statGridLabel }),

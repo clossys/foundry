@@ -117,6 +117,12 @@ describe("Pagination", () => {
     expect(screen.getByText("Showing 41–42 of 42")).toBeInTheDocument();
   });
 
+  it("renders the no-results label for zero totalItems even without pageSize", () => {
+    render(<Pagination page={1} pageCount={4} totalItems={0} onPageChange={() => {}} />);
+    expect(screen.getByText("No results")).toBeInTheDocument();
+    expect(screen.queryByText("Page 1 of 4")).not.toBeInTheDocument();
+  });
+
   it("omits the page-size selector region when pageSizeOptions/onPageSizeChange are not both given", () => {
     render(<Pagination page={1} pageCount={5} onPageChange={() => {}} />);
     expect(screen.queryByText("Rows per page")).not.toBeInTheDocument();

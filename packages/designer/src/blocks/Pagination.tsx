@@ -144,16 +144,14 @@ export function Pagination({
       style={style}
     >
       <p className="text-body-s text-ink-secondary">
-        {clampedCount === 0
+        {clampedCount === 0 || totalItems === 0
           ? noResultsLabel
           : totalItems !== undefined && pageSize !== undefined
-            ? totalItems === 0
-              ? noResultsLabel
-              : rangeSummaryMessage(
-                  (page - 1) * pageSize + 1,
-                  Math.min(page * pageSize, totalItems),
-                  totalItems,
-                )
+            ? rangeSummaryMessage(
+                (page - 1) * pageSize + 1,
+                Math.min(page * pageSize, totalItems),
+                totalItems,
+              )
             : pageSummaryMessage(page, clampedCount)}
       </p>
       <div className="flex items-center gap-xs">
