@@ -1,5 +1,4 @@
 ---
-advisor: patch
 launcher: patch
 ---
 
