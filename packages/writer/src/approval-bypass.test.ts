@@ -1000,6 +1000,114 @@ describe("copy-read-without-resolver", () => {
     });
     expect(gate.verdict).toBe("violated");
   });
+
+  it("flags the newline member at any class-name length (fix round 25)", () => {
+    const head = [
+      'import { createCopyResolver as make } from "@clossys/writer";',
+      'import registry from "../copy/registry.json";',
+    ].join("\n");
+    const use = "export const out = make(registry);";
+    const member = "x = 1\nload(make: Handler): void { make(registry); }";
+    for (const nameLen of [313, 314, 315, 400]) {
+      const name = "C".repeat(nameLen);
+      const { gate } = scan({
+        "src/copy.ts": [head, `class ${name} { ${member} }`, use].join("\n"),
+      });
+      expect(gate.verdict).toBe("violated");
+    }
+  });
+
+  it("flags the newline member at any heritage-name length (fix round 25)", () => {
+    const head = [
+      'import { createCopyResolver as make } from "@clossys/writer";',
+      'import registry from "../copy/registry.json";',
+    ].join("\n");
+    const use = "export const out = make(registry);";
+    const member = "x = 1\nload(make: Handler): void { make(registry); }";
+    for (const nameLen of [303, 304, 400]) {
+      const heritage = "F".repeat(nameLen);
+      const { gate } = scan({
+        "src/copy.ts": [head, `class C extends ${heritage} { ${member} }`, use].join("\n"),
+      });
+      expect(gate.verdict).toBe("violated");
+    }
+  });
+
+  it("flags the newline member at any whitespace gap before the object literal (fix round 25)", () => {
+    const head = [
+      'import { createCopyResolver as make } from "@clossys/writer";',
+      'import registry from "../copy/registry.json";',
+    ].join("\n");
+    const use = "export const out = make(registry);";
+    const member = "{ x: 1\nload(make: Handler): void { make(registry); } }";
+    for (const gap of [319, 320, 400]) {
+      const { gate } = scan({
+        "src/copy.ts": [head, `const obj =${" ".repeat(gap)}${member}`, use].join("\n"),
+      });
+      expect(gate.verdict).toBe("violated");
+    }
+  });
+
+  it("flags the newline member in a returned and an argument object literal (fix round 25)", () => {
+    const head = [
+      'import { createCopyResolver as make } from "@clossys/writer";',
+      'import registry from "../copy/registry.json";',
+    ].join("\n");
+    const use = "export const out = make(registry);";
+    for (const shadow of [
+      "function f() { return { x: 1\nload(make: Handler): void { make(registry); } }; }",
+      "foo({ x: 1\nload(make: Handler): void { make(registry); } });",
+    ]) {
+      const { gate } = scan({ "src/copy.ts": [head, shadow, use].join("\n") });
+      expect(gate.verdict).toBe("violated");
+    }
+  });
+
+  it("flags modifier-named methods whose parameter list is read (fix round 25)", () => {
+    const head = [
+      'import { createCopyResolver as make } from "@clossys/writer";',
+      'import registry from "../copy/registry.json";',
+    ].join("\n");
+    const use = "export const out = make(registry);";
+    const words = ["async", "get", "set", "static", "public", "private", "protected", "override", "readonly"];
+    for (const word of words) {
+      const classMethod = `class C { ${word}(make: Handler): void { make(registry); } }`;
+      const objectMethod = `const obj = { ${word}(make: Handler): void { make(registry); } };`;
+      for (const shadow of [classMethod, objectMethod]) {
+        const { gate } = scan({ "src/copy.ts": [head, shadow, use].join("\n") });
+        expect(gate.verdict).toBe("violated");
+      }
+    }
+  });
+
+  it("reads the parameter list of a method named abstract on an abstract class (fix round 25)", () => {
+    const head = [
+      'import { createCopyResolver as make } from "@clossys/writer";',
+      'import registry from "../copy/registry.json";',
+    ].join("\n");
+    const use = "export const out = make(registry);";
+    const { gate } = scan({
+      "src/copy.ts": [head, "abstract class C { abstract load(make: Handler): void { make(registry); } }", use].join("\n"),
+    });
+    expect(gate.verdict).toBe("violated");
+    expect(gate.findings.every((f) => f.rule === "copy-read-without-resolver")).toBe(true);
+  });
+
+  it("keeps modifier lead-ins on the real method name (fix round 25)", () => {
+    const head = [
+      'import { createCopyResolver as make } from "@clossys/writer";',
+      'import registry from "../copy/registry.json";',
+    ].join("\n");
+    const use = "export const out = make(registry);";
+    for (const shadow of [
+      "class C { static load(make: Handler): void { make(registry); } }",
+      "class C { static async load(make: Handler): void { make(registry); } }",
+      "const obj = { async load(make: Handler): void { make(registry); } };",
+    ]) {
+      const { gate } = scan({ "src/copy.ts": [head, shadow, use].join("\n") });
+      expect(gate.verdict).toBe("violated");
+    }
+  });
 });
 
 describe("scope and masking", () => {

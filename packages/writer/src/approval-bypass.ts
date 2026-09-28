@@ -683,6 +683,7 @@ const METHOD_HEADER_MODIFIER_WORDS = new Set([
   "protected",
   "readonly",
   "override",
+  "abstract",
 ]);
 
 /** Modifiers, optional `get`/`set`, and an optional generator `*` before the method name. */
@@ -693,20 +694,54 @@ function skipMethodHeaderLead(code: string, i: number): number {
     i = skipIdentCode(code, i);
     if (i === kwStart) break;
     const word = code.slice(kwStart, i);
-    if (METHOD_HEADER_MODIFIER_WORDS.has(word)) continue;
-    i = kwStart;
-    break;
+    if (!METHOD_HEADER_MODIFIER_WORDS.has(word)) {
+      i = kwStart;
+      break;
+    }
+    // A leading word is a modifier only when the real method name follows it.
+    // A `(` or `<` right after the word means the word IS the method name and
+    // its own parameter list (or type-parameter list) must be read.
+    const after = skipWsCode(code, i);
+    if (code[after] === "(" || code[after] === "<") {
+      i = kwStart;
+      break;
+    }
+    i = after;
   }
   i = skipWsCode(code, i);
   if (isKeywordAt(code, i, "get") || isKeywordAt(code, i, "set")) {
-    i += 3;
-    i = skipWsCode(code, i);
+    const after = skipWsCode(code, i + 3);
+    // `get`/`set` is an accessor keyword only when the property name follows;
+    // a `(` or `<` after it means `get`/`set` is itself the method name.
+    if (code[after] !== "(" && code[after] !== "<") i = after;
   }
   if (code[i] === "*") {
     i++;
     i = skipWsCode(code, i);
   }
   return i;
+}
+
+/**
+ * Whether the `{` at `open` opens a class body or an object-literal member
+ * container — the only places a newline-led `name(` is a method header.
+ * The class-header test walks back from `{` to the nearest structural
+ * boundary (`;`, `}`, `{`, or the start of the file); a header contains none
+ * of those, so the length of the name, heritage clause, or spacing before `{`
+ * can never matter. There is no fixed look-back window here.
+ */
+function braceIsClassOrObjectLiteral(code: string, open: number): boolean {
+  if (code[open] !== "{") return false;
+  if (openBraceIsDeclareClassBody(code, open)) return false;
+  if (indexInsideDeclareBlock(code, open + 1, "class")) return false;
+  if (objectMethodBraceIsTypeOnly(code, open)) return false;
+  let segStart = open - 1;
+  while (segStart >= 0 && code[segStart] !== ";" && code[segStart] !== "}" && code[segStart] !== "{") segStart--;
+  const header = code.slice(segStart + 1, open);
+  if (new RegExp(`(?<![\\w$.])class(?![\\w$])(?:\\s+${IDENT})?[^{};()]*$`, "u").test(header)) return true;
+  if (/(?<![\w$.])(?:return|typeof|new|void|delete|await|yield)\s*$/u.test(header)) return true;
+  if (/[=,([{:?]\s*$/u.test(header)) return true;
+  return false;
 }
 
 /** Newline after a field initializer without `;`, inside a class or object literal. */
@@ -718,11 +753,7 @@ function newlineMayStartClassOrObjectMember(code: string, nlIdx: number): boolea
   if (prev === ";" || prev === "{" || prev === "}" || prev === ",") return false;
   const open = enclosingOpener(code, nlIdx);
   if (open === -1 || code[open] !== "{") return false;
-  if (objectMethodBraceIsTypeOnly(code, open)) return false;
-  const beforeOpen = code.slice(Math.max(0, open - 320), open);
-  if (new RegExp(`(?<![\\w$.])class(?![\\w$])(?:\\s+${IDENT})?[^{};()]*$`, "u").test(beforeOpen)) return true;
-  if (/[=,{]\s*$/.test(beforeOpen)) return true;
-  return false;
+  return braceIsClassOrObjectLiteral(code, open);
 }
 
 function isDeclareFunctionPrefix(code: string, fnKeywordIndex: number): boolean {
