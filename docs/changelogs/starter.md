@@ -6,6 +6,33 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## 0.2.0 - 2026-09-28
+
+- Each package skill's section for when the package is not installed speaks of the repositories the team is set up in, instead of every inventoried repository.
+- Each package skill says the whole team is composed in the hub and a repository staffed in an approved plan gets `@clossys-advisor` and the voices of the roles staffed there once that plan's setup pull request has merged, so a missing `@clossys-<package>` mention is a bug only in the hub.
+- foundry-starter admit exits 2 when the pull-request head ledger is absent.
+- foundry-starter admit exits 1 when the head is a next generation whose last entry is labeled approved.
+- foundry-starter admit exits 1 when the head ledger is another spelling of the protected base ledger.
+- foundry-starter admit exits 1 when the head ledger adds a package act the base ledger did not defer.
+- foundry-starter admit exits 1 when the head ledger's history breaks the base ledger's history prefix.
+- foundry-starter admit exits 0 when the pull-request ledger's canonical bytes are the protected base ledger's.
+- foundry-starter admit exits 1 when the head ledger keeps a deferred row on the admitted generation.
+- foundry-starter admit exits 0 when the pull-request ledger is the admitted next generation of the protected base ledger.
+- foundry-starter admit exits 1 when the protected base's npm ci result does not match a base ledger package's integrity.
+- A v1 Starter request can select phase admission.
+- foundry-starter admit exits 1 when the head ledger's new generation names a different plan digest from the base setup entry.
+- foundry-starter admit exits 1 when the protected base's pnpm install --frozen-lockfile result does not match a base ledger package's integrity.
+- foundry-starter admit exits 1 when the head ledger's new generation names a different subject digest from the base setup entry.
+- foundry-starter admit exits 1 when a protected-base manifest spec for a ledger package is a tarball filename.
+- foundry-starter admit exits 2 when the pull-request head ledger is not a readable ledger document.
+- The caller-workflow document explains that `decide` proves a changed pin one merge later, and shows an optional `prove-head-install` job for the npm caller.
+- Make the protected-base `advisor` request block optional. When it is omitted, `decide` verifies matching `authorization.planDigest` and ledger plan digest values instead of running `@clossys/advisor`, while the target check still runs.
+- Export `evaluateHeadInstall()` and the `HeadInstall*` types from `@clossys/starter`, and `PUBLIC_NPM_REGISTRY`, `validateNpmLockfileSources()`, and `stagedNpmManifest()` from `@clossys/starter/npm`.
+- After `npm ci` completes, it compares npm's own hidden lockfile, `node_modules/.package-lock.json`, against the head's `package-lock.json` entry by entry, reporting a mismatch as a violation and an unreadable hidden lockfile as indeterminate.
+- `prove-head` refuses a head `package-lock.json` entry whose resolved source is not a `https://registry.npmjs.org/` tarball named for its own entry's name and version, or whose integrity is not one SHA-512 value, other than a bundled dependency recorded with neither field.
+- It refuses a dependency spec ending in `.tgz`, `.tar.gz`, or `.tar` anywhere one could redirect the install: the manifest's `dependencies`, `devDependencies`, `optionalDependencies`, and `peerDependencies`, `overrides` at any depth, and a lock entry's own dependency maps (or the root entry's `devDependencies`).
+- Add `foundry-starter prove-head`, which checks a pull request head's own npm install from the protected base's installed Starter by reading the head's request, `package.json`, and `package-lock.json` as data.
+
 ## 0.1.10 - 2026-09-24
 
 - The changelog is no longer included in the package; it now lives in the public repository, linked from the README.
