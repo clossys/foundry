@@ -453,22 +453,35 @@ const FLAT_SHAPE_GEOMETRY: ReadonlyMap<string, readonly string[]> = new Map([
   ["polyline", ["points"]],
   ["line", ["x1", "y1", "x2", "y2"]],
 ]);
-/** The only attributes a recognised root may carry (never paint, never a reference). */
-const FLAT_ROOT_ATTRIBUTES: ReadonlySet<string> = new Set(["xmlns", "viewBox", "width", "height", "role", "aria-label", "data-clear-space"]);
+/**
+ * The only attributes a recognised root may carry (never paint, never a
+ * reference), each mapped to its own constant so the root is re-emitted
+ * from these names, never from text sliced out of the input.
+ */
+const FLAT_ROOT_ATTRIBUTE_NAMES: ReadonlyMap<string, string> = new Map([
+  ["xmlns", "xmlns"],
+  ["viewBox", "viewBox"],
+  ["width", "width"],
+  ["height", "height"],
+  ["role", "role"],
+  ["aria-label", "aria-label"],
+  ["data-clear-space", "data-clear-space"],
+]);
 
 /**
- * One attribute: leading whitespace, a name, `=`, and a quoted value that
- * contains none of `"` `'` `<` `>` `&`. A value that could close its own
- * quote, open a tag, or start an entity is simply not matched, so the
- * recogniser rejects the whole document instead of re-emitting it.
+ * Caps on what the recogniser will look at. The recogniser exists to
+ * recognise a logo, and its cost must stay bounded on hostile input: an
+ * input over any cap is simply not recognised, so it stays flat,
+ * byte-identical to the previous release.
+ *  - attributes on one tag,
+ *  - elements in all (every `<g>` and every shape),
+ *  - nesting depth (open `<g>` groups; also bounds the recursion in
+ *    {@link renderFlatNodes}).
  */
-const FLAT_ATTR = String.raw`[ \t\r\n]+[A-Za-z][A-Za-z0-9:_-]*[ \t\r\n]*=[ \t\r\n]*(?:"[^"'<>&]*"|'[^"'<>&]*')`;
-const FLAT_ATTR_RE = /[ \t\r\n]+([A-Za-z][A-Za-z0-9:_-]*)[ \t\r\n]*=[ \t\r\n]*(?:"([^"'<>&]*)"|'([^"'<>&]*)')/y;
-const FLAT_ROOT_RE = new RegExp(String.raw`<svg((?:${FLAT_ATTR})*)[ \t\r\n]*>`, "y");
-const FLAT_TAG_RE = new RegExp(String.raw`<([a-z]+)((?:${FLAT_ATTR})*)[ \t\r\n]*(/?)>`, "y");
-const FLAT_CLOSE_G_RE = /<\/g[ \t\r\n]*>/y;
-const FLAT_CLOSE_SVG_RE = /<\/svg[ \t\r\n]*>/y;
-const FLAT_WS_RE = /[ \t\r\n]*/y;
+const FLAT_MAX_ATTRIBUTES_PER_TAG = 32;
+const FLAT_MAX_ELEMENTS = 2000;
+const FLAT_MAX_DEPTH = 32;
+
 const FLAT_HEX_RE = /^#(?:([0-9a-fA-F]{3})|([0-9a-fA-F]{6}))$/;
 const FLAT_STROKE_ATTR_RE = /^stroke-[a-z]+(?:-[a-z]+)*$/;
 
@@ -486,20 +499,100 @@ interface FlatGroup {
 }
 type FlatNode = FlatShape | FlatGroup;
 
-/** The attributes of one recognised tag as `[name, value]` pairs, or `null` for a duplicate name. */
-function readFlatAttrs(source: string): FlatAttrs | null {
+const CHAR_TAB = 9;
+const CHAR_LF = 10;
+const CHAR_CR = 13;
+const CHAR_SPACE = 32;
+const CHAR_DQUOTE = 34;
+const CHAR_AMP = 38;
+const CHAR_SQUOTE = 39;
+const CHAR_HYPHEN = 45;
+const CHAR_SLASH = 47;
+const CHAR_COLON = 58;
+const CHAR_LT = 60;
+const CHAR_EQ = 61;
+const CHAR_GT = 62;
+const CHAR_UNDERSCORE = 95;
+
+const isFlatSpace = (code: number): boolean => code === CHAR_SPACE || code === CHAR_TAB || code === CHAR_LF || code === CHAR_CR;
+const isLowerLetter = (code: number): boolean => code >= 97 && code <= 122;
+const isAsciiLetter = (code: number): boolean => isLowerLetter(code) || (code >= 65 && code <= 90);
+const isFlatNameChar = (code: number): boolean => isAsciiLetter(code) || (code >= 48 && code <= 57) || code === CHAR_COLON || code === CHAR_UNDERSCORE || code === CHAR_HYPHEN;
+
+/** The index of the first non-whitespace character of `text` at or after `at`. */
+function skipFlatSpace(text: string, at: number): number {
+  let i = at;
+  while (i < text.length && isFlatSpace(text.charCodeAt(i))) i++;
+  return i;
+}
+
+/** The index just after `</name` + optional whitespace + `>` at `at`, or `-1` when `text` has no such closing tag there. */
+function flatCloseTagEnd(text: string, at: number, name: string): number {
+  if (!text.startsWith(`</${name}`, at)) return -1;
+  const i = skipFlatSpace(text, at + 2 + name.length);
+  return text.charCodeAt(i) === CHAR_GT ? i + 1 : -1;
+}
+
+interface FlatTag {
+  name: string;
+  attrs: FlatAttrs;
+  selfClosing: boolean;
+  /** The index just after the tag's `>`. */
+  end: number;
+}
+
+/**
+ * Scans one start tag at `at` (which must hold `<`): a lowercase name, then
+ * attributes, then `>` or `/>`. Each attribute is leading whitespace, a
+ * name, `=`, and a quoted value containing none of `"` `'` `<` `>` `&`; a
+ * value that could close its own quote, open a tag or start an entity is
+ * not accepted, so the recogniser rejects the whole document instead of
+ * re-emitting it. Returns `null` on anything else, on a duplicate
+ * attribute name, and on more than {@link FLAT_MAX_ATTRIBUTES_PER_TAG}
+ * attributes.
+ *
+ * A single left-to-right pass with no backtracking: every character is
+ * looked at a bounded number of times, so the cost is linear in the length
+ * of the tag (and the attribute cap stops it after
+ * {@link FLAT_MAX_ATTRIBUTES_PER_TAG} attributes). Duplicates are found with
+ * a `Set`, not by comparing every pair.
+ */
+function scanFlatTag(text: string, at: number): FlatTag | null {
+  if (text.charCodeAt(at) !== CHAR_LT) return null;
+  let i = at + 1;
+  while (i < text.length && isLowerLetter(text.charCodeAt(i))) i++;
+  if (i === at + 1) return null;
+  const name = text.slice(at + 1, i);
   const attrs: FlatAttrs = [];
-  let at = 0;
-  while (at < source.length) {
-    FLAT_ATTR_RE.lastIndex = at;
-    const match = FLAT_ATTR_RE.exec(source);
-    if (!match) return null;
-    const name = match[1]!;
-    if (attrs.some(([seen]) => seen === name)) return null;
-    attrs.push([name, match[2] ?? match[3] ?? ""]);
-    at = FLAT_ATTR_RE.lastIndex;
+  const seen = new Set<string>();
+  for (;;) {
+    const afterSpace = skipFlatSpace(text, i);
+    const code = text.charCodeAt(afterSpace);
+    if (code === CHAR_GT) return { name, attrs, selfClosing: false, end: afterSpace + 1 };
+    if (code === CHAR_SLASH) return text.charCodeAt(afterSpace + 1) === CHAR_GT ? { name, attrs, selfClosing: true, end: afterSpace + 2 } : null;
+    if (afterSpace === i || !isAsciiLetter(code)) return null; // an attribute needs leading whitespace and a letter to start its name
+    if (attrs.length === FLAT_MAX_ATTRIBUTES_PER_TAG) return null;
+    let nameEnd = afterSpace + 1;
+    while (nameEnd < text.length && isFlatNameChar(text.charCodeAt(nameEnd))) nameEnd++;
+    const attrName = text.slice(afterSpace, nameEnd);
+    if (seen.has(attrName)) return null;
+    seen.add(attrName);
+    const eq = skipFlatSpace(text, nameEnd);
+    if (text.charCodeAt(eq) !== CHAR_EQ) return null;
+    const quoteAt = skipFlatSpace(text, eq + 1);
+    const quote = text.charCodeAt(quoteAt);
+    if (quote !== CHAR_DQUOTE && quote !== CHAR_SQUOTE) return null;
+    let valueEnd = quoteAt + 1;
+    for (;;) {
+      if (valueEnd >= text.length) return null;
+      const c = text.charCodeAt(valueEnd);
+      if (c === quote) break;
+      if (c === CHAR_DQUOTE || c === CHAR_SQUOTE || c === CHAR_LT || c === CHAR_GT || c === CHAR_AMP) return null;
+      valueEnd++;
+    }
+    attrs.push([attrName, text.slice(quoteAt + 1, valueEnd)]);
+    i = valueEnd + 1;
   }
-  return attrs;
 }
 
 /** A hex paint as six lowercase digits, or `undefined` when it is not a plain `#rgb`/`#rrggbb`. */
@@ -533,7 +626,8 @@ function flatShapeTone(tag: string, attrs: FlatAttrs): string | null {
  *
  *  - root: `<svg>` with only `xmlns`, a parseable `viewBox`, `width`,
  *    `height`, `role`, `aria-label`, `data-clear-space` — no paint, no
- *    reference, no `id`;
+ *    reference, no `id`. It is re-emitted from those constant names and
+ *    the escaped values, double-quoted;
  *  - children: balanced `<g transform="…">` and self-closing `path`,
  *    `rect`, `circle`, `ellipse`, `polygon`, `polyline`, `line`, carrying
  *    only geometry, `transform`, `fill`, `stroke`, `stroke-*`,
@@ -542,48 +636,58 @@ function flatShapeTone(tag: string, attrs: FlatAttrs): string | null {
  *    between tags (no text, comment, `<!`, `<?`, CDATA);
  *  - every shape has an explicit hex `fill` (`#rgb`/`#rrggbb`, alpha
  *    rejected) and its `stroke` is `none` or the same hex: one tone each;
- *  - exactly two tones, every first-tone shape before every second-tone one.
+ *  - exactly two tones, every first-tone shape before every second-tone one;
+ *  - within the caps: at most {@link FLAT_MAX_ATTRIBUTES_PER_TAG}
+ *    attributes on a tag, {@link FLAT_MAX_ELEMENTS} elements in all and
+ *    {@link FLAT_MAX_DEPTH} groups deep. A document over a cap is not
+ *    recognised, so it stays flat.
+ *
+ * Tags are read by {@link scanFlatTag}, a single non-backtracking pass, so
+ * the whole recognition is linear in the input; its parse is iterative and
+ * its render recursion is bounded by {@link FLAT_MAX_DEPTH}.
  */
 function recogniseFlatTwoTone(svg: string): { root: string; box: NonNullable<ReturnType<typeof parseViewBoxBox>>; nodes: FlatNode[]; toneA: string } | null {
   const text = svg.trim();
-  FLAT_ROOT_RE.lastIndex = 0;
-  const rootMatch = FLAT_ROOT_RE.exec(text);
-  if (!rootMatch) return null;
-  const rootAttrs = readFlatAttrs(rootMatch[1]!);
-  if (rootAttrs === null || rootAttrs.some(([name]) => !FLAT_ROOT_ATTRIBUTES.has(name))) return null;
+  const rootTag = scanFlatTag(text, 0);
+  if (rootTag === null || rootTag.name !== "svg" || rootTag.selfClosing) return null;
+  // Re-emit the root from constant names and escaped values; never slice it out of the input.
+  const rootAttrs: FlatAttrs = [];
+  for (const [name, value] of rootTag.attrs) {
+    const canonical = FLAT_ROOT_ATTRIBUTE_NAMES.get(name);
+    if (canonical === undefined) return null;
+    rootAttrs.push([canonical, value]);
+  }
   const viewBox = rootAttrs.find(([name]) => name === "viewBox")?.[1];
   const box = viewBox === undefined ? undefined : parseViewBoxBox(viewBox);
   if (box === undefined) return null;
+  const root = `<svg${rootAttrs.map(([name, value]) => ` ${name}="${escapeXml(value)}"`).join("")}>`;
 
   const top: FlatNode[] = [];
   const open: FlatGroup[] = [];
   const siblings = (): FlatNode[] => (open.length > 0 ? open[open.length - 1]!.children : top);
   const tones: string[] = [];
   let seenSecondTone = false;
-  let at = FLAT_ROOT_RE.lastIndex;
+  let elements = 0;
+  let at = rootTag.end;
   for (;;) {
-    FLAT_WS_RE.lastIndex = at;
-    FLAT_WS_RE.exec(text);
-    at = FLAT_WS_RE.lastIndex;
-    FLAT_CLOSE_SVG_RE.lastIndex = at;
-    if (FLAT_CLOSE_SVG_RE.test(text)) return open.length === 0 && FLAT_CLOSE_SVG_RE.lastIndex === text.length && tones.length === 2 ? { root: rootMatch[0], box, nodes: top, toneA: tones[0]! } : null;
-    FLAT_CLOSE_G_RE.lastIndex = at;
-    if (FLAT_CLOSE_G_RE.test(text)) {
+    at = skipFlatSpace(text, at);
+    const svgEnd = flatCloseTagEnd(text, at, "svg");
+    if (svgEnd !== -1) return open.length === 0 && svgEnd === text.length && tones.length === 2 ? { root, box, nodes: top, toneA: tones[0]! } : null;
+    const groupEnd = flatCloseTagEnd(text, at, "g");
+    if (groupEnd !== -1) {
       if (open.length === 0) return null;
       open.pop();
-      at = FLAT_CLOSE_G_RE.lastIndex;
+      at = groupEnd;
       continue;
     }
-    FLAT_TAG_RE.lastIndex = at;
-    const tag = FLAT_TAG_RE.exec(text);
-    if (!tag) return null;
-    at = FLAT_TAG_RE.lastIndex;
-    const name = tag[1]!;
-    const attrs = readFlatAttrs(tag[2]!);
-    if (attrs === null) return null;
-    const selfClosing = tag[3] === "/";
+    const tag = scanFlatTag(text, at);
+    if (tag === null) return null;
+    at = tag.end;
+    elements++;
+    if (elements > FLAT_MAX_ELEMENTS) return null;
+    const { name, attrs, selfClosing } = tag;
     if (name === "g") {
-      if (selfClosing || attrs.some(([attr]) => attr !== "transform")) return null;
+      if (selfClosing || attrs.some(([attr]) => attr !== "transform") || open.length >= FLAT_MAX_DEPTH) return null;
       const group: FlatGroup = { kind: "group", transform: attrs[0]?.[1], children: [] };
       siblings().push(group);
       open.push(group);
@@ -615,15 +719,15 @@ function renderFlatNodes(nodes: readonly FlatNode[], paintOf: (shape: FlatShape)
   for (const node of nodes) {
     if (node.kind === "group") {
       const inner = renderFlatNodes(node.children, paintOf);
-      if (inner !== "") out += `<g${node.transform === undefined ? "" : ` transform="${node.transform}"`}>${inner}</g>`;
+      if (inner !== "") out += `<g${node.transform === undefined ? "" : ` transform="${escapeXml(node.transform)}"`}>${inner}</g>`;
       continue;
     }
     const paint = paintOf(node);
     if (paint === undefined) continue;
     const attrs = node.attrs
-      .map(([name, value]) => ` ${name}="${name === "fill" || (name === "stroke" && value !== "none") ? paint : value}"`)
+      .map(([name, value]) => ` ${escapeXml(name)}="${name === "fill" || (name === "stroke" && value !== "none") ? paint : escapeXml(value)}"`)
       .join("");
-    out += `<${node.tag}${attrs} />`;
+    out += `<${escapeXml(node.tag)}${attrs} />`;
   }
   return out;
 }
@@ -650,12 +754,14 @@ function renderFlatNodes(nodes: readonly FlatNode[], paintOf: (shape: FlatShape)
  * badge) shows through where they overlap. The contrast between the tones
  * becomes the contrast between `color` and what it sits on, the pair
  * `identity-checks.ts`'s contrast check already judges. The result is the
- * root start tag verbatim, a `<defs>` of two `<mask>`s (white coverage
+ * root start tag (re-emitted from its parsed attributes), a `<defs>` of two `<mask>`s (white coverage
  * over the root `viewBox`, the other tone painted `#000`), and two masked
  * `<g>` layers; `color` stays the only visible paint, so a `currentColor`
  * recolour keeps `mono`/`favicon` single-colour (mask paint is coverage,
  * not rendered colour, and `identity-checks.ts` skips the masks generated
- * here). Mask ids are `recolor-` plus a hash of `svg` and `color`.
+ * here). Mask ids are `recolor-` plus a hash of `svg` and `color`. The
+ * root is re-emitted from its parsed attributes (constant names, escaped
+ * values, double-quoted), not sliced out of the input.
  *
  * WHAT IS RECOGNISED: the whole document is a flat mark: groups (with only
  * `transform`) and basic shapes (`path`, `rect`, `circle`, `ellipse`,
@@ -664,19 +770,21 @@ function renderFlatNodes(nodes: readonly FlatNode[], paintOf: (shape: FlatShape)
  * exactly two tones (`#fff` and `#FFFFFF` are one tone), and no ids,
  * references, styles, classes, text, comments or root paint. The root
  * carries only `xmlns`, a parseable `viewBox`, `width`, `height`, `role`,
- * `aria-label` and `data-clear-space`.
+ * `aria-label` and `data-clear-space`. Caps: at most 32 attributes on a
+ * tag, 2000 elements in all and 32 groups deep.
  *
  * WHAT IS NOT: everything else stays FLAT, byte-identical to the previous
  * release: one tone, three or more tones, a tone order A-B-A, alpha or
  * named or `currentColor` paint, root or group paint, `<use>`, `<style>`,
  * `style=`, `class=`, any `id` or `url(#…)`, text, comments, and any
- * value containing a quote, `<` or `&`. A derived variant is therefore
- * never broken by this function and never gains an attribute its input
- * lacked: the only names added are the generated `mask`, `maskUnits`,
- * `id`, `x`, `y`, `width` and `height`, and no id of the input is renamed
- * and no attribute value is re-quoted or rewritten beyond its paint.
- * A mark outside the subset gets no knockout, so its tone boundary is lost
- * as it always was.
+ * value containing a quote, `<` or `&`, and any input over a cap above. A
+ * derived variant is therefore never broken by this function and never
+ * gains an attribute its input lacked: the only names added are the
+ * generated `mask`, `maskUnits`, `id`, `x`, `y`, `width` and `height`, no
+ * id of the input is renamed, and no attribute value is rewritten beyond
+ * its paint (a value is re-emitted double-quoted, which is safe because a
+ * recognised value holds no quote). A mark outside the subset gets no
+ * knockout, so its tone boundary is lost as it always was.
  */
 export function recolorSvg(svg: string, color: string): string {
   const escapedColor = escapeXml(color);

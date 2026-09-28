@@ -505,7 +505,7 @@ describe("recolorSvg knocks out only a recognised flat two-tone mark (issue #153
       }
     });
 
-    it("the root start tag is carried over verbatim", () => {
+    it("a canonically written root start tag is carried over unchanged", () => {
       const svg = `<svg ${NS} viewBox="0 0 48 48" width="48" height="48" role="img" aria-label="Acme logo" data-clear-space="4">${FIELD_RECT}${FIGURE_PATH}</svg>`;
       expect(recolorSvg(svg, "red").startsWith(svg.slice(0, svg.indexOf(">") + 1))).toBe(true);
     });
@@ -513,6 +513,118 @@ describe("recolorSvg knocks out only a recognised flat two-tone mark (issue #153
     it("is deterministic and never renames an id the input carried (there are none in the subset)", () => {
       expect(recolorSvg(FLAT_SVG, "red")).toBe(recolorSvg(FLAT_SVG, "red"));
       for (const [, svg] of RECOGNISED) expect(svg).not.toMatch(/\bid\s*=/);
+    });
+  });
+
+  describe("the recogniser's cost is bounded, and an input over a cap is flat (byte-identical to main)", () => {
+    // Caps documented in the README and the changeset: 32 attributes on a
+    // tag, 2000 elements in all, 32 groups deep.
+    const MAX_ATTRS = 32;
+    const MAX_ELEMENTS = 2000;
+    const MAX_DEPTH = 32;
+    const BUDGET_MS = 250;
+
+    /** `recolorSvg(svg, color)` and how long it took, in ms. */
+    function timed(svg: string, color = "red"): { out: string; ms: number } {
+      const start = performance.now();
+      const out = recolorSvg(svg, color);
+      return { out, ms: performance.now() - start };
+    }
+    /** Distinct attribute names the recogniser allows on a shape: `stroke-` plus letters. */
+    const strokeName = (i: number): string => `stroke-${String.fromCharCode(97 + Math.floor(i / 26))}${String.fromCharCode(97 + (i % 26))}`;
+    const shapeWithAttrs = (count: number): string => {
+      // d + fill + (count - 2) distinct stroke-* attributes = `count` attributes.
+      const extra = Array.from({ length: count - 2 }, (_, i) => ` ${strokeName(i)}="1"`).join("");
+      return `<path d="${FIGURE_D}" fill="#f5f5f5"${extra} />`;
+    };
+
+    it("a 200 KB root with tens of thousands of attributes finishes within budget and is flat", () => {
+      const attrs = Array.from({ length: 30000 }, (_, i) => ` a${i}=""`).join("");
+      const svg = `<svg ${NS} viewBox="0 0 48 48"${attrs}>${FIELD_RECT}${FIGURE_PATH}</svg>`;
+      expect(svg.length).toBeGreaterThan(200_000);
+      const { out, ms } = timed(svg);
+      expect(out).toBe(mainRecolorSvg(svg, "red"));
+      expect(ms).toBeLessThan(BUDGET_MS);
+    });
+
+    it("a 200 KB shape with tens of thousands of attributes finishes within budget and is flat", () => {
+      const attrs = Array.from({ length: 30000 }, (_, i) => ` a${i}=""`).join("");
+      const svg = doc(`${FIELD_RECT}<path d="${FIGURE_D}" fill="#f5f5f5"${attrs} />`);
+      const { out, ms } = timed(svg);
+      expect(out).toBe(mainRecolorSvg(svg, "red"));
+      expect(ms).toBeLessThan(BUDGET_MS);
+    });
+
+    it("a 200 KB duplicate-attribute root is flat within budget", () => {
+      const attrs = Array.from({ length: 30000 }, () => ` viewBox="0 0 48 48"`).join("");
+      const svg = `<svg ${NS}${attrs}>${FIELD_RECT}${FIGURE_PATH}</svg>`;
+      const { out, ms } = timed(svg);
+      expect(out).toBe(mainRecolorSvg(svg, "red"));
+      expect(ms).toBeLessThan(BUDGET_MS);
+    });
+
+    it("a recognised mark 5,000 groups deep returns main's output and does not throw", () => {
+      const svg = doc(`${"<g>".repeat(5000)}${FIELD_RECT}${FIGURE_PATH}${"</g>".repeat(5000)}`);
+      let out = "";
+      expect(() => {
+        out = recolorSvg(svg, "red");
+      }).not.toThrow();
+      expect(out).toBe(mainRecolorSvg(svg, "red"));
+    });
+
+    it("adoptSuppliedMark does not throw on a 5,000-deep group mark", () => {
+      const svg = doc(`${"<g>".repeat(5000)}${FIELD_RECT}${FIGURE_PATH}${"</g>".repeat(5000)}`);
+      expect(() => adoptSuppliedMark({ brand: { name: "Acme" }, suppliedSvg: svg, tokens: TOKENS })).not.toThrow();
+    });
+
+    it("an input just under the attribute cap is still knocked out; one over it is flat", () => {
+      const under = doc(FIELD_RECT + shapeWithAttrs(MAX_ATTRS));
+      expect(maskCount(recolorSvg(under, "red"))).toBe(2);
+      const over = doc(FIELD_RECT + shapeWithAttrs(MAX_ATTRS + 1));
+      expect(recolorSvg(over, "red")).toBe(mainRecolorSvg(over, "red"));
+    });
+
+    it("an input just under the element cap is still knocked out; one over it is flat", () => {
+      const many = (n: number): string => `${FIELD_RECT}${FIGURE_PATH.repeat(n - 1)}`;
+      const under = doc(many(MAX_ELEMENTS));
+      expect(maskCount(recolorSvg(under, "red"))).toBe(2);
+      const over = doc(many(MAX_ELEMENTS + 1));
+      expect(recolorSvg(over, "red")).toBe(mainRecolorSvg(over, "red"));
+      // Groups count as elements too.
+      const groups = doc(`${"<g></g>".repeat(MAX_ELEMENTS)}${FIELD_RECT}${FIGURE_PATH}`);
+      expect(recolorSvg(groups, "red")).toBe(mainRecolorSvg(groups, "red"));
+    });
+
+    it("an input just under the nesting cap is still knocked out; one over it is flat", () => {
+      const nested = (depth: number): string => doc(`${"<g>".repeat(depth)}${FIELD_RECT}${FIGURE_PATH}${"</g>".repeat(depth)}`);
+      expect(maskCount(recolorSvg(nested(MAX_DEPTH), "red"))).toBe(2);
+      expect(recolorSvg(nested(MAX_DEPTH + 1), "red")).toBe(mainRecolorSvg(nested(MAX_DEPTH + 1), "red"));
+    });
+
+    it("attribute scanning is linear: 80 KB whitespace witnesses finish within budget and are flat", () => {
+      const tabs = "\t".repeat(80_000);
+      const witnesses: [string, string][] = [
+        ["tabs then a name with no '='", `<svg ${NS} viewBox="0 0 48 48"${tabs}x>${FIELD_RECT}${FIGURE_PATH}</svg>`],
+        ["tabs around '='", `<svg ${NS} viewBox${tabs}=${tabs}"0 0 48 48"${tabs}!>${FIELD_RECT}${FIGURE_PATH}</svg>`],
+        ["tabs after the last attribute, no '>'", `<svg ${NS} viewBox="0 0 48 48"${tabs}!${FIELD_RECT}${FIGURE_PATH}</svg>`],
+        ["tabs then an unterminated value", `<svg ${NS} viewBox="0 0 48 48"${tabs}x="${tabs}`],
+        ["tabs inside a shape tag", doc(`${FIELD_RECT}<path d="${FIGURE_D}"${tabs}fill${tabs}`)],
+      ];
+      for (const [name, svg] of witnesses) {
+        const { out, ms } = timed(svg);
+        expect(out, name).toBe(mainRecolorSvg(svg, "red"));
+        expect(ms, name).toBeLessThan(BUDGET_MS);
+      }
+    });
+  });
+
+  describe("the root is re-emitted from its parsed attributes, not sliced from the input", () => {
+    it("re-emits allowlisted root attributes canonically, values unchanged", () => {
+      const svg = `<svg\n  xmlns = '${"http://www.w3.org/2000/svg"}'\tviewBox='0 0 48 48'  role="img">${FIELD_RECT}${FIGURE_PATH}</svg>`;
+      const out = recolorSvg(svg, "red");
+      expect(maskCount(out)).toBe(2);
+      expect(out.startsWith('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" role="img"><defs>')).toBe(true);
+      expectAddsNothing(svg, out, "red");
     });
   });
 

@@ -4544,15 +4544,28 @@ parseable `viewBox`, `width`, `height`, `role`, `aria-label` and
 root paint. Such a mark is recoloured as a knockout: each tone is painted
 in the variant's single colour and masked out where the other tone paints,
 so the surface or badge shows through and the tones keep their contrast.
+The knockout's root is re-emitted from its parsed attributes (constant
+names, escaped values, double-quoted), never sliced out of the input.
+**Caps:** the recogniser reads at most 32 attributes on a tag, 2000
+elements in all (every `<g>` and every shape) and 32 groups deep, in one
+linear, non-backtracking pass, so its cost stays bounded on a crafted
+document and its recursion depth is bounded. An input over any cap is not
+recognised and stays flat, exactly as any other unrecognised input.
 **Everything else stays flat:** any other input (one tone, three or more
 tones, tones in an A-B-A order, root or group paint, `<use>`, `<style>`,
 `style=`, classes, ids, references, named/`rgb()`/`currentColor`/alpha
-paint, text, or a value holding a quote, `<` or `&`) is recoloured exactly
-as before, every `fill`/`stroke` attribute onto the variant's colour, so
-its tones become one colour and their boundary is lost. That is byte-for-byte
-the flat recolour of the previous release: the derived variant is never
-broken by the knockout and never gains an attribute its input lacked. Treat
-the derived variants as a starting point for review.
+paint, text, a value holding a quote, `<` or `&`, or an input over a cap)
+is recoloured exactly as before, every `fill`/`stroke` attribute onto the
+variant's colour, so its tones become one colour and their boundary is
+lost. That is byte-for-byte the flat recolour of the previous release: the
+derived variant is never broken by the knockout and never gains an
+attribute its input lacked. The contrast check skips only the `<mask>`s
+`recolorSvg` itself emits, matched by their exact generated form (the
+`recolor-<8 hex>-a|b` id, one white coverage `<rect>`, then only groups and
+self-closing shapes painted `#000` or `none`, closed by `</mask>`); a
+self-closing or malformed look-alike, and a mark's own `<mask>`, are judged
+on their paint as before. Treat the derived variants as a starting point
+for review.
 
 **Four checks judge every direction**, mirroring the "package owns
 judgment, every check reports satisfied/violated/indeterminate" split this

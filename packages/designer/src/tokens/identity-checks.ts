@@ -105,8 +105,82 @@ export interface IdentityContrastResult {
  */
 const PAINT_ATTR_RE = /(?<![\w-])(?:fill|stroke)\s*=\s*("([^"]*)"|'([^']*)')/g;
 
-/** A `<mask>` exactly as `recolorSvg` generates it (see {@link extractRenderedColors}). */
-const GENERATED_MASK_RE = /<mask id="recolor-[0-9a-f]{8}-[ab]"[^>]*>[\s\S]*?<\/mask>/g;
+/**
+ * The pieces of a `<mask>` exactly as `identity-kit.ts`'s `recolorSvg`
+ * emits it (`renderFlatNodes` and `recolorSvg`'s `mask`): a start tag with
+ * the generated id `recolor-<8 hex>-a|b`, `maskUnits`, and a numeric
+ * `x`/`y`/`width`/`height` region; one white coverage `<rect>`; then
+ * only `<g>` / `</g>` and self-closing basic shapes whose attributes are
+ * `name="value"` (lowercase name, single spaces, double quotes, no
+ * `"` `'` `<` `>` `&` in the value) and whose `fill`/`stroke` is `#000` or
+ * `none`; then `</mask>`. Anything else is not a mask `recolorSvg` made.
+ */
+const MASK_NUMBER = String.raw`-?\d+(?:\.\d+)?(?:e[+-]?\d+)?`;
+const MASK_REGION = String.raw`x="${MASK_NUMBER}" y="${MASK_NUMBER}" width="${MASK_NUMBER}" height="${MASK_NUMBER}"`;
+const GENERATED_MASK_HEAD_RE = new RegExp(String.raw`<mask id="recolor-[0-9a-f]{8}-[ab]" maskUnits="userSpaceOnUse" ${MASK_REGION}>`, "g");
+const GENERATED_MASK_RECT_RE = new RegExp(String.raw`<rect ${MASK_REGION} fill="#fff" />`, "y");
+const GENERATED_MASK_GROUP_OPEN_RE = /<g(?: transform="[^"'<>&]*")?>/y;
+const GENERATED_MASK_SHAPE_OPEN_RE = /<(?:path|rect|circle|ellipse|polygon|polyline|line)/y;
+const GENERATED_MASK_ATTR_RE = / ([a-z][a-z0-9]*(?:-[a-z0-9]+)*)="([^"'<>&]*)"/y;
+
+/**
+ * The index just after the `</mask>` that closes a generated mask whose
+ * start tag ends at `from`, or `-1` when what follows is anything other
+ * than the body `recolorSvg` emits. A single pass over the body: every
+ * token is matched at a fixed position, and the scan stops at the first
+ * token that is not one of the emitted forms (so it can never run past
+ * the next `<mask`, and a nested `<mask>` is never accepted).
+ */
+function generatedMaskEnd(svg: string, from: number): number {
+  GENERATED_MASK_RECT_RE.lastIndex = from;
+  if (!GENERATED_MASK_RECT_RE.test(svg)) return -1;
+  let at = GENERATED_MASK_RECT_RE.lastIndex;
+  let depth = 0;
+  for (;;) {
+    if (svg.startsWith("</mask>", at)) return depth === 0 ? at + "</mask>".length : -1;
+    if (svg.startsWith("</g>", at)) {
+      if (depth === 0) return -1;
+      depth--;
+      at += "</g>".length;
+      continue;
+    }
+    GENERATED_MASK_GROUP_OPEN_RE.lastIndex = at;
+    if (GENERATED_MASK_GROUP_OPEN_RE.test(svg)) {
+      depth++;
+      at = GENERATED_MASK_GROUP_OPEN_RE.lastIndex;
+      continue;
+    }
+    GENERATED_MASK_SHAPE_OPEN_RE.lastIndex = at;
+    if (!GENERATED_MASK_SHAPE_OPEN_RE.test(svg)) return -1;
+    at = GENERATED_MASK_SHAPE_OPEN_RE.lastIndex;
+    for (;;) {
+      GENERATED_MASK_ATTR_RE.lastIndex = at;
+      const attr = GENERATED_MASK_ATTR_RE.exec(svg);
+      if (attr === null) break;
+      if ((attr[1] === "fill" || attr[1] === "stroke") && attr[2] !== "#000" && attr[2] !== "none") return -1;
+      at = GENERATED_MASK_ATTR_RE.lastIndex;
+    }
+    if (!svg.startsWith(" />", at)) return -1;
+    at += " />".length;
+  }
+}
+
+/** `svg` without each `<mask>` that {@link generatedMaskEnd} proves `recolorSvg` emitted; every other mask, and everything outside a stripped one, is kept. */
+function stripGeneratedMasks(svg: string): string {
+  let out = "";
+  let copied = 0;
+  GENERATED_MASK_HEAD_RE.lastIndex = 0;
+  for (;;) {
+    const head = GENERATED_MASK_HEAD_RE.exec(svg);
+    if (head === null) break;
+    const end = generatedMaskEnd(svg, head.index + head[0].length);
+    if (end === -1) continue;
+    out += svg.slice(copied, head.index);
+    copied = end;
+    GENERATED_MASK_HEAD_RE.lastIndex = end;
+  }
+  return out + svg.slice(copied);
+}
 
 /**
  * Every distinct, explicit `fill`/`stroke` colour literal `svg` actually
@@ -122,13 +196,16 @@ const GENERATED_MASK_RE = /<mask id="recolor-[0-9a-f]{8}-[ab]"[^>]*>[\s\S]*?<\/m
  * coverage geometry (its luminance decides where the masked content
  * shows), never a colour that reaches the screen, and counting it would
  * fail a `currentColor`-only `mono` variant for paint nobody sees. Only
- * that generated shape is skipped, `<mask id="recolor-<8 hex>-a|b"`
- * (`recolorSvg` emits no nested `<mask>` and no `>` inside its mask tag);
- * a mark's own `<mask>` is judged exactly as it always was.
+ * that exact generated form is skipped ({@link stripGeneratedMasks}: the
+ * generated id and start tag, one white `<rect>`, then only groups and
+ * self-closing shapes painted `#000`/`none`, closed by a real `</mask>`).
+ * A self-closing or otherwise malformed look-alike is not skipped, so it
+ * cannot swallow visible paint after it, and a mark's own `<mask>` is
+ * judged exactly as it always was.
  */
 function extractRenderedColors(svg: string): readonly string[] {
   const colors = new Set<string>();
-  const visible = svg.replace(GENERATED_MASK_RE, "");
+  const visible = stripGeneratedMasks(svg);
   for (const match of visible.matchAll(PAINT_ATTR_RE)) {
     const value = match[2] ?? match[3] ?? "";
     if (value === "" || value === "none" || value === "transparent" || value === "currentColor") continue;
