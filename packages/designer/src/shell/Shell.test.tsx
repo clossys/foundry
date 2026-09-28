@@ -131,6 +131,15 @@ describe("Shell", () => {
       expect(screen.getByRole("main")).toHaveFocus();
     });
 
+    it("uses skipLinkLabel when a caller passes one", () => {
+      render(
+        <Shell skipLinkLabel="Saltar al contenido">
+          <Shell.Main>Content</Shell.Main>
+        </Shell>,
+      );
+      expect(screen.getByRole("link", { name: "Saltar al contenido" })).toBeInTheDocument();
+    });
+
     it("points its href at Shell.Main's real id", () => {
       render(<FullShell />);
       const skipLink = screen.getByRole("link", { name: "Skip to content" });

@@ -6,7 +6,13 @@ import type { ThemePreference } from "./internal/theme-core.js";
 
 const CYCLE: readonly ThemePreference[] = ["system", "light", "dark"];
 
-const PREFERENCE_LABEL: Record<ThemePreference, string> = {
+export interface ThemePreferenceLabels {
+  readonly system: string;
+  readonly light: string;
+  readonly dark: string;
+}
+
+const DEFAULT_PREFERENCE_LABELS: ThemePreferenceLabels = {
   system: "System",
   light: "Light",
   dark: "Dark",
@@ -26,7 +32,35 @@ function nextPreference(current: ThemePreference): ThemePreference {
   return CYCLE[(index + 1) % CYCLE.length] ?? "system";
 }
 
-export interface ThemeToggleProps extends Omit<ButtonProps, "children" | "onPress"> {}
+export interface ThemeToggleProps extends Omit<ButtonProps, "children" | "onPress"> {
+  /**
+   * Spoken names for each theme preference.
+   * @default System / Light / Dark
+   */
+  preferenceLabels?: ThemePreferenceLabels;
+  /**
+   * Accessible name for the cycling control.
+   * @default (current, next, labels) => `Theme: ${labels[current]}. Activate to switch to ${labels[next]}.`
+   */
+  toggleLabel?: (current: ThemePreference, next: ThemePreference, labels: ThemePreferenceLabels) => string;
+  /**
+   * Live-region announcement after the preference changes.
+   * @default (next, labels) => `Theme set to ${labels[next]}`
+   */
+  preferenceAnnouncement?: (next: ThemePreference, labels: ThemePreferenceLabels) => string;
+}
+
+function defaultToggleLabel(
+  current: ThemePreference,
+  next: ThemePreference,
+  labels: ThemePreferenceLabels,
+): string {
+  return `Theme: ${labels[current]}. Activate to switch to ${labels[next]}.`;
+}
+
+function defaultPreferenceAnnouncement(next: ThemePreference, labels: ThemePreferenceLabels): string {
+  return `Theme set to ${labels[next]}`;
+}
 
 /**
  * A single control that cycles System -> Light -> Dark -> System.
@@ -66,13 +100,21 @@ export interface ThemeToggleProps extends Omit<ButtonProps, "children" | "onPres
  * region is updated on every press instead, which is announced
  * consistently regardless of whether the label itself is re-read.
  */
-export function ThemeToggle({ className, variant = "ghost", size = "sm", ...rest }: ThemeToggleProps) {
+export function ThemeToggle({
+  className,
+  variant = "ghost",
+  size = "sm",
+  preferenceLabels = DEFAULT_PREFERENCE_LABELS,
+  toggleLabel = defaultToggleLabel,
+  preferenceAnnouncement = defaultPreferenceAnnouncement,
+  "aria-label": ariaLabel,
+  ...rest
+}: ThemeToggleProps) {
   const { preference, setPreference } = useTheme();
-  const [announcement, setAnnouncement] = useState("");
+  const [announcedPreference, setAnnouncedPreference] = useState<ThemePreference | null>(null);
   const statusId = useId();
 
   const next = nextPreference(preference);
-  const label = `Theme: ${PREFERENCE_LABEL[preference]}. Activate to switch to ${PREFERENCE_LABEL[next]}.`;
 
   return (
     <>
@@ -81,17 +123,19 @@ export function ThemeToggle({ className, variant = "ghost", size = "sm", ...rest
         variant={variant}
         size={size}
         className={className}
-        aria-label={label}
+        aria-label={ariaLabel ?? toggleLabel(preference, next, preferenceLabels)}
         aria-describedby={statusId}
         onPress={() => {
           setPreference(next);
-          setAnnouncement(`Theme set to ${PREFERENCE_LABEL[next]}`);
+          setAnnouncedPreference(next);
         }}
       >
         <Icon glyph={PREFERENCE_GLYPH[preference]} decorative />
       </Button>
       <span id={statusId} role="status" aria-live="polite" className="sr-only">
-        {announcement}
+        {announcedPreference === null
+          ? null
+          : preferenceAnnouncement(announcedPreference, preferenceLabels)}
       </span>
     </>
   );

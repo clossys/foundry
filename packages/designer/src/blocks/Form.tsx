@@ -47,6 +47,12 @@ export interface FormProps
    * component doc comment below.
    */
   errors?: readonly FormError[];
+  /**
+   * Heading for the error summary. Called with the number of entries in
+   * `errors`.
+   * @default "There is 1 error" for one entry, "There are N errors" otherwise
+   */
+  errorSummaryMessage?: (count: number) => ReactNode;
   /** Slot for the form's submit/cancel controls, rendered at the end. */
   actions?: ReactNode;
   /** Native `<form>` submit handler, passed straight through — `Form` adds no logic of its own around it. */
@@ -94,10 +100,15 @@ export interface FormProps
  * submit handler itself), or the summary steals focus back on every one of
  * those too.
  */
+function defaultErrorSummaryMessage(count: number): string {
+  return count === 1 ? "There is 1 error" : "There are " + String(count) + " errors";
+}
+
 export function Form({
   heading,
   children,
   errors,
+  errorSummaryMessage = defaultErrorSummaryMessage,
   actions,
   onSubmit,
   className,
@@ -144,9 +155,7 @@ export function Form({
           className="flex flex-col gap-sm rounded-control border border-status-danger bg-status-danger-tint p-md text-status-danger-text outline-none"
           style={summaryFocused ? { boxShadow: UI_RING_FOCUS } : undefined}
         >
-          <h2 className="text-body font-body font-semibold">
-            {errorList.length === 1 ? "There is 1 error" : `There are ${errorList.length} errors`}
-          </h2>
+          <h2 className="text-body font-body font-semibold">{errorSummaryMessage(errorList.length)}</h2>
           <ul className="flex flex-col gap-xs text-body-s">
             {errorList.map((error, index) => (
               <li key={`${error.fieldId}-${index}`}>

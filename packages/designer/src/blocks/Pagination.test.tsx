@@ -117,6 +117,12 @@ describe("Pagination", () => {
     expect(screen.getByText("Showing 41–42 of 42")).toBeInTheDocument();
   });
 
+  it("renders the no-results label for zero totalItems even without pageSize", () => {
+    render(<Pagination page={1} pageCount={4} totalItems={0} onPageChange={() => {}} />);
+    expect(screen.getByText("No results")).toBeInTheDocument();
+    expect(screen.queryByText("Page 1 of 4")).not.toBeInTheDocument();
+  });
+
   it("omits the page-size selector region when pageSizeOptions/onPageSizeChange are not both given", () => {
     render(<Pagination page={1} pageCount={5} onPageChange={() => {}} />);
     expect(screen.queryByText("Rows per page")).not.toBeInTheDocument();
@@ -153,5 +159,25 @@ describe("Pagination", () => {
     render(<Pagination page={1} pageCount={5} onPageChange={() => {}} style={{ marginTop: "8px" }} />);
     const nav = screen.getByRole("navigation");
     expect(nav.style.marginTop).toBe("8px");
+  });
+
+  it("reads summaries and the page-size label from message props", () => {
+    render(
+      <Pagination
+        page={2}
+        pageCount={4}
+        onPageChange={() => {}}
+        totalItems={40}
+        pageSize={10}
+        noResultsLabel="Sin resultados"
+        rangeSummaryMessage={(start, end, total) => `${start}-${end} de ${total}`}
+        pageSummaryMessage={(current, count) => `Página ${current} de ${count}`}
+        pageSizeLabel="Filas por página"
+        pageSizeOptions={[10, 25]}
+        onPageSizeChange={() => {}}
+      />,
+    );
+    expect(screen.getByText("11-20 de 40")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Filas por página/ })).toBeInTheDocument();
   });
 });

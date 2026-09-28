@@ -29,6 +29,11 @@ export interface ShellProps extends HTMLAttributes<HTMLDivElement> {
    * `Shell.Footer` — any subset that includes `Shell.Main`, in any order.
    */
   children: ReactNode;
+  /**
+   * Visible text of the skip link that jumps to `Shell.Main`.
+   * @default "Skip to content"
+   */
+  skipLinkLabel?: string;
 }
 
 /**
@@ -65,7 +70,7 @@ export interface ShellProps extends HTMLAttributes<HTMLDivElement> {
  * different `layout.tsx` files — see this package's README, "How differing
  * chrome is handled".
  */
-function ShellRoot({ children, className, ...rest }: ShellProps) {
+function ShellRoot({ children, className, skipLinkLabel = "Skip to content", ...rest }: ShellProps) {
   return (
     <div
       {...rest}
@@ -74,7 +79,7 @@ function ShellRoot({ children, className, ...rest }: ShellProps) {
         gridTemplateAreas: '"header header header" "sidenav main rail" "footer footer footer"',
       }}
     >
-      <SkipLink />
+      <SkipLink label={skipLinkLabel} />
       {children}
     </div>
   );
@@ -101,7 +106,7 @@ function ShellRoot({ children, className, ...rest }: ShellProps) {
  * `href` is kept too; so the URL fragment and browser history still update
  * normally.
  */
-function SkipLink() {
+function SkipLink({ label }: { label: string }) {
   return (
     <a
       href={`#${MAIN_CONTENT_ID}`}
@@ -115,7 +120,7 @@ function SkipLink() {
       )}
       style={{ zIndex: UI_Z_SKIP_LINK }}
     >
-      Skip to content
+      {label}
     </a>
   );
 }
@@ -156,6 +161,11 @@ function ShellHeader({ children, className, style, ground = "base", ...rest }: S
 
 export interface ShellSideNavProps extends HTMLAttributes<HTMLElement> {
   children?: ReactNode;
+  /**
+   * Accessible name for the primary navigation landmark.
+   * @default "Primary"
+   */
+  "aria-label"?: string;
 }
 
 /**
@@ -169,11 +179,17 @@ export interface ShellSideNavProps extends HTMLAttributes<HTMLElement> {
  * visually-hidden labels) is the consumer's own nav content's job; this
  * component only sizes the track it sits in.
  */
-function ShellSideNav({ children, className, style, ...rest }: ShellSideNavProps) {
+function ShellSideNav({
+  children,
+  className,
+  style,
+  "aria-label": ariaLabel = "Primary",
+  ...rest
+}: ShellSideNavProps) {
   return (
     <nav
-      aria-label="Primary"
       {...rest}
+      aria-label={ariaLabel}
       className={cx(
         "min-h-0 overflow-y-auto overflow-x-hidden py-lg border-e border-line-base",
         // Literal arbitrary-value classes, not `shell-vars.ts` constants:

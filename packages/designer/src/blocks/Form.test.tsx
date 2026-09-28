@@ -53,6 +53,36 @@ describe("Form", () => {
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
 
+  it("renders the default error-summary heading, and a caller-supplied one", () => {
+    const one: FormError[] = [{ fieldId: "email", message: "Enter a valid email" }];
+    const { unmount } = render(
+      <Form errors={one}>
+        <input id="email" aria-label="Email" />
+      </Form>,
+    );
+    expect(screen.getByRole("heading", { name: "There is 1 error" })).toBeInTheDocument();
+    unmount();
+
+    const two: FormError[] = [
+      { fieldId: "email", message: "Enter a valid email" },
+      { fieldId: "name", message: "Enter your name" },
+    ];
+    const plural = render(
+      <Form errors={two}>
+        <input id="email" aria-label="Email" />
+      </Form>,
+    );
+    expect(screen.getByRole("heading", { name: "There are 2 errors" })).toBeInTheDocument();
+    plural.unmount();
+
+    render(
+      <Form errors={one} errorSummaryMessage={(count) => `${count} problemas`}>
+        <input id="email" aria-label="Email" />
+      </Form>,
+    );
+    expect(screen.getByRole("heading", { name: "1 problemas" })).toBeInTheDocument();
+  });
+
   it("renders one linked entry per error, each pointing at its field via a real href", () => {
     const errors: FormError[] = [
       { fieldId: "email", message: "Enter a valid email" },

@@ -39,8 +39,24 @@ export interface BarChartProps {
   height?: number;
   /** @default thousands-comma formatting */
   valueFormat?: (value: number) => string;
+  /**
+   * Accessible name for one bar.
+   * @default (seriesName, category, formattedValue) => `${seriesName}, ${category}: ${formattedValue}`
+   */
+  barLabel?: (seriesName: string, category: string, formattedValue: string) => string;
+  /** Column heading for the category column in the table-view fallback. @default "Category" */
+  categoryColumnLabel?: string;
+  /**
+   * Text of the disclosure that opens the table-view fallback.
+   * Forwarded to `ChartFrame`, which defaults it to "View as table".
+   */
+  tableFallbackLabel?: string;
   className?: string;
   style?: CSSProperties;
+}
+
+function defaultBarLabel(seriesName: string, category: string, formattedValue: string): string {
+  return `${seriesName}, ${category}: ${formattedValue}`;
 }
 
 const BAR_MAX_THICKNESS = 24; // marks-and-anatomy.md: bar/column ≤ 24px thick
@@ -65,6 +81,9 @@ export function BarChart({
   width = 480,
   height = 280,
   valueFormat = formatTickValue,
+  barLabel = defaultBarLabel,
+  categoryColumnLabel = "Category",
+  tableFallbackLabel,
   className,
   style,
 }: BarChartProps) {
@@ -88,7 +107,7 @@ export function BarChart({
   const showDirectLabels = visibleSeries.length >= 2 && visibleSeries.length <= 4;
 
   const table: ChartTableSpec = {
-    headers: ["Category", ...visibleSeries.map((s) => s.name)],
+    headers: [categoryColumnLabel, ...visibleSeries.map((s) => s.name)],
     rows: categories.map((category, i) => [category, ...visibleSeries.map((s) => valueFormat(s.values[i] ?? 0))]),
   };
 
@@ -100,6 +119,7 @@ export function BarChart({
       height={height}
       legend={legend}
       table={table}
+      tableFallbackLabel={tableFallbackLabel}
       className={className}
       style={style}
       xTicks={[]}
@@ -164,13 +184,13 @@ export function BarChart({
                           strokeWidth={isHovered ? 2 : 0}
                           tabIndex={0}
                           role="img"
-                          aria-label={`${s.name}, ${cat}: ${valueFormat(value)}`}
+                          aria-label={barLabel(s.name, cat, valueFormat(value))}
                           onMouseEnter={() => setHovered(key)}
                           onMouseLeave={() => setHovered((cur) => (cur === key ? null : cur))}
                           onFocus={() => setHovered(key)}
                           onBlur={() => setHovered((cur) => (cur === key ? null : cur))}
                         >
-                          <title>{`${s.name} — ${cat}: ${valueFormat(value)}`}</title>
+                          <title>{barLabel(s.name, cat, valueFormat(value))}</title>
                         </rect>
                         {showDirectLabels && isLastCategory ? (
                           <text

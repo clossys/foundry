@@ -92,4 +92,23 @@ describe("ThemeToggle", () => {
     renderToggle(<ThemeToggle className="my-toggle" />);
     expect(screen.getByRole("button").className).toContain("my-toggle");
   });
+
+  it("reads preference, toggle, and announcement copy from message props", async () => {
+    const user = userEvent.setup();
+    renderToggle(
+      <ThemeToggle
+        preferenceLabels={{ system: "Sistema", light: "Claro", dark: "Oscuro" }}
+        toggleLabel={(current, next, labels) => `Tema: ${labels[current]}. Cambiar a ${labels[next]}.`}
+        preferenceAnnouncement={(next, labels) => `Tema en ${labels[next]}`}
+      />,
+    );
+    expect(screen.getByRole("button", { name: "Tema: Sistema. Cambiar a Claro." })).toBeInTheDocument();
+    await user.click(screen.getByRole("button"));
+    expect(screen.getByRole("status")).toHaveTextContent("Tema en Claro");
+  });
+
+  it("does not overwrite a caller aria-label passed through rest", () => {
+    renderToggle(<ThemeToggle aria-label="Custom theme control" />);
+    expect(screen.getByRole("button", { name: "Custom theme control" })).toBeInTheDocument();
+  });
 });

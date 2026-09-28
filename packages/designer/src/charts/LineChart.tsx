@@ -32,13 +32,28 @@ export interface LineChartProps {
   /** @default `Date` -> locale short date; `number` -> the number itself */
   xFormat?: (value: Date | number) => string;
   /**
-   * Accessible name for the keyboard/hover overlay, appended after `title`
-   * (as `"${title}: ${keyboardHintLabel}"`).
+   * Hint appended to `title` in the keyboard/hover overlay's accessible name.
    * @default "use arrow keys to inspect values"
    */
   keyboardHintLabel?: string;
+  /**
+   * Accessible name for the keyboard/hover overlay.
+   * @default (chartTitle, hint) => `${chartTitle}: ${hint}`
+   */
+  overlayLabel?: (chartTitle: string, hint: string) => string;
+  /** Column heading for the x column in the table-view fallback. @default "X" */
+  xColumnLabel?: string;
+  /**
+   * Text of the disclosure that opens the table-view fallback.
+   * Forwarded to `ChartFrame`, which defaults it to "View as table".
+   */
+  tableFallbackLabel?: string;
   className?: string;
   style?: CSSProperties;
+}
+
+function defaultOverlayLabel(chartTitle: string, hint: string): string {
+  return `${chartTitle}: ${hint}`;
 }
 
 const defaultXFormat = (value: Date | number): string =>
@@ -63,6 +78,9 @@ export function LineChart({
   valueFormat = formatTickValue,
   xFormat = defaultXFormat,
   keyboardHintLabel = "use arrow keys to inspect values",
+  overlayLabel = defaultOverlayLabel,
+  xColumnLabel = "X",
+  tableFallbackLabel,
   className,
   style,
 }: LineChartProps) {
@@ -86,12 +104,12 @@ export function LineChart({
   const showDirectLabels = visibleSeries.length >= 2 && visibleSeries.length <= 4;
 
   const table: ChartTableSpec = {
-    headers: ["X", ...visibleSeries.map((s) => s.name)],
+    headers: [xColumnLabel, ...visibleSeries.map((s) => s.name)],
     rows: x.map((xv, i) => [xFormat(xv), ...visibleSeries.map((s) => valueFormat(s.values[i] ?? 0))]),
   };
 
   return (
-    <ChartFrame title={title} description={description} width={width} height={height} legend={legend} table={table} className={className} style={style} xTicks={[]} yTicks={[]}>
+    <ChartFrame title={title} description={description} width={width} height={height} legend={legend} table={table} tableFallbackLabel={tableFallbackLabel} className={className} style={style} xTicks={[]} yTicks={[]}>
       {(plot) => {
         const y = linearScale([domainMin, domainMax], [plot.y + plot.height, plot.y]);
         const xScale = isTime
@@ -222,7 +240,7 @@ export function LineChart({
               fill="transparent"
               tabIndex={0}
               role="img"
-              aria-label={`${title}: ${keyboardHintLabel}`}
+              aria-label={overlayLabel(title, keyboardHintLabel)}
               onPointerMove={onOverlayPointerMove}
               onPointerLeave={() => setActiveIndex(null)}
               onFocus={() => setActiveIndex((cur) => cur ?? 0)}

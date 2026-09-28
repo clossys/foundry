@@ -44,6 +44,19 @@ describe("Stat", () => {
     expect(screen.getByText("No change,", { exact: false })).toBeInTheDocument();
   });
 
+  it("reads trend direction from trendLabels", () => {
+    render(
+      <Stat
+        label="Users"
+        value="2,481"
+        delta="+12%"
+        trend="up"
+        trendLabels={{ up: "Sube", down: "Baja", neutral: "Sin cambio" }}
+      />,
+    );
+    expect(screen.getByText("Sube,", { exact: false })).toBeInTheDocument();
+  });
+
   it("applies the success status token to an \"up\" trend", () => {
     render(<Stat label="Users" value="2,481" delta="+12%" trend="up" />);
     const delta = screen.getByText("+12%").closest("span");

@@ -15,6 +15,16 @@ export interface SparklineProps {
   color?: string;
   /** @default thousands-comma formatting */
   valueFormat?: (value: number) => string;
+  /**
+   * Text of the disclosure that opens the table-view fallback.
+   * @default "View as table"
+   */
+  tableFallbackLabel?: string;
+  /**
+   * Column heading for the value column in the table-view fallback.
+   * @default "Value"
+   */
+  valueColumnLabel?: string;
   className?: string;
   style?: CSSProperties;
 }
@@ -40,6 +50,8 @@ export function Sparkline({
   height = 24,
   color,
   valueFormat = formatTickValue,
+  tableFallbackLabel = "View as table",
+  valueColumnLabel = "Value",
   className,
   style,
 }: SparklineProps) {
@@ -62,13 +74,13 @@ export function Sparkline({
         {last ? <circle cx={last[0]} cy={last[1]} r={2.5} fill={resolvedColor} /> : null}
       </svg>
       <details data-chart-part="table-fallback">
-        <summary className="text-caption text-ink-secondary font-body cursor-pointer">View as table</summary>
+        <summary className="text-caption text-ink-secondary font-body cursor-pointer">{tableFallbackLabel}</summary>
         <table className="text-caption font-body">
           <caption className="sr-only">{title}</caption>
           <thead>
             <tr>
               <th scope="col">#</th>
-              <th scope="col">Value</th>
+              <th scope="col">{valueColumnLabel}</th>
             </tr>
           </thead>
           <tbody>

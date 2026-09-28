@@ -66,6 +66,11 @@ export interface ChartFrameProps {
   style?: CSSProperties;
   /** Render prop: receives the resolved plot rectangle so marks can be computed in the same coordinate space `ChartFrame` drew its axes in. */
   children: (plot: PlotArea) => ReactNode;
+  /**
+   * Text of the disclosure that opens the table-view fallback.
+   * @default "View as table"
+   */
+  tableFallbackLabel?: string;
 }
 
 /**
@@ -88,6 +93,7 @@ export function ChartFrame({
   className,
   style,
   children,
+  tableFallbackLabel = "View as table",
 }: ChartFrameProps) {
   const titleId = useId();
   const descId = useId();
@@ -171,7 +177,7 @@ export function ChartFrame({
       ) : null}
 
       <details data-chart-part="table-fallback">
-        <summary className="text-body-s text-ink-secondary font-body cursor-pointer">View as table</summary>
+        <summary className="text-body-s text-ink-secondary font-body cursor-pointer">{tableFallbackLabel}</summary>
         <table className="text-body-s font-body">
           <caption className="sr-only">{title}</caption>
           <thead>

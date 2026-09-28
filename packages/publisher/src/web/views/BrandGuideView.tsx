@@ -20,17 +20,40 @@ export interface BrandGuideViewProps {
   colors: readonly BrandGuideFact[];
   type: readonly BrandGuideFact[];
   facts: readonly BrandGuideFact[];
+  /** Accessible name for the lockup section. @default "Lockup" */
+  lockupLabel?: string;
+  /** Accessible name for the downloads section. @default "Downloads" */
+  downloadsLabel?: string;
+  /** Accessible name for the color section. @default "Color" */
+  colorLabel?: string;
+  /** Accessible name for the type section. @default "Type" */
+  typeLabel?: string;
+  /** Accessible name for the strategy-facts section. @default "Strategy facts" */
+  factsLabel?: string;
 }
 
 /** Public brand guide. Fixture copy ships with the package; the host cites Strategist facts beside the tokens. */
-export function BrandGuideView({ title, usage, lockupSvg, assets, colors, type, facts }: BrandGuideViewProps): ReactNode {
+export function BrandGuideView({
+  title,
+  usage,
+  lockupSvg,
+  assets,
+  colors,
+  type,
+  facts,
+  lockupLabel = "Lockup",
+  downloadsLabel = "Downloads",
+  colorLabel = "Color",
+  typeLabel = "Type",
+  factsLabel = "Strategy facts",
+}: BrandGuideViewProps): ReactNode {
   return (
     <main>
       <PageHeader title={title} description={usage} />
-      <section aria-label="Lockup">
+      <section aria-label={lockupLabel}>
         <div dangerouslySetInnerHTML={{ __html: lockupSvg }} />
       </section>
-      <section aria-label="Downloads">
+      <section aria-label={downloadsLabel}>
         <ul>
           {assets.map((asset) => (
             <li key={asset.role}>
@@ -39,7 +62,7 @@ export function BrandGuideView({ title, usage, lockupSvg, assets, colors, type, 
           ))}
         </ul>
       </section>
-      <section aria-label="Color">
+      <section aria-label={colorLabel}>
         <dl>
           {colors.map((entry) => (
             <div key={entry.name}>
@@ -49,7 +72,7 @@ export function BrandGuideView({ title, usage, lockupSvg, assets, colors, type, 
           ))}
         </dl>
       </section>
-      <section aria-label="Type">
+      <section aria-label={typeLabel}>
         <dl>
           {type.map((entry) => (
             <div key={entry.name}>
@@ -59,7 +82,7 @@ export function BrandGuideView({ title, usage, lockupSvg, assets, colors, type, 
           ))}
         </dl>
       </section>
-      <section aria-label="Strategy facts">
+      <section aria-label={factsLabel}>
         <dl>
           {facts.map((entry) => (
             <div key={entry.name}>

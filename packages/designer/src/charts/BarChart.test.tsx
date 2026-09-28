@@ -97,6 +97,18 @@ describe("BarChart", () => {
     expect(container.querySelector("figure")!.style.maxWidth).toBe("500px");
   });
 
+  it("reads the category column heading from categoryColumnLabel", () => {
+    render(
+      <BarChart
+        title="t"
+        categories={["Jan"]}
+        series={[{ name: "Revenue", values: [10] }]}
+        categoryColumnLabel="Categoría"
+      />,
+    );
+    expect(screen.getByRole("columnheader", { name: "Categoría" })).toBeInTheDocument();
+  });
+
   it("each bar carries an accessible name with its category and formatted value (per-mark hover/focus target)", () => {
     render(<BarChart title="t" categories={["Jan"]} series={[{ name: "Revenue", values: [1284] }]} />);
     expect(screen.getByRole("img", { name: "Revenue, Jan: 1,284" })).toBeInTheDocument();

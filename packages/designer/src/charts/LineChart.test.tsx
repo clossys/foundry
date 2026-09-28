@@ -122,6 +122,13 @@ describe("LineChart", () => {
     expect(overlay).toHaveAttribute("aria-label", "Revenue: use arrow keys to inspect values");
   });
 
+  it("reads the x column heading from xColumnLabel", () => {
+    render(
+      <LineChart title="t" x={[0, 1]} series={[{ name: "Revenue", values: [1, 2] }]} xColumnLabel="Eje X" />,
+    );
+    expect(screen.getByRole("columnheader", { name: "Eje X" })).toBeInTheDocument();
+  });
+
   it("accepts a custom keyboardHintLabel that replaces the default hint text", () => {
     const { container } = render(
       <LineChart

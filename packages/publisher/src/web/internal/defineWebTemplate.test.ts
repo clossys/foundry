@@ -30,6 +30,12 @@ describe("defineWebTemplate — happy path", () => {
     expect(typeof template.build).toBe("function");
   });
 
+  it("accepts a function statGridLabel and returns the template", () => {
+    const template = defineWebTemplate({ ...minimalOptions, statGridLabel: (index: number) => `Figure ${index + 1}` });
+    expect(template.name).toBe("AcmeWidget");
+    expect(typeof template.build).toBe("function");
+  });
+
   it("a slot absent from slotKinds defaults to ['copy', 'asset'], the same as every built-in", () => {
     const template = defineWebTemplate(minimalOptions);
     expect(slotKindsFor(template, "heading")).toEqual(["copy", "asset"]);
@@ -150,5 +156,13 @@ describe("defineWebTemplate — fails closed with RenderError('invalid-template-
 
   it("rejects an empty blocks array", () => {
     expectInvalidDefinition(() => defineWebTemplate({ ...minimalOptions, blocks: [] }));
+  });
+
+  it("rejects a null statGridLabel", () => {
+    expectInvalidDefinition(() => defineWebTemplate({ ...minimalOptions, statGridLabel: null as never }));
+  });
+
+  it("rejects a non-function statGridLabel", () => {
+    expectInvalidDefinition(() => defineWebTemplate({ ...minimalOptions, statGridLabel: "Stat" as never }));
   });
 });

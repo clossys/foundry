@@ -49,6 +49,21 @@ export interface CollectionViewProps extends HTMLAttributes<HTMLDivElement> {
    */
   pagination?: CollectionViewPagination;
   footerSecondary?: ReactNode;
+  /**
+   * Accessible name for the entry list.
+   * @default "Collection entries"
+   */
+  entriesLabel?: string;
+  /**
+   * Accessible name for one entry's tag list.
+   * @default "Tags"
+   */
+  tagsLabel?: string;
+  /**
+   * Accessible name for the pagination landmark.
+   * @default "Collection pagination"
+   */
+  paginationLabel?: string;
   style?: CSSProperties;
 }
 
@@ -57,7 +72,7 @@ export interface CollectionViewProps extends HTMLAttributes<HTMLDivElement> {
  * titles, semantic dates, tag-list semantics, and the explicit empty state;
  * it intentionally leaves data loading and pagination state to the consumer.
  */
-export function CollectionView({ brand, heading, description, entries, empty, focusTargetId = "collection-heading", pagination, footerSecondary, className, style, ...rest }: CollectionViewProps) {
+export function CollectionView({ brand, heading, description, entries, empty, focusTargetId = "collection-heading", pagination, footerSecondary, entriesLabel = "Collection entries", tagsLabel = "Tags", paginationLabel = "Collection pagination", className, style, ...rest }: CollectionViewProps) {
   if (!Array.isArray(entries)) {
     throw new Error("CollectionView requires entries to be an array.");
   }
@@ -102,7 +117,7 @@ export function CollectionView({ brand, heading, description, entries, empty, fo
             action={empty.action === undefined ? undefined : <a href={empty.action.href} className="text-ink-link underline">{empty.action.label}</a>}
           />
         ) : (
-          <ul className="flex flex-col gap-lg" aria-label="Collection entries">
+          <ul className="flex flex-col gap-lg" aria-label={entriesLabel}>
             {entries.map((entry) => (
               <li key={entry.id}>
                 <article className="flex flex-col gap-sm border-b border-line-base pb-lg">
@@ -118,7 +133,7 @@ export function CollectionView({ brand, heading, description, entries, empty, fo
                   </div>
                   {entry.summary === undefined ? null : <p className="text-body text-ink-secondary">{entry.summary}</p>}
                   {entry.tags === undefined || entry.tags.length === 0 ? null : (
-                    <ul className="flex flex-wrap gap-sm" aria-label="Tags">
+                    <ul className="flex flex-wrap gap-sm" aria-label={tagsLabel}>
                       {entry.tags.map((tag: string, index: number) => (
                         <li key={`${entry.id}-tag-${index}`} className="rounded-pill bg-surface-sunken px-sm py-xs text-caption text-ink-secondary">
                           {tag}
@@ -132,7 +147,7 @@ export function CollectionView({ brand, heading, description, entries, empty, fo
           </ul>
         )}
         {pagination === undefined ? null : (
-          <nav className="flex flex-wrap gap-md" aria-label="Collection pagination">
+          <nav className="flex flex-wrap gap-md" aria-label={paginationLabel}>
             {previous === undefined ? null : <a href={previous.href} className="text-ink-link underline">{previous.label}</a>}
             {next === undefined ? null : <a href={next.href} className="text-ink-link underline">{next.label}</a>}
           </nav>
