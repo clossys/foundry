@@ -534,22 +534,46 @@ function skipIdentCode(code: string, i: number): number {
   return i;
 }
 
+function skipPostfixTypeArrayBrackets(code: string, i: number): number {
+  for (;;) {
+    i = skipWsCode(code, i);
+    if (code[i] !== "[") break;
+    const end = matchingClose(code, i);
+    i = end === -1 ? code.length : end + 1;
+  }
+  return i;
+}
+
 /** One extends/type operand: a name, generic, object type, or parenthesized type. */
 function skipTypeOperand(code: string, i: number): number {
   i = skipWsCode(code, i);
   const c = code[i];
-  if (c === "(" || c === "{" || c === "<") {
+  if (c === "{") {
     const end = matchingClose(code, i);
     return end === -1 ? code.length : end + 1;
+  }
+  if (c === "(") {
+    const end = matchingClose(code, i);
+    i = end === -1 ? code.length : end + 1;
+    i = skipWsCode(code, i);
+    if (code[i] === "=" && code[i + 1] === ">") {
+      i += 2;
+      i = skipTypeOperand(code, skipWsCode(code, i));
+    }
+    return i;
+  }
+  if (c === "<") {
+    i = indexAfterGenericTypeParamList(code, i);
+    return skipPostfixTypeArrayBrackets(code, i);
   }
   if (c === undefined) return i;
   i = skipIdentCode(code, i);
   i = skipWsCode(code, i);
   if (code[i] === "<") {
-    const end = matchingClose(code, i);
-    i = end === -1 ? code.length : end + 1;
+    i = indexAfterGenericTypeParamList(code, i);
+    i = skipWsCode(code, i);
   }
-  return i;
+  return skipPostfixTypeArrayBrackets(code, i);
 }
 
 function indexInsideDeclareBlock(code: string, idx: number, kind: "class" | "namespace"): boolean {
@@ -842,6 +866,30 @@ function paramListShadowsName(inner: string, name: string): boolean {
   return singleParamBindingShadows(inner.slice(start), name);
 }
 
+/** Parameter list of each `function` declaration matched by `fnDeclPrefix`, after optional type params. */
+function eachFnDeclParamListAfterName(
+  code: string,
+  fnDeclPrefix: string,
+  onList: (paramInner: string, fnKeywordIndex: number) => boolean,
+): boolean {
+  for (const m of code.matchAll(new RegExp(`${fnDeclPrefix}${IDENT}`, "gu"))) {
+    const fnIdx = code.indexOf("function", m.index!);
+    if (fnIdx === -1 || fnIdx > m.index! + m[0].length) continue;
+    let i = m.index! + m[0].length;
+    i = skipWsCode(code, i);
+    if (code[i] === "<") {
+      i = indexAfterGenericTypeParamList(code, i);
+      i = skipWsCode(code, i);
+    }
+    if (code[i] !== "(") continue;
+    const open = i;
+    const close = matchingClose(code, open);
+    if (close === -1) continue;
+    if (onList(code.slice(open + 1, close), fnIdx)) return true;
+  }
+  return false;
+}
+
 /** Arrows after an object-property `:` or a ternary `:` are not scanned (e.g. `{ load: (make) => ... }`, `c ? g : (make) => ...`). */
 function forEachParenListShadows(code: string, name: string): boolean {
   for (let i = 0; i < code.length; i++) {
@@ -941,18 +989,14 @@ function collectLocalShadowedCalleepNames(
         }
       }
     }
-    if (!shadowed.has(name)) {
-      for (const m of code.matchAll(new RegExp(`${fnDeclPrefix}(${IDENT})\\s*(?:<[^>]*>)?\\s*\\(`, "gu"))) {
-        const fnIdx = code.indexOf("function", m.index!);
-        if (fnIdx !== -1 && skipFunctionParamValueBinding(code, fnIdx)) continue;
-        const open = m.index! + m[0].length - 1;
-        const close = matchingClose(code, open);
-        if (close === -1) continue;
-        if (paramListShadowsName(code.slice(open + 1, close), name)) {
-          shadowed.add(name);
-          break;
-        }
-      }
+    if (
+      !shadowed.has(name) &&
+      eachFnDeclParamListAfterName(code, fnDeclPrefix, (inner, fnIdx) => {
+        if (skipFunctionParamValueBinding(code, fnIdx)) return false;
+        return paramListShadowsName(inner, name);
+      })
+    ) {
+      shadowed.add(name);
     }
     for (const m of code.matchAll(new RegExp(`\\{\\s*(${IDENT})\\s*(?:<[^>]*>)?\\s*${firstParamBind}`, "gu"))) {
       if (CONTROL_FLOW_BLOCK_KEYWORDS.has(m[1]!)) continue;
