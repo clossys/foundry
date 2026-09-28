@@ -217,11 +217,79 @@ const NOT_ID_CONTINUE = `(?![${ID_CONTINUE_IN_CLASS}])`;
 const WRITER_PACKAGE_CALLEES = ["createCopyResolver", "resolveCopyRef", "parseCopyRegistry", "validateCopyRegistryShape"] as const;
 const WRITER_PACKAGE_CALLEE_SET = new Set<string>(WRITER_PACKAGE_CALLEES);
 const APPROVAL_KEYS = new Set(["approvedBy", "pendingOwnerReview"]);
-/** A plain or compound assignment operator, never a comparison or an arrow. */
-const ASSIGN_OP_RE = /^\s*(?:\?\?|\|\||&&)?=(?![=>])/;
 
 function isWs(c: string | undefined): boolean {
   return c === " " || c === "\t" || c === "\n" || c === "\r" || c === "\f" || c === "\v";
+}
+
+/**
+ * The next position at or after `idx` that is not whitespace and not inside a
+ * comment. `code` is masked, so a comment is a run of blanks; this skips it by
+ * shape. Never a fixed window.
+ */
+function nextSignificant(code: string, idx: number): number {
+  let i = idx;
+  const n = code.length;
+  while (i < n) {
+    const c = code[i]!;
+    if (isWs(c)) {
+      i++;
+      continue;
+    }
+    if (c === "/" && code[i + 1] === "/") {
+      const nl = code.indexOf("\n", i);
+      i = nl === -1 ? n : nl;
+      continue;
+    }
+    if (c === "/" && code[i + 1] === "*") {
+      let end = i + 2;
+      while (end < n && !(code[end] === "*" && code[end + 1] === "/")) end++;
+      i = end >= n ? n : end + 2;
+      continue;
+    }
+    break;
+  }
+  return i;
+}
+
+/**
+ * Reads the assignment operator at `idx` (already advanced to the operator by
+ * `nextSignificant`), returning its length, or 0 when it is not one. A
+ * `+`/`-`/`*`/`/`/`%`/`&`/`|`/`^` before the `=` is skipped only when it is
+ * not itself the first character of a comparison operator (`==`, `!=`, `<=`,
+ * `>=`, `&&`, `||`), so `x.approvedBy === y` is a read, never an assignment.
+ */
+function assignOpLengthAt(code: string, idx: number): number {
+  let i = idx;
+  const c = code[i];
+  if (c === "?" || c === "|" || c === "&") {
+    if (code[i + 1] !== c) return 0;
+    i += 2;
+  } else if (c === "+" || c === "-" || c === "*" || c === "/" || c === "%" || c === "^") {
+    i += 1;
+  }
+  if (code[i] !== "=") return 0;
+  const next = code[i + 1];
+  if (next === "=" || next === ">") return 0;
+  return i - idx + 1;
+}
+
+/**
+ * Length of a `:`-only object key separator at `idx`, or 0. A `::` (or a `:`
+ * followed by another `:`) is not a key separator.
+ */
+function colonLengthAt(code: string, idx: number): number {
+  return code[idx] === ":" && code[idx + 1] !== ":" ? 1 : 0;
+}
+
+/** Whether the character ending just before `end` is a plain registry binding reference (not a suffix of a longer word or `.`). */
+function isBindingReferenceEnd(code: string, end: number): boolean {
+  for (let i = end - 1; i >= 0; i--) {
+    const c = code[i]!;
+    if (isWs(c)) continue;
+    return /[\w$)\]]/.test(c);
+  }
+  return false;
 }
 
 /** Escapes every regular-expression metacharacter in `value`, backslash included. */
@@ -784,7 +852,7 @@ function braceIsClassOrObjectLiteral(code: string, open: number): boolean {
   if (namespaceBodyBraceKind(code, open) === "plain") return true;
   const segStart = boundaryStartBefore(code, open);
   const header = code.slice(segStart, open);
-  if (new RegExp(`(?<![\\w$.])class(?![\\w$])(?:\\s+${IDENT})?[^{};]*$`, "u").test(header)) return true;
+  if (openBraceIsClassBody(code, open)) return true;
   if (/(?<![\w$.])(?:return|typeof|new|void|delete|await|yield)\s*$/u.test(header)) return true;
   if (/[=,([{:?]\s*$/u.test(header)) return true;
   return false;
@@ -936,24 +1004,68 @@ function declareClassBodyBraceAfterDeclareKeyword(code: string, declareIdx: numb
     i = skipWsCode(code, i);
   }
   if (!isKeywordAt(code, i, "class")) return -1;
-  i += "class".length;
+  return classBodyBraceAfterClassKeyword(code, i);
+}
+
+/**
+ * Consumes one heritage-clause operand plus any call-like suffixes it carries:
+ * `B`, `B<C>`, `B<{a:1}>`, `(Foo)`, `mixin(Base)`, `ns.mixin(Base)`. A `{`
+ * inside a generic argument list is consumed with the angle-depth walk
+ * (`skipTypeOperand`/`indexAfterGenericTypeParamList`), never mistaken for the
+ * class body, and the operand's own length never decides anything.
+ */
+function skipHeritageOperand(code: string, i: number): number {
+  i = skipWsCode(code, i);
+  i = skipTypeOperand(code, i);
+  for (;;) {
+    i = skipWsCode(code, i);
+    if (code[i] === "<" && ltAtIsGenericOpener(code, i)) {
+      i = indexAfterGenericTypeParamList(code, i);
+      continue;
+    }
+    if (code[i] === "(" || code[i] === "[") {
+      const close = matchingClose(code, i);
+      i = close === -1 ? code.length : close + 1;
+      continue;
+    }
+    if (code[i] === ".") {
+      i++;
+      i = skipIdentCode(code, i);
+      continue;
+    }
+    break;
+  }
+  return i;
+}
+
+/**
+ * Index of the `{` opening the body of the `class` keyword at `classIdx`,
+ * walking the class name, its type-parameter list, and its `extends` /
+ * `implements` clauses. A `{` inside any of those — a type-parameter
+ * constraint (`class C<T extends { a: number }>`), a heritage generic argument
+ * (`class C extends B<{a:1}>`), the same on an `abstract class` — is not the
+ * body: `<`/`>` and bracket depth decide, and the distance from the keyword or
+ * any interior brace never does. Returns -1 when no body follows.
+ */
+function classBodyBraceAfterClassKeyword(code: string, classIdx: number): number {
+  let i = classIdx + "class".length;
   i = skipWsCode(code, i);
   const nameStart = i;
   i = skipIdentCode(code, i);
-  if (i === nameStart) return -1;
+  if (i === nameStart) return code[i] === "{" ? i : -1; // anonymous class expression
   i = skipOptionalGenericTypeParams(code, i);
   i = skipWsCode(code, i);
   if (isExtendsKeywordAt(code, i)) {
-    i += 7;
+    i += "extends".length;
     i = skipWsCode(code, i);
-    i = skipTypeOperand(code, i);
+    i = skipHeritageOperand(code, i);
   }
   i = skipWsCode(code, i);
   if (isKeywordAt(code, i, "implements")) {
     i += "implements".length;
     for (;;) {
       i = skipWsCode(code, i);
-      i = skipTypeOperand(code, i);
+      i = skipHeritageOperand(code, i);
       i = skipWsCode(code, i);
       if (code[i] === ",") {
         i++;
@@ -964,6 +1076,22 @@ function declareClassBodyBraceAfterDeclareKeyword(code: string, declareIdx: numb
   }
   i = skipWsCode(code, i);
   return code[i] === "{" ? i : -1;
+}
+
+/**
+ * Whether `{` at `open` is the body of the nearest preceding `class` keyword,
+ * decided by walking that keyword's header (`classBodyBraceAfterClassKeyword`)
+ * rather than by scanning back from `open` until the first `{` — so a class
+ * whose header contains a brace (a type-parameter constraint or heritage
+ * generic argument) is still recognized.
+ */
+function openBraceIsClassBody(code: string, open: number): boolean {
+  const header = code.slice(boundaryStartBefore(code, open), open);
+  const matches = [...header.matchAll(/(?<![\w$.])class(?![\w$])/gu)];
+  if (matches.length === 0) return false;
+  const last = matches[matches.length - 1]!;
+  const classIdx = boundaryStartBefore(code, open) + last.index!;
+  return classBodyBraceAfterClassKeyword(code, classIdx) === open;
 }
 
 function eachDeclareClassBodySpan(code: string, visit: (openBrace: number, closeBrace: number) => void): void {
@@ -1945,8 +2073,8 @@ export function extractApprovalBypass(
       const prev = prevNonWs(code, i);
       if (prev >= 0 && code[prev] === "." && !(code[prev - 1] === "." && code[prev - 2] === ".")) continue; // `obj.name` — a property, not the binding
       if (bindingFollowsTypeofQuery(code, i)) continue; // a type query reads no content
-      const afterName = code.slice(i + b.name.length, i + b.name.length + 20);
-      if (/^\s*:(?!:)/.test(afterName) && isObjectKeyPosition(code, i)) continue; // `{ name: ... }` — a key, not the binding
+      const afterName = nextSignificant(code, i + b.name.length);
+      if (colonLengthAt(code, afterName) > 0 && isObjectKeyPosition(code, i)) continue; // `{ name: ... }` — a key, not the binding
       if (
         registryBindingUseAllowed(
           code,
@@ -1983,30 +2111,30 @@ export function extractApprovalBypass(
     const end = i + name.length;
     const prev = prevNonWs(code, i);
     const isMember = prev >= 0 && code[prev] === "." && code[prev - 1] !== ".";
-    const rest = code.slice(end, end + 20);
+    const afterName = nextSignificant(code, end);
     if (isMember) {
       if (code[prev - 1] === "?") continue; // `x?.name` can never be assigned
-      const op = ASSIGN_OP_RE.exec(rest);
-      if (!op) continue;
+      const opLen = assignOpLengthAt(code, afterName);
+      if (opLen === 0) continue;
       if (name === "status") {
-        if (isApprovedLiteral(literalAfter(end + op[0].length))) flagApproval(i, `status is assigned "approved" in code`);
+        if (isApprovedLiteral(literalAfter(afterName + opLen))) flagApproval(i, `status is assigned "approved" in code`);
       } else {
         flagApproval(i, `${name} is assigned in code`);
       }
       continue;
     }
-    const colon = /^\s*:(?!:)/.exec(rest);
-    if (colon) {
+    const colonLen = colonLengthAt(code, afterName);
+    if (colonLen > 0) {
       if (!isObjectKeyPosition(code, i)) continue;
       if (name === "status") {
-        if (isApprovedLiteral(literalAfter(end + colon[0].length))) flagApproval(i, `status is set to "approved" in an object literal`);
+        if (isApprovedLiteral(literalAfter(afterName + colonLen))) flagApproval(i, `status is set to "approved" in an object literal`);
       } else {
         flagApproval(i, `${name} is set in an object literal`);
       }
       continue;
     }
     // shorthand `{ approvedBy }` / `{ a, pendingOwnerReview }`
-    if (name !== "status" && /^\s*[,}]/.test(rest) && isObjectKeyPosition(code, i)) {
+    if (name !== "status" && (code[afterName] === "," || code[afterName] === "}") && isObjectKeyPosition(code, i)) {
       flagApproval(i, `${name} is set in an object literal (shorthand property)`);
     }
   }
@@ -2024,20 +2152,21 @@ export function extractApprovalBypass(
     if (bracketed) {
       const close = nextNonWs(code, lit.end);
       if (code[close] !== "]") continue;
-      const rest = code.slice(close + 1, close + 20);
-      const colon = /^\s*:(?!:)/.exec(rest);
-      const op = ASSIGN_OP_RE.exec(rest);
-      if (colon && isObjectKeyPosition(code, prev)) {
-        valueFrom = close + 1 + colon[0].length;
+      const afterBracket = nextSignificant(code, close + 1);
+      const colonLen = colonLengthAt(code, afterBracket);
+      const opLen = assignOpLengthAt(code, afterBracket);
+      if (colonLen > 0 && isObjectKeyPosition(code, prev)) {
+        valueFrom = afterBracket + colonLen;
         where = "a computed object key";
-      } else if (op && prevNonWs(code, prev) >= 0 && /[\w$)\]]/.test(code[prevNonWs(code, prev)]!)) {
-        valueFrom = close + 1 + op[0].length;
+      } else if (opLen > 0 && isBindingReferenceEnd(code, prev)) {
+        valueFrom = afterBracket + opLen;
         where = "a bracket member assignment";
       } else continue;
     } else {
-      const colon = /^\s*:(?!:)/.exec(code.slice(lit.end, lit.end + 20));
-      if (!colon || !isObjectKeyPosition(code, lit.start)) continue;
-      valueFrom = lit.end + colon[0].length;
+      const colonPos = nextSignificant(code, lit.end);
+      const colonLen = colonLengthAt(code, colonPos);
+      if (colonLen === 0 || !isObjectKeyPosition(code, lit.start)) continue;
+      valueFrom = colonPos + colonLen;
       where = "a quoted object key";
     }
     if (name === "status") {

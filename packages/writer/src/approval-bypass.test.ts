@@ -1166,6 +1166,85 @@ describe("copy-read-without-resolver", () => {
       expect(gate.findings.some((f) => f.rule === "copy-read-without-resolver")).toBe(true);
     }
   });
+
+  it("walks class headers whose type-parameter constraint or heritage contains a brace (fix round 27)", () => {
+    const head = [
+      'import { createCopyResolver as make } from "@clossys/writer";',
+      'import registry from "../copy/registry.json";',
+    ].join("\n");
+    const use = "export const out = make(registry);";
+    const member = "x = 1\nload(make: Handler): void { make(registry); }";
+    for (const header of [
+      "class C<T extends { a: number }>",
+      "class C extends B<{a:1}>",
+      "class C implements I<{a:1}>",
+      "abstract class C<T extends {a:1}>",
+    ]) {
+      const { gate } = scan({ "src/copy.ts": [head, `${header} { ${member} }`, use].join("\n") });
+      expect(gate.verdict).toBe("violated");
+      expect(gate.findings.every((f) => f.rule === "copy-read-without-resolver")).toBe(true);
+    }
+  });
+
+  it("treats a key-to-colon gap the same at 19, 20, 21 and 30 spaces (fix round 27)", () => {
+    const head = 'import { createCopyResolver } from "@clossys/writer";';
+    for (const gap of [19, 20, 21, 30]) {
+      const { gate } = scan({
+        "src/copy.ts": [head, `export const a = { status${" ".repeat(gap)}: "approved" };`].join("\n"),
+      });
+      expect(gate.verdict).toBe("violated");
+      expect(gate.findings.every((f) => f.rule === "approval-set-in-code")).toBe(true);
+    }
+  });
+
+  it("treats a name-to-assignment gap the same at 19, 20, 21 and 30 characters (fix round 27)", () => {
+    const head = 'import type { CopyEntry } from "@clossys/writer";';
+    for (const gap of [19, 20, 21, 30]) {
+      const pad = " ".repeat(gap);
+      const { gate } = scan({
+        "src/copy.ts": [
+          head,
+          "export function f(x: CopyEntry) {",
+          `  x.approvedBy${pad}= "owner";`,
+          `  x["status"]${pad}= "approved";`,
+          `  const y = { "pendingOwnerReview"${pad}: true };`,
+          "  return [x, y];",
+          "}",
+        ].join("\n"),
+      });
+      expect(gate.verdict).toBe("violated");
+      expect(gate.findings.every((f) => f.rule === "approval-set-in-code")).toBe(true);
+      expect(gate.findings.length).toBe(3);
+    }
+  });
+
+  it("does not treat parenthesized heritage in an ambient class as a value binding (fix round 27)", () => {
+    const head = [
+      'import { createCopyResolver as make } from "@clossys/writer";',
+      'import registry from "../copy/registry.json";',
+    ].join("\n");
+    const use = "export const out = make(registry);";
+    const member = "load(make: Handler): void";
+    for (const header of ["declare class C extends mixin(Base)", "declare class C extends ns.mixin(Base)"]) {
+      const { gate } = scan({ "src/copy.ts": [head, `${header} { ${member} }`, use].join("\n") });
+      expect(gate.findings).toEqual([]);
+      expect(gate.verdict).toBe("satisfied");
+    }
+  });
+
+  it("still flags a non-ambient parenthesized heritage as a value binding (fix round 27)", () => {
+    const head = [
+      'import { createCopyResolver as make } from "@clossys/writer";',
+      'import registry from "../copy/registry.json";',
+    ].join("\n");
+    const use = "export const out = make(registry);";
+    for (const header of ["class C extends mixin(Base)", "class C extends ns.mixin(Base)"]) {
+      const { gate } = scan({
+        "src/copy.ts": [head, `${header} { load(make: Handler): void { make(registry); } }`, use].join("\n"),
+      });
+      expect(gate.verdict).toBe("violated");
+    }
+  });
 });
 
 describe("scope and masking", () => {
