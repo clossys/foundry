@@ -1095,19 +1095,29 @@ function classBodyBraceAfterClassKeyword(code: string, classIdx: number): number
 }
 
 /**
- * Whether `{` at `open` is the body of the nearest preceding `class` keyword,
- * decided by walking that keyword's header (`classBodyBraceAfterClassKeyword`)
- * rather than by scanning back from `open` until the first `{` — so a class
- * whose header contains a brace (a type-parameter constraint or heritage
- * generic argument) is still recognized.
+ * Whether `{` at `open` is the body of any `class` keyword in the preceding
+ * header segment, decided by walking each candidate keyword's header
+ * (`classBodyBraceAfterClassKeyword`) rather than by scanning back from `open`
+ * until the first `{` — so a class whose header contains a brace (a
+ * type-parameter constraint or heritage generic argument) is still recognized.
+ *
+ * A heritage clause may itself contain a class expression (`extends (class D)`,
+ * `extends (class {})`, `extends (class D extends E {})`). The LAST `class` in
+ * the segment is then the inner one, whose own header walk expects the inner
+ * body and does not land on the outer brace, so taking only the last keyword
+ * rejects the outer body. The body brace belongs to the class if ANY candidate
+ * keyword's walk reaches it; the outermost (earliest) candidate is tried first
+ * and the earlier ones are tried when a later candidate does not land here.
  */
 function openBraceIsClassBody(code: string, open: number): boolean {
-  const header = code.slice(boundaryStartBefore(code, open), open);
+  const segStart = boundaryStartBefore(code, open);
+  const header = code.slice(segStart, open);
   const matches = [...header.matchAll(/(?<![\w$.])class(?![\w$])/gu)];
-  if (matches.length === 0) return false;
-  const last = matches[matches.length - 1]!;
-  const classIdx = boundaryStartBefore(code, open) + last.index!;
-  return classBodyBraceAfterClassKeyword(code, classIdx) === open;
+  for (const match of matches) {
+    const classIdx = segStart + match.index!;
+    if (classBodyBraceAfterClassKeyword(code, classIdx) === open) return true;
+  }
+  return false;
 }
 
 function eachDeclareClassBodySpan(code: string, visit: (openBrace: number, closeBrace: number) => void): void {

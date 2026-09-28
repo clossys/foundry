@@ -1437,6 +1437,83 @@ describe("copy-read-without-resolver", () => {
       expect(gate.verdict).toBe("satisfied");
     }
   });
+
+  it("flags class bodies whose heritage clause is a class expression (fix round 31)", () => {
+    const head = [
+      'import { createCopyResolver as make } from "@clossys/writer";',
+      'import registry from "../copy/registry.json";',
+    ].join("\n");
+    const use = "export const out = make(registry);";
+    const member = "x = 1\nload(make: Handler): void { make(registry); }";
+    for (const form of [
+      `class C extends (class D) { ${member} }`,
+      `class C extends (class {}) { ${member} }`,
+      `class C extends (class D extends E {}) { ${member} }`,
+    ]) {
+      const { gate } = scan({ "src/copy.ts": [head, form, use].join("\n") });
+      expect(gate.verdict).toBe("violated");
+      expect(gate.findings.every((f) => f.rule === "copy-read-without-resolver")).toBe(true);
+    }
+  });
+
+  it("flags class bodies whose heritage clause is a class expression, on the same line (fix round 31)", () => {
+    const head = [
+      'import { createCopyResolver as make } from "@clossys/writer";',
+      'import registry from "../copy/registry.json";',
+    ].join("\n");
+    const use = "export const out = make(registry);";
+    const form = "class C extends (class D) { load(make: Handler): void { make(registry); } }";
+    const { gate } = scan({ "src/copy.ts": [head, form, use].join("\n") });
+    expect(gate.verdict).toBe("violated");
+    expect(gate.findings.every((f) => f.rule === "copy-read-without-resolver")).toBe(true);
+  });
+
+  it("flags anonymous class bodies whose heritage clause is a class expression (fix round 31)", () => {
+    const head = [
+      'import { createCopyResolver as make } from "@clossys/writer";',
+      'import registry from "../copy/registry.json";',
+    ].join("\n");
+    const use = "export const out = make(registry);";
+    const member = "x = 1\nload(make: Handler): void { make(registry); }";
+    for (const form of [
+      `const X = class extends (class {}) { ${member} };`,
+      `const X = class extends (class D) { ${member} };`,
+      `const X = class extends (class extends B {}) { ${member} };`,
+    ]) {
+      const { gate } = scan({ "src/copy.ts": [head, form, use].join("\n") });
+      expect(gate.verdict).toBe("violated");
+      expect(gate.findings.every((f) => f.rule === "copy-read-without-resolver")).toBe(true);
+    }
+  });
+
+  it("flags class-expression heritage bodies in call, array, return and ternary positions (fix round 31)", () => {
+    const head = [
+      'import { createCopyResolver as make } from "@clossys/writer";',
+      'import registry from "../copy/registry.json";',
+    ].join("\n");
+    const use = "export const out = make(registry);";
+    const member = "x = 1\nload(make: Handler): void { make(registry); }";
+    const contexts: ((expr: string) => string)[] = [
+      (expr) => `consume(${expr});`,
+      (expr) => `const arr = [${expr}];`,
+      (expr) => `function f() { return ${expr}; }`,
+      (expr) => `const t = cond ? ${expr} : null;`,
+    ];
+    for (const expr of [
+      `class C extends (class D) { ${member} }`,
+      `class C extends (class {}) { ${member} }`,
+      `class C extends (class D extends E {}) { ${member} }`,
+      `class extends (class {}) { ${member} }`,
+      `class extends (class D) { ${member} }`,
+      `class extends (class extends B {}) { ${member} }`,
+    ]) {
+      for (const wrap of contexts) {
+        const { gate } = scan({ "src/copy.ts": [head, wrap(expr), use].join("\n") });
+        expect(gate.verdict).toBe("violated");
+        expect(gate.findings.every((f) => f.rule === "copy-read-without-resolver")).toBe(true);
+      }
+    }
+  });
 });
 
 describe("scope and masking", () => {
