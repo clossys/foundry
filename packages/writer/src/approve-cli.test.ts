@@ -330,6 +330,22 @@ describe("mainApproveCommand", () => {
       ).toBe(2);
     });
 
+    it("whitespace-only --delegate value", () => {
+      writeRegistry(baseRegistry());
+      expect(
+        mainApproveCommand([
+          registryPath(),
+          "site.home.title",
+          "--by",
+          "delegate",
+          "--delegate",
+          " ",
+          "--scope",
+          "site.home",
+        ]),
+      ).toBe(2);
+    });
+
     it("malformed --scope item", () => {
       writeRegistry(baseRegistry());
       expect(

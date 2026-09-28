@@ -536,6 +536,20 @@ describe("CopyRegistry — the stronger rendered-copy contract", () => {
       expect(findings.some((f) => f.rule === "approval-expires-before-approved")).toBe(true);
     });
 
+    it("rejects impossible UTC calendar dates in approvedAt and expiresAt", () => {
+      for (const bad of ["2026-02-30T00:00:00Z", "2026-02-29T00:00:00Z", "2026-13-01T00:00:00Z"]) {
+        expect(validateCopyRegistryShape(withApproval({ ...ownerApproval, approvedAt: bad })).some((f) => f.rule === "approval-approved-at-shape")).toBe(true);
+        expect(
+          validateCopyRegistryShape(withApproval({ ...delegateWithExpiry, approvedAt: "2026-08-01T00:00:00.000Z", expiresAt: bad })).some(
+            (f) => f.rule === "approval-expires-at-shape",
+          ),
+        ).toBe(true);
+      }
+      for (const ok of ["2024-02-29T00:00:00Z", "2026-02-28T00:00:00Z"]) {
+        expect(validateCopyRegistryShape(withApproval({ ...ownerApproval, approvedAt: ok }))).toEqual([]);
+      }
+    });
+
     it("still validates with zero findings when the fingerprint is stale — staleness is a resolver concern, not a shape one", () => {
       const findings = validateCopyRegistryShape(withApproval({ ...ownerApproval, textFingerprint: computeCopyFingerprint("some other text") }));
       expect(findings).toEqual([]);

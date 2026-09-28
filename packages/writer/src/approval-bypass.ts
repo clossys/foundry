@@ -400,7 +400,9 @@ function parseCopyRegistryRegistryArgAllowed(
     const outerExport = writerImports.localToExport.get(outer.callee);
     return outerExport !== undefined && isResolverExport(outerExport) && writerCalleeAllowed(outer.callee, writerImports, localShadowedCalleepNames);
   }
-  if (next === ";" || next === undefined) {
+  const gap = code.slice(call.close + 1, afterClose);
+  const gapHasNewline = /[\r\n]/.test(gap);
+  if (next === ";" || next === undefined || gapHasNewline) {
     let nameEnd = call.open - 1;
     while (nameEnd >= 0 && isWs(code[nameEnd]!)) nameEnd--;
     let nameStart = nameEnd;
@@ -652,8 +654,8 @@ function interfaceBodyBraceIndex(code: string, openBrace: number): boolean {
   for (const m of code.matchAll(new RegExp(`\\binterface\\s+${IDENT}(?:\\s*<[^>]*>)?`, "gu"))) {
     let i = m.index! + m[0].length;
     i = skipWsCode(code, i);
-    if (code.slice(i, i + 8) === "extends") {
-      i += 8;
+    if (code.slice(i, i + 7) === "extends" && (code[i + 7] === undefined || !/[\w$]/.test(code[i + 7]!))) {
+      i += 7;
       i = skipWsCode(code, i);
       for (;;) {
         i = skipWsCode(code, i);
@@ -892,6 +894,22 @@ function eachFnDeclParamListAfterName(
 }
 
 /** Arrows after an object-property `:` or a ternary `:` are not scanned (e.g. `{ load: (make) => ... }`, `c ? g : (make) => ...`). */
+/** Whether a `catch (` binding shadows `name`, scanning left-to-right without nested-regex quantifiers. */
+function anyCatchBindingShadowsName(code: string, name: string): boolean {
+  for (let i = 0; i + 5 <= code.length; i++) {
+    if (code.slice(i, i + 5) !== "catch") continue;
+    if (i > 0 && /[\w$.]/.test(code[i - 1]!)) continue;
+    const afterWord = i + 5;
+    if (afterWord < code.length && /[\w$]/.test(code[afterWord]!)) continue;
+    const open = skipWsCode(code, afterWord);
+    if (code[open] !== "(") continue;
+    const close = matchingClose(code, open);
+    if (close === -1) continue;
+    if (singleParamBindingShadows(code.slice(open + 1, close), name)) return true;
+  }
+  return false;
+}
+
 function forEachParenListShadows(code: string, name: string): boolean {
   for (let i = 0; i < code.length; i++) {
     if (code[i] !== "(") continue;
@@ -1088,10 +1106,7 @@ function collectLocalShadowedCalleepNames(
     if (!shadowed.has(name) && forEachParenListShadows(code, name)) shadowed.add(name);
     if (new RegExp(`${CALLEE_BOUNDARY}(?:const|let|var)\\s+${IDENT}\\s*=\\s*(?:async\\s+)?\\(\\s*\\[\\s*${esc}`, "u").test(code))
       shadowed.add(name);
-    if (new RegExp(`catch\\s*\\(\\s*${esc}(?:\\s*:[^)]+)?\\s*\\)`, "u").test(code)) shadowed.add(name);
-    for (const m of code.matchAll(/catch\s*\(\s*\{([^}]*)\}/gu)) {
-      if (destructuringPatternShadowsName(m[1]!, name)) shadowed.add(name);
-    }
+    if (anyCatchBindingShadowsName(code, name)) shadowed.add(name);
   }
   return shadowed;
 }

@@ -394,7 +394,14 @@ function validateTranslationShape(value: unknown, path: string): CopyFinding[] {
 const ISO_UTC_TIMESTAMP_RE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{3})?Z$/;
 
 function isIsoUtcTimestamp(value: unknown): value is string {
-  return typeof value === "string" && ISO_UTC_TIMESTAMP_RE.test(value) && !Number.isNaN(Date.parse(value));
+  if (typeof value !== "string" || !ISO_UTC_TIMESTAMP_RE.test(value)) return false;
+  const year = Number(value.slice(0, 4));
+  const month = Number(value.slice(5, 7));
+  const day = Number(value.slice(8, 10));
+  const parsed = Date.parse(value);
+  if (Number.isNaN(parsed)) return false;
+  const utc = new Date(parsed);
+  return utc.getUTCFullYear() === year && utc.getUTCMonth() + 1 === month && utc.getUTCDate() === day;
 }
 
 /** `textFingerprint` shape: a `sha256` hex digest — 64 lowercase hex characters. */

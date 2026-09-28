@@ -252,7 +252,7 @@ describe("copy-read-without-resolver", () => {
         'import { createCopyResolver, parseCopyRegistry } from "@clossys/writer";',
         'import registry from "../copy/registry.json";',
         "export const nested = createCopyResolver(parseCopyRegistry(registry));",
-        "const reg = parseCopyRegistry(registry);",
+        "const reg = parseCopyRegistry(registry)",
         "export const bound = createCopyResolver(reg);",
       ].join("\n"),
     });

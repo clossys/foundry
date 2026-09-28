@@ -237,7 +237,8 @@ function validateArgs(raw: RawArgs, now: Date): ValidatedArgs {
     if (raw.delegate === undefined) {
       throw new ApproveInputError("--by delegate requires --delegate <id>");
     }
-    if (raw.delegate.length === 0) {
+    const delegateId = raw.delegate.trim();
+    if (delegateId.length === 0) {
       throw new ApproveInputError("--delegate must not be empty");
     }
     if (raw.scope === undefined || raw.scope.length === 0) {
@@ -249,7 +250,7 @@ function validateArgs(raw: RawArgs, now: Date): ValidatedArgs {
       }
     }
     const expiresAt = raw.expires !== undefined ? validateExpires(raw.expires, now) : undefined;
-    action = { kind: "approve-delegate", delegate: raw.delegate, scope: raw.scope, expiresAt };
+    action = { kind: "approve-delegate", delegate: delegateId, scope: raw.scope, expiresAt };
   } else {
     throw new ApproveInputError(`--by must be "owner" or "delegate", got ${JSON.stringify(raw.by)}`);
   }
