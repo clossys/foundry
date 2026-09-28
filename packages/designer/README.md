@@ -4532,8 +4532,19 @@ SVG's own colours, unchanged — only `mono`/`light`/`dark`/`favicon`/
 with two or more distinct `fill`/`stroke` tones (and a root `viewBox`) is
 recoloured as a knockout rather than flattened: each tone is painted in the
 variant's single colour and masked out where the other tone paints, so the
-surface or badge shows through and the tones keep their contrast (tones are
-grouped by literal value, first-painted tone against the rest).
+surface or badge shows through and the tones keep their contrast. Tones are
+grouped by literal value, the first tone against the rest, and paint counts
+wherever it is set: on a shape, an ancestor `<g>`, or the root, as a
+`fill`/`stroke` attribute or an inline `style` declaration; a `<use>`
+renders the recoloured shape of its own copy of the mark. **What is
+guaranteed, and what is not:** for a mark whose paint falls into two nested
+layers (a field of one tone with figures of the other on top) the boundary
+between the two tones keeps its contrast. It is not guaranteed for a mark
+with three or more nested layers, where a shape of the first tone drawn on
+top of a later tone is knocked out with it and that boundary is lost (no
+worse than flattening every tone to one colour). Paint set by a `<style>`
+block is neither a tone nor recoloured. Treat the derived variants as a
+starting point for review.
 
 **Four checks judge every direction**, mirroring the "package owns
 judgment, every check reports satisfied/violated/indeterminate" split this

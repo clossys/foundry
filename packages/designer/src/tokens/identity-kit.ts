@@ -438,19 +438,84 @@ function isNonPaint(value: string): boolean {
   return value === "none" || value === "transparent" || value === "";
 }
 
+/** An inline `style="…"` attribute; a `fill`/`stroke` declaration inside its value is paint exactly as the presentation attribute is. */
+const STYLE_ATTR_RE = /(?<![\w:-])style\s*=\s*("([^"]*)"|'([^']*)')/gi;
+const STYLE_PAINT_DECL_RE = /(?<![\w-])(fill|stroke)(\s*:\s*)([^;]*)/gi;
+
 /**
- * Rewrites every `fill`/`stroke` paint attribute whose trimmed value
- * `replace` maps to a string, emitting it double-quoted; a value `replace`
- * maps to `undefined` (and every non-paint value) is left byte-for-byte as
+ * Rewrites every `fill`/`stroke` paint — presentation attribute or inline
+ * `style` declaration — whose trimmed value `replace` maps to a string
+ * (an attribute is emitted double-quoted); a value `replace` maps to
+ * `undefined` (and every non-paint value) is left byte-for-byte as
  * written. `replacement` strings are written verbatim — callers escape.
  */
 function substitutePaint(markup: string, replace: (value: string) => string | undefined): string {
-  return markup.replace(PAINT_ATTR_RE, (match, attr: string, _quoted: string, doubleQuoted: string | undefined, singleQuoted: string | undefined) => {
-    const value = (doubleQuoted ?? singleQuoted ?? "").trim();
-    if (isNonPaint(value)) return match;
-    const replacement = replace(value);
-    return replacement === undefined ? match : `${attr}="${replacement}"`;
+  return markup
+    .replace(PAINT_ATTR_RE, (match, attr: string, _quoted: string, doubleQuoted: string | undefined, singleQuoted: string | undefined) => {
+      const value = (doubleQuoted ?? singleQuoted ?? "").trim();
+      if (isNonPaint(value)) return match;
+      const replacement = replace(value);
+      return replacement === undefined ? match : `${attr}="${replacement}"`;
+    })
+    .replace(STYLE_ATTR_RE, (match, quoted: string, doubleQuoted: string | undefined) => {
+      const quote = doubleQuoted !== undefined ? '"' : "'";
+      const body = quoted.slice(1, -1);
+      const rewritten = body.replace(STYLE_PAINT_DECL_RE, (decl, prop: string, colon: string, raw: string) => {
+        const value = raw.trim();
+        if (isNonPaint(value)) return decl;
+        const replacement = replace(value);
+        return replacement === undefined ? decl : `${prop}${colon}${replacement}`;
+      });
+      return rewritten === body ? match : `style=${quote}${rewritten}${quote}`;
+    });
+}
+
+/** The distinct paint values of `markup` (attribute and inline-style `fill`/`stroke`), in document order. */
+function paintTonesOf(markup: string): string[] {
+  const found: { index: number; value: string }[] = [];
+  for (const match of markup.matchAll(PAINT_ATTR_RE)) found.push({ index: match.index ?? 0, value: (match[3] ?? match[4] ?? "").trim() });
+  for (const style of markup.matchAll(STYLE_ATTR_RE)) {
+    const offset = (style.index ?? 0) + style[0].indexOf(style[1]!) + 1;
+    for (const decl of (style[2] ?? style[3] ?? "").matchAll(STYLE_PAINT_DECL_RE)) found.push({ index: offset + (decl.index ?? 0), value: (decl[3] ?? "").trim() });
+  }
+  const tones: string[] = [];
+  for (const { value } of found.sort((a, b) => a.index - b.index)) {
+    if (!isNonPaint(value) && !tones.includes(value)) tones.push(value);
+  }
+  return tones;
+}
+
+/**
+ * Splits the root start tag into the tag WITHOUT its `fill`/`stroke`
+ * (attribute and inline-style declaration alike) and those two properties
+ * as `[name, value]` pairs (a style declaration wins over the attribute,
+ * as in CSS). Every other root attribute — `viewBox`, `xmlns`, the
+ * remaining `style` declarations — stays on the tag untouched.
+ */
+function splitRootPaint(tag: string): { tag: string; paint: [string, string][] } {
+  const declared = new Map<string, string>();
+  // The attribute goes with the whitespace that led up to it, so no gap is left in the tag.
+  const paintAttr = new RegExp(`\\s*${PAINT_ATTR_RE.source}`, "g");
+  const styleAttr = new RegExp(`\\s*${STYLE_ATTR_RE.source}`, "gi");
+  let stripped = tag.replace(paintAttr, (_match, attr: string, _quoted: string, doubleQuoted: string | undefined, singleQuoted: string | undefined) => {
+    declared.set(attr.toLowerCase(), (doubleQuoted ?? singleQuoted ?? "").trim());
+    return "";
   });
+  stripped = stripped.replace(styleAttr, (_match, quoted: string, doubleQuoted: string | undefined) => {
+    const quote = doubleQuoted !== undefined ? '"' : "'";
+    const kept = quoted
+      .slice(1, -1)
+      .split(";")
+      .filter((decl) => {
+        const found = decl.match(/^\s*(fill|stroke)\s*:\s*([\s\S]*)$/i);
+        if (!found) return decl.trim() !== "";
+        declared.set(found[1]!.toLowerCase(), found[2]!.trim());
+        return false;
+      })
+      .join(";");
+    return kept.trim() === "" ? "" : ` style=${quote}${kept}${quote}`;
+  });
+  return { tag: stripped, paint: [...declared] };
 }
 
 /** 32-bit FNV-1a over UTF-16 code units, as 8 lowercase hex digits — a short, deterministic id suffix, not a security hash. */
@@ -461,6 +526,33 @@ function fnv1a32Hex(value: string): string {
     hash = Math.imul(hash, 0x01000193);
   }
   return (hash >>> 0).toString(16).padStart(8, "0");
+}
+
+const ID_ATTR_RE = /(?<![\w:-])id\s*=\s*(?:"([^"]*)"|'([^']*)')/g;
+const ID_DEFINITION_RE = /(?<![\w:-])(id\s*=\s*)("([^"]*)"|'([^']*)')/g;
+const HREF_REFERENCE_RE = /(?<![\w-])(href\s*=\s*)(?:"#([^"]*)"|'#([^']*)')/g;
+const URL_REFERENCE_RE = /url\(\s*(['"]?)#([^)'"\s]+)\1\s*\)/g;
+
+/**
+ * Makes every `id` defined in `markup`, and every reference to one
+ * (`href`/`xlink:href="#id"`, `url(#id)`), unique to one copy by appending
+ * `suffix`. An id not defined in `markup` is left alone. Without this, the
+ * knockout's four copies of the mark would define each id four times and
+ * every `<use>` would resolve to the first copy — whose paint belongs to a
+ * different layer.
+ */
+function scopeIds(markup: string, ids: ReadonlySet<string>, suffix: string): string {
+  if (ids.size === 0) return markup;
+  return markup
+    .replace(ID_DEFINITION_RE, (match, head: string, _quoted: string, doubleQuoted: string | undefined, singleQuoted: string | undefined) => {
+      const value = doubleQuoted ?? singleQuoted ?? "";
+      return ids.has(value) ? `${head}"${value}${suffix}"` : match;
+    })
+    .replace(HREF_REFERENCE_RE, (match, head: string, doubleQuoted: string | undefined, singleQuoted: string | undefined) => {
+      const value = doubleQuoted ?? singleQuoted ?? "";
+      return ids.has(value) ? `${head}"#${value}${suffix}"` : match;
+    })
+    .replace(URL_REFERENCE_RE, (match, quote: string, value: string) => (ids.has(value) ? `url(${quote}#${value}${suffix}${quote})` : match));
 }
 
 /**
@@ -474,8 +566,8 @@ function fnv1a32Hex(value: string): string {
  * TWO OR MORE TONES (#1537): flattening every tone onto `color` would
  * erase the contrast between them — a dark square carrying a light inner
  * figure became one flat square. Instead the mark is recoloured as a
- * KNOCKOUT: tone group A (the first-painted tone in document order) and
- * group B (every other tone) are each painted in `color`, each masked out
+ * KNOCKOUT: tone group A (the first tone in document order) and group B
+ * (every other tone) are each painted in `color`, each masked out
  * wherever the other group paints, so the surface (or `appIcon`'s badge)
  * shows through where the tones overlap. The contrast between the tones
  * becomes the contrast between `color` and whatever it sits on — the pair
@@ -488,25 +580,37 @@ function fnv1a32Hex(value: string): string {
  * skips it). Mask ids are `recolor-` plus a hash of `svg` and `color`:
  * deterministic, and distinct across colour variants of the same mark.
  *
- * Limits, all deliberate: tones are grouped by LITERAL paint value
- * (`#fff` and `white` are two tones), and only as "first-painted tone vs
- * the rest", so a three-tone mark keeps one boundary, not every one; ids
- * inside the supplied mark are duplicated across the four copies; paint
- * inherited or defaulted without an attribute is neither a tone nor
- * recoloured. It does not reach into a `style="fill:#fff"` CSS declaration
- * or a `<style>` block, since either would require a real CSS parser to
- * rewrite safely — a supplied mark that paints exclusively through inline
- * `style` attributes will not recolour correctly here. Those limitations
- * are why `adoptSuppliedMark`'s derived variants are a starting point for
- * review, not a guarantee.
+ * Inherited paint counts. A tone is any `fill`/`stroke` attribute OR
+ * inline `style` declaration, on a shape, an ancestor `<g>`, or the root.
+ * The root's own `fill`/`stroke` are lifted off the root tag onto each of
+ * the four copies (recoloured per copy exactly as paint on a shape is, a
+ * non-paint value such as `fill="none"` carried over as written), so
+ * nothing inherits the original colour from above.
+ *
+ * `<use>`: the four copies would otherwise each define every `id` of the
+ * mark and every `<use href="#x">` would resolve to the first copy, whose
+ * paint belongs to another layer. Each copy therefore gets its own ids —
+ * `id`s, `href`/`xlink:href="#x"` and `url(#x)` are rewritten together —
+ * so every `<use>` renders the recoloured shape of its own copy.
+ *
+ * Soundness boundary. For a mark whose paint falls into two nested layers
+ * (a field of one tone, figures of the other on top of it, however they
+ * are reached: directly, by inheritance, or through `<use>`) the boundary
+ * between the two tones keeps its contrast. It is NOT guaranteed for a
+ * mark with three or more nested layers: tones are grouped only as "first
+ * tone vs the rest", so a shape of the first tone drawn on top of a later
+ * tone (a dark dot inside a light figure on a dark field) is knocked out
+ * with it and one boundary is lost — no worse than flattening. Tones are
+ * also grouped by LITERAL paint value (`#fff` and `white` are two tones);
+ * paint that a `<style>` block, not an attribute or inline `style`, sets
+ * is neither a tone nor recoloured; and references written in a `<style>`
+ * block or in SMIL timing are not rewritten. Those limitations are why
+ * `adoptSuppliedMark`'s derived variants are a starting point for review,
+ * not a guarantee.
  */
 export function recolorSvg(svg: string, color: string): string {
   const escapedColor = escapeXml(color);
-  const tones: string[] = [];
-  for (const match of svg.matchAll(PAINT_ATTR_RE)) {
-    const value = (match[3] ?? match[4] ?? "").trim();
-    if (!isNonPaint(value) && !tones.includes(value)) tones.push(value);
-  }
+  const tones = paintTonesOf(svg);
   const rootViewBox = isSvgDocument(svg) ? rootStartTag(svg).match(/\bviewBox\s*=\s*(?:"([^"]*)"|'([^']*)')/i) : null;
   const box = rootViewBox ? parseViewBoxBox(rootViewBox[1] ?? rootViewBox[2] ?? "") : undefined;
   if (tones.length < 2 || box === undefined) {
@@ -518,19 +622,29 @@ export function recolorSvg(svg: string, color: string): string {
   }
 
   const toneA = tones[0]!;
+  const { tag: root, paint: rootPaint } = splitRootPaint(rootStartTag(svg));
   const inner = innerMarkupOf(svg);
-  const layerA = substitutePaint(inner, (v) => (v === toneA ? escapedColor : "none"));
-  const layerB = substitutePaint(inner, (v) => (v === toneA ? "none" : escapedColor));
-  const maskForA = substitutePaint(inner, (v) => (v === toneA ? "none" : "#000"));
-  const maskForB = substitutePaint(inner, (v) => (v === toneA ? "#000" : "none"));
+  const ids = new Set([...inner.matchAll(ID_ATTR_RE)].map((m) => m[1] ?? m[2] ?? ""));
+  const id = `recolor-${fnv1a32Hex(`${svg}\u0000${color}`)}`;
+
+  // One self-contained copy of the mark: its own paint, its own ids, and the
+  // root's fill/stroke on a wrapper so inherited paint is recoloured too.
+  const copy = (suffix: string, replace: (value: string) => string): string => {
+    const paint = rootPaint.map(([name, value]) => ` ${name}="${isNonPaint(value) ? value.replace(/"/g, "&quot;") : replace(value)}"`).join("");
+    const body = scopeIds(substitutePaint(inner, replace), ids, `-${id}-${suffix}`);
+    return paint === "" ? body : `<g${paint}>${body}</g>`;
+  };
+  const layerA = copy("la", (v) => (v === toneA ? escapedColor : "none"));
+  const layerB = copy("lb", (v) => (v === toneA ? "none" : escapedColor));
+  const maskForA = copy("ma", (v) => (v === toneA ? "none" : "#000"));
+  const maskForB = copy("mb", (v) => (v === toneA ? "#000" : "none"));
 
   const region = `x="${round4(box.minX)}" y="${round4(box.minY)}" width="${round4(box.width)}" height="${round4(box.height)}"`;
-  const id = `recolor-${fnv1a32Hex(`${svg}\u0000${color}`)}`;
   const mask = (suffix: string, content: string): string =>
     `<mask id="${id}-${suffix}" maskUnits="userSpaceOnUse" ${region}><rect ${region} fill="#fff" />${content}</mask>`;
 
   return (
-    `${rootStartTag(svg)}<defs>${mask("a", maskForA)}${mask("b", maskForB)}</defs>` +
+    `${root}<defs>${mask("a", maskForA)}${mask("b", maskForB)}</defs>` +
     `<g mask="url(#${id}-a)">${layerA}</g><g mask="url(#${id}-b)">${layerB}</g></svg>`
   );
 }

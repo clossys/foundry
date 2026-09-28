@@ -336,19 +336,55 @@ describe("two-tone supplied mark keeps contrast between its tones in every varia
   // 48x48 so `appIcon`'s badge transform resolves to the identity
   // `translate(0,0) scale(1)`: the fixture's coordinates stay literal.
   const FIGURE_D = "M16 16h16v16H16z";
-  const TWO_TONE_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><rect width="48" height="48" fill="#1a1a1a" /><path d="${FIGURE_D}" fill="#f5f5f5" /></svg>`;
+  const NS = 'xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"';
+  const FLAT_SVG = `<svg ${NS} viewBox="0 0 48 48"><rect width="48" height="48" fill="#1a1a1a" /><path d="${FIGURE_D}" fill="#f5f5f5" /></svg>`;
+  // Regression fixtures from the #1589 review: paint the shapes inherit.
+  const ROOT_FILL_SVG = `<svg ${NS} viewBox="0 0 48 48" fill="#1a1a1a"><rect width="48" height="48" /><path d="${FIGURE_D}" fill="#f5f5f5" /></svg>`;
+  const ROOT_STYLE_SVG = `<svg ${NS} viewBox="0 0 48 48" style="fill:#1a1a1a"><rect width="48" height="48" /><path d="${FIGURE_D}" fill="#f5f5f5" /></svg>`;
+  const GROUP_FILL_SVG = `<svg ${NS} viewBox="0 0 48 48"><g fill="#1a1a1a"><rect width="48" height="48" /></g><path d="${FIGURE_D}" fill="#f5f5f5" /></svg>`;
+  // The figure a `<use>` draws sits OUTSIDE the tone-A rect, so it renders as
+  // visible paint (not as a knockout hole) - it only survives if its `<use>`
+  // resolves to a copy that still carries its recoloured paint.
+  const USE_D = "M28 16h16v16H28z";
+  const HOLE_D = "M4 4h8v8H4z";
+  const useSvg = (attr: string): string =>
+    `<svg ${NS} viewBox="0 0 48 48"><rect width="24" height="48" fill="#1a1a1a" /><path d="${HOLE_D}" fill="#f5f5f5" /><defs><path id="fig" d="${USE_D}" fill="#f5f5f5" /></defs><use ${attr}="#fig" /></svg>`;
+  const USE_SVG = useSvg("href");
+  const USE_XLINK_SVG = useSvg("xlink:href");
+
   type Point = { x: number; y: number };
   const FIELD: Point = { x: 4, y: 4 }; // inside the square, outside the figure
   const FIGURE: Point = { x: 24, y: 24 }; // inside the figure
+  const USE_FIGURE: Point = { x: 36, y: 24 }; // inside the figure a <use> draws, outside the tone-A rect
+  const BEYOND: Point = { x: 36, y: 4 }; // canvas nothing paints
+  /** `suppliedContrast`: whether `primary`/`mark` (the supplied SVG, unchanged) are judged too - only when the supplied art itself contrasts with the surface. */
+  type Probes = { painted: Point; unpainted: Point; suppliedContrast: boolean; skip?: readonly (typeof IDENTITY_VARIANT_ROLES)[number][] };
+  const FLAT_PROBES: Probes = { painted: FIELD, unpainted: FIGURE, suppliedContrast: true };
+  const USE_PROBES: Probes = { painted: USE_FIGURE, unpainted: BEYOND, suppliedContrast: false };
+  // `appIcon` re-homes the recoloured inner markup under `wrapBadge`'s own root,
+  // which declares no `xmlns:xlink`: an `xlink:href` cannot resolve there whatever
+  // recolorSvg emits (true on main too, and out of scope here).
+  const XLINK_PROBES: Probes = { ...USE_PROBES, skip: ["appIcon"] };
 
   const IDENTITY_TRANSFORM = "translate(0,0) scale(1)";
+  /** Every path the fixtures draw is an axis-aligned square: [minX, maxX, minY, maxY]. */
+  const PATH_BOXES: Record<string, [number, number, number, number]> = {
+    [FIGURE_D]: [16, 32, 16, 32],
+    [HOLE_D]: [4, 12, 4, 12],
+    [USE_D]: [28, 44, 16, 32],
+  };
 
   /**
-   * Models SVG painting for THIS fixture only (a 48x48 `rect` plus one
-   * square `path`) and throws on anything else - an unknown path `d`, a
-   * non-identity transform, an unrecognised mask paint - so it can never
-   * silently mis-measure a variant. Painter's algorithm over `rect`/`path`
-   * in document order; `<defs>`/`<mask>` contents are not painted directly.
+   * Models SVG painting for these fixtures only (a 48x48 `rect` plus one
+   * square `path`, optionally drawn through `<defs>` + `<use>`, optionally
+   * with `fill` inherited from the root or a `<g>`, as an attribute or an
+   * inline `style`) and throws on anything else - an unknown path `d`, a
+   * non-identity transform, an unrecognised mask paint, a dangling `<use>`
+   * - so it can never silently mis-measure a variant. Painter's algorithm
+   * over `rect`/`path`/`use` in document order; `<defs>`/`<mask>` contents
+   * are not painted directly. A `<use>` paints the element its `href`
+   * resolves to IN THE DOCUMENT (first element with that id), exactly as a
+   * renderer does, so a duplicated id resolves to its first copy.
    */
   function renderedColorAt(svg: string, point: Point, ctx: { surface: string; currentColor: string }): string {
     const doc = new DOMParser().parseFromString(svg, "image/svg+xml");
@@ -358,17 +394,39 @@ describe("two-tone supplied mark keeps contrast between its tones in every varia
       return chain; // self first, root last
     };
     const inside = (v: number, lo: number, hi: number): boolean => v >= lo && v <= hi;
-    const covers = (el: Element): boolean => {
-      if (el.tagName === "rect") {
-        const x = Number(el.getAttribute("x") ?? 0);
-        const y = Number(el.getAttribute("y") ?? 0);
-        return inside(point.x, x, x + Number(el.getAttribute("width"))) && inside(point.y, y, y + Number(el.getAttribute("height")));
-      }
-      if (el.getAttribute("d") !== FIGURE_D) throw new Error(`renderedColorAt: unknown path geometry ${el.getAttribute("d")}`);
-      return inside(point.x, 16, 32) && inside(point.y, 16, 32);
+    const targetOf = (el: Element): Element => {
+      if (el.tagName !== "use") return el;
+      const ref = (el.getAttribute("href") ?? el.getAttribute("xlink:href") ?? "").replace(/^#/, "");
+      const target = ref === "" ? null : doc.querySelector(`[id="${ref}"]`);
+      if (!target) throw new Error(`renderedColorAt: dangling <use> reference "${ref}"`);
+      return target;
     };
-    const rawFill = (el: Element): string => ancestors(el).find((a) => a.hasAttribute("fill"))?.getAttribute("fill")?.trim() ?? "#000000";
-    const shapes = (root: ParentNode): Element[] => Array.from(root.querySelectorAll("rect, path"));
+    const covers = (el: Element): boolean => {
+      const shape = targetOf(el);
+      if (shape.tagName === "rect") {
+        const x = Number(shape.getAttribute("x") ?? 0);
+        const y = Number(shape.getAttribute("y") ?? 0);
+        return inside(point.x, x, x + Number(shape.getAttribute("width"))) && inside(point.y, y, y + Number(shape.getAttribute("height")));
+      }
+      const box = PATH_BOXES[shape.getAttribute("d") ?? ""];
+      if (box === undefined) throw new Error(`renderedColorAt: unknown path geometry ${shape.getAttribute("d")}`);
+      return inside(point.x, box[0], box[1]) && inside(point.y, box[2], box[3]);
+    };
+    const fillOn = (el: Element): string | undefined => {
+      const styled = el.getAttribute("style")?.match(/(?:^|;)\s*fill\s*:\s*([^;]+)/)?.[1]?.trim();
+      return styled ?? el.getAttribute("fill")?.trim();
+    };
+    // Inherited paint: the shape's own, then each ancestor's. A `<use>`'s
+    // referenced element paints with its own value, else the `<use>`'s chain.
+    const rawFill = (el: Element): string => {
+      const chain = el.tagName === "use" ? [targetOf(el), ...ancestors(el)] : ancestors(el);
+      for (const node of chain) {
+        const value = fillOn(node);
+        if (value !== undefined) return value;
+      }
+      return "#000000";
+    };
+    const shapes = (root: ParentNode): Element[] => Array.from(root.querySelectorAll("rect, path, use"));
     const assertIdentityTransform = (el: Element): void => {
       for (const a of ancestors(el)) {
         const t = a.getAttribute("transform");
@@ -380,6 +438,8 @@ describe("two-tone supplied mark keeps contrast between its tones in every varia
       if (!mask) throw new Error(`renderedColorAt: no <mask id="${id}">`);
       let coverage = 0;
       for (const shape of shapes(mask)) {
+        // A `<defs>` INSIDE the mask holds referenced geometry, not painted geometry.
+        if (ancestors(shape).slice(0, ancestors(shape).indexOf(mask)).some((a) => a.tagName === "defs")) continue;
         const paint = rawFill(shape).toLowerCase();
         if (paint === "none" || paint === "transparent" || !covers(shape)) continue;
         if (paint === "#fff" || paint === "#ffffff" || paint === "white") coverage = 1;
@@ -412,23 +472,107 @@ describe("two-tone supplied mark keeps contrast between its tones in every varia
     return color;
   }
 
-  const direction = adoptSuppliedMark({ brand: { name: "Acme" }, suppliedSvg: TWO_TONE_SVG, tokens: TOKENS });
+  /** Where each variant paints: the tone the field is recoloured to, and the surface the knocked-out figure shows. */
+  function expectedTones(role: (typeof IDENTITY_VARIANT_ROLES)[number]): { field: string; figure: string } | undefined {
+    switch (role) {
+      case "primary":
+      case "mark":
+        return undefined; // the supplied SVG, unchanged
+      case "light":
+        return { field: TOKENS.ink, figure: TOKENS.surfaceBase };
+      case "dark":
+        return { field: TOKENS.onInverse, figure: TOKENS.surfaceInverse };
+      case "mono":
+      case "favicon":
+        return { field: TOKENS.ink, figure: TOKENS.surfaceBase };
+      case "appIcon":
+        return { field: TOKENS.onAccent, figure: TOKENS.accent };
+    }
+  }
 
-  it("covers all seven variant roles", () => {
-    expect(IDENTITY_VARIANT_ROLES).toHaveLength(7);
-    for (const role of IDENTITY_VARIANT_ROLES) expect(Object.keys(direction.variants)).toContain(role);
+  function variantSuite(name: string, svg: string, probes: Probes): void {
+    describe(name, () => {
+      const direction = adoptSuppliedMark({ brand: { name: "Acme" }, suppliedSvg: svg, tokens: TOKENS });
+
+      it("covers all seven variant roles", () => {
+        expect(IDENTITY_VARIANT_ROLES).toHaveLength(7);
+        for (const role of IDENTITY_VARIANT_ROLES) expect(Object.keys(direction.variants)).toContain(role);
+      });
+
+      it.each(IDENTITY_VARIANT_ROLES)("%s variant keeps the field/figure contrast at or above the non-text floor", (role) => {
+        if (probes.skip?.includes(role) || (!probes.suppliedContrast && expectedTones(role) === undefined)) return;
+        const ctx = role === "dark" ? { surface: TOKENS.surfaceInverse, currentColor: TOKENS.onInverse } : { surface: TOKENS.surfaceBase, currentColor: TOKENS.ink };
+        const variant = direction.variants[role];
+        const field = renderedColorAt(variant, probes.painted, ctx);
+        const figure = renderedColorAt(variant, probes.unpainted, ctx);
+        const ratio = contrastRatio(field, figure);
+        expect(ratio, `${role}: painted ${field} vs unpainted ${figure} has contrast ${ratio.toFixed(2)}, below ${IDENTITY_MIN_CONTRAST}`).toBeGreaterThanOrEqual(IDENTITY_MIN_CONTRAST);
+      });
+
+      it.each(IDENTITY_VARIANT_ROLES)("%s variant is recoloured onto its token colour, not left in the supplied tones", (role) => {
+        const expected = expectedTones(role);
+        if (expected === undefined || probes.skip?.includes(role)) return;
+        const ctx = role === "dark" ? { surface: TOKENS.surfaceInverse, currentColor: TOKENS.onInverse } : { surface: TOKENS.surfaceBase, currentColor: TOKENS.ink };
+        const variant = direction.variants[role];
+        expect(renderedColorAt(variant, probes.painted, ctx)).toBe(expected.field);
+        expect(renderedColorAt(variant, probes.unpainted, ctx)).toBe(expected.figure);
+      });
+
+      it("the mono variant of a two-tone mark still paints through currentColor alone", () => {
+        expect(checkSingleColourLegibility(direction.variants.mono).ok).toBe(true);
+      });
+    });
+  }
+
+  variantSuite("flat two-tone mark", FLAT_SVG, FLAT_PROBES);
+  variantSuite("root-level fill (issue #1537, review of #1589)", ROOT_FILL_SVG, FLAT_PROBES);
+  variantSuite("root-level style fill (issue #1537, review of #1589)", ROOT_STYLE_SVG, FLAT_PROBES);
+  variantSuite("fill inherited from an ancestor <g> (issue #1537, review of #1589)", GROUP_FILL_SVG, FLAT_PROBES);
+  variantSuite("figure drawn through <defs> + <use href> (issue #1537, review of #1589)", USE_SVG, USE_PROBES);
+  variantSuite("figure drawn through <defs> + <use xlink:href> (issue #1537, review of #1589)", USE_XLINK_SVG, XLINK_PROBES);
+
+  describe("root paint that is not a tone", () => {
+    it("recolours root stroke too, and keeps a root fill=\"none\" so stroked shapes are not filled", () => {
+      const svg = `<svg ${NS} viewBox="0 0 48 48" fill="none" stroke="#1a1a1a"><rect width="48" height="48" /><path d="${FIGURE_D}" stroke="#f5f5f5" /></svg>`;
+      const out = recolorSvg(svg, "red");
+      expect(out).not.toMatch(/#1a1a1a|#f5f5f5/);
+      const doc = new DOMParser().parseFromString(out, "image/svg+xml");
+      const visible = Array.from(doc.querySelectorAll("g[mask] > g"));
+      expect(visible).toHaveLength(2);
+      for (const layer of visible) expect(layer.getAttribute("fill")).toBe("none");
+      expect(visible.map((layer) => layer.getAttribute("stroke")).sort()).toEqual(["none", "red"]);
+    });
   });
 
-  it.each(IDENTITY_VARIANT_ROLES)("%s variant keeps the field/figure contrast at or above the non-text floor", (role) => {
-    const ctx = role === "dark" ? { surface: TOKENS.surfaceInverse, currentColor: TOKENS.onInverse } : { surface: TOKENS.surfaceBase, currentColor: TOKENS.ink };
-    const svg = direction.variants[role];
-    const field = renderedColorAt(svg, FIELD, ctx);
-    const figure = renderedColorAt(svg, FIGURE, ctx);
-    const ratio = contrastRatio(field, figure);
-    expect(ratio, `${role}: field ${field} vs figure ${figure} has contrast ${ratio.toFixed(2)}, below ${IDENTITY_MIN_CONTRAST}`).toBeGreaterThanOrEqual(IDENTITY_MIN_CONTRAST);
-  });
+  describe("<use> references after the knockout copies", () => {
+    it.each([
+      ["href", USE_SVG],
+      ["xlink:href", USE_XLINK_SVG],
+    ])("every id is unique and every <use> (%s) targets an element inside its own layer; the visible layer carrying the figure paints it in the recoloured colour", (_attr, svg) => {
+      const out = recolorSvg(svg, "red");
+      const ids = [...out.matchAll(/(?<![\w:-])id="([^"]+)"/g)].map((m) => m[1]);
+      expect(new Set(ids).size, `duplicate ids in ${ids.join(", ")}`).toBe(ids.length);
 
-  it("the mono variant of a two-tone mark still paints through currentColor alone", () => {
-    expect(checkSingleColourLegibility(direction.variants.mono).ok).toBe(true);
+      const doc = new DOMParser().parseFromString(out, "image/svg+xml");
+      const uses = Array.from(doc.querySelectorAll("use"));
+      expect(uses).toHaveLength(4); // two mask copies, two visible layers
+      const container = (el: Element): Element | null => el.closest("g[mask], mask");
+      for (const use of uses) {
+        const ref = (use.getAttribute("href") ?? use.getAttribute("xlink:href") ?? "").replace(/^#/, "");
+        const target = doc.querySelector(`[id="${ref}"]`);
+        expect(target, `<use> ${ref} has no target`).not.toBeNull();
+        expect(container(target!), `<use> ${ref} escapes its own layer`).toBe(container(use));
+      }
+
+      const visibleTargets = uses
+        .filter((use) => use.closest("g[mask]") !== null)
+        .map((use) => doc.querySelector(`[id="${(use.getAttribute("href") ?? use.getAttribute("xlink:href") ?? "").replace(/^#/, "")}"]`)!.getAttribute("fill"));
+      expect(visibleTargets.sort()).toEqual(["none", "red"]);
+    });
+
+    it("single-tone output stays a plain paint substitution: ids and references are not touched", () => {
+      const single = `<svg ${NS} viewBox="0 0 48 48"><defs><path id="fig" d="${FIGURE_D}" fill="#1a1a1a" /></defs><use href="#fig" fill="#1a1a1a" /></svg>`;
+      expect(recolorSvg(single, "red")).toBe(single.replace(/fill="#1a1a1a"/g, 'fill="red"'));
+    });
   });
 });
