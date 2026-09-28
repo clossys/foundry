@@ -1735,20 +1735,65 @@ function parameterDefaultExpressionForName(
   return undefined;
 }
 
-function collectDocumentedDefaultProps(sourceFile: ts.SourceFile): Set<string> {
-  const names = new Set<string>();
-  function noteDefaultTags(tags: readonly ts.JSDocTag[], name: string): void {
-    for (const tag of tags) {
-      if (tag.tagName.text === "default") names.add(name);
-    }
-  }
+function hasDefaultJSDocTag(node: ts.Node): boolean {
+  return ts.getJSDocTags(node).some((tag) => tag.tagName.text === "default");
+}
+
+function parameterTypeInterfaceName(parameter: ts.ParameterDeclaration): string | null {
+  if (parameter.type === undefined || !ts.isTypeReferenceNode(parameter.type)) return null;
+  const typeName = parameter.type.typeName;
+  return ts.isIdentifier(typeName) ? typeName.text : null;
+}
+
+function findInterfaceDeclaration(
+  sourceFile: ts.SourceFile,
+  interfaceName: string,
+): ts.InterfaceDeclaration | undefined {
+  let found: ts.InterfaceDeclaration | undefined;
   function visit(node: ts.Node): void {
-    if (ts.isInterfaceDeclaration(node)) {
-      for (const member of node.members) {
-        if (!ts.isPropertySignature(member) || member.name === undefined) continue;
-        noteDefaultTags(ts.getJSDocTags(member), member.name.getText(sourceFile));
-      }
+    if (found !== undefined) return;
+    if (ts.isInterfaceDeclaration(node) && node.name.text === interfaceName) {
+      found = node;
+      return;
     }
+    ts.forEachChild(node, visit);
+  }
+  visit(sourceFile);
+  return found;
+}
+
+function interfacePropertyKey(member: ts.PropertySignature, source: ts.SourceFile): string | null {
+  if (member.name === undefined) return null;
+  if (ts.isIdentifier(member.name)) return member.name.text;
+  if (ts.isStringLiteral(member.name) || ts.isNoSubstitutionTemplateLiteral(member.name)) {
+    return member.name.text;
+  }
+  if (ts.isComputedPropertyName(member.name)) {
+    const literal = staticLiteral(unwrapExpression(member.name.expression));
+    if (literal !== null) return literal;
+  }
+  return member.name.getText(source);
+}
+
+function interfacePropertyHasDefaultTag(
+  sourceFile: ts.SourceFile,
+  interfaceName: string,
+  propertyName: string,
+): boolean {
+  const iface = findInterfaceDeclaration(sourceFile, interfaceName);
+  if (iface === undefined) return false;
+  for (const member of iface.members) {
+    if (!ts.isPropertySignature(member)) continue;
+    const memberKey = interfacePropertyKey(member, sourceFile);
+    if (memberKey === null || memberKey !== propertyName) continue;
+    return hasDefaultJSDocTag(member);
+  }
+  return false;
+}
+
+function collectReferencedInterfaceNames(sourceFile: ts.SourceFile): Set<string> {
+  const names = new Set<string>();
+  function visit(node: ts.Node): void {
     if (
       ts.isFunctionDeclaration(node) ||
       ts.isArrowFunction(node) ||
@@ -1756,8 +1801,8 @@ function collectDocumentedDefaultProps(sourceFile: ts.SourceFile): Set<string> {
       ts.isMethodDeclaration(node)
     ) {
       for (const parameter of node.parameters) {
-        if (!ts.isIdentifier(parameter.name)) continue;
-        noteDefaultTags(ts.getJSDocTags(parameter), parameter.name.text);
+        const interfaceName = parameterTypeInterfaceName(parameter);
+        if (interfaceName !== null) names.add(interfaceName);
       }
     }
     ts.forEachChild(node, visit);
@@ -1766,17 +1811,53 @@ function collectDocumentedDefaultProps(sourceFile: ts.SourceFile): Set<string> {
   return names;
 }
 
-function collectUndocumentedMessageInterfaceProps(
-  sourceFile: ts.SourceFile,
-  documentedDefaults: Set<string>,
-): Set<string> {
+function bindingHasDocumentedDefault(
+  parameter: ts.ParameterDeclaration,
+  bindingElement: ts.BindingElement | undefined,
+  source: ts.SourceFile,
+): boolean {
+  if (bindingElement !== undefined && hasDefaultJSDocTag(bindingElement)) return true;
+  if (bindingElement === undefined && hasDefaultJSDocTag(parameter)) return true;
+  const objectKey =
+    bindingElement !== undefined
+      ? (bindingElementObjectKey(bindingElement, source) ?? bindingElementPropertyName(bindingElement, source))
+      : ts.isIdentifier(parameter.name)
+        ? parameter.name.text
+        : null;
+  const interfaceName = parameterTypeInterfaceName(parameter);
+  if (interfaceName !== null && objectKey !== null) {
+    return interfacePropertyHasDefaultTag(source, interfaceName, objectKey);
+  }
+  return false;
+}
+
+function identifierMatchesDocumentedParameter(
+  name: string,
+  parameters: ts.ParameterDeclaration[],
+  source: ts.SourceFile,
+): boolean {
+  for (const parameter of parameters) {
+    if (ts.isIdentifier(parameter.name) && parameter.name.text === name) {
+      return bindingHasDocumentedDefault(parameter, undefined, source);
+    }
+  }
+  return false;
+}
+
+function collectUndocumentedMessageInterfaceProps(sourceFile: ts.SourceFile): Set<string> {
+  const referencedInterfaces = collectReferencedInterfaceNames(sourceFile);
   const names = new Set<string>();
   function visit(node: ts.Node): void {
     if (ts.isInterfaceDeclaration(node)) {
+      if (!referencedInterfaces.has(node.name.text)) return;
       for (const member of node.members) {
-        if (!ts.isPropertySignature(member) || member.name === undefined) continue;
-        const propName = member.name.getText(sourceFile);
-        if (MESSAGE_JSX_ATTRS.has(propName) && !documentedDefaults.has(propName)) {
+        if (!ts.isPropertySignature(member)) continue;
+        const propName = interfacePropertyKey(member, sourceFile);
+        if (propName === null) continue;
+        if (
+          MESSAGE_JSX_ATTRS.has(propName) &&
+          !interfacePropertyHasDefaultTag(sourceFile, node.name.text, propName)
+        ) {
           names.add(propName);
         }
       }
@@ -1985,7 +2066,6 @@ function objectLiteralMemberInitializer(
 function collectParameterLiteralDefaults(
   parameters: ts.NodeArray<ts.ParameterDeclaration>,
   source: ts.SourceFile,
-  documentedDefaults: Set<string>,
   moduleBindings: Set<string>,
   moduleFunctions: Set<string>,
   moduleDirectStringFunctions: Set<string>,
@@ -1996,12 +2076,14 @@ function collectParameterLiteralDefaults(
   const literalParams = new Map<string, number>();
 
   function noteBindingDefault(
+    parameter: ts.ParameterDeclaration,
+    bindingElement: ts.BindingElement | undefined,
     propName: string,
     localName: string,
     initializer: ts.Expression,
     line: number,
   ): void {
-    if (documentedDefaults.has(propName)) return;
+    if (bindingHasDocumentedDefault(parameter, bindingElement, source)) return;
     if (
       !parameterDefaultIsShippedCopy(
         initializer,
@@ -2016,7 +2098,12 @@ function collectParameterLiteralDefaults(
     literalParams.set(localName, line);
   }
 
-  function walkBindingPattern(pattern: ts.ObjectBindingPattern, line: number, defaultExpr?: ts.Expression): void {
+  function walkBindingPattern(
+    parameter: ts.ParameterDeclaration,
+    pattern: ts.ObjectBindingPattern,
+    line: number,
+    defaultExpr?: ts.Expression,
+  ): void {
     if (defaultExpr !== undefined) {
       defaultExpr = resolveModulePatternDefault(
         defaultExpr,
@@ -2039,9 +2126,9 @@ function collectParameterLiteralDefaults(
             ? objectLiteralPropertyInitializer(defaultObject, nestedObjectKey, source)
             : undefined);
         if (nestedDefault !== undefined) {
-          walkBindingPattern(element.name, line, nestedDefault);
+          walkBindingPattern(parameter, element.name, line, nestedDefault);
         } else {
-          walkBindingPattern(element.name, line);
+          walkBindingPattern(parameter, element.name, line);
         }
         continue;
       }
@@ -2053,7 +2140,7 @@ function collectParameterLiteralDefaults(
           (defaultObject !== undefined && propNameForNested !== null
             ? objectLiteralPropertyInitializer(defaultObject, propNameForNested, source)
             : undefined);
-        walkArrayBindingPattern(element.name, line, defaultObject, element, nestedDefault);
+        walkArrayBindingPattern(parameter, element.name, line, defaultObject, element, nestedDefault);
         continue;
       }
       const propName = bindingElementPropertyName(element, source);
@@ -2064,11 +2151,12 @@ function collectParameterLiteralDefaults(
         element.initializer ??
         (defaultObject !== undefined ? objectLiteralPropertyInitializer(defaultObject, objectKey, source) : undefined);
       if (initializer === undefined) continue;
-      noteBindingDefault(propName, localName, initializer, line);
+      noteBindingDefault(parameter, element, propName, localName, initializer, line);
     }
   }
 
   function walkArrayBindingPattern(
+    parameter: ts.ParameterDeclaration,
     pattern: ts.ArrayBindingPattern,
     line: number,
     defaultObject?: ts.ObjectLiteralExpression,
@@ -2089,9 +2177,9 @@ function collectParameterLiteralDefaults(
           );
         }
         if (nestedDefault !== undefined) {
-          walkBindingPattern(element.name, line, nestedDefault);
+          walkBindingPattern(parameter, element.name, line, nestedDefault);
         } else {
-          walkBindingPattern(element.name, line);
+          walkBindingPattern(parameter, element.name, line);
         }
         continue;
       }
@@ -2106,7 +2194,7 @@ function collectParameterLiteralDefaults(
             moduleMessageArrayInitializers,
           );
         }
-        walkArrayBindingPattern(element.name, line, defaultObject, element, childDefault);
+        walkArrayBindingPattern(parameter, element.name, line, defaultObject, element, childDefault);
         continue;
       }
       const propName = bindingElementPropertyName(element, source);
@@ -2157,7 +2245,7 @@ function collectParameterLiteralDefaults(
         }
       }
       if (initializer === undefined) continue;
-      noteBindingDefault(resolvedPropName, localName, initializer, line);
+      noteBindingDefault(parameter, element, resolvedPropName, localName, initializer, line);
     }
   }
 
@@ -2172,7 +2260,7 @@ function collectParameterLiteralDefaults(
               moduleMessageArrayInitializers,
             )
           : undefined;
-      walkBindingPattern(parameter.name, line, resolvedInit);
+      walkBindingPattern(parameter, parameter.name, line, resolvedInit);
       continue;
     }
     if (ts.isArrayBindingPattern(parameter.name)) {
@@ -2184,11 +2272,11 @@ function collectParameterLiteralDefaults(
               moduleMessageArrayInitializers,
             )
           : undefined;
-      walkArrayBindingPattern(parameter.name, line, undefined, undefined, resolvedInit);
+      walkArrayBindingPattern(parameter, parameter.name, line, undefined, undefined, resolvedInit);
       continue;
     }
     if (ts.isIdentifier(parameter.name) && parameter.initializer !== undefined) {
-      noteBindingDefault(parameter.name.text, parameter.name.text, parameter.initializer, line);
+      noteBindingDefault(parameter, undefined, parameter.name.text, parameter.name.text, parameter.initializer, line);
     }
   }
 
@@ -2279,7 +2367,6 @@ function collectMessageCallParameterNames(
 function collectUndocumentedShippedPropNames(
   parameters: ts.NodeArray<ts.ParameterDeclaration>,
   source: ts.SourceFile,
-  documentedDefaults: Set<string>,
   moduleBindings: Set<string>,
   moduleFunctions: Set<string>,
   moduleDirectStringFunctions: Set<string>,
@@ -2289,8 +2376,13 @@ function collectUndocumentedShippedPropNames(
 ): Set<string> {
   const names = new Set<string>();
 
-  function noteShippedProp(propName: string, initializer: ts.Expression): void {
-    if (documentedDefaults.has(propName)) return;
+  function noteShippedProp(
+    parameter: ts.ParameterDeclaration,
+    bindingElement: ts.BindingElement | undefined,
+    propName: string,
+    initializer: ts.Expression,
+  ): void {
+    if (bindingHasDocumentedDefault(parameter, bindingElement, source)) return;
     if (
       parameterDefaultIsShippedCopy(
         initializer,
@@ -2304,7 +2396,11 @@ function collectUndocumentedShippedPropNames(
     }
   }
 
-  function walkBindingPattern(pattern: ts.ObjectBindingPattern, defaultExpr?: ts.Expression): void {
+  function walkBindingPattern(
+    parameter: ts.ParameterDeclaration,
+    pattern: ts.ObjectBindingPattern,
+    defaultExpr?: ts.Expression,
+  ): void {
     if (defaultExpr !== undefined) {
       defaultExpr = resolveModulePatternDefault(
         defaultExpr,
@@ -2327,9 +2423,9 @@ function collectUndocumentedShippedPropNames(
             ? objectLiteralPropertyInitializer(defaultObject, propNameForNested, source)
             : undefined);
         if (nestedDefault !== undefined) {
-          walkBindingPattern(element.name, nestedDefault);
+          walkBindingPattern(parameter, element.name, nestedDefault);
         } else {
-          walkBindingPattern(element.name);
+          walkBindingPattern(parameter, element.name);
         }
         continue;
       }
@@ -2341,7 +2437,7 @@ function collectUndocumentedShippedPropNames(
           (defaultObject !== undefined && propNameForNested !== null
             ? objectLiteralPropertyInitializer(defaultObject, propNameForNested, source)
             : undefined);
-        walkArrayBindingPattern(element.name, defaultObject, element, nestedDefault);
+        walkArrayBindingPattern(parameter, element.name, defaultObject, element, nestedDefault);
         continue;
       }
       const propName = bindingElementPropertyName(element, source);
@@ -2351,11 +2447,12 @@ function collectUndocumentedShippedPropNames(
         element.initializer ??
         (defaultObject !== undefined ? objectLiteralPropertyInitializer(defaultObject, objectKey, source) : undefined);
       if (initializer === undefined) continue;
-      noteShippedProp(propName, initializer);
+      noteShippedProp(parameter, element, propName, initializer);
     }
   }
 
   function walkArrayBindingPattern(
+    parameter: ts.ParameterDeclaration,
     pattern: ts.ArrayBindingPattern,
     defaultObject?: ts.ObjectLiteralExpression,
     parentElement?: ts.BindingElement,
@@ -2375,9 +2472,9 @@ function collectUndocumentedShippedPropNames(
           );
         }
         if (nestedDefault !== undefined) {
-          walkBindingPattern(element.name, nestedDefault);
+          walkBindingPattern(parameter, element.name, nestedDefault);
         } else {
-          walkBindingPattern(element.name);
+          walkBindingPattern(parameter, element.name);
         }
         continue;
       }
@@ -2392,7 +2489,7 @@ function collectUndocumentedShippedPropNames(
             moduleMessageArrayInitializers,
           );
         }
-        walkArrayBindingPattern(element.name, defaultObject, element, childDefault);
+        walkArrayBindingPattern(parameter, element.name, defaultObject, element, childDefault);
         continue;
       }
       const propName = bindingElementPropertyName(element, source);
@@ -2443,7 +2540,7 @@ function collectUndocumentedShippedPropNames(
         }
       }
       if (initializer === undefined) continue;
-      noteShippedProp(localName, initializer);
+      noteShippedProp(parameter, element, resolvedPropName, initializer);
     }
   }
 
@@ -2457,7 +2554,7 @@ function collectUndocumentedShippedPropNames(
               moduleMessageArrayInitializers,
             )
           : undefined;
-      walkBindingPattern(parameter.name, resolvedInit);
+      walkBindingPattern(parameter, parameter.name, resolvedInit);
       continue;
     }
     if (ts.isArrayBindingPattern(parameter.name)) {
@@ -2469,11 +2566,11 @@ function collectUndocumentedShippedPropNames(
               moduleMessageArrayInitializers,
             )
           : undefined;
-      walkArrayBindingPattern(parameter.name, undefined, undefined, resolvedInit);
+      walkArrayBindingPattern(parameter, parameter.name, undefined, undefined, resolvedInit);
       continue;
     }
     if (ts.isIdentifier(parameter.name) && parameter.initializer !== undefined) {
-      noteShippedProp(parameter.name.text, parameter.initializer);
+      noteShippedProp(parameter, undefined, parameter.name.text, parameter.initializer);
     }
   }
   return names;
@@ -2481,7 +2578,6 @@ function collectUndocumentedShippedPropNames(
 
 function collectFileUndocumentedShippedPropNames(
   sourceFile: ts.SourceFile,
-  documentedDefaults: Set<string>,
   moduleBindings: Set<string>,
   moduleFunctions: Set<string>,
   moduleMessageObjectInitializers: Map<string, ts.Expression>,
@@ -2492,7 +2588,6 @@ function collectFileUndocumentedShippedPropNames(
     for (const propName of collectUndocumentedShippedPropNames(
       node.parameters,
       sourceFile,
-      documentedDefaults,
       moduleBindings,
       moduleFunctions,
       new Set<string>(),
@@ -2521,7 +2616,6 @@ function collectFileUndocumentedShippedPropNames(
 
 function analyzeRenderedLocals(
   body: ts.ConciseBody,
-  documentedDefaults: Set<string>,
   undocumentedPropNames: Set<string>,
   fileUndocumentedPropNames: Set<string>,
   literalLocals: Map<string, number>,
@@ -2606,12 +2700,18 @@ function analyzeRenderedLocals(
     const slices = objectMemberPathSlicesFromDefault(chain.objectName, chain.memberKeys);
     if (slices !== null) {
       return slices.some((slice) =>
-        parameterDefaultIsShippedCopy(
+        renderSliceExpressionIsShipped(
           slice,
           moduleBindings,
           moduleFunctions,
           moduleDirectStringFunctions,
           fileModuleDirectStringAliases,
+          parameterDefaultSearchParameters,
+          source,
+          moduleMessageObjectInitializers,
+          moduleMessageArrayInitializers,
+          messageCallParameters,
+          literalLocalInitializers,
         ),
       );
     }
@@ -2732,12 +2832,18 @@ function analyzeRenderedLocals(
           const slices = memberSliceFromIdentifierDefault(expression.expression.text, member);
           if (slices !== null) {
             return slices.some((slice) =>
-              parameterDefaultIsShippedCopy(
+              renderSliceExpressionIsShipped(
                 slice,
                 moduleBindings,
                 moduleFunctions,
                 moduleDirectStringFunctions,
                 fileModuleDirectStringAliases,
+                parameterDefaultSearchParameters,
+                source,
+                moduleMessageObjectInitializers,
+                moduleMessageArrayInitializers,
+                messageCallParameters,
+                literalLocalInitializers,
               ),
             );
           }
@@ -3086,15 +3192,20 @@ function analyzeRenderedLocals(
     if (sourceExpr === undefined) return;
     let defaultExpr: ts.Expression = sourceExpr;
     if (ts.isIdentifier(sourceExpr)) {
-      const paramDefault = parameterDefaultExpressionForName(
-        sourceExpr.text,
-        currentParameters,
-        source,
-        moduleMessageObjectInitializers,
-        moduleMessageArrayInitializers,
-      );
-      if (paramDefault !== undefined) {
-        defaultExpr = paramDefault;
+      const localInit = literalLocalInitializers.get(sourceExpr.text);
+      if (localInit !== undefined) {
+        defaultExpr = localInit;
+      } else {
+        const paramDefault = parameterDefaultExpressionForName(
+          sourceExpr.text,
+          currentParameters,
+          source,
+          moduleMessageObjectInitializers,
+          moduleMessageArrayInitializers,
+        );
+        if (paramDefault !== undefined) {
+          defaultExpr = paramDefault;
+        }
       }
     }
     const slices = collectArrayIndexSlicesFromDefault(
@@ -3106,12 +3217,18 @@ function analyzeRenderedLocals(
     if (slices === null) return;
     if (
       slices.some((slice) =>
-        parameterDefaultIsShippedCopy(
+        renderSliceExpressionIsShipped(
           slice,
           moduleBindings,
           moduleFunctions,
           moduleDirectStringFunctions,
           fileModuleDirectStringAliases,
+          parameterDefaultSearchParameters,
+          source,
+          moduleMessageObjectInitializers,
+          moduleMessageArrayInitializers,
+          messageCallParameters,
+          literalLocalInitializers,
         ),
       )
     ) {
@@ -3128,7 +3245,9 @@ function analyzeRenderedLocals(
     for (let argIndex = 0; argIndex < call.arguments.length; argIndex++) {
       const argument = call.arguments[argIndex];
       if (!ts.isExpression(argument)) continue;
-      if (ts.isIdentifier(argument) && documentedDefaults.has(argument.text)) continue;
+      if (ts.isIdentifier(argument) && identifierMatchesDocumentedParameter(argument.text, currentParameters, source)) {
+        continue;
+      }
       if (
         ts.isIdentifier(argument) &&
         !undocumentedPropNames.has(argument.text) &&
@@ -3925,7 +4044,6 @@ function analyzeFunctionLiteralBindings(
   parameters: ts.NodeArray<ts.ParameterDeclaration>,
   body: ts.ConciseBody | undefined,
   source: ts.SourceFile,
-  documentedDefaults: Set<string>,
   moduleBindings: Set<string>,
   moduleFunctions: Set<string>,
   moduleDirectStringFunctions: Set<string>,
@@ -3953,7 +4071,6 @@ function analyzeFunctionLiteralBindings(
   const literalBindings = collectParameterLiteralDefaults(
     parameters,
     source,
-    documentedDefaults,
     moduleBindings,
     moduleFunctions,
     moduleDirectStringFunctions,
@@ -3964,7 +4081,6 @@ function analyzeFunctionLiteralBindings(
   const undocumentedPropNames = collectUndocumentedShippedPropNames(
     parameters,
     source,
-    documentedDefaults,
     moduleBindings,
     moduleFunctions,
     moduleDirectStringFunctions,
@@ -3990,7 +4106,6 @@ function analyzeFunctionLiteralBindings(
   if (body !== undefined) {
     const analyzed = analyzeRenderedLocals(
       body,
-      documentedDefaults,
       undocumentedPropNames,
       fileUndocumentedPropNames,
       literalBindings,
@@ -4036,7 +4151,6 @@ function scriptKindForFileName(fileName: string): ts.ScriptKind {
 export function findShippedMessageViolations(fileName: string, sourceText: string): ShippedMessageViolation[] {
   const source = ts.createSourceFile(fileName, sourceText, ts.ScriptTarget.Latest, true, scriptKindForFileName(fileName));
   const violations: ShippedMessageViolation[] = [];
-  const documentedDefaults = collectDocumentedDefaultProps(source);
   const moduleBindings = collectModuleLetteredBindings(source);
   const moduleRenderedStringBindings = collectModuleRenderedStringBindings(source);
   const moduleFunctions = collectModuleShippedFunctions(source);
@@ -4046,7 +4160,6 @@ export function findShippedMessageViolations(fileName: string, sourceText: strin
   const moduleMessageArrayInitializers = collectModuleMessageArrayInitializers(source);
   const fileUndocumentedPropNames = collectFileUndocumentedShippedPropNames(
     source,
-    documentedDefaults,
     moduleBindings,
     moduleFunctions,
     moduleMessageObjectInitializers,
@@ -4054,7 +4167,7 @@ export function findShippedMessageViolations(fileName: string, sourceText: strin
   );
   const { initializers: callSiteParameterInitializers, parameterContexts: callSiteParameterContexts } =
     collectCallSiteParameterInitializers(source);
-  const interfaceMessageProps = collectUndocumentedMessageInterfaceProps(source, documentedDefaults);
+  const interfaceMessageProps = collectUndocumentedMessageInterfaceProps(source);
 
   function lineOf(node: ts.Node): number {
     return source.getLineAndCharacterOfPosition(node.getStart(source)).line + 1;
@@ -4101,7 +4214,6 @@ export function findShippedMessageViolations(fileName: string, sourceText: strin
         node.parameters,
         body,
         source,
-        documentedDefaults,
         moduleBindings,
         moduleFunctions,
         moduleDirectStringFunctions,
@@ -6414,6 +6526,114 @@ describe("shipped message lint", () => {
       "",
     ].join("\n");
     expect(findShippedMessageViolations("Example.tsx", numericCopyIsSilent)).toEqual([]);
+  });
+
+  it("notes fix round 24 binding defaults, destructuring, and member slices", () => {
+    const unusedInterfaceDoesNotExempt = [
+      'interface ExampleProps { /** @default "Save changes" */ caption?: string }',
+      'export function Other(caption = "Save changes") { return <span>{caption}</span>; }',
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", unusedInterfaceDoesNotExempt)).toEqual([
+      expect.objectContaining({ kind: "rendered-local", text: "caption" }),
+    ]);
+
+    const siblingFunctionDefaultTag = [
+      'export function Example(/** @default "Save changes" */ caption = "Save changes") { return <span />; }',
+      'export function Other(caption = "Save changes") { return <span>{caption}</span>; }',
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", siblingFunctionDefaultTag)).toEqual([
+      expect.objectContaining({ kind: "rendered-local", text: "caption" }),
+    ]);
+
+    const rangeSummaryHelper = [
+      "function defaultRangeSummaryMessage(start: number, end: number, total: number): string { return `Showing ${start}–${end} of ${total}`; }",
+      "interface ExampleProps {",
+      "  /** @default `Showing ${start}–${end} of ${total}` */",
+      "  rangeSummaryMessage?: (start: number, end: number, total: number) => string;",
+      "}",
+      "export function Example({ rangeSummaryMessage = defaultRangeSummaryMessage }: ExampleProps) {",
+      "  const rangeSummary = rangeSummaryMessage(1, 10, 100);",
+      "  const row = [rangeSummary];",
+      "  const [title] = row;",
+      "  return <p>{title}</p>;",
+      "}",
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Pagination.tsx", rangeSummaryHelper)).toEqual([
+      expect.objectContaining({ kind: "rendered-local", text: "title" }),
+    ]);
+
+    const storedCallMemberLocal = [
+      "function defaultRangeSummaryMessage(start: number, end: number, total: number): string { return `Showing ${start}–${end} of ${total}`; }",
+      "interface ExampleProps {",
+      "  /** @default `Showing ${start}–${end} of ${total}` */",
+      "  rangeSummaryMessage?: (start: number, end: number, total: number) => string;",
+      "}",
+      "export function Example({ rangeSummaryMessage = defaultRangeSummaryMessage }: ExampleProps) {",
+      "  const rangeSummary = rangeSummaryMessage(1, 10, 100);",
+      "  const row = { caption: rangeSummary };",
+      "  const title = row.caption;",
+      "  return <p>{title}</p>;",
+      "}",
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Pagination.tsx", storedCallMemberLocal)).toEqual([
+      expect.objectContaining({ kind: "rendered-local", text: "title" }),
+    ]);
+
+    const storedCallMemberStringKeyLocal = [
+      "function defaultRangeSummaryMessage(start: number, end: number, total: number): string { return `Showing ${start}–${end} of ${total}`; }",
+      "interface ExampleProps {",
+      "  /** @default `Showing ${start}–${end} of ${total}` */",
+      "  rangeSummaryMessage?: (start: number, end: number, total: number) => string;",
+      "}",
+      "export function Example({ rangeSummaryMessage = defaultRangeSummaryMessage }: ExampleProps) {",
+      "  const rangeSummary = rangeSummaryMessage(1, 10, 100);",
+      "  const row = { caption: rangeSummary };",
+      '  const title = row["caption"];',
+      "  return <p>{title}</p>;",
+      "}",
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Pagination.tsx", storedCallMemberStringKeyLocal)).toEqual([
+      expect.objectContaining({ kind: "rendered-local", text: "title" }),
+    ]);
+
+    const copiedFunctionMemberCallLocal = [
+      "function defaultRangeSummaryMessage(start: number, end: number, total: number): string { return `Showing ${start}–${end} of ${total}`; }",
+      "interface ExampleProps {",
+      "  /** @default `Showing ${start}–${end} of ${total}` */",
+      "  rangeSummaryMessage?: (start: number, end: number, total: number) => string;",
+      "}",
+      "export function Example({ rangeSummaryMessage = defaultRangeSummaryMessage }: ExampleProps) {",
+      "  const row = { caption: rangeSummaryMessage };",
+      "  const title = row.caption;",
+      "  return <p>{title(1, 10, 100)}</p>;",
+      "}",
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Pagination.tsx", copiedFunctionMemberCallLocal)).toEqual([
+      expect.objectContaining({ kind: "rendered-local", text: "title" }),
+    ]);
+
+    const copiedFunctionMemberStringKeyCallLocal = [
+      "function defaultRangeSummaryMessage(start: number, end: number, total: number): string { return `Showing ${start}–${end} of ${total}`; }",
+      "interface ExampleProps {",
+      "  /** @default `Showing ${start}–${end} of ${total}` */",
+      "  rangeSummaryMessage?: (start: number, end: number, total: number) => string;",
+      "}",
+      "export function Example({ rangeSummaryMessage = defaultRangeSummaryMessage }: ExampleProps) {",
+      "  const row = { caption: rangeSummaryMessage };",
+      '  const title = row["caption"];',
+      "  return <p>{title(1, 10, 100)}</p>;",
+      "}",
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Pagination.tsx", copiedFunctionMemberStringKeyCallLocal)).toEqual([
+      expect.objectContaining({ kind: "rendered-local", text: "title" }),
+    ]);
   });
 
 });
