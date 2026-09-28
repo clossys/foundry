@@ -1103,12 +1103,18 @@ function collectCallSiteParameterInitializers(
           if (argument === undefined || !ts.isExpression(argument)) continue;
           if (!ts.isIdentifier(parameter.name)) continue;
           const paramName = parameter.name.text;
-          if (!ts.isIdentifier(argument) || argument.text !== paramName) continue;
-          const localInit = localInitializerInScope(argument.text, node);
-          if (localInit === undefined) continue;
-          const unwrappedInit = unwrapExpression(localInit);
-          if (!ts.isObjectLiteralExpression(unwrappedInit) && !ts.isArrayLiteralExpression(unwrappedInit)) continue;
-          const argumentValue: ts.Expression = localInit;
+          let argumentValue: ts.Expression | undefined;
+          if (ts.isArrayLiteralExpression(unwrapExpression(argument))) {
+            argumentValue = argument;
+          } else if (ts.isIdentifier(argument) && argument.text === paramName) {
+            const localInit = localInitializerInScope(argument.text, node);
+            if (localInit === undefined) continue;
+            const unwrappedInit = unwrapExpression(localInit);
+            if (!ts.isObjectLiteralExpression(unwrappedInit) && !ts.isArrayLiteralExpression(unwrappedInit)) continue;
+            argumentValue = localInit;
+          } else {
+            continue;
+          }
           let fnMap = initializers.get(node.expression.text);
           if (fnMap === undefined) {
             fnMap = new Map<string, ts.Expression>();
@@ -1708,6 +1714,14 @@ function unwrapExpression(expression: ts.Expression): ts.Expression {
     break;
   }
   return current;
+}
+
+function memberAccessFromCallCallee(expression: ts.Expression): ts.PropertyAccessExpression | ts.ElementAccessExpression | null {
+  const unwrapped = unwrapExpression(expression);
+  if (ts.isPropertyAccessExpression(unwrapped) || ts.isElementAccessExpression(unwrapped)) {
+    return unwrapped;
+  }
+  return null;
 }
 
 function collectChildLiterals(expression: ts.Expression | undefined, out: string[]): void {
@@ -2471,8 +2485,30 @@ function analyzeRenderedLocals(
     }
     if (ts.isCallExpression(expression)) {
       if (callCarriesShippedMessage(expression)) return true;
-      if (ts.isPropertyAccessExpression(expression.expression)) {
-        return memberAccessCarriesShippedMessage(expression.expression);
+      const memberCallee = memberAccessFromCallCallee(expression.expression);
+      if (memberCallee !== null) {
+        if (ts.isPropertyAccessExpression(memberCallee)) {
+          return memberAccessCarriesShippedMessage(memberCallee);
+        }
+        return expressionCarriesShippedMessage(memberCallee);
+      }
+      if (ts.isIdentifier(expression.expression)) {
+        const paramDefault = parameterDefaultExpressionForName(
+          expression.expression.text,
+          parameterDefaultSearchParameters,
+          source,
+          moduleMessageObjectInitializers,
+          moduleMessageArrayInitializers,
+        );
+        if (paramDefault !== undefined) {
+          return parameterDefaultIsShippedCopy(
+            paramDefault,
+            moduleBindings,
+            moduleFunctions,
+            moduleDirectStringFunctions,
+            fileModuleDirectStringAliases,
+          );
+        }
       }
     }
     if (ts.isConditionalExpression(expression)) {
@@ -2550,6 +2586,34 @@ function analyzeRenderedLocals(
         if (shorthandName === null) continue;
         const paramDefault = parameterDefaultExpressionForName(
           shorthandName,
+          currentParameters,
+          source,
+          moduleMessageObjectInitializers,
+          moduleMessageArrayInitializers,
+        );
+        if (
+          paramDefault !== undefined &&
+          parameterDefaultIsShippedCopy(
+            paramDefault,
+            moduleBindings,
+            moduleFunctions,
+            moduleDirectStringFunctions,
+            fileModuleDirectStringAliases,
+          )
+        ) {
+          literalLocals.set(name, line);
+          literalLocalInitializers.set(name, initializer);
+          break;
+        }
+      }
+    }
+    if (ts.isArrayLiteralExpression(objectLiteral)) {
+      for (const element of objectLiteral.elements) {
+        if (!ts.isExpression(element)) continue;
+        const unwrappedElement = unwrapExpression(element);
+        if (!ts.isIdentifier(unwrappedElement)) continue;
+        const paramDefault = parameterDefaultExpressionForName(
+          unwrappedElement.text,
           currentParameters,
           source,
           moduleMessageObjectInitializers,
@@ -2901,7 +2965,11 @@ function checkRenderedLocalReferences(
   }
 
   function noteReference(name: string, node: ts.Node): void {
-    if (literalLocals.has(name) || moduleRenderedStringBindings.has(name)) {
+    if (
+      literalLocals.has(name) ||
+      moduleRenderedStringBindings.has(name) ||
+      literalLocalInitializers.has(name)
+    ) {
       violations.push({
         file: fileName,
         line: lineOf(node),
@@ -2934,6 +3002,37 @@ function checkRenderedLocalReferences(
     );
   }
 
+  function sliceExpressionsAreShipped(slices: readonly ts.Expression[]): boolean {
+    return slices.some((slice) => {
+      const unwrapped = unwrapExpression(slice);
+      if (ts.isIdentifier(unwrapped)) {
+        const paramDefault = parameterDefaultExpressionForName(
+          unwrapped.text,
+          parameterDefaultSearchParameters,
+          source,
+          moduleMessageObjectInitializers,
+          moduleMessageArrayInitializers,
+        );
+        if (paramDefault !== undefined) {
+          return parameterDefaultIsShippedCopy(
+            paramDefault,
+            moduleBindings,
+            moduleFunctions,
+            moduleDirectStringFunctions,
+            moduleDirectStringAliases,
+          );
+        }
+      }
+      return parameterDefaultIsShippedCopy(
+        slice,
+        moduleBindings,
+        moduleFunctions,
+        moduleDirectStringFunctions,
+        moduleDirectStringAliases,
+      );
+    });
+  }
+
   function renderedMemberPathIsShippedCopy(objectName: string, memberKeys: readonly string[]): boolean {
     let defaultExpr = literalLocalInitializers.get(objectName) ?? localDefaultExpression(objectName);
     if (defaultExpr === undefined) return false;
@@ -2946,15 +3045,7 @@ function checkRenderedLocalReferences(
       parameterDefaultSearchParameters,
     );
     if (slices === null || slices.length === 0) return false;
-    return slices.some((slice) =>
-      parameterDefaultIsShippedCopy(
-        slice,
-        moduleBindings,
-        moduleFunctions,
-        moduleDirectStringFunctions,
-        moduleDirectStringAliases,
-      ),
-    );
+    return sliceExpressionsAreShipped(slices);
   }
 
   function notePropertyAccess(node: ts.PropertyAccessExpression, reportAt: ts.Node): void {
@@ -2985,17 +3076,7 @@ function checkRenderedLocalReferences(
           moduleMessageArrayInitializers,
         );
         if (entries !== null) {
-          if (
-            entries.some((entry) =>
-              parameterDefaultIsShippedCopy(
-                entry,
-                moduleBindings,
-                moduleFunctions,
-                moduleDirectStringFunctions,
-                moduleDirectStringAliases,
-              ),
-            )
-          ) {
+          if (sliceExpressionsAreShipped(entries)) {
             noteReference(objectName, reportAt);
           }
           return;
@@ -3014,30 +3095,16 @@ function checkRenderedLocalReferences(
               moduleMessageArrayInitializers,
             ),
           );
-          if (ts.isArrayLiteralExpression(resolved)) {
+          if (
+            ts.isArrayLiteralExpression(resolved) ||
+            collectArrayAllElementSlicesFromDefault(
+              defaultExpr,
+              moduleMessageObjectInitializers,
+              moduleMessageArrayInitializers,
+            ) !== null
+          ) {
             return;
           }
-        }
-        const entries = collectArrayAllElementSlicesFromDefault(
-          defaultExpr,
-          moduleMessageObjectInitializers,
-          moduleMessageArrayInitializers,
-        );
-        if (entries !== null) {
-          if (
-            entries.some((entry) =>
-              parameterDefaultIsShippedCopy(
-                entry,
-                moduleBindings,
-                moduleFunctions,
-                moduleDirectStringFunctions,
-                moduleDirectStringAliases,
-              ),
-            )
-          ) {
-            noteReference(objectName, reportAt);
-          }
-          return;
         }
         if (
           literalLocals.has(objectName) ||
@@ -3114,12 +3181,19 @@ function checkRenderedLocalReferences(
       return;
     }
     if (ts.isCallExpression(expression)) {
-      const callee = unwrapExpression(expression.expression);
-      if (ts.isPropertyAccessExpression(callee)) {
-        notePropertyAccess(callee, node);
-      } else if (ts.isIdentifier(callee)) {
-        noteModuleDirectStringCall(callee, node);
-        noteReference(callee.text, node);
+      const memberCallee = memberAccessFromCallCallee(expression.expression);
+      if (memberCallee !== null) {
+        if (ts.isPropertyAccessExpression(memberCallee)) {
+          notePropertyAccess(memberCallee, node);
+        } else {
+          noteElementAccess(memberCallee, node);
+        }
+      } else {
+        const callee = unwrapExpression(expression.expression);
+        if (ts.isIdentifier(callee)) {
+          noteModuleDirectStringCall(callee, node);
+          noteReference(callee.text, node);
+        }
       }
       return;
     }
@@ -3313,12 +3387,19 @@ function checkRenderedLocalReferences(
       return;
     }
     if (ts.isCallExpression(expression)) {
-      const callee = unwrapExpression(expression.expression);
-      if (ts.isPropertyAccessExpression(callee)) {
-        notePropertyAccess(callee, node);
-      } else if (ts.isIdentifier(callee)) {
-        noteModuleDirectStringCall(callee, node);
-        noteReference(callee.text, node);
+      const memberCallee = memberAccessFromCallCallee(expression.expression);
+      if (memberCallee !== null) {
+        if (ts.isPropertyAccessExpression(memberCallee)) {
+          notePropertyAccess(memberCallee, node);
+        } else {
+          noteElementAccess(memberCallee, node);
+        }
+      } else {
+        const callee = unwrapExpression(expression.expression);
+        if (ts.isIdentifier(callee)) {
+          noteModuleDirectStringCall(callee, node);
+          noteReference(callee.text, node);
+        }
       }
       return;
     }
@@ -4244,7 +4325,7 @@ describe("shipped message lint", () => {
     ]);
   });
 
-  it("passes message call locals when the prop default is documented with @default", () => {
+  it("fails message call locals even when the prop default is documented with @default", () => {
     const source = [
       "function defaultRangeSummaryMessage(start: number, end: number, total: number): string { return `Showing ${start}–${end} of ${total}`; }",
       "interface ExampleProps {",
@@ -4257,7 +4338,9 @@ describe("shipped message lint", () => {
       "}",
       "",
     ].join("\n");
-    expect(findShippedMessageViolations("Pagination.tsx", source)).toEqual([]);
+    expect(findShippedMessageViolations("Pagination.tsx", source)).toEqual([
+      expect.objectContaining({ kind: "rendered-local", text: "rangeSummary" }),
+    ]);
   });
 
   it("fails message props copied into locals in a function that does not own the defaults", () => {
@@ -5506,6 +5589,127 @@ describe("shipped message lint", () => {
     expect(findShippedMessageViolations("Example.tsx", restObjectMember)).toEqual([
       expect.objectContaining({ kind: "rendered-local", text: "rest" }),
     ]);
+  });
+
+  it("notes fix round 21 member calls, string-key calls, defaults, copies, and indexes", () => {
+    const onlyMemberCall = [
+      "import { createElement } from \"react\";",
+      "function defaultStatGridLabel(index: number): string { return `Stat ${index}`; }",
+      "function renderBlock(messages: { nodeChapterFallbackTitle: string; statGridLabel: (index: number) => string }) {",
+      "  return createElement(\"span\", { className: \"sr-only\" }, messages.statGridLabel(1));",
+      "}",
+      "export function compileConsumerTemplateBlocks({",
+      "  nodeChapterFallbackTitle = \"Widget\",",
+      "  statGridLabel = defaultStatGridLabel,",
+      "}: { nodeChapterFallbackTitle?: string; statGridLabel?: (index: number) => string }) {",
+      "  const messages = { nodeChapterFallbackTitle, statGridLabel };",
+      "  return () => renderBlock(messages);",
+      "}",
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("compileConsumerTemplateBlocks.ts", onlyMemberCall)).toEqual([
+      expect.objectContaining({ kind: "rendered-local", text: "messages" }),
+    ]);
+
+    const onlyMemberCallAlias = onlyMemberCall.replaceAll("messages", "copy");
+    expect(findShippedMessageViolations("compileConsumerTemplateBlocks.ts", onlyMemberCallAlias)).toEqual([
+      expect.objectContaining({ kind: "rendered-local", text: "copy" }),
+    ]);
+
+    const stringKeyCalls = [
+      'export function E(row = { caption: () => "Save changes" }) {',
+      "  return (",
+      "    <>",
+      '      <span>{row["caption"]()}</span>',
+      '      <span>{(row)["caption"]()}</span>',
+      '      <span>{row!["caption"]()}</span>',
+      '      <span>{(row as { caption: () => string })["caption"]()}</span>',
+      "    </>",
+      "  );",
+      "}",
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", stringKeyCalls)).toEqual(
+      expect.arrayContaining([expect.objectContaining({ kind: "rendered-local", text: "row" })]),
+    );
+
+    const nestedStringKeyCall = [
+      'export function E(row = { meta: { caption: () => "Save changes" } }) { return <span>{row["meta"]["caption"]()}</span>; }',
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", nestedStringKeyCall)).toEqual([
+      expect.objectContaining({ kind: "rendered-local", text: "row" }),
+    ]);
+
+    const literalStringKeyCall = [
+      'export function E(row = { caption: () => "1" }) { return <span>{row["caption"]()}</span>; }',
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", literalStringKeyCall)).toEqual([]);
+
+    const copiedCaptionElement = [
+      'export function Example(caption = "Save changes") { const row = [caption]; return <span>{row[0]}</span>; }',
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", copiedCaptionElement)).toEqual([
+      expect.objectContaining({ kind: "rendered-local", text: "row" }),
+    ]);
+
+    const copiedCaptionThroughHelper = [
+      "function show(row: string[]) { return <span>{row[0]}</span>; }",
+      'export function Example(caption = "Save changes") { return show([caption]); }',
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", copiedCaptionThroughHelper)).toEqual([
+      expect.objectContaining({ kind: "rendered-local", text: "row" }),
+    ]);
+
+    const copiedCaptionWithDefault = [
+      "interface ExampleProps { /** @default \"Save changes\" */ caption?: string; }",
+      'export function Example({ caption = "Save changes" }: ExampleProps) { const row = [caption]; return <span>{row[0]}</span>; }',
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", copiedCaptionWithDefault)).toEqual([
+      expect.objectContaining({ kind: "rendered-local", text: "row" }),
+    ]);
+
+    const literalCopiedCaptionElement = [
+      'export function Example(caption = "Save changes") { const row = ["1"]; return <span>{row[0]}</span>; }',
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", literalCopiedCaptionElement)).toEqual([]);
+
+    const conditionalArrayVariableIndex = [
+      'export function E(row = true ? ["1", "Save changes"] : ["1", "1"], i: number) { return <span>{row[i]}</span>; }',
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", conditionalArrayVariableIndex)).toEqual([]);
+
+    const nullishArrayVariableIndex = [
+      'export function E(row = null ?? ["1", "Save changes"], i: number) { return <span>{row[i]}</span>; }',
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", nullishArrayVariableIndex)).toEqual([]);
+
+    const logicalOrArrayVariableIndex = [
+      'export function E(row = ["1", "1"] || ["1", "Save changes"], i: number) { return <span>{row[i]}</span>; }',
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", logicalOrArrayVariableIndex)).toEqual([]);
+
+    const nullishArrayFixedIndex = [
+      'export function E(row = null ?? ["1", "Save changes"]) { return <span>{row[1]}</span>; }',
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", nullishArrayFixedIndex)).toEqual([
+      expect.objectContaining({ kind: "rendered-local", text: "row" }),
+    ]);
+
+    const nullishArrayFixedIndexSilent = [
+      'export function E(row = null ?? ["Save changes", "1"]) { return <span>{row[1]}</span>; }',
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", nullishArrayFixedIndexSilent)).toEqual([]);
   });
 
   it("finds no shipped message literals under designer src", () => {

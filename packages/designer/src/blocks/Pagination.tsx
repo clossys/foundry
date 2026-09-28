@@ -132,17 +132,6 @@ export function Pagination({
   const isFirstPage = page <= 1;
   const isLastPage = page >= clampedCount;
 
-  let rangeSummary: string;
-  if (clampedCount === 0) {
-    rangeSummary = noResultsLabel;
-  } else if (totalItems !== undefined && pageSize !== undefined) {
-    const start = (page - 1) * pageSize + 1;
-    const end = Math.min(page * pageSize, totalItems);
-    rangeSummary = totalItems === 0 ? noResultsLabel : rangeSummaryMessage(start, end, totalItems);
-  } else {
-    rangeSummary = pageSummaryMessage(page, clampedCount);
-  }
-
   const showPageSizeSelector = Boolean(
     pageSizeOptions && pageSizeOptions.length > 0 && onPageSizeChange,
   );
@@ -154,7 +143,19 @@ export function Pagination({
       className={cx("flex flex-wrap items-center justify-between gap-md", className)}
       style={style}
     >
-      <p className="text-body-s text-ink-secondary">{rangeSummary}</p>
+      <p className="text-body-s text-ink-secondary">
+        {clampedCount === 0
+          ? noResultsLabel
+          : totalItems !== undefined && pageSize !== undefined
+            ? totalItems === 0
+              ? noResultsLabel
+              : rangeSummaryMessage(
+                  (page - 1) * pageSize + 1,
+                  Math.min(page * pageSize, totalItems),
+                  totalItems,
+                )
+            : pageSummaryMessage(page, clampedCount)}
+      </p>
       <div className="flex items-center gap-xs">
         <Button
           variant="ghost"

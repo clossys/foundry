@@ -111,11 +111,10 @@ export function ThemeToggle({
   ...rest
 }: ThemeToggleProps) {
   const { preference, setPreference } = useTheme();
-  const [announcement, setAnnouncement] = useState("");
+  const [announcedPreference, setAnnouncedPreference] = useState<ThemePreference | null>(null);
   const statusId = useId();
 
   const next = nextPreference(preference);
-  const label = toggleLabel(preference, next, preferenceLabels);
 
   return (
     <>
@@ -124,17 +123,19 @@ export function ThemeToggle({
         variant={variant}
         size={size}
         className={className}
-        aria-label={ariaLabel ?? label}
+        aria-label={ariaLabel ?? toggleLabel(preference, next, preferenceLabels)}
         aria-describedby={statusId}
         onPress={() => {
           setPreference(next);
-          setAnnouncement(preferenceAnnouncement(next, preferenceLabels));
+          setAnnouncedPreference(next);
         }}
       >
         <Icon glyph={PREFERENCE_GLYPH[preference]} decorative />
       </Button>
       <span id={statusId} role="status" aria-live="polite" className="sr-only">
-        {announcement}
+        {announcedPreference === null
+          ? null
+          : preferenceAnnouncement(announcedPreference, preferenceLabels)}
       </span>
     </>
   );
