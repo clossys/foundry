@@ -402,13 +402,46 @@ function parseCopyRegistryBindingInitEndsAtCall(code: string, call: { open: numb
   let nameStart = nameEnd;
   while (nameStart >= 0 && /[\w$]/.test(code[nameStart]!)) nameStart--;
   nameStart++;
-  const preDecl = code.slice(Math.max(0, nameStart - 80), nameStart);
-  return new RegExp(`${CALLEE_BOUNDARY}(?:const|let|var)\\s+${IDENT}(?:\\s*:[^=;]+)?\\s*=\\s*$`, "u").test(preDecl);
+  const preStart = Math.max(0, nameStart - 400);
+  const preDecl = code.slice(preStart, nameStart);
+  const matches = [...preDecl.matchAll(new RegExp(`${CALLEE_BOUNDARY}(?:const|let|var)\\s+(${IDENT})`, "gu"))];
+  for (let d = matches.length - 1; d >= 0; d--) {
+    const decl = matches[d]!;
+    let i = preStart + decl.index! + decl[0].length;
+    i = skipWsCode(code, i);
+    if (code[i] === ":") {
+      i = skipTypeOperand(code, i + 1);
+      i = skipWsCode(code, i);
+    }
+    if (code[i] !== "=") continue;
+    i = skipWsCode(code, i + 1);
+    i = skipIdentCode(code, i);
+    i = skipWsCode(code, i);
+    if (i === skipWsCode(code, call.open)) return true;
+  }
+  return new RegExp(`${CALLEE_BOUNDARY}(?:const|let|var)\\s+${IDENT}(?:\\s*:[^=;]+)?\\s*=\\s*$`, "u").test(
+    code.slice(Math.max(0, nameStart - 80), nameStart),
+  );
+}
+
+/** Comma in `const a = x, b = y` starts the next declarator — not a continued expression. */
+function commaStartsNextDeclarator(code: string, commaIdx: number): boolean {
+  let j = skipWsCode(code, commaIdx + 1);
+  const identStart = j;
+  j = skipIdentCode(code, j);
+  if (j === identStart) return false;
+  j = skipWsCode(code, j);
+  if (code[j] === ":") {
+    j = skipTypeOperand(code, j + 1);
+    j = skipWsCode(code, j);
+  }
+  return code[j] === "=";
 }
 
 /** A line break before `+`, `(`, `.`, `?.`, etc. continues the initializer — not a finished binding. */
 function postfixContinuesParseResult(code: string, idx: number): boolean {
   const c = code[idx];
+  if (c === "," && commaStartsNextDeclarator(code, idx)) return false;
   if (c === "+" || c === "-" || c === "*" || c === "/" || c === "%" || c === "(" || c === ",") return true;
   if (c === "." && code[idx + 1] !== ".") return true;
   if (code.slice(idx, idx + 2) === "?.") return true;
@@ -430,13 +463,14 @@ function parseCopyRegistryRegistryArgAllowed(
   const afterClose = nextNonWs(code, call.close + 1);
   const next = code[afterClose];
   if (next === "." || next === "[") return false;
-  if (postfixContinuesParseResult(code, afterClose)) return false;
+  if (next === "," && commaStartsNextDeclarator(code, afterClose)) return true;
   if (next === "," || next === ")") {
     const outer = callContaining(code, call.close);
     if (!outer) return false;
     const outerExport = writerImports.localToExport.get(outer.callee);
     return outerExport !== undefined && isResolverExport(outerExport) && writerCalleeAllowed(outer.callee, writerImports, localShadowedCalleepNames);
   }
+  if (postfixContinuesParseResult(code, afterClose)) return false;
   const gap = code.slice(call.close + 1, afterClose);
   const gapHasNewline = /[\r\n]/.test(gap);
   if (next === ";" || next === undefined || gapHasNewline) {
@@ -526,10 +560,26 @@ function writerRequireDestructureSpans(specifiers: Specifier[], isWriter: (s: st
   return spans;
 }
 
+function splitDestructuringParts(inner: string): string[] {
+  const parts: string[] = [];
+  let depth = 0;
+  let start = 0;
+  for (let i = 0; i <= inner.length; i++) {
+    const c = inner[i];
+    if (c === "{" || c === "[" || c === "(") depth++;
+    else if (c === "}" || c === "]" || c === ")") depth--;
+    else if (c === "," && depth === 0) {
+      parts.push(inner.slice(start, i));
+      start = i + 1;
+    }
+  }
+  parts.push(inner.slice(start));
+  return parts;
+}
+
 function destructuringPatternShadowsName(inner: string, name: string): boolean {
   const esc = escapeRegExp(name);
-  const parts = inner.split(",");
-  for (const part of parts) {
+  for (const part of splitDestructuringParts(inner)) {
     const trimmed = part.trim();
     if (!trimmed) continue;
     if (new RegExp(`^${esc}(?:\\s*=.*)?$`, "u").test(trimmed)) return true;
@@ -547,7 +597,7 @@ function destructuringPatternShadowsName(inner: string, name: string): boolean {
 
 function arrayPatternShadowsName(inner: string, name: string): boolean {
   const esc = escapeRegExp(name);
-  for (const part of inner.split(",")) {
+  for (const part of splitDestructuringParts(inner)) {
     const trimmed = part.trim();
     if (!trimmed) continue;
     if (new RegExp(`^${esc}(?:\\s*=.*)?$`, "u").test(trimmed)) return true;
@@ -689,11 +739,25 @@ function constructorInDeclareClass(code: string, constructorIdx: number): boolea
   return indexInsideDeclareBlock(code, constructorIdx, "class");
 }
 
+function isExtendsKeywordAt(code: string, i: number): boolean {
+  if (code.slice(i, i + 7) !== "extends") return false;
+  const next = code[i + 7];
+  return next === undefined || !/[\w$]/.test(next);
+}
+
+function skipOptionalGenericTypeParams(code: string, i: number): number {
+  i = skipWsCode(code, i);
+  if (code[i] !== "<" || !ltAtIsGenericOpener(code, i)) return i;
+  return skipWsCode(code, indexAfterGenericTypeParamList(code, i));
+}
+
 function interfaceBodyBraceIndex(code: string, openBrace: number): boolean {
-  for (const m of code.matchAll(new RegExp(`\\binterface\\s+${IDENT}(?:\\s*<[^>]*>)?`, "gu"))) {
+  for (const m of code.matchAll(new RegExp(`\\binterface\\s+${IDENT}`, "gu"))) {
     let i = m.index! + m[0].length;
     i = skipWsCode(code, i);
-    if (code.slice(i, i + 7) === "extends" && (code[i + 7] === undefined || !/[\w$]/.test(code[i + 7]!))) {
+    i = skipOptionalGenericTypeParams(code, i);
+    i = skipWsCode(code, i);
+    if (isExtendsKeywordAt(code, i)) {
       i += 7;
       i = skipWsCode(code, i);
       for (;;) {
@@ -706,6 +770,13 @@ function interfaceBodyBraceIndex(code: string, openBrace: number): boolean {
           continue;
         }
         break;
+      }
+    } else {
+      while (i < code.length && code[i] !== "{" && code[i] !== ";") {
+        const before = i;
+        i = skipIdentCode(code, i);
+        i = skipWsCode(code, i);
+        if (i === before) break;
       }
     }
     i = skipWsCode(code, i);
@@ -1002,9 +1073,12 @@ function collectLocalShadowedCalleepNames(
       ).test(code)
     )
       shadowed.add(name);
-    for (const m of code.matchAll(new RegExp(`${CALLEE_BOUNDARY}(?:const|let|var)\\s*\\{([^}]*)\\}`, "gu"))) {
+    for (const m of code.matchAll(new RegExp(`${CALLEE_BOUNDARY}(?:const|let|var)\\s*\\{`, "gu"))) {
       if (writerRequireDestructureDeclSpans.some((s) => m.index! >= s.start && m.index! < s.end)) continue;
-      if (destructuringPatternShadowsName(m[1]!, name)) shadowed.add(name);
+      const open = m.index! + m[0].length - 1;
+      const close = matchingClose(code, open);
+      if (close === -1) continue;
+      if (destructuringPatternShadowsName(code.slice(open + 1, close), name)) shadowed.add(name);
     }
     for (const m of code.matchAll(new RegExp(`${CALLEE_BOUNDARY}(?:const|let|var)\\s*\\[([^\\]]*)\\]`, "gu"))) {
       if (arrayPatternShadowsName(m[1]!, name)) shadowed.add(name);
