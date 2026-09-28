@@ -482,6 +482,16 @@ describe("copy-read-without-resolver", () => {
       "run(opts, (make: Handler) => make(registry));",
       "wrap(0, (make) => make(registry));",
       "const f = g || ((make) => make(registry));",
+      "const f = g && ((make) => make(registry));",
+      "({ key: make }: { key: Handler }) => make(registry);",
+      "({ make = fallback }) => make(registry);",
+      "({ key: make = fallback }) => make(registry);",
+      "({ ...make }) => make(registry);",
+      "(make: Foo) => make(registry);",
+      "(make = fallback) => make(registry);",
+      "<T,>(make: T) => make(registry);",
+      "({ make }) => make(registry);",
+      "({ key: make }) => make(registry);",
     ]) {
       const { gate } = scan({ "src/copy.ts": [head, shadow, use].join("\n") });
       expect(gate.verdict).toBe("violated");
@@ -556,6 +566,11 @@ describe("copy-read-without-resolver", () => {
       "declare class C { constructor(readonly make: unknown); }",
       "declare namespace N { function load(make: unknown): void }",
       "type F = ((make: (x: number) => number) => void)",
+      "function g(cb: string | ((make: number) => void)) { return cb; }",
+      "const use: string | ((make: number) => void) = make",
+      "function g(cb: Foo & ((make: number) => void)) { return cb; }",
+      "function g(cb: Call<string, (make: number) => void>) { return cb; }",
+      "function g(cb: [string, (make: number) => void]) { return cb; }",
     ]) {
       const { gate } = scan({ "src/copy.ts": [head, decl, use].join("\n") });
       expect(gate.verdict).toBe("satisfied");

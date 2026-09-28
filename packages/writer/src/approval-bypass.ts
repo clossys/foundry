@@ -631,6 +631,39 @@ function parenListIsTypeMethodSignature(code: string, close: number): boolean {
   return next !== ":" && next !== "=";
 }
 
+/** Single `|` or `&` before `(` — union/intersection type syntax, not `||` / `&&`. */
+function prevCharIsSingleTypeUnionOrIntersection(code: string, openIdx: number): boolean {
+  const p = prevNonWs(code, openIdx);
+  if (p < 0) return false;
+  const c = code[p]!;
+  if (c !== "|" && c !== "&") return false;
+  const q = prevNonWs(code, p);
+  return !(q >= 0 && code[q] === c);
+}
+
+/** Comma before `(` inside a generic or tuple type list — not a call argument comma. */
+function commaBeforeOpenIsInTypeList(code: string, openIdx: number): boolean {
+  const p = prevNonWs(code, openIdx);
+  if (p < 0 || code[p] !== ",") return false;
+  let angle = 0;
+  let square = 0;
+  let paren = 0;
+  for (let i = p - 1; i >= 0; i--) {
+    const c = code[i]!;
+    if (c === ">") angle++;
+    else if (c === "<") {
+      angle--;
+      if (angle < 0 && square === 0 && paren === 0) return true;
+    } else if (c === "]") square++;
+    else if (c === "[") {
+      square--;
+      if (square < 0 && angle === 0 && paren === 0) return true;
+    } else if (c === ")") paren++;
+    else if (c === "(") paren--;
+  }
+  return false;
+}
+
 /** A parenthesized parameter list in a type alias or similar — not a runtime callback. */
 function openParenIsTypeSyntax(code: string, openIdx: number): boolean {
   const before = code.slice(Math.max(0, openIdx - 400), openIdx);
@@ -639,6 +672,8 @@ function openParenIsTypeSyntax(code: string, openIdx: number): boolean {
     return true;
   let p = prevNonWs(code, openIdx);
   if (p >= 0 && code[p] === ":") return true;
+  if (prevCharIsSingleTypeUnionOrIntersection(code, openIdx)) return true;
+  if (commaBeforeOpenIsInTypeList(code, openIdx)) return true;
   if (p >= 0 && code[p] === "(") {
     const q = prevNonWs(code, p);
     if (q >= 0 && code[q] === ":") return true;
@@ -690,11 +725,14 @@ function paramListShadowsName(inner: string, name: string): boolean {
 
 /** Arrows after an object-property `:` or a ternary `:` are not scanned (e.g. `{ load: (make) => ... }`, `c ? g : (make) => ...`). */
 function forEachParenListShadows(code: string, name: string): boolean {
-  for (const m of code.matchAll(/(?:\(|,)\s*(?:async\s+)?(?:<[^>]*>\s*)?\(\s*/gu)) {
-    const open = m.index! + m[0].length - 1;
-    if (openParenIsTypeSyntax(code, open)) continue;
+  for (let i = 0; i < code.length; i++) {
+    if (code[i] !== "(") continue;
+    const open = i;
     const close = matchingClose(code, open);
     if (close === -1) continue;
+    const after = skipWsCode(code, close + 1);
+    if (code[after] !== "=" || code[after + 1] !== ">") continue;
+    if (openParenIsTypeSyntax(code, open)) continue;
     if (paramListShadowsName(code.slice(open + 1, close), name)) return true;
   }
   return false;
