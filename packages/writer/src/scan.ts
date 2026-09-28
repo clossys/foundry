@@ -634,6 +634,14 @@ interface TokenizeResult {
   literals: Literal[];
   jsxTexts: JsxTextRun[];
   unchecked: RawUnchecked[];
+  /**
+   * Half-open `[start, end)` ranges of `content` that are NOT code: every
+   * comment, every string literal, every template literal's static segments
+   * (never its `${...}` interpolations, which are code), every regex literal
+   * body, and every JSX text run. Read only by `maskNonCode` below; every
+   * other caller ignores it.
+   */
+  opaque: Array<[number, number]>;
   /** Set when the scanner could not reach a consistent end-of-file state (unterminated string/template/comment, or a regex heuristic that desynced quote tracking). */
   failure?: string;
 }
@@ -687,6 +695,7 @@ function tokenize(content: string, isJsxFile: boolean): TokenizeResult {
   const literals: Literal[] = [];
   const jsxTexts: JsxTextRun[] = [];
   const unchecked: RawUnchecked[] = [];
+  const opaque: Array<[number, number]> = [];
   const n = content.length;
   let i = 0;
   let line = 1;
@@ -745,6 +754,7 @@ function tokenize(content: string, isJsxFile: boolean): TokenizeResult {
       }
       if (ck === '"' || ck === "'") {
         const q = ck;
+        const stringStart = j;
         j++;
         while (j < n && content[j] !== q) {
           if (content[j] === "\\") j++;
@@ -752,6 +762,7 @@ function tokenize(content: string, isJsxFile: boolean): TokenizeResult {
           j++;
         }
         j++; // consume closing quote, or run past EOF — caught by the outer unterminated-template check
+        opaque.push([stringStart, Math.min(j, n)]);
         continue;
       }
       if (ck === "`") {
@@ -762,6 +773,7 @@ function tokenize(content: string, isJsxFile: boolean): TokenizeResult {
       }
       if (ck === "/" && content[j + 1] === "/") {
         const nl = content.indexOf("\n", j);
+        opaque.push([j, nl === -1 ? n : nl]);
         j = nl === -1 ? n : nl;
         continue;
       }
@@ -769,6 +781,7 @@ function tokenize(content: string, isJsxFile: boolean): TokenizeResult {
         const close = content.indexOf("*/", j + 2);
         if (close === -1) return -1;
         advanceLine(j, close + 2);
+        opaque.push([j, close + 2]);
         j = close + 2;
         continue;
       }
@@ -780,22 +793,28 @@ function tokenize(content: string, isJsxFile: boolean): TokenizeResult {
   /** Skips an entire template literal starting at `pos` (`content[pos] === "\`"`), including every interpolation it contains, recursively. Returns the index one past its closing backtick, or `-1` if unterminated. */
   function skipTemplateFrom(pos: number): number {
     let j = pos + 1;
+    let segmentStart = pos;
     while (j < n) {
       const cj = content[j] as string;
       if (cj === "\\" && j + 1 < n) {
         j += 2;
         continue;
       }
-      if (cj === "`") return j + 1;
+      if (cj === "`") {
+        opaque.push([segmentStart, j + 1]);
+        return j + 1;
+      }
       if (cj === "\n") {
         line++;
         j++;
         continue;
       }
       if (cj === "$" && content[j + 1] === "{") {
+        opaque.push([segmentStart, j]);
         const next = skipInterpolation(j + 2);
         if (next === -1) return -1;
         j = next;
+        segmentStart = j;
         continue;
       }
       j++;
@@ -858,6 +877,7 @@ function tokenize(content: string, isJsxFile: boolean): TokenizeResult {
       literalFailure = `unterminated string starting at line ${startLine}`;
       return -1;
     }
+    opaque.push([start, j]);
     literals.push({
       kind: "string",
       line: startLine,
@@ -892,6 +912,7 @@ function tokenize(content: string, isJsxFile: boolean): TokenizeResult {
     let j = pos + 1;
     let current = "";
     let closed = false;
+    let segmentStart = pos;
     while (j < n) {
       const cj = content[j] as string;
       if (cj === "\\" && j + 1 < n) {
@@ -905,6 +926,7 @@ function tokenize(content: string, isJsxFile: boolean): TokenizeResult {
         break;
       }
       if (cj === "$" && content[j + 1] === "{") {
+        opaque.push([segmentStart, j]);
         staticParts.push(unescape(current));
         current = "";
         placeholderCount++;
@@ -920,6 +942,7 @@ function tokenize(content: string, isJsxFile: boolean): TokenizeResult {
           return -1;
         }
         j = next;
+        segmentStart = j;
         continue;
       }
       if (cj === "\n") line++;
@@ -931,6 +954,7 @@ function tokenize(content: string, isJsxFile: boolean): TokenizeResult {
       return -1;
     }
     staticParts.push(unescape(current));
+    opaque.push([segmentStart, j]);
     literals.push({
       kind: "template",
       line: startLine,
@@ -981,6 +1005,7 @@ function tokenize(content: string, isJsxFile: boolean): TokenizeResult {
       }
       if (cj === "/" && content[j + 1] === "/") {
         const nl = content.indexOf("\n", j);
+        opaque.push([j, nl === -1 ? n : nl]);
         j = nl === -1 ? n : nl;
         continue;
       }
@@ -988,6 +1013,7 @@ function tokenize(content: string, isJsxFile: boolean): TokenizeResult {
         const close = content.indexOf("*/", j + 2);
         if (close === -1) return -1;
         advanceLine(j, close + 2);
+        opaque.push([j, close + 2]);
         j = close + 2;
         continue;
       }
@@ -1079,6 +1105,7 @@ function tokenize(content: string, isJsxFile: boolean): TokenizeResult {
           if (found !== -1) {
             let m = found + 1;
             while (m < n && /[a-z]/i.test(content[m] as string)) m++;
+            opaque.push([j, m]);
             j = m;
             localLast = "value";
             continue;
@@ -1116,7 +1143,10 @@ function tokenize(content: string, isJsxFile: boolean): TokenizeResult {
     const flush = (): void => {
       if (j > runStart) {
         const raw = content.slice(runStart, j);
-        if (raw.trim().length > 0) jsxTexts.push({ line: runStartLine, raw });
+        if (raw.trim().length > 0) {
+          jsxTexts.push({ line: runStartLine, raw });
+          opaque.push([runStart, j]);
+        }
       }
     };
 
@@ -1268,12 +1298,14 @@ function tokenize(content: string, isJsxFile: boolean): TokenizeResult {
     const entryLiteralsCount = literals.length;
     const entryJsxTextsCount = jsxTexts.length;
     const entryUncheckedCount = unchecked.length;
+    const entryOpaqueCount = opaque.length;
 
     function backtrack(): null {
       line = entryLine;
       literals.length = entryLiteralsCount;
       jsxTexts.length = entryJsxTextsCount;
       unchecked.length = entryUncheckedCount;
+      opaque.length = entryOpaqueCount;
       return null;
     }
 
@@ -1339,6 +1371,7 @@ function tokenize(content: string, isJsxFile: boolean): TokenizeResult {
         // above.
         if (cj === "/" && content[j + 1] === "/") {
           const nl = content.indexOf("\n", j);
+          opaque.push([j, nl === -1 ? n : nl]);
           j = nl === -1 ? n : nl;
           continue;
         }
@@ -1346,6 +1379,7 @@ function tokenize(content: string, isJsxFile: boolean): TokenizeResult {
           const close = content.indexOf("*/", j + 2);
           if (close === -1) return backtrack(); // unterminated block comment — not committed, silently not-JSX
           advanceLine(j, close + 2);
+          opaque.push([j, close + 2]);
           j = close + 2;
           continue;
         }
@@ -1456,6 +1490,7 @@ function tokenize(content: string, isJsxFile: boolean): TokenizeResult {
     // line comment
     if (c === "/" && content[i + 1] === "/") {
       const nl = content.indexOf("\n", i);
+      opaque.push([i, nl === -1 ? n : nl]);
       i = nl === -1 ? n : nl;
       continue;
     }
@@ -1463,8 +1498,9 @@ function tokenize(content: string, isJsxFile: boolean): TokenizeResult {
     // block comment
     if (c === "/" && content[i + 1] === "*") {
       const close = content.indexOf("*/", i + 2);
-      if (close === -1) return { literals, jsxTexts, unchecked, failure: `unterminated block comment starting at line ${line}` };
+      if (close === -1) return { literals, jsxTexts, unchecked, opaque, failure: `unterminated block comment starting at line ${line}` };
       advanceLine(i, close + 2);
+      opaque.push([i, close + 2]);
       i = close + 2;
       continue;
     }
@@ -1472,7 +1508,7 @@ function tokenize(content: string, isJsxFile: boolean): TokenizeResult {
     // string literal
     if (c === '"' || c === "'") {
       const end = scanStringLiteral(i);
-      if (end === -1) return { literals, jsxTexts, unchecked, failure: literalFailure };
+      if (end === -1) return { literals, jsxTexts, unchecked, opaque, failure: literalFailure };
       lastTokenType = "value";
       i = end;
       continue;
@@ -1481,7 +1517,7 @@ function tokenize(content: string, isJsxFile: boolean): TokenizeResult {
     // template literal
     if (c === "`") {
       const end = scanTemplateLiteral(i);
-      if (end === -1) return { literals, jsxTexts, unchecked, failure: literalFailure };
+      if (end === -1) return { literals, jsxTexts, unchecked, opaque, failure: literalFailure };
       lastTokenType = "value";
       i = end;
       continue;
@@ -1540,6 +1576,7 @@ function tokenize(content: string, isJsxFile: boolean): TokenizeResult {
         if (found !== -1) {
           let k = found + 1;
           while (k < n && /[a-z]/i.test(content[k] as string)) k++;
+          opaque.push([i, k]);
           i = k;
           lastTokenType = "value";
           continue;
@@ -1581,7 +1618,7 @@ function tokenize(content: string, isJsxFile: boolean): TokenizeResult {
     i++;
   }
 
-  return { literals, jsxTexts, unchecked };
+  return { literals, jsxTexts, unchecked, opaque };
 }
 
 // ---------------------------------------------------------- classification
@@ -1987,4 +2024,58 @@ export function extractCopyCandidates(content: string, filePath: string): Extrac
   const unchecked: UncheckedItem[] = rawUnchecked.map((u) => ({ file: filePath, line: u.line, kind: u.kind, detail: u.detail }));
 
   return { candidates, excluded, citations, unchecked };
+}
+
+/** One string or template literal `maskNonCode` found, with its position in the original content. */
+export interface MaskedLiteral {
+  kind: "string" | "template";
+  line: number;
+  /** Index of the opening quote/backtick. */
+  start: number;
+  /** Index one past the closing quote/backtick. */
+  end: number;
+  raw: string;
+  /** The literal's static text, unescaped; a template's interpolations are dropped. */
+  text: string;
+}
+
+/** `maskNonCode`'s result. `code` has the same length and line breaks as the input. */
+export interface CodeMask {
+  code: string;
+  literals: MaskedLiteral[];
+  failure?: string;
+}
+
+/**
+ * Pure. Runs this file's tokenizer over `content` and returns a copy of it in
+ * which every comment, string literal, template static segment, regex literal
+ * and (in a `.tsx`/`.jsx` file) JSX text run is replaced by spaces, keeping
+ * every newline and every character offset. A caller can then match code
+ * patterns against `code` without a comment or a string ever matching, and
+ * look up the literal at a given offset through `literals`. A template's
+ * `${...}` interpolations stay visible in `code`, because they are code.
+ *
+ * Exported for `approval-bypass.ts` so it delegates literal and comment
+ * boundaries to this tokenizer instead of growing a second one. Deliberately
+ * not re-exported from `index.ts`: it is an internal helper, not package API.
+ */
+export function maskNonCode(content: string, filePath: string): CodeMask {
+  const { literals, opaque, failure } = tokenize(content, JSX_FILE_RE.test(filePath));
+  const masked = content.split("");
+  if (!failure) {
+    for (const [start, end] of opaque) {
+      for (let k = start; k < end && k < masked.length; k++) {
+        if (masked[k] !== "\n") masked[k] = " ";
+      }
+    }
+  }
+  const out: MaskedLiteral[] = literals.map((lit) => ({
+    kind: lit.kind,
+    line: lit.line,
+    start: lit.start,
+    end: lit.end,
+    raw: lit.raw,
+    text: lit.staticParts.join(""),
+  }));
+  return failure ? { code: masked.join(""), literals: out, failure } : { code: masked.join(""), literals: out };
 }

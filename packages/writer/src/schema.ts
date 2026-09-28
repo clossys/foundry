@@ -34,6 +34,8 @@ import type {
   CopyRecord,
   CopySource,
 } from "./types.js";
+import { COPY_FINGERPRINT_ALGORITHM } from "./fingerprint.js";
+import { isDelegateScopeItem, isEntryInDelegateScope } from "./approval.js";
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -384,6 +386,207 @@ function validateTranslationShape(value: unknown, path: string): CopyFinding[] {
 }
 
 /**
+ * `YYYY-MM-DDTHH:MM:SS(.sss)?Z` — the one ISO 8601 UTC shape this package
+ * accepts for `approvedAt`/`expiresAt`. Also requires `Date.parse` to
+ * actually accept it, so a string that merely matches the pattern but names
+ * an impossible date (e.g. a bad month) is still rejected.
+ */
+const ISO_UTC_TIMESTAMP_RE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{3})?Z$/;
+
+export function isIsoUtcTimestamp(value: unknown): value is string {
+  if (typeof value !== "string" || !ISO_UTC_TIMESTAMP_RE.test(value)) return false;
+  const year = Number(value.slice(0, 4));
+  const month = Number(value.slice(5, 7));
+  const day = Number(value.slice(8, 10));
+  const parsed = Date.parse(value);
+  if (Number.isNaN(parsed)) return false;
+  const utc = new Date(parsed);
+  return utc.getUTCFullYear() === year && utc.getUTCMonth() + 1 === month && utc.getUTCDate() === day;
+}
+
+/** `textFingerprint` shape: a `sha256` hex digest — 64 lowercase hex characters. */
+const COPY_FINGERPRINT_RE = /^[0-9a-f]{64}$/;
+
+/**
+ * Validates a `CopyRegistryEntry.approval` field, when present. `undefined`
+ * is always valid, on any entry — an entry with no approval record keeps
+ * resolving exactly as it did before this field existed. Staleness (does
+ * `textFingerprint` still match the entry's current `text`) and expiry
+ * against "now" are runtime concerns for the resolver (`resolve.ts`) and
+ * `assessCopyApprovals` (`approval.ts`), never shape findings here: a
+ * registry with a stale or expired record is still a well-formed
+ * `CopyRegistry`.
+ */
+function validateApprovalShape(value: unknown, entryStatus: unknown, entryId: unknown, path: string): CopyFinding[] {
+  if (value === undefined) return [];
+  if (!isPlainObject(value)) {
+    return [
+      {
+        rule: "approval-shape",
+        severity: "error",
+        message: `${path} must be an object when present, got ${JSON.stringify(value)}.`,
+        path,
+      },
+    ];
+  }
+
+  const approvedBy = value.approvedBy;
+  const approvedAt = value.approvedAt;
+  const textFingerprint = value.textFingerprint;
+  const fingerprintAlgorithm = value.fingerprintAlgorithm;
+  const delegate = value.delegate;
+  const pendingOwnerReview = value.pendingOwnerReview;
+  const expiresAt = value.expiresAt;
+
+  const findings: CopyFinding[] = [];
+
+  if (entryStatus !== "approved") {
+    findings.push({
+      rule: "approval-status-mismatch",
+      severity: "error",
+      message: `${path} is present but the entry's status is ${JSON.stringify(entryStatus)}, not "approved".`,
+      path,
+    });
+  }
+
+  const isDelegateRecord = approvedBy === "delegate";
+
+  if (approvedBy !== "owner" && approvedBy !== "delegate") {
+    findings.push({
+      rule: "approval-approved-by",
+      severity: "error",
+      message: `${path}.approvedBy must be "owner" or "delegate", got ${JSON.stringify(approvedBy)}.`,
+      path: `${path}.approvedBy`,
+    });
+  }
+
+  if (!isIsoUtcTimestamp(approvedAt)) {
+    findings.push({
+      rule: "approval-approved-at-shape",
+      severity: "error",
+      message: `${path}.approvedAt must be an ISO 8601 UTC timestamp, got ${JSON.stringify(approvedAt)}.`,
+      path: `${path}.approvedAt`,
+    });
+  }
+
+  if (typeof textFingerprint !== "string" || !COPY_FINGERPRINT_RE.test(textFingerprint)) {
+    findings.push({
+      rule: "approval-fingerprint-shape",
+      severity: "error",
+      message: `${path}.textFingerprint must be a 64-character lowercase hex string, got ${JSON.stringify(textFingerprint)}.`,
+      path: `${path}.textFingerprint`,
+    });
+  }
+
+  if (fingerprintAlgorithm !== COPY_FINGERPRINT_ALGORITHM) {
+    findings.push({
+      rule: "approval-fingerprint-shape",
+      severity: "error",
+      message: `${path}.fingerprintAlgorithm must be ${JSON.stringify(COPY_FINGERPRINT_ALGORITHM)}, got ${JSON.stringify(fingerprintAlgorithm)}.`,
+      path: `${path}.fingerprintAlgorithm`,
+    });
+  }
+
+  if (isDelegateRecord && delegate === undefined) {
+    findings.push({
+      rule: "approval-delegate-required",
+      severity: "error",
+      message: `${path}.delegate is required when approvedBy is "delegate".`,
+      path: `${path}.delegate`,
+    });
+  }
+
+  if (approvedBy === "owner") {
+    (["delegate", "pendingOwnerReview", "expiresAt"] as const).forEach((field) => {
+      if (value[field] !== undefined) {
+        findings.push({
+          rule: "approval-delegate-forbidden",
+          severity: "error",
+          message: `${path}.${field} is forbidden when approvedBy is "owner".`,
+          path: `${path}.${field}`,
+        });
+      }
+    });
+  }
+
+  // The remaining checks (scope shape, scope membership, pendingOwnerReview,
+  // expiresAt) only make sense on an actual delegate record — on an owner
+  // record any of these fields is already reported above as forbidden, and
+  // shape-checking a field that should not exist would only add noise.
+  if (!isDelegateRecord) return findings;
+
+  let scopeIsValid = false;
+  if (!isPlainObject(delegate)) {
+    if (delegate !== undefined) {
+      findings.push({
+        rule: "approval-delegate-scope-shape",
+        severity: "error",
+        message: `${path}.delegate must be an object, got ${JSON.stringify(delegate)}.`,
+        path: `${path}.delegate`,
+      });
+    }
+  } else {
+    const delegateId = delegate.id;
+    const scope = delegate.scope;
+    const idIsValid = isNonEmptyString(delegateId);
+    const scopeIsArrayOfItems = Array.isArray(scope) && scope.length > 0 && scope.every((item) => isDelegateScopeItem(item));
+    if (!idIsValid || !scopeIsArrayOfItems) {
+      findings.push({
+        rule: "approval-delegate-scope-shape",
+        severity: "error",
+        message: `${path}.delegate must have a non-empty string id and a non-empty array scope of well-formed namespace items, got ${JSON.stringify(delegate)}.`,
+        path: `${path}.delegate`,
+      });
+    } else {
+      scopeIsValid = true;
+    }
+
+    if (scopeIsValid && typeof entryId === "string" && !isEntryInDelegateScope(entryId, scope as string[])) {
+      findings.push({
+        rule: "approval-outside-delegate-scope",
+        severity: "error",
+        message: `${path}.delegate scope ${JSON.stringify(scope)} does not cover entry id ${JSON.stringify(entryId)}.`,
+        path: `${path}.delegate`,
+      });
+    }
+  }
+
+  if (typeof pendingOwnerReview !== "boolean") {
+    findings.push({
+      rule: "approval-pending-review-shape",
+      severity: "error",
+      message: `${path}.pendingOwnerReview must be a boolean when approvedBy is "delegate", got ${JSON.stringify(pendingOwnerReview)}.`,
+      path: `${path}.pendingOwnerReview`,
+    });
+  }
+
+  let expiresAtIsValid = false;
+  if (expiresAt !== undefined) {
+    if (!isIsoUtcTimestamp(expiresAt)) {
+      findings.push({
+        rule: "approval-expires-at-shape",
+        severity: "error",
+        message: `${path}.expiresAt must be an ISO 8601 UTC timestamp when present, got ${JSON.stringify(expiresAt)}.`,
+        path: `${path}.expiresAt`,
+      });
+    } else {
+      expiresAtIsValid = true;
+    }
+  }
+
+  if (expiresAtIsValid && isIsoUtcTimestamp(approvedAt) && Date.parse(expiresAt as string) <= Date.parse(approvedAt)) {
+    findings.push({
+      rule: "approval-expires-before-approved",
+      severity: "error",
+      message: `${path}.expiresAt ${JSON.stringify(expiresAt)} must be strictly after ${path}.approvedAt ${JSON.stringify(approvedAt)}.`,
+      path: `${path}.expiresAt`,
+    });
+  }
+
+  return findings;
+}
+
+/**
  * Validates the stronger registry shape used to resolve `CopyRef`s. A plain
  * `CopyRecord` deliberately remains valid for source scanning and voice
  * checking; it cannot become rendered content until it carries locale,
@@ -456,6 +659,7 @@ export function validateCopyRegistryShape(value: unknown): CopyFinding[] {
         });
       }
       findings.push(...validateTranslationShape(entry.translation, `entries.${i}.translation`));
+      findings.push(...validateApprovalShape(entry.approval, entry.status, entry.id, `entries.${i}.approval`));
     });
   }
 
@@ -496,11 +700,25 @@ function buildCopyRecord(value: Record<string, unknown>): CopyRecord {
 
 function buildCopyRegistry(value: Record<string, unknown>): CopyRegistry {
   const record = buildCopyRecord(value);
-  const entries = (value.entries as Array<Record<string, unknown>>).map((entry) => ({
-    ...record.entries.find((item) => item.id === entry.id)!,
-    status: entry.status as CopyEntryStatus,
-    translation: entry.translation as CopyRegistryEntry["translation"],
-  })) as CopyRegistryEntry[];
+  const entries = (value.entries as Array<Record<string, unknown>>).map((entry) => {
+    const built: CopyRegistryEntry = {
+      ...record.entries.find((item) => item.id === entry.id)!,
+      status: entry.status as CopyEntryStatus,
+      translation: entry.translation as CopyRegistryEntry["translation"],
+    };
+    // Only copy `approval` when the input entry actually has one — an
+    // `approval: undefined` key would still make `"approval" in entry` true,
+    // breaking the "no record at all" case `resolve.ts` and `approval.ts`
+    // both depend on. Copied defensively (a fresh `delegate.scope` array) so
+    // the parsed registry never aliases the caller's own input object.
+    if (entry.approval !== undefined) {
+      const approval = entry.approval as CopyRegistryEntry["approval"];
+      built.approval = approval?.delegate
+        ? { ...approval, delegate: { ...approval.delegate, scope: [...approval.delegate.scope] } }
+        : { ...approval! };
+    }
+    return built;
+  });
 
   return {
     ...record,

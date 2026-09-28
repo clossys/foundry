@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { parseCopyRecord, parseCopyRegistry, validateCopyRecordShape, validateCopyRegistryShape } from "./schema.js";
-import type { CopyRecord, CopyRegistry } from "./types.js";
+import { computeCopyFingerprint, COPY_FINGERPRINT_ALGORITHM } from "./fingerprint.js";
+import type { CopyApproval, CopyRecord, CopyRegistry } from "./types.js";
 
 // A minimal but complete, obviously-fictional CopyRecord used across this
 // file's tests. "Acme" mirrors the placeholder already used elsewhere in
@@ -464,6 +465,104 @@ describe("CopyRegistry — the stronger rendered-copy contract", () => {
         ],
       });
       expect(findings).toEqual([]);
+    });
+  });
+
+  describe("approval", () => {
+    const text = validRegistry.entries[0].text;
+    const fingerprint = computeCopyFingerprint(text);
+
+    const ownerApproval: CopyApproval = {
+      approvedBy: "owner",
+      approvedAt: "2026-08-01T00:00:00.000Z",
+      textFingerprint: fingerprint,
+      fingerprintAlgorithm: COPY_FINGERPRINT_ALGORITHM,
+    };
+
+    const delegateApproval: CopyApproval = {
+      approvedBy: "delegate",
+      approvedAt: "2026-08-01T00:00:00.000Z",
+      textFingerprint: fingerprint,
+      fingerprintAlgorithm: COPY_FINGERPRINT_ALGORITHM,
+      delegate: { id: "delegate-a", scope: ["home"] },
+      pendingOwnerReview: true,
+    };
+
+    const delegateWithExpiry: CopyApproval = {
+      ...delegateApproval,
+      expiresAt: "2026-09-01T00:00:00.000Z",
+    };
+
+    function withApproval(approval: CopyApproval | undefined): CopyRegistry {
+      return {
+        ...validRegistry,
+        entries: [{ ...validRegistry.entries[0], approval }],
+      };
+    }
+
+    it("accepts owner, delegate and delegate-with-expiry records", () => {
+      expect(validateCopyRegistryShape(withApproval(ownerApproval))).toEqual([]);
+      expect(validateCopyRegistryShape(withApproval(delegateApproval))).toEqual([]);
+      expect(validateCopyRegistryShape(withApproval(delegateWithExpiry))).toEqual([]);
+    });
+
+    it("rejects a record on a draft entry", () => {
+      const findings = validateCopyRegistryShape({
+        ...validRegistry,
+        entries: [{ ...validRegistry.entries[0], status: "draft", approval: ownerApproval }],
+      });
+      expect(findings.some((f) => f.rule === "approval-status-mismatch")).toBe(true);
+    });
+
+    it("rejects delegate fields on an owner record", () => {
+      const findings = validateCopyRegistryShape(
+        withApproval({ ...ownerApproval, delegate: { id: "delegate-a", scope: ["home"] }, pendingOwnerReview: true, expiresAt: "2026-09-01T00:00:00.000Z" }),
+      );
+      const forbidden = findings.filter((f) => f.rule === "approval-delegate-forbidden");
+      expect(forbidden.length).toBe(3);
+    });
+
+    it("rejects an id outside the delegate scope", () => {
+      const findings = validateCopyRegistryShape(
+        withApproval({ ...delegateApproval, delegate: { id: "delegate-a", scope: ["dashboard"] } }),
+      );
+      expect(findings.some((f) => f.rule === "approval-outside-delegate-scope")).toBe(true);
+    });
+
+    it("rejects expiresAt not after approvedAt", () => {
+      const findings = validateCopyRegistryShape(
+        withApproval({ ...delegateApproval, expiresAt: delegateApproval.approvedAt }),
+      );
+      expect(findings.some((f) => f.rule === "approval-expires-before-approved")).toBe(true);
+    });
+
+    it("rejects impossible UTC calendar dates in approvedAt and expiresAt", () => {
+      for (const bad of ["2026-02-30T00:00:00Z", "2026-02-29T00:00:00Z", "2026-13-01T00:00:00Z"]) {
+        expect(validateCopyRegistryShape(withApproval({ ...ownerApproval, approvedAt: bad })).some((f) => f.rule === "approval-approved-at-shape")).toBe(true);
+        expect(
+          validateCopyRegistryShape(withApproval({ ...delegateWithExpiry, approvedAt: "2026-08-01T00:00:00.000Z", expiresAt: bad })).some(
+            (f) => f.rule === "approval-expires-at-shape",
+          ),
+        ).toBe(true);
+      }
+      for (const ok of ["2024-02-29T00:00:00Z", "2026-02-28T00:00:00Z"]) {
+        expect(validateCopyRegistryShape(withApproval({ ...ownerApproval, approvedAt: ok }))).toEqual([]);
+      }
+    });
+
+    it("still validates with zero findings when the fingerprint is stale — staleness is a resolver concern, not a shape one", () => {
+      const findings = validateCopyRegistryShape(withApproval({ ...ownerApproval, textFingerprint: computeCopyFingerprint("some other text") }));
+      expect(findings).toEqual([]);
+    });
+
+    it("parseCopyRegistry preserves approval", () => {
+      const parsed = parseCopyRegistry(withApproval(delegateWithExpiry));
+      expect(parsed.entries[0].approval).toEqual(delegateWithExpiry);
+      // Defensive copy: mutating the input's nested scope array must not affect the parsed result.
+      const input = withApproval(delegateWithExpiry);
+      const parsedAgain = parseCopyRegistry(input);
+      input.entries[0].approval!.delegate!.scope.push("mutated");
+      expect(parsedAgain.entries[0].approval!.delegate!.scope).toEqual(["home"]);
     });
   });
 });

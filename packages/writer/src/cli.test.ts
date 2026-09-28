@@ -1,10 +1,13 @@
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { mainApprovalStateCommand } from "./approval.js";
+import { mainApproveCommand } from "./approve-cli.js";
 import { CliInputError, main, mainAddressabilityCheck } from "./cli.js";
+import { COPY_FINGERPRINT_ALGORITHM, computeCopyFingerprint } from "./fingerprint.js";
 
 // Hermetic: every test operates on its own pair of `mkdtemp` directories
 // (a real record.json file's directory, plus a scan directory), removed
@@ -866,6 +869,26 @@ describe("main — direct-path reachability (real compiled dist/cli.js)", () => 
     },
     20_000,
   );
+
+  it(
+    "approve --help: real exit 0 through the real dispatch branch",
+    () => {
+      const result = runCompiledCli(["approve", "--help"]);
+      expect(result.status).toBe(0);
+      expect(result.stdout).toMatch(/Usage: writer-check approve/);
+    },
+    20_000,
+  );
+
+  it(
+    "approval-state --help: real exit 0 through the real dispatch branch",
+    () => {
+      const result = runCompiledCli(["approval-state", "--help"]);
+      expect(result.status).toBe(0);
+      expect(result.stdout).toMatch(/Usage: writer-check approval-state/);
+    },
+    20_000,
+  );
 });
 
 describe("mainAddressabilityCheck — argument handling", () => {
@@ -931,5 +954,202 @@ describe("mainAddressabilityCheck — argument handling", () => {
     expect(() => mainAddressabilityCheck([dir, "--extensions", ","])).toThrow(CliInputError);
     expect(() => mainAddressabilityCheck([dir, "--extensions", ""])).toThrow(CliInputError);
     expect(() => mainAddressabilityCheck([dir, "--extensions", ".mjs,,.cjs"])).toThrow(CliInputError);
+  });
+});
+
+// -----------------------------------------------------------------------
+// `writer-check approve` / `writer-check approval-state` — end to end via
+// the exported `mainApproveCommand` (approve-cli.ts) and
+// `mainApprovalStateCommand` (approval.ts), the same way every other
+// subcommand above is exercised in-process. Real dispatch-through-dist.js
+// reachability for both is covered separately, in the
+// "direct-path reachability" describe block above.
+//
+// Hermetic: every test builds its own mkdtemp fixture tree, removed
+// afterward. Nothing here touches this repository's own source.
+// -----------------------------------------------------------------------
+
+describe("mainApproveCommand / mainApprovalStateCommand — dispatch wiring", () => {
+  const dirs: string[] = [];
+
+  function fixture(files: Record<string, string>): string {
+    const root = mkdtempSync(join(tmpdir(), "writer-approval-dispatch-"));
+    dirs.push(root);
+    for (const [rel, content] of Object.entries(files)) {
+      const full = join(root, rel);
+      mkdirSync(dirname(full), { recursive: true });
+      writeFileSync(full, content);
+    }
+    return root;
+  }
+
+  /**
+   * A single-entry `CopyRegistry`, `entryOverrides` merged onto a current,
+   * unexpired owner-approval record for `text`. Generic ids only
+   * (`site.home.title`), per this repository's public-safety contract.
+   */
+  function registryJson(entryOverrides: Record<string, unknown> = {}): string {
+    const text = "Home title copy.";
+    const entry: Record<string, unknown> = {
+      id: "site.home.title",
+      text,
+      context: "home hero",
+      status: "approved",
+      approval: {
+        approvedBy: "owner",
+        approvedAt: "2026-01-01T00:00:00.000Z",
+        textFingerprint: computeCopyFingerprint(text),
+        fingerprintAlgorithm: COPY_FINGERPRINT_ALGORITHM,
+      },
+      ...entryOverrides,
+    };
+    return JSON.stringify(
+      {
+        id: "fixture-app",
+        locale: "en",
+        revision: "rev-1",
+        source: { kind: "consumer", reference: "editorial/revisions/1" },
+        entries: [entry],
+      },
+      null,
+      2,
+    );
+  }
+
+  const RESOLVER_ONLY_SOURCE = [
+    'import { createCopyResolver } from "@clossys/writer";',
+    "export function getResolver(registry: unknown) {",
+    "  return createCopyResolver(registry);",
+    "}",
+  ].join("\n");
+
+  beforeEach(() => {
+    vi.spyOn(console, "log").mockImplementation(() => {});
+    vi.spyOn(console, "error").mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    while (dirs.length > 0) {
+      const d = dirs.pop()!;
+      rmSync(d, { recursive: true, force: true });
+    }
+  });
+
+  describe("mainApproveCommand", () => {
+    it("--help returns 0 and prints usage", () => {
+      expect(mainApproveCommand(["--help"])).toBe(0);
+      const printed = vi.mocked(console.log).mock.calls.map((c) => String(c[0])).join("\n");
+      expect(printed).toMatch(/Usage: writer-check approve/);
+    });
+
+    it("exit 0: owner approval is written to the registry file on disk", () => {
+      const root = fixture({ "registry.json": registryJson({ status: "draft", approval: undefined }) });
+      const registryFile = join(root, "registry.json");
+      const code = mainApproveCommand([registryFile, "site.home.title", "--by", "owner"], {
+        now: new Date("2026-09-27T00:00:00.000Z"),
+      });
+      expect(code).toBe(0);
+      const written = JSON.parse(readFileSync(registryFile, "utf8")) as { entries: Array<{ status: string; approval?: { approvedBy: string } }> };
+      expect(written.entries[0]!.status).toBe("approved");
+      expect(written.entries[0]!.approval?.approvedBy).toBe("owner");
+    });
+
+    it("exit 1: refuses (and writes nothing) for an unknown entry id", () => {
+      const root = fixture({ "registry.json": registryJson() });
+      const registryFile = join(root, "registry.json");
+      const before = readFileSync(registryFile, "utf8");
+      const code = mainApproveCommand([registryFile, "does.not.exist", "--by", "owner"]);
+      expect(code).toBe(1);
+      expect(readFileSync(registryFile, "utf8")).toBe(before);
+    });
+
+    it("exit 2: bad arguments (neither --by nor --revoke) never touch the file", () => {
+      const root = fixture({ "registry.json": registryJson() });
+      const registryFile = join(root, "registry.json");
+      const before = readFileSync(registryFile, "utf8");
+      const code = mainApproveCommand([registryFile, "site.home.title"]);
+      expect(code).toBe(2);
+      expect(readFileSync(registryFile, "utf8")).toBe(before);
+    });
+  });
+
+  describe("mainApprovalStateCommand", () => {
+    it("--help returns 0 and prints usage", () => {
+      expect(mainApprovalStateCommand(["--help"])).toBe(0);
+      const printed = vi.mocked(console.log).mock.calls.map((c) => String(c[0])).join("\n");
+      expect(printed).toMatch(/Usage: writer-check approval-state/);
+    });
+
+    it("exit 0: a current owner record and a source file that only passes the registry to createCopyResolver", () => {
+      const root = fixture({
+        "registry.json": registryJson(),
+        "src/page.ts": RESOLVER_ONLY_SOURCE,
+      });
+      const code = mainApprovalStateCommand([join(root, "registry.json"), root]);
+      expect(code).toBe(0);
+    });
+
+    it("exit 1: a stale approval record (recorded fingerprint no longer matches the entry's text)", () => {
+      const root = fixture({
+        "registry.json": registryJson({ approval: { approvedBy: "owner", approvedAt: "2026-01-01T00:00:00.000Z", textFingerprint: computeCopyFingerprint("Some earlier text."), fingerprintAlgorithm: COPY_FINGERPRINT_ALGORITHM } }),
+        "src/page.ts": RESOLVER_ONLY_SOURCE,
+      });
+      const code = mainApprovalStateCommand([join(root, "registry.json"), root]);
+      expect(code).toBe(1);
+    });
+
+    it('exit 1: a hard-coded status: "approved" in a coupled file, registry itself clean', () => {
+      const root = fixture({
+        "registry.json": registryJson(),
+        "src/page.ts": [
+          'import { createCopyResolver } from "@clossys/writer";',
+          'export const fake = { id: "x", status: "approved" };',
+        ].join("\n"),
+      });
+      const code = mainApprovalStateCommand([join(root, "registry.json"), root]);
+      expect(code).toBe(1);
+    });
+
+    it("exit 2: a dynamic import of the registry in a coupled file, with no violations", () => {
+      const root = fixture({
+        "registry.json": registryJson(),
+        "src/page.ts": [
+          'import { createCopyResolver } from "@clossys/writer";',
+          "export async function load() {",
+          '  return import("../registry.json");',
+          "}",
+        ].join("\n"),
+      });
+      const code = mainApprovalStateCommand([join(root, "registry.json"), root]);
+      expect(code).toBe(2);
+    });
+
+    it("exit 2: an invalid registry file (fails validateCopyRegistryShape) — nothing is scanned", () => {
+      const root = fixture({ "registry.json": JSON.stringify({ id: "fixture-app" }) });
+      const code = mainApprovalStateCommand([join(root, "registry.json"), root]);
+      expect(code).toBe(2);
+    });
+
+    it("--format json prints exactly one parseable object with verdict/findings/unchecked/counts", () => {
+      const root = fixture({
+        "registry.json": registryJson(),
+        "src/page.ts": RESOLVER_ONLY_SOURCE,
+      });
+      const code = mainApprovalStateCommand([join(root, "registry.json"), root, "--format", "json"]);
+      expect(code).toBe(0);
+      const printedLines = vi.mocked(console.log).mock.calls.map((c) => String(c[0]));
+      expect(printedLines).toHaveLength(1);
+      const parsed = JSON.parse(printedLines[0]!) as {
+        verdict: string;
+        findings: unknown[];
+        unchecked: unknown[];
+        counts: { errors: number; warnings: number; unchecked: number; filesScanned: number; coupledFiles: number };
+      };
+      expect(parsed.verdict).toBe("satisfied");
+      expect(parsed.findings).toEqual([]);
+      expect(parsed.unchecked).toEqual([]);
+      expect(parsed.counts).toEqual({ errors: 0, warnings: 0, unchecked: 0, filesScanned: 1, coupledFiles: 1 });
+    });
   });
 });

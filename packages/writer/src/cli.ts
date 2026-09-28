@@ -109,6 +109,21 @@
  *       all. This is the explicit third state this gate is built around:
  *       "could not check" must never be reported as a pass.
  *
+ * A FIFTH and SIXTH subcommand, `approve` and `approval-state`, are
+ * dispatched the same way `addressability` and `passages` are — a fully
+ * separate top-level branch at the very bottom of this file, never folded
+ * through `main()`. `writer-check approve` writes a
+ * `CopyRegistryEntry.approval` record so nobody hand-edits one; its whole
+ * argument-parsing, validation, and atomic-write contract lives in
+ * `mainApproveCommand` (`./approve-cli.ts`) — this file only wires its
+ * exit code through. `writer-check approval-state` reports the current
+ * approval state of a registry from two angles at once: whether every
+ * approved entry's own record is current (`assessCopyApprovals`) and
+ * whether consumer source actually routes copy through the registry's
+ * approval lifecycle rather than around it (`scanApprovalBypass`/
+ * `checkApprovalBypass`); its own contract lives in
+ * `mainApprovalStateCommand` (`./approval.ts`).
+ *
  * A malformed `pathExclusions` entry (see `scan.ts`/`path-exclusions.ts`)
  * gets the same `2` treatment as `unchecked`, for the identical reason: an
  * exclusion list this run cannot trust means this run cannot say which
@@ -134,6 +149,8 @@ import { checkCopyTraceability, type CopyGateFinding, type CopyGateIgnored, type
 import { checkLocaleCoverage, type LocaleCoverageReport } from "./locale-coverage.js";
 import { liveTreeExists, scanLiveCopyTrees } from "./live-copy-gate.js";
 import { checkPassageComposition, readPassageRecord, type PassageGateResult } from "./passage.js";
+import { mainApprovalStateCommand } from "./approval.js";
+import { mainApproveCommand } from "./approve-cli.js";
 import { readCopyRecord } from "./registry.js";
 import { checkRenderRegistryParity } from "./render-registry-parity.js";
 import { scanCopySourceTree, type ScanResult, type UncheckedItem } from "./scan.js";
@@ -147,13 +164,18 @@ const USAGE = `Usage: writer-check <record-file> [scan-dir] [options]
   record-file    Path to a CopyRecord JSON file (see @clossys/writer's README). Required.
   scan-dir       Directory to scan for user-facing string/template literals. Defaults to the current working directory.
 
-See also "writer-check addressability [scan-dir]" and "writer-check passages
-<registry-file>" (this same file's other subcommands, both dispatched on
-argv[0] before anything below) — addressability asks whether user-facing
-prose is resolved from the copy registry by id, rather than typed inline;
-passages asks whether a passage composes registered entries/terms rather
-than inlining a literal or reaching into another passage's internals. Both
-are separate, stricter gates; neither runs as part of this default command.
+See also "writer-check addressability [scan-dir]", "writer-check passages
+<registry-file>", "writer-check approve <registry-file> <entry-id>...", and
+"writer-check approval-state <registry-file> <scan-dir>" (this same file's
+other subcommands, all dispatched on argv[0] before anything below) —
+addressability asks whether user-facing prose is resolved from the copy
+registry by id, rather than typed inline; passages asks whether a passage
+composes registered entries/terms rather than inlining a literal or
+reaching into another passage's internals; approve writes an entry's
+approval record; approval-state reports whether a
+registry's approval records are current and whether consumer source
+actually routes copy through them. All four are separate gates/commands;
+none runs as part of this default command.
 
 Options:
   --help         Print this message and exit 0.
@@ -177,6 +199,8 @@ Run "writer-check voice-derivation-coverage --help" for the second subcommand's 
 Run "writer-check locale-coverage --help" for the third subcommand's own usage.
 Run "writer-check addressability --help" for that subcommand's own usage.
 Run "writer-check passages --help" for the passage-composition subcommand's own usage.
+Run "writer-check approve --help" for the approval-recording subcommand's own usage.
+Run "writer-check approval-state --help" for the approval-state subcommand's own usage.
 `;
 
 const VOICE_DERIVATION_COVERAGE_USAGE = `Usage: writer-check voice-derivation-coverage <obligations-file> <brand-derived-rule-ids-file> [options]
@@ -1510,11 +1534,12 @@ function detectMainModule(): boolean {
 }
 
 /**
- * `writer-check`, `writer-check addressability`, and `writer-check passages`
- * are ONE `bin` entry, one compiled file, dispatched by an explicit FIRST
- * ARGUMENT — never by how this file was invoked (its own path, a symlink
- * name, an installed `bin` shim, ...). That is deliberate: this
- * repository's own root `package.json` invokes every gate by compiled path
+ * `writer-check`, `writer-check addressability`, `writer-check passages`,
+ * `writer-check approve`, and `writer-check approval-state` are ONE `bin`
+ * entry, one compiled file, dispatched by an explicit FIRST ARGUMENT — never
+ * by how this file was invoked (its own path, a symlink name, an installed
+ * `bin` shim, ...). That is deliberate: this repository's own root
+ * `package.json` invokes every gate by compiled path
  * (`node packages/ui/dist/tokens/contrast-cli.js`,
  * `node packages/controller/dist/cli.js`, ...), never by `bin` name, so
  * any dispatch keyed on the invoking path/name (a second `bin` entry
@@ -1524,7 +1549,11 @@ function detectMainModule(): boolean {
  * exactly the "runs the wrong thing without ever failing" failure mode a
  * gate must never have. `rawArgs[0]` is read BEFORE `main()`'s own
  * `parseArgs` ever sees the array, so the default command's argument
- * shape is completely unaffected by either subcommand existing at all.
+ * shape is completely unaffected by any subcommand existing at all.
+ * `mainApproveCommand`/`mainApprovalStateCommand` never throw (see their own
+ * doc comments), so — unlike `runAddressabilityCheck`/`runPassagesCheck`
+ * above — their branches assign `process.exitCode` directly, with no
+ * try/catch wrapper of their own to add.
  */
 if (detectMainModule()) {
   const rawArgs = process.argv.slice(2);
@@ -1532,6 +1561,10 @@ if (detectMainModule()) {
     runAddressabilityCheck(rawArgs.slice(1));
   } else if (rawArgs[0] === "passages") {
     runPassagesCheck(rawArgs.slice(1));
+  } else if (rawArgs[0] === "approve") {
+    process.exitCode = mainApproveCommand(rawArgs.slice(1));
+  } else if (rawArgs[0] === "approval-state") {
+    process.exitCode = mainApprovalStateCommand(rawArgs.slice(1));
   } else {
     run();
   }
