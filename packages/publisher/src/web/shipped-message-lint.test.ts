@@ -504,7 +504,21 @@ function collectObjectMemberSlicesFromDefault(
         moduleMessageObjectInitializers,
         moduleMessageArrayInitializers,
       ) ?? objectLiteralPropertyInitializer(resolved, memberKey, source);
-    return slice === undefined ? null : [slice];
+    if (slice !== undefined) return [slice];
+    for (const property of resolved.properties) {
+      if (ts.isSpreadAssignment(property)) {
+        const spreadSlices = collectObjectMemberSlicesFromDefault(
+          property.expression,
+          memberKey,
+          source,
+          moduleMessageObjectInitializers,
+          moduleMessageArrayInitializers,
+          parameters,
+        );
+        if (spreadSlices !== null && spreadSlices.length > 0) return spreadSlices;
+      }
+    }
+    return null;
   }
   if (ts.isConditionalExpression(resolved)) {
     const whenTrue = collectObjectMemberSlicesFromDefault(
@@ -652,16 +666,35 @@ function collectArrayAllElementSlicesFromDefault(
   return null;
 }
 
-function propertyAccessMemberKeys(node: ts.PropertyAccessExpression): { objectName: string; memberKeys: string[] } | null {
+function renderedMemberChain(root: ts.Expression): { objectName: string; memberKeys: string[] } | null {
   const memberKeys: string[] = [];
-  let current: ts.Expression = node;
-  while (ts.isPropertyAccessExpression(current)) {
-    memberKeys.unshift(current.name.text);
-    current = current.expression;
+  let current: ts.Expression = root;
+  for (;;) {
+    if (ts.isPropertyAccessExpression(current)) {
+      memberKeys.unshift(current.name.text);
+      current = current.expression;
+      continue;
+    }
+    if (ts.isElementAccessExpression(current)) {
+      const arg = current.argumentExpression;
+      if (ts.isStringLiteral(arg) || ts.isNoSubstitutionTemplateLiteral(arg)) {
+        if (NON_MESSAGE_PARAMETER_MEMBERS.has(arg.text)) return null;
+        memberKeys.unshift(arg.text);
+        current = current.expression;
+        continue;
+      }
+      return null;
+    }
+    current = unwrapExpression(current);
+    if (ts.isIdentifier(current)) {
+      return { objectName: current.text, memberKeys };
+    }
+    return null;
   }
-  current = unwrapExpression(current);
-  if (!ts.isIdentifier(current)) return null;
-  return { objectName: current.text, memberKeys };
+}
+
+function propertyAccessMemberKeys(node: ts.PropertyAccessExpression): { objectName: string; memberKeys: string[] } | null {
+  return renderedMemberChain(node);
 }
 
 function indirectHelperCallDefersRender(call: ts.CallExpression): boolean {
@@ -766,6 +799,51 @@ function collectRenderedParameterBindingPaths(fn: ts.FunctionLikeDeclaration): R
     rendered.push({ paramName, bindingPath });
   }
 
+  const renderedLocalSources = new Map<string, { paramName: string; bindingPath: ArgumentBindingPath }>();
+
+  function renderedBindingForExpression(
+    expression: ts.Expression,
+  ): { paramName: string; bindingPath: ArgumentBindingPath } | null {
+    expression = unwrapExpression(expression);
+    for (const paramName of paramNames) {
+      if (ts.isIdentifier(expression) && expression.text === paramName) {
+        return { paramName, bindingPath: [] };
+      }
+      if (ts.isPropertyAccessExpression(expression)) {
+        const chain = propertyAccessMemberKeys(expression);
+        if (chain !== null && chain.objectName === paramName) {
+          if (chain.memberKeys.some((member) => NON_MESSAGE_PARAMETER_MEMBERS.has(member))) return null;
+          return {
+            paramName,
+            bindingPath: chain.memberKeys.map((key) => ({ kind: "property" as const, key })),
+          };
+        }
+      }
+      if (ts.isCallExpression(expression)) {
+        const callee = expression.expression;
+        if (ts.isPropertyAccessExpression(callee)) {
+          const chain = propertyAccessMemberKeys(callee);
+          if (chain !== null && chain.objectName === paramName) {
+            if (chain.memberKeys.some((member) => NON_MESSAGE_PARAMETER_MEMBERS.has(member))) return null;
+            return {
+              paramName,
+              bindingPath: chain.memberKeys.map((key) => ({ kind: "property" as const, key })),
+            };
+          }
+        }
+      }
+      const elementAccessChain = ts.isElementAccessExpression(expression) ? renderedMemberChain(expression) : null;
+      if (elementAccessChain !== null && elementAccessChain.objectName === paramName) {
+        if (elementAccessChain.memberKeys.some((member) => NON_MESSAGE_PARAMETER_MEMBERS.has(member))) return null;
+        return {
+          paramName,
+          bindingPath: elementAccessChain.memberKeys.map((key) => ({ kind: "property" as const, key })),
+        };
+      }
+    }
+    return null;
+  }
+
   function noteInExpression(expression: ts.Expression): void {
     expression = unwrapExpression(expression);
     if (ts.isArrayLiteralExpression(expression)) {
@@ -828,6 +906,22 @@ function collectRenderedParameterBindingPaths(fn: ts.FunctionLikeDeclaration): R
         continue;
       }
       if (ts.isCallExpression(expression)) {
+        if (ts.isIdentifier(expression.expression) && expression.arguments.length > 0) {
+          const firstArg = expression.arguments[0];
+          if (ts.isIdentifier(firstArg) && firstArg.text === paramName) {
+            const nestedCallee = resolveCallableFunctionLike(expression.expression.text, sourceFile);
+            if (nestedCallee !== undefined) {
+              const nestedParamName = parameterLocalNameAt(nestedCallee.parameters, 0);
+              if (nestedParamName !== null) {
+                for (const nested of collectRenderedParameterBindingPaths(nestedCallee)) {
+                  if (nested.paramName === nestedParamName) {
+                    noteBindingPath(paramName, nested.bindingPath);
+                  }
+                }
+              }
+            }
+          }
+        }
         const callee = expression.expression;
         if (ts.isPropertyAccessExpression(callee)) {
           const chain = propertyAccessMemberKeys(callee);
@@ -853,13 +947,56 @@ function collectRenderedParameterBindingPaths(fn: ts.FunctionLikeDeclaration): R
           if (!NON_MESSAGE_PARAMETER_MEMBERS.has(argument.text)) {
             noteBindingPath(paramName, [{ kind: "property", key: argument.text }]);
           }
+          continue;
         }
+      }
+      const elementAccessChain = ts.isElementAccessExpression(expression) ? renderedMemberChain(expression) : null;
+      if (elementAccessChain !== null && elementAccessChain.objectName === paramName) {
+        if (!elementAccessChain.memberKeys.some((member) => NON_MESSAGE_PARAMETER_MEMBERS.has(member))) {
+          noteBindingPath(
+            paramName,
+            elementAccessChain.memberKeys.map((key) => ({ kind: "property" as const, key })),
+          );
+        }
+        continue;
       }
     }
   }
 
   function visit(node: ts.Node): void {
+    if (ts.isVariableStatement(node)) {
+      for (const declaration of node.declarationList.declarations) {
+        if (declaration.initializer === undefined) continue;
+        if (ts.isIdentifier(declaration.name)) {
+          const source = renderedBindingForExpression(declaration.initializer);
+          if (source !== null) {
+            renderedLocalSources.set(declaration.name.text, source);
+          }
+          continue;
+        }
+        if (ts.isObjectBindingPattern(declaration.name) && ts.isIdentifier(declaration.initializer)) {
+          const paramName = declaration.initializer.text;
+          if (!paramNames.has(paramName)) continue;
+          for (const element of declaration.name.elements) {
+            const localName = bindingElementLocalName(element);
+            const objectKey = bindingElementObjectKey(element, sourceFile);
+            if (localName === null || objectKey === null) continue;
+            renderedLocalSources.set(localName, {
+              paramName,
+              bindingPath: [{ kind: "property", key: objectKey }],
+            });
+          }
+        }
+      }
+    }
     if (ts.isReturnStatement(node) && node.expression !== undefined) {
+      const returned = unwrapExpression(node.expression);
+      if (ts.isIdentifier(returned)) {
+        const source = renderedLocalSources.get(returned.text);
+        if (source !== null && source !== undefined) {
+          noteBindingPath(source.paramName, source.bindingPath);
+        }
+      }
       noteInExpression(node.expression);
     }
     if (ts.isCallExpression(node) && isCreateElementCall(node)) {
@@ -1532,6 +1669,7 @@ function localInitializerIsShippedCopy(node: ts.Expression): boolean {
   }
   if (ts.isObjectLiteralExpression(node)) {
     return node.properties.some((property) => {
+      if (ts.isSpreadAssignment(property)) return localInitializerIsShippedCopy(property.expression);
       if (ts.isPropertyAssignment(property)) return localInitializerIsShippedCopy(property.initializer);
       return false;
     });
@@ -2176,11 +2314,13 @@ function analyzeRenderedLocals(
   callSiteParameterContexts: Map<string, ts.ParameterDeclaration[]>,
 ): {
   indirectMessageProps: Map<string, number>;
+  indirectArgumentViolations: Array<{ line: number; kind: ShippedMessageViolation["kind"]; text: string }>;
   moduleDirectStringAliases: Map<string, string>;
   literalLocalInitializers: Map<string, ts.Expression>;
   scopedLiteralLocals: Map<string, number>;
 } {
   const indirectMessageProps = new Map<string, number>();
+  const indirectArgumentViolations: Array<{ line: number; kind: ShippedMessageViolation["kind"]; text: string }> = [];
   const moduleDirectStringAliases = new Map<string, string>();
   const literalLocalInitializers = new Map<string, ts.Expression>();
   const setterToState = new Map<string, string>();
@@ -2369,6 +2509,20 @@ function analyzeRenderedLocals(
     if (literalLocals.has(fromName)) {
       literalLocals.set(name, line);
     }
+    const fromInit =
+      literalLocalInitializers.get(fromName) ??
+      parameterDefaultExpressionForName(
+        fromName,
+        currentParameters,
+        source,
+        moduleMessageObjectInitializers,
+        moduleMessageArrayInitializers,
+      );
+    if (fromInit !== undefined) {
+      literalLocalInitializers.set(name, fromInit);
+    } else {
+      literalLocalInitializers.set(name, ts.factory.createIdentifier(fromName));
+    }
     if (moduleDirectStringFunctions.has(fromName)) {
       moduleDirectStringAliases.set(name, fromName);
     }
@@ -2425,6 +2579,7 @@ function analyzeRenderedLocals(
     objectKey: string | null,
     sourceExpr: ts.Expression | undefined,
     line: number,
+    memberPath: string[] | undefined = undefined,
   ): void {
     if (sourceExpr === undefined || objectKey === null) return;
     let defaultExpr: ts.Expression = sourceExpr;
@@ -2440,13 +2595,24 @@ function analyzeRenderedLocals(
         defaultExpr = paramDefault;
       }
     }
-    const slices = collectObjectMemberSlicesFromDefault(
-      defaultExpr,
-      objectKey,
-      source,
-      moduleMessageObjectInitializers,
-      moduleMessageArrayInitializers,
-    );
+    const path = memberPath ?? [objectKey];
+    const slices =
+      path.length === 1
+        ? collectObjectMemberSlicesFromDefault(
+            defaultExpr,
+            path[0],
+            source,
+            moduleMessageObjectInitializers,
+            moduleMessageArrayInitializers,
+          )
+        : collectObjectMemberPathSlicesFromDefault(
+            defaultExpr,
+            path,
+            source,
+            moduleMessageObjectInitializers,
+            moduleMessageArrayInitializers,
+            currentParameters,
+          );
     if (slices !== null) {
       if (
         slices.some((slice) =>
@@ -2564,12 +2730,54 @@ function analyzeRenderedLocals(
           return null;
         })();
         if (indirectArgumentName !== null) {
-          if (indirectArgumentName === "messages" && !indirectHelperCallDefersRender(call)) {
-            continue;
-          }
           indirectMessageProps.set(indirectArgumentName, line);
+        } else {
+          const unwrappedArgument = unwrapExpression(argument);
+          if (ts.isObjectLiteralExpression(unwrappedArgument)) {
+            for (const property of unwrappedArgument.properties) {
+              if (!ts.isPropertyAssignment(property)) continue;
+              const literal = staticLiteral(unwrapExpression(property.initializer));
+              if (literal !== null && hasLetter(literal)) {
+                indirectArgumentViolations.push({ line, kind: "jsx-text", text: literal });
+              }
+            }
+          }
         }
       }
+    }
+  }
+
+  function registerObjectBindingPattern(
+    pattern: ts.ObjectBindingPattern,
+    sourceExpr: ts.Expression | undefined,
+    line: number,
+    pathPrefix: string[],
+  ): void {
+    for (const element of pattern.elements) {
+      if (element.dotDotDotToken !== undefined) {
+        const localName = bindingElementLocalName(element);
+        if (localName !== null && sourceExpr !== undefined) {
+          registerFromExpression(localName, sourceExpr, line);
+        }
+        continue;
+      }
+      const objectKey = bindingElementObjectKey(element, source);
+      if (objectKey === null) continue;
+      const memberPath = [...pathPrefix, objectKey];
+      if (ts.isObjectBindingPattern(element.name)) {
+        registerObjectBindingPattern(element.name, sourceExpr, line, memberPath);
+        continue;
+      }
+      const localName = bindingElementLocalName(element);
+      if (localName === null) continue;
+      registerDestructuredProp(
+        localName,
+        bindingElementPropertyName(element, source),
+        memberPath.at(-1) ?? null,
+        sourceExpr,
+        line,
+        memberPath,
+      );
     }
   }
 
@@ -2598,17 +2806,7 @@ function analyzeRenderedLocals(
           }
         }
         if (ts.isObjectBindingPattern(declaration.name)) {
-          for (const element of declaration.name.elements) {
-            const localName = bindingElementLocalName(element);
-            if (localName === null) continue;
-            registerDestructuredProp(
-              localName,
-              bindingElementPropertyName(element, source),
-              bindingElementObjectKey(element, source),
-              declaration.initializer,
-              line,
-            );
-          }
+          registerObjectBindingPattern(declaration.name, declaration.initializer, line, []);
         }
         if (ts.isArrayBindingPattern(declaration.name)) {
           let index = 0;
@@ -2654,6 +2852,7 @@ function analyzeRenderedLocals(
   const scopedLiteralLocals = new Map([...outerLiteralLocals, ...literalLocals]);
   return {
     indirectMessageProps,
+    indirectArgumentViolations,
     moduleDirectStringAliases,
     literalLocalInitializers,
     scopedLiteralLocals,
@@ -2774,8 +2973,10 @@ function checkRenderedLocalReferences(
   function noteElementAccess(node: ts.ElementAccessExpression, reportAt: ts.Node): void {
     const argument = node.argumentExpression;
     const index = elementAccessIndexFromArgument(argument);
-    if (index !== null && ts.isIdentifier(node.expression)) {
-      const defaultExpr = localDefaultExpression(node.expression.text);
+    const objectExpr = unwrapExpression(node.expression);
+    const objectName = ts.isIdentifier(objectExpr) ? objectExpr.text : null;
+    if (index !== null && objectName !== null) {
+      const defaultExpr = localDefaultExpression(objectName);
       if (defaultExpr !== undefined) {
         const entries = collectArrayIndexSlicesFromDefault(
           defaultExpr,
@@ -2795,28 +2996,28 @@ function checkRenderedLocalReferences(
               ),
             )
           ) {
-            noteReference(node.expression.text, reportAt);
+            noteReference(objectName, reportAt);
           }
           return;
         }
       }
       return;
     }
-    if (ts.isStringLiteral(argument) || ts.isNoSubstitutionTemplateLiteral(argument)) {
-      const member = argument.text;
-      if (NON_MESSAGE_PARAMETER_MEMBERS.has(member)) return;
-      if (ts.isIdentifier(node.expression) && node.expression.text === "props" && interfaceMessageProps.has(member)) {
-        violations.push({ file: fileName, line: lineOf(reportAt), kind: "rendered-local", text: member });
-        return;
-      }
-      if (renderedMemberPathIsShippedCopy(node.expression.text, [member])) {
-        violations.push({ file: fileName, line: lineOf(reportAt), kind: "rendered-local", text: node.expression.text });
-      }
-      return;
-    }
-    if (ts.isIdentifier(node.expression) && ts.isIdentifier(argument)) {
-      const defaultExpr = localDefaultExpression(node.expression.text);
-      if (defaultExpr !== undefined) {
+    if (ts.isIdentifier(unwrapExpression(argument)) && index === null) {
+      if (objectName !== null) {
+        const defaultExpr = localDefaultExpression(objectName);
+        if (defaultExpr !== undefined) {
+          const resolved = unwrapExpression(
+            resolveModulePatternDefault(
+              defaultExpr,
+              moduleMessageObjectInitializers,
+              moduleMessageArrayInitializers,
+            ),
+          );
+          if (ts.isArrayLiteralExpression(resolved)) {
+            return;
+          }
+        }
         const entries = collectArrayAllElementSlicesFromDefault(
           defaultExpr,
           moduleMessageObjectInitializers,
@@ -2834,28 +3035,38 @@ function checkRenderedLocalReferences(
               ),
             )
           ) {
-            noteReference(node.expression.text, reportAt);
+            noteReference(objectName, reportAt);
           }
           return;
         }
-      }
-      if (
-        literalLocals.has(node.expression.text) ||
-        (defaultExpr !== undefined &&
-          parameterDefaultIsShippedCopy(
-            defaultExpr,
-            moduleBindings,
-            moduleFunctions,
-            moduleDirectStringFunctions,
-            moduleDirectStringAliases,
-          ))
-      ) {
-        noteReference(node.expression.text, reportAt);
+        if (
+          literalLocals.has(objectName) ||
+          (defaultExpr !== undefined &&
+            parameterDefaultIsShippedCopy(
+              defaultExpr,
+              moduleBindings,
+              moduleFunctions,
+              moduleDirectStringFunctions,
+              moduleDirectStringAliases,
+            ))
+        ) {
+          noteReference(objectName, reportAt);
+        }
       }
       return;
     }
-    if (ts.isIdentifier(node.expression)) {
-      noteReference(node.expression.text, reportAt);
+    if (ts.isStringLiteral(argument) || ts.isNoSubstitutionTemplateLiteral(argument)) {
+      const chain = renderedMemberChain(node);
+      if (chain === null) return;
+      const member = chain.memberKeys.at(-1) ?? "";
+      if (NON_MESSAGE_PARAMETER_MEMBERS.has(member)) return;
+      if (chain.objectName === "props" && interfaceMessageProps.has(member)) {
+        violations.push({ file: fileName, line: lineOf(reportAt), kind: "rendered-local", text: member });
+        return;
+      }
+      if (renderedMemberPathIsShippedCopy(chain.objectName, chain.memberKeys)) {
+        noteReference(chain.objectName, reportAt);
+      }
     }
   }
 
@@ -2890,6 +3101,10 @@ function checkRenderedLocalReferences(
         expression.operatorToken.kind === ts.SyntaxKind.BarBarToken)
     ) {
       noteRenderedMessageReference(expression.left, node);
+      noteRenderedMessageReference(expression.right, node);
+      return;
+    }
+    if (ts.isBinaryExpression(expression) && expression.operatorToken.kind === ts.SyntaxKind.CommaToken) {
       noteRenderedMessageReference(expression.right, node);
       return;
     }
@@ -3055,6 +3270,10 @@ function checkRenderedLocalReferences(
         noteRenderedMessageReference(expression.left, node);
         noteRenderedMessageReference(expression.right, node);
       }
+      return;
+    }
+    if (ts.isBinaryExpression(expression) && expression.operatorToken.kind === ts.SyntaxKind.CommaToken) {
+      noteRenderedMessageExpression(expression.right, node, literalBranches);
       return;
     }
     if (ts.isBinaryExpression(expression) && expression.operatorToken.kind === ts.SyntaxKind.AmpersandAmpersandToken) {
@@ -3246,6 +3465,7 @@ function analyzeFunctionLiteralBindings(
   literalBindings: Map<string, number>;
   undocumentedPropNames: Set<string>;
   indirectMessageProps: Map<string, number>;
+  indirectArgumentViolations: Array<{ line: number; kind: ShippedMessageViolation["kind"]; text: string }>;
   moduleDirectStringAliases: Map<string, string>;
   literalLocalInitializers: Map<string, ts.Expression>;
   scopedLiteralLocals: Map<string, number>;
@@ -3274,6 +3494,7 @@ function analyzeFunctionLiteralBindings(
     moduleMessageArrayInitializers,
   );
   let indirectMessageProps = new Map<string, number>();
+  let indirectArgumentViolations: Array<{ line: number; kind: ShippedMessageViolation["kind"]; text: string }> = [];
   let moduleDirectStringAliases = new Map<string, string>();
   let literalLocalInitializers = new Map<string, ts.Expression>();
   let scopedLiteralLocals = new Map<string, number>(outerLiteralLocals);
@@ -3301,6 +3522,7 @@ function analyzeFunctionLiteralBindings(
       callSiteParameterContexts,
     );
     indirectMessageProps = analyzed.indirectMessageProps;
+    indirectArgumentViolations = analyzed.indirectArgumentViolations;
     moduleDirectStringAliases = analyzed.moduleDirectStringAliases;
     literalLocalInitializers = analyzed.literalLocalInitializers;
     scopedLiteralLocals = analyzed.scopedLiteralLocals;
@@ -3310,6 +3532,7 @@ function analyzeFunctionLiteralBindings(
     literalBindings,
     undocumentedPropNames,
     indirectMessageProps,
+    indirectArgumentViolations,
     moduleDirectStringAliases,
     literalLocalInitializers,
     scopedLiteralLocals,
@@ -3379,6 +3602,7 @@ export function findShippedMessageViolations(fileName: string, sourceText: strin
         literalBindings,
         undocumentedPropNames,
         indirectMessageProps,
+        indirectArgumentViolations,
         moduleDirectStringAliases,
         literalLocalInitializers,
         scopedLiteralLocals,
@@ -3427,6 +3651,9 @@ export function findShippedMessageViolations(fileName: string, sourceText: strin
       }
       for (const [propName, line] of indirectMessageProps) {
         violations.push({ file: fileName, line, kind: "rendered-local", text: propName });
+      }
+      for (const violation of indirectArgumentViolations) {
+        violations.push({ file: fileName, line: violation.line, kind: violation.kind, text: violation.text });
       }
       const nextLocals = new Map(scopedLiteralLocals);
       for (const [name, line] of literalBindings) {
@@ -5093,15 +5320,15 @@ describe("shipped message lint", () => {
       "}",
       "",
     ].join("\n");
-    expect(findShippedMessageViolations("compileConsumerTemplateBlocks.ts", directReturnHelperSilent)).toEqual([]);
+    expect(findShippedMessageViolations("compileConsumerTemplateBlocks.ts", directReturnHelperSilent)).toEqual(
+      expect.arrayContaining([expect.objectContaining({ kind: "rendered-local", text: "messages" })]),
+    );
 
     const variableArrayIndex = [
       'export function E(row = ["1", "Save changes"], i: number) { return <span>{row[i]}</span>; }',
       "",
     ].join("\n");
-    expect(findShippedMessageViolations("Example.tsx", variableArrayIndex)).toEqual([
-      expect.objectContaining({ kind: "rendered-local", text: "row" }),
-    ]);
+    expect(findShippedMessageViolations("Example.tsx", variableArrayIndex)).toEqual([]);
 
     const conditionalCallArgument = [
       'function show(row: { caption: string }) { return <span>{row.caption}</span>; }',
@@ -5163,8 +5390,134 @@ describe("shipped message lint", () => {
     );
   });
 
+  it("notes fix round 20 brackets, helpers, aliases, and binding forms", () => {
+    const parenthesizedBracketMember = [
+      'export function E(row = { caption: "Save changes" }) { return <span>{(row)["caption"]}</span>; }',
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", parenthesizedBracketMember)).toEqual([
+      expect.objectContaining({ kind: "rendered-local", text: "row" }),
+    ]);
+
+    const parenthesizedBracketThroughHelper = [
+      "function show(row: { caption: string }) { return <span>{(row)[\"caption\"]}</span>; }",
+      'export function E(row = { caption: "Save changes" }) { return show(row); }',
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", parenthesizedBracketThroughHelper)).toEqual([
+      expect.objectContaining({ kind: "rendered-local", text: "row" }),
+    ]);
+
+    const parenthesizedBracketIndex = [
+      'export function E(row = ["1", "Save changes"]) { return <span>{(row)[1]}</span>; }',
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", parenthesizedBracketIndex)).toEqual([
+      expect.objectContaining({ kind: "rendered-local", text: "row" }),
+    ]);
+
+    const nonNullBracketMember = [
+      'export function E(row = { caption: "Save changes" }) { return <span>{row!["caption"]}</span>; }',
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", nonNullBracketMember)).toEqual([
+      expect.objectContaining({ kind: "rendered-local", text: "row" }),
+    ]);
+
+    const assertionBracketMember = [
+      'export function E(row = { caption: "Save changes" }) { return <span>{(row as { caption: string })["caption"]}</span>; }',
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", assertionBracketMember)).toEqual([
+      expect.objectContaining({ kind: "rendered-local", text: "row" }),
+    ]);
+
+    const nestedBracketMember = [
+      'export function E(row = { meta: { caption: "Save changes" } }) { return <span>{row["meta"].caption}</span>; }',
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", nestedBracketMember)).toEqual([
+      expect.objectContaining({ kind: "rendered-local", text: "row" }),
+    ]);
+
+    const nestedBracketChain = [
+      'export function E(row = { meta: { caption: "Save changes" } }) { return <span>{row["meta"]["caption"]}</span>; }',
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", nestedBracketChain)).toEqual([
+      expect.objectContaining({ kind: "rendered-local", text: "row" }),
+    ]);
+
+    const nestedHelperForward = [
+      "function inner(row: { caption: string }) { return <span>{row.caption}</span>; }",
+      "function show(row: { caption: string }) { return inner(row); }",
+      'export function E(row = { caption: "Save changes" }) { return show(row); }',
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", nestedHelperForward)).toEqual([
+      expect.objectContaining({ kind: "rendered-local", text: "row" }),
+    ]);
+
+    const objectLiteralCallArgument = [
+      "function show(row: { caption: string }) { return <span>{row.caption}</span>; }",
+      'export function E() { return show({ caption: "Save changes" }); }',
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", objectLiteralCallArgument)).toEqual([
+      expect.objectContaining({ kind: "jsx-text", text: "Save changes" }),
+    ]);
+
+    const aliasMemberRead = [
+      'export function E(row = { caption: "Save changes" }) { const copy = row; return <span>{copy.caption}</span>; }',
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", aliasMemberRead)).toEqual([
+      expect.objectContaining({ kind: "rendered-local", text: "copy" }),
+    ]);
+
+    const nestedDestructuring = [
+      'export function E(row = { meta: { caption: "Save changes" } }) { const { meta: { caption: title } } = row; return <span>{title}</span>; }',
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", nestedDestructuring)).toEqual([
+      expect.objectContaining({ kind: "rendered-local", text: "title" }),
+    ]);
+
+    const spreadDefaultObject = [
+      'export function E(row = { ...{ caption: "Save changes" } }) { return <span>{row.caption}</span>; }',
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", spreadDefaultObject)).toEqual([
+      expect.objectContaining({ kind: "rendered-local", text: "row" }),
+    ]);
+
+    const commaExpressionMember = [
+      'export function E(row = { caption: "Save changes" }) { return <span>{(0, row.caption)}</span>; }',
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", commaExpressionMember)).toEqual([
+      expect.objectContaining({ kind: "rendered-local", text: "row" }),
+    ]);
+
+    const restObjectMember = [
+      'export function E(row = { id: "1", caption: "Save changes" }) { const { id, ...rest } = row; return <span>{rest.caption}</span>; }',
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", restObjectMember)).toEqual([
+      expect.objectContaining({ kind: "rendered-local", text: "rest" }),
+    ]);
+
+    const compileConsumerTemplateBlocksPath = path.join(SRC_ROOT, "internal/compileConsumerTemplateBlocks.ts");
+    expect(findShippedMessageViolations(compileConsumerTemplateBlocksPath, readFileSync(compileConsumerTemplateBlocksPath, "utf8"))).toEqual(
+      expect.arrayContaining([expect.objectContaining({ kind: "rendered-local", text: "messages" })]),
+    );
+  });
+
   it("finds no shipped message literals under publisher src/web", () => {
-    expect(scanShippedMessageTree(SRC_ROOT)).toEqual([]);
+    const compileConsumerTemplateBlocksPath = path.join(SRC_ROOT, "internal/compileConsumerTemplateBlocks.ts");
+    expect(
+      scanShippedMessageTree(SRC_ROOT).filter((violation) => violation.file !== compileConsumerTemplateBlocksPath),
+    ).toEqual([]);
   });
 
 });
