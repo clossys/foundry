@@ -272,6 +272,44 @@ function checkRemoteTip(root: string, set: RepositoryChangeSet): ApplyStepResult
   return null;
 }
 
+function digestAtRef(root: string, ref: string, relPath: string, mode: WholeFileChange["mode"]): string | null {
+  if (mode === "120000") {
+    const target = gitShowUtf8(root, ref, relPath);
+    if (target === null) return null;
+    return contentDigest(target);
+  }
+  const text = gitShowUtf8(root, ref, relPath);
+  if (text === null) return null;
+  return contentDigest(text);
+}
+
+function checkBaseCommitMovement(root: string, set: RepositoryChangeSet): ApplyStepResult | null {
+  const branch = set.repository.defaultBranch;
+  const tip = git(root, ["rev-parse", `refs/heads/${branch}`]);
+  if (tip.status !== 0) return result(2, "indeterminate", "remote-tip-unreadable");
+  const tipCommit = tip.stdout.trim();
+  if (tipCommit === set.repository.baseCommit) return null;
+  for (const file of set.files.filter(isWhole)) {
+    if (digestAtRef(root, tipCommit, file.path, file.mode) !== file.before) return result(2, "indeterminate", "base-conflict");
+  }
+  return result(1, "violated", "superseded");
+}
+
+function persistChangeSet(hub: string, set: RepositoryChangeSet): ApplyStepResult | null {
+  let hubReal: string;
+  try {
+    hubReal = realpathSync(hub);
+  } catch {
+    return result(2, "indeterminate", "change-set-not-stored");
+  }
+  try {
+    storeChangeSet(hubReal, set);
+  } catch {
+    return result(2, "indeterminate", "change-set-not-stored");
+  }
+  return null;
+}
+
 function checkChangeSetShape(set: RepositoryChangeSet): ApplyStepResult | null {
   if (!BRANCH_SHAPE.test(set.branch) || !COMMIT_SHAPE.test(set.repository.baseCommit)) return result(2, "indeterminate", "change-set-invalid");
   if (!validateRepositoryChangeSet(set).valid) return result(2, "indeterminate", "change-set-invalid");
@@ -550,9 +588,16 @@ export async function materializeRepository(input: MaterializeInput): Promise<Ap
   const set = input.set;
   const texts = { ...textsFromChangeSet(set), ...input.texts };
 
+  const baseMovement = checkBaseCommitMovement(root, set);
+  if (baseMovement !== null) return baseMovement;
+
   if (git(root, ["show-ref", "--verify", "--quiet", `refs/heads/${set.branch}`]).status === 0) {
     const verified = await verifyRepository({ clone: root, set, binding: input.binding, heldChangeSets: held });
-    if (verified.exitCode === 0) return verified;
+    if (verified.exitCode === 0) {
+      const stored = persistChangeSet(input.hub, set);
+      if (stored !== null) return stored;
+      return verified;
+    }
     if (verified.verdict === "indeterminate") return verified;
     return { exitCode: 1, verdict: "violated", reason: "diverged", detail: verified.detail };
   }
@@ -593,6 +638,14 @@ export async function materializeRepository(input: MaterializeInput): Promise<Ap
   const pathsToTouch = writePaths(set);
   const symlinkCheck = refuseReservedSymlinks(root, pathsToTouch);
   if (symlinkCheck !== null) return symlinkCheck;
+
+  let ledgerBytes: Buffer;
+  try {
+    ledgerBytes = expectedLedgerBytes(previousLedger, set, input.binding);
+  } catch (cause) {
+    if (cause instanceof TypeError) return result(2, "indeterminate", "change-set-invalid");
+    throw cause;
+  }
 
   if (git(root, ["checkout", "-b", set.branch, set.repository.baseCommit]).status !== 0) {
     return result(2, "indeterminate", "branch-not-created");
@@ -656,7 +709,6 @@ export async function materializeRepository(input: MaterializeInput): Promise<Ap
     toolingVersion = regen.tooling.version;
   }
 
-  const ledgerBytes = expectedLedgerBytes(previousLedger, set, input.binding);
   const ledgerWritten = writeRegularFile(root, LEDGER_PATH, ledgerBytes.toString("utf8"), contentDigest(ledgerBytes.toString("utf8")));
   if (ledgerWritten !== null) return ledgerWritten;
   const ledgerRead = readFileSync(join(root, LEDGER_PATH));
@@ -671,17 +723,8 @@ export async function materializeRepository(input: MaterializeInput): Promise<Ap
     toStore = { ...set, tooling };
   }
 
-  let hubReal: string;
-  try {
-    hubReal = realpathSync(input.hub);
-  } catch {
-    return result(2, "indeterminate", "change-set-not-stored");
-  }
-  try {
-    storeChangeSet(hubReal, toStore);
-  } catch {
-    return result(2, "indeterminate", "change-set-not-stored");
-  }
+  const stored = persistChangeSet(input.hub, toStore);
+  if (stored !== null) return stored;
 
   return result(0, "materialized");
 }
