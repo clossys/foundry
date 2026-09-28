@@ -255,17 +255,33 @@ function enclosingOpener(code: string, idx: number): number {
   return -1;
 }
 
-function matchingClose(code: string, open: number): number {
-  let depth = 0;
-  for (let i = open; i < code.length; i++) {
+let matchingCloseTableCode: string | undefined;
+let matchingCloseTable: Int32Array | undefined;
+
+function buildMatchingCloseTable(code: string): Int32Array {
+  const closeAt = new Int32Array(code.length);
+  closeAt.fill(-1);
+  const stack: number[] = [];
+  for (let i = 0; i < code.length; i++) {
     const c = code[i];
-    if (c === "{" || c === "(" || c === "[") depth++;
+    if (c === "{" || c === "(" || c === "[") stack.push(i);
     else if (c === "}" || c === ")" || c === "]") {
-      depth--;
-      if (depth === 0) return i;
+      if (stack.length === 0) continue;
+      const open = stack.pop()!;
+      closeAt[open] = i;
     }
   }
-  return -1;
+  return closeAt;
+}
+
+function matchingClose(code: string, open: number): number {
+  if (matchingCloseTableCode !== code) {
+    matchingCloseTableCode = code;
+    matchingCloseTable = buildMatchingCloseTable(code);
+  }
+  const c = code[open];
+  if (c !== "{" && c !== "(" && c !== "[") return -1;
+  return matchingCloseTable![open] ?? -1;
 }
 
 const ID_CONTINUE_RE = /[\p{ID_Continue}$]/u;
@@ -380,6 +396,26 @@ function writerCalleeAllowed(
   return writerImports.localNames.has(callee) && !localShadowedCalleepNames.has(callee);
 }
 
+function parseCopyRegistryBindingInitEndsAtCall(code: string, call: { open: number; close: number }): boolean {
+  let nameEnd = call.open - 1;
+  while (nameEnd >= 0 && isWs(code[nameEnd]!)) nameEnd--;
+  let nameStart = nameEnd;
+  while (nameStart >= 0 && /[\w$]/.test(code[nameStart]!)) nameStart--;
+  nameStart++;
+  const preDecl = code.slice(Math.max(0, nameStart - 80), nameStart);
+  return new RegExp(`${CALLEE_BOUNDARY}(?:const|let|var)\\s+${IDENT}(?:\\s*:[^=;]+)?\\s*=\\s*$`, "u").test(preDecl);
+}
+
+/** A line break before `+`, `(`, `.`, `?.`, etc. continues the initializer — not a finished binding. */
+function postfixContinuesParseResult(code: string, idx: number): boolean {
+  const c = code[idx];
+  if (c === "+" || c === "-" || c === "*" || c === "/" || c === "%" || c === "(" || c === ",") return true;
+  if (c === "." && code[idx + 1] !== ".") return true;
+  if (code.slice(idx, idx + 2) === "?.") return true;
+  if (code.slice(idx, idx + 2) === "??") return true;
+  return false;
+}
+
 function parseCopyRegistryRegistryArgAllowed(
   code: string,
   argIdx: number,
@@ -394,6 +430,7 @@ function parseCopyRegistryRegistryArgAllowed(
   const afterClose = nextNonWs(code, call.close + 1);
   const next = code[afterClose];
   if (next === "." || next === "[") return false;
+  if (postfixContinuesParseResult(code, afterClose)) return false;
   if (next === "," || next === ")") {
     const outer = callContaining(code, call.close);
     if (!outer) return false;
@@ -403,13 +440,7 @@ function parseCopyRegistryRegistryArgAllowed(
   const gap = code.slice(call.close + 1, afterClose);
   const gapHasNewline = /[\r\n]/.test(gap);
   if (next === ";" || next === undefined || gapHasNewline) {
-    let nameEnd = call.open - 1;
-    while (nameEnd >= 0 && isWs(code[nameEnd]!)) nameEnd--;
-    let nameStart = nameEnd;
-    while (nameStart >= 0 && /[\w$]/.test(code[nameStart]!)) nameStart--;
-    nameStart++;
-    const preDecl = code.slice(Math.max(0, nameStart - 80), nameStart);
-    return new RegExp(`${CALLEE_BOUNDARY}(?:const|let|var)\\s+${IDENT}\\s*=\\s*$`, "u").test(preDecl);
+    return parseCopyRegistryBindingInitEndsAtCall(code, call);
   }
   return false;
 }
@@ -419,6 +450,7 @@ function registryBindingUseAllowed(
   bindIdx: number,
   bindNameLen: number,
   fromParsedRegistry: boolean,
+  parseRegistryAssign: boolean,
   writerImports: WriterCalleeImports,
   localShadowedCalleepNames: Set<string>,
 ): boolean {
@@ -429,6 +461,7 @@ function registryBindingUseAllowed(
   if (!writerCalleeAllowed(call.callee, writerImports, localShadowedCalleepNames)) return false;
   const exportName = writerImports.localToExport.get(call.callee);
   if (exportName === undefined) return false;
+  if (parseRegistryAssign && !fromParsedRegistry) return false;
   if (fromParsedRegistry) return isResolverExport(exportName);
   if (exportName === "parseCopyRegistry") {
     return parseCopyRegistryRegistryArgAllowed(code, bindIdx, writerImports, localShadowedCalleepNames);
@@ -502,6 +535,12 @@ function destructuringPatternShadowsName(inner: string, name: string): boolean {
     if (new RegExp(`^${esc}(?:\\s*=.*)?$`, "u").test(trimmed)) return true;
     if (new RegExp(`^${IDENT}\\s*:\\s*${esc}(?:\\s*=.*)?$`, "u").test(trimmed)) return true;
     if (new RegExp(`^\\.\\.\\.\\s*${esc}$`, "u").test(trimmed)) return true;
+    const nestedObj = new RegExp(`^${IDENT}\\s*:\\s*\\{`, "u").exec(trimmed);
+    if (nestedObj) {
+      const open = trimmed.indexOf("{", nestedObj.index);
+      const close = matchingClose(trimmed, open);
+      if (close > open && destructuringPatternShadowsName(trimmed.slice(open + 1, close), name)) return true;
+    }
   }
   return false;
 }
@@ -904,7 +943,7 @@ function anyCatchBindingShadowsName(code: string, name: string): boolean {
     const open = skipWsCode(code, afterWord);
     if (code[open] !== "(") continue;
     const close = matchingClose(code, open);
-    if (close === -1) continue;
+    if (close === -1) return false;
     if (singleParamBindingShadows(code.slice(open + 1, close), name)) return true;
   }
   return false;
@@ -1025,7 +1064,7 @@ function collectLocalShadowedCalleepNames(
       const parenOpen = m.index! + parenRel;
       if (openParenIsTypeSyntax(code, parenOpen)) continue;
       const parenClose = matchingClose(code, parenOpen);
-      if (parenClose !== -1 && parenListIsTypeMethodSignature(code, parenClose)) continue;
+      if (parenClose === -1) continue;
       shadowed.add(name);
       break;
     }
@@ -1039,7 +1078,6 @@ function collectLocalShadowedCalleepNames(
         if (openParenIsTypeSyntax(code, parenOpen)) continue;
         const close = matchingClose(code, parenOpen);
         if (close === -1) continue;
-        if (parenListIsTypeMethodSignature(code, close)) continue;
         if (paramListShadowsName(code.slice(parenOpen + 1, close), name)) {
           shadowed.add(name);
           break;
@@ -1282,7 +1320,13 @@ export function extractApprovalBypass(
   };
 
   // ---- 2. registry loads: bindings to trace, and loads this gate cannot trace
-  const bindings: { name: string; declStart: number; declEnd: number; fromParsedRegistry: boolean }[] = [];
+  const bindings: {
+    name: string;
+    declStart: number;
+    declEnd: number;
+    fromParsedRegistry: boolean;
+    parseRegistryAssign: boolean;
+  }[] = [];
   for (const spec of specifiers) {
     if (!isRegistry(spec.lit.text)) continue;
     const at = spec.lit.start;
@@ -1299,9 +1343,9 @@ export function extractApprovalBypass(
         if (/^type\s+(?!,)/.test(clause) && clause !== "type") break; // type-only import: no runtime data
         const decl = { declStart: spec.stmtStart, declEnd: spec.lit.end };
         const def = new RegExp(`^(${IDENT})\\s*(?:,|$)`).exec(clause);
-        if (def) bindings.push({ name: def[1]!, ...decl, fromParsedRegistry: false });
+        if (def) bindings.push({ name: def[1]!, ...decl, fromParsedRegistry: false, parseRegistryAssign: false });
         const ns = new RegExp(`\\*\\s*as\\s+(${IDENT})`).exec(clause);
-        if (ns) bindings.push({ name: ns[1]!, ...decl, fromParsedRegistry: false });
+        if (ns) bindings.push({ name: ns[1]!, ...decl, fromParsedRegistry: false, parseRegistryAssign: false });
         const named = /\{([^}]*)\}/.exec(clause);
         if (named) {
           for (const part of named[1]!.split(",")) {
@@ -1312,7 +1356,7 @@ export function extractApprovalBypass(
             const local = m[3] ?? imported;
             if (local === undefined) continue;
             if (imported === "default") {
-              bindings.push({ name: local, ...decl, fromParsedRegistry: false });
+              bindings.push({ name: local, ...decl, fromParsedRegistry: false, parseRegistryAssign: false });
             } else {
               finding(
                 "copy-read-without-resolver",
@@ -1326,7 +1370,14 @@ export function extractApprovalBypass(
       }
       case "import-equals": {
         const m = new RegExp(`import\\s+(?:type\\s+)?(${IDENT})\\s*=`).exec(code.slice(spec.stmtStart, at));
-        if (m) bindings.push({ name: m[1]!, declStart: spec.stmtStart, declEnd: spec.lit.end, fromParsedRegistry: false });
+        if (m)
+          bindings.push({
+            name: m[1]!,
+            declStart: spec.stmtStart,
+            declEnd: spec.lit.end,
+            fromParsedRegistry: false,
+            parseRegistryAssign: false,
+          });
         break;
       }
       case "require": {
@@ -1341,6 +1392,7 @@ export function extractApprovalBypass(
             declStart: Math.max(0, spec.stmtStart - 200) + decl.index,
             declEnd: close + 1,
             fromParsedRegistry: false,
+            parseRegistryAssign: false,
           });
         } else {
           uncheckedAt("registry-require-unbound", at, "require of registry is not bound to a plain identifier, so its use cannot be traced");
@@ -1353,13 +1405,25 @@ export function extractApprovalBypass(
     }
   }
 
-  for (const m of code.matchAll(new RegExp(`${CALLEE_BOUNDARY}(?:const|let|var)\\s+(${IDENT})\\s*=\\s*${CALLEE_BOUNDARY}parseCopyRegistry\\s*\\(`, "gu"))) {
+  for (const m of code.matchAll(
+    new RegExp(`${CALLEE_BOUNDARY}(?:const|let|var)\\s+(${IDENT})(?:\\s*:[^=;]+)?\\s*=\\s*${CALLEE_BOUNDARY}parseCopyRegistry\\s*\\(`, "gu"),
+  )) {
     const name = m[1]!;
     const declStart = m.index!;
     const openParen = code.indexOf("(", m.index + m[0].length - 1);
     const close = matchingClose(code, openParen);
     if (close === -1) continue;
-    bindings.push({ name, declStart, declEnd: close + 1, fromParsedRegistry: true });
+    const parseCall = { open: openParen, close };
+    const afterClose = nextNonWs(code, close + 1);
+    const endsAtParse =
+      parseCopyRegistryBindingInitEndsAtCall(code, parseCall) && !postfixContinuesParseResult(code, afterClose);
+    bindings.push({
+      name,
+      declStart,
+      declEnd: close + 1,
+      fromParsedRegistry: endsAtParse,
+      parseRegistryAssign: true,
+    });
   }
 
   // ---- 3. import(...) / require(...) calls whose argument is not a plain literal
@@ -1386,7 +1450,17 @@ export function extractApprovalBypass(
       if (/(?<![\w$.])typeof\s+$/.test(code.slice(Math.max(0, i - 20), i))) continue; // a type query reads no content
       const afterName = code.slice(i + b.name.length, i + b.name.length + 20);
       if (/^\s*:(?!:)/.test(afterName) && isObjectKeyPosition(code, i)) continue; // `{ name: ... }` — a key, not the binding
-      if (registryBindingUseAllowed(code, i, b.name.length, b.fromParsedRegistry, writerImports, localShadowedCalleepNames))
+      if (
+        registryBindingUseAllowed(
+          code,
+          i,
+          b.name.length,
+          b.fromParsedRegistry,
+          b.parseRegistryAssign,
+          writerImports,
+          localShadowedCalleepNames,
+        )
+      )
         continue;
       finding(
         "copy-read-without-resolver",

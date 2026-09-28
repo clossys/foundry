@@ -66,7 +66,7 @@ import { existsSync, readFileSync, renameSync, unlinkSync, writeFileSync } from 
 import { basename, dirname, join, resolve } from "node:path";
 import { isDelegateScopeItem, isEntryInDelegateScope } from "./approval.js";
 import { COPY_FINGERPRINT_ALGORITHM, computeCopyFingerprint } from "./fingerprint.js";
-import { validateCopyRegistryShape } from "./schema.js";
+import { isIsoUtcTimestamp, validateCopyRegistryShape } from "./schema.js";
 
 export const APPROVE_USAGE = `Usage: writer-check approve <registry-file> <entry-id>... --by owner
    or: writer-check approve <registry-file> <entry-id>... --by delegate --delegate <id> --scope <ns>[,<ns>...] [--expires <ISO>]
@@ -189,10 +189,8 @@ function parseRawArgs(argv: string[]): RawArgs {
  * string that merely matches the pattern but names an impossible date
  * (e.g. a bad month) is still rejected.
  */
-const EXPIRES_RE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{3})?Z$/;
-
 function validateExpires(raw: string, now: Date): string {
-  if (!EXPIRES_RE.test(raw) || Number.isNaN(Date.parse(raw))) {
+  if (!isIsoUtcTimestamp(raw)) {
     throw new ApproveInputError(
       `--expires must be an ISO 8601 UTC timestamp (e.g. 2026-01-01T00:00:00Z), got ${JSON.stringify(raw)}`,
     );
@@ -237,10 +235,10 @@ function validateArgs(raw: RawArgs, now: Date): ValidatedArgs {
     if (raw.delegate === undefined) {
       throw new ApproveInputError("--by delegate requires --delegate <id>");
     }
-    const delegateId = raw.delegate.trim();
-    if (delegateId.length === 0) {
+    if (raw.delegate.trim().length === 0) {
       throw new ApproveInputError("--delegate must not be empty");
     }
+    const delegateId = raw.delegate;
     if (raw.scope === undefined || raw.scope.length === 0) {
       throw new ApproveInputError("--by delegate requires --scope <ns>[,<ns>...]");
     }

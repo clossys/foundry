@@ -393,7 +393,7 @@ function validateTranslationShape(value: unknown, path: string): CopyFinding[] {
  */
 const ISO_UTC_TIMESTAMP_RE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{3})?Z$/;
 
-function isIsoUtcTimestamp(value: unknown): value is string {
+export function isIsoUtcTimestamp(value: unknown): value is string {
   if (typeof value !== "string" || !ISO_UTC_TIMESTAMP_RE.test(value)) return false;
   const year = Number(value.slice(0, 4));
   const month = Number(value.slice(5, 7));
