@@ -343,16 +343,34 @@ treated as unavailable and never answers 500.
 types `GatedHostGate`, `GatedHostGateOptions`, `GatedHostNext`,
 `GatePrincipalState`, `ProtectedResourceMetadata`.
 
-A signed-out navigation (`Sec-Fetch-Mode: navigate`, `Accept: text/html`, or a
-Next.js `RSC` header / `_rsc` parameter) gets a 307 to the same host's sign-in
-route with a relative `redirect_url` and `Cache-Control: no-store`. A signed-out
-non-navigation or API request gets a 401 with an RFC 9728 `WWW-Authenticate`.
-Return URLs are relative or in an explicit sibling-origin allowlist, else `/`.
-A signed-in principal without permission is routed to a not-authorized route
-that answers 403. An unavailable provider fails gated routes closed to sign-in
-and lets the sign-in route render an unavailable state (503 with `Retry-After`
-when `production` is set). Every response carries `X-Robots-Tag: noindex,
-nofollow`.
+A signed-out navigation (`Sec-Fetch-Mode: navigate`, `Accept: text/html` with a
+quality above zero, or a Next.js `RSC` header / `_rsc` parameter) gets a 307 to
+the same host's sign-in route with a relative `redirect_url` and
+`Cache-Control: no-store`. A signed-out non-navigation or API request gets a 401
+with an RFC 9728 `WWW-Authenticate`. Return URLs are relative or in an explicit
+sibling-origin allowlist, else `/`. A signed-in principal without permission is
+routed to a not-authorized route that answers 403. An unavailable provider fails
+gated routes closed to sign-in and lets the sign-in path and its sub-routes
+(`/sign-in/...`) render an unavailable state (503 with `Retry-After` when
+`production` is set). A provider answer that is `null` or not an object is
+treated as unavailable, a throwing `isPublicPath` means the path is not public,
+and public paths are answered without asking the provider. `retryAfterSeconds`
+must be a non-negative integer. Every response the gate produces, and every
+pass-through response it wraps, carries `X-Robots-Tag: noindex, nofollow`.
+
+The 403 and 503 are set on the response that `next` returns, so they apply only
+when `next` returns the final response. Under a Next.js proxy,
+`NextResponse.next()` or a rewrite can discard that status: the not-authorized
+page must return its own 403 (for example with `forbidden()`), the sign-in page
+its own 503, or the caller's `next` must render the page itself.
+
+Next.js 16 hides the `RSC` header and the `_rsc` parameter from a proxy unless
+`skipProxyUrlNormalize: true` is set. Without it, router fetches are classed as
+non-navigation and get a 401, and the router falls back to a full navigation.
+
+The sign-in page must pass the incoming `redirect_url` through
+`resolveReturnUrl`. The gate builds only relative return URLs, so
+`siblingOrigins` matters only on the sign-in page.
 
 ### `./providers/clerk` and its subpaths
 

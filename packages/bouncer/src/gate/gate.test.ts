@@ -152,8 +152,91 @@ describe("gated host gate", () => {
       await ok(req("/x"), page),
       await gate({ state: "unavailable" }, { production: true })(req("/sign-in"), page),
       await gate({ state: "signed-out" }, { protectedResourceMetadata: { authorization_servers: [] } })(req(PROTECTED_RESOURCE_METADATA_PATH), page),
+      await gate({ state: "signed-out" })(req(PROTECTED_RESOURCE_METADATA_PATH), page),
+      await gate({ state: "signed-out" }, { isPublicPath: (p: string) => p === "/health" })(req("/health"), page),
+      await signedOut(req("/sign-in/factor-one"), page),
     ];
     for (const res of responses) expect(res.headers.get("x-robots-tag")).toBe("noindex, nofollow");
+  });
+
+  it("1: an Accept entry with q=0 is not navigation", () => {
+    expect(isNavigationRequest(req("/x", { accept: "text/html;q=0" }))).toBe(false);
+    expect(isNavigationRequest(req("/x", { accept: "application/json, text/html; q=0.0" }))).toBe(false);
+    expect(isNavigationRequest(req("/x", { accept: "text/html;q=0.5" }))).toBe(true);
+    expect(isNavigationRequest(req("/x", { accept: "application/json, text/html" }))).toBe(true);
+  });
+
+  it("3: sign-in sub-routes and the trailing slash pass through; a lookalike stays gated", async () => {
+    const seen: boolean[] = [];
+    const next = ({ providerUnavailable }: { providerUnavailable: boolean }) => {
+      seen.push(providerUnavailable);
+      return new Response("sign-in page");
+    };
+    const g = gate({ state: "signed-out" });
+    for (const path of ["/sign-in/", "/sign-in/factor-one", "/sign-in/sso-callback?x=1"]) {
+      const res = await g(req(path, { accept: "text/html" }), next);
+      expect(res.status).toBe(200);
+    }
+    expect(seen).toEqual([false, false, false]);
+    const lookalike = await g(req("/sign-input", { accept: "text/html" }), next);
+    expect(lookalike.status).toBe(307);
+    expect(seen).toHaveLength(3);
+    // Sub-routes get the provider-unavailable flag and the production 503 like the sign-in path itself.
+    seen.length = 0;
+    const prod = await gate({ state: "unavailable" }, { production: true })(req("/sign-in/sso-callback"), next);
+    expect(seen).toEqual([true]);
+    expect(prod.status).toBe(503);
+    expect(prod.headers.get("retry-after")).toBe("30");
+  });
+
+  it("5: a null or non-object provider answer is unavailable, not a TypeError", async () => {
+    for (const bad of [null, undefined, "signed-in", 42, {}, { state: "other" }]) {
+      const g = createGatedHostGate({
+        signInPath: "/sign-in",
+        notAuthorizedPath: "/not-authorized",
+        resolvePrincipal: () => bad as never,
+      });
+      const nav = await g(req("/reports", { accept: "text/html" }), page);
+      expect(nav.status).toBe(307);
+      expect((await g(req("/api/x"), page)).status).toBe(401);
+      let flag: boolean | undefined;
+      await g(req("/sign-in"), ({ providerUnavailable }) => {
+        flag = providerUnavailable;
+        return page();
+      });
+      expect(flag).toBe(true);
+    }
+  });
+
+  it("3: a throwing isPublicPath means not public", async () => {
+    const g = gate({ state: "signed-out" }, { isPublicPath: () => { throw new Error("x"); } });
+    const res = await g(req("/reports", { accept: "text/html" }), page);
+    expect(res.status).toBe(307);
+  });
+
+  it("3: public paths never call the identity provider", async () => {
+    let calls = 0;
+    const g = createGatedHostGate({
+      signInPath: "/sign-in",
+      notAuthorizedPath: "/not-authorized",
+      isPublicPath: (p) => p === "/health",
+      resolvePrincipal: () => {
+        calls += 1;
+        return { state: "signed-out" };
+      },
+    });
+    expect((await g(req("/health"), page)).status).toBe(200);
+    expect(calls).toBe(0);
+    await g(req("/other", { accept: "text/html" }), page);
+    expect(calls).toBe(1);
+  });
+
+  it("rejects retryAfterSeconds that is not a non-negative integer", () => {
+    const base = { signInPath: "/sign-in", notAuthorizedPath: "/n", resolvePrincipal: () => ({ state: "signed-out" as const }) };
+    for (const bad of [-1, 1.5, Number.NaN, Number.POSITIVE_INFINITY, "30" as never]) {
+      expect(() => createGatedHostGate({ ...base, retryAfterSeconds: bad })).toThrow(TypeError);
+    }
+    expect(() => createGatedHostGate({ ...base, retryAfterSeconds: 0 })).not.toThrow();
   });
 
   it("rejects malformed options at construction", () => {

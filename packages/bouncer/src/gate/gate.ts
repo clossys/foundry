@@ -10,18 +10,28 @@
  *      `X-Robots-Tag: noindex, nofollow`.
  *   2. The RFC 9728 metadata path is served (when configured) or passed
  *      through, never gated.
- *   3. The sign-in path passes through. When the provider is unavailable or
- *      unconfigured it is still reached, with `providerUnavailable` set, and
- *      in production the response is forced to 503 with `Retry-After`.
+ *   3. The sign-in path and its sub-routes (`/sign-in/...`) pass through. When
+ *      the provider is unavailable or unconfigured they are still reached,
+ *      with `providerUnavailable` set, and in production the gate sets the
+ *      response to 503 with `Retry-After`. Public paths (`isPublicPath`) pass
+ *      through without asking the provider.
  *   4. A signed-out or provider-unavailable request to a gated route fails
  *      closed: a navigation gets a 307 to the same host's sign-in route with
  *      a validated relative `redirect_url`; an API route or non-navigation
  *      request gets a 401 JSON body with an RFC 9728 `WWW-Authenticate`.
  *   5. A signed-in principal without permission gets a 307 (navigation) to
  *      the not-authorized route, or a 403 JSON body (API / non-navigation).
- *      The not-authorized route itself is always answered with 403.
+ *      The gate sets 403 on the not-authorized route's response.
  *
- * A provider that throws is treated as unavailable. Nothing here answers 500.
+ * A provider that throws, or answers null or a non-object, is treated as
+ * unavailable. Nothing here answers 500.
+ *
+ * The 403 and 503 above are set on the Response that `next` returns, so they
+ * apply only when `next` returns the final response. Under a Next.js proxy,
+ * `NextResponse.next()` or a rewrite can discard that status: the
+ * not-authorized page must return its own 403 (for example with
+ * `forbidden()`), the sign-in page its own 503, or `next` must render the
+ * page itself.
  */
 
 export const PROTECTED_RESOURCE_METADATA_PATH = "/.well-known/oauth-protected-resource";
@@ -48,7 +58,7 @@ export interface ProtectedResourceMetadata {
 export interface GatedHostGateOptions<P = unknown> {
   /** Same-host sign-in route, e.g. `/sign-in`. */
   readonly signInPath: string;
-  /** Same-host route that renders the not-authorized page. The gate forces it to answer 403. */
+  /** Same-host route that renders the not-authorized page. The gate sets 403 on the response `next` returns for it. */
   readonly notAuthorizedPath: string;
   /** Explicit sibling origins a return URL may name. Everything else falls back to `/`. */
   readonly siblingOrigins?: readonly string[];
@@ -62,13 +72,23 @@ export interface GatedHostGateOptions<P = unknown> {
   readonly apiPathPrefixes?: readonly string[];
   /** When set, the gate serves the RFC 9728 document itself. Otherwise the path passes through to `next`. */
   readonly protectedResourceMetadata?: ProtectedResourceMetadata;
-  /** Production forces the unavailable sign-in state to 503 with `Retry-After`. Default false. */
+  /** In production the gate sets the unavailable sign-in state to 503 with `Retry-After` on the response `next` returns. Default false. */
   readonly production?: boolean;
-  /** Seconds for `Retry-After`. Default 30. */
+  /** Seconds for `Retry-After`; a non-negative integer. Default 30. */
   readonly retryAfterSeconds?: number;
 }
 
 export type GatedHostGate = (request: Request, next: GatedHostNext) => Promise<Response>;
+
+/** True when an Accept entry names `text/html` with a quality above zero. */
+function acceptsHtml(accept: string): boolean {
+  return accept.split(",").some((entry) => {
+    const [type, ...params] = entry.split(";").map((part) => part.trim().toLowerCase());
+    if (type !== "text/html") return false;
+    const q = params.find((param) => param.startsWith("q="));
+    return q === undefined ? true : !(Number(q.slice(2)) === 0);
+  });
+}
 
 /**
  * A request is a navigation when the browser says so (`Sec-Fetch-Mode:
@@ -77,7 +97,7 @@ export type GatedHostGate = (request: Request, next: GatedHostNext) => Promise<R
  */
 export function isNavigationRequest(request: Request): boolean {
   if (request.headers.get("sec-fetch-mode")?.toLowerCase() === "navigate") return true;
-  if (/\btext\/html\b/i.test(request.headers.get("accept") ?? "")) return true;
+  if (acceptsHtml(request.headers.get("accept") ?? "")) return true;
   if (request.headers.has("rsc")) return true;
   try {
     return new URL(request.url).searchParams.has("_rsc");
@@ -123,6 +143,14 @@ function assertPath(name: string, value: unknown): asserts value is string {
   }
 }
 
+function normalizeState<P>(value: unknown): GatePrincipalState<P> {
+  if (typeof value === "object" && value !== null) {
+    const state = (value as { state?: unknown }).state;
+    if (state === "signed-out" || state === "signed-in" || state === "unavailable") return value as GatePrincipalState<P>;
+  }
+  return { state: "unavailable" };
+}
+
 function withHeaders(response: Response, extra: Record<string, string>, status?: number): Response {
   const headers = new Headers(response.headers);
   for (const [k, v] of Object.entries(extra)) headers.set(k, v);
@@ -147,7 +175,12 @@ export function createGatedHostGate<P = unknown>(options: GatedHostGateOptions<P
   if (typeof options.resolvePrincipal !== "function") throw new TypeError("resolvePrincipal must be a function.");
   const siblings = options.siblingOrigins ?? [];
   const apiPrefixes = options.apiPathPrefixes ?? ["/api/"];
-  const retryAfter = String(options.retryAfterSeconds ?? 30);
+  const retrySeconds = options.retryAfterSeconds ?? 30;
+  if (!Number.isInteger(retrySeconds) || retrySeconds < 0) {
+    throw new TypeError("retryAfterSeconds must be a non-negative integer.");
+  }
+  const retryAfter = String(retrySeconds);
+  const signInPrefix = options.signInPath.endsWith("/") ? options.signInPath : `${options.signInPath}/`;
 
   return async (request, next) => {
     const url = new URL(request.url);
@@ -165,14 +198,26 @@ export function createGatedHostGate<P = unknown>(options: GatedHostGateOptions<P
       return withHeaders(await next({ providerUnavailable: false }), {});
     }
 
+    const isSignIn = pathname === options.signInPath || pathname.startsWith(signInPrefix);
+
+    if (!isSignIn) {
+      let isPublic = false;
+      try {
+        isPublic = options.isPublicPath?.(pathname) === true;
+      } catch {
+        isPublic = false;
+      }
+      if (isPublic) return withHeaders(await next({ providerUnavailable: false }), {});
+    }
+
     let state: GatePrincipalState<P>;
     try {
-      state = await options.resolvePrincipal(request);
+      state = normalizeState(await options.resolvePrincipal(request));
     } catch {
       state = { state: "unavailable" };
     }
 
-    if (pathname === options.signInPath) {
+    if (isSignIn) {
       const unavailable = state.state === "unavailable";
       const response = await next({ providerUnavailable: unavailable });
       if (unavailable && options.production === true) {
@@ -180,8 +225,6 @@ export function createGatedHostGate<P = unknown>(options: GatedHostGateOptions<P
       }
       return withHeaders(response, {});
     }
-
-    if (options.isPublicPath?.(pathname) === true) return withHeaders(await next({ providerUnavailable: false }), {});
 
     if (state.state !== "signed-in") {
       if (navigation) {
