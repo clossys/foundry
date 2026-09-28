@@ -410,7 +410,7 @@ function parseCopyRegistryBindingInitEndsAtCall(code: string, call: { open: numb
     let i = preStart + decl.index! + decl[0].length;
     i = skipWsCode(code, i);
     if (code[i] === ":") {
-      i = skipTypeOperand(code, i + 1);
+      i = skipTypeAnnotation(code, i + 1);
       i = skipWsCode(code, i);
     }
     if (code[i] !== "=") continue;
@@ -420,7 +420,7 @@ function parseCopyRegistryBindingInitEndsAtCall(code: string, call: { open: numb
     if (i === skipWsCode(code, call.open)) return true;
   }
   return new RegExp(`${CALLEE_BOUNDARY}(?:const|let|var)\\s+${IDENT}(?:\\s*:[^=;]+)?\\s*=\\s*$`, "u").test(
-    code.slice(Math.max(0, nameStart - 80), nameStart),
+    code.slice(Math.max(0, nameStart - 400), nameStart),
   );
 }
 
@@ -432,7 +432,7 @@ function commaStartsNextDeclarator(code: string, commaIdx: number): boolean {
   if (j === identStart) return false;
   j = skipWsCode(code, j);
   if (code[j] === ":") {
-    j = skipTypeOperand(code, j + 1);
+    j = skipTypeAnnotation(code, j + 1);
     j = skipWsCode(code, j);
   }
   return code[j] === "=";
@@ -446,6 +446,9 @@ function postfixContinuesParseResult(code: string, idx: number): boolean {
   if (c === "." && code[idx + 1] !== ".") return true;
   if (code.slice(idx, idx + 2) === "?.") return true;
   if (code.slice(idx, idx + 2) === "??") return true;
+  if (code.slice(idx, idx + 2) === "||") return true;
+  if (code.slice(idx, idx + 2) === "&&") return true;
+  if (code.slice(idx, idx + 2) === "==" && code[idx + 2] !== "=") return true;
   return false;
 }
 
@@ -585,11 +588,18 @@ function destructuringPatternShadowsName(inner: string, name: string): boolean {
     if (new RegExp(`^${esc}(?:\\s*=.*)?$`, "u").test(trimmed)) return true;
     if (new RegExp(`^${IDENT}\\s*:\\s*${esc}(?:\\s*=.*)?$`, "u").test(trimmed)) return true;
     if (new RegExp(`^\\.\\.\\.\\s*${esc}$`, "u").test(trimmed)) return true;
+    if (new RegExp(`^\\[[^\\]]+\\]\\s*:\\s*${esc}(?:\\s*=.*)?$`, "u").test(trimmed)) return true;
     const nestedObj = new RegExp(`^${IDENT}\\s*:\\s*\\{`, "u").exec(trimmed);
     if (nestedObj) {
       const open = trimmed.indexOf("{", nestedObj.index);
       const close = matchingClose(trimmed, open);
       if (close > open && destructuringPatternShadowsName(trimmed.slice(open + 1, close), name)) return true;
+    }
+    const nestedArr = new RegExp(`^${IDENT}\\s*:\\s*\\[`, "u").exec(trimmed);
+    if (nestedArr) {
+      const open = trimmed.indexOf("[", nestedArr.index);
+      const close = matchingClose(trimmed, open);
+      if (close > open && arrayPatternShadowsName(trimmed.slice(open + 1, close), name)) return true;
     }
   }
   return false;
@@ -601,6 +611,14 @@ function arrayPatternShadowsName(inner: string, name: string): boolean {
     const trimmed = part.trim();
     if (!trimmed) continue;
     if (new RegExp(`^${esc}(?:\\s*=.*)?$`, "u").test(trimmed)) return true;
+    if (trimmed.startsWith("{")) {
+      const close = matchingClose(trimmed, 0);
+      if (close > 0 && destructuringPatternShadowsName(trimmed.slice(1, close), name)) return true;
+    }
+    if (trimmed.startsWith("[")) {
+      const close = matchingClose(trimmed, 0);
+      if (close > 0 && arrayPatternShadowsName(trimmed.slice(1, close), name)) return true;
+    }
   }
   return false;
 }
@@ -635,8 +653,43 @@ function skipPostfixTypeArrayBrackets(code: string, i: number): number {
   return i;
 }
 
+/** A full type annotation after `:` — unions, intersections, and postfix arrays. */
+function skipTypeAnnotation(code: string, i: number): number {
+  for (;;) {
+    i = skipWsCode(code, i);
+    i = skipTypeOperand(code, i);
+    i = skipWsCode(code, i);
+    const c = code[i];
+    if (c === "|" || c === "&") {
+      i++;
+      continue;
+    }
+    break;
+  }
+  return i;
+}
+
 /** One extends/type operand: a name, generic, object type, or parenthesized type. */
 function skipTypeOperand(code: string, i: number): number {
+  i = skipWsCode(code, i);
+  for (;;) {
+    const kwStart = i;
+    i = skipIdentCode(code, i);
+    if (i === kwStart) break;
+    const word = code.slice(kwStart, i);
+    if (word === "readonly") continue;
+    if (word === "keyof" || word === "typeof" || word === "infer") {
+      i = skipWsCode(code, i);
+      continue;
+    }
+    if (word === "unique") {
+      i = skipWsCode(code, i);
+      i = skipIdentCode(code, i);
+      return skipPostfixTypeArrayBrackets(code, i);
+    }
+    i = kwStart;
+    break;
+  }
   i = skipWsCode(code, i);
   const c = code[i];
   if (c === "{") {
@@ -866,19 +919,7 @@ function indexAfterGenericTypeParamList(code: string, ltIdx: number): number {
 
 function skipReturnTypeAfterParamList(code: string, i: number): number {
   if (code[i] !== ":") return i;
-  i++;
-  for (;;) {
-    i = skipWsCode(code, i);
-    i = skipTypeOperand(code, i);
-    i = skipWsCode(code, i);
-    const c = code[i];
-    if (c === "|" || c === "&") {
-      i++;
-      continue;
-    }
-    break;
-  }
-  return i;
+  return skipTypeAnnotation(code, i + 1);
 }
 
 /** Comma before `(` or `[` inside a generic or tuple type list — not a call argument comma. */
