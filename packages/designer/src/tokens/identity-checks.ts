@@ -105,6 +105,9 @@ export interface IdentityContrastResult {
  */
 const PAINT_ATTR_RE = /(?<![\w-])(?:fill|stroke)\s*=\s*("([^"]*)"|'([^']*)')/g;
 
+/** A `<mask>` exactly as `recolorSvg` generates it (see {@link extractRenderedColors}). */
+const GENERATED_MASK_RE = /<mask id="recolor-[0-9a-f]{8}-[ab]"[^>]*>[\s\S]*?<\/mask>/g;
+
 /**
  * Every distinct, explicit `fill`/`stroke` colour literal `svg` actually
  * paints with — `none`/`transparent`/empty/`currentColor` excluded, since
@@ -114,19 +117,18 @@ const PAINT_ATTR_RE = /(?<![\w-])(?:fill|stroke)\s*=\s*("([^"]*)"|'([^']*)')/g;
  * see `rootStartTag`), the colour that actually renders can come from any
  * nested element.
  *
- * Paint inside a `<mask>…</mask>` element is skipped: mask content is
- * coverage geometry (its luminance decides where the masked content shows),
- * never a colour that reaches the screen. `identity-kit.ts`'s `recolorSvg`
- * knocks a two-tone mark out with `#fff`/`#000` masks (#1537); counting
- * those as rendered colours would fail a `currentColor`-only `mono`
- * variant for paint nobody sees. Stripping is textual (first `</mask>`
- * after each `<mask`), matching this module's regex-level reading
- * elsewhere, not a parse — a nested `<mask>` is not a shape this package
- * emits.
+ * Paint inside a `<mask>` that `identity-kit.ts`'s `recolorSvg` generated
+ * for its two-tone knockout (#1537) is skipped: that mask content is
+ * coverage geometry (its luminance decides where the masked content
+ * shows), never a colour that reaches the screen, and counting it would
+ * fail a `currentColor`-only `mono` variant for paint nobody sees. Only
+ * that generated shape is skipped, `<mask id="recolor-<8 hex>-a|b"`
+ * (`recolorSvg` emits no nested `<mask>` and no `>` inside its mask tag);
+ * a mark's own `<mask>` is judged exactly as it always was.
  */
 function extractRenderedColors(svg: string): readonly string[] {
   const colors = new Set<string>();
-  const visible = svg.replace(/<mask\b[\s\S]*?<\/mask\s*>/gi, "");
+  const visible = svg.replace(GENERATED_MASK_RE, "");
   for (const match of visible.matchAll(PAINT_ATTR_RE)) {
     const value = match[2] ?? match[3] ?? "";
     if (value === "" || value === "none" || value === "transparent" || value === "currentColor") continue;

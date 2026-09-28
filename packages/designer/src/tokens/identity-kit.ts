@@ -433,91 +433,6 @@ function isSvgDocument(value: string): boolean {
  */
 const PAINT_ATTR_RE = /(?<![\w-])(fill|stroke)\s*=\s*("([^"]*)"|'([^']*)')/g;
 
-/** `true` for a paint value that paints nothing (`none`/`transparent`/empty) — never recoloured, never a tone. */
-function isNonPaint(value: string): boolean {
-  return value === "none" || value === "transparent" || value === "";
-}
-
-/** An inline `style="…"` attribute; a `fill`/`stroke` declaration inside its value is paint exactly as the presentation attribute is. */
-const STYLE_ATTR_RE = /(?<![\w:-])style\s*=\s*("([^"]*)"|'([^']*)')/gi;
-const STYLE_PAINT_DECL_RE = /(?<![\w-])(fill|stroke)(\s*:\s*)([^;]*)/gi;
-
-/**
- * Rewrites every `fill`/`stroke` paint — presentation attribute or inline
- * `style` declaration — whose trimmed value `replace` maps to a string
- * (an attribute is emitted double-quoted); a value `replace` maps to
- * `undefined` (and every non-paint value) is left byte-for-byte as
- * written. `replacement` strings are written verbatim — callers escape.
- */
-function substitutePaint(markup: string, replace: (value: string) => string | undefined): string {
-  return markup
-    .replace(PAINT_ATTR_RE, (match, attr: string, _quoted: string, doubleQuoted: string | undefined, singleQuoted: string | undefined) => {
-      const value = (doubleQuoted ?? singleQuoted ?? "").trim();
-      if (isNonPaint(value)) return match;
-      const replacement = replace(value);
-      return replacement === undefined ? match : `${attr}="${replacement}"`;
-    })
-    .replace(STYLE_ATTR_RE, (match, quoted: string, doubleQuoted: string | undefined) => {
-      const quote = doubleQuoted !== undefined ? '"' : "'";
-      const body = quoted.slice(1, -1);
-      const rewritten = body.replace(STYLE_PAINT_DECL_RE, (decl, prop: string, colon: string, raw: string) => {
-        const value = raw.trim();
-        if (isNonPaint(value)) return decl;
-        const replacement = replace(value);
-        return replacement === undefined ? decl : `${prop}${colon}${replacement}`;
-      });
-      return rewritten === body ? match : `style=${quote}${rewritten}${quote}`;
-    });
-}
-
-/** The distinct paint values of `markup` (attribute and inline-style `fill`/`stroke`), in document order. */
-function paintTonesOf(markup: string): string[] {
-  const found: { index: number; value: string }[] = [];
-  for (const match of markup.matchAll(PAINT_ATTR_RE)) found.push({ index: match.index ?? 0, value: (match[3] ?? match[4] ?? "").trim() });
-  for (const style of markup.matchAll(STYLE_ATTR_RE)) {
-    const offset = (style.index ?? 0) + style[0].indexOf(style[1]!) + 1;
-    for (const decl of (style[2] ?? style[3] ?? "").matchAll(STYLE_PAINT_DECL_RE)) found.push({ index: offset + (decl.index ?? 0), value: (decl[3] ?? "").trim() });
-  }
-  const tones: string[] = [];
-  for (const { value } of found.sort((a, b) => a.index - b.index)) {
-    if (!isNonPaint(value) && !tones.includes(value)) tones.push(value);
-  }
-  return tones;
-}
-
-/**
- * Splits the root start tag into the tag WITHOUT its `fill`/`stroke`
- * (attribute and inline-style declaration alike) and those two properties
- * as `[name, value]` pairs (a style declaration wins over the attribute,
- * as in CSS). Every other root attribute — `viewBox`, `xmlns`, the
- * remaining `style` declarations — stays on the tag untouched.
- */
-function splitRootPaint(tag: string): { tag: string; paint: [string, string][] } {
-  const declared = new Map<string, string>();
-  // The attribute goes with the whitespace that led up to it, so no gap is left in the tag.
-  const paintAttr = new RegExp(`\\s*${PAINT_ATTR_RE.source}`, "g");
-  const styleAttr = new RegExp(`\\s*${STYLE_ATTR_RE.source}`, "gi");
-  let stripped = tag.replace(paintAttr, (_match, attr: string, _quoted: string, doubleQuoted: string | undefined, singleQuoted: string | undefined) => {
-    declared.set(attr.toLowerCase(), (doubleQuoted ?? singleQuoted ?? "").trim());
-    return "";
-  });
-  stripped = stripped.replace(styleAttr, (_match, quoted: string, doubleQuoted: string | undefined) => {
-    const quote = doubleQuoted !== undefined ? '"' : "'";
-    const kept = quoted
-      .slice(1, -1)
-      .split(";")
-      .filter((decl) => {
-        const found = decl.match(/^\s*(fill|stroke)\s*:\s*([\s\S]*)$/i);
-        if (!found) return decl.trim() !== "";
-        declared.set(found[1]!.toLowerCase(), found[2]!.trim());
-        return false;
-      })
-      .join(";");
-    return kept.trim() === "" ? "" : ` style=${quote}${kept}${quote}`;
-  });
-  return { tag: stripped, paint: [...declared] };
-}
-
 /** 32-bit FNV-1a over UTF-16 code units, as 8 lowercase hex digits — a short, deterministic id suffix, not a security hash. */
 function fnv1a32Hex(value: string): string {
   let hash = 0x811c9dc5;
@@ -528,125 +443,262 @@ function fnv1a32Hex(value: string): string {
   return (hash >>> 0).toString(16).padStart(8, "0");
 }
 
-const ID_ATTR_RE = /(?<![\w:-])id\s*=\s*(?:"([^"]*)"|'([^']*)')/g;
-const ID_DEFINITION_RE = /(?<![\w:-])(id\s*=\s*)("([^"]*)"|'([^']*)')/g;
-const HREF_REFERENCE_RE = /(?<![\w-])(href\s*=\s*)(?:"#([^"]*)"|'#([^']*)')/g;
-const URL_REFERENCE_RE = /url\(\s*(['"]?)#([^)'"\s]+)\1\s*\)/g;
+/** The shapes the recogniser accepts, and the geometry attributes each may carry. */
+const FLAT_SHAPE_GEOMETRY: ReadonlyMap<string, readonly string[]> = new Map([
+  ["path", ["d"]],
+  ["rect", ["x", "y", "width", "height", "rx", "ry"]],
+  ["circle", ["cx", "cy", "r"]],
+  ["ellipse", ["cx", "cy", "rx", "ry"]],
+  ["polygon", ["points"]],
+  ["polyline", ["points"]],
+  ["line", ["x1", "y1", "x2", "y2"]],
+]);
+/** The only attributes a recognised root may carry (never paint, never a reference). */
+const FLAT_ROOT_ATTRIBUTES: ReadonlySet<string> = new Set(["xmlns", "viewBox", "width", "height", "role", "aria-label", "data-clear-space"]);
 
 /**
- * Makes every `id` defined in `markup`, and every reference to one
- * (`href`/`xlink:href="#id"`, `url(#id)`), unique to one copy by appending
- * `suffix`. An id not defined in `markup` is left alone. Without this, the
- * knockout's four copies of the mark would define each id four times and
- * every `<use>` would resolve to the first copy — whose paint belongs to a
- * different layer.
+ * One attribute: leading whitespace, a name, `=`, and a quoted value that
+ * contains none of `"` `'` `<` `>` `&`. A value that could close its own
+ * quote, open a tag, or start an entity is simply not matched, so the
+ * recogniser rejects the whole document instead of re-emitting it.
  */
-function scopeIds(markup: string, ids: ReadonlySet<string>, suffix: string): string {
-  if (ids.size === 0) return markup;
-  return markup
-    .replace(ID_DEFINITION_RE, (match, head: string, _quoted: string, doubleQuoted: string | undefined, singleQuoted: string | undefined) => {
-      const value = doubleQuoted ?? singleQuoted ?? "";
-      return ids.has(value) ? `${head}"${value}${suffix}"` : match;
-    })
-    .replace(HREF_REFERENCE_RE, (match, head: string, doubleQuoted: string | undefined, singleQuoted: string | undefined) => {
-      const value = doubleQuoted ?? singleQuoted ?? "";
-      return ids.has(value) ? `${head}"#${value}${suffix}"` : match;
-    })
-    .replace(URL_REFERENCE_RE, (match, quote: string, value: string) => (ids.has(value) ? `url(${quote}#${value}${suffix}${quote})` : match));
+const FLAT_ATTR = String.raw`[ \t\r\n]+[A-Za-z][A-Za-z0-9:_-]*[ \t\r\n]*=[ \t\r\n]*(?:"[^"'<>&]*"|'[^"'<>&]*')`;
+const FLAT_ATTR_RE = /[ \t\r\n]+([A-Za-z][A-Za-z0-9:_-]*)[ \t\r\n]*=[ \t\r\n]*(?:"([^"'<>&]*)"|'([^"'<>&]*)')/y;
+const FLAT_ROOT_RE = new RegExp(String.raw`<svg((?:${FLAT_ATTR})*)[ \t\r\n]*>`, "y");
+const FLAT_TAG_RE = new RegExp(String.raw`<([a-z]+)((?:${FLAT_ATTR})*)[ \t\r\n]*(/?)>`, "y");
+const FLAT_CLOSE_G_RE = /<\/g[ \t\r\n]*>/y;
+const FLAT_CLOSE_SVG_RE = /<\/svg[ \t\r\n]*>/y;
+const FLAT_WS_RE = /[ \t\r\n]*/y;
+const FLAT_HEX_RE = /^#(?:([0-9a-fA-F]{3})|([0-9a-fA-F]{6}))$/;
+const FLAT_STROKE_ATTR_RE = /^stroke-[a-z]+(?:-[a-z]+)*$/;
+
+type FlatAttrs = [name: string, value: string][];
+interface FlatShape {
+  kind: "shape";
+  tag: string;
+  attrs: FlatAttrs;
+  tone: string;
+}
+interface FlatGroup {
+  kind: "group";
+  transform: string | undefined;
+  children: FlatNode[];
+}
+type FlatNode = FlatShape | FlatGroup;
+
+/** The attributes of one recognised tag as `[name, value]` pairs, or `null` for a duplicate name. */
+function readFlatAttrs(source: string): FlatAttrs | null {
+  const attrs: FlatAttrs = [];
+  let at = 0;
+  while (at < source.length) {
+    FLAT_ATTR_RE.lastIndex = at;
+    const match = FLAT_ATTR_RE.exec(source);
+    if (!match) return null;
+    const name = match[1]!;
+    if (attrs.some(([seen]) => seen === name)) return null;
+    attrs.push([name, match[2] ?? match[3] ?? ""]);
+    at = FLAT_ATTR_RE.lastIndex;
+  }
+  return attrs;
+}
+
+/** A hex paint as six lowercase digits, or `undefined` when it is not a plain `#rgb`/`#rrggbb`. */
+function normaliseHex(value: string): string | undefined {
+  const match = FLAT_HEX_RE.exec(value);
+  if (!match) return undefined;
+  const digits = (match[1] ? [...match[1]].map((d) => d + d).join("") : match[2]!).toLowerCase();
+  return `#${digits}`;
+}
+
+/** `attrs` are all allowed on `tag`, and its paint is one hex tone; returns that tone or `null`. */
+function flatShapeTone(tag: string, attrs: FlatAttrs): string | null {
+  const geometry = FLAT_SHAPE_GEOMETRY.get(tag);
+  if (geometry === undefined) return null;
+  const paint = new Map<string, string>();
+  for (const [name, value] of attrs) {
+    if (name === "fill" || name === "stroke") paint.set(name, value);
+    else if (!(geometry.includes(name) || name === "transform" || name === "fill-rule" || name === "clip-rule" || FLAT_STROKE_ATTR_RE.test(name))) return null;
+  }
+  const tone = normaliseHex(paint.get("fill") ?? "");
+  if (tone === undefined) return null;
+  const stroke = paint.get("stroke");
+  if (stroke !== undefined && stroke !== "none" && normaliseHex(stroke) !== tone) return null;
+  return tone;
+}
+
+/**
+ * The fail-closed recogniser behind {@link recolorSvg}'s knockout. Returns
+ * the parsed mark only when the WHOLE document is a flat two-tone mark;
+ * `null` for anything else, however close.
+ *
+ *  - root: `<svg>` with only `xmlns`, a parseable `viewBox`, `width`,
+ *    `height`, `role`, `aria-label`, `data-clear-space` — no paint, no
+ *    reference, no `id`;
+ *  - children: balanced `<g transform="…">` and self-closing `path`,
+ *    `rect`, `circle`, `ellipse`, `polygon`, `polyline`, `line`, carrying
+ *    only geometry, `transform`, `fill`, `stroke`, `stroke-*`,
+ *    `fill-rule`, `clip-rule`;
+ *  - every attribute value free of `"` `'` `<` `>` `&`; only whitespace
+ *    between tags (no text, comment, `<!`, `<?`, CDATA);
+ *  - every shape has an explicit hex `fill` (`#rgb`/`#rrggbb`, alpha
+ *    rejected) and its `stroke` is `none` or the same hex: one tone each;
+ *  - exactly two tones, every first-tone shape before every second-tone one.
+ */
+function recogniseFlatTwoTone(svg: string): { root: string; box: NonNullable<ReturnType<typeof parseViewBoxBox>>; nodes: FlatNode[]; toneA: string } | null {
+  const text = svg.trim();
+  FLAT_ROOT_RE.lastIndex = 0;
+  const rootMatch = FLAT_ROOT_RE.exec(text);
+  if (!rootMatch) return null;
+  const rootAttrs = readFlatAttrs(rootMatch[1]!);
+  if (rootAttrs === null || rootAttrs.some(([name]) => !FLAT_ROOT_ATTRIBUTES.has(name))) return null;
+  const viewBox = rootAttrs.find(([name]) => name === "viewBox")?.[1];
+  const box = viewBox === undefined ? undefined : parseViewBoxBox(viewBox);
+  if (box === undefined) return null;
+
+  const top: FlatNode[] = [];
+  const open: FlatGroup[] = [];
+  const siblings = (): FlatNode[] => (open.length > 0 ? open[open.length - 1]!.children : top);
+  const tones: string[] = [];
+  let seenSecondTone = false;
+  let at = FLAT_ROOT_RE.lastIndex;
+  for (;;) {
+    FLAT_WS_RE.lastIndex = at;
+    FLAT_WS_RE.exec(text);
+    at = FLAT_WS_RE.lastIndex;
+    FLAT_CLOSE_SVG_RE.lastIndex = at;
+    if (FLAT_CLOSE_SVG_RE.test(text)) return open.length === 0 && FLAT_CLOSE_SVG_RE.lastIndex === text.length && tones.length === 2 ? { root: rootMatch[0], box, nodes: top, toneA: tones[0]! } : null;
+    FLAT_CLOSE_G_RE.lastIndex = at;
+    if (FLAT_CLOSE_G_RE.test(text)) {
+      if (open.length === 0) return null;
+      open.pop();
+      at = FLAT_CLOSE_G_RE.lastIndex;
+      continue;
+    }
+    FLAT_TAG_RE.lastIndex = at;
+    const tag = FLAT_TAG_RE.exec(text);
+    if (!tag) return null;
+    at = FLAT_TAG_RE.lastIndex;
+    const name = tag[1]!;
+    const attrs = readFlatAttrs(tag[2]!);
+    if (attrs === null) return null;
+    const selfClosing = tag[3] === "/";
+    if (name === "g") {
+      if (selfClosing || attrs.some(([attr]) => attr !== "transform")) return null;
+      const group: FlatGroup = { kind: "group", transform: attrs[0]?.[1], children: [] };
+      siblings().push(group);
+      open.push(group);
+      continue;
+    }
+    if (!selfClosing || !FLAT_SHAPE_GEOMETRY.has(name)) return null;
+    const tone = flatShapeTone(name, attrs);
+    if (tone === null) return null;
+    if (!tones.includes(tone)) {
+      if (tones.length === 2) return null;
+      tones.push(tone);
+    }
+    if (tone === tones[1]) seenSecondTone = true;
+    else if (seenSecondTone) return null;
+    siblings().push({ kind: "shape", tag: name, attrs, tone });
+  }
+}
+
+/**
+ * One layer of the recognised mark as markup. `paintOf` gives the paint a
+ * shape is drawn in for this layer, or `undefined` to leave the shape out;
+ * a `stroke` of `none` stays `none`, every other stroke takes that paint.
+ * Every other attribute is written back with its input value, which the
+ * recogniser has already proved free of `"` `'` `<` `>` `&`. A group with
+ * no shape left in this layer is dropped.
+ */
+function renderFlatNodes(nodes: readonly FlatNode[], paintOf: (shape: FlatShape) => string | undefined): string {
+  let out = "";
+  for (const node of nodes) {
+    if (node.kind === "group") {
+      const inner = renderFlatNodes(node.children, paintOf);
+      if (inner !== "") out += `<g${node.transform === undefined ? "" : ` transform="${node.transform}"`}>${inner}</g>`;
+      continue;
+    }
+    const paint = paintOf(node);
+    if (paint === undefined) continue;
+    const attrs = node.attrs
+      .map(([name, value]) => ` ${name}="${name === "fill" || (name === "stroke" && value !== "none") ? paint : value}"`)
+      .join("");
+    out += `<${node.tag}${attrs} />`;
+  }
+  return out;
 }
 
 /**
  * Best-effort structural recolour onto the single paint `color`.
  *
- * ONE TONE (or not a complete `<svg>` document, or no parseable root
- * `viewBox` to bound a mask by): every `fill`/`stroke` PAINT ATTRIBUTE
- * value that is not `none`/`transparent`/empty is replaced with `color` —
- * nothing else changes.
+ * FLAT RECOLOUR (every input but one narrow kind, below): every
+ * `fill`/`stroke` PAINT ATTRIBUTE value that is not
+ * `none`/`transparent`/empty is replaced with `color`, and nothing else
+ * changes. Deliberately narrow — it does not reach into a
+ * `style="fill:#fff"` declaration or a `<style>` block, since either would
+ * need a real CSS parser to rewrite safely; a mark that paints through
+ * those, through paint inherited from an ancestor, or through `<use>` will
+ * not recolour correctly. That limitation is why `adoptSuppliedMark`'s
+ * derived variants are a starting point for review, not a guarantee.
  *
- * TWO OR MORE TONES (#1537): flattening every tone onto `color` would
- * erase the contrast between them — a dark square carrying a light inner
- * figure became one flat square. Instead the mark is recoloured as a
- * KNOCKOUT: tone group A (the first tone in document order) and group B
- * (every other tone) are each painted in `color`, each masked out
- * wherever the other group paints, so the surface (or `appIcon`'s badge)
- * shows through where the tones overlap. The contrast between the tones
- * becomes the contrast between `color` and whatever it sits on — the pair
+ * KNOCKOUT (#1537), only for a RECOGNISED FLAT TWO-TONE MARK. Flattening
+ * a two-tone mark erases the contrast between its tones (a dark square
+ * carrying a light figure becomes one flat square), so a mark that
+ * `recogniseFlatTwoTone` accepts is instead recoloured as a knockout:
+ * the first tone (A) and the second (B) are each painted in `color`, each
+ * masked out wherever the other paints, so the surface (or `appIcon`'s
+ * badge) shows through where they overlap. The contrast between the tones
+ * becomes the contrast between `color` and what it sits on, the pair
  * `identity-checks.ts`'s contrast check already judges. The result is the
- * root start tag, a `<defs>` of two `<mask>`s (white coverage over the
- * root `viewBox`, the other group painted `#000`), and two masked `<g>`
- * copies of the inner markup; `color` is still the only visible paint,
- * so a `currentColor` recolour keeps `mono`/`favicon` single-colour (mask
- * content is coverage, not rendered colour — `extractRenderedColors`
- * skips it). Mask ids are `recolor-` plus a hash of `svg` and `color`:
- * deterministic, and distinct across colour variants of the same mark.
+ * root start tag verbatim, a `<defs>` of two `<mask>`s (white coverage
+ * over the root `viewBox`, the other tone painted `#000`), and two masked
+ * `<g>` layers; `color` stays the only visible paint, so a `currentColor`
+ * recolour keeps `mono`/`favicon` single-colour (mask paint is coverage,
+ * not rendered colour, and `identity-checks.ts` skips the masks generated
+ * here). Mask ids are `recolor-` plus a hash of `svg` and `color`.
  *
- * Inherited paint counts. A tone is any `fill`/`stroke` attribute OR
- * inline `style` declaration, on a shape, an ancestor `<g>`, or the root.
- * The root's own `fill`/`stroke` are lifted off the root tag onto each of
- * the four copies (recoloured per copy exactly as paint on a shape is, a
- * non-paint value such as `fill="none"` carried over as written), so
- * nothing inherits the original colour from above.
+ * WHAT IS RECOGNISED: the whole document is a flat mark: groups (with only
+ * `transform`) and basic shapes (`path`, `rect`, `circle`, `ellipse`,
+ * `polygon`, `polyline`, `line`) with an explicit hex `fill` (`#rgb` or
+ * `#rrggbb`), every first-tone shape before every second-tone shape,
+ * exactly two tones (`#fff` and `#FFFFFF` are one tone), and no ids,
+ * references, styles, classes, text, comments or root paint. The root
+ * carries only `xmlns`, a parseable `viewBox`, `width`, `height`, `role`,
+ * `aria-label` and `data-clear-space`.
  *
- * `<use>`: the four copies would otherwise each define every `id` of the
- * mark and every `<use href="#x">` would resolve to the first copy, whose
- * paint belongs to another layer. Each copy therefore gets its own ids —
- * `id`s, `href`/`xlink:href="#x"` and `url(#x)` are rewritten together —
- * so every `<use>` renders the recoloured shape of its own copy.
- *
- * Soundness boundary. For a mark whose paint falls into two nested layers
- * (a field of one tone, figures of the other on top of it, however they
- * are reached: directly, by inheritance, or through `<use>`) the boundary
- * between the two tones keeps its contrast. It is NOT guaranteed for a
- * mark with three or more nested layers: tones are grouped only as "first
- * tone vs the rest", so a shape of the first tone drawn on top of a later
- * tone (a dark dot inside a light figure on a dark field) is knocked out
- * with it and one boundary is lost — no worse than flattening. Tones are
- * also grouped by LITERAL paint value (`#fff` and `white` are two tones);
- * paint that a `<style>` block, not an attribute or inline `style`, sets
- * is neither a tone nor recoloured; and references written in a `<style>`
- * block or in SMIL timing are not rewritten. Those limitations are why
- * `adoptSuppliedMark`'s derived variants are a starting point for review,
- * not a guarantee.
+ * WHAT IS NOT: everything else stays FLAT, byte-identical to the previous
+ * release: one tone, three or more tones, a tone order A-B-A, alpha or
+ * named or `currentColor` paint, root or group paint, `<use>`, `<style>`,
+ * `style=`, `class=`, any `id` or `url(#…)`, text, comments, and any
+ * value containing a quote, `<` or `&`. A derived variant is therefore
+ * never broken by this function and never gains an attribute its input
+ * lacked: the only names added are the generated `mask`, `maskUnits`,
+ * `id`, `x`, `y`, `width` and `height`, and no id of the input is renamed
+ * and no attribute value is re-quoted or rewritten beyond its paint.
+ * A mark outside the subset gets no knockout, so its tone boundary is lost
+ * as it always was.
  */
 export function recolorSvg(svg: string, color: string): string {
   const escapedColor = escapeXml(color);
-  const tones = paintTonesOf(svg);
-  const rootViewBox = isSvgDocument(svg) ? rootStartTag(svg).match(/\bviewBox\s*=\s*(?:"([^"]*)"|'([^']*)')/i) : null;
-  const box = rootViewBox ? parseViewBoxBox(rootViewBox[1] ?? rootViewBox[2] ?? "") : undefined;
-  if (tones.length < 2 || box === undefined) {
+  const mark = recogniseFlatTwoTone(svg);
+  if (mark === null) {
     return svg.replace(PAINT_ATTR_RE, (match, attr: string, _quoted: string, doubleQuoted: string | undefined, singleQuoted: string | undefined) => {
       const value = doubleQuoted ?? singleQuoted ?? "";
-      if (isNonPaint(value)) return match;
+      if (value === "none" || value === "transparent" || value === "") return match;
       return `${attr}="${escapedColor}"`;
     });
   }
 
-  const toneA = tones[0]!;
-  const { tag: root, paint: rootPaint } = splitRootPaint(rootStartTag(svg));
-  const inner = innerMarkupOf(svg);
-  const ids = new Set([...inner.matchAll(ID_ATTR_RE)].map((m) => m[1] ?? m[2] ?? ""));
+  const { root, box, nodes, toneA } = mark;
   const id = `recolor-${fnv1a32Hex(`${svg}\u0000${color}`)}`;
-
-  // One self-contained copy of the mark: its own paint, its own ids, and the
-  // root's fill/stroke on a wrapper so inherited paint is recoloured too.
-  const copy = (suffix: string, replace: (value: string) => string): string => {
-    const paint = rootPaint.map(([name, value]) => ` ${name}="${isNonPaint(value) ? value.replace(/"/g, "&quot;") : replace(value)}"`).join("");
-    const body = scopeIds(substitutePaint(inner, replace), ids, `-${id}-${suffix}`);
-    return paint === "" ? body : `<g${paint}>${body}</g>`;
-  };
-  const layerA = copy("la", (v) => (v === toneA ? escapedColor : "none"));
-  const layerB = copy("lb", (v) => (v === toneA ? "none" : escapedColor));
-  const maskForA = copy("ma", (v) => (v === toneA ? "none" : "#000"));
-  const maskForB = copy("mb", (v) => (v === toneA ? "#000" : "none"));
-
   const region = `x="${round4(box.minX)}" y="${round4(box.minY)}" width="${round4(box.width)}" height="${round4(box.height)}"`;
-  const mask = (suffix: string, content: string): string =>
-    `<mask id="${id}-${suffix}" maskUnits="userSpaceOnUse" ${region}><rect ${region} fill="#fff" />${content}</mask>`;
-
-  return (
-    `${root}<defs>${mask("a", maskForA)}${mask("b", maskForB)}</defs>` +
-    `<g mask="url(#${id}-a)">${layerA}</g><g mask="url(#${id}-b)">${layerB}</g></svg>`
-  );
+  const mask = (suffix: string, hole: string): string => `<mask id="${id}-${suffix}" maskUnits="userSpaceOnUse" ${region}><rect ${region} fill="#fff" />${hole}</mask>`;
+  const isA = (shape: FlatShape): boolean => shape.tone === toneA;
+  const layerA = renderFlatNodes(nodes, (s) => (isA(s) ? escapedColor : undefined));
+  const layerB = renderFlatNodes(nodes, (s) => (isA(s) ? undefined : escapedColor));
+  const holesForA = renderFlatNodes(nodes, (s) => (isA(s) ? undefined : "#000"));
+  const holesForB = renderFlatNodes(nodes, (s) => (isA(s) ? "#000" : undefined));
+  return `${root}<defs>${mask("a", holesForA)}${mask("b", holesForB)}</defs><g mask="url(#${id}-a)">${layerA}</g><g mask="url(#${id}-b)">${layerB}</g></svg>`;
 }
 
 function innerMarkupOf(svg: string): string {

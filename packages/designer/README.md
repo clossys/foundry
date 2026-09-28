@@ -4528,23 +4528,31 @@ fit the badge). For a GENERATED direction, `primary`/`mark` are
 ink-coloured (drawn via `currentColor` under a `color:` style set to the
 `ink` token); for an ADOPTED direction, `primary`/`mark` are the supplied
 SVG's own colours, unchanged — only `mono`/`light`/`dark`/`favicon`/
-`appIcon` are recoloured onto token colours in both cases. A supplied mark
-with two or more distinct `fill`/`stroke` tones (and a root `viewBox`) is
-recoloured as a knockout rather than flattened: each tone is painted in the
-variant's single colour and masked out where the other tone paints, so the
-surface or badge shows through and the tones keep their contrast. Tones are
-grouped by literal value, the first tone against the rest, and paint counts
-wherever it is set: on a shape, an ancestor `<g>`, or the root, as a
-`fill`/`stroke` attribute or an inline `style` declaration; a `<use>`
-renders the recoloured shape of its own copy of the mark. **What is
-guaranteed, and what is not:** for a mark whose paint falls into two nested
-layers (a field of one tone with figures of the other on top) the boundary
-between the two tones keeps its contrast. It is not guaranteed for a mark
-with three or more nested layers, where a shape of the first tone drawn on
-top of a later tone is knocked out with it and that boundary is lost (no
-worse than flattening every tone to one colour). Paint set by a `<style>`
-block is neither a tone nor recoloured. Treat the derived variants as a
-starting point for review.
+`appIcon` are recoloured onto token colours in both cases.
+
+**What the recolour does with a two-tone mark (#1537).** Flattening a
+two-tone mark onto one colour erases the contrast between its tones, so
+`recolorSvg` knocks a mark out instead, but only a mark it recognises as a
+flat two-tone mark. **Recognised:** the whole document is groups (carrying
+only `transform`) and basic shapes (`path`, `rect`, `circle`, `ellipse`,
+`polygon`, `polyline`, `line`), each with an explicit hex `fill`
+(`#rgb` or `#rrggbb`, no alpha; a `stroke` is `none` or the same hex);
+exactly two tones (`#fff` and `#FFFFFF` are one tone), every first-tone
+shape before every second-tone shape; a root carrying only `xmlns`, a
+parseable `viewBox`, `width`, `height`, `role`, `aria-label` and
+`data-clear-space`; no `id`, reference, `style`, class, text, comment or
+root paint. Such a mark is recoloured as a knockout: each tone is painted
+in the variant's single colour and masked out where the other tone paints,
+so the surface or badge shows through and the tones keep their contrast.
+**Everything else stays flat:** any other input (one tone, three or more
+tones, tones in an A-B-A order, root or group paint, `<use>`, `<style>`,
+`style=`, classes, ids, references, named/`rgb()`/`currentColor`/alpha
+paint, text, or a value holding a quote, `<` or `&`) is recoloured exactly
+as before, every `fill`/`stroke` attribute onto the variant's colour, so
+its tones become one colour and their boundary is lost. That is byte-for-byte
+the flat recolour of the previous release: the derived variant is never
+broken by the knockout and never gains an attribute its input lacked. Treat
+the derived variants as a starting point for review.
 
 **Four checks judge every direction**, mirroring the "package owns
 judgment, every check reports satisfied/violated/indeterminate" split this

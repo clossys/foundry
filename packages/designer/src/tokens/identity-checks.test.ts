@@ -183,13 +183,20 @@ describe("checkSingleColourLegibility", () => {
     expect(result.offendingColors).toEqual(["#fff"]);
   });
 
-  it("ignores paint inside a <mask> (coverage, not rendered colour), but still catches an explicit colour outside one (issue #1537)", () => {
-    const masks = '<defs><mask id="m"><rect width="48" height="48" fill="#fff" /><path d="M0 0h1v1H0z" fill="#000" /></mask></defs>';
-    const knockedOut = checkSingleColourLegibility(`<svg viewBox="0 0 48 48">${masks}<g mask="url(#m)"><rect width="48" height="48" fill="currentColor" /></g></svg>`);
+  it("ignores paint inside a recolorSvg-generated <mask> (coverage, not rendered colour), but still catches an explicit colour outside one (issue #1537)", () => {
+    const masks = '<defs><mask id="recolor-0123abcd-a" maskUnits="userSpaceOnUse" x="0" y="0" width="48" height="48"><rect x="0" y="0" width="48" height="48" fill="#fff" /><path d="M0 0h1v1H0z" fill="#000" /></mask></defs>';
+    const knockedOut = checkSingleColourLegibility(`<svg viewBox="0 0 48 48">${masks}<g mask="url(#recolor-0123abcd-a)"><rect width="48" height="48" fill="currentColor" /></g></svg>`);
     expect(knockedOut).toEqual({ ok: true, offendingColors: [] });
-    const leaked = checkSingleColourLegibility(`<svg viewBox="0 0 48 48">${masks}<g mask="url(#m)"><rect width="48" height="48" fill="#112233" /></g></svg>`);
+    const leaked = checkSingleColourLegibility(`<svg viewBox="0 0 48 48">${masks}<g mask="url(#recolor-0123abcd-a)"><rect width="48" height="48" fill="#112233" /></g></svg>`);
     expect(leaked.ok).toBe(false);
     expect(leaked.offendingColors).toEqual(["#112233"]);
+  });
+
+  it("judges a mark's own <mask> exactly as before #1537: its paint still counts", () => {
+    const own = '<svg viewBox="0 0 48 48"><defs><mask id="m"><rect width="48" height="48" fill="#fff" /><path d="M0 0h1v1H0z" fill="#112233" /></mask></defs><g mask="url(#m)"><rect width="48" height="48" fill="currentColor" /></g></svg>';
+    const result = checkSingleColourLegibility(own);
+    expect(result.ok).toBe(false);
+    expect(result.offendingColors).toEqual(["#fff", "#112233"]);
   });
 });
 
