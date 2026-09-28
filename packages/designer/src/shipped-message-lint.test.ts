@@ -2085,19 +2085,14 @@ function objectLiteralMemberValue(
     if (ts.isShorthandPropertyAssignment(property) && property.name.text === memberKey) {
       return property.name;
     }
-  }
-  return undefined;
-}
-
-function resolveObjectLiteralForExpression(
-  expression: ts.Expression | undefined,
-  source: ts.SourceFile,
-): ts.ObjectLiteralExpression | undefined {
-  if (expression === undefined) return undefined;
-  const unwrapped = unwrapExpression(expression);
-  if (ts.isObjectLiteralExpression(unwrapped)) return unwrapped;
-  if (ts.isIdentifier(unwrapped)) {
-    return objectLiteralInitializerForName(unwrapped.text, unwrapped);
+    // A spread member is resolved through the spread source, so
+    // `{ ...{ show } }` and `{ ...base, show }` resolve like a direct member.
+    if (ts.isSpreadAssignment(property)) {
+      const spread = unwrapExpression(property.expression);
+      if (!ts.isObjectLiteralExpression(spread)) continue;
+      const spreadValue = objectLiteralMemberValue(spread, memberKey, source);
+      if (spreadValue !== undefined) return spreadValue;
+    }
   }
   return undefined;
 }
@@ -2106,41 +2101,186 @@ function resolveMemberCalleeFunctionLike(
   calleeExpr: ts.PropertyAccessExpression | ts.ElementAccessExpression,
   source: ts.SourceFile,
 ): ts.FunctionLikeDeclaration | undefined {
-  const chain = renderedMemberChain(calleeExpr);
-  if (chain === null) return undefined;
-  const segments = [chain.objectName, ...chain.memberKeys];
+  const value = resolveMemberChainValue(calleeExpr, source);
+  if (value === undefined) return undefined;
+  return functionLikeForResolvedValue(value, source);
+}
+
+function functionLikeForResolvedValue(
+  value: ts.Expression | ts.FunctionLikeDeclaration,
+  source: ts.SourceFile,
+): ts.FunctionLikeDeclaration | undefined {
+  if (ts.isFunctionLike(value)) return value;
+  const unwrapped = unwrapExpression(value);
+  if (ts.isIdentifier(unwrapped)) {
+    return resolveCallableFunctionLike(unwrapped.text, source);
+  }
+  return undefined;
+}
+
+// Resolve a member or element callee (`o.show`, `fns[0]`, `list.renderers.show`)
+// to the value it names, following in-file object, array, spread, and assignment
+// containers. The result is the raw member value, which lets a caller decide
+// whether it names a renderer without depending on the callee's shape.
+function resolveMemberChainValue(
+  calleeExpr: ts.PropertyAccessExpression | ts.ElementAccessExpression,
+  source: ts.SourceFile,
+): ts.Expression | ts.FunctionLikeDeclaration | undefined {
+  const segments = memberChainSegments(calleeExpr);
+  if (segments === null) return undefined;
   // Try every suffix: the leading identifiers may be namespaces or objects
   // this file does not declare, while a later local object does resolve.
   for (let start = 0; start + 1 < segments.length; start++) {
     const rootName = segments[start];
     if (rootName === undefined) continue;
-    const rootObject = objectLiteralInitializerForName(rootName, calleeExpr);
-    if (rootObject === undefined) continue;
-    let current: ts.ObjectLiteralExpression | undefined = rootObject;
-    for (let index = start + 1; index < segments.length && current !== undefined; index++) {
-      const key = segments[index];
-      if (key === undefined) {
-        current = undefined;
-        break;
-      }
-      const member = objectLiteralMemberValue(current, key, source);
-      if (member === undefined) {
-        current = undefined;
-        break;
-      }
-      if (index === segments.length - 1) {
-        if (ts.isFunctionLike(member)) return member;
-        if (ts.isIdentifier(member)) {
-          const resolved = resolveCallableFunctionLike(member.text, source);
-          if (resolved !== undefined) return resolved;
-        }
-        current = undefined;
-        break;
-      }
-      current = resolveObjectLiteralForExpression(member as ts.Expression, source);
+    const memberKeys = segments.slice(start + 1);
+    const rootedValue = inFileContainerValue(rootName, calleeExpr);
+    if (rootedValue !== undefined) {
+      const resolved = followMemberPath(rootedValue, memberKeys, source, calleeExpr);
+      if (resolved !== undefined) return resolved;
     }
+    const assigned = assignedMemberValue(rootName, memberKeys, calleeExpr);
+    if (assigned !== undefined) return assigned;
   }
   return undefined;
+}
+
+function memberChainSegments(
+  calleeExpr: ts.PropertyAccessExpression | ts.ElementAccessExpression,
+): string[] | null {
+  const memberKeys: string[] = [];
+  let current: ts.Expression = calleeExpr;
+  for (;;) {
+    if (ts.isPropertyAccessExpression(current)) {
+      memberKeys.unshift(current.name.text);
+      current = current.expression;
+      continue;
+    }
+    if (ts.isElementAccessExpression(current)) {
+      const arg = current.argumentExpression;
+      const index = elementAccessIndexFromArgument(arg);
+      if (index !== null) {
+        memberKeys.unshift(String(index));
+      } else if (ts.isStringLiteral(arg) || ts.isNoSubstitutionTemplateLiteral(arg)) {
+        memberKeys.unshift(arg.text);
+      } else {
+        // A non-constant index cannot be resolved to a binding.
+        return null;
+      }
+      current = current.expression;
+      continue;
+    }
+    current = unwrapExpression(current);
+    if (ts.isIdentifier(current)) return [current.text, ...memberKeys];
+    return null;
+  }
+}
+
+function hasNonConstantElementAccess(
+  calleeExpr: ts.PropertyAccessExpression | ts.ElementAccessExpression,
+): boolean {
+  let current: ts.Expression = calleeExpr;
+  for (;;) {
+    if (ts.isPropertyAccessExpression(current)) {
+      current = current.expression;
+      continue;
+    }
+    if (ts.isElementAccessExpression(current)) {
+      const arg = current.argumentExpression;
+      if (elementAccessIndexFromArgument(arg) === null &&
+        !ts.isStringLiteral(arg) &&
+        !ts.isNoSubstitutionTemplateLiteral(arg)) {
+        return true;
+      }
+      current = current.expression;
+      continue;
+    }
+    return false;
+  }
+}
+
+function followMemberPath(
+  container: ts.Expression | ts.FunctionLikeDeclaration,
+  memberKeys: readonly string[],
+  source: ts.SourceFile,
+  from: ts.Node,
+): ts.Expression | ts.FunctionLikeDeclaration | undefined {
+  let current: ts.Expression | ts.FunctionLikeDeclaration | undefined = container;
+  for (const key of memberKeys) {
+    if (current === undefined) return undefined;
+    current = memberValueOfContainer(current, key, source, from);
+  }
+  return current;
+}
+
+function inFileContainerValue(
+  name: string,
+  from: ts.Node,
+): ts.Expression | undefined {
+  return localInitializerInScope(name, from);
+}
+
+function memberValueOfContainer(
+  container: ts.Expression | ts.FunctionLikeDeclaration,
+  memberKey: string,
+  source: ts.SourceFile,
+  from: ts.Node,
+): ts.Expression | ts.FunctionLikeDeclaration | undefined {
+  if (ts.isFunctionLike(container)) return undefined;
+  const unwrapped = unwrapExpression(container);
+  if (ts.isObjectLiteralExpression(unwrapped)) {
+    return objectLiteralMemberValue(unwrapped, memberKey, source);
+  }
+  if (ts.isArrayLiteralExpression(unwrapped)) {
+    const index = numericMemberKey(memberKey);
+    if (index === null) return undefined;
+    const element = unwrapped.elements[index];
+    return element !== undefined && ts.isExpression(element) ? element : undefined;
+  }
+  if (ts.isIdentifier(unwrapped)) {
+    const initializer = localInitializerInScope(unwrapped.text, from);
+    if (initializer === undefined) return undefined;
+    return memberValueOfContainer(initializer, memberKey, source, from);
+  }
+  return undefined;
+}
+
+// `o.show = show; o.show(caption)` assigns the renderer outside the object
+// literal, so a matching assignment in scope resolves the member too.
+function assignedMemberValue(
+  rootName: string,
+  memberKeys: readonly string[],
+  from: ts.Node,
+): ts.Expression | ts.FunctionLikeDeclaration | undefined {
+  let found: ts.Expression | undefined;
+  let scope: ts.Node | undefined = from;
+  while (scope !== undefined) {
+    if (ts.isBlock(scope) || ts.isSourceFile(scope)) {
+      for (const statement of scope.statements) {
+        if (!ts.isExpressionStatement(statement)) continue;
+        const expression = statement.expression;
+        if (!ts.isBinaryExpression(expression)) continue;
+        if (expression.operatorToken.kind !== ts.SyntaxKind.EqualsToken) continue;
+        const target = unwrapExpression(expression.left);
+        if (!ts.isPropertyAccessExpression(target) && !ts.isElementAccessExpression(target)) {
+          continue;
+        }
+        const targetSegments = memberChainSegments(target);
+        if (targetSegments === null) continue;
+        if (targetSegments.length !== memberKeys.length + 1) continue;
+        if (targetSegments[0] !== rootName) continue;
+        if (!targetSegments.slice(1).every((key, index) => key === memberKeys[index])) continue;
+        found = expression.right;
+      }
+      if (found !== undefined) return found;
+    }
+    scope = scope.parent;
+  }
+  return found;
+}
+
+function numericMemberKey(memberKey: string): number | null {
+  return /^(?:0|[1-9]\d*)$/.test(memberKey) ? Number(memberKey) : null;
 }
 
 function calleeFunctionLikeFromCall(
@@ -2221,15 +2361,41 @@ function fileDeclaredBindingNames(sourceFile: ts.SourceFile): Set<string> {
   return names;
 }
 
+const FILE_IMPORTED_BINDINGS_CACHE = new WeakMap<ts.SourceFile, Set<string>>();
+
+function fileImportedBindingNames(sourceFile: ts.SourceFile): Set<string> {
+  const cached = FILE_IMPORTED_BINDINGS_CACHE.get(sourceFile);
+  if (cached !== undefined) return cached;
+  const names = new Set<string>();
+  for (const statement of sourceFile.statements) {
+    if (!ts.isImportDeclaration(statement)) continue;
+    const clause = statement.importClause;
+    if (clause === undefined) continue;
+    if (clause.name !== undefined) names.add(clause.name.text);
+    const bindings = clause.namedBindings;
+    if (bindings === undefined) continue;
+    if (ts.isNamespaceImport(bindings)) {
+      names.add(bindings.name.text);
+    } else {
+      for (const element of bindings.elements) names.add(element.name.text);
+    }
+  }
+  FILE_IMPORTED_BINDINGS_CACHE.set(sourceFile, names);
+  return names;
+}
+
 function isCapitalizedIdentifierName(name: string): boolean {
   const first = name.charAt(0);
   return first !== "" && first === first.toUpperCase() && first !== first.toLowerCase();
 }
 
-// Global builtins are not shipped-message renderers: a call through them
-// (`Number(value)`, `Object.values(x)`, `Buffer.byteLength(css)`) keeps its
-// argument silent, the same way the global `console` object does.
-const GLOBAL_BUILTIN_CALLEES = new Set([
+// The real global builtins are not shipped-message renderers: a call through
+// them (`Number(value)`, `Object.values(x)`, `Buffer.byteLength(css)`) keeps
+// its argument silent, the same way the global `console` object does. A name
+// is the global builtin only when the file neither declares nor imports it;
+// an imported or local `Number`, `String`, `Math`, or `Buffer` is resolved
+// like any other binding.
+const GLOBAL_BUILTIN_NAMES = new Set([
   "Number",
   "String",
   "Boolean",
@@ -2265,9 +2431,13 @@ const GLOBAL_BUILTIN_CALLEES = new Set([
   "globalThis",
 ]);
 
-function calleeIsGlobalBuiltin(calleeExpr: ts.Expression): boolean {
+function calleeIsGlobalBuiltin(calleeExpr: ts.Expression, sourceFile: ts.SourceFile): boolean {
   const rootName = expressionRootIdentifier(calleeExpr);
-  return rootName !== null && GLOBAL_BUILTIN_CALLEES.has(rootName);
+  if (rootName === null || !GLOBAL_BUILTIN_NAMES.has(rootName)) return false;
+  // The name is the global builtin only when the file neither declares nor
+  // imports a binding of that name. An imported or local `Number`, `String`,
+  // `Math`, or `Buffer` is resolved like any other binding.
+  return !fileDeclaredBindingNames(sourceFile).has(rootName);
 }
 
 function expressionRootIdentifier(expression: ts.Expression): string | null {
@@ -2310,14 +2480,34 @@ function indirectCalleeMayRender(
   }
   const declared = fileDeclaredBindingNames(sourceFile);
   if (ts.isPropertyAccessExpression(calleeExpr) || ts.isElementAccessExpression(calleeExpr)) {
-    // A member or element callee rooted in a value this file declares as a
-    // plain local (a findings buffer, an unchecked list) is not a renderer.
+    // A member or element callee is resolved to a same-file binding when the
+    // object or array literal is in-file. Shape does not decide: a resolved
+    // member that holds a renderer notes, and a resolved member that does not
+    // render stays silent. A parameter's object or array is not in-file, so a
+    // member read on it may render only when it is an element access.
     if (rootIsParameter) return ts.isElementAccessExpression(calleeExpr);
-    if (declared.has(rootName)) return false;
-    return true;
+    const value = resolveMemberChainValue(calleeExpr, sourceFile);
+    if (value !== undefined) {
+      // A function-like callee was already handled by the caller; an
+      // identifier may still name an imported renderer.
+      return ts.isFunctionLike(value) || ts.isIdentifier(unwrapExpression(value));
+    }
+    // A non-constant index (`fns[i]`) may pick any element of an in-file
+    // array, including a renderer, so a member or element that cannot be
+    // resolved this way is analysed.
+    if (hasNonConstantElementAccess(calleeExpr)) return true;
+    // An in-file container whose member is absent (a builtin method such as
+    // `findings.push`) is not a renderer. A base this file does not declare,
+    // or imports, may carry one (`Math.max`, `Buffer.from`), so its argument
+    // is analysed.
+    return !declared.has(rootName) || fileImportedBindingNames(sourceFile).has(rootName);
   }
-  if (rootIsParameter) return true;
-  if (declared.has(rootName)) return false;
+  // A direct identifier was not resolved as an in-file function-like. A name
+  // this file declares is the global builtin's renderer only when the name is
+  // a builtin the file shadowed (`let Number = (v) => <span>{v}</span>`); a
+  // plain local this file declares stays silent. A name the file does not
+  // declare at all may render.
+  if (declared.has(rootName)) return GLOBAL_BUILTIN_NAMES.has(rootName);
   return true;
 }
 
@@ -2548,7 +2738,7 @@ function indirectCallRendersArgument(
   // render keeps the argument silent, so an internal diagnostic message that
   // happens to be spelled in English is not read as a shipped message.
   if (callee === undefined) {
-    if (calleeIsGlobalBuiltin(call.expression)) return false;
+    if (calleeIsGlobalBuiltin(call.expression, sourceFile)) return false;
     if (!indirectCalleeMayRender(call, sourceFile, currentParameters)) {
       return false;
     }
@@ -9521,4 +9711,161 @@ describe("shipped message lint", () => {
     ]);
   });
 
-});
+  it("notes fix round 32 resolved member and element callees and shadowed builtins", () => {
+    // 1. A member callee on an in-file object literal holding a renderer.
+    const plainLocalMember = [
+      "function show(value: string) { return <span>{value}</span>; }",
+      "const o = { show };",
+      'export function Example(caption = "Save changes") { return o.show(caption); }',
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", plainLocalMember)).toEqual([
+      expect.objectContaining({ kind: "rendered-local", text: "caption" }),
+    ]);
+
+    // 2. An element callee on an in-file array literal holding a renderer.
+    const plainLocalElement = [
+      "function show(value: string) { return <span>{value}</span>; }",
+      "const fns = [show];",
+      'export function Example(caption = "Save changes") { return fns[0](caption); }',
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", plainLocalElement)).toEqual([
+      expect.objectContaining({ kind: "rendered-local", text: "caption" }),
+    ]);
+
+    // 2b. A non-constant index on an in-file array may pick the renderer.
+    const variableIndexElement = [
+      "function show(value: string) { return <span>{value}</span>; }",
+      "const fns = [show];",
+      'export function Example(i: number, caption = "Save changes") { return fns[i](caption); }',
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", variableIndexElement)).toEqual([
+      expect.objectContaining({ kind: "rendered-local", text: "caption" }),
+    ]);
+
+    // 3. An element holding an imported renderer.
+    const importedElement = [
+      'import { renderIt } from "./renderers";',
+      "const fns = [renderIt];",
+      'export function Example(caption = "Save changes") { return fns[0](caption); }',
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", importedElement)).toEqual([
+      expect.objectContaining({ kind: "rendered-local", text: "caption" }),
+    ]);
+
+    // 4. A nested object chain.
+    const nestedObjectMember = [
+      "function show(value: string) { return <span>{value}</span>; }",
+      "const list = { renderers: { show } };",
+      'export function Example(caption = "Save changes") { return list.renderers.show(caption); }',
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", nestedObjectMember)).toEqual([
+      expect.objectContaining({ kind: "rendered-local", text: "caption" }),
+    ]);
+
+    // 5. A member that arrives through a spread.
+    const spreadObjectMember = [
+      "function show(value: string) { return <span>{value}</span>; }",
+      "const o = { ...{ show } };",
+      'export function Example(caption = "Save changes") { return o.show(caption); }',
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", spreadObjectMember)).toEqual([
+      expect.objectContaining({ kind: "rendered-local", text: "caption" }),
+    ]);
+
+    // 6. A member assigned outside the literal.
+    const assignedMember = [
+      "function show(value: string) { return <span>{value}</span>; }",
+      "const o = { show };",
+      "o.show = show;",
+      'export function Example(caption = "Save changes") { return o.show(caption); }',
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", assignedMember)).toEqual([
+      expect.objectContaining({ kind: "rendered-local", text: "caption" }),
+    ]);
+
+    // 7. The same member with a `+` operand.
+    const memberPlusOperand = [
+      "function show(value: string) { return <span>{value}</span>; }",
+      "const o = { show };",
+      'export function Example(caption = "Save changes") { return o.show(caption + ""); }',
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", memberPlusOperand)).toEqual([
+      expect.objectContaining({ kind: "rendered-local", text: "caption" }),
+    ]);
+
+    // 8. A resolved non-rendering member stays silent, with and without `+`.
+    const nonRenderingMember = [
+      'const log = { info(v: string) { console.log(v); } };',
+      'export function Example(caption = "Save changes") { return log.info(caption); }',
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", nonRenderingMember)).toEqual([]);
+    const nonRenderingMemberPlus = [
+      'const log = { info(v: string) { console.log(v); } };',
+      'export function Example(caption = "Save changes") { return log.info(caption + ""); }',
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", nonRenderingMemberPlus)).toEqual([]);
+
+    // 9. Shadowed builtins: an imported name is resolved, not a global.
+    const importedNumber = [
+      'import { Number } from "./renderers";',
+      'export function Example(caption = "Save changes") { return Number(caption); }',
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", importedNumber)).toEqual([
+      expect.objectContaining({ kind: "rendered-local", text: "caption" }),
+    ]);
+    const importedString = [
+      'import { String } from "./renderers";',
+      'export function Example(caption = "Save changes") { return String(caption); }',
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", importedString)).toEqual([
+      expect.objectContaining({ kind: "rendered-local", text: "caption" }),
+    ]);
+    const importedMath = [
+      'import { Math } from "./renderers";',
+      'export function Example(caption = "Save changes") { return Math.max(caption); }',
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", importedMath)).toEqual([
+      expect.objectContaining({ kind: "rendered-local", text: "caption" }),
+    ]);
+    const importedBuffer = [
+      'import { Buffer } from "./renderers";',
+      'export function Example(caption = "Save changes") { return Buffer.from(caption); }',
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", importedBuffer)).toEqual([
+      expect.objectContaining({ kind: "rendered-local", text: "caption" }),
+    ]);
+
+    // 10. A local `Number` assigned a renderer is resolved too.
+    const declaredNumberRenderer = [
+      "let Number: any;",
+      "Number = (v) => <span>{v}</span>;",
+      'export function Example(caption = "Save changes") { return Number(caption); }',
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", declaredNumberRenderer)).toEqual([
+      expect.objectContaining({ kind: "rendered-local", text: "caption" }),
+    ]);
+
+    // 11. The real global `console` object stays exempt.
+    const consolePlus = [
+      'export function Example(caption = "Save changes") { console.log(caption + ""); }',
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", consolePlus)).toEqual([]);
+  });
+
+  });
