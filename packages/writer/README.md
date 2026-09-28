@@ -186,6 +186,55 @@ the same `CopyRegistry` file a surface renders from:
   gate (built-in defaults for `display-heading`, `eyebrow`, and `button` when
   `maxWords` is omitted).
 
+## Site identity copy (`site.name` / `site.tagline`)
+
+A site's name and tagline are a reserved copy kind: two entries in the same
+`CopyRegistry` a surface renders from, under the ids `SITE_NAME_COPY_ID`
+(`"site.name"`) and `SITE_TAGLINE_COPY_ID` (`"site.tagline"`, both listed in
+`SITE_IDENTITY_COPY_IDS`). `resolveSiteIdentity` resolves both through
+`resolveCopyRef`, so the approval policy in "Resolving copy for a surface"
+applies to each without a second code path: the entry must be `approved`, a
+recorded approval must still match the entry's current text, a delegate
+approval must not have expired, and a delegate approval is refused on
+`"production"` unless `acceptDelegateInProduction` is set.
+
+```ts
+import { resolveSiteIdentity, type CopyRegistry } from "@clossys/writer";
+
+declare const registry: CopyRegistry;
+const result = resolveSiteIdentity(registry, { target: "production", locale: "en" });
+
+if (!result.complete) {
+  for (const issue of result.issues) console.error(issue.field, issue.reason, issue.message);
+} else {
+  const { name, tagline } = result.identity;
+}
+```
+
+The second argument is `CopyResolveOptions` (`target`, `acceptDelegateInProduction`,
+`now`) plus an optional `locale`, which is passed to the resolver as the
+requested locale of each entry. A malformed options object, or a blank or
+non-string `locale`, is reported as `"invalid-options"` rather than thrown.
+
+The result is all-or-nothing. Both entries are always attempted, and every
+problem is returned in one pass, each `SiteIdentityIssue` tagged with the
+`field` (`"name"` or `"tagline"`) it belongs to. `identity` (the two strings)
+and `resolutions` (each field's `CopyResolution`, with its registry, revision,
+locale, source and approval provenance) are present only when both resolved;
+when either fails neither is returned, so a caller cannot end up with half an
+identity. An issue's `reason` is any `CopyResolveIssueReason`, or one of two
+reasons specific to this kind:
+
+- `"site-identity-placeholder"` — the entry declares placeholders, or its text
+  contains braces the resolver would rewrite. A name and a tagline are literal
+  text, not templates.
+- `"site-identity-blank"` — the resolved text is empty after trimming.
+
+`resolveSiteIdentity` does not modify the registry and returns the same result
+for the same registry and options (pass `now` to fix the clock). Consuming it
+is a separate change: a publisher page-metadata builder is not part of this
+package, and nothing here reads a brand-facts record.
+
 ## Delegated approval — who approved this copy, and is it still that text?
 
 `status: "approved"` says an entry may render. It does not say who decided
@@ -882,6 +931,10 @@ The root entry point exports the copy registry and traceability surface:
   `CopyEntryCheckResult`, `CopyEntrySkip`, `CopyRecordCheckOptions`,
   `CopyRecordCheckReport`, `CopyRecordFinding`, and
   `CopyRecordWaivedFinding`.
+- Site identity (see above): `resolveSiteIdentity`, `SITE_NAME_COPY_ID`,
+  `SITE_TAGLINE_COPY_ID`, `SITE_IDENTITY_COPY_IDS`, `SiteIdentityField`,
+  `SiteIdentityIssue`, `SiteIdentityIssueReason`, `SiteIdentityOptions`, and
+  `SiteIdentityResolution`.
 - Translation provenance and fingerprinting (see "Where this package sits
   on i18n" above): `CopyTranslationProvenance`, `computeCopyFingerprint`,
   and `COPY_FINGERPRINT_ALGORITHM`.
