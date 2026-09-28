@@ -11,7 +11,7 @@ export interface AuthViewProps extends HTMLAttributes<HTMLDivElement> {
    */
   brand: ReactNode;
   /**
-   * The page's own name — the words for sign-in, account creation,
+   * The page's own name - the words for sign-in, account creation,
    * password reset, or verification. Renders as the page's `<h1>` through
    * Designer's `PageHeader`, above the card. Copy is the caller's; this
    * view has no mode that picks a heading.
@@ -20,7 +20,7 @@ export interface AuthViewProps extends HTMLAttributes<HTMLDivElement> {
   /** A line of supporting copy under `heading`. */
   description?: ReactNode;
   /**
-   * The form slot. Rendered inside Designer's `Card`, exactly as given —
+   * The form slot. Rendered inside Designer's `Card`, exactly as given -
    * no `<form>` wrapper, no submit handling, no field state, no
    * validation. Fill it with Designer's `Form`, `TextField`, and `Button`.
    * Sign-in, sign-up, and password reset are three fillings of this slot,
@@ -29,7 +29,7 @@ export interface AuthViewProps extends HTMLAttributes<HTMLDivElement> {
    */
   form: ReactNode;
   /**
-   * Slot for a secondary link below the fields, still inside the card —
+   * Slot for a secondary link below the fields, still inside the card -
    * the alternate step ("Create an account", "Back to sign in").
    */
   secondaryAction?: ReactNode;
@@ -46,7 +46,7 @@ export interface AuthViewProps extends HTMLAttributes<HTMLDivElement> {
 /**
  * One page shell for every authentication step: sign-in, sign-up,
  * password reset, email verification. A view, not a block: a page is an
- * auth page or it isn't — there is no page that reasonably shows two
+ * auth page or it isn't - there is no page that reasonably shows two
  * auth forms side by side.
  *
  * The shell is Designer's, in order: `SiteHeader`, `PageHeader`, `Card`
@@ -55,7 +55,7 @@ export interface AuthViewProps extends HTMLAttributes<HTMLDivElement> {
  * caller passes in.
  *
  * **This component implements no authentication of any kind.** No
- * provider, no form state, no field validation, no submit handling — it
+ * provider, no form state, no field validation, no submit handling - it
  * renders `form` exactly as given. An auth provider stays behind the
  * caller's submit handler. A shared view that absorbed one provider's
  * field set would immediately need an escape hatch for every other one.

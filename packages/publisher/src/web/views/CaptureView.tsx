@@ -47,7 +47,7 @@ export interface CaptureViewProps extends HTMLAttributes<HTMLDivElement> {
  * A page shell for a consumer-owned capture form. Site header, page
  * header, the form inside Designer's `Card`, and site footer. It owns
  * neither network submission nor validation state: the only state rule it
- * applies is presentational and fail-closed—`submitted` replaces the form
+ * applies is presentational and fail-closed-`submitted` replaces the form
  * in place, still inside the card.
  */
 export function CaptureView({
