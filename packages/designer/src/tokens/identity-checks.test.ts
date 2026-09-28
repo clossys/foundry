@@ -126,7 +126,7 @@ describe("checkIdentityContrast", () => {
         ["single-quoted attributes", `${GEN_HEAD}${GEN_RECT}<path d="M0 0" fill='#eeeeee' /></mask>`],
         ["a prefixed paint name", `${GEN_HEAD}${GEN_RECT}<path d="M0 0" xlink:fill="#eeeeee" /></mask>`],
         ["a missing closing tag", `${GEN_HEAD}${GEN_RECT}${LOW}`],
-        ["a header with an extra attribute", `${GEN_HEAD.replace(">", ' fill="#eeeeee">')}${GEN_RECT}</mask>`],
+        ["a header with an extra attribute", `${GEN_HEAD.replace(/>/g, ' fill="#eeeeee">')}${GEN_RECT}</mask>`],
         ["a header id that is not the generated pattern", `${GEN_HEAD.replace("00000000-a", "0000000-a")}${GEN_RECT}<path d="M0 0" fill="#eeeeee" /></mask>`],
       ])("is not stripped when the body has %s", (_name, mask) => {
         const crafted = wrap(`<defs>${mask}</defs>`);
