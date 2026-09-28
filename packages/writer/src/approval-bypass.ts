@@ -550,7 +550,8 @@ function skipTypeOperand(code: string, i: number): number {
   const c = code[i];
   if (c === "{") {
     const end = matchingClose(code, i);
-    return end === -1 ? code.length : end + 1;
+    i = end === -1 ? code.length : end + 1;
+    return skipPostfixTypeArrayBrackets(code, i);
   }
   if (c === "(") {
     const end = matchingClose(code, i);
@@ -560,7 +561,7 @@ function skipTypeOperand(code: string, i: number): number {
       i += 2;
       i = skipTypeOperand(code, skipWsCode(code, i));
     }
-    return i;
+    return skipPostfixTypeArrayBrackets(code, i);
   }
   if (c === "<") {
     i = indexAfterGenericTypeParamList(code, i);
