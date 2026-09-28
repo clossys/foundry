@@ -521,12 +521,74 @@ function isDeclareFunctionPrefix(code: string, fnKeywordIndex: number): boolean 
   return /(?:^|\s)declare\s+$/.test(before);
 }
 
+function functionInDeclareNamespace(code: string, fnKeywordIndex: number): boolean {
+  const before = code.slice(Math.max(0, fnKeywordIndex - 250), fnKeywordIndex);
+  return /declare\s+namespace\s+[\w$]+\s*\{[^}]*$/.test(before);
+}
+
+function constructorInDeclareClass(code: string, constructorIdx: number): boolean {
+  const before = code.slice(Math.max(0, constructorIdx - 300), constructorIdx);
+  return /declare\s+class\s+[\w$]+\s*\{[^}]*$/.test(before);
+}
+
+/** A parenthesized parameter list in a type alias or similar — not a runtime callback. */
+function openParenIsTypeSyntax(code: string, openIdx: number): boolean {
+  const before = code.slice(Math.max(0, openIdx - 400), openIdx);
+  if (new RegExp(`(?<![\\w$.])type\\s+${IDENT}(?:\\s*<[^>]*>)?\\s*=\\s*[^{;=]*$`, "u").test(before)) return true;
+  if (new RegExp(`(?<![\\w$.])interface\\s+${IDENT}(?:\\s*<[^>]*>)?(?:\\s+extends\\s+[^{;]*)?\\s*$`, "u").test(before))
+    return true;
+  return false;
+}
+
+function singleParamBindingShadows(param: string, name: string): boolean {
+  const esc = escapeRegExp(name);
+  const trimmed = param.trim();
+  if (!trimmed) return false;
+  if (new RegExp(`^(?:\\.\\.\\.\\s*)?${esc}(?:\\s*:[^=,)]+|\\s*=[^,)]+|\\s*\\?|\\s*$)`, "u").test(trimmed)) return true;
+  if (trimmed.startsWith("{")) {
+    const close = trimmed.lastIndexOf("}");
+    if (close > 0) return destructuringPatternShadowsName(trimmed.slice(1, close), name);
+  }
+  if (trimmed.startsWith("[")) {
+    const close = trimmed.lastIndexOf("]");
+    if (close > 0) return arrayPatternShadowsName(trimmed.slice(1, close), name);
+  }
+  return false;
+}
+
+function paramListShadowsName(inner: string, name: string): boolean {
+  let depth = 0;
+  let start = 0;
+  for (let i = 0; i <= inner.length; i++) {
+    const c = inner[i];
+    if (c === "(" || c === "{" || c === "[") depth++;
+    else if (c === ")" || c === "}" || c === "]") depth--;
+    else if (c === "," && depth === 0) {
+      if (singleParamBindingShadows(inner.slice(start, i), name)) return true;
+      start = i + 1;
+    }
+  }
+  return singleParamBindingShadows(inner.slice(start), name);
+}
+
+function forEachParenListShadows(code: string, name: string): boolean {
+  for (const m of code.matchAll(/(?:\(|,)\s*(?:async\s+)?(?:<[^>]*>\s*)?\(\s*/gu)) {
+    const open = m.index! + m[0].length - 1;
+    if (openParenIsTypeSyntax(code, open)) continue;
+    const close = matchingClose(code, open);
+    if (close === -1) continue;
+    if (paramListShadowsName(code.slice(open + 1, close), name)) return true;
+  }
+  return false;
+}
+
 /** Ambient or type-only `{ name(` forms — not class or object-literal methods. */
 function objectMethodBraceIsTypeOnly(code: string, openBrace: number): boolean {
   const before = code.slice(Math.max(0, openBrace - 120), openBrace);
   if (/(?:^|\s)declare\s+class\s+[\w$]*\s*$/.test(before)) return true;
-  if (new RegExp(`(?<![\\w$.])interface\\s+${IDENT}(?:\\s*<[^{}]*)?\\s*$`, "u").test(before)) return true;
-  if (new RegExp(`(?<![\\w$.])type\\s+${IDENT}(?:\\s*<[^{};]*)?\\s*=\\s*$`, "u").test(before)) return true;
+  if (new RegExp(`(?<![\\w$.])interface\\s+${IDENT}(?:\\s*<[^>]*>)?(?:\\s+extends\\s+[^{;]*)?\\s*$`, "u").test(before))
+    return true;
+  if (new RegExp(`(?<![\\w$.])type\\s+${IDENT}(?:\\s*<[^{};]*)?\\s*=\\s*[^{;]*$`, "u").test(before)) return true;
   return false;
 }
 
@@ -579,19 +641,24 @@ function collectLocalShadowedCalleepNames(
       for (const m of code.matchAll(re)) {
         const fnIdx = code.indexOf("function", m.index!);
         if (fnIdx !== -1 && isDeclareFunctionPrefix(code, fnIdx)) continue;
+        if (fnIdx !== -1 && functionInDeclareNamespace(code, fnIdx)) continue;
         fnParamShadow = true;
         break;
       }
       if (fnParamShadow) break;
     }
     if (fnParamShadow) shadowed.add(name);
-    if (
+    for (const m of code.matchAll(
       new RegExp(
         `constructor\\s*\\([^)]*(?:public|private|protected|readonly)\\s+${esc}(?:\\?(?:\\s*[,):]|=|:)|(?![\\w$])\\s*(?:[,):]|=|:))`,
-        "u",
-      ).test(code)
-    )
-      shadowed.add(name);
+        "gu",
+      ),
+    )) {
+      if (!constructorInDeclareClass(code, m.index!)) {
+        shadowed.add(name);
+        break;
+      }
+    }
     if (
       new RegExp(
         `constructor\\s*\\([^)]*${esc}(?:\\?(?:\\s*[,):]|=|:)|(?![\\w$])\\s*(?:[,):]|=|:))[^)]*\\)\\s*(?:\\s*:\\s*[^\\{;]+)?\\s*\\{`,
@@ -617,6 +684,31 @@ function collectLocalShadowedCalleepNames(
       shadowed.add(name);
     if (new RegExp(`${CALLEE_BOUNDARY}(?:const|let|var)\\s+${IDENT}\\s*=\\s*(?:async\\s+)?${firstParamBind}\\s*=>`, "u").test(code))
       shadowed.add(name);
+    if (!shadowed.has(name)) {
+      for (const m of code.matchAll(
+        new RegExp(`${CALLEE_BOUNDARY}(?:const|let|var)\\s+${IDENT}\\s*=\\s*(?:async\\s+)?(?:<[^>]*>\\s*)?\\(\\s*`, "gu"),
+      )) {
+        const open = m.index! + m[0].length - 1;
+        const close = matchingClose(code, open);
+        if (close === -1) continue;
+        if (paramListShadowsName(code.slice(open + 1, close), name)) {
+          shadowed.add(name);
+          break;
+        }
+      }
+    }
+    if (!shadowed.has(name)) {
+      for (const m of code.matchAll(/=>\s*(?:async\s+)?(?:<[^>]*>\s*)?\(\s*/gu)) {
+        const open = m.index! + m[0].length - 1;
+        if (openParenIsTypeSyntax(code, open)) continue;
+        const close = matchingClose(code, open);
+        if (close === -1) continue;
+        if (paramListShadowsName(code.slice(open + 1, close), name)) {
+          shadowed.add(name);
+          break;
+        }
+      }
+    }
     if (
       new RegExp(
         `${CALLEE_BOUNDARY}(?:const|let|var)\\s+${IDENT}\\s*=\\s*(?:async\\s+)?\\(\\s*${esc}\\s*:\\s*\\([^)]*\\)\\s*=>\\s*[^)]*\\)\\s*=>`,
@@ -634,7 +726,7 @@ function collectLocalShadowedCalleepNames(
     if (new RegExp(`${CALLEE_BOUNDARY}\\(\\s*${esc}(?:\\s*:[^)]*)?\\)\\s*:[^=>]+\\s*=>`, "u").test(code)) shadowed.add(name);
     if (new RegExp(`${CALLEE_BOUNDARY}export\\s+default\\s+(?:async\\s+)?\\(\\s*${esc}(?:\\s*:[^)]*)?\\)`, "u").test(code))
       shadowed.add(name);
-    if (new RegExp(`(?:\\(|,)\\s*(?:async\\s+)?\\(\\s*${esc}(?:\\s*:[^)]*)?\\)\\s*(?:=>|\\{)`, "u").test(code)) shadowed.add(name);
+    if (!shadowed.has(name) && forEachParenListShadows(code, name)) shadowed.add(name);
     if (new RegExp(`${CALLEE_BOUNDARY}(?:const|let|var)\\s+${IDENT}\\s*=\\s*(?:async\\s+)?\\(\\s*\\[\\s*${esc}`, "u").test(code))
       shadowed.add(name);
     if (new RegExp(`catch\\s*\\(\\s*${esc}(?:\\s*:[^)]+)?\\s*\\)`, "u").test(code)) shadowed.add(name);
@@ -657,7 +749,7 @@ function collectLocalShadowedCalleepNames(
 function braceIsPatternOrType(code: string, open: number): boolean {
   const before = code.slice(Math.max(0, open - 400), open);
   if (/(?<![\w$.])(?:const|let|var)\s*$/.test(before)) return true;
-  if (new RegExp(`(?<![\\w$.])interface\\s+${IDENT}(?:\\s*<[^{}]*>)?(?:\\s+extends\\s+[^{};]*)?\\s*$`).test(before)) return true;
+  if (new RegExp(`(?<![\\w$.])interface\\s+${IDENT}(?:\\s*<[^>]*>)?(?:\\s+extends\\s+[^{};]*)?\\s*$`).test(before)) return true;
   if (new RegExp(`(?<![\\w$.])type\\s+${IDENT}(?:\\s*<[^{};]*>)?\\s*=\\s*$`).test(before)) return true;
   if (new RegExp(`(?<![\\w$.])class(?![\\w$])(?:\\s+${IDENT})?[^{};()]*$`).test(before)) return true;
   if (/(?<![\w$.])(?:as|satisfies)\s*$/.test(before)) return true;

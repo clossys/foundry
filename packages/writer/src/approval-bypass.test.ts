@@ -484,6 +484,39 @@ describe("copy-read-without-resolver", () => {
     }
   });
 
+  it("flags every arrow-parameter shape that shadows a renamed import", () => {
+    const head = [
+      'import { createCopyResolver as make } from "@clossys/writer";',
+      'import registry from "../copy/registry.json";',
+    ].join("\n");
+    const use = "export const out = make(registry);";
+    for (const shadow of [
+      "const load = (make: Foo) => make(registry);",
+      "const load = (make = fallback) => make(registry);",
+      "const load = <T,>(make: T) => make(registry);",
+      "const load = (x: number) => (make: Foo) => make(registry);",
+    ]) {
+      const { gate } = scan({ "src/copy.ts": [head, shadow, use].join("\n") });
+      expect(gate.verdict).toBe("violated");
+    }
+  });
+
+  it("flags object-pattern parameters in arrows and callbacks", () => {
+    const head = [
+      'import { createCopyResolver as make } from "@clossys/writer";',
+      'import registry from "../copy/registry.json";',
+    ].join("\n");
+    const use = "export const out = make(registry);";
+    for (const shadow of [
+      "const load = ({ make }) => make(registry);",
+      "const xs: unknown[] = [];\nxs.forEach(({ make }) => make(registry));",
+      "const load = ({ key: make }) => make(registry);",
+    ]) {
+      const { gate } = scan({ "src/copy.ts": [head, shadow, use].join("\n") });
+      expect(gate.verdict).toBe("violated");
+    }
+  });
+
   it("does not treat block-leading if, while, or switch tests as parameter shadows", () => {
     const head = [
       'import { createCopyResolver as make } from "@clossys/writer";',
@@ -514,6 +547,11 @@ describe("copy-read-without-resolver", () => {
       "type Loader = { load(make: unknown): void }",
       "interface C { new (make: unknown): C }",
       "declare class C { load(make: unknown): void }",
+      "interface Loader extends Base { load(make: unknown): void }",
+      "type Loader = Base & { load(make: unknown): void }",
+      "declare class C { constructor(readonly make: unknown); }",
+      "declare namespace N { function load(make: unknown): void }",
+      "type F = ((make: (x: number) => number) => void)",
     ]) {
       const { gate } = scan({ "src/copy.ts": [head, decl, use].join("\n") });
       expect(gate.verdict).toBe("satisfied");
