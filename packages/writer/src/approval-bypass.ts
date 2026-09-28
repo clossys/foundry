@@ -569,6 +569,55 @@ function functionInDeclareNamespace(code: string, fnKeywordIndex: number): boole
   return indexInsideDeclareBlock(code, fnKeywordIndex, "namespace");
 }
 
+function isDeclareNamespacePrefix(code: string, namespaceKeywordIndex: number): boolean {
+  const before = code.slice(Math.max(0, namespaceKeywordIndex - 12), namespaceKeywordIndex);
+  return /(?:^|\s)declare\s+$/.test(before);
+}
+
+function indexInsidePlainNamespaceBlock(code: string, idx: number): boolean {
+  for (const m of code.matchAll(new RegExp(`${CALLEE_BOUNDARY}namespace\\s+${IDENT}\\s*\\{`, "gu"))) {
+    const nsIdx = m.index! + m[0].indexOf("namespace");
+    if (isDeclareNamespacePrefix(code, nsIdx)) continue;
+    const open = m.index! + m[0].length - 1;
+    const close = matchingClose(code, open);
+    if (close !== -1 && idx > open && idx < close) return true;
+  }
+  return false;
+}
+
+/** Namespace overload/signature declarations (`function f(x: T): R;`) are not value bindings. */
+function functionSignatureNotFollowedByBlock(code: string, fnKeywordIndex: number): boolean {
+  let i = fnKeywordIndex + "function".length;
+  i = skipWsCode(code, i);
+  if (code[i] === "*") i++;
+  i = skipIdentCode(code, i);
+  i = skipWsCode(code, i);
+  if (code[i] === "<") {
+    const end = matchingClose(code, i);
+    i = end === -1 ? code.length : end + 1;
+    i = skipWsCode(code, i);
+  }
+  if (code[i] !== "(") return false;
+  const close = matchingClose(code, i);
+  if (close === -1) return false;
+  i = skipWsCode(code, close + 1);
+  return code[i] !== "{";
+}
+
+function functionInPlainNamespaceWithoutBody(code: string, fnKeywordIndex: number): boolean {
+  return (
+    indexInsidePlainNamespaceBlock(code, fnKeywordIndex) &&
+    functionSignatureNotFollowedByBlock(code, fnKeywordIndex)
+  );
+}
+
+function skipFunctionParamValueBinding(code: string, fnKeywordIndex: number): boolean {
+  if (isDeclareFunctionPrefix(code, fnKeywordIndex)) return true;
+  if (functionInDeclareNamespace(code, fnKeywordIndex)) return true;
+  if (functionInPlainNamespaceWithoutBody(code, fnKeywordIndex)) return true;
+  return false;
+}
+
 function constructorInDeclareClass(code: string, constructorIdx: number): boolean {
   return indexInsideDeclareBlock(code, constructorIdx, "class");
 }
@@ -641,6 +690,12 @@ function prevCharIsSingleTypeUnionOrIntersection(code: string, openIdx: number):
   return !(q >= 0 && code[q] === c);
 }
 
+/** Flush `<` after an identifier starts a generic type argument list, not a comparison. */
+function ltAtIsGenericOpener(code: string, ltIdx: number): boolean {
+  const before = codePointBefore(code, ltIdx);
+  return before !== undefined && isIdContinueCodePoint(before);
+}
+
 /** A `>` after `openIdx` that closes the `<` at `ltIdx`, ignoring the `>` in `=>`. */
 function hasMatchingGenericCloserAfter(code: string, ltIdx: number, afterIdx: number): boolean {
   let depth = 0;
@@ -670,7 +725,14 @@ function commaBeforeOpenIsInTypeList(code: string, openIdx: number): boolean {
       angle++;
     } else if (c === "<") {
       angle--;
-      if (angle < 0 && square === 0 && paren === 0 && hasMatchingGenericCloserAfter(code, i, openIdx)) return true;
+      if (
+        angle < 0 &&
+        square === 0 &&
+        paren === 0 &&
+        ltAtIsGenericOpener(code, i) &&
+        hasMatchingGenericCloserAfter(code, i, openIdx)
+      )
+        return true;
     } else if (c === "]") square++;
     else if (c === "[") {
       square--;
@@ -784,8 +846,7 @@ function collectLocalShadowedCalleepNames(
     const esc = escapeRegExp(name);
     for (const m of code.matchAll(new RegExp(`${fnDeclPrefix}${esc}${NOT_ID_CONTINUE}`, "gu"))) {
       const fnIdx = code.indexOf("function", m.index!);
-      if (fnIdx !== -1 && isDeclareFunctionPrefix(code, fnIdx)) continue;
-      if (fnIdx !== -1 && functionInDeclareNamespace(code, fnIdx)) continue;
+      if (fnIdx !== -1 && skipFunctionParamValueBinding(code, fnIdx)) continue;
       shadowed.add(name);
       break;
     }
@@ -828,8 +889,7 @@ function collectLocalShadowedCalleepNames(
       for (const m of code.matchAll(re)) {
         const fnIdx = code.indexOf("function", m.index!);
         if (fnIdx === -1 || fnIdx > m.index! + m[0].length) continue;
-        if (isDeclareFunctionPrefix(code, fnIdx)) continue;
-        if (functionInDeclareNamespace(code, fnIdx)) continue;
+        if (skipFunctionParamValueBinding(code, fnIdx)) continue;
         fnParamShadow = true;
         break;
       }
@@ -851,8 +911,7 @@ function collectLocalShadowedCalleepNames(
     if (!shadowed.has(name)) {
       for (const m of code.matchAll(new RegExp(`${fnDeclPrefix}(${IDENT})\\s*(?:<[^>]*>)?\\s*\\(`, "gu"))) {
         const fnIdx = code.indexOf("function", m.index!);
-        if (fnIdx !== -1 && isDeclareFunctionPrefix(code, fnIdx)) continue;
-        if (fnIdx !== -1 && functionInDeclareNamespace(code, fnIdx)) continue;
+        if (fnIdx !== -1 && skipFunctionParamValueBinding(code, fnIdx)) continue;
         const open = m.index! + m[0].length - 1;
         const close = matchingClose(code, open);
         if (close === -1) continue;
