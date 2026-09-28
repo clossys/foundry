@@ -831,6 +831,61 @@ describe("copy-read-without-resolver", () => {
     }
   });
 
+  it("does not treat declare-class headers with type parameters, extends, implements, or abstract as value bindings", () => {
+    const head = [
+      'import { createCopyResolver as make } from "@clossys/writer";',
+      'import registry from "../copy/registry.json";',
+    ].join("\n");
+    const use = "export const out = make(registry);";
+    const member = "load(make: Handler): void";
+    const longName = "C".repeat(80);
+    const longConstraint = "L".repeat(80);
+    for (const decl of [
+      `declare class C<T> { ${member} }`,
+      `declare class ${longName}<T extends ${longConstraint}> { ${member} }`,
+      "export declare class C { load(make: Handler): void }",
+      "declare class C extends Foo { load(make: Handler): void }",
+      "declare class C extends Foo<Bar> { load(make: Handler): void }",
+      "declare class C implements Foo { load(make: Handler): void }",
+      "declare abstract class C { load(make: Handler): void }",
+    ]) {
+      const { gate } = scan({ "src/copy.ts": [head, decl, use].join("\n") });
+      expect(gate.findings).toEqual([]);
+      expect(gate.verdict).toBe("satisfied");
+    }
+  });
+
+  it("does not treat interface members after a semicolon as value bindings", () => {
+    const head = [
+      'import { createCopyResolver as make } from "@clossys/writer";',
+      'import registry from "../copy/registry.json";',
+    ].join("\n");
+    const use = "export const out = make(registry);";
+    for (const decl of [
+      "interface X { a: number; load(make: Handler): void }",
+      "interface X { load(other: Handler): void; save(make: Handler): void }",
+    ]) {
+      const { gate } = scan({ "src/copy.ts": [head, decl, use].join("\n") });
+      expect(gate.findings).toEqual([]);
+      expect(gate.verdict).toBe("satisfied");
+    }
+  });
+
+  it("flags class and object methods whose type-parameter list contains a nested generic", () => {
+    const head = [
+      'import { createCopyResolver as make } from "@clossys/writer";',
+      'import registry from "../copy/registry.json";',
+    ].join("\n");
+    const use = "export const out = make(registry);";
+    for (const shadow of [
+      "class C { load<T extends Foo<Bar>>(make: Handler): void { make(registry); } }",
+      "const obj = { x: 1, load<T extends Foo<Bar>>(make: Handler): void { make(registry); } };",
+    ]) {
+      const { gate } = scan({ "src/copy.ts": [head, shadow, use].join("\n") });
+      expect(gate.verdict).toBe("violated");
+    }
+  });
+
   it("does not flag typeof queries on the registry binding at long whitespace gaps", () => {
     const head = [
       'import { createCopyResolver } from "@clossys/writer";',

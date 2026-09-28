@@ -794,11 +794,72 @@ function skipQualifiedTypeName(code: string, i: number): number {
   return i;
 }
 
+function isKeywordAt(code: string, i: number, kw: string): boolean {
+  if (code.slice(i, i + kw.length) !== kw) return false;
+  const next = code[i + kw.length];
+  return next === undefined || !/[\w$]/.test(next);
+}
+
+/** Index of `{` opening a `declare` / `declare abstract` class body after the `declare` keyword. */
+function declareClassBodyBraceAfterDeclareKeyword(code: string, declareIdx: number): number {
+  let i = declareIdx + "declare".length;
+  i = skipWsCode(code, i);
+  if (isKeywordAt(code, i, "abstract")) {
+    i += "abstract".length;
+    i = skipWsCode(code, i);
+  }
+  if (!isKeywordAt(code, i, "class")) return -1;
+  i += "class".length;
+  i = skipWsCode(code, i);
+  const nameStart = i;
+  i = skipIdentCode(code, i);
+  if (i === nameStart) return -1;
+  i = skipOptionalGenericTypeParams(code, i);
+  i = skipWsCode(code, i);
+  if (isExtendsKeywordAt(code, i)) {
+    i += 7;
+    i = skipWsCode(code, i);
+    i = skipTypeOperand(code, i);
+  }
+  i = skipWsCode(code, i);
+  if (isKeywordAt(code, i, "implements")) {
+    i += "implements".length;
+    for (;;) {
+      i = skipWsCode(code, i);
+      i = skipTypeOperand(code, i);
+      i = skipWsCode(code, i);
+      if (code[i] === ",") {
+        i++;
+        continue;
+      }
+      break;
+    }
+  }
+  i = skipWsCode(code, i);
+  return code[i] === "{" ? i : -1;
+}
+
+function eachDeclareClassBodySpan(code: string, visit: (openBrace: number, closeBrace: number) => void): void {
+  for (const m of code.matchAll(new RegExp(`${CALLEE_BOUNDARY}(?:export\\s+)?declare\\s+`, "gu"))) {
+    const declareIdx = code.indexOf("declare", m.index!);
+    if (declareIdx === -1) continue;
+    const open = declareClassBodyBraceAfterDeclareKeyword(code, declareIdx);
+    if (open === -1) continue;
+    const close = matchingClose(code, open);
+    if (close === -1) continue;
+    visit(open, close);
+  }
+}
+
 function indexInsideDeclareBlock(code: string, idx: number, kind: "class" | "namespace"): boolean {
-  const head =
-    kind === "class"
-      ? new RegExp(`${CALLEE_BOUNDARY}declare\\s+class\\s+${IDENT}\\s*\\{`, "gu")
-      : new RegExp(`${CALLEE_BOUNDARY}declare\\s+namespace\\s+${IDENT}\\s*\\{`, "gu");
+  if (kind === "class") {
+    let inside = false;
+    eachDeclareClassBodySpan(code, (open, close) => {
+      if (idx > open && idx < close) inside = true;
+    });
+    return inside;
+  }
+  const head = new RegExp(`${CALLEE_BOUNDARY}declare\\s+namespace\\s+${IDENT}\\s*\\{`, "gu");
   for (const m of code.matchAll(head)) {
     const open = m.index! + m[0].length - 1;
     const close = matchingClose(code, open);
@@ -810,10 +871,11 @@ function indexInsideDeclareBlock(code: string, idx: number, kind: "class" | "nam
 /** Whether `{` at `openBrace` opens the body of a `declare class` (any class-name length). */
 function openBraceIsDeclareClassBody(code: string, openBrace: number): boolean {
   if (code[openBrace] !== "{") return false;
-  for (const m of code.matchAll(new RegExp(`${CALLEE_BOUNDARY}declare\\s+class\\s+${IDENT}\\s*\\{`, "gu"))) {
-    if (m.index! + m[0].length - 1 === openBrace) return true;
-  }
-  return false;
+  let match = false;
+  eachDeclareClassBodySpan(code, (open) => {
+    if (open === openBrace) match = true;
+  });
+  return match;
 }
 
 /** `typeof` followed only by whitespace before the registry binding — a type query, not a read. */
@@ -887,9 +949,7 @@ function constructorInDeclareClass(code: string, constructorIdx: number): boolea
 }
 
 function isExtendsKeywordAt(code: string, i: number): boolean {
-  if (code.slice(i, i + 7) !== "extends") return false;
-  const next = code[i + 7];
-  return next === undefined || !/[\w$]/.test(next);
+  return isKeywordAt(code, i, "extends");
 }
 
 function skipOptionalGenericTypeParams(code: string, i: number): number {
@@ -1185,12 +1245,45 @@ function forEachParenListShadows(code: string, name: string): boolean {
 /** Ambient or type-only `{ name(` forms — not class or object-literal methods. */
 function objectMethodBraceIsTypeOnly(code: string, openBrace: number): boolean {
   if (openBraceIsDeclareClassBody(code, openBrace)) return true;
-  if (indexInsideDeclareBlock(code, openBrace, "class")) return true;
+  if (indexInsideDeclareBlock(code, openBrace + 1, "class")) return true;
   if (openBraceIsTypeMemberContext(code, openBrace)) return true;
   const before = code.slice(Math.max(0, openBrace - 120), openBrace);
   if (new RegExp(`(?<![\\w$.])interface\\s+${IDENT}(?:\\s*<[^>]*>)?(?:\\s+extends\\s+[^{;]*)?\\s*$`, "u").test(before))
     return true;
   if (new RegExp(`(?<![\\w$.])type\\s+${IDENT}(?:\\s*<[^{};]*)?\\s*=\\s*[^{;]*$`, "u").test(before)) return true;
+  return false;
+}
+
+/** Type-only object/class member context when the lead is `{`, `,`, `;`, or `}`. */
+function objectMethodContextIsTypeOnly(code: string, memberLeadIdx: number): boolean {
+  if (code[memberLeadIdx] === "{") return objectMethodBraceIsTypeOnly(code, memberLeadIdx);
+  const open = enclosingOpener(code, memberLeadIdx);
+  if (open === -1 || code[open] !== "{") return false;
+  return objectMethodBraceIsTypeOnly(code, open);
+}
+
+/** Each `{|,|;|}`-led method name, optional type params, and `(` — generic lists use full depth walk. */
+function forEachObjectMethodParamList(
+  code: string,
+  onMethod: (parenOpen: number, memberLeadIdx: number) => boolean | void,
+): boolean {
+  for (let lead = 0; lead < code.length; lead++) {
+    const c = code[lead];
+    if (c !== "{" && c !== "," && c !== ";" && c !== "}") continue;
+    let i = skipWsCode(code, lead + 1);
+    const methodStart = i;
+    i = skipIdentCode(code, i);
+    if (i === methodStart) continue;
+    const methodName = code.slice(methodStart, i);
+    if (CONTROL_FLOW_BLOCK_KEYWORDS.has(methodName)) continue;
+    i = skipWsCode(code, i);
+    if (code[i] === "<" && ltAtIsGenericOpener(code, i)) {
+      i = indexAfterGenericTypeParamList(code, i);
+      i = skipWsCode(code, i);
+    }
+    if (code[i] !== "(") continue;
+    if (onMethod(i, lead) === true) return true;
+  }
   return false;
 }
 
@@ -1282,34 +1375,18 @@ function collectLocalShadowedCalleepNames(
     ) {
       shadowed.add(name);
     }
-    const objectMethodLead = `(?:\\{|,|\\}|;)\\s*(${IDENT})\\s*(?:<[^>]*>)?\\s*`;
-    for (const m of code.matchAll(new RegExp(`${objectMethodLead}${firstParamBind}`, "gu"))) {
-      if (CONTROL_FLOW_BLOCK_KEYWORDS.has(m[1]!)) continue;
-      if (objectMethodBraceIsTypeOnly(code, m.index!)) continue;
-      const parenRel = m[0].indexOf("(");
-      if (parenRel === -1) continue;
-      const parenOpen = m.index! + parenRel;
-      if (openParenIsTypeSyntax(code, parenOpen)) continue;
-      const parenClose = matchingClose(code, parenOpen);
-      if (parenClose === -1) continue;
-      shadowed.add(name);
-      break;
-    }
-    if (!shadowed.has(name)) {
-      for (const m of code.matchAll(new RegExp(`${objectMethodLead}\\(`, "gu"))) {
-        if (CONTROL_FLOW_BLOCK_KEYWORDS.has(m[1]!)) continue;
-        if (objectMethodBraceIsTypeOnly(code, m.index!)) continue;
-        const parenRel = m[0].indexOf("(");
-        if (parenRel === -1) continue;
-        const parenOpen = m.index! + parenRel;
-        if (openParenIsTypeSyntax(code, parenOpen)) continue;
+    if (
+      !shadowed.has(name) &&
+      forEachObjectMethodParamList(code, (parenOpen, memberLeadIdx) => {
+        if (objectMethodContextIsTypeOnly(code, memberLeadIdx)) return false;
+        if (openParenIsTypeSyntax(code, parenOpen)) return false;
         const close = matchingClose(code, parenOpen);
-        if (close === -1) continue;
-        if (paramListShadowsName(code.slice(parenOpen + 1, close), name)) {
-          shadowed.add(name);
-          break;
-        }
-      }
+        if (close === -1) return false;
+        if (paramListShadowsName(code.slice(parenOpen + 1, close), name)) return true;
+        return false;
+      })
+    ) {
+      shadowed.add(name);
     }
     if (new RegExp(`${CALLEE_BOUNDARY}(?:const|let|var)\\s+${IDENT}\\s*=\\s*(?:async\\s+)?${esc}\\s*=>`, "u").test(code))
       shadowed.add(name);
