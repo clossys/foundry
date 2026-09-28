@@ -284,7 +284,7 @@ export function defineWebTemplate(options: DefineWebTemplateOptions): WebTemplat
     slotKinds === undefined ? undefined : Object.freeze(Object.fromEntries(Object.entries(slotKinds).map(([key, kinds]) => [key, Object.freeze([...kinds])])));
 
   if (statGridLabel !== undefined && typeof statGridLabel !== "function") {
-    fail(`statGridLabel must be a function (index: number) => string when present, got ${JSON.stringify(statGridLabel)}.`);
+    fail(`statGridLabel must be a function when present, got ${typeof statGridLabel}.`);
   }
 
   const build = compileConsumerTemplateBlocks(frozenBlocks, {
