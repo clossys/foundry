@@ -81,7 +81,7 @@ const BRAND_KEYS = ["name", "wordmark"] as const;
 
 const HOSTNAME_RE = /^(?=.{1,253}$)[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)+$/;
 const ORIGIN_RE = /^(https?):\/\/([^/:?#\s]+)$/;
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const EMAIL_RE = /^[^\s@]+@[^\s@.]+(?:\.[^\s@.]+)+$/;
 
 function refuseUnknownKeys(value: Record<string, unknown>, allowed: readonly string[], prefix: string, issues: ValidationIssue[]): void {
   for (const key of Object.keys(value)) {

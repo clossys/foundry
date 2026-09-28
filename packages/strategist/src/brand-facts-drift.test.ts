@@ -165,12 +165,19 @@ describe("checkBrandFactsDrift — one finding per conflict class", () => {
 
 describe("checkBrandFactsDrift — escape hatch and dedupe", () => {
   it("records an ignored line and does not check it", () => {
-    for (const marker of ["<!-- brand-facts:ignore -->", "/* brand-facts:ignore */", "{/* brand-facts:ignore */}", "// brand-facts:ignore", "# brand-facts:ignore"]) {
+    for (const marker of ["<!-- brand-facts:ignore -->", "/* brand-facts:ignore */", "{/* brand-facts:ignore */}", "// brand-facts:ignore"]) {
       const result = check(`Formerly LumenFold Ltd, at http://old.lumenfold.test ${marker}`);
       expect(result.findings, marker).toEqual([]);
       expect(result.ignored).toEqual([{ file: "page.md", line: 1, snippet: expect.stringContaining("LumenFold") }]);
       expect(result.state).toBe("clean");
     }
+  });
+
+  it("opens the marker with `#` only as the first non-blank character of the line", () => {
+    const result = check("  # brand-facts:ignore Formerly LumenFold Ltd, at http://old.lumenfold.test");
+    expect(result.findings).toEqual([]);
+    expect(result.ignored).toHaveLength(1);
+    expect(kinds("Formerly LumenFold Ltd, at http://old.lumenfold.test # brand-facts:ignore")).toContain("legal-name");
   });
 
   it("reports the same (kind, file, line, found) once", () => {

@@ -1010,8 +1010,34 @@ taglines and no `copyEntries` were supplied. `indeterminate` takes precedence
 over `drift`; findings are still returned, and `indeterminateReasons` says why.
 
 A line can opt out with `brand-facts:ignore` inside a comment marker
-(`<!-- -->`, `/* */`, `{/* */}`, `//` or `#`). Ignored lines are not checked
-and are listed in `result.ignored`, so a report shows what was overridden.
+(`<!-- -->`, `/* */`, `{/* */}`, `//`, or `#` as the first non-blank character
+of the line). Ignored lines are not checked and are listed in
+`result.ignored`, so a report shows what was overridden. The marker silences
+its whole physical line, so on a single-line file (minified JSON or HTML) it
+silences the whole file.
+
+The drift check runs in linear time per line and reads lines up to 16,384
+characters. A longer line makes the result `indeterminate` (exit 2), never
+`clean`: the reason names the file and line, and the length limit is applied
+before the ignore marker, so a marker cannot excuse a line that was not read.
+
+### Residual risk
+
+Detection is lexical: it catches only the forms listed in the table above,
+and a conflict stated any other way is not detected. Known misses, each
+stated here so that a clean result is not read as proof of consistency:
+
+- A legal name that does not contain the brand name, written in prose. The
+  phrase is read as a third party's; only a `legalName`-style key catches it.
+- A place in lowercase (`incorporated in nevada`), and the company suffix
+  `Incorporated` spelled out.
+- A brand host with a hyphenated multi-word label (`blue-harbor.example`).
+- A company phrase with more than 8 words before its suffix, a word longer
+  than 40 characters, or more than 4 whitespace characters in one gap.
+- A value on the line after its key, and a tagline outside a `tagline` or
+  `slogan` key.
+- A meta tag that contains `<` inside an attribute value.
+- A file that is not valid UTF-8 is decoded lossily.
 
 ### `strategist-check brand-facts`
 

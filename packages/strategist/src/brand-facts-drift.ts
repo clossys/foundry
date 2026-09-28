@@ -42,10 +42,22 @@
  * Writer registry, and without it there is no text to hold a surface to.
  * Indeterminate wins over drift; findings are still returned.
  *
+ * LINEAR TIME, BOUNDED LINES. Every matcher runs in time linear in the length
+ * of one line: a quantifier that could be retried from every start position
+ * is bounded (company phrases read at most 8 capitalized words of at most 40
+ * characters, separated by at most 4 whitespace characters) or replaced by an
+ * index scan (trailing trims, the host cut). A line over `MAX_LINE_CHARS` is
+ * not checked at all: it makes the result "indeterminate", naming file:line,
+ * and the cap is applied before the ignore marker, so a line that was not
+ * read never counts as clean or as an override. Detection is lexical: it
+ * catches only the forms above, and a conflict stated any other way is not
+ * detected.
+ *
  * ESCAPE HATCH: a line carrying `brand-facts:ignore` inside a comment opener
- * (`<!--`, `/*`, `{/*`, `//`, `#`) — the same shape as the facts gate's
- * `facts-gate:ignore` — is recorded in `ignored` and not checked. Recorded,
- * never silent.
+ * (`<!--`, `/*`, `{/*`, `//`, or `#` as the first non-blank character of the
+ * line) — the same shape as the facts gate's `facts-gate:ignore` — is recorded
+ * in `ignored` and not checked. The marker silences its whole physical line,
+ * so it silences a whole single-line file. Recorded, never silent.
  */
 
 import type { BrandFacts, CopyEntryLike } from "./brand-facts.js";
@@ -91,19 +103,34 @@ export interface BrandFactsDriftResult {
 
 // --------------------------------------------------------------- matchers
 
-const IGNORE_MARKER_RE = /(?:<!--|\/\*|\{\/\*|\/\/|#)\s*brand-facts:ignore\b/i;
+/**
+ * A line longer than this is not checked: it makes the result "indeterminate".
+ * @internal
+ */
+export const MAX_LINE_CHARS = 16384;
+
+/** `#` opens the marker only as the first non-blank character; anywhere else it is a URL fragment or a heading. */
+const IGNORE_MARKER_RE = /(?:<!--|\/\*|\{\/\*|\/\/)\s*brand-facts:ignore\b|^\s*#\s*brand-facts:ignore\b/i;
+/** How many over-cap lines are listed one by one in `indeterminateReasons`; the rest are counted. */
+const MAX_LONG_LINE_REASONS = 20;
 
 const URL_RE = /\bhttps?:\/\/[^\s"'<>()[\]{}`\\]+/gi;
 const URL_PARTS_RE = /^(https?):\/\/(?:[^@/?#]*@)?([^/?#:]+)(?::(\d+))?/i;
-const URL_TRAILING_PUNCT_RE = /[.,;:!?]+$/;
 const EMAIL_RE = /(?<![\w.%+-])[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)+/g;
 const HOST_SHAPE_RE = /^[a-z0-9-]+(?:\.[a-z0-9-]+)+$/;
 
-const COMPANY_SUFFIX = String.raw`(?:Pty\s+Ltd\.?|Inc\.?|L\.L\.C\.|LLC|Ltd\.?|Limited|Corp\.?|Corporation|GmbH|PLC|LLP|B\.V\.|S\.A\.|AG)`;
-const CAP_WORD = String.raw`\p{Lu}[\p{L}\p{N}&'’-]*`;
-/** A run of capitalized words, then an optional comma, then a company suffix. Group 1 is the leading words. */
-const COMPANY_PHRASE_RE = new RegExp(
-  String.raw`(?<![\p{L}\p{N}])((?:${CAP_WORD}\s+)*${CAP_WORD}),?\s+${COMPANY_SUFFIX}(?![\p{L}\p{N}])`,
+const COMPANY_SUFFIX = String.raw`(?:Pty\s{1,4}Ltd\.?|Inc\.?|L\.L\.C\.|LLC|Ltd\.?|Limited|Corp\.?|Corporation|GmbH|PLC|LLP|B\.V\.|S\.A\.|AG)`;
+const CAP_WORD = String.raw`\p{Lu}[\p{L}\p{N}&'’-]{0,39}`;
+/**
+ * Up to 8 capitalized words, then an optional comma, then a company suffix.
+ * Group 1 is the leading words. Linear: every quantifier is bounded, and a
+ * word (letters, digits, `&`, `'`, `-`) and its separator (whitespace) never
+ * share a character, so a start position does at most a constant amount of
+ * work and the lookbehind confines starts to word boundaries.
+ * @internal
+ */
+export const COMPANY_PHRASE_RE = new RegExp(
+  String.raw`(?<![\p{L}\p{N}])((?:${CAP_WORD}\s{1,4}){0,7}${CAP_WORD}),?\s{1,4}${COMPANY_SUFFIX}(?![\p{L}\p{N}])`,
   "gu",
 );
 
@@ -119,7 +146,8 @@ const NOT_PLACES = new Set(
   ],
 );
 
-const META_TAG_RE = /<meta\b[^>]*>/gi;
+/** `[^<>]` stops at the next `<`, so a run of `<meta` openers is not rescanned from each one. @internal */
+export const META_TAG_RE = /<meta\b[^<>]*>/gi;
 const OG_SITE_NAME_RE = /\b(?:property|name)\s*=\s*["']og:site_name["']/i;
 const META_CONTENT_RE = /\bcontent\s*=\s*(?:"([^"]*)"|'([^']*)')/i;
 
@@ -132,6 +160,28 @@ const TAGLINE_KEYS = ["tagline", "slogan"];
 
 /** What may precede a key for its unquoted value to count: indentation and an optional YAML list dash or bullet. */
 const KEY_AT_LINE_START_RE = /^\s*(?:[-*]\s+)?$/;
+
+/**
+ * `text` without its trailing whitespace and commas. An end-index scan, not
+ * `/[\s,]+$/`, which is quadratic on a long run that does not reach the end.
+ * @internal
+ */
+export function trimTrailingSeparators(text: string): string {
+  let end = text.length;
+  while (end > 0 && /[\s,]/.test(text[end - 1] as string)) end--;
+  return text.slice(0, end);
+}
+
+/**
+ * `text` without its trailing sentence punctuation (`. , ; : ! ?`). An
+ * end-index scan for the same reason as `trimTrailingSeparators`.
+ * @internal
+ */
+export function stripTrailingPunctuation(text: string): string {
+  let end = text.length;
+  while (end > 0 && ".,;:!?".includes(text[end - 1] as string)) end--;
+  return text.slice(0, end);
+}
 
 function escapeRegExp(text: string): string {
   return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -164,7 +214,7 @@ function keyValues(line: string, keys: readonly string[]): string[] {
       continue;
     }
     if (!KEY_AT_LINE_START_RE.test(line.slice(0, m.index ?? 0))) continue; // unquoted value mid-line: prose, not a declaration
-    const value = (m[5] ?? "").replace(/[\s,]+$/, "");
+    const value = trimTrailingSeparators(m[5] ?? "");
     if (value !== "") out.push(value);
   }
   return out;
@@ -183,14 +233,16 @@ function parseUrl(raw: string): ParsedUrl | undefined {
   return { host, origin: `${(m[1] as string).toLowerCase()}://${host}${port}` };
 }
 
-/** Lowercase host out of a `domain`-style value: tolerates a scheme, a path, and a port. */
-function hostOfValue(value: string): string {
-  return value
-    .trim()
-    .toLowerCase()
-    .replace(/^https?:\/\//, "")
-    .replace(/[/?#:].*$/, "")
-    .replace(/\.$/, "");
+/**
+ * Lowercase host out of a `domain`-style value: tolerates a scheme, a path,
+ * and a port. The cut is a search and a slice, not `/[/?#:].*$/`, which is
+ * quadratic when a line terminator stops `.` before `$`.
+ * @internal
+ */
+export function hostOfValue(value: string): string {
+  const bare = value.trim().toLowerCase().replace(/^https?:\/\//, "");
+  const cut = bare.search(/[/?#:]/);
+  return (cut === -1 ? bare : bare.slice(0, cut)).replace(/\.$/, "");
 }
 
 // ------------------------------------------------------------------- check
@@ -202,6 +254,8 @@ export function checkBrandFactsDrift(
 ): BrandFactsDriftResult {
   const findings: BrandFactsDriftFinding[] = [];
   const ignored: BrandFactsDriftResult["ignored"] = [];
+  const longLineReasons: string[] = [];
+  let longLines = 0;
   const seen = new Set<string>();
 
   const legalName = facts.legalEntity.name;
@@ -265,6 +319,16 @@ export function checkBrandFactsDrift(
     for (let i = 0; i < lines.length; i++) {
       const raw = (lines[i] as string).replace(/\r$/, "");
       const lineNo = i + 1;
+      // The cap comes first: a line that was not read is neither clean nor an override.
+      if (raw.length > MAX_LINE_CHARS) {
+        longLines++;
+        if (longLines <= MAX_LONG_LINE_REASONS) {
+          longLineReasons.push(
+            `${file.path}:${lineNo} is ${raw.length} characters, over the ${MAX_LINE_CHARS} character limit, and was not checked`,
+          );
+        }
+        continue;
+      }
       if (IGNORE_MARKER_RE.test(raw)) {
         ignored.push({ file: file.path, line: lineNo, snippet: snippetOf(raw) });
         continue;
@@ -334,7 +398,7 @@ export function checkBrandFactsDrift(
 
       // 5 + 6. Canonical origin and domain, over URLs.
       for (const m of raw.matchAll(URL_RE)) {
-        const url = parseUrl(m[0].replace(URL_TRAILING_PUNCT_RE, ""));
+        const url = parseUrl(stripTrailingPunctuation(m[0]));
         if (url === undefined) continue;
         if (domains.includes(url.host)) {
           if (url.origin !== facts.canonicalOrigin) {
@@ -407,7 +471,10 @@ export function checkBrandFactsDrift(
       `tagline-unresolved: the record's tagline copyId "${copyId}" does not resolve to an approved Writer copy-registry entry.`);
   }
 
-  const indeterminateReasons: string[] = [];
+  const indeterminateReasons: string[] = [...longLineReasons];
+  if (longLines > longLineReasons.length) {
+    indeterminateReasons.push(`${longLines - longLineReasons.length} more line(s) over the ${MAX_LINE_CHARS} character limit were not checked`);
+  }
   if (files.length === 0) indeterminateReasons.push("no files scanned");
   if (facts.taglines.length > 0 && copyEntries === undefined) {
     indeterminateReasons.push(
