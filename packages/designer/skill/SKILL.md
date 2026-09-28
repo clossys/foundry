@@ -45,6 +45,8 @@ Marketing chapters after the fold: `MarketingChapter`, not `SectionHeader`. Hero
 
 Do not invent a type pairing during the walk that proves 3 — cite or author the brand-type record from `templates/brand-type.template.json` and run `designer-type-check`.
 
+Multi-application product: one `brand/brand.css` overlay, one `brand/designer.css` entry (`theme.css`, the overlay, then `utilities.css`), and one `@clossys/designer` dependency at the root; `designer-brand-check` fails a second stylesheet under `apps/` that binds `--color-*`.
+
 Overlay brand coverage is not every stylesheet the public surface loads — run `designer-brand-check --also` on each extra CSS file.
 
 Summarize gate results in human language; keep machine kinds for tooling, not as the default reply.

@@ -638,6 +638,37 @@ actually use instead of Tailwind discovering them from `dist/`. If the
 directory form above silently produces no styling under Turbopack + pnpm in
 your project, try this instead.
 
+**Several applications, one product.** Applications that are cuts of one
+product share one brand binding and one Designer install:
+
+```text
+brand/brand.css        the only overlay, copied from brand-template.css, under :root[data-brand-bound]
+brand/extensions.css   optional, product prefix only (--acme-ext-*)
+brand/designer.css     the only CSS entry
+```
+
+`brand/designer.css` imports, in order, `tailwindcss`,
+`@clossys/designer/theme.css`, `./brand.css`, `./extensions.css` when
+present, and `@clossys/designer/utilities.css`. Every application stylesheet
+imports that one file and every document root sets `data-brand-bound`.
+Applications do not copy the block.
+
+`utilities.css` is generated from this package's components and holds
+`@source inline(...)` directives listing every class they render. It
+generates the utilities from the CSS file's own location, so it does not
+depend on a path `@source` resolving through a pnpm symlink (step 2), and the
+consumer keeps no class list.
+
+Only the repository root (or one workspace package) declares
+`@clossys/designer`. When an application cannot resolve
+`@clossys/designer/atoms/server`, `blocks/server`, or `shell/server` from that
+dependency under pnpm, add a workspace package that depends on
+`@clossys/designer` and re-exports those entries; applications depend on that
+package instead. `designer-brand-check` looks for `brand/brand.css` by
+default and, when an `apps/` directory exists (or `--apps <dir>` is given),
+exits 1 for any other stylesheet under it that declares a `--color-*`
+property.
+
 **3. If a component still renders unstyled, call `assertTokenStylesLoaded`
 first** — before chasing your Tailwind `@source` config or bundler setup.
 Both steps above can silently fail to do anything (a missed import, a
