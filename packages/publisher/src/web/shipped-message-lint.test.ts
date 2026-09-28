@@ -1597,6 +1597,17 @@ function collectRenderedParameterBindingPaths(fn: ts.FunctionLikeDeclaration): R
       }
       return;
     }
+    // A call this file cannot resolve to a body (`o.render(o.caption)`,
+    // `String(count)`) may render what it is passed. Only `console` logs.
+    if (
+      ts.isCallExpression(expression) &&
+      !isGlobalConsoleCallee(expression, sourceFile) &&
+      calleeFunctionLikeFromCall(expression, sourceFile) === undefined
+    ) {
+      for (const argument of expression.arguments) {
+        noteInExpression(ts.isSpreadElement(argument) ? argument.expression : argument);
+      }
+    }
     for (const paramName of paramNames) {
       if (ts.isIdentifier(expression) && expression.text === paramName) {
         noteBindingPath(paramName, []);
@@ -1782,6 +1793,31 @@ function localInitializerInScope(name: string, from: ts.Node): ts.Expression | u
     current = current.parent;
   }
   return undefined;
+}
+
+// `@default` belongs to the `const` binding it is written on: the binding's
+// own leading trivia, or the statement's when the binding is its first.
+function constBindingInScopeHasDefaultTag(name: string, from: ts.Node): boolean {
+  let current: ts.Node | undefined = from;
+  while (current !== undefined) {
+    if (ts.isBlock(current) || ts.isSourceFile(current)) {
+      for (const statement of current.statements) {
+        if (!ts.isVariableStatement(statement)) continue;
+        const declarations = statement.declarationList.declarations;
+        const declaration = declarations.find(
+          (candidate) => ts.isIdentifier(candidate.name) && candidate.name.text === name,
+        );
+        if (declaration === undefined) continue;
+        if ((statement.declarationList.flags & ts.NodeFlags.Const) === 0) return false;
+        return (
+          hasDefaultJSDocTag(declaration) ||
+          (declaration === declarations[0] && leadingTriviaHasDefaultTag(statement, statement.getSourceFile()))
+        );
+      }
+    }
+    current = current.parent;
+  }
+  return false;
 }
 
 function enclosingFunctionParameters(from: ts.Node): ts.ParameterDeclaration[] {
@@ -2338,19 +2374,19 @@ function fileDeclaredBindingNames(sourceFile: ts.SourceFile): Set<string> {
           }
         }
       }
-    } else if (
-      (ts.isFunctionDeclaration(node) || ts.isClassDeclaration(node)) &&
-      node.name !== undefined
-    ) {
-      names.add(node.name.text);
     } else if (ts.isVariableDeclaration(node)) {
       noteBindingName(node.name);
-    } else if (
-      (ts.isFunctionDeclaration(node) ||
-        ts.isFunctionExpression(node) ||
-        ts.isArrowFunction(node) ||
-        ts.isMethodDeclaration(node)) &&
-      node.parameters !== undefined
+    }
+    if ((ts.isFunctionDeclaration(node) || ts.isClassDeclaration(node)) && node.name !== undefined) {
+      names.add(node.name.text);
+    }
+    // A named function declaration records its parameters too, so a
+    // parameter named like a global (`Math`, `Number`) is that parameter.
+    if (
+      ts.isFunctionDeclaration(node) ||
+      ts.isFunctionExpression(node) ||
+      ts.isArrowFunction(node) ||
+      ts.isMethodDeclaration(node)
     ) {
       for (const parameter of node.parameters) noteBindingName(parameter.name);
     }
@@ -2387,57 +2423,6 @@ function fileImportedBindingNames(sourceFile: ts.SourceFile): Set<string> {
 function isCapitalizedIdentifierName(name: string): boolean {
   const first = name.charAt(0);
   return first !== "" && first === first.toUpperCase() && first !== first.toLowerCase();
-}
-
-// The real global builtins are not shipped-message renderers: a call through
-// them (`Number(value)`, `Object.values(x)`, `Buffer.byteLength(css)`) keeps
-// its argument silent, the same way the global `console` object does. A name
-// is the global builtin only when the file neither declares nor imports it;
-// an imported or local `Number`, `String`, `Math`, or `Buffer` is resolved
-// like any other binding.
-const GLOBAL_BUILTIN_NAMES = new Set([
-  "Number",
-  "String",
-  "Boolean",
-  "BigInt",
-  "Symbol",
-  "Object",
-  "Array",
-  "Math",
-  "JSON",
-  "Reflect",
-  "RegExp",
-  "Date",
-  "Error",
-  "TypeError",
-  "RangeError",
-  "Map",
-  "Set",
-  "WeakMap",
-  "WeakSet",
-  "Promise",
-  "Buffer",
-  "parseInt",
-  "parseFloat",
-  "isNaN",
-  "isFinite",
-  "encodeURI",
-  "encodeURIComponent",
-  "decodeURI",
-  "decodeURIComponent",
-  "structuredClone",
-  "console",
-  "process",
-  "globalThis",
-]);
-
-function calleeIsGlobalBuiltin(calleeExpr: ts.Expression, sourceFile: ts.SourceFile): boolean {
-  const rootName = expressionRootIdentifier(calleeExpr);
-  if (rootName === null || !GLOBAL_BUILTIN_NAMES.has(rootName)) return false;
-  // The name is the global builtin only when the file neither declares nor
-  // imports a binding of that name. An imported or local `Number`, `String`,
-  // `Math`, or `Buffer` is resolved like any other binding.
-  return !fileDeclaredBindingNames(sourceFile).has(rootName);
 }
 
 function expressionRootIdentifier(expression: ts.Expression): string | null {
@@ -2484,8 +2469,8 @@ function indirectCalleeMayRender(
     // object or array literal is in-file. Shape does not decide: a resolved
     // member that holds a renderer notes, and a resolved member that does not
     // render stays silent. A parameter's object or array is not in-file, so a
-    // member read on it may render only when it is an element access.
-    if (rootIsParameter) return ts.isElementAccessExpression(calleeExpr);
+    // member or element read on it may render.
+    if (rootIsParameter) return true;
     const value = resolveMemberChainValue(calleeExpr, sourceFile);
     if (value !== undefined) {
       // A function-like callee was already handled by the caller; an
@@ -2502,12 +2487,9 @@ function indirectCalleeMayRender(
     // is analysed.
     return !declared.has(rootName) || fileImportedBindingNames(sourceFile).has(rootName);
   }
-  // A direct identifier was not resolved as an in-file function-like. A name
-  // this file declares is the global builtin's renderer only when the name is
-  // a builtin the file shadowed (`let Number = (v) => <span>{v}</span>`); a
-  // plain local this file declares stays silent. A name the file does not
-  // declare at all may render.
-  if (declared.has(rootName)) return GLOBAL_BUILTIN_NAMES.has(rootName);
+  // A direct identifier was not resolved to an in-file body. Its name does not
+  // decide: a parameter, a global (`Number`, `Math`, `process`), or any other
+  // binding this file cannot follow may render, so its argument is analysed.
   return true;
 }
 
@@ -2532,6 +2514,63 @@ function resolveIndirectCalleeFunctionLike(
   return callee;
 }
 
+function sliceTracesToParameterDefault(
+  slice: ts.Expression,
+  parameters: ts.ParameterDeclaration[],
+  literalLocalInitializers: Map<string, ts.Expression>,
+  sourceFile: ts.SourceFile,
+  moduleMessageObjectInitializers: Map<string, ts.Expression>,
+  moduleMessageArrayInitializers: Map<string, ts.Expression>,
+  seen: Set<string>,
+): boolean {
+  for (const operand of argumentRenderOperands(slice)) {
+    const current = unwrapExpression(operand);
+    const rootName = expressionRootIdentifier(current);
+    if (rootName === null) continue;
+    const localInit = literalLocalInitializers.get(rootName);
+    if (localInit === undefined) {
+      if (
+        parameterDefaultExpressionForName(
+          rootName,
+          parameters,
+          sourceFile,
+          moduleMessageObjectInitializers,
+          moduleMessageArrayInitializers,
+        ) !== undefined
+      ) {
+        return true;
+      }
+      continue;
+    }
+    if (seen.has(rootName)) continue;
+    seen.add(rootName);
+    let value: ts.Expression | ts.FunctionLikeDeclaration | undefined = localInit;
+    if (ts.isPropertyAccessExpression(current) || ts.isElementAccessExpression(current)) {
+      const chain = renderedMemberChain(current);
+      value =
+        chain !== null && chain.objectName === rootName
+          ? followMemberPath(localInit, chain.memberKeys, sourceFile, current)
+          : undefined;
+    }
+    if (
+      value !== undefined &&
+      !ts.isFunctionLike(value) &&
+      sliceTracesToParameterDefault(
+        value,
+        parameters,
+        literalLocalInitializers,
+        sourceFile,
+        moduleMessageObjectInitializers,
+        moduleMessageArrayInitializers,
+        seen,
+      )
+    ) {
+      return true;
+    }
+  }
+  return false;
+}
+
 function argumentSliceRendersShippedCopy(
   slice: ts.Expression,
   sourceFile: ts.SourceFile,
@@ -2554,6 +2593,24 @@ function argumentSliceRendersShippedCopy(
     ts.isStringLiteral(unwrapped) ||
     ts.isNoSubstitutionTemplateLiteral(unwrapped) ||
     ts.isNumericLiteral(unwrapped)
+  ) {
+    return false;
+  }
+  // The callee's render is not visible here, so only a value that is a
+  // message prop by this scanner's own definition -- a parameter default,
+  // reached directly or through a local, member, index, or operand -- is
+  // shipped copy. A local, module constant, or call result that merely holds
+  // lettered data (CSS, a diagnostic, a report) is checked where it renders.
+  if (
+    !sliceTracesToParameterDefault(
+      unwrapped,
+      parameterSearchParameters,
+      literalLocalInitializers,
+      sourceFile,
+      moduleMessageObjectInitializers,
+      moduleMessageArrayInitializers,
+      new Set<string>(),
+    )
   ) {
     return false;
   }
@@ -2634,7 +2691,7 @@ function argumentObjectRendersShippedCopy(
       continue;
     }
     if (
-      directArgumentRenderSlices(value).some((slice) =>
+      argumentRenderOperands(value).some((slice) =>
         argumentSliceRendersShippedCopy(
           slice,
           sourceFile,
@@ -2730,19 +2787,8 @@ function indirectCallRendersArgument(
   if (isCreateElementCall(call)) return argIndex >= 2;
   // Only the global `console` object stays silent without resolution.
   if (isGlobalConsoleCallee(call, sourceFile)) return false;
-  const callee = resolveIndirectCalleeFunctionLike(call, sourceFile, currentParameters);
-  // A callee that cannot be resolved in-file is analysed conservatively when it
-  // is a callee whose value could carry a render: a capitalized component, or a
-  // callee rooted in a parameter or a file binding this file does not resolve
-  // as a function. A bare literal or a construction this file declares cannot
-  // render keeps the argument silent, so an internal diagnostic message that
-  // happens to be spelled in English is not read as a shipped message.
-  if (callee === undefined) {
-    if (calleeIsGlobalBuiltin(call.expression, sourceFile)) return false;
-    if (!indirectCalleeMayRender(call, sourceFile, currentParameters)) {
-      return false;
-    }
-    return argumentExpressionRendersShippedCopy(
+  const analyseArgument = (): boolean =>
+    argumentExpressionRendersShippedCopy(
       argument,
       sourceFile,
       currentParameters,
@@ -2755,7 +2801,104 @@ function indirectCallRendersArgument(
       moduleMessageObjectInitializers,
       moduleMessageArrayInitializers,
     );
+  const resolvedCalleeRenders = (callee: ts.FunctionLikeDeclaration): boolean =>
+    resolvedCalleeRendersArgument(
+      callee,
+      argIndex,
+      argument,
+      sourceFile,
+      currentParameters,
+      parameterSearchParameters,
+      literalLocalInitializers,
+      moduleBindings,
+      moduleFunctions,
+      moduleDirectStringFunctions,
+      moduleDirectStringAliases,
+      moduleMessageObjectInitializers,
+      moduleMessageArrayInitializers,
+    );
+  const callee = resolveIndirectCalleeFunctionLike(call, sourceFile, currentParameters);
+  if (callee !== undefined) return resolvedCalleeRenders(callee);
+  // A non-constant index (`fns[i]`) on an in-file array may pick any element,
+  // so every element is followed: one that renders, or one this file cannot
+  // resolve to a body, makes the call a finding.
+  const elements = variableIndexCalleeElements(call, sourceFile);
+  if (elements !== undefined) {
+    return elements.some((element) => {
+      const elementCallee = element === undefined ? undefined : functionLikeForResolvedValue(element, sourceFile);
+      return elementCallee === undefined ? analyseArgument() : resolvedCalleeRenders(elementCallee);
+    });
   }
+  // A callee that cannot be resolved in-file is analysed conservatively when
+  // its value could carry a render. A member this file's own container lacks
+  // (`findings.push`) or a resolved non-function value cannot render.
+  if (!indirectCalleeMayRender(call, sourceFile, currentParameters)) {
+    return false;
+  }
+  return analyseArgument();
+}
+
+function variableIndexCalleeElements(
+  call: ts.CallExpression,
+  sourceFile: ts.SourceFile,
+): Array<ts.Expression | undefined> | undefined {
+  const calleeExpr = unwrapExpression(call.expression);
+  if (!ts.isElementAccessExpression(calleeExpr)) return undefined;
+  const index = calleeExpr.argumentExpression;
+  if (
+    elementAccessIndexFromArgument(index) !== null ||
+    ts.isStringLiteral(index) ||
+    ts.isNoSubstitutionTemplateLiteral(index)
+  ) {
+    return undefined;
+  }
+  const base = unwrapExpression(calleeExpr.expression);
+  let container: ts.Expression | ts.FunctionLikeDeclaration | undefined;
+  if (ts.isIdentifier(base)) {
+    container = inFileContainerValue(base.text, calleeExpr);
+  } else if (ts.isPropertyAccessExpression(base) || ts.isElementAccessExpression(base)) {
+    container = resolveMemberChainValue(base, sourceFile);
+  }
+  if (container === undefined || ts.isFunctionLike(container)) return undefined;
+  const elements: Array<ts.Expression | undefined> = [];
+  const seen = new Set<ts.Node>();
+  function collect(value: ts.Expression): boolean {
+    let current = unwrapExpression(value);
+    if (ts.isIdentifier(current)) {
+      const initializer = localInitializerInScope(current.text, calleeExpr);
+      if (initializer === undefined) return false;
+      current = unwrapExpression(initializer);
+    }
+    if (!ts.isArrayLiteralExpression(current) || seen.has(current)) return false;
+    seen.add(current);
+    for (const element of current.elements) {
+      if (ts.isOmittedExpression(element)) continue;
+      if (ts.isSpreadElement(element)) {
+        if (!collect(element.expression)) elements.push(undefined);
+        continue;
+      }
+      elements.push(element);
+    }
+    return true;
+  }
+  return collect(container) ? elements : undefined;
+}
+
+function resolvedCalleeRendersArgument(
+  callee: ts.FunctionLikeDeclaration,
+  argIndex: number,
+  argument: ts.Expression,
+  sourceFile: ts.SourceFile,
+  currentParameters: ts.ParameterDeclaration[] | undefined,
+  parameterSearchParameters: ts.ParameterDeclaration[],
+  literalLocalInitializers: Map<string, ts.Expression>,
+  moduleBindings: Set<string>,
+  moduleFunctions: Set<string>,
+  moduleDirectStringFunctions: Set<string>,
+  moduleDirectStringAliases: Map<string, string>,
+  moduleMessageObjectInitializers: Map<string, ts.Expression>,
+  moduleMessageArrayInitializers: Map<string, ts.Expression>,
+): boolean {
   const param = callee.parameters[argIndex];
   if (param === undefined) return false;
   const boundLocals = bindingPatternLocalNames(param.name);
@@ -2786,7 +2929,7 @@ function indirectCallRendersArgument(
     if (paramBindingPath === null) continue;
     const isWholeValue = renderedPath.length === 0 && paramBindingPath.length === 0;
     const slicePath = renderedPath.length > 0 ? [...paramBindingPath, ...renderedPath] : paramBindingPath;
-    const slices = isWholeValue
+    const pathSlices = isWholeValue
       ? directArgumentRenderSlices(argumentValue)
       : expressionSlicesAtArgumentBindingPath(
           argumentValue,
@@ -2797,6 +2940,8 @@ function indirectCallRendersArgument(
           moduleMessageArrayInitializers,
           literalLocalInitializers,
         );
+    // A template, `+`, `??`, or `&&` in the passed slice renders its operands.
+    const slices = [...pathSlices, ...pathSlices.flatMap((slice) => argumentRenderOperands(slice))];
     if (
       slices.some((slice) =>
         parameterDefaultIsShippedCopy(
@@ -3367,6 +3512,25 @@ function identifierMatchesDocumentedParameter(
   return false;
 }
 
+// At a render site a destructured `@default` prop is the same binding as a
+// documented identifier parameter: exempt only when rendered as itself.
+function identifierMatchesDocumentedBinding(
+  name: string,
+  parameters: readonly ts.ParameterDeclaration[],
+  source: ts.SourceFile,
+): boolean {
+  for (const parameter of parameters) {
+    if (ts.isIdentifier(parameter.name) && parameter.name.text === name) {
+      return bindingHasDocumentedDefault(parameter, undefined, source);
+    }
+    if (ts.isObjectBindingPattern(parameter.name)) {
+      const element = parameter.name.elements.find((candidate) => bindingElementLocalName(candidate) === name);
+      if (element !== undefined) return bindingHasDocumentedDefault(parameter, element, source);
+    }
+  }
+  return false;
+}
+
 function collectUndocumentedMessageInterfaceProps(sourceFile: ts.SourceFile): Set<string> {
   const referencedInterfaces = collectReferencedInterfaceNames(sourceFile);
   const names = new Set<string>();
@@ -3885,6 +4049,98 @@ function collectMessageCallParameterNames(
   }
 
   return names;
+}
+
+// A `@default` binding whose default initializer is an in-file function
+// documents the strings that function returns. The exemption covers the call
+// only when it is itself the rendered expression; shipped copy passed to it,
+// or a template or operator around it at the render site, is still noted.
+function parameterHasDocumentedStringDefault(
+  name: string,
+  parameters: readonly ts.ParameterDeclaration[],
+  source: ts.SourceFile,
+  moduleMessageObjectInitializers: Map<string, ts.Expression>,
+  moduleMessageArrayInitializers: Map<string, ts.Expression>,
+): boolean {
+  for (const parameter of parameters) {
+    let bindingElement: ts.BindingElement | undefined;
+    if (ts.isIdentifier(parameter.name)) {
+      if (parameter.name.text !== name) continue;
+    } else if (ts.isObjectBindingPattern(parameter.name)) {
+      bindingElement = parameter.name.elements.find((element) => bindingElementLocalName(element) === name);
+      if (bindingElement === undefined) continue;
+    } else {
+      continue;
+    }
+    const initializer = parameterDefaultExpressionForName(
+      name,
+      [parameter],
+      source,
+      moduleMessageObjectInitializers,
+      moduleMessageArrayInitializers,
+    );
+    return (
+      initializer !== undefined &&
+      bindingHasDocumentedDefault(parameter, bindingElement, source) &&
+      documentedDefaultReturnsOnlyStrings(initializer, source)
+    );
+  }
+  return false;
+}
+
+function callIsRenderedDirectly(call: ts.CallExpression): boolean {
+  let current: ts.Node = call;
+  let parent = current.parent;
+  while (
+    parent !== undefined &&
+    (ts.isParenthesizedExpression(parent) ||
+      ts.isNonNullExpression(parent) ||
+      ts.isAsExpression(parent) ||
+      ts.isSatisfiesExpression(parent) ||
+      (ts.isConditionalExpression(parent) && parent.condition !== current))
+  ) {
+    current = parent;
+    parent = parent.parent;
+  }
+  if (parent === undefined) return false;
+  if (ts.isJsxExpression(parent)) return true;
+  return ts.isCallExpression(parent) && isCreateElementCall(parent) && parent.arguments.indexOf(current as ts.Expression) >= 2;
+}
+
+// The strings an in-file default function returns are that binding's
+// documented default. A template it returns interpolates call-site values
+// into copy, which `@default` does not exempt.
+function documentedDefaultReturnsOnlyStrings(initializer: ts.Expression, source: ts.SourceFile): boolean {
+  const unwrapped = unwrapExpression(initializer);
+  const fn =
+    ts.isArrowFunction(unwrapped) || ts.isFunctionExpression(unwrapped)
+      ? unwrapped
+      : ts.isIdentifier(unwrapped)
+        ? resolveCallableFunctionLike(unwrapped.text, source)
+        : undefined;
+  if (fn === undefined || fn.body === undefined) return false;
+  const returned: ts.Expression[] = [];
+  function collectReturns(node: ts.Node): void {
+    if (ts.isFunctionLike(node)) return;
+    if (ts.isReturnStatement(node) && node.expression !== undefined) returned.push(node.expression);
+    ts.forEachChild(node, collectReturns);
+  }
+  if (ts.isBlock(fn.body)) {
+    ts.forEachChild(fn.body, collectReturns);
+  } else {
+    returned.push(fn.body);
+  }
+  let carriesTemplateCopy = false;
+  function visit(node: ts.Node): void {
+    if (carriesTemplateCopy || ts.isFunctionLike(node)) return;
+    if (ts.isTemplateExpression(node) && templateExpressionIsShippedCopy(node)) {
+      carriesTemplateCopy = true;
+      return;
+    }
+    ts.forEachChild(node, visit);
+  }
+  for (const expression of returned) visit(expression);
+  return returned.length > 0 && !carriesTemplateCopy;
 }
 
 function collectUndocumentedShippedPropNames(
@@ -5031,6 +5287,10 @@ function analyzeRenderedLocals(
         if (indirectArgumentName !== null) {
           indirectMessageProps.set(indirectArgumentName, line);
         } else {
+          const calleeUnresolved =
+            !isCreateElementCall(call) &&
+            resolveIndirectCalleeFunctionLike(call, source, currentParameters) === undefined &&
+            variableIndexCalleeElements(call, source) === undefined;
           const unwrappedArgument = unwrapExpression(argument);
           if (ts.isObjectLiteralExpression(unwrappedArgument)) {
             for (const property of unwrappedArgument.properties) {
@@ -5070,7 +5330,17 @@ function analyzeRenderedLocals(
                   continue;
                 }
               }
-              if (!ts.isTemplateExpression(initializer)) continue;
+              // A resolved render reports its own `+`, `??`, and `&&` operands
+              // where it renders them; an unresolved callee has no such site.
+              if (
+                !ts.isTemplateExpression(initializer) &&
+                !(
+                  calleeUnresolved &&
+                  (ts.isBinaryExpression(initializer) || ts.isConditionalExpression(initializer))
+                )
+              ) {
+                continue;
+              }
               const shippedSlice = argumentRenderOperands(initializer)
                 .filter((slice) => {
                   const operand = unwrapExpression(slice);
@@ -5398,8 +5668,21 @@ function checkRenderedLocalReferences(
     return sliceExpressionsAreShipped(slices);
   }
 
-  function noteMessageCallReference(calleeName: string, node: ts.Node): void {
+  function noteMessageCallReference(calleeName: string, node: ts.Node, call: ts.CallExpression): void {
     if (!messageCallParameters.has(calleeName)) return;
+    if (
+      parameters !== undefined &&
+      callIsRenderedDirectly(call) &&
+      parameterHasDocumentedStringDefault(
+        calleeName,
+        parameters,
+        source,
+        moduleMessageObjectInitializers,
+        moduleMessageArrayInitializers,
+      )
+    ) {
+      return;
+    }
     violations.push({
       file: fileName,
       line: lineOf(node),
@@ -5702,7 +5985,7 @@ function checkRenderedLocalReferences(
         const callee = unwrapExpression(expression.expression);
         if (ts.isIdentifier(callee)) {
           noteModuleDirectStringCall(callee, node);
-          noteMessageCallReference(callee.text, node);
+          noteMessageCallReference(callee.text, node, expression);
           noteReference(callee.text, node);
         }
       }
@@ -5731,7 +6014,15 @@ function checkRenderedLocalReferences(
   }
 
   function isBareDocumentedParameterJsxRender(name: string, expressionNode: ts.Node): boolean {
-    if (parameters === undefined || !identifierMatchesDocumentedParameter(name, parameters, source)) {
+    const documentedParameter =
+      parameters !== undefined && identifierMatchesDocumentedBinding(name, parameters, source);
+    const shadowedByParameter =
+      parameters !== undefined &&
+      parameters.some((parameter) => bindingPatternLocalNames(parameter.name).includes(name));
+    if (
+      !documentedParameter &&
+      (shadowedByParameter || !constBindingInScopeHasDefaultTag(name, expressionNode))
+    ) {
       return false;
     }
     if (!ts.isIdentifier(expressionNode) || expressionNode.text !== name) return false;
@@ -5758,7 +6049,7 @@ function checkRenderedLocalReferences(
 
   function noteRenderedLocalIdentifier(name: string, node: ts.Node): void {
     if (isBareDocumentedParameterJsxRender(name, node)) return;
-    if (parameters !== undefined && identifierMatchesDocumentedParameter(name, parameters, source)) {
+    if (parameters !== undefined && identifierMatchesDocumentedBinding(name, parameters, source)) {
       const paramDefault = parameterDefaultExpressionForName(
         name,
         parameters,
@@ -5974,7 +6265,7 @@ function checkRenderedLocalReferences(
         const callee = unwrapExpression(expression.expression);
         if (ts.isIdentifier(callee)) {
           noteModuleDirectStringCall(callee, node);
-          noteMessageCallReference(callee.text, node);
+          noteMessageCallReference(callee.text, node, expression);
           noteReference(callee.text, node);
         }
       }
@@ -9877,4 +10168,177 @@ describe("shipped message lint", () => {
     expect(findShippedMessageViolations("Example.tsx", consolePlus)).toEqual([]);
   });
 
+  it("notes fix round 33 unresolved callees whatever their name", () => {
+    const captionNote = [expect.objectContaining({ kind: "rendered-local", text: "caption" })];
+
+    // 1. A callee nothing in the file resolves is analysed, global name or not.
+    for (const call of [
+      "Number(caption)",
+      "String(caption)",
+      "Math.max(caption)",
+      "Boolean(caption)",
+      "Date(caption)",
+      "Map(caption)",
+      "Promise(caption)",
+      "Object.values(caption)",
+      "RegExp(caption)",
+      "Reflect(caption)",
+      "parseInt(caption)",
+      "globalThis.Render(caption)",
+      "globalThis(caption)",
+      "process(caption)",
+      "Buffer.from(caption)",
+      'Buffer.from(caption, "utf8")',
+    ]) {
+      const source = `export function Example(caption = "Save changes") { return ${call}; }\n`;
+      expect(findShippedMessageViolations("Example.tsx", source), call).toEqual(captionNote);
+    }
+
+    // 2. A parameter named like a global is that parameter, not the global.
+    for (const name of ["Math", "Number", "String", "Buffer", "Render"]) {
+      const source = `export function Example(${name}: (v: string) => JSX.Element, caption = "Save changes") { return ${name}(caption); }\n`;
+      expect(findShippedMessageViolations("Example.tsx", source), name).toEqual(captionNote);
+    }
+
+    // 3. A template or operator member of an object passed to a render, resolved in file or not.
+    for (const member of ["`${caption}`", 'caption + ""', 'caption ?? "1"', "caption && caption"]) {
+      const resolved = [
+        "function renderMessage(o: { render: (v: string) => unknown; caption: string }) { return o.render(o.caption); }",
+        "function show(value: string) { return <span>{value}</span>; }",
+        `export function Example(caption = "Save changes") { return renderMessage({ render: show, caption: ${member} }); }`,
+        "",
+      ].join("\n");
+      expect(findShippedMessageViolations("Example.tsx", resolved), member).toEqual(expect.arrayContaining(captionNote));
+      const unresolved = [
+        'import { renderMessage } from "./renderers";',
+        "function show(value: string) { return <span>{value}</span>; }",
+        `export function Example(caption = "Save changes") { return renderMessage({ render: show, caption: ${member} }); }`,
+        "",
+      ].join("\n");
+      expect(findShippedMessageViolations("Example.tsx", unresolved), member).toEqual(expect.arrayContaining(captionNote));
+    }
+
+    // 4. A variable index follows every in-file element before giving up.
+    const logOnlyElements = [
+      "function logInfo(v: string) { console.log(v); }",
+      "const fns = [logInfo];",
+      'export function Example(i: number, caption = "Save changes") { return fns[i](caption); }',
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", logOnlyElements)).toEqual([]);
+    expect(findShippedMessageViolations("Example.tsx", logOnlyElements.replace("fns[i]", "fns[0]"))).toEqual([]);
+    const mixedElements = [
+      "function logInfo(v: string) { console.log(v); }",
+      "function show(value: string) { return <span>{value}</span>; }",
+      "const fns = [logInfo, show];",
+      'export function Example(i: number, caption = "Save changes") { return fns[i](caption); }',
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", mixedElements)).toEqual(captionNote);
+    const unresolvedElement = [
+      'import { external } from "./renderers";',
+      "function logInfo(v: string) { console.log(v); }",
+      "const fns = [logInfo, external];",
+      'export function Example(i: number, caption = "Save changes") { return fns[i](caption); }',
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", unresolvedElement)).toEqual(captionNote);
+
+    // 5. Lettered data passed to an unresolved callee is not a message prop.
+    const letteredData = [
+      'import { compile } from "./css";',
+      'export function build(on: boolean) { const css = `@import "tailwindcss";`; return compile(css, on ? "wide layout" : undefined); }',
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.ts", letteredData)).toEqual([]);
+  });
+
+  it("keeps fix round 33 documented defaults exempt only as themselves", () => {
+    const formLike = (documented: boolean, rendered: string) =>
+      [
+        "function defaultErrorSummaryMessage(count: number): string {",
+        '  return count === 1 ? "There is 1 error" : "There are " + String(count) + " errors";',
+        "}",
+        "interface ExampleProps {",
+        documented ? '  /** @default "There is 1 error" for one entry, "There are N errors" otherwise */' : "",
+        "  errorSummaryMessage?: (count: number) => string;",
+        "  errors?: string[];",
+        "  caption?: string;",
+        "}",
+        'export function Example({ errorSummaryMessage = defaultErrorSummaryMessage, errors = [], caption = "Save changes" }: ExampleProps) {',
+        `  return <h2>{${rendered}}</h2>;`,
+        "}",
+        "",
+      ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", formLike(true, "errorSummaryMessage(errors.length)"))).toEqual([]);
+    expect(findShippedMessageViolations("Example.tsx", formLike(false, "errorSummaryMessage(errors.length)"))).toEqual([
+      expect.objectContaining({ kind: "rendered-local", text: "errorSummaryMessage" }),
+    ]);
+    for (const rendered of [
+      "errorSummaryMessage(caption)",
+      "errorSummaryMessage(`${caption}`)",
+      'errorSummaryMessage(caption + "")',
+      "`${errorSummaryMessage(errors.length)}!`",
+    ]) {
+      expect(findShippedMessageViolations("Example.tsx", formLike(true, rendered)), rendered).not.toEqual([]);
+    }
+
+    const destructured = (rendered: string) =>
+      [
+        "export function Example({",
+        '  /** @default "Capture form" */',
+        '  formLabel = "Capture form",',
+        "}: { formLabel?: string }) {",
+        `  return ${rendered};`,
+        "}",
+        "",
+      ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", destructured("<form aria-label={formLabel} />"))).toEqual([]);
+    expect(findShippedMessageViolations("Example.tsx", destructured("<span>{formLabel}</span>"))).toEqual([]);
+    for (const rendered of [
+      "<form aria-label={`${formLabel}`} />",
+      '<span>{formLabel + ""}</span>',
+      '<form aria-label={formLabel ?? "1"} />',
+      "<span>{formLabel && formLabel}</span>",
+    ]) {
+      expect(findShippedMessageViolations("Example.tsx", destructured(rendered)), rendered).toEqual([
+        expect.objectContaining({ kind: "rendered-local", text: "formLabel" }),
+      ]);
+    }
+
+    const documentedConst = [
+      '/** @default "Page not found" */',
+      'const title = "Page not found";',
+      "export function Example() { return <h1 title={title}>{title}</h1>; }",
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", documentedConst)).toEqual([]);
+    expect(
+      findShippedMessageViolations("Example.tsx", documentedConst.replace("{title}</h1>", "{`${title}!`}</h1>")),
+    ).not.toEqual([]);
+  });
+
+  it("scans fix round 33 real publisher sources", () => {
+    const captureView = path.join(SRC_ROOT, "views/CaptureView.tsx");
+    expect(findShippedMessageViolations(captureView, readFileSync(captureView, "utf8"))).toEqual([]);
+    const notFound = path.join(SRC_ROOT, "../../templates/site/app/not-found.tsx");
+    expect(findShippedMessageViolations(notFound, readFileSync(notFound, "utf8"))).toEqual([]);
+    const inlineNotFound = [
+      'import { ErrorView } from "@clossys/publisher/web";',
+      "export default function NotFound() {",
+      "  return (",
+      "    <ErrorView",
+      "      status={404}",
+      '      title="Page not found"',
+      "      description=\"The page you're looking for doesn't exist or has moved.\"",
+      '      action={<a href="/">Back to home</a>}',
+      "    />",
+      "  );",
+      "}",
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("not-found.tsx", inlineNotFound).map((violation) => violation.text)).toEqual(
+      expect.arrayContaining(['title="Page not found"', "Back to home"]),
+    );
+  });
 });
