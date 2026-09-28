@@ -641,7 +641,22 @@ function prevCharIsSingleTypeUnionOrIntersection(code: string, openIdx: number):
   return !(q >= 0 && code[q] === c);
 }
 
-/** Comma before `(` inside a generic or tuple type list — not a call argument comma. */
+/** A `>` after `openIdx` that closes the `<` at `ltIdx`, ignoring the `>` in `=>`. */
+function hasMatchingGenericCloserAfter(code: string, ltIdx: number, afterIdx: number): boolean {
+  let depth = 0;
+  for (let j = ltIdx; j < code.length; j++) {
+    const c = code[j]!;
+    if (c === "<") depth++;
+    else if (c === ">") {
+      if (j > 0 && code[j - 1] === "=") continue;
+      depth--;
+      if (depth === 0) return j > afterIdx;
+    }
+  }
+  return false;
+}
+
+/** Comma before `(` or `[` inside a generic or tuple type list — not a call argument comma. */
 function commaBeforeOpenIsInTypeList(code: string, openIdx: number): boolean {
   const p = prevNonWs(code, openIdx);
   if (p < 0 || code[p] !== ",") return false;
@@ -650,14 +665,23 @@ function commaBeforeOpenIsInTypeList(code: string, openIdx: number): boolean {
   let paren = 0;
   for (let i = p - 1; i >= 0; i--) {
     const c = code[i]!;
-    if (c === ">") angle++;
-    else if (c === "<") {
+    if (c === ">") {
+      if (i > 0 && code[i - 1] === "=") continue;
+      angle++;
+    } else if (c === "<") {
       angle--;
-      if (angle < 0 && square === 0 && paren === 0) return true;
+      if (angle < 0 && square === 0 && paren === 0 && hasMatchingGenericCloserAfter(code, i, openIdx)) return true;
     } else if (c === "]") square++;
     else if (c === "[") {
       square--;
-      if (square < 0 && angle === 0 && paren === 0) return true;
+      if (square < 0 && angle === 0 && paren === 0) {
+        const prev = prevNonWs(code, i);
+        if (prev >= 0) {
+          const pc = code[prev]!;
+          if (pc === ":" || pc === "|" || pc === "&" || pc === "<") return true;
+          if (pc === "," && commaBeforeOpenIsInTypeList(code, i)) return true;
+        }
+      }
     } else if (c === ")") paren++;
     else if (c === "(") paren--;
   }
