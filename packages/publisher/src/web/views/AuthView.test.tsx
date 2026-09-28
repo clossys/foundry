@@ -12,6 +12,21 @@ import { AuthView } from "./AuthView.js";
 
 afterEach(cleanup);
 
+const ALLOWED_IMPORT = /^(react|@clossys\/designer\/.+)$/;
+
+/**
+ * Every module specifier named by an `import` statement (bare, type, or
+ * named) or an `export * / export { ... } from` re-export. A plain
+ * `export function ...` names no module, so the export branch requires the
+ * re-export shape rather than scanning to the next string literal.
+ */
+const MODULE_SPECIFIER =
+  /^\s*(?:import\b[^;]*?|export\s+(?:type\s+)?(?:\*(?:\s+as\s+\w+)?|\{[^}]*\})\s*from\s*)["']([^"']+)["']/gm;
+
+function moduleSpecifiers(source: string): string[] {
+  return [...source.matchAll(MODULE_SPECIFIER)].map((m) => m[1] as string);
+}
+
 describe("AuthView", () => {
   it("renders heading as the page's <h1>", () => {
     render(<AuthView brand="Acme" heading="Sign in" form={<div>form goes here</div>} />);
@@ -69,13 +84,35 @@ describe("AuthView", () => {
 
   it("imports only react and @clossys/designer/* (no auth provider)", () => {
     const source = readFileSync(join(import.meta.dirname, "AuthView.tsx"), "utf8");
-    const specifiers = [...source.matchAll(/^import\s[^;]*?from\s+["']([^"']+)["']/gms)].map((m) => m[1]);
+    const specifiers = moduleSpecifiers(source);
     expect(specifiers.length).toBeGreaterThan(0);
     for (const specifier of specifiers) {
-      expect(specifier).toMatch(/^(react|@clossys\/designer\/.+)$/);
+      expect(specifier).toMatch(ALLOWED_IMPORT);
     }
     expect(source).not.toMatch(/\brequire\(|import\(/);
   });
+
+  it("the import scan catches bare imports, re-exports, and type imports", () => {
+    const sample = [
+      'import type { A } from "react";',
+      'import "some-auth-provider";',
+      'export * from "another-provider";',
+      'export { B } from "@clossys/designer/atoms";',
+      "import {",
+      "  C,",
+      '} from "third-provider";',
+    ].join("\n");
+    expect(moduleSpecifiers(sample)).toEqual([
+      "react",
+      "some-auth-provider",
+      "another-provider",
+      "@clossys/designer/atoms",
+      "third-provider",
+    ]);
+    const offenders = moduleSpecifiers(sample).filter((specifier) => !ALLOWED_IMPORT.test(specifier));
+    expect(offenders).toEqual(["some-auth-provider", "another-provider", "third-provider"]);
+  });
+
 
   it("renders the secondaryAction slot's content", () => {
     render(
