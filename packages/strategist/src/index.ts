@@ -47,6 +47,13 @@
  *      `direction-invalidation.ts`'s header comment for why this is two
  *      functions, not one.
  *
+ *   The brand-facts record sits alongside these: `BrandFacts`
+ *   (`brand-facts.ts`, read by `readBrandFacts` and by `readStrategy` as
+ *   `brandFacts`) records the legal entity, brand casing, domains, canonical
+ *   origin, owned addresses, and tagline references into the Writer copy
+ *   registry, and `checkBrandFactsDrift` (`brand-facts-drift.ts`, pure) reports
+ *   every surface line that restates one of those differently.
+ *
  * Nothing in this package's own source is a real company's mission,
  * positioning, facts, or brand — see the README's "What this package is
  * not" and `@example/ui/tokens`' README ("The three-layer contract")
@@ -113,6 +120,32 @@ export type {
   DirectionCurrencyFindingKind,
   DirectionCurrencyResult,
 } from "./direction-invalidation.js";
+
+export {
+  BRAND_FACTS_FILE,
+  copyEntriesFromRegistry,
+  readBrandFacts,
+  resolveBrandTaglines,
+  validateBrandFacts,
+} from "./brand-facts.js";
+export type {
+  BrandFacts,
+  BrandFactsRead,
+  BrandIdentity,
+  BrandLegalEntity,
+  BrandTagline,
+  CopyEntryLike,
+  ResolvedTagline,
+} from "./brand-facts.js";
+
+export { checkBrandFactsDrift } from "./brand-facts-drift.js";
+export type {
+  BrandFactsDriftFinding,
+  BrandFactsDriftKind,
+  BrandFactsDriftOptions,
+  BrandFactsDriftResult,
+  BrandFactsDriftState,
+} from "./brand-facts-drift.js";
 
 export { readStrategy, brandDerivationsFromBundle } from "./reader.js";
 export type { StrategyBundle, StrategyReadIssue, StrategyReadIssueReason } from "./reader.js";

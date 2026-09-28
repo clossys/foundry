@@ -31,7 +31,7 @@ Done is exceptional (5) as defined in PRE-AUTH-QUALITY (the brief that ships wit
 
 If `node_modules/@clossys/strategist` is present (or this package's bins are on PATH), use the exact pin in the tree. Read `package.json` `bin` for the real command names.
 - Assessment CLI: `strategist-rate-check`
-- Additional gate CLI: `strategist-check`
+- Additional gate CLI: `strategist-check` (including `brand-facts`)
 
 `strategist-check brand-coverage` reporting every brandable slot owned is necessary, not sufficient — full N/N slot coverage is not keep when Designer-facing surfaces have no explicit do-not language; declare those surfaces with `--surfaces`.
 
@@ -54,6 +54,7 @@ Author one directory. Bound fields must validate; room fields are prose storage 
 | `claims.json` | `id`, `status`, `assertion`, `basis` (required when approved) | `example` | no headline copy |
 | `constraints.json` | `id`, `target`, `instruction` | `why` | empty array is valid |
 | `brand.json` | essence, attribute `id`/`statement`/`basis`, derivation slots or voice rules | derivation `rationale` | no hex colors or type pairings |
+| `brand-facts.json` | `legalEntity` name/incorporated/jurisdiction, `brand` name and wordmark casing, `domains`, `canonicalOrigin`, `contactEmail`, tagline `copyId`s | — | no tagline text — reference the Writer copy id |
 | `mission.json` | `statement`, `vision`, value `id`/`rule` | — | optional at handoff |
 | `roadmap.json` | `id`, `title`, `status`; shipped needs `factRef` or `claimId` | `description` | optional at handoff |
 | `direction.json` | `id`, `subject`, `decidedOn`, `supersedes`, `derivesFrom` | `rationale` | no `statement`; facts are not subjects |
@@ -63,6 +64,8 @@ Retired filenames: `brand-essence.json`, `brand-attributes.json`, `brand-derivat
 Before interviewing for `audiences.json`, read `clossys/brief.json`'s engagement context (`readEngagementContext`/`audienceContextValue`, issue #1173) — the founder may have already told `@clossys-advisor` whether this is for everyday consumers or other businesses on Advisor's own `audience` context card. Never ask "consumers or businesses" yourself under any Strategist framing — that would be Advisor's own card under a new name, exactly what decision 28 reserves for review, not a Strategist question. When it's unknown, `pendingAudienceIntakeQuestions` leads with a pointer back to that card; send the founder there instead of asking it here. Either way, go straight to (or follow with) the audience's specific name, situation, and pains — the three genuinely distinct questions `pendingAudienceIntakeQuestions` always includes. Never overwrite an audience already recorded in `audiences.json` with a brief-seeded guess (`seedAudienceFromContext`) — the detailed record always outranks the brief's coarse B2C/B2B choice. Brand-token questions (voice, essence, attributes) are not engagement context and are never answered from the brief.
 
 `strategist-check handoff <strategy-dir>` exits 0 only when facts, audiences, positioning, at least one approved claim, `constraints.json`, brand refs, and direction refs resolve. A facts-only directory still passes `readStrategy` and fails handoff.
+
+After recording or changing a brand fact, run `strategist-check brand-facts <strategy-dir> <scan-dir>`. Exit 1 means another surface states a conflicting value: fix the surface or deliberately change the record, never both silently. Exit 2 means it could not check, which is never a pass.
 
 Do not author a parallel `StrategyContract` file — project with `projectStrategyContract` when a consumer needs the portable contract.
 
