@@ -2847,6 +2847,20 @@ describe("an existing unrelated repository appointed as the hub by cloning it (#
     expect(tree(directory)).toEqual(treeAfterClone(seed));
   });
 
+  it("refuses, before writing anything, an unmarked clone whose package.json is present but unreadable (a directory)", () => {
+    const directory = tempDir();
+    const seed: CloneSeed = (dir) => {
+      unrelatedProject({ manifest: false })(dir);
+      mkdirSync(join(dir, "package.json"));
+    };
+    const workspaceHost = cloningHost(directory, seed);
+    const plan = plannedFromEmptyDirectory(workspaceHost);
+    expect(() => applyWorkspacePlan(workspaceHost, plan, skeletonRoot, composeApplyOptions(seedSkillCatalogue(["advisor"])))).toThrow(
+      /existing package\.json is present but cannot be read/,
+    );
+    expect(tree(directory)).toEqual(treeAfterClone(seed));
+  });
+
   it("refuses, before writing anything, an unmarked clone that is the Foundry supplier tree", () => {
     const directory = tempDir();
     const seed: CloneSeed = (dir) => {

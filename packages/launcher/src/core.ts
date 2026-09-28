@@ -836,12 +836,18 @@ function parseManifestObject(raw: string): Record<string, unknown> | undefined {
 /**
  * The manifest refusals of `mergeHubEnginePins` in "appoint" mode, raised by
  * `adoptHubFiles` before its first write so a refusal leaves the checkout
- * untouched: a present `package.json` that is not a JSON object, or a missing
- * one with no skeleton manifest to write in its place.
+ * untouched: a present `package.json` that is unreadable or not a JSON object,
+ * or a missing one with no skeleton manifest to write in its place.
  */
 function assertManifestAppointable(host: WorkspaceHost, directory: string, skeletonRoot: string): void {
-  const raw = host.readText(join(directory, "package.json"));
+  const manifestPath = join(directory, "package.json");
+  const raw = host.readText(manifestPath);
   if (raw === null) {
+    // readText collapses every read error to null, so tell "absent" from
+    // "present but unreadable" (a directory, no read permission, a dangling link).
+    if (host.exists(manifestPath) || host.isSymlink(manifestPath)) {
+      throw new Error("existing package.json is present but cannot be read (is it a directory, or unreadable?)");
+    }
     if (host.readText(join(skeletonRoot, "package.json")) === null) throw new Error("missing skeleton package.json");
     return;
   }
@@ -1856,7 +1862,7 @@ function classifyClonedHub(
  * (`clone: true`, planned from an empty directory) is classified only after
  * the clone, by `classifyClonedHub`: a marked clone resumes (migrating a
  * legacy marker), an unmarked one is appointed through the adopt path, and
- * every refusal happens before anything is written into the clone (#1585).
+ * every refusal Launcher decides happens before anything is written into the clone (#1585).
  * Every path writes only into the hub checkout, never into an inventoried
  * repository beside it.
  */
