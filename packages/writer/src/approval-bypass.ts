@@ -593,14 +593,15 @@ function functionSignatureNotFollowedByBlock(code: string, fnKeywordIndex: numbe
   i = skipIdentCode(code, i);
   i = skipWsCode(code, i);
   if (code[i] === "<") {
-    const end = matchingClose(code, i);
-    i = end === -1 ? code.length : end + 1;
+    i = indexAfterGenericTypeParamList(code, i);
     i = skipWsCode(code, i);
   }
   if (code[i] !== "(") return false;
   const close = matchingClose(code, i);
   if (close === -1) return false;
   i = skipWsCode(code, close + 1);
+  i = skipReturnTypeAfterParamList(code, i);
+  i = skipWsCode(code, i);
   return code[i] !== "{";
 }
 
@@ -709,6 +710,38 @@ function hasMatchingGenericCloserAfter(code: string, ltIdx: number, afterIdx: nu
     }
   }
   return false;
+}
+
+/** Index after the `>` that closes the type-parameter list opened at `ltIdx`. */
+function indexAfterGenericTypeParamList(code: string, ltIdx: number): number {
+  let depth = 0;
+  for (let j = ltIdx; j < code.length; j++) {
+    const c = code[j]!;
+    if (c === "<") depth++;
+    else if (c === ">") {
+      if (j > 0 && code[j - 1] === "=") continue;
+      depth--;
+      if (depth === 0) return j + 1;
+    }
+  }
+  return code.length;
+}
+
+function skipReturnTypeAfterParamList(code: string, i: number): number {
+  if (code[i] !== ":") return i;
+  i++;
+  for (;;) {
+    i = skipWsCode(code, i);
+    i = skipTypeOperand(code, i);
+    i = skipWsCode(code, i);
+    const c = code[i];
+    if (c === "|" || c === "&") {
+      i++;
+      continue;
+    }
+    break;
+  }
+  return i;
 }
 
 /** Comma before `(` or `[` inside a generic or tuple type list — not a call argument comma. */
