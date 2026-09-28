@@ -1059,8 +1059,12 @@ function classBodyBraceAfterClassKeyword(code: string, classIdx: number): number
   const nameEnd = skipIdentCode(code, i);
   if (nameEnd > nameStart) {
     const word = code.slice(nameStart, nameEnd);
-    if (word !== "extends" && word !== "implements") i = skipOptionalGenericTypeParams(code, nameEnd);
+    if (word !== "extends" && word !== "implements") i = nameEnd;
   }
+  // The optional `<…>` type-parameter list is skipped whether or not a name
+  // was read: an anonymous class (`class<T> { … }`) has none, and leaving the
+  // `<` at the cursor would hide the body brace from the walk below.
+  i = skipOptionalGenericTypeParams(code, i);
   i = skipWsCode(code, i);
   if (isExtendsKeywordAt(code, i)) {
     i += "extends".length;

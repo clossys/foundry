@@ -1311,6 +1311,56 @@ describe("copy-read-without-resolver", () => {
     }
   });
 
+  it("flags anonymous class expressions whose type-parameter list precedes the body (fix round 29)", () => {
+    const head = [
+      'import { createCopyResolver as make } from "@clossys/writer";',
+      'import registry from "../copy/registry.json";',
+    ].join("\n");
+    const use = "export const out = make(registry);";
+    const member = "x = 1\nload(make: Handler): void { make(registry); }";
+    for (const form of [
+      `const X = class<T> { ${member} };`,
+      `const X = class<T> extends Base { ${member} };`,
+      `export default class<T> extends Base { ${member} }`,
+      `const X = class<T extends {a:1}> extends Base { ${member} };`,
+    ]) {
+      const { gate } = scan({ "src/copy.ts": [head, form, use].join("\n") });
+      expect(gate.verdict).toBe("violated");
+      expect(gate.findings.every((f) => f.rule === "copy-read-without-resolver")).toBe(true);
+    }
+  });
+
+  it("flags an anonymous `class<T>` in a call argument (fix round 29)", () => {
+    const head = [
+      'import { createCopyResolver as make } from "@clossys/writer";',
+      'import registry from "../copy/registry.json";',
+    ].join("\n");
+    const use = "export const out = make(registry);";
+    const member = "x = 1\nload(make: Handler): void { make(registry); }";
+    for (const form of [
+      `consume(class<T> { ${member} });`,
+      `const X = class<T> extends Base { ${member} };`,
+    ]) {
+      const { gate } = scan({ "src/copy.ts": [head, form, use].join("\n") });
+      expect(gate.verdict).toBe("violated");
+      expect(gate.findings.every((f) => f.rule === "copy-read-without-resolver")).toBe(true);
+    }
+  });
+
+  it("keeps the named analogues of a class type-parameter list as findings (fix round 29)", () => {
+    const head = [
+      'import { createCopyResolver as make } from "@clossys/writer";',
+      'import registry from "../copy/registry.json";',
+    ].join("\n");
+    const use = "export const out = make(registry);";
+    const member = "x = 1\nload(make: Handler): void { make(registry); }";
+    for (const header of ["class C<T>", "class C<T> extends Base", "class C<T extends {a:1}> extends Base"]) {
+      const { gate } = scan({ "src/copy.ts": [head, `${header} { ${member} }`, use].join("\n") });
+      expect(gate.verdict).toBe("violated");
+      expect(gate.findings.every((f) => f.rule === "copy-read-without-resolver")).toBe(true);
+    }
+  });
+
   it("keeps anonymous ambient class headers type-only (fix round 28)", () => {
     const head = [
       'import { createCopyResolver as make } from "@clossys/writer";',
