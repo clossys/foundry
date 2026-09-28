@@ -513,6 +513,23 @@ function arrayPatternShadowsName(inner: string, name: string): boolean {
   return false;
 }
 
+/** Statement keywords mistaken for shorthand object methods when `{ if (x)` opens a block. */
+const CONTROL_FLOW_BLOCK_KEYWORDS = new Set(["if", "while", "switch"]);
+
+function isDeclareFunctionPrefix(code: string, fnKeywordIndex: number): boolean {
+  const before = code.slice(Math.max(0, fnKeywordIndex - 12), fnKeywordIndex);
+  return /(?:^|\s)declare\s+$/.test(before);
+}
+
+/** Ambient or type-only `{ name(` forms — not class or object-literal methods. */
+function objectMethodBraceIsTypeOnly(code: string, openBrace: number): boolean {
+  const before = code.slice(Math.max(0, openBrace - 120), openBrace);
+  if (/(?:^|\s)declare\s+class\s+[\w$]*\s*$/.test(before)) return true;
+  if (new RegExp(`(?<![\\w$.])interface\\s+${IDENT}(?:\\s*<[^{}]*)?\\s*$`, "u").test(before)) return true;
+  if (new RegExp(`(?<![\\w$.])type\\s+${IDENT}(?:\\s*<[^{};]*)?\\s*=\\s*$`, "u").test(before)) return true;
+  return false;
+}
+
 function collectLocalShadowedCalleepNames(
   code: string,
   writerLocalNames: Set<string>,
@@ -549,25 +566,63 @@ function collectLocalShadowedCalleepNames(
     const firstParamBind = `\\(\\s*${boundParam}`;
     const laterParamBind = `,\\s*(?:\\.\\.\\.\\s*)?${esc}(?:\\?(?:\\s*[,):]|=|:)|(?![\\w$])\\s*(?:[,):]|=|:))`;
     const fnNamed = `${IDENT}\\s*(?:<[^>]*>)?\\s*${firstParamBind}`;
-    if (new RegExp(`${fnDeclPrefix}${fnNamed}`, "u").test(code)) shadowed.add(name);
-    if (new RegExp(`${fnDeclPrefix}\\s*${firstParamBind}`, "u").test(code)) shadowed.add(name);
-    if (new RegExp(`${fnDeclPrefix}${IDENT}\\s*(?:<[^>]*>)?\\s*\\([^)]*${laterParamBind}`, "u").test(code))
-      shadowed.add(name);
-    if (new RegExp(`${fnDeclPrefix}\\s*\\([^)]*${laterParamBind}`, "u").test(code)) shadowed.add(name);
-    if (new RegExp(`${fnDeclPrefix}${IDENT}\\s*(?:<[^>]*>)?\\s*\\(\\s*\\{[^}]*${esc}`, "u").test(code)) shadowed.add(name);
-    if (new RegExp(`${fnDeclPrefix}${IDENT}\\s*(?:<[^>]*>)?\\s*\\(\\s*\\[[^\\]]*${esc}`, "u").test(code)) shadowed.add(name);
+    const fnDeclParamRes = [
+      new RegExp(`${fnDeclPrefix}${fnNamed}`, "gu"),
+      new RegExp(`${fnDeclPrefix}\\s*${firstParamBind}`, "gu"),
+      new RegExp(`${fnDeclPrefix}${IDENT}\\s*(?:<[^>]*>)?\\s*\\([^)]*${laterParamBind}`, "gu"),
+      new RegExp(`${fnDeclPrefix}\\s*\\([^)]*${laterParamBind}`, "gu"),
+      new RegExp(`${fnDeclPrefix}${IDENT}\\s*(?:<[^>]*>)?\\s*\\(\\s*\\{[^}]*${esc}`, "gu"),
+      new RegExp(`${fnDeclPrefix}${IDENT}\\s*(?:<[^>]*>)?\\s*\\(\\s*\\[[^\\]]*${esc}`, "gu"),
+    ];
+    let fnParamShadow = false;
+    for (const re of fnDeclParamRes) {
+      for (const m of code.matchAll(re)) {
+        const fnIdx = code.indexOf("function", m.index!);
+        if (fnIdx !== -1 && isDeclareFunctionPrefix(code, fnIdx)) continue;
+        fnParamShadow = true;
+        break;
+      }
+      if (fnParamShadow) break;
+    }
+    if (fnParamShadow) shadowed.add(name);
     if (
       new RegExp(
-        `constructor\\s*\\([^)]*(?:public|private|protected|readonly\\s+)?${esc}(?:\\?(?:\\s*[,):]|=|:)|(?![\\w$])\\s*(?:[,):]|=|:))`,
+        `constructor\\s*\\([^)]*(?:public|private|protected|readonly)\\s+${esc}(?:\\?(?:\\s*[,):]|=|:)|(?![\\w$])\\s*(?:[,):]|=|:))`,
         "u",
       ).test(code)
     )
       shadowed.add(name);
-    if (new RegExp(`\\{\\s*${IDENT}\\s*(?:<[^>]*>)?\\s*${firstParamBind}`, "u").test(code)) shadowed.add(name);
-    if (new RegExp(`\\{\\s*${IDENT}\\s*(?:<[^>]*>)?\\s*\\([^)]*${laterParamBind}`, "u").test(code)) shadowed.add(name);
+    if (
+      new RegExp(
+        `constructor\\s*\\([^)]*${esc}(?:\\?(?:\\s*[,):]|=|:)|(?![\\w$])\\s*(?:[,):]|=|:))[^)]*\\)\\s*(?:\\s*:\\s*[^\\{;]+)?\\s*\\{`,
+        "u",
+      ).test(code)
+    )
+      shadowed.add(name);
+    for (const m of code.matchAll(new RegExp(`\\{\\s*(${IDENT})\\s*(?:<[^>]*>)?\\s*${firstParamBind}`, "gu"))) {
+      if (CONTROL_FLOW_BLOCK_KEYWORDS.has(m[1]!)) continue;
+      if (objectMethodBraceIsTypeOnly(code, m.index!)) continue;
+      shadowed.add(name);
+      break;
+    }
+    if (!shadowed.has(name)) {
+      for (const m of code.matchAll(new RegExp(`\\{\\s*(${IDENT})\\s*(?:<[^>]*>)?\\s*\\([^)]*${laterParamBind}`, "gu"))) {
+        if (CONTROL_FLOW_BLOCK_KEYWORDS.has(m[1]!)) continue;
+        if (objectMethodBraceIsTypeOnly(code, m.index!)) continue;
+        shadowed.add(name);
+        break;
+      }
+    }
     if (new RegExp(`${CALLEE_BOUNDARY}(?:const|let|var)\\s+${IDENT}\\s*=\\s*(?:async\\s+)?${esc}\\s*=>`, "u").test(code))
       shadowed.add(name);
     if (new RegExp(`${CALLEE_BOUNDARY}(?:const|let|var)\\s+${IDENT}\\s*=\\s*(?:async\\s+)?${firstParamBind}\\s*=>`, "u").test(code))
+      shadowed.add(name);
+    if (
+      new RegExp(
+        `${CALLEE_BOUNDARY}(?:const|let|var)\\s+${IDENT}\\s*=\\s*(?:async\\s+)?\\(\\s*${esc}\\s*:\\s*\\([^)]*\\)\\s*=>\\s*[^)]*\\)\\s*=>`,
+        "u",
+      ).test(code)
+    )
       shadowed.add(name);
     if (
       new RegExp(
@@ -575,6 +630,12 @@ function collectLocalShadowedCalleepNames(
         "u",
       ).test(code)
     )
+      shadowed.add(name);
+    if (new RegExp(`${CALLEE_BOUNDARY}\\(\\s*${esc}(?:\\s*:[^)]*)?\\)\\s*:[^=>]+\\s*=>`, "u").test(code)) shadowed.add(name);
+    if (new RegExp(`${CALLEE_BOUNDARY}export\\s+default\\s+(?:async\\s+)?\\(\\s*${esc}(?:\\s*:[^)]*)?\\)`, "u").test(code))
+      shadowed.add(name);
+    if (new RegExp(`(?:\\(|,)\\s*(?:async\\s+)?\\(\\s*${esc}(?:\\s*:[^)]*)?\\)\\s*(?:=>|\\{)`, "u").test(code)) shadowed.add(name);
+    if (new RegExp(`${CALLEE_BOUNDARY}(?:const|let|var)\\s+${IDENT}\\s*=\\s*(?:async\\s+)?\\(\\s*\\[\\s*${esc}`, "u").test(code))
       shadowed.add(name);
     if (new RegExp(`catch\\s*\\(\\s*${esc}(?:\\s*:[^)]+)?\\s*\\)`, "u").test(code)) shadowed.add(name);
     for (const m of code.matchAll(/catch\s*\(\s*\{([^}]*)\}/gu)) {

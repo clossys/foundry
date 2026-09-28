@@ -463,6 +463,70 @@ describe("copy-read-without-resolver", () => {
     });
     expect(gate.verdict).toBe("satisfied");
   });
+
+  it("flags arrow and callback parameters that shadow a renamed import", () => {
+    const head = [
+      'import { createCopyResolver as make } from "@clossys/writer";',
+      'import registry from "../copy/registry.json";',
+    ].join("\n");
+    const use = "export const out = make(registry);";
+    for (const shadow of [
+      "const load = (make: (data: unknown) => unknown) => make(registry);",
+      "const load = (make): unknown => make(registry);",
+      "const load = async (make: (data: unknown) => unknown) => make(registry);",
+      "export default (make: (data: unknown) => unknown) => make(registry);",
+      "const items: unknown[] = [];\nitems.forEach((make) => { make(registry); });",
+      "const load = ([make]: Array<(data: unknown) => unknown>) => make(registry);",
+      "const load = (make) => make(registry);",
+    ]) {
+      const { gate } = scan({ "src/copy.ts": [head, shadow, use].join("\n") });
+      expect(gate.verdict).toBe("violated");
+    }
+  });
+
+  it("does not treat block-leading if, while, or switch tests as parameter shadows", () => {
+    const head = [
+      'import { createCopyResolver as make } from "@clossys/writer";',
+      'import registry from "../copy/registry.json";',
+    ].join("\n");
+    for (const body of [
+      "export function run() { if (make) return make(registry); }",
+      "export function run(flag: boolean) { if (flag) { if (make) return make(registry); } }",
+      "export function run() { while (make) return make(registry); }",
+      "export function run() { while (true) { while (make) return make(registry); } }",
+      "export function run() { switch (make) { case 1: return make(registry); } }",
+    ]) {
+      const { gate } = scan({ "src/copy.ts": [head, body].join("\n") });
+      expect(gate.verdict).toBe("satisfied");
+    }
+  });
+
+  it("does not treat ambient or type-only parameters as value bindings", () => {
+    const head = [
+      'import { createCopyResolver as make } from "@clossys/writer";',
+      'import registry from "../copy/registry.json";',
+    ].join("\n");
+    const use = "export const out = make(registry);";
+    for (const decl of [
+      "declare function load(make: unknown): void;",
+      "declare class C { constructor(make: unknown); }",
+      "interface Loader { load(make: unknown): void }",
+      "type Loader = { load(make: unknown): void }",
+      "interface C { new (make: unknown): C }",
+      "declare class C { load(make: unknown): void }",
+    ]) {
+      const { gate } = scan({ "src/copy.ts": [head, decl, use].join("\n") });
+      expect(gate.verdict).toBe("satisfied");
+    }
+    const { gate: ctorGate } = scan({
+      "src/copy.ts": [
+        head,
+        "class C { constructor(public make) { make(registry); } }",
+        use,
+      ].join("\n"),
+    });
+    expect(ctorGate.verdict).toBe("violated");
+  });
 });
 
 describe("scope and masking", () => {
