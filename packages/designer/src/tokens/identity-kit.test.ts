@@ -1,8 +1,11 @@
 import { describe, expect, it } from "vitest";
+import { contrastRatio } from "./color.js";
+import { checkSingleColourLegibility, IDENTITY_MIN_CONTRAST } from "./identity-checks.js";
 import {
   adoptSuppliedMark,
   deriveInitials,
   generateIdentityDirections,
+  IDENTITY_VARIANT_ROLES,
   IdentityKitValidationError,
   isValidCssColor,
   isValidCssFontFamily,
@@ -302,5 +305,106 @@ describe("injection resistance (issue: unescaped token interpolation)", () => {
     const recoloured = recolorSvg(svg, '"/><script>alert(1)</script><path fill="');
     expect(recoloured).not.toContain("<script>");
     expect(recoloured).toContain("&quot;/&gt;&lt;script&gt;");
+  });
+});
+
+describe("two-tone supplied mark keeps contrast between its tones in every variant (issue #1537)", () => {
+  // 48x48 so `appIcon`'s badge transform resolves to the identity
+  // `translate(0,0) scale(1)`: the fixture's coordinates stay literal.
+  const FIGURE_D = "M16 16h16v16H16z";
+  const TWO_TONE_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><rect width="48" height="48" fill="#1a1a1a" /><path d="${FIGURE_D}" fill="#f5f5f5" /></svg>`;
+  type Point = { x: number; y: number };
+  const FIELD: Point = { x: 4, y: 4 }; // inside the square, outside the figure
+  const FIGURE: Point = { x: 24, y: 24 }; // inside the figure
+
+  const IDENTITY_TRANSFORM = "translate(0,0) scale(1)";
+
+  /**
+   * Models SVG painting for THIS fixture only (a 48x48 `rect` plus one
+   * square `path`) and throws on anything else - an unknown path `d`, a
+   * non-identity transform, an unrecognised mask paint - so it can never
+   * silently mis-measure a variant. Painter's algorithm over `rect`/`path`
+   * in document order; `<defs>`/`<mask>` contents are not painted directly.
+   */
+  function renderedColorAt(svg: string, point: Point, ctx: { surface: string; currentColor: string }): string {
+    const doc = new DOMParser().parseFromString(svg, "image/svg+xml");
+    const ancestors = (el: Element): Element[] => {
+      const chain: Element[] = [];
+      for (let node: Element | null = el; node; node = node.parentElement) chain.push(node);
+      return chain; // self first, root last
+    };
+    const inside = (v: number, lo: number, hi: number): boolean => v >= lo && v <= hi;
+    const covers = (el: Element): boolean => {
+      if (el.tagName === "rect") {
+        const x = Number(el.getAttribute("x") ?? 0);
+        const y = Number(el.getAttribute("y") ?? 0);
+        return inside(point.x, x, x + Number(el.getAttribute("width"))) && inside(point.y, y, y + Number(el.getAttribute("height")));
+      }
+      if (el.getAttribute("d") !== FIGURE_D) throw new Error(`renderedColorAt: unknown path geometry ${el.getAttribute("d")}`);
+      return inside(point.x, 16, 32) && inside(point.y, 16, 32);
+    };
+    const rawFill = (el: Element): string => ancestors(el).find((a) => a.hasAttribute("fill"))?.getAttribute("fill")?.trim() ?? "#000000";
+    const shapes = (root: ParentNode): Element[] => Array.from(root.querySelectorAll("rect, path"));
+    const assertIdentityTransform = (el: Element): void => {
+      for (const a of ancestors(el)) {
+        const t = a.getAttribute("transform");
+        if (t !== null && t.trim() !== IDENTITY_TRANSFORM) throw new Error(`renderedColorAt: unsupported transform "${t}"`);
+      }
+    };
+    const maskCoverage = (id: string): number => {
+      const mask = doc.querySelector(`mask[id="${id}"]`);
+      if (!mask) throw new Error(`renderedColorAt: no <mask id="${id}">`);
+      let coverage = 0;
+      for (const shape of shapes(mask)) {
+        const paint = rawFill(shape).toLowerCase();
+        if (paint === "none" || paint === "transparent" || !covers(shape)) continue;
+        if (paint === "#fff" || paint === "#ffffff" || paint === "white") coverage = 1;
+        else if (paint === "#000" || paint === "#000000" || paint === "black") coverage = 0;
+        else throw new Error(`renderedColorAt: unsupported mask paint ${paint}`);
+      }
+      return coverage;
+    };
+
+    let color = ctx.surface;
+    for (const shape of shapes(doc)) {
+      if (ancestors(shape).some((a) => a.tagName === "defs" || a.tagName === "mask")) continue;
+      assertIdentityTransform(shape);
+      if (!covers(shape)) continue;
+      const maskRef = ancestors(shape)
+        .map((a) => a.getAttribute("mask")?.match(/^url\(#([^)]+)\)$/)?.[1])
+        .find((id) => id !== undefined);
+      if (maskRef !== undefined && maskCoverage(maskRef) === 0) continue;
+      const fill = rawFill(shape);
+      if (fill === "none" || fill === "transparent") continue;
+      if (fill.toLowerCase() === "currentcolor") {
+        const styled = ancestors(shape)
+          .map((a) => a.getAttribute("style")?.match(/(?:^|;)\s*color\s*:\s*([^;]+)/)?.[1]?.trim())
+          .find((c) => c !== undefined);
+        color = styled ?? ctx.currentColor;
+      } else {
+        color = fill;
+      }
+    }
+    return color;
+  }
+
+  const direction = adoptSuppliedMark({ brand: { name: "Acme" }, suppliedSvg: TWO_TONE_SVG, tokens: TOKENS });
+
+  it("covers all seven variant roles", () => {
+    expect(IDENTITY_VARIANT_ROLES).toHaveLength(7);
+    for (const role of IDENTITY_VARIANT_ROLES) expect(Object.keys(direction.variants)).toContain(role);
+  });
+
+  it.each(IDENTITY_VARIANT_ROLES)("%s variant keeps the field/figure contrast at or above the non-text floor", (role) => {
+    const ctx = role === "dark" ? { surface: TOKENS.surfaceInverse, currentColor: TOKENS.onInverse } : { surface: TOKENS.surfaceBase, currentColor: TOKENS.ink };
+    const svg = direction.variants[role];
+    const field = renderedColorAt(svg, FIELD, ctx);
+    const figure = renderedColorAt(svg, FIGURE, ctx);
+    const ratio = contrastRatio(field, figure);
+    expect(ratio, `${role}: field ${field} vs figure ${figure} has contrast ${ratio.toFixed(2)}, below ${IDENTITY_MIN_CONTRAST}`).toBeGreaterThanOrEqual(IDENTITY_MIN_CONTRAST);
+  });
+
+  it("the mono variant of a two-tone mark still paints through currentColor alone", () => {
+    expect(checkSingleColourLegibility(direction.variants.mono).ok).toBe(true);
   });
 });
