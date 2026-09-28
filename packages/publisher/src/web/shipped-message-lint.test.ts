@@ -769,6 +769,261 @@ function parameterDefaultIsMessageCall(
   );
 }
 
+type CallCalleeResolution = { name: string; call: ts.CallExpression };
+
+function identifierIsLocalBinding(name: string, from: ts.Node): string | null {
+  let current: ts.Node | undefined = from;
+  while (current !== undefined) {
+    if (ts.isFunctionLike(current) && current.name !== undefined) {
+      if (current.name.getText() === name) return null;
+    }
+    if (ts.isVariableDeclaration(current)) {
+      const initializer = current.initializer;
+      if (initializer !== undefined && (ts.isArrowFunction(initializer) || ts.isFunctionExpression(initializer))) {
+        const names = ts.isIdentifier(current.name)
+          ? [current.name.text]
+          : bindingPatternLocalNames(current.name);
+        if (names.includes(name)) return null;
+      }
+    }
+    if (ts.isParameter(current)) {
+      if (bindingPatternLocalNames(current.name).includes(name)) return null;
+    }
+    current = current.parent;
+  }
+  return name;
+}
+
+function calleeCallOfExpression(expression: ts.Expression): { callee: ts.Expression; call: ts.CallExpression } | null {
+  const unwrapped = unwrapExpression(expression);
+  if (!ts.isCallExpression(unwrapped)) return null;
+  return { callee: unwrapped.expression, call: unwrapped };
+}
+
+function resolveCallCallee(
+  calleeExpression: ts.Expression,
+  from: ts.Node,
+  source: ts.SourceFile,
+): CallCalleeResolution | null {
+  let current = unwrapExpression(calleeExpression);
+  let lastCall: ts.CallExpression | null = null;
+  for (let step = 0; step < 16; step++) {
+    if (ts.isIdentifier(current)) {
+      const resolvedName = identifierIsLocalBinding(current.text, from);
+      if (resolvedName === null) return null;
+      return { name: resolvedName, call: lastCall ?? (from as ts.CallExpression) };
+    }
+    if (ts.isPropertyAccessExpression(current) || ts.isElementAccessExpression(current)) {
+      current = current.expression;
+      continue;
+    }
+    if (ts.isCallExpression(current) || ts.isNewExpression(current)) {
+      lastCall = current;
+      current = current.expression;
+      continue;
+    }
+    return null;
+  }
+  return null;
+}
+
+function callCalleeResolutionOfCall(call: ts.CallExpression, source: ts.SourceFile): CallCalleeResolution | null {
+  return resolveCallCallee(call.expression, call, source);
+}
+
+function callExpressionCalleeName(call: ts.CallExpression, source: ts.SourceFile): string | null {
+  const resolution = callCalleeResolutionOfCall(call, source);
+  return resolution === null ? null : resolution.name;
+}
+
+function memberInitializerFromCallResult(
+  call: ts.CallExpression,
+  memberKey: string,
+  source: ts.SourceFile,
+): ts.Expression | undefined {
+  const calleeName = callExpressionCalleeName(call, source);
+  if (calleeName === null) return undefined;
+  const fn = resolveCallableFunctionLike(calleeName, source);
+  if (fn === undefined) return undefined;
+  const object = functionBodyReturnObjectLiteral(fn);
+  if (object === undefined) return undefined;
+  return objectLiteralPropertyInitializer(object, memberKey, source);
+}
+
+function callResultSliceInitializers(
+  call: ts.CallExpression,
+  memberKey: string | number,
+  source: ts.SourceFile,
+  visited: Set<ts.CallExpression> = new Set(),
+): ts.Expression[] {
+  if (visited.has(call)) return [];
+  visited.add(call);
+  const calleeName = callExpressionCalleeName(call, source);
+  if (calleeName === null) return [];
+  const fn = resolveCallableFunctionLike(calleeName, source);
+  if (fn === undefined) return [];
+  if (typeof memberKey === "number") {
+    const array = functionBodyReturnArrayLiteral(fn);
+    if (array === undefined) return [];
+    const entry = array.elements[memberKey];
+    return entry !== undefined && ts.isExpression(entry) ? [entry] : [];
+  }
+  const object = functionBodyReturnObjectLiteral(fn);
+  if (object === undefined) return [];
+  const slices: ts.Expression[] = [];
+  const direct = objectLiteralPropertyInitializer(object, memberKey, source);
+  if (direct !== undefined) slices.push(direct);
+  for (const property of object.properties) {
+    if (!ts.isSpreadAssignment(property)) continue;
+    const spread = unwrapExpression(property.expression);
+    const memberInit =
+      ts.isCallExpression(spread) && callExpressionCalleeName(spread, source) !== null
+        ? callResultSliceInitializers(spread, memberKey, source, visited)
+        : (() => {
+            const objectMember = collectObjectMemberSlicesFromDefault(
+              spread,
+              memberKey,
+              source,
+              new Map<string, ts.Expression>(),
+              new Map<string, ts.Expression>(),
+            );
+            return objectMember ?? [];
+          })();
+    slices.push(...memberInit);
+  }
+  return slices;
+}
+
+function elementAccessKeyFromArgument(argument: ts.Expression): string | number | null {
+  const numericIndex = elementAccessIndexFromArgument(argument);
+  if (numericIndex !== null) return numericIndex;
+  const unwrapped = unwrapExpression(argument);
+  if (ts.isStringLiteral(unwrapped) || ts.isNoSubstitutionTemplateLiteral(unwrapped)) return unwrapped.text;
+  return null;
+}
+
+function accessKeyOf(node: ts.PropertyAccessExpression | ts.ElementAccessExpression): string | number | null {
+  if (ts.isPropertyAccessExpression(node)) return node.name.text;
+  return elementAccessKeyFromArgument(node.argumentExpression);
+}
+
+function accessValueSlices(
+  expression: ts.Expression,
+  source: ts.SourceFile,
+  literalLocalInitializers: Map<string, ts.Expression>,
+): ts.Expression[] | null {
+  const unwrapped = unwrapExpression(expression);
+  if (ts.isCallExpression(unwrapped)) return [unwrapped];
+  if (ts.isIdentifier(unwrapped)) {
+    const initializer = literalLocalInitializers.get(unwrapped.text);
+    if (initializer === undefined) return null;
+    return [initializer];
+  }
+  if (ts.isPropertyAccessExpression(unwrapped) || ts.isElementAccessExpression(unwrapped)) {
+    const key = accessKeyOf(unwrapped);
+    if (key === null) return null;
+    const baseSlices = accessValueSlices(unwrapped.expression, source, literalLocalInitializers);
+    if (baseSlices === null) return null;
+    const out: ts.Expression[] = [];
+    for (const base of baseSlices) {
+      const slices =
+        typeof key === "number"
+          ? collectArrayIndexSlicesFromDefault(base, key, new Map(), new Map(), source)
+          : collectObjectMemberSlicesFromDefault(base, key, source, new Map(), new Map());
+      if (slices !== null) out.push(...slices);
+    }
+    return out.length === 0 ? null : out;
+  }
+  return null;
+}
+
+function memberSlicesOverExpression(
+  expression: ts.Expression,
+  memberKey: string | number,
+  source: ts.SourceFile,
+  literalLocalInitializers: Map<string, ts.Expression>,
+): ts.Expression[] | null {
+  const baseSlices = accessValueSlices(expression, source, literalLocalInitializers);
+  if (baseSlices === null) return null;
+  const out: ts.Expression[] = [];
+  for (const base of baseSlices) {
+    const unwrapped = unwrapExpression(base);
+    const slices =
+      ts.isCallExpression(unwrapped)
+        ? callResultSliceInitializers(unwrapped, memberKey, source)
+        : typeof memberKey === "number"
+          ? collectArrayIndexSlicesFromDefault(base, memberKey, new Map(), new Map(), source)
+          : collectObjectMemberSlicesFromDefault(base, memberKey, source, new Map(), new Map());
+    if (slices !== null) out.push(...slices);
+  }
+  return out.length === 0 ? null : out;
+}
+
+function callResultSliceSource(
+  expression: ts.Expression,
+  literalLocalInitializers: Map<string, ts.Expression>,
+): { call: ts.CallExpression; keys: Array<string | number> } | null {
+  const unwrapped = unwrapExpression(expression);
+  if (ts.isCallExpression(unwrapped)) return { call: unwrapped, keys: [] };
+  if (ts.isPropertyAccessExpression(unwrapped) || ts.isElementAccessExpression(unwrapped)) {
+    const inner = callResultSliceSource(unwrapped.expression, literalLocalInitializers);
+    if (inner === null) return null;
+    const key = accessKeyOf(unwrapped);
+    if (key === null) return null;
+    return { call: inner.call, keys: [...inner.keys, key] };
+  }
+  if (ts.isIdentifier(unwrapped)) {
+    const localInit = literalLocalInitializers.get(unwrapped.text);
+    if (localInit === undefined) return null;
+    return callResultSliceSource(localInit, literalLocalInitializers);
+  }
+  return null;
+}
+
+function callResultSlicePathReportName(
+  expression: ts.Expression,
+  literalLocalInitializers: Map<string, ts.Expression>,
+): string | null {
+  const unwrapped = unwrapExpression(expression);
+  if (ts.isPropertyAccessExpression(unwrapped) || ts.isElementAccessExpression(unwrapped)) {
+    const base = unwrapExpression(unwrapped.expression);
+    if (ts.isIdentifier(base) && literalLocalInitializers.has(base.text)) return base.text;
+  }
+  const source0 = callResultSliceSource(unwrapped, literalLocalInitializers);
+  if (source0 !== null) {
+    const last = source0.keys.at(-1);
+    if (typeof last === "string") return last;
+    const callee = unwrapExpression(source0.call.expression);
+    if (ts.isIdentifier(callee)) return callee.text;
+  }
+  return callResultSliceReportName(unwrapped);
+}
+
+function callResultSliceInitializersAtPath(
+  call: ts.CallExpression,
+  keys: readonly (string | number)[],
+  source: ts.SourceFile,
+): ts.Expression[] {
+  let slices: ts.Expression[] = [call];
+  for (const key of keys) {
+    const next: ts.Expression[] = [];
+    for (const slice of slices) {
+      const unwrapped = unwrapExpression(slice);
+      if (ts.isCallExpression(unwrapped)) {
+        next.push(...callResultSliceInitializers(unwrapped, key, source));
+        continue;
+      }
+      const resolved =
+        typeof key === "number"
+          ? collectArrayIndexSlicesFromDefault(slice, key, new Map(), new Map(), source)
+          : collectObjectMemberSlicesFromDefault(slice, key, source, new Map(), new Map());
+      if (resolved !== null) next.push(...resolved);
+    }
+    slices = next;
+  }
+  return slices;
+}
+
 function callResultSliceReportName(expression: ts.Expression): string | null {
   const unwrapped = unwrapExpression(expression);
   if (ts.isPropertyAccessExpression(unwrapped)) {
@@ -778,7 +1033,9 @@ function callResultSliceReportName(expression: ts.Expression): string | null {
   }
   if (ts.isElementAccessExpression(unwrapped)) {
     const argument = unwrapped.argumentExpression;
-    if (ts.isStringLiteral(argument) || ts.isNoSubstitutionTemplateLiteral(argument)) return argument.text;
+    if (ts.isStringLiteral(argument) || ts.isNoSubstitutionTemplateLiteral(argument)) {
+      if (elementAccessIndexFromArgument(argument) === null) return argument.text;
+    }
     const inner = unwrapExpression(unwrapped.expression);
     if (ts.isCallExpression(inner)) {
       const callee = unwrapExpression(inner.expression);
@@ -805,15 +1062,9 @@ function callResultSliceExpressionIsShipped(
   messageCallParameters: Set<string>,
   literalLocalInitializers: Map<string, ts.Expression>,
 ): boolean {
-  const unwrapped = unwrapExpression(expression);
-  const checkMember = (memberKey: string): boolean => {
-    if (isExemptRenderedMember(memberKey)) return false;
-    const inner = unwrapExpression(unwrapped.expression);
-    if (!ts.isCallExpression(inner)) return false;
-    const memberInit = callableReturnObjectMemberInitializer(inner, memberKey, source);
-    if (memberInit === undefined) return false;
-    return renderSliceExpressionIsShipped(
-      memberInit,
+  const sliceIsShipped = (slice: ts.Expression): boolean =>
+    renderSliceExpressionIsShipped(
+      slice,
       moduleBindings,
       moduleFunctions,
       moduleDirectStringFunctions,
@@ -825,20 +1076,39 @@ function callResultSliceExpressionIsShipped(
       messageCallParameters,
       literalLocalInitializers,
     );
-  };
-  if (ts.isPropertyAccessExpression(unwrapped)) {
-    return checkMember(unwrapped.name.text);
+  const unwrapped = unwrapExpression(expression);
+  if (ts.isBinaryExpression(unwrapped)) {
+    const kind = unwrapped.operatorToken.kind;
+    if (
+      kind === ts.SyntaxKind.PlusToken ||
+      kind === ts.SyntaxKind.QuestionQuestionToken ||
+      kind === ts.SyntaxKind.BarBarToken ||
+      kind === ts.SyntaxKind.AmpersandAmpersandToken
+    ) {
+      const branches: ts.Expression[] = [];
+      for (const operand of [unwrapped.left, unwrapped.right]) {
+        const operandUnwrapped = unwrapExpression(operand);
+        if (ts.isCallExpression(operandUnwrapped)) {
+          branches.push(operand);
+          continue;
+        }
+        branches.push(...directArgumentRenderSlices(operand));
+      }
+      const source0 = branches
+        .map((branch) => callResultSliceSource(branch, literalLocalInitializers))
+        .find((resolved) => resolved !== null);
+      if (source0 === undefined) return false;
+      const keys = source0.keys;
+      const lastKey = keys.at(-1);
+      if (lastKey === undefined) return false;
+      if (typeof lastKey === "string" && isExemptRenderedMember(lastKey)) return false;
+      return callResultSliceInitializersAtPath(source0.call, keys, source).some(sliceIsShipped);
+    }
   }
-  if (ts.isElementAccessExpression(unwrapped)) {
-    const argument = unwrapped.argumentExpression;
-    const numericIndex = elementAccessIndexFromArgument(argument);
-    const inner = unwrapExpression(unwrapped.expression);
-    if (!ts.isCallExpression(inner)) return false;
-    if (numericIndex !== null) {
-      const entry = callableReturnArrayElementInitializer(inner, numericIndex, source);
-      if (entry === undefined) return false;
-      return renderSliceExpressionIsShipped(
-        entry,
+  if (ts.isConditionalExpression(unwrapped)) {
+    return (
+      callResultSliceExpressionIsShipped(
+        unwrapped.whenTrue,
         moduleBindings,
         moduleFunctions,
         moduleDirectStringFunctions,
@@ -849,14 +1119,9 @@ function callResultSliceExpressionIsShipped(
         moduleMessageArrayInitializers,
         messageCallParameters,
         literalLocalInitializers,
-      );
-    }
-    if (ts.isStringLiteral(argument) || ts.isNoSubstitutionTemplateLiteral(argument)) {
-      if (isExemptRenderedMember(argument.text)) return false;
-      const memberInit = callableReturnObjectMemberInitializer(inner, argument.text, source);
-      if (memberInit === undefined) return false;
-      return renderSliceExpressionIsShipped(
-        memberInit,
+      ) ||
+      callResultSliceExpressionIsShipped(
+        unwrapped.whenFalse,
         moduleBindings,
         moduleFunctions,
         moduleDirectStringFunctions,
@@ -867,8 +1132,16 @@ function callResultSliceExpressionIsShipped(
         moduleMessageArrayInitializers,
         messageCallParameters,
         literalLocalInitializers,
-      );
-    }
+      )
+    );
+  }
+  if (ts.isPropertyAccessExpression(unwrapped) || ts.isElementAccessExpression(unwrapped)) {
+    const lastKey = accessKeyOf(unwrapped);
+    if (lastKey === null) return false;
+    if (typeof lastKey === "string" && isExemptRenderedMember(lastKey)) return false;
+    const source0 = callResultSliceSource(unwrapped, literalLocalInitializers);
+    if (source0 === null) return false;
+    return callResultSliceInitializersAtPath(source0.call, source0.keys, source).some(sliceIsShipped);
   }
   return false;
 }
@@ -1570,6 +1843,7 @@ function directArgumentRenderSlices(expression: ts.Expression): ts.Expression[] 
   if (ts.isBinaryExpression(expression)) {
     const kind = expression.operatorToken.kind;
     if (
+      kind === ts.SyntaxKind.PlusToken ||
       kind === ts.SyntaxKind.QuestionQuestionToken ||
       kind === ts.SyntaxKind.BarBarToken ||
       kind === ts.SyntaxKind.AmpersandAmpersandToken
@@ -1644,19 +1918,19 @@ function indirectCallRendersArgument(
     if (!boundLocals.includes(paramName)) continue;
     const paramBindingPath = findArgumentBindingPath(param.name, paramName, sourceFile);
     if (paramBindingPath === null) continue;
+    const isWholeValue = renderedPath.length === 0 && paramBindingPath.length === 0;
     const slicePath = renderedPath.length > 0 ? [...paramBindingPath, ...renderedPath] : paramBindingPath;
-    const slices =
-      slicePath.length === 0
-        ? directArgumentRenderSlices(argumentValue)
-        : expressionSlicesAtArgumentBindingPath(
-            argumentValue,
-            slicePath,
-            sourceFile,
-            parameterSearchParameters,
-            moduleMessageObjectInitializers,
-            moduleMessageArrayInitializers,
-            literalLocalInitializers,
-          );
+    const slices = isWholeValue
+      ? directArgumentRenderSlices(argumentValue)
+      : expressionSlicesAtArgumentBindingPath(
+          argumentValue,
+          slicePath,
+          sourceFile,
+          parameterSearchParameters,
+          moduleMessageObjectInitializers,
+          moduleMessageArrayInitializers,
+          literalLocalInitializers,
+        );
     if (
       slices.some((slice) =>
         parameterDefaultIsShippedCopy(
@@ -1665,6 +1939,19 @@ function indirectCallRendersArgument(
           moduleFunctions,
           moduleDirectStringFunctions,
           moduleDirectStringAliases,
+        ) ||
+        renderSliceExpressionIsShipped(
+          slice,
+          moduleBindings,
+          moduleFunctions,
+          moduleDirectStringFunctions,
+          moduleDirectStringAliases,
+          parameterSearchParameters,
+          sourceFile,
+          moduleMessageObjectInitializers,
+          moduleMessageArrayInitializers,
+          new Set<string>(),
+          literalLocalInitializers,
         ) ||
         (ts.isIdentifier(unwrapExpression(slice)) &&
           parameterDefaultExpressionForName(
@@ -1978,6 +2265,25 @@ function expressionSlicesAtArgumentBindingPath(
         moduleMessageArrayInitializers,
         literalLocalInitializers,
       );
+    }
+    if (ts.isCallExpression(expression)) {
+      const memberSlices = callResultSliceInitializers(expression, segment.key, source);
+      if (rest.length === 0) return memberSlices;
+      const out: ts.Expression[] = [];
+      for (const memberSlice of memberSlices) {
+        out.push(
+          ...expressionSlicesAtArgumentBindingPath(
+            memberSlice,
+            rest,
+            source,
+            parameters,
+            moduleMessageObjectInitializers,
+            moduleMessageArrayInitializers,
+            literalLocalInitializers,
+          ),
+        );
+      }
+      return out;
     }
     if (!ts.isObjectLiteralExpression(expression)) return [];
     const next = objectLiteralMemberInitializer(
@@ -3304,7 +3610,8 @@ function analyzeRenderedLocals(
     }
     if (
       ts.isBinaryExpression(expression) &&
-      (expression.operatorToken.kind === ts.SyntaxKind.QuestionQuestionToken ||
+      (expression.operatorToken.kind === ts.SyntaxKind.PlusToken ||
+        expression.operatorToken.kind === ts.SyntaxKind.QuestionQuestionToken ||
         expression.operatorToken.kind === ts.SyntaxKind.BarBarToken ||
         expression.operatorToken.kind === ts.SyntaxKind.AmpersandAmpersandToken)
     ) {
@@ -3554,6 +3861,7 @@ function analyzeRenderedLocals(
           )
         ) {
           literalLocals.set(localName, line);
+          literalLocalInitializers.set(localName, memberInit);
         }
         return;
       }
@@ -3751,10 +4059,27 @@ function analyzeRenderedLocals(
           mergedLiteralLocalInitializers,
         )
       ) {
+        const shippedSlice = directArgumentRenderSlices(unwrappedForTrack).find((slice) =>
+          renderSliceExpressionIsShipped(
+            slice,
+            moduleBindings,
+            moduleFunctions,
+            moduleDirectStringFunctions,
+            fileModuleDirectStringAliases,
+            parameterDefaultSearchParameters,
+            source,
+            moduleMessageObjectInitializers,
+            moduleMessageArrayInitializers,
+            messageCallParameters,
+            mergedLiteralLocalInitializers,
+          ),
+        );
         indirectArgumentViolations.push({
           line,
           kind: "rendered-local",
-          text: callResultSliceReportName(unwrappedForTrack) ?? unwrappedForTrack.getText(source),
+          text:
+            (shippedSlice === undefined ? null : callResultSliceReportName(shippedSlice)) ??
+            unwrappedForTrack.getText(source),
         });
         continue;
       }
@@ -4108,6 +4433,13 @@ function checkRenderedLocalReferences(
   }
 
   function callResultMemberReportName(expression: ts.Expression): string | null {
+    return (
+      callResultSlicePathReportName(expression, literalLocalInitializers) ??
+      callResultMemberReportNameFallback(expression)
+    );
+  }
+
+  function callResultMemberReportNameFallback(expression: ts.Expression): string | null {
     const unwrapped = unwrapExpression(expression);
     const call = ts.isPropertyAccessExpression(unwrapped) || ts.isElementAccessExpression(unwrapped)
       ? unwrapExpression(unwrapped.expression)
@@ -4119,7 +4451,9 @@ function checkRenderedLocalReferences(
       return unwrapped.name.text;
     }
     const argument = unwrapped.argumentExpression;
-    if (ts.isStringLiteral(argument) || ts.isNoSubstitutionTemplateLiteral(argument)) return argument.text;
+    if (elementAccessIndexFromArgument(argument) === null) {
+      if (ts.isStringLiteral(argument) || ts.isNoSubstitutionTemplateLiteral(argument)) return argument.text;
+    }
     const callee = unwrapExpression(call.expression);
     if (ts.isIdentifier(callee)) return callee.text;
     const memberCallee = memberAccessFromCallCallee(call.expression);
@@ -7769,6 +8103,156 @@ describe("shipped message lint", () => {
       "",
     ].join("\n");
     expect(findShippedMessageViolations("Example.tsx", documentedParameterIndexSilent)).toEqual([]);
+  });
+
+  it("notes fix round 28 call slices in call arguments, stored binaries, and member chains", () => {
+    const callResultMemberLocal = [
+      'function getRow(): { caption: string } { return { caption: "Save changes" }; }',
+      "function show(value: string) { return <span>{value}</span>; }",
+      "export function Example() { const row = getRow(); return show(row.caption); }",
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", callResultMemberLocal)).toEqual([
+      expect.objectContaining({ kind: "rendered-local", text: "caption" }),
+    ]);
+
+    const callResultMemberAlias = [
+      'function getRow(): { caption: string } { return { caption: "Save changes" }; }',
+      "function show(value: string) { return <span>{value}</span>; }",
+      "export function Example() { const title = getRow().caption; return show(title); }",
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", callResultMemberAlias)).toEqual([
+      expect.objectContaining({ kind: "rendered-local", text: "title" }),
+    ]);
+
+    const callResultDestructured = [
+      'function getRow(): { caption: string } { return { caption: "Save changes" }; }',
+      "function show(value: string) { return <span>{value}</span>; }",
+      "export function Example() { const { caption: title } = getRow(); return show(title); }",
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", callResultDestructured)).toEqual([
+      expect.objectContaining({ kind: "rendered-local", text: "title" }),
+    ]);
+
+    const callResultAliasedFunction = [
+      'function getRow(): { caption: string } { return { caption: "Save changes" }; }',
+      "function show(value: string) { return <span>{value}</span>; }",
+      "export function Example() { const get = getRow; const row = get(); return show(row.caption); }",
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", callResultAliasedFunction)).toEqual([
+      expect.objectContaining({ kind: "rendered-local", text: "caption" }),
+    ]);
+
+    const callResultIndexLocal = [
+      'function getList(): string[] { return ["Save changes"]; }',
+      "function show(value: string) { return <span>{value}</span>; }",
+      "export function Example() { const row = getList(); return show(row[0]); }",
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", callResultIndexLocal)).toEqual([
+      expect.objectContaining({ kind: "rendered-local", text: "row[0]" }),
+    ]);
+
+    const callArgumentNullish = [
+      'function getRow(): { caption: string } { return { caption: "Save changes" }; }',
+      "function show(value: string) { return <span>{value}</span>; }",
+      'export function Example() { return show(getRow().caption ?? "1"); }',
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", callArgumentNullish)).toEqual([
+      expect.objectContaining({ kind: "rendered-local", text: "caption" }),
+    ]);
+
+    const callArgumentLogicalAnd = [
+      'function getRow(): { caption: string } { return { caption: "Save changes" }; }',
+      "function show(value: string) { return <span>{value}</span>; }",
+      "export function Example(on = true) { return show(on && getRow().caption); }",
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", callArgumentLogicalAnd)).toEqual([
+      expect.objectContaining({ kind: "rendered-local", text: "caption" }),
+    ]);
+
+    const callArgumentPlusPrefix = [
+      'function getRow(): { caption: string } { return { caption: "Save changes" }; }',
+      "function show(value: string) { return <span>{value}</span>; }",
+      'export function Example() { return show("" + getRow().caption); }',
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", callArgumentPlusPrefix)).toEqual([
+      expect.objectContaining({ kind: "rendered-local", text: "caption" }),
+    ]);
+
+    const callArgumentIndexPlusPrefix = [
+      'function getList(): string[] { return ["Save changes"]; }',
+      "function show(value: string) { return <span>{value}</span>; }",
+      'export function Example() { return show("" + getList()[0]); }',
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", callArgumentIndexPlusPrefix)).toEqual([
+      expect.objectContaining({ kind: "rendered-local", text: "getList" }),
+    ]);
+
+    const storedMemberBinary = [
+      'function getRow(): { caption: string } { return { caption: "Save changes" }; }',
+      'export function Example() { const title = getRow().caption + ""; return <span>{title}</span>; }',
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", storedMemberBinary)).toEqual([
+      expect.objectContaining({ kind: "rendered-local", text: "title" }),
+    ]);
+
+    const storedIndexBinary = [
+      'function getList(): string[] { return ["Save changes"]; }',
+      'export function Example() { const title = getList()[0] + ""; return <span>{title}</span>; }',
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", storedIndexBinary)).toEqual([
+      expect.objectContaining({ kind: "rendered-local", text: "title" }),
+    ]);
+
+    const indexThenMember = [
+      'function getRows(): { caption: string }[] { return [{ caption: "Save changes" }]; }',
+      "export function Example() { return <span>{getRows()[0].caption}</span>; }",
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", indexThenMember)).toEqual([
+      expect.objectContaining({ kind: "rendered-local", text: "caption" }),
+    ]);
+
+    const storedIndexThenMember = [
+      'function getRows(): { caption: string }[] { return [{ caption: "Save changes" }]; }',
+      "export function Example() { const row = getRows(); return <span>{row[0].caption}</span>; }",
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", storedIndexThenMember)).toEqual([
+      expect.objectContaining({ kind: "rendered-local", text: "caption" }),
+    ]);
+
+    const quotedNumericIndex = [
+      'function getList(): string[] { return ["Save changes"]; }',
+      'export function Example() { return <span>{getList()["0"]}</span>; }',
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", quotedNumericIndex)).toEqual([
+      expect.objectContaining({ kind: "rendered-local", text: "getList" }),
+    ]);
+    expect(
+      findShippedMessageViolations("Example.tsx", quotedNumericIndex.replace('getList()["0"]', '(getList)()["0"]')),
+    ).toEqual([expect.objectContaining({ kind: "rendered-local", text: "getList" })]);
+    expect(
+      findShippedMessageViolations("Example.tsx", quotedNumericIndex.replace('getList()["0"]', 'getList!()["0"]')),
+    ).toEqual([expect.objectContaining({ kind: "rendered-local", text: "getList" })]);
+
+    const quotedNumericIndexSilent = [
+      'function getList(): string[] { return ["Save changes"]; }',
+      'export function Example() { return <span>{getList()["1"]}</span>; }',
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", quotedNumericIndexSilent)).toEqual([]);
   });
 
 });
