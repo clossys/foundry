@@ -434,6 +434,11 @@ function expressionReferencesParameterInRenderContext(expression: ts.Expression,
       return !NON_MESSAGE_PARAMETER_MEMBERS.has(expression.name.text);
     }
   }
+  if (ts.isElementAccessExpression(expression)) {
+    if (ts.isIdentifier(expression.expression) && expression.expression.text === paramName) {
+      return false;
+    }
+  }
   if (ts.isTemplateExpression(expression)) {
     return expression.templateSpans.some((span) =>
       expressionReferencesParameterInRenderContext(span.expression, paramName),
@@ -477,17 +482,27 @@ function expressionReferencesParameterInRenderContext(expression: ts.Expression,
   return false;
 }
 
-function functionBodyRendersParameters(fn: ts.FunctionLikeDeclaration): Set<string> {
+type RenderedParameterBinding = { paramName: string; bindingPath: ArgumentBindingPath };
+
+function collectRenderedParameterBindingPaths(fn: ts.FunctionLikeDeclaration): RenderedParameterBinding[] {
   const paramNames = new Set<string>();
   for (const parameter of fn.parameters) {
     for (const name of bindingPatternLocalNames(parameter.name)) {
       paramNames.add(name);
     }
   }
-  const rendered = new Set<string>();
+  const rendered: RenderedParameterBinding[] = [];
+  const seen = new Set<string>();
   const body = fn.body;
   if (body === undefined) return rendered;
   const sourceFile = fn.getSourceFile();
+
+  function noteBindingPath(paramName: string, bindingPath: ArgumentBindingPath): void {
+    const key = `${paramName}\0${bindingPath.map((segment) => `${segment.kind}:${"key" in segment ? segment.key : segment.index}`).join("\0")}`;
+    if (seen.has(key)) return;
+    seen.add(key);
+    rendered.push({ paramName, bindingPath });
+  }
 
   function noteInExpression(expression: ts.Expression): void {
     expression = unwrapExpression(expression);
@@ -501,9 +516,55 @@ function functionBodyRendersParameters(fn: ts.FunctionLikeDeclaration): Set<stri
       }
       return;
     }
+    if (ts.isConditionalExpression(expression)) {
+      noteInExpression(expression.whenTrue);
+      noteInExpression(expression.whenFalse);
+      return;
+    }
+    if (ts.isBinaryExpression(expression)) {
+      const kind = expression.operatorToken.kind;
+      if (
+        kind === ts.SyntaxKind.PlusToken ||
+        kind === ts.SyntaxKind.QuestionQuestionToken ||
+        kind === ts.SyntaxKind.BarBarToken ||
+        kind === ts.SyntaxKind.AmpersandAmpersandToken
+      ) {
+        noteInExpression(expression.left);
+        noteInExpression(expression.right);
+        return;
+      }
+    }
+    if (ts.isParenthesizedExpression(expression) || ts.isNonNullExpression(expression) || ts.isAsExpression(expression)) {
+      noteInExpression(expression.expression);
+      return;
+    }
+    if (ts.isSatisfiesExpression(expression)) {
+      noteInExpression(expression.expression);
+      return;
+    }
+    if (ts.isTemplateExpression(expression)) {
+      for (const span of expression.templateSpans) {
+        noteInExpression(span.expression);
+      }
+      return;
+    }
     for (const paramName of paramNames) {
-      if (expressionReferencesParameterInRenderContext(expression, paramName)) {
-        rendered.add(paramName);
+      if (ts.isIdentifier(expression) && expression.text === paramName) {
+        noteBindingPath(paramName, []);
+        continue;
+      }
+      if (ts.isPropertyAccessExpression(expression) && ts.isIdentifier(expression.expression) && expression.expression.text === paramName) {
+        const member = expression.name.text;
+        if (!NON_MESSAGE_PARAMETER_MEMBERS.has(member)) {
+          noteBindingPath(paramName, [{ kind: "property", key: member }]);
+        }
+        continue;
+      }
+      if (ts.isElementAccessExpression(expression) && ts.isIdentifier(expression.expression) && expression.expression.text === paramName) {
+        const argument = expression.argumentExpression;
+        if (ts.isStringLiteral(argument) || ts.isNoSubstitutionTemplateLiteral(argument)) {
+          noteBindingPath(paramName, [{ kind: "property", key: argument.text }]);
+        }
       }
     }
   }
@@ -650,7 +711,7 @@ function indirectCallRendersArgument(
   if (param === undefined) return false;
   const boundLocals = bindingPatternLocalNames(param.name);
   if (boundLocals.length === 0) return false;
-  const renderedParams = functionBodyRendersParameters(callee);
+  const renderedBindings = collectRenderedParameterBindingPaths(callee);
   let argumentValue = argument;
   if (ts.isIdentifier(argument) && currentParameters !== undefined) {
     const defaultInit = parameterDefaultExpressionForName(
@@ -664,16 +725,17 @@ function indirectCallRendersArgument(
       argumentValue = defaultInit;
     }
   }
-  for (const localName of boundLocals) {
-    if (!renderedParams.has(localName)) continue;
-    const bindingPath = findArgumentBindingPath(param.name, localName, sourceFile);
-    if (bindingPath === null) continue;
+  for (const { paramName, bindingPath: renderedPath } of renderedBindings) {
+    if (!boundLocals.includes(paramName)) continue;
+    const paramBindingPath = findArgumentBindingPath(param.name, paramName, sourceFile);
+    if (paramBindingPath === null) continue;
+    const slicePath = renderedPath.length > 0 ? [...paramBindingPath, ...renderedPath] : paramBindingPath;
     const slice =
-      bindingPath.length === 0
+      slicePath.length === 0
         ? unwrapExpression(argumentValue)
         : expressionAtArgumentBindingPath(
             argumentValue,
-            bindingPath,
+            slicePath,
             sourceFile,
             moduleMessageObjectInitializers,
             moduleMessageArrayInitializers,
@@ -1819,9 +1881,13 @@ function checkRenderedLocalReferences(
   moduleRenderedStringBindings: Set<string>,
   literalLocalInitializers: Map<string, ts.Expression>,
   moduleMessageObjectInitializers: Map<string, ts.Expression>,
+  moduleMessageArrayInitializers: Map<string, ts.Expression>,
+  moduleBindings: Set<string>,
+  moduleFunctions: Set<string>,
   fileName: string,
   source: ts.SourceFile,
   violations: ShippedMessageViolation[],
+  parameters?: ts.NodeArray<ts.ParameterDeclaration>,
 ): void {
   function lineOf(node: ts.Node): number {
     return source.getLineAndCharacterOfPosition(node.getStart(source)).line + 1;
@@ -1848,8 +1914,48 @@ function checkRenderedLocalReferences(
     });
   }
 
+  function localDefaultExpression(name: string): ts.Expression | undefined {
+    const localInit = literalLocalInitializers.get(name);
+    if (localInit !== undefined) return localInit;
+    if (parameters === undefined) return undefined;
+    return parameterDefaultExpressionForName(
+      name,
+      parameters,
+      source,
+      moduleMessageObjectInitializers,
+      moduleMessageArrayInitializers,
+    );
+  }
+
+  function renderedMemberIsShippedCopy(objectName: string, memberKey: string): boolean {
+    const defaultExpr = localDefaultExpression(objectName);
+    if (defaultExpr === undefined) return false;
+    const resolved = unwrapExpression(
+      resolveModulePatternDefault(defaultExpr, moduleMessageObjectInitializers, moduleMessageArrayInitializers),
+    );
+    if (!ts.isObjectLiteralExpression(resolved)) {
+      return parameterDefaultIsShippedCopy(
+        defaultExpr,
+        moduleBindings,
+        moduleFunctions,
+        moduleDirectStringFunctions,
+        moduleDirectStringAliases,
+      );
+    }
+    const slice = objectLiteralPropertyInitializer(resolved, memberKey, source);
+    if (slice === undefined) return false;
+    return parameterDefaultIsShippedCopy(
+      slice,
+      moduleBindings,
+      moduleFunctions,
+      moduleDirectStringFunctions,
+      moduleDirectStringAliases,
+    );
+  }
+
   function notePropertyAccess(node: ts.PropertyAccessExpression, reportAt: ts.Node): void {
     const member = node.name.text;
+    if (NON_MESSAGE_PARAMETER_MEMBERS.has(member)) return;
     if (undocumentedPropNames.has(member)) {
       violations.push({ file: fileName, line: lineOf(reportAt), kind: "rendered-local", text: member });
       return;
@@ -1858,7 +1964,7 @@ function checkRenderedLocalReferences(
       violations.push({ file: fileName, line: lineOf(reportAt), kind: "rendered-local", text: member });
       return;
     }
-    if (ts.isIdentifier(node.expression)) {
+    if (ts.isIdentifier(node.expression) && renderedMemberIsShippedCopy(node.expression.text, member)) {
       noteReference(node.expression.text, reportAt);
     }
   }
@@ -1867,6 +1973,7 @@ function checkRenderedLocalReferences(
     const argument = node.argumentExpression;
     if (ts.isStringLiteral(argument) || ts.isNoSubstitutionTemplateLiteral(argument)) {
       const member = argument.text;
+      if (NON_MESSAGE_PARAMETER_MEMBERS.has(member)) return;
       if (undocumentedPropNames.has(member)) {
         violations.push({ file: fileName, line: lineOf(reportAt), kind: "rendered-local", text: member });
         return;
@@ -1875,6 +1982,10 @@ function checkRenderedLocalReferences(
         violations.push({ file: fileName, line: lineOf(reportAt), kind: "rendered-local", text: member });
         return;
       }
+      if (ts.isIdentifier(node.expression) && renderedMemberIsShippedCopy(node.expression.text, member)) {
+        violations.push({ file: fileName, line: lineOf(reportAt), kind: "rendered-local", text: member });
+      }
+      return;
     }
     if (ts.isIdentifier(node.expression)) {
       noteReference(node.expression.text, reportAt);
@@ -2376,9 +2487,13 @@ export function findShippedMessageViolations(fileName: string, sourceText: strin
         moduleRenderedStringBindings,
         literalLocalInitializers,
         moduleMessageObjectInitializers,
+        moduleMessageArrayInitializers,
+        moduleBindings,
+        moduleFunctions,
         fileName,
         source,
         violations,
+        parameters,
       );
     }
     for (const [propName, line] of indirectMessageProps) {
@@ -2415,11 +2530,54 @@ export function findShippedMessageViolations(fileName: string, sourceText: strin
           moduleRenderedStringBindings,
           new Map(),
           moduleMessageObjectInitializers,
+          moduleMessageArrayInitializers,
+          moduleBindings,
+          moduleFunctions,
           fileName,
           source,
           violations,
         );
       }
+    }
+
+    if (functionLikeDepth === 0 && ts.isExpressionStatement(node)) {
+      checkRenderedLocalReferences(
+        node.expression,
+        new Map(),
+        fileUndocumentedPropNames,
+        interfaceMessageProps,
+        moduleDirectStringFunctions,
+        fileModuleDirectStringAliases,
+        moduleRenderedStringBindings,
+        new Map(),
+        moduleMessageObjectInitializers,
+        moduleMessageArrayInitializers,
+        moduleBindings,
+        moduleFunctions,
+        fileName,
+        source,
+        violations,
+      );
+    }
+
+    if (functionLikeDepth === 0 && ts.isExportAssignment(node) && !node.isExportEquals) {
+      checkRenderedLocalReferences(
+        node.expression,
+        new Map(),
+        fileUndocumentedPropNames,
+        interfaceMessageProps,
+        moduleDirectStringFunctions,
+        fileModuleDirectStringAliases,
+        moduleRenderedStringBindings,
+        new Map(),
+        moduleMessageObjectInitializers,
+        moduleMessageArrayInitializers,
+        moduleBindings,
+        moduleFunctions,
+        fileName,
+        source,
+        violations,
+      );
     }
 
     if (ts.isJsxText(node) && hasLetter(node.text)) {
@@ -3801,7 +3959,65 @@ describe("shipped message lint", () => {
     );
   });
 
+  it("notes fix round 16 member slices and module expression statements", () => {
+    const memberSliceSilent = [
+      'function show(row: { id: string; caption: string }) { return <span>{row.caption}</span>; }',
+      'export function E(row = { id: "Save changes", caption: "1" }) { return show(row); }',
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", memberSliceSilent)).toEqual([]);
+
+    const bracketCaption = [
+      'function show(row: { caption: string }) { return <span>{row["caption"]}</span>; }',
+      'export function E(row = { caption: "Save changes" }) { return show(row); }',
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", bracketCaption)).toEqual([
+      expect.objectContaining({ kind: "rendered-local", text: "row" }),
+    ]);
+
+    const modeLength = ['export function f(mode = "strict mode") { return <span>{mode.length}</span>; }', ""].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", modeLength)).toEqual([]);
+
+    const propertyCaption = [
+      'function show(row: { caption: string }) { return <span>{row.caption}</span>; }',
+      'export function E(row = { caption: "Save changes" }) { return show(row); }',
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", propertyCaption)).toEqual([
+      expect.objectContaining({ kind: "rendered-local", text: "row" }),
+    ]);
+
+    const moduleExpressionStatement = [
+      'import { createElement } from "react";',
+      'createElement("span", { children: "Save changes" });',
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.ts", moduleExpressionStatement)).toEqual([
+      expect.objectContaining({ kind: "jsx-text", text: "Save changes" }),
+    ]);
+
+    const moduleExportDefault = [
+      'import { createElement } from "react";',
+      'export default createElement("span", { children: "Save changes" });',
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.ts", moduleExportDefault)).toEqual([
+      expect.objectContaining({ kind: "jsx-text", text: "Save changes" }),
+    ]);
+
+    const moduleCreateElementChild = [
+      'import { createElement } from "react";',
+      'createElement("span", null, "Save changes");',
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.ts", moduleCreateElementChild)).toEqual([
+      expect.objectContaining({ kind: "jsx-text", text: "Save changes" }),
+    ]);
+  });
+
   it("finds no shipped message literals under publisher src/web", () => {
     expect(scanShippedMessageTree(SRC_ROOT)).toEqual([]);
   });
+
 });
