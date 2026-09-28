@@ -2168,6 +2168,360 @@ function isGlobalConsoleCallee(call: ts.CallExpression, source: ts.SourceFile): 
   return objectLiteralInitializerForName("console", calleeExpr) === undefined;
 }
 
+const FILE_DECLARED_BINDINGS_CACHE = new WeakMap<ts.SourceFile, Set<string>>();
+
+function fileDeclaredBindingNames(sourceFile: ts.SourceFile): Set<string> {
+  const cached = FILE_DECLARED_BINDINGS_CACHE.get(sourceFile);
+  if (cached !== undefined) return cached;
+  const names = new Set<string>();
+  function noteBindingName(name: ts.BindingName): void {
+    if (ts.isIdentifier(name)) {
+      names.add(name.text);
+      return;
+    }
+    for (const element of name.elements) {
+      if (ts.isOmittedExpression(element)) continue;
+      noteBindingName(element.name);
+    }
+  }
+  function visit(node: ts.Node): void {
+    if (ts.isImportDeclaration(node)) {
+      const clause = node.importClause;
+      if (clause !== undefined) {
+        if (clause.name !== undefined) names.add(clause.name.text);
+        const bindings = clause.namedBindings;
+        if (bindings !== undefined) {
+          if (ts.isNamespaceImport(bindings)) {
+            names.add(bindings.name.text);
+          } else {
+            for (const element of bindings.elements) names.add(element.name.text);
+          }
+        }
+      }
+    } else if (
+      (ts.isFunctionDeclaration(node) || ts.isClassDeclaration(node)) &&
+      node.name !== undefined
+    ) {
+      names.add(node.name.text);
+    } else if (ts.isVariableDeclaration(node)) {
+      noteBindingName(node.name);
+    } else if (
+      (ts.isFunctionDeclaration(node) ||
+        ts.isFunctionExpression(node) ||
+        ts.isArrowFunction(node) ||
+        ts.isMethodDeclaration(node)) &&
+      node.parameters !== undefined
+    ) {
+      for (const parameter of node.parameters) noteBindingName(parameter.name);
+    }
+    ts.forEachChild(node, visit);
+  }
+  visit(sourceFile);
+  FILE_DECLARED_BINDINGS_CACHE.set(sourceFile, names);
+  return names;
+}
+
+function isCapitalizedIdentifierName(name: string): boolean {
+  const first = name.charAt(0);
+  return first !== "" && first === first.toUpperCase() && first !== first.toLowerCase();
+}
+
+// Global builtins are not shipped-message renderers: a call through them
+// (`Number(value)`, `Object.values(x)`, `Buffer.byteLength(css)`) keeps its
+// argument silent, the same way the global `console` object does.
+const GLOBAL_BUILTIN_CALLEES = new Set([
+  "Number",
+  "String",
+  "Boolean",
+  "BigInt",
+  "Symbol",
+  "Object",
+  "Array",
+  "Math",
+  "JSON",
+  "Reflect",
+  "RegExp",
+  "Date",
+  "Error",
+  "TypeError",
+  "RangeError",
+  "Map",
+  "Set",
+  "WeakMap",
+  "WeakSet",
+  "Promise",
+  "Buffer",
+  "parseInt",
+  "parseFloat",
+  "isNaN",
+  "isFinite",
+  "encodeURI",
+  "encodeURIComponent",
+  "decodeURI",
+  "decodeURIComponent",
+  "structuredClone",
+  "console",
+  "process",
+  "globalThis",
+]);
+
+function calleeIsGlobalBuiltin(calleeExpr: ts.Expression): boolean {
+  const rootName = expressionRootIdentifier(calleeExpr);
+  return rootName !== null && GLOBAL_BUILTIN_CALLEES.has(rootName);
+}
+
+function expressionRootIdentifier(expression: ts.Expression): string | null {
+  let current = unwrapExpression(expression);
+  while (true) {
+    if (ts.isIdentifier(current)) return current.text;
+    if (
+      ts.isPropertyAccessExpression(current) ||
+      ts.isElementAccessExpression(current) ||
+      ts.isNonNullExpression(current) ||
+      ts.isParenthesizedExpression(current) ||
+      ts.isCallExpression(current)
+    ) {
+      current = unwrapExpression(current.expression);
+      continue;
+    }
+    return null;
+  }
+}
+
+function indirectCalleeMayRender(
+  call: ts.CallExpression,
+  sourceFile: ts.SourceFile,
+  currentParameters: ts.ParameterDeclaration[] | undefined,
+): boolean {
+  const calleeExpr = unwrapExpression(call.expression);
+  // A callee whose own expression is a call result (`HOC(show)(caption)`,
+  // `getUi().show(caption)`) cannot be resolved in-file and may render.
+  if (ts.isCallExpression(calleeExpr)) return true;
+  const rootName = expressionRootIdentifier(calleeExpr);
+  if (rootName === null) return true;
+  let rootIsParameter = false;
+  if (currentParameters !== undefined) {
+    for (const parameter of currentParameters) {
+      if (bindingPatternLocalNames(parameter.name).includes(rootName)) {
+        rootIsParameter = true;
+        break;
+      }
+    }
+  }
+  const declared = fileDeclaredBindingNames(sourceFile);
+  if (ts.isPropertyAccessExpression(calleeExpr) || ts.isElementAccessExpression(calleeExpr)) {
+    // A member or element callee rooted in a value this file declares as a
+    // plain local (a findings buffer, an unchecked list) is not a renderer.
+    if (rootIsParameter) return ts.isElementAccessExpression(calleeExpr);
+    if (declared.has(rootName)) return false;
+    return true;
+  }
+  if (rootIsParameter) return true;
+  if (declared.has(rootName)) return false;
+  return true;
+}
+
+function resolveIndirectCalleeFunctionLike(
+  call: ts.CallExpression,
+  sourceFile: ts.SourceFile,
+  currentParameters: ts.ParameterDeclaration[] | undefined,
+): ts.FunctionLikeDeclaration | undefined {
+  let callee = calleeFunctionLikeFromCall(call, sourceFile);
+  if (callee === undefined) {
+    const calleeExpr = unwrapExpression(call.expression);
+    if (ts.isIdentifier(calleeExpr) && currentParameters !== undefined) {
+      const defaultInit = parameterDefaultInitializerForLocalName(calleeExpr.text, currentParameters);
+      if (defaultInit !== undefined) {
+        const init = unwrapExpression(defaultInit);
+        if (ts.isIdentifier(init)) {
+          callee = resolveCallableFunctionLike(init.text, sourceFile);
+        }
+      }
+    }
+  }
+  return callee;
+}
+
+function argumentSliceRendersShippedCopy(
+  slice: ts.Expression,
+  sourceFile: ts.SourceFile,
+  parameterSearchParameters: ts.ParameterDeclaration[],
+  moduleBindings: Set<string>,
+  moduleFunctions: Set<string>,
+  moduleDirectStringFunctions: Set<string>,
+  moduleDirectStringAliases: Map<string, string>,
+  moduleMessageObjectInitializers: Map<string, ts.Expression>,
+  moduleMessageArrayInitializers: Map<string, ts.Expression>,
+  literalLocalInitializers: Map<string, ts.Expression>,
+): boolean {
+  const unwrapped = unwrapExpression(slice);
+  // A bare literal is not a reference to a shipped message on its own. The
+  // scanner only follows a value that already reaches a render elsewhere (a
+  // documented parameter default, a rendered literal local, a call result, a
+  // module binding), so an argument that merely happens to be a string with
+  // letters -- an internal rule name, a diagnostic sentence -- stays silent.
+  if (
+    ts.isStringLiteral(unwrapped) ||
+    ts.isNoSubstitutionTemplateLiteral(unwrapped) ||
+    ts.isNumericLiteral(unwrapped)
+  ) {
+    return false;
+  }
+  if (renderSliceExpressionIsShipped(
+    slice,
+    moduleBindings,
+    moduleFunctions,
+    moduleDirectStringFunctions,
+    moduleDirectStringAliases,
+    parameterSearchParameters,
+    sourceFile,
+    moduleMessageObjectInitializers,
+    moduleMessageArrayInitializers,
+    new Set<string>(),
+    literalLocalInitializers,
+  )) {
+    return true;
+  }
+  if (!ts.isIdentifier(unwrapped)) return false;
+  const parameterDefault = parameterDefaultExpressionForName(
+    unwrapped.text,
+    parameterSearchParameters,
+    sourceFile,
+    moduleMessageObjectInitializers,
+    moduleMessageArrayInitializers,
+  );
+  return (
+    parameterDefault !== undefined &&
+    parameterDefaultIsShippedCopy(
+      parameterDefault,
+      moduleBindings,
+      moduleFunctions,
+      moduleDirectStringFunctions,
+      moduleDirectStringAliases,
+    )
+  );
+}
+
+function argumentObjectRendersShippedCopy(
+  object: ts.ObjectLiteralExpression,
+  sourceFile: ts.SourceFile,
+  parameterSearchParameters: ts.ParameterDeclaration[],
+  moduleBindings: Set<string>,
+  moduleFunctions: Set<string>,
+  moduleDirectStringFunctions: Set<string>,
+  moduleDirectStringAliases: Map<string, string>,
+  moduleMessageObjectInitializers: Map<string, ts.Expression>,
+  moduleMessageArrayInitializers: Map<string, ts.Expression>,
+  literalLocalInitializers: Map<string, ts.Expression>,
+): boolean {
+  for (const property of object.properties) {
+    let value: ts.Expression | undefined;
+    if (ts.isShorthandPropertyAssignment(property)) {
+      value = property.name;
+    } else if (ts.isPropertyAssignment(property)) {
+      value = unwrapExpression(property.initializer);
+    } else if (ts.isSpreadAssignment(property)) {
+      value = unwrapExpression(property.expression);
+    }
+    if (value === undefined) continue;
+    if (ts.isObjectLiteralExpression(value)) {
+      if (
+        argumentObjectRendersShippedCopy(
+          value,
+          sourceFile,
+          parameterSearchParameters,
+          moduleBindings,
+          moduleFunctions,
+          moduleDirectStringFunctions,
+          moduleDirectStringAliases,
+          moduleMessageObjectInitializers,
+          moduleMessageArrayInitializers,
+          literalLocalInitializers,
+        )
+      ) {
+        return true;
+      }
+      continue;
+    }
+    if (
+      directArgumentRenderSlices(value).some((slice) =>
+        argumentSliceRendersShippedCopy(
+          slice,
+          sourceFile,
+          parameterSearchParameters,
+          moduleBindings,
+          moduleFunctions,
+          moduleDirectStringFunctions,
+          moduleDirectStringAliases,
+          moduleMessageObjectInitializers,
+          moduleMessageArrayInitializers,
+          literalLocalInitializers,
+        ),
+      )
+    ) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function argumentExpressionRendersShippedCopy(
+  argument: ts.Expression,
+  sourceFile: ts.SourceFile,
+  currentParameters: ts.ParameterDeclaration[] | undefined,
+  parameterSearchParameters: ts.ParameterDeclaration[],
+  literalLocalInitializers: Map<string, ts.Expression>,
+  moduleBindings: Set<string>,
+  moduleFunctions: Set<string>,
+  moduleDirectStringFunctions: Set<string>,
+  moduleDirectStringAliases: Map<string, string>,
+  moduleMessageObjectInitializers: Map<string, ts.Expression>,
+  moduleMessageArrayInitializers: Map<string, ts.Expression>,
+): boolean {
+  // Only a local initializer is substituted here. A documented parameter
+  // default stays as the identifier so argumentSliceRendersShippedCopy can
+  // recognise it as a rendered default rather than as a bare literal, and a
+  // parameter that merely carries a renderer is left alone (a call through it
+  // is not the message).
+  let argumentValue = argument;
+  const unwrapped = unwrapExpression(argument);
+  if (ts.isIdentifier(unwrapped)) {
+    const localInit = literalLocalInitializers.get(unwrapped.text);
+    if (localInit !== undefined) {
+      argumentValue = localInit;
+    }
+  }
+  const resolved = unwrapExpression(argumentValue);
+  if (ts.isObjectLiteralExpression(resolved)) {
+    return argumentObjectRendersShippedCopy(
+      resolved,
+      sourceFile,
+      parameterSearchParameters,
+      moduleBindings,
+      moduleFunctions,
+      moduleDirectStringFunctions,
+      moduleDirectStringAliases,
+      moduleMessageObjectInitializers,
+      moduleMessageArrayInitializers,
+      literalLocalInitializers,
+    );
+  }
+  return directArgumentRenderSlices(argumentValue).some((slice) =>
+    argumentSliceRendersShippedCopy(
+      slice,
+      sourceFile,
+      parameterSearchParameters,
+      moduleBindings,
+      moduleFunctions,
+      moduleDirectStringFunctions,
+      moduleDirectStringAliases,
+      moduleMessageObjectInitializers,
+      moduleMessageArrayInitializers,
+      literalLocalInitializers,
+    ),
+  );
+}
+
 function indirectCallRendersArgument(
   call: ts.CallExpression,
   argIndex: number,
@@ -2184,22 +2538,34 @@ function indirectCallRendersArgument(
   moduleMessageArrayInitializers: Map<string, ts.Expression>,
 ): boolean {
   if (isCreateElementCall(call)) return argIndex >= 2;
+  // Only the global `console` object stays silent without resolution.
   if (isGlobalConsoleCallee(call, sourceFile)) return false;
-  const calleeExpr = unwrapExpression(call.expression);
-  let callee = calleeFunctionLikeFromCall(call, sourceFile);
-  if (callee === undefined && ts.isIdentifier(calleeExpr) && currentParameters !== undefined) {
-    const defaultInit = parameterDefaultInitializerForLocalName(calleeExpr.text, currentParameters);
-    if (defaultInit !== undefined) {
-      const init = unwrapExpression(defaultInit);
-      if (ts.isIdentifier(init)) {
-        callee = resolveCallableFunctionLike(init.text, sourceFile);
-      }
+  const callee = resolveIndirectCalleeFunctionLike(call, sourceFile, currentParameters);
+  // A callee that cannot be resolved in-file is analysed conservatively when it
+  // is a callee whose value could carry a render: a capitalized component, or a
+  // callee rooted in a parameter or a file binding this file does not resolve
+  // as a function. A bare literal or a construction this file declares cannot
+  // render keeps the argument silent, so an internal diagnostic message that
+  // happens to be spelled in English is not read as a shipped message.
+  if (callee === undefined) {
+    if (calleeIsGlobalBuiltin(call.expression)) return false;
+    if (!indirectCalleeMayRender(call, sourceFile, currentParameters)) {
+      return false;
     }
+    return argumentExpressionRendersShippedCopy(
+      argument,
+      sourceFile,
+      currentParameters,
+      parameterSearchParameters,
+      literalLocalInitializers,
+      moduleBindings,
+      moduleFunctions,
+      moduleDirectStringFunctions,
+      moduleDirectStringAliases,
+      moduleMessageObjectInitializers,
+      moduleMessageArrayInitializers,
+    );
   }
-  // A callee that cannot be resolved in-file keeps the previous behaviour:
-  // the argument is not analysed, so an unknown callee never decides from its
-  // name or shape. Only the global `console` object is exempted explicitly.
-  if (callee === undefined) return false;
   const param = callee.parameters[argIndex];
   if (param === undefined) return false;
   const boundLocals = bindingPatternLocalNames(param.name);
@@ -4478,12 +4844,41 @@ function analyzeRenderedLocals(
           const unwrappedArgument = unwrapExpression(argument);
           if (ts.isObjectLiteralExpression(unwrappedArgument)) {
             for (const property of unwrappedArgument.properties) {
-              if (!ts.isPropertyAssignment(property)) continue;
-              const initializer = unwrapExpression(property.initializer);
+              let initializer: ts.Expression | undefined;
+              if (ts.isShorthandPropertyAssignment(property)) {
+                initializer = property.name;
+              } else if (ts.isPropertyAssignment(property)) {
+                initializer = unwrapExpression(property.initializer);
+              } else {
+                continue;
+              }
+              if (initializer === undefined) continue;
               const literal = staticLiteral(initializer);
               if (literal !== null && hasLetter(literal)) {
                 indirectArgumentViolations.push({ line, kind: "jsx-text", text: literal });
                 continue;
+              }
+              if (ts.isIdentifier(unwrapExpression(initializer))) {
+                const name = unwrapExpression(initializer).text;
+                const tracked =
+                  indirectCallArgumentIsTracked(name) ||
+                  parameterDefaultIsShippedCopy(
+                    parameterDefaultExpressionForName(
+                      name,
+                      parameterDefaultSearchParameters,
+                      source,
+                      moduleMessageObjectInitializers,
+                      moduleMessageArrayInitializers,
+                    ) ?? initializer,
+                    moduleBindings,
+                    moduleFunctions,
+                    moduleDirectStringFunctions,
+                    fileModuleDirectStringAliases,
+                  );
+                if (tracked) {
+                  indirectArgumentViolations.push({ line, kind: "rendered-local", text: name });
+                  continue;
+                }
               }
               if (!ts.isTemplateExpression(initializer)) continue;
               const shippedSlice = argumentRenderOperands(initializer)
@@ -9011,6 +9406,128 @@ describe("shipped message lint", () => {
       "",
     ].join("\n");
     expect(findShippedMessageViolations("Example.tsx", consoleIndex)).toEqual([]);
+  });
+
+  it("notes fix round 31 unresolved-callee arguments conservatively", () => {
+    // 1. A rendering helper in another module: the callee is not in-file.
+    const externalShowArgument = [
+      'export function Example(caption = "Save changes") { return externalShow(caption); }',
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", externalShowArgument)).toEqual([
+      expect.objectContaining({ kind: "rendered-local", text: "caption" }),
+    ]);
+
+    // 2. The same external callee with a `+` operand.
+    const externalShowPlusOperand = [
+      'export function Example(caption = "Save changes") { return externalShow(caption + ""); }',
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", externalShowPlusOperand)).toEqual([
+      expect.objectContaining({ kind: "rendered-local", text: "caption" }),
+    ]);
+
+    // 3. An unresolved namespace member callee.
+    const externalNamespaceMember = [
+      'export function Example(caption = "Save changes") { return ns.external.show(caption); }',
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", externalNamespaceMember)).toEqual([
+      expect.objectContaining({ kind: "rendered-local", text: "caption" }),
+    ]);
+
+    // 4. A higher-order callee whose value is not in the file.
+    const higherOrderCallee = [
+      "function show(value: string) { return <span>{value}</span>; }",
+      'export function Example(caption = "Save changes") { return HOC(show)(caption); }',
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", higherOrderCallee)).toEqual([
+      expect.objectContaining({ kind: "rendered-local", text: "caption" }),
+    ]);
+
+    // 5. A callee held on a parameter.
+    const parameterMemberCallee = [
+      'export function Example(caption = "Save changes") { return props.render(caption); }',
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", parameterMemberCallee)).toEqual([
+      expect.objectContaining({ kind: "rendered-local", text: "caption" }),
+    ]);
+
+    // 6. A renderer arriving as a parameter.
+    const parameterRendererCallee = [
+      'export function Example(renderer: (v: string) => unknown, caption = "Save changes") { return renderer(caption); }',
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", parameterRendererCallee)).toEqual([
+      expect.objectContaining({ kind: "rendered-local", text: "caption" }),
+    ]);
+
+    // 7. A rendering callee carried in a passed object literal.
+    const objectLiteralCalleeCarrier = [
+      'export function Example(caption = "Save changes") { return renderMessage({ render: externalShow, caption }); }',
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", objectLiteralCalleeCarrier)).toEqual([
+      expect.objectContaining({ kind: "rendered-local", text: "caption" }),
+    ]);
+
+    // 8. A rendered call result.
+    const renderedCallResult = [
+      'export function Example(caption = "Save changes") { return <span>{externalShow(caption)}</span>; }',
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", renderedCallResult)).toEqual([
+      expect.objectContaining({ kind: "rendered-local", text: "caption" }),
+    ]);
+
+    // 9. An unresolved capitalized callee.
+    const unresolvedCapitalizedCallee = [
+      'export function Example(caption = "Save changes") { return ExternalShow(caption); }',
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", unresolvedCapitalizedCallee)).toEqual([
+      expect.objectContaining({ kind: "rendered-local", text: "caption" }),
+    ]);
+    expect(
+      findShippedMessageViolations(
+        "Example.tsx",
+        unresolvedCapitalizedCallee.replace("ExternalShow(caption)", "Render(caption)"),
+      ),
+    ).toEqual([expect.objectContaining({ kind: "rendered-local", text: "caption" })]);
+
+    // 10. Unresolved member or element callees rooted in a call result or a parameter.
+    const memberCalleeOnCallResult = [
+      'export function Example(caption = "Save changes") { return getUi().show(caption); }',
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", memberCalleeOnCallResult)).toEqual([
+      expect.objectContaining({ kind: "rendered-local", text: "caption" }),
+    ]);
+    const elementCalleeOnParameter = [
+      'export function Example(handlers: unknown[], caption = "Save changes") { return handlers[0](caption); }',
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", elementCalleeOnParameter)).toEqual([
+      expect.objectContaining({ kind: "rendered-local", text: "caption" }),
+    ]);
+    const elementStringCalleeOnParameter = [
+      'export function Example(ui: Record<string, unknown>, caption = "Save changes") { return ui["show"](caption); }',
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", elementStringCalleeOnParameter)).toEqual([
+      expect.objectContaining({ kind: "rendered-local", text: "caption" }),
+    ]);
+
+    // 11. A rendering member callee on an external object notes like the local one.
+    const externalRenderersMember = [
+      'export function Example(caption = "Save changes") { return renderers.show(caption); }',
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", externalRenderersMember)).toEqual([
+      expect.objectContaining({ kind: "rendered-local", text: "caption" }),
+    ]);
   });
 
 });
