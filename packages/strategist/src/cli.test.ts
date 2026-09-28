@@ -934,6 +934,12 @@ describe("main — brand-coverage — default brand/brand.css", () => {
     expect(logged).not.toContain("<derivations-file> <brandable-slots-file>");
   });
 
+  it("the brand-coverage help names brand/brand.css as a source of the slot names", () => {
+    expect(main(["brand-coverage", "--help"])).toBe(0);
+    const logged = vi.mocked(console.log).mock.calls.map((c) => String(c[0])).join("\n");
+    expect(logged).toContain("slot names brandable-slots-file or brand/brand.css declares");
+  });
+
   it("an explicit brandable-slots-file still wins over brand/brand.css", () => {
     writeBrandCss(":root { --color-surface: #000; }");
     const derivationsFile = writeDerivations(strategyDir, [derivation("Precise", ["--color-accent-primary"])]);

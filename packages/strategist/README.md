@@ -636,10 +636,10 @@ writes it to a file this subcommand reads).
 When `brandable-slots-file` is omitted, the subcommand reads
 `brand/brand.css` under the working directory, takes every custom property
 declared there as a brandable slot, and prints `Brand stylesheet: <path>` so
-the report names the stylesheet it proved. The path follows the repository
-layout in clossys/foundry#1581. The overlay bytes belong to Designer, and the
-layout requires that `clossys/strategist/` hold direction only, with no hex
-values or type pairings; this package does not yet enforce that rule. A
+the report names the stylesheet it proved.
+The `brand/brand.css` default path comes from clossys/foundry#1583. Rule:
+`clossys/strategist/` holds direction only, with no hex values or type
+pairings. This package does not yet enforce it. A
 missing `brand/brand.css` is a usage error, and a stylesheet declaring no
 custom properties is indeterminate (exit `2`).
 

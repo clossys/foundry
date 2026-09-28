@@ -107,7 +107,7 @@ Options:
   --surfaces <path>      Designer-facing surface file that must contain do-not language (repeatable).
   --help                 Print this message and exit 0.
 
-Checks, in both directions, whether derivations-file fully accounts for the slot names brandable-slots-file declares. Full N/N slot coverage is necessary, not sufficient for keep — Designer-facing surfaces must still carry explicit do-not language when --surfaces is declared.
+Checks, in both directions, whether derivations-file fully accounts for the slot names brandable-slots-file or brand/brand.css declares. Full N/N slot coverage is necessary, not sufficient for keep — Designer-facing surfaces must still carry explicit do-not language when --surfaces is declared.
 
 Exit codes: 0 = satisfied, 1 = violated (a real coverage gap in either direction, or a surface missing do-not language), 2 = indeterminate (could not run: bad input, missing/unreadable/unparseable/invalid file, zero brandable slots supplied, zero derivations supplied, or a declared --surfaces path is missing).
 `;

@@ -33,7 +33,7 @@ If `node_modules/@clossys/strategist` is present (or this package's bins are on 
 - Assessment CLI: `strategist-rate-check`
 - Additional gate CLI: `strategist-check`
 
-`strategist-check brand-coverage` reporting every brandable slot owned is necessary, not sufficient — full N/N slot coverage is not keep when Designer-facing surfaces have no explicit do-not language; declare those surfaces with `--surfaces`. Without a brandable-slots file it proves the custom properties declared in `brand/brand.css`, the single Designer overlay, and names that stylesheet in its report; the overlay bytes belong to Designer, and the layout requires `clossys/strategist/` to hold direction only, with no hex values or type pairings (the package does not yet enforce that).
+`strategist-check brand-coverage` reporting every brandable slot owned is necessary, not sufficient — full N/N slot coverage is not keep when Designer-facing surfaces have no explicit do-not language; declare those surfaces with `--surfaces`. Without a brandable-slots file it proves the custom properties declared in `brand/brand.css`, the single Designer overlay, and names that stylesheet in its report. The `brand/brand.css` default path comes from clossys/foundry#1583. Rule: `clossys/strategist/` holds direction only, with no hex values or type pairings. This package does not yet enforce it.
 
 Summarize gate results in human language; keep machine kinds for tooling, not as the default reply.
 

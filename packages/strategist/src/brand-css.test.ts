@@ -38,6 +38,30 @@ describe("extractBrandCssSlots", () => {
     expect(extractBrandCssSlots(css)).toEqual(["--b", "--c"]);
   });
 
+  it("collects non-ASCII and escaped custom-property names", () => {
+    const css = ":root { --\u00fcmlaut: 1; --a\\:b: 2; --caf\u00e9-\u30c6: 3; --plain_1: 4; }";
+    expect(extractBrandCssSlots(css)).toEqual(["--\u00fcmlaut", "--a\\:b", "--caf\u00e9-\u30c6", "--plain_1"]);
+  });
+
+  it("does not count a name that follows an opening parenthesis, with or without a space", () => {
+    const css = [
+      "@supports (--a: 1) { :root { --b: 2; } }",
+      "@supports ( --c: 1 ) { :root { --d: 2; } }",
+      "@container style(--e: x) { .x { color: red; } }",
+      "@container style(  --f: x ) { .x { color: red; } }",
+      "@container style(\n  --g: x) { .x { color: red; } }",
+    ].join("\n");
+    expect(extractBrandCssSlots(css)).toEqual(["--b", "--d"]);
+  });
+
+  it("leaves an unterminated comment as text, so declarations after it are still collected", () => {
+    expect(extractBrandCssSlots(":root { --a: 1; } /* never closed\n:root { --b: 2; }")).toEqual(["--a", "--b"]);
+  });
+
+  it("leaves an unterminated string as text, so declarations after it are still collected", () => {
+    expect(extractBrandCssSlots(':root { --a: 1; content: "never closed; --b: 2; }')).toEqual(["--a", "--b"]);
+  });
+
   it("returns an empty list for a stylesheet declaring no custom properties", () => {
     expect(extractBrandCssSlots("body { color: red; }")).toEqual([]);
     expect(extractBrandCssSlots("")).toEqual([]);
