@@ -113,10 +113,21 @@ const PAINT_ATTR_RE = /(?<![\w-])(?:fill|stroke)\s*=\s*("([^"]*)"|'([^']*)')/g;
  * root tag: unlike `viewBox`/`data-clear-space` (declared root metadata,
  * see `rootStartTag`), the colour that actually renders can come from any
  * nested element.
+ *
+ * Paint inside a `<mask>…</mask>` element is skipped: mask content is
+ * coverage geometry (its luminance decides where the masked content shows),
+ * never a colour that reaches the screen. `identity-kit.ts`'s `recolorSvg`
+ * knocks a two-tone mark out with `#fff`/`#000` masks (#1537); counting
+ * those as rendered colours would fail a `currentColor`-only `mono`
+ * variant for paint nobody sees. Stripping is textual (first `</mask>`
+ * after each `<mask`), matching this module's regex-level reading
+ * elsewhere, not a parse — a nested `<mask>` is not a shape this package
+ * emits.
  */
 function extractRenderedColors(svg: string): readonly string[] {
   const colors = new Set<string>();
-  for (const match of svg.matchAll(PAINT_ATTR_RE)) {
+  const visible = svg.replace(/<mask\b[\s\S]*?<\/mask\s*>/gi, "");
+  for (const match of visible.matchAll(PAINT_ATTR_RE)) {
     const value = match[2] ?? match[3] ?? "";
     if (value === "" || value === "none" || value === "transparent" || value === "currentColor") continue;
     colors.add(value);

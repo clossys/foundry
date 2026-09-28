@@ -4528,7 +4528,12 @@ fit the badge). For a GENERATED direction, `primary`/`mark` are
 ink-coloured (drawn via `currentColor` under a `color:` style set to the
 `ink` token); for an ADOPTED direction, `primary`/`mark` are the supplied
 SVG's own colours, unchanged — only `mono`/`light`/`dark`/`favicon`/
-`appIcon` are recoloured onto token colours in both cases.
+`appIcon` are recoloured onto token colours in both cases. A supplied mark
+with two or more distinct `fill`/`stroke` tones (and a root `viewBox`) is
+recoloured as a knockout rather than flattened: each tone is painted in the
+variant's single colour and masked out where the other tone paints, so the
+surface or badge shows through and the tones keep their contrast (tones are
+grouped by literal value, first-painted tone against the rest).
 
 **Four checks judge every direction**, mirroring the "package owns
 judgment, every check reports satisfied/violated/indeterminate" split this

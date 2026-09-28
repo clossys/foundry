@@ -433,23 +433,106 @@ function isSvgDocument(value: string): boolean {
  */
 const PAINT_ATTR_RE = /(?<![\w-])(fill|stroke)\s*=\s*("([^"]*)"|'([^']*)')/g;
 
+/** `true` for a paint value that paints nothing (`none`/`transparent`/empty) — never recoloured, never a tone. */
+function isNonPaint(value: string): boolean {
+  return value === "none" || value === "transparent" || value === "";
+}
+
 /**
- * Best-effort structural recolour: every `fill`/`stroke` PAINT ATTRIBUTE
- * value that is not `none`/`transparent`/empty is replaced with `color`.
- * Deliberately narrow — it does not reach into a `style="fill:#fff"` CSS
- * declaration or a `<style>` block, since either would require a real CSS
- * parser to rewrite safely. A supplied mark that paints exclusively
- * through inline `style` attributes will not recolour correctly here;
- * that limitation is why `adoptSuppliedMark`'s derived variants are a
- * starting point for review, not a guarantee.
+ * Rewrites every `fill`/`stroke` paint attribute whose trimmed value
+ * `replace` maps to a string, emitting it double-quoted; a value `replace`
+ * maps to `undefined` (and every non-paint value) is left byte-for-byte as
+ * written. `replacement` strings are written verbatim — callers escape.
+ */
+function substitutePaint(markup: string, replace: (value: string) => string | undefined): string {
+  return markup.replace(PAINT_ATTR_RE, (match, attr: string, _quoted: string, doubleQuoted: string | undefined, singleQuoted: string | undefined) => {
+    const value = (doubleQuoted ?? singleQuoted ?? "").trim();
+    if (isNonPaint(value)) return match;
+    const replacement = replace(value);
+    return replacement === undefined ? match : `${attr}="${replacement}"`;
+  });
+}
+
+/** 32-bit FNV-1a over UTF-16 code units, as 8 lowercase hex digits — a short, deterministic id suffix, not a security hash. */
+function fnv1a32Hex(value: string): string {
+  let hash = 0x811c9dc5;
+  for (let i = 0; i < value.length; i++) {
+    hash ^= value.charCodeAt(i);
+    hash = Math.imul(hash, 0x01000193);
+  }
+  return (hash >>> 0).toString(16).padStart(8, "0");
+}
+
+/**
+ * Best-effort structural recolour onto the single paint `color`.
+ *
+ * ONE TONE (or not a complete `<svg>` document, or no parseable root
+ * `viewBox` to bound a mask by): every `fill`/`stroke` PAINT ATTRIBUTE
+ * value that is not `none`/`transparent`/empty is replaced with `color` —
+ * nothing else changes.
+ *
+ * TWO OR MORE TONES (#1537): flattening every tone onto `color` would
+ * erase the contrast between them — a dark square carrying a light inner
+ * figure became one flat square. Instead the mark is recoloured as a
+ * KNOCKOUT: tone group A (the first-painted tone in document order) and
+ * group B (every other tone) are each painted in `color`, each masked out
+ * wherever the other group paints, so the surface (or `appIcon`'s badge)
+ * shows through where the tones overlap. The contrast between the tones
+ * becomes the contrast between `color` and whatever it sits on — the pair
+ * `identity-checks.ts`'s contrast check already judges. The result is the
+ * root start tag, a `<defs>` of two `<mask>`s (white coverage over the
+ * root `viewBox`, the other group painted `#000`), and two masked `<g>`
+ * copies of the inner markup; `color` is still the only visible paint,
+ * so a `currentColor` recolour keeps `mono`/`favicon` single-colour (mask
+ * content is coverage, not rendered colour — `extractRenderedColors`
+ * skips it). Mask ids are `recolor-` plus a hash of `svg` and `color`:
+ * deterministic, and distinct across colour variants of the same mark.
+ *
+ * Limits, all deliberate: tones are grouped by LITERAL paint value
+ * (`#fff` and `white` are two tones), and only as "first-painted tone vs
+ * the rest", so a three-tone mark keeps one boundary, not every one; ids
+ * inside the supplied mark are duplicated across the four copies; paint
+ * inherited or defaulted without an attribute is neither a tone nor
+ * recoloured. It does not reach into a `style="fill:#fff"` CSS declaration
+ * or a `<style>` block, since either would require a real CSS parser to
+ * rewrite safely — a supplied mark that paints exclusively through inline
+ * `style` attributes will not recolour correctly here. Those limitations
+ * are why `adoptSuppliedMark`'s derived variants are a starting point for
+ * review, not a guarantee.
  */
 export function recolorSvg(svg: string, color: string): string {
   const escapedColor = escapeXml(color);
-  return svg.replace(PAINT_ATTR_RE, (match, attr: string, _quoted: string, doubleQuoted: string | undefined, singleQuoted: string | undefined) => {
-    const value = doubleQuoted ?? singleQuoted ?? "";
-    if (value === "none" || value === "transparent" || value === "") return match;
-    return `${attr}="${escapedColor}"`;
-  });
+  const tones: string[] = [];
+  for (const match of svg.matchAll(PAINT_ATTR_RE)) {
+    const value = (match[3] ?? match[4] ?? "").trim();
+    if (!isNonPaint(value) && !tones.includes(value)) tones.push(value);
+  }
+  const rootViewBox = isSvgDocument(svg) ? rootStartTag(svg).match(/\bviewBox\s*=\s*(?:"([^"]*)"|'([^']*)')/i) : null;
+  const box = rootViewBox ? parseViewBoxBox(rootViewBox[1] ?? rootViewBox[2] ?? "") : undefined;
+  if (tones.length < 2 || box === undefined) {
+    return svg.replace(PAINT_ATTR_RE, (match, attr: string, _quoted: string, doubleQuoted: string | undefined, singleQuoted: string | undefined) => {
+      const value = doubleQuoted ?? singleQuoted ?? "";
+      if (isNonPaint(value)) return match;
+      return `${attr}="${escapedColor}"`;
+    });
+  }
+
+  const toneA = tones[0]!;
+  const inner = innerMarkupOf(svg);
+  const layerA = substitutePaint(inner, (v) => (v === toneA ? escapedColor : "none"));
+  const layerB = substitutePaint(inner, (v) => (v === toneA ? "none" : escapedColor));
+  const maskForA = substitutePaint(inner, (v) => (v === toneA ? "none" : "#000"));
+  const maskForB = substitutePaint(inner, (v) => (v === toneA ? "#000" : "none"));
+
+  const region = `x="${round4(box.minX)}" y="${round4(box.minY)}" width="${round4(box.width)}" height="${round4(box.height)}"`;
+  const id = `recolor-${fnv1a32Hex(`${svg}\u0000${color}`)}`;
+  const mask = (suffix: string, content: string): string =>
+    `<mask id="${id}-${suffix}" maskUnits="userSpaceOnUse" ${region}><rect ${region} fill="#fff" />${content}</mask>`;
+
+  return (
+    `${rootStartTag(svg)}<defs>${mask("a", maskForA)}${mask("b", maskForB)}</defs>` +
+    `<g mask="url(#${id}-a)">${layerA}</g><g mask="url(#${id}-b)">${layerB}</g></svg>`
+  );
 }
 
 function innerMarkupOf(svg: string): string {

@@ -142,6 +142,30 @@ describe("recolorSvg", () => {
     const svg = "<svg><path fill = '#fff' data-fill=\"#000\" stroke='none' /></svg>";
     expect(recolorSvg(svg, "red")).toBe('<svg><path fill="red" data-fill="#000" stroke=\'none\' /></svg>');
   });
+
+  const TWO_TONE = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect width="24" height="24" fill="#1a1a1a" /><path d="M8 8h8v8H8z" fill="#f5f5f5" stroke="none" /></svg>';
+
+  it("recolours a two-tone document as a knockout: two masks, and only the target colour or none as paint outside them (issue #1537)", () => {
+    const out = recolorSvg(TWO_TONE, "currentColor");
+    expect(out.startsWith('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">')).toBe(true);
+    expect(out.endsWith("</svg>")).toBe(true);
+    const masks = out.match(/<mask\b[\s\S]*?<\/mask>/g) ?? [];
+    expect(masks).toHaveLength(2);
+    for (const mask of masks) expect(mask).toContain('<rect x="0" y="0" width="24" height="24" fill="#fff" />');
+    const ids = [...out.matchAll(/<mask id="([^"]+)"/g)].map((m) => m[1]);
+    expect(ids).toEqual([expect.stringMatching(/^recolor-[0-9a-f]{8}-a$/), expect.stringMatching(/^recolor-[0-9a-f]{8}-b$/)]);
+    for (const id of ids) expect(out).toContain(`mask="url(#${id})"`);
+    const outside = out.replace(/<mask\b[\s\S]*?<\/mask>/g, "");
+    const paints = new Set([...outside.matchAll(/(?<![\w-])(?:fill|stroke)="([^"]*)"/g)].map((m) => m[1]));
+    expect([...paints].sort()).toEqual(["currentColor", "none"]);
+    expect(checkSingleColourLegibility(out).ok).toBe(true);
+  });
+
+  it("is deterministic for a two-tone document, and gives each colour variant its own mask ids", () => {
+    expect(recolorSvg(TWO_TONE, "red")).toBe(recolorSvg(TWO_TONE, "red"));
+    const idOf = (svg: string): string | undefined => svg.match(/<mask id="([^"]+)"/)?.[1];
+    expect(idOf(recolorSvg(TWO_TONE, "red"))).not.toBe(idOf(recolorSvg(TWO_TONE, "blue")));
+  });
 });
 
 describe("adoptSuppliedMark", () => {
