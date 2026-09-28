@@ -65,12 +65,12 @@
   },
   "devDependencies": {
     "@types/node": "^26.5.1",
-    "resend": "^6.19.0",
+    "resend": "^6.30.0",
     "typescript": "~6.0.0",
     "vitest": "^5.0.1"
   },
   "peerDependencies": {
-    "resend": "^6.19.0"
+    "resend": "^6.30.0"
   },
   "peerDependenciesMeta": {
     "resend": {
