@@ -22,6 +22,7 @@ import type {
   WorkspacePlan,
   WorkspacePlanAdopt,
   WorkspacePlanCreate,
+  WorkspacePlanResume,
   WorkspaceRefusal,
 } from "./types.js";
 import { composeSkills, SKILLS_MANIFEST_REL, type SkillCompositionResult } from "./skills.js";
@@ -242,8 +243,9 @@ function readHubAt(host: WorkspaceHost, path: string): HubDocument | undefined {
  * migration (#1171). `clean`: only the current path has a marker. `legacy`:
  * only the old path does; resume migrates it (see `migrateLegacyHubState`).
  * `indeterminate`: both paths carry a parseable marker; launcher never
- * merges them silently, so `planWorkspace` refuses instead. `none`: neither
- * path has one.
+ * merges them silently, so `planWorkspace` refuses instead (and, for a hub
+ * cloned from an empty directory, `classifyClonedHub` at apply time).
+ * `none`: neither path has one.
  */
 function locateHub(
   host: WorkspaceHost,
@@ -341,7 +343,13 @@ export function readLiveLauncherVersion(host: WorkspaceHost): string | undefined
   return readRegistryVersion(host, LAUNCHER_PACKAGE);
 }
 
-/** Collects GitHub owner, cwd shape, default-hub presence, and the public Advisor and Integrator versions. */
+/**
+ * Collects GitHub owner, cwd shape, default-hub presence, and the public
+ * Advisor and Integrator versions. Default-hub presence means only that
+ * `{owner}/workspace` exists on GitHub; its contents (marker, legacy marker,
+ * or none) are not observed here but classified after the clone, at apply
+ * time (#1585).
+ */
 
 export function observeWorkspace(host: WorkspaceHost): WorkspaceObservation {
   const cwd = host.cwd;
@@ -712,6 +720,9 @@ export function planWorkspace(
   const ownerResult = resolveOwner(observation, host);
   if ("action" in ownerResult) return ownerResult;
   if (observation.remoteDefaultHub && sameOwner(observation.remoteDefaultHub.owner, ownerResult.owner)) {
+    // A clone plan: whether `{owner}/workspace` is already a hub (marked, legacy-marked) or an existing
+    // repository to appoint (unmarked) is not known until it is cloned, so applyWorkspacePlan classifies
+    // it then (classifyClonedHub, #1585) and may take the adopt path instead of resuming.
     return {
       action: "resume",
       owner: observation.remoteDefaultHub.owner,
@@ -822,7 +833,9 @@ function engineVersionEntries(versions: HubEngineVersions): readonly (readonly [
  *
  * `appoint` writes the packed skeleton manifest when the hub has none,
  * refuses a manifest that is not a JSON object, names a dedicated
- * `{owner}/workspace` hub `@owner/workspace`, and rewrites the manifest.
+ * `{owner}/workspace` hub `@owner/workspace` only when its manifest has no
+ * own `name` (an existing name is never overwritten, #1585), and rewrites
+ * the manifest.
  * `resume` changes only the engine pins (never the `name`), writes the
  * manifest only when a pin changed, and leaves a missing or unreadable
  * manifest as it is (the health report then shows the engine pins as
@@ -888,7 +901,8 @@ function mergeHubEnginePins(
       });
     }
   }
-  if (mode === "appoint" && repository === DEFAULT_REPOSITORY_NAME) {
+  // Only a nameless manifest is named: an existing `name` is the project's own and is never overwritten (#1585).
+  if (mode === "appoint" && repository === DEFAULT_REPOSITORY_NAME && !Object.hasOwn(manifest, "name")) {
     manifest.name = `@${owner}/${repository}`;
   }
   if (mode === "resume" && changes.length === 0) return changes;
@@ -1717,9 +1731,10 @@ function finishHubApply(
  * Migrates a legacy `.clossys/` hub marker (and its sibling inventory, when
  * present) to `clossys/.state/`, then removes the old directory. Called only
  * when `locateHub` found the marker at the legacy path and nowhere else
- * (`plan.migrateFrom === "legacy"`); a hub with markers at both paths is
- * refused by `planWorkspace` before apply ever runs, so this never merges
- * two hub states.
+ * (`plan.migrateFrom === "legacy"`, or `classifyClonedHub` for a fresh
+ * clone); a hub with markers at both paths is refused by `planWorkspace`
+ * (or, for a clone, by `classifyClonedHub`) before anything is written, so
+ * this never merges two hub states.
  */
 function migrateLegacyHubState(host: WorkspaceHost, directory: string): HubHealthReport["migration"] {
   const markerRaw = host.readText(join(directory, LEGACY_WORKSPACE_MARKER_REL));
@@ -1745,9 +1760,78 @@ function engineVersionsOf(plan: WorkspacePlan): HubEngineVersions {
 }
 
 /**
+ * Classifies a freshly cloned `{owner}/workspace` (a resume plan with
+ * `clone: true`) by its marker, the way `planWorkspace` classifies a local
+ * checkout, and returns how apply must continue (#1585). It only reads: every
+ * refusal is thrown here, before apply writes anything into the clone.
+ *
+ * - both markers: refused, as `planWorkspace` refuses them locally;
+ * - a marker (current or legacy) for another owner: refused;
+ * - only the legacy marker: resume, migrating it;
+ * - only the current marker: resume;
+ * - no marker: an existing repository with unrelated content is being
+ *   appointed, so apply takes the adopt path, which keeps its files. That
+ *   path needs both engine versions, refuses the Foundry supplier tree, and
+ *   refuses an on-disk inventory that fails its contract (a missing or valid
+ *   one is kept as it is; this path writes no inventory).
+ */
+function classifyClonedHub(
+  host: WorkspaceHost,
+  plan: WorkspacePlanResume,
+): { kind: "resume"; migrateFrom?: "legacy" } | { kind: "appoint"; plan: WorkspacePlanAdopt } {
+  const located = locateHub(host, plan.directory);
+  if (located.migration === "indeterminate") {
+    throw new Error(
+      `in the cloned ${plan.owner}/${plan.repository}, both ${WORKSPACE_MARKER_REL} and the legacy ${LEGACY_WORKSPACE_MARKER_REL} are present; launcher never merges them silently -- remove one before resuming`,
+    );
+  }
+  if (located.document !== undefined) {
+    if (!sameOwner(located.document.owner, plan.owner)) {
+      throw new Error(
+        `the cloned ${plan.owner}/${plan.repository} carries a hub marker owned by "${located.document.owner}", not "${plan.owner}"; refusing to resume a hub for the wrong account`,
+      );
+    }
+    return located.migration === "legacy" ? { kind: "resume", migrateFrom: "legacy" } : { kind: "resume" };
+  }
+  if (!plan.advisorVersion) {
+    throw new Error(`cannot read a public ${ADVISOR_PACKAGE} version from the npm registry; appointing the cloned ${plan.owner}/${plan.repository} pins it`);
+  }
+  if (!plan.integratorVersion) {
+    throw new Error(`cannot read a public ${INTEGRATOR_PACKAGE} version from the npm registry; appointing the cloned ${plan.owner}/${plan.repository} pins it`);
+  }
+  if (looksLikeFoundry(host, plan.directory)) {
+    throw new Error(
+      `refusing to appoint the cloned ${plan.owner}/${plan.repository}: it looks like the Foundry supplier tree`,
+    );
+  }
+  const inventory = inspectInventory(host.readBytes(join(plan.directory, WORKSPACE_INVENTORY_REL)), plan.owner);
+  if (inventory.status === "invalid") {
+    throw new Error(
+      `the cloned ${plan.owner}/${plan.repository} has an on-disk hub inventory that ${inventory.reason ?? "does not conform to the inventory contract"}; fix or remove ${WORKSPACE_INVENTORY_REL} in that repository, then run launcher from inside the checkout`,
+    );
+  }
+  return {
+    kind: "appoint",
+    plan: {
+      action: "adopt",
+      owner: plan.owner,
+      repository: plan.repository,
+      directory: plan.directory,
+      advisorVersion: plan.advisorVersion,
+      integratorVersion: plan.integratorVersion,
+    },
+  };
+}
+
+/**
  * Applies a create, resume, or adopt plan through the host. Resume refreshes
- * composed skills and stale AGENTS.md guidance. Every path writes only into
- * the hub checkout, never into an inventoried repository beside it.
+ * composed skills and stale AGENTS.md guidance. A resume plan that clones
+ * (`clone: true`, planned from an empty directory) is classified only after
+ * the clone, by `classifyClonedHub`: a marked clone resumes (migrating a
+ * legacy marker), an unmarked one is appointed through the adopt path, and
+ * every refusal happens before anything is written into the clone (#1585).
+ * Every path writes only into the hub checkout, never into an inventoried
+ * repository beside it.
  */
 export function applyWorkspacePlan(
   host: WorkspaceHost,
@@ -1760,13 +1844,17 @@ export function applyWorkspacePlan(
   const contractPath = options.contractPath;
   const liveLauncherVersion = options.liveLauncherVersion;
   if (plan.action === "resume") {
+    let migrateFrom = plan.migrateFrom;
     if (plan.clone) {
       requireZero(
         host.run("gh", ["repo", "clone", `${plan.owner}/${plan.repository}`, plan.directory]),
         "gh repo clone",
       );
+      const cloned = classifyClonedHub(host, plan);
+      if (cloned.kind === "appoint") return applyAdoptPlan(host, cloned.plan, skeletonRoot, options);
+      migrateFrom = cloned.migrateFrom;
     }
-    const migration = plan.migrateFrom === "legacy" ? migrateLegacyHubState(host, plan.directory) : undefined;
+    const migration = migrateFrom === "legacy" ? migrateLegacyHubState(host, plan.directory) : undefined;
     // --repositories (#1179): write the chosen inventory before composing, so
     // this same run's health report lists the repositories just chosen.
     if (plan.chosenInventory?.kind === "write") {
@@ -1815,6 +1903,18 @@ export function applyWorkspacePlan(
       liveLauncherVersion,
     );
   }
+  return applyAdoptPlan(host, plan, skeletonRoot, options);
+}
+
+/** Appoints an existing checkout as the hub, keeping its files: the adopt plan's apply, also reached from an unmarked clone (#1585). */
+function applyAdoptPlan(
+  host: WorkspaceHost,
+  plan: WorkspacePlanAdopt,
+  skeletonRoot: string,
+  options: ApplyWorkspaceOptions,
+): WorkspaceApplyResult {
+  const launcherPackageRoot = options.launcherPackageRoot ?? resolve(skeletonRoot, "..");
+  const { skillCatalogueRoot, contractPath, liveLauncherVersion } = options;
   const enginePinChanges = adoptHubFiles(host, skeletonRoot, plan);
   const inventoryReplacedNote = plan.replacesInvalidInventory === true
     ? " The on-disk inventory failed schema validation; --inventory replaced it."
