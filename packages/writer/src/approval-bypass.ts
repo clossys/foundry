@@ -497,8 +497,9 @@ function destructuringPatternShadowsName(inner: string, name: string): boolean {
   for (const part of parts) {
     const trimmed = part.trim();
     if (!trimmed) continue;
-    if (new RegExp(`^${esc}$`, "u").test(trimmed)) return true;
-    if (new RegExp(`^${IDENT}\\s*:\\s*${esc}$`, "u").test(trimmed)) return true;
+    if (new RegExp(`^${esc}(?:\\s*=.*)?$`, "u").test(trimmed)) return true;
+    if (new RegExp(`^${IDENT}\\s*:\\s*${esc}(?:\\s*=.*)?$`, "u").test(trimmed)) return true;
+    if (new RegExp(`^\\.\\.\\.\\s*${esc}$`, "u").test(trimmed)) return true;
   }
   return false;
 }
@@ -521,14 +522,113 @@ function isDeclareFunctionPrefix(code: string, fnKeywordIndex: number): boolean 
   return /(?:^|\s)declare\s+$/.test(before);
 }
 
+function skipWsCode(code: string, i: number): number {
+  while (i < code.length && isWs(code[i])) i++;
+  return i;
+}
+
+function skipIdentCode(code: string, i: number): number {
+  if (i >= code.length || !isIdStartCodePoint(codePointAt(code, i))) return i;
+  i = codePointEndAt(code, i) + 1;
+  while (i < code.length && isIdContinueCodePoint(codePointAt(code, i))) i = codePointEndAt(code, i) + 1;
+  return i;
+}
+
+/** One extends/type operand: a name, generic, object type, or parenthesized type. */
+function skipTypeOperand(code: string, i: number): number {
+  i = skipWsCode(code, i);
+  const c = code[i];
+  if (c === "(" || c === "{" || c === "<") {
+    const end = matchingClose(code, i);
+    return end === -1 ? code.length : end + 1;
+  }
+  if (c === undefined) return i;
+  i = skipIdentCode(code, i);
+  i = skipWsCode(code, i);
+  if (code[i] === "<") {
+    const end = matchingClose(code, i);
+    i = end === -1 ? code.length : end + 1;
+  }
+  return i;
+}
+
+function indexInsideDeclareBlock(code: string, idx: number, kind: "class" | "namespace"): boolean {
+  const head =
+    kind === "class"
+      ? new RegExp(`${CALLEE_BOUNDARY}declare\\s+class\\s+${IDENT}\\s*\\{`, "gu")
+      : new RegExp(`${CALLEE_BOUNDARY}declare\\s+namespace\\s+${IDENT}\\s*\\{`, "gu");
+  for (const m of code.matchAll(head)) {
+    const open = m.index! + m[0].length - 1;
+    const close = matchingClose(code, open);
+    if (close !== -1 && idx > open && idx < close) return true;
+  }
+  return false;
+}
+
 function functionInDeclareNamespace(code: string, fnKeywordIndex: number): boolean {
-  const before = code.slice(Math.max(0, fnKeywordIndex - 250), fnKeywordIndex);
-  return /declare\s+namespace\s+[\w$]+\s*\{[^}]*$/.test(before);
+  return indexInsideDeclareBlock(code, fnKeywordIndex, "namespace");
 }
 
 function constructorInDeclareClass(code: string, constructorIdx: number): boolean {
-  const before = code.slice(Math.max(0, constructorIdx - 300), constructorIdx);
-  return /declare\s+class\s+[\w$]+\s*\{[^}]*$/.test(before);
+  return indexInsideDeclareBlock(code, constructorIdx, "class");
+}
+
+function interfaceBodyBraceIndex(code: string, openBrace: number): boolean {
+  for (const m of code.matchAll(new RegExp(`\\binterface\\s+${IDENT}(?:\\s*<[^>]*>)?`, "gu"))) {
+    let i = m.index! + m[0].length;
+    i = skipWsCode(code, i);
+    if (code.slice(i, i + 8) === "extends") {
+      i += 8;
+      i = skipWsCode(code, i);
+      for (;;) {
+        i = skipWsCode(code, i);
+        if (code[i] === "{") break;
+        i = skipTypeOperand(code, i);
+        i = skipWsCode(code, i);
+        if (code[i] === ",") {
+          i++;
+          continue;
+        }
+        break;
+      }
+    }
+    i = skipWsCode(code, i);
+    if (i === openBrace && code[i] === "{") return true;
+  }
+  return false;
+}
+
+function typeAliasRhsContainsBrace(code: string, openBrace: number): boolean {
+  for (const m of code.matchAll(new RegExp(`\\btype\\s+${IDENT}(?:\\s*<[^>]*>)?\\s*=\\s*`, "gu"))) {
+    let i = m.index! + m[0].length;
+    const start = i;
+    for (;;) {
+      i = skipTypeOperand(code, i);
+      i = skipWsCode(code, i);
+      const c = code[i];
+      if (c === "&" || c === "|") {
+        i++;
+        continue;
+      }
+      if (c === ";" || c === undefined) break;
+      break;
+    }
+    if (openBrace >= start && openBrace < i) return true;
+  }
+  return false;
+}
+
+function openBraceIsTypeMemberContext(code: string, openBrace: number): boolean {
+  return interfaceBodyBraceIndex(code, openBrace) || typeAliasRhsContainsBrace(code, openBrace);
+}
+
+/** A `name(params): Return` member inside a type — not a runtime method. */
+function parenListIsTypeMethodSignature(code: string, close: number): boolean {
+  const i = skipWsCode(code, close + 1);
+  if (code[i] !== ":") return false;
+  const j = skipWsCode(code, i + 1);
+  const next = code[j];
+  return next !== ":" && next !== "=";
 }
 
 /** A parenthesized parameter list in a type alias or similar — not a runtime callback. */
@@ -537,20 +637,38 @@ function openParenIsTypeSyntax(code: string, openIdx: number): boolean {
   if (new RegExp(`(?<![\\w$.])type\\s+${IDENT}(?:\\s*<[^>]*>)?\\s*=\\s*[^{;=]*$`, "u").test(before)) return true;
   if (new RegExp(`(?<![\\w$.])interface\\s+${IDENT}(?:\\s*<[^>]*>)?(?:\\s+extends\\s+[^{;]*)?\\s*$`, "u").test(before))
     return true;
+  let p = prevNonWs(code, openIdx);
+  if (p >= 0 && code[p] === ":") return true;
+  if (p >= 0 && code[p] === "(") {
+    const q = prevNonWs(code, p);
+    if (q >= 0 && (code[q] === ":" || code[q] === "(" || code[q] === "|" || code[q] === "&" || code[q] === ",")) return true;
+    return openParenIsTypeSyntax(code, p);
+  }
+  if (p >= 0 && (code[p] === "|" || code[p] === "&" || code[p] === ",")) return true;
+  if (p >= 0 && /[\w$]/.test(code[p]!)) {
+    let q = p;
+    while (q >= 0 && /[\w$]/.test(code[q]!)) q--;
+    q = prevNonWs(code, q + 1);
+    if (q >= 0 && code[q] === "{") {
+      if (openBraceIsTypeMemberContext(code, q)) return true;
+    }
+  }
   return false;
 }
 
+const PARAM_MODIFIER_RE = /^(?:(?:public|private|protected|readonly)\s+)+/u;
+
 function singleParamBindingShadows(param: string, name: string): boolean {
   const esc = escapeRegExp(name);
-  const trimmed = param.trim();
+  let trimmed = param.trim().replace(PARAM_MODIFIER_RE, "");
   if (!trimmed) return false;
   if (new RegExp(`^(?:\\.\\.\\.\\s*)?${esc}(?:\\s*:[^=,)]+|\\s*=[^,)]+|\\s*\\?|\\s*$)`, "u").test(trimmed)) return true;
   if (trimmed.startsWith("{")) {
-    const close = trimmed.lastIndexOf("}");
+    const close = matchingClose(trimmed, 0);
     if (close > 0) return destructuringPatternShadowsName(trimmed.slice(1, close), name);
   }
   if (trimmed.startsWith("[")) {
-    const close = trimmed.lastIndexOf("]");
+    const close = matchingClose(trimmed, 0);
     if (close > 0) return arrayPatternShadowsName(trimmed.slice(1, close), name);
   }
   return false;
@@ -586,6 +704,7 @@ function forEachParenListShadows(code: string, name: string): boolean {
 function objectMethodBraceIsTypeOnly(code: string, openBrace: number): boolean {
   const before = code.slice(Math.max(0, openBrace - 120), openBrace);
   if (/(?:^|\s)declare\s+class\s+[\w$]*\s*$/.test(before)) return true;
+  if (openBraceIsTypeMemberContext(code, openBrace)) return true;
   if (new RegExp(`(?<![\\w$.])interface\\s+${IDENT}(?:\\s*<[^>]*>)?(?:\\s+extends\\s+[^{;]*)?\\s*$`, "u").test(before))
     return true;
   if (new RegExp(`(?<![\\w$.])type\\s+${IDENT}(?:\\s*<[^{};]*)?\\s*=\\s*[^{;]*$`, "u").test(before)) return true;
@@ -601,7 +720,13 @@ function collectLocalShadowedCalleepNames(
   const fnDeclPrefix = `${CALLEE_BOUNDARY}(?:export\\s+default\\s+)?(?:async\\s+)?function\\s*(?:\\*\\s*)?`;
   for (const name of writerLocalNames) {
     const esc = escapeRegExp(name);
-    if (new RegExp(`${fnDeclPrefix}${esc}${NOT_ID_CONTINUE}`, "u").test(code)) shadowed.add(name);
+    for (const m of code.matchAll(new RegExp(`${fnDeclPrefix}${esc}${NOT_ID_CONTINUE}`, "gu"))) {
+      const fnIdx = code.indexOf("function", m.index!);
+      if (fnIdx !== -1 && isDeclareFunctionPrefix(code, fnIdx)) continue;
+      if (fnIdx !== -1 && functionInDeclareNamespace(code, fnIdx)) continue;
+      shadowed.add(name);
+      break;
+    }
     if (new RegExp(`${CALLEE_BOUNDARY}class\\s+${esc}${NOT_ID_CONTINUE}`, "u").test(code)) shadowed.add(name);
     if (new RegExp(`${CALLEE_BOUNDARY}(?:const|let|var)\\s+${esc}(?:\\s*:[^=;]*)?\\s*=`, "u").test(code)) shadowed.add(name);
     if (new RegExp(`${CALLEE_BOUNDARY}(?:const|let|var)\\s+${esc}(?:\\s*:[^=;]+)?\\s*;`, "u").test(code)) shadowed.add(name);
@@ -640,44 +765,68 @@ function collectLocalShadowedCalleepNames(
     for (const re of fnDeclParamRes) {
       for (const m of code.matchAll(re)) {
         const fnIdx = code.indexOf("function", m.index!);
-        if (fnIdx !== -1 && isDeclareFunctionPrefix(code, fnIdx)) continue;
-        if (fnIdx !== -1 && functionInDeclareNamespace(code, fnIdx)) continue;
+        if (fnIdx === -1 || fnIdx > m.index! + m[0].length) continue;
+        if (isDeclareFunctionPrefix(code, fnIdx)) continue;
+        if (functionInDeclareNamespace(code, fnIdx)) continue;
         fnParamShadow = true;
         break;
       }
       if (fnParamShadow) break;
     }
     if (fnParamShadow) shadowed.add(name);
-    for (const m of code.matchAll(
-      new RegExp(
-        `constructor\\s*\\([^)]*(?:public|private|protected|readonly)\\s+${esc}(?:\\?(?:\\s*[,):]|=|:)|(?![\\w$])\\s*(?:[,):]|=|:))`,
-        "gu",
-      ),
-    )) {
-      if (!constructorInDeclareClass(code, m.index!)) {
-        shadowed.add(name);
-        break;
+    if (!shadowed.has(name)) {
+      for (const m of code.matchAll(/constructor\s*\(/gu)) {
+        if (constructorInDeclareClass(code, m.index!)) continue;
+        const open = m.index! + m[0].length - 1;
+        const close = matchingClose(code, open);
+        if (close === -1) continue;
+        if (paramListShadowsName(code.slice(open + 1, close), name)) {
+          shadowed.add(name);
+          break;
+        }
       }
     }
-    if (
-      new RegExp(
-        `constructor\\s*\\([^)]*${esc}(?:\\?(?:\\s*[,):]|=|:)|(?![\\w$])\\s*(?:[,):]|=|:))[^)]*\\)\\s*(?:\\s*:\\s*[^\\{;]+)?\\s*\\{`,
-        "u",
-      ).test(code)
-    )
-      shadowed.add(name);
+    if (!shadowed.has(name)) {
+      for (const m of code.matchAll(new RegExp(`${fnDeclPrefix}(${IDENT})\\s*(?:<[^>]*>)?\\s*\\(`, "gu"))) {
+        const fnIdx = code.indexOf("function", m.index!);
+        if (fnIdx !== -1 && isDeclareFunctionPrefix(code, fnIdx)) continue;
+        if (fnIdx !== -1 && functionInDeclareNamespace(code, fnIdx)) continue;
+        const open = m.index! + m[0].length - 1;
+        const close = matchingClose(code, open);
+        if (close === -1) continue;
+        if (paramListShadowsName(code.slice(open + 1, close), name)) {
+          shadowed.add(name);
+          break;
+        }
+      }
+    }
     for (const m of code.matchAll(new RegExp(`\\{\\s*(${IDENT})\\s*(?:<[^>]*>)?\\s*${firstParamBind}`, "gu"))) {
       if (CONTROL_FLOW_BLOCK_KEYWORDS.has(m[1]!)) continue;
       if (objectMethodBraceIsTypeOnly(code, m.index!)) continue;
+      const parenRel = m[0].indexOf("(");
+      if (parenRel === -1) continue;
+      const parenOpen = m.index! + parenRel;
+      if (openParenIsTypeSyntax(code, parenOpen)) continue;
+      const parenClose = matchingClose(code, parenOpen);
+      if (parenClose !== -1 && parenListIsTypeMethodSignature(code, parenClose)) continue;
       shadowed.add(name);
       break;
     }
     if (!shadowed.has(name)) {
-      for (const m of code.matchAll(new RegExp(`\\{\\s*(${IDENT})\\s*(?:<[^>]*>)?\\s*\\([^)]*${laterParamBind}`, "gu"))) {
+      for (const m of code.matchAll(new RegExp(`\\{\\s*(${IDENT})\\s*(?:<[^>]*>)?\\s*\\(`, "gu"))) {
         if (CONTROL_FLOW_BLOCK_KEYWORDS.has(m[1]!)) continue;
         if (objectMethodBraceIsTypeOnly(code, m.index!)) continue;
-        shadowed.add(name);
-        break;
+        const parenRel = m[0].indexOf("(");
+        if (parenRel === -1) continue;
+        const parenOpen = m.index! + parenRel;
+        if (openParenIsTypeSyntax(code, parenOpen)) continue;
+        const close = matchingClose(code, parenOpen);
+        if (close === -1) continue;
+        if (parenListIsTypeMethodSignature(code, close)) continue;
+        if (paramListShadowsName(code.slice(parenOpen + 1, close), name)) {
+          shadowed.add(name);
+          break;
+        }
       }
     }
     if (new RegExp(`${CALLEE_BOUNDARY}(?:const|let|var)\\s+${IDENT}\\s*=\\s*(?:async\\s+)?${esc}\\s*=>`, "u").test(code))
@@ -709,6 +858,9 @@ function collectLocalShadowedCalleepNames(
         }
       }
     }
+    if (!shadowed.has(name)) {
+      if (new RegExp(`=>\\s*(?:async\\s+)?(?:<[^>]*>\\s*)?${esc}\\s*=>`, "u").test(code)) shadowed.add(name);
+    }
     if (
       new RegExp(
         `${CALLEE_BOUNDARY}(?:const|let|var)\\s+${IDENT}\\s*=\\s*(?:async\\s+)?\\(\\s*${esc}\\s*:\\s*\\([^)]*\\)\\s*=>\\s*[^)]*\\)\\s*=>`,
@@ -716,13 +868,21 @@ function collectLocalShadowedCalleepNames(
       ).test(code)
     )
       shadowed.add(name);
-    if (
-      new RegExp(
-        `${CALLEE_BOUNDARY}(?:const|let|var)\\s+${IDENT}\\s*=\\s*(?:async\\s+)?\\([^)]*${laterParamBind}[^)]*\\)\\s*=>`,
-        "u",
-      ).test(code)
-    )
-      shadowed.add(name);
+    if (!shadowed.has(name)) {
+      for (const m of code.matchAll(
+        new RegExp(`${CALLEE_BOUNDARY}(?:const|let|var)\\s+${IDENT}\\s*=\\s*(?:async\\s+)?(?:<[^>]*>\\s*)?\\(`, "gu"),
+      )) {
+        const open = m.index! + m[0].length - 1;
+        const close = matchingClose(code, open);
+        if (close === -1) continue;
+        const after = nextNonWs(code, close + 1);
+        if (code.slice(after, after + 2) !== "=>") continue;
+        if (paramListShadowsName(code.slice(open + 1, close), name)) {
+          shadowed.add(name);
+          break;
+        }
+      }
+    }
     if (new RegExp(`${CALLEE_BOUNDARY}\\(\\s*${esc}(?:\\s*:[^)]*)?\\)\\s*:[^=>]+\\s*=>`, "u").test(code)) shadowed.add(name);
     if (new RegExp(`${CALLEE_BOUNDARY}export\\s+default\\s+(?:async\\s+)?\\(\\s*${esc}(?:\\s*:[^)]*)?\\)`, "u").test(code))
       shadowed.add(name);
