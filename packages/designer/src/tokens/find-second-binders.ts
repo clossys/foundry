@@ -1,9 +1,9 @@
 /**
  * `findSecondBinders` — a product ships one brand overlay. Any other
- * stylesheet (`.css`, `.scss`, `.pcss`) under the applications directory that
- * declares a `--color-*` custom property, resets them with `--color-*`, or
- * declares one inside `@apply [--color-x:…]` is a second binding of the same
- * slots and is reported. Comments and quoted strings are ignored.
+ * stylesheet (`.css`, `.scss`, `.sass`, `.less`, `.pcss`, `.postcss`) under
+ * the applications directory that declares a `--color-*` custom property,
+ * resets them with `--color-*`, or declares one inside `@apply [--color-x:…]`
+ * is a second binding of the same slots and is reported. Comments and quoted strings are ignored.
  * Dependency and tool-output directories are not scanned, nor `build/` and
  * `dist/` at the top of the applications directory or of one application.
  */
@@ -20,12 +20,23 @@ const SKIP_ANYWHERE = new Set(["node_modules", ".next", ".turbo", "coverage", ".
  */
 const SKIP_AT_APP_ROOT = new Set(["build", "dist"]);
 const APP_ROOT_MAX_DEPTH = 1;
-const STYLESHEET_EXTENSIONS = [".css", ".scss", ".pcss"];
-/** `--color-x:` and the `--color-*: initial` wildcard reset; also inside `@apply [--color-x:red]`. `var(--color-x)` reads have no colon and never match. */
-const COLOR_DECLARATION_RE = /(?:^|[\s;{\[])(--color-(?:[a-z0-9-]+|\*))\s*:/g;
-/** Comments and quoted strings in one left-to-right pass, so a quote inside a comment or a comment marker inside a string cannot confuse the other. */
-const COMMENT_OR_STRING_RE = /\/\*[\s\S]*?\*\/|"(?:[^"\\\n]|\\.)*"|'(?:[^'\\\n]|\\.)*'/g;
-const COMMENT_OR_STRING_OR_LINE_RE = /\/\*[\s\S]*?\*\/|"(?:[^"\\\n]|\\.)*"|'(?:[^'\\\n]|\\.)*'|(?<![:\w(])\/\/[^\n]*/g;
+const STYLESHEET_EXTENSIONS = [".css", ".scss", ".sass", ".less", ".pcss", ".postcss"];
+/**
+ * `--color-x:`, a family wildcard reset (`--color-*`, `--color-red-*`) and SCSS
+ * interpolation (`--color-#{$k}`), case-insensitive because custom-property
+ * names are; also inside `@apply [--color-x:red]`. `var(--color-x)` reads have
+ * no colon and never match, and neither does a feature query directly inside
+ * parentheses, `@container style( --color-a: red)`.
+ */
+const COLOR_DECLARATION_RE = /(?:^|[\s;{\[])(?<!\(\s*)(--color-(?:[\w-]*\*|(?:[\w-]|#\{[^}]*\})+))\s*:/gi;
+/**
+ * Comments and quoted strings in one left-to-right pass, so a quote inside a
+ * comment or a comment marker inside a string cannot confuse the other. A
+ * backslash-newline continues a string onto the next line.
+ */
+const STRING_PATTERN = String.raw`"(?:[^"\\\n]|\\(?:\r\n|[\s\S]))*"|'(?:[^'\\\n]|\\(?:\r\n|[\s\S]))*'`;
+const COMMENT_OR_STRING_RE = new RegExp(String.raw`\/\*[\s\S]*?\*\/|${STRING_PATTERN}`, "g");
+const COMMENT_OR_STRING_OR_LINE_RE = new RegExp(String.raw`\/\*[\s\S]*?\*\/|${STRING_PATTERN}|(?<![:\w(])\/\/[^\n]*`, "g");
 
 export interface SecondBinderFinding {
   file: string;
@@ -45,7 +56,7 @@ function walk(dir: string, depth: number, out: string[]): void {
 }
 
 function stripCommentsAndStrings(source: string, file: string): string {
-  const re = file.endsWith(".css") ? COMMENT_OR_STRING_RE : COMMENT_OR_STRING_OR_LINE_RE;
+  const re = file.endsWith(".css") || file.endsWith(".postcss") ? COMMENT_OR_STRING_RE : COMMENT_OR_STRING_OR_LINE_RE;
   return source.replace(re, " ");
 }
 

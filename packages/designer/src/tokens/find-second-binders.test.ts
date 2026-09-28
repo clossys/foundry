@@ -95,4 +95,40 @@ describe("findSecondBinders", () => {
     write("apps/web/a.scss", "// --color-accent: red;\n.x { background: url(https://example.test/a.png); margin: 0; }");
     expect(findSecondBinders(join(dir, "apps"), brand)).toEqual([]);
   });
+
+  it("reports wildcard resets of a colour family, SCSS interpolation and uppercase names", () => {
+    const brand = write("brand/brand.css", ":root { --color-accent: #2a78d6; }");
+    const family = write("apps/web/a.css", "@theme { --color-red-*: initial; }");
+    const interpolated = write("apps/web/b.scss", "@each $k in $keys { :root { --color-#{$k}: red; } }");
+    const upper = write("apps/web/c.css", ":root { --COLOR-Accent: red; --Color-Ink: blue; }");
+    expect(findSecondBinders(join(dir, "apps"), brand)).toEqual([
+      { file: family, slots: ["--color-red-*"] },
+      { file: interpolated, slots: ["--color-#{$k}"] },
+      { file: upper, slots: ["--COLOR-Accent", "--Color-Ink"] },
+    ]);
+  });
+
+  it("scans .sass, .less and .postcss stylesheets", () => {
+    const brand = write("brand/brand.css", ":root { --color-accent: #2a78d6; }");
+    const sass = write("apps/web/a.sass", ":root\n  --color-accent: red\n");
+    const less = write("apps/web/b.less", ".x { --color-ink: red; }");
+    const postcss = write("apps/web/c.postcss", ".x { --color-line: red; }");
+    expect(findSecondBinders(join(dir, "apps"), brand)).toEqual([
+      { file: sass, slots: ["--color-accent"] },
+      { file: less, slots: ["--color-ink"] },
+      { file: postcss, slots: ["--color-line"] },
+    ]);
+  });
+
+  it("does not flag a --color-* feature query inside @container style()", () => {
+    const brand = write("brand/brand.css", ":root { --color-accent: #2a78d6; }");
+    write("apps/web/a.css", "@container style( --color-a: red) { .x { margin: 0; } }\n@container style(--color-b: red) { .y { margin: 0; } }");
+    expect(findSecondBinders(join(dir, "apps"), brand)).toEqual([]);
+  });
+
+  it("ignores a quoted string continued across lines with a backslash", () => {
+    const brand = write("brand/brand.css", ":root { --color-accent: #2a78d6; }");
+    write("apps/web/a.css", '.x::before { content: "line one \\\n --color-accent: red"; }');
+    expect(findSecondBinders(join(dir, "apps"), brand)).toEqual([]);
+  });
 });
