@@ -286,6 +286,7 @@ function expressionIsShippedCopy(expression: ts.Expression): boolean {
   if (ts.isBinaryExpression(expression)) {
     const kind = expression.operatorToken.kind;
     if (
+      kind === ts.SyntaxKind.PlusToken ||
       kind === ts.SyntaxKind.AmpersandAmpersandToken ||
       kind === ts.SyntaxKind.BarBarToken ||
       kind === ts.SyntaxKind.QuestionQuestionToken
@@ -412,6 +413,7 @@ function collectArrayIndexSlicesFromDefault(
   index: number,
   moduleMessageObjectInitializers: Map<string, ts.Expression>,
   moduleMessageArrayInitializers: Map<string, ts.Expression>,
+  sourceFile?: ts.SourceFile,
 ): ts.Expression[] | null {
   if (parameterDefault === undefined) return null;
   const resolved = resolveModulePatternDefault(
@@ -430,12 +432,14 @@ function collectArrayIndexSlicesFromDefault(
       index,
       moduleMessageObjectInitializers,
       moduleMessageArrayInitializers,
+      sourceFile,
     );
     const whenFalse = collectArrayIndexSlicesFromDefault(
       unwrapped.whenFalse,
       index,
       moduleMessageObjectInitializers,
       moduleMessageArrayInitializers,
+      sourceFile,
     );
     const slices: ts.Expression[] = [];
     if (whenTrue !== null) slices.push(...whenTrue);
@@ -454,18 +458,24 @@ function collectArrayIndexSlicesFromDefault(
         index,
         moduleMessageObjectInitializers,
         moduleMessageArrayInitializers,
+        sourceFile,
       );
       const right = collectArrayIndexSlicesFromDefault(
         unwrapped.right,
         index,
         moduleMessageObjectInitializers,
         moduleMessageArrayInitializers,
+        sourceFile,
       );
       const slices: ts.Expression[] = [];
       if (left !== null) slices.push(...left);
       if (right !== null) slices.push(...right);
       return slices.length === 0 ? null : slices;
     }
+  }
+  if (sourceFile !== undefined && ts.isCallExpression(unwrapped)) {
+    const entry = callableReturnArrayElementInitializer(unwrapped, index, sourceFile);
+    return entry !== undefined ? [entry] : null;
   }
   return null;
 }
@@ -495,6 +505,10 @@ function collectObjectMemberSlicesFromDefault(
   const resolved = unwrapExpression(
     resolveModulePatternDefault(expr, moduleMessageObjectInitializers, moduleMessageArrayInitializers),
   );
+  if (ts.isCallExpression(resolved)) {
+    const memberInit = callableReturnObjectMemberInitializer(resolved, memberKey, source);
+    return memberInit !== undefined ? [memberInit] : null;
+  }
   if (ts.isObjectLiteralExpression(resolved)) {
     const slice =
       objectLiteralMemberInitializer(
@@ -721,6 +735,15 @@ function isComponentIdentifier(name: string): boolean {
 }
 
 const NON_MESSAGE_PARAMETER_MEMBERS = new Set(["length", "toString", "valueOf"]);
+
+const INDIRECT_CALL_BUILTIN_CALLEES = new Set([
+  "Number",
+  "String",
+  "Boolean",
+  "parseInt",
+  "parseFloat",
+  "BigInt",
+]);
 
 const EXEMPT_RENDERED_MEMBER_NAMES = new Set(["glyph", "displayName", "d", "aria-hidden", "aria-live"]);
 
@@ -1213,8 +1236,13 @@ function collectCallSiteParameterInitializers(
   const parameterContexts = new Map<string, ts.ParameterDeclaration[]>();
 
   function visit(node: ts.Node): void {
-    if (ts.isCallExpression(node) && ts.isIdentifier(node.expression)) {
-      const callee = resolveCallableFunctionLike(node.expression.text, sourceFile);
+    if (ts.isCallExpression(node)) {
+      const calleeExpr = unwrapExpression(node.expression);
+      if (!ts.isIdentifier(calleeExpr)) {
+        ts.forEachChild(node, visit);
+        return;
+      }
+      const callee = resolveCallableFunctionLike(calleeExpr.text, sourceFile);
       if (callee !== undefined) {
         for (let index = 0; index < callee.parameters.length; index++) {
           const parameter = callee.parameters[index];
@@ -1234,8 +1262,8 @@ function collectCallSiteParameterInitializers(
             });
             if (!seedsCallSite) continue;
             argumentValue = argument;
-          } else if (ts.isIdentifier(argument)) {
-            const localInit = localInitializerInScope(argument.text, node);
+          } else if (ts.isIdentifier(unwrappedArgument)) {
+            const localInit = localInitializerInScope(unwrappedArgument.text, node);
             if (localInit === undefined) continue;
             const unwrappedInit = unwrapExpression(localInit);
             if (!ts.isObjectLiteralExpression(unwrappedInit) && !ts.isArrayLiteralExpression(unwrappedInit)) continue;
@@ -1243,13 +1271,13 @@ function collectCallSiteParameterInitializers(
           } else {
             continue;
           }
-          let fnMap = initializers.get(node.expression.text);
+          let fnMap = initializers.get(calleeExpr.text);
           if (fnMap === undefined) {
             fnMap = new Map<string, ts.Expression>();
-            initializers.set(node.expression.text, fnMap);
+            initializers.set(calleeExpr.text, fnMap);
           }
           fnMap.set(paramName, argumentValue);
-          parameterContexts.set(node.expression.text, enclosingFunctionParameters(node));
+          parameterContexts.set(calleeExpr.text, enclosingFunctionParameters(node));
         }
       }
     }
@@ -1277,6 +1305,38 @@ function functionBodyReturnObjectLiteral(
   return undefined;
 }
 
+function functionBodyReturnArrayLiteral(
+  fn: ts.FunctionLikeDeclaration,
+): ts.ArrayLiteralExpression | undefined {
+  const body = fn.body;
+  if (body === undefined) return undefined;
+  if (!ts.isBlock(body)) {
+    const unwrapped = unwrapExpression(body);
+    return ts.isArrayLiteralExpression(unwrapped) ? unwrapped : undefined;
+  }
+  for (const statement of body.statements) {
+    if (!ts.isReturnStatement(statement) || statement.expression === undefined) continue;
+    const unwrapped = unwrapExpression(statement.expression);
+    if (ts.isArrayLiteralExpression(unwrapped)) return unwrapped;
+  }
+  return undefined;
+}
+
+function callableReturnArrayElementInitializer(
+  call: ts.CallExpression,
+  index: number,
+  sourceFile: ts.SourceFile,
+): ts.Expression | undefined {
+  const callee = unwrapExpression(call.expression);
+  if (!ts.isIdentifier(callee)) return undefined;
+  const fn = resolveCallableFunctionLike(callee.text, sourceFile);
+  if (fn === undefined) return undefined;
+  const array = functionBodyReturnArrayLiteral(fn);
+  if (array === undefined) return undefined;
+  const entry = array.elements[index];
+  return entry !== undefined && ts.isExpression(entry) ? entry : undefined;
+}
+
 function callableReturnObjectMemberInitializer(
   call: ts.CallExpression,
   memberKey: string,
@@ -1294,7 +1354,10 @@ function callableReturnObjectMemberInitializer(
 function resolveCallableFunctionLike(
   calleeName: string,
   sourceFile: ts.SourceFile,
+  visited: Set<string> = new Set(),
 ): ts.FunctionLikeDeclaration | undefined {
+  if (visited.has(calleeName)) return undefined;
+  visited.add(calleeName);
   let found: ts.FunctionLikeDeclaration | undefined;
   function visit(node: ts.Node): void {
     if (found !== undefined) return;
@@ -1316,6 +1379,33 @@ function resolveCallableFunctionLike(
     ts.forEachChild(node, visit);
   }
   visit(sourceFile);
+  if (found === undefined) {
+    let aliasInit: ts.Expression | undefined;
+    function visitAlias(node: ts.Node): void {
+      if (aliasInit !== undefined) return;
+      if (ts.isVariableStatement(node)) {
+        for (const declaration of node.declarationList.declarations) {
+          if (!ts.isIdentifier(declaration.name) || declaration.name.text !== calleeName) continue;
+          if (declaration.initializer === undefined) continue;
+          aliasInit = declaration.initializer;
+          return;
+        }
+      }
+      ts.forEachChild(node, visitAlias);
+    }
+    visitAlias(sourceFile);
+    if (aliasInit !== undefined) {
+      const unwrappedAlias = unwrapExpression(aliasInit);
+      if (ts.isIdentifier(unwrappedAlias)) {
+        found = resolveCallableFunctionLike(unwrappedAlias.text, sourceFile, visited);
+      } else if (
+        (ts.isArrowFunction(unwrappedAlias) || ts.isFunctionExpression(unwrappedAlias)) &&
+        unwrappedAlias.body !== undefined
+      ) {
+        found = unwrappedAlias;
+      }
+    }
+  }
   return found;
 }
 
@@ -1349,6 +1439,24 @@ function parameterDefaultInitializerForLocalName(
   return undefined;
 }
 
+function directArgumentRenderSlices(expression: ts.Expression): ts.Expression[] {
+  expression = unwrapExpression(expression);
+  if (ts.isBinaryExpression(expression)) {
+    const kind = expression.operatorToken.kind;
+    if (
+      kind === ts.SyntaxKind.QuestionQuestionToken ||
+      kind === ts.SyntaxKind.BarBarToken ||
+      kind === ts.SyntaxKind.AmpersandAmpersandToken
+    ) {
+      return [
+        ...directArgumentRenderSlices(expression.left),
+        ...directArgumentRenderSlices(expression.right),
+      ];
+    }
+  }
+  return [expression];
+}
+
 function indirectCallRendersArgument(
   call: ts.CallExpression,
   argIndex: number,
@@ -1365,8 +1473,10 @@ function indirectCallRendersArgument(
   moduleMessageArrayInitializers: Map<string, ts.Expression>,
 ): boolean {
   if (isCreateElementCall(call)) return argIndex >= 2;
-  if (!ts.isIdentifier(call.expression)) return false;
-  const calleeName = call.expression.text;
+  const calleeExpr = unwrapExpression(call.expression);
+  if (!ts.isIdentifier(calleeExpr)) return false;
+  const calleeName = calleeExpr.text;
+  if (INDIRECT_CALL_BUILTIN_CALLEES.has(calleeName)) return false;
   if (isComponentIdentifier(calleeName)) return true;
   let resolvedCalleeName = calleeName;
   if (currentParameters !== undefined) {
@@ -1386,13 +1496,14 @@ function indirectCallRendersArgument(
   if (boundLocals.length === 0) return false;
   const renderedBindings = collectRenderedParameterBindingPaths(callee);
   let argumentValue = argument;
-  if (ts.isIdentifier(argument)) {
-    const localInit = literalLocalInitializers.get(argument.text);
+  const unwrappedArgument = unwrapExpression(argument);
+  if (ts.isIdentifier(unwrappedArgument)) {
+    const localInit = literalLocalInitializers.get(unwrappedArgument.text);
     if (localInit !== undefined) {
       argumentValue = localInit;
     } else if (currentParameters !== undefined) {
       const defaultInit = parameterDefaultExpressionForName(
-        argument.text,
+        unwrappedArgument.text,
         currentParameters,
         sourceFile,
         moduleMessageObjectInitializers,
@@ -1410,7 +1521,7 @@ function indirectCallRendersArgument(
     const slicePath = renderedPath.length > 0 ? [...paramBindingPath, ...renderedPath] : paramBindingPath;
     const slices =
       slicePath.length === 0
-        ? [unwrapExpression(argumentValue)]
+        ? directArgumentRenderSlices(argumentValue)
         : expressionSlicesAtArgumentBindingPath(
             argumentValue,
             slicePath,
@@ -1427,7 +1538,28 @@ function indirectCallRendersArgument(
           moduleFunctions,
           moduleDirectStringFunctions,
           moduleDirectStringAliases,
-        ),
+        ) ||
+        (ts.isIdentifier(unwrapExpression(slice)) &&
+          parameterDefaultExpressionForName(
+            unwrapExpression(slice).text,
+            parameterSearchParameters,
+            sourceFile,
+            moduleMessageObjectInitializers,
+            moduleMessageArrayInitializers,
+          ) !== undefined &&
+          parameterDefaultIsShippedCopy(
+            parameterDefaultExpressionForName(
+              unwrapExpression(slice).text,
+              parameterSearchParameters,
+              sourceFile,
+              moduleMessageObjectInitializers,
+              moduleMessageArrayInitializers,
+            )!,
+            moduleBindings,
+            moduleFunctions,
+            moduleDirectStringFunctions,
+            moduleDirectStringAliases,
+          )),
       )
     ) {
       return true;
@@ -2729,11 +2861,12 @@ function analyzeRenderedLocals(
   }
 
   function callCarriesShippedMessage(call: ts.CallExpression): boolean {
-    if (!ts.isIdentifier(call.expression)) return false;
+    const callee = unwrapExpression(call.expression);
+    if (!ts.isIdentifier(callee)) return false;
     return (
-      literalLocals.has(call.expression.text) ||
-      moduleDirectStringFunctions.has(call.expression.text) ||
-      moduleDirectStringAliases.has(call.expression.text)
+      literalLocals.has(callee.text) ||
+      moduleDirectStringFunctions.has(callee.text) ||
+      moduleDirectStringAliases.has(callee.text)
     );
   }
 
@@ -2859,6 +2992,7 @@ function analyzeRenderedLocals(
             numericIndex,
             moduleMessageObjectInitializers,
             moduleMessageArrayInitializers,
+            source,
           );
           if (slices !== null) {
             return slices.some((slice) =>
@@ -2878,6 +3012,24 @@ function analyzeRenderedLocals(
             );
           }
           return false;
+        }
+        if (ts.isCallExpression(objectExpr)) {
+          const entry = callableReturnArrayElementInitializer(objectExpr, numericIndex, source);
+          if (entry !== undefined) {
+            return renderSliceExpressionIsShipped(
+              entry,
+              moduleBindings,
+              moduleFunctions,
+              moduleDirectStringFunctions,
+              fileModuleDirectStringAliases,
+              parameterDefaultSearchParameters,
+              source,
+              moduleMessageObjectInitializers,
+              moduleMessageArrayInitializers,
+              messageCallParameters,
+              literalLocalInitializers,
+            );
+          }
         }
         if (literalLocals.has(objectName)) {
           return true;
@@ -3035,6 +3187,12 @@ function analyzeRenderedLocals(
   function registerFromExpression(name: string, initializer: ts.Expression, line: number): void {
     registerLocal(name, initializer, line);
     const unwrappedInitializer = unwrapExpression(initializer);
+    if (ts.isCallExpression(unwrappedInitializer)) {
+      const callCallee = unwrapExpression(unwrappedInitializer.expression);
+      if (ts.isIdentifier(callCallee) && moduleFunctions.has(callCallee.text)) {
+        literalLocalInitializers.set(name, initializer);
+      }
+    }
     if (ts.isIdentifier(unwrappedInitializer)) {
       registerAlias(name, unwrappedInitializer.text, line);
     }
@@ -3359,7 +3517,15 @@ function analyzeRenderedLocals(
     for (let argIndex = 0; argIndex < call.arguments.length; argIndex++) {
       const argument = call.arguments[argIndex];
       if (!ts.isExpression(argument)) continue;
-      if (ts.isIdentifier(argument) && !indirectCallArgumentIsTracked(argument.text)) {
+      const unwrappedForTrack = unwrapExpression(argument);
+      if (isCreateElementCall(call)) {
+        if (!ts.isIdentifier(unwrappedForTrack) && !ts.isObjectLiteralExpression(unwrappedForTrack)) {
+          continue;
+        }
+        if (ts.isIdentifier(unwrappedForTrack) && !indirectCallArgumentIsTracked(unwrappedForTrack.text)) {
+          continue;
+        }
+      } else if (ts.isIdentifier(unwrappedForTrack) && !indirectCallArgumentIsTracked(unwrappedForTrack.text)) {
         continue;
       }
       if (
@@ -3380,10 +3546,31 @@ function analyzeRenderedLocals(
         )
       ) {
         const indirectArgumentName = ((): string | null => {
-          if (ts.isIdentifier(argument)) return argument.text;
-          if (ts.isConditionalExpression(argument)) {
-            if (ts.isIdentifier(argument.whenTrue)) return argument.whenTrue.text;
-            if (ts.isIdentifier(argument.whenFalse)) return argument.whenFalse.text;
+          const unwrapped = unwrapExpression(argument);
+          if (ts.isIdentifier(unwrapped)) return unwrapped.text;
+          if (ts.isConditionalExpression(unwrapped)) {
+            if (ts.isIdentifier(unwrapped.whenTrue)) return unwrapped.whenTrue.text;
+            if (ts.isIdentifier(unwrapped.whenFalse)) return unwrapped.whenFalse.text;
+          }
+          if (ts.isBinaryExpression(unwrapped)) {
+            const kind = unwrapped.operatorToken.kind;
+            if (
+              kind === ts.SyntaxKind.QuestionQuestionToken ||
+              kind === ts.SyntaxKind.BarBarToken ||
+              kind === ts.SyntaxKind.AmpersandAmpersandToken
+            ) {
+              const left = unwrapExpression(unwrapped.left);
+              const right = unwrapExpression(unwrapped.right);
+              const candidates =
+                kind === ts.SyntaxKind.AmpersandAmpersandToken ? [right, left] : [left, right];
+              for (const candidate of candidates) {
+                if (ts.isIdentifier(candidate) && indirectCallArgumentIsTracked(candidate.text)) {
+                  return candidate.text;
+                }
+              }
+              if (ts.isIdentifier(right)) return right.text;
+              if (ts.isIdentifier(left)) return left.text;
+            }
           }
           return null;
         })();
@@ -3669,7 +3856,19 @@ function checkRenderedLocalReferences(
 
   function notePropertyAccess(node: ts.PropertyAccessExpression, reportAt: ts.Node): void {
     const chain = propertyAccessMemberKeys(node);
-    if (chain === null) return;
+    if (chain === null) {
+      const objectExpr = unwrapExpression(node.expression);
+      if (ts.isCallExpression(objectExpr)) {
+        const memberInit = callableReturnObjectMemberInitializer(objectExpr, node.name.text, source);
+        if (memberInit !== undefined && sliceExpressionsAreShipped([memberInit])) {
+          const callee = unwrapExpression(objectExpr.expression);
+          if (ts.isIdentifier(callee)) {
+            noteReference(callee.text, reportAt);
+          }
+        }
+      }
+      return;
+    }
     if (chain.memberKeys.some((member) => isExemptRenderedMember(member))) return;
     if (chain.objectName === "props" && interfaceMessageProps.has(chain.memberKeys.at(-1) ?? "")) {
       violations.push({ file: fileName, line: lineOf(reportAt), kind: "rendered-local", text: chain.memberKeys.at(-1) ?? "" });
@@ -3685,6 +3884,16 @@ function checkRenderedLocalReferences(
     const index = elementAccessIndexFromArgument(argument);
     const objectExpr = unwrapExpression(node.expression);
     const objectName = ts.isIdentifier(objectExpr) ? objectExpr.text : null;
+    if (index !== null && ts.isCallExpression(objectExpr)) {
+      const entry = callableReturnArrayElementInitializer(objectExpr, index, source);
+      if (entry !== undefined && sliceExpressionsAreShipped([entry])) {
+        const callee = unwrapExpression(objectExpr.expression);
+        if (ts.isIdentifier(callee)) {
+          noteReference(callee.text, reportAt);
+        }
+      }
+      return;
+    }
     if (index !== null && objectName !== null) {
       const defaultExpr = localDefaultExpression(objectName);
       if (defaultExpr !== undefined) {
@@ -3693,6 +3902,7 @@ function checkRenderedLocalReferences(
           index,
           moduleMessageObjectInitializers,
           moduleMessageArrayInitializers,
+          source,
         );
         if (entries !== null) {
           if (sliceExpressionsAreShipped(entries)) {
@@ -3799,6 +4009,13 @@ function checkRenderedLocalReferences(
       noteRenderedMessageReference(expression.right, node);
       return;
     }
+    if (ts.isBinaryExpression(expression) && expression.operatorToken.kind === ts.SyntaxKind.PlusToken) {
+      if (!returnExpressionIsDirectStringShippedCopy(expression)) {
+        noteRenderedMessageReference(expression.left, node);
+        noteRenderedMessageReference(expression.right, node);
+      }
+      return;
+    }
     if (ts.isCallExpression(expression)) {
       const memberCallee = memberAccessFromCallCallee(expression.expression);
       if (memberCallee !== null) {
@@ -3843,10 +4060,26 @@ function checkRenderedLocalReferences(
     if (parameters === undefined || !identifierMatchesDocumentedParameter(name, parameters, source)) {
       return false;
     }
-    if (!ts.isIdentifier(expressionNode)) return false;
-    const parent = expressionNode.parent;
-    if (parent === undefined || !ts.isJsxExpression(parent)) return false;
-    return unwrapExpression(parent.expression) === expressionNode;
+    if (!ts.isIdentifier(expressionNode) || expressionNode.text !== name) return false;
+    let current: ts.Node | undefined = expressionNode.parent;
+    while (current !== undefined) {
+      if (ts.isJsxExpression(current)) {
+        if (current.expression === undefined) return false;
+        const rendered = unwrapExpression(current.expression);
+        return ts.isIdentifier(rendered) && rendered.text === name;
+      }
+      if (
+        ts.isJsxElement(current) ||
+        ts.isJsxFragment(current) ||
+        ts.isJsxSelfClosingElement(current) ||
+        ts.isCallExpression(current) ||
+        ts.isPropertyAssignment(current)
+      ) {
+        return false;
+      }
+      current = current.parent;
+    }
+    return false;
   }
 
   function noteRenderedLocalIdentifier(name: string, node: ts.Node): void {
@@ -4026,6 +4259,9 @@ function checkRenderedLocalReferences(
           kind: "jsx-text",
           text: expression.getText(source),
         });
+      } else {
+        noteRenderedMessageReference(expression.left, node);
+        noteRenderedMessageReference(expression.right, node);
       }
       return;
     }
@@ -6899,6 +7135,139 @@ describe("shipped message lint", () => {
       "",
     ].join("\n");
     expect(findShippedMessageViolations("Example.tsx", destructureFromCallResult)).toEqual([]);
+  });
+
+  it("notes fix round 26 plus, callee unwrap, argument unwrap, call slices, aliases, and @default", () => {
+    const plusDefault = [
+      'export function Example(/** @default "Save changes" */ caption = "Save changes") { return <span>{caption + ""}</span>; }',
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", plusDefault)).toEqual([
+      expect.objectContaining({ kind: "rendered-local", text: "caption" }),
+    ]);
+
+    const plusNoDefault = plusDefault.replace('/** @default "Save changes" */ ', "");
+    expect(findShippedMessageViolations("Example.tsx", plusNoDefault)).toEqual([
+      expect.objectContaining({ kind: "rendered-local", text: "caption" }),
+    ]);
+
+    const indirectCallee = [
+      "function show(value: string) { return <span>{value}</span>; }",
+      'export function Example(/** @default "Save changes" */ caption = "Save changes") { return (show)(caption); }',
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", indirectCallee)).toEqual([
+      expect.objectContaining({ kind: "rendered-local", text: "caption" }),
+    ]);
+
+    const nonNullCallee = indirectCallee.replace("return (show)(caption);", "return show!(caption);");
+    expect(findShippedMessageViolations("Example.tsx", nonNullCallee)).toEqual([
+      expect.objectContaining({ kind: "rendered-local", text: "caption" }),
+    ]);
+
+    const renderBlockIndirect = [
+      "import { createElement } from \"react\";",
+      "function defaultStatGridLabel(index: number): string { return `Stat ${index}`; }",
+      "function renderBlock(messages: { nodeChapterFallbackTitle: string; statGridLabel: (index: number) => string }) {",
+      "  return createElement(\"span\", { className: \"sr-only\" }, messages.nodeChapterFallbackTitle, messages.statGridLabel(1));",
+      "}",
+      "export function compileConsumerTemplateBlocks({",
+      "  nodeChapterFallbackTitle = \"Widget\",",
+      "  statGridLabel = defaultStatGridLabel,",
+      "}: { nodeChapterFallbackTitle?: string; statGridLabel?: (index: number) => string }) {",
+      "  const copy = { nodeChapterFallbackTitle, statGridLabel };",
+      "  return () => (renderBlock)(copy);",
+      "}",
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("compileConsumerTemplateBlocks.ts", renderBlockIndirect)).toEqual(
+      expect.arrayContaining([expect.objectContaining({ kind: "rendered-local", text: "messages" })]),
+    );
+
+    const renderBlockNonNull = renderBlockIndirect.replace("return () => (renderBlock)(copy);", "return () => renderBlock!(copy);");
+    expect(findShippedMessageViolations("compileConsumerTemplateBlocks.ts", renderBlockNonNull)).toEqual(
+      expect.arrayContaining([expect.objectContaining({ kind: "rendered-local", text: "messages" })]),
+    );
+
+    const wrappedArgument = [
+      "function show(value: string) { return <span>{value}</span>; }",
+      'export function Example(/** @default "Save changes" */ caption = "Save changes") { return show((caption)); }',
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", wrappedArgument)).toEqual([
+      expect.objectContaining({ kind: "rendered-local", text: "caption" }),
+    ]);
+    expect(
+      findShippedMessageViolations(
+        "Example.tsx",
+        wrappedArgument.replace("show((caption))", "show(caption!)"),
+      ),
+    ).toEqual([expect.objectContaining({ kind: "rendered-local", text: "caption" })]);
+    expect(
+      findShippedMessageViolations(
+        "Example.tsx",
+        wrappedArgument.replace("show((caption))", "show(caption as string)"),
+      ),
+    ).toEqual([expect.objectContaining({ kind: "rendered-local", text: "caption" })]);
+
+    const wrappedCallArgument = [
+      "function show(value: string) { return <span>{value}</span>; }",
+      'export function Example(/** @default "Save changes" */ caption = "Save changes", on = true) { return show(caption ?? "1"); }',
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", wrappedCallArgument)).toEqual([
+      expect.objectContaining({ kind: "rendered-local", text: "caption" }),
+    ]);
+    expect(
+      findShippedMessageViolations(
+        "Example.tsx",
+        wrappedCallArgument.replace('caption ?? "1"', "on && caption"),
+      ),
+    ).toEqual([expect.objectContaining({ kind: "rendered-local", text: "caption" })]);
+
+    const callResultMember = [
+      'function getRow(): { caption: string } { return { caption: "Save changes" }; }',
+      "export function Example(caption = \"Save changes\") { const row = getRow(); return <span>{row.caption}</span>; }",
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", callResultMember)).toEqual([
+      expect.objectContaining({ kind: "rendered-local", text: "row" }),
+    ]);
+
+    const callResultAlias = [
+      'function getRow(): { caption: string } { return { caption: "Save changes" }; }',
+      "export function Example(caption = \"Save changes\") { const get = getRow; const { caption: title } = get(); return <span>{title}</span>; }",
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", callResultAlias)).toEqual([
+      expect.objectContaining({ kind: "rendered-local", text: "title" }),
+    ]);
+
+    const defaultExemptWrappers = [
+      'export function Example(/** @default "Save changes" */ caption = "Save changes") { return <span>{(caption)}</span>; }',
+      "",
+    ].join("\n");
+    expect(findShippedMessageViolations("Example.tsx", defaultExemptWrappers)).toEqual([]);
+    expect(
+      findShippedMessageViolations("Example.tsx", defaultExemptWrappers.replace("{caption}", "{caption!}")),
+    ).toEqual([]);
+    expect(
+      findShippedMessageViolations(
+        "Example.tsx",
+        defaultExemptWrappers.replace("{caption}", "{caption as string}"),
+      ),
+    ).toEqual([]);
+    expect(
+      findShippedMessageViolations(
+        "Example.tsx",
+        defaultExemptWrappers.replace("{caption}", "{caption satisfies string}"),
+      ),
+    ).toEqual([]);
+
+    const noDefaultWrappers = defaultExemptWrappers.replace('/** @default "Save changes" */ ', "");
+    expect(findShippedMessageViolations("Example.tsx", noDefaultWrappers)).toEqual([
+      expect.objectContaining({ kind: "rendered-local", text: "caption" }),
+    ]);
   });
 
 });
