@@ -1108,6 +1108,64 @@ describe("copy-read-without-resolver", () => {
       expect(gate.verdict).toBe("violated");
     }
   });
+
+  it("flags namespace bodies at any type-operator header (fix round 26)", () => {
+    const head = [
+      'import { createCopyResolver as make } from "@clossys/writer";',
+      'import registry from "../copy/registry.json";',
+    ].join("\n");
+    const use = "export const out = make(registry);";
+    const member = "x = 1\nload(make: Handler): void { make(registry); }";
+    for (const header of [
+      "namespace Foo.Bar",
+      "namespace Foo.Bar[]",
+      "namespace typeof Foo.Bar",
+      "namespace readonly (string | number)[]",
+      "namespace keyof Foo",
+      "namespace typeof Foo",
+      "namespace unique symbol",
+      "namespace N",
+    ]) {
+      const { gate } = scan({ "src/copy.ts": [head, `${header} { ${member} }`, use].join("\n") });
+      expect(gate.verdict).toBe("violated");
+      expect(gate.findings.every((f) => f.rule === "copy-read-without-resolver")).toBe(true);
+    }
+  });
+
+  it("flags class bodies whose header contains a parenthesis (fix round 26)", () => {
+    const head = [
+      'import { createCopyResolver as make } from "@clossys/writer";',
+      'import registry from "../copy/registry.json";',
+    ].join("\n");
+    const use = "export const out = make(registry);";
+    const member = "x = 1\nload(make: Handler): void { make(registry); }";
+    for (const header of [
+      "class C extends mixin(Base)",
+      "class C extends (Foo)",
+      "class C extends ns.mixin(Base)",
+      "class C<T extends (Foo)>",
+      "class C extends Foo<Bar>",
+      "class C implements A<B>",
+    ]) {
+      const { gate } = scan({ "src/copy.ts": [head, `${header} { ${member} }`, use].join("\n") });
+      expect(gate.verdict).toBe("violated");
+      expect(gate.findings.every((f) => f.rule === "copy-read-without-resolver")).toBe(true);
+    }
+  });
+
+  it("couples a registry import with a long named clause and reports the bypass (fix round 26)", () => {
+    for (const len of [1900, 2000, 2001, 2100, 3200]) {
+      const names = Array.from({ length: Math.ceil(len / 10) }, (_, i) => `n${i}abcdefg`).join(", ").slice(0, len);
+      const src = [
+        `import registry, { ${names} } from "../copy/registry.json";`,
+        "export const out = registry.entries;",
+      ].join("\n");
+      const { scan: s, gate } = scan({ "src/copy.ts": src });
+      expect(s.coupledFiles).toEqual(["src/copy.ts"]);
+      expect(gate.verdict).toBe("violated");
+      expect(gate.findings.some((f) => f.rule === "copy-read-without-resolver")).toBe(true);
+    }
+  });
 });
 
 describe("scope and masking", () => {

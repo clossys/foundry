@@ -241,6 +241,54 @@ function nextNonWs(code: string, idx: number): number {
   return i;
 }
 
+/**
+ * Start index just after the nearest real statement boundary at or before
+ * `idx`: file start, a top-level `;`, or a top-level `{` that opens an
+ * enclosing block. Parentheses and brackets do NOT bound the segment — a
+ * callee (`require(`, `import(`) or a type keyword may precede them — and
+ * nested brackets are balanced on the way back, so a `}` closing an import
+ * clause or a destructuring pattern never ends the segment early. The length
+ * of the segment is arbitrary: there is no fixed character window here.
+ */
+function boundaryStartBefore(code: string, idx: number): number {
+  let depth = 0;
+  for (let i = idx - 1; i >= 0; i--) {
+    const c = code[i]!;
+    if (c === ")" || c === "]" || c === "}") depth++;
+    else if (c === "(" || c === "[" || c === "{") {
+      if (depth > 0) {
+        depth--;
+        continue;
+      }
+      if (c === "{") return i + 1; // an enclosing block bounds the statement
+    } else if (depth === 0 && c === ";") return i + 1;
+  }
+  return 0;
+}
+
+/**
+ * End index just past the next real statement boundary at or after `idx`: a
+ * top-level `;`, `{` or `}`. An unmatched `)`/`]` (the closer of an enclosing
+ * callee or parameter list) does not end the segment, and nested brackets are
+ * balanced, so the segment length is arbitrary — no fixed window.
+ */
+function forwardSegmentEnd(code: string, idx: number): number {
+  let depth = 0;
+  for (let i = idx; i < code.length; i++) {
+    const c = code[i]!;
+    if (c === "(" || c === "[" || c === "{") {
+      if (depth === 0 && c === "{") return i + 1;
+      depth++;
+    } else if (c === ")" || c === "]") {
+      if (depth > 0) depth--;
+    } else if (c === "}") {
+      if (depth === 0) return i + 1;
+      depth--;
+    } else if (depth === 0 && c === ";") return i + 1;
+  }
+  return code.length;
+}
+
 /** Index of the nearest unclosed `{`, `(` or `[` before `idx`, or -1. `code` is masked, so every bracket seen is real code. */
 function enclosingOpener(code: string, idx: number): number {
   let depth = 0;
@@ -575,7 +623,7 @@ function collectWriterCalleeImports(specifiers: Specifier[], isWriter: (s: strin
       const m = new RegExp(`import\\s+(?:type\\s+)?(${IDENT})\\s*=`, "u").exec(code.slice(spec.stmtStart, spec.lit.start));
       if (m && WRITER_PACKAGE_CALLEE_SET.has(m[1]!)) note(m[1]!, m[1]!);
     } else if (spec.form === "require") {
-      const pre = code.slice(Math.max(0, spec.stmtStart - 400), spec.stmtStart);
+      const pre = code.slice(boundaryStartBefore(code, spec.stmtStart), spec.stmtStart);
       const decl = new RegExp(`${CALLEE_BOUNDARY}(?:const|let|var)\\s+\\{([^}]*)\\}\\s*=\\s*$`, "u").exec(pre);
       if (decl) {
         for (const part of decl[1]!.split(",")) {
@@ -597,7 +645,7 @@ function writerRequireDestructureSpans(specifiers: Specifier[], isWriter: (s: st
   const spans: { start: number; end: number }[] = [];
   for (const spec of specifiers) {
     if (spec.form !== "require" || !isWriter(spec.lit.text)) continue;
-    const preStart = Math.max(0, spec.stmtStart - 400);
+    const preStart = boundaryStartBefore(code, spec.stmtStart);
     const pre = code.slice(preStart, spec.stmtStart);
     const decl = new RegExp(`${CALLEE_BOUNDARY}(?:const|let|var)\\s+\\{([^}]*)\\}\\s*=\\s*$`, "u").exec(pre);
     if (decl) spans.push({ start: preStart + decl.index!, end: spec.stmtStart });
@@ -732,13 +780,11 @@ function skipMethodHeaderLead(code: string, i: number): number {
  */
 function braceIsClassOrObjectLiteral(code: string, open: number): boolean {
   if (code[open] !== "{") return false;
-  if (openBraceIsDeclareClassBody(code, open)) return false;
-  if (indexInsideDeclareBlock(code, open + 1, "class")) return false;
   if (objectMethodBraceIsTypeOnly(code, open)) return false;
-  let segStart = open - 1;
-  while (segStart >= 0 && code[segStart] !== ";" && code[segStart] !== "}" && code[segStart] !== "{") segStart--;
-  const header = code.slice(segStart + 1, open);
-  if (new RegExp(`(?<![\\w$.])class(?![\\w$])(?:\\s+${IDENT})?[^{};()]*$`, "u").test(header)) return true;
+  if (namespaceBodyBraceKind(code, open) === "plain") return true;
+  const segStart = boundaryStartBefore(code, open);
+  const header = code.slice(segStart, open);
+  if (new RegExp(`(?<![\\w$.])class(?![\\w$])(?:\\s+${IDENT})?[^{};]*$`, "u").test(header)) return true;
   if (/(?<![\w$.])(?:return|typeof|new|void|delete|await|yield)\s*$/u.test(header)) return true;
   if (/[=,([{:?]\s*$/u.test(header)) return true;
   return false;
@@ -940,13 +986,11 @@ function indexInsideDeclareBlock(code: string, idx: number, kind: "class" | "nam
     });
     return inside;
   }
-  const head = new RegExp(`${CALLEE_BOUNDARY}declare\\s+namespace\\s+${IDENT}\\s*\\{`, "gu");
-  for (const m of code.matchAll(head)) {
-    const open = m.index! + m[0].length - 1;
-    const close = matchingClose(code, open);
-    if (close !== -1 && idx > open && idx < close) return true;
-  }
-  return false;
+  let inside = false;
+  eachNamespaceBodySpan(code, (open, close, declare) => {
+    if (declare && idx > open && idx < close) inside = true;
+  });
+  return inside;
 }
 
 /** Whether `{` at `openBrace` opens the body of a `declare class` (any class-name length). */
@@ -976,19 +1020,49 @@ function functionInDeclareNamespace(code: string, fnKeywordIndex: number): boole
 }
 
 function isDeclareNamespacePrefix(code: string, namespaceKeywordIndex: number): boolean {
-  const before = code.slice(Math.max(0, namespaceKeywordIndex - 12), namespaceKeywordIndex);
-  return /(?:^|\s)declare\s+$/.test(before);
+  let i = namespaceKeywordIndex - 1;
+  while (i >= 0 && isWs(code[i]!)) i--;
+  const wordEnd = i;
+  while (i >= 0 && isIdContinueCodePoint(codePointAt(code, i))) i = codePointStartAt(code, i) - 1;
+  const wordStart = i + 1;
+  if (wordStart > wordEnd) return false;
+  if (code.slice(wordStart, wordEnd + 1) !== "declare") return false;
+  if (wordStart > 0) {
+    const before = codePointBefore(code, wordStart);
+    if (before !== undefined && (isIdContinueCodePoint(before) || before === "$" || before === ".")) return false;
+  }
+  return true;
+}
+
+/**
+ * Visits every `namespace` body in `code`, walking from the keyword through an
+ * arbitrary type-operator header (`Foo.Bar[]`, `typeof Foo.Bar`,
+ * `readonly (string | number)[]`, `unique symbol`, …) to the real `{`. The
+ * header length is never bounded by a character window.
+ */
+function eachNamespaceBodySpan(
+  code: string,
+  visit: (openBrace: number, closeBrace: number, declare: boolean) => void,
+): void {
+  for (const m of code.matchAll(new RegExp(`${CALLEE_BOUNDARY}namespace\\b`, "gu"))) {
+    const kwIdx = m.index!;
+    const declare = isDeclareNamespacePrefix(code, kwIdx);
+    let i = skipWsCode(code, kwIdx + "namespace".length);
+    i = skipTypeOperand(code, i);
+    i = skipWsCode(code, i);
+    if (code[i] !== "{") continue;
+    const close = matchingClose(code, i);
+    if (close === -1) continue;
+    visit(i, close, declare);
+  }
 }
 
 function indexInsidePlainNamespaceBlock(code: string, idx: number): boolean {
-  for (const m of code.matchAll(new RegExp(`${CALLEE_BOUNDARY}namespace\\s+${IDENT}\\s*\\{`, "gu"))) {
-    const nsIdx = m.index! + m[0].indexOf("namespace");
-    if (isDeclareNamespacePrefix(code, nsIdx)) continue;
-    const open = m.index! + m[0].length - 1;
-    const close = matchingClose(code, open);
-    if (close !== -1 && idx > open && idx < close) return true;
-  }
-  return false;
+  let inside = false;
+  eachNamespaceBodySpan(code, (open, close, declare) => {
+    if (!declare && idx > open && idx < close) inside = true;
+  });
+  return inside;
 }
 
 /** Namespace overload/signature declarations (`function f(x: T): R;`) are not value bindings. */
@@ -1212,7 +1286,7 @@ function openParenIsTypeSyntax(code: string, openIdx: number): boolean {
     if (close !== -1 && parenListIsTypeMethodSignature(code, close)) return true;
   }
   if (indexInTypeAliasAssignmentRhs(code, openIdx)) return true;
-  const before = code.slice(Math.max(0, openIdx - 400), openIdx);
+  const before = code.slice(boundaryStartBefore(code, openIdx), openIdx);
   if (new RegExp(`(?<![\\w$.])interface\\s+${IDENT}(?:\\s*<[^>]*>)?(?:\\s+extends\\s+[^{;]*)?\\s*$`, "u").test(before))
     return true;
   let p = prevNonWs(code, openIdx);
@@ -1323,12 +1397,70 @@ function forEachParenListShadows(code: string, name: string): boolean {
   return false;
 }
 
+/** Whether `{` at `open` opens a `namespace` body, and whether the `namespace` is ambient (`declare`). */
+function namespaceBodyBraceKind(code: string, open: number): "plain" | "declare" | undefined {
+  if (code[open] !== "{") return undefined;
+  const segStart = boundaryStartBefore(code, open);
+  const m = new RegExp(`(?<![\\w$.])namespace\\s+[^{};]*$`, "u").exec(code.slice(segStart, open));
+  if (!m) return undefined;
+  return isDeclareNamespacePrefix(code, segStart + m.index) ? "declare" : "plain";
+}
+
+/** Each `{|,|;|}`- or newline-led method header through its parameter list, skipping control-flow blocks. */
+function forEachContainerMethodParamList(
+  code: string,
+  onMethod: (parenOpen: number) => boolean | void,
+): boolean {
+  for (let lead = 0; lead < code.length; lead++) {
+    const c = code[lead];
+    if (c !== "{" && c !== "," && c !== ";" && c !== "}") continue;
+    let i = skipWsCode(code, lead + 1);
+    i = skipMethodHeaderLead(code, i);
+    const methodStart = i;
+    i = skipIdentCode(code, i);
+    if (i === methodStart) continue;
+    if (CONTROL_FLOW_BLOCK_KEYWORDS.has(code.slice(methodStart, i))) continue;
+    i = skipWsCode(code, i);
+    if (code[i] === "<") {
+      i = indexAfterGenericTypeParamList(code, i);
+      i = skipWsCode(code, i);
+    }
+    if (code[i] !== "(") continue;
+    if (onMethod(i) === true) return true;
+  }
+  for (let lead = 0; lead < code.length; lead++) {
+    const c = code[lead];
+    if (c !== "\n" && c !== "\r") continue;
+    if (!newlineMayStartClassOrObjectMember(code, lead)) continue;
+    let i = skipWsCode(code, lead + 1);
+    i = skipMethodHeaderLead(code, i);
+    const methodStart = i;
+    i = skipIdentCode(code, i);
+    if (i === methodStart) continue;
+    if (CONTROL_FLOW_BLOCK_KEYWORDS.has(code.slice(methodStart, i))) continue;
+    i = skipWsCode(code, i);
+    if (code[i] === "<") {
+      i = indexAfterGenericTypeParamList(code, i);
+      i = skipWsCode(code, i);
+    }
+    if (code[i] !== "(") continue;
+    if (onMethod(i) === true) return true;
+  }
+  return false;
+}
+
 /** Ambient or type-only `{ name(` forms — not class or object-literal methods. */
 function objectMethodBraceIsTypeOnly(code: string, openBrace: number): boolean {
   if (openBraceIsDeclareClassBody(code, openBrace)) return true;
   if (indexInsideDeclareBlock(code, openBrace + 1, "class")) return true;
+  // A plain `namespace N { ... }` body sets approval like any object container.
+  // An ambient `declare namespace` body is type-only. A `namespace` header past
+  // the old 120-character window is still recognised, so `namespace Foo.Bar[]`
+  // cannot hide its members.
+  const nsKind = namespaceBodyBraceKind(code, openBrace);
+  if (nsKind !== undefined) return nsKind === "declare";
   if (openBraceIsTypeMemberContext(code, openBrace)) return true;
-  const before = code.slice(Math.max(0, openBrace - 120), openBrace);
+  const before = code.slice(boundaryStartBefore(code, openBrace), openBrace);
   if (new RegExp(`(?<![\\w$.])interface\\s+${IDENT}(?:\\s*<[^>]*>)?(?:\\s+extends\\s+[^{;]*)?\\s*$`, "u").test(before))
     return true;
   if (new RegExp(`(?<![\\w$.])type\\s+${IDENT}(?:\\s*<[^{};]*)?\\s*=\\s*[^{;]*$`, "u").test(before)) return true;
@@ -1341,51 +1473,6 @@ function objectMethodContextIsTypeOnly(code: string, memberLeadIdx: number): boo
   const open = enclosingOpener(code, memberLeadIdx);
   if (open === -1 || code[open] !== "{") return false;
   return objectMethodBraceIsTypeOnly(code, open);
-}
-
-/** Each `{|,|;|}`- or newline-led method header through its parameter list. */
-function forEachObjectMethodParamList(
-  code: string,
-  onMethod: (parenOpen: number, memberLeadIdx: number) => boolean | void,
-): boolean {
-  for (let lead = 0; lead < code.length; lead++) {
-    const c = code[lead];
-    if (c !== "{" && c !== "," && c !== ";" && c !== "}") continue;
-    let i = skipWsCode(code, lead + 1);
-    i = skipMethodHeaderLead(code, i);
-    const methodStart = i;
-    i = skipIdentCode(code, i);
-    if (i === methodStart) continue;
-    const methodName = code.slice(methodStart, i);
-    if (CONTROL_FLOW_BLOCK_KEYWORDS.has(methodName)) continue;
-    i = skipWsCode(code, i);
-    if (code[i] === "<") {
-      i = indexAfterGenericTypeParamList(code, i);
-      i = skipWsCode(code, i);
-    }
-    if (code[i] !== "(") continue;
-    if (onMethod(i, lead) === true) return true;
-  }
-  for (let lead = 0; lead < code.length; lead++) {
-    const c = code[lead];
-    if (c !== "\n" && c !== "\r") continue;
-    if (!newlineMayStartClassOrObjectMember(code, lead)) continue;
-    let i = skipWsCode(code, lead + 1);
-    i = skipMethodHeaderLead(code, i);
-    const methodStart = i;
-    i = skipIdentCode(code, i);
-    if (i === methodStart) continue;
-    const methodName = code.slice(methodStart, i);
-    if (CONTROL_FLOW_BLOCK_KEYWORDS.has(methodName)) continue;
-    i = skipWsCode(code, i);
-    if (code[i] === "<") {
-      i = indexAfterGenericTypeParamList(code, i);
-      i = skipWsCode(code, i);
-    }
-    if (code[i] !== "(") continue;
-    if (onMethod(i, lead) === true) return true;
-  }
-  return false;
 }
 
 function collectLocalShadowedCalleepNames(
@@ -1478,8 +1565,9 @@ function collectLocalShadowedCalleepNames(
     }
     if (
       !shadowed.has(name) &&
-      forEachObjectMethodParamList(code, (parenOpen, memberLeadIdx) => {
-        if (objectMethodContextIsTypeOnly(code, memberLeadIdx)) return false;
+      forEachContainerMethodParamList(code, (parenOpen) => {
+        const container = enclosingOpener(code, parenOpen);
+        if (container >= 0 && objectMethodContextIsTypeOnly(code, container)) return false;
         if (openParenIsTypeSyntax(code, parenOpen)) return false;
         const close = matchingClose(code, parenOpen);
         if (close === -1) return false;
@@ -1566,11 +1654,11 @@ function collectLocalShadowedCalleepNames(
  * literal (a false positive, never a silent miss).
  */
 function braceIsPatternOrType(code: string, open: number): boolean {
-  const before = code.slice(Math.max(0, open - 400), open);
+  const before = code.slice(boundaryStartBefore(code, open), open);
   if (/(?<![\w$.])(?:const|let|var)\s*$/.test(before)) return true;
   if (new RegExp(`(?<![\\w$.])interface\\s+${IDENT}(?:\\s*<[^>]*>)?(?:\\s+extends\\s+[^{};]*)?\\s*$`).test(before)) return true;
   if (new RegExp(`(?<![\\w$.])type\\s+${IDENT}(?:\\s*<[^{};]*>)?\\s*=\\s*$`).test(before)) return true;
-  if (new RegExp(`(?<![\\w$.])class(?![\\w$])(?:\\s+${IDENT})?[^{};()]*$`).test(before)) return true;
+  if (new RegExp(`(?<![\\w$.])class(?![\\w$])(?:\\s+${IDENT})?[^{};]*$`).test(before)) return true;
   if (/(?<![\w$.])(?:as|satisfies)\s*$/.test(before)) return true;
   if (/\)\s*:\s*$/.test(before)) return true; // a return-type annotation
   if (new RegExp(`(?<![\\w$.])(?:const|let|var)\\s+${IDENT}\\s*:\\s*$`).test(before)) return true;
@@ -1578,7 +1666,7 @@ function braceIsPatternOrType(code: string, open: number): boolean {
   if (/(?<![\w$.])function\b[^(){};]*\(\s*$/.test(before)) return true;
   const close = matchingClose(code, open);
   if (close === -1) return false;
-  const after = code.slice(close + 1, close + 400);
+  const after = code.slice(close + 1, forwardSegmentEnd(code, close + 1));
   if (/^\s*=(?![=>])/.test(after)) return true;
   if (/^\s*(?::[^(){};=]*)?\)\s*(?::[^{};=]*)?(?:=>|\{)/.test(after)) return true; // an arrow or method parameter
   if (/^\s*(?:of|in)\b/.test(after)) return true;
@@ -1682,9 +1770,9 @@ export function extractApprovalBypass(
   const specifierStarts = new Set<number>();
   for (const lit of literals) {
     if (!isPlainLiteral(lit)) continue;
-    const before = code.slice(Math.max(0, lit.start - 2000), lit.start);
+    const before = code.slice(boundaryStartBefore(code, lit.start), lit.start);
     const base = lit.start - before.length;
-    const after = code.slice(lit.end, lit.end + 40);
+    const after = code.slice(lit.end, forwardSegmentEnd(code, lit.end));
     let spec: Specifier | undefined;
     if (lit.kind === "string" && /(?<![\w$.])from\s*$/.test(before)) {
       const kw = [...before.matchAll(/(?<![\w$.])(import|export)(?![\w$])/g)].pop();
@@ -1693,9 +1781,10 @@ export function extractApprovalBypass(
       spec = { lit, form: "bare", stmtStart: base + before.search(/import\s*$/) };
     } else if (/(?<![\w$.])require\s*\(\s*$/.test(before) && /^\s*\)/.test(after)) {
       const callee = base + before.search(/require\s*\(\s*$/);
-      const eq = new RegExp(`(?<![\\w$.])import\\s+(?:type\\s+)?${IDENT}\\s*=\\s*$`).exec(code.slice(Math.max(0, callee - 200), callee));
+      const eqSegmentStart = boundaryStartBefore(code, callee);
+      const eq = new RegExp(`(?<![\\w$.])import\\s+(?:type\\s+)?${IDENT}\\s*=\\s*$`).exec(code.slice(eqSegmentStart, callee));
       spec = eq
-        ? { lit, form: "import-equals", stmtStart: Math.max(0, callee - 200) + eq.index }
+        ? { lit, form: "import-equals", stmtStart: eqSegmentStart + eq.index }
         : { lit, form: "require", stmtStart: callee };
     } else if (/(?<![\w$.])import\s*\(\s*$/.test(before) && /^\s*[),]/.test(after)) {
       spec = { lit, form: "dynamic", stmtStart: base + before.search(/import\s*\(\s*$/) };
@@ -1788,7 +1877,8 @@ export function extractApprovalBypass(
         break;
       }
       case "require": {
-        const pre = code.slice(Math.max(0, spec.stmtStart - 200), spec.stmtStart);
+        const preStart = boundaryStartBefore(code, spec.stmtStart);
+        const pre = code.slice(preStart, spec.stmtStart);
         const decl = new RegExp(`(?<![\\w$.])(?:const|let|var)\\s+(${IDENT})\\s*=\\s*$`).exec(pre);
         const close = code.indexOf(")", spec.lit.end);
         // Bound only when the call is the whole initializer: `const x = require("...")` followed by `;`, `,`, `}`, a line break or EOF.
@@ -1796,7 +1886,7 @@ export function extractApprovalBypass(
         if (decl !== null && bound) {
           bindings.push({
             name: decl[1]!,
-            declStart: Math.max(0, spec.stmtStart - 200) + decl.index,
+            declStart: preStart + decl.index,
             declEnd: close + 1,
             fromParsedRegistry: false,
             parseRegistryAssign: false,
