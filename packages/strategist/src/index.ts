@@ -101,6 +101,7 @@ export type {
   StrategyConstraintTarget,
 } from "./schema.js";
 
+export { BRAND_CSS_SEGMENTS, extractBrandCssSlots } from "./brand-css.js";
 export { checkBrandCoverage, validateBrandDerivation, validateBrandDerivations } from "./brand-derivation.js";
 export type { BrandCoverageFailureReason, BrandCoverageResult, BrandDerivation } from "./brand-derivation.js";
 

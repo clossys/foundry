@@ -853,3 +853,63 @@ describe("main — --facts-dir — real runs", () => {
     expect(dirFinding).toBe(flatFinding);
   });
 });
+
+// -----------------------------------------------------------------------
+// brand-coverage — default stylesheet. With no brandable-slots-file, the
+// slots proven are the custom properties declared in `brand/brand.css`
+// under the working directory.
+// -----------------------------------------------------------------------
+
+describe("main — brand-coverage — default brand/brand.css", () => {
+  let cwd: string;
+  let originalCwd: string;
+
+  beforeEach(() => {
+    cwd = mkdtempSync(join(tmpdir(), "strategy-cli-brandcss-"));
+    originalCwd = process.cwd();
+    process.chdir(cwd);
+  });
+
+  afterEach(() => {
+    process.chdir(originalCwd);
+    rmSync(cwd, { recursive: true, force: true });
+  });
+
+  function writeBrandCss(css: string): void {
+    mkdirSync(join(cwd, "brand"), { recursive: true });
+    writeFileSync(join(cwd, "brand", "brand.css"), css);
+  }
+
+  it("reads the slots from brand/brand.css when brandable-slots-file is omitted, and names the stylesheet", () => {
+    writeBrandCss(":root { --color-accent-primary: #123456; /* --ignored: 1 */ }\n@media (prefers-color-scheme: dark) { :root { --color-accent-primary: #abcdef; --color-surface: #000; } }");
+    const derivationsFile = writeDerivations(strategyDir, [derivation("Precise", ["--color-accent-primary", "--color-surface"])]);
+    expect(main(["brand-coverage", derivationsFile])).toBe(0);
+    const logged = vi.mocked(console.log).mock.calls.map((c) => String(c[0])).join("\n");
+    expect(logged).toContain("Brand stylesheet:");
+    expect(logged).toContain("2 brandable slot(s) checked");
+  });
+
+  it("returns 1 when a slot declared in brand/brand.css has no derivation", () => {
+    writeBrandCss(":root { --color-accent-primary: #123456; --color-surface: #000; }");
+    const derivationsFile = writeDerivations(strategyDir, [derivation("Precise", ["--color-accent-primary"])]);
+    expect(main(["brand-coverage", derivationsFile])).toBe(1);
+  });
+
+  it("returns 2 when brand/brand.css declares no custom properties", () => {
+    writeBrandCss("body { color: red; }");
+    const derivationsFile = writeDerivations(strategyDir, [derivation("Precise", ["--color-accent-primary"])]);
+    expect(main(["brand-coverage", derivationsFile])).toBe(2);
+  });
+
+  it("throws CliInputError when brand/brand.css is absent and no slots file is given", () => {
+    const derivationsFile = writeDerivations(strategyDir, [derivation("Precise", ["--color-accent-primary"])]);
+    expect(() => main(["brand-coverage", derivationsFile])).toThrow(CliInputError);
+  });
+
+  it("an explicit brandable-slots-file still wins over brand/brand.css", () => {
+    writeBrandCss(":root { --color-surface: #000; }");
+    const derivationsFile = writeDerivations(strategyDir, [derivation("Precise", ["--color-accent-primary"])]);
+    const slotsFile = writeBrandableSlots(strategyDir, ["--color-accent-primary"]);
+    expect(main(["brand-coverage", derivationsFile, slotsFile])).toBe(0);
+  });
+});

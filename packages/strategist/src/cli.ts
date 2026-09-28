@@ -55,6 +55,7 @@ import {
   type BrandCoverageResult,
   type BrandDerivation,
 } from "./brand-derivation.js";
+import { BRAND_CSS_SEGMENTS, extractBrandCssSlots } from "./brand-css.js";
 import { checkBrandSurfaces } from "./brand-surfaces.js";
 import {
   checkDirectionCoverage,
@@ -97,10 +98,10 @@ Exit codes: 0 = clean, 1 = at least one finding, 2 = could not run (bad input, m
 Run "strategist-check brand-coverage --help", "strategist-check direction --help", "strategist-check handoff --help", or "strategist-check apply --help" for those subcommands' own usage.
 `;
 
-const BRAND_COVERAGE_USAGE = `Usage: strategist-check brand-coverage <derivations-file> <brandable-slots-file> [options]
+const BRAND_COVERAGE_USAGE = `Usage: strategist-check brand-coverage <derivations-file> [<brandable-slots-file>] [options]
 
   derivations-file      Path to a JSON file containing an array of BrandDerivation objects (see @clossys/strategist's README, "The brand layer"). Required.
-  brandable-slots-file  Path to a JSON file containing an array of brandable token-slot name strings (the thing being checked FOR — e.g. every @example/ui/tokens entry with "brandable: true", collected by the caller since this package never imports tokens). Required.
+  brandable-slots-file  Path to a JSON file containing an array of brandable token-slot name strings (the thing being checked FOR — e.g. every @example/ui/tokens entry with "brandable: true", collected by the caller since this package never imports tokens). Optional: when omitted, the slots are the custom properties declared in brand/brand.css under the working directory, and that stylesheet is named in the report.
 
 Options:
   --surfaces <path>      Designer-facing surface file that must contain do-not language (repeatable).
@@ -516,19 +517,23 @@ function runBrandCoverage(argv: string[]): number {
   if (!args.derivationsFile) {
     throw new CliInputError("derivations-file is required");
   }
-  if (!args.brandableSlotsFile) {
-    throw new CliInputError("brandable-slots-file is required");
-  }
 
   const derivationsFile = resolve(args.derivationsFile);
-  const brandableSlotsFile = resolve(args.brandableSlotsFile);
   requireFile("derivations-file", derivationsFile);
-  requireFile("brandable-slots-file", brandableSlotsFile);
-
   console.log(`Derivations file: ${derivationsFile}`);
-  console.log(`Brandable slots file: ${brandableSlotsFile}`);
 
-  const slotsRead = readBrandableSlots(brandableSlotsFile);
+  let slotsRead: BrandableSlotsReadResult;
+  if (args.brandableSlotsFile) {
+    const brandableSlotsFile = resolve(args.brandableSlotsFile);
+    requireFile("brandable-slots-file", brandableSlotsFile);
+    console.log(`Brandable slots file: ${brandableSlotsFile}`);
+    slotsRead = readBrandableSlots(brandableSlotsFile);
+  } else {
+    const brandCssFile = resolve(process.cwd(), ...BRAND_CSS_SEGMENTS);
+    requireFile("brand stylesheet (default when brandable-slots-file is omitted)", brandCssFile);
+    console.log(`Brand stylesheet: ${brandCssFile}`);
+    slotsRead = { ok: true, value: extractBrandCssSlots(readFileSync(brandCssFile, "utf8")) };
+  }
   if (!slotsRead.ok) {
     console.error(`\nBrandable slots could not be loaded: ${slotsRead.detail}`);
     console.error("Refusing to report a pass with no trustworthy brandable-slot list to check against.");

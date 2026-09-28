@@ -614,10 +614,10 @@ npx strategist-check brand-coverage ./brand-derivations.json ./brandable-slots.j
 ```
 
 ```
-Usage: strategist-check brand-coverage <derivations-file> <brandable-slots-file> [--surfaces <file>]
+Usage: strategist-check brand-coverage <derivations-file> [<brandable-slots-file>] [--surfaces <file>]
 
   derivations-file      Path to a JSON file containing an array of BrandDerivation objects. Required.
-  brandable-slots-file  Path to a JSON file containing an array of brandable token-slot name strings. Required.
+  brandable-slots-file  Path to a JSON file containing an array of brandable token-slot name strings. Optional; defaults to the custom properties declared in brand/brand.css.
 
 Options:
   --help                 Print this message and exit 0.
@@ -632,6 +632,14 @@ non-empty strings: the caller-supplied `brandableSlots` list
 `@clossys/designer/tokens` — a consumer collects that list itself, e.g.
 `Object.values(TOKENS).filter(t => t.brandable).map(t => t.property)`, and
 writes it to a file this subcommand reads).
+
+When `brandable-slots-file` is omitted, the subcommand reads
+`brand/brand.css` under the working directory, takes every custom property
+declared there as a brandable slot, and prints `Brand stylesheet: <path>` so
+the report names the stylesheet it proved. The overlay bytes belong to
+Designer; `clossys/strategist/` still refuses hex values and type pairings. A
+missing `brand/brand.css` is a usage error, and a stylesheet declaring no
+custom properties is indeterminate (exit `2`).
 
 Exit codes map `checkBrandCoverage`'s own three-state result directly —
 note this is **not** the same 0/1/2 meaning as the facts-check exit codes
