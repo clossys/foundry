@@ -186,10 +186,6 @@ function hasLetter(value: string): boolean {
   return /\p{L}/u.test(value);
 }
 
-function isNonMessageLiteralParameterName(name: string): boolean {
-  return name === "text";
-}
-
 function staticLiteral(node: ts.Node): string | null {
   if (ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node)) return node.text;
   if (ts.isTemplateExpression(node)) {
@@ -823,7 +819,6 @@ function collectParameterLiteralDefaults(
         }
       }
       if (initializer === undefined) continue;
-      if (!MESSAGE_JSX_ATTRS.has(resolvedPropName) && !isNonMessageLiteralParameterName(localName)) continue;
       noteBindingDefault(resolvedPropName, localName, initializer, line);
     }
   }
@@ -838,11 +833,7 @@ function collectParameterLiteralDefaults(
       walkArrayBindingPattern(parameter.name, line, undefined, undefined, parameter.initializer);
       continue;
     }
-    if (
-      ts.isIdentifier(parameter.name) &&
-      parameter.initializer !== undefined &&
-      (MESSAGE_JSX_ATTRS.has(parameter.name.text) || isNonMessageLiteralParameterName(parameter.name.text))
-    ) {
+    if (ts.isIdentifier(parameter.name) && parameter.initializer !== undefined) {
       noteBindingDefault(parameter.name.text, parameter.name.text, parameter.initializer, line);
     }
   }
@@ -975,8 +966,7 @@ function collectUndocumentedShippedPropNames(
         }
       }
       if (initializer === undefined) continue;
-      if (!MESSAGE_JSX_ATTRS.has(resolvedPropName) && !isNonMessageLiteralParameterName(localName)) continue;
-      noteShippedProp(resolvedPropName, initializer);
+      noteShippedProp(localName, initializer);
     }
   }
 
@@ -989,11 +979,7 @@ function collectUndocumentedShippedPropNames(
       walkArrayBindingPattern(parameter.name, undefined, undefined, parameter.initializer);
       continue;
     }
-    if (
-      ts.isIdentifier(parameter.name) &&
-      parameter.initializer !== undefined &&
-      (MESSAGE_JSX_ATTRS.has(parameter.name.text) || isNonMessageLiteralParameterName(parameter.name.text))
-    ) {
+    if (ts.isIdentifier(parameter.name) && parameter.initializer !== undefined) {
       noteShippedProp(parameter.name.text, parameter.initializer);
     }
   }
@@ -3145,6 +3131,15 @@ describe("shipped message lint", () => {
     );
 
     const nonMessageDefaults = [
+      "export function ExampleA({ items: [caption] = [\"Save changes\"] }: { items: string[] }) {",
+      "  return <span>{caption}</span>;",
+      "}",
+      'export function ExampleB(caption = "Save changes") {',
+      "  return <span>{caption}</span>;",
+      "}",
+      'export function Example([caption] = ["Save changes"]) {',
+      "  return <span>{caption}</span>;",
+      "}",
       "export function ExampleA({ items: [text] = [\"Save changes\"] }: { items: string[] }) {",
       "  return <span>{text}</span>;",
       "}",
@@ -3154,7 +3149,10 @@ describe("shipped message lint", () => {
       "",
     ].join("\n");
     expect(findShippedMessageViolations("Example.tsx", nonMessageDefaults)).toEqual(
-      expect.arrayContaining([expect.objectContaining({ kind: "rendered-local", text: "text" })]),
+      expect.arrayContaining([
+        expect.objectContaining({ kind: "rendered-local", text: "caption" }),
+        expect.objectContaining({ kind: "rendered-local", text: "text" }),
+      ]),
     );
 
     const renderConcatenation = [

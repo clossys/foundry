@@ -406,6 +406,12 @@ function findingForLiteral(
  * actually checked — correct for this package's own CLI, actively
  * misleading for anyone else's.
  */
+/** Default parameter documentation consumed by shipped-message lint. */
+interface TokenGateShippedMessageDefaults {
+  /** @default "@clossys/designer/tokens" */
+  registryLabel?: string;
+}
+
 export function checkTokenPurity(
   candidates: StyleCandidate[],
   tokens: Readonly<Record<string, TokenDefinition>>,
