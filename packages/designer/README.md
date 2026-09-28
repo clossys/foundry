@@ -649,9 +649,20 @@ brand/designer.css     the only CSS entry
 
 `brand/designer.css` imports, in order, `tailwindcss`,
 `@clossys/designer/theme.css`, `./brand.css`, `./extensions.css` when
-present, and `@clossys/designer/utilities.css`. Every application stylesheet
-imports that one file and every document root sets `data-brand-bound`.
-Applications do not copy the block.
+present, and `@clossys/designer/utilities.css`:
+
+```css
+@import "tailwindcss";
+@import "@clossys/designer/theme.css";
+@import "./brand.css";
+@import "./extensions.css";
+@import "@clossys/designer/utilities.css";
+```
+
+Delete the `./extensions.css` line when the product has no extension file; an
+`@import` of a file that does not exist fails the build. Every application
+stylesheet imports that one file and every document root sets
+`data-brand-bound`. Applications do not copy the block.
 
 `utilities.css` is generated from this package's components and holds
 `@source inline(...)` directives listing every class they render. It

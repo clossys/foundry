@@ -33,4 +33,66 @@ describe("findSecondBinders", () => {
     write("apps/web/node_modules/p/c.css", ":root { --color-accent: red; }");
     expect(findSecondBinders(join(dir, "apps"), brand)).toEqual([]);
   });
+
+  it("reports the --color-* wildcard reset", () => {
+    const brand = write("brand/brand.css", ":root { --color-accent: #2a78d6; }");
+    const second = write("apps/web/globals.css", "@theme { --color-*: initial; }");
+    expect(findSecondBinders(join(dir, "apps"), brand)).toEqual([{ file: second, slots: ["--color-*"] }]);
+  });
+
+  it("scans .scss and .pcss stylesheets", () => {
+    const brand = write("brand/brand.css", ":root { --color-accent: #2a78d6; }");
+    const scss = write("apps/web/a.scss", ".x { --color-accent: red; }");
+    const pcss = write("apps/web/b.pcss", ".x { --color-ink: red; }");
+    expect(findSecondBinders(join(dir, "apps"), brand)).toEqual([
+      { file: scss, slots: ["--color-accent"] },
+      { file: pcss, slots: ["--color-ink"] },
+    ]);
+  });
+
+  it("reports a --color-* declaration inside @apply", () => {
+    const brand = write("brand/brand.css", ":root { --color-accent: #2a78d6; }");
+    const second = write("apps/web/a.css", ".x { @apply [--color-accent:red] p-4; }");
+    expect(findSecondBinders(join(dir, "apps"), brand)).toEqual([{ file: second, slots: ["--color-accent"] }]);
+  });
+
+  it("ignores --color-* text inside quoted strings", () => {
+    const brand = write("brand/brand.css", ":root { --color-accent: #2a78d6; }");
+    write("apps/web/a.css", '.x::before { content: "--color-accent: red"; }\n.y::after { content: \'a; --color-ink: red\'; }');
+    write("apps/web/b.css", '/* it\'s a comment */ .x::before { content: "/*"; }\n.z { margin: 0; }');
+    expect(findSecondBinders(join(dir, "apps"), brand)).toEqual([]);
+  });
+
+  it("still reports a binding that follows a string or an apostrophe in a comment", () => {
+    const brand = write("brand/brand.css", ":root { --color-accent: #2a78d6; }");
+    const second = write("apps/web/a.css", '/* it\'s */ .x::before { content: "a"; }\n:root { --color-ink: red; }');
+    expect(findSecondBinders(join(dir, "apps"), brand)).toEqual([{ file: second, slots: ["--color-ink"] }]);
+  });
+
+  it("does not flag var(--color-*) reads", () => {
+    const brand = write("brand/brand.css", ":root { --color-accent: #2a78d6; }");
+    write("apps/web/a.css", ".x { color: var(--color-accent); border-color: var(--color-line, red); background: var(--color-*, blue); }");
+    expect(findSecondBinders(join(dir, "apps"), brand)).toEqual([]);
+  });
+
+  it("skips top-level build, dist and node_modules but not a nested folder with those names", () => {
+    const brand = write("brand/brand.css", ":root { --color-accent: #2a78d6; }");
+    write("apps/build/a.css", ":root { --color-accent: red; }");
+    write("apps/dist/a.css", ":root { --color-accent: red; }");
+    write("apps/node_modules/p/a.css", ":root { --color-accent: red; }");
+    write("apps/web/dist/a.css", ":root { --color-accent: red; }");
+    write("apps/web/node_modules/p/a.css", ":root { --color-accent: red; }");
+    const nestedBuild = write("apps/web/src/build/theme.css", ":root { --color-accent: red; }");
+    const nestedDist = write("apps/web/src/dist/theme.css", ":root { --color-accent: red; }");
+    expect(findSecondBinders(join(dir, "apps"), brand)).toEqual([
+      { file: nestedBuild, slots: ["--color-accent"] },
+      { file: nestedDist, slots: ["--color-accent"] },
+    ]);
+  });
+
+  it("ignores // line comments in .scss and .pcss", () => {
+    const brand = write("brand/brand.css", ":root { --color-accent: #2a78d6; }");
+    write("apps/web/a.scss", "// --color-accent: red;\n.x { background: url(https://example.test/a.png); margin: 0; }");
+    expect(findSecondBinders(join(dir, "apps"), brand)).toEqual([]);
+  });
 });

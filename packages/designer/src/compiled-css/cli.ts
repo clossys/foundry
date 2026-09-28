@@ -29,7 +29,7 @@
 import { existsSync, mkdirSync, readFileSync, realpathSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { scanCompiledCssSources } from "./scan-sources.js";
+import { scanCompiledCssSources, scanUtilitiesSources } from "./scan-sources.js";
 import { generateCompiledCss } from "./generate.js";
 import { checkCompiledCssFreshness } from "./check.js";
 import { generateUtilitiesCss } from "./utilities.js";
@@ -119,7 +119,7 @@ export async function main(argv: string[]): Promise<number> {
       writeFileSync(outPath, generated.css, "utf8");
       console.log(`Wrote ${outPath} (${generated.classCount} class rule(s), ${generated.byteSize} bytes).`);
       const utilitiesPath = resolve(stylesDir, "utilities.css");
-      writeFileSync(utilitiesPath, generateUtilitiesCss(scan.candidates), "utf8");
+      writeFileSync(utilitiesPath, generateUtilitiesCss(scanUtilitiesSources(packageRoot).candidates), "utf8");
       console.log(`Wrote ${utilitiesPath}.`);
       return 0;
     }
@@ -133,14 +133,14 @@ export async function main(argv: string[]): Promise<number> {
     const result = await checkCompiledCssFreshness({ packageRoot });
     console.log(`Scanned ${result.filesScanned} file(s), ${result.classCount} class rule(s) in a fresh re-derivation.`);
     const utilitiesPath = resolve(packageRoot, "styles", "utilities.css");
-    const expectedUtilities = generateUtilitiesCss(scanCompiledCssSources(packageRoot).candidates);
+    const expectedUtilities = generateUtilitiesCss(scanUtilitiesSources(packageRoot).candidates);
     const utilitiesInSync = existsSync(utilitiesPath) && readFileSync(utilitiesPath, "utf8") === expectedUtilities;
     if (!utilitiesInSync) {
       console.error(`"${utilitiesPath}" is missing or stale. Run \`npm run generate:compiled-css\`.`);
       return 1;
     }
     if (result.inSync) {
-      console.log(`${compiledCssPath} and ${utilitiesPath} are in sync with src/atoms/, src/blocks/, and src/shell/.`);
+      console.log(`${compiledCssPath} and ${utilitiesPath} are in sync with the component sources.`);
       return 0;
     }
     console.error(result.diffSummary ?? "styles/compiled.css is stale.");
