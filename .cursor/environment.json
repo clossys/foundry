@@ -1,4 +1,0 @@
-{
-  "install": "node scripts/agent-cloud.mjs bootstrap && node scripts/agent-cloud.mjs check",
-  "start": "npm run build --workspace=packages/controller --if-present"
-}
