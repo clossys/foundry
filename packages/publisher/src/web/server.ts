@@ -57,3 +57,33 @@ export type {
   WebTemplateBlockSpec,
   WebTwitterMetadata,
 } from "./types.js";
+
+// The contact handler is server-only: import it from server code, never a client bundle.
+export {
+  CONTACT_CLIENT_KEY_MAX_LENGTH,
+  CONTACT_DEFAULT_CAPS,
+  STUB_CONTACT_DELIVERY,
+  createContactHandler,
+  createMemoryRateLimiter,
+  createStubContactDelivery,
+} from "./contact/index.js";
+export type {
+  ContactCaps,
+  ContactDelivery,
+  ContactFieldCode,
+  ContactFieldCodeMap,
+  ContactFieldIssue,
+  ContactFieldName,
+  ContactHandleOptions,
+  ContactHandler,
+  ContactHandlerConfig,
+  ContactOutboundMessage,
+  ContactRateLimiter,
+  ContactResult,
+  ContactResultStatus,
+  ContactSubmission,
+  ContactTarget,
+  ContactUnavailableReason,
+  MemoryRateLimiterOptions,
+  StubContactDelivery,
+} from "./contact/index.js";
