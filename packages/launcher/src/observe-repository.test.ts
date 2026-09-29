@@ -171,8 +171,8 @@ const TEMPLATES = Object.values(TEMPLATE_PATHS).flat();
 
 /** A repository that carries everything `apply` needs; each option removes or bends one proof. */
 function applyFiles(opts: { ledger?: string | null; drop?: string; range?: string; resolved?: string | null } = {}): Files {
-  const range = opts.range ?? "1.2.3";
-  const resolved = opts.resolved === undefined ? "1.2.3" : opts.resolved;
+  const range = opts.range ?? "0.2.1";
+  const resolved = opts.resolved === undefined ? "0.2.1" : opts.resolved;
   const files: Files = {
     "package.json": `${JSON.stringify({ name: "example-site", private: true, devDependencies: { [STARTER]: range } }, null, 2)}\n`,
     "package-lock.json": npmLock(range, resolved),
@@ -429,18 +429,18 @@ describe("observeRepository: an observation is exactly the committed head of a c
       expect(result.phase).toBe("apply");
       expect(result.packageManager).toBe("npm");
       expect(result.lockfile).toBe("package-lock.json");
-      expect(result.manifestEntries).toEqual([{ placement: "devDependencies", name: STARTER, value: "1.2.3" }]);
-      expect(result.lockedPackages).toEqual([{ name: STARTER, version: "1.2.3", integrity: INTEGRITY }]);
+      expect(result.manifestEntries).toEqual([{ placement: "devDependencies", name: STARTER, value: "0.2.1" }]);
+      expect(result.lockedPackages).toEqual([{ name: STARTER, version: "0.2.1", integrity: INTEGRITY }]);
       expect(Buffer.from(result.ledger!).toString("utf8")).toBe(ledgerText());
     });
 
     it("is setup when the starter is a range rather than an exact version", async () => {
-      const fx = makeFixture(applyFiles({ range: "^1.2.3" }));
+      const fx = makeFixture(applyFiles({ range: "^0.2.1" }));
       expect(observed(await observe(fx)).phase).toBe("setup");
     });
 
     it("is setup when the lockfile resolves the starter to another version", async () => {
-      const fx = makeFixture(applyFiles({ resolved: "1.2.4" }));
+      const fx = makeFixture(applyFiles({ resolved: "0.2.2" }));
       expect(observed(await observe(fx)).phase).toBe("setup");
     });
 
@@ -452,11 +452,11 @@ describe("observeRepository: an observation is exactly the committed head of a c
     });
 
     it.each([
-      ["a lockfile entry that is another package installed under the starter's name", "evil", "1.2.3", `https://registry.npmjs.org/evil/-/evil-1.2.3.tgz`, null],
-      ["a lockfile whose root row aliases the starter to another package", "@clossys/starter", "1.2.3", `https://registry.npmjs.org/@clossys/starter/-/starter-1.2.3.tgz`, "npm:evil@1.2.3"],
-      ["a lockfile entry resolved from another package's tarball", "@clossys/starter", "1.2.3", "https://registry.npmjs.org/evil/-/evil-1.2.3.tgz", null],
+      ["a lockfile entry that is another package installed under the starter's name", "evil", "0.2.1", `https://registry.npmjs.org/evil/-/evil-0.2.1.tgz`, null],
+      ["a lockfile whose root row aliases the starter to another package", "@clossys/starter", "0.2.1", `https://registry.npmjs.org/@clossys/starter/-/starter-0.2.1.tgz`, "npm:evil@0.2.1"],
+      ["a lockfile entry resolved from another package's tarball", "@clossys/starter", "0.2.1", "https://registry.npmjs.org/evil/-/evil-0.2.1.tgz", null],
     ])("refuses %s rather than report the starter locked", async (_what, entryName, version, resolved, specifier) => {
-      const lock = JSON.parse(npmLock("1.2.3", "1.2.3")) as { packages: Record<string, Record<string, unknown>> };
+      const lock = JSON.parse(npmLock("0.2.1", "0.2.1")) as { packages: Record<string, Record<string, unknown>> };
       lock.packages[`node_modules/${STARTER}`] = { name: entryName, version, resolved, integrity: INTEGRITY, dev: true };
       if (specifier !== null) (lock.packages[""]!.devDependencies as Record<string, string>)[STARTER] = specifier;
       const fx = makeFixture({ ...applyFiles(), "package-lock.json": `${JSON.stringify(lock, null, 2)}\n` });
@@ -525,7 +525,7 @@ describe("observeRepository: an observation is exactly the committed head of a c
     });
 
     it("skips two lockfiles", async () => {
-      const fx = makeFixture({ ...plainFiles(), "package-lock.json": npmLock("1.2.3", "1.2.3"), "yarn.lock": "# yarn lockfile v1\n" });
+      const fx = makeFixture({ ...plainFiles(), "package-lock.json": npmLock("0.2.1", "0.2.1"), "yarn.lock": "# yarn lockfile v1\n" });
       expect(await observe(fx)).toEqual(skip(fx, "lockfile-ambiguous", "indeterminate"));
     });
 
@@ -537,7 +537,7 @@ describe("observeRepository: an observation is exactly the committed head of a c
     it("refuses a lockfile that contradicts the packageManager field", async () => {
       const fx = makeFixture({
         "package.json": '{"name":"example-site","packageManager":"pnpm@9.0.0"}\n',
-        "package-lock.json": npmLock("1.2.3", "1.2.3"),
+        "package-lock.json": npmLock("0.2.1", "0.2.1"),
       });
       expect(await observe(fx)).toEqual(skip(fx, "package-manager-conflict", "violated"));
     });
@@ -632,12 +632,13 @@ describe("observeRepository: an observation is exactly the committed head of a c
       const text = profileText(["README.md", "package.json", "governance", ".agents", ".claude", ".cursor"]);
       const fx = makeFixture({ ...plainFiles(), "governance/repository-profile.json": text });
       const result = observed(await observe(fx));
-      expect(result.repositoryProfile).toEqual({ path: "governance/repository-profile.json", rootVocabulary: "checked", undeclaredRoots: ["clossys"], prohibitedRoots: [] });
+      // A repository with no ledger is in its setup phase, so the roots its templates go in are introduced too.
+      expect(result.repositoryProfile).toEqual({ path: "governance/repository-profile.json", rootVocabulary: "checked", undeclaredRoots: [".github", ".starter", "clossys"], prohibitedRoots: [] });
       expect(result.repositoryProfileText).toBe(text);
     });
 
     it("reports nothing to add, and no text, when the profile declares every root", async () => {
-      const text = profileText(["README.md", "package.json", "governance", "clossys", ".agents", ".claude", ".cursor"]);
+      const text = profileText(["README.md", "package.json", "governance", "clossys", ".agents", ".claude", ".cursor", ".github", ".starter"]);
       const fx = makeFixture({ ...plainFiles(), "governance/repository-profile.json": text });
       const result = observed(await observe(fx));
       expect(result.repositoryProfile).toEqual({ path: "governance/repository-profile.json", rootVocabulary: "checked", undeclaredRoots: [], prohibitedRoots: [] });

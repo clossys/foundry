@@ -391,7 +391,7 @@ Exit codes preserve the ternary:
 | `isPlanApproved()` | True only when a plan's most recent decision (by timestamp) has `chosen === "approved"`. False when decisions at that latest time disagree, or when any decision time does not parse. It binds no bytes: it ignores `subjectDigest`, so it is also true for an approval that names no change. |
 | `applyEngagementBrief()` | Writes `clossys/brief.json` into a repository directory once the plan validates and is approved and the brief validates; refuses and writes nothing otherwise. Reports the plan's canonical digest. |
 | `planDigest()` / `canonicalJson()` / `canonicalDigest()` / `PLAN_DIGEST_EXCLUDED_FIELDS` | The canonical plan digest: `sha256:` over the RFC 8785 canonical JSON of the plan without `asOf` and `decisions`. Identical to Advisor's for every plan. `canonicalDigest()` is the shared step: `sha256:` over the canonical JSON of any value, which the plan, change-set and bundle digests all use. |
-| `planApplyBundle()` | The pure apply planner: from a validated plan, the hub brief, observations of each staffed repository's default branch (including the exact bytes of its installed-state ledger and its composed-skill manifest), the change sets the hub holds, the composed skill text, the producer version and the hub's Advisor and Integrator pins, computes one change set per staffed repository in the apply phase and returns a report-mode bundle. Trusts a repository's ledger only through held change sets, or skips the repository with the trust rule as its reason (`ledger-unreadable`, `identity`, `renamed`, `ledger-chain`, `ledger-foreign-row`); computes each owned path and key by compare-and-swap against the trusted ledger (add, keep, update, or a refusal: `unowned-existing`, `client-edited`, `deleted`), reported under V8; composes the Advisor voice with the staffed roles' voices; skips a repository in the setup phase (`setup-template-unbuilt`), one whose Controller profile needs root entries added when the observation omits the profile text (`root-entry-edit-unbuilt`), one whose owned package the lockfile no longer resolves to the recorded version and integrity (`integrity-mismatch`, violated), one whose ledger holds only some of a setup template's files (`template-rows-partial`), and one whose lockfile or ledger path has a case variant among the observed files (`case-variant-path`). Two or more observed files at the same path, compared case-insensitively, have no single base digest between them, so that path is never kept, updated or adopted. Refuses, by throwing before computing anything, a staffed role that is not a lowercase id token (`role-not-an-id`) and a planItem that is not its repository id, a colon and its package name (`plan-item-not-derived`). Reads no file, network, process or clock; the same inputs give the same bytes. Throws, naming positions and never values, on inputs it cannot plan from. |
+| `planApplyBundle()` | The pure apply planner: from a validated plan, the hub brief, observations of each staffed repository's default branch (including the exact bytes of its installed-state ledger and its composed-skill manifest), the change sets the hub holds, the composed skill text, the producer version and the hub's Advisor and Integrator pins, computes one change set per staffed repository (a setup set for a repository in the setup phase, an apply set otherwise) and returns a report-mode bundle. Trusts a repository's ledger only through held change sets, or skips the repository with the trust rule as its reason (`ledger-unreadable`, `identity`, `renamed`, `ledger-chain`, `ledger-foreign-row`); computes each owned path and key by compare-and-swap against the trusted ledger (add, keep, update, or a refusal: `unowned-existing`, `client-edited`, `deleted`), reported under V8; composes the Advisor voice with the staffed roles' voices; skips a repository, `indeterminate` and outside the bundle digest, when a setup set cannot be computed safely (`package-manager-unsupported`, `starter-pin-absent`, `starter-pin-unsupported`, `release-age-text-absent`, `starter-request-invalid`), when an apply set would change the Starter pin its request names (`starter-request-stale`), one whose Controller profile needs root entries added when the observation omits the profile text (`root-entry-edit-unbuilt`), one whose owned package the lockfile no longer resolves to the recorded version and integrity (`integrity-mismatch`, violated), one whose ledger holds only some of a setup template's files (`template-rows-partial`), and one whose lockfile or ledger path has a case variant among the observed files (`case-variant-path`). Two or more observed files at the same path, compared case-insensitively, have no single base digest between them, so that path is never kept, updated or adopted. Refuses, by throwing before computing anything, a staffed role that is not a lowercase id token (`role-not-an-id`) and a planItem that is not its repository id, a colon and its package name (`plan-item-not-derived`). Reads no file, network, process or clock; the same inputs give the same bytes. Throws, naming positions and never values, on inputs it cannot plan from. |
 | `trustInstalledLedger()` / `reconcileWholeFile()` | Whether a repository's ledger bytes may be trusted: exactly canonical and valid (`ledger-unreadable`), for the observed node id (`identity`) and id, compared exactly -- a difference in letter case alone is still refused (`renamed`) -- every generation a held, valid change set whose digest recomputes and that agrees with its history entry (`ledger-chain`), and every row a write of the set it names (`ledger-foreign-row`); a refusal carries the rule only. `reconcileWholeFile()` is the compare-and-swap table for one whole file, with the generation-0 adoption pass allowed only in a setup set; `clossys/.state/skills.json` is adopted through that pass only when its base already holds the exact bytes the set would write, never merely because a skills manifest was read. Pure. Types: `LedgerTrust`, `LedgerTrustRule`, `WholeFileState`, `WholeFileOutcome`. |
 | `projectEngagementBrief()` / `serializeEngagementBrief()` / `PUBLIC_PROBLEM_PLACEHOLDER` | One repository's brief: the hub brief with `staffedHere` set to that repository's roles in plan order, and `problem` replaced by the brief contract's fixed placeholder unless the repository is private, members in the brief contract's order at every depth; and the exact bytes written for it (two-space JSON and a final newline). |
 | `changeSetDigest()` / `changeSetDigestSubject()` / `CHANGE_SET_DIGEST_EXCLUDED_FIELDS` / `DERIVED_FILE_DIGEST_FIELDS` | The change-set digest: `canonicalDigest()` of the change set without `changeSetDigest`, `branch`, `bundle`, `pullRequest`, `inverse`, `tooling` and `texts`, with each derived file reduced to `path`, `mode`, `derived`, `item` and `invariants`. |
@@ -707,12 +707,49 @@ in this package).
 - A skill under a symbolic link on the default branch (`.agents`,
   `.agents/skills` or the role's own skill directory) is refused as
   `skills-root-is-link`: the planner never writes through a link.
-- A repository in the `setup` phase gets no change set yet: it is skipped
-  as `setup-template-unbuilt`, `indeterminate`, and left out of the bundle
-  digest. The change-set contract requires a setup set to carry the setup
-  templates (the caller workflows, the Starter request, the CI and
-  path-scope workflows, the Starter pin and, for pnpm or Yarn, the
-  release-age exemption), and the planner does not compute them yet.
+- A repository in the `setup` phase gets a setup set, which the change-set
+  contract requires to carry exactly one item for each of four setup
+  templates (`caller-workflow`, `starter-request`, `ci-template` and
+  `path-scope-job`), the plan's one Starter pin, and, for pnpm, one
+  release-age exemption. The template bytes come only from
+  `renderSetupTemplate()`; the template patterns join `pathAllowList` before
+  any template file is written, and the Starter request takes the package
+  manager, the repository id and the plan's pin and nothing else. A template
+  file the base does not have is created; one it has is adopted only when its
+  bytes are exactly the set's own, and is `unowned-existing` otherwise.
+  Adoption follows the same compare-and-swap table as any whole file, and is
+  the one place the generation-0 adoption pass runs: a composed skill is
+  adopted only when the base's skills manifest records the digest of its
+  bytes. The plan's `pin-starter` act is the set's Starter pin. Every
+  `install` act goes to `deferred` with the reason `after-setup`: it gets no
+  item, no key and no lockfile invariant, and is written by the apply set
+  that follows.
+- For pnpm, a setup set carries one `exempt-release-age` item, with the fixed
+  item id `release-age`, for the pnpm workspace file. Its text comes only from
+  `editReleaseAgeExemption()`, over the exact text of `pnpm-workspace.yaml`
+  and of `.npmrc` that the observation carries. An edit is a whole-file write
+  whose `before` is the digest the base has (or null, when the file is
+  created); an entry the file already lists gives the item and no file; a
+  file the editor will not read, or one whose `.npmrc` sets the same list,
+  gives a path refusal with the editor's reason
+  (`release-age-surface-unparseable`, `release-age-surface-conflict`) and a V6
+  `indeterminate` check with the same rule. A directory at the file's path is
+  refused as unparseable. An apply set carries the same item, with no file,
+  when its trusted ledger records that entry, so that it matches the setup
+  set item for item. npm has no exemption key, so an npm set has no item.
+- A repository is skipped, `indeterminate` and outside the bundle digest,
+  with a reason of its own, wherever a setup set cannot be computed safely:
+  `package-manager-unsupported` (neither npm nor pnpm), `starter-pin-absent`
+  (the plan names no single Starter pin there), `starter-pin-unsupported`
+  (a pin outside the templates' range, `STARTER_PIN_RANGE`),
+  `starter-request-invalid` (a request the renderer refuses, such as a
+  repository id that is not `owner/name`), and `release-age-text-absent` (a
+  pnpm repository whose workspace file or `.npmrc` is there and whose exact
+  text the observation does not carry). An apply set whose Starter pin would
+  write a key is skipped as `starter-request-stale`, because the request a
+  setup set wrote would then name another pin and an apply set does not
+  rewrite it. The planner throws if the text an observation carries is not
+  the file its `files` digest.
 - The planner reads the repository's installed-state ledger at the base
   and trusts it only through change sets the hub holds (see
   `trustInstalledLedger()` above): every generation must be a held set whose
@@ -738,9 +775,8 @@ in this package).
 - In an apply set, each setup template whose files all have ledger rows is
   carried as a no-op item, one keep entry per file (or `client-edited` /
   `deleted`); a template with only some of its files in the ledger skips the
-  repository as `template-rows-partial`. An apply set carries no release-age
-  item; its ledger rows for release age pass forward unchanged. Only apply
-  sets edit the Controller repository profile: when the observation carries
+  repository as `template-rows-partial`. A set edits the Controller repository
+  profile: when the observation carries
   its text and the edit is stable, a `declare-root-entry` item adds each root
   name the set introduces and the vocabulary lacks, as an allowed extension,
   changing nothing else in the profile (`editJsonPointer`, the same editor
@@ -784,8 +820,8 @@ in this package).
   layout only: the part of V6 that regenerates the lockfile and checks its
   invariants is not run, so a set that changes a lockfile carries V6
   `indeterminate` with rule `lockfile-not-run`, and V6 is `satisfied` only
-  for a set with no lockfile change. A setup-phase repository is skipped
-  instead (see above). Compare-and-swap outcomes are reported under V8:
+  for a set with no lockfile change; a release-age path refusal adds V6
+  `indeterminate` with its reason as the rule. Compare-and-swap outcomes are reported under V8:
   `unowned-existing`, `client-edited`, `deleted` and `removal-unbuilt` each
   give V8 `indeterminate`, and a set with none of them gives V8 `satisfied`. Two V3 checks
   need no observation: when the authorization names a different plan
@@ -794,6 +830,15 @@ in this package).
   and no authorization is given, every computed repository gets a violated
   V3 check (`authorization-absent`). Each repository's verdict is the worst
   of its checks.
+
+What a setup set guarantees: it validates against the contract, every write
+is a compare-and-swap against the base, a file is adopted only by byte proof,
+template bytes come from the renderer alone, the Starter pin is one the
+templates support, and materialization and verification both prove that the
+release-age file is the base's bytes plus exactly the one scope entry. What it
+does not handle: root entries in a setup set (the apply set that follows is
+refused by admission because its items differ), lockfile regeneration, the
+provenance check (V9), and a later change of the pin.
 
 Nothing here writes to a product repository, creates a branch or opens a
 pull request; the only files this part of the package writes are the hub's
@@ -860,13 +905,20 @@ if ("skipped" in observed) console.log(observed.skipped, observed.verdict);
   from `clossys`, `.agents`, `.claude` or `.cursor` only by letter case,
   Unicode form or a trailing dot, and two spellings of `.github` or
   `.starter`, are refused (`case-variant-owned-path`); a `consumerCi` workflow
-  is a regular file spelled `.github/workflows/`.
+  is a regular file spelled `.github/workflows/`. A regular `.npmrc` is listed
+  as well, though the flow never writes it, because a pnpm setup reads it.
+- `pnpmWorkspaceText` and `npmrcText` are the exact UTF-8 text of
+  `pnpm-workspace.yaml` and `.npmrc` at the head, or null when the file is
+  absent or is not UTF-8; the planner reads a release-age exemption only from
+  them, and throws when one is not the file `files` digests.
 - `nodeId` and `visibility` come through the injected ports; a port that
   throws or returns a malformed value is `indeterminate`.
 - `phase` is `apply` only when the base has a valid installed-state ledger,
   every setup-template path is a regular file at the head, and
-  `manifestEntries` pins `@clossys/starter` at an exact version for which its
-  lockfile has a row of that name and version, not an alias (an `npm:` alias,
+  `manifestEntries` pins `@clossys/starter` at an exact `0.2.x` version, the
+  range the setup templates support (the templates' own predicate; `0.1.9`
+  and `0.3.0` read as `setup`), for which its lockfile has a row of that name
+  and version, not an alias (an `npm:` alias,
   or another package under its name, is refused as `lockfile-unreadable`; the
   host and integrity are the planner's to check); otherwise it is `setup`.
 - git runs without hooks, `fsmonitor` or a pager, and every tree, blob and
@@ -896,12 +948,14 @@ read as absent (`base-mismatch` catches them); a symbolic link at `.github`,
 `base-mismatch`; lossy UTF-8 digests can collide, as in materialization; a
 clone clean only through a custom global `core.excludesFile`, or one that
 needs `safe.directory`, is refused, which fails closed. Ownership and trust
-are the planner's judgement, and so is whether the pinned Starter version is one that implements the
-request: there is no version-range check here.
+are the planner's judgement, and so is whether the pinned Starter version implements the
+request beyond that template range.
 It is not a check of Windows short names or other alias spellings beyond case
 and Unicode-normalization folding, and which root names a particular set
 creates is the planner's contract check; the observation reports over
-`clossys`, `.agents`, `.claude` and `.cursor`.
+`clossys`, `.agents`, `.claude` and `.cursor`, and, for a repository in its
+setup phase, `.github`, `.starter` and, for a pnpm repository whose workspace
+file the exemption edit will create, `pnpm-workspace.yaml`.
 
 ### The installed-state ledger
 

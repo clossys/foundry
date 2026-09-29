@@ -49,6 +49,8 @@ import type { LockfileFormat, LockfileView, RootDependency } from "./lockfile-re
 import type { RepositoryObservation, SkippedRepositoryObservation } from "./plan-bundle.js";
 import { loadContract } from "./plan-contract.js";
 import { wouldViolateRootEntries } from "./root-entries.js";
+import { editReleaseAgeExemption } from "./release-age-edit.js";
+import { isSupportedStarterVersion } from "./setup-templates.js";
 
 export interface RepositoryObservationPorts {
   /** GitHub's immutable node id for the repository `id` names. May throw or reject. */
@@ -154,6 +156,10 @@ const RELEASE_AGE_SURFACES: readonly { readonly surface: ReleaseAgeSurfaceKind; 
 ];
 const DISCOVERY: readonly DiscoveryRoot[] = [".claude/skills", ".cursor/skills"];
 const PROFILE_ROOTS: readonly string[] = ["clossys", ".agents", ".claude", ".cursor"];
+/** The roots a setup set adds beside them: its workflows and scripts, and its Starter request. */
+const SETUP_PROFILE_ROOTS: readonly string[] = [".github", ".starter"];
+const NPMRC_PATH = ".npmrc";
+const PNPM_WORKSPACE_PATH = "pnpm-workspace.yaml";
 const PROFILE_NAMES: ReadonlySet<string> = new Set(["repository-profile.json", "repository-declaration.json"]);
 const PROFILE_FIRST = "governance/repository-profile.json";
 const PROFILE_SKIPPED_DIRECTORIES: ReadonlySet<string> = new Set([".git", "node_modules", "dist", "build", ".next", "coverage", ".turbo", ".cache"]);
@@ -1134,8 +1140,11 @@ function hasExactKeys(record: Record<string, unknown>, keys: readonly string[]):
   return own.length === keys.length && keys.every((key) => Object.hasOwn(record, key));
 }
 
-/** The Controller repository profile: the one Controller would locate, its path, and what a set that adds the four roots would break in it. */
-function readProfile(tree: Tree, reader: BlobReader): { readonly profile: RepositoryProfileObservation | null; readonly text: string | null } {
+/**
+ * The Controller repository profile: the one Controller would locate, its path, and what a set that adds the four roots would break in
+ * it. `setupRoots` are the roots a setup set adds beside them, when the repository is in its setup phase.
+ */
+function readProfile(tree: Tree, reader: BlobReader, setupRoots: readonly string[]): { readonly profile: RepositoryProfileObservation | null; readonly text: string | null } {
   const path = locateProfile(tree);
   if (path === null) return { profile: null, text: null };
   const unparseable = { profile: { path, rootVocabulary: "unparseable", undeclaredRoots: [], prohibitedRoots: [] } as RepositoryProfileObservation, text: null };
@@ -1144,7 +1153,7 @@ function readProfile(tree: Tree, reader: BlobReader): { readonly profile: Reposi
   const parsed = parseStrictJson(reader.read(entry, MAX_BLOB_BYTES, "observation-too-large"));
   if (parsed === null) return unparseable;
   // checkRootNames() refused every spelling but the exact one, so exact presence is presence.
-  const introduced = PROFILE_ROOTS.filter((root) => !tree.root.children.has(root));
+  const introduced = [...PROFILE_ROOTS, ...setupRoots].filter((root) => !tree.root.children.has(root));
   const verdict = wouldViolateRootEntries(parsed.value, introduced);
   if (verdict.verdict === "indeterminate") return unparseable;
   if (verdict.verdict === "satisfied") return { profile: { path, rootVocabulary: verdict.vocabulary, undeclaredRoots: [], prohibitedRoots: [] }, text: null };
@@ -1182,8 +1191,35 @@ function readPhase(tree: Tree, ledger: Uint8Array | null, manifest: readonly Man
   if (!Object.values(TEMPLATE_PATHS).every((paths) => paths.every((path) => lookup(tree, path).kind === "regular"))) return "setup";
   const starters = manifest.filter((entry) => entry.name === STARTER);
   const version = starters.length === 1 ? starters[0]!.value : "";
-  if (!EXACT_VERSION.test(version)) return "setup";
+  // The pin must also be one the setup templates support, or the request they wrote could not have named it.
+  if (!EXACT_VERSION.test(version) || !isSupportedStarterVersion(version)) return "setup";
   return locked.some((pkg) => pkg.name === STARTER && pkg.version === version) ? "apply" : "setup";
+}
+
+/** The exact text of a regular file at the root, or null when it is absent, not a regular file, or not UTF-8. */
+function readSurfaceText(tree: Tree, reader: BlobReader, path: string): string | null {
+  const found = lookup(tree, path);
+  return found.kind === "regular" ? decodeUtf8(reader.read(found.entry, MAX_BLOB_BYTES, "observation-too-large")) : null;
+}
+
+/** `files` with the .npmrc's digest added when it is there: a pnpm setup reads it, though the flow never writes it. */
+function withNpmrc(files: { readonly path: string; readonly sha256: string }[], tree: Tree, reader: BlobReader): { readonly path: string; readonly sha256: string }[] {
+  const found = lookup(tree, NPMRC_PATH);
+  if (found.kind !== "regular") return files;
+  return [...files, { path: NPMRC_PATH, sha256: digestOf(reader.read(found.entry, MAX_BLOB_BYTES, "observation-too-large")) }].sort((left, right) => compareCodeUnits(left.path, right.path));
+}
+
+/**
+ * The root names a setup set adds beyond the four every set adds: the two directories its templates go in, and, for a pnpm
+ * repository with no workspace file, that file when the exemption edit will create it (a conflicting .npmrc refuses the edit, and
+ * then nothing creates it).
+ */
+function setupRoots(tree: Tree, packageManager: PackageManagerKind, npmrcText: string | null): string[] {
+  const roots = [...SETUP_PROFILE_ROOTS];
+  if (packageManager === "pnpm" && !tree.root.children.has(PNPM_WORKSPACE_PATH) && editReleaseAgeExemption({ surface: "pnpm-workspace", text: null, npmrc: npmrcText }).kind === "edited") {
+    roots.push(PNPM_WORKSPACE_PATH);
+  }
+  return roots;
 }
 
 /** Everything read from the committed tree, which is the tree at the head commit. */
@@ -1197,13 +1233,16 @@ function readCommittedHead(clone: string, tree: Tree): Omit<RepositoryObservatio
   const packages = readPackageState(tree, manifest, reader);
   const releaseAgeSurfaces = readReleaseAgeSurfaces(tree);
   const linkedAgentsPaths = readLinkedAgentsPaths(tree);
-  const files = readOwnedFiles(owned, reader);
+  const files = withNpmrc(readOwnedFiles(owned, reader), tree, reader);
   const ledger = readLedger(tree, reader);
   const skillsManifest = readSkillsManifest(tree, reader);
-  const { profile, text } = readProfile(tree, reader);
   const manifestEntries = manifest?.entries ?? [];
+  const phase = readPhase(tree, ledger, manifestEntries, packages.lockedPackages);
+  const pnpmWorkspaceText = readSurfaceText(tree, reader, PNPM_WORKSPACE_PATH);
+  const npmrcText = readSurfaceText(tree, reader, NPMRC_PATH);
+  const { profile, text } = readProfile(tree, reader, phase === "setup" ? setupRoots(tree, packages.packageManager, npmrcText) : []);
   return {
-    phase: readPhase(tree, ledger, manifestEntries, packages.lockedPackages),
+    phase,
     packageManager: packages.packageManager,
     lockfile: packages.lockfile,
     releaseAgeSurfaces,
@@ -1217,6 +1256,8 @@ function readCommittedHead(clone: string, tree: Tree): Omit<RepositoryObservatio
     ledger,
     skillsManifest,
     repositoryProfileText: text,
+    pnpmWorkspaceText,
+    npmrcText,
   };
 }
 

@@ -62,6 +62,15 @@ const STARTER_BIN = "foundry-starter";
 const SNAPSHOT_MAX_AGE_MS = 3_600_000;
 
 const STARTER_VERSION = /^0\.2\.(?:0|[1-9][0-9]{0,8})$/u;
+
+/**
+ * Whether `version` is a Starter version the templates support: exactly the
+ * rule renderStarterRequest() applies, so a repository is read as past its
+ * setup only at a pin these templates would themselves have written.
+ */
+export function isSupportedStarterVersion(version: unknown): boolean {
+  return typeof version === "string" && STARTER_VERSION.test(version);
+}
 /** A SHA-512 SRI: 86 base64 symbols and `==`. */
 const SHA512_SRI = /^sha512-([A-Za-z0-9+/]{86})==$/u;
 /** The last of 86 symbols carries 4 payload bits and 2 zero bits; only these four symbols end a canonical 64-byte value. */
@@ -130,7 +139,7 @@ export function renderStarterRequest(input: unknown): TemplateResult {
   const name = ownValue(starter, "name");
   if (name !== STARTER_NAME) return refuse("input-invalid", "starter.name");
   const version = ownValue(starter, "version");
-  if (typeof version !== "string" || !STARTER_VERSION.test(version)) return refuse("starter-pin-unsupported", "starter.version");
+  if (!isSupportedStarterVersion(version)) return refuse("starter-pin-unsupported", "starter.version");
   const integrity = ownValue(starter, "integrity");
   if (!isSha512Sri(integrity)) return refuse("input-invalid", "starter.integrity");
 

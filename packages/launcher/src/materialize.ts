@@ -39,6 +39,7 @@ import { checkLockfileInvariants } from "./lockfile-invariants.js";
 import type { LockfileInvariantPackage } from "./lockfile-invariants.js";
 import { regenerateLockfile } from "./lockfile-regen.js";
 import type { LockfileSpawn } from "./lockfile-regen.js";
+import { verifyReleaseAgeExemption } from "./release-age-edit.js";
 
 // The approval binding a set's ledger records is never an input: admission
 // (admission.ts) computes it from the hub's committed plan and stored bundles,
@@ -274,6 +275,22 @@ function digestAtRef(root: string, ref: string, relPath: string, mode: WholeFile
   const text = gitShowUtf8(root, ref, relPath);
   if (text === null) return null;
   return contentDigest(text);
+}
+
+/**
+ * Whether the bytes an exempt-release-age item writes at `path` are the base's bytes plus exactly the one scope entry, judged by
+ * verifyReleaseAgeExemption() over the base commit's own bytes (never the working tree) and its .npmrc. True for a file no such
+ * item names. The set carries the file's digest only, so this is the one place the "one entry, nothing else" rule is proved.
+ */
+function provesReleaseAgeEdit(root: string, set: RepositoryChangeSet, file: WholeFileChange, after: string): boolean {
+  const item = set.items.find((entry) => entry.id === file.item);
+  if (item === undefined || item.act !== "exempt-release-age") return true;
+  if (item.path !== file.path) return false;
+  const before = gitShowUtf8(root, set.repository.baseCommit, file.path);
+  // The digest the set names as `before` must be these very bytes, or the proof would be over another file.
+  if ((before === null ? null : contentDigest(before)) !== file.before) return false;
+  const npmrc = gitShowUtf8(root, set.repository.baseCommit, ".npmrc");
+  return verifyReleaseAgeExemption({ surface: item.surface, before, after, npmrc }).verified;
 }
 
 function checkBaseCommitMovement(root: string, set: RepositoryChangeSet): ApplyStepResult | null {
@@ -549,7 +566,9 @@ function verifyPrepared(set: RepositoryChangeSet, pre: Preconditions): ApplyStep
           if (!stat.isFile() || stat.isSymbolicLink()) return result(1, "violated", "mode-mismatch");
           const mode = stat.mode & 0o777;
           if ((mode & 0o111) !== 0) return result(1, "violated", "mode-mismatch");
-          if (contentDigest(readFileSync(path, "utf8")) !== file.after) return result(1, "violated", "content-mismatch");
+          const onDisk = readFileSync(path, "utf8");
+          if (contentDigest(onDisk) !== file.after) return result(1, "violated", "content-mismatch");
+          if (!provesReleaseAgeEdit(root, set, file, onDisk)) return result(1, "violated", "content-mismatch");
         }
       } catch {
         return result(1, "violated", "content-mismatch");
@@ -656,6 +675,7 @@ export async function materializeRepository(input: MaterializeInput): Promise<Ap
     const resolved = resolveFileText(root, set, file, texts);
     if (typeof resolved !== "string") return resolved;
     if (file.after !== null && contentDigest(resolved) !== file.after) return result(1, "violated", "content-mismatch");
+    if (!provesReleaseAgeEdit(root, set, file, resolved)) return result(1, "violated", "content-mismatch");
     resolvedTexts.set(file.path, resolved);
   }
 
