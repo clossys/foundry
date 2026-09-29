@@ -37,9 +37,16 @@ applies at its cascade scope, or that the template builds.
   (`react-aria-components`, `tailwind-merge`).
 - `postcss.config.mjs` — enables the `@tailwindcss/postcss` plugin.
 - `next.config.mjs`, `tsconfig.json` — a plain App Router setup.
-- `app/globals.css` — the Tailwind path: `tailwindcss`, Designer's
-  `theme.css`, `@source` entries for the Designer and Publisher `dist`
-  directories, then the repository's own brand file.
+- `app/globals.css` — the Tailwind path, in file order: the Tailwind
+  import (`@import "tailwindcss"`), Designer's theme
+  (`@import "@clossys/designer/theme.css"`), the repository's own brand
+  file (`@import "../../../clossys/designer/brand.css"`), then `@source`
+  lines for the Designer dist
+  (`@source "../node_modules/@clossys/designer/dist"`) and the Publisher
+  dist (`@source "../node_modules/@clossys/publisher/dist"`). The
+  `@source` paths assume `@clossys/designer` and `@clossys/publisher` are
+  installed in the template's own `node_modules` (not hoisted); a hoisted
+  install needs the paths adjusted.
 - `app/layout.tsx` — root layout: sets `data-brand-bound` on `<html>` and
   injects Designer's theme init script into `<head>`.
 - `app/page.tsx` — the landing route (`MarketingView`).
