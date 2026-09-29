@@ -184,7 +184,7 @@ async function buildReplay({ root, packageKey, qualification, qualificationIntro
     publicationSource: { sha: provider.run.head_sha, rootPackageJsonSha256: joins.rootPackageJsonSha256, rootPackageLockSha256: joins.rootPackageLockSha256 },
   };
   if (provider.run.event !== "workflow_dispatch" || !["success", "failure", "cancelled", "skipped"].includes(provider.run.conclusion) || provider.run.head_sha === qualificationIntroduction || !gitAncestor(root, qualificationIntroduction, provider.run.head_sha)) throw new Error("GitHub run must be a completed manual replay after qualification; its overall result remains explicit");
-  if (joins.rootPackageJsonSha256 === qualification.rootPackageJsonSha256 || joins.rootPackageLockSha256 === qualification.rootPackageLockSha256) throw new Error("replay v3 is reserved for drift in both root resolution hashes");
+  if (joins.rootPackageJsonSha256 === qualification.rootPackageJsonSha256 && joins.rootPackageLockSha256 === qualification.rootPackageLockSha256) throw new Error("replay v3 is reserved for drift in at least one root resolution hash; the direct join applies when neither drifted");
   const packument = await publicPackument(fetchImpl, qualification.candidate.name);
   const audit = verifiedAnonymousAudit(qualification.candidate.name, qualification.candidate.version, auditRun, env);
   const auditResult = inspectPublicNpmProvenance({ name: qualification.candidate.name, version: qualification.candidate.version, sourceSha: provider.run.head_sha, audit, packument });
