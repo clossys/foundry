@@ -775,6 +775,52 @@ set. Both commands are step 3 in
 (section 11); a successful verify corresponds to the `materialized` row in
 section 4.4 of that RFC.
 
+### What authorizes a write
+
+`materialize` and `verify` decide, from the hub alone, on whose authority a
+change set is written, and record exactly that in the ledger; no flag, option
+or default supplies it. The decision reads the plan committed at the hub's
+current branch head (an uncommitted edit to `clossys/advisor/plan.json` is
+ignored, and a detached head refuses), the latest approving decision's
+subject digest, the stored bundle with that digest, and the stored change
+sets.
+
+- **Approved.** The set is a member of that bundle, by repository id and
+  change-set digest, and its plan digest equals the plan's. The ledger
+  records `approved` with the bundle's digest.
+- **Admitted.** An apply set that is not a member is admitted, with no second
+  approval, only when all of the following hold: it has the same plan digest
+  and the approving decision is still the latest; its package acts equal the
+  setup set's by plan item, it defers nothing, has the same `producer`, and
+  every whole-file entry is a no-op; and the base's trusted ledger ends with
+  that setup set, bound `approved` to the same subject, with every byte the
+  setup set wrote present in the base by content, so a squash or rebase merge
+  is admitted. The setup set must itself be a member of the approved bundle,
+  and the ledger the set would write must pass the succession rules as an
+  admitted generation.
+- **Otherwise** the step reports `indeterminate` with reason
+  `awaiting-approval` and a fixed detail token, and writes nothing.
+
+A set with package acts also needs a current execution authorization: the
+hub's own `node_modules/.bin/advisor-execution-readiness` (never `npx`) runs
+against the committed `clossys/advisor/assessment-input.json` at the current
+instant, and the authorization must name the plan digest, the repository and
+every package act. Readiness's own answer is kept: not current is `violated`;
+unreadable, absent or failing to run is `indeterminate`. `materialize` checks
+before its first write, and `verify` checks again, so a withdrawn approval or
+an expired authorization fails `verify`.
+
+`readHubAuthority()` reads the committed approval, `planPackagesFor()` gives
+the plan's package identities for one repository, and `decideSetBinding()`
+returns the binding or an `AdmissionRefusal` (exit code, reason and a fixed
+detail token). `HubAuthority` is what `readHubAuthority()` returns, and a
+`ReadinessRunner` replaces the process launch of the readiness executable, for
+tests.
+
+This proves that the bytes are those the committed decision names, or that the
+one-approval rule admits. It does not prove who committed the decision; the
+hub repository's branch protection governs that.
+
 ## Taking the registry snapshot
 
 `launcher-apply-plan snapshot --request <file> [--out <file>]` takes the

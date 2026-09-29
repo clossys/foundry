@@ -1,8 +1,10 @@
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { withDecisions } from "./admission-fixture.js";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { SNAPSHOT_USAGE, main, snapshotMain } from "./apply-plan-cli.js";
+import { buildMaterializedFixture, branchExists, readCloneLedger, writeSnapshot } from "./apply-step-fixture.js";
+import { SNAPSHOT_USAGE, main, materializeMain, snapshotMain, verifyMain } from "./apply-plan-cli.js";
 import { PACKAGE_SCOPE } from "./generated/package-scope.generated.js";
 import { createNodeHost } from "./host.js";
 import { REGISTRY_SNAPSHOT_REL, registrySnapshotViolations, type Transport } from "./registry-snapshot.js";
@@ -357,3 +359,80 @@ describe("launcher-apply-plan snapshot (#1178)", () => {
     expect(String(err.mock.calls.at(-1)?.[0])).toBe(`launcher-apply-plan snapshot: the snapshot could not be written to ${join(hub, "taken", "registry-snapshot.json")}; no snapshot was written`);
   });
 });
+
+describe("launcher-apply-plan materialize and verify decide the approval from the hub (#1178)", () => {
+  const SITE = "example-owner/site";
+  const FORGED = { kind: "approved", subjectDigest: `sha256:${"f".repeat(64)}` };
+
+  function quiet() {
+    return { log: vi.spyOn(console, "log").mockImplementation(() => {}), err: vi.spyOn(console, "error").mockImplementation(() => {}) };
+  }
+
+  it("5a: with only --repo, a stored set no committed plan approves is refused, and nothing is written", async () => {
+    const site = buildMaterializedFixture(roots, { storeSet: true, hub: { planMode: "absent" } });
+    const { err } = quiet();
+    const before = writeSnapshot(site.clone, site.hub);
+    expect(await materializeMain(["--repo", SITE], { cwd: site.hub, clone: site.clone })).toBe(2);
+    expect(String(err.mock.calls.at(-1)?.[0])).toBe("launcher-apply-plan materialize: indeterminate (awaiting-approval); plan-unreadable");
+    expect(writeSnapshot(site.clone, site.hub)).toBe(before);
+    expect(branchExists(site.clone, site.set.branch)).toBe(false);
+    expect(readCloneLedger(site.clone)).toBeNull();
+  });
+
+  it("5h: the options take no binding, so a plan that approves nothing writes no approved ledger, whatever a caller passes", async () => {
+    const site = buildMaterializedFixture(roots, { storeSet: true, hub: ({ plan }) => ({ plans: [withDecisions(plan, [])] }) });
+    quiet();
+    const before = writeSnapshot(site.clone, site.hub);
+    expect(await materializeMain(["--repo", SITE], { cwd: site.hub, clone: site.clone, binding: FORGED } as never)).toBe(2);
+    expect(await verifyMain(["--repo", SITE], { cwd: site.hub, clone: site.clone, set: site.set, binding: FORGED } as never)).toBe(2);
+    expect(writeSnapshot(site.clone, site.hub)).toBe(before);
+    expect(readCloneLedger(site.clone)).toBeNull();
+  });
+
+  it("5h and 5i: a set the hub approved materializes through the default readiness runner, and the ledger records the computed binding, never one passed in", async () => {
+    const site = buildMaterializedFixture(roots, { storeSet: true });
+    const { log } = quiet();
+    // No runReadiness and no now: the hub's own executable runs at the wall clock.
+    expect(await materializeMain(["--repo", SITE], { cwd: site.hub, clone: site.clone, binding: FORGED } as never)).toBe(0);
+    expect(String(log.mock.calls.at(-1)?.[0])).toBe("launcher-apply-plan materialize: materialized");
+    expect(readCloneLedger(site.clone)!.history[0].binding).toEqual({ kind: "approved", subjectDigest: site.bundle.bundleDigest });
+    expect(await verifyMain(["--repo", SITE], { cwd: site.hub, clone: site.clone })).toBe(0);
+  });
+
+  it("5i: a hub without the readiness executable is refused as authorization-unverified, writing nothing", async () => {
+    const site = buildMaterializedFixture(roots, { storeSet: true, hub: { readiness: false } });
+    const { err } = quiet();
+    const before = writeSnapshot(site.clone, site.hub);
+    expect(await materializeMain(["--repo", SITE], { cwd: site.hub, clone: site.clone })).toBe(2);
+    expect(String(err.mock.calls.at(-1)?.[0])).toBe("launcher-apply-plan materialize: indeterminate (authorization-unverified); readiness-bin-missing");
+    expect(writeSnapshot(site.clone, site.hub)).toBe(before);
+  });
+
+  it("passes an injected readiness runner and instant through to both commands", async () => {
+    const site = buildMaterializedFixture(roots, { storeSet: true });
+    const { err } = quiet();
+    const seen: string[] = [];
+    const runReadiness = (request: { asOf: string }) => {
+      seen.push(request.asOf);
+      return { status: 1 };
+    };
+    const now = () => new Date("2026-10-02T03:04:05Z");
+    expect(await materializeMain(["--repo", SITE], { cwd: site.hub, clone: site.clone, now, runReadiness })).toBe(1);
+    expect(String(err.mock.calls.at(-1)?.[0])).toBe("launcher-apply-plan materialize: violated (authorization-not-current); readiness-violated");
+    expect(await verifyMain(["--repo", SITE], { cwd: site.hub, clone: site.clone, set: site.set, now, runReadiness })).toBe(1);
+    expect(seen).toEqual(["2026-10-02T03:04:05.000Z", "2026-10-02T03:04:05.000Z"]);
+  });
+
+  it("the help texts say what an approval is and do not cite paths the package does not ship", () => {
+    const { log } = quiet();
+    return Promise.all([materializeMain(["--help"]), verifyMain(["--help"])]).then((codes) => {
+      expect(codes).toEqual([0, 0]);
+      const text = log.mock.calls.map((call) => String(call[0])).join("\n");
+      expect(text).toContain("Refuses, and writes nothing, unless the plan committed at the hub's HEAD");
+      expect(text).toContain("execution authorization");
+      expect(text).toContain("no longer verifies");
+      expect(text).not.toMatch(/docs\//);
+    });
+  });
+});
+

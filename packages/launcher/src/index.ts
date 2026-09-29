@@ -97,3 +97,6 @@ export type {
   WorkspaceRefusal,
   WorkspaceState,
 } from "./types.js";
+
+export { decideSetBinding, planPackagesFor, readHubAuthority } from "./admission.js";
+export type { AdmissionDecision, AdmissionRefusal, HubAuthority, ReadinessRunner } from "./admission.js";
