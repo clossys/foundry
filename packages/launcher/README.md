@@ -743,7 +743,9 @@ if ("skipped" in observed) console.log(observed.skipped, observed.verdict);
   when its tree is dirty or has untracked files not ignored, or a tracked file is marked
   skip-worktree or assume-unchanged; when its local head differs from the
   remote tip; when it reads objects from another store
-  (`objects/info/alternates`); or when `.git/config` holds a key outside a
+  (`objects/info/alternates`); when its git directory holds a split index's
+  shared file (`sharedindex.*`), which git rewrites on every index read, so
+  observing it would write to the clone (`clone-config-unsafe`); or when `.git/config` holds a key outside a
   short fixed list (`violated`). The config is read as data, so a filter,
   hook path, pager, `fsmonitor` or alias entry is refused rather than run.
 - The default origin parser names only an exact `https://github.com/` or

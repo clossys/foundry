@@ -944,6 +944,47 @@ describe("observeRepository: an observation is exactly the committed head of a c
     });
   });
 
+  describe("a split index is refused before any git command reads the index", () => {
+    function sharedIndexes(fx: Fixture): string[] {
+      return readdirSync(join(fx.clone, ".git")).filter((name) => name.startsWith("sharedindex."));
+    }
+
+    it("refuses a clone made split with `git update-index --split-index`, and leaves its lstat snapshot unchanged", async () => {
+      const fx = makeFixture();
+      git(fx.clone, "update-index", "--split-index");
+      const shared = sharedIndexes(fx);
+      expect(shared).toHaveLength(1);
+      // git freshens the shared file's mtime on every index read, so start from a time that a freshening cannot equal.
+      utimesSync(join(fx.clone, ".git", shared[0]!), 1, 1);
+      const before = snapshot(fx.clone);
+      expect(await observe(fx)).toEqual(skip(fx, "clone-config-unsafe", "violated"));
+      expect(snapshot(fx.clone)).toEqual(before);
+    });
+
+    it("refuses a leftover `.git/sharedindex.deadbeef` file, whatever it holds", async () => {
+      const fx = makeFixture();
+      writeFileSync(join(fx.clone, ".git", "sharedindex.deadbeef"), "");
+      const before = snapshot(fx.clone);
+      expect(await observe(fx)).toEqual(skip(fx, "clone-config-unsafe", "violated"));
+      expect(snapshot(fx.clone)).toEqual(before);
+    });
+
+    it("refuses a `sharedindex.` entry that is a directory or a link", async () => {
+      const dir = makeFixture();
+      mkdirSync(join(dir.clone, ".git", "sharedindex.deadbeef"));
+      expect(await observe(dir)).toEqual(skip(dir, "clone-config-unsafe", "violated"));
+      const link = makeFixture();
+      symlinkSync("index", join(link.clone, ".git", "sharedindex.deadbeef"));
+      expect(await observe(link)).toEqual(skip(link, "clone-config-unsafe", "violated"));
+    });
+
+    it("observes a normal clone as before, and it has no shared index", async () => {
+      const fx = makeFixture();
+      expect(sharedIndexes(fx)).toEqual([]);
+      expect(observed(await observe(fx)).baseCommit).toBe(headOf(fx));
+    });
+  });
+
   describe("observing writes nothing", () => {
     it("leaves the clone's .git directory and status exactly as they were", async () => {
       const fx = makeFixture({ ...plainFiles(), "clossys/brief.json": "{}\n", ".github/workflows/ci.yml": "name: ci\n" });

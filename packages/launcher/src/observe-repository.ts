@@ -10,9 +10,10 @@
 // never an alternate object store, `commondir` or submodule repository;
 // anything unusual is refused, not interpreted. Its `.git/config` is read as
 // data, never executed, and refused unless every key is one a plain clone
-// carries; a clone that names an alternate object store is refused; only then
-// does a git command run inside it, with every hook, filesystem monitor and
-// pager switched off. git inside the clone reads no configuration but the
+// carries; a clone that names an alternate object store, or holds a split
+// index's shared file (git rewrites its mtime on every index read), is refused;
+// only then does a git command run inside it, with every hook, filesystem
+// monitor and pager switched off. git inside the clone reads no configuration but the
 // vetted `.git/config` and fixed `-c` overrides: the system and global
 // configuration and the environment's configuration variables are pinned or
 // removed. What the object database holds is trusted to match its ids, as the
@@ -31,7 +32,7 @@
 // repository contains; a port that throws is a skip too.
 
 import { spawnSync } from "node:child_process";
-import { accessSync, constants, lstatSync, mkdtempSync, realpathSync, rmSync, statSync } from "node:fs";
+import { accessSync, constants, lstatSync, mkdtempSync, readdirSync, realpathSync, rmSync, statSync } from "node:fs";
 import type { Stats } from "node:fs";
 import { tmpdir } from "node:os";
 import { delimiter, dirname, isAbsolute, join } from "node:path";
@@ -276,8 +277,19 @@ function locateClone(clone: string): string {
   // Objects that are the clone's own: a real directory, and no list of other stores to read from.
   if (!statOf(join(gitDir, "objects"), "clone-unreadable").isDirectory()) refuse("clone-unreadable");
   for (const name of ["alternates", "http-alternates"]) if (isPresent(join(gitDir, "objects", "info", name))) refuse("clone-config-unsafe");
+  // A split index: git freshens the shared file's mtime on every index read, which would be a write to the clone.
+  if (holdsSharedIndex(gitDir)) refuse("clone-config-unsafe");
   try {
     return realpathSync(clone);
+  } catch {
+    return refuse("clone-unreadable");
+  }
+}
+
+/** Whether the git directory holds a `sharedindex.*` entry of any type, by listing it: no shell glob, and no git command. */
+function holdsSharedIndex(gitDir: string): boolean {
+  try {
+    return readdirSync(gitDir).some((name) => name.toLowerCase().startsWith("sharedindex."));
   } catch {
     return refuse("clone-unreadable");
   }
