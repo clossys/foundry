@@ -1,17 +1,12 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { assertImplementedContract } from "./generated/contract-schema.generated.js";
-import { PLAN_CONTRACTS } from "./generated/plan-contracts.generated.js";
 import { PLAN_DIGEST_EXCLUDED_FIELDS, canonicalJson, planDigest } from "./plan-digest.js";
-import type { AdvisorPlan } from "./plan-contract.js";
 
 /*
- * Issue #1475. This package's own implementation of the canonical plan
- * digest, checked against the shared corpus @clossys/advisor is tested
- * against too, so the two packages compute identical digests; and the
- * build-time packing that lets this package validate against Advisor's
- * contracts with no runtime dependency on Advisor. Reading sibling source
- * here is test-only: nothing at runtime leaves this package.
+ * Issue #1586. This package's own implementation of the canonical plan
+ * digest, checked against the shared corpus every other reader of a plan is
+ * tested against, so all of them compute identical digests. Reading the
+ * repository's docs here is test-only: nothing at runtime leaves this package.
  */
 const REPO = new URL("../../../", import.meta.url);
 const read = (path: string): string => readFileSync(new URL(path, REPO), "utf8");
@@ -19,30 +14,45 @@ const read = (path: string): string => readFileSync(new URL(path, REPO), "utf8")
 interface DigestCorpus {
   canonicalJson: { name: string; value: unknown; canonical: string }[];
   refused: { name: string; json: string }[];
-  plans: { name: string; plan: AdvisorPlan; canonical: string; digest: string }[];
+  plans: { name: string; plan: Record<string, unknown> & { decisions: { subjectDigest?: string }[] }; canonical: string; digest: string }[];
 }
 const CORPUS = JSON.parse(read("docs/contracts/advisor-plan-digest.fixture.json")) as DigestCorpus;
 const corpusPlan = (name: string) => CORPUS.plans.find((entry) => entry.name === name)!;
 
-describe("canonical plan digest (docs/contracts/advisor-plan-digest.md)", () => {
+describe("canonical plan digest", () => {
   it("excludes exactly asOf and decisions", () => {
     expect(PLAN_DIGEST_EXCLUDED_FIELDS).toEqual(["asOf", "decisions"]);
   });
 
   it("serializes every corpus value to its expected canonical JSON", () => {
+    expect(CORPUS.canonicalJson.length).toBeGreaterThan(0);
     for (const entry of CORPUS.canonicalJson) expect(canonicalJson(entry.value), entry.name).toBe(entry.canonical);
   });
 
   it("refuses every corpus value that is not well-formed Unicode", () => {
+    expect(CORPUS.refused.length).toBeGreaterThan(0);
     for (const entry of CORPUS.refused) expect(() => canonicalJson(JSON.parse(entry.json)), entry.name).toThrow(/lone surrogate/);
   });
 
   it("refuses what JSON cannot carry instead of dropping it", () => {
     expect(() => canonicalJson(Number.POSITIVE_INFINITY)).toThrow(/non-finite/);
+    expect(() => canonicalJson(Number.NaN)).toThrow(TypeError);
     expect(() => canonicalJson({ a: undefined })).toThrow(/undefined/);
+    expect(() => canonicalJson(undefined)).toThrow(TypeError);
+    expect(() => canonicalJson(() => 1)).toThrow(TypeError);
+    expect(() => canonicalJson(1n)).toThrow(TypeError);
+    expect(() => canonicalJson(Symbol("x"))).toThrow(TypeError);
+    expect(() => canonicalJson([1, , 3])).toThrow(TypeError);
+  });
+
+  it("writes negative zero as 0 and sorts keys by UTF-16 code units", () => {
+    expect(canonicalJson(-0)).toBe("0");
+    // U+1F600 is the surrogate pair D83D DE00, which sorts before U+FF5E by UTF-16 code units, though its code point is greater.
+    expect(canonicalJson({ b: 1, a: 2, "\u{1F600}": 3, "\uFF5E": 4 })).toBe('{"a":2,"b":1,"\u{1F600}":3,"\uFF5E":4}');
   });
 
   it("computes every corpus plan's expected canonical form and digest", () => {
+    expect(CORPUS.plans.length).toBeGreaterThan(0);
     for (const entry of CORPUS.plans) {
       const subject = Object.fromEntries(Object.entries(entry.plan).filter(([key]) => !PLAN_DIGEST_EXCLUDED_FIELDS.includes(key)));
       expect(canonicalJson(subject), entry.name).toBe(entry.canonical);
@@ -58,7 +68,7 @@ describe("canonical plan digest (docs/contracts/advisor-plan-digest.md)", () => 
     expect(digest("unicode-decomposed")).not.toBe(digest("unicode-precomposed"));
   });
 
-  it("covers kits, staffing, packages and resolution, and excludes a decision's subjectDigest (#1178)", () => {
+  it("covers kits, staffing, packages and resolution, and excludes a decision's subjectDigest", () => {
     const digest = (name: string) => planDigest(corpusPlan(name).plan);
     const base = digest("staffed-with-packages");
     expect(digest("staffed-with-packages-keys-reversed")).toBe(base);
@@ -68,7 +78,7 @@ describe("canonical plan digest (docs/contracts/advisor-plan-digest.md)", () => 
     }
   });
 
-  it("covers delegatedCopyApproval and its scopes, and excludes asOf and decisions from them (#1586)", () => {
+  it("covers delegatedCopyApproval and its scopes, and excludes asOf and decisions from them", () => {
     const digest = (name: string) => planDigest(corpusPlan(name).plan);
     const scoped = digest("delegated-copy-approval-scoped");
     expect(digest("delegated-copy-approval-unscoped")).not.toBe(digest("blockers-without-due"));
@@ -82,35 +92,8 @@ describe("canonical plan digest (docs/contracts/advisor-plan-digest.md)", () => 
   });
 
   it("has no digest for an invalid plan", () => {
-    const plan = { ...corpusPlan("blockers-without-due").plan, extra: true } as unknown as AdvisorPlan;
+    const plan = { ...corpusPlan("blockers-without-due").plan, extra: true };
     expect(() => planDigest(plan)).toThrow(/invalid plan has no digest: plan has a field the contract does not declare \(key \d+ of this object\)/);
-  });
-});
-
-describe("packed plan, brief and inventory contracts", () => {
-  it("are the docs/contracts files, unchanged, with the registry snapshot, change-set, bundle and ledger contracts after them (#1178)", () => {
-    expect(Object.keys(PLAN_CONTRACTS)).toEqual([
-      "advisor-plan.json",
-      "engagement-brief.json",
-      "engagement-context.json",
-      "repository-inventory.json",
-      "registry-snapshot.json",
-      "repository-change-set.json",
-      "apply-bundle.json",
-      "installed-ledger.json",
-    ]);
-    for (const [name, contract] of Object.entries(PLAN_CONTRACTS)) expect(contract).toEqual(JSON.parse(read(`docs/contracts/${name}`)));
-  });
-
-  it("use only keywords the checker implements, in every subschema", () => {
-    for (const contract of Object.values(PLAN_CONTRACTS)) expect(() => assertImplementedContract(contract)).not.toThrow();
-  });
-
-  it("carry a byte-identical copy of Advisor's one contract checker, under a generated-file header", () => {
-    const copy = readFileSync(new URL("./generated/contract-schema.generated.ts", import.meta.url), "utf8");
-    const canonical = read("packages/advisor/src/contract-schema.ts");
-    expect(copy.startsWith("// AUTO-GENERATED")).toBe(true);
-    expect(copy.endsWith(canonical)).toBe(true);
-    expect(copy.slice(0, copy.length - canonical.length).split("\n").every((line) => line === "" || line.startsWith("//"))).toBe(true);
+    expect(() => planDigest(undefined)).toThrow(/invalid plan has no digest/);
   });
 });

@@ -47,3 +47,7 @@ packages/strategist/src/generated/
 # Generated installed-ledger contract with its checker
 # (packages/starter/scripts/pack-ledger-contract.mjs, issue #1178).
 packages/starter/src/generated/
+
+# Generated plan contract with its checker
+# (packages/writer/scripts/pack-plan-contract.mjs, issue #1586).
+packages/writer/src/generated/

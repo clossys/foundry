@@ -1,5 +1,5 @@
 {
-  "description": "Issue #1475: the shared corpus for the canonical plan digest defined in docs/contracts/advisor-plan-digest.md. Both @clossys/advisor and @clossys/launcher test their own implementation against every case here, so the two packages compute identical digests. Expected values were produced independently of either package. The plans that carry kits, staffing, packages, resolution or a decision's subjectDigest (issue #1178) were added later and computed the same way, independently of either package: a stand-alone Python 3 script took each plan without asOf and decisions, serialized it with json.dumps(subject, ensure_ascii=False, sort_keys=True, separators=(',', ':')) -- which is RFC 8785 for these plans, because every key is ASCII (so code-point order equals UTF-16 order) and the only number is the integer 1 -- and hashed its UTF-8 bytes with hashlib.sha256.",
+  "description": "Issue #1475: the shared corpus for the canonical plan digest defined in docs/contracts/advisor-plan-digest.md. @clossys/advisor, @clossys/launcher and @clossys/writer each test their own implementation against every case here, so the three packages compute identical digests. Expected values were produced independently of either package. The plans that carry kits, staffing, packages, resolution or a decision's subjectDigest (issue #1178) were added later and computed the same way, independently of either package: a stand-alone Python 3 script took each plan without asOf and decisions, serialized it with json.dumps(subject, ensure_ascii=False, sort_keys=True, separators=(',', ':')) -- which is RFC 8785 for these plans, because every key is ASCII (so code-point order equals UTF-16 order) and the only number is the integer 1 -- and hashed its UTF-8 bytes with hashlib.sha256. The plans that carry delegatedCopyApproval (issue #1586) were computed the same way, by the same kind of stand-alone script; where such a plan's approving decision names a subjectDigest, the script computed it first and then wrote it into decisions, which the digest excludes. @clossys/writer tests its own implementation against every case here too.",
   "canonicalJson": [
     {
       "name": "key-order",
@@ -1153,6 +1153,379 @@
       },
       "canonical": "{\"blockers\":[],\"kits\":[{\"id\":\"launch\",\"source\":\"preset\",\"verdict\":\"recommended\"}],\"mandate\":{\"primaryProblemId\":\"strategist-unclear-direction\",\"problem\":\"Our site doesn't explain what we do.\",\"roles\":[\"strategist\",\"writer\"]},\"recommendedNext\":{\"action\":\"Approve the first-wave plan.\",\"owner\":\"sponsor\"},\"schemaVersion\":1,\"staffing\":[{\"repository\":\"example-owner/site\",\"roles\":[\"strategist\",\"writer\"]},{\"repository\":\"example-owner/docs\",\"roles\":[\"writer\"]}],\"whereWeAre\":[\"Fit and readiness both satisfied.\"]}",
       "digest": "sha256:112aa3633987200a416ca5e6e894ddc95c4aee881e82210025c2aad5603dcced"
+    },
+    {
+      "name": "delegated-copy-approval-unscoped",
+      "note": "Blockers-without-due plus a delegatedCopyApproval with no scopes, approved by a decision that names the plan's own digest. The field is covered by the digest (it differs from the same plan without it).",
+      "plan": {
+        "schemaVersion": 1,
+        "asOf": "2026-09-24T09:00:00Z",
+        "mandate": {
+          "problem": "Our site doesn't explain what we do.",
+          "primaryProblemId": "strategist-unclear-direction",
+          "roles": [
+            "strategist",
+            "writer"
+          ]
+        },
+        "whereWeAre": [
+          "Fit and readiness both satisfied."
+        ],
+        "recommendedNext": {
+          "action": "Approve the first-wave plan.",
+          "owner": "sponsor"
+        },
+        "decisions": [
+          {
+            "at": "2026-09-24T10:00:00Z",
+            "recommended": "compose from confirmed problems",
+            "chosen": "approved",
+            "by": "sponsor",
+            "subjectDigest": "sha256:211634543ec34b76fab4fcb028d2d7cc0dd5c02f3b16753caa841655a71fed41"
+          }
+        ],
+        "blockers": [
+          {
+            "capabilityId": "engagement",
+            "kind": "missing-authority",
+            "owner": "sponsor",
+            "nextAction": {
+              "who": "sponsor",
+              "how": "approve the plan",
+              "byWhen": "2026-09-29"
+            },
+            "since": "2026-09-20T00:00:00Z"
+          }
+        ],
+        "delegatedCopyApproval": {
+          "target": "production"
+        }
+      },
+      "canonical": "{\"blockers\":[{\"capabilityId\":\"engagement\",\"kind\":\"missing-authority\",\"nextAction\":{\"byWhen\":\"2026-09-29\",\"how\":\"approve the plan\",\"who\":\"sponsor\"},\"owner\":\"sponsor\",\"since\":\"2026-09-20T00:00:00Z\"}],\"delegatedCopyApproval\":{\"target\":\"production\"},\"mandate\":{\"primaryProblemId\":\"strategist-unclear-direction\",\"problem\":\"Our site doesn't explain what we do.\",\"roles\":[\"strategist\",\"writer\"]},\"recommendedNext\":{\"action\":\"Approve the first-wave plan.\",\"owner\":\"sponsor\"},\"schemaVersion\":1,\"whereWeAre\":[\"Fit and readiness both satisfied.\"]}",
+      "digest": "sha256:211634543ec34b76fab4fcb028d2d7cc0dd5c02f3b16753caa841655a71fed41"
+    },
+    {
+      "name": "delegated-copy-approval-scoped",
+      "note": "The same plan with two scopes declared, approved by a decision that names its own digest. The scopes are covered by the digest (it differs from the unscoped plan).",
+      "plan": {
+        "schemaVersion": 1,
+        "asOf": "2026-09-24T09:00:00Z",
+        "mandate": {
+          "problem": "Our site doesn't explain what we do.",
+          "primaryProblemId": "strategist-unclear-direction",
+          "roles": [
+            "strategist",
+            "writer"
+          ]
+        },
+        "whereWeAre": [
+          "Fit and readiness both satisfied."
+        ],
+        "recommendedNext": {
+          "action": "Approve the first-wave plan.",
+          "owner": "sponsor"
+        },
+        "decisions": [
+          {
+            "at": "2026-09-24T10:00:00Z",
+            "recommended": "compose from confirmed problems",
+            "chosen": "approved",
+            "by": "sponsor",
+            "subjectDigest": "sha256:7455ac97005eb967866933f5c8feb06ea074dd7208968a2ebfb22bfa4a1d3f85"
+          }
+        ],
+        "blockers": [
+          {
+            "capabilityId": "engagement",
+            "kind": "missing-authority",
+            "owner": "sponsor",
+            "nextAction": {
+              "who": "sponsor",
+              "how": "approve the plan",
+              "byWhen": "2026-09-29"
+            },
+            "since": "2026-09-20T00:00:00Z"
+          }
+        ],
+        "delegatedCopyApproval": {
+          "target": "production",
+          "scopes": [
+            "home",
+            "site.pricing"
+          ]
+        }
+      },
+      "canonical": "{\"blockers\":[{\"capabilityId\":\"engagement\",\"kind\":\"missing-authority\",\"nextAction\":{\"byWhen\":\"2026-09-29\",\"how\":\"approve the plan\",\"who\":\"sponsor\"},\"owner\":\"sponsor\",\"since\":\"2026-09-20T00:00:00Z\"}],\"delegatedCopyApproval\":{\"scopes\":[\"home\",\"site.pricing\"],\"target\":\"production\"},\"mandate\":{\"primaryProblemId\":\"strategist-unclear-direction\",\"problem\":\"Our site doesn't explain what we do.\",\"roles\":[\"strategist\",\"writer\"]},\"recommendedNext\":{\"action\":\"Approve the first-wave plan.\",\"owner\":\"sponsor\"},\"schemaVersion\":1,\"whereWeAre\":[\"Fit and readiness both satisfied.\"]}",
+      "digest": "sha256:7455ac97005eb967866933f5c8feb06ea074dd7208968a2ebfb22bfa4a1d3f85"
+    },
+    {
+      "name": "delegated-copy-approval-scoped-keys-reversed",
+      "note": "The scoped plan with every object's keys in reverse order, including delegatedCopyApproval and the decision: the same digest as the scoped plan.",
+      "plan": {
+        "delegatedCopyApproval": {
+          "scopes": [
+            "home",
+            "site.pricing"
+          ],
+          "target": "production"
+        },
+        "blockers": [
+          {
+            "since": "2026-09-20T00:00:00Z",
+            "nextAction": {
+              "byWhen": "2026-09-29",
+              "how": "approve the plan",
+              "who": "sponsor"
+            },
+            "owner": "sponsor",
+            "kind": "missing-authority",
+            "capabilityId": "engagement"
+          }
+        ],
+        "decisions": [
+          {
+            "subjectDigest": "sha256:7455ac97005eb967866933f5c8feb06ea074dd7208968a2ebfb22bfa4a1d3f85",
+            "by": "sponsor",
+            "chosen": "approved",
+            "recommended": "compose from confirmed problems",
+            "at": "2026-09-24T10:00:00Z"
+          }
+        ],
+        "recommendedNext": {
+          "owner": "sponsor",
+          "action": "Approve the first-wave plan."
+        },
+        "whereWeAre": [
+          "Fit and readiness both satisfied."
+        ],
+        "mandate": {
+          "roles": [
+            "strategist",
+            "writer"
+          ],
+          "primaryProblemId": "strategist-unclear-direction",
+          "problem": "Our site doesn't explain what we do."
+        },
+        "asOf": "2026-09-24T09:00:00Z",
+        "schemaVersion": 1
+      },
+      "canonical": "{\"blockers\":[{\"capabilityId\":\"engagement\",\"kind\":\"missing-authority\",\"nextAction\":{\"byWhen\":\"2026-09-29\",\"how\":\"approve the plan\",\"who\":\"sponsor\"},\"owner\":\"sponsor\",\"since\":\"2026-09-20T00:00:00Z\"}],\"delegatedCopyApproval\":{\"scopes\":[\"home\",\"site.pricing\"],\"target\":\"production\"},\"mandate\":{\"primaryProblemId\":\"strategist-unclear-direction\",\"problem\":\"Our site doesn't explain what we do.\",\"roles\":[\"strategist\",\"writer\"]},\"recommendedNext\":{\"action\":\"Approve the first-wave plan.\",\"owner\":\"sponsor\"},\"schemaVersion\":1,\"whereWeAre\":[\"Fit and readiness both satisfied.\"]}",
+      "digest": "sha256:7455ac97005eb967866933f5c8feb06ea074dd7208968a2ebfb22bfa4a1d3f85"
+    },
+    {
+      "name": "delegated-copy-approval-scoped-new-decisions",
+      "note": "The scoped plan with a later asOf and a later deferring decision: asOf and decisions are excluded, so the same digest as the scoped plan.",
+      "plan": {
+        "schemaVersion": 1,
+        "asOf": "2026-09-26T09:00:00Z",
+        "mandate": {
+          "problem": "Our site doesn't explain what we do.",
+          "primaryProblemId": "strategist-unclear-direction",
+          "roles": [
+            "strategist",
+            "writer"
+          ]
+        },
+        "whereWeAre": [
+          "Fit and readiness both satisfied."
+        ],
+        "recommendedNext": {
+          "action": "Approve the first-wave plan.",
+          "owner": "sponsor"
+        },
+        "decisions": [
+          {
+            "at": "2026-09-24T10:00:00Z",
+            "recommended": "compose from confirmed problems",
+            "chosen": "approved",
+            "by": "sponsor",
+            "subjectDigest": "sha256:7455ac97005eb967866933f5c8feb06ea074dd7208968a2ebfb22bfa4a1d3f85"
+          },
+          {
+            "at": "2026-09-26T10:00:00Z",
+            "recommended": "keep the approved plan",
+            "chosen": "deferred",
+            "by": "sponsor"
+          }
+        ],
+        "blockers": [
+          {
+            "capabilityId": "engagement",
+            "kind": "missing-authority",
+            "owner": "sponsor",
+            "nextAction": {
+              "who": "sponsor",
+              "how": "approve the plan",
+              "byWhen": "2026-09-29"
+            },
+            "since": "2026-09-20T00:00:00Z"
+          }
+        ],
+        "delegatedCopyApproval": {
+          "target": "production",
+          "scopes": [
+            "home",
+            "site.pricing"
+          ]
+        }
+      },
+      "canonical": "{\"blockers\":[{\"capabilityId\":\"engagement\",\"kind\":\"missing-authority\",\"nextAction\":{\"byWhen\":\"2026-09-29\",\"how\":\"approve the plan\",\"who\":\"sponsor\"},\"owner\":\"sponsor\",\"since\":\"2026-09-20T00:00:00Z\"}],\"delegatedCopyApproval\":{\"scopes\":[\"home\",\"site.pricing\"],\"target\":\"production\"},\"mandate\":{\"primaryProblemId\":\"strategist-unclear-direction\",\"problem\":\"Our site doesn't explain what we do.\",\"roles\":[\"strategist\",\"writer\"]},\"recommendedNext\":{\"action\":\"Approve the first-wave plan.\",\"owner\":\"sponsor\"},\"schemaVersion\":1,\"whereWeAre\":[\"Fit and readiness both satisfied.\"]}",
+      "digest": "sha256:7455ac97005eb967866933f5c8feb06ea074dd7208968a2ebfb22bfa4a1d3f85"
+    },
+    {
+      "name": "delegated-copy-approval-scopes-reordered",
+      "note": "The scoped plan with its two scopes in the other order: array order is significant, so a different digest. The decision still names the scoped plan's digest, so it no longer approves this plan.",
+      "plan": {
+        "schemaVersion": 1,
+        "asOf": "2026-09-24T09:00:00Z",
+        "mandate": {
+          "problem": "Our site doesn't explain what we do.",
+          "primaryProblemId": "strategist-unclear-direction",
+          "roles": [
+            "strategist",
+            "writer"
+          ]
+        },
+        "whereWeAre": [
+          "Fit and readiness both satisfied."
+        ],
+        "recommendedNext": {
+          "action": "Approve the first-wave plan.",
+          "owner": "sponsor"
+        },
+        "decisions": [
+          {
+            "at": "2026-09-24T10:00:00Z",
+            "recommended": "compose from confirmed problems",
+            "chosen": "approved",
+            "by": "sponsor",
+            "subjectDigest": "sha256:7455ac97005eb967866933f5c8feb06ea074dd7208968a2ebfb22bfa4a1d3f85"
+          }
+        ],
+        "blockers": [
+          {
+            "capabilityId": "engagement",
+            "kind": "missing-authority",
+            "owner": "sponsor",
+            "nextAction": {
+              "who": "sponsor",
+              "how": "approve the plan",
+              "byWhen": "2026-09-29"
+            },
+            "since": "2026-09-20T00:00:00Z"
+          }
+        ],
+        "delegatedCopyApproval": {
+          "target": "production",
+          "scopes": [
+            "site.pricing",
+            "home"
+          ]
+        }
+      },
+      "canonical": "{\"blockers\":[{\"capabilityId\":\"engagement\",\"kind\":\"missing-authority\",\"nextAction\":{\"byWhen\":\"2026-09-29\",\"how\":\"approve the plan\",\"who\":\"sponsor\"},\"owner\":\"sponsor\",\"since\":\"2026-09-20T00:00:00Z\"}],\"delegatedCopyApproval\":{\"scopes\":[\"site.pricing\",\"home\"],\"target\":\"production\"},\"mandate\":{\"primaryProblemId\":\"strategist-unclear-direction\",\"problem\":\"Our site doesn't explain what we do.\",\"roles\":[\"strategist\",\"writer\"]},\"recommendedNext\":{\"action\":\"Approve the first-wave plan.\",\"owner\":\"sponsor\"},\"schemaVersion\":1,\"whereWeAre\":[\"Fit and readiness both satisfied.\"]}",
+      "digest": "sha256:c85abd26dd5d28e9901e24ec3bd29b7e9dca878033d174e82b238208211a106a"
+    },
+    {
+      "name": "delegated-copy-approval-scope-widened",
+      "note": "The scoped plan with one scope widened from site.pricing to site: editing a scope changes the digest. The decision still names the scoped plan's digest, so it no longer approves this plan.",
+      "plan": {
+        "schemaVersion": 1,
+        "asOf": "2026-09-24T09:00:00Z",
+        "mandate": {
+          "problem": "Our site doesn't explain what we do.",
+          "primaryProblemId": "strategist-unclear-direction",
+          "roles": [
+            "strategist",
+            "writer"
+          ]
+        },
+        "whereWeAre": [
+          "Fit and readiness both satisfied."
+        ],
+        "recommendedNext": {
+          "action": "Approve the first-wave plan.",
+          "owner": "sponsor"
+        },
+        "decisions": [
+          {
+            "at": "2026-09-24T10:00:00Z",
+            "recommended": "compose from confirmed problems",
+            "chosen": "approved",
+            "by": "sponsor",
+            "subjectDigest": "sha256:7455ac97005eb967866933f5c8feb06ea074dd7208968a2ebfb22bfa4a1d3f85"
+          }
+        ],
+        "blockers": [
+          {
+            "capabilityId": "engagement",
+            "kind": "missing-authority",
+            "owner": "sponsor",
+            "nextAction": {
+              "who": "sponsor",
+              "how": "approve the plan",
+              "byWhen": "2026-09-29"
+            },
+            "since": "2026-09-20T00:00:00Z"
+          }
+        ],
+        "delegatedCopyApproval": {
+          "target": "production",
+          "scopes": [
+            "home",
+            "site"
+          ]
+        }
+      },
+      "canonical": "{\"blockers\":[{\"capabilityId\":\"engagement\",\"kind\":\"missing-authority\",\"nextAction\":{\"byWhen\":\"2026-09-29\",\"how\":\"approve the plan\",\"who\":\"sponsor\"},\"owner\":\"sponsor\",\"since\":\"2026-09-20T00:00:00Z\"}],\"delegatedCopyApproval\":{\"scopes\":[\"home\",\"site\"],\"target\":\"production\"},\"mandate\":{\"primaryProblemId\":\"strategist-unclear-direction\",\"problem\":\"Our site doesn't explain what we do.\",\"roles\":[\"strategist\",\"writer\"]},\"recommendedNext\":{\"action\":\"Approve the first-wave plan.\",\"owner\":\"sponsor\"},\"schemaVersion\":1,\"whereWeAre\":[\"Fit and readiness both satisfied.\"]}",
+      "digest": "sha256:75a13fa71d0e79b229b49fda2dc418556253554b5e2e1df2c9fecf47268b68f3"
+    },
+    {
+      "name": "delegated-copy-approval-removed",
+      "note": "The scoped plan with delegatedCopyApproval removed: the digest of blockers-without-due again. The decision still names the scoped plan's digest.",
+      "plan": {
+        "schemaVersion": 1,
+        "asOf": "2026-09-24T09:00:00Z",
+        "mandate": {
+          "problem": "Our site doesn't explain what we do.",
+          "primaryProblemId": "strategist-unclear-direction",
+          "roles": [
+            "strategist",
+            "writer"
+          ]
+        },
+        "whereWeAre": [
+          "Fit and readiness both satisfied."
+        ],
+        "recommendedNext": {
+          "action": "Approve the first-wave plan.",
+          "owner": "sponsor"
+        },
+        "decisions": [
+          {
+            "at": "2026-09-24T10:00:00Z",
+            "recommended": "compose from confirmed problems",
+            "chosen": "approved",
+            "by": "sponsor",
+            "subjectDigest": "sha256:7455ac97005eb967866933f5c8feb06ea074dd7208968a2ebfb22bfa4a1d3f85"
+          }
+        ],
+        "blockers": [
+          {
+            "capabilityId": "engagement",
+            "kind": "missing-authority",
+            "owner": "sponsor",
+            "nextAction": {
+              "who": "sponsor",
+              "how": "approve the plan",
+              "byWhen": "2026-09-29"
+            },
+            "since": "2026-09-20T00:00:00Z"
+          }
+        ]
+      },
+      "canonical": "{\"blockers\":[{\"capabilityId\":\"engagement\",\"kind\":\"missing-authority\",\"nextAction\":{\"byWhen\":\"2026-09-29\",\"how\":\"approve the plan\",\"who\":\"sponsor\"},\"owner\":\"sponsor\",\"since\":\"2026-09-20T00:00:00Z\"}],\"mandate\":{\"primaryProblemId\":\"strategist-unclear-direction\",\"problem\":\"Our site doesn't explain what we do.\",\"roles\":[\"strategist\",\"writer\"]},\"recommendedNext\":{\"action\":\"Approve the first-wave plan.\",\"owner\":\"sponsor\"},\"schemaVersion\":1,\"whereWeAre\":[\"Fit and readiness both satisfied.\"]}",
+      "digest": "sha256:92af7a1b566210f7d2f6ebdc49faa59332b8191d651e812972f5d671497e0409"
     }
   ]
 }

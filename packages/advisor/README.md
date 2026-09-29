@@ -375,6 +375,12 @@ digits in each part and no prerelease or build suffix, and one canonical
 `sha512-` integrity value) and
 `resolution` (`{ snapshotDigest }`), typed as `AdvisorPlanKit`,
 `AdvisorPlanStaffing`, `AdvisorPlanPackageAct` and `AdvisorPlanResolution`.
+A plan may also declare `delegatedCopyApproval` (`{ target: "production", scopes? }`,
+typed as `AdvisorPlanDelegatedCopyApproval`, issue #1586): copy a delegate
+approved is accepted on production, in the listed copy entry-id namespaces or,
+without `scopes`, in every one. `@clossys/writer` honours it only through an
+approval that names this plan's digest; `scopes` is never empty, and a
+repeated item is redundant, not refused.
 A decision (`AdvisorPlanDecision`) may carry `subjectDigest`.
 Once the schema passes, `validateAdvisorPlan()` applies the code rules the
 contract's description defines, each finding with the rule
