@@ -1,12 +1,13 @@
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
-import { execFileSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
 import { cpSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, realpathSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 
 import { argsFrom, buildLaterPublicationRecord, createLaterPublicationRecord, credentiallessAuditEnv, verifiedAnonymousAudit, writeNoOverwrite } from "./record-later-publication.mjs";
+import { buildPublicationRecordWithFallback } from "./lib/publication-evidence-run.mjs";
 import { comparableTranscriptSha256, currentQualificationJoins } from "./lib/candidate-qualification.mjs";
 import { publicNpmVersionUrl, PUBLIC_NPM_REGISTRY } from "./lib/public-npm-registry.mjs";
 import { RELEASE_RUNTIME } from "./lib/release-runtime.mjs";
@@ -218,7 +219,11 @@ test("creator writes one canonical owner-present record in a synthetic git repos
 // Builds a synthetic qualified repository, applies the requested root drift
 // (and optional package-owned change) at the publication source, and runs the
 // creator's replay path against it. Returns the creator result or its rejection.
-async function replayScenario(t, { driftFiles = ["package.json", "package-lock.json"], packageChange = false, expectRecord = true, refusal } = {}) {
+// `changedTarball` repacks after qualification so the served candidate bytes
+// differ while the qualification still names the original tarball. `prepareOnly`
+// returns that repository without calling the creator, so a caller can drive
+// the real fallback with the same fixture.
+async function replayScenario(t, { driftFiles = ["package.json", "package-lock.json"], packageChange = false, expectRecord = true, refusal, changedTarball = false, prepareOnly = false } = {}) {
   const root = realpathSync(mkdtempSync(join(tmpdir(), "record-later-publication-replay-e2e-")));
   t.after(() => rmSync(root, { recursive: true, force: true }));
   const sourceRoot = process.cwd();
@@ -243,8 +248,8 @@ async function replayScenario(t, { driftFiles = ["package.json", "package-lock.j
   // Derived, not hardcoded: the packed filename carries strategist's current
   // version, so pinning it here breaks on every version bump.
   const candidatePath = join(packDirectory, readdirSync(packDirectory).find((entry) => entry.endsWith(".tgz")));
-  const candidateBytesForRecord = readFileSync(candidatePath);
-  const hashes = { sha1: digest("sha1", candidateBytesForRecord), sha256: digest("sha256", candidateBytesForRecord), sha512: digest("sha512", candidateBytesForRecord) };
+  const qualifiedBytes = readFileSync(candidatePath);
+  const hashes = { sha1: digest("sha1", qualifiedBytes), sha256: digest("sha256", qualifiedBytes), sha512: digest("sha512", qualifiedBytes) };
   const manifestBytes = readFileSync(join(root, "packages/strategist/package.json"));
   const version = JSON.parse(manifestBytes).version;
   const qualification = syntheticQualification({ root, base, manifestBytes, version, hashes });
@@ -261,12 +266,27 @@ async function replayScenario(t, { driftFiles = ["package.json", "package-lock.j
   execFileSync("git", ["commit", "-qm", "synthetic root resolution drift", "--allow-empty"], { cwd: root });
   const sourceSha = execFileSync("git", ["rev-parse", "HEAD"], { cwd: root, encoding: "utf8" }).trim();
 
+  // A changed tarball is a second pack of a shipped file, after the source
+  // commit. The qualification, the proof, and the registry bytes below keep
+  // the original digests; only the candidate the creator reads changes.
+  let creatorBytes = qualifiedBytes;
+  if (changedTarball) {
+    const readmePath = join(root, "packages/strategist/README.md");
+    writeFileSync(readmePath, `${readFileSync(readmePath, "utf8")}\n`);
+    const repackDirectory = join(root, ".pack-output-changed");
+    mkdirSync(repackDirectory);
+    execFileSync("npm", ["pack", "--ignore-scripts", "--pack-destination", repackDirectory, "--workspace=packages/strategist"], { cwd: root, stdio: ["ignore", "ignore", "ignore"] });
+    creatorBytes = readFileSync(join(repackDirectory, readdirSync(repackDirectory).find((entry) => entry.endsWith(".tgz"))));
+    if (creatorBytes.equals(qualifiedBytes)) throw new Error("changed-tarball fixture packed identical bytes");
+    writeFileSync(candidatePath, creatorBytes);
+  }
+
   const replayProof = {
     schemaVersion: 2, kind: "public-npm-anonymous-registry-proof-v2", evidence: {
       registry: PUBLIC_NPM_REGISTRY, access: "anonymous", name: qualification.candidate.name, version: qualification.candidate.version,
       metadataUrl: publicNpmVersionUrl(PUBLIC_NPM_REGISTRY, qualification.candidate.name, qualification.candidate.version), repository: "clossys/foundry",
       tarballUrl: `${PUBLIC_NPM_REGISTRY}/@clossys/strategist/-/strategist-${version}.tgz`, integrity: `sha512-${Buffer.from(hashes.sha512, "hex").toString("base64")}`,
-      shasum: hashes.sha1, sha256: hashes.sha256, sha512: hashes.sha512, packedManifestSha256: digest("sha256", manifestBytes), size: candidateBytesForRecord.length,
+      shasum: hashes.sha1, sha256: hashes.sha256, sha512: hashes.sha512, packedManifestSha256: digest("sha256", manifestBytes), size: qualifiedBytes.length,
     },
   };
   const proofPath = join(root, "registry-proof.json");
@@ -283,7 +303,7 @@ async function replayScenario(t, { driftFiles = ["package.json", "package-lock.j
   }, null, 2)}\n`);
   const archiveDirectory = join(root, ".qualified-artifact");
   mkdirSync(archiveDirectory);
-  writeFileSync(join(archiveDirectory, "candidate.tgz"), candidateBytesForRecord);
+  writeFileSync(join(archiveDirectory, "candidate.tgz"), creatorBytes);
   writeFileSync(join(archiveDirectory, "transcript.json"), `${JSON.stringify(qualification.transcript, null, 2)}\n`);
   const archivePath = join(root, "qualified-candidate.zip");
   execFileSync("zip", ["-q", archivePath, "candidate.tgz", "transcript.json"], { cwd: archiveDirectory });
@@ -317,10 +337,25 @@ async function replayScenario(t, { driftFiles = ["package.json", "package-lock.j
       { id: 780, name: "publish (strategist)", conclusion: "success", html_url: `https://github.com/clossys/foundry/actions/runs/${runId}/job/780` },
     ] });
     if (url === `https://registry.npmjs.org/${encodeURIComponent(qualification.candidate.name)}`) return response(packument);
+    if (url === replayProof.evidence.metadataUrl) return response({
+      name: qualification.candidate.name, version: qualification.candidate.version,
+      repository: { type: "git", url: "git+https://github.com/clossys/foundry.git" },
+      dist: { tarball: replayProof.evidence.tarballUrl, integrity: replayProof.evidence.integrity, shasum: hashes.sha1 },
+    });
+    if (url === replayProof.evidence.tarballUrl) return {
+      ok: true, status: 200,
+      headers: { get: (name) => String(name).toLowerCase() === "content-length" ? String(qualifiedBytes.length) : null },
+      arrayBuffer: async () => Uint8Array.from(qualifiedBytes).buffer,
+      json: async () => { throw new Error("tarball is not JSON"); },
+    };
     throw new Error(`unexpected fetch ${url}`);
   };
   const auditRun = (_file, args) => args[0] === "audit" ? JSON.stringify(audit) : "";
 
+  const harness = {
+    root, qualification, archiveBytes, version, sourceSha, publicationPath, qualificationPath, fetchImpl, auditRun, runId, artifactId,
+  };
+  if (prepareOnly) return harness;
   const run = () => createLaterPublicationRecord({
     root, packageKey: "strategist", qualificationPath: join(root, qualificationPath), candidatePath, proofPath, publicationPath,
     artifactArchivePath: archivePath, replayEvidencePath, fetchImpl, auditRun, env: {}, releaseRuntimeRun,
@@ -369,6 +404,78 @@ test("creator refuses the v3 replay with a fixed reason when neither root hash d
 
 test("creator still refuses lock-only drift when a package-owned file also changed", async (t) => {
   await replayScenario(t, { driftFiles: ["package-lock.json"], packageChange: "PLACEHOLDER.txt", expectRecord: false, refusal: /only the two root resolution hashes may differ/ });
+});
+
+// Lock-only drift does not waive the tarball join. The candidate bytes are a
+// second pack of a shipped file; the qualification still names the first pack.
+// The refusal is the creator's tarball comparison, which runs before the
+// drift decision, so removing that comparison changes this error.
+test("creator refuses lock-only drift when the candidate tarball also changed", async (t) => {
+  await replayScenario(t, {
+    driftFiles: ["package-lock.json"], changedTarball: true, expectRecord: false,
+    refusal: /candidate tarball differs from the qualification record/,
+  });
+});
+
+// The direct join fails because only the lock hash drifted. Record creation
+// is the real creator. The fallback does not forward the creator's
+// release-runtime or audit seams, so this test supplies the same two the
+// other creator tests use; it does not substitute a record. Removing the
+// fallback leaves the direct failure, and reserving v3 for both-hash drift
+// makes the second attempt fail too.
+test("direct join failure records lock-only drift through the real v3 replay", async (t) => {
+  const harness = await replayScenario(t, { driftFiles: ["package-lock.json"], prepareOnly: true });
+  const attempts = [];
+  const createRecord = async (options) => {
+    attempts.push(options.artifactArchivePath === undefined ? "direct" : "replay");
+    return createLaterPublicationRecord({ ...options, releaseRuntimeRun, auditRun: harness.auditRun });
+  };
+  const tempDir = mkdtempSync(join(harness.root, "fallback-"));
+  const result = await buildPublicationRecordWithFallback({
+    root: harness.root,
+    packageKey: "strategist",
+    qualificationPath: join(harness.root, harness.qualificationPath),
+    publicationPath: harness.publicationPath,
+    fetchImpl: harness.fetchImpl,
+    env: {},
+    runId: harness.runId,
+    runAttempt: 1,
+    name: harness.qualification.candidate.name,
+    version: harness.version,
+    sourceSha: harness.sourceSha,
+    auditRun: harness.auditRun,
+    tempDir,
+    findArtifact: async () => ({ id: harness.artifactId, name: "qualified-candidate-strategist" }),
+    downloadZip: async () => harness.archiveBytes,
+    createRecord,
+  });
+  assert.deepEqual(attempts, ["direct", "replay"]);
+  assert.equal(result.record.schemaVersion, 3);
+  assert.equal(result.record.kind, "foundry-trusted-publication-replay-v3");
+  assert.equal(result.record.source.publicationSource.rootPackageJsonSha256, harness.qualification.rootPackageJsonSha256);
+  assert.notEqual(result.record.source.publicationSource.rootPackageLockSha256, harness.qualification.rootPackageLockSha256);
+  assert.deepEqual(readdirSync(join(harness.root, "governance/release-publications/later")), [`strategist-${harness.version}.json`]);
+});
+
+// The introduced blob is the altered record, so the immutable-bytes check is
+// satisfied. The validator behind `npm run check:later-publications` still
+// refuses because the retained publicationSource lock hash is not the hash
+// measured at that source commit. One character is enough.
+test("check:later-publications refuses a retained v3 record whose publicationSource hash changed by one character", async (t) => {
+  const { root, result } = await replayScenario(t, { driftFiles: ["package-lock.json"] });
+  const absolute = join(root, result.path);
+  const record = JSON.parse(readFileSync(absolute, "utf8"));
+  const original = record.source.publicationSource.rootPackageLockSha256;
+  const altered = `${original[0] === "0" ? "1" : "0"}${original.slice(1)}`;
+  assert.equal(altered.length, original.length);
+  assert.notEqual(altered, original);
+  record.source.publicationSource.rootPackageLockSha256 = altered;
+  writeFileSync(absolute, `${JSON.stringify(record, null, 2)}\n`);
+  execFileSync("git", ["add", result.path], { cwd: root });
+  execFileSync("git", ["commit", "-qm", "introduce tampered publication record"], { cwd: root });
+  const check = spawnSync(process.execPath, [join(process.cwd(), "scripts/check-later-publications.mjs")], { cwd: root, encoding: "utf8" });
+  assert.notEqual(check.status, 0, check.stderr || check.stdout);
+  assert.match(`${check.stderr}`, /\[replay-source\]/);
 });
 
 test("creator refuses credential-bearing environments before reading inputs", async () => {
