@@ -124,7 +124,7 @@ versioned packages.
 | `@clossys/controller/conventions/documents/*` | The shipped convention documents themselves (`branch-provenance.md`, `skill-grammar.md`, `agent-interoperability.md`, `routine-declaration.md`, `schedule-declaration.md`, `live-state-reconciliation.md`, `skill-registry.md`, `machine-guidance.md`, `machine-baseline.md`, `gate-naming.md`, `runner-conventions.md`, `ci-conventions.md`) as real files a provisioning step can copy or template onto a machine. |
 | `@clossys/controller/conventions/adapters/*` | The shipped adapter files (`agent-policy.rules`, `shell-integration.zsh`, `branch-provenance-hook.sh`, `heavy-cmd-hook.sh`, `scoped-main-push.sh`, `workspace-shell.zsh`) as real files, same shape as the documents above. |
 | `@clossys/controller/conventions/data/*` | Dated data files an evaluator reads as input, never hard-coded in code: `runner-pricing.json` (`asOf`, source URLs). |
-| `@clossys/controller/conventions/templates/*` | Ready-to-adopt CI workflow skeletons: `ci-workflow.yml`, which a test in this package proves passes `ci-conventions-check` as shipped. |
+| `@clossys/controller/conventions/templates/*` | Ready-to-adopt CI workflow templates: `ci-workflow.yml` and `product-ci-workflow.yml` (a lockfile-selected npm or pnpm workflow for a client product repository), each of which a test in this package proves passes `ci-conventions-check` as shipped. |
 | `@clossys/controller/policy` | The content-addressed `PolicyBinding` primitive: compute a digest, validate a binding's shape, verify a binding against materialized content. Zero I/O, zero dependency of its own — the primitive `./gates` and `./artifacts` bind rules and artifacts to documents with, without ever committing the document itself. |
 
 `@clossys/controller/positions` exports
@@ -2167,6 +2167,11 @@ straight through. `conventions/templates/ci-workflow.yml`, resolved by
 `templatePath("ci-workflow.yml")`, is a conforming skeleton a scaffold can
 compose into a new repository — a test in this package runs the real
 shipped file through `evaluateCiConventions` and asserts it passes.
+`product-ci-workflow.yml` is the single-job (`verify-product`) template for a
+client product repository, installed as `.github/workflows/clossys-ci.yml`; its
+own test does the same and also runs its install step against stubbed package
+managers to show a repository without exactly one of `package-lock.json` or
+`pnpm-lock.yaml` is refused.
 
 `ci-conventions.md`'s own **Weekly Sunday `@clossys/*` adoption** section
 (owner direction 2026-09-23, #1187/#1259's cadence rule) is a consuming
