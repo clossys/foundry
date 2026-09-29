@@ -167,7 +167,7 @@ The web condition changes only the implementation selected for server
 rendering, not the API. `MarketingView` keeps the same props and regional
 layout; its server target uses Designer's native `details`/`summary` FAQ while
 the ordinary target keeps Designer's React Aria FAQ. `AuthView`, `ErrorView`,
-`CaptureView`, `CollectionView`, `DocumentView`, the renderer functions,
+`CaptureView`, `CollectionView`, `DocumentView`, `LegalView`, the renderer functions,
 template helpers, error class, and all runtime export names are present in
 both targets.
 
@@ -1479,8 +1479,8 @@ lists are exported as `LEGAL_SECTION_IDS`, keyed by kind.
 - `variables`: `entity`, `jurisdiction` and `contact`, each a required
   non-empty string.
 - `factsToConfirm` (optional): a list of `CopyRef`s naming facts a person
-  still has to confirm. A draft needs a non-empty list. It is data only:
-  this package does not render it.
+  still has to confirm. A draft needs a non-empty list. `LegalView` renders
+  it in a draft callout.
 - `notApplicable` (optional): a record from section id to a `CopyRef`. A
   section that does not apply keeps its heading and states so through that
   reference, and the section's only block is a paragraph carrying it.
@@ -1506,9 +1506,77 @@ this package verifies. No legal wording ships in this package: every
 string in a legal document is a `CopyRef` that the consumer's own registry
 owns.
 
-**Not included yet:** a rendered `LegalView` and draft callout, a
-processor list derived from other content, variants of the `children`
-section, and reading the brand-facts record for the variables.
+**Not included yet:** a processor list derived from other content, variants
+of the `children` section, and reading the brand-facts record for the
+variables.
+
+#### `LegalView`
+
+`LegalView`, exported from `@clossys/publisher/web` next to `DocumentView`,
+renders a `LegalDocument` in the same site chrome and layout as
+`DocumentView`. It is server-safe and has no summary or action props.
+
+```tsx
+import { LegalView } from "@clossys/publisher/web";
+import type { LegalViewLabels } from "@clossys/publisher/web";
+import type { LegalDocument } from "@clossys/publisher/document";
+
+type LegalResolver = React.ComponentProps<typeof LegalView>["resolveCopyId"];
+
+declare const resolveCopyId: LegalResolver; // the caller's approved-copy registry
+declare const brand: React.ReactNode; // the caller's brand mark
+declare const terms: LegalDocument; // as built in the example above
+
+const labels: LegalViewLabels = {
+  effectiveDate: { id: "acme.legal.label.effective-date" },
+  lastUpdated: { id: "acme.legal.label.last-updated" },
+  draftHeading: { id: "acme.legal.label.draft-heading" },
+};
+
+export function TermsPage() {
+  return <LegalView brand={brand} document={terms} resolveCopyId={resolveCopyId} labels={labels} locale="en-GB" />;
+}
+```
+
+Props, in addition to the standard `div` attributes and `style`:
+
+- `brand`: the brand node placed in the page chrome.
+- `document`: the `LegalDocument` to render.
+- `resolveCopyId`: `@clossys/writer`'s ref-based `CopyResolver`
+  (`(ref: CopyRef) => CopyResolution | undefined`) that turns every `CopyRef`
+  into traced text, the same type `renderStructuredDocument` takes. It is not
+  the string-keyed `CopyResolver` exported from `@clossys/publisher/web`, which
+  carries no provenance and does not type-check here.
+- `labels`: `LegalViewLabels`, three `CopyRef`s named `effectiveDate`,
+  `lastUpdated` and `draftHeading`.
+- `locale` (required): the locale passed to `Intl.DateTimeFormat`.
+- `footerSecondary` (optional): extra footer content.
+
+What it does:
+
+- It runs `validateLegalDocument` first. Any finding throws a `RenderError`,
+  so an invalid document does not render.
+- It renders the sections through `renderStructuredDocument` in the fixed
+  order of `LEGAL_SECTION_IDS`.
+- A section listed in `legal.notApplicable` keeps its heading and renders
+  the `CopyRef` given for it.
+- The effective and last-updated dates render as
+  `<time dateTime="YYYY-MM-DD">`, formatted with
+  `Intl.DateTimeFormat(locale)` in UTC and labelled by the `labels` copy
+  references, resolved with `resolveCopyId`.
+- A `draft` document renders a `role="note"` callout before the first
+  section. Its heading comes from `labels.draftHeading` and it holds one
+  list item per resolved `factsToConfirm` entry. No prop turns the callout
+  off, and a `counsel-reviewed` document renders without it.
+- The content variables (`entity`, `jurisdiction`, `contact`) are not
+  displayed and no interpolation is applied to copy.
+- Every visible string comes from a caller `CopyRef`, so the caller supplies
+  a `locale` and the text for every label.
+
+**Soundness boundary.** `LegalView` guarantees the document's structure,
+section order, dates and a draft marker that cannot be suppressed. It says
+nothing about the legal adequacy of any text. It does not enforce the
+production gate: call `gateLegalDocument` separately before publishing.
 
 ## `record` — the append-only publication ledger
 
@@ -2151,11 +2219,11 @@ cosmetic gap.
   `lintSiteMetadataHtml`, `SITE_METADATA_REQUIRED_TAGS`, `SiteMetadataError`,
   `listWebTemplateNames`, `defineWebTemplate`, `createWebRenderer`,
   `AuthView`, `CaptureView`, `CollectionView`, `DocumentView`, `ErrorView`,
-  `MarketingView`, `SectionedView`, `RenderError`, and the `AuthViewProps`,
+  `LegalView`, `MarketingView`, `SectionedView`, `RenderError`, and the `AuthViewProps`,
   `CaptureViewProps`, `CollectionViewEmptyState`, `CollectionViewEntry`,
   `CollectionViewLink`, `CollectionViewPagination`, `CollectionViewProps`,
   `DocumentViewEffectiveDate`, `DocumentViewProps`,
-  `ErrorViewProps`, `MarketingViewProps`, `MarketingFeatureItem`, `MarketingFaqItem`,
+  `ErrorViewProps`, `LegalViewLabels`, `LegalViewProps`, `MarketingViewProps`, `MarketingFeatureItem`, `MarketingFaqItem`,
   `SectionedViewLandmark`, `SectionedViewProps`,
   `RenderErrorReason`, `AssetResolver`, `CopyResolver`, `RenderWebOptions`,
   `RenderWebResult`, `RepeatingWebSlotFieldSpec`, `RepeatingWebSlotSpec`, `ResolvedWebGroupField`, `ResolvedWebGroupItem`,

@@ -64,6 +64,9 @@ export type {
   WebTwitterMetadata,
 } from "./types.js";
 
+export { LegalView } from "./views/index.js";
+export type { LegalViewLabels, LegalViewProps } from "./views/index.js";
+
 // The contact handler is server-only: import it from server code, never a client bundle.
 export {
   CONTACT_CLIENT_KEY_MAX_LENGTH,

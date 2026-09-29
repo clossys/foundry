@@ -30,3 +30,6 @@ export type { BrandGuideAssetLink, BrandGuideFact, BrandGuideViewProps } from ".
 
 export { SystemAuditView } from "./SystemAuditView.js";
 export type { SystemAuditViewProps } from "./SystemAuditView.js";
+
+export { LegalView } from "./LegalView.js";
+export type { LegalViewLabels, LegalViewProps } from "./LegalView.js";
