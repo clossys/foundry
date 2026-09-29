@@ -405,3 +405,47 @@ describe("verifyReleaseAgeExemption: the .npmrc conflict", () => {
     expect(verify("yarnrc", yarnBefore, yarnAfter, "minimum-release-age-exclude=foo\n")).toEqual({ verified: true, value: VALUE });
   });
 });
+
+describe("editReleaseAgeExemption: linear-time line scans", () => {
+  // CodeQL js/polynomial-redos: trimming spaces with an alternation of an
+  // anchored-start and an anchored-end run backtracks quadratically on a long
+  // run of spaces that does not end the line. The budget is generous for a
+  // linear scan and far below what a quadratic one takes on this input.
+  const BUDGET_MS = 250;
+  const spaces = " ".repeat(80_000);
+  const timed = (run: () => unknown): number => {
+    const start = performance.now();
+    run();
+    return performance.now() - start;
+  };
+
+  const witnesses: readonly (readonly [string, string])[] = [
+    ["spaces then a character", `${spaces}x`],
+    ["spaces, a character, then more spaces", `${spaces}x${spaces}`],
+    ["a list dash then spaces then a character", `-${spaces}x`],
+    ["a key then spaces then a character", `k:${spaces}x`],
+    ["repeated dash-space items", "- ".repeat(40_000)],
+    ["spaces then a comment start", `${spaces}#`],
+  ];
+
+  for (const { surface } of SURFACES) {
+    for (const [name, line] of witnesses) {
+      it(`${surface}: scans ${name} within the budget`, () => {
+        expect(timed(() => edit(surface, `${line}\n`))).toBeLessThan(BUDGET_MS);
+        expect(timed(() => edit(surface, `k: v\n${line}\n`))).toBeLessThan(BUDGET_MS);
+      });
+    }
+  }
+
+  it("gives the same verdicts on small inputs of the same shapes", () => {
+    for (const { surface, key, q } of SURFACES) {
+      expect(edit(surface, "  x\n")).toEqual(UNPARSEABLE);
+      expect(edit(surface, "k:   x  \n")).toEqual({ kind: "edited", text: `k:   x  \n${key}:\n  - ${q}\n` });
+      expect(edit(surface, `${key}:\n  -   x\n`)).toEqual(UNPARSEABLE);
+      expect(edit(surface, "k: ?   \n")).toEqual({ kind: "edited", text: `k: ?   \n${key}:\n  - ${q}\n` });
+      expect(edit(surface, "k: |  \n")).toEqual(UNPARSEABLE);
+      expect(edit(surface, "-   |\n")).toEqual(UNPARSEABLE);
+      expect(edit(surface, "   # c\nk: v\n")).toEqual({ kind: "edited", text: `   # c\nk: v\n${key}:\n  - ${q}\n` });
+    }
+  });
+});

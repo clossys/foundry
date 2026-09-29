@@ -84,7 +84,21 @@ const KEY_LINE = new RegExp(`^(?:(${KEY_NAME})|'(${KEY_NAME})'|"(${KEY_NAME})"):
 
 const isBlankLine = (line: string): boolean => /^ *$/.test(line);
 const isCommentLine = (line: string): boolean => /^ *#/.test(line);
-const trimSpaces = (value: string): string => value.replace(/^ +| +$/g, "");
+
+/** Where the spaces around `value[from, to)` end: the bounds of the same text without its leading and trailing spaces. One pass, no backtracking. */
+function trimmedBounds(value: string, from: number, to: number): readonly [number, number] {
+  let start = from;
+  while (start < to && value[start] === " ") start += 1;
+  let end = to;
+  while (end > start && value[end - 1] === " ") end -= 1;
+  return [start, end];
+}
+
+/** The text without its leading and trailing spaces (only U+0020). */
+function trimSpaces(value: string): string {
+  const [start, end] = trimmedBounds(value, 0, value.length);
+  return value.slice(start, end);
+}
 
 /** End index (exclusive) of the single-quoted scalar starting at `start`; `''` is an escaped quote. */
 function endOfSingleQuoted(line: string, start: number): number {
@@ -155,8 +169,14 @@ function scanForForbiddenConstructs(line: string): void {
     tokenStart = c === "[" || c === "{" || c === ",";
     i += 1;
   }
-  let content = trimSpaces(line);
-  while (content === "-" || content.startsWith("- ")) content = content === "-" ? "" : trimSpaces(content.slice(2));
+  // The trimmed line with every leading "- " marker (and the spaces after it) skipped, by index so a long run of markers is not re-copied.
+  const [trimmedStart, end] = trimmedBounds(line, 0, line.length);
+  let start = trimmedStart;
+  while (start < end && line[start] === "-" && (start + 1 === end || line[start + 1] === " ")) {
+    start += 1;
+    while (start < end && line[start] === " ") start += 1;
+  }
+  const content = line.slice(start, end);
   if (content === "?" || content.startsWith("? ")) refuse();
   if (content.startsWith("|") || content.startsWith(">")) refuse();
   const colon = findKeyColon(content);
