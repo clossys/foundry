@@ -24,3 +24,6 @@ export { SectionedView } from "./SectionedView.server.js";
 export { BrandGuideView } from "./BrandGuideView.js";
 export { SystemAuditView } from "./SystemAuditView.js";
 export type { SectionedViewLandmark, SectionedViewProps } from "./SectionedView.js";
+
+export { LegalView } from "./LegalView.js";
+export type { LegalViewLabels, LegalViewProps } from "./LegalView.js";

@@ -43,3 +43,6 @@ export type {
   WebTemplateBlockSpec,
   WebTwitterMetadata,
 } from "./types.js";
+
+export { LegalView } from "./views/index.js";
+export type { LegalViewLabels, LegalViewProps } from "./views/index.js";
