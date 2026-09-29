@@ -5,6 +5,26 @@
  */
 export { renderWebDocument } from "./renderWebDocument.js";
 export { buildWebHeadMetadata } from "./headMetadata.js";
+export { SiteMetadataError, buildSiteMetadata } from "./siteMetadata.js";
+export type {
+  SiteIdentityInput,
+  SiteLegalStatus,
+  SiteMetadata,
+  SiteMetadataErrorReason,
+  SiteOpenGraphMetadata,
+  SitePageInput,
+  SitePageKind,
+  SiteShareCard,
+  SiteTwitterMetadata,
+} from "./siteMetadata.js";
+export { SITE_METADATA_REQUIRED_TAGS, lintSiteMetadataHtml } from "./siteMetadataLint.js";
+export type {
+  SiteMetadataLintFinding,
+  SiteMetadataLintResult,
+  SiteMetadataLintRule,
+  SiteMetadataRequiredTag,
+  SiteMetadataTagSelector,
+} from "./siteMetadataLint.js";
 export { brandAssetHeadLinks, publicationMapEmitsBrandAssets } from "./brandAssetHead.js";
 export { listWebTemplateNames } from "./internal/webTemplates.js";
 export { defineWebTemplate } from "./internal/defineWebTemplate.js";

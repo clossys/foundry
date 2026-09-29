@@ -87,6 +87,23 @@ export type {
   ApprovalBypassVerdict,
 } from "./approval-bypass.js";
 
+// Site identity: the site name and tagline as a reserved copy kind
+// (`site.name` / `site.tagline`), resolved through `resolveCopyRef` so the
+// same approval policy applies. See site-identity.ts's top doc comment.
+export {
+  resolveSiteIdentity,
+  SITE_IDENTITY_COPY_IDS,
+  SITE_NAME_COPY_ID,
+  SITE_TAGLINE_COPY_ID,
+} from "./site-identity.js";
+export type {
+  SiteIdentityField,
+  SiteIdentityIssue,
+  SiteIdentityIssueReason,
+  SiteIdentityOptions,
+  SiteIdentityResolution,
+} from "./site-identity.js";
+
 export { readCopyRecord } from "./registry.js";
 export type { CopyRegistryReadIssue, CopyRegistryReadIssueReason, CopyRegistryReadResult } from "./registry.js";
 
