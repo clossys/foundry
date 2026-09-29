@@ -215,7 +215,10 @@ test("creator writes one canonical owner-present record in a synthetic git repos
   assert.deepEqual(readdirSync(join(root, "governance/release-publications/later")), [`strategist-${version}.json`]);
 });
 
-test("creator retains one provider-bound replay record from the exact qualified archive", async (t) => {
+// Builds a synthetic qualified repository, applies the requested root drift
+// (and optional package-owned change) at the publication source, and runs the
+// creator's replay path against it. Returns the creator result or its rejection.
+async function replayScenario(t, { driftFiles = ["package.json", "package-lock.json"], packageChange = false, expectRecord = true, refusal } = {}) {
   const root = realpathSync(mkdtempSync(join(tmpdir(), "record-later-publication-replay-e2e-")));
   t.after(() => rmSync(root, { recursive: true, force: true }));
   const sourceRoot = process.cwd();
@@ -252,10 +255,10 @@ test("creator retains one provider-bound replay record from the exact qualified 
 
   // The replay exception is only for raw root-resolution drift; changing
   // whitespace keeps both root files valid while changing their byte hashes.
-  writeFileSync(join(root, "package.json"), `${readFileSync(join(root, "package.json"), "utf8")}\n`);
-  writeFileSync(join(root, "package-lock.json"), `${readFileSync(join(root, "package-lock.json"), "utf8")}\n`);
-  execFileSync("git", ["add", "package.json", "package-lock.json"], { cwd: root });
-  execFileSync("git", ["commit", "-qm", "synthetic root resolution drift"], { cwd: root });
+  for (const file of driftFiles) writeFileSync(join(root, file), `${readFileSync(join(root, file), "utf8")}\n`);
+  if (packageChange) writeFileSync(join(root, "packages/strategist", packageChange), "placeholder change\n");
+  execFileSync("git", ["add", "-A", ...driftFiles, ...(packageChange ? ["packages/strategist"] : [])], { cwd: root });
+  execFileSync("git", ["commit", "-qm", "synthetic root resolution drift", "--allow-empty"], { cwd: root });
   const sourceSha = execFileSync("git", ["rev-parse", "HEAD"], { cwd: root, encoding: "utf8" }).trim();
 
   const replayProof = {
@@ -318,16 +321,54 @@ test("creator retains one provider-bound replay record from the exact qualified 
   };
   const auditRun = (_file, args) => args[0] === "audit" ? JSON.stringify(audit) : "";
 
-  const result = await createLaterPublicationRecord({
+  const run = () => createLaterPublicationRecord({
     root, packageKey: "strategist", qualificationPath: join(root, qualificationPath), candidatePath, proofPath, publicationPath,
     artifactArchivePath: archivePath, replayEvidencePath, fetchImpl, auditRun, env: {}, releaseRuntimeRun,
   });
+  if (!expectRecord) {
+    await assert.rejects(run(), refusal);
+    assert.deepEqual(readdirSync(join(root, "governance/release-publications/later")), []);
+    return { root };
+  }
+  const result = await run();
+  return { root, result, qualification, archiveBytes, version };
+}
+
+test("creator retains one provider-bound replay record from the exact qualified archive", async (t) => {
+  const { root, result, qualification, archiveBytes, version } = await replayScenario(t);
   assert.equal(result.record.kind, "foundry-trusted-publication-replay-v3");
   assert.equal(result.record.publication.reference, result.record.runQualification.run.url);
   assert.equal(result.record.runQualification.artifact.archiveSha256, `sha256:${digest("sha256", archiveBytes)}`);
   assert.equal(result.record.runQualification.transcript.rawSha256, digest("sha256", Buffer.from(`${JSON.stringify(qualification.transcript, null, 2)}\n`)));
   assert.equal(result.record.runQualification.transcript.comparableSha256, comparableTranscriptSha256(qualification.transcript));
   assert.deepEqual(readdirSync(join(root, "governance/release-publications/later")), [`strategist-${version}.json`]);
+});
+
+test("creator records the v3 replay when only the root package-lock hash drifted, and the record validates", async (t) => {
+  const { root, result, qualification, version } = await replayScenario(t, { driftFiles: ["package-lock.json"] });
+  assert.equal(result.record.kind, "foundry-trusted-publication-replay-v3");
+  const roots = result.record.source.qualificationRoots;
+  const measured = result.record.source.publicationSource;
+  assert.equal(roots.packageJsonSha256, qualification.rootPackageJsonSha256);
+  assert.equal(measured.rootPackageJsonSha256, qualification.rootPackageJsonSha256, "unchanged root package.json hash is recorded truthfully");
+  assert.notEqual(measured.rootPackageLockSha256, qualification.rootPackageLockSha256);
+  assert.equal(measured.rootPackageLockSha256, digest("sha256", readFileSync(join(root, "package-lock.json"))));
+  assert.deepEqual(readdirSync(join(root, "governance/release-publications/later")), [`strategist-${version}.json`]);
+});
+
+test("creator records the v3 replay when only the root package.json hash drifted", async (t) => {
+  const { result, qualification } = await replayScenario(t, { driftFiles: ["package.json"] });
+  const measured = result.record.source.publicationSource;
+  assert.notEqual(measured.rootPackageJsonSha256, qualification.rootPackageJsonSha256);
+  assert.equal(measured.rootPackageLockSha256, qualification.rootPackageLockSha256);
+});
+
+test("creator refuses the v3 replay with a fixed reason when neither root hash drifted", async (t) => {
+  await replayScenario(t, { driftFiles: [], expectRecord: false, refusal: /replay v3 is reserved for drift in at least one root resolution hash/ });
+});
+
+test("creator still refuses lock-only drift when a package-owned file also changed", async (t) => {
+  await replayScenario(t, { driftFiles: ["package-lock.json"], packageChange: "PLACEHOLDER.txt", expectRecord: false, refusal: /only the two root resolution hashes may differ/ });
 });
 
 test("creator refuses credential-bearing environments before reading inputs", async () => {

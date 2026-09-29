@@ -64,7 +64,7 @@ export type { ContextChoiceApplyResult, ContextQuestionCard, ContextQuestionChoi
 export type { ClientProblem } from "./client-problems.js";
 export type { ProblemChoiceApplyResult, ProblemConfirmation, ProblemConfirmationState, ProblemQuestionCard, ProblemQuestionChoice } from "./problem-questions.js";
 export type {
-  AdvisorBlockerKind, AdvisorBlockerNextAction, AdvisorPlan, AdvisorPlanBlocker, AdvisorPlanDecision, AdvisorPlanKit, AdvisorPlanMandate, AdvisorPlanNextAction, AdvisorPlanPackageAct,
+  AdvisorBlockerKind, AdvisorBlockerNextAction, AdvisorPlan, AdvisorPlanBlocker, AdvisorPlanDecision, AdvisorPlanDelegatedCopyApproval, AdvisorPlanKit, AdvisorPlanMandate, AdvisorPlanNextAction, AdvisorPlanPackageAct,
   AdvisorPlanResolution, AdvisorPlanStaffing,
 } from "./status.js";
 export type { RegistrySnapshot, RegistrySnapshotPackage, RegistrySnapshotRuleId, RegistrySnapshotVersion, RegistrySnapshotViolation } from "./registry-snapshot.js";

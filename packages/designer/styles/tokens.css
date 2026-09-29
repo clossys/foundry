@@ -452,6 +452,23 @@ html:not([data-brand-bound]):not([data-suppress-brand-banner])::before {
   --ui-icon-stroke:                2;
 
   /* ════════════════════════════════════════════════════════════════
+   * UI · BRANDMARK (6 · the render contract for @clossys/designer's
+   * Brandmark shell component — no Tailwind namespace). Height per size
+   * step, and the gap between the mark and a lockup's wordmark at the
+   * identity kit's 8/48 gap ratio (height x 8/48: 4px / 6px / 8px, all
+   * exact). The wordmark's font-size is NOT a token: it is calc-derived
+   * from the height (height x 22/48) at the use site. The gap is
+   * likewise calc-derivable, kept as a token so a brand can tighten or
+   * loosen lockup spacing without resizing the mark.
+   * ════════════════════════════════════════════════════════════════ */
+  --ui-brandmark-height-sm:       24px;
+  --ui-brandmark-height-md:       36px;
+  --ui-brandmark-height-lg:       48px;
+  --ui-brandmark-gap-sm:          4px;
+  --ui-brandmark-gap-md:          6px;
+  --ui-brandmark-gap-lg:          8px;
+
+  /* ════════════════════════════════════════════════════════════════
    * RADIUS (5 · Tailwind `--radius-*` namespace)
    * ════════════════════════════════════════════════════════════════ */
   --radius-sharp:                 0px;
@@ -724,7 +741,7 @@ html:not([data-brand-bound]):not([data-suppress-brand-banner])::before {
  * parse-css.ts`, used by `parity.test.ts`, `contrast.test.ts`, and
  * `dark-mode-cascade.test.ts`) parses only the FIRST top-level `:root {`
  * block in this file as "the real token layer" and asserts it declares
- * exactly this package's curated 159 tokens; this sentinel is not a
+ * exactly this package's curated 165 tokens; this sentinel is not a
  * design token — it is a structural presence marker — so it stays out
  * of `src/tokens/tokens.ts`'s registry and out of that block entirely,
  * in a second `:root` rule the browser cascades in fine (CSS allows any

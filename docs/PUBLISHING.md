@@ -371,11 +371,14 @@ transcripts remain immutable and valid under their original closed schemas.
 
 An already-public trusted release whose qualification was immutable before the
 protected publish source changed may use the separate closed **v3 replay**
-record only when both root `package.json` and `package-lock.json` hashes
-drifted and every package-owned join still matches exactly. It is not a waiver
+record only when at least one of the root `package.json` and
+`package-lock.json` hashes drifted (one or both) and every package-owned join
+still matches exactly; when neither drifted, the direct join applies and the
+replay refuses. It is not a waiver
 for a changed package, policy, adapter, fixture, archetype, dimension, manifest,
 or tarball. The record retains qualification roots and publication-source roots
-in different fields, proves strict ancestry `qualification introduction < source
+in different fields, each publication-source hash equal to the value measured at
+the source whether or not it drifted, proves strict ancestry `qualification introduction < source
 < publication record`, and binds successful qualification and publish jobs,
 the exact GitHub artifact ID/archive digest, fresh raw and canonical transcript
 digests, candidate hashes, and anonymous npm signature/attestation evidence.

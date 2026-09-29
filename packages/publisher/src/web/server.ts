@@ -5,6 +5,26 @@
  */
 export { renderWebDocument } from "./renderWebDocument.js";
 export { buildWebHeadMetadata } from "./headMetadata.js";
+export { SiteMetadataError, buildSiteMetadata } from "./siteMetadata.js";
+export type {
+  SiteIdentityInput,
+  SiteLegalStatus,
+  SiteMetadata,
+  SiteMetadataErrorReason,
+  SiteOpenGraphMetadata,
+  SitePageInput,
+  SitePageKind,
+  SiteShareCard,
+  SiteTwitterMetadata,
+} from "./siteMetadata.js";
+export { SITE_METADATA_REQUIRED_TAGS, lintSiteMetadataHtml } from "./siteMetadataLint.js";
+export type {
+  SiteMetadataLintFinding,
+  SiteMetadataLintResult,
+  SiteMetadataLintRule,
+  SiteMetadataRequiredTag,
+  SiteMetadataTagSelector,
+} from "./siteMetadataLint.js";
 export { brandAssetHeadLinks, publicationMapEmitsBrandAssets } from "./brandAssetHead.js";
 export { listWebTemplateNames } from "./internal/webTemplates.js";
 export { defineWebTemplate } from "./internal/defineWebTemplate.js";
@@ -57,3 +77,33 @@ export type {
   WebTemplateBlockSpec,
   WebTwitterMetadata,
 } from "./types.js";
+
+// The contact handler is server-only: import it from server code, never a client bundle.
+export {
+  CONTACT_CLIENT_KEY_MAX_LENGTH,
+  CONTACT_DEFAULT_CAPS,
+  STUB_CONTACT_DELIVERY,
+  createContactHandler,
+  createMemoryRateLimiter,
+  createStubContactDelivery,
+} from "./contact/index.js";
+export type {
+  ContactCaps,
+  ContactDelivery,
+  ContactFieldCode,
+  ContactFieldCodeMap,
+  ContactFieldIssue,
+  ContactFieldName,
+  ContactHandleOptions,
+  ContactHandler,
+  ContactHandlerConfig,
+  ContactOutboundMessage,
+  ContactRateLimiter,
+  ContactResult,
+  ContactResultStatus,
+  ContactSubmission,
+  ContactTarget,
+  ContactUnavailableReason,
+  MemoryRateLimiterOptions,
+  StubContactDelivery,
+} from "./contact/index.js";

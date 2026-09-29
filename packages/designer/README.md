@@ -3654,8 +3654,8 @@ export function Chrome() {
 }
 ```
 
-`brand` is still the consumer's own node; this package ships no brand mark for
-it. The inner containers of the header, the footer and the `SiteFooter.Legal`
+`brand` is still a slot that takes any node you supply, including a
+`Brandmark`. The inner containers of the header, the footer and the `SiteFooter.Legal`
 row carry no `max-w-*` class and no `maxWidth` style, so chrome content runs
 the full viewport width, inset only by the `--ui-width-page-padding-x` token;
 page content stays in `Shell.Main`'s container. A test pins this for every
@@ -3664,6 +3664,68 @@ ground.
 `transparent` does not check the contrast of the chrome ink over whatever
 sits beneath it. That is the consumer's backdrop's job: choose a backdrop the
 base ink reads against, or use `ground="inverse"` over a dark one.
+
+### `Brandmark`
+
+`Brandmark` is the site's identity link, for `SiteHeader`'s `brand` slot or
+anywhere else a home link belongs. It ships from the same `/shell` subpath
+(and from `/shell/server`, since it has no hooks and no client directive).
+
+```tsx
+import { Brandmark, SiteHeader } from "@clossys/designer/shell";
+
+<SiteHeader
+  brand={
+    <Brandmark
+      variant="lockup"
+      size="md"
+      label="Acme home"
+      markSrc="/brand/acme-mark.svg"
+      wordmark="Acme"
+    />
+  }
+/>;
+```
+
+`label`, `markSrc` and `wordmark` are placeholders the example supplies;
+this package ships no default label, brand name or image. `variant` is
+`"mark"` (the image alone; `wordmark` is not accepted) or `"lockup"` (the
+image beside `wordmark`, which is required and is text: a `string`, never an
+element or image). `size` is `"sm"`, `"md"` or
+`"lg"`, mapped to the `--ui-brandmark-height-*` and `--ui-brandmark-gap-*`
+tokens. The exported types are `BrandmarkProps`, `BrandmarkVariant` and
+`BrandmarkSize`.
+
+What `Brandmark` does: it renders a plain `<a href="/">` whose accessible
+name is `label` (set as `aria-label`), so the name does not depend on the
+image or the wordmark text. The image is decorative (`alt=""`) and is set
+from `markSrc` as a URL, and `wordmark` renders as live text in the display
+font at a size derived from the mark's height; neither is injected as
+markup. The component spreads no props onto the anchor, so `href` and
+`aria-label` are not reachable through its props. What it does not do: it
+does not check that `markSrc` resolves or that the image is legible at the
+chosen size, it does not check that `label` is a meaningful name beyond the
+two refusals below, and it does not load the display font, so the wordmark
+falls back to whatever the page's font stack provides when the font is not
+loaded. A lockup without a wordmark value renders the mark alone.
+
+`Brandmark` refuses two `label` values by throwing a plain `Error` that
+names the prop and does not repeat its value. First, an empty,
+whitespace-only or non-string `label` is refused for both variants, because
+the image is decorative and the link would otherwise have no accessible
+name. Second, for `variant="lockup"` the `label` must contain the visible
+`wordmark` text, compared case-insensitively with whitespace normalised
+(`"Acme home"` for a wordmark of `"Acme"`), because `aria-label` replaces the
+visible text as the link's name and a label without it fails WCAG 2.5.3
+(label in name). The `mark` variant shows no text, so only the first refusal
+applies to it, and a lockup with an empty wordmark falls back to the mark
+alone and is held to the first refusal only. The component renders on the
+server, so a refused `label` fails that render.
+
+Declared boundary: the wordmark's size is the mark's height times the fixed
+22/48 ratio, so at `size="sm"` (a 24px mark) the wordmark is 11px. Sizes
+derive from that ratio and are not raised to a minimum, so use `"md"` or
+`"lg"` where an 11px wordmark is too small.
 
 ### `Toaster` and `toast`
 
@@ -4672,7 +4734,7 @@ part of this package's public API" and reachable only by that one test.
   ratified from `contrast.test.ts`'s own hand-curated pair map rather than
   auto-derived from token names. An earlier design assumed this gate could
   self-extend, deriving one pair per `--<role>-on-<ground>`-shaped token
-  name; counted against this package's real 154 tokens, only 5 actually
+  name; counted against this package's real 165 tokens, only 5 actually
   follow that shape (`--color-ink-on-accent`, `--color-ink-on-inverse`,
   `--color-accent-on-inverse`, `--color-line-on-inverse`,
   `--ui-ring-on-inverse` — see `contrast-pairs.ts`'s own header for a 6th,
@@ -4912,6 +4974,24 @@ identityKitReport(wordmark, tokens, "0.5.0");
 //   findings: [],
 // }
 ```
+
+**Composing a lockup from a supplied mark.** `composeLockup({ brand,
+suppliedSvg, tokens, wordmark, fontLicence, header })` returns a
+JSON-serialisable spec for a mark-plus-wordmark lockup: the supplied SVG
+trimmed but otherwise unchanged as `mark`, its `light` and `dark` recolours
+from `adoptSuppliedMark`, the `wordmark` text, the `fontLicence` record
+(`{ family, outlining }`), `gapRatio` and `wordmarkSizeRatio` (the gap and
+the wordmark's font size as ratios of the mark's height, taken from the
+generated wordmark direction), the `header` selection (`"mark"` or
+`"lockup"`) and `rendering: "live-text"`. A non-SVG mark, an empty
+wordmark, an unrecognised `header` or `fontLicence.outlining` value, or a
+`fontLicence.family` outside the font-family character set is refused with
+an `IdentityKitValidationError` that lists each reason. `composeLockup` does
+not outline glyphs (that needs a font parser, which this package does not
+depend on, so `outlining: "permitted"` records the licence and does not
+change the output), does not judge whether the mark is legible, and does
+not check that the font loads. `Brandmark` from `@clossys/designer/shell`
+renders a lockup as live text at the same proportions.
 
 ## Environment-declaration-consistency gate (`@clossys/designer/gate`, `designer-environment-check`)
 

@@ -81,7 +81,7 @@ describe("server-safe entry points resolve under react-server (test 1)", () => {
         "StatusList",
       ],
     },
-    { distRelPath: "shell/server.js", expectedExports: ["Shell", "SiteFooter", "SiteHeader", "SkipLink"] },
+    { distRelPath: "shell/server.js", expectedExports: ["Brandmark", "Shell", "SiteFooter", "SiteHeader", "SkipLink"] },
     { distRelPath: "charts/server.js", expectedExports: ["ChartFrame", "Sparkline"] },
     { distRelPath: "theme/server.js", expectedExports: ["getThemeInitScript"] },
   ];
