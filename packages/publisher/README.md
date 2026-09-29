@@ -1122,8 +1122,9 @@ inline-style structure, and deterministic markup. Not done: no rasterisation
 runs here; there is no font, tagline-fit, or contrast check (a long tagline can
 overflow the card); an accepted SVG mark's own content is not inspected; and
 approving the words on the card is the caller's. The `opengraph-image` route
-file and adopting the card in a page are not part of this change; the site
-template's `app/site-metadata.ts` maps `buildSiteMetadata`'s result onto
+file and adopting the card in a page are not part of this change. The site
+template (copied into a consumer repository, and not part of this package's
+npm files) carries a pure mapping from `buildSiteMetadata`'s result onto
 Next.js metadata and viewport.
 
 ## `media` — the asset registry contract, responsive images, and video (v2)
