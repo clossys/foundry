@@ -1,0 +1,514 @@
+{
+  "schemaVersion": 2,
+  "timing": "pre-publication",
+  "candidate": {
+    "name": "@clossys/starter",
+    "version": "0.2.0",
+    "packageTreeSha1": "eeed3ec20d854a955a2e92fce0252debe1697fbe",
+    "packageManifestSha256": "81f0770249c285e4ce82103d85326ccc98bb172023b5d8b9aff84b107c01ffed",
+    "policySha256": "ce40b67b6a282d9010fc65f852b8f92249fcac38da8be17670c320c237bcf9a6",
+    "adapterSha256": "6341726ccd9af935455e47f40007fb483e09b7330588d5cef475fe6d9ebe3118",
+    "fixtureSetSha256": "799738485545e8658e4ea27b70137c67968d5597ab4cafbf05fb78526b46cd14",
+    "tarball": {
+      "sha1": "0c00008ff4a8033d4f4d528b10330369a034ab8b",
+      "sha256": "9ff973bbef3709c1e206bc8815462f540df410d4e3b99880298f625c059e3b2f",
+      "sha512": "17c10092c260c3eceab1e81336dea1810a07683c3b8534a394845de1d4c6b769f0100ec2cba4126db7085565a902a0be4a700e27947dc045ae36dff63d225550"
+    }
+  },
+  "archetypes": [
+    {
+      "kind": "current-direct",
+      "status": "qualified"
+    },
+    {
+      "kind": "prior-minor",
+      "status": "unsupported"
+    },
+    {
+      "kind": "oldest-supported",
+      "status": "unsupported"
+    },
+    {
+      "kind": "control-plane",
+      "status": "unsupported"
+    }
+  ],
+  "reviewedCommit": "f4ab885bd0c6f030a2698a05c2b5be15b50a30b1",
+  "rootPackageJsonSha256": "58045c48be5e19cae860b1d5ae230fe0ce4872edaccf11d2893abaec91c40274",
+  "rootPackageLockSha256": "f5ff4374210f01c953c1e1dafc457175579716f7ccfc05e8e0ce25cef0fbf52b",
+  "transcript": {
+    "schema": "foundry-candidate-qualification-transcript-v3",
+    "version": 3,
+    "candidate": {
+      "name": "@clossys/starter",
+      "version": "0.2.0"
+    },
+    "archetype": "current-direct",
+    "tarball": {
+      "sha1": "0c00008ff4a8033d4f4d528b10330369a034ab8b",
+      "sha256": "9ff973bbef3709c1e206bc8815462f540df410d4e3b99880298f625c059e3b2f",
+      "sha512": "17c10092c260c3eceab1e81336dea1810a07683c3b8534a394845de1d4c6b769f0100ec2cba4126db7085565a902a0be4a700e27947dc045ae36dff63d225550"
+    },
+    "peerInstall": {},
+    "consumer": {
+      "manifestSha256": "44bb2566309fadf6c62ae8b9dde37c0865422f967d88d4732573aefc71380fc0",
+      "lockfileSha256": "a346ff01c62cfc1cbdc011a760ddb5f01451641677e561fe85934f1841474aa5"
+    },
+    "coverage": {
+      "declaredExportKeys": 3,
+      "concreteTargets": 6,
+      "runtimeImports": 3,
+      "reactServerImports": 0,
+      "staticTargets": 3,
+      "frameworkExports": 0,
+      "frameworkBuilds": 0,
+      "failed": 0,
+      "installedManifestSha256": "81f0770249c285e4ce82103d85326ccc98bb172023b5d8b9aff84b107c01ffed",
+      "bins": 1,
+      "lifecycleScriptsDisabled": true
+    },
+    "observations": [
+      {
+        "id": "install",
+        "kind": "install",
+        "launch": "npm-fixed",
+        "expectedExitCode": 0,
+        "observedExitCode": 0,
+        "signal": null,
+        "launchError": false,
+        "stdoutSha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+        "stderrSha256": "62d23df6c26cde48b45a87bdd8ca669e2a84da2ad8930aad8d4a3c2004523b97"
+      },
+      {
+        "id": "import:import:@clossys/starter",
+        "kind": "import",
+        "launch": "node-direct",
+        "expectedExitCode": 0,
+        "observedExitCode": 0,
+        "signal": null,
+        "launchError": false,
+        "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "id": "import:import:@clossys/starter/npm",
+        "kind": "import",
+        "launch": "node-direct",
+        "expectedExitCode": 0,
+        "observedExitCode": 0,
+        "signal": null,
+        "launchError": false,
+        "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "id": "import:import:@clossys/starter/pnpm",
+        "kind": "import",
+        "launch": "node-direct",
+        "expectedExitCode": 0,
+        "observedExitCode": 0,
+        "signal": null,
+        "launchError": false,
+        "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "id": "help:foundry-starter",
+        "kind": "help",
+        "launch": "installed-bin",
+        "expectedExitCode": 0,
+        "observedExitCode": 0,
+        "signal": null,
+        "launchError": false,
+        "stdoutSha256": "5efcf436ff0af063d96eca3b5ac095eb03ffc611bf867df63fd9a7e875ed3198",
+        "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "id": "case:activation-satisfied",
+        "kind": "case",
+        "launch": "installed-bin",
+        "expectedExitCode": 0,
+        "observedExitCode": 0,
+        "signal": null,
+        "launchError": false,
+        "stdoutSha256": "f7890cff315e920d1ee16c3fca818ee4738948ea3c09b5197b09f1dcc2b1369b",
+        "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "rawCaseEvidence": {
+          "argv": [
+            "$NODE",
+            "$TEMP/node_modules/.bin/foundry-starter",
+            "decide",
+            "$TEMP/fixtures/request-satisfied.json",
+            "$TEMP/fixtures/snapshot",
+            "$TEMP/fixtures/event.json",
+            "$TEMP/fixtures/receipt.json"
+          ],
+          "materializedInputs": [
+            {
+              "path": "$TEMP/fixtures/event.json",
+              "sha256": "62e2decba9ed444e946b5275487c1d1c8141fe7ce2a4ca724a7cd13392627b6e",
+              "bytes": "{\n  \"schemaVersion\": 1,\n  \"provider\": \"github-actions\",\n  \"eventName\": \"workflow_run\",\n  \"repository\": \"fixture/repository\",\n  \"baseSha\": \"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\n  \"sourceWorkflowRunId\": \"1\",\n  \"sourceHeadSha\": \"cccccccccccccccccccccccccccccccccccccccc\",\n  \"artifactName\": \"adoption-snapshot-1\",\n  \"sourceConclusion\": \"success\"\n}\n"
+            },
+            {
+              "path": "$TEMP/fixtures/receipt.json",
+              "sha256": "a2f1af7ce0b9fe59281ad1ce4520eacefb0cd638fe921ce3cff94a95f470fc92",
+              "bytes": "{\"schemaVersion\":1,\"packageManager\":\"npm\",\"attempted\":true,\"exitCode\":0}\n"
+            },
+            {
+              "path": "$TEMP/fixtures/request-satisfied.json",
+              "sha256": "b798220f7812f8ac6825ada61cea70d63d0c877387616f1c9428e4a7e6994390",
+              "bytes": "{\n  \"schemaVersion\": 1,\n  \"phase\": \"activation\",\n  \"packageManager\": \"npm\",\n  \"snapshot\": { \"repository\": \"fixture/repository\", \"maxAgeMs\": 604800000 },\n  \"starter\": { \"name\": \"@clossys/starter\", \"version\": \"0.2.0\", \"integrity\": \"sha512-F8EAksJgw+zqsegTNt6hgQoHaDw7hTSjlIRd4dTGt2nwEA7Cy6QSbbcIVWWpAqC+SnAOJ5R9wEWuNt/2PSJVUA==\", \"bin\": \"foundry-starter\" },\n  \"advisor\": { \"name\": \"@clossys/advisor\", \"version\": \"0.1.5\", \"integrity\": \"sha512-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==\", \"bin\": \"advisor-execution-readiness\" },\n  \"target\": { \"name\": \"@fixture/qualification-target\", \"version\": \"1.0.0\", \"integrity\": \"sha512-AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQ==\", \"bin\": \"qualification-target-check\", \"invocation\": \"single-json-input\" },\n  \"evidence\": { \"assessment\": \"evidence/assessment.json\", \"targetInput\": \"evidence/target-satisfied.json\" }\n}\n"
+            },
+            {
+              "path": "$TEMP/fixtures/snapshot/evidence/assessment.json",
+              "sha256": "76803f0313ee3f6dece803dbcea2571be613b7fabf43068ef4c6d7019b193648",
+              "bytes": "{\n  \"target\": {\n    \"name\": \"@fixture/qualification-target\",\n    \"version\": \"1.0.0\",\n    \"integrity\": \"sha512-AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQ==\",\n    \"bin\": \"qualification-target-check\",\n    \"invocation\": \"single-json-input\",\n    \"repository\": \"fixture/repository\"\n  }\n}\n"
+            },
+            {
+              "path": "$TEMP/fixtures/snapshot/evidence/target-indeterminate.json",
+              "sha256": "5637a5af0c3a897e33be95bc72ed24f4525d4b6d5364c24d5f7d0403d11f1d65",
+              "bytes": "{\"mode\":\"indeterminate\"}\n"
+            },
+            {
+              "path": "$TEMP/fixtures/snapshot/evidence/target-satisfied.json",
+              "sha256": "cb653a8697300b97f940a0b7fccdeac4190ae49407c1a2e6746f094cbd2956d6",
+              "bytes": "{\"mode\":\"satisfied\"}\n"
+            },
+            {
+              "path": "$TEMP/fixtures/snapshot/evidence/target-violated.json",
+              "sha256": "0d9711a9b9ee37779c48a9ad998f61e22aa14b773ec07b1a1feaf1596b4d2ed8",
+              "bytes": "{\"mode\":\"violated\"}\n"
+            },
+            {
+              "path": "$TEMP/fixtures/snapshot/snapshot.json",
+              "sha256": "df5927f7be034dd6961d3f14ab9775b56a5e2b5b64743ddcac6004bfd24c5e89",
+              "bytes": "{\n  \"schemaVersion\": 1,\n  \"provider\": \"github-actions\",\n  \"eventName\": \"pull_request\",\n  \"repository\": \"fixture/repository\",\n  \"pullRequestNumber\": 1,\n  \"baseSha\": \"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\n  \"headSha\": \"cccccccccccccccccccccccccccccccccccccccc\",\n  \"workflowRunId\": \"1\",\n  \"artifactName\": \"adoption-snapshot-1\",\n  \"digest\": \"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\n  \"capturedAt\": \"2026-09-29T01:16:19.420Z\",\n  \"files\": [\n    { \"path\": \"evidence/assessment.json\", \"size\": 326, \"sha256\": \"76803f0313ee3f6dece803dbcea2571be613b7fabf43068ef4c6d7019b193648\" },\n    { \"path\": \"evidence/target-satisfied.json\", \"size\": 21, \"sha256\": \"cb653a8697300b97f940a0b7fccdeac4190ae49407c1a2e6746f094cbd2956d6\" },\n    { \"path\": \"evidence/target-violated.json\", \"size\": 20, \"sha256\": \"0d9711a9b9ee37779c48a9ad998f61e22aa14b773ec07b1a1feaf1596b4d2ed8\" },\n    { \"path\": \"evidence/target-indeterminate.json\", \"size\": 25, \"sha256\": \"5637a5af0c3a897e33be95bc72ed24f4525d4b6d5364c24d5f7d0403d11f1d65\" }\n  ]\n}\n"
+            }
+          ],
+          "consumerOverlay": [
+            {
+              "sourcePath": "$TEMP/fixtures/overlay/advisor-cli.js",
+              "targetPath": "$TEMP/node_modules/@clossys/advisor/dist/execution-readiness-cli.js",
+              "sha256": "dfce78d0bc6384d8eae0f238166995189f75d7c0f5d5583d3d7dc1c226f49679",
+              "bytes": "#!$ENV node\nimport { readFileSync } from \"node:fs\";\nconst input = JSON.parse(readFileSync(process.argv[2], \"utf8\"));\nconsole.log(JSON.stringify({\n  state: \"satisfied\",\n  assessment: {\n    firstWavePlan: {\n      state: \"ready-for-sponsor-approval\",\n      workItems: [{\n        targetRepositoryId: input.target.repository,\n        package: { name: input.target.name, version: input.target.version, integrity: input.target.integrity },\n        bin: input.target.bin,\n        invocation: input.target.invocation\n      }]\n    }\n  }\n}));\n"
+            },
+            {
+              "sourcePath": "$TEMP/fixtures/overlay/advisor-package.json",
+              "targetPath": "$TEMP/node_modules/@clossys/advisor/package.json",
+              "sha256": "e871b1e74e88d729a16785d0eb25b294b072d7c8a59fcaf4607251d989271664",
+              "bytes": "{\n  \"name\": \"@clossys/advisor\",\n  \"version\": \"0.1.5\",\n  \"type\": \"module\",\n  \"bin\": { \"advisor-execution-readiness\": \"./dist/execution-readiness-cli.js\" }\n}\n"
+            },
+            {
+              "sourcePath": "$TEMP/fixtures/overlay/package-lock.json",
+              "targetPath": "$TEMP/package-lock.json",
+              "sha256": "ec9cb6a723b8f55b9f19d77188eb716ab6f19d3d05c27f9e96379898296a0390",
+              "bytes": "{\n  \"name\": \"qualification-consumer\",\n  \"lockfileVersion\": 3,\n  \"requires\": true,\n  \"packages\": {\n    \"\": {\n      \"devDependencies\": {\n        \"@clossys/starter\": \"0.2.0\",\n        \"@clossys/advisor\": \"0.1.5\",\n        \"@fixture/qualification-target\": \"1.0.0\"\n      }\n    },\n    \"node_modules/@clossys/starter\": {\n      \"version\": \"0.2.0\",\n      \"integrity\": \"sha512-F8EAksJgw+zqsegTNt6hgQoHaDw7hTSjlIRd4dTGt2nwEA7Cy6QSbbcIVWWpAqC+SnAOJ5R9wEWuNt/2PSJVUA==\"\n    },\n    \"node_modules/@clossys/advisor\": {\n      \"version\": \"0.1.5\",\n      \"integrity\": \"sha512-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==\"\n    },\n    \"node_modules/@fixture/qualification-target\": {\n      \"version\": \"1.0.0\",\n      \"integrity\": \"sha512-AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQ==\"\n    }\n  }\n}\n"
+            },
+            {
+              "sourcePath": "$TEMP/fixtures/overlay/package.json",
+              "targetPath": "$TEMP/package.json",
+              "sha256": "398debc93f02cca8d197019e0f170be56357015a6560252954b3de3e8d1c7b52",
+              "bytes": "{\n  \"private\": true,\n  \"devDependencies\": {\n    \"@clossys/starter\": \"0.2.0\",\n    \"@clossys/advisor\": \"0.1.5\",\n    \"@fixture/qualification-target\": \"1.0.0\"\n  }\n}\n"
+            },
+            {
+              "sourcePath": "$TEMP/fixtures/overlay/target-cli.js",
+              "targetPath": "$TEMP/node_modules/@fixture/qualification-target/dist/check.js",
+              "sha256": "3aee8473be8bd3cc1e2a0d37c0e592af4ba6ce771f69f2fcec5fb0119dec94d2",
+              "bytes": "#!$ENV node\nimport { readFileSync } from \"node:fs\";\nconst input = JSON.parse(readFileSync(process.argv[2], \"utf8\"));\nconst state = [\"satisfied\", \"violated\", \"indeterminate\"].includes(input.mode) ? input.mode : \"indeterminate\";\nconsole.log(JSON.stringify({ state }));\nprocess.exitCode = state === \"satisfied\" ? 0 : state === \"violated\" ? 1 : 2;\n"
+            },
+            {
+              "sourcePath": "$TEMP/fixtures/overlay/target-package.json",
+              "targetPath": "$TEMP/node_modules/@fixture/qualification-target/package.json",
+              "sha256": "96a2684df9df9b10054471ed93c5f121aa1fef75769999d63dd7bd247d8c3c73",
+              "bytes": "{\n  \"name\": \"@fixture/qualification-target\",\n  \"version\": \"1.0.0\",\n  \"type\": \"module\",\n  \"bin\": { \"qualification-target-check\": \"./dist/check.js\" }\n}\n"
+            }
+          ],
+          "exitCode": 0,
+          "stdout": "{\n  \"state\": \"satisfied\",\n  \"phase\": \"activation\",\n  \"findings\": [],\n  \"advisor\": \"satisfied\",\n  \"target\": \"satisfied\"\n}\n",
+          "stderr": ""
+        }
+      },
+      {
+        "id": "case:activation-violated",
+        "kind": "case",
+        "launch": "installed-bin",
+        "expectedExitCode": 1,
+        "observedExitCode": 1,
+        "signal": null,
+        "launchError": false,
+        "stdoutSha256": "343628bed6b5f58e7aefcded00b598c63127223c940f4f360f1918e5fd0ccb1e",
+        "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "rawCaseEvidence": {
+          "argv": [
+            "$NODE",
+            "$TEMP/node_modules/.bin/foundry-starter",
+            "decide",
+            "$TEMP/fixtures/request-violated.json",
+            "$TEMP/fixtures/snapshot",
+            "$TEMP/fixtures/event.json",
+            "$TEMP/fixtures/receipt.json"
+          ],
+          "materializedInputs": [
+            {
+              "path": "$TEMP/fixtures/event.json",
+              "sha256": "62e2decba9ed444e946b5275487c1d1c8141fe7ce2a4ca724a7cd13392627b6e",
+              "bytes": "{\n  \"schemaVersion\": 1,\n  \"provider\": \"github-actions\",\n  \"eventName\": \"workflow_run\",\n  \"repository\": \"fixture/repository\",\n  \"baseSha\": \"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\n  \"sourceWorkflowRunId\": \"1\",\n  \"sourceHeadSha\": \"cccccccccccccccccccccccccccccccccccccccc\",\n  \"artifactName\": \"adoption-snapshot-1\",\n  \"sourceConclusion\": \"success\"\n}\n"
+            },
+            {
+              "path": "$TEMP/fixtures/receipt.json",
+              "sha256": "a2f1af7ce0b9fe59281ad1ce4520eacefb0cd638fe921ce3cff94a95f470fc92",
+              "bytes": "{\"schemaVersion\":1,\"packageManager\":\"npm\",\"attempted\":true,\"exitCode\":0}\n"
+            },
+            {
+              "path": "$TEMP/fixtures/request-violated.json",
+              "sha256": "38bf609b2215e6f1a7da4ddbfb3dcb8afe9435ee6b2ba33799c895908abf1349",
+              "bytes": "{\n  \"schemaVersion\": 1,\n  \"phase\": \"activation\",\n  \"packageManager\": \"npm\",\n  \"snapshot\": { \"repository\": \"fixture/repository\", \"maxAgeMs\": 604800000 },\n  \"starter\": { \"name\": \"@clossys/starter\", \"version\": \"0.2.0\", \"integrity\": \"sha512-F8EAksJgw+zqsegTNt6hgQoHaDw7hTSjlIRd4dTGt2nwEA7Cy6QSbbcIVWWpAqC+SnAOJ5R9wEWuNt/2PSJVUA==\", \"bin\": \"foundry-starter\" },\n  \"advisor\": { \"name\": \"@clossys/advisor\", \"version\": \"0.1.5\", \"integrity\": \"sha512-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==\", \"bin\": \"advisor-execution-readiness\" },\n  \"target\": { \"name\": \"@fixture/qualification-target\", \"version\": \"1.0.0\", \"integrity\": \"sha512-AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQ==\", \"bin\": \"qualification-target-check\", \"invocation\": \"single-json-input\" },\n  \"evidence\": { \"assessment\": \"evidence/assessment.json\", \"targetInput\": \"evidence/target-violated.json\" }\n}\n"
+            },
+            {
+              "path": "$TEMP/fixtures/snapshot/evidence/assessment.json",
+              "sha256": "76803f0313ee3f6dece803dbcea2571be613b7fabf43068ef4c6d7019b193648",
+              "bytes": "{\n  \"target\": {\n    \"name\": \"@fixture/qualification-target\",\n    \"version\": \"1.0.0\",\n    \"integrity\": \"sha512-AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQ==\",\n    \"bin\": \"qualification-target-check\",\n    \"invocation\": \"single-json-input\",\n    \"repository\": \"fixture/repository\"\n  }\n}\n"
+            },
+            {
+              "path": "$TEMP/fixtures/snapshot/evidence/target-indeterminate.json",
+              "sha256": "5637a5af0c3a897e33be95bc72ed24f4525d4b6d5364c24d5f7d0403d11f1d65",
+              "bytes": "{\"mode\":\"indeterminate\"}\n"
+            },
+            {
+              "path": "$TEMP/fixtures/snapshot/evidence/target-satisfied.json",
+              "sha256": "cb653a8697300b97f940a0b7fccdeac4190ae49407c1a2e6746f094cbd2956d6",
+              "bytes": "{\"mode\":\"satisfied\"}\n"
+            },
+            {
+              "path": "$TEMP/fixtures/snapshot/evidence/target-violated.json",
+              "sha256": "0d9711a9b9ee37779c48a9ad998f61e22aa14b773ec07b1a1feaf1596b4d2ed8",
+              "bytes": "{\"mode\":\"violated\"}\n"
+            },
+            {
+              "path": "$TEMP/fixtures/snapshot/snapshot.json",
+              "sha256": "df5927f7be034dd6961d3f14ab9775b56a5e2b5b64743ddcac6004bfd24c5e89",
+              "bytes": "{\n  \"schemaVersion\": 1,\n  \"provider\": \"github-actions\",\n  \"eventName\": \"pull_request\",\n  \"repository\": \"fixture/repository\",\n  \"pullRequestNumber\": 1,\n  \"baseSha\": \"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\n  \"headSha\": \"cccccccccccccccccccccccccccccccccccccccc\",\n  \"workflowRunId\": \"1\",\n  \"artifactName\": \"adoption-snapshot-1\",\n  \"digest\": \"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\n  \"capturedAt\": \"2026-09-29T01:16:19.420Z\",\n  \"files\": [\n    { \"path\": \"evidence/assessment.json\", \"size\": 326, \"sha256\": \"76803f0313ee3f6dece803dbcea2571be613b7fabf43068ef4c6d7019b193648\" },\n    { \"path\": \"evidence/target-satisfied.json\", \"size\": 21, \"sha256\": \"cb653a8697300b97f940a0b7fccdeac4190ae49407c1a2e6746f094cbd2956d6\" },\n    { \"path\": \"evidence/target-violated.json\", \"size\": 20, \"sha256\": \"0d9711a9b9ee37779c48a9ad998f61e22aa14b773ec07b1a1feaf1596b4d2ed8\" },\n    { \"path\": \"evidence/target-indeterminate.json\", \"size\": 25, \"sha256\": \"5637a5af0c3a897e33be95bc72ed24f4525d4b6d5364c24d5f7d0403d11f1d65\" }\n  ]\n}\n"
+            }
+          ],
+          "consumerOverlay": [
+            {
+              "sourcePath": "$TEMP/fixtures/overlay/advisor-cli.js",
+              "targetPath": "$TEMP/node_modules/@clossys/advisor/dist/execution-readiness-cli.js",
+              "sha256": "dfce78d0bc6384d8eae0f238166995189f75d7c0f5d5583d3d7dc1c226f49679",
+              "bytes": "#!$ENV node\nimport { readFileSync } from \"node:fs\";\nconst input = JSON.parse(readFileSync(process.argv[2], \"utf8\"));\nconsole.log(JSON.stringify({\n  state: \"satisfied\",\n  assessment: {\n    firstWavePlan: {\n      state: \"ready-for-sponsor-approval\",\n      workItems: [{\n        targetRepositoryId: input.target.repository,\n        package: { name: input.target.name, version: input.target.version, integrity: input.target.integrity },\n        bin: input.target.bin,\n        invocation: input.target.invocation\n      }]\n    }\n  }\n}));\n"
+            },
+            {
+              "sourcePath": "$TEMP/fixtures/overlay/advisor-package.json",
+              "targetPath": "$TEMP/node_modules/@clossys/advisor/package.json",
+              "sha256": "e871b1e74e88d729a16785d0eb25b294b072d7c8a59fcaf4607251d989271664",
+              "bytes": "{\n  \"name\": \"@clossys/advisor\",\n  \"version\": \"0.1.5\",\n  \"type\": \"module\",\n  \"bin\": { \"advisor-execution-readiness\": \"./dist/execution-readiness-cli.js\" }\n}\n"
+            },
+            {
+              "sourcePath": "$TEMP/fixtures/overlay/package-lock.json",
+              "targetPath": "$TEMP/package-lock.json",
+              "sha256": "ec9cb6a723b8f55b9f19d77188eb716ab6f19d3d05c27f9e96379898296a0390",
+              "bytes": "{\n  \"name\": \"qualification-consumer\",\n  \"lockfileVersion\": 3,\n  \"requires\": true,\n  \"packages\": {\n    \"\": {\n      \"devDependencies\": {\n        \"@clossys/starter\": \"0.2.0\",\n        \"@clossys/advisor\": \"0.1.5\",\n        \"@fixture/qualification-target\": \"1.0.0\"\n      }\n    },\n    \"node_modules/@clossys/starter\": {\n      \"version\": \"0.2.0\",\n      \"integrity\": \"sha512-F8EAksJgw+zqsegTNt6hgQoHaDw7hTSjlIRd4dTGt2nwEA7Cy6QSbbcIVWWpAqC+SnAOJ5R9wEWuNt/2PSJVUA==\"\n    },\n    \"node_modules/@clossys/advisor\": {\n      \"version\": \"0.1.5\",\n      \"integrity\": \"sha512-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==\"\n    },\n    \"node_modules/@fixture/qualification-target\": {\n      \"version\": \"1.0.0\",\n      \"integrity\": \"sha512-AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQ==\"\n    }\n  }\n}\n"
+            },
+            {
+              "sourcePath": "$TEMP/fixtures/overlay/package.json",
+              "targetPath": "$TEMP/package.json",
+              "sha256": "398debc93f02cca8d197019e0f170be56357015a6560252954b3de3e8d1c7b52",
+              "bytes": "{\n  \"private\": true,\n  \"devDependencies\": {\n    \"@clossys/starter\": \"0.2.0\",\n    \"@clossys/advisor\": \"0.1.5\",\n    \"@fixture/qualification-target\": \"1.0.0\"\n  }\n}\n"
+            },
+            {
+              "sourcePath": "$TEMP/fixtures/overlay/target-cli.js",
+              "targetPath": "$TEMP/node_modules/@fixture/qualification-target/dist/check.js",
+              "sha256": "3aee8473be8bd3cc1e2a0d37c0e592af4ba6ce771f69f2fcec5fb0119dec94d2",
+              "bytes": "#!$ENV node\nimport { readFileSync } from \"node:fs\";\nconst input = JSON.parse(readFileSync(process.argv[2], \"utf8\"));\nconst state = [\"satisfied\", \"violated\", \"indeterminate\"].includes(input.mode) ? input.mode : \"indeterminate\";\nconsole.log(JSON.stringify({ state }));\nprocess.exitCode = state === \"satisfied\" ? 0 : state === \"violated\" ? 1 : 2;\n"
+            },
+            {
+              "sourcePath": "$TEMP/fixtures/overlay/target-package.json",
+              "targetPath": "$TEMP/node_modules/@fixture/qualification-target/package.json",
+              "sha256": "96a2684df9df9b10054471ed93c5f121aa1fef75769999d63dd7bd247d8c3c73",
+              "bytes": "{\n  \"name\": \"@fixture/qualification-target\",\n  \"version\": \"1.0.0\",\n  \"type\": \"module\",\n  \"bin\": { \"qualification-target-check\": \"./dist/check.js\" }\n}\n"
+            }
+          ],
+          "exitCode": 1,
+          "stdout": "{\n  \"state\": \"violated\",\n  \"phase\": \"activation\",\n  \"findings\": [],\n  \"advisor\": \"satisfied\",\n  \"target\": \"violated\"\n}\n",
+          "stderr": ""
+        }
+      },
+      {
+        "id": "case:activation-indeterminate",
+        "kind": "case",
+        "launch": "installed-bin",
+        "expectedExitCode": 2,
+        "observedExitCode": 2,
+        "signal": null,
+        "launchError": false,
+        "stdoutSha256": "0de9e35fd31659d00f0d3bfca66f637f212849742f0e31fc252ef5895c4bd32b",
+        "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "rawCaseEvidence": {
+          "argv": [
+            "$NODE",
+            "$TEMP/node_modules/.bin/foundry-starter",
+            "decide",
+            "$TEMP/fixtures/request-indeterminate.json",
+            "$TEMP/fixtures/snapshot",
+            "$TEMP/fixtures/event.json",
+            "$TEMP/fixtures/receipt.json"
+          ],
+          "materializedInputs": [
+            {
+              "path": "$TEMP/fixtures/event.json",
+              "sha256": "62e2decba9ed444e946b5275487c1d1c8141fe7ce2a4ca724a7cd13392627b6e",
+              "bytes": "{\n  \"schemaVersion\": 1,\n  \"provider\": \"github-actions\",\n  \"eventName\": \"workflow_run\",\n  \"repository\": \"fixture/repository\",\n  \"baseSha\": \"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\n  \"sourceWorkflowRunId\": \"1\",\n  \"sourceHeadSha\": \"cccccccccccccccccccccccccccccccccccccccc\",\n  \"artifactName\": \"adoption-snapshot-1\",\n  \"sourceConclusion\": \"success\"\n}\n"
+            },
+            {
+              "path": "$TEMP/fixtures/receipt.json",
+              "sha256": "a2f1af7ce0b9fe59281ad1ce4520eacefb0cd638fe921ce3cff94a95f470fc92",
+              "bytes": "{\"schemaVersion\":1,\"packageManager\":\"npm\",\"attempted\":true,\"exitCode\":0}\n"
+            },
+            {
+              "path": "$TEMP/fixtures/request-indeterminate.json",
+              "sha256": "5e025c454abadfb33364fcb7b46419ca1b4d659e0aee3e8d9312b42a9795e972",
+              "bytes": "{\n  \"schemaVersion\": 1,\n  \"phase\": \"activation\",\n  \"packageManager\": \"npm\",\n  \"snapshot\": { \"repository\": \"fixture/repository\", \"maxAgeMs\": 604800000 },\n  \"starter\": { \"name\": \"@clossys/starter\", \"version\": \"0.2.0\", \"integrity\": \"sha512-F8EAksJgw+zqsegTNt6hgQoHaDw7hTSjlIRd4dTGt2nwEA7Cy6QSbbcIVWWpAqC+SnAOJ5R9wEWuNt/2PSJVUA==\", \"bin\": \"foundry-starter\" },\n  \"advisor\": { \"name\": \"@clossys/advisor\", \"version\": \"0.1.5\", \"integrity\": \"sha512-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==\", \"bin\": \"advisor-execution-readiness\" },\n  \"target\": { \"name\": \"@fixture/qualification-target\", \"version\": \"1.0.0\", \"integrity\": \"sha512-AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQ==\", \"bin\": \"qualification-target-check\", \"invocation\": \"single-json-input\" },\n  \"evidence\": { \"assessment\": \"evidence/assessment.json\", \"targetInput\": \"evidence/target-indeterminate.json\" }\n}\n"
+            },
+            {
+              "path": "$TEMP/fixtures/snapshot/evidence/assessment.json",
+              "sha256": "76803f0313ee3f6dece803dbcea2571be613b7fabf43068ef4c6d7019b193648",
+              "bytes": "{\n  \"target\": {\n    \"name\": \"@fixture/qualification-target\",\n    \"version\": \"1.0.0\",\n    \"integrity\": \"sha512-AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQ==\",\n    \"bin\": \"qualification-target-check\",\n    \"invocation\": \"single-json-input\",\n    \"repository\": \"fixture/repository\"\n  }\n}\n"
+            },
+            {
+              "path": "$TEMP/fixtures/snapshot/evidence/target-indeterminate.json",
+              "sha256": "5637a5af0c3a897e33be95bc72ed24f4525d4b6d5364c24d5f7d0403d11f1d65",
+              "bytes": "{\"mode\":\"indeterminate\"}\n"
+            },
+            {
+              "path": "$TEMP/fixtures/snapshot/evidence/target-satisfied.json",
+              "sha256": "cb653a8697300b97f940a0b7fccdeac4190ae49407c1a2e6746f094cbd2956d6",
+              "bytes": "{\"mode\":\"satisfied\"}\n"
+            },
+            {
+              "path": "$TEMP/fixtures/snapshot/evidence/target-violated.json",
+              "sha256": "0d9711a9b9ee37779c48a9ad998f61e22aa14b773ec07b1a1feaf1596b4d2ed8",
+              "bytes": "{\"mode\":\"violated\"}\n"
+            },
+            {
+              "path": "$TEMP/fixtures/snapshot/snapshot.json",
+              "sha256": "df5927f7be034dd6961d3f14ab9775b56a5e2b5b64743ddcac6004bfd24c5e89",
+              "bytes": "{\n  \"schemaVersion\": 1,\n  \"provider\": \"github-actions\",\n  \"eventName\": \"pull_request\",\n  \"repository\": \"fixture/repository\",\n  \"pullRequestNumber\": 1,\n  \"baseSha\": \"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\n  \"headSha\": \"cccccccccccccccccccccccccccccccccccccccc\",\n  \"workflowRunId\": \"1\",\n  \"artifactName\": \"adoption-snapshot-1\",\n  \"digest\": \"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\n  \"capturedAt\": \"2026-09-29T01:16:19.420Z\",\n  \"files\": [\n    { \"path\": \"evidence/assessment.json\", \"size\": 326, \"sha256\": \"76803f0313ee3f6dece803dbcea2571be613b7fabf43068ef4c6d7019b193648\" },\n    { \"path\": \"evidence/target-satisfied.json\", \"size\": 21, \"sha256\": \"cb653a8697300b97f940a0b7fccdeac4190ae49407c1a2e6746f094cbd2956d6\" },\n    { \"path\": \"evidence/target-violated.json\", \"size\": 20, \"sha256\": \"0d9711a9b9ee37779c48a9ad998f61e22aa14b773ec07b1a1feaf1596b4d2ed8\" },\n    { \"path\": \"evidence/target-indeterminate.json\", \"size\": 25, \"sha256\": \"5637a5af0c3a897e33be95bc72ed24f4525d4b6d5364c24d5f7d0403d11f1d65\" }\n  ]\n}\n"
+            }
+          ],
+          "consumerOverlay": [
+            {
+              "sourcePath": "$TEMP/fixtures/overlay/advisor-cli.js",
+              "targetPath": "$TEMP/node_modules/@clossys/advisor/dist/execution-readiness-cli.js",
+              "sha256": "dfce78d0bc6384d8eae0f238166995189f75d7c0f5d5583d3d7dc1c226f49679",
+              "bytes": "#!$ENV node\nimport { readFileSync } from \"node:fs\";\nconst input = JSON.parse(readFileSync(process.argv[2], \"utf8\"));\nconsole.log(JSON.stringify({\n  state: \"satisfied\",\n  assessment: {\n    firstWavePlan: {\n      state: \"ready-for-sponsor-approval\",\n      workItems: [{\n        targetRepositoryId: input.target.repository,\n        package: { name: input.target.name, version: input.target.version, integrity: input.target.integrity },\n        bin: input.target.bin,\n        invocation: input.target.invocation\n      }]\n    }\n  }\n}));\n"
+            },
+            {
+              "sourcePath": "$TEMP/fixtures/overlay/advisor-package.json",
+              "targetPath": "$TEMP/node_modules/@clossys/advisor/package.json",
+              "sha256": "e871b1e74e88d729a16785d0eb25b294b072d7c8a59fcaf4607251d989271664",
+              "bytes": "{\n  \"name\": \"@clossys/advisor\",\n  \"version\": \"0.1.5\",\n  \"type\": \"module\",\n  \"bin\": { \"advisor-execution-readiness\": \"./dist/execution-readiness-cli.js\" }\n}\n"
+            },
+            {
+              "sourcePath": "$TEMP/fixtures/overlay/package-lock.json",
+              "targetPath": "$TEMP/package-lock.json",
+              "sha256": "ec9cb6a723b8f55b9f19d77188eb716ab6f19d3d05c27f9e96379898296a0390",
+              "bytes": "{\n  \"name\": \"qualification-consumer\",\n  \"lockfileVersion\": 3,\n  \"requires\": true,\n  \"packages\": {\n    \"\": {\n      \"devDependencies\": {\n        \"@clossys/starter\": \"0.2.0\",\n        \"@clossys/advisor\": \"0.1.5\",\n        \"@fixture/qualification-target\": \"1.0.0\"\n      }\n    },\n    \"node_modules/@clossys/starter\": {\n      \"version\": \"0.2.0\",\n      \"integrity\": \"sha512-F8EAksJgw+zqsegTNt6hgQoHaDw7hTSjlIRd4dTGt2nwEA7Cy6QSbbcIVWWpAqC+SnAOJ5R9wEWuNt/2PSJVUA==\"\n    },\n    \"node_modules/@clossys/advisor\": {\n      \"version\": \"0.1.5\",\n      \"integrity\": \"sha512-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==\"\n    },\n    \"node_modules/@fixture/qualification-target\": {\n      \"version\": \"1.0.0\",\n      \"integrity\": \"sha512-AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQ==\"\n    }\n  }\n}\n"
+            },
+            {
+              "sourcePath": "$TEMP/fixtures/overlay/package.json",
+              "targetPath": "$TEMP/package.json",
+              "sha256": "398debc93f02cca8d197019e0f170be56357015a6560252954b3de3e8d1c7b52",
+              "bytes": "{\n  \"private\": true,\n  \"devDependencies\": {\n    \"@clossys/starter\": \"0.2.0\",\n    \"@clossys/advisor\": \"0.1.5\",\n    \"@fixture/qualification-target\": \"1.0.0\"\n  }\n}\n"
+            },
+            {
+              "sourcePath": "$TEMP/fixtures/overlay/target-cli.js",
+              "targetPath": "$TEMP/node_modules/@fixture/qualification-target/dist/check.js",
+              "sha256": "3aee8473be8bd3cc1e2a0d37c0e592af4ba6ce771f69f2fcec5fb0119dec94d2",
+              "bytes": "#!$ENV node\nimport { readFileSync } from \"node:fs\";\nconst input = JSON.parse(readFileSync(process.argv[2], \"utf8\"));\nconst state = [\"satisfied\", \"violated\", \"indeterminate\"].includes(input.mode) ? input.mode : \"indeterminate\";\nconsole.log(JSON.stringify({ state }));\nprocess.exitCode = state === \"satisfied\" ? 0 : state === \"violated\" ? 1 : 2;\n"
+            },
+            {
+              "sourcePath": "$TEMP/fixtures/overlay/target-package.json",
+              "targetPath": "$TEMP/node_modules/@fixture/qualification-target/package.json",
+              "sha256": "96a2684df9df9b10054471ed93c5f121aa1fef75769999d63dd7bd247d8c3c73",
+              "bytes": "{\n  \"name\": \"@fixture/qualification-target\",\n  \"version\": \"1.0.0\",\n  \"type\": \"module\",\n  \"bin\": { \"qualification-target-check\": \"./dist/check.js\" }\n}\n"
+            }
+          ],
+          "exitCode": 2,
+          "stdout": "{\n  \"state\": \"indeterminate\",\n  \"phase\": \"activation\",\n  \"findings\": [],\n  \"advisor\": \"satisfied\",\n  \"target\": \"indeterminate\"\n}\n",
+          "stderr": ""
+        }
+      },
+      {
+        "id": "uninstall",
+        "kind": "uninstall",
+        "launch": "npm-fixed",
+        "expectedExitCode": 0,
+        "observedExitCode": 0,
+        "signal": null,
+        "launchError": false,
+        "stdoutSha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+        "stderrSha256": "62d23df6c26cde48b45a87bdd8ca669e2a84da2ad8930aad8d4a3c2004523b97"
+      },
+      {
+        "id": "reinstall",
+        "kind": "reinstall",
+        "launch": "npm-fixed",
+        "expectedExitCode": 0,
+        "observedExitCode": 0,
+        "signal": null,
+        "launchError": false,
+        "stdoutSha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+        "stderrSha256": "62d23df6c26cde48b45a87bdd8ca669e2a84da2ad8930aad8d4a3c2004523b97"
+      }
+    ],
+    "dimensions": [
+      {
+        "dimension": "position",
+        "status": "unsupported",
+        "reason": "Starter is non-role tooling and a disposable consumer makes no installed position claim."
+      },
+      {
+        "dimension": "completion",
+        "status": "unsupported",
+        "reason": "Tooling conformance is not consumer completion."
+      },
+      {
+        "dimension": "rollback",
+        "status": "supported",
+        "evidence": [
+          "uninstall",
+          "reinstall"
+        ]
+      },
+      {
+        "dimension": "duplicate",
+        "status": "unsupported",
+        "reason": "Starter has no first-party runtime dependency graph to deduplicate."
+      },
+      {
+        "dimension": "cadence",
+        "status": "unsupported",
+        "reason": "Cadence is not established by a disposable installation canary."
+      },
+      {
+        "dimension": "closeWindow",
+        "status": "unsupported",
+        "reason": "Close-window evidence is not established by a disposable installation canary."
+      }
+    ],
+    "restoration": {
+      "manifestRestored": true,
+      "lockfileRestored": true,
+      "packageAbsentAfterUninstall": true
+    },
+    "mismatches": [],
+    "ok": true,
+    "fixtureMaterializedAt": "2026-09-29T01:16:19.420Z",
+    "canonicalSha256": "eb1385079778e76cc3e68606ad03f9c5c0a134ca77bd4513f74adf2669f63003"
+  },
+  "candidateReview": {
+    "headSha": "f4ab885bd0c6f030a2698a05c2b5be15b50a30b1",
+    "reference": "github-actions-dispatch:qualify-candidate.yml;run:36506752605;attempt:1"
+  },
+  "findings": []
+}
