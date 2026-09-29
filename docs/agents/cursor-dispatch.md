@@ -19,10 +19,15 @@ Cursor has no issue-opened trigger. Dispatch is a comment:
 2. The master session adds the `cursor-glm` label.
 3. The master session comments on the issue:
 
-   > @cursor Implement this issue on GLM 5.3 Flash. Run the tests. Open a
+   > Implement this issue on GLM 5.3 Flash. Run the tests. Open a
    > pull request. Comment the pull request link on this issue. If you get
    > stuck or a test will not pass, post one comment saying what blocks you
    > and stop. Do not merge.
+
+   The comment begins with a mention of the Cursor GitHub App (the agent
+   handle); that mention is the trigger. The exact handle lives in the
+   operator's runbook and is not restated here — this repository does not
+   name peer accounts.
 
 4. Cursor clones the repo, works the issue once, pushes a branch, opens a
    pull request, and stops. One run is one-way: it ends at the push.
@@ -38,12 +43,11 @@ Cursor has no issue-opened trigger. Dispatch is a comment:
 - The master session treats a blocker comment as a CI signal: fix the
   environment or the issue and re-dispatch once, split the issue smaller, or
   escalate to Opus 5.5. Two unsuccessful runs on one issue is the ceiling.
-- The lane re-opens only through a new `@cursor` mention. The master session
-  may comment `@cursor Fix the CI failures. Do not merge.` on the pull
-  request; that starts one new bounded run, which reads the existing thread
-  first and ends at its own push.
-- Cursor agents never mention `@cursor` or any other agent handle in comments
-  they post. An agent-posted mention would start another run; that is the one
+- The lane re-opens only through a new agent-handle mention on the pull
+  request. The master session posts one follow-up dispatch comment; that
+  starts one new bounded run, which reads the existing thread first and ends
+  at its own push.
+- Cursor agents never post an agent-handle mention in comments they write. An agent-posted mention would start another run; that is the one
   real loop risk in this setup, and it is forbidden.
 
 ## Qualification
