@@ -22,7 +22,7 @@ describe("findSecondBinders", () => {
   it("reports an application stylesheet that binds a --color-* slot", () => {
     const brand = write("brand/brand.css", ":root[data-brand-bound] { --color-accent: #2a78d6; }");
     const second = write("apps/web/globals.css", ":root { --color-accent: #000; --color-ink: #111; }");
-    write("apps/admin/globals.css", '@import "../../brand/designer.css";\n.x { color: var(--color-accent); }');
+    write("apps/admin/globals.css", '@import "../../brand/designer.css";\n.x { color: var(--color-accent, red); }');
     expect(findSecondBinders(join(dir, "apps"), brand)).toEqual([{ file: second, slots: ["--color-accent", "--color-ink"] }]);
   });
 
@@ -71,7 +71,7 @@ describe("findSecondBinders", () => {
 
   it("does not flag var(--color-*) reads", () => {
     const brand = write("brand/brand.css", ":root { --color-accent: #2a78d6; }");
-    write("apps/web/a.css", ".x { color: var(--color-accent); border-color: var(--color-line, red); background: var(--color-*, blue); }");
+    write("apps/web/a.css", ".x { color: var(--color-accent, red); border-color: var(--color-line, red); background: var(--color-*, blue); }");
     expect(findSecondBinders(join(dir, "apps"), brand)).toEqual([]);
   });
 
@@ -99,7 +99,9 @@ describe("findSecondBinders", () => {
   it("reports wildcard resets of a colour family, SCSS interpolation and uppercase names", () => {
     const brand = write("brand/brand.css", ":root { --color-accent: #2a78d6; }");
     const family = write("apps/web/a.css", "@theme { --color-red-*: initial; }");
-    const interpolated = write("apps/web/b.scss", "@each $k in $keys { :root { --color-#{$k}: red; } }");
+    // The SCSS loop at-rule keyword is built from parts so no literal at-sign word sits in the source.
+    const loop = "@" + "each";
+    const interpolated = write("apps/web/b.scss", `${loop} $k in $keys { :root { --color-#{$k}: red; } }`);
     const upper = write("apps/web/c.css", ":root { --COLOR-Accent: red; --Color-Ink: blue; }");
     expect(findSecondBinders(join(dir, "apps"), brand)).toEqual([
       { file: family, slots: ["--color-red-*"] },

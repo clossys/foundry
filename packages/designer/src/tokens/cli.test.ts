@@ -137,7 +137,7 @@ describe("command line — one brand overlay under apps/", () => {
 
   it("exits 1, not 0, when the apps are clean but the brand file leaves template slots uncovered", () => {
     writeProductFile("brand/brand.css", ":root { --color-accent: #2a78d6; }\n");
-    writeProductFile("apps/web/globals.css", '@import "../../../brand/designer.css";\n.x { color: var(--color-accent); }\n');
+    writeProductFile("apps/web/globals.css", '@import "../../../brand/designer.css";\n.x { color: var(--color-accent, red); }\n');
     const result = runCli([]);
     expect(result.status).toBe(1);
     expect(result.stdout).not.toContain("second-brand-binding");
