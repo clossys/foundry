@@ -723,23 +723,47 @@ const observed = await observeRepository({
 if ("skipped" in observed) console.log(observed.skipped, observed.verdict);
 ```
 
-- Every field is read from git objects at the default-branch head, never from
-  the working tree; a symbolic link's digest is the digest of its target.
-  Nothing is written to the clone: the remote tip is read with `git ls-remote`
-  run outside the clone, and the default branch comes from the remote's
-  `HEAD`.
+- The rule: only this repository's own object database and refs are read,
+  through git plumbing, never the working tree and never anything a
+  repository can point elsewhere; anything unusual is refused, not
+  interpreted. Every field is read from git objects at the default-branch
+  head; a file's digest is that of its bytes read as UTF-8 text, as
+  materialization computes it (a symbolic link's digest is the digest of its
+  target). Nothing is written to the clone: the remote tip is read with
+  `git ls-remote` run outside the clone, and the default branch comes from
+  the remote's `HEAD`.
+- The committed tree is listed first, and a submodule is refused
+  (`submodule-present`), before any command that reads the working tree runs;
+  `git status` never considers a submodule, because git would open the
+  submodule's own repository and read its configuration.
 - A clone is refused, not observed, when its directory is missing
   (`clone-missing`, `indeterminate`); when its `origin` is another repository;
-  when its tree is dirty or has untracked files; when its local head differs
-  from the remote tip; or when `.git/config` holds a key outside a short fixed
-  list (`violated`). The config is read as data, so a filter, hook path,
-  pager, `fsmonitor` or alias entry is refused rather than run.
+  when its tree is dirty or has untracked files, or a tracked file is marked
+  skip-worktree or assume-unchanged; when its local head differs from the
+  remote tip; when it reads objects from another store
+  (`objects/info/alternates`); or when `.git/config` holds a key outside a
+  short fixed list (`violated`). The config is read as data, so a filter,
+  hook path, pager, `fsmonitor` or alias entry is refused rather than run.
+- The default origin parser names only an exact `https://github.com/` or
+  `ssh` GitHub URL, and only those two transports fetch; an `originId` you
+  supply is the only way a local path is fetched. git is run from an absolute
+  path found among the absolute, non-empty `PATH` entries, never by a search
+  of the clone's own directory.
+- `files` lists whatever the head holds at a path the apply flow may write: a
+  file, a symbolic link, or, for a directory, each file under it, so a
+  directory where a link belongs reads as occupied. Root entries that differ
+  from `clossys`, `.agents`, `.claude` or `.cursor` only by letter case,
+  Unicode form or a trailing dot, and two spellings of `.github` or
+  `.starter`, are refused (`case-variant-owned-path`); a `consumerCi` workflow
+  is a regular file spelled `.github/workflows/`.
 - `nodeId` and `visibility` come through the injected ports; a port that
   throws or returns a malformed value is `indeterminate`.
 - `phase` is `apply` only when the base has a valid installed-state ledger,
   every setup-template path is a regular file at the head, and
   `manifestEntries` pins `@clossys/starter` at an exact version that its
-  lockfile resolves; otherwise it is `setup`.
+  lockfile resolves to the registry package of that name (an `npm:` alias, or
+  another package under its name, is refused as `lockfile-unreadable`);
+  otherwise it is `setup`.
 - git runs without hooks, `fsmonitor` or a pager, and every tree, blob and
   output read has a size bound.
 
@@ -749,7 +773,9 @@ if ("skipped" in observed) console.log(observed.skipped, observed.verdict);
 | `indeterminate` | `clone-missing`, `clone-unreadable`, `id-owner-unknown`, `remote-tip-unreadable`, `node-id-unavailable`, `visibility-unavailable`, `tree-too-large`, `submodule-present`, `manifest-unreadable`, `lockfile-ambiguous`, `package-manager-unknown`, `lockfile-unreadable`, `release-age-surface-invalid`, `agents-link-unreportable`, `observation-too-large`, `case-variant-owned-path`, `ledger-unreadable`, `profile-ambiguous` |
 
 What it does not decide: it reports what the committed head holds, not
-whether applying is safe. Ownership and trust are the planner's judgement.
+whether applying is safe. Ownership and trust are the planner's judgement,
+and so is whether the pinned Starter version is one that implements the
+request: there is no version-range check here.
 It is not a check of Windows short names or other alias spellings beyond case
 and Unicode-normalization folding, and which root names a particular set
 creates is the planner's contract check; the observation reports over

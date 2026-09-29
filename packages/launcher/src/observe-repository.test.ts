@@ -5,7 +5,7 @@
 // bare-path shape.
 
 import { execFileSync } from "node:child_process";
-import { chmodSync, copyFileSync, existsSync, lstatSync, mkdirSync, mkdtempSync, readdirSync, realpathSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import { appendFileSync, chmodSync, copyFileSync, existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, realpathSync, rmSync, symlinkSync, utimesSync, writeFileSync } from "node:fs";
 import { devNull, tmpdir } from "node:os";
 import { dirname, join, sep } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
@@ -13,12 +13,12 @@ import { LEDGER_PATH, TEMPLATE_PATHS, contentDigest } from "./change-set-contrac
 import type { RepositoryVisibility } from "./change-set-contract.js";
 import { serializeInstalledLedger } from "./ledger-contract.js";
 import type { InstalledLedger } from "./ledger-contract.js";
-import { observeRepository } from "./observe-repository.js";
+import { defaultOriginId, observeRepository } from "./observe-repository.js";
 import type { RepositoryObservationPorts } from "./observe-repository.js";
 import type { RepositoryObservation, SkippedRepositoryObservation } from "./plan-bundle.js";
 
 type Result = RepositoryObservation | SkippedRepositoryObservation;
-type Files = Record<string, string | { link: string }>;
+type Files = Record<string, string | Buffer | { link: string }>;
 
 interface Fixture {
   readonly root: string;
@@ -59,7 +59,7 @@ function writeTree(dir: string, files: Files): void {
   for (const [path, entry] of Object.entries(files)) {
     const full = join(dir, path);
     mkdirSync(dirname(full), { recursive: true });
-    if (typeof entry === "string") writeFileSync(full, entry);
+    if (typeof entry === "string" || Buffer.isBuffer(entry)) writeFileSync(full, entry);
     else symlinkSync(entry.link, full);
   }
 }
@@ -210,6 +210,68 @@ function snapshot(dir: string, rel = ""): string[] {
     if (stat.isDirectory()) out.push(...snapshot(dir, path));
   }
   return out;
+}
+
+/** Runs `body` with environment variables set, and puts them back whatever happens. */
+async function withEnv<T>(vars: Record<string, string>, body: () => Promise<T>): Promise<T> {
+  const before = Object.fromEntries(Object.keys(vars).map((name) => [name, process.env[name]]));
+  Object.assign(process.env, vars);
+  try {
+    return await body();
+  } finally {
+    for (const [name, value] of Object.entries(before)) {
+      if (value === undefined) delete process.env[name];
+      else process.env[name] = value;
+    }
+  }
+}
+
+/** Observes with the default origin parser: no `originId` is injected. */
+function observeWithDefaultParser(fx: Fixture): Promise<Result> {
+  return observeRepository({ id: fx.id, clone: fx.clone, ports: { nodeId: () => NODE_ID, visibility: () => "private" } });
+}
+
+/**
+ * Commits the same bytes at every path in one commit and pushes it, through git's
+ * plumbing and not through the working tree: paths that differ only by letter case
+ * cannot all be written on a case-insensitive file system, and identical bytes keep
+ * the clone clean there too.
+ */
+function commitCollidingPaths(fx: Fixture, paths: readonly string[], content: string): void {
+  const source = join(fx.root, "colliding-content");
+  writeFileSync(source, content);
+  const oid = git(fx.clone, "hash-object", "-w", source).trim();
+  git(fx.clone, "config", "core.ignorecase", "false");
+  for (const path of paths) git(fx.clone, "update-index", "--add", "--cacheinfo", `100644,${oid},${path}`);
+  git(fx.clone, "commit", "-m", "colliding paths");
+  git(fx.clone, "push", "origin", "main");
+  git(fx.clone, "reset", "--hard", "HEAD");
+}
+
+/** A submodule, committed and checked out, whose own configuration would run a script for a clean filter and for fsmonitor. */
+function addHostileSubmodule(fx: Fixture): { readonly canary: string } {
+  const canary = join(fx.root, "submodule-canary");
+  const script = join(fx.root, "submodule-hostile.sh");
+  writeFileSync(script, `#!/bin/sh\ntouch "${canary}"\ncat\n`);
+  chmodSync(script, 0o755);
+  const source = join(fx.root, "submodule-source");
+  mkdirSync(source);
+  git(source, "init", "-b", "main");
+  writeFileSync(join(source, "tracked.txt"), "tracked\n");
+  git(source, "add", "-A");
+  git(source, "commit", "-m", "submodule");
+  git(fx.clone, "-c", "protocol.file.allow=always", "submodule", "add", source, "sub");
+  git(fx.clone, "commit", "-m", "add the submodule");
+  git(fx.clone, "push", "origin", "main");
+  // The parent's own configuration keeps only what a plain clone carries; the submodule's is the hostile one.
+  git(fx.clone, "config", "--remove-section", "submodule.sub");
+  const modules = join(fx.clone, ".git", "modules", "sub");
+  appendFileSync(join(modules, "config"), `[filter "evil"]\n\tclean = ${script}\n\tsmudge = ${script}\n[core]\n\tfsmonitor = ${script}\n`);
+  mkdirSync(join(modules, "info"), { recursive: true });
+  writeFileSync(join(modules, "info", "attributes"), "* filter=evil\n");
+  // A file whose stat differs from the index makes git hash it again, through the clean filter.
+  utimesSync(join(fx.clone, "sub", "tracked.txt"), 1, 1);
+  return { canary };
 }
 
 describe("observeRepository: an observation is exactly the committed head of a clean clone", () => {
@@ -389,6 +451,18 @@ describe("observeRepository: an observation is exactly the committed head of a c
       expect(result.lockedPackages).toEqual([]);
     });
 
+    it.each([
+      ["a lockfile entry that is another package installed under the starter's name", "evil", "1.2.3", `https://registry.npmjs.org/evil/-/evil-1.2.3.tgz`, null],
+      ["a lockfile whose root row aliases the starter to another package", "@clossys/starter", "1.2.3", `https://registry.npmjs.org/@clossys/starter/-/starter-1.2.3.tgz`, "npm:evil@1.2.3"],
+      ["a lockfile entry resolved from another package's tarball", "@clossys/starter", "1.2.3", "https://registry.npmjs.org/evil/-/evil-1.2.3.tgz", null],
+    ])("refuses %s rather than report the starter locked", async (_what, entryName, version, resolved, specifier) => {
+      const lock = JSON.parse(npmLock("1.2.3", "1.2.3")) as { packages: Record<string, Record<string, unknown>> };
+      lock.packages[`node_modules/${STARTER}`] = { name: entryName, version, resolved, integrity: INTEGRITY, dev: true };
+      if (specifier !== null) (lock.packages[""]!.devDependencies as Record<string, string>)[STARTER] = specifier;
+      const fx = makeFixture({ ...applyFiles(), "package-lock.json": `${JSON.stringify(lock, null, 2)}\n` });
+      expect(await observe(fx)).toEqual(skip(fx, "lockfile-unreadable", "indeterminate"));
+    });
+
     it("is setup when the ledger is not a valid ledger", async () => {
       const fx = makeFixture(applyFiles({ ledger: '{"not":"a ledger"}\n' }));
       expect(observed(await observe(fx)).phase).toBe("setup");
@@ -423,9 +497,14 @@ describe("observeRepository: an observation is exactly the committed head of a c
       expect(observed(await observe(fx)).symlinkedSkillRoots).toEqual([".claude/skills"]);
     });
 
-    it("sees a symlink at a case variant of the root", async () => {
-      const fx = makeFixture({ ...plainFiles(), ".Claude/Skills": { link: "../shared/skills" } });
+    it("sees a symlink at a case variant below the root", async () => {
+      const fx = makeFixture({ ...plainFiles(), ".claude/Skills": { link: "../shared/skills" } });
       expect(observed(await observe(fx)).symlinkedSkillRoots).toEqual([".claude/skills"]);
+    });
+
+    it("refuses a symlink at a case variant of the root rather than read it", async () => {
+      const fx = makeFixture({ ...plainFiles(), ".Claude/Skills": { link: "../shared/skills" } });
+      expect(await observe(fx)).toEqual(skip(fx, "case-variant-owned-path", "indeterminate"));
     });
 
     it("lists .agents when it is a symlink", async () => {
@@ -586,6 +665,182 @@ describe("observeRepository: an observation is exactly the committed head of a c
     it.each([["agents.md"], ["Clossys/notes.txt"], [".GitHub/workflows/clossys-ci.yml"]])("skips a committed %s beside no canonical spelling", async (path) => {
       const fx = makeFixture({ ...plainFiles(), [path]: "variant\n" });
       expect(await observe(fx)).toEqual(skip(fx, "case-variant-owned-path", "indeterminate"));
+    });
+  });
+
+  describe("the object database is the only thing read", () => {
+    it("runs nothing from a populated submodule's own configuration, and refuses the submodule", async () => {
+      const fx = makeFixture();
+      const { canary } = addHostileSubmodule(fx);
+      expect(await observe(fx)).toEqual(skip(fx, "submodule-present", "indeterminate"));
+      expect(existsSync(canary)).toBe(false);
+    });
+
+    it("refuses a submodule that is staged and not yet committed", async () => {
+      const fx = makeFixture();
+      git(fx.clone, "update-index", "--add", "--cacheinfo", `160000,${headOf(fx)},staged-sub`);
+      expect(await observe(fx)).toEqual(skip(fx, "submodule-present", "indeterminate"));
+    });
+
+    it("never runs a `git` file committed at the root of the clone, whatever PATH holds", async () => {
+      const fx = makeFixture();
+      const canary = join(fx.root, "git-canary");
+      writeFileSync(join(fx.clone, "git"), `#!/bin/sh\ntouch "${canary}"\nexit 1\n`);
+      chmodSync(join(fx.clone, "git"), 0o755);
+      git(fx.clone, "add", "-A");
+      git(fx.clone, "commit", "-m", "a file named git");
+      git(fx.clone, "push", "origin", "main");
+      await withEnv({ PATH: `:${process.env.PATH ?? ""}:.` }, () => observe(fx));
+      expect(existsSync(canary)).toBe(false);
+    });
+
+    it("refuses a clone that reads objects from an alternate object store", async () => {
+      const fx = makeFixture();
+      const other = makeFixture(plainFiles(), "rival/gadgets");
+      writeFileSync(join(fx.clone, ".git", "objects", "info", "alternates"), `${join(other.clone, ".git", "objects")}\n`);
+      expect(await observe(fx)).toEqual(skip(fx, "clone-config-unsafe", "violated"));
+    });
+
+    it("refuses when GIT_ALTERNATE_OBJECT_DIRECTORIES names an object store", async () => {
+      const fx = makeFixture();
+      const other = makeFixture(plainFiles(), "rival/gadgets");
+      const result = await withEnv({ GIT_ALTERNATE_OBJECT_DIRECTORIES: join(other.clone, ".git", "objects") }, () => observe(fx));
+      expect(result).toEqual(skip(fx, "clone-unreadable", "indeterminate"));
+    });
+
+    it.each([
+      ["skip-worktree", "--skip-worktree"],
+      ["assume-unchanged", "--assume-unchanged"],
+    ])("refuses a tracked file marked %s, which hides an edit from git status", async (_name, flag) => {
+      const fx = makeFixture();
+      git(fx.clone, "update-index", flag, "README.md");
+      writeFileSync(join(fx.clone, "README.md"), "# Edited behind git's back\n");
+      expect(await observe(fx)).toEqual(skip(fx, "working-tree-dirty", "violated"));
+    });
+  });
+
+  describe("the origin", () => {
+    it.each([
+      ["https://github.com/acme/widgets", "acme/widgets"],
+      ["https://github.com/acme/widgets.git", "acme/widgets"],
+      ["git@github.com:acme/widgets.git", "acme/widgets"],
+      ["git@github.com:acme/widgets", "acme/widgets"],
+      ["ssh://git@github.com/acme/widgets.git", "acme/widgets"],
+    ])("names %s as %s", (url, named) => {
+      expect(defaultOriginId(url)).toBe(named);
+    });
+
+    it.each([
+      "file://github.com/acme/widgets",
+      "file://github.com/acme/widgets/extra/segments",
+      "file:///github.com/acme/widgets",
+      "http://github.com/acme/widgets",
+      "git://github.com/acme/widgets",
+      "https://github.com/acme/widgets/extra",
+      "https://user@github.com/acme/widgets",
+      "https://github.com:8443/acme/widgets",
+      "https://github.com/acme/widgets?x=1",
+      "https://github.com/acme/widgets#frag",
+      "https://github.com.evil.example/acme/widgets",
+      "ssh://git@github.com:22/acme/widgets",
+      "/local/acme/widgets",
+    ])("does not name %s", (url) => {
+      expect(defaultOriginId(url)).toBeNull();
+    });
+
+    it("refuses a file:// origin that only reads like a GitHub one", async () => {
+      const fx = makeFixture();
+      git(fx.clone, "remote", "set-url", "origin", "file://github.com/acme/widgets");
+      expect(await observeWithDefaultParser(fx)).toEqual(skip(fx, "origin-mismatch", "violated"));
+    });
+
+    it("does not fetch over the file protocol when the default parser names the origin", async () => {
+      const fx = makeFixture();
+      git(fx.clone, "remote", "set-url", "origin", "https://github.com/acme/widgets.git");
+      const global = join(fx.root, "rewrite.gitconfig");
+      writeFileSync(global, `[url "file://${join(fx.root, "origin", "acme")}/"]\n\tinsteadOf = https://github.com/acme/\n`);
+      const result = await withEnv({ GIT_CONFIG_GLOBAL: global }, () => observeWithDefaultParser(fx));
+      expect(result).toEqual(skip(fx, "remote-tip-unreadable", "indeterminate"));
+    });
+  });
+
+  describe("an owned path holds whatever the head holds at it", () => {
+    it.each([
+      [".claude/skills/clossys-builder"],
+      [".cursor/skills/clossys-builder"],
+      [".github/workflows/clossys-ci.yml"],
+      [".github/scripts/clossys-check.sh"],
+      [".starter/request.json"],
+    ])("lists the files of a directory committed at %s, so the path reads as occupied", async (path) => {
+      const fx = makeFixture({ ...plainFiles(), [`${path}/SKILL.md`]: "# a directory where a link belongs\n" });
+      const result = observed(await observe(fx));
+      expect(result.files).toContainEqual({ path: `${path}/SKILL.md`, sha256: contentDigest("# a directory where a link belongs\n") });
+      expect(result.files.some((file) => file.path === path)).toBe(false);
+    });
+
+    it("lists a regular file committed at a discovery-link path with the digest of its bytes", async () => {
+      const fx = makeFixture({ ...plainFiles(), ".claude/skills/clossys-builder": "not a link\n" });
+      expect(observed(await observe(fx)).files).toContainEqual({ path: ".claude/skills/clossys-builder", sha256: contentDigest("not a link\n") });
+    });
+
+    it("refuses a directory at a case variant of an owned path", async () => {
+      const fx = makeFixture({ ...plainFiles(), ".claude/skills/CLOSSYS-builder/SKILL.md": "variant\n" });
+      expect(await observe(fx)).toEqual(skip(fx, "case-variant-owned-path", "indeterminate"));
+    });
+  });
+
+  describe("letter case at the root", () => {
+    it.each([[".Claude/settings.json"], [".CLAUDE"], [".Agents/skills/notes.md"], [".CURSOR/rules.md"], ["Clossys/notes.md"]])("refuses a committed %s as a case variant of a root the flow adds", async (path) => {
+      const fx = makeFixture({ ...plainFiles(), [path]: "variant\n" });
+      expect(await observe(fx)).toEqual(skip(fx, "case-variant-owned-path", "indeterminate"));
+    });
+
+    it("does not let a case variant stand in for a root the profile prohibits", async () => {
+      const text = `${JSON.stringify({ schemaVersion: 3, rootEntries: [{ name: ".Claude", classification: "canonical", disposition: "allowed" }, { name: ".claude", classification: "canonical", disposition: "prohibited" }] })}\n`;
+      const fx = makeFixture({ ...plainFiles(), ".Claude/settings.json": "{}\n", "governance/repository-profile.json": text });
+      expect(await observe(fx)).toEqual(skip(fx, "case-variant-owned-path", "indeterminate"));
+    });
+
+    it("refuses two root entries that differ only by case", async () => {
+      const fx = makeFixture();
+      commitCollidingPaths(fx, [".claude/settings.json", ".CLAUDE/settings.json"], "{}\n");
+      expect(await observe(fx)).toEqual(skip(fx, "case-variant-owned-path", "indeterminate"));
+    });
+
+    it("refuses .github and .GitHub side by side", async () => {
+      const fx = makeFixture();
+      commitCollidingPaths(fx, [".github/workflows/ci.yml", ".GitHub/workflows/ci.yml"], "name: ci\n");
+      expect(await observe(fx)).toEqual(skip(fx, "case-variant-owned-path", "indeterminate"));
+    });
+
+    it("does not read a .GitHub/Workflows directory as a workflow of the repository's own", async () => {
+      const fx = makeFixture({ ...plainFiles(), ".GitHub/Workflows/build.yml": "name: build\n" });
+      expect(observed(await observe(fx)).consumerCi).toBe(false);
+    });
+
+    it("does not read a symbolic link named like a workflow as one", async () => {
+      const fx = makeFixture({ ...plainFiles(), ".github/workflows/build.yml": { link: "../../elsewhere.yml" } });
+      expect(observed(await observe(fx)).consumerCi).toBe(false);
+    });
+  });
+
+  describe("bytes as materialize reads them", () => {
+    it("digests a blob that is not UTF-8 as materialize does, whether it reads the file or `git show`", async () => {
+      const bytes = Buffer.from([0xff, 0xfe, 0x41, 0x80, 0xc3, 0x28, 0x0a]);
+      const fx = makeFixture({ ...plainFiles(), "clossys/opaque.bin": bytes });
+      const result = observed(await observe(fx));
+      const row = result.files.find((file) => file.path === "clossys/opaque.bin");
+      // materialize: contentDigest(readFileSync(path, "utf8")) on the disk, and contentDigest of `git show` decoded as UTF-8 on a ref.
+      expect(row?.sha256).toBe(contentDigest(readFileSync(join(fx.clone, "clossys/opaque.bin"), "utf8")));
+      expect(row?.sha256).toBe(contentDigest(git(fx.clone, "show", "HEAD:clossys/opaque.bin")));
+    });
+
+    it("digests a UTF-8 file that starts with a byte order mark as materialize does", async () => {
+      const text = "\ufeff# with a mark\n";
+      const fx = makeFixture({ ...plainFiles(), "clossys/marked.md": text });
+      const row = observed(await observe(fx)).files.find((file) => file.path === "clossys/marked.md");
+      expect(row?.sha256).toBe(contentDigest(readFileSync(join(fx.clone, "clossys/marked.md"), "utf8")));
+      expect(row?.sha256).toBe(contentDigest(text));
     });
   });
 
