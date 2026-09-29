@@ -16,6 +16,8 @@ import {
   writeFileSync,
 } from "node:fs";
 import { dirname, join } from "node:path";
+import { decideSetBinding, planPackagesFor, readHubAuthority } from "./admission.js";
+import type { AdmissionRefusal, PlanPackageIdentity, ReadinessRunner } from "./admission.js";
 import { storeChangeSet } from "./apply-store.js";
 import {
   CANONICAL_KEYS,
@@ -28,34 +30,40 @@ import {
   matchesPathPattern,
   validateRepositoryChangeSet,
 } from "./change-set-contract.js";
-import type { ApprovalBinding, ChangeSetItem, FileChange, PackageInvariant, RepositoryChangeSet, WholeFileChange } from "./change-set-contract.js";
+import type { ApprovalBinding, FileChange, PackageInvariant, RepositoryChangeSet, WholeFileChange } from "./change-set-contract.js";
 import { JsonEditUnstableError, editJsonPointer, valueAtJsonPointer } from "./key-editor.js";
 import { renderInstalledLedger } from "./ledger-contract.js";
-import type { InstalledLedger, LedgerPackageIdentity } from "./ledger-contract.js";
+import type { InstalledLedger } from "./ledger-contract.js";
 import { trustInstalledLedger } from "./ledger-trust.js";
-import type { PlanPackageActs } from "./ledger-trust.js";
 import { checkLockfileInvariants } from "./lockfile-invariants.js";
 import type { LockfileInvariantPackage } from "./lockfile-invariants.js";
 import { regenerateLockfile } from "./lockfile-regen.js";
 import type { LockfileSpawn } from "./lockfile-regen.js";
 
+// The approval binding a set's ledger records is never an input: admission
+// (admission.ts) computes it from the hub's committed plan and stored bundles,
+// and materialize and verify both use exactly that binding (#1178).
 export interface MaterializeInput {
   readonly clone: string;
   readonly hub: string;
   readonly set: RepositoryChangeSet;
   readonly texts: Readonly<Record<string, string>>;
-  readonly binding: ApprovalBinding;
   readonly heldChangeSets?: readonly RepositoryChangeSet[];
   readonly spawn?: LockfileSpawn;
+  /** The instant the execution authorization is judged at; the wall clock by default. */
   readonly now?: () => Date;
   readonly toolVersion?: string | null;
+  /** Runs the hub's advisor-execution-readiness; the hub's own installed executable by default. */
+  readonly runReadiness?: ReadinessRunner;
 }
 
 export interface VerifyInput {
   readonly clone: string;
+  readonly hub: string;
   readonly set: RepositoryChangeSet;
-  readonly binding: ApprovalBinding;
   readonly heldChangeSets?: readonly RepositoryChangeSet[];
+  readonly now?: () => Date;
+  readonly runReadiness?: ReadinessRunner;
 }
 
 export interface ApplyStepResult {
@@ -71,8 +79,6 @@ const COMMIT_SHAPE = /^[0-9a-f]{40}$/u;
 const TOOL_VERSION_SHAPE = /^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(?:-[0-9A-Za-z.-]+)?$/u;
 const LEFTOVER_SKILL = /^\.agents\/skills\/clossys-[^/]+(?:\/.*)?$/u;
 const RESERVED_ROOTS = new Set(["clossys", ".github", ".starter"]);
-
-type PackageItem = Extract<ChangeSetItem, { act: "install" | "pin-starter" }>;
 
 const isWhole = (file: FileChange): file is WholeFileChange => !("derived" in file);
 
@@ -94,21 +100,8 @@ function safeDefaultBranch(branch: string): boolean {
   return DEFAULT_BRANCH_SHAPE.test(branch);
 }
 
-function planPackagesFromSet(set: RepositoryChangeSet): (LedgerPackageIdentity & { readonly act: "install" | "pin-starter" })[] {
-  return set.items
-    .filter((item): item is PackageItem => item.act === "install" || item.act === "pin-starter")
-    .map(({ planItem, act, package: pkg, placement }) => ({
-      planItem,
-      act,
-      name: pkg.name,
-      version: pkg.version,
-      integrity: pkg.integrity,
-      placement,
-    }));
-}
-
-function planPackageActsForSet(set: RepositoryChangeSet): PlanPackageActs[] {
-  return [{ planDigest: set.planDigest, packages: planPackagesFromSet(set) }];
+function refusalResult(refusal: AdmissionRefusal): ApplyStepResult {
+  return result(refusal.exitCode, refusal.exitCode === 1 ? "violated" : "indeterminate", refusal.reason, refusal.detail);
 }
 
 function digestAtPath(root: string, relPath: string): string | null {
@@ -316,23 +309,30 @@ function checkChangeSetShape(set: RepositoryChangeSet): ApplyStepResult | null {
   return null;
 }
 
+/**
+ * The base ledger, trusted against the acts of the plan committed at the hub
+ * (never the acts of the set being judged: a set cannot vouch for itself), with
+ * the exact bytes it was read from (null when the base has none).
+ */
 function baseLedgerTrust(
   root: string,
   set: RepositoryChangeSet,
   heldChangeSets: readonly RepositoryChangeSet[],
-): { ledger: InstalledLedger | null } | ApplyStepResult {
+  planDigest: string,
+  planPackages: readonly PlanPackageIdentity[],
+): { ledger: InstalledLedger | null; bytes: Uint8Array | null } | ApplyStepResult {
   const bytes = gitShowBytes(root, set.repository.baseCommit, LEDGER_PATH);
   const ledgerBytes = bytes ?? new Uint8Array(0);
   const trust = trustInstalledLedger(
     ledgerBytes.length === 0 ? null : ledgerBytes,
     { id: set.repository.id, nodeId: set.repository.nodeId },
     heldChangeSets,
-    { planPackageActs: planPackageActsForSet(set) },
+    { planPackageActs: [{ planDigest, packages: planPackages }] },
   );
   if (trust.state === "refused") return result(2, "indeterminate", trust.rule);
   const generation = trust.ledger?.generation ?? 0;
   if (generation !== set.ledger.generation) return result(1, "violated", "ledger-mismatch");
-  return { ledger: trust.ledger };
+  return { ledger: trust.ledger, bytes: ledgerBytes.length === 0 ? null : ledgerBytes };
 }
 
 function refuseReservedSymlinks(root: string, paths: readonly string[]): ApplyStepResult | null {
@@ -448,15 +448,31 @@ function symlinkBeforeRead(root: string, relPaths: readonly string[]): ApplyStep
   return null;
 }
 
-function expectedLedgerBytes(previous: InstalledLedger | null, set: RepositoryChangeSet, binding: ApprovalBinding): Buffer {
-  return Buffer.from(renderInstalledLedger(previous, set, binding, planPackagesFromSet(set)), "utf8");
+function expectedLedgerBytes(
+  previous: InstalledLedger | null,
+  set: RepositoryChangeSet,
+  binding: ApprovalBinding,
+  planPackages: readonly PlanPackageIdentity[],
+): Buffer {
+  return Buffer.from(renderInstalledLedger(previous, set, binding, planPackages), "utf8");
+}
+
+interface Preconditions {
+  readonly root: string;
+  readonly previousLedger: InstalledLedger | null;
+  /** The binding admission computed from the hub: the only one a ledger may record. */
+  readonly binding: ApprovalBinding;
+  /** The committed plan's package acts for the set's repository: what RENDER writes ledger rows from. */
+  readonly planPackages: readonly PlanPackageIdentity[];
 }
 
 async function runPreconditions(
   clone: string,
+  hub: string,
   set: RepositoryChangeSet,
   heldChangeSets: readonly RepositoryChangeSet[],
-): Promise<{ root: string; previousLedger: InstalledLedger | null } | ApplyStepResult> {
+  admission: { readonly now?: () => Date; readonly runReadiness?: ReadinessRunner },
+): Promise<Preconditions | ApplyStepResult> {
   const resolved = resolveCloneRoot(clone);
   if ("exitCode" in resolved) return resolved;
   const { root } = resolved;
@@ -466,17 +482,41 @@ async function runPreconditions(
   if (symlinks !== null) return symlinks;
   const remote = checkRemoteTip(root, set);
   if (remote !== null) return remote;
-  const trust = baseLedgerTrust(root, set, heldChangeSets);
+
+  let hubRoot = hub;
+  try {
+    hubRoot = realpathSync(hub);
+  } catch {
+    // readHubAuthority refuses a hub it cannot read.
+  }
+  const authority = readHubAuthority(hubRoot);
+  if ("state" in authority) return refusalResult(authority);
+  const planPackages = planPackagesFor(authority, set.repository.id);
+  const trust = baseLedgerTrust(root, set, heldChangeSets, authority.planDigest, planPackages);
   if ("exitCode" in trust) return trust;
-  return { root, previousLedger: trust.ledger };
+  const decided = await decideSetBinding({
+    hub: hubRoot,
+    clone: root,
+    set,
+    authority,
+    baseLedger: trust.ledger,
+    baseLedgerBytes: trust.bytes,
+    now: admission.now,
+    runReadiness: admission.runReadiness,
+  });
+  if (decided.state !== "bound") return refusalResult(decided);
+  return { root, previousLedger: trust.ledger, binding: decided.binding, planPackages };
 }
 
 export async function verifyRepository(input: VerifyInput): Promise<ApplyStepResult> {
-  const held = input.heldChangeSets ?? [];
-  const pre = await runPreconditions(input.clone, input.set, held);
+  const pre = await runPreconditions(input.clone, input.hub, input.set, input.heldChangeSets ?? [], input);
   if ("exitCode" in pre) return pre;
-  const { root, previousLedger } = pre;
-  const set = input.set;
+  return verifyPrepared(input.set, pre);
+}
+
+/** The body of verify, over preconditions (and so an admission) that were already computed. */
+function verifyPrepared(set: RepositoryChangeSet, pre: Preconditions): ApplyStepResult {
+  const { root, previousLedger, binding, planPackages } = pre;
   const allowed = (path: string) => set.pathAllowList.some((pattern) => matchesPathPattern(path, pattern));
   const declared = declaredPaths(set);
 
@@ -552,7 +592,7 @@ export async function verifyRepository(input: VerifyInput): Promise<ApplyStepRes
     if (checked.verdict === "indeterminate") return result(2, "indeterminate", checked.reason);
   }
 
-  const expectedLedger = expectedLedgerBytes(previousLedger, set, input.binding);
+  const expectedLedger = expectedLedgerBytes(previousLedger, set, binding, planPackages);
   let ledgerOnDisk: Buffer;
   try {
     ledgerOnDisk = readFileSync(join(root, LEDGER_PATH));
@@ -581,10 +621,9 @@ function textsFromChangeSet(set: RepositoryChangeSet): Readonly<Record<string, s
 }
 
 export async function materializeRepository(input: MaterializeInput): Promise<ApplyStepResult> {
-  const held = input.heldChangeSets ?? [];
-  const pre = await runPreconditions(input.clone, input.set, held);
+  const pre = await runPreconditions(input.clone, input.hub, input.set, input.heldChangeSets ?? [], input);
   if ("exitCode" in pre) return pre;
-  const { root, previousLedger } = pre;
+  const { root, previousLedger, binding, planPackages } = pre;
   const set = input.set;
   const texts = { ...textsFromChangeSet(set), ...input.texts };
 
@@ -592,7 +631,7 @@ export async function materializeRepository(input: MaterializeInput): Promise<Ap
   if (baseMovement !== null) return baseMovement;
 
   if (git(root, ["show-ref", "--verify", "--quiet", `refs/heads/${set.branch}`]).status === 0) {
-    const verified = await verifyRepository({ clone: root, set, binding: input.binding, heldChangeSets: held });
+    const verified = verifyPrepared(set, pre);
     if (verified.exitCode === 0) {
       const stored = persistChangeSet(input.hub, set);
       if (stored !== null) return stored;
@@ -641,7 +680,7 @@ export async function materializeRepository(input: MaterializeInput): Promise<Ap
 
   let ledgerBytes: Buffer;
   try {
-    ledgerBytes = expectedLedgerBytes(previousLedger, set, input.binding);
+    ledgerBytes = expectedLedgerBytes(previousLedger, set, binding, planPackages);
   } catch (cause) {
     if (cause instanceof TypeError) return result(2, "indeterminate", "change-set-invalid");
     throw cause;

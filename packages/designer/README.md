@@ -2114,10 +2114,59 @@ a deliberate follow-up.
 ### `Form`
 
 ```tsx
-import { Form, FieldGroup } from "@clossys/designer/blocks";
+import { Form, useFormValidation } from "@clossys/designer/blocks";
 import { TextField, Button } from "@clossys/designer/atoms";
 import { useState } from "react";
 
+// With useFormValidation: timing, focus and pending state come from the hook.
+async function sendMessage(values: { name: string; email: string; phone: string }): Promise<void> {
+  // Replace with the product's own request; a failure rejects.
+  if (values.email.length === 0) throw new Error("empty");
+}
+
+function ContactForm() {
+  const [sendFailed, setSendFailed] = useState(false);
+
+  const form = useFormValidation({
+    initialValues: { name: "", email: "", phone: "" },
+    validators: {
+      name: (value) => (value.trim() === "" ? "Enter your name." : undefined),
+      email: (value) => {
+        if (value.trim() === "") return "Enter your email address.";
+        if (!value.includes("@")) return "Enter an email address like name@example.com.";
+        return undefined;
+      },
+    },
+    onSubmit: async (values) => {
+      setSendFailed(false);
+      try {
+        await sendMessage(values);
+      } catch {
+        setSendFailed(true);
+      }
+    },
+  });
+
+  return (
+    <Form
+      heading="Contact us"
+      validation={form}
+      errorSummaryMessage={(count) => `${count} ${count === 1 ? "field needs" : "fields need"} attention`}
+      submitError={sendFailed ? "We could not send your message. Try again." : undefined}
+      actions={
+        <Button {...form.getSubmitButtonProps()} variant="primary">
+          Send message
+        </Button>
+      }
+    >
+      <TextField label="Name" {...form.getFieldProps("name")} />
+      <TextField label="Email" type="email" {...form.getFieldProps("email")} />
+      <TextField label="Phone (optional)" type="tel" {...form.getFieldProps("phone")} />
+    </Form>
+  );
+}
+
+// Without the hook: errors come from the consumer's own validation.
 function ProfileForm() {
   const [errors, setErrors] = useState<{ fieldId: string; message: string }[]>([]);
 
@@ -2125,6 +2174,7 @@ function ProfileForm() {
     <Form
       heading="Profile"
       errors={errors}
+      errorSummaryMessage={(count) => `Fix ${count} ${count === 1 ? "field" : "fields"} to continue`}
       onSubmit={(e) => {
         e.preventDefault();
         setErrors([{ fieldId: "email", message: "Enter a valid email address." }]);
@@ -2138,12 +2188,12 @@ function ProfileForm() {
 ```
 
 A form's own layout: an optional heading region, the fields region
-(`children`), an error-summary region, and an actions region — four
-regions that differ in kind, and a page can hold two `Form`s (two
-independent forms on one settings page), which is what makes this a block
-rather than a view.
+(`children`), an error-summary region, a submit-error region, and an actions
+region — five regions that differ in kind, and a page can hold two `Form`s
+(two independent forms on one settings page), which is what makes this a
+block rather than a view.
 
-**Implements no validation logic or form state, deliberately.**
+**`Form` implements no validation logic or form state, deliberately.**
 react-aria-components already carries validation through each field's own
 `isInvalid`/`validationErrors`, and most real consumers layer a form
 library of their own choice (React Hook Form, Formik, TanStack Form, ...)
@@ -2151,34 +2201,156 @@ on top of that. A shared UI package that tried to own validation would
 have to pick one of those, and every consumer using a different one would
 immediately need an escape hatch — the same structural-difference-through-
 a-mode-prop failure this README's variant rule warns against, just scoped
-to a form library instead of visual styling. `Form` provides three things
-only: the region layout, the error-summary region, and native `onSubmit`
-passthrough — nothing about *when* a field is invalid or *what* makes it
-so.
+to a form library instead of visual styling. So `Form` lays out the regions
+and renders whatever a consumer's validation already decided; nothing about
+*when* a field is invalid or *what* makes it so lives in it. The validation
+timing half of the pattern is a separate, optional hook,
+[`useFormValidation`](#useformvalidation), that a consumer opts into
+through the `validation` prop. Consumers on another form library keep
+passing `errors` from it and never call the hook.
 
-**The error summary is this component's real accessibility value.** A
-sighted user scanning a long form after a failed submit can see which
-fields turned red; a screen-reader user tabbing field-by-field cannot
-discover that without visiting every one. `errors` (an array of
-`{ fieldId, message }`) renders a summary region the moment it's non-empty:
-`role="alert"` plus a programmatic focus move onto the region itself (via
-a `tabIndex={-1}` ref), so it's both announced and immediately reachable by
-keyboard — a screen reader user lands directly on the list of what's
-wrong instead of discovering it field-by-field. Each entry is a real
-`<a href="#fieldId">`, linking it to the actual invalid control (a
-consumer-supplied `id`, matching react-aria-components' own convention of
-applying a supplied `id` to the field's real control, not a wrapper); a
-click or Enter on that link moves focus straight to the field.
-`errorSummaryMessage` is the summary heading. It is called with the number
-of entries in `errors` and defaults to "There is 1 error" when that count
-is 1 and "There are N errors" otherwise.
+**The error summary is opt-in.** It renders only when `errorSummaryMessage`
+is passed and there is at least one error; `Form` ships no heading text of
+its own, so there is no default in a language the consumer does not render.
+`errorSummaryMessage` is called with the number of entries and returns the
+heading. Without it, the inline error under each field carries the
+messages. When shown, the summary is a `role="alert"` region collecting
+every error, each entry a real `<a href="#fieldId">` to the actual invalid
+control (a consumer-supplied `id`, matching react-aria-components'
+convention of applying a supplied `id` to the field's real control, not a
+wrapper); a click or Enter on that link moves focus straight to the field.
+That gives a screen-reader user tabbing field-by-field a way to discover
+what is wrong without visiting every field.
 
-`errors` is controlled: `Form` tracks no validation state of its own, so a
-NEW array reference is the only "a submission just failed" signal it has
-— that's what triggers the focus move, keyed on `errors`' own identity
-rather than a derived count. A consumer must not construct an equivalent
-new array on every unrelated render, or the summary steals focus back on
-every one of those too.
+**Two ways in, two focus rules.**
+
+- With `validation` (the `useFormValidation` return value, or any
+  `FormValidationBinding`): `Form` submits through `validation.handleSubmit`,
+  sets `noValidate` so the browser's own constraint bubbles do not pre-empt
+  the pattern, sets `aria-busy` while a submit is pending, and uses
+  `validation.summaryErrors` as `errors` unless `errors` is passed. A failed
+  submit moves focus to the first invalid field in document order. If
+  `errorSummaryMessage` is also passed, the summary renders and is announced
+  through its `role="alert"` without taking focus, because taking focus
+  there as well would fight the field for it. The `onSubmit` prop is ignored
+  in this mode: the validation source owns submission, and calling both
+  would send twice.
+- With `errors` alone (no `validation`): `Form` tracks no validation state,
+  so a NEW non-empty `errors` array reference is the only "a submission
+  just failed" signal it has, and it moves focus to the summary (when
+  `errorSummaryMessage` is passed and the summary renders). A consumer must
+  not construct an equivalent new array on every unrelated render, or the
+  summary steals focus back on every one of those too.
+
+**`onSubmitError` receives a rejected send.** With `validation`, if the
+promise returned by `onSubmit` rejects, `Form` catches it, so it never becomes
+an unhandled promise rejection, and calls `onSubmitError(error)`. The
+pending state clears either way. The prop is optional and does nothing when
+omitted. `Form` renders no error text for it: set your own state in the
+callback and pass the message through `submitError`. It is not called for
+field validation failures.
+
+**`submitError` is for send failures only.** It renders one `role="alert"`
+region above the actions while set, with consumer content: the network or
+server refused a submission that passed validation. Field-level problems
+belong in the fields' own errors and the summary, not there.
+
+**Pending, not disabled.** The actions slot is the consumer's. Give the
+submit `Button` the pending state (`validation.getSubmitButtonProps()`),
+never `isDisabled`, so it keeps keyboard focus while the send runs.
+
+### `useFormValidation`
+
+The `ContactForm` example under [`Form`](#form) shows the hook end to end.
+
+`useFormValidation` is the validation-timing half of the form pattern. It
+renders nothing and holds the values, the errors currently shown, which
+fields the user has left, and the submit state. Pass its return value to
+`Form`'s `validation` prop, or, without `Form`, attach `formRef` and
+`handleSubmit` to your own `<form>`.
+
+**Options.** `initialValues` (also what `reset()` returns to), `validators`
+(one optional function per field; a field without one is always valid),
+`onSubmit` (called with the values only when every field is valid), and
+`idPrefix` (optional; defaults to React's `useId()`, and prefixes every DOM
+id the hook generates). A validator receives the field's value and every
+current value, and returns the error to show or nothing: `undefined`,
+`null`, `false` and `""` all mean valid, anything else is the message. It
+re-runs on its own field's change, blur and submit, not when another
+field it reads changes.
+
+**Return value.** `values`, `errors` (only those currently shown),
+`touched`, `submitCount`, `isSubmitting`, `fieldId(name)` and
+`errorId(name)` (stable DOM ids), `getFieldProps(name)`,
+`getNativeInputProps(name)`, `getSubmitButtonProps()`, `setFieldValue(name,
+value)`, `reset()`, and the `FormValidationBinding` members `Form` reads
+(`handleSubmit`, `summaryErrors`, `formRef`).
+
+**Timing.**
+
+- Before the first submit, typing shows no error. A field validates when
+  the user leaves it (blur).
+- A field that shows an error re-validates on every change, so the error
+  clears as soon as the value is valid instead of waiting for the next
+  blur.
+- After the first submit, every change re-validates.
+- A failed submit calls no `onSubmit`, marks every field touched, and shows
+  every error.
+
+**Focus.** A failed submit moves focus to the first invalid field in
+document order (not validator-key order), after React has committed the
+error, so a screen reader announces the field together with its
+`aria-describedby` text. The hook finds the field by the DOM id it
+generated, inside the form's own document or shadow root.
+
+**Pending state.** The submit button is never disabled. While an async
+`onSubmit` is pending, `isSubmitting` is true and `getSubmitButtonProps()`
+returns `{ type: "submit", isPending }`, which the `Button` atom maps to a
+pending state that stays focusable and is announced by
+react-aria-components. A second submit while one is pending is ignored,
+including two submits in the same tick before a re-render. Handle a send
+failure inside `onSubmit` (catch, then render your own message through
+`Form`'s `submitError`). `isSubmitting` is cleared whether `onSubmit`
+resolves or rejects, so the submit button is usable again. A rejection is
+re-thrown from `handleSubmit`: a caller that attaches `handleSubmit` to its
+own `<form>` must catch it, and `Form` catches it and passes it to its
+`onSubmitError` prop.
+
+**Error summary and `submitError`.** The summary is opt-in: it appears only
+when `errorSummaryMessage` is passed to `Form`. It shows the errors as of
+the last failed submit and does not shrink as the user fixes fields, since
+each change to a live alert is announced again; the inline error under each
+field is what clears live. `submitError` is one alert for send failures
+only, never for field errors.
+
+**Accessible error association.** `getFieldProps(name)` returns `id`,
+`name`, `value`, `onChange`, `onBlur`, `isInvalid`, `errorMessage` and
+`validationBehavior: "aria"`. Spread it on a designer field atom
+(`TextField`, `Textarea`, `Select`, ...) and react-aria-components wires
+`aria-invalid` and the `aria-describedby` link to the atom's own error
+element. `"aria"` keeps the browser's native constraint validation out of
+the way, since the hook owns when an error shows. For a plain `<input>`,
+`<textarea>` or `<select>`, `getNativeInputProps(name)` gives the same
+wiring: `aria-invalid` while the field shows an error, and
+`aria-describedby` pointing at `errorId(name)` only while an error shows.
+Render the error element yourself with `id={form.errorId(name)}`.
+
+**No built-in strings.** Every user-facing string comes from props or from
+validator return values: the hook ships no error text, and `Form` ships no
+summary heading. Write messages in the language the product renders, and
+say how to fix the problem rather than only that one exists. Mark optional
+fields with "(optional)" in the label, not an asterisk on required ones.
+
+**Benchmark.** The pattern follows what leading product sites converge on:
+inline errors beside the field, validation on leaving a field, live
+clearing once the value is fixed, focus on the first invalid field after a
+failed submit, and a submit button that stays focusable while it sends.
+WCAG 2.2 AA is the floor. Relevant success criteria: 3.3.1 Error
+Identification (the error is identified in text, next to the field), 3.3.3
+Error Suggestion (validators return correction guidance, which is consumer
+copy), 4.1.2 Name, Role, Value and 1.3.1 Info and Relationships (the error
+is programmatically associated with its field), and 2.4.3 Focus Order
+(focus moves to the first invalid field in reading order).
 
 ### `FieldGroup`
 
@@ -3410,6 +3582,50 @@ the same reason `RadioGroup.Radio`'s own section documents: real footer
 columns differ column-by-column in a way that reads more naturally as
 hand-written markup.
 
+`SiteFooter.Legal` fills the `secondary` slot with a copyright line and a
+row of legal links, so a caller supplies data rather than composing the row
+by hand. It takes `entity` (a plain string) and `links` (a list of
+`{ label, href }` records), plus an optional `linksLabel`, the accessible
+name for the links region. When `linksLabel` is given, the links render
+inside a `<nav aria-label>`; otherwise they render as a plain list. The
+component ships no English of its own, so the caller supplies `linksLabel`
+in the page's language.
+
+```tsx
+import { SiteFooter } from "@clossys/designer/shell";
+
+export function Footer() {
+  return (
+    <SiteFooter
+      secondary={
+        <SiteFooter.Legal
+          entity="Example Co"
+          linksLabel="Legal"
+          links={[
+            { label: "Terms", href: "/terms" },
+            { label: "Privacy", href: "/privacy" },
+          ]}
+        />
+      }
+    />
+  );
+}
+```
+
+It renders one text string, `© {year} {entity}`, where the year is computed
+at render from the current date; there is no `year` prop. The component owns
+the layout: the links come first in DOM order; below the `desktop`
+breakpoint the two stack, centred, links first; from `desktop` up they sit on
+one line with the copyright on the left and the links on the right. Every
+link tap target is at least 44px. There is deliberately no disclaimer slot
+and no `children`, `className`, or `style` prop — regulatory text belongs in
+legal documents the links point to. `SiteFooter.Legal` does not import
+react-aria-components, so it is available from `@clossys/designer/shell/server`
+as well as `@clossys/designer/shell`, and its prop types
+(`SiteFooterLegalProps`, `SiteFooterLegalLink`) are exported from both.
+`secondary` continues to accept any node, so existing footers that
+compose their own row are unaffected.
+
 ### `Toaster` and `toast`
 
 A toast stack is a **runtime service**, not a layout component (see
@@ -4088,9 +4304,19 @@ not a grab-bag).
 | `Stat` | component | A single metric: label, value, optional delta/trend, optional description. |
 | `StatProps` | type | Props for `Stat`: `label`, `value`, `delta`, `trend`, `trendLabels` (default Increase / Decrease / No change), `description`, `className`, `style`, plus every native `<div>` attribute. |
 | `StatTrend` | type | `"up" \| "down" \| "neutral"`. |
-| `Form` | component | Form layout: optional heading, fields region, error-summary region (focused/announced on failure), actions region. No validation logic. |
-| `FormProps` | type | Props for `Form`: `heading`, `children`, `errors`, `errorSummaryMessage` (default "There is 1 error" / "There are N errors"), `actions`, `onSubmit`, `className`, `style`, plus every native `<form>` attribute. |
+| `Form` | component | Form layout: optional heading, fields region, opt-in error-summary region, submit-error region, actions region. Owns no validation logic; opts into `useFormValidation` through `validation`. |
+| `FormProps` | type | Props for `Form`: `heading`, `children`, `errors`, `errorSummaryMessage` (opt-in: the summary renders only when passed; no default text), `submitError`, `validation`, `onSubmitError` (optional; receives a rejection from the validated `onSubmit`, and does nothing when omitted), `actions`, `onSubmit` (ignored when `validation` is passed), `className`, `style`, plus every native `<form>` attribute. |
 | `FormError` | type | One error-summary entry: `fieldId`, `message`. |
+| `FormValidationBinding` | type | What `Form` reads from a validation source: `handleSubmit`, `summaryErrors`, `isSubmitting`, `formRef`. `useFormValidation`'s return value satisfies it. |
+| `useFormValidation` | function | Hook for the form validation timing: validate on blur, re-validate on change once a field shows an error or after the first submit, focus the first invalid field on a failed submit, pending (never disabled) submit. Returns `FormValidation`. |
+| `FormValidation` | type | Return of `useFormValidation`: `values`, `errors`, `touched`, `submitCount`, `isSubmitting`, `fieldId`, `errorId`, `getFieldProps`, `getNativeInputProps`, `getSubmitButtonProps`, `setFieldValue`, `reset`, plus the `FormValidationBinding` members. |
+| `UseFormValidationOptions` | type | Options for `useFormValidation`: `initialValues`, `validators`, `onSubmit`, `idPrefix`. |
+| `FieldValidator` | type | `(value, values) => ReactNode`: returns the error to show, or `undefined`/`null`/`false`/`""` when valid. |
+| `FormFieldName` | type | The string keys of a form's values type; each becomes part of a DOM id. |
+| `FormStringFieldName` | type | The field names whose value is a string, the ones `getNativeInputProps` accepts. |
+| `FormFieldProps` | type | Props `getFieldProps` returns for a designer field atom: `id`, `name`, `value`, `onChange`, `onBlur`, `isInvalid`, `errorMessage`, `validationBehavior`. |
+| `FormNativeInputProps` | type | Props `getNativeInputProps` returns for a plain input: `id`, `name`, `value`, `onChange`, `onBlur`, `aria-invalid`, `aria-describedby`. |
+| `FormSubmitButtonProps` | type | Props `getSubmitButtonProps` returns for the submit `Button`: `type: "submit"`, `isPending`. |
 | `FieldGroup` | component | A related set of fields under a shared `<fieldset>`/`<legend>`: legend, optional description, the fields. |
 | `FieldGroupProps` | type | Props for `FieldGroup`: `legend`, `description`, `layout`, `children`, `className`, `style`, plus every native `<fieldset>` attribute. |
 | `FieldGroupLayout` | type | `"single" \| "multi"`. |
@@ -4163,7 +4389,7 @@ not a grab-bag).
 | `SiteHeaderProps` | type | Props for `SiteHeader`: `brand` (required), `nav`, `actions`, plus every native `<header>` attribute. |
 | `NavShell` | component | The responsive half of a public site's navigation: an inline `<nav>` from `tablet` up, a trigger-plus-drawer below it. |
 | `NavShellProps` | type | Props for `NavShell`: `children` (the nav links, rendered in both the desktop row and the drawer), `aria-label` (default `"Primary"`), `triggerLabel` (default `"Menu"`), `closeLabel` (default `"Close menu"`), `className`, plus most of react-aria-components' own `DialogTrigger` props (`isOpen`, `defaultOpen`, `onOpenChange`). |
-| `SiteFooter` | component | Public-site bottom chrome: grouped link columns, a secondary/legal row. Carries `SiteFooter.Column`. Renders the page's `contentinfo` landmark. |
+| `SiteFooter` | component | Public-site bottom chrome: grouped link columns, a secondary/legal row. Carries `SiteFooter.Column` and `SiteFooter.Legal`. Renders the page's `contentinfo` landmark. |
 | `SiteFooterProps` | type | Props for `SiteFooter`: `columns`, `secondary`, plus every native `<footer>` attribute. |
 | `SiteFooterColumnProps` | type | Props for `SiteFooter.Column`: `heading`, `children` (the column's own links), `className`. |
 | `Toaster` | component | The toast viewport — mount once, anywhere in the same tree as `Shell`. |

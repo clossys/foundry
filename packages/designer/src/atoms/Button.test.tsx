@@ -60,6 +60,18 @@ describe("Button", () => {
     expect(onPress).not.toHaveBeenCalled();
   });
 
+  it("pending: stays focusable, carries no disabled attribute, and is not dimmed", () => {
+    render(<Button isPending>Save</Button>);
+    const button = screen.getByRole("button");
+    expect(button).not.toHaveAttribute("disabled");
+    expect(button).toHaveAttribute("data-pending", "true");
+    // jsdom cannot parse the `var()` opacity value, so read the attribute:
+    // a disabled Button writes an opacity declaration, a pending one must not.
+    expect(button.getAttribute("style") ?? "").not.toContain("opacity");
+    button.focus();
+    expect(button).toHaveFocus();
+  });
+
   it("forwards a consumer style prop, and the consumer's conflicting property wins the merge", () => {
     render(
       <Button isDisabled style={{ opacity: 0.42, marginTop: "8px" }}>

@@ -433,6 +433,63 @@ into a product repository, so until the repository is staffed in an approved
 plan and that plan's setup pull request merges, an unsatisfied
 `agents-pointer` check is the expected state; its note says so.
 
+### Setup templates
+
+`renderSetupTemplate()` and the renderers beside it are pure functions that
+return the exact bytes of the files a setup change writes. Nothing writes those
+bytes yet; a later step plans them into a change set. The renderers behind it
+are exported too: `renderStarterRequest()`, `renderAdoptionDecisionWorkflow()`,
+`renderProductCiWorkflow()`, `renderAdoptionEvidenceWorkflow()`,
+`renderSnapshotCollector()`, `renderPathScopeWorkflow()` and
+`renderPathScopeScript()`, the standalone script the path-scope workflow embeds.
+A `TemplateResult` is either `{ ok: true, files }`, a list of `TemplateFile`
+entries (`path` and `bytes`), or `{ ok: false, refusal }` with a
+`TemplateRefusal`; the package manager is a `SetupPackageManager` and the Starter
+pin a `StarterPinInput`.
+
+There are four acts, each with a fixed file list that `renderSetupTemplate()`
+returns in this order:
+
+- `add-caller-workflow` takes `{ packageManager }` and returns
+  `.github/workflows/clossys-adoption-evidence.yml`,
+  `.github/workflows/clossys-adoption-decision.yml` and
+  `.github/scripts/clossys-collect-adoption-snapshot.mjs`.
+- `write-starter-request` takes a `StarterRequestInput` and returns
+  `.starter/request.json`.
+- `add-ci-template` takes no input and returns `.github/workflows/clossys-ci.yml`.
+- `add-path-scope-job` takes no input and returns
+  `.github/workflows/clossys-path-scope.yml`.
+
+The request is in the admission phase and names the Starter as both its own
+engine and its target, and it names both evidence paths, the assessment file
+and the target-input file. It carries no advisor and no hub. The Starter pin must be an exact version in `>=0.2.0 <0.3.0`
+(`STARTER_PIN_RANGE`); any other pin is refused as `starter-pin-unsupported`,
+and a package manager other than npm or pnpm, Yarn included, is refused as
+`package-manager-unsupported`. A refusal names a position such as
+`starter.version` and never quotes the value it refused.
+
+The decision workflow starts only on `workflow_run` completion of the evidence
+workflow, and its job carries no condition, so it starts for every conclusion.
+It checks out the protected pull request base, runs one fixed frozen install
+(`npm ci --ignore-scripts` or `pnpm install --frozen-lockfile --ignore-scripts`),
+and runs the installed Starter's `admit` command over a sparse checkout of the
+`workflow_run` head that holds only `/clossys/.state/installed.json`. The
+trusted decision job never reads or trusts the snapshot artifact the evidence
+workflow uploads, because a pull request controls that workflow. The collector
+script is still written because the contract's file set for the caller
+workflows names it.
+
+The path-scope job applies to pull requests whose head branch starts with
+`clossys/apply-`, and fails when a changed path is outside the paths Clossys may
+own (`OWNED_PATH_PATTERNS`) or, apart from the ledger, `package.json` and the
+lockfiles, is not named by the pull request's own ledger. It runs in the pull
+request's own context, so it catches an agent's mistakes, not a hostile author;
+the admission job runs from the protected base.
+
+A change to any of these workflows, or to `.starter/request.json`, is proved
+only by the first pull request after it merges, because the decision runs from
+the base: a one-merge lag.
+
 ## Inventory: adopting an existing source
 
 When an account already keeps a repository inventory in its own control
@@ -572,6 +629,50 @@ and it does not decide whether a plan should be approved (that is
 Advisor's job); it only validates the two shapes and writes the one file.
 The apply planner below is different: it projects each repository's brief
 from the hub brief itself.
+
+### Release-age exemption
+
+`editReleaseAgeExemption()` computes the edit that lists the publishing
+scope's `<scope>/*` entry as exempt from a package manager's release-age
+delay (#1178). It is pure: it does no I/O. It takes a surface
+(`pnpm-workspace` or `yarnrc`), the surface file's text or `null`, and, for
+pnpm, the `.npmrc` text or `null`. It returns `edited` with the exact new
+text, `unchanged` when the scope entry is already listed, or a refusal
+(`ReleaseAgeEdit`, with `ReleaseAgeEditInput` and
+`ReleaseAgeEditRefusalReason`).
+
+The entry goes under `minimumReleaseAgeExclude` (pnpm, single-quoted) or
+`npmPreapprovedPackages` (Yarn, double-quoted). A missing file becomes the
+key alone, a top-level block sequence of scalars gets one new entry after
+its last item, and a file without the key gets the key appended. Other
+bytes, including comments and the final newline, are kept. The function
+reads only the shapes it recognises: `release-age-surface-unparseable` covers
+a flow sequence, an anchor, an alias, a tag, a comment inside the list,
+several documents, a tab, a carriage return or byte order mark, a repeated
+key, and a value that is not a block sequence of scalars.
+
+For pnpm the `.npmrc` is read under a fixed grammar and refused otherwise.
+Every line must be blank, a comment (first non-space character `#` or `;`),
+or a plain `key=value` assignment, optionally spaced around the `=`, whose key
+is only ASCII letters, digits and `@ : _ . / -`. An `.npmrc` containing any
+line outside those shapes (a quoted or bracketed key, a comment or escape
+inside the key, a tab, a section header, a key with no `=`) is refused as
+`release-age-surface-unparseable`, because npm's ini reader could read such a
+line as the exclusion setting. A plain key that is
+`minimum-release-age-exclude` in any case, with `-` and `_` ignored (so the
+camel-case spelling too), is refused as `release-age-surface-conflict`.
+Refusing is the default: an unrelated `.npmrc` line the grammar does not list
+also refuses the whole file, and the caller resolves the file by hand.
+
+`verifyReleaseAgeExemption()` takes the surface, the text before, the text
+after, and, for pnpm, the `.npmrc` text. It reports a `ReleaseAgeVerdict`, `{ verified: true, value }`
+(its input is a `ReleaseAgeVerifyInput`), only when the two texts differ by that one added entry, read again with the
+same rules; `value` is the `<scope>/*` string the installed-state ledger's
+`entries` row holds. It returns `{ verified: false }` for an unchanged file
+(`before` equal to `after`) and for any `.npmrc` that is a conflict or outside
+the grammar above, so a wiring unit must not verify after an `unchanged` or
+`refused` result. It says nothing about whether a given pnpm or Yarn
+version honours the key; that is proved separately with pinned tools.
 
 ### Computing each repository's change
 
@@ -774,6 +875,52 @@ set. Both commands are step 3 in
 [`docs/rfcs/apply-approved-plan.md`](../../docs/rfcs/apply-approved-plan.md)
 (section 11); a successful verify corresponds to the `materialized` row in
 section 4.4 of that RFC.
+
+### What authorizes a write
+
+`materialize` and `verify` decide, from the hub alone, on whose authority a
+change set is written, and record exactly that in the ledger; no flag, option
+or default supplies it. The decision reads the plan committed at the hub's
+current branch head (an uncommitted edit to `clossys/advisor/plan.json` is
+ignored, and a detached head refuses), the latest approving decision's
+subject digest, the stored bundle with that digest, and the stored change
+sets.
+
+- **Approved.** The set is a member of that bundle, by repository id and
+  change-set digest, and its plan digest equals the plan's. The ledger
+  records `approved` with the bundle's digest.
+- **Admitted.** An apply set that is not a member is admitted, with no second
+  approval, only when all of the following hold: it has the same plan digest
+  and the approving decision is still the latest; its package acts equal the
+  setup set's by plan item, it defers nothing, has the same `producer`, and
+  every whole-file entry is a no-op; and the base's trusted ledger ends with
+  that setup set, bound `approved` to the same subject, with every byte the
+  setup set wrote present in the base by content, so a squash or rebase merge
+  is admitted. The setup set must itself be a member of the approved bundle,
+  and the ledger the set would write must pass the succession rules as an
+  admitted generation.
+- **Otherwise** the step reports `indeterminate` with reason
+  `awaiting-approval` and a fixed detail token, and writes nothing.
+
+A set with package acts also needs a current execution authorization: the
+hub's own `node_modules/.bin/advisor-execution-readiness` (never `npx`) runs
+against the committed `clossys/advisor/assessment-input.json` at the current
+instant, and the authorization must name the plan digest, the repository and
+every package act. Readiness's own answer is kept: not current is `violated`;
+unreadable, absent or failing to run is `indeterminate`. `materialize` checks
+before its first write, and `verify` checks again, so a withdrawn approval or
+an expired authorization fails `verify`.
+
+`readHubAuthority()` reads the committed approval, `planPackagesFor()` gives
+the plan's package identities for one repository, and `decideSetBinding()`
+returns the binding or an `AdmissionRefusal` (exit code, reason and a fixed
+detail token). `HubAuthority` is what `readHubAuthority()` returns, and a
+`ReadinessRunner` replaces the process launch of the readiness executable, for
+tests.
+
+This proves that the bytes are those the committed decision names, or that the
+one-approval rule admits. It does not prove who committed the decision; the
+hub repository's branch protection governs that.
 
 ## Taking the registry snapshot
 

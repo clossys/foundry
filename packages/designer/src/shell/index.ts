@@ -61,4 +61,9 @@ export { NavShell } from "./NavShell.js";
 export type { NavShellProps } from "./NavShell.js";
 
 export { SiteFooter } from "./SiteFooter.js";
-export type { SiteFooterProps, SiteFooterColumnProps } from "./SiteFooter.js";
+export type {
+  SiteFooterProps,
+  SiteFooterColumnProps,
+  SiteFooterLegalProps,
+  SiteFooterLegalLink,
+} from "./SiteFooter.js";
