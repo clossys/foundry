@@ -598,6 +598,10 @@
   .text-h3 {
     font-size: var(--text-h3, 14px);
   }
+  .leading-none {
+    --tw-leading: 1;
+    line-height: 1;
+  }
   .font-medium {
     --tw-font-weight: var(--font-weight-medium, 500);
     font-weight: var(--font-weight-medium, 500);
@@ -884,6 +888,10 @@
   inherits: false;
   initial-value: solid;
 }
+@property --tw-leading {
+  syntax: "*";
+  inherits: false;
+}
 @property --tw-font-weight {
   syntax: "*";
   inherits: false;
@@ -1004,6 +1012,7 @@
       --tw-translate-y: 0;
       --tw-translate-z: 0;
       --tw-border-style: solid;
+      --tw-leading: initial;
       --tw-font-weight: initial;
       --tw-tracking: initial;
       --tw-ordinal: initial;

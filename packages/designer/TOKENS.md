@@ -403,7 +403,7 @@ elevation 3, ring 2, duration 6, z 9, alpha 1 (36, all `--ui-*`).
 49 + 20 + 27 + 36 = 132 tokens across 25 families, by this same
 1-family-added arithmetic. **Note:** this total (and the "128 tokens
 across 24 families" figure elsewhere in this README predating it) does not
-match `src/tokens.ts`'s real count (154 across 26 families) — a pre-existing
+match `src/tokens.ts`'s real count (165 across 27 families) — a pre-existing
 gap from the `chart` color family (22 tokens, added in `0.4.0`) never being
 folded into this reference table's totals. That gap predates this PR and is
 out of its scope; `src/tokens.ts`/`styles/tokens.css` are what `parity.test.ts`

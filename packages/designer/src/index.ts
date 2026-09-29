@@ -191,7 +191,7 @@ export type {
   SectionMeasure,
 } from "./blocks/index.js";
 
-export { Shell, Toaster, toast, SkipLink, SiteHeader, NavShell, SiteFooter } from "./shell/index.js";
+export { Shell, Toaster, toast, SkipLink, SiteHeader, NavShell, SiteFooter, Brandmark } from "./shell/index.js";
 export type {
   ShellProps,
   ShellHeaderProps,
@@ -210,6 +210,9 @@ export type {
   NavShellProps,
   SiteFooterProps,
   SiteFooterColumnProps,
+  BrandmarkProps,
+  BrandmarkVariant,
+  BrandmarkSize,
 } from "./shell/index.js";
 
 export { ChartFrame, BarChart, LineChart, Sparkline } from "./charts/index.js";

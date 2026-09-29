@@ -959,11 +959,12 @@ export interface LockupSpec {
  * and holds a fresh `fontLicence` copy.
  */
 export function composeLockup(input: ComposeLockupInput): LockupSpec {
-  const { variants } = adoptSuppliedMark({ brand: input.brand, suppliedSvg: input.suppliedSvg, tokens: input.tokens });
+  // `input` is passed whole: adoptSuppliedMark reads only brand, suppliedSvg and tokens. A rebuilt object literal here makes the shipped-message lint recurse without end.
+  const adopted = adoptSuppliedMark(input);
 
   const reasons: string[] = [];
-  const wordmark = typeof input.wordmark === "string" ? input.wordmark.trim() : "";
-  if (wordmark.length === 0) {
+  const wordmarkText = typeof input.wordmark === "string" ? input.wordmark.trim() : "";
+  if (wordmarkText.length === 0) {
     reasons.push("wordmark must be a non-empty string");
   }
   if (!(LOCKUP_HEADERS as readonly unknown[]).includes(input.header)) {
@@ -981,10 +982,10 @@ export function composeLockup(input: ComposeLockupInput): LockupSpec {
   }
 
   return {
-    mark: variants.primary,
-    light: variants.light,
-    dark: variants.dark,
-    wordmark,
+    mark: adopted.variants.primary,
+    light: adopted.variants.light,
+    dark: adopted.variants.dark,
+    wordmark: wordmarkText,
     fontLicence: { family: licence.family as string, outlining: licence.outlining as LockupFontOutlining },
     gapRatio: LOCKUP_GAP_RATIO,
     wordmarkSizeRatio: LOCKUP_WORDMARK_SIZE_RATIO,
