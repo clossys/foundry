@@ -865,6 +865,42 @@ This proves that the bytes are those the committed decision names, or that the
 one-approval rule admits. It does not prove who committed the decision; the
 hub repository's branch protection governs that.
 
+### Rendering the pull request
+
+`renderPullRequest({ set, binding, taskRecord })` returns the title and body of
+the pull request for one stored change set, and `bodySha256`, which is
+`sha256:` and the hex SHA-256 of the body's UTF-8 bytes. It is a pure function
+of its three inputs (`RenderPullRequestInput`): it reads no file, runs no command and opens nothing. The
+title is exactly `set.pullRequest.title`, which must be `Clossys: apply plan `
+and the first 12 hex digits of the set's own digest.
+
+The body is LF only and ends in one LF. Its first line is the marker
+`<!-- clossys-change-set: sha256:<64 hex> -->`, and no other line is a marker.
+It then names the repository id, the phase, and the change-set, plan and bundle
+digests; the binding you pass (`approved` with its subject digest, or `admitted`
+with its subject digest and setup change set); one line per item, in the set's
+own order, with `name@version` for `install` and `pin-starter`; each deferred or
+refused entry by item id and reason code only; and a `## Task record` section
+that links `#<n>`. It carries ids, act names, versions and digests only, never
+brief or plan prose, file contents, key values or paths.
+
+`readChangeSetMarker(body)` returns the digest only when exactly one line of the
+body is exactly the marker and the marker appears nowhere else, and `null`
+otherwise.
+
+It returns a `PullRequestText`, or a `PullRequestRefusal` whose
+`PullRequestRefusalReason` is a fixed token that names no id, digest or input
+text, for a set that fails `validateRepositoryChangeSet` or
+whose digest does not recompute, a malformed binding, an `admitted` binding on
+a setup set, a task record that is not a positive safe integer, and any value it
+cannot prove safe to write (each must match its own strict pattern and hold no
+`<`, `>`, backtick, `|`, carriage return or line feed).
+
+It does not decide the binding: it shows what you pass, so pass the result of
+`decideSetBinding()`. It does not check that the task-record issue exists, and
+it cannot stop a pull request's body being edited after it is opened; keeping
+`bodySha256` and the marker is what lets a later step notice that.
+
 ## Taking the registry snapshot
 
 `launcher-apply-plan snapshot --request <file> [--out <file>]` takes the
