@@ -10,6 +10,9 @@ describe("CaptureView", () => {
     expect(html).toContain('id="capture-errors" role="alert" tabindex="-1"');
     expect(html.indexOf("Please correct the form.")).toBeLessThan(html.indexOf('id="capture-form"'));
     expect(html).toContain('<h1 class="text-h1');
+    const cardAt = html.indexOf("rounded-control");
+    expect(cardAt).toBeGreaterThan(html.indexOf("<h1"));
+    expect(cardAt).toBeLessThan(html.indexOf('id="capture-form"'));
   });
 
   it("replaces form and errors in place with a polite submitted state", () => {

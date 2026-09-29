@@ -189,7 +189,7 @@ describe("packed Publisher web React-server boundary", () => {
     );
     writeFileSync(
       join(adversarialRoot, "dist", "blocks", "server.js"),
-      "export const EmptyState = () => null; export const FeatureGrid = () => null; export const Hero = () => null;\n",
+      "export const EmptyState = () => null; export const FeatureGrid = () => null; export const Hero = () => null; export const PageHeader = () => null;\n",
     );
     writeFileSync(
       join(adversarialRoot, "dist", "shell", "server.js"),

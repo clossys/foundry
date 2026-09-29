@@ -10,10 +10,10 @@ describe("web template registry", () => {
     expect(getWebTemplate("DashboardView")).toBeUndefined();
   });
 
-  it("AuthView's flow marks exactly heading and form as required", () => {
+  it("AuthView's flow marks brand, heading, and form as required", () => {
     const template = getWebTemplate("AuthView")!;
     const required = template.flow.slots.filter((s) => s.required === true).map((s) => s.key).sort();
-    expect(required).toEqual(["form", "heading"]);
+    expect(required).toEqual(["brand", "form", "heading"]);
   });
 
   it("ErrorView's flow marks exactly status and title as required", () => {

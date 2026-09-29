@@ -92,6 +92,7 @@ describe("golden: AuthView", () => {
         description: "Sign in to your Acme account.",
       },
       bindings: [
+        { slot: "brand", value: "Acme" },
         { slot: "heading", value: "Sign in" },
         { slot: "description", copyId: "auth.signin.description" },
         { slot: "form", value: "email + password form" },
@@ -105,17 +106,20 @@ describe("golden: AuthView", () => {
     const html = renderToStaticMarkup(element);
 
     expect(html).toBe(
-      '<div class="flex min-h-dvh flex-col items-center justify-center gap-lg p-xl">' +
-        '<div class="rounded-control bg-surface-raised p-lg flex w-full max-w-sm flex-col gap-lg" ' +
-        'style="box-shadow:var(--ui-elevation-raised, 0 1px 0 var(--color-line-base, oklch(0.8761 0 0)))">' +
-        '<div class="flex flex-col gap-xs text-center">' +
+      '<div class="flex min-h-dvh flex-col">' +
+        '<header class="bg-surface-raised py-sm border-b border-line-base" style="position:relative;z-index:var(--ui-z-shell, 20);border-bottom-width:var(--ui-border-hairline, 1px)">' +
+        '<div class="mx-auto flex w-full flex-wrap items-center justify-between gap-md" style="padding-inline:var(--ui-width-page-padding-x, clamp(16px, 4vw, 48px))">' +
+        '<div class="flex items-center gap-lg">Acme</div></div></header>' +
+        '<main class="mx-auto flex w-full flex-1 flex-col gap-xl px-lg py-2xl" style="max-width:var(--ui-width-prose-max, 48rem)">' +
+        '<header class="flex flex-col gap-md"><div class="flex flex-wrap items-start justify-between gap-lg"><div class="flex flex-col gap-xs">' +
         '<h1 class="text-h1 font-display text-ink-primary">Sign in</h1>' +
         '<p class="text-body text-ink-secondary">Welcome back.</p>' +
-        "</div>" +
-        "email + password form" +
-        "</div>" +
-        '<p class="text-center text-body-s text-ink-muted">\u00A9 2026 Acme</p>' +
-        "</div>",
+        "</div></div></header>" +
+        '<div class="rounded-control bg-surface-raised p-lg flex flex-col gap-lg" style="box-shadow:var(--ui-elevation-raised, 0 1px 0 var(--color-line-base, oklch(0.8761 0 0)))">' +
+        "email + password form</div>" +
+        '<p class="text-body-s text-ink-muted">\u00A9 2026 Acme</p></main>' +
+        '<footer class="bg-surface-raised text-ink-primary py-lg border-t border-line-base" style="position:relative;z-index:var(--ui-z-shell, 20);border-top-width:var(--ui-border-hairline, 1px)">' +
+        '<div class="mx-auto flex w-full flex-col gap-lg" style="padding-inline:var(--ui-width-page-padding-x, clamp(16px, 4vw, 48px))"></div></footer></div>',
     );
   });
 });
@@ -143,18 +147,20 @@ describe("golden: assetId — a real <img>, byte for byte, alt text and intrinsi
 
     expect(html).toBe(
       '<link rel="preload" as="image" href="https://cdn.example/logo.svg"/>' +
-        '<div class="flex min-h-dvh flex-col items-center justify-center gap-lg p-xl">' +
-        '<div class="flex justify-center">' +
+        '<div class="flex min-h-dvh flex-col">' +
+        '<header class="bg-surface-raised py-sm border-b border-line-base" style="position:relative;z-index:var(--ui-z-shell, 20);border-bottom-width:var(--ui-border-hairline, 1px)">' +
+        '<div class="mx-auto flex w-full flex-wrap items-center justify-between gap-md" style="padding-inline:var(--ui-width-page-padding-x, clamp(16px, 4vw, 48px))">' +
+        '<div class="flex items-center gap-lg">' +
         '<img src="https://cdn.example/logo.svg" alt="Acme logo" width="120" height="40"/>' +
-        "</div>" +
-        '<div class="rounded-control bg-surface-raised p-lg flex w-full max-w-sm flex-col gap-lg" ' +
-        'style="box-shadow:var(--ui-elevation-raised, 0 1px 0 var(--color-line-base, oklch(0.8761 0 0)))">' +
-        '<div class="flex flex-col gap-xs text-center">' +
+        "</div></div></header>" +
+        '<main class="mx-auto flex w-full flex-1 flex-col gap-xl px-lg py-2xl" style="max-width:var(--ui-width-prose-max, 48rem)">' +
+        '<header class="flex flex-col gap-md"><div class="flex flex-wrap items-start justify-between gap-lg"><div class="flex flex-col gap-xs">' +
         '<h1 class="text-h1 font-display text-ink-primary">Sign in</h1>' +
-        "</div>" +
-        "email + password form" +
-        "</div>" +
-        "</div>",
+        "</div></div></header>" +
+        '<div class="rounded-control bg-surface-raised p-lg flex flex-col gap-lg" style="box-shadow:var(--ui-elevation-raised, 0 1px 0 var(--color-line-base, oklch(0.8761 0 0)))">' +
+        "email + password form</div></main>" +
+        '<footer class="bg-surface-raised text-ink-primary py-lg border-t border-line-base" style="position:relative;z-index:var(--ui-z-shell, 20);border-top-width:var(--ui-border-hairline, 1px)">' +
+        '<div class="mx-auto flex w-full flex-col gap-lg" style="padding-inline:var(--ui-width-page-padding-x, clamp(16px, 4vw, 48px))"></div></footer></div>',
     );
   });
 

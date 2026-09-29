@@ -69,12 +69,13 @@ const AUTH_VIEW_TEMPLATE: WebTemplate = {
   name: "AuthView",
   flow: {
     slots: [
-      { key: "brand" },
+      { key: "brand", required: true },
       { key: "heading", required: true },
       { key: "description" },
       { key: "form", required: true },
       { key: "secondaryAction" },
       { key: "footnote" },
+      { key: "footerSecondary" },
     ],
   },
   // AuthView's `heading`/`form` props are required (non-optional keys) even
@@ -92,6 +93,7 @@ const AUTH_VIEW_TEMPLATE: WebTemplate = {
       form: content.form,
       secondaryAction: content.secondaryAction,
       footnote: content.footnote,
+      footerSecondary: content.footerSecondary,
     }),
 };
 

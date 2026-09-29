@@ -18,6 +18,7 @@ const registry: CopyRegistry = {
   revision: "fixture-1",
   source: { kind: "consumer", reference: "fixtures/reference-pipeline" },
   entries: [
+    ["brand", "Reference"],
     ["description", "Description"],
     ["form", "Form"],
     ["web-title", "Reference title"],
@@ -62,6 +63,7 @@ describe("reference pipeline fixture", () => {
       meta: { channel: "web", title: ref("web-title"), description: ref("web-description") },
       template: "AuthView",
       bindings: [
+        { slot: "brand", copy: ref("brand") },
         { slot: "heading", copy: ref("heading", { audience: "someone" }) },
         { slot: "description", copy: ref("description") },
         { slot: "form", copy: ref("form") },
@@ -128,7 +130,7 @@ describe("reference pipeline fixture", () => {
     expect(manifests.map((manifest) => manifest.channel)).toEqual(["web", "email", "image", "print", "slides"]);
     expect(manifests.every((manifest) => manifest.provenance?.fingerprint === provenance.fingerprint)).toBe(true);
     expect(manifests.map((manifest) => manifest.copy?.flatMap((copy) => copy.entryIds))).toEqual([
-      ["reference.description", "reference.form", "reference.heading", "reference.web-description", "reference.web-title"],
+      ["reference.brand", "reference.description", "reference.form", "reference.heading", "reference.web-description", "reference.web-title"],
       ["reference.email-body", "reference.email-preheader", "reference.email-subject"],
       ["reference.canvas", "reference.image-alt"],
       ["reference.canvas"],
