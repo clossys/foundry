@@ -28,7 +28,8 @@ export interface SiteHeaderProps extends Omit<HTMLAttributes<HTMLElement>, "chil
   /**
    * Semantic plate for the header bar — `inverse` for a dark hero band,
    * `transparent` for no plate and no border at all (the page beneath shows
-   * through, ink stays the base ink; the consumer's backdrop owns contrast).
+   * through). Like `base`, the header sets no ink class, so its content
+   * inherits ink from the page; the consumer's backdrop owns contrast.
    * @default "base"
    */
   ground?: SiteChromeGround;

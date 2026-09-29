@@ -3631,7 +3631,9 @@ compose their own row are unaffected.
 `SiteHeader` and `SiteFooter` accept `ground="transparent"` for chrome that
 sits over a page backdrop. It renders no `bg-*` class, no `border-*` class
 and no border-width style, and `SiteFooter` also omits the divider between
-`columns` and `secondary`. Ink stays the base ink. `ground` still defaults to
+`columns` and `secondary`. Ink is unchanged from `"base"`: `SiteFooter` still
+sets the base ink, and `SiteHeader` still sets none, so its content inherits
+its ink from the page. `ground` still defaults to
 `"base"`, and `"base"` and `"inverse"` render the same markup as before.
 `Shell.Header` and `Shell.Footer` keep `"base" | "inverse"`: passing
 `"transparent"` to either is a type error.
