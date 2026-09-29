@@ -573,6 +573,36 @@ Advisor's job); it only validates the two shapes and writes the one file.
 The apply planner below is different: it projects each repository's brief
 from the hub brief itself.
 
+### Release-age exemption
+
+`editReleaseAgeExemption()` computes the edit that lists the publishing
+scope's `<scope>/*` entry as exempt from a package manager's release-age
+delay (#1178). It is pure: it does no I/O. It takes a surface
+(`pnpm-workspace` or `yarnrc`), the surface file's text or `null`, and, for
+pnpm, the `.npmrc` text or `null`. It returns `edited` with the exact new
+text, `unchanged` when the scope entry is already listed, or a refusal
+(`ReleaseAgeEdit`, with `ReleaseAgeEditInput` and
+`ReleaseAgeEditRefusalReason`).
+
+The entry goes under `minimumReleaseAgeExclude` (pnpm, single-quoted) or
+`npmPreapprovedPackages` (Yarn, double-quoted). A missing file becomes the
+key alone, a top-level block sequence of scalars gets one new entry after
+its last item, and a file without the key gets the key appended. Other
+bytes, including comments and the final newline, are kept. The function
+reads only the shapes it recognises: `release-age-surface-unparseable` covers
+a flow sequence, an anchor, an alias, a tag, a comment inside the list,
+several documents, a tab, a carriage return or byte order mark, a repeated
+key, and a value that is not a block sequence of scalars, and
+`release-age-surface-conflict` covers an `.npmrc` that sets
+`minimum-release-age-exclude`.
+
+`verifyReleaseAgeExemption()` takes the surface, the text before, the text
+after, and, for pnpm, the `.npmrc` text. It reports a `ReleaseAgeVerdict`, `{ verified: true, value }`
+(its input is a `ReleaseAgeVerifyInput`), only when the two texts differ by that one added entry, read again with the
+same rules; `value` is the `<scope>/*` string the installed-state ledger's
+`entries` row holds. It says nothing about whether a given pnpm or Yarn
+version honours the key; that is proved separately with pinned tools.
+
 ### Computing each repository's change
 
 `planApplyBundle()` computes, for each repository a plan staffs, the change
