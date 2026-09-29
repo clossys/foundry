@@ -309,9 +309,10 @@ jobs:
         run: git checkout --detach "$SOURCE_SHA"
 
       # Recording evidence never packs, qualifies, or writes a package
-      # tarball, so the recorder itself refuses only when the npm major
-      # version is below 11, or when the version cannot be read or is
-      # malformed, at the start of every run (governance/decisions/
+      # tarball, so the recorder's only runtime requirement is npm 11 or newer
+      # (it refuses when the npm major version is below 11, when the version
+      # cannot be read or is malformed, or when PATH holds a relative or empty
+      # entry), checked at the start of every run (governance/decisions/
       # evidence-recording-runtime-scope.json). This job keeps the exact
       # pinned tuple anyway, the same one qualify/publish assert on this
       # publish run, so that automated records are produced on one

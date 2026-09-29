@@ -457,6 +457,12 @@ the hand-run direct join (see [the hand-run
 recorder](#current-retained-candidate-first-publication-handoff)), as
 `governance/decisions/evidence-recording-runtime-scope.json` records.
 
+That decision record is a relaxation with a sunset of 2027-03-29. From that
+date the `publish safety` check fails on every pull request until a later
+decision record that supersedes it is merged (the gate regression tests validate
+every committed record against the current date). That failure is intended: it
+forces the owner to renew or reverse the narrowing.
+
 This is a separate requirement from root `package.json`'s `engines.node:
 ">=20"`, and the two are not in tension: `engines` states the floor a
 *consumer* of a published package needs to run it, while the qualification
@@ -1071,8 +1077,9 @@ node scripts/record-later-publication.mjs \
 
 The recorder does not require the exact pinned release runtime, because it
 never packs, qualifies, or writes a package tarball. Before it reads any input
-it resolves `npm` once, to an absolute path, from `PATH`, and it refuses to
-resolve npm through a relative or empty `PATH` entry. It then reads the version
+it resolves `npm` once, to an absolute path, from `PATH`, and it refuses a
+relative or empty `PATH` entry anywhere in `PATH`, not only before npm (npm's
+launcher runs `env node`, which searches the whole `PATH`). It then reads the version
 of that npm and refuses when the major version is below 11, or when the version
 cannot be read or is not exactly one semantic version (`11.0.0garbage` and
 multi-line output are refused). This check runs on every path: the direct join

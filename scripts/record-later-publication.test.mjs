@@ -576,7 +576,7 @@ for (const [label, version] of REFUSED_NPM_VERSIONS.filter(([label]) => ["older 
   });
 }
 
-for (const [label, PATH] of [["a relative entry", "node_modules/.bin:/usr/bin"], ["an empty entry", ":/usr/bin"], ["a dot entry", ".:/usr/bin"]]) {
+for (const [label, PATH] of [["a relative entry", "node_modules/.bin:/usr/bin"], ["an empty entry", ":/usr/bin"], ["a dot entry", ".:/usr/bin"], ["a relative entry after npm", "/usr/bin:node_modules/.bin"], ["an empty entry after npm", "/usr/bin:"], ["a dot entry after npm", "/usr/bin:."]]) {
   test(`creator refuses to resolve npm through ${label} on PATH, before running anything`, async (t) => {
     const { root, probes, fetched } = await replayScenario(t, { env: { PATH }, expectRecord: false, refusal: /refuses to resolve npm through a relative or empty PATH entry/ });
     assert.deepEqual(probes, [], "no command runs when the npm resolution is refused");
@@ -618,12 +618,12 @@ test("npm floor accepts exactly one semantic version at major 11 or newer, and r
 test("npm resolves once to an absolute path and refuses a relative or empty PATH entry", () => {
   const present = (...paths) => (candidate) => paths.includes(candidate);
   assert.equal(resolveEvidenceNpm("/opt/a:/opt/b:/opt/c", present("/opt/b/npm", "/opt/c/npm")), "/opt/b/npm", "the first executable npm on PATH wins");
-  assert.equal(resolveEvidenceNpm("/opt/a:relative/bin", present("/opt/a/npm")), "/opt/a/npm", "entries after the resolved one are not consulted");
-  assert.equal(resolveEvidenceNpm("/opt/a:", present("/opt/a/npm")), "/opt/a/npm", "an empty entry after the resolved one is not consulted");
-  for (const PATH of ["relative/bin:/opt/a", "./bin:/opt/a", ".:/opt/a", ":/opt/a", "/opt/x::/opt/a", "/opt/x:node_modules/.bin:/opt/a", "node_modules/.bin"]) {
+  assert.equal(resolveEvidenceNpm("/opt/a:/opt/b", present("/opt/a/npm")), "/opt/a/npm", "an absolute-only PATH resolves");
+  for (const PATH of ["/opt/a:relative/bin", "/opt/a:", "/opt/a:.", "/opt/a:/opt/b:node_modules/.bin", "relative/bin:/opt/a", "./bin:/opt/a", ".:/opt/a", ":/opt/a", "/opt/x::/opt/a", "/opt/x:node_modules/.bin:/opt/a", "node_modules/.bin"]) {
     assert.throws(() => resolveEvidenceNpm(PATH, present("/opt/a/npm")), /relative or empty PATH entry/, PATH);
   }
   assert.throws(() => resolveEvidenceNpm("relative/bin:/opt/a", () => true), /relative or empty PATH entry/, "a relative entry is refused even when npm would exist there");
+  assert.throws(() => resolveEvidenceNpm("/opt/a:relative/bin", () => true), /relative or empty PATH entry/, "a relative entry after npm is refused too: npm's launcher runs `env node`, which searches the whole PATH");
   assert.throws(() => resolveEvidenceNpm("/opt/a:/opt/b", () => false), /no absolute PATH entry contains an executable npm/);
   assert.throws(() => resolveEvidenceNpm("", () => true), /PATH is empty/);
   assert.throws(() => resolveEvidenceNpm(undefined, () => true), /PATH is empty/);
@@ -662,6 +662,10 @@ test("npm floor refusal stops verifiedAnonymousAudit before it installs anything
 test("verifiedAnonymousAudit refuses a relative PATH entry before running any command", () => {
   const { run, calls } = npmProbe();
   assert.throws(() => verifiedAnonymousAudit("@clossys/strategist", "0.1.1", run, { PATH: "node_modules/.bin:/usr/bin" }, { isExecutable: anyExecutable }), /relative or empty PATH entry/);
+  assert.deepEqual(calls, []);
+  for (const PATH of ["/usr/bin:node_modules/.bin", "/usr/bin:"]) {
+    assert.throws(() => verifiedAnonymousAudit("@clossys/strategist", "0.1.1", run, { PATH }, { isExecutable: anyExecutable }), /relative or empty PATH entry/, `${PATH} (an entry after npm)`);
+  }
   assert.deepEqual(calls, []);
 });
 

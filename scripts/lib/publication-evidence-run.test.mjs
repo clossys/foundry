@@ -247,6 +247,11 @@ test("verifyPublicationProvenance refuses a malformed npm version or a relative 
     verifyPublicationProvenance({ fetchImpl, name, version, sourceSha, runId, runAttempt, auditRun: withNpmFloor((file, args) => { ran.push(args[0]); return JSON.stringify(audit); }), env: { PATH: "node_modules/.bin:/usr/bin" }, packument, isExecutable: () => true }),
     /refuses to resolve npm through a relative or empty PATH entry/,
   );
+  await assert.rejects(
+    verifyPublicationProvenance({ fetchImpl, name, version, sourceSha, runId, runAttempt, auditRun: withNpmFloor((file, args) => { ran.push(args[0]); return JSON.stringify(audit); }), env: { PATH: "/usr/bin:node_modules/.bin" }, packument, isExecutable: () => true }),
+    /refuses to resolve npm through a relative or empty PATH entry/,
+    "a relative entry after npm is refused too",
+  );
   assert.deepEqual(ran, []);
 });
 

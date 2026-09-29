@@ -148,15 +148,21 @@ function isExecutableFile(path) {
   } catch { return false; }
 }
 
-// Resolve `npm` once, to an absolute path. Every PATH entry is inspected in
-// order. An empty or relative entry is refused rather than resolved, because it
-// would mean a different directory for each command that runs from a different
-// working directory (for example one holding the package being audited).
-// `isExecutable` is a test seam and is never passed by the command line.
+// Resolve `npm` once, to an absolute path. Every PATH entry is inspected, and
+// an empty or relative entry ANYWHERE in PATH is refused, not only the entries
+// that come before npm: npm's launcher script runs `env node`, which searches
+// the whole PATH, so a relative entry after npm could still supply `node`.
+// Such an entry would also mean a different directory for each command that
+// runs from a different working directory (for example one holding the package
+// being audited). `isExecutable` is a test seam and is never passed by the
+// command line.
 export function resolveEvidenceNpm(pathValue, isExecutable = isExecutableFile) {
   if (typeof pathValue !== "string" || pathValue.length === 0) throw new Error("evidence recording cannot resolve npm: PATH is empty");
-  for (const entry of pathValue.split(delimiter)) {
+  const entries = pathValue.split(delimiter);
+  for (const entry of entries) {
     if (entry === "" || !isAbsolute(entry)) throw new Error(`evidence recording refuses to resolve npm through a relative or empty PATH entry (${JSON.stringify(entry)})`);
+  }
+  for (const entry of entries) {
     const candidate = join(entry, "npm");
     if (isExecutable(candidate)) return candidate;
   }
@@ -449,9 +455,9 @@ export async function createLaterPublicationRecord({ root = process.cwd(), packa
   // resolved once, here, to an absolute path, and that path is the one the
   // audit runs. This recorder does not run `npm pack --dry-run` itself:
   // currentQualificationJoins does, looking `npm` up on this process's own
-  // PATH. The command line and the workflow pass process.env, so that lookup
-  // sees the same PATH the floor just checked. It is not pinned to the path
-  // resolved here.
+  // PATH. Both production callers pass an env whose PATH is this process's
+  // PATH, so that lookup sees the same PATH the floor just checked. It is not
+  // pinned to the path resolved here.
   const npm = withEvidenceEnv(env, (auditEnv) => requireEvidenceNpm(auditRun ?? execFileSync, auditEnv, isExecutable));
   const absoluteRoot = resolve(root);
   const qualificationInputFile = regularBytes(qualificationInput, "qualification record");
