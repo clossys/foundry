@@ -42,3 +42,6 @@ export const rejectsUnknownSize = <Brandmark variant="mark" size="xl" label="x" 
 
 // @ts-expect-error — `variant` is a closed set.
 export const rejectsUnknownVariant = <Brandmark variant="stacked" size="md" label="x" markSrc="/m.svg" />;
+
+// @ts-expect-error — `wordmark` is text (a string), never an element or image.
+export const wordmarkRejectsElement = <Brandmark variant="lockup" size="md" label="x" markSrc="/m.svg" wordmark={<b>x</b>} />;

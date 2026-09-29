@@ -2,6 +2,7 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import type { ReactElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import ts from "typescript";
 import { afterEach, describe, expect, it } from "vitest";
@@ -9,7 +10,7 @@ import { render, screen } from "@testing-library/react";
 import { scanStyleSources } from "../style-scan.js";
 import { checkTokenPurity } from "../token-gate.js";
 import { TOKENS } from "../tokens/tokens.js";
-import * as identityKit from "../tokens/identity-kit.js";
+import { LOCKUP_GAP_RATIO, LOCKUP_WORDMARK_SIZE_RATIO } from "../tokens/identity-kit.js";
 import { Brandmark, BRANDMARK_SIZES, BRANDMARK_VARIANTS, type BrandmarkSize, type BrandmarkVariant } from "./Brandmark.js";
 import type { BrandmarkProps } from "./Brandmark.js";
 import { BRANDMARK_WORDMARK_SIZE_RATIO } from "./internal/shell-vars.js";
@@ -22,9 +23,10 @@ const tokensCss = readFileSync(join(packageRoot, "styles", "tokens.css"), "utf8"
 
 const brandmarkConstantStatements = shellVarsSource.match(/export const (?:UI_)?BRANDMARK_\w+\s*=[^;]+;/g) ?? [];
 
-const LABEL = "Consumer-supplied accessible name";
 const MARK_SRC = "/assets/mark.svg";
 const WORDMARK = "Wordmark text";
+// Contains the visible wordmark text, as a lockup's label must (WCAG 2.5.3).
+const LABEL = `${WORDMARK}, consumer-supplied accessible name`;
 
 const HEIGHT_PX: Record<BrandmarkSize, number> = { sm: 24, md: 36, lg: 48 };
 // The identity kit's lockup gap ratio: gap = height x 8/48.
@@ -147,19 +149,88 @@ describe("Brandmark: token wiring", () => {
     expect(BRANDMARK_WORDMARK_SIZE_RATIO).toBeCloseTo(22 / 48, 12);
   });
 
-  // The identity kit is edited by a sibling change that adds these exports;
-  // until they exist the local ratios are the only source, and this
-  // cross-check is reported as skipped rather than passing vacuously.
-  const kit = identityKit as Record<string, unknown>;
-  it.skipIf(typeof kit.LOCKUP_GAP_RATIO !== "number")("the gap ratio (8/48) equals the identity kit's LOCKUP_GAP_RATIO", () => {
-    expect(GAP_RATIO).toBeCloseTo(kit.LOCKUP_GAP_RATIO as number, 12);
+  // Hard guards, no skip path: both constants ship in this package's own
+  // identity kit, so a rename or a non-numeric value must fail here rather
+  // than let the shell's ratios drift from the kit's unnoticed.
+  it("the gap ratio (8/48) equals the identity kit's LOCKUP_GAP_RATIO", () => {
+    expect(typeof LOCKUP_GAP_RATIO).toBe("number");
+    expect(Number.isFinite(LOCKUP_GAP_RATIO)).toBe(true);
+    expect(GAP_RATIO).toBeCloseTo(LOCKUP_GAP_RATIO, 12);
   });
-  it.skipIf(typeof kit.LOCKUP_WORDMARK_SIZE_RATIO !== "number")(
-    "BRANDMARK_WORDMARK_SIZE_RATIO equals the identity kit's LOCKUP_WORDMARK_SIZE_RATIO",
-    () => {
-      expect(BRANDMARK_WORDMARK_SIZE_RATIO).toBeCloseTo(kit.LOCKUP_WORDMARK_SIZE_RATIO as number, 12);
-    },
-  );
+  it("BRANDMARK_WORDMARK_SIZE_RATIO equals the identity kit's LOCKUP_WORDMARK_SIZE_RATIO", () => {
+    expect(typeof LOCKUP_WORDMARK_SIZE_RATIO).toBe("number");
+    expect(Number.isFinite(LOCKUP_WORDMARK_SIZE_RATIO)).toBe(true);
+    expect(BRANDMARK_WORDMARK_SIZE_RATIO).toBeCloseTo(LOCKUP_WORDMARK_SIZE_RATIO, 12);
+  });
+});
+
+function refusal(node: ReactElement): string {
+  try {
+    renderToStaticMarkup(node);
+  } catch (error) {
+    expect(error).toBeInstanceOf(Error);
+    return (error as Error).message;
+  }
+  throw new Error("expected Brandmark to refuse, but it rendered");
+}
+
+describe("Brandmark: the label must name the link", () => {
+  it.each(["", " ", "   ", "\t\n "])("refuses an empty or whitespace-only label (%j) for both variants, naming the prop", (label) => {
+    for (const variant of BRANDMARK_VARIANTS) {
+      const base = props(variant, "md");
+      const message = refusal(<Brandmark {...base} label={label} />);
+      expect(message).toContain("label");
+    }
+  });
+
+  it("refuses a label forced to a non-string past the type system", () => {
+    const forced = { ...props("mark", "md"), label: undefined } as unknown as BrandmarkProps;
+    expect(refusal(<Brandmark {...forced} />)).toContain("label");
+  });
+
+  it("a normal label renders, named by that label", () => {
+    render(<Brandmark {...props("mark", "md")} label="Acme home" />);
+    expect(screen.getByRole("link", { name: "Acme home" })).toHaveAttribute("href", "/");
+  });
+});
+
+describe("Brandmark: lockup label contains the visible wordmark text (WCAG 2.5.3)", () => {
+  const base = { variant: "lockup", size: "md", markSrc: MARK_SRC } as const;
+
+  it("renders when the label contains the wordmark", () => {
+    render(<Brandmark {...base} label="Northwind Studio home" wordmark="Northwind Studio" />);
+    expect(screen.getByRole("link", { name: "Northwind Studio home" })).toBeInTheDocument();
+  });
+
+  it("matches case-insensitively and with whitespace normalised", () => {
+    render(<Brandmark {...base} label={"go to  NORTHWIND\n studio  home"} wordmark="  Northwind   Studio " />);
+    expect(screen.getByRole("link", { name: /northwind/i })).toBeInTheDocument();
+  });
+
+  it("refuses a label that lacks the wordmark, naming the props and echoing neither value", () => {
+    const message = refusal(<Brandmark {...base} label="Northwind home" wordmark="Northwind Studio" />);
+    expect(message).toContain("label");
+    expect(message).toContain("wordmark");
+    expect(message).not.toContain("Northwind");
+  });
+
+  it("does not echo a distinctive label or wordmark in either refusal", () => {
+    const lacking = refusal(<Brandmark {...base} label="zq-label-value" wordmark="zq-wordmark-value" />);
+    expect(lacking).not.toContain("zq-label-value");
+    expect(lacking).not.toContain("zq-wordmark-value");
+    const empty = refusal(<Brandmark {...base} label="  " wordmark="zq-wordmark-value" />);
+    expect(empty).not.toContain("zq-wordmark-value");
+  });
+
+  it("the mark variant (image only) is unaffected: any non-empty label renders", () => {
+    render(<Brandmark variant="mark" size="md" markSrc={MARK_SRC} label="Home" />);
+    expect(screen.getByRole("link", { name: "Home" })).toBeInTheDocument();
+  });
+
+  it("a lockup with no wordmark to show falls back to the mark and needs no wordmark in the label", () => {
+    render(<Brandmark {...base} label="Home" wordmark="" />);
+    expect(screen.getByRole("link", { name: "Home" }).querySelectorAll("span")).toHaveLength(0);
+  });
 });
 
 describe("Brandmark: designer-token-check over the new files", () => {
@@ -209,7 +280,7 @@ describe("Brandmark: no injected markup, no built-in copy", () => {
     const source = ts.createSourceFile("Brandmark.tsx", brandmarkSource, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
     const importSpecifiers = source.statements.filter(ts.isImportDeclaration).map((d) => (d.moduleSpecifier as ts.StringLiteral).text);
     expect(importSpecifiers.filter((spec) => /react-aria/.test(spec))).toEqual([]);
-    expect(importSpecifiers.filter((spec) => spec === "react")).toEqual(["react"]); // type-only: ReactNode
+    // `wordmark` is text, so no React type import is needed; if one is added it must stay type-only.
     const directives = source.statements.filter((st) => ts.isExpressionStatement(st) && ts.isStringLiteral(st.expression));
     expect(directives).toEqual([]);
     const hookCalls: string[] = [];
@@ -222,7 +293,7 @@ describe("Brandmark: no injected markup, no built-in copy", () => {
     visit(source);
     expect(hookCalls).toEqual([]);
     const reactImport = source.statements.filter(ts.isImportDeclaration).find((d) => (d.moduleSpecifier as ts.StringLiteral).text === "react");
-    expect(reactImport?.importClause?.isTypeOnly).toBe(true);
+    if (reactImport) expect(reactImport.importClause?.isTypeOnly).toBe(true);
   });
 
   it("has no lettered JSX text and no lettered string literal in JSX attributes beyond className/style/href/alt", () => {
@@ -258,6 +329,7 @@ describe("Brandmark: server render", () => {
     expect(html).toContain('<a href="/"');
     expect(html).toContain(`aria-label="${LABEL}"`);
     expect(html).toContain(`<img src="${MARK_SRC}" alt=""`);
-    expect(html.includes(WORDMARK)).toBe(variant === "lockup");
+    expect(html.includes("<span")).toBe(variant === "lockup");
+    if (variant === "lockup") expect(html).toContain(`>${WORDMARK}</span>`);
   });
 });

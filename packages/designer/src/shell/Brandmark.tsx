@@ -1,4 +1,3 @@
-import type { ReactNode } from "react";
 import { cx } from "../atoms/internal/cx.js";
 import {
   UI_BRANDMARK_GAP_LG,
@@ -26,6 +25,11 @@ const SIZE_VARS: Readonly<Record<BrandmarkSize, { height: string; gap: string; w
   lg: { height: UI_BRANDMARK_HEIGHT_LG, gap: UI_BRANDMARK_GAP_LG, wordmark: UI_BRANDMARK_WORDMARK_SIZE_LG },
 };
 
+/** Case-insensitive, whitespace-collapsed form used for the label-in-name comparison. */
+function normalise(text: string): string {
+  return text.replace(/\s+/g, " ").trim().toLowerCase();
+}
+
 interface BrandmarkBaseProps {
   /** Which step of the closed size set to render at. */
   size: BrandmarkSize;
@@ -35,7 +39,9 @@ interface BrandmarkBaseProps {
    * this package's README, "Public contract"). Applied as the link's
    * `aria-label`, so the name is exactly this string whichever variant
    * renders, and the decorative image and any wordmark text add nothing
-   * to it.
+   * to it. Must not be empty or whitespace-only (an unnamed link is
+   * refused), and for `variant="lockup"` must contain the visible
+   * `wordmark` text (see {@link Brandmark}).
    */
   label: string;
   /**
@@ -59,10 +65,11 @@ export type BrandmarkProps = BrandmarkBaseProps &
         variant: "lockup";
         /**
          * The brand name, rendered as live text (not an image) in the display
-         * font, sized from the mark's height. Nothing is rendered for an
-         * empty wordmark: a lockup without one falls back to the mark alone.
+         * font, sized from the mark's height. Text only: a string, never an
+         * element or image. Nothing is rendered for an empty wordmark: a
+         * lockup without one falls back to the mark alone.
          */
-        wordmark: ReactNode;
+        wordmark: string;
       }
   );
 
@@ -79,12 +86,30 @@ export type BrandmarkProps = BrandmarkBaseProps &
  *
  * Deliberately no props spread onto the anchor: nothing a consumer passes
  * can reach `href` or `aria-label`, even past the type system.
+ *
+ * Refuses (throws a plain `Error` that names the prop and never echoes its
+ * value) a `label` that is empty, whitespace-only or not a string, since the
+ * image is decorative and the link would have no accessible name. For the
+ * lockup it also refuses a `label` that does not contain the visible
+ * wordmark text, compared case-insensitively with whitespace normalised:
+ * `aria-label` replaces the visible text as the link's name, so a label
+ * without it fails WCAG 2.5.3 (label in name). The `mark` variant shows no
+ * text and is not subject to that second check.
  */
 export function Brandmark(props: BrandmarkProps) {
   const { variant, size, label, markSrc, className } = props;
   const vars = SIZE_VARS[size];
   const wordmark = variant === "lockup" ? props.wordmark : undefined;
-  const showWordmark = wordmark !== undefined && wordmark !== null && wordmark !== false && wordmark !== "";
+  const showWordmark = typeof wordmark === "string" && wordmark !== "";
+
+  if (typeof label !== "string" || label.trim() === "") {
+    throw new Error("Brandmark: `label` must be a non-empty string; it is the link's whole accessible name.");
+  }
+  if (showWordmark && !normalise(label).includes(normalise(wordmark))) {
+    throw new Error(
+      'Brandmark: for variant="lockup", `label` must contain the visible `wordmark` text (WCAG 2.5.3, label in name).',
+    );
+  }
 
   return (
     <a

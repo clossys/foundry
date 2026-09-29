@@ -3435,7 +3435,8 @@ import { Brandmark, SiteHeader } from "@clossys/designer/shell";
 `label`, `markSrc` and `wordmark` are placeholders the example supplies;
 this package ships no default label, brand name or image. `variant` is
 `"mark"` (the image alone; `wordmark` is not accepted) or `"lockup"` (the
-image beside `wordmark`, which is required). `size` is `"sm"`, `"md"` or
+image beside `wordmark`, which is required and is text: a `string`, never an
+element or image). `size` is `"sm"`, `"md"` or
 `"lg"`, mapped to the `--ui-brandmark-height-*` and `--ui-brandmark-gap-*`
 tokens. The exported types are `BrandmarkProps`, `BrandmarkVariant` and
 `BrandmarkSize`.
@@ -3448,10 +3449,28 @@ font at a size derived from the mark's height; neither is injected as
 markup. The component spreads no props onto the anchor, so `href` and
 `aria-label` are not reachable through its props. What it does not do: it
 does not check that `markSrc` resolves or that the image is legible at the
-chosen size, it does not check that `label` is a meaningful name, and it
-does not load the display font, so the wordmark falls back to whatever the
-page's font stack provides when the font is not loaded. A lockup without a
-wordmark value renders the mark alone.
+chosen size, it does not check that `label` is a meaningful name beyond the
+two refusals below, and it does not load the display font, so the wordmark
+falls back to whatever the page's font stack provides when the font is not
+loaded. A lockup without a wordmark value renders the mark alone.
+
+`Brandmark` refuses two `label` values by throwing a plain `Error` that
+names the prop and does not repeat its value. First, an empty,
+whitespace-only or non-string `label` is refused for both variants, because
+the image is decorative and the link would otherwise have no accessible
+name. Second, for `variant="lockup"` the `label` must contain the visible
+`wordmark` text, compared case-insensitively with whitespace normalised
+(`"Acme home"` for a wordmark of `"Acme"`), because `aria-label` replaces the
+visible text as the link's name and a label without it fails WCAG 2.5.3
+(label in name). The `mark` variant shows no text, so only the first refusal
+applies to it, and a lockup with an empty wordmark falls back to the mark
+alone and is held to the first refusal only. The component renders on the
+server, so a refused `label` fails that render.
+
+Declared boundary: the wordmark's size is the mark's height times the fixed
+22/48 ratio, so at `size="sm"` (a 24px mark) the wordmark is 11px. Sizes
+derive from that ratio and are not raised to a minimum, so use `"md"` or
+`"lg"` where an 11px wordmark is too small.
 
 ### `Toaster` and `toast`
 
