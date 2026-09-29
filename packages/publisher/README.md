@@ -1402,9 +1402,10 @@ renders a `LegalDocument` in the same site chrome and layout as
 import { LegalView } from "@clossys/publisher/web";
 import type { LegalViewLabels } from "@clossys/publisher/web";
 import type { LegalDocument } from "@clossys/publisher/document";
-import type { CopyResolver } from "@clossys/writer";
 
-declare const resolveCopyId: CopyResolver; // the caller's approved-copy registry
+type LegalResolver = React.ComponentProps<typeof LegalView>["resolveCopyId"];
+
+declare const resolveCopyId: LegalResolver; // the caller's approved-copy registry
 declare const brand: React.ReactNode; // the caller's brand mark
 declare const terms: LegalDocument; // as built in the example above
 
