@@ -5,11 +5,11 @@
  * `children`, no `className`/`style`, no HTML-attribute pass-through and no
  * disclaimer member.
  *
- * This is a `*.check.tsx` file, not part of `SiteFooter.test.tsx`, because
+ * This is a `*.check.tsx` file rather than part of the runtime tests, because
  * `tsc` excludes `*.test.tsx` and a `@ts-expect-error` there asserts nothing
  * (see `shell-contract.check.tsx` for the full reasoning and the gate that
- * enforces it). `SiteFooter.test.tsx` covers the runtime half: a stray
- * `children` or `disclaimer` forced through a cast is never rendered.
+ * enforces it). The runtime tests cover the other half: a stray `children` or
+ * `disclaimer` forced through a cast is never rendered.
  */
 import { SiteFooter, type SiteFooterLegalProps } from "../SiteFooter.js";
 
