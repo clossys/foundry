@@ -58,7 +58,19 @@ export { Stat } from "./Stat.js";
 export type { StatProps, StatTrend } from "./Stat.js";
 
 export { Form } from "./Form.js";
-export type { FormProps, FormError } from "./Form.js";
+export type { FormProps, FormError, FormValidationBinding } from "./Form.js";
+
+export { useFormValidation } from "./useFormValidation.js";
+export type {
+  UseFormValidationOptions,
+  FormValidation,
+  FieldValidator,
+  FormFieldName,
+  FormStringFieldName,
+  FormFieldProps,
+  FormNativeInputProps,
+  FormSubmitButtonProps,
+} from "./useFormValidation.js";
 
 export { FieldGroup } from "./FieldGroup.js";
 export type { FieldGroupProps, FieldGroupLayout } from "./FieldGroup.js";

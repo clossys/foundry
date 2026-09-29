@@ -49,7 +49,12 @@ export { SiteHeader } from "./SiteHeader.js";
 export type { SiteHeaderProps } from "./SiteHeader.js";
 
 export { SiteFooter } from "./SiteFooter.js";
-export type { SiteFooterProps, SiteFooterColumnProps } from "./SiteFooter.js";
+export type {
+  SiteFooterProps,
+  SiteFooterColumnProps,
+  SiteFooterLegalProps,
+  SiteFooterLegalLink,
+} from "./SiteFooter.js";
 
 export { Brandmark } from "./Brandmark.js";
 export type { BrandmarkProps, BrandmarkVariant, BrandmarkSize } from "./Brandmark.js";

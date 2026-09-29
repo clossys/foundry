@@ -573,6 +573,50 @@ Advisor's job); it only validates the two shapes and writes the one file.
 The apply planner below is different: it projects each repository's brief
 from the hub brief itself.
 
+### Release-age exemption
+
+`editReleaseAgeExemption()` computes the edit that lists the publishing
+scope's `<scope>/*` entry as exempt from a package manager's release-age
+delay (#1178). It is pure: it does no I/O. It takes a surface
+(`pnpm-workspace` or `yarnrc`), the surface file's text or `null`, and, for
+pnpm, the `.npmrc` text or `null`. It returns `edited` with the exact new
+text, `unchanged` when the scope entry is already listed, or a refusal
+(`ReleaseAgeEdit`, with `ReleaseAgeEditInput` and
+`ReleaseAgeEditRefusalReason`).
+
+The entry goes under `minimumReleaseAgeExclude` (pnpm, single-quoted) or
+`npmPreapprovedPackages` (Yarn, double-quoted). A missing file becomes the
+key alone, a top-level block sequence of scalars gets one new entry after
+its last item, and a file without the key gets the key appended. Other
+bytes, including comments and the final newline, are kept. The function
+reads only the shapes it recognises: `release-age-surface-unparseable` covers
+a flow sequence, an anchor, an alias, a tag, a comment inside the list,
+several documents, a tab, a carriage return or byte order mark, a repeated
+key, and a value that is not a block sequence of scalars.
+
+For pnpm the `.npmrc` is read under a fixed grammar and refused otherwise.
+Every line must be blank, a comment (first non-space character `#` or `;`),
+or a plain `key=value` assignment, optionally spaced around the `=`, whose key
+is only ASCII letters, digits and `@ : _ . / -`. An `.npmrc` containing any
+line outside those shapes (a quoted or bracketed key, a comment or escape
+inside the key, a tab, a section header, a key with no `=`) is refused as
+`release-age-surface-unparseable`, because npm's ini reader could read such a
+line as the exclusion setting. A plain key that is
+`minimum-release-age-exclude` in any case, with `-` and `_` ignored (so the
+camel-case spelling too), is refused as `release-age-surface-conflict`.
+Refusing is the default: an unrelated `.npmrc` line the grammar does not list
+also refuses the whole file, and the caller resolves the file by hand.
+
+`verifyReleaseAgeExemption()` takes the surface, the text before, the text
+after, and, for pnpm, the `.npmrc` text. It reports a `ReleaseAgeVerdict`, `{ verified: true, value }`
+(its input is a `ReleaseAgeVerifyInput`), only when the two texts differ by that one added entry, read again with the
+same rules; `value` is the `<scope>/*` string the installed-state ledger's
+`entries` row holds. It returns `{ verified: false }` for an unchanged file
+(`before` equal to `after`) and for any `.npmrc` that is a conflict or outside
+the grammar above, so a wiring unit must not verify after an `unchanged` or
+`refused` result. It says nothing about whether a given pnpm or Yarn
+version honours the key; that is proved separately with pinned tools.
+
 ### Computing each repository's change
 
 `planApplyBundle()` computes, for each repository a plan staffs, the change
@@ -774,6 +818,52 @@ set. Both commands are step 3 in
 [`docs/rfcs/apply-approved-plan.md`](../../docs/rfcs/apply-approved-plan.md)
 (section 11); a successful verify corresponds to the `materialized` row in
 section 4.4 of that RFC.
+
+### What authorizes a write
+
+`materialize` and `verify` decide, from the hub alone, on whose authority a
+change set is written, and record exactly that in the ledger; no flag, option
+or default supplies it. The decision reads the plan committed at the hub's
+current branch head (an uncommitted edit to `clossys/advisor/plan.json` is
+ignored, and a detached head refuses), the latest approving decision's
+subject digest, the stored bundle with that digest, and the stored change
+sets.
+
+- **Approved.** The set is a member of that bundle, by repository id and
+  change-set digest, and its plan digest equals the plan's. The ledger
+  records `approved` with the bundle's digest.
+- **Admitted.** An apply set that is not a member is admitted, with no second
+  approval, only when all of the following hold: it has the same plan digest
+  and the approving decision is still the latest; its package acts equal the
+  setup set's by plan item, it defers nothing, has the same `producer`, and
+  every whole-file entry is a no-op; and the base's trusted ledger ends with
+  that setup set, bound `approved` to the same subject, with every byte the
+  setup set wrote present in the base by content, so a squash or rebase merge
+  is admitted. The setup set must itself be a member of the approved bundle,
+  and the ledger the set would write must pass the succession rules as an
+  admitted generation.
+- **Otherwise** the step reports `indeterminate` with reason
+  `awaiting-approval` and a fixed detail token, and writes nothing.
+
+A set with package acts also needs a current execution authorization: the
+hub's own `node_modules/.bin/advisor-execution-readiness` (never `npx`) runs
+against the committed `clossys/advisor/assessment-input.json` at the current
+instant, and the authorization must name the plan digest, the repository and
+every package act. Readiness's own answer is kept: not current is `violated`;
+unreadable, absent or failing to run is `indeterminate`. `materialize` checks
+before its first write, and `verify` checks again, so a withdrawn approval or
+an expired authorization fails `verify`.
+
+`readHubAuthority()` reads the committed approval, `planPackagesFor()` gives
+the plan's package identities for one repository, and `decideSetBinding()`
+returns the binding or an `AdmissionRefusal` (exit code, reason and a fixed
+detail token). `HubAuthority` is what `readHubAuthority()` returns, and a
+`ReadinessRunner` replaces the process launch of the readiness executable, for
+tests.
+
+This proves that the bytes are those the committed decision names, or that the
+one-approval rule admits. It does not prove who committed the decision; the
+hub repository's branch protection governs that.
 
 ## Taking the registry snapshot
 

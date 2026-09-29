@@ -49,6 +49,8 @@ export type { LedgerTrust, LedgerTrustRule, PlanPackageActs, TrustInstalledLedge
 export { BUNDLE_STORE_REL, CHANGE_SET_STORE_REL, readStoredApplyBundle, readStoredChangeSet, storeApplyBundle, storeChangeSet } from "./apply-store.js";
 export { isRootEntryName, wouldViolateRootEntries } from "./root-entries.js";
 export type { RootEntriesVerdict } from "./root-entries.js";
+export { editReleaseAgeExemption, verifyReleaseAgeExemption } from "./release-age-edit.js";
+export type { ReleaseAgeEdit, ReleaseAgeEditInput, ReleaseAgeEditRefusalReason, ReleaseAgeVerdict, ReleaseAgeVerifyInput } from "./release-age-edit.js";
 export type { InstalledLedger, LedgerPackageIdentity, LedgerSuccession, LedgerViolation } from "./ledger-contract.js";
 export { PUBLIC_PROBLEM_PLACEHOLDER, planApplyBundle, projectEngagementBrief, serializeEngagementBrief } from "./plan-bundle.js";
 export type { PlanApplyBundleInputs, PlanApplyBundleResult, RepositoryObservation, SkippedRepositoryObservation } from "./plan-bundle.js";
@@ -97,3 +99,6 @@ export type {
   WorkspaceRefusal,
   WorkspaceState,
 } from "./types.js";
+
+export { decideSetBinding, planPackagesFor, readHubAuthority } from "./admission.js";
+export type { AdmissionDecision, AdmissionRefusal, HubAuthority, ReadinessRunner } from "./admission.js";
