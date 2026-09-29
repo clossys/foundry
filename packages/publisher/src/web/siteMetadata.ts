@@ -22,14 +22,16 @@
  * FAIL CLOSED, NEVER GUESS. Every input problem throws a
  * `SiteMetadataError` carrying a closed `reason`; nothing is repaired or
  * normalized. A name, tagline or label must be non-blank and must not start
- * or end with whitespace or contain a line break, because it is emitted
+ * or end with whitespace or contain a tab, a line break or any other control
+ * character (an internal single space is fine), because it is emitted
  * VERBATIM into the title and a trimmed or collapsed copy would be a guess;
  * every other text value is only checked to be a non-blank string and is
  * emitted verbatim too. A canonical path and an absolute share-card URL must
  * already be in their normalised form: they are refused unless `new URL`
  * serialises them back to exactly the same string, so a `.`, `..` or encoded
- * `..` segment, an empty segment, or a malformed spelling can never resolve to
- * a different address than the one emitted. The share card must be exactly the
+ * `..` segment, an empty segment, a non-ASCII character that is not
+ * percent-encoded (`/café` is refused, `/caf%C3%A9` accepted), or a malformed
+ * spelling can never resolve to a different address than the one emitted. The share card must be exactly the
  * size `OG_SHARE_CARD_SPEC` declares (any other dimensions, including swapped
  * ones, are refused).
  *
@@ -142,13 +144,13 @@ function requireText(value: unknown, field: string): string {
   return value;
 }
 
-/** A text that goes verbatim into the title: non-blank, no leading or trailing whitespace, no line break. */
+/** A text that goes verbatim into the title: non-blank, no leading or trailing whitespace, no control character (a tab or a line break included). */
 function requireTitleText(value: unknown, field: string): string {
   const text = requireText(value, field);
-  if (text !== text.trim() || /[\n\v\f\r\u0085\u2028\u2029]/.test(text)) {
+  if (text !== text.trim() || /[\u0000-\u001f\u007f-\u009f\u2028\u2029]/.test(text)) {
     throw new SiteMetadataError(
       "invalid-input",
-      `${field} must not start or end with whitespace or contain a line break.`,
+      `${field} must not start or end with whitespace or contain a tab, line break, or other control character.`,
     );
   }
   return text;
@@ -211,7 +213,7 @@ function requirePath(value: unknown, origin: string): string {
   ) {
     throw new SiteMetadataError(
       "invalid-path",
-      "page.path must start with a single '/', be in normal URL form, and contain no '?', '#', whitespace, backslash, '.' or '..' segment, or empty segment except a trailing slash.",
+      "page.path must start with a single '/', be in normal URL form (a non-ASCII character must be percent-encoded, as in /caf%C3%A9), and contain no '?', '#', whitespace, backslash, '.' or '..' segment, or empty segment except a trailing slash.",
     );
   }
   return value;

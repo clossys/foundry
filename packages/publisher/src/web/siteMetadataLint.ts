@@ -24,6 +24,10 @@
  *     each skipped to its own end tag. A `<script>` whose text contains
  *     `<!--` is refused, because a parser then reads the text differently.
  *   - The only end tag: `</head>`.
+ *   - After `</head>`: whitespace and comments, then end of input or `<body`.
+ *     A parser puts a `meta`, `link` or `title` found there into the head, so
+ *     anything else between `</head>` and `<body` is `unreadable`. Nothing after
+ *     `<body` is read.
  *   - A comment whose text contains `--!>` is refused, because a parser
  *     closes it there.
  *   - Everything else is `unreadable`: any other start or end tag (including
@@ -56,16 +60,16 @@
  * true, correct for the page, an absolute URL, a valid image, or whether two
  * tags agree (a `<title>` that differs from `og:title` passes). Metadata that
  * a framework streams into the body is reported missing, and is never counted.
- * Whatever follows `</head>` is not read, except that a second `<head>` open
- * tag makes the document `unreadable`.
+ * Whatever follows `<body` is not read.
  *
  * UNREADABLE INPUT. When the head cannot be read, the result is a single
  * `unreadable` finding with `complete: false` and no claim about which tags
  * are missing: a non-string or blank input, no `<head>` element, a `<head>`
- * with no `</head>`, more than one `<head>` open tag, or anything outside the
- * grammar above before the head closes. An unterminated construct AFTER
- * `</head>` is not reported, because the head has already been read in full
- * by then. The function does not throw for any input.
+ * with no `</head>`, more than one `<head>` open tag, anything outside the
+ * grammar above before the head closes, or anything other than whitespace and
+ * comments between `</head>` and end of input or `<body`. An unterminated
+ * construct after `<body` is not reported. The function does not throw for any
+ * input.
  */
 
 export type SiteMetadataTagSelector = "title" | "meta-name" | "meta-property" | "link-rel";
@@ -142,8 +146,7 @@ interface Unreadable {
   message: string;
 }
 
-/** The elements whose text a parser reads without tags. Only `title`, `style` and `script` are accepted inside the head. */
-const RAW_TEXT_ELEMENTS: ReadonlySet<string> = new Set(["title", "script", "style", "textarea"]);
+/** The raw-text elements accepted inside the head; their text is read without tags. */
 const HEAD_RAW_TEXT_ELEMENTS: ReadonlySet<string> = new Set(["title", "script", "style"]);
 
 function isWhitespace(char: string): boolean {
@@ -367,57 +370,41 @@ function scanHead(html: string): HeadContents | Unreadable {
     }
   }
 
-  if (hasSecondHead(html, i)) return { tag: "head", message: "The document has more than one <head> open tag." };
-  return contents;
+  const afterHead = scanAfterHead(html, i);
+  return afterHead ?? contents;
 }
 
 /**
- * After `</head>`, the rest of the document is not read, except to see whether
- * it opens another `<head>`. This is a tolerant scan: an unterminated
- * construct simply ends it.
+ * After `</head>` a parser stays in its "after head" mode until `<body>`, and
+ * in that mode a `meta`, `link`, `title`, `base`, `script`, `style`, `template`
+ * or `noscript` start tag is put INTO the head. So the lint accepts only
+ * whitespace and comments, then end of input or `<body` (followed by
+ * whitespace, `/` or `>`); anything else is refused. What follows `<body` is
+ * never read.
  */
-function hasSecondHead(html: string, from: number): boolean {
+function scanAfterHead(html: string, from: number): Unreadable | null {
   const length = html.length;
   let i = from;
-  while (i < length) {
-    const lt = html.indexOf("<", i);
-    if (lt === -1) return false;
-    i = lt;
+  for (;;) {
+    i = skipWhitespace(html, i);
+    if (i >= length) return null;
 
     if (html.startsWith("<!--", i)) {
-      const end = html.indexOf("-->", i + 2);
-      if (end === -1) return false;
-      i = end + 3;
+      const comment = readComment(html, i);
+      if ("message" in comment) return comment;
+      i = comment.end;
       continue;
     }
 
-    const next = html.charAt(i + 1);
-    if (next === "!" || next === "?") {
-      const end = html.indexOf(">", i + 2);
-      if (end === -1) return false;
-      i = end + 1;
-      continue;
+    if (asciiLower(html.slice(i, i + 5)) === "<body") {
+      const after = html.charAt(i + 5);
+      if (after !== "" && (isWhitespace(after) || after === "/" || after === ">")) return null;
     }
-
-    const closing = next === "/";
-    const nameStart = i + (closing ? 2 : 1);
-    if (!isAsciiLetter(html.charAt(nameStart))) {
-      i += 1;
-      continue;
-    }
-
-    const tag = readTag(html, nameStart);
-    if ("error" in tag) return false;
-    i = tag.end;
-    if (closing) continue;
-    if (tag.name === "head") return true;
-    if (RAW_TEXT_ELEMENTS.has(tag.name)) {
-      const close = findRawTextClose(html, i, tag.name);
-      if (close === -1) return false;
-      i = close;
-    }
+    return {
+      tag: "head",
+      message: "Something other than whitespace, a comment or <body> follows </head>, where a parser moves head elements into the head.",
+    };
   }
-  return false;
 }
 
 // ---------------------------------------------------------------------------

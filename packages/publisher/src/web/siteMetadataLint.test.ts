@@ -298,7 +298,7 @@ describe("lintSiteMetadataHtml reports every problem in one pass", () => {
   });
 
   it("reports every tag missing for a head that has none of the set", () => {
-    const result = lintSiteMetadataHtml("<html><head><meta charset=utf-8></head></html>");
+    const result = lintSiteMetadataHtml("<html><head><meta charset=utf-8></head><body></body></html>");
     expect(result.complete).toBe(false);
     expect(result.findings).toHaveLength(SITE_METADATA_REQUIRED_TAGS.length);
     expect(result.findings.every((finding) => finding.rule === "missing")).toBe(true);
@@ -611,6 +611,108 @@ describe("lintSiteMetadataHtml strict head grammar", () => {
   });
 });
 
+// ---------------------------------------------------------------------------
+// After `</head>`: a parser stays in its "after head" mode until `<body>`, and in
+// that mode a meta, title or link start tag goes INTO the head. So after
+// `</head>` the lint accepts only whitespace, comments, then end of input or
+// `<body`; anything else is `unreadable`.
+// ---------------------------------------------------------------------------
+
+describe("lintSiteMetadataHtml after the closing head tag", () => {
+  const ROBOTS = `<meta name="robots" content="noindex">`;
+  const refused: Array<[string, string]> = [
+    ["a robots meta", ROBOTS],
+    ["an empty robots meta", `<meta name="robots" content="">`],
+    ["a meta", `<meta name="viewport" content="width=device-width">`],
+    ["a title", "<title>Other</title>"],
+    ["a link", `<link rel=canonical href=/y>`],
+    ["a base", `<base href="/">`],
+    ["a script", "<script>1</script>"],
+    ["a style", "<style>a{}</style>"],
+    ["a div", "<div>x</div>"],
+    ["plain text", "hello"],
+    ["a no-break space", "\u00a0"],
+    ["a byte order mark", "\uFEFF"],
+    ["a second </head>", "</head>"],
+    ["a <head>", "<head>"],
+    ["a <head> element", "<head></head>"],
+    ["a second <html>", "<html>"],
+    ["a doctype", "<!doctype html>"],
+    ["a stray end tag", "</div>"],
+    ["an end tag then a meta", `</div>${ROBOTS}`],
+    ["a script then a meta", `<script>1</script>${ROBOTS}`],
+    ["a <header>", "<header>x</header>"],
+    ["a <bodyx>", "<bodyx>"],
+    ["a <body without a terminator", "<body"],
+    ["a bare <", "<"],
+    ["a processing instruction", "<?x?>"],
+    ["an unterminated comment", "<!-- never closed"],
+    ["a comment closed by --!>", `<!-- a --!>${ROBOTS}-->`],
+    ["a declaration", "<!x>"],
+  ];
+
+  it.each(refused)("refuses %s between </head> and <body>", (_label, markup) => {
+    expectUnreadable(`${fixture()}${markup}<body>`, "before <body>");
+    expectUnreadable(`${fixture()}${markup}`, "at end of input");
+    expectUnreadable(`${fixture()} \n<!-- c -->\n${markup}<body>`, "after whitespace and a comment");
+    expectUnreadable(`${fixture()}<!-- c -->${markup}<body>`, "after a comment");
+  });
+
+  it("refuses the review's failing inputs, each of which a parser reads as a second copy in the head", () => {
+    const inputs = [
+      `${fixture()}${ROBOTS}<body>`,
+      `${fixture()}<title>Other</title>`,
+      `${fixture()}\n<!--x--><link rel=canonical href=/y>`,
+      `${fixture()}</div>${ROBOTS}`,
+      `${fixture()}<script>1</script>${ROBOTS}`,
+      `${fixture()}<meta name="robots" content="">`,
+    ];
+    for (const html of inputs) {
+      expectUnreadable(html, html.slice(-80));
+      expect(oracleSaysComplete(html), html.slice(-80)).toBe(false);
+    }
+  });
+
+  it("reports the after-head class as one unreadable finding, not as a duplicate", () => {
+    expect(lintSiteMetadataHtml(`${fixture()}${ROBOTS}<body>`).findings.map((finding) => finding.tag)).toEqual(["head"]);
+  });
+
+  it.each([
+    ["end of input", ""],
+    ["whitespace", " \n\t\r\f"],
+    ["a comment", "<!-- c -->"],
+    ["empty comments", "<!----><!--->"],
+    ["whitespace and comments", "\n<!-- a -->  <!-- b -->\n"],
+    ["a plain body", "<body>"],
+    ["an upper-case body", "<BODY>"],
+    ["a body with attributes", `<body class="a" data-x=y>`],
+    ["a body after whitespace and a comment", "\n<!-- c -->\n<body>"],
+    ["a self-closing-style body", "<body/>"],
+    ["a body with a line break before its attribute", "<body\nclass=x>"],
+  ])("still judges a page whose </head> is followed by %s", (_label, tail) => {
+    expect(lintSiteMetadataHtml(`${fixture()}${tail}`)).toEqual({ complete: true, findings: [] });
+    expect(lintSiteMetadataHtml(`${fixture()}${tail}<h1>Hello</h1></body></html>`).complete).toBe(tail.toLowerCase().includes("<body"));
+    expect(oracleSaysComplete(`${fixture()}${tail}`)).toBe(true);
+  });
+
+  it("judges the head normally when </head> is followed only by whitespace, comments and <body>", () => {
+    const html = `${fixture({ override: { robots: null } })}\n<!-- c -->\n<body>`;
+    expect(rulesAndTags(html)).toEqual([["missing", "robots"]]);
+    expect(rulesAndTags(`${fixture({ duplicate: ["title"] })}<body>`)).toEqual([["duplicate", "title"]]);
+  });
+
+  it("refuses an end tag such as </html> directly after </head>, because only <body or the end of input may follow", () => {
+    expectUnreadable(`${fixture()}</html>`, "</html> after </head>");
+  });
+
+  it("does not read what follows <body", () => {
+    expect(lintSiteMetadataHtml(`${fixture()}<body>${ROBOTS}<head><title>x</title><!-- never closed`)).toEqual({
+      complete: true,
+      findings: [],
+    });
+  });
+});
+
 describe("lintSiteMetadataHtml closed character-reference set", () => {
   const cases: Array<[string, string]> = [
     ["a numeric reference with no semicolon", "&#32"],
@@ -791,6 +893,16 @@ describe("lintSiteMetadataHtml against a spec parser", () => {
     fixture({ extraHead: `<noscript>${ROBOTS}</noscript>` }),
     fixture({ beforeHead: "hello" }),
     fixture({ beforeHead: "<div>x</div>" }),
+    `${fixture()}\n<!-- c -->\n<body class="a">`,
+    `${fixture()}${ROBOTS}<body>`,
+    `${fixture()}<title>Other</title>`,
+    `${fixture()}\n<!--x--><link rel=canonical href=/y>`,
+    `${fixture()}</div>${ROBOTS}`,
+    `${fixture()}<script>1</script>${ROBOTS}`,
+    `${fixture()}<div>x</div>${ROBOTS}`,
+    `${fixture()}hello${ROBOTS}`,
+    `${fixture()}</head>${ROBOTS}`,
+    `${fixture()}<head>${ROBOTS}`,
     withInserted("<div>x</div>", "start"),
     withInserted("<img src=x>", "middle"),
     withInserted("hello", "end"),
@@ -856,23 +968,38 @@ describe("lintSiteMetadataHtml against a spec parser", () => {
       `<meta property="og:title" content="&#x20;">`, `<meta property='og:image' content=''>`, "<svg>", "</svg>",
       "<textarea>", "</textarea>", "<html>", "<head>", "</head>", "<body>", "\uFEFF", "\u00a0",
     ];
+    // Between `</head>` and `<body>` a parser moves head-class tags into the head, so that position
+    // draws from a pool weighted toward whitespace, comments and the tags a parser would move.
+    const afterHeadPieces = [
+      " ", "\n", "\t", "<!-- c -->", "<!---->", `<meta name="robots" content="a">`, `<meta name="description" content="d">`,
+      "<title>t</title>", "<link rel=canonical href=/x>", `<meta property="og:title" content="t">`, `<meta name="viewport" content="v">`,
+      "<base href=/>", "<script>1</script>", "<style>a{}</style>", "</div>", "<div>", "x", "</head>", "<head>", "<html>", "<body>",
+      "<body class=a>", "<!-- a --!> ", "<!-- never",
+    ];
     let seed = 20260928;
     const next = (bound: number): number => {
       seed = (seed * 1103515245 + 12345) & 0x7fffffff;
-      return seed % bound;
+      return (seed >>> 8) % bound;
     };
     let completeCount = 0;
-    for (let round = 0; round < 400; round += 1) {
+    let completeAfterHead = 0;
+    for (let round = 0; round < 800; round += 1) {
+      // Positions 0-2 are inside the head; 3 is after `</head>`, alone or before a `<body>`.
+      const slot = round % 4;
+      const pool = slot === 3 ? afterHeadPieces : pieces;
       let mix = "";
-      for (let n = next(4); n > 0; n -= 1) mix += pieces[next(pieces.length)];
+      for (let n = next(4); n > 0; n -= 1) mix += pool[next(pool.length)];
       const overridden: Record<string, string | null> =
         round % 3 === 0 ? { robots: null, description: null, "og:title": null, "og:image": null, canonical: null } : {};
-      const html = withInserted(mix, POSITIONS[round % 3]!, fixture({ override: overridden }));
+      const base = fixture({ override: overridden });
+      const html = slot < 3 ? withInserted(mix, POSITIONS[slot]!, base) : `${base}${mix}`;
       if (!lintSiteMetadataHtml(html).complete) continue;
       completeCount += 1;
+      if (slot === 3) completeAfterHead += 1;
       expect(oracleSaysComplete(html), html.slice(0, 500)).toBe(true);
     }
     expect(completeCount).toBeGreaterThan(0);
+    expect(completeAfterHead).toBeGreaterThan(0);
   });
 
   it("agrees with the oracle that the bypass fixtures the old lint accepted are not complete pages", () => {
@@ -886,6 +1013,9 @@ describe("lintSiteMetadataHtml against a spec parser", () => {
       `\uFEFF${fixture()}`,
       withInserted("</body>", "start"),
       withInserted("</br>", "start"),
+      `${fixture()}<meta name="robots" content="noindex"><body>`,
+      `${fixture()}<title>Other</title>`,
+      `${fixture()}</div><link rel=canonical href=/y>`,
     ];
     for (const html of bypasses) {
       expect(oracleSaysComplete(html), html.slice(0, 300)).toBe(false);

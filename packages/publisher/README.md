@@ -951,8 +951,9 @@ package.
 - **Title.** A `home` page is `${name} · ${tagline}`; every other kind is
   `${label} · ${name}`. The separator is U+00B7 with one space on each side.
   Values are emitted verbatim — nothing is trimmed — so a `name`, `tagline`,
-  or `label` with leading or trailing whitespace or a line break is refused
-  rather than repaired.
+  or `label` with leading or trailing whitespace, or with a tab, a line break,
+  or any other control character anywhere in it, is refused rather than
+  repaired. A single internal space is fine.
 - **Fallbacks.** `canonical` is `origin` plus `path`; `og:url` is the
   canonical; `og:title` and `twitter:title` are the title; `og:description`
   and `twitter:description` are the page description; `og:site_name` is the
@@ -972,12 +973,15 @@ package.
   does not record or verify counsel review.
 - **Refusals.** It throws `SiteMetadataError` (with a closed `reason`) for a
   non-object input, a blank text field, a `name`, `tagline`, or `label` that
-  starts or ends with whitespace or contains a line break, an `origin` that is
+  starts or ends with whitespace or contains a control character (a tab or a
+  line break included), an `origin` that is
   not an `http(s)` origin equal to `new URL(origin).origin`, a `path` that does
   not start with a single `/`, that contains `?`, `#`, whitespace, a `.` or
   `..` segment (encoded or not), or an empty segment other than a trailing
   slash, or that `new URL` would serialise differently (the path must already
-  be in normal form, so it cannot resolve to another address), an unknown
+  be in normal form, so it cannot resolve to another address; a non-ASCII path
+  such as `/café` is refused, and its percent-encoded form `/caf%C3%A9` is
+  accepted), an unknown
   `kind`, a `status` on a non-legal page or outside `draft`/`counsel-reviewed`,
   a share-card `url` that is neither root-relative nor an absolute `http(s)`
   URL exactly as `new URL(url).href` writes it (`https:foo.png` is refused),
@@ -1002,14 +1006,19 @@ recognise is `unreadable`, never guessed.
 - **Accepted.** Before `<head>`: whitespace, comments, one `<!doctype>`, and
   one `<html>`. Inside the head: whitespace, comments, and `meta`, `link`,
   `base`, `title`, `style`, and `script` elements (a `script` whose text
-  contains `<!--` is refused). `</head>` is the only end tag.
+  contains `<!--` is refused). `</head>` is the only end tag. After `</head>`:
+  whitespace and comments, then end of input or `<body`; nothing after `<body`
+  is read.
 - **Refused as `unreadable`.** Any other start or end tag in the head
   (including `template` and `noscript`), any text between tags, a `<` or `</`
   not followed by a letter, a `<!` that is not a comment, `<?`, a comment that
   contains `--!>`, a byte order mark, text or an element before `<head>`, a
   non-string or blank input, no `<head>`, a `<head>` with no `</head>`, a
-  second `<head>`, and an unterminated comment, tag, attribute quote,
-  `<title>`, `<script>`, or `<style>` before the head closes.
+  second `<head>`, an unterminated comment, tag, attribute quote, `<title>`,
+  `<script>`, or `<style>` before the head closes, and anything between
+  `</head>` and `<body` other than whitespace and comments (a `meta`, `title`,
+  or `link` there is moved into the head by a parser, so it is refused, as is
+  any element, text, second `</head>`, or `<head>`).
 - **Character references.** Every `&` followed by a letter or `#` must start
   one of `&amp;`, `&lt;`, `&gt;`, `&quot;`, `&apos;`, `&#N;`, or `&#xH;`. A
   declared tag whose value has any other reference (`&nbsp;`, `&copy`, `&#32`)
@@ -1018,19 +1027,28 @@ recognise is `unreadable`, never guessed.
   set is decoded to read a tag's identity and to decide whether a value is
   empty, so `&#160;` and a raw no-break space are both empty.
 
-**Soundness boundary.** `lintSiteMetadataHtml` reports complete only when the
-head consists solely of whitespace, comments and `meta`, `link`, `base`,
-`title`, `style` and `script` elements (scripts without `<!--`), with character
-references limited to `&amp;`, `&lt;`, `&gt;`, `&quot;`, `&apos;` and numeric
-forms. Other head content is `unreadable`, never guessed. Within that grammar
-it checks presence, uniqueness and non-emptiness of the declared set, not
-whether the values are true, correct for the page, an absolute URL, or
-consistent with another tag. Metadata that a framework streams into the body is
-reported missing. It does not read what follows `</head>`, other than to refuse
-a second `<head>`. Where it says complete, a spec-compliant HTML parser, with
+**Soundness boundary.** `lintSiteMetadataHtml` judges only heads whose
+after-head content is whitespace, comments and `<body`: it reports complete
+only when the head consists solely of whitespace, comments and `meta`, `link`,
+`base`, `title`, `style` and `script` elements (scripts without `<!--`), with
+character references limited to `&amp;`, `&lt;`, `&gt;`, `&quot;`, `&apos;` and
+numeric forms, and `</head>` is followed only by whitespace, comments and then
+end of input or `<body`. Everything else is `unreadable`, never guessed; that
+includes a `meta`, `title` or `link` between `</head>` and `<body`, which a
+parser moves into the head. Within that grammar it checks presence, uniqueness
+and non-emptiness of the declared set, not whether the values are true, correct
+for the page, an absolute URL, or consistent with another tag. Metadata that a
+framework streams into the body is reported missing. It does not read what
+follows `<body`. Where it says complete, a spec-compliant HTML parser, with
 scripting on or off, puts exactly one non-blank copy of each declared tag
-directly in the head; the package's tests confirm that against jsdom and
-parse5.
+directly in the head; the package's tests confirm that against jsdom.
+
+**Input boundary of `buildSiteMetadata`.** A `name`, `tagline` or `label` with
+a tab or any other control character inside it is refused, not only one with
+leading or trailing whitespace or a line break; a single internal space is
+accepted. A non-ASCII path such as `/café` is refused (a safe false reject,
+because `new URL` would encode it and the path must already be in normal form);
+the percent-encoded form `/caf%C3%A9` is accepted.
 
 **Not part of this change.** The share-card route or image generation, wiring
 this head set into `MarketingView` or any other view or template, and how a

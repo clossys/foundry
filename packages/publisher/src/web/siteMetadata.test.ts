@@ -178,6 +178,20 @@ describe("buildSiteMetadata refusals", () => {
     expect(reasonOf(() => build(site(), page({ label: text })))).toBe("invalid-input");
   });
 
+  it.each(["Ab\tcd", "Ab\u0000cd", "Ab\u0007cd", "Ab\u001fcd", "Ab\u007fcd", "Ab\u0085cd", "Ab\u009fcd", "Ab\vcd", "Ab\fcd"])(
+    "refuses a control character inside the name, tagline or label %j",
+    (text) => {
+      expect(reasonOf(() => build(site({ name: text })))).toBe("invalid-input");
+      expect(reasonOf(() => build(site({ tagline: text })))).toBe("invalid-input");
+      expect(reasonOf(() => build(site(), page({ label: text })))).toBe("invalid-input");
+    },
+  );
+
+  it("accepts a single internal space in a name, tagline and label", () => {
+    const meta = build(site({ name: "Ab cd", tagline: "Ab cd" }), page({ label: "Ab cd" }));
+    expect(meta.title).toBe(`Ab cd ${SEP} Ab cd`);
+  });
+
   it("keeps a name, tagline and label with single inner spaces", () => {
     const meta = build(site({ name: "Acme Tools", tagline: "Fast, small" }), page({ label: "Our prices" }));
     expect(meta.title).toBe(`Our prices ${SEP} Acme Tools`);
@@ -226,12 +240,18 @@ describe("buildSiteMetadata refusals", () => {
     "/a//",
     "//",
     "/é",
+    "/café",
   ])("refuses the path %j", (path) => {
     expect(reasonOf(() => build(site(), page({ path })))).toBe("invalid-path");
   });
 
   it("refuses a non-string path", () => {
     expect(reasonOf(() => build(site(), page({ path: 3 as never })))).toBe("invalid-path");
+  });
+
+  it("refuses a non-ASCII path and accepts its percent-encoded form", () => {
+    expect(reasonOf(() => build(site(), page({ path: "/café" })))).toBe("invalid-path");
+    expect(build(site(), page({ path: "/caf%C3%A9" })).canonical).toBe("https://example.com/caf%C3%A9");
   });
 
   it("accepts a trailing slash and an encoded segment that stays put", () => {
