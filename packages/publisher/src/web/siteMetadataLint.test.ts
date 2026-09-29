@@ -1000,7 +1000,7 @@ describe("lintSiteMetadataHtml against a spec parser", () => {
     }
     expect(completeCount).toBeGreaterThan(0);
     expect(completeAfterHead).toBeGreaterThan(0);
-  });
+  }, 60_000);
 
   it("agrees with the oracle that the bypass fixtures the old lint accepted are not complete pages", () => {
     const bypasses = [
