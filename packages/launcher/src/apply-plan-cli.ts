@@ -18,7 +18,8 @@ import {
 } from "./registry-snapshot.js";
 import { listStoredChangeSets } from "./apply-store.js";
 import { materializeRepository, verifyRepository, type ApplyStepResult } from "./materialize.js";
-import type { ApprovalBinding, RepositoryChangeSet } from "./change-set-contract.js";
+import type { ReadinessRunner } from "./admission.js";
+import type { RepositoryChangeSet } from "./change-set-contract.js";
 import type { LockfileSpawn } from "./lockfile-regen.js";
 
 export const APPLY_PLAN_USAGE = `Usage: launcher-apply-plan --plan <plan.json> --brief <brief.json> --repo <directory>
@@ -156,11 +157,13 @@ export interface ApplyCommandOptions {
   readonly clone?: string;
   readonly set?: RepositoryChangeSet;
   readonly texts?: Readonly<Record<string, string>>;
-  readonly binding?: ApprovalBinding;
   readonly heldChangeSets?: readonly RepositoryChangeSet[];
   readonly spawn?: LockfileSpawn;
+  /** The instant the execution authorization is judged at; the wall clock by default. */
   readonly now?: () => Date;
   readonly toolVersion?: string | null;
+  /** Runs the hub's advisor-execution-readiness; the hub's own installed executable by default. */
+  readonly runReadiness?: ReadinessRunner;
 }
 
 const REPO_ID_SHAPE = /^[^/]+\/[^/]+$/u;
@@ -188,7 +191,7 @@ function spawnGit(cwd: string, args: string[]): string | null {
 function resolveApplyInputs(
   id: string,
   options: ApplyCommandOptions,
-): { hub: string; clone: string; set: RepositoryChangeSet; binding: ApprovalBinding; held: RepositoryChangeSet[]; texts: Readonly<Record<string, string>> } | ApplyStepResult {
+): { hub: string; clone: string; set: RepositoryChangeSet; held: RepositoryChangeSet[]; texts: Readonly<Record<string, string>> } | ApplyStepResult {
   const hub = options.cwd ?? process.cwd();
   if (options.set !== undefined && options.set.repository.id !== id) {
     return { exitCode: 2, verdict: "indeterminate", reason: "change-set-absent" };
@@ -222,19 +225,31 @@ function resolveApplyInputs(
       set = filtered[0]!;
     }
   }
-  const binding = options.binding ?? { kind: "approved", subjectDigest: set.planDigest };
   const clone = options.clone ?? resolve(dirname(realpathSync(hub)), id.slice(id.indexOf("/") + 1));
   const storedTexts =
     set.texts === undefined ? {} : Object.fromEntries(set.texts.map((row) => [row.path, row.text] as const));
-  return { hub, clone, set, binding, held, texts: options.texts ?? storedTexts };
+  return { hub, clone, set, held, texts: options.texts ?? storedTexts };
 }
 
 const MATERIALIZE_HELP = `Usage: launcher-apply-plan materialize --repo <id>
 
-Writes a stored repository change set into the repository's local clone.`;
+Writes a stored repository change set into the repository's local clone.
+
+Refuses, and writes nothing, unless the plan committed at the hub's HEAD
+approves a bundle that holds the change set, or the change set is an apply set
+admitted under the one-approval rule: it follows the approved setup set and
+changes nothing that approval did not already cover. When the change set has
+package acts, the execution authorization in the hub's committed assessment
+must also be current at the time of the run. The approval a change set's
+ledger records is decided from the hub alone; it is never taken from an
+option or defaulted.`;
 const VERIFY_HELP = `Usage: launcher-apply-plan verify --repo <id>
 
-Reports whether the repository's local clone matches its stored change set.`;
+Reports whether the repository's local clone matches its stored change set.
+Verify re-checks everything materialize checks before writing, including the
+committed approval and, for a change set with package acts, that the execution
+authorization is still current at the time of the run: a clone whose approval
+was withdrawn or whose authorization expired no longer verifies.`;
 
 function printApplyOutcome(label: string, outcome: ApplyStepResult): number {
   const suffix = outcome.exitCode === 0 ? outcome.verdict : `${outcome.verdict} (${outcome.reason})`;
@@ -258,11 +273,11 @@ export async function materializeMain(argv: readonly string[], options: ApplyCom
       hub: resolved.hub,
       set: resolved.set,
       texts: resolved.texts,
-      binding: resolved.binding,
       heldChangeSets: resolved.held,
       spawn: options.spawn,
       now: options.now,
       toolVersion: options.toolVersion,
+      runReadiness: options.runReadiness,
     });
     return printApplyOutcome("materialize", outcome);
   } catch (cause) {
@@ -280,7 +295,14 @@ export async function verifyMain(argv: readonly string[], options: ApplyCommandO
     }
     const resolved = resolveApplyInputs(parsed.id, options);
     if ("exitCode" in resolved) return printApplyOutcome("verify", resolved);
-    const outcome = await verifyRepository({ clone: resolved.clone, set: resolved.set, binding: resolved.binding, heldChangeSets: resolved.held });
+    const outcome = await verifyRepository({
+      clone: resolved.clone,
+      hub: resolved.hub,
+      set: resolved.set,
+      heldChangeSets: resolved.held,
+      now: options.now,
+      runReadiness: options.runReadiness,
+    });
     return printApplyOutcome("verify", outcome);
   } catch (cause) {
     console.error(`launcher-apply-plan verify: ${cause instanceof ApplyPlanInputError ? cause.message : "usage: launcher-apply-plan verify --repo <id>"}`);
