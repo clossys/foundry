@@ -1,6 +1,6 @@
 import type { HTMLAttributes, ReactNode } from "react";
 import { cx } from "../atoms/internal/cx.js";
-import { SHELL_GROUND_CLASSES, type ShellGround } from "./internal/shell-ground.js";
+import { SITE_CHROME_GROUND_CLASSES, siteChromeHasBorder, type SiteChromeGround } from "./internal/shell-ground.js";
 import { UI_BORDER_HAIRLINE, UI_WIDTH_PAGE_PADDING_X, UI_Z_SHELL } from "./internal/shell-vars.js";
 
 export interface SiteHeaderProps extends Omit<HTMLAttributes<HTMLElement>, "children"> {
@@ -26,10 +26,13 @@ export interface SiteHeaderProps extends Omit<HTMLAttributes<HTMLElement>, "chil
    */
   actions?: ReactNode;
   /**
-   * Semantic plate for the header bar — `inverse` for a dark hero band.
+   * Semantic plate for the header bar — `inverse` for a dark hero band,
+   * `transparent` for no plate and no border at all (the page beneath shows
+   * through). Like `base`, the header sets no ink class, so its content
+   * inherits ink from the page; the consumer's backdrop owns contrast.
    * @default "base"
    */
-  ground?: ShellGround;
+  ground?: SiteChromeGround;
 }
 
 /**
@@ -55,16 +58,17 @@ export interface SiteHeaderProps extends Omit<HTMLAttributes<HTMLElement>, "chil
  * a prop on it.
  */
 export function SiteHeader({ brand, nav, actions, ground = "base", className, style, ...rest }: SiteHeaderProps) {
-  const colors = SHELL_GROUND_CLASSES[ground];
+  const colors = SITE_CHROME_GROUND_CLASSES[ground];
+  const bordered = siteChromeHasBorder(ground);
 
   return (
     <header
       {...rest}
-      className={cx(colors.surface, "py-sm border-b", colors.border, className)}
+      className={cx(colors.surface, "py-sm", bordered ? cx("border-b", colors.border) : "", className)}
       style={{
         position: "relative",
         zIndex: UI_Z_SHELL,
-        borderBottomWidth: UI_BORDER_HAIRLINE,
+        ...(bordered ? { borderBottomWidth: UI_BORDER_HAIRLINE } : {}),
         ...style,
       }}
     >
