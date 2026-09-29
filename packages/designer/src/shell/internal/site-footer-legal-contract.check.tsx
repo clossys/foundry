@@ -15,6 +15,15 @@ import { SiteFooter, type SiteFooterLegalProps } from "../SiteFooter.js";
 
 const links = [{ label: "Privacy", href: "/privacy" }] as const;
 
+/**
+ * A declared, non-literal value for the `className` probe below. The
+ * package's token-parity test reads every `className="..."` string literal
+ * under `src/` as a Tailwind class and rejects an unknown one, so the probe
+ * must not be a literal. The type is `string`, which is exactly what a real
+ * `className` member would accept.
+ */
+declare const notAClass: string;
+
 type Equal<A, B> = (<T>() => T extends A ? 1 : 2) extends <T>() => T extends B ? 1 : 2 ? true : false;
 
 /** The exact accepted prop names; adding any member makes this fail to compile. */
@@ -31,7 +40,7 @@ export const legalRejectsChildren = <SiteFooter.Legal entity="Acme Studio" links
 export const legalRejectsDisclaimer = <SiteFooter.Legal entity="Acme Studio" links={links} disclaimer="x" />;
 
 // @ts-expect-error — no `className`: the responsive layout is component-owned.
-export const legalRejectsClassName = <SiteFooter.Legal entity="Acme Studio" links={links} className="x" />;
+export const legalRejectsClassName = <SiteFooter.Legal entity="Acme Studio" links={links} className={notAClass} />;
 
 // @ts-expect-error — no `style`: the responsive layout is component-owned.
 export const legalRejectsStyle = <SiteFooter.Legal entity="Acme Studio" links={links} style={{}} />;
