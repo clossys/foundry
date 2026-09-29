@@ -2302,11 +2302,19 @@ than the handler supplies, such as a required `html`, fails to compile.
 
 ```ts
 import { createContactHandler, createMemoryRateLimiter } from "@clossys/publisher/web";
+import type { ContactDelivery } from "@clossys/publisher/web";
+
+// Your Messenger email adapter, constructed elsewhere; it is assignable to
+// `ContactDelivery` as it is.
+declare const emailAdapter: ContactDelivery;
 
 const handler = createContactHandler({
-  // ...topics, from, to, subject as above
+  topics: ["general", "press"],
+  from: "Site <site@example.com>",
+  to: ["inbox@example.com"],
+  subject: "New contact form message",
   limiter: createMemoryRateLimiter({ limit: 3, windowMs: 60_000, now: () => Date.now() }),
-  delivery: emailAdapter, // your Messenger email adapter, constructed elsewhere
+  delivery: emailAdapter,
   target: "production",
 });
 ```
