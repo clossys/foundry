@@ -1,6 +1,53 @@
+import { readFileSync } from "node:fs";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { CaptureView } from "./CaptureView.js";
+
+/** Length units a consumer token-purity gate treats as a raw length literal. */
+const RAW_LENGTH_UNIT = /^(?:\d+(?:\.\d+)?)(?:px|rem|em|vw|vh|dvh|ch|%)/;
+
+/**
+ * Fallback text of every `var(` call in `source`. A fallback is the text
+ * after the first comma that is not nested inside another call.
+ */
+function varFallbacks(source: string): string[] {
+  const fallbacks: string[] = [];
+  let from = 0;
+  while (from < source.length) {
+    const start = source.indexOf("var(", from);
+    if (start < 0) break;
+    const open = start + 3;
+    let depth = 0;
+    let close = -1;
+    for (let i = open; i < source.length; i += 1) {
+      const ch = source[i];
+      if (ch === "(") depth += 1;
+      else if (ch === ")") {
+        depth -= 1;
+        if (depth === 0) {
+          close = i;
+          break;
+        }
+      }
+    }
+    if (close < 0) break;
+    const args = source.slice(open + 1, close);
+    let depthInArgs = 0;
+    let comma = -1;
+    for (let i = 0; i < args.length; i += 1) {
+      const ch = args[i];
+      if (ch === "(") depthInArgs += 1;
+      else if (ch === ")") depthInArgs -= 1;
+      else if (ch === "," && depthInArgs === 0) {
+        comma = i;
+        break;
+      }
+    }
+    if (comma >= 0) fallbacks.push(args.slice(comma + 1).trim());
+    from = start + 4;
+  }
+  return fallbacks;
+}
 
 describe("CaptureView", () => {
   it("keeps an error summary before the consumer form and exposes the documented focus target", () => {
@@ -30,6 +77,18 @@ describe("CaptureView", () => {
     const custom = renderToStaticMarkup(<CaptureView brand="Acme" heading="Keep in touch" form="Fields" formLabel="Formulario" />);
     expect(custom).toContain('aria-label="Formulario"');
     expect(custom).not.toContain("Capture form");
+  });
+
+  it("carries no raw length literal in a var() fallback", () => {
+    const source = readFileSync(new URL("./CaptureView.tsx", import.meta.url), "utf8");
+    for (const fallback of varFallbacks(source)) {
+      expect(fallback).not.toMatch(RAW_LENGTH_UNIT);
+    }
+
+    const html = renderToStaticMarkup(<CaptureView brand="Acme" heading="Keep in touch" form="Fields" />);
+    const mainStart = html.indexOf("<main");
+    const mainOpen = html.slice(mainStart, html.indexOf(">", mainStart) + 1);
+    expect(mainOpen).toContain("max-width:var(--ui-width-prose-max)");
   });
 
   it("fails closed when the form-state or error-focus contract is incomplete", () => {
