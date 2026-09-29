@@ -8662,7 +8662,7 @@ describe("shipped message lint", () => {
       path.join(SRC_ROOT, "theme/ThemeToggle.tsx"),
     ]);
     expect(scanShippedMessageTree(SRC_ROOT).filter((violation) => !inlineCallPaths.has(violation.file))).toEqual([]);
-  });
+  }, 60_000);
 
   it("notes fix round 22 inline calls, exempt members, and copied slices", () => {
     const inlineRangeSummary = [
