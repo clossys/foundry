@@ -23,6 +23,7 @@
   ],
   "rootEntries": [
     { "name": ".changesets", "classification": "canonical", "disposition": "required" },
+    { "name": ".cursor", "classification": "extension", "disposition": "required" },
     { "name": ".github", "classification": "canonical", "disposition": "required" },
     { "name": ".gitignore", "classification": "canonical", "disposition": "required" },
     { "name": ".npmrc.example", "classification": "canonical", "disposition": "required" },
