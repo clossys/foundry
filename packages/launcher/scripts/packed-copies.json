@@ -3,6 +3,7 @@
   "copies": [
     { "copy": "skill-catalogue/{package}/SKILL.md", "source": "packages/{package}/skill/SKILL.md" },
     { "copy": "contracts/conversation-contract.md", "source": "docs/contracts/conversation-contract.md" },
-    { "copy": "contracts/repository-inventory.json", "source": "docs/contracts/repository-inventory.json" }
+    { "copy": "contracts/repository-inventory.json", "source": "docs/contracts/repository-inventory.json" },
+    { "copy": "contracts/product-ci-workflow.yml", "source": "packages/controller/conventions/templates/product-ci-workflow.yml" }
   ]
 }
