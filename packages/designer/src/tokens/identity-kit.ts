@@ -54,6 +54,16 @@
  *     badge, the shape app-icon surfaces (OS launchers, PWA manifests)
  *     expect.
  *
+ * LIVE-TEXT LOCKUP SPEC (#1535). `composeLockup` takes a SUPPLIED mark
+ * (it never draws a monogram), adopts it through `adoptSuppliedMark`, and
+ * returns a JSON-serialisable spec: the mark byte-for-byte, its `light`
+ * and `dark` recolours, the wordmark string, the font's licence record,
+ * and fixed proportions (gap and wordmark size as ratios of the mark's
+ * height) copied from the generated wordmark direction, so both paths
+ * share one set of `LOCKUP_*` constants. The wordmark stays live text
+ * (`rendering` is always `"live-text"`); this package parses no fonts, so
+ * it never outlines glyphs. Anything unrecognised is refused, not defaulted.
+ *
  * Every SVG this module returns declares `data-clear-space` on its root
  * element — `identity-checks.ts`'s `checkClearSpace` reads it. This
  * package does not rasterize or lay out a real page, so clear space is a
@@ -66,6 +76,14 @@ const MARK_VIEW_BOX = "0 0 48 48";
 const WORDMARK_VIEW_BOX = "0 0 200 48";
 const CLEAR_SPACE_RATIO = 0.2;
 const BADGE_SIZE = 48;
+
+/** The wordmark direction's layout, in viewBox units; the mark is `LOCKUP_MARK_HEIGHT` tall, the wordmark starts after `LOCKUP_GAP`. */
+export const LOCKUP_MARK_HEIGHT = 48;
+export const LOCKUP_GAP = 8;
+export const LOCKUP_WORDMARK_SIZE = 22;
+/** The same proportions as ratios of the mark's height, for scaling to any supplied mark. */
+export const LOCKUP_GAP_RATIO = LOCKUP_GAP / LOCKUP_MARK_HEIGHT;
+export const LOCKUP_WORDMARK_SIZE_RATIO = LOCKUP_WORDMARK_SIZE / LOCKUP_MARK_HEIGHT;
 
 export const IDENTITY_VARIANT_ROLES = ["primary", "mark", "mono", "light", "dark", "favicon", "appIcon"] as const;
 export type IdentityVariantRole = (typeof IDENTITY_VARIANT_ROLES)[number];
@@ -289,7 +307,7 @@ function buildWordmarkGlyph(name: string, initials: string, fontFamily: string):
   const escapedName = escapeXml(name);
   const escapedFontFamily = escapeXml(fontFamily);
   const roundel = buildMonogramGlyph(initials, "circle", fontFamily);
-  return `<g>${roundel}</g><text x="56" y="30" font-family="${escapedFontFamily}" font-size="22" font-weight="600" fill="currentColor">${escapedName}</text>`;
+  return `<g>${roundel}</g><text x="${LOCKUP_MARK_HEIGHT + LOCKUP_GAP}" y="30" font-family="${escapedFontFamily}" font-size="${LOCKUP_WORDMARK_SIZE}" font-weight="600" fill="currentColor">${escapedName}</text>`;
 }
 
 function wrapGlyph(glyph: string, viewBox: string, color: string): string {
@@ -877,5 +895,101 @@ export function adoptSuppliedMark(input: AdoptSuppliedMarkInput): IdentityDirect
       favicon: recolorSvg(trimmed, "currentColor"),
       appIcon: wrapBadge(onAccentGlyph, tokens.accent, tokens.onAccent, sourceViewBox),
     },
+  };
+}
+
+export const LOCKUP_HEADERS = ["mark", "lockup"] as const;
+export type LockupHeader = (typeof LOCKUP_HEADERS)[number];
+
+export const LOCKUP_FONT_OUTLINING = ["permitted", "restricted", "unknown"] as const;
+export type LockupFontOutlining = (typeof LOCKUP_FONT_OUTLINING)[number];
+
+/** What the font's licence allows for glyph outlining, as recorded by the caller; `unknown` is a legitimate answer, an unrecognised value is refused. */
+export interface LockupFontLicence {
+  family: string;
+  outlining: LockupFontOutlining;
+}
+
+export interface ComposeLockupInput {
+  brand: IdentityBrandInput;
+  /** A complete `<svg>...</svg>` document, adopted unchanged as the mark. */
+  suppliedSvg: string;
+  tokens: IdentityTokenInput;
+  /** The wordmark text; stored trimmed. */
+  wordmark: string;
+  fontLicence: LockupFontLicence;
+  /** Which asset the page header uses: the mark alone or the full lockup. */
+  header: LockupHeader;
+}
+
+export interface LockupSpec {
+  /** The supplied SVG, trimmed, byte-for-byte. */
+  mark: string;
+  /** The mark recoloured to `tokens.ink`, as `adoptSuppliedMark` derives it. */
+  light: string;
+  /** The mark recoloured to `tokens.onInverse`, as `adoptSuppliedMark` derives it. */
+  dark: string;
+  wordmark: string;
+  fontLicence: LockupFontLicence;
+  /** Gap between mark and wordmark, as a ratio of the mark's height. */
+  gapRatio: number;
+  /** Wordmark font size, as a ratio of the mark's height. */
+  wordmarkSizeRatio: number;
+  header: LockupHeader;
+  rendering: "live-text";
+}
+
+/**
+ * A live-text lockup spec from a SUPPLIED mark (#1535). The mark is
+ * adopted through {@link adoptSuppliedMark} (a non-SVG mark throws its
+ * {@link IdentityKitValidationError} unchanged); no monogram is ever
+ * generated. `wordmark`, `header` and `fontLicence` are validated
+ * together and refused with every reason collected: fail closed, nothing
+ * unrecognised is defaulted.
+ *
+ * The spec guarantees only the supplied mark and the fixed proportions
+ * ({@link LOCKUP_GAP_RATIO}, {@link LOCKUP_WORDMARK_SIZE_RATIO}). It does
+ * not judge the mark's legibility, does not outline text, and does not
+ * guarantee the font loads. `rendering` is always `"live-text"`:
+ * `fontLicence.outlining` of `"permitted"` records what the licence
+ * allows and does NOT produce outlined output in this version, since
+ * outlining needs a font-parsing dependency, a separate decision.
+ *
+ * The result is plain data (`JSON.parse(JSON.stringify(spec))` equals it)
+ * and holds a fresh `fontLicence` copy.
+ */
+export function composeLockup(input: ComposeLockupInput): LockupSpec {
+  // `input` is passed whole: adoptSuppliedMark reads only brand, suppliedSvg and tokens. A rebuilt object literal here makes the shipped-message lint recurse without end.
+  const adopted = adoptSuppliedMark(input);
+
+  const reasons: string[] = [];
+  const wordmarkText = typeof input.wordmark === "string" ? input.wordmark.trim() : "";
+  if (wordmarkText.length === 0) {
+    reasons.push("wordmark must be a non-empty string");
+  }
+  if (!(LOCKUP_HEADERS as readonly unknown[]).includes(input.header)) {
+    reasons.push(`header must be one of ${LOCKUP_HEADERS.join(", ")}`);
+  }
+  const licence: Partial<LockupFontLicence> = typeof input.fontLicence === "object" && input.fontLicence !== null ? input.fontLicence : {};
+  if (!(LOCKUP_FONT_OUTLINING as readonly unknown[]).includes(licence.outlining)) {
+    reasons.push(`fontLicence.outlining must be one of ${LOCKUP_FONT_OUTLINING.join(", ")}`);
+  }
+  if (!isValidCssFontFamily(licence.family as string)) {
+    reasons.push("fontLicence.family contains a character outside the allowed font-family charset (letters, digits, whitespace, comma, hyphen, underscore, quotes, period)");
+  }
+  if (reasons.length > 0) {
+    throw new IdentityKitValidationError(reasons);
+  }
+
+  return {
+    mark: adopted.variants.primary,
+    light: adopted.variants.light,
+    dark: adopted.variants.dark,
+    wordmark: wordmarkText,
+    fontLicence: { family: licence.family as string, outlining: licence.outlining as LockupFontOutlining },
+    gapRatio: LOCKUP_GAP_RATIO,
+    wordmarkSizeRatio: LOCKUP_WORDMARK_SIZE_RATIO,
+    header: input.header,
+    rendering: "live-text",
   };
 }

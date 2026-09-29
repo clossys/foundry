@@ -67,3 +67,6 @@ export type {
   SiteFooterLegalProps,
   SiteFooterLegalLink,
 } from "./SiteFooter.js";
+
+export { Brandmark } from "./Brandmark.js";
+export type { BrandmarkProps, BrandmarkVariant, BrandmarkSize } from "./Brandmark.js";

@@ -174,23 +174,36 @@ export type { MasterMark } from "./master-mark.js";
 
 export {
   adoptSuppliedMark,
+  composeLockup,
   deriveInitials,
   generateIdentityDirections,
   IDENTITY_VARIANT_ROLES,
   IdentityKitValidationError,
   isValidCssColor,
   isValidCssFontFamily,
+  LOCKUP_FONT_OUTLINING,
+  LOCKUP_GAP,
+  LOCKUP_GAP_RATIO,
+  LOCKUP_HEADERS,
+  LOCKUP_MARK_HEIGHT,
+  LOCKUP_WORDMARK_SIZE,
+  LOCKUP_WORDMARK_SIZE_RATIO,
   recolorSvg,
   validateIdentityTokenInput,
 } from "./identity-kit.js";
 export type {
   AdoptSuppliedMarkInput,
+  ComposeLockupInput,
   IdentityBrandInput,
   IdentityDirection,
   IdentityDirectionKind,
   IdentityTokenInput,
   IdentityVariantRole,
   IdentityVariantSet,
+  LockupFontLicence,
+  LockupFontOutlining,
+  LockupHeader,
+  LockupSpec,
 } from "./identity-kit.js";
 
 export {

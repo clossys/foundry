@@ -3,14 +3,23 @@ import { contrastRatio } from "./color.js";
 import { checkSingleColourLegibility, IDENTITY_MIN_CONTRAST } from "./identity-checks.js";
 import {
   adoptSuppliedMark,
+  composeLockup,
   deriveInitials,
   generateIdentityDirections,
   IDENTITY_VARIANT_ROLES,
   IdentityKitValidationError,
   isValidCssColor,
   isValidCssFontFamily,
+  LOCKUP_FONT_OUTLINING,
+  LOCKUP_GAP,
+  LOCKUP_GAP_RATIO,
+  LOCKUP_HEADERS,
+  LOCKUP_MARK_HEIGHT,
+  LOCKUP_WORDMARK_SIZE,
+  LOCKUP_WORDMARK_SIZE_RATIO,
   recolorSvg,
   validateIdentityTokenInput,
+  type ComposeLockupInput,
   type IdentityTokenInput,
 } from "./identity-kit.js";
 
@@ -770,5 +779,149 @@ describe("recolorSvg knocks out only a recognised flat two-tone mark (issue #153
       expect(variants.dark).toBe(mainRecolorSvg(svg, TOKENS.onInverse));
       expect(variants.favicon).toBe(mainRecolorSvg(svg, "currentColor"));
     });
+  });
+});
+
+describe("composeLockup (issue #1535, live-text lockup from a supplied mark)", () => {
+  const SUPPLIED = `  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M2 2h20v20H2z" fill="#123456" /></svg>\n`;
+  const BRAND = { name: "Acme Studio" };
+
+  function input(overrides: Partial<ComposeLockupInput> = {}): ComposeLockupInput {
+    return {
+      brand: BRAND,
+      suppliedSvg: SUPPLIED,
+      tokens: TOKENS,
+      wordmark: "Acme Studio",
+      fontLicence: { family: "Inter, sans-serif", outlining: "permitted" },
+      header: "lockup",
+      ...overrides,
+    };
+  }
+
+  function reasonsOf(run: () => unknown): readonly string[] {
+    try {
+      run();
+    } catch (error) {
+      expect(error).toBeInstanceOf(IdentityKitValidationError);
+      return (error as IdentityKitValidationError).reasons;
+    }
+    throw new Error("expected composeLockup to throw");
+  }
+
+  it("carries the supplied mark byte-for-byte (trimmed) as spec.mark", () => {
+    const spec = composeLockup(input());
+    expect(spec.mark).toBe(SUPPLIED.trim());
+  });
+
+  it("takes light and dark from adoptSuppliedMark for the same input", () => {
+    const adopted = adoptSuppliedMark({ brand: BRAND, suppliedSvg: SUPPLIED, tokens: TOKENS });
+    const spec = composeLockup(input());
+    expect(spec.light).toBe(adopted.variants.light);
+    expect(spec.dark).toBe(adopted.variants.dark);
+    expect(adopted.variants.primary).toBe(spec.mark);
+    expect(adopted.variants.mark).toBe(SUPPLIED.trim());
+  });
+
+  it("leaves the generated wordmark direction on the shared proportions", () => {
+    const wordmark = generateIdentityDirections({ name: "Acme Studio" }, TOKENS)[0];
+    expect(wordmark.variants.primary).toContain('<text x="56" y="30"');
+    expect(wordmark.variants.primary).toContain('font-size="22"');
+  });
+
+  it("exports proportions equal to those parsed from the generated wordmark direction", () => {
+    const primary = generateIdentityDirections({ name: "Acme Studio" }, TOKENS)[0].variants.primary;
+    const x = Number(/<text x="([\d.]+)"[^>]*>Acme Studio</.exec(primary)?.[1]);
+    const size = Number(/<text [^>]*font-size="([\d.]+)"[^>]*>Acme Studio</.exec(primary)?.[1]);
+    expect(LOCKUP_MARK_HEIGHT).toBe(48);
+    const spec = composeLockup(input());
+    expect(spec.gapRatio).toBe((x - LOCKUP_MARK_HEIGHT) / LOCKUP_MARK_HEIGHT);
+    expect(spec.wordmarkSizeRatio).toBe(size / LOCKUP_MARK_HEIGHT);
+    expect(spec.gapRatio).toBe(LOCKUP_GAP_RATIO);
+    expect(spec.wordmarkSizeRatio).toBe(LOCKUP_WORDMARK_SIZE_RATIO);
+    expect(LOCKUP_GAP_RATIO).toBe(LOCKUP_GAP / LOCKUP_MARK_HEIGHT);
+    expect(LOCKUP_WORDMARK_SIZE_RATIO).toBe(LOCKUP_WORDMARK_SIZE / LOCKUP_MARK_HEIGHT);
+  });
+
+  it("always reports live-text rendering, even when outlining is permitted", () => {
+    for (const outlining of LOCKUP_FONT_OUTLINING) {
+      const spec = composeLockup(input({ fontLicence: { family: "Inter", outlining } }));
+      expect(spec.rendering).toBe("live-text");
+      expect(spec.fontLicence.outlining).toBe(outlining);
+    }
+  });
+
+  it("echoes the header for both values", () => {
+    for (const header of LOCKUP_HEADERS) {
+      expect(composeLockup(input({ header })).header).toBe(header);
+    }
+  });
+
+  it("stores the wordmark trimmed", () => {
+    expect(composeLockup(input({ wordmark: "  Acme Studio \n" })).wordmark).toBe("Acme Studio");
+  });
+
+  it("returns a fresh fontLicence copy", () => {
+    const fontLicence = { family: "Inter", outlining: "restricted" as const };
+    const spec = composeLockup(input({ fontLicence }));
+    expect(spec.fontLicence).toEqual(fontLicence);
+    expect(spec.fontLicence).not.toBe(fontLicence);
+  });
+
+  it("is JSON-serialisable and round-trips deep-equal", () => {
+    const spec = composeLockup(input());
+    expect(JSON.parse(JSON.stringify(spec))).toEqual(spec);
+  });
+
+  it("never generates a monogram: no text element unless the supplied mark had one", () => {
+    const spec = composeLockup(input());
+    expect(spec.mark).not.toContain("<text");
+    expect(spec.light).not.toContain("<text");
+    expect(spec.dark).not.toContain("<text");
+    const withText = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><text x="1" y="12">Q</text></svg>`;
+    const spec2 = composeLockup(input({ suppliedSvg: withText }));
+    expect(spec2.mark).toBe(withText);
+    expect(spec2.mark.match(/<text/g)).toHaveLength(1);
+    expect(spec2.light.match(/<text/g)).toHaveLength(1);
+  });
+
+  it("refuses a mark that is not a complete svg document, unchanged from adoptSuppliedMark", () => {
+    const bad = ["plain text", "<svg viewBox=\"0 0 1 1\"><path d=\"M0 0\" />", `${SUPPLIED.trim()}<script>alert(1)</script>`];
+    for (const suppliedSvg of bad) {
+      expect(() => composeLockup(input({ suppliedSvg }))).toThrow(IdentityKitValidationError);
+      const expected = reasonsOf(() => adoptSuppliedMark({ brand: BRAND, suppliedSvg, tokens: TOKENS }));
+      expect(reasonsOf(() => composeLockup(input({ suppliedSvg })))).toEqual(expected);
+    }
+  });
+
+  it("refuses an empty or whitespace wordmark", () => {
+    for (const wordmark of ["", "   ", "\n\t"]) {
+      expect(() => composeLockup(input({ wordmark }))).toThrow(IdentityKitValidationError);
+    }
+    expect(() => composeLockup(input({ wordmark: undefined as unknown as string }))).toThrow(IdentityKitValidationError);
+    expect(() => composeLockup(input({ wordmark: 7 as unknown as string }))).toThrow(IdentityKitValidationError);
+  });
+
+  it("refuses an unrecognised header", () => {
+    expect(() => composeLockup(input({ header: "banner" as never }))).toThrow(IdentityKitValidationError);
+    expect(() => composeLockup(input({ header: undefined as never }))).toThrow(IdentityKitValidationError);
+  });
+
+  it("refuses an unrecognised outlining value", () => {
+    expect(() => composeLockup(input({ fontLicence: { family: "Inter", outlining: "maybe" as never } }))).toThrow(IdentityKitValidationError);
+    expect(() => composeLockup(input({ fontLicence: { family: "Inter", outlining: undefined as never } }))).toThrow(IdentityKitValidationError);
+    expect(() => composeLockup(input({ fontLicence: undefined as never }))).toThrow(IdentityKitValidationError);
+  });
+
+  it("refuses a font family outside the allowed charset", () => {
+    for (const family of ["", "Inter\"><script>", "a;b", "f(x)"]) {
+      expect(() => composeLockup(input({ fontLicence: { family, outlining: "unknown" } }))).toThrow(IdentityKitValidationError);
+    }
+  });
+
+  it("collects every reason rather than stopping at the first", () => {
+    const reasons = reasonsOf(() =>
+      composeLockup(input({ wordmark: " ", header: "x" as never, fontLicence: { family: "a;b", outlining: "y" as never } })),
+    );
+    expect(reasons).toHaveLength(4);
   });
 });
