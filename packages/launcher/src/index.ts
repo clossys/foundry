@@ -97,3 +97,11 @@ export type {
   WorkspaceRefusal,
   WorkspaceState,
 } from "./types.js";
+export {
+  PROVENANCE_CHECK_BIN,
+  PROVENANCE_CHECK_MAX_BUFFER,
+  PROVENANCE_CHECK_TIMEOUT_MS,
+  checkSetProvenance,
+  registrySnapshotDigest,
+} from "./provenance-gate.js";
+export type { ProvenanceGateInput, ProvenanceGatePorts } from "./provenance-gate.js";

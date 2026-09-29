@@ -852,6 +852,43 @@ A snapshot is a record of what the registry answered, not evidence of where
 a package came from; that is shown by verifying the package's provenance,
 which this step does not do.
 
+## Checking provenance (V9)
+
+`checkSetProvenance({ tree, hubRoot, items, baseLedger, snapshot, planSnapshotDigest }, ports?)`
+returns, for one change set, its V9 `ApplyCheck` entries
+(`Promise<readonly ApplyCheck[]>`). It is exported but not yet run by `plan`,
+`materialize` or `verify`; a later change wires it in.
+
+- **Engine.** It runs the hub's own `node_modules/.bin/integrator-provenance-check --cwd <tree>`
+  (`PROVENANCE_CHECK_BIN`), never through `npx` and never looked up on `PATH`. If
+  that bin is missing, or its real path is not inside the hub's installed
+  `@clossys/integrator`, the result is indeterminate (`engine-missing-bin`).
+  The child gets an environment built from a fixed list of variables, so no
+  parent credential, proxy or CA-trust variable reaches it, and its time and
+  output are capped (`PROVENANCE_CHECK_TIMEOUT_MS`, `PROVENANCE_CHECK_MAX_BUFFER`).
+  The JSON report is parsed strictly; exit `2`, unreadable output, or output
+  that contradicts the exit code is indeterminate.
+- **What gates.** Only `install` and `pin-starter` items with
+  `satisfiedInBase: false`. Each must be `verified` at exactly its version. One
+  missing from the report is indeterminate; a verified version other than the
+  act's is violated (`version-mismatch`). Other `@clossys/*` packages in the
+  report never gate, so an unrelated violated legacy pin passes.
+- **First-publication exception.** An unverified package passes
+  (`first-publication-exception`, satisfied) only when all three hold: the
+  trusted base ledger has no `packages` row for it; the snapshot's recomputed
+  digest, `registrySnapshotDigest(snapshot)`, equals the plan's
+  `resolution.snapshotDigest`; and the snapshot lists exactly one version for
+  it, the act's. Otherwise it is violated (`provenance-unverified`). Accepting
+  an unattested first publication under these conditions is by design.
+- **Verdict.** Indeterminate outranks violated: when any indeterminate rule
+  applies, only indeterminate entries are returned. A set with nothing to gate
+  returns one satisfied entry with no rule, without running the engine.
+- **Soundness boundary.** A pass proves registry provenance for the named
+  versions at check time, as the hub's pinned Integrator reports it. It does
+  not cover transitive dependencies or a later republish.
+
+Types: `ProvenanceGateInput`, `ProvenanceGatePorts`.
+
 ## Why this is not Advisor, Starter, Builder, installer, creator, or a connector
 
 Advisor is the engagement engine: it grades evidence and names a next
