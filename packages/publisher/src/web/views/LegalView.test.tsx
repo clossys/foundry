@@ -212,6 +212,14 @@ describe("LegalView dates", () => {
     expect(formatted("en", 2026, 1, 1)).toContain("January 1, 2026");
   });
 
+  it("keeps a year below 100 instead of mapping it to the 1900s", () => {
+    const html = render(legalDoc("terms", { legal: { effectiveDate: "0050-06-01" } }), { locale: "en" });
+    const match = /<time dateTime="0050-06-01"[^>]*>([^<]*)<\/time>/.exec(html);
+    expect(match).not.toBeNull();
+    expect(match?.[1]).toContain("50");
+    expect(match?.[1]).not.toContain("1950");
+  });
+
   it("places the dates between the page header and the article body", () => {
     const html = render(legalDoc("terms"));
     expect(html.indexOf("<time")).toBeLessThan(html.indexOf("<article"));

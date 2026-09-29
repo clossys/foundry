@@ -60,7 +60,10 @@ function createDateFormatter(locale: string): Intl.DateTimeFormat {
 /** `value` is already proven `YYYY-MM-DD` by validateLegalDocument; the date is built in UTC so no timezone can shift the day. */
 function formatDate(formatter: Intl.DateTimeFormat, value: string): string {
   const [year, month, day] = value.split("-").map(Number) as [number, number, number];
-  return formatter.format(new Date(Date.UTC(year, month - 1, day)));
+  // Date.UTC maps years 0-99 to 1900-1999, so set the full year explicitly.
+  const date = new Date(0);
+  date.setUTCFullYear(year, month - 1, day);
+  return formatter.format(date);
 }
 
 /**
