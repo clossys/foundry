@@ -315,6 +315,20 @@ export interface CopyRegistry extends CopyRecord {
   entries: CopyRegistryEntry[];
 }
 
+/** The approval facts a resolution carries (`CopyResolution.approval`). */
+export type CopyResolutionApproval =
+  | { approvedBy: "owner"; pendingOwnerReview: false }
+  | {
+      approvedBy: "delegate";
+      pendingOwnerReview: boolean;
+      /**
+       * Present only when this delegate-approved entry resolved on "production"
+       * because the `approvalPlan` authorized it: that plan's canonical digest.
+       * Absent when `acceptDelegateInProduction` authorized it, and on "preview".
+       */
+      authorizingPlanDigest?: string;
+    };
+
 /** A successful, fully traced resolution of one copy reference. */
 export interface CopyResolution {
   ref: CopyRef;
@@ -325,7 +339,7 @@ export interface CopyResolution {
   source: CopySource;
   entryId: CopyEntryId;
   /** Present only when the resolved entry carries an approval record. */
-  approval?: { approvedBy: CopyApprover; pendingOwnerReview: boolean };
+  approval?: CopyResolutionApproval;
 }
 
 /** Resolver shape for callers that need rendered audience text. */

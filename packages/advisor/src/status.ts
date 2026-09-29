@@ -117,6 +117,23 @@ export interface AdvisorPlanResolution {
   snapshotDigest: string;
 }
 
+/**
+ * Declares that copy a delegate approved is accepted on production (issue
+ * #1586). Read by `@clossys/writer`, and only through an approval that names
+ * this plan's own digest; this package only validates and records it. The plan
+ * digest covers it, so the freeze after an approval applies to it.
+ */
+export interface AdvisorPlanDelegatedCopyApproval {
+  /** The resolution target on which a delegate's approval is accepted. One value for now. */
+  target: "production";
+  /**
+   * Optional. The copy entry-id namespaces this declaration covers (for
+   * example `site.home`, which covers `site.home.title`). Absent, every entry
+   * is covered. Never empty. A repeated item is redundant, not refused.
+   */
+  scopes?: readonly string[];
+}
+
 /** Who does it, how, and by when. Field-for-field the same as the Controller role's own `NextAction` record -- named distinctly here only to avoid colliding with this file's own plan-level `AdvisorPlanNextAction`, which is a different concept (the one pending step for the whole plan, not one blocker's). */
 export interface AdvisorBlockerNextAction {
   who: string;
@@ -156,6 +173,8 @@ export interface AdvisorPlan {
   packages?: readonly AdvisorPlanPackageAct[];
   /** Optional. Present exactly when `packages` is. */
   resolution?: AdvisorPlanResolution;
+  /** Optional. Copy a delegate approved is accepted on production; see `AdvisorPlanDelegatedCopyApproval`. */
+  delegatedCopyApproval?: AdvisorPlanDelegatedCopyApproval;
 }
 
 function section(title: string, body: readonly string[]): string {

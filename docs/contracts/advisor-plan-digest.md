@@ -6,11 +6,13 @@ It names exactly which plan is meant: the Advisor skill records it as the
 assessment basis's `planDigest`, which an execution authorization must
 equal. How a recorded approval binds bytes is
 set out under [Approval binding](#approval-binding) below.
-`@clossys/advisor` and `@clossys/launcher` each implement it once, from this
-page, as `planDigest()`. Both test their implementation against the shared
-corpus [`advisor-plan-digest.fixture.json`](advisor-plan-digest.fixture.json),
-whose expected values were produced independently of either package, so the
-two packages compute identical digests.
+`@clossys/advisor`, `@clossys/launcher` and `@clossys/writer` each implement
+it once, from this page (Advisor and Launcher as `planDigest()`, Writer inside
+`planDelegateCopyAuthority()`). Each tests its implementation against the
+shared corpus
+[`advisor-plan-digest.fixture.json`](advisor-plan-digest.fixture.json), whose
+expected values were produced independently of any of them, so the three
+packages compute identical digests.
 
 ## Definition
 
@@ -80,7 +82,8 @@ approval binding (issue #1178). The definition above does not change.
   else. A reader that applies the plan must recompute the digest of the
   change it holds, and refuse unless the two are equal. An approval without
   a `subjectDigest` binds nothing. No reader in this repository applies a
-  bound approval yet. Launcher's brief-only path (`launcher-apply-plan
+  bound approval yet. `@clossys/writer` is the first to grant authority from
+  one (see [Delegated copy approval](#delegated-copy-approval)). Launcher's brief-only path (`launcher-apply-plan
   --plan --brief --repo`) predates the binding and checks none: it still
   accepts any approving decision, and it is kept as it is, not extended. `@clossys/launcher` reads it with
   `approvedSubject()`. That function returns the `subjectDigest` of the
@@ -104,6 +107,34 @@ approval binding (issue #1178). The definition above does not change.
   between is reported elsewhere. It is not written into `whereWeAre`,
   `recommendedNext` or `blockers`, because each of those is covered. The
   rule is stated in the contract's description and in the Advisor skill.
+
+## Delegated copy approval
+
+Issue #1586. `@clossys/writer` grants authority from a bound approval: copy
+that a delegate approved is accepted on production when the plan says so. It
+reads the plan as follows.
+
+- **Writer is given the plan's bytes, and reads them strictly.** It does not
+  accept a parsed object. Invalid UTF-8, a leading byte order mark and a
+  repeated object key at any depth are refused, as under Definition.
+- **The plan must validate,** against `advisor-plan.json`, including the code
+  rules that the contract's description defines. A plan that does not validate
+  authorizes nothing, whatever it says about copy.
+- **The plan must declare `delegatedCopyApproval`.** The member is covered by
+  the digest, so adding it, removing it or editing its `scopes` after an
+  approval changes the digest, and the approval then names a plan that no
+  longer exists. `scopes`, when present, limits which copy entry ids are
+  covered; without it every entry is covered.
+- **The latest decision is found exactly as `approvedSubject()` finds it.** It
+  is the latest by `at`. When several decisions share that instant, every one
+  of them must have chosen `approved` with the same `subjectDigest`. When a
+  decision time does not parse, nothing is approved.
+- **The subject must equal the plan's own digest, recomputed by Writer.** For
+  this reader the change the approver was shown is the plan itself. A
+  `subjectDigest` that names another plan, or an apply bundle, grants nothing
+  here.
+- **Whether the decision is genuine depends on where the file is committed,**
+  as under Earlier decisions: nothing inside the plan can show who wrote it.
 
 ## Why these choices
 

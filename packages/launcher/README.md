@@ -433,6 +433,63 @@ into a product repository, so until the repository is staffed in an approved
 plan and that plan's setup pull request merges, an unsatisfied
 `agents-pointer` check is the expected state; its note says so.
 
+### Setup templates
+
+`renderSetupTemplate()` and the renderers beside it are pure functions that
+return the exact bytes of the files a setup change writes. Nothing writes those
+bytes yet; a later step plans them into a change set. The renderers behind it
+are exported too: `renderStarterRequest()`, `renderAdoptionDecisionWorkflow()`,
+`renderProductCiWorkflow()`, `renderAdoptionEvidenceWorkflow()`,
+`renderSnapshotCollector()`, `renderPathScopeWorkflow()` and
+`renderPathScopeScript()`, the standalone script the path-scope workflow embeds.
+A `TemplateResult` is either `{ ok: true, files }`, a list of `TemplateFile`
+entries (`path` and `bytes`), or `{ ok: false, refusal }` with a
+`TemplateRefusal`; the package manager is a `SetupPackageManager` and the Starter
+pin a `StarterPinInput`.
+
+There are four acts, each with a fixed file list that `renderSetupTemplate()`
+returns in this order:
+
+- `add-caller-workflow` takes `{ packageManager }` and returns
+  `.github/workflows/clossys-adoption-evidence.yml`,
+  `.github/workflows/clossys-adoption-decision.yml` and
+  `.github/scripts/clossys-collect-adoption-snapshot.mjs`.
+- `write-starter-request` takes a `StarterRequestInput` and returns
+  `.starter/request.json`.
+- `add-ci-template` takes no input and returns `.github/workflows/clossys-ci.yml`.
+- `add-path-scope-job` takes no input and returns
+  `.github/workflows/clossys-path-scope.yml`.
+
+The request is in the admission phase and names the Starter as both its own
+engine and its target, and it names both evidence paths, the assessment file
+and the target-input file. It carries no advisor and no hub. The Starter pin must be an exact version in `>=0.2.0 <0.3.0`
+(`STARTER_PIN_RANGE`); any other pin is refused as `starter-pin-unsupported`,
+and a package manager other than npm or pnpm, Yarn included, is refused as
+`package-manager-unsupported`. A refusal names a position such as
+`starter.version` and never quotes the value it refused.
+
+The decision workflow starts only on `workflow_run` completion of the evidence
+workflow, and its job carries no condition, so it starts for every conclusion.
+It checks out the protected pull request base, runs one fixed frozen install
+(`npm ci --ignore-scripts` or `pnpm install --frozen-lockfile --ignore-scripts`),
+and runs the installed Starter's `admit` command over a sparse checkout of the
+`workflow_run` head that holds only `/clossys/.state/installed.json`. The
+trusted decision job never reads or trusts the snapshot artifact the evidence
+workflow uploads, because a pull request controls that workflow. The collector
+script is still written because the contract's file set for the caller
+workflows names it.
+
+The path-scope job applies to pull requests whose head branch starts with
+`clossys/apply-`, and fails when a changed path is outside the paths Clossys may
+own (`OWNED_PATH_PATTERNS`) or, apart from the ledger, `package.json` and the
+lockfiles, is not named by the pull request's own ledger. It runs in the pull
+request's own context, so it catches an agent's mistakes, not a hostile author;
+the admission job runs from the protected base.
+
+A change to any of these workflows, or to `.starter/request.json`, is proved
+only by the first pull request after it merges, because the decision runs from
+the base: a one-merge lag.
+
 ## Inventory: adopting an existing source
 
 When an account already keeps a repository inventory in its own control
@@ -573,6 +630,50 @@ Advisor's job); it only validates the two shapes and writes the one file.
 The apply planner below is different: it projects each repository's brief
 from the hub brief itself.
 
+### Release-age exemption
+
+`editReleaseAgeExemption()` computes the edit that lists the publishing
+scope's `<scope>/*` entry as exempt from a package manager's release-age
+delay (#1178). It is pure: it does no I/O. It takes a surface
+(`pnpm-workspace` or `yarnrc`), the surface file's text or `null`, and, for
+pnpm, the `.npmrc` text or `null`. It returns `edited` with the exact new
+text, `unchanged` when the scope entry is already listed, or a refusal
+(`ReleaseAgeEdit`, with `ReleaseAgeEditInput` and
+`ReleaseAgeEditRefusalReason`).
+
+The entry goes under `minimumReleaseAgeExclude` (pnpm, single-quoted) or
+`npmPreapprovedPackages` (Yarn, double-quoted). A missing file becomes the
+key alone, a top-level block sequence of scalars gets one new entry after
+its last item, and a file without the key gets the key appended. Other
+bytes, including comments and the final newline, are kept. The function
+reads only the shapes it recognises: `release-age-surface-unparseable` covers
+a flow sequence, an anchor, an alias, a tag, a comment inside the list,
+several documents, a tab, a carriage return or byte order mark, a repeated
+key, and a value that is not a block sequence of scalars.
+
+For pnpm the `.npmrc` is read under a fixed grammar and refused otherwise.
+Every line must be blank, a comment (first non-space character `#` or `;`),
+or a plain `key=value` assignment, optionally spaced around the `=`, whose key
+is only ASCII letters, digits and `@ : _ . / -`. An `.npmrc` containing any
+line outside those shapes (a quoted or bracketed key, a comment or escape
+inside the key, a tab, a section header, a key with no `=`) is refused as
+`release-age-surface-unparseable`, because npm's ini reader could read such a
+line as the exclusion setting. A plain key that is
+`minimum-release-age-exclude` in any case, with `-` and `_` ignored (so the
+camel-case spelling too), is refused as `release-age-surface-conflict`.
+Refusing is the default: an unrelated `.npmrc` line the grammar does not list
+also refuses the whole file, and the caller resolves the file by hand.
+
+`verifyReleaseAgeExemption()` takes the surface, the text before, the text
+after, and, for pnpm, the `.npmrc` text. It reports a `ReleaseAgeVerdict`, `{ verified: true, value }`
+(its input is a `ReleaseAgeVerifyInput`), only when the two texts differ by that one added entry, read again with the
+same rules; `value` is the `<scope>/*` string the installed-state ledger's
+`entries` row holds. It returns `{ verified: false }` for an unchanged file
+(`before` equal to `after`) and for any `.npmrc` that is a conflict or outside
+the grammar above, so a wiring unit must not verify after an `unchanged` or
+`refused` result. It says nothing about whether a given pnpm or Yarn
+version honours the key; that is proved separately with pinned tools.
+
 ### Computing each repository's change
 
 `planApplyBundle()` computes, for each repository a plan staffs, the change
@@ -704,6 +805,104 @@ repository `@clossys-advisor` and the voices of the roles staffed there --
 are not built yet, so until it ships no Launcher command puts those voices
 into a product repository.
 
+### Observing a repository
+
+`observeRepository({ id, clone, hubOwner?, ports })` turns one local clone
+into the `RepositoryObservation` that `planApplyBundle()` takes, or into a
+skipped observation `{ id, skipped, verdict }` with a reason id. The input is
+an `ObserveRepositoryInput`: a bare `id` is qualified by `hubOwner`, and the
+`RepositoryObservationPorts` supply the two values a clone cannot hold
+(`nodeId` and `visibility`) and, optionally, `originId`, which maps an origin
+URL to `owner/name`.
+
+```ts
+const observed = await observeRepository({
+  id: "acme/site",
+  clone: "/work/site",
+  ports: { nodeId, visibility },
+});
+if ("skipped" in observed) console.log(observed.skipped, observed.verdict);
+```
+
+- The rule: only this repository's own object database and refs are read,
+  through git plumbing, never the working tree and never an alternate object
+  store, `commondir` or submodule repository; anything unusual is refused,
+  not interpreted. What the object database holds is trusted to match its
+  ids: an observation is the committed head as the clone's object database
+  stores it. Every field is read from git objects at the default-branch
+  head; a file's digest is that of its bytes read as UTF-8 text, as
+  materialization computes it (a symbolic link's digest is the digest of its
+  target). Nothing is written to the clone: the remote tip is read with
+  `git ls-remote` run outside the clone, and the default branch comes from
+  the remote's `HEAD`.
+- The committed tree is listed first, and a submodule is refused
+  (`submodule-present`), before any command that reads the working tree runs;
+  `git status` never considers a submodule, because git would open the
+  submodule's own repository and read its configuration.
+- A clone is refused, not observed, when its directory is missing
+  (`clone-missing`, `indeterminate`); when its `origin` is another repository;
+  when its tree is dirty or has untracked files not ignored, or a tracked file is marked
+  skip-worktree or assume-unchanged; when its local head differs from the
+  remote tip; when it reads objects from another store
+  (`objects/info/alternates`); when its git directory holds a split index's
+  shared file (`sharedindex.*`), which git rewrites on every index read, so
+  observing it would write to the clone (`clone-config-unsafe`); or when `.git/config` holds a key outside a
+  short fixed list (`violated`). The config is read as data, so a filter,
+  hook path, pager, `fsmonitor` or alias entry is refused rather than run.
+- The default origin parser names only an exact `https://github.com/` or
+  `ssh` GitHub URL, and only those two transports fetch; an `originId` you
+  supply is the only way a local path is fetched. git is run from an absolute
+  path found among the absolute, non-empty `PATH` entries, never by a search
+  of the clone's own directory.
+- `files` lists whatever the head holds at a path the apply flow may write: a
+  file, a symbolic link, or, for a directory, each file under it, so a
+  directory where a link belongs reads as occupied. Root entries that differ
+  from `clossys`, `.agents`, `.claude` or `.cursor` only by letter case,
+  Unicode form or a trailing dot, and two spellings of `.github` or
+  `.starter`, are refused (`case-variant-owned-path`); a `consumerCi` workflow
+  is a regular file spelled `.github/workflows/`.
+- `nodeId` and `visibility` come through the injected ports; a port that
+  throws or returns a malformed value is `indeterminate`.
+- `phase` is `apply` only when the base has a valid installed-state ledger,
+  every setup-template path is a regular file at the head, and
+  `manifestEntries` pins `@clossys/starter` at an exact version for which its
+  lockfile has a row of that name and version, not an alias (an `npm:` alias,
+  or another package under its name, is refused as `lockfile-unreadable`; the
+  host and integrity are the planner's to check); otherwise it is `setup`.
+- git runs without hooks, `fsmonitor` or a pager, and every tree, blob and
+  output read has a size bound. git inside the clone reads no configuration
+  but the vetted `.git/config` and fixed `-c` overrides: the system and
+  global configuration are switched off, and `GIT_CONFIG_COUNT` and its
+  key and value variables, `GIT_CONFIG_PARAMETERS`, `GIT_CONFIG_SYSTEM` and
+  `GIT_ATTR_SOURCE` are removed. `git ls-remote`, which runs outside the
+  clone, keeps the operator's global and system git config files (credential
+  helpers, proxy), but the `GIT_CONFIG_COUNT`, `GIT_CONFIG_KEY_n`,
+  `GIT_CONFIG_VALUE_n` and `GIT_CONFIG_PARAMETERS` environment variables are
+  not forwarded to it either, so an origin that needs credentials supplied
+  through those variables is skipped as `remote-tip-unreadable` instead of
+  observed.
+
+| Verdict | Skip reasons |
+| --- | --- |
+| `violated` | `invalid-id`, `clone-config-unsafe`, `origin-mismatch`, `not-on-default-branch`, `remote-tip-mismatch`, `working-tree-dirty`, `package-manager-conflict` |
+| `indeterminate` | `clone-missing`, `clone-unreadable`, `id-owner-unknown`, `remote-tip-unreadable`, `node-id-unavailable`, `visibility-unavailable`, `tree-too-large`, `submodule-present`, `manifest-unreadable`, `lockfile-ambiguous`, `package-manager-unknown`, `lockfile-unreadable`, `release-age-surface-invalid`, `agents-link-unreportable`, `observation-too-large`, `case-variant-owned-path`, `ledger-unreadable`, `profile-ambiguous` |
+
+What it does not decide: it reports what the committed head holds, not
+whether applying is safe. Object contents, and links inside
+`.git/objects`, are trusted to match their ids. Ignored files at owned paths
+read as absent (`base-mismatch` catches them); a symbolic link at `.github`,
+`.starter` or `clossys` is unreported here and refused by materialization
+(`symlink-ancestor`); conversion attributes (`eol`, `ident`, LFS) end in
+`base-mismatch`; lossy UTF-8 digests can collide, as in materialization; a
+clone clean only through a custom global `core.excludesFile`, or one that
+needs `safe.directory`, is refused, which fails closed. Ownership and trust
+are the planner's judgement, and so is whether the pinned Starter version is one that implements the
+request: there is no version-range check here.
+It is not a check of Windows short names or other alias spellings beyond case
+and Unicode-normalization folding, and which root names a particular set
+creates is the planner's contract check; the observation reports over
+`clossys`, `.agents`, `.claude` and `.cursor`.
+
 ### The installed-state ledger
 
 Every change set names `clossys/.state/installed.json` as a derived file:
@@ -774,6 +973,88 @@ set. Both commands are step 3 in
 [`docs/rfcs/apply-approved-plan.md`](../../docs/rfcs/apply-approved-plan.md)
 (section 11); a successful verify corresponds to the `materialized` row in
 section 4.4 of that RFC.
+
+### What authorizes a write
+
+`materialize` and `verify` decide, from the hub alone, on whose authority a
+change set is written, and record exactly that in the ledger; no flag, option
+or default supplies it. The decision reads the plan committed at the hub's
+current branch head (an uncommitted edit to `clossys/advisor/plan.json` is
+ignored, and a detached head refuses), the latest approving decision's
+subject digest, the stored bundle with that digest, and the stored change
+sets.
+
+- **Approved.** The set is a member of that bundle, by repository id and
+  change-set digest, and its plan digest equals the plan's. The ledger
+  records `approved` with the bundle's digest.
+- **Admitted.** An apply set that is not a member is admitted, with no second
+  approval, only when all of the following hold: it has the same plan digest
+  and the approving decision is still the latest; its package acts equal the
+  setup set's by plan item, it defers nothing, has the same `producer`, and
+  every whole-file entry is a no-op; and the base's trusted ledger ends with
+  that setup set, bound `approved` to the same subject, with every byte the
+  setup set wrote present in the base by content, so a squash or rebase merge
+  is admitted. The setup set must itself be a member of the approved bundle,
+  and the ledger the set would write must pass the succession rules as an
+  admitted generation.
+- **Otherwise** the step reports `indeterminate` with reason
+  `awaiting-approval` and a fixed detail token, and writes nothing.
+
+A set with package acts also needs a current execution authorization: the
+hub's own `node_modules/.bin/advisor-execution-readiness` (never `npx`) runs
+against the committed `clossys/advisor/assessment-input.json` at the current
+instant, and the authorization must name the plan digest, the repository and
+every package act. Readiness's own answer is kept: not current is `violated`;
+unreadable, absent or failing to run is `indeterminate`. `materialize` checks
+before its first write, and `verify` checks again, so a withdrawn approval or
+an expired authorization fails `verify`.
+
+`readHubAuthority()` reads the committed approval, `planPackagesFor()` gives
+the plan's package identities for one repository, and `decideSetBinding()`
+returns the binding or an `AdmissionRefusal` (exit code, reason and a fixed
+detail token). `HubAuthority` is what `readHubAuthority()` returns, and a
+`ReadinessRunner` replaces the process launch of the readiness executable, for
+tests.
+
+This proves that the bytes are those the committed decision names, or that the
+one-approval rule admits. It does not prove who committed the decision; the
+hub repository's branch protection governs that.
+
+### Rendering the pull request
+
+`renderPullRequest({ set, binding, taskRecord })` returns the title and body of
+the pull request for one stored change set, and `bodySha256`, which is
+`sha256:` and the hex SHA-256 of the body's UTF-8 bytes. It is a pure function
+of its three inputs (`RenderPullRequestInput`): it reads no file, runs no command and opens nothing. The
+title is exactly `set.pullRequest.title`, which must be `Clossys: apply plan `
+and the first 12 hex digits of the set's own digest.
+
+The body is LF only and ends in one LF. Its first line is the marker
+`<!-- clossys-change-set: sha256:<64 hex> -->`, and no other line is a marker.
+It then names the repository id, the phase, and the change-set, plan and bundle
+digests; the binding you pass (`approved` with its subject digest, or `admitted`
+with its subject digest and setup change set); one line per item, in the set's
+own order, with `name@version` for `install` and `pin-starter`; each deferred or
+refused entry by item id and reason code only; and a `## Task record` section
+that links `#<n>`. It carries ids, act names, versions and digests only, never
+brief or plan prose, file contents, key values or paths.
+
+`readChangeSetMarker(body)` returns the digest only when exactly one line of the
+body is exactly the marker and the marker appears nowhere else, and `null`
+otherwise.
+
+It returns a `PullRequestText`, or a `PullRequestRefusal` whose
+`PullRequestRefusalReason` is a fixed token that names no id, digest or input
+text, for a set that fails `validateRepositoryChangeSet` or
+whose digest does not recompute, a malformed binding, an `admitted` binding on
+a setup set, a task record that is not a positive safe integer, and any value it
+cannot prove safe to write (each must match its own strict pattern and hold no
+`<`, `>`, backtick, `|`, carriage return or line feed).
+
+It does not decide the binding: it shows what you pass, so pass the result of
+`decideSetBinding()`. It does not check that the task-record issue exists, and
+it cannot stop a pull request's body being edited after it is opened; keeping
+`bodySha256` and the marker is what lets a later step notice that.
 
 ## Taking the registry snapshot
 

@@ -110,6 +110,8 @@ export interface AdvisorPlan {
   /** Present exactly when `resolution` is. */
   readonly packages?: readonly PlanPackageAct[];
   readonly resolution?: { readonly snapshotDigest: string };
+  /** Declares that copy a delegate approved is accepted on production (issue #1586); read by @clossys/writer, not by this package. */
+  readonly delegatedCopyApproval?: { readonly target: "production"; readonly scopes?: readonly string[] };
 }
 
 /** `reason` lists every violation, separated by `; `, each naming the field at fault (for example `plan.blockers[0].capabilityId is required`). */

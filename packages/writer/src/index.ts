@@ -36,6 +36,7 @@ export type {
   CopyRegistry,
   CopyRegistryEntry,
   CopyResolution,
+  CopyResolutionApproval,
   CopyResolver,
   CopySource,
   CopyTranslationProvenance,
@@ -55,9 +56,16 @@ export type {
   CopyResolveIssue,
   CopyResolveIssueReason,
   CopyResolveOptions,
+  CopyResolvePlanRefusal,
   CopyResolveResult,
   CopyResolveTarget,
 } from "./resolve.js";
+
+// Production authority from an approved plan: whether the bytes of an
+// Advisor plan record authorize delegate-approved copy on "production". See
+// plan-authority.ts's top doc comment for the rule and what it does not prove.
+export { planDelegateCopyAuthority } from "./plan-authority.js";
+export type { PlanDelegateCopyAuthority, PlanDelegateCopyRefusal } from "./plan-authority.js";
 
 // Delegated approval: is a registry entry's approval record current, is a
 // delegate's approval within the scope it was granted, and does consumer
@@ -78,6 +86,23 @@ export type {
   ApprovalBypassUncheckedItem,
   ApprovalBypassVerdict,
 } from "./approval-bypass.js";
+
+// Site identity: the site name and tagline as a reserved copy kind
+// (`site.name` / `site.tagline`), resolved through `resolveCopyRef` so the
+// same approval policy applies. See site-identity.ts's top doc comment.
+export {
+  resolveSiteIdentity,
+  SITE_IDENTITY_COPY_IDS,
+  SITE_NAME_COPY_ID,
+  SITE_TAGLINE_COPY_ID,
+} from "./site-identity.js";
+export type {
+  SiteIdentityField,
+  SiteIdentityIssue,
+  SiteIdentityIssueReason,
+  SiteIdentityOptions,
+  SiteIdentityResolution,
+} from "./site-identity.js";
 
 export { readCopyRecord } from "./registry.js";
 export type { CopyRegistryReadIssue, CopyRegistryReadIssueReason, CopyRegistryReadResult } from "./registry.js";

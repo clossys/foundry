@@ -143,7 +143,7 @@ Use explicit subpaths:
 - `@clossys/publisher/assessment` — `assessVerifiedPublicationRate`, the charter close metric. Empty evaluated set is indeterminate, never 1. The CLI is `publisher-rate-check`.
 - `@clossys/publisher/core` — canonical `SurfaceDocument` contract, validation, copy/media resolution, and output manifests.
 - `@clossys/publisher/media` — media registry, reader, and coverage check.
-- `@clossys/publisher/web` — web composition, head metadata, and the dedicated
+- `@clossys/publisher/web` — web composition, head metadata (including site identity metadata and its head lint), and the dedicated
   resolved-model `SectionedView` renderer. Under React's
   `react-server` export condition it resolves a server-safe target with the
   same runtime export names and Designer's server-only component barrels;
@@ -943,6 +943,124 @@ an approved, versioned `CopyRegistry` resolves all content; flowed web/email
 slots avoid canvas placeholders; web, email, image, print, and slide outputs
 each receive a manifest with structural strategy provenance. It also asserts
 that draft or malformed sources fail closed.
+
+### Site identity metadata — `buildSiteMetadata` and `lintSiteMetadataHtml`
+
+`buildSiteMetadata({ site, page })` turns a site's identity (`name`,
+`tagline`, `origin`, `themeColor`, `locale`, and a `shareCard`) and one page's
+facts (`kind`, `label`, `description`, `path`, and for a legal page an optional
+`status`) into one plain-data head set: `title`, `description`, `canonical`,
+`robots`, `themeColor`, `metadataBase`, `locale`, an `openGraph` object, and a
+`twitter` object. Every page kind yields the same keys, with no `undefined`
+values, and the same input yields a deep-equal result. It takes plain typed
+values; it does not read a brand-facts record and does not call the Writer
+package.
+
+- **Title.** A `home` page is `${name} · ${tagline}`; every other kind is
+  `${label} · ${name}`. The separator is U+00B7 with one space on each side.
+  Values are emitted verbatim — nothing is trimmed — so a `name`, `tagline`,
+  or `label` with leading or trailing whitespace, or with a tab, a line break,
+  or any other control character anywhere in it, is refused rather than
+  repaired. A single internal space is fine.
+- **Fallbacks.** `canonical` is `origin` plus `path`; `og:url` is the
+  canonical; `og:title` and `twitter:title` are the title; `og:description`
+  and `twitter:description` are the page description; `og:site_name` is the
+  site name; `og:type` is `website`; the Twitter card is
+  `summary_large_image`. A root-relative share-card `url` is resolved against
+  `origin`; an absolute `http(s)` URL is kept as given.
+- **Robots.**
+
+  | Page kind | `status` | `robots` |
+  | --- | --- | --- |
+  | `home`, `contact`, `custom` | not allowed | `index, follow` |
+  | `notFound` | not allowed | `noindex, nofollow` |
+  | `legal` | missing or `draft` | `noindex, nofollow` |
+  | `legal` | `counsel-reviewed` | `index, follow` |
+
+  `buildSiteMetadata` only maps the `status` it is given to a robots value; it
+  does not record or verify counsel review.
+- **Refusals.** It throws `SiteMetadataError` (with a closed `reason`) for a
+  non-object input, a blank text field, a `name`, `tagline`, or `label` that
+  starts or ends with whitespace or contains a control character (a tab or a
+  line break included), an `origin` that is
+  not an `http(s)` origin equal to `new URL(origin).origin`, a `path` that does
+  not start with a single `/`, that contains `?`, `#`, whitespace, a `.` or
+  `..` segment (encoded or not), or an empty segment other than a trailing
+  slash, or that `new URL` would serialise differently (the path must already
+  be in normal form, so it cannot resolve to another address; a non-ASCII path
+  such as `/café` is refused, and its percent-encoded form `/caf%C3%A9` is
+  accepted), an unknown
+  `kind`, a `status` on a non-legal page or outside `draft`/`counsel-reviewed`,
+  a share-card `url` that is neither root-relative nor an absolute `http(s)`
+  URL exactly as `new URL(url).href` writes it (`https:foo.png` is refused),
+  and a share card whose `width` and `height` are not integers equal to
+  `OG_SHARE_CARD_SPEC` (1200 by 630; swapped or other dimensions are
+  refused).
+
+`lintSiteMetadataHtml(html)` checks a rendered document's `<head>` against the
+declared set `SITE_METADATA_REQUIRED_TAGS`: `<title>`; `description`,
+`robots`, and `theme-color` metas; `link rel="canonical"`; the `og:title`,
+`og:description`, `og:url`, `og:site_name`, `og:type`, `og:locale`,
+`og:image`, `og:image:alt`, `og:image:width`, and `og:image:height`
+properties; and the `twitter:card`, `twitter:title`, `twitter:description`,
+`twitter:image`, and `twitter:image:alt` metas. It reports every problem in
+one pass as a `SiteMetadataLintFinding` (`missing`, `empty`, `duplicate`, or
+`unreadable`), and `complete` is `true` only when there are no findings. `og:*`
+is read from `property`, the other metas from `name`.
+
+The lint is a strict grammar, not a repairing parser: anything it does not
+recognise is `unreadable`, never guessed.
+
+- **Accepted.** Before `<head>`: whitespace, comments, one `<!doctype>`, and
+  one `<html>`. Inside the head: whitespace, comments, and `meta`, `link`,
+  `base`, `title`, `style`, and `script` elements (a `script` whose text
+  contains `<!--` is refused). `</head>` is the only end tag. After `</head>`:
+  whitespace and comments, then end of input or `<body`; nothing after `<body`
+  is read.
+- **Refused as `unreadable`.** Any other start or end tag in the head
+  (including `template` and `noscript`), any text between tags, a `<` or `</`
+  not followed by a letter, a `<!` that is not a comment, `<?`, a comment that
+  contains `--!>`, a byte order mark, text or an element before `<head>`, a
+  non-string or blank input, no `<head>`, a `<head>` with no `</head>`, a
+  second `<head>`, an unterminated comment, tag, attribute quote, `<title>`,
+  `<script>`, or `<style>` before the head closes, and anything between
+  `</head>` and `<body` other than whitespace and comments (a `meta`, `title`,
+  or `link` there is moved into the head by a parser, so it is refused, as is
+  any element, text, second `</head>`, or `<head>`).
+- **Character references.** Every `&` followed by a letter or `#` must start
+  one of `&amp;`, `&lt;`, `&gt;`, `&quot;`, `&apos;`, `&#N;`, or `&#xH;`. A
+  declared tag whose value has any other reference (`&nbsp;`, `&copy`, `&#32`)
+  gets an `unreadable` finding for that tag, and a `name`, `property`, or `rel`
+  attribute with one gets an `unreadable` finding for its element. The closed
+  set is decoded to read a tag's identity and to decide whether a value is
+  empty, so `&#160;` and a raw no-break space are both empty.
+
+**Soundness boundary.** `lintSiteMetadataHtml` judges only heads whose
+after-head content is whitespace, comments and `<body`: it reports complete
+only when the head consists solely of whitespace, comments and `meta`, `link`,
+`base`, `title`, `style` and `script` elements (scripts without `<!--`), with
+character references limited to `&amp;`, `&lt;`, `&gt;`, `&quot;`, `&apos;` and
+numeric forms, and `</head>` is followed only by whitespace, comments and then
+end of input or `<body`. Everything else is `unreadable`, never guessed; that
+includes a `meta`, `title` or `link` between `</head>` and `<body`, which a
+parser moves into the head. Within that grammar it checks presence, uniqueness
+and non-emptiness of the declared set, not whether the values are true, correct
+for the page, an absolute URL, or consistent with another tag. Metadata that a
+framework streams into the body is reported missing. It does not read what
+follows `<body`. Where it says complete, a spec-compliant HTML parser, with
+scripting on or off, puts exactly one non-blank copy of each declared tag
+directly in the head; the package's tests confirm that against jsdom.
+
+**Input boundary of `buildSiteMetadata`.** A `name`, `tagline` or `label` with
+a tab or any other control character inside it is refused, not only one with
+leading or trailing whitespace or a line break; a single internal space is
+accepted. A non-ASCII path such as `/café` is refused (a safe false reject,
+because `new URL` would encode it and the path must already be in normal form);
+the percent-encoded form `/caf%C3%A9` is accepted.
+
+**Not part of this change.** The share-card route or image generation, wiring
+this head set into `MarketingView` or any other view or template, and how a
+legal document's `status` is decided or stored.
 
 ## `media` — the asset registry contract, responsive images, and video (v2)
 
@@ -2097,7 +2215,8 @@ cosmetic gap.
   `AssetCoverageReport`, `AssetTypeCounts`, `ImageAssetEntry`,
   `ImageSource`, `VideoAssetEntry`, `VideoCaption`, and
   `VideoReducedMotionBehavior` types. The CLI is `publisher-media-check`.
-- `web`: `renderWebDocument`, `buildWebHeadMetadata`,
+- `web`: `renderWebDocument`, `buildWebHeadMetadata`, `buildSiteMetadata`,
+  `lintSiteMetadataHtml`, `SITE_METADATA_REQUIRED_TAGS`, `SiteMetadataError`,
   `listWebTemplateNames`, `defineWebTemplate`, `createWebRenderer`,
   `AuthView`, `CaptureView`, `CollectionView`, `DocumentView`, `ErrorView`,
   `LegalView`, `MarketingView`, `SectionedView`, `RenderError`, and the `AuthViewProps`,
@@ -2110,7 +2229,12 @@ cosmetic gap.
   `RenderWebResult`, `RepeatingWebSlotFieldSpec`, `RepeatingWebSlotSpec`, `ResolvedWebGroupField`, `ResolvedWebGroupItem`,
   `WebSlotContentKind`, `WebTemplate`, `DefineWebTemplateOptions`,
   `CreateWebRendererOptions`, `WebRenderer`, `WebHeadMetadata`,
-  `WebOpenGraphMetadata`, and `WebTwitterMetadata` types.
+  `WebOpenGraphMetadata`, `WebTwitterMetadata`, `SiteIdentityInput`,
+  `SiteLegalStatus`, `SiteMetadata`, `SiteMetadataErrorReason`,
+  `SiteOpenGraphMetadata`, `SitePageInput`, `SitePageKind`, `SiteShareCard`,
+  `SiteTwitterMetadata`, `SiteMetadataLintFinding`, `SiteMetadataLintResult`,
+  `SiteMetadataLintRule`, `SiteMetadataRequiredTag`, and
+  `SiteMetadataTagSelector` types.
 - `document`: `validateStructuredDocument`, `renderStructuredDocument`,
   `RenderError`, and the `DocumentBlock`, `DocumentCallout`,
   `DocumentDefinitionList`, `DocumentInline`, `DocumentList`,
@@ -2284,6 +2408,153 @@ points from a clean public-registry install. A legacy registry lane once
 omitted `peerDependenciesMeta`; see
 [issue #226](https://github.com/clossys/foundry/issues/226) for that retired
 registry behavior.
+
+## `web` — contact submission handler
+
+`createContactHandler` in `@clossys/publisher/web` is a framework-neutral,
+server-only handler for a public contact form. It takes a parsed submission
+and a caller-supplied client key and resolves to a result made of status codes.
+It knows nothing about HTTP, routing or rendering, and it delivers by calling
+a delivery port you inject, so import it from server code only.
+
+```ts
+import {
+  createContactHandler,
+  createMemoryRateLimiter,
+  createStubContactDelivery,
+} from "@clossys/publisher/web";
+
+const handler = createContactHandler({
+  topics: ["general", "press"],
+  from: "Site <site@example.com>",
+  to: ["inbox@example.com"],
+  subject: "New contact form message",
+  limiter: createMemoryRateLimiter({ limit: 3, windowMs: 60_000, now: () => Date.now() }),
+  delivery: createStubContactDelivery(), // refused when target is "production"
+  target: "preview",
+});
+
+const result = await handler.handle(body, { clientKey });
+// { status: "accepted" } | { status: "invalid", fields: [...] }
+// | { status: "rate-limited" } | { status: "unavailable" }
+```
+
+`body` is whatever your framework parsed from the request; the handler reads it
+as `unknown`. `from`, `to` and `subject` come from configuration, not from
+the submission. The other config fields are `honeypotField`
+(default `"website"`), `caps`, `createMessageId` and `onUnavailable` (called
+with a reason code only). Construction throws on invalid configuration.
+
+### Result codes
+
+| Status | Meaning |
+| --- | --- |
+| `accepted` | The delivery port's promise resolved, or the honeypot field was filled and nothing was delivered. The two are indistinguishable to the caller. |
+| `invalid` | One or more `fields` issues, ordered `topic`, `name`, `email`, `phone`, `message`, then `submission`. Each issue is a field plus a code: `not-a-string`, `too-long`, `control-character`, `required`, `unknown-topic` (topic) or `malformed` (email, phone). The `submission` issue is `too-long` for the total cap. |
+| `rate-limited` | The limiter answered `false`. |
+| `unavailable` | The handler could not proceed: invalid client key, the limiter threw, rejected or answered a non-boolean, message id generation failed, delivery threw or rejected, or something else threw unexpectedly. The reason goes to `onUnavailable`, not to the client. |
+
+Results carry codes only: no English text, and no part of the input is echoed
+back. Mapping codes to words belongs to your rendering layer. Length caps
+default to `CONTACT_DEFAULT_CAPS` (topic 100, name 100, email 254, phone 40,
+message 5000, total 6000 UTF-16 code units) and can be overridden per field.
+
+### Evaluation order
+
+`handle(submission, { clientKey })` runs these steps in order, and a step that
+ends the call skips the rest:
+
+1. Client key check: a missing, non-string, blank or over-long key (more than
+   `CONTACT_CLIENT_KEY_MAX_LENGTH`, 256) resolves `unavailable` with no limiter
+   call.
+2. Honeypot: a filled honeypot field resolves `accepted` with no limiter call
+   and no delivery.
+3. Validation of the declared fields and the total cap: any issue resolves
+   `invalid` with no limiter call, so correcting a typo does not use up the
+   allowance.
+4. Limiter: `check(clientKey)` is awaited once. `true` continues, `false`
+   resolves `rate-limited`, and a throw, rejection or non-boolean resolves
+   `unavailable`.
+5. Delivery: the outbound message is built and `deliver` is awaited once. A
+   resolve is `accepted`; a throw or rejection is `unavailable`. There is no
+   retry, and the limiter use is not refunded.
+
+The outbound message is plain text. Name, email, phone, topic and message appear
+only in the body, and the submitted email is the sole `replyTo`. Control
+characters are refused in every field, except that `message` may contain tab,
+line feed and carriage return; single-line fields also refuse U+2028 and U+2029.
+
+### Wiring a Messenger email adapter
+
+`ContactDelivery` is a local port, `{ channel: "email", deliver(message) }`, and
+Publisher imports no Messenger code. The message it builds is shaped so that an
+email adapter from `@clossys/messenger` is assignable to `delivery` without a
+wrapper under `strictFunctionTypes`; a delivery whose `deliver` requires more
+than the handler supplies, such as a required `html`, fails to compile.
+
+```ts
+import { createContactHandler, createMemoryRateLimiter } from "@clossys/publisher/web";
+import type { ContactDelivery } from "@clossys/publisher/web";
+
+// Your Messenger email adapter, constructed elsewhere; it is assignable to
+// `ContactDelivery` as it is.
+declare const emailAdapter: ContactDelivery;
+
+const handler = createContactHandler({
+  topics: ["general", "press"],
+  from: "Site <site@example.com>",
+  to: ["inbox@example.com"],
+  subject: "New contact form message",
+  limiter: createMemoryRateLimiter({ limit: 3, windowMs: 60_000, now: () => Date.now() }),
+  delivery: emailAdapter,
+  target: "production",
+});
+```
+
+### The stub delivery
+
+`createStubContactDelivery()` returns an in-memory delivery for tests and
+previews. Each call to `deliver` appends a frozen copy of the message to
+`deliveries` and resolves `{ provider: "stub", messageId }`. Every stub carries
+the `STUB_CONTACT_DELIVERY` brand, and `createContactHandler` throws at
+construction when `target` is `"production"` and the delivery carries it. A
+`target` outside `"production" | "preview" | "development" | "test"` also
+throws, so a typo such as `"prod"` does not admit a stub. Detection covers the
+stub as returned: a caller who re-wraps it in a new `{ channel, deliver }`
+object drops the brand and is not detected.
+
+### What this does and does not guarantee
+
+As constructed, and with a limiter that answers correctly:
+
+- Only a well-formed, capped, control-free, non-honeypot submission that the
+  limiter allows reaches `deliver`.
+- The recipients, sender and subject come from configuration; submitted text
+  reaches a header only as the shape-checked `replyTo` address.
+- A stub delivery is not called by a handler whose target is `"production"`.
+- Results contain status and field codes and no submitted text.
+
+It does not provide:
+
+- Bot detection beyond the honeypot. A bot that leaves the honeypot empty and
+  submits valid input is treated as a person.
+- A distributed limiter. `createMemoryRateLimiter` keeps a sliding window in one
+  process (`limit`, `windowMs`, an injected `now`, and `maxKeys`, default
+  10 000), so several instances or serverless invocations each hold their own
+  window. Inject a shared `ContactRateLimiter` for those deployments.
+- A check on the caller's client key. The handler does not verify that it
+  identifies a real client, so a key taken from a spoofable header gives a
+  spoofable limit.
+- A deliverability guarantee. `accepted` means the delivery port resolved,
+  typically provider acceptance, not that a message reached an inbox.
+- Timing equalisation: a honeypot hit skips delivery and may answer faster.
+
+Known limits on input shape: the email check is conservative because the value
+becomes a `replyTo` address. It requires an ASCII dot-atom local part of at most
+64 characters and a domain of two or more ASCII labels, so internationalised
+addresses and quoted local parts are refused as `malformed`. Phone accepts only
+ASCII digits, space and `+ - ( ) . / # * x X`, with at least one digit. Bidirectional
+formatting characters are not refused.
 
 ## Licence
 
