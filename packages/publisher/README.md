@@ -1070,7 +1070,7 @@ It is exported from `@clossys/publisher/web` and its server entry, and is
 framework-neutral: it renders nothing, rasterises nothing, loads no font, and
 fetches nothing.
 
-```ts
+```typescript
 import { buildShareCard, buildSiteMetadata } from "@clossys/publisher/web";
 
 const card = buildShareCard({
