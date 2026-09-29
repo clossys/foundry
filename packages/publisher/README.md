@@ -1400,8 +1400,9 @@ renders a `LegalDocument` in the same site chrome and layout as
 
 ```tsx
 import { LegalView } from "@clossys/publisher/web";
-import type { CopyResolver, LegalViewLabels } from "@clossys/publisher/web";
+import type { LegalViewLabels } from "@clossys/publisher/web";
 import type { LegalDocument } from "@clossys/publisher/document";
+import type { CopyResolver } from "@clossys/writer";
 
 declare const resolveCopyId: CopyResolver; // the caller's approved-copy registry
 declare const brand: React.ReactNode; // the caller's brand mark
@@ -1422,7 +1423,11 @@ Props, in addition to the standard `div` attributes and `style`:
 
 - `brand`: the brand node placed in the page chrome.
 - `document`: the `LegalDocument` to render.
-- `resolveCopyId`: the `CopyResolver` that turns every `CopyRef` into text.
+- `resolveCopyId`: `@clossys/writer`'s ref-based `CopyResolver`
+  (`(ref: CopyRef) => CopyResolution | undefined`) that turns every `CopyRef`
+  into traced text, the same type `renderStructuredDocument` takes. It is not
+  the string-keyed `CopyResolver` exported from `@clossys/publisher/web`, which
+  carries no provenance and does not type-check here.
 - `labels`: `LegalViewLabels`, three `CopyRef`s named `effectiveDate`,
   `lastUpdated` and `draftHeading`.
 - `locale` (required): the locale passed to `Intl.DateTimeFormat`.
