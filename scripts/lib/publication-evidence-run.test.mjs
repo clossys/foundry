@@ -25,6 +25,9 @@ const version = "0.1.1";
 const runId = 999;
 const runAttempt = 1;
 
+/** The audit seam also answers the recorder's npm floor probe (npm 11 or newer); everything else goes to `run`. */
+const withNpmFloor = (run, npm = "11.17.0\n") => (file, args, options) => (args[0] === "--version" ? npm : run(file, args, options));
+
 /** A minimal, exactly-shaped npm audit + packument fixture that inspectPublicNpmProvenance() accepts — the same shape record-later-publication.test.mjs's replay e2e test builds by hand. */
 function provenanceFixture({ name: pkgName = name, version: pkgVersion = version, sourceSha: sha = sourceSha, runId: run = runId, runAttempt: attempt = runAttempt, mutateStatement = (s) => s } = {}) {
   const sha512Hex = "1".repeat(128);
@@ -149,7 +152,7 @@ test("fetchPackument and fetchPublishedAt read the exact packument and its measu
 
 test("verifyPublicationProvenance accepts an exactly-matching SLSA attestation and rejects malformed identity fields before any network call", async () => {
   const { packument, audit } = provenanceFixture();
-  const auditRun = () => JSON.stringify(audit);
+  const auditRun = withNpmFloor(() => JSON.stringify(audit));
   const result = await verifyPublicationProvenance({ fetchImpl: async () => { throw new Error("must not be called — packument was already supplied"); }, name, version, sourceSha, runId, runAttempt, auditRun, env: {}, packument });
   assert.deepEqual(result.audit, audit);
 
@@ -170,7 +173,7 @@ test("verifyPublicationProvenance accepts an exactly-matching SLSA attestation a
 test("verifyPublicationProvenance refuses a record whose claimed run or commit the attestation does not corroborate", async () => {
   const wrongCommit = "7".repeat(40);
   const { packument, audit } = provenanceFixture({ sourceSha: wrongCommit }); // attestation names a DIFFERENT commit than the one we claim
-  const auditRun = () => JSON.stringify(audit);
+  const auditRun = withNpmFloor(() => JSON.stringify(audit));
   await assert.rejects(
     verifyPublicationProvenance({ fetchImpl: async () => { throw new Error("must not be called"); }, name, version, sourceSha, runId, runAttempt, auditRun, env: {}, packument }),
     /measured npm SLSA provenance attestation does not corroborate this run/,
@@ -178,7 +181,7 @@ test("verifyPublicationProvenance refuses a record whose claimed run or commit t
 });
 
 test("verifyPublicationProvenance refuses a mismatched workflow path or event in the attestation", async () => {
-  const auditRunFor = (fixture) => () => JSON.stringify(fixture.audit);
+  const auditRunFor = (fixture) => withNpmFloor(() => JSON.stringify(fixture.audit));
 
   const wrongWorkflow = provenanceFixture({
     mutateStatement: (statement) => ({ ...structuredClone(statement), predicate: { ...structuredClone(statement.predicate), buildDefinition: { ...structuredClone(statement.predicate.buildDefinition), externalParameters: { workflow: { repository: "https://github.com/clossys/foundry", path: ".github/workflows/some-other-workflow.yml", ref: "refs/heads/main" } } } } }),
@@ -207,7 +210,7 @@ test("verifyPublicationProvenance refuses a mismatched workflow path or event in
 // attestation says attempt 1. This proves the fix actually closes that gap.
 test("verifyPublicationProvenance refuses a record that names the right commit but the wrong run or attempt (2026-09-23 correctness review, B2)", async () => {
   const { packument, audit } = provenanceFixture({ runId: 35850983604, runAttempt: 1 }); // the real launcher@0.3.0 attestation's actual run/attempt
-  const auditRun = () => JSON.stringify(audit);
+  const auditRun = withNpmFloor(() => JSON.stringify(audit));
 
   await assert.rejects(
     verifyPublicationProvenance({ fetchImpl: async () => { throw new Error("must not be called"); }, name, version, sourceSha, runId: 35850983604, runAttempt: 2, auditRun, env: {}, packument }),
@@ -221,9 +224,20 @@ test("verifyPublicationProvenance refuses a record that names the right commit b
   await verifyPublicationProvenance({ fetchImpl: async () => { throw new Error("must not be called"); }, name, version, sourceSha, runId: 35850983604, runAttempt: 1, auditRun, env: {}, packument });
 });
 
+test("verifyPublicationProvenance refuses an npm older than the floor before it runs the audit", async () => {
+  const { packument, audit } = provenanceFixture();
+  const ran = [];
+  const auditRun = withNpmFloor((file, args) => { ran.push(args[0]); return JSON.stringify(audit); }, "10.9.4\n");
+  await assert.rejects(
+    verifyPublicationProvenance({ fetchImpl: async () => { throw new Error("must not be called"); }, name, version, sourceSha, runId, runAttempt, auditRun, env: {}, packument }),
+    /evidence recording requires npm 11 or newer.*observed npm 10\.9\.4/,
+  );
+  assert.deepEqual(ran, []);
+});
+
 test("verifyPublicationProvenance fetches the packument itself when the caller does not already have one", async () => {
   const { packument, audit } = provenanceFixture();
-  const auditRun = () => JSON.stringify(audit);
+  const auditRun = withNpmFloor(() => JSON.stringify(audit));
   let fetchCount = 0;
   const fetchImpl = async (url) => {
     fetchCount += 1;
@@ -384,7 +398,7 @@ test("a wrong run/attempt is refused before either join, for a package whose rea
   const version = "0.1.10";
   const realSourceSha = "8".repeat(40);
   const { packument, audit } = provenanceFixture({ name, version, sourceSha: realSourceSha, runId: 35835576561, runAttempt: 1 });
-  const auditRun = () => JSON.stringify(audit);
+  const auditRun = withNpmFloor(() => JSON.stringify(audit));
 
   const calls = { createRecord: 0 };
   const createRecord = async () => { calls.createRecord += 1; throw new Error("must not be called — provenance never passed"); };

@@ -440,6 +440,15 @@ qualification must run on: `RELEASE_RUNTIME` is Node `v24.19.0`, npm
 qualification.mjs` asserts all three before it packs anything and refuses
 closed, rather than producing a record, on any mismatch.
 
+The pin governs every step that produces or verifies bytes: qualification,
+packing, artifact reproducibility, publishing, and retention. Recording
+publication evidence for an already-published version is not one of those
+steps. The recorder only downloads the published tarball, compares its hashes
+and integrity, reads the archived qualification transcript, and checks git
+ancestry. It requires npm 11 or newer instead of the exact tuple (see
+[the hand-run recorder](#current-retained-candidate-first-publication-handoff)), as
+`governance/decisions/evidence-recording-runtime-scope.json` records.
+
 This is a separate requirement from root `package.json`'s `engines.node:
 ">=20"`, and the two are not in tension: `engines` states the floor a
 *consumer* of a published package needs to run it, while the qualification
@@ -448,9 +457,10 @@ that proves something. A qualification record binds exact tarball bytes —
 `tsc` output and gzip compression both vary with the toolchain that
 produced them — so "close enough" would prove the bytes a different
 runtime produced, not the bytes actually being qualified. This is also why
-the pin must never be relaxed: loosening it to accept whatever runtime
-happens to be at hand would turn the record from proof of exact artifact
-bytes into a record of some other, unspecified bytes, silently.
+the pin must never be relaxed for a step that produces or verifies bytes:
+loosening it to accept whatever runtime happens to be at hand would turn the
+record from proof of exact artifact bytes into a record of some other,
+unspecified bytes, silently.
 
 **A developer machine that doesn't match this exact tuple cannot produce a
 record at all** — `run-candidate-qualification.mjs` fails closed before
@@ -1050,6 +1060,14 @@ node scripts/record-later-publication.mjs \
   --proof <registry-proof.json> \
   --publication <publication-evidence.json>
 ```
+
+The recorder does not require the exact pinned release runtime, because it
+never produces bytes. Before it runs `npm audit signatures
+--include-attestations`, it reads the version of the `npm` on `PATH` and
+refuses unless that is major version 11 or newer, or unreadable. Any Node
+version that runs the script is otherwise acceptable. The automatic workflow
+below still runs on the exact pinned runtime, which keeps its records
+deterministic.
 
 The v3 replay path additionally requires both regular, non-symlink inputs;
 supplying only one fails, while omitting both continues to select the ordinary

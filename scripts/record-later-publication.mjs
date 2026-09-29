@@ -16,7 +16,6 @@ import { assertPackageAuthorized, loadReleaseCatalog, readCurrentReleaseIdentity
 import { repositoryIdentityFromPackument, validatePublicNpmRegistryProof } from "./lib/public-npm-registry.mjs";
 import { trustedReplaySourceEvidence, validateLaterPublication } from "./lib/release-later-publication.mjs";
 import { inspectPublicNpmProvenance } from "./check-public-npm-provenance.mjs";
-import { assertReleaseRuntime } from "./lib/release-runtime.mjs";
 
 const KEY = /^[a-z0-9][a-z0-9-]{0,63}$/;
 const SHA1 = /^[a-f0-9]{40}$/;
@@ -124,10 +123,27 @@ export function credentiallessAuditEnv(directory, parent = process.env) {
   };
 }
 
+// Recording evidence for an already-published version never produces bytes: it
+// compares hashes the registry already served. The exact release runtime pin
+// (scripts/lib/release-runtime.mjs) therefore does not apply here. The one
+// toolchain-sensitive step is `npm audit signatures --include-attestations`,
+// which needs a recent npm, so the recorder requires this major version or newer.
+export const EVIDENCE_NPM_MIN_MAJOR = 11;
+
+export function assertEvidenceNpmFloor(run, env) {
+  let observed;
+  try { observed = String(run("npm", ["--version"], { encoding: "utf8", env })).trim(); } catch { observed = ""; }
+  const major = /^(\d+)\.\d+\.\d+/.exec(observed)?.[1];
+  if (major === undefined || Number(major) < EVIDENCE_NPM_MIN_MAJOR) {
+    throw new Error(`evidence recording requires npm ${EVIDENCE_NPM_MIN_MAJOR} or newer for "npm audit signatures --include-attestations"; observed npm ${observed || "<unreadable>"}`);
+  }
+}
+
 export function verifiedAnonymousAudit(name, version, run = execFileSync, parent = process.env) {
   const directory = mkdtempSync(join(tmpdir(), "foundry-replay-audit-"));
   const env = credentiallessAuditEnv(directory, parent);
   try {
+    assertEvidenceNpmFloor(run, env);
     run("npm", ["init", "--yes"], { cwd: directory, stdio: "ignore", env });
     run("npm", ["install", "--ignore-scripts", "--save-exact", `${name}@${version}`], { cwd: directory, stdio: "ignore", env });
     const output = run("npm", ["audit", "signatures", "--json", "--include-attestations"], { cwd: directory, encoding: "utf8", maxBuffer: 8 * 1024 * 1024, env });
@@ -368,10 +384,9 @@ export function argsFrom(argv) {
   return result;
 }
 
-export async function createLaterPublicationRecord({ root = process.cwd(), packageKey, qualificationPath: qualificationInput, candidatePath, proofPath, publicationPath, artifactArchivePath, replayEvidencePath, fetch: fetchEvidence = false, fetchImpl = fetch, env = process.env, releaseRuntimeRun, auditRun }) {
+export async function createLaterPublicationRecord({ root = process.cwd(), packageKey, qualificationPath: qualificationInput, candidatePath, proofPath, publicationPath, artifactArchivePath, replayEvidencePath, fetch: fetchEvidence = false, fetchImpl = fetch, env = process.env, auditRun }) {
   if (!KEY.test(packageKey ?? "")) throw new Error("package key is invalid");
   assertCredentialFree(env);
-  assertReleaseRuntime(releaseRuntimeRun ? { run: releaseRuntimeRun, env } : { env });
   const absoluteRoot = resolve(root);
   const qualificationInputFile = regularBytes(qualificationInput, "qualification record");
   const qualification = parseJson(qualificationInputFile.bytes, "qualification record");

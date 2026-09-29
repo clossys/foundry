@@ -3,7 +3,11 @@ import { spawnSync } from "node:child_process";
 /**
  * The runtime tuple whose bytes and package-manager behavior release evidence
  * is allowed to describe. Keep this in one place: workflow and release
- * commands must agree on the same exact toolchain.
+ * commands must agree on the same exact toolchain. It governs every step that
+ * produces or verifies bytes (qualification, packing, reproducibility,
+ * publishing, retention). Recording publication evidence for an already
+ * published version produces no bytes and needs only the npm floor in
+ * scripts/record-later-publication.mjs.
  */
 export const RELEASE_RUNTIME = Object.freeze({
   node: "v24.19.0",

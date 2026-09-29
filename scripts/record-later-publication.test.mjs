@@ -6,20 +6,14 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 
-import { argsFrom, buildLaterPublicationRecord, createLaterPublicationRecord, credentiallessAuditEnv, verifiedAnonymousAudit, writeNoOverwrite } from "./record-later-publication.mjs";
+import { argsFrom, assertEvidenceNpmFloor, buildLaterPublicationRecord, createLaterPublicationRecord, credentiallessAuditEnv, EVIDENCE_NPM_MIN_MAJOR, verifiedAnonymousAudit, writeNoOverwrite } from "./record-later-publication.mjs";
 import { buildPublicationRecordWithFallback } from "./lib/publication-evidence-run.mjs";
 import { comparableTranscriptSha256, currentQualificationJoins } from "./lib/candidate-qualification.mjs";
 import { publicNpmVersionUrl, PUBLIC_NPM_REGISTRY } from "./lib/public-npm-registry.mjs";
-import { RELEASE_RUNTIME } from "./lib/release-runtime.mjs";
 
 const hex = (value, length) => value.repeat(length);
 const digest = (algorithm, value) => createHash(algorithm).update(value).digest("hex");
 const candidateBytes = Buffer.from("candidate bytes");
-const releaseRuntimeRun = (file, args) => {
-  if (args[0] === "--version") return { status: 0, stdout: file === process.execPath ? `${RELEASE_RUNTIME.node}\n` : `${RELEASE_RUNTIME.npm}\n`, stderr: "" };
-  if (args[0] === "-p") return { status: 0, stdout: `${RELEASE_RUNTIME.zlib}\n`, stderr: "" };
-  throw new Error(`unexpected release runtime probe ${file} ${args.join(" ")}`);
-};
 const candidate = {
   name: "@clossys/strategist", version: "0.1.1", packageTreeSha1: hex("a", 40), packageManifestSha256: hex("b", 64),
   policySha256: hex("c", 64), adapterSha256: hex("d", 64), fixtureSetSha256: hex("e", 64),
@@ -197,7 +191,7 @@ test("creator writes one canonical owner-present record in a synthetic git repos
   writeFileSync(publicationPath, `${JSON.stringify({ mode: "owner-present", publishedAt: "2026-08-31T00:00:00.000Z", reference: `https://registry.npmjs.org/%40clossys%2Fstrategist/${version}` }, null, 2)}\n`);
 
   const call = () => createLaterPublicationRecord({
-    root, packageKey: "strategist", qualificationPath: join(root, qualificationPath), candidatePath, proofPath, publicationPath, env: {}, releaseRuntimeRun,
+    root, packageKey: "strategist", qualificationPath: join(root, qualificationPath), candidatePath, proofPath, publicationPath, env: {},
   });
   const result = await call();
   assert.equal(result.path, `governance/release-publications/later/strategist-${version}.json`);
@@ -223,7 +217,7 @@ test("creator writes one canonical owner-present record in a synthetic git repos
 // differ while the qualification still names the original tarball. `prepareOnly`
 // returns that repository without calling the creator, so a caller can drive
 // the real fallback with the same fixture.
-async function replayScenario(t, { driftFiles = ["package.json", "package-lock.json"], packageChange = false, expectRecord = true, refusal, changedTarball = false, prepareOnly = false } = {}) {
+async function replayScenario(t, { driftFiles = ["package.json", "package-lock.json"], packageChange = false, expectRecord = true, refusal, changedTarball = false, prepareOnly = false, npmVersion = "11.17.0\n" } = {}) {
   const root = realpathSync(mkdtempSync(join(tmpdir(), "record-later-publication-replay-e2e-")));
   t.after(() => rmSync(root, { recursive: true, force: true }));
   const sourceRoot = process.cwd();
@@ -350,23 +344,34 @@ async function replayScenario(t, { driftFiles = ["package.json", "package-lock.j
     };
     throw new Error(`unexpected fetch ${url}`);
   };
-  const auditRun = (_file, args) => args[0] === "audit" ? JSON.stringify(audit) : "";
+  // The audit seam also answers the recorder's npm floor probe. `probes` lists
+  // every executable the recorder ran, so a test can assert it never asked for
+  // the Node or zlib version.
+  const probes = [];
+  const auditRun = (file, args) => {
+    probes.push([file, ...args]);
+    if (args[0] === "--version") {
+      if (npmVersion instanceof Error) throw npmVersion;
+      return npmVersion;
+    }
+    return args[0] === "audit" ? JSON.stringify(audit) : "";
+  };
 
   const harness = {
-    root, qualification, archiveBytes, version, sourceSha, publicationPath, qualificationPath, fetchImpl, auditRun, runId, artifactId,
+    root, qualification, archiveBytes, version, sourceSha, publicationPath, qualificationPath, fetchImpl, auditRun, runId, artifactId, probes,
   };
   if (prepareOnly) return harness;
   const run = () => createLaterPublicationRecord({
     root, packageKey: "strategist", qualificationPath: join(root, qualificationPath), candidatePath, proofPath, publicationPath,
-    artifactArchivePath: archivePath, replayEvidencePath, fetchImpl, auditRun, env: {}, releaseRuntimeRun,
+    artifactArchivePath: archivePath, replayEvidencePath, fetchImpl, auditRun, env: {},
   });
   if (!expectRecord) {
     await assert.rejects(run(), refusal);
     assert.deepEqual(readdirSync(join(root, "governance/release-publications/later")), []);
-    return { root };
+    return { root, probes };
   }
   const result = await run();
-  return { root, result, qualification, archiveBytes, version };
+  return { root, result, qualification, archiveBytes, version, probes };
 }
 
 test("creator retains one provider-bound replay record from the exact qualified archive", async (t) => {
@@ -418,9 +423,9 @@ test("creator refuses lock-only drift when the candidate tarball also changed", 
 });
 
 // The direct join fails because only the lock hash drifted. Record creation
-// is the real creator. The fallback does not forward the creator's
-// release-runtime or audit seams, so this test supplies the same two the
-// other creator tests use; it does not substitute a record. Removing the
+// is the real creator. The fallback does not forward the creator's audit seam,
+// so this test supplies the same one the other creator tests use; it does not
+// substitute a record. Removing the
 // fallback leaves the direct failure, and reserving v3 for both-hash drift
 // makes the second attempt fail too.
 test("direct join failure records lock-only drift through the real v3 replay", async (t) => {
@@ -428,7 +433,7 @@ test("direct join failure records lock-only drift through the real v3 replay", a
   const attempts = [];
   const createRecord = async (options) => {
     attempts.push(options.artifactArchivePath === undefined ? "direct" : "replay");
-    return createLaterPublicationRecord({ ...options, releaseRuntimeRun, auditRun: harness.auditRun });
+    return createLaterPublicationRecord({ ...options, auditRun: harness.auditRun });
   };
   const tempDir = mkdtempSync(join(harness.root, "fallback-"));
   const result = await buildPublicationRecordWithFallback({
@@ -485,24 +490,52 @@ test("creator refuses credential-bearing environments before reading inputs", as
   );
 });
 
-test("creator refuses a mismatched release runtime before reading or retaining a record", async () => {
-  const mismatch = (file, args) => {
-    if (args[0] === "--version") return { status: 0, stdout: `${file === process.execPath ? RELEASE_RUNTIME.node : "11.12.0"}\n`, stderr: "" };
-    if (args[0] === "-p") return { status: 0, stdout: `${RELEASE_RUNTIME.zlib}\n`, stderr: "" };
-    throw new Error("unexpected release runtime probe");
-  };
-  await assert.rejects(
-    createLaterPublicationRecord({ packageKey: "strategist", qualificationPath: "missing.json", publicationPath: "missing-publication.json", candidatePath: "missing.tgz", proofPath: "missing-proof.json", env: {}, releaseRuntimeRun: mismatch }),
-    /observed npm 11\.12\.0/,
-  );
+// The exact release runtime pin governs steps that produce bytes. Recording
+// evidence for a published version only compares served hashes, so it asks the
+// npm on PATH for its major version and never probes Node or zlib. A machine
+// whose Node and zlib differ from the pin therefore records successfully.
+test("creator records the v3 replay on a machine that is not the pinned runtime when npm is 11 or newer", async (t) => {
+  const { result, probes } = await replayScenario(t, { npmVersion: "11.4.2\n" });
+  assert.equal(result.record.kind, "foundry-trusted-publication-replay-v3");
+  assert.deepEqual(probes.filter(([, ...args]) => args[0] === "--version"), [["npm", "--version"]]);
+  assert.equal(probes.every(([file]) => file === "npm"), true, "only npm is ever executed; Node and zlib are not probed");
+});
+
+test("creator accepts a newer npm major than the floor", async (t) => {
+  const { result } = await replayScenario(t, { npmVersion: "12.0.0\n" });
+  assert.equal(result.record.kind, "foundry-trusted-publication-replay-v3");
+});
+
+for (const [label, npmVersion] of [["older than 11", "10.9.4\n"], ["unparseable", "not-a-version\n"], ["empty", "\n"], ["unreadable (probe throws)", new Error("spawn npm ENOENT")]]) {
+  test(`creator refuses the v3 replay with the npm floor message when npm is ${label}, before any audit runs`, async (t) => {
+    const { root, probes } = await replayScenario(t, {
+      npmVersion, expectRecord: false, refusal: /evidence recording requires npm 11 or newer for "npm audit signatures --include-attestations"; observed npm /,
+    });
+    assert.deepEqual(readdirSync(join(root, "governance/release-publications/later")), []);
+    assert.deepEqual(probes, [["npm", "--version"]], "the floor is checked before init, install, or audit");
+  });
+}
+
+test("npm floor refusal names the observed version or that it was unreadable", () => {
+  assert.throws(() => assertEvidenceNpmFloor(() => "10.9.4\n", {}), /observed npm 10\.9\.4$/);
+  assert.throws(() => assertEvidenceNpmFloor(() => { throw new Error("spawn npm ENOENT"); }, {}), /observed npm <unreadable>$/);
+  assert.doesNotThrow(() => assertEvidenceNpmFloor(() => Buffer.from("11.17.0\n"), {}));
+  assert.equal(EVIDENCE_NPM_MIN_MAJOR, 11);
+});
+
+test("npm floor refusal stops verifiedAnonymousAudit before it installs anything", () => {
+  const calls = [];
+  const run = (_file, args) => { calls.push(args); return args[0] === "--version" ? "9.8.1\n" : ""; };
+  assert.throws(() => verifiedAnonymousAudit("@clossys/strategist", "0.1.1", run, {}), /observed npm 9\.8\.1/);
+  assert.deepEqual(calls, [["--version"]]);
 });
 
 test("replay signature audit never inherits a token, private registry, or npm configuration", () => {
   const parent = { PATH: "/safe/bin", NODE_AUTH_TOKEN: "secret", NPM_CONFIG_USERCONFIG: "/private/npmrc", npm_config_registry: "https://private.example.invalid" };
   const calls = [];
-  const run = (_file, args, options) => { calls.push({ args, env: options.env }); return args[0] === "audit" ? "{}" : ""; };
+  const run = (_file, args, options) => { calls.push({ args, env: options.env }); return args[0] === "audit" ? "{}" : args[0] === "--version" ? "11.17.0\n" : ""; };
   assert.deepEqual(verifiedAnonymousAudit("@clossys/strategist", "0.1.1", run, parent), {});
-  assert.equal(calls.length, 3);
+  assert.equal(calls.length, 4, "the npm floor probe, init, install, and audit");
   for (const call of calls) {
     assert.equal(call.env.npm_config_registry, "https://registry.npmjs.org/");
     assert.equal(call.env.npm_config_always_auth, "false");
