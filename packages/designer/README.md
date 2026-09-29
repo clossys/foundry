@@ -4539,6 +4539,43 @@ ink-coloured (drawn via `currentColor` under a `color:` style set to the
 SVG's own colours, unchanged — only `mono`/`light`/`dark`/`favicon`/
 `appIcon` are recoloured onto token colours in both cases.
 
+**What the recolour does with a two-tone mark (#1537).** Flattening a
+two-tone mark onto one colour erases the contrast between its tones, so
+`recolorSvg` knocks a mark out instead, but only a mark it recognises as a
+flat two-tone mark. **Recognised:** the whole document is groups (carrying
+only `transform`) and basic shapes (`path`, `rect`, `circle`, `ellipse`,
+`polygon`, `polyline`, `line`), each with an explicit hex `fill`
+(`#rgb` or `#rrggbb`, no alpha; a `stroke` is `none` or the same hex);
+exactly two tones (`#fff` and `#FFFFFF` are one tone), every first-tone
+shape before every second-tone shape; a root carrying only `xmlns`, a
+parseable `viewBox`, `width`, `height`, `role`, `aria-label` and
+`data-clear-space`; no `id`, reference, `style`, class, text, comment or
+root paint. Such a mark is recoloured as a knockout: each tone is painted
+in the variant's single colour and masked out where the other tone paints,
+so the surface or badge shows through and the tones keep their contrast.
+The knockout's root is re-emitted from its parsed attributes (constant
+names, escaped values, double-quoted), never sliced out of the input.
+**Caps:** the recogniser reads at most 32 attributes on a tag, 2000
+elements in all (every `<g>` and every shape) and 32 groups deep, in one
+linear, non-backtracking pass, so its cost stays bounded on a crafted
+document and its recursion depth is bounded. An input over any cap is not
+recognised and stays flat, exactly as any other unrecognised input.
+**Everything else stays flat:** any other input (one tone, three or more
+tones, tones in an A-B-A order, root or group paint, `<use>`, `<style>`,
+`style=`, classes, ids, references, named/`rgb()`/`currentColor`/alpha
+paint, text, a value holding a quote, `<` or `&`, or an input over a cap)
+is recoloured exactly as before, every `fill`/`stroke` attribute onto the
+variant's colour, so its tones become one colour and their boundary is
+lost. That is byte-for-byte the flat recolour of the previous release: the
+derived variant is never broken by the knockout and never gains an
+attribute its input lacked. The contrast check skips only the `<mask>`s
+`recolorSvg` itself emits, matched by their exact generated form (the
+`recolor-<8 hex>-a|b` id, one white coverage `<rect>`, then only groups and
+self-closing shapes painted `#000` or `none`, closed by `</mask>`); a
+self-closing or malformed look-alike, and a mark's own `<mask>`, are judged
+on their paint as before. Treat the derived variants as a starting point
+for review.
+
 **Four checks judge every direction**, mirroring the "package owns
 judgment, every check reports satisfied/violated/indeterminate" split this
 repository holds every gate to:
