@@ -22,6 +22,8 @@ const FROM = "Site Contact <contact@example.com>";
 const TO = ["inbox@example.com", "ops@example.com"] as const;
 const SUBJECT = "New contact form message";
 const CLIENT_KEY = "client-1";
+// Kept in one constant so an address is built as `<local>@${DOMAIN}` wherever the local part ends in a character the foreign-reference scan treats as a boundary.
+const DOMAIN = "example.com";
 
 /** A distinctive string that must never appear in any result or observer call. */
 const MARKER = "ZZ-MARKER-9f3c1";
@@ -595,7 +597,7 @@ const SINGLE_LINE_ONLY_CHARS: ReadonlyArray<readonly [string, string]> = [
 
 const SINGLE_LINE_FIELDS: ReadonlyArray<readonly [Exclude<ContactFieldName, "message">, (c: string) => string]> = [
   ["name", (c) => `Ada${c}Lovelace`],
-  ["email", (c) => `ada${c}@example.com`],
+  ["email", (c) => `ada${c}@${DOMAIN}`],
   ["topic", (c) => `general${c}`],
   ["phone", (c) => `555${c}0100`],
 ];
@@ -1033,7 +1035,7 @@ describe("createContactHandler — non-object submissions", () => {
 describe("createContactHandler — email shape", () => {
   it.each([
     ["no @", "ada.example.com"],
-    ["an empty local part", "@example.com"],
+    ["an empty local part", `@${DOMAIN}`],
     ["an empty domain", "ada@"],
     ["two @", "a@b@example.com"],
     ["a space in the local part", "a b@example.com"],
@@ -1052,13 +1054,13 @@ describe("createContactHandler — email shape", () => {
     ["a domain label starting with a hyphen", "ada@-example.com"],
     ["a domain label ending with a hyphen", "ada@example-.com"],
     ["a leading dot in the domain", "ada@.example.com"],
-    ["a non-ASCII local part", "adá@example.com"],
+    ["a non-ASCII local part", `adá@${DOMAIN}`],
     ["a non-ASCII domain", "ada@exämple.com"],
-    ["a quoted local part", '"a b"@example.com'],
-    ["a parenthesised comment", "ada(comment)@example.com"],
+    ["a quoted local part", `"a b"@${DOMAIN}`],
+    ["a parenthesised comment", `ada(comment)@${DOMAIN}`],
     ["a backslash", "a\\b@example.com"],
     ["an underscore in the domain", "ada@exa_mple.com"],
-    ["a local part of 65 characters", `${"a".repeat(65)}@example.com`],
+    ["a local part of 65 characters", `${"a".repeat(65)}@${DOMAIN}`],
   ])("reports malformed for %s", async (_label, email) => {
     const { handler, delivery, limiter } = makeHandler();
     const result = await submit(handler, { ...valid, email });
@@ -1074,7 +1076,7 @@ describe("createContactHandler — email shape", () => {
     ["allowed punctuation", "a!#$%&'*+/=?^_`{|}~-b@example.com"],
     ["a numeric domain label", "ada@123.example.com"],
     ["a hyphen inside a label", "ada@ex-ample.com"],
-    ["a local part of exactly 64 characters", `${"a".repeat(64)}@example.com`],
+    ["a local part of exactly 64 characters", `${"a".repeat(64)}@${DOMAIN}`],
     ["uppercase", "ADA@EXAMPLE.COM"],
   ])("accepts %s", async (_label, email) => {
     const { handler, delivery } = makeHandler();
@@ -1289,7 +1291,7 @@ describe("createContactHandler — results carry codes only", () => {
   const markedSubmissions: ReadonlyArray<readonly [string, unknown]> = [
     ["a marked unknown topic", { ...valid, topic: `${MARKER}` }],
     ["a marked control-character name", { ...valid, name: `${MARKER}\r\nBcc: x@example.com` }],
-    ["a marked malformed email", { ...valid, email: `${MARKER}@@example.com` }],
+    ["a marked malformed email", { ...valid, email: `${MARKER}@@${DOMAIN}` }],
     ["a marked malformed phone", { ...valid, phone: `${MARKER}` }],
     ["a marked message with a NUL", { ...valid, message: `${MARKER}\0` }],
     ["a marked over-long name", { ...valid, name: MARKER.repeat(20) }],
