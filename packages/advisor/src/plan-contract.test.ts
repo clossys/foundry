@@ -57,6 +57,11 @@ describe("packed plan, brief, inventory and registry snapshot contracts", () => 
     expect(definitions.packageAct!.properties.act!.enum).toEqual(["install", "pin-starter"]);
   });
 
+  it("declare one delegated copy approval target, so a later value fails closed in this reader (#1586)", () => {
+    const definitions = PLAN_CONTRACTS["advisor-plan.json"]!.definitions as Record<string, { properties: Record<string, { enum: unknown }> }>;
+    expect(definitions.delegatedCopyApproval!.properties.target!.enum).toEqual(["production"]);
+  });
+
   it("export the brief contract's public problem placeholder, and a brief carrying it validates", () => {
     const definitions = PLAN_CONTRACTS["engagement-brief.json"]!.definitions as Record<string, { const: unknown }>;
     expect(PUBLIC_PROBLEM_PLACEHOLDER).toBe(definitions.publicProblemPlaceholder!.const);
@@ -363,6 +368,19 @@ describe("canonical plan digest (docs/contracts/advisor-plan-digest.md)", () => 
     for (const name of ["staffed-with-packages-version-changed", "staffed-with-packages-integrity-changed", "staffed-with-packages-staffing-reordered", "staffed-without-packages"]) {
       expect(digest(name), name).not.toBe(base);
     }
+  });
+
+  it("covers delegatedCopyApproval and its scopes, and excludes asOf and decisions from them (#1586)", () => {
+    const digest = (name: string) => planDigest(corpusPlan(name).plan);
+    const scoped = digest("delegated-copy-approval-scoped");
+    expect(digest("delegated-copy-approval-unscoped")).not.toBe(digest("blockers-without-due"));
+    expect(scoped).not.toBe(digest("delegated-copy-approval-unscoped"));
+    expect(digest("delegated-copy-approval-scoped-keys-reversed")).toBe(scoped);
+    expect(digest("delegated-copy-approval-scoped-new-decisions")).toBe(scoped);
+    expect(digest("delegated-copy-approval-scopes-reordered")).not.toBe(scoped);
+    expect(digest("delegated-copy-approval-scope-widened")).not.toBe(scoped);
+    expect(digest("delegated-copy-approval-removed")).toBe(digest("blockers-without-due"));
+    expect(corpusPlan("delegated-copy-approval-scoped").plan.decisions[0]?.subjectDigest).toBe(scoped);
   });
 
   it("has no digest for an invalid plan", () => {

@@ -151,10 +151,17 @@ const resolve = createCopyResolver(registry, options);
   `"production"`) — which audience this resolution is for. An owner-approved
   entry resolves on either target. A delegate-approved entry resolves freely
   on `"preview"` but is refused on `"production"`
-  (`"delegate-approval-refused"`) unless the caller opts in.
+  (`"delegate-approval-refused"`) unless the caller opts in, with
+  `acceptDelegateInProduction: true` or with `approvalPlan`.
 - `acceptDelegateInProduction` (default `false`) — only meaningful when
   `target` is `"production"`; set it to `true` to accept a delegate's
   sign-off as sufficient to publish, not just to preview.
+- `approvalPlan` (`Uint8Array`, optional) — the bytes of an Advisor plan
+  record, read by the caller. Consulted only for a delegate-approved entry on
+  `"production"` when `acceptDelegateInProduction` is not `true`; see
+  "Production authority from an approved plan" below. Passing it together with
+  `acceptDelegateInProduction: true`, or passing anything that is not a
+  `Uint8Array`, is `"invalid-options"`.
 - `now` (default `new Date()`, evaluated per call) — the clock staleness and
   expiry are measured against; a test fixes it to make an assertion
   deterministic.
@@ -164,7 +171,9 @@ Three new refusal reasons follow directly from an entry's approval record
 `"approval-stale"` (the recorded fingerprint no longer matches the entry's
 current text), `"approval-expired"` (a delegate record's `expiresAt` has
 passed), and `"delegate-approval-refused"` (a delegate record on
-`"production"` without `acceptDelegateInProduction: true`). A malformed
+`"production"` without `acceptDelegateInProduction: true` or an authorizing
+`approvalPlan`; when a plan was given, the issue's `planRefusal`
+(`CopyResolvePlanRefusal`) says why it did not authorize the entry). A malformed
 `CopyResolveOptions` itself is `"invalid-options"`, checked and refused
 before anything else so a broken options object never silently falls back
 to defaults. An `approved` entry that carries no `approval` record at all
@@ -248,6 +257,127 @@ a 64-character `sha256` hex digest of that entry's own `text`, computed by
   `"approval-expired"` — an error, mutually exclusive with `"approval-stale"`
   (staleness, the more fundamental problem, takes priority when a record is
   somehow both).
+
+### Production authority from an approved plan
+
+`acceptDelegateInProduction: true` is a bare flag: it records no reason. The
+other way to let a delegate-approved entry resolve on `"production"` is
+`approvalPlan`, the bytes of an Advisor plan record whose own approval covers
+the delegation. The plan declares it in an optional top-level member,
+`delegatedCopyApproval` (`{ "target": "production", "scopes": ["site.home"] }`),
+defined by the plan contract and its
+[digest definition](https://github.com/clossys/foundry/blob/main/docs/contracts/advisor-plan-digest.md);
+the [contract](https://github.com/clossys/foundry/blob/main/docs/contracts/advisor-plan.json)
+and the digest page live in the public repository, not shipped in this
+package. `scopes` is optional; when present it is a non-empty list of copy
+entry-id namespaces (`site.home`, not `site.home.*`). Writer reads no file:
+the caller passes the bytes.
+
+```ts
+import { createCopyResolver, planDelegateCopyAuthority, type CopyRegistry } from "@clossys/writer";
+
+declare const registry: CopyRegistry;
+declare const planBytes: Uint8Array; // the plan file's bytes, read by the caller
+const authority = planDelegateCopyAuthority(planBytes);
+if (!authority.authorized) throw new Error(`plan does not authorize delegate copy: ${authority.refusal}`);
+const resolved = createCopyResolver(registry, { target: "production", approvalPlan: planBytes })({ id: "home.title" });
+const digest = resolved?.approval?.approvedBy === "delegate" ? resolved.approval.authorizingPlanDigest : undefined;
+```
+
+A delegate-approved entry resolves on `"production"` under `approvalPlan` when
+Writer itself has established each of these from the bytes it was given:
+
+- the bytes are strict JSON: valid UTF-8, no byte-order mark, and no key
+  repeated at any depth;
+- the plan they encode passes the plan contract's schema and its code rules
+  R1 to R12 and, for `delegatedCopyApproval`, the schema's own checks (a
+  non-empty `scopes` list of well-formed namespaces, a known `target`, no
+  unknown key). Repeating a scope item is accepted and only redundant;
+- the plan declares `delegatedCopyApproval`;
+- the plan's latest decision by time has chosen `"approved"` and names a
+  `subjectDigest` equal to the canonical digest Writer computed from those
+  same bytes. Decisions that tie at the same instant must all approve and
+  name one digest; a decision time that does not parse authorizes nothing.
+  The digest covers `delegatedCopyApproval` and its `scopes`, so adding,
+  removing or editing either after an approval leaves the plan unapproved
+  for this purpose until a new approval names the new digest;
+- the entry's id is inside the declared `scopes`, when scopes are declared.
+  An entry is inside a scope when its id equals a scope item or starts with
+  `item + "."`, as for a delegate's own scope: `site.home` covers
+  `site.home` and `site.home.title`, not `site.homepage.title`. Without
+  `scopes` the declaration covers every entry. The entry's own
+  `approval.delegate.scope` is enforced as before, so both lists must hold.
+
+`planDelegateCopyAuthority(bytes)` is the pure function that does this. It
+returns a `PlanDelegateCopyAuthority`: `{ authorized: true, planDigest,
+scopes? }` (`scopes` present only when the plan declares them) or
+`{ authorized: false, refusal, violations? }`, where `refusal` is a
+`PlanDelegateCopyRefusal` and `violations` (only with `"plan-invalid"`) lists
+each failed rule and position, never a value. Nothing in the result quotes the
+plan. The refusal codes:
+
+- `"plan-not-bytes"` — the argument is not a `Uint8Array` (a string, a parsed
+  object, a `DataView` and a `Uint16Array` are all refused).
+- `"plan-unreadable"` — the bytes are not strict JSON (invalid UTF-8, a
+  byte-order mark, a syntax error, or a repeated key).
+- `"plan-invalid"` — the plan fails the contract's schema or code rules, which
+  includes a `delegatedCopyApproval` that is malformed, has an empty `scopes`
+  list or an unknown `target`, and a decision time that does not parse.
+- `"delegated-copy-approval-absent"` — the plan does not declare
+  `delegatedCopyApproval`.
+- `"no-decisions"` — the plan has no decisions.
+- `"decision-time-unparseable"` — a decision's time does not parse (a valid
+  plan cannot reach this; it is kept as a second check).
+- `"latest-decision-not-approved"` — a decision at the latest time has not
+  chosen `"approved"`, so a later deferral or rejection withdraws the grant.
+- `"approval-without-subject-digest"` — an approving decision at the latest
+  time names no well-formed `subjectDigest`, so it binds no bytes.
+- `"latest-decisions-disagree"` — decisions tied at the latest time name
+  different digests.
+- `"subject-digest-mismatch"` — the latest approval names a digest other than
+  this plan's own: the plan changed after it, or the approval belongs to
+  another plan.
+
+`resolveCopyRef` adds one more code of its own, in `CopyResolvePlanRefusal`
+(`PlanDelegateCopyRefusal` plus this value): `"entry-outside-plan-scopes"` —
+the plan authorizes delegate copy but its `scopes` do not include the entry.
+
+**What the resolution reports.** `CopyResolution.approval` is a
+`CopyResolutionApproval`: `{ approvedBy: "owner", pendingOwnerReview: false }`
+or `{ approvedBy: "delegate", pendingOwnerReview, authorizingPlanDigest? }`.
+`authorizingPlanDigest` is the plan's canonical digest and is present only when
+an `approvalPlan` authorized the entry on `"production"`. It is absent when
+`acceptDelegateInProduction` authorized it and on `"preview"`, so a
+plan-authorized resolution can be told from a flag-authorized one by whether
+the key is a string.
+
+**Precedence.** An entry's own `"approval-stale"` and `"approval-expired"`
+outrank every plan outcome. `acceptDelegateInProduction: true` together with
+`approvalPlan` is `"invalid-options"`, so two authorities never compete. On
+`"preview"` the plan is accepted and ignored, and no digest is reported; the
+plan is likewise unread for an owner-approved entry or one with no approval
+record. It is evaluated on each call and not cached.
+
+**What this does not prove.**
+
+- Who wrote the decision. Nothing in the file shows that the latest decision is
+  genuine; that depends on where the plan file is committed and who could
+  commit it. Anyone able to write the file can append an approval naming the
+  digest.
+- Where the bytes came from. The plan is caller-supplied bytes, and Writer
+  verifies no provenance. A caller that controls the call could equally pass
+  `acceptDelegateInProduction: true`; the plan route adds a recorded,
+  digest-bound reason, not a boundary against the caller.
+- Any link between the registry and the plan. The plan names no registry,
+  revision or entry fingerprint, so it covers delegate approvals in scope that
+  were recorded before or after the plan's approval. Entry-level staleness and
+  expiry still apply.
+- Expiry. The plan's approval has none: it holds until the file changes or a
+  later decision withdraws it.
+- More than one subject. One latest decision binds one subject, so a decision
+  naming an apply-bundle digest grants nothing here.
+- A narrow grant. A `delegatedCopyApproval` without `scopes` covers every
+  entry; the grant is visible only as the missing member.
 
 ### `writer-check approve` — write or revoke a record
 
@@ -932,6 +1062,10 @@ The root entry point exports the copy registry and traceability surface:
   that write and report on this state, `writer-check approve` and
   `writer-check approval-state`, are CLI-only and not exported from
   `index.ts`.
+- Production authority from an approved plan (see above):
+  `planDelegateCopyAuthority`, `PlanDelegateCopyAuthority`,
+  `PlanDelegateCopyRefusal`, `CopyResolutionApproval`, and
+  `CopyResolvePlanRefusal`.
 
 The voice names described under Public entry points are re-exported from the
 root and from `@clossys/writer/voice`, including the rule-vocabulary
