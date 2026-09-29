@@ -11,12 +11,20 @@
 //
 // Every ambiguity refuses. A report that does not parse to exactly the shape
 // the bin prints, or that disagrees with its own exit code, is indeterminate,
-// never trusted as far as it goes. The one exception D20 allows is a package's
-// first identity publication, which carries no provenance: it is granted only
-// for a package the base ledger does not already hold, when the plan names the
-// exact snapshot it was resolved from and that snapshot records that package
-// at exactly the one version the set installs. Nothing here fetches, repairs or
-// retries.
+// never trusted as far as it goes. A package version the bin does not verify is
+// never passed by any exception: it stays violated or indeterminate exactly as
+// Integrator reports it.
+//
+// D20's first-identity-publication exception is deliberately not implemented.
+// It needs evidence that a version is a package's first publication, and the
+// registry snapshot cannot give it: a snapshot taken to resolve a plan records
+// only the one version `latest` names, whatever else the package has published,
+// and Integrator reports "attestation failed" (violated) the same way as "no
+// attestation". Any condition built on the snapshot would therefore also pass a
+// package with earlier releases whose latest release fails verification. Until
+// the snapshot contract records evidence of a first publication, an unattested
+// first publication blocks the apply: fail closed. Nothing here fetches,
+// repairs or retries.
 //
 // The RFC and the snapshot contract are in the public repository, not shipped
 // in this package: docs/rfcs/apply-approved-plan.md and
@@ -28,7 +36,6 @@ import { compareCodeUnits } from "./change-set-contract.js";
 import type { ApplyCheck, ChangeSetItem } from "./change-set-contract.js";
 import { readContractDocument } from "./generated/contract-schema.generated.js";
 import { PACKAGE_SCOPE } from "./generated/package-scope.generated.js";
-import type { InstalledLedger } from "./ledger-contract.js";
 import { spawnLockfileTool } from "./lockfile-regen.js";
 import type { LockfileSpawn, LockfileSpawnResult } from "./lockfile-regen.js";
 import { lockfileToolEnv, prepareLockfileScratch } from "./lockfile-tool-env.js";
@@ -51,12 +58,6 @@ export interface ProvenanceGateInput {
   readonly hubRoot: string;
   /** The change set's items. */
   readonly items: readonly ChangeSetItem[];
-  /** The trusted base ledger, or null when the repository has none. */
-  readonly baseLedger: InstalledLedger | null;
-  /** The hub's registry snapshot, already parsed. */
-  readonly snapshot: RegistrySnapshot;
-  /** `plan.resolution.snapshotDigest`, or null when the plan has none. */
-  readonly planSnapshotDigest: string | null;
 }
 
 /** Ports. Not reachable from a CLI. */
@@ -75,7 +76,9 @@ export interface ProvenanceGatePorts {
  * name, each reduced to name, status, latest and versions, versions sorted by
  * version and kept whole. fetchedAt, fetchedBy, responseSha256, schemaVersion
  * and kind are left out. Throws TypeError for a snapshot that does not validate
- * against the contract: an invalid snapshot has no digest.
+ * against the contract: an invalid snapshot has no digest. The gate itself
+ * does not read a snapshot; this is exported for the plan binding that a later
+ * change wires in.
  */
 export function registrySnapshotDigest(snapshot: RegistrySnapshot): string {
   if (registrySnapshotViolations(snapshot).length > 0) throw new TypeError("a snapshot that does not validate against the registry snapshot contract has no digest");
@@ -251,24 +254,6 @@ function launchFailure(result: LockfileSpawnResult): string | undefined {
 }
 
 // ---------------------------------------------------------------------------
-// The first-publication exception (D20)
-// ---------------------------------------------------------------------------
-
-/**
- * Whether D20's first-publication exception covers one package that has no
- * verified provenance: the base ledger holds no row for it, the plan names this
- * snapshot's digest, and the snapshot found it with exactly the one version the
- * set installs. `digest` is the snapshot's digest, computed once by the caller
- * for a valid snapshot.
- */
-function exceptionApplies(pkg: GatedPackage, input: ProvenanceGateInput, digest: string): boolean {
-  if (input.baseLedger !== null && input.baseLedger.packages.some((row) => row.name === pkg.name)) return false;
-  if (input.planSnapshotDigest === null || input.planSnapshotDigest !== digest) return false;
-  const entry = input.snapshot.packages.find((candidate) => candidate.name === pkg.name);
-  return entry !== undefined && entry.status === "found" && entry.versions.length === 1 && entry.versions[0]?.version === pkg.version;
-}
-
-// ---------------------------------------------------------------------------
 // The gate
 // ---------------------------------------------------------------------------
 
@@ -276,12 +261,14 @@ function exceptionApplies(pkg: GatedPackage, input: ProvenanceGateInput, digest:
  * V9 for one change set. Satisfied without touching anything when the set
  * installs or pins nothing its base lacks. Otherwise runs the hub's
  * `integrator-provenance-check` against `tree` and judges each gated package
- * by exact name and exact version. Other `@clossys` packages in the report
- * never gate: an unrelated violated legacy pin passes when every gated package
- * is verified. Indeterminate wins over violated; the result lists each
- * distinct rule once, in code-unit order, and never mixes a satisfied entry
- * with a refusal. Never throws for a bad input; everything it cannot rely on is
- * an indeterminate entry.
+ * by exact name and exact version: satisfied only when every one is verified
+ * at that version, with no exception for an unverified one. Other `@clossys`
+ * packages in the report never gate: an unrelated violated legacy pin passes
+ * when every gated package is verified. Indeterminate wins over violated; the
+ * result lists each distinct rule once, in code-unit order, and never mixes a
+ * satisfied entry with a refusal. Never throws for a bad input; everything it
+ * cannot rely on is an indeterminate entry. The input carries no ledger or
+ * snapshot: nothing here reads one.
  */
 export async function checkSetProvenance(input: ProvenanceGateInput, ports: ProvenanceGatePorts = {}): Promise<readonly ApplyCheck[]> {
   // 1. The gated set.
@@ -336,9 +323,6 @@ export async function checkSetProvenance(input: ProvenanceGateInput, ports: Prov
   // 7 and 8. Each gated package, by exact name and exact version.
   const indeterminateRules = new Set<string>();
   const violatedRules = new Set<string>();
-  let excepted = false;
-  let snapshotDigest: string | undefined;
-  let snapshotChecked = false;
   for (const pkg of gated) {
     const entries = report.packages.filter((entry) => entry.name === pkg.name);
     if (entries.length === 0) {
@@ -355,21 +339,12 @@ export async function checkSetProvenance(input: ProvenanceGateInput, ports: Prov
       continue;
     }
     if (entries.every((entry) => entry.state === "verified")) continue;
-    // Unverified at the act's own version: the only way through is D20's exception.
-    if (!snapshotChecked) {
-      snapshotChecked = true;
-      if (registrySnapshotViolations(input.snapshot).length === 0) snapshotDigest = registrySnapshotDigest(input.snapshot);
-    }
-    if (snapshotDigest === undefined) {
-      indeterminateRules.add("snapshot-invalid");
-      continue;
-    }
-    if (exceptionApplies(pkg, input, snapshotDigest)) excepted = true;
-    else violatedRules.add("provenance-unverified");
+    // Unverified at the act's own version: violated, with no exception.
+    violatedRules.add("provenance-unverified");
   }
 
   // 9. Indeterminate wins over violated; a satisfied entry never sits beside a refusal.
   if (indeterminateRules.size > 0) return distinctRules("indeterminate", indeterminateRules);
   if (violatedRules.size > 0) return distinctRules("violated", violatedRules);
-  return excepted ? [{ check: "V9", verdict: "satisfied", rule: "first-publication-exception" }] : [{ check: "V9", verdict: "satisfied" }];
+  return [{ check: "V9", verdict: "satisfied" }];
 }

@@ -4,7 +4,6 @@ import { basename, delimiter, dirname, join } from "node:path";
 import { afterAll, afterEach, describe, expect, it, vi } from "vitest";
 import type { ApplyCheck, ChangeSetItem } from "./change-set-contract.js";
 import { PACKAGE_SCOPE } from "./generated/package-scope.generated.js";
-import type { InstalledLedger } from "./ledger-contract.js";
 import type { LockfileSpawn, LockfileSpawnRequest, LockfileSpawnResult } from "./lockfile-regen.js";
 import { LOCKFILE_TOOL_ENV_KEYS } from "./lockfile-tool-env.js";
 import {
@@ -40,6 +39,9 @@ afterAll(() => rmSync(scratchRoot, { recursive: true, force: true }));
 afterEach(() => vi.unstubAllEnvs());
 
 const STUB_BIN_TEXT = "#!/usr/bin/env node\n";
+
+/** Variables the OS or Node puts into every child process: macOS adds this one, whatever the parent passed. */
+const ADDED_BY_OS_OR_NODE: readonly string[] = ["__CF_USER_TEXT_ENCODING"];
 
 interface Hub {
   readonly hub: string;
@@ -148,16 +150,13 @@ function snapshotOf(packages: readonly { name: string; versions: readonly string
   };
 }
 
-const ledgerWith = (...names: string[]): InstalledLedger => ({ packages: names.map((name) => ({ name })) }) as unknown as InstalledLedger;
-
 function inputFor(hub: Hub, items: readonly ChangeSetItem[], overrides: Partial<ProvenanceGateInput> = {}): ProvenanceGateInput {
-  return { tree: hub.tree, hubRoot: hub.hub, items, baseLedger: null, snapshot: snapshotOf([{ name: WRITER, versions: ["1.0.0"] }]), planSnapshotDigest: null, ...overrides };
+  return { tree: hub.tree, hubRoot: hub.hub, items, ...overrides };
 }
 
 const indeterminate = (rule: string): ApplyCheck => ({ check: "V9", verdict: "indeterminate", rule });
 const violated = (rule: string): ApplyCheck => ({ check: "V9", verdict: "violated", rule });
 const SATISFIED: ApplyCheck = { check: "V9", verdict: "satisfied" };
-const EXCEPTION: ApplyCheck = { check: "V9", verdict: "satisfied", rule: "first-publication-exception" };
 
 /** Runs the gate against a fresh hub with one injected spawn answer. */
 async function run(answer: LockfileSpawnResult, items: readonly ChangeSetItem[], overrides: Partial<ProvenanceGateInput> = {}): Promise<{ checks: readonly ApplyCheck[]; calls: LockfileSpawnRequest[] }> {
@@ -213,10 +212,10 @@ describe("checkSetProvenance: what is gated", () => {
       packageItem(DESIGNER, "2.0.0", { act: "pin-starter", satisfiedInBase: true }),
     ];
     // Roots that could never pass the canonical check: proof that nothing looks at them.
-    const checks = await checkSetProvenance({ tree: "relative/tree", hubRoot: "relative/hub", items, baseLedger: null, snapshot: snapshotOf([{ name: WRITER, versions: ["1.0.0"] }]), planSnapshotDigest: null }, { spawn });
+    const checks = await checkSetProvenance({ tree: "relative/tree", hubRoot: "relative/hub", items }, { spawn });
     expect(checks).toEqual([SATISFIED]);
     expect(calls).toHaveLength(0);
-    expect(await checkSetProvenance({ tree: "x", hubRoot: "y", items: [], baseLedger: null, snapshot: snapshotOf([{ name: WRITER, versions: ["1.0.0"] }]), planSnapshotDigest: null }, { spawn })).toEqual([SATISFIED]);
+    expect(await checkSetProvenance({ tree: "x", hubRoot: "y", items: [] }, { spawn })).toEqual([SATISFIED]);
     expect(calls).toHaveLength(0);
   });
 
@@ -518,7 +517,8 @@ describe("checkSetProvenance: the launch", () => {
       expect(Object.hasOwn(dump.env, key), key).toBe(false);
       expect(text.includes(value), key).toBe(false);
     }
-    const allowed = new Set<string>(LOCKFILE_TOOL_ENV_KEYS);
+    // Node or the OS adds a few variables to a child on some platforms; every other key must come from the allow-list.
+    const allowed = new Set<string>([...LOCKFILE_TOOL_ENV_KEYS, ...ADDED_BY_OS_OR_NODE]);
     for (const key of Object.keys(dump.env)) expect(allowed.has(key), key).toBe(true);
     expect(dump.env.PATH?.startsWith(`${dirname(process.execPath)}${delimiter}`)).toBe(true);
     expect(basename(dump.cwd).startsWith("launcher-lockfile-")).toBe(true);
@@ -657,7 +657,7 @@ describe("checkSetProvenance: reading the report", () => {
 });
 
 describe("checkSetProvenance: per gated package", () => {
-  it("a violated gated package is violated when the exception does not apply", async () => {
+  it("a violated gated package is violated", async () => {
     const { checks } = await run(exitWith(1, report("violated", [violatedPackage(WRITER, "1.0.0")])), [packageItem(WRITER, "1.0.0")]);
     expect(checks).toEqual([violated("provenance-unverified")]);
   });
@@ -677,9 +677,8 @@ describe("checkSetProvenance: per gated package", () => {
     expect((await run(exitWith(0, verifiedReport([WRITER, "1.0.0"], [WRITER, "0.9.0"])), [packageItem(WRITER, "1.0.0")])).checks).toEqual([violated("version-mismatch")]);
   });
 
-  it("a version mismatch is never rescued by the first-publication exception", async () => {
-    const snapshot = snapshotOf([{ name: WRITER, versions: ["1.0.0"] }]);
-    const { checks } = await run(exitWith(1, report("violated", [violatedPackage(WRITER, "0.9.0")])), [packageItem(WRITER, "1.0.0")], { snapshot, planSnapshotDigest: registrySnapshotDigest(snapshot) });
+  it("an unverified report entry at another version is a version mismatch, not an unverified package", async () => {
+    const { checks } = await run(exitWith(1, report("violated", [violatedPackage(WRITER, "0.9.0")])), [packageItem(WRITER, "1.0.0")]);
     expect(checks).toEqual([violated("version-mismatch")]);
   });
 
@@ -704,87 +703,62 @@ describe("checkSetProvenance: per gated package", () => {
   });
 });
 
-describe("checkSetProvenance: the first-publication exception (D20)", () => {
-  const items = [packageItem(WRITER, "1.0.0")];
-  const unverified = exitWith(1, report("violated", [violatedPackage(WRITER, "1.0.0")]));
-  const snapshot = snapshotOf([{ name: WRITER, versions: ["1.0.0"] }]);
-  const granted = (): Partial<ProvenanceGateInput> => ({ snapshot, planSnapshotDigest: registrySnapshotDigest(snapshot), baseLedger: null });
+describe("checkSetProvenance: an unverified package is never excepted (D20 is not implemented)", () => {
+  const items = [packageItem(WRITER, "2.0.0")];
+  const failedAttestation = exitWith(1, report("violated", [violatedPackage(WRITER, "2.0.0")]));
+  const undecided = exitWith(2, report("indeterminate", [{ name: WRITER, installedVersion: "2.0.0", state: "indeterminate", reasons: ["attestations endpoint unreachable"] }]));
+  // What the snapshot step really writes for a package with earlier releases: the one version `latest` names, with attestations.
+  const latestOnly = snapshotOf([{ name: WRITER, versions: ["2.0.0"] }]);
+  const attested: RegistrySnapshot = { ...latestOnly, packages: latestOnly.packages.map((entry) => ({ ...entry, versions: entry.versions.map((version) => ({ ...version, hasAttestations: true })) })) };
+  // Inputs the gate used to accept for the exception. It no longer has them, and passing them changes nothing.
+  const formerInputs = (baseLedger: unknown): Partial<ProvenanceGateInput> => ({ baseLedger, snapshot: attested, planSnapshotDigest: registrySnapshotDigest(attested) }) as unknown as Partial<ProvenanceGateInput>;
 
-  it("is granted when the package is new, the plan names this snapshot, and the snapshot holds exactly this version", async () => {
-    const result = await run(unverified, items, granted());
-    expect(result.checks).toEqual([EXCEPTION]);
-    expect(result.calls).toHaveLength(1);
+  it("a package with prior releases whose latest fails attestation verification is violated, whether or not the base has a row for it", async () => {
+    expect((await run(failedAttestation, items)).checks).toEqual([violated("provenance-unverified")]);
+    expect((await run(failedAttestation, items, formerInputs(null))).checks).toEqual([violated("provenance-unverified")]);
+    expect((await run(failedAttestation, items, formerInputs({ packages: [] }))).checks).toEqual([violated("provenance-unverified")]);
+    expect((await run(failedAttestation, items, formerInputs({ packages: [{ name: DESIGNER }] }))).checks).toEqual([violated("provenance-unverified")]);
   });
 
-  it("is granted when the base ledger exists but has no row for the package", async () => {
-    expect((await run(unverified, items, { ...granted(), baseLedger: ledgerWith(DESIGNER, LEGACY) })).checks).toEqual([EXCEPTION]);
-    expect((await run(unverified, items, { ...granted(), baseLedger: ledgerWith() })).checks).toEqual([EXCEPTION]);
+  it("a package with no attestations at all is violated too: an unattested first publication blocks", async () => {
+    const unattested = snapshotOf([{ name: WRITER, versions: ["1.0.0"] }]);
+    const answer = exitWith(1, report("violated", [violatedPackage(WRITER, "1.0.0")]));
+    const inputs = { baseLedger: null, snapshot: unattested, planSnapshotDigest: registrySnapshotDigest(unattested) } as unknown as Partial<ProvenanceGateInput>;
+    expect((await run(answer, [packageItem(WRITER, "1.0.0")], inputs)).checks).toEqual([violated("provenance-unverified")]);
   });
 
-  it("is refused for a package the base ledger already has a row for, whatever the row's version", async () => {
-    expect((await run(unverified, items, { ...granted(), baseLedger: ledgerWith(WRITER) })).checks).toEqual([violated("provenance-unverified")]);
-    expect((await run(unverified, items, { ...granted(), baseLedger: ledgerWith(DESIGNER, WRITER) })).checks).toEqual([violated("provenance-unverified")]);
+  it("a package Integrator cannot decide is indeterminate, never satisfied", async () => {
+    expect((await run(undecided, items)).checks).toEqual([indeterminate("engine-indeterminate")]);
+    expect((await run(undecided, items, formerInputs(null))).checks).toEqual([indeterminate("engine-indeterminate")]);
+    const contradictory = exitWith(1, report("violated", [{ name: WRITER, installedVersion: "2.0.0", state: "indeterminate", reasons: [] }]));
+    expect((await run(contradictory, items, formerInputs(null))).checks).toEqual([indeterminate("report-contradicts-exit")]);
   });
 
-  it("is refused when the snapshot records two versions", async () => {
-    const two = snapshotOf([{ name: WRITER, versions: ["0.9.0", "1.0.0"] }]);
-    expect((await run(unverified, items, { snapshot: two, planSnapshotDigest: registrySnapshotDigest(two) })).checks).toEqual([violated("provenance-unverified")]);
-  });
-
-  it("is refused when the plan's snapshot digest is another snapshot's", async () => {
-    const other = snapshotOf([{ name: WRITER, versions: ["1.0.0"] }, { name: DESIGNER, versions: ["1.0.0"] }]);
-    expect((await run(unverified, items, { snapshot, planSnapshotDigest: registrySnapshotDigest(other) })).checks).toEqual([violated("provenance-unverified")]);
-    expect((await run(unverified, items, { snapshot, planSnapshotDigest: `sha256:${"0".repeat(64)}` })).checks).toEqual([violated("provenance-unverified")]);
-    expect((await run(unverified, items, { snapshot, planSnapshotDigest: "" })).checks).toEqual([violated("provenance-unverified")]);
-  });
-
-  it("is refused when the plan has no snapshot digest", async () => {
-    expect((await run(unverified, items, { snapshot, planSnapshotDigest: null })).checks).toEqual([violated("provenance-unverified")]);
-  });
-
-  it("is refused when the snapshot's one version is not the act's", async () => {
-    const elsewhere = snapshotOf([{ name: WRITER, versions: ["1.0.1"] }]);
-    expect((await run(unverified, items, { snapshot: elsewhere, planSnapshotDigest: registrySnapshotDigest(elsewhere) })).checks).toEqual([violated("provenance-unverified")]);
-  });
-
-  it("is refused when the snapshot did not find the package, or does not list it", async () => {
-    const notFound = snapshotOf([{ name: WRITER, versions: [], status: "not-found" }]);
-    expect((await run(unverified, items, { snapshot: notFound, planSnapshotDigest: registrySnapshotDigest(notFound) })).checks).toEqual([violated("provenance-unverified")]);
-    const unlisted = snapshotOf([{ name: DESIGNER, versions: ["1.0.0"] }]);
-    expect((await run(unverified, items, { snapshot: unlisted, planSnapshotDigest: registrySnapshotDigest(unlisted) })).checks).toEqual([violated("provenance-unverified")]);
-  });
-
-  it("is refused when the snapshot's one version is one the act's name shares only by prefix", async () => {
-    const lookalike = snapshotOf([{ name: `${WRITER}-extra`, versions: ["1.0.0"] }]);
-    expect((await run(unverified, items, { snapshot: lookalike, planSnapshotDigest: registrySnapshotDigest(lookalike) })).checks).toEqual([violated("provenance-unverified")]);
-  });
-
-  it("an invalid snapshot with an exception under consideration is indeterminate", async () => {
-    const invalid = { ...snapshot, packages: [...snapshot.packages, ...snapshot.packages] } as RegistrySnapshot;
-    expect((await run(unverified, items, { snapshot: invalid, planSnapshotDigest: registrySnapshotDigest(snapshot) })).checks).toEqual([indeterminate("snapshot-invalid")]);
-    const wrongKind = { ...snapshot, kind: "something-else" } as unknown as RegistrySnapshot;
-    expect((await run(unverified, items, { snapshot: wrongKind, planSnapshotDigest: registrySnapshotDigest(snapshot) })).checks).toEqual([indeterminate("snapshot-invalid")]);
-    const notAnObject = null as unknown as RegistrySnapshot;
-    expect((await run(unverified, items, { snapshot: notAnObject, planSnapshotDigest: null })).checks).toEqual([indeterminate("snapshot-invalid")]);
-  });
-
-  it("an invalid snapshot is never looked at when every gated package is verified", async () => {
-    const invalid = null as unknown as RegistrySnapshot;
-    expect((await run(exitWith(0, verifiedReport([WRITER, "1.0.0"])), items, { snapshot: invalid, planSnapshotDigest: null })).checks).toEqual([SATISFIED]);
-  });
-
-  it("a verified package and an excepted one together carry the exception's rule", async () => {
+  it("one unverified package makes the whole set violated, though the others are verified", async () => {
     const both = [packageItem(DESIGNER, "2.0.0"), packageItem(WRITER, "1.0.0")];
     const answer = exitWith(1, report("violated", [verifiedPackage(DESIGNER, "2.0.0"), violatedPackage(WRITER, "1.0.0")]));
-    const twoPackages = snapshotOf([{ name: WRITER, versions: ["1.0.0"] }, { name: DESIGNER, versions: ["2.0.0"] }]);
-    expect((await run(answer, both, { snapshot: twoPackages, planSnapshotDigest: registrySnapshotDigest(twoPackages) })).checks).toEqual([EXCEPTION]);
+    expect((await run(answer, both)).checks).toEqual([violated("provenance-unverified")]);
   });
 
-  it("a package the exception cannot cover still makes the set violated, though another was excepted", async () => {
-    const both = [packageItem(DESIGNER, "2.0.0"), packageItem(WRITER, "1.0.0")];
-    const answer = exitWith(1, report("violated", [violatedPackage(DESIGNER, "2.0.0"), violatedPackage(WRITER, "1.0.0")]));
-    const twoPackages = snapshotOf([{ name: WRITER, versions: ["1.0.0"] }, { name: DESIGNER, versions: ["1.9.0", "2.0.0"] }]);
-    expect((await run(answer, both, { snapshot: twoPackages, planSnapshotDigest: registrySnapshotDigest(twoPackages) })).checks).toEqual([violated("provenance-unverified")]);
+  it("no result carries a rule on a satisfied entry, and none names an exception", async () => {
+    const answers = [failedAttestation, undecided, exitWith(0, verifiedReport([WRITER, "2.0.0"]))];
+    for (const answer of answers) {
+      for (const check of (await run(answer, items, formerInputs(null))).checks) {
+        if (check.verdict === "satisfied") expect(check).toEqual(SATISFIED);
+        expect(JSON.stringify(check)).not.toContain("exception");
+      }
+    }
+  });
+
+  it("stray or malformed input fields, such as a ledger that is not a ledger, can neither throw nor change the verdict", async () => {
+    const malformed: unknown[] = [undefined, "ledger", 7, [], {}, { packages: null }, { packages: "x" }, { packages: {} }, { packages: [null] }, { packages: [7] }, { packages: [{}] }, { packages: [{ name: 7 }] }, { packages: [{ name: WRITER }] }];
+    const verified = exitWith(0, verifiedReport([WRITER, "2.0.0"]));
+    for (const baseLedger of malformed) {
+      const stray = { baseLedger, snapshot: null, planSnapshotDigest: 7 } as unknown as Partial<ProvenanceGateInput>;
+      expect((await run(verified, items, stray)).checks, JSON.stringify(baseLedger)).toEqual([SATISFIED]);
+      expect((await run(failedAttestation, items, stray)).checks, JSON.stringify(baseLedger)).toEqual([violated("provenance-unverified")]);
+      expect((await run(undecided, items, stray)).checks, JSON.stringify(baseLedger)).toEqual([indeterminate("engine-indeterminate")]);
+    }
   });
 });
 

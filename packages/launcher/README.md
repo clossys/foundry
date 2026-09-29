@@ -854,7 +854,7 @@ which this step does not do.
 
 ## Checking provenance (V9)
 
-`checkSetProvenance({ tree, hubRoot, items, baseLedger, snapshot, planSnapshotDigest }, ports?)`
+`checkSetProvenance({ tree, hubRoot, items }, ports?)`
 returns, for one change set, its V9 `ApplyCheck` entries
 (`Promise<readonly ApplyCheck[]>`). It is exported but not yet run by `plan`,
 `materialize` or `verify`; a later change wires it in.
@@ -873,19 +873,32 @@ returns, for one change set, its V9 `ApplyCheck` entries
   missing from the report is indeterminate; a verified version other than the
   act's is violated (`version-mismatch`). Other `@clossys/*` packages in the
   report never gate, so an unrelated violated legacy pin passes.
-- **First-publication exception.** An unverified package passes
-  (`first-publication-exception`, satisfied) only when all three hold: the
-  trusted base ledger has no `packages` row for it; the snapshot's recomputed
-  digest, `registrySnapshotDigest(snapshot)`, equals the plan's
-  `resolution.snapshotDigest`; and the snapshot lists exactly one version for
-  it, the act's. Otherwise it is violated (`provenance-unverified`). Accepting
-  an unattested first publication under these conditions is by design.
+- **No exception.** An unverified package is never satisfied. One the bin
+  reports `violated` stays violated (`provenance-unverified`), and one it
+  cannot decide stays indeterminate. The first-publication exception the
+  design allows for (D20) is deliberately not implemented: a registry
+  snapshot records only the one version `latest` names, so it cannot show
+  that a version is a package's first publication, and Integrator reports a
+  failed attestation the same way as a missing one. Any exception built on
+  that would also pass a package with earlier releases whose latest release
+  fails verification. Until the snapshot contract records evidence of a first
+  publication, an unattested first publication blocks the apply (fail
+  closed).
 - **Verdict.** Indeterminate outranks violated: when any indeterminate rule
   applies, only indeterminate entries are returned. A set with nothing to gate
   returns one satisfied entry with no rule, without running the engine.
-- **Soundness boundary.** A pass proves registry provenance for the named
-  versions at check time, as the hub's pinned Integrator reports it. It does
-  not cover transitive dependencies or a later republish.
+- **Soundness boundary.** A pass means every version the set installs or
+  updates is verified by the hub's pinned Integrator at check time, with no
+  exception. It does not cover transitive dependencies or a later republish.
+  The bin check accepts any regular file inside the installed
+  `@clossys/integrator` package and does not compare the installed version
+  with the hub's pin; the hub's `node_modules` is trusted.
+
+`registrySnapshotDigest(snapshot)` returns a registry snapshot's contract digest
+(`sha256:` and 64 lowercase hexadecimal digits) from the snapshot's contents,
+independent of fetch time and of the order of packages and versions; it throws a
+`TypeError` for a snapshot that does not validate. The provenance check does not
+read a snapshot; the digest is for the plan binding a later change wires in.
 
 Types: `ProvenanceGateInput`, `ProvenanceGatePorts`.
 
