@@ -37,4 +37,15 @@ describe("site chrome token-purity scan", () => {
   it("carries no waiver on any chrome line", { timeout: 60_000 }, () => {
     expect(gate.ignored).toEqual([]);
   });
+
+  it("reports only the three known arbitrary-value findings", { timeout: 60_000 }, () => {
+    // The drawer width and the legal row's tap target still need tokens (a token
+    // unit's change). Any other finding here is a new hardcoded value in chrome.
+    const found = gate.findings.map((f) => `${f.file}: ${f.snippet}`).sort();
+    expect(found).toEqual([
+      "NavShell.tsx: w-[min(20rem,85vw)]",
+      "SiteFooter.tsx: min-h-[44px]",
+      "SiteFooter.tsx: min-w-[44px]",
+    ]);
+  });
 });
