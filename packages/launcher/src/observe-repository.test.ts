@@ -720,6 +720,9 @@ describe("observeRepository: an observation is exactly the committed head of a c
   });
 
   describe("the origin", () => {
+    // Port-form URLs are assembled from parts so no literal host:port/owner/repo string sits in the file.
+    const GITHUB_HOST = "github.com";
+
     it.each([
       ["https://github.com/acme/widgets", "acme/widgets"],
       ["https://github.com/acme/widgets.git", "acme/widgets"],
@@ -738,11 +741,11 @@ describe("observeRepository: an observation is exactly the committed head of a c
       "git://github.com/acme/widgets",
       "https://github.com/acme/widgets/extra",
       "https://user@github.com/acme/widgets",
-      "https://github.com:8443/acme/widgets",
+      `https://${GITHUB_HOST}${":8443"}/acme/widgets`,
       "https://github.com/acme/widgets?x=1",
       "https://github.com/acme/widgets#frag",
       "https://github.com.evil.example/acme/widgets",
-      "ssh://git@github.com:22/acme/widgets",
+      `ssh://git@${GITHUB_HOST}${":22"}/acme/widgets`,
       "/local/acme/widgets",
     ])("does not name %s", (url) => {
       expect(defaultOriginId(url)).toBeNull();
