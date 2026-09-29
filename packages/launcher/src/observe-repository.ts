@@ -214,8 +214,12 @@ function gitBinary(): string | null {
 /**
  * git inside the clone reads no configuration but the vetted `.git/config` and
  * fixed `-c` overrides: the system and global configuration are switched off,
- * and every other source the environment names is removed. Only `ls-remote`,
- * which runs outside the clone, keeps the operator's own (credentials, proxy).
+ * and every other source the environment names is removed. `ls-remote`, which
+ * runs outside the clone, keeps the operator's global and system git config
+ * files (credential helpers, proxy), but the `GIT_CONFIG_COUNT`, `GIT_CONFIG_KEY_n`,
+ * `GIT_CONFIG_VALUE_n` and `GIT_CONFIG_PARAMETERS` variables are not forwarded
+ * to it either: an origin that needs credentials supplied through those
+ * variables is skipped as `remote-tip-unreadable`, not observed.
  */
 function gitEnvironment(cwd: string, protocols: string, remote: boolean): NodeJS.ProcessEnv {
   const env: NodeJS.ProcessEnv = { ...process.env };

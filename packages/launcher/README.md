@@ -773,8 +773,13 @@ if ("skipped" in observed) console.log(observed.skipped, observed.verdict);
   but the vetted `.git/config` and fixed `-c` overrides: the system and
   global configuration are switched off, and `GIT_CONFIG_COUNT` and its
   key and value variables, `GIT_CONFIG_PARAMETERS`, `GIT_CONFIG_SYSTEM` and
-  `GIT_ATTR_SOURCE` are removed. Only `git ls-remote`, which runs outside the
-  clone, keeps the operator's own configuration.
+  `GIT_ATTR_SOURCE` are removed. `git ls-remote`, which runs outside the
+  clone, keeps the operator's global and system git config files (credential
+  helpers, proxy), but the `GIT_CONFIG_COUNT`, `GIT_CONFIG_KEY_n`,
+  `GIT_CONFIG_VALUE_n` and `GIT_CONFIG_PARAMETERS` environment variables are
+  not forwarded to it either, so an origin that needs credentials supplied
+  through those variables is skipped as `remote-tip-unreadable` instead of
+  observed.
 
 | Verdict | Skip reasons |
 | --- | --- |
