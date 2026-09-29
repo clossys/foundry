@@ -454,6 +454,8 @@ message, is a 0-based index into the decoded text in UTF-16 code units
 (JavaScript's string index): it equals the byte offset only for ASCII
 text, and a character outside the Basic Multilingual Plane counts as two.
 
+When a plan carries `delegatedCopyApproval`, the "Recommended next" section ends with one more line after a blank one, so the person about to approve sees that approving also accepts delegate-approved copy on production: `Approving this plan also accepts delegate-approved copy on production, for every copy entry.` when the declaration has no `scopes`, or `Approving this plan also accepts delegate-approved copy on production, only for copy entries under: ` followed by each distinct scope once, in first-occurrence order, each as a code span and joined by `, `, and ending in `.` when it does. The line is built from the declaration's own digest-covered fields only, and a plan without the field renders exactly as before. `renderAdvisorStatus()` does not validate its input first, so it throws a `TypeError` naming the position, never the value, for a target other than `production`, an empty `scopes` list, a scope outside the shape the plan contract accepts for a copy entry-id namespace, or a member the declaration does not define. STATUS shows no digest and cannot prove the approver read it, or that a committed STATUS still matches its plan; the approval binds the plan's digest, not this text.
+
 ## Exact packages from a registry snapshot (issue #1178)
 
 A plan's `packages` and `resolution` are never written by hand. Two pure

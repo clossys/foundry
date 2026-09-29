@@ -177,6 +177,48 @@ export interface AdvisorPlan {
   delegatedCopyApproval?: AdvisorPlanDelegatedCopyApproval;
 }
 
+/**
+ * The contract's `copyDelegateScope` pattern (`definitions.copyDelegateScope`
+ * in the plan contract), held once here. A test keeps its source equal to the
+ * packed contract's, so the renderer never accepts a scope the contract would
+ * refuse. No `g` or `y` flag, so `test()` carries no state between calls.
+ */
+export const DELEGATED_COPY_SCOPE_PATTERN = /^[a-z0-9]+(-[a-z0-9]+)*(\.[a-z0-9]+(-[a-z0-9]+)*)*$/;
+
+const DELEGATED_COPY_DECLARATION_MEMBERS: readonly string[] = ["target", "scopes"];
+
+/**
+ * The one line that tells the person about to approve a plan that the approval
+ * also accepts delegate-approved copy on production. `renderAdvisorStatus` does
+ * not validate its input first, so this refuses every value outside the
+ * contract's shape with a `TypeError` that names the position, never the value:
+ * a value here goes in front of an approver, so nothing ambiguous is rendered.
+ */
+function delegatedCopyLine(declaration: unknown): string {
+  const at = "plan.delegatedCopyApproval";
+  if (typeof declaration !== "object" || declaration === null || Array.isArray(declaration)) {
+    throw new TypeError(`${at} must be an object with a target and optional scopes`);
+  }
+  for (const key of Object.keys(declaration)) {
+    if (!DELEGATED_COPY_DECLARATION_MEMBERS.includes(key)) throw new TypeError(`${at} has a member the plan contract does not declare`);
+  }
+  const target = Object.hasOwn(declaration, "target") ? (declaration as { target?: unknown }).target : undefined;
+  if (target !== "production") throw new TypeError(`${at}.target must be "production"`);
+  const lead = `Approving this plan also accepts delegate-approved copy on ${target}`;
+  if (!Object.hasOwn(declaration, "scopes")) return `${lead}, for every copy entry.`;
+  const scopes = (declaration as { scopes?: unknown }).scopes;
+  if (!Array.isArray(scopes) || scopes.length === 0) throw new TypeError(`${at}.scopes must be a non-empty list`);
+  const distinct: string[] = [];
+  for (let index = 0; index < scopes.length; index += 1) {
+    const scope: unknown = Object.hasOwn(scopes, index) ? scopes[index] : undefined;
+    if (typeof scope !== "string" || !DELEGATED_COPY_SCOPE_PATTERN.test(scope)) {
+      throw new TypeError(`${at}.scopes[${index}] is not a copy entry-id namespace the plan contract accepts`);
+    }
+    if (!distinct.includes(scope)) distinct.push(scope);
+  }
+  return `${lead}, only for copy entries under: ${distinct.map((scope) => `\`${scope}\``).join(", ")}.`;
+}
+
 function section(title: string, body: readonly string[]): string {
   return [`## ${title}`, "", ...body, ""].join("\n");
 }
@@ -231,6 +273,7 @@ export function renderAdvisorStatus(plan: AdvisorPlan): string {
   const recommendedNextLines = plan.recommendedNext
     ? [`${plan.recommendedNext.action} (owner: ${plan.recommendedNext.owner}${plan.recommendedNext.due ? `, due ${plan.recommendedNext.due}` : ""})`]
     : ["Nothing pending."];
+  if (Object.hasOwn(plan, "delegatedCopyApproval")) recommendedNextLines.push("", delegatedCopyLine(plan.delegatedCopyApproval));
   const decisionLines =
     plan.decisions.length > 0
       ? plan.decisions.map((item) => `- ${item.at} — recommended: ${item.recommended}; chosen: ${item.chosen} (by ${item.by})`)
