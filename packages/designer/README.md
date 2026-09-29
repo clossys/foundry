@@ -3626,6 +3626,43 @@ as well as `@clossys/designer/shell`, and its prop types
 `secondary` continues to accept any node, so existing footers that
 compose their own row are unaffected.
 
+#### Transparent chrome and full width
+
+`SiteHeader` and `SiteFooter` accept `ground="transparent"` for chrome that
+sits over a page backdrop. It renders no `bg-*` class, no `border-*` class
+and no border-width style, and `SiteFooter` also omits the divider between
+`columns` and `secondary`. Ink stays the base ink. `ground` still defaults to
+`"base"`, and `"base"` and `"inverse"` render the same markup as before.
+`Shell.Header` and `Shell.Footer` keep `"base" | "inverse"`: passing
+`"transparent"` to either is a type error.
+
+```tsx
+import { SiteFooter, SiteHeader } from "@clossys/designer/shell";
+
+export function Chrome() {
+  return (
+    <>
+      <SiteHeader ground="transparent" brand={<a href="/">Example Co</a>} />
+      <SiteFooter
+        ground="transparent"
+        secondary={<SiteFooter.Legal entity="Example Co" links={[{ label: "Privacy", href: "/privacy" }]} />}
+      />
+    </>
+  );
+}
+```
+
+`brand` is still the consumer's own node; this package ships no brand mark for
+it. The inner containers of the header, the footer and the `SiteFooter.Legal`
+row carry no `max-w-*` class and no `maxWidth` style, so chrome content runs
+the full viewport width, inset only by the `--ui-width-page-padding-x` token;
+page content stays in `Shell.Main`'s container. A test pins this for every
+ground.
+
+`transparent` does not check the contrast of the chrome ink over whatever
+sits beneath it. That is the consumer's backdrop's job: choose a backdrop the
+base ink reads against, or use `ground="inverse"` over a dark one.
+
 ### `Toaster` and `toast`
 
 A toast stack is a **runtime service**, not a layout component (see

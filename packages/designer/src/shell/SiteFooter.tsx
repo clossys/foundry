@@ -1,6 +1,6 @@
 import type { HTMLAttributes, ReactNode } from "react";
 import { cx } from "../atoms/internal/cx.js";
-import { SHELL_GROUND_CLASSES, type ShellGround } from "./internal/shell-ground.js";
+import { SITE_CHROME_GROUND_CLASSES, siteChromeHasBorder, type SiteChromeGround } from "./internal/shell-ground.js";
 import { UI_BORDER_HAIRLINE, UI_WIDTH_PAGE_PADDING_X, UI_Z_SHELL } from "./internal/shell-vars.js";
 
 export interface SiteFooterProps extends Omit<HTMLAttributes<HTMLElement>, "children"> {
@@ -18,11 +18,13 @@ export interface SiteFooterProps extends Omit<HTMLAttributes<HTMLElement>, "chil
   secondary?: ReactNode;
   /**
    * Semantic plate for the footer bar — `inverse` paints the same
-   * surface/ink tokens grounded marketing blocks use. Do not reconstruct
-   * the plate with host `className` utilities.
+   * surface/ink tokens grounded marketing blocks use; `transparent` paints
+   * no plate, no border and no divider between `columns` and `secondary`
+   * (ink stays the base ink; the consumer's backdrop owns contrast). Do not
+   * reconstruct the plate with host `className` utilities.
    * @default "base"
    */
-  ground?: ShellGround;
+  ground?: SiteChromeGround;
 }
 
 /**
@@ -35,16 +37,17 @@ export interface SiteFooterProps extends Omit<HTMLAttributes<HTMLElement>, "chil
  * already carries.
  */
 function SiteFooterRoot({ columns, secondary, ground = "base", className, style, ...rest }: SiteFooterProps) {
-  const colors = SHELL_GROUND_CLASSES[ground];
+  const colors = SITE_CHROME_GROUND_CLASSES[ground];
+  const bordered = siteChromeHasBorder(ground);
 
   return (
     <footer
       {...rest}
-      className={cx(colors.surface, colors.primary, "py-lg border-t", colors.border, className)}
+      className={cx(colors.surface, colors.primary, "py-lg", bordered ? cx("border-t", colors.border) : "", className)}
       style={{
         position: "relative",
         zIndex: UI_Z_SHELL,
-        borderTopWidth: UI_BORDER_HAIRLINE,
+        ...(bordered ? { borderTopWidth: UI_BORDER_HAIRLINE } : {}),
         ...style,
       }}
     >
@@ -61,7 +64,7 @@ function SiteFooterRoot({ columns, secondary, ground = "base", className, style,
               "flex flex-col gap-sm text-body-s",
               colors.secondary,
               "tablet:flex-row tablet:items-center tablet:justify-between",
-              columns ? cx("border-t pt-lg", colors.border) : "",
+              columns && bordered ? cx("border-t pt-lg", colors.border) : "",
             )}
           >
             {secondary}
