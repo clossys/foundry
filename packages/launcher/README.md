@@ -1133,6 +1133,56 @@ A snapshot is a record of what the registry answered, not evidence of where
 a package came from; that is shown by verifying the package's provenance,
 which this step does not do.
 
+## Checking provenance (V9)
+
+`checkSetProvenance({ tree, hubRoot, items }, ports?)`
+returns, for one change set, its V9 `ApplyCheck` entries
+(`Promise<readonly ApplyCheck[]>`). It is exported but not yet run by `plan`,
+`materialize` or `verify`; a later change wires it in.
+
+- **Engine.** It runs the hub's own `node_modules/.bin/integrator-provenance-check --cwd <tree>`
+  (`PROVENANCE_CHECK_BIN`), never through `npx` and never looked up on `PATH`. If
+  that bin is missing, or its real path is not inside the hub's installed
+  `@clossys/integrator`, the result is indeterminate (`engine-missing-bin`).
+  The child gets an environment built from a fixed list of variables, so no
+  parent credential, proxy or CA-trust variable reaches it, and its time and
+  output are capped (`PROVENANCE_CHECK_TIMEOUT_MS`, `PROVENANCE_CHECK_MAX_BUFFER`).
+  The JSON report is parsed strictly; exit `2`, unreadable output, or output
+  that contradicts the exit code is indeterminate.
+- **What gates.** Only `install` and `pin-starter` items with
+  `satisfiedInBase: false`. Each must be `verified` at exactly its version. One
+  missing from the report is indeterminate; a verified version other than the
+  act's is violated (`version-mismatch`). Other `@clossys/*` packages in the
+  report never gate, so an unrelated violated legacy pin passes.
+- **No exception.** An unverified package is never satisfied. One the bin
+  reports `violated` stays violated (`provenance-unverified`), and one it
+  cannot decide stays indeterminate. The first-publication exception the
+  design allows for (D20) is deliberately not implemented: a registry
+  snapshot records only the one version `latest` names, so it cannot show
+  that a version is a package's first publication, and Integrator reports a
+  failed attestation the same way as a missing one. Any exception built on
+  that would also pass a package with earlier releases whose latest release
+  fails verification. Until the snapshot contract records evidence of a first
+  publication, an unattested first publication blocks the apply (fail
+  closed).
+- **Verdict.** Indeterminate outranks violated: when any indeterminate rule
+  applies, only indeterminate entries are returned. A set with nothing to gate
+  returns one satisfied entry with no rule, without running the engine.
+- **Soundness boundary.** A pass means every version the set installs or
+  updates is verified by the hub's pinned Integrator at check time, with no
+  exception. It does not cover transitive dependencies or a later republish.
+  The bin check accepts any regular file inside the installed
+  `@clossys/integrator` package and does not compare the installed version
+  with the hub's pin; the hub's `node_modules` is trusted.
+
+`registrySnapshotDigest(snapshot)` returns a registry snapshot's contract digest
+(`sha256:` and 64 lowercase hexadecimal digits) from the snapshot's contents,
+independent of fetch time and of the order of packages and versions; it throws a
+`TypeError` for a snapshot that does not validate. The provenance check does not
+read a snapshot; the digest is for the plan binding a later change wires in.
+
+Types: `ProvenanceGateInput`, `ProvenanceGatePorts`.
+
 ## Why this is not Advisor, Starter, Builder, installer, creator, or a connector
 
 Advisor is the engagement engine: it grades evidence and names a next
