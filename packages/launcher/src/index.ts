@@ -86,6 +86,8 @@ export { reportInventoryDrift } from "./inventory-adoption.js";
 export type { ExternalInventoryDeclaration, InventoryDriftReport } from "./inventory-adoption.js";
 export { detectLinkedHosts, parseHostRecord, serializeHostRecord, HOSTS_REL } from "./hosts.js";
 export type { DiscoveredHost, HostRecord } from "./hosts.js";
+export { readChangeSetMarker, renderPullRequest } from "./pull-request-body.js";
+export type { PullRequestRefusal, PullRequestRefusalReason, PullRequestText, RenderPullRequestInput } from "./pull-request-body.js";
 export { parsePreferences, readHostModelProfile, resolveModelForTier } from "./model-profile.js";
 export type {
   BudgetPreference,
