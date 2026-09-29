@@ -95,6 +95,31 @@ describe("Brandmark: accessible name, href, and mark image", () => {
     expect(screen.getByRole("link", { name: LABEL }).querySelectorAll("span")).toHaveLength(0);
   });
 
+  it.each(["   ", "\t", "\n", " \t\n \r\n "])(
+    "treats a whitespace-only wordmark (%j) as absent: mark only, no wordmark span, no gap",
+    (wordmark) => {
+      render(<Brandmark {...props("lockup", "md")} wordmark={wordmark} />);
+      const link = screen.getByRole("link", { name: LABEL });
+      expect(link.querySelectorAll("span")).toHaveLength(0);
+      expect(link.querySelectorAll("img")).toHaveLength(1);
+      expect(link.textContent).toBe("");
+      expect(link.style.gap).toBe("");
+    },
+  );
+
+  it.each(["   ", "\t\n"])(
+    "a whitespace-only wordmark (%j) needs no wordmark in the label, and a blank label still throws",
+    (wordmark) => {
+      render(<Brandmark {...props("lockup", "md")} label="Home" wordmark={wordmark} />);
+      expect(screen.getByRole("link", { name: "Home" }).querySelectorAll("span")).toHaveLength(0);
+      expect(() => render(<Brandmark {...props("lockup", "md")} label="  " wordmark={wordmark} />)).toThrow(/label/);
+    },
+  );
+
+  it("does not weaken the label check: a padded but non-blank wordmark is still compared against the label", () => {
+    expect(() => render(<Brandmark {...props("lockup", "md")} label="Home" wordmark="  Northwind  " />)).toThrow(/label-in-name|label in name|wordmark/);
+  });
+
   it("accepts a className, applied to the link", () => {
     render(<Brandmark {...props("mark", "sm")} className="consumer-class" />);
     expect(screen.getByRole("link", { name: LABEL })).toHaveClass("consumer-class");

@@ -66,8 +66,8 @@ export type BrandmarkProps = BrandmarkBaseProps &
         /**
          * The brand name, rendered as live text (not an image) in the display
          * font, sized from the mark's height. Text only: a string, never an
-         * element or image. Nothing is rendered for an empty wordmark: a
-         * lockup without one falls back to the mark alone.
+         * element or image. Nothing is rendered for an empty or
+         * whitespace-only wordmark: a lockup without one falls back to the mark alone.
          */
         wordmark: string;
       }
@@ -100,7 +100,7 @@ export function Brandmark(props: BrandmarkProps) {
   const { variant, size, label, markSrc, className } = props;
   const vars = SIZE_VARS[size];
   const wordmark = variant === "lockup" ? props.wordmark : undefined;
-  const showWordmark = typeof wordmark === "string" && wordmark !== "";
+  const showWordmark = typeof wordmark === "string" && normalise(wordmark) !== "";
 
   if (typeof label !== "string" || label.trim() === "") {
     throw new Error("Brandmark: `label` must be a non-empty string; it is the link's whole accessible name.");
