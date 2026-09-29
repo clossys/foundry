@@ -3582,6 +3582,50 @@ the same reason `RadioGroup.Radio`'s own section documents: real footer
 columns differ column-by-column in a way that reads more naturally as
 hand-written markup.
 
+`SiteFooter.Legal` fills the `secondary` slot with a copyright line and a
+row of legal links, so a caller supplies data rather than composing the row
+by hand. It takes `entity` (a plain string) and `links` (a list of
+`{ label, href }` records), plus an optional `linksLabel`, the accessible
+name for the links region. When `linksLabel` is given, the links render
+inside a `<nav aria-label>`; otherwise they render as a plain list. The
+component ships no English of its own, so the caller supplies `linksLabel`
+in the page's language.
+
+```tsx
+import { SiteFooter } from "@clossys/designer/shell";
+
+export function Footer() {
+  return (
+    <SiteFooter
+      secondary={
+        <SiteFooter.Legal
+          entity="Example Co"
+          linksLabel="Legal"
+          links={[
+            { label: "Terms", href: "/terms" },
+            { label: "Privacy", href: "/privacy" },
+          ]}
+        />
+      }
+    />
+  );
+}
+```
+
+It renders one text string, `© {year} {entity}`, where the year is computed
+at render from the current date; there is no `year` prop. The component owns
+the layout: the links come first in DOM order; below the `desktop`
+breakpoint the two stack, centred, links first; from `desktop` up they sit on
+one line with the copyright on the left and the links on the right. Every
+link tap target is at least 44px. There is deliberately no disclaimer slot
+and no `children`, `className`, or `style` prop — regulatory text belongs in
+legal documents the links point to. `SiteFooter.Legal` does not import
+react-aria-components, so it is available from `@clossys/designer/shell/server`
+as well as `@clossys/designer/shell`, and its prop types
+(`SiteFooterLegalProps`, `SiteFooterLegalLink`) are exported from both.
+`secondary` continues to accept any node, so existing footers that
+compose their own row are unaffected.
+
 ### `Toaster` and `toast`
 
 A toast stack is a **runtime service**, not a layout component (see
@@ -4345,7 +4389,7 @@ not a grab-bag).
 | `SiteHeaderProps` | type | Props for `SiteHeader`: `brand` (required), `nav`, `actions`, plus every native `<header>` attribute. |
 | `NavShell` | component | The responsive half of a public site's navigation: an inline `<nav>` from `tablet` up, a trigger-plus-drawer below it. |
 | `NavShellProps` | type | Props for `NavShell`: `children` (the nav links, rendered in both the desktop row and the drawer), `aria-label` (default `"Primary"`), `triggerLabel` (default `"Menu"`), `closeLabel` (default `"Close menu"`), `className`, plus most of react-aria-components' own `DialogTrigger` props (`isOpen`, `defaultOpen`, `onOpenChange`). |
-| `SiteFooter` | component | Public-site bottom chrome: grouped link columns, a secondary/legal row. Carries `SiteFooter.Column`. Renders the page's `contentinfo` landmark. |
+| `SiteFooter` | component | Public-site bottom chrome: grouped link columns, a secondary/legal row. Carries `SiteFooter.Column` and `SiteFooter.Legal`. Renders the page's `contentinfo` landmark. |
 | `SiteFooterProps` | type | Props for `SiteFooter`: `columns`, `secondary`, plus every native `<footer>` attribute. |
 | `SiteFooterColumnProps` | type | Props for `SiteFooter.Column`: `heading`, `children` (the column's own links), `className`. |
 | `Toaster` | component | The toast viewport — mount once, anywhere in the same tree as `Shell`. |
