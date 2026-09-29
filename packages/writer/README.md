@@ -206,7 +206,7 @@ const result = resolveSiteIdentity(registry, { target: "production", locale: "en
 
 if (!result.complete) {
   for (const issue of result.issues) console.error(issue.field, issue.reason, issue.message);
-} else {
+} else if (result.identity) {
   const { name, tagline } = result.identity;
 }
 ```
