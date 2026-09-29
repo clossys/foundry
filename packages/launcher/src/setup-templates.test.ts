@@ -176,23 +176,23 @@ describe("renderStarterRequest", () => {
   });
 
   it("never echoes the offending value in a refusal", () => {
-    const secret = "SECRET-MARKER-9f3a";
+    const marker = "MARKER-VALUE-ONE";
     const cases: unknown[] = [
-      input({ packageManager: secret }),
-      input({ repository: secret }),
-      input({ starter: pin({ name: secret }) }),
-      input({ starter: pin({ version: secret }) }),
-      input({ starter: pin({ integrity: secret }) }),
-      { ...input(), [secret]: 1 },
-      input({ starter: { ...pin(), [secret]: 1 } }),
-      secret,
+      input({ packageManager: marker }),
+      input({ repository: marker }),
+      input({ starter: pin({ name: marker }) }),
+      input({ starter: pin({ version: marker }) }),
+      input({ starter: pin({ integrity: marker }) }),
+      { ...input(), [marker]: 1 },
+      input({ starter: { ...pin(), [marker]: 1 } }),
+      marker,
     ];
     for (const value of cases) {
       const result = renderStarterRequest(value);
       expect(result.ok).toBe(false);
-      expect(JSON.stringify(result)).not.toContain(secret);
+      expect(JSON.stringify(result)).not.toContain(marker);
     }
-    expect(JSON.stringify(renderAdoptionDecisionWorkflow(secret))).not.toContain(secret);
+    expect(JSON.stringify(renderAdoptionDecisionWorkflow(marker))).not.toContain(marker);
   });
 
   it("is a pure function of its input", () => {
@@ -646,16 +646,16 @@ describe("renderSetupTemplate", () => {
   });
 
   it("never echoes the offending value", () => {
-    const secret = "SECRET-MARKER-9f3a";
+    const marker = "MARKER-VALUE-ONE";
     for (const result of [
-      renderSetupTemplate(secret as unknown as TemplateAct, secret),
-      renderSetupTemplate("add-caller-workflow", { packageManager: secret }),
-      renderSetupTemplate("add-caller-workflow", { [secret]: 1 }),
-      renderSetupTemplate("add-ci-template", secret),
-      renderSetupTemplate("write-starter-request", input({ repository: secret })),
+      renderSetupTemplate(marker as unknown as TemplateAct, marker),
+      renderSetupTemplate("add-caller-workflow", { packageManager: marker }),
+      renderSetupTemplate("add-caller-workflow", { [marker]: 1 }),
+      renderSetupTemplate("add-ci-template", marker),
+      renderSetupTemplate("write-starter-request", input({ repository: marker })),
     ]) {
       expect(result.ok).toBe(false);
-      expect(JSON.stringify(result)).not.toContain(secret);
+      expect(JSON.stringify(result)).not.toContain(marker);
     }
   });
 
