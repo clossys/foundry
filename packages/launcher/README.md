@@ -433,6 +433,63 @@ into a product repository, so until the repository is staffed in an approved
 plan and that plan's setup pull request merges, an unsatisfied
 `agents-pointer` check is the expected state; its note says so.
 
+### Setup templates
+
+`renderSetupTemplate()` and the renderers beside it are pure functions that
+return the exact bytes of the files a setup change writes. Nothing writes those
+bytes yet; a later step plans them into a change set. The renderers behind it
+are exported too: `renderStarterRequest()`, `renderAdoptionDecisionWorkflow()`,
+`renderProductCiWorkflow()`, `renderAdoptionEvidenceWorkflow()`,
+`renderSnapshotCollector()`, `renderPathScopeWorkflow()` and
+`renderPathScopeScript()`, the standalone script the path-scope workflow embeds.
+A `TemplateResult` is either `{ ok: true, files }`, a list of `TemplateFile`
+entries (`path` and `bytes`), or `{ ok: false, refusal }` with a
+`TemplateRefusal`; the package manager is a `SetupPackageManager` and the Starter
+pin a `StarterPinInput`.
+
+There are four acts, each with a fixed file list that `renderSetupTemplate()`
+returns in this order:
+
+- `add-caller-workflow` takes `{ packageManager }` and returns
+  `.github/workflows/clossys-adoption-evidence.yml`,
+  `.github/workflows/clossys-adoption-decision.yml` and
+  `.github/scripts/clossys-collect-adoption-snapshot.mjs`.
+- `write-starter-request` takes a `StarterRequestInput` and returns
+  `.starter/request.json`.
+- `add-ci-template` takes no input and returns `.github/workflows/clossys-ci.yml`.
+- `add-path-scope-job` takes no input and returns
+  `.github/workflows/clossys-path-scope.yml`.
+
+The request is in the admission phase and names the Starter as both its own
+engine and its target, and it names both evidence paths, the assessment file
+and the target-input file. It carries no advisor and no hub. The Starter pin must be an exact version in `>=0.2.0 <0.3.0`
+(`STARTER_PIN_RANGE`); any other pin is refused as `starter-pin-unsupported`,
+and a package manager other than npm or pnpm, Yarn included, is refused as
+`package-manager-unsupported`. A refusal names a position such as
+`starter.version` and never quotes the value it refused.
+
+The decision workflow starts only on `workflow_run` completion of the evidence
+workflow, and its job carries no condition, so it starts for every conclusion.
+It checks out the protected pull request base, runs one fixed frozen install
+(`npm ci --ignore-scripts` or `pnpm install --frozen-lockfile --ignore-scripts`),
+and runs the installed Starter's `admit` command over a sparse checkout of the
+`workflow_run` head that holds only `/clossys/.state/installed.json`. The
+trusted decision job never reads or trusts the snapshot artifact the evidence
+workflow uploads, because a pull request controls that workflow. The collector
+script is still written because the contract's file set for the caller
+workflows names it.
+
+The path-scope job applies to pull requests whose head branch starts with
+`clossys/apply-`, and fails when a changed path is outside the paths Clossys may
+own (`OWNED_PATH_PATTERNS`) or, apart from the ledger, `package.json` and the
+lockfiles, is not named by the pull request's own ledger. It runs in the pull
+request's own context, so it catches an agent's mistakes, not a hostile author;
+the admission job runs from the protected base.
+
+A change to any of these workflows, or to `.starter/request.json`, is proved
+only by the first pull request after it merges, because the decision runs from
+the base: a one-merge lag.
+
 ## Inventory: adopting an existing source
 
 When an account already keeps a repository inventory in its own control
