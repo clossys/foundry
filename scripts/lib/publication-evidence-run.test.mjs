@@ -153,7 +153,7 @@ test("fetchPackument and fetchPublishedAt read the exact packument and its measu
 test("verifyPublicationProvenance accepts an exactly-matching SLSA attestation and rejects malformed identity fields before any network call", async () => {
   const { packument, audit } = provenanceFixture();
   const auditRun = withNpmFloor(() => JSON.stringify(audit));
-  const result = await verifyPublicationProvenance({ fetchImpl: async () => { throw new Error("must not be called — packument was already supplied"); }, name, version, sourceSha, runId, runAttempt, auditRun, env: {}, packument });
+  const result = await verifyPublicationProvenance({ fetchImpl: async () => { throw new Error("must not be called — packument was already supplied"); }, name, version, sourceSha, runId, runAttempt, auditRun, env: {}, packument, isExecutable: () => true });
   assert.deepEqual(result.audit, audit);
 
   await assert.rejects(
@@ -175,7 +175,7 @@ test("verifyPublicationProvenance refuses a record whose claimed run or commit t
   const { packument, audit } = provenanceFixture({ sourceSha: wrongCommit }); // attestation names a DIFFERENT commit than the one we claim
   const auditRun = withNpmFloor(() => JSON.stringify(audit));
   await assert.rejects(
-    verifyPublicationProvenance({ fetchImpl: async () => { throw new Error("must not be called"); }, name, version, sourceSha, runId, runAttempt, auditRun, env: {}, packument }),
+    verifyPublicationProvenance({ fetchImpl: async () => { throw new Error("must not be called"); }, name, version, sourceSha, runId, runAttempt, auditRun, env: {}, packument, isExecutable: () => true }),
     /measured npm SLSA provenance attestation does not corroborate this run/,
   );
 });
@@ -187,7 +187,7 @@ test("verifyPublicationProvenance refuses a mismatched workflow path or event in
     mutateStatement: (statement) => ({ ...structuredClone(statement), predicate: { ...structuredClone(statement.predicate), buildDefinition: { ...structuredClone(statement.predicate.buildDefinition), externalParameters: { workflow: { repository: "https://github.com/clossys/foundry", path: ".github/workflows/some-other-workflow.yml", ref: "refs/heads/main" } } } } }),
   });
   await assert.rejects(
-    verifyPublicationProvenance({ fetchImpl: async () => { throw new Error("must not be called"); }, name, version, sourceSha, runId, runAttempt, auditRun: auditRunFor(wrongWorkflow), env: {}, packument: wrongWorkflow.packument }),
+    verifyPublicationProvenance({ fetchImpl: async () => { throw new Error("must not be called"); }, name, version, sourceSha, runId, runAttempt, auditRun: auditRunFor(wrongWorkflow), env: {}, packument: wrongWorkflow.packument, isExecutable: () => true }),
     /does not corroborate this run/,
   );
 
@@ -195,7 +195,7 @@ test("verifyPublicationProvenance refuses a mismatched workflow path or event in
     mutateStatement: (statement) => ({ ...structuredClone(statement), predicate: { ...structuredClone(statement.predicate), buildDefinition: { ...structuredClone(statement.predicate.buildDefinition), internalParameters: { github: { event_name: "push" } } } } }),
   });
   await assert.rejects(
-    verifyPublicationProvenance({ fetchImpl: async () => { throw new Error("must not be called"); }, name, version, sourceSha, runId, runAttempt, auditRun: auditRunFor(wrongEvent), env: {}, packument: wrongEvent.packument }),
+    verifyPublicationProvenance({ fetchImpl: async () => { throw new Error("must not be called"); }, name, version, sourceSha, runId, runAttempt, auditRun: auditRunFor(wrongEvent), env: {}, packument: wrongEvent.packument, isExecutable: () => true }),
     /does not corroborate this run/,
   );
 });
@@ -213,15 +213,15 @@ test("verifyPublicationProvenance refuses a record that names the right commit b
   const auditRun = withNpmFloor(() => JSON.stringify(audit));
 
   await assert.rejects(
-    verifyPublicationProvenance({ fetchImpl: async () => { throw new Error("must not be called"); }, name, version, sourceSha, runId: 35850983604, runAttempt: 2, auditRun, env: {}, packument }),
+    verifyPublicationProvenance({ fetchImpl: async () => { throw new Error("must not be called"); }, name, version, sourceSha, runId: 35850983604, runAttempt: 2, auditRun, env: {}, packument, isExecutable: () => true }),
     /measured npm SLSA provenance attestation names a different run\/attempt than this record claims \(attested .*attempts\/1, claimed .*attempts\/2\)/,
   );
   await assert.rejects(
-    verifyPublicationProvenance({ fetchImpl: async () => { throw new Error("must not be called"); }, name, version, sourceSha, runId: 999999, runAttempt: 1, auditRun, env: {}, packument }),
+    verifyPublicationProvenance({ fetchImpl: async () => { throw new Error("must not be called"); }, name, version, sourceSha, runId: 999999, runAttempt: 1, auditRun, env: {}, packument, isExecutable: () => true }),
     /measured npm SLSA provenance attestation names a different run\/attempt than this record claims/,
   );
   // The one exactly-correct claim still passes.
-  await verifyPublicationProvenance({ fetchImpl: async () => { throw new Error("must not be called"); }, name, version, sourceSha, runId: 35850983604, runAttempt: 1, auditRun, env: {}, packument });
+  await verifyPublicationProvenance({ fetchImpl: async () => { throw new Error("must not be called"); }, name, version, sourceSha, runId: 35850983604, runAttempt: 1, auditRun, env: {}, packument, isExecutable: () => true });
 });
 
 test("verifyPublicationProvenance refuses an npm older than the floor before it runs the audit", async () => {
@@ -229,8 +229,23 @@ test("verifyPublicationProvenance refuses an npm older than the floor before it 
   const ran = [];
   const auditRun = withNpmFloor((file, args) => { ran.push(args[0]); return JSON.stringify(audit); }, "10.9.4\n");
   await assert.rejects(
-    verifyPublicationProvenance({ fetchImpl: async () => { throw new Error("must not be called"); }, name, version, sourceSha, runId, runAttempt, auditRun, env: {}, packument }),
+    verifyPublicationProvenance({ fetchImpl: async () => { throw new Error("must not be called"); }, name, version, sourceSha, runId, runAttempt, auditRun, env: {}, packument, isExecutable: () => true }),
     /evidence recording requires npm 11 or newer.*observed npm 10\.9\.4/,
+  );
+  assert.deepEqual(ran, []);
+});
+
+test("verifyPublicationProvenance refuses a malformed npm version or a relative PATH entry before it runs the audit", async () => {
+  const { packument, audit } = provenanceFixture();
+  const ran = [];
+  const fetchImpl = async () => { throw new Error("must not be called"); };
+  await assert.rejects(
+    verifyPublicationProvenance({ fetchImpl, name, version, sourceSha, runId, runAttempt, auditRun: withNpmFloor((file, args) => { ran.push(args[0]); return JSON.stringify(audit); }, "11.0.0garbage\n"), env: {}, packument, isExecutable: () => true }),
+    /evidence recording requires npm 11 or newer.*observed npm 11\.0\.0garbage/,
+  );
+  await assert.rejects(
+    verifyPublicationProvenance({ fetchImpl, name, version, sourceSha, runId, runAttempt, auditRun: withNpmFloor((file, args) => { ran.push(args[0]); return JSON.stringify(audit); }), env: { PATH: "node_modules/.bin:/usr/bin" }, packument, isExecutable: () => true }),
+    /refuses to resolve npm through a relative or empty PATH entry/,
   );
   assert.deepEqual(ran, []);
 });
@@ -244,7 +259,7 @@ test("verifyPublicationProvenance fetches the packument itself when the caller d
     assert.equal(url, `${PUBLIC_NPM_REGISTRY}/${encodeURIComponent(name)}`);
     return { ok: true, status: 200, json: async () => packument };
   };
-  await verifyPublicationProvenance({ fetchImpl, name, version, sourceSha, runId, runAttempt, auditRun, env: {} });
+  await verifyPublicationProvenance({ fetchImpl, name, version, sourceSha, runId, runAttempt, auditRun, env: {}, isExecutable: () => true });
   assert.equal(fetchCount, 1);
 });
 
@@ -404,7 +419,7 @@ test("a wrong run/attempt is refused before either join, for a package whose rea
   const createRecord = async () => { calls.createRecord += 1; throw new Error("must not be called — provenance never passed"); };
   const findArtifact = async () => { throw new Error("must not be called — provenance never passed"); };
   const downloadZip = async () => { throw new Error("must not be called — provenance never passed"); };
-  const verifyProvenance = (options) => verifyPublicationProvenance({ ...options, auditRun, packument });
+  const verifyProvenance = (options) => verifyPublicationProvenance({ ...options, auditRun, packument, isExecutable: () => true });
 
   await assert.rejects(
     buildPublicationRecordWithFallback({

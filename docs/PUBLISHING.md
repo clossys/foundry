@@ -440,13 +440,21 @@ qualification must run on: `RELEASE_RUNTIME` is Node `v24.19.0`, npm
 qualification.mjs` asserts all three before it packs anything and refuses
 closed, rather than producing a record, on any mismatch.
 
-The pin governs every step that produces or verifies bytes: qualification,
-packing, artifact reproducibility, publishing, and retention. Recording
-publication evidence for an already-published version is not one of those
-steps. The recorder only downloads the published tarball, compares its hashes
-and integrity, reads the archived qualification transcript, and checks git
-ancestry. It requires npm 11 or newer instead of the exact tuple (see
-[the hand-run recorder](#current-retained-candidate-first-publication-handoff)), as
+The pin governs every step whose byte result depends on the toolchain:
+qualification, packing, artifact reproducibility, publishing, and retention.
+Recording publication evidence for an already-published version is not one of
+those steps. The recorder compares hashes and integrity values that the
+registry already served; it never packs a package, qualifies one, or writes a
+package tarball. It downloads the published tarball, compares its hashes and
+integrity, reads the archived qualification transcript, and checks git
+ancestry. Two of its steps do depend on the npm in use: `npm audit signatures
+--include-attestations` (the v3 replay, and the automatic workflow's
+provenance pre-check) and, for a schema-3 qualification, `npm pack --dry-run`.
+The recorder therefore refuses when the npm major version is below 11, or when
+the version cannot be read or is not exactly one semantic version, instead of
+requiring the exact tuple. It checks this at the start of every run, including
+the hand-run direct join (see [the hand-run
+recorder](#current-retained-candidate-first-publication-handoff)), as
 `governance/decisions/evidence-recording-runtime-scope.json` records.
 
 This is a separate requirement from root `package.json`'s `engines.node:
@@ -457,8 +465,8 @@ that proves something. A qualification record binds exact tarball bytes —
 `tsc` output and gzip compression both vary with the toolchain that
 produced them — so "close enough" would prove the bytes a different
 runtime produced, not the bytes actually being qualified. This is also why
-the pin must never be relaxed for a step that produces or verifies bytes:
-loosening it to accept whatever runtime happens to be at hand would turn the
+the pin must never be relaxed for a step whose byte result depends on the
+toolchain: loosening it to accept whatever runtime happens to be at hand would turn the
 record from proof of exact artifact bytes into a record of some other,
 unspecified bytes, silently.
 
@@ -1062,9 +1070,17 @@ node scripts/record-later-publication.mjs \
 ```
 
 The recorder does not require the exact pinned release runtime, because it
-never produces bytes. Before it runs `npm audit signatures
---include-attestations`, it reads the version of the `npm` on `PATH` and
-refuses unless that is major version 11 or newer, or unreadable. Any Node
+never packs, qualifies, or writes a package tarball. Before it reads any input
+it resolves `npm` once, to an absolute path, from `PATH`, and it refuses to
+resolve npm through a relative or empty `PATH` entry. It then reads the version
+of that npm and refuses when the major version is below 11, or when the version
+cannot be read or is not exactly one semantic version (`11.0.0garbage` and
+multi-line output are refused). This check runs on every path: the direct join
+above, the v3 replay below, and the automatic workflow's provenance pre-check.
+The npm that was checked is the one that runs `npm audit signatures
+--include-attestations`. For a schema-3 qualification the qualification join
+also runs `npm pack --dry-run`, through the first `npm` on this process's own
+`PATH`, the same lookup the check just made. Any Node
 version that runs the script is otherwise acceptable. The automatic workflow
 below still runs on the exact pinned runtime, which keeps its records
 deterministic.
