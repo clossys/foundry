@@ -1079,8 +1079,8 @@ multi-line output are refused). This check runs on every path: the direct join
 above, the v3 replay below, and the automatic workflow's provenance pre-check.
 The npm that was checked is the one that runs `npm audit signatures
 --include-attestations`. For a schema-3 qualification the qualification join
-also runs `npm pack --dry-run`, through the first `npm` on this process's own
-`PATH`, the same lookup the check just made. Any Node
+also runs `npm pack --dry-run`, through the `npm` that this process's own
+`PATH` resolves, the same lookup the check just made. Any Node
 version that runs the script is otherwise acceptable. The automatic workflow
 below still runs on the exact pinned runtime, which keeps its records
 deterministic.
