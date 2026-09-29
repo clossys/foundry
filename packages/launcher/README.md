@@ -704,6 +704,57 @@ repository `@clossys-advisor` and the voices of the roles staffed there --
 are not built yet, so until it ships no Launcher command puts those voices
 into a product repository.
 
+### Observing a repository
+
+`observeRepository({ id, clone, hubOwner?, ports })` turns one local clone
+into the `RepositoryObservation` that `planApplyBundle()` takes, or into a
+skipped observation `{ id, skipped, verdict }` with a reason id. The input is
+an `ObserveRepositoryInput`: a bare `id` is qualified by `hubOwner`, and the
+`RepositoryObservationPorts` supply the two values a clone cannot hold
+(`nodeId` and `visibility`) and, optionally, `originId`, which maps an origin
+URL to `owner/name`.
+
+```ts
+const observed = await observeRepository({
+  id: "acme/site",
+  clone: "/work/site",
+  ports: { nodeId, visibility },
+});
+if ("skipped" in observed) console.log(observed.skipped, observed.verdict);
+```
+
+- Every field is read from git objects at the default-branch head, never from
+  the working tree; a symbolic link's digest is the digest of its target.
+  Nothing is written to the clone: the remote tip is read with `git ls-remote`
+  run outside the clone, and the default branch comes from the remote's
+  `HEAD`.
+- A clone is refused, not observed, when its directory is missing
+  (`clone-missing`, `indeterminate`); when its `origin` is another repository;
+  when its tree is dirty or has untracked files; when its local head differs
+  from the remote tip; or when `.git/config` holds a key outside a short fixed
+  list (`violated`). The config is read as data, so a filter, hook path,
+  pager, `fsmonitor` or alias entry is refused rather than run.
+- `nodeId` and `visibility` come through the injected ports; a port that
+  throws or returns a malformed value is `indeterminate`.
+- `phase` is `apply` only when the base has a valid installed-state ledger,
+  every setup-template path is a regular file at the head, and
+  `manifestEntries` pins `@clossys/starter` at an exact version that its
+  lockfile resolves; otherwise it is `setup`.
+- git runs without hooks, `fsmonitor` or a pager, and every tree, blob and
+  output read has a size bound.
+
+| Verdict | Skip reasons |
+| --- | --- |
+| `violated` | `invalid-id`, `clone-config-unsafe`, `origin-mismatch`, `not-on-default-branch`, `remote-tip-mismatch`, `working-tree-dirty`, `package-manager-conflict` |
+| `indeterminate` | `clone-missing`, `clone-unreadable`, `id-owner-unknown`, `remote-tip-unreadable`, `node-id-unavailable`, `visibility-unavailable`, `tree-too-large`, `submodule-present`, `manifest-unreadable`, `lockfile-ambiguous`, `package-manager-unknown`, `lockfile-unreadable`, `release-age-surface-invalid`, `agents-link-unreportable`, `observation-too-large`, `case-variant-owned-path`, `ledger-unreadable`, `profile-ambiguous` |
+
+What it does not decide: it reports what the committed head holds, not
+whether applying is safe. Ownership and trust are the planner's judgement.
+It is not a check of Windows short names or other alias spellings beyond case
+and Unicode-normalization folding, and which root names a particular set
+creates is the planner's contract check; the observation reports over
+`clossys`, `.agents`, `.claude` and `.cursor`.
+
 ### The installed-state ledger
 
 Every change set names `clossys/.state/installed.json` as a derived file:

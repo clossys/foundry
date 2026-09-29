@@ -52,6 +52,8 @@ export type { RootEntriesVerdict } from "./root-entries.js";
 export type { InstalledLedger, LedgerPackageIdentity, LedgerSuccession, LedgerViolation } from "./ledger-contract.js";
 export { PUBLIC_PROBLEM_PLACEHOLDER, planApplyBundle, projectEngagementBrief, serializeEngagementBrief } from "./plan-bundle.js";
 export type { PlanApplyBundleInputs, PlanApplyBundleResult, RepositoryObservation, SkippedRepositoryObservation } from "./plan-bundle.js";
+export { observeRepository } from "./observe-repository.js";
+export type { ObserveRepositoryInput, RepositoryObservationPorts } from "./observe-repository.js";
 export type { DoctorCheckHost, DoctorReport, DoctorStepId, DoctorStepResult } from "./doctor.js";
 export { checkCloudSessionBootstrap } from "./product-repository.js";
 export type { CloudBootstrapCheck, CloudBootstrapReport } from "./product-repository.js";
