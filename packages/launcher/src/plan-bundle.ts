@@ -26,15 +26,21 @@
 // longer names; it reports that (removal-unbuilt) and leaves the row to be
 // carried forward. The bundle still claims no repository state.
 //
-// A setup-phase repository is skipped, not computed: the change-set
-// contract requires a setup set to carry the setup templates (code rule
-// C11), and this module does not compute them yet. A repository whose
-// Controller profile needs root entries added (code rule C13) is skipped as
-// root-entry-edit-unbuilt when the observation does not carry the profile
-// text; when repositoryProfileText is present, the profile is edited here.
-// The generation-0 adoption pass, which only a setup set runs (§12.2), is
-// therefore reached only through reconcileWholeFile()'s own tests until setup
-// sets are computed.
+// A setup-phase repository gets a setup set (code rules C10 to C12): the
+// brief, the skills and the ledger as an apply set has them, exactly one item
+// for each of the four setup templates -- whose bytes come only from
+// renderSetupTemplate() -- the Starter pin the plan names, every install the
+// plan names deferred until after setup, and, for pnpm, the one edit that
+// exempts the publishing scope from the release-age window. A setup set is
+// also the only place the generation-0 adoption pass runs (RFC §12.2): a file
+// the base already holds is adopted only by byte proof. Every ambiguity is a
+// skip with its own reason id (`package-manager-unsupported`,
+// `starter-pin-absent`, `starter-pin-unsupported`, `release-age-text-absent`,
+// `starter-request-invalid`, and, for an apply set, `starter-request-stale`),
+// never a guess. A repository whose Controller profile needs root entries
+// added (code rule C13) is skipped as root-entry-edit-unbuilt when the
+// observation does not carry the profile text; when repositoryProfileText is
+// present, the profile is edited here.
 
 import type { AdvisorPlan, EngagementBrief, EngagementBriefRole, EngagementContext, PlanPackageAct } from "./plan-contract.js";
 import { loadContract, validateAdvisorPlan, validateEngagementBrief } from "./plan-contract.js";
@@ -42,19 +48,22 @@ import { planDigest } from "./plan-digest.js";
 import { HUB_ONLY_ROLES } from "./plan-rules.js";
 import { bundleDigest, changeSetDigest } from "./change-set-digest.js";
 import {
-  AUTHORIZATION_ABSENT, AUTHORIZATION_PLAN_MISMATCH, BRIEF_PATH, CANONICAL_KEYS, DISCOVERY_ROOTS, ID_TOKEN, LEDGER_PATH, derivedPlanItem, SKILLS_MANIFEST_PATH, TEMPLATE_PATHS, canonicalOrder, contentDigest,
+  AUTHORIZATION_ABSENT, AUTHORIZATION_PLAN_MISMATCH, BRIEF_PATH, CANONICAL_KEYS, DISCOVERY_ROOTS, EXEMPTION_SURFACES, ID_TOKEN, LEDGER_PATH, derivedPlanItem, SKILLS_MANIFEST_PATH, TEMPLATE_PATHS, canonicalOrder, contentDigest,
   dependencyPointer, discoveryLinkPath, discoveryLinkTarget, isSafeRelativePath, lockfilePath, matchesPathPattern, skillPath, validateApplyBundle, validateRepositoryChangeSet,
   worstVerdict,
 } from "./change-set-contract.js";
 import type {
-  ApplyBundle, ApplyBundleRepository, ApplyCheck, ChangeSetItem, ChangeSetPhase, ChangeSetRefusal, DependencyPlacement, DiscoveryRoot,
+  ApplyBundle, ApplyBundleRepository, ApplyCheck, ChangeSetDeferral, ChangeSetItem, ChangeSetPhase, ChangeSetRefusal, DependencyPlacement, DiscoveryRoot,
   FileChange, KeyChange, LockfileName, PackageInvariant, PackageManagerKind, PinnedPackage, ReleaseAgeSurfaceKind, RepositoryChangeSet, RepositoryProfileObservation,
   RepositoryVisibility, TemplateAct,
 } from "./change-set-contract.js";
 import type { InstalledLedger } from "./ledger-contract.js";
+import { PACKAGE_SCOPE } from "./generated/package-scope.generated.js";
 import { JsonEditUnstableError, editJsonPointer } from "./key-editor.js";
 import { reconcileWholeFile, trustInstalledLedger } from "./ledger-trust.js";
 import type { PlanPackageActs } from "./ledger-trust.js";
+import { editReleaseAgeExemption } from "./release-age-edit.js";
+import { renderSetupTemplate } from "./setup-templates.js";
 
 /** What was read from one staffed repository's default branch. The planner trusts it as given. */
 export interface RepositoryObservation {
@@ -66,7 +75,7 @@ export interface RepositoryObservation {
   readonly defaultBranch: string;
   /** The default branch's head commit. */
   readonly baseCommit: string;
-  /** setup unless the base already carries what proves a later pull request; decided from the base by the caller. A setup repository is skipped for now. */
+  /** setup unless the base already carries what proves a later pull request; decided from the base by the caller. A setup repository gets a setup set. */
   readonly phase: ChangeSetPhase;
   readonly packageManager: PackageManagerKind;
   readonly lockfile: LockfileName;
@@ -115,6 +124,18 @@ export interface RepositoryObservation {
   readonly skillsManifest: readonly { readonly name: string; readonly sha256: string }[] | null;
   /** Exact bytes of the Controller repository profile on the default branch, when the caller read them for declare-root-entry (code rule C13). */
   readonly repositoryProfileText?: string | null;
+  /**
+   * Exact text of pnpm-workspace.yaml on the default branch, when the caller read it (null or absent: not supplied). A pnpm setup
+   * set edits this file to exempt the publishing scope from the release-age window; when the file is there and its text is not
+   * supplied, the repository is skipped as `release-age-text-absent`. It must be the file `files` digests, or the planner throws.
+   */
+  readonly pnpmWorkspaceText?: string | null;
+  /**
+   * Exact text of .npmrc on the default branch, when the caller read it (null or absent: not supplied). A pnpm setup set reads it
+   * to refuse an edit that a setting there would contradict; when the file is there and its text is not supplied, the repository
+   * is skipped as `release-age-text-absent`. `files` must digest .npmrc too, and the text must be that file, or the planner throws.
+   */
+  readonly npmrcText?: string | null;
 }
 
 /** A staffed repository no change set is computed for, and why, as an id such as `not-in-inventory`. */
@@ -178,7 +199,11 @@ const TEMPLATE_ITEMS: readonly { readonly act: TemplateAct; readonly id: string 
 ];
 /** The patterns a set that names the setup templates adds to its pathAllowList. */
 const TEMPLATE_ALLOW_LIST = [".github/scripts/clossys-*", ".github/workflows/clossys-*", ".starter/request.json"];
-const RESERVED_ITEM_IDS = new Set(["brief", "skills", "ledger", ROOT_ENTRIES_ITEM, ...TEMPLATE_ITEMS.map((template) => template.id)]);
+/** The one exempt-release-age item a pnpm set carries: a fixed id no plan text can spell, because a planItem is `repository:package`. */
+const RELEASE_AGE_ITEM = "release-age";
+const RELEASE_AGE_SURFACE = "pnpm-workspace";
+const RESERVED_ITEM_IDS = new Set(["brief", "skills", "ledger", ROOT_ENTRIES_ITEM, RELEASE_AGE_ITEM, ...TEMPLATE_ITEMS.map((template) => template.id)]);
+const NPMRC_PATH = ".npmrc";
 
 /**
  * The Advisor voice (D33): every staffed repository gets it beside its
@@ -256,6 +281,65 @@ function sortChecks(checks: readonly ApplyCheck[]): ApplyCheck[] {
   return canonicalOrder(checks, (check) => [check.check, check.rule ?? ""]);
 }
 
+const CASE_VARIANT = "case-variant";
+
+/** The content digest the observation lists for a path (compared case-insensitively, as C3 does); null when none, CASE_VARIANT when several. */
+function observedDigest(observation: RepositoryObservation, path: string): string | null {
+  const lower = path.toLowerCase();
+  const held = observation.files.filter((file) => file.path.toLowerCase() === lower);
+  if (held.length === 0) return null;
+  return held.length === 1 ? held[0]!.sha256 : CASE_VARIANT;
+}
+
+/** Throws unless each release-age surface text the observation supplies is exactly the file it digests. Names the field, never the text. */
+function checkSurfaceTexts(observation: RepositoryObservation): void {
+  for (const { field, path, text } of [
+    { field: "pnpmWorkspaceText", path: EXEMPTION_SURFACES[RELEASE_AGE_SURFACE].path, text: observation.pnpmWorkspaceText },
+    { field: "npmrcText", path: NPMRC_PATH, text: observation.npmrcText },
+  ]) {
+    if (typeof text !== "string") continue;
+    if (observedDigest(observation, path) !== contentDigest(text)) throw new TypeError(`${field} does not match the observed ${path} file`);
+  }
+}
+
+/** The files one setup template act writes, with the item that names them. */
+interface SetupTemplate {
+  readonly id: string;
+  readonly files: readonly { readonly path: string; readonly bytes: string }[];
+}
+
+/**
+ * Renders the four setup templates for a repository in the setup phase, or
+ * names why it cannot: every reason is an id, and the first one found is the
+ * one given. The bytes come from renderSetupTemplate() alone; the request
+ * takes the manager, the repository id and the plan's one Starter pin, and
+ * nothing else reaches a template.
+ */
+function prepareSetup(observation: RepositoryObservation, acts: readonly PlanPackageAct[]): { readonly templates: readonly SetupTemplate[] } | { readonly skip: string } {
+  const packageManager = observation.packageManager;
+  if (packageManager !== "npm" && packageManager !== "pnpm") return { skip: "package-manager-unsupported" };
+  const pins = acts.filter((act) => act.act === "pin-starter");
+  // Plan rule R10 allows at most one, so any other count is an absent pin: a set pins Starter exactly once (C11).
+  if (pins.length !== 1) return { skip: "starter-pin-absent" };
+  const pin = pins[0]!;
+  const request = renderSetupTemplate("write-starter-request", { packageManager, repository: observation.id, starter: { name: pin.name, version: pin.version, integrity: pin.integrity } });
+  if (!request.ok) return { skip: request.refusal.reason === "starter-pin-unsupported" ? "starter-pin-unsupported" : "starter-request-invalid" };
+  if (packageManager === "pnpm") {
+    // The edit needs the surface's exact text, and the .npmrc's when there is one: nothing is edited from a digest.
+    const surface = observedDigest(observation, EXEMPTION_SURFACES[RELEASE_AGE_SURFACE].path);
+    if (surface !== null && typeof observation.pnpmWorkspaceText !== "string") return { skip: "release-age-text-absent" };
+    const npmrc = observation.releaseAgeSurfaces.some((entry) => entry.path === NPMRC_PATH) || observedDigest(observation, NPMRC_PATH) !== null;
+    if (npmrc && typeof observation.npmrcText !== "string") return { skip: "release-age-text-absent" };
+  }
+  const templates: SetupTemplate[] = [];
+  for (const { act, id } of TEMPLATE_ITEMS) {
+    const rendered = act === "write-starter-request" ? request : renderSetupTemplate(act, act === "add-caller-workflow" ? { packageManager } : undefined);
+    if (!rendered.ok) throw new TypeError(`the setup template ${act} does not render`);
+    templates.push({ id, files: rendered.files });
+  }
+  return { templates };
+}
+
 interface ComputedSet {
   readonly changeSet: Omit<RepositoryChangeSet, "branch" | "bundle" | "pullRequest" | "changeSetDigest">;
   readonly checks: readonly ApplyCheck[];
@@ -274,6 +358,7 @@ function computeChangeSet(
   roles: readonly string[],
   acts: readonly PlanPackageAct[],
   skillContent: ReadonlyMap<string, string>,
+  setupTemplates: readonly SetupTemplate[] | null,
 ): ComputedSet | SkippedSet {
   // Paths compare case-insensitively (code rule C3): a base file that differs only in case is the same file on many checkouts.
   // Two (or more) observed files at the same lowercase path -- distinct case variants, or a repeated entry -- have no single
@@ -309,6 +394,7 @@ function computeChangeSet(
   const files: FileChange[] = [];
   const keys: KeyChange[] = [];
   const refused: ChangeSetRefusal[] = [];
+  const deferred: ChangeSetDeferral[] = [];
   const texts: Record<string, string> = {};
   const pathAllowList = [...BASE_ALLOW_LIST];
   // A path is present when a file is there, or when it is a directory holding one.
@@ -376,27 +462,43 @@ function computeChangeSet(
   }
   writeWhole(SKILLS_MANIFEST_PATH, serializeComposedSkillsManifest(composed, inputs.producer.version), "skills");
 
-  // The setup templates in an apply set (only an apply set reaches here) are no-ops: never written anew, only kept where
-  // the trusted ledger records them all. A template act the ledger records none of gets no item.
-  for (const { act, id } of TEMPLATE_ITEMS) {
-    const rows = TEMPLATE_PATHS[act].map((path) => ({ path, row: fileRowAt(path) }));
-    const recorded = rows.filter((entry) => entry.row !== null).length;
-    if (recorded === 0) continue;
-    // A ledger that records some of an act's files and not the others cannot be kept as that act, and nothing here writes the rest.
-    if (recorded < rows.length) return { skip: { verdict: "indeterminate", reason: "template-rows-partial" } };
-    items.push({ id, act });
-    for (const { path, row } of rows) {
-      const outcome = reconcile(path, row!);
-      if (outcome.write) files.push({ path, mode: "100644", before: row, after: row, item: id });
-      else refused.push({ path, reason: outcome.reason, item: id });
+  if (setupTemplates !== null) {
+    // A setup set holds each template once, its bytes from the renderer alone. The template patterns join the allow list before any
+    // write, so a template path is never refused as unsafe; a base file already there is adopted only when its bytes are exactly
+    // the set's own, and is unowned-existing otherwise (RFC §12.2).
+    pathAllowList.push(...TEMPLATE_ALLOW_LIST);
+    for (const { id, files: templateFiles } of setupTemplates) {
+      items.push({ id, act: TEMPLATE_ITEMS.find((template) => template.id === id)!.act });
+      for (const file of templateFiles) writeWhole(file.path, file.bytes, id);
     }
+  } else {
+    // The setup templates in an apply set are no-ops: never written anew, only kept where the trusted ledger records them all.
+    // A template act the ledger records none of gets no item.
+    for (const { act, id } of TEMPLATE_ITEMS) {
+      const rows = TEMPLATE_PATHS[act].map((path) => ({ path, row: fileRowAt(path) }));
+      const recorded = rows.filter((entry) => entry.row !== null).length;
+      if (recorded === 0) continue;
+      // A ledger that records some of an act's files and not the others cannot be kept as that act, and nothing here writes the rest.
+      if (recorded < rows.length) return { skip: { verdict: "indeterminate", reason: "template-rows-partial" } };
+      items.push({ id, act });
+      for (const { path, row } of rows) {
+        const outcome = reconcile(path, row!);
+        if (outcome.write) files.push({ path, mode: "100644", before: row, after: row, item: id });
+        else refused.push({ path, reason: outcome.reason, item: id });
+      }
+    }
+    if (items.some((item) => TEMPLATE_ITEMS.some((template) => template.id === item.id))) pathAllowList.push(...TEMPLATE_ALLOW_LIST);
   }
-  if (items.some((item) => TEMPLATE_ITEMS.some((template) => template.id === item.id))) pathAllowList.push(...TEMPLATE_ALLOW_LIST);
 
   const invariants: PackageInvariant[] = [];
   for (const act of acts) {
     if (RESERVED_ITEM_IDS.has(act.planItem)) {
-      throw new TypeError("a package act's planItem is an item id the change set reserves (brief, skills, ledger, root-entries, caller-workflow, starter-request, ci-template or path-scope-job)");
+      throw new TypeError("a package act's planItem is an item id the change set reserves (brief, skills, ledger, root-entries, release-age, caller-workflow, starter-request, ci-template or path-scope-job)");
+    }
+    // A setup set defers every install until after setup (code rule C10): no item, no key, no invariant.
+    if (observation.phase === "setup" && act.act === "install") {
+      deferred.push({ planItem: act.planItem, reason: "after-setup" });
+      continue;
     }
     const pinned: PinnedPackage = { name: act.name, version: act.version, integrity: act.integrity };
     const entries = observation.manifestEntries.filter((entry) => entry.name === act.name);
@@ -433,6 +535,9 @@ function computeChangeSet(
       continue;
     }
     if (row === undefined || act.version !== row) {
+      // The request a setup set wrote names this pin; an apply set that changes it would leave the request naming another, and
+      // rewriting the request is not something an apply set does.
+      if (act.act === "pin-starter" && observation.phase === "apply") return { skip: { verdict: "indeterminate", reason: "starter-request-stale" } };
       keys.push({ file: "package.json", pointer, before: row ?? null, after: act.version, item: act.planItem });
       invariants.push({ item: act.planItem, ...pinned });
       continue;
@@ -446,6 +551,37 @@ function computeChangeSet(
     pathAllowList.push("package.json", lockfile);
     const sorted = canonicalOrder(invariants, CANONICAL_KEYS.invariant);
     files.push({ path: lockfile, mode: "100644", derived: true, item: sorted[0]!.item, invariants: sorted, before: existingAt(lockfile) ?? null });
+  }
+
+  // pnpm reads the release-age window from the workspace file. A setup set exempts the publishing scope there with the one edit
+  // editReleaseAgeExemption() makes (code rule C12); an apply set only carries the item when the trusted ledger records that entry,
+  // so that it is the setup set's item over again, with no file of its own (RFC D26).
+  if (observation.packageManager === "pnpm") {
+    const surface = EXEMPTION_SURFACES[RELEASE_AGE_SURFACE];
+    const scopeEntry = `${PACKAGE_SCOPE.scope}/*`;
+    const recorded = (ledger?.entries ?? []).some((row) => row.file === surface.path && row.key === surface.key && row.value === scopeEntry);
+    if (setupTemplates !== null || recorded) {
+      items.push({ id: RELEASE_AGE_ITEM, act: "exempt-release-age", scope: PACKAGE_SCOPE.scope, surface: RELEASE_AGE_SURFACE, path: surface.path });
+      pathAllowList.push(surface.path);
+    }
+    if (setupTemplates !== null) {
+      const baseDigest = existingAt(surface.path);
+      if (baseDigest === undefined && presentAt(surface.path)) {
+        // A directory holds the path: there is no file to edit and none to create.
+        refused.push({ path: surface.path, reason: "release-age-surface-unparseable", item: RELEASE_AGE_ITEM });
+      } else {
+        // prepareSetup() skipped every repository that has the file and not its text, and checkSurfaceTexts() held the text to the digest.
+        const text = baseDigest === undefined ? null : observation.pnpmWorkspaceText;
+        if (typeof text !== "string" && text !== null) throw new TypeError("pnpmWorkspaceText is absent for a pnpm-workspace.yaml the observation digests");
+        const edit = editReleaseAgeExemption({ surface: RELEASE_AGE_SURFACE, text, npmrc: observation.npmrcText ?? null });
+        if (edit.kind === "edited") {
+          files.push({ path: surface.path, mode: "100644", before: baseDigest ?? null, after: contentDigest(edit.text), item: RELEASE_AGE_ITEM });
+          texts[surface.path] = edit.text;
+        } else if (edit.kind === "refused") {
+          refused.push({ path: surface.path, reason: edit.reason, item: RELEASE_AGE_ITEM });
+        }
+      }
+    }
   }
 
   const generation = ledger?.generation ?? 0;
@@ -523,6 +659,8 @@ function computeChangeSet(
   if (reasons.has("root-vocabulary-unknown")) checks.push({ check: "V6", verdict: "indeterminate", rule: "root-vocabulary-unknown" });
   if (reasons.has("root-entry-prohibited")) checks.push({ check: "V6", verdict: "indeterminate", rule: "root-entry-prohibited" });
   if (reasons.has("skills-root-is-link")) checks.push({ check: "V6", verdict: "indeterminate", rule: "skills-root-is-link" });
+  if (reasons.has("release-age-surface-conflict")) checks.push({ check: "V6", verdict: "indeterminate", rule: "release-age-surface-conflict" });
+  if (reasons.has("release-age-surface-unparseable")) checks.push({ check: "V6", verdict: "indeterminate", rule: "release-age-surface-unparseable" });
   // V6 also regenerates the lockfile and checks its invariants; that part is not run here, so a set that changes a lockfile is not satisfied.
   if (files.some((file) => "derived" in file && file.path !== LEDGER_PATH)) checks.push({ check: "V6", verdict: "indeterminate", rule: "lockfile-not-run" });
   if (checks.length === 0) checks.push({ check: "V6", verdict: "satisfied" });
@@ -578,8 +716,8 @@ function computeChangeSet(
       files: canonicalOrder(files, CANONICAL_KEYS.file),
       keys: canonicalOrder(keys, CANONICAL_KEYS.key),
       refused: canonicalOrder(refused, CANONICAL_KEYS.refusal),
-      // Only an apply set is computed, and an apply set defers nothing (code rule C10).
-      deferred: [],
+      // A setup set defers each install until after setup, and an apply set defers nothing (code rule C10).
+      deferred: canonicalOrder(deferred, CANONICAL_KEYS.deferral),
       pathAllowList: canonicalOrder(pathAllowList, CANONICAL_KEYS.pattern),
       ...(Object.keys(texts).length > 0
         ? { texts: canonicalOrder(Object.entries(texts).map(([path, text]) => ({ path, text })), (entry) => [entry.path]) }
@@ -621,8 +759,20 @@ function computeChangeSet(
  *   files the trusted ledger records is an item whose files are kept (or
  *   refused as `client-edited` or `deleted`); one it records none of has no
  *   item; one it records only some of skips the repository as
- *   `template-rows-partial`. No exempt-release-age or declare-root-entry item
- *   is added to carry the ledger's entries rows.
+ *   `template-rows-partial`. A pnpm apply set carries the release-age
+ *   exemption item, with no file, when the trusted ledger records that
+ *   entry, so it matches the setup set's item; it adds no other entries.
+ * - A setup set holds one item for each of the four setup templates, their
+ *   bytes only from renderSetupTemplate(), the plan's one Starter pin, and
+ *   every install the plan names as a deferral (`after-setup`) with no item,
+ *   key or invariant. A template file the base already has is adopted only
+ *   when its bytes are the set's own (else `unowned-existing`), and a
+ *   composed skill only when the skills manifest records its digest. For
+ *   pnpm it also holds one `release-age` item: the workspace file is created
+ *   or edited by editReleaseAgeExemption() over the observed text (`before`
+ *   the observed digest, or null), left alone when the entry is already
+ *   listed, or refused (`release-age-surface-unparseable`,
+ *   `release-age-surface-conflict`, with a V6 `indeterminate` check).
  * - Two or more observed files at the same path, compared case-insensitively
  *   (or a repeated entry), have no single base digest between them: the path
  *   is occupied by other bytes than any one of them, so it is never kept,
@@ -636,25 +786,32 @@ function computeChangeSet(
  *   (`unowned-existing`, `client-edited`, `deleted`) and for
  *   `removal-unbuilt`, and is satisfied otherwise; V6 is computed apart from
  *   it.
- * - A setup-phase repository is skipped as `setup-template-unbuilt`, with
- *   verdict indeterminate: a setup set must carry the setup templates, which
- *   this planner does not compute yet. A repository whose Controller profile
- *   needs root entries added is edited when `repositoryProfileText` is present,
- *   and skipped as `root-entry-edit-unbuilt` when that text is absent. A
- *   profile that is unparseable, or that prohibits a root name the set
- *   introduces, gets a declare-root-entry item refused as
- *   `root-vocabulary-unknown` or `root-entry-prohibited`.
+ * - A repository whose Controller profile needs root entries added is
+ *   edited when `repositoryProfileText` is present, and skipped as
+ *   `root-entry-edit-unbuilt` when that text is absent. A profile that is
+ *   unparseable, or that prohibits a root name the set introduces, gets a
+ *   declare-root-entry item refused as `root-vocabulary-unknown` or
+ *   `root-entry-prohibited`.
  * - A role's skill under a symbolic link (`.agents`, `.agents/skills` or its
  *   own directory) is refused as `skills-root-is-link`, never written.
  * - A package act the default branch already satisfies exactly is kept as an
  *   item with `satisfiedInBase: true` and writes nothing.
+ * - A setup repository is skipped, `indeterminate`, as
+ *   `package-manager-unsupported` (neither npm nor pnpm), `starter-pin-absent`
+ *   (no single pin-starter act), `starter-pin-unsupported` (a pin outside the
+ *   templates' range), `starter-request-invalid` (a request the renderer
+ *   refuses) or `release-age-text-absent` (a pnpm workspace file or `.npmrc`
+ *   is there and its text was not supplied). An apply set whose pin-starter
+ *   writes a key is skipped as `starter-request-stale`.
  * - A staffed repository with no observation, with a skip reason, whose
- *   ledger is not trusted, in the setup phase, whose profile needs root
- *   entries added, or skipped for `integrity-mismatch`, `template-rows-partial`
- *   or `case-variant-path` is left out of the bundle digest.
+ *   ledger is not trusted, whose profile needs root entries added and has no
+ *   text, or skipped for any reason above, `integrity-mismatch`,
+ *   `template-rows-partial` or `case-variant-path` is left out of the bundle
+ *   digest.
  *
- * Throws, naming positions and never values, when the plan or hub brief does
- * not validate, the plan has no staffing, a staffed role is not a lowercase id
+ * Throws, naming positions and never values, when the release-age text an
+ * observation supplies is not the file it digests, when the plan or hub brief
+ * does not validate, the plan has no staffing, a staffed role is not a lowercase id
  * token (`role-not-an-id`), a package act's planItem is not its repository id,
  * a colon and its package name (`plan-item-not-derived`), the hub brief has `staffedHere`, an
  * observation repeats or names an unstaffed repository, a staffed role or
@@ -712,6 +869,7 @@ export function planApplyBundle(inputs: PlanApplyBundleInputs): PlanApplyBundleR
       });
       continue;
     }
+    checkSurfaceTexts(observation);
     // A ledger the hub cannot account for refuses the whole repository, and nothing is inferred from it (RFC §12.2, §12.6).
     const repositoryPackages = (inputs.plan.packages ?? [])
       .filter((act) => act.repository === staffingEntry.repository)
@@ -722,10 +880,16 @@ export function planApplyBundle(inputs: PlanApplyBundleInputs): PlanApplyBundleR
       entries.push({ id: staffingEntry.repository, verdict: "indeterminate", reason: trust.rule, checks: [] });
       continue;
     }
+    const acts = (inputs.plan.packages ?? []).filter((act) => act.repository === staffingEntry.repository);
+    let setupTemplates: readonly SetupTemplate[] | null = null;
     if (observation.phase === "setup") {
-      // A setup set must hold the setup templates (code rule C11), which this planner does not compute yet.
-      entries.push({ id: staffingEntry.repository, verdict: "indeterminate", reason: "setup-template-unbuilt", checks: [] });
-      continue;
+      // A setup set holds the setup templates (code rule C11); anything that stops them being rendered or the pin being safe is a skip.
+      const prepared = prepareSetup(observation, acts);
+      if ("skip" in prepared) {
+        entries.push({ id: staffingEntry.repository, verdict: "indeterminate", reason: prepared.skip, checks: [] });
+        continue;
+      }
+      setupTemplates = prepared.templates;
     }
     const profile = observation.repositoryProfile;
     if (
@@ -738,8 +902,7 @@ export function planApplyBundle(inputs: PlanApplyBundleInputs): PlanApplyBundleR
       entries.push({ id: staffingEntry.repository, verdict: "indeterminate", reason: "root-entry-edit-unbuilt", checks: [] });
       continue;
     }
-    const acts = (inputs.plan.packages ?? []).filter((act) => act.repository === staffingEntry.repository);
-    const result = computeChangeSet(inputs, digestOfPlan, observation, trust.ledger, staffingEntry.roles, acts, skillContent);
+    const result = computeChangeSet(inputs, digestOfPlan, observation, trust.ledger, staffingEntry.roles, acts, skillContent, setupTemplates);
     if ("skip" in result) {
       entries.push({ id: staffingEntry.repository, verdict: result.skip.verdict, reason: result.skip.reason, checks: [] });
       continue;

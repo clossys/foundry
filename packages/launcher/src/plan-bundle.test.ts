@@ -79,8 +79,9 @@ const DOCS: RepositoryObservation = {
   repositoryProfile: null,
   linkedAgentsPaths: [],
   files: [],
-  manifestEntries: [],
-  lockedPackages: [],
+  // An apply set that would change the Starter pin is skipped (starter-request-stale), so this repository already holds the pin.
+  manifestEntries: [{ placement: "devDependencies", name: STARTER.name, value: STARTER.version }],
+  lockedPackages: [{ name: STARTER.name, version: STARTER.version, integrity: STARTER.integrity }],
   ledger: null,
   skillsManifest: null,
 };
@@ -146,18 +147,19 @@ describe("planApplyBundle", () => {
     }
   });
 
-  it("skips a setup-phase repository as setup-template-unbuilt, outside the bundle digest, because a setup set must carry the templates it does not compute", () => {
+  it("skips a setup-phase repository as starter-request-invalid, outside the bundle digest, when the pin it names is not one the Starter request can name", () => {
+    // The corpus plan pins a Starter under another scope, which the setup templates never name; plan-bundle-setup.test.ts computes the setup sets.
     const { bundle, changeSets } = run(withRepository({ phase: "setup" }, DOCS.id));
     expect(changeSets.map((set) => set.repository.id)).toEqual([SITE.id]);
-    expect(bundle.repositories[1]).toEqual({ id: DOCS.id, verdict: "indeterminate", reason: "setup-template-unbuilt", checks: [] });
+    expect(bundle.repositories[1]).toEqual({ id: DOCS.id, verdict: "indeterminate", reason: "starter-request-invalid", checks: [] });
     expect(bundle.bundleDigest).toBe(bundleDigest(planDigest(PLAN), [{ id: SITE.id, changeSetDigest: changeSets[0]!.changeSetDigest }]));
     expect(validateApplyBundle(bundle)).toEqual({ valid: true });
   });
 
-  it("reports setup-template-unbuilt before root-entry-edit-unbuilt when a setup repository needs root entries and has no profile text", () => {
+  it("reports starter-request-invalid before root-entry-edit-unbuilt when a setup repository needs root entries and has no profile text", () => {
     const profile = { path: "governance/repository-profile.json", rootVocabulary: "checked" as const, undeclaredRoots: ["clossys"], prohibitedRoots: [] };
     const setup = run(withRepository({ phase: "setup", repositoryProfile: profile }));
-    expect(setup.bundle.repositories[0]).toEqual({ id: SITE.id, verdict: "indeterminate", reason: "setup-template-unbuilt", checks: [] });
+    expect(setup.bundle.repositories[0]).toEqual({ id: SITE.id, verdict: "indeterminate", reason: "starter-request-invalid", checks: [] });
     expect(setup.changeSets.map((set) => set.repository.id)).toEqual([DOCS.id]);
 
     const apply = run(withRepository({ phase: "apply", repositoryProfile: profile }));
@@ -173,7 +175,7 @@ describe("planApplyBundle", () => {
         files: [{ path: profile.path, sha256: sha(profileText) }],
       }),
     );
-    expect(setupWithText.bundle.repositories[0]).toEqual({ id: SITE.id, verdict: "indeterminate", reason: "setup-template-unbuilt", checks: [] });
+    expect(setupWithText.bundle.repositories[0]).toEqual({ id: SITE.id, verdict: "indeterminate", reason: "starter-request-invalid", checks: [] });
   });
 
   it("records a profile after digest from a decimal schemaVersion without rewriting it to an integer token", () => {
@@ -344,10 +346,9 @@ describe("planApplyBundle", () => {
     }
     const docs = setFor(changeSets, DOCS.id);
     expect(docs.deferred).toEqual([]);
-    expect(docs.keys).toEqual([
-      { file: "package.json", pointer: "/devDependencies/@example~1starter", before: null, after: "0.9.2", item: "example-owner/docs:@example/starter" },
-      { file: "package.json", pointer: "/devDependencies/@example~1writer", before: null, after: "0.7.0", item: "example-owner/docs:@example/writer" },
-    ]);
+    // The Starter pin is already in the base, so only the install writes a key.
+    expect(docs.items.find((item) => "planItem" in item && item.planItem === "example-owner/docs:@example/starter")).toMatchObject({ act: "pin-starter", satisfiedInBase: true });
+    expect(docs.keys).toEqual([{ file: "package.json", pointer: "/devDependencies/@example~1writer", before: null, after: "0.7.0", item: "example-owner/docs:@example/writer" }]);
     expect(docs.pathAllowList).toEqual([".agents/skills/clossys-*/**", ".claude/skills/clossys-*", ".cursor/skills/clossys-*", "clossys/**", "package.json", "pnpm-lock.yaml"]);
   });
 
@@ -1251,7 +1252,7 @@ describe("the planner is pure", () => {
     expect(result.findings).toEqual([]);
   });
 
-  it("reaches exactly the planner, the contract, digest and ledger modules, and the generated contract data", () => {
+  it("reaches exactly the planner, the contract, digest, ledger, template and release-age editor modules, and the generated contract data", () => {
     expect([...result.visited].sort()).toEqual(
       [
         "change-set-contract.ts",
@@ -1266,6 +1267,9 @@ describe("the planner is pure", () => {
         "plan-contract.ts",
         "plan-digest.ts",
         "plan-rules.ts",
+        "release-age-edit.ts",
+        "setup-template-scripts.ts",
+        "setup-templates.ts",
       ]
         .map(at)
         .sort(),
