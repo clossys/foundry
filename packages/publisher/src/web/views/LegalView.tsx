@@ -46,7 +46,11 @@ function resolveCopy(ref: CopyRef, path: string, resolver: CopyResolver): string
   return resolution.text;
 }
 
-function createDateFormatter(locale: string): Intl.DateTimeFormat {
+function createDateFormatter(locale: unknown): Intl.DateTimeFormat {
+  // The type requires a locale, but a JavaScript caller can omit it or pass anything; Intl would silently fall back to the host default.
+  if (typeof locale !== "string" || locale.trim().length === 0) {
+    throw new RenderError("resolution-failed", "LegalView requires a non-empty locale string and does not fall back to a default locale.");
+  }
   try {
     return new Intl.DateTimeFormat(locale, { dateStyle: "long", timeZone: "UTC" });
   } catch (error) {

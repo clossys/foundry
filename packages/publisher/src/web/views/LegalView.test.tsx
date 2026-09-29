@@ -1,5 +1,5 @@
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import type { CopyRegistry, CopyResolver } from "@clossys/writer";
 import { createCopyResolver } from "@clossys/writer";
 import { RenderError } from "../../internal/errors.js";
@@ -229,6 +229,31 @@ describe("LegalView dates", () => {
   it("throws RenderError for an invalid locale", () => {
     expect(() => render(legalDoc("terms"), { locale: "!!" })).toThrow(RenderError);
   });
+
+  const badLocales: Array<[string, unknown]> = [
+    ["omitted", undefined],
+    ["empty", ""],
+    ["blank", "   "],
+    ["non-string number", 424242],
+    ["non-string object", { tag: "sentinel-locale-value" }],
+  ];
+  for (const [name, value] of badLocales) {
+    it(`throws RenderError before any date formatting for an ${name} locale, without echoing the value`, () => {
+      const spy = vi.spyOn(Intl, "DateTimeFormat");
+      try {
+        const attempt = () =>
+          renderToStaticMarkup(
+            <LegalView brand="Acme" document={legalDoc("terms")} resolveCopyId={resolver} labels={LABELS} locale={value as string} />,
+          );
+        expect(attempt).toThrow(RenderError);
+        expect(attempt).toThrow(/locale/);
+        expect(attempt).not.toThrow(/424242|sentinel-locale-value/);
+        expect(spy).not.toHaveBeenCalled();
+      } finally {
+        spy.mockRestore();
+      }
+    });
+  }
 });
 
 describe("LegalView labels", () => {
