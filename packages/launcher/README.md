@@ -724,9 +724,11 @@ if ("skipped" in observed) console.log(observed.skipped, observed.verdict);
 ```
 
 - The rule: only this repository's own object database and refs are read,
-  through git plumbing, never the working tree and never anything a
-  repository can point elsewhere; anything unusual is refused, not
-  interpreted. Every field is read from git objects at the default-branch
+  through git plumbing, never the working tree and never an alternate object
+  store, `commondir` or submodule repository; anything unusual is refused,
+  not interpreted. What the object database holds is trusted to match its
+  ids: an observation is the committed head as the clone's object database
+  stores it. Every field is read from git objects at the default-branch
   head; a file's digest is that of its bytes read as UTF-8 text, as
   materialization computes it (a symbolic link's digest is the digest of its
   target). Nothing is written to the clone: the remote tip is read with
@@ -738,7 +740,7 @@ if ("skipped" in observed) console.log(observed.skipped, observed.verdict);
   submodule's own repository and read its configuration.
 - A clone is refused, not observed, when its directory is missing
   (`clone-missing`, `indeterminate`); when its `origin` is another repository;
-  when its tree is dirty or has untracked files, or a tracked file is marked
+  when its tree is dirty or has untracked files not ignored, or a tracked file is marked
   skip-worktree or assume-unchanged; when its local head differs from the
   remote tip; when it reads objects from another store
   (`objects/info/alternates`); or when `.git/config` holds a key outside a
@@ -760,12 +762,17 @@ if ("skipped" in observed) console.log(observed.skipped, observed.verdict);
   throws or returns a malformed value is `indeterminate`.
 - `phase` is `apply` only when the base has a valid installed-state ledger,
   every setup-template path is a regular file at the head, and
-  `manifestEntries` pins `@clossys/starter` at an exact version that its
-  lockfile resolves to the registry package of that name (an `npm:` alias, or
-  another package under its name, is refused as `lockfile-unreadable`);
-  otherwise it is `setup`.
+  `manifestEntries` pins `@clossys/starter` at an exact version for which its
+  lockfile has a row of that name and version, not an alias (an `npm:` alias,
+  or another package under its name, is refused as `lockfile-unreadable`; the
+  host and integrity are the planner's to check); otherwise it is `setup`.
 - git runs without hooks, `fsmonitor` or a pager, and every tree, blob and
-  output read has a size bound.
+  output read has a size bound. git inside the clone reads no configuration
+  but the vetted `.git/config` and fixed `-c` overrides: the system and
+  global configuration are switched off, and `GIT_CONFIG_COUNT` and its
+  key and value variables, `GIT_CONFIG_PARAMETERS`, `GIT_CONFIG_SYSTEM` and
+  `GIT_ATTR_SOURCE` are removed. Only `git ls-remote`, which runs outside the
+  clone, keeps the operator's own configuration.
 
 | Verdict | Skip reasons |
 | --- | --- |
@@ -773,8 +780,15 @@ if ("skipped" in observed) console.log(observed.skipped, observed.verdict);
 | `indeterminate` | `clone-missing`, `clone-unreadable`, `id-owner-unknown`, `remote-tip-unreadable`, `node-id-unavailable`, `visibility-unavailable`, `tree-too-large`, `submodule-present`, `manifest-unreadable`, `lockfile-ambiguous`, `package-manager-unknown`, `lockfile-unreadable`, `release-age-surface-invalid`, `agents-link-unreportable`, `observation-too-large`, `case-variant-owned-path`, `ledger-unreadable`, `profile-ambiguous` |
 
 What it does not decide: it reports what the committed head holds, not
-whether applying is safe. Ownership and trust are the planner's judgement,
-and so is whether the pinned Starter version is one that implements the
+whether applying is safe. Object contents, and links inside
+`.git/objects`, are trusted to match their ids. Ignored files at owned paths
+read as absent (`base-mismatch` catches them); a symbolic link at `.github`,
+`.starter` or `clossys` is unreported here and refused by materialization
+(`symlink-ancestor`); conversion attributes (`eol`, `ident`, LFS) end in
+`base-mismatch`; lossy UTF-8 digests can collide, as in materialization; a
+clone clean only through a custom global `core.excludesFile`, or one that
+needs `safe.directory`, is refused, which fails closed. Ownership and trust
+are the planner's judgement, and so is whether the pinned Starter version is one that implements the
 request: there is no version-range check here.
 It is not a check of Windows short names or other alias spellings beyond case
 and Unicode-normalization folding, and which root names a particular set

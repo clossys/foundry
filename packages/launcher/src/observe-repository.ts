@@ -1,17 +1,22 @@
 // Observing one local clone as a RepositoryObservation (RFC apply-approved-plan
 // §7 V4 and V7, issue #1178): the read side of the apply planner. It reports
-// the committed head of a clean clone whose origin is the repository the
-// inventory id names, and nothing else. The clone's working tree is never
+// the committed head of a clean clone, as the clone's object database stores
+// it, whose origin is the repository the inventory id names, and nothing else. The clone's working tree is never
 // read: every byte comes from a git object at the head commit, so an edit that
 // is not committed, or a file that is ignored, is not observed.
 //
 // The clone is untrusted content, and the rule is: this repository's own object
 // database and refs are read through git plumbing, never the working tree and
-// never anything a repository can point elsewhere; anything unusual is refused,
-// not interpreted. Its `.git/config` is read as data, never executed, and
-// refused unless every key is one a plain clone carries; a clone that names an
-// alternate object store is refused; only then does a git command run inside it,
-// with every hook, filesystem monitor and pager switched off. The committed
+// never an alternate object store, `commondir` or submodule repository;
+// anything unusual is refused, not interpreted. Its `.git/config` is read as
+// data, never executed, and refused unless every key is one a plain clone
+// carries; a clone that names an alternate object store is refused; only then
+// does a git command run inside it, with every hook, filesystem monitor and
+// pager switched off. git inside the clone reads no configuration but the
+// vetted `.git/config` and fixed `-c` overrides: the system and global
+// configuration and the environment's configuration variables are pinned or
+// removed. What the object database holds is trusted to match its ids, as the
+// clone's object database stores it. The committed
 // tree is listed, and a submodule refused, before any command that reads the
 // working tree runs, and none of those considers a submodule. The origin's tip
 // is asked with `git ls-remote`, which writes no ref and no object, from a
@@ -161,8 +166,10 @@ const GIT_OPTIONS: readonly string[] = [
 /** Variables that would point git at another repository, object store or configuration than the clone's own. */
 const GIT_REMOVED_ENV: readonly string[] = [
   "GIT_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE", "GIT_OBJECT_DIRECTORY", "GIT_ALTERNATE_OBJECT_DIRECTORIES", "GIT_COMMON_DIR", "GIT_NAMESPACE", "GIT_REPLACE_REF_BASE", "GIT_GRAFT_FILE",
-  "GIT_SHALLOW_FILE", "GIT_CONFIG_PARAMETERS", "GIT_EXTERNAL_DIFF",
+  "GIT_SHALLOW_FILE", "GIT_CONFIG_PARAMETERS", "GIT_CONFIG_COUNT", "GIT_CONFIG_SYSTEM", "GIT_ATTR_SOURCE", "GIT_EXTERNAL_DIFF",
 ];
+/** The numbered configuration variables `GIT_CONFIG_COUNT` reads. */
+const GIT_NUMBERED_CONFIG_ENV = /^GIT_CONFIG_(?:KEY|VALUE)_/iu;
 /** The transports a fetch may use when the default origin parser named the origin: exactly the two GitHub serves. */
 const REMOTE_PROTOCOLS = "https:ssh";
 
@@ -203,11 +210,19 @@ function gitBinary(): string | null {
   return binary;
 }
 
-function gitEnvironment(cwd: string, protocols: string): NodeJS.ProcessEnv {
+/**
+ * git inside the clone reads no configuration but the vetted `.git/config` and
+ * fixed `-c` overrides: the system and global configuration are switched off,
+ * and every other source the environment names is removed. Only `ls-remote`,
+ * which runs outside the clone, keeps the operator's own (credentials, proxy).
+ */
+function gitEnvironment(cwd: string, protocols: string, remote: boolean): NodeJS.ProcessEnv {
   const env: NodeJS.ProcessEnv = { ...process.env };
   for (const name of GIT_REMOVED_ENV) delete env[name];
+  for (const name of Object.keys(env)) if (GIT_NUMBERED_CONFIG_ENV.test(name)) delete env[name];
   return {
     ...env,
+    ...(remote ? {} : { GIT_CONFIG_NOSYSTEM: "1", GIT_CONFIG_GLOBAL: "/dev/null" }),
     GIT_TERMINAL_PROMPT: "0",
     GIT_OPTIONAL_LOCKS: "0",
     GIT_NO_REPLACE_OBJECTS: "1",
@@ -220,12 +235,12 @@ function gitEnvironment(cwd: string, protocols: string): NodeJS.ProcessEnv {
   };
 }
 
-function git(cwd: string, args: readonly string[], maxBuffer: number = SMALL_OUTPUT, protocols: string = REMOTE_PROTOCOLS): GitRun {
+function git(cwd: string, args: readonly string[], maxBuffer: number = SMALL_OUTPUT, protocols: string = REMOTE_PROTOCOLS, remote = false): GitRun {
   const binary = gitBinary();
   if (binary === null) return { status: -1, stdout: Buffer.alloc(0), overflow: false };
   const run = spawnSync(binary, [...GIT_OPTIONS, ...args], {
     cwd,
-    env: gitEnvironment(cwd, protocols),
+    env: gitEnvironment(cwd, protocols, remote),
     shell: false,
     stdio: ["ignore", "pipe", "ignore"],
     timeout: GIT_TIMEOUT_MS,
@@ -357,7 +372,7 @@ function originUrl(entries: readonly ConfigEntry[]): string {
   return only;
 }
 
-export /** The exact forms of a GitHub origin: https, scp-style ssh and `ssh://`, with an owner and a name and nothing more. */
+/** The exact forms of a GitHub origin: https, scp-style ssh and `ssh://`, with an owner and a name and nothing more. */
 const GITHUB_HTTPS = /^https:\/\/github\.com\/([^/?#@:\s]+)\/([^/?#@:\s]+)$/u;
 const GITHUB_SSH = /^(?:git@github\.com:|ssh:\/\/git@github\.com\/)([^/?#@:\s]+)\/([^/?#@:\s]+)$/u;
 
@@ -386,7 +401,7 @@ function safeBranch(branch: string): boolean {
 
 /** The origin's default branch and its tip, from `git ls-remote`: it writes no ref and no object anywhere. */
 function remoteTip(url: string, neutral: string, protocols: string): { readonly branch: string; readonly oid: string } {
-  const run = git(neutral, ["ls-remote", "--symref", "--", url, "HEAD"], SMALL_OUTPUT, protocols);
+  const run = git(neutral, ["ls-remote", "--symref", "--", url, "HEAD"], SMALL_OUTPUT, protocols, true);
   if (run.status !== 0 || run.overflow) return refuse("remote-tip-unreadable");
   let text: string;
   try {
@@ -611,7 +626,13 @@ function lookup(tree: Tree, path: string): Lookup {
 function fold(path: string): string {
   return path
     .split("/")
-    .map((segment) => segment.normalize("NFD").toLowerCase().toUpperCase().toLowerCase().normalize("NFD").replace(/[. ]+$/u, ""))
+    .map((segment) => {
+      const folded = segment.normalize("NFD").toLowerCase().toUpperCase().toLowerCase().normalize("NFD");
+      // A loop, not a pattern: `/[. ]+$/` retries from every dot or space of a long run.
+      let end = folded.length;
+      while (end > 0 && (folded[end - 1] === "." || folded[end - 1] === " ")) end -= 1;
+      return folded.slice(0, end);
+    })
     .join("/");
 }
 
@@ -776,7 +797,7 @@ function digestOf(bytes: Buffer): string {
 
 // ---- strict JSON ------------------------------------------------------------------------------
 
-/** UTF-8 text without a byte order mark, or null. */
+/** UTF-8 text, or null. A byte order mark is kept as U+FEFF, which strict JSON refuses. */
 function decodeUtf8(bytes: Uint8Array): string | null {
   try {
     return new TextDecoder("utf-8", { fatal: true, ignoreBOM: true }).decode(bytes);
@@ -956,10 +977,10 @@ function rootLockfiles(tree: Tree): { readonly known: readonly (typeof LOCKFILES
 }
 
 /**
- * The Starter the lockfile locks must be the registry package `@clossys/starter`
- * itself: not an `npm:` alias, not another package installed under its name, and
- * not a tarball of another package. Anything else is a lockfile this module does
- * not interpret.
+ * The Starter the lockfile locks must have a lockfile row of that name and
+ * version: not an `npm:` alias, not another package installed under its name,
+ * and not a tarball of another package. Anything else is a lockfile this module
+ * does not interpret. The host and the integrity are the planner's to check.
  */
 function checkStarterIdentity(view: LockfileView, row: RootDependency, manifest: Manifest | null): void {
   const locked = view.entries.find((candidate) => candidate.key === (view.format === "npm" ? `node_modules/${STARTER}` : `${STARTER}@${row.version}`));

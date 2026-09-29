@@ -1,5 +1,5 @@
-// Invariant under test: an observation is exactly the committed head of a
-// clean clone matching its id; anything unestablished is a skip reason, never
+// Invariant under test: an observation is exactly the committed head, as the
+// clone's object database stores it, of a clean clone matching its id; anything unestablished is a skip reason, never
 // a guess. Every test drives real git against temporary repositories, each
 // with a bare origin, and injects an `originId` that recognises only that
 // bare-path shape.
@@ -7,7 +7,7 @@
 import { execFileSync } from "node:child_process";
 import { appendFileSync, chmodSync, copyFileSync, existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, realpathSync, rmSync, symlinkSync, utimesSync, writeFileSync } from "node:fs";
 import { devNull, tmpdir } from "node:os";
-import { dirname, join, sep } from "node:path";
+import { delimiter, dirname, join, sep } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { LEDGER_PATH, TEMPLATE_PATHS, contentDigest } from "./change-set-contract.js";
 import type { RepositoryVisibility } from "./change-set-contract.js";
@@ -841,6 +841,106 @@ describe("observeRepository: an observation is exactly the committed head of a c
       const row = observed(await observe(fx)).files.find((file) => file.path === "clossys/marked.md");
       expect(row?.sha256).toBe(contentDigest(readFileSync(join(fx.clone, "clossys/marked.md"), "utf8")));
       expect(row?.sha256).toBe(contentDigest(text));
+    });
+  });
+
+  describe("git inside the clone reads no configuration but the vetted .git/config", () => {
+    type Source = (fx: Fixture, xdg: string, definition: readonly [string, string][]) => Record<string, string>;
+    const gitConfigText = (definition: readonly [string, string][]): string => `[filter "x"]\n${definition.map(([key, value]) => `\t${key} = ${value}\n`).join("")}`;
+    const SOURCES: readonly (readonly [string, Source])[] = [
+      [
+        "GIT_CONFIG_SYSTEM",
+        (fx, _xdg, definition) => {
+          const file = join(fx.root, "system.gitconfig");
+          writeFileSync(file, gitConfigText(definition));
+          return { GIT_CONFIG_SYSTEM: file };
+        },
+      ],
+      [
+        "GIT_CONFIG_GLOBAL",
+        (fx, _xdg, definition) => {
+          const file = join(fx.root, "global.gitconfig");
+          writeFileSync(file, gitConfigText(definition));
+          return { GIT_CONFIG_GLOBAL: file };
+        },
+      ],
+      [
+        "XDG config",
+        (_fx, xdg, definition) => {
+          mkdirSync(join(xdg, "git"), { recursive: true });
+          writeFileSync(join(xdg, "git", "config"), gitConfigText(definition));
+          return {};
+        },
+      ],
+      [
+        "GIT_CONFIG_COUNT",
+        (_fx, _xdg, definition) => ({
+          GIT_CONFIG_COUNT: String(definition.length),
+          ...Object.fromEntries(definition.flatMap(([key, value], at) => [[`GIT_CONFIG_KEY_${at}`, `filter.x.${key}`], [`GIT_CONFIG_VALUE_${at}`, value]])),
+        }),
+      ],
+      ["GIT_CONFIG_PARAMETERS", (_fx, _xdg, definition) => ({ GIT_CONFIG_PARAMETERS: definition.map(([key, value]) => `'filter.x.${key}'='${value}'`).join(" ") })],
+    ];
+    const SELECTORS: readonly (readonly [string, (fx: Fixture, xdg: string) => void])[] = [
+      ["committed .gitattributes", (fx) => commit(fx, { ".gitattributes": "* filter=x\n" }, "attributes")],
+      ["info/attributes", (fx) => writeFileSync(join(fx.clone, ".git", "info", "attributes"), "* filter=x\n")],
+      [
+        "XDG attributes",
+        (_fx, xdg) => {
+          mkdirSync(join(xdg, "git"), { recursive: true });
+          writeFileSync(join(xdg, "git", "attributes"), "* filter=x\n");
+        },
+      ],
+    ];
+    const DRIVERS: readonly (readonly [string, (script: string) => readonly [string, string][]])[] = [
+      ["clean", (script) => [["clean", script]]],
+      ["process", (script) => [["process", script], ["required", "true"]]],
+    ];
+    const CELLS = SOURCES.flatMap(([source, define]) => SELECTORS.flatMap(([selector, select]) => DRIVERS.map(([driver, spell]) => [source, selector, driver, define, select, spell] as const)));
+
+    it("covers thirty cells", () => {
+      expect(CELLS).toHaveLength(30);
+    });
+
+    it.each(CELLS)("runs no filter defined by %s and selected by %s, driver %s, and leaves the clone as it was", async (_source, _selector, _driver, define, select, spell) => {
+      const fx = makeFixture();
+      const canary = join(fx.root, "canary");
+      const script = join(fx.root, "filter.sh");
+      writeFileSync(script, `#!/bin/sh\ntouch "${canary}"\ncat\n`);
+      chmodSync(script, 0o755);
+      const xdg = join(fx.root, "xdg");
+      select(fx, xdg);
+      const environment = { XDG_CONFIG_HOME: xdg, ...define(fx, xdg, spell(script)) };
+      // A tracked file whose stat differs from the index makes git hash it again, through any clean filter.
+      utimesSync(join(fx.clone, "README.md"), 1, 1);
+      const before = snapshot(fx.clone);
+      const result = await withEnv(environment, () => observe(fx));
+      expect(existsSync(canary)).toBe(false);
+      expect("skipped" in result || result.baseCommit === headOf(fx)).toBe(true);
+      expect(snapshot(fx.clone)).toEqual(before);
+    });
+
+    it.each([["GIT_CONFIG_COUNT"], ["GIT_CONFIG_KEY_0"], ["GIT_CONFIG_VALUE_0"], ["GIT_CONFIG_SYSTEM"], ["GIT_ATTR_SOURCE"]])("does not pass %s on to git", async (name) => {
+      const fx = makeFixture();
+      const capture = join(fx.root, "environment");
+      const wrapper = join(fx.root, "bin");
+      mkdirSync(wrapper);
+      const real = execFileSync("which", ["git"], { encoding: "utf8" }).trim();
+      writeFileSync(join(wrapper, "git"), `#!/bin/sh\nenv >> "${capture}"\nexec "${real}" "$@"\n`);
+      chmodSync(join(wrapper, "git"), 0o755);
+      const result = await withEnv({ PATH: `${wrapper}${delimiter}${process.env.PATH ?? ""}`, [name]: "1" }, () => observe(fx));
+      expect("skipped" in result || result.baseCommit === headOf(fx)).toBe(true);
+      const lines = readFileSync(capture, "utf8").split("\n");
+      expect(lines.length).toBeGreaterThan(1);
+      expect(lines.some((line) => line.startsWith(`${name}=`))).toBe(false);
+      expect(lines).toContain("GIT_CONFIG_NOSYSTEM=1");
+    });
+  });
+
+  describe("folding trailing dots and spaces", () => {
+    it.each([["clossys. . ./notes.md"], ["clossys.../notes.md"], ["clossys  /notes.md"], [".agents. /notes.md"]])("reads %s as the owned name without its trailing dots and spaces", async (path) => {
+      const fx = makeFixture({ ...plainFiles(), [path]: "text\n" });
+      expect(await observe(fx)).toEqual(skip(fx, "case-variant-owned-path", "indeterminate"));
     });
   });
 
