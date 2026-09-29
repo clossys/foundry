@@ -1,0 +1,12 @@
+{
+  "name": "fixture-site",
+  "private": true,
+  "version": "0.1.0",
+  "dependencies": {
+    "@clossys/designer": "workspace:*",
+    "@clossys/publisher": "^0.7.0 || ^0.8.0",
+    "next": ">=16 <17",
+    "react": "*",
+    "react-dom": "19.x"
+  }
+}

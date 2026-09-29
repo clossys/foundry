@@ -7,18 +7,41 @@ repository's own `clossys/` records from the first commit.
 `apps/site` by Launcher (#1215) — it does not run inside Foundry itself.**
 Foundry does not install Next.js or React as a dependency, and this
 template's own `package.json`/`tsconfig.json` are not part of Foundry's
-npm workspace; nothing here is built, typechecked, or tested by this
-repository's own `npm run build`/`npm run typecheck`/`npm test`. Treat it
-shipped, versioned template content, not compiled source — this
-repository's own gitignored `dist/` build output is the only thing
-`npm run build`/`npm run typecheck`/`npm test` ever touch.
+npm workspace, so the template itself is not built or typechecked, and its
+own `npm run build`/`npm run typecheck` are not run here. Treat it as
+shipped, versioned template content, not compiled source. Three static
+guards do run in Publisher's own test suite:
+
+1. The `@clossys` ranges in `package.json` cover the on-disk package
+   versions, `next`, `react` and `react-dom` cover the versions the
+   workspace lockfile resolves, and a range in an unrecognised form fails.
+2. Every `var(--name)` that the template, Publisher's web views and
+   Designer's atoms, blocks and shell reference is declared by the CSS the
+   template loads (Designer's token layer through `theme.css`, or the
+   template's own CSS), with a pinned exception list for existing
+   references outside the template. The check follows the template's CSS
+   `@import`s, so a token layer the template does not load fails.
+3. Designer's token-purity scan over the template reports no error and
+   nothing it could not classify.
+
+These guards are static. They check declared ranges and property names;
+they do not check that an install resolves those ranges, that a value
+applies at its cascade scope, or that the template builds.
 
 ## What it contains
 
 - `package.json` — Next.js (App Router), `@clossys/publisher/web` and
-  `@clossys/designer` as real dependencies once instantiated.
+  `@clossys/designer` as real dependencies once instantiated, plus
+  Tailwind (`tailwindcss`, and `@tailwindcss/postcss` for the build) and
+  the peers Designer's components need at render time
+  (`react-aria-components`, `tailwind-merge`).
+- `postcss.config.mjs` — enables the `@tailwindcss/postcss` plugin.
 - `next.config.mjs`, `tsconfig.json` — a plain App Router setup.
-- `app/layout.tsx` — root layout, renders Designer's theme.
+- `app/globals.css` — the Tailwind path: `tailwindcss`, Designer's
+  `theme.css`, `@source` entries for the Designer and Publisher `dist`
+  directories, then the repository's own brand file.
+- `app/layout.tsx` — root layout: sets `data-brand-bound` on `<html>` and
+  injects Designer's theme init script into `<head>`.
 - `app/page.tsx` — the landing route (`MarketingView`).
 - `app/about/page.tsx`, `app/contact/page.tsx`, `app/privacy/page.tsx`,
   `app/terms/page.tsx` — the other required routes (#1208's own list),

@@ -57,6 +57,29 @@ export type { PlanApplyBundleInputs, PlanApplyBundleResult, RepositoryObservatio
 export type { DoctorCheckHost, DoctorReport, DoctorStepId, DoctorStepResult } from "./doctor.js";
 export { checkCloudSessionBootstrap } from "./product-repository.js";
 export type { CloudBootstrapCheck, CloudBootstrapReport } from "./product-repository.js";
+// Setup templates: pure renderers for the files a setup change writes.
+export {
+  renderSetupTemplate,
+  renderStarterRequest,
+  renderAdoptionDecisionWorkflow,
+  renderProductCiWorkflow,
+  STARTER_PIN_RANGE,
+} from "./setup-templates.js";
+export type {
+  SetupPackageManager,
+  StarterPinInput,
+  StarterRequestInput,
+  TemplateFile,
+  TemplateRefusal,
+  TemplateResult,
+} from "./setup-templates.js";
+export {
+  renderSnapshotCollector,
+  renderAdoptionEvidenceWorkflow,
+  renderPathScopeScript,
+  renderPathScopeWorkflow,
+  OWNED_PATH_PATTERNS,
+} from "./setup-template-scripts.js";
 export { reportInventoryDrift } from "./inventory-adoption.js";
 export type { ExternalInventoryDeclaration, InventoryDriftReport } from "./inventory-adoption.js";
 export { detectLinkedHosts, parseHostRecord, serializeHostRecord, HOSTS_REL } from "./hosts.js";

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
+import { getThemeInitScript } from "@clossys/designer/theme/server";
 import "./globals.css";
 
 // Reads brand tokens from clossys/designer/brand.css at build time — the
@@ -13,9 +14,16 @@ export const metadata: Metadata = {
   },
 };
 
+// `data-brand-bound` is set in server-rendered markup so the brand file's
+// `:root[data-brand-bound]` rules apply and Designer's unbranded badge stays
+// off. The theme init script runs before first paint and sets the theme
+// attributes on <html> itself, so React is told to expect that difference.
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" data-brand-bound suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: getThemeInitScript() }} />
+      </head>
       <body>{children}</body>
     </html>
   );
