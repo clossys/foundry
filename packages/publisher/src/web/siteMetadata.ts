@@ -21,11 +21,17 @@
  *
  * FAIL CLOSED, NEVER GUESS. Every input problem throws a
  * `SiteMetadataError` carrying a closed `reason`; nothing is repaired or
- * normalized. Text values are only checked to be non-blank
- * strings and are emitted VERBATIM — nothing is trimmed, collapsed, or
- * re-cased, so a value with leading or trailing whitespace comes out with
- * it. The share card must be exactly the size `OG_SHARE_CARD_SPEC` declares
- * (any other dimensions, including swapped ones, are refused).
+ * normalized. A name, tagline or label must be non-blank and must not start
+ * or end with whitespace or contain a line break, because it is emitted
+ * VERBATIM into the title and a trimmed or collapsed copy would be a guess;
+ * every other text value is only checked to be a non-blank string and is
+ * emitted verbatim too. A canonical path and an absolute share-card URL must
+ * already be in their normalised form: they are refused unless `new URL`
+ * serialises them back to exactly the same string, so a `.`, `..` or encoded
+ * `..` segment, an empty segment, or a malformed spelling can never resolve to
+ * a different address than the one emitted. The share card must be exactly the
+ * size `OG_SHARE_CARD_SPEC` declares (any other dimensions, including swapped
+ * ones, are refused).
  *
  * This module takes no brand-facts record and does not call the Writer
  * package; a caller supplies plain values. It reads no environment, does no
@@ -40,7 +46,7 @@ export type SitePageKind = "home" | "contact" | "legal" | "notFound" | "custom";
 export type SiteLegalStatus = "draft" | "counsel-reviewed";
 
 export interface SiteShareCard {
-  /** An absolute `http(s)` URL, or a root-relative path starting with a single `/` (resolved against the site origin). */
+  /** An absolute `http(s)` URL exactly as `new URL(url).href` serialises it, or a root-relative path starting with a single `/` (resolved against the site origin). */
   url: string;
   alt: string;
   /** Must be an integer equal to `OG_SHARE_CARD_SPEC.widthPx`. */
@@ -64,7 +70,7 @@ export interface SitePageInput {
   /** The page's short name, used in the title of every kind except `home`. */
   label: string;
   description: string;
-  /** Starts with a single `/`; no `?`, `#`, whitespace, or `..` segment. */
+  /** Starts with a single `/`; no `?`, `#`, whitespace, `.` or `..` segment, or empty segment except a trailing slash; already in `new URL` normal form. */
   path: string;
   /** Allowed only on `kind: "legal"`; a missing status there is a draft. */
   status?: SiteLegalStatus;
@@ -136,6 +142,18 @@ function requireText(value: unknown, field: string): string {
   return value;
 }
 
+/** A text that goes verbatim into the title: non-blank, no leading or trailing whitespace, no line break. */
+function requireTitleText(value: unknown, field: string): string {
+  const text = requireText(value, field);
+  if (text !== text.trim() || /[\n\v\f\r\u0085\u2028\u2029]/.test(text)) {
+    throw new SiteMetadataError(
+      "invalid-input",
+      `${field} must not start or end with whitespace or contain a line break.`,
+    );
+  }
+  return text;
+}
+
 /** True when `text` has whitespace, a control character, or a backslash — none of which a path or URL here may carry. */
 function hasUnsafeCharacter(text: string): boolean {
   return /[\s\u0000-\u001f\u007f\\]/.test(text);
@@ -143,6 +161,21 @@ function hasUnsafeCharacter(text: string): boolean {
 
 function hasDotDotSegment(pathname: string): boolean {
   return pathname.split("/").includes("..");
+}
+
+/** True when `path` has an empty segment other than a single trailing slash. */
+function hasEmptySegment(path: string): boolean {
+  const segments = path.split("/").slice(1);
+  return segments.slice(0, -1).includes("");
+}
+
+/** True when `new URL` would serialise `origin + path` to something other than itself. */
+function changesWhenParsed(origin: string, path: string): boolean {
+  try {
+    return new URL(`${origin}${path}`).href !== `${origin}${path}`;
+  } catch {
+    return true;
+  }
 }
 
 function requireOrigin(value: unknown): string {
@@ -164,7 +197,7 @@ function requireOrigin(value: unknown): string {
   return value;
 }
 
-function requirePath(value: unknown): string {
+function requirePath(value: unknown, origin: string): string {
   if (
     typeof value !== "string" ||
     !value.startsWith("/") ||
@@ -172,11 +205,13 @@ function requirePath(value: unknown): string {
     value.includes("?") ||
     value.includes("#") ||
     hasUnsafeCharacter(value) ||
-    hasDotDotSegment(value)
+    hasDotDotSegment(value) ||
+    hasEmptySegment(value) ||
+    changesWhenParsed(origin, value)
   ) {
     throw new SiteMetadataError(
       "invalid-path",
-      "page.path must start with a single '/' and contain no '?', '#', whitespace, backslash, or '..' segment.",
+      "page.path must start with a single '/', be in normal URL form, and contain no '?', '#', whitespace, backslash, '.' or '..' segment, or empty segment except a trailing slash.",
     );
   }
   return value;
@@ -212,7 +247,7 @@ function resolveShareCardUrl(value: unknown, origin: string): string {
   if (value.startsWith("/")) {
     if (value.startsWith("//")) return refuse();
     const pathname = value.split(/[?#]/, 1)[0] ?? "";
-    if (hasDotDotSegment(pathname)) return refuse();
+    if (hasDotDotSegment(pathname) || changesWhenParsed(origin, value)) return refuse();
     return `${origin}${value}`;
   }
   let parsed: URL;
@@ -221,7 +256,12 @@ function resolveShareCardUrl(value: unknown, origin: string): string {
   } catch {
     return refuse();
   }
-  if ((parsed.protocol !== "http:" && parsed.protocol !== "https:") || parsed.username !== "" || parsed.password !== "") {
+  if (
+    (parsed.protocol !== "http:" && parsed.protocol !== "https:") ||
+    parsed.username !== "" ||
+    parsed.password !== "" ||
+    parsed.href !== value
+  ) {
     return refuse();
   }
   return value;
@@ -258,15 +298,15 @@ export function buildSiteMetadata(input: { site: SiteIdentityInput; page: SitePa
   if (!isRecord(site)) throw new SiteMetadataError("invalid-input", "input.site must be an object.");
   if (!isRecord(page)) throw new SiteMetadataError("invalid-input", "input.page must be an object.");
 
-  const name = requireText(site["name"], "site.name");
-  const tagline = requireText(site["tagline"], "site.tagline");
+  const name = requireTitleText(site["name"], "site.name");
+  const tagline = requireTitleText(site["tagline"], "site.tagline");
   const themeColor = requireText(site["themeColor"], "site.themeColor");
   const locale = requireText(site["locale"], "site.locale");
   const origin = requireOrigin(site["origin"]);
-  const label = requireText(page["label"], "page.label");
+  const label = requireTitleText(page["label"], "page.label");
   const description = requireText(page["description"], "page.description");
   const kind = requireKind(page["kind"]);
-  const path = requirePath(page["path"]);
+  const path = requirePath(page["path"], origin);
   const status = requireStatus(kind, page["status"]);
   const shareCard = requireShareCard(site["shareCard"], origin);
 

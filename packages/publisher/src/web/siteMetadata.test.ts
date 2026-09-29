@@ -172,6 +172,17 @@ describe("buildSiteMetadata refusals", () => {
     expect(reasonOf(() => build(site(), page({ [key]: undefined as never })))).toBe("invalid-input");
   });
 
+  it.each(["Acme ", " Acme", "Ac\nme", "Ac\r\nme", "Ac\u2028me", "\tAcme", "Acme\n"])("refuses the name, tagline or label %j", (text) => {
+    expect(reasonOf(() => build(site({ name: text })))).toBe("invalid-input");
+    expect(reasonOf(() => build(site({ tagline: text })))).toBe("invalid-input");
+    expect(reasonOf(() => build(site(), page({ label: text })))).toBe("invalid-input");
+  });
+
+  it("keeps a name, tagline and label with single inner spaces", () => {
+    const meta = build(site({ name: "Acme Tools", tagline: "Fast, small" }), page({ label: "Our prices" }));
+    expect(meta.title).toBe(`Our prices ${SEP} Acme Tools`);
+  });
+
   it("refuses a blank share card alt", () => {
     expect(reasonOf(() => build(site({ shareCard: { url: "/a.png", alt: " ", width: 1200, height: 630 } })))).toBe("invalid-input");
   });
@@ -207,12 +218,25 @@ describe("buildSiteMetadata refusals", () => {
     "/..",
     "/a/..",
     "https://example.com/a",
+    "/a//b",
+    "/a/./b",
+    "/a/%2e%2e/b",
+    "/a/%2E%2E/b",
+    "/a/.",
+    "/a//",
+    "//",
+    "/é",
   ])("refuses the path %j", (path) => {
     expect(reasonOf(() => build(site(), page({ path })))).toBe("invalid-path");
   });
 
   it("refuses a non-string path", () => {
     expect(reasonOf(() => build(site(), page({ path: 3 as never })))).toBe("invalid-path");
+  });
+
+  it("accepts a trailing slash and an encoded segment that stays put", () => {
+    expect(build(site(), page({ path: "/a/b/" })).canonical).toBe("https://example.com/a/b/");
+    expect(build(site(), page({ path: "/a%20b" })).canonical).toBe("https://example.com/a%20b");
   });
 
   it("accepts the root path and a nested path", () => {
@@ -260,6 +284,14 @@ describe("buildSiteMetadata refusals", () => {
     "",
     "data:image/png;base64,AAAA",
     "/a b.png",
+    "https:foo.png",
+    "https:/foo.png",
+    "https://EXAMPLE.com/a.png",
+    "https://example.com:443/a.png",
+    "https://example.com/a/../b.png",
+    "https://example.com",
+    "/a/%2e%2e/b.png",
+    "/a/./b.png",
   ])("refuses the share card url %j", (url) => {
     expect(reasonOf(() => build(site({ shareCard: { url, alt: "Card", width: 1200, height: 630 } })))).toBe("invalid-share-card");
   });

@@ -950,7 +950,9 @@ package.
 
 - **Title.** A `home` page is `${name} · ${tagline}`; every other kind is
   `${label} · ${name}`. The separator is U+00B7 with one space on each side.
-  Values are emitted verbatim — nothing is trimmed.
+  Values are emitted verbatim — nothing is trimmed — so a `name`, `tagline`,
+  or `label` with leading or trailing whitespace or a line break is refused
+  rather than repaired.
 - **Fallbacks.** `canonical` is `origin` plus `path`; `og:url` is the
   canonical; `og:title` and `twitter:title` are the title; `og:description`
   and `twitter:description` are the page description; `og:site_name` is the
@@ -969,14 +971,19 @@ package.
   `buildSiteMetadata` only maps the `status` it is given to a robots value; it
   does not record or verify counsel review.
 - **Refusals.** It throws `SiteMetadataError` (with a closed `reason`) for a
-  non-object input, a blank text field, an `origin` that is not an
-  `http(s)` origin equal to `new URL(origin).origin`, a `path` that does not
-  start with a single `/` or that contains `?`, `#`, whitespace, or a `..`
-  segment, an unknown `kind`, a `status` on a non-legal page or outside
-  `draft`/`counsel-reviewed`, a share-card `url` that is neither absolute
-  `http(s)` nor root-relative, and a share card whose `width` and `height` are
-  not integers equal to `OG_SHARE_CARD_SPEC` (1200 by 630; swapped or other
-  dimensions are refused).
+  non-object input, a blank text field, a `name`, `tagline`, or `label` that
+  starts or ends with whitespace or contains a line break, an `origin` that is
+  not an `http(s)` origin equal to `new URL(origin).origin`, a `path` that does
+  not start with a single `/`, that contains `?`, `#`, whitespace, a `.` or
+  `..` segment (encoded or not), or an empty segment other than a trailing
+  slash, or that `new URL` would serialise differently (the path must already
+  be in normal form, so it cannot resolve to another address), an unknown
+  `kind`, a `status` on a non-legal page or outside `draft`/`counsel-reviewed`,
+  a share-card `url` that is neither root-relative nor an absolute `http(s)`
+  URL exactly as `new URL(url).href` writes it (`https:foo.png` is refused),
+  and a share card whose `width` and `height` are not integers equal to
+  `OG_SHARE_CARD_SPEC` (1200 by 630; swapped or other dimensions are
+  refused).
 
 `lintSiteMetadataHtml(html)` checks a rendered document's `<head>` against the
 declared set `SITE_METADATA_REQUIRED_TAGS`: `<title>`; `description`,
@@ -987,20 +994,43 @@ properties; and the `twitter:card`, `twitter:title`, `twitter:description`,
 `twitter:image`, and `twitter:image:alt` metas. It reports every problem in
 one pass as a `SiteMetadataLintFinding` (`missing`, `empty`, `duplicate`, or
 `unreadable`), and `complete` is `true` only when there are no findings. `og:*`
-is read from `property`, the other metas from `name`. Markup it cannot read (a
-non-string or blank input, no `<head>`, a `<head>` with no `</head>`, more than
-one `<head>`, an unterminated comment, tag, attribute quote, `<title>`,
-`<script>`, `<style>`, or `<textarea>`) yields a single `unreadable` finding
-and `complete: false`.
+is read from `property`, the other metas from `name`.
 
-**Soundness boundary.** The lint checks the presence, uniqueness, and
-non-emptiness of the declared set. It does not check that a value is true,
-correct for the page, an absolute URL, or consistent with another tag. It
-reads only the `<head>`, only the attribute forms above, and does not count a
-tag inside a comment, `<script>`, `<style>`, `<textarea>`, `<template>`,
-`<noscript>`, or the `<body>`. It uses a small tolerant tokenizer rather than
-a full HTML parser, so markup a browser would repair can be reported
-`unreadable`.
+The lint is a strict grammar, not a repairing parser: anything it does not
+recognise is `unreadable`, never guessed.
+
+- **Accepted.** Before `<head>`: whitespace, comments, one `<!doctype>`, and
+  one `<html>`. Inside the head: whitespace, comments, and `meta`, `link`,
+  `base`, `title`, `style`, and `script` elements (a `script` whose text
+  contains `<!--` is refused). `</head>` is the only end tag.
+- **Refused as `unreadable`.** Any other start or end tag in the head
+  (including `template` and `noscript`), any text between tags, a `<` or `</`
+  not followed by a letter, a `<!` that is not a comment, `<?`, a comment that
+  contains `--!>`, a byte order mark, text or an element before `<head>`, a
+  non-string or blank input, no `<head>`, a `<head>` with no `</head>`, a
+  second `<head>`, and an unterminated comment, tag, attribute quote,
+  `<title>`, `<script>`, or `<style>` before the head closes.
+- **Character references.** Every `&` followed by a letter or `#` must start
+  one of `&amp;`, `&lt;`, `&gt;`, `&quot;`, `&apos;`, `&#N;`, or `&#xH;`. A
+  declared tag whose value has any other reference (`&nbsp;`, `&copy`, `&#32`)
+  gets an `unreadable` finding for that tag, and a `name`, `property`, or `rel`
+  attribute with one gets an `unreadable` finding for its element. The closed
+  set is decoded to read a tag's identity and to decide whether a value is
+  empty, so `&#160;` and a raw no-break space are both empty.
+
+**Soundness boundary.** `lintSiteMetadataHtml` reports complete only when the
+head consists solely of whitespace, comments and `meta`, `link`, `base`,
+`title`, `style` and `script` elements (scripts without `<!--`), with character
+references limited to `&amp;`, `&lt;`, `&gt;`, `&quot;`, `&apos;` and numeric
+forms. Other head content is `unreadable`, never guessed. Within that grammar
+it checks presence, uniqueness and non-emptiness of the declared set, not
+whether the values are true, correct for the page, an absolute URL, or
+consistent with another tag. Metadata that a framework streams into the body is
+reported missing. It does not read what follows `</head>`, other than to refuse
+a second `<head>`. Where it says complete, a spec-compliant HTML parser, with
+scripting on or off, puts exactly one non-blank copy of each declared tag
+directly in the head; the package's tests confirm that against jsdom and
+parse5.
 
 **Not part of this change.** The share-card route or image generation, wiring
 this head set into `MarketingView` or any other view or template, and how a

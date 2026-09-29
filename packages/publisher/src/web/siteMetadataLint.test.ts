@@ -1,3 +1,4 @@
+import { JSDOM, VirtualConsole } from "jsdom";
 import { describe, expect, it } from "vitest";
 import { OG_SHARE_CARD_SPEC } from "../templates/channelSpecs.js";
 import { buildSiteMetadata, type SiteMetadata } from "./siteMetadata.js";
@@ -75,7 +76,7 @@ interface HeadOptions {
   override?: Record<string, string | null>;
   /** keys rendered twice. */
   duplicate?: string[];
-  /** raw markup appended inside the head after the tags. */
+  /** raw markup appended inside the head after the tags (it must stay inside the strict grammar to be readable). */
   extraHead?: string;
   /** raw markup placed before the head. */
   beforeHead?: string;
@@ -221,9 +222,10 @@ describe("lintSiteMetadataHtml missing tags", () => {
     ]);
   });
 
-  it("does not let entity decoding change tag identity", () => {
+  it("reads a tag's identity the way a parser decodes it, so an encoded name is the tag it names", () => {
     const html = fixture({ override: { robots: null }, extraHead: `<meta name="rob&#111;ts" content="x">` });
-    expect(rulesAndTags(html)).toEqual([["missing", "robots"]]);
+    expect(lintSiteMetadataHtml(html)).toEqual({ complete: true, findings: [] });
+    expect(rulesAndTags(fixture({ extraHead: `<meta name="rob&#111;ts" content="x">` }))).toEqual([["duplicate", "robots"]]);
   });
 
   it("does not count a link without rel=canonical", () => {
@@ -316,25 +318,21 @@ describe("lintSiteMetadataHtml regions that do not count", () => {
     expect(rulesAndTags(html)).toEqual([["missing", "robots"]]);
   });
 
-  it("does not count a tag inside a style or textarea", () => {
-    const html = fixture({
-      override: { robots: null },
-      extraHead: `<style>/* ${robots} */</style><textarea>${robots}</textarea>`,
-    });
+  it("does not count a tag inside a style", () => {
+    const html = fixture({ override: { robots: null }, extraHead: `<style>/* ${robots} */</style>` });
     expect(rulesAndTags(html)).toEqual([["missing", "robots"]]);
   });
 
-  it("does not count a tag inside noscript or template", () => {
-    const html = fixture({
-      override: { robots: null },
-      extraHead: `<noscript>${robots}</noscript><template>${robots}</template>`,
-    });
-    expect(rulesAndTags(html)).toEqual([["missing", "robots"]]);
-  });
-
-  it("does not count a duplicate that sits only inside noscript", () => {
-    const html = fixture({ extraHead: `<noscript>${robots}</noscript>` });
-    expect(lintSiteMetadataHtml(html)).toEqual({ complete: true, findings: [] });
+  it("refuses a textarea, noscript or template in the head instead of guessing what a browser does with it", () => {
+    for (const extraHead of [
+      `<textarea>${robots}</textarea>`,
+      `<noscript>${robots}</noscript>`,
+      `<template>${robots}</template>`,
+    ]) {
+      const result = lintSiteMetadataHtml(fixture({ override: { robots: null }, extraHead }));
+      expect(result.complete).toBe(false);
+      expect(result.findings.map((finding) => finding.rule)).toEqual(["unreadable"]);
+    }
   });
 
   it("does not count a tag in the body", () => {
@@ -490,5 +488,460 @@ describe("lintSiteMetadataHtml fuzz-style properties", () => {
   it("agrees with itself on repeated calls", () => {
     const html = fixture({ override: { robots: null }, duplicate: ["og:url"] });
     expect(lintSiteMetadataHtml(html)).toEqual(lintSiteMetadataHtml(html));
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Strict grammar: inside the head only the fixed element set is accepted, and
+// anything else is `unreadable`. Every case below is a class a browser's
+// "in head" insertion mode closes the head on, or reads differently.
+// ---------------------------------------------------------------------------
+
+type Position = "start" | "middle" | "end";
+const POSITIONS: readonly Position[] = ["start", "middle", "end"];
+
+/** A complete fixture with `markup` inserted at one of three places inside the head. */
+function withInserted(markup: string, position: Position, base: string = fixture()): string {
+  const open = base.indexOf("<head>") + "<head>".length;
+  const close = base.indexOf("</head>");
+  const at = position === "start" ? open : position === "end" ? close : base.indexOf('<meta property="og:title"');
+  return base.slice(0, at) + markup + base.slice(at);
+}
+
+function expectUnreadable(html: string, context: string): void {
+  const result = lintSiteMetadataHtml(html);
+  expect(result.complete, context).toBe(false);
+  expect(
+    result.findings.map((finding) => finding.rule),
+    context,
+  ).toEqual(["unreadable"]);
+}
+
+describe("lintSiteMetadataHtml strict head grammar", () => {
+  const ROBOTS = `<meta name="robots" content="index, follow">`;
+
+  describe.each(POSITIONS)("markup placed at the %s of the head", (position) => {
+    const cases: Array<[string, string]> = [
+      ["a div", "<div>x</div>"],
+      ["an img", "<img src=x>"],
+      ["plain text", "hello"],
+      ["a lone '<' and a space", "< "],
+      ["an svg title", "<svg><title>x</title></svg>"],
+      ["a body end tag", "</body>"],
+      ["a br end tag", "</br>"],
+      ["a noscript", "<noscript></noscript>"],
+      ["a template", "<template></template>"],
+      ["a noscript that hides a template close", `<noscript></template>${ROBOTS}</noscript>`],
+      ["a textarea", "<textarea></textarea>"],
+      ["a second html start tag", "<html>"],
+      ["a body start tag", "<body>"],
+      ["an html end tag", "</html>"],
+      ["a processing instruction", "<?xml version='1.0'?>"],
+      ["a non-comment declaration", "<!ELEMENT x>"],
+      ["a doctype inside the head", "<!doctype html>"],
+      ["an empty end tag", "</>"],
+      ["a '<' followed by a digit", "<1>"],
+      ["a title end tag with no title", "</title>"],
+      ["a meta end tag", "</meta>"],
+    ];
+    it.each(cases)("refuses %s", (label, markup) => {
+      expectUnreadable(withInserted(markup, position), `${label} at ${position}`);
+    });
+  });
+
+  it("refuses text or a div before <head>", () => {
+    for (const beforeHead of ["hello", "<div>x</div>", "<p>", "x", "<img src=x>"]) {
+      expectUnreadable(fixture({ beforeHead }), `before head: ${beforeHead}`);
+    }
+    expectUnreadable(`hello${fixture()}`, "text before the doctype");
+    expectUnreadable(fixture().replace("<html", "text<html"), "text between the doctype and <html>");
+    expectUnreadable(fixture().replace("<head>", "text<head>"), "text between <html> and <head>");
+  });
+
+  it("refuses a second doctype, a second html, and a doctype after html", () => {
+    expectUnreadable(fixture().replace("<html", "<!doctype html><html"), "two doctypes");
+    expectUnreadable(fixture().replace("<head>", "<html><head>"), "two html start tags");
+    expectUnreadable(fixture().replace("<head>", "<!doctype html><head>"), "a doctype after html");
+  });
+
+  it("refuses <noscript> and <template> that hide a meta from the depth counter", () => {
+    const html = fixture({ override: { robots: null }, extraHead: `<noscript></template>${ROBOTS}</noscript>` });
+    expectUnreadable(html, "noscript closed by a template end tag");
+    expectUnreadable(fixture({ extraHead: "<template><noscript></template></noscript></template>" }), "nested hidden depth");
+  });
+
+  it("refuses double-escaped script content", () => {
+    const html = fixture({
+      override: { robots: null },
+      extraHead: `<script><!--<script></script>${ROBOTS}</script>`,
+    });
+    expectUnreadable(html, "double-escaped script");
+    expectUnreadable(fixture({ extraHead: "<script>var a = 1; <!-- x</script>" }), "a script containing a comment opener");
+    expectUnreadable(fixture({ extraHead: "<SCRIPT><!--</SCRIPT>" }), "an upper-case script containing a comment opener");
+  });
+
+  it("accepts a script or style that merely mentions markup, and a title with markup-like text", () => {
+    expect(lintSiteMetadataHtml(fixture({ extraHead: `<script>var s = "<div></div>";</script><style>a > b {}</style>` })).complete).toBe(true);
+  });
+
+  it("refuses a comment that a browser closes with --!> before the lint would", () => {
+    const html = fixture({ extraHead: `<!-- a --!>${ROBOTS}<!-- b -->` });
+    expectUnreadable(html, "a comment closed by --!>");
+  });
+
+  it("accepts the empty-comment forms and ordinary comments in the head and before it", () => {
+    expect(lintSiteMetadataHtml(fixture({ extraHead: "<!----><!--->" + "<!-- a -- b -->" })).complete).toBe(true);
+    expect(lintSiteMetadataHtml(`<!-- top -->${fixture()}`).complete).toBe(true);
+  });
+
+  it("accepts whitespace around the head", () => {
+    expect(lintSiteMetadataHtml(fixture().replace("<head>", "\n <head>\n\t").replace("</head>", " \r\n</head>")).complete).toBe(true);
+  });
+
+  it("refuses a byte order mark, which a parser fed a string reads as text and so closes the head", () => {
+    expectUnreadable(`\uFEFF${fixture()}`, "a leading BOM");
+    expectUnreadable(` \uFEFF${fixture()}`, "a BOM after whitespace");
+    expectUnreadable(withInserted("\uFEFF", "start"), "a BOM inside the head");
+  });
+
+  it("refuses a head element name that only starts with an allowed one", () => {
+    expectUnreadable(withInserted("<metadata>", "start"), "<metadata>");
+    expectUnreadable(withInserted("<links>", "middle"), "<links>");
+    expectUnreadable(withInserted("<titles></titles>", "end"), "<titles>");
+  });
+});
+
+describe("lintSiteMetadataHtml closed character-reference set", () => {
+  const cases: Array<[string, string]> = [
+    ["a numeric reference with no semicolon", "&#32"],
+    ["a hex reference with no semicolon", "&#x20"],
+    ["&nbsp;", "&nbsp;"],
+    ["&nbsp with no semicolon", "&nbsp"],
+    ["&copy with no semicolon", "&copy"],
+    ["&copy;", "&copy;"],
+    ["&AMP;", "&AMP;"],
+    ["&amp with no semicolon", "&amp"],
+    ["a bare &#", "&#;"],
+    ["&#x with no digits", "&#x;"],
+    ["a named reference that decodes to a colon", "&colon;"],
+  ];
+
+  it.each(cases)("reports %s in a value as unreadable for that tag", (_label, value) => {
+    const html = fixture({ override: { description: null }, extraHead: `<meta name="description" content="a ${value} b">` });
+    const result = lintSiteMetadataHtml(html);
+    expect(result.complete).toBe(false);
+    expect(result.findings.map((finding) => [finding.rule, finding.tag])).toEqual([["unreadable", "description"]]);
+  });
+
+  it("reports a bad reference in a title, a link href, and a property meta for that tag", () => {
+    const title = fixture({ override: { title: null }, extraHead: "<title>a &nbsp; b</title>" });
+    expect(rulesAndTags(title)).toEqual([["unreadable", "title"]]);
+    const href = fixture({ override: { canonical: null }, extraHead: `<link rel="canonical" href="https://example.com/?a=1&b=2&copy">` });
+    expect(rulesAndTags(href)).toEqual([["unreadable", "canonical"]]);
+    const prop = fixture({ override: { "og:title": null }, extraHead: `<meta property="og:title" content="&#32">` });
+    expect(rulesAndTags(prop)).toEqual([["unreadable", "og:title"]]);
+  });
+
+  it("refuses a reference outside the set in an identity attribute, whose decoded value could name a declared tag", () => {
+    const html = fixture({ override: { "og:title": null }, extraHead: `<meta property="og&colon;title" content="x">` });
+    expect(lintSiteMetadataHtml(html).complete).toBe(false);
+    expect(lintSiteMetadataHtml(html).findings.some((finding) => finding.rule === "unreadable" && finding.tag === "meta")).toBe(true);
+  });
+
+  it("accepts the closed set and treats a decoded identity as the tag it names", () => {
+    for (const value of ["&amp;", "&lt;", "&gt;", "&quot;", "&apos;", "&#38;", "&#x26;", "&#X26;", "&#00038;", "a & b", "a &1 b", "&&amp;"]) {
+      const html = fixture({ override: { description: null }, extraHead: `<meta name="description" content="${value}">` });
+      expect(lintSiteMetadataHtml(html), value).toEqual({ complete: true, findings: [] });
+    }
+    const named = fixture({ override: { robots: null }, extraHead: `<meta name="rob&#111;ts" content="x">` });
+    expect(lintSiteMetadataHtml(named)).toEqual({ complete: true, findings: [] });
+    const duplicate = fixture({ extraHead: `<meta name="rob&#111;ts" content="x">` });
+    expect(rulesAndTags(duplicate)).toEqual([["duplicate", "robots"]]);
+  });
+
+  it("judges an entity blank and a raw blank alike", () => {
+    for (const blank of ["&#160;", "&#xA0;", "\u00a0", "&#32;&#9;", "&#x2003;"]) {
+      const html = fixture({ override: { description: null }, extraHead: `<meta name="description" content="${blank}">` });
+      expect(rulesAndTags(html), JSON.stringify(blank)).toEqual([["empty", "description"]]);
+    }
+  });
+});
+
+describe("lintSiteMetadataHtml property: nothing outside the grammar survives", () => {
+  const ELEMENTS = [
+    "div", "span", "p", "a", "img", "br", "body", "h1", "svg", "math", "noscript", "template", "textarea", "iframe",
+    "form", "input", "ul", "li", "table", "section", "nav", "header", "footer", "main", "article", "button", "select",
+    "option", "object", "embed", "video", "audio", "canvas", "frameset", "frame", "basefont", "bgsound", "noframes",
+    "x-custom", "b", "i", "pre", "html", "hr", "font", "center", "marquee", "xmp", "plaintext", "noembed", "isindex",
+    "title-x", "metas", "linked", "scripts", "styled", "headers", "DIV", "Div",
+  ];
+  const TEXTS = ["x", "hello", "0", ".", "\u00a0", "\u200b", "text with spaces", "&amp;", "\u0000", "-->", "\u00e9"];
+  const END_TAGS = ELEMENTS.filter((name) => name !== "head");
+
+  it("has at least 30 element names to try", () => {
+    expect(ELEMENTS.length).toBeGreaterThanOrEqual(30);
+  });
+
+  it.each(POSITIONS)("refuses every non-allowlisted start tag at the %s of the head", (position) => {
+    for (const name of ELEMENTS) {
+      expectUnreadable(withInserted(`<${name}>`, position), `<${name}> at ${position}`);
+      expectUnreadable(withInserted(`<${name} a="b">x</${name}>`, position), `<${name} a> at ${position}`);
+    }
+  });
+
+  it.each(POSITIONS)("refuses every non-head end tag at the %s of the head", (position) => {
+    for (const name of END_TAGS) {
+      expectUnreadable(withInserted(`</${name}>`, position), `</${name}> at ${position}`);
+    }
+  });
+
+  it.each(POSITIONS)("refuses non-whitespace text at the %s of the head", (position) => {
+    for (const text of TEXTS) {
+      expectUnreadable(withInserted(text, position), `text ${JSON.stringify(text)} at ${position}`);
+    }
+  });
+
+  it("refuses every non-allowlisted element placed before <head>", () => {
+    for (const name of ELEMENTS) {
+      expectUnreadable(fixture({ beforeHead: `<${name}>` }), `<${name}> before head`);
+    }
+    for (const text of TEXTS) {
+      expectUnreadable(fixture({ beforeHead: text }), `text ${JSON.stringify(text)} before head`);
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Oracle: whenever the lint says complete, a spec parser puts exactly one
+// non-blank copy of each declared tag directly in <head>. jsdom (scripting
+// on and off) is a test-only devDependency; the module itself has no
+// dependency.
+// ---------------------------------------------------------------------------
+
+interface HeadElement {
+  name: string;
+  attrs: Map<string, string>;
+  text: string;
+}
+
+/** Parses with jsdom's spec parser; `scripting` turns the parser's scripting flag on, which changes how `<noscript>` is read. */
+function jsdomHead(html: string, scripting: boolean): HeadElement[] {
+  const dom = new JSDOM(html, { virtualConsole: new VirtualConsole(), ...(scripting ? { runScripts: "dangerously" as const } : {}) });
+  const head = dom.window.document.head;
+  const elements = [...head.children].map((element) => ({
+    name: element.localName,
+    attrs: new Map([...element.attributes].map((attr) => [attr.name, attr.value])),
+    text: element.textContent ?? "",
+  }));
+  dom.window.close();
+  return elements;
+}
+
+function oracleValues(elements: HeadElement[], key: string): string[] {
+  const entry = SITE_METADATA_REQUIRED_TAGS.find((candidate) => candidate.key === key)!;
+  const lower = (text: string): string => text.toLowerCase();
+  switch (entry.selector) {
+    case "title":
+      return elements.filter((element) => element.name === "title").map((element) => element.text);
+    case "meta-name":
+    case "meta-property": {
+      const identity = entry.selector === "meta-name" ? "name" : "property";
+      return elements
+        .filter((element) => element.name === "meta" && lower(element.attrs.get(identity) ?? "") === key)
+        .map((element) => element.attrs.get("content") ?? "");
+    }
+    case "link-rel":
+      return elements
+        .filter((element) => element.name === "link" && lower(element.attrs.get("rel") ?? "").split(/[ \t\n\r\f]+/).includes(key))
+        .map((element) => element.attrs.get("href") ?? "");
+  }
+}
+
+/** Every parser view of `html` holds exactly one non-blank copy of each declared tag in <head>. */
+function oracleSaysComplete(html: string): boolean {
+  const views = [jsdomHead(html, false), jsdomHead(html, true)];
+  return views.every((elements) =>
+    SITE_METADATA_REQUIRED_TAGS.every((entry) => {
+      const values = oracleValues(elements, entry.key);
+      return values.length === 1 && values[0]!.trim() !== "";
+    }),
+  );
+}
+
+describe("lintSiteMetadataHtml against a spec parser", () => {
+  const ROBOTS = `<meta name="robots" content="index, follow">`;
+  const inputs: string[] = [
+    fixture(),
+    fullDocument(),
+    `\uFEFF${fixture()}`,
+    `<!-- top -->${fixture()}`,
+    fixture({ beforeHead: "<!-- a --><!---->" }),
+    fixture({ extraHead: "<!-- c --><!----><!--->" }),
+    fixture({ extraHead: `<script>var a = "<div>";</script><style>a>b{}</style><base href="/">` }),
+    fixture({ override: { title: null }, extraHead: `<TITLE>A &amp; B</TITLE>` }),
+    fixture({ override: { robots: null }, extraHead: `<META NAME=robots CONTENT=index>` }),
+    fixture({ override: { robots: null }, extraHead: `<meta name="rob&#111;ts" content="x">` }),
+    fixture({ override: { canonical: null }, extraHead: `<link rel="Canonical nofollow" href="https://example.com/x">` }),
+    fixture({ override: { description: null }, extraHead: `<meta name="description" content="&#38;&#x26;&amp;">` }),
+    fixture({ override: { description: null }, extraHead: `<meta name="description" content="&#160;">` }),
+    fixture({ extraHead: "<!-- a --!>" + ROBOTS + "<!-- b -->" }),
+    fixture({ override: { robots: null }, extraHead: `<script><!--<script></script>${ROBOTS}</script>` }),
+    fixture({ override: { robots: null }, extraHead: `<noscript></template>${ROBOTS}</noscript>` }),
+    fixture({ override: { robots: null }, extraHead: `<template>${ROBOTS}</template>` }),
+    fixture({ extraHead: `<noscript>${ROBOTS}</noscript>` }),
+    fixture({ beforeHead: "hello" }),
+    fixture({ beforeHead: "<div>x</div>" }),
+    withInserted("<div>x</div>", "start"),
+    withInserted("<img src=x>", "middle"),
+    withInserted("hello", "end"),
+    withInserted("< ", "start"),
+    withInserted("<svg><title>x</title></svg>", "start"),
+    withInserted("</body>", "middle"),
+    withInserted("</br>", "middle"),
+    withInserted("<textarea></textarea>", "middle"),
+    withInserted("&#32", "end"),
+    fixture({ override: { description: null }, extraHead: `<meta name="description" content="&#32">` }),
+    fixture({ override: { description: null }, extraHead: `<meta name="description" content="&nbsp;">` }),
+    fixture({ override: { description: null }, extraHead: `<meta name="description" content="&copy">` }),
+    fixture({ override: { "og:title": null }, extraHead: `<meta property="og&colon;title" content="x">` }),
+    ...SITE_METADATA_REQUIRED_TAGS.flatMap((entry) => [
+      fixture({ override: { [entry.key]: null } }),
+      fixture({ duplicate: [entry.key] }),
+    ]),
+  ];
+
+  it("really parses with scripting on in one view and off in the other", () => {
+    const html = `<!doctype html><html><head><noscript><meta name="robots" content="x"></noscript></head></html>`;
+    const read = (scripting: boolean): number => {
+      const dom = new JSDOM(html, { virtualConsole: new VirtualConsole(), ...(scripting ? { runScripts: "dangerously" as const } : {}) });
+      const count = dom.window.document.head.querySelectorAll("noscript > meta").length;
+      dom.window.close();
+      return count;
+    };
+    expect(read(false)).toBe(1);
+    expect(read(true)).toBe(0);
+  });
+
+  it("has fixtures the lint accepts and fixtures it refuses", () => {
+    const complete = inputs.filter((html) => lintSiteMetadataHtml(html).complete);
+    expect(complete.length).toBeGreaterThanOrEqual(8);
+    expect(complete.length).toBeLessThan(inputs.length);
+  });
+
+  it("only reports complete when jsdom with scripting on and off find exactly one non-blank copy of each tag in the head", () => {
+    for (const html of inputs) {
+      if (!lintSiteMetadataHtml(html).complete) continue;
+      expect(oracleSaysComplete(html), html.slice(0, 400)).toBe(true);
+    }
+  });
+
+  it("only reports complete for the property-test insertions when the parsers agree", () => {
+    for (const position of POSITIONS) {
+      for (const name of ["div", "img", "noscript", "template", "body", "svg", "textarea", "p", "x-custom"]) {
+        for (const markup of [`<${name}>`, `</${name}>`, `<${name}></${name}>`]) {
+          const html = withInserted(markup, position);
+          if (lintSiteMetadataHtml(html).complete) expect(oracleSaysComplete(html), html.slice(0, 400)).toBe(true);
+        }
+      }
+    }
+  });
+
+  it("only reports complete when the parsers agree, over deterministic random mixes of head pieces", () => {
+    const pieces = [
+      " ", "\n", "<!-- c -->", "<!---->", "<!--->", "<!-- a --!> ", "<base href=/>", "<meta charset=utf-8>",
+      `<script>var a="<b>";</script>`, "<script><!--</script>", "<style>a{}</style>", "<title>t &amp; u</title>",
+      "<title>&nbsp;</title>", "<noscript>", "</noscript>", "<template>", "</template>", "<div>", "</div>", "x", "<",
+      "< ", "</", "<!x>", "<?x?>", "</br>", "</body>", "<p>", "&#32", `<meta name="robots" content="a">`,
+      `<meta name="rob&#111;ts" content="&#32;">`, `<meta name=description content=&copy>`, `<link rel=canonical href=/x>`,
+      `<meta property="og:title" content="&#x20;">`, `<meta property='og:image' content=''>`, "<svg>", "</svg>",
+      "<textarea>", "</textarea>", "<html>", "<head>", "</head>", "<body>", "\uFEFF", "\u00a0",
+    ];
+    let seed = 20260928;
+    const next = (bound: number): number => {
+      seed = (seed * 1103515245 + 12345) & 0x7fffffff;
+      return seed % bound;
+    };
+    let completeCount = 0;
+    for (let round = 0; round < 400; round += 1) {
+      let mix = "";
+      for (let n = next(4); n > 0; n -= 1) mix += pieces[next(pieces.length)];
+      const overridden: Record<string, string | null> =
+        round % 3 === 0 ? { robots: null, description: null, "og:title": null, "og:image": null, canonical: null } : {};
+      const html = withInserted(mix, POSITIONS[round % 3]!, fixture({ override: overridden }));
+      if (!lintSiteMetadataHtml(html).complete) continue;
+      completeCount += 1;
+      expect(oracleSaysComplete(html), html.slice(0, 500)).toBe(true);
+    }
+    expect(completeCount).toBeGreaterThan(0);
+  });
+
+  it("agrees with the oracle that the bypass fixtures the old lint accepted are not complete pages", () => {
+    const bypasses = [
+      withInserted("<div>x</div>", "start"),
+      withInserted("<img src=x>", "start"),
+      withInserted("hello", "start"),
+      withInserted("< ", "start"),
+      withInserted("<svg><title>x</title></svg>", "start"),
+      fixture({ beforeHead: "hello" }),
+      `\uFEFF${fixture()}`,
+      withInserted("</body>", "start"),
+      withInserted("</br>", "start"),
+    ];
+    for (const html of bypasses) {
+      expect(oracleSaysComplete(html), html.slice(0, 300)).toBe(false);
+      expect(lintSiteMetadataHtml(html).complete, html.slice(0, 300)).toBe(false);
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Time budget: the lint is linear, so a 200 KB pathological input finishes
+// well inside the budget even on a busy machine.
+// ---------------------------------------------------------------------------
+
+describe("lintSiteMetadataHtml time budget", () => {
+  const SIZE = 200_000;
+  const BUDGET_MS = 750;
+  const repeat = (unit: string): string => unit.repeat(Math.ceil(SIZE / unit.length)).slice(0, SIZE);
+  const head = "<!doctype html><html><head>";
+  const pathological: Array<[string, string]> = [
+    ["only '<'", repeat("<")],
+    ["comment openers", repeat("<!--")],
+    ["closed empty comments in the head", head + repeat("<!---->")],
+    ["closed comments with --! runs in the head", head + repeat("<!-- --! -->")],
+    ["unterminated meta starts in the head", head + repeat("<meta ")],
+    ["attribute noise in the head", head + "<meta " + repeat('a="b" c ')],
+    ["one long unterminated quoted value", head + '<meta name="x" content="' + repeat("a")],
+    ["many titles in the head", head + repeat("<title>x</title>") + "</head>"],
+    ["many scripts in the head", head + repeat("<script>x</script>") + "</head>"],
+    ["many metas with entities in the head", head + repeat('<meta name="robots" content="&amp;&#1;">') + "</head>"],
+    ["many style starts after the head", head + "</head>" + repeat("<style>")],
+    ["end-tag openers inside a script", head + "<script>" + repeat("</")],
+    ["character-reference prefixes in a value", head + '<meta name="description" content="' + repeat("&#") + '"></head>'],
+    ["character-reference prefixes in a title", head + "<title>" + repeat("&#1") + "</title></head>"],
+    ["hex character references in a value", head + '<meta name="description" content="' + repeat("&#x1;") + '"></head>'],
+    ["a long run of digits after &#", head + '<meta name="description" content="&#' + repeat("1") + '"></head>'],
+    ["many tags after the head", head + "</head>" + repeat("<div>")],
+    ["comment and script openers after the head", head + "</head>" + repeat("<!--<script>")],
+    ["whitespace only inside the head", head + repeat(" \n")],
+    ["whitespace only before the head", repeat(" ") + "<head>"],
+  ];
+
+  it.each(pathological)("lints %s within the time budget", (_label, html) => {
+    expect(html.length).toBeGreaterThanOrEqual(SIZE - 1);
+    const started = performance.now();
+    const result = lintSiteMetadataHtml(html);
+    const elapsed = performance.now() - started;
+    expect(elapsed).toBeLessThan(BUDGET_MS);
+    expect(result.complete).toBe(false);
+    expect(result.findings.length).toBeGreaterThan(0);
+  });
+
+  it("lints a 200 KB complete head with a long trailing body within the time budget", () => {
+    const html = fixture() + "<body>" + repeat("<p>x</p><!-- y -->") + "</body>";
+    const started = performance.now();
+    const result = lintSiteMetadataHtml(html);
+    expect(performance.now() - started).toBeLessThan(BUDGET_MS);
+    expect(result).toEqual({ complete: true, findings: [] });
   });
 });
