@@ -592,15 +592,29 @@ bytes, including comments and the final newline, are kept. The function
 reads only the shapes it recognises: `release-age-surface-unparseable` covers
 a flow sequence, an anchor, an alias, a tag, a comment inside the list,
 several documents, a tab, a carriage return or byte order mark, a repeated
-key, and a value that is not a block sequence of scalars, and
-`release-age-surface-conflict` covers an `.npmrc` that sets
-`minimum-release-age-exclude`.
+key, and a value that is not a block sequence of scalars.
+
+For pnpm the `.npmrc` is read under a fixed grammar and refused otherwise.
+Every line must be blank, a comment (first non-space character `#` or `;`),
+or a plain `key=value` assignment, optionally spaced around the `=`, whose key
+is only ASCII letters, digits and `@ : _ . / -`. An `.npmrc` containing any
+line outside those shapes (a quoted or bracketed key, a comment or escape
+inside the key, a tab, a section header, a key with no `=`) is refused as
+`release-age-surface-unparseable`, because npm's ini reader could read such a
+line as the exclusion setting. A plain key that is
+`minimum-release-age-exclude` in any case, with `-` and `_` ignored (so the
+camel-case spelling too), is refused as `release-age-surface-conflict`.
+Refusing is the default: an unrelated `.npmrc` line the grammar does not list
+also refuses the whole file, and the caller resolves the file by hand.
 
 `verifyReleaseAgeExemption()` takes the surface, the text before, the text
 after, and, for pnpm, the `.npmrc` text. It reports a `ReleaseAgeVerdict`, `{ verified: true, value }`
 (its input is a `ReleaseAgeVerifyInput`), only when the two texts differ by that one added entry, read again with the
 same rules; `value` is the `<scope>/*` string the installed-state ledger's
-`entries` row holds. It says nothing about whether a given pnpm or Yarn
+`entries` row holds. It returns `{ verified: false }` for an unchanged file
+(`before` equal to `after`) and for any `.npmrc` that is a conflict or outside
+the grammar above, so a wiring unit must not verify after an `unchanged` or
+`refused` result. It says nothing about whether a given pnpm or Yarn
 version honours the key; that is proved separately with pinned tools.
 
 ### Computing each repository's change

@@ -270,13 +270,11 @@ describe("editReleaseAgeExemption: the .npmrc conflict", () => {
   const conflicts: ReadonlyArray<readonly [string, string]> = [
     ["plain", "minimum-release-age-exclude=foo\n"],
     ["spaces around =", "  minimum-release-age-exclude  =  foo\n"],
-    ["array suffix", "minimum-release-age-exclude[]=x\n"],
     ["underscore spelling", "minimum_release_age_exclude=foo\n"],
     ["upper-case spelling", "Minimum-Release-Age-Exclude=foo\n"],
     ["leading byte order mark", "\uFEFFminimum-release-age-exclude=foo\n"],
     ["CRLF endings", "a=1\r\nminimum-release-age-exclude=foo\r\n"],
     ["bare CR endings", "a=1\rminimum-release-age-exclude=foo"],
-    ["no value", "minimum-release-age-exclude"],
     ["after other lines and comments", "; c\n# c\nregistry=https://example.test\n\nminimum-release-age-exclude=x"],
   ];
 
@@ -382,6 +380,110 @@ describe.each(SURFACES)("verifyReleaseAgeExemption ($surface)", (s) => {
 
   it("is false for a mixed-up quoting on a key append", () => {
     expect(verify(surface, "a: 1\n", `a: 1\n${k}:\n  - ${s.wrongQ}\n`)).toEqual(no);
+  });
+});
+
+describe("editReleaseAgeExemption: the .npmrc fixed safe grammar", () => {
+  // An .npmrc is accepted only when every line is blank, a comment, or a plain
+  // `key=value` whose key is ASCII letters, digits and `@ : _ . / -`. Any other
+  // line shape refuses the whole file as unparseable; a plain key that reads
+  // as the exclusion list, in any case and with `-` and `_` ignored, is a
+  // conflict. Each spelling below is one npm's ini reader reads as the key.
+  const key = "minimumReleaseAgeExclude";
+  const K = "minimum-release-age-exclude";
+  const refused: ReadonlyArray<readonly [string, string, typeof CONFLICT]> = [
+    ["a double-quoted key", `"${K}"=@a/*\n`, UNPARSEABLE],
+    ["a single-quoted key", `'${K}'=@a/*\n`, UNPARSEABLE],
+    ["a quoted key with an array suffix", `"${K}[]"=@a/*\n`, UNPARSEABLE],
+    ["a comment after the key before the equals sign", `${K};c=@a/*\n`, UNPARSEABLE],
+    ["a hash comment after the key before the equals sign", `${K} #c=@a/*\n`, UNPARSEABLE],
+    ["a JSON escape inside a quoted key", `"minimum-release-age-exclud\\u0065"=@a/*\n`, UNPARSEABLE],
+    ["the camel-case spelling", `${key}=@a/*\n`, CONFLICT],
+    ["the camel-case spelling in other case", `MINIMUMRELEASEAGEEXCLUDE=@a/*\n`, CONFLICT],
+    ["an array suffix", `${K}[]=x\n`, UNPARSEABLE],
+    ["a key with no equals sign", `${K}\n`, UNPARSEABLE],
+    ["a key with no equals sign after a comment", `; c\n${K}`, UNPARSEABLE],
+    ["a section header", `[a]\n${K}=x\n`, UNPARSEABLE],
+    ["a tab around the key", `\t${K}=x\n`, UNPARSEABLE],
+    ["an unrelated line that is not a plain assignment", `registry\n`, UNPARSEABLE],
+    ["an unrelated quoted key", `"registry"=https://example.com/\n`, UNPARSEABLE],
+    ["a backslash in an unrelated key", `reg\\istry=x\n`, UNPARSEABLE],
+    ["an empty key", `=x\n`, UNPARSEABLE],
+    ["a space inside a key", `a b=x\n`, UNPARSEABLE],
+    ["a non-ASCII letter in a key", `\u0131=x\n`, UNPARSEABLE],
+    ["a Unicode line separator in a key", `a\u2028b=x\n`, UNPARSEABLE],
+    ["a conflicting key beside an unrecognised line", `${K}=x\n"a"=1\n`, UNPARSEABLE],
+  ];
+
+  it.each(refused)("refuses %s", (_name, npmrc, reason) => {
+    expect(edit("pnpm-workspace", `${key}:\n  - a\n`, npmrc)).toEqual(reason);
+    expect(edit("pnpm-workspace", null, npmrc)).toEqual(reason);
+  });
+
+  it.each(refused)("does not verify a well-formed edit beside %s", (_name, npmrc) => {
+    const before = `${key}:\n  - 'x'\n`;
+    const after = `${key}:\n  - 'x'\n  - '${VALUE}'\n`;
+    expect(verify("pnpm-workspace", before, after)).toEqual({ verified: true, value: VALUE });
+    expect(verify("pnpm-workspace", before, after, npmrc)).toEqual({ verified: false });
+  });
+
+  it("refuses a file whose first line is fine and whose last is not", () => {
+    expect(edit("pnpm-workspace", null, "registry=https://example.com/\n\n; c\n'a'=1")).toEqual(UNPARSEABLE);
+  });
+
+  it.each([
+    ["an ordinary unrelated line", "registry=https://example.com/\n"],
+    ["an unrelated line and a comment", "; c\n# c\nregistry=https://example.com/\n"],
+    ["a scoped registry key", "@scope:registry=https://example.com/\n"],
+    ["a registry auth key", "//registry.example.com/:_authToken=${TOKEN}\n"],
+    ["spaces around the equals sign and the line", "  save-exact  =  true  \n"],
+    ["quotes, comment marks and equals signs in a value", "a=b\"'c;d#e=f[]\n"],
+    ["an empty value", "always-auth=\n"],
+    ["blank and whitespace-only lines", "\n   \n\nregistry=x\n\n"],
+    ["CRLF endings", "registry=x\r\n; c\r\n"],
+    ["a byte order mark", "\uFEFFregistry=x\n"],
+    ["a similar but longer key", `${K}-more=x\n`],
+    ["a similar but shorter key", "minimum-release-age-exclud=x\n"],
+    ["the setting name inside a comment", `; ${key}=x\n# ${K}=x\n`],
+  ])("still edits beside %s", (_name, npmrc) => {
+    expect(edit("pnpm-workspace", null, npmrc)).toEqual({ kind: "edited", text: `${key}:\n  - '${VALUE}'\n` });
+    const before = `${key}:\n  - 'x'\n`;
+    const after = `${key}:\n  - 'x'\n  - '${VALUE}'\n`;
+    expect(verify("pnpm-workspace", before, after, npmrc)).toEqual({ verified: true, value: VALUE });
+  });
+
+  it("leaves the yarnrc surface alone whatever the .npmrc holds", () => {
+    expect(edit("yarnrc", null, `"${K}"=x\n[a]\n`)).toEqual({ kind: "edited", text: `npmPreapprovedPackages:\n  - "${VALUE}"\n` });
+  });
+
+  it("leaves the pnpm YAML edit path unchanged with no .npmrc, an empty one or an unrelated one", () => {
+    for (const npmrc of [undefined, null, "", "registry=x\n"]) {
+      expect(edit("pnpm-workspace", `a: 1\n${key}:\n  - x\n`, npmrc)).toEqual({ kind: "edited", text: `a: 1\n${key}:\n  - x\n  - '${VALUE}'\n` });
+      expect(edit("pnpm-workspace", `${key}:\n  - '${VALUE}'\n`, npmrc)).toEqual({ kind: "unchanged" });
+      expect(edit("pnpm-workspace", "a: &x 1\n", npmrc)).toEqual(UNPARSEABLE);
+    }
+  });
+
+  it("scans an 80 KB adversarial .npmrc line within a fixed budget", () => {
+    const budgetMs = 250;
+    const n = 80_000;
+    const lines = [
+      `${" ".repeat(n)}x`,
+      `${" ".repeat(n)}=`,
+      `k${" ".repeat(n)}x=1`,
+      `${"a".repeat(n)}`,
+      `${"a".repeat(n)}=${"=".repeat(n)}`,
+      `${K}${" ".repeat(n)};c=x`,
+      `${"-_".repeat(n / 2)}=x`,
+      `"${"\\".repeat(n)}`,
+      `${"[]".repeat(n / 2)}=x`,
+    ];
+    for (const line of lines) {
+      const start = performance.now();
+      edit("pnpm-workspace", null, `${line}\n`);
+      verify("pnpm-workspace", null, `${key}:\n  - '${VALUE}'\n`, `${line}\n`);
+      expect(performance.now() - start).toBeLessThan(budgetMs);
+    }
   });
 });
 

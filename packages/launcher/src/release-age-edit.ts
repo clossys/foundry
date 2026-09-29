@@ -48,22 +48,56 @@ const quotedEntry = (surface: ExemptionSurfaceKind): string => (surface === "pnp
 const keyBlock = (key: string, entry: string): string => `${key}:\n  - ${entry}\n`;
 
 // ---------------------------------------------------------------------------
-// .npmrc conflict (pnpm only): the same setting spelled in .npmrc.
+// The .npmrc (pnpm only): a fixed safe grammar, never a list of bad spellings.
 // ---------------------------------------------------------------------------
 
-/** Whether the pnpm surface's .npmrc already sets the same exclusion list, in any spelling npm's ini reader accepts. */
-function hasNpmrcConflict(surface: ExemptionSurfaceKind, npmrc: string | null | undefined): boolean {
-  if (surface !== "pnpm-workspace" || npmrc === null || npmrc === undefined) return false;
+/** The exclusion setting's key with `-` and `_` removed and lower-cased: the kebab and the camel-case spellings both reduce to it. */
+const NPMRC_CONFLICT_KEY = "minimumreleaseageexclude";
+
+/** A character of an accepted .npmrc key: an ASCII letter or digit, or one of `@ : _ . / -`. */
+function isNpmrcKeyCharacter(code: number): boolean {
+  return (
+    (code >= 48 && code <= 57) || // 0-9
+    (code >= 65 && code <= 90) || // A-Z
+    (code >= 97 && code <= 122) || // a-z
+    code === 64 || // @
+    code === 58 || // :
+    code === 95 || // _
+    code === 46 || // .
+    code === 47 || // /
+    code === 45 // -
+  );
+}
+
+type NpmrcState = "clear" | "conflict" | "unparseable";
+
+/**
+ * Reads a pnpm surface's .npmrc under a fixed grammar. Every line must be
+ * blank (spaces only), a comment (first non-space character `#` or `;`), or a
+ * plain assignment: optional spaces, a key of ASCII letters, digits and
+ * `@ : _ . / -`, optional spaces, `=`, then any value. Any other line shape
+ * (a quoted or bracketed key, a comment before the `=`, a backslash, a tab, a
+ * section header, a key with no `=`) makes the whole file `unparseable`,
+ * because npm's ini reader could read such a line as the exclusion key. A plain
+ * key that reduces to the exclusion setting is a `conflict`. Index scans only.
+ */
+function readNpmrc(surface: ExemptionSurfaceKind, npmrc: string | null | undefined): NpmrcState {
+  if (surface !== "pnpm-workspace" || npmrc === null || npmrc === undefined) return "clear";
   const text = npmrc.startsWith("\uFEFF") ? npmrc.slice(1) : npmrc;
-  for (const raw of text.split(/\r\n|\r|\n/)) {
-    const line = raw.trim();
-    if (line === "" || line.startsWith(";") || line.startsWith("#")) continue;
-    const eq = line.indexOf("=");
-    let name = (eq === -1 ? line : line.slice(0, eq)).trim().toLowerCase().replace(/_/g, "-");
-    if (name.endsWith("[]")) name = name.slice(0, -2);
-    if (name === "minimum-release-age-exclude") return true;
+  let conflict = false;
+  for (const line of text.split(/\r\n|\r|\n/)) {
+    let start = 0;
+    while (start < line.length && line[start] === " ") start += 1;
+    if (start === line.length || line[start] === "#" || line[start] === ";") continue;
+    let keyEnd = start;
+    while (keyEnd < line.length && isNpmrcKeyCharacter(line.charCodeAt(keyEnd))) keyEnd += 1;
+    if (keyEnd === start) return "unparseable";
+    let equals = keyEnd;
+    while (equals < line.length && line[equals] === " ") equals += 1;
+    if (line[equals] !== "=") return "unparseable";
+    if (line.slice(start, keyEnd).replace(/[-_]/g, "").toLowerCase() === NPMRC_CONFLICT_KEY) conflict = true;
   }
-  return false;
+  return conflict ? "conflict" : "clear";
 }
 
 // ---------------------------------------------------------------------------
@@ -317,13 +351,16 @@ function readSurface(text: string, key: string): Reading | null {
  * is created or appended with a two-space list; an existing block sequence
  * gains one line after its last item, in its own indent, and nothing else
  * changes. An already-present entry is unchanged. Refuses a pnpm `.npmrc`
- * that sets the same list, and any file the restricted reader does not fully
+ * that sets the same list (conflict) or has any line outside the fixed safe
+ * grammar (unparseable), and any file the restricted reader does not fully
  * recognise (flow lists, comments inside the list, anchors, aliases, tags,
  * block scalars, multiple documents, tabs, CRLF, repeated keys, and more).
  */
 export function editReleaseAgeExemption(input: ReleaseAgeEditInput): ReleaseAgeEdit {
   const { surface, text } = input;
-  if (hasNpmrcConflict(surface, input.npmrc)) return CONFLICT;
+  const npmrc = readNpmrc(surface, input.npmrc);
+  if (npmrc === "conflict") return CONFLICT;
+  if (npmrc === "unparseable") return UNPARSEABLE;
   const { key } = EXEMPTION_SURFACES[surface];
   const entry = quotedEntry(surface);
   const block = keyBlock(key, entry);
@@ -348,7 +385,7 @@ export function editReleaseAgeExemption(input: ReleaseAgeEditInput): ReleaseAgeE
  */
 export function verifyReleaseAgeExemption(input: ReleaseAgeVerifyInput): ReleaseAgeVerdict {
   const { surface, before, after } = input;
-  if (hasNpmrcConflict(surface, input.npmrc) || before === after) return NOT_VERIFIED;
+  if (readNpmrc(surface, input.npmrc) !== "clear" || before === after) return NOT_VERIFIED;
   const { key } = EXEMPTION_SURFACES[surface];
   const entry = quotedEntry(surface);
   const value = scopeValue();
