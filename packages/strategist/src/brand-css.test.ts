@@ -66,4 +66,61 @@ describe("extractBrandCssSlots", () => {
     expect(extractBrandCssSlots("body { color: red; }")).toEqual([]);
     expect(extractBrandCssSlots("")).toEqual([]);
   });
+
+  describe("hostile input", () => {
+    const N = 100_000;
+    const BOUND_MS = 1000;
+    const timed = (css: string): { slots: string[]; ms: number } => {
+      const start = performance.now();
+      const slots = extractBrandCssSlots(css);
+      return { slots, ms: performance.now() - start };
+    };
+
+    it("runs in linear time on a comment opener followed by many repeated openers", () => {
+      const { slots, ms } = timed("/*" + "a/*".repeat(N / 3) + "\n:root { --a: 1; }");
+      expect(ms).toBeLessThan(BOUND_MS);
+      expect(slots).toEqual(["--a"]);
+    });
+
+    it("runs in linear time on a double quote followed by many escaped double quotes", () => {
+      const { slots, ms } = timed('"' + '\\"'.repeat(N / 2) + "\n:root { --a: 1; }");
+      expect(ms).toBeLessThan(BOUND_MS);
+      expect(slots).toEqual(["--a"]);
+    });
+
+    it("runs in linear time on a single quote followed by many escaped single quotes", () => {
+      const { slots, ms } = timed("'" + "\\'".repeat(N / 2) + "\n:root { --a: 1; }");
+      expect(ms).toBeLessThan(BOUND_MS);
+      expect(slots).toEqual(["--a"]);
+    });
+
+    it("runs in linear time on many unterminated openers of every kind", () => {
+      const { ms } = timed("/*'\"".repeat(N / 4));
+      expect(ms).toBeLessThan(BOUND_MS);
+    });
+
+    it("runs in linear time on a long run of escaped name characters", () => {
+      const { ms } = timed("--a\\ ".repeat(N / 5));
+      expect(ms).toBeLessThan(BOUND_MS);
+    });
+
+    it("runs in linear time on a long run of whitespace before a parenthesis check", () => {
+      const { slots, ms } = timed("(" + " ".repeat(N) + "--a: 1");
+      expect(ms).toBeLessThan(BOUND_MS);
+      expect(slots).toEqual([]);
+    });
+  });
+
+  it("keeps scanning after an unterminated comment, so a string after it still hides its contents", () => {
+    expect(extractBrandCssSlots('/* open\n.x { content: "--hidden: 1"; } :root { --a: 1; }')).toEqual(["--a"]);
+  });
+
+  it("closes a string at an unescaped quote and honours a backslash-escaped quote inside it", () => {
+    const css = '.x { content: "a\\"--hidden: 1"; } :root { --a: 1; } .y { content: \'it\\\'s\'; --b: 2; }';
+    expect(extractBrandCssSlots(css)).toEqual(["--a", "--b"]);
+  });
+
+  it("does not treat a comment closer that overlaps its opener as a terminator", () => {
+    expect(extractBrandCssSlots("/*/ --a: 1; */ :root { --b: 2; }")).toEqual(["--b"]);
+  });
 });
