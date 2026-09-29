@@ -1,25 +1,39 @@
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { execFileSync, spawnSync } from "node:child_process";
-import { cpSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, realpathSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import { chmodSync, cpSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, realpathSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 
-import { argsFrom, buildLaterPublicationRecord, createLaterPublicationRecord, credentiallessAuditEnv, verifiedAnonymousAudit, writeNoOverwrite } from "./record-later-publication.mjs";
-import { buildPublicationRecordWithFallback } from "./lib/publication-evidence-run.mjs";
+import { argsFrom, assertEvidenceNpmFloor, buildLaterPublicationRecord, createLaterPublicationRecord, credentiallessAuditEnv, EVIDENCE_NPM_MIN_MAJOR, requireEvidenceNpm, resolveEvidenceNpm, verifiedAnonymousAudit, writeNoOverwrite } from "./record-later-publication.mjs";
+import { buildPublicationRecordWithFallback, verifyPublicationProvenance } from "./lib/publication-evidence-run.mjs";
 import { comparableTranscriptSha256, currentQualificationJoins } from "./lib/candidate-qualification.mjs";
 import { publicNpmVersionUrl, PUBLIC_NPM_REGISTRY } from "./lib/public-npm-registry.mjs";
-import { RELEASE_RUNTIME } from "./lib/release-runtime.mjs";
 
 const hex = (value, length) => value.repeat(length);
 const digest = (algorithm, value) => createHash(algorithm).update(value).digest("hex");
 const candidateBytes = Buffer.from("candidate bytes");
-const releaseRuntimeRun = (file, args) => {
-  if (args[0] === "--version") return { status: 0, stdout: file === process.execPath ? `${RELEASE_RUNTIME.node}\n` : `${RELEASE_RUNTIME.npm}\n`, stderr: "" };
-  if (args[0] === "-p") return { status: 0, stdout: `${RELEASE_RUNTIME.zlib}\n`, stderr: "" };
-  throw new Error(`unexpected release runtime probe ${file} ${args.join(" ")}`);
-};
+// The recorder resolves npm once on PATH and runs that absolute path. Tests
+// inject an existence predicate that accepts every candidate, so the first PATH
+// entry ("/usr/bin" for an empty environment) supplies the resolved path.
+const NPM = "/usr/bin/npm";
+const anyExecutable = () => true;
+// A run seam that answers the npm version probe and records every command the
+// recorder runs. `answer` supplies the result of any other command.
+function npmProbe({ version = "11.17.0\n", answer = () => "" } = {}) {
+  const calls = [];
+  const run = (file, args, options) => {
+    calls.push([file, ...args]);
+    if (args[0] === "--version") {
+      if (version instanceof Error) throw version;
+      return version;
+    }
+    return answer(file, args, options);
+  };
+  return { run, calls };
+}
+const FLOOR_REFUSAL = /evidence recording requires npm 11 or newer for "npm audit signatures --include-attestations" and "npm pack --dry-run"; observed npm /;
 const candidate = {
   name: "@clossys/strategist", version: "0.1.1", packageTreeSha1: hex("a", 40), packageManifestSha256: hex("b", 64),
   policySha256: hex("c", 64), adapterSha256: hex("d", 64), fixtureSetSha256: hex("e", 64),
@@ -196,10 +210,14 @@ test("creator writes one canonical owner-present record in a synthetic git repos
   const publicationPath = join(root, "publication-evidence.json");
   writeFileSync(publicationPath, `${JSON.stringify({ mode: "owner-present", publishedAt: "2026-08-31T00:00:00.000Z", reference: `https://registry.npmjs.org/%40clossys%2Fstrategist/${version}` }, null, 2)}\n`);
 
+  // The direct join runs no signature audit, yet the npm floor still applies to
+  // it. `direct.calls` lists every command the recorder ran through its seam.
+  const direct = npmProbe();
   const call = () => createLaterPublicationRecord({
-    root, packageKey: "strategist", qualificationPath: join(root, qualificationPath), candidatePath, proofPath, publicationPath, env: {}, releaseRuntimeRun,
+    root, packageKey: "strategist", qualificationPath: join(root, qualificationPath), candidatePath, proofPath, publicationPath, env: {}, auditRun: direct.run, isExecutable: anyExecutable,
   });
   const result = await call();
+  assert.deepEqual(direct.calls, [[NPM, "--version"]], "the direct join reads the npm version once and runs no audit");
   assert.equal(result.path, `governance/release-publications/later/strategist-${version}.json`);
   assert.equal(result.record.kind, "foundry-later-publication-v1");
   assert.deepEqual(Object.keys(JSON.parse(readFileSync(join(root, result.path), "utf8"))), ["schemaVersion", "kind", "qualification", "candidate", "source", "catalog", "publication", "registryProof"]);
@@ -223,7 +241,7 @@ test("creator writes one canonical owner-present record in a synthetic git repos
 // differ while the qualification still names the original tarball. `prepareOnly`
 // returns that repository without calling the creator, so a caller can drive
 // the real fallback with the same fixture.
-async function replayScenario(t, { driftFiles = ["package.json", "package-lock.json"], packageChange = false, expectRecord = true, refusal, changedTarball = false, prepareOnly = false } = {}) {
+async function replayScenario(t, { driftFiles = ["package.json", "package-lock.json"], packageChange = false, expectRecord = true, refusal, changedTarball = false, prepareOnly = false, npmVersion = "11.17.0\n", env = {}, isExecutable = anyExecutable } = {}) {
   const root = realpathSync(mkdtempSync(join(tmpdir(), "record-later-publication-replay-e2e-")));
   t.after(() => rmSync(root, { recursive: true, force: true }));
   const sourceRoot = process.cwd();
@@ -328,7 +346,9 @@ async function replayScenario(t, { driftFiles = ["package.json", "package-lock.j
   const bundle = { predicateType: "https://slsa.dev/provenance/v1", bundle: { dsseEnvelope: { payload: Buffer.from(JSON.stringify(statement)).toString("base64") } } };
   const packument = { versions: { [qualification.candidate.version]: { name: qualification.candidate.name, version: qualification.candidate.version, dist: { integrity: replayProof.evidence.integrity, signatures: [{ keyid: "SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U" }], attestations: { url: attestationUrl } } } } };
   const audit = { invalid: [], missing: [], verified: [{ name: qualification.candidate.name, version: qualification.candidate.version, registry: "https://registry.npmjs.org/", attestations: { url: attestationUrl, provenance: { predicateType: "https://slsa.dev/provenance/v1" } }, attestationBundles: [bundle] }] };
+  const fetched = []; // every URL the recorder fetched, so a test can prove a refusal came before any network read
   const fetchImpl = async (url) => {
+    fetched.push(String(url));
     const response = (body) => ({ ok: true, status: 200, json: async () => body });
     if (url.endsWith(`/actions/runs/${runId}`)) return response({ id: runId, head_sha: sourceSha, event: "workflow_dispatch", conclusion: "success" });
     if (url.endsWith(`/actions/artifacts/${artifactId}`)) return response({ id: artifactId, name: "qualified-candidate-strategist", digest: `sha256:${digest("sha256", archiveBytes)}`, size_in_bytes: archiveBytes.length, archive_download_url: `https://api.github.com/repos/clossys/foundry/actions/artifacts/${artifactId}/zip`, workflow_run: { id: runId, head_sha: sourceSha } });
@@ -350,23 +370,26 @@ async function replayScenario(t, { driftFiles = ["package.json", "package-lock.j
     };
     throw new Error(`unexpected fetch ${url}`);
   };
-  const auditRun = (_file, args) => args[0] === "audit" ? JSON.stringify(audit) : "";
+  // The audit seam also answers the recorder's npm floor probe. `probes` lists
+  // every command the recorder ran, so a test can assert it never asked for
+  // the Node or zlib version and that every command used the resolved npm.
+  const { run: auditRun, calls: probes } = npmProbe({ version: npmVersion, answer: (_file, args) => args[0] === "audit" ? JSON.stringify(audit) : "" });
 
   const harness = {
-    root, qualification, archiveBytes, version, sourceSha, publicationPath, qualificationPath, fetchImpl, auditRun, runId, artifactId,
+    root, qualification, archiveBytes, version, sourceSha, publicationPath, qualificationPath, fetchImpl, auditRun, runId, artifactId, probes, isExecutable,
   };
   if (prepareOnly) return harness;
   const run = () => createLaterPublicationRecord({
     root, packageKey: "strategist", qualificationPath: join(root, qualificationPath), candidatePath, proofPath, publicationPath,
-    artifactArchivePath: archivePath, replayEvidencePath, fetchImpl, auditRun, env: {}, releaseRuntimeRun,
+    artifactArchivePath: archivePath, replayEvidencePath, fetchImpl, auditRun, env, isExecutable,
   });
   if (!expectRecord) {
     await assert.rejects(run(), refusal);
     assert.deepEqual(readdirSync(join(root, "governance/release-publications/later")), []);
-    return { root };
+    return { root, probes, fetched };
   }
   const result = await run();
-  return { root, result, qualification, archiveBytes, version };
+  return { root, result, qualification, archiveBytes, version, probes, fetched };
 }
 
 test("creator retains one provider-bound replay record from the exact qualified archive", async (t) => {
@@ -418,9 +441,9 @@ test("creator refuses lock-only drift when the candidate tarball also changed", 
 });
 
 // The direct join fails because only the lock hash drifted. Record creation
-// is the real creator. The fallback does not forward the creator's
-// release-runtime or audit seams, so this test supplies the same two the
-// other creator tests use; it does not substitute a record. Removing the
+// is the real creator. The fallback does not forward the creator's audit seam,
+// so this test supplies the same one the other creator tests use; it does not
+// substitute a record. Removing the
 // fallback leaves the direct failure, and reserving v3 for both-hash drift
 // makes the second attempt fail too.
 test("direct join failure records lock-only drift through the real v3 replay", async (t) => {
@@ -428,7 +451,7 @@ test("direct join failure records lock-only drift through the real v3 replay", a
   const attempts = [];
   const createRecord = async (options) => {
     attempts.push(options.artifactArchivePath === undefined ? "direct" : "replay");
-    return createLaterPublicationRecord({ ...options, releaseRuntimeRun, auditRun: harness.auditRun });
+    return createLaterPublicationRecord({ ...options, auditRun: harness.auditRun, isExecutable: harness.isExecutable });
   };
   const tempDir = mkdtempSync(join(harness.root, "fallback-"));
   const result = await buildPublicationRecordWithFallback({
@@ -448,6 +471,7 @@ test("direct join failure records lock-only drift through the real v3 replay", a
     findArtifact: async () => ({ id: harness.artifactId, name: "qualified-candidate-strategist" }),
     downloadZip: async () => harness.archiveBytes,
     createRecord,
+    verifyProvenance: (options) => verifyPublicationProvenance({ ...options, isExecutable: harness.isExecutable }),
   });
   assert.deepEqual(attempts, ["direct", "replay"]);
   assert.equal(result.record.schemaVersion, 3);
@@ -485,31 +509,191 @@ test("creator refuses credential-bearing environments before reading inputs", as
   );
 });
 
-test("creator refuses a mismatched release runtime before reading or retaining a record", async () => {
-  const mismatch = (file, args) => {
-    if (args[0] === "--version") return { status: 0, stdout: `${file === process.execPath ? RELEASE_RUNTIME.node : "11.12.0"}\n`, stderr: "" };
-    if (args[0] === "-p") return { status: 0, stdout: `${RELEASE_RUNTIME.zlib}\n`, stderr: "" };
-    throw new Error("unexpected release runtime probe");
-  };
+// The exact release runtime pin governs steps that produce bytes. Recording
+// evidence for a published version never packs or writes a tarball, so it
+// resolves npm once, requires its major version to be 11 or newer, and never
+// probes Node or zlib. A machine whose Node and zlib differ from the pin
+// therefore records successfully. The floor is checked at the start of
+// createLaterPublicationRecord, before any input is read, so it covers the
+// direct join, the v3 replay, and the schema-3 `npm pack --dry-run` join alike.
+test("creator records the v3 replay on a machine that is not the pinned runtime when npm is 11 or newer", async (t) => {
+  const { result, probes } = await replayScenario(t, { npmVersion: "11.4.2\n" });
+  assert.equal(result.record.kind, "foundry-trusted-publication-replay-v3");
+  assert.notEqual(probes.length, 0);
+  assert.equal(probes.every(([file]) => file === NPM), true, "only the one resolved npm is ever executed; Node and zlib are not probed");
+  assert.deepEqual(probes.filter(([, ...args]) => args[0] === "--version"), [[NPM, "--version"], [NPM, "--version"]], "one probe at the start of the creator and one immediately before the audit");
+  assert.deepEqual(probes.slice(0, 1), [[NPM, "--version"]], "the floor is the first command the recorder runs");
+});
+
+test("creator accepts a newer npm major than the floor", async (t) => {
+  const { result } = await replayScenario(t, { npmVersion: "12.0.0\n" });
+  assert.equal(result.record.kind, "foundry-trusted-publication-replay-v3");
+});
+
+// Every version the floor must refuse, whatever path reaches it.
+const REFUSED_NPM_VERSIONS = [
+  ["older than 11", "10.9.4\n"],
+  ["unparseable", "not-a-version\n"],
+  ["empty", "\n"],
+  ["unreadable (probe throws)", new Error("spawn npm ENOENT")],
+  ["a malformed suffix", "11.0.0garbage\n"],
+  ["multi-line output", "11.0.0\n11.0.0\n"],
+  ["a leading v", "v11.0.0\n"],
+  ["an incomplete version", "11.0\n"],
+  ["trailing words", "11.0.0 (custom build)\n"],
+];
+
+// The direct join reads no signature audit, so before this floor moved to the
+// start of the creator it had no runtime check at all. The inputs below do not
+// exist: a refusal that names the npm floor proves the floor ran before any
+// input was read, and a refusal about a missing file proves the floor passed.
+for (const [label, version] of REFUSED_NPM_VERSIONS) {
+  test(`creator refuses the direct path before reading any input when npm is ${label}`, async () => {
+    const { run, calls } = npmProbe({ version });
+    await assert.rejects(
+      createLaterPublicationRecord({ packageKey: "strategist", qualificationPath: "missing.json", publicationPath: "missing-publication.json", candidatePath: "missing.tgz", proofPath: "missing-proof.json", env: {}, auditRun: run, isExecutable: anyExecutable }),
+      FLOOR_REFUSAL,
+    );
+    assert.deepEqual(calls, [[NPM, "--version"]]);
+  });
+}
+
+test("creator passes the npm floor on the direct path and only then reads its inputs", async () => {
+  const { run, calls } = npmProbe();
   await assert.rejects(
-    createLaterPublicationRecord({ packageKey: "strategist", qualificationPath: "missing.json", publicationPath: "missing-publication.json", candidatePath: "missing.tgz", proofPath: "missing-proof.json", env: {}, releaseRuntimeRun: mismatch }),
-    /observed npm 11\.12\.0/,
+    createLaterPublicationRecord({ packageKey: "strategist", qualificationPath: "missing.json", publicationPath: "missing-publication.json", candidatePath: "missing.tgz", proofPath: "missing-proof.json", env: {}, auditRun: run, isExecutable: anyExecutable }),
+    (error) => !FLOOR_REFUSAL.test(error.message) && /ENOENT|no such file/.test(error.message),
   );
+  assert.deepEqual(calls, [[NPM, "--version"]]);
+});
+
+for (const [label, version] of REFUSED_NPM_VERSIONS.filter(([label]) => ["older than 11", "unreadable (probe throws)", "a malformed suffix", "multi-line output"].includes(label))) {
+  test(`creator refuses the v3 replay when npm is ${label}, before any audit runs and before a record is written`, async (t) => {
+    const { root, probes, fetched } = await replayScenario(t, { npmVersion: version, expectRecord: false, refusal: FLOOR_REFUSAL });
+    assert.deepEqual(fetched, [], "the floor is checked before any provider or registry metadata is fetched");
+    assert.deepEqual(readdirSync(join(root, "governance/release-publications/later")), []);
+    assert.deepEqual(probes, [[NPM, "--version"]], "the floor is checked before init, install, or audit");
+  });
+}
+
+for (const [label, PATH] of [["a relative entry", "node_modules/.bin:/usr/bin"], ["an empty entry", ":/usr/bin"], ["a dot entry", ".:/usr/bin"], ["a relative entry after npm", "/usr/bin:node_modules/.bin"], ["an empty entry after npm", "/usr/bin:"], ["a dot entry after npm", "/usr/bin:."]]) {
+  test(`creator refuses to resolve npm through ${label} on PATH, before running anything`, async (t) => {
+    const { root, probes, fetched } = await replayScenario(t, { env: { PATH }, expectRecord: false, refusal: /refuses to resolve npm through a relative or empty PATH entry/ });
+    assert.deepEqual(probes, [], "no command runs when the npm resolution is refused");
+    assert.deepEqual(fetched, [], "nothing is fetched when the npm resolution is refused");
+    assert.deepEqual(readdirSync(join(root, "governance/release-publications/later")), []);
+  });
+}
+
+test("creator refuses when no absolute PATH entry contains an executable npm", async () => {
+  const { run, calls } = npmProbe();
+  await assert.rejects(
+    createLaterPublicationRecord({ packageKey: "strategist", qualificationPath: "missing.json", publicationPath: "missing-publication.json", candidatePath: "missing.tgz", proofPath: "missing-proof.json", env: {}, auditRun: run, isExecutable: () => false }),
+    /cannot resolve npm: no absolute PATH entry contains an executable npm/,
+  );
+  assert.deepEqual(calls, []);
+});
+
+test("npm floor refusal names the observed version or that it was unreadable", () => {
+  assert.throws(() => assertEvidenceNpmFloor(() => "10.9.4\n", {}), /observed npm 10\.9\.4$/);
+  assert.throws(() => assertEvidenceNpmFloor(() => { throw new Error("spawn npm ENOENT"); }, {}), /observed npm <unreadable>$/);
+  assert.throws(() => assertEvidenceNpmFloor(() => "11.0.0garbage\n", {}), /observed npm 11\.0\.0garbage$/);
+  assert.throws(() => assertEvidenceNpmFloor(() => "11.0.0\n11.0.0\n", {}), /observed npm <multi-line output>$/);
+  assert.equal(EVIDENCE_NPM_MIN_MAJOR, 11);
+});
+
+test("npm floor accepts exactly one semantic version at major 11 or newer, and runs the npm it was given", () => {
+  for (const version of ["11.0.0", "11.17.0\n", "  12.1.3  ", "11.0.0-beta.1", "11.0.0+build.5", "11.0.0-rc.1+sha.abc", "100.0.0"]) {
+    const seen = [];
+    assert.doesNotThrow(() => assertEvidenceNpmFloor((file, args, options) => { seen.push([file, args, options.env]); return version; }, { HOME: "/tmp/home", PATH: "/opt/bin" }, "/opt/bin/npm"), version);
+    assert.deepEqual(seen, [["/opt/bin/npm", ["--version"], { HOME: "/tmp/home", PATH: "/opt/bin" }]]);
+  }
+  assert.doesNotThrow(() => assertEvidenceNpmFloor(() => Buffer.from("11.17.0\n"), {}));
+  for (const version of ["10.99.99", "11.0.0garbage", "11.0.0\n11.0.0", "11.0.0-", "11.0.0+", "11.0.0-beta/x", "v11.0.0", "011x", "", "[object Object]"]) {
+    assert.throws(() => assertEvidenceNpmFloor(() => version, {}), /requires npm 11 or newer/, JSON.stringify(version));
+  }
+  assert.throws(() => assertEvidenceNpmFloor(() => ({ stdout: "11.0.0" }), {}), /requires npm 11 or newer/);
+});
+
+test("npm resolves once to an absolute path and refuses a relative or empty PATH entry", () => {
+  const present = (...paths) => (candidate) => paths.includes(candidate);
+  assert.equal(resolveEvidenceNpm("/opt/a:/opt/b:/opt/c", present("/opt/b/npm", "/opt/c/npm")), "/opt/b/npm", "the first executable npm on PATH wins");
+  assert.equal(resolveEvidenceNpm("/opt/a:/opt/b", present("/opt/a/npm")), "/opt/a/npm", "an absolute-only PATH resolves");
+  for (const PATH of ["/opt/a:relative/bin", "/opt/a:", "/opt/a:.", "/opt/a:/opt/b:node_modules/.bin", "relative/bin:/opt/a", "./bin:/opt/a", ".:/opt/a", ":/opt/a", "/opt/x::/opt/a", "/opt/x:node_modules/.bin:/opt/a", "node_modules/.bin"]) {
+    assert.throws(() => resolveEvidenceNpm(PATH, present("/opt/a/npm")), /relative or empty PATH entry/, PATH);
+  }
+  assert.throws(() => resolveEvidenceNpm("relative/bin:/opt/a", () => true), /relative or empty PATH entry/, "a relative entry is refused even when npm would exist there");
+  assert.throws(() => resolveEvidenceNpm("/opt/a:relative/bin", () => true), /relative or empty PATH entry/, "a relative entry after npm is refused too: npm's launcher runs `env node`, which searches the whole PATH");
+  assert.throws(() => resolveEvidenceNpm("/opt/a:/opt/b", () => false), /no absolute PATH entry contains an executable npm/);
+  assert.throws(() => resolveEvidenceNpm("", () => true), /PATH is empty/);
+  assert.throws(() => resolveEvidenceNpm(undefined, () => true), /PATH is empty/);
+});
+
+test("npm resolution finds only a regular executable file on a real PATH", (t) => {
+  const bin = mkdtempSync(join(tmpdir(), "record-later-publication-npm-path-"));
+  t.after(() => rmSync(bin, { recursive: true, force: true }));
+  assert.throws(() => resolveEvidenceNpm(bin), /no absolute PATH entry contains an executable npm/, "no npm at all");
+  mkdirSync(join(bin, "npm"));
+  assert.throws(() => resolveEvidenceNpm(bin), /no absolute PATH entry contains an executable npm/, "a directory named npm is not npm");
+  rmSync(join(bin, "npm"), { recursive: true });
+  writeFileSync(join(bin, "npm"), "#!/bin/sh\necho 11.0.0\n", { mode: 0o644 });
+  assert.throws(() => resolveEvidenceNpm(bin), /no absolute PATH entry contains an executable npm/, "a non-executable npm is not npm");
+  chmodSync(join(bin, "npm"), 0o755);
+  assert.equal(resolveEvidenceNpm(bin), join(bin, "npm"));
+});
+
+test("requireEvidenceNpm resolves first and reads the version from that same absolute path", () => {
+  const { run, calls } = npmProbe();
+  assert.equal(requireEvidenceNpm(run, { PATH: "/opt/a:/opt/b", HOME: "/tmp/h" }, (candidate) => candidate === "/opt/b/npm"), "/opt/b/npm");
+  assert.deepEqual(calls, [["/opt/b/npm", "--version"]]);
+  const refused = npmProbe({ version: "10.0.0\n" });
+  assert.throws(() => requireEvidenceNpm(refused.run, { PATH: "/opt/b" }, anyExecutable), FLOOR_REFUSAL);
+  const unresolved = npmProbe();
+  assert.throws(() => requireEvidenceNpm(unresolved.run, { PATH: "rel:/opt/b" }, anyExecutable), /relative or empty PATH entry/);
+  assert.deepEqual(unresolved.calls, [], "nothing is run when resolution is refused");
+});
+
+test("npm floor refusal stops verifiedAnonymousAudit before it installs anything", () => {
+  const { run, calls } = npmProbe({ version: "9.8.1\n" });
+  assert.throws(() => verifiedAnonymousAudit("@clossys/strategist", "0.1.1", run, {}, { isExecutable: anyExecutable }), /observed npm 9\.8\.1/);
+  assert.deepEqual(calls, [[NPM, "--version"]]);
+});
+
+test("verifiedAnonymousAudit refuses a relative PATH entry before running any command", () => {
+  const { run, calls } = npmProbe();
+  assert.throws(() => verifiedAnonymousAudit("@clossys/strategist", "0.1.1", run, { PATH: "node_modules/.bin:/usr/bin" }, { isExecutable: anyExecutable }), /relative or empty PATH entry/);
+  assert.deepEqual(calls, []);
+  for (const PATH of ["/usr/bin:node_modules/.bin", "/usr/bin:"]) {
+    assert.throws(() => verifiedAnonymousAudit("@clossys/strategist", "0.1.1", run, { PATH }, { isExecutable: anyExecutable }), /relative or empty PATH entry/, `${PATH} (an entry after npm)`);
+  }
+  assert.deepEqual(calls, []);
+});
+
+test("verifiedAnonymousAudit re-reads the version from the npm it is given and runs that same binary", () => {
+  const { run, calls } = npmProbe({ answer: (_file, args) => args[0] === "audit" ? "{}" : "" });
+  assert.deepEqual(verifiedAnonymousAudit("@clossys/strategist", "0.1.1", run, { PATH: "/safe/bin" }, { npm: "/checked/bin/npm" }), {});
+  assert.deepEqual(calls.map(([file, ...args]) => [file, args[0]]), [["/checked/bin/npm", "--version"], ["/checked/bin/npm", "init"], ["/checked/bin/npm", "install"], ["/checked/bin/npm", "audit"]]);
+  const old = npmProbe({ version: "10.0.0\n" });
+  assert.throws(() => verifiedAnonymousAudit("@clossys/strategist", "0.1.1", old.run, { PATH: "/safe/bin" }, { npm: "/checked/bin/npm" }), FLOOR_REFUSAL);
+  assert.deepEqual(old.calls, [["/checked/bin/npm", "--version"]]);
 });
 
 test("replay signature audit never inherits a token, private registry, or npm configuration", () => {
   const parent = { PATH: "/safe/bin", NODE_AUTH_TOKEN: "secret", NPM_CONFIG_USERCONFIG: "/private/npmrc", npm_config_registry: "https://private.example.invalid" };
-  const calls = [];
-  const run = (_file, args, options) => { calls.push({ args, env: options.env }); return args[0] === "audit" ? "{}" : ""; };
-  assert.deepEqual(verifiedAnonymousAudit("@clossys/strategist", "0.1.1", run, parent), {});
-  assert.equal(calls.length, 3);
-  for (const call of calls) {
-    assert.equal(call.env.npm_config_registry, "https://registry.npmjs.org/");
-    assert.equal(call.env.npm_config_always_auth, "false");
-    assert.equal(call.env.npm_config_ignore_scripts, "true");
-    assert.equal(call.env.NODE_AUTH_TOKEN, undefined);
-    assert.equal(call.env.NPM_CONFIG_USERCONFIG, undefined);
-    assert.equal(call.env.npm_config_userconfig.startsWith(call.env.HOME), true);
+  const probed = [];
+  const { run, calls } = npmProbe({ version: "11.17.0\n", answer: (_file, args) => args[0] === "audit" ? "{}" : "" });
+  const spy = (file, args, options) => { probed.push(options.env); return run(file, args, options); };
+  assert.deepEqual(verifiedAnonymousAudit("@clossys/strategist", "0.1.1", spy, parent, { isExecutable: anyExecutable }), {});
+  assert.equal(calls.length, 4, "the npm floor probe, init, install, and audit");
+  assert.equal(calls.every(([file]) => file === "/safe/bin/npm"), true, "the checked npm is the one that runs");
+  assert.equal(probed.length, 4);
+  for (const env of probed) {
+    assert.equal(env.npm_config_registry, "https://registry.npmjs.org/");
+    assert.equal(env.npm_config_always_auth, "false");
+    assert.equal(env.npm_config_ignore_scripts, "true");
+    assert.equal(env.NODE_AUTH_TOKEN, undefined);
+    assert.equal(env.NPM_CONFIG_USERCONFIG, undefined);
+    assert.equal(env.npm_config_userconfig.startsWith(env.HOME), true);
   }
   assert.equal(credentiallessAuditEnv("/tmp/replay", parent).PATH, "/safe/bin");
 });
