@@ -472,3 +472,27 @@ test("buildPublicationRecordWithFallback throws a combined error and writes noth
     rmSync(root, { recursive: true, force: true });
   }
 });
+
+// When neither root hash drifted the direct join is the only applicable path;
+// the replay refuses with its fixed reason and both failures stay visible.
+test("buildPublicationRecordWithFallback prefers the direct join and surfaces the replay's fixed refusal when neither root hash drifted", async () => {
+  const root = mkdtempSync(join(tmpdir(), "publication-evidence-fallback-no-drift-"));
+  try {
+    const order = [];
+    const createRecord = async (options) => {
+      order.push(options.artifactArchivePath === undefined ? "direct" : "replay");
+      throw new Error(options.artifactArchivePath === undefined ? "direct join refused" : "replay v3 is reserved for drift in at least one root resolution hash; the direct join applies when neither drifted");
+    };
+    await assert.rejects(
+      buildPublicationRecordWithFallback({
+        root: "/repo", packageKey: "strategist", qualificationPath: "q.json", publicationPath: "p.json", fetchImpl: async () => {}, env: {}, runId: 1, tempDir: root,
+        name: "strategist-name", version: "0.1.1", sourceSha,
+        findArtifact: async () => ({ id: 7 }), downloadZip: async () => Buffer.from("zip bytes"), createRecord, verifyProvenance: async () => {},
+      }),
+      /direct publication evidence failed \(direct join refused\).*replay v3 is reserved for drift in at least one root resolution hash/s,
+    );
+    assert.deepEqual(order, ["direct", "replay"]);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
