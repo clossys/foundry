@@ -1188,20 +1188,32 @@ sets.
 - **Otherwise** the step reports `indeterminate` with reason
   `awaiting-approval` and a fixed detail token, and writes nothing.
 
+The hub's head must be its branch's upstream. `readHubAuthority()` resolves
+`HEAD` once to a commit id, requires the attached branch's configured upstream
+to resolve to that same commit (local refs only, nothing is fetched), and reads
+the plan from that commit id. A branch with no upstream, or one ahead of or
+behind it, is `indeterminate` with detail `hub-not-upstream`.
+
 A set with package acts also needs a current execution authorization: the
 hub's own `node_modules/.bin/advisor-execution-readiness` (never `npx`) runs
 against the committed `clossys/advisor/assessment-input.json` at the current
 instant, and the authorization must name the plan digest, the repository and
-every package act. Readiness's own answer is kept: not current is `violated`;
-unreadable, absent or failing to run is `indeterminate`. `materialize` checks
+every package act. The assessment is read at the commit id the plan was read
+from: a hub whose `HEAD` has since moved, detached, or stopped matching its
+upstream is `indeterminate` with detail `hub-head-moved`. The authorization's
+permitted packages must also equal the plan's packages, by `name@version#integrity`
+with each distinct package listed once; an extra, a missing or a repeated
+entry is `violated` with detail `packages-not-exact`. Readiness's own answer is
+kept: not current is `violated`; unreadable, absent or failing to run is `indeterminate`. `materialize` checks
 before its first write, and `verify` checks again, so a withdrawn approval or
 an expired authorization fails `verify`.
 
 `readHubAuthority()` reads the committed approval, `planPackagesFor()` gives
 the plan's package identities for one repository, and `decideSetBinding()`
 returns the binding or an `AdmissionRefusal` (exit code, reason and a fixed
-detail token). `HubAuthority` is what `readHubAuthority()` returns, and a
-`ReadinessRunner` replaces the process launch of the readiness executable, for
+detail token). `HubAuthority` is what `readHubAuthority()` returns: the plan,
+its digest, the approved subject, and `head`, the commit id the plan was read
+from. A `ReadinessRunner` replaces the process launch of the readiness executable, for
 tests.
 
 This proves that the bytes are those the committed decision names, or that the

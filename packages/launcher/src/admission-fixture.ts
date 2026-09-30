@@ -107,10 +107,15 @@ export function decide(plan: AdvisorPlan, chosen: string, at: string, subject?: 
   return withDecisions(plan, [...plan.decisions, decision(at, chosen, subject)]);
 }
 
+/** The head commit of the hub most recently built by hubRepo for a plan digest, so a test that has only the plan still holds the head its hub was read at. */
+const HUB_HEADS = new Map<string, string>();
+
+/** What readHubAuthority returns for the plan: the head is that of the hub last built for this plan, or a placeholder commit id when none was. */
 export function authorityOf(plan: AdvisorPlan): HubAuthority {
   const subject = approvedSubject(plan);
   if (subject === null) throw new Error("the fixture plan is not approved");
-  return { plan, planDigest: planDigest(plan), subject };
+  const digest = planDigest(plan);
+  return { plan, planDigest: digest, subject, head: HUB_HEADS.get(digest) ?? "0".repeat(40) };
 }
 
 /** The plan's identity for each package act of one repository. */
@@ -405,7 +410,8 @@ export function writeReadinessStub(hub: string): string {
 
 /** An assessment-input document carrying an execution authorization for a plan. */
 export function assessmentFor(plan: AdvisorPlan, patch: Loose = {}, permitted: readonly string[] = [SITE_ID]): Loose {
-  const packages = (plan.packages ?? []).filter((act) => permitted.includes(act.repository)).map(({ name, version, integrity }) => ({ name, version, integrity }));
+  // Every distinct package of the plan is permitted, whatever the repository: admission requires the list to equal the plan's packages exactly.
+  const packages = [...new Map((plan.packages ?? []).map(({ name, version, integrity }) => [`${name}@${version}#${integrity}`, { name, version, integrity }] as const)).values()];
   return {
     engagement: {
       executionAuthorization: {
@@ -438,12 +444,16 @@ export interface HubOptions {
   readonly bundles?: readonly ApplyBundle[];
   /** Put the hub in a subdirectory of the repository that holds it. */
   readonly nested?: boolean;
+  /** Give the hub's branch an upstream: a bare origin the commits are pushed to. Default true; false leaves the branch with none. */
+  readonly upstream?: boolean;
 }
 
 export interface HubFixture {
   readonly hub: string;
   readonly repository: string;
   readonly commits: readonly string[];
+  /** The bare origin the hub's branch tracks, or null when it has none. */
+  readonly origin: string | null;
 }
 
 /** A current authorization for the plan; none when the plan has no digest (it is invalid). */
@@ -496,6 +506,13 @@ export function hubRepo(roots: string[], options: HubOptions): HubFixture {
     git(repository, "commit", "-m", `plan ${index}`);
     commits.push(git(repository, "rev-parse", "HEAD").trim());
   }
+  let origin: string | null = null;
+  if (options.upstream !== false) {
+    origin = join(makeRoot(roots, "launcher-admission-origin-"), "hub.git");
+    execFileSync("git", ["init", "--bare", "-b", "main", origin], { env: gitEnv, stdio: "ignore" });
+    git(repository, "remote", "add", "origin", origin);
+    git(repository, "push", "-q", "-u", "origin", "main");
+  }
   if (options.detachAt !== undefined) git(repository, "checkout", "-q", "--detach", commits[options.detachAt]!);
   if (options.worktreePlan !== undefined) {
     rmSync(join(hub, PLAN_FILE), { force: true });
@@ -503,16 +520,50 @@ export function hubRepo(roots: string[], options: HubOptions): HubFixture {
   }
   if (mode === "absent") writeFileSync(join(hub, PLAN_FILE), jsonText(last));
   if (options.readiness !== false) writeReadinessStub(hub);
+  try {
+    HUB_HEADS.set(planDigest(last), commits[commits.length - 1]!);
+  } catch {
+    // An invalid plan has no digest, and no authority is built for it.
+  }
   const realHub = realpathSync(hub);
   for (const set of options.sets ?? []) storeChangeSet(realHub, set);
   for (const bundle of options.bundles ?? []) storeApplyBundle(realHub, bundle);
-  return { hub: realHub, repository, commits };
+  return { hub: realHub, repository, commits, origin };
 }
 
-/** Commits `plan` as clossys/advisor/plan.json at the hub's current branch: one more decision, or a whole other plan. */
+/** Whether the hub's current branch has an upstream. */
+function hasUpstream(hub: string): boolean {
+  try {
+    git(hub, "rev-parse", "--verify", "-q", "@{upstream}");
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** Commits `plan` as clossys/advisor/plan.json at the hub's current branch, and pushes it when the branch has an upstream: one more decision, or a whole other plan. */
 export function commitHubPlan(hub: string, plan: AdvisorPlan, message = "plan decision"): string {
   writeFileSync(join(hub, PLAN_FILE), jsonText(plan));
   git(hub, "add", "-f", PLAN_FILE);
   git(hub, "commit", "-m", message);
+  if (hasUpstream(hub)) git(hub, "push", "-q");
   return git(hub, "rev-parse", "HEAD").trim();
+}
+
+/** Commits a new assessment-input.json at the hub's current branch, and pushes it when the branch has an upstream. */
+export function commitHubAssessment(hub: string, document: Loose, message = "assessment"): string {
+  writeFileSync(join(hub, ASSESSMENT_FILE), jsonText(document));
+  git(hub, "add", "-f", ASSESSMENT_FILE);
+  git(hub, "commit", "-m", message);
+  if (hasUpstream(hub)) git(hub, "push", "-q");
+  return git(hub, "rev-parse", "HEAD").trim();
+}
+
+/** Puts one more commit on the hub's origin from a separate clone, then fetches it: the hub's branch is now behind its upstream. */
+export function advanceHubUpstream(roots: string[], hub: string, origin: string): void {
+  const other = join(makeRoot(roots, "launcher-admission-other-"), "hub");
+  execFileSync("git", ["clone", "-q", origin, other], { env: gitEnv, stdio: "ignore" });
+  git(other, "commit", "-q", "--allow-empty", "-m", "elsewhere");
+  git(other, "push", "-q", "origin", "main");
+  git(hub, "fetch", "-q", "origin");
 }
