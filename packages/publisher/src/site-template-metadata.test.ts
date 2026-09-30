@@ -249,6 +249,8 @@ describe("siteSitemap", () => {
     expect(body).toContain("requireLegalDocument(record, \"preview\").legal");
     expect(body).toContain("return { status, lastUpdated };");
     expect(body).not.toMatch(/counsel-reviewed|\b as /);
+    expect(body).toContain('"/terms": state(termsRecord)');
+    expect(body).toContain('"/privacy": state(privacyRecord)');
     const keyed = [...body.matchAll(/(\/[a-z]+)": state\(/g)].map((match) => match[1]);
     expect(keyed.sort()).toEqual(manifest.routes.filter((route) => route.template === "LegalView").map((route) => route.id).sort());
   });
@@ -257,7 +259,7 @@ describe("siteSitemap", () => {
     expect(manifest.routes.map((route) => route.id)).toEqual(["/", "/about", "/contact", "/privacy", "/terms"]);
     const sitemap = readTemplate("app/sitemap.ts");
     expect(sitemap).toMatch(/routes:\s*manifest\.routes\s*,/);
-    expect(sitemap).not.toMatch(/["'`]\/[^"'`]*\/[^"'`]*["'`]/);
+    expect(sitemap).not.toMatch(/["'`]\/[^"'`]*["'`]/);
     const entries = siteSitemap({
       target: "production",
       origin: ORIGIN,
