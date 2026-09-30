@@ -1578,3 +1578,176 @@ test("release-pr.yml stages docs/changelogs/, where this script writes every cha
   assert.ok(staged.includes(CHANGELOGS_DIR), `release-pr.yml stages ${JSON.stringify(staged)}, not ${CHANGELOGS_DIR}`);
   for (const path of ["packages", ".changesets", "package-lock.json"]) assert.ok(staged.includes(path), `release-pr.yml no longer stages ${path}`);
 });
+
+// -------------------------------------------------- packed template manifests: their @clossys/* ranges move with the release
+//
+// packages/<dir>/templates/<name>/package.json is shipped inside the owner's
+// tarball (publisher's `files` has `templates`), so a range rewrite there
+// changes a packed manifest exactly like a `dependencies` rewrite does: the
+// owner gets a dependent-only patch bump unless a changeset already names it.
+
+function templateText(ranges, extra = {}) {
+  const manifest = { name: "site", private: true, version: "0.1.0", dependencies: { ...ranges, next: "^16.3.6" }, ...extra };
+  return `${JSON.stringify(manifest, null, 2)}\n`;
+}
+
+function makeClossysPackage(root, dir, version) {
+  const pkgDir = join(root, "packages", dir);
+  mkdirSync(pkgDir, { recursive: true });
+  writeFileSync(join(pkgDir, "package.json"), `{\n  "name": "@clossys/${dir}",\n  "version": "${version}",\n  "license": "MIT"\n}\n`);
+  writeFileSync(changelogFile(root, dir), `# Changelog\n\n## ${version}\n\n- Initial release.\n`);
+  return pkgDir;
+}
+
+function writeTemplate(root, dir, name, text) {
+  const path = join(root, "packages", dir, "templates", name, "package.json");
+  mkdirSync(dirname(path), { recursive: true });
+  writeFileSync(path, text);
+  return path;
+}
+
+// designer 0.6.2 is released as a minor; publisher 0.7.0 ships a site
+// template whose designer range (^0.6.0) the new 0.7.0 no longer covers.
+function designerMinorFixture(root, templateBody = templateText({ "@clossys/designer": "^0.6.0" })) {
+  makeClossysPackage(root, "designer", "0.6.2");
+  makeClossysPackage(root, "publisher", "0.7.0");
+  const template = writeTemplate(root, "publisher", "site", templateBody);
+  writeChangeset(root, "designer-feature.md", "---\ndesigner: minor\n---\n\nAdd a feature.\n");
+  return template;
+}
+
+test("applyReleaseChangesets: a designer minor rewrites the owning package's template range and patch-bumps that owner", () => {
+  const root = makeRoot();
+  try {
+    const before = templateText({ "@clossys/designer": "^0.6.0" });
+    const template = designerMinorFixture(root, before);
+
+    const result = applyReleaseChangesets({ root, runNpmInstall: () => {}, today: () => "2026-09-22" });
+
+    assert.equal(result.findings.length, 0, JSON.stringify(result.findings));
+    assert.deepEqual(
+      result.applied.map((a) => `${a.package} ${a.fromVersion} -> ${a.toVersion} (${a.bump})`),
+      ["designer 0.6.2 -> 0.7.0 (minor)", "publisher 0.7.0 -> 0.7.1 (patch)"],
+    );
+
+    const publisherApplied = result.applied.find((a) => a.package === "publisher");
+    assert.deepEqual(publisherApplied.changesetFiles, []);
+    assert.equal(publisherApplied.dependencyUpdates, undefined, "the owner's own manifest ranges did not move");
+    assert.deepEqual(publisherApplied.templateUpdates, [{ template: "templates/site", section: "dependencies", name: "@clossys/designer", fromRange: "^0.6.0", toRange: "^0.7.0" }]);
+    assert.equal(result.applied.find((a) => a.package === "designer").templateUpdates, undefined);
+
+    // Every byte but the one range is unchanged, including the `next` range.
+    assert.equal(readFileSync(template, "utf8"), before.replace('"@clossys/designer": "^0.6.0"', '"@clossys/designer": "^0.7.0"'));
+    assert.equal(JSON.parse(readFileSync(template, "utf8")).dependencies.next, "^16.3.6");
+
+    assert.equal(JSON.parse(readFileSync(join(root, "packages", "publisher", "package.json"), "utf8")).version, "0.7.1");
+    assert.equal(
+      readFileSync(changelogFile(root, "publisher"), "utf8"),
+      "# Changelog\n\n## 0.7.1 - 2026-09-22\n\n- Updated templates/site dependency @clossys/designer to ^0.7.0\n\n## 0.7.0\n\n- Initial release.\n",
+    );
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("applyReleaseChangesets: a named owner's own minor rewrites its template's self range with no second bump", () => {
+  const root = makeRoot();
+  try {
+    makeClossysPackage(root, "publisher", "0.7.0");
+    const before = templateText({ "@clossys/publisher": "^0.7.0" });
+    const template = writeTemplate(root, "publisher", "site", before);
+    writeChangeset(root, "publisher-feature.md", "---\npublisher: minor\n---\n\nAdd a feature.\n");
+
+    const result = applyReleaseChangesets({ root, runNpmInstall: () => {}, today: () => "2026-09-22" });
+
+    assert.equal(result.findings.length, 0, JSON.stringify(result.findings));
+    assert.equal(result.applied.length, 1, "one bump only -- the owner is already named");
+    assert.equal(result.applied[0].toVersion, "0.8.0");
+    assert.deepEqual(result.applied[0].templateUpdates, [{ template: "templates/site", section: "dependencies", name: "@clossys/publisher", fromRange: "^0.7.0", toRange: "^0.8.0" }]);
+    assert.equal(readFileSync(template, "utf8"), before.replace("^0.7.0", "^0.8.0"));
+    assert.equal(
+      readFileSync(changelogFile(root, "publisher"), "utf8"),
+      "# Changelog\n\n## 0.8.0 - 2026-09-22\n\n- Add a feature.\n- Updated templates/site dependency @clossys/publisher to ^0.8.0\n\n## 0.7.0\n\n- Initial release.\n",
+    );
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("applyReleaseChangesets: an unevaluable template range refuses the run and writes nothing", () => {
+  const root = makeRoot();
+  try {
+    const before = templateText({ "@clossys/designer": "workspace:*" });
+    const template = designerMinorFixture(root, before);
+
+    const result = applyReleaseChangesets({ root, runNpmInstall: () => {}, today: () => "2026-09-22" });
+
+    assert.equal(result.applied.length, 0);
+    assert.equal(result.findings.length, 1, JSON.stringify(result.findings));
+    assert.match(result.findings[0], /packages\/publisher\/templates\/site\/package\.json/);
+    assert.match(result.findings[0], /workspace:/);
+
+    assert.equal(readFileSync(template, "utf8"), before);
+    assert.equal(JSON.parse(readFileSync(join(root, "packages", "designer", "package.json"), "utf8")).version, "0.6.2");
+    assert.equal(JSON.parse(readFileSync(join(root, "packages", "publisher", "package.json"), "utf8")).version, "0.7.0");
+    assert.equal(existsSync(join(root, ".changesets", "designer-feature.md")), true);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("applyReleaseChangesets: when npm fails the template manifest is restored", () => {
+  const root = makeRoot();
+  try {
+    const before = templateText({ "@clossys/designer": "^0.6.0" });
+    const template = designerMinorFixture(root, before);
+    const publisherManifest = readFileSync(join(root, "packages", "publisher", "package.json"), "utf8");
+    const publisherChangelog = readFileSync(changelogFile(root, "publisher"), "utf8");
+
+    assert.throws(
+      () =>
+        applyReleaseChangesets({
+          root,
+          today: () => "2026-09-22",
+          runNpmInstall: () => {
+            // The template was already rewritten by the time npm runs.
+            assert.notEqual(readFileSync(template, "utf8"), before);
+            throw new Error("simulated npm install --package-lock-only failure");
+          },
+        }),
+      /simulated npm install/,
+    );
+
+    assert.equal(readFileSync(template, "utf8"), before, "the template manifest must be rolled back with everything else");
+    assert.equal(readFileSync(join(root, "packages", "publisher", "package.json"), "utf8"), publisherManifest);
+    assert.equal(readFileSync(changelogFile(root, "publisher"), "utf8"), publisherChangelog);
+    assert.equal(existsSync(join(root, ".changesets", "designer-feature.md")), true);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("applyReleaseChangesets: --dry-run reports the template rewrite, leaves the template untouched, and never calls npm", () => {
+  const root = makeRoot();
+  try {
+    const before = templateText({ "@clossys/designer": "^0.6.0" });
+    const template = designerMinorFixture(root, before);
+
+    const result = applyReleaseChangesets({
+      root,
+      dryRun: true,
+      today: () => "2026-09-22",
+      runNpmInstall: () => assert.fail("--dry-run must not invoke npm"),
+    });
+
+    assert.equal(result.findings.length, 0, JSON.stringify(result.findings));
+    assert.equal(result.applied.find((a) => a.package === "publisher").templateUpdates.length, 1);
+    assert.equal(readFileSync(template, "utf8"), before);
+
+    const stdout = execFileSync(process.execPath, [scriptPath, "--dry-run"], { cwd: root, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
+    assert.match(stdout, /template templates\/site \(dependencies\) @clossys\/designer: \^0\.6\.0 -> \^0\.7\.0/);
+    assert.equal(readFileSync(template, "utf8"), before);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});

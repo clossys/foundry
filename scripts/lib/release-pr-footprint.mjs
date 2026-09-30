@@ -96,6 +96,21 @@
 //     `governance/release-qualification-deferrals/README.md`, and every
 //     other path under `governance/`, matches no pattern here and falls
 //     through to "anything else fails" exactly as before.
+//   packages/<dir>/templates/<name>/package.json  (issue #1644) -- a packed
+//     template manifest: the owner's tarball ships it whole, so a release
+//     that moves a @clossys/* range in it (scripts/apply-release-changesets.mjs,
+//     "PACKED TEMPLATE MANIFESTS") must be admitted -- and ONLY that.
+//     Admitted ONLY when: status is "modified"; `<dir>` is itself bumped in
+//     this diff (a template edit under a package this diff does not release
+//     is an edit to shipped bytes with no version to carry it); and
+//     isTemplateManifestRangeOnlyChange() holds -- the four dependency
+//     sections change only through isAllowedDependencyRangeChange() (an
+//     existing entry, to exactly `^<a version this diff bumped that package
+//     to>`, no key added, removed or reordered) and every other byte of the
+//     parsed manifest, its own "version" included, is identical. The owner's
+//     changelog must then carry one "Updated templates/<name> dependency
+//     <dep> to <range>" bullet per changed entry, which
+//     reconstructExpectedChangelogText() rebuilds byte for byte.
 //   anything else -- fails outright, regardless of status.
 import { parseChangesetText } from "../collect-changesets.mjs";
 import { computeBumpLevel } from "../check-release-pr-shape.mjs";
@@ -113,6 +128,9 @@ export const RELEASE_PR_FILE_PATTERNS = {
   // that writes one fails as "not a release-PR-shaped change".
   changelog: CHANGELOG_REL_PATH_RE,
   lockfile: /^package-lock\.json$/,
+  // packages/<dir>/templates/<name>/package.json -- one directory level
+  // under templates/ and nothing deeper, and never another file in it.
+  templateManifest: /^packages\/([^/]+)\/templates\/([^/]+)\/package\.json$/,
   changeset: /^\.changesets\/[a-z0-9][a-z0-9-]*\.md$/,
 };
 
@@ -158,6 +176,29 @@ function isAllowedDependencyRangeChange(baseMap, headMap, bumpedVersionsByName) 
     if (headMap[key] !== `^${newVersion}`) return false; // must land on EXACTLY ^<newVersion>, nothing looser or different
   }
   return true;
+}
+
+/**
+ * Is `headText` the SAME packed template manifest as `baseText` except for
+ * dependency-range rewrites (issue #1644)? All four of
+ * REWRITABLE_ENTRY_FIELDS may change, each only through
+ * isAllowedDependencyRangeChange() -- an existing entry, to exactly
+ * `^<the version bumpedVersionsByName proves this SAME diff bumped that
+ * package to>`, with no key added, removed or reordered -- and everything
+ * else in the parsed manifest, `version` included, must be identical in
+ * value and key order. There is no version bump here to validate: a
+ * template is not a workspace package and its own "version" never moves.
+ */
+export function isTemplateManifestRangeOnlyChange(baseText, headText, bumpedVersionsByName = {}) {
+  let baseJson, headJson;
+  try {
+    baseJson = JSON.parse(baseText);
+    headJson = JSON.parse(headText);
+  } catch {
+    return false;
+  }
+  if (!baseJson || typeof baseJson !== "object" || Array.isArray(baseJson) || !headJson || typeof headJson !== "object" || Array.isArray(headJson)) return false;
+  return compareRestAllowingDependencyRangeBumps(baseJson, headJson, bumpedVersionsByName);
 }
 
 /**
@@ -866,6 +907,13 @@ function extractChangelogDate(headText, newVersion) {
  *     by field, in that order, and by each field's own head-side key
  *     order -- NEVER `devDependencies`, which never produces a bullet at
  *     all (see this module's header on devDependencies);
+ *   - template bullets ("Updated templates/<name> dependency <name> to
+ *     <range>", issue #1644), after those, one per changed entry of each
+ *     of `dir`'s changed template manifests: templates in name order, then
+ *     all FOUR sections in DEPENDENCY_RANGE_SECTIONS-then-devDependencies
+ *     order, then each section's head-side key order. Unlike the owner's own
+ *     manifest, a packed template's devDependencies IS published, so it
+ *     produces bullets too;
  *   - `date`, read from the diff's own new heading via
  *     extractChangelogDate() above, not computed independently.
  *
@@ -876,7 +924,7 @@ function extractChangelogDate(headText, newVersion) {
  * header for why a byte-for-byte rebuild, not a text-containment check,
  * is what proves a changeset was genuinely consumed.
  */
-function reconstructExpectedChangelogText({ status, baseText, headText, newVersion, deletedChangesetsForDir, baseManifestJson, headManifestJson }) {
+function reconstructExpectedChangelogText({ status, baseText, headText, newVersion, deletedChangesetsForDir, baseManifestJson, headManifestJson, templateManifestsForDir = [] }) {
   const date = extractChangelogDate(headText, newVersion);
   if (date === null) return null;
 
@@ -892,7 +940,18 @@ function reconstructExpectedChangelogText({ status, baseText, headText, newVersi
     }
   }
 
-  const bullets = [...ownBullets, ...dependencyUpdateBullets];
+  const templateUpdateBullets = [];
+  for (const { template, baseJson, headJson } of templateManifestsForDir) {
+    for (const section of REWRITABLE_ENTRY_FIELDS) {
+      const baseMap = (baseJson && typeof baseJson[section] === "object" && baseJson[section]) || {};
+      const headMap = (headJson && typeof headJson[section] === "object" && headJson[section]) || {};
+      for (const name of Object.keys(headMap)) {
+        if (baseMap[name] !== headMap[name]) templateUpdateBullets.push(`Updated ${template} dependency ${name} to ${headMap[name]}`);
+      }
+    }
+  }
+
+  const bullets = [...ownBullets, ...dependencyUpdateBullets, ...templateUpdateBullets];
   return prependChangelogEntry(status === "added" ? null : baseText, { version: newVersion, date, bullets, breakingBullets });
 }
 
@@ -1063,6 +1122,25 @@ export function evaluateReleasePrFootprint({ files }) {
     }
   }
 
+  // dir -> { template, baseJson, headJson }[] for every changed packed
+  // template manifest, in template-name order (issue #1644) -- the order
+  // apply-release-changesets.mjs writes each template's bullets in. Only
+  // parsed here; whether each one is admitted at all is decided by its own
+  // branch in the loop below, which refuses the whole diff otherwise.
+  const templateManifestsByDir = {};
+  for (const file of [...files].sort((a, b) => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0))) {
+    const match = RELEASE_PR_FILE_PATTERNS.templateManifest.exec(file.path);
+    if (!match) continue;
+    let baseJson, headJson;
+    try {
+      baseJson = JSON.parse(file.baseContent);
+      headJson = JSON.parse(file.headContent);
+    } catch {
+      continue;
+    }
+    (templateManifestsByDir[match[1]] ??= []).push({ template: `templates/${match[2]}`, baseJson, headJson });
+  }
+
   // Set by the lockfile branch below the moment ANY file in this diff
   // matches RELEASE_PR_FILE_PATTERNS.lockfile -- checked once, after this
   // loop, against `bumpedDirs` (issue #1331: a version bump whose diff
@@ -1113,12 +1191,26 @@ export function evaluateReleasePrFootprint({ files }) {
         deletedChangesetsForDir: deletedChangesetsByDir[dir] ?? [],
         baseManifestJson: manifestJsonByDir[dir]?.baseJson,
         headManifestJson: manifestJsonByDir[dir]?.headJson,
+        templateManifestsForDir: templateManifestsByDir[dir] ?? [],
       });
       if (expectedChangelog === null || expectedChangelog !== file.headContent) {
         return {
           ok: false,
           reason: `"${file.path}" does not byte-for-byte match the CHANGELOG entry reconstructed from this diff's own consumed changesets and dependency-range rewrites`,
         };
+      }
+      continue;
+    }
+
+    const templateMatch = RELEASE_PR_FILE_PATTERNS.templateManifest.exec(file.path);
+    if (templateMatch) {
+      const dir = templateMatch[1];
+      if (file.status !== "modified") return { ok: false, reason: `"${file.path}" has status "${file.status}" -- expected modified` };
+      if (!Object.prototype.hasOwnProperty.call(bumpedVersions, dir)) {
+        return { ok: false, reason: `"${file.path}" is a packed template manifest, but packages/${dir} was not bumped in this diff` };
+      }
+      if (!isTemplateManifestRangeOnlyChange(file.baseContent, file.headContent, bumpedVersionsByName)) {
+        return { ok: false, reason: `"${file.path}" changes more than dependency ranges rewritten to exactly ^<the version this diff bumped that package to>` };
       }
       continue;
     }
