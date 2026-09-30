@@ -235,6 +235,69 @@ const ADVISOR_DEGRADED_NEGATOR_RULES = [
   },
 ];
 
+// Launcher's apply-an-approved-plan section (issue #1762): the agent procedure
+// that applies a stored change set. Scoped extraction exactly as for Advisor's
+// degraded-mode section above, for the same reason: phrases such as
+// `Clossys adoption decision` or `status` can appear elsewhere in the skill,
+// and a whole-file search would credit them to a section that never states them.
+const LAUNCHER_APPLY_SECTION_HEADING_RE = /^## Apply an approved plan\b.*$/m;
+
+/** The text of Launcher's apply section, or null when it has none. */
+function launcherApplySection(text) {
+  const match = LAUNCHER_APPLY_SECTION_HEADING_RE.exec(text);
+  if (!match) return null;
+  const rest = text.slice(match.index + match[0].length);
+  const next = /^## /m.exec(rest);
+  return next ? rest.slice(0, next.index) : rest;
+}
+
+// Positive rules K1-K6: each must be present in the section text.
+const LAUNCHER_APPLY_POSITIVE_RULES = [
+  {
+    rule: "launcher-apply-k1-never-pushes",
+    re: /Launcher never pushes, opens a pull request, files an issue or merges/,
+    message: "must say Launcher never pushes, opens a pull request, files an issue or merges (K1)",
+  },
+  {
+    rule: "launcher-apply-k2-verify-first",
+    re: /Before any commit, run `launcher-apply-plan verify --repo <id>` and stop unless it exits 0/,
+    message: "must require `launcher-apply-plan verify --repo <id>` to exit 0 before any commit (K2)",
+  },
+  {
+    rule: "launcher-apply-k3-own-branch",
+    re: /Commit and push only the set's `clossys\/apply-` branch, never the default branch, never force-push, one pull request per staffed repository/,
+    message:
+      "must limit commits and pushes to the set's `clossys/apply-` branch, never the default branch, never a force-push, one pull request per staffed repository (K3)",
+  },
+  {
+    rule: "launcher-apply-k4-task-record-body",
+    re: /File one task-record issue[^.]*labelled from that repository's own task-record configuration[^.]*exactly the `launcher-apply-plan body --repo <id> --task-record <n>` output, unedited/,
+    message:
+      "must file one task-record issue labelled from the target repository's own configuration and open the pull request with exactly the `body --task-record <n>` output, unedited (K4)",
+  },
+  {
+    rule: "launcher-apply-k5-status-gate",
+    re: /continue only on `proposed`[^.]*on `superseded`[^.]*--supersedes <n>[^.]*close the old pull request once the new one is proposed[^.]*stop and report/,
+    message:
+      "must run `status`, continue only on `proposed`, handle `superseded` with a new branch, `--supersedes <n>` and closing the old pull request, and otherwise stop and report (K5)",
+  },
+  {
+    rule: "launcher-apply-k6-no-merge",
+    re: /Never merge or enable auto-merge\. Report ready only when `status` is `proposed` and `Clossys adoption decision` is green; the setup pull request merges before the apply pull request opens/,
+    message:
+      "must forbid merge and auto-merge and report ready only when `status` is `proposed` and `Clossys adoption decision` is green, with setup merging before apply opens (K6)",
+  },
+];
+
+// Negative rules: wording inside the section that would license a merge or a
+// forced push while every positive rule above still matched.
+const LAUNCHER_APPLY_NEGATOR_RULES = [
+  { rule: "launcher-apply-negator-gh-pr-merge", re: /gh pr merge/i, message: "must not tell the reader to run `gh pr merge`" },
+  { rule: "launcher-apply-negator-auto", re: /--auto\b/, message: "must not pass `--auto` to anything" },
+  { rule: "launcher-apply-negator-push-force", re: /push\s+(?:--force\b|-f\b)/, message: "must not tell the reader to `push --force` or `push -f`" },
+  { rule: "launcher-apply-negator-may-merge", re: /\bmay merge\b/i, message: 'must not say the reader "may merge"' },
+];
+
 function validateSkillBody(packageDir, text) {
   const findings = [];
   if (packageDir === "customer") {
@@ -296,6 +359,23 @@ function validateSkillBody(packageDir, text) {
       }
       for (const { rule, re, message } of ADVISOR_DEGRADED_NEGATOR_RULES) {
         if (re.test(section)) findings.push({ rule, packageDir, message: `advisor skill's degraded-mode section ${message}` });
+      }
+    }
+  }
+  if (packageDir === "launcher") {
+    const section = launcherApplySection(text);
+    if (section === null) {
+      findings.push({
+        rule: "launcher-apply-section-missing",
+        packageDir,
+        message: 'launcher skill must have a "## Apply an approved plan" section stating the agent procedure (issue #1762)',
+      });
+    } else {
+      for (const { rule, re, message } of LAUNCHER_APPLY_POSITIVE_RULES) {
+        if (!re.test(section)) findings.push({ rule, packageDir, message: `launcher skill's apply section ${message}` });
+      }
+      for (const { rule, re, message } of LAUNCHER_APPLY_NEGATOR_RULES) {
+        if (re.test(section)) findings.push({ rule, packageDir, message: `launcher skill's apply section ${message}` });
       }
     }
   }
