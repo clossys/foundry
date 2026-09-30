@@ -13,11 +13,13 @@ import { TOKENS } from "../tokens/tokens.js";
 import { LOCKUP_GAP_RATIO, LOCKUP_WORDMARK_SIZE_RATIO } from "../tokens/identity-kit.js";
 import { Brandmark, BRANDMARK_SIZES, BRANDMARK_VARIANTS, type BrandmarkSize, type BrandmarkVariant } from "./Brandmark.js";
 import type { BrandmarkProps } from "./Brandmark.js";
+import { BADGE_INSET_SHARE, BADGE_RADIUS_SHARE, badgePlatePath } from "./badge-plate.js";
 import { BRANDMARK_WORDMARK_SIZE_RATIO } from "./internal/shell-vars.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const packageRoot = join(here, "..", "..");
 const brandmarkSource = readFileSync(join(here, "Brandmark.tsx"), "utf8");
+const badgePlateSource = readFileSync(join(here, "badge-plate.ts"), "utf8");
 const shellVarsSource = readFileSync(join(here, "internal", "shell-vars.ts"), "utf8");
 const tokensCss = readFileSync(join(packageRoot, "styles", "tokens.css"), "utf8");
 
@@ -272,9 +274,10 @@ describe("Brandmark: designer-token-check over the new files", () => {
     // is other components' (each of its fallback-carrying reads reports the
     // same warning), and is not this change's to vouch for.
     writeFileSync(join(dir, "brandmark-vars.ts"), `${brandmarkConstantStatements.join("\n")}\n`);
+    writeFileSync(join(dir, "badge-plate.ts"), badgePlateSource);
 
     const scan = scanStyleSources(dir);
-    expect(scan.filesScanned).toBe(2);
+    expect(scan.filesScanned).toBe(3);
     const result = checkTokenPurity(scan.candidates, TOKENS, scan.filesScanned, scan.unchecked);
 
     expect(scan.unchecked).toEqual([]);
@@ -356,5 +359,98 @@ describe("Brandmark: server render", () => {
     expect(html).toContain(`<img src="${MARK_SRC}" alt=""`);
     expect(html.includes("<span")).toBe(variant === "lockup");
     if (variant === "lockup") expect(html).toContain(`>${WORDMARK}</span>`);
+  });
+});
+
+// Captured from main before `plate` existed (label, mark URL and wordmark as in `props()` above).
+const NO_PLATE_GOLDEN: Readonly<Record<string, string>> = {
+  "mark/sm": "<link rel=\"preload\" as=\"image\" href=\"/assets/mark.svg\"/><a href=\"/\" aria-label=\"Wordmark text, consumer-supplied accessible name\" class=\"inline-flex items-center no-underline text-ink-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent\"><img src=\"/assets/mark.svg\" alt=\"\" style=\"height:var(--ui-brandmark-height-sm, 24px);width:auto\"/></a>",
+  "mark/md": "<link rel=\"preload\" as=\"image\" href=\"/assets/mark.svg\"/><a href=\"/\" aria-label=\"Wordmark text, consumer-supplied accessible name\" class=\"inline-flex items-center no-underline text-ink-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent\"><img src=\"/assets/mark.svg\" alt=\"\" style=\"height:var(--ui-brandmark-height-md, 36px);width:auto\"/></a>",
+  "mark/lg": "<link rel=\"preload\" as=\"image\" href=\"/assets/mark.svg\"/><a href=\"/\" aria-label=\"Wordmark text, consumer-supplied accessible name\" class=\"inline-flex items-center no-underline text-ink-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent\"><img src=\"/assets/mark.svg\" alt=\"\" style=\"height:var(--ui-brandmark-height-lg, 48px);width:auto\"/></a>",
+  "lockup/sm": "<link rel=\"preload\" as=\"image\" href=\"/assets/mark.svg\"/><a href=\"/\" aria-label=\"Wordmark text, consumer-supplied accessible name\" class=\"inline-flex items-center no-underline text-ink-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent\" style=\"gap:var(--ui-brandmark-gap-sm, 4px)\"><img src=\"/assets/mark.svg\" alt=\"\" style=\"height:var(--ui-brandmark-height-sm, 24px);width:auto\"/><span class=\"font-display leading-none\" style=\"font-size:calc(var(--ui-brandmark-height-sm, 24px) * 0.4583333333333333)\">Wordmark text</span></a>",
+  "lockup/md": "<link rel=\"preload\" as=\"image\" href=\"/assets/mark.svg\"/><a href=\"/\" aria-label=\"Wordmark text, consumer-supplied accessible name\" class=\"inline-flex items-center no-underline text-ink-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent\" style=\"gap:var(--ui-brandmark-gap-md, 6px)\"><img src=\"/assets/mark.svg\" alt=\"\" style=\"height:var(--ui-brandmark-height-md, 36px);width:auto\"/><span class=\"font-display leading-none\" style=\"font-size:calc(var(--ui-brandmark-height-md, 36px) * 0.4583333333333333)\">Wordmark text</span></a>",
+  "lockup/lg": "<link rel=\"preload\" as=\"image\" href=\"/assets/mark.svg\"/><a href=\"/\" aria-label=\"Wordmark text, consumer-supplied accessible name\" class=\"inline-flex items-center no-underline text-ink-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent\" style=\"gap:var(--ui-brandmark-gap-lg, 8px)\"><img src=\"/assets/mark.svg\" alt=\"\" style=\"height:var(--ui-brandmark-height-lg, 48px);width:auto\"/><span class=\"font-display leading-none\" style=\"font-size:calc(var(--ui-brandmark-height-lg, 48px) * 0.4583333333333333)\">Wordmark text</span></a>",
+};
+
+describe("Brandmark: plate", () => {
+  function sharedProps(variant: BrandmarkVariant, size: BrandmarkSize): BrandmarkProps {
+    return { ...props(variant, size), plate: "shared" };
+  }
+
+  it.each(COMBOS)("%s / %s: `plate` omitted and \"self\" render markup byte-identical to main", (variant, size) => {
+    const golden = NO_PLATE_GOLDEN[`${variant}/${size}`];
+    expect(renderToStaticMarkup(<Brandmark {...props(variant, size)} />)).toBe(golden);
+    expect(renderToStaticMarkup(<Brandmark {...props(variant, size)} plate="self" />)).toBe(golden);
+  });
+
+  it.each(COMBOS)("%s / %s: \"shared\" renders one decorative plate whose radius and inset come from the two shares", (variant, size) => {
+    const html = renderToStaticMarkup(<Brandmark {...sharedProps(variant, size)} />);
+    expect(html).not.toContain("<svg");
+    expect(html).not.toContain("dangerouslySetInnerHTML");
+    expect(html).toContain("bg-ink-primary");
+
+    render(<Brandmark {...sharedProps(variant, size)} />);
+    const link = screen.getByRole("link", { name: LABEL });
+    expect(link).toHaveAttribute("href", "/");
+    expect(link).toHaveAttribute("aria-label", LABEL);
+
+    const plates = [...link.querySelectorAll("span")].filter((el) => el.className.includes("bg-ink-primary"));
+    expect(plates).toHaveLength(1);
+    const plate = plates[0] as HTMLElement;
+    expect(plate.getAttribute("aria-hidden")).toBe("true");
+    expect(plate.textContent).toBe("");
+    const height = `var(--ui-brandmark-height-${size}, ${HEIGHT_PX[size]}px)`;
+    expect(plate.style.height).toBe(height);
+    expect(plate.style.width).toBe(height);
+    expect(plate.style.borderRadius).toBe(`calc(${height} * ${BADGE_RADIUS_SHARE})`);
+
+    const img = plate.querySelector("img") as HTMLImageElement;
+    expect(img).not.toBeNull();
+    expect(link.querySelectorAll("img")).toHaveLength(1);
+    expect(img).toHaveAttribute("alt", "");
+    expect(img).toHaveAttribute("src", MARK_SRC);
+    const inner = `calc(${height} * ${1 - 2 * BADGE_INSET_SHARE})`;
+    expect(img.style.height).toBe(inner);
+    expect(img.style.width).toBe(inner);
+    expect(1 - 2 * BADGE_INSET_SHARE).toBeCloseTo(0.64, 12);
+  });
+
+  it.each(BRANDMARK_SIZES)("lockup / %s: the plate wraps only the mark; the wordmark and gap stay outside it", (size) => {
+    render(<Brandmark {...sharedProps("lockup", size)} />);
+    const link = screen.getByRole("link", { name: LABEL });
+    const plate = [...link.querySelectorAll("span")].find((el) => el.className.includes("bg-ink-primary")) as HTMLElement;
+    const text = screen.getByText(WORDMARK);
+    expect(plate).not.toContainElement(text);
+    expect(link).toContainElement(text);
+    expect(link.style.gap).toContain(`--ui-brandmark-gap-${size}`);
+  });
+
+  it("mark / sm: a shared-plate mark has exactly one span (the plate) and no text", () => {
+    render(<Brandmark {...sharedProps("mark", "sm")} />);
+    const link = screen.getByRole("link", { name: LABEL });
+    expect(link.querySelectorAll("span")).toHaveLength(1);
+    expect(link.textContent).toBe("");
+  });
+
+  it("an unknown `plate` forced past the type system renders as \"self\"", () => {
+    const forced = { ...props("mark", "md"), plate: "round" } as unknown as BrandmarkProps;
+    expect(renderToStaticMarkup(<Brandmark {...forced} />)).toBe(NO_PLATE_GOLDEN["mark/md"]);
+  });
+
+  it("still applies both label refusals with a shared plate", () => {
+    expect(refusal(<Brandmark {...sharedProps("mark", "md")} label=" " />)).toContain("label");
+    expect(refusal(<Brandmark {...sharedProps("lockup", "md")} label="Home" />)).toContain("wordmark");
+  });
+
+  it("the CSS shares in Brandmark come from the exported constants (one source)", () => {
+    expect(brandmarkSource).toMatch(/import \{[^}]*BADGE_RADIUS_SHARE[^}]*\} from "\.\/badge-plate\.js"/);
+    expect(brandmarkSource).toMatch(/import \{[^}]*BADGE_INSET_SHARE[^}]*\} from "\.\/badge-plate\.js"/);
+    expect(brandmarkSource).not.toMatch(/\b0\.18\b|\b7 \/ 32\b|\b0\.21875\b|\b0\.64\b/);
+  });
+
+  it("the path and the CSS describe one geometry: same radius share at the token height", () => {
+    const side = HEIGHT_PX.md;
+    const r = side * BADGE_RADIUS_SHARE;
+    expect(badgePlatePath(side).startsWith(`M${r} 0H`)).toBe(true);
   });
 });
