@@ -430,6 +430,18 @@ regardless of import order). Per the CSS Cascading Layers spec:
   covered by every atom's own tests (e.g. `Button.test.tsx`) and does not
   change under the compiled-CSS path.
 
+**Base layer.** Ahead of `foundry-ui-compiled`, `compiled.css` emits a
+second named layer, `foundry-ui-base`, with two rules: `*, ::before, ::after`
+sets `box-sizing: border-box`, and `input, textarea, select, button` sets
+`font: inherit`. The Tailwind-native path gets both from Tailwind's own
+preflight; this layer gives the `tokens.css` + `compiled.css` path the same
+two behaviors while preflight itself stays out, so margin, list and color
+resets remain your choice. `foundry-ui-base` is declared before
+`foundry-ui-compiled`, so a utility class wins over it, and your own
+unlayered CSS wins over both. To override a base rule, write a rule for the
+same selector in unlayered CSS, or in a named layer declared after
+`foundry-ui-base`.
+
 **Load exactly one path, never both.** `compiled.css` and the Tailwind-native
 path (`theme.css` + a consumer's own `@source`-driven Tailwind build) both
 generate declarations for the same class names, in different layers. Loading

@@ -17,6 +17,10 @@
  * `compiled.css` path without Tailwind. `charts` and `theme` remain
  * Tailwind-native only.
  *
+ * Base: a narrow `foundry-ui-base` layer (border-box sizing and
+ * form-control font inheritance) comes first, before the utilities layer.
+ * Tailwind's preflight stays excluded.
+ *
  * Load this AFTER `@clossys/designer/tokens.css` (never instead of it —
  * every declaration below reads a token custom property this file does
  * NOT itself declare). Every generated rule lives inside the
@@ -24,6 +28,20 @@
  * README.md's "Framework-portable components, without Tailwind" section
  * for the full override-precedence contract this layering produces.
  * ════════════════════════════════════════════════════════════════════ */
+
+@layer foundry-ui-base {
+  *,
+  ::before,
+  ::after {
+    box-sizing: border-box;
+  }
+  input,
+  textarea,
+  select,
+  button {
+    font: inherit;
+  }
+}
 
 /*! tailwindcss v4.3.3 | MIT License | https://tailwindcss.com */
 @layer properties;
