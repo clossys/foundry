@@ -262,16 +262,21 @@ const STATUS_HELP = `Usage: launcher-apply-plan status --repo <id>
 
 Reports what the pull request for the repository's stored change set is doing,
 from read-only evidence: the open pull requests, the default branch's tip, and
-the commits already in the local clone. It changes nothing: it does not fetch a
-pull request's head, check anything out, or write a file, an index or a ref.
+the commits already in the local clone. It does not fetch a pull request's head
+(its git calls run with lazy fetch off), check anything out, or write a file, an
+index or a pull request's ref. The one write is verify's: the fetch of the
+default branch into its remote-tracking ref.
 
 The state is one of: proposed (an open pull request of this change set, made
 by the person running this, whose head passes every check verify makes),
 applied (the default branch already holds the change set), planned (neither),
-diverged (its pull request does not match), superseded (only an older change
-set of this repository has a pull request) or indeterminate (something could
-not be read or trusted). It prints the state, a fixed reason and #<number> for
-each pull request it is about, and nothing else.
+diverged (its pull request does not match), superseded (an older change set of
+this repository has a pull request, even beside this one's) or indeterminate
+(something could not be read or trusted, including any open pull request whose
+body names the marker word but is not the person's own, and a listing of 100 or
+more open pull requests). It prints the state, a fixed reason and #<number> for
+each pull request it is about, and nothing else. proposed does not check the
+head's ancestry to the base; the merge gate does.
 
 Exit codes: 0 = proposed or applied, 1 = diverged, 2 = anything else.`;
 

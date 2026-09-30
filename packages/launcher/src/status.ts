@@ -19,10 +19,12 @@
 //   `marker-malformed`.
 // - S5. A pull request with this set's digest is `proposed` only if its base is the default branch, its branch and title are the
 //   set's, its head commit is already in the clone, and verify's own checks (verifyPrepared) pass over that commit's tree,
-//   including the exact ledger bytes; otherwise `diverged`.
+//   including the exact ledger bytes; otherwise `diverged`. A precondition that fails (the clone, the hub or the admission, not
+//   the pull request) and any object git cannot read are `indeterminate`, and are judged first. `proposed` does not check the
+//   head's ancestry to the base: the merge gate does.
 // - S6. A pull request with another digest this hub stored for the repository is `superseded`. A digest this hub never stored,
-//   two pull requests with one digest, more than 100 open pull requests, or a port that fails or answers malformed is
-//   `indeterminate`.
+//   two pull requests with one digest, 100 or more open pull requests (a full page of 100 cannot show that nothing lies beyond
+//   it), or a port that fails or answers malformed is `indeterminate`.
 // - S7. `applied` means the default branch's tip is in the clone and holds every `after` and every key the set writes, whether
 //   the set was merged by a pull request or was already there; it needs no open pull request.
 //
@@ -30,6 +32,7 @@
 // verify's, `proved` and `held` and the drift classes are not observed here.
 
 import { spawnSync } from "node:child_process";
+import { dirname } from "node:path";
 import { contentDigest, validateRepositoryChangeSet } from "./change-set-contract.js";
 import type { RepositoryChangeSet } from "./change-set-contract.js";
 import { changeSetDigest } from "./change-set-digest.js";
@@ -53,7 +56,7 @@ export interface StatusResult {
 export interface StatusPorts {
   /** The node id of the account running this. */
   readonly viewer: () => string | Promise<string>;
-  /** Every open pull request of the repository, as rows of `PullRequestRow`'s fields: at most the first 101 are read. */
+  /** The open pull requests of the repository, as rows of `PullRequestRow`'s fields: only the first page of 100 is read, and a full page is refused. */
   readonly openPullRequests: (repositoryId: string) => unknown | Promise<unknown>;
   /** The commit id of the default branch's tip on the remote. */
   readonly tip: (repositoryId: string, branch: string) => string | Promise<string>;
@@ -69,13 +72,17 @@ export interface StatusInput {
   readonly runReadiness?: ReadinessRunner;
   /** The GitHub ports; read-only `gh api` by default. */
   readonly ports?: StatusPorts;
+  /** How long one git call may run before status gives up on it as `indeterminate`; 30 seconds by default. */
+  readonly gitTimeoutMs?: number;
 }
 
 // ---------------------------------------------------------------------------
 // shapes
 
-/** More open pull requests than this cannot be read whole, so the answer is `indeterminate`. */
+/** The page size of the open pull request listing: a listing this long may have more behind it, so the answer is `indeterminate`. */
 export const MAX_OPEN_PULL_REQUESTS = 100;
+
+const GIT_TIMEOUT_MS = 30_000;
 
 const TOKEN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/u;
 const MARKER_LINE = /^<!-- clossys-change-set: (sha256:[0-9a-f]{64}) -->$/u;
@@ -108,20 +115,41 @@ function fromStep(step: ApplyStepResult, pullRequest: number): StatusResult {
 // ---------------------------------------------------------------------------
 // git, over commits only
 
-function runGit(cwd: string, args: readonly string[]): { status: number | null; stdout: Buffer } {
+/** Thrown when git cannot be run or does not answer in time: the answer is unknown, never "no". */
+const GIT_UNAVAILABLE = "git-unavailable";
+
+/**
+ * git over the clone, with lazy fetch off (S1): an object a partial clone does not hold is reported missing, never fetched from a
+ * promisor remote. Every call is bounded by `timeoutMs`; a call that cannot run or times out throws.
+ */
+function runGit(cwd: string, args: readonly string[], timeoutMs: number): { status: number; stdout: Buffer } {
   const env: NodeJS.ProcessEnv = { ...process.env };
   for (const name of Object.keys(env)) if (name.startsWith("GIT_")) delete env[name];
   env.GIT_LITERAL_PATHSPECS = "1";
   env.GIT_TERMINAL_PROMPT = "0";
   env.GIT_OPTIONAL_LOCKS = "0";
-  const run = spawnSync("git", ["--no-replace-objects", ...args], { cwd, env, stdio: ["ignore", "pipe", "ignore"], maxBuffer: 64 * 1024 * 1024 });
-  if (run.error !== undefined || run.stdout === null || run.stdout === undefined) return { status: null, stdout: Buffer.alloc(0) };
+  env.GIT_NO_LAZY_FETCH = "1";
+  env.GIT_CEILING_DIRECTORIES = dirname(cwd);
+  const run = spawnSync("git", ["--no-replace-objects", ...args], { cwd, env, stdio: ["ignore", "pipe", "ignore"], maxBuffer: 64 * 1024 * 1024, timeout: timeoutMs, killSignal: "SIGKILL" });
+  if (run.error !== undefined || run.status === null || run.stdout === null || run.stdout === undefined) throw new Error(GIT_UNAVAILABLE);
   return { status: run.status, stdout: run.stdout };
 }
 
-/** Whether `commit` is a commit object already in the clone's object database. */
-function commitIsLocal(root: string, commit: string): boolean {
-  return COMMIT.test(commit) && runGit(root, ["cat-file", "-e", `${commit}^{commit}`]).status === 0;
+/** Runs `run` with lazy fetch off in this process too, for the reads verifyPrepared makes with its own git helper. It is synchronous, so nothing else sees the change. */
+function withoutLazyFetch<T>(run: () => T): T {
+  const previous = process.env.GIT_NO_LAZY_FETCH;
+  process.env.GIT_NO_LAZY_FETCH = "1";
+  try {
+    return run();
+  } finally {
+    if (previous === undefined) delete process.env.GIT_NO_LAZY_FETCH;
+    else process.env.GIT_NO_LAZY_FETCH = previous;
+  }
+}
+
+/** Whether `commit` is a commit object already in the clone's object database. Throws when git cannot say. */
+function commitIsLocal(root: string, commit: string, timeoutMs: number): boolean {
+  return COMMIT.test(commit) && runGit(root, ["cat-file", "-e", `${commit}^{commit}`], timeoutMs).status === 0;
 }
 
 interface TreeRecord {
@@ -130,36 +158,53 @@ interface TreeRecord {
   readonly oid: string;
 }
 
-/** The one tree entry at `relPath` in `commit`, or null when there is none. Throws when git cannot say. */
-function treeRecord(root: string, commit: string, relPath: string): TreeRecord | null {
-  const listed = runGit(root, ["ls-tree", "-z", commit, "--", relPath]);
-  if (listed.status !== 0) throw new Error("tree-unreadable");
-  const records = listed.stdout.toString("utf8").split("\0").filter((record) => record !== "");
-  if (records.length === 0) return null;
-  if (records.length !== 1) throw new Error("tree-unreadable");
-  const record = records[0]!;
-  const tab = record.indexOf("\t");
-  if (tab === -1 || record.slice(tab + 1) !== relPath) throw new Error("tree-unreadable");
-  const [mode, type, oid, ...rest] = record.slice(0, tab).split(" ");
-  if (mode === undefined || type === undefined || oid === undefined || rest.length > 0 || !COMMIT.test(oid)) throw new Error("tree-unreadable");
-  return { mode, type, oid };
-}
-
-function blobBytes(root: string, oid: string): Buffer {
-  const blob = runGit(root, ["cat-file", "blob", oid]);
-  if (blob.status !== 0) throw new Error("blob-unreadable");
-  return blob.stdout;
+/** A TreeReader over one commit's tree, and whether any read of it failed (a corrupt, missing or unreachable object, or a git that did not answer). */
+interface CommitReader {
+  readonly reader: TreeReader;
+  readonly unreadable: () => boolean;
 }
 
 /**
  * A TreeReader over one commit's tree: git plumbing only, so the working tree, the index and every ref stay as they were. A path
- * behind a link cannot be reached by `ls-tree`, and a link above a path is reported by hasSymlinkAncestor.
+ * behind a link cannot be reached by `ls-tree`, and a link above a path is reported by hasSymlinkAncestor. verifyPrepared answers a
+ * failed read as a mismatch, so `unreadable` records every failure for the caller to turn into `indeterminate`.
  */
-export function commitReader(root: string, commit: string): TreeReader {
-  return {
+function commitReader(root: string, commit: string, timeoutMs: number): CommitReader {
+  let failed = false;
+  const fail = (): never => {
+    failed = true;
+    throw new Error("object-unreadable");
+  };
+  const git = (args: readonly string[]): { status: number; stdout: Buffer } => {
+    try {
+      return runGit(root, args, timeoutMs);
+    } catch {
+      return fail();
+    }
+  };
+  /** The one tree entry at `relPath` in the commit, or null when there is none. Throws when git cannot say. */
+  const treeRecord = (relPath: string): TreeRecord | null => {
+    const listed = git(["ls-tree", "-z", commit, "--", relPath]);
+    if (listed.status !== 0) return fail();
+    const records = listed.stdout.toString("utf8").split("\0").filter((record) => record !== "");
+    if (records.length === 0) return null;
+    if (records.length !== 1) return fail();
+    const record = records[0]!;
+    const tab = record.indexOf("\t");
+    if (tab === -1 || record.slice(tab + 1) !== relPath) return fail();
+    const [mode, type, oid, ...rest] = record.slice(0, tab).split(" ");
+    if (mode === undefined || type === undefined || oid === undefined || rest.length > 0 || !COMMIT.test(oid)) return fail();
+    return { mode, type, oid };
+  };
+  const blobBytes = (oid: string): Buffer => {
+    const blob = git(["cat-file", "blob", oid]);
+    if (blob.status !== 0) return fail();
+    return blob.stdout;
+  };
+  const reader: TreeReader = {
     onBranch: () => true,
     changedPaths(baseCommit): GitPathList {
-      const diff = runGit(root, ["diff-tree", "-r", "-z", "--name-only", "--no-renames", baseCommit, commit]);
+      const diff = git(["diff-tree", "-r", "-z", "--name-only", "--no-renames", baseCommit, commit]);
       if (diff.status !== 0) return { ok: false };
       return { ok: true, paths: diff.stdout.toString("utf8").split("\0").filter((path) => path !== "") };
     },
@@ -167,27 +212,28 @@ export function commitReader(root: string, commit: string): TreeReader {
     hasSymlinkAncestor(relPath) {
       const parts = relPath.split("/");
       for (let length = 1; length < parts.length; length += 1) {
-        const record = treeRecord(root, commit, parts.slice(0, length).join("/"));
+        const record = treeRecord(parts.slice(0, length).join("/"));
         if (record === null) return false;
         if (record.mode === "120000") return true;
       }
       return false;
     },
     entry(relPath): TreeEntry | null {
-      const record = treeRecord(root, commit, relPath);
+      const record = treeRecord(relPath);
       if (record === null) return null;
       if (record.type !== "blob") return { kind: "other" };
-      if (record.mode === "120000") return { kind: "symlink", target: blobBytes(root, record.oid).toString("utf8") };
+      if (record.mode === "120000") return { kind: "symlink", target: blobBytes(record.oid).toString("utf8") };
       if (record.mode === "100644") return { kind: "file", executable: false };
       if (record.mode === "100755") return { kind: "file", executable: true };
       return { kind: "other" };
     },
     bytes(relPath) {
-      const record = treeRecord(root, commit, relPath);
+      const record = treeRecord(relPath);
       if (record === null || record.type !== "blob" || (record.mode !== "100644" && record.mode !== "100755")) throw new Error("not-a-regular-file");
-      return blobBytes(root, record.oid);
+      return blobBytes(record.oid);
     },
   };
+  return { reader, unreadable: () => failed };
 }
 
 // ---------------------------------------------------------------------------
@@ -221,16 +267,11 @@ export function createGhPorts(run: GhRun = runGh): StatusPorts {
   };
   return {
     viewer: () => get("user", ".node_id"),
+    // One page of 100: a full page may have more behind it, and readRows refuses it rather than guess (S6).
     openPullRequests(id) {
-      const rows: unknown[] = [];
-      for (const page of [1, 2]) {
-        const parsed: unknown = JSON.parse(get(`${repositoryPath(id)}/pulls?state=open&per_page=100&page=${page}`, PULL_REQUEST_FIELDS));
-        if (!Array.isArray(parsed)) throw new Error("gh api answered something else");
-        rows.push(...parsed);
-        // A short page is the last one; a full first page may have a second, whose rows tell status there are too many.
-        if (parsed.length < 100) break;
-      }
-      return rows;
+      const parsed: unknown = JSON.parse(get(`${repositoryPath(id)}/pulls?state=open&per_page=${MAX_OPEN_PULL_REQUESTS}&page=1`, PULL_REQUEST_FIELDS));
+      if (!Array.isArray(parsed)) throw new Error("gh api answered something else");
+      return parsed;
     },
     tip(id, branch) {
       if (!branchSafe(branch)) throw new Error("branch-invalid");
@@ -257,7 +298,7 @@ interface PullRequestRow {
 
 function readRows(raw: unknown): PullRequestRow[] | "too-many-open" | "port-malformed" {
   if (!Array.isArray(raw)) return "port-malformed";
-  if (raw.length > MAX_OPEN_PULL_REQUESTS) return "too-many-open";
+  if (raw.length >= MAX_OPEN_PULL_REQUESTS) return "too-many-open";
   const rows: PullRequestRow[] = [];
   for (const row of raw as unknown[]) {
     if (!isRecord(row)) return "port-malformed";
@@ -347,6 +388,7 @@ async function observe(input: StatusInput): Promise<StatusResult> {
   for (const entry of held) if (validateRepositoryChangeSet(entry).valid && changeSetDigest(entry) === entry.changeSetDigest) known.add(entry.changeSetDigest);
   known.delete(set.changeSetDigest);
 
+  const timeoutMs = input.gitTimeoutMs ?? GIT_TIMEOUT_MS;
   const ports = input.ports ?? createGhPorts();
   let viewer: string;
   let raw: unknown;
@@ -382,14 +424,24 @@ async function observe(input: StatusInput): Promise<StatusResult> {
   if (current !== null) {
     const number = current.number;
     if (typeof current.baseRef !== "string" || typeof current.headRef !== "string" || typeof current.title !== "string" || typeof current.headSha !== "string") return indeterminate("port-malformed", [number]);
+    // The clone, the hub and the admission come first: a refusal there is about them, not about the pull request, so it is
+    // `indeterminate` whatever the pull request says.
+    const pre = await runPreconditions(input.clone, input.hub, set, input.heldChangeSets ?? [], { now: input.now, runReadiness: input.runReadiness });
+    if ("exitCode" in pre) return indeterminate(pre.reason ?? "refused", [number]);
     // S5
     if (current.baseRef !== branch) return diverged("base-branch-mismatch", [number]);
     if (current.headRef !== set.branch) return diverged("ref-mismatch", [number]);
     if (current.title !== set.pullRequest.title) return diverged("title-mismatch", [number]);
-    if (!commitIsLocal(root, current.headSha)) return diverged("head-not-local", [number]);
-    const pre = await runPreconditions(input.clone, input.hub, set, input.heldChangeSets ?? [], { now: input.now, runReadiness: input.runReadiness });
-    if ("exitCode" in pre) return fromStep(pre, number);
-    const verified = verifyPrepared(set, pre, commitReader(root, current.headSha));
+    if (!commitIsLocal(root, current.headSha, timeoutMs)) return diverged("head-not-local", [number]);
+    const head = commitReader(root, current.headSha, timeoutMs);
+    let verified: ApplyStepResult | null = null;
+    try {
+      verified = withoutLazyFetch(() => verifyPrepared(set, pre, head.reader));
+    } catch (cause) {
+      if (!head.unreadable()) throw cause;
+    }
+    // A read that failed may have been answered as a mismatch: an object git cannot read is unknown, not diverged.
+    if (verified === null || head.unreadable()) return indeterminate("object-unreadable", [number]);
     if (verified.exitCode !== 0) return fromStep(verified, number);
     proposed = { exitCode: 0, state: "proposed", pullRequests: [number] };
   }
@@ -404,13 +456,15 @@ async function observe(input: StatusInput): Promise<StatusResult> {
     return indeterminate("port-failed");
   }
   if (!COMMIT.test(tip)) return indeterminate("port-malformed");
-  if (!commitIsLocal(root, tip)) return indeterminate("tip-not-local");
+  if (!commitIsLocal(root, tip, timeoutMs)) return indeterminate("tip-not-local");
+  const tipReader = commitReader(root, tip, timeoutMs);
   let holds: boolean;
   try {
-    holds = holdsTheSet(set, commitReader(root, tip));
+    holds = holdsTheSet(set, tipReader.reader);
   } catch {
     return indeterminate("tip-unreadable");
   }
+  if (tipReader.unreadable()) return indeterminate("tip-unreadable");
   return holds ? { exitCode: 0, state: "applied" } : { exitCode: 2, state: "planned" };
 }
 

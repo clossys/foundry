@@ -495,7 +495,7 @@ export interface TreeReader {
 export type { GitPathList };
 
 /** The reader verify uses: the clone's working tree and its git status. */
-export function workingTreeReader(root: string): TreeReader {
+function workingTreeReader(root: string): TreeReader {
   return {
     onBranch(branch) {
       const head = git(root, ["rev-parse", "--abbrev-ref", "HEAD"]);

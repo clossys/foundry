@@ -1,5 +1,6 @@
 import { execFileSync } from "node:child_process";
-import { readFileSync, rmSync, writeFileSync } from "node:fs";
+import { chmodSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { branchExists, buildMaterializedFixture, writeSnapshot } from "./apply-step-fixture.js";
@@ -39,6 +40,13 @@ const gitEnv = {
 };
 function git(cwd: string, ...args: string[]): string {
   return execFileSync("git", ["-c", "commit.gpgsign=false", "-c", "core.hooksPath=/dev/null", ...args], { cwd, env: gitEnv, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] }).trim();
+}
+
+/** Every file name under the clone's object database: a grown pack or a new loose object shows here. */
+function objectFiles(clone: string): string[] {
+  const walk = (dir: string): string[] =>
+    readdirSync(dir, { withFileTypes: true }).flatMap((entry) => (entry.isDirectory() ? walk(join(dir, entry.name)).map((name) => `${entry.name}/${name}`) : [entry.name]));
+  return walk(join(clone, ".git/objects")).sort();
 }
 
 /** A materialized clone whose branch holds one commit (the pull request's head), with the clone back on the default branch. */
@@ -235,12 +243,15 @@ describe("status", () => {
   );
 
   it(
-    "more than 100 open pull requests, a failing port or a malformed answer is indeterminate",
+    "a full page of 100 open pull requests, a failing port or a malformed answer is indeterminate",
     async () => {
       const world = await proposedWorld();
       const plain = (number: number) => ({ number, body: "plain" });
-      const exactly = await statusOf(world, fakePorts([row(world), ...Array.from({ length: MAX_OPEN_PULL_REQUESTS - 1 }, (_, i) => plain(i + 100))]).ports);
-      expect(exactly).toMatchObject({ state: "proposed" });
+      // 99 rows are a whole listing; 100 may hide the oldest pull request beyond the page, so they are refused.
+      const short = await statusOf(world, fakePorts([row(world), ...Array.from({ length: MAX_OPEN_PULL_REQUESTS - 2 }, (_, i) => plain(i + 100))]).ports);
+      expect(short).toMatchObject({ state: "proposed" });
+      const full = await statusOf(world, fakePorts([row(world), ...Array.from({ length: MAX_OPEN_PULL_REQUESTS - 1 }, (_, i) => plain(i + 100))]).ports);
+      expect(full).toEqual({ exitCode: 2, state: "indeterminate", reason: "too-many-open" });
       const over = await statusOf(world, fakePorts([row(world), ...Array.from({ length: MAX_OPEN_PULL_REQUESTS }, (_, i) => plain(i + 100))]).ports);
       expect(over).toEqual({ exitCode: 2, state: "indeterminate", reason: "too-many-open" });
 
@@ -333,6 +344,87 @@ describe("status", () => {
     TIMEOUT,
   );
 
+  it(
+    "never fetches a head or an object a partial clone lacks",
+    async () => {
+      const world = await proposedWorld();
+      // The head exists on the origin only: a blobless clone whose promisor remote would serve it to a lazy fetch.
+      git(world.clone, "push", "origin", world.set.branch);
+      git(world.origin, "config", "uploadpack.allowFilter", "true");
+      git(world.origin, "config", "uploadpack.allowAnySHA1InWant", "true");
+      git(world.clone, "config", "core.repositoryformatversion", "1");
+      git(world.clone, "config", "extensions.partialClone", "origin");
+      git(world.clone, "config", "remote.origin.promisor", "true");
+      git(world.clone, "config", "remote.origin.partialclonefilter", "blob:none");
+      git(world.clone, "branch", "-D", world.set.branch);
+      git(world.clone, "update-ref", "-d", `refs/remotes/origin/${world.set.branch}`);
+      git(world.clone, "reflog", "expire", "--expire=now", "--all");
+      git(world.clone, "prune", "--expire=now");
+      const before = objectFiles(world.clone);
+      const snapshot = writeSnapshot(world.clone, world.hub);
+
+      const result = await statusOf(world, fakePorts([row(world)]).ports);
+      expect(result).toEqual({ exitCode: 1, state: "diverged", reason: "head-not-local", pullRequests: [7] });
+      expect(objectFiles(world.clone)).toEqual(before);
+      expect(writeSnapshot(world.clone, world.hub)).toBe(snapshot);
+    },
+    TIMEOUT,
+  );
+
+  it(
+    "an object git cannot read is indeterminate, not diverged",
+    async () => {
+      const world = await proposedWorld();
+      expect(await statusOf(world, fakePorts([row(world)]).ports)).toMatchObject({ state: "proposed" });
+      // Lose the ledger blob of the head commit from the object database.
+      const listed = git(world.clone, "ls-tree", world.head, "--", "clossys/.state/installed.json");
+      const oid = /^\d+ blob ([0-9a-f]{40})\t/u.exec(listed)![1]!;
+      rmSync(join(world.clone, ".git/objects", oid.slice(0, 2), oid.slice(2)), { force: true });
+      const result = await statusOf(world, fakePorts([row(world)]).ports);
+      expect(result).toEqual({ exitCode: 2, state: "indeterminate", reason: "object-unreadable", pullRequests: [7] });
+    },
+    TIMEOUT,
+  );
+
+  it(
+    "a git call that hangs is indeterminate",
+    async () => {
+      const world = await proposedWorld();
+      const shim = join(tmpdir(), `launcher-status-shim-${process.pid}-${Date.now()}`);
+      roots.push(shim);
+      mkdirSync(shim, { recursive: true });
+      writeFileSync(join(shim, "git"), "#!/bin/sh\nexec sleep 20\n");
+      chmodSync(join(shim, "git"), 0o755);
+      const path = process.env.PATH;
+      process.env.PATH = `${shim}:${path ?? ""}`;
+      try {
+        const started = Date.now();
+        const result = await statusRepository({ clone: world.clone, hub: world.hub, set: world.set, heldChangeSets: [], ports: fakePorts([], "d".repeat(40)).ports, gitTimeoutMs: 300 });
+        expect(result).toEqual({ exitCode: 2, state: "indeterminate", reason: "status-failed" });
+        expect(Date.now() - started).toBeLessThan(10_000);
+      } finally {
+        process.env.PATH = path;
+      }
+    },
+    TIMEOUT,
+  );
+
+  it(
+    "a precondition that fails is indeterminate whatever the pull request says",
+    async () => {
+      const world = await proposedWorld();
+      // The local default branch moves ahead of the remote's: the clone, not the pull request, is out of step.
+      writeFileSync(join(world.clone, "unpushed.txt"), "x\n");
+      git(world.clone, "add", "unpushed.txt");
+      git(world.clone, "commit", "-m", "local only");
+      for (const over of [{}, { title: "x" }, { headRef: "clossys/apply-000000000000" }]) {
+        const result = await statusOf(world, fakePorts([row(world, over)]).ports);
+        expect(result, JSON.stringify(over)).toEqual({ exitCode: 2, state: "indeterminate", reason: "remote-tip-mismatch", pullRequests: [7] });
+      }
+    },
+    TIMEOUT,
+  );
+
   it("prints only fixed tokens and safe numbers", () => {
     expect(safeReason("head-not-local")).toBe("head-not-local");
     for (const hostile of ["Has Space", "UPPER", "a\nb", "a/b", "x".repeat(65), "", undefined, 4, "-lead", "trail-"]) expect(safeReason(hostile)).toBe("refused");
@@ -362,22 +454,22 @@ describe("status", () => {
       expect(args).toHaveLength(6);
       expect(args[4]).toBe("--jq");
       for (const flag of ["-f", "-F", "--field", "--raw-field", "--input", "-X", "--method=POST", "PATCH", "PUT", "POST", "DELETE"]) expect(args).not.toContain(flag);
-      expect(args[3]).toMatch(/^(user|repos\/[A-Za-z0-9._-]+\/[A-Za-z0-9._-]+\/(pulls\?state=open&per_page=100&page=[12]|git\/ref\/heads\/[A-Za-z0-9._\/-]+))$/u);
+      expect(args[3]).toMatch(/^(user|repos\/[A-Za-z0-9._-]+\/[A-Za-z0-9._-]+\/(pulls\?state=open&per_page=100&page=1|git\/ref\/heads\/[A-Za-z0-9._\/-]+))$/u);
     }
     // A repository id or branch that is not a plain name never reaches a path.
     for (const bad of ["../x/y", "a/b/c", "a b/c", "a/b?x=1", "a/..", ""]) expect(() => ports.openPullRequests(bad), bad).toThrow();
     for (const bad of ["../x", "a b", "a?x", "a//b", "a/../b", "", "-x", "a#b"]) expect(() => ports.tip(SITE_ID, bad), bad).toThrow();
     expect(calls).toHaveLength(3);
-    // A failing or malformed answer throws; a second page is read only after a full first page.
+    // A failing or malformed answer throws; only the first page is ever asked for, however full it is.
     expect(() => createGhPorts(() => ({ status: 1, stdout: "" })).viewer()).toThrow();
     expect(() => createGhPorts(() => ({ status: 0, stdout: "{}" })).openPullRequests(SITE_ID)).toThrow();
     const pages: string[] = [];
     const full = JSON.stringify(Array.from({ length: 100 }, (_, i) => ({ number: i + 1 })));
     const paged = createGhPorts((args) => {
       pages.push(args[3]!);
-      return { status: 0, stdout: pages.length === 1 ? full : "[]" };
+      return { status: 0, stdout: full };
     });
     expect(((await paged.openPullRequests(SITE_ID)) as unknown[]).length).toBe(100);
-    expect(pages).toHaveLength(2);
+    expect(pages).toHaveLength(1);
   });
 });
