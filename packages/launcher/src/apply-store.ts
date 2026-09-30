@@ -1,5 +1,6 @@
-// The hub's two apply stores (issue #1178): every repository change set and
-// every apply bundle this hub has computed, kept by digest under
+// The hub's two apply stores (issue #1178): every repository change set (kept
+// append-only) and every apply bundle (the newest computation replacing the
+// last under one digest) this hub has computed, kept by digest under
 // clossys/.state/apply/ so a later step (the ledger, an approval, a resumed
 // apply) can read back the exact document a digest names instead of trusting
 // whatever is passed to it in memory.
@@ -35,7 +36,7 @@
 // turns into directory creation), names only the failing operation and the
 // error's code -- never a path, digest or other value a `cause` might carry.
 //
-// This module does I/O (mkdirSync, open/write/link/read on the hub
+// This module does I/O (mkdirSync, open/write/link/rename/read on the hub
 // directory) and so must never be imported by plan-bundle.ts, which computes
 // change sets and bundles without touching a filesystem.
 

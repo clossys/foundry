@@ -1000,8 +1000,13 @@ here reads a ledger from a repository: the caller hands its bytes in.
 - The hub keeps every change set and bundle it computes under
   `clossys/.state/apply/change-sets/` and `clossys/.state/apply/bundles/`,
   one file per digest (`storeChangeSet()`, `storeApplyBundle()`). A stored
-  file is never replaced, and a read returns it only when its recomputed
-  digest matches its name.
+  change set is never replaced; a stored bundle is replaced atomically, and
+  only when the same `bundleDigest` is stored again, which covers the plan
+  digest and the change-set digests only, so only the authorization, verdict,
+  clock and mode fields can differ. `plan` always writes a report-mode bundle, so a
+  rerun replaces a stored bundle of the same digest, including any
+  planned-mode state or binding fields a later unit may add to it. A read
+  returns a file only when its recomputed digest matches its name.
 - The succession rules compare what two ledgers claim, not the files: an
   admitted generation must install exactly the packages its setup deferred
   and change no other row, but whether the pull request's tree matches its

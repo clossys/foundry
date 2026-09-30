@@ -1,12 +1,18 @@
 import { randomBytes } from "node:crypto";
-import { chmodSync, existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, realpathSync, rmSync, statSync, symlinkSync, writeFileSync } from "node:fs";
+import { chmodSync, existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, realpathSync, renameSync, rmSync, statSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { basename, join } from "node:path";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { bundleDigest } from "./change-set-digest.js";
 import { validateApplyBundle, validateRepositoryChangeSet } from "./change-set-contract.js";
 import type { ApplyBundle, RepositoryChangeSet } from "./change-set-contract.js";
 import { BUNDLE_STORE_REL, CHANGE_SET_STORE_REL, readStoredApplyBundle, readStoredChangeSet, storeApplyBundle, storeChangeSet } from "./apply-store.js";
+
+// A pass-through spy on renameSync, so one test can make the rename step of a replacement fail (a test-only seam; nothing in production is added).
+vi.mock("node:fs", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("node:fs")>();
+  return { ...actual, renameSync: vi.fn(actual.renameSync) };
+});
 
 /*
  * Issue #1178. The hub's two apply stores, content-addressed by digest: the
@@ -209,7 +215,7 @@ describe("storeApplyBundle / readStoredApplyBundle", () => {
     expect(Object.keys(bundleStore())).toEqual([`${BUNDLE.bundleDigest.slice("sha256:".length)}.json`]);
   });
 
-  it("replaces the stored file with the newest bytes when the same digest is stored with a new authorization or mode, and only that file changes", () => {
+  it("replaces the stored file with the newest bytes when the same digest is stored with a new authorization, and only that file changes", () => {
     const other = storeApplyBundle(hub, OTHER_BUNDLE);
     const otherBefore = readFileSync(other, "utf8");
     const path = storeApplyBundle(hub, BUNDLE);
@@ -262,6 +268,41 @@ describe("storeApplyBundle / readStoredApplyBundle", () => {
     storeApplyBundle(hub, later);
     expect(readStoredApplyBundle(hub, BUNDLE.bundleDigest)).toEqual(later);
     expect(readdirSync(join(hub, BUNDLE_STORE_REL)).filter((entry) => entry.endsWith(".tmp"))).toEqual([basename(stray)]);
+  });
+
+  it("a real replacement goes through a temporary file and a rename: the file at the digest name is a new inode, never rewritten in place", () => {
+    const path = storeApplyBundle(hub, BUNDLE);
+    const before = statSync(path);
+    const held = readFileSync(path);
+    const renames = vi.mocked(renameSync);
+    renames.mockClear();
+    const later: ApplyBundle = { ...BUNDLE, computedAt: "2026-09-25T00:00:00Z" };
+    storeApplyBundle(hub, later);
+    expect(renames).toHaveBeenCalledTimes(1);
+    const [from, to] = renames.mock.calls[0] as [string, string];
+    expect(to).toBe(path);
+    expect(basename(from)).toMatch(/^\..+\.tmp$/);
+    expect(from).not.toBe(path);
+    expect(statSync(path).ino).not.toBe(before.ino);
+    expect(held.toString("utf8")).toBe(bundleBytes(BUNDLE));
+    expect(readFileSync(path, "utf8")).toBe(bundleBytes(later));
+  });
+
+  it("a rename that fails leaves the old bundle byte for byte and removes the temporary file", () => {
+    const path = storeApplyBundle(hub, BUNDLE);
+    const before = readFileSync(path);
+    const directory = join(hub, BUNDLE_STORE_REL);
+    let temporary = "";
+    vi.mocked(renameSync).mockImplementationOnce((from) => {
+      temporary = String(from);
+      expect(existsSync(temporary)).toBe(true);
+      throw Object.assign(new Error("simulated"), { code: "EXDEV" });
+    });
+    expect(() => storeApplyBundle(hub, { ...BUNDLE, computedAt: "2026-09-25T00:00:00Z" })).toThrow(/^hub store write failed \(EXDEV\)$/);
+    expect(temporary).not.toBe("");
+    expect(existsSync(temporary)).toBe(false);
+    expect(readFileSync(path).equals(before)).toBe(true);
+    expect(readdirSync(directory)).toEqual([basename(path)]);
   });
 
   it("a failed replacement leaves the stored file as it was and no temporary file of its own", () => {
