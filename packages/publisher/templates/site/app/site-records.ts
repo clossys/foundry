@@ -21,7 +21,7 @@ import brandFactsRecord from "../../../clossys/strategist/brand-facts.json" with
 import copyRegistryRecord from "../../../clossys/writer/copy-registry.json" with { type: "json" };
 import privacyRecord from "../../../clossys/publisher/legal/privacy.json" with { type: "json" };
 import termsRecord from "../../../clossys/publisher/legal/terms.json" with { type: "json" };
-import { parseBrandFacts, requireLegalDocument, resolveCrawlTarget, resolveSiteOrigin, resolveSiteTarget } from "./site-wiring";
+import { parseBrandFacts, requireLegalDocument, resolveCanonicalSiteOrigin, resolveCrawlTarget, resolveSiteTarget } from "./site-wiring";
 import type { SiteBrandFacts, SiteLegalState, SiteTarget } from "./site-wiring";
 
 /** The deployment target for this process: `SITE_TARGET`, and `production` when it is absent. */
@@ -37,9 +37,12 @@ export function siteCrawlTarget(): SiteTarget {
   return resolveCrawlTarget(process.env);
 }
 
-/** The site's origin: `NEXT_PUBLIC_SITE_URL`, which must be a valid origin. There is no fallback. */
+/**
+ * The site's origin: `NEXT_PUBLIC_SITE_URL`, which must be a valid origin and,
+ * on `production`, must equal the brand-facts `canonicalOrigin`. There is no fallback.
+ */
 export function siteOrigin(): string {
-  return resolveSiteOrigin(process.env);
+  return resolveCanonicalSiteOrigin(process.env, loadBrandFacts());
 }
 
 export function loadBrandFacts(): SiteBrandFacts {

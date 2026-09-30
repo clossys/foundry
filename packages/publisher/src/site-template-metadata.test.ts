@@ -19,10 +19,12 @@ import { OG_SHARE_CARD_SPEC } from "./templates/channelSpecs.js";
 import type { WebRouteManifest } from "./web/checkWebRoutes.js";
 import { buildShareCard } from "./web/shareCard.js";
 import { buildSiteMetadata } from "./web/siteMetadata.js";
-import { resolveCrawlTarget, resolveSiteOrigin, siteRobots, siteSitemap } from "../templates/site/app/site-wiring.js";
+import { resolveCanonicalSiteOrigin, resolveCrawlTarget, resolveSiteOrigin, siteRobots, siteSitemap } from "../templates/site/app/site-wiring.js";
 import type { SiteLegalState } from "../templates/site/app/site-wiring.js";
 import {
+  ABOUT_COPY_IDS,
   LANDING_COPY_IDS,
+  SHARE_CARD_ALT_ID,
   aboutCopyIds,
   allContactPageCopyIds,
   landingCopyIds,
@@ -342,7 +344,91 @@ describe("siteShareCardText", () => {
   it("the root layout takes metadataBase from the origin variable through siteOrigin", () => {
     const layout = readTemplate("app/layout.tsx");
     expect(layout).toMatch(/metadataBase:\s*new URL\(siteOrigin\(\)\)/);
-    expect(readTemplate("app/site-records.ts")).toMatch(/return resolveSiteOrigin\(process\.env\);/);
+  });
+});
+
+// ------------------------------------------------- resolveCanonicalSiteOrigin
+
+describe("resolveCanonicalSiteOrigin", () => {
+  const facts = { canonicalOrigin: ORIGIN };
+
+  it("production accepts the canonical origin", () => {
+    expect(resolveCanonicalSiteOrigin({ SITE_TARGET: "production", NEXT_PUBLIC_SITE_URL: ORIGIN }, facts)).toBe(ORIGIN);
+  });
+
+  // The variable must already be a valid origin (the origin rules run first), so the
+  // slash and case mismatches are on the record's side.
+  const DIFFERENT: ReadonlyArray<[string, string, string]> = [
+    ["a canonicalOrigin with a trailing slash", ORIGIN, `${ORIGIN}/`],
+    ["a canonicalOrigin with an uppercase host", ORIGIN, "https://MARKER.example"],
+    ["another host", "https://other.example", ORIGIN],
+  ];
+
+  for (const [label, value, canonicalOrigin] of DIFFERENT) {
+    it(`production refuses a different origin: ${label}, naming both names and neither value`, () => {
+      let thrown: unknown;
+      try {
+        resolveCanonicalSiteOrigin({ SITE_TARGET: "production", NEXT_PUBLIC_SITE_URL: value }, { canonicalOrigin });
+      } catch (error) {
+        thrown = error;
+      }
+      expect(thrown).toBeInstanceOf(Error);
+      const message = (thrown as Error).message;
+      expect(message).toContain("NEXT_PUBLIC_SITE_URL");
+      expect(message).toContain("canonicalOrigin");
+      for (const leaked of [value, canonicalOrigin, ORIGIN, "marker", "MARKER", "other.example"]) expect(message).not.toContain(leaked);
+    });
+  }
+
+  const OTHER_TARGETS: ReadonlyArray<[string, Record<string, string | undefined>]> = [
+    ["absent", {}],
+    ["preview", { SITE_TARGET: "preview" }],
+    ["development", { SITE_TARGET: "development" }],
+    ["test", { SITE_TARGET: "test" }],
+  ];
+
+  for (const [label, target] of OTHER_TARGETS) {
+    it(`other targets do not compare: SITE_TARGET ${label} returns the variable's origin`, () => {
+      const preview = "https://preview.example";
+      expect(resolveCanonicalSiteOrigin({ ...target, NEXT_PUBLIC_SITE_URL: preview }, facts)).toBe(preview);
+    });
+  }
+
+  it("the origin rules still apply first: production with an absent or malformed variable", () => {
+    for (const env of [{}, { NEXT_PUBLIC_SITE_URL: "" }, { NEXT_PUBLIC_SITE_URL: `${ORIGIN}/docs` }, { NEXT_PUBLIC_SITE_URL: "marker.example" }]) {
+      let thrown: unknown;
+      try {
+        resolveCanonicalSiteOrigin({ SITE_TARGET: "production", ...env }, facts);
+      } catch (error) {
+        thrown = error;
+      }
+      expect(thrown).toBeInstanceOf(Error);
+      const message = (thrown as Error).message;
+      expect(message).toContain("NEXT_PUBLIC_SITE_URL");
+      expect(message).not.toContain("canonicalOrigin");
+    }
+  });
+
+  it("the origin rules still apply first: a malformed variable on a canonical-matching facts value", () => {
+    expect(() => resolveCanonicalSiteOrigin({ SITE_TARGET: "preview", NEXT_PUBLIC_SITE_URL: `${ORIGIN}/` }, facts)).toThrow(/NEXT_PUBLIC_SITE_URL/);
+  });
+
+  it("an unknown SITE_TARGET throws naming SITE_TARGET", () => {
+    expect(() => resolveCanonicalSiteOrigin({ SITE_TARGET: "staging", NEXT_PUBLIC_SITE_URL: ORIGIN }, facts)).toThrow(/SITE_TARGET/);
+    expect(() => resolveCanonicalSiteOrigin({ SITE_TARGET: "", NEXT_PUBLIC_SITE_URL: ORIGIN }, facts)).toThrow(/SITE_TARGET/);
+  });
+
+  it("siteOrigin goes through the canonical check", () => {
+    expect(templateFunctionBody("app/site-records.ts", "siteOrigin")).toBe("return resolveCanonicalSiteOrigin(process.env, loadBrandFacts());");
+  });
+});
+
+// ------------------------------------------------------------------- README
+
+describe("the template README", () => {
+  it("names the five upgrade copy ids", () => {
+    const readme = readTemplate("README.md");
+    for (const id of [...Object.values(ABOUT_COPY_IDS), SHARE_CARD_ALT_ID]) expect(readme, id).toContain(id);
   });
 });
 

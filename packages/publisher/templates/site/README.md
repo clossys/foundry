@@ -132,6 +132,16 @@ applies to `site.origin`. `app/layout.tsx` sets `metadataBase` from it, and
 `robots` and `sitemap` build their absolute URLs from it. The variable is read
 only through `siteOrigin()` in `app/site-records.ts`.
 
+The brand-facts record carries a second origin, `canonicalOrigin`, and
+`siteOrigin()` checks the two against each other. When `SITE_TARGET` is
+explicitly `production` (the crawl rule: an absent value is not
+`production`), an origin that is not exactly equal to `canonicalOrigin`
+fails every page and the build. There is no normalisation: a trailing slash
+or a different letter case is a mismatch. The message names
+`NEXT_PUBLIC_SITE_URL` and `canonicalOrigin` and never either value. On every
+other target (absent, `preview`, `development`, `test`) the variable's origin
+is used without comparing, because previews have their own origins.
+
 ## `SITE_TARGET`
 
 `SITE_TARGET` names the deployment: `production`, `preview`, `development`
@@ -225,6 +235,15 @@ returns `unavailable` and logs a code only.
   still deliver after the visitor was shown a failure.
 - **The honeypot is the only bot check.** A submission that fills the hidden
   field is answered as accepted and delivers nothing. There is no CAPTCHA.
+
+## Upgrading
+
+A site made from a template copy made before the `/about` page and the share
+card landed needs five new copy entries in its `clossys/writer/copy-registry.json`,
+or its build fails: the four about ids `site.about.heading`,
+`site.about.description`, `site.about.cta-heading` and
+`site.about.cta-description` (`ABOUT_COPY_IDS` in `app/site-copy.ts`), and the
+share card's alternative text, `site.share-card.alt` (`SHARE_CARD_ALT_ID`).
 
 ## Not yet wired
 

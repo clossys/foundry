@@ -90,6 +90,27 @@ export function resolveSiteOrigin(env: Readonly<Record<string, string | undefine
   return value;
 }
 
+/**
+ * The site's origin, checked against the brand-facts record's
+ * `canonicalOrigin`. It starts from `resolveSiteOrigin`, so every refusal
+ * there applies first. On `production` (by the crawl rule: only an explicit
+ * `SITE_TARGET=production`) the origin must equal `facts.canonicalOrigin`
+ * exactly, with no normalisation: a trailing slash or a different case is a
+ * mismatch. The error names both sources and never either value. On every
+ * other target the variable's origin is returned without comparing, because
+ * previews have their own origins.
+ */
+export function resolveCanonicalSiteOrigin(
+  env: Readonly<Record<string, string | undefined>>,
+  facts: Pick<SiteBrandFacts, "canonicalOrigin">,
+): string {
+  const origin = resolveSiteOrigin(env);
+  if (resolveCrawlTarget(env) === "production" && origin !== facts.canonicalOrigin) {
+    throw new Error(`${SITE_ORIGIN_VARIABLE} must equal the brand-facts canonicalOrigin on production.`);
+  }
+  return origin;
+}
+
 // ----------------------------------------------------------- robots, sitemap
 
 /** The `robots` route's result: assignable to Next's `MetadataRoute.Robots`, and it imports nothing from `next`. */
