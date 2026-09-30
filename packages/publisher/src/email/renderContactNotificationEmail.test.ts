@@ -3,6 +3,9 @@ import { renderContactNotificationEmail } from "./renderContactNotificationEmail
 
 const DOMAIN = "example.com";
 
+/** Sentinel whose contents leak under String(), JSON.stringify and interpolation. */
+const MARK = "ZZ-MARK-77";
+
 const full = {
   topic: "general",
   name: "Ada Lovelace",
@@ -139,11 +142,44 @@ describe("labels", () => {
     expect(rendered.html).not.toContain("<b>");
   });
 
+  it("escapes each of the five labels exactly once", () => {
+    for (const label of ["topic", "name", "email", "phone", "message"] as const) {
+      const rendered = renderContactNotificationEmail(full, { labels: { [label]: `<b>&"'` } });
+      expect(rendered.html).toContain(`>&lt;b&gt;&amp;&quot;&#39;</th>`);
+      expect(rendered.html).not.toContain("<b>");
+    }
+  });
+
   it("refuses a non-string label without echoing it", () => {
-    const message = refusal(() =>
-      renderContactNotificationEmail(full, { labels: { name: 7 as unknown as string } }),
-    );
-    expect(message).toContain("labels.name");
+    for (const label of ["topic", "name", "email", "phone", "message"] as const) {
+      for (const bad of [7 as unknown as string, { toString: () => MARK }, [MARK], { leaked: MARK }]) {
+        const message = refusal(() => renderContactNotificationEmail(full, { labels: { [label]: bad } }));
+        expect(message).toContain(`labels.${label}`);
+        expect(message).not.toContain(MARK);
+      }
+    }
+  });
+
+  it("refuses a non-string field without echoing it", () => {
+    for (const field of ["topic", "name", "email", "phone", "message"] as const) {
+      for (const bad of [7 as unknown as string, { toString: () => MARK }, [MARK], { leaked: MARK }]) {
+        const message = refusal(() => renderContactNotificationEmail({ ...full, [field]: bad } as never));
+        expect(message).toContain(field);
+        expect(message).not.toContain(MARK);
+      }
+    }
+  });
+
+  it("refuses every C1 control character in each single-line field", () => {
+    for (const field of ["topic", "name", "email", "phone"] as const) {
+      for (let code = 0x80; code <= 0x9f; code += 1) {
+        const message = refusal(() =>
+          renderContactNotificationEmail({ ...full, [field]: `${MARK}${String.fromCharCode(code)}${MARK}` }),
+        );
+        expect(message).toContain(field);
+        expect(message).not.toContain(MARK);
+      }
+    }
   });
 
   it("refuses an options value that is not an object, and a labels value that is not an object", () => {
@@ -208,6 +244,21 @@ describe("untrusted input escaping", () => {
   it("leaves text unescaped, exactly as the handler wrote it before", () => {
     const rendered = renderContactNotificationEmail({ ...full, name: "<b>&</b>" });
     expect(rendered.text).toContain("Name: <b>&</b>\n");
+  });
+
+  it.each([
+    ["topic", "Topic"],
+    ["name", "Name"],
+    ["email", "Email"],
+    ["phone", "Phone"],
+    ["message", null],
+  ] as const)("leaves text unescaped for every field ($0)", (field, label) => {
+    const rendered = renderContactNotificationEmail({ ...full, [field]: "<b>&</b>" });
+    if (label === null) {
+      expect(rendered.text.endsWith("\n\n<b>&</b>")).toBe(true);
+    } else {
+      expect(rendered.text).toContain(`${label}: <b>&</b>\n`);
+    }
   });
 });
 
