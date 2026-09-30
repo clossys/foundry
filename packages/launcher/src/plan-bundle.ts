@@ -598,7 +598,8 @@ function computeChangeSet(
   // A profile that needs no new entry needs no item; one that needs entries added is skipped by the caller when it did not
   // supply the profile text, or edited here when it did. That refusal stays even over a ledger with rootEntries rows: code
   // rule C13 requires the item whenever the observed profile needs one. No declare-root-entry is emitted to carry the
-  // ledger's entries rows, and no exempt-release-age either: RENDER carries entries rows forward unchanged.
+  // ledger's entries rows, and the release-age row is the one entries row an apply set names an item for (an
+  // exempt-release-age item, added above when the trusted ledger records it): RENDER carries entries rows forward unchanged.
   const profile = observation.repositoryProfile;
   if (
     profile !== null &&

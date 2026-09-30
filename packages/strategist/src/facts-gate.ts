@@ -35,6 +35,7 @@
  *     product.
  */
 
+import { blankCssDeclPercents } from "./css-decl-percent.js";
 import { buildFactIndex, isTracedSurfaceForm, type FactIndex } from "./fact-index.js";
 import type { Fact } from "./schema.js";
 
@@ -172,19 +173,6 @@ function blankBalancedCall(text: string, name: string): string {
 
 const JSX_STYLE_ATTR_RE = /\bstyle=\{\{[\s\S]*?\}\}/g;
 const HTML_STYLE_ATTR_RE = /\bstyle=(?:"[^"]*"|'[^']*')/gi;
-// Declaration-shaped `prop: ... N%`. The first version put the number's
-// quantifiers next to the middle run's (`[^;…]*\d+`), so both could consume
-// the same digit run and the engine re-split a long run from every position:
-// quadratic, seconds on a 100k-character line. Two guards keep the same
-// matches in linear time. The middle stays greedy, so the match still lands
-// on the LAST percent sign with a number before it (`a: 3% 50%` blanks the
-// whole declaration, not just the first percentage). And the tail may only
-// START at a number's first digit — `(?<!\d)` and `(?<!\d\.)` reject
-// positions inside a number in constant time, so a long digit run costs one
-// pass instead of one pass per position; the fraction group is `*` so a
-// multi-dot malformed value ("1.2.3%") still blanks from its first digit.
-const CSS_DECL_PERCENT_RE = /\b[\w-]+\s*:\s*[^;`"'}\n]*(?<!\d)(?<!\d\.)\d+(?:\.\d+)*\s*%/g;
-
 /** Removes style-literal regions where a trailing `%` is a dimension, not a claim. */
 function blankStyleLiteralRegions(text: string): string {
   let out = blankBalancedCall(text, "color-mix");
@@ -192,7 +180,7 @@ function blankStyleLiteralRegions(text: string): string {
   out = blankBalancedCall(out, "calc");
   out = out.replace(JSX_STYLE_ATTR_RE, (m) => " ".repeat(m.length));
   out = out.replace(HTML_STYLE_ATTR_RE, (m) => " ".repeat(m.length));
-  out = out.replace(CSS_DECL_PERCENT_RE, (m) => " ".repeat(m.length));
+  out = blankCssDeclPercents(out);
   return out;
 }
 
