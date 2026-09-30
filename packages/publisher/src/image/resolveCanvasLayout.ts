@@ -139,7 +139,7 @@ export function resolveCanvasLayout(
     if (bindingErrors.length > 0) parts.push(`malformed binding(s): ${bindingErrors.map((f) => f.message).join("; ")}`);
     throw new RenderError(
       "resolution-failed",
-      `could not resolve document "${doc.id}" against its layout: ${parts.join("; ")}.`,
+      `could not resolve the document against its layout: ${parts.join("; ")}.`,
     );
   }
 

@@ -62,6 +62,30 @@ describe("refusal paths", () => {
     }
   });
 
+  it("does not echo the document id when the layout is missing", () => {
+    const doc = baseDoc({ id: "sentinel-doc-id-61", layout: undefined });
+    try {
+      renderImageDocument(doc);
+      expect.unreachable("should have thrown");
+    } catch (error) {
+      expect(error).toBeInstanceOf(RenderError);
+      expect((error as RenderError).message).toBe('renderImageDocument could not resolve the document: channel "image" requires a layout, but doc.layout is undefined.');
+      expect((error as RenderError).message).not.toContain("sentinel-doc-id-61");
+    }
+  });
+
+  it("does not echo the document id when a required slot has no binding", () => {
+    const doc = baseDoc({ id: "sentinel-doc-id-61", bindings: [{ slot: "eyebrow", value: "Product update" }] });
+    try {
+      renderImageDocument(doc);
+      expect.unreachable("should have thrown");
+    } catch (error) {
+      expect(error).toBeInstanceOf(RenderError);
+      expect((error as RenderError).message).toContain("could not resolve the document against its layout: missing required slot(s): headline");
+      expect((error as RenderError).message).not.toContain("sentinel-doc-id-61");
+    }
+  });
+
   it("failed resolution: a required slot has no binding at all", () => {
     const doc = baseDoc({ bindings: [{ slot: "eyebrow", value: "Product update" }] });
     try {

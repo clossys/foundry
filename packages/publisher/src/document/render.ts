@@ -179,7 +179,7 @@ export function renderStructuredDocument(doc: StructuredDocument, options: Rende
   if (errors.length > 0) {
     throw new RenderError(
       "resolution-failed",
-      `renderStructuredDocument refused to render invalid document "${doc?.id ?? "(unknown)"}": ${errors.map((finding) => `${finding.rule} at ${finding.path ?? "(root)"} — ${finding.message}`).join("; ")}`,
+      `renderStructuredDocument refused to render an invalid document: ${errors.map((finding) => `${finding.rule} at ${finding.path ?? "(root)"}`).join("; ")}.`,
     );
   }
 
@@ -189,7 +189,7 @@ export function renderStructuredDocument(doc: StructuredDocument, options: Rende
     if (resolution === undefined || typeof resolution.text !== "string" || resolution.text.trim().length === 0) {
       throw new RenderError(
         "resolution-failed",
-        `renderStructuredDocument could not resolve CopyRef "${ref.id}" at ${path} for document "${doc.id}" (missing options.resolveCopyId, an unresolved id, or empty resolved text).`,
+        `renderStructuredDocument could not resolve a CopyRef at ${path} (missing options.resolveCopyId, an unresolved id, or empty resolved text).`,
       );
     }
     resolutions.push(resolution);

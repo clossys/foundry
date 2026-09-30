@@ -196,7 +196,7 @@ export function resolveSurfaceDocument(surface: SurfaceDocument, resolver: CopyR
   const text = (ref: CopyRef, path: string): string => {
     const resolution = resolver(ref);
     if (resolution === undefined || typeof resolution.text !== "string" || resolution.text.trim().length === 0) {
-      throw new SurfaceResolutionError("unresolved-copy", `resolveSurfaceDocument could not resolve CopyRef "${ref.id}" at ${path} for surface "${surface.id}".`);
+      throw new SurfaceResolutionError("unresolved-copy", `resolveSurfaceDocument could not resolve a CopyRef at ${path}.`);
     }
     resolutions.push(resolution);
     return resolution.text;
@@ -249,7 +249,7 @@ function resolveRepeatingBindingItem(item: SurfaceSlotBindingItem, bindingIndex:
     return {
       index: itemIndex,
       fields: Object.fromEntries(
-        Object.entries(item.fields).map(([field, binding]) => [field, resolveRepeatingFieldBinding(binding, `${path}.fields.${field}`, text)]),
+        Object.entries(item.fields).map(([field, binding]) => [field, resolveRepeatingFieldBinding(binding, `${path}.fields`, text)]),
       ),
     };
   }
@@ -295,7 +295,7 @@ function resolveMeta(meta: SurfaceChannelMeta, text: (ref: CopyRef, path: string
     case "image":
       return { channel: "image", width: meta.width, height: meta.height, format: meta.format, ...(meta.scale === undefined ? {} : { scale: meta.scale }), alt: text(meta.alt, "meta.alt") };
     case "slides":
-      return { channel: "slides", aspect: meta.aspect, ...(meta.notes === undefined ? {} : { notes: Object.fromEntries(Object.entries(meta.notes).map(([key, ref]) => [key, text(ref, `meta.notes.${key}`)])) }) };
+      return { channel: "slides", aspect: meta.aspect, ...(meta.notes === undefined ? {} : { notes: Object.fromEntries(Object.entries(meta.notes).map(([key, ref]) => [key, text(ref, "meta.notes")])) }) };
     case "print":
       return meta;
   }
