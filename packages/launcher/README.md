@@ -1450,8 +1450,8 @@ after the lockfile step passes; `materialize` and `verify` do not yet run it.
   output are capped (`PROVENANCE_CHECK_TIMEOUT_MS`, `PROVENANCE_CHECK_MAX_BUFFER`).
   The JSON report is parsed strictly; exit `2`, unreadable output, or output
   that contradicts the exit code is indeterminate.
-- **What gates.** Only `install` and `pin-starter` items with
-  `satisfiedInBase: false`. Each must be `verified` at exactly its version. One
+- **What gates.** Every `install` and `pin-starter` item except one whose
+  `satisfiedInBase` is exactly `true`. Each must be `verified` at exactly its version. One
   missing from the report is indeterminate; a verified version other than the
   act's is violated (`version-mismatch`). Other `@clossys/*` packages in the
   report never gate, so an unrelated violated legacy pin passes.
