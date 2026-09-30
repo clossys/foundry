@@ -64,7 +64,7 @@ describe("blankCssDeclPercents matches the #1680 regex", () => {
   });
 
   it("returns the oracle's output when newlines, carriage returns and other whitespace occur", () => {
-    const alphabet = [..."ab-_:", " ", "\n", "\r", " ", ..."0123456789", ".", "%", ";", "}"];
+    const alphabet = [..."ab-_:", " ", "\n", "\r", "\u00a0", "\u3000", "\u2028", ..."0123456789", ".", "%", ";", "}"];
     const inputs = corpus(1613, 2000, alphabet, 30);
     expect(inputs.filter((s) => oracle(s) !== s).length).toBeGreaterThan(50);
     expect(firstDivergence(inputs)).toBeUndefined();

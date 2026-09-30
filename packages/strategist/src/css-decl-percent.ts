@@ -60,8 +60,8 @@ function isSpace(c: number): boolean {
 }
 
 export function blankCssDeclPercents(text: string): string {
+  if (!text.includes("%")) return text;
   const n = text.length;
-  if (n === 0) return text;
 
   // tailEnd[p] is the index just past the `%` when a valid tail starts at p,
   // else 0. lastTail[i] is the largest valid tail start below i, else -1.
