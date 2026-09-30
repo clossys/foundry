@@ -1328,6 +1328,35 @@ describe("applyWorkspacePlan", () => {
     expect(existsSync(join(directory, WORKSPACE_MARKER_REL))).toBe(false);
   });
 
+  it("appoint refuses a symlinked package.json before any write, naming no path", () => {
+    const directory = tempDir();
+    const outside = tempDir();
+    const target = join(outside, "records-manifest.json");
+    const targetBytes = `${JSON.stringify({ name: "records", private: true }, null, 2)}\n`;
+    writeFileSync(target, targetBytes);
+    symlinkSync(target, join(directory, "package.json"));
+    writeInventory(directory);
+    let message = "";
+    try {
+      applyWorkspacePlan(
+        host(directory),
+        { action: "adopt", owner: "acme", repository: "hub", directory, advisorVersion: "0.2.3", integratorVersion: "0.8.2" },
+        skeletonRoot,
+      );
+    } catch (error) {
+      message = error instanceof Error ? error.message : String(error);
+    }
+    expect(message).toMatch(/existing package\.json is a symbolic link/);
+    expect(message).not.toContain(directory);
+    expect(message).not.toContain(target);
+    expect(message).not.toContain(outside);
+    expect(readFileSync(target, "utf8")).toBe(targetBytes);
+    expect(lstatSync(join(directory, "package.json")).isSymbolicLink()).toBe(true);
+    expect(existsSync(join(directory, WORKSPACE_MARKER_REL))).toBe(false);
+    expect(existsSync(join(directory, "CLAUDE.md"))).toBe(false);
+    expect(existsSync(join(directory, ".gitignore"))).toBe(false);
+  });
+
   it("names a github.com origin generically in the dirty-tree refusal", () => {
     const directory = tempDir();
     writeFileSync(join(directory, "package.json"), `${JSON.stringify({ name: "product" }, null, 2)}\n`);
@@ -2859,6 +2888,30 @@ describe("an existing unrelated repository appointed as the hub by cloning it (#
       /existing package\.json is present but cannot be read/,
     );
     expect(tree(directory)).toEqual(treeAfterClone(seed));
+  });
+
+  it("refuses, before writing anything, an unmarked clone whose package.json is a symbolic link", () => {
+    const directory = tempDir();
+    const target = join(tempDir(), "records-manifest.json");
+    const targetBytes = `${JSON.stringify({ name: "records", private: true }, null, 2)}\n`;
+    writeFileSync(target, targetBytes);
+    const seed: CloneSeed = (dir) => {
+      unrelatedProject({ manifest: false })(dir);
+      symlinkSync(target, join(dir, "package.json"));
+    };
+    const workspaceHost = cloningHost(directory, seed);
+    const plan = plannedFromEmptyDirectory(workspaceHost);
+    let message = "";
+    try {
+      applyWorkspacePlan(workspaceHost, plan, skeletonRoot, composeApplyOptions(seedSkillCatalogue(["advisor"])));
+    } catch (error) {
+      message = error instanceof Error ? error.message : String(error);
+    }
+    expect(message).toMatch(/existing package\.json is a symbolic link/);
+    expect(message).not.toContain(directory);
+    expect(message).not.toContain(target);
+    expect(tree(directory)).toEqual(treeAfterClone(seed));
+    expect(readFileSync(target, "utf8")).toBe(targetBytes);
   });
 
   it("refuses, before writing anything, an unmarked clone that is the Foundry supplier tree", () => {
