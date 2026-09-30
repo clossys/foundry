@@ -489,10 +489,12 @@ gh workflow run qualify-candidate.yml -f package=<pkg>
 (pass `-f version=<version>` only to qualify something other than the
 checked-out ref's current manifest version). The workflow runs on the pinned
 `actions/setup-node` runtime, produces and retains the qualification record,
-then pushes a `claude/qualify-<pkg>-<version>` branch carrying it. GitHub
-Actions' own token cannot open a pull request against this repository, so the
-workflow pushes the branch and stops; a maintainer opens the PR for that
-branch by hand.
+then pushes a `claude/qualify-<pkg>-<version>` branch carrying it and opens
+the qualification pull request itself with `gh pr create`. A maintainer
+reviews and merges that pull request. Only if GitHub refuses the pull request
+because Actions is not permitted to create them does the run stay green, push
+the branch, and write a compare URL to its job summary, from which a
+maintainer opens the pull request.
 
 **Until a retained record exists,** a package version that has already
 merged to `main` ahead of one carries an acknowledged, issue-referenced
