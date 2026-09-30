@@ -146,7 +146,7 @@ export function renderMaterialsSection(tokenOverrides: Record<string, string>): 
     const title = previewCopyString(`preview.overview.title.${length}`);
     files.push({
       file: `materials-overview-${length}.html`,
-      content: wrapStandalonePage(title, `<p style="max-width: var(--ui-width-prose-max, 48rem); margin: 1rem auto 0; padding: 0 1.5rem;"><a href="materials-index.html">&larr; Materials index</a></p>\n${markup}`),
+      content: wrapStandalonePage(title, `<p style="max-width: var(--ui-width-prose-max, none); margin: 1rem auto 0; padding: 0 1.5rem;"><a href="materials-index.html">&larr; Materials index</a></p>\n${markup}`),
     });
   }
 
