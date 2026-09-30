@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { withDecisions } from "./admission-fixture.js";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { buildMaterializedFixture, branchExists, readCloneLedger, writeSnapshot } from "./apply-step-fixture.js";
-import { SNAPSHOT_USAGE, main, materializeMain, snapshotMain, verifyMain } from "./apply-plan-cli.js";
+import { APPLY_PLAN_USAGE, SNAPSHOT_USAGE, main, materializeMain, snapshotMain, statusMain, verifyMain } from "./apply-plan-cli.js";
 import { PLAN_USAGE, planMain } from "./plan-command.js";
 import { PACKAGE_SCOPE } from "./generated/package-scope.generated.js";
 import { createNodeHost } from "./host.js";
@@ -444,6 +444,23 @@ describe("launcher-apply-plan materialize and verify decide the approval from th
       expect(text).toContain("no longer verifies");
       expect(text).not.toMatch(/docs\//);
     });
+  });
+
+  it("status has a help text, is in the usage, and refuses a malformed --repo without echoing it", async () => {
+    const { log, err } = quiet();
+    expect(await statusMain(["--help"])).toBe(0);
+    const text = log.mock.calls.map((call) => String(call[0])).join("\n");
+    expect(text).toContain("launcher-apply-plan status --repo <id>");
+    expect(text).toContain("changes nothing");
+    expect(text).toContain("Exit codes: 0 = proposed or applied, 1 = diverged, 2 = anything else.");
+    expect(text).not.toMatch(/docs\//);
+    expect(APPLY_PLAN_USAGE).toContain("launcher-apply-plan status --repo <id>");
+    for (const argv of [[], ["--repo"], ["--repo", "no-slash"], ["--repo", "a/b", "--x"], ["--repo", "example-other/.."]]) {
+      expect(await statusMain(argv)).toBe(2);
+    }
+    const printed = err.mock.calls.map((call) => String(call[0])).join("\n");
+    expect(printed).toContain("usage: launcher-apply-plan status --repo <id>");
+    expect(printed).not.toContain("example-other");
   });
 });
 

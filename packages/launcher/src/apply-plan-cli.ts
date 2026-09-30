@@ -19,6 +19,7 @@ import {
 import { listStoredChangeSets } from "./apply-store.js";
 import { planMain } from "./plan-command.js";
 import { materializeRepository, verifyRepository, type ApplyStepResult } from "./materialize.js";
+import { formatStatus, statusRepository, type StatusPorts } from "./status.js";
 import type { ReadinessRunner } from "./admission.js";
 import type { RepositoryChangeSet } from "./change-set-contract.js";
 import type { LockfileSpawn } from "./lockfile-regen.js";
@@ -27,6 +28,7 @@ export const APPLY_PLAN_USAGE = `Usage: launcher-apply-plan --plan <plan.json> -
        launcher-apply-plan plan [--help]
        launcher-apply-plan materialize --repo <id>
        launcher-apply-plan verify --repo <id>
+       launcher-apply-plan status --repo <id>
        launcher-apply-plan snapshot --request <file> [--out <file>]
 
 The plan subcommand is described by launcher-apply-plan plan --help, and the
@@ -167,6 +169,8 @@ export interface ApplyCommandOptions {
   readonly toolVersion?: string | null;
   /** Runs the hub's advisor-execution-readiness; the hub's own installed executable by default. */
   readonly runReadiness?: ReadinessRunner;
+  /** The read-only GitHub questions `status` asks; read-only `gh api` calls by default. */
+  readonly statusPorts?: StatusPorts;
 }
 
 const REPO_ID_SHAPE = /^[^/]+\/[^/]+$/u;
@@ -254,6 +258,29 @@ committed approval and, for a change set with package acts, that the execution
 authorization is still current at the time of the run: a clone whose approval
 was withdrawn or whose authorization expired no longer verifies.`;
 
+const STATUS_HELP = `Usage: launcher-apply-plan status --repo <id>
+
+Reports what the pull request for the repository's stored change set is doing,
+from read-only evidence: the open pull requests, the default branch's tip, and
+the commits already in the local clone. It needs a full clone: a partial clone
+is refused as indeterminate (partial-clone) before any object is read. It
+changes nothing but the fetch of the default branch into its remote-tracking ref
+that verify also makes: it does not fetch a pull request's head, check anything
+out, or write a file or an index.
+
+The state is one of: proposed (an open pull request of this change set, made
+by the person running this, whose head passes every check verify makes),
+applied (the default branch already holds the change set), planned (neither),
+diverged (its pull request does not match), superseded (an older change set of
+this repository has a pull request, even beside this one's) or indeterminate
+(something could not be read or trusted, including a partial clone, any open
+pull request whose body names the marker word but is not the person's own, and a
+listing of 100 or more open pull requests). It prints the state, a fixed reason
+and #<number> for each pull request it is about, and nothing else. proposed
+does not check the head's ancestry to the base, and nothing in this unit does.
+
+Exit codes: 0 = proposed or applied, 1 = diverged, 2 = anything else.`;
+
 function printApplyOutcome(label: string, outcome: ApplyStepResult): number {
   const suffix = outcome.exitCode === 0 ? outcome.verdict : `${outcome.verdict} (${outcome.reason})`;
   const detail = outcome.detail === undefined ? "" : `; ${outcome.detail}`;
@@ -309,6 +336,35 @@ export async function verifyMain(argv: readonly string[], options: ApplyCommandO
     return printApplyOutcome("verify", outcome);
   } catch (cause) {
     console.error(`launcher-apply-plan verify: ${cause instanceof ApplyPlanInputError ? cause.message : "usage: launcher-apply-plan verify --repo <id>"}`);
+    return 2;
+  }
+}
+
+export async function statusMain(argv: readonly string[], options: ApplyCommandOptions = {}): Promise<number> {
+  try {
+    const parsed = parseRepoSubcommand(argv, "status");
+    if (parsed.help) {
+      console.log(STATUS_HELP);
+      return 0;
+    }
+    const resolved = resolveApplyInputs(parsed.id, options);
+    if ("exitCode" in resolved) {
+      console.log(formatStatus({ state: "indeterminate", reason: resolved.reason }));
+      return 2;
+    }
+    const outcome = await statusRepository({
+      clone: resolved.clone,
+      hub: resolved.hub,
+      set: resolved.set,
+      heldChangeSets: resolved.held,
+      now: options.now,
+      runReadiness: options.runReadiness,
+      ports: options.statusPorts,
+    });
+    console.log(formatStatus(outcome));
+    return outcome.exitCode;
+  } catch (cause) {
+    console.error(`launcher-apply-plan status: ${cause instanceof ApplyPlanInputError ? cause.message : "usage: launcher-apply-plan status --repo <id>"}`);
     return 2;
   }
 }
@@ -393,6 +449,10 @@ async function run(): Promise<void> {
   }
   if (argv[0] === "verify") {
     process.exitCode = await verifyMain(argv.slice(1));
+    return;
+  }
+  if (argv[0] === "status") {
+    process.exitCode = await statusMain(argv.slice(1));
     return;
   }
   if (argv[0] === "snapshot") {
