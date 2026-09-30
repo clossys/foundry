@@ -959,7 +959,6 @@ export interface LockupSpec {
  * and holds a fresh `fontLicence` copy.
  */
 export function composeLockup(input: ComposeLockupInput): LockupSpec {
-  // `input` is passed whole: adoptSuppliedMark reads only brand, suppliedSvg and tokens. A rebuilt object literal here makes the shipped-message lint recurse without end.
   const adopted = adoptSuppliedMark(input);
 
   const reasons: string[] = [];
