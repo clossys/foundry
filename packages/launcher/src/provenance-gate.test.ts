@@ -219,6 +219,33 @@ describe("checkSetProvenance: what is gated", () => {
     expect(calls).toHaveLength(0);
   });
 
+  it(
+    "an install or pin-starter item whose satisfiedInBase is not exactly true is gated",
+    async () => {
+      const { calls, spawn } = recorder(exitWith(0, verifiedReport()));
+      const shapes: { label: string; apply: (item: Record<string, unknown>) => void }[] = [
+        { label: "deleted", apply: (item) => void delete item.satisfiedInBase },
+        { label: "undefined", apply: (item) => void (item.satisfiedInBase = undefined) },
+        { label: "null", apply: (item) => void (item.satisfiedInBase = null) },
+        { label: "0", apply: (item) => void (item.satisfiedInBase = 0) },
+        { label: '"false"', apply: (item) => void (item.satisfiedInBase = "false") },
+        { label: '"true"', apply: (item) => void (item.satisfiedInBase = "true") },
+        { label: "1", apply: (item) => void (item.satisfiedInBase = 1) },
+      ];
+      for (const act of ["install", "pin-starter"] as const) {
+        for (const { label, apply } of shapes) {
+          const item = packageItem(WRITER, "1.0.0", { act, satisfiedInBase: true }) as unknown as Record<string, unknown>;
+          apply(item);
+          // Relative roots: a gated item is refused at the root check, a skipped one is satisfied untouched.
+          const checks = await checkSetProvenance({ tree: "relative/tree", hubRoot: "relative/hub", items: [item as unknown as ChangeSetItem] }, { spawn });
+          expect(checks, `${act} with satisfiedInBase ${label}`).toEqual([indeterminate("root-not-canonical")]);
+        }
+      }
+      expect(calls).toHaveLength(0);
+    },
+    30_000,
+  );
+
   it("gates only the packages that are not satisfied in the base", async () => {
     const hub = makeHub();
     const { calls, spawn } = recorder(exitWith(0, verifiedReport([WRITER, "1.0.0"])));

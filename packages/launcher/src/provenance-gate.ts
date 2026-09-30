@@ -112,13 +112,15 @@ interface GatedPackage {
 
 /**
  * The packages this set installs or pins that its base does not already hold,
- * by exact name, each once. Undefined when one name is gated at two versions:
- * the set then asks for something no single report can answer.
+ * by exact name, each once. Only a `satisfiedInBase` of exactly `true` skips an
+ * item: a value other than `true` (`false`, missing, `null`, a string or a
+ * number) is gated. Undefined when one name is gated at two versions: the set
+ * then asks for something no single report can answer.
  */
 function gatedPackages(items: readonly ChangeSetItem[]): GatedPackage[] | undefined {
   const versions = new Map<string, string>();
   for (const item of items) {
-    if ((item.act !== "install" && item.act !== "pin-starter") || item.satisfiedInBase !== false) continue;
+    if ((item.act !== "install" && item.act !== "pin-starter") || item.satisfiedInBase === true) continue;
     const earlier = versions.get(item.package.name);
     if (earlier !== undefined && earlier !== item.package.version) return undefined;
     versions.set(item.package.name, item.package.version);
