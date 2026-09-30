@@ -18,6 +18,7 @@ import {
 } from "./registry-snapshot.js";
 import { listStoredChangeSets } from "./apply-store.js";
 import { planMain } from "./plan-command.js";
+import { BODY_USAGE, BodyUsageError, bodyRepository, parseBodyArgs } from "./body-command.js";
 import { materializeRepository, verifyRepository, type ApplyStepResult } from "./materialize.js";
 import { formatStatus, statusRepository, type StatusPorts } from "./status.js";
 import type { ReadinessRunner } from "./admission.js";
@@ -29,6 +30,7 @@ export const APPLY_PLAN_USAGE = `Usage: launcher-apply-plan --plan <plan.json> -
        launcher-apply-plan materialize --repo <id>
        launcher-apply-plan verify --repo <id>
        launcher-apply-plan status --repo <id>
+       launcher-apply-plan body --repo <id> --task-record <n> [--supersedes <n>]...
        launcher-apply-plan snapshot --request <file> [--out <file>]
 
 The plan subcommand is described by launcher-apply-plan plan --help, and the
@@ -369,6 +371,60 @@ export async function statusMain(argv: readonly string[], options: ApplyCommandO
   }
 }
 
+const BODY_HELP = `Usage: ${BODY_USAGE}
+
+Prints the body of the pull request for the repository's stored change set, and
+nothing else, and records the SHA-256 of exactly those bytes as the change set's
+pullRequest.bodySha256. The approval the body shows is decided from the hub at
+the time of the run, as materialize decides it; it is never taken from an
+option. A planned bundle the hub stored for the change set must hold that same
+approval. --task-record is the number of the task-record issue in the
+repository; each --supersedes is the number of the pull request of an older
+change set of this repository that this one replaces, and needs another stored
+change set of the repository. A change set already bound to another body is
+refused, and one already bound to this body prints it again.
+
+Exit codes: 0 = the body was printed, 1 = refused (a fixed token on standard
+error, nothing on standard output), 2 = indeterminate or a usage error.`;
+
+/**
+ * The `body` subcommand. Standard output is the body and only the body, after it is recorded; a refusal prints one line of fixed
+ * tokens to standard error and never an argument.
+ */
+export async function bodyMain(argv: readonly string[], options: ApplyCommandOptions = {}): Promise<number> {
+  try {
+    const parsed = parseBodyArgs(argv);
+    if (parsed.help) {
+      console.log(BODY_HELP);
+      return 0;
+    }
+    const resolved = resolveApplyInputs(parsed.id, options);
+    if ("exitCode" in resolved) {
+      console.error(`launcher-apply-plan body: indeterminate (${resolved.reason ?? "refused"})`);
+      return 2;
+    }
+    const outcome = await bodyRepository({
+      clone: resolved.clone,
+      hub: resolved.hub,
+      set: resolved.set,
+      heldChangeSets: resolved.held,
+      taskRecord: parsed.taskRecord,
+      supersedes: parsed.supersedes,
+      now: options.now,
+      runReadiness: options.runReadiness,
+    });
+    if (outcome.exitCode !== 0) {
+      console.error(`launcher-apply-plan body: ${outcome.exitCode === 1 ? "refused" : "indeterminate"} (${outcome.reason})`);
+      return outcome.exitCode;
+    }
+    process.stdout.write(outcome.body);
+    return 0;
+  } catch (cause) {
+    console.error(cause instanceof BodyUsageError ? `launcher-apply-plan body: usage: ${BODY_USAGE}` : "launcher-apply-plan body: indeterminate (body-failed)");
+    return 2;
+  }
+}
+
 function parseSnapshotArgs(argv: readonly string[]): { help: true } | { help: false; requestPath: string; outPath?: string } {
   if (argv.length === 1 && (argv[0] === "--help" || argv[0] === "-h")) return { help: true };
   const flags = new Map<string, string>();
@@ -453,6 +509,10 @@ async function run(): Promise<void> {
   }
   if (argv[0] === "status") {
     process.exitCode = await statusMain(argv.slice(1));
+    return;
+  }
+  if (argv[0] === "body") {
+    process.exitCode = await bodyMain(argv.slice(1));
     return;
   }
   if (argv[0] === "snapshot") {

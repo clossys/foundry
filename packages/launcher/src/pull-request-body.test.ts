@@ -135,6 +135,52 @@ describe("renderPullRequest: golden bytes", () => {
   });
 });
 
+describe("renderPullRequest: supersedes", () => {
+  const withSupersedes = (supersedes: unknown, taskRecord = 12) => renderPullRequest({ set: world.apply, binding: APPROVED_APPLY, taskRecord, supersedes } as never);
+  const golden = rendered(world.apply, APPROVED_APPLY);
+
+  it("supersedes ascending, absent keeps golden bytes", () => {
+    const out = withSupersedes([9, 3]);
+    if (out.state !== "rendered") throw new Error(`refused: ${out.reason}`);
+    expect(out.body).toBe(golden.body.replace("## Task record\n", "## Supersedes\n\n- #3\n- #9\n\n## Task record\n"));
+    expect(out.body).toContain("\n- #3\n- #9\n\n## Task record\n\n- #12\n");
+    expect(out.bodySha256).toBe(`sha256:${createHash("sha256").update(Buffer.from(out.body, "utf8")).digest("hex")}`);
+    expect(readChangeSetMarker(out.body)).toBe(APPLY_DIGEST);
+    expect(out.body.endsWith("\n\n")).toBe(false);
+    // The order the caller gave never shows.
+    expect(withSupersedes([3, 9])).toEqual(out);
+
+    // Absent, undefined and empty: the golden bytes, and the golden hash.
+    for (const supersedes of [undefined, []]) {
+      const same = withSupersedes(supersedes);
+      expect(same).toEqual(golden);
+      if (same.state === "rendered") expect(same.body).not.toContain("Supersedes");
+    }
+    expect(golden.bodySha256).toBe("sha256:3c64caa51a91957723ba34faac759c2546c17ca159c04453c14748ded6cf9309");
+    expect(renderPullRequest({ set: world.apply, binding: APPROVED_APPLY, taskRecord: 12 })).toEqual(golden);
+  });
+
+  it("refuses a duplicate, a number that is not a positive safe integer, the task record, and anything that is not a list of numbers", () => {
+    const bad: unknown[] = [[3, 3], [0], [-1], [1.5], [2 ** 53], [Number.NaN], [Number.POSITIVE_INFINITY], [-0], [12], [3, 12], ["3"], [null], [[3]], [7n], "3", 3, null, {}, { length: 1, 0: 3 }];
+    for (const supersedes of bad) expect(withSupersedes(supersedes), String(supersedes)).toEqual({ state: "refused", reason: "supersedes-invalid" });
+    expect(withSupersedes([Number.MAX_SAFE_INTEGER])).toMatchObject({ state: "rendered" });
+    expect(withSupersedes([1])).toMatchObject({ state: "rendered" });
+    // A supersedes list is judged against the task record it is given.
+    expect(withSupersedes([12], 13)).toMatchObject({ state: "rendered" });
+    // The task record is judged first.
+    expect(withSupersedes([3], 0)).toEqual({ state: "refused", reason: "task-record-invalid" });
+  });
+
+  it("reads the list once, so a number that changes between reads cannot split the checks from the text", () => {
+    const shifting = [3];
+    let reads = 0;
+    Object.defineProperty(shifting, 0, { enumerable: true, get: () => (reads++ === 0 ? 3 : 12) });
+    const out = withSupersedes(shifting);
+    if (out.state !== "rendered") throw new Error(`refused: ${out.reason}`);
+    expect(out.body).toContain("## Supersedes\n\n- #3\n\n## Task record");
+  });
+});
+
 describe("renderPullRequest: shape and purity", () => {
   const cases: [string, RepositoryChangeSet, ApprovalBinding][] = [
     ["approved apply", world.apply, APPROVED_APPLY],

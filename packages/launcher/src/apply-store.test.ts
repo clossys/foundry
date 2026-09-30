@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { bundleDigest } from "./change-set-digest.js";
 import { validateApplyBundle, validateRepositoryChangeSet } from "./change-set-contract.js";
 import type { ApplyBundle, RepositoryChangeSet } from "./change-set-contract.js";
-import { BUNDLE_STORE_REL, CHANGE_SET_STORE_REL, readStoredApplyBundle, readStoredChangeSet, storeApplyBundle, storeChangeSet } from "./apply-store.js";
+import { BUNDLE_STORE_REL, CHANGE_SET_STORE_REL, bindChangeSetBody, readStoredApplyBundle, readStoredChangeSet, storeApplyBundle, storeChangeSet } from "./apply-store.js";
 
 // A pass-through spy on renameSync, so one test can make the rename step of a replacement fail (a test-only seam; nothing in production is added).
 vi.mock("node:fs", async (importOriginal) => {
@@ -507,5 +507,128 @@ describe("hub store directory safety (issue #1545 fix 5)", () => {
     } finally {
       chmodSync(directory, 0o755);
     }
+  });
+});
+
+describe("bindChangeSetBody (issue #1716)", () => {
+  const A = `sha256:${"a".repeat(64)}`;
+  const B = `sha256:${"b".repeat(64)}`;
+  const setFile = (): string => join(hub, CHANGE_SET_STORE_REL, `${SET.changeSetDigest.slice("sha256:".length)}.json`);
+  const bytesOf = (value: unknown): string => `${JSON.stringify(value, null, 2)}\n`;
+  const bound = (hash: string): RepositoryChangeSet => ({ ...SET, pullRequest: { ...SET.pullRequest, bodySha256: hash } });
+
+  it("records the hash in the one stored set and changes nothing else in it", () => {
+    storeChangeSet(hub, SET);
+    const other = storeChangeSet(hub, OTHER_SET);
+    const otherBefore = readFileSync(other);
+    const before = readFileSync(setFile(), "utf8");
+    expect(bindChangeSetBody(hub, SET.changeSetDigest, A)).toBe(setFile());
+    expect(readFileSync(setFile(), "utf8")).toBe(bytesOf(bound(A)));
+    const read = readStoredChangeSet(hub, SET.changeSetDigest)!;
+    expect(read.changeSetDigest).toBe(SET.changeSetDigest);
+    expect(read.pullRequest).toEqual({ title: SET.pullRequest.title, bodySha256: A });
+    // Take the hash out and the bytes are the ones stored before: no other member moved, nor any order.
+    const { bodySha256: _hash, ...rest } = read.pullRequest;
+    expect(bytesOf({ ...read, pullRequest: rest })).toBe(before);
+    expect(readFileSync(other).equals(otherBefore)).toBe(true);
+    expect(readdirSync(join(hub, CHANGE_SET_STORE_REL)).filter((name) => name.endsWith(".tmp"))).toEqual([]);
+  });
+
+  it("a bound body is never rebound", () => {
+    storeChangeSet(hub, SET);
+    bindChangeSetBody(hub, SET.changeSetDigest, A);
+    const path = setFile();
+    const held = readFileSync(path);
+    // The same hash again is a no-op: nothing is renamed over the file.
+    const renames = vi.mocked(renameSync);
+    renames.mockClear();
+    expect(() => bindChangeSetBody(hub, SET.changeSetDigest, A)).not.toThrow();
+    expect(renames).not.toHaveBeenCalled();
+    expect(readFileSync(path).equals(held)).toBe(true);
+    // Another hash throws, names no path or hash, and keeps the bytes.
+    let message = "";
+    try {
+      bindChangeSetBody(hub, SET.changeSetDigest, B);
+    } catch (error) {
+      expect(error).toBeInstanceOf(TypeError);
+      message = String(error);
+    }
+    expect(message).not.toBe("");
+    expect(message).not.toContain(hub);
+    expect(message).not.toContain(B);
+    expect(message).not.toContain(A);
+    expect(readFileSync(path).equals(held)).toBe(true);
+    expect(renames).not.toHaveBeenCalled();
+    // Storing the set again, with no hash or another, keeps the bound bytes.
+    for (const again of [SET, bound(B)]) {
+      expect(() => storeChangeSet(hub, again)).not.toThrow();
+      expect(readFileSync(path).equals(held)).toBe(true);
+    }
+    expect(readStoredChangeSet(hub, SET.changeSetDigest)!.pullRequest.bodySha256).toBe(A);
+  });
+
+  it("goes through a temporary file and a rename, and a rename that fails leaves the stored set byte for byte", () => {
+    storeChangeSet(hub, SET);
+    const path = setFile();
+    const before = readFileSync(path);
+    vi.mocked(renameSync).mockClear();
+    let temporary = "";
+    vi.mocked(renameSync).mockImplementationOnce((from) => {
+      temporary = String(from);
+      throw Object.assign(new Error("simulated"), { code: "EXDEV" });
+    });
+    expect(() => bindChangeSetBody(hub, SET.changeSetDigest, A)).toThrow(/^hub store write failed \(EXDEV\)$/);
+    expect(existsSync(temporary)).toBe(false);
+    expect(readFileSync(path).equals(before)).toBe(true);
+    expect(readdirSync(join(hub, CHANGE_SET_STORE_REL))).toEqual([basename(path)]);
+
+    const held = readFileSync(path);
+    const inode = statSync(path).ino;
+    bindChangeSetBody(hub, SET.changeSetDigest, A);
+    const [from, to] = vi.mocked(renameSync).mock.calls.at(-1) as [string, string];
+    expect(to).toBe(path);
+    expect(basename(from)).toMatch(/^\..+\.tmp$/);
+    expect(statSync(path).ino).not.toBe(inode);
+    expect(held.toString("utf8")).toBe(bytesOf(SET));
+  });
+
+  it("refuses a set that is not stored, a stored file that does not verify, and a hash or digest that is not well formed, changing nothing", () => {
+    expect(() => bindChangeSetBody(hub, SET.changeSetDigest, A)).toThrow(TypeError);
+    expect(existsSync(join(hub, "clossys"))).toBe(false);
+    storeChangeSet(hub, SET);
+    for (const digest of ["sha256:../x", `sha256:${"A".repeat(64)}`, "0".repeat(64)]) expect(() => bindChangeSetBody(hub, digest, A)).toThrow(TypeError);
+    for (const hash of ["sha256:abc", `sha256:${"A".repeat(64)}`, "a".repeat(64), `${A}\n`, "", 7 as never]) expect(() => bindChangeSetBody(hub, SET.changeSetDigest, hash)).toThrow(TypeError);
+    // Bytes that no longer recompute to their name are not bound.
+    const path = setFile();
+    const tampered: RepositoryChangeSet = { ...SET, repository: { ...SET.repository, baseCommit: "f".repeat(40) } };
+    writeFileSync(path, bytesOf(tampered));
+    expect(() => bindChangeSetBody(hub, SET.changeSetDigest, A)).toThrow(TypeError);
+    expect(readFileSync(path, "utf8")).toBe(bytesOf(tampered));
+    // Nor is another set's file, renamed to this name.
+    writeFileSync(path, bytesOf(OTHER_SET));
+    expect(() => bindChangeSetBody(hub, SET.changeSetDigest, A)).toThrow(TypeError);
+    expect(readFileSync(path, "utf8")).toBe(bytesOf(OTHER_SET));
+  });
+
+  it("refuses a stored name held by a symbolic link, and a symbolic link in the store's directories, writing nothing through them", () => {
+    storeChangeSet(hub, SET);
+    const path = setFile();
+    const real = readFileSync(path);
+    const outside = join(hub, "outside.json");
+    writeFileSync(outside, real);
+    rmSync(path);
+    symlinkSync(outside, path);
+    expect(() => bindChangeSetBody(hub, SET.changeSetDigest, A)).toThrow(TypeError);
+    expect(readFileSync(outside).equals(real)).toBe(true);
+    expect(lstatSync(path).isSymbolicLink()).toBe(true);
+    expect(readdirSync(join(hub, CHANGE_SET_STORE_REL)).filter((name) => name.endsWith(".tmp"))).toEqual([]);
+
+    rmSync(path);
+    const directory = join(hub, CHANGE_SET_STORE_REL);
+    const moved = join(hub, "moved-change-sets");
+    renameSync(directory, moved);
+    symlinkSync(moved, directory, "dir");
+    expect(() => bindChangeSetBody(hub, SET.changeSetDigest, A)).toThrow(TypeError);
+    expect(readdirSync(moved).filter((name) => name.endsWith(".tmp"))).toEqual([]);
   });
 });

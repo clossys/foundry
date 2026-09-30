@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { withDecisions } from "./admission-fixture.js";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { buildMaterializedFixture, branchExists, readCloneLedger, writeSnapshot } from "./apply-step-fixture.js";
-import { APPLY_PLAN_USAGE, SNAPSHOT_USAGE, main, materializeMain, snapshotMain, statusMain, verifyMain } from "./apply-plan-cli.js";
+import { APPLY_PLAN_USAGE, SNAPSHOT_USAGE, bodyMain, main, materializeMain, snapshotMain, statusMain, verifyMain } from "./apply-plan-cli.js";
 import { PLAN_USAGE, planMain } from "./plan-command.js";
 import { PACKAGE_SCOPE } from "./generated/package-scope.generated.js";
 import { createNodeHost } from "./host.js";
@@ -462,5 +462,57 @@ describe("launcher-apply-plan materialize and verify decide the approval from th
     expect(printed).toContain("usage: launcher-apply-plan status --repo <id>");
     expect(printed).not.toContain("example-other");
   });
-});
 
+  it("body echoes nothing on refusal", async () => {
+    const written: string[] = [];
+    vi.spyOn(process.stdout, "write").mockImplementation(((chunk: string | Uint8Array) => {
+      written.push(String(chunk));
+      return true;
+    }) as never);
+    const { log, err } = quiet();
+    const SENTINEL = "example-other/sentinel-4d2c";
+    const JUNK = "junk-sentinel-9f3a";
+    const site = buildMaterializedFixture(roots, { storeSet: true });
+    const options = { cwd: site.hub, clone: site.clone };
+    // A well-formed repository the hub does not hold is indeterminate, by token only.
+    expect(await bodyMain(["--repo", SENTINEL, "--task-record", "12"], options)).toBe(2);
+    // Anything the parser cannot read as a repository and whole numbers is a usage error, echoing none of it.
+    const usage = [
+      [],
+      ["--repo"],
+      ["--repo", SENTINEL],
+      ["--repo", "example-owner/site", "--task-record", JUNK],
+      ["--repo", "example-owner/site", "--task-record", "1e3"],
+      ["--repo", "example-owner/site", "--task-record", "01"],
+      ["--repo", "example-owner/site", "--task-record", "-1"],
+      ["--repo", "example-owner/site", "--task-record", "9007199254740993"],
+      ["--repo", "example-owner/site", "--task-record", ""],
+      ["--repo", "example-owner/site", "--task-record", "12", "--supersedes", JUNK],
+      ["--repo", "example-owner/site", "--task-record", "12", "--supersedes"],
+      ["--repo", "example-owner/site", "--task-record", "12", "--binding", JUNK],
+      ["--repo", "example-owner/site", "--task-record", "12", "--task-record", "13"],
+      ["--repo", "no-slash-sentinel", "--task-record", "12"],
+      ["--repo", "example-other/..", "--task-record", "12"],
+      [JUNK],
+    ];
+    for (const argv of usage) expect(await bodyMain(argv, options), JSON.stringify(argv)).toBe(2);
+    expect(written).toEqual([]);
+    const printed = [...log.mock.calls, ...err.mock.calls].map((call) => String(call[0])).join("\n");
+    for (const secret of [SENTINEL, JUNK, "sentinel-4d2c", "1e3", "9007199254740993", "no-slash-sentinel"]) expect(printed).not.toContain(secret);
+    expect(err.mock.calls.map((call) => String(call[0]))).toEqual([
+      "launcher-apply-plan body: indeterminate (change-set-absent)",
+      ...usage.map(() => "launcher-apply-plan body: usage: launcher-apply-plan body --repo <id> --task-record <n> [--supersedes <n>]..."),
+    ]);
+    // A refusal by number (zero) also prints a token only.
+    expect(await bodyMain(["--repo", "example-owner/site", "--task-record", "0"], options)).toBe(1);
+    expect(String(err.mock.calls.at(-1)?.[0])).toBe("launcher-apply-plan body: refused (task-record-invalid)");
+    expect(written).toEqual([]);
+    // The help, and the usage of the command as a whole, name the command.
+    expect(await bodyMain(["--help"])).toBe(0);
+    const help = log.mock.calls.map((call) => String(call[0])).join("\n");
+    expect(help).toContain("launcher-apply-plan body --repo <id>");
+    expect(help).toContain("Exit codes: 0 = the body was printed");
+    expect(help).not.toMatch(/docs\//);
+    expect(APPLY_PLAN_USAGE).toContain("launcher-apply-plan body --repo <id> --task-record <n> [--supersedes <n>]...");
+  }, 120_000);
+});
