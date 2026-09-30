@@ -23,7 +23,10 @@
 // is asked with `git ls-remote`, which writes no ref and no object, from a
 // directory outside the clone. It performs no write to the clone, and none
 // anywhere except one empty scratch directory under the system temporary
-// directory, removed before it returns.
+// directory, removed before it returns. The clone is not locked, and the checks
+// are not repeated after the reads: a process that changes the clone in
+// between goes unnoticed, which changes nothing reported, since every byte is
+// an object at the remote tip's commit (see the README's declared limits).
 //
 // Anything that cannot be established is a skip with a reason id, never a
 // guess. A skip is `violated` when the clone is what it must not be (dirty,
@@ -173,10 +176,18 @@ const GIT_OPTIONS: readonly string[] = [
 /** Variables that would point git at another repository, object store or configuration than the clone's own. */
 const GIT_REMOVED_ENV: readonly string[] = [
   "GIT_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE", "GIT_OBJECT_DIRECTORY", "GIT_ALTERNATE_OBJECT_DIRECTORIES", "GIT_COMMON_DIR", "GIT_NAMESPACE", "GIT_REPLACE_REF_BASE", "GIT_GRAFT_FILE",
-  "GIT_SHALLOW_FILE", "GIT_CONFIG_PARAMETERS", "GIT_CONFIG_COUNT", "GIT_CONFIG_SYSTEM", "GIT_ATTR_SOURCE", "GIT_EXTERNAL_DIFF",
+  "GIT_SHALLOW_FILE", "GIT_CONFIG_PARAMETERS", "GIT_CONFIG_SYSTEM", "GIT_ATTR_SOURCE", "GIT_EXTERNAL_DIFF",
 ];
-/** The numbered configuration variables `GIT_CONFIG_COUNT` reads. */
-const GIT_NUMBERED_CONFIG_ENV = /^GIT_CONFIG_(?:KEY|VALUE)_/iu;
+/**
+ * The configuration variables `git ls-remote` alone receives: `GIT_CONFIG_COUNT`
+ * and the numbered key and value variables it reads. They are the operator's own
+ * environment, the same trust as the global git config file `ls-remote` keeps,
+ * and they cannot loosen a fixed `-c` override or `GIT_ALLOW_PROTOCOL`, which
+ * both win over them.
+ */
+const GIT_COUNTED_CONFIG_ENV = /^GIT_CONFIG_(?:COUNT|(?:KEY|VALUE)_.*)$/iu;
+/** git's own test switches (`GIT_TEST_SPLIT_INDEX` forces a split index on an index write, for one): never passed on to any git command. */
+const GIT_TEST_ENV = /^GIT_TEST_/iu;
 /** The transports a fetch may use when the default origin parser named the origin: exactly the two GitHub serves. */
 const REMOTE_PROTOCOLS = "https:ssh";
 
@@ -220,17 +231,23 @@ function gitBinary(): string | null {
 /**
  * git inside the clone reads no configuration but the vetted `.git/config` and
  * fixed `-c` overrides: the system and global configuration are switched off,
- * and every other source the environment names is removed. `ls-remote`, which
- * runs outside the clone, keeps the operator's global and system git config
- * files (credential helpers, proxy), but the `GIT_CONFIG_COUNT`, `GIT_CONFIG_KEY_n`,
- * `GIT_CONFIG_VALUE_n` and `GIT_CONFIG_PARAMETERS` variables are not forwarded
- * to it either: an origin that needs credentials supplied through those
- * variables is skipped as `remote-tip-unreadable`, not observed.
+ * and every other source the environment names is removed
+ * (`GIT_CONFIG_COUNT` and its numbered key and value variables,
+ * `GIT_CONFIG_PARAMETERS`, `GIT_CONFIG_SYSTEM`). `ls-remote`, which runs outside
+ * the clone, keeps the operator's global and system git config files
+ * (credential helpers, proxy) and is given `GIT_CONFIG_COUNT`, `GIT_CONFIG_KEY_n`
+ * and `GIT_CONFIG_VALUE_n`, so an origin that needs credentials supplied through
+ * them is observed; `GIT_CONFIG_PARAMETERS` (git's own encoding of `-c` for its
+ * children, not an interface) and `GIT_CONFIG_SYSTEM` are not forwarded to it,
+ * and an origin that needs either is skipped as `remote-tip-unreadable`. git's
+ * `GIT_TEST_*` switches reach no command.
  */
 function gitEnvironment(cwd: string, protocols: string, remote: boolean): NodeJS.ProcessEnv {
   const env: NodeJS.ProcessEnv = { ...process.env };
   for (const name of GIT_REMOVED_ENV) delete env[name];
-  for (const name of Object.keys(env)) if (GIT_NUMBERED_CONFIG_ENV.test(name)) delete env[name];
+  for (const name of Object.keys(env)) {
+    if (GIT_TEST_ENV.test(name) || (!remote && GIT_COUNTED_CONFIG_ENV.test(name))) delete env[name];
+  }
   return {
     ...env,
     ...(remote ? {} : { GIT_CONFIG_NOSYSTEM: "1", GIT_CONFIG_GLOBAL: "/dev/null" }),

@@ -924,20 +924,82 @@ describe("observeRepository: an observation is exactly the committed head of a c
       expect(snapshot(fx.clone)).toEqual(before);
     });
 
-    it.each([["GIT_CONFIG_COUNT"], ["GIT_CONFIG_KEY_0"], ["GIT_CONFIG_VALUE_0"], ["GIT_CONFIG_SYSTEM"], ["GIT_ATTR_SOURCE"]])("does not pass %s on to git", async (name) => {
-      const fx = makeFixture();
+    /** Puts a `git` ahead of the real one on PATH that records each invocation's arguments and environment, and returns one record per invocation. */
+    function recordGit(fx: Fixture): { readonly path: string; readonly invocations: () => { readonly args: string; readonly env: string[] }[] } {
       const capture = join(fx.root, "environment");
       const wrapper = join(fx.root, "bin");
       mkdirSync(wrapper);
       const real = execFileSync("which", ["git"], { encoding: "utf8" }).trim();
-      writeFileSync(join(wrapper, "git"), `#!/bin/sh\nenv >> "${capture}"\nexec "${real}" "$@"\n`);
+      writeFileSync(join(wrapper, "git"), `#!/bin/sh\nprintf '@@ %s\\n' "$*" >> "${capture}"\nenv >> "${capture}"\nexec "${real}" "$@"\n`);
       chmodSync(join(wrapper, "git"), 0o755);
-      const result = await withEnv({ PATH: `${wrapper}${delimiter}${process.env.PATH ?? ""}`, [name]: "1" }, () => observe(fx));
+      return {
+        path: `${wrapper}${delimiter}${process.env.PATH ?? ""}`,
+        invocations: () =>
+          readFileSync(capture, "utf8")
+            .split(/^@@ /mu)
+            .filter((record) => record !== "")
+            .map((record) => {
+              const [args = "", ...env] = record.split("\n");
+              return { args, env };
+            }),
+      };
+    }
+
+    it.each([["GIT_CONFIG_PARAMETERS"], ["GIT_CONFIG_SYSTEM"], ["GIT_ATTR_SOURCE"], ["GIT_TEST_SPLIT_INDEX"], ["GIT_TEST_FSMONITOR"]])("does not pass %s on to any git command", async (name) => {
+      const fx = makeFixture();
+      const recorded = recordGit(fx);
+      const result = await withEnv({ PATH: recorded.path, [name]: "1" }, () => observe(fx));
       expect("skipped" in result || result.baseCommit === headOf(fx)).toBe(true);
-      const lines = readFileSync(capture, "utf8").split("\n");
-      expect(lines.length).toBeGreaterThan(1);
-      expect(lines.some((line) => line.startsWith(`${name}=`))).toBe(false);
-      expect(lines).toContain("GIT_CONFIG_NOSYSTEM=1");
+      const invocations = recorded.invocations();
+      expect(invocations.length).toBeGreaterThan(1);
+      for (const { args, env } of invocations) {
+        expect(env.some((line) => line.startsWith(`${name}=`))).toBe(false);
+        // Only `ls-remote` keeps the operator's system and global git config files.
+        if (!/\bls-remote\b/u.test(args)) expect(env).toContain("GIT_CONFIG_NOSYSTEM=1");
+      }
+    });
+
+    it("passes the operator's GIT_CONFIG_COUNT, key and value variables to `git ls-remote` only", async () => {
+      const fx = makeFixture();
+      const recorded = recordGit(fx);
+      const configuration = { GIT_CONFIG_COUNT: "1", GIT_CONFIG_KEY_0: "advice.detachedHead", GIT_CONFIG_VALUE_0: "false" };
+      const result = await withEnv({ PATH: recorded.path, ...configuration }, () => observe(fx));
+      expect(observed(result).baseCommit).toBe(headOf(fx));
+      const invocations = recorded.invocations();
+      const remote = invocations.filter(({ args }) => /\bls-remote\b/u.test(args));
+      expect(remote).toHaveLength(1);
+      for (const [name, value] of Object.entries(configuration)) expect(remote[0]!.env).toContain(`${name}=${value}`);
+      const inside = invocations.filter(({ args }) => !/\bls-remote\b/u.test(args));
+      expect(inside.length).toBeGreaterThan(1);
+      for (const { env } of inside) for (const name of Object.keys(configuration)) expect(env.some((line) => line.startsWith(`${name}=`))).toBe(false);
+    });
+
+    it("lets an origin that needs a configuration variable be observed", async () => {
+      const fx = makeFixture();
+      const named = "https://origin.invalid/acme/widgets.git";
+      git(fx.clone, "remote", "set-url", "origin", named);
+      const configuration = {
+        GIT_CONFIG_COUNT: "1",
+        GIT_CONFIG_KEY_0: "url.file://" + join(fx.root, "origin") + "/.insteadOf",
+        GIT_CONFIG_VALUE_0: "https://origin.invalid/",
+      };
+      const ports = { originId: (url: string) => (url === named ? fx.id : null) };
+      const result = await withEnv(configuration, () => observe(fx, { ports }));
+      expect(observed(result).baseCommit).toBe(headOf(fx));
+    });
+
+    it("does not let a forwarded configuration variable open the file transport for an origin the default parser named", async () => {
+      const fx = makeFixture();
+      git(fx.clone, "remote", "set-url", "origin", "https://github.com/acme/widgets.git");
+      const configuration = {
+        GIT_CONFIG_COUNT: "2",
+        GIT_CONFIG_KEY_0: "url.file://" + join(fx.root, "origin", "acme") + "/.insteadOf",
+        GIT_CONFIG_VALUE_0: "https://github.com/acme/",
+        GIT_CONFIG_KEY_1: "protocol.allow",
+        GIT_CONFIG_VALUE_1: "always",
+      };
+      const result = await withEnv(configuration, () => observeWithDefaultParser(fx));
+      expect(result).toEqual(skip(fx, "remote-tip-unreadable", "indeterminate"));
     });
   });
 
