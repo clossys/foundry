@@ -145,7 +145,7 @@ export function renderPrintDocument(doc: ComposeDocument, options: RenderPrintOp
     if (findingMessages.length > 0) parts.push(`binding shape finding(s): ${findingMessages.join("; ")}`);
     throw new RenderError(
       "resolution-failed",
-      `renderPrintDocument could not resolve document "${doc.id}" against its own layout: ${parts.join("; ")}.`,
+      `renderPrintDocument could not resolve the document against its own layout: ${parts.join("; ")}.`,
     );
   }
 

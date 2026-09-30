@@ -164,7 +164,7 @@ export function renderEmailDocument(doc: ComposeDocument, options: RenderEmailOp
     }
     throw new RenderError(
       "resolution-failed",
-      `renderEmailDocument could not resolve document "${doc.id}" against its layout: ${parts.join("; ")}.`,
+      `renderEmailDocument could not resolve the document against its layout: ${parts.join("; ")}.`,
     );
   }
 

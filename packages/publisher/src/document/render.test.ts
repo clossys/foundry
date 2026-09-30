@@ -202,3 +202,39 @@ describe("renderStructuredDocument — fails closed", () => {
     expect((thrown as RenderError).reason).toBe("resolution-failed");
   });
 });
+
+describe("renderStructuredDocument — messages never echo a caller id or key", () => {
+  const SENTINEL_DOC_ID = "sentinel-doc-id-17";
+  const SENTINEL_REF_ID = "sentinel.ref.id.17";
+  const SENTINEL_HREF = "sentinel-href-17:payload";
+
+  function thrownMessage(doc: StructuredDocument, options?: Parameters<typeof renderStructuredDocument>[1]): string {
+    try {
+      renderStructuredDocument(doc, options);
+    } catch (error) {
+      expect(error).toBeInstanceOf(RenderError);
+      expect((error as RenderError).reason).toBe("resolution-failed");
+      return (error as RenderError).message;
+    }
+    return expect.unreachable("expected renderStructuredDocument to throw");
+  }
+
+  it("names the rule and fixed path of an invalid document, not its id or the finding's own text", () => {
+    const message = thrownMessage({
+      id: SENTINEL_DOC_ID,
+      title: ref("acme.title"),
+      sections: [{ kind: "section", id: "s", level: 2, heading: ref("acme.h"), blocks: [{ kind: "paragraph", content: [{ kind: "link", text: ref("acme.t"), href: SENTINEL_HREF }] }] }],
+    });
+    expect(message).toBe("renderStructuredDocument refused to render an invalid document: link-scheme-not-allowed at sections.0.blocks.0.content.0.href.");
+    expect(message).not.toContain(SENTINEL_DOC_ID);
+    expect(message).not.toContain(SENTINEL_HREF);
+  });
+
+  it("names only the fixed path of an unresolved CopyRef, not its id or the document id", () => {
+    const doc: StructuredDocument = { id: SENTINEL_DOC_ID, title: ref(SENTINEL_REF_ID), sections: [] };
+    const message = thrownMessage(doc, { resolveCopyId: fakeResolver({}) });
+    expect(message).toBe("renderStructuredDocument could not resolve a CopyRef at title (missing options.resolveCopyId, an unresolved id, or empty resolved text).");
+    expect(message).not.toContain(SENTINEL_DOC_ID);
+    expect(message).not.toContain(SENTINEL_REF_ID);
+  });
+});

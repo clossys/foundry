@@ -142,6 +142,34 @@ describe("LegalView refuses an invalid document", () => {
     const invalid = legalDoc("terms", { legal: { status: "draft" } });
     expect(() => render(invalid)).toThrow(/legal-draft-facts-missing/);
   });
+
+  it("names the fixed notApplicable path without echoing a caller-chosen key", () => {
+    const invalid = legalDoc("terms", { legal: { notApplicable: { "sentinel-key-29": ref("acme.terms.sentinel") } } });
+    let thrown: unknown;
+    try {
+      render(invalid);
+    } catch (error) {
+      thrown = error;
+    }
+    expect(thrown).toBeInstanceOf(RenderError);
+    expect((thrown as Error).message).toBe("LegalView refused an invalid legal document: legal-not-applicable-unknown-section at legal.notApplicable.");
+    expect((thrown as Error).message).not.toContain("sentinel-key-29");
+  });
+
+  it("does not echo the document id or an unresolved CopyRef id from the document renderer", () => {
+    const invalid = { ...legalDoc("terms"), id: "sentinel-doc-id-29" };
+    const missing: CopyResolver = (r) => (r.id === `acme.terms.${LEGAL_SECTION_IDS.terms[0]}.p1` ? undefined : resolver(r));
+    let thrown: unknown;
+    try {
+      render(invalid, { resolveCopyId: missing });
+    } catch (error) {
+      thrown = error;
+    }
+    expect(thrown).toBeInstanceOf(RenderError);
+    expect((thrown as Error).message).toContain("could not resolve a CopyRef at sections.0.blocks.0.content.0.text");
+    expect((thrown as Error).message).not.toContain("sentinel-doc-id-29");
+    expect((thrown as Error).message).not.toContain(`acme.terms.${LEGAL_SECTION_IDS.terms[0]}.p1`);
+  });
 });
 
 describe("LegalView draft marker", () => {

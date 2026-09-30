@@ -1,9 +1,14 @@
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import type { CopyRegistry, CopyResolver } from "@clossys/writer";
 import { createCopyResolver } from "@clossys/writer";
 import { RenderError } from "../../internal/errors.js";
 import { DocumentView } from "./DocumentView.js";
+
+vi.mock("../../document/render.js", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../../document/render.js")>();
+  return { ...actual, renderStructuredDocument: vi.fn(actual.renderStructuredDocument) };
+});
 
 const ref = (id: string) => ({ id });
 const registry: CopyRegistry = {
@@ -51,5 +56,49 @@ describe("DocumentView", () => {
     expect(() => renderToStaticMarkup(<DocumentView brand="Acme" document={document} resolveCopyId={resolver} effectiveDate={{ dateTime: "", text: ref("acme.document.date") }} />)).toThrow(/effectiveDate.dateTime/);
     expect(() => renderToStaticMarkup(<DocumentView brand="Acme" document={document} resolveCopyId={resolver} effectiveDate={{ dateTime: "2026-02-30", text: ref("acme.document.date") }} />)).toThrow(/real ISO date/);
     expect(() => renderToStaticMarkup(<DocumentView brand="Acme" document={document} resolveCopyId={resolver} effectiveDate={{ dateTime: "September 1", text: ref("acme.document.date") }} />)).toThrow(/real ISO date/);
+  });
+});
+
+describe("DocumentView error messages never echo a caller id", () => {
+  const SENTINEL_DOC_ID = "sentinel-doc-id-23";
+  const SENTINEL_REF_ID = "sentinel.ref.id.23";
+
+  function thrownMessage(render: () => unknown): string {
+    try {
+      render();
+    } catch (error) {
+      expect(error).toBeInstanceOf(RenderError);
+      expect((error as RenderError).reason).toBe("resolution-failed");
+      return (error as RenderError).message;
+    }
+    return expect.unreachable("expected DocumentView to throw");
+  }
+
+  it("names only the fixed summary path for an unresolved summary CopyRef", () => {
+    const message = thrownMessage(() => renderToStaticMarkup(<DocumentView brand="Acme" document={document} resolveCopyId={resolver} summary={ref(SENTINEL_REF_ID)} />));
+    expect(message).toBe("DocumentView could not resolve a CopyRef at summary.");
+    expect(message).not.toContain(SENTINEL_REF_ID);
+  });
+
+  it("names only the fixed effectiveDate.text path for an unresolved date CopyRef", () => {
+    const message = thrownMessage(() => renderToStaticMarkup(<DocumentView brand="Acme" document={document} resolveCopyId={resolver} effectiveDate={{ dateTime: "2026-09-01", text: ref(SENTINEL_REF_ID) }} />));
+    expect(message).toBe("DocumentView could not resolve a CopyRef at effectiveDate.text.");
+    expect(message).not.toContain(SENTINEL_REF_ID);
+  });
+
+  it("reports an unresolved title without echoing the document id", async () => {
+    const { renderStructuredDocument } = await import("../../document/render.js");
+    vi.mocked(renderStructuredDocument).mockReturnValueOnce({ element: null, resolutions: [] } as never);
+    const message = thrownMessage(() => renderToStaticMarkup(<DocumentView brand="Acme" document={{ ...document, id: SENTINEL_DOC_ID }} resolveCopyId={resolver} />));
+    expect(message).toBe("DocumentView could not resolve the document title.");
+    expect(message).not.toContain(SENTINEL_DOC_ID);
+  });
+
+  it("passes the document renderer's fixed message through for an unresolved body CopyRef", () => {
+    const unresolvedBody = { ...document, id: SENTINEL_DOC_ID, sections: [{ ...document.sections[0]!, blocks: [{ kind: "paragraph" as const, content: [{ kind: "text" as const, text: ref(SENTINEL_REF_ID) }] }] }] };
+    const message = thrownMessage(() => renderToStaticMarkup(<DocumentView brand="Acme" document={unresolvedBody} resolveCopyId={resolver} />));
+    expect(message).toContain("could not resolve a CopyRef at sections.0.blocks.0.content.0.text");
+    expect(message).not.toContain(SENTINEL_DOC_ID);
+    expect(message).not.toContain(SENTINEL_REF_ID);
   });
 });

@@ -38,6 +38,14 @@ export interface LegalViewProps extends HTMLAttributes<HTMLDivElement> {
   style?: CSSProperties;
 }
 
+const NOT_APPLICABLE_PATH_PREFIX = "legal.notApplicable.";
+
+/** A finding path for an error message: `legal.notApplicable.<key>` is built from a caller-controlled object key, so the key is never repeated. */
+function messagePath(path: string | undefined): string {
+  if (path === undefined) return "(document)";
+  return path.startsWith(NOT_APPLICABLE_PATH_PREFIX) ? "legal.notApplicable" : path;
+}
+
 function resolveCopy(ref: CopyRef, path: string, resolver: CopyResolver): string {
   const resolution = resolver(ref);
   if (resolution === undefined || typeof resolution.text !== "string" || resolution.text.trim().length === 0) {
@@ -92,7 +100,7 @@ export function LegalView({ brand, document, resolveCopyId, labels, locale, foot
   if (findings.length > 0) {
     throw new RenderError(
       "resolution-failed",
-      `LegalView refused an invalid legal document: ${findings.map((finding) => `${finding.rule} at ${finding.path ?? "(document)"}`).join("; ")}.`,
+      `LegalView refused an invalid legal document: ${findings.map((finding) => `${finding.rule} at ${messagePath(finding.path)}`).join("; ")}.`,
     );
   }
 
