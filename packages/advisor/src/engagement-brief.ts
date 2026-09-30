@@ -120,7 +120,8 @@ export function toEngagementBrief({
   /**
    * The hub's engagement context, snapshotted into the brief when supplied:
    * one entry per field id in the fixed field order, a field the context
-   * does not carry written as unknown. Throws when a field id is not a
+   * does not carry written as unknown. Throws when the context's
+   * `schemaVersion` is not 1, when a field id is not a
    * context field id or appears twice, or when a known field's value is not
    * one of that field's fixed choice ids (`applyContextChoice()` returns
    * `known` for it). The brief is committed in every staffed repository,
@@ -149,29 +150,41 @@ export function toEngagementBrief({
  * `applyContextChoice()` says it is one of that field's fixed choice ids: the
  * vocabulary is closed, so a shape check (a lowercase slug) would still let
  * a founder's sentence through once a caller slugified it.
+ *
+ * The input is read once: `schemaVersion` and `fields` once each, and each
+ * field's `id`, `state` and `value` once into locals that are both validated
+ * and written, so a getter-backed field cannot pass validation and then emit
+ * other text. A `schemaVersion` other than 1 is refused. No message echoes
+ * anything read from the input.
  */
 function snapshotContext(context: EngagementContext): EngagementContext {
+  const { schemaVersion, fields } = context;
+  if (schemaVersion !== 1) {
+    throw new TypeError("engagement context schemaVersion must be 1; the contract allows no other version");
+  }
   const ids = new Set<string>(ENGAGEMENT_CONTEXT_FIELD_IDS);
   const byId = new Map<EngagementContextFieldId, EngagementContextField>();
-  for (const field of context.fields) {
-    if (!ids.has(field.id)) {
-      throw new TypeError(`engagement context field ${JSON.stringify(field.id)} is not a context field id (${ENGAGEMENT_CONTEXT_FIELD_IDS.join(", ")})`);
+  for (const field of fields) {
+    const { id, state, value } = field as EngagementContextField & { value?: unknown };
+    if (typeof id !== "string" || !ids.has(id)) {
+      throw new TypeError(`an engagement context field id is not a context field id (${ENGAGEMENT_CONTEXT_FIELD_IDS.join(", ")})`);
     }
-    if (byId.has(field.id)) {
-      throw new TypeError(`engagement context field "${field.id}" appears more than once; the contract allows exactly one entry per field id`);
+    if (byId.has(id)) {
+      throw new TypeError(`engagement context field "${id}" appears more than once; the contract allows exactly one entry per field id`);
     }
-    byId.set(field.id, snapshotField(field));
+    byId.set(id, snapshotField(id, state, value));
   }
   return { schemaVersion: 1, fields: ENGAGEMENT_CONTEXT_FIELD_IDS.map((id) => byId.get(id) ?? { id, state: "unknown" }) };
 }
 
-function snapshotField(field: EngagementContextField): EngagementContextField {
-  if (field.state === "unknown") return { id: field.id, state: "unknown" };
-  if (field.state !== "known" || typeof field.value !== "string" || applyContextChoice(field.id, field.value).kind !== "known") {
+/** Validates and emits only the locals it is handed -- never re-reads the field they came from. */
+function snapshotField(id: EngagementContextFieldId, state: unknown, value: unknown): EngagementContextField {
+  if (state === "unknown") return { id, state: "unknown" };
+  if (state !== "known" || typeof value !== "string" || applyContextChoice(id, value).kind !== "known") {
     // The value is deliberately not echoed: it may be exactly the founder text this check keeps out.
-    throw new TypeError(`engagement context field "${field.id}" must be unknown, or known with one of that field's fixed choice ids -- never freeform or slugified text, because the brief is committed in every staffed repository`);
+    throw new TypeError(`engagement context field "${id}" must be unknown, or known with one of that field's fixed choice ids -- never freeform or slugified text, because the brief is committed in every staffed repository`);
   }
-  return { id: field.id, state: "known", value: field.value };
+  return { id, state: "known", value };
 }
 
 /**

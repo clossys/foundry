@@ -296,7 +296,11 @@ repository can be public when the hub is not. So a snapshot carries only
 each field's fixed choice ids: `toEngagementBrief()` throws on a known
 field whose `value` is not one of them (a founder's own "something else"
 sentence, or a slugified form of it), and on a field id that appears
-twice, rather than copying it into the brief.
+twice, rather than copying it into the brief. A context whose
+`schemaVersion` is not 1 is refused the same way, and a rejected field id
+is never echoed in the error. Each field's `id`, `state` and `value` is
+read once, so a getter-backed field cannot pass the check and then write
+other text.
 
 The field ids double as reserved intake question ids: a role's own
 intake card may not reuse one, because that question belongs to the
@@ -304,7 +308,8 @@ context card above. Foundry's package-framework gate reports a reused
 id as `intake-card-duplicates-context-field` (report mode, a warning;
 `--enforce`, a finding). Intake and context ids are lowercase slugs, and
 the comparison ignores case and surrounding whitespace, so `Audience` or
-` audience` is the same reserved id.
+` audience` is the same reserved id. Only the package-framework gate runs
+this reused-id check; the package-conformance gate never does.
 
 ## Client problem vocabulary and confirmation
 
