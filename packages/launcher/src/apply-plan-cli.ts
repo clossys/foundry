@@ -262,10 +262,10 @@ const STATUS_HELP = `Usage: launcher-apply-plan status --repo <id>
 
 Reports what the pull request for the repository's stored change set is doing,
 from read-only evidence: the open pull requests, the default branch's tip, and
-the commits already in the local clone. It does not fetch a pull request's head
-(its git calls run with lazy fetch off), check anything out, or write a file, an
-index or a pull request's ref. The one write is verify's: the fetch of the
-default branch into its remote-tracking ref.
+the commits already in the local clone. It changes nothing but the fetch of the
+default branch into its remote-tracking ref that verify also makes: it does not
+fetch a pull request's head (its git calls run with lazy fetch off), check
+anything out, or write a file or an index.
 
 The state is one of: proposed (an open pull request of this change set, made
 by the person running this, whose head passes every check verify makes),
