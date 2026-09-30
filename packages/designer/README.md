@@ -3547,6 +3547,28 @@ prop" shape every block in this README already follows; see `SiteHeader`'s
 own doc comment for why it's `shell`, not `blocks`, despite reading like a
 `PageHeader`-shaped composition of named regions.
 
+`navPlacement` (`"leading"` by default, the markup above) moves the same `nav`
+slot within the row: `"centered"` gives brand, nav, and trailing controls their
+own regions, with the brand and trailing regions growing equally so the nav
+centers on the header, in DOM, visual, and tab order. `secondaryAction` is a
+second trailing slot rendered directly before `actions`, in either placement.
+Both stay one `nav` slot, so the header holds one navigation landmark.
+
+```tsx
+<SiteHeader
+  navPlacement="centered"
+  brand={<Link href="/" variant="standalone">Acme</Link>}
+  nav={
+    <NavShell aria-label="Primary">
+      <Link href="/products" variant="standalone">Products</Link>
+      <Link href="/pricing" variant="standalone">Pricing</Link>
+    </NavShell>
+  }
+  secondaryAction={<Link href="/sign-in" variant="standalone">Sign in</Link>}
+  actions={<Link href="/pricing" variant="standalone">Pricing</Link>}
+/>
+```
+
 `NavShell` is the responsive half: an ordinary inline `<nav>` from the
 `tablet` breakpoint up, and a trigger-plus-drawer below it — CSS-only
 breakpoint switching, no JS media-query state, so the correct layout is
@@ -4522,8 +4544,8 @@ not a grab-bag).
 | `ShellFooterProps` | type | Props for `Shell.Footer`: `children`, plus every native `<footer>` attribute. |
 | `SkipLink` | component | Keyboard affordance to bypass nav chrome and jump straight to a page's content. Visually hidden until focused. |
 | `SkipLinkProps` | type | Props for `SkipLink`: `targetId` (the jump target's `id`), `children` (the link's own visible text — no built-in copy), `className`. |
-| `SiteHeader` | component | Public-site top chrome: brand slot, primary navigation slot, actions slot. Renders the page's `banner` landmark. |
-| `SiteHeaderProps` | type | Props for `SiteHeader`: `brand` (required), `nav`, `actions`, plus every native `<header>` attribute. |
+| `SiteHeader` | component | Public-site top chrome: brand slot, primary navigation slot (leading or centered), secondary action slot, actions slot. Renders the page's `banner` landmark. |
+| `SiteHeaderProps` | type | Props for `SiteHeader`: `brand` (required), `nav`, `navPlacement` (`"leading"` default, or `"centered"`), `secondaryAction`, `actions`, plus every native `<header>` attribute. |
 | `NavShell` | component | The responsive half of a public site's navigation: an inline `<nav>` from `tablet` up, a trigger-plus-drawer below it. |
 | `NavShellProps` | type | Props for `NavShell`: `children` (the nav links, rendered in both the desktop row and the drawer), `aria-label` (default `"Primary"`), `triggerLabel` (default `"Menu"`), `closeLabel` (default `"Close menu"`), `className`, plus most of react-aria-components' own `DialogTrigger` props (`isOpen`, `defaultOpen`, `onOpenChange`). |
 | `SiteFooter` | component | Public-site bottom chrome: grouped link columns, a secondary/legal row. Carries `SiteFooter.Column` and `SiteFooter.Legal`. Renders the page's `contentinfo` landmark. |
