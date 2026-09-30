@@ -5,7 +5,8 @@
 //
 // It never changes anything. Three read-only `gh api` calls (S1: GET only, see createGhPorts) say who is asking, which pull
 // requests are open, and where the default branch is; every other read is git plumbing over commits that are already in the
-// clone (`ls-tree`, `cat-file`, `diff-tree`, `rev-parse`). It never fetches a pull request's head, never checks anything out and
+// clone (`ls-tree`, `cat-file`, `diff-tree`, `rev-parse`). It never fetches a pull request's head (a partial clone is refused before any object is read, and every git call also runs
+// with lazy fetch off and a time limit), never checks anything out and
 // never writes an index, a ref, a worktree or a file. (The one exception is verify's own precondition step, which fetches the
 // default branch into its remote-tracking ref exactly as `verify` does; see runPreconditions.)
 //
@@ -21,7 +22,7 @@
 //   set's, its head commit is already in the clone, and verify's own checks (verifyPrepared) pass over that commit's tree,
 //   including the exact ledger bytes; otherwise `diverged`. A precondition that fails (the clone, the hub or the admission, not
 //   the pull request) and any object git cannot read are `indeterminate`, and are judged first. `proposed` does not check the
-//   head's ancestry to the base: the merge gate does.
+//   head's ancestry to the base, and nothing in this unit does.
 // - S6. A pull request with another digest this hub stored for the repository is `superseded`. A digest this hub never stored,
 //   two pull requests with one digest, 100 or more open pull requests (a full page of 100 cannot show that nothing lies beyond
 //   it), or a port that fails or answers malformed is `indeterminate`.
@@ -32,13 +33,14 @@
 // verify's, `proved` and `held` and the drift classes are not observed here.
 
 import { spawnSync } from "node:child_process";
-import { dirname } from "node:path";
+import { readdirSync } from "node:fs";
+import { dirname, isAbsolute, join } from "node:path";
 import { contentDigest, validateRepositoryChangeSet } from "./change-set-contract.js";
 import type { RepositoryChangeSet } from "./change-set-contract.js";
 import { changeSetDigest } from "./change-set-digest.js";
 import type { ReadinessRunner } from "./admission.js";
 import { valueAtJsonPointer } from "./key-editor.js";
-import { checkChangeSetShape, resolveCloneRoot, runPreconditions, verifyPrepared } from "./materialize.js";
+import { GIT_TIMEOUT_ENV, checkChangeSetShape, resolveCloneRoot, runPreconditions, verifyPrepared } from "./materialize.js";
 import type { ApplyStepResult, GitPathList, TreeEntry, TreeReader } from "./materialize.js";
 import { readChangeSetMarker } from "./pull-request-body.js";
 
@@ -135,15 +137,49 @@ function runGit(cwd: string, args: readonly string[], timeoutMs: number): { stat
   return { status: run.status, stdout: run.stdout };
 }
 
-/** Runs `run` with lazy fetch off in this process too, for the reads verifyPrepared makes with its own git helper. It is synchronous, so nothing else sees the change. */
-function withoutLazyFetch<T>(run: () => T): T {
-  const previous = process.env.GIT_NO_LAZY_FETCH;
+/**
+ * Runs `run` with lazy fetch off and a time limit in this process's environment too, for the reads the shared preconditions and
+ * verifyPrepared make with their own git helpers, which inherit it (verify sets neither). One status at a time per process.
+ */
+async function withGitLimits<T>(timeoutMs: number, run: () => T | Promise<T>): Promise<T> {
+  const saved = { lazy: process.env.GIT_NO_LAZY_FETCH, limit: process.env[GIT_TIMEOUT_ENV] };
   process.env.GIT_NO_LAZY_FETCH = "1";
+  process.env[GIT_TIMEOUT_ENV] = String(timeoutMs);
   try {
-    return run();
+    return await run();
   } finally {
-    if (previous === undefined) delete process.env.GIT_NO_LAZY_FETCH;
-    else process.env.GIT_NO_LAZY_FETCH = previous;
+    if (saved.lazy === undefined) delete process.env.GIT_NO_LAZY_FETCH;
+    else process.env.GIT_NO_LAZY_FETCH = saved.lazy;
+    if (saved.limit === undefined) delete process.env[GIT_TIMEOUT_ENV];
+    else process.env[GIT_TIMEOUT_ENV] = saved.limit;
+  }
+}
+
+/**
+ * Whether the clone is a partial (promisor) clone, whose missing objects git would fetch on demand. Status refuses one before it
+ * reads any object, whatever version of git it has: by the configuration that makes a clone partial (`extensions.partialclone`, or a
+ * remote marked `promisor`, which every filtered clone sets, blobless or treeless) and by a `.promisor` pack marker, in case the
+ * configuration was edited away. Throws when git cannot say.
+ */
+function isPartialClone(root: string, timeoutMs: number): boolean {
+  const config = runGit(root, ["config", "--get-regexp", "^(extensions\\.partialclone|remote\\..*\\.promisor)$"], timeoutMs);
+  if (config.status !== 0 && config.status !== 1) throw new Error(GIT_UNAVAILABLE);
+  for (const line of config.stdout.toString("utf8").split("\n")) {
+    const space = line.indexOf(" ");
+    const key = (space === -1 ? line : line.slice(0, space)).toLowerCase();
+    const value = space === -1 ? "" : line.slice(space + 1).trim().toLowerCase();
+    if (key === "extensions.partialclone") return true;
+    if (key.endsWith(".promisor") && !["false", "no", "off", "0"].includes(value)) return true;
+  }
+  const located = runGit(root, ["rev-parse", "--git-path", "objects/pack"], timeoutMs);
+  if (located.status !== 0) throw new Error(GIT_UNAVAILABLE);
+  const relative = located.stdout.toString("utf8").trim();
+  const packs = isAbsolute(relative) ? relative : join(root, relative);
+  try {
+    return readdirSync(packs).some((name) => name.endsWith(".promisor"));
+  } catch (cause) {
+    if ((cause as NodeJS.ErrnoException).code === "ENOENT") return false;
+    throw cause;
   }
 }
 
@@ -382,13 +418,16 @@ async function observe(input: StatusInput): Promise<StatusResult> {
   if (changeSetDigest(set) !== set.changeSetDigest) return indeterminate("change-set-invalid");
   if (!REPOSITORY_ID.test(id) || !branchSafe(branch) || !isNodeId(nodeId)) return indeterminate("repository-invalid");
 
+  // Before any read of an object: a partial clone would have git fetch what it lacks, from the network, with the operator's credentials.
+  const timeoutMs = input.gitTimeoutMs ?? GIT_TIMEOUT_MS;
+  if (isPartialClone(root, timeoutMs)) return indeterminate("partial-clone");
+
   // The digests this hub stored for this repository: the ones a marker may name besides this set's own.
   const held = (input.heldChangeSets ?? []).filter((entry) => entry.repository.id === id);
   const known = new Set<string>();
   for (const entry of held) if (validateRepositoryChangeSet(entry).valid && changeSetDigest(entry) === entry.changeSetDigest) known.add(entry.changeSetDigest);
   known.delete(set.changeSetDigest);
 
-  const timeoutMs = input.gitTimeoutMs ?? GIT_TIMEOUT_MS;
   const ports = input.ports ?? createGhPorts();
   let viewer: string;
   let raw: unknown;
@@ -426,7 +465,7 @@ async function observe(input: StatusInput): Promise<StatusResult> {
     if (typeof current.baseRef !== "string" || typeof current.headRef !== "string" || typeof current.title !== "string" || typeof current.headSha !== "string") return indeterminate("port-malformed", [number]);
     // The clone, the hub and the admission come first: a refusal there is about them, not about the pull request, so it is
     // `indeterminate` whatever the pull request says.
-    const pre = await runPreconditions(input.clone, input.hub, set, input.heldChangeSets ?? [], { now: input.now, runReadiness: input.runReadiness });
+    const pre = await withGitLimits(timeoutMs, () => runPreconditions(input.clone, input.hub, set, input.heldChangeSets ?? [], { now: input.now, runReadiness: input.runReadiness }));
     if ("exitCode" in pre) return indeterminate(pre.reason ?? "refused", [number]);
     // S5
     if (current.baseRef !== branch) return diverged("base-branch-mismatch", [number]);
@@ -436,7 +475,7 @@ async function observe(input: StatusInput): Promise<StatusResult> {
     const head = commitReader(root, current.headSha, timeoutMs);
     let verified: ApplyStepResult | null = null;
     try {
-      verified = withoutLazyFetch(() => verifyPrepared(set, pre, head.reader));
+      verified = await withGitLimits(timeoutMs, () => verifyPrepared(set, pre, head.reader));
     } catch (cause) {
       if (!head.unreadable()) throw cause;
     }

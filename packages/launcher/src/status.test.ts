@@ -1,7 +1,7 @@
 import { execFileSync } from "node:child_process";
 import { chmodSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { branchExists, buildMaterializedFixture, writeSnapshot } from "./apply-step-fixture.js";
 import { reseal } from "./admission-fixture.js";
@@ -345,33 +345,6 @@ describe("status", () => {
   );
 
   it(
-    "never fetches a head or an object a partial clone lacks",
-    async () => {
-      const world = await proposedWorld();
-      // The head exists on the origin only: a blobless clone whose promisor remote would serve it to a lazy fetch.
-      git(world.clone, "push", "origin", world.set.branch);
-      git(world.origin, "config", "uploadpack.allowFilter", "true");
-      git(world.origin, "config", "uploadpack.allowAnySHA1InWant", "true");
-      git(world.clone, "config", "core.repositoryformatversion", "1");
-      git(world.clone, "config", "extensions.partialClone", "origin");
-      git(world.clone, "config", "remote.origin.promisor", "true");
-      git(world.clone, "config", "remote.origin.partialclonefilter", "blob:none");
-      git(world.clone, "branch", "-D", world.set.branch);
-      git(world.clone, "update-ref", "-d", `refs/remotes/origin/${world.set.branch}`);
-      git(world.clone, "reflog", "expire", "--expire=now", "--all");
-      git(world.clone, "prune", "--expire=now");
-      const before = objectFiles(world.clone);
-      const snapshot = writeSnapshot(world.clone, world.hub);
-
-      const result = await statusOf(world, fakePorts([row(world)]).ports);
-      expect(result).toEqual({ exitCode: 1, state: "diverged", reason: "head-not-local", pullRequests: [7] });
-      expect(objectFiles(world.clone)).toEqual(before);
-      expect(writeSnapshot(world.clone, world.hub)).toBe(snapshot);
-    },
-    TIMEOUT,
-  );
-
-  it(
     "an object git cannot read is indeterminate, not diverged",
     async () => {
       const world = await proposedWorld();
@@ -421,6 +394,106 @@ describe("status", () => {
         const result = await statusOf(world, fakePorts([row(world, over)]).ports);
         expect(result, JSON.stringify(over)).toEqual({ exitCode: 2, state: "indeterminate", reason: "remote-tip-mismatch", pullRequests: [7] });
       }
+    },
+    TIMEOUT,
+  );
+
+  it(
+    "refuses a partial clone before it reads anything else",
+    async () => {
+      const world = await proposedWorld();
+      git(world.origin, "config", "uploadpack.allowFilter", "true");
+      git(world.origin, "config", "uploadpack.allowAnySHA1InWant", "true");
+      const parent = dirname(world.clone);
+      const partial = (name: string, filter: string, checkout: boolean): string => {
+        git(parent, "clone", "-q", `--filter=${filter}`, ...(checkout ? [] : ["--no-checkout"]), `file://${world.origin}`, name);
+        return join(parent, name);
+      };
+      const ask = async (clone: string) => {
+        const { ports, calls } = fakePorts([], "0".repeat(40));
+        const result = await statusRepository({ clone, hub: world.hub, set: world.set, heldChangeSets: [], ports });
+        return { result, calls };
+      };
+      const refused = { exitCode: 2, state: "indeterminate", reason: "partial-clone" };
+
+      for (const [name, filter] of [["blobless", "blob:none"], ["treeless", "tree:0"]] as const) {
+        const clone = partial(name, filter, false);
+        const before = objectFiles(clone);
+        const { result, calls } = await ask(clone);
+        expect(result, name).toEqual(refused);
+        // Nothing was asked of GitHub, and nothing was fetched.
+        expect(calls, name).toEqual({ viewer: 0, open: [], tip: [] });
+        expect(objectFiles(clone), name).toEqual(before);
+      }
+
+      // The promisor pack marker alone is enough: the configuration may have been edited away.
+      const marked = partial("marked", "blob:none", false);
+      git(marked, "config", "--unset", "remote.origin.promisor");
+      expect((await ask(marked)).result).toEqual(refused);
+      // ...and the configuration alone is enough: the marker files may be gone.
+      const configured = partial("configured", "blob:none", false);
+      for (const name of readdirSync(join(configured, ".git/objects/pack"))) if (name.endsWith(".promisor")) rmSync(join(configured, ".git/objects/pack", name));
+      expect((await ask(configured)).result).toEqual(refused);
+
+      // A full clone is not refused: it goes on to read the tip.
+      git(parent, "clone", "-q", `file://${world.origin}`, "full");
+      const full = await ask(join(parent, "full"));
+      expect(full.result).toEqual({ exitCode: 2, state: "indeterminate", reason: "tip-not-local" });
+      expect(full.calls.tip).toHaveLength(1);
+    },
+    TIMEOUT,
+  );
+
+  it(
+    "runs every git call with lazy fetch off, from inside the clone",
+    async () => {
+      const world = await proposedWorld();
+      const shim = join(tmpdir(), `launcher-status-env-${process.pid}-${Date.now()}`);
+      roots.push(shim);
+      mkdirSync(shim, { recursive: true });
+      const real = execFileSync("which", ["git"], { encoding: "utf8" }).trim();
+      const log = join(shim, "log");
+      writeFileSync(join(shim, "git"), `#!/bin/sh\nprintf '%s|%s\\n' "$GIT_NO_LAZY_FETCH" "$GIT_CEILING_DIRECTORIES" >> '${log}'\nexec '${real}' "$@"\n`);
+      chmodSync(join(shim, "git"), 0o755);
+      const path = process.env.PATH;
+      process.env.PATH = `${shim}:${path ?? ""}`;
+      try {
+        const result = await statusRepository({ clone: world.clone, hub: world.hub, set: world.set, heldChangeSets: [], ports: fakePorts([row(world)]).ports });
+        expect(result).toMatchObject({ state: "proposed" });
+      } finally {
+        process.env.PATH = path;
+      }
+      const lines = readFileSync(log, "utf8").trim().split("\n");
+      // status's own reads, the fetch and the base reads of the preconditions, and verify's reads of the base.
+      expect(lines.length).toBeGreaterThan(8);
+      for (const line of lines) expect(line.startsWith("1|"), line).toBe(true);
+      expect(lines.filter((line) => line === `1|${dirname(world.clone)}`).length).toBeGreaterThan(3);
+    },
+    TIMEOUT,
+  );
+
+  it(
+    "a hung precondition fetch is indeterminate",
+    async () => {
+      const world = await proposedWorld();
+      const shim = join(tmpdir(), `launcher-status-fetch-${process.pid}-${Date.now()}`);
+      roots.push(shim);
+      mkdirSync(shim, { recursive: true });
+      const real = execFileSync("which", ["git"], { encoding: "utf8" }).trim();
+      writeFileSync(join(shim, "git"), `#!/bin/sh\ncase " $* " in *" fetch "*) exec sleep 20 ;; esac\nexec '${real}' "$@"\n`);
+      chmodSync(join(shim, "git"), 0o755);
+      const path = process.env.PATH;
+      process.env.PATH = `${shim}:${path ?? ""}`;
+      try {
+        const started = Date.now();
+        const result = await statusRepository({ clone: world.clone, hub: world.hub, set: world.set, heldChangeSets: [], ports: fakePorts([row(world)]).ports, gitTimeoutMs: 1_000 });
+        expect(result).toEqual({ exitCode: 2, state: "indeterminate", reason: "remote-tip-unreadable", pullRequests: [7] });
+        expect(Date.now() - started).toBeLessThan(15_000);
+      } finally {
+        process.env.PATH = path;
+      }
+      expect(process.env.CLOSSYS_LAUNCHER_GIT_TIMEOUT_MS).toBeUndefined();
+      expect(process.env.GIT_NO_LAZY_FETCH).toBeUndefined();
     },
     TIMEOUT,
   );

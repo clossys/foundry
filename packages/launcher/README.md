@@ -1229,14 +1229,15 @@ and it changes nothing: it asks GitHub three read-only questions (who is
 asking, which pull requests are open, and where the default branch is) with
 `gh api --method GET`, reads only commits that are already in the local clone
 through git, and never fetches a pull request's head, checks anything out or
-writes a file, an index or a ref of a pull request or a branch. Its own git
-calls run with lazy fetch off and a 30 second limit each (the preconditions it
-shares with `verify` keep `verify`'s git calls), so in a partial clone an object
-that is not already there is unreadable rather than fetched (git 2.44 or newer
-honours this; an older git does not, so use a full clone with it). What
-it does write is what `verify` writes: the fetch of the default branch into its
-remote-tracking ref (`refs/remotes/origin/<default branch>`), which also leaves
-`FETCH_HEAD` and any new objects of that branch in the clone, and it runs the
+writes a file, an index or any ref but one. It needs a full clone: a partial
+(promisor) clone, such as a blobless or treeless one, is refused up front as
+`partial-clone`, before any object is read, because git would fetch what such a
+clone lacks. All its git calls also run with lazy fetch off, and each has a
+30 second limit, including those of the preconditions it shares with `verify`
+except the base-commit reads made by the hub admission, which have no limit. The one
+ref it writes is the one `verify` writes: the fetch of the default branch into
+its remote-tracking ref (`refs/remotes/origin/<default branch>`), which also
+leaves `FETCH_HEAD` and any new objects of that branch in the clone. It runs the
 hub's readiness executable as `verify` does.
 
 ```bash
@@ -1269,7 +1270,8 @@ closed: closing the stray pull request is the remedy.
 Every reason `indeterminate` can carry:
 
 - The set and the clone: `change-set-absent`, `change-set-invalid`,
-  `repository-invalid` and `missing-clone`.
+  `repository-invalid`, `missing-clone` and `partial-clone` (a blobless,
+  treeless or other partial clone; use a full clone).
 - GitHub: `port-failed`, `port-malformed` and `too-many-open`. Only the first
   page of 100 open pull requests is read, so a listing of 100 or more cannot be
   shown to be whole and is refused.
@@ -1289,10 +1291,11 @@ Every reason `indeterminate` can carry:
   unreadable tree, such as `status-unreadable`, `symlink-ancestor` and
   `lockfile-format-unsupported`, appear the same way.
 
-`proposed` does not check the head's ancestry to the base commit: it checks the
-head's tree and the paths that differ from the base, as `verify` does, but a
-head built on a newer default branch that reverts it can look the same. The
-merge gate decides that. Nor can `status` tell that a pull request's body was
+`proposed` does not check the head's ancestry to the base commit, and nothing in
+this unit does: it checks the head's tree and the paths that differ from the
+base, as `verify` does, so a head built on a newer default branch that reverts
+it can look the same. A reviewer reading the pull request's own diff on GitHub
+is what would notice. Nor can `status` tell that a pull request's body was
 edited after it was opened beyond what the marker and these checks show.
 
 `verify` now reads a path the set removes with a `lstat` alone. A file that is

@@ -87,11 +87,23 @@ function result(exitCode: 0 | 1 | 2, verdict: ApplyStepResult["verdict"], reason
   return detail === undefined ? { exitCode, verdict, reason } : { exitCode, verdict, reason, detail };
 }
 
+/**
+ * The time limit `status` puts on the git calls of the preconditions it shares with verify, through this variable; unset (verify's
+ * own case) there is no limit. A call that runs out of time has no status, which is read as a failure.
+ */
+export const GIT_TIMEOUT_ENV = "CLOSSYS_LAUNCHER_GIT_TIMEOUT_MS";
+function gitTimeout(): number | undefined {
+  const limit = Number(process.env[GIT_TIMEOUT_ENV]);
+  return Number.isSafeInteger(limit) && limit > 0 ? limit : undefined;
+}
+
 function git(root: string, args: readonly string[]): { status: number; stdout: string } {
   const run = spawnSync("git", ["-c", "commit.gpgsign=false", "-c", "core.hooksPath=/dev/null", ...args], {
     cwd: root,
     encoding: "utf8",
     stdio: ["ignore", "pipe", "ignore"],
+    timeout: gitTimeout(),
+    killSignal: "SIGKILL",
   });
   return { status: run.status ?? 1, stdout: run.stdout ?? "" };
 }
@@ -128,6 +140,8 @@ function gitShowBytes(root: string, ref: string, path: string): Uint8Array | nul
   const run = spawnSync("git", ["-c", "commit.gpgsign=false", "-c", "core.hooksPath=/dev/null", "show", `${ref}:${path}`], {
     cwd: root,
     stdio: ["ignore", "pipe", "ignore"],
+    timeout: gitTimeout(),
+    killSignal: "SIGKILL",
   });
   if ((run.status ?? 1) !== 0) return null;
   return run.stdout ?? null;
