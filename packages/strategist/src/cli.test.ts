@@ -1047,3 +1047,76 @@ describe("main — brand-facts — the third state: could not run (exit 2)", () 
     });
   });
 });
+
+// ---------------------------------------------------------------------
+// wont-claim — the strategy-brief.json claim gate. Every case builds its
+// own record and surfaces inside this test's mkdtemp directories.
+// ---------------------------------------------------------------------
+
+const WONT_CLAIM_RECORD = {
+  wontClaim: [
+    {
+      id: "guaranteed-outcomes",
+      statement: "We never promise a guaranteed outcome for a customer.",
+      matchPhrases: ["guaranteed results"],
+    },
+  ],
+};
+
+function stageWontClaim(page: string): void {
+  writeFileSync(join(strategyDir, "strategy-brief.json"), JSON.stringify(WONT_CLAIM_RECORD));
+  writeFileSync(join(scanDir, "page.md"), page);
+}
+
+describe("main — wont-claim", () => {
+  it("the top-level usage names the wont-claim subcommand", { timeout: 8_000 }, () => {
+    expect(main(["--help"])).toBe(0);
+    const usage = loggedLines("log").join("\n");
+    expect(usage).toContain("strategist-check wont-claim <strategy-dir> <scan-dir>");
+    expect(usage).toContain('"strategist-check wont-claim --help"');
+  });
+
+  it("--help prints the subcommand usage and exits 0", { timeout: 8_000 }, () => {
+    expect(main(["wont-claim", "--help"])).toBe(0);
+    expect(loggedLines("log").some((line) => line.includes("Usage: strategist-check wont-claim"))).toBe(true);
+  });
+
+  it("wont-claim exit codes", { timeout: 8_000 }, () => {
+    stageWontClaim("A calm page with no promises.");
+    expect(main(["wont-claim", strategyDir, scanDir])).toBe(0);
+
+    writeFileSync(join(scanDir, "page.md"), "Enjoy Guaranteed Results today.");
+    expect(main(["wont-claim", strategyDir, scanDir])).toBe(1);
+    expect(loggedLines("log").some((line) => line.startsWith("  [guaranteed-outcomes] page.md:1"))).toBe(true);
+
+    // The record lives in the scanned tree too: it is never a finding source.
+    writeFileSync(join(scanDir, "page.md"), "Fine.");
+    writeFileSync(join(scanDir, "strategy-brief.json"), JSON.stringify(WONT_CLAIM_RECORD));
+    expect(main(["wont-claim", strategyDir, scanDir])).toBe(0);
+
+    rmSync(join(strategyDir, "strategy-brief.json"));
+    expect(main(["wont-claim", strategyDir, scanDir])).toBe(2);
+
+    writeFileSync(join(strategyDir, "strategy-brief.json"), JSON.stringify({ wontClaim: [{ id: "Bad Id", statement: "x" }] }));
+    expect(main(["wont-claim", strategyDir, scanDir])).toBe(2);
+
+    writeFileSync(join(strategyDir, "strategy-brief.json"), JSON.stringify(WONT_CLAIM_RECORD));
+    rmSync(join(scanDir, "page.md"));
+    rmSync(join(scanDir, "strategy-brief.json"));
+    expect(main(["wont-claim", strategyDir, scanDir])).toBe(2);
+  });
+
+  it("honours --extensions and --exclude, and treats zero matching files as exit 2", { timeout: 8_000 }, () => {
+    stageWontClaim("clean");
+    writeFileSync(join(scanDir, "app.ts"), 'export const s = "guaranteed results";');
+    expect(main(["wont-claim", strategyDir, scanDir])).toBe(0); // .ts is not a default extension
+    expect(main(["wont-claim", strategyDir, scanDir, "--extensions", ".ts"])).toBe(1);
+    expect(main(["wont-claim", strategyDir, scanDir, "--extensions", ".ts", "--exclude", "app.ts"])).toBe(2);
+  });
+
+  it("refuses bad arguments with a CliInputError", { timeout: 8_000 }, () => {
+    expect(() => main(["wont-claim", strategyDir])).toThrow(CliInputError);
+    expect(() => main(["wont-claim", strategyDir, scanDir, "--bogus"])).toThrow(CliInputError);
+    expect(() => main(["wont-claim", strategyDir, scanDir, "--facts-dir", factsDir])).toThrow(CliInputError);
+  });
+});

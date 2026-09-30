@@ -238,6 +238,7 @@ clossys/strategist/
   brand-attributes.json                     optional — an array of BrandAttribute
   brand-derivations.json                       optional — an array of BrandDerivation
   brand-facts.json                                optional — a BrandFacts record
+  strategy-brief.json                                optional — a StrategyBrief record (claims never to make)
 ```
 
 The three `brand-*.json` names follow the same convention as everything
@@ -1070,6 +1071,100 @@ exists, that file is used.
 | `1` | `drift` — at least one scanned surface conflicts with the record. |
 | `2` | **Could not run** — `brand-facts.json` missing, unreadable or invalid; a given copy registry unreadable or invalid; no files scanned; an unreadable directory; taglines recorded with no copy registry available; or bad arguments. Never `0`. |
 
+## The strategy-brief record
+
+`strategy-brief.json` lists the claims this strategy must never make, so a
+surface that makes one can be found instead of relying on each author to
+remember. It is **not** the engagement brief: `clossys/brief.json` is the
+founder's engagement brief and has its own schema, owner and readers, and
+neither file is read through the other. `readStrategy` does not read
+`strategy-brief.json`; `readStrategyBrief` does.
+
+```json
+{
+  "wontClaim": [
+    {
+      "id": "guaranteed-outcomes",
+      "statement": "We never promise a fixed outcome for a customer.",
+      "why": "No result can be promised in advance.",
+      "matchPhrases": ["guaranteed results", "risk-free"]
+    },
+    { "id": "best-in-class", "statement": "We never call the product the best in its class." }
+  ]
+}
+```
+
+- `wontClaim` is required and may be empty.
+- `id` is kebab-case and unique.
+- `statement` is a sentence of at least 10 characters.
+- `why` is optional prose.
+- `matchPhrases` is optional: non-blank strings, unique ignoring case. An
+  entry without phrases is recorded but cannot be mechanically checked.
+- Unknown keys are refused at every level, and an issue names the path of the
+  problem, never the value.
+
+### `checkWontClaimDrift` — does any surface make a claim it must not?
+
+```ts
+import { checkWontClaimDrift, readStrategyBrief, scanStrategyDirectory } from "@clossys/strategist";
+
+const read = readStrategyBrief("./clossys/strategist");
+if (read.status === "ok") {
+  const files = scanStrategyDirectory("./site", { extensions: [".md", ".html"] });
+  const result = checkWontClaimDrift(files, read.brief);
+  result.state; // "clean" | "hit" | "indeterminate"
+}
+```
+
+The check is pure: it takes already-read `ScannedFile[]` and a validated
+`StrategyBrief`, does no I/O and never throws. Its rules:
+
+- **Literal phrases.** A phrase matches literally, ignoring case, on word
+  boundaries. The phrase is escaped before it becomes a pattern, so there is no
+  user regex: `guaranteed.*results` matches only those exact characters, and
+  "unguaranteed results" is not a hit for "guaranteed results".
+- **Findings.** A match is a finding (`file`, `line`, `id`), one per id per
+  line. A line with `wont-claim:ignore` inside a comment (`<!--`, `/*`,
+  `{/*`, `//`, or `#` as the first non-blank character) is listed in `ignored`
+  and not checked.
+- **Unchecked entries.** An entry with no `matchPhrases` is listed in
+  `unchecked` and never changes the state.
+- **Fails closed.** Zero files checked, or a line over 16,384 characters, makes
+  the state `indeterminate`, which wins over a hit.
+- **Not its own source.** A file named `strategy-brief.json` is never scanned
+  for findings and is not counted as scanned.
+
+Detection is lexical: a claim made in words the record does not list is not
+found.
+
+### `strategist-check wont-claim`
+
+```bash
+npx strategist-check wont-claim ./clossys/strategist ./site
+```
+
+```
+Usage: strategist-check wont-claim <strategy-dir> <scan-dir> [options]
+
+  strategy-dir   Directory containing strategy-brief.json (the won't-claim record — not the engagement brief).
+  scan-dir       Directory to scan for surfaces that make a claim the record says must never be made.
+
+Options:
+  --help                   Print this message and exit 0.
+  --extensions <ext>       File extension to scan (repeatable; include the leading dot).
+  --skip-dirs <name>       Directory name to skip during the walk (repeatable), added to the built-in skip list.
+  --exclude <glob>         Repo-relative path glob to omit (repeatable).
+```
+
+Default extensions are `.md`, `.mdx`, `.txt`, `.html`, `.htm`, `.json`,
+`.yml` and `.yaml`; code files opt in through `--extensions`.
+
+| Code | Meaning |
+| --- | --- |
+| `0` | `checkWontClaimDrift` returned `clean`. |
+| `1` | `hit` — at least one scanned surface makes a recorded claim. |
+| `2` | **Could not run** — `strategy-brief.json` missing, unreadable or invalid; no files scanned; an over-long line; an unreadable directory; or bad arguments. Never `0`. |
+
 ## API
 
 ### Entities (`schema.ts`)
@@ -1138,6 +1233,22 @@ See "The brand-facts record" above.
 | `BrandFactsDriftResult` | type | `{ state, findings, ignored, filesScanned, indeterminateReasons }`. |
 | `BrandFactsDriftState` | type | `"clean" \| "drift" \| "indeterminate"`. |
 | `BrandFactsDriftFinding`, `BrandFactsDriftKind`, `BrandFactsDriftOptions` | types | `{ kind, file, line, found, expected, message }`, the nine kinds in the table above, and `{ copyEntries? }`. |
+
+### Strategy brief (`strategy-brief.ts`, `wont-claim-drift.ts`)
+
+See "The strategy-brief record" above.
+
+| Export | Kind | Purpose |
+| --- | --- | --- |
+| `validateStrategyBrief(value)` | function | Pure. One `StrategyBrief` record; refuses unknown keys at every level, a duplicate `id`, a short `statement`, and a blank or case-insensitive duplicate phrase, each by path. |
+| `readStrategyBrief(strategyDir)` | function | Reads `<strategyDir>/strategy-brief.json` (`STRATEGY_BRIEF_FILE`). Never throws; returns a `StrategyBriefRead`. |
+| `checkWontClaimDrift(files, brief)` | function | Pure. Scans `ScannedFile[]` for lines that contain a recorded phrase. Returns a `WontClaimResult`. |
+| `STRATEGY_BRIEF_FILE` | const | `"strategy-brief.json"`. |
+| `StrategyBrief`, `WontClaim` | types | The record shape. |
+| `StrategyBriefRead` | type | `{ status: "ok"; brief } \| { status: "missing"; detail } \| { status: "invalid"; issue: StrategyReadIssue }`. |
+| `WontClaimResult` | type | `{ state, findings, ignored, unchecked, filesScanned, indeterminateReasons }`. |
+| `WontClaimState` | type | `"clean" \| "hit" \| "indeterminate"`. |
+| `WontClaimFinding` | type | `{ id, file, line, found, message }`. |
 
 ### Engagement context (`engagement-context.ts`, `audience-intake.ts`)
 
