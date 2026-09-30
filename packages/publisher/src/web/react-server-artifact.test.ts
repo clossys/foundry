@@ -179,6 +179,7 @@ describe("packed Publisher web React-server boundary", () => {
           "./atoms/server": "./dist/atoms/server.js",
           "./blocks/server": "./dist/blocks/server.js",
           "./shell/server": "./dist/shell/server.js",
+          "./tokens": "./dist/tokens.js",
         },
         files: ["dist"],
       }),
@@ -195,6 +196,8 @@ describe("packed Publisher web React-server boundary", () => {
       join(adversarialRoot, "dist", "shell", "server.js"),
       "export const SiteFooter = () => null; export const SiteHeader = () => null;\n",
     );
+    // Publisher's web entry also reads Designer's token registry; an empty one is enough here.
+    writeFileSync(join(adversarialRoot, "dist", "tokens.js"), "export const TOKENS = {};\n");
 
     const adversarialPacked = join(fixtureRoot, "adversarial-packed");
     const designer023Tarball = packPackage(adversarialRoot, adversarialPacked);
@@ -298,6 +301,7 @@ describe("packed Publisher web React-server boundary", () => {
           "./atoms/server": "./dist/atoms/server.js",
           "./blocks/server": "./dist/blocks/server.js",
           "./shell/server": "./dist/shell/server.js",
+          "./tokens": "./dist/tokens.js",
         },
         files: ["dist"],
       }),
@@ -335,6 +339,8 @@ describe("packed Publisher web React-server boundary", () => {
       join(adversarialRoot, "dist", "shell", "server.js"),
       "export const SiteFooter = () => null; export const SiteHeader = () => null;\n",
     );
+    // Publisher's web entry also reads Designer's token registry; an empty one is enough here.
+    writeFileSync(join(adversarialRoot, "dist", "tokens.js"), "export const TOKENS = {};\n");
 
     const adversarialPacked = join(fixtureRoot, "designer-0.4.7-shaped-packed");
     const designer047Tarball = packPackage(adversarialRoot, adversarialPacked);

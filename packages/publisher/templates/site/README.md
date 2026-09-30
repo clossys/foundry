@@ -61,6 +61,12 @@ applies at its cascade scope, or that the template builds.
   ever added without one or composes Designer blocks directly.
 - `vercel.json` — hosting configuration with the application root at
   `apps/site` (#1208's own requirement).
+- `app/site-metadata.ts` — pure `toNextMetadata(meta)` and
+  `toNextViewport(meta)`, which map the result of Publisher's
+  `buildSiteMetadata` onto Next.js `Metadata` and `Viewport`: the title as
+  `absolute`, the canonical under `alternates`, robots, Open Graph with its
+  image, the Twitter card, `metadataBase` as a URL, and the theme colour in the
+  viewport. It imports only types, and no route uses it yet.
 
 ## What every page actually reads
 
