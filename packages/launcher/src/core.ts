@@ -836,16 +836,21 @@ function parseManifestObject(raw: string): Record<string, unknown> | undefined {
 /**
  * The manifest refusals of `mergeHubEnginePins` in "appoint" mode, raised by
  * `adoptHubFiles` before its first write so a refusal leaves the checkout
- * untouched: a present `package.json` that is unreadable or not a JSON object,
- * or a missing one with no skeleton manifest to write in its place.
+ * untouched: a `package.json` that is a symbolic link (live or dangling, never
+ * resolved, so the write cannot land outside the checkout), a present one that
+ * is unreadable or not a JSON object, or a missing one with no skeleton
+ * manifest to write in its place.
  */
 function assertManifestAppointable(host: WorkspaceHost, directory: string, skeletonRoot: string): void {
   const manifestPath = join(directory, "package.json");
+  if (host.isSymlink(manifestPath)) {
+    throw new Error("existing package.json is a symbolic link; replace it with a regular file before appointing");
+  }
   const raw = host.readText(manifestPath);
   if (raw === null) {
     // readText collapses every read error to null, so tell "absent" from
-    // "present but unreadable" (a directory, no read permission, a dangling link).
-    if (host.exists(manifestPath) || host.isSymlink(manifestPath)) {
+    // "present but unreadable" (a directory, no read permission).
+    if (host.exists(manifestPath)) {
       throw new Error("existing package.json is present but cannot be read (is it a directory, or unreadable?)");
     }
     if (host.readText(join(skeletonRoot, "package.json")) === null) throw new Error("missing skeleton package.json");
