@@ -18,7 +18,7 @@
  * needs to install it.
  */
 
-export type { DocumentBlock, DocumentCallout, DocumentDefinitionList, DocumentInline, DocumentList, DocumentParagraph, DocumentSection, DocumentTable, StructuredDocument } from "./types.js";
+export type { DocumentBlock, DocumentCallout, DocumentColumnStyle, DocumentDefinitionList, DocumentInline, DocumentList, DocumentParagraph, DocumentSection, DocumentTable, StructuredDocument } from "./types.js";
 
 export { validateStructuredDocument } from "./validate.js";
 

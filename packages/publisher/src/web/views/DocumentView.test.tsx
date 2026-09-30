@@ -22,6 +22,12 @@ const registry: CopyRegistry = {
     { id: "acme.document.date", text: "Effective today", context: "fixture", status: "approved" },
     { id: "acme.document.section", text: "Details", context: "fixture", status: "approved" },
     { id: "acme.document.body", text: "Fixture body.", context: "fixture", status: "approved" },
+    { id: "acme.document.bold", text: "Bold words", context: "fixture", status: "approved" },
+    { id: "acme.document.italic", text: "Italic words", context: "fixture", status: "approved" },
+    { id: "acme.document.col.name", text: "Name", context: "fixture", status: "approved" },
+    { id: "acme.document.col.code", text: "Identifier", context: "fixture", status: "approved" },
+    { id: "acme.document.cell.name", text: "Widget", context: "fixture", status: "approved" },
+    { id: "acme.document.cell.code", text: "widget_v1", context: "fixture", status: "approved" },
   ],
 };
 const resolver: CopyResolver = createCopyResolver(registry);
@@ -40,6 +46,32 @@ describe("DocumentView", () => {
     expect(html).toContain('<article');
     expect(html).toContain('<section id="details"><h2');
     expect(html).toContain("Fixture body.");
+  });
+
+  it("emphasis and mono column reach the page", () => {
+    const emphasised = {
+      ...document,
+      sections: [
+        {
+          ...document.sections[0]!,
+          blocks: [
+            { kind: "paragraph" as const, content: [{ kind: "strong" as const, content: [{ kind: "text" as const, text: ref("acme.document.bold") }] }, { kind: "em" as const, content: [{ kind: "text" as const, text: ref("acme.document.italic") }] }] },
+            {
+              kind: "table" as const,
+              headers: [ref("acme.document.col.name"), ref("acme.document.col.code")],
+              columnStyles: ["default" as const, "mono" as const],
+              rows: [[ref("acme.document.cell.name"), ref("acme.document.cell.code")]],
+            },
+          ],
+        },
+      ],
+    };
+    const html = renderToStaticMarkup(<DocumentView brand="Acme" document={emphasised} resolveCopyId={resolver} />);
+    expect(html).toContain("<strong>Bold words</strong>");
+    expect(html).toContain("<em>Italic words</em>");
+    expect(html).toContain("<td>Widget</td><td><code>widget_v1</code></td>");
+    expect(html).not.toContain("<code>Widget");
+    expect(html).not.toMatch(/<th[^>]*><code>/);
   });
 
   it("refuses an invalid document before it can become a page", () => {

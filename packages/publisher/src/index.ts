@@ -40,6 +40,7 @@ export { validateStructuredDocument, renderStructuredDocument } from "./document
 export type {
   DocumentBlock,
   DocumentCallout,
+  DocumentColumnStyle,
   DocumentDefinitionList,
   DocumentInline,
   DocumentList,

@@ -2,7 +2,8 @@
  * `renderStructuredDocument` — turns a validated `StructuredDocument` into a
  * `ReactNode` tree built entirely from semantic HTML elements (`<section>`,
  * `<h2>`–`<h6>`, `<p>`, `<ul>`/`<ol>`, `<dl>`, `<table>`/`<thead>`/`<tbody>`/
- * `<th>`/`<td>`, `<a>`) — never through a markup-string sink, and never
+ * `<th>`/`<td>`, `<a>`, `<strong>`, `<em>`, and `<code>` for a monospace
+ * table column) — never through a markup-string sink, and never
  * through `dangerouslySetInnerHTML`. Every block and every inline node is a
  * typed, closed-vocabulary primitive this file walks explicitly; there is
  * no `"html"` block kind and no markdown-string field parsed into
@@ -89,8 +90,16 @@ function headingTag(level: DocumentSection["level"]): "h2" | "h3" | "h4" | "h5" 
 }
 
 function renderInline(inline: DocumentInline, path: string, text: TextFn): ReactNode {
-  if (inline.kind === "text") return text(inline.text, `${path}.text`);
-  return createElement("a", { key: path, href: inline.href }, text(inline.text, `${path}.text`));
+  switch (inline.kind) {
+    case "text":
+      return text(inline.text, `${path}.text`);
+    case "link":
+      return createElement("a", { key: path, href: inline.href }, text(inline.text, `${path}.text`));
+    case "strong":
+      return createElement("strong", { key: path }, ...renderInlineList(inline.content, `${path}.content`, text));
+    case "em":
+      return createElement("em", { key: path }, ...renderInlineList(inline.content, `${path}.content`, text));
+  }
 }
 
 function renderInlineList(inlines: DocumentInline[], path: string, text: TextFn): ReactNode[] {
@@ -141,7 +150,12 @@ function renderBlock(block: DocumentBlock, path: string, text: TextFn): ReactNod
             createElement(
               "tr",
               { key: `${path}.rows.${rowIndex}` },
-              ...row.map((cell, cellIndex) => createElement("td", { key: `${path}.rows.${rowIndex}.${cellIndex}` }, text(cell, `${path}.rows.${rowIndex}.${cellIndex}`))),
+              ...row.map((cell, cellIndex) => {
+                const cellPath = `${path}.rows.${rowIndex}.${cellIndex}`;
+                const resolved = text(cell, cellPath);
+                // A `"mono"` column wraps only its body cells; the `<th>` stays plain.
+                return createElement("td", { key: cellPath }, block.columnStyles?.[cellIndex] === "mono" ? createElement("code", null, resolved) : resolved);
+              }),
             ),
           ),
         ),
