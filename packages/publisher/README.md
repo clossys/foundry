@@ -828,11 +828,10 @@ is a `CopyRef` resolved through `resolveCopyId`.
 
 ```tsx
 import { ContactView } from "@clossys/publisher/web";
-import type { ContactViewCopy } from "@clossys/publisher/web";
-import type { CopyResolver } from "@clossys/writer";
+import type { ContactViewCopy, ContactViewProps } from "@clossys/publisher/web";
 
 declare const brand: React.ReactNode; // the caller's brand mark, for example a Designer `Brandmark`
-declare const resolveCopyId: CopyResolver;
+declare const resolveCopyId: ContactViewProps["resolveCopyId"]; // the approved-copy resolver
 declare const copy: ContactViewCopy; // one approved `CopyRef` per string the view shows
 declare function send(values: Record<string, string>): Promise<{ status: "accepted" }>; // your call to `createContactHandler`'s `handle`
 
