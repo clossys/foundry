@@ -18,7 +18,9 @@ import type { PlanCommandOptions } from "./plan-command.js";
 import { HUB_BRIEF, SKILLS, STARTER_INTEGRITY, STARTER_NAME, STARTER_VERSION, WRITER_INTEGRITY, setupPlan } from "./plan-bundle-setup-fixture.js";
 import type { AdvisorPlan } from "./plan-contract.js";
 import { planDigest } from "./plan-digest.js";
-import type { LockfileSpawn } from "./lockfile-regen.js";
+import type { LockfileSpawn, LockfileSpawnRequest } from "./lockfile-regen.js";
+import { PACKAGE_SCOPE } from "./generated/package-scope.generated.js";
+import { PROVENANCE_CHECK_BIN } from "./provenance-gate.js";
 
 // A switch that makes the real sheet refuse, so a test can show a refused sheet stores nothing.
 const sheetSwitch = vi.hoisted(() => ({ refuse: false }));
@@ -127,6 +129,8 @@ interface World {
   readonly options: PlanCommandOptions;
   readonly out: string[];
   readonly err: string[];
+  /** Every request the two stub spawns received, in order. */
+  readonly spawned: { readonly lockfile: LockfileSpawnRequest[]; readonly provenance: LockfileSpawnRequest[] };
 }
 
 const cloneOf = (world: World, id: string): string => join(world.root, id.slice(id.indexOf("/") + 1));
@@ -155,6 +159,35 @@ function makeClone(root: string, id: string): void {
   git(path, "add", "-A");
   git(path, "commit", "-m", "initial");
   git(path, "push", "-u", "origin", "main");
+}
+
+/** The package manager the dry tree runs: answers the version probe, then writes the lockfile npm would for the pinned Starter. */
+const lockfileStub =
+  (calls: LockfileSpawnRequest[]): LockfileSpawn =>
+  async (request) => {
+    calls.push(request);
+    if (request.args.includes("--version")) return { status: 0, stdout: "10.9.0\n", stderr: "" };
+    writeFileSync(join(request.cwd, "package-lock.json"), npmLock(true));
+    return { status: 0, stdout: "", stderr: "" };
+  };
+
+/** The hub's provenance check: reports the pinned Starter as verified, whatever tree it is given. */
+const provenanceStub =
+  (calls: LockfileSpawnRequest[]): LockfileSpawn =>
+  async (request) => {
+    calls.push(request);
+    const report = { state: "verified", registryBaseUrl: PACKAGE_SCOPE.registry, packages: [{ name: STARTER_NAME, installedVersion: STARTER_VERSION, latestVersion: STARTER_VERSION, currencyDistance: "current", state: "verified", reasons: [] }] };
+    return { status: 0, stdout: json(report), stderr: "" };
+  };
+
+/** Integrator installed in the hub the way npm lays it out: a stub file, and a relative link for the bin. */
+function writeIntegratorStub(hub: string): void {
+  const stub = join(hub, "node_modules", "@clossys", "integrator", "dist", "provenance-check-cli.js");
+  const bin = join(hub, "node_modules", ".bin", PROVENANCE_CHECK_BIN);
+  mkdirSync(dirname(stub), { recursive: true });
+  mkdirSync(dirname(bin), { recursive: true });
+  writeFileSync(stub, "#!/usr/bin/env node\n", { mode: 0o755 });
+  symlinkSync("../@clossys/integrator/dist/provenance-check-cli.js", bin);
 }
 
 interface WorldOptions {
@@ -188,18 +221,22 @@ function makeWorld(options: WorldOptions = {}): World {
   git(hub, "add", "-A");
   git(hub, "commit", "-m", "hub");
   writeReadinessStub(hub);
+  writeIntegratorStub(hub);
   const out: string[] = [];
   const err: string[] = [];
+  const spawned = { lockfile: [] as LockfileSpawnRequest[], provenance: [] as LockfileSpawnRequest[] };
   return {
     root,
     hub,
     plan,
     out,
     err,
+    spawned,
     options: {
       cwd: hub,
       now: NOW,
       producerVersion: "0.4.0",
+      spawn: { lockfileSpawn: lockfileStub(spawned.lockfile), provenanceSpawn: provenanceStub(spawned.provenance) },
       ports: { nodeId: (id) => `R_${id.slice(id.indexOf("/") + 1)}`, visibility: () => "private", originId: originIdFor(root) },
       stdout: (text) => void out.push(text),
       stderr: (line) => void err.push(line),
@@ -262,10 +299,6 @@ Approve subjectDigest: sha256:21214292be57dd50009ba1faf8d4707e4a86ddbf5cb301b17c
 | example-owner/docs | add-path-scope-job | path-scope-job | 1 path | 383f32af7ac6 |
 | example-owner/docs | compose-skills | skills | 7 paths | 383f32af7ac6 |
 | example-owner/docs | write-starter-request | starter-request | 1 path | 383f32af7ac6 |
-
-Checks not satisfied:
-- example-owner/site V6 indeterminate lockfile-not-run
-- example-owner/docs V6 indeterminate lockfile-not-run
 `;
 
 const APPLY_SHEET = `Clossys apply plan: approval sheet
@@ -312,15 +345,23 @@ describe("launcher-apply-plan plan", () => {
   });
 
   it(
-    "plans two setup repositories, then after both merge two apply repositories; stores sets then the bundle; prints the sheet; and repeats byte for byte",
+    "plans two setup repositories, then after both merge two apply repositories, stores, prints the sheet, and repeats byte for byte",
     async () => {
       const world = makeWorld({ plan: pinnedPlan() });
       const before = stateSnapshot(world);
 
-      // The first run: both repositories are new, and a Starter pin changes a lockfile the planner cannot yet prove (V6).
-      expect(await run(world)).toBe(2);
+      // The first run: both repositories are new, and a Starter pin changes a lockfile. The dry tree proves it (V6) and the hub's check (V9).
+      expect(await run(world)).toBe(0);
       expect(world.err).toEqual([]);
       const first = world.out.join("");
+      expect(first).not.toContain("lockfile-not-run");
+      expect(first).not.toContain("Checks not satisfied");
+      // One dry tree for each repository: the lockfile step, then the provenance check on that same tree.
+      const installs = world.spawned.lockfile.filter((request) => !request.args.includes("--version"));
+      expect(installs).toHaveLength(2);
+      expect(world.spawned.provenance).toHaveLength(2);
+      expect(world.spawned.provenance.map((request) => request.args[request.args.indexOf("--cwd") + 1]).sort()).toEqual(installs.map((request) => request.cwd).sort());
+      for (const request of installs) expect(existsSync(request.cwd)).toBe(false);
       expect(storedFiles(world)).toHaveLength(3);
       expect(listStoredChangeSets(world.hub).map((set) => set.repository.id).sort()).toEqual([DOCS, SITE]);
       expect(stateSnapshot(world)).toEqual(before);
@@ -329,7 +370,7 @@ describe("launcher-apply-plan plan", () => {
       // A second run over the same hub and clones is byte-identical, and stores nothing more.
       const stored = storedFiles(world);
       world.out.length = 0;
-      expect(await run(world)).toBe(2);
+      expect(await run(world)).toBe(0);
       expect(world.out.join("")).toBe(first);
       expect(storedFiles(world)).toEqual(stored);
 
@@ -346,11 +387,7 @@ describe("launcher-apply-plan plan", () => {
       write(world.hub, "clossys/advisor/plan.json", json(approvedPlan(digest, world.plan)));
       git(world.hub, "add", "clossys/advisor/plan.json");
       git(world.hub, "commit", "-m", "approve");
-      const spawn: LockfileSpawn = async (request) => {
-        if (request.args.includes("--version")) return { status: 0, stdout: "10.9.0\n", stderr: "" };
-        writeFileSync(join(request.cwd, "package-lock.json"), npmLock(true));
-        return { status: 0, stdout: "", stderr: "" };
-      };
+      const spawn = lockfileStub([]);
       for (const set of listStoredChangeSets(world.hub)) {
         const clone = cloneOf(world, set.repository.id);
         expect(await materializeRepository({ clone, hub: world.hub, set, texts: {}, spawn, now: NOW, runReadiness: READY })).toMatchObject({ exitCode: 0 });
@@ -383,7 +420,7 @@ describe("launcher-apply-plan plan", () => {
   describe("what it reads from the hub", () => {
     it("carries the committed execution authorization into the bundle, and null without one", async () => {
       const withAuthorization = makeWorld();
-      expect(await run(withAuthorization)).toBe(2);
+      expect(await run(withAuthorization)).toBe(0);
       expect(withAuthorization.out.join("")).toContain(`Authorization: plan ${planDigest(withAuthorization.plan)} expires 2999-01-01T00:00:00Z\n`);
 
       // No blob at all: no authorization, so the planner reports V3 as violated on every repository.
@@ -399,20 +436,20 @@ describe("launcher-apply-plan plan", () => {
     it("reads the authorization from the committed blob, not from a working-tree edit", async () => {
       const world = makeWorld();
       write(world.hub, "clossys/advisor/assessment-input.json", json({ engagement: { executionAuthorization: { planDigest: "sha256:x", expiresAt: 5 } } }));
-      expect(await run(world)).toBe(2);
+      expect(await run(world)).toBe(0);
       expect(world.err).toEqual([]);
       expect(world.out.join("")).toContain(`Authorization: plan ${planDigest(world.plan)} `);
     }, TEST_TIMEOUT_MS);
 
     it("reports whether the plan file it read is the committed one, from the bytes: an uncommitted edit says no", async () => {
       const world = makeWorld();
-      expect(await run(world)).toBe(2);
+      expect(await run(world)).toBe(0);
       expect(world.out.join("")).toContain("Plan committed: yes\n");
 
       // The same plan with a trailing newline added in the working tree only: same digest, not the committed bytes.
       const edited = makeWorld();
       write(edited.hub, "clossys/advisor/plan.json", `${json(edited.plan)}\n`);
-      expect(await run(edited)).toBe(2);
+      expect(await run(edited)).toBe(0);
       expect(edited.err).toEqual([]);
       const sheet = edited.out.join("");
       expect(sheet).toContain("Plan committed: no\n");

@@ -20,6 +20,8 @@ import type { ApplyBundle, PinnedPackage, RepositoryChangeSet, RepositoryVisibil
 import { ID_TOKEN, skillPath } from "./change-set-contract.js";
 import { ADVISOR_PACKAGE, INTEGRATOR_PACKAGE, WORKSPACE_INVENTORY_REL, readInventoryRepositories } from "./core.js";
 import { readContractDocument } from "./generated/contract-schema.generated.js";
+import { dryMaterializeBundle } from "./dry-materialize.js";
+import type { DryMaterializePorts } from "./dry-materialize.js";
 import { createNodeHost } from "./host.js";
 import { sameRepository } from "./identity.js";
 import { isUnreadable, readLockfile } from "./lockfile-readers.js";
@@ -48,6 +50,15 @@ clossys/advisor/assessment-input.json. Observes the committed default branch
 of each staffed repository's clone, a sibling directory of the hub, and
 never writes in a clone.
 
+A repository whose change set changes a lockfile and is otherwise satisfied is
+dry-materialized: its committed tree and its change set are written into a
+temporary directory (never the clone), the lockfile is regenerated there with
+install scripts off (V6), and, only when that passes, the hub's installed
+@clossys/integrator provenance check runs on that same tree (V9). The
+temporary directory is removed before the command ends. A tool that changes
+anything but the lockfile, a submodule, a link that leaves the tree, or an
+oversized tree is refused, and no rule names a path, an id or tool output.
+
 Writes only under clossys/.state/apply/: each change set, then the bundle.
 The sheet holds ids and digests only, never plan or brief text. This
 computes and records no approval: the approval is the plan's decision, made
@@ -75,6 +86,8 @@ export interface PlanCommandOptions {
   readonly stdout?: (text: string) => void;
   /** Where a refusal goes, one line; standard error by default. */
   readonly stderr?: (line: string) => void;
+  /** How the package manager and the hub's provenance check are launched for the dry tree; the real runners by default. Not reachable from a CLI. */
+  readonly spawn?: Pick<DryMaterializePorts, "lockfileSpawn" | "provenanceSpawn">;
 }
 
 /** The fixed reasons a plan run stops before any bundle is stored. */
@@ -346,6 +359,9 @@ const DEFAULT_PORTS: RepositoryObservationPorts = {
   },
 };
 
+/** The sibling directory of the hub that holds a repository's clone. */
+const cloneOf = (hub: string, id: string): string => resolve(dirname(hub), id.slice(id.indexOf("/") + 1));
+
 async function observeStaffed(
   hub: string,
   plan: AdvisorPlan,
@@ -362,8 +378,7 @@ async function observeStaffed(
       observations.push({ id, skipped: "not-in-inventory", verdict: "indeterminate" });
       continue;
     }
-    const clone = resolve(dirname(hub), id.slice(id.indexOf("/") + 1));
-    observations.push(await observeRepository({ id, clone, ports }));
+    observations.push(await observeRepository({ id, clone: cloneOf(hub, id), ports }));
   }
   return observations;
 }
@@ -439,6 +454,12 @@ export async function planMain(argv: readonly string[], options: PlanCommandOpti
         computedAt,
         heldChangeSets,
       });
+    } catch {
+      return refuse("planner-refused");
+    }
+    // The part of V6 the planner cannot run, and V9: on a temporary tree, never in a clone.
+    try {
+      result = await dryMaterializeBundle(result, { hub, cloneFor: (id) => cloneOf(hub, id), now: options.now ?? (() => new Date()), ports: options.spawn });
     } catch {
       return refuse("planner-refused");
     }

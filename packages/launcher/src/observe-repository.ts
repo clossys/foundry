@@ -1299,3 +1299,50 @@ export async function observeRepository(input: ObserveRepositoryInput): Promise<
     if (neutral !== null) rmSync(neutral, { recursive: true, force: true });
   }
 }
+
+// ---- the committed files, for a caller that writes them elsewhere -------------------------------
+
+/** The most files a caller may be handed; a tree with more is refused as `tree-too-large`. */
+const MAX_COMMITTED_FILES = 20_000;
+
+/** One file of the committed tree: its git mode, and its exact bytes (a symbolic link's bytes are its target). */
+export interface CommittedFile {
+  readonly path: string;
+  readonly mode: "100644" | "100755" | "120000";
+  readonly bytes: Buffer;
+}
+
+/** A skip reason as an id; the same fixed set an observation is skipped with. */
+export type CommittedFilesReason = SkipReason;
+
+export type CommittedFilesResult = { readonly ok: true; readonly files: readonly CommittedFile[] } | { readonly ok: false; readonly reason: CommittedFilesReason };
+
+/**
+ * Every file of the tree at `commit`, read as observeRepository() reads a tree: the clone is vetted the same way (a real
+ * `.git` of its own, a `.git/config` of plain keys only, no alternate object store), and then only `ls-tree` and `cat-file` run,
+ * at that commit. Nothing is checked out and no index, ref or worktree is written; the working tree is never read. A submodule,
+ * more than a fixed number of files, or more than the observation's read total is refused, and the reason is one fixed id.
+ */
+export function readCommittedFiles(cloneInput: string, commit: string): CommittedFilesResult {
+  let neutral: string | null = null;
+  try {
+    if (!OBJECT_ID.test(commit)) refuse("clone-unreadable");
+    if ((process.env.GIT_ALTERNATE_OBJECT_DIRECTORIES ?? "") !== "") refuse("clone-unreadable");
+    const clone = locateClone(cloneInput);
+    neutral = mkdtempSync(join(tmpdir(), "observe-repository-"));
+    checkConfig(readConfig(clone, neutral));
+    checkRepositoryShape(clone);
+    const named = git(clone, ["rev-parse", "--verify", "-q", `${commit}^{commit}`]);
+    if (named.status !== 0 || named.overflow || named.stdout.toString("utf8").trim() !== commit) refuse("clone-unreadable");
+    const tree = listTree(clone, commit);
+    if (tree.entries.length > MAX_COMMITTED_FILES) refuse("tree-too-large");
+    if (tree.entries.reduce((sum, entry) => sum + entry.size, 0) > MAX_READ_BYTES) refuse("tree-too-large");
+    const reader = new BlobReader(clone);
+    const files = tree.entries.map((entry): CommittedFile => ({ path: entry.path, mode: entry.mode as CommittedFile["mode"], bytes: reader.read(entry, MAX_READ_BYTES, "tree-too-large") }));
+    return { ok: true, files };
+  } catch (cause) {
+    return { ok: false, reason: cause instanceof Refusal ? cause.reason : "clone-unreadable" };
+  } finally {
+    if (neutral !== null) rmSync(neutral, { recursive: true, force: true });
+  }
+}
