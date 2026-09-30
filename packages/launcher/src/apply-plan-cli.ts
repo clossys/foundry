@@ -17,17 +17,20 @@ import {
   type FetchSnapshotOptions,
 } from "./registry-snapshot.js";
 import { listStoredChangeSets } from "./apply-store.js";
+import { planMain } from "./plan-command.js";
 import { materializeRepository, verifyRepository, type ApplyStepResult } from "./materialize.js";
 import type { ReadinessRunner } from "./admission.js";
 import type { RepositoryChangeSet } from "./change-set-contract.js";
 import type { LockfileSpawn } from "./lockfile-regen.js";
 
 export const APPLY_PLAN_USAGE = `Usage: launcher-apply-plan --plan <plan.json> --brief <brief.json> --repo <directory>
+       launcher-apply-plan plan [--help]
        launcher-apply-plan materialize --repo <id>
        launcher-apply-plan verify --repo <id>
        launcher-apply-plan snapshot --request <file> [--out <file>]
 
-The snapshot subcommand is described by launcher-apply-plan snapshot --help.
+The plan subcommand is described by launcher-apply-plan plan --help, and the
+snapshot subcommand by launcher-apply-plan snapshot --help.
 
 Writes clossys/brief.json into <directory> from the given brief, once the
 given plan's most recent decision is "approved". Refuses, and writes
@@ -380,6 +383,10 @@ export async function snapshotMain(argv: readonly string[], options: SnapshotCom
 
 async function run(): Promise<void> {
   const argv = process.argv.slice(2);
+  if (argv[0] === "plan") {
+    process.exitCode = await planMain(argv.slice(1));
+    return;
+  }
   if (argv[0] === "materialize") {
     process.exitCode = await materializeMain(argv.slice(1));
     return;

@@ -5,6 +5,7 @@ import { withDecisions } from "./admission-fixture.js";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { buildMaterializedFixture, branchExists, readCloneLedger, writeSnapshot } from "./apply-step-fixture.js";
 import { SNAPSHOT_USAGE, main, materializeMain, snapshotMain, verifyMain } from "./apply-plan-cli.js";
+import { PLAN_USAGE, planMain } from "./plan-command.js";
 import { PACKAGE_SCOPE } from "./generated/package-scope.generated.js";
 import { createNodeHost } from "./host.js";
 import { REGISTRY_SNAPSHOT_REL, registrySnapshotViolations, type Transport } from "./registry-snapshot.js";
@@ -254,6 +255,16 @@ describe("launcher-apply-plan snapshot (#1178)", () => {
     expect(SNAPSHOT_USAGE).toMatch(/^Usage: launcher-apply-plan snapshot --request <file> \[--out <file>\]/);
     expect(main(["--help"], createNodeHost())).toBe(0);
     expect(String(log.mock.calls[1]?.[0])).toContain("launcher-apply-plan snapshot --request <file> [--out <file>]");
+    expect(String(log.mock.calls[1]?.[0])).toContain("launcher-apply-plan plan [--help]\n");
+    expect(String(log.mock.calls[1]?.[0])).toContain("launcher-apply-plan plan --help");
+  });
+
+  it("the plan subcommand's usage takes no option and names no approval", async () => {
+    const write = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
+    expect(await planMain(["--help"])).toBe(0);
+    expect(String(write.mock.calls[0]?.[0])).toBe(`${PLAN_USAGE}\n`);
+    expect(PLAN_USAGE).toMatch(/^Usage: launcher-apply-plan plan \[--help\]/);
+    expect(PLAN_USAGE).not.toMatch(/--approve|--subject|--binding/);
   });
 
   it("writes the snapshot to clossys/.state/apply/registry-snapshot.json under the hub by default, and exits 0", async () => {
