@@ -112,3 +112,6 @@ export type {
   MemoryRateLimiterOptions,
   StubContactDelivery,
 } from "./contact/index.js";
+
+export { LandingView } from "#publisher-web-views";
+export type { LandingViewProps } from "#publisher-web-views";

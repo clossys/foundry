@@ -27,3 +27,5 @@ export type { SectionedViewLandmark, SectionedViewProps } from "./SectionedView.
 
 export { LegalView } from "./LegalView.js";
 export type { LegalViewLabels, LegalViewProps } from "./LegalView.js";
+export { LandingView } from "./LandingView.js";
+export type { LandingViewProps } from "./LandingView.js";
