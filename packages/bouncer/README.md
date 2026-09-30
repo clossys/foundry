@@ -340,6 +340,36 @@ webhook verification) plus `./providers/clerk/web`,
 `./providers/clerk/web/proxy`, split so importing the edge-safe proxy entry
 never pulls `next/headers`, `next/navigation`, React, or client components.
 
+#### Webhook verification contract
+
+`verifyClerkWebhook` and `verifyAndMapClerkWebhook` check in a fixed order:
+signing secret, then headers, then signature, then JSON parse, then event
+shape. Each refusal throws `ClerkWebhookSignatureError` with a `code`; the
+code is the vocabulary, and the status is what a route handler should answer:
+
+| `code` | Stage | Status |
+| --- | --- | --- |
+| `signing-secret-invalid` | signing secret | 503 |
+| `signature-headers-missing` | headers | 400 |
+| `signature-invalid` | signature | 401 |
+| `payload-invalid` | parse or shape | 400 |
+
+`signing-secret-invalid` is a server misconfiguration, not a bad delivery, so
+it is a 503 and is raised before the body or headers are looked at. The
+messages are fixed text: no error carries the secret, a header value, or any
+body text, and none sets a `cause`. `payload-invalid` means the signature
+matched but the body is not JSON or is not a plain object (a signed `null`,
+array or scalar); an unsigned body is always `signature-invalid`. Any other
+throw is not part of this contract: let it reach the route's own 500
+`internal_error` response rather than mapping it to one of these codes.
+
+`assertClerkWebhookSigningSecret(signingSecret)` is exported so a route can
+check its configured secret at startup or per request. A string is trimmed
+once, may start with the optional prefix, and the rest must be strict base64
+decoding to at least 16 bytes; a `Uint8Array` must be at least 16 bytes.
+Call the guard before reading the body, so a misconfigured secret answers 503
+without consuming the request.
+
 `./providers/clerk` (guards `svix`) and `./providers/clerk/web/server`
 (guards both `@clerk/nextjs` and `next`) each guard every optional peer they
 import with `assertPeerVersion`, evaluated once at import time, checking the

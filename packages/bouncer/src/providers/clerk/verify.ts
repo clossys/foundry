@@ -28,15 +28,54 @@ assertPeerVersion({
   foundVersion: resolveInstalledPeerVersion("svix", import.meta.url),
 });
 
-type ClerkWebhookSignatureErrorCode = "signature-headers-missing" | "signature-invalid";
+export type ClerkWebhookSignatureErrorCode = "signing-secret-invalid" | "signature-headers-missing" | "signature-invalid" | "payload-invalid";
 
-/** A typed error for absent or invalid Svix signature material. */
+const errorMessages: Record<ClerkWebhookSignatureErrorCode, string> = {
+  "signing-secret-invalid": "Clerk webhook verification requires a valid signing secret.",
+  "signature-headers-missing": "Clerk webhook verification requires the Svix signature headers.",
+  "signature-invalid": "Clerk webhook signature verification failed.",
+  "payload-invalid": "Clerk webhook payload is not a valid signed event object.",
+};
+
+/** A typed error for an unusable signing secret, absent or invalid Svix signature material, or a signed payload that is not an event object. */
 export class ClerkWebhookSignatureError extends Error {
   override readonly name = "ClerkWebhookSignatureError";
 
   constructor(readonly code: ClerkWebhookSignatureErrorCode, readonly missingHeaders: readonly string[] = []) {
-    super(code === "signature-headers-missing" ? "Clerk webhook verification requires the Svix signature headers." : "Clerk webhook signature verification failed.");
+    super(errorMessages[code]);
   }
+}
+
+const signingSecretPrefix = "whsec_";
+const signingSecretMinimumBytes = 16;
+const base64Shape = /^[A-Za-z0-9+/]+={0,2}$/;
+
+/**
+ * Refuses, before any delivery is read, a signing secret that could never
+ * authenticate one: a missing or blank value, a prefix with nothing after it
+ * (an empty HMAC key that would verify anything signed with it), a value
+ * that is not strict base64, or a key under 16 bytes. A string is trimmed
+ * once and may carry the `whsec_` prefix; bytes are used as given. Returns
+ * the value to hand the verifier and never echoes the secret.
+ */
+export function assertClerkWebhookSigningSecret(signingSecret: unknown): string | Uint8Array {
+  if (signingSecret instanceof Uint8Array) {
+    if (signingSecret.byteLength < signingSecretMinimumBytes) throw new ClerkWebhookSignatureError("signing-secret-invalid");
+    return signingSecret;
+  }
+  if (typeof signingSecret !== "string") throw new ClerkWebhookSignatureError("signing-secret-invalid");
+  const trimmed = signingSecret.trim();
+  const encoded = trimmed.startsWith(signingSecretPrefix) ? trimmed.slice(signingSecretPrefix.length) : trimmed;
+  if (!base64Shape.test(encoded) || encoded.length % 4 !== 0) throw new ClerkWebhookSignatureError("signing-secret-invalid");
+  const padding = encoded.endsWith("==") ? 2 : encoded.endsWith("=") ? 1 : 0;
+  if ((encoded.length / 4) * 3 - padding < signingSecretMinimumBytes) throw new ClerkWebhookSignatureError("signing-secret-invalid");
+  return trimmed;
+}
+
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  if (typeof value !== "object" || value === null) return false;
+  const prototype = Object.getPrototypeOf(value) as unknown;
+  return prototype === Object.prototype || prototype === null;
 }
 
 const requiredHeaderNames = ["svix-id", "svix-timestamp", "svix-signature"] as const;
@@ -63,14 +102,22 @@ function readRequiredHeaders(headers: ClerkWebhookHeaders): Record<(typeof requi
   };
 }
 
-/** Verifies the exact bytes received through Svix without retaining signing material. */
+/**
+ * Verifies the exact bytes received through Svix without retaining signing material.
+ * Checks run in a fixed order: signing secret, headers, signature, JSON parse, event shape.
+ */
 export function verifyClerkWebhook(rawBody: ClerkWebhookRawBody, headers: ClerkWebhookHeaders, signingSecret: string | Uint8Array): VerifiedClerkWebhook {
+  const secret = assertClerkWebhookSigningSecret(signingSecret);
   const signatureHeaders = readRequiredHeaders(headers);
   const payload = typeof rawBody === "string" ? rawBody : Buffer.from(rawBody);
+  let event: unknown;
   try {
-    const event = new Webhook(signingSecret).verify(payload, signatureHeaders);
-    return { eventId: signatureHeaders["svix-id"], event };
-  } catch {
-    throw new ClerkWebhookSignatureError("signature-invalid");
+    const webhook = typeof secret === "string" ? new Webhook(secret) : new Webhook(secret, { format: "raw" });
+    event = webhook.verify(payload, signatureHeaders);
+  } catch (error) {
+    // svix parses only after a signature match, so a SyntaxError is a signed non-JSON body.
+    throw new ClerkWebhookSignatureError(error instanceof SyntaxError ? "payload-invalid" : "signature-invalid");
   }
+  if (!isPlainObject(event)) throw new ClerkWebhookSignatureError("payload-invalid");
+  return { eventId: signatureHeaders["svix-id"], event };
 }
