@@ -57,6 +57,8 @@ applies at its cascade scope, or that the template builds.
   route (`ContactView`). The page is a server component holding an inline
   server action; the form is a client module, because `ContactView` is
   interactive and its server-side export is a stub that throws.
+  `/contact?topic=<id>` preselects that topic; an unlisted or repeated value
+  selects nothing. Reading `searchParams` makes the route render per request.
 - `app/terms/page.tsx`, `app/privacy/page.tsx` — the legal routes
   (`LegalView`), behind the production legal gate.
 - `app/about/page.tsx` — the about route (`MarketingView`). It reads the

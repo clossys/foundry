@@ -32,6 +32,17 @@ export const CONTACT_TOPICS = ["product", "press", "partnership", "other"] as co
 
 export type ContactTopic = (typeof CONTACT_TOPICS)[number];
 
+/**
+ * The topic a `?topic=` query value names, or `undefined`. Only a string equal
+ * to a listed id counts: an array (a repeated parameter), a different case,
+ * surrounding whitespace, an unknown id and an object's inherited names all
+ * select nothing. The value is compared and never echoed.
+ */
+export function resolveInitialTopic(param: string | readonly string[] | undefined): ContactTopic | undefined {
+  if (typeof param !== "string") return undefined;
+  return CONTACT_TOPICS.find((topic) => topic === param);
+}
+
 const topicCopyId = (topic: ContactTopic): string => `site.contact.topic.${topic}`;
 
 export function contactViewTopics(): ContactViewTopic[] {
