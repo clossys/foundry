@@ -12,14 +12,14 @@
 // of every scripts/**/*.test.mjs file, which would duplicate the rest of
 // check:gates for no extra signal about leaking. A regression in the SHARED
 // helper (the thing every converted file actually depends on) shows up here
-// regardless of which of the five files exercises it; a regression isolated
+// regardless of which of the six files exercises it; a regression isolated
 // to one specific file's own call site is caught by that file's own
 // presence in this list, not by exhaustiveness.
 //
 // Known fixture-directory prefixes, from issue #1250's own leak inventory
 // and this repository's fix for it (kept here as a named, greppable record
 // -- the actual assertion below is stricter: it requires the fresh TMPDIR to
-// come back COMPLETELY empty, since nothing other than these five suites'
+// come back COMPLETELY empty, since nothing other than these six suites'
 // own fixtures should ever be written into a TMPDIR this test controls):
 //   artifact-reproducibility-*, touches-packages-*, observer-check-*,
 //   materialise-pack-{checkout,tar,store,source,artifacts}-*,
@@ -27,7 +27,7 @@
 //   locksmith-check-*, locksmith-provider-custody-*, *-rate-check-*,
 //   push-tree-identical-*, advisor-cli-*, publication-history-*,
 //   malformed-later-publication-*, install-docs-*, pkg-skill-*,
-//   publisher-web-routes-*
+//   publisher-web-routes-*, tmp-fixture-async-*
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import { readdirSync } from "node:fs";
@@ -50,7 +50,13 @@ const REPRESENTATIVE_SUITES = [
   "scripts/check-install-docs.test.mjs",
   "scripts/check-package-skills.test.mjs",
   "scripts/check-publisher-web-routes.test.mjs",
+  "scripts/lib/tmp-fixture.test.mjs",
 ];
+
+// The child's own node:test summary must report at least one passing test.
+// "pass 0" means the child ran nothing, which would leave the TMPDIR trivially
+// empty and let this gate pass without exercising any suite.
+const CHILD_RAN_TESTS = /\bpass [1-9]\d*\b/;
 
 test("converted fixture suites leave no directory behind in a fresh TMPDIR", (t) => {
   const childTmpDir = makeTmpDirSync(t, "tmp-fixture-leak-gate-");
@@ -92,7 +98,7 @@ test("converted fixture suites leave no directory behind in a fresh TMPDIR", (t)
     // would misreport a functional failure as a leak.
     assert.fail(`representative suites failed under an isolated TMPDIR:\n${error.stdout ?? ""}\n${error.stderr ?? ""}`);
   }
-  assert.match(output, /\bpass \d+/, "expected node --test's own summary in the child's output");
+  assert.match(output, CHILD_RAN_TESTS, "expected node --test's own summary in the child's output, reporting at least one passing test");
 
   const leftover = readdirSync(childTmpDir);
   assert.deepEqual(
@@ -100,4 +106,11 @@ test("converted fixture suites leave no directory behind in a fresh TMPDIR", (t)
     [],
     `${leftover.length} director${leftover.length === 1 ? "y" : "ies"} leaked into TMPDIR by the representative suites: ${leftover.join(", ")}`,
   );
+});
+
+test("the child summary pattern rejects pass 0", () => {
+  assert.doesNotMatch("# pass 0", CHILD_RAN_TESTS);
+  assert.doesNotMatch("ℹ pass 0", CHILD_RAN_TESTS);
+  assert.match("# pass 1", CHILD_RAN_TESTS);
+  assert.match("ℹ pass 12", CHILD_RAN_TESTS);
 });
