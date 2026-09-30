@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { CaptureView } from "./CaptureView.js";
@@ -36,5 +37,20 @@ describe("CaptureView", () => {
     expect(() => renderToStaticMarkup(<CaptureView brand="Acme" heading="Keep in touch" />)).toThrow(/requires form/);
     expect(() => renderToStaticMarkup(<CaptureView brand="Acme" heading="Keep in touch" form="Fields" errorSummary="Invalid" />)).toThrow(/errorSummary and errorSummaryId together/);
     expect(() => renderToStaticMarkup(<CaptureView brand="Acme" heading="Keep in touch" form="Fields" errorSummary="Invalid" errorSummaryId="  " />)).toThrow(/non-whitespace/);
+  });
+
+  it("carries no raw length literal in a var() fallback", () => {
+    const source = readFileSync(new URL("./CaptureView.tsx", import.meta.url), "utf8");
+    const varCalls = source.match(/var\([^)]*\)/g) ?? [];
+    expect(varCalls.length).toBeGreaterThan(0);
+    for (const varCall of varCalls) {
+      const commaAt = varCall.indexOf(",");
+      if (commaAt === -1) continue;
+      const fallback = varCall.slice(commaAt + 1, -1).trim();
+      expect(fallback).not.toMatch(/^-?\d+(\.\d+)?(px|rem|em|vw|vh|dvh|ch|%)/);
+    }
+    const html = renderToStaticMarkup(<CaptureView brand="Acme" heading="Keep in touch" form="Fields" />);
+    const mainTag = html.slice(html.indexOf("<main"), html.indexOf(">", html.indexOf("<main")) + 1);
+    expect(mainTag).toContain("max-width:var(--ui-width-prose-max, none)");
   });
 });
