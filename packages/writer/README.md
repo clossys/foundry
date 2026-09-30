@@ -244,6 +244,55 @@ for the same registry and options (pass `now` to fix the clock). Consuming it
 is a separate change: a publisher page-metadata builder is not part of this
 package, and nothing here reads a brand-facts record.
 
+## Messaging kit (`messaging.pitch.*` / `messaging.boilerplate.*`)
+
+The short, medium and long "about us" texts a consumer reuses in press,
+footers and email are a reserved copy kind too: six entries in the same
+`CopyRegistry`, under the ids in `MESSAGING_KIT_COPY_IDS`, in this order:
+
+- `messaging.pitch.one-liner`, `messaging.pitch.elevator`,
+  `messaging.pitch.paragraph`
+- `messaging.boilerplate.short`, `messaging.boilerplate.medium`,
+  `messaging.boilerplate.long`
+
+`resolveMessagingKit` resolves each through `resolveCopyRef`, so the approval
+policy in "Resolving copy for a surface" applies unchanged and there is no
+second text store or approval path. No copy ships in this package; the words
+are the consumer's own.
+
+```ts
+import { resolveMessagingKit, type CopyRegistry } from "@clossys/writer";
+
+declare const registry: CopyRegistry;
+const result = resolveMessagingKit(registry, { target: "production", locale: "en" });
+
+if (!result.complete) {
+  for (const issue of result.issues) console.error(issue.field, issue.reason, issue.message);
+} else if (result.kit) {
+  const { pitch, boilerplate } = result.kit;
+  console.log(pitch.oneLiner, boilerplate.long);
+}
+```
+
+The options are the same as for `resolveSiteIdentity`: `CopyResolveOptions`
+plus an optional `locale`; malformed options are reported as
+`"invalid-options"`, not thrown. The result is all-or-nothing: all six entries
+are attempted, every problem is returned in id order with its `field`
+(`"pitch.oneLiner"` through `"boilerplate.long"`), and `kit` and `resolutions`
+exist only when there are no issues. An issue's `reason` is any
+`CopyResolveIssueReason` (each refusal keeps the resolver's own reason), or
+one of three specific to this kind:
+
+- `"messaging-placeholder"` — the entry declares placeholders, or its text
+  contains braces the resolver would rewrite.
+- `"messaging-blank"` — the resolved text is empty after trimming.
+- `"messaging-ladder-order"` — `countCopyWords` does not strictly increase
+  within a ladder (one-liner, elevator, paragraph; then short, medium, long).
+  It is reported on the later field. The two ladders are not compared with
+  each other, and there are no other word targets.
+
+An FAQ and a tagline are out of scope (`site.tagline` already exists).
+
 ## Delegated approval — who approved this copy, and is it still that text?
 
 `status: "approved"` says an entry may render. It does not say who decided
@@ -1065,6 +1114,13 @@ The root entry point exports the copy registry and traceability surface:
   `SITE_TAGLINE_COPY_ID`, `SITE_IDENTITY_COPY_IDS`, `SiteIdentityField`,
   `SiteIdentityIssue`, `SiteIdentityIssueReason`, `SiteIdentityOptions`, and
   `SiteIdentityResolution`.
+- Messaging kit (see above): `resolveMessagingKit`, `MESSAGING_KIT_COPY_IDS`,
+  `MESSAGING_PITCH_ONE_LINER_COPY_ID`, `MESSAGING_PITCH_ELEVATOR_COPY_ID`,
+  `MESSAGING_PITCH_PARAGRAPH_COPY_ID`, `MESSAGING_BOILERPLATE_SHORT_COPY_ID`,
+  `MESSAGING_BOILERPLATE_MEDIUM_COPY_ID`, `MESSAGING_BOILERPLATE_LONG_COPY_ID`,
+  `MessagingKit`, `MessagingKitField`, `MessagingKitIssue`,
+  `MessagingKitIssueReason`, `MessagingKitOptions`, `MessagingKitResolution`,
+  and `MessagingKitResolutions`.
 - Translation provenance and fingerprinting (see "Where this package sits
   on i18n" above): `CopyTranslationProvenance`, `computeCopyFingerprint`,
   and `COPY_FINGERPRINT_ALGORITHM`.
