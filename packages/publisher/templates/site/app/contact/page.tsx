@@ -1,20 +1,30 @@
 import type { Metadata } from "next";
-import { renderWebDocument, buildWebHeadMetadata } from "@clossys/publisher/web";
-// Reads clossys/publisher/surfaces/contact.json at build time (#1205).
-// Uses the shipped MarketingView template; a long-form page that needs
-// DocumentView's structured-document shape instead registers it as a
-// consumer template via defineWebTemplate (see this package's README,
-// "Choosing a shipped view") rather than calling DocumentView directly.
-import surface from "../../../../clossys/publisher/surfaces/contact.json" with { type: "json" };
+import { headers } from "next/headers";
+import type { ContactResult, ContactViewValues } from "@clossys/publisher/web";
+import { submitContact } from "../site-contact";
+import { CONTACT_HEADING_ID, allContactPageCopyIds, requireCopy, siteFooterLegal, siteText } from "../site-copy";
+import { createSiteCopyResolver, loadBrandFacts, siteTarget } from "../site-records";
+import { ContactForm } from "./contact-form";
 
-export function generateMetadata(): Metadata {
-  const head = buildWebHeadMetadata(surface.meta);
-  return { title: head.title, description: head.description };
+// The submit path. The action runs on the server; the client sends the form
+// values and gets a `ContactResult` back. The limiter is keyed on the
+// forwarded-for header, and the handler decides everything else. It never
+// throws: a failure to build the handler is an `unavailable` result.
+async function submit(values: ContactViewValues): Promise<ContactResult> {
+  "use server";
+  return submitContact(values, (await headers()).get("x-forwarded-for"));
 }
 
-export default function Page() {
-  const { element } = renderWebDocument(surface, {
-    groups: surface.groups ?? [],
-  });
-  return element;
+function loadCopy() {
+  return requireCopy(createSiteCopyResolver(siteTarget()), allContactPageCopyIds());
+}
+
+export function generateMetadata(): Metadata {
+  return { title: siteText(loadCopy(), CONTACT_HEADING_ID) };
+}
+
+export default function ContactPage() {
+  const facts = loadBrandFacts();
+  const copy = loadCopy();
+  return <ContactForm brand={facts.brandLabel} legal={siteFooterLegal(copy, facts.entity)} copy={copy} onSubmit={submit} />;
 }
