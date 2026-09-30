@@ -417,6 +417,58 @@ describe("launcher-apply-plan plan", () => {
     TEST_TIMEOUT_MS,
   );
 
+  it(
+    "a rerun on an unchanged hub with a later clock exits as the first run, prints the sheet, and stores the newest computation under the same digest (#1693)",
+    async () => {
+      const world = makeWorld();
+      expect(await run(world)).toBe(0);
+      const first = world.out.join("");
+      const digest = /^Approve subjectDigest: (sha256:[0-9a-f]{64})$/mu.exec(first)![1]!;
+      const stored = storedFiles(world);
+      const bundlePath = join(world.hub, BUNDLE_STORE_REL, `${digest.slice("sha256:".length)}.json`);
+      const setBytes = (): string[] => readdirSync(join(world.hub, CHANGE_SET_STORE_REL)).sort().map((name) => readFileSync(join(world.hub, CHANGE_SET_STORE_REL, name), "utf8"));
+      const sets = setBytes();
+      expect(readStoredApplyBundle(world.hub, digest)!.computedAt).toBe("2026-09-25T00:00:00.000Z");
+
+      world.out.length = 0;
+      expect(await planMain([], { ...world.options, now: () => new Date("2026-09-26T08:30:00Z") })).toBe(0);
+      expect(world.err).toEqual([]);
+      expect(world.out.join("")).toBe(first);
+      expect(storedFiles(world)).toEqual(stored);
+      expect(setBytes()).toEqual(sets);
+      const rerun = readStoredApplyBundle(world.hub, digest)!;
+      expect(rerun.computedAt).toBe("2026-09-26T08:30:00.000Z");
+      expect(readFileSync(bundlePath, "utf8")).toBe(`${JSON.stringify(rerun, null, 2)}\n`);
+      expect(readdirSync(join(world.hub, BUNDLE_STORE_REL)).filter((name) => name.endsWith(".tmp"))).toEqual([]);
+    },
+    TEST_TIMEOUT_MS,
+  );
+
+  it(
+    "a rerun after the execution authorization is committed shows it on the sheet, and the stored bundle equals what the sheet describes (#1693)",
+    async () => {
+      const world = makeWorld({ assessment: null });
+      expect(await run(world)).toBe(1);
+      const before = world.out.join("");
+      expect(before).toContain("Authorization: none\n");
+      const digest = /^Approve subjectDigest: (sha256:[0-9a-f]{64})$/mu.exec(before)![1]!;
+      expect(readStoredApplyBundle(world.hub, digest)!.authorization).toBeNull();
+
+      write(world.hub, "clossys/advisor/assessment-input.json", json(assessmentFor(world.plan, {}, [SITE, DOCS])));
+      git(world.hub, "add", "-A");
+      git(world.hub, "commit", "-m", "authorize");
+      world.out.length = 0;
+      expect(await run(world)).toBe(0);
+      expect(world.err).toEqual([]);
+      const after = world.out.join("");
+      expect(after).toContain(`Authorization: plan ${planDigest(world.plan)} expires 2999-01-01T00:00:00Z\n`);
+      // Approving needs the digest, and the digest does not move when only the authorization does (RFC 12.3).
+      expect(/^Approve subjectDigest: (sha256:[0-9a-f]{64})$/mu.exec(after)![1]).toBe(digest);
+      expect(readStoredApplyBundle(world.hub, digest)!.authorization).toEqual({ planDigest: planDigest(world.plan), expiresAt: "2999-01-01T00:00:00Z" });
+    },
+    TEST_TIMEOUT_MS,
+  );
+
   describe("what it reads from the hub", () => {
     it("carries the committed execution authorization into the bundle, and null without one", async () => {
       const withAuthorization = makeWorld();

@@ -1,16 +1,23 @@
 import { randomBytes } from "node:crypto";
-import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, realpathSync, rmSync, statSync, symlinkSync, writeFileSync } from "node:fs";
+import { chmodSync, existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, realpathSync, renameSync, rmSync, statSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { basename, join } from "node:path";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { bundleDigest } from "./change-set-digest.js";
 import { validateApplyBundle, validateRepositoryChangeSet } from "./change-set-contract.js";
 import type { ApplyBundle, RepositoryChangeSet } from "./change-set-contract.js";
 import { BUNDLE_STORE_REL, CHANGE_SET_STORE_REL, readStoredApplyBundle, readStoredChangeSet, storeApplyBundle, storeChangeSet } from "./apply-store.js";
 
+// A pass-through spy on renameSync, so one test can make the rename step of a replacement fail (a test-only seam; nothing in production is added).
+vi.mock("node:fs", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("node:fs")>();
+  return { ...actual, renameSync: vi.fn(actual.renameSync) };
+});
+
 /*
- * Issue #1178. The hub's two apply stores: append-only, content-addressed by
- * digest. Reading corpus files here is test-only.
+ * Issue #1178. The hub's two apply stores, content-addressed by digest: the
+ * change-set store is append-only; the bundle store replaces a file only under
+ * the same digest (issue #1693). Reading corpus files here is test-only.
  */
 const REPO = new URL("../../../", import.meta.url);
 const read = (path: string): string => readFileSync(new URL(path, REPO), "utf8");
@@ -45,6 +52,14 @@ const BUNDLE: ApplyBundle = {
   bundleDigest: bundleDigest(PLAN_DIGEST, [{ id: SET.repository.id, changeSetDigest: SET.changeSetDigest }]),
 };
 if (!validateApplyBundle(BUNDLE).valid) throw new Error("this suite's own bundle fixture does not validate against the apply-bundle contract");
+/** A second bundle, for another plan digest and change set, so it has another digest. */
+const OTHER_BUNDLE: ApplyBundle = {
+  ...BUNDLE,
+  plan: { ...BUNDLE.plan, digest: OTHER_SET.planDigest },
+  repositories: [{ id: OTHER_SET.repository.id, verdict: "satisfied", phase: OTHER_SET.phase, changeSet: OTHER_SET.changeSetDigest, checks: [{ check: "V6", verdict: "satisfied" }] }],
+  bundleDigest: bundleDigest(OTHER_SET.planDigest, [{ id: OTHER_SET.repository.id, changeSetDigest: OTHER_SET.changeSetDigest }]),
+};
+if (!validateApplyBundle(OTHER_BUNDLE).valid) throw new Error("this suite's second bundle fixture does not validate against the apply-bundle contract");
 
 let hub: string;
 
@@ -184,14 +199,183 @@ describe("storeApplyBundle / readStoredApplyBundle", () => {
     expect(after.size).toBe(before.size);
   });
 
-  it("refuses different bytes stored under the same digest name", () => {
-    storeApplyBundle(hub, BUNDLE);
-    const path = join(hub, BUNDLE_STORE_REL, `${BUNDLE.bundleDigest.slice("sha256:".length)}.json`);
+  const bundleFile = (digest: string): string => join(hub, BUNDLE_STORE_REL, `${digest.slice("sha256:".length)}.json`);
+  const bundleBytes = (document: ApplyBundle): string => `${JSON.stringify(document, null, 2)}\n`;
+  /** Every file in the bundle store, with its bytes: a change to any other name shows here. */
+  const bundleStore = (): Record<string, string> =>
+    Object.fromEntries(readdirSync(join(hub, BUNDLE_STORE_REL)).sort().map((name) => [name, readFileSync(join(hub, BUNDLE_STORE_REL, name), "utf8")]));
+
+  it("replaces the stored file with the newest bytes when the same digest is stored with a later clock", () => {
+    const path = storeApplyBundle(hub, BUNDLE);
+    const later: ApplyBundle = { ...BUNDLE, computedAt: "2026-09-25T00:00:00Z" };
+    expect(later.bundleDigest).toBe(BUNDLE.bundleDigest);
+    expect(storeApplyBundle(hub, later)).toBe(path);
+    expect(readFileSync(path, "utf8")).toBe(bundleBytes(later));
+    expect(readStoredApplyBundle(hub, BUNDLE.bundleDigest)).toEqual(later);
+    expect(Object.keys(bundleStore())).toEqual([`${BUNDLE.bundleDigest.slice("sha256:".length)}.json`]);
+  });
+
+  it("replaces the stored file with the newest bytes when the same digest is stored with a new authorization, and only that file changes", () => {
+    const other = storeApplyBundle(hub, OTHER_BUNDLE);
+    const otherBefore = readFileSync(other, "utf8");
+    const path = storeApplyBundle(hub, BUNDLE);
+    const authorized: ApplyBundle = { ...BUNDLE, authorization: { planDigest: PLAN_DIGEST, expiresAt: "2999-01-01T00:00:00Z" }, computedAt: "2026-09-26T00:00:00Z" };
+    expect(validateApplyBundle(authorized).valid).toBe(true);
+    expect(authorized.bundleDigest).toBe(BUNDLE.bundleDigest);
+    const before = bundleStore();
+    storeApplyBundle(hub, authorized);
+    const after = bundleStore();
+    const name = `${BUNDLE.bundleDigest.slice("sha256:".length)}.json`;
+    expect(after[name]).toBe(bundleBytes(authorized));
+    expect(after[name]).not.toBe(before[name]);
+    const { [name]: _replaced, ...untouchedAfter } = after;
+    const { [name]: _was, ...untouchedBefore } = before;
+    expect(untouchedAfter).toEqual(untouchedBefore);
+    expect(readFileSync(other, "utf8")).toBe(otherBefore);
+    expect(readStoredApplyBundle(hub, BUNDLE.bundleDigest)).toEqual(authorized);
+    expect(path).toBe(bundleFile(BUNDLE.bundleDigest));
+  });
+
+  it("writes nothing when the same bytes are stored again: the file keeps its inode and modification time", () => {
+    const path = storeApplyBundle(hub, BUNDLE);
+    const before = statSync(path);
+    expect(storeApplyBundle(hub, BUNDLE)).toBe(path);
+    const after = statSync(path);
+    expect(after.ino).toBe(before.ino);
+    expect(after.mtimeMs).toBe(before.mtimeMs);
+    expect(readdirSync(join(hub, BUNDLE_STORE_REL))).toEqual([`${BUNDLE.bundleDigest.slice("sha256:".length)}.json`]);
+  });
+
+  it("a bundle with another digest never touches the file of the first", () => {
+    const path = storeApplyBundle(hub, BUNDLE);
     const before = readFileSync(path, "utf8");
-    const collided: ApplyBundle = { ...BUNDLE, plan: { ...BUNDLE.plan, committed: false } };
-    expect(() => storeApplyBundle(hub, collided)).toThrow(TypeError);
+    expect(OTHER_BUNDLE.bundleDigest).not.toBe(BUNDLE.bundleDigest);
+    storeApplyBundle(hub, OTHER_BUNDLE);
     expect(readFileSync(path, "utf8")).toBe(before);
-    expect(readdirSync(join(hub, BUNDLE_STORE_REL)).filter((name) => name.endsWith(".tmp"))).toEqual([]);
+    expect(readStoredApplyBundle(hub, OTHER_BUNDLE.bundleDigest)).toEqual(OTHER_BUNDLE);
+  });
+
+  it("an interrupted write never leaves a half file under the digest name: the stray temporary file is not a stored bundle", () => {
+    const path = storeApplyBundle(hub, BUNDLE);
+    const name = `${BUNDLE.bundleDigest.slice("sha256:".length)}.json`;
+    // What a crash between the temporary write and the rename leaves: a partial file under a dot-prefixed temporary name.
+    const stray = join(hub, BUNDLE_STORE_REL, `.${name}.0123456789abcdef.tmp`);
+    writeFileSync(stray, bundleBytes({ ...BUNDLE, computedAt: "2026-09-25T00:00:00Z" }).slice(0, 40));
+    expect(readFileSync(path, "utf8")).toBe(bundleBytes(BUNDLE));
+    expect(readStoredApplyBundle(hub, BUNDLE.bundleDigest)).toEqual(BUNDLE);
+    // A later store still replaces the digest name in one step and leaves the stray file alone.
+    const later: ApplyBundle = { ...BUNDLE, computedAt: "2026-09-25T00:00:00Z" };
+    storeApplyBundle(hub, later);
+    expect(readStoredApplyBundle(hub, BUNDLE.bundleDigest)).toEqual(later);
+    expect(readdirSync(join(hub, BUNDLE_STORE_REL)).filter((entry) => entry.endsWith(".tmp"))).toEqual([basename(stray)]);
+  });
+
+  it("a real replacement goes through a temporary file and a rename: the file at the digest name is a new inode, never rewritten in place", () => {
+    const path = storeApplyBundle(hub, BUNDLE);
+    const before = statSync(path);
+    const held = readFileSync(path);
+    const renames = vi.mocked(renameSync);
+    renames.mockClear();
+    const later: ApplyBundle = { ...BUNDLE, computedAt: "2026-09-25T00:00:00Z" };
+    storeApplyBundle(hub, later);
+    expect(renames).toHaveBeenCalledTimes(1);
+    const [from, to] = renames.mock.calls[0] as [string, string];
+    expect(to).toBe(path);
+    expect(basename(from)).toMatch(/^\..+\.tmp$/);
+    expect(from).not.toBe(path);
+    expect(statSync(path).ino).not.toBe(before.ino);
+    expect(held.toString("utf8")).toBe(bundleBytes(BUNDLE));
+    expect(readFileSync(path, "utf8")).toBe(bundleBytes(later));
+  });
+
+  it("a rename that fails leaves the old bundle byte for byte and removes the temporary file", () => {
+    const path = storeApplyBundle(hub, BUNDLE);
+    const before = readFileSync(path);
+    const directory = join(hub, BUNDLE_STORE_REL);
+    let temporary = "";
+    vi.mocked(renameSync).mockImplementationOnce((from) => {
+      temporary = String(from);
+      expect(existsSync(temporary)).toBe(true);
+      throw Object.assign(new Error("simulated"), { code: "EXDEV" });
+    });
+    expect(() => storeApplyBundle(hub, { ...BUNDLE, computedAt: "2026-09-25T00:00:00Z" })).toThrow(/^hub store write failed \(EXDEV\)$/);
+    expect(temporary).not.toBe("");
+    expect(existsSync(temporary)).toBe(false);
+    expect(readFileSync(path).equals(before)).toBe(true);
+    expect(readdirSync(directory)).toEqual([basename(path)]);
+  });
+
+  it("a failed replacement leaves the stored file as it was and no temporary file of its own", () => {
+    if (process.platform === "win32" || (process.getuid?.() ?? 1) === 0) return;
+    const path = storeApplyBundle(hub, BUNDLE);
+    const directory = join(hub, BUNDLE_STORE_REL);
+    chmodSync(directory, 0o555);
+    try {
+      expect(() => storeApplyBundle(hub, { ...BUNDLE, computedAt: "2026-09-25T00:00:00Z" })).toThrow(/^hub store write failed \(EACCES\)$/);
+    } finally {
+      chmodSync(directory, 0o755);
+    }
+    expect(readFileSync(path, "utf8")).toBe(bundleBytes(BUNDLE));
+    expect(readdirSync(directory)).toEqual([basename(path)]);
+  });
+
+  it("refuses a digest name held by a symbolic link, writing nothing through it", () => {
+    storeApplyBundle(hub, OTHER_BUNDLE);
+    const directory = join(hub, BUNDLE_STORE_REL);
+    const path = bundleFile(BUNDLE.bundleDigest);
+    const outside = join(hub, "outside.json");
+    writeFileSync(outside, "untouched\n");
+    symlinkSync(outside, path);
+    expect(() => storeApplyBundle(hub, BUNDLE)).toThrow(TypeError);
+    expect(readFileSync(outside, "utf8")).toBe("untouched\n");
+    expect(lstatSync(path).isSymbolicLink()).toBe(true);
+    expect(readdirSync(directory).filter((entry) => entry.endsWith(".tmp"))).toEqual([]);
+  });
+
+  it("replaces a stored file whose bytes were tampered with, so a rerun repairs it", () => {
+    const path = storeApplyBundle(hub, BUNDLE);
+    writeFileSync(path, "not json\n");
+    expect(readStoredApplyBundle(hub, BUNDLE.bundleDigest)).toBeNull();
+    storeApplyBundle(hub, BUNDLE);
+    expect(readStoredApplyBundle(hub, BUNDLE.bundleDigest)).toEqual(BUNDLE);
+  });
+
+  it("an invalid bundle throws with no path or value echoed, and replaces nothing", () => {
+    const path = storeApplyBundle(hub, BUNDLE);
+    const before = readFileSync(path, "utf8");
+    const invalid = { ...BUNDLE, computedAt: "2026-09-25T00:00:00Z", mode: "not-a-mode" } as unknown as ApplyBundle;
+    let message = "";
+    try {
+      storeApplyBundle(hub, invalid);
+    } catch (error) {
+      expect(error).toBeInstanceOf(TypeError);
+      message = String(error);
+    }
+    expect(message).not.toBe("");
+    expect(message).not.toContain(hub);
+    expect(message).not.toContain("not-a-mode");
+    expect(readFileSync(path, "utf8")).toBe(before);
+  });
+
+  it("a symlinked bundles directory throws, echoes no path, and leaves the link's target empty", () => {
+    const target = realpathSync(mkdtempSync(join(tmpdir(), "apply-store-target-")));
+    try {
+      mkdirSync(join(hub, "clossys", ".state", "apply"), { recursive: true });
+      symlinkSync(target, join(hub, "clossys", ".state", "apply", "bundles"), "dir");
+      let message = "";
+      try {
+        storeApplyBundle(hub, BUNDLE);
+      } catch (error) {
+        expect(error).toBeInstanceOf(TypeError);
+        message = String(error);
+      }
+      expect(message).not.toBe("");
+      expect(message).not.toContain(hub);
+      expect(message).not.toContain(target);
+      expect(readdirSync(target)).toEqual([]);
+    } finally {
+      rmSync(target, { recursive: true, force: true });
+    }
   });
 
   it("throws before storing a bundle that does not validate", () => {
