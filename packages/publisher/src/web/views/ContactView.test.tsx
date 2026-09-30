@@ -6,7 +6,7 @@ import { join } from "node:path";
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { renderToStaticMarkup } from "react-dom/server";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { CopyRef, CopyResolver } from "@clossys/writer";
 import { ContactView } from "./ContactView.js";
 import type { ContactViewCopy, ContactViewProps } from "./ContactView.js";
@@ -146,6 +146,15 @@ function hasRawLengthFallback(source: string): boolean {
 }
 
 describe("ContactView golden markup", () => {
+  // The legal line reads the clock for its year; freeze only Date so user-event's timers stay real.
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-06-15T12:00:00Z"));
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it("renders the idle form", () => {
     // React Aria stamps its hidden native select with an opaque tooling attribute; the snapshot pins this view's markup, not that one.
     expect(markup().replace(/ data-[a-z0-9]+-ignore="[^"]*"/g, "")).toMatchInlineSnapshot(`"<div class="flex min-h-dvh flex-col"><header class="py-sm" style="position:relative;z-index:var(--ui-z-shell, 20)"><div class="mx-auto flex w-full flex-wrap items-center justify-between gap-md" style="padding-inline:var(--ui-width-page-padding-x, clamp(16px, 4vw, 48px))"><div class="flex items-center gap-lg"><a href="/">BRAND-SENTINEL</a></div></div></header><main class="mx-auto flex w-full flex-1 flex-col gap-xl px-lg py-2xl" style="max-width:var(--ui-width-prose-max, none)"><header class="flex flex-col gap-md"><div class="flex flex-wrap items-start justify-between gap-lg"><div class="flex flex-col gap-xs"><h1 class="text-h1 font-display text-ink-primary">HEADING-SENTINEL</h1><p class="text-body text-ink-secondary">DESCRIPTION-SENTINEL</p></div></div></header><div class="rounded-control bg-surface-raised p-lg" style="box-shadow:var(--ui-elevation-raised, 0 1px 0 var(--color-line-base, oklch(0.8761 0 0)))"><form noValidate="" class="flex flex-col gap-lg"><div class="flex flex-col gap-md"><template></template><div class="flex flex-col gap-xs" data-rac="" data-required="true"><span class="text-body-s text-ink-secondary font-body" id="react-aria-_R_4blH3_">TOPICLABEL-SENTINEL</span><button id="_R_0_-topic" class="flex w-full items-center justify-between gap-sm rounded-control border bg-surface-raised px-md py-sm text-body text-ink-primary outline-none disabled:cursor-not-allowed border-line-base" data-rac="" type="button" tabindex="0" data-react-aria-pressable="true" aria-labelledby="react-aria-_R_4blH7_ react-aria-_R_4blH3_" aria-describedby="react-aria-_R_4blH5_ react-aria-_R_4blH6_" aria-haspopup="listbox" aria-expanded="false"><span id="react-aria-_R_4blH7_" class="truncate" data-rac="" data-placeholder="true">TOPICPLACEHOLDER-SENTINEL</span><span aria-hidden="true" class="text-ink-muted">▾</span></button><div style="border:0;clip:rect(0 0 0 0);clip-path:inset(50%);height:1px;margin:-1px;overflow:hidden;padding:0;position:fixed;width:1px;white-space:nowrap;top:0;left:0" aria-hidden="true" data-react-aria-prevent-focus="true" data-testid="hidden-select-container"><label><select tabindex="-1" name="topic"><option value="" label=" " selected=""> </option><option value="sales">SALES-TOPIC-SENTINEL</option><option value="support">SUPPORT-TOPIC-SENTINEL</option></select></label></div></div><div class="flex flex-col gap-xs" data-rac="" data-required="true"><label class="text-body-s text-ink-secondary font-body" id="react-aria-_R_jlH1_" for="_R_0_-name">NAMELABEL-SENTINEL</label><input id="_R_0_-name" type="text" aria-required="true" autoComplete="name" tabindex="0" aria-labelledby="react-aria-_R_jlH1_" aria-describedby="react-aria-_R_jlH3_ react-aria-_R_jlH4_" class="rounded-control border bg-surface-raised px-md py-sm text-body text-ink-primary border-line-base" data-rac="" name="name" value=""/></div><div class="flex flex-col gap-xs" data-rac="" data-required="true"><label class="text-body-s text-ink-secondary font-body" id="react-aria-_R_rlH1_" for="_R_0_-email">EMAILLABEL-SENTINEL</label><input id="_R_0_-email" type="email" aria-required="true" autoComplete="email" tabindex="0" aria-labelledby="react-aria-_R_rlH1_" aria-describedby="react-aria-_R_rlH3_ react-aria-_R_rlH4_" class="rounded-control border bg-surface-raised px-md py-sm text-body text-ink-primary border-line-base" data-rac="" name="email" value=""/></div><div class="flex flex-col gap-xs" data-rac=""><label class="text-body-s text-ink-secondary font-body" id="react-aria-_R_13lH1_" for="_R_0_-phone">PHONELABEL-SENTINEL</label><input id="_R_0_-phone" type="tel" autoComplete="tel" tabindex="0" aria-labelledby="react-aria-_R_13lH1_" aria-describedby="react-aria-_R_13lH3_ react-aria-_R_13lH4_" class="rounded-control border bg-surface-raised px-md py-sm text-body text-ink-primary border-line-base" data-rac="" name="phone" value=""/></div><div class="flex flex-col gap-xs" data-rac="" data-required="true"><label class="text-body-s text-ink-secondary font-body" id="react-aria-_R_1blH1_" for="_R_0_-message">MESSAGELABEL-SENTINEL</label><textarea id="_R_0_-message" type="text" aria-required="true" name="message" tabindex="0" aria-labelledby="react-aria-_R_1blH1_" aria-describedby="react-aria-_R_1blH3_ react-aria-_R_1blH4_" rows="6" class="resize-y rounded-control border bg-surface-raised px-md py-sm text-body text-ink-primary border-line-base" data-rac=""></textarea></div><div aria-hidden="true" style="position:absolute;left:-10000px;width:1px;height:1px;overflow:hidden"><input type="text" tabindex="-1" autoComplete="off" name="website" value=""/></div></div><div class="flex items-center gap-sm"><button id="_R_0_-submit" class="inline-flex items-center justify-center gap-sm rounded-control font-body transition-colors motion-reduce:transition-none outline-none disabled:cursor-not-allowed px-md py-sm text-body bg-accent text-ink-on-accent hover:bg-accent-hover" data-rac="" type="submit" tabindex="0" data-react-aria-pressable="true">SUBMIT-SENTINEL</button></div></form></div></main><footer class="text-ink-primary py-lg" style="position:relative;z-index:var(--ui-z-shell, 20)"><div class="mx-auto flex w-full flex-col gap-lg" style="padding-inline:var(--ui-width-page-padding-x, clamp(16px, 4vw, 48px))"><div class="flex flex-col gap-sm text-body-s text-ink-secondary tablet:flex-row tablet:items-center tablet:justify-between"><div class="flex w-full flex-col items-center gap-sm text-center desktop:flex-row-reverse desktop:flex-nowrap desktop:items-center desktop:justify-between desktop:text-start"><nav aria-label="LINKS-NAME-SENTINEL"><ul role="list" class="m-0 flex list-none flex-wrap items-center justify-center gap-x-sm p-0 desktop:flex-nowrap desktop:justify-end"><li><a href="/one" class="inline-flex items-center justify-center px-xs text-inherit underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent" style="min-height:var(--ui-layout-tap-target, 44px);min-width:var(--ui-layout-tap-target, 44px)">LINK-ONE-SENTINEL</a></li></ul></nav><p class="m-0 desktop:whitespace-nowrap">© 2026 ENTITY-SENTINEL</p></div></div></div></footer></div>"`);
@@ -179,7 +188,6 @@ describe("ContactView topic", () => {
     render(<ContactView {...props({ initialTopic: "nonexistent-topic" })} />);
     const trigger = screen.getByRole("button", { name: /TOPICLABEL-SENTINEL/ });
     expect(trigger).toHaveTextContent("TOPICPLACEHOLDER-SENTINEL");
-    expect(trigger).not.toHaveTextContent("SENTINEL-TOPIC");
     expect(trigger.textContent).not.toContain("TOPIC-SENTINEL");
   });
 
@@ -201,7 +209,9 @@ describe("ContactView topic", () => {
     expect(attempt([{ id: secret, label: ref("topic.sales") }])).not.toThrow(/LEAK/);
     expect(attempt([{ id: "", label: ref("topic.sales") }])).toThrow(/kebab-case/);
     expect(attempt([{ id: "sales", label: ref("topic.sales") }, { id: "sales", label: ref("topic.support") }])).toThrow(/topics\[1\]\.id to be unique/);
-    expect(attempt([{ id: "sales", label: ref("topic.sales") }, { id: "sales", label: ref("topic.support") }])).not.toThrow(/LEAK/);
+    const twice = attempt([{ id: "dup-id-leak", label: ref("topic.sales") }, { id: "dup-id-leak", label: ref("topic.support") }]);
+    expect(twice).toThrow(/topics\[1\]\.id to be unique/);
+    expect(twice).not.toThrow(/leak/i);
     expect(attempt([])).toThrow(/at least one topic/);
     expect(attempt(TOPICS)).not.toThrow();
   });
@@ -361,6 +371,51 @@ describe("ContactView results", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent("UNAVAILABLE-SENTINEL");
   });
 
+  it("clears a server failure when the next attempt is refused by a client check: one alert only", async () => {
+    render(<ContactView {...props({ onSubmit: async () => ({ status: "rate-limited" }) })} />);
+    const u = user();
+    await fill(u);
+    await u.click(submitButton());
+    expect(await screen.findByRole("alert")).toHaveTextContent("RATELIMITED-SENTINEL");
+    await u.clear(screen.getByRole("textbox", { name: /EMAILLABEL-SENTINEL/ }));
+    await u.click(submitButton());
+    await screen.findByText("EMAILREQUIRED-SENTINEL", { selector: "a" });
+    const alerts = screen.getAllByRole("alert");
+    expect(alerts).toHaveLength(1);
+    expect(alerts[0]).toHaveTextContent("ERRORSUMMARY-SENTINEL");
+    expect(screen.queryByText("RATELIMITED-SENTINEL")).toBeNull();
+  });
+
+  it.each([
+    ["undefined", undefined],
+    ["an unknown status", { status: "teapot" }],
+    ["a non-object", "oops"],
+  ])("renders the unavailable failure when onSubmit resolves to %s", async (_label, answer) => {
+    render(<ContactView {...props({ onSubmit: (async () => answer) as unknown as ContactViewProps["onSubmit"] })} />);
+    const u = user();
+    await fill(u);
+    await u.click(submitButton());
+    expect(await screen.findByRole("alert")).toHaveTextContent("UNAVAILABLE-SENTINEL");
+    expect(screen.queryByRole("status")).toBeNull();
+  });
+
+  it("re-announces and refocuses when the same failure comes twice in a row", async () => {
+    const onSubmit = vi.fn(async (): Promise<ContactResult> => ({ status: "unavailable" }));
+    render(<ContactView {...props({ onSubmit })} />);
+    const u = user();
+    await fill(u);
+    await u.click(submitButton());
+    const first = await screen.findByRole("alert");
+    await waitFor(() => expect(submitButton()).toHaveFocus());
+    await u.click(screen.getByRole("textbox", { name: /NAMELABEL-SENTINEL/ }));
+    expect(submitButton()).not.toHaveFocus();
+    await u.click(submitButton());
+    await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(screen.getByRole("alert")).not.toBe(first));
+    await waitFor(() => expect(submitButton()).toHaveFocus());
+    expect(screen.getByRole("alert")).toHaveTextContent("UNAVAILABLE-SENTINEL");
+  });
+
   it("can send again after a failure", async () => {
     const results: ContactResult[] = [{ status: "unavailable" }, { status: "accepted" }];
     const onSubmit = vi.fn(async () => results.shift()!);
@@ -409,9 +464,12 @@ describe("ContactView copy", () => {
     expect(attempt).not.toThrow(/LEAKED-ID/);
     expect(() => markup({ topics: [{ id: "sales", label: ref("topic.LEAKED-ID") }] })).toThrow(/topics\[0\]\.label/);
     expect(() => markup({ topics: [{ id: "sales", label: ref("topic.LEAKED-ID") }] })).not.toThrow(/LEAKED-ID/);
+  });
+
+  it.each(COPY_KEYS)("fails loudly, naming the path, when the copy key %s is absent", (key) => {
     const missing = { ...COPY } as Partial<ContactViewCopy>;
-    delete missing.heading;
-    expect(() => markup({ copy: missing as ContactViewCopy })).toThrow(/copy\.heading/);
+    delete missing[key];
+    expect(() => markup({ copy: missing as ContactViewCopy })).toThrow(new RegExp(`copy\\.${key}\\b`));
   });
 });
 

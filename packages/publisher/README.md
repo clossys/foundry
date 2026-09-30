@@ -828,12 +828,12 @@ is a `CopyRef` resolved through `resolveCopyId`.
 
 ```tsx
 import { ContactView } from "@clossys/publisher/web";
-import type { ContactViewCopy, ContactViewProps } from "@clossys/publisher/web";
+import type { ContactResult, ContactViewCopy, ContactViewProps } from "@clossys/publisher/web";
 
 declare const brand: React.ReactNode; // the caller's brand mark, for example a Designer `Brandmark`
 declare const resolveCopyId: ContactViewProps["resolveCopyId"]; // the approved-copy resolver
 declare const copy: ContactViewCopy; // one approved `CopyRef` per string the view shows
-declare function send(values: Record<string, string>): Promise<{ status: "accepted" }>; // your call to `createContactHandler`'s `handle`
+declare function send(values: Record<string, string>): Promise<ContactResult>; // your submit handler: a route or server action that runs `createContactHandler`'s `handle`
 
 export function ContactPage() {
   return (
@@ -870,7 +870,7 @@ Props, in addition to the standard `div` attributes (minus `children` and
   `honeypotField` you gave `createContactHandler`.
 - `onSubmit(values)`: resolves to a `ContactResult`. `values` holds `topic`,
   `name`, `email`, `phone` (`""` when empty), `message` and the honeypot field
-  under its own name. A rejection is read as `unavailable`.
+  under its own name. A rejection or an unknown answer reads as `unavailable`.
 
 What it guarantees: one `<h1>`, which never names the chosen topic; topic, name,
 email and message are checked in the browser first, and a failed check sends

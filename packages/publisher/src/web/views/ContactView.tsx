@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
 import type { CopyRef, CopyResolver } from "@clossys/writer";
 import { Button, Select, TextField, Textarea } from "@clossys/designer/atoms";
@@ -232,16 +232,29 @@ export function ContactView({
       message: (value) => (value.trim() === "" ? text.messageRequired : undefined),
     },
     onSubmit: async (values) => {
-      setOutcome("idle");
-      let result: ContactResult;
+      let result: ContactResult | undefined;
       try {
         result = await onSubmitRef.current(values as ContactViewValues);
       } catch {
         result = { status: "unavailable" };
       }
-      setOutcome(result.status);
+      // Anything the handler answers other than the three known statuses (undefined, a proxy error body) is a failure to send, never silence.
+      const status = result?.status;
+      setOutcome(status === "accepted" || status === "invalid" || status === "rate-limited" ? status : "unavailable");
     },
   });
+
+  // The previous outcome is cleared at the start of every submit attempt, including one a client-side check refuses, so a stale failure never sits beside a new error summary and a repeated failure is announced again.
+  const binding = useMemo(
+    () => ({
+      ...validation,
+      handleSubmit: (event?: Parameters<typeof validation.handleSubmit>[0]) => {
+        setOutcome("idle");
+        return validation.handleSubmit(event);
+      },
+    }),
+    [validation],
+  );
 
   const submitId = validation.fieldId(SUBMIT_ID_SUFFIX);
 
@@ -282,7 +295,7 @@ export function ContactView({
             </div>
           ) : (
             <Form
-              validation={validation}
+              validation={binding}
               errorSummaryMessage={() => text.errorSummary}
               submitError={failure}
               actions={
