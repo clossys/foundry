@@ -214,6 +214,40 @@ describe("toEngagementBrief() keeps founder text out of the committed brief", ()
     expect(() => brief({ schemaVersion: 1, fields: [...HUB.fields, { id: "stage", state: "unknown" }] })).toThrow(/more than once/);
   });
 
+  it("each context field's id, state and value are read exactly once", () => {
+    const reads = { id: 0, state: 0, value: 0 };
+    const PROSE = "Mostly dentists near our office";
+    const field = {};
+    Object.defineProperty(field, "id", { enumerable: true, get: () => (++reads.id === 1 ? "audience" : PROSE) });
+    Object.defineProperty(field, "state", { enumerable: true, get: () => (++reads.state === 1 ? "known" : PROSE) });
+    Object.defineProperty(field, "value", { enumerable: true, get: () => (++reads.value === 1 ? "businesses" : PROSE) });
+    const written = brief({ schemaVersion: 1, fields: [field as EngagementContextField] });
+    expect(written.context?.fields.find((entry) => entry.id === "audience")).toEqual({ id: "audience", state: "known", value: "businesses" });
+    expect(reads).toEqual({ id: 1, state: 1, value: 1 });
+    expect(JSON.stringify(written)).not.toContain("dentists");
+  });
+
+  it("an unknown field id is refused without echoing it", () => {
+    for (const id of ["Mostly dentists near our office", { note: "dentists" }]) {
+      const bad = { schemaVersion: 1, fields: [{ id, state: "unknown" }] } as unknown as EngagementContext;
+      expect(() => brief(bad)).toThrow(TypeError);
+      expect(() => brief(bad)).toThrow(/not a context field id/);
+      try {
+        brief(bad);
+      } catch (error) {
+        expect(String((error as Error).message)).not.toContain("dentists");
+      }
+    }
+  });
+
+  it("a context whose schemaVersion is not 1 is refused", () => {
+    for (const bad of [{ schemaVersion: 2, fields: [] }, { schemaVersion: "1", fields: [] }, { schemaVersion: 0, fields: [] }, { fields: [] }]) {
+      expect(() => brief(bad as unknown as EngagementContext)).toThrow(TypeError);
+      expect(() => brief(bad as unknown as EngagementContext)).toThrow(/schemaVersion/);
+    }
+    expect(brief({ schemaVersion: 1, fields: [] }).context?.schemaVersion).toBe(1);
+  });
+
   it("drops keys the contract does not allow, inherited names included, rather than copying them", () => {
     for (const key of ["note", ...PROTOTYPE_KEYS]) {
       const field = JSON.parse(`{"id":"audience","state":"known","value":"businesses",${JSON.stringify(key)}:"free text"}`) as EngagementContextField;
