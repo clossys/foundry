@@ -99,7 +99,9 @@ records, and one file, `app/site-records.ts`, reads them:
   resolve fails the render instead of showing a blank. The ids are listed in
   `app/site-copy.ts` (`site.landing.*`, `site.contact.*`, `site.footer.*`,
   `site.legal.*`, `site.error.*`), and the registry must hold an entry for
-  each. On `production` an entry resolves only with its approval record.
+  each. An approved entry resolves on every target; on `production` an entry
+  approved only by a delegate is refused, and so is any approval that is
+  stale or expired.
 - `clossys/publisher/legal/terms.json` and `privacy.json` — the two legal
   documents, whose text is copy ids into the same registry.
 
@@ -115,7 +117,11 @@ site from rendering. It decides three things:
 - **Legal documents.** On `production` a document whose status is not
   `counsel-reviewed` refuses to render, so a draft cannot be served there.
   Every other target renders a draft with its draft notice.
-- **Copy.** On `production` copy resolves only with its approval record.
+- **Copy.** An entry approved by its owner resolves on every target. On
+  `production` the Writer resolver also refuses an entry approved only by a
+  delegate; a stale or expired approval is refused on every target. The
+  `target` option that makes the resolver refuse on `production` needs a Writer
+  release that takes it; the range in `package.json` moves with the release.
 - **Contact delivery**, below.
 
 ## Contact delivery
@@ -144,10 +150,20 @@ returns `unavailable` and logs a code only.
 - **The client key comes from `x-forwarded-for`.** The template reads the
   last address in the header (the one the nearest proxy appended) and keys
   the limiter on a keyed hash of it, so the key never contains the address.
-  Requests with no header share one bucket. This is only as strong as the
-  proxy in front of the site: behind a host that sets or overwrites the
-  header it identifies the client; with no such proxy a caller can choose
-  its own key and so has no limit.
+  An IPv6 address is reduced to its /64 prefix first, because one host
+  normally holds a whole /64 and would otherwise get a bucket per address;
+  ports, brackets, zone ids, letter case and IPv4-mapped forms are folded
+  into one key per address. A last hop that is not an address gets no key of
+  its own, and joins the one bucket shared with requests that have no
+  header. This is only as strong as the proxy in front of the site: behind a
+  host that sets or overwrites the header it identifies the client's
+  network; with no such proxy a caller can choose its own key and so has no
+  limit. The limiter holds at most 10,000 keys. When the store is full it
+  drops keys whose windows have all expired, and refuses a new client only
+  while every stored window is still live, so the refusal ends with the
+  ten-minute window and is never permanent.
+- **Sends time out after ten seconds.** A provider that does not answer in
+  that time ends the request as `unavailable` instead of holding it open.
 - **The honeypot is the only bot check.** A submission that fills the hidden
   field is answered as accepted and delivers nothing. There is no CAPTCHA.
 

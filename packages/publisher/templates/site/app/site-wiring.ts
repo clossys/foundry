@@ -9,6 +9,7 @@
  * client module may import it; the client-safe half is `site-copy.ts`.
  */
 import { createHmac, randomBytes } from "node:crypto";
+import { isIP } from "node:net";
 import { gateLegalDocument } from "@clossys/publisher/document";
 import type { LegalDocument } from "@clossys/publisher/document";
 import {
@@ -45,6 +46,8 @@ export function resolveSiteTarget(env: Readonly<Record<string, string | undefine
 
 // ----------------------------------------------------------------- delivery
 
+const NON_PRODUCTION_TARGETS: readonly string[] = ["preview", "development", "test"];
+
 function isStubDelivery(value: unknown): boolean {
   return typeof value === "object" && value !== null && STUB_CONTACT_DELIVERY in value;
 }
@@ -55,7 +58,13 @@ function isStubDelivery(value: unknown): boolean {
  * stub and never builds the real one, so a preview cannot send a message.
  */
 export function selectContactDelivery(target: SiteTarget, makeProduction: () => ContactDelivery): ContactDelivery {
-  if (target !== "production") return createStubContactDelivery();
+  if (target !== "production") {
+    // An allow-list: a value this function does not know is refused, never sent to the stub.
+    if (typeof target !== "string" || !NON_PRODUCTION_TARGETS.includes(target)) {
+      throw new Error("The contact delivery target must be production, preview, development or test.");
+    }
+    return createStubContactDelivery();
+  }
   const delivery = makeProduction();
   if (isStubDelivery(delivery)) throw new Error("A stub delivery is refused for the production target.");
   return delivery;
@@ -117,14 +126,61 @@ const ADDRESS_READ_LIMIT = 128;
 const KEY_SECRET = randomBytes(32);
 
 /**
+ * The canonical text the limiter key is derived from, or `undefined` when the
+ * value is not an address.
+ *
+ * An IPv4 address is kept whole. An IPv6 address is reduced to its /64 prefix,
+ * because one host normally holds a whole /64 and could otherwise take a new
+ * bucket per address. An IPv4-mapped IPv6 address is the IPv4 address it
+ * carries. The port (`ip:port`, `[ip]:port`), the brackets, a `%zone` suffix
+ * and the letter case are removed first, so one address has one key however
+ * the proxy spelled it.
+ */
+function canonicalAddress(raw: string): string | undefined {
+  let text = raw;
+  const bracketed = /^\[([^\]]*)\](?::\d{1,5})?$/.exec(text);
+  if (bracketed !== null) text = bracketed[1] ?? "";
+  else if (/^\d{1,3}(?:\.\d{1,3}){3}:\d{1,5}$/.test(text)) text = text.slice(0, text.lastIndexOf(":"));
+  const zone = text.indexOf("%");
+  if (zone !== -1) text = text.slice(0, zone);
+
+  const family = isIP(text);
+  if (family === 4) return `v4:${text}`;
+  if (family !== 6) return undefined;
+
+  let groups = text.toLowerCase();
+  const dotted = groups.lastIndexOf(".");
+  if (dotted !== -1) {
+    const colon = groups.lastIndexOf(":");
+    const octets = groups.slice(colon + 1).split(".").map(Number);
+    const high = ((octets[0] ?? 0) << 8) | (octets[1] ?? 0);
+    const low = ((octets[2] ?? 0) << 8) | (octets[3] ?? 0);
+    groups = `${groups.slice(0, colon + 1)}${high.toString(16)}:${low.toString(16)}`;
+  }
+  const halves = groups.split("::");
+  const head = halves[0] === "" ? [] : (halves[0] ?? "").split(":");
+  const tail = halves.length === 2 ? (halves[1] === "" ? [] : (halves[1] ?? "").split(":")) : [];
+  const fill = halves.length === 2 ? 8 - head.length - tail.length : 0;
+  const words = [...head, ...Array<string>(Math.max(fill, 0)).fill("0"), ...tail].map((word) => Number.parseInt(word, 16));
+  if (words.length !== 8 || words.some((word) => !Number.isInteger(word) || word < 0 || word > 0xffff)) return undefined;
+
+  const mapped = words.slice(0, 5).every((word) => word === 0) && words[5] === 0xffff;
+  if (mapped) return `v4:${words[6]! >> 8}.${words[6]! & 255}.${words[7]! >> 8}.${words[7]! & 255}`;
+  return `v6:${words.slice(0, 4).map((word) => word.toString(16).padStart(4, "0")).join(":")}`;
+}
+
+/**
  * The limiter key for a request, derived from its `x-forwarded-for` header.
  *
  * It reads the last address in the header, the one the nearest proxy appended,
- * because the earlier ones are whatever the caller chose to send. The address
- * is keyed (HMAC-SHA-256 with a secret held in this process) so the key is
- * opaque and never contains the address, and is a fixed 64 characters, well
- * inside the handler's 256 limit. A request with no usable header shares one
- * bucket, so it is limited too instead of being exempt.
+ * because the earlier ones are whatever the caller chose to send. That value
+ * is normalised (see `canonicalAddress`): IPv6 by /64 prefix, spelling
+ * variants folded together. A value that is not an address gets no key of its
+ * own; it joins the shared unknown bucket, so junk cannot be rotated to mint
+ * buckets. The canonical text is keyed (HMAC-SHA-256 with a secret held in this
+ * process) so the key is opaque and never contains the address, and is a fixed
+ * length, well inside the handler's 256 limit. A request with no usable header
+ * shares that one bucket, so it is limited too instead of being exempt.
  *
  * This is only as strong as the proxy that sets the header: see the template
  * README, "Contact delivery".
@@ -133,8 +189,9 @@ export function deriveClientKey(forwardedFor: string | null | undefined): string
   if (typeof forwardedFor !== "string") return UNKNOWN_CLIENT_KEY;
   const hops = forwardedFor.split(",");
   const last = (hops[hops.length - 1] ?? "").trim().slice(0, ADDRESS_READ_LIMIT);
-  if (last.length === 0) return UNKNOWN_CLIENT_KEY;
-  return `client-${createHmac("sha256", KEY_SECRET).update(last).digest("hex")}`;
+  const canonical = canonicalAddress(last);
+  if (canonical === undefined) return UNKNOWN_CLIENT_KEY;
+  return `client-${createHmac("sha256", KEY_SECRET).update(canonical).digest("hex")}`;
 }
 
 // ---------------------------------------------------------------- submitter

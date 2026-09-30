@@ -14,6 +14,9 @@
 import { createResendAdapter } from "@clossys/messenger/providers/resend";
 import type { ContactDelivery } from "@clossys/publisher/web";
 
+/** A send that has not answered by then fails as `unavailable` instead of holding the visitor's request open. */
+const SEND_TIMEOUT_MS = 10_000;
+
 export function createProductionDelivery(): ContactDelivery {
-  return createResendAdapter({ apiKey: () => process.env.RESEND_API_KEY });
+  return createResendAdapter({ apiKey: () => process.env.RESEND_API_KEY, timeoutMs: SEND_TIMEOUT_MS });
 }

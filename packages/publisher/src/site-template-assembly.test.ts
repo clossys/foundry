@@ -136,6 +136,14 @@ describe("selectContactDelivery", () => {
     expect(() => selectContactDelivery("production", () => createStubContactDelivery())).toThrow(/stub/i);
   });
 
+  it("throws on a target that is neither production nor a known non-production target, and builds nothing", () => {
+    for (const target of ["Production", "prod", "staging", "", " ", undefined, null, 1, {}]) {
+      const make = vi.fn(() => recordingDelivery());
+      expect(() => selectContactDelivery(target as never, make)).toThrow(/target/i);
+      expect(make).not.toHaveBeenCalled();
+    }
+  });
+
   it("returns the branded stub for every other target and does not build the production delivery", () => {
     for (const target of ["preview", "development", "test"] as const) {
       const make = vi.fn(() => recordingDelivery());
@@ -243,10 +251,87 @@ describe("deriveClientKey", () => {
     expect(deriveClientKey("192.0.2.9, 198.51.100.1, 203.0.113.7")).toBe(real);
   });
 
-  it("stays within the handler's client key length for an oversized header", () => {
+  it("stays within the handler's client key length for an oversized header, and shares the unknown bucket", () => {
     const key = deriveClientKey("9".repeat(20_000));
     expect(key.length).toBeLessThanOrEqual(256);
-    expect(key).not.toBe(UNKNOWN_CLIENT_KEY);
+    expect(key).toBe(UNKNOWN_CLIENT_KEY);
+  });
+
+  describe("normalises the last hop before it is hashed", () => {
+    it("gives ten thousand addresses inside one /64 one key", () => {
+      const keys = new Set<string>();
+      for (let i = 0; i < 10_000; i += 1) {
+        keys.add(deriveClientKey(`2001:db8:1:2::${i.toString(16)}`));
+        keys.add(deriveClientKey(`2001:DB8:1:2:${((i * 7919) % 0xffff).toString(16)}:${i.toString(16)}::${(i + 1).toString(16)}`));
+      }
+      expect(keys.size).toBe(1);
+      expect(deriveClientKey("2001:db8:1:2:ffff:ffff:ffff:ffff")).toBe([...keys][0]);
+    });
+
+    it("gives two different /64 blocks different keys", () => {
+      expect(deriveClientKey("2001:db8:1:2::1")).not.toBe(deriveClientKey("2001:db8:1:3::1"));
+      expect(deriveClientKey("2001:db8:1:2::1")).not.toBe(deriveClientKey("2001:db8:2:2::1"));
+    });
+
+    it("gives every spelling of one address the same key", () => {
+      const v6 = deriveClientKey("2001:db8::1");
+      for (const form of [
+        "2001:DB8::1",
+        "2001:0db8:0:0:0:0:0:1",
+        "2001:db8:0000:0000:0000:0000:0000:0001",
+        "[2001:db8::1]",
+        "[2001:db8::1]:443",
+        "2001:db8::1%eth0",
+        "[2001:db8::1%25eth0]:443".replace("%25", "%"),
+      ]) {
+        expect(deriveClientKey(form), form).toBe(v6);
+      }
+      const v4 = deriveClientKey("203.0.113.7");
+      for (const form of ["203.0.113.7:5000", "203.0.113.7:5001", "::ffff:203.0.113.7", "::FFFF:cb00:7107", "[::ffff:203.0.113.7]:80"]) {
+        expect(deriveClientKey(form), form).toBe(v4);
+      }
+    });
+
+    it("keeps IPv4 addresses apart", () => {
+      expect(deriveClientKey("203.0.113.7")).not.toBe(deriveClientKey("203.0.113.8"));
+    });
+
+    it("sends anything that is not an address to the one shared bucket, never a key of its own", () => {
+      const junk = ["not-an-ip", "999.1.1.1", "1.2.3", "1.2.3.4.5", "2001:db8::g", "2001:db8::1::2", "unknown", "[", "]:", "1.2.3.4:", "1.2.3.4:x", "::ffff:999.1.1.1"];
+      for (let i = 0; i < 1_000; i += 1) junk.push(`junk-${i}`, `2001:db8:${i}`);
+      const keys = new Set(junk.map((value) => deriveClientKey(value)));
+      expect([...keys]).toEqual([UNKNOWN_CLIENT_KEY]);
+    });
+  });
+});
+
+describe("the limiter under key rotation", () => {
+  const LIMIT_CONFIG = (now: () => number, stub: ContactDelivery) => ({
+    target: "test" as const,
+    delivery: stub,
+    contactEmail: CONTACT_EMAIL,
+    subject: SUBJECT,
+    now,
+  });
+
+  it("is not filled by a host rotating addresses inside its /64: another visitor still gets through", async () => {
+    const stub = createStubContactDelivery();
+    const handler = createSiteContactHandler(LIMIT_CONFIG(() => 1_000, stub));
+    for (let i = 0; i < 10_000; i += 1) {
+      await handler.handle(goodSubmission(), { clientKey: deriveClientKey(`2001:db8:1:2::${i.toString(16)}`) });
+    }
+    expect(stub.deliveries).toHaveLength(CONTACT_RATE_LIMIT.limit);
+    expect(await handler.handle(goodSubmission(), { clientKey: deriveClientKey("198.51.100.99") })).toEqual({ status: "accepted" });
+  });
+
+  it("refuses new clients only while a full store's windows are live, and admits them once the window has passed", async () => {
+    let time = 1_000;
+    const stub = createStubContactDelivery();
+    const handler = createSiteContactHandler(LIMIT_CONFIG(() => time, stub));
+    for (let i = 0; i < 10_000; i += 1) await handler.handle(goodSubmission(), { clientKey: `client-fill-${i}` });
+    expect(await handler.handle(goodSubmission(), { clientKey: "client-newcomer" })).toEqual({ status: "rate-limited" });
+    time += CONTACT_RATE_LIMIT.windowMs + 1;
+    expect(await handler.handle(goodSubmission(), { clientKey: "client-newcomer" })).toEqual({ status: "accepted" });
   });
 });
 
@@ -575,6 +660,20 @@ describe("template file rules", () => {
     const reads = source.match(/process\.env\.[A-Z_]+/g) ?? [];
     expect(reads).toEqual(["process.env.RESEND_API_KEY"]);
     expect(source).toMatch(/apiKey:\s*\(\)\s*=>\s*process\.env\.RESEND_API_KEY/);
+  });
+
+  it("takes the contact target from the environment, never from a literal", () => {
+    const contact = readFileSync(join(APP_DIR, "site-contact.ts"), "utf8");
+    expect(contact).toMatch(/const target = siteTarget\(\);/);
+    expect(contact).toMatch(/selectContactDelivery\(target, createProductionDelivery\)/);
+    expect(contact).not.toMatch(/target\s*[:=]\s*["'`](production|preview|development|test)["'`]/);
+    expect(readFileSync(join(APP_DIR, "site-records.ts"), "utf8")).toMatch(/return resolveSiteTarget\(process\.env\);/);
+  });
+
+  it("bounds the delivery call with a timeout", () => {
+    const source = readFileSync(join(APP_DIR, "site-delivery.ts"), "utf8");
+    expect(source).toMatch(/SEND_TIMEOUT_MS\s*=\s*10_000;/);
+    expect(source).toMatch(/timeoutMs:\s*SEND_TIMEOUT_MS/);
   });
 
   it("carries no key, token or password literal", () => {

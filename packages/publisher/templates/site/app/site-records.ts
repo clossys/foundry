@@ -34,9 +34,10 @@ export function loadBrandFacts(): SiteBrandFacts {
 }
 
 /**
- * The approved-copy resolver. On `production` an entry must carry its approval
- * record to resolve; on every other target an approved entry resolves without
- * one, so a preview can show copy that is approved but not yet signed off.
+ * The approved-copy resolver, with the Writer resolver's target policy: an
+ * entry approved by its owner resolves on every target, an entry approved only
+ * by a delegate is refused on `production`, and a stale or expired approval is
+ * refused on every target.
  */
 export function createSiteCopyResolver(target: SiteTarget): CopyResolver {
   return createCopyResolver(copyRegistryRecord, { target: target === "production" ? "production" : "preview" });
