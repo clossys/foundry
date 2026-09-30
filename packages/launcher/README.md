@@ -336,6 +336,7 @@ launcher-apply-plan --plan plan.json --brief brief.json --repo ./product-checkou
 launcher-apply-plan plan
 launcher-apply-plan materialize --repo ./site-checkout
 launcher-apply-plan verify --repo ./site-checkout
+launcher-apply-plan status --repo ./site-checkout
 launcher-apply-plan snapshot --request package-request.json
 ```
 
@@ -1218,6 +1219,89 @@ It does not decide the binding: it shows what you pass, so pass the result of
 `decideSetBinding()`. It does not check that the task-record issue exists, and
 it cannot stop a pull request's body being edited after it is opened; keeping
 `bodySha256` and the marker is what lets a later step notice that.
+
+### Observing the pull request
+
+`launcher-apply-plan status --repo <id>` reports what the pull request for the
+repository's stored change set is doing. It runs after the agent has pushed the
+branch and opened the pull request from the text `renderPullRequest()` returned,
+and it changes nothing: it asks GitHub three read-only questions (who is
+asking, which pull requests are open, and where the default branch is) with
+`gh api --method GET`, reads only commits that are already in the local clone
+through git, and never fetches a pull request's head, checks anything out or
+writes a file, an index or any ref but one. It needs a full clone: a partial
+(promisor) clone, such as a blobless or treeless one, is refused up front as
+`partial-clone`, before any object is read, because git would fetch what such a
+clone lacks. All its git calls also run with lazy fetch off, and each has a
+30 second limit, including those of the preconditions it shares with `verify`
+except the base-commit reads made by the hub admission, which have no limit. The one
+ref it writes is the one `verify` writes: the fetch of the default branch into
+its remote-tracking ref (`refs/remotes/origin/<default branch>`), which also
+leaves `FETCH_HEAD` and any new objects of that branch in the clone. It runs the
+hub's readiness executable as `verify` does.
+
+```bash
+launcher-apply-plan status --repo ./site-checkout
+```
+
+It prints one line, `launcher-apply-plan status: <state>`, then a fixed reason
+in parentheses and `#<n>` for each pull request it is about, and nothing else:
+never a body, a title, a login, a branch, a path or any tool output.
+
+| State | Exit | Meaning |
+| --- | --- | --- |
+| `proposed` | `0` | An open pull request carries this set's marker, was opened by the person running this, from and into the set's own repository, on the set's branch and title, and its head commit passes every check `verify` makes, including the ledger's exact bytes. |
+| `applied` | `0` | The default branch's tip is in the clone and holds every `after` and every key the set writes, however it got there, with no open pull request needed. |
+| `planned` | `2` | Neither. |
+| `diverged` | `1` | The pull request that carries this set's marker does not match it: a different base branch, branch or title, a head that is not in the clone, or a head that fails a `verify` check. |
+| `superseded` | `2` | An older change set this hub stored for the repository has an open pull request. It outranks `proposed`, so it is also the state when this set's own pull request is open beside the older one. |
+| `indeterminate` | `2` | Something could not be read or trusted, with one of the reasons below. |
+
+When more than one applies, the first of `indeterminate`, `diverged`,
+`superseded`, `proposed`, `applied` and `planned` wins. A pull request whose
+body names the marker counts only when its author is the person running this
+and its head and base are both the set's repository; any other is
+`foreign-marker`. A body that has a carriage return, a marker that is not the
+whole of its first line, or a marker `readChangeSetMarker()` cannot read is
+`marker-malformed`. Any open pull request whose body names the marker word, from
+anyone, therefore makes `status` `indeterminate` (`foreign-marker`) until it is
+closed: closing the stray pull request is the remedy.
+
+Every reason `indeterminate` can carry:
+
+- The set and the clone: `change-set-absent`, `change-set-invalid`,
+  `repository-invalid`, `missing-clone` and `partial-clone` (a blobless,
+  treeless or other partial clone; use a full clone).
+- GitHub: `port-failed`, `port-malformed` and `too-many-open`. Only the first
+  page of 100 open pull requests is read, so a listing of 100 or more cannot be
+  shown to be whole and is refused.
+- The markers: `foreign-marker`, `marker-malformed`, `unknown-digest` (a digest
+  this hub never stored) and `duplicate-digest`.
+- Git, over commits already in the clone: `tip-not-local` (the default branch's
+  tip is not in the clone), `tip-unreadable` (the tip's tree could not be read),
+  `object-unreadable` (a corrupt, missing or unreachable object of the pull
+  request's head, or a git call that timed out on it) and `status-failed` (any
+  other failure, including a git call that timed out, a git that cannot run or
+  an unexpected error; nothing is guessed from it).
+- The clone, the hub and the admission, which `verify` needs and which are
+  judged before the pull request's own fields: a refusal there, of either exit
+  code of `verify` (for example `remote-tip-mismatch`, when the local default
+  branch is not the remote's), is `indeterminate` here, because it is about the
+  clone and not about the pull request. `verify`'s own reasons for an
+  unreadable tree, such as `status-unreadable`, `symlink-ancestor` and
+  `lockfile-format-unsupported`, appear the same way.
+
+`proposed` does not check the head's ancestry to the base commit, and nothing in
+this unit does: it checks the head's tree and the paths that differ from the
+base, as `verify` does, so a head built on a newer default branch that reverts
+it can look the same. A reviewer reading the pull request's own diff on GitHub
+is what would notice. Nor can `status` tell that a pull request's body was
+edited after it was opened beyond what the marker and these checks show.
+
+`verify` now reads a path the set removes with a `lstat` alone. A file that is
+still there but that `verify` cannot read used to raise (exit 2, the usage
+line); it now reports `removal-present` (exit 1), which is the truth about a
+path that should be gone.
 
 ## Taking the registry snapshot
 
