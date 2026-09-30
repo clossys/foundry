@@ -173,7 +173,7 @@
   },
   "devDependencies": {
     "@tailwindcss/oxide": "^4.3.3",
-    "pnpm": "12.4.1",
+    "pnpm": "12.7.0",
     "typescript": "~6.0.0"
   }
 }
