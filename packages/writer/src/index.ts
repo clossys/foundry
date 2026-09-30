@@ -104,6 +104,29 @@ export type {
   SiteIdentityResolution,
 } from "./site-identity.js";
 
+// Messaging kit: a pitch and a boilerplate in three lengths each, as a
+// reserved copy kind (`messaging.pitch.*` / `messaging.boilerplate.*`),
+// resolved through `resolveCopyRef`. See messaging-kit.ts's top doc comment.
+export {
+  resolveMessagingKit,
+  MESSAGING_KIT_COPY_IDS,
+  MESSAGING_PITCH_ONE_LINER_COPY_ID,
+  MESSAGING_PITCH_ELEVATOR_COPY_ID,
+  MESSAGING_PITCH_PARAGRAPH_COPY_ID,
+  MESSAGING_BOILERPLATE_SHORT_COPY_ID,
+  MESSAGING_BOILERPLATE_MEDIUM_COPY_ID,
+  MESSAGING_BOILERPLATE_LONG_COPY_ID,
+} from "./messaging-kit.js";
+export type {
+  MessagingKit,
+  MessagingKitField,
+  MessagingKitIssue,
+  MessagingKitIssueReason,
+  MessagingKitOptions,
+  MessagingKitResolution,
+  MessagingKitResolutions,
+} from "./messaging-kit.js";
+
 export { readCopyRecord } from "./registry.js";
 export type { CopyRegistryReadIssue, CopyRegistryReadIssueReason, CopyRegistryReadResult } from "./registry.js";
 
