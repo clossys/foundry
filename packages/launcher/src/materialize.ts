@@ -180,7 +180,7 @@ function ensureParentDir(root: string, relPath: string): ApplyStepResult | null 
   return null;
 }
 
-function writeRegularFile(root: string, relPath: string, text: string, after: string): ApplyStepResult | null {
+export function writeRegularFile(root: string, relPath: string, text: string, after: string): ApplyStepResult | null {
   const parent = ensureParentDir(root, relPath);
   if (parent !== null) return parent;
   const path = join(root, relPath);
@@ -202,7 +202,7 @@ function writeRegularFile(root: string, relPath: string, text: string, after: st
   return null;
 }
 
-function writeSymlink(root: string, relPath: string, target: string, after: string): ApplyStepResult | null {
+export function writeSymlink(root: string, relPath: string, target: string, after: string): ApplyStepResult | null {
   const parent = ensureParentDir(root, relPath);
   if (parent !== null) return parent;
   const path = join(root, relPath);
@@ -217,7 +217,7 @@ function writeSymlink(root: string, relPath: string, target: string, after: stri
   return null;
 }
 
-function removePath(root: string, relPath: string): ApplyStepResult | null {
+export function removePath(root: string, relPath: string): ApplyStepResult | null {
   if (hasSymlinkAncestor(root, relPath)) return result(2, "indeterminate", "symlink-ancestor");
   const path = join(root, relPath);
   try {
@@ -283,13 +283,22 @@ function digestAtRef(root: string, ref: string, relPath: string, mode: WholeFile
  * item names. The set carries the file's digest only, so this is the one place the "one entry, nothing else" rule is proved.
  */
 function provesReleaseAgeEdit(root: string, set: RepositoryChangeSet, file: WholeFileChange, after: string): boolean {
+  return provesReleaseAgeEditWith((path) => gitShowUtf8(root, set.repository.baseCommit, path), set, file, after);
+}
+
+/**
+ * provesReleaseAgeEdit() over any reader of the base commit's own bytes: `readBase` returns the text of a path at the base
+ * commit, or null when there is none. The plan command's dry tree reads them from the clone's object database and never runs
+ * `git show`.
+ */
+export function provesReleaseAgeEditWith(readBase: (path: string) => string | null, set: RepositoryChangeSet, file: WholeFileChange, after: string): boolean {
   const item = set.items.find((entry) => entry.id === file.item);
   if (item === undefined || item.act !== "exempt-release-age") return true;
   if (item.path !== file.path) return false;
-  const before = gitShowUtf8(root, set.repository.baseCommit, file.path);
+  const before = readBase(file.path);
   // The digest the set names as `before` must be these very bytes, or the proof would be over another file.
   if ((before === null ? null : contentDigest(before)) !== file.before) return false;
-  const npmrc = gitShowUtf8(root, set.repository.baseCommit, ".npmrc");
+  const npmrc = readBase(".npmrc");
   return verifyReleaseAgeExemption({ surface: item.surface, before, after, npmrc }).verified;
 }
 
@@ -352,7 +361,7 @@ function baseLedgerTrust(
   return { ledger: trust.ledger, bytes: ledgerBytes.length === 0 ? null : ledgerBytes };
 }
 
-function refuseReservedSymlinks(root: string, paths: readonly string[]): ApplyStepResult | null {
+export function refuseReservedSymlinks(root: string, paths: readonly string[]): ApplyStepResult | null {
   for (const reserved of RESERVED_ROOTS) {
     try {
       if (lstatSync(join(root, reserved)).isSymbolicLink()) return result(2, "indeterminate", "symlink-ancestor");
@@ -396,7 +405,7 @@ function declareRootEntryText(root: string, set: RepositoryChangeSet, path: stri
   }
 }
 
-function resolveFileText(root: string, set: RepositoryChangeSet, file: WholeFileChange, texts: Readonly<Record<string, string>>): string | ApplyStepResult {
+export function resolveFileText(root: string, set: RepositoryChangeSet, file: WholeFileChange, texts: Readonly<Record<string, string>>): string | ApplyStepResult {
   if (texts[file.path] !== undefined) return texts[file.path]!;
   if (file.mode === "120000") {
     const role = discoveryLinkRole(file.path);
@@ -412,7 +421,7 @@ function resolveFileText(root: string, set: RepositoryChangeSet, file: WholeFile
   return result(2, "indeterminate", "file-text-unavailable");
 }
 
-function packagesForLockfile(set: RepositoryChangeSet, invariants: readonly PackageInvariant[]): LockfileInvariantPackage[] | null {
+export function packagesForLockfile(set: RepositoryChangeSet, invariants: readonly PackageInvariant[]): LockfileInvariantPackage[] | null {
   const packages: LockfileInvariantPackage[] = [];
   for (const row of invariants) {
     const item = set.items.find((entry) => entry.id === row.item);
@@ -423,7 +432,7 @@ function packagesForLockfile(set: RepositoryChangeSet, invariants: readonly Pack
   return packages;
 }
 
-function derivedLockfile(set: RepositoryChangeSet): { path: string; invariants: PackageInvariant[] } | null {
+export function derivedLockfile(set: RepositoryChangeSet): { path: string; invariants: PackageInvariant[] } | null {
   const derived = set.files.find((file) => "derived" in file && file.path !== LEDGER_PATH);
   if (derived === undefined || !("derived" in derived)) return null;
   const invariants = derived.invariants.filter((row): row is PackageInvariant => "name" in row);
@@ -634,7 +643,7 @@ function verifyPrepared(set: RepositoryChangeSet, pre: Preconditions): ApplyStep
   return result(0, "materialized");
 }
 
-function textsFromChangeSet(set: RepositoryChangeSet): Readonly<Record<string, string>> {
+export function textsFromChangeSet(set: RepositoryChangeSet): Readonly<Record<string, string>> {
   if (set.texts === undefined) return {};
   return Object.fromEntries(set.texts.map((row) => [row.path, row.text] as const));
 }

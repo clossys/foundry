@@ -816,12 +816,14 @@ in this package).
   repository that passed all nine pre-apply checks and is bound by an
   approval is `planned`, with that binding; nothing writes a planned bundle
   yet, because the checks that would earn it -- the installed-state ledger
-  and package provenance -- are not run here. The bundle reports the
-  planner's own dry-materialization check (V6), which covers the file
+  and package provenance -- are not all earned here. The planner reports its
+  own dry-materialization check (V6), which covers the file
   layout only: the part of V6 that regenerates the lockfile and checks its
-  invariants is not run, so a set that changes a lockfile carries V6
+  invariants is not run by the planner, so a set that changes a lockfile carries V6
   `indeterminate` with rule `lockfile-not-run`, and V6 is `satisfied` only
-  for a set with no lockfile change; a release-age path refusal adds V6
+  for a set with no lockfile change; the `plan` command replaces that entry
+  by running the rest of V6, and V9, in a temporary tree (see the plan
+  command below). A release-age path refusal adds V6
   `indeterminate` with its reason as the rule. Compare-and-swap outcomes are reported under V8:
   `unowned-existing`, `client-edited`, `deleted` and `removal-unbuilt` each
   give V8 `indeterminate`, and a set with none of them gives V8 `satisfied`. Two V3 checks
@@ -838,8 +840,9 @@ template bytes come from the renderer alone, the Starter pin is one the
 templates support, and materialization and verification both prove that the
 release-age file is the base's bytes plus exactly the one scope entry. What it
 does not handle: root entries in a setup set (the apply set that follows is
-refused by admission because its items differ), lockfile regeneration, the
-provenance check (V9), and a later change of the pin.
+refused by admission because its items differ), lockfile regeneration and the
+provenance check (V9), which the `plan` command runs on a temporary tree, and
+a later change of the pin.
 
 Nothing here writes to a product repository, creates a branch or opens a
 pull request; the only files this part of the package writes are the hub's
@@ -1044,13 +1047,15 @@ repository is observed from its clone, a sibling of the hub, by
 an approval or a binding, and the command computes and records none.
 
 It then stores the change sets and the bundle under `clossys/.state/apply/`,
-the only place it writes, and prints the sheet. Running it again over unchanged
-inputs and an unchanged clock gives the same bytes. A rerun after the clock or
-the committed authorization changed keeps the same bundle digest, which covers
-the plan digest and the change-set digests only, and stores the newest
-computation under it: the one bundle file is replaced atomically, and the sheet
-is printed as before. Change sets stay append-only. Earlier computations under a
-digest are not recorded.
+the only place it writes, and prints the sheet. Over unchanged inputs and an
+unchanged clock the sets, their digests and the bundle digest are the same on
+every run; the V6 and V9 checks stored with them come from the package manager,
+the registry and the Integrator, and the digest does not cover them. A rerun
+after the clock, the committed authorization or the result of a check changed
+keeps the same bundle digest, which covers the plan digest and the change-set
+digests only, and stores the newest computation under it: the one bundle file
+is replaced atomically, and the sheet is printed as before. Change sets stay
+append-only. Earlier computations under a digest are not recorded.
 
 ```text
 Approve subjectDigest: sha256:<the bundle digest>
@@ -1080,9 +1085,27 @@ Exit `0` when every repository is `satisfied`; `1` when any is `violated`;
 `2` when an input could not be read, the planner refused, or a repository is
 `indeterminate`. A bundle that was computed is stored and printed whatever the
 exit. A Starter pin or a package install changes a lockfile, whose
-regeneration (V6) the planner does not run, so a repository whose set changes
-one is `indeterminate` and the command exits `2`; it still stores and prints
-the sheet. Supersede, the registry check (V9) and lockfile regeneration are
+regeneration (V6) the planner does not run, so the command dry-materializes
+each such repository before it prints the sheet. It reads the clone at the
+set's base commit through git's object database (`ls-tree` and `cat-file`; no
+checkout, worktree, index or ref is written), writes that tree and the set's
+changes into a directory of its own under the operating system's temporary
+directory, regenerates the lockfile there with the runner `materialize` uses
+(V6), and, only when that passes, runs the hub's provenance check (V9) on the
+same tree. The directory is removed before the command returns, whatever
+happened. A submodule, a link that could reach outside the tree, a link or file
+whose name a filesystem that folds case or normalization would read as a parent
+directory of another entry, a `..` or `.git` path segment or a tree over the
+size cap gives V6 `indeterminate` and launches nothing. A base file whose bytes
+differ from what the set names as its `before` gives V6 `violated`
+(`base-mismatch`), and set text whose bytes differ from its digest gives V6
+`indeterminate` (`change-set-invalid`). A failure of the dry tree gives V6
+`indeterminate` with rule `dry-tree-failed` for that repository only, and V9 is
+then `indeterminate` with rule `lockfile-not-regenerated`. Only V6 and V9 change: the sets, their
+digests and the bundle digest do not. A repository that has a refused path or
+key, or another check that is not satisfied, is not dry-materialized. No rule
+carries tool output, a path or an id. The tool version of pnpm and Yarn is not
+supplied, so a repository that uses one stays `indeterminate`. Supersede is
 not part of this command.
 
 ### Materializing and verifying a change set
@@ -1259,8 +1282,8 @@ which this step does not do.
 
 `checkSetProvenance({ tree, hubRoot, items }, ports?)`
 returns, for one change set, its V9 `ApplyCheck` entries
-(`Promise<readonly ApplyCheck[]>`). It is exported but not yet run by `plan`,
-`materialize` or `verify`; a later change wires it in.
+(`Promise<readonly ApplyCheck[]>`). `plan` runs it on its temporary tree,
+after the lockfile step passes; `materialize` and `verify` do not yet run it.
 
 - **Engine.** It runs the hub's own `node_modules/.bin/integrator-provenance-check --cwd <tree>`
   (`PROVENANCE_CHECK_BIN`), never through `npx` and never looked up on `PATH`. If
