@@ -368,7 +368,9 @@ export function checkBrandFactsDrift(
         }
       }
 
-      // 3. Jurisdiction, in prose.
+      // 3. Jurisdiction, in prose. The cap counts differing places only: a
+      // place that matches the record never spends it, so a line that says
+      // the right jurisdiction many times still reports the next wrong one.
       const places: string[] = [];
       const MAX_PLACES_PER_LINE = 16;
       const collectPlace = (re: RegExp): void => {
@@ -376,7 +378,9 @@ export function checkBrandFactsDrift(
           if (places.length >= MAX_PLACES_PER_LINE) break;
           const rest = prose.slice((m.index ?? 0) + m[0].length).replace(PLACE_PREFIX_RE, "");
           const place = PLACE_RE.exec(rest.slice(0, 256))?.[0];
-          if (place !== undefined && !NOT_PLACES.has(place.toLowerCase())) places.push(place);
+          if (place === undefined || NOT_PLACES.has(place.toLowerCase())) continue;
+          if (normalizePlace(place) === normalizePlace(jurisdiction)) continue;
+          places.push(place);
         }
       };
       if (!thirdPartyOnly) collectPlace(JURISDICTION_FORMED_RE);
