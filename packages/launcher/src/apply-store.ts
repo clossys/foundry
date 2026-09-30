@@ -31,6 +31,9 @@
 // for a stored set as that set's `pullRequest.bodySha256`, the one member the
 // digest excludes, replacing that one file atomically. It never rebinds: a set
 // already bound to another hash is refused, and the same hash is a no-op.
+// Binds of one set are serialised by a per-digest lock file, taken exclusively
+// and never waited for or broken (issue #1738), and a set that changed or was
+// removed while it was being bound is refused, never replaced or recreated.
 // A stored file's recomputed digest proves its integrity, not
 // its provenance: anyone who can write the hub directory can add a set that
 // verifies, the same way anyone who can write a git object store can add a
@@ -242,7 +245,10 @@ function writeAppendOnly(hubDirectory: string, storeRel: string, fileName: strin
 /**
  * Stores `bytes` under `fileName` in `hubDirectory`/`storeRel`, replacing
  * whatever regular file already holds that one name (unless `refuseOver` says
- * the file as it is now must not be replaced, which throws its message): the bytes go to a
+ * the file as it is now must not be replaced, which throws its message; with
+ * `refuseOver.whenMissing` a name that holds no file is refused the same way
+ * instead of being created, for a caller that read the file first and must not
+ * recreate one removed since): the bytes go to a
  * temporary file in the same real directory (created exclusively, flushed to
  * disk), which is then renamed over the final name, so a reader sees the old
  * file or the new one and never a partial file, and an interrupted write
@@ -253,7 +259,7 @@ function writeAppendOnly(hubDirectory: string, storeRel: string, fileName: strin
  * `ensureRealDirectory()`). The temporary file is always removed. Returns the
  * final path.
  */
-function writeReplacing(hubDirectory: string, storeRel: string, fileName: string, bytes: Buffer, refuseOver?: { readonly when: (existing: Buffer) => boolean; readonly message: string }): string {
+function writeReplacing(hubDirectory: string, storeRel: string, fileName: string, bytes: Buffer, refuseOver?: { readonly when: (existing: Buffer) => boolean; readonly message: string; readonly whenMissing?: boolean }): string {
   assertHubDirectory(hubDirectory);
   const directory = join(hubDirectory, storeRel);
   ensureRealDirectory(hubDirectory, directory, "write");
@@ -265,6 +271,7 @@ function writeReplacing(hubDirectory: string, storeRel: string, fileName: string
   } catch (cause) {
     if (cause instanceof TypeError) throw cause;
     if ((cause as NodeJS.ErrnoException).code !== "ENOENT") throw wrapFsError("hub store write", cause);
+    if (refuseOver?.whenMissing === true) throw new TypeError(refuseOver.message);
     occupied = false;
   }
   if (occupied) {
@@ -392,6 +399,15 @@ export class BodyBoundError extends TypeError {
  * a regular file, or when a store directory segment is a symbolic link. Every
  * error names no path, digest or hash, and no other file is touched. Returns
  * the file's path.
+ *
+ * Two binds of one set are serialised by a per-digest lock (issue #1738): a
+ * dot-prefixed file in the change-sets directory, created exclusively before
+ * the set is first read and removed once this call is done, only by the call
+ * that created it. A bind that finds the lock already held throws a TypeError
+ * and changes nothing, so of two binds with different hashes exactly one
+ * renames; it never waits and never breaks a lock. A crash mid-bind leaves the
+ * lock, and later binds of that set then refuse (fails closed). A set removed
+ * after this call read it is refused rather than written again already bound.
  */
 export function bindChangeSetBody(hubDirectory: string, digest: string, bodySha256: string): string {
   assertDigestShape(digest);
@@ -402,6 +418,32 @@ export function bindChangeSetBody(hubDirectory: string, digest: string, bodySha2
   if (!ensureRealDirectory(hubDirectory, directory, "read")) throw absent();
   const fileName = digestFileName(digest);
   const path = join(directory, fileName);
+  const lockPath = join(directory, `.${fileName}.bind.lock`);
+  let lockDescriptor: number;
+  try {
+    lockDescriptor = openSync(lockPath, "wx", 0o600);
+  } catch (cause) {
+    if ((cause as NodeJS.ErrnoException).code === "EEXIST") throw new TypeError("this stored change set is being bound by another call, or an earlier bind of it did not finish");
+    throw wrapFsError("hub store write", cause);
+  }
+  try {
+    try {
+      closeSync(lockDescriptor);
+    } catch (cause) {
+      throw wrapFsError("hub store write", cause);
+    }
+    return bindLocked(hubDirectory, digest, bodySha256, directory, fileName, path, absent);
+  } finally {
+    try {
+      rmSync(lockPath, { force: true });
+    } catch {
+      // Best-effort; a lock left behind makes later binds of this set refuse, which fails closed.
+    }
+  }
+}
+
+/** The body of bindChangeSetBody once the per-digest lock is held: read, verify, and replace the one file. */
+function bindLocked(hubDirectory: string, digest: string, bodySha256: string, directory: string, fileName: string, path: string, absent: () => TypeError): string {
   let info;
   try {
     info = lstatSync(path);
@@ -434,6 +476,7 @@ export function bindChangeSetBody(hubDirectory: string, digest: string, bodySha2
   return writeReplacing(hubDirectory, CHANGE_SET_STORE_REL, fileName, serializeStoredDocument(next), {
     when: (now) => !now.equals(existing),
     message: "the stored change set changed while its body was being bound",
+    whenMissing: true,
   });
 }
 
