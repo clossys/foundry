@@ -1,6 +1,7 @@
 export { mapClerkEvent, resolveClerkMembershipLocalIds } from "./map.js";
 export { verifyAndMapClerkWebhook } from "./verify-and-map.js";
-export { ClerkWebhookSignatureError, verifyClerkWebhook } from "./verify.js";
+export { assertClerkWebhookSigningSecret, ClerkWebhookSignatureError, verifyClerkWebhook } from "./verify.js";
+export type { ClerkWebhookSignatureErrorCode } from "./verify.js";
 export type {
   ClerkEventMapping, ClerkEventMappingOptions, ClerkLifecycleEventName, ClerkLifecycleType, ClerkLocalIdResolution,
   ClerkLocalIdResolver, ClerkMembershipEvent, ClerkNormalizedEvent, ClerkOrganizationEvent, ClerkResolvedMembershipEvent,
