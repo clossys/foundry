@@ -1,0 +1,155 @@
+import { describe, expect, it } from "vitest";
+import { ApprovalSheetError, renderApprovalSheet } from "./approval-sheet.js";
+import type { ApprovalSheetInput, ApprovalSheetRefusal } from "./approval-sheet.js";
+import { bundleDigest, changeSetDigest } from "./change-set-digest.js";
+import type { ApplyBundle, RepositoryChangeSet } from "./change-set-contract.js";
+import { planApplyBundle } from "./plan-bundle.js";
+import { clone, setupInputs, setupObservation, SITE_ID } from "./plan-bundle-setup-fixture.js";
+import type { Loose } from "./plan-bundle-setup-fixture.js";
+
+/** A bundle and its one change set, planned from the setup fixture: a real planner result, not a hand-built one. */
+function planned(): ApprovalSheetInput {
+  const { bundle, changeSets } = planApplyBundle(setupInputs(setupObservation()));
+  return { bundle, changeSets };
+}
+
+/** `input` with `edit` applied to its (single) change set, and every digest recomputed so only the edited value is wrong. */
+function edited(input: ApprovalSheetInput, edit: (set: Loose) => void): ApprovalSheetInput {
+  const set = clone(input.changeSets[0]!) as unknown as Loose;
+  edit(set);
+  set.changeSetDigest = changeSetDigest(set);
+  const short = set.changeSetDigest.slice("sha256:".length, "sha256:".length + 12);
+  set.branch = `clossys/apply-${short}`;
+  set.pullRequest = { ...set.pullRequest, title: `Clossys: apply plan ${short}` };
+  const bundle = clone(input.bundle) as unknown as Loose;
+  const entry = bundle.repositories.find((candidate: Loose) => candidate.id === set.repository.id);
+  entry.changeSet = set.changeSetDigest;
+  bundle.bundleDigest = bundleDigest(bundle.plan.digest, [{ id: set.repository.id, changeSetDigest: set.changeSetDigest }]);
+  set.bundle = bundle.bundleDigest;
+  return { bundle: bundle as ApplyBundle, changeSets: [set as RepositoryChangeSet] };
+}
+
+function refusal(input: ApprovalSheetInput): ApprovalSheetRefusal {
+  try {
+    renderApprovalSheet(input);
+  } catch (error) {
+    if (error instanceof ApprovalSheetError) return error.token;
+    throw error;
+  }
+  throw new Error("the sheet was rendered");
+}
+
+describe("renderApprovalSheet", () => {
+  it("renders the golden sheet: the bundle's ids and digests, one row per item, then what was held back", () => {
+    expect(renderApprovalSheet(planned())).toBe(GOLDEN);
+  });
+
+  it("is deterministic, LF-terminated, and free of anything but printable ASCII and newlines", () => {
+    const first = renderApprovalSheet(planned());
+    expect(renderApprovalSheet(planned())).toBe(first);
+    expect(first.endsWith("\n")).toBe(true);
+    expect(first.endsWith("\n\n")).toBe(false);
+    expect(first).toMatch(/^[\x20-\x7e\n]+$/u);
+  });
+
+  it("asks for approval of exactly the bundle digest, and computes no approval", () => {
+    const { bundle } = planned();
+    const sheet = renderApprovalSheet(planned());
+    expect(sheet.split("\n").filter((line) => line.startsWith("Approve "))).toEqual([`Approve subjectDigest: ${bundle.bundleDigest}`]);
+    expect(sheet).not.toMatch(/approved|decision/iu);
+  });
+
+  it("orders the RFC 12.7 columns and prints the package as name@version and every other act as a path count", () => {
+    const rows = renderApprovalSheet(planned())
+      .split("\n")
+      .filter((line) => line.startsWith("| "));
+    expect(rows[0]).toBe("| Repository | Kind | Item | Change | Digest |");
+    expect(rows[1]).toBe("| --- | --- | --- | --- | --- |");
+    const cells = rows.slice(2).map((row) => row.split(" | ").map((cell) => cell.replace(/^\| | \|$/gu, "")));
+    expect(cells.every((row) => row.length === 5 && /^[0-9a-f]{12}$/u.test(row[4]!))).toBe(true);
+    expect(cells.find((row) => row[1] === "pin-starter")![3]).toMatch(/^@clossys\/starter@\d+\.\d+\.\d+$/u);
+    expect(cells.filter((row) => row[1] !== "pin-starter" && row[1] !== "install").every((row) => /^\d+ paths?$/u.test(row[3]!))).toBe(true);
+  });
+
+  it("carries no brief or plan prose, no stored text and no file contents", () => {
+    const input = planned();
+    const sheet = renderApprovalSheet(input);
+    for (const set of input.changeSets) {
+      for (const text of Object.values(set.texts ?? {})) expect(sheet).not.toContain(String(text).slice(0, 24));
+      for (const file of set.files) if ("after" in file && typeof file.after === "string") expect(sheet).not.toContain(file.after);
+    }
+    expect(sheet).not.toContain("Strategist");
+  });
+
+  it("lists a skipped repository by id and reason token, and prints a bundle with no change set", () => {
+    const bundle = planApplyBundle(setupInputs(null, undefined, { repositories: [{ id: SITE_ID, skipped: "not-in-inventory", verdict: "indeterminate" }] })).bundle;
+    const sheet = renderApprovalSheet({ bundle, changeSets: [] });
+    expect(sheet).toContain(`\nSkipped:\n- ${SITE_ID} indeterminate not-in-inventory\n`);
+    expect(sheet.split("\n").filter((line) => line.startsWith("| "))).toHaveLength(2);
+  });
+
+  describe("refuses, by a fixed token that echoes nothing", () => {
+    it("a bundle that does not validate", () => {
+      const input = planned();
+      const bundle = { ...clone(input.bundle), schemaVersion: 2 } as unknown as ApplyBundle;
+      expect(refusal({ ...input, bundle })).toBe("bundle-invalid");
+    });
+
+    it("a change set that does not validate", () => {
+      const input = planned();
+      const set = { ...clone(input.changeSets[0]!), kind: "other" } as unknown as RepositoryChangeSet;
+      expect(refusal({ ...input, changeSets: [set] })).toBe("change-set-invalid");
+    });
+
+    it("a change set whose digest does not recompute (the change-set validator recomputes it)", () => {
+      const input = planned();
+      const set = clone(input.changeSets[0]!) as unknown as Loose;
+      set.files[0].path = "changed-after-digest.txt";
+      expect(refusal({ ...input, changeSets: [set as RepositoryChangeSet] })).toBe("change-set-invalid");
+    });
+
+    it("a bundle whose digest does not recompute (the bundle validator recomputes it)", () => {
+      const input = planned();
+      const bundle = clone(input.bundle) as unknown as Loose;
+      bundle.bundleDigest = `sha256:${"0".repeat(64)}`;
+      const set = { ...clone(input.changeSets[0]!), bundle: bundle.bundleDigest } as RepositoryChangeSet;
+      expect(refusal({ bundle: bundle as ApplyBundle, changeSets: [set] })).toBe("bundle-invalid");
+    });
+
+    it("sets that are not exactly the bundle's", () => {
+      const input = planned();
+      expect(refusal({ ...input, changeSets: [] })).toBe("set-mismatch");
+      expect(refusal({ ...input, changeSets: [input.changeSets[0]!, input.changeSets[0]!] })).toBe("set-mismatch");
+      const other = { ...clone(input.changeSets[0]!), bundle: `sha256:${"1".repeat(64)}` } as RepositoryChangeSet;
+      expect(refusal({ ...input, changeSets: [other] })).toBe("set-mismatch");
+    });
+  });
+});
+
+const PLAN_DIGEST = "sha256:6395298da2ed12341ef1e86139dce75ecf9ee7a2402290627e6d46d1b6412a8d";
+const BUNDLE_DIGEST = "sha256:cd0650c662442c21a67a508a7570e32fcb62c502f8dc863588a7c5d09227e2b5";
+
+const GOLDEN = `Clossys apply plan: approval sheet
+Mode: report
+Plan digest: ${PLAN_DIGEST}
+Bundle digest: ${BUNDLE_DIGEST}
+Authorization: plan ${PLAN_DIGEST} expires 2999-01-01T00:00:00Z
+Approve subjectDigest: ${BUNDLE_DIGEST}
+
+| Repository | Kind | Item | Change | Digest |
+| --- | --- | --- | --- | --- |
+| example-owner/site | write-record | brief | 1 path | 3d2b4f88280d |
+| example-owner/site | add-caller-workflow | caller-workflow | 3 paths | 3d2b4f88280d |
+| example-owner/site | add-ci-template | ci-template | 1 path | 3d2b4f88280d |
+| example-owner/site | pin-starter | example-owner/site:@clossys/starter | @clossys/starter@0.2.0 | 3d2b4f88280d |
+| example-owner/site | write-ledger | ledger | 1 path | 3d2b4f88280d |
+| example-owner/site | add-path-scope-job | path-scope-job | 1 path | 3d2b4f88280d |
+| example-owner/site | compose-skills | skills | 10 paths | 3d2b4f88280d |
+| example-owner/site | write-starter-request | starter-request | 1 path | 3d2b4f88280d |
+
+Deferred:
+- example-owner/site example-owner/site:@clossys/writer after-setup
+
+Checks not satisfied:
+- example-owner/site V6 indeterminate lockfile-not-run
+`;

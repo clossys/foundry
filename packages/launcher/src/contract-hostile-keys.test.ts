@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { main, snapshotMain } from "./apply-plan-cli.js";
 import { main as cliMain } from "./cli.js";
+import { planMain } from "./plan-command.js";
 import { readContractDocument } from "./generated/contract-schema.generated.js";
 import { PACKAGE_SCOPE } from "./generated/package-scope.generated.js";
 import { createNodeHost } from "./host.js";
@@ -496,6 +497,42 @@ describe("no key text through launcher-apply-plan", () => {
     ]);
     for (const [name, key] of Object.entries(HOSTILE)) {
       const hostile = applyRuns(key);
+      expect(hostile, name).toEqual(baseline);
+      expect(leaks(key, hostile, baseline), name).toEqual([]);
+    }
+  });
+
+  it("the plan subcommand refuses by a fixed token that names no key", async () => {
+    mkdirSync(join(root, "clossys", "advisor"), { recursive: true });
+    const runs = async (key: string) => {
+      const out: { name: string; exit: number; err: string[]; out: string[] }[] = [];
+      for (const [name, [planText, briefText]] of Object.entries(documents(key))) {
+        writeFileSync(join(root, "clossys", "advisor", "plan.json"), planText!);
+        writeFileSync(join(root, "clossys", "advisor", "brief.json"), briefText!);
+        const lines: string[] = [];
+        const stdout: string[] = [];
+        const exit = await planMain([], {
+          cwd: root,
+          now: () => new Date("2026-09-25T00:00:00Z"),
+          producerVersion: "0.0.0",
+          ports: { nodeId: () => "R_x", visibility: () => "private" },
+          stdout: (text) => void stdout.push(text),
+          stderr: (line) => void lines.push(line.split(root).join("<root>")),
+        });
+        out.push({ name, exit, err: lines, out: stdout });
+      }
+      return out;
+    };
+    const baseline = await runs(HARMLESS);
+    expect(baseline).toEqual([
+      { name: "undeclared in the plan", exit: 2, err: ["launcher-apply-plan plan: plan-invalid; nothing was stored"], out: [] },
+      { name: "undeclared in the brief", exit: 2, err: ["launcher-apply-plan plan: brief-invalid; nothing was stored"], out: [] },
+      { name: "repeated in the plan", exit: 2, err: ["launcher-apply-plan plan: plan-unreadable; nothing was stored"], out: [] },
+      { name: "repeated inside a hostile key's value in the brief", exit: 2, err: ["launcher-apply-plan plan: brief-unreadable; nothing was stored"], out: [] },
+      { name: "a syntax error inside a hostile key's value", exit: 2, err: ["launcher-apply-plan plan: plan-unreadable; nothing was stored"], out: [] },
+    ]);
+    for (const [name, key] of Object.entries(HOSTILE)) {
+      const hostile = await runs(key);
       expect(hostile, name).toEqual(baseline);
       expect(leaks(key, hostile, baseline), name).toEqual([]);
     }

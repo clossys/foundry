@@ -333,6 +333,7 @@ launcher-check --help
 launcher-check --input observation.json
 launcher-doctor
 launcher-apply-plan --plan plan.json --brief brief.json --repo ./product-checkout
+launcher-apply-plan plan
 launcher-apply-plan materialize --repo ./site-checkout
 launcher-apply-plan verify --repo ./site-checkout
 launcher-apply-plan snapshot --request package-request.json
@@ -1016,6 +1017,60 @@ here reads a ledger from a repository: the caller hands its bytes in.
 - Each ledger is read from its bytes and must be exactly the bytes the
   contract renders for it: a repeated key, a byte order mark or any other
   spelling is refused (`bytes`), never read as an unchanged ledger.
+
+### Planning and the approval sheet
+
+`launcher-apply-plan plan` runs in the hub and takes no option beyond `--help`.
+It computes the apply bundle for the plan committed there and prints the
+approval sheet a client reads before approving it (RFC section 12.7). It
+reads the hub only: `clossys/advisor/plan.json` and `brief.json`, the composed
+skill of each staffed role and of the Advisor voice, the stored change sets,
+the inventory (a staffed repository the inventory does not list is skipped as
+`not-in-inventory`), the exact `@clossys/advisor` and `@clossys/integrator`
+versions in `package.json` with their integrity from the lockfile (a range, or
+a version the lockfile does not hold, is refused), and the execution
+authorization committed in `clossys/advisor/assessment-input.json`, read as
+the blob at `HEAD` and never from the working tree. No blob, or no
+`engagement.executionAuthorization`, is no authorization; one that is not an
+object, or lacks a string `planDigest` or `expiresAt`, is refused. Each staffed
+repository is observed from its clone, a sibling of the hub, by
+`observeRepository()`, and `planApplyBundle()` does the rest. No option carries
+an approval or a binding, and the command computes and records none.
+
+It then stores the change sets and the bundle under `clossys/.state/apply/`,
+the only place it writes, and prints the sheet. Running it again on the same
+hub and clones prints the same bytes and stores nothing new.
+
+```text
+Approve subjectDigest: sha256:<the bundle digest>
+
+| Repository | Kind | Item | Change | Digest |
+| --- | --- | --- | --- | --- |
+| example-owner/site | pin-starter | example-owner/site:@clossys/starter | @clossys/starter@0.2.0 | 3d2b4f88280d |
+| example-owner/site | compose-skills | skills | 10 paths | 3d2b4f88280d |
+```
+
+The sheet is ids and digests only: the bundle and plan digests, the mode, the
+authorization, one row for each item of each change set (`Change` is
+`name@version` for a package act, else a path count; `Digest` is the first 12
+hex digits of the set's digest), and then each deferred, refused or skipped
+entry by id or path and reason token. It carries no brief or plan prose, no
+stored text, no key value and no file contents. `renderApprovalSheet()` in
+this package builds it as a pure function of the bundle and its change sets,
+and refuses, by a fixed token that names no value, a set or bundle that does
+not validate, sets that are not exactly the bundle's, and any printed value
+that fails a strict pattern or holds `<`, `>`, a backtick, `|`, a carriage
+return or a line feed. Every refusal of the command is likewise a fixed token,
+printed as `launcher-apply-plan plan: <token>; nothing was stored`.
+
+Exit `0` when every repository is `satisfied`; `1` when any is `violated`;
+`2` when an input could not be read, the planner refused, or a repository is
+`indeterminate`. A bundle that was computed is stored and printed whatever the
+exit. A Starter pin or a package install changes a lockfile, whose
+regeneration (V6) the planner does not run, so a repository whose set changes
+one is `indeterminate` and the command exits `2`; it still stores and prints
+the sheet. Supersede, the registry check (V9) and lockfile regeneration are
+not part of this command.
 
 ### Materializing and verifying a change set
 
