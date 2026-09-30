@@ -230,7 +230,7 @@ export function removePath(root: string, relPath: string): ApplyStepResult | nul
   return null;
 }
 
-function resolveCloneRoot(clone: string): { root: string } | ApplyStepResult {
+export function resolveCloneRoot(clone: string): { root: string } | ApplyStepResult {
   try {
     const stat = lstatSync(clone);
     if (!stat.isDirectory() || stat.isSymbolicLink()) return result(2, "indeterminate", "missing-clone");
@@ -329,7 +329,7 @@ function persistChangeSet(hub: string, set: RepositoryChangeSet): ApplyStepResul
   return null;
 }
 
-function checkChangeSetShape(set: RepositoryChangeSet): ApplyStepResult | null {
+export function checkChangeSetShape(set: RepositoryChangeSet): ApplyStepResult | null {
   if (!BRANCH_SHAPE.test(set.branch) || !COMMIT_SHAPE.test(set.repository.baseCommit)) return result(2, "indeterminate", "change-set-invalid");
   if (!validateRepositoryChangeSet(set).valid) return result(2, "indeterminate", "change-set-invalid");
   return null;
@@ -467,9 +467,63 @@ function diffPaths(root: string, baseCommit: string): GitPathList {
   };
 }
 
-function symlinkBeforeRead(root: string, relPaths: readonly string[]): ApplyStepResult | null {
+/** What one path is in a tree: a link and where it points, a regular file (and whether it is executable), or anything else. */
+export type TreeEntry =
+  | { readonly kind: "symlink"; readonly target: string }
+  | { readonly kind: "file"; readonly executable: boolean }
+  | { readonly kind: "other" };
+
+/**
+ * Everything verifyPrepared reads about the tree it judges, so the same checks run over the working tree (verify) or over one
+ * commit's tree with no checkout (status). Nothing here writes.
+ */
+export interface TreeReader {
+  /** Whether the tree is on `branch`: a working tree checks its HEAD; a commit reader is told its ref by its caller and answers true. */
+  onBranch(branch: string): boolean;
+  /** The paths that differ from `baseCommit`. */
+  changedPaths(baseCommit: string): GitPathList;
+  /** The paths git reports as modified or untracked; a commit has none. */
+  dirtyPaths(): GitPathList;
+  /** Whether a directory above `relPath` is a link. */
+  hasSymlinkAncestor(relPath: string): boolean;
+  /** What `relPath` is, or null when there is nothing there; throws when it cannot be told. */
+  entry(relPath: string): TreeEntry | null;
+  /** The bytes at `relPath`; throws when it cannot be read. */
+  bytes(relPath: string): Buffer;
+}
+
+export type { GitPathList };
+
+/** The reader verify uses: the clone's working tree and its git status. */
+export function workingTreeReader(root: string): TreeReader {
+  return {
+    onBranch(branch) {
+      const head = git(root, ["rev-parse", "--abbrev-ref", "HEAD"]);
+      return head.status === 0 && head.stdout.trim() === branch;
+    },
+    changedPaths: (baseCommit) => diffPaths(root, baseCommit),
+    dirtyPaths: () => porcelainPaths(root),
+    hasSymlinkAncestor: (relPath) => hasSymlinkAncestor(root, relPath),
+    entry(relPath) {
+      const path = join(root, relPath);
+      let stat;
+      try {
+        stat = lstatSync(path);
+      } catch (cause) {
+        if ((cause as NodeJS.ErrnoException).code === "ENOENT") return null;
+        throw cause;
+      }
+      if (stat.isSymbolicLink()) return { kind: "symlink", target: readlinkSync(path) };
+      if (stat.isFile()) return { kind: "file", executable: (stat.mode & 0o111) !== 0 };
+      return { kind: "other" };
+    },
+    bytes: (relPath) => readFileSync(join(root, relPath)),
+  };
+}
+
+function symlinkBeforeRead(reader: TreeReader, relPaths: readonly string[]): ApplyStepResult | null {
   for (const relPath of relPaths) {
-    if (hasSymlinkAncestor(root, relPath)) return result(2, "indeterminate", "symlink-ancestor");
+    if (reader.hasSymlinkAncestor(relPath)) return result(2, "indeterminate", "symlink-ancestor");
   }
   return null;
 }
@@ -483,7 +537,7 @@ function expectedLedgerBytes(
   return Buffer.from(renderInstalledLedger(previous, set, binding, planPackages), "utf8");
 }
 
-interface Preconditions {
+export interface Preconditions {
   readonly root: string;
   readonly previousLedger: InstalledLedger | null;
   /** The binding admission computed from the hub: the only one a ledger may record. */
@@ -492,7 +546,7 @@ interface Preconditions {
   readonly planPackages: readonly PlanPackageIdentity[];
 }
 
-async function runPreconditions(
+export async function runPreconditions(
   clone: string,
   hub: string,
   set: RepositoryChangeSet,
@@ -540,23 +594,25 @@ export async function verifyRepository(input: VerifyInput): Promise<ApplyStepRes
   return verifyPrepared(input.set, pre);
 }
 
-/** The body of verify, over preconditions (and so an admission) that were already computed. */
-function verifyPrepared(set: RepositoryChangeSet, pre: Preconditions): ApplyStepResult {
+/**
+ * The body of verify, over preconditions (and so an admission) that were already computed, and over a reader of the tree it
+ * judges: the clone's working tree by default (verify), or one commit's tree (status).
+ */
+export function verifyPrepared(set: RepositoryChangeSet, pre: Preconditions, reader: TreeReader = workingTreeReader(pre.root)): ApplyStepResult {
   const { root, previousLedger, binding, planPackages } = pre;
   const allowed = (path: string) => set.pathAllowList.some((pattern) => matchesPathPattern(path, pattern));
   const declared = declaredPaths(set);
 
-  const head = git(root, ["rev-parse", "--abbrev-ref", "HEAD"]);
-  if (head.status !== 0 || head.stdout.trim() !== set.branch) return result(1, "violated", "diverged");
+  if (!reader.onBranch(set.branch)) return result(1, "violated", "diverged");
 
-  const porcelainEarly = porcelainPaths(root);
+  const porcelainEarly = reader.dirtyPaths();
   if (!porcelainEarly.ok) return result(2, "indeterminate", "status-unreadable");
-  const diffEarly = diffPaths(root, set.repository.baseCommit);
+  const diffEarly = reader.changedPaths(set.repository.baseCommit);
   if (!diffEarly.ok) return result(2, "indeterminate", "status-unreadable");
 
   const lockEarly = derivedLockfile(set);
   const readPaths = [...declared, ...(lockEarly !== null ? [lockEarly.path] : [])];
-  const symlink = symlinkBeforeRead(root, readPaths);
+  const symlink = symlinkBeforeRead(reader, readPaths);
   if (symlink !== null) return symlink;
 
   for (const path of declared) {
@@ -565,31 +621,32 @@ function verifyPrepared(set: RepositoryChangeSet, pre: Preconditions): ApplyStep
 
   for (const file of set.files.filter(isWhole)) {
     if (file.after !== null) {
-      const path = join(root, file.path);
       try {
-        const stat = lstatSync(path);
+        const entry = reader.entry(file.path);
+        if (entry === null) return result(1, "violated", "content-mismatch");
         if (file.mode === "120000") {
-          if (!stat.isSymbolicLink()) return result(1, "violated", "mode-mismatch");
-          if (contentDigest(readlinkSync(path)) !== file.after) return result(1, "violated", "content-mismatch");
+          if (entry.kind !== "symlink") return result(1, "violated", "mode-mismatch");
+          if (contentDigest(entry.target) !== file.after) return result(1, "violated", "content-mismatch");
         } else {
-          if (!stat.isFile() || stat.isSymbolicLink()) return result(1, "violated", "mode-mismatch");
-          const mode = stat.mode & 0o777;
-          if ((mode & 0o111) !== 0) return result(1, "violated", "mode-mismatch");
-          const onDisk = readFileSync(path, "utf8");
+          if (entry.kind !== "file") return result(1, "violated", "mode-mismatch");
+          if (entry.executable) return result(1, "violated", "mode-mismatch");
+          const onDisk = reader.bytes(file.path).toString("utf8");
           if (contentDigest(onDisk) !== file.after) return result(1, "violated", "content-mismatch");
           if (!provesReleaseAgeEdit(root, set, file, onDisk)) return result(1, "violated", "content-mismatch");
         }
       } catch {
         return result(1, "violated", "content-mismatch");
       }
-    } else if (digestAtPath(root, file.path) !== null) return result(1, "violated", "removal-present");
+    } else {
+      const present = reader.entry(file.path);
+      if (present !== null && present.kind !== "other") return result(1, "violated", "removal-present");
+    }
   }
 
   if (set.keys.length > 0) {
-    const manifestPath = join(root, "package.json");
     let manifest: string;
     try {
-      manifest = readFileSync(manifestPath, "utf8");
+      manifest = reader.bytes("package.json").toString("utf8");
     } catch {
       return result(1, "violated", "content-mismatch");
     }
@@ -609,7 +666,7 @@ function verifyPrepared(set: RepositoryChangeSet, pre: Preconditions): ApplyStep
     const base = gitShowUtf8(root, set.repository.baseCommit, lock.path) ?? "";
     let current: string;
     try {
-      current = readFileSync(join(root, lock.path), "utf8");
+      current = reader.bytes(lock.path).toString("utf8");
     } catch {
       return result(1, "violated", "lockfile-invariants");
     }
@@ -623,7 +680,7 @@ function verifyPrepared(set: RepositoryChangeSet, pre: Preconditions): ApplyStep
   const expectedLedger = expectedLedgerBytes(previousLedger, set, binding, planPackages);
   let ledgerOnDisk: Buffer;
   try {
-    ledgerOnDisk = readFileSync(join(root, LEDGER_PATH));
+    ledgerOnDisk = reader.bytes(LEDGER_PATH);
   } catch {
     return result(1, "violated", "ledger-mismatch");
   }

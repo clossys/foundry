@@ -336,6 +336,7 @@ launcher-apply-plan --plan plan.json --brief brief.json --repo ./product-checkou
 launcher-apply-plan plan
 launcher-apply-plan materialize --repo ./site-checkout
 launcher-apply-plan verify --repo ./site-checkout
+launcher-apply-plan status --repo ./site-checkout
 launcher-apply-plan snapshot --request package-request.json
 ```
 
@@ -1200,6 +1201,47 @@ It does not decide the binding: it shows what you pass, so pass the result of
 `decideSetBinding()`. It does not check that the task-record issue exists, and
 it cannot stop a pull request's body being edited after it is opened; keeping
 `bodySha256` and the marker is what lets a later step notice that.
+
+### Observing the pull request
+
+`launcher-apply-plan status --repo <id>` reports what the pull request for the
+repository's stored change set is doing. It runs after the agent has pushed the
+branch and opened the pull request from the text `renderPullRequest()` returned,
+and it changes nothing: it asks GitHub three read-only questions (who is
+asking, which pull requests are open, and where the default branch is) with
+`gh api --method GET`, reads only commits that are already in the local clone
+through git, and never fetches a pull request's head, checks anything out or
+writes a file, an index or a ref. The one write is the one `verify` makes, the
+fetch of the default branch into its remote-tracking ref.
+
+```bash
+launcher-apply-plan status --repo ./site-checkout
+```
+
+It prints one line, `launcher-apply-plan status: <state>`, then a fixed reason
+in parentheses and `#<n>` for each pull request it is about, and nothing else:
+never a body, a title, a login, a branch, a path or any tool output.
+
+| State | Exit | Meaning |
+| --- | --- | --- |
+| `proposed` | `0` | An open pull request carries this set's marker, was opened by the person running this, from and into the set's own repository, on the set's branch and title, and its head commit passes every check `verify` makes, including the ledger's exact bytes. |
+| `applied` | `0` | The default branch's tip is in the clone and holds every `after` and every key the set writes, however it got there, with no open pull request needed. |
+| `planned` | `2` | Neither. |
+| `diverged` | `1` | The pull request that carries this set's marker does not match it: a different base branch, branch or title, a head that is not in the clone, or a head that fails a `verify` check. |
+| `superseded` | `2` | Only an older change set this hub stored for the repository has an open pull request. |
+| `indeterminate` | `2` | Something could not be read or trusted, with one of the reasons below. |
+
+When more than one applies, the first of `indeterminate`, `diverged`,
+`superseded`, `proposed`, `applied` and `planned` wins. A pull request whose
+body names the marker counts only when its author is the person running this
+and its head and base are both the set's repository; any other is
+`foreign-marker`. A body that has a carriage return, a marker that is not the
+whole of its first line, or a marker `readChangeSetMarker()` cannot read is
+`marker-malformed`. Other `indeterminate` reasons are `unknown-digest` (a digest
+this hub never stored), `duplicate-digest`, `too-many-open` (more than 100 open
+pull requests), `port-failed`, `port-malformed`, `tip-not-local` and the
+reasons `verify` gives. It cannot tell that a pull request's body was edited
+after it was opened beyond what the marker and these checks show.
 
 ## Taking the registry snapshot
 
