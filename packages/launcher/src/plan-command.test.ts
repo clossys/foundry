@@ -8,6 +8,7 @@ import { devNull, tmpdir } from "node:os";
 import { dirname, join, sep } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { READINESS_BIN, approvedPlan, assessmentFor, clone as cloneValue, writeReadinessStub } from "./admission-fixture.js";
+import type { ReadinessRunner } from "./admission.js";
 import type { Loose } from "./admission-fixture.js";
 import { BUNDLE_STORE_REL, CHANGE_SET_STORE_REL, listStoredChangeSets, readStoredApplyBundle } from "./apply-store.js";
 import type { PinnedPackage } from "./change-set-contract.js";
@@ -131,6 +132,8 @@ interface World {
   readonly err: string[];
   /** Every request the two stub spawns received, in order. */
   readonly spawned: { readonly lockfile: LockfileSpawnRequest[]; readonly provenance: LockfileSpawnRequest[] };
+  /** Every request the injected readiness runner received, in order (it answers ready). */
+  readonly readiness: Parameters<ReadinessRunner>[0][];
 }
 
 const cloneOf = (world: World, id: string): string => join(world.root, id.slice(id.indexOf("/") + 1));
@@ -225,6 +228,7 @@ function makeWorld(options: WorldOptions = {}): World {
   const out: string[] = [];
   const err: string[] = [];
   const spawned = { lockfile: [] as LockfileSpawnRequest[], provenance: [] as LockfileSpawnRequest[] };
+  const readiness: Parameters<ReadinessRunner>[0][] = [];
   return {
     root,
     hub,
@@ -232,7 +236,12 @@ function makeWorld(options: WorldOptions = {}): World {
     out,
     err,
     spawned,
+    readiness,
     options: {
+      runReadiness: (request) => {
+        readiness.push(request);
+        return { status: 0 };
+      },
       cwd: hub,
       now: NOW,
       producerVersion: "0.4.0",
@@ -302,7 +311,7 @@ Approve subjectDigest: sha256:21214292be57dd50009ba1faf8d4707e4a86ddbf5cb301b17c
 `;
 
 const APPLY_SHEET = `Clossys apply plan: approval sheet
-Mode: report
+Mode: planned
 Plan digest: sha256:af6d64909cbc93dd8009df226a7a25173810a705d2081045fe446d8268a43bfd
 Plan committed: yes
 Bundle digest: sha256:3b1f0f81f4cabdd5880350eb1478904b2fcb4f39fb9a674b4ba618eb7de8d952
@@ -328,6 +337,32 @@ Approve subjectDigest: sha256:3b1f0f81f4cabdd5880350eb1478904b2fcb4f39fb9a674b4b
 | example-owner/docs | compose-skills | skills | 7 paths | b7571a08ee07 |
 | example-owner/docs | write-starter-request | starter-request | 1 path | b7571a08ee07 |
 `;
+
+const SUBJECT = /^Approve subjectDigest: (sha256:[0-9a-f]{64})$/mu;
+
+/** Commits the plan with its approval of `digest`, as the owner would. */
+function approveAndCommit(world: World, digest: string): void {
+  write(world.hub, "clossys/advisor/plan.json", json(approvedPlan(digest, world.plan)));
+  git(world.hub, "add", "clossys/advisor/plan.json");
+  git(world.hub, "commit", "-m", "approve");
+}
+
+/** Materializes each stored setup set in its clone and merges it by squash: both repositories become apply repositories. */
+async function materializeAndMerge(world: World): Promise<void> {
+  const spawn = lockfileStub([]);
+  for (const set of listStoredChangeSets(world.hub)) {
+    const clone = cloneOf(world, set.repository.id);
+    expect(await materializeRepository({ clone, hub: world.hub, set, texts: {}, spawn, now: NOW, runReadiness: READY })).toMatchObject({ exitCode: 0 });
+    git(clone, "add", "-A");
+    git(clone, "commit", "-m", "setup");
+    git(clone, "checkout", "main");
+    git(clone, "merge", "--squash", set.branch);
+    git(clone, "commit", "-m", "setup (squashed)");
+    git(clone, "push", "origin", "main");
+  }
+}
+
+const storedSetBytes = (world: World): string[] => readdirSync(join(world.hub, CHANGE_SET_STORE_REL)).sort().map((name) => readFileSync(join(world.hub, CHANGE_SET_STORE_REL, name), "utf8"));
 
 // ---------------------------------------------------------------------------
 
@@ -384,23 +419,16 @@ describe("launcher-apply-plan plan", () => {
       expect(bundle.computedAt).toBe("2026-09-25T00:00:00.000Z");
 
       // Approve the bundle, materialize each setup set and merge it: both repositories are now apply repositories.
-      write(world.hub, "clossys/advisor/plan.json", json(approvedPlan(digest, world.plan)));
-      git(world.hub, "add", "clossys/advisor/plan.json");
-      git(world.hub, "commit", "-m", "approve");
-      const spawn = lockfileStub([]);
-      for (const set of listStoredChangeSets(world.hub)) {
-        const clone = cloneOf(world, set.repository.id);
-        expect(await materializeRepository({ clone, hub: world.hub, set, texts: {}, spawn, now: NOW, runReadiness: READY })).toMatchObject({ exitCode: 0 });
-        git(clone, "add", "-A");
-        git(clone, "commit", "-m", "setup");
-        git(clone, "checkout", "main");
-        git(clone, "merge", "--squash", set.branch);
-        git(clone, "commit", "-m", "setup (squashed)");
-        git(clone, "push", "origin", "main");
-      }
+      approveAndCommit(world, digest);
+      await materializeAndMerge(world);
 
       world.out.length = 0;
       const before2 = stateSnapshot(world);
+      // An apply set names the bundle that will be recorded in the ledger, and admission needs that bundle stored: the first run
+      // stores it, the next run binds against it.
+      expect(await run(world)).toBe(2);
+      expect(world.out.join("")).toContain("V3 indeterminate apply-bundle-unrecorded");
+      world.out.length = 0;
       const code = await run(world);
       const second = world.out.join("");
       expect(world.err).toEqual([]);
@@ -408,7 +436,8 @@ describe("launcher-apply-plan plan", () => {
       expect(stateSnapshot(world)).toEqual(before2);
       expect(second).not.toBe(first);
       expect(second).toBe(APPLY_SHEET);
-      const applied = readStoredApplyBundle(world.hub, /^Approve subjectDigest: (sha256:[0-9a-f]{64})$/mu.exec(second)![1]!)!;
+      const applied = readStoredApplyBundle(world.hub, SUBJECT.exec(second)![1]!)!;
+      expect(applied.mode).toBe("planned");
       expect(applied.repositories.map((entry) => ("phase" in entry ? [entry.id, entry.phase, entry.verdict] : [entry.id, "none", entry.verdict]))).toEqual([
         [SITE, "apply", "satisfied"],
         [DOCS, "apply", "satisfied"],
@@ -468,6 +497,170 @@ describe("launcher-apply-plan plan", () => {
     },
     TEST_TIMEOUT_MS,
   );
+
+  describe("planned mode: an approval binds exactly what was planned (#1708)", () => {
+    it(
+      "an approved rerun is planned, digests unchanged",
+      async () => {
+        const world = makeWorld();
+        expect(await run(world)).toBe(0);
+        const first = world.out.join("");
+        expect(world.readiness).toHaveLength(0);
+        const digest = SUBJECT.exec(first)![1]!;
+        const reported = readStoredApplyBundle(world.hub, digest)!;
+        expect(reported.mode).toBe("report");
+        const sets = storedSetBytes(world);
+        const stored = storedFiles(world);
+
+        approveAndCommit(world, digest);
+        world.out.length = 0;
+        expect(await run(world)).toBe(0);
+        expect(world.err).toEqual([]);
+        const second = world.out.join("");
+        // Only the mode line moves: the same digests, the same rows.
+        expect(second).toBe(first.replace("Mode: report", "Mode: planned"));
+        expect(storedSetBytes(world)).toEqual(sets);
+        expect(storedFiles(world)).toEqual(stored);
+
+        const planned = readStoredApplyBundle(world.hub, digest)!;
+        expect(planned.mode).toBe("planned");
+        expect(planned.bundleDigest).toBe(reported.bundleDigest);
+        expect(planned.plan).toEqual(reported.plan);
+        expect(planned.repositories.map((entry) => ("changeSet" in entry ? [entry.id, entry.changeSet] : [entry.id]))).toEqual(reported.repositories.map((entry) => ("changeSet" in entry ? [entry.id, entry.changeSet] : [entry.id])));
+        for (const entry of planned.repositories) {
+          if (!("changeSet" in entry)) throw new Error("expected a computed repository");
+          expect(entry.state).toBe("planned");
+          expect(entry.verdict).toBe("satisfied");
+          expect(entry.phase).toBe("setup");
+          expect(entry.binding).toEqual({ kind: "approved", subjectDigest: digest });
+          for (const id of ["V1", "V2", "V3", "V4", "V5", "V6", "V7", "V8", "V9"]) expect(entry.checks.filter((check) => check.check === id)).toEqual([{ check: id, verdict: "satisfied" }]);
+        }
+        // Each set changes a lockfile, so the dry tree's V9 stands, and each set has a package act, so readiness ran once for each.
+        expect(world.readiness).toHaveLength(2);
+        for (const request of world.readiness) expect(request.cwd).toBe(world.hub);
+        expect(readdirSync(join(world.hub, BUNDLE_STORE_REL)).filter((name) => name.endsWith(".tmp"))).toEqual([]);
+      },
+      TEST_TIMEOUT_MS,
+    );
+
+    it(
+      "after setup merges, apply sets are admitted",
+      async () => {
+        const world = makeWorld();
+        expect(await run(world)).toBe(0);
+        const first = world.out.join("");
+        const digest = SUBJECT.exec(first)![1]!;
+        const setupSets = new Map(readStoredApplyBundle(world.hub, digest)!.repositories.map((entry) => [entry.id, "changeSet" in entry ? entry.changeSet : ""]));
+        approveAndCommit(world, digest);
+        await materializeAndMerge(world);
+
+        // An apply set names the bundle that will be recorded in the ledger, and admission needs that bundle stored: the first run
+        // stores it with V3 indeterminate and no binding, and the next run, reading it back, admits.
+        world.out.length = 0;
+        expect(await run(world)).toBe(2);
+        const unbound = world.out.join("");
+        expect(unbound).toContain("example-owner/site V3 indeterminate apply-bundle-unrecorded");
+        expect(unbound).toContain("example-owner/docs V3 indeterminate apply-bundle-unrecorded");
+        const pending = readStoredApplyBundle(world.hub, SUBJECT.exec(unbound)![1]!)!;
+        for (const entry of pending.repositories) {
+          if (!("changeSet" in entry)) throw new Error("expected a computed repository");
+          expect("binding" in entry).toBe(false);
+          expect("state" in entry).toBe(false);
+        }
+
+        world.out.length = 0;
+        expect(await run(world)).toBe(0);
+        expect(world.err).toEqual([]);
+        const second = world.out.join("");
+        expect(second).toBe(APPLY_SHEET);
+        expect(second).toContain("Mode: planned\n");
+        const applied = readStoredApplyBundle(world.hub, SUBJECT.exec(second)![1]!)!;
+        expect(applied.mode).toBe("planned");
+        for (const entry of applied.repositories) {
+          if (!("changeSet" in entry)) throw new Error("expected a computed repository");
+          expect(entry.phase).toBe("apply");
+          expect(entry.state).toBe("planned");
+          // Bound by the approval of the setup bundle, through the setup set: never by the apply bundle's own digest.
+          expect(entry.binding).toEqual({ kind: "admitted", subjectDigest: digest, setupChangeSet: setupSets.get(entry.id) });
+          expect(entry.binding).not.toMatchObject({ subjectDigest: applied.bundleDigest });
+        }
+      },
+      TEST_TIMEOUT_MS,
+    );
+
+    it(
+      "no approval, or an uncommitted plan edit, stays report",
+      async () => {
+        // No approval: the sheet is the report sheet, and readiness never runs.
+        const world = makeWorld();
+        expect(await run(world)).toBe(0);
+        expect(world.out.join("")).toBe(FIRST_SHEET);
+        expect(world.readiness).toHaveLength(0);
+        const digest = SUBJECT.exec(world.out.join(""))![1]!;
+
+        // An approval that is committed, then a whitespace edit that is not: the digest still matches, but the plan is not the committed one.
+        approveAndCommit(world, digest);
+        write(world.hub, "clossys/advisor/plan.json", `${json(approvedPlan(digest, world.plan))}\n`);
+        world.out.length = 0;
+        expect(await run(world)).toBe(0);
+        expect(world.err).toEqual([]);
+        const edited = world.out.join("");
+        expect(edited).toContain("Mode: report\n");
+        expect(edited).toContain("Plan committed: no\n");
+        expect(world.readiness).toHaveLength(0);
+        const stored = readStoredApplyBundle(world.hub, SUBJECT.exec(edited)![1]!)!;
+        expect(stored.mode).toBe("report");
+        expect(stored.repositories.some((entry) => "state" in entry || "binding" in entry)).toBe(false);
+      },
+      TEST_TIMEOUT_MS,
+    );
+
+    it(
+      "a refused readiness makes the repository violated with no binding, and the sheet says so",
+      async () => {
+        const world = makeWorld();
+        expect(await run(world)).toBe(0);
+        approveAndCommit(world, SUBJECT.exec(world.out.join(""))![1]!);
+        world.out.length = 0;
+        expect(await planMain([], { ...world.options, runReadiness: () => ({ status: 1 }) })).toBe(1);
+        const sheet = world.out.join("");
+        expect(sheet).toContain("Mode: planned\n");
+        expect(sheet).toContain("- example-owner/site V3 violated readiness-violated");
+        const bundle = readStoredApplyBundle(world.hub, SUBJECT.exec(sheet)![1]!)!;
+        for (const entry of bundle.repositories) {
+          if (!("changeSet" in entry)) throw new Error("expected a computed repository");
+          expect(entry.verdict).toBe("violated");
+          expect(entry.state).toBeUndefined();
+          expect(entry.binding).toBeUndefined();
+        }
+      },
+      TEST_TIMEOUT_MS,
+    );
+
+    it(
+      "a report rerun never replaces a stored planned bundle: the rerun with the approval no longer committed is store-failed",
+      async () => {
+        const world = makeWorld();
+        expect(await run(world)).toBe(0);
+        const digest = SUBJECT.exec(world.out.join(""))![1]!;
+        approveAndCommit(world, digest);
+        expect(await run(world)).toBe(0);
+        const file = join(world.hub, BUNDLE_STORE_REL, `${digest.slice("sha256:".length)}.json`);
+        const planned = readFileSync(file, "utf8");
+        expect(readStoredApplyBundle(world.hub, digest)!.mode).toBe("planned");
+
+        // Revoke the approval: the same bundle digest would now be computed as a report.
+        git(world.hub, "revert", "--no-edit", "HEAD");
+        world.out.length = 0;
+        world.err.length = 0;
+        expect(await run(world)).toBe(2);
+        expect(world.err).toEqual(["launcher-apply-plan plan: store-failed"]);
+        expect(world.out).toEqual([]);
+        expect(readFileSync(file, "utf8")).toBe(planned);
+      },
+      TEST_TIMEOUT_MS,
+    );
+  });
 
   describe("what it reads from the hub", () => {
     it("carries the committed execution authorization into the bundle, and null without one", async () => {
