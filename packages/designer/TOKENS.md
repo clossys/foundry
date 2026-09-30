@@ -352,7 +352,7 @@ cleanly" below for why.
 | `--breakpoint-desktop` | `1280px` | no |
 | `--breakpoint-wide` | `1440px` | no |
 
-### `--ui-*` (42 tokens, case 2 — no Tailwind utility, raw `var()` only)
+### `--ui-*` (44 tokens, case 2 — no Tailwind utility, raw `var()` only)
 
 | Token | Default | Brandable |
 | --- | --- | --- |
@@ -363,6 +363,8 @@ cleanly" below for why.
 | `--ui-layout-sidebar-w` | `256px` | yes |
 | `--ui-layout-sidebar-rail-w` | `64px` | no |
 | `--ui-layout-aside-w` | `320px` | no |
+| `--ui-layout-drawer-w` | `min(20rem, 85vw)` | no |
+| `--ui-layout-tap-target` | `44px` | no |
 | `--ui-density-pad` | alias of `--spacing-xl` | no |
 | `--ui-density-gap` | alias of `--spacing-lg` | no |
 | `--ui-density-row` | alias of `--spacing-3xl` | no |
@@ -404,12 +406,12 @@ one row per family rather than one row per step, so the row count in each
 table is lower than its token count. Per-family totals: surface 7, ink 7,
 line 3, accent 5, status 12, neutral 11, overlay 3, skeleton 1 (color, 49);
 text 13, font 3, tracking 4 (20); spacing 10, radius 5, easing 6,
-breakpoint 6 (27); width 4, layout 3, density 3, icon 4, brandmark 6,
-border 1, elevation 3, ring 2, duration 6, z 9, alpha 1 (42, all `--ui-*`).
-49 + 20 + 27 + 42 = 138 tokens across 26 families, by this same
+breakpoint 6 (27); width 4, layout 5, density 3, icon 4, brandmark 6,
+border 1, elevation 3, ring 2, duration 6, z 9, alpha 1 (44, all `--ui-*`).
+49 + 20 + 27 + 44 = 140 tokens across 26 families, by this same
 1-family-added arithmetic. **Note:** this total (and the "128 tokens
 across 24 families" figure elsewhere in this README predating it) does not
-match `src/tokens.ts`'s real count (165 across 27 families) — a pre-existing
+match `src/tokens.ts`'s real count (167 across 27 families) — a pre-existing
 gap from the `chart` color family (22 tokens, added in `0.4.0`) never being
 folded into this reference table's totals. That gap predates this PR and is
 out of its scope; `src/tokens.ts`/`styles/tokens.css` are what `parity.test.ts`
