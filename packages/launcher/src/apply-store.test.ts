@@ -300,6 +300,25 @@ describe("storeApplyBundle / readStoredApplyBundle", () => {
     expect(readStoredApplyBundle(hub, BUNDLE.bundleDigest)).toEqual(BUNDLE);
   });
 
+  it("a report replaces a genuine planned bundle stored under another digest name", () => {
+    // A planned bundle under its own digest name; BUNDLE is a report of another digest.
+    const plannedPath = storeApplyBundle(hub, PLANNED);
+    expect(readFileSync(plannedPath, "utf8")).toBe(bundleBytes(PLANNED));
+    expect(plannedPath).toBe(bundleFile(PLANNED.bundleDigest));
+
+    // Copy the planned bytes under OTHER_BUNDLE's file name, as a crash or an outside hand could have.
+    const otherName = `${OTHER_BUNDLE.bundleDigest.slice("sha256:".length)}.json`;
+    const otherPath = join(hub, BUNDLE_STORE_REL, otherName);
+    writeFileSync(otherPath, readFileSync(plannedPath));
+
+    // The planned bundle in the copy verifies as planned and as OTHER_BUNDLE's digest, so the report's replace-protection
+    // reads it as one; the copy's name is not its own digest, so it must not be protected.
+    expect(readStoredApplyBundle(hub, OTHER_BUNDLE.bundleDigest)).not.toBeNull();
+    expect(storeApplyBundle(hub, OTHER_BUNDLE)).toBe(otherPath);
+    expect(readFileSync(otherPath, "utf8")).toBe(bundleBytes(OTHER_BUNDLE));
+    expect(readStoredApplyBundle(hub, BUNDLE.bundleDigest)).toEqual(PLANNED);
+  });
+
   it("writes nothing when the same bytes are stored again: the file keeps its inode and modification time", () => {
     const path = storeApplyBundle(hub, BUNDLE);
     const before = statSync(path);
