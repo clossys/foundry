@@ -42,6 +42,7 @@ const COPY_KEYS = [
   "messageRequired",
   "sentHeading",
   "sentBody",
+  "failureLabel",
   "invalid",
   "rateLimited",
   "unavailable",
@@ -317,6 +318,9 @@ describe("ContactView results", () => {
     await u.click(submitButton());
     const alert = await screen.findByRole("alert");
     expect(alert).toHaveTextContent(sentinel);
+    // A failure leads with its own text label, so it is not told apart by colour alone.
+    expect(alert.firstElementChild?.firstElementChild).toHaveTextContent("FAILURELABEL-SENTINEL");
+    expect(alert.firstElementChild?.firstElementChild).toHaveClass("font-semibold");
     await waitFor(() => expect(submitButton()).toHaveFocus());
     expect(screen.getByRole("textbox", { name: /NAMELABEL-SENTINEL/ })).toHaveValue("Ada Person");
     expect(screen.getByRole("textbox", { name: /EMAILLABEL-SENTINEL/ })).toHaveValue("ada@example.com");

@@ -860,7 +860,7 @@ Props, in addition to the standard `div` attributes (minus `children` and
 - `legal`: the props of Designer's `SiteFooter.Legal`, passed straight through.
 - `resolveCopyId` and `copy`: the approved-copy resolver and one `CopyRef` per
   string (heading, description, every label, the button, the client-side error
-  messages, the confirmation and the three failure messages).
+  messages, the confirmation, a short failure label and the three failure messages).
 - `topics`: `{ id, label }[]`, at least one. Each `id` must be unique
   kebab-case; the thrown error names the position, never the id. Each `label`
   is a `CopyRef`.
@@ -879,7 +879,7 @@ order, `aria-hidden` and `autocomplete="off"`, and its value reaches
 `onSubmit`; the submit button is pending, never `disabled`, while sending;
 `accepted` replaces the form with a `role="status"` confirmation and focuses
 its heading; `invalid`, `rate-limited` and `unavailable` each show a
-`role="alert"`, keep every typed value and focus the submit button; the banner
+`role="alert"` led by the failure label, keep every typed value and focus the submit button; the banner
 and footer carry no background, border or width cap; and an entry that does not
 resolve throws an error naming its path, never its id.
 

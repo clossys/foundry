@@ -44,6 +44,8 @@ export interface ContactViewCopy {
   sentHeading: CopyRef;
   /** Body of the confirmation. */
   sentBody: CopyRef;
+  /** Short label leading every failure message (for example "Error"), so a failure reads as one without relying on colour. */
+  failureLabel: CopyRef;
   /** Shown when the server answered `invalid`. Per-field mapping is not part of this view. */
   invalid: CopyRef;
   /** Shown when the server answered `rate-limited`. */
@@ -205,6 +207,7 @@ export function ContactView({
     messageRequired: resolveCopy(copy.messageRequired, "copy.messageRequired", resolveCopyId),
     sentHeading: resolveCopy(copy.sentHeading, "copy.sentHeading", resolveCopyId),
     sentBody: resolveCopy(copy.sentBody, "copy.sentBody", resolveCopyId),
+    failureLabel: resolveCopy(copy.failureLabel, "copy.failureLabel", resolveCopyId),
     invalid: resolveCopy(copy.invalid, "copy.invalid", resolveCopyId),
     rateLimited: resolveCopy(copy.rateLimited, "copy.rateLimited", resolveCopyId),
     unavailable: resolveCopy(copy.unavailable, "copy.unavailable", resolveCopyId),
@@ -254,7 +257,14 @@ export function ContactView({
     }
   }, [outcome, submitId]);
 
-  const failure = outcome === "invalid" ? text.invalid : outcome === "rate-limited" ? text.rateLimited : outcome === "unavailable" ? text.unavailable : null;
+  const failureMessage = outcome === "invalid" ? text.invalid : outcome === "rate-limited" ? text.rateLimited : outcome === "unavailable" ? text.unavailable : null;
+  const failure =
+    failureMessage === null ? null : (
+      <div className="flex flex-col gap-xs">
+        <span className="font-semibold">{text.failureLabel}</span>
+        <span>{failureMessage}</span>
+      </div>
+    );
   const topicField = validation.getFieldProps("topic");
 
   return (
