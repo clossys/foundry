@@ -142,6 +142,14 @@ describe("labels", () => {
     expect(rendered.html).not.toContain("<b>");
   });
 
+  it("escapes each of the five labels exactly once", () => {
+    for (const label of ["topic", "name", "email", "phone", "message"] as const) {
+      const rendered = renderContactNotificationEmail(full, { labels: { [label]: `<b>&"'` } });
+      expect(rendered.html).toContain(`>&lt;b&gt;&amp;&quot;&#39;</th>`);
+      expect(rendered.html).not.toContain("<b>");
+    }
+  });
+
   it("refuses a non-string label without echoing it", () => {
     for (const label of ["topic", "name", "email", "phone", "message"] as const) {
       for (const bad of [7 as unknown as string, { toString: () => MARK }, [MARK], { leaked: MARK }]) {
