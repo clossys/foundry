@@ -661,7 +661,10 @@ is only ASCII letters, digits and `@ : _ . / -`. An `.npmrc` containing any
 line outside those shapes (a quoted or bracketed key, a comment or escape
 inside the key, a tab, a section header, a key with no `=`) is refused as
 `release-age-surface-unparseable`, because npm's ini reader could read such a
-line as the exclusion setting. A plain key that is
+line as the exclusion setting. A plain key that is `userconfig`,
+`globalconfig` or `prefix` (in any case, with `-` and `_` ignored) is refused
+the same way, because it points npm at another config file or prefix
+directory whose own exclusion list the editor cannot read. A plain key that is
 `minimum-release-age-exclude` in any case, with `-` and `_` ignored (so the
 camel-case spelling too), is refused as `release-age-surface-conflict`.
 Refusing is the default: an unrelated `.npmrc` line the grammar does not list
@@ -934,11 +937,13 @@ if ("skipped" in observed) console.log(observed.skipped, observed.verdict);
   key and value variables, `GIT_CONFIG_PARAMETERS`, `GIT_CONFIG_SYSTEM` and
   `GIT_ATTR_SOURCE` are removed. `git ls-remote`, which runs outside the
   clone, keeps the operator's global and system git config files (credential
-  helpers, proxy), but the `GIT_CONFIG_COUNT`, `GIT_CONFIG_KEY_n`,
-  `GIT_CONFIG_VALUE_n` and `GIT_CONFIG_PARAMETERS` environment variables are
-  not forwarded to it either, so an origin that needs credentials supplied
-  through those variables is skipped as `remote-tip-unreadable` instead of
-  observed.
+  helpers, proxy) and is given `GIT_CONFIG_COUNT`, `GIT_CONFIG_KEY_n` and
+  `GIT_CONFIG_VALUE_n`, so an origin that needs credentials supplied through
+  them is observed; a fixed `-c` override and `GIT_ALLOW_PROTOCOL` still win
+  over them. `GIT_CONFIG_PARAMETERS` (git's internal encoding of `-c`, not an
+  interface) and `GIT_CONFIG_SYSTEM` are not forwarded to it, so an origin that
+  needs either is skipped as `remote-tip-unreadable`. git's own `GIT_TEST_*`
+  switches (`GIT_TEST_SPLIT_INDEX` among them) reach no git command.
 
 | Verdict | Skip reasons |
 | --- | --- |
@@ -946,7 +951,16 @@ if ("skipped" in observed) console.log(observed.skipped, observed.verdict);
 | `indeterminate` | `clone-missing`, `clone-unreadable`, `id-owner-unknown`, `remote-tip-unreadable`, `node-id-unavailable`, `visibility-unavailable`, `tree-too-large`, `submodule-present`, `manifest-unreadable`, `lockfile-ambiguous`, `package-manager-unknown`, `lockfile-unreadable`, `release-age-surface-invalid`, `agents-link-unreportable`, `observation-too-large`, `case-variant-owned-path`, `ledger-unreadable`, `profile-ambiguous` |
 
 What it does not decide: it reports what the committed head holds, not
-whether applying is safe. Object contents, and links inside
+whether applying is safe. The checks (configuration, head, index, status)
+and the reads run one after another and are not repeated; the clone is not
+locked. A process that changes the clone between a check and a read is not
+detected, and cannot be detected by checking again, since any later check
+has the same gap, and a process that can write the clone's `.git` can
+already plant a hook or filter that the operator's own git would run. What
+the observation reports is unaffected: every byte comes from an object at the
+remote tip's commit, which a later commit, checkout or edit in the clone does
+not change, so an observation states what that commit held, not that the
+clone stayed clean after it was checked. Object contents, and links inside
 `.git/objects`, are trusted to match their ids. Ignored files at owned paths
 read as absent (`base-mismatch` catches them); a symbolic link at `.github`,
 `.starter` or `clossys` is unreported here and refused by materialization

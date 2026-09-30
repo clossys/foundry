@@ -53,6 +53,13 @@ const keyBlock = (key: string, entry: string): string => `${key}:\n  - ${entry}\
 
 /** The exclusion setting's key with `-` and `_` removed and lower-cased: the kebab and the camel-case spellings both reduce to it. */
 const NPMRC_CONFLICT_KEY = "minimumreleaseageexclude";
+/**
+ * Keys, reduced the same way, that point the package manager at another user
+ * config file, global config file or prefix directory. Such a line sends the
+ * reader to a file this editor is never given, which may hold the exclusion
+ * list itself, so the whole `.npmrc` is refused rather than read as clear.
+ */
+const NPMRC_REDIRECT_KEYS: ReadonlySet<string> = new Set(["userconfig", "globalconfig", "prefix"]);
 
 /** A character of an accepted .npmrc key: an ASCII letter or digit, or one of `@ : _ . / -`. */
 function isNpmrcKeyCharacter(code: number): boolean {
@@ -79,7 +86,10 @@ type NpmrcState = "clear" | "conflict" | "unparseable";
  * (a quoted or bracketed key, a comment before the `=`, a backslash, a tab, a
  * section header, a key with no `=`) makes the whole file `unparseable`,
  * because npm's ini reader could read such a line as the exclusion key. A plain
- * key that reduces to the exclusion setting is a `conflict`. Index scans only.
+ * key that reduces (in the same way) to `userconfig`, `globalconfig` or `prefix`
+ * is `unparseable` too: it redirects the read to a file this reader cannot
+ * see. A plain key that reduces to the exclusion setting is a `conflict`.
+ * Index scans only.
  */
 function readNpmrc(surface: ExemptionSurfaceKind, npmrc: string | null | undefined): NpmrcState {
   if (surface !== "pnpm-workspace" || npmrc === null || npmrc === undefined) return "clear";
@@ -95,7 +105,9 @@ function readNpmrc(surface: ExemptionSurfaceKind, npmrc: string | null | undefin
     let equals = keyEnd;
     while (equals < line.length && line[equals] === " ") equals += 1;
     if (line[equals] !== "=") return "unparseable";
-    if (line.slice(start, keyEnd).replace(/[-_]/g, "").toLowerCase() === NPMRC_CONFLICT_KEY) conflict = true;
+    const reduced = line.slice(start, keyEnd).replace(/[-_]/g, "").toLowerCase();
+    if (NPMRC_REDIRECT_KEYS.has(reduced)) return "unparseable";
+    if (reduced === NPMRC_CONFLICT_KEY) conflict = true;
   }
   return conflict ? "conflict" : "clear";
 }

@@ -413,6 +413,13 @@ describe("editReleaseAgeExemption: the .npmrc fixed safe grammar", () => {
     ["a non-ASCII letter in a key", `\u0131=x\n`, UNPARSEABLE],
     ["a Unicode line separator in a key", `a\u2028b=x\n`, UNPARSEABLE],
     ["a conflicting key beside an unrecognised line", `${K}=x\n"a"=1\n`, UNPARSEABLE],
+    // These keys point npm or pnpm at another config file or prefix directory, whose own exclusion list this reader cannot see.
+    ["a userconfig key", "userconfig=../other.npmrc\n", UNPARSEABLE],
+    ["a globalconfig key", "globalconfig=../other.npmrc\n", UNPARSEABLE],
+    ["a prefix key", "prefix=../elsewhere\n", UNPARSEABLE],
+    ["a userconfig key in other case with separators", "User-Config = ../other.npmrc\n", UNPARSEABLE],
+    ["a globalconfig key with an underscore", "global_config=../other.npmrc\n", UNPARSEABLE],
+    ["a prefix key after unrelated lines", "; c\nregistry=https://example.com/\n  PREFIX=/x\n", UNPARSEABLE],
   ];
 
   it.each(refused)("refuses %s", (_name, npmrc, reason) => {
@@ -444,6 +451,8 @@ describe("editReleaseAgeExemption: the .npmrc fixed safe grammar", () => {
     ["a byte order mark", "\uFEFFregistry=x\n"],
     ["a similar but longer key", `${K}-more=x\n`],
     ["a similar but shorter key", "minimum-release-age-exclud=x\n"],
+    ["a key that only contains a redirecting name", "userconfigs=x\nmy-prefix=y\nprefixed=z\n@scope:prefix=w\n"],
+    ["a redirecting name only in a value or a comment", "registry=userconfig\n; prefix=x\n# globalconfig=x\n"],
     ["the setting name inside a comment", `; ${key}=x\n# ${K}=x\n`],
   ])("still edits beside %s", (_name, npmrc) => {
     expect(edit("pnpm-workspace", null, npmrc)).toEqual({ kind: "edited", text: `${key}:\n  - '${VALUE}'\n` });
@@ -453,6 +462,7 @@ describe("editReleaseAgeExemption: the .npmrc fixed safe grammar", () => {
   });
 
   it("leaves the yarnrc surface alone whatever the .npmrc holds", () => {
+    expect(edit("yarnrc", null, "userconfig=x\nprefix=y\n")).toEqual({ kind: "edited", text: `npmPreapprovedPackages:\n  - "${VALUE}"\n` });
     expect(edit("yarnrc", null, `"${K}"=x\n[a]\n`)).toEqual({ kind: "edited", text: `npmPreapprovedPackages:\n  - "${VALUE}"\n` });
   });
 
