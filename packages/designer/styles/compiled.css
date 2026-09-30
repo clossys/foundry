@@ -179,9 +179,6 @@
   .min-h-0 {
     min-height: 0px;
   }
-  .min-h-\[44px\] {
-    min-height: 44px;
-  }
   .min-h-dvh {
     min-height: 100dvh;
   }
@@ -247,9 +244,6 @@
   }
   .min-w-\[12rem\] {
     min-width: 12rem;
-  }
-  .min-w-\[44px\] {
-    min-width: 44px;
   }
   .flex-1 {
     flex: 1;
@@ -444,6 +438,9 @@
   }
   .bg-ink-muted {
     background-color: var(--color-ink-muted, oklch(0.5658 0 0));
+  }
+  .bg-ink-primary {
+    background-color: var(--color-ink-primary, oklch(0.2178 0 0));
   }
   .bg-line-base {
     background-color: var(--color-line-base, oklch(0.8761 0 0));

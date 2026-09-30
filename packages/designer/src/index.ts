@@ -224,6 +224,8 @@ export type {
   BrandmarkVariant,
   BrandmarkSize,
 } from "./shell/index.js";
+export type { BrandmarkPlate } from "./shell/index.js";
+export { BADGE_INSET_SHARE, BADGE_RADIUS_SHARE, badgePlatePath } from "./shell/index.js";
 
 export { ChartFrame, BarChart, LineChart, Sparkline } from "./charts/index.js";
 export type {

@@ -94,7 +94,7 @@ export function CaptureView({
   return (
     <div {...rest} className={mergeUiClasses("flex min-h-dvh flex-col", className)} style={style}>
       <SiteHeader brand={brand} />
-      <main className="mx-auto flex w-full flex-1 flex-col gap-xl px-lg py-2xl" style={{ maxWidth: "var(--ui-width-prose-max, 48rem)" }}>
+      <main className="mx-auto flex w-full flex-1 flex-col gap-xl px-lg py-2xl" style={{ maxWidth: "var(--ui-width-prose-max, none)" }}>
         <PageHeader title={heading} description={description} />
         <section aria-label={formLabel}>
           <Card className="flex flex-col gap-lg">

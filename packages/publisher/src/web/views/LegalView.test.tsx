@@ -230,6 +230,19 @@ describe("LegalView dates", () => {
     expect(() => render(legalDoc("terms"), { locale: "!!" })).toThrow(RenderError);
   });
 
+  it("throws a fixed-token RenderError for a malformed locale without echoing it", () => {
+    const attempt = () => render(legalDoc("terms"), { locale: "!!sentinel-locale!!" });
+    expect(attempt).toThrow(RenderError);
+    expect(attempt).toThrow(/locale/);
+    expect(attempt).not.toThrow(/sentinel-locale/);
+  });
+
+  it("caps the content width with the prose-max token and a non-length fallback", () => {
+    const html = render(legalDoc("terms"));
+    const mainTag = html.slice(html.indexOf("<main"), html.indexOf(">", html.indexOf("<main")) + 1);
+    expect(mainTag).toContain("max-width:var(--ui-width-prose-max, none)");
+  });
+
   const badLocales: Array<[string, unknown]> = [
     ["omitted", undefined],
     ["empty", ""],

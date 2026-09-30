@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { render, screen, within } from "@testing-library/react";
 import { SiteFooter, type SiteFooterLegalProps } from "./SiteFooter.js";
+import { UI_LAYOUT_TAP_TARGET } from "./internal/shell-vars.js";
 
 describe("SiteFooter", () => {
   it("renders grouped link columns and a secondary row", () => {
@@ -120,8 +121,10 @@ describe("SiteFooter.Legal", () => {
       const link = screen.getByRole("link", { name: label });
       expect(link.tagName).toBe("A");
       expect(link).toHaveAttribute("href", href);
-      expect(link.classList.contains("min-h-[44px]")).toBe(true);
-      expect(link.classList.contains("min-w-[44px]")).toBe(true);
+      expect(link.style.minHeight).toBe(UI_LAYOUT_TAP_TARGET);
+      expect(link.style.minWidth).toBe(UI_LAYOUT_TAP_TARGET);
+      expect(link.className).not.toContain("min-h-[");
+      expect(link.className).not.toContain("min-w-[");
       expect(link.className).toContain("focus-visible:outline-2");
     }
   });

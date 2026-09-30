@@ -25,6 +25,8 @@ export type {
   SiteMetadataRequiredTag,
   SiteMetadataTagSelector,
 } from "./siteMetadataLint.js";
+export { ShareCardError, SHARE_CARD_DEFAULT_PATH, SHARE_CARD_DEFAULT_ROLES, buildShareCard } from "./shareCard.js";
+export type { ShareCard, ShareCardErrorReason, ShareCardInput, ShareCardMark, ShareCardRoles } from "./shareCard.js";
 export { brandAssetHeadLinks, publicationMapEmitsBrandAssets } from "./brandAssetHead.js";
 export { listWebTemplateNames } from "./internal/webTemplates.js";
 export { defineWebTemplate } from "./internal/defineWebTemplate.js";

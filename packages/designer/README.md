@@ -3727,6 +3727,42 @@ Declared boundary: the wordmark's size is the mark's height times the fixed
 derive from that ratio and are not raised to a minimum, so use `"md"` or
 `"lg"` where an 11px wordmark is too small.
 
+#### Shared plate
+
+`plate` is `"self"` or `"shared"`, and defaults to `"self"`. With `"self"` or
+without the prop the markup is unchanged: the mark's own edge is its plate.
+With `"shared"`, `Brandmark` draws one rounded-square plate behind the mark in
+the base ink (`bg-ink-primary`), as a decorative `<span>` styled with CSS; no
+inline `<svg` is used. The plate's side is the size's height token and its
+corner radius is that side times `BADGE_RADIUS_SHARE` (7/32). The image is
+inset by `BADGE_INSET_SHARE` (0.18) on each side, so it is 64% of the side. In
+a lockup the plate wraps the mark only; the wordmark stays beside it. The
+exported type is `BrandmarkPlate`.
+
+```tsx
+<Brandmark
+  variant="mark"
+  size="md"
+  label="Acme home"
+  markSrc="/brand/acme-mark-on-ink.svg"
+  plate="shared"
+/>;
+```
+
+`badgePlatePath(size)` returns the same rounded square as SVG path data, from
+(0, 0) to (`size`, `size`), for a consumer that draws the plate itself. The
+radius is `size * BADGE_RADIUS_SHARE` and each number is rounded to 3
+decimals, so `badgePlatePath(32)` is
+`M7 0H25A7 7 0 0 1 32 7V25A7 7 0 0 1 25 32H7A7 7 0 0 1 0 25V7A7 7 0 0 1 7 0Z`.
+It throws a `TypeError` for a non-number and a `RangeError` for a non-finite
+or non-positive `size`; the message names `size` and does not repeat the
+value. `BADGE_RADIUS_SHARE`, `BADGE_INSET_SHARE` and `badgePlatePath` ship
+from `/shell`, `/shell/server` and the package root.
+
+What it does not do: it does not check that the mark reads on the base ink,
+so the consumer supplies a mark that does, and it does not check the
+contrast between them.
+
 ### `Toaster` and `toast`
 
 A toast stack is a **runtime service**, not a layout component (see
@@ -4734,7 +4770,7 @@ part of this package's public API" and reachable only by that one test.
   ratified from `contrast.test.ts`'s own hand-curated pair map rather than
   auto-derived from token names. An earlier design assumed this gate could
   self-extend, deriving one pair per `--<role>-on-<ground>`-shaped token
-  name; counted against this package's real 165 tokens, only 5 actually
+  name; counted against this package's real 167 tokens, only 5 actually
   follow that shape (`--color-ink-on-accent`, `--color-ink-on-inverse`,
   `--color-accent-on-inverse`, `--color-line-on-inverse`,
   `--ui-ring-on-inverse` — see `contrast-pairs.ts`'s own header for a 6th,

@@ -9,7 +9,7 @@
  * Contract checked here: the link's `href` (fixed to "/") and its
  * `aria-label` (the required `label` prop) are not declared props; `lockup`
  * requires a `wordmark` while `mark` refuses one; `variant` and `size` are
- * closed sets.
+ * closed sets; `plate` is the closed set "shared" | "self", optional.
  *
  * Nothing here is imported by a barrel or by runtime code.
  */
@@ -45,3 +45,9 @@ export const rejectsUnknownVariant = <Brandmark variant="stacked" size="md" labe
 
 // @ts-expect-error — `wordmark` is text (a string), never an element or image.
 export const wordmarkRejectsElement = <Brandmark variant="lockup" size="md" label="x" markSrc="/m.svg" wordmark={<b>x</b>} />;
+
+export const acceptsSharedPlate = <Brandmark variant="mark" size="sm" label="x" markSrc="/m.svg" plate="shared" />;
+export const acceptsSelfPlate = <Brandmark variant="lockup" size="md" label="x" markSrc="/m.svg" wordmark="x" plate="self" />;
+
+// @ts-expect-error — `plate` is a closed set: "shared" | "self".
+export const rejectsUnknownPlate = <Brandmark variant="mark" size="md" label="x" markSrc="/m.svg" plate="round" />;

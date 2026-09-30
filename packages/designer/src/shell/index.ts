@@ -70,3 +70,5 @@ export type {
 
 export { Brandmark } from "./Brandmark.js";
 export type { BrandmarkProps, BrandmarkVariant, BrandmarkSize } from "./Brandmark.js";
+export type { BrandmarkPlate } from "./Brandmark.js";
+export { BADGE_INSET_SHARE, BADGE_RADIUS_SHARE, badgePlatePath } from "./badge-plate.js";

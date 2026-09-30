@@ -1,4 +1,5 @@
 import { cx } from "../atoms/internal/cx.js";
+import { BADGE_INSET_SHARE, BADGE_RADIUS_SHARE } from "./badge-plate.js";
 import {
   UI_BRANDMARK_GAP_LG,
   UI_BRANDMARK_GAP_MD,
@@ -18,6 +19,17 @@ export type BrandmarkVariant = (typeof BRANDMARK_VARIANTS)[number];
 /** The closed size set; each step maps to a height token and a gap token. */
 export const BRANDMARK_SIZES = ["sm", "md", "lg"] as const;
 export type BrandmarkSize = (typeof BRANDMARK_SIZES)[number];
+
+/**
+ * Where the mark's plate comes from: `"self"` (the default) leaves the mark
+ * as it is, its own edge being its plate; `"shared"` draws one rounded-square
+ * plate behind it.
+ */
+export const BRANDMARK_PLATES = ["shared", "self"] as const;
+export type BrandmarkPlate = (typeof BRANDMARK_PLATES)[number];
+
+/** The image's side inside a shared plate, as a fraction of the plate's side. */
+const PLATE_IMAGE_SHARE = 1 - 2 * BADGE_INSET_SHARE;
 
 const SIZE_VARS: Readonly<Record<BrandmarkSize, { height: string; gap: string; wordmark: string }>> = {
   sm: { height: UI_BRANDMARK_HEIGHT_SM, gap: UI_BRANDMARK_GAP_SM, wordmark: UI_BRANDMARK_WORDMARK_SIZE_SM },
@@ -50,6 +62,16 @@ interface BrandmarkBaseProps {
    * the name.
    */
   markSrc: string;
+  /**
+   * `"self"` (the default, and what an omitted prop means): the mark is
+   * rendered as it always was. `"shared"`: one rounded-square plate in the
+   * base ink is drawn behind the mark (in a lockup, behind the mark only),
+   * with the image inset on every side; supply a mark that reads on that ink,
+   * as its contrast is not checked. The plate is CSS, never markup from the
+   * consumer. Its geometry is `BADGE_RADIUS_SHARE` and `BADGE_INSET_SHARE`,
+   * the same shares `badgePlatePath` draws.
+   */
+  plate?: BrandmarkPlate;
   className?: string;
 }
 
@@ -97,7 +119,7 @@ export type BrandmarkProps = BrandmarkBaseProps &
  * text and is not subject to that second check.
  */
 export function Brandmark(props: BrandmarkProps) {
-  const { variant, size, label, markSrc, className } = props;
+  const { variant, size, label, markSrc, className, plate } = props;
   const vars = SIZE_VARS[size];
   const wordmark = variant === "lockup" ? props.wordmark : undefined;
   const showWordmark = typeof wordmark === "string" && normalise(wordmark) !== "";
@@ -122,7 +144,29 @@ export function Brandmark(props: BrandmarkProps) {
       )}
       style={showWordmark ? { gap: vars.gap } : undefined}
     >
-      <img src={markSrc} alt="" style={{ height: vars.height, width: "auto" }} />
+      {plate === "shared" ? (
+        <span
+          aria-hidden
+          className="inline-flex shrink-0 items-center justify-center bg-ink-primary"
+          style={{
+            height: vars.height,
+            width: vars.height,
+            borderRadius: `calc(${vars.height} * ${BADGE_RADIUS_SHARE})`,
+          }}
+        >
+          <img
+            src={markSrc}
+            alt=""
+            style={{
+              height: `calc(${vars.height} * ${PLATE_IMAGE_SHARE})`,
+              width: `calc(${vars.height} * ${PLATE_IMAGE_SHARE})`,
+              objectFit: "contain",
+            }}
+          />
+        </span>
+      ) : (
+        <img src={markSrc} alt="" style={{ height: vars.height, width: "auto" }} />
+      )}
       {showWordmark ? (
         <span className="font-display leading-none" style={{ fontSize: vars.wordmark }}>
           {wordmark}

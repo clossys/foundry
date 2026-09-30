@@ -188,6 +188,48 @@ describe("checkBrandFactsDrift finishes on pathological lines just under the cap
   }
 });
 
+describe("the jurisdiction place scan is bounded per line and per file", () => {
+  const run = (content: string) => checkBrandFactsDrift([{ path: "page.md", content }], facts);
+  const line = "INCORPORATED IN ".repeat(MAX_LINE_CHARS / "INCORPORATED IN ".length);
+  const jurisdictionFindings = (result: ReturnType<typeof run>) => result.findings.filter((f) => f.kind === "jurisdiction");
+
+  it("reports at most 16 jurisdiction findings for one repeated-phrase line at the cap", () => {
+    expect(line.length).toBe(MAX_LINE_CHARS);
+    expect(jurisdictionFindings(run(line)).length).toBeLessThanOrEqual(16);
+  });
+
+  it("reports at most 320 jurisdiction findings for 20 such lines, in under 200000 serialized characters", () => {
+    const result = run(Array.from({ length: 20 }, () => line).join("\n"));
+    expect(jurisdictionFindings(result).length).toBeLessThanOrEqual(320);
+    expect(JSON.stringify(result).length).toBeLessThan(200000);
+  });
+
+  it("reports exactly 16 findings for a line carrying 17 different drifting places", () => {
+    const states = [
+      "Nevada", "Oregon", "Maine", "Idaho", "Kansas", "Ohio", "Texas", "Vermont", "Georgia",
+      "Hawaii", "Iowa", "Montana", "Wyoming", "Florida", "Indiana", "Alabama", "Arkansas",
+    ];
+    const line = states.map((state) => `Incorporated in ${state}.`).join(" ");
+    const found = jurisdictionFindings(run(line));
+    expect(found).toHaveLength(16);
+    expect(found.map((f) => f.found)).toEqual(states.slice(0, 16));
+  });
+
+  it("still reports drift after 16 matching mentions followed by one differing place", () => {
+    const correct = "<p>Lumenfold Labs Inc. is incorporated in Delaware.</p>";
+    const wrong = "<p>Our affiliate is registered in Nevada.</p>";
+    const result = run(correct.repeat(16) + wrong);
+    expect(result.state).toBe("drift");
+    expect(result.findings.map((f) => [f.kind, f.found, f.expected])).toEqual([["jurisdiction", "Nevada", "Delaware"]]);
+  });
+
+  it("still reads an ordinary place", () => {
+    expect(run("Incorporated in Delaware.").state).toBe("clean");
+    const found = jurisdictionFindings(run("Incorporated in Nevada."));
+    expect(found.map((f) => [f.line, f.found, f.expected])).toEqual([[1, "Nevada", "Delaware"]]);
+  });
+});
+
 describe("the ignore marker", () => {
   const run = (content: string) => checkBrandFactsDrift([{ path: "page.md", content }], facts);
 

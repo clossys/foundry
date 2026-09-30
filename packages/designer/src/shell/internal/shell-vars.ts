@@ -31,6 +31,12 @@
 /** The optional context `Rail` (aside), shown from the `desktop` breakpoint up. */
 export const UI_LAYOUT_ASIDE_W = "var(--ui-layout-aside-w, 320px)";
 
+/** The navigation drawer's width: 20rem, capped to 85% of the viewport. */
+export const UI_LAYOUT_DRAWER_W = "var(--ui-layout-drawer-w, min(20rem, 85vw))";
+
+/** Minimum width and height of an interactive target (44px). */
+export const UI_LAYOUT_TAP_TARGET = "var(--ui-layout-tap-target, 44px)";
+
 /** Max width `Shell.Main`'s content is centered within. */
 export const UI_WIDTH_CONTENT_MAX = "var(--ui-width-content-max, 64rem)";
 
