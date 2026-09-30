@@ -413,11 +413,13 @@ html:not([data-brand-bound]):not([data-suppress-brand-banner])::before {
   --ui-width-page-padding-x:      clamp(16px, 4vw, 48px);
 
   /* ════════════════════════════════════════════════════════════════
-   * UI · LAYOUT (3 · chrome dimensions — no Tailwind namespace)
+   * UI · LAYOUT (5 · chrome dimensions — no Tailwind namespace)
    * ════════════════════════════════════════════════════════════════ */
   --ui-layout-sidebar-w:          256px;   /* expanded left nav */
   --ui-layout-sidebar-rail-w:     64px;    /* collapsed icon-only nav */
   --ui-layout-aside-w:            320px;   /* right-rail panel */
+  --ui-layout-drawer-w:           min(20rem, 85vw); /* navigation drawer: 20rem, capped to 85% of the viewport */
+  --ui-layout-tap-target:         44px;    /* minimum interactive target size */
 
   /* ════════════════════════════════════════════════════════════════
    * UI · DENSITY (3 · comfortable-mode defaults — no Tailwind namespace)
@@ -741,7 +743,7 @@ html:not([data-brand-bound]):not([data-suppress-brand-banner])::before {
  * parse-css.ts`, used by `parity.test.ts`, `contrast.test.ts`, and
  * `dark-mode-cascade.test.ts`) parses only the FIRST top-level `:root {`
  * block in this file as "the real token layer" and asserts it declares
- * exactly this package's curated 165 tokens; this sentinel is not a
+ * exactly this package's curated 167 tokens; this sentinel is not a
  * design token — it is a structural presence marker — so it stays out
  * of `src/tokens/tokens.ts`'s registry and out of that block entirely,
  * in a second `:root` rule the browser cascades in fine (CSS allows any

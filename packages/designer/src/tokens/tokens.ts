@@ -2,7 +2,7 @@
  * The token catalog: every custom property this package declares in
  * `styles/tokens.css`, as data. This file is the JS/TS half of the package;
  * `styles/tokens.css` is the CSS half. Both are hand-authored and both are
- * meant to describe the exact same 165 tokens — a test in this package
+ * meant to describe the exact same 167 tokens — a test in this package
  * (`parity.test.ts`) parses `styles/tokens.css` and asserts its custom
  * property names and values match this file entry-for-entry, in both
  * directions. That test is what keeps this file honest; nothing generates
@@ -35,7 +35,7 @@
  */
 
 /**
- * The 27 semantic groups the 165 tokens fall into. Each maps to exactly one
+ * The 27 semantic groups the 167 tokens fall into. Each maps to exactly one
  * CSS custom property prefix — see `FAMILY_PREFIX` in `parity.test.ts` (and
  * the README's naming table) for the concrete mapping.
  */
@@ -267,6 +267,8 @@ export const TOKENS: Readonly<Record<string, TokenDefinition>> = {
   "--ui-layout-sidebar-w": { property: "--ui-layout-sidebar-w", family: "layout", value: "256px", brandable: true, themeDependent: false },
   "--ui-layout-sidebar-rail-w": { property: "--ui-layout-sidebar-rail-w", family: "layout", value: "64px", brandable: false, themeDependent: false },
   "--ui-layout-aside-w": { property: "--ui-layout-aside-w", family: "layout", value: "320px", brandable: false, themeDependent: false },
+  "--ui-layout-drawer-w": { property: "--ui-layout-drawer-w", family: "layout", value: "min(20rem, 85vw)", brandable: false, themeDependent: false },
+  "--ui-layout-tap-target": { property: "--ui-layout-tap-target", family: "layout", value: "44px", brandable: false, themeDependent: false },
 
   // ── UI · DENSITY ────────────────────────────────────────────────────
   "--ui-density-pad": { property: "--ui-density-pad", family: "density", value: "var(--spacing-xl, 24px)", brandable: false, themeDependent: false },

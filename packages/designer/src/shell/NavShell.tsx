@@ -11,6 +11,7 @@ import { Icon } from "../atoms/Icon.js";
 import { cx } from "../atoms/internal/cx.js";
 import { UI_ELEVATION_FLOATING, UI_Z_MODAL } from "../atoms/internal/ui-vars.js";
 import { X } from "../icons/index.js";
+import { UI_LAYOUT_DRAWER_W } from "./internal/shell-vars.js";
 
 export interface NavShellProps extends Omit<AriaDialogTriggerProps, "children"> {
   /**
@@ -118,7 +119,10 @@ export function NavShell({
           {triggerLabel}
         </Button>
         <ModalOverlay className="fixed inset-0 bg-overlay-scrim" style={{ zIndex: UI_Z_MODAL }} isDismissable>
-          <Modal className="fixed inset-y-0 start-0 flex h-full w-[min(20rem,85vw)] flex-col outline-none">
+          <Modal
+          className="fixed inset-y-0 start-0 flex h-full flex-col outline-none"
+          style={{ width: UI_LAYOUT_DRAWER_W }}
+        >
             <AriaDialog
               aria-label={ariaLabel}
               className="flex h-full w-full flex-col gap-lg overflow-auto border-e border-overlay-border bg-overlay-surface p-lg text-body text-ink-primary outline-none"

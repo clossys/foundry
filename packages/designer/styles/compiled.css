@@ -179,9 +179,6 @@
   .min-h-0 {
     min-height: 0px;
   }
-  .min-h-\[44px\] {
-    min-height: 44px;
-  }
   .min-h-dvh {
     min-height: 100dvh;
   }
@@ -247,9 +244,6 @@
   }
   .min-w-\[12rem\] {
     min-width: 12rem;
-  }
-  .min-w-\[44px\] {
-    min-width: 44px;
   }
   .flex-1 {
     flex: 1;

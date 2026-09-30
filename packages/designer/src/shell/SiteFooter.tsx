@@ -1,7 +1,7 @@
 import type { HTMLAttributes, ReactNode } from "react";
 import { cx } from "../atoms/internal/cx.js";
 import { SITE_CHROME_GROUND_CLASSES, siteChromeHasBorder, type SiteChromeGround } from "./internal/shell-ground.js";
-import { UI_BORDER_HAIRLINE, UI_WIDTH_PAGE_PADDING_X, UI_Z_SHELL } from "./internal/shell-vars.js";
+import { UI_BORDER_HAIRLINE, UI_LAYOUT_TAP_TARGET, UI_WIDTH_PAGE_PADDING_X, UI_Z_SHELL } from "./internal/shell-vars.js";
 
 export interface SiteFooterProps extends Omit<HTMLAttributes<HTMLElement>, "children"> {
   /**
@@ -124,10 +124,12 @@ export interface SiteFooterLegalProps {
 }
 
 const LEGAL_LINK_CLASSES = cx(
-  "inline-flex min-h-[44px] min-w-[44px] items-center justify-center px-xs",
+  "inline-flex items-center justify-center px-xs",
   "text-inherit underline",
   "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent",
 );
+
+const LEGAL_LINK_STYLE = { minHeight: UI_LAYOUT_TAP_TARGET, minWidth: UI_LAYOUT_TAP_TARGET } as const;
 
 /**
  * The standard legal row for `SiteFooter`'s `secondary` slot: a copyright
@@ -151,7 +153,7 @@ function SiteFooterLegal({ entity, links, linksLabel }: SiteFooterLegalProps) {
     >
       {links.map((link) => (
         <li key={link.href + link.label}>
-          <a href={link.href} className={LEGAL_LINK_CLASSES}>
+          <a href={link.href} className={LEGAL_LINK_CLASSES} style={LEGAL_LINK_STYLE}>
             {link.label}
           </a>
         </li>
