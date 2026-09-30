@@ -33,3 +33,5 @@ export type { SystemAuditViewProps } from "./SystemAuditView.js";
 
 export { LegalView } from "./LegalView.js";
 export type { LegalViewLabels, LegalViewProps } from "./LegalView.js";
+export { LandingView } from "./LandingView.js";
+export type { LandingViewProps } from "./LandingView.js";
