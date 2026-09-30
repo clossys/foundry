@@ -19,6 +19,13 @@ function varCalls(source: string): string[] {
   return calls;
 }
 
+describe("varCalls scanner", () => {
+  it("flags a raw length in a fallback nested inside min()", () => {
+    expect(hasRawLengthFallback("var(--a, min(var(--b), 2rem))")).toBe(true);
+    expect(hasRawLengthFallback("var(--a, min(var(--b), none))")).toBe(false);
+  });
+});
+
 const RAW_LENGTH = /(^|[\s,(])-?(\d+(\.\d*)?|\.\d+)(px|rem|em|vw|vh|dvh|ch|%)/;
 
 /** True when the fallback of any `var(` call in `source`, however deeply nested, carries a raw length literal. */
