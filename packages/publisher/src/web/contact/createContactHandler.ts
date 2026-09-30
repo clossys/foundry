@@ -102,7 +102,10 @@ function resolveHoneypot(value: unknown): string {
   return value;
 }
 
-function requireDelivery(value: unknown, target: ContactTarget): ContactDelivery {
+/** A validated port with the one function read from it at construction. */
+type KeptPort<Port, Fn> = { readonly port: Port; readonly fn: Fn };
+
+function requireDelivery(value: unknown, target: ContactTarget): KeptPort<ContactDelivery, ContactDelivery["deliver"]> {
   if (typeof value !== "object" || value === null) fail("delivery must be an object");
   // Presence anywhere on the prototype chain, whatever the value: the safe
   // direction for a forged or inherited brand is refusal.
@@ -111,15 +114,18 @@ function requireDelivery(value: unknown, target: ContactTarget): ContactDelivery
   }
   const candidate = value as { channel?: unknown; deliver?: unknown };
   if (candidate.channel !== "email") fail('delivery.channel must be "email"');
-  if (typeof candidate.deliver !== "function") fail("delivery.deliver must be a function");
-  return value as ContactDelivery;
+  // Read once: the value that passes this check is the one the handler keeps.
+  const deliver = candidate.deliver;
+  if (typeof deliver !== "function") fail("delivery.deliver must be a function");
+  return { port: value as ContactDelivery, fn: deliver as ContactDelivery["deliver"] };
 }
 
-function requireLimiter(value: unknown): ContactRateLimiter {
-  if (typeof value !== "object" || value === null || typeof (value as { check?: unknown }).check !== "function") {
-    fail("limiter.check must be a function");
-  }
-  return value as ContactRateLimiter;
+function requireLimiter(value: unknown): KeptPort<ContactRateLimiter, ContactRateLimiter["check"]> {
+  if (typeof value !== "object" || value === null) fail("limiter.check must be a function");
+  // Read once: the value that passes this check is the one the handler keeps.
+  const check = (value as { check?: unknown }).check;
+  if (typeof check !== "function") fail("limiter.check must be a function");
+  return { port: value as ContactRateLimiter, fn: check as ContactRateLimiter["check"] };
 }
 
 // ---------------------------------------------------------------------------
@@ -235,7 +241,9 @@ function validateSubmission(
  * Builds a contact handler. Validates the whole configuration and throws
  * synchronously on any violation, so a handler that exists is correctly
  * configured. The config is read once: later mutation of the object or its
- * arrays does not change the handler.
+ * arrays does not change the handler. The same holds for the ports: `deliver`
+ * and `check` are each read once here, and a later reassignment on the port
+ * has no effect. Each is called with its own port as `this`.
  */
 export function createContactHandler(config: ContactHandlerConfig): ContactHandler {
   if (typeof config !== "object" || config === null) fail("config must be an object");
@@ -244,8 +252,8 @@ export function createContactHandler(config: ContactHandlerConfig): ContactHandl
   if (typeof target !== "string" || !TARGETS.includes(target)) {
     fail("target must be production, preview, development or test");
   }
-  const delivery = requireDelivery(config.delivery, target as ContactTarget);
-  const limiter = requireLimiter(config.limiter);
+  const { port: delivery, fn: deliver } = requireDelivery(config.delivery, target as ContactTarget);
+  const { port: limiter, fn: check } = requireLimiter(config.limiter);
   const caps = resolveCaps(config.caps);
   const topics = resolveTopics(config.topics, caps.topic);
   const from = requireLine("from", config.from);
@@ -307,7 +315,7 @@ export function createContactHandler(config: ContactHandlerConfig): ContactHandl
     // 4. Limiter: only exactly true proceeds.
     let answer: unknown;
     try {
-      answer = await limiter.check(clientKey);
+      answer = await Reflect.apply(check, limiter, [clientKey]);
     } catch {
       return unavailable("limiter-failed");
     }
@@ -345,7 +353,7 @@ export function createContactHandler(config: ContactHandlerConfig): ContactHandl
       html: rendered.html,
     };
     try {
-      await delivery.deliver(message);
+      await Reflect.apply(deliver, delivery, [message]);
     } catch {
       return unavailable("delivery-failed");
     }

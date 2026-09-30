@@ -2636,7 +2636,9 @@ const result = await handler.handle(body, { clientKey });
 as `unknown`. `from`, `to` and `subject` come from configuration, not from
 the submission. The other config fields are `honeypotField`
 (default `"website"`), `caps`, `createMessageId` and `onUnavailable` (called
-with a reason code only). Construction throws on invalid configuration.
+with a reason code only). Construction throws on invalid configuration. The
+handler reads `delivery.deliver` and `limiter.check` once, at construction, and
+calls each with its own port as `this`; reassigning either later has no effect.
 
 ### Result codes
 
@@ -2751,7 +2753,9 @@ As constructed, and with a limiter that answers correctly:
   limiter allows reaches `deliver`.
 - The recipients, sender and subject come from configuration; submitted text
   reaches a header only as the shape-checked `replyTo` address.
-- A stub delivery is not called by a handler whose target is `"production"`.
+- A stub delivery is not called by a handler whose target is `"production"`,
+  including one assigned onto the delivery after construction, because
+  `deliver` and `check` are read once at construction.
 - Results contain status and field codes and no submitted text.
 
 It does not provide:
