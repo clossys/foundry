@@ -2203,6 +2203,57 @@ below), lifecycle values, version shape, a needs graph free of unknown
 references and cycles, timestamp ordering, and no premature `approvedAt`/
 `verifiedAt`/`publishedTo` on an item that has not reached that stage yet.
 
+### Importing a v0 pack
+
+An earlier pack index can be imported into a valid `pack.json`.
+`LegacyV0Pack` is the documented input type: `{ items }` with one entry for
+each of `brief`, `brandKit`, `voice`, `shareCard`, `email`, and `website`
+(other top-level keys are ignored). Each entry is
+`LegacyV0PackItem`: `{ status, iteration: "v0", approvedAt?, updated?, notes? }`,
+where `status` is `LegacyV0PackStatus` (`draft`, `delegated`, or `approved`)
+and `delegated` means delegated approval, pending the owner's review.
+`LegacyV0PackKey` names the six keys, and `LEGACY_V0_PACK_ITEMS`
+(`LegacyV0PackItemSpec` entries, in order) maps each key to its pack item id,
+layer, owner, visibility, and `needs`.
+
+`importLegacyV0Pack(value)` is pure. It returns
+`LegacyV0PackImportResult`: `{ ok: true, manifest }` or
+`{ ok: false, issues }`, where each `LegacyV0PackIssue` is a `path` and a
+`message` that never repeats the input's value.
+
+- `draft` becomes `draft`, `delegated` becomes `in-review`, and `approved`
+  becomes `kept`. No item becomes `published`.
+- An `approved` item needs `approvedAt`; a `draft` or `delegated` item that
+  carries one is refused.
+- Timestamps are `YYYY-MM-DD` (written as `T00:00:00Z`) or a UTC timestamp;
+  any other form and any impossible date is refused. `updated` becomes
+  `updatedAt`, and `notes` is dropped.
+- A missing or extra item, an unknown key inside an item, an unknown status,
+  or an `iteration` other than `"v0"` is refused by path, as is any finding
+  from `validatePackManifest` on the result.
+
+`writeLegacyV0PackImport(rootDir, value)` returns `LegacyV0PackWriteResult`
+and writes the manifest to `LEGACY_V0_PACK_OUTPUT_PATH`
+(`clossys/publisher/pack.json` under `rootDir`). It writes nothing when the
+import is refused or the file already exists.
+
+```ts
+import { importLegacyV0Pack } from "@clossys/publisher/pack";
+
+const result = importLegacyV0Pack({
+  items: {
+    brief: { status: "approved", iteration: "v0", approvedAt: "2026-09-20" },
+    brandKit: { status: "delegated", iteration: "v0" },
+    voice: { status: "draft", iteration: "v0" },
+    shareCard: { status: "draft", iteration: "v0" },
+    email: { status: "draft", iteration: "v0" },
+    website: { status: "draft", iteration: "v0" },
+  },
+});
+if (!result.ok) throw new Error(result.issues.map((issue) => issue.path).join(", "));
+console.log(result.manifest.items.length);
+```
+
 ## Surface documents move to Publisher
 
 Issue #1205: Publisher authors the in-tree `SectionedView`/`MarketingView`
