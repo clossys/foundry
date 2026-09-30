@@ -302,6 +302,21 @@ describe("deriveClientKey", () => {
       const keys = new Set(junk.map((value) => deriveClientKey(value)));
       expect([...keys]).toEqual([UNKNOWN_CLIENT_KEY]);
     });
+
+    // Pins the folding as it is today: only IPv4-mapped addresses lose their
+    // IPv6 key. NAT64 and IPv4-compatible addresses keep theirs, so they share
+    // a bucket with every other address in their /64. If a change makes them
+    // fold to IPv4 keys, this test must be rewritten, not silenced.
+    it("keeps NAT64 and IPv4-compatible addresses as IPv6 keys", () => {
+      const nat64 = deriveClientKey("64:ff9b::203.0.113.7");
+      for (const form of ["64:ff9b::cb00:7107", "[64:ff9b::203.0.113.7]:443", "64:ff9b::198.51.100.9"]) {
+        expect(deriveClientKey(form), form).toBe(nat64);
+      }
+      expect(nat64).not.toBe(UNKNOWN_CLIENT_KEY);
+      expect(nat64).not.toBe(deriveClientKey("203.0.113.7"));
+      expect(deriveClientKey("::203.0.113.7")).toBe(deriveClientKey("::1"));
+      expect(deriveClientKey("::203.0.113.7")).not.toBe(deriveClientKey("203.0.113.7"));
+    });
   });
 });
 
@@ -670,10 +685,19 @@ describe("template file rules", () => {
     expect(readFileSync(join(APP_DIR, "site-records.ts"), "utf8")).toMatch(/return resolveSiteTarget\(process\.env\);/);
   });
 
-  it("bounds the delivery call with a timeout", () => {
-    const source = readFileSync(join(APP_DIR, "site-delivery.ts"), "utf8");
-    expect(source).toMatch(/SEND_TIMEOUT_MS\s*=\s*10_000;/);
-    expect(source).toMatch(/timeoutMs:\s*SEND_TIMEOUT_MS/);
+  it("passes a ten-second timeout to the Resend adapter", async () => {
+    const createResendAdapter = vi.fn(() => ({}) as unknown as ContactDelivery);
+    vi.doMock("@clossys/messenger/providers/resend", () => ({ createResendAdapter }));
+    try {
+      const { createProductionDelivery } = await import("../templates/site/app/site-delivery.js");
+      createProductionDelivery();
+      expect(createResendAdapter).toHaveBeenCalledTimes(1);
+      const config = createResendAdapter.mock.calls[0]?.[0] as { apiKey?: unknown; timeoutMs?: unknown } | undefined;
+      expect(config).toEqual({ apiKey: expect.any(Function), timeoutMs: 10_000 });
+      expect(typeof config?.apiKey).toBe("function");
+    } finally {
+      vi.doUnmock("@clossys/messenger/providers/resend");
+    }
   });
 
   it("carries no key, token or password literal", () => {
