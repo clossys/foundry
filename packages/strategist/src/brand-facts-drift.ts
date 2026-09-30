@@ -370,10 +370,12 @@ export function checkBrandFactsDrift(
 
       // 3. Jurisdiction, in prose.
       const places: string[] = [];
+      const MAX_PLACES_PER_LINE = 16;
       const collectPlace = (re: RegExp): void => {
         for (const m of prose.matchAll(re)) {
+          if (places.length >= MAX_PLACES_PER_LINE) break;
           const rest = prose.slice((m.index ?? 0) + m[0].length).replace(PLACE_PREFIX_RE, "");
-          const place = PLACE_RE.exec(rest)?.[0];
+          const place = PLACE_RE.exec(rest.slice(0, 256))?.[0];
           if (place !== undefined && !NOT_PLACES.has(place.toLowerCase())) places.push(place);
         }
       };
