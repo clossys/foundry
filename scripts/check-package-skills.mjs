@@ -277,9 +277,9 @@ const LAUNCHER_APPLY_POSITIVE_RULES = [
   },
   {
     rule: "launcher-apply-k5-status-gate",
-    re: /continue only on `proposed`[^.]*on `superseded`[^.]*--supersedes <n>[^.]*close the old pull request once the new one is proposed[^.]*stop and report/,
+    re: /Run `launcher-apply-plan status --repo <id>` and continue only on `proposed`[^.]*on `superseded`, use a new branch[^.]*--supersedes <n>[^.]*close the old pull request[^.]*run `status` again, which must say `proposed`[^.]*stop and report/,
     message:
-      "must run `status`, continue only on `proposed`, handle `superseded` with a new branch, `--supersedes <n>` and closing the old pull request, and otherwise stop and report (K5)",
+      "must run `status`, continue only on `proposed`, handle `superseded` with a new branch, `--supersedes <n>`, closing the old pull request and running `status` again, and otherwise stop and report (K5)",
   },
   {
     rule: "launcher-apply-k6-no-merge",

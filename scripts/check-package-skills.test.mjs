@@ -291,7 +291,7 @@ const LAUNCHER_APPLY_PARTS = {
   k2: "Before any commit, run `launcher-apply-plan verify --repo <id>` and stop unless it exits 0.",
   k3: "Commit and push only the set's `clossys/apply-` branch, never the default branch, never force-push, one pull request per staffed repository.",
   k4: "File one task-record issue in the target repository, labelled from that repository's own task-record configuration, then open the pull request with exactly the `launcher-apply-plan body --repo <id> --task-record <n>` output, unedited.",
-  k5: "Run `launcher-apply-plan status --repo <id>` and continue only on `proposed`; on `superseded`, use a new branch, pass `--supersedes <n>` to `body`, and close the old pull request once the new one is proposed; on any other state, stop and report.",
+  k5: "Run `launcher-apply-plan status --repo <id>` and continue only on `proposed`; on `superseded`, use a new branch, pass `--supersedes <n>` to `body`, open the new pull request, close the old pull request, and run `status` again, which must say `proposed`; on any other state, stop and report.",
   k6: "Never merge or enable auto-merge. Report ready only when `status` is `proposed` and `Clossys adoption decision` is green; the setup pull request merges before the apply pull request opens.",
 };
 
@@ -365,6 +365,28 @@ test("each missing launcher rule is flagged despite a decoy", () => {
       result.findings.map((f) => f.rule),
       [expectedRule],
       `omitting ${omitKey} must flag only ${expectedRule}`,
+    );
+  }
+});
+
+test("launcher K5 requires each of its instructions, not only the gate on proposed", () => {
+  const k5 = LAUNCHER_APPLY_PARTS.k5;
+  const cuts = {
+    statusCommand: "Run `launcher-apply-plan status --repo <id>` and ",
+    newBranch: "use a new branch, ",
+    supersedesFlag: "pass `--supersedes <n>` to `body`, ",
+    closeOld: "close the old pull request, ",
+    statusAgain: "and run `status` again, which must say `proposed`",
+    stopAndReport: "; on any other state, stop and report",
+  };
+  for (const [name, cut] of Object.entries(cuts)) {
+    assert.ok(k5.includes(cut), `fixture K5 must contain the ${name} instruction`);
+    const skillText = launcherSkillText().replace(k5, k5.replace(cut, ""));
+    const result = evaluatePackageSkills([launcherPackage(skillText)]);
+    assert.deepEqual(
+      result.findings.map((f) => f.rule),
+      [LAUNCHER_APPLY_RULE_BY_PART.k5],
+      `removing the ${name} instruction from K5 must flag K5`,
     );
   }
 });

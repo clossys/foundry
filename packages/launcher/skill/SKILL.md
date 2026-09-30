@@ -34,7 +34,7 @@ Once the client has approved a plan, the staffed repositories are set up and the
 4. **Commit.** Commit the materialized change on the set's own branch, which is `clossys/apply-` followed by the first 12 hex digits of the change set's digest.
 5. **Push.** Commit and push only the set's `clossys/apply-` branch, never the default branch, never force-push, one pull request per staffed repository.
 6. **Open.** Open the pull request against the default branch with the set's title and the body from step 3.
-7. **Status.** Run `launcher-apply-plan status --repo <id>` and continue only on `proposed`; on `superseded`, use a new branch, pass `--supersedes <n>` to `body`, and close the old pull request once the new one is proposed; on any other state, stop and report. It exits 0 for `proposed` and `applied`, 1 for `diverged` and 2 otherwise.
+7. **Status.** Run `launcher-apply-plan status --repo <id>` and continue only on `proposed`; on `superseded`, use a new branch, pass `--supersedes <n>` to `body`, open the new pull request, close the old pull request, and run `status` again, which must say `proposed`; on any other state, stop and report. It exits 0 for `proposed` and `applied`, 1 for `diverged` and 2 otherwise.
 8. **Report.** Never merge or enable auto-merge. Report ready only when `status` is `proposed` and `Clossys adoption decision` is green; the setup pull request merges before the apply pull request opens.
 
 ## When this package is installed
