@@ -287,7 +287,7 @@ describe("deriveClientKey", () => {
         expect(deriveClientKey(form), form).toBe(v6);
       }
       const v4 = deriveClientKey("203.0.113.7");
-      for (const form of ["203.0.113.7:5000", "203.0.113.7:5001", "::ffff:203.0.113.7", "::FFFF:cb00:7107", "[::ffff:203.0.113.7]:80"]) {
+      for (const form of ["203.0.113.7:5000", "203.0.113.7:5001", "::ffff:203.0.113.7", "::FFFF:cb00:7107", "::ffff:203.0.113.7%eth0", "[::ffff:203.0.113.7]:80"]) {
         expect(deriveClientKey(form), form).toBe(v4);
       }
     });
