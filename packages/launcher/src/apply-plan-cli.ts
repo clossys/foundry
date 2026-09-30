@@ -271,13 +271,15 @@ that verify also makes: it does not fetch a pull request's head, check anything
 out, or write a file or an index.
 
 The state is one of: proposed (an open pull request of this change set, made
-by the person running this, whose head passes every check verify makes),
+by the person running this, whose body is the body `body` recorded and whose
+head passes every check verify makes),
 applied (the default branch already holds the change set), planned (neither),
-diverged (its pull request does not match), superseded (an older change set of
+diverged (its pull request or its body does not match), superseded (an older change set of
 this repository has a pull request, even beside this one's) or indeterminate
-(something could not be read or trusted, including a partial clone, any open
-pull request whose body names the marker word but is not the person's own, and a
-listing of 100 or more open pull requests). It prints the state, a fixed reason
+(something could not be read or trusted, including a partial clone, a change set
+`body` never recorded a body for, any open pull request whose body names the
+marker word but is not the person's own, and a listing of 100 or more open pull
+requests). It prints the state, a fixed reason
 and #<number> for each pull request it is about, and nothing else. proposed
 does not check the head's ancestry to the base, and nothing in this unit does.
 
