@@ -13,6 +13,10 @@
 //   approves nothing, and a detached HEAD at an old commit cannot revive an
 //   approval a later commit revoked (decisions are append-only and outside the
 //   plan digest).
+// - That HEAD must also be its branch's upstream (H1, local refs, no fetch): a
+//   local commit nobody pushed, or a clone that fell behind, is not the hub's
+//   word. HEAD is resolved to one commit id, and every later read of the hub
+//   (the plan, the assessment) is made at that id, never at `HEAD` again.
 // - Bundles and setup sets are read only from the hub's own stores, by digest,
 //   through the store readers that recompute each digest. Nothing the caller
 //   holds in memory stands in for them.
@@ -57,11 +61,13 @@ export interface AdmissionRefusal {
   readonly detail?: string;
 }
 
-/** What the hub's committed plan says: the plan itself, its digest, and the bundle digest its latest decision approves. */
+/** What the hub's committed plan says: the plan itself, its digest, the bundle digest its latest decision approves, and the commit id it was read from. */
 export interface HubAuthority {
   readonly plan: AdvisorPlan;
   readonly planDigest: string;
   readonly subject: string;
+  /** The commit id HEAD resolved to, which equalled its branch's upstream, and which the plan was read from. */
+  readonly head: string;
 }
 
 export type AdmissionDecision = { readonly state: "bound"; readonly binding: ApprovalBinding } | AdmissionRefusal;
@@ -172,18 +178,39 @@ function parseTreeRows(stdout: Buffer): TreeRow[] | null {
   return rows;
 }
 
+/** The hub's head: an attached HEAD's commit id that equals its branch's upstream, an attached one that does not, or no usable attached HEAD. */
+type HubHead = { readonly state: "upstream"; readonly commit: string } | { readonly state: "not-upstream" } | { readonly state: "unreadable" };
+
 /**
- * The bytes of a regular file at `relPath` in the tree of the hub's HEAD, or
- * null. HEAD must be attached to a branch (a detached HEAD may sit on an old
- * commit that still carries a since-revoked approval), the path must be one
- * regular, non-executable blob (mode 100644: a symbolic link is refused), and
- * the read goes through the blob's object id, so it never sees the worktree.
- * The path is relative to the hub, so a hub inside a larger repository works.
+ * H1. Resolves the hub's HEAD to one commit id, and requires the branch's
+ * configured upstream to resolve to that same commit. Local refs only: nothing
+ * here fetches, so a hub whose upstream is stale is judged by what it holds.
+ * HEAD must be attached to a branch (a detached HEAD may sit on an old commit
+ * that still carries a since-revoked approval). No upstream, ahead and behind
+ * are all `not-upstream`.
  */
-function readCommittedBlob(hub: string, relPath: string): Buffer | null {
-  const head = runGit(hub, ["symbolic-ref", "-q", "HEAD"]);
-  if (head.status !== 0 || !head.stdout.toString("utf8").trim().startsWith("refs/heads/")) return null;
-  const listed = runGit(hub, ["ls-tree", "-z", "HEAD", "--", relPath]);
+function resolveHubHead(hub: string): HubHead {
+  const symbolic = runGit(hub, ["symbolic-ref", "-q", "HEAD"]);
+  if (symbolic.status !== 0 || !symbolic.stdout.toString("utf8").trim().startsWith("refs/heads/")) return { state: "unreadable" };
+  const head = runGit(hub, ["rev-parse", "--verify", "-q", "HEAD^{commit}"]);
+  const commit = head.stdout.toString("utf8").trim();
+  if (head.status !== 0 || !OBJECT_ID.test(commit)) return { state: "unreadable" };
+  const upstream = runGit(hub, ["rev-parse", "--verify", "-q", "@{upstream}^{commit}"]);
+  if (upstream.status !== 0 || upstream.stdout.toString("utf8").trim() !== commit) return { state: "not-upstream" };
+  return { state: "upstream", commit };
+}
+
+/**
+ * The bytes of a regular file at `relPath` in the tree of one commit of the
+ * hub, or null. The commit is the id resolveHubHead returned, never `HEAD`, so
+ * two reads cannot straddle a moved head. The path must be one regular,
+ * non-executable blob (mode 100644: a symbolic link is refused), and the read
+ * goes through the blob's object id, so it never sees the worktree. The path
+ * is relative to the hub, so a hub inside a larger repository works.
+ */
+function readCommittedBlob(hub: string, commit: string, relPath: string): Buffer | null {
+  if (!OBJECT_ID.test(commit)) return null;
+  const listed = runGit(hub, ["ls-tree", "-z", commit, "--", relPath]);
   if (listed.status !== 0) return null;
   const rows = parseTreeRows(listed.stdout);
   if (rows === null || rows.length !== 1) return null;
@@ -198,13 +225,20 @@ function readCommittedBlob(hub: string, relPath: string): Buffer | null {
 
 /**
  * K1. The plan committed at the hub's HEAD, and the bundle digest its latest
- * decision approves. Exit 2, `awaiting-approval`, with `plan-unreadable` when
- * the plan cannot be read as one strict-JSON regular blob at an attached HEAD,
- * and `plan-not-approved` when it does not validate, or nothing in it is
- * approved with a subject (see approvedSubject).
+ * decision approves. Exit 2, `awaiting-approval`, with `hub-not-upstream` when
+ * the attached HEAD is not its branch's upstream (H1: no upstream, ahead or
+ * behind), `plan-unreadable` when the plan cannot be read as one strict-JSON
+ * regular blob at an attached HEAD, and `plan-not-approved` when it does not
+ * validate, or nothing in it is approved with a subject (see approvedSubject).
+ * HEAD is resolved once (H2): `head` is that commit id, and the plan is read
+ * from it.
  */
 export function readHubAuthority(hub: string): HubAuthority | AdmissionRefusal {
-  const bytes = readCommittedBlob(hub, PLAN_PATH);
+  const hubHead = resolveHubHead(hub);
+  if (hubHead.state === "unreadable") return refuse("plan-unreadable");
+  if (hubHead.state === "not-upstream") return refuse("hub-not-upstream");
+  const { commit } = hubHead;
+  const bytes = readCommittedBlob(hub, commit, PLAN_PATH);
   if (bytes === null) return refuse("plan-unreadable");
   let document: unknown;
   try {
@@ -222,7 +256,7 @@ export function readHubAuthority(hub: string): HubAuthority | AdmissionRefusal {
   } catch {
     return refuse("plan-not-approved");
   }
-  return { plan, planDigest: digest, subject };
+  return { plan, planDigest: digest, subject, head: commit };
 }
 
 /**
@@ -609,6 +643,15 @@ function packageActsOf(set: RepositoryChangeSet, authority: HubAuthority): { nam
   return acts;
 }
 
+const packageKey = (entry: { readonly name: string; readonly version: string; readonly integrity: string }): string => `${entry.name}@${entry.version}#${entry.integrity}`;
+
+/** Whether two lists hold the same strings, the same number of times each, in any order. */
+function sameStrings(left: readonly string[], right: readonly string[]): boolean {
+  const a = [...left].sort();
+  const b = [...right].sort();
+  return a.length === b.length && a.every((item, index) => item === b[index]);
+}
+
 const notCurrent = (detail: string): AdmissionRefusal => ({ state: "refused", exitCode: 1, reason: "authorization-not-current", detail });
 const unverified = (detail: string): AdmissionRefusal => ({ state: "refused", exitCode: 2, reason: "authorization-unverified", detail });
 
@@ -628,11 +671,17 @@ function defaultRunner(timeoutMs: number): ReadinessRunner {
 /**
  * K11. A set with package acts is bound only while the hub's execution
  * authorization is current: clossys/advisor/assessment-input.json, read as a
- * git object at the hub's HEAD, must carry an authorization for this plan
- * digest that permits this repository and every package act of the set (and
- * of what it defers), and the hub's own advisor-execution-readiness, run on
- * those exact committed bytes at the current instant, must exit 0. Exit 1 is
- * `authorization-not-current`; exit 2 and anything else is
+ * git object at the commit the plan was read from (H3: HEAD must still be
+ * attached, still equal `authority.head` and still match its upstream, else
+ * `authorization-unverified` `hub-head-moved`), must carry an authorization
+ * for this plan digest that permits this repository and every package act of
+ * the set (and of what it defers), and the hub's own
+ * advisor-execution-readiness, run on those exact committed bytes at the
+ * current instant, must exit 0. The permitted packages must also equal the
+ * plan's packages exactly (H4): the distinct `name@version#integrity` keys of
+ * every act in the plan, no more, no fewer and none repeated, else
+ * `authorization-not-current` `packages-not-exact`; repositories stay a subset
+ * check. Exit 1 is `authorization-not-current`; exit 2 and anything else is
  * `authorization-unverified`. A set with no package act skips this step.
  */
 function checkAuthorization(input: DecideSetBindingInput): AdmissionRefusal | null {
@@ -641,7 +690,9 @@ function checkAuthorization(input: DecideSetBindingInput): AdmissionRefusal | nu
   if (acts === null) return unverified("deferred-unplanned");
   if (acts.length === 0) return null;
 
-  const bytes = readCommittedBlob(hub, ASSESSMENT_PATH);
+  const hubHead = resolveHubHead(hub);
+  if (hubHead.state !== "upstream" || hubHead.commit !== authority.head) return unverified("hub-head-moved");
+  const bytes = readCommittedBlob(hub, authority.head, ASSESSMENT_PATH);
   if (bytes === null) return unverified("assessment-unreadable");
   let document: unknown;
   try {
@@ -665,6 +716,9 @@ function checkAuthorization(input: DecideSetBindingInput): AdmissionRefusal | nu
   for (const act of acts) {
     if (!permitted.some((entry) => entry.name === act.name && entry.version === act.version && entry.integrity === act.integrity)) return notCurrent("package-not-permitted");
   }
+  // H4: the authorization is for the plan's packages, all of them and only them; a repeated entry is not the same list.
+  const planned = new Set((authority.plan.packages ?? []).map(packageKey));
+  if (!sameStrings(permitted.map(packageKey), [...planned])) return notCurrent("packages-not-exact");
 
   const bin = join(hub, READINESS_BIN);
   try {

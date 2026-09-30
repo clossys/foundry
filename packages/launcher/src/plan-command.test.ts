@@ -223,6 +223,10 @@ function makeWorld(options: WorldOptions = {}): World {
   if (assessment !== null) write(hub, "clossys/advisor/assessment-input.json", typeof assessment === "string" ? assessment : json(assessment));
   git(hub, "add", "-A");
   git(hub, "commit", "-m", "hub");
+  const hubOrigin = join(root, "origin", "hub.git");
+  git(root, "init", "--bare", "-b", "main", hubOrigin);
+  git(hub, "remote", "add", "origin", hubOrigin);
+  git(hub, "push", "-u", "origin", "main");
   writeReadinessStub(hub);
   writeIntegratorStub(hub);
   const out: string[] = [];
@@ -345,6 +349,7 @@ function approveAndCommit(world: World, digest: string): void {
   write(world.hub, "clossys/advisor/plan.json", json(approvedPlan(digest, world.plan)));
   git(world.hub, "add", "clossys/advisor/plan.json");
   git(world.hub, "commit", "-m", "approve");
+  git(world.hub, "push");
 }
 
 /** Materializes each stored setup set in its clone and merges it by squash: both repositories become apply repositories. */
@@ -486,6 +491,7 @@ describe("launcher-apply-plan plan", () => {
       write(world.hub, "clossys/advisor/assessment-input.json", json(assessmentFor(world.plan, {}, [SITE, DOCS])));
       git(world.hub, "add", "-A");
       git(world.hub, "commit", "-m", "authorize");
+      git(world.hub, "push");
       world.out.length = 0;
       expect(await run(world)).toBe(0);
       expect(world.err).toEqual([]);
@@ -717,6 +723,7 @@ describe("launcher-apply-plan plan", () => {
       chmodSync(join(executable.hub, "clossys/advisor/assessment-input.json"), 0o755);
       git(executable.hub, "add", "-A");
       git(executable.hub, "commit", "-m", "executable");
+      git(executable.hub, "push");
       expect(git(executable.hub, "ls-tree", "HEAD", "clossys/advisor/assessment-input.json")).toMatch(/^100755 blob /u);
       expect(await run(executable)).toBe(1);
       expect(executable.out.join("")).toContain("Authorization: none\n");
@@ -726,6 +733,7 @@ describe("launcher-apply-plan plan", () => {
       symlinkSync("brief.json", join(linked.hub, "clossys/advisor/assessment-input.json"));
       git(linked.hub, "add", "-A");
       git(linked.hub, "commit", "-m", "link");
+      git(linked.hub, "push");
       expect(git(linked.hub, "ls-tree", "HEAD", "clossys/advisor/assessment-input.json")).toMatch(/^120000 blob /u);
       expect(await run(linked)).toBe(1);
       expect(linked.err).toEqual([]);

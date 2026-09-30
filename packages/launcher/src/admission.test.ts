@@ -8,6 +8,7 @@ import { LEDGER_PATH, contentDigest, dependencyPointer, validateRepositoryChange
 import type { RepositoryChangeSet } from "./change-set-contract.js";
 import { readInstalledLedger, renderInstalledLedger } from "./ledger-contract.js";
 import { trustInstalledLedger } from "./ledger-trust.js";
+import type { AdvisorPlan } from "./plan-contract.js";
 import { planDigest } from "./plan-digest.js";
 import {
   ASSESSMENT_FILE,
@@ -19,16 +20,19 @@ import {
   STARTER,
   STRATEGIST,
   WRITER,
+  advanceHubUpstream,
   approvedPlan,
   assessmentFor,
   authorityOf,
   buildWorld,
   bundleOf,
   clone,
+  commitHubAssessment,
   committedPlanPackages,
   decide,
   decision,
   editLedger,
+  git,
   hubRepo,
   lockfileText,
   memoryReaders,
@@ -832,6 +836,8 @@ describe("planPackagesFor", () => {
 // git-backed: the hub
 
 const hubOf = (options: HubOptions) => hubRepo(roots, options);
+/** What readHubAuthority returns for a hub whose HEAD holds `p`: the plan, its digest, its subject and the commit it was read from. */
+const authorityAt = (hub: string, p: AdvisorPlan) => ({ plan: p, planDigest: planDigest(p), subject: approvedSubject(p), head: git(hub, "rev-parse", "HEAD").trim() });
 const noParts = (value: unknown, ...parts: string[]) => {
   const text = JSON.stringify(value);
   for (const part of parts) expect(text).not.toContain(part);
@@ -844,13 +850,13 @@ describe("readHubAuthority (K1): the plan as a git object at the hub's head", ()
     const p = plan();
     const { hub } = hubOf({ plans: [p] });
     const result = readHubAuthority(hub);
-    expect(result).toEqual({ plan: p, planDigest: planDigest(p), subject: approvedSubject(p) });
+    expect(result).toEqual(authorityAt(hub, p));
   });
 
   it("works for a hub inside a larger repository, reading its plan relative to the hub", () => {
     const p = plan();
     const { hub } = hubOf({ plans: [p], nested: true });
-    expect(readHubAuthority(hub)).toEqual({ plan: p, planDigest: planDigest(p), subject: approvedSubject(p) });
+    expect(readHubAuthority(hub)).toEqual(authorityAt(hub, p));
   });
 
   it("ignores GIT_DIR, GIT_WORK_TREE and GIT_INDEX_FILE from the environment", () => {
@@ -862,7 +868,7 @@ describe("readHubAuthority (K1): the plan as a git object at the hub's head", ()
     process.env.GIT_WORK_TREE = other.repository;
     process.env.GIT_INDEX_FILE = `${other.repository}/.git/index`;
     try {
-      expect(readHubAuthority(hub)).toEqual({ plan: p, planDigest: planDigest(p), subject: approvedSubject(p) });
+      expect(readHubAuthority(hub)).toEqual(authorityAt(hub, p));
     } finally {
       for (const [key, value] of Object.entries(saved)) {
         if (value === undefined) delete process.env[key];
@@ -882,7 +888,7 @@ describe("readHubAuthority (K1): the plan as a git object at the hub's head", ()
   it("P-12: an uncommitted edit that revokes is ignored; the committed plan still approves", () => {
     const p = plan();
     const { hub } = hubOf({ plans: [p], worktreePlan: decide(p, "rejected", LATER_AT) });
-    expect(readHubAuthority(hub)).toEqual({ plan: p, planDigest: planDigest(p), subject: approvedSubject(p) });
+    expect(readHubAuthority(hub)).toEqual(authorityAt(hub, p));
   });
 
   it("P-01: a later decision, committed, that does not approve leaves nothing approved", () => {
@@ -951,6 +957,31 @@ describe("readHubAuthority (K1): the plan as a git object at the hub's head", ()
     expect(readHubAuthority(`${root}/absent`)).toEqual(aa("plan-unreadable"));
   });
 
+  it("a hub head that is not its upstream is refused", () => {
+    const p = plan();
+    // No upstream at all.
+    expect(readHubAuthority(hubOf({ plans: [p], upstream: false }).hub)).toEqual(aa("hub-not-upstream"));
+    // One local commit ahead of the upstream.
+    const ahead = hubOf({ plans: [p] });
+    git(ahead.hub, "commit", "--allow-empty", "-m", "local only");
+    expect(readHubAuthority(ahead.hub)).toEqual(aa("hub-not-upstream"));
+    // The upstream moved on and was fetched: the head is behind.
+    const behind = hubOf({ plans: [p] });
+    advanceHubUpstream(roots, behind.hub, behind.origin!);
+    expect(readHubAuthority(behind.hub)).toEqual(aa("hub-not-upstream"));
+    // Equal to its upstream is admitted, and nothing here fetches: the behind hub's own origin ref is what counts.
+    expect(readHubAuthority(hubOf({ plans: [p] }).hub)).toMatchObject({ planDigest: planDigest(p) });
+  });
+
+  it("a plan read resolves HEAD once: authority.head is the commit the plan was read from", () => {
+    const p = plan();
+    const fixture = hubOf({ plans: [p, decide(p, "approved", LATER_AT, approvedSubject(p)!)] });
+    const result = readHubAuthority(fixture.hub) as { head: string; plan: unknown };
+    expect(result.head).toMatch(/^[0-9a-f]{40}$/u);
+    expect(result.head).toBe(fixture.commits[1]);
+    expect(git(fixture.hub, "show", `${result.head}:clossys/advisor/plan.json`)).toBe(`${JSON.stringify(result.plan, null, 2)}\n`);
+  });
+
   it("names no path, digest or id in any refusal", () => {
     const p = plan();
     const fixture = hubOf({ plans: [p, decide(p, "rejected", LATER_AT)] });
@@ -965,6 +996,7 @@ describe("readHubAuthority (K1): the plan as a git object at the hub's head", ()
 interface Scene {
   readonly w: World;
   readonly hub: string;
+  readonly origin: string | null;
   readonly clone: string;
   readonly baseCommit: string;
 }
@@ -980,7 +1012,7 @@ function scene(options: { world?: WorldOptions; hub?: Partial<HubOptions>; tree?
     },
   });
   const fixture = hubRepo(roots, { plans: [w.plan], sets: [w.setup], bundles: [w.approvedBundle, w.applyBundle], ...options.hub });
-  return { w, hub: fixture.hub, clone: site!.clone, baseCommit: site!.baseCommit, sideTip: site!.sideTip };
+  return { w, hub: fixture.hub, origin: fixture.origin, clone: site!.clone, baseCommit: site!.baseCommit, sideTip: site!.sideTip };
 }
 
 const bind = (s: Scene, patch: Record<string, unknown> = {}) =>
@@ -1186,6 +1218,51 @@ describe("K11: the execution authorization is current (readiness)", () => {
     expect(await bind(dropped, { set: dropped.w.setup })).toEqual(notCurrent("package-not-permitted"));
   });
 
+  it("the assessment is read at the authority's commit: a newer assessment committed and pushed afterwards is hub-head-moved", async () => {
+    const s = scene();
+    const authority = readHubAuthority(s.hub);
+    commitHubAssessment(s.hub, assessmentFor(s.w.plan, { expiresAt: "2099-01-01T00:00:00Z" }));
+    expect(await bind(s, { authority })).toEqual(unverified("hub-head-moved"));
+    // A head that moved and was not pushed, and a head detached at the same commit, are refused the same way.
+    const local = scene();
+    const localAuthority = readHubAuthority(local.hub);
+    git(local.hub, "commit", "--allow-empty", "-m", "local only");
+    expect(await bind(local, { authority: localAuthority })).toEqual(unverified("hub-head-moved"));
+    const detached = scene();
+    const detachedAuthority = readHubAuthority(detached.hub);
+    git(detached.hub, "checkout", "-q", "--detach");
+    expect(await bind(detached, { authority: detachedAuthority })).toEqual(unverified("hub-head-moved"));
+    // The head the authority was read from still admits.
+    const fresh = scene();
+    expect(await bind(fresh, { authority: readHubAuthority(fresh.hub) })).toEqual(admitted(fresh.w));
+  });
+
+  it("a head that no longer matches its upstream is hub-head-moved even at the authority's commit", async () => {
+    const s = scene();
+    const authority = readHubAuthority(s.hub);
+    advanceHubUpstream(roots, s.hub, s.origin!);
+    expect(await bind(s, { authority })).toEqual(unverified("hub-head-moved"));
+  });
+
+  it("authorization must equal the plan's packages exactly: an extra, a missing package of another repository and a duplicate are packages-not-exact", async () => {
+    const exact = (p: AdvisorPlan) => assessmentFor(p).engagement.executionAuthorization.permittedPackages as Loose[];
+    const extra = withAssessment(assessmentFor(plan(), { permittedPackages: [...exact(plan()), { name: "@example/extra", version: "1.0.0", integrity: OTHER_INTEGRITY }] }));
+    expect(await bind(extra)).toEqual(notCurrent("packages-not-exact"));
+    // A package only another repository's act names: the site set's own acts are all permitted, yet the list is not the plan's.
+    const elsewhere = (plan0: Loose) => {
+      const docsWriter = (plan0.packages as Loose[]).find((act) => act.repository === DOCS_ID && act.name === "@example/writer")!;
+      docsWriter.version = "0.6.0";
+    };
+    const docsOnly = buildWorld({ editPlan: elsewhere }).plan;
+    const missing = scene({ world: { editPlan: elsewhere }, hub: { assessment: assessmentFor(docsOnly, { permittedPackages: exact(docsOnly).filter((row) => row.version !== "0.6.0") }) } });
+    expect(await bind(missing)).toEqual(notCurrent("packages-not-exact"));
+    const duplicated = withAssessment(assessmentFor(plan(), { permittedPackages: [...exact(plan()), exact(plan())[0]!] }));
+    expect(await bind(duplicated)).toEqual(notCurrent("packages-not-exact"));
+    // Order does not matter, and the exact list admits.
+    const reordered = withAssessment(assessmentFor(plan(), { permittedPackages: [...exact(plan())].reverse() }));
+    expect(await bind(reordered)).toEqual(admitted(reordered.w));
+  });
+
   it("an approved setup set is held to the same authorization", async () => {
     const expired = withAssessment(assessmentFor(plan(), { expiresAt: "2026-09-30T00:00:00Z" }));
     expect(await bind(expired, { set: expired.w.setup, now: () => NOW })).toEqual(notCurrent("readiness-violated"));
@@ -1226,6 +1303,7 @@ describe("K11: the execution authorization is current (readiness)", () => {
     const env = { ...process.env, GIT_CONFIG_GLOBAL: "/dev/null", GIT_AUTHOR_NAME: "Example Author", GIT_AUTHOR_EMAIL: "author@example.com", GIT_COMMITTER_NAME: "Example Author", GIT_COMMITTER_EMAIL: "author@example.com" };
     execFileSync("git", ["add", "-f", ASSESSMENT_FILE], { cwd: garbage.hub, env });
     execFileSync("git", ["commit", "-q", "-m", "garbage"], { cwd: garbage.hub, env });
+    execFileSync("git", ["push", "-q"], { cwd: garbage.hub, env });
     expect(await bind(garbage)).toEqual(unverified("assessment-unreadable"));
   });
 
@@ -1239,10 +1317,10 @@ describe("K11: the execution authorization is current (readiness)", () => {
     expect(await bind(withAssessment(assessmentFor(plan(), { permittedPackages: [null] })))).toEqual(unverified("assessment-unreadable"));
   });
 
-  it("a detached hub head reads no assessment either", async () => {
+  it("a detached hub head reads no assessment either: it is hub-head-moved", async () => {
     const s = scene({ hub: { plans: [buildWorld().plan, buildWorld().plan], detachAt: 0 } });
     const authority = s.w.authority;
-    expect(await bind(s, { authority })).toEqual(unverified("assessment-unreadable"));
+    expect(await bind(s, { authority })).toEqual(unverified("hub-head-moved"));
   });
 
   it("a set with no package acts (staffing only) skips this step: it needs no assessment and no executable", async () => {
