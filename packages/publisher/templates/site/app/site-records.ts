@@ -21,12 +21,17 @@ import brandFactsRecord from "../../../clossys/strategist/brand-facts.json" with
 import copyRegistryRecord from "../../../clossys/writer/copy-registry.json" with { type: "json" };
 import privacyRecord from "../../../clossys/publisher/legal/privacy.json" with { type: "json" };
 import termsRecord from "../../../clossys/publisher/legal/terms.json" with { type: "json" };
-import { parseBrandFacts, requireLegalDocument, resolveSiteTarget } from "./site-wiring";
-import type { SiteBrandFacts, SiteTarget } from "./site-wiring";
+import { parseBrandFacts, requireLegalDocument, resolveSiteOrigin, resolveSiteTarget } from "./site-wiring";
+import type { SiteBrandFacts, SiteLegalState, SiteTarget } from "./site-wiring";
 
 /** The deployment target for this process: `SITE_TARGET`, and `production` when it is absent. */
 export function siteTarget(): SiteTarget {
   return resolveSiteTarget(process.env);
+}
+
+/** The site's origin: `NEXT_PUBLIC_SITE_URL`, which must be a valid origin. There is no fallback. */
+export function siteOrigin(): string {
+  return resolveSiteOrigin(process.env);
 }
 
 export function loadBrandFacts(): SiteBrandFacts {
@@ -46,6 +51,21 @@ export function createSiteCopyResolver(target: SiteTarget): CopyResolver {
 /** A legal document that may be published for the target: valid everywhere, counsel-reviewed on `production`. */
 export function loadLegalDocument(kind: "terms" | "privacy", target: SiteTarget): LegalDocument {
   return requireLegalDocument(kind === "terms" ? termsRecord : privacyRecord, target);
+}
+
+/**
+ * What the sitemap needs from the two legal documents, keyed by route id: each
+ * document's status and its own `lastUpdated`. The documents are validated but
+ * not gated, so a draft is reported as a draft (and left out of the sitemap)
+ * instead of stopping it; the pages themselves still refuse a draft on
+ * `production`.
+ */
+export function loadLegalSitemapStates(): Record<string, SiteLegalState> {
+  const state = (record: unknown): SiteLegalState => {
+    const { status, lastUpdated } = requireLegalDocument(record, "preview").legal;
+    return { status, lastUpdated };
+  };
+  return { "/terms": state(termsRecord), "/privacy": state(privacyRecord) };
 }
 
 /** The registry's locale: a BCP 47 tag, used to format dates on the legal pages. */

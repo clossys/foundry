@@ -10458,7 +10458,18 @@ describe("shipped message lint", () => {
     expect(findShippedMessageViolations(captureView, readFileSync(captureView, "utf8"))).toEqual([]);
     // The whole site template tree, so a page, the error boundary and the 404 page all stay free of shipped wording.
     const siteTemplateApp = path.join(SRC_ROOT, "../../templates/site/app");
-    for (const file of ["error.tsx", "not-found.tsx", "site-error-view.tsx", "contact/contact-form.tsx", "contact/page.tsx"]) {
+    for (const file of [
+      "error.tsx",
+      "not-found.tsx",
+      "site-error-view.tsx",
+      "contact/contact-form.tsx",
+      "contact/page.tsx",
+      "about/page.tsx",
+      "layout.tsx",
+      "opengraph-image.tsx",
+      "robots.ts",
+      "sitemap.ts",
+    ]) {
       expect(readFileSync(path.join(siteTemplateApp, file), "utf8").length).toBeGreaterThan(0);
     }
     expect(scanShippedMessageTree(siteTemplateApp)).toEqual([]);

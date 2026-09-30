@@ -127,6 +127,59 @@ export function landingCopyIds(headingId: string): string[] {
   return [headingId, LANDING_COPY_IDS.description, LANDING_COPY_IDS.contactAction, ...FOOTER_IDS];
 }
 
+// -------------------------------------------------------------------- about
+
+/**
+ * The about page's own ids. The contact action is the landing page's, and the
+ * footer is the shared one, so the page adds only what it says itself.
+ */
+export const ABOUT_COPY_IDS = {
+  heading: "site.about.heading",
+  description: "site.about.description",
+  ctaHeading: "site.about.cta-heading",
+  ctaDescription: "site.about.cta-description",
+} as const;
+
+/** Every id the about page resolves. */
+export function aboutCopyIds(): string[] {
+  return [...Object.values(ABOUT_COPY_IDS), LANDING_COPY_IDS.contactAction, ...FOOTER_IDS];
+}
+
+// -------------------------------------------------------------- share card
+
+/** The share card's alternative text. Its words are the registry's, like every other. */
+export const SHARE_CARD_ALT_ID = "site.share-card.alt";
+
+/** What the share card reads from the brand-facts record. */
+export interface SiteShareCardFacts {
+  readonly brandLabel: string;
+  /** The first tagline's copy id, when the record lists one. */
+  readonly taglineCopyId: string | undefined;
+}
+
+/** The id the card's tagline comes from: the first tagline's, else the landing heading's. */
+function shareCardTaglineId(facts: SiteShareCardFacts): string {
+  return facts.taglineCopyId ?? LANDING_COPY_IDS.heading;
+}
+
+/** Every id the share card resolves: its tagline and its alternative text. */
+export function siteShareCardCopyIds(facts: SiteShareCardFacts): string[] {
+  return [shareCardTaglineId(facts), SHARE_CARD_ALT_ID];
+}
+
+/**
+ * The plain text `buildShareCard` takes: the brand label as the name, the
+ * tagline's copy and the alt copy. Throws, naming the id only, when an id is
+ * not in the map.
+ */
+export function siteShareCardText(facts: SiteShareCardFacts, copy: SiteCopyMap): { name: string; tagline: string; alt: string } {
+  return {
+    name: facts.brandLabel,
+    tagline: siteText(copy, shareCardTaglineId(facts)),
+    alt: siteText(copy, SHARE_CARD_ALT_ID),
+  };
+}
+
 // -------------------------------------------------------------------- legal
 
 export const LEGAL_LABEL_IDS = {

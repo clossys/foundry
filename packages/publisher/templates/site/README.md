@@ -49,8 +49,9 @@ applies at its cascade scope, or that the template builds.
   `@source` paths assume `@clossys/designer` and `@clossys/publisher` are
   installed in the template's own `node_modules` (not hoisted); a hoisted
   install needs the paths adjusted.
-- `app/layout.tsx` — root layout: sets `data-brand-bound` on `<html>` and
-  injects Designer's theme init script into `<head>`.
+- `app/layout.tsx` — root layout: sets `data-brand-bound` on `<html>`,
+  injects Designer's theme init script into `<head>`, and sets `metadataBase`
+  from `NEXT_PUBLIC_SITE_URL` (see "`NEXT_PUBLIC_SITE_URL`" below).
 - `app/page.tsx` — the landing route (`LandingView`).
 - `app/contact/page.tsx` and `app/contact/contact-form.tsx` — the contact
   route (`ContactView`). The page is a server component holding an inline
@@ -58,7 +59,10 @@ applies at its cascade scope, or that the template builds.
   interactive and its server-side export is a stub that throws.
 - `app/terms/page.tsx`, `app/privacy/page.tsx` — the legal routes
   (`LegalView`), behind the production legal gate.
-- `app/about/page.tsx` — the about route (`MarketingView`).
+- `app/about/page.tsx` — the about route (`MarketingView`). It reads the
+  brand-facts record for the name and the legal entity and resolves only the
+  ids `aboutCopyIds()` lists; it reads no `clossys/publisher/surfaces/`
+  record and carries no wording.
 - `app/error.tsx` (a client error boundary) and `app/not-found.tsx` — the
   500 and 404 pages, both rendered by `app/site-error-view.tsx` through
   `ErrorView`.
@@ -69,7 +73,10 @@ applies at its cascade scope, or that the template builds.
 - `app/site-wiring.ts` — the pure server wiring (target, delivery choice,
   contact handler, client key, legal gate); `app/site-contact.ts` and
   `app/site-delivery.ts` assemble it.
-- `app/robots.ts`, `app/sitemap.ts` — Next's metadata route convention.
+- `app/robots.ts`, `app/sitemap.ts`, `app/opengraph-image.tsx` — Next's
+  metadata route convention, each a thin wrapper over the pure functions in
+  `app/site-wiring.ts` and `app/site-copy.ts` (see "Crawlers and the share
+  card").
 - `web-route-manifest.json` — the manifest `publisher-web-route-check`
   reads (see `@clossys/publisher/web`'s `evaluateWebRouteManifest`):
   every route above, each naming its template, so CI fails if a route is
@@ -97,9 +104,9 @@ records, and one file, `app/site-records.ts`, reads them:
 - `clossys/writer/copy-registry.json` — every visible word, by copy id. A
   page resolves the ids it needs when it renders; an id that does not
   resolve fails the render instead of showing a blank. The ids are listed in
-  `app/site-copy.ts` (`site.landing.*`, `site.contact.*`, `site.footer.*`,
-  `site.legal.*`, `site.error.*`), and the registry must hold an entry for
-  each. An approved entry resolves on every target; on `production` an entry
+  `app/site-copy.ts` (`site.landing.*`, `site.about.*`, `site.share-card.*`,
+  `site.contact.*`, `site.footer.*`, `site.legal.*`, `site.error.*`), and the
+  registry must hold an entry for each. An approved entry resolves on every target; on `production` an entry
   approved only by a delegate is refused, and so is any approval that is
   stale or expired. That refusal comes from the `target` option of Writer's
   resolver, which needs a Writer release that takes it: the range `^0.4.0` in
@@ -112,11 +119,23 @@ records, and one file, `app/site-records.ts`, reads them:
 Tokens come from `clossys/designer/brand.css`, as before. This template
 ships no copy and no tokens of its own.
 
+## `NEXT_PUBLIC_SITE_URL`
+
+`NEXT_PUBLIC_SITE_URL` is the site's origin, for example an `https` address
+with no path. It is required, and there is no fallback: an absent, blank or
+malformed value stops the pages that need it from rendering, and the message
+names the variable and never the value. It must be an `http` or `https`
+origin exactly as `new URL(value).origin` writes it: no path, no query, no
+credentials and no trailing slash, the rule Publisher's `buildSiteMetadata`
+applies to `site.origin`. `app/layout.tsx` sets `metadataBase` from it, and
+`robots` and `sitemap` build their absolute URLs from it. The variable is read
+only through `siteOrigin()` in `app/site-records.ts`.
+
 ## `SITE_TARGET`
 
 `SITE_TARGET` names the deployment: `production`, `preview`, `development`
 or `test`. An absent value is `production`, and any other value stops the
-site from rendering. It decides three things:
+site from rendering. It decides four things:
 
 - **Legal documents.** On `production` a document whose status is not
   `counsel-reviewed` refuses to render, so a draft cannot be served there.
@@ -127,7 +146,29 @@ site from rendering. It decides three things:
   `target` option and the delegate refusal on `production` need a Writer
   release that takes the option: the range `^0.4.0` in `package.json` does not
   pick up 0.5.x, and the published 0.4.0 ignores the option.
+- **Crawling and the sitemap**, below.
 - **Contact delivery**, below.
+
+## Crawlers and the share card
+
+- **`robots`.** Only `production` allows crawling and names
+  `<origin>/sitemap.xml`. Every other target disallows everything and names no
+  sitemap, so a preview is never indexed.
+- **`sitemap`.** On `production` it lists the routes in
+  `web-route-manifest.json` under the origin, and nothing else, so a route
+  added to the manifest is listed and a route that is not in it never is. A
+  route whose template is `LegalView` is listed only when its document's
+  status is `counsel-reviewed`, and then carries that document's own
+  `lastUpdated` as `lastModified`; a draft is left out, not an error. No
+  other route has a `lastModified`, and nothing reads a clock. On every other
+  target the sitemap is empty.
+- **Share card.** `app/opengraph-image.tsx` draws Publisher's `buildShareCard`
+  at the size it declares, as a PNG. The name is the brand label from the
+  brand-facts record, the tagline is the first tagline's approved copy (the
+  landing heading's when the record lists none), and the alternative text is
+  the approved copy `site.share-card.alt`. Colours are Designer's default
+  roles; the route sets no colour, length or text of its own. A missing copy
+  id fails the build.
 
 ## Contact delivery
 

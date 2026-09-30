@@ -1,11 +1,9 @@
 import type { MetadataRoute } from "next";
+import { siteOrigin, siteTarget } from "./site-records";
+import { siteRobots } from "./site-wiring";
 
-// Reads the site's own base URL from an environment variable Launcher sets
-// at compose time (#1215) rather than hard-coding a domain in this template.
+// Only `production` may be crawled, and only there is the sitemap named; the
+// rule and the origin live in `site-wiring.ts` and `site-records.ts`.
 export default function robots(): MetadataRoute.Robots {
-  const base = process.env.NEXT_PUBLIC_SITE_URL ?? "https://example.com";
-  return {
-    rules: { userAgent: "*", allow: "/" },
-    sitemap: `${base}/sitemap.xml`,
-  };
+  return siteRobots(siteTarget(), siteOrigin());
 }
