@@ -1,0 +1,215 @@
+/**
+ * The site's copy ids and the plain copy map the client carries.
+ *
+ * Every visible word on these pages is a Writer copy id. This module holds
+ * the ids, and nothing else that can be seen: no wording, no default text.
+ * The wording lives in the repository's own Writer copy registry and reaches
+ * a page only through the resolver `site-records.ts` builds.
+ *
+ * It is pure and client-safe. It imports only types, so a client module can
+ * import it without pulling Writer's Node-only root (`node:fs`, `node:crypto`)
+ * or any Next.js module into the browser bundle. A server page resolves the
+ * ids it needs once with `requireCopy` and hands the resulting plain map to a
+ * client module, which reads it back through `createMapResolver`.
+ */
+import type { SiteFooterLegalProps } from "@clossys/designer/shell/server";
+import type { ContactViewCopy, ContactViewTopic, LegalViewLabels } from "@clossys/publisher/web";
+import type { CopyRef, CopyResolver } from "@clossys/writer";
+
+/** Resolved copy, id to text. Plain data: it crosses the server/client boundary as props. */
+export type SiteCopyMap = Readonly<Record<string, string>>;
+
+const ref = (id: string): CopyRef => ({ id });
+
+// ------------------------------------------------------------------ contact
+
+/**
+ * The topics the contact form offers. The view lists them and the handler
+ * accepts them from this one list, so a topic cannot be offered without being
+ * accepted, or accepted without being offered.
+ */
+export const CONTACT_TOPICS = ["product", "press", "partnership", "other"] as const;
+
+export type ContactTopic = (typeof CONTACT_TOPICS)[number];
+
+const topicCopyId = (topic: ContactTopic): string => `site.contact.topic.${topic}`;
+
+export function contactViewTopics(): ContactViewTopic[] {
+  return CONTACT_TOPICS.map((id) => ({ id, label: ref(topicCopyId(id)) }));
+}
+
+/** The subject line of the message a submission sends to the site's inbox. */
+export const CONTACT_SUBJECT_ID = "site.contact.notification-subject";
+
+const CONTACT_COPY_IDS: Readonly<Record<keyof ContactViewCopy, string>> = {
+  heading: "site.contact.heading",
+  description: "site.contact.description",
+  topicLabel: "site.contact.topic-label",
+  topicPlaceholder: "site.contact.topic-placeholder",
+  nameLabel: "site.contact.name-label",
+  emailLabel: "site.contact.email-label",
+  phoneLabel: "site.contact.phone-label",
+  messageLabel: "site.contact.message-label",
+  submit: "site.contact.submit",
+  submitting: "site.contact.submitting",
+  errorSummary: "site.contact.error-summary",
+  topicRequired: "site.contact.topic-required",
+  nameRequired: "site.contact.name-required",
+  emailRequired: "site.contact.email-required",
+  emailInvalid: "site.contact.email-invalid",
+  messageRequired: "site.contact.message-required",
+  sentHeading: "site.contact.sent-heading",
+  sentBody: "site.contact.sent-body",
+  failureLabel: "site.contact.failure-label",
+  invalid: "site.contact.invalid",
+  rateLimited: "site.contact.rate-limited",
+  unavailable: "site.contact.unavailable",
+};
+
+/** The contact page's title, for the document head. */
+export const CONTACT_HEADING_ID = CONTACT_COPY_IDS.heading;
+
+/** `ContactView`'s copy prop: one bare reference per entry. */
+export function contactViewCopy(): ContactViewCopy {
+  const copy: Record<string, CopyRef> = {};
+  for (const [key, id] of Object.entries(CONTACT_COPY_IDS)) copy[key] = ref(id);
+  return copy as unknown as ContactViewCopy;
+}
+
+// ------------------------------------------------------------------- footer
+
+const FOOTER_COPY_IDS = {
+  terms: "site.footer.terms",
+  privacy: "site.footer.privacy",
+  contact: "site.footer.contact",
+  linksLabel: "site.footer.links-label",
+} as const;
+
+/** One resolved text from the map; throws, naming the id only, when it is absent or blank. */
+export function siteText(copy: SiteCopyMap, id: string): string {
+  const text = Object.hasOwn(copy, id) ? copy[id] : undefined;
+  // The message names the id and never any text.
+  if (typeof text !== "string" || text.trim().length === 0) throw new Error(`Site copy is missing ${id}.`);
+  return text;
+}
+
+/** The legal row every page carries: the entity name and links to the three pages a visitor may need. */
+export function siteFooterLegal(copy: SiteCopyMap, entity: string): SiteFooterLegalProps {
+  return {
+    entity,
+    links: [
+      { label: siteText(copy, FOOTER_COPY_IDS.terms), href: "/terms" },
+      { label: siteText(copy, FOOTER_COPY_IDS.privacy), href: "/privacy" },
+      { label: siteText(copy, FOOTER_COPY_IDS.contact), href: "/contact" },
+    ],
+    linksLabel: siteText(copy, FOOTER_COPY_IDS.linksLabel),
+  };
+}
+
+const FOOTER_IDS: readonly string[] = Object.values(FOOTER_COPY_IDS);
+
+/** Every id the contact page resolves: the form, its topics and the footer. */
+export function allContactPageCopyIds(): string[] {
+  return [...Object.values(CONTACT_COPY_IDS), ...CONTACT_TOPICS.map(topicCopyId), ...FOOTER_IDS];
+}
+
+// ------------------------------------------------------------------ landing
+
+export const LANDING_COPY_IDS = {
+  /** Used as the heading when the brand-facts record lists no tagline. */
+  heading: "site.landing.heading",
+  description: "site.landing.description",
+  contactAction: "site.landing.contact-action",
+} as const;
+
+/** Every id the landing page resolves. `headingId` is the first tagline's copy id, or the fallback heading id. */
+export function landingCopyIds(headingId: string): string[] {
+  return [headingId, LANDING_COPY_IDS.description, LANDING_COPY_IDS.contactAction, ...FOOTER_IDS];
+}
+
+// -------------------------------------------------------------------- legal
+
+export const LEGAL_LABEL_IDS = {
+  effectiveDate: "site.legal.effective-date",
+  lastUpdated: "site.legal.last-updated",
+  draftHeading: "site.legal.draft-heading",
+} as const;
+
+/** `LegalView`'s labels prop: one bare reference per label. The view resolves them through the server's resolver. */
+export function legalViewLabels(): LegalViewLabels {
+  return {
+    effectiveDate: ref(LEGAL_LABEL_IDS.effectiveDate),
+    lastUpdated: ref(LEGAL_LABEL_IDS.lastUpdated),
+    draftHeading: ref(LEGAL_LABEL_IDS.draftHeading),
+  };
+}
+
+// -------------------------------------------------------------------- error
+
+export interface SiteErrorCopyIds {
+  readonly title: string;
+  readonly description: string;
+  readonly action: string;
+}
+
+export const ERROR_COPY_IDS = {
+  notFound: {
+    title: "site.error.not-found.title",
+    description: "site.error.not-found.description",
+    action: "site.error.not-found.action",
+  },
+  failed: {
+    title: "site.error.failed.title",
+    description: "site.error.failed.description",
+    action: "site.error.failed.action",
+  },
+} as const satisfies Record<string, SiteErrorCopyIds>;
+
+/** Every id the error pages resolve. */
+export function errorCopyIds(): string[] {
+  return [...Object.values(ERROR_COPY_IDS.notFound), ...Object.values(ERROR_COPY_IDS.failed)];
+}
+
+// ------------------------------------------------------------------ resolve
+
+/**
+ * Resolves each id once and returns the text as a plain map. Throws, naming
+ * the first id that does not resolve and never any text, so a page fails at
+ * build or render time instead of showing a blank.
+ */
+export function requireCopy(resolver: CopyResolver, ids: readonly string[]): SiteCopyMap {
+  const map: Record<string, string> = {};
+  for (const id of ids) {
+    const resolution = resolver(ref(id));
+    if (resolution === undefined || typeof resolution.text !== "string" || resolution.text.trim().length === 0) {
+      throw new Error(`Site copy does not resolve: ${id}.`);
+    }
+    map[id] = resolution.text;
+  }
+  return map;
+}
+
+/**
+ * The resolver a client module reads a `SiteCopyMap` through. It answers only
+ * an own id that is in the map, only for a bare reference (no values to
+ * substitute) and only in its locale, so it cannot answer with anything the
+ * server did not resolve.
+ */
+export function createMapResolver(copy: SiteCopyMap, locale = "en"): CopyResolver {
+  return (request) => {
+    if (typeof request?.id !== "string" || !Object.hasOwn(copy, request.id)) return undefined;
+    if (request.values !== undefined) return undefined;
+    if (request.locale !== undefined && request.locale !== locale) return undefined;
+    const text = copy[request.id];
+    if (typeof text !== "string") return undefined;
+    return {
+      ref: request,
+      text,
+      recordId: "site-copy-map",
+      revision: "map",
+      locale,
+      source: { kind: "consumer", reference: "site-copy-map" },
+      entryId: request.id,
+    };
+  };
+}

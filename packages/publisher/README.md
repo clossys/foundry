@@ -2332,12 +2332,14 @@ registry.ts` (never hardcoded in a renderer):
 - **Web views** (`gallery.html`) — every shipped view: `MarketingView`,
   `SectionedView`, `AuthView`, `ErrorView`, `CaptureView`, `DocumentView`,
   `CollectionView`.
-- **Site** (`site-*.html`) — `templates/site`'s own routes
-  (`web-route-manifest.json`), rendered through the exact template each
-  route names (`MarketingView` for home/about/contact/privacy/terms,
-  a direct `ErrorView` call for `not-found`, matching `templates/site/app/not-found.tsx`
-  itself). `templates/site/app/robots.ts`/`templates/site/app/sitemap.ts` are Next.js metadata route
-  handlers, not page components — there is no view to render for either,
+- **Site** (`site-*.html`) — fixtures for `templates/site`'s routes,
+  rendered through `MarketingView` for home/about/contact/privacy/terms and
+  a direct `ErrorView` call for `not-found`. The template's own routes now
+  render `LandingView` for home, `ContactView` for contact and `LegalView`
+  for terms and privacy (`templates/site/web-route-manifest.json`), and the
+  gallery keeps rendering the earlier fixtures until it is updated.
+  `templates/site/app/robots.ts`/`templates/site/app/sitemap.ts` are Next.js
+  metadata route handlers, not page components — there is no view to render for either,
   so neither appears here.
 - **Materials** (`materials-*.html`) — the company overview at each of
   the three lengths (`COMPANY_OVERVIEW_TEMPLATES`' own section order),

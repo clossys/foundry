@@ -10456,8 +10456,12 @@ describe("shipped message lint", () => {
   it("scans fix round 33 real publisher sources", () => {
     const captureView = path.join(SRC_ROOT, "views/CaptureView.tsx");
     expect(findShippedMessageViolations(captureView, readFileSync(captureView, "utf8"))).toEqual([]);
-    const notFound = path.join(SRC_ROOT, "../../templates/site/app/not-found.tsx");
-    expect(findShippedMessageViolations(notFound, readFileSync(notFound, "utf8"))).toEqual([]);
+    // The whole site template tree, so a page, the error boundary and the 404 page all stay free of shipped wording.
+    const siteTemplateApp = path.join(SRC_ROOT, "../../templates/site/app");
+    for (const file of ["error.tsx", "not-found.tsx", "site-error-view.tsx", "contact/contact-form.tsx", "contact/page.tsx"]) {
+      expect(readFileSync(path.join(siteTemplateApp, file), "utf8").length).toBeGreaterThan(0);
+    }
+    expect(scanShippedMessageTree(siteTemplateApp)).toEqual([]);
     const inlineNotFound = [
       'import { ErrorView } from "@clossys/publisher/web";',
       "export default function NotFound() {",
