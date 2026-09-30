@@ -21,12 +21,20 @@ import brandFactsRecord from "../../../clossys/strategist/brand-facts.json" with
 import copyRegistryRecord from "../../../clossys/writer/copy-registry.json" with { type: "json" };
 import privacyRecord from "../../../clossys/publisher/legal/privacy.json" with { type: "json" };
 import termsRecord from "../../../clossys/publisher/legal/terms.json" with { type: "json" };
-import { parseBrandFacts, requireLegalDocument, resolveSiteOrigin, resolveSiteTarget } from "./site-wiring";
+import { parseBrandFacts, requireLegalDocument, resolveCrawlTarget, resolveSiteOrigin, resolveSiteTarget } from "./site-wiring";
 import type { SiteBrandFacts, SiteLegalState, SiteTarget } from "./site-wiring";
 
 /** The deployment target for this process: `SITE_TARGET`, and `production` when it is absent. */
 export function siteTarget(): SiteTarget {
   return resolveSiteTarget(process.env);
+}
+
+/**
+ * The target `robots` and `sitemap` use: `production` only when `SITE_TARGET`
+ * is explicitly `production`. An absent value does not allow crawling.
+ */
+export function siteCrawlTarget(): SiteTarget {
+  return resolveCrawlTarget(process.env);
 }
 
 /** The site's origin: `NEXT_PUBLIC_SITE_URL`, which must be a valid origin. There is no fallback. */

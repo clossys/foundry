@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 import manifest from "../web-route-manifest.json" with { type: "json" };
-import { loadLegalSitemapStates, siteOrigin, siteTarget } from "./site-records";
+import { loadLegalSitemapStates, siteCrawlTarget, siteOrigin } from "./site-records";
 import { siteSitemap } from "./site-wiring";
 
 // The routes are the manifest's, so a route added there is listed here and a
@@ -8,7 +8,7 @@ import { siteSitemap } from "./site-wiring";
 // document is counsel-reviewed, with that document's own last-updated date.
 export default function sitemap(): MetadataRoute.Sitemap {
   return siteSitemap({
-    target: siteTarget(),
+    target: siteCrawlTarget(),
     origin: siteOrigin(),
     routes: manifest.routes,
     legal: loadLegalSitemapStates(),

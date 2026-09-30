@@ -19,7 +19,7 @@ import { OG_SHARE_CARD_SPEC } from "./templates/channelSpecs.js";
 import type { WebRouteManifest } from "./web/checkWebRoutes.js";
 import { buildShareCard } from "./web/shareCard.js";
 import { buildSiteMetadata } from "./web/siteMetadata.js";
-import { resolveSiteOrigin, siteRobots, siteSitemap } from "../templates/site/app/site-wiring.js";
+import { resolveCrawlTarget, resolveSiteOrigin, siteRobots, siteSitemap } from "../templates/site/app/site-wiring.js";
 import type { SiteLegalState } from "../templates/site/app/site-wiring.js";
 import {
   LANDING_COPY_IDS,
@@ -89,6 +89,42 @@ describe("resolveSiteOrigin", () => {
       expect(source, file).not.toMatch(/example\.(com|org|net)/);
       expect(source, file).not.toMatch(/NEXT_PUBLIC_SITE_URL\s*(\?\?|\|\|)/);
     }
+  });
+});
+
+// ------------------------------------------------------- resolveCrawlTarget
+
+describe("resolveCrawlTarget (crawling fails closed)", () => {
+  const NOT_CRAWLABLE: ReadonlyArray<[string, Record<string, string | undefined>]> = [
+    ["absent", {}],
+    ["undefined", { SITE_TARGET: undefined }],
+    ["preview", { SITE_TARGET: "preview" }],
+    ["development", { SITE_TARGET: "development" }],
+    ["test", { SITE_TARGET: "test" }],
+  ];
+
+  for (const [label, env] of NOT_CRAWLABLE) {
+    it(`SITE_TARGET ${label}: robots disallows, names no sitemap, and the sitemap is empty`, () => {
+      const target = resolveCrawlTarget(env);
+      expect(target).not.toBe("production");
+      const robots = siteRobots(target, ORIGIN);
+      expect(robots).toEqual({ rules: { userAgent: "*", disallow: "/" } });
+      expect(JSON.stringify(robots)).not.toContain("sitemap");
+      expect(JSON.stringify(robots)).not.toContain(ORIGIN);
+      expect(siteSitemap({ target, origin: ORIGIN, routes: manifest.routes, legal: {} })).toEqual([]);
+    });
+  }
+
+  it("SITE_TARGET=production allows crawling and lists the routes", () => {
+    const target = resolveCrawlTarget({ SITE_TARGET: "production" });
+    expect(target).toBe("production");
+    expect(siteRobots(target, ORIGIN).sitemap).toBe(`${ORIGIN}/sitemap.xml`);
+    expect(siteSitemap({ target, origin: ORIGIN, routes: manifest.routes, legal: {} }).length).toBeGreaterThan(0);
+  });
+
+  it("still throws for a value that is set but unknown", () => {
+    expect(() => resolveCrawlTarget({ SITE_TARGET: "staging" })).toThrow(/SITE_TARGET/);
+    expect(() => resolveCrawlTarget({ SITE_TARGET: "" })).toThrow(/SITE_TARGET/);
   });
 });
 
@@ -186,10 +222,11 @@ describe("siteSitemap", () => {
     const sitemap = readTemplate("app/sitemap.ts");
     expect(sitemap).toMatch(/from\s+["']\.\.\/web-route-manifest\.json["']/);
     expect(sitemap).toMatch(/siteSitemap\(/);
+    expect(sitemap).toMatch(/target:\s*siteCrawlTarget\(\)/);
     expect(sitemap).not.toMatch(/new Date/);
     expect(sitemap).not.toMatch(/["'`]\/(about|contact|privacy|terms)["'`]/);
     const robots = readTemplate("app/robots.ts");
-    expect(robots).toMatch(/siteRobots\(siteTarget\(\), siteOrigin\(\)\)/);
+    expect(robots).toMatch(/siteRobots\(siteCrawlTarget\(\), siteOrigin\(\)\)/);
     expect(robots).not.toMatch(/allow/);
   });
 });
@@ -254,7 +291,13 @@ describe("siteShareCardText", () => {
     expect(source).not.toMatch(/["'`](image\/png)["'`]/);
     expect(source).toMatch(/export const size\s*=/);
     expect(source).toMatch(/export const contentType\s*=/);
-    expect(source).toMatch(/export const alt\s*=/);
+    expect(source).toMatch(/export const alt\s*=\s*card\.shareCard\.alt;/);
+    // No text literal: once the import lines and comments are removed, no string or template literal is left.
+    const code = source
+      .replace(/^import .*$/gm, "")
+      .replace(/\/\*[\s\S]*?\*\//g, "")
+      .replace(/\/\/.*$/gm, "");
+    expect(code).not.toMatch(/["'`]/);
   });
 
   it("the root layout takes metadataBase from the origin variable through siteOrigin", () => {

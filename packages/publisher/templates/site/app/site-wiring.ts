@@ -31,9 +31,11 @@ const SITE_TARGETS: readonly string[] = ["production", "preview", "development",
 
 /**
  * The deployment target, from `SITE_TARGET`. An absent value is `production`,
- * the strictest target, so forgetting to set it can only make the site refuse
- * more, never less. A value that is set but not one of the four throws: a
- * typo must not quietly select a different target.
+ * which is the strictest target for the legal and copy gates: forgetting to
+ * set it makes those gates refuse more, never less. It is not the safe
+ * default for crawling, which is why `resolveCrawlTarget` exists. A value
+ * that is set but not one of the four throws: a typo must not quietly select
+ * a different target.
  */
 export function resolveSiteTarget(env: Readonly<Record<string, string | undefined>>): SiteTarget {
   const value = env["SITE_TARGET"];
@@ -42,6 +44,20 @@ export function resolveSiteTarget(env: Readonly<Record<string, string | undefine
     throw new Error("SITE_TARGET must be one of production, preview, development or test.");
   }
   return value as SiteTarget;
+}
+
+/**
+ * The target `robots` and `sitemap` act on. Crawling fails closed: it is
+ * `production` only when `SITE_TARGET` is explicitly the string
+ * `production`. An absent value is `preview` here (no crawling, empty
+ * sitemap), so a host that sets `SITE_TARGET` only on its production
+ * environment cannot leave its previews crawlable. A value that is set but
+ * unknown throws, as in `resolveSiteTarget`.
+ */
+export function resolveCrawlTarget(env: Readonly<Record<string, string | undefined>>): SiteTarget {
+  const value = env["SITE_TARGET"];
+  if (value === undefined) return "preview";
+  return resolveSiteTarget(env);
 }
 
 // ------------------------------------------------------------------- origin

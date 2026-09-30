@@ -123,7 +123,8 @@ ships no copy and no tokens of its own.
 
 `NEXT_PUBLIC_SITE_URL` is the site's origin, for example an `https` address
 with no path. It is required, and there is no fallback: an absent, blank or
-malformed value stops the pages that need it from rendering, and the message
+malformed value fails every page and the build (the root layout reads it, so
+404 and 500 fail too), and `next dev` needs it set as well. The message
 names the variable and never the value. It must be an `http` or `https`
 origin exactly as `new URL(value).origin` writes it: no path, no query, no
 credentials and no trailing slash, the rule Publisher's `buildSiteMetadata`
@@ -134,8 +135,10 @@ only through `siteOrigin()` in `app/site-records.ts`.
 ## `SITE_TARGET`
 
 `SITE_TARGET` names the deployment: `production`, `preview`, `development`
-or `test`. An absent value is `production`, and any other value stops the
-site from rendering. It decides four things:
+or `test`. For the legal and copy gates an absent value is `production`, the
+strictest target; for crawling an absent value is not `production` (see
+below), and any other value stops the site from rendering. It decides four
+things:
 
 - **Legal documents.** On `production` a document whose status is not
   `counsel-reviewed` refuses to render, so a draft cannot be served there.
@@ -151,9 +154,10 @@ site from rendering. It decides four things:
 
 ## Crawlers and the share card
 
-- **`robots`.** Only `production` allows crawling and names
-  `<origin>/sitemap.xml`. Every other target disallows all crawling and names no
-  sitemap. `robots.txt` stops crawling; it does not guarantee that a URL is
+- **`robots`.** Only an explicit `SITE_TARGET=production` allows crawling and
+  names `<origin>/sitemap.xml`. Every other target, and an absent
+  `SITE_TARGET`, disallows all crawling and names no sitemap. Set it to
+  `production` on the production environment, or the site stays uncrawlable. `robots.txt` stops crawling; it does not guarantee that a URL is
   never listed, because a preview address linked from elsewhere can still
   appear in search results.
 - **`sitemap`.** On `production` it lists the routes in
@@ -163,7 +167,7 @@ site from rendering. It decides four things:
   status is `counsel-reviewed`, and then carries that document's own
   `lastUpdated` as `lastModified`; a draft is left out, not an error. No
   other route has a `lastModified`, and nothing reads a clock. On every other
-  target the sitemap is empty.
+  target, and when `SITE_TARGET` is absent, the sitemap is empty.
 - **Share card.** `app/opengraph-image.tsx` draws Publisher's `buildShareCard`
   at the size it declares, as a PNG. The name is the brand label from the
   brand-facts record, the tagline is the first tagline's approved copy (the
