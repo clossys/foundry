@@ -7,13 +7,16 @@
 //
 // It writes only under clossys/.state/apply/ in the hub, through the store
 // (which refuses a symbolic link in that path), and writes nothing in any
-// clone. It computes and records no approval: no option carries one, and the
-// binding of a set is decided later, from the hub, by admission. Every refusal
-// is a fixed token that echoes no plan, brief, skill or repository text.
+// clone. It computes and records no approval: no option carries one. The
+// bundle is a report unless the hub's committed plan is approved for this plan
+// digest; then it is planned, and each set's binding is decided from the hub,
+// by admission (planned-bundle.ts). Every refusal is a fixed token that echoes
+// no plan, brief, skill or repository text.
 
 import { spawnSync } from "node:child_process";
 import { lstatSync, readFileSync, realpathSync } from "node:fs";
 import { dirname, join, resolve, sep } from "node:path";
+import type { ReadinessRunner } from "./admission.js";
 import { renderApprovalSheet, ApprovalSheetError } from "./approval-sheet.js";
 import { listStoredChangeSets, storeApplyBundle, storeChangeSet } from "./apply-store.js";
 import type { ApplyBundle, PinnedPackage, RepositoryChangeSet, RepositoryVisibility } from "./change-set-contract.js";
@@ -27,6 +30,7 @@ import { sameRepository } from "./identity.js";
 import { isUnreadable, readLockfile } from "./lockfile-readers.js";
 import type { LockfileFormat } from "./lockfile-readers.js";
 import { observeRepository } from "./observe-repository.js";
+import { plannedBundle } from "./planned-bundle.js";
 import type { RepositoryObservationPorts } from "./observe-repository.js";
 import { planApplyBundle } from "./plan-bundle.js";
 import type { PlanApplyBundleResult, RepositoryObservation, SkippedRepositoryObservation } from "./plan-bundle.js";
@@ -59,10 +63,23 @@ temporary directory is removed before the command ends. A tool that changes
 anything but the lockfile, a submodule, a link that leaves the tree, or an
 oversized tree is refused, and no rule names a path, an id or tool output.
 
+When the plan file is the one committed at an attached HEAD and that committed
+plan carries an approval for this plan digest, the mode is planned: for each
+repository the hub decides the binding from what it holds (the approved
+bundle, the stored change sets, the base ledger and tree), and runs its own
+advisor-execution-readiness for a set that installs packages. A repository is
+planned only when every check V1 to V9 is satisfied and an approval binds its
+change set; one the hub refuses is violated (V3, exit 1) or indeterminate
+(exit 2), with a fixed rule, and is never bound. With no such approval the mode
+is report, the checks are as above, and nothing is run for readiness. A
+report never replaces the stored planned bundle of the same digest: that
+refusal is "store-failed".
+
 Writes only under clossys/.state/apply/: each change set, then the bundle.
 The sheet holds ids and digests only, never plan or brief text. This
 computes and records no approval: the approval is the plan's decision, made
-in the hub, for the subject digest the sheet names.
+in the hub, for the subject digest the sheet names. The digests, the change
+sets and the sheet do not depend on the mode, except its line.
 
 Every refusal is a fixed word and names nothing from the files it read. A
 refusal before anything is stored ends "; nothing was stored"; "store-failed"
@@ -88,6 +105,8 @@ export interface PlanCommandOptions {
   readonly stderr?: (line: string) => void;
   /** How the package manager and the hub's provenance check are launched for the dry tree; the real runners by default. Not reachable from a CLI. */
   readonly spawn?: Pick<DryMaterializePorts, "lockfileSpawn" | "provenanceSpawn">;
+  /** How advisor-execution-readiness is run for a set that installs packages in planned mode; the hub's own bin by default. Not reachable from a CLI. */
+  readonly runReadiness?: ReadinessRunner;
 }
 
 /** The fixed reasons a plan run stops before any bundle is stored. */
@@ -460,6 +479,12 @@ export async function planMain(argv: readonly string[], options: PlanCommandOpti
     // The part of V6 the planner cannot run, and V9: on a temporary tree, never in a clone.
     try {
       result = await dryMaterializeBundle(result, { hub, cloneFor: (id) => cloneOf(hub, id), now: options.now ?? (() => new Date()), ports: { lockfileSpawn: options.spawn?.lockfileSpawn, provenanceSpawn: options.spawn?.provenanceSpawn } });
+    } catch {
+      return refuse("planner-refused");
+    }
+    // An approval that binds exactly what was planned: only from the hub's committed, approved plan, only through admission.
+    try {
+      result = await plannedBundle(result, { hub, cloneFor: (id) => cloneOf(hub, id), heldChangeSets, now: options.now ?? (() => new Date()), runReadiness: options.runReadiness });
     } catch {
       return refuse("planner-refused");
     }

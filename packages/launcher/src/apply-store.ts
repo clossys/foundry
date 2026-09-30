@@ -18,10 +18,18 @@
 // touched, and superseded computations are not recorded. Admission reads a
 // stored bundle for its digest, its plan digest and the change sets it holds,
 // never for its authorization or verdicts, which it re-checks at apply time.
-// Writing the same bytes again is a no-op in both stores. A stored file's
-// recomputed digest proves its integrity, not its provenance: anyone who can
-// write the hub directory can add a set that verifies, the same way anyone who
-// can write a git object store can add a commit. A read never trusts a file
+// A planned bundle is the exception to that replacement (issue #1708): a report
+// never replaces a stored bundle that verifies as planned under the same
+// digest, because a planned file records approvals a report does not, and a
+// rerun with less (an approval no longer committed, an uncommitted plan edit)
+// must not quietly erase them. The refusal names no path. A planned bundle
+// replaces a report or a planned one, and a file that does not verify (any
+// bytes that do not read back as a valid bundle of that digest) is replaced by
+// either, since it protects nothing. Writing the same bytes again is a no-op
+// in both stores. A stored file's recomputed digest proves its integrity, not
+// its provenance: anyone who can write the hub directory can add a set that
+// verifies, the same way anyone who can write a git object store can add a
+// commit. A read never trusts a file
 // merely because it parses: the document must validate against its contract,
 // recompute to the digest the file name claims, and (for a change set) to
 // the digest the document itself carries -- so a renamed or hand-edited file
@@ -239,7 +247,7 @@ function writeAppendOnly(hubDirectory: string, storeRel: string, fileName: strin
  * `ensureRealDirectory()`). The temporary file is always removed. Returns the
  * final path.
  */
-function writeReplacing(hubDirectory: string, storeRel: string, fileName: string, bytes: Buffer): string {
+function writeReplacing(hubDirectory: string, storeRel: string, fileName: string, bytes: Buffer, refuseOver?: (existing: Buffer) => boolean): string {
   assertHubDirectory(hubDirectory);
   const directory = join(hubDirectory, storeRel);
   ensureRealDirectory(hubDirectory, directory, "write");
@@ -260,6 +268,7 @@ function writeReplacing(hubDirectory: string, storeRel: string, fileName: string
     } catch (cause) {
       throw wrapFsError("hub store write", cause);
     }
+    if (refuseOver?.(existing) === true) throw new TypeError("a stored planned apply bundle is never replaced by a report of the same digest");
     if (existing.equals(bytes)) return finalPath;
   }
   const temporaryPath = join(directory, `.${fileName}.${randomBytes(8).toString("hex")}.tmp`);
@@ -363,15 +372,40 @@ export function storeChangeSet(hubDirectory: string, set: RepositoryChangeSet): 
  * excludes the authorization, the clock, the mode and the verdicts (RFC
  * 12.3), so a bundle whose digest already names a stored file replaces that
  * one file atomically with these bytes, the newest computation; the same
- * bytes again are a no-op. A bundle with any other digest never touches
- * another file. Superseded computations are not recorded. Returns the file's
- * path.
+ * bytes again are a no-op. A report bundle never replaces a stored file that
+ * verifies as a planned bundle of this digest (a TypeError, naming no path);
+ * a planned bundle replaces anything. A bundle with any other digest never
+ * touches another file. Superseded computations are not recorded. Returns the
+ * file's path.
  */
 export function storeApplyBundle(hubDirectory: string, bundle: ApplyBundle): string {
   const validation = validateApplyBundle(bundle);
   if (!validation.valid) throw new TypeError(`an apply bundle must validate against its contract before it can be stored: ${validation.reason}`);
   assertDigestShape(bundle.bundleDigest);
-  return writeReplacing(hubDirectory, BUNDLE_STORE_REL, digestFileName(bundle.bundleDigest), serializeStoredDocument(bundle));
+  const digest = bundle.bundleDigest;
+  return writeReplacing(hubDirectory, BUNDLE_STORE_REL, digestFileName(digest), serializeStoredDocument(bundle), bundle.mode === "report" ? (existing) => verifiesAsPlanned(existing, digest) : undefined);
+}
+
+/** Whether `bytes` read back as a valid, digest-verified apply bundle of `digest` whose mode is planned: exactly what a read would return. */
+function verifiesAsPlanned(bytes: Buffer, digest: string): boolean {
+  let document: unknown;
+  try {
+    document = readContractDocument(bytes);
+  } catch {
+    return false;
+  }
+  return verifiedBundle(document, digest)?.mode === "planned";
+}
+
+/** The document as a bundle when it validates and its digest, recomputed from the plan digest and each computed repository, is `digest` and its own. */
+function verifiedBundle(document: unknown, digest: string): ApplyBundle | null {
+  if (!validateApplyBundle(document).valid) return null;
+  const bundle = document as ApplyBundle;
+  const computed: { readonly id: string; readonly changeSetDigest: string }[] = bundle.repositories.flatMap((entry: ApplyBundleRepository) =>
+    "changeSet" in entry ? [{ id: entry.id, changeSetDigest: entry.changeSet }] : [],
+  );
+  const recomputed = bundleDigest(bundle.plan.digest, computed);
+  return recomputed === bundle.bundleDigest && recomputed === digest ? bundle : null;
 }
 
 /**
@@ -429,12 +463,5 @@ export function readStoredApplyBundle(hubDirectory: string, digest: string): App
   assertDigestShape(digest);
   const document = readStoredBytes(hubDirectory, BUNDLE_STORE_REL, digestFileName(digest));
   if (document === null) return null;
-  if (!validateApplyBundle(document).valid) return null;
-  const bundle = document as ApplyBundle;
-  const computed: { readonly id: string; readonly changeSetDigest: string }[] = bundle.repositories.flatMap((entry: ApplyBundleRepository) =>
-    "changeSet" in entry ? [{ id: entry.id, changeSetDigest: entry.changeSet }] : [],
-  );
-  const recomputed = bundleDigest(bundle.plan.digest, computed);
-  if (recomputed !== bundle.bundleDigest || recomputed !== digest) return null;
-  return bundle;
+  return verifiedBundle(document, digest);
 }

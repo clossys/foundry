@@ -61,6 +61,24 @@ const OTHER_BUNDLE: ApplyBundle = {
 };
 if (!validateApplyBundle(OTHER_BUNDLE).valid) throw new Error("this suite's second bundle fixture does not validate against the apply-bundle contract");
 
+/** The same bundle as a planned one: bound by an approval, with V1 to V9 satisfied (code rules A5 to A7). Same digest: the digest does not cover the mode. */
+const PLANNED: ApplyBundle = {
+  ...BUNDLE,
+  mode: "planned",
+  repositories: [
+    {
+      id: SET.repository.id,
+      verdict: "satisfied",
+      phase: SET.phase,
+      changeSet: SET.changeSetDigest,
+      checks: ["V1", "V2", "V3", "V4", "V5", "V6", "V7", "V8", "V9"].map((check) => ({ check, verdict: "satisfied" as const })),
+      state: "planned",
+      binding: { kind: "approved", subjectDigest: BUNDLE.bundleDigest },
+    },
+  ],
+};
+if (!validateApplyBundle(PLANNED).valid || PLANNED.bundleDigest !== BUNDLE.bundleDigest) throw new Error("this suite's planned bundle fixture does not validate against the apply-bundle contract");
+
 let hub: string;
 
 beforeEach(() => {
@@ -205,7 +223,7 @@ describe("storeApplyBundle / readStoredApplyBundle", () => {
   const bundleStore = (): Record<string, string> =>
     Object.fromEntries(readdirSync(join(hub, BUNDLE_STORE_REL)).sort().map((name) => [name, readFileSync(join(hub, BUNDLE_STORE_REL, name), "utf8")]));
 
-  it("replaces the stored file with the newest bytes when the same digest is stored with a later clock", () => {
+  it("replaces a stored report bundle with the newest bytes when the same digest is stored with a later clock", () => {
     const path = storeApplyBundle(hub, BUNDLE);
     const later: ApplyBundle = { ...BUNDLE, computedAt: "2026-09-25T00:00:00Z" };
     expect(later.bundleDigest).toBe(BUNDLE.bundleDigest);
@@ -215,7 +233,7 @@ describe("storeApplyBundle / readStoredApplyBundle", () => {
     expect(Object.keys(bundleStore())).toEqual([`${BUNDLE.bundleDigest.slice("sha256:".length)}.json`]);
   });
 
-  it("replaces the stored file with the newest bytes when the same digest is stored with a new authorization, and only that file changes", () => {
+  it("replaces a stored report bundle with the newest bytes when the same digest is stored with a new authorization, and only that file changes", () => {
     const other = storeApplyBundle(hub, OTHER_BUNDLE);
     const otherBefore = readFileSync(other, "utf8");
     const path = storeApplyBundle(hub, BUNDLE);
@@ -234,6 +252,52 @@ describe("storeApplyBundle / readStoredApplyBundle", () => {
     expect(readFileSync(other, "utf8")).toBe(otherBefore);
     expect(readStoredApplyBundle(hub, BUNDLE.bundleDigest)).toEqual(authorized);
     expect(path).toBe(bundleFile(BUNDLE.bundleDigest));
+  });
+
+  it("report never replaces a stored planned bundle", () => {
+    const path = storeApplyBundle(hub, PLANNED);
+    const before = statSync(path);
+    const bytes = readFileSync(path, "utf8");
+    const attempts: ApplyBundle[] = [BUNDLE, { ...BUNDLE, computedAt: "2026-09-25T00:00:00Z" }];
+    for (const attempt of attempts) {
+      let caught: unknown;
+      try {
+        storeApplyBundle(hub, attempt);
+      } catch (cause) {
+        caught = cause;
+      }
+      expect(caught).toBeInstanceOf(TypeError);
+      // The refusal names no path, digest or id.
+      const message = (caught as Error).message;
+      expect(message).not.toContain(hub);
+      expect(message).not.toContain(tmpdir());
+      expect(message).not.toContain("sha256");
+      expect(message).not.toContain(SET.repository.id);
+      const after = statSync(path);
+      expect(readFileSync(path, "utf8")).toBe(bytes);
+      expect(after.ino).toBe(before.ino);
+      expect(after.mtimeMs).toBe(before.mtimeMs);
+      expect(readdirSync(join(hub, BUNDLE_STORE_REL))).toEqual([`${BUNDLE.bundleDigest.slice("sha256:".length)}.json`]);
+    }
+    expect(readStoredApplyBundle(hub, BUNDLE.bundleDigest)).toEqual(PLANNED);
+  });
+
+  it("a planned bundle replaces a stored report bundle and a stored planned one, and a report replaces a planned file that does not verify", () => {
+    const path = storeApplyBundle(hub, BUNDLE);
+    expect(storeApplyBundle(hub, PLANNED)).toBe(path);
+    expect(readFileSync(path, "utf8")).toBe(bundleBytes(PLANNED));
+    const later: ApplyBundle = { ...PLANNED, computedAt: "2026-09-25T00:00:00Z" };
+    expect(storeApplyBundle(hub, later)).toBe(path);
+    expect(readStoredApplyBundle(hub, BUNDLE.bundleDigest)).toEqual(later);
+
+    // A file that claims to be planned but does not verify (its bytes are not a bundle of this digest) is no protection: it is replaced.
+    writeFileSync(path, `${JSON.stringify({ ...PLANNED, bundleDigest: `sha256:${"0".repeat(64)}` }, null, 2)}\n`);
+    expect(readStoredApplyBundle(hub, BUNDLE.bundleDigest)).toBeNull();
+    expect(storeApplyBundle(hub, BUNDLE)).toBe(path);
+    expect(readFileSync(path, "utf8")).toBe(bundleBytes(BUNDLE));
+    writeFileSync(path, "not json\n");
+    expect(storeApplyBundle(hub, BUNDLE)).toBe(path);
+    expect(readStoredApplyBundle(hub, BUNDLE.bundleDigest)).toEqual(BUNDLE);
   });
 
   it("writes nothing when the same bytes are stored again: the file keeps its inode and modification time", () => {
