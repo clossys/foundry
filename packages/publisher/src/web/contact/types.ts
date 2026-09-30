@@ -241,6 +241,9 @@ export const CONTACT_CLIENT_KEY_MAX_LENGTH = 256;
  *
  * Atomicity under concurrent calls for the same key is the limiter's
  * responsibility; the handler awaits the answer and does nothing else with it.
+ *
+ * The handler reads `check` once, at construction, and calls that function
+ * with the limiter as `this`; reassigning `check` afterwards has no effect.
  */
 export interface ContactRateLimiter {
   check(key: string): boolean | Promise<boolean>;
@@ -359,6 +362,9 @@ export interface ContactOutboundMessage {
  * The handler calls `deliver` at most once per `handle()`, awaits it, ignores
  * the resolved value, and maps a throw or rejection to `unavailable`
  * (reason `delivery-failed`). It never retries.
+ *
+ * The handler reads `deliver` once, at construction, and calls that function
+ * with the delivery as `this`; reassigning `deliver` afterwards has no effect.
  */
 export interface ContactDelivery {
   readonly channel: "email";
