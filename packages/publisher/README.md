@@ -763,6 +763,57 @@ This is the narrow disposition for entry pages; it does not add CMS, parser,
 or taxonomy behavior. A future Designer-block integration is separately
 staged and is not part of these publisher shells.
 
+### `LandingView`
+
+`LandingView`, exported from `@clossys/publisher/web`, is a single-screen
+landing page: a transparent banner, one hero centred both ways, and a
+transparent legal footer, over an optional backdrop. It is server-safe (it
+imports only Designer's `/shell/server` and `/atoms/server` barrels) and ships
+no wording of its own: every visible word comes from a prop.
+
+```tsx
+import { LandingView } from "@clossys/publisher/web";
+
+declare const brand: React.ReactNode; // the caller's brand mark, for example a Designer `Brandmark`
+
+export function HomePage() {
+  return (
+    <LandingView
+      brand={brand}
+      headerAction={<a href="/start">Start</a>}
+      heading="A page that says one thing"
+      description="One supporting line."
+      legal={{ entity: "Example Co", links: [{ label: "Privacy", href: "/privacy" }] }}
+    />
+  );
+}
+```
+
+Props, in addition to the standard `div` attributes (minus `children`) and `style`:
+
+- `brand`: the identity slot in the banner.
+- `headerAction` (optional): the page's call to action, rendered in the banner.
+- `eyebrow`, `description` (optional): the lines above and below the heading.
+- `heading`: the page's only `<h1>`.
+- `heroAction` (optional): a call to action inside the hero. It is absent by
+  default, so the call to action is header-only unless you supply one.
+- `media` (optional): rendered after the description.
+- `align` (`"center"` or `"start"`, default `"center"`): aligns the hero's
+  content and changes only that wrapper's classes.
+- `backdrop` (optional): rendered first, absolutely positioned behind the rest,
+  with `aria-hidden="true"` and `pointer-events-none`. It is absent from the
+  markup when not supplied.
+- `legal`: the props of Designer's `SiteFooter.Legal`, passed straight through.
+
+What it guarantees: one banner, one main and one contentinfo landmark; one
+`<h1>`; a header and footer with `ground="transparent"`, so they carry no
+background, border or width cap and run the full viewport width; and text that
+comes only from props.
+
+What it does not do: check the contrast of the page ink over your backdrop
+(that contract is issue #1523), or make anything you put inside the backdrop
+unfocusable. Keep focusable content out of `backdrop`.
+
 ### `defineWebTemplate` / `createWebRenderer` — an extensible, instance-scoped web-template registry
 
 `AuthView`, `ErrorView`, and `MarketingView` are this package's own three
