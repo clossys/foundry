@@ -29,10 +29,20 @@
 // - S7. `applied` means the default branch's tip is in the clone and holds every `after` and every key the set writes, whether
 //   the set was merged by a pull request or was already there; it needs no open pull request.
 //
+// - S8. This set's pull request is `proposed` only if `sha256:` and the hex SHA-256 of its body's UTF-8 bytes, exactly as the port
+//   returned it (no trim, no line-ending or final-LF change), equal the set's `bodySha256`; otherwise `diverged` (`body-mismatch`).
+//   A body that is not well-formed UTF-16 is `body-mismatch`.
+// - S9. A set with no `bodySha256` is `indeterminate` (`body-unbound`), never `proposed` or `diverged`.
+// - S10. The order: the preconditions, then `body-unbound`, then base, ref and title, then `body-mismatch`, then `head-not-local`
+//   and verify. The precedence of states is unchanged.
+// - S11. Only this set's own row is hashed, never an older one; neither the stored hash nor the body's is printed or stored, and the
+//   S2 line, the exit codes and the three GET calls are as they were.
+//
 // Precedence: indeterminate, then diverged, then superseded, then proposed, then applied, then planned. `materialized` is
 // verify's, `proved` and `held` and the drift classes are not observed here.
 
 import { spawnSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import { readdirSync } from "node:fs";
 import { dirname, isAbsolute, join } from "node:path";
 import { contentDigest, validateRepositoryChangeSet } from "./change-set-contract.js";
@@ -346,6 +356,14 @@ function readRows(raw: unknown): PullRequestRow[] | "too-many-open" | "port-malf
   return rows.sort((left, right) => left.number - right.number);
 }
 
+const LONE_SURROGATE = /[\uD800-\uDFFF]/u;
+
+/** Whether `body` is the body `bodySha256` names (S8): the hash of its UTF-8 bytes as they are, and a body no encoder would have to repair. */
+function bodyHashes(body: string, bodySha256: string): boolean {
+  if (LONE_SURROGATE.test(body)) return false;
+  return `sha256:${createHash("sha256").update(Buffer.from(body, "utf8")).digest("hex")}` === bodySha256;
+}
+
 /** The digest on the first and only marker line of a body (S4), or null. */
 function markerOf(body: string): string | null {
   if (body.includes("\r")) return null;
@@ -467,10 +485,15 @@ async function observe(input: StatusInput): Promise<StatusResult> {
     // `indeterminate` whatever the pull request says.
     const pre = await withGitLimits(timeoutMs, () => runPreconditions(input.clone, input.hub, set, input.heldChangeSets ?? [], { now: input.now, runReadiness: input.runReadiness }));
     if ("exitCode" in pre) return indeterminate(pre.reason ?? "refused", [number]);
+    // S9
+    const bodySha256 = set.pullRequest.bodySha256;
+    if (bodySha256 === undefined) return indeterminate("body-unbound", [number]);
     // S5
     if (current.baseRef !== branch) return diverged("base-branch-mismatch", [number]);
     if (current.headRef !== set.branch) return diverged("ref-mismatch", [number]);
     if (current.title !== set.pullRequest.title) return diverged("title-mismatch", [number]);
+    // S8: `current.body` passed markerOf, so it is a string.
+    if (current.body === null || !bodyHashes(current.body, bodySha256)) return diverged("body-mismatch", [number]);
     if (!commitIsLocal(root, current.headSha, timeoutMs)) return diverged("head-not-local", [number]);
     const head = commitReader(root, current.headSha, timeoutMs);
     let verified: ApplyStepResult | null = null;

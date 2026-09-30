@@ -1,4 +1,5 @@
 import { execFileSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import { chmodSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
@@ -59,14 +60,27 @@ async function proposedWorld(edit?: (clone: string) => void) {
   git(fixture.clone, "commit", "-m", "apply");
   const head = git(fixture.clone, "rev-parse", "HEAD");
   git(fixture.clone, "checkout", "main");
-  return { ...fixture, head };
+  // What `body` does once it has rendered the pull request: the set carries the hash of exactly that body (the digest excludes it).
+  const unbound = fixture.set;
+  const rendered = renderPullRequest({ set: unbound, binding: fixture.binding, taskRecord: 12 });
+  if (rendered.state !== "rendered") throw new Error(`refused: ${rendered.reason}`);
+  const set = { ...unbound, pullRequest: { ...unbound.pullRequest, bodySha256: rendered.bodySha256 } };
+  return { ...fixture, set, unbound, head };
 }
 type World = Awaited<ReturnType<typeof proposedWorld>>;
 
 function bodyOf(world: World, extra = ""): string {
-  const rendered = renderPullRequest({ set: world.set, binding: world.binding, taskRecord: 12 });
+  const rendered = renderPullRequest({ set: world.unbound, binding: world.binding, taskRecord: 12 });
   if (rendered.state !== "rendered") throw new Error(`refused: ${rendered.reason}`);
   return extra === "" ? rendered.body : `${rendered.body}${extra}\n`;
+}
+
+/** The hash `body` would record for a body text, computed here and not by the code under test. */
+const hashOf = (text: string): string => `sha256:${createHash("sha256").update(Buffer.from(text, "utf8")).digest("hex")}`;
+
+/** The same world, its set bound to the hash of `text` instead of the rendered body's. */
+function boundTo(world: World, text: string): World {
+  return { ...world, set: { ...world.unbound, pullRequest: { ...world.unbound.pullRequest, bodySha256: hashOf(text) } } };
 }
 
 function row(world: World, over: Record<string, unknown> = {}): Record<string, unknown> {
@@ -243,6 +257,99 @@ describe("status", () => {
   );
 
   it(
+    "a body edited after opening is diverged",
+    async () => {
+      const world = await proposedWorld();
+      const body = bodyOf(world);
+      expect(body.endsWith("\n")).toBe(true);
+      const edited: [string, string, World][] = [
+        ["appended line", bodyOf(world, "one more line"), world],
+        ["no final LF", body.slice(0, -1), world],
+        ["trailing space", `${body.slice(0, -1)} \n`, world],
+        ["lone surrogate", `${body}\ud800\n`, world],
+        // The recorded hash is the trimmed body's: a comparison that trims what it reads would call these equal.
+        ["extra final LF", `${body}\n`, boundTo(world, body.trimEnd())],
+        ["final LF after a trimmed record", body, boundTo(world, body.trimEnd())],
+        ["trailing space after a trimmed record", `${body.trimEnd()} `, boundTo(world, body.trimEnd())],
+        // A lone surrogate is written as U+FFFD by a UTF-8 encoder: the record of that text must still not match it.
+        ["lone surrogate beside its replacement", `${body}\ud800\n`, boundTo(world, `${body}\ufffd\n`)],
+      ];
+      for (const [name, text, bound] of edited) {
+        const result = await statusOf(bound, fakePorts([row(bound, { body: text })]).ports);
+        expect(result, name).toEqual({ exitCode: 1, state: "diverged", reason: "body-mismatch", pullRequests: [7] });
+      }
+      // The body exactly as rendered, and one recorded for an astral character it holds, is proposed.
+      expect(await statusOf(world, fakePorts([row(world)]).ports)).toEqual({ exitCode: 0, state: "proposed", pullRequests: [7] });
+      const astral = `${body}\u{1F600}\n`;
+      const bound = boundTo(world, astral);
+      expect(await statusOf(bound, fakePorts([row(bound, { body: astral })]).ports)).toEqual({ exitCode: 0, state: "proposed", pullRequests: [7] });
+    },
+    TIMEOUT,
+  );
+
+  it(
+    "an unbound set is never proposed",
+    async () => {
+      const world = await proposedWorld();
+      const unbound = { ...world, set: world.unbound };
+      expect(unbound.set.pullRequest.bodySha256).toBeUndefined();
+      const expected = { exitCode: 2, state: "indeterminate", reason: "body-unbound", pullRequests: [7] };
+      expect(await statusOf(unbound, fakePorts([row(unbound)]).ports)).toEqual(expected);
+      expect(formatStatus(expected as StatusResult)).toBe("launcher-apply-plan status: indeterminate (body-unbound) #7");
+      // Nor diverged: a wrong title or a wrong body does not make it so.
+      expect(await statusOf(unbound, fakePorts([row(unbound, { title: "x" })]).ports)).toEqual(expected);
+      expect(await statusOf(unbound, fakePorts([row(unbound, { body: bodyOf(unbound, "edited") })]).ports)).toEqual(expected);
+      // A set with no pull request is not asked about its body.
+      expect(await statusOf(unbound, fakePorts([], world.set.repository.baseCommit).ports)).toEqual({ exitCode: 2, state: "planned" });
+    },
+    TIMEOUT,
+  );
+
+  it(
+    "the body check keeps its place",
+    async () => {
+      const world = await proposedWorld();
+      const wrong = bodyOf(world, "edited");
+      // A precondition comes first: the local default branch moved ahead of the remote's.
+      const moved = await proposedWorld();
+      writeFileSync(join(moved.clone, "unpushed.txt"), "x\n");
+      git(moved.clone, "add", "unpushed.txt");
+      git(moved.clone, "commit", "-m", "local only");
+      expect(await statusOf(moved, fakePorts([row(moved, { body: bodyOf(moved, "edited") })]).ports)).toEqual({ exitCode: 2, state: "indeterminate", reason: "remote-tip-mismatch", pullRequests: [7] });
+      // Then base, ref and title.
+      const before: [Record<string, unknown>, string][] = [
+        [{ baseRef: "release" }, "base-branch-mismatch"],
+        [{ headRef: "clossys/apply-000000000000" }, "ref-mismatch"],
+        [{ title: "Clossys: apply plan 000000000000" }, "title-mismatch"],
+      ];
+      for (const [over, reason] of before) {
+        expect(await statusOf(world, fakePorts([row(world, { ...over, body: wrong })]).ports), reason).toEqual({ exitCode: 1, state: "diverged", reason, pullRequests: [7] });
+      }
+      // The body comes before the head is looked for in the clone.
+      expect(await statusOf(world, fakePorts([row(world, { body: wrong, headSha: "a".repeat(40) })]).ports)).toEqual({ exitCode: 1, state: "diverged", reason: "body-mismatch", pullRequests: [7] });
+      // And a matching body leaves that to the head check.
+      expect(await statusOf(world, fakePorts([row(world, { headSha: "a".repeat(40) })]).ports)).toEqual({ exitCode: 1, state: "diverged", reason: "head-not-local", pullRequests: [7] });
+    },
+    TIMEOUT,
+  );
+
+  it(
+    "an older superseded body is not hashed",
+    async () => {
+      const world = await proposedWorld();
+      const older = reseal({ ...structuredClone(world.set), repository: { ...world.set.repository, baseCommit: "1".repeat(40) } } as never);
+      const olderBody = bodyOf(world).replace(world.set.changeSetDigest, older.changeSetDigest);
+      const held = [older, world.set];
+      const edited = `${olderBody}edited after opening\n`;
+      expect(hashOf(edited)).not.toBe(world.set.pullRequest.bodySha256);
+      expect(await statusOf(world, fakePorts([row(world, { number: 5, body: edited })]).ports, held)).toEqual({ exitCode: 2, state: "superseded", pullRequests: [5] });
+      // Beside this set's own matching pull request it is still the older one that is reported.
+      expect(await statusOf(world, fakePorts([row(world, { number: 5, body: edited }), row(world)]).ports, held)).toEqual({ exitCode: 2, state: "superseded", pullRequests: [5] });
+    },
+    TIMEOUT,
+  );
+
+  it(
     "a full page of 100 open pull requests, a failing port or a malformed answer is indeterminate",
     async () => {
       const world = await proposedWorld();
@@ -319,6 +426,7 @@ describe("status", () => {
         { rows: [row(world, { body: `${sentinelBody}\r\n` })], code: 2 },
         { rows: [row(world, { author: LOGIN_SENTINEL })], code: 2 },
         { rows: [row(world, { body: `${BODY_SENTINEL} clossys-change-set` })], code: 2 },
+        { rows: [row(world, { body: sentinelBody })], code: 1 },
       ];
       for (const { rows, code } of cases) {
         const { ports } = fakePorts(rows);
@@ -331,7 +439,7 @@ describe("status", () => {
 
       const printed = out.join("\n");
       expect(out.length).toBeGreaterThan(0);
-      for (const forbidden of [LOGIN_SENTINEL, TITLE_SENTINEL, BODY_SENTINEL, REPO_SENTINEL, SITE_ID, world.set.branch, world.set.pullRequest.title, world.head, world.hub, world.clone]) {
+      for (const forbidden of [LOGIN_SENTINEL, TITLE_SENTINEL, BODY_SENTINEL, REPO_SENTINEL, SITE_ID, world.set.branch, world.set.pullRequest.title, world.head, world.hub, world.clone, world.set.pullRequest.bodySha256!, hashOf(sentinelBody), hashOf(sentinelBody).slice("sha256:".length)]) {
         expect(printed.includes(forbidden), forbidden).toBe(false);
       }
       // Every line is the fixed shape: a state, at most one fixed reason token, and #<n> for each number.

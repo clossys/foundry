@@ -1304,10 +1304,10 @@ never a body, a title, a login, a branch, a path or any tool output.
 
 | State | Exit | Meaning |
 | --- | --- | --- |
-| `proposed` | `0` | An open pull request carries this set's marker, was opened by the person running this, from and into the set's own repository, on the set's branch and title, and its head commit passes every check `verify` makes, including the ledger's exact bytes. |
+| `proposed` | `0` | An open pull request carries this set's marker, was opened by the person running this, from and into the set's own repository, on the set's branch and title, its body hashes to the `bodySha256` that `body` recorded, and its head commit passes every check `verify` makes, including the ledger's exact bytes. |
 | `applied` | `0` | The default branch's tip is in the clone and holds every `after` and every key the set writes, however it got there, with no open pull request needed. |
 | `planned` | `2` | Neither. |
-| `diverged` | `1` | The pull request that carries this set's marker does not match it: a different base branch, branch or title, a head that is not in the clone, or a head that fails a `verify` check. |
+| `diverged` | `1` | The pull request that carries this set's marker does not match it: a different base branch, branch or title, a body whose hash is not the recorded `bodySha256` (`body-mismatch`), a head that is not in the clone, or a head that fails a `verify` check. |
 | `superseded` | `2` | An older change set this hub stored for the repository has an open pull request. It outranks `proposed`, so it is also the state when this set's own pull request is open beside the older one. |
 | `indeterminate` | `2` | Something could not be read or trusted, with one of the reasons below. |
 
@@ -1331,6 +1331,9 @@ Every reason `indeterminate` can carry:
   shown to be whole and is refused.
 - The markers: `foreign-marker`, `marker-malformed`, `unknown-digest` (a digest
   this hub never stored) and `duplicate-digest`.
+- The body: `body-unbound`, when the set has no `bodySha256` because `body` never
+  ran for it. Such a set is never `proposed` and never `diverged`; run `body`,
+  which records the hash, and open the pull request from its output.
 - Git, over commits already in the clone: `tip-not-local` (the default branch's
   tip is not in the clone), `tip-unreadable` (the tip's tree could not be read),
   `object-unreadable` (a corrupt, missing or unreachable object of the pull
@@ -1349,8 +1352,17 @@ Every reason `indeterminate` can carry:
 this unit does: it checks the head's tree and the paths that differ from the
 base, as `verify` does, so a head built on a newer default branch that reverts
 it can look the same. A reviewer reading the pull request's own diff on GitHub
-is what would notice. Nor can `status` tell that a pull request's body was
-edited after it was opened beyond what the marker and these checks show.
+is what would notice.
+
+`status` does notice a body edited after it was opened. It hashes the body of
+this set's own pull request, as GitHub returned it, with no trimming and no
+change to line endings or the final line feed, and `proposed` needs
+`sha256:` and the hex SHA-256 of its UTF-8 bytes to equal the set's
+`bodySha256`. An appended line, a missing final line feed, a trailing space or
+a character that is not well-formed UTF-16 is `diverged` (`body-mismatch`). The
+body is checked after the base branch, branch and title and before the head, so
+the first of those that differs is the reason given. An older set's pull request
+is never hashed, and neither hash nor body is printed.
 
 `verify` now reads a path the set removes with a `lstat` alone. A file that is
 still there but that `verify` cannot read used to raise (exit 2, the usage
