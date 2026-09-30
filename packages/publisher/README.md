@@ -1062,6 +1062,71 @@ the percent-encoded form `/caf%C3%A9` is accepted.
 this head set into `MarketingView` or any other view or template, and how a
 legal document's `status` is decided or stored.
 
+### Share card — `buildShareCard`
+
+`buildShareCard(input)` builds the site's one share card as a React element for
+an image-response API, and returns the record `buildSiteMetadata` takes for it.
+It is exported from `@clossys/publisher/web` and its server entry, and is
+framework-neutral: it renders nothing, rasterises nothing, loads no font, and
+fetches nothing.
+
+```typescript
+import { buildShareCard, buildSiteMetadata } from "@clossys/publisher/web";
+
+const card = buildShareCard({
+  name: "Example Studio",
+  tagline: "Small tools, well made",
+  alt: "Example Studio",
+  mark: { src: markDataUrl, width: 96, height: 96 }, // optional inline data URL
+});
+
+// card.element     the React element, exactly 1200 by 630
+// card.width       1200
+// card.height      630
+// card.contentType "image/png"
+// card.shareCard   { url: "/opengraph-image", alt, width: 1200, height: 630 }
+
+const meta = buildSiteMetadata({
+  site: { name: "Example Studio", tagline: "Small tools, well made", origin: "https://example.com", themeColor: "#112233", locale: "en_US", shareCard: card.shareCard },
+  page: { kind: "home", label: "Home", description: "A description.", path: "/" },
+});
+```
+
+- **Text.** `name` and `tagline` are the plain values `buildSiteMetadata` takes,
+  under its title-text rule; `alt` is supplied by the caller. Nothing comes from
+  a copy registry and no text is built in. Text is emitted verbatim.
+- **Colour.** Every colour is a Designer role token resolved through
+  `buildFlatTokenMap(tokenOverrides)`. The defaults are
+  `SHARE_CARD_DEFAULT_ROLES` (`--color-surface-base` background,
+  `--color-ink-primary` name, `--color-ink-secondary` tagline,
+  `--color-accent` rule); `roles` picks others. A role that does not resolve to a
+  concrete `#rrggbb[aa]` colour is refused.
+- **Mark.** Optional. Accepted only as a `data:image/svg+xml` or
+  `data:image/png;base64` URL with integer `width` and `height` no larger than
+  the card height. Any other source is refused, so the card cannot trigger a
+  fetch.
+- **Route.** `path` (default `/opengraph-image`) is the card's root-relative
+  route, in normal URL form; it becomes `shareCard.url`.
+- **Structure.** Inline styles only: no class names, no CSS custom properties,
+  and `display: flex` on every element with more than one child. The same input
+  renders the same markup.
+- **Refusals.** It throws `ShareCardError` with a closed `reason`
+  (`invalid-input`, `blank-text`, `surrounding-whitespace`, `control-character`,
+  `invalid-path`, `invalid-token-override`, `unresolvable-role`,
+  `invalid-mark-source`, `invalid-mark-size`). The error text is fixed per reason
+  and never echoes input.
+
+**Soundness boundary.** Guaranteed: the `OG_SHARE_CARD_SPEC` size, colours only
+from role tokens, validated caller text, a mark only from inline data,
+inline-style structure, and deterministic markup. Not done: no rasterisation
+runs here; there is no font, tagline-fit, or contrast check (a long tagline can
+overflow the card); an accepted SVG mark's own content is not inspected; and
+approving the words on the card is the caller's. The `opengraph-image` route
+file and adopting the card in a page are not part of this change. The site
+template (copied into a consumer repository, and not part of this package's
+npm files) carries a pure mapping from `buildSiteMetadata`'s result onto
+Next.js metadata and viewport.
+
 ## `media` — the asset registry contract, responsive images, and video (v2)
 
 `@clossys/publisher/media` registers a consumer's own image and video
