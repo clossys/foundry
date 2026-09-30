@@ -338,6 +338,17 @@ function tamperedRun(run: SetupRun, text: string): { set: RepositoryChangeSet; h
   return { set: withBundle, hub };
 }
 
+/** The set with pnpm-workspace.yaml's `before` digest replaced (and the set resealed), and a hub that approved exactly that set. */
+function tamperedBefore(run: SetupRun, before: string | null): { set: RepositoryChangeSet; hub: string } {
+  const set = cloneValue(run.setup) as unknown as Loose;
+  set.files.find((file: Loose) => file.path === "pnpm-workspace.yaml").before = before;
+  const sealed = reseal(set);
+  const bundle = bundleOf(run.plan, [{ id: SITE_ID, set: sealed }]);
+  const withBundle = { ...sealed, bundle: bundle.bundleDigest } as RepositoryChangeSet;
+  const hub = hubRepo(roots, { plans: [approvedPlan(bundle.bundleDigest, run.plan)], sets: [withBundle], bundles: [bundle] }).hub;
+  return { set: withBundle, hub };
+}
+
 describe("materialize and verify prove that the release-age file gains exactly one entry", () => {
   const TWO_ENTRIES = "packages:\n  - 'apps/*'\nminimumReleaseAgeExclude:\n  - '@clossys/*'\n  - 'extra-scope/*'\n";
 
@@ -378,6 +389,37 @@ describe("materialize and verify prove that the release-age file gains exactly o
       writeFileSync(join(run.site.clone, "pnpm-workspace.yaml"), TWO_ENTRIES);
       const result = await verifyRepository({ clone: run.site.clone, hub, set, now: NOW, runReadiness: READY });
       expect(result).toMatchObject({ exitCode: 1, verdict: "violated", reason: "content-mismatch" });
+    },
+    TEST_TIMEOUT_MS,
+  );
+
+  it(
+    "verify refuses a file item whose before digest is not the base commit's bytes, though the after text is the one-entry edit",
+    async () => {
+      const run = await computeSetup("pnpm", { "pnpm-workspace.yaml": "packages:\n  - 'apps/*'\n" });
+      expect(await materializeSetup(run)).toMatchObject({ exitCode: 0 });
+      // Only `before` is wrong: the bytes on disk and the `after` digest are exactly what a correct set names.
+      const { set, hub } = tamperedBefore(run, contentDigest("packages:\n  - 'other/*'\n"));
+      git(run.site.clone, "checkout", "-b", set.branch);
+      const result = await verifyRepository({ clone: run.site.clone, hub, set, now: NOW, runReadiness: READY });
+      expect(result).toMatchObject({ exitCode: 1, verdict: "violated", reason: "content-mismatch" });
+    },
+    TEST_TIMEOUT_MS,
+  );
+
+  it(
+    "materialize refuses a before digest the working tree matches but the base commit does not, and writes nothing",
+    async () => {
+      const run = await computeSetup("pnpm");
+      expect(run.setup.files.find((file) => file.path === "pnpm-workspace.yaml")).toMatchObject({ before: null });
+      // An ignored, untracked file: the working-tree digest check and the porcelain check both pass over it, while the base commit has no such file.
+      const stray = "packages:\n  - 'other/*'\n";
+      writeFileSync(join(run.site.clone, "pnpm-workspace.yaml"), stray);
+      writeFileSync(join(run.site.clone, ".git", "info", "exclude"), "pnpm-workspace.yaml\n", { flag: "a" });
+      const { set, hub } = tamperedBefore(run, contentDigest(stray));
+      const result = await materializeRepository({ clone: run.site.clone, hub, set, texts: {}, spawn: spawnFor("pnpm"), toolVersion: "10.9.0", now: NOW, runReadiness: READY });
+      expect(result).toMatchObject({ exitCode: 1, verdict: "violated", reason: "content-mismatch" });
+      expect(() => git(run.site.clone, "show-ref", "--verify", "--quiet", `refs/heads/${set.branch}`)).toThrow();
     },
     TEST_TIMEOUT_MS,
   );
