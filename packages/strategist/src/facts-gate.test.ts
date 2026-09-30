@@ -186,6 +186,36 @@ describe("checkFactsTraceability — false-positive avoidance", () => {
     const result = checkFactsTraceability([{ path: "Box.tsx", content }], [], { scanStyleLiterals: true });
     expect(result.claimsScanned).toBeGreaterThan(0);
   });
+
+  it("keeps blanking declaration percentages with fractions and spaces", () => {
+    const content = ".a { width: 12.5 % ; top: 3%; }";
+    const result = checkFactsTraceability([{ path: "card.css", content }], []);
+    expect(result.findings).toEqual([]);
+    expect(result.claimsScanned).toBe(0);
+  });
+
+  it("finishes a 100,000-character declaration-shaped line without quadratic work", () => {
+    // A declaration opener followed by a very long run of digits and NO
+    // terminating `%`: the adjacent quantifiers of the old declaration
+    // regex (`[^;…]*\d+`) re-split that run from every digit position, so
+    // its work grew quadratically in the run's length. A linear scan of the
+    // same line must stay far under a second even at 100k characters.
+    const budgetMs = 1000;
+    const content = "a:" + "1".repeat(100000);
+    let ms = Number.POSITIVE_INFINITY;
+    let result!: ReturnType<typeof checkFactsTraceability>;
+    // Best of three timings: a heavily loaded runner must not read as a slow
+    // scan, and a quadratic scan is slow on every attempt (seconds, not
+    // milliseconds), so a slow first attempt is still retried here.
+    for (let attempt = 0; attempt < 3; attempt++) {
+      const start = performance.now();
+      result = checkFactsTraceability([{ path: "card.css", content }], []);
+      ms = Math.min(ms, performance.now() - start);
+      if (ms < budgetMs) break;
+    }
+    expect(result.claimsScanned).toBe(0); // no `%` terminator, so nothing was blanked as a declaration
+    expect(ms).toBeLessThan(budgetMs);
+  });
 });
 
 describe("checkFactsTraceability — Money facts", () => {
