@@ -814,6 +814,79 @@ What it does not do: check the contrast of the page ink over your backdrop
 (that contract is issue #1523), or make anything you put inside the backdrop
 unfocusable. Keep focusable content out of `backdrop`.
 
+### `ContactView`
+
+`ContactView`, exported from `@clossys/publisher/web`, is a single-screen
+contact page: a logo-only transparent banner, a page header, one form in a
+card, and a transparent legal footer. The form asks for a topic, a name, an
+email, an optional phone and a message, and carries a hidden honeypot field.
+It is a client component: it needs Designer's React Aria fields, so import it
+from a module that is a client boundary. Under the `react-server` condition
+`@clossys/publisher/web` still exports the name, as a stub that throws a
+`RenderError` when called. It ships no wording of its own: every visible word
+is a `CopyRef` resolved through `resolveCopyId`.
+
+```tsx
+import { ContactView } from "@clossys/publisher/web";
+import type { ContactResult, ContactViewCopy, ContactViewProps } from "@clossys/publisher/web";
+
+declare const brand: React.ReactNode; // the caller's brand mark, for example a Designer `Brandmark`
+declare const resolveCopyId: ContactViewProps["resolveCopyId"]; // the approved-copy resolver
+declare const copy: ContactViewCopy; // one approved `CopyRef` per string the view shows
+declare function send(values: Record<string, string>): Promise<ContactResult>; // your submit handler: a route or server action that runs `createContactHandler`'s `handle`
+
+export function ContactPage() {
+  return (
+    <ContactView
+      brand={brand}
+      legal={{ entity: "Example Co", links: [{ label: "Privacy", href: "/privacy" }] }}
+      resolveCopyId={resolveCopyId}
+      copy={copy}
+      topics={[
+        { id: "general", label: { id: "contact.topic.general" } },
+        { id: "support", label: { id: "contact.topic.support" } },
+      ]}
+      initialTopic="support"
+      onSubmit={send}
+    />
+  );
+}
+```
+
+Props, in addition to the standard `div` attributes (minus `children` and
+`onSubmit`) and `style`:
+
+- `brand`: the identity slot in the banner, which holds nothing else.
+- `legal`: the props of Designer's `SiteFooter.Legal`, passed straight through.
+- `resolveCopyId` and `copy`: the approved-copy resolver and one `CopyRef` per
+  string (heading, description, every label, the button, the client-side error
+  messages, the confirmation, a short failure label and the three failure messages).
+- `topics`: `{ id, label }[]`, at least one. Each `id` must be unique
+  kebab-case; the thrown error names the position, never the id. Each `label`
+  is a `CopyRef`.
+- `initialTopic` (optional): a topic id to preselect. An id that is not in
+  `topics` is ignored.
+- `honeypotField` (default `"website"`): the hidden field's name. Match the
+  `honeypotField` you gave `createContactHandler`.
+- `onSubmit(values)`: resolves to a `ContactResult`. `values` holds `topic`,
+  `name`, `email`, `phone` (`""` when empty), `message` and the honeypot field
+  under its own name. A rejection or an unknown answer reads as `unavailable`.
+
+What it guarantees: one `<h1>`, which never names the chosen topic; topic, name,
+email and message are checked in the browser first, and a failed check sends
+nothing and focuses the first invalid field; the honeypot is out of the tab
+order, `aria-hidden` and `autocomplete="off"`, and its value reaches
+`onSubmit`; the submit button is pending, never `disabled`, while sending;
+`accepted` replaces the form with a `role="status"` confirmation and focuses
+its heading; `invalid`, `rate-limited` and `unavailable` each show a
+`role="alert"` led by the failure label, keep every typed value and focus the submit button; the banner
+and footer carry no background, border or width cap; and an entry that does not
+resolve throws an error naming its path, never its id.
+
+What it does not do: show which field a server `invalid` result refers to (the
+result's `fields` are not rendered yet), send anything itself, or detect bots
+beyond the honeypot.
+
 ### `defineWebTemplate` / `createWebRenderer` — an extensible, instance-scoped web-template registry
 
 `AuthView`, `ErrorView`, and `MarketingView` are this package's own three

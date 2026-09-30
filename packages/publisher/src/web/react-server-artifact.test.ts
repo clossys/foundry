@@ -156,7 +156,7 @@ describe("packed Publisher web React-server boundary", () => {
 
   it("exports the exact same runtime names from the ordinary and react-server targets", () => {
     expect(server.keys).toEqual(normal.keys);
-    expect(server.keys).toEqual(expect.arrayContaining(["CaptureView", "CollectionView", "DocumentView", "SectionedView"]));
+    expect(server.keys).toEqual(expect.arrayContaining(["CaptureView", "CollectionView", "ContactView", "DocumentView", "SectionedView"]));
   });
 
   it("renders the packed SectionedView through server-safe ordered-step and status blocks", () => {
