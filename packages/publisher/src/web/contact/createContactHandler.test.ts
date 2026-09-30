@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import { renderContactNotificationEmail } from "../../email/renderContactNotificationEmail.js";
 import { createContactHandler } from "./createContactHandler.js";
 import { createMemoryRateLimiter } from "./memoryRateLimiter.js";
 import { createStubContactDelivery } from "./stubDelivery.js";
@@ -12,6 +13,12 @@ import {
   type ContactOutboundMessage,
   type ContactResult,
 } from "./types.js";
+
+// Wraps the real renderer so one test can make it throw; every other call runs the real function.
+vi.mock("../../email/renderContactNotificationEmail.js", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../../email/renderContactNotificationEmail.js")>();
+  return { ...actual, renderContactNotificationEmail: vi.fn(actual.renderContactNotificationEmail) };
+});
 
 // ---------------------------------------------------------------------------
 // Fixtures and helpers
@@ -1420,11 +1427,11 @@ describe("createContactHandler — the delivered message", () => {
     expect(message.channel).toBe("email");
   });
 
-  it("builds plain text only, with no html, headers, cc, bcc or attachments", async () => {
+  it("builds text and html, with no headers, cc, bcc or attachments", async () => {
     const { handler, delivery } = makeHandler();
     await submit(handler, valid);
     const message = delivered(delivery) as unknown as Record<string, unknown>;
-    expect(message.html).toBeUndefined();
+    expect(typeof message.html).toBe("string");
     for (const key of ["headers", "cc", "bcc", "attachments"]) {
       expect(message).not.toHaveProperty(key);
     }
@@ -1432,6 +1439,53 @@ describe("createContactHandler — the delivered message", () => {
     for (const [key, value] of Object.entries(message)) {
       if (value !== undefined) expect(allowed.has(key)).toBe(true);
     }
+  });
+
+  it("delivers the html the renderer builds, alongside the unchanged text", async () => {
+    const { handler, delivery } = makeHandler();
+    await submit(handler, valid);
+    const message = delivered(delivery);
+    expect(message.html).toBe(renderContactNotificationEmail(valid).html);
+    expect(message.text).toBe(renderContactNotificationEmail(valid).text);
+    expect(message.text).toBe(EXPECTED_TEXT_WITH_PHONE);
+
+    const second = makeHandler();
+    await submit(second.handler, validWithoutPhone);
+    expect(delivered(second.delivery).html).toBe(renderContactNotificationEmail(validWithoutPhone).html);
+    expect(delivered(second.delivery).text).toBe(EXPECTED_TEXT_WITHOUT_PHONE);
+  });
+
+  it("delivers escaped html for a hostile submission that passes validation", async () => {
+    const { handler, delivery } = makeHandler();
+    const hostile = {
+      ...valid,
+      name: `<script>alert(1)</script> "><img src=x onerror=y>`,
+      message: `&lt; <!--[if mso]> --> ]]> javascript:alert(1)\n<a href="x">y</a>`,
+    };
+    const result = await submit(handler, hostile);
+    expect(result).toStrictEqual({ status: "accepted" });
+    const { html } = delivered(delivery);
+    expect(html).toBe(renderContactNotificationEmail(hostile).html);
+    expect(html).not.toMatch(/<a[\s>]/i);
+    expect(html).not.toMatch(/<img/i);
+    expect(html).not.toMatch(/<script/i);
+    expect(html).not.toContain("<!--");
+    expect(html).toContain("&lt;script&gt;alert(1)&lt;/script&gt;");
+    expect(html).toContain("&amp;lt; &lt;!--[if mso]&gt;");
+    expect(delivered(delivery).text).toContain(`Name: ${hostile.name}\n`);
+  });
+
+  it("answers unavailable and delivers nothing when the renderer throws", async () => {
+    const onUnavailable = vi.fn();
+    const { handler, delivery } = makeHandler({ onUnavailable });
+    vi.mocked(renderContactNotificationEmail).mockImplementationOnce(() => {
+      throw new TypeError(`render failed ${MARKER}`);
+    });
+    const result = await submit(handler, valid);
+    expect(result).toStrictEqual({ status: "unavailable" });
+    expect(delivery.deliver).not.toHaveBeenCalled();
+    expect(onUnavailable).toHaveBeenCalledExactlyOnceWith("internal-error");
+    expect(JSON.stringify([result, onUnavailable.mock.calls])).not.toContain(MARKER);
   });
 
   it("builds the documented text layout with a phone line", async () => {
@@ -1508,11 +1562,12 @@ describe("createContactHandler — the delivered message", () => {
     const { handler, delivery } = makeHandler();
     await submit(handler, valid);
     const message = delivered(delivery);
-    const { text, replyTo, ...rest } = message;
+    const { text, html, replyTo, ...rest } = message;
     expect(JSON.stringify(rest)).not.toContain(valid.email);
     expect(JSON.stringify(rest)).not.toContain("Ada");
     expect(JSON.stringify(replyTo)).not.toContain("Ada");
     expect(text).toContain(valid.name);
+    expect(html).toContain(valid.name);
   });
 
   it("ignores unknown keys in the submission and never lets them reach the message", async () => {
@@ -1544,7 +1599,7 @@ describe("createContactHandler — the delivered message", () => {
     expect(message.event).toBe("publisher.contact.submitted");
     expect(message.category).toBe("contact");
     expect(message.channel).toBe("email");
-    expect(message.html).toBeUndefined();
+    expect(message.html).toBe(renderContactNotificationEmail(valid).html);
     for (const key of ["headers", "bcc", "cc", "attachments"]) {
       expect(message).not.toHaveProperty(key);
     }

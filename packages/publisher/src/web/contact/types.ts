@@ -14,9 +14,9 @@
  * ## The invariant
  *
  * Only a well-formed, capped, control-free, non-honeypot submission that a
- * working limiter allows is delivered — exactly once, as plain text, to
- * recipients, from a sender, under a subject that all come from config and never
- * from the submission. A stub delivery never delivers in production: a handler
+ * working limiter allows is delivered — exactly once, as a text body and an
+ * escaped HTML body, to recipients, from a sender, under a subject that all come
+ * from config and never from the submission. A stub delivery never delivers in production: a handler
  * whose target is `"production"` refuses to be constructed with one.
  *
  * Every path that cannot prove the invariant holds fails closed: it delivers
@@ -84,9 +84,9 @@ export interface ContactSubmission {
   readonly topic: string;
   /** Multi-line free text. The only field permitted to contain line breaks and tabs. */
   readonly message: string;
-  /** Single line. Placed only in the plain-text body. */
+  /** Single line. Placed only in the two bodies. */
   readonly name: string;
-  /** Single line. Placed only in the plain-text body and as the sole `replyTo`. */
+  /** Single line. Placed only in the two bodies and as the sole `replyTo`. */
   readonly email: string;
   /** Optional single line. `""` or whitespace-only is treated as absent. */
   readonly phone?: string;
@@ -294,7 +294,7 @@ export type CreateMemoryRateLimiter = (options: MemoryRateLimiterOptions) => Con
  * Structurally assignable to Messenger's `EmailMessage`: every property here
  * exists there with a wider or equal type, and every `EmailMessage` property
  * absent here is optional there. The properties typed `?: never` make the
- * refusals explicit — this handler cannot produce HTML, extra headers, extra
+ * refusals explicit — this handler cannot produce extra headers, extra
  * recipients or attachments, and `never` is assignable to any optional type, so
  * compatibility is preserved.
  *
@@ -303,7 +303,10 @@ export type CreateMemoryRateLimiter = (options: MemoryRateLimiterOptions) => Con
  * - `replyTo` — exactly the submitted email, trimmed; the only place the email
  *   reaches a header. The name is never used as a display name, so no
  *   submitted text other than a shape-checked address reaches any header.
- * - `text` — the only place name, email, phone, topic and message appear.
+ * - `text`, `html` — the only places name, email, phone, topic and message
+ *   appear. `html` is built by `renderContactNotificationEmail`, which escapes
+ *   every value once into inert text: no link, image, script or remote
+ *   resource, and nothing submitted is ever an attribute value.
  * - `id` — from {@link ContactHandlerConfig.createMessageId}.
  * - `event`, `category`, `channel` — fixed literals.
  *
@@ -332,7 +335,7 @@ export interface ContactOutboundMessage {
   readonly replyTo: readonly [string];
   readonly subject: string;
   readonly text: string;
-  readonly html?: never;
+  readonly html: string;
   readonly headers?: never;
   readonly cc?: never;
   readonly bcc?: never;
@@ -350,7 +353,7 @@ export interface ContactOutboundMessage {
  *   `EmailMessage`; its `Promise<ProviderAcceptance>` is assignable to
  *   `Promise<unknown>`; its `channel` is `"email"`.
  * - A delivery whose `deliver` demands more than this handler supplies (for
- *   example a required `html`) is rejected at compile time instead of being
+ *   example a required `headers`) is rejected at compile time instead of being
  *   accepted by method bivariance and handed a message it cannot handle.
  *
  * The handler calls `deliver` at most once per `handle()`, awaits it, ignores
