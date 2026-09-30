@@ -41,7 +41,7 @@ export interface LegalViewProps extends HTMLAttributes<HTMLDivElement> {
 function resolveCopy(ref: CopyRef, path: string, resolver: CopyResolver): string {
   const resolution = resolver(ref);
   if (resolution === undefined || typeof resolution.text !== "string" || resolution.text.trim().length === 0) {
-    throw new RenderError("resolution-failed", `LegalView could not resolve CopyRef "${ref.id}" at ${path}.`);
+    throw new RenderError("resolution-failed", `LegalView could not resolve a CopyRef at ${path}.`);
   }
   return resolution.text;
 }
@@ -99,7 +99,7 @@ export function LegalView({ brand, document, resolveCopyId, labels, locale, foot
   const rendered = renderStructuredDocument(document, { resolveCopyId });
   const title = rendered.resolutions[0]?.text;
   if (title === undefined) {
-    throw new RenderError("resolution-failed", `LegalView could not resolve title for document "${document.id}".`);
+    throw new RenderError("resolution-failed", "LegalView could not resolve the document title.");
   }
 
   const effectiveLabel = resolveCopy(labels.effectiveDate, "labels.effectiveDate", resolveCopyId);

@@ -8,6 +8,11 @@ import type { LegalDocument, LegalDocumentKind } from "../../document/legal.js";
 import { LegalView } from "./LegalView.js";
 import type { LegalViewLabels } from "./LegalView.js";
 
+vi.mock("../../document/render.js", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../../document/render.js")>();
+  return { ...actual, renderStructuredDocument: vi.fn(actual.renderStructuredDocument) };
+});
+
 // Placeholder copy only: every string below is an obviously-fake marker, never
 // legal-sounding wording. Each id maps to a unique text so assertions can tell
 // which reference rendered where.
@@ -156,7 +161,8 @@ describe("LegalView draft marker", () => {
   it("throws when a fact does not resolve", () => {
     const doc = legalDoc("terms", { legal: { status: "draft", factsToConfirm: [ref("acme.fact.unknown")] } });
     expect(() => render(doc)).toThrow(RenderError);
-    expect(() => render(doc)).toThrow(/acme\.fact\.unknown/);
+    expect(() => render(doc)).toThrow(/legal\.factsToConfirm\.0/);
+    expect(() => render(doc)).not.toThrow(/acme\.fact\.unknown/);
   });
 
   it("renders no callout element for a counsel-reviewed document", () => {
@@ -274,7 +280,7 @@ describe("LegalView labels", () => {
     it(`throws RenderError naming the CopyRef when ${key} is unresolved, even for a reviewed document`, () => {
       const labels = { ...LABELS, [key]: ref("acme.label.missing") };
       expect(() => render(legalDoc("terms"), { labels })).toThrow(RenderError);
-      expect(() => render(legalDoc("terms"), { labels })).toThrow(/acme\.label\.missing/);
+      expect(() => render(legalDoc("terms"), { labels })).not.toThrow(/acme\.label\.missing/);
       expect(() => render(legalDoc("terms"), { labels })).toThrow(new RegExp(`labels\\.${key}`));
     });
   }
@@ -293,6 +299,23 @@ describe("LegalView variables", () => {
       expect(html).not.toContain("Placeholder Jurisdiction Marker");
       expect(html).not.toContain("placeholder-contact-marker");
     }
+  });
+});
+
+describe("LegalView title", () => {
+  it("reports an unresolved title without echoing the document id", async () => {
+    const { renderStructuredDocument } = await import("../../document/render.js");
+    vi.mocked(renderStructuredDocument).mockReturnValueOnce({ element: null, resolutions: [] } as never);
+    let thrown: unknown;
+    try {
+      render({ ...legalDoc("terms"), id: "sentinel-doc-id-42" });
+    } catch (error) {
+      thrown = error;
+    }
+    expect(thrown).toBeInstanceOf(RenderError);
+    expect(thrown).toBeInstanceOf(Error);
+    expect((thrown as Error).message).toMatch(/title/);
+    expect((thrown as Error).message).not.toContain("sentinel-doc-id-42");
   });
 });
 
