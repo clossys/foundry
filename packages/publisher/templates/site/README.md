@@ -152,8 +152,10 @@ site from rendering. It decides four things:
 ## Crawlers and the share card
 
 - **`robots`.** Only `production` allows crawling and names
-  `<origin>/sitemap.xml`. Every other target disallows everything and names no
-  sitemap, so a preview is never indexed.
+  `<origin>/sitemap.xml`. Every other target disallows all crawling and names no
+  sitemap. `robots.txt` stops crawling; it does not guarantee that a URL is
+  never listed, because a preview address linked from elsewhere can still
+  appear in search results.
 - **`sitemap`.** On `production` it lists the routes in
   `web-route-manifest.json` under the origin, and nothing else, so a route
   added to the manifest is listed and a route that is not in it never is. A

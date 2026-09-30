@@ -85,8 +85,8 @@ export interface SiteRobots {
 /**
  * What crawlers may do. Only `production` allows the site to be crawled and
  * names its sitemap; every other target, and any value this function does not
- * know, disallows everything, so a preview or a mistyped target is never
- * indexed.
+ * know, disallows all crawling. That stops crawlers; it does not guarantee
+ * that a URL is never listed.
  */
 export function siteRobots(target: SiteTarget, origin: string): SiteRobots {
   if (target !== "production") return { rules: { userAgent: "*", disallow: "/" } };
