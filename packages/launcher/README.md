@@ -633,6 +633,15 @@ Advisor's job); it only validates the two shapes and writes the one file.
 The apply planner below is different: it projects each repository's brief
 from the hub brief itself.
 
+Launcher's packed skill carries the agent procedure that puts a stored change
+set into a staffed repository, under "Apply an approved plan" (#1762). The
+agent verifies, files the task-record issue, prints the pull request body with
+`launcher-apply-plan body`, commits and pushes only the set's `clossys/apply-`
+branch, opens the pull request, reads `launcher-apply-plan status`, and reports.
+Launcher never pushes, opens a pull request, files an issue or merges, and the
+procedure forbids merging and enabling auto-merge. `check-package-skills` pins
+each of those rules in the packed skill text.
+
 ### Release-age exemption
 
 `editReleaseAgeExemption()` computes the edit that lists the publishing
