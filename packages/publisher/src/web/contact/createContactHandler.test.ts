@@ -1907,3 +1907,89 @@ describe("createContactHandler — config validation", () => {
     expect(delivery.deliver).not.toHaveBeenCalled();
   });
 });
+
+// ---------------------------------------------------------------------------
+// Ports are read once
+// ---------------------------------------------------------------------------
+
+describe("createContactHandler — ports are read once", () => {
+  it("a delivery rewired after construction is never called", { timeout: 5000 }, async () => {
+    const delivery = makeDelivery();
+    const original = delivery.deliver;
+    const { handler } = makeHandler({ target: "production", delivery });
+    const stub = createStubContactDelivery();
+    (delivery as { deliver: unknown }).deliver = stub.deliver;
+
+    expect(await submit(handler, valid)).toStrictEqual({ status: "accepted" });
+    expect(original).toHaveBeenCalledTimes(1);
+    expect(stub.deliveries).toHaveLength(0);
+  });
+
+  it("a limiter rewired after construction is never consulted", { timeout: 5000 }, async () => {
+    const limiter = makeLimiter(false);
+    const { handler, delivery } = makeHandler({ limiter });
+    const spy = vi.fn((_key: string) => true);
+    (limiter as { check: unknown }).check = spy;
+
+    expect(await submit(handler, valid)).toStrictEqual({ status: "rate-limited" });
+    expect(spy).not.toHaveBeenCalled();
+    expect(delivery.deliver).not.toHaveBeenCalled();
+  });
+
+  it("port functions are read once, at construction", { timeout: 5000 }, async () => {
+    const stub = createStubContactDelivery();
+    const original = vi.fn(async (_message: ContactOutboundMessage) => ({ provider: "fake", messageId: "x" }));
+    const allow = vi.fn((_key: string) => true);
+    let deliverReads = 0;
+    let checkReads = 0;
+    const delivery = {
+      channel: "email" as const,
+      get deliver() {
+        deliverReads += 1;
+        return deliverReads === 1 ? original : stub.deliver;
+      },
+    };
+    const limiter = {
+      get check() {
+        checkReads += 1;
+        return checkReads === 1 ? allow : () => true;
+      },
+    };
+    const { handler } = makeHandler({ delivery, limiter });
+
+    expect(await submit(handler, valid)).toStrictEqual({ status: "accepted" });
+    expect(await submit(handler, valid)).toStrictEqual({ status: "accepted" });
+    expect(deliverReads).toBe(1);
+    expect(checkReads).toBe(1);
+    expect(original).toHaveBeenCalledTimes(2);
+    expect(allow).toHaveBeenCalledTimes(2);
+    expect(stub.deliveries).toHaveLength(0);
+  });
+
+  it("ports are called with their own object as this", { timeout: 5000 }, async () => {
+    class ClassDelivery {
+      readonly channel = "email" as const;
+      readonly seen: unknown[] = [];
+      async deliver(_message: ContactOutboundMessage): Promise<unknown> {
+        this.seen.push(this);
+        return undefined;
+      }
+    }
+    class ClassLimiter {
+      readonly seen: unknown[] = [];
+      check(_key: string): boolean {
+        this.seen.push(this);
+        return true;
+      }
+    }
+    const delivery = new ClassDelivery();
+    const limiter = new ClassLimiter();
+    const { handler } = makeHandler({ delivery, limiter });
+
+    expect(await submit(handler, valid)).toStrictEqual({ status: "accepted" });
+    expect(delivery.seen).toEqual([delivery]);
+    expect(delivery.seen[0]).toBe(delivery);
+    expect(limiter.seen).toHaveLength(1);
+    expect(limiter.seen[0]).toBe(limiter);
+  });
+});
