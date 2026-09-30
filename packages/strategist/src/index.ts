@@ -54,6 +54,12 @@
  *   registry, and `checkBrandFactsDrift` (`brand-facts-drift.ts`, pure) reports
  *   every surface line that restates one of those differently.
  *
+ *   The strategy-brief record is a separate file: `StrategyBrief`
+ *   (`strategy-brief.ts`, read by `readStrategyBrief`) lists the claims a
+ *   strategy must never make, and `checkWontClaimDrift` (`wont-claim-drift.ts`,
+ *   pure) reports every surface line that makes one. It is not the
+ *   engagement brief, and `readStrategy` does not read it.
+ *
  * Nothing in this package's own source is a real company's mission,
  * positioning, facts, or brand — see the README's "What this package is
  * not" and `@example/ui/tokens`' README ("The three-layer contract")
@@ -139,6 +145,12 @@ export type {
 } from "./brand-facts.js";
 
 export { checkBrandFactsDrift } from "./brand-facts-drift.js";
+
+export { readStrategyBrief, STRATEGY_BRIEF_FILE, validateStrategyBrief } from "./strategy-brief.js";
+export type { StrategyBrief, StrategyBriefRead, WontClaim } from "./strategy-brief.js";
+
+export { checkWontClaimDrift } from "./wont-claim-drift.js";
+export type { WontClaimFinding, WontClaimResult, WontClaimState } from "./wont-claim-drift.js";
 export type {
   BrandFactsDriftFinding,
   BrandFactsDriftKind,

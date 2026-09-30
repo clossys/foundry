@@ -31,7 +31,7 @@ Done is exceptional (5) as defined in PRE-AUTH-QUALITY (the brief that ships wit
 
 If `node_modules/@clossys/strategist` is present (or this package's bins are on PATH), use the exact pin in the tree. Read `package.json` `bin` for the real command names.
 - Assessment CLI: `strategist-rate-check`
-- Additional gate CLI: `strategist-check` (including `brand-facts`)
+- Additional gate CLI: `strategist-check` (including `brand-facts` and `wont-claim`)
 
 `strategist-check brand-coverage` reporting every brandable slot owned is necessary, not sufficient — full N/N slot coverage is not keep when Designer-facing surfaces have no explicit do-not language; declare those surfaces with `--surfaces`.
 
@@ -55,6 +55,7 @@ Author one directory. Bound fields must validate; room fields are prose storage 
 | `constraints.json` | `id`, `target`, `instruction` | `why` | empty array is valid |
 | `brand.json` | essence, attribute `id`/`statement`/`basis`, derivation slots or voice rules | derivation `rationale` | no hex colors or type pairings |
 | `brand-facts.json` | `legalEntity` name/incorporated/jurisdiction, `brand` name and wordmark casing, `domains`, `canonicalOrigin`, `contactEmail`, tagline `copyId`s | — | no tagline text — reference the Writer copy id |
+| `strategy-brief.json` | `wontClaim` entries: `id`, `statement`, `matchPhrases` | `why` | not the engagement brief; no regex, phrases are literal |
 | `mission.json` | `statement`, `vision`, value `id`/`rule` | — | optional at handoff |
 | `roadmap.json` | `id`, `title`, `status`; shipped needs `factRef` or `claimId` | `description` | optional at handoff |
 | `direction.json` | `id`, `subject`, `decidedOn`, `supersedes`, `derivesFrom` | `rationale` | no `statement`; facts are not subjects |
@@ -66,6 +67,8 @@ Before interviewing for `audiences.json`, read `clossys/brief.json`'s engagement
 `strategist-check handoff <strategy-dir>` exits 0 only when facts, audiences, positioning, at least one approved claim, `constraints.json`, brand refs, and direction refs resolve. A facts-only directory still passes `readStrategy` and fails handoff.
 
 After recording or changing a brand fact, run `strategist-check brand-facts <strategy-dir> <scan-dir>`. Exit 1 means another surface states a conflicting value: fix the surface or deliberately change the record, never both silently. Exit 2 means it could not check, which is never a pass.
+
+After recording or changing a won't-claim entry, run `strategist-check wont-claim <strategy-dir> <scan-dir>`. Exit 1 means a surface makes a claim the record says never to make: remove the claim, or deliberately change the record, never both silently. Exit 2 means it could not check, which is never a pass. An entry with no `matchPhrases` is listed as not mechanically checked.
 
 Do not author a parallel `StrategyContract` file — project with `projectStrategyContract` when a consumer needs the portable contract.
 
