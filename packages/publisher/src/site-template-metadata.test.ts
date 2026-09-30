@@ -37,6 +37,15 @@ function readTemplate(path: string): string {
   return readFileSync(join(TEMPLATE_DIR, path), "utf8");
 }
 
+/** The exact trimmed body of one `export function` in a template source file; a thrown error fails the calling test. */
+function templateFunctionBody(file: string, name: string): string {
+  const depthOne = "(?:[^{}]|\\{(?:[^{}]|\\{[^{}]*\\})*\\})*";
+  const match = new RegExp(`export function ${name}\\([^)]*\\)[^{]*\\{(${depthOne})\\}`).exec(readTemplate(file));
+  const body = match?.[1];
+  if (body === undefined) throw new Error(`export function ${name} is absent or not extractable in ${file}`);
+  return body.trim();
+}
+
 const ORIGIN = "https://marker.example";
 const manifest = JSON.parse(readTemplate("web-route-manifest.json")) as WebRouteManifest;
 
@@ -125,6 +134,11 @@ describe("resolveCrawlTarget (crawling fails closed)", () => {
   it("still throws for a value that is set but unknown", () => {
     expect(() => resolveCrawlTarget({ SITE_TARGET: "staging" })).toThrow(/SITE_TARGET/);
     expect(() => resolveCrawlTarget({ SITE_TARGET: "" })).toThrow(/SITE_TARGET/);
+  });
+
+  it("siteCrawlTarget calls resolveCrawlTarget and nothing else", () => {
+    expect(templateFunctionBody("app/site-records.ts", "siteCrawlTarget")).toBe("return resolveCrawlTarget(process.env);");
+    expect(resolveCrawlTarget({})).toBe("preview");
   });
 });
 
@@ -228,6 +242,29 @@ describe("siteSitemap", () => {
     const robots = readTemplate("app/robots.ts");
     expect(robots).toMatch(/siteRobots\(siteCrawlTarget\(\), siteOrigin\(\)\)/);
     expect(robots).not.toMatch(/allow/);
+  });
+
+  it("loadLegalSitemapStates validates each document and reports its own status", () => {
+    const body = templateFunctionBody("app/site-records.ts", "loadLegalSitemapStates");
+    expect(body).toContain("requireLegalDocument(record, \"preview\").legal");
+    expect(body).toContain("return { status, lastUpdated };");
+    expect(body).not.toMatch(/counsel-reviewed|\b as /);
+    const keyed = [...body.matchAll(/(\/[a-z]+)": state\(/g)].map((match) => match[1]);
+    expect(keyed.sort()).toEqual(manifest.routes.filter((route) => route.template === "LegalView").map((route) => route.id).sort());
+  });
+
+  it("the sitemap lists exactly the template routes, from the manifest only", () => {
+    expect(manifest.routes.map((route) => route.id)).toEqual(["/", "/about", "/contact", "/privacy", "/terms"]);
+    const sitemap = readTemplate("app/sitemap.ts");
+    expect(sitemap).toMatch(/routes:\s*manifest\.routes\s*,/);
+    expect(sitemap).not.toMatch(/["'`]\/[^"'`]*\/[^"'`]*["'`]/);
+    const entries = siteSitemap({
+      target: "production",
+      origin: ORIGIN,
+      routes: manifest.routes,
+      legal: { "/terms": reviewed("2026-01-02"), "/privacy": reviewed("2026-01-03") },
+    });
+    expect(entries.map((entry) => entry.url)).toEqual(["/", "/about", "/contact", "/privacy", "/terms"].map((id) => `${ORIGIN}${id}`));
   });
 });
 
