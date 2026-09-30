@@ -459,7 +459,7 @@ export async function planMain(argv: readonly string[], options: PlanCommandOpti
     }
     // The part of V6 the planner cannot run, and V9: on a temporary tree, never in a clone.
     try {
-      result = await dryMaterializeBundle(result, { hub, cloneFor: (id) => cloneOf(hub, id), now: options.now ?? (() => new Date()), ports: options.spawn });
+      result = await dryMaterializeBundle(result, { hub, cloneFor: (id) => cloneOf(hub, id), now: options.now ?? (() => new Date()), ports: { lockfileSpawn: options.spawn?.lockfileSpawn, provenanceSpawn: options.spawn?.provenanceSpawn } });
     } catch {
       return refuse("planner-refused");
     }

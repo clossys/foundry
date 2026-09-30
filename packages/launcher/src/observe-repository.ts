@@ -645,7 +645,7 @@ function lookup(tree: Tree, path: string): Lookup {
  * segment decomposed, case-folded through both cases, decomposed again, and
  * without trailing dots and spaces.
  */
-function fold(path: string): string {
+export function fold(path: string): string {
   return path
     .split("/")
     .map((segment) => {

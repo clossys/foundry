@@ -6,13 +6,14 @@ import { execFileSync } from "node:child_process";
 import { existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, readlinkSync, realpathSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { devNull, tmpdir } from "node:os";
 import { dirname, join, sep } from "node:path";
-import { afterAll, describe, expect, it } from "vitest";
+import { afterAll, describe, expect, it, vi } from "vitest";
 import { reseal } from "./admission-fixture.js";
 import type { Loose } from "./admission-fixture.js";
 import type { ApplyCheck, RepositoryChangeSet } from "./change-set-contract.js";
-import { DRY_TREE_FAILED, LOCKFILE_NOT_REGENERATED, dryMaterialize } from "./dry-materialize.js";
+import { DRY_TREE_FAILED, LOCKFILE_NOT_REGENERATED, dryMaterialize, treeIsSafe, writeBaseTree } from "./dry-materialize.js";
 import type { DryMaterializePorts } from "./dry-materialize.js";
 import type { LockfileSpawn, LockfileSpawnRequest, LockfileSpawnResult } from "./lockfile-regen.js";
+import { readCommittedFiles } from "./observe-repository.js";
 import { planApplyBundle } from "./plan-bundle.js";
 import { NPM_LOCK_TEXT, SITE_ID, STARTER_INTEGRITY, STARTER_NAME, STARTER_VERSION, setupInputs, setupObservation, setupPlan, sha } from "./plan-bundle-setup-fixture.js";
 import { PROVENANCE_CHECK_BIN } from "./provenance-gate.js";
@@ -190,6 +191,51 @@ function picture(clone: string): Record<string, unknown> {
     worktrees: git(clone, "worktree", "list", "--porcelain"),
     head: git(clone, "rev-parse", "HEAD"),
   };
+}
+
+
+interface TreeEntry {
+  readonly mode: "100644" | "100755" | "120000";
+  readonly content: string;
+}
+
+/**
+ * A commit on top of `repo` whose tree is the base's files plus `extra`, built with `git mktree` so that a path a case-folding
+ * disk could not hold (two spellings of one name, a link beside a directory) is committed all the same.
+ */
+function commitWith(repo: Repo, extra: Readonly<Record<string, TreeEntry>>): string {
+  const entries = new Map<string, { mode: string; sha: string }>();
+  for (const line of git(repo.clone, "ls-tree", "-r", repo.head).split("\n")) {
+    const match = /^(\d+) blob ([0-9a-f]+)\t(.+)$/u.exec(line)!;
+    entries.set(match[3]!, { mode: match[1]!, sha: match[2]! });
+  }
+  for (const [path, entry] of Object.entries(extra)) {
+    const sha = execFileSync("git", ["hash-object", "-w", "--stdin"], { cwd: repo.clone, env: gitEnv, input: entry.content, encoding: "utf8" }).trim();
+    entries.set(path, { mode: entry.mode, sha });
+  }
+  const build = (prefix: string): string => {
+    const lines: string[] = [];
+    const directories = new Set<string>();
+    for (const [path, entry] of entries) {
+      if (!path.startsWith(prefix)) continue;
+      const rest = path.slice(prefix.length);
+      const slash = rest.indexOf("/");
+      if (slash === -1) lines.push(`${entry.mode} blob ${entry.sha}\t${rest}`);
+      else directories.add(rest.slice(0, slash));
+    }
+    for (const name of directories) lines.push(`040000 tree ${build(`${prefix}${name}/`)}\t${name}`);
+    return execFileSync("git", ["mktree"], { cwd: repo.clone, env: gitEnv, input: `${lines.join("\n")}\n`, encoding: "utf8" }).trim();
+  };
+  return git(repo.clone, "commit-tree", build(""), "-p", repo.head, "-m", "extra entries");
+}
+
+/** Every path under `directory`, links and directories included, relative to it. */
+function everything(directory: string, base = directory): string[] {
+  return readdirSync(directory).sort().flatMap((name) => {
+    const full = join(directory, name);
+    const rest = full.slice(base.length + 1);
+    return lstatSync(full).isDirectory() ? [rest, ...everything(full, base)] : [rest];
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -412,6 +458,180 @@ describe("dry materialization", () => {
       TEST_TIMEOUT_MS,
     );
   });
+
+  describe("a link that a folding filesystem would read as a parent directory of a later entry", () => {
+    const link = (content: string): TreeEntry => ({ mode: "120000", content });
+    const file = (content: string): TreeEntry => ({ mode: "100644", content });
+    const aliased: [string, Record<string, TreeEntry>][] = [
+      ["case aliases chained upward to reach any ancestor", { "x/Y": link(".."), "x/y/L": link("../.."), "x/y/l/PWNED": file("owned\n") }],
+      ["a link whose case variant is the parent of a link that leads out", { "a/L": link(".."), "a/l/M": link("../../outside"), "m/pwned.sh": file("payload\n") }],
+      ["the same name spelled composed and decomposed", { "d/caf\u00e9": link(".."), "d/cafe\u0301/N": file("owned\n") }],
+    ];
+
+    it.each(aliased)(
+      "%s is refused before anything is written, and nothing appears outside the temporary directory",
+      async (_name, extra) => {
+        const repo = makeRepo();
+        const commit = commitWith(repo, extra);
+        const committed = readCommittedFiles(repo.clone, commit);
+        expect(committed.ok).toBe(true);
+        // The decision is about the tree's names alone, so it holds on a filesystem that keeps the spellings apart too.
+        expect(treeIsSafe(committed.ok ? committed.files : [])).toBe(false);
+
+        const outer = nextDir("outer");
+        const tempRoot = join(outer, "a", "b");
+        mkdirSync(tempRoot, { recursive: true });
+        const hub = makeHub();
+        const run = await dry(repo, hub, setFor(commit), { tempRoot });
+        expect(run.checks![0]).toEqual({ check: "V6", verdict: "indeterminate", rule: "tree-unsafe" });
+        expect(run.checks![1]).toEqual({ check: "V9", verdict: "indeterminate", rule: LOCKFILE_NOT_REGENERATED });
+        expect(run.npm.calls).toHaveLength(0);
+        expect(run.engine.calls).toHaveLength(0);
+        expect(readdirSync(tempRoot)).toEqual([]);
+        expect(everything(outer)).toEqual(["a", "a/b"]);
+      },
+      TEST_TIMEOUT_MS,
+    );
+
+    it(
+      "a tree that repeats a name only as directories, or names a file beside a longer name, is still safe",
+      () => {
+        const repo = makeRepo({ "docs/Guide.md": "a\n", "docs/guide/intro.md": "b\n", "docs/guide.txt": "c\n" });
+        const committed = readCommittedFiles(repo.clone, repo.head);
+        expect(committed.ok && treeIsSafe(committed.files)).toBe(true);
+      },
+      TEST_TIMEOUT_MS,
+    );
+
+    it.each(aliased)(
+      "the writer itself refuses %s rather than write through a link",
+      (_name, extra) => {
+        const repo = makeRepo();
+        const committed = readCommittedFiles(repo.clone, commitWith(repo, extra));
+        expect(committed.ok).toBe(true);
+        // Deep enough that every level a chain of links could climb is still inside `outer`, which is searched afterwards.
+        const outer = nextDir("outer");
+        const inner = join(outer, "one", "two", "three");
+        mkdirSync(inner, { recursive: true });
+        const outside = (kept: readonly string[]): string[] => everything(outer).filter((path) => !["one", "one/two", "one/two/three"].includes(path) && !kept.some((name) => path === `one/two/three/${name}` || path.startsWith(`one/two/three/${name}/`)));
+        const root = join(inner, "root");
+        mkdirSync(root);
+        // Whether or not this disk folds the spellings, the writer either finishes inside the root or throws, and the throw comes
+        // before any write that would land outside it.
+        try {
+          writeBaseTree(root, committed.ok ? committed.files : []);
+        } catch {
+          // refused
+        }
+        expect(outside(["root"])).toEqual([]);
+        const probe = nextDir("probe");
+        writeFileSync(join(probe, "a"), "");
+        if (existsSync(join(probe, "A"))) {
+          const again = join(inner, "again");
+          mkdirSync(again);
+          expect(() => writeBaseTree(again, committed.ok ? committed.files : [])).toThrow();
+          expect(outside(["root", "again"])).toEqual([]);
+        }
+      },
+      TEST_TIMEOUT_MS,
+    );
+
+    it.each([
+      ["a `.git` segment", "../.git/config"],
+      ["a control character", "a\u0001b"],
+    ])(
+      "a link target with %s is refused and launches nothing",
+      async (_name, target) => {
+        const repo = makeRepo();
+        const commit = commitWith(repo, { "docs/entry": link(target) });
+        const committed = readCommittedFiles(repo.clone, commit);
+        expect(committed.ok && treeIsSafe(committed.files)).toBe(false);
+        const run = await dry(repo, makeHub(), setFor(commit));
+        expect(run.checks![0]).toEqual({ check: "V6", verdict: "indeterminate", rule: "tree-unsafe" });
+        expect(run.npm.calls).toHaveLength(0);
+        expect(run.engine.calls).toHaveLength(0);
+        expect(readdirSync(run.temp)).toEqual([]);
+      },
+      TEST_TIMEOUT_MS,
+    );
+
+    it(
+      "a tree with more files than the cap is V6 indeterminate tree-too-large and launches nothing",
+      async () => {
+        const repo = makeRepo();
+        const empty = execFileSync("git", ["hash-object", "-w", "--stdin"], { cwd: repo.clone, env: gitEnv, input: "", encoding: "utf8" }).trim();
+        const lines = [git(repo.clone, "ls-tree", "HEAD")];
+        for (let index = 0; index <= 20_000; index += 1) lines.push(`100644 blob ${empty}\tfiller-${index}`);
+        const tree = execFileSync("git", ["mktree"], { cwd: repo.clone, env: gitEnv, input: `${lines.join("\n")}\n`, encoding: "utf8", maxBuffer: 64 * 1024 * 1024 }).trim();
+        const commit = git(repo.clone, "commit-tree", tree, "-p", repo.head, "-m", "many files");
+        const run = await dry(repo, makeHub(), setFor(commit));
+        expect(run.checks![0]).toEqual({ check: "V6", verdict: "indeterminate", rule: "tree-too-large" });
+        expect(run.checks![1]).toEqual({ check: "V9", verdict: "indeterminate", rule: LOCKFILE_NOT_REGENERATED });
+        expect(run.npm.calls).toHaveLength(0);
+        expect(run.engine.calls).toHaveLength(0);
+        expect(readdirSync(run.temp)).toEqual([]);
+      },
+      TEST_TIMEOUT_MS,
+    );
+  });
+
+  it(
+    "a lockfile step that is indeterminate never reaches the provenance check",
+    async () => {
+      const repo = makeRepo();
+      const hub = makeHub();
+      const failing = await dry(repo, hub, setFor(repo.head), { npm: recorder((request) => (request.args.includes("--version") ? { status: 0, stdout: "10.9.0\n", stderr: "" } : { status: 1, stdout: "", stderr: STDERR_SENTINEL })) });
+      expect(verdicts(failing.checks)).toEqual([
+        ["V6", "indeterminate", "tool-failed"],
+        ["V9", "indeterminate", LOCKFILE_NOT_REGENERATED],
+      ]);
+      expect(installCalls(failing.npm)).toHaveLength(1);
+      expect(failing.engine.calls).toHaveLength(0);
+      expect(readdirSync(failing.temp)).toEqual([]);
+    },
+    TEST_TIMEOUT_MS,
+  );
+
+  it(
+    "a lockfile on disk that is not the bytes the runner reported is V6 violated lockfile-invariants, and no engine runs",
+    async () => {
+      const repo = makeRepo();
+      const hub = makeHub();
+      const temp = nextDir("temp");
+      vi.resetModules();
+      vi.doMock("./lockfile-regen.js", async (importOriginal) => {
+        const original = await importOriginal<typeof import("./lockfile-regen.js")>();
+        return {
+          ...original,
+          // The runner's own verdict is satisfied, but it names bytes other than the ones the tree holds.
+          regenerateLockfile: async (...args: Parameters<typeof original.regenerateLockfile>) => {
+            const result = await original.regenerateLockfile(...args);
+            return result.verdict === "satisfied" ? { ...result, after: "0".repeat(64) } : result;
+          },
+        };
+      });
+      try {
+        const mocked = await import("./dry-materialize.js");
+        const packageManager = npm();
+        const engineRecorder = engine();
+        const checks = await mocked.dryMaterialize(
+          { clone: repo.clone, hubRoot: hub.hub, set: setFor(repo.head), now: NOW },
+          { lockfileSpawn: packageManager.spawn, provenanceSpawn: engineRecorder.spawn, tempRoot: temp },
+        );
+        expect(verdicts(checks)).toEqual([
+          ["V6", "violated", "lockfile-invariants"],
+          ["V9", "indeterminate", LOCKFILE_NOT_REGENERATED],
+        ]);
+        expect(installCalls(packageManager)).toHaveLength(1);
+        expect(engineRecorder.calls).toHaveLength(0);
+        expect(readdirSync(temp)).toEqual([]);
+      } finally {
+        vi.doUnmock("./lockfile-regen.js");
+        vi.resetModules();
+      }
+    },
+    TEST_TIMEOUT_MS,
+  );
 
   it(
     "a clone that is not the base commit's repository, or a commit it lacks, gives V6 indeterminate and launches nothing",

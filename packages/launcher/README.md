@@ -1042,10 +1042,13 @@ repository is observed from its clone, a sibling of the hub, by
 an approval or a binding, and the command computes and records none.
 
 It then stores the change sets and the bundle under `clossys/.state/apply/`,
-the only place it writes, and prints the sheet. Running it again over unchanged
-inputs and an unchanged clock gives the same bytes. A rerun after the clock or
-the committed authorization changed currently refuses with `store-failed`,
-because the store is append-only by bytes (#1693).
+the only place it writes, and prints the sheet. Over unchanged inputs and an
+unchanged clock the sets, their digests and the bundle digest are the same on
+every run; the V6 and V9 checks stored with them come from the package manager,
+the registry and the Integrator, and the digest does not cover them. A rerun
+after the clock, the committed authorization or the result of a check changed
+currently refuses with `store-failed`, because the store is append-only by
+bytes (#1693).
 
 ```text
 Approve subjectDigest: sha256:<the bundle digest>
@@ -1083,12 +1086,15 @@ changes into a directory of its own under the operating system's temporary
 directory, regenerates the lockfile there with the runner `materialize` uses
 (V6), and, only when that passes, runs the hub's provenance check (V9) on the
 same tree. The directory is removed before the command returns, whatever
-happened. A submodule, a link that could reach outside the tree, a `..` or
-`.git` path segment or a tree over the size cap gives V6 `indeterminate` and
-launches nothing; bytes that differ from what the set names give V6
-`violated`; a failure of the dry tree gives V6 `indeterminate` with rule
-`dry-tree-failed` for that repository only, and V9 is then `indeterminate`
-with rule `lockfile-not-regenerated`. Only V6 and V9 change: the sets, their
+happened. A submodule, a link that could reach outside the tree, a link or file
+whose name a filesystem that folds case or normalization would read as a parent
+directory of another entry, a `..` or `.git` path segment or a tree over the
+size cap gives V6 `indeterminate` and launches nothing. A base file whose bytes
+differ from what the set names as its `before` gives V6 `violated`
+(`base-mismatch`), and set text whose bytes differ from its digest gives V6
+`indeterminate` (`change-set-invalid`). A failure of the dry tree gives V6
+`indeterminate` with rule `dry-tree-failed` for that repository only, and V9 is
+then `indeterminate` with rule `lockfile-not-regenerated`. Only V6 and V9 change: the sets, their
 digests and the bundle digest do not. A repository that has a refused path or
 key, or another check that is not satisfied, is not dry-materialized. No rule
 carries tool output, a path or an id. The tool version of pnpm and Yarn is not

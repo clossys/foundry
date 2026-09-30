@@ -11,9 +11,9 @@
 // this returns, whatever happened. Nothing here changes a set, its digest or the bundle's digest: only the checks move.
 
 import { createHash } from "node:crypto";
-import { chmodSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import { chmodSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { dirname, join } from "node:path";
+import { dirname, join, sep } from "node:path";
 import { canonicalOrder, contentDigest, lockfilePath, validateApplyBundle, validateRepositoryChangeSet, worstVerdict } from "./change-set-contract.js";
 import type { ApplyBundle, ApplyBundleRepository, ApplyCheck, RepositoryChangeSet, WholeFileChange } from "./change-set-contract.js";
 import { JsonEditUnstableError, editJsonPointer } from "./key-editor.js";
@@ -21,7 +21,7 @@ import { regenerateLockfile } from "./lockfile-regen.js";
 import type { LockfileSpawn } from "./lockfile-regen.js";
 import { derivedLockfile, packagesForLockfile, provesReleaseAgeEditWith, refuseReservedSymlinks, removePath, resolveFileText, textsFromChangeSet, writeRegularFile, writeSymlink } from "./materialize.js";
 import type { ApplyStepResult } from "./materialize.js";
-import { readCommittedFiles } from "./observe-repository.js";
+import { fold, readCommittedFiles } from "./observe-repository.js";
 import type { CommittedFile } from "./observe-repository.js";
 import type { PlanApplyBundleResult } from "./plan-bundle.js";
 import { checkSetProvenance } from "./provenance-gate.js";
@@ -94,24 +94,71 @@ function linkStaysInside(path: string, target: string): boolean {
   });
 }
 
-/** Whether every path, and every link, of the committed tree is one the dry tree may hold. */
-function treeIsSafe(files: readonly CommittedFile[]): boolean {
-  const seen = new Set<string>();
+/**
+ * Whether every path, and every link, of the committed tree is one the dry tree may hold. A filesystem that folds case or
+ * normalization reads two spellings as one name, so a link and a directory kept apart only by spelling would be the same entry
+ * there and a later write would go through the link. Every entry (link or file) is therefore folded as observeRepository folds
+ * it, and the tree is refused when that fold repeats, or is a proper prefix of another entry's fold.
+ */
+export function treeIsSafe(files: readonly CommittedFile[]): boolean {
+  const seen = [new Set<string>(), new Set<string>()];
+  const entries: string[] = [];
   for (const file of files) {
     if (!segmentsSafe(file.path)) return false;
     // A tree that keeps two paths apart only by case or normalization would be one path on a filesystem that folds them.
-    const key = file.path.normalize("NFC").toLowerCase();
-    if (seen.has(key)) return false;
-    seen.add(key);
+    const keys = [file.path.normalize("NFC").toLowerCase(), fold(file.path)];
+    for (const [index, key] of keys.entries()) {
+      if (seen[index]!.has(key)) return false;
+      seen[index]!.add(key);
+    }
+    entries.push(fold(file.path));
     if (file.mode === "120000" && !linkStaysInside(file.path, file.bytes.toString("utf8"))) return false;
+  }
+  const named = new Set(entries);
+  for (const entry of entries) {
+    const segments = entry.split("/");
+    for (let length = 1; length < segments.length; length += 1) if (named.has(segments.slice(0, length).join("/"))) return false;
   }
   return true;
 }
 
-function writeBaseTree(root: string, files: readonly CommittedFile[]): void {
-  for (const file of files) {
+/** Whether `directory`'s real path is `root` or inside it. */
+function insideRoot(root: string, directory: string): boolean {
+  const real = realpathSync(directory);
+  return real === root || real.startsWith(`${root}${sep}`);
+}
+
+/**
+ * Makes each directory of `relative` (a path inside `root`) one segment at a time, and throws when a segment already exists as
+ * anything but a real directory: nothing is created through a link, and nothing is created before the segment is looked at.
+ */
+function ensureDirectory(root: string, relative: string): string {
+  let current = root;
+  if (relative === "") return current;
+  for (const segment of relative.split("/")) {
+    current = join(current, segment);
+    let stat: ReturnType<typeof lstatSync> | null = null;
+    try {
+      stat = lstatSync(current);
+    } catch (cause) {
+      if ((cause as NodeJS.ErrnoException).code !== "ENOENT") throw cause;
+    }
+    if (stat === null) mkdirSync(current);
+    else if (!stat.isDirectory()) throw new Error("a directory of the base tree is not a directory");
+  }
+  return current;
+}
+
+/**
+ * Writes the committed tree under `root` (a real path of its own): directories and regular files first and links last, so no
+ * write of a file goes through a link, and before each write the real path of its parent must be inside `root`.
+ */
+export function writeBaseTree(root: string, files: readonly CommittedFile[]): void {
+  const ordered = [...files.filter((file) => file.mode !== "120000"), ...files.filter((file) => file.mode === "120000")];
+  for (const file of ordered) {
     const path = join(root, file.path);
-    mkdirSync(dirname(path), { recursive: true });
+    ensureDirectory(root, dirname(file.path) === "." ? "" : dirname(file.path));
+    if (!insideRoot(root, dirname(path))) throw new Error("a path of the base tree resolves outside the temporary directory");
     if (file.mode === "120000") {
       symlinkSync(file.bytes.toString("utf8"), path);
       continue;
