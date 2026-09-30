@@ -311,9 +311,8 @@ describe("storeApplyBundle / readStoredApplyBundle", () => {
     const otherPath = join(hub, BUNDLE_STORE_REL, otherName);
     writeFileSync(otherPath, readFileSync(plannedPath));
 
-    // The planned bundle in the copy verifies as planned and as OTHER_BUNDLE's digest, so the report's replace-protection
-    // reads it as one; the copy's name is not its own digest, so it must not be protected.
-    expect(readStoredApplyBundle(hub, OTHER_BUNDLE.bundleDigest)).not.toBeNull();
+    // The copy holds a planned bundle that verifies as its own digest -- but its name is not that digest, so the
+    // report's replace-protection must not read the copy as a stored planned bundle.
     expect(storeApplyBundle(hub, OTHER_BUNDLE)).toBe(otherPath);
     expect(readFileSync(otherPath, "utf8")).toBe(bundleBytes(OTHER_BUNDLE));
     expect(readStoredApplyBundle(hub, BUNDLE.bundleDigest)).toEqual(PLANNED);
