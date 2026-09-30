@@ -33,9 +33,10 @@ import type { AdvisorPlan, EngagementBrief } from "./plan-contract.js";
 
 export const PLAN_USAGE = `Usage: launcher-apply-plan plan [--help]
 
-Run in the hub. Computes the apply bundle for the plan committed there and
-prints the approval sheet: the bundle and plan digests, the mode, the
-execution authorization, the line to approve, one row for each item of each
+Run in the hub. Computes the apply bundle for the plan file in the working
+tree, reports whether that file is the one committed at HEAD, and prints the
+approval sheet: the bundle and plan digests, whether the plan is committed, the
+mode, the execution authorization, the line to approve, one row for each item of each
 repository's change set, and every item deferred, refused or skipped.
 
 Reads, in the hub: clossys/advisor/plan.json and brief.json, the composed
@@ -52,7 +53,9 @@ The sheet holds ids and digests only, never plan or brief text. This
 computes and records no approval: the approval is the plan's decision, made
 in the hub, for the subject digest the sheet names.
 
-Every refusal is a fixed word and names nothing from the files it read.
+Every refusal is a fixed word and names nothing from the files it read. A
+refusal before anything is stored ends "; nothing was stored"; "store-failed"
+and an unexpected failure do not, because some sets may already be stored.
 
 Exit codes: 0 = every repository is satisfied, 1 = a repository is violated,
 2 = an input could not be read, the planner refused, or a repository is
@@ -177,6 +180,22 @@ function readCommittedBlob(hub: string, rel: string): Buffer | null {
   if (mode !== "100644" || type !== "blob" || oid === undefined || rest.length > 0 || !OBJECT_ID.test(oid)) return null;
   const blob = runGit(hub, ["cat-file", "blob", oid]);
   return blob.status === 0 ? blob.stdout : null;
+}
+
+/** The hub inventory's repository ids, read through readHubFile (no link, nothing outside the hub); an absent file lists none. */
+function readInventory(hub: string): readonly string[] {
+  const path = join(hub, WORKSPACE_INVENTORY_REL);
+  try {
+    if (lstatSync(path, { throwIfNoEntry: false }) === undefined) return [];
+  } catch {
+    return refuse("inventory-unreadable");
+  }
+  if (readHubFile(hub, WORKSPACE_INVENTORY_REL) === null) return refuse("inventory-unreadable");
+  try {
+    return readInventoryRepositories(createNodeHost(hub), path, "the hub inventory");
+  } catch {
+    return refuse("inventory-unreadable");
+  }
 }
 
 function readPlan(hub: string): { plan: AdvisorPlan; bytes: Buffer } {
@@ -396,12 +415,7 @@ export async function planMain(argv: readonly string[], options: PlanCommandOpti
     } catch {
       return refuse("store-unreadable");
     }
-    let inventory: readonly string[];
-    try {
-      inventory = readInventoryRepositories(createNodeHost(hub), join(hub, WORKSPACE_INVENTORY_REL), "the hub inventory");
-    } catch {
-      return refuse("inventory-unreadable");
-    }
+    const inventory = readInventory(hub);
     const { engine, integrator } = readPins(hub);
     const authorization = readAuthorization(hub);
     const committedPlan = readCommittedBlob(hub, PLAN_REL);

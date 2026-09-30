@@ -66,6 +66,12 @@ function change(set: RepositoryChangeSet, item: ChangeSetItem): string {
   return `${count} ${count === 1 ? "path" : "paths"}`;
 }
 
+function yesNo(value: unknown): "yes" | "no" {
+  if (value === true) return "yes";
+  if (value === false) return "no";
+  throw new ApprovalSheetError("value-unsafe");
+}
+
 function row(cells: readonly string[]): string {
   return `| ${cells.join(" | ")} |`;
 }
@@ -115,6 +121,7 @@ export function renderApprovalSheet(input: ApprovalSheetInput): string {
     "Clossys apply plan: approval sheet",
     `Mode: ${safe(bundle.mode, TOKEN)}`,
     `Plan digest: ${safe(bundle.plan.digest, DIGEST)}`,
+    `Plan committed: ${yesNo(bundle.plan.committed)}`,
     `Bundle digest: ${safe(bundle.bundleDigest, DIGEST)}`,
     `Authorization: ${authorization}`,
     `Approve subjectDigest: ${safe(bundle.bundleDigest, DIGEST)}`,
@@ -131,13 +138,13 @@ export function renderApprovalSheet(input: ApprovalSheetInput): string {
   for (const entry of bundle.repositories) {
     const id = safe(entry.id, REPOSITORY);
     if (!("changeSet" in entry)) {
-      skipped.push(`- ${id} ${entry.verdict} ${safe(entry.reason, TOKEN)}`);
+      skipped.push(`- ${id} ${safe(entry.verdict, TOKEN)} ${safe(entry.reason, TOKEN)}`);
       continue;
     }
     const set = sets.get(entry.changeSet)!;
     for (const item of set.deferred) deferred.push(`- ${id} ${safe(item.planItem, ITEM)} ${safe(item.reason, TOKEN)}`);
     for (const item of set.refused) {
-      const where = "path" in item ? safe(item.path, PATH) : `${item.file}#${safe(item.pointer, PATH)}`;
+      const where = "path" in item ? safe(item.path, PATH) : `${safe(item.file, PATH)}#${safe(item.pointer, PATH)}`;
       refused.push(`- ${id} ${where} ${safe(item.reason, TOKEN)}`);
     }
     for (const check of entry.checks) {

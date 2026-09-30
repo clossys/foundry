@@ -3,10 +3,10 @@
 // against temporary repositories, so each carries its own timeout.
 
 import { execFileSync } from "node:child_process";
-import { chmodSync, existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, readlinkSync, realpathSync, rmSync, writeFileSync } from "node:fs";
+import { chmodSync, existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, readlinkSync, realpathSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { devNull, tmpdir } from "node:os";
 import { dirname, join, sep } from "node:path";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { READINESS_BIN, approvedPlan, assessmentFor, clone as cloneValue, writeReadinessStub } from "./admission-fixture.js";
 import type { Loose } from "./admission-fixture.js";
 import { BUNDLE_STORE_REL, CHANGE_SET_STORE_REL, listStoredChangeSets, readStoredApplyBundle } from "./apply-store.js";
@@ -19,6 +19,19 @@ import { HUB_BRIEF, SKILLS, STARTER_INTEGRITY, STARTER_NAME, STARTER_VERSION, WR
 import type { AdvisorPlan } from "./plan-contract.js";
 import { planDigest } from "./plan-digest.js";
 import type { LockfileSpawn } from "./lockfile-regen.js";
+
+// A switch that makes the real sheet refuse, so a test can show a refused sheet stores nothing.
+const sheetSwitch = vi.hoisted(() => ({ refuse: false }));
+vi.mock("./approval-sheet.js", async (importOriginal) => {
+  const original = await importOriginal<typeof import("./approval-sheet.js")>();
+  return {
+    ...original,
+    renderApprovalSheet: (input: Parameters<typeof original.renderApprovalSheet>[0]) => {
+      if (sheetSwitch.refuse) throw new original.ApprovalSheetError("value-unsafe");
+      return original.renderApprovalSheet(input);
+    },
+  };
+});
 
 const TEST_TIMEOUT_MS = 120_000;
 const NOW = () => new Date("2026-09-25T00:00:00Z");
@@ -48,6 +61,7 @@ function git(cwd: string, ...args: string[]): string {
 
 const roots: string[] = [];
 afterEach(() => {
+  sheetSwitch.refuse = false;
   for (const root of roots.splice(0)) rmSync(root, { recursive: true, force: true });
 });
 
@@ -225,6 +239,7 @@ const storedFiles = (world: World): string[] => {
 const FIRST_SHEET = `Clossys apply plan: approval sheet
 Mode: report
 Plan digest: sha256:af6d64909cbc93dd8009df226a7a25173810a705d2081045fe446d8268a43bfd
+Plan committed: yes
 Bundle digest: sha256:21214292be57dd50009ba1faf8d4707e4a86ddbf5cb301b17cd844a2c20ecb71
 Authorization: plan sha256:af6d64909cbc93dd8009df226a7a25173810a705d2081045fe446d8268a43bfd expires 2999-01-01T00:00:00Z
 Approve subjectDigest: sha256:21214292be57dd50009ba1faf8d4707e4a86ddbf5cb301b17cd844a2c20ecb71
@@ -256,6 +271,7 @@ Checks not satisfied:
 const APPLY_SHEET = `Clossys apply plan: approval sheet
 Mode: report
 Plan digest: sha256:af6d64909cbc93dd8009df226a7a25173810a705d2081045fe446d8268a43bfd
+Plan committed: yes
 Bundle digest: sha256:3b1f0f81f4cabdd5880350eb1478904b2fcb4f39fb9a674b4ba618eb7de8d952
 Authorization: plan sha256:af6d64909cbc93dd8009df226a7a25173810a705d2081045fe446d8268a43bfd expires 2999-01-01T00:00:00Z
 Approve subjectDigest: sha256:3b1f0f81f4cabdd5880350eb1478904b2fcb4f39fb9a674b4ba618eb7de8d952
@@ -388,6 +404,52 @@ describe("launcher-apply-plan plan", () => {
       expect(world.out.join("")).toContain(`Authorization: plan ${planDigest(world.plan)} `);
     }, TEST_TIMEOUT_MS);
 
+    it("reports whether the plan file it read is the committed one, from the bytes: an uncommitted edit says no", async () => {
+      const world = makeWorld();
+      expect(await run(world)).toBe(2);
+      expect(world.out.join("")).toContain("Plan committed: yes\n");
+
+      // The same plan with a trailing newline added in the working tree only: same digest, not the committed bytes.
+      const edited = makeWorld();
+      write(edited.hub, "clossys/advisor/plan.json", `${json(edited.plan)}\n`);
+      expect(await run(edited)).toBe(2);
+      expect(edited.err).toEqual([]);
+      const sheet = edited.out.join("");
+      expect(sheet).toContain("Plan committed: no\n");
+      expect(sheet).not.toContain("Plan committed: yes");
+      const digest = /^Approve subjectDigest: (sha256:[0-9a-f]{64})$/mu.exec(sheet)![1]!;
+      expect(readStoredApplyBundle(edited.hub, digest)!.plan.committed).toBe(false);
+    }, TEST_TIMEOUT_MS);
+
+    it("reads the committed blob only from an attached HEAD: a detached HEAD gives no authorization and an uncommitted plan", async () => {
+      const world = makeWorld();
+      git(world.hub, "checkout", "--detach");
+      expect(await run(world)).toBe(1);
+      const sheet = world.out.join("");
+      expect(sheet).toContain("Authorization: none\n");
+      expect(sheet).toContain("Plan committed: no\n");
+    }, TEST_TIMEOUT_MS);
+
+    it("reads the committed blob only when it is a plain file: an executable or a symbolic link gives no authorization", async () => {
+      const executable = makeWorld();
+      chmodSync(join(executable.hub, "clossys/advisor/assessment-input.json"), 0o755);
+      git(executable.hub, "add", "-A");
+      git(executable.hub, "commit", "-m", "executable");
+      expect(git(executable.hub, "ls-tree", "HEAD", "clossys/advisor/assessment-input.json")).toMatch(/^100755 blob /u);
+      expect(await run(executable)).toBe(1);
+      expect(executable.out.join("")).toContain("Authorization: none\n");
+
+      const linked = makeWorld();
+      rmSync(join(linked.hub, "clossys/advisor/assessment-input.json"));
+      symlinkSync("brief.json", join(linked.hub, "clossys/advisor/assessment-input.json"));
+      git(linked.hub, "add", "-A");
+      git(linked.hub, "commit", "-m", "link");
+      expect(git(linked.hub, "ls-tree", "HEAD", "clossys/advisor/assessment-input.json")).toMatch(/^120000 blob /u);
+      expect(await run(linked)).toBe(1);
+      expect(linked.err).toEqual([]);
+      expect(linked.out.join("")).toContain("Authorization: none\n");
+    }, TEST_TIMEOUT_MS);
+
     it("treats a document with no engagement, or no executionAuthorization, as no authorization", async () => {
       for (const assessment of [{}, { engagement: {} }] as Loose[]) {
         const world = makeWorld({ assessment });
@@ -442,6 +504,35 @@ describe("launcher-apply-plan plan", () => {
         expect(existsSync(join(world.hub, APPLY_STATE))).toBe(false);
       }, TEST_TIMEOUT_MS);
     }
+
+    it("a sheet that refuses stores nothing: the sheet is rendered before anything is stored", async () => {
+      const world = makeWorld();
+      const before = stateSnapshot(world);
+      sheetSwitch.refuse = true;
+      expect(await run(world)).toBe(2);
+      expect(world.err).toEqual(["launcher-apply-plan plan: sheet-refused; nothing was stored"]);
+      expect(world.out).toEqual([]);
+      expect(storedFiles(world)).toEqual([]);
+      expect(existsSync(join(world.hub, APPLY_STATE))).toBe(false);
+      expect(stateSnapshot(world)).toEqual(before);
+    }, TEST_TIMEOUT_MS);
+
+    it("reads the inventory like every other hub input: a symbolic link, inside the hub or out of it, is refused", async () => {
+      for (const target of ["outside", "inside"]) {
+        const world = makeWorld();
+        const inventory = join(world.hub, "clossys/.state/inventory.json");
+        const real = target === "outside" ? join(world.root, "inventory-elsewhere.json") : join(world.hub, "clossys/.state/inventory-real.json");
+        writeFileSync(real, readFileSync(inventory));
+        rmSync(inventory);
+        symlinkSync(real, inventory);
+        const before = stateSnapshot(world);
+        expect(await run(world)).toBe(2);
+        expect(world.err).toEqual(["launcher-apply-plan plan: inventory-unreadable; nothing was stored"]);
+        expect(world.out).toEqual([]);
+        expect(storedFiles(world)).toEqual([]);
+        expect(stateSnapshot(world)).toEqual(before);
+      }
+    }, TEST_TIMEOUT_MS);
 
     it("refuses a working directory that is not a hub", async () => {
       const world = makeWorld();

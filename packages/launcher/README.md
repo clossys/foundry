@@ -1021,7 +1021,8 @@ here reads a ledger from a repository: the caller hands its bytes in.
 ### Planning and the approval sheet
 
 `launcher-apply-plan plan` runs in the hub and takes no option beyond `--help`.
-It computes the apply bundle for the plan committed there and prints the
+It computes the apply bundle for the plan file in the hub's working tree, reports whether
+that exact file is the one committed at `HEAD` (the sheet's `Plan committed:` line), and prints the
 approval sheet a client reads before approving it (RFC section 12.7). It
 reads the hub only: `clossys/advisor/plan.json` and `brief.json`, the composed
 skill of each staffed role and of the Advisor voice, the stored change sets,
@@ -1038,8 +1039,10 @@ repository is observed from its clone, a sibling of the hub, by
 an approval or a binding, and the command computes and records none.
 
 It then stores the change sets and the bundle under `clossys/.state/apply/`,
-the only place it writes, and prints the sheet. Running it again on the same
-hub and clones prints the same bytes and stores nothing new.
+the only place it writes, and prints the sheet. Running it again over unchanged
+inputs and an unchanged clock gives the same bytes. A rerun after the clock or
+the committed authorization changed currently refuses with `store-failed`,
+because the store is append-only by bytes (#1693).
 
 ```text
 Approve subjectDigest: sha256:<the bundle digest>
@@ -1061,7 +1064,9 @@ and refuses, by a fixed token that names no value, a set or bundle that does
 not validate, sets that are not exactly the bundle's, and any printed value
 that fails a strict pattern or holds `<`, `>`, a backtick, `|`, a carriage
 return or a line feed. Every refusal of the command is likewise a fixed token,
-printed as `launcher-apply-plan plan: <token>; nothing was stored`.
+printed as `launcher-apply-plan plan: <token>; nothing was stored`, except
+`store-failed` and an unexpected failure, which end without that clause because
+some of the sets may already be stored.
 
 Exit `0` when every repository is `satisfied`; `1` when any is `violated`;
 `2` when an input could not be read, the planner refused, or a repository is

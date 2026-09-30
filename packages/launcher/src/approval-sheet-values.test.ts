@@ -31,10 +31,11 @@ function edit(change: (input: { bundle: Loose; set: Loose }) => void): ApprovalS
 }
 
 /** A bundle whose only repository was skipped, for the given reason, and so has no change set. */
-function skipped(reason: string): ApprovalSheetInput {
+function skipped(reason: string, verdict = "indeterminate"): ApprovalSheetInput {
   const { bundle } = planApplyBundle(setupInputs(null, undefined, { repositories: [{ id: "example-owner/site", skipped: "not-in-inventory", verdict: "indeterminate" }] }));
   const edited = clone(bundle) as unknown as Loose;
   edited.repositories[0].reason = reason;
+  edited.repositories[0].verdict = verdict;
   return { bundle: edited, changeSets: [] } as unknown as ApprovalSheetInput;
 }
 
@@ -49,7 +50,7 @@ function token(input: ApprovalSheetInput): string {
   return "rendered";
 }
 
-const HOSTILE = ["a|b", "a`b", "a<b", "a>b", "a\nb", "a\rb", "a b", "", "\u2028"] as const;
+const HOSTILE = ["a|b", "a`b", "a<b", "a>b", "a\nb", "a\rb", "a\tb", "a\u0000b", "a\u001bb", "a b", "", "\u2028"] as const;
 
 describe("the sheet's own value patterns", () => {
   it("render an unedited bundle through the mocked validators", () => {
@@ -65,6 +66,11 @@ describe("the sheet's own value patterns", () => {
       expect(token(edit(({ set }) => void (set.refused = [{ file: "package.json", pointer: value, reason: "unowned-existing", item: "skills" }])))).toBe("value-unsafe");
       expect(token(edit(({ bundle }) => void (bundle.repositories[0].checks = [{ check: "V8", verdict: "indeterminate", rule: value }])))).toBe("value-unsafe");
       expect(token(skipped(value))).toBe("value-unsafe");
+    });
+
+    it(`refuse ${shown} as a skipped repository's verdict and as a refused key's file`, () => {
+      expect(token(skipped("not-in-inventory", value))).toBe("value-unsafe");
+      expect(token(edit(({ set }) => void (set.refused = [{ file: value, pointer: "/dependencies", reason: "unowned-existing", item: "skills" }])))).toBe("value-unsafe");
     });
 
     it(`refuse ${shown} as a repository id, an item id, a package name, a version, the mode and the authorization`, () => {
@@ -96,6 +102,7 @@ describe("the sheet's own value patterns", () => {
   it("never echo the offending value", () => {
     for (const value of ["secret-looking|value", "a`b"]) {
       const input = edit(({ set }) => void (set.deferred = [{ planItem: value, reason: "after-setup" }]));
+      expect(() => renderApprovalSheet(input)).toThrow(ApprovalSheetError);
       try {
         renderApprovalSheet(input);
       } catch (error) {

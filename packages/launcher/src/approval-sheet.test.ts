@@ -2,9 +2,10 @@ import { describe, expect, it } from "vitest";
 import { ApprovalSheetError, renderApprovalSheet } from "./approval-sheet.js";
 import type { ApprovalSheetInput, ApprovalSheetRefusal } from "./approval-sheet.js";
 import { bundleDigest, changeSetDigest } from "./change-set-digest.js";
+import { validateApplyBundle, validateRepositoryChangeSet } from "./change-set-contract.js";
 import type { ApplyBundle, RepositoryChangeSet } from "./change-set-contract.js";
 import { planApplyBundle } from "./plan-bundle.js";
-import { clone, setupInputs, setupObservation, SITE_ID } from "./plan-bundle-setup-fixture.js";
+import { clone, setupInputs, setupObservation, setupPlan, SITE_ID } from "./plan-bundle-setup-fixture.js";
 import type { Loose } from "./plan-bundle-setup-fixture.js";
 
 /** A bundle and its one change set, planned from the setup fixture: a real planner result, not a hand-built one. */
@@ -42,6 +43,14 @@ function refusal(input: ApprovalSheetInput): ApprovalSheetRefusal {
 describe("renderApprovalSheet", () => {
   it("renders the golden sheet: the bundle's ids and digests, one row per item, then what was held back", () => {
     expect(renderApprovalSheet(planned())).toBe(GOLDEN);
+  });
+
+  it("prints Plan committed from the bundle's flag: yes when committed, no when not", () => {
+    const uncommitted = planApplyBundle(setupInputs(setupObservation(), undefined, { planCommitted: false }));
+    expect(renderApprovalSheet(planned()).split("\n")).toContain("Plan committed: yes");
+    const sheet = renderApprovalSheet({ bundle: uncommitted.bundle, changeSets: uncommitted.changeSets });
+    expect(sheet.split("\n")).toContain("Plan committed: no");
+    expect(sheet.split("\n")).not.toContain("Plan committed: yes");
   });
 
   it("is deterministic, LF-terminated, and free of anything but printable ASCII and newlines", () => {
@@ -123,6 +132,46 @@ describe("renderApprovalSheet", () => {
       const other = { ...clone(input.changeSets[0]!), bundle: `sha256:${"1".repeat(64)}` } as RepositoryChangeSet;
       expect(refusal({ ...input, changeSets: [other] })).toBe("set-mismatch");
     });
+
+    describe("with two computed sets, only one of which the bundle names", () => {
+      const DOCS_ID = "example-owner/docs";
+
+      /** A real two-repository bundle, cut down to its first entry, and the two sets it was planned with. */
+      function twoSets(): { bundle: Loose; site: Loose; docs: Loose } {
+        const plan = setupPlan();
+        const staffed = { ...plan, staffing: [...plan.staffing!, { repository: DOCS_ID, roles: ["writer"] }], packages: [...plan.packages!, ...setupPlan({ repository: DOCS_ID }).packages!] };
+        const docsObservation = setupObservation({ id: DOCS_ID, nodeId: "R_exampleDocs1" });
+        const planned2 = planApplyBundle(setupInputs(setupObservation(), staffed, { repositories: [setupObservation(), docsObservation] }));
+        expect(planned2.changeSets.map((set) => set.repository.id)).toEqual([SITE_ID, DOCS_ID]);
+        const bundle = clone(planned2.bundle) as unknown as Loose;
+        bundle.repositories = bundle.repositories.slice(0, 1);
+        return { bundle, site: clone(planned2.changeSets[0]!) as unknown as Loose, docs: clone(planned2.changeSets[1]!) as unknown as Loose };
+      }
+
+      /** Names `named` (a set) in the bundle's only entry, and binds every set to the recomputed bundle digest. */
+      function bound(bundle: Loose, named: Loose, ...sets: Loose[]): ApprovalSheetInput {
+        bundle.repositories[0].changeSet = named.changeSetDigest;
+        bundle.bundleDigest = bundleDigest(bundle.plan.digest, [{ id: bundle.repositories[0].id, changeSetDigest: named.changeSetDigest }]);
+        for (const set of sets) set.bundle = bundle.bundleDigest;
+        expect(validateApplyBundle(bundle).valid).toBe(true);
+        for (const set of sets) expect(validateRepositoryChangeSet(set).valid).toBe(true);
+        return { bundle: bundle as ApplyBundle, changeSets: sets as RepositoryChangeSet[] };
+      }
+
+      it("refuses a valid extra set the bundle does not name (the set count must match)", () => {
+        const { bundle, site, docs } = twoSets();
+        expect(refusal(bound(bundle, site, site, docs))).toBe("set-mismatch");
+        // The same bundle with exactly its own set renders.
+        const { bundle: again, site: own } = twoSets();
+        expect(() => renderApprovalSheet(bound(again, own, own))).not.toThrow();
+      });
+
+      it("refuses a set that is valid and bound to the bundle but belongs to another repository than the entry naming it", () => {
+        const { bundle, docs } = twoSets();
+        expect(bundle.repositories[0].id).toBe(SITE_ID);
+        expect(refusal(bound(bundle, docs, docs))).toBe("set-mismatch");
+      });
+    });
   });
 });
 
@@ -132,6 +181,7 @@ const BUNDLE_DIGEST = "sha256:cd0650c662442c21a67a508a7570e32fcb62c502f8dc863588
 const GOLDEN = `Clossys apply plan: approval sheet
 Mode: report
 Plan digest: ${PLAN_DIGEST}
+Plan committed: yes
 Bundle digest: ${BUNDLE_DIGEST}
 Authorization: plan ${PLAN_DIGEST} expires 2999-01-01T00:00:00Z
 Approve subjectDigest: ${BUNDLE_DIGEST}
