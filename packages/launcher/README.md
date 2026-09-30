@@ -811,12 +811,12 @@ in this package).
 - The bundle digest covers only the plan digest and each computed
   repository's id and change-set digest, so an approval can bind it and a
   repository can recompute it from digests alone.
-- The bundle's `mode` is `report`, and it records no repository state and
-  no binding. The bundle contract also defines a `planned` mode, where a
-  repository that passed all nine pre-apply checks and is bound by an
-  approval is `planned`, with that binding; nothing writes a planned bundle
-  yet, because the checks that would earn it -- the installed-state ledger
-  and package provenance -- are not all earned here. The planner reports its
+- The planner's bundle `mode` is `report`, and it records no repository
+  state and no binding. The bundle contract also defines a `planned` mode,
+  where a repository that passed all nine pre-apply checks and is bound by an
+  approval is `planned`, with that binding; the `plan` command writes one
+  only when the hub's committed plan carries an approval that names a bundle
+  the hub holds (see the plan command below). The planner reports its
   own dry-materialization check (V6), which covers the file
   layout only: the part of V6 that regenerates the lockfile and checks its
   invariants is not run by the planner, so a set that changes a lockfile carries V6
@@ -1006,10 +1006,12 @@ here reads a ledger from a repository: the caller hands its bytes in.
   change set is never replaced; a stored bundle is replaced atomically, and
   only when the same `bundleDigest` is stored again, which covers the plan
   digest and the change-set digests only, so only the authorization, verdict,
-  clock and mode fields can differ. `plan` always writes a report-mode bundle, so a
-  rerun replaces a stored bundle of the same digest, including any
-  planned-mode state or binding fields a later unit may add to it. A read
-  returns a file only when its recomputed digest matches its name.
+  clock and mode fields can differ. A rerun replaces a stored bundle of the
+  same digest, planned or not, with one exception: a report-mode bundle never
+  replaces a stored planned one that verifies (`store-failed`), so an
+  approval-bound record is not downgraded by a run that lost the approval. A
+  stored file that does not verify is replaced. A read returns a file only
+  when its recomputed digest matches its name.
 - The succession rules compare what two ledgers claim, not the files: an
   admitted generation must install exactly the packages its setup deferred
   and change no other row, but whether the pull request's tree matches its
@@ -1044,7 +1046,23 @@ the blob at `HEAD` and never from the working tree. No blob, or no
 object, or lacks a string `planDigest` or `expiresAt`, is refused. Each staffed
 repository is observed from its clone, a sibling of the hub, by
 `observeRepository()`, and `planApplyBundle()` does the rest. No option carries
-an approval or a binding, and the command computes and records none.
+an approval or a binding. The result is a `planned` bundle only when the plan
+is the committed one and the hub's committed plan, read as a git object at an
+attached `HEAD`, carries an approving decision for this plan digest whose
+subject is a bundle the hub stores and verifies. Then each repository's V3 is
+decided by the admission check (`decideSetBinding()`, over the installed-state
+ledger at the set's base commit), and only a bound repository gets a binding:
+V3 `violated` (exit 1) or `indeterminate` (exit 2) with its fixed rule token
+gives none, and a repository whose V3 the bundle already marks violated is
+not admitted and spawns no readiness run. A repository with a binding and
+V1 to V9 all satisfied is `planned`; V1, V2, V4, V5 and V7 are recorded
+satisfied, V9 satisfied only for a set with no derived lockfile (a set that
+changes one keeps the dry tree's V9, and is not `planned` without it). An apply
+set names the bundle that will be recorded in the ledger, and admission needs
+that bundle stored, so the first run after a setup set merges stores it with
+V3 `indeterminate` (`apply-bundle-unrecorded`) and the next run admits it. The
+digests, the change sets and the sheet, apart from its `Mode:` line, are the
+same as in report mode.
 
 It then stores the change sets and the bundle under `clossys/.state/apply/`,
 the only place it writes, and prints the sheet. Over unchanged inputs and an
