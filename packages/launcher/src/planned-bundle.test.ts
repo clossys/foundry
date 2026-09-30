@@ -246,12 +246,12 @@ describe("plannedBundle", () => {
       const plain = mutateSet(corpusSet("staffing-only") as unknown as RepositoryChangeSet, (set) => void (set.repository.id = DOCS_ID));
       expect(derivedLockfile(plain)).toBeNull();
       expect(derivedLockfile(s.w.apply)).not.toBeNull();
-      const input = reportOf(s, [
-        { set: s.w.apply, checks: [satisfied("V6"), { check: "V9", verdict: "indeterminate", rule: "lockfile-not-regenerated" }, satisfied("V8")] },
-        { set: plain },
-      ]);
+      // The SITE set carries no V9 of its own (the dry tree ran none for it): planned mode must not add a satisfied V9 to a set that changes a lockfile.
+      const input = reportOf(s, [{ set: s.w.apply }, { set: plain }]);
       const result = await plannedBundle(input, options(s, { runReadiness: runner(0) }));
-      expect(entryOf(result, SITE_ID).checks.filter((check) => check.check === "V9")).toEqual([{ check: "V9", verdict: "indeterminate", rule: "lockfile-not-regenerated" }]);
+      const site = entryOf(result, SITE_ID);
+      expect(site.checks.filter((check) => check.check === "V9")).toEqual([{ check: "V9", verdict: "indeterminate", rule: "provenance-not-run" }]);
+      expect(site).not.toHaveProperty("state");
       // The other set is refused (its base is not in this clone), yet it still has its own V9 and the four the planner never reports.
       const docs = entryOf(result, DOCS_ID);
       expect(docs.checks.filter((check) => check.check === "V9")).toEqual([satisfied("V9")]);
@@ -283,6 +283,22 @@ describe("plannedBundle", () => {
       entry = entryOf(result, SITE_ID);
       expect(entry.checks.filter((check) => check.check === "V3")).toEqual([{ check: "V3", verdict: "indeterminate", rule: "ledger-chain" }]);
       expect(entry).not.toHaveProperty("binding");
+    },
+    TIMEOUT_MS,
+  );
+
+  it(
+    "an executable base ledger is ledger-unreadable with no binding",
+    async () => {
+      // The base commit holds the ledger as mode 100755: not one regular, non-executable blob, so it cannot be read as a ledger.
+      const s = scene((tree) => void tree.set(LEDGER_PATH, { ...tree.get(LEDGER_PATH)!, mode: "100755" }));
+      let readinessCalls = 0;
+      const result = await plannedBundle(reportOf(s, [{ set: s.w.apply }]), options(s, { runReadiness: () => { readinessCalls += 1; return { status: 0 }; } }));
+      const entry = entryOf(result, SITE_ID);
+      expect(entry.checks.filter((check) => check.check === "V3")).toEqual([{ check: "V3", verdict: "indeterminate", rule: "ledger-unreadable" }]);
+      expect(entry).not.toHaveProperty("binding");
+      expect(entry).not.toHaveProperty("state");
+      expect(readinessCalls).toBe(0);
     },
     TIMEOUT_MS,
   );
