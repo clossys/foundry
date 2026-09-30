@@ -2544,10 +2544,37 @@ ends the call skips the rest:
    resolve is `accepted`; a throw or rejection is `unavailable`. There is no
    retry, and the limiter use is not refunded.
 
-The outbound message is plain text. Name, email, phone, topic and message appear
-only in the body, and the submitted email is the sole `replyTo`. Control
+The outbound message carries a text body and an escaped HTML body. Name, email,
+phone, topic and message appear only in those two bodies, and the submitted
+email is the sole `replyTo`. Control
 characters are refused in every field, except that `message` may contain tab,
 line feed and carriage return; single-line fields also refuse U+2028 and U+2029.
+
+### Notification email
+
+`renderContactNotificationEmail(input, options?)`, exported from
+`@clossys/publisher/email`, returns `{ html, text }` for one submission
+(`topic`, `name`, `email`, `message`, optional `phone`). The handler calls it and
+delivers both bodies. `text` is the layout above; `html` is fixed table markup
+with inline styles, and no `react`, `@clossys/designer` or other dependency.
+
+Every value passes through the package's HTML escaping exactly once, into
+element text only. There are no anchors, images, scripts, comments or remote
+resources, so an address or URL in a field is inert text, never a link. Message
+line breaks become `<br>` after escaping. `options.labels` renames the `Topic`,
+`Name`, `Email`, `Phone` and `Message` labels (the defaults are those English
+words); a label is escaped and single-line checked like a value.
+
+The function throws a `TypeError` naming the field, never its value, for a
+non-string, for any control character in a single-line field or label (plus
+U+2028 and U+2029), and for any control character in `message` other than tab,
+line feed and carriage return. In the handler a throw resolves `unavailable`
+with nothing delivered. Types: `ContactNotificationInput`,
+`ContactNotificationLabels`, `ContactNotificationEmail` and
+`RenderContactNotificationEmailOptions`.
+
+Not covered: no mail-client rendering check, no deliverability guarantee, no
+link handling.
 
 ### Wiring a Messenger email adapter
 
@@ -2555,7 +2582,7 @@ line feed and carriage return; single-line fields also refuse U+2028 and U+2029.
 Publisher imports no Messenger code. The message it builds is shaped so that an
 email adapter from `@clossys/messenger` is assignable to `delivery` without a
 wrapper under `strictFunctionTypes`; a delivery whose `deliver` requires more
-than the handler supplies, such as a required `html`, fails to compile.
+than the handler supplies, such as a required `headers`, fails to compile.
 
 ```ts
 import { createContactHandler, createMemoryRateLimiter } from "@clossys/publisher/web";

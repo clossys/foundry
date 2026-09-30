@@ -15,6 +15,7 @@ import {
   type ContactUnavailableReason,
   type ValidatedContactSubmission,
 } from "./types.js";
+import { renderContactNotificationEmail } from "../../email/renderContactNotificationEmail.js";
 
 /**
  * Framework-neutral, server-only contact submission handler. `types.ts` is the
@@ -226,13 +227,6 @@ function validateSubmission(
   };
 }
 
-function buildText(submission: ValidatedContactSubmission): string {
-  const lines = [`Topic: ${submission.topic}`, `Name: ${submission.name}`, `Email: ${submission.email}`];
-  if (submission.phone !== undefined) lines.push(`Phone: ${submission.phone}`);
-  lines.push("", submission.message);
-  return lines.join("\n");
-}
-
 // ---------------------------------------------------------------------------
 // The handler
 // ---------------------------------------------------------------------------
@@ -329,6 +323,15 @@ export function createContactHandler(config: ContactHandlerConfig): ContactHandl
     }
     if (typeof id !== "string" || id.length === 0) return unavailable("message-id-failed");
 
+    // Validation already enforced the renderer's own refusals, so a throw here
+    // is unexpected; it fails closed like any other, with nothing delivered.
+    let rendered: ReturnType<typeof renderContactNotificationEmail>;
+    try {
+      rendered = renderContactNotificationEmail(validated.submission);
+    } catch {
+      return unavailable("internal-error");
+    }
+
     const message: ContactOutboundMessage = {
       id,
       event: "publisher.contact.submitted",
@@ -338,7 +341,8 @@ export function createContactHandler(config: ContactHandlerConfig): ContactHandl
       to: [...to],
       replyTo: [validated.submission.email],
       subject,
-      text: buildText(validated.submission),
+      text: rendered.text,
+      html: rendered.html,
     };
     try {
       await delivery.deliver(message);
