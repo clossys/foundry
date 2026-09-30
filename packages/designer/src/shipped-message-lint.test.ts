@@ -179,8 +179,42 @@ const NON_COPY_JSX_ATTRS = new Set([
 export interface ShippedMessageViolation {
   file: string;
   line: number;
-  kind: "jsx-text" | "aria-literal" | "jsx-attribute" | "nullish-fallback" | "rendered-local";
+  kind: "jsx-text" | "aria-literal" | "jsx-attribute" | "nullish-fallback" | "rendered-local" | "scan-incomplete";
   text: string;
+}
+
+/**
+ * The lint terminates on every input (issue #1623). The analysis follows a
+ * name to the expression it resolves to, and that expression can resolve
+ * back to itself, for example when a parameter and a same-named parameter
+ * of the function it is passed to each read the other's member. Two
+ * bounds keep that finite:
+ *
+ * - An expression already being evaluated is not evaluated again, which
+ *   cuts every cycle and adds no finding: a cycle contributes no copy
+ *   beyond what its other branches already report.
+ * - A step budget per file, and the call stack itself, bound everything
+ *   else. A file that reaches either is reported as a `scan-incomplete`
+ *   finding carrying the partial findings before it, never passed
+ *   silently. The largest file in this tree needs about 6 thousand steps.
+ */
+export const SCAN_STEP_BUDGET = 250_000;
+
+interface ScanGuard {
+  steps: number;
+  budget: number;
+  active: Set<ts.Node>;
+}
+
+let scanGuard: ScanGuard | null = null;
+
+class ScanBudgetExceeded extends Error {}
+
+function spendScanStep(): void {
+  const guard = scanGuard;
+  if (guard === null) return;
+  guard.steps++;
+  if (guard.steps > guard.budget) throw new ScanBudgetExceeded();
 }
 
 function hasLetter(value: string): boolean {
@@ -1171,7 +1205,20 @@ function callResultSliceExpressionIsShipped(
   return false;
 }
 
-function renderSliceExpressionIsShipped(
+function renderSliceExpressionIsShipped(...args: Parameters<typeof renderSliceExpressionIsShippedUnguarded>): boolean {
+  const guard = scanGuard;
+  if (guard === null) return renderSliceExpressionIsShippedUnguarded(...args);
+  const node = unwrapExpression(args[0]);
+  if (guard.active.has(node)) return false;
+  guard.active.add(node);
+  try {
+    return renderSliceExpressionIsShippedUnguarded(...args);
+  } finally {
+    guard.active.delete(node);
+  }
+}
+
+function renderSliceExpressionIsShippedUnguarded(
   expression: ts.Expression,
   moduleBindings: Set<string>,
   moduleFunctions: Set<string>,
@@ -3675,6 +3722,7 @@ function localInitializerIsShippedCopy(node: ts.Expression): boolean {
 }
 
 function unwrapExpression(expression: ts.Expression): ts.Expression {
+  spendScanStep();
   let current: ts.Expression = expression;
   for (;;) {
     if (ts.isParenthesizedExpression(current)) {
@@ -6578,9 +6626,56 @@ function scriptKindForFileName(fileName: string): ts.ScriptKind {
   return fileName.endsWith(".tsx") ? ts.ScriptKind.TSX : ts.ScriptKind.TS;
 }
 
-export function findShippedMessageViolations(fileName: string, sourceText: string): ShippedMessageViolation[] {
-  const source = ts.createSourceFile(fileName, sourceText, ts.ScriptTarget.Latest, true, scriptKindForFileName(fileName));
+function dedupeViolations(violations: ShippedMessageViolation[]): ShippedMessageViolation[] {
+  const seen = new Set<string>();
+  return violations.filter((violation) => {
+    const key = `${violation.line}:${violation.kind}:${violation.text}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+export function findShippedMessageViolations(
+  fileName: string,
+  sourceText: string,
+  options: { stepBudget?: number } = {},
+): ShippedMessageViolation[] {
+  const outerGuard = scanGuard;
+  const guard: ScanGuard = { steps: 0, budget: options.stepBudget ?? SCAN_STEP_BUDGET, active: new Set() };
+  scanGuard = guard;
   const violations: ShippedMessageViolation[] = [];
+  try {
+    return scanSourceForShippedMessages(fileName, sourceText, violations);
+  } catch (error) {
+    let reason: string;
+    if (error instanceof ScanBudgetExceeded) {
+      reason = `the analysis step budget of ${guard.budget} was exceeded`;
+    } else if (error instanceof RangeError) {
+      reason = "the call stack was exhausted";
+    } else {
+      throw error;
+    }
+    return dedupeViolations([
+      ...violations,
+      {
+        file: fileName,
+        line: 1,
+        kind: "scan-incomplete",
+        text: `scan stopped before the end of the file because ${reason}; findings after this point are unknown`,
+      },
+    ]);
+  } finally {
+    scanGuard = outerGuard;
+  }
+}
+
+function scanSourceForShippedMessages(
+  fileName: string,
+  sourceText: string,
+  violations: ShippedMessageViolation[],
+): ShippedMessageViolation[] {
+  const source = ts.createSourceFile(fileName, sourceText, ts.ScriptTarget.Latest, true, scriptKindForFileName(fileName));
   const moduleBindings = collectModuleLetteredBindings(source);
   const moduleRenderedStringBindings = collectModuleRenderedStringBindings(source);
   const moduleFunctions = collectModuleShippedFunctions(source);
@@ -6839,13 +6934,7 @@ export function findShippedMessageViolations(fileName: string, sourceText: strin
   }
 
   visit(source);
-  const seen = new Set<string>();
-  return violations.filter((violation) => {
-    const key = `${violation.line}:${violation.kind}:${violation.text}`;
-    if (seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  });
+  return dedupeViolations(violations);
 }
 
 export function scanShippedMessageTree(root: string): ShippedMessageViolation[] {
@@ -10453,4 +10542,73 @@ describe("shipped message lint", () => {
     expect(themeToggle).toEqual(expect.arrayContaining(["toggleLabel", "preferenceAnnouncement"]));
   });
 
+  describe("terminates on every input (issue #1623)", () => {
+    // An object literal rebuilt from the properties of its input and passed to a
+    // function that itself receives `input`: the shape composeLockup first used.
+    const rebuiltLiteralSource = [
+      "interface Brand { name: string }",
+      "interface Input { brand: Brand; suppliedSvg: string }",
+      "export function adopt(input: Input) {",
+      "  const { brand, suppliedSvg } = input;",
+      "  return { label: `${brand.name} - adopted`, svg: suppliedSvg };",
+      "}",
+      "export function compose(input: Input) {",
+      "  const adopted = adopt({ brand: input.brand, suppliedSvg: input.suppliedSvg });",
+      "  return adopted;",
+      "}",
+      "export function Other() {",
+      "  return <p>Hello there</p>;",
+      "}",
+      "",
+    ].join("\n");
+    const TIME_BUDGET_MS = 2_000;
+
+    it("returns within a fixed time budget for a rebuilt object literal, keeping the findings it has", () => {
+      const started = performance.now();
+      const violations = findShippedMessageViolations("Rebuilt.tsx", rebuiltLiteralSource);
+      expect(performance.now() - started).toBeLessThan(TIME_BUDGET_MS);
+      expect(violations).toEqual([expect.objectContaining({ kind: "jsx-text", text: "Hello there" })]);
+    });
+
+    it("scans the original composeLockup call shape in the real identity kit without recursing", () => {
+      const real = readFileSync(path.join(SRC_ROOT, "tokens/identity-kit.ts"), "utf8");
+      const call = "adoptSuppliedMark(input);";
+      expect(real).toContain(call);
+      const rebuilt = real.replace(
+        call,
+        "adoptSuppliedMark({ brand: input.brand, suppliedSvg: input.suppliedSvg, tokens: input.tokens });",
+      );
+      const started = performance.now();
+      expect(findShippedMessageViolations("tokens/identity-kit.ts", rebuilt)).toEqual([]);
+      expect(performance.now() - started).toBeLessThan(TIME_BUDGET_MS);
+    });
+
+    it("reports a scan-incomplete finding, never a silent pass, when the step budget runs out", () => {
+      const violations = findShippedMessageViolations("Rebuilt.tsx", rebuiltLiteralSource, { stepBudget: 1 });
+      expect(violations.at(-1)).toEqual({
+        file: "Rebuilt.tsx",
+        line: 1,
+        kind: "scan-incomplete",
+        text: "scan stopped before the end of the file because the analysis step budget of 1 was exceeded; findings after this point are unknown",
+      });
+    });
+
+    it("reports a scan-incomplete finding when the call stack is exhausted", () => {
+      const depth = 40_000;
+      const source = `export const total = ${Array.from({ length: depth }, () => "1").join(" + ")};\n`;
+      const violations = findShippedMessageViolations("Deep.ts", source);
+      expect(violations).toEqual([
+        expect.objectContaining({
+          kind: "scan-incomplete",
+          line: 1,
+          text: expect.stringContaining("the call stack was exhausted"),
+        }),
+      ]);
+    });
+
+    it("scans the next file normally after a file stopped early", () => {
+      expect(findShippedMessageViolations("Rebuilt.tsx", rebuiltLiteralSource, { stepBudget: 1 }).length).toBeGreaterThan(0);
+      expect(findShippedMessageViolations("Rebuilt.tsx", rebuiltLiteralSource)).toHaveLength(1);
+    });
+  });
   });
