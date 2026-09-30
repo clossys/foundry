@@ -337,6 +337,7 @@ launcher-apply-plan plan
 launcher-apply-plan materialize --repo ./site-checkout
 launcher-apply-plan verify --repo ./site-checkout
 launcher-apply-plan status --repo ./site-checkout
+launcher-apply-plan body --repo <id> --task-record 12
 launcher-apply-plan snapshot --request package-request.json
 ```
 
@@ -1186,7 +1187,7 @@ hub repository's branch protection governs that.
 
 ### Rendering the pull request
 
-`renderPullRequest({ set, binding, taskRecord })` returns the title and body of
+`renderPullRequest({ set, binding, taskRecord, supersedes? })` returns the title and body of
 the pull request for one stored change set, and `bodySha256`, which is
 `sha256:` and the hex SHA-256 of the body's UTF-8 bytes. It is a pure function
 of its three inputs (`RenderPullRequestInput`): it reads no file, runs no command and opens nothing. The
@@ -1200,7 +1201,10 @@ digests; the binding you pass (`approved` with its subject digest, or `admitted`
 with its subject digest and setup change set); one line per item, in the set's
 own order, with `name@version` for `install` and `pin-starter`; each deferred or
 refused entry by item id and reason code only; and a `## Task record` section
-that links `#<n>`. It carries ids, act names, versions and digests only, never
+that links `#<n>`. With `supersedes`, a list of distinct positive safe integers
+that are not the task record, it also writes a `## Supersedes` section before
+the task record, one `- #<n>` line for each number, ascending; without it, or
+with an empty list, the body is byte for byte what it was. It carries ids, act names, versions and digests only, never
 brief or plan prose, file contents, key values or paths.
 
 `readChangeSetMarker(body)` returns the digest only when exactly one line of the
@@ -1211,7 +1215,9 @@ It returns a `PullRequestText`, or a `PullRequestRefusal` whose
 `PullRequestRefusalReason` is a fixed token that names no id, digest or input
 text, for a set that fails `validateRepositoryChangeSet` or
 whose digest does not recompute, a malformed binding, an `admitted` binding on
-a setup set, a task record that is not a positive safe integer, and any value it
+a setup set, a task record that is not a positive safe integer, a `supersedes` list that is
+not distinct positive safe integers other than the task record
+(`supersedes-invalid`), and any value it
 cannot prove safe to write (each must match its own strict pattern and hold no
 `<`, `>`, backtick, `|`, carriage return or line feed).
 
@@ -1219,6 +1225,40 @@ It does not decide the binding: it shows what you pass, so pass the result of
 `decideSetBinding()`. It does not check that the task-record issue exists, and
 it cannot stop a pull request's body being edited after it is opened; keeping
 `bodySha256` and the marker is what lets a later step notice that.
+
+### Recording the body
+
+`launcher-apply-plan body --repo <id> --task-record <n> [--supersedes <n>]...`
+prints the body of the pull request for the repository's stored change set, and
+nothing else, then records the `bodySha256` of exactly the bytes it printed as
+the set's `pullRequest.bodySha256`. Open the pull request from that output.
+
+```bash
+launcher-apply-plan body --repo <id> --task-record 12 --supersedes 9
+```
+
+The approval the body shows is what the hub decides at the time of the run, as
+`materialize` decides it, from the plan committed at the hub's HEAD: it is never
+an option or an argument, and a hub whose approval was withdrawn refuses with
+the same reason `materialize` gives, printing no body. If the hub stored a
+planned bundle for the set, that bundle must record exactly the same approval,
+or the run is refused as `binding-mismatch`. Each `--supersedes` is the number
+of the pull request of an older change set of the repository, once each and not
+the task record, and needs another change set of that repository in the hub's
+store (`supersedes-unfounded` otherwise). Every number is digits only.
+
+A set is bound to one body. Running `body` again with the same arguments prints
+the same body and changes nothing; a run that would produce another body is
+refused as `body-bound` and prints nothing, so an approval binds exactly the
+body that was opened. Recording the hash replaces the one stored file of the
+set atomically, refuses a symbolic link, and changes nothing else in the set:
+its digest, its file name and every other member stay as they were.
+
+Exit `0` prints the body and only the body. Exit `1` is a refusal and exit `2`
+is indeterminate or a usage error; each prints nothing on standard output and
+one line on standard error, `launcher-apply-plan body: refused (<reason>)` or
+`launcher-apply-plan body: indeterminate (<reason>)`, a fixed reason and never
+an argument, a path or any tool output.
 
 ### Observing the pull request
 

@@ -5,6 +5,8 @@
 // and the number of the task-record issue. It reads nothing, writes nothing and
 // opens nothing; a later step decides the binding, passes it in, records
 // `bodySha256` and hands the text to the agent that opens the pull request.
+// The caller may also pass the numbers of the older pull requests this one
+// replaces; they are written ascending under `## Supersedes` and nothing else.
 //
 // This is a public-safety surface, so every ambiguity refuses:
 //
@@ -35,6 +37,7 @@ export type PullRequestRefusalReason =
   | "binding-invalid"
   | "binding-phase-mismatch"
   | "task-record-invalid"
+  | "supersedes-invalid"
   | "value-unsafe"
   | "body-invalid"
   | "render-failed";
@@ -51,6 +54,12 @@ export interface RenderPullRequestInput {
   readonly binding: ApprovalBinding;
   /** The number of the task-record issue in the target repository: a positive safe integer. */
   readonly taskRecord: number;
+  /**
+   * The numbers of the pull requests of older change sets this one replaces (RFC section 6, D6): each a positive safe integer,
+   * none repeated and none the task record. Written ascending under `## Supersedes`. Absent or empty: no such section, and the
+   * body is the one it was without this option.
+   */
+  readonly supersedes?: readonly number[];
 }
 
 export interface PullRequestText {
@@ -158,6 +167,21 @@ function render(input: RenderPullRequestInput): PullRequestText | PullRequestRef
   const { taskRecord } = input;
   if (typeof taskRecord !== "number" || !Number.isSafeInteger(taskRecord) || taskRecord < 1) return refuse("task-record-invalid");
 
+  // Read once, like the set: what is checked is what is written. Only a list of distinct positive safe integers other than the task record passes.
+  let supersedes: number[] = [];
+  if (input.supersedes !== undefined) {
+    let read: unknown;
+    try {
+      read = JSON.parse(JSON.stringify(input.supersedes));
+    } catch {
+      return refuse("supersedes-invalid");
+    }
+    if (!Array.isArray(read)) return refuse("supersedes-invalid");
+    for (const entry of read as unknown[]) if (typeof entry !== "number" || !Number.isSafeInteger(entry) || entry < 1 || entry === taskRecord) return refuse("supersedes-invalid");
+    supersedes = (read as number[]).slice().sort((left, right) => left - right);
+    if (supersedes.some((entry, index) => index > 0 && entry === supersedes[index - 1])) return refuse("supersedes-invalid");
+  }
+
   // One snapshot, so a getter or a proxy cannot show the checks one value and the text another.
   let set: RepositoryChangeSet;
   let binding: unknown;
@@ -222,6 +246,7 @@ function render(input: RenderPullRequestInput): PullRequestText | PullRequestRef
     "",
     ...items,
     ...(notes.length === 0 ? [] : ["", "## Not applied", "", ...notes]),
+    ...(supersedes.length === 0 ? [] : ["", "## Supersedes", "", ...supersedes.map((number) => `- #${number}`)]),
     "",
     "## Task record",
     "",
