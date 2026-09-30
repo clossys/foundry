@@ -1245,11 +1245,11 @@ from role tokens, validated caller text, a mark only from inline data,
 inline-style structure, and deterministic markup. Not done: no rasterisation
 runs here; there is no font, tagline-fit, or contrast check (a long tagline can
 overflow the card); an accepted SVG mark's own content is not inspected; and
-approving the words on the card is the caller's. The `opengraph-image` route
-file and adopting the card in a page are not part of this change. The site
-template (copied into a consumer repository, and not part of this package's
-npm files) carries a pure mapping from `buildSiteMetadata`'s result onto
-Next.js metadata and viewport.
+approving the words on the card is the caller's. The site template
+(copied into a consumer repository, and not part of this package's npm files)
+carries a pure mapping from `buildSiteMetadata`'s result onto Next.js
+metadata and viewport, and an `opengraph-image` route that draws this card from
+approved copy in Designer's default roles.
 
 ## `media` — the asset registry contract, responsive images, and video (v2)
 
@@ -2340,7 +2340,9 @@ registry.ts` (never hardcoded in a renderer):
   gallery keeps rendering the earlier fixtures until it is updated.
   `templates/site/app/robots.ts`/`templates/site/app/sitemap.ts` are Next.js
   metadata route handlers, not page components — there is no view to render for either,
-  so neither appears here.
+  so neither appears here. `robots` allows crawling on `production` only, and
+  `sitemap` lists the manifest's routes there, a legal route once its document
+  is counsel-reviewed.
 - **Materials** (`materials-*.html`) — the company overview at each of
   the three lengths (`COMPANY_OVERVIEW_TEMPLATES`' own section order),
   the pitch deck (`PITCH_DECK_SLIDE_ORDER`) plus one

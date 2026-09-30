@@ -611,10 +611,11 @@ describe("the template manifest", () => {
 
   it("routes each page to its view, and each route file imports that view", () => {
     expect(route("/")?.template).toBe("LandingView");
+    expect(route("/about")?.template).toBe("MarketingView");
     expect(route("/contact")?.template).toBe("ContactView");
     expect(route("/terms")?.template).toBe("LegalView");
     expect(route("/privacy")?.template).toBe("LegalView");
-    for (const id of ["/", "/terms", "/privacy"]) {
+    for (const id of ["/", "/about", "/terms", "/privacy"]) {
       const entry = route(id)!;
       expect(importsFromWeb(sources[entry.file!]!, entry.template!)).toBe(true);
     }

@@ -3,16 +3,18 @@ import type { ReactNode } from "react";
 import { getThemeInitScript } from "@clossys/designer/theme/server";
 import { errorCopyIds, requireCopy } from "./site-copy";
 import { SiteCopyProvider } from "./site-copy-context";
-import { createSiteCopyResolver, loadBrandFacts, siteTarget } from "./site-records";
+import { createSiteCopyResolver, loadBrandFacts, siteOrigin, siteTarget } from "./site-records";
 import "./globals.css";
 
 // Reads brand tokens from clossys/designer/brand.css at build time — the
 // repository's own file, never copied into this template. See this
 // template's own README, "What every page actually reads."
 
-// The brand name is the default title; every page sets its own.
+// The brand name is the default title; every page sets its own. `metadataBase`
+// is the site's origin from `NEXT_PUBLIC_SITE_URL`, which has no fallback.
 export function generateMetadata(): Metadata {
   return {
+    metadataBase: new URL(siteOrigin()),
     title: {
       default: loadBrandFacts().brandLabel,
       template: "%s",

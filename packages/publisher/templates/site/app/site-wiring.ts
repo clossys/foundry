@@ -31,9 +31,11 @@ const SITE_TARGETS: readonly string[] = ["production", "preview", "development",
 
 /**
  * The deployment target, from `SITE_TARGET`. An absent value is `production`,
- * the strictest target, so forgetting to set it can only make the site refuse
- * more, never less. A value that is set but not one of the four throws: a
- * typo must not quietly select a different target.
+ * which is the strictest target for the legal and copy gates: forgetting to
+ * set it makes those gates refuse more, never less. It is not the safe
+ * default for crawling, which is why `resolveCrawlTarget` exists. A value
+ * that is set but not one of the four throws: a typo must not quietly select
+ * a different target.
  */
 export function resolveSiteTarget(env: Readonly<Record<string, string | undefined>>): SiteTarget {
   const value = env["SITE_TARGET"];
@@ -42,6 +44,119 @@ export function resolveSiteTarget(env: Readonly<Record<string, string | undefine
     throw new Error("SITE_TARGET must be one of production, preview, development or test.");
   }
   return value as SiteTarget;
+}
+
+/**
+ * The target `robots` and `sitemap` act on. Crawling fails closed: it is
+ * `production` only when `SITE_TARGET` is explicitly the string
+ * `production`. An absent value is `preview` here (no crawling, empty
+ * sitemap), so a host that sets `SITE_TARGET` only on its production
+ * environment cannot leave its previews crawlable. A value that is set but
+ * unknown throws, as in `resolveSiteTarget`.
+ */
+export function resolveCrawlTarget(env: Readonly<Record<string, string | undefined>>): SiteTarget {
+  const value = env["SITE_TARGET"];
+  if (value === undefined) return "preview";
+  return resolveSiteTarget(env);
+}
+
+// ------------------------------------------------------------------- origin
+
+const SITE_ORIGIN_VARIABLE = "NEXT_PUBLIC_SITE_URL";
+
+/**
+ * The site's origin, from `NEXT_PUBLIC_SITE_URL`. It must be an absolute
+ * `http` or `https` origin exactly as `new URL(value).origin` writes it: no
+ * path, no trailing slash, no query, no credentials. That is the rule
+ * Publisher's `buildSiteMetadata` applies to `site.origin`, so a value this
+ * returns is one it accepts. There is no fallback: an absent, blank or
+ * malformed value throws, naming the variable and never the value, because a
+ * guessed origin would put a wrong address in every canonical link and in the
+ * sitemap.
+ */
+export function resolveSiteOrigin(env: Readonly<Record<string, string | undefined>>): string {
+  const value = env[SITE_ORIGIN_VARIABLE];
+  const refuse = (): never => {
+    throw new Error(`${SITE_ORIGIN_VARIABLE} must be an absolute http(s) origin with no path, query, credentials or trailing slash.`);
+  };
+  if (typeof value !== "string" || value.trim() === "") return refuse();
+  let parsed: URL;
+  try {
+    parsed = new URL(value);
+  } catch {
+    return refuse();
+  }
+  if ((parsed.protocol !== "http:" && parsed.protocol !== "https:") || parsed.origin !== value) return refuse();
+  return value;
+}
+
+// ----------------------------------------------------------- robots, sitemap
+
+/** The `robots` route's result: assignable to Next's `MetadataRoute.Robots`, and it imports nothing from `next`. */
+export interface SiteRobots {
+  readonly rules: { readonly userAgent: string; readonly allow?: string; readonly disallow?: string };
+  readonly sitemap?: string;
+}
+
+/**
+ * What crawlers may do. Only `production` allows the site to be crawled and
+ * names its sitemap; every other target, and any value this function does not
+ * know, disallows all crawling. That stops crawlers; it does not guarantee
+ * that a URL is never listed.
+ */
+export function siteRobots(target: SiteTarget, origin: string): SiteRobots {
+  if (target !== "production") return { rules: { userAgent: "*", disallow: "/" } };
+  return { rules: { userAgent: "*", allow: "/" }, sitemap: `${origin}/sitemap.xml` };
+}
+
+/** What the sitemap needs to know about a legal document: its review status and its last-updated date. */
+export interface SiteLegalState {
+  readonly status: LegalDocument["legal"]["status"];
+  /** The document's own `lastUpdated`, as the record gives it. */
+  readonly lastUpdated: string;
+}
+
+/** One route as the manifest declares it. */
+export interface SiteSitemapRoute {
+  readonly id: string;
+  readonly template?: string;
+}
+
+/** One sitemap entry: assignable to Next's `MetadataRoute.Sitemap` item. */
+export interface SiteSitemapEntry {
+  readonly url: string;
+  readonly lastModified?: string;
+}
+
+const LEGAL_TEMPLATE = "LegalView";
+
+/**
+ * The sitemap. It lists the manifest's routes under the origin, on
+ * `production` only (every other target lists nothing). A route whose
+ * template is `LegalView` is listed only when `legal` holds an entry for its
+ * id whose status is exactly `counsel-reviewed`, and then carries that
+ * document's own `lastUpdated` as `lastModified`. No other route carries a
+ * `lastModified`: nothing here reads a clock.
+ */
+export function siteSitemap(input: {
+  readonly target: SiteTarget;
+  readonly origin: string;
+  readonly routes: readonly SiteSitemapRoute[];
+  readonly legal: Readonly<Record<string, SiteLegalState | undefined>>;
+}): SiteSitemapEntry[] {
+  if (input.target !== "production") return [];
+  const entries: SiteSitemapEntry[] = [];
+  for (const route of input.routes) {
+    const url = `${input.origin}${route.id}`;
+    if (route.template !== LEGAL_TEMPLATE) {
+      entries.push({ url });
+      continue;
+    }
+    const state = Object.hasOwn(input.legal, route.id) ? input.legal[route.id] : undefined;
+    if (state?.status !== "counsel-reviewed") continue;
+    entries.push({ url, lastModified: state.lastUpdated });
+  }
+  return entries;
 }
 
 // ----------------------------------------------------------------- delivery
