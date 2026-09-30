@@ -282,7 +282,7 @@ describe("deriveClientKey", () => {
         "[2001:db8::1]",
         "[2001:db8::1]:443",
         "2001:db8::1%eth0",
-        "[2001:db8::1%25eth0]:443".replace("%25", "%"),
+        "[2001:db8::1%eth0]:443",
       ]) {
         expect(deriveClientKey(form), form).toBe(v6);
       }
