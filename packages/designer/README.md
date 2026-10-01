@@ -1202,18 +1202,9 @@ either one applies exactly the classes `Button` applies for that variant and
 size, plus the same disabled opacity and focus ring, in place of the link
 `variant` classes. The element stays a link (`role="link"`, `href`,
 `render`), because navigation is a link and not a button; `Button` itself
-only renders a `<button>`. With neither prop set, `Link` is unchanged.
-
-```tsx
-<Link
-  href="/prompts"
-  buttonVariant="secondary"
-  buttonSize="lg"
-  render={(props) => <RouterLink {...props} to="/prompts" />}
->
-  Prompts
-</Link>
-```
+only renders a `<button>`. With neither prop set, `Link` is unchanged. For a
+framework link in button style, pass them alongside `render`:
+`<Link href="/prompts" buttonVariant="secondary" buttonSize="lg" render={(props) => <RouterLink {...props} to="/prompts" />}>`.
 
 ### `Checkbox`
 
