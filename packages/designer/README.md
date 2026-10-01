@@ -3153,13 +3153,13 @@ assuming one.
 // ErrorView is exported by @clossys/publisher/web.
 import { Button } from "@clossys/designer/atoms";
 
-function NotFoundPage() {
+function ServerErrorPage() {
   return (
     <ErrorView
-      status={404}
-      title="Page not found"
-      description="Something went wrong. Error: 8f2a91c0."
-      action={<Button onPress={() => goHome()}>Go home</Button>}
+      status={500}
+      title="Something went wrong"
+      description="We couldn't load this page. Error: 8f2a91c0."
+      action={<Button onPress={() => retry()}>Try again</Button>}
     />
   );
 }
