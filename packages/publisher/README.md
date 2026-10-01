@@ -1975,11 +1975,12 @@ segment `error` boundary keeps the layout, so use `ErrorView` there instead.
 
 `SignInForm`, exported from `@clossys/publisher/web`, is an identifier-first
 sign-in form for `AuthView`'s form slot: an identifier step, then a password
-step. It imports no identity provider and reads no browser global; the caller
-injects the two handlers (an adapter package can supply them) and decides where
-to go once signed in. It is a client component, so import it from a module that
-is a client boundary. Under the `react-server` condition the name is a stub
-that throws a `RenderError` when called. The page's `<h1>` stays `AuthView`'s.
+step, then an optional code step. It imports no identity provider and reads no
+browser global; the caller injects the handlers (an adapter package can supply
+them) and decides where to go once signed in. It is a client component, so
+import it from a module that is a client boundary. Under the `react-server`
+condition the name is a stub that throws a `RenderError` when called. The
+page's `<h1>` stays `AuthView`'s.
 
 ```tsx
 import { AuthView, SignInForm } from "@clossys/publisher/web";
@@ -1988,6 +1989,8 @@ import type { SignInResult } from "@clossys/publisher/web";
 declare const brand: React.ReactNode;
 declare function lookUp(identifier: string): Promise<SignInResult>; // your handler
 declare function check(secret: string): Promise<SignInResult>; // your handler
+declare function checkCode(code: string): Promise<SignInResult>; // optional, for the code step
+declare function sendNewCode(): Promise<SignInResult>; // optional, for the code step
 declare function goToApp(): void;
 
 export function SignInPage() {
@@ -1996,7 +1999,16 @@ export function SignInPage() {
       brand={brand}
       heading="Sign in"
       description="Continue to Acme Console."
-      form={<SignInForm identify={lookUp} verify={check} onSignedIn={goToApp} nouns={{ surface: "Acme Console" }} />}
+      form={
+        <SignInForm
+          identify={lookUp}
+          verify={check}
+          verifyCode={checkCode}
+          resendCode={sendNewCode}
+          onSignedIn={goToApp}
+          nouns={{ surface: "Acme Console" }}
+        />
+      }
     />
   );
 }
@@ -2005,13 +2017,22 @@ export function SignInPage() {
 Props:
 
 - `identify(identifier)` and `verify(secret)`: each resolves to a
-  `SignInResult`, `{ status: "ok" }` or `{ status: SignInFailure }`, where
-  `SignInFailure` is `"credential"`, `"notFound"`, `"rateLimited"`,
-  `"locked"`, `"network"` or `"unavailable"`. The union is closed. `identify`
-  receives the identifier trimmed. A handler that throws, or answers anything
-  outside the union, reads as `unavailable`.
-- `onSignedIn()`: called once after `verify` answers `ok`. The form does not
-  navigate, set a cookie or redirect.
+  `SignInResult`, `{ status: "ok" }`, `{ status: "needsCode" }` or
+  `{ status: SignInFailure }`, where `SignInFailure` is `"credential"`,
+  `"notFound"`, `"rateLimited"`, `"locked"`, `"network"` or `"unavailable"`.
+  The union is closed. `identify` receives the identifier trimmed. A handler
+  that throws, or answers anything outside the union, reads as `unavailable`.
+- `verifyCode(code)` (optional): checks the one-time code on the code step and
+  resolves to a `SignInResult`. It receives the code trimmed.
+- `resendCode()` (optional): sends a new code and resolves to a `SignInResult`.
+  Without it the code step has no resend control. Any cooldown is the
+  caller's: answer `rateLimited`.
+- `unavailable` (optional): shows `front-door.unavailable.notice` in the
+  form's alert from the first render, disables the submit and resend buttons,
+  and calls no handler, while the form stays on screen. Pair it with
+  `AuthView`'s `isDisabled`.
+- `onSignedIn()`: called once after `verify` or `verifyCode` answers `ok`. The
+  form does not navigate, set a cookie or redirect.
 - `nouns` (optional): the nouns of the shipped wording. Pass `surface`, which
   the network notice names; every id the form shows is resolved on each render
   through `resolveFrontDoorCopy`, so an incomplete set throws a `RenderError`
@@ -2026,27 +2047,45 @@ identifier kept and the password cleared. There is no Back control inside the
 card. A `verify` answer of `ok` calls `onSignedIn` once and the submit button
 stays pending.
 
+The code step is a second step after a correct password, not a first factor.
+It shows only when `verify` answers `needsCode` and `verifyCode` is given:
+`front-door.code.description`, a code field (`front-door.code.label`,
+`autocomplete="one-time-code"`), the `front-door.code.primary` submit, a
+`front-door.code.secondary` resend button when `resendCode` is given, and the
+same `front-door.password.secondary` button, which returns to the identifier
+step with the identifier kept and the password and code cleared. A
+`verifyCode` answer of `ok` calls `onSignedIn` once and the submit button stays
+pending. A resend that answers `ok` clears the code and its inline error; a
+failed one shows in the alert and keeps the step and the typed code. A
+`needsCode` from `identify` or `verifyCode`, or from `verify` without
+`verifyCode`, reads as `unavailable`, so the form never shows a step it cannot
+finish. Each step change moves focus to the new step's field.
+
 Where each failure shows, on the step it happened in:
 
 | Result | Where | Copy id |
 | --- | --- | --- |
 | empty identifier | inline on the field | `front-door.identifier-required.notice` |
 | empty password | inline on the field | `front-door.password-required.notice` |
+| empty code | inline on the field | `front-door.code-required.notice` |
 | `credential` or `notFound`, identifier step | inline on the field | `front-door.identifier-not-found.notice` |
 | `credential` or `notFound`, password step | inline on the field | `front-door.password.notice` |
+| `credential` or `notFound`, code step | inline on the field | `front-door.code.notice` |
 | `rateLimited` | the form's one `role="alert"` | `front-door.rate-limited.notice` |
 | `locked` | the form's one `role="alert"` | `front-door.locked.notice` |
 | `network` | the form's one `role="alert"` | `front-door.network.notice` |
-| `unavailable`, a throw, or an unknown answer | the form's one `role="alert"` | `front-door.unavailable.notice` |
+| `unavailable`, a stray `needsCode`, a throw, an unknown answer, or the `unavailable` prop | the form's one `role="alert"` | `front-door.unavailable.notice` |
 
 Nothing is validated before a submit or on blur, and an empty submit calls no
-handler. An inline error clears when its field changes. The submit button is
-pending, never `disabled`, while a call is in flight, and a second submit is
-ignored. Each step's `<form>` is labelled with `front-door.sign-in.title` or
-`front-door.password.title`, and the form has no error summary.
+handler. An inline error clears when its field changes. The submit and resend
+buttons are pending, never `disabled`, while a call is in flight, and a second
+submit or resend is ignored. Each step's `<form>` is labelled with
+`front-door.sign-in.title`, `front-door.password.title` or
+`front-door.code.title`, and the form has no error summary.
 
 What it does not do: offer a passkey, single sign-on, sign-up or one-time-code
-first factor, show a password-reset link, or choose a return target.
+first factor, run a resend cooldown, show a password-reset link, or choose a
+return target.
 
 ### `PackReviewView`
 
