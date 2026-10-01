@@ -86,6 +86,7 @@ describe("publisher-head-lint cli", () => {
       expect(main([dir])).toBe(2);
       expect(main([dir, "--site-name", "  "])).toBe(2);
       expect(main([dir, "--site-name"])).toBe(2);
+      expect(main([dir, "--site-name", "-h"])).toBe(2);
       expect(main(["--site-name", SITE])).toBe(2);
       expect(main([dir, dir, "--site-name", SITE])).toBe(2);
       expect(main([dir, "--site-name", SITE, "--bogus"])).toBe(2);
@@ -116,6 +117,14 @@ describe("publisher-head-lint cli", () => {
       expect(main([dir, "--site-name", SITE])).toBe(1);
       expect(out).toEqual(["head-missing /docs#og:url", "head-missing /docs/intro#og:image"]);
     });
+  });
+
+  it("percent-encodes file names into routes", TIMEOUT, () => {
+    writeFileSync(join(dir, "index.html"), page("/", `${SITE} · A fictional tagline`));
+    writeFileSync(join(dir, "C#.html"), page("/C%23", `C# · ${SITE}`));
+    writeFileSync(join(dir, "a b.html"), page("/a%20b", `Spaced · ${SITE}`, { omit: "og:image" }));
+    expect(main([dir, "--site-name", SITE])).toBe(1);
+    expect(out).toEqual(["head-missing /a%20b#og:image"]);
   });
 
   it("skips symbolic links", TIMEOUT, () => {

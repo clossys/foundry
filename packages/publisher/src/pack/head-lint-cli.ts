@@ -9,7 +9,7 @@
  *
  * Every `.html` file under the directory is a page: `index.html` maps to its
  * directory's route (`index.html` is `/`, `about/index.html` is `/about`) and
- * `a.html` to `/a`. Symbolic links are skipped. Nothing is written.
+ * `a.html` to `/a` (file names are percent-encoded). Symbolic links are skipped. Nothing is written.
  *
  * Exit codes:
  *
@@ -58,7 +58,7 @@ function parseArgs(argv: string[]): ParsedArgs {
       args.help = true;
     } else if (arg === "--site-name") {
       const value = argv[index + 1];
-      if (value === undefined || value.startsWith("--")) throw new CliInputError("--site-name needs a value");
+      if (value === undefined || value.startsWith("-")) throw new CliInputError("--site-name needs a value");
       if (args.siteName !== undefined) throw new CliInputError("--site-name was given more than once");
       index += 1;
       args.siteName = value;
@@ -75,7 +75,8 @@ function parseArgs(argv: string[]): ParsedArgs {
 function routeOf(relativePath: string): string {
   const withoutExtension = relativePath.replace(/\.html$/i, "");
   const route = withoutExtension === "index" ? "" : withoutExtension.replace(/\/index$/, "");
-  return `/${route}`;
+  // Encode each segment: a file name such as `C#.html` is the route `/C%23`, not a path with a fragment.
+  return `/${route.split("/").map(encodeURIComponent).join("/")}`;
 }
 
 function collectPages(root: string, relativeDir: string, pages: RenderedHeadPage[]): void {

@@ -132,6 +132,7 @@ function parseTag(html: string, start: number): ParsedTag | undefined {
 function scanHead(html: string): HeadScan {
   const scan: HeadScan = { titles: [], metas: new Map(), canonicals: [] };
   let index = 0;
+  let templateDepth = 0;
   while (index < html.length) {
     const open = html.indexOf("<", index);
     if (open === -1) break;
@@ -147,17 +148,24 @@ function scanHead(html: string): HeadScan {
       continue;
     }
     index = tag.end;
-    if (tag.closing) {
-      if (tag.name === "head") break;
+    // A <template>'s contents are a separate fragment, not the document's head: nothing inside it counts or ends the head.
+    if (tag.name === "template") {
+      templateDepth = tag.closing ? Math.max(0, templateDepth - 1) : templateDepth + 1;
       continue;
     }
-    if (tag.name === "body") break;
+    if (tag.closing) {
+      if (tag.name === "head" && templateDepth === 0) break;
+      continue;
+    }
+    if (tag.name === "body" && templateDepth === 0) break;
     if (tag.name === "script" || tag.name === "style") {
       const closer = new RegExp(`</${tag.name}\\s*>`, "gi");
       closer.lastIndex = index;
       const found = closer.exec(html);
       if (found === null) break;
       index = found.index + found[0].length;
+    } else if (templateDepth > 0) {
+      continue;
     } else if (tag.name === "title") {
       const closer = /<\/title\s*>/gi;
       closer.lastIndex = index;

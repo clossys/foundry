@@ -152,6 +152,16 @@ describe("lintRenderedHead", () => {
       expect(lint(html)).toEqual([{ rule: "head-missing", path: "/#title" }]);
     });
 
+    it("does not count a tag inside a template, nor let one end the head", () => {
+      const inner = head({ title: `${SITE} · A fictional tagline` }).replace("<head>", "").replace(/<\/head>.*$/, "");
+      const html = `<!doctype html><html><head><meta charset="utf-8"><template><head></head><body>${inner}</body></template></head><body></body></html>`;
+      expect(rules(lint(html))).toContain("head-missing");
+      expect(lint(html)).toContainEqual({ rule: "head-missing", path: "/#title" });
+      expect(lint(html)).toContainEqual({ rule: "head-missing", path: "/#og:image" });
+      const withTemplateTitle = head().replace("</head>", `<template><title>${SITE} · Other</title></template></head>`);
+      expect(lint(withTemplateTitle)).toEqual([]);
+    });
+
     it("keys findings on the route of each page", () => {
       const findings = lintRenderedHead({
         siteName: SITE,
