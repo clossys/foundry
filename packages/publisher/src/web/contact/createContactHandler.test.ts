@@ -1993,3 +1993,217 @@ describe("createContactHandler — ports are read once", () => {
     expect(limiter.seen[0]).toBe(limiter);
   });
 });
+
+// ---------------------------------------------------------------------------
+// Lone UTF-16 surrogates
+// ---------------------------------------------------------------------------
+
+describe("createContactHandler — lone UTF-16 surrogates", () => {
+  const HIGH = "\uD800";
+  const LOW = "\uDC00";
+
+  it.each([
+    ["a lone high surrogate at the end", `Ada${HIGH}`],
+    ["a lone high surrogate before a letter", `${HIGH}da`],
+    ["a lone low surrogate at the start", `${LOW}Ada`],
+    ["a lone low surrogate in the middle", `A${LOW}da`],
+    ["a reversed pair", `${LOW}${HIGH}`],
+    ["two high surrogates in a row", `${HIGH}${HIGH}`],
+  ])("refuses %s in name as malformed, before the limiter and delivery", async (_label, name) => {
+    const { handler, delivery, limiter } = makeHandler();
+    const result = await submit(handler, { ...valid, name });
+    expect(issuesOf(result)).toStrictEqual([{ field: "name", code: "malformed" }]);
+    expect(limiter.check).not.toHaveBeenCalled();
+    expect(delivery.deliver).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ["a lone high surrogate", `Hello ${HIGH} there`],
+    ["a lone low surrogate", `Hello ${LOW} there`],
+    ["a lone surrogate on the second line", `Hello\nthere ${HIGH}`],
+  ])("refuses %s in message as malformed, before the limiter and delivery", async (_label, message) => {
+    const { handler, delivery, limiter } = makeHandler();
+    const result = await submit(handler, { ...valid, message });
+    expect(issuesOf(result)).toStrictEqual([{ field: "message", code: "malformed" }]);
+    expect(limiter.check).not.toHaveBeenCalled();
+    expect(delivery.deliver).not.toHaveBeenCalled();
+  });
+
+  it("accepts a well-formed surrogate pair in name and message and delivers it unchanged", async () => {
+    const { handler, delivery } = makeHandler();
+    expect(await submit(handler, { ...valid, name: "Ada \u{1F600}", message: "Hello \u{1F600}\nSecond line." })).toStrictEqual({ status: "accepted" });
+    const message = delivered(delivery);
+    expect(message.text).toContain("Name: Ada \u{1F600}");
+    expect(message.text).toContain("Hello \u{1F600}");
+  });
+
+  it("reports the surrogate refusal alongside other field issues, in field order, without echoing the value", async () => {
+    const { handler } = makeHandler();
+    const result = await submit(handler, { ...valid, name: `${MARKER}${HIGH}`, email: "nope", message: `${MARKER}${LOW}` });
+    expect(issuesOf(result)).toStrictEqual([
+      { field: "email", code: "malformed" },
+      { field: "name", code: "malformed" },
+      { field: "message", code: "malformed" },
+    ].sort((a, b) => ["topic", "name", "email", "phone", "message"].indexOf(a.field) - ["topic", "name", "email", "phone", "message"].indexOf(b.field)));
+    expect(JSON.stringify(result)).not.toContain(MARKER);
+  });
+
+  it("keeps control-character and too-long ahead of the surrogate check", async () => {
+    const { handler } = makeHandler({ caps: { name: 4 } });
+    const control = await submit(handler, { ...valid, name: `A\u0000${HIGH}` });
+    expect(issuesOf(control)).toStrictEqual([{ field: "name", code: "control-character" }]);
+    const long = await submit(handler, { ...valid, name: `abcde${HIGH}` });
+    expect(issuesOf(long)).toStrictEqual([{ field: "name", code: "too-long" }]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Optional timeouts on the limiter and delivery calls
+// ---------------------------------------------------------------------------
+
+describe("createContactHandler — port timeouts", () => {
+  const NEVER = (): Promise<never> => new Promise<never>(() => undefined);
+
+  async function settle<T>(promise: Promise<T>, advanceMs: number): Promise<T> {
+    await vi.advanceTimersByTimeAsync(advanceMs);
+    return promise;
+  }
+
+  it("answers unavailable (limiter-timeout) when the limiter never settles, and never delivers", { timeout: 5000 }, async () => {
+    vi.useFakeTimers();
+    try {
+      const onUnavailable = vi.fn();
+      const limiter = { check: vi.fn((_key: string) => NEVER() as unknown as Promise<boolean>) };
+      const { handler, delivery } = makeHandler({ limiter, limiterTimeoutMs: 50, onUnavailable });
+      const pending = submit(handler, valid);
+      expect(await settle(pending, 50)).toStrictEqual({ status: "unavailable" });
+      expect(onUnavailable).toHaveBeenCalledExactlyOnceWith("limiter-timeout");
+      expect(limiter.check).toHaveBeenCalledTimes(1);
+      expect(delivery.deliver).not.toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("answers unavailable (delivery-timeout) when delivery never settles, calling deliver once", { timeout: 5000 }, async () => {
+    vi.useFakeTimers();
+    try {
+      const onUnavailable = vi.fn();
+      const delivery = { channel: "email" as const, deliver: vi.fn((_message: ContactOutboundMessage) => NEVER()) };
+      const { handler } = makeHandler({ delivery, deliveryTimeoutMs: 50, onUnavailable });
+      const pending = submit(handler, valid);
+      expect(await settle(pending, 50)).toStrictEqual({ status: "unavailable" });
+      expect(onUnavailable).toHaveBeenCalledExactlyOnceWith("delivery-timeout");
+      expect(delivery.deliver).toHaveBeenCalledTimes(1);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("settles at the configured bound and not before", { timeout: 5000 }, async () => {
+    vi.useFakeTimers();
+    try {
+      const limiter = { check: vi.fn((_key: string) => NEVER() as unknown as Promise<boolean>) };
+      const { handler } = makeHandler({ limiter, limiterTimeoutMs: 50 });
+      let result: ContactResult | undefined;
+      void submit(handler, valid).then((value) => {
+        result = value;
+      });
+      await vi.advanceTimersByTimeAsync(49);
+      expect(result).toBeUndefined();
+      await vi.advanceTimersByTimeAsync(1);
+      expect(result).toStrictEqual({ status: "unavailable" });
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("ignores a limiter answer that arrives after the timeout: no delivery follows", { timeout: 5000 }, async () => {
+    vi.useFakeTimers();
+    try {
+      let release: (answer: boolean) => void = () => undefined;
+      const limiter = { check: vi.fn((_key: string) => new Promise<boolean>((resolve) => (release = resolve))) };
+      const { handler, delivery } = makeHandler({ limiter, limiterTimeoutMs: 50 });
+      expect(await settle(submit(handler, valid), 50)).toStrictEqual({ status: "unavailable" });
+      release(true);
+      await vi.advanceTimersByTimeAsync(1000);
+      expect(delivery.deliver).not.toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("does not surface a delivery rejection that arrives after the timeout", { timeout: 5000 }, async () => {
+    vi.useFakeTimers();
+    try {
+      let fail: (error: Error) => void = () => undefined;
+      const delivery = { channel: "email" as const, deliver: vi.fn((_message: ContactOutboundMessage) => new Promise<never>((_resolve, reject) => (fail = reject))) };
+      const { handler } = makeHandler({ delivery, deliveryTimeoutMs: 50 });
+      expect(await settle(submit(handler, valid), 50)).toStrictEqual({ status: "unavailable" });
+      fail(new Error(MARKER));
+      await vi.advanceTimersByTimeAsync(1000);
+      // An unhandled rejection would fail this run; reaching here is the assertion.
+      expect(delivery.deliver).toHaveBeenCalledTimes(1);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("leaves no timer behind once the ports settle in time", { timeout: 5000 }, async () => {
+    vi.useFakeTimers();
+    try {
+      const { handler, delivery } = makeHandler({ limiterTimeoutMs: 50, deliveryTimeoutMs: 50 });
+      expect(await submit(handler, valid)).toStrictEqual({ status: "accepted" });
+      expect(delivery.deliver).toHaveBeenCalledTimes(1);
+      expect(vi.getTimerCount()).toBe(0);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("leaves no timer behind when a port throws or rejects before the timeout", { timeout: 5000 }, async () => {
+    vi.useFakeTimers();
+    try {
+      const sync = makeHandler({ limiter: { check: () => { throw new Error("down"); } } as never, limiterTimeoutMs: 50 });
+      expect(await submit(sync.handler, valid)).toStrictEqual({ status: "unavailable" });
+      const rejecting = makeHandler({ delivery: { channel: "email" as const, deliver: async () => Promise.reject(new Error("down")) }, deliveryTimeoutMs: 50 });
+      expect(await submit(rejecting.handler, valid)).toStrictEqual({ status: "unavailable" });
+      expect(vi.getTimerCount()).toBe(0);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("keeps the existing reason codes when a port fails before the timeout", { timeout: 5000 }, async () => {
+    const onUnavailable = vi.fn();
+    const limiterFailure = makeHandler({ limiter: { check: () => { throw new Error("down"); } } as never, limiterTimeoutMs: 50, onUnavailable });
+    await submit(limiterFailure.handler, valid);
+    const deliveryFailure = makeHandler({ delivery: { channel: "email" as const, deliver: async () => Promise.reject(new Error("down")) }, deliveryTimeoutMs: 50, onUnavailable });
+    await submit(deliveryFailure.handler, valid);
+    expect(onUnavailable.mock.calls).toStrictEqual([["limiter-failed"], ["delivery-failed"]]);
+  });
+
+  it.each([
+    ["zero", 0],
+    ["a negative number", -1],
+    ["a fraction", 1.5],
+    ["NaN", Number.NaN],
+    ["Infinity", Number.POSITIVE_INFINITY],
+    ["a numeric string", "50"],
+    ["null", null],
+    ["a value above the 32-bit timer ceiling", 2_147_483_648],
+  ])("refuses %s as limiterTimeoutMs and deliveryTimeoutMs at construction, naming the option and not the value", (_label, value) => {
+    expect(() => makeHandler({ limiterTimeoutMs: value as never })).toThrow(/limiterTimeoutMs must be a positive integer no greater than 2147483647/);
+    expect(() => makeHandler({ deliveryTimeoutMs: value as never })).toThrow(/deliveryTimeoutMs must be a positive integer no greater than 2147483647/);
+    try {
+      makeHandler({ limiterTimeoutMs: value as never });
+    } catch (error) {
+      expect((error as Error).message).not.toContain(String(value));
+    }
+  });
+
+  it("accepts the largest timer-safe value and an explicit undefined", () => {
+    expect(() => makeHandler({ limiterTimeoutMs: 2_147_483_647, deliveryTimeoutMs: 2_147_483_647 })).not.toThrow();
+    expect(() => makeHandler({ limiterTimeoutMs: undefined, deliveryTimeoutMs: undefined })).not.toThrow();
+  });
+});

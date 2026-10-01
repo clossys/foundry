@@ -2892,8 +2892,10 @@ const result = await handler.handle(body, { clientKey });
 `body` is whatever your framework parsed from the request; the handler reads it
 as `unknown`. `from`, `to` and `subject` come from configuration, not from
 the submission. The other config fields are `honeypotField`
-(default `"website"`), `caps`, `createMessageId` and `onUnavailable` (called
-with a reason code only). Construction throws on invalid configuration. The
+(default `"website"`), `caps`, `createMessageId`, `onUnavailable` (called
+with a reason code only), and the optional `limiterTimeoutMs` and
+`deliveryTimeoutMs` (positive integers, at most 2147483647 milliseconds; no
+timeout by default). Construction throws on invalid configuration. The
 handler reads `delivery.deliver` and `limiter.check` once, at construction, and
 calls each with its own port as `this`; reassigning either later has no effect.
 
@@ -2902,9 +2904,9 @@ calls each with its own port as `this`; reassigning either later has no effect.
 | Status | Meaning |
 | --- | --- |
 | `accepted` | The delivery port's promise resolved, or the honeypot field was filled and nothing was delivered. The two are indistinguishable to the caller. |
-| `invalid` | One or more `fields` issues, ordered `topic`, `name`, `email`, `phone`, `message`, then `submission`. Each issue is a field plus a code: `not-a-string`, `too-long`, `control-character`, `required`, `unknown-topic` (topic) or `malformed` (email, phone). The `submission` issue is `too-long` for the total cap. |
+| `invalid` | One or more `fields` issues, ordered `topic`, `name`, `email`, `phone`, `message`, then `submission`. Each issue is a field plus a code: `not-a-string`, `too-long`, `control-character`, `required`, `unknown-topic` (topic) or `malformed` (email, phone, and name or message that contain a lone UTF-16 surrogate). The `submission` issue is `too-long` for the total cap. |
 | `rate-limited` | The limiter answered `false`. |
-| `unavailable` | The handler could not proceed: invalid client key, the limiter threw, rejected or answered a non-boolean, message id generation failed, delivery threw or rejected, or something else threw unexpectedly. The reason goes to `onUnavailable`, not to the client. |
+| `unavailable` | The handler could not proceed: invalid client key, the limiter threw, rejected or answered a non-boolean, the limiter or delivery did not settle within its timeout, message id generation failed, delivery threw or rejected, or something else threw unexpectedly. The reason goes to `onUnavailable`, not to the client. |
 
 Results carry codes only: no English text, and no part of the input is echoed
 back. Mapping codes to words belongs to your rendering layer. Length caps
@@ -2925,17 +2927,32 @@ ends the call skips the rest:
    `invalid` with no limiter call, so correcting a typo does not use up the
    allowance.
 4. Limiter: `check(clientKey)` is awaited once. `true` continues, `false`
-   resolves `rate-limited`, and a throw, rejection or non-boolean resolves
-   `unavailable`.
+   resolves `rate-limited`, and a throw, rejection, non-boolean or a call that
+   has not settled within `limiterTimeoutMs` resolves `unavailable`.
 5. Delivery: the outbound message is built and `deliver` is awaited once. A
-   resolve is `accepted`; a throw or rejection is `unavailable`. There is no
-   retry, and the limiter use is not refunded.
+   resolve is `accepted`; a throw, a rejection or a call that has not settled
+   within `deliveryTimeoutMs` is `unavailable`. There is no retry, and the
+   limiter use is not refunded.
 
 The outbound message carries a text body and an escaped HTML body. Name, email,
 phone, topic and message appear only in those two bodies, and the submitted
 email is the sole `replyTo`. Control
 characters are refused in every field, except that `message` may contain tab,
-line feed and carriage return; single-line fields also refuse U+2028 and U+2029.
+line feed and carriage return; single-line fields also refuse U+2028 and U+2029. `name` and `message` also
+refuse a lone UTF-16 surrogate as `malformed`, since it cannot be encoded in the
+notification; a well-formed pair, such as an emoji, is accepted.
+
+### Timeouts
+
+With no timeout configured, `handle()` waits as long as the limiter or delivery
+port takes. `limiterTimeoutMs` and `deliveryTimeoutMs` bound each call
+separately. When a call has not settled in time, `handle()` resolves
+`unavailable` with the reason `limiter-timeout` or `delivery-timeout`, and an
+answer or rejection that arrives later is discarded. The handler does not cancel
+the call. A timed-out limiter call delivers nothing. A timed-out delivery may
+still complete, so its outcome is unknown, and a client that submits again can
+produce a second message. If your delivery port accepts an abort signal or has
+its own timeout, set that as well.
 
 ### Notification email
 
@@ -3023,6 +3040,13 @@ It does not provide:
   process (`limit`, `windowMs`, an injected `now`, and `maxKeys`, default
   10 000), so several instances or serverless invocations each hold their own
   window. Inject a shared `ContactRateLimiter` for those deployments.
+- A limiter that keeps serving new clients when its store is full. Once
+  `createMemoryRateLimiter` holds `maxKeys` keys that still have a live window,
+  it answers `false` for every new key, so `handle()` resolves `rate-limited`
+  for new clients until some window ends. Keys already in the store keep their
+  own limit. A flood of distinct client keys can therefore lock new clients out
+  for up to `windowMs`; derive the client key from something a client cannot
+  vary freely, or inject a shared limiter.
 - A check on the caller's client key. The handler does not verify that it
   identifies a real client, so a key taken from a spoofable header gives a
   spoofable limit.
