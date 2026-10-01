@@ -65,8 +65,8 @@ export interface SealFinding {
 
 export interface CheckSealEvidenceOptions {
   map: PublicationMap;
-  /** When given, the evidence's own `itemId` must equal it. Without it, the evidence only has to name some item. */
-  itemId?: string;
+  /** The item being sealed. Required: the evidence's own `itemId` must equal it, and a missing or empty one is refused. */
+  itemId: string;
   /** ISO 8601 UTC instant the check is made at. */
   now: string;
 }
@@ -83,7 +83,8 @@ export interface SealWebsiteInput {
 }
 
 export type SealWebsiteResult =
-  | { ok: true; manifest: PackManifest; ledger: Ledger; entryId: string }
+  /** `resumed` is true when the ledger already held this seal's identical entry (an interrupted run) and only the manifest was finished; the ledger is then returned as given. */
+  | { ok: true; manifest: PackManifest; ledger: Ledger; entryId: string; resumed: boolean }
   | { ok: false; findings: readonly SealFinding[] };
 
 const COMMIT_RE = /^[0-9a-f]{40}$/;
@@ -116,16 +117,12 @@ function parseInstant(value: unknown): number | undefined {
   return Number.isFinite(ms) ? ms : undefined;
 }
 
-/** True when `value` is a real ISO 8601 UTC instant (`2026-09-30T12:00:00Z`, optional fraction). */
-export function isSealInstant(value: unknown): boolean {
-  return parseInstant(value) !== undefined;
-}
-
 function isHttpsUrl(value: unknown): boolean {
   if (typeof value !== "string" || value.length === 0) return false;
   try {
     const url = new URL(value);
-    return url.protocol === "https:" && url.hostname.length > 0;
+    // Credentials in the URL would reach the ledger `url` and the manifest `publishedTo`.
+    return url.protocol === "https:" && url.hostname.length > 0 && url.username === "" && url.password === "";
   } catch {
     return false;
   }
@@ -156,6 +153,7 @@ export function checkSealEvidence(evidence: unknown, options: CheckSealEvidenceO
 function checkEvidence(evidence: unknown, options: CheckSealEvidenceOptions | undefined, add: (rule: string, path: string) => void): void {
   const nowMs = parseInstant(options?.now);
   if (nowMs === undefined) add("now-invalid", "now");
+  if (!isNonEmptyString(options?.itemId)) add("item-id-invalid", "itemId");
 
   const map = options?.map;
   let mappedPaths: string[] = [];
@@ -174,7 +172,7 @@ function checkEvidence(evidence: unknown, options: CheckSealEvidenceOptions | un
   if (evidence.schemaVersion !== 1) add("schema-version", "schemaVersion");
 
   if (!isNonEmptyString(evidence.itemId)) add("evidence-item-shape", "itemId");
-  else if (options?.itemId !== undefined && evidence.itemId !== options.itemId) add("evidence-item-mismatch", "itemId");
+  else if (isNonEmptyString(options?.itemId) && evidence.itemId !== options.itemId) add("evidence-item-mismatch", "itemId");
 
   const commit = evidence.commit;
   if (typeof commit !== "string" || !COMMIT_RE.test(commit)) add("commit-shape", "commit");
@@ -247,6 +245,20 @@ function packFindingsClean(manifest: unknown): boolean {
 }
 
 /**
+ * True when `existing` is the entry a seal on this id, url and strategy revision would have recorded at some
+ * earlier instant: not after `nowMs`, and not before the evidence was observed. The second bound is what keeps
+ * a hand-added entry from backdating the `verifiedAt` the rerun copies into the manifest.
+ */
+function isIdenticalEntry(existing: PublicationEntry, expected: { id: string; url: string; strategyRevision: string }, nowMs: number | undefined, observedMs: number | undefined): boolean {
+  const recordedMs = parseInstant(existing.publishedAt);
+  if (recordedMs === undefined || nowMs === undefined || observedMs === undefined || recordedMs > nowMs || recordedMs < observedMs) return false;
+  const wanted: PublicationEntry = { id: expected.id, publishedAt: existing.publishedAt, channel: "web", url: expected.url, strategyRevision: expected.strategyRevision, factCitations: [] };
+  // Key order is not part of the entry: a hand-formatted ledger is still the same entry.
+  const canonical = (entry: PublicationEntry): string => JSON.stringify(Object.entries(entry).sort(([left], [right]) => (left < right ? -1 : left > right ? 1 : 0)));
+  return canonical(existing) === canonical(wanted);
+}
+
+/**
  * Seals a website pack item. Pure: nothing passed in is mutated, and a
  * refusal returns findings only, never a partial manifest or ledger.
  *
@@ -257,7 +269,11 @@ function packFindingsClean(manifest: unknown): boolean {
  * commit>`) is not already in the ledger (`seal-already-recorded`). On accept
  * it returns a new manifest whose item is `published` with `verifiedAt` set to
  * `now` and `publishedTo` set to the production URL, and a ledger grown by
- * `appendEntry` with one `web` entry.
+ * `appendEntry` with one `web` entry. An entry id already in the ledger is
+ * finished rather than refused (`resumed: true`, ledger returned unchanged,
+ * `verifiedAt` the entry's own `publishedAt`) only when the entry is exactly
+ * the one this evidence would record, recorded between the evidence's
+ * `observedAt` and `now`, and the item is still `kept`.
  */
 export function sealWebsite(input: SealWebsiteInput): SealWebsiteResult {
   const findings: SealFinding[] = [];
@@ -297,21 +313,33 @@ function seal(input: SealWebsiteInput, findings: SealFinding[]): SealWebsiteResu
   const delivery = isPlainObject(evidence) && isPlainObject(evidence.delivery) ? evidence.delivery : undefined;
   const validCommit = typeof commit === "string" && COMMIT_RE.test(commit) ? commit : undefined;
   const entryId = validCommit !== undefined && typeof itemId === "string" ? `website-${itemId}-${validCommit.slice(0, 12)}` : undefined;
-  if (entryId !== undefined && ledgerOk && ledger.some((existing) => existing.id === entryId)) add("seal-already-recorded", "ledger");
+  const productionUrl = typeof delivery?.productionUrl === "string" ? delivery.productionUrl : undefined;
 
-  if (findings.length > 0 || target === undefined || entryId === undefined || typeof delivery?.productionUrl !== "string") return undefined;
+  // An entry already in the ledger is finished, not refused, only when it is exactly the one this evidence would record and the item is still kept.
+  let recorded: PublicationEntry | undefined;
+  if (entryId !== undefined && ledgerOk) {
+    const existing = ledger.find((candidate) => candidate.id === entryId);
+    if (existing !== undefined) {
+      if (target !== undefined && productionUrl !== undefined && isIdenticalEntry(existing, { id: entryId, url: productionUrl, strategyRevision }, parseInstant(now), isPlainObject(evidence) ? parseInstant(evidence.observedAt) : undefined)) recorded = existing;
+      else add("seal-already-recorded", "ledger");
+    }
+  }
 
-  const productionUrl = delivery.productionUrl;
+  if (findings.length > 0 || target === undefined || entryId === undefined || productionUrl === undefined) return undefined;
+
+  const verifiedAt = recorded?.publishedAt ?? now;
   const sealedManifest: PackManifest = {
     ...manifest,
     items: manifest.items.map((candidate): PackItem =>
-      candidate.id === itemId ? { ...structuredClone(candidate), status: "published", verifiedAt: now, publishedTo: [productionUrl] } : structuredClone(candidate),
+      candidate.id === itemId ? { ...structuredClone(candidate), status: "published", verifiedAt, publishedTo: [productionUrl] } : structuredClone(candidate),
     ),
   };
   if (!packFindingsClean(sealedManifest)) {
     add("manifest-invalid", "manifest");
     return undefined;
   }
+
+  if (recorded !== undefined) return { ok: true, manifest: sealedManifest, ledger, entryId, resumed: true };
 
   const entry: PublicationEntry = { id: entryId, publishedAt: now, channel: "web", url: productionUrl, strategyRevision, factCitations: [] };
   let grown: Ledger;
@@ -321,5 +349,5 @@ function seal(input: SealWebsiteInput, findings: SealFinding[]): SealWebsiteResu
     add("ledger-entry-invalid", "ledger");
     return undefined;
   }
-  return { ok: true, manifest: sealedManifest, ledger: grown, entryId };
+  return { ok: true, manifest: sealedManifest, ledger: grown, entryId, resumed: false };
 }

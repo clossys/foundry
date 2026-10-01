@@ -21,6 +21,7 @@ const publisherOmissionRow = ({ rejected = [], web = "imports" } = {}) => ({
 const bouncerExports = [
   "@clossys/bouncer",
   "@clossys/bouncer/agent",
+  "@clossys/bouncer/gate",
   "@clossys/bouncer/providers/clerk",
   "@clossys/bouncer/providers/clerk/web",
   "@clossys/bouncer/providers/clerk/web/client",

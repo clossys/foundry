@@ -111,6 +111,31 @@ export function resolveCanonicalSiteOrigin(
   return origin;
 }
 
+// -------------------------------------------------------------- pack review
+
+/**
+ * Whether the pack-review route may be served for a target. It is an
+ * allow-list: only `development` and `test` pass. `production` and `preview`
+ * do not (a preview deployment has a public address), and neither does any
+ * value this function does not know, so a new target is closed until it is
+ * listed here. The route reads no record and builds no markup before this
+ * returns `true`.
+ */
+export function packReviewAvailable(target: SiteTarget): boolean {
+  return target === "development" || target === "test";
+}
+
+/**
+ * The same-site address of a route, or of a route pinned to one forced state
+ * (`?preview=<state>`, which only a non-production target reads). Both parts
+ * come from the template's own route list and state list, never from the
+ * request; the index builder has already refused anything but a plain route
+ * and a plain slug.
+ */
+export function packReviewHref(route: string, state?: string): string {
+  return state === undefined ? route : `${route}?preview=${state}`;
+}
+
 // ----------------------------------------------------------- robots, sitemap
 
 /** The `robots` route's result: assignable to Next's `MetadataRoute.Robots`, and it imports nothing from `next`. */

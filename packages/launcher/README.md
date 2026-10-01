@@ -337,7 +337,7 @@ launcher-apply-plan plan
 launcher-apply-plan materialize --repo ./site-checkout
 launcher-apply-plan verify --repo ./site-checkout
 launcher-apply-plan status --repo ./site-checkout
-launcher-apply-plan body --repo <id> --task-record 12
+launcher-apply-plan body --repo "<id>" --task-record 12
 launcher-apply-plan snapshot --request package-request.json
 ```
 
@@ -402,7 +402,7 @@ Exit codes preserve the ternary:
 | `bundleDigest()` | The bundle digest an approval binds: `canonicalDigest()` of the plan digest and, sorted by id, the id and change-set digest of each repository that has a change set. Nothing else. |
 | `validateRepositoryChangeSet()` / `validateApplyBundle()` | Validation of a change set and a bundle against the shared change-set and bundle contracts, including their code rules (C1-C16 for a change set: references, allow-list and case-insensitive path rules, the ledger, the digest, only the ledger and lockfile derived, canonical order, each item's writes matching it -- discovery links, the skills manifest, the pointer files and the setup templates included -- a pin-starter in devDependencies and at most once, phase, a complete setup set, the release-age exemption's surface and scope, the root entries a Controller profile needs, no skill written through a symbolic link, every refusal at a path or key its item binds, every whole file changed only as its act's write kind allows (none deletes), and each planItem derived from the repository id and package name; A1-A7 for a bundle: unique ids, the digest, verdicts that are the worst of their checks, the authorization-mismatch and authorization-absent checks, no state or binding in a report bundle, and in a planned bundle a state only where all nine checks passed and a binding exactly where V3 passed). Unknown fields are refused; no reason echoes a value. |
 | `wouldViolateRootEntries()` / `isRootEntryName()` | Whether the root names some paths introduce (each path's first segment) would fail a Controller repository profile's closed root vocabulary: `satisfied` when the profile has no vocabulary Controller checks (schema version 1 or 2, or an empty `rootEntries`) or declares every name allowed or required; `violated`, with the undeclared and the prohibited names, sorted; `indeterminate` (`root-vocabulary-unknown`) for anything Controller could not read as a root vocabulary. Reads only `schemaVersion` and `rootEntries`, by the rules Controller's README states; pure. `isRootEntryName()` is Controller's rule for one direct-child name. |
-| `validateInstalledLedger()` / `readInstalledLedger()` / `ledgerSuccession()` / `serializeInstalledLedger()` / `renderInstalledLedger()` | The installed-state ledger (`clossys/.state/installed.json`): validation against the shared ledger contract and its code rules L1-L10 (history, each generation's approval binding, rows naming history, owned paths and link modes, keys matching packages, no act twice, canonical order, root entries in one Controller profile among fixed names, id-token roles in skill paths, and derived planItems); the contract's succession rules for a pull request's head ledger against its base's, each given as its exact bytes, a `Uint8Array` (both must be exactly canonical; then unchanged, or one next generation keeping the base's history, and an admitted generation installing exactly what the setup deferred and changing nothing else), reporting whether a next generation was proved `admitted` or only claims an approval (`approval-claimed`); the exact bytes of a valid ledger; a strict read of a ledger from its bytes, also a `Uint8Array` (null unless it is a `Uint8Array`, valid and exactly canonical -- decoded with the same strict, BOM- and invalid-UTF-8-refusing reader the plan and brief contracts use, never a caller's own decode); and the bytes of the next generation a change set writes over the previous ledger, under the contract's RENDER section (each deferred row takes its identity from the plan's package acts, `LedgerPackageIdentity`), refusing a set computed from another generation or for another repository, and an apply set that would adopt a file. A valid ledger is well formed, not trusted: see `trustInstalledLedger()`. |
+| `validateInstalledLedger()` / `readInstalledLedger()` / `ledgerSuccession()` / `serializeInstalledLedger()` / `renderInstalledLedger()` | The installed-state ledger (`clossys/.state/installed.json`): validation against the shared ledger contract and its code rules L1-L10 (history, each generation's approval binding, rows naming history, owned paths and link modes, keys matching packages, no act twice, canonical order, root entries in one Controller profile among fixed names, id-token roles in skill paths, and derived planItems); the contract's succession rules for a pull request's head ledger against its base's, each given as its exact bytes, a `Uint8Array` (both must be exactly canonical; then unchanged, or one next generation keeping the base's history, and an admitted generation installing exactly what the setup deferred and changing nothing else, except that an apply set may add the one guide row, for the `AGENTS.md` file inside `clossys/`, with the guide's digest), reporting whether a next generation was proved `admitted` or only claims an approval (`approval-claimed`); the exact bytes of a valid ledger; a strict read of a ledger from its bytes, also a `Uint8Array` (null unless it is a `Uint8Array`, valid and exactly canonical -- decoded with the same strict, BOM- and invalid-UTF-8-refusing reader the plan and brief contracts use, never a caller's own decode); and the bytes of the next generation a change set writes over the previous ledger, under the contract's RENDER section (each deferred row takes its identity from the plan's package acts, `LedgerPackageIdentity`), refusing a set computed from another generation or for another repository, and an apply set that would adopt a file. A valid ledger is well formed, not trusted: see `trustInstalledLedger()`. |
 | `storeChangeSet()` / `storeApplyBundle()` / `readStoredChangeSet()` / `readStoredApplyBundle()` / `CHANGE_SET_STORE_REL` / `BUNDLE_STORE_REL` | The hub's content-addressed stores under `clossys/.state/apply/change-sets/` and `clossys/.state/apply/bundles/`, one file per digest named by its 64 hex digits: a write validates first and does nothing when the file already holds the same bytes; a change set is append-only and different bytes under its name are refused, while a bundle's digest excludes its authorization, clock and verdicts, so storing a bundle under a digest that already names a file atomically replaces that one file with the newest computation (superseded computations are not recorded); a read is strict, validated, and returns the document only when its recomputed digest matches its name, else null. A digest argument that is not `sha256:` and 64 lowercase hex digits is refused before any path is built. A stored file's recomputed digest proves its integrity, not its provenance: anyone who can write the hub directory can add a set that verifies. Every store directory segment down to `change-sets/` or `bundles/` must be a real directory; a symbolic link anywhere in that chain is refused rather than followed, and a filesystem error other than a missing directory or file is rethrown naming only the operation and its error code, never a path. |
 | `CloneMissingOutcome` / `DoctorCheckHost` / `DoctorReport` / `DoctorStepId` / `DoctorStepResult` / `CloudBootstrapCheck` / `CloudBootstrapReport` / `ExternalInventoryDeclaration` / `InventoryDriftReport` / `DiscoveredHost` / `HostRecord` / `BudgetPreference` / `HostModelProfile` / `HostTierMapping` / `ModelResolution` / `PreferencesDocument` / `ReasoningTier` / `SupportedHost` / `AdvisorPlan` / `ApplyBriefResult` / `BlockerKind` / `EngagementBrief` / `EngagementBriefRole` / `EngagementContext` / `EngagementContextField` / `EngagementContextFieldId` / `GoalDirection` / `PlanBlocker` / `PlanDecision` / `PlanKit` / `PlanPackageAct` / `PlanStaffing` / `ValidationResult` / `PlanApplyBundleInputs` / `PlanApplyBundleResult` / `RepositoryObservation` / `SkippedRepositoryObservation` / `BundleDigestEntry` / `ApplyBundle` / `ApplyBundleRepository` / `ApplyCheck` / `ApplyCheckId` / `ChangeSetDeferral` / `ChangeSetItem` / `ChangeSetPhase` / `ChangeSetRefusal` / `CheckVerdict` / `ContentDigest` / `DependencyPlacement` / `DerivedFileChange` / `FileChange` / `KeyChange` / `LedgerInvariant` / `LockfileName` / `PackageInvariant` / `PackageManagerKind` / `PinnedPackage` / `RefusalReason` / `ReleaseAgeSurfaceKind` / `RepositoryChangeSet` / `RepositoryVisibility` / `WholeFileChange` / `ApprovalBinding` / `DiscoveryRoot` / `ExemptionSurfaceKind` / `WriteRecordSource` / `InstalledLedger` / `LedgerSuccession` / `LedgerViolation` / `RepositoryProfileObservation` / `RootEntryDeclaration` / `RootEntriesVerdict` | Typed contracts for the sections above. |
 
@@ -731,7 +731,16 @@ in this package).
   of the whole file, like any other whole file, with no marker inside it: an
   existing guide file the ledger does not record is refused as
   `unowned-existing`, and only a setup set adopts one whose bytes are already
-  exactly the guide. `verify` compares the head's bytes with the set's digest
+  exactly the guide. A repository set up before the guide existed has neither
+  a ledger row nor a file there, so an apply set adds the guide. The planner
+  adds it only where the trusted ledger has no row for it and nothing, file or
+  directory, is at its path in any letter case. Admission accepts that one
+  add and no other only where the setup set wrote no guide and the base tree
+  at the set's base commit holds nothing at its path in any letter case. The
+  ledger's succession rule S3 reads the two ledgers, not the tree: it accepts
+  the one new row only where the base ledger has none at that path, with mode
+  `100644` and the digest of `AGENTS_GUIDE_TEXT` as its `after`.
+  `verify` compares the head's bytes with the set's digest
   and with `verifyAgentsGuide()`; any difference is `diverged`, and `status`
   reports it as `agents-guide-mismatch`, printing only that token and the pull
   request number, never file text. The repository's own root `AGENTS.md` and
@@ -1058,8 +1067,9 @@ here reads a ledger from a repository: the caller hands its bytes in.
   when its recomputed digest matches its name.
 - The succession rules compare what two ledgers claim, not the files: an
   admitted generation must install exactly the packages its setup deferred
-  and change no other row, but whether the pull request's tree matches its
-  ledger is a separate check.
+  and change no other row (an apply set may also add the one guide row, for
+  the `AGENTS.md` file inside `clossys/`, with the guide's digest), but whether the pull request's
+  tree matches its ledger is a separate check.
 - For a reader without the hub, an `approved` head generation is an
   unauthenticated claim, never an admission or a pass: a pull request
   could relabel an admitted generation `approved` to escape the admission
@@ -1105,8 +1115,10 @@ changes one keeps the dry tree's V9, and is not `planned` without it). An apply
 set names the bundle that will be recorded in the ledger, and admission needs
 that bundle stored, so the first run after a setup set merges stores it with
 V3 `indeterminate` (`apply-bundle-unrecorded`) and the next run admits it. The
-digests, the change sets and the sheet, apart from its `Mode:` line, are the
-same as in report mode.
+digests and the change sets are the same as in report mode. So is the sheet,
+apart from its `Mode:` line and, under `Checks not satisfied`, the V3 row of a
+repository the hub refuses (and the V9 row of a set that changes a lockfile, when
+the dry tree ran no provenance check), which only planned mode adds.
 
 It then stores the change sets and the bundle under `clossys/.state/apply/`,
 the only place it writes, and prints the sheet. Over unchanged inputs and an
@@ -1198,7 +1210,11 @@ sets.
   approval, only when all of the following hold: it has the same plan digest
   and the approving decision is still the latest; its package acts equal the
   setup set's by plan item, it defers nothing, has the same `producer`, and
-  every whole-file entry is a no-op; and the base's trusted ledger ends with
+  every whole-file entry is a no-op except the Launcher guide's add (the
+  `agents-guide` item and its file, before null and after the guide's digest,
+  only where the setup set wrote no guide and the base tree at the set's base
+  commit holds nothing at its path in any letter case); and the base's
+  trusted ledger ends with
   that setup set, bound `approved` to the same subject, with every byte the
   setup set wrote present in the base by content, so a squash or rebase merge
   is admitted. The setup set must itself be a member of the approved bundle,
@@ -1244,7 +1260,7 @@ hub repository's branch protection governs that.
 `renderPullRequest({ set, binding, taskRecord, supersedes? })` returns the title and body of
 the pull request for one stored change set, and `bodySha256`, which is
 `sha256:` and the hex SHA-256 of the body's UTF-8 bytes. It is a pure function
-of its three inputs (`RenderPullRequestInput`): it reads no file, runs no command and opens nothing. The
+of its inputs (`RenderPullRequestInput`: the set, the binding, the task record and the optional superseded numbers): it reads no file, runs no command and opens nothing. The
 title is exactly `set.pullRequest.title`, which must be `Clossys: apply plan `
 and the first 12 hex digits of the set's own digest.
 
@@ -1288,8 +1304,12 @@ nothing else, then records the `bodySha256` of exactly the bytes it printed as
 the set's `pullRequest.bodySha256`. Open the pull request from that output.
 
 ```bash
-launcher-apply-plan body --repo <id> --task-record 12 --supersedes 9
+launcher-apply-plan body --repo "<id>" --task-record 12 --supersedes 9
 ```
+
+`<id>` is the repository's id, `owner/name`. It is quoted in the examples because
+an unquoted `<id>` pasted into a shell is read as a redirection; replace the
+whole quoted word with the id.
 
 The approval the body shows is what the hub decides at the time of the run, as
 `materialize` decides it, from the plan committed at the hub's HEAD: it is never
@@ -1303,16 +1323,28 @@ store (`supersedes-unfounded` otherwise). Every number is digits only.
 
 A set is bound to one body. Running `body` again with the same arguments prints
 the same body and changes nothing; a run that would produce another body is
-refused as `body-bound` and prints nothing, so an approval binds exactly the
-body that was opened. Recording the hash replaces the one stored file of the
-set atomically, refuses a symbolic link, and changes nothing else in the set:
-its digest, its file name and every other member stay as they were.
+refused as `body-bound` and prints nothing, so the hash recorded for the set
+belongs to one body only; whether the pull request that was opened still carries
+that body is what `status` checks afterwards. Recording the hash replaces the one
+stored file of the set atomically, refuses a symbolic link, and changes nothing
+else in the set: its digest, its file name and every other member stay as they
+were.
+
+There is no command that undoes a binding, and no `--dry-run`. A `--task-record`
+or `--supersedes` number mistyped on a first run binds the set to that body, and
+every later run with other numbers is refused as `body-bound`; nothing in this
+package unbinds it. Check the numbers before running `body`.
+
+Hand the output to the pull request as a file, and open the pull request with
+`--body-file`, not with `--body "$(launcher-apply-plan body ...)"`: shell command
+substitution drops the final line feed, and the recorded hash covers it.
 
 Exit `0` prints the body and only the body. Exit `1` is a refusal and exit `2`
 is indeterminate or a usage error; each prints nothing on standard output and
-one line on standard error, `launcher-apply-plan body: refused (<reason>)` or
-`launcher-apply-plan body: indeterminate (<reason>)`, a fixed reason and never
-an argument, a path or any tool output.
+one line on standard error, `launcher-apply-plan body: refused (<reason>)`,
+`launcher-apply-plan body: indeterminate (<reason>)` or, for a usage error,
+`launcher-apply-plan body: usage: <the usage line>`, a fixed reason or the usage
+line and never an argument, a path or any tool output.
 
 ### Observing the pull request
 
@@ -1328,7 +1360,14 @@ writes a file, an index or any ref but one. It needs a full clone: a partial
 `partial-clone`, before any object is read, because git would fetch what such a
 clone lacks. All its git calls also run with lazy fetch off, and each has a
 30 second limit, including those of the preconditions it shares with `verify`
-except the base-commit reads made by the hub admission, which have no limit. The one
+except the base-commit reads made by the hub admission, which have no limit. A
+read of a base blob inside `verify`'s own checks (a base lockfile, for one) that
+fails or times out is taken as an absent file, so `status` can answer `diverged`
+where `indeterminate` is the truer answer. The limit reaches those shared
+reads through the environment variable `CLOSSYS_LAUNCHER_GIT_TIMEOUT_MS`, which
+`status` sets for the duration of its own checks, one `status` call at a time in
+a process; set in a shell, the same variable also limits the git calls of
+`verify` and `materialize`, which set none. The one
 ref it writes is the one `verify` writes: the fetch of the default branch into
 its remote-tracking ref (`refs/remotes/origin/<default branch>`), which also
 leaves `FETCH_HEAD` and any new objects of that branch in the clone. It runs the

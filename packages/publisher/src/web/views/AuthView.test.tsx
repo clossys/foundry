@@ -183,6 +183,67 @@ describe("AuthView", () => {
     expect(first.parentElement?.parentElement).toBe(screen.getByRole("main"));
   });
 
+  it("disabled keeps the form: the form stays in the card inside a disabled fieldset, with its typed value unchanged", () => {
+    const { container } = render(
+      <AuthView
+        brand="Acme"
+        heading="Sign in"
+        description="Welcome back."
+        isDisabled
+        form={
+          <form aria-label="Sign in form">
+            <label htmlFor="email">Email</label>
+            <input id="email" type="email" defaultValue="ada@example.com" />
+          </form>
+        }
+      />,
+    );
+    const card = container.querySelector(".rounded-control") as HTMLElement;
+    const input = screen.getByLabelText("Email") as HTMLInputElement;
+    expect(input).toBeInTheDocument();
+    const fieldset = input.closest("fieldset[disabled]") as HTMLElement;
+    expect(fieldset).not.toBeNull();
+    expect(card).toContainElement(fieldset);
+    expect(input.value).toBe("ada@example.com");
+    expect(input).toBeDisabled();
+  });
+
+  it("secondary line stays enabled: with isDisabled, the secondaryAction link is not inside the fieldset", () => {
+    const { container } = render(
+      <AuthView
+        brand="Acme"
+        heading="Sign in"
+        description="Welcome back."
+        isDisabled
+        form={<form aria-label="Sign in form"><input aria-label="Email" /></form>}
+        secondaryAction={<a href="/retry">Try again</a>}
+      />,
+    );
+    const link = screen.getByRole("link", { name: "Try again" });
+    const fieldset = container.querySelector("fieldset") as HTMLElement;
+    expect(fieldset).not.toBeNull();
+    expect(fieldset).not.toContainElement(link);
+    expect(link).toBeEnabled();
+  });
+
+  it("no wrapper by default: without isDisabled no fieldset renders and the form's root is the card's first child", () => {
+    for (const props of [{}, { isDisabled: false }]) {
+      const { container, unmount } = render(
+        <AuthView
+          brand="Acme"
+          heading="Sign in"
+          description="Welcome back."
+          form={<form aria-label="Sign in form"><input aria-label="Email" /></form>}
+          {...props}
+        />,
+      );
+      expect(container.querySelector("fieldset")).toBeNull();
+      const card = container.querySelector(".rounded-control") as HTMLElement;
+      expect(card.firstElementChild).toBe(screen.getByRole("form", { name: "Sign in form" }));
+      unmount();
+    }
+  });
+
   it("renders the footnote slot's content", () => {
     render(<AuthView brand="Acme" heading="Sign in" description="Welcome back." form={<div>form</div>} footnote="Terms apply." />);
     expect(screen.getByText("Terms apply.")).toBeInTheDocument();
