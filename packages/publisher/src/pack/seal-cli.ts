@@ -147,7 +147,7 @@ function writePair(first: { path: string; text: string }, second: { path: string
   }
 }
 
-/** Exported so `seal-cli.test.ts` can exercise the whole argv-to-exit-code contract without spawning a process. Never throws: anything that stops a run maps to 2. */
+/** Exported so the whole argv-to-exit-code contract can be exercised without spawning a process. Never throws: anything that stops a run maps to 2. */
 export function main(argv: string[]): number {
   try {
     return execute(argv);
