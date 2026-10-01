@@ -1938,6 +1938,12 @@ No theme script runs in this document, so it is pinned to the light theme
 Brand tokens are not imported here: import your brand stylesheet in the same
 global-error file that renders this component, as your root layout does.
 
+Brand fonts loaded through a framework font loader usually expose their CSS
+variables through a class that must sit on `<html>`, and brand tokens that
+reference those variables lose them when this document replaces the root
+layout. Pass that class as the optional `htmlClassName` prop; it is rendered as
+`className` on `<html>` only when it is a non-empty string.
+
 ```tsx
 "use client";
 

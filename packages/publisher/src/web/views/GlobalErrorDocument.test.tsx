@@ -44,6 +44,17 @@ describe("GlobalErrorDocument", () => {
       expect(root.style.colorScheme).toBe("light");
       expect([...root.children].map((child) => child.tagName)).toEqual(["HEAD", "BODY"]);
     });
+
+    it("puts htmlClassName on the root html as its class", () => {
+      const root = parse({ ...baseProps, htmlClassName: "font-sans font-display" }).documentElement;
+      expect(root.getAttribute("class")).toBe("font-sans font-display");
+      expect(root.classList.contains("font-display")).toBe(true);
+    });
+
+    it("renders no class on the root html when htmlClassName is omitted or empty", () => {
+      expect(parse().documentElement.hasAttribute("class")).toBe(false);
+      expect(parse({ ...baseProps, htmlClassName: "" }).documentElement.hasAttribute("class")).toBe(false);
+    });
   });
 
   describe("head", () => {
