@@ -2646,7 +2646,8 @@ the pack's `website` item can be sealed, and only on evidence that names it.
   evidence was taken. `observedAt` must be a real calendar date and time:
   `2026-09-31T00:00:00Z` is refused as a bad shape.
 - `delivery`: `{ state: "ready", deployedCommit, productionUrl }`, with an
-  `https` production URL.
+  `https` production URL that carries no username or password, so a secret
+  cannot reach the ledger `url` or the manifest `publishedTo`.
 - `pages`: one `WebsiteSealPage` per observed page, each
   `{ path, status, servedCommit, desktopDigest, mobileDigest }`, the digests
   being sha256 hex.
@@ -2656,10 +2657,11 @@ the pack's `website` item can be sealed, and only on evidence that names it.
   and `none` needs a non-empty `reason`.
 
 `checkSealEvidence(evidence, { map, now, itemId })` returns `SealFinding[]`,
-each a `rule` and a `path`, and never throws. `itemId` is optional; when
-given, the evidence's own `itemId` must equal it. It refuses when:
+each a `rule` and a `path`, and never throws. `itemId` is required: the
+evidence's own `itemId` must equal it, and a missing or empty `itemId` is
+refused as `item-id-invalid`. It refuses when:
 
-- `itemId` is missing, or differs from the item being sealed;
+- the evidence's `itemId` is missing, or differs from the item being sealed;
 - `delivery.state` is not `ready`, or `deployedCommit` differs from `commit`;
 - a path on the `PublicationMap` has no page, or a page is not status 200, or
   its `servedCommit` differs from `commit`;
@@ -2674,7 +2676,7 @@ the entry id, which is derived from the item id and the commit.
 
 `sealWebsite({ manifest, ledger, itemId, evidence, map, now, strategyRevision })`
 is pure and returns `SealWebsiteResult`: `{ ok: true, manifest, ledger, entryId }`
-or `{ ok: false, findings }`. It refuses unless the evidence is clean, `itemId`
+or `{ ok: false, findings }` (`resumed` is explained below). It refuses unless the evidence is clean, `itemId`
 is `website` and in `sealableItemIds(manifest)`, and the item is `public`
 (`item-not-website` otherwise). On accept the item
 is `published` with `verifiedAt` set to `now` and `publishedTo` set to the
@@ -2682,6 +2684,17 @@ production URL, and the ledger gains one `web` entry through `appendEntry` with
 id `website-<itemId>-<first 12 of commit>`; the inputs are not changed. Sealing
 the same commit again is refused as `seal-already-recorded`, and a refusal
 returns no manifest or ledger.
+
+One existing entry is finished instead of refused. A run stopped after its
+ledger write and before its manifest write leaves the ledger ahead of a
+manifest whose item is still `kept`. If the ledger entry is identical to the
+one this evidence would record (same id, `web` channel, url and strategy
+revision, no fact citations, and a `publishedAt` that is a real instant not
+before the evidence's `observedAt` and not after `now`) and every other check passes on the current evidence, the result
+is `{ ok: true, resumed: true }`: the ledger is returned as given and the
+manifest item is `published` with `verifiedAt` set to the entry's
+`publishedAt`. An entry that differs in any of those is
+`seal-already-recorded`, and stale evidence is still refused.
 
 The `publisher-seal` command runs it over files:
 
@@ -2693,25 +2706,42 @@ publisher-seal clossys/publisher/pack.json clossys/publisher/record.json evidenc
 It exits 0 when it sealed and wrote both files, 1 when it refused and wrote
 nothing, and 2 when it could not run: a missing or unreadable file, invalid
 JSON, a manifest, ledger, or map that is not itself valid, a manifest or
-ledger that is a symbolic link or has a second hard link, a lock held by
-another run, a file that changed while the run was deciding, a failed write, or
-bad arguments.
+ledger that is a symbolic link or has a second hard link, the manifest and
+ledger being one file under two spellings of its directory, a lock held by
+another run or one that could not be created, a file that changed while the run
+was deciding, a failed write, or bad arguments.
 
 The seal is made at the current time. There is no `--now`: a settable time
 would let a caller backdate the 24 hour evidence window, so passing it is an
 unknown flag and exits 2.
 
 Nothing is written before the gate has accepted. Then the command takes
-`<file>.seal.lock` on the manifest and the ledger (created exclusively, so a
-second run is refused instead of racing), re-reads both, and refuses if either
-changed since the gate looked. It writes each output, and a copy of the
-previous ledger, to a temp file created exclusively with the permissions of the
-file it replaces, then renames the ledger first and the manifest second. If the
-manifest rename fails, the previous ledger is renamed back and the run can be
-repeated; if that fails too, the error says the ledger was written and names
-the file that holds the previous ledger. A run removes only the temp and lock
-files it created; a lock left by a run that stopped is removed by hand once no
-run is active.
+`<name>.seal.lock` on the manifest and the ledger, created exclusively in the
+real directory of each file (the directory is resolved first, so two spellings
+of one directory, such as a symbolic-linked parent, contend for the same lock),
+re-reads both, and refuses if either changed since the gate looked. Only an
+existing lock is reported as another run holding it; any other failure to
+create the lock is reported with its own error code. It writes each output,
+and a copy of the previous ledger, to a temp file created exclusively with the
+permissions of the file it replaces, then renames the ledger first and the
+manifest second. If the manifest rename fails, the previous ledger is renamed
+back and the run can be repeated; if that fails too, the error says the ledger
+was written and names the file that holds the previous ledger.
+
+A run that is stopped between the two renames leaves the ledger ahead of the
+manifest, both lock files, and a restore copy of the previous ledger. Remove
+the two `.seal.lock` files once no run is active, then run the same command
+again with the same evidence and `--strategy-revision`. The ledger already
+holds the identical entry and the item is still `kept`, so the command leaves
+the ledger alone, writes only the manifest (its `verifiedAt` is the entry's
+`publishedAt`), prints that the entry was already recorded, and exits 0. The
+restore copy can then be deleted. If the entry differs, the run is refused as
+`seal-already-recorded` and changes nothing. A run removes only the temp and
+lock files it created.
+
+Known limit: the evidence is supplied by the caller. The commit and the host it
+names are checked against each other and against the clock, but not against an
+independent source, so a caller that supplies false evidence can still seal.
 
 ```ts
 import { checkSealEvidence } from "@clossys/publisher/pack";
