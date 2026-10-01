@@ -100,7 +100,7 @@ export type {
 export { LandingView } from "./views/index.js";
 export type { LandingViewProps } from "./views/index.js";
 export { ContactView } from "./views/index.js";
-export type { ContactViewCopy, ContactViewProps, ContactViewTopic, ContactViewValues } from "./views/index.js";
+export type { ContactViewCopy, ContactViewDevPreview, ContactViewProps, ContactViewTopic, ContactViewValues } from "./views/index.js";
 
 // Kept after the views: the share card reads Designer names newer than the views do, and a Designer that lacks the views' names must fail on those first.
 export {

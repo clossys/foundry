@@ -26,6 +26,7 @@ import {
   contactViewCopy,
   contactViewTopics,
   createMapResolver,
+  resolveDevPreview,
   resolveInitialTopic,
 } from "../templates/site/app/site-copy.js";
 
@@ -87,6 +88,61 @@ describe("resolveInitialTopic", () => {
       const result = resolveInitialTopic(param as string);
       expect(result === undefined || (CONTACT_TOPICS as readonly string[]).includes(result)).toBe(true);
     }
+  });
+});
+
+describe("resolveDevPreview", () => {
+  const STATES = ["idle", "submitting", "accepted", "invalid", "rate-limited", "unavailable"] as const;
+  const hostile: (string | readonly string[] | undefined)[] = [
+    undefined,
+    "",
+    "__proto__",
+    "constructor",
+    "ACCEPTED",
+    "Accepted",
+    " accepted",
+    "accepted ",
+    "bogus",
+    ["accepted"],
+    ["accepted", "invalid"],
+    [],
+  ];
+
+  it("refuses production for every closed value and hostile input", TIMEOUT, () => {
+    for (const param of [...STATES, ...hostile]) expect(resolveDevPreview("production", param)).toBeUndefined();
+  });
+
+  it("does not inspect the parameter on production", TIMEOUT, () => {
+    const trap = new Proxy([] as string[], {
+      get() {
+        throw new Error("inspected");
+      },
+      has() {
+        throw new Error("inspected");
+      },
+    });
+    expect(resolveDevPreview("production", trap)).toBeUndefined();
+  });
+
+  it("accepts exactly the closed values outside production", TIMEOUT, () => {
+    for (const target of ["preview", "development", "test"] as const) {
+      for (const state of STATES) expect(resolveDevPreview(target, state)).toBe(state);
+      for (const param of hostile) expect(resolveDevPreview(target, param)).toBeUndefined();
+    }
+  });
+
+  it("never throws on a non-string input", TIMEOUT, () => {
+    const odd: unknown[] = [null, 0, true, {}, [null], Symbol("fixture"), () => "accepted"];
+    for (const param of odd) expect(resolveDevPreview("preview", param as string)).toBeUndefined();
+  });
+
+  it("the page resolves it from the site target, never the environment, and the form passes it on", TIMEOUT, () => {
+    const page = readTemplate("app/contact/page.tsx");
+    expect(page).toContain("resolveDevPreview(siteTarget()");
+    expect(page).not.toContain("process.env");
+    const metadata = functionBody(page, "generateMetadata");
+    expect(metadata).not.toMatch(/preview/i);
+    expect(readTemplate("app/contact/contact-form.tsx")).toMatch(/devPreview=\{devPreview\}/);
   });
 });
 
