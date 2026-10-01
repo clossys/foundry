@@ -96,18 +96,28 @@ describe("findSecondBinders", () => {
     expect(findSecondBinders(join(dir, "apps"), brand)).toEqual([]);
   });
 
-  it("reports wildcard resets of a colour family, SCSS interpolation and uppercase names", () => {
+  it("reports wildcard resets of a colour family, SCSS interpolation", () => {
     const brand = write("brand/brand.css", ":root { --color-accent: #2a78d6; }");
     const family = write("apps/web/a.css", "@theme { --color-red-*: initial; }");
     // The SCSS loop at-rule keyword is built from parts so no literal at-sign word sits in the source.
     const loop = "@" + "each";
     const interpolated = write("apps/web/b.scss", `${loop} $k in $keys { :root { --color-#{$k}: red; } }`);
-    const upper = write("apps/web/c.css", ":root { --COLOR-Accent: red; --Color-Ink: blue; }");
     expect(findSecondBinders(join(dir, "apps"), brand)).toEqual([
       { file: family, slots: ["--color-red-*"] },
       { file: interpolated, slots: ["--color-#{$k}"] },
-      { file: upper, slots: ["--COLOR-Accent", "--Color-Ink"] },
     ]);
+  });
+
+  it("ignores a custom property that differs only by case", () => {
+    const brand = write("brand/brand.css", ":root { --color-accent: #2a78d6; }");
+    write("apps/web/a.css", ":root { --Color-Ink: blue; --COLOR-Accent: red; }");
+    expect(findSecondBinders(join(dir, "apps"), brand)).toEqual([]);
+  });
+
+  it("ignores // line comments in .postcss", () => {
+    const brand = write("brand/brand.css", ":root { --color-accent: #2a78d6; }");
+    const second = write("apps/web/a.postcss", "// --color-accent: red;\n.x { --color-ink: blue; }");
+    expect(findSecondBinders(join(dir, "apps"), brand)).toEqual([{ file: second, slots: ["--color-ink"] }]);
   });
 
   it("scans .sass, .less and .postcss stylesheets", () => {

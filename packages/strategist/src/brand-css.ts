@@ -23,7 +23,7 @@
  *   declaration, and is not collected.
  */
 
-/** Repository-relative location of the single Designer overlay stylesheet. */
+/** Location, relative to the working directory, of the single Designer overlay stylesheet. */
 export const BRAND_CSS_SEGMENTS = ["brand", "brand.css"] as const;
 
 export function extractBrandCssSlots(css: string): string[] {
@@ -132,10 +132,26 @@ function nameEnd(text: string, from: number): number {
       const next = text.charAt(i + 1);
       if (next === "" || next === "\n" || next === "\r" || next === "\u2028" || next === "\u2029") break;
       i += 2;
+      if (isHexCode(next.charCodeAt(0))) {
+        let digits = 1;
+        while (digits < 6 && isHexCode(text.charCodeAt(i))) {
+          i += 1;
+          digits += 1;
+        }
+        // One optional whitespace character ends the escape (CSS Syntax: hex escape).
+        const after = text.charAt(i);
+        if (after === " " || after === "\t" || after === "\n" || after === "\r" || after === "\f") {
+          i += after === "\r" && text.charAt(i + 1) === "\n" ? 2 : 1;
+        }
+      }
     } else if (code > 0x7f || code === DASH || isWordCode(code)) i += 1;
     else break;
   }
   return i;
+}
+
+function isHexCode(code: number): boolean {
+  return (code >= 0x30 && code <= 0x39) || (code >= 0x41 && code <= 0x46) || (code >= 0x61 && code <= 0x66);
 }
 
 function isWordCode(code: number): boolean {

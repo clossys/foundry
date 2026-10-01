@@ -693,11 +693,11 @@ generates the utilities from the CSS file's own location, so it does not
 depend on a path `@source` resolving through a pnpm symlink (step 2), and the
 consumer keeps no class list.
 
-Only the repository root (or one workspace package) declares
-`@clossys/designer`. When an application cannot resolve
-`@clossys/designer/atoms/server`, `blocks/server`, or `shell/server` from that
-dependency under pnpm, add a workspace package that depends on
-`@clossys/designer` and re-exports those entries; applications depend on that
+Only the repository root declares `@clossys/designer`. When an application
+cannot resolve `@clossys/designer/atoms/server`, `blocks/server`, or
+`shell/server` from that dependency under pnpm, add a workspace package that
+depends on `@clossys/designer` and re-exports those entries and
+the CSS entries `theme.css` and `utilities.css`; applications depend on that
 package instead. `designer-brand-check` looks for `brand/brand.css` by
 default and, when an `apps/` directory exists (or `--apps <dir>` is given),
 exits 1 for any other stylesheet under it that declares a `--color-*`

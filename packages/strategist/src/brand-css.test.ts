@@ -43,6 +43,10 @@ describe("extractBrandCssSlots", () => {
     expect(extractBrandCssSlots(css)).toEqual(["--\u00fcmlaut", "--a\\:b", "--caf\u00e9-\u30c6", "--plain_1"]);
   });
 
+  it("collects a name that ends in a hex escape and its space", () => {
+    expect(extractBrandCssSlots(":root { --a\\30 b: 1; --c\\31: 2; --d\\:e: 3; }")).toEqual(["--a\\30 b", "--c\\31", "--d\\:e"]);
+  });
+
   it("does not count a name that follows an opening parenthesis, with or without a space", () => {
     const css = [
       "@supports (--a: 1) { :root { --b: 2; } }",
