@@ -13,7 +13,8 @@ describe("constant text and verify", () => {
     expect(AGENTS_GUIDE_TEXT).toMatch(/not edit, rename or duplicate/u);
     expect(AGENTS_GUIDE_TEXT).toMatch(/carves out that namespace/u);
     for (const line of AGENTS_GUIDE_TEXT.split("\n")) {
-      expect(line, line).not.toMatch(/<!--|-->|\b(begin|end)\b/iu);
+      expect(line, line).not.toMatch(/\b(begin|end)\b/iu);
+      for (const comment of ["<!--", "--!>", "-->"]) expect(line.includes(comment), line).toBe(false);
     }
     expect(AGENTS_GUIDE_TEXT).not.toContain("\r");
     expect(AGENTS_GUIDE_TEXT.endsWith("\n")).toBe(true);
