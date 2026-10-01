@@ -339,8 +339,8 @@ export interface BrandShareCardInput {
   headline: string;
   /** A second line under the headline. */
   supporting?: string;
-  /** The image's alternative text, supplied by the caller. */
-  alt: string;
+  /** The image's alternative text. Omit to derive it from the card's visible text. */
+  alt?: string;
   /** The card's root-relative route. Default `/opengraph-image`. */
   path?: string;
   /** Brand overrides for `buildFlatTokenMap`. */
@@ -389,6 +389,16 @@ function requireBrandRoles(value: unknown): Required<BrandShareCardRoles> {
 
 const KICKER_RULE_PX = 2;
 
+/** The card's visible text in reading order, joined so no punctuation doubles. */
+function deriveAlt(parts: ReadonlyArray<string | undefined>): string {
+  let alt = "";
+  for (const part of parts) {
+    if (part === undefined) continue;
+    alt = alt === "" ? part : /[.!?:]$/.test(alt) ? `${alt} ${part}` : `${alt}. ${part}`;
+  }
+  return alt;
+}
+
 /**
  * Builds the brand share card: the site-header lockup (a plated mark beside
  * the wordmark, or the plate alone) top left, then the kicker after a rule,
@@ -405,7 +415,7 @@ export function buildBrandShareCard(input: BrandShareCardInput): ShareCard {
   const kicker = requireOptionalText(input["kicker"]);
   const headline = requireText(input["headline"]);
   const supporting = requireOptionalText(input["supporting"]);
-  const alt = requireText(input["alt"]);
+  const alt = input["alt"] === undefined ? deriveAlt([wordmark, kicker, headline, supporting]) : requireText(input["alt"]);
   const path = requirePath(input["path"]);
   const overrides = requireTokenOverrides(input["tokenOverrides"]);
   const roles = requireBrandRoles(input["roles"]);

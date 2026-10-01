@@ -337,6 +337,40 @@ describe("refusals and exports", () => {
     expect(reasonOf(() => buildBrandShareCard(input({ headline: 4 as unknown as string })))).toBe("invalid-input");
   });
 
+  describe("derived alt", () => {
+    function derived(overrides: Partial<BrandShareCardInput>): string {
+      const { alt: _alt, ...rest } = input(overrides);
+      return buildBrandShareCard(rest as BrandShareCardInput).shareCard.alt;
+    }
+
+    it("reads the visible text in order when alt is omitted", () => {
+      expect(derived({ kicker: undefined, supporting: undefined, headline: "Sign in" })).toBe("Example Studio. Sign in");
+      expect(derived({ kicker: undefined, headline: "Sign in", supporting: "Staff only" })).toBe("Example Studio. Sign in. Staff only");
+      expect(derived({})).toBe("Example Studio. Small tools. Made well, made to last. A fictional studio for tests.");
+    });
+
+    it("does not double terminal punctuation", () => {
+      expect(derived({ kicker: undefined, headline: "Ready?", supporting: "Staff only" })).toBe("Example Studio. Ready? Staff only");
+      expect(derived({ kicker: undefined, headline: "Sign in!", supporting: "Staff only" })).toBe("Example Studio. Sign in! Staff only");
+      expect(derived({ wordmark: "Example Studio.", kicker: "Note:", headline: "Sign in", supporting: undefined })).toBe("Example Studio. Note: Sign in");
+    });
+
+    it("is the headline alone without a wordmark, kicker or supporting line", () => {
+      expect(derived({ wordmark: undefined, kicker: undefined, supporting: undefined, headline: "Sign in" })).toBe("Sign in");
+    });
+  });
+
+  describe("explicit alt wins", () => {
+    it("returns a supplied alt verbatim", () => {
+      expect(buildBrandShareCard(input({ alt: "Custom" })).shareCard.alt).toBe("Custom");
+    });
+
+    it("still refuses an explicit empty or non-string alt", () => {
+      expect(reasonOf(() => buildBrandShareCard(input({ alt: "" })))).toBe("blank-text");
+      expect(reasonOf(() => buildBrandShareCard(input({ alt: 4 as unknown as string })))).toBe("invalid-input");
+    });
+  });
+
   it("refuses a displayFontFamily outside letters, digits, spaces and hyphens", () => {
     for (const displayFontFamily of ["Example;Display", "Example, serif", "Example\"", "url(x)", "", 3 as unknown as string]) {
       expect(reasonOf(() => buildBrandShareCard(input({ displayFontFamily })))).toBe("invalid-input");
