@@ -50,15 +50,15 @@ export type ShareCardErrorReason =
   | "invalid-mark-size";
 
 const REASON_MESSAGES: Record<ShareCardErrorReason, string> = {
-  "invalid-input": "buildShareCard input is not shaped as documented.",
-  "blank-text": "name, tagline and alt must be non-blank strings.",
-  "surrounding-whitespace": "name, tagline and alt must not start or end with whitespace.",
-  "control-character": "name, tagline and alt must not contain a tab, line break or other control character.",
+  "invalid-input": "The share card input is not shaped as documented.",
+  "blank-text": "A text field must be a non-blank string.",
+  "surrounding-whitespace": "A text field must not start or end with whitespace.",
+  "control-character": "A text field must not contain a tab, line break or other control character.",
   "invalid-path": "path must be a root-relative path in normal URL form with no query, fragment, or dot segment.",
   "invalid-token-override": "tokenOverrides names a token the Designer registry does not allow to be overridden.",
   "unresolvable-role": "a colour role does not resolve to a concrete #rrggbb colour.",
-  "invalid-mark-source": "mark.src must be an inline data:image/svg+xml or data:image/png;base64 URL.",
-  "invalid-mark-size": "mark.width and mark.height must be positive integers no larger than the card height.",
+  "invalid-mark-source": "The mark source must be an inline data:image/svg+xml or data:image/png;base64 URL.",
+  "invalid-mark-size": "The mark width and height must be positive integers no larger than the card height.",
 };
 
 export class ShareCardError extends Error {
@@ -390,7 +390,7 @@ function requireBrandRoles(value: unknown): Required<BrandShareCardRoles> {
 const KICKER_RULE_PX = 2;
 
 /**
- * Builds the brand share card: the front-door lockup (a plated mark beside
+ * Builds the brand share card: the site-header lockup (a plated mark beside
  * the wordmark, or the plate alone) top left, then the kicker after a rule,
  * with the headline and supporting line at the bottom. The plate, wordmark
  * size and gap are computed from Designer's published geometry; the output
@@ -443,6 +443,7 @@ export function buildBrandShareCard(input: BrandShareCardInput): ShareCard {
           justifyContent: "center",
           width: plate,
           height: plate,
+          flexShrink: 0,
           borderRadius: plate * BADGE_RADIUS_SHARE,
           backgroundColor: plateColour,
         } satisfies CSSProperties,
@@ -452,7 +453,7 @@ export function buildBrandShareCard(input: BrandShareCardInput): ShareCard {
         width: imageSide,
         height: imageSide,
         alt: "",
-        style: { display: "flex", width: imageSide, height: imageSide },
+        style: { display: "flex", width: imageSide, height: imageSide, objectFit: "contain" },
       }),
     ),
   ];
@@ -465,6 +466,11 @@ export function buildBrandShareCard(input: BrandShareCardInput): ShareCard {
           style: {
             display: "flex",
             marginLeft: gap,
+            flexShrink: 1,
+            minWidth: 0,
+            overflow: "hidden",
+            whiteSpace: "nowrap",
+            textOverflow: "ellipsis",
             fontSize: plate * LOCKUP_WORDMARK_SIZE_RATIO,
             lineHeight: 1,
             fontWeight: 700,
@@ -478,17 +484,31 @@ export function buildBrandShareCard(input: BrandShareCardInput): ShareCard {
   }
 
   const top: ReactElement[] = [
-    createElement("div", { key: "lockup", style: { display: "flex", alignItems: "center" } satisfies CSSProperties }, ...lockup),
+    createElement("div", { key: "lockup", style: { display: "flex", alignItems: "center", flexShrink: 1, minWidth: 0, maxWidth: "100%" } satisfies CSSProperties }, ...lockup),
   ];
   if (kicker !== undefined) {
     top.push(
       createElement("div", {
         key: "rule",
-        style: { display: "flex", width: KICKER_RULE_PX, height: plate, marginLeft: gap, backgroundColor: kickerColour } satisfies CSSProperties,
+        style: { display: "flex", width: KICKER_RULE_PX, height: plate, marginLeft: gap, flexShrink: 0, backgroundColor: kickerColour } satisfies CSSProperties,
       }),
       createElement(
         "div",
-        { key: "kicker", style: { display: "flex", marginLeft: gap, fontSize: 32, lineHeight: 1.2, color: kickerColour } satisfies CSSProperties },
+        {
+          key: "kicker",
+          style: {
+            display: "flex",
+            flex: 1,
+            minWidth: 0,
+            overflow: "hidden",
+            whiteSpace: "nowrap",
+            textOverflow: "ellipsis",
+            marginLeft: gap,
+            fontSize: 32,
+            lineHeight: 1.2,
+            color: kickerColour,
+          } satisfies CSSProperties,
+        },
         kicker,
       ),
     );
@@ -497,7 +517,10 @@ export function buildBrandShareCard(input: BrandShareCardInput): ShareCard {
   const bottom: ReactElement[] = [
     createElement(
       "div",
-      { key: "headline", style: { display: "flex", fontSize: 88, lineHeight: 1.1, fontWeight: 700, color: headlineColour, ...family } satisfies CSSProperties },
+      {
+        key: "headline",
+        style: { display: "block", lineClamp: 2, overflow: "hidden", fontSize: 88, lineHeight: 1.1, fontWeight: 700, color: headlineColour, ...family } satisfies CSSProperties,
+      },
       headline,
     ),
   ];
@@ -505,7 +528,10 @@ export function buildBrandShareCard(input: BrandShareCardInput): ShareCard {
     bottom.push(
       createElement(
         "div",
-        { key: "supporting", style: { display: "flex", marginTop: 24, fontSize: 40, lineHeight: 1.3, color: supportingColour } satisfies CSSProperties },
+        {
+          key: "supporting",
+          style: { display: "block", lineClamp: 2, overflow: "hidden", marginTop: 24, fontSize: 40, lineHeight: 1.3, color: supportingColour } satisfies CSSProperties,
+        },
         supporting,
       ),
     );

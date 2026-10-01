@@ -500,7 +500,7 @@ describe("launcher-apply-plan materialize and verify decide the approval from th
     for (const argv of usage) expect(await bodyMain(argv, options), JSON.stringify(argv)).toBe(2);
     expect(written).toEqual([]);
     const printed = [...log.mock.calls, ...err.mock.calls].map((call) => String(call[0])).join("\n");
-    for (const echoed of [SENTINEL, JUNK, "sentinel-4d2c", "1e3", "9007199254740993", "no-slash-sentinel"]) expect(printed).not.toContain(echoed);
+    for (const value of [SENTINEL, JUNK, "sentinel-4d2c", "1e3", "9007199254740993", "no-slash-sentinel"]) expect(printed).not.toContain(value);
     expect(err.mock.calls.map((call) => String(call[0]))).toEqual([
       "launcher-apply-plan body: indeterminate (change-set-absent)",
       ...usage.map(() => "launcher-apply-plan body: usage: launcher-apply-plan body --repo <id> --task-record <n> [--supersedes <n>]..."),

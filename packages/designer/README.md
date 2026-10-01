@@ -3242,7 +3242,7 @@ function SignInPage() {
       heading="Sign in"
       description="Welcome back."
       form={<MyProductsOwnSignInForm />}
-      secondaryAction={<Link href="/signup">Don't have an account? Sign up</Link>}
+      secondaryAction={<Link href="/request-access">No account? Request access</Link>}
       footnote={<>By continuing you agree to our <Link href="/terms">Terms</Link>.</>}
     />
   );
@@ -3252,8 +3252,8 @@ function SignInPage() {
 A full-page authentication shell — sign-in, sign-up, password reset, email
 verification. In order: a site header (`SiteHeader`, holding the required
 `brand`), a page header (`heading` plus the required `description`), a card
-(built on `atoms/Card`) holding the `form` slot and `secondaryAction`, an
-optional `footnote`, and a site footer (`SiteFooter`, fed by
+(built on `atoms/Card`) holding only the `form` slot, the `secondaryAction`
+lines below the card, an optional `footnote`, and a site footer (`SiteFooter`, fed by
 `footerSecondary`). `heading` (required) renders as the page's `<h1>`;
 `description` (required) renders directly under it, so every step decides on
 a supporting line; `form` (required) is rendered exactly as given, with no
@@ -3262,6 +3262,10 @@ measure (`38rem`). The optional `internalNote` (`{ label, message }`) renders
 a badge-labelled development note under the footnote, and a site passes it
 only in development. An auth page's `footerSecondary` holds a legal row only,
 never a locale switcher, because auth pages are single-locale.
+`secondaryAction` is always the site's copy, and an invitation or activation
+step never offers request-access or sign-up; the view has no mode and no
+`requestAccess` prop, so each site's activation-page test asserts no
+request-access or sign-up link.
 
 **`AuthView` implements no authentication of any kind** — no provider, no
 form state, no field validation, no submit handling. It renders whatever

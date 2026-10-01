@@ -12,6 +12,7 @@ import {
   clone,
   corpusSet,
   decide,
+  editLedger,
   hubRepo,
   mutateSet,
   siteRepo,
@@ -343,6 +344,23 @@ describe("plannedBundle", () => {
       const entry = entryOf(result, SITE_ID);
       expect(entry.checks.filter((check) => check.check === "V3")).toEqual([satisfied("V3")]);
       expect(entry).toHaveProperty("binding");
+    },
+    TIMEOUT_MS,
+  );
+
+  it(
+    "a symlink base ledger is ledger-unreadable with no binding",
+    async () => {
+      // The base commit holds the ledger as mode 120000, a symbolic link: not one regular, non-executable blob, so it cannot be read as a ledger.
+      // The link's target text is itself a readable ledger (rows cleared to fit a link target), so only the mode keeps it from being read as one.
+      const s = scene((tree) => void tree.set(LEDGER_PATH, { mode: "120000", bytes: editLedger(tree.get(LEDGER_PATH)!.bytes, (ledger) => { for (const rows of ["files", "keys", "entries", "packages", "deferred"]) ledger[rows] = []; }) }));
+      let readinessCalls = 0;
+      const result = await plannedBundle(reportOf(s, [{ set: s.w.apply }]), options(s, { runReadiness: () => { readinessCalls += 1; return { status: 0 }; } }));
+      const entry = entryOf(result, SITE_ID);
+      expect(entry.checks.filter((check) => check.check === "V3")).toEqual([{ check: "V3", verdict: "indeterminate", rule: "ledger-unreadable" }]);
+      expect(entry).not.toHaveProperty("binding");
+      expect(entry).not.toHaveProperty("state");
+      expect(readinessCalls).toBe(0);
     },
     TIMEOUT_MS,
   );

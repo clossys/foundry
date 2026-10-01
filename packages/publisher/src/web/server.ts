@@ -116,6 +116,8 @@ export { LandingView } from "#publisher-web-views";
 export type { LandingViewProps } from "#publisher-web-views";
 export { ContactView } from "#publisher-web-views";
 export type { ContactViewCopy, ContactViewDevPreview, ContactViewProps, ContactViewTopic, ContactViewValues } from "#publisher-web-views";
+export { GlobalErrorDocument } from "#publisher-web-views";
+export type { GlobalErrorDocumentProps } from "#publisher-web-views";
 
 // Kept after the views: the share card reads Designer names newer than the views do, and a Designer that lacks the views' names must fail on those first.
 export {

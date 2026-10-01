@@ -139,6 +139,13 @@ describe("renderPullRequest: supersedes", () => {
   const withSupersedes = (supersedes: unknown, taskRecord = 12) => renderPullRequest({ set: world.apply, binding: APPROVED_APPLY, taskRecord, supersedes } as never);
   const golden = rendered(world.apply, APPROVED_APPLY);
 
+  it("supersedes sorts numerically", () => {
+    const out = withSupersedes([10, 9]);
+    if (out.state !== "rendered") throw new Error(`refused: ${out.reason}`);
+    expect(out.body).toContain("\n- #9\n- #10\n\n## Task record\n");
+    expect(out).toEqual(withSupersedes([9, 10]));
+  });
+
   it("supersedes ascending, absent keeps golden bytes", () => {
     const out = withSupersedes([9, 3]);
     if (out.state !== "rendered") throw new Error(`refused: ${out.reason}`);
