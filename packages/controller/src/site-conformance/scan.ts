@@ -72,11 +72,11 @@ function isDirectory(path: string): boolean {
 }
 
 /** Strict UTF-8: bytes that are not valid text are "could not run", never a lossy decode that could hide a literal. */
-function decodeSource(bytes: Uint8Array): string {
+function decodeSource(bytes: Uint8Array, origin: string = "a source file under the site"): string {
   try {
     return UTF8.decode(bytes);
   } catch {
-    throw new SiteConformanceError("a source file under the site is not valid UTF-8");
+    throw new SiteConformanceError(`${origin} is not valid UTF-8`);
   }
 }
 
@@ -257,14 +257,14 @@ function reachesPublisherView(file: string, source: string): boolean {
   for (const spec of importSpecifiers(source)) {
     if (!spec.startsWith(".")) continue;
     const target = resolveRelative(file, spec);
-    if (target === undefined) continue;
+    if (target === undefined || !/\.tsx?$/.test(target)) continue; // only .ts and .tsx targets are read; other files are skipped unread
     let bytes: Uint8Array;
     try {
       bytes = readFileSync(target);
     } catch {
       continue; // an unreadable import is not a Publisher view
     }
-    if (importsPublisherWeb(decodeSource(bytes))) return true;
+    if (importsPublisherWeb(decodeSource(bytes, "a source file reached by a relative import"))) return true;
   }
   return false;
 }

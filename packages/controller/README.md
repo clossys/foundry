@@ -2491,12 +2491,14 @@ its reason; a waiver that matches nothing is itself the finding
 It exits `0` whenever the scan ran, with or without findings, and `2` when it
 could not run: a missing repository or site directory, no files, a missing or
 invalid manifest, an empty-reason, unknown-rule or duplicate waiver, bad JSON,
-a source file or directory that cannot be read, a source file that is not valid
-UTF-8, a `--site` or `<dir>/app` that is, or is reached through, a symlink, a
-route manifest or waiver file that is itself a symlink, any other unexpected
-failure, or an unknown flag (including `--enforce`, which this slice does not
-offer). The scan matches source with line and token rules, not a full parse of the
-language; `--enforce` is not offered until it does.
+a source file or directory that cannot be read, a source file, or a `.ts` or
+`.tsx` file reached by a relative import, that is not valid UTF-8, a `--site`
+or `<dir>/app` that is, or is reached through, a symlink, a route manifest or
+waiver file that is itself a symlink, any other unexpected failure, or an
+unknown flag (including `--enforce`, which this slice does not offer). A
+relative import of any other file type, such as an image, is not read. The scan
+matches source with line and token rules, not a full parse of the language;
+`--enforce` is not offered until it does.
 
 ## API
 

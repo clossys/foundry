@@ -348,4 +348,20 @@ describe("symlinked and non-UTF-8 inputs", () => {
     writeFileSync(join(root, "apps/site/lib/view.ts"), Buffer.from([0xff, 0xfe, 0x30]));
     expect(() => scanSiteConformance(root)).toThrow(/not valid UTF-8/);
   });
+
+  it("does not read a non-.ts/.tsx relative-import target, so a binary asset import is not an error", () => {
+    baseSite();
+    put("apps/site/app/page.tsx", `import hero from "./hero.png";\nimport { View } from "./view";\nexport default View;\n`);
+    writeFileSync(join(root, "apps/site/app/hero.png"), Buffer.from([0x89, 0x50, 0x4e, 0x47, 0xff, 0xfe, 0x00, 0x80]));
+    put("apps/site/app/view.ts", `export { View } from "@clossys/publisher/web";\n`);
+    const result = scanSiteConformance(root);
+    expect(result.findings).toEqual([]);
+  });
+
+  it("names a relative-import target that is not valid UTF-8 without claiming it is under the site", () => {
+    baseSite();
+    put("apps/site/app/page.tsx", `import { a } from "../../../outside";\nexport default a;\n`);
+    writeFileSync(join(root, "outside.ts"), Buffer.from([0xff, 0xfe, 0x30]));
+    expect(() => scanSiteConformance(root)).toThrow(/a source file reached by a relative import is not valid UTF-8/);
+  });
 });
