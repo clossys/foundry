@@ -10,10 +10,16 @@
  * - `clossys/publisher/legal/terms.json` and `privacy.json`: the two legal
  *   documents, whose text is copy ids into the same registry.
  *
+ * One more file is read here, and only by the dev-only pack review:
+ * `clossys/publisher/pack.json`, through `loadPackManifest`, at request time
+ * and never imported, so a repository without one still builds.
+ *
  * Server-only. Writer's root reads the file system, so this module and
  * everything that imports it stay out of client bundles: a server page
  * resolves what a client module needs and passes it down as plain data.
  */
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { createCopyResolver } from "@clossys/writer";
 import type { CopyResolver } from "@clossys/writer";
 import type { LegalDocument } from "@clossys/publisher/document";
@@ -89,4 +95,15 @@ export function legalTitle(document: LegalDocument, resolver: CopyResolver): str
   const resolution = resolver(document.title);
   if (resolution === undefined || resolution.text.trim().length === 0) throw new Error("The legal document title does not resolve.");
   return resolution.text;
+}
+
+/**
+ * The pack manifest, parsed and not yet validated (the review index validates
+ * it). Read at request time from the repository's own `clossys/publisher/`
+ * directory, two levels above the app. Throws when the file is absent or is
+ * not JSON; the caller treats any throw as "unavailable" and never shows the
+ * message, which names a path.
+ */
+export function loadPackManifest(): unknown {
+  return JSON.parse(readFileSync(resolve(process.cwd(), "..", "..", "clossys", "publisher", "pack.json"), "utf8"));
 }
