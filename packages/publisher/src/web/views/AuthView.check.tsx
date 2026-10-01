@@ -17,3 +17,8 @@ export const withMode = <AuthView brand="Acme" heading="Sign in" description="We
 // `description` is required: every step decides on a supporting line.
 // @ts-expect-error description is required
 export const withoutDescription = <AuthView brand="Acme" heading="Sign in" form={null} />;
+
+// The view stays copy-free: it has no request-access prop, so it cannot grow a
+// built-in request-access link. An alternate step arrives only as `secondaryAction`.
+// @ts-expect-error AuthView has no requestAccess prop
+export const withRequestAccess = <AuthView brand="Acme" heading="Sign in" description="Welcome back." requestAccess={null} form={null} />;
