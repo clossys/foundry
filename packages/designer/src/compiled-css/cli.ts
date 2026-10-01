@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /**
  * `ui-compiled-css-check` — this package's own maintainer/CI tool for
- * regenerating and verifying `styles/compiled.css`, mirroring `ui-token-
- * check`'s presentation shape (`../cli.ts`) and this repository's shared
+ * regenerating and verifying `styles/compiled.css` and `styles/utilities.css`,
+ * mirroring `ui-token-check`'s presentation shape (`../cli.ts`) and this repository's shared
  * three-state gate-exit contract (this repository's own CONTRIBUTING guide,
  * "Gate CLIs exit `0` clean / `1` findings / `2` could not run"):
  *
@@ -36,9 +36,11 @@ import { generateUtilitiesCss } from "./utilities.js";
 
 const USAGE = `Usage: ui-compiled-css-check [--write] [--package-root <path>]
 
-  --check          (default) Verify styles/compiled.css matches a fresh
-                    re-derivation from src/atoms/. Does not write anything.
-  --write           Regenerate styles/compiled.css and write it to disk.
+  --check          (default) Verify styles/compiled.css and
+                    styles/utilities.css match a fresh re-derivation from
+                    src/atoms/. Does not write anything.
+  --write           Regenerate styles/compiled.css and styles/utilities.css
+                    and write them to disk.
   --package-root <path>
                     This package's own root directory (containing styles/
                     and src/atoms/). Defaults to two directories up from

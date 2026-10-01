@@ -1,7 +1,7 @@
 /**
  * `generateUtilitiesCss` — the `styles/utilities.css` shipped beside
  * `theme.css`. It is a run of single-line `@source inline(...)` directives (Tailwind rejects a string that spans lines) listing every class
- * candidate `scanCompiledCssSources` extracts from this package's own
+ * candidate `scanUtilitiesSources` extracts from this package's own
  * components, so a shared CSS entry can generate this package's utilities
  * without a path-based `@source` on `dist` (which a pnpm symlink can defeat)
  * and without the consumer maintaining a class list.

@@ -23,12 +23,12 @@ const APP_ROOT_MAX_DEPTH = 1;
 const STYLESHEET_EXTENSIONS = [".css", ".scss", ".sass", ".less", ".pcss", ".postcss"];
 /**
  * `--color-x:`, a family wildcard reset (`--color-*`, `--color-red-*`) and SCSS
- * interpolation (`--color-#{$k}`), case-insensitive because custom-property
+ * interpolation (`--color-#{$k}`), case-sensitive because custom-property
  * names are; also inside `@apply [--color-x:red]`. `var(--color-x)` reads have
  * no colon and never match, and neither does a feature query directly inside
  * parentheses, `@container style( --color-a: red)`.
  */
-const COLOR_DECLARATION_RE = /(?:^|[\s;{\[])(?<!\(\s*)(--color-(?:[\w-]*\*|(?:[\w-]|#\{[^}]*\})+))\s*:/gi;
+const COLOR_DECLARATION_RE = /(?:^|[\s;{\[])(?<!\(\s*)(--color-(?:[\w-]*\*|(?:[\w-]|#\{[^}]*\})+))\s*:/g;
 /**
  * Comments and quoted strings in one left-to-right pass, so a quote inside a
  * comment or a comment marker inside a string cannot confuse the other. A
@@ -56,7 +56,7 @@ function walk(dir: string, depth: number, out: string[]): void {
 }
 
 function stripCommentsAndStrings(source: string, file: string): string {
-  const re = file.endsWith(".css") || file.endsWith(".postcss") ? COMMENT_OR_STRING_RE : COMMENT_OR_STRING_OR_LINE_RE;
+  const re = file.endsWith(".css") ? COMMENT_OR_STRING_RE : COMMENT_OR_STRING_OR_LINE_RE;
   return source.replace(re, " ");
 }
 
