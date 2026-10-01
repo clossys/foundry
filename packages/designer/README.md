@@ -1196,6 +1196,16 @@ this component's own:
 </Link>
 ```
 
+`buttonVariant` (`ButtonVariant`, default `"primary"`) and `buttonSize`
+(`ButtonSize`, default `"md"`) give a link the look of a `Button`: setting
+either one applies exactly the classes `Button` applies for that variant and
+size, plus the same disabled opacity and focus ring, in place of the link
+`variant` classes. The element stays a link (`role="link"`, `href`,
+`render`), because navigation is a link and not a button; `Button` itself
+only renders a `<button>`. With neither prop set, `Link` is unchanged. For a
+framework link in button style, pass them alongside `render`:
+`<Link href="/prompts" buttonVariant="secondary" buttonSize="lg" render={(props) => <RouterLink {...props} to="/prompts" />}>`.
+
 ### `Checkbox`
 
 ```tsx
@@ -4496,7 +4506,7 @@ not a grab-bag).
 | `BreadcrumbProps` | type | Props for `Breadcrumb`: `children`, `className`, `aria-label`, plus react-aria-components' own `Breadcrumbs` props. |
 | `BreadcrumbItemProps` | type | Props for `Breadcrumb.Item`: `href`, `children`, `className`. |
 | `Link` | component | Navigable link built on react-aria-components' `Link`. |
-| `LinkProps` | type | Props for `Link`: `variant`, plus everything react-aria-components' own `Link` accepts (including `render`, for a custom/router link element). |
+| `LinkProps` | type | Props for `Link`: `variant`, `buttonVariant`, `buttonSize`, plus everything react-aria-components' own `Link` accepts (including `render`, for a custom/router link element). |
 | `LinkVariant` | type | `"default" \| "muted" \| "standalone"`. |
 | `Checkbox` | component | Checkbox with indeterminate support, built on react-aria-components' `Checkbox`. |
 | `CheckboxProps` | type | Props for `Checkbox`: `children` (the visible label), plus everything react-aria-components' own `Checkbox` accepts (including `isIndeterminate`). |
