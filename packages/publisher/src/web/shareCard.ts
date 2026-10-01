@@ -466,6 +466,7 @@ export function buildBrandShareCard(input: BrandShareCardInput): ShareCard {
           style: {
             display: "flex",
             marginLeft: gap,
+            flexShrink: 1,
             minWidth: 0,
             overflow: "hidden",
             whiteSpace: "nowrap",
@@ -483,7 +484,7 @@ export function buildBrandShareCard(input: BrandShareCardInput): ShareCard {
   }
 
   const top: ReactElement[] = [
-    createElement("div", { key: "lockup", style: { display: "flex", alignItems: "center", minWidth: 0, maxWidth: "100%" } satisfies CSSProperties }, ...lockup),
+    createElement("div", { key: "lockup", style: { display: "flex", alignItems: "center", flexShrink: 1, minWidth: 0, maxWidth: "100%" } satisfies CSSProperties }, ...lockup),
   ];
   if (kicker !== undefined) {
     top.push(

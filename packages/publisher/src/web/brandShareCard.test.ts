@@ -282,6 +282,8 @@ describe("overflow guards", () => {
     const lockup = byKey(root, "lockup").props.style ?? {};
     expect(lockup["minWidth"]).toBe(0);
     expect(lockup["maxWidth"]).toBe("100%");
+    expect(lockup["flexShrink"]).toBe(1);
+    expect(byKey(root, "wordmark").props.style?.["flexShrink"]).toBe(1);
     for (const key of ["wordmark", "kicker"]) {
       const style = byKey(root, key).props.style ?? {};
       expect(style["minWidth"]).toBe(0);
