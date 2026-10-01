@@ -1960,7 +1960,8 @@ segment `error` boundary keeps the layout, so use `ErrorView` there instead.
 review index for a site release. One page lists every page of the site with its
 forced states, every exported artifact, and a contact sheet that renders each
 page and state in a lazy frame at 390, 1024 and 1440 px. Each page and export
-carries a `draft`, `delegated` or `approved` badge. It is server-safe, reads
+carries a `draft`, `delegated` or `approved` badge; each forced state and each
+contact-sheet frame shows its page's badge. It is server-safe, reads
 nothing, and ships no wording: the caller builds the entries with
 [`buildPackReviewIndex`](#reviewing-a-pack) and passes every visible string.
 
@@ -2006,14 +2007,18 @@ Props:
   text. Every `href` must be a same-site address (one leading slash, no
   `//`, no backslash, no control character); anything else throws a
   `RenderError` naming the position, never the value.
-- `exports`: `{ id, kind, path, status, width? }[]`. `path` is shown as plain
-  text and is never a link; `width` is the review width of an email export.
+- `exports`: `{ id, kind, path, status, href?, width? }[]`. `path` is shown as
+  plain text and is never a link; `href` is an optional same-site address
+  (the same rule as a page's), and when given the kind's name links to it;
+  `width` is the review width of an email export.
 - `labels`: `pagesHeading`, `exportsHeading`, `sheetHeading`, `none`, the
   `statuses` and `kinds` word for each, `exportWidth(width)` and
   `frameTitle({ page, state?, width })`. The view has no default wording.
 - `widths` (default `[390, 1024, 1440]`): positive whole numbers; others throw.
 
-An unknown `status` throws. Entry text is rendered as text: no markup from an
+Each section is named by its own `h2` through `aria-labelledby`, and a frame's
+caption puts a text separator between the page and the state. An unknown
+`status` throws. Entry text is rendered as text: no markup from an
 entry is injected, and the frames use `loading="lazy"` and never `srcDoc`. The
 view does not know whether it is running in development: gating it is the
 caller's job (the site template does, see its README).
