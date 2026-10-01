@@ -1,4 +1,5 @@
 import { execFileSync } from "node:child_process";
+import type { spawnSync as SpawnSync } from "node:child_process";
 import { existsSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { decideBinding, decideSetBinding, planPackagesFor, readHubAuthority, verifyAdmittedSuccession, checkSuccession } from "./admission.js";
@@ -51,6 +52,17 @@ import type { HubOptions, Loose, World, WorldOptions } from "./admission-fixture
  * matrix (P, M, C2, C3 and H); the pure core is tested over in-memory readers,
  * and the parts that need real git use a temporary hub and clone.
  */
+
+// The test double over the module's git reads: it records every spawn and still runs the real git.
+const spawned = vi.hoisted(() => ({ calls: [] as string[][] }));
+vi.mock("node:child_process", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("node:child_process")>();
+  const recording: typeof SpawnSync = ((command: string, args?: readonly string[], ...rest: unknown[]) => {
+    if (command === "git") spawned.calls.push([...(args ?? [])]);
+    return (actual.spawnSync as (...all: unknown[]) => unknown)(command, args, ...rest);
+  }) as typeof SpawnSync;
+  return { ...actual, spawnSync: recording };
+});
 
 // Each git-backed case builds a hub and a clone; a slow machine needs more than the default.
 vi.setConfig({ testTimeout: 30_000 });
@@ -974,6 +986,48 @@ describe("readHubAuthority (K1): the plan as a git object at the hub's head", ()
     expect(readHubAuthority(hubOf({ plans: [p] }).hub)).toMatchObject({ planDigest: planDigest(p) });
   });
 
+  it("the upstream must be a remote-tracking ref: a local branch as upstream (remote `.`) is refused, a remote-tracking one is admitted", async () => {
+    const p = plan();
+    const localUpstream = (options: HubOptions = { plans: [p], upstream: false }) => {
+      const fixture = hubOf(options);
+      git(fixture.hub, "branch", "elsewhere");
+      git(fixture.hub, "config", "branch.main.remote", ".");
+      git(fixture.hub, "config", "branch.main.merge", "refs/heads/elsewhere");
+      return fixture;
+    };
+    // The local branch sits at HEAD's own commit, so the commit comparison alone would pass.
+    const local = localUpstream();
+    expect(git(local.hub, "rev-parse", "--verify", "@{upstream}").trim()).toBe(git(local.hub, "rev-parse", "HEAD").trim());
+    expect(readHubAuthority(local.hub)).toEqual(aa("hub-not-upstream"));
+    // Pointing a pushed branch's upstream at a local branch is refused the same way.
+    const repointed = localUpstream({ plans: [p] });
+    expect(git(repointed.hub, "rev-parse", "--symbolic-full-name", "@{upstream}").trim()).toBe("refs/heads/elsewhere");
+    expect(readHubAuthority(repointed.hub)).toEqual(aa("hub-not-upstream"));
+    // A remote-tracking upstream is admitted.
+    const tracked = hubOf({ plans: [p] });
+    expect(git(tracked.hub, "rev-parse", "--symbolic-full-name", "@{upstream}").trim()).toBe("refs/remotes/origin/main");
+    expect(readHubAuthority(tracked.hub)).toMatchObject({ planDigest: planDigest(p) });
+  });
+
+  it("HEAD, its commit and its upstream are read by one git call", () => {
+    const fixture = hubOf({ plans: [plan()] });
+    spawned.calls.length = 0;
+    expect(readHubAuthority(fixture.hub)).toMatchObject({ head: fixture.commits[0] });
+    const headReads = spawned.calls.filter((args) => args.includes("rev-parse") || args.includes("symbolic-ref"));
+    expect(headReads).toHaveLength(1);
+  });
+
+  it("two hubs built for one plan each keep their own head", () => {
+    const p = plan();
+    const first = hubOf({ plans: [p] });
+    const second = hubOf({ plans: [decide(p, "rejected", LATER_AT), p] });
+    expect(first.commits.at(-1)).not.toBe(second.commits.at(-1));
+    expect(authorityOf(p, first.hub).head).toBe(first.commits.at(-1));
+    expect(authorityOf(p, second.hub).head).toBe(second.commits.at(-1));
+    // Asked without a hub, the head is still that of the hub built last for the plan.
+    expect(authorityOf(p).head).toBe(second.commits.at(-1));
+  });
+
   it("a plan read resolves HEAD once: authority.head is the commit the plan was read from", () => {
     const p = plan();
     const fixture = hubOf({ plans: [p, decide(p, "approved", LATER_AT, approvedSubject(p)!)] });
@@ -1262,6 +1316,25 @@ describe("K11: the execution authorization is current (readiness)", () => {
     // Order does not matter, and the exact list admits.
     const reordered = withAssessment(assessmentFor(plan(), { permittedPackages: [...exact(plan())].reverse() }));
     expect(await bind(reordered)).toEqual(admitted(reordered.w));
+  });
+
+  it("package keys are unambiguous: an entry with an empty name does not stand in for a plan package", async () => {
+    const exact = (p: AdvisorPlan) => assessmentFor(p).engagement.executionAuthorization.permittedPackages as Loose[];
+    const elsewhere = (plan0: Loose) => {
+      const docsWriter = (plan0.packages as Loose[]).find((act) => act.repository === DOCS_ID && act.name === "@example/writer")!;
+      docsWriter.version = "0.6.0";
+    };
+    const docs = buildWorld({ editPlan: elsewhere }).plan;
+    const rows = exact(docs);
+    const docsRow = rows.find((row) => row.version === "0.6.0")!;
+    // `@example/writer@0.6.0#<integrity>` is also what the empty name with the rest of that text as its version joins to.
+    const colliding = { name: "", version: `${docsRow.name.slice(1)}@${docsRow.version}`, integrity: docsRow.integrity };
+    const forged = rows.map((row) => (row === docsRow ? colliding : row));
+    const s = scene({ world: { editPlan: elsewhere }, hub: { assessment: assessmentFor(docs, { permittedPackages: forged }) } });
+    expect(await bind(s)).toEqual(notCurrent("packages-not-exact"));
+    // The same list with the real row admits.
+    const genuine = scene({ world: { editPlan: elsewhere }, hub: { assessment: assessmentFor(docs) } });
+    expect(await bind(genuine)).toEqual(admitted(genuine.w));
   });
 
   it("an approved setup set is held to the same authorization", async () => {
