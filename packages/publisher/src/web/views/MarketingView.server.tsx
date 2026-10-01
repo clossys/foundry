@@ -48,7 +48,9 @@ export function MarketingView({
           composition={heroMedia ? "split" : "editorial"}
           ground={heroGround}
         />
-        <FeatureGrid heading={featuresHeading} description={featuresDescription} items={features} ground={featuresGround} />
+        {features.length > 0 || featuresHeading !== undefined || featuresDescription !== undefined ? (
+          <FeatureGrid heading={featuresHeading} description={featuresDescription} items={features} ground={featuresGround} />
+        ) : null}
         {faq !== undefined ? <Faq heading={faqHeading} description={faqDescription} items={faq} ground={faqGround} /> : null}
         <Hero headingLevel={2} heading={ctaHeading} description={ctaDescription} actions={ctaAction} ground={ctaGround} />
       </main>

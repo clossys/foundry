@@ -440,19 +440,19 @@ function validatePublicGroups(groups: unknown): ResolvedSurfaceGroup[] {
         if (!isPlainClosedObject(itemCandidate.fields) || !hasOnlyEnumerableStringDataKeys(itemCandidate.fields) || Object.keys(itemCandidate.fields).length === 0) {
           invalidPublicGroups(`groups[${groupIndex}].items[${itemIndex}].fields must be a non-empty plain object.`);
         }
-        for (const [field, binding] of Object.entries(itemCandidate.fields)) {
+        for (const [fieldIndex, [field, binding]] of Object.entries(itemCandidate.fields).entries()) {
           if (!isNonWhitespaceString(field) || !isPlainClosedObject(binding) || !hasOnlyOwnKeys(binding, ["value", "assetId"])) {
-            invalidPublicGroups(`groups[${groupIndex}].items[${itemIndex}].fields.${field || "(empty)"} must be a plain value/assetId binding with no unknown keys.`);
+            invalidPublicGroups(`groups[${groupIndex}].items[${itemIndex}].fields[${fieldIndex}] must be a plain value/assetId binding with no unknown keys.`);
           }
           const fieldSources = [binding.value, binding.assetId].filter((source) => source !== undefined);
           if (fieldSources.length !== 1) {
-            invalidPublicGroups(`groups[${groupIndex}].items[${itemIndex}].fields.${field} must set exactly one of value/assetId.`);
+            invalidPublicGroups(`groups[${groupIndex}].items[${itemIndex}].fields[${fieldIndex}] must set exactly one of value/assetId.`);
           }
           if (binding.value !== undefined && !isNonWhitespaceString(binding.value)) {
-            invalidPublicGroups(`groups[${groupIndex}].items[${itemIndex}].fields.${field}.value must be a non-whitespace string when supplied.`);
+            invalidPublicGroups(`groups[${groupIndex}].items[${itemIndex}].fields[${fieldIndex}].value must be a non-whitespace string when supplied.`);
           }
           if (binding.assetId !== undefined && !isNonWhitespaceString(binding.assetId)) {
-            invalidPublicGroups(`groups[${groupIndex}].items[${itemIndex}].fields.${field}.assetId must be a non-whitespace string when supplied.`);
+            invalidPublicGroups(`groups[${groupIndex}].items[${itemIndex}].fields[${fieldIndex}].assetId must be a non-whitespace string when supplied.`);
           }
         }
       }
@@ -476,7 +476,7 @@ function validateStructuredGroupItem(slotKey: string, item: ResolvedSurfaceGroup
   if (unknownFields.length > 0) {
     throw new RenderError(
       "resolution-failed",
-      `renderWebDocument could not use repeating slot "${slotKey}" item ${item.index}: unknown field(s) ${unknownFields.join(", ")}. Known field(s): ${fields.map((field) => field.key).join(", ")}.`,
+      `renderWebDocument could not use repeating slot "${slotKey}" item ${item.index}: ${unknownFields.length} unknown field(s). Known field(s): ${fields.map((field) => field.key).join(", ")}.`,
     );
   }
   const missingRequired = fields.filter((field) => field.required === true && !Object.hasOwn(itemFields, field.key)).map((field) => field.key);
@@ -526,7 +526,7 @@ function resolveTemplateGroups(doc: ComposeDocument, template: WebTemplate, opti
   if (unknownGroups.length > 0) {
     throw new RenderError(
       "resolution-failed",
-      `renderWebDocument received repeating group(s) for slot(s) [${unknownGroups.join(", ")}] against template "${doc.template}", which does not declare any of them as a repeating slot. Known repeating slot(s): ${repeatingSlots.map((spec) => spec.key).join(", ") || "(none)"}.`,
+      `renderWebDocument received ${unknownGroups.length} repeating group(s) for slot(s) the template does not declare as repeating. Known repeating slot(s): ${repeatingSlots.map((spec) => spec.key).join(", ") || "(none)"}.`,
     );
   }
 
@@ -547,7 +547,7 @@ function resolveTemplateGroups(doc: ComposeDocument, template: WebTemplate, opti
       else if (item.fields !== undefined) {
         throw new RenderError(
           "resolution-failed",
-          `renderWebDocument received a structured fields item for repeating slot "${spec.key}", but template "${doc.template}" does not declare fields for that slot.`,
+          `renderWebDocument received a structured fields item for repeating slot "${spec.key}", but the template does not declare fields for that slot.`,
         );
       }
       return resolveGroupItemContent(spec.key, item, options);
@@ -577,7 +577,7 @@ export function renderWebDocumentAgainst(templates: ReadonlyMap<string, WebTempl
   if (template === undefined) {
     throw new RenderError(
       "unknown-template",
-      `renderWebDocument does not know template "${doc.template}". Known templates: ${[...templates.keys()].join(", ") || "(none)"}.`,
+      `renderWebDocument does not know the document's template. Known templates: ${[...templates.keys()].join(", ") || "(none)"}.`,
     );
   }
 
@@ -612,7 +612,7 @@ export function renderWebDocumentAgainst(templates: ReadonlyMap<string, WebTempl
   if (result.missingRequired.length > 0 || result.unknownBindings.length > 0 || hasBindingErrors || nothingResolvedAtAll) {
     const parts: string[] = [];
     if (result.missingRequired.length > 0) parts.push(`missing required slot(s): ${result.missingRequired.join(", ")}`);
-    if (result.unknownBindings.length > 0) parts.push(`binding(s) targeting unknown slot(s): ${result.unknownBindings.map((b) => b.slot).join(", ")}`);
+    if (result.unknownBindings.length > 0) parts.push(`${result.unknownBindings.length} binding(s) targeting unknown slot(s)`);
     if (nothingResolvedAtAll) parts.push("no binding matched any slot in the template — nothing to render");
     throw new RenderError(
       "resolution-failed",
@@ -627,7 +627,7 @@ export function renderWebDocumentAgainst(templates: ReadonlyMap<string, WebTempl
   if (hasAssetProblems(assetsResolution)) {
     throw new RenderError(
       "empty-output",
-      `renderWebDocument resolved document "${doc.id}" against template "${doc.template}", but at least one assetId binding did not produce a real asset: ${describeAssetProblems(assetsResolution).join("; ")}. Rendering would silently ship a page with a broken or missing image, which this function refuses to do.`,
+      `renderWebDocument resolved the document against its template, but at least one assetId binding did not produce a real asset: ${describeAssetProblems(assetsResolution).join("; ")}. Rendering would silently ship a page with a broken or missing image, which this function refuses to do.`,
     );
   }
 
@@ -638,7 +638,7 @@ export function renderWebDocumentAgainst(templates: ReadonlyMap<string, WebTempl
       if (!kinds.includes("asset")) {
         throw new RenderError(
           "resolution-failed",
-          `renderWebDocument received an assetId binding for slot "${key}" against template "${doc.template}", but that slot's declared content kind(s) (${kinds.join(", ")}) do not include "asset".`,
+          `renderWebDocument received an assetId binding for a slot whose declared content kind(s) (${kinds.join(", ")}) do not include "asset".`,
         );
       }
       const asset = assetsResolution.byKey.get(key);
@@ -652,7 +652,7 @@ export function renderWebDocumentAgainst(templates: ReadonlyMap<string, WebTempl
       if (!kinds.includes("copy")) {
         throw new RenderError(
           "resolution-failed",
-          `renderWebDocument received a copy binding for slot "${key}" against template "${doc.template}", but that slot's declared content kind(s) (${kinds.join(", ")}) do not include "copy".`,
+          `renderWebDocument received a copy binding for a slot whose declared content kind(s) (${kinds.join(", ")}) do not include "copy".`,
         );
       }
       content[key] = text;
@@ -671,21 +671,21 @@ export function renderWebDocumentAgainst(templates: ReadonlyMap<string, WebTempl
       throw new RenderError(
         "resolution-failed",
         isRepeating
-          ? `renderWebDocument received a single node binding for slot "${nodeBinding.slot}" against template "${doc.template}", but that slot is a REPEATING slot on this template — author it as a SurfaceRepeatingSlotBinding item and pass it through options.groups instead of options.nodes.`
-          : `renderWebDocument received a node binding for slot "${nodeBinding.slot}" against template "${doc.template}", which does not declare that flowed slot at all. Known flowed slot(s): ${template.flow.slots.map((slot) => slot.key).join(", ") || "(none)"}.`,
+          ? `renderWebDocument received a single node binding for a slot that is a REPEATING slot on this template — author it as a SurfaceRepeatingSlotBinding item and pass it through options.groups instead of options.nodes.`
+          : `renderWebDocument received a node binding for a slot the template does not declare as a flowed slot at all. Known flowed slot(s): ${template.flow.slots.map((slot) => slot.key).join(", ") || "(none)"}.`,
       );
     }
     const kinds = slotKindsFor(template, nodeBinding.slot);
     if (!kinds.includes("node")) {
       throw new RenderError(
         "resolution-failed",
-        `renderWebDocument received a node binding for slot "${nodeBinding.slot}" against template "${doc.template}", but that slot's declared content kind(s) (${kinds.join(", ")}) do not include "node". Declare it via slotKinds: { ${nodeBinding.slot}: [..., "node"] } when defining the template.`,
+        `renderWebDocument received a node binding for a slot whose declared content kind(s) (${kinds.join(", ")}) do not include "node". Declare it via slotKinds: { <slot>: [..., "node"] } when defining the template.`,
       );
     }
     if (nodeBinding.slot in content) {
       throw new RenderError(
         "resolution-failed",
-        `renderWebDocument received both a node binding (options.nodes) and a copy/asset binding (doc.bindings) for slot "${nodeBinding.slot}" against template "${doc.template}" — a slot may resolve from exactly one source.`,
+        `renderWebDocument received both a node binding (options.nodes) and a copy/asset binding (doc.bindings) for one slot — a slot may resolve from exactly one source.`,
       );
     }
     content[nodeBinding.slot] = nodeBinding.node as ReactNode;
@@ -699,7 +699,7 @@ export function renderWebDocumentAgainst(templates: ReadonlyMap<string, WebTempl
   if (unresolvedRequired.length > 0) {
     throw new RenderError(
       "empty-output",
-      `renderWebDocument resolved document "${doc.id}" against template "${doc.template}", but required slot(s) [${unresolvedRequired.join(", ")}] produced no content — every copyId binding must resolve via options.resolveCopyId, every value binding must be non-empty, and every assetId binding must resolve via options.resolveAssetId. Rendering would silently ship an incomplete page, which this function refuses to do.`,
+      `renderWebDocument resolved the document against its template, but required slot(s) [${unresolvedRequired.join(", ")}] produced no content — every copyId binding must resolve via options.resolveCopyId, every value binding must be non-empty, and every assetId binding must resolve via options.resolveAssetId. Rendering would silently ship an incomplete page, which this function refuses to do.`,
     );
   }
 

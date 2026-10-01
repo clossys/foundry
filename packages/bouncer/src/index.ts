@@ -146,6 +146,16 @@ export {
   createServiceUnavailableResponse,
 } from "./host-responses.js";
 export type { GatedHostHeaderOptions, ServiceUnavailableOptions } from "./host-responses.js";
+
+export { SIGN_IN_FAILURE_CLASSES, classifySignInFailure, signInFailureCopyId } from "./sign-in-failure.js";
+export type {
+  ClassifySignInFailureOptions,
+  SignInFailureClass,
+  SignInFailureCodeTable,
+  SignInFailureCopyId,
+  SignInFailureCopyIdOptions,
+  SignInFailureShape,
+} from "./sign-in-failure.js";
 export type {
   SiteSecurityHeaderWarning,
   SiteSecurityHeaders,

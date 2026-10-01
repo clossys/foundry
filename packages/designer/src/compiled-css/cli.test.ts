@@ -13,6 +13,8 @@ beforeEach(() => {
   cpSync(join(packageRoot, "src", "atoms"), join(dir, "src", "atoms"), { recursive: true });
   cpSync(join(packageRoot, "src", "blocks"), join(dir, "src", "blocks"), { recursive: true });
   cpSync(join(packageRoot, "src", "shell"), join(dir, "src", "shell"), { recursive: true });
+  cpSync(join(packageRoot, "src", "charts"), join(dir, "src", "charts"), { recursive: true });
+  cpSync(join(packageRoot, "src", "theme"), join(dir, "src", "theme"), { recursive: true });
   vi.spyOn(console, "log").mockImplementation(() => {});
   vi.spyOn(console, "error").mockImplementation(() => {});
 });

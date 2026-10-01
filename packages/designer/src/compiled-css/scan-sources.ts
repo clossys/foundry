@@ -14,13 +14,20 @@ export interface CompiledCssScanResult extends ClassScanResult {
   byDir: Record<(typeof COMPILED_CSS_SOURCE_DIRS)[number], number>;
 }
 
-export function scanCompiledCssSources(packageRoot: string): CompiledCssScanResult {
+/**
+ * Directories whose components are exported (`./atoms`, `./blocks`, `./shell`,
+ * `./charts`, `./theme`). `styles/utilities.css` lists the classes of all of
+ * them; `compiled.css` keeps the narrower scan above.
+ */
+export const UTILITIES_SOURCE_DIRS = [...COMPILED_CSS_SOURCE_DIRS, "charts", "theme"] as const;
+
+function scanDirs<D extends string>(packageRoot: string, dirs: readonly D[]): ClassScanResult & { byDir: Record<D, number> } {
   const candidates = new Set<string>();
   let filesScanned = 0;
   const skippedByDesign = [...scanClassCandidates(join(packageRoot, "src", "atoms")).skippedByDesign];
-  const byDir: CompiledCssScanResult["byDir"] = { atoms: 0, blocks: 0, shell: 0 };
+  const byDir = {} as Record<D, number>;
 
-  for (const dir of COMPILED_CSS_SOURCE_DIRS) {
+  for (const dir of dirs) {
     const scan = scanClassCandidates(join(packageRoot, "src", dir));
     byDir[dir] = scan.filesScanned;
     filesScanned += scan.filesScanned;
@@ -36,4 +43,13 @@ export function scanCompiledCssSources(packageRoot: string): CompiledCssScanResu
     skippedByDesign,
     byDir,
   };
+}
+
+export function scanCompiledCssSources(packageRoot: string): CompiledCssScanResult {
+  return scanDirs(packageRoot, COMPILED_CSS_SOURCE_DIRS);
+}
+
+/** Candidates for `styles/utilities.css`: every exported component directory. */
+export function scanUtilitiesSources(packageRoot: string): ClassScanResult {
+  return scanDirs(packageRoot, UTILITIES_SOURCE_DIRS);
 }

@@ -378,6 +378,65 @@ export function proxy(request: Request): Promise<Response> {
 }
 ```
 
+## Sign-in failure classes
+
+A sign-in provider's error text can reveal whether an account exists.
+`classifySignInFailure` reads a failure down to one of seven classes, and
+`signInFailureCopyId` maps a class to a Writer front-door copy id. The output
+is a class or an id and never provider text, so a host shows the copy it owns.
+Both are pure and never throw.
+
+| Class | Copy id |
+| --- | --- |
+| `credential` | `front-door.password.notice`, or `front-door.code.notice` with `{ factor: "code" }` |
+| `notFound` | `front-door.identifier-not-found.notice` |
+| `rateLimited` | `front-door.rate-limited.notice` |
+| `locked` | `front-door.locked.notice` |
+| `network`, `unavailable`, `unknown` | `front-door.unavailable.notice` |
+
+`SIGN_IN_FAILURE_CLASSES` lists the seven in that order. The rules, in order:
+
+1. A failure that is not an object is `unknown`.
+2. Each `errors[i].code` in turn (the first 16 entries), then `code`: the first one that is an own key
+   of `options.codes` wins. A name such as `toString` is never a match.
+3. Otherwise status 429 is `rateLimited`, 423 is `locked`, and 500-599 is
+   `unavailable`.
+4. Anything else is `unknown`, and so is a failure that throws when read. A 404
+   is `unknown`: `notFound` comes only from a provider code.
+
+`hideAccountExistence: true` reads `notFound` as `credential` and `locked` as
+`rateLimited`, which changes the copy the page shows and nothing else. It does
+not stop a visitor learning whether an account exists: some codes, such as
+`strategy_for_user_invalid`, `user_banned` and `form_password_pwned` or
+`form_password_compromised`, still read as `unknown` while an unknown account
+reads `credential`, and the raw Clerk code stays visible in the browser's
+devtools. For that guarantee, use Clerk's own enumeration protection. The
+default keeps `notFound`.
+
+The Clerk table, `CLERK_SIGN_IN_FAILURE_CODES`, ships from
+`./providers/clerk/web` and `./providers/clerk/web/client`. It holds
+`form_password_incorrect`, `form_password_or_identifier_incorrect` (the code
+Clerk sends with enumeration protection on) and `form_code_incorrect`
+(`credential`), `form_identifier_not_found` (`notFound`), `user_locked`
+(`locked`) and `clerk_offline` (`network`), each checked against the installed
+Clerk packages. Clerk codes not in it read as
+`unknown`, or by status when one is set. `humaniseClerkError` returns the
+provider's own text, which can name an account; use this path where that text
+must not reach the page.
+
+Pass the Clerk table as `codes`:
+
+```ts
+import { classifySignInFailure, signInFailureCopyId } from "@clossys/bouncer";
+import type { SignInFailureCodeTable } from "@clossys/bouncer";
+
+// `codes` is CLERK_SIGN_IN_FAILURE_CODES for a Clerk sign-in.
+export function copyIdForSignInError(error: unknown, codes: SignInFailureCodeTable) {
+  const failureClass = classifySignInFailure(error, { codes, hideAccountExistence: true });
+  return signInFailureCopyId(failureClass, { factor: "password" });
+}
+```
+
 ## Exports
 
 ### Root — `@clossys/bouncer`
@@ -448,6 +507,8 @@ answer.
 | `GATED_HOST_ROBOTS_TAG`, `GATED_HOST_ROBOTS_TXT` | The robots tag value and the deny-all `robots.txt` body of a gated host |
 | `applyGatedHostHeaders`, `createRobotsTxtRoute`, `createHealthRoute`, `createServiceUnavailableResponse` | Gated-host response helpers: robots tag, `no-store`, deny-all `robots.txt`, `/health`, and a 503 with `Retry-After` |
 | `GatedHostHeaderOptions`, `ServiceUnavailableOptions` | Their option types |
+| `SIGN_IN_FAILURE_CLASSES`, `classifySignInFailure`, `signInFailureCopyId` | Sign-in failure classes and their Writer copy ids. Never provider text |
+| `SignInFailureClass`, `SignInFailureShape`, `SignInFailureCodeTable`, `SignInFailureCopyId`, `ClassifySignInFailureOptions`, `SignInFailureCopyIdOptions` | Their types |
 
 ### `./agent`
 

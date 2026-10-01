@@ -36,14 +36,19 @@ import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { checkBrandFileCoverage, type BrandFileCoverageReport } from "./check-brand-file-coverage.js";
 import { compareBrandStylesheets } from "./compare-brand-stylesheets.js";
+import { findSecondBinders } from "./find-second-binders.js";
 import { readBrandCss, type BrandCssReadResult } from "./read-brand-css.js";
 
-const USAGE = `Usage: designer-brand-check <brand-css-file> [options]
+const DEFAULT_BRAND_CSS_FILE = "brand/brand.css";
+const DEFAULT_APPS_DIR = "apps";
 
-  brand-css-file   Path to a brand CSS file (e.g. your project's brand.css, started from @clossys/designer/brand-template.css). Required.
+const USAGE = `Usage: designer-brand-check [brand-css-file] [options]
+
+  brand-css-file   Path to the product's one brand overlay (started from @clossys/designer/brand-template.css). Defaults to brand/brand.css.
 
 Options:
   --also <path>    Additional stylesheet that must not redeclare a brandable slot with a different value than the overlay. Repeatable.
+  --apps <dir>     Directory of applications. Any stylesheet under it, other than the brand file, that declares a --color-* property is a finding. Defaults to apps/ when that directory exists.
   --help           Print this message and exit 0.
 
 Exit codes: 0 = clean, 1 = at least one finding, 2 = could not run (bad input, missing/unreadable file, or a region of the file that could not be parsed).
@@ -55,12 +60,14 @@ export class CliInputError extends Error {}
 interface ParsedArgs {
   brandCssFile?: string;
   alsoFiles: string[];
+  appsDir?: string;
   help: boolean;
 }
 
 function parseArgs(argv: string[]): ParsedArgs {
   let brandCssFile: string | undefined;
   const alsoFiles: string[] = [];
+  let appsDir: string | undefined;
   let help = false;
 
   for (let i = 0; i < argv.length; i++) {
@@ -75,6 +82,12 @@ function parseArgs(argv: string[]): ParsedArgs {
       alsoFiles.push(value);
       continue;
     }
+    if (arg === "--apps") {
+      const value = argv[++i];
+      if (value === undefined || value.startsWith("-")) throw new CliInputError("--apps requires a directory argument");
+      appsDir = value;
+      continue;
+    }
     if (arg.startsWith("-")) {
       throw new CliInputError(`unknown flag "${arg}"`);
     }
@@ -85,7 +98,7 @@ function parseArgs(argv: string[]): ParsedArgs {
     }
   }
 
-  return { brandCssFile, alsoFiles, help };
+  return { brandCssFile, alsoFiles, appsDir, help };
 }
 
 function requireFile(label: string, path: string): void {
@@ -148,11 +161,7 @@ export function main(argv: string[]): number {
     console.log(USAGE);
     return 0;
   }
-  if (!args.brandCssFile) {
-    throw new CliInputError("brand-css-file is required");
-  }
-
-  const path = resolve(args.brandCssFile);
+  const path = resolve(args.brandCssFile ?? DEFAULT_BRAND_CSS_FILE);
   requireFile("brand-css-file", path);
 
   const read = readBrandCss(path);
@@ -195,6 +204,22 @@ export function main(argv: string[]): number {
     for (const f of divergenceFindings) console.log(`  [${f.rule}] ${f.slot}  ${f.message}`);
   }
 
+  const appsDir = args.appsDir ?? (existsSync(DEFAULT_APPS_DIR) ? DEFAULT_APPS_DIR : undefined);
+  let secondBinders: ReturnType<typeof findSecondBinders> = [];
+  if (appsDir !== undefined) {
+    const resolvedApps = resolve(appsDir);
+    if (!existsSync(resolvedApps) || !statSync(resolvedApps).isDirectory()) {
+      throw new CliInputError(`apps directory "${appsDir}" does not exist or is not a directory`);
+    }
+    secondBinders = findSecondBinders(resolvedApps, path);
+    if (secondBinders.length > 0) {
+      console.log(`\n${secondBinders.length} second brand binding finding(s):`);
+      for (const f of secondBinders) {
+        console.log(`  [second-brand-binding] ${f.file}  declares ${f.slots.join(", ")}; the product's one overlay is ${path}`);
+      }
+    }
+  }
+
   // An unparsed region of the FILE (`read.unchecked`) or an unclassified
   // declaration KEY the check itself flagged (`result.unchecked`) both mean
   // the same thing: part of what should have been examined was not — see
@@ -204,7 +229,7 @@ export function main(argv: string[]): number {
   // accounted for.
   if (read.unchecked.length > 0 || result.unchecked.length > 0) return 2;
 
-  if (divergenceFindings.length > 0) return 1;
+  if (divergenceFindings.length > 0 || secondBinders.length > 0) return 1;
   return result.findings.length > 0 ? 1 : 0;
 }
 

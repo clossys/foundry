@@ -39,8 +39,14 @@ export interface AuthViewProps extends HTMLAttributes<HTMLDivElement> {
    */
   form: ReactNode;
   /**
-   * Slot for a secondary link below the fields, still inside the card -
-   * the alternate step ("Create an account", "Back to sign in").
+   * Slot for the alternate-step lines, rendered below the card and above the
+   * footnote - "No account? Join the waitlist", "Forgot password?", "Already
+   * set up? Sign in". Pass one line or several; they stack. The card holds
+   * only the form and its one primary action. The text is always the site's
+   * copy: this view has no `requestAccess` prop and no built-in link. An
+   * invitation or activation step never offers request-access or sign-up -
+   * the view has no mode and cannot tell it from sign-in, so the site keeps
+   * that rule.
    */
   secondaryAction?: ReactNode;
   /**
@@ -74,8 +80,9 @@ export interface AuthViewProps extends HTMLAttributes<HTMLDivElement> {
  * auth forms side by side.
  *
  * The shell is Designer's, in order: `SiteHeader`, `PageHeader`, `Card`
- * around the form slot, `SiteFooter`. There is no `mode` prop. A step
- * differs by the heading, the form slot, and the secondary link the
+ * around the form slot, the `secondaryAction` lines below the card, the
+ * footnote, the internal note, `SiteFooter`. There is no `mode` prop. A step
+ * differs by the heading, the form slot, and the alternate-step lines the
  * caller passes in.
  *
  * **This component implements no authentication of any kind.** No
@@ -108,8 +115,10 @@ export function AuthView({
         <PageHeader title={heading} description={description} />
         <Card className="flex flex-col gap-lg">
           {form}
-          {secondaryAction ? <div className="text-body-s text-ink-secondary">{secondaryAction}</div> : null}
         </Card>
+        {secondaryAction ? (
+          <div className="flex flex-col gap-xs text-body-s text-ink-secondary">{secondaryAction}</div>
+        ) : null}
         {footnote ? <p className="text-body-s text-ink-muted">{footnote}</p> : null}
         {internalNote ? (
           <p className="flex items-center gap-xs text-body-s text-ink-muted">

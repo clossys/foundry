@@ -260,6 +260,22 @@ describe("launcher-apply-plan body", () => {
   );
 
   it(
+    "a set whose repository id differs from the stored set is change-set-absent",
+    async () => {
+      const w = world();
+      const before = state(w);
+      // The same set digest, naming another repository: --repo names that other id too, so the run passes the id check against --repo and reaches the stored set's.
+      const other = "example-owner/other";
+      const out = await run(["--repo", other, "--task-record", "12"], { ...w.options, set: { ...w.set, repository: { ...w.set.repository, id: other } } });
+      expect(out.code).toBe(2);
+      expect(out.stdout.length).toBe(0);
+      expect(out.stderr).toEqual(["launcher-apply-plan body: indeterminate (change-set-absent)"]);
+      expect(state(w)).toBe(before);
+    },
+    TIMEOUT,
+  );
+
+  it(
     "a stored set that is a symbolic link is not written through, and nothing is printed",
     async () => {
       const w = world();

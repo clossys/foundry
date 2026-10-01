@@ -175,7 +175,8 @@ describe("golden: assetId — a slide with an image, byte for byte", () => {
     } catch (error) {
       expect((error as RenderError).reason).toBe("empty-output");
       expect((error as RenderError).message).toContain('slide 0 (id="title")');
-      expect((error as RenderError).message).toContain("marketing.hero");
+      expect((error as RenderError).message).toContain("1 assetId(s) that did not resolve to a real asset");
+      expect((error as RenderError).message).not.toContain("marketing.hero");
     }
   });
 

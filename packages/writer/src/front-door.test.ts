@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import {
   FRONT_DOOR_COPY_EN,
@@ -8,7 +9,7 @@ import {
 } from "./front-door.js";
 import type { FrontDoorKey, FrontDoorNouns } from "./front-door.js";
 import { checkCopyRecord } from "./checker.js";
-import { validateCopyRegistryShape } from "./schema.js";
+import { parseCopyRegistry, validateCopyRegistryShape } from "./schema.js";
 import type { VoiceRecord } from "./voice/index.js";
 
 // Obviously-fictional fixtures only: "Acme" and the reserved `.test` domain.
@@ -26,6 +27,53 @@ const EXPECTED_IDS = [
   "front-door.password.primary",
   "front-door.password.secondary",
   "front-door.identifier-not-found.notice",
+  "front-door.forgot-password.label",
+  "front-door.password.notice",
+  "front-door.sign-in.alt",
+  "front-door.code.title",
+  "front-door.code.description",
+  "front-door.code.label",
+  "front-door.code.primary",
+  "front-door.code.secondary",
+  "front-door.code.notice",
+  "front-door.unavailable.notice",
+  "front-door.rate-limited.notice",
+  "front-door.locked.notice",
+  "front-door.expired.notice",
+  "front-door.signed-out.notice",
+  "front-door.error.title",
+  "front-door.error.description",
+  "front-door.error.primary",
+  "front-door.not-found.title",
+  "front-door.not-found.description",
+  "front-door.not-found.primary",
+  "front-door.not-authorized.title",
+  "front-door.not-authorized.description",
+  "front-door.not-authorized.primary",
+  "front-door.not-authorized.secondary",
+  "front-door.access-pending.title",
+  "front-door.access-pending.description",
+  "front-door.access-pending.primary",
+  "front-door.service-unavailable.title",
+  "front-door.service-unavailable.description",
+  "front-door.service-unavailable.primary",
+  "front-door.request-access.description",
+  "front-door.request-access.label",
+  "front-door.reset.title",
+  "front-door.reset.description",
+  "front-door.reset.label",
+  "front-door.reset.primary",
+  "front-door.reset.secondary",
+  "front-door.reset.notice",
+  "front-door.activation.title",
+  "front-door.activation.description",
+  "front-door.activation.primary",
+  "front-door.activation.notice",
+  "front-door.internal-note.label",
+  "front-door.identifier-required.notice",
+  "front-door.password-required.notice",
+  "front-door.code-required.notice",
+  "front-door.network.notice",
 ] as const;
 
 function tokensIn(text: string): string[] {
@@ -41,7 +89,7 @@ describe("catalog shape", () => {
     expect(validateCopyRegistryShape(FRONT_DOOR_COPY_EN)).toEqual([]);
     expect(FRONT_DOOR_COPY_IDS).toEqual(EXPECTED_IDS);
     expect(FRONT_DOOR_COPY_EN.entries.map((entry) => entry.id)).toEqual([...FRONT_DOOR_COPY_IDS]);
-    expect(FRONT_DOOR_COPY_EN.entries).toHaveLength(10);
+    expect(FRONT_DOOR_COPY_EN.entries).toHaveLength(57);
   });
 
   it("identifies itself as the shipped English revision 1 catalog", () => {
@@ -70,6 +118,22 @@ describe("catalog shape", () => {
   });
 });
 
+describe("catalog file", () => {
+  const filePath = new URL("../templates/front-door.en.json", import.meta.url);
+
+  it("parses as a registry and deep-equals the shipped catalog", () => {
+    const data: unknown = JSON.parse(readFileSync(filePath, "utf8"));
+    expect(() => parseCopyRegistry(data)).not.toThrow();
+    expect(parseCopyRegistry(data).entries).toHaveLength(57);
+    expect(data).toEqual(FRONT_DOOR_COPY_EN);
+  });
+
+  it("is exported from the package as ./front-door.en.json", () => {
+    const manifest = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8")) as { exports: Record<string, unknown> };
+    expect(manifest.exports["./front-door.en.json"]).toBe("./templates/front-door.en.json");
+  });
+});
+
 describe("voice", () => {
   const voice: VoiceRecord = {
     id: "front-door-test-voice",
@@ -91,7 +155,7 @@ describe("voice", () => {
   it("has no error finding under the test voice", () => {
     const report = checkCopyRecord(FRONT_DOOR_COPY_EN, voice);
     expect(report.complete).toBe(true);
-    expect(report.checkedCount).toBe(10);
+    expect(report.checkedCount).toBe(57);
     expect(report.findings.filter((finding) => finding.severity === "error")).toEqual([]);
   });
 
@@ -117,7 +181,7 @@ describe("voice", () => {
 });
 
 describe("isFrontDoorCopyId", () => {
-  it("accepts exactly the ten reserved ids", () => {
+  it("accepts exactly the reserved ids", () => {
     for (const id of EXPECTED_IDS) expect(isFrontDoorCopyId(id)).toBe(true);
     expect(isFrontDoorCopyId("front-door.sign-in.heading")).toBe(false);
     expect(isFrontDoorCopyId("sign-in.title")).toBe(false);
@@ -148,7 +212,7 @@ describe("resolver", () => {
     expect(resolveFrontDoorCopy("front-door.sign-in.description", { surface: "Acme Console" }).text).toBe("Continue to Acme Console.");
   });
 
-  it("resolves all ten ids when every noun is supplied", () => {
+  it("resolves every id when every noun is supplied", () => {
     const nouns: FrontDoorNouns = { brand: "Acme", surface: "Acme Console", identifier: "ana@example.test", digest: "abc123", requestAccessLabel: "Request access" };
     for (const id of FRONT_DOOR_COPY_IDS) {
       const result = resolveFrontDoorCopy(id, nouns);
@@ -156,6 +220,16 @@ describe("resolver", () => {
       expect(result.complete).toBe(true);
       expect(result.text?.length).toBeGreaterThan(0);
     }
+  });
+
+  it("resolves the digest noun into the error description", () => {
+    const result = resolveFrontDoorCopy("front-door.error.description", { digest: "8f2a91c0" });
+    expect(result.complete).toBe(true);
+    expect(result.text).toBe("Something went wrong. Error: 8f2a91c0.");
+    const missing = resolveFrontDoorCopy("front-door.error.description", {});
+    expect(missing.complete).toBe(false);
+    expect(missing.issues.map((issue) => issue.reason)).toEqual(["missing-noun"]);
+    expect(missing.issues[0]?.noun).toBe("digest");
   });
 
   it("reports missing-noun for an absent or blank noun", () => {
@@ -197,6 +271,18 @@ describe("resolver", () => {
       const result = resolveFrontDoorCopy(key as unknown as FrontDoorKey, {});
       expect(result.complete).toBe(false);
       expect(result.issues.map((issue) => issue.reason)).toEqual(["unknown-copy-id"]);
+    }
+  });
+
+  it("refuses a key that cannot be converted to a string without throwing", () => {
+    const nullPrototype = Object.create(null) as unknown as FrontDoorKey;
+    const throwingToString = { toString(): string { throw new Error("boom"); } } as unknown as FrontDoorKey;
+    for (const key of [nullPrototype, throwingToString, Symbol("x") as unknown as FrontDoorKey]) {
+      expect(() => resolveFrontDoorCopy(key, {})).not.toThrow();
+      const result = resolveFrontDoorCopy(key, {});
+      expect(result.complete).toBe(false);
+      expect(result.issues.map((issue) => issue.reason)).toEqual(["unknown-copy-id"]);
+      expect(typeof result.issues[0]?.id).toBe("string");
     }
   });
 

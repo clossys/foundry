@@ -52,7 +52,7 @@ export interface MarketingViewProps extends HTMLAttributes<HTMLDivElement> {
   featuresHeading?: ReactNode;
   /** A line of supporting copy under the features heading. */
   featuresDescription?: ReactNode;
-  /** The features to render — a homogeneous repeat, bound via a `SurfaceRepeatingSlotBinding`. May be empty. */
+  /** The features to render — a homogeneous repeat, bound via a `SurfaceRepeatingSlotBinding`. May be empty; an empty list with no features heading or description omits the grid. */
   features: readonly MarketingFeatureItem[];
   /** Semantic ground for the feature grid band. @default "sunken" */
   featuresGround?: SectionGround;
@@ -103,8 +103,9 @@ export interface MarketingViewProps extends HTMLAttributes<HTMLDivElement> {
  *
  * `features` is always an array (the `features` binding is required —
  * see `internal/webTemplates.ts`'s `MARKETING_VIEW_TEMPLATE.repeatingSlots`
- * — but MAY be empty; `FeatureGrid` itself renders a heading region with
- * zero items cleanly). `faq` is optional at both levels: `undefined` omits
+ * — but MAY be empty). The feature band is omitted when that array is
+ * empty and neither a features heading nor a features description is
+ * bound. `faq` is optional at both levels: `undefined` omits
  * the whole section, an empty array renders it with zero entries — see
  * `faq`'s own doc comment above.
  */
@@ -146,7 +147,9 @@ export function MarketingView({
           composition={heroMedia ? "split" : "editorial"}
           ground={heroGround}
         />
-        <FeatureGrid heading={featuresHeading} description={featuresDescription} items={features} ground={featuresGround} />
+        {features.length > 0 || featuresHeading !== undefined || featuresDescription !== undefined ? (
+          <FeatureGrid heading={featuresHeading} description={featuresDescription} items={features} ground={featuresGround} />
+        ) : null}
         {faq !== undefined ? <Faq heading={faqHeading} description={faqDescription} items={faq} ground={faqGround} /> : null}
         <Hero headingLevel={2} heading={ctaHeading} description={ctaDescription} actions={ctaAction} ground={ctaGround} />
       </main>

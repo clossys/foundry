@@ -175,10 +175,10 @@ export interface ResolvedSurfaceDocument {
 export function resolveSurfaceDocument(surface: SurfaceDocument, resolver: CopyResolver, options: ResolveSurfaceDocumentOptions = {}): ResolvedSurfaceDocument {
   const findings = validateSurfaceDocument(surface);
   if (findings.some((finding) => finding.severity === "error")) {
-    throw new SurfaceResolutionError("invalid-surface", `resolveSurfaceDocument refused invalid surface "${surface.id}": ${findings.map((finding) => finding.message).join("; ")}`);
+    throw new SurfaceResolutionError("invalid-surface", `resolveSurfaceDocument refused an invalid surface: ${findings.map((finding) => finding.message).join("; ")}`);
   }
   if (typeof resolver !== "function") {
-    throw new SurfaceResolutionError("unresolved-copy", `resolveSurfaceDocument needs a CopyResolver for surface "${surface.id}".`);
+    throw new SurfaceResolutionError("unresolved-copy", "resolveSurfaceDocument needs a CopyResolver.");
   }
 
   const nodeSlots = new Set(options.nodeSlots ?? []);
@@ -187,7 +187,7 @@ export function resolveSurfaceDocument(surface: SurfaceDocument, resolver: CopyR
     if (!knownTemplates.has(surface.template)) {
       throw new SurfaceResolutionError(
         "unsupported-template",
-        `resolveSurfaceDocument cannot resolve surface "${surface.id}": template "${surface.template}" is not registered. Known template(s): ${[...knownTemplates].join(", ") || "(none)"}.`,
+        `resolveSurfaceDocument cannot resolve the surface: its template is not registered. Known template(s): ${[...knownTemplates].join(", ") || "(none)"}.`,
       );
     }
   }
@@ -218,7 +218,7 @@ export function resolveSurfaceDocument(surface: SurfaceDocument, resolver: CopyR
     if (!nodeSlots.has(binding.slot)) {
       throw new SurfaceResolutionError(
         "unsupported-node",
-        `resolveSurfaceDocument cannot lower caller-owned node binding at bindings.${index} (slot "${binding.slot}"); pass { nodeSlots: [...] } naming this slot (see a template's own node-kind slots, e.g. @clossys/publisher/web's defineWebTemplate/WebTemplate.slotKinds), or render that web node through a direct surface-web composition.`,
+        `resolveSurfaceDocument cannot lower caller-owned node binding at bindings.${index}; pass { nodeSlots: [...] } naming its slot (see a template's own node-kind slots, e.g. @clossys/publisher/web's defineWebTemplate/WebTemplate.slotKinds), or render that web node through a direct surface-web composition.`,
       );
     }
     nodes.push({ slot: binding.slot, node: binding.node as object });
@@ -249,7 +249,7 @@ function resolveRepeatingBindingItem(item: SurfaceSlotBindingItem, bindingIndex:
     return {
       index: itemIndex,
       fields: Object.fromEntries(
-        Object.entries(item.fields).map(([field, binding]) => [field, resolveRepeatingFieldBinding(binding, `${path}.fields`, text)]),
+        Object.entries(item.fields).map(([field, binding], fieldIndex) => [field, resolveRepeatingFieldBinding(binding, `${path}.fields.${fieldIndex}`, text)]),
       ),
     };
   }
