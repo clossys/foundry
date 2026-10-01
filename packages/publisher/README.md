@@ -354,7 +354,10 @@ Name a shipped template when its slots cover the page:
 - **`ErrorView`** — error shell, including the sign-in-boundary states: not
   authorized (403), pending, revoked, and provider unavailable (503). It takes
   the same props for each; the status, title, description, and recovery
-  action are the caller's copy.
+  action are the caller's copy. A diagnostic reference goes inline in the
+  description (`"Something went wrong. Error: 8f2a91c0."`), there is no
+  details disclosure, and `action` holds one primary control: a secondary
+  destination is a text link inside the description.
 
 If a required band is not a slot on any shipped template and not one of the
 six `SectionedView` kinds, **do not flatten** it into a one-item

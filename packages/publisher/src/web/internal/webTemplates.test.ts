@@ -22,6 +22,11 @@ describe("web template registry", () => {
     expect(required).toEqual(["status", "title"]);
   });
 
+  it("ErrorView's flow slot keys are exactly status, title, description, action", () => {
+    const template = getWebTemplate("ErrorView")!;
+    expect(template.flow.slots.map((s) => s.key)).toEqual(["status", "title", "description", "action"]);
+  });
+
   it("MarketingView's flow marks exactly brand, heroHeading, and ctaHeading as required", () => {
     const template = getWebTemplate("MarketingView")!;
     const required = template.flow.slots.filter((s) => s.required === true).map((s) => s.key).sort();
