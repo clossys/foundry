@@ -421,7 +421,6 @@ describe("golden: MarketingView", () => {
         "</header>" +
         '<main class="flex flex-col gap-2xl py-2xl">' +
         '<section class="flex flex-col gap-xl"><div class="flex flex-col items-start gap-md"><h1 class="text-display-l font-display max-w-display text-ink-primary">Placeholder hero heading</h1></div></section>' +
-        '<div class="flex flex-col gap-lg bg-surface-sunken"><div class="grid grid-cols-1 gap-lg tablet:grid-cols-2 desktop:grid-cols-3"></div></div>' +
         '<section class="bg-surface-sunken flex flex-col gap-xl"><div class="flex flex-col items-start gap-md"><h2 class="text-display-l font-display max-w-display text-ink-primary">Placeholder CTA heading</h2></div></section>' +
         "</main>" +
         '<footer class="bg-surface-raised text-ink-primary py-lg border-t border-line-base" style="position:relative;z-index:var(--ui-z-shell, 20);border-top-width:var(--ui-border-hairline, 1px)">' +

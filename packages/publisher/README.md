@@ -658,9 +658,8 @@ that picks one — see "Scope," above: this package still does not compose.
 slots; `features` (required) and `faq` (optional) are **repeating** slots,
 each bound via a `SurfaceRepeatingSlotBinding` and rendered through
 `@clossys/designer`'s `FeatureGrid`/`Faq` blocks respectively. An empty
-repeating group (`items: []`) renders that section with zero entries —
-never an error, the same "empty is a deliberate, valid choice" contract
-`SurfaceRepeatingSlotBinding` itself holds to, above; a `faq` binding that
+`features` group with no `featuresHeading` or `featuresDescription` omits
+the grid; a `faq` binding that
 was never authored at all omits the whole FAQ section instead, which is a
 different, equally valid outcome (see `MarketingView`'s own `faq` prop doc
 comment).
