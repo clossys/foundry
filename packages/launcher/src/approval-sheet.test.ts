@@ -176,7 +176,7 @@ describe("renderApprovalSheet", () => {
 });
 
 const PLAN_DIGEST = "sha256:6395298da2ed12341ef1e86139dce75ecf9ee7a2402290627e6d46d1b6412a8d";
-const BUNDLE_DIGEST = "sha256:cd0650c662442c21a67a508a7570e32fcb62c502f8dc863588a7c5d09227e2b5";
+const BUNDLE_DIGEST = "sha256:719d13e4fd78b1e9557899eaaaaf99a9768ed0f8d19a585cdf865a8ba76325ad";
 
 const GOLDEN = `Clossys apply plan: approval sheet
 Mode: report
@@ -188,14 +188,15 @@ Approve subjectDigest: ${BUNDLE_DIGEST}
 
 | Repository | Kind | Item | Change | Digest |
 | --- | --- | --- | --- | --- |
-| example-owner/site | write-record | brief | 1 path | 3d2b4f88280d |
-| example-owner/site | add-caller-workflow | caller-workflow | 3 paths | 3d2b4f88280d |
-| example-owner/site | add-ci-template | ci-template | 1 path | 3d2b4f88280d |
-| example-owner/site | pin-starter | example-owner/site:@clossys/starter | @clossys/starter@0.2.0 | 3d2b4f88280d |
-| example-owner/site | write-ledger | ledger | 1 path | 3d2b4f88280d |
-| example-owner/site | add-path-scope-job | path-scope-job | 1 path | 3d2b4f88280d |
-| example-owner/site | compose-skills | skills | 10 paths | 3d2b4f88280d |
-| example-owner/site | write-starter-request | starter-request | 1 path | 3d2b4f88280d |
+| example-owner/site | write-record | agents-guide | 1 path | c20a407f12bc |
+| example-owner/site | write-record | brief | 1 path | c20a407f12bc |
+| example-owner/site | add-caller-workflow | caller-workflow | 3 paths | c20a407f12bc |
+| example-owner/site | add-ci-template | ci-template | 1 path | c20a407f12bc |
+| example-owner/site | pin-starter | example-owner/site:@clossys/starter | @clossys/starter@0.2.0 | c20a407f12bc |
+| example-owner/site | write-ledger | ledger | 1 path | c20a407f12bc |
+| example-owner/site | add-path-scope-job | path-scope-job | 1 path | c20a407f12bc |
+| example-owner/site | compose-skills | skills | 10 paths | c20a407f12bc |
+| example-owner/site | write-starter-request | starter-request | 1 path | c20a407f12bc |
 
 Deferred:
 - example-owner/site example-owner/site:@clossys/writer after-setup

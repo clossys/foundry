@@ -290,56 +290,60 @@ const FIRST_SHEET = `Clossys apply plan: approval sheet
 Mode: report
 Plan digest: sha256:af6d64909cbc93dd8009df226a7a25173810a705d2081045fe446d8268a43bfd
 Plan committed: yes
-Bundle digest: sha256:21214292be57dd50009ba1faf8d4707e4a86ddbf5cb301b17cd844a2c20ecb71
+Bundle digest: sha256:69e3b2f19426441760ede57ad566249d12ffe544c56206c3706c5baaa7b757d3
 Authorization: plan sha256:af6d64909cbc93dd8009df226a7a25173810a705d2081045fe446d8268a43bfd expires 2999-01-01T00:00:00Z
-Approve subjectDigest: sha256:21214292be57dd50009ba1faf8d4707e4a86ddbf5cb301b17cd844a2c20ecb71
+Approve subjectDigest: sha256:69e3b2f19426441760ede57ad566249d12ffe544c56206c3706c5baaa7b757d3
 
 | Repository | Kind | Item | Change | Digest |
 | --- | --- | --- | --- | --- |
-| example-owner/site | write-record | brief | 1 path | c9bee88d5ec5 |
-| example-owner/site | add-caller-workflow | caller-workflow | 3 paths | c9bee88d5ec5 |
-| example-owner/site | add-ci-template | ci-template | 1 path | c9bee88d5ec5 |
-| example-owner/site | pin-starter | example-owner/site:@clossys/starter | @clossys/starter@0.2.0 | c9bee88d5ec5 |
-| example-owner/site | write-ledger | ledger | 1 path | c9bee88d5ec5 |
-| example-owner/site | add-path-scope-job | path-scope-job | 1 path | c9bee88d5ec5 |
-| example-owner/site | compose-skills | skills | 10 paths | c9bee88d5ec5 |
-| example-owner/site | write-starter-request | starter-request | 1 path | c9bee88d5ec5 |
-| example-owner/docs | write-record | brief | 1 path | 383f32af7ac6 |
-| example-owner/docs | add-caller-workflow | caller-workflow | 3 paths | 383f32af7ac6 |
-| example-owner/docs | add-ci-template | ci-template | 1 path | 383f32af7ac6 |
-| example-owner/docs | pin-starter | example-owner/docs:@clossys/starter | @clossys/starter@0.2.0 | 383f32af7ac6 |
-| example-owner/docs | write-ledger | ledger | 1 path | 383f32af7ac6 |
-| example-owner/docs | add-path-scope-job | path-scope-job | 1 path | 383f32af7ac6 |
-| example-owner/docs | compose-skills | skills | 7 paths | 383f32af7ac6 |
-| example-owner/docs | write-starter-request | starter-request | 1 path | 383f32af7ac6 |
+| example-owner/site | write-record | agents-guide | 1 path | daf0d81ce55f |
+| example-owner/site | write-record | brief | 1 path | daf0d81ce55f |
+| example-owner/site | add-caller-workflow | caller-workflow | 3 paths | daf0d81ce55f |
+| example-owner/site | add-ci-template | ci-template | 1 path | daf0d81ce55f |
+| example-owner/site | pin-starter | example-owner/site:@clossys/starter | @clossys/starter@0.2.0 | daf0d81ce55f |
+| example-owner/site | write-ledger | ledger | 1 path | daf0d81ce55f |
+| example-owner/site | add-path-scope-job | path-scope-job | 1 path | daf0d81ce55f |
+| example-owner/site | compose-skills | skills | 10 paths | daf0d81ce55f |
+| example-owner/site | write-starter-request | starter-request | 1 path | daf0d81ce55f |
+| example-owner/docs | write-record | agents-guide | 1 path | 0fb8da1ec295 |
+| example-owner/docs | write-record | brief | 1 path | 0fb8da1ec295 |
+| example-owner/docs | add-caller-workflow | caller-workflow | 3 paths | 0fb8da1ec295 |
+| example-owner/docs | add-ci-template | ci-template | 1 path | 0fb8da1ec295 |
+| example-owner/docs | pin-starter | example-owner/docs:@clossys/starter | @clossys/starter@0.2.0 | 0fb8da1ec295 |
+| example-owner/docs | write-ledger | ledger | 1 path | 0fb8da1ec295 |
+| example-owner/docs | add-path-scope-job | path-scope-job | 1 path | 0fb8da1ec295 |
+| example-owner/docs | compose-skills | skills | 7 paths | 0fb8da1ec295 |
+| example-owner/docs | write-starter-request | starter-request | 1 path | 0fb8da1ec295 |
 `;
 
 const APPLY_SHEET = `Clossys apply plan: approval sheet
 Mode: planned
 Plan digest: sha256:af6d64909cbc93dd8009df226a7a25173810a705d2081045fe446d8268a43bfd
 Plan committed: yes
-Bundle digest: sha256:3b1f0f81f4cabdd5880350eb1478904b2fcb4f39fb9a674b4ba618eb7de8d952
+Bundle digest: sha256:3ac36c84e77645d4cf881abe3d58a25d2ceaa3430a546dcbcbc026cf7220c134
 Authorization: plan sha256:af6d64909cbc93dd8009df226a7a25173810a705d2081045fe446d8268a43bfd expires 2999-01-01T00:00:00Z
-Approve subjectDigest: sha256:3b1f0f81f4cabdd5880350eb1478904b2fcb4f39fb9a674b4ba618eb7de8d952
+Approve subjectDigest: sha256:3ac36c84e77645d4cf881abe3d58a25d2ceaa3430a546dcbcbc026cf7220c134
 
 | Repository | Kind | Item | Change | Digest |
 | --- | --- | --- | --- | --- |
-| example-owner/site | write-record | brief | 1 path | c3909522108a |
-| example-owner/site | add-caller-workflow | caller-workflow | 3 paths | c3909522108a |
-| example-owner/site | add-ci-template | ci-template | 1 path | c3909522108a |
-| example-owner/site | pin-starter | example-owner/site:@clossys/starter | @clossys/starter@0.2.0 | c3909522108a |
-| example-owner/site | write-ledger | ledger | 1 path | c3909522108a |
-| example-owner/site | add-path-scope-job | path-scope-job | 1 path | c3909522108a |
-| example-owner/site | compose-skills | skills | 10 paths | c3909522108a |
-| example-owner/site | write-starter-request | starter-request | 1 path | c3909522108a |
-| example-owner/docs | write-record | brief | 1 path | b7571a08ee07 |
-| example-owner/docs | add-caller-workflow | caller-workflow | 3 paths | b7571a08ee07 |
-| example-owner/docs | add-ci-template | ci-template | 1 path | b7571a08ee07 |
-| example-owner/docs | pin-starter | example-owner/docs:@clossys/starter | @clossys/starter@0.2.0 | b7571a08ee07 |
-| example-owner/docs | write-ledger | ledger | 1 path | b7571a08ee07 |
-| example-owner/docs | add-path-scope-job | path-scope-job | 1 path | b7571a08ee07 |
-| example-owner/docs | compose-skills | skills | 7 paths | b7571a08ee07 |
-| example-owner/docs | write-starter-request | starter-request | 1 path | b7571a08ee07 |
+| example-owner/site | write-record | agents-guide | 1 path | 417599971e42 |
+| example-owner/site | write-record | brief | 1 path | 417599971e42 |
+| example-owner/site | add-caller-workflow | caller-workflow | 3 paths | 417599971e42 |
+| example-owner/site | add-ci-template | ci-template | 1 path | 417599971e42 |
+| example-owner/site | pin-starter | example-owner/site:@clossys/starter | @clossys/starter@0.2.0 | 417599971e42 |
+| example-owner/site | write-ledger | ledger | 1 path | 417599971e42 |
+| example-owner/site | add-path-scope-job | path-scope-job | 1 path | 417599971e42 |
+| example-owner/site | compose-skills | skills | 10 paths | 417599971e42 |
+| example-owner/site | write-starter-request | starter-request | 1 path | 417599971e42 |
+| example-owner/docs | write-record | agents-guide | 1 path | 0f1f1b6eb7c2 |
+| example-owner/docs | write-record | brief | 1 path | 0f1f1b6eb7c2 |
+| example-owner/docs | add-caller-workflow | caller-workflow | 3 paths | 0f1f1b6eb7c2 |
+| example-owner/docs | add-ci-template | ci-template | 1 path | 0f1f1b6eb7c2 |
+| example-owner/docs | pin-starter | example-owner/docs:@clossys/starter | @clossys/starter@0.2.0 | 0f1f1b6eb7c2 |
+| example-owner/docs | write-ledger | ledger | 1 path | 0f1f1b6eb7c2 |
+| example-owner/docs | add-path-scope-job | path-scope-job | 1 path | 0f1f1b6eb7c2 |
+| example-owner/docs | compose-skills | skills | 7 paths | 0f1f1b6eb7c2 |
+| example-owner/docs | write-starter-request | starter-request | 1 path | 0f1f1b6eb7c2 |
 `;
 
 const SUBJECT = /^Approve subjectDigest: (sha256:[0-9a-f]{64})$/mu;
