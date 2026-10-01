@@ -1,4 +1,6 @@
+import { execFileSync } from "node:child_process";
 import { rmSync } from "node:fs";
+import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import type { ReadinessRunner } from "./admission.js";
 import {
@@ -300,6 +302,48 @@ describe("plannedBundle", () => {
       expect(entry).not.toHaveProperty("binding");
       expect(entry).not.toHaveProperty("state");
       expect(readinessCalls).toBe(0);
+    },
+    TIMEOUT_MS,
+  );
+
+  it(
+    "the base ledger is read from the clone the run names, whatever repository the environment points git at",
+    async () => {
+      const s = scene();
+      const saved = { dir: process.env.GIT_DIR, objects: process.env.GIT_OBJECT_DIRECTORY };
+      // A hostile environment: git's own location variables name the hub's repository, which holds no base commit of the clone.
+      process.env.GIT_DIR = join(s.hub, ".git");
+      process.env.GIT_OBJECT_DIRECTORY = join(s.hub, ".git", "objects");
+      let result: PlanApplyBundleResult;
+      try {
+        result = await plannedBundle(reportOf(s, [{ set: s.w.apply }]), options(s, { runReadiness: runner(0) }));
+      } finally {
+        for (const [name, value] of [["GIT_DIR", saved.dir], ["GIT_OBJECT_DIRECTORY", saved.objects]] as const) {
+          if (value === undefined) delete process.env[name];
+          else process.env[name] = value;
+        }
+      }
+      const entry = entryOf(result, SITE_ID);
+      expect(entry.checks.filter((check) => check.check === "V3")).toEqual([satisfied("V3")]);
+      expect(entry).toHaveProperty("binding");
+    },
+    TIMEOUT_MS,
+  );
+
+  it(
+    "a replace ref in the clone does not change the base ledger that is read",
+    async () => {
+      const s = scene();
+      const git = (...args: string[]): string => execFileSync("git", args, { cwd: s.clone, encoding: "utf8", stdio: ["pipe", "pipe", "ignore"], input: "not a ledger\n" }).trim();
+      const real = git("rev-parse", `${s.w.apply.repository.baseCommit}:${LEDGER_PATH}`);
+      const decoy = git("hash-object", "-w", "--stdin");
+      git("replace", real, decoy);
+      // The replacement shows through a plain `git cat-file`, so the fixture is a real one.
+      expect(git("cat-file", "blob", real)).toBe("not a ledger");
+      const result = await plannedBundle(reportOf(s, [{ set: s.w.apply }]), options(s, { runReadiness: runner(0) }));
+      const entry = entryOf(result, SITE_ID);
+      expect(entry.checks.filter((check) => check.check === "V3")).toEqual([satisfied("V3")]);
+      expect(entry).toHaveProperty("binding");
     },
     TIMEOUT_MS,
   );

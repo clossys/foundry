@@ -353,8 +353,14 @@ Name a shipped template when its slots cover the page:
   "No account? Join the waitlist") renders below it, before the footnote, and
   is always the site's copy. An invitation or activation step never offers
   request-access or sign-up: the view has no mode and no `requestAccess`
-  prop, so each site's activation-page test asserts no request-access or
-  sign-up link. The content column uses the
+  prop, so each site's activation-page test should assert no request-access or
+  sign-up link. Pass each `secondaryAction` line as one element: text plus a
+  link in one fragment splits onto two lines. When the sign-in provider is
+  unavailable, `isDisabled` keeps the form on screen inside a disabled
+  `<fieldset>` with the typed values still shown; the explanation goes in the
+  form's own `submitError`, and a retry link in `secondaryAction` stays
+  enabled. Switching `isDisabled` remounts the form, so the site keeps the
+  typed values in its own state. The content column uses the
   `--ui-width-form-max` form measure, and `description` is a required prop
   so every step decides on a supporting line. The form slot is filled with
   Designer's `Form` / `TextField` / `Button`. There is no mode prop, and
@@ -377,6 +383,10 @@ Name a shipped template when its slots cover the page:
   private copy of the header/error/footer shell. It also frames the
   sign-in-boundary states. It is not a built-in web template. See
   [Boundary pages](#boundary-pages).
+- **`PackReviewView`** — the dev-only review index: a site's pages, their
+  forced states, its exported artifacts and a lazy contact sheet, each entry
+  with a `draft`, `delegated` or `approved` badge. It uses the same frame as
+  `AuthView`. See [`PackReviewView`](#packreviewview).
 
 If a required band is not a slot on any shipped template and not one of the
 six `SectionedView` kinds, **do not flatten** it into a one-item
@@ -1950,6 +1960,70 @@ Next requires the global-error file to be a client module, so it starts with
 its own: put it in `description` as caller copy (`Error: <digest>.`). A
 segment `error` boundary keeps the layout, so use `ErrorView` there instead.
 
+### `PackReviewView`
+
+`PackReviewView`, exported from `@clossys/publisher/web`, is the dev-only
+review index for a site release. One page lists every page of the site with its
+forced states, every exported artifact, and a contact sheet that renders each
+page and state in a lazy frame at 390, 1024 and 1440 px. Each page and export
+carries a `draft`, `delegated` or `approved` badge. It is server-safe, reads
+nothing, and ships no wording: the caller builds the entries with
+[`buildPackReviewIndex`](#reviewing-a-pack) and passes every visible string.
+
+The frame is the one `AuthView` uses: Designer's `SiteHeader` with the
+text-only surface badge (`surfaceLabel`, required), a `PageHeader`, and
+`SiteFooter`, with the page held to `--ui-width-form-max`. The contact sheet
+scrolls sideways inside its own section, so the widest frame never widens the
+page.
+
+```tsx
+import { PackReviewView } from "@clossys/publisher/web";
+import type { PackReviewViewLabels } from "@clossys/publisher/web";
+
+declare const labels: PackReviewViewLabels; // every heading, badge, kind and frame name, as approved copy
+
+export function ReviewPage() {
+  return (
+    <PackReviewView
+      brand={<span>Example Studio</span>}
+      surfaceLabel="Review"
+      heading="Pack review"
+      description="Pages, states and exports of this site."
+      pages={[
+        {
+          id: "/contact",
+          href: "/contact",
+          status: "delegated",
+          states: [{ id: "accepted", href: "/contact?preview=accepted" }],
+        },
+      ]}
+      exports={[{ id: "share-card:0", kind: "og-image", path: "out/share/og-image.png", status: "approved" }]}
+      labels={labels}
+    />
+  );
+}
+```
+
+Props:
+
+- `brand`, `surfaceLabel`, `heading`, `description`, `footerSecondary`
+  (optional): the frame, as above.
+- `pages`: `{ id, href, status, states: { id, href }[] }[]`. `id` is shown as
+  text. Every `href` must be a same-site address (one leading slash, no
+  `//`, no backslash, no control character); anything else throws a
+  `RenderError` naming the position, never the value.
+- `exports`: `{ id, kind, path, status, width? }[]`. `path` is shown as plain
+  text and is never a link; `width` is the review width of an email export.
+- `labels`: `pagesHeading`, `exportsHeading`, `sheetHeading`, `none`, the
+  `statuses` and `kinds` word for each, `exportWidth(width)` and
+  `frameTitle({ page, state?, width })`. The view has no default wording.
+- `widths` (default `[390, 1024, 1440]`): positive whole numbers; others throw.
+
+An unknown `status` throws. Entry text is rendered as text: no markup from an
+entry is injected, and the frames use `loading="lazy"` and never `srcDoc`. The
+view does not know whether it is running in development: gating it is the
+caller's job (the site template does, see its README).
+
 ## `record` — the append-only publication ledger
 
 `@clossys/publisher/record` is the return path: an append-only
@@ -2437,6 +2511,47 @@ if (!result.ok) throw new Error(result.issues.map((issue) => issue.path).join(",
 console.log(result.manifest.items.length);
 ```
 
+### Reviewing a pack
+
+`buildPackReviewIndex(manifest, { routes, states })` enumerates what a review
+visits, for [`PackReviewView`](#packreviewview). It is pure and returns
+`PackReviewIndexResult`: `{ ok: true, index }` or `{ ok: false, issues }`,
+where each `PackReviewIssue` is a `rule` and a `path`, never a value from the
+input.
+
+- **Pages** are the `routes` the caller lists, in order, each with the
+  `states` (kebab-case slugs) the caller declares for it. Each carries the
+  `website` item's badge; a pack with no `website` item reports `draft`.
+- **Exports** come from `outputPaths` of `share-card` (an `og-image`),
+  `brand-kit` (`favicon`, `app-icon`, `logo`, or `other`, by file name) and
+  `notification-email` (an `.html` output is listed at 600 and 375 px, as
+  `email-html`, and a `.txt` output is `email-text`), in that order. A
+  directory output (a trailing `/`) is not an export. Each carries the badge of
+  its own item.
+- `packReviewStatus(status)` folds a pack status onto `draft`, `delegated` or
+  `approved`: `absent`, `found` and `draft` are `draft`, `in-review` is
+  `delegated`, and `kept` and `published` are `approved`.
+  `PACK_REVIEW_WIDTHS` (390, 1024, 1440) and `PACK_REVIEW_EMAIL_WIDTHS` (600,
+  375) hold the widths.
+- A manifest that does not pass `validatePackManifest`, an output path that is
+  not a plain relative path (a leading `/`, a `..` or empty segment, a
+  backslash, a scheme, a query or a control character), and a route or state
+  that is not a plain path or slug are all refused.
+
+```ts
+import { buildPackReviewIndex } from "@clossys/publisher/pack";
+import type { PackManifest } from "@clossys/publisher/pack";
+
+declare const manifest: PackManifest; // read from clossys/publisher/pack.json
+
+const result = buildPackReviewIndex(manifest, {
+  routes: [{ id: "/" }, { id: "/contact" }],
+  states: { "/contact": ["idle", "accepted"] },
+});
+if (!result.ok) throw new Error(result.issues.map((issue) => issue.rule).join(", "));
+console.log(result.index.pages.length, result.index.exports.length);
+```
+
 ### Sealing a website
 
 A website item moves from `kept` to `published` only on evidence. The caller
@@ -2804,11 +2919,12 @@ cosmetic gap.
   `lintSiteMetadataHtml`, `SITE_METADATA_REQUIRED_TAGS`, `SiteMetadataError`,
   `listWebTemplateNames`, `defineWebTemplate`, `createWebRenderer`,
   `AuthView`, `CaptureView`, `CollectionView`, `DocumentView`, `ErrorView`,
-  `LegalView`, `MarketingView`, `SectionedView`, `RenderError`, and the `AuthViewProps`,
+  `LegalView`, `MarketingView`, `PackReviewView`, `SectionedView`, `RenderError`, and the `AuthViewProps`,
   `CaptureViewProps`, `CollectionViewEmptyState`, `CollectionViewEntry`,
   `CollectionViewLink`, `CollectionViewPagination`, `CollectionViewProps`,
   `DocumentViewEffectiveDate`, `DocumentViewProps`,
   `ErrorViewProps`, `LegalViewLabels`, `LegalViewProps`, `MarketingViewProps`, `MarketingFeatureItem`, `MarketingFaqItem`,
+  `PackReviewViewExport`, `PackReviewViewLabels`, `PackReviewViewPage`, `PackReviewViewProps`, `PackReviewViewState`,
   `SectionedViewLandmark`, `SectionedViewProps`,
   `RenderErrorReason`, `AssetResolver`, `CopyResolver`, `RenderWebOptions`,
   `RenderWebResult`, `RepeatingWebSlotFieldSpec`, `RepeatingWebSlotSpec`, `ResolvedWebGroupField`, `ResolvedWebGroupItem`,
@@ -2853,7 +2969,11 @@ cosmetic gap.
   `PACK_LAYERS`, `PACK_VISIBILITIES`, `isPackLayer`, `isPackVisibility`,
   `isPackVersionString`, `validatePackManifest`, `planPackOrder`,
   `computePackReadiness`, `sealableItemIds`, `detectExistingPackItems`,
-  `foundPackItem`, and the `PackStatus`, `LifecycleState`,
+  `foundPackItem`, `buildPackReviewIndex`, `packReviewStatus`,
+  `PACK_REVIEW_STATUSES`, `PACK_REVIEW_WIDTHS`, `PACK_REVIEW_EMAIL_WIDTHS`, and
+  the `PackReviewExport`, `PackReviewExportKind`, `PackReviewIndex`,
+  `PackReviewIndexResult`, `PackReviewInput`, `PackReviewIssue`,
+  `PackReviewPage`, and `PackReviewStatus` types, and the `PackStatus`, `LifecycleState`,
   `LifecycleCondition`, and `PackStatusLifecyclePosition` types (also
   re-exported from `@clossys/controller`) and the `PackLayer`,
   `PackVisibility`, `PackItem`, `PackManifest`, `PackSourcePin`,

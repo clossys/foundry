@@ -74,7 +74,8 @@ const DIGEST = /^sha256:[0-9a-f]{64}$/u;
 const TITLE = /^Clossys: apply plan [0-9a-f]{12}$/u;
 const MARKER_LINE = /^<!-- clossys-change-set: (sha256:[0-9a-f]{64}) -->$/u;
 const REPOSITORY_ID = /^(?:[A-Za-z0-9][A-Za-z0-9-]{0,38}\/)?[A-Za-z0-9._-]{1,100}$/u;
-const ITEM_ID = /^[A-Za-z0-9][A-Za-z0-9._:@/-]{0,299}$/u;
+// 355 characters: a repository id of up to 140, a colon and a package name of up to 214 (the planItem the contract derives, C16).
+const ITEM_ID = /^[A-Za-z0-9][A-Za-z0-9._:@/-]{0,354}$/u;
 const ID_TOKEN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/u;
 const PACKAGE_NAME = /^(?=.{1,214}$)@[a-z0-9][a-z0-9._-]*\/[a-z0-9][a-z0-9._-]*$/u;
 const EXACT_VERSION = /^(?:0|[1-9][0-9]{0,15})\.(?:0|[1-9][0-9]{0,15})\.(?:0|[1-9][0-9]{0,15})$/u;

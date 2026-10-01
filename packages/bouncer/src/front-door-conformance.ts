@@ -30,6 +30,7 @@ export type FrontDoorRule =
   | "health"
   | "service-unavailable"
   | "security-headers"
+  | "sign-in-status"
   | "boundary-status"
   | "handler-threw";
 
@@ -45,9 +46,9 @@ export interface FrontDoorViolation {
 export interface FrontDoorHttpConfig {
   /** Absolute base URL the requests are built against. */
   readonly origin: string;
-  /** Sign-in routes: `no-store`, the production security headers and the robots tag. */
+  /** Sign-in routes: a status below 400, `no-store`, the production security headers and the robots tag. */
   readonly signInPaths?: readonly string[];
-  /** Gated routes requested with no cookie: a 3xx, 401 or 403 that is `no-store` and carries the robots tag. */
+  /** Gated routes requested with no cookie: a redirect with a `Location`, 401 or 403 that is `no-store` and carries the robots tag. */
   readonly boundaryPaths?: readonly string[];
   /** Defaults to `/robots.txt`. */
   readonly robotsPath?: string;
@@ -60,6 +61,7 @@ export interface FrontDoorHttpConfig {
 type FrontDoorHandle = (request: Request) => Response | Promise<Response>;
 
 const NO_STORE = "no-store";
+const REDIRECT_STATUSES: readonly number[] = [301, 302, 303, 307, 308];
 const SERVICE_UNAVAILABLE_ROUTE = "serviceUnavailable";
 const SECURITY_HEADER_NAMES = ["Strict-Transport-Security", "Referrer-Policy", "Permissions-Policy"] as const;
 
@@ -84,14 +86,18 @@ function robotsTagViolations(route: string, response: Response): FrontDoorViolat
 
 function noStoreViolations(route: string, response: Response): FrontDoorViolation[] {
   const value = response.headers.get("Cache-Control");
-  return value === NO_STORE
+  const tokens = value === null ? [] : value.split(",").map((token) => token.trim().toLowerCase());
+  return tokens.includes(NO_STORE)
     ? []
-    : [{ route, rule: "no-store", message: `Cache-Control is ${describeValue(value)}, expected ${JSON.stringify(NO_STORE)}` }];
+    : [{ route, rule: "no-store", message: `Cache-Control is ${describeValue(value)}, expected the ${JSON.stringify(NO_STORE)} directive` }];
 }
 
 function signInViolations(route: string, response: Response): FrontDoorViolation[] {
   const expected = productionSecurityHeaders();
   const violations = [...robotsTagViolations(route, response), ...noStoreViolations(route, response)];
+  if (response.status >= 400) {
+    violations.push({ route, rule: "sign-in-status", message: `status is ${response.status}, expected a status below 400` });
+  }
   for (const name of SECURITY_HEADER_NAMES) {
     const value = response.headers.get(name);
     if (value !== expected[name]) {
@@ -112,8 +118,16 @@ function signInViolations(route: string, response: Response): FrontDoorViolation
 function boundaryViolations(route: string, response: Response): FrontDoorViolation[] {
   const { status } = response;
   const violations = [...robotsTagViolations(route, response), ...noStoreViolations(route, response)];
-  if (!((status >= 300 && status <= 399) || status === 401 || status === 403)) {
-    violations.push({ route, rule: "boundary-status", message: `status is ${status}, expected a 3xx, 401 or 403` });
+  if (REDIRECT_STATUSES.includes(status)) {
+    if (response.headers.get("Location") === null) {
+      violations.push({ route, rule: "boundary-status", message: `status ${status} is a redirect with no Location` });
+    }
+  } else if (status !== 401 && status !== 403) {
+    violations.push({
+      route,
+      rule: "boundary-status",
+      message: `status is ${status}, expected a redirect (301, 302, 303, 307 or 308) with a Location, 401 or 403`,
+    });
   }
   return violations;
 }
@@ -202,7 +216,7 @@ export async function checkFrontDoorHttp(
   handle: FrontDoorHandle,
 ): Promise<readonly FrontDoorViolation[]> {
   const base = new URL(config.origin);
-  const request = (path: string) => () => handle(new Request(new URL(path, base), { method: "GET" }));
+  const request = (path: string) => () => handle(new Request(new URL(path, base), { method: "GET", redirect: "manual" }));
   const robotsPath = config.robotsPath ?? "/robots.txt";
   const healthPath = config.healthPath ?? "/health";
   const checks: Promise<FrontDoorViolation[]>[] = [

@@ -155,6 +155,16 @@ export {
 export type { GatedHostHeaderOptions, ServiceUnavailableOptions } from "./host-responses.js";
 export { assertFrontDoorHttp, checkFrontDoorHttp } from "./front-door-conformance.js";
 export type { FrontDoorHttpConfig, FrontDoorRule, FrontDoorViolation } from "./front-door-conformance.js";
+
+export { SIGN_IN_FAILURE_CLASSES, classifySignInFailure, signInFailureCopyId } from "./sign-in-failure.js";
+export type {
+  ClassifySignInFailureOptions,
+  SignInFailureClass,
+  SignInFailureCodeTable,
+  SignInFailureCopyId,
+  SignInFailureCopyIdOptions,
+  SignInFailureShape,
+} from "./sign-in-failure.js";
 export type {
   SiteSecurityHeaderWarning,
   SiteSecurityHeaders,

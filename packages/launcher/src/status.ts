@@ -5,8 +5,8 @@
 //
 // It never changes anything. Three read-only `gh api` calls (S1: GET only, see createGhPorts) say who is asking, which pull
 // requests are open, and where the default branch is; every other read is git plumbing over commits that are already in the
-// clone (`ls-tree`, `cat-file`, `diff-tree`, `rev-parse`). It never fetches a pull request's head (a partial clone is refused before any object is read, and every git call also runs
-// with lazy fetch off and a time limit), never checks anything out and
+// clone (`ls-tree`, `cat-file`, `diff-tree`, `rev-parse`). It never fetches a pull request's head (a partial clone is refused before any object is read, and its own git calls and the
+// preconditions' it shares with `verify` run with lazy fetch off and a time limit; the hub admission's git reads have no time limit), never checks anything out and
 // never writes an index, a ref, a worktree or a file. (The one exception is verify's own precondition step, which fetches the
 // default branch into its remote-tracking ref exactly as `verify` does; see runPreconditions.)
 //
@@ -21,7 +21,9 @@
 // - S5. A pull request with this set's digest is `proposed` only if its base is the default branch, its branch and title are the
 //   set's, its head commit is already in the clone, and verify's own checks (verifyPrepared) pass over that commit's tree,
 //   including the exact ledger bytes; otherwise `diverged`. A precondition that fails (the clone, the hub or the admission, not
-//   the pull request) and any object git cannot read are `indeterminate`, and are judged first. `proposed` does not check the
+//   the pull request) and any object of the head or the tip that git cannot read are `indeterminate`, and are judged first. A base-commit
+//   read inside verify's checks that fails or times out (a base lockfile, for one) is taken as an absent file, so `diverged` can be the
+//   answer where `indeterminate` is the truer one. `proposed` does not check the
 //   head's ancestry to the base, and nothing in this unit does.
 // - S6. A pull request with another digest this hub stored for the repository is `superseded`. A digest this hub never stored,
 //   two pull requests with one digest, 100 or more open pull requests (a full page of 100 cannot show that nothing lies beyond
@@ -147,11 +149,22 @@ function runGit(cwd: string, args: readonly string[], timeoutMs: number): { stat
   return { status: run.status, stdout: run.stdout };
 }
 
+/** The turn the next withGitLimits waits for: the one before it, finished or failed. */
+let limitsTurn: Promise<unknown> = Promise.resolve();
+
 /**
  * Runs `run` with lazy fetch off and a time limit in this process's environment too, for the reads the shared preconditions and
- * verifyPrepared make with their own git helpers, which inherit it (verify sets neither). One status at a time per process.
+ * verifyPrepared make with their own git helpers, which inherit it (verify sets neither). The variables belong to the process, so
+ * two calls in one process take turns: an overlapping call waits until the one before it has put the variables back, and each
+ * sees only its own limit. The same variable, set in a shell, also limits `verify` and `materialize`, which set none.
  */
-async function withGitLimits<T>(timeoutMs: number, run: () => T | Promise<T>): Promise<T> {
+function withGitLimits<T>(timeoutMs: number, run: () => T | Promise<T>): Promise<T> {
+  const turn = limitsTurn.then(() => withGitLimitsNow(timeoutMs, run));
+  limitsTurn = turn.catch(() => undefined);
+  return turn;
+}
+
+async function withGitLimitsNow<T>(timeoutMs: number, run: () => T | Promise<T>): Promise<T> {
   const saved = { lazy: process.env.GIT_NO_LAZY_FETCH, limit: process.env[GIT_TIMEOUT_ENV] };
   process.env.GIT_NO_LAZY_FETCH = "1";
   process.env[GIT_TIMEOUT_ENV] = String(timeoutMs);
@@ -167,18 +180,19 @@ async function withGitLimits<T>(timeoutMs: number, run: () => T | Promise<T>): P
 
 /**
  * Whether the clone is a partial (promisor) clone, whose missing objects git would fetch on demand. Status refuses one before it
- * reads any object, whatever version of git it has: by the configuration that makes a clone partial (`extensions.partialclone`, or a
- * remote marked `promisor`, which every filtered clone sets, blobless or treeless) and by a `.promisor` pack marker, in case the
+ * reads any object, whatever version of git it has: by the configuration that makes a clone partial (`extensions.partialclone`, a
+ * remote marked `promisor`, which every filtered clone sets, blobless or treeless, or a remote that records a `partialclonefilter`) and by a `.promisor` pack marker, in case the
  * configuration was edited away. Throws when git cannot say.
  */
 function isPartialClone(root: string, timeoutMs: number): boolean {
-  const config = runGit(root, ["config", "--get-regexp", "^(extensions\\.partialclone|remote\\..*\\.promisor)$"], timeoutMs);
+  // `-z` ends each entry with a NUL and puts a newline between key and value, so a remote name that holds a space cannot split the key.
+  const config = runGit(root, ["config", "-z", "--get-regexp", "^(extensions\\.partialclone|remote\\..*\\.(promisor|partialclonefilter))$"], timeoutMs);
   if (config.status !== 0 && config.status !== 1) throw new Error(GIT_UNAVAILABLE);
-  for (const line of config.stdout.toString("utf8").split("\n")) {
-    const space = line.indexOf(" ");
-    const key = (space === -1 ? line : line.slice(0, space)).toLowerCase();
-    const value = space === -1 ? "" : line.slice(space + 1).trim().toLowerCase();
-    if (key === "extensions.partialclone") return true;
+  for (const entry of config.stdout.toString("utf8").split("\0")) {
+    const newline = entry.indexOf("\n");
+    const key = (newline === -1 ? entry : entry.slice(0, newline)).toLowerCase();
+    const value = newline === -1 ? "" : entry.slice(newline + 1).trim().toLowerCase();
+    if (key === "extensions.partialclone" || key.endsWith(".partialclonefilter")) return true;
     if (key.endsWith(".promisor") && !["false", "no", "off", "0"].includes(value)) return true;
   }
   const located = runGit(root, ["rev-parse", "--git-path", "objects/pack"], timeoutMs);

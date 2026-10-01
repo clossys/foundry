@@ -77,6 +77,17 @@ describe("conforming host", () => {
     expect(await checkFrontDoorHttp(config, handle)).toEqual([]);
   });
 
+  it("requests with redirect manual so a redirect is read as returned", async () => {
+    const modes: string[] = [];
+    const routes = conformingRoutes();
+    await checkFrontDoorHttp(config, (request) => {
+      modes.push(request.redirect);
+      return hostOf(routes)(request);
+    });
+
+    expect(modes).toEqual(Array(4).fill("manual"));
+  });
+
   it("sends a GET with no cookie to the configured paths", async () => {
     const seen: Request[] = [];
     const routes = conformingRoutes();
@@ -110,6 +121,46 @@ describe("each invariant", () => {
     };
 
     onlyRule(await rulesOf(routes), "/app", "no-store");
+  });
+
+  it("a sign-in route that answers an error status yields sign-in-status", async () => {
+    for (const status of [404, 500]) {
+      const routes = conformingRoutes();
+      routes["/sign-in"] = () =>
+        applyGatedHostHeaders(new Response("gone", { status, headers: productionHeaders() }), { noStore: true });
+
+      onlyRule(await rulesOf(routes), "/sign-in", "sign-in-status");
+    }
+  });
+
+  it("a Cache-Control with no-store among other directives satisfies no-store, one without it does not", async () => {
+    const routes = conformingRoutes();
+    routes["/app"] = () => {
+      const response = applyGatedHostHeaders(new Response(null, { status: 401 }));
+      response.headers.set("Cache-Control", "private, No-Store, max-age=0");
+      return response;
+    };
+    expect(await rulesOf(routes)).toEqual([]);
+
+    routes["/app"] = () => {
+      const response = applyGatedHostHeaders(new Response(null, { status: 401 }));
+      response.headers.set("Cache-Control", "private, max-age=0");
+      return response;
+    };
+    onlyRule(await rulesOf(routes), "/app", "no-store");
+  });
+
+  it("a boundary that answers 304 or a redirect with no Location yields boundary-status", async () => {
+    for (const [status, headers] of [
+      [304, {}],
+      [302, {}],
+      [300, { Location: "/sign-in" }],
+    ] as const) {
+      const routes = conformingRoutes();
+      routes["/app"] = () => applyGatedHostHeaders(new Response(null, { status, headers }), { noStore: true });
+
+      onlyRule(await rulesOf(routes), "/app", "boundary-status");
+    }
   });
 
   it("a missing robots tag yields robots-tag", async () => {
