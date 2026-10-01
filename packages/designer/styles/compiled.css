@@ -17,6 +17,10 @@
  * `compiled.css` path without Tailwind. `charts` and `theme` remain
  * Tailwind-native only.
  *
+ * Base: a narrow `foundry-ui-base` layer (border-box sizing and
+ * form-control font inheritance) comes first, before the utilities layer.
+ * Tailwind's preflight stays excluded.
+ *
  * Load this AFTER `@clossys/designer/tokens.css` (never instead of it —
  * every declaration below reads a token custom property this file does
  * NOT itself declare). Every generated rule lives inside the
@@ -24,6 +28,20 @@
  * README.md's "Framework-portable components, without Tailwind" section
  * for the full override-precedence contract this layering produces.
  * ════════════════════════════════════════════════════════════════════ */
+
+@layer foundry-ui-base {
+  *,
+  ::before,
+  ::after {
+    box-sizing: border-box;
+  }
+  input,
+  textarea,
+  select,
+  button {
+    font: inherit;
+  }
+}
 
 /*! tailwindcss v4.3.3 | MIT License | https://tailwindcss.com */
 @layer properties;
@@ -113,6 +131,9 @@
   }
   .hidden {
     display: none;
+  }
+  .inline {
+    display: inline;
   }
   .inline-block {
     display: inline-block;
@@ -339,6 +360,9 @@
   .gap-xs {
     gap: var(--spacing-xs, 4px);
   }
+  .gap-x-sm {
+    column-gap: var(--spacing-sm, 8px);
+  }
   .truncate {
     overflow: hidden;
     text-overflow: ellipsis;
@@ -432,6 +456,9 @@
   }
   .bg-ink-muted {
     background-color: var(--color-ink-muted, oklch(0.5658 0 0));
+  }
+  .bg-ink-primary {
+    background-color: var(--color-ink-primary, oklch(0.2178 0 0));
   }
   .bg-line-base {
     background-color: var(--color-line-base, oklch(0.8761 0 0));
@@ -598,6 +625,10 @@
   .text-h3 {
     font-size: var(--text-h3, 14px);
   }
+  .leading-none {
+    --tw-leading: 1;
+    line-height: 1;
+  }
   .font-medium {
     --tw-font-weight: var(--font-weight-medium, 500);
     font-weight: var(--font-weight-medium, 500);
@@ -616,6 +647,9 @@
   }
   .text-accent-text {
     color: var(--color-accent-text, oklch(0.36 0 0));
+  }
+  .text-inherit {
+    color: inherit;
   }
   .text-ink-link {
     color: var(--color-ink-link, oklch(0.36 0 0));
@@ -862,6 +896,27 @@
     .desktop\:grid-cols-4 {
       grid-template-columns: repeat(4, minmax(0, 1fr));
     }
+    .desktop\:flex-row-reverse {
+      flex-direction: row-reverse;
+    }
+    .desktop\:flex-nowrap {
+      flex-wrap: nowrap;
+    }
+    .desktop\:items-center {
+      align-items: center;
+    }
+    .desktop\:justify-between {
+      justify-content: space-between;
+    }
+    .desktop\:justify-end {
+      justify-content: flex-end;
+    }
+    .desktop\:text-start {
+      text-align: start;
+    }
+    .desktop\:whitespace-nowrap {
+      white-space: nowrap;
+    }
   }
 }
 @property --tw-translate-x {
@@ -883,6 +938,10 @@
   syntax: "*";
   inherits: false;
   initial-value: solid;
+}
+@property --tw-leading {
+  syntax: "*";
+  inherits: false;
 }
 @property --tw-font-weight {
   syntax: "*";
@@ -1004,6 +1063,7 @@
       --tw-translate-y: 0;
       --tw-translate-z: 0;
       --tw-border-style: solid;
+      --tw-leading: initial;
       --tw-font-weight: initial;
       --tw-tracking: initial;
       --tw-ordinal: initial;

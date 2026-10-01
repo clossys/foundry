@@ -69,12 +69,13 @@ const AUTH_VIEW_TEMPLATE: WebTemplate = {
   name: "AuthView",
   flow: {
     slots: [
-      { key: "brand" },
+      { key: "brand", required: true },
       { key: "heading", required: true },
       { key: "description" },
       { key: "form", required: true },
       { key: "secondaryAction" },
       { key: "footnote" },
+      { key: "footerSecondary" },
     ],
   },
   // AuthView's `heading`/`form` props are required (non-optional keys) even
@@ -92,6 +93,7 @@ const AUTH_VIEW_TEMPLATE: WebTemplate = {
       form: content.form,
       secondaryAction: content.secondaryAction,
       footnote: content.footnote,
+      footerSecondary: content.footerSecondary,
     }),
 };
 
@@ -103,8 +105,6 @@ const ERROR_VIEW_TEMPLATE: WebTemplate = {
       { key: "title", required: true },
       { key: "description" },
       { key: "action" },
-      { key: "details" },
-      { key: "detailsLabel" },
     ],
   },
   build: (content) =>
@@ -113,8 +113,6 @@ const ERROR_VIEW_TEMPLATE: WebTemplate = {
       title: content.title,
       description: content.description,
       action: content.action,
-      details: content.details,
-      detailsLabel: content.detailsLabel,
     }),
 };
 

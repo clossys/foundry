@@ -405,19 +405,22 @@ html:not([data-brand-bound]):not([data-suppress-brand-banner])::before {
   --spacing-6xl:                  128px;
 
   /* ════════════════════════════════════════════════════════════════
-   * UI · WIDTH (4 · content max-widths — no Tailwind namespace)
+   * UI · WIDTH (5 · content max-widths — no Tailwind namespace)
    * ════════════════════════════════════════════════════════════════ */
   --ui-width-content-max:         64rem;
   --ui-width-prose-max:           48rem;
   --ui-width-wide-max:            72rem;
+  --ui-width-form-max:            38rem;
   --ui-width-page-padding-x:      clamp(16px, 4vw, 48px);
 
   /* ════════════════════════════════════════════════════════════════
-   * UI · LAYOUT (3 · chrome dimensions — no Tailwind namespace)
+   * UI · LAYOUT (5 · chrome dimensions — no Tailwind namespace)
    * ════════════════════════════════════════════════════════════════ */
   --ui-layout-sidebar-w:          256px;   /* expanded left nav */
   --ui-layout-sidebar-rail-w:     64px;    /* collapsed icon-only nav */
   --ui-layout-aside-w:            320px;   /* right-rail panel */
+  --ui-layout-drawer-w:           min(20rem, 85vw); /* navigation drawer: 20rem, capped to 85% of the viewport */
+  --ui-layout-tap-target:         44px;    /* minimum interactive target size */
 
   /* ════════════════════════════════════════════════════════════════
    * UI · DENSITY (3 · comfortable-mode defaults — no Tailwind namespace)
@@ -450,6 +453,23 @@ html:not([data-brand-bound]):not([data-suppress-brand-banner])::before {
   --ui-icon-md:                    var(--spacing-xl, 24px);
   --ui-icon-lg:                    var(--spacing-2xl, 32px);
   --ui-icon-stroke:                2;
+
+  /* ════════════════════════════════════════════════════════════════
+   * UI · BRANDMARK (6 · the render contract for @clossys/designer's
+   * Brandmark shell component — no Tailwind namespace). Height per size
+   * step, and the gap between the mark and a lockup's wordmark at the
+   * identity kit's 8/48 gap ratio (height x 8/48: 4px / 6px / 8px, all
+   * exact). The wordmark's font-size is NOT a token: it is calc-derived
+   * from the height (height x 22/48) at the use site. The gap is
+   * likewise calc-derivable, kept as a token so a brand can tighten or
+   * loosen lockup spacing without resizing the mark.
+   * ════════════════════════════════════════════════════════════════ */
+  --ui-brandmark-height-sm:       24px;
+  --ui-brandmark-height-md:       36px;
+  --ui-brandmark-height-lg:       48px;
+  --ui-brandmark-gap-sm:          4px;
+  --ui-brandmark-gap-md:          6px;
+  --ui-brandmark-gap-lg:          8px;
 
   /* ════════════════════════════════════════════════════════════════
    * RADIUS (5 · Tailwind `--radius-*` namespace)
@@ -724,7 +744,7 @@ html:not([data-brand-bound]):not([data-suppress-brand-banner])::before {
  * parse-css.ts`, used by `parity.test.ts`, `contrast.test.ts`, and
  * `dark-mode-cascade.test.ts`) parses only the FIRST top-level `:root {`
  * block in this file as "the real token layer" and asserts it declares
- * exactly this package's curated 159 tokens; this sentinel is not a
+ * exactly this package's curated 168 tokens; this sentinel is not a
  * design token — it is a structural presence marker — so it stays out
  * of `src/tokens/tokens.ts`'s registry and out of that block entirely,
  * in a second `:root` rule the browser cascades in fine (CSS allows any

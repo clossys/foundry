@@ -281,6 +281,165 @@ test("advisor degraded-mode checks fail against the pre-#1507 SKILL.md (proves t
   assert.ok(result.findings.some((f) => f.rule === "advisor-degraded-section-missing"));
 });
 
+// Launcher's apply-an-approved-plan section (issue #1762). Same scoping as the
+// advisor fixture above: each rule is stated INSIDE "## Apply an approved
+// plan", and a decoy "## Elsewhere" section repeats every phrase the rules
+// look for (and the forbidden wording), so a gate that scanned the whole file
+// would wrongly pass every omission case and wrongly flag the clean case.
+const LAUNCHER_APPLY_PARTS = {
+  k1: "Launcher never pushes, opens a pull request, files an issue or merges; you do that with the client's own access.",
+  k2: "Before any commit, run `launcher-apply-plan verify --repo <id>` and stop unless it exits 0.",
+  k3: "Commit and push only the set's `clossys/apply-` branch, never the default branch, never force-push, one pull request per staffed repository.",
+  k4: "File one task-record issue in the target repository, labelled from that repository's own task-record configuration, then open the pull request with exactly the `launcher-apply-plan body --repo <id> --task-record <n>` output, unedited.",
+  k5: "Run `launcher-apply-plan status --repo <id>` and continue only on `proposed`; on `superseded`, use a new branch, pass `--supersedes <n>` to `body`, open the new pull request, close the old pull request, and run `status` again, which must say `proposed`; on any other state, stop and report.",
+  k6: "Never merge or enable auto-merge. Report ready only when `status` is `proposed` and `Clossys adoption decision` is green; the setup pull request merges before the apply pull request opens.",
+};
+
+const LAUNCHER_APPLY_RULE_BY_PART = {
+  k1: "launcher-apply-k1-never-pushes",
+  k2: "launcher-apply-k2-verify-first",
+  k3: "launcher-apply-k3-own-branch",
+  k4: "launcher-apply-k4-task-record-body",
+  k5: "launcher-apply-k5-status-gate",
+  k6: "launcher-apply-k6-no-merge",
+};
+
+// Wording that would license a merge or a forced push, each inside the section.
+const LAUNCHER_APPLY_NEGATORS = {
+  ghPrMerge: { phrase: "Then run gh pr merge 12.", rule: "launcher-apply-negator-gh-pr-merge" },
+  auto: { phrase: "Pass --auto to queue it.", rule: "launcher-apply-negator-auto" },
+  pushForce: { phrase: "If it is rejected, git push --force.", rule: "launcher-apply-negator-push-force" },
+  pushShortForce: { phrase: "If it is rejected, git push -f.", rule: "launcher-apply-negator-push-force" },
+  mayMerge: { phrase: "After review you may merge the pull request.", rule: "launcher-apply-negator-may-merge" },
+};
+
+const LAUNCHER_APPLY_DECOY =
+  "Decoy text a whole-file scan would wrongly credit or flag: launcher-apply-plan verify --repo <id>, `clossys/apply-`, task-record, `body --repo <id> --task-record <n>`, `status`, proposed, superseded, Clossys adoption decision, Launcher never pushes, opens a pull request, files an issue or merges, Never merge or enable auto-merge, gh pr merge, --auto, push --force, push -f, may merge.";
+
+function launcherApplySectionBody(omitKey, extraLine) {
+  const lines = Object.entries(LAUNCHER_APPLY_PARTS)
+    .filter(([key]) => key !== omitKey)
+    .map(([, line]) => line)
+    .join("\n\n");
+  const extra = extraLine ? `\n\n${extraLine}` : "";
+  return `## Apply an approved plan
+
+${lines}${extra}
+
+## Elsewhere
+
+${LAUNCHER_APPLY_DECOY}
+`;
+}
+
+const launcherSkillText = (omitKey, extraLine) => `---
+name: clossys-launcher
+description: Workspace hub skill.
+disable-model-invocation: true
+---
+
+# clossys-launcher
+
+${launcherApplySectionBody(omitKey, extraLine)}`;
+
+const launcherPackage = (skillText) => ({
+  packageDir: "launcher",
+  skillPath: "/tmp/ignored",
+  expectedName: "clossys-launcher",
+  skillText,
+  files: ["skill"],
+});
+
+test("launcher apply section passes when complete", () => {
+  const result = evaluatePackageSkills([launcherPackage(launcherSkillText())]);
+  assert.equal(result.exitCode, 0, JSON.stringify(result.findings));
+  assert.equal(result.findings.length, 0);
+  assert.deepEqual(result.passed, [{ packageDir: "launcher", name: "clossys-launcher" }]);
+});
+
+test("each missing launcher rule is flagged despite a decoy", () => {
+  for (const [omitKey, expectedRule] of Object.entries(LAUNCHER_APPLY_RULE_BY_PART)) {
+    const result = evaluatePackageSkills([launcherPackage(launcherSkillText(omitKey))]);
+    assert.equal(result.exitCode, 1, `expected a finding when omitting ${omitKey}`);
+    assert.deepEqual(
+      result.findings.map((f) => f.rule),
+      [expectedRule],
+      `omitting ${omitKey} must flag only ${expectedRule}`,
+    );
+  }
+});
+
+test("launcher K5 requires each of its instructions, not only the gate on proposed", () => {
+  const k5 = LAUNCHER_APPLY_PARTS.k5;
+  const cuts = {
+    statusCommand: "Run `launcher-apply-plan status --repo <id>` and ",
+    newBranch: "use a new branch, ",
+    supersedesFlag: "pass `--supersedes <n>` to `body`, ",
+    closeOld: "close the old pull request, ",
+    statusAgain: "and run `status` again, which must say `proposed`",
+    stopAndReport: "; on any other state, stop and report",
+  };
+  for (const [name, cut] of Object.entries(cuts)) {
+    assert.ok(k5.includes(cut), `fixture K5 must contain the ${name} instruction`);
+    const skillText = launcherSkillText().replace(k5, k5.replace(cut, ""));
+    const result = evaluatePackageSkills([launcherPackage(skillText)]);
+    assert.deepEqual(
+      result.findings.map((f) => f.rule),
+      [LAUNCHER_APPLY_RULE_BY_PART.k5],
+      `removing the ${name} instruction from K5 must flag K5`,
+    );
+  }
+});
+
+test("a missing launcher apply section is flagged", () => {
+  const result = evaluatePackageSkills([
+    launcherPackage(validSkill("clossys-launcher", "Workspace hub skill.")),
+  ]);
+  assert.equal(result.exitCode, 1);
+  assert.deepEqual(result.findings.map((f) => f.rule), ["launcher-apply-section-missing"]);
+});
+
+test("merge or force wording inside the section is flagged; outside it is not", () => {
+  for (const [name, { phrase, rule }] of Object.entries(LAUNCHER_APPLY_NEGATORS)) {
+    const inside = evaluatePackageSkills([launcherPackage(launcherSkillText(undefined, phrase))]);
+    assert.equal(inside.exitCode, 1, `expected a finding for ${name} inside the section`);
+    assert.deepEqual(inside.findings.map((f) => f.rule), [rule], `negator ${name}`);
+  }
+  // The decoy section carries every forbidden phrase and must not be flagged.
+  const outside = evaluatePackageSkills([launcherPackage(launcherSkillText())]);
+  assert.equal(outside.exitCode, 0, JSON.stringify(outside.findings));
+});
+
+test("launcher rules apply to the launcher package only", () => {
+  const result = evaluatePackageSkills([
+    {
+      packageDir: "alpha",
+      skillPath: "/tmp/ignored",
+      expectedName: "clossys-alpha",
+      skillText: validSkill("clossys-alpha", "Third-person description for alpha role."),
+      files: ["skill"],
+    },
+  ]);
+  assert.equal(result.exitCode, 0, JSON.stringify(result.findings));
+});
+
+test("the pre-change launcher skill fails", (t) => {
+  let preChangeText;
+  try {
+    preChangeText = execFileSync("git", ["show", "3b20d2ff:packages/launcher/skill/SKILL.md"], {
+      cwd: repoRoot,
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "ignore"],
+    });
+  } catch {
+    t.skip("commit 3b20d2ff is not reachable in this checkout's git history");
+    return;
+  }
+  const result = evaluatePackageSkills([launcherPackage(preChangeText)]);
+  assert.equal(result.exitCode, 1);
+  assert.ok(result.findings.some((f) => f.rule === "launcher-apply-section-missing"));
+});
+
 test("skill without files entry is a finding", () => {
   const result = evaluatePackageSkills([
     {

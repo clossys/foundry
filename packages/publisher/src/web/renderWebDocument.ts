@@ -262,7 +262,7 @@ function resolveGroupItemContent(slotKey: string, item: ResolvedSurfaceGroupItem
     if (!isRenderAsset(looked)) {
       throw new RenderError(
         "empty-output",
-        `renderWebDocument could not resolve repeating slot "${slotKey}" item ${item.index}'s assetId "${item.assetId}" into a real asset (missing options.resolveAssetId, an unresolved id, or a value that did not match the required RenderImageAsset or RenderVideoAsset shape). Rendering would silently ship a page with a broken or missing image, which this function refuses to do.`,
+        `renderWebDocument could not resolve repeating slot "${slotKey}" item ${item.index}'s assetId into a real asset (missing options.resolveAssetId, an unresolved id, or a value that did not match the required RenderImageAsset or RenderVideoAsset shape). Rendering would silently ship a page with a broken or missing image, which this function refuses to do.`,
       );
     }
     return { index: item.index, element: buildAssetElement(looked, options) };
@@ -300,7 +300,7 @@ function resolveGroupFieldContent(
     if (!isRenderAsset(looked)) {
       throw new RenderError(
         "empty-output",
-        `renderWebDocument could not resolve repeating slot "${slotKey}" item ${itemIndex} field "${field}" assetId "${binding.assetId}" into a real asset (missing options.resolveAssetId, an unresolved id, or a value that did not match the required RenderImageAsset or RenderVideoAsset shape). Rendering would silently ship incomplete structured content, which this function refuses to do.`,
+        `renderWebDocument could not resolve repeating slot "${slotKey}" item ${itemIndex}'s field assetId into a real asset (missing options.resolveAssetId, an unresolved id, or a value that did not match the required RenderImageAsset or RenderVideoAsset shape). Rendering would silently ship incomplete structured content, which this function refuses to do.`,
       );
     }
     return { element: buildAssetElement(looked, options) };
@@ -534,7 +534,7 @@ function resolveTemplateGroups(doc: ComposeDocument, template: WebTemplate, opti
   if (missingRequired.length > 0) {
     throw new RenderError(
       "resolution-failed",
-      `renderWebDocument could not resolve document "${doc.id}" against template "${doc.template}": missing required repeating slot(s): ${missingRequired.join(", ")}.`,
+      `renderWebDocument could not resolve the document against its template: missing required repeating slot(s): ${missingRequired.join(", ")}.`,
     );
   }
 
@@ -616,7 +616,7 @@ export function renderWebDocumentAgainst(templates: ReadonlyMap<string, WebTempl
     if (nothingResolvedAtAll) parts.push("no binding matched any slot in the template — nothing to render");
     throw new RenderError(
       "resolution-failed",
-      `renderWebDocument could not resolve document "${doc.id}" against template "${doc.template}": ${parts.join("; ")}.`,
+      `renderWebDocument could not resolve the document against its template: ${parts.join("; ")}.`,
     );
   }
 

@@ -60,8 +60,29 @@ describe("refusal: resolution-failed", () => {
     expect(caught).toBeInstanceOf(RenderError);
     expect((caught as RenderError).reason).toBe("resolution-failed");
     expect((caught as RenderError).message).toBe(
-      'renderEmailDocument could not resolve document "x" against its layout: missing required slot(s): a; binding(s) targeting unknown slot(s): nonexistent.',
+      'renderEmailDocument could not resolve the document against its layout: missing required slot(s): a; binding(s) targeting unknown slot(s): nonexistent.',
     );
+  });
+
+  it("does not echo the document id", () => {
+    const doc: ComposeDocument = {
+      id: "sentinel-doc-id-53",
+      channel: "email",
+      template: "T",
+      meta: { channel: "email", subject: "s", preheader: "p" },
+      bindings: [{ slot: "nonexistent", value: "v" }],
+    };
+
+    let caught: unknown;
+    try {
+      renderEmailDocument(doc, { layout: SINGLE_SLOT_LAYOUT });
+    } catch (error) {
+      caught = error;
+    }
+
+    expect(caught).toBeInstanceOf(RenderError);
+    expect((caught as RenderError).message).toContain("renderEmailDocument could not resolve the document against its layout:");
+    expect((caught as RenderError).message).not.toContain("sentinel-doc-id-53");
   });
 
   it("throws RenderError('resolution-failed') for a wholly empty document (no bindings, no layout)", () => {

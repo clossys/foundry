@@ -35,6 +35,7 @@
  *     product.
  */
 
+import { blankCssDeclPercents } from "./css-decl-percent.js";
 import { buildFactIndex, isTracedSurfaceForm, type FactIndex } from "./fact-index.js";
 import type { Fact } from "./schema.js";
 
@@ -172,8 +173,6 @@ function blankBalancedCall(text: string, name: string): string {
 
 const JSX_STYLE_ATTR_RE = /\bstyle=\{\{[\s\S]*?\}\}/g;
 const HTML_STYLE_ATTR_RE = /\bstyle=(?:"[^"]*"|'[^']*')/gi;
-const CSS_DECL_PERCENT_RE = /\b[\w-]+\s*:\s*[^;`"'}\n]*\d+(?:\.\d+)?\s*%/g;
-
 /** Removes style-literal regions where a trailing `%` is a dimension, not a claim. */
 function blankStyleLiteralRegions(text: string): string {
   let out = blankBalancedCall(text, "color-mix");
@@ -181,7 +180,7 @@ function blankStyleLiteralRegions(text: string): string {
   out = blankBalancedCall(out, "calc");
   out = out.replace(JSX_STYLE_ATTR_RE, (m) => " ".repeat(m.length));
   out = out.replace(HTML_STYLE_ATTR_RE, (m) => " ".repeat(m.length));
-  out = out.replace(CSS_DECL_PERCENT_RE, (m) => " ".repeat(m.length));
+  out = blankCssDeclPercents(out);
   return out;
 }
 

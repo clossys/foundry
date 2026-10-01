@@ -237,6 +237,8 @@ clossys/strategist/
   brand-essence.json                     optional — a BrandEssence
   brand-attributes.json                     optional — an array of BrandAttribute
   brand-derivations.json                       optional — an array of BrandDerivation
+  brand-facts.json                                optional — a BrandFacts record
+  strategy-brief.json                                optional — a StrategyBrief record (claims never to make)
 ```
 
 The three `brand-*.json` names follow the same convention as everything
@@ -917,6 +919,262 @@ an empty `reviewedAgainstRefs` (`reason: "no-reviews-provided"`) is
 "zero things checked is never zero findings" discipline `checkBrandCoverage`
 already documents.
 
+## The brand-facts record
+
+`brand-facts.json` holds the handful of facts about the brand that many
+surfaces restate and that must not disagree: the legal entity (`name`,
+`incorporated`, `jurisdiction`), the brand's prose name and optional
+`wordmark` casing, every host the brand serves in `domains`, the
+`canonicalOrigin`, the `contactEmail` (plus any `additionalEmails`), and its
+`taglines`. A tagline is a `copyId` that names an entry in a Writer copy
+registry; the record never holds the tagline text. Writer owns the words and
+their approval status, so restating the text here would create a second copy
+that can drift from the first. A tagline carrying `text` is refused, with a
+message that points at `copyId`. Publisher, Designer and Writer do not read
+this record yet.
+
+```json
+{
+  "legalEntity": {
+    "name": "Lumenfold Labs Inc.",
+    "incorporated": true,
+    "jurisdiction": "Delaware"
+  },
+  "brand": { "name": "Lumenfold", "wordmark": "LUMENFOLD" },
+  "domains": ["lumenfold.example", "www.lumenfold.example"],
+  "canonicalOrigin": "https://lumenfold.example",
+  "contactEmail": "hello@lumenfold.example",
+  "taglines": [{ "copyId": "brand.tagline" }]
+}
+```
+
+`wordmark` must equal `name` case-insensitively; `canonicalOrigin` is
+`https://<host>` or `http://<host>` with no path, and its host must be in
+`domains`. Unknown keys are refused at every object level.
+
+### Reading it
+
+```ts
+import {
+  readBrandFacts,
+  validateBrandFacts,
+  copyEntriesFromRegistry,
+  resolveBrandTaglines,
+  readStrategy,
+} from "@clossys/strategist";
+
+const read = readBrandFacts("./clossys/strategist");
+if (read.status === "ok") {
+  const registry = copyEntriesFromRegistry(JSON.parse(registryText));
+  if (registry.ok) {
+    const { resolved, unresolved } = resolveBrandTaglines(read.facts, registry.value);
+  }
+}
+
+const bundle = readStrategy("./clossys/strategist");
+bundle.brandFacts; // BrandFacts | undefined
+```
+
+`readBrandFacts` returns `{ status: "ok", facts }`, `{ status: "missing",
+detail }`, or `{ status: "invalid", issue }` and never throws.
+`validateBrandFacts` is the pure validator behind it. `readStrategy` reads
+`brand-facts.json` as an optional file into `StrategyBundle.brandFacts`; a
+present-and-invalid file lands in `bundle.issues` and sets `complete` to
+`false`. `copyEntriesFromRegistry` accepts a Writer copy registry — an object
+with an `entries` array of `{ id, text, status? }` — and returns the entries.
+`resolveBrandTaglines` resolves a tagline only when an entry's `id` matches
+and its `status` is `approved`, the rule Writer's registry uses; the rest come
+back in `unresolved`.
+
+### `checkBrandFactsDrift` — is any surface stating something else?
+
+```ts
+import { checkBrandFactsDrift, scanStrategyDirectory } from "@clossys/strategist";
+
+const files = scanStrategyDirectory("./site", { extensions: [".md", ".html", ".json"] });
+const result = checkBrandFactsDrift(files, read.facts, { copyEntries: registry.value });
+// result.state: "clean" | "drift" | "indeterminate"
+```
+
+The check is pure: it takes already-read `ScannedFile[]`, a `BrandFacts`
+record, and optionally the copy entries, and scans line by line. Each finding
+carries a `kind`, `file`, 1-based `line`, `found`, `expected`, and a
+one-sentence `message`.
+
+| Kind | Conflicting when |
+| --- | --- |
+| `legal-name` | A phrase ending in a company suffix (`Inc`, `LLC`, `Ltd`, `GmbH`, ...) contains the brand name but is not `legalEntity.name`, or a `legalName`/`companyName`-style key holds another value. Phrases without the brand name (a third party) are ignored. |
+| `incorporation` | `legalEntity.incorporated` is `false` and a surface states a company-suffixed brand name or "incorporated in/under". |
+| `jurisdiction` | "incorporated/registered/organized in", or "governed by the laws of", names a place other than `legalEntity.jurisdiction`, or a `jurisdiction` key holds another value. |
+| `brand-casing` | The brand name appears as a whole word in a casing that is neither `brand.name` nor `brand.wordmark`, or a `brandName`/`siteName`/`og:site_name` value differs from both. URLs, email addresses and recorded hostnames are blanked first. |
+| `canonical-origin` | An `http(s)` URL on one of `domains` has a scheme or host other than `canonicalOrigin` (http instead of https, or an alias host). Subdomains not listed in `domains` are ignored. |
+| `domain` | An `http(s)` URL on a host outside `domains` has a DNS label equal to the brand name's slug, or a `domain`/`primaryDomain` key holds another value. |
+| `contact-email` | An address on a recorded domain, or one with a label equal to the brand slug, is neither `contactEmail` nor in `additionalEmails`, or a `contactEmail`/`supportEmail` key holds another value. |
+| `tagline` | A `tagline`/`slogan` key holds text that is not one of the resolved tagline texts. |
+| `tagline-unresolved` | A recorded tagline `copyId` does not resolve to an approved registry entry (reported at `brand-facts.json`, line `0`). |
+
+The result's `state` has three values. `clean` means files were scanned and
+nothing conflicted. `drift` means at least one finding. `indeterminate`
+means the check could not read what it needed, and it is never reported as
+`clean`: it applies when no file was scanned, or when the record has
+taglines and no `copyEntries` were supplied. `indeterminate` takes precedence
+over `drift`; findings are still returned, and `indeterminateReasons` says why.
+
+A line can opt out with `brand-facts:ignore` inside a comment marker
+(`<!-- -->`, `/* */`, `{/* */}`, `//`, or `#` as the first non-blank character
+of the line). Ignored lines are not checked and are listed in
+`result.ignored`, so a report shows what was overridden. The marker silences
+its whole physical line, so on a single-line file (minified JSON or HTML) it
+silences the whole file.
+
+The drift check runs in linear time per line and reads lines up to 16,384
+characters. A longer line makes the result `indeterminate` (exit 2), never
+`clean`: the reason names the file and line, and the length limit is applied
+before the ignore marker, so a marker cannot excuse a line that was not read.
+
+### Residual risk
+
+Detection is lexical: it catches only the forms listed in the table above,
+and a conflict stated any other way is not detected. Known misses, each
+stated here so that a clean result is not read as proof of consistency:
+
+- A legal name that does not contain the brand name, written in prose. The
+  phrase is read as a third party's; only a `legalName`-style key catches it.
+- A place in lowercase (`incorporated in nevada`), and the company suffix
+  `Incorporated` spelled out.
+- A brand host with a hyphenated multi-word label (`blue-harbor.example`).
+- A company phrase with more than 8 words before its suffix, a word longer
+  than 40 characters, or more than 4 whitespace characters in one gap.
+- A value on the line after its key, and a tagline outside a `tagline` or
+  `slogan` key.
+- A meta tag that contains `<` inside an attribute value.
+- A file that is not valid UTF-8 is decoded lossily.
+
+### `strategist-check brand-facts`
+
+```bash
+npx strategist-check brand-facts ./clossys/strategist ./site
+```
+
+```
+Usage: strategist-check brand-facts <strategy-dir> <scan-dir> [options]
+
+  strategy-dir   Directory containing brand-facts.json.
+  scan-dir       Directory to scan for surfaces that restate a brand fact.
+
+Options:
+  --help                   Print this message and exit 0.
+  --copy-registry <file>   Writer copy registry used to resolve tagline copy ids.
+  --extensions <ext>       File extension to scan (repeatable; include the leading dot).
+  --skip-dirs <name>       Directory name to skip during the walk (repeatable), added to the built-in skip list.
+  --exclude <glob>         Repo-relative path glob to omit (repeatable).
+```
+
+Default extensions are `.md`, `.mdx`, `.txt`, `.html`, `.htm`, `.json`,
+`.yml` and `.yaml`; code files opt in through `--extensions`. When
+`--copy-registry` is not given and `<cwd>/clossys/writer/copy-registry.json`
+exists, that file is used.
+
+| Code | Meaning |
+| --- | --- |
+| `0` | `checkBrandFactsDrift` returned `clean`. |
+| `1` | `drift` — at least one scanned surface conflicts with the record. |
+| `2` | **Could not run** — `brand-facts.json` missing, unreadable or invalid; a given copy registry unreadable or invalid; no files scanned; an unreadable directory; taglines recorded with no copy registry available; or bad arguments. Never `0`. |
+
+## The strategy-brief record
+
+`strategy-brief.json` lists the claims this strategy must never make, so a
+surface that makes one can be found instead of relying on each author to
+remember. It is **not** the engagement brief: `clossys/brief.json` is the
+founder's engagement brief and has its own schema, owner and readers, and
+neither file is read through the other. `readStrategy` does not read
+`strategy-brief.json`; `readStrategyBrief` does.
+
+```json
+{
+  "wontClaim": [
+    {
+      "id": "guaranteed-outcomes",
+      "statement": "We never promise a fixed outcome for a customer.",
+      "why": "No result can be promised in advance.",
+      "matchPhrases": ["guaranteed results", "risk-free"]
+    },
+    { "id": "best-in-class", "statement": "We never call the product the best in its class." }
+  ]
+}
+```
+
+- `wontClaim` is required and may be empty.
+- `id` is kebab-case and unique.
+- `statement` is a sentence of at least 10 characters.
+- `why` is optional prose.
+- `matchPhrases` is optional: non-blank strings, unique ignoring case. An
+  entry without phrases is recorded but cannot be mechanically checked.
+- Unknown keys are refused at every level, and an issue names the path of the
+  problem, never the value.
+
+### `checkWontClaimDrift` — does any surface make a claim it must not?
+
+```ts
+import { checkWontClaimDrift, readStrategyBrief, scanStrategyDirectory } from "@clossys/strategist";
+
+const read = readStrategyBrief("./clossys/strategist");
+if (read.status === "ok") {
+  const files = scanStrategyDirectory("./site", { extensions: [".md", ".html"] });
+  const result = checkWontClaimDrift(files, read.brief);
+  result.state; // "clean" | "hit" | "indeterminate"
+}
+```
+
+The check is pure: it takes already-read `ScannedFile[]` and a validated
+`StrategyBrief`, does no I/O and never throws. Its rules:
+
+- **Literal phrases.** A phrase matches literally, ignoring case, on word
+  boundaries. The phrase is escaped before it becomes a pattern, so there is no
+  user regex: `guaranteed.*results` matches only those exact characters, and
+  "unguaranteed results" is not a hit for "guaranteed results".
+- **Findings.** A match is a finding (`file`, `line`, `id`), one per id per
+  line. A line with `wont-claim:ignore` inside a comment (`<!--`, `/*`,
+  `{/*`, `//`, or `#` as the first non-blank character) is listed in `ignored`
+  and not checked.
+- **Unchecked entries.** An entry with no `matchPhrases` is listed in
+  `unchecked` and never changes the state.
+- **Fails closed.** Zero files checked, or a line over 16,384 characters, makes
+  the state `indeterminate`, which wins over a hit.
+- **Not its own source.** A file named `strategy-brief.json` is never scanned
+  for findings and is not counted as scanned.
+
+Detection is lexical: a claim made in words the record does not list is not
+found.
+
+### `strategist-check wont-claim`
+
+```bash
+npx strategist-check wont-claim ./clossys/strategist ./site
+```
+
+```
+Usage: strategist-check wont-claim <strategy-dir> <scan-dir> [options]
+
+  strategy-dir   Directory containing strategy-brief.json (the won't-claim record — not the engagement brief).
+  scan-dir       Directory to scan for surfaces that make a claim the record says must never be made.
+
+Options:
+  --help                   Print this message and exit 0.
+  --extensions <ext>       File extension to scan (repeatable; include the leading dot).
+  --skip-dirs <name>       Directory name to skip during the walk (repeatable), added to the built-in skip list.
+  --exclude <glob>         Repo-relative path glob to omit (repeatable).
+```
+
+Default extensions are `.md`, `.mdx`, `.txt`, `.html`, `.htm`, `.json`,
+`.yml` and `.yaml`; code files opt in through `--extensions`.
+
+| Code | Meaning |
+| --- | --- |
+| `0` | `checkWontClaimDrift` returned `clean`. |
+| `1` | `hit` — at least one scanned surface makes a recorded claim. |
+| `2` | **Could not run** — `strategy-brief.json` missing, unreadable or invalid; no files scanned; an over-long line; an unreadable directory; or bad arguments. Never `0`. |
+
 ## API
 
 ### Entities (`schema.ts`)
@@ -963,9 +1221,44 @@ anyone extending this package with their own entity.
 | --- | --- | --- |
 | `readStrategy(root)` | function | Reads and validates a strategy directory (see "Directory shape" above). The package's one deliberate I/O surface. Never throws — see `StrategyBundle.issues`/`complete`. |
 | `brandDerivationsFromBundle(bundle)` | function | Pure. Returns `bundle.brand?.derivations` or `[]` when the brand layer is absent — the same derivations `checkBrandCoverage` expects. |
-| `StrategyBundle` | type | `{ root, facts, mission?, positioning?, markets?, audiences?, roadmap?, brandEssence?, brandAttributes?, brandDerivations?, issues, complete }`. |
+| `StrategyBundle` | type | `{ root, facts, mission?, positioning?, markets?, audiences?, roadmap?, brandEssence?, brandAttributes?, brandDerivations?, brandFacts?, issues, complete }`. |
 | `StrategyReadIssue` | type | `{ file, reason: StrategyReadIssueReason, detail }` — one file that did not become usable data. |
 | `StrategyReadIssueReason` | type | `"unreadable" \| "unparseable" \| "invalid-schema" \| "missing-required"`. |
+
+### Brand facts (`brand-facts.ts`, `brand-facts-drift.ts`)
+
+See "The brand-facts record" above.
+
+| Export | Kind | Purpose |
+| --- | --- | --- |
+| `validateBrandFacts(value)` | function | Pure. One `BrandFacts` record; refuses unknown keys at every level and a tagline that carries `text` instead of a `copyId`. |
+| `readBrandFacts(strategyDir)` | function | Reads `<strategyDir>/brand-facts.json` (`BRAND_FACTS_FILE`). Never throws; returns a `BrandFactsRead`. |
+| `resolveBrandTaglines(facts, entries)` | function | Pure. `{ resolved, unresolved }` — a tagline resolves only to an entry whose `id` matches and whose `status` is `approved`. |
+| `copyEntriesFromRegistry(value)` | function | Pure. Validates a Writer copy registry (an object with an `entries` array) into `CopyEntryLike[]`. |
+| `checkBrandFactsDrift(files, facts, options?)` | function | Pure. Scans `ScannedFile[]` for statements that conflict with the record; `options.copyEntries` supplies the Writer entries taglines resolve against. Returns a `BrandFactsDriftResult`. |
+| `BRAND_FACTS_FILE` | const | `"brand-facts.json"`. |
+| `BrandFacts`, `BrandLegalEntity`, `BrandIdentity`, `BrandTagline` | types | The record shape. |
+| `BrandFactsRead` | type | `{ status: "ok"; facts } \| { status: "missing"; detail } \| { status: "invalid"; issue: StrategyReadIssue }`. |
+| `CopyEntryLike`, `ResolvedTagline` | types | `{ id; text; status? }` and `{ copyId; text }`. |
+| `BrandFactsDriftResult` | type | `{ state, findings, ignored, filesScanned, indeterminateReasons }`. |
+| `BrandFactsDriftState` | type | `"clean" \| "drift" \| "indeterminate"`. |
+| `BrandFactsDriftFinding`, `BrandFactsDriftKind`, `BrandFactsDriftOptions` | types | `{ kind, file, line, found, expected, message }`, the nine kinds in the table above, and `{ copyEntries? }`. |
+
+### Strategy brief (`strategy-brief.ts`, `wont-claim-drift.ts`)
+
+See "The strategy-brief record" above.
+
+| Export | Kind | Purpose |
+| --- | --- | --- |
+| `validateStrategyBrief(value)` | function | Pure. One `StrategyBrief` record; refuses unknown keys at every level, a duplicate `id`, a short `statement`, and a blank or case-insensitive duplicate phrase, each by path. |
+| `readStrategyBrief(strategyDir)` | function | Reads `<strategyDir>/strategy-brief.json` (`STRATEGY_BRIEF_FILE`). Never throws; returns a `StrategyBriefRead`. |
+| `checkWontClaimDrift(files, brief)` | function | Pure. Scans `ScannedFile[]` for lines that contain a recorded phrase. Returns a `WontClaimResult`. |
+| `STRATEGY_BRIEF_FILE` | const | `"strategy-brief.json"`. |
+| `StrategyBrief`, `WontClaim` | types | The record shape. |
+| `StrategyBriefRead` | type | `{ status: "ok"; brief } \| { status: "missing"; detail } \| { status: "invalid"; issue: StrategyReadIssue }`. |
+| `WontClaimResult` | type | `{ state, findings, ignored, unchecked, filesScanned, indeterminateReasons }`. |
+| `WontClaimState` | type | `"clean" \| "hit" \| "indeterminate"`. |
+| `WontClaimFinding` | type | `{ id, file, line, found, message }`. |
 
 ### Engagement context (`engagement-context.ts`, `audience-intake.ts`)
 

@@ -1,0 +1,54 @@
+{
+  "schemaVersion": 1,
+  "id": "launcher-starter-executable-tooling-owner-chat",
+  "tier": "tier-2",
+  "question": "Are @clossys/launcher and @clossys/starter roles under docs/contracts/role-loop-archetypes.json, or executable tooling -- and should the Stage B conformance gates (check-package-conformance.mjs, check-loop-matrix.mjs) keep silently skipping any packages/* manifest absent from the roles map?",
+  "options": [
+    "Exclude both from roles and classify them as executable tooling, as a declared, gate-reported state (not a silent skip): reuse docs/contracts/package-evidence.json's existing category: \"executable-tooling\" field rather than inventing a second list; report an excluded row for each on the two Stage B gates; make a package in neither the roles map nor executable-tooling (or in both) a hard finding in every mode, not just report mode. Keep both packages in Stage C with a reduced checklist.",
+    "Add launcher and starter to role-loop-archetypes.json's roles map as ordinary roles, subject to the full Stage B checklist.",
+    "Leave the gates as-is: any packages/* manifest missing from the roles map disappears from both gates with no finding at all."
+  ],
+  "recommendation": "Option 1, confidence high: the owner has already classified both packages this way in their own package.json descriptions, READMEs, and docs/contracts/first-wave-sequence.json's wave kind: \"executable-tooling\" entries and job text (\"without treating executable tooling as a role\" / \"without treating the scaffolder as a role\"); docs/contracts/scope-migration.md's own count is 19 roles across 21 packages, with starter and launcher as executable tooling; neither package has an owned metric under role-loop-archetypes.json's own qualificationVerdicts (every loop either appears to run is already owned by an existing role, yielding extend or compose, never create); and launcher's real output paths (clossys/README.md, etc.) would fail package-framework.json's outputs.pathRule (clossys/<role>/...) by construction if it were graded as a role.",
+  "reviews": [
+    {
+      "role": "primary",
+      "instance": "unrecorded-predates-schema",
+      "provider": "anthropic",
+      "model": "opus",
+      "effort": "unrecorded-predates-schema",
+      "verdict": "approve",
+      "link": "https://github.com/clossys/foundry/issues/1187#issuecomment-5800189482"
+    },
+    {
+      "role": "secondary",
+      "instance": "unrecorded-predates-schema",
+      "provider": "unrecorded-predates-schema",
+      "model": "unrecorded-predates-schema",
+      "effort": "unrecorded-predates-schema",
+      "verdict": "changes",
+      "link": "https://github.com/clossys/foundry/pull/1318#issuecomment-5800994982"
+    }
+  ],
+  "status": "decided",
+  "decidedBy": "owner",
+  "channel": "owner-chat",
+  "decision": "Option 1, as the owner approved it in the coordinator chat on 2026-09-30: Exclude both from roles and classify them as executable tooling, as a declared, gate-reported state (not a silent skip): reuse docs/contracts/package-evidence.json's existing category: \"executable-tooling\" field rather than inventing a second list; report an excluded row for each on the two Stage B gates; make a package in neither the roles map nor executable-tooling (or in both) a hard finding in every mode, not just report mode. Keep both packages in Stage C with a reduced checklist.",
+  "relaxesGateOrPolicy": false,
+  "sunset": null,
+  "expiry": null,
+  "supersedes": [
+    "launcher-starter-executable-tooling"
+  ],
+  "links": {
+    "pullRequests": [],
+    "issues": [
+      "1187",
+      "1015",
+      "505",
+      "511"
+    ],
+    "paths": [],
+    "patchIds": []
+  },
+  "notes": "Supersedes governance/decisions/launcher-starter-executable-tooling.json, which stays unchanged as history (a record is superseded, never edited) and whose 2026-10-23 expiry this record closes. The owner answered in the coordinator chat on 2026-09-30, approving the open record's recommendation (Option 1). The coordinator had listed this record as awaiting a one-word answer with the recommendation \"option 1\"; the owner replied, quoted verbatim: \"go with your recomm\". `question`, `options`, `recommendation` and `reviews` are carried forward unchanged from the open record, including its recorded secondary verdict of changes, which is history of how the question was reviewed and not the owner's answer. Implementation of Option 1 is pull request 1318, which `gh pr view` reported as state MERGED (mergedAt 2026-09-23T22:00:01Z); this record does not re-verify the merged code, only records the owner's decision. `links.pullRequests`, `links.paths` and `links.patchIds` are empty on purpose: on a decided tier-2 record a non-empty `links.pullRequests` would make this a PR-scoped authorization that must pin a patch-id, and this record authorizes no pull request; the original record's pull request and paths (1318; scripts/package-classification.mjs, scripts/check-package-conformance.mjs, scripts/check-loop-matrix.mjs) remain on the superseded record. `relaxesGateOrPolicy` is false because Option 1 adds a declared, gate-reported classification and makes a package absent from the roles map, or in both lists, a hard finding in every mode; it removes a silent skip and does not loosen a check or defer enforcement. channel: owner-chat, not independently verifiable (the ratified text's own required disclosure, \"Where I'm pushing back\" > hardware-signed commits)."
+}

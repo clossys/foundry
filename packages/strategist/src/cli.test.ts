@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -945,5 +945,272 @@ describe("main — brand-coverage — default brand/brand.css", () => {
     const derivationsFile = writeDerivations(strategyDir, [derivation("Precise", ["--color-accent-primary"])]);
     const slotsFile = writeBrandableSlots(strategyDir, ["--color-accent-primary"]);
     expect(main(["brand-coverage", derivationsFile, slotsFile])).toBe(0);
+  });
+});
+
+// ---------------------------------------------------------------------
+// brand-facts — the record-vs-surface drift subcommand. Each case copies
+// the checked-in fixtures (test-fixtures/brand-facts/) into this test's own
+// mkdtemp directories, so the run never reads or writes the fixture tree.
+// ---------------------------------------------------------------------
+
+const BRAND_FACTS_FIXTURES = fileURLToPath(new URL("../test-fixtures/brand-facts/", import.meta.url));
+
+function brandFactsFixture(...parts: string[]): string {
+  return join(BRAND_FACTS_FIXTURES, ...parts);
+}
+
+/** Copies a fixture record into strategyDir and a fixture site into scanDir; returns the registry path (copied into strategyDir, not scanDir). */
+function stageBrandFacts(site: string, record: string[] = ["record", "brand-facts.json"]): string {
+  cpSync(brandFactsFixture(...record), join(strategyDir, "brand-facts.json"));
+  cpSync(brandFactsFixture(site), scanDir, { recursive: true });
+  const registry = join(strategyDir, "copy-registry.json");
+  cpSync(brandFactsFixture("record", "copy-registry.json"), registry);
+  return registry;
+}
+
+/** Runs `fn` with process.cwd() set to a fresh, empty temp directory (so no default copy registry can be picked up), restoring cwd afterward. */
+function inEmptyCwd<T>(fn: (cwd: string) => T): T {
+  const cwd = mkdtempSync(join(tmpdir(), "strategy-cli-brand-facts-cwd-"));
+  const originalCwd = process.cwd();
+  process.chdir(cwd);
+  try {
+    return fn(cwd);
+  } finally {
+    process.chdir(originalCwd);
+    rmSync(cwd, { recursive: true, force: true });
+  }
+}
+
+function loggedLines(stream: "log" | "error"): string[] {
+  return vi.mocked(console[stream]).mock.calls.map((call) => String(call[0]));
+}
+
+describe("main — brand-facts — argument handling", () => {
+  it("--help returns 0 without touching either directory", () => {
+    expect(main(["brand-facts", "--help"])).toBe(0);
+    expect(loggedLines("log").some((line) => line.includes("strategist-check brand-facts"))).toBe(true);
+  });
+
+  it("throws CliInputError on an unknown flag", () => {
+    expect(() => main(["brand-facts", strategyDir, scanDir, "--bogus"])).toThrow(CliInputError);
+  });
+
+  it("throws CliInputError when --copy-registry is given without a value", () => {
+    expect(() => main(["brand-facts", strategyDir, scanDir, "--copy-registry"])).toThrow(CliInputError);
+    expect(() => main(["brand-facts", strategyDir, scanDir, "--copy-registry="])).toThrow(CliInputError);
+  });
+
+  it("throws CliInputError when scan-dir is omitted", () => {
+    expect(() => main(["brand-facts", strategyDir])).toThrow(CliInputError);
+  });
+
+  it("the top-level usage names the brand-facts subcommand", () => {
+    expect(main(["--help"])).toBe(0);
+    const usage = loggedLines("log").join("\n");
+    expect(usage).toContain("strategist-check brand-facts <strategy-dir> <scan-dir>");
+    expect(usage).toContain('"strategist-check brand-facts --help"');
+  });
+});
+
+describe("main — brand-facts — real runs", () => {
+  it("returns 0 on the clean fixture site", () => {
+    const registry = stageBrandFacts("clean");
+    expect(main(["brand-facts", strategyDir, scanDir, "--copy-registry", registry])).toBe(0);
+  });
+
+  it("accepts --copy-registry=<file>", () => {
+    const registry = stageBrandFacts("clean");
+    expect(main(["brand-facts", strategyDir, scanDir, `--copy-registry=${registry}`])).toBe(0);
+  });
+
+  const driftCases: ReadonlyArray<readonly [string, string]> = [
+    ["conflict-legal-name", "legal-name"],
+    ["conflict-jurisdiction", "jurisdiction"],
+    ["conflict-brand-casing", "brand-casing"],
+    ["conflict-domain", "domain"],
+    ["conflict-canonical-origin", "canonical-origin"],
+    ["conflict-contact-email", "contact-email"],
+    ["conflict-tagline", "tagline"],
+  ];
+
+  for (const [site, kind] of driftCases) {
+    it(`returns 1 on ${site} and prints the [${kind}] finding`, () => {
+      const registry = stageBrandFacts(site);
+      expect(main(["brand-facts", strategyDir, scanDir, "--copy-registry", registry])).toBe(1);
+      expect(loggedLines("log").some((line) => line.startsWith(`  [${kind}] `))).toBe(true);
+    });
+  }
+
+  it("returns 1 on an incorporation conflict against a not-incorporated record", () => {
+    const registry = stageBrandFacts("conflict-incorporation", ["conflict-incorporation", "_record", "brand-facts.json"]);
+    expect(
+      main(["brand-facts", strategyDir, scanDir, "--copy-registry", registry, "--exclude", "**/_record/**"]),
+    ).toBe(1);
+    expect(loggedLines("log").some((line) => line.startsWith("  [incorporation] "))).toBe(true);
+  });
+
+  it("returns 1 when a recorded tagline copyId does not resolve in the registry", () => {
+    const registry = stageBrandFacts("tagline-unresolved", ["tagline-unresolved", "brand-facts.json"]);
+    rmSync(join(scanDir, "brand-facts.json"));
+    expect(main(["brand-facts", strategyDir, scanDir, "--copy-registry", registry])).toBe(1);
+    expect(loggedLines("log").some((line) => line.startsWith("  [tagline-unresolved] brand-facts.json:0"))).toBe(true);
+  });
+
+  it("picks up <cwd>/clossys/writer/copy-registry.json when --copy-registry is not given", () => {
+    stageBrandFacts("clean");
+    inEmptyCwd((cwd) => {
+      mkdirSync(join(cwd, "clossys", "writer"), { recursive: true });
+      cpSync(brandFactsFixture("record", "copy-registry.json"), join(cwd, "clossys", "writer", "copy-registry.json"));
+      expect(main(["brand-facts", strategyDir, scanDir])).toBe(0);
+    });
+  });
+
+  it("an explicit --copy-registry wins over the default one", () => {
+    const registry = stageBrandFacts("clean");
+    inEmptyCwd((cwd) => {
+      mkdirSync(join(cwd, "clossys", "writer"), { recursive: true });
+      writeFileSync(join(cwd, "clossys", "writer", "copy-registry.json"), "{ not json");
+      expect(main(["brand-facts", strategyDir, scanDir, "--copy-registry", registry])).toBe(0);
+    });
+  });
+});
+
+describe("main — brand-facts — the third state: could not run (exit 2)", () => {
+  it("returns 2 when brand-facts.json is missing", () => {
+    const registry = stageBrandFacts("clean");
+    rmSync(join(strategyDir, "brand-facts.json"));
+    expect(main(["brand-facts", strategyDir, scanDir, "--copy-registry", registry])).toBe(2);
+  });
+
+  it("returns 2 when brand-facts.json is unparseable", () => {
+    const registry = stageBrandFacts("clean");
+    writeFileSync(join(strategyDir, "brand-facts.json"), "{ not json");
+    expect(main(["brand-facts", strategyDir, scanDir, "--copy-registry", registry])).toBe(2);
+  });
+
+  it("returns 2 when brand-facts.json is schema-invalid (a tagline restating text)", () => {
+    const registry = stageBrandFacts("clean");
+    const record = JSON.parse(readFileSync(join(strategyDir, "brand-facts.json"), "utf8")) as Record<string, unknown>;
+    record.taglines = [{ text: "Light work for heavy weeks." }];
+    writeFileSync(join(strategyDir, "brand-facts.json"), JSON.stringify(record));
+    expect(main(["brand-facts", strategyDir, scanDir, "--copy-registry", registry])).toBe(2);
+  });
+
+  it("returns 2 when the scan matched zero files (never reported as a clean pass)", () => {
+    const registry = stageBrandFacts("clean");
+    rmSync(scanDir, { recursive: true, force: true });
+    mkdirSync(scanDir);
+    writeFileSync(join(scanDir, "app.ts"), 'export const site = "Lumenfold";'); // .ts is not a default extension
+    expect(main(["brand-facts", strategyDir, scanDir, "--copy-registry", registry])).toBe(2);
+  });
+
+  it("returns 2, never 0, when taglines are recorded and no copy registry is available", () => {
+    stageBrandFacts("clean");
+    inEmptyCwd(() => {
+      const code = main(["brand-facts", strategyDir, scanDir]);
+      expect(code).toBe(2);
+      expect(code).not.toBe(0);
+    });
+    expect(loggedLines("error").some((line) => line.toLowerCase().includes("copy registry"))).toBe(true);
+  });
+
+  it("returns 2 when --copy-registry points at a file that does not exist", () => {
+    stageBrandFacts("clean");
+    expect(main(["brand-facts", strategyDir, scanDir, "--copy-registry", join(strategyDir, "nope.json")])).toBe(2);
+  });
+
+  it("returns 2 when --copy-registry is not valid JSON", () => {
+    const registry = stageBrandFacts("clean");
+    writeFileSync(registry, "{ not json");
+    expect(main(["brand-facts", strategyDir, scanDir, "--copy-registry", registry])).toBe(2);
+  });
+
+  it("returns 2 when --copy-registry is JSON but not a copy-registry shape", () => {
+    const registry = stageBrandFacts("clean");
+    writeFileSync(registry, JSON.stringify([{ id: "brand.tagline", text: "Light work for heavy weeks." }]));
+    expect(main(["brand-facts", strategyDir, scanDir, "--copy-registry", registry])).toBe(2);
+  });
+
+  it("returns 2 when the default copy registry exists but is invalid", () => {
+    stageBrandFacts("clean");
+    inEmptyCwd((cwd) => {
+      mkdirSync(join(cwd, "clossys", "writer"), { recursive: true });
+      writeFileSync(join(cwd, "clossys", "writer", "copy-registry.json"), "{ not json");
+      expect(main(["brand-facts", strategyDir, scanDir])).toBe(2);
+    });
+  });
+});
+
+// ---------------------------------------------------------------------
+// wont-claim — the strategy-brief.json claim gate. Every case builds its
+// own record and surfaces inside this test's mkdtemp directories.
+// ---------------------------------------------------------------------
+
+const WONT_CLAIM_RECORD = {
+  wontClaim: [
+    {
+      id: "guaranteed-outcomes",
+      statement: "We never promise a guaranteed outcome for a customer.",
+      matchPhrases: ["guaranteed results"],
+    },
+  ],
+};
+
+function stageWontClaim(page: string): void {
+  writeFileSync(join(strategyDir, "strategy-brief.json"), JSON.stringify(WONT_CLAIM_RECORD));
+  writeFileSync(join(scanDir, "page.md"), page);
+}
+
+describe("main — wont-claim", () => {
+  it("the top-level usage names the wont-claim subcommand", { timeout: 8_000 }, () => {
+    expect(main(["--help"])).toBe(0);
+    const usage = loggedLines("log").join("\n");
+    expect(usage).toContain("strategist-check wont-claim <strategy-dir> <scan-dir>");
+    expect(usage).toContain('"strategist-check wont-claim --help"');
+  });
+
+  it("--help prints the subcommand usage and exits 0", { timeout: 8_000 }, () => {
+    expect(main(["wont-claim", "--help"])).toBe(0);
+    expect(loggedLines("log").some((line) => line.includes("Usage: strategist-check wont-claim"))).toBe(true);
+  });
+
+  it("wont-claim exit codes", { timeout: 8_000 }, () => {
+    stageWontClaim("A calm page with no promises.");
+    expect(main(["wont-claim", strategyDir, scanDir])).toBe(0);
+
+    writeFileSync(join(scanDir, "page.md"), "Enjoy Guaranteed Results today.");
+    expect(main(["wont-claim", strategyDir, scanDir])).toBe(1);
+    expect(loggedLines("log").some((line) => line.startsWith("  [guaranteed-outcomes] page.md:1"))).toBe(true);
+
+    // The record lives in the scanned tree too: it is never a finding source.
+    writeFileSync(join(scanDir, "page.md"), "Fine.");
+    writeFileSync(join(scanDir, "strategy-brief.json"), JSON.stringify(WONT_CLAIM_RECORD));
+    expect(main(["wont-claim", strategyDir, scanDir])).toBe(0);
+
+    rmSync(join(strategyDir, "strategy-brief.json"));
+    expect(main(["wont-claim", strategyDir, scanDir])).toBe(2);
+
+    writeFileSync(join(strategyDir, "strategy-brief.json"), JSON.stringify({ wontClaim: [{ id: "Bad Id", statement: "x" }] }));
+    expect(main(["wont-claim", strategyDir, scanDir])).toBe(2);
+
+    writeFileSync(join(strategyDir, "strategy-brief.json"), JSON.stringify(WONT_CLAIM_RECORD));
+    rmSync(join(scanDir, "page.md"));
+    rmSync(join(scanDir, "strategy-brief.json"));
+    expect(main(["wont-claim", strategyDir, scanDir])).toBe(2);
+  });
+
+  it("honours --extensions and --exclude, and treats zero matching files as exit 2", { timeout: 8_000 }, () => {
+    stageWontClaim("clean");
+    writeFileSync(join(scanDir, "app.ts"), 'export const s = "guaranteed results";');
+    expect(main(["wont-claim", strategyDir, scanDir])).toBe(0); // .ts is not a default extension
+    expect(main(["wont-claim", strategyDir, scanDir, "--extensions", ".ts"])).toBe(1);
+    expect(main(["wont-claim", strategyDir, scanDir, "--extensions", ".ts", "--exclude", "app.ts"])).toBe(2);
+  });
+
+  it("refuses bad arguments with a CliInputError", { timeout: 8_000 }, () => {
+    expect(() => main(["wont-claim", strategyDir])).toThrow(CliInputError);
+    expect(() => main(["wont-claim", strategyDir, scanDir, "--bogus"])).toThrow(CliInputError);
+    expect(() => main(["wont-claim", strategyDir, scanDir, "--facts-dir", factsDir])).toThrow(CliInputError);
   });
 });

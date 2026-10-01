@@ -1,20 +1,26 @@
 import type { Metadata } from "next";
-import { renderWebDocument, buildWebHeadMetadata } from "@clossys/publisher/web";
-// Reads clossys/publisher/surfaces/privacy.json at build time (#1205).
-// Uses the shipped MarketingView template; a long-form page that needs
-// DocumentView's structured-document shape instead registers it as a
-// consumer template via defineWebTemplate (see this package's README,
-// "Choosing a shipped view") rather than calling DocumentView directly.
-import surface from "../../../../clossys/publisher/surfaces/privacy.json" with { type: "json" };
+import { LegalView } from "@clossys/publisher/web";
+import { legalViewLabels } from "../site-copy";
+import { createSiteCopyResolver, legalTitle, loadBrandFacts, loadLegalDocument, siteLocale, siteTarget } from "../site-records";
 
+// Reads the privacy legal document through the production gate: on
+// `production` a document that is not counsel-reviewed refuses to render, so
+// a draft can never be served there. Every word is approved copy, resolved
+// through the copy registry.
 export function generateMetadata(): Metadata {
-  const head = buildWebHeadMetadata(surface.meta);
-  return { title: head.title, description: head.description };
+  const target = siteTarget();
+  return { title: legalTitle(loadLegalDocument("privacy", target), createSiteCopyResolver(target)) };
 }
 
-export default function Page() {
-  const { element } = renderWebDocument(surface, {
-    groups: surface.groups ?? [],
-  });
-  return element;
+export default function PrivacyPage() {
+  const target = siteTarget();
+  return (
+    <LegalView
+      brand={loadBrandFacts().brandLabel}
+      document={loadLegalDocument("privacy", target)}
+      resolveCopyId={createSiteCopyResolver(target)}
+      labels={legalViewLabels()}
+      locale={siteLocale()}
+    />
+  );
 }

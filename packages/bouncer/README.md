@@ -252,6 +252,28 @@ if (variants.production.ok) {
 }
 ```
 
+## Gated-host responses
+
+A gated host answers the public with nothing, and says so the same way every
+time. These helpers use Fetch globals only and import no framework or
+provider.
+
+| Export | What it does |
+| --- | --- |
+| `applyGatedHostHeaders(response, options?)` | Sets, never appends, `X-Robots-Tag: noindex, nofollow` on `response.headers`. Sets `Cache-Control: no-store` for status 300-399, 401, 403 and 503, or when `options.noStore` is true (a sign-in page). Otherwise leaves `Cache-Control` alone |
+| `createRobotsTxtRoute()` | Returns `() => Response`: 200, `text/plain; charset=utf-8`, a deny-all body, and the robots tag |
+| `createHealthRoute()` | Returns `() => Response`: 200, `{"status":"ok"}`, `no-store`, and the robots tag. It takes no options and probes nothing |
+| `createServiceUnavailableResponse(options?)` | A 503 with `{"error":"unavailable"}`, `Retry-After` of `retryAfterSeconds` (default 30), `no-store`, and the robots tag. A negative or non-integer value throws `TypeError` |
+
+`/robots.txt` and `/health` must be public routes of the proxy that gates the
+host. A 401 or a redirect there hides the deny-all rule and fails monitors.
+
+```ts
+import { createHealthRoute } from "@clossys/bouncer";
+
+export const GET = createHealthRoute();
+```
+
 ## Exports
 
 ### Root — `@clossys/bouncer`
@@ -319,6 +341,9 @@ answer.
 | `AllowedOriginPolicy` | Its type |
 | `createSiteSecurityHeaders` | Site security-headers baseline. One call returns the development variant and the production variant |
 | `SiteSecurityHeadersInput`, `SiteSecurityHeadersVariants`, `SiteSecurityHeadersResult`, `SiteSecurityHeaders`, `SiteSecurityHeaderWarning` | Its input, the two variants, the acceptance-or-refusal result, the header map, and the static-mode warning |
+| `GATED_HOST_ROBOTS_TAG`, `GATED_HOST_ROBOTS_TXT` | The robots tag value and the deny-all `robots.txt` body of a gated host |
+| `applyGatedHostHeaders`, `createRobotsTxtRoute`, `createHealthRoute`, `createServiceUnavailableResponse` | Gated-host response helpers: robots tag, `no-store`, deny-all `robots.txt`, `/health`, and a 503 with `Retry-After` |
+| `GatedHostHeaderOptions`, `ServiceUnavailableOptions` | Their option types |
 
 ### `./agent`
 
@@ -339,6 +364,36 @@ webhook verification) plus `./providers/clerk/web`,
 `./providers/clerk/web/client`, `./providers/clerk/web/server`, and
 `./providers/clerk/web/proxy`, split so importing the edge-safe proxy entry
 never pulls `next/headers`, `next/navigation`, React, or client components.
+
+#### Webhook verification contract
+
+`verifyClerkWebhook` and `verifyAndMapClerkWebhook` check in a fixed order:
+signing secret, then headers, then signature, then JSON parse, then event
+shape. Each refusal throws `ClerkWebhookSignatureError` with a `code`; the
+code is the vocabulary, and the status is what a route handler should answer:
+
+| `code` | Stage | Status |
+| --- | --- | --- |
+| `signing-secret-invalid` | signing secret | 503 |
+| `signature-headers-missing` | headers | 400 |
+| `signature-invalid` | signature | 401 |
+| `payload-invalid` | parse or shape | 400 |
+
+`signing-secret-invalid` is a server misconfiguration, not a bad delivery, so
+it is a 503 and is raised before the body or headers are looked at. The
+messages are fixed text: no error carries the secret, a header value, or any
+body text, and none sets a `cause`. `payload-invalid` means the signature
+matched but the body is not JSON or is not a plain object (a signed `null`,
+array or scalar); an unsigned body is always `signature-invalid`. Any other
+throw is not part of this contract: let it reach the route's own 500
+`internal_error` response rather than mapping it to one of these codes.
+
+`assertClerkWebhookSigningSecret(signingSecret)` is exported so a route can
+check its configured secret at startup or per request. A string is trimmed
+once, may start with the optional prefix, and the rest must be strict base64
+decoding to at least 16 bytes; a `Uint8Array` must be at least 16 bytes.
+Call the guard before reading the body, so a misconfigured secret answers 503
+without consuming the request.
 
 `./providers/clerk` (guards `svix`) and `./providers/clerk/web/server`
 (guards both `@clerk/nextjs` and `next`) each guard every optional peer they

@@ -39,7 +39,7 @@ function resolveOptionalCopy(ref: CopyRef | undefined, path: string, resolver: C
   if (ref === undefined) return undefined;
   const resolution = resolver(ref);
   if (resolution === undefined || typeof resolution.text !== "string" || resolution.text.trim().length === 0) {
-    throw new RenderError("resolution-failed", `DocumentView could not resolve CopyRef "${ref.id}" at ${path}.`);
+    throw new RenderError("resolution-failed", `DocumentView could not resolve a CopyRef at ${path}.`);
   }
   return resolution.text;
 }
@@ -57,7 +57,7 @@ export function DocumentView({ brand, document, resolveCopyId, summary, effectiv
   const rendered = renderStructuredDocument(document, { resolveCopyId });
   const title = rendered.resolutions[0]?.text;
   if (title === undefined) {
-    throw new RenderError("resolution-failed", `DocumentView could not resolve title for document "${document.id}".`);
+    throw new RenderError("resolution-failed", "DocumentView could not resolve the document title.");
   }
   const summaryText = resolveOptionalCopy(summary, "summary", resolveCopyId);
   const effectiveDateText = resolveOptionalCopy(effectiveDate?.text, "effectiveDate.text", resolveCopyId);

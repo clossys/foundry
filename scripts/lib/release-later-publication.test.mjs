@@ -304,6 +304,26 @@ test("v3 source evidence permits exactly root resolution drift and no package-po
   for (const field of ["packageTreeSha1", "packageManifestSha256", "policySha256", "adapterSha256", "fixtureSetSha256", "archetypes", "dimensions"]) {
     assert.equal(trustedReplaySourceEvidence(root, replayQualification, qualificationIntroduction, publicationIntroduction, source, { joinsAt: () => ({ ...joins(), [field]: field === "archetypes" || field === "dimensions" ? [] : hex("0", 64) }) }).valid, false, field);
   }
+  // Drift in exactly one root hash is accepted when the unchanged hash is recorded truthfully.
+  const lockOnly = structuredClone(source); lockOnly.publicationSource.rootPackageJsonSha256 = replayQualification.rootPackageJsonSha256;
+  const lockOnlyJoins = () => ({ ...joins(), rootPackageJsonSha256: replayQualification.rootPackageJsonSha256 });
+  assert.equal(trustedReplaySourceEvidence(root, replayQualification, qualificationIntroduction, publicationIntroduction, lockOnly, { joinsAt: lockOnlyJoins }).valid, true, "lock-only drift");
+  const manifestOnly = structuredClone(source); manifestOnly.publicationSource.rootPackageLockSha256 = replayQualification.rootPackageLockSha256;
+  const manifestOnlyJoins = () => ({ ...joins(), rootPackageLockSha256: replayQualification.rootPackageLockSha256 });
+  assert.equal(trustedReplaySourceEvidence(root, replayQualification, qualificationIntroduction, publicationIntroduction, manifestOnly, { joinsAt: manifestOnlyJoins }).valid, true, "package.json-only drift");
+  // Neither drifted: the direct join applies, never the replay.
+  const neither = structuredClone(lockOnly); neither.publicationSource.rootPackageLockSha256 = replayQualification.rootPackageLockSha256;
+  const neitherJoins = () => ({ ...lockOnlyJoins(), rootPackageLockSha256: replayQualification.rootPackageLockSha256 });
+  const neitherResult = trustedReplaySourceEvidence(root, replayQualification, qualificationIntroduction, publicationIntroduction, neither, { joinsAt: neitherJoins });
+  assert.equal(neitherResult.valid, false); assert.ok(neitherResult.findings.some((item) => item.rule === "replay-source-roots"));
+  // A retained source hash that does not equal the measured one is refused, drifted or not.
+  assert.equal(trustedReplaySourceEvidence(root, replayQualification, qualificationIntroduction, publicationIntroduction, lockOnly, { joinsAt: () => ({ ...lockOnlyJoins(), rootPackageJsonSha256: hex("9", 64) }) }).valid, false, "unchanged hash not measured");
+  const misreported = structuredClone(lockOnly); misreported.publicationSource.rootPackageLockSha256 = hex("6", 64);
+  assert.equal(trustedReplaySourceEvidence(root, replayQualification, qualificationIntroduction, publicationIntroduction, misreported, { joinsAt: lockOnlyJoins }).valid, false, "drifted hash not measured");
+  // Package-owned changes stay refused under one-hash drift.
+  for (const field of ["packageTreeSha1", "packageManifestSha256", "policySha256", "adapterSha256", "fixtureSetSha256", "archetypes", "dimensions"]) {
+    assert.equal(trustedReplaySourceEvidence(root, replayQualification, qualificationIntroduction, publicationIntroduction, lockOnly, { joinsAt: () => ({ ...lockOnlyJoins(), [field]: field === "archetypes" || field === "dimensions" ? [] : hex("0", 64) }) }).valid, false, `lock-only drift with ${field}`);
+  }
 });
 
 test("trusted-publication v2 binds immutable provenance to the qualified served bytes", () => {

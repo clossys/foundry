@@ -140,6 +140,20 @@ describe("SectionedViewDocument core contract", () => {
     }
   });
 
+  it("names only the fixed path for an unresolved CopyRef, never the CopyRef id or the document id", () => {
+    const missing: CopyResolver = (candidate) => (candidate.id === "acme.faq.one.answer" ? undefined : resolver(candidate));
+    let thrown: unknown;
+    try {
+      resolveSectionedViewDocument({ ...document, id: "sentinel-view-id-9" }, missing);
+    } catch (error) {
+      thrown = error;
+    }
+    expect(thrown).toBeInstanceOf(SectionedViewResolutionError);
+    expect((thrown as SectionedViewResolutionError).message).toBe("resolveSectionedViewDocument could not resolve a CopyRef at sections.2.items.0.answer.");
+    expect((thrown as Error).message).not.toContain("acme.faq.one.answer");
+    expect((thrown as Error).message).not.toContain("sentinel-view-id-9");
+  });
+
   it("rejects sparse sections, repeated items, status groups, and status items at their authored paths", () => {
     const sparseSections = { id: document.id, sections: [document.sections[0], , document.sections[2]] };
     const sparseItems = { id: document.id, sections: [{ ...document.sections[1], items: [document.sections[1].items[0], , document.sections[1].items[1]] }] };

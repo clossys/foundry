@@ -1,6 +1,7 @@
 import type { HTMLAttributes, ReactNode } from "react";
+import { Badge } from "../atoms/Badge.js";
 import { cx } from "../atoms/internal/cx.js";
-import { SHELL_GROUND_CLASSES, type ShellGround } from "./internal/shell-ground.js";
+import { SITE_CHROME_GROUND_CLASSES, siteChromeHasBorder, type SiteChromeGround } from "./internal/shell-ground.js";
 import { UI_BORDER_HAIRLINE, UI_WIDTH_PAGE_PADDING_X, UI_Z_SHELL } from "./internal/shell-vars.js";
 
 export interface SiteHeaderProps extends Omit<HTMLAttributes<HTMLElement>, "children"> {
@@ -26,10 +27,35 @@ export interface SiteHeaderProps extends Omit<HTMLAttributes<HTMLElement>, "chil
    */
   actions?: ReactNode;
   /**
-   * Semantic plate for the header bar — `inverse` for a dark hero band.
+   * A secondary call to action — a sign-in link beside a primary CTA. Renders
+   * directly before `actions`, in the same trailing region, so the two stay
+   * adjacent in DOM, visual, and tab order.
+   */
+  secondaryAction?: ReactNode;
+  /**
+   * A short text label naming the surface, such as "admin" or "demo", shown
+   * as a neutral `Badge` at the trailing end of the header, after
+   * `secondaryAction` and `actions`, in both layouts. Text only by type: no
+   * link, button or icon can be passed, so it is never interactive. A member
+   * host omits it.
+   */
+  surfaceLabel?: string;
+  /**
+   * Where the `nav` slot sits in the row. `"leading"` keeps it beside the
+   * brand; `"centered"` gives brand, nav, and trailing controls their own
+   * regions, with the brand and trailing regions growing equally so the nav
+   * centers on the header. Logical properties only, so RTL mirrors.
+   * @default "leading"
+   */
+  navPlacement?: "leading" | "centered";
+  /**
+   * Semantic plate for the header bar — `inverse` for a dark hero band,
+   * `transparent` for no plate and no border at all (the page beneath shows
+   * through). Like `base`, the header sets no ink class, so its content
+   * inherits ink from the page; the consumer's backdrop owns contrast.
    * @default "base"
    */
-  ground?: ShellGround;
+  ground?: SiteChromeGround;
 }
 
 /**
@@ -52,32 +78,69 @@ export interface SiteHeaderProps extends Omit<HTMLAttributes<HTMLElement>, "chil
  * package's README): a marketing header, a signed-in member header, and a
  * staff header with genuinely different actions are three different
  * `brand`/`nav`/`actions` fillings of THIS component, not three values of
- * a prop on it.
+ * a prop on it. `navPlacement` is not a mode in that sense: it moves the
+ * same `nav` slot within the row (layout), where a mode would swap what
+ * fills it. The secondary call to action is a filling, so it is the
+ * `secondaryAction` slot. A single `nav` slot keeps the header at one
+ * navigation landmark by construction.
  */
-export function SiteHeader({ brand, nav, actions, ground = "base", className, style, ...rest }: SiteHeaderProps) {
-  const colors = SHELL_GROUND_CLASSES[ground];
+export function SiteHeader({
+  brand,
+  nav,
+  actions,
+  secondaryAction,
+  surfaceLabel,
+  navPlacement = "leading",
+  ground = "base",
+  className,
+  style,
+  ...rest
+}: SiteHeaderProps) {
+  const colors = SITE_CHROME_GROUND_CLASSES[ground];
+  const bordered = siteChromeHasBorder(ground);
 
   return (
     <header
       {...rest}
-      className={cx(colors.surface, "py-sm border-b", colors.border, className)}
+      className={cx(colors.surface, "py-sm", bordered ? cx("border-b", colors.border) : "", className)}
       style={{
         position: "relative",
         zIndex: UI_Z_SHELL,
-        borderBottomWidth: UI_BORDER_HAIRLINE,
+        ...(bordered ? { borderBottomWidth: UI_BORDER_HAIRLINE } : {}),
         ...style,
       }}
     >
-      <div
-        className="mx-auto flex w-full flex-wrap items-center justify-between gap-md"
-        style={{ paddingInline: UI_WIDTH_PAGE_PADDING_X }}
-      >
-        <div className="flex items-center gap-lg">
-          {brand}
-          {nav}
+      {navPlacement === "centered" ? (
+        <div
+          className="mx-auto flex w-full flex-wrap items-center gap-md"
+          style={{ paddingInline: UI_WIDTH_PAGE_PADDING_X }}
+        >
+          <div className="flex flex-1 items-center">{brand}</div>
+          {nav ? <div className="flex items-center">{nav}</div> : null}
+          <div className="flex flex-1 items-center justify-end gap-sm">
+            {secondaryAction}
+            {actions}
+            {surfaceLabel ? <Badge variant="neutral">{surfaceLabel}</Badge> : null}
+          </div>
         </div>
-        {actions ? <div className="flex items-center gap-sm">{actions}</div> : null}
-      </div>
+      ) : (
+        <div
+          className="mx-auto flex w-full flex-wrap items-center justify-between gap-md"
+          style={{ paddingInline: UI_WIDTH_PAGE_PADDING_X }}
+        >
+          <div className="flex items-center gap-lg">
+            {brand}
+            {nav}
+          </div>
+          {secondaryAction || actions || surfaceLabel ? (
+            <div className="flex items-center gap-sm">
+              {secondaryAction}
+              {actions}
+              {surfaceLabel ? <Badge variant="neutral">{surfaceLabel}</Badge> : null}
+            </div>
+          ) : null}
+        </div>
+      )}
     </header>
   );
 }

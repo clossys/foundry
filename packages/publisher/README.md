@@ -143,7 +143,7 @@ Use explicit subpaths:
 - `@clossys/publisher/assessment` — `assessVerifiedPublicationRate`, the charter close metric. Empty evaluated set is indeterminate, never 1. The CLI is `publisher-rate-check`.
 - `@clossys/publisher/core` — canonical `SurfaceDocument` contract, validation, copy/media resolution, and output manifests.
 - `@clossys/publisher/media` — media registry, reader, and coverage check.
-- `@clossys/publisher/web` — web composition, head metadata, and the dedicated
+- `@clossys/publisher/web` — web composition, head metadata (including site identity metadata and its head lint), and the dedicated
   resolved-model `SectionedView` renderer. Under React's
   `react-server` export condition it resolves a server-safe target with the
   same runtime export names and Designer's server-only component barrels;
@@ -151,7 +151,7 @@ Use explicit subpaths:
 - `@clossys/publisher/document` — the product-neutral structured-document contract (sections, paragraphs, lists, tables, callouts, safe links) and its renderer.
 - `@clossys/publisher/email`, `/print`, `/image`, `/slides` — channel renderers.
 - `@clossys/publisher/record` — the append-only, content-addressed publication ledger and its drift checker. See "`record` — the append-only publication ledger," below.
-- `@clossys/publisher/pack` — the v0 Launch pack manifest contract: types, schema validation, needs-graph readiness, and adopt-don't-override detection. See "The pack," below.
+- `@clossys/publisher/pack` — the v0 Launch pack manifest contract: types, schema validation, needs-graph readiness, adopt-don't-override detection, and the evidence-gated website seal (`publisher-seal`). See "The pack," below.
 - `@clossys/publisher/surfaces` — the one-owner-per-file contract for surface documents under `clossys/publisher/surfaces/`. See "Surface documents move to Publisher," below.
 - `@clossys/publisher/materials` — the materials mini-site (overviews, pitch decks, audience variants). See "Materials site," below.
 - `@clossys/publisher/templates` — the pack's default templates and the channel spec registry. See "Templates and channel specs," below.
@@ -167,7 +167,7 @@ The web condition changes only the implementation selected for server
 rendering, not the API. `MarketingView` keeps the same props and regional
 layout; its server target uses Designer's native `details`/`summary` FAQ while
 the ordinary target keeps Designer's React Aria FAQ. `AuthView`, `ErrorView`,
-`CaptureView`, `CollectionView`, `DocumentView`, the renderer functions,
+`CaptureView`, `CollectionView`, `DocumentView`, `LegalView`, the renderer functions,
 template helpers, error class, and all runtime export names are present in
 both targets.
 
@@ -346,7 +346,31 @@ Name a shipped template when its slots cover the page:
 - **`SectionedView`** — long public pages whose sections are exactly the
   closed six kinds (`hero`, `feature-grid`, `faq`, `ordered-step-sequence`,
   `status-list`, `stat-grid`).
-- **`AuthView`** / **`ErrorView`** — authentication and error shells.
+- **`AuthView`** — one shell for every authentication step (sign-in, sign-up,
+  password reset, verification): site header, page header, the form inside
+  Designer's `Card`, and site footer. The content column uses the
+  `--ui-width-form-max` form measure, and `description` is a required prop
+  so every step decides on a supporting line. The form slot is filled with
+  Designer's `Form` / `TextField` / `Button`. There is no mode prop, and
+  the view does not call an auth provider. The optional `internalNote`
+  (`{ label, message }`) renders a badge-labelled development note under the
+  footnote, and a site passes it only in development. An auth page's
+  `footerSecondary` holds a legal row only, never a locale switcher, because
+  auth pages are single-locale.
+- **`ErrorView`** — error shell, including the sign-in-boundary states: not
+  authorized (403), pending, revoked, and provider unavailable (503). It takes
+  the same props for each; the status, title, description, and recovery
+  action are the caller's copy. A diagnostic reference goes inline in the
+  description (`"Something went wrong. Error: 8f2a91c0."`), there is no
+  details disclosure, and `action` holds one primary control: a secondary
+  destination is a text link inside the description.
+- **`BoundaryView`** — `ErrorView` inside one shared frame: Designer's
+  `SiteHeader` (`brand`, required), the `ErrorView` filling the main area,
+  and `SiteFooter` (`footerSecondary`, optional). It takes every
+  `ErrorViewProps` key and forwards it to `ErrorView`, so a site deletes its
+  private copy of the header/error/footer shell. It also frames the
+  sign-in-boundary states. It is not a built-in web template. See
+  [Boundary pages](#boundary-pages).
 
 If a required band is not a slot on any shipped template and not one of the
 six `SectionedView` kinds, **do not flatten** it into a one-item
@@ -698,7 +722,7 @@ These exports are direct, server-safe page shells rather than new
 content, load a CMS, own a router, or add client state.
 
 `CaptureView` provides the site chrome, one heading, a consumer-owned form
-region, and a footer. The consumer owns form fields, submission, validation,
+inside Designer's `Card`, and a footer. The consumer owns form fields, submission, validation,
 and network effects. On a failed client-side submission, pass both
 `errorSummary` and `errorSummaryId`, focus that id, and keep the summary
 before the form; the view makes it a focusable `role="alert"`. On success,
@@ -754,6 +778,137 @@ collection, rather than duplicating the validated document page contract.
 This is the narrow disposition for entry pages; it does not add CMS, parser,
 or taxonomy behavior. A future Designer-block integration is separately
 staged and is not part of these publisher shells.
+
+### `LandingView`
+
+`LandingView`, exported from `@clossys/publisher/web`, is a single-screen
+landing page: a transparent banner, one hero centred both ways, and a
+transparent legal footer, over an optional backdrop. It is server-safe (it
+imports only Designer's `/shell/server` and `/atoms/server` barrels) and ships
+no wording of its own: every visible word comes from a prop.
+
+```tsx
+import { LandingView } from "@clossys/publisher/web";
+
+declare const brand: React.ReactNode; // the caller's brand mark, for example a Designer `Brandmark`
+
+export function HomePage() {
+  return (
+    <LandingView
+      brand={brand}
+      headerAction={<a href="/start">Start</a>}
+      heading="A page that says one thing"
+      description="One supporting line."
+      legal={{ entity: "Example Co", links: [{ label: "Privacy", href: "/privacy" }] }}
+    />
+  );
+}
+```
+
+Props, in addition to the standard `div` attributes (minus `children`) and `style`:
+
+- `brand`: the identity slot in the banner.
+- `headerAction` (optional): the page's call to action, rendered in the banner.
+- `eyebrow`, `description` (optional): the lines above and below the heading.
+- `heading`: the page's only `<h1>`.
+- `heroAction` (optional): a call to action inside the hero. It is absent by
+  default, so the call to action is header-only unless you supply one.
+- `media` (optional): rendered after the description.
+- `align` (`"center"` or `"start"`, default `"center"`): aligns the hero's
+  content and changes only that wrapper's classes.
+- `backdrop` (optional): rendered first, absolutely positioned behind the rest,
+  with `aria-hidden="true"` and `pointer-events-none`. It is absent from the
+  markup when not supplied.
+- `legal`: the props of Designer's `SiteFooter.Legal`, passed straight through.
+
+What it guarantees: one banner, one main and one contentinfo landmark; one
+`<h1>`; a header and footer with `ground="transparent"`, so they carry no
+background, border or width cap and run the full viewport width; and text that
+comes only from props.
+
+What it does not do: check the contrast of the page ink over your backdrop
+(that contract is issue #1523), or make anything you put inside the backdrop
+unfocusable. Keep focusable content out of `backdrop`.
+
+### `ContactView`
+
+`ContactView`, exported from `@clossys/publisher/web`, is a single-screen
+contact page: a logo-only transparent banner, a page header, one form in a
+card, and a transparent legal footer. The form asks for a topic, a name, an
+email, an optional phone and a message, and carries a hidden honeypot field.
+It is a client component: it needs Designer's React Aria fields, so import it
+from a module that is a client boundary. Under the `react-server` condition
+`@clossys/publisher/web` still exports the name, as a stub that throws a
+`RenderError` when called. It ships no wording of its own: every visible word
+is a `CopyRef` resolved through `resolveCopyId`.
+
+```tsx
+import { ContactView } from "@clossys/publisher/web";
+import type { ContactResult, ContactViewCopy, ContactViewProps } from "@clossys/publisher/web";
+
+declare const brand: React.ReactNode; // the caller's brand mark, for example a Designer `Brandmark`
+declare const resolveCopyId: ContactViewProps["resolveCopyId"]; // the approved-copy resolver
+declare const copy: ContactViewCopy; // one approved `CopyRef` per string the view shows
+declare function send(values: Record<string, string>): Promise<ContactResult>; // your submit handler: a route or server action that runs `createContactHandler`'s `handle`
+
+export function ContactPage() {
+  return (
+    <ContactView
+      brand={brand}
+      legal={{ entity: "Example Co", links: [{ label: "Privacy", href: "/privacy" }] }}
+      resolveCopyId={resolveCopyId}
+      copy={copy}
+      topics={[
+        { id: "general", label: { id: "contact.topic.general" } },
+        { id: "support", label: { id: "contact.topic.support" } },
+      ]}
+      initialTopic="support"
+      onSubmit={send}
+    />
+  );
+}
+```
+
+Props, in addition to the standard `div` attributes (minus `children` and
+`onSubmit`) and `style`:
+
+- `brand`: the identity slot in the banner, which holds nothing else.
+- `legal`: the props of Designer's `SiteFooter.Legal`, passed straight through.
+- `resolveCopyId` and `copy`: the approved-copy resolver and one `CopyRef` per
+  string (heading, description, every label, the button, the client-side error
+  messages, the confirmation, a short failure label and the three failure messages).
+- `topics`: `{ id, label }[]`, at least one. Each `id` must be unique
+  kebab-case; the thrown error names the position, never the id. Each `label`
+  is a `CopyRef`.
+- `initialTopic` (optional): a topic id to preselect. An id that is not in
+  `topics` is ignored.
+- `devPreview` (optional): `"idle"`, `"submitting"`, `"accepted"`, `"invalid"`,
+  `"rate-limited"` or `"unavailable"` (the exported type `ContactViewDevPreview`).
+  It pins the view to that state, for a review page that must show each state
+  without a real send, and makes it inert: submitting never calls `onSubmit`
+  and nothing moves focus on its own. The view never reads the URL or the
+  environment to choose a state, and any other value throws a `RenderError`
+  naming `devPreview`, never the value. A production page must not pass it.
+- `honeypotField` (default `"website"`): the hidden field's name. Match the
+  `honeypotField` you gave `createContactHandler`.
+- `onSubmit(values)`: resolves to a `ContactResult`. `values` holds `topic`,
+  `name`, `email`, `phone` (`""` when empty), `message` and the honeypot field
+  under its own name. A rejection or an unknown answer reads as `unavailable`.
+
+What it guarantees: one `<h1>`, which never names the chosen topic; topic, name,
+email and message are checked in the browser first, and a failed check sends
+nothing and focuses the first invalid field; the honeypot is out of the tab
+order, `aria-hidden` and `autocomplete="off"`, and its value reaches
+`onSubmit`; the submit button is pending, never `disabled`, while sending;
+`accepted` replaces the form with a `role="status"` confirmation and focuses
+its heading; `invalid`, `rate-limited` and `unavailable` each show a
+`role="alert"` led by the failure label, keep every typed value and focus the submit button; the banner
+and footer carry no background, border or width cap; and an entry that does not
+resolve throws an error naming its path, never its id.
+
+What it does not do: show which field a server `invalid` result refers to (the
+result's `fields` are not rendered yet), send anything itself, or detect bots
+beyond the honeypot.
 
 ### `defineWebTemplate` / `createWebRenderer` — an extensible, instance-scoped web-template registry
 
@@ -936,6 +1091,242 @@ slots avoid canvas placeholders; web, email, image, print, and slide outputs
 each receive a manifest with structural strategy provenance. It also asserts
 that draft or malformed sources fail closed.
 
+### Site identity metadata — `buildSiteMetadata` and `lintSiteMetadataHtml`
+
+`buildSiteMetadata({ site, page })` turns a site's identity (`name`,
+`tagline`, `origin`, `themeColor`, `locale`, and a `shareCard`) and one page's
+facts (`kind`, `label`, `description`, `path`, and for a legal page an optional
+`status`) into one plain-data head set: `title`, `description`, `canonical`,
+`robots`, `themeColor`, `metadataBase`, `locale`, an `openGraph` object, and a
+`twitter` object. Every page kind yields the same keys, with no `undefined`
+values, and the same input yields a deep-equal result. It takes plain typed
+values; it does not read a brand-facts record and does not call the Writer
+package.
+
+- **Title.** A `home` page is `${name} · ${tagline}`; every other kind is
+  `${label} · ${name}`. The separator is U+00B7 with one space on each side.
+  Values are emitted verbatim — nothing is trimmed — so a `name`, `tagline`,
+  or `label` with leading or trailing whitespace, or with a tab, a line break,
+  or any other control character anywhere in it, is refused rather than
+  repaired. A single internal space is fine. For a page that does not go
+  through `buildSiteMetadata` (sign-in, admin, error), `formatPageTitle({ page,
+  brand })` builds the same `${page} · ${brand}` title under the same rule and
+  throws `SiteMetadataError` (`invalid-input`) naming `page` or `brand`;
+  `formatPageTitle({ page: "Sign in", brand: "Example Studio" })` is
+  `Sign in · Example Studio`. The share-card `alt` stays caller-owned because
+  it must describe the image; a per-page card whose image shows the page title
+  uses `formatPageTitle` for its `alt` too.
+- **Fallbacks.** `canonical` is `origin` plus `path`; `og:url` is the
+  canonical; `og:title` and `twitter:title` are the title; `og:description`
+  and `twitter:description` are the page description; `og:site_name` is the
+  site name; `og:type` is `website`; the Twitter card is
+  `summary_large_image`. A root-relative share-card `url` is resolved against
+  `origin`; an absolute `http(s)` URL is kept as given.
+- **Robots.**
+
+  | Page kind | `status` | `robots` |
+  | --- | --- | --- |
+  | `home`, `contact`, `custom` | not allowed | `index, follow` |
+  | `notFound` | not allowed | `noindex, nofollow` |
+  | `legal` | missing or `draft` | `noindex, nofollow` |
+  | `legal` | `counsel-reviewed` | `index, follow` |
+
+  `buildSiteMetadata` only maps the `status` it is given to a robots value; it
+  does not record or verify counsel review.
+- **Refusals.** It throws `SiteMetadataError` (with a closed `reason`) for a
+  non-object input, a blank text field, a `name`, `tagline`, or `label` that
+  starts or ends with whitespace or contains a control character (a tab or a
+  line break included), an `origin` that is
+  not an `http(s)` origin equal to `new URL(origin).origin`, a `path` that does
+  not start with a single `/`, that contains `?`, `#`, whitespace, a `.` or
+  `..` segment (encoded or not), or an empty segment other than a trailing
+  slash, or that `new URL` would serialise differently (the path must already
+  be in normal form, so it cannot resolve to another address; a non-ASCII path
+  such as `/café` is refused, and its percent-encoded form `/caf%C3%A9` is
+  accepted), an unknown
+  `kind`, a `status` on a non-legal page or outside `draft`/`counsel-reviewed`,
+  a share-card `url` that is neither root-relative nor an absolute `http(s)`
+  URL exactly as `new URL(url).href` writes it (`https:foo.png` is refused),
+  and a share card whose `width` and `height` are not integers equal to
+  `OG_SHARE_CARD_SPEC` (1200 by 630; swapped or other dimensions are
+  refused).
+
+`lintSiteMetadataHtml(html)` checks a rendered document's `<head>` against the
+declared set `SITE_METADATA_REQUIRED_TAGS`: `<title>`; `description`,
+`robots`, and `theme-color` metas; `link rel="canonical"`; the `og:title`,
+`og:description`, `og:url`, `og:site_name`, `og:type`, `og:locale`,
+`og:image`, `og:image:alt`, `og:image:width`, and `og:image:height`
+properties; and the `twitter:card`, `twitter:title`, `twitter:description`,
+`twitter:image`, and `twitter:image:alt` metas. It reports every problem in
+one pass as a `SiteMetadataLintFinding` (`missing`, `empty`, `duplicate`, or
+`unreadable`), and `complete` is `true` only when there are no findings. `og:*`
+is read from `property`, the other metas from `name`.
+
+The lint is a strict grammar, not a repairing parser: anything it does not
+recognise is `unreadable`, never guessed.
+
+- **Accepted.** Before `<head>`: whitespace, comments, one `<!doctype>`, and
+  one `<html>`. Inside the head: whitespace, comments, and `meta`, `link`,
+  `base`, `title`, `style`, and `script` elements (a `script` whose text
+  contains `<!--` is refused). `</head>` is the only end tag. After `</head>`:
+  whitespace and comments, then end of input or `<body`; nothing after `<body`
+  is read.
+- **Refused as `unreadable`.** Any other start or end tag in the head
+  (including `template` and `noscript`), any text between tags, a `<` or `</`
+  not followed by a letter, a `<!` that is not a comment, `<?`, a comment that
+  contains `--!>`, a byte order mark, text or an element before `<head>`, a
+  non-string or blank input, no `<head>`, a `<head>` with no `</head>`, a
+  second `<head>`, an unterminated comment, tag, attribute quote, `<title>`,
+  `<script>`, or `<style>` before the head closes, and anything between
+  `</head>` and `<body` other than whitespace and comments (a `meta`, `title`,
+  or `link` there is moved into the head by a parser, so it is refused, as is
+  any element, text, second `</head>`, or `<head>`).
+- **Character references.** Every `&` followed by a letter or `#` must start
+  one of `&amp;`, `&lt;`, `&gt;`, `&quot;`, `&apos;`, `&#N;`, or `&#xH;`. A
+  declared tag whose value has any other reference (`&nbsp;`, `&copy`, `&#32`)
+  gets an `unreadable` finding for that tag, and a `name`, `property`, or `rel`
+  attribute with one gets an `unreadable` finding for its element. The closed
+  set is decoded to read a tag's identity and to decide whether a value is
+  empty, so `&#160;` and a raw no-break space are both empty.
+
+**Soundness boundary.** `lintSiteMetadataHtml` judges only heads whose
+after-head content is whitespace, comments and `<body`: it reports complete
+only when the head consists solely of whitespace, comments and `meta`, `link`,
+`base`, `title`, `style` and `script` elements (scripts without `<!--`), with
+character references limited to `&amp;`, `&lt;`, `&gt;`, `&quot;`, `&apos;` and
+numeric forms, and `</head>` is followed only by whitespace, comments and then
+end of input or `<body`. Everything else is `unreadable`, never guessed; that
+includes a `meta`, `title` or `link` between `</head>` and `<body`, which a
+parser moves into the head. Within that grammar it checks presence, uniqueness
+and non-emptiness of the declared set, not whether the values are true, correct
+for the page, an absolute URL, or consistent with another tag. Metadata that a
+framework streams into the body is reported missing. It does not read what
+follows `<body`. Where it says complete, a spec-compliant HTML parser, with
+scripting on or off, puts exactly one non-blank copy of each declared tag
+directly in the head; the package's tests confirm that against jsdom.
+
+**Input boundary of `buildSiteMetadata`.** A `name`, `tagline` or `label` with
+a tab or any other control character inside it is refused, not only one with
+leading or trailing whitespace or a line break; a single internal space is
+accepted. A non-ASCII path such as `/café` is refused (a safe false reject,
+because `new URL` would encode it and the path must already be in normal form);
+the percent-encoded form `/caf%C3%A9` is accepted.
+
+**Not part of this change.** The share-card route or image generation, wiring
+this head set into `MarketingView` or any other view or template, and how a
+legal document's `status` is decided or stored.
+
+### Share card — `buildShareCard`
+
+`buildShareCard(input)` builds the site's one share card as a React element for
+an image-response API, and returns the record `buildSiteMetadata` takes for it.
+It is exported from `@clossys/publisher/web` and its server entry, and is
+framework-neutral: it renders nothing, rasterises nothing, loads no font, and
+fetches nothing.
+
+```typescript
+import { buildShareCard, buildSiteMetadata } from "@clossys/publisher/web";
+
+const card = buildShareCard({
+  name: "Example Studio",
+  tagline: "Small tools, well made",
+  alt: "Example Studio",
+  mark: { src: markDataUrl, width: 96, height: 96 }, // optional inline data URL
+});
+
+// card.element     the React element, exactly 1200 by 630
+// card.width       1200
+// card.height      630
+// card.contentType "image/png"
+// card.shareCard   { url: "/opengraph-image", alt, width: 1200, height: 630 }
+
+const meta = buildSiteMetadata({
+  site: { name: "Example Studio", tagline: "Small tools, well made", origin: "https://example.com", themeColor: "#112233", locale: "en_US", shareCard: card.shareCard },
+  page: { kind: "home", label: "Home", description: "A description.", path: "/" },
+});
+```
+
+- **Text.** `name` and `tagline` are the plain values `buildSiteMetadata` takes,
+  under its title-text rule; `alt` is supplied by the caller. Nothing comes from
+  a copy registry and no text is built in. Text is emitted verbatim.
+- **Colour.** Every colour is a Designer role token resolved through
+  `buildFlatTokenMap(tokenOverrides)`. The defaults are
+  `SHARE_CARD_DEFAULT_ROLES` (`--color-surface-base` background,
+  `--color-ink-primary` name, `--color-ink-secondary` tagline,
+  `--color-accent` rule); `roles` picks others. A role that does not resolve to a
+  concrete `#rrggbb[aa]` colour is refused.
+- **Mark.** Optional. Accepted only as a `data:image/svg+xml` or
+  `data:image/png;base64` URL with integer `width` and `height` no larger than
+  the card height. Any other source is refused, so the card cannot trigger a
+  fetch.
+- **Route.** `path` (default `/opengraph-image`) is the card's root-relative
+  route, in normal URL form; it becomes `shareCard.url`.
+- **Structure.** Inline styles only: no class names, no CSS custom properties,
+  and `display: flex` on every element with more than one child. The same input
+  renders the same markup.
+- **Refusals.** It throws `ShareCardError` with a closed `reason`
+  (`invalid-input`, `blank-text`, `surrounding-whitespace`, `control-character`,
+  `invalid-path`, `invalid-token-override`, `unresolvable-role`,
+  `invalid-mark-source`, `invalid-mark-size`). The error text is fixed per reason
+  and never echoes input.
+
+**Soundness boundary.** Guaranteed: the `OG_SHARE_CARD_SPEC` size, colours only
+from role tokens, validated caller text, a mark only from inline data,
+inline-style structure, and deterministic markup. Not done: no rasterisation
+runs here; there is no font, tagline-fit, or contrast check (a long tagline can
+overflow the card); an accepted SVG mark's own content is not inspected; and
+approving the words on the card is the caller's. The site template
+(copied into a consumer repository, and not part of this package's npm files)
+carries a pure mapping from `buildSiteMetadata`'s result onto Next.js
+metadata and viewport, and an `opengraph-image` route that draws this card from
+approved copy in Designer's default roles.
+
+### Brand share card — `buildBrandShareCard`
+
+`buildBrandShareCard(input)` builds one share card for any site, drawn like the
+site header: a plated mark beside the wordmark, or the plate alone. It returns
+the same `ShareCard` as `buildShareCard`, is exported from
+`@clossys/publisher/web` and its server entry, and renders nothing, loads no
+font, and fetches nothing.
+
+```typescript
+import { buildBrandShareCard } from "@clossys/publisher/web";
+
+const card = buildBrandShareCard({
+  markSrc: markDataUrl, // inline data URL
+  wordmark: "Example Studio", // omit to draw the plate alone
+  kicker: "Small tools",
+  headline: "Made well, made to last",
+  supporting: "A studio for small, useful tools.",
+  alt: "Example Studio",
+  displayFontFamily: "Example Display", // optional, for the wordmark and headline
+});
+
+// card.element  the React element, exactly 1200 by 630
+// card.shareCard { url: "/opengraph-image", alt, width: 1200, height: 630 }
+```
+
+- **Text.** `headline` and `alt` are required; `wordmark`, `kicker` and
+  `supporting` are optional. All follow `buildShareCard`'s text rule and are
+  emitted verbatim; a blank optional value is refused, not dropped.
+- **Lockup.** The plate is `BRAND_SHARE_CARD_PLATE_PX` (96) square. Its corner
+  radius, the mark's inset, the wordmark size and the gap all come from
+  Designer's published badge and lockup ratios rather than numbers kept here.
+  The kicker follows the lockup after a 2px rule in its own colour; `headline`
+  and `supporting` sit at the bottom.
+- **Colour.** Every colour is a Designer role token resolved through
+  `buildFlatTokenMap(tokenOverrides)`. The defaults are
+  `BRAND_SHARE_CARD_DEFAULT_ROLES` (`--color-surface-base` background;
+  `--color-ink-primary` plate, wordmark and headline; `--color-ink-secondary`
+  kicker and supporting); `roles` picks others.
+- **Mark.** `markSrc` follows the rule for `buildShareCard`'s `mark.src`: an
+  inline `data:image/svg+xml` or `data:image/png;base64` URL, never a remote one.
+- **Font.** `displayFontFamily` names a family for the wordmark and headline:
+  letters, digits, spaces and hyphens only. No font is loaded; the renderer
+  must have it.
+- **Refusals.** It throws `ShareCardError` with the existing closed reasons and
+  no new one; the error text never echoes input.
+
 ## `media` — the asset registry contract, responsive images, and video (v2)
 
 `@clossys/publisher/media` registers a consumer's own image and video
@@ -1092,6 +1483,8 @@ const helpArticle: StructuredDocument = {
           content: [
             { kind: "text", text: ref("acme.overview.p1") },
             { kind: "link", text: ref("acme.overview.link"), href: "#pricing" }, // an in-document fragment link
+            { kind: "strong", content: [{ kind: "link", text: ref("acme.overview.bold"), href: "https://acme.example/docs" }] }, // a bold link
+            { kind: "em", content: [{ kind: "text", text: ref("acme.overview.italic") }] },
           ],
         },
         { kind: "list", style: "ordered", items: [[{ kind: "text", text: ref("acme.overview.item1") }]] },
@@ -1102,7 +1495,14 @@ const helpArticle: StructuredDocument = {
       id: "pricing",
       level: 2,
       heading: ref("acme.pricing.heading"),
-      blocks: [{ kind: "table", headers: [ref("acme.pricing.plan"), ref("acme.pricing.price")], rows: [[ref("acme.pricing.plan1"), ref("acme.pricing.price1")]] }],
+      blocks: [
+        {
+          kind: "table",
+          headers: [ref("acme.pricing.plan"), ref("acme.pricing.price")],
+          columnStyles: ["default", "mono"], // one entry per header; a "mono" column's body cells render in <code>
+          rows: [[ref("acme.pricing.plan1"), ref("acme.pricing.price1")]],
+        },
+      ],
     },
   ],
 };
@@ -1115,11 +1515,20 @@ const { element, resolutions } = renderStructuredDocument(helpArticle, { resolve
 discipline `SurfaceSlotBinding.copy` already holds document content to.
 `DocumentBlock` is a closed, six-member vocabulary (`section`, `paragraph`,
 `list`, `definition-list`, `table`, `callout`); `DocumentInline` (inside a
-paragraph, list item, or callout — never a block on its own) is `text` or
-`link`. A `DocumentSection` (`id`, `level: 2–6`, `heading`, `blocks`) is the
+paragraph, list item, or callout — never a block on its own) is `text`,
+`link`, `strong`, or `em`. A `DocumentSection` (`id`, `level: 2–6`, `heading`, `blocks`) is the
 one block kind that nests, and is also what `StructuredDocument.sections`
 is made of at the top level. See `src/document/types.ts` for the full
 shape and every field's own doc comment.
+
+`strong` and `em` are inline emphasis: each wraps a non-empty run of further
+`DocumentInline` in `content`, so they nest, and a bold link is a `strong`
+whose `content` holds a `link`. A table column can be set monospace through
+`columnStyles`, one `"default"` or `"mono"` entry per header.
+`renderStructuredDocument` renders `strong` as `<strong>`, `em` as `<em>`,
+and each body cell of a `"mono"` column as `<code>` around its text (the
+`<th>` is left plain); there is no class and no inline style. A table
+without `columnStyles` renders as before. The example above shows both.
 
 **What is validated (`validateStructuredDocument(value): ComposeFinding[]`)**
 — shape (every block/inline kind checked against its own fields, a
@@ -1171,6 +1580,11 @@ calling out:
     `StructuredDocument` can be rendered in more than one place; a link
     that means different things per mount point is a defect that would
     only surface on the second mount.
+- **Emphasis.** The link rules above apply to a `link` inside `strong` or
+  `em` the same as to one outside it. Emphasis nests at most four deep
+  (`"inline-emphasis-too-deep"`, reported once at the fifth level), an
+  empty `content` is `"inline-emphasis-empty"`, and an inline `kind` other
+  than `text`, `link`, `strong`, or `em` is `"inline-kind-unknown"`.
 - **Tables.** `headers` must be a non-empty `CopyRef[]`
   (`"table-headers-required"`); every row must have exactly
   `headers.length` cells, never padded or truncated
@@ -1180,6 +1594,10 @@ calling out:
   association an accessible table needs is therefore structural (the fixed
   cell count matching a real `<th>` per column), not left to visual
   alignment.
+  When `columnStyles` is present it must have `headers.length` entries
+  (`"table-column-styles-length-mismatch"`) and each entry must be
+  `"default"` or `"mono"` (`"table-column-style-unknown"`; a value that is
+  not an array is `"table-column-styles-shape"`).
 - **Anchors.** Every `DocumentSection.id`, at every nesting depth, must be
   unique across the **whole document**, not just among siblings — a
   duplicate is `"section-anchor-duplicate"`, reported for the second (and
@@ -1274,16 +1692,209 @@ const { element: pageElement } = createWebRenderer({ templates: [HelpArticleView
 ```
 
 **Non-goals** (see issue #176 for the fuller argument for each): no
-legal-specific content types (no clause numbering, no defined-terms
-glossary, no citation/footnote-to-statute primitive — this contract
-describes document *structure*, never *what kind* of document it is); no
-arbitrary HTML passthrough; no pagination (a `StructuredDocument` is one
+clause numbering, no defined-terms glossary, and no
+citation/footnote-to-statute primitive — a legal document is a profile
+over this structure (see "Legal documents" below), not a separate content
+type; no arbitrary HTML passthrough; no pagination (a `StructuredDocument` is one
 document — a multi-page work is a caller-side concern composing an ordered
 sequence of them, the identical boundary this package's README already
 draws for `SurfaceDocument` and canvas channels); no automatic
 table-of-contents generation (this contract supplies the addressable
 section/anchor structure a TOC would be built from; generating and
 rendering the TOC itself is left to the caller).
+
+### Legal documents (Terms and Privacy profile)
+
+A Terms or Privacy page is a `StructuredDocument` with one extra field,
+`legal`. `LegalDocument` is `StructuredDocument & { legal: LegalProfile }`,
+and `validateLegalDocument` and `gateLegalDocument` check that profile on
+top of the ordinary document contract. The profile adds no block kinds and
+`renderStructuredDocument` renders a legal document the same way it renders
+any other.
+
+```ts
+import { LEGAL_SECTION_IDS, validateLegalDocument, gateLegalDocument } from "@clossys/publisher/document";
+import type { DocumentSection, LegalDocument } from "@clossys/publisher/document";
+
+const ref = (id: string) => ({ id });
+
+// One section per fixed id, in order. Every string is a CopyRef the caller's registry owns.
+const sections = LEGAL_SECTION_IDS.terms.map(
+  (id): DocumentSection => ({
+    kind: "section",
+    id,
+    level: 2,
+    heading: ref(`acme.terms.${id}.heading`),
+    blocks: [{ kind: "paragraph", content: [{ kind: "text", text: ref(id === "indemnity" ? "acme.terms.indemnity.not-applicable" : `acme.terms.${id}.p1`) }] }],
+  }),
+);
+
+const terms: LegalDocument = {
+  id: "acme.legal.terms",
+  title: ref("acme.terms.title"),
+  sections,
+  legal: {
+    kind: "terms",
+    status: "draft",
+    effectiveDate: "2026-01-15",
+    lastUpdated: "2026-01-10",
+    variables: { entity: "Acme Example Ltd", jurisdiction: "Exampleland", contact: "legal@acme.example" },
+    factsToConfirm: [ref("acme.terms.facts.entity-registration")], // a draft needs at least one
+    notApplicable: { indemnity: ref("acme.terms.indemnity.not-applicable") },
+  },
+};
+
+validateLegalDocument(terms); // [] when clean
+gateLegalDocument(terms, "preview"); // { ok: true, findings: [] }: a valid draft may be previewed
+gateLegalDocument(terms, "production"); // { ok: false, ... }: a draft is refused
+```
+
+**Section ids.** The top-level `sections` of a legal document carry these
+ids, in this order, with none missing, extra, renamed or reordered. Both
+lists are exported as `LEGAL_SECTION_IDS`, keyed by kind.
+
+- `terms`: `about`, `acceptance`, `eligibility`, `using-the-site`,
+  `acceptable-use`, `intellectual-property`, `your-submissions`,
+  `third-parties`, `no-professional-advice`, `disclaimers`, `liability`,
+  `indemnity`, `changes`, `suspension`, `governing-law`, `general`,
+  `contact`.
+- `privacy`: `about`, `scope`, `what-we-collect`, `how-we-use`,
+  `legal-bases`, `cookies`, `sharing`, `international-transfers`,
+  `retention`, `security`, `your-rights`, `children`, `changes`, `contact`.
+
+**The profile.** `LegalProfile` carries:
+
+- `kind`: `"terms"` or `"privacy"`, which selects the id list above.
+- `status`: `"draft"` or `"counsel-reviewed"`.
+- `effectiveDate` and `lastUpdated`: both required, `YYYY-MM-DD`, and
+  each must be a real calendar date (`2026-02-30` is refused).
+- `variables`: `entity`, `jurisdiction` and `contact`, each a required
+  non-empty string.
+- `factsToConfirm` (optional): a list of `CopyRef`s naming facts a person
+  still has to confirm. A draft needs a non-empty list. `LegalView` renders
+  it in a draft callout.
+- `notApplicable` (optional): a record from section id to a `CopyRef`. A
+  section that does not apply keeps its heading and states so through that
+  reference, and the section's only block is a paragraph carrying it.
+
+**Findings and the gate.** `validateLegalDocument(value: unknown)` returns
+the base `validateStructuredDocument` findings plus the legal-profile
+findings (a missing, extra, renamed or reordered section, the status, the
+dates, the variables, and the facts a draft needs). It takes an `unknown`
+value and returns findings instead of throwing.
+
+`gateLegalDocument(value: unknown, target: "preview" | "production")`
+returns `{ ok, findings }` and is pure. It refuses when the document is
+invalid or the target is not one of the two above. For `"production"` it
+accepts only a valid `counsel-reviewed` document; for `"preview"` it
+accepts any valid document, including a valid draft. It is a function a
+caller can call: this package does not wire it into any iteration or
+release process.
+
+**Soundness boundary.** The profile checks structure, status, dates and
+variables. It does not and cannot judge the legal adequacy of any text,
+and a `counsel-reviewed` status is a claim the caller makes, not something
+this package verifies. No legal wording ships in this package: every
+string in a legal document is a `CopyRef` that the consumer's own registry
+owns.
+
+**Not included yet:** a processor list derived from other content, variants
+of the `children` section, and reading the brand-facts record for the
+variables.
+
+#### `LegalView`
+
+`LegalView`, exported from `@clossys/publisher/web` next to `DocumentView`,
+renders a `LegalDocument` in the same site chrome and layout as
+`DocumentView`. It is server-safe and has no summary or action props.
+
+```tsx
+import { LegalView } from "@clossys/publisher/web";
+import type { LegalViewLabels } from "@clossys/publisher/web";
+import type { LegalDocument } from "@clossys/publisher/document";
+
+type LegalResolver = React.ComponentProps<typeof LegalView>["resolveCopyId"];
+
+declare const resolveCopyId: LegalResolver; // the caller's approved-copy registry
+declare const brand: React.ReactNode; // the caller's brand mark
+declare const terms: LegalDocument; // as built in the example above
+
+const labels: LegalViewLabels = {
+  effectiveDate: { id: "acme.legal.label.effective-date" },
+  lastUpdated: { id: "acme.legal.label.last-updated" },
+  draftHeading: { id: "acme.legal.label.draft-heading" },
+};
+
+export function TermsPage() {
+  return <LegalView brand={brand} document={terms} resolveCopyId={resolveCopyId} labels={labels} locale="en-GB" />;
+}
+```
+
+Props, in addition to the standard `div` attributes and `style`:
+
+- `brand`: the brand node placed in the page chrome.
+- `document`: the `LegalDocument` to render.
+- `resolveCopyId`: `@clossys/writer`'s ref-based `CopyResolver`
+  (`(ref: CopyRef) => CopyResolution | undefined`) that turns every `CopyRef`
+  into traced text, the same type `renderStructuredDocument` takes. It is not
+  the string-keyed `CopyResolver` exported from `@clossys/publisher/web`, which
+  carries no provenance and does not type-check here.
+- `labels`: `LegalViewLabels`, three `CopyRef`s named `effectiveDate`,
+  `lastUpdated` and `draftHeading`.
+- `locale` (required): the locale passed to `Intl.DateTimeFormat`.
+- `footerSecondary` (optional): extra footer content.
+
+What it does:
+
+- It runs `validateLegalDocument` first. Any finding throws a `RenderError`,
+  so an invalid document does not render.
+- It renders the sections through `renderStructuredDocument` in the fixed
+  order of `LEGAL_SECTION_IDS`.
+- A section listed in `legal.notApplicable` keeps its heading and renders
+  the `CopyRef` given for it.
+- The effective and last-updated dates render as
+  `<time dateTime="YYYY-MM-DD">`, formatted with
+  `Intl.DateTimeFormat(locale)` in UTC and labelled by the `labels` copy
+  references, resolved with `resolveCopyId`.
+- A `draft` document renders a `role="note"` callout before the first
+  section. Its heading comes from `labels.draftHeading` and it holds one
+  list item per resolved `factsToConfirm` entry. No prop turns the callout
+  off, and a `counsel-reviewed` document renders without it.
+- The content variables (`entity`, `jurisdiction`, `contact`) are not
+  displayed and no interpolation is applied to copy.
+- Every visible string comes from a caller `CopyRef`, so the caller supplies
+  a `locale` and the text for every label.
+
+**Soundness boundary.** `LegalView` guarantees the document's structure,
+section order, dates and a draft marker that cannot be suppressed. It says
+nothing about the legal adequacy of any text. It does not enforce the
+production gate: call `gateLegalDocument` separately before publishing.
+
+### Boundary pages
+
+`BoundaryView` is the whole page for a 500, a 404 or a sign-in boundary state: one
+retry action, and any second destination as a text link in the description.
+
+```tsx
+import { BoundaryView } from "@clossys/publisher/web";
+
+export function ServerErrorPage({ reference }: { reference: string }) {
+  return (
+    <BoundaryView
+      brand="Example Studio"
+      status={500}
+      title="Something went wrong"
+      description={
+        <>
+          Something went wrong. Error: {reference}. You can also{" "}
+          <a href="/contact">contact us</a>.
+        </>
+      }
+      action={<a href="/">Try again</a>}
+    />
+  );
+}
+```
 
 ## `record` — the append-only publication ledger
 
@@ -1721,6 +2332,134 @@ below), lifecycle values, version shape, a needs graph free of unknown
 references and cycles, timestamp ordering, and no premature `approvedAt`/
 `verifiedAt`/`publishedTo` on an item that has not reached that stage yet.
 
+### Importing a v0 pack
+
+An earlier pack index can be imported into a valid `pack.json`.
+`LegacyV0Pack` is the documented input type: `{ items }` with one entry for
+each of `brief`, `brandKit`, `voice`, `shareCard`, `email`, and `website`
+(other top-level keys are ignored). Each entry is
+`LegacyV0PackItem`: `{ status, iteration: "v0", approvedAt?, updated?, notes? }`,
+where `status` is `LegacyV0PackStatus` (`draft`, `delegated`, or `approved`)
+and `delegated` means delegated approval, pending the owner's review.
+`LegacyV0PackKey` names the six keys, and `LEGACY_V0_PACK_ITEMS`
+(`LegacyV0PackItemSpec` entries, in order) maps each key to its pack item id,
+layer, owner, visibility, and `needs`.
+
+`importLegacyV0Pack(value)` is pure. It returns
+`LegacyV0PackImportResult`: `{ ok: true, manifest }` or
+`{ ok: false, issues }`, where each `LegacyV0PackIssue` is a `path` and a
+`message` that never repeats the input's value.
+
+- `draft` becomes `draft`, `delegated` becomes `in-review`, and `approved`
+  becomes `kept`. No item becomes `published`.
+- An `approved` item needs `approvedAt`; a `draft` or `delegated` item that
+  carries one is refused.
+- Timestamps are `YYYY-MM-DD` (written as `T00:00:00Z`) or a UTC timestamp;
+  any other form and any impossible date is refused. `updated` becomes
+  `updatedAt`, and `notes` is dropped.
+- A missing or extra item, an unknown key inside an item, an unknown status,
+  or an `iteration` other than `"v0"` is refused by path, as is any finding
+  from `validatePackManifest` on the result.
+
+`writeLegacyV0PackImport(rootDir, value)` returns `LegacyV0PackWriteResult`
+and writes the manifest to `LEGACY_V0_PACK_OUTPUT_PATH`
+(`clossys/publisher/pack.json` under `rootDir`). It writes nothing when the
+import is refused or the file already exists.
+
+```ts
+import { importLegacyV0Pack } from "@clossys/publisher/pack";
+
+const result = importLegacyV0Pack({
+  items: {
+    brief: { status: "approved", iteration: "v0", approvedAt: "2026-09-20" },
+    brandKit: { status: "delegated", iteration: "v0" },
+    voice: { status: "draft", iteration: "v0" },
+    shareCard: { status: "draft", iteration: "v0" },
+    email: { status: "draft", iteration: "v0" },
+    website: { status: "draft", iteration: "v0" },
+  },
+});
+if (!result.ok) throw new Error(result.issues.map((issue) => issue.path).join(", "));
+console.log(result.manifest.items.length);
+```
+
+### Sealing a website
+
+A website item moves from `kept` to `published` only on evidence. The caller
+supplies the evidence; Publisher checks it and never calls a provider.
+
+`WebsiteSealEvidence` (`schemaVersion: 1`) is one bundle:
+
+- `commit`: the 40-hex commit being sealed, and `observedAt`, when the
+  evidence was taken.
+- `delivery`: `{ state: "ready", deployedCommit, productionUrl }`, with an
+  `https` production URL.
+- `pages`: one `WebsiteSealPage` per observed page, each
+  `{ path, status, servedCommit, desktopDigest, mobileDigest }`, the digests
+  being sha256 hex.
+- `contactIntake` (`WebsiteSealContactIntake`): either
+  `{ kind: "present", path, submissionDigest }` or
+  `{ kind: "none", reason }`. It is always stated; a missing value is refused
+  and `none` needs a non-empty `reason`.
+
+`checkSealEvidence(evidence, { map, now })` returns `SealFinding[]`, each a
+`rule` and a `path`, and never throws. It refuses when:
+
+- `delivery.state` is not `ready`, or `deployedCommit` differs from `commit`;
+- a path on the `PublicationMap` has no page, or a page is not status 200, or
+  its `servedCommit` differs from `commit`;
+- a digest is not sha256 hex;
+- `observedAt` is in the future or more than 24 hours before `now`;
+- `contactIntake` is missing or malformed, or the map has no path entries.
+
+There is no waiver flag, option, or environment switch. A finding never
+repeats a digest, URL, reason, path, or commit from the input: it names a rule
+and an index path such as `pages[1].servedCommit`.
+
+`sealWebsite({ manifest, ledger, itemId, evidence, map, now, strategyRevision })`
+is pure and returns `SealWebsiteResult`: `{ ok: true, manifest, ledger, entryId }`
+or `{ ok: false, findings }`. It refuses unless the evidence is clean, `itemId`
+is in `sealableItemIds(manifest)`, and the item is `public`. On accept the item
+is `published` with `verifiedAt` set to `now` and `publishedTo` set to the
+production URL, and the ledger gains one `web` entry through `appendEntry` with
+id `website-<itemId>-<first 12 of commit>`; the inputs are not changed. Sealing
+the same commit again is refused as `seal-already-recorded`, and a refusal
+returns no manifest or ledger.
+
+The `publisher-seal` command runs it over files:
+
+```sh
+publisher-seal clossys/publisher/pack.json clossys/publisher/record.json evidence.json map.json \
+  --item website --strategy-revision rev-1 [--now 2026-09-30T12:00:00Z]
+```
+
+It exits 0 when it sealed and wrote both files (each to a temp file, then
+renamed), 1 when it refused and wrote nothing, and 2 when it could not run: a
+missing or unreadable file, invalid JSON, a manifest, ledger, or map that is
+not itself valid, or bad arguments. `--now` defaults to the current time.
+
+```ts
+import { checkSealEvidence } from "@clossys/publisher/pack";
+
+const commit = "b".repeat(40);
+const digest = "a".repeat(64);
+const findings = checkSealEvidence(
+  {
+    schemaVersion: 1,
+    commit,
+    observedAt: "2026-09-30T11:00:00Z",
+    delivery: { state: "ready", deployedCommit: commit, productionUrl: "https://www.example.test/" },
+    pages: [{ path: "/", status: 200, servedCommit: commit, desktopDigest: digest, mobileDigest: digest }],
+    contactIntake: { kind: "none", reason: "the site has no contact form" },
+  },
+  {
+    map: { entries: [{ id: "home", template: "landing", documentId: "doc-home", location: { kind: "path", path: "/" } }] },
+    now: "2026-09-30T12:00:00Z",
+  },
+);
+console.log(findings.length === 0 ? "ready to seal" : findings.map((finding) => `${finding.rule} ${finding.path}`));
+```
+
 ## Surface documents move to Publisher
 
 Issue #1205: Publisher authors the in-tree `SectionedView`/`MarketingView`
@@ -1850,13 +2589,17 @@ registry.ts` (never hardcoded in a renderer):
 - **Web views** (`gallery.html`) — every shipped view: `MarketingView`,
   `SectionedView`, `AuthView`, `ErrorView`, `CaptureView`, `DocumentView`,
   `CollectionView`.
-- **Site** (`site-*.html`) — `templates/site`'s own routes
-  (`web-route-manifest.json`), rendered through the exact template each
-  route names (`MarketingView` for home/about/contact/privacy/terms,
-  a direct `ErrorView` call for `not-found`, matching `templates/site/app/not-found.tsx`
-  itself). `templates/site/app/robots.ts`/`templates/site/app/sitemap.ts` are Next.js metadata route
-  handlers, not page components — there is no view to render for either,
-  so neither appears here.
+- **Site** (`site-*.html`) — fixtures for `templates/site`'s routes,
+  rendered through `MarketingView` for home/about/contact/privacy/terms and
+  a direct `ErrorView` call for `not-found`. The template's own routes now
+  render `LandingView` for home, `ContactView` for contact and `LegalView`
+  for terms and privacy (`templates/site/web-route-manifest.json`), and the
+  gallery keeps rendering the earlier fixtures until it is updated.
+  `templates/site/app/robots.ts`/`templates/site/app/sitemap.ts` are Next.js
+  metadata route handlers, not page components — there is no view to render for either,
+  so neither appears here. `robots` allows crawling on `production` only, and
+  `sitemap` lists the manifest's routes there, a legal route once its document
+  is counsel-reviewed.
 - **Materials** (`materials-*.html`) — the company overview at each of
   the three lengths (`COMPANY_OVERVIEW_TEMPLATES`' own section order),
   the pitch deck (`PITCH_DECK_SLIDE_ORDER`) plus one
@@ -1922,23 +2665,29 @@ cosmetic gap.
   `AssetCoverageReport`, `AssetTypeCounts`, `ImageAssetEntry`,
   `ImageSource`, `VideoAssetEntry`, `VideoCaption`, and
   `VideoReducedMotionBehavior` types. The CLI is `publisher-media-check`.
-- `web`: `renderWebDocument`, `buildWebHeadMetadata`,
+- `web`: `renderWebDocument`, `buildWebHeadMetadata`, `buildSiteMetadata`, `formatPageTitle`,
+  `lintSiteMetadataHtml`, `SITE_METADATA_REQUIRED_TAGS`, `SiteMetadataError`,
   `listWebTemplateNames`, `defineWebTemplate`, `createWebRenderer`,
   `AuthView`, `CaptureView`, `CollectionView`, `DocumentView`, `ErrorView`,
-  `MarketingView`, `SectionedView`, `RenderError`, and the `AuthViewProps`,
+  `LegalView`, `MarketingView`, `SectionedView`, `RenderError`, and the `AuthViewProps`,
   `CaptureViewProps`, `CollectionViewEmptyState`, `CollectionViewEntry`,
   `CollectionViewLink`, `CollectionViewPagination`, `CollectionViewProps`,
   `DocumentViewEffectiveDate`, `DocumentViewProps`,
-  `ErrorViewProps`, `MarketingViewProps`, `MarketingFeatureItem`, `MarketingFaqItem`,
+  `ErrorViewProps`, `LegalViewLabels`, `LegalViewProps`, `MarketingViewProps`, `MarketingFeatureItem`, `MarketingFaqItem`,
   `SectionedViewLandmark`, `SectionedViewProps`,
   `RenderErrorReason`, `AssetResolver`, `CopyResolver`, `RenderWebOptions`,
   `RenderWebResult`, `RepeatingWebSlotFieldSpec`, `RepeatingWebSlotSpec`, `ResolvedWebGroupField`, `ResolvedWebGroupItem`,
   `WebSlotContentKind`, `WebTemplate`, `DefineWebTemplateOptions`,
   `CreateWebRendererOptions`, `WebRenderer`, `WebHeadMetadata`,
-  `WebOpenGraphMetadata`, and `WebTwitterMetadata` types.
+  `WebOpenGraphMetadata`, `WebTwitterMetadata`, `SiteIdentityInput`,
+  `SiteLegalStatus`, `SiteMetadata`, `SiteMetadataErrorReason`,
+  `SiteOpenGraphMetadata`, `SitePageInput`, `SitePageKind`, `SiteShareCard`,
+  `SiteTwitterMetadata`, `SiteMetadataLintFinding`, `SiteMetadataLintResult`,
+  `SiteMetadataLintRule`, `SiteMetadataRequiredTag`, and
+  `SiteMetadataTagSelector` types.
 - `document`: `validateStructuredDocument`, `renderStructuredDocument`,
   `RenderError`, and the `DocumentBlock`, `DocumentCallout`,
-  `DocumentDefinitionList`, `DocumentInline`, `DocumentList`,
+  `DocumentColumnStyle`, `DocumentDefinitionList`, `DocumentInline`, `DocumentList`,
   `DocumentParagraph`, `DocumentSection`, `DocumentTable`,
   `StructuredDocument`, `RenderStructuredDocumentOptions`,
   `RenderStructuredDocumentResult`, and `RenderErrorReason` types.
@@ -2109,6 +2858,184 @@ points from a clean public-registry install. A legacy registry lane once
 omitted `peerDependenciesMeta`; see
 [issue #226](https://github.com/clossys/foundry/issues/226) for that retired
 registry behavior.
+
+## `web` — contact submission handler
+
+`createContactHandler` in `@clossys/publisher/web` is a framework-neutral,
+server-only handler for a public contact form. It takes a parsed submission
+and a caller-supplied client key and resolves to a result made of status codes.
+It knows nothing about HTTP, routing or rendering, and it delivers by calling
+a delivery port you inject, so import it from server code only.
+
+```ts
+import {
+  createContactHandler,
+  createMemoryRateLimiter,
+  createStubContactDelivery,
+} from "@clossys/publisher/web";
+
+const handler = createContactHandler({
+  topics: ["general", "press"],
+  from: "Site <site@example.com>",
+  to: ["inbox@example.com"],
+  subject: "New contact form message",
+  limiter: createMemoryRateLimiter({ limit: 3, windowMs: 60_000, now: () => Date.now() }),
+  delivery: createStubContactDelivery(), // refused when target is "production"
+  target: "preview",
+});
+
+const result = await handler.handle(body, { clientKey });
+// { status: "accepted" } | { status: "invalid", fields: [...] }
+// | { status: "rate-limited" } | { status: "unavailable" }
+```
+
+`body` is whatever your framework parsed from the request; the handler reads it
+as `unknown`. `from`, `to` and `subject` come from configuration, not from
+the submission. The other config fields are `honeypotField`
+(default `"website"`), `caps`, `createMessageId` and `onUnavailable` (called
+with a reason code only). Construction throws on invalid configuration. The
+handler reads `delivery.deliver` and `limiter.check` once, at construction, and
+calls each with its own port as `this`; reassigning either later has no effect.
+
+### Result codes
+
+| Status | Meaning |
+| --- | --- |
+| `accepted` | The delivery port's promise resolved, or the honeypot field was filled and nothing was delivered. The two are indistinguishable to the caller. |
+| `invalid` | One or more `fields` issues, ordered `topic`, `name`, `email`, `phone`, `message`, then `submission`. Each issue is a field plus a code: `not-a-string`, `too-long`, `control-character`, `required`, `unknown-topic` (topic) or `malformed` (email, phone). The `submission` issue is `too-long` for the total cap. |
+| `rate-limited` | The limiter answered `false`. |
+| `unavailable` | The handler could not proceed: invalid client key, the limiter threw, rejected or answered a non-boolean, message id generation failed, delivery threw or rejected, or something else threw unexpectedly. The reason goes to `onUnavailable`, not to the client. |
+
+Results carry codes only: no English text, and no part of the input is echoed
+back. Mapping codes to words belongs to your rendering layer. Length caps
+default to `CONTACT_DEFAULT_CAPS` (topic 100, name 100, email 254, phone 40,
+message 5000, total 6000 UTF-16 code units) and can be overridden per field.
+
+### Evaluation order
+
+`handle(submission, { clientKey })` runs these steps in order, and a step that
+ends the call skips the rest:
+
+1. Client key check: a missing, non-string, blank or over-long key (more than
+   `CONTACT_CLIENT_KEY_MAX_LENGTH`, 256) resolves `unavailable` with no limiter
+   call.
+2. Honeypot: a filled honeypot field resolves `accepted` with no limiter call
+   and no delivery.
+3. Validation of the declared fields and the total cap: any issue resolves
+   `invalid` with no limiter call, so correcting a typo does not use up the
+   allowance.
+4. Limiter: `check(clientKey)` is awaited once. `true` continues, `false`
+   resolves `rate-limited`, and a throw, rejection or non-boolean resolves
+   `unavailable`.
+5. Delivery: the outbound message is built and `deliver` is awaited once. A
+   resolve is `accepted`; a throw or rejection is `unavailable`. There is no
+   retry, and the limiter use is not refunded.
+
+The outbound message carries a text body and an escaped HTML body. Name, email,
+phone, topic and message appear only in those two bodies, and the submitted
+email is the sole `replyTo`. Control
+characters are refused in every field, except that `message` may contain tab,
+line feed and carriage return; single-line fields also refuse U+2028 and U+2029.
+
+### Notification email
+
+`renderContactNotificationEmail(input, options?)`, exported from
+`@clossys/publisher/email`, returns `{ html, text }` for one submission
+(`topic`, `name`, `email`, `message`, optional `phone`). The handler calls it and
+delivers both bodies. `text` is the layout above; `html` is fixed table markup
+with inline styles, and no `react`, `@clossys/designer` or other dependency.
+
+Every value passes through the package's HTML escaping exactly once, into
+element text only. There are no anchors, images, scripts, comments or remote
+resources, so an address or URL in a field is inert text, never a link. Message
+line breaks become `<br>` after escaping. `options.labels` renames the `Topic`,
+`Name`, `Email`, `Phone` and `Message` labels (the defaults are those English
+words); a label is escaped and single-line checked like a value.
+
+The function throws a `TypeError` naming the field, never its value, for a
+non-string, for any control character in a single-line field or label (plus
+U+2028 and U+2029), and for any control character in `message` other than tab,
+line feed and carriage return. In the handler a throw resolves `unavailable`
+with nothing delivered. Types: `ContactNotificationInput`,
+`ContactNotificationLabels`, `ContactNotificationEmail` and
+`RenderContactNotificationEmailOptions`.
+
+Not covered: no mail-client rendering check, no deliverability guarantee, no
+link handling.
+
+### Wiring a Messenger email adapter
+
+`ContactDelivery` is a local port, `{ channel: "email", deliver(message) }`, and
+Publisher imports no Messenger code. The message it builds is shaped so that an
+email adapter from `@clossys/messenger` is assignable to `delivery` without a
+wrapper under `strictFunctionTypes`; a delivery whose `deliver` requires more
+than the handler supplies, such as a required `headers`, fails to compile.
+
+```ts
+import { createContactHandler, createMemoryRateLimiter } from "@clossys/publisher/web";
+import type { ContactDelivery } from "@clossys/publisher/web";
+
+// Your Messenger email adapter, constructed elsewhere; it is assignable to
+// `ContactDelivery` as it is.
+declare const emailAdapter: ContactDelivery;
+
+const handler = createContactHandler({
+  topics: ["general", "press"],
+  from: "Site <site@example.com>",
+  to: ["inbox@example.com"],
+  subject: "New contact form message",
+  limiter: createMemoryRateLimiter({ limit: 3, windowMs: 60_000, now: () => Date.now() }),
+  delivery: emailAdapter,
+  target: "production",
+});
+```
+
+### The stub delivery
+
+`createStubContactDelivery()` returns an in-memory delivery for tests and
+previews. Each call to `deliver` appends a frozen copy of the message to
+`deliveries` and resolves `{ provider: "stub", messageId }`. Every stub carries
+the `STUB_CONTACT_DELIVERY` brand, and `createContactHandler` throws at
+construction when `target` is `"production"` and the delivery carries it. A
+`target` outside `"production" | "preview" | "development" | "test"` also
+throws, so a typo such as `"prod"` does not admit a stub. Detection covers the
+stub as returned: a caller who re-wraps it in a new `{ channel, deliver }`
+object drops the brand and is not detected.
+
+### What this does and does not guarantee
+
+As constructed, and with a limiter that answers correctly:
+
+- Only a well-formed, capped, control-free, non-honeypot submission that the
+  limiter allows reaches `deliver`.
+- The recipients, sender and subject come from configuration; submitted text
+  reaches a header only as the shape-checked `replyTo` address.
+- A stub delivery is not called by a handler whose target is `"production"`,
+  including one assigned onto the delivery after construction, because
+  `deliver` and `check` are read once at construction.
+- Results contain status and field codes and no submitted text.
+
+It does not provide:
+
+- Bot detection beyond the honeypot. A bot that leaves the honeypot empty and
+  submits valid input is treated as a person.
+- A distributed limiter. `createMemoryRateLimiter` keeps a sliding window in one
+  process (`limit`, `windowMs`, an injected `now`, and `maxKeys`, default
+  10 000), so several instances or serverless invocations each hold their own
+  window. Inject a shared `ContactRateLimiter` for those deployments.
+- A check on the caller's client key. The handler does not verify that it
+  identifies a real client, so a key taken from a spoofable header gives a
+  spoofable limit.
+- A deliverability guarantee. `accepted` means the delivery port resolved,
+  typically provider acceptance, not that a message reached an inbox.
+- Timing equalisation: a honeypot hit skips delivery and may answer faster.
+
+Known limits on input shape: the email check is conservative because the value
+becomes a `replyTo` address. It requires an ASCII dot-atom local part of at most
+64 characters and a domain of two or more ASCII labels, so internationalised
+addresses and quoted local parts are refused as `malformed`. Phone accepts only
+ASCII digits, space and `+ - ( ) . / # * x X`, with at least one digit. Bidirectional
+formatting characters are not refused.
 
 ## Licence
 

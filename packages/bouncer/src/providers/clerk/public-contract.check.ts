@@ -7,6 +7,8 @@ import type {
   ClerkRoleMapper,
   ClerkWebhookHeaders,
   ClerkWebhookSignatureError,
+  ClerkWebhookSignatureErrorCode,
+  assertClerkWebhookSigningSecret,
   mapClerkEvent,
   resolveClerkMembershipLocalIds,
   verifyAndMapClerkWebhook,
@@ -27,6 +29,11 @@ type MembershipRoleContract = Extract<ClerkMembershipEvent, { type: "created" | 
 type NormalizedMembershipContract = Extract<ClerkNormalizedEvent, { kind: "membership" }> extends ClerkMembershipEvent ? true : false;
 type RequiredRoleMapperContract = ClerkEventMappingOptions extends { roleMapper: ClerkRoleMapper } ? true : false;
 type SignatureErrorContract = ClerkWebhookSignatureError extends Error ? true : false;
+type SignatureErrorCodeContract = [ClerkWebhookSignatureErrorCode] extends ["signing-secret-invalid" | "signature-headers-missing" | "signature-invalid" | "payload-invalid"]
+  ? (["signing-secret-invalid" | "signature-headers-missing" | "signature-invalid" | "payload-invalid"] extends [ClerkWebhookSignatureErrorCode] ? true : false)
+  : false;
+type SignatureErrorCodeFieldContract = ClerkWebhookSignatureError extends { code: ClerkWebhookSignatureErrorCode } ? true : false;
+type SigningSecretGuardContract = typeof assertClerkWebhookSigningSecret extends (signingSecret: unknown) => string | Uint8Array ? true : false;
 type VerifiedEventContract = VerifyResult extends { eventId: string; event: unknown } ? true : false;
 type LifecycleAliasContract = IsAssignable<
   | "organization_membership.created"
@@ -42,6 +49,9 @@ export const membershipRoleContract: MembershipRoleContract = true;
 export const normalizedMembershipContract: NormalizedMembershipContract = true;
 export const requiredRoleMapperContract: RequiredRoleMapperContract = true;
 export const signatureErrorContract: SignatureErrorContract = true;
+export const signatureErrorCodeContract: SignatureErrorCodeContract = true;
+export const signatureErrorCodeFieldContract: SignatureErrorCodeFieldContract = true;
+export const signingSecretGuardContract: SigningSecretGuardContract = true;
 export const verifiedEventContract: VerifiedEventContract = true;
 export const lifecycleAliasContract: LifecycleAliasContract = true;
 

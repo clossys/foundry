@@ -45,6 +45,8 @@ describe("resolveRequestRedirect", () => {
     "javascript:alert(1)",
     "\\other.example.test/path",
     "https://user:password@app.example.test/path",
+    "/.//other.example.test/path",
+    "/%2e%2e//other.example.test/path",
   ])("rejects unsafe target %s", (target) => {
     expect(resolveRequestRedirect(request, [target]))
       .toBeUndefined();

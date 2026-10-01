@@ -1,17 +1,43 @@
-// The hub's two apply stores (issue #1178): every repository change set and
-// every apply bundle this hub has ever computed, kept by digest under
+// The hub's two apply stores (issue #1178): every repository change set (kept
+// append-only, bar the body hash of a set, below) and every apply bundle (the newest computation replacing the
+// last under one digest) this hub has computed, kept by digest under
 // clossys/.state/apply/ so a later step (the ledger, an approval, a resumed
 // apply) can read back the exact document a digest names instead of trusting
 // whatever is passed to it in memory.
 //
-// Both stores are append-only and content-addressed: a file's name is its
-// document's own digest, so a name is only ever bound to the first bytes
-// stored under it. A stored file's recomputed digest proves its integrity,
-// not its provenance: anyone who can write the hub directory can add a set
-// that verifies, the same way anyone who can write a git object store can add
-// a commit. Writing over an existing name with different bytes is refused
-// rather than silently replacing history a ledger or an approval may already
-// cite; writing the same bytes again is a no-op. A read never trusts a file
+// Both stores are content-addressed: a file's name is its document's own
+// digest. The change-set store is append-only: a name is only ever bound to
+// the first bytes stored under it, and writing over it with different bytes
+// is refused rather than silently replacing history a ledger or an approval
+// may already cite. The bundle store is not, by design (RFC 12.2, 12.3 and
+// 12.7, issue #1693): a bundle's digest covers the plan digest and the
+// change-set digests only, not its authorization, clock, mode or verdicts, so
+// a rerun of `plan` over an unchanged hub yields the same digest with newer
+// bytes. Storing a bundle under a digest that already names a file replaces
+// that file atomically with the newest computation; only that one name is
+// touched, and superseded computations are not recorded. Admission reads a
+// stored bundle for its digest, its plan digest and the change sets it holds,
+// never for its authorization or verdicts, which it re-checks at apply time.
+// A planned bundle is the exception to that replacement (issue #1708): a report
+// never replaces a stored bundle that verifies as planned under the same
+// digest, because a planned file records approvals a report does not, and a
+// rerun with less (an approval no longer committed, an uncommitted plan edit)
+// must not quietly erase them. The refusal names no path. A planned bundle
+// replaces a report or a planned one, and a file that does not verify (any
+// bytes that do not read back as a valid bundle of that digest) is replaced by
+// either, since it protects nothing. Writing the same bytes again is a no-op
+// in both stores. The change-set store has one exception to append-only (issue
+// #1716): bindChangeSetBody records the hash of the pull request body rendered
+// for a stored set as that set's `pullRequest.bodySha256`, the one member the
+// digest excludes, replacing that one file atomically. It never rebinds: a set
+// already bound to another hash is refused, and the same hash is a no-op.
+// Binds of one set are serialised by a per-digest lock file, taken exclusively
+// and never waited for or broken (issue #1738), and a set that changed or was
+// removed while it was being bound is refused, never replaced or recreated.
+// A stored file's recomputed digest proves its integrity, not
+// its provenance: anyone who can write the hub directory can add a set that
+// verifies, the same way anyone who can write a git object store can add a
+// commit. A read never trusts a file
 // merely because it parses: the document must validate against its contract,
 // recompute to the digest the file name claims, and (for a change set) to
 // the digest the document itself carries -- so a renamed or hand-edited file
@@ -26,12 +52,12 @@
 // turns into directory creation), names only the failing operation and the
 // error's code -- never a path, digest or other value a `cause` might carry.
 //
-// This module does I/O (mkdirSync, open/write/link/read on the hub
+// This module does I/O (mkdirSync, open/write/link/rename/read on the hub
 // directory) and so must never be imported by plan-bundle.ts, which computes
 // change sets and bundles without touching a filesystem.
 
 import { randomBytes } from "node:crypto";
-import { closeSync, fsyncSync, linkSync, lstatSync, mkdirSync, openSync, readFileSync, readdirSync, realpathSync, rmSync, writeSync } from "node:fs";
+import { closeSync, fsyncSync, linkSync, lstatSync, mkdirSync, openSync, readFileSync, readdirSync, realpathSync, renameSync, rmSync, writeSync } from "node:fs";
 import { isAbsolute, join, relative, sep } from "node:path";
 import { bundleDigest, changeSetDigest } from "./change-set-digest.js";
 import { validateApplyBundle, validateRepositoryChangeSet } from "./change-set-contract.js";
@@ -217,6 +243,87 @@ function writeAppendOnly(hubDirectory: string, storeRel: string, fileName: strin
 }
 
 /**
+ * Stores `bytes` under `fileName` in `hubDirectory`/`storeRel`, replacing
+ * whatever regular file already holds that one name (unless `refuseOver` says
+ * the file as it is now must not be replaced, which throws its message; with
+ * `refuseOver.whenMissing` a name that holds no file is refused the same way
+ * instead of being created, for a caller that read the file first and must not
+ * recreate one removed since): the bytes go to a
+ * temporary file in the same real directory (created exclusively, flushed to
+ * disk), which is then renamed over the final name, so a reader sees the old
+ * file or the new one and never a partial file, and an interrupted write
+ * leaves at most a temporary file under another name. Identical existing
+ * bytes are a no-op and write nothing. A name held by a symbolic link or any
+ * other non-regular file is refused before anything is written. Every store
+ * directory segment is a real directory, never a symbolic link (see
+ * `ensureRealDirectory()`). The temporary file is always removed. Returns the
+ * final path.
+ */
+function writeReplacing(hubDirectory: string, storeRel: string, fileName: string, bytes: Buffer, refuseOver?: { readonly when: (existing: Buffer) => boolean; readonly message: string; readonly whenMissing?: boolean }): string {
+  assertHubDirectory(hubDirectory);
+  const directory = join(hubDirectory, storeRel);
+  ensureRealDirectory(hubDirectory, directory, "write");
+  const finalPath = join(directory, fileName);
+  let occupied = true;
+  try {
+    const info = lstatSync(finalPath);
+    if (!info.isFile()) throw new TypeError("a hub store file name is occupied by a symbolic link or a non-regular file");
+  } catch (cause) {
+    if (cause instanceof TypeError) throw cause;
+    if ((cause as NodeJS.ErrnoException).code !== "ENOENT") throw wrapFsError("hub store write", cause);
+    if (refuseOver?.whenMissing === true) throw new TypeError(refuseOver.message);
+    occupied = false;
+  }
+  if (occupied) {
+    let existing: Buffer;
+    try {
+      existing = readFileSync(finalPath);
+    } catch (cause) {
+      throw wrapFsError("hub store write", cause);
+    }
+    if (refuseOver?.when(existing) === true) throw new TypeError(refuseOver.message);
+    if (existing.equals(bytes)) return finalPath;
+  }
+  const temporaryPath = join(directory, `.${fileName}.${randomBytes(8).toString("hex")}.tmp`);
+  let descriptor: number | undefined;
+  try {
+    try {
+      descriptor = openSync(temporaryPath, "wx", 0o644);
+    } catch (cause) {
+      throw wrapFsError("hub store write", cause);
+    }
+    let written = 0;
+    try {
+      while (written < bytes.length) written += writeSync(descriptor, bytes, written, bytes.length - written);
+      fsyncSync(descriptor);
+      closeSync(descriptor);
+    } catch (cause) {
+      throw wrapFsError("hub store write", cause);
+    }
+    descriptor = undefined;
+    try {
+      renameSync(temporaryPath, finalPath);
+    } catch (cause) {
+      throw wrapFsError("hub store write", cause);
+    }
+  } finally {
+    if (descriptor !== undefined) {
+      try {
+        closeSync(descriptor);
+      } catch {
+        // Already failing; the original error is the one reported.
+      }
+    }
+    try {
+      rmSync(temporaryPath, { force: true });
+    } catch {
+      // Best-effort cleanup; the original error (or success) is what is reported.
+    }
+  }
+  return finalPath;
+}
+
+/**
  * Reads and re-reads bytes stored at `hubDirectory`/`storeRel`/`fileName`,
  * strictly: a missing store directory or a missing file reads as `null`, and
  * bytes that are not exactly one strict-JSON value also read as `null`
@@ -269,19 +376,153 @@ export function storeChangeSet(hubDirectory: string, set: RepositoryChangeSet): 
   );
 }
 
+/** Thrown by bindChangeSetBody when the stored set is already bound to another body. Names no path, digest or hash. */
+export class BodyBoundError extends TypeError {
+  constructor() {
+    super("this stored change set is already bound to another pull request body");
+  }
+}
+
+/**
+ * Records `bodySha256`, the hash of the pull request body rendered for the
+ * change set stored under `digest` (issue #1716), as that set's
+ * `pullRequest.bodySha256` -- the one member it changes. The digest excludes
+ * that member, so the file's name and every digest stay as they were. The set
+ * is read here, from the store, and must verify exactly as readStoredChangeSet
+ * verifies it; a set that is not stored, or does not verify, is a TypeError.
+ * A set already bound to the same hash is a no-op that writes nothing; one
+ * bound to another hash throws BodyBoundError and is left as it was: a bound
+ * body is never rebound, and storeChangeSet never replaces a stored set, so it
+ * cannot unbind one either. The write replaces only that one file, atomically
+ * (a temporary file in the same directory, renamed over the name), and is
+ * refused when the file is not the bytes that were read, a symbolic link or not
+ * a regular file, or when a store directory segment is a symbolic link. Every
+ * error names no path, digest or hash, and no other file is touched. Returns
+ * the file's path.
+ *
+ * Two binds of one set are serialised by a per-digest lock (issue #1738): a
+ * dot-prefixed file in the change-sets directory, created exclusively before
+ * the set is first read and removed once this call is done, only by the call
+ * that created it. A bind that finds the lock already held throws a TypeError
+ * and changes nothing, so of two binds with different hashes exactly one
+ * renames; it never waits and never breaks a lock. A crash mid-bind leaves the
+ * lock, and later binds of that set then refuse (fails closed). A set removed
+ * after this call read it is refused rather than written again already bound.
+ */
+export function bindChangeSetBody(hubDirectory: string, digest: string, bodySha256: string): string {
+  assertDigestShape(digest);
+  if (typeof bodySha256 !== "string" || !DIGEST_SHAPE.test(bodySha256)) throw new TypeError("a body hash must match sha256: followed by exactly 64 lowercase hex digits");
+  assertHubDirectory(hubDirectory);
+  const directory = join(hubDirectory, CHANGE_SET_STORE_REL);
+  const absent = (): TypeError => new TypeError("no verified change set is stored under this digest");
+  if (!ensureRealDirectory(hubDirectory, directory, "read")) throw absent();
+  const fileName = digestFileName(digest);
+  const path = join(directory, fileName);
+  const lockPath = join(directory, `.${fileName}.bind.lock`);
+  let lockDescriptor: number;
+  try {
+    lockDescriptor = openSync(lockPath, "wx", 0o600);
+  } catch (cause) {
+    if ((cause as NodeJS.ErrnoException).code === "EEXIST") throw new TypeError("this stored change set is being bound by another call, or an earlier bind of it did not finish");
+    throw wrapFsError("hub store write", cause);
+  }
+  try {
+    try {
+      closeSync(lockDescriptor);
+    } catch (cause) {
+      throw wrapFsError("hub store write", cause);
+    }
+    return bindLocked(hubDirectory, digest, bodySha256, directory, fileName, path, absent);
+  } finally {
+    try {
+      rmSync(lockPath, { force: true });
+    } catch {
+      // Best-effort; a lock left behind makes later binds of this set refuse, which fails closed.
+    }
+  }
+}
+
+/** The body of bindChangeSetBody once the per-digest lock is held: read, verify, and replace the one file. */
+function bindLocked(hubDirectory: string, digest: string, bodySha256: string, directory: string, fileName: string, path: string, absent: () => TypeError): string {
+  let info;
+  try {
+    info = lstatSync(path);
+  } catch (cause) {
+    if ((cause as NodeJS.ErrnoException).code === "ENOENT") throw absent();
+    throw wrapFsError("hub store read", cause);
+  }
+  if (!info.isFile()) throw new TypeError("a hub store file name is occupied by a symbolic link or a non-regular file");
+  let existing: Buffer;
+  try {
+    existing = readFileSync(path);
+  } catch (cause) {
+    throw wrapFsError("hub store read", cause);
+  }
+  let document: unknown;
+  try {
+    document = readContractDocument(existing);
+  } catch {
+    throw absent();
+  }
+  if (!validateRepositoryChangeSet(document).valid) throw absent();
+  const set = document as RepositoryChangeSet;
+  const recomputed = changeSetDigest(set);
+  if (recomputed !== set.changeSetDigest || recomputed !== digest) throw absent();
+  const current = set.pullRequest.bodySha256;
+  if (current === bodySha256) return path;
+  if (current !== undefined) throw new BodyBoundError();
+  const next: RepositoryChangeSet = { ...set, pullRequest: { ...set.pullRequest, bodySha256 } };
+  if (!validateRepositoryChangeSet(next).valid || changeSetDigest(next) !== digest) throw new TypeError("a change set must still validate, under its own digest, once its body is bound");
+  return writeReplacing(hubDirectory, CHANGE_SET_STORE_REL, fileName, serializeStoredDocument(next), {
+    when: (now) => !now.equals(existing),
+    message: "the stored change set changed while its body was being bound",
+    whenMissing: true,
+  });
+}
+
 /**
  * Stores `bundle` under `hubDirectory`/BUNDLE_STORE_REL, named for its own
  * `bundleDigest`. Throws a TypeError, naming no path, id or value, when the
- * bundle does not validate against the apply-bundle contract, or when that
- * name is already taken by different bytes (the store is append-only).
- * Storing the same bundle again, byte for byte, is a no-op. Returns the
+ * bundle does not validate against the apply-bundle contract, when the
+ * digest is malformed, or when a store directory segment or the file name is
+ * a symbolic link; nothing is written or replaced in those cases. The digest
+ * excludes the authorization, the clock, the mode and the verdicts (RFC
+ * 12.3), so a bundle whose digest already names a stored file replaces that
+ * one file atomically with these bytes, the newest computation; the same
+ * bytes again are a no-op. A report bundle never replaces a stored file that
+ * verifies as a planned bundle of this digest (a TypeError, naming no path);
+ * a planned bundle replaces anything. A bundle with any other digest never
+ * touches another file. Superseded computations are not recorded. Returns the
  * file's path.
  */
 export function storeApplyBundle(hubDirectory: string, bundle: ApplyBundle): string {
   const validation = validateApplyBundle(bundle);
   if (!validation.valid) throw new TypeError(`an apply bundle must validate against its contract before it can be stored: ${validation.reason}`);
   assertDigestShape(bundle.bundleDigest);
-  return writeAppendOnly(hubDirectory, BUNDLE_STORE_REL, digestFileName(bundle.bundleDigest), serializeStoredDocument(bundle));
+  const digest = bundle.bundleDigest;
+  return writeReplacing(hubDirectory, BUNDLE_STORE_REL, digestFileName(digest), serializeStoredDocument(bundle), bundle.mode === "report" ? { when: (existing) => verifiesAsPlanned(existing, digest), message: "a stored planned apply bundle is never replaced by a report of the same digest" } : undefined);
+}
+
+/** Whether `bytes` read back as a valid, digest-verified apply bundle of `digest` whose mode is planned: exactly what a read would return. */
+function verifiesAsPlanned(bytes: Buffer, digest: string): boolean {
+  let document: unknown;
+  try {
+    document = readContractDocument(bytes);
+  } catch {
+    return false;
+  }
+  return verifiedBundle(document, digest)?.mode === "planned";
+}
+
+/** The document as a bundle when it validates and its digest, recomputed from the plan digest and each computed repository, is `digest` and its own. */
+function verifiedBundle(document: unknown, digest: string): ApplyBundle | null {
+  if (!validateApplyBundle(document).valid) return null;
+  const bundle = document as ApplyBundle;
+  const computed: { readonly id: string; readonly changeSetDigest: string }[] = bundle.repositories.flatMap((entry: ApplyBundleRepository) =>
+    "changeSet" in entry ? [{ id: entry.id, changeSetDigest: entry.changeSet }] : [],
+  );
+  const recomputed = bundleDigest(bundle.plan.digest, computed);
+  return recomputed === bundle.bundleDigest && recomputed === digest ? bundle : null;
 }
 
 /**
@@ -339,12 +580,5 @@ export function readStoredApplyBundle(hubDirectory: string, digest: string): App
   assertDigestShape(digest);
   const document = readStoredBytes(hubDirectory, BUNDLE_STORE_REL, digestFileName(digest));
   if (document === null) return null;
-  if (!validateApplyBundle(document).valid) return null;
-  const bundle = document as ApplyBundle;
-  const computed: { readonly id: string; readonly changeSetDigest: string }[] = bundle.repositories.flatMap((entry: ApplyBundleRepository) =>
-    "changeSet" in entry ? [{ id: entry.id, changeSetDigest: entry.changeSet }] : [],
-  );
-  const recomputed = bundleDigest(bundle.plan.digest, computed);
-  if (recomputed !== bundle.bundleDigest || recomputed !== digest) return null;
-  return bundle;
+  return verifiedBundle(document, digest);
 }

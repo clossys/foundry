@@ -308,11 +308,16 @@ jobs:
           SOURCE_SHA: ${{ github.event.workflow_run.head_sha }}
         run: git checkout --detach "$SOURCE_SHA"
 
-      # Record construction runs createLaterPublicationRecord(), which calls
-      # record-later-publication.mjs's assertReleaseRuntime() unconditionally
-      # -- the exact pinned tuple qualify/publish already assert on this same
-      # publish run, reused here rather than relaxed. No cache: step is used
-      # here (see the file header, security review B1's cache note).
+      # Recording evidence never packs, qualifies, or writes a package
+      # tarball, so the recorder's only runtime requirement is npm 11 or newer
+      # (it refuses when the npm major version is below 11, when the version
+      # cannot be read or is malformed, or when PATH holds a relative or empty
+      # entry), checked at the start of every run (governance/decisions/
+      # evidence-recording-runtime-scope.json). This job keeps the exact
+      # pinned tuple anyway, the same one qualify/publish assert on this
+      # publish run, so that automated records are produced on one
+      # deterministic toolchain. No cache: step is used here (see the file
+      # header, security review B1's cache note).
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         if: steps.idempotency.outputs.already-recorded != 'true'
         with:

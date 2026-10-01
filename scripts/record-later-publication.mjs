@@ -3,10 +3,10 @@
 // exact qualification and anonymous registry evidence. This command never
 // publishes and never accepts credentials. The record is the only output.
 
-import { constants, closeSync, fstatSync, fsyncSync, lstatSync, linkSync, openSync, readFileSync, rmSync, unlinkSync, writeFileSync, mkdtempSync } from "node:fs";
+import { accessSync, constants, closeSync, fstatSync, fsyncSync, lstatSync, linkSync, openSync, readFileSync, rmSync, statSync, unlinkSync, writeFileSync, mkdtempSync } from "node:fs";
 import { createHash, randomUUID } from "node:crypto";
 import { execFileSync } from "node:child_process";
-import { join, dirname, basename, resolve } from "node:path";
+import { delimiter, isAbsolute, join, dirname, basename, resolve } from "node:path";
 import { tmpdir } from "node:os";
 
 import { assertCredentialFree } from "./lib/candidate-runner.mjs";
@@ -16,7 +16,6 @@ import { assertPackageAuthorized, loadReleaseCatalog, readCurrentReleaseIdentity
 import { repositoryIdentityFromPackument, validatePublicNpmRegistryProof } from "./lib/public-npm-registry.mjs";
 import { trustedReplaySourceEvidence, validateLaterPublication } from "./lib/release-later-publication.mjs";
 import { inspectPublicNpmProvenance } from "./check-public-npm-provenance.mjs";
-import { assertReleaseRuntime } from "./lib/release-runtime.mjs";
 
 const KEY = /^[a-z0-9][a-z0-9-]{0,63}$/;
 const SHA1 = /^[a-f0-9]{40}$/;
@@ -124,13 +123,93 @@ export function credentiallessAuditEnv(directory, parent = process.env) {
   };
 }
 
-export function verifiedAnonymousAudit(name, version, run = execFileSync, parent = process.env) {
+// Recording evidence for an already-published version never packs, qualifies,
+// or writes a package tarball: it compares hashes the registry already served.
+// The exact release runtime pin (scripts/lib/release-runtime.mjs) therefore
+// does not apply here. The steps on this path whose result depends on the npm
+// in use are `npm audit signatures --include-attestations` (the v3 replay and
+// the workflow's provenance pre-check) and, for a schema-3 qualification, the
+// `npm pack --dry-run` run by currentQualificationJoins (candidate-
+// qualification.mjs). npm itself must be this major version or newer; this is
+// checked once, at the start of createLaterPublicationRecord and again inside
+// verifiedAnonymousAudit, so it covers the direct join, the v3 replay, and the
+// audit run by the workflow.
+export const EVIDENCE_NPM_MIN_MAJOR = 11;
+
+// Exactly one semantic version, nothing before or after it (surrounding
+// whitespace is trimmed first, so a normal trailing newline is fine).
+const NPM_VERSION = /^(\d+)\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$/;
+
+function isExecutableFile(path) {
+  try {
+    if (!statSync(path).isFile()) return false;
+    accessSync(path, constants.X_OK);
+    return true;
+  } catch { return false; }
+}
+
+// Resolve `npm` once, to an absolute path. Every PATH entry is inspected, and
+// an empty or relative entry ANYWHERE in PATH is refused, not only the entries
+// that come before npm: npm's launcher script runs `env node`, which searches
+// the whole PATH, so a relative entry after npm could still supply `node`.
+// Such an entry would also mean a different directory for each command that
+// runs from a different working directory (for example one holding the package
+// being audited). `isExecutable` is a test seam and is never passed by the
+// command line.
+export function resolveEvidenceNpm(pathValue, isExecutable = isExecutableFile) {
+  if (typeof pathValue !== "string" || pathValue.length === 0) throw new Error("evidence recording cannot resolve npm: PATH is empty");
+  const entries = pathValue.split(delimiter);
+  for (const entry of entries) {
+    if (entry === "" || !isAbsolute(entry)) throw new Error(`evidence recording refuses to resolve npm through a relative or empty PATH entry (${JSON.stringify(entry)})`);
+  }
+  for (const entry of entries) {
+    const candidate = join(entry, "npm");
+    if (isExecutable(candidate)) return candidate;
+  }
+  throw new Error("evidence recording cannot resolve npm: no absolute PATH entry contains an executable npm");
+}
+
+// `npm` is the absolute path from resolveEvidenceNpm, so the version read is
+// the one that runs. The refusal is fail-closed: a version that cannot be read,
+// is not exactly one semantic version, or has a major below the floor is refused.
+export function assertEvidenceNpmFloor(run, env, npm = "npm") {
+  let observed;
+  try { observed = String(run(npm, ["--version"], { encoding: "utf8", env, cwd: env?.HOME })).trim(); } catch { observed = ""; }
+  const major = NPM_VERSION.exec(observed)?.[1];
+  if (major === undefined || Number(major) < EVIDENCE_NPM_MIN_MAJOR) {
+    const shown = observed === "" ? "<unreadable>" : /[\r\n]/.test(observed) ? "<multi-line output>" : observed.slice(0, 40);
+    throw new Error(`evidence recording requires npm ${EVIDENCE_NPM_MIN_MAJOR} or newer for "npm audit signatures --include-attestations" and "npm pack --dry-run"; observed npm ${shown}`);
+  }
+}
+
+// Resolve npm once and refuse unless it meets the floor. The returned absolute
+// path is what the caller must run.
+function withEvidenceEnv(parent, use) {
+  const directory = mkdtempSync(join(tmpdir(), "foundry-npm-floor-"));
+  try { return use(credentiallessAuditEnv(directory, parent)); }
+  finally { rmSync(directory, { recursive: true, force: true }); }
+}
+
+export function requireEvidenceNpm(run, env, isExecutable) {
+  const npm = resolveEvidenceNpm(env.PATH, isExecutable);
+  assertEvidenceNpmFloor(run, env, npm);
+  return npm;
+}
+
+// `npm` (the absolute path createLaterPublicationRecord already resolved) and
+// `isExecutable` are test seams and are never passed by the command line. The
+// version is read again from whichever npm will run, so the audit never depends
+// on an earlier check. When no `npm` is supplied, this function resolves npm
+// itself, which is what the workflow's provenance pre-check relies on.
+export function verifiedAnonymousAudit(name, version, run = execFileSync, parent = process.env, { npm: checked, isExecutable } = {}) {
   const directory = mkdtempSync(join(tmpdir(), "foundry-replay-audit-"));
   const env = credentiallessAuditEnv(directory, parent);
   try {
-    run("npm", ["init", "--yes"], { cwd: directory, stdio: "ignore", env });
-    run("npm", ["install", "--ignore-scripts", "--save-exact", `${name}@${version}`], { cwd: directory, stdio: "ignore", env });
-    const output = run("npm", ["audit", "signatures", "--json", "--include-attestations"], { cwd: directory, encoding: "utf8", maxBuffer: 8 * 1024 * 1024, env });
+    const npm = checked ?? resolveEvidenceNpm(env.PATH, isExecutable);
+    assertEvidenceNpmFloor(run, env, npm);
+    run(npm, ["init", "--yes"], { cwd: directory, stdio: "ignore", env });
+    run(npm, ["install", "--ignore-scripts", "--save-exact", `${name}@${version}`], { cwd: directory, stdio: "ignore", env });
+    const output = run(npm, ["audit", "signatures", "--json", "--include-attestations"], { cwd: directory, encoding: "utf8", maxBuffer: 8 * 1024 * 1024, env });
     return parseJson(Buffer.from(output), "credentialless npm audit result");
   } finally { rmSync(directory, { recursive: true, force: true }); }
 }
@@ -161,7 +240,7 @@ async function publicPackument(fetchImpl, name) {
   return response.json();
 }
 
-async function buildReplay({ root, packageKey, qualification, qualificationIntroduction, archiveFile, replayEvidence, proof, candidateBytes, provider, fetchImpl, auditRun, env }) {
+async function buildReplay({ root, packageKey, qualification, qualificationIntroduction, archiveFile, replayEvidence, proof, candidateBytes, provider, fetchImpl, auditRun, env, npm }) {
   replayEvidenceRecord(replayEvidence);
   if (!provider || provider.run?.id !== replayEvidence.runId || provider.artifact?.id !== replayEvidence.artifactId || !Array.isArray(provider.jobs)) throw new Error("GitHub provider metadata does not bind the requested run and artifact");
   const archiveDigest = `sha256:${digest("sha256", archiveFile.bytes)}`;
@@ -184,9 +263,9 @@ async function buildReplay({ root, packageKey, qualification, qualificationIntro
     publicationSource: { sha: provider.run.head_sha, rootPackageJsonSha256: joins.rootPackageJsonSha256, rootPackageLockSha256: joins.rootPackageLockSha256 },
   };
   if (provider.run.event !== "workflow_dispatch" || !["success", "failure", "cancelled", "skipped"].includes(provider.run.conclusion) || provider.run.head_sha === qualificationIntroduction || !gitAncestor(root, qualificationIntroduction, provider.run.head_sha)) throw new Error("GitHub run must be a completed manual replay after qualification; its overall result remains explicit");
-  if (joins.rootPackageJsonSha256 === qualification.rootPackageJsonSha256 || joins.rootPackageLockSha256 === qualification.rootPackageLockSha256) throw new Error("replay v3 is reserved for drift in both root resolution hashes");
+  if (joins.rootPackageJsonSha256 === qualification.rootPackageJsonSha256 && joins.rootPackageLockSha256 === qualification.rootPackageLockSha256) throw new Error("replay v3 is reserved for drift in at least one root resolution hash; the direct join applies when neither drifted");
   const packument = await publicPackument(fetchImpl, qualification.candidate.name);
-  const audit = verifiedAnonymousAudit(qualification.candidate.name, qualification.candidate.version, auditRun, env);
+  const audit = verifiedAnonymousAudit(qualification.candidate.name, qualification.candidate.version, auditRun, env, { npm });
   const auditResult = inspectPublicNpmProvenance({ name: qualification.candidate.name, version: qualification.candidate.version, sourceSha: provider.run.head_sha, audit, packument });
   if (auditResult.code !== 0) throw new Error(`anonymous signature and attestation evidence is invalid: ${auditResult.failures[0]}`);
   const version = packument.versions?.[qualification.candidate.version] ?? packument;
@@ -272,7 +351,7 @@ export function buildLaterPublicationRecord({ packageKey, qualificationPath: qua
   return { record, recordBytes };
 }
 
-async function validateCandidateAndProof({ root, packageKey, qualification, qualificationPathInput, qualificationBytes, candidateBytes, proof, catalog, catalogBytes, publication, archiveFile, replayEvidence, fetchImpl, auditRun, env }) {
+async function validateCandidateAndProof({ root, packageKey, qualification, qualificationPathInput, qualificationBytes, candidateBytes, proof, catalog, catalogBytes, publication, archiveFile, replayEvidence, fetchImpl, auditRun, env, npm }) {
   const identity = readCurrentReleaseIdentity({ path: resolve(root, "package-scope.json") });
   const target = resolveReleaseTarget(catalog, identity);
   assertPackageAuthorized(target, packageKey);
@@ -309,7 +388,7 @@ async function validateCandidateAndProof({ root, packageKey, qualification, qual
 
   const recordPath = `${OUTPUT_DIRECTORY}/${packageKey}-${candidate.version}.json`;
   const replay = archiveFile && replayEvidence
-    ? await buildReplay({ root, packageKey, qualification, qualificationIntroduction: qualificationHistory.introductionCommit, archiveFile, replayEvidence, proof, candidateBytes, provider: await fetchReplayProviderMetadata(replayEvidence, fetchImpl), fetchImpl, auditRun, env })
+    ? await buildReplay({ root, packageKey, qualification, qualificationIntroduction: qualificationHistory.introductionCommit, archiveFile, replayEvidence, proof, candidateBytes, provider: await fetchReplayProviderMetadata(replayEvidence, fetchImpl), fetchImpl, auditRun, env, npm })
     : undefined;
   if ((archiveFile || replayEvidence) && !replay) throw new Error("qualified artifact archive and provider evidence must be supplied together");
   const built = buildLaterPublicationRecord({ packageKey, qualificationPath: qualificationRecordPath, qualification, qualificationBytes, candidateBytes, proof, catalog, catalogBytes, publication, recordPath, provenanceSourceValid: prePublicationSourceValid(root, qualification, qualificationHistory.introductionCommit, publication), replay });
@@ -368,10 +447,18 @@ export function argsFrom(argv) {
   return result;
 }
 
-export async function createLaterPublicationRecord({ root = process.cwd(), packageKey, qualificationPath: qualificationInput, candidatePath, proofPath, publicationPath, artifactArchivePath, replayEvidencePath, fetch: fetchEvidence = false, fetchImpl = fetch, env = process.env, releaseRuntimeRun, auditRun }) {
+export async function createLaterPublicationRecord({ root = process.cwd(), packageKey, qualificationPath: qualificationInput, candidatePath, proofPath, publicationPath, artifactArchivePath, replayEvidencePath, fetch: fetchEvidence = false, fetchImpl = fetch, env = process.env, auditRun, isExecutable }) {
   if (!KEY.test(packageKey ?? "")) throw new Error("package key is invalid");
   assertCredentialFree(env);
-  assertReleaseRuntime(releaseRuntimeRun ? { run: releaseRuntimeRun, env } : { env });
+  // The npm floor comes before any input is read, so it covers the direct
+  // join, the v3 replay, and the schema-3 `npm pack --dry-run` join. npm is
+  // resolved once, here, to an absolute path, and that path is the one the
+  // audit runs. This recorder does not run `npm pack --dry-run` itself:
+  // currentQualificationJoins does, looking `npm` up on this process's own
+  // PATH. Both production callers pass an env whose PATH is this process's
+  // PATH, so that lookup sees the same PATH the floor just checked. It is not
+  // pinned to the path resolved here.
+  const npm = withEvidenceEnv(env, (auditEnv) => requireEvidenceNpm(auditRun ?? execFileSync, auditEnv, isExecutable));
   const absoluteRoot = resolve(root);
   const qualificationInputFile = regularBytes(qualificationInput, "qualification record");
   const qualification = parseJson(qualificationInputFile.bytes, "qualification record");
@@ -398,7 +485,7 @@ export async function createLaterPublicationRecord({ root = process.cwd(), packa
     const catalogFile = regularBytes(resolve(absoluteRoot, CATALOG_PATH), "release catalog");
     const catalog = loadReleaseCatalog({ path: catalogFile.absolute });
     const replayEvidence = replayEvidenceFile ? parseJson(replayEvidenceFile.bytes, "replay provider evidence") : undefined;
-    const built = await validateCandidateAndProof({ root: absoluteRoot, packageKey, qualification, qualificationPathInput: qualificationInputFile.absolute, qualificationBytes: qualificationInputFile.bytes, candidateBytes: candidateFile.bytes, proof, catalog, catalogBytes: catalogFile.bytes, publication, archiveFile, replayEvidence, fetchImpl, auditRun, env });
+    const built = await validateCandidateAndProof({ root: absoluteRoot, packageKey, qualification, qualificationPathInput: qualificationInputFile.absolute, qualificationBytes: qualificationInputFile.bytes, candidateBytes: candidateFile.bytes, proof, catalog, catalogBytes: catalogFile.bytes, publication, archiveFile, replayEvidence, fetchImpl, auditRun, env, npm });
     const output = resolve(absoluteRoot, built.recordPath);
     writeNoOverwrite(output, built.recordBytes);
     const retained = regularBytes(output, "retained publication record");

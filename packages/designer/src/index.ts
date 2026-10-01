@@ -117,6 +117,7 @@ export {
   Pagination,
   Stat,
   Form,
+  useFormValidation,
   FieldGroup,
   ConfirmDialog,
   Toolbar,
@@ -150,6 +151,15 @@ export type {
   StatTrend,
   FormProps,
   FormError,
+  FormValidationBinding,
+  UseFormValidationOptions,
+  FormValidation,
+  FieldValidator,
+  FormFieldName,
+  FormStringFieldName,
+  FormFieldProps,
+  FormNativeInputProps,
+  FormSubmitButtonProps,
   FieldGroupProps,
   FieldGroupLayout,
   ConfirmDialogProps,
@@ -191,7 +201,7 @@ export type {
   SectionMeasure,
 } from "./blocks/index.js";
 
-export { Shell, Toaster, toast, SkipLink, SiteHeader, NavShell, SiteFooter } from "./shell/index.js";
+export { Shell, Toaster, toast, SkipLink, SiteHeader, NavShell, SiteFooter, Brandmark } from "./shell/index.js";
 export type {
   ShellProps,
   ShellHeaderProps,
@@ -210,7 +220,12 @@ export type {
   NavShellProps,
   SiteFooterProps,
   SiteFooterColumnProps,
+  BrandmarkProps,
+  BrandmarkVariant,
+  BrandmarkSize,
 } from "./shell/index.js";
+export type { BrandmarkPlate } from "./shell/index.js";
+export { BADGE_INSET_SHARE, BADGE_RADIUS_SHARE, badgePlatePath } from "./shell/index.js";
 
 export { ChartFrame, BarChart, LineChart, Sparkline } from "./charts/index.js";
 export type {

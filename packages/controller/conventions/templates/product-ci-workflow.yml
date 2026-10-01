@@ -1,0 +1,74 @@
+# CI workflow for a client product repository. The setup pull request of a
+# product repository writes this file as .github/workflows/clossys-ci.yml,
+# only when that path is absent -- an existing file is left as the
+# repository has it.
+#
+# Passes ci-conventions-check with `verify-product` declared as the required
+# context mapped to that installed path; a test in this package runs the
+# shipped bytes through the checker. One job means no fan-in job is needed:
+# `verify-product` is itself the required-status-check context.
+#
+# The package manager is chosen by lockfile, and anything else fails
+# closed: a repository with exactly one of package-lock.json or
+# pnpm-lock.yaml installs with that manager, and a repository with both, with
+# neither, or with a yarn.lock beside either is refused by the install step
+# with an error rather than guessed at. The install step
+# passes --ignore-scripts, and no cache is configured because cache selection
+# would need the same lockfile decision made before the install step runs.
+# Build and test run the repository's own `build` and `test` scripts when
+# present and skip a missing one.
+
+name: Clossys CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  merge_group:
+
+# Least-privilege by default (ci-conventions.md, Security). A job that
+# genuinely needs more declares exactly that job-level exception.
+permissions:
+  contents: read
+
+# cancel-in-progress only for pull_request: the group key includes the
+# event name, so a push (to main) or a merge_group run is never cancelled
+# by a later pull_request run on the same ref, and a pull_request run IS
+# cancelled by its own next push -- ci-conventions.md, Cost.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  verify-product:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 20
+      # Selects the manager once and records it as PM for the build and
+      # test steps below, so the lockfile decision is not repeated.
+      - name: Install dependencies
+        run: |
+          if [ -f yarn.lock ]; then
+            echo "::error::yarn.lock is present and Yarn is not supported"
+            exit 1
+          elif [ -f pnpm-lock.yaml ] && [ ! -f package-lock.json ]; then
+            echo "PM=pnpm" >> "$GITHUB_ENV"
+            corepack enable
+            pnpm install --frozen-lockfile --ignore-scripts
+          elif [ -f package-lock.json ] && [ ! -f pnpm-lock.yaml ]; then
+            echo "PM=npm" >> "$GITHUB_ENV"
+            npm ci --ignore-scripts
+          else
+            echo "::error::exactly one of package-lock.json or pnpm-lock.yaml is required"
+            exit 1
+          fi
+      - name: Build
+        run: '"${PM:?}" run --if-present build'
+      - name: Test
+        run: '"${PM:?}" run --if-present test'

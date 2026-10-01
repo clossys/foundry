@@ -698,7 +698,7 @@ export function resolveSectionedViewDocument(document: SectionedViewDocument, re
   const text = (ref: CopyRef, path: string): string => {
     const resolution = resolver(ref);
     if (resolution === undefined || typeof resolution.text !== "string" || resolution.text.trim().length === 0) {
-      throw new SectionedViewResolutionError("unresolved-copy", `resolveSectionedViewDocument could not resolve CopyRef "${ref.id}" at ${path} for document "${document.id}".`);
+      throw new SectionedViewResolutionError("unresolved-copy", `resolveSectionedViewDocument could not resolve a CopyRef at ${path}.`);
     }
     resolutions.push(resolution);
     return resolution.text;

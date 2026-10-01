@@ -68,6 +68,19 @@ describe("canonical plan digest (docs/contracts/advisor-plan-digest.md)", () => 
     }
   });
 
+  it("covers delegatedCopyApproval and its scopes, and excludes asOf and decisions from them (#1586)", () => {
+    const digest = (name: string) => planDigest(corpusPlan(name).plan);
+    const scoped = digest("delegated-copy-approval-scoped");
+    expect(digest("delegated-copy-approval-unscoped")).not.toBe(digest("blockers-without-due"));
+    expect(scoped).not.toBe(digest("delegated-copy-approval-unscoped"));
+    expect(digest("delegated-copy-approval-scoped-keys-reversed")).toBe(scoped);
+    expect(digest("delegated-copy-approval-scoped-new-decisions")).toBe(scoped);
+    expect(digest("delegated-copy-approval-scopes-reordered")).not.toBe(scoped);
+    expect(digest("delegated-copy-approval-scope-widened")).not.toBe(scoped);
+    expect(digest("delegated-copy-approval-removed")).toBe(digest("blockers-without-due"));
+    expect(corpusPlan("delegated-copy-approval-scoped").plan.decisions[0]?.subjectDigest).toBe(scoped);
+  });
+
   it("has no digest for an invalid plan", () => {
     const plan = { ...corpusPlan("blockers-without-due").plan, extra: true } as unknown as AdvisorPlan;
     expect(() => planDigest(plan)).toThrow(/invalid plan has no digest: plan has a field the contract does not declare \(key \d+ of this object\)/);

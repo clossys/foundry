@@ -54,6 +54,16 @@
  *     badge, the shape app-icon surfaces (OS launchers, PWA manifests)
  *     expect.
  *
+ * LIVE-TEXT LOCKUP SPEC (#1535). `composeLockup` takes a SUPPLIED mark
+ * (it never draws a monogram), adopts it through `adoptSuppliedMark`, and
+ * returns a JSON-serialisable spec: the mark byte-for-byte, its `light`
+ * and `dark` recolours, the wordmark string, the font's licence record,
+ * and fixed proportions (gap and wordmark size as ratios of the mark's
+ * height) copied from the generated wordmark direction, so both paths
+ * share one set of `LOCKUP_*` constants. The wordmark stays live text
+ * (`rendering` is always `"live-text"`); this package parses no fonts, so
+ * it never outlines glyphs. Anything unrecognised is refused, not defaulted.
+ *
  * Every SVG this module returns declares `data-clear-space` on its root
  * element — `identity-checks.ts`'s `checkClearSpace` reads it. This
  * package does not rasterize or lay out a real page, so clear space is a
@@ -66,6 +76,14 @@ const MARK_VIEW_BOX = "0 0 48 48";
 const WORDMARK_VIEW_BOX = "0 0 200 48";
 const CLEAR_SPACE_RATIO = 0.2;
 const BADGE_SIZE = 48;
+
+/** The wordmark direction's layout, in viewBox units; the mark is `LOCKUP_MARK_HEIGHT` tall, the wordmark starts after `LOCKUP_GAP`. */
+export const LOCKUP_MARK_HEIGHT = 48;
+export const LOCKUP_GAP = 8;
+export const LOCKUP_WORDMARK_SIZE = 22;
+/** The same proportions as ratios of the mark's height, for scaling to any supplied mark. */
+export const LOCKUP_GAP_RATIO = LOCKUP_GAP / LOCKUP_MARK_HEIGHT;
+export const LOCKUP_WORDMARK_SIZE_RATIO = LOCKUP_WORDMARK_SIZE / LOCKUP_MARK_HEIGHT;
 
 export const IDENTITY_VARIANT_ROLES = ["primary", "mark", "mono", "light", "dark", "favicon", "appIcon"] as const;
 export type IdentityVariantRole = (typeof IDENTITY_VARIANT_ROLES)[number];
@@ -289,7 +307,7 @@ function buildWordmarkGlyph(name: string, initials: string, fontFamily: string):
   const escapedName = escapeXml(name);
   const escapedFontFamily = escapeXml(fontFamily);
   const roundel = buildMonogramGlyph(initials, "circle", fontFamily);
-  return `<g>${roundel}</g><text x="56" y="30" font-family="${escapedFontFamily}" font-size="22" font-weight="600" fill="currentColor">${escapedName}</text>`;
+  return `<g>${roundel}</g><text x="${LOCKUP_MARK_HEIGHT + LOCKUP_GAP}" y="30" font-family="${escapedFontFamily}" font-size="${LOCKUP_WORDMARK_SIZE}" font-weight="600" fill="currentColor">${escapedName}</text>`;
 }
 
 function wrapGlyph(glyph: string, viewBox: string, color: string): string {
@@ -433,23 +451,380 @@ function isSvgDocument(value: string): boolean {
  */
 const PAINT_ATTR_RE = /(?<![\w-])(fill|stroke)\s*=\s*("([^"]*)"|'([^']*)')/g;
 
+/** 32-bit FNV-1a over UTF-16 code units, as 8 lowercase hex digits — a short, deterministic id suffix, not a security hash. */
+function fnv1a32Hex(value: string): string {
+  let hash = 0x811c9dc5;
+  for (let i = 0; i < value.length; i++) {
+    hash ^= value.charCodeAt(i);
+    hash = Math.imul(hash, 0x01000193);
+  }
+  return (hash >>> 0).toString(16).padStart(8, "0");
+}
+
+/** The shapes the recogniser accepts, and the geometry attributes each may carry. */
+const FLAT_SHAPE_GEOMETRY: ReadonlyMap<string, readonly string[]> = new Map([
+  ["path", ["d"]],
+  ["rect", ["x", "y", "width", "height", "rx", "ry"]],
+  ["circle", ["cx", "cy", "r"]],
+  ["ellipse", ["cx", "cy", "rx", "ry"]],
+  ["polygon", ["points"]],
+  ["polyline", ["points"]],
+  ["line", ["x1", "y1", "x2", "y2"]],
+]);
 /**
- * Best-effort structural recolour: every `fill`/`stroke` PAINT ATTRIBUTE
- * value that is not `none`/`transparent`/empty is replaced with `color`.
- * Deliberately narrow — it does not reach into a `style="fill:#fff"` CSS
- * declaration or a `<style>` block, since either would require a real CSS
- * parser to rewrite safely. A supplied mark that paints exclusively
- * through inline `style` attributes will not recolour correctly here;
- * that limitation is why `adoptSuppliedMark`'s derived variants are a
- * starting point for review, not a guarantee.
+ * The only attributes a recognised root may carry (never paint, never a
+ * reference), each mapped to its own constant so the root is re-emitted
+ * from these names, never from text sliced out of the input.
+ */
+const FLAT_ROOT_ATTRIBUTE_NAMES: ReadonlyMap<string, string> = new Map([
+  ["xmlns", "xmlns"],
+  ["viewBox", "viewBox"],
+  ["width", "width"],
+  ["height", "height"],
+  ["role", "role"],
+  ["aria-label", "aria-label"],
+  ["data-clear-space", "data-clear-space"],
+]);
+
+/**
+ * Caps on what the recogniser will look at. The recogniser exists to
+ * recognise a logo, and its cost must stay bounded on hostile input: an
+ * input over any cap is simply not recognised, so it stays flat,
+ * byte-identical to the previous release.
+ *  - attributes on one tag,
+ *  - elements in all (every `<g>` and every shape),
+ *  - nesting depth (open `<g>` groups; also bounds the recursion in
+ *    {@link renderFlatNodes}).
+ */
+const FLAT_MAX_ATTRIBUTES_PER_TAG = 32;
+const FLAT_MAX_ELEMENTS = 2000;
+const FLAT_MAX_DEPTH = 32;
+
+const FLAT_HEX_RE = /^#(?:([0-9a-fA-F]{3})|([0-9a-fA-F]{6}))$/;
+const FLAT_STROKE_ATTR_RE = /^stroke-[a-z]+(?:-[a-z]+)*$/;
+
+type FlatAttrs = [name: string, value: string][];
+interface FlatShape {
+  kind: "shape";
+  tag: string;
+  attrs: FlatAttrs;
+  tone: string;
+}
+interface FlatGroup {
+  kind: "group";
+  transform: string | undefined;
+  children: FlatNode[];
+}
+type FlatNode = FlatShape | FlatGroup;
+
+const CHAR_TAB = 9;
+const CHAR_LF = 10;
+const CHAR_CR = 13;
+const CHAR_SPACE = 32;
+const CHAR_DQUOTE = 34;
+const CHAR_AMP = 38;
+const CHAR_SQUOTE = 39;
+const CHAR_HYPHEN = 45;
+const CHAR_SLASH = 47;
+const CHAR_COLON = 58;
+const CHAR_LT = 60;
+const CHAR_EQ = 61;
+const CHAR_GT = 62;
+const CHAR_UNDERSCORE = 95;
+
+const isFlatSpace = (code: number): boolean => code === CHAR_SPACE || code === CHAR_TAB || code === CHAR_LF || code === CHAR_CR;
+const isLowerLetter = (code: number): boolean => code >= 97 && code <= 122;
+const isAsciiLetter = (code: number): boolean => isLowerLetter(code) || (code >= 65 && code <= 90);
+const isFlatNameChar = (code: number): boolean => isAsciiLetter(code) || (code >= 48 && code <= 57) || code === CHAR_COLON || code === CHAR_UNDERSCORE || code === CHAR_HYPHEN;
+
+/** The index of the first non-whitespace character of `text` at or after `at`. */
+function skipFlatSpace(text: string, at: number): number {
+  let i = at;
+  while (i < text.length && isFlatSpace(text.charCodeAt(i))) i++;
+  return i;
+}
+
+/** The index just after `</name` + optional whitespace + `>` at `at`, or `-1` when `text` has no such closing tag there. */
+function flatCloseTagEnd(text: string, at: number, name: string): number {
+  if (!text.startsWith(`</${name}`, at)) return -1;
+  const i = skipFlatSpace(text, at + 2 + name.length);
+  return text.charCodeAt(i) === CHAR_GT ? i + 1 : -1;
+}
+
+interface FlatTag {
+  name: string;
+  attrs: FlatAttrs;
+  selfClosing: boolean;
+  /** The index just after the tag's `>`. */
+  end: number;
+}
+
+/**
+ * Scans one start tag at `at` (which must hold `<`): a lowercase name, then
+ * attributes, then `>` or `/>`. Each attribute is leading whitespace, a
+ * name, `=`, and a quoted value containing none of `"` `'` `<` `>` `&`; a
+ * value that could close its own quote, open a tag or start an entity is
+ * not accepted, so the recogniser rejects the whole document instead of
+ * re-emitting it. Returns `null` on anything else, on a duplicate
+ * attribute name, and on more than {@link FLAT_MAX_ATTRIBUTES_PER_TAG}
+ * attributes.
+ *
+ * A single left-to-right pass with no backtracking: every character is
+ * looked at a bounded number of times, so the cost is linear in the length
+ * of the tag (and the attribute cap stops it after
+ * {@link FLAT_MAX_ATTRIBUTES_PER_TAG} attributes). Duplicates are found with
+ * a `Set`, not by comparing every pair.
+ */
+function scanFlatTag(text: string, at: number): FlatTag | null {
+  if (text.charCodeAt(at) !== CHAR_LT) return null;
+  let i = at + 1;
+  while (i < text.length && isLowerLetter(text.charCodeAt(i))) i++;
+  if (i === at + 1) return null;
+  const name = text.slice(at + 1, i);
+  const attrs: FlatAttrs = [];
+  const seen = new Set<string>();
+  for (;;) {
+    const afterSpace = skipFlatSpace(text, i);
+    const code = text.charCodeAt(afterSpace);
+    if (code === CHAR_GT) return { name, attrs, selfClosing: false, end: afterSpace + 1 };
+    if (code === CHAR_SLASH) return text.charCodeAt(afterSpace + 1) === CHAR_GT ? { name, attrs, selfClosing: true, end: afterSpace + 2 } : null;
+    if (afterSpace === i || !isAsciiLetter(code)) return null; // an attribute needs leading whitespace and a letter to start its name
+    if (attrs.length === FLAT_MAX_ATTRIBUTES_PER_TAG) return null;
+    let nameEnd = afterSpace + 1;
+    while (nameEnd < text.length && isFlatNameChar(text.charCodeAt(nameEnd))) nameEnd++;
+    const attrName = text.slice(afterSpace, nameEnd);
+    if (seen.has(attrName)) return null;
+    seen.add(attrName);
+    const eq = skipFlatSpace(text, nameEnd);
+    if (text.charCodeAt(eq) !== CHAR_EQ) return null;
+    const quoteAt = skipFlatSpace(text, eq + 1);
+    const quote = text.charCodeAt(quoteAt);
+    if (quote !== CHAR_DQUOTE && quote !== CHAR_SQUOTE) return null;
+    let valueEnd = quoteAt + 1;
+    for (;;) {
+      if (valueEnd >= text.length) return null;
+      const c = text.charCodeAt(valueEnd);
+      if (c === quote) break;
+      if (c === CHAR_DQUOTE || c === CHAR_SQUOTE || c === CHAR_LT || c === CHAR_GT || c === CHAR_AMP) return null;
+      valueEnd++;
+    }
+    attrs.push([attrName, text.slice(quoteAt + 1, valueEnd)]);
+    i = valueEnd + 1;
+  }
+}
+
+/** A hex paint as six lowercase digits, or `undefined` when it is not a plain `#rgb`/`#rrggbb`. */
+function normaliseHex(value: string): string | undefined {
+  const match = FLAT_HEX_RE.exec(value);
+  if (!match) return undefined;
+  const digits = (match[1] ? [...match[1]].map((d) => d + d).join("") : match[2]!).toLowerCase();
+  return `#${digits}`;
+}
+
+/** `attrs` are all allowed on `tag`, and its paint is one hex tone; returns that tone or `null`. */
+function flatShapeTone(tag: string, attrs: FlatAttrs): string | null {
+  const geometry = FLAT_SHAPE_GEOMETRY.get(tag);
+  if (geometry === undefined) return null;
+  const paint = new Map<string, string>();
+  for (const [name, value] of attrs) {
+    if (name === "fill" || name === "stroke") paint.set(name, value);
+    else if (!(geometry.includes(name) || name === "transform" || name === "fill-rule" || name === "clip-rule" || FLAT_STROKE_ATTR_RE.test(name))) return null;
+  }
+  const tone = normaliseHex(paint.get("fill") ?? "");
+  if (tone === undefined) return null;
+  const stroke = paint.get("stroke");
+  if (stroke !== undefined && stroke !== "none" && normaliseHex(stroke) !== tone) return null;
+  return tone;
+}
+
+/**
+ * The fail-closed recogniser behind {@link recolorSvg}'s knockout. Returns
+ * the parsed mark only when the WHOLE document is a flat two-tone mark;
+ * `null` for anything else, however close.
+ *
+ *  - root: `<svg>` with only `xmlns`, a parseable `viewBox`, `width`,
+ *    `height`, `role`, `aria-label`, `data-clear-space` — no paint, no
+ *    reference, no `id`. It is re-emitted from those constant names and
+ *    the escaped values, double-quoted;
+ *  - children: balanced `<g transform="…">` and self-closing `path`,
+ *    `rect`, `circle`, `ellipse`, `polygon`, `polyline`, `line`, carrying
+ *    only geometry, `transform`, `fill`, `stroke`, `stroke-*`,
+ *    `fill-rule`, `clip-rule`;
+ *  - every attribute value free of `"` `'` `<` `>` `&`; only whitespace
+ *    between tags (no text, comment, `<!`, `<?`, CDATA);
+ *  - every shape has an explicit hex `fill` (`#rgb`/`#rrggbb`, alpha
+ *    rejected) and its `stroke` is `none` or the same hex: one tone each;
+ *  - exactly two tones, every first-tone shape before every second-tone one;
+ *  - within the caps: at most {@link FLAT_MAX_ATTRIBUTES_PER_TAG}
+ *    attributes on a tag, {@link FLAT_MAX_ELEMENTS} elements in all and
+ *    {@link FLAT_MAX_DEPTH} groups deep. A document over a cap is not
+ *    recognised, so it stays flat.
+ *
+ * Tags are read by {@link scanFlatTag}, a single non-backtracking pass, so
+ * the whole recognition is linear in the input; its parse is iterative and
+ * its render recursion is bounded by {@link FLAT_MAX_DEPTH}.
+ */
+function recogniseFlatTwoTone(svg: string): { root: string; box: NonNullable<ReturnType<typeof parseViewBoxBox>>; nodes: FlatNode[]; toneA: string } | null {
+  const text = svg.trim();
+  const rootTag = scanFlatTag(text, 0);
+  if (rootTag === null || rootTag.name !== "svg" || rootTag.selfClosing) return null;
+  // Re-emit the root from constant names and escaped values; never slice it out of the input.
+  const rootAttrs: FlatAttrs = [];
+  for (const [name, value] of rootTag.attrs) {
+    const canonical = FLAT_ROOT_ATTRIBUTE_NAMES.get(name);
+    if (canonical === undefined) return null;
+    rootAttrs.push([canonical, value]);
+  }
+  const viewBox = rootAttrs.find(([name]) => name === "viewBox")?.[1];
+  const box = viewBox === undefined ? undefined : parseViewBoxBox(viewBox);
+  if (box === undefined) return null;
+  const root = `<svg${rootAttrs.map(([name, value]) => ` ${name}="${escapeXml(value)}"`).join("")}>`;
+
+  const top: FlatNode[] = [];
+  const open: FlatGroup[] = [];
+  const siblings = (): FlatNode[] => (open.length > 0 ? open[open.length - 1]!.children : top);
+  const tones: string[] = [];
+  let seenSecondTone = false;
+  let elements = 0;
+  let at = rootTag.end;
+  for (;;) {
+    at = skipFlatSpace(text, at);
+    const svgEnd = flatCloseTagEnd(text, at, "svg");
+    if (svgEnd !== -1) return open.length === 0 && svgEnd === text.length && tones.length === 2 ? { root, box, nodes: top, toneA: tones[0]! } : null;
+    const groupEnd = flatCloseTagEnd(text, at, "g");
+    if (groupEnd !== -1) {
+      if (open.length === 0) return null;
+      open.pop();
+      at = groupEnd;
+      continue;
+    }
+    const tag = scanFlatTag(text, at);
+    if (tag === null) return null;
+    at = tag.end;
+    elements++;
+    if (elements > FLAT_MAX_ELEMENTS) return null;
+    const { name, attrs, selfClosing } = tag;
+    if (name === "g") {
+      if (selfClosing || attrs.some(([attr]) => attr !== "transform") || open.length >= FLAT_MAX_DEPTH) return null;
+      const group: FlatGroup = { kind: "group", transform: attrs[0]?.[1], children: [] };
+      siblings().push(group);
+      open.push(group);
+      continue;
+    }
+    if (!selfClosing || !FLAT_SHAPE_GEOMETRY.has(name)) return null;
+    const tone = flatShapeTone(name, attrs);
+    if (tone === null) return null;
+    if (!tones.includes(tone)) {
+      if (tones.length === 2) return null;
+      tones.push(tone);
+    }
+    if (tone === tones[1]) seenSecondTone = true;
+    else if (seenSecondTone) return null;
+    siblings().push({ kind: "shape", tag: name, attrs, tone });
+  }
+}
+
+/**
+ * One layer of the recognised mark as markup. `paintOf` gives the paint a
+ * shape is drawn in for this layer, or `undefined` to leave the shape out;
+ * a `stroke` of `none` stays `none`, every other stroke takes that paint.
+ * Every other attribute is written back with its input value, which the
+ * recogniser has already proved free of `"` `'` `<` `>` `&`. A group with
+ * no shape left in this layer is dropped.
+ */
+function renderFlatNodes(nodes: readonly FlatNode[], paintOf: (shape: FlatShape) => string | undefined): string {
+  let out = "";
+  for (const node of nodes) {
+    if (node.kind === "group") {
+      const inner = renderFlatNodes(node.children, paintOf);
+      if (inner !== "") out += `<g${node.transform === undefined ? "" : ` transform="${escapeXml(node.transform)}"`}>${inner}</g>`;
+      continue;
+    }
+    const paint = paintOf(node);
+    if (paint === undefined) continue;
+    const attrs = node.attrs
+      .map(([name, value]) => ` ${escapeXml(name)}="${name === "fill" || (name === "stroke" && value !== "none") ? paint : escapeXml(value)}"`)
+      .join("");
+    out += `<${escapeXml(node.tag)}${attrs} />`;
+  }
+  return out;
+}
+
+/**
+ * Best-effort structural recolour onto the single paint `color`.
+ *
+ * FLAT RECOLOUR (every input but one narrow kind, below): every
+ * `fill`/`stroke` PAINT ATTRIBUTE value that is not
+ * `none`/`transparent`/empty is replaced with `color`, and nothing else
+ * changes. Deliberately narrow — it does not reach into a
+ * `style="fill:#fff"` declaration or a `<style>` block, since either would
+ * need a real CSS parser to rewrite safely; a mark that paints through
+ * those, through paint inherited from an ancestor, or through `<use>` will
+ * not recolour correctly. That limitation is why `adoptSuppliedMark`'s
+ * derived variants are a starting point for review, not a guarantee.
+ *
+ * KNOCKOUT (#1537), only for a RECOGNISED FLAT TWO-TONE MARK. Flattening
+ * a two-tone mark erases the contrast between its tones (a dark square
+ * carrying a light figure becomes one flat square), so a mark that
+ * `recogniseFlatTwoTone` accepts is instead recoloured as a knockout:
+ * the first tone (A) and the second (B) are each painted in `color`, each
+ * masked out wherever the other paints, so the surface (or `appIcon`'s
+ * badge) shows through where they overlap. The contrast between the tones
+ * becomes the contrast between `color` and what it sits on, the pair
+ * `identity-checks.ts`'s contrast check already judges. The result is the
+ * root start tag (re-emitted from its parsed attributes), a `<defs>` of two `<mask>`s (white coverage
+ * over the root `viewBox`, the other tone painted `#000`), and two masked
+ * `<g>` layers; `color` stays the only visible paint, so a `currentColor`
+ * recolour keeps `mono`/`favicon` single-colour (mask paint is coverage,
+ * not rendered colour, and `identity-checks.ts` skips the masks generated
+ * here). Mask ids are `recolor-` plus a hash of `svg` and `color`. The
+ * root is re-emitted from its parsed attributes (constant names, escaped
+ * values, double-quoted), not sliced out of the input.
+ *
+ * WHAT IS RECOGNISED: the whole document is a flat mark: groups (with only
+ * `transform`) and basic shapes (`path`, `rect`, `circle`, `ellipse`,
+ * `polygon`, `polyline`, `line`) with an explicit hex `fill` (`#rgb` or
+ * `#rrggbb`), every first-tone shape before every second-tone shape,
+ * exactly two tones (`#fff` and `#FFFFFF` are one tone), and no ids,
+ * references, styles, classes, text, comments or root paint. The root
+ * carries only `xmlns`, a parseable `viewBox`, `width`, `height`, `role`,
+ * `aria-label` and `data-clear-space`. Caps: at most 32 attributes on a
+ * tag, 2000 elements in all and 32 groups deep.
+ *
+ * WHAT IS NOT: everything else stays FLAT, byte-identical to the previous
+ * release: one tone, three or more tones, a tone order A-B-A, alpha or
+ * named or `currentColor` paint, root or group paint, `<use>`, `<style>`,
+ * `style=`, `class=`, any `id` or `url(#…)`, text, comments, and any
+ * value containing a quote, `<` or `&`, and any input over a cap above. A
+ * derived variant is therefore never broken by this function and never
+ * gains an attribute its input lacked: the only names added are the
+ * generated `mask`, `maskUnits`, `id`, `x`, `y`, `width` and `height`, no
+ * id of the input is renamed, and no attribute value is rewritten beyond
+ * its paint (a value is re-emitted double-quoted, which is safe because a
+ * recognised value holds no quote). A mark outside the subset gets no
+ * knockout, so its tone boundary is lost as it always was.
  */
 export function recolorSvg(svg: string, color: string): string {
   const escapedColor = escapeXml(color);
-  return svg.replace(PAINT_ATTR_RE, (match, attr: string, _quoted: string, doubleQuoted: string | undefined, singleQuoted: string | undefined) => {
-    const value = doubleQuoted ?? singleQuoted ?? "";
-    if (value === "none" || value === "transparent" || value === "") return match;
-    return `${attr}="${escapedColor}"`;
-  });
+  const mark = recogniseFlatTwoTone(svg);
+  if (mark === null) {
+    return svg.replace(PAINT_ATTR_RE, (match, attr: string, _quoted: string, doubleQuoted: string | undefined, singleQuoted: string | undefined) => {
+      const value = doubleQuoted ?? singleQuoted ?? "";
+      if (value === "none" || value === "transparent" || value === "") return match;
+      return `${attr}="${escapedColor}"`;
+    });
+  }
+
+  const { root, box, nodes, toneA } = mark;
+  const id = `recolor-${fnv1a32Hex(`${svg}\u0000${color}`)}`;
+  const region = `x="${round4(box.minX)}" y="${round4(box.minY)}" width="${round4(box.width)}" height="${round4(box.height)}"`;
+  const mask = (suffix: string, hole: string): string => `<mask id="${id}-${suffix}" maskUnits="userSpaceOnUse" ${region}><rect ${region} fill="#fff" />${hole}</mask>`;
+  const isA = (shape: FlatShape): boolean => shape.tone === toneA;
+  const layerA = renderFlatNodes(nodes, (s) => (isA(s) ? escapedColor : undefined));
+  const layerB = renderFlatNodes(nodes, (s) => (isA(s) ? undefined : escapedColor));
+  const holesForA = renderFlatNodes(nodes, (s) => (isA(s) ? undefined : "#000"));
+  const holesForB = renderFlatNodes(nodes, (s) => (isA(s) ? "#000" : undefined));
+  return `${root}<defs>${mask("a", holesForA)}${mask("b", holesForB)}</defs><g mask="url(#${id}-a)">${layerA}</g><g mask="url(#${id}-b)">${layerB}</g></svg>`;
 }
 
 function innerMarkupOf(svg: string): string {
@@ -520,5 +895,100 @@ export function adoptSuppliedMark(input: AdoptSuppliedMarkInput): IdentityDirect
       favicon: recolorSvg(trimmed, "currentColor"),
       appIcon: wrapBadge(onAccentGlyph, tokens.accent, tokens.onAccent, sourceViewBox),
     },
+  };
+}
+
+export const LOCKUP_HEADERS = ["mark", "lockup"] as const;
+export type LockupHeader = (typeof LOCKUP_HEADERS)[number];
+
+export const LOCKUP_FONT_OUTLINING = ["permitted", "restricted", "unknown"] as const;
+export type LockupFontOutlining = (typeof LOCKUP_FONT_OUTLINING)[number];
+
+/** What the font's licence allows for glyph outlining, as recorded by the caller; `unknown` is a legitimate answer, an unrecognised value is refused. */
+export interface LockupFontLicence {
+  family: string;
+  outlining: LockupFontOutlining;
+}
+
+export interface ComposeLockupInput {
+  brand: IdentityBrandInput;
+  /** A complete `<svg>...</svg>` document, adopted unchanged as the mark. */
+  suppliedSvg: string;
+  tokens: IdentityTokenInput;
+  /** The wordmark text; stored trimmed. */
+  wordmark: string;
+  fontLicence: LockupFontLicence;
+  /** Which asset the page header uses: the mark alone or the full lockup. */
+  header: LockupHeader;
+}
+
+export interface LockupSpec {
+  /** The supplied SVG, trimmed, byte-for-byte. */
+  mark: string;
+  /** The mark recoloured to `tokens.ink`, as `adoptSuppliedMark` derives it. */
+  light: string;
+  /** The mark recoloured to `tokens.onInverse`, as `adoptSuppliedMark` derives it. */
+  dark: string;
+  wordmark: string;
+  fontLicence: LockupFontLicence;
+  /** Gap between mark and wordmark, as a ratio of the mark's height. */
+  gapRatio: number;
+  /** Wordmark font size, as a ratio of the mark's height. */
+  wordmarkSizeRatio: number;
+  header: LockupHeader;
+  rendering: "live-text";
+}
+
+/**
+ * A live-text lockup spec from a SUPPLIED mark (#1535). The mark is
+ * adopted through {@link adoptSuppliedMark} (a non-SVG mark throws its
+ * {@link IdentityKitValidationError} unchanged); no monogram is ever
+ * generated. `wordmark`, `header` and `fontLicence` are validated
+ * together and refused with every reason collected: fail closed, nothing
+ * unrecognised is defaulted.
+ *
+ * The spec guarantees only the supplied mark and the fixed proportions
+ * ({@link LOCKUP_GAP_RATIO}, {@link LOCKUP_WORDMARK_SIZE_RATIO}). It does
+ * not judge the mark's legibility, does not outline text, and does not
+ * guarantee the font loads. `rendering` is always `"live-text"`:
+ * `fontLicence.outlining` of `"permitted"` records what the licence
+ * allows and does NOT produce outlined output in this version, since
+ * outlining needs a font-parsing dependency, a separate decision.
+ *
+ * The result is plain data (`JSON.parse(JSON.stringify(spec))` equals it)
+ * and holds a fresh `fontLicence` copy.
+ */
+export function composeLockup(input: ComposeLockupInput): LockupSpec {
+  const adopted = adoptSuppliedMark(input);
+
+  const reasons: string[] = [];
+  const wordmarkText = typeof input.wordmark === "string" ? input.wordmark.trim() : "";
+  if (wordmarkText.length === 0) {
+    reasons.push("wordmark must be a non-empty string");
+  }
+  if (!(LOCKUP_HEADERS as readonly unknown[]).includes(input.header)) {
+    reasons.push(`header must be one of ${LOCKUP_HEADERS.join(", ")}`);
+  }
+  const licence: Partial<LockupFontLicence> = typeof input.fontLicence === "object" && input.fontLicence !== null ? input.fontLicence : {};
+  if (!(LOCKUP_FONT_OUTLINING as readonly unknown[]).includes(licence.outlining)) {
+    reasons.push(`fontLicence.outlining must be one of ${LOCKUP_FONT_OUTLINING.join(", ")}`);
+  }
+  if (!isValidCssFontFamily(licence.family as string)) {
+    reasons.push("fontLicence.family contains a character outside the allowed font-family charset (letters, digits, whitespace, comma, hyphen, underscore, quotes, period)");
+  }
+  if (reasons.length > 0) {
+    throw new IdentityKitValidationError(reasons);
+  }
+
+  return {
+    mark: adopted.variants.primary,
+    light: adopted.variants.light,
+    dark: adopted.variants.dark,
+    wordmark: wordmarkText,
+    fontLicence: { family: licence.family as string, outlining: licence.outlining as LockupFontOutlining },
+    gapRatio: LOCKUP_GAP_RATIO,
+    wordmarkSizeRatio: LOCKUP_WORDMARK_SIZE_RATIO,
+    header: input.header,
+    rendering: "live-text",
   };
 }

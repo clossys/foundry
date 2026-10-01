@@ -371,11 +371,14 @@ transcripts remain immutable and valid under their original closed schemas.
 
 An already-public trusted release whose qualification was immutable before the
 protected publish source changed may use the separate closed **v3 replay**
-record only when both root `package.json` and `package-lock.json` hashes
-drifted and every package-owned join still matches exactly. It is not a waiver
+record only when at least one of the root `package.json` and
+`package-lock.json` hashes drifted (one or both) and every package-owned join
+still matches exactly; when neither drifted, the direct join applies and the
+replay refuses. It is not a waiver
 for a changed package, policy, adapter, fixture, archetype, dimension, manifest,
 or tarball. The record retains qualification roots and publication-source roots
-in different fields, proves strict ancestry `qualification introduction < source
+in different fields, each publication-source hash equal to the value measured at
+the source whether or not it drifted, proves strict ancestry `qualification introduction < source
 < publication record`, and binds successful qualification and publish jobs,
 the exact GitHub artifact ID/archive digest, fresh raw and canonical transcript
 digests, candidate hashes, and anonymous npm signature/attestation evidence.
@@ -437,6 +440,29 @@ qualification must run on: `RELEASE_RUNTIME` is Node `v24.19.0`, npm
 qualification.mjs` asserts all three before it packs anything and refuses
 closed, rather than producing a record, on any mismatch.
 
+The pin governs every step whose byte result depends on the toolchain:
+qualification, packing, artifact reproducibility, publishing, and retention.
+Recording publication evidence for an already-published version is not one of
+those steps. The recorder compares hashes and integrity values that the
+registry already served; it never packs a package, qualifies one, or writes a
+package tarball. It downloads the published tarball, compares its hashes and
+integrity, reads the archived qualification transcript, and checks git
+ancestry. Two of its steps do depend on the npm in use: `npm audit signatures
+--include-attestations` (the v3 replay, and the automatic workflow's
+provenance pre-check) and, for a schema-3 qualification, `npm pack --dry-run`.
+The recorder therefore refuses when the npm major version is below 11, or when
+the version cannot be read or is not exactly one semantic version, instead of
+requiring the exact tuple. It checks this at the start of every run, including
+the hand-run direct join (see [the hand-run
+recorder](#current-retained-candidate-first-publication-handoff)), as
+`governance/decisions/evidence-recording-runtime-scope.json` records.
+
+That decision record is a relaxation with a sunset of 2027-03-29. From that
+date the `publish safety` check fails on every pull request until a later
+decision record that supersedes it is merged (the gate regression tests validate
+every committed record against the current date). That failure is intended: it
+forces the owner to renew or reverse the narrowing.
+
 This is a separate requirement from root `package.json`'s `engines.node:
 ">=20"`, and the two are not in tension: `engines` states the floor a
 *consumer* of a published package needs to run it, while the qualification
@@ -445,9 +471,10 @@ that proves something. A qualification record binds exact tarball bytes —
 `tsc` output and gzip compression both vary with the toolchain that
 produced them — so "close enough" would prove the bytes a different
 runtime produced, not the bytes actually being qualified. This is also why
-the pin must never be relaxed: loosening it to accept whatever runtime
-happens to be at hand would turn the record from proof of exact artifact
-bytes into a record of some other, unspecified bytes, silently.
+the pin must never be relaxed for a step whose byte result depends on the
+toolchain: loosening it to accept whatever runtime happens to be at hand would turn the
+record from proof of exact artifact bytes into a record of some other,
+unspecified bytes, silently.
 
 **A developer machine that doesn't match this exact tuple cannot produce a
 record at all** — `run-candidate-qualification.mjs` fails closed before
@@ -462,10 +489,12 @@ gh workflow run qualify-candidate.yml -f package=<pkg>
 (pass `-f version=<version>` only to qualify something other than the
 checked-out ref's current manifest version). The workflow runs on the pinned
 `actions/setup-node` runtime, produces and retains the qualification record,
-then pushes a `claude/qualify-<pkg>-<version>` branch carrying it. GitHub
-Actions' own token cannot open a pull request against this repository, so the
-workflow pushes the branch and stops; a maintainer opens the PR for that
-branch by hand.
+then pushes a `claude/qualify-<pkg>-<version>` branch carrying it and opens
+the qualification pull request itself with `gh pr create`. A maintainer
+reviews and merges that pull request. Only if GitHub refuses the pull request
+because Actions is not permitted to create them does the run stay green, push
+the branch, and write a compare URL to its job summary, from which a
+maintainer opens the pull request.
 
 **Until a retained record exists,** a package version that has already
 merged to `main` ahead of one carries an acknowledged, issue-referenced
@@ -1047,6 +1076,23 @@ node scripts/record-later-publication.mjs \
   --proof <registry-proof.json> \
   --publication <publication-evidence.json>
 ```
+
+The recorder does not require the exact pinned release runtime, because it
+never packs, qualifies, or writes a package tarball. Before it reads any input
+it resolves `npm` once, to an absolute path, from `PATH`, and it refuses a
+relative or empty `PATH` entry anywhere in `PATH`, not only before npm (npm's
+launcher runs `env node`, which searches the whole `PATH`). It then reads the version
+of that npm and refuses when the major version is below 11, or when the version
+cannot be read or is not exactly one semantic version (`11.0.0garbage` and
+multi-line output are refused). This check runs on every path: the direct join
+above, the v3 replay below, and the automatic workflow's provenance pre-check.
+The npm that was checked is the one that runs `npm audit signatures
+--include-attestations`. For a schema-3 qualification the qualification join
+also runs `npm pack --dry-run`, through the `npm` that this process's own
+`PATH` resolves, the same lookup the check just made. Any Node
+version that runs the script is otherwise acceptable. The automatic workflow
+below still runs on the exact pinned runtime, which keeps its records
+deterministic.
 
 The v3 replay path additionally requires both regular, non-symlink inputs;
 supplying only one fails, while omitting both continues to select the ordinary

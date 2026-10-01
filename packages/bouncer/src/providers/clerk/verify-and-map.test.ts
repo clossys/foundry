@@ -5,8 +5,8 @@
  */
 import { Buffer } from "node:buffer";
 import { Webhook } from "svix";
-import { describe, expect, it } from "vitest";
-import { verifyAndMapClerkWebhook } from "./index.js";
+import { describe, expect, it, vi } from "vitest";
+import { ClerkWebhookSignatureError, verifyAndMapClerkWebhook } from "./index.js";
 import type { ClerkEventMappingOptions, ClerkWebhookHeaders } from "./index.js";
 
 const signingSecret = `whsec_${Buffer.alloc(32, 7).toString("base64")}`;
@@ -58,5 +58,18 @@ describe("verifyAndMapClerkWebhook", () => {
         providerTenantId: "organization_synthetic",
       },
     });
+  });
+
+  it("a signed non-object event throws payload-invalid before mapping", async () => {
+    for (const rawBody of ["null", "[]", "42", '"text"']) {
+      const roleMapper = vi.fn(() => "manager");
+      const failure = await verifyAndMapClerkWebhook(rawBody, signedHeaders(rawBody), signingSecret, { roleMapper }).then(
+        () => undefined,
+        (error: unknown) => error,
+      );
+      expect(failure, rawBody).toBeInstanceOf(ClerkWebhookSignatureError);
+      expect((failure as ClerkWebhookSignatureError).code, rawBody).toBe("payload-invalid");
+      expect(roleMapper, rawBody).not.toHaveBeenCalled();
+    }
   });
 });

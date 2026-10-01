@@ -50,6 +50,11 @@
  *      or `static`. A refused source is omitted from the emitted policy.
  *      Package declarations and extension hosts are caller-supplied.
  *
+ *   6. THE GATED-HOST RESPONSE HELPERS (`host-responses.ts`). The robots
+ *      tag, `no-store` on authentication, redirect and error responses, a
+ *      deny-all `robots.txt`, a `/health` route and a 503 with `Retry-After`,
+ *      built on Fetch globals only.
+ *
  * THE GATE COUNT: unreconciled grant surface — authority live here that no
  * provider still backs. `checkAuthorityReconciliation` counts it. That count
  * is 0 on an empty set and is not the charter metric.
@@ -131,6 +136,16 @@ export {
 export type { AllowedOriginPolicy } from "./redirect.js";
 
 export { createSiteSecurityHeaders } from "./security-headers.js";
+
+export {
+  GATED_HOST_ROBOTS_TAG,
+  GATED_HOST_ROBOTS_TXT,
+  applyGatedHostHeaders,
+  createHealthRoute,
+  createRobotsTxtRoute,
+  createServiceUnavailableResponse,
+} from "./host-responses.js";
+export type { GatedHostHeaderOptions, ServiceUnavailableOptions } from "./host-responses.js";
 export type {
   SiteSecurityHeaderWarning,
   SiteSecurityHeaders,

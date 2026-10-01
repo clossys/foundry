@@ -16,9 +16,11 @@
  *
  * See `render.ts` for the renderer and `validate.ts` for shape/heading-
  * order/link/table/anchor validation; see this package's README, "document"
- * for the full picture, including the deliberate non-goals (no legal-
- * specific content types, no arbitrary HTML passthrough, no pagination, no
- * automatic table-of-contents generation).
+ * for the full picture, including the deliberate non-goals (no clause
+ * numbering, defined-terms glossary or statute-citation primitive, no
+ * arbitrary HTML passthrough, no pagination, no automatic table-of-contents
+ * generation). A legal document is a profile over this shape, not a
+ * separate content type.
  */
 
 import type { CopyRef } from "@clossys/writer";
@@ -33,11 +35,27 @@ import type { CopyRef } from "@clossys/writer";
  * `"link"`'s `href` is validated against a closed scheme allowlist
  * (`https:`, `http:`, `mailto:`, or a `"#"`-prefixed in-document fragment
  * resolving to a real `DocumentSection.id`) — see `validate.ts`'s
- * `"link-scheme-not-allowed"`/`"link-fragment-unresolved"` rules. A table
- * cell and a definition-list term/description are plain `CopyRef`s, not
- * `DocumentInline` — neither can carry a link.
+ * `"link-scheme-not-allowed"`/`"link-fragment-unresolved"` rules.
+ *
+ * `"strong"` and `"em"` are inline emphasis: each wraps a non-empty run of
+ * further `DocumentInline` (`content`), so they nest (a bold link is a
+ * `"strong"` whose `content` holds a `"link"`). Every leaf is still a
+ * `CopyRef` — emphasis carries structure, never a markup string. Emphasis
+ * nests at most four deep (`"inline-emphasis-too-deep"`) and an empty
+ * `content` is `"inline-emphasis-empty"`; the same link rules apply to a
+ * link inside emphasis as to one outside it. `renderStructuredDocument`
+ * renders them as `<strong>` and `<em>`.
+ *
+ * A table cell and a definition-list term/description are plain
+ * `CopyRef`s, not `DocumentInline` — neither can carry a link or emphasis.
+ * A table column can be set monospace as a whole instead, through
+ * `DocumentTable.columnStyles`.
  */
-export type DocumentInline = { kind: "text"; text: CopyRef } | { kind: "link"; text: CopyRef; href: string };
+export type DocumentInline =
+  | { kind: "text"; text: CopyRef }
+  | { kind: "link"; text: CopyRef; href: string }
+  | { kind: "strong"; content: DocumentInline[] }
+  | { kind: "em"; content: DocumentInline[] };
 
 // ---------------------------------------------------------------------------
 // DocumentParagraph / DocumentList / DocumentDefinitionList / DocumentTable / DocumentCallout
@@ -68,8 +86,15 @@ export interface DocumentDefinitionList {
 }
 
 /**
+ * The closed presentation vocabulary for one table column: `"default"` is
+ * plain text, `"mono"` wraps each body cell's text in `<code>`. A column
+ * style is a literal, never a class name or inline style.
+ */
+export type DocumentColumnStyle = "default" | "mono";
+
+/**
  * `headers` and every entry in `rows` are plain `CopyRef[]`, never
- * `DocumentInline[]` — a table cell cannot carry a link. Every row must
+ * `DocumentInline[]` — a table cell cannot carry a link or emphasis. Every row must
  * have exactly `headers.length` cells; a short or long row is a validation
  * finding (`"table-row-length-mismatch"`), never silently padded or
  * truncated — see `validate.ts`. `renderStructuredDocument` renders
@@ -77,11 +102,19 @@ export interface DocumentDefinitionList {
  * `<td>` inside `<tbody>`, so the header-to-cell association an accessible
  * table needs is structural (the fixed cell count matching a real `<th>`
  * per column), not left to visual alignment alone.
+ *
+ * `columnStyles`, when present, has one entry per header
+ * (`"table-column-styles-length-mismatch"` otherwise) and each entry is a
+ * `DocumentColumnStyle` (`"table-column-style-unknown"` otherwise). A
+ * `"mono"` column renders each of its `<td>` cells with the text wrapped in
+ * `<code>`; its `<th>` is left as is. A table without `columnStyles`
+ * renders as it always did.
  */
 export interface DocumentTable {
   kind: "table";
   caption?: CopyRef;
   headers: CopyRef[];
+  columnStyles?: DocumentColumnStyle[];
   rows: CopyRef[][];
 }
 

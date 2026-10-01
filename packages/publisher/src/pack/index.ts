@@ -26,3 +26,26 @@ export type { PackItemReadiness, PackReadiness } from "./readiness.js";
 
 export { detectExistingPackItems, foundPackItem } from "./adopt.js";
 export type { PackAdoptionCandidate, PackAdoptionResult } from "./adopt.js";
+
+export { importLegacyV0Pack, LEGACY_V0_PACK_ITEMS, LEGACY_V0_PACK_OUTPUT_PATH, writeLegacyV0PackImport } from "./legacy-v0.js";
+export type {
+  LegacyV0Pack,
+  LegacyV0PackImportResult,
+  LegacyV0PackIssue,
+  LegacyV0PackItem,
+  LegacyV0PackItemSpec,
+  LegacyV0PackKey,
+  LegacyV0PackStatus,
+  LegacyV0PackWriteResult,
+} from "./legacy-v0.js";
+
+export { checkSealEvidence, sealWebsite } from "./seal.js";
+export type {
+  CheckSealEvidenceOptions,
+  SealFinding,
+  SealWebsiteInput,
+  SealWebsiteResult,
+  WebsiteSealContactIntake,
+  WebsiteSealEvidence,
+  WebsiteSealPage,
+} from "./seal.js";

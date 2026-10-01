@@ -107,7 +107,8 @@ registered `CopyRecord`. It exits 0 when clean, 1 when it finds traceability
 issues, and 2 when it cannot run.
 
 This package does not resolve a claim's `factRef`, infer tone or grammar, or
-ship actual product language. Those decisions remain with the consumer and the
+ship actual product language, except for the ten English sign-in defaults in
+"Front-door copy" below. Those decisions remain with the consumer and the
 product's facts system.
 
 ## Resolving copy for a surface
@@ -151,10 +152,17 @@ const resolve = createCopyResolver(registry, options);
   `"production"`) — which audience this resolution is for. An owner-approved
   entry resolves on either target. A delegate-approved entry resolves freely
   on `"preview"` but is refused on `"production"`
-  (`"delegate-approval-refused"`) unless the caller opts in.
+  (`"delegate-approval-refused"`) unless the caller opts in, with
+  `acceptDelegateInProduction: true` or with `approvalPlan`.
 - `acceptDelegateInProduction` (default `false`) — only meaningful when
   `target` is `"production"`; set it to `true` to accept a delegate's
   sign-off as sufficient to publish, not just to preview.
+- `approvalPlan` (`Uint8Array`, optional) — the bytes of an Advisor plan
+  record, read by the caller. Consulted only for a delegate-approved entry on
+  `"production"` when `acceptDelegateInProduction` is not `true`; see
+  "Production authority from an approved plan" below. Passing it together with
+  `acceptDelegateInProduction: true`, or passing anything that is not a
+  `Uint8Array`, is `"invalid-options"`.
 - `now` (default `new Date()`, evaluated per call) — the clock staleness and
   expiry are measured against; a test fixes it to make an assertion
   deterministic.
@@ -164,7 +172,9 @@ Three new refusal reasons follow directly from an entry's approval record
 `"approval-stale"` (the recorded fingerprint no longer matches the entry's
 current text), `"approval-expired"` (a delegate record's `expiresAt` has
 passed), and `"delegate-approval-refused"` (a delegate record on
-`"production"` without `acceptDelegateInProduction: true`). A malformed
+`"production"` without `acceptDelegateInProduction: true` or an authorizing
+`approvalPlan`; when a plan was given, the issue's `planRefusal`
+(`CopyResolvePlanRefusal`) says why it did not authorize the entry). A malformed
 `CopyResolveOptions` itself is `"invalid-options"`, checked and refused
 before anything else so a broken options object never silently falls back
 to defaults. An `approved` entry that carries no `approval` record at all
@@ -185,6 +195,163 @@ the same `CopyRegistry` file a surface renders from:
   and optional `maxWords`. Approved copy that exceeds the budget fails the
   gate (built-in defaults for `display-heading`, `eyebrow`, and `button` when
   `maxWords` is omitted).
+
+## Site identity copy (`site.name` / `site.tagline`)
+
+A site's name and tagline are a reserved copy kind: two entries in the same
+`CopyRegistry` a surface renders from, under the ids `SITE_NAME_COPY_ID`
+(`"site.name"`) and `SITE_TAGLINE_COPY_ID` (`"site.tagline"`, both listed in
+`SITE_IDENTITY_COPY_IDS`). `resolveSiteIdentity` resolves both through
+`resolveCopyRef`, so the approval policy in "Resolving copy for a surface"
+applies to each without a second code path: the entry must be `approved`, a
+recorded approval must still match the entry's current text, a delegate
+approval must not have expired, and a delegate approval is refused on
+`"production"` unless `acceptDelegateInProduction` is set.
+
+```ts
+import { resolveSiteIdentity, type CopyRegistry } from "@clossys/writer";
+
+declare const registry: CopyRegistry;
+const result = resolveSiteIdentity(registry, { target: "production", locale: "en" });
+
+if (!result.complete) {
+  for (const issue of result.issues) console.error(issue.field, issue.reason, issue.message);
+} else if (result.identity) {
+  const { name, tagline } = result.identity;
+}
+```
+
+The second argument is `CopyResolveOptions` (`target`, `acceptDelegateInProduction`,
+`now`) plus an optional `locale`, which is passed to the resolver as the
+requested locale of each entry. A malformed options object, or a blank or
+non-string `locale`, is reported as `"invalid-options"` rather than thrown.
+
+The result is all-or-nothing. Both entries are always attempted, and every
+problem is returned in one pass, each `SiteIdentityIssue` tagged with the
+`field` (`"name"` or `"tagline"`) it belongs to. `identity` (the two strings)
+and `resolutions` (each field's `CopyResolution`, with its registry, revision,
+locale, source and approval provenance) are present only when both resolved;
+when either fails neither is returned, so a caller cannot end up with half an
+identity. An issue's `reason` is any `CopyResolveIssueReason`, or one of two
+reasons specific to this kind:
+
+- `"site-identity-placeholder"` — the entry declares placeholders, or its text
+  contains braces the resolver would rewrite. A name and a tagline are literal
+  text, not templates.
+- `"site-identity-blank"` — the resolved text is empty after trimming.
+
+`resolveSiteIdentity` does not modify the registry and returns the same result
+for the same registry and options (pass `now` to fix the clock). Consuming it
+is a separate change: a publisher page-metadata builder is not part of this
+package, and nothing here reads a brand-facts record.
+
+## Messaging kit (`messaging.pitch.*` / `messaging.boilerplate.*`)
+
+The short, medium and long "about us" texts a consumer reuses in press,
+footers and email are a reserved copy kind too: six entries in the same
+`CopyRegistry`, under the ids in `MESSAGING_KIT_COPY_IDS`, in this order:
+
+- `messaging.pitch.one-liner`, `messaging.pitch.elevator`,
+  `messaging.pitch.paragraph`
+- `messaging.boilerplate.short`, `messaging.boilerplate.medium`,
+  `messaging.boilerplate.long`
+
+`resolveMessagingKit` resolves each through `resolveCopyRef`, so the approval
+policy in "Resolving copy for a surface" applies unchanged and there is no
+second text store or approval path. No copy ships in this package; the words
+are the consumer's own.
+
+```ts
+import { resolveMessagingKit, type CopyRegistry } from "@clossys/writer";
+
+declare const registry: CopyRegistry;
+const result = resolveMessagingKit(registry, { target: "production", locale: "en" });
+
+if (!result.complete) {
+  for (const issue of result.issues) console.error(issue.field, issue.reason, issue.message);
+} else if (result.kit) {
+  const { pitch, boilerplate } = result.kit;
+  console.log(pitch.oneLiner, boilerplate.long);
+}
+```
+
+The options are the same as for `resolveSiteIdentity`: `CopyResolveOptions`
+plus an optional `locale`; malformed options are reported as
+`"invalid-options"`, not thrown. The result is all-or-nothing: all six entries
+are attempted, every problem is returned in id order with its `field`
+(`"pitch.oneLiner"` through `"boilerplate.long"`), and `kit` and `resolutions`
+exist only when there are no issues. An issue's `reason` is any
+`CopyResolveIssueReason` (each refusal keeps the resolver's own reason), or
+one of three specific to this kind:
+
+- `"messaging-placeholder"` — the entry declares placeholders, or its text
+  contains braces the resolver would rewrite.
+- `"messaging-blank"` — the resolved text is empty after trimming.
+- `"messaging-ladder-order"` — `countCopyWords` does not strictly increase
+  within a ladder (one-liner, elevator, paragraph; then short, medium, long).
+  It is reported on the later field. The two ladders are not compared with
+  each other, and there are no other word targets.
+
+An FAQ and a tagline are out of scope (`site.tagline` already exists).
+
+## Front-door copy (`front-door.*`)
+
+The words on a sign-in page and the pages around it are a reserved copy kind
+too, so each page does not carry its own. An id is
+`front-door.<state>.<slot>`, where the slot is one of `title`, `description`,
+`label`, `primary`, `secondary`, `notice` or `alt`. This version ships ten
+sign-in ids, listed in `FRONT_DOOR_COPY_IDS` (typed as `FrontDoorKey`), as
+`FRONT_DOOR_COPY_EN`, a `CopyRegistry` with the id `front-door`, locale `en`
+and revision `1`. They are US English:
+
+| Id | Text |
+| --- | --- |
+| `front-door.sign-in.title` | Sign in |
+| `front-door.sign-in.description` | Continue to {surface}. |
+| `front-door.sign-in.label` | Email |
+| `front-door.sign-in.primary` | Continue |
+| `front-door.password.title` | Enter your password |
+| `front-door.password.description` | Signing in as {identifier}. |
+| `front-door.password.label` | Password |
+| `front-door.password.primary` | Sign in |
+| `front-door.password.secondary` | Use a different email |
+| `front-door.identifier-not-found.notice` | We couldn’t find an account for that email. Check it and try again. |
+
+A `{token}` in a text is a noun from the closed set `FRONT_DOOR_NOUNS`:
+`brand`, `surface`, `identifier`, `digest` and `requestAccessLabel` (typed as
+`FrontDoorNoun`; a caller's values are `FrontDoorNouns`). The defaults are
+marked `approved` and carry no approval record: that is the package's own
+statement about shipped defaults, not a consumer's sign-off.
+
+`resolveFrontDoorCopy(key, nouns)` resolves one entry through
+`resolveCopyRef` and never throws. It hands the resolver only the nouns that
+entry declares, so a known noun the entry does not use is dropped. The result
+is `{ complete, text?, resolution?, issues }`; `text` and `resolution` exist
+only when `issues` is empty. An issue's `reason` is one of:
+
+- `"unknown-copy-id"` — the id is not in `FRONT_DOOR_COPY_IDS`.
+- `"missing-noun"` — a noun the entry declares is absent or blank.
+- `"unknown-noun"` — a noun name outside `FRONT_DOOR_NOUNS`.
+
+```ts
+import { resolveFrontDoorCopy } from "@clossys/writer";
+
+const heading = resolveFrontDoorCopy("front-door.password.title", {});
+const line = resolveFrontDoorCopy("front-door.password.description", {
+  identifier: "ana@example.test",
+  brand: "Acme",
+});
+
+if (line.complete) {
+  console.log(heading.text, line.text); // "Enter your password" "Signing in as ana@example.test."
+} else {
+  for (const issue of line.issues) console.error(issue.reason, issue.noun, issue.message);
+}
+```
+
+A site overrides one entry by registering the same id in its own registry and
+resolving it with `resolveCopyRef`; the defaults are the fallback, not a lock.
+Other states and a JSON file of the catalog are not in this version.
 
 ## Delegated approval — who approved this copy, and is it still that text?
 
@@ -248,6 +415,127 @@ a 64-character `sha256` hex digest of that entry's own `text`, computed by
   `"approval-expired"` — an error, mutually exclusive with `"approval-stale"`
   (staleness, the more fundamental problem, takes priority when a record is
   somehow both).
+
+### Production authority from an approved plan
+
+`acceptDelegateInProduction: true` is a bare flag: it records no reason. The
+other way to let a delegate-approved entry resolve on `"production"` is
+`approvalPlan`, the bytes of an Advisor plan record whose own approval covers
+the delegation. The plan declares it in an optional top-level member,
+`delegatedCopyApproval` (`{ "target": "production", "scopes": ["site.home"] }`),
+defined by the plan contract and its
+[digest definition](https://github.com/clossys/foundry/blob/main/docs/contracts/advisor-plan-digest.md);
+the [contract](https://github.com/clossys/foundry/blob/main/docs/contracts/advisor-plan.json)
+and the digest page live in the public repository, not shipped in this
+package. `scopes` is optional; when present it is a non-empty list of copy
+entry-id namespaces (`site.home`, not `site.home.*`). Writer reads no file:
+the caller passes the bytes.
+
+```ts
+import { createCopyResolver, planDelegateCopyAuthority, type CopyRegistry } from "@clossys/writer";
+
+declare const registry: CopyRegistry;
+declare const planBytes: Uint8Array; // the plan file's bytes, read by the caller
+const authority = planDelegateCopyAuthority(planBytes);
+if (!authority.authorized) throw new Error(`plan does not authorize delegate copy: ${authority.refusal}`);
+const resolved = createCopyResolver(registry, { target: "production", approvalPlan: planBytes })({ id: "home.title" });
+const digest = resolved?.approval?.approvedBy === "delegate" ? resolved.approval.authorizingPlanDigest : undefined;
+```
+
+A delegate-approved entry resolves on `"production"` under `approvalPlan` when
+Writer itself has established each of these from the bytes it was given:
+
+- the bytes are strict JSON: valid UTF-8, no byte-order mark, and no key
+  repeated at any depth;
+- the plan they encode passes the plan contract's schema and its code rules
+  R1 to R12 and, for `delegatedCopyApproval`, the schema's own checks (a
+  non-empty `scopes` list of well-formed namespaces, a known `target`, no
+  unknown key). Repeating a scope item is accepted and only redundant;
+- the plan declares `delegatedCopyApproval`;
+- the plan's latest decision by time has chosen `"approved"` and names a
+  `subjectDigest` equal to the canonical digest Writer computed from those
+  same bytes. Decisions that tie at the same instant must all approve and
+  name one digest; a decision time that does not parse authorizes nothing.
+  The digest covers `delegatedCopyApproval` and its `scopes`, so adding,
+  removing or editing either after an approval leaves the plan unapproved
+  for this purpose until a new approval names the new digest;
+- the entry's id is inside the declared `scopes`, when scopes are declared.
+  An entry is inside a scope when its id equals a scope item or starts with
+  `item + "."`, as for a delegate's own scope: `site.home` covers
+  `site.home` and `site.home.title`, not `site.homepage.title`. Without
+  `scopes` the declaration covers every entry. The entry's own
+  `approval.delegate.scope` is enforced as before, so both lists must hold.
+
+`planDelegateCopyAuthority(bytes)` is the pure function that does this. It
+returns a `PlanDelegateCopyAuthority`: `{ authorized: true, planDigest,
+scopes? }` (`scopes` present only when the plan declares them) or
+`{ authorized: false, refusal, violations? }`, where `refusal` is a
+`PlanDelegateCopyRefusal` and `violations` (only with `"plan-invalid"`) lists
+each failed rule and position, never a value. Nothing in the result quotes the
+plan. The refusal codes:
+
+- `"plan-not-bytes"` — the argument is not a `Uint8Array` (a string, a parsed
+  object, a `DataView` and a `Uint16Array` are all refused).
+- `"plan-unreadable"` — the bytes are not strict JSON (invalid UTF-8, a
+  byte-order mark, a syntax error, or a repeated key).
+- `"plan-invalid"` — the plan fails the contract's schema or code rules, which
+  includes a `delegatedCopyApproval` that is malformed, has an empty `scopes`
+  list or an unknown `target`, and a decision time that does not parse.
+- `"delegated-copy-approval-absent"` — the plan does not declare
+  `delegatedCopyApproval`.
+- `"no-decisions"` — the plan has no decisions.
+- `"decision-time-unparseable"` — a decision's time does not parse (a valid
+  plan cannot reach this; it is kept as a second check).
+- `"latest-decision-not-approved"` — a decision at the latest time has not
+  chosen `"approved"`, so a later deferral or rejection withdraws the grant.
+- `"approval-without-subject-digest"` — an approving decision at the latest
+  time names no well-formed `subjectDigest`, so it binds no bytes.
+- `"latest-decisions-disagree"` — decisions tied at the latest time name
+  different digests.
+- `"subject-digest-mismatch"` — the latest approval names a digest other than
+  this plan's own: the plan changed after it, or the approval belongs to
+  another plan.
+
+`resolveCopyRef` adds one more code of its own, in `CopyResolvePlanRefusal`
+(`PlanDelegateCopyRefusal` plus this value): `"entry-outside-plan-scopes"` —
+the plan authorizes delegate copy but its `scopes` do not include the entry.
+
+**What the resolution reports.** `CopyResolution.approval` is a
+`CopyResolutionApproval`: `{ approvedBy: "owner", pendingOwnerReview: false }`
+or `{ approvedBy: "delegate", pendingOwnerReview, authorizingPlanDigest? }`.
+`authorizingPlanDigest` is the plan's canonical digest and is present only when
+an `approvalPlan` authorized the entry on `"production"`. It is absent when
+`acceptDelegateInProduction` authorized it and on `"preview"`, so a
+plan-authorized resolution can be told from a flag-authorized one by whether
+the key is a string.
+
+**Precedence.** An entry's own `"approval-stale"` and `"approval-expired"`
+outrank every plan outcome. `acceptDelegateInProduction: true` together with
+`approvalPlan` is `"invalid-options"`, so two authorities never compete. On
+`"preview"` the plan is accepted and ignored, and no digest is reported; the
+plan is likewise unread for an owner-approved entry or one with no approval
+record. It is evaluated on each call and not cached.
+
+**What this does not prove.**
+
+- Who wrote the decision. Nothing in the file shows that the latest decision is
+  genuine; that depends on where the plan file is committed and who could
+  commit it. Anyone able to write the file can append an approval naming the
+  digest.
+- Where the bytes came from. The plan is caller-supplied bytes, and Writer
+  verifies no provenance. A caller that controls the call could equally pass
+  `acceptDelegateInProduction: true`; the plan route adds a recorded,
+  digest-bound reason, not a boundary against the caller.
+- Any link between the registry and the plan. The plan names no registry,
+  revision or entry fingerprint, so it covers delegate approvals in scope that
+  were recorded before or after the plan's approval. Entry-level staleness and
+  expiry still apply.
+- Expiry. The plan's approval has none: it holds until the file changes or a
+  later decision withdraws it.
+- More than one subject. One latest decision binds one subject, so a decision
+  naming an apply-bundle digest grants nothing here.
+- A narrow grant. A `delegatedCopyApproval` without `scopes` covers every
+  entry; the grant is visible only as the missing member.
 
 ### `writer-check approve` — write or revoke a record
 
@@ -882,6 +1170,21 @@ The root entry point exports the copy registry and traceability surface:
   `CopyEntryCheckResult`, `CopyEntrySkip`, `CopyRecordCheckOptions`,
   `CopyRecordCheckReport`, `CopyRecordFinding`, and
   `CopyRecordWaivedFinding`.
+- Site identity (see above): `resolveSiteIdentity`, `SITE_NAME_COPY_ID`,
+  `SITE_TAGLINE_COPY_ID`, `SITE_IDENTITY_COPY_IDS`, `SiteIdentityField`,
+  `SiteIdentityIssue`, `SiteIdentityIssueReason`, `SiteIdentityOptions`, and
+  `SiteIdentityResolution`.
+- Messaging kit (see above): `resolveMessagingKit`, `MESSAGING_KIT_COPY_IDS`,
+  `MESSAGING_PITCH_ONE_LINER_COPY_ID`, `MESSAGING_PITCH_ELEVATOR_COPY_ID`,
+  `MESSAGING_PITCH_PARAGRAPH_COPY_ID`, `MESSAGING_BOILERPLATE_SHORT_COPY_ID`,
+  `MESSAGING_BOILERPLATE_MEDIUM_COPY_ID`, `MESSAGING_BOILERPLATE_LONG_COPY_ID`,
+  `MessagingKit`, `MessagingKitField`, `MessagingKitIssue`,
+  `MessagingKitIssueReason`, `MessagingKitOptions`, `MessagingKitResolution`,
+  and `MessagingKitResolutions`.
+- Front-door copy (see above): `resolveFrontDoorCopy`, `isFrontDoorCopyId`,
+  `FRONT_DOOR_COPY_EN`, `FRONT_DOOR_COPY_IDS`, `FRONT_DOOR_NOUNS`,
+  `FrontDoorKey`, `FrontDoorNoun`, `FrontDoorNouns`, `FrontDoorCopyIssue`,
+  `FrontDoorCopyIssueReason`, and `FrontDoorCopyResolution`.
 - Translation provenance and fingerprinting (see "Where this package sits
   on i18n" above): `CopyTranslationProvenance`, `computeCopyFingerprint`,
   and `COPY_FINGERPRINT_ALGORITHM`.
@@ -932,6 +1235,10 @@ The root entry point exports the copy registry and traceability surface:
   that write and report on this state, `writer-check approve` and
   `writer-check approval-state`, are CLI-only and not exported from
   `index.ts`.
+- Production authority from an approved plan (see above):
+  `planDelegateCopyAuthority`, `PlanDelegateCopyAuthority`,
+  `PlanDelegateCopyRefusal`, `CopyResolutionApproval`, and
+  `CopyResolvePlanRefusal`.
 
 The voice names described under Public entry points are re-exported from the
 root and from `@clossys/writer/voice`, including the rule-vocabulary

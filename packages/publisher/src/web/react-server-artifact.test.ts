@@ -156,7 +156,7 @@ describe("packed Publisher web React-server boundary", () => {
 
   it("exports the exact same runtime names from the ordinary and react-server targets", () => {
     expect(server.keys).toEqual(normal.keys);
-    expect(server.keys).toEqual(expect.arrayContaining(["CaptureView", "CollectionView", "DocumentView", "SectionedView"]));
+    expect(server.keys).toEqual(expect.arrayContaining(["CaptureView", "CollectionView", "ContactView", "DocumentView", "SectionedView"]));
   });
 
   it("renders the packed SectionedView through server-safe ordered-step and status blocks", () => {
@@ -179,22 +179,25 @@ describe("packed Publisher web React-server boundary", () => {
           "./atoms/server": "./dist/atoms/server.js",
           "./blocks/server": "./dist/blocks/server.js",
           "./shell/server": "./dist/shell/server.js",
+          "./tokens": "./dist/tokens.js",
         },
         files: ["dist"],
       }),
     );
     writeFileSync(
       join(adversarialRoot, "dist", "atoms", "server.js"),
-      "export const Card = ({ children }) => children; export const mergeUiClasses = (...names) => names.filter(Boolean).join(' ');\n",
+      "export const Badge = ({ children }) => children; export const Card = ({ children }) => children; export const mergeUiClasses = (...names) => names.filter(Boolean).join(' ');\n",
     );
     writeFileSync(
       join(adversarialRoot, "dist", "blocks", "server.js"),
-      "export const EmptyState = () => null; export const FeatureGrid = () => null; export const Hero = () => null;\n",
+      "export const EmptyState = () => null; export const FeatureGrid = () => null; export const Hero = () => null; export const PageHeader = () => null;\n",
     );
     writeFileSync(
       join(adversarialRoot, "dist", "shell", "server.js"),
       "export const SiteFooter = () => null; export const SiteHeader = () => null;\n",
     );
+    // Publisher's web entry also reads Designer's token registry; an empty one is enough here.
+    writeFileSync(join(adversarialRoot, "dist", "tokens.js"), "export const TOKENS = {};\n");
 
     const adversarialPacked = join(fixtureRoot, "adversarial-packed");
     const designer023Tarball = packPackage(adversarialRoot, adversarialPacked);
@@ -298,13 +301,14 @@ describe("packed Publisher web React-server boundary", () => {
           "./atoms/server": "./dist/atoms/server.js",
           "./blocks/server": "./dist/blocks/server.js",
           "./shell/server": "./dist/shell/server.js",
+          "./tokens": "./dist/tokens.js",
         },
         files: ["dist"],
       }),
     );
     writeFileSync(
       join(adversarialRoot, "dist", "atoms", "server.js"),
-      "export const Card = ({ children }) => children; export const mergeUiClasses = (...names) => names.filter(Boolean).join(' ');\n",
+      "export const Badge = ({ children }) => children; export const Card = ({ children }) => children; export const mergeUiClasses = (...names) => names.filter(Boolean).join(' ');\n",
     );
     // Every block Publisher's web graph names, at the shape Designer 0.4.7
     // actually ships it — deliberately without `MarketingChapter`, which
@@ -335,6 +339,8 @@ describe("packed Publisher web React-server boundary", () => {
       join(adversarialRoot, "dist", "shell", "server.js"),
       "export const SiteFooter = () => null; export const SiteHeader = () => null;\n",
     );
+    // Publisher's web entry also reads Designer's token registry; an empty one is enough here.
+    writeFileSync(join(adversarialRoot, "dist", "tokens.js"), "export const TOKENS = {};\n");
 
     const adversarialPacked = join(fixtureRoot, "designer-0.4.7-shaped-packed");
     const designer047Tarball = packPackage(adversarialRoot, adversarialPacked);

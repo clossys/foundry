@@ -1,7 +1,6 @@
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
 import { mergeUiClasses } from "@clossys/designer/atoms/server";
 import { EmptyState } from "@clossys/designer/blocks/server";
-import { UI_WIDTH_PROSE_MAX } from "./internal/view-vars.js";
 
 export interface ErrorViewProps extends Omit<HTMLAttributes<HTMLDivElement>, "title"> {
   /**
@@ -20,24 +19,23 @@ export interface ErrorViewProps extends Omit<HTMLAttributes<HTMLDivElement>, "ti
    * `status` above, not this.
    */
   title: ReactNode;
-  /** A line of supporting copy under `title`. Passed straight through to `EmptyState`. */
+  /**
+   * A line of supporting copy under `title`. Passed straight through to
+   * `EmptyState`. A diagnostic reference belongs here as caller copy, for
+   * example `"Something went wrong. Error: 8f2a91c0."`, and any secondary
+   * destination is a text link inside this copy rather than a second control
+   * in `action`.
+   */
   description?: ReactNode;
   /**
-   * Slot for the recovery action — typically a `Button` atom ("Go home",
-   * "Try again"). Passed straight through to `EmptyState`. Optional: a 403
+   * Slot for the ONE primary recovery control — typically a `Button` atom
+   * ("Go home", "Try again"). Passed straight through to `EmptyState`. It
+   * stays a `ReactNode` because template bindings fill it with text; put a
+   * secondary destination in `description` as a text link. Optional: a 403
    * page for a resource the visitor will never regain access to has
    * nowhere useful to send them.
    */
   action?: ReactNode;
-  /**
-   * Slot for technical/diagnostic content — a request id, a stack trace, a
-   * correlation id for support. Rendered inside a native `<details>`,
-   * collapsed by default: this information is for the rare visitor who
-   * needs to report the error, not for the page's primary reading order.
-   */
-  details?: ReactNode;
-  /** Copy-owned label for the technical-details disclosure. Required whenever `details` is supplied. */
-  detailsLabel?: ReactNode;
   /** Merged onto the outer element's inline style, after this component's own. */
   style?: CSSProperties;
 }
@@ -68,15 +66,10 @@ export function ErrorView({
   title,
   description,
   action,
-  details,
-  detailsLabel,
   className,
   style,
   ...rest
 }: ErrorViewProps) {
-  if (details && !detailsLabel) {
-    throw new Error("ErrorView requires detailsLabel whenever details is provided.");
-  }
   return (
     <div
       {...rest}
@@ -88,17 +81,6 @@ export function ErrorView({
     >
       <h1 className="text-display-l font-display text-ink-primary">{status}</h1>
       <EmptyState title={title} description={description} action={action} />
-      {details ? (
-        <details
-          className="mt-lg w-full text-left text-body-s text-ink-muted"
-          style={{ maxWidth: UI_WIDTH_PROSE_MAX }}
-        >
-          <summary className="cursor-pointer text-body-s text-ink-secondary">
-            {detailsLabel}
-          </summary>
-          <div className="mt-sm">{details}</div>
-        </details>
-      ) : null}
     </div>
   );
 }
