@@ -17,7 +17,8 @@
     "publisher-web-route-check": 0,
     "publisher-preview": 0,
     "publisher-seal": 0,
-    "publisher-head-lint": 0
+    "publisher-head-lint": 0,
+    "publisher-site-instantiate": 0
   },
   "fixtures": [
     "assets.json",
