@@ -396,8 +396,9 @@ function checkCondition2(set: RepositoryChangeSet, setup: RepositoryChangeSet, a
   }
   // The one addition: an install set up before the Launcher guide existed has a setup set that wrote none, so the apply set may add it.
   const wrote = new Map(setup.files.filter(isWhole).flatMap((file) => (file.after === null ? [] : [[file.path, file] as const])));
+  // The guide item is matched whole, not by id: an item with the guide's id and another act or source is compared like any other item.
   const mayAddGuide = !setup.items.some((item) => item.id === GUIDE_ITEM_ID) && !wrote.has(AGENTS_GUIDE_PATH);
-  const others = (value: RepositoryChangeSet) => value.items.filter((item) => !isPackageItem(item) && !(mayAddGuide && value === set && item.id === GUIDE_ITEM_ID));
+  const others = (value: RepositoryChangeSet) => value.items.filter((item) => !isPackageItem(item) && !(mayAddGuide && value === set && isGuideItem(item)));
   if (!same(others(set), others(setup))) return refuse("items-differ");
 
   // Every whole file is a no-op over bytes the setup wrote, except the guide add: absent before, the constant text after.
@@ -436,25 +437,34 @@ function checkCondition2(set: RepositoryChangeSet, setup: RepositoryChangeSet, a
 
 const GUIDE_ITEM_ID = "agents-guide";
 
+/** The one item an apply set may add: `{ id: "agents-guide", act: "write-record", source: "agents-guide" }`, and no other field. */
+const isGuideItem = (item: ChangeSetItem): boolean =>
+  same(item, { id: GUIDE_ITEM_ID, act: "write-record", source: "agents-guide" });
+
 // ---------------------------------------------------------------------------
 // K9: condition 3, the base tree
 
 const normalizeName = (name: string): string => name.normalize("NFC").toLowerCase();
 
 /**
- * The guide an apply set adds is added only where the base has nothing there: no file, no directory, and no sibling in `clossys/` that
- * differs from it only in case. Null when the set adds no guide, or the path is clear.
+ * The guide an apply set adds is added only where the base has nothing there in any letter case, as the planner reads it: every root
+ * entry whose name is `clossys` in any case is listed, and none may hold an entry named `agents.md` in any case, file or directory. Null
+ * when the set adds no guide, or the path is clear.
  */
 function checkGuideAbsent(set: RepositoryChangeSet, readers: AdmissionReaders): AdmissionRefusal | null {
   if (!set.files.some((file) => isWhole(file) && file.path === AGENTS_GUIDE_PATH && file.before === null)) return null;
   const entry = guarded(() => readers.baseEntry(AGENTS_GUIDE_PATH), "unreadable" as const);
   if (entry === "unreadable") return refuse("base-unreadable");
   if (entry !== null) return refuse("guide-not-absent");
-  const directory = AGENTS_GUIDE_PATH.slice(0, AGENTS_GUIDE_PATH.lastIndexOf("/"));
-  const names = guarded(() => readers.baseDirectory(directory), "unreadable" as const);
-  if (names === "unreadable") return refuse("base-unreadable");
-  const wanted = normalizeName(AGENTS_GUIDE_PATH.slice(directory.length + 1));
-  if (names !== null && names.some((name) => normalizeName(name) === wanted)) return refuse("guide-not-absent");
+  const slash = AGENTS_GUIDE_PATH.lastIndexOf("/");
+  const [directory, base] = [normalizeName(AGENTS_GUIDE_PATH.slice(0, slash)), normalizeName(AGENTS_GUIDE_PATH.slice(slash + 1))];
+  const roots = guarded(() => readers.baseDirectory(""), "unreadable" as const);
+  if (roots === "unreadable" || roots === null) return refuse("base-unreadable");
+  for (const root of roots.filter((name) => normalizeName(name) === directory)) {
+    const names = guarded(() => readers.baseDirectory(root), "unreadable" as const);
+    if (names === "unreadable") return refuse("base-unreadable");
+    if (names !== null && names.some((name) => normalizeName(name) === base)) return refuse("guide-not-absent");
+  }
   return null;
 }
 

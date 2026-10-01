@@ -787,6 +787,14 @@ describe("the Launcher guide", () => {
       expect(site.files.map((file) => file.path)).not.toContain(GUIDE_PATH);
     });
 
+    // A directory at the guide's path, or the guide's name in another letter case: either is the client's, and the guide is refused.
+    it.each([`${GUIDE_PATH}/x`, "clossys/agents.md"])("a base holding %s refuses the guide", (path) => {
+      const site = applySite({ files: [...siteAfterSetup().files, { path, sha256: sha("the client's\n") }] });
+      expect(validateRepositoryChangeSet(site)).toEqual({ valid: true });
+      expect(guideRefusals(site)).toEqual([{ path: GUIDE_PATH, reason: "unowned-existing", item: "agents-guide" }]);
+      expect(site.files.map((file) => file.path)).not.toContain(GUIDE_PATH);
+    });
+
     it("other reserved paths unchanged", () => {
       const site = applySite();
       expect(site.refused).toEqual([{ path: ADVISOR_SKILL, reason: "unowned-existing", item: "skills" }]);
@@ -841,6 +849,19 @@ describe("the installed-state ledger", () => {
     expect(site.files.find((file) => file.path === LEDGER)).toMatchObject({ invariants: [{ ledgerGeneration: 4 }] });
     // Without a ledger the set is computed over generation 0.
     expect(setFor(run().changeSets, SITE.id).ledger).toEqual({ generation: 0 });
+  });
+
+  it("refuses the guide as deleted where the trusted ledger has its row and the file is gone from disk, and never adds it again", () => {
+    const firstHeld = corpusSet("apply-after-setup");
+    const secondSet = setFor(run(withSite(second, [SETUP_HELD, firstHeld])).changeSets, SITE.id);
+    expect(secondSet.files.find((file) => file.path === AGENTS_GUIDE_PATH)).toMatchObject({ before: null });
+    const third = merged(second, secondSet, readInstalledLedger(second.ledger!), PLAN, "f");
+    expect(ledgerRowAfter(readInstalledLedger(third.ledger!)!, AGENTS_GUIDE_PATH)).toBe(sha(AGENTS_GUIDE_TEXT));
+    const gone = { ...third, files: third.files.filter((file) => file.path !== AGENTS_GUIDE_PATH) };
+    const site = setFor(run(withSite(gone, [SETUP_HELD, firstHeld, secondSet])).changeSets, SITE.id);
+    expect(validateRepositoryChangeSet(site)).toEqual({ valid: true });
+    expect(site.refused).toContainEqual({ path: AGENTS_GUIDE_PATH, reason: "deleted", item: "agents-guide" });
+    expect(site.files.map((file) => file.path)).not.toContain(AGENTS_GUIDE_PATH);
   });
 
   it("updates an owned file whose desired bytes changed, from the bytes the flow last wrote", () => {

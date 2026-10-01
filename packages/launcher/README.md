@@ -732,9 +732,14 @@ in this package).
   existing guide file the ledger does not record is refused as
   `unowned-existing`, and only a setup set adopts one whose bytes are already
   exactly the guide. A repository set up before the guide existed has neither
-  a ledger row nor a file there, so an apply set adds the guide, and admission
-  and the ledger's succession rules accept that one add and no other, only
-  where the ledger has no row for it and nothing is on disk at its path.
+  a ledger row nor a file there, so an apply set adds the guide. The planner
+  adds it only where the trusted ledger has no row for it and nothing, file or
+  directory, is at its path in any letter case. Admission accepts that one
+  add and no other only where the setup set wrote no guide and the base tree
+  at the set's base commit holds nothing at its path in any letter case. The
+  ledger's succession rule S3 reads the two ledgers, not the tree: it accepts
+  the one new row only where the base ledger has none at that path, with mode
+  `100644` and the digest of `AGENTS_GUIDE_TEXT` as its `after`.
   `verify` compares the head's bytes with the set's digest
   and with `verifyAgentsGuide()`; any difference is `diverged`, and `status`
   reports it as `agents-guide-mismatch`, printing only that token and the pull
@@ -1202,7 +1207,11 @@ sets.
   approval, only when all of the following hold: it has the same plan digest
   and the approving decision is still the latest; its package acts equal the
   setup set's by plan item, it defers nothing, has the same `producer`, and
-  every whole-file entry is a no-op; and the base's trusted ledger ends with
+  every whole-file entry is a no-op except the Launcher guide's add (the
+  `agents-guide` item and its file, before null and after the guide's digest,
+  only where the setup set wrote no guide and the base tree at the set's base
+  commit holds nothing at its path in any letter case); and the base's
+  trusted ledger ends with
   that setup set, bound `approved` to the same subject, with every byte the
   setup set wrote present in the base by content, so a squash or rebase merge
   is admitted. The setup set must itself be a member of the approved bundle,

@@ -1390,6 +1390,36 @@ describe("an install set up before the Launcher guide existed", () => {
     for (const [label, edit] of held) expect(run(w, {}, { tree: withTree(w, edit) }), label).toEqual(aa("guide-not-absent"));
   });
 
+  it("refuses the guide add where the base holds the guide under a root or a name that differs only in letter case", () => {
+    // The planner reads presence case-insensitively across the whole path. Here K9 refuses the root variant first, because every setup set
+    // writes under clossys/ and a sibling root that differs only in case is base-case-variant; the guide's own check refuses it too.
+    const w = guideWorld();
+    expect(w.tree.has(LEDGER_PATH)).toBe(true);
+    const encoded = new TextEncoder().encode("a client file\n");
+    for (const path of ["Clossys/AGENTS.md", "CLOSSYS/agents.md", "Clossys/AGENTS.md/inner.md"]) {
+      expect(run(w, {}, { tree: withTree(w, (tree) => void tree.set(path, { mode: "100644", bytes: encoded })) }), path).toEqual(aa("base-case-variant"));
+    }
+  });
+
+  it("refuses an item that only looks like the guide's: the same id with another act or source", () => {
+    // The change-set contract (C9) binds each item to the paths its act writes, so a look-alike that still names the guide's file is refused
+    // before admission compares items; admission's own filter matches the guide item whole as well.
+    for (const lookalike of [
+      { id: "agents-guide", act: "write-record", source: "engagement-brief" },
+      { id: "agents-guide", act: "write-record", source: "agents-pointer" },
+      { id: "agents-guide", act: "add-ci-template" },
+    ]) {
+      const w = world({
+        editApply: (a, texts) => {
+          addGuide(a, texts);
+          a.items = a.items.map((item: Loose) => (item.id === "agents-guide" ? clone(lookalike) : item));
+          normalize(a);
+        },
+      });
+      expect(run(w), JSON.stringify(lookalike)).toEqual({ state: "refused", exitCode: 2, reason: "change-set-invalid" });
+    }
+  });
+
   it("refuses the guide add when its bytes are not the constant text, and the contract itself refuses it as a link", () => {
     const w = guideWorld({ after: contentDigest("another guide\n") });
     expect(validateRepositoryChangeSet(w.apply)).toEqual({ valid: true });

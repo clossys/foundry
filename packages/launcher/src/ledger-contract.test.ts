@@ -5,6 +5,8 @@ import { PLAN_CONTRACTS } from "./generated/plan-contracts.generated.js";
 import type { ApprovalBinding, RepositoryChangeSet } from "./change-set-contract.js";
 import { LEDGER_MEMBER_ORDER, installedLedgerViolations, ledgerSuccession, readInstalledLedger, serializeInstalledLedger, validateInstalledLedger } from "./ledger-contract.js";
 import { trustInstalledLedger } from "./ledger-trust.js";
+import { AGENTS_GUIDE_TEXT } from "./agents-guide.js";
+import { contentDigest } from "./change-set-contract.js";
 import type { InstalledLedger } from "./ledger-contract.js";
 
 /*
@@ -287,7 +289,9 @@ describe("ledger succession (a pull request's head against its base)", () => {
       return head;
     };
     const lastChangeSet = () => ledger("admitted-generation-2").history.at(-1)!.changeSet;
-    const guideRow = (patch: Loose = {}) => ({ path: GUIDE, mode: "100644", after: sha("the guide\n"), changeSet: lastChangeSet(), ...patch });
+    /** The digest of the guide's bytes: the only after S3 accepts for the added row. */
+    const GUIDE_AFTER = contentDigest(AGENTS_GUIDE_TEXT);
+    const guideRow = (patch: Loose = {}) => ({ path: GUIDE, mode: "100644", after: GUIDE_AFTER, changeSet: lastChangeSet(), ...patch });
     const check = (head: Loose, base: InstalledLedger = ledger("setup-generation-1")) => ledgerSuccession(toBytes(text(base)), toBytes(text(head)));
 
     it("admits a generation that also adds the guide's files row, written by that generation, and nothing else", () => {
@@ -299,10 +303,21 @@ describe("ledger succession (a pull request's head against its base)", () => {
       const description = LEDGER.description as string;
       const render = description.slice(description.indexOf("RENDER."), description.indexOf("CODE RULES"));
       const succession = description.slice(description.indexOf("SUCCESSION,"));
-      expect(render).toContain("the only file with a before of null that RENDER writes a row for is the Launcher guide (path clossys/AGENTS.md, mode 100644)");
-      expect(succession).toContain("head.files equal base's or add exactly one row and drop none, the row for clossys/AGENTS.md with mode 100644");
+      expect(render).toContain(`the only file with a before of null that RENDER writes a row for is the Launcher guide (path clossys/AGENTS.md, mode 100644, after ${GUIDE_AFTER}, the digest of the guide's bytes)`);
+      expect(render).toContain("only where a previous ledger P exists and holds no row at that path in any letter case");
+      expect(succession).toContain(`head.files equal base's or add exactly one row and drop none, the row for clossys/AGENTS.md with mode 100644, after ${GUIDE_AFTER}`);
       expect(succession).toContain("changes no other row, apart from that one files row");
       expect(description.match(/clossys\/AGENTS\.md/g)).toHaveLength(2);
+      // The contract names the guide's bytes by one digest, and it is the digest of the text this package writes.
+      expect([...new Set(description.match(/after (sha256:[0-9a-f]{64})/g))]).toEqual([`after ${GUIDE_AFTER}`]);
+    });
+
+    it("refuses the guide row when its after is not the digest of the guide's bytes", () => {
+      for (const after of [sha("the guide\n"), sha(`${AGENTS_GUIDE_TEXT}\n`), sha(AGENTS_GUIDE_TEXT.replace(/\n/g, "\r\n"))]) {
+        const result = check(headWith([guideRow({ after })]));
+        expect(result.violations.map(label), after).toContain("S3");
+        expect(result.admission, after).toBeNull();
+      }
     });
 
     it("refuses an admitted generation that adds a files row at any other path", () => {
