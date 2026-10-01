@@ -309,9 +309,14 @@ The gate is closed by construction:
   routes and the not-authorized route) is `Cache-Control: private, no-store`
   and `Vary: Cookie, Authorization`, whatever `next` returned: a `public` or
   `s-maxage` value is replaced and any existing `Vary` value is kept. A path
-  `isPublicPath` approves is left as `next` rendered it. A shared cache or
-  CDN therefore cannot keep a protected page and serve it to a signed-out
-  visitor.
+  `isPublicPath` approves is left as `next` rendered it. CDN-specific cache
+  headers (every `CDN-Cache-Control` variant, such as
+  `Vercel-CDN-Cache-Control`, and `Surrogate-Control`) are removed from those
+  gated responses too. A shared cache or CDN therefore cannot keep a protected
+  page and serve it to a signed-out visitor. The header guarantee holds only
+  for the response `next` returns to the gate; a framework that rewrites cache
+  headers after the proxy runs is outside it. The downstream router must route
+  on the same `Request` URL the gate saw.
 - `isPermitted` is required and only the answer `true` permits; a throw or any
   other answer denies. There is no permit-everyone default.
 - Every absolute URL in a response comes from `origin`, `siblingOrigins` and

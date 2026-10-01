@@ -339,7 +339,8 @@ export function createGatedHostGate<P = unknown>(options: GatedHostGateOptions<P
      * Renders `next`; a throw or a non-Response becomes a 503, and `status`
      * overrides the rendered one. A gated pass-through (anything but a public
      * path) is always `private, no-store` and varies on credentials, whatever
-     * `next` set, so a shared cache cannot keep it for a signed-out visitor.
+     * `next` set, and loses `Surrogate-Control` and every `*CDN-Cache-Control`
+     * header, so a shared cache cannot keep it for a signed-out visitor.
      */
     const render = async (providerUnavailable: boolean, status?: number, gated = true): Promise<Response> => {
       try {
@@ -349,6 +350,10 @@ export function createGatedHostGate<P = unknown>(options: GatedHostGateOptions<P
         if (status === 503) response.headers.set("Retry-After", retryAfter);
         applyGatedHostHeaders(response, gated ? { noStore: true } : undefined);
         if (gated) {
+          for (const name of [...response.headers.keys()]) {
+            const lower = name.toLowerCase();
+            if (lower === "surrogate-control" || lower.endsWith("cdn-cache-control")) response.headers.delete(name);
+          }
           response.headers.set("Cache-Control", NO_STORE_PRIVATE);
           varyByCredentials(response.headers);
         }

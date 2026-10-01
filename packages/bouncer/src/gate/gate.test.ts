@@ -607,6 +607,44 @@ describe("review fixes: shared caches never keep a gated pass-through", () => {
     expectPrivate(res, "Cookie, Authorization");
   });
 
+  const cdnHeaders = () =>
+    new Response("page", {
+      status: 200,
+      headers: {
+        "Cache-Control": "public, s-maxage=31536000",
+        "CDN-Cache-Control": "public, max-age=31536000",
+        "Vercel-CDN-Cache-Control": "public, max-age=31536000",
+        "Surrogate-Control": "max-age=31536000",
+      },
+    });
+  const expectNoCdnHeaders = (res: Response) => {
+    expect(res.headers.get("cdn-cache-control")).toBeNull();
+    expect(res.headers.get("vercel-cdn-cache-control")).toBeNull();
+    expect(res.headers.get("surrogate-control")).toBeNull();
+    expectPrivate(res, "Cookie, Authorization");
+  };
+
+  it("removes CDN-specific cache headers from a permitted pass-through", async () => {
+    expectNoCdnHeaders(await gate(admin)(req("/reports", html), cdnHeaders));
+  });
+
+  it("removes CDN-specific cache headers from a sign-in pass-through", async () => {
+    for (const state of [signedOut, admin, viewer]) expectNoCdnHeaders(await gate(state)(req("/sign-in", html), cdnHeaders));
+  });
+
+  it("removes CDN-specific cache headers from the not-authorized page", async () => {
+    const res = await gate(viewer)(req("/not-authorized", html), cdnHeaders);
+    expect(res.status).toBe(403);
+    expectNoCdnHeaders(res);
+  });
+
+  it("leaves CDN-specific cache headers on a public path", async () => {
+    const res = await gate(signedOut, { isPublicPath: (p) => p === "/health" })(req("/health"), cdnHeaders);
+    expect(res.headers.get("cdn-cache-control")).toBe("public, max-age=31536000");
+    expect(res.headers.get("vercel-cdn-cache-control")).toBe("public, max-age=31536000");
+    expect(res.headers.get("surrogate-control")).toBe("max-age=31536000");
+  });
+
   it("does not repeat a Vary value next already set, in any case, and keeps Vary: *", async () => {
     expectPrivate(await gate(admin)(req("/r", html), cacheable("cookie, Accept-Language")), "cookie, Accept-Language, Authorization");
     expectPrivate(await gate(admin)(req("/r", html), cacheable("*")), "*");
