@@ -3,10 +3,11 @@
  * without Next.js.
  *
  * `packReviewGate` is the one gate for both: it is open only when
- * `SITE_TARGET` is `development` or `test` and the hosting environment
- * (`VERCEL_ENV`) is absent or `development`. It never throws: a `SITE_TARGET`
- * that is absent, unlisted or unknown is closed, so the caller ends in
- * `notFound` and never in a 500 raised here.
+ * `SITE_TARGET` is `development` or `test`, the hosting environment
+ * (`VERCEL_ENV`) is absent or `development`, and `NODE_ENV` is absent,
+ * `development` or `test`. It never throws: a `SITE_TARGET` that is absent,
+ * unlisted or unknown is closed, so the caller ends in `notFound` and never
+ * in a 500 raised here.
  *
  * `resolvePackReviewPage` and `resolvePackReviewExport` check the gate first
  * and return `not-found` before they call any loader, so a closed gate reads
@@ -31,21 +32,28 @@ export type PackReviewPageModel =
   | { kind: "unavailable" }
   | { kind: "review"; pages: PackReviewViewPage[]; exports: PackReviewViewExport[] };
 
-/** The process environment, or a stand-in: only `SITE_TARGET` and `VERCEL_ENV` are read. */
+/** The process environment, or a stand-in: only `SITE_TARGET`, `VERCEL_ENV` and `NODE_ENV` are read. */
 export type PackReviewEnv = Readonly<Record<string, string | undefined>>;
 
 /** The hosting values that mean a real deployment; `VERCEL_ENV` is also closed for any value that is not `development`. */
 const HOSTED_ENVIRONMENTS: readonly string[] = ["production", "preview"];
 
+/** The `NODE_ENV` values that may serve the review; absent is allowed too, and every other value (an empty string included) is closed. */
+const DEVELOPMENT_NODE_ENVS: readonly string[] = ["development", "test"];
+
 /**
- * Whether the review may be served at all. Both must hold: `SITE_TARGET` is
- * `development` or `test` (`packReviewAvailable`), and `VERCEL_ENV` is absent
+ * Whether the review may be served at all. All three must hold: `SITE_TARGET`
+ * is `development` or `test` (`packReviewAvailable`); `VERCEL_ENV` is absent
  * or `development`, so a deployment that carries a development `SITE_TARGET`
- * by mistake still refuses on `production` and `preview`. Any other
- * `VERCEL_ENV` value is closed too, and a `SITE_TARGET` that
- * `resolveSiteTarget` refuses is closed, not an error.
+ * by mistake still refuses on `production` and `preview`; and `NODE_ENV` is
+ * absent, `development` or `test`, so a self-hosted production build, which
+ * sets no `VERCEL_ENV`, refuses too. Any other `VERCEL_ENV` or `NODE_ENV`
+ * value is closed, and a `SITE_TARGET` that `resolveSiteTarget` refuses is
+ * closed, not an error.
  */
 export function packReviewGate(env: PackReviewEnv): boolean {
+  const mode = env["NODE_ENV"];
+  if (mode !== undefined && !DEVELOPMENT_NODE_ENVS.includes(mode)) return false;
   const hosting = env["VERCEL_ENV"];
   if (hosting !== undefined && (HOSTED_ENVIRONMENTS.includes(hosting) || hosting !== "development")) return false;
   try {
