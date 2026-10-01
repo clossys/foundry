@@ -3836,7 +3836,7 @@ sets the base ink, and `SiteHeader` still sets none, so its content inherits
 its ink from the page. `ground` still defaults to
 `"base"`, and `"base"` and `"inverse"` render the same markup as before.
 `Shell.Header` and `Shell.Footer` keep `"base" | "inverse"`: passing
-`"transparent"` to either is a type error.
+`"transparent"` or `"transparent-inverse"` to either is a type error.
 
 ```tsx
 import { SiteFooter, SiteHeader } from "@clossys/designer/shell";
@@ -3861,9 +3861,33 @@ the full viewport width, inset only by the `--ui-width-page-padding-x` token;
 page content stays in `Shell.Main`'s container. A test pins this for every
 ground.
 
-`transparent` does not check the contrast of the chrome ink over whatever
-sits beneath it. That is the consumer's backdrop's job: choose a backdrop the
-base ink reads against, or use `ground="inverse"` over a dark one.
+`ground="transparent-inverse"` is the same no-plate, no-border chrome for a
+page that is itself on the inverse ground (`bg-surface-inverse` with
+`text-ink-on-inverse`). `SiteFooter` sets `text-ink-on-inverse` on the footer
+and `text-ink-on-inverse-muted` on its `secondary` row, the ink the
+`"inverse"` plate uses; `SiteHeader` renders exactly as it does for
+`"transparent"`, since it sets no ink and inherits the page's.
+
+```tsx
+import { SiteFooter, SiteHeader } from "@clossys/designer/shell";
+
+export function InverseChrome() {
+  return (
+    <div className="bg-surface-inverse text-ink-on-inverse">
+      <SiteHeader ground="transparent-inverse" brand={<a href="/">Example Co</a>} />
+      <SiteFooter
+        ground="transparent-inverse"
+        secondary={<SiteFooter.Legal entity="Example Co" links={[{ label: "Privacy", href: "/privacy" }]} />}
+      />
+    </div>
+  );
+}
+```
+
+Neither transparent ground checks the contrast of the chrome ink over
+whatever sits beneath it. That is the consumer's backdrop's job: choose a
+backdrop the base ink reads against, use `"transparent-inverse"` over the
+inverse ground, or use `ground="inverse"` for an opaque dark band.
 
 ### `Brandmark`
 

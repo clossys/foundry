@@ -20,8 +20,10 @@ export interface SiteFooterProps extends Omit<HTMLAttributes<HTMLElement>, "chil
    * Semantic plate for the footer bar — `inverse` paints the same
    * surface/ink tokens grounded marketing blocks use; `transparent` paints
    * no plate, no border and no divider between `columns` and `secondary`
-   * (ink stays the base ink; the consumer's backdrop owns contrast). Do not
-   * reconstruct the plate with host `className` utilities.
+   * (ink stays the base ink; the consumer's backdrop owns contrast);
+   * `transparent-inverse` paints the same nothing with the inverse ink, for a
+   * footer over a page on the inverse ground. Do not reconstruct the plate
+   * with host `className` utilities.
    * @default "base"
    */
   ground?: SiteChromeGround;

@@ -1,7 +1,14 @@
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
 import { mergeUiClasses } from "@clossys/designer/atoms/server";
+import { SECTION_GROUND_CLASSES } from "@clossys/designer/blocks/server";
 import { SiteFooter, SiteHeader } from "@clossys/designer/shell/server";
 import type { SiteFooterLegalProps } from "@clossys/designer/shell/server";
+
+/** The page's ground: `base` keeps the ambient surface and the base ink; `inverse` paints the inverse surface with the on-inverse ink. */
+export type LandingViewGround = "base" | "inverse";
+
+/** The footer's plate: `transparent` paints none; `surface` paints the base chrome plate with a hairline on its top edge. */
+export type LandingViewFooter = "transparent" | "surface";
 
 export interface LandingViewProps extends Omit<HTMLAttributes<HTMLDivElement>, "children"> {
   /** Persistent site identity, rendered in the page banner. A slot: consumers typically pass a `Brandmark`. */
@@ -33,6 +40,20 @@ export interface LandingViewProps extends Omit<HTMLAttributes<HTMLDivElement>, "
   backdrop?: ReactNode;
   /** The legal row, passed straight to `SiteFooter.Legal`. Every visible word in it comes from these props. */
   legal: SiteFooterLegalProps;
+  /**
+   * The page's ground. `"inverse"` paints the inverse surface on the page
+   * root and gives the banner, hero and footer the on-inverse ink; the banner
+   * and a transparent footer stay plate-less over the backdrop.
+   * @default "base"
+   */
+  ground?: LandingViewGround;
+  /**
+   * The footer's plate. `"surface"` paints Designer's base chrome plate
+   * across the full width, with a hairline on its top edge only and the base
+   * ink, above the backdrop. The banner is unaffected.
+   * @default "transparent"
+   */
+  footer?: LandingViewFooter;
   style?: CSSProperties;
 }
 
@@ -43,13 +64,16 @@ export interface LandingViewProps extends Omit<HTMLAttributes<HTMLDivElement>, "
  * What it guarantees: one banner, one main and one contentinfo landmark; the
  * `heading` as the page's only `<h1>`; a call to action in the banner alone
  * unless `heroAction` is supplied; a backdrop that is inert to assistive
- * technology and to the pointer; header, footer and legal row that carry no
- * background, border or width cap, so chrome content runs the full viewport
- * width; and copy that comes only from props (there is no built-in wording).
+ * technology and to the pointer; a header, and unless `footer` is
+ * `"surface"` a footer and legal row, that carry no background, border or
+ * width cap, so chrome content runs the full viewport width; ink for every
+ * text role taken from Designer's ground classes for `ground`; and copy that
+ * comes only from props (there is no built-in wording).
  *
  * What it does not do: check the contrast of the page ink over the backdrop,
- * and it does not make anything a consumer places inside the backdrop
- * unfocusable. Both belong to the consumer's backdrop.
+ * restyle the actions a consumer passes in (a call to action carries its own
+ * treatment), or make anything a consumer places inside the backdrop
+ * unfocusable. Those belong to the consumer.
  */
 export function LandingView({
   brand,
@@ -62,15 +86,19 @@ export function LandingView({
   align = "center",
   backdrop,
   legal,
+  ground = "base",
+  footer = "transparent",
   className,
   style,
   ...rest
 }: LandingViewProps) {
   const centred = align === "center";
+  const ink = SECTION_GROUND_CLASSES[ground];
+  const chromeGround = ground === "inverse" ? "transparent-inverse" : "transparent";
   return (
     <div
       {...rest}
-      className={mergeUiClasses("relative flex min-h-dvh flex-col text-ink-primary", className)}
+      className={mergeUiClasses("relative flex min-h-dvh flex-col", ink.surface, ink.primary, className)}
       style={style}
     >
       {backdrop ? (
@@ -78,17 +106,17 @@ export function LandingView({
           {backdrop}
         </div>
       ) : null}
-      <SiteHeader ground="transparent" brand={brand} actions={headerAction} />
+      <SiteHeader ground={chromeGround} brand={brand} actions={headerAction} />
       <main className="relative flex flex-1 flex-col items-center justify-center px-lg py-2xl">
         <div className={mergeUiClasses("flex w-full flex-col gap-md", centred ? "items-center text-center" : "items-start text-start")}>
-          {eyebrow ? <p className="text-caption uppercase tracking-label text-ink-muted">{eyebrow}</p> : null}
-          <h1 className="text-display-l font-display text-ink-primary">{heading}</h1>
-          {description ? <p className="text-body-l max-w-display text-ink-secondary">{description}</p> : null}
+          {eyebrow ? <p className={`text-caption uppercase tracking-label ${ink.muted}`}>{eyebrow}</p> : null}
+          <h1 className={`text-display-l font-display ${ink.primary}`}>{heading}</h1>
+          {description ? <p className={`text-body-l max-w-display ${ink.secondary}`}>{description}</p> : null}
           {heroAction ? <div className="flex flex-wrap items-center gap-sm">{heroAction}</div> : null}
           {media ? <div className="w-full max-w-display">{media}</div> : null}
         </div>
       </main>
-      <SiteFooter ground="transparent" secondary={<SiteFooter.Legal {...legal} />} />
+      <SiteFooter ground={footer === "surface" ? "base" : chromeGround} secondary={<SiteFooter.Legal {...legal} />} />
     </div>
   );
 }

@@ -835,8 +835,8 @@ staged and is not part of these publisher shells.
 `LandingView`, exported from `@clossys/publisher/web`, is a single-screen
 landing page: a transparent banner, one hero centred both ways, and a
 transparent legal footer, over an optional backdrop. It is server-safe (it
-imports only Designer's `/shell/server` and `/atoms/server` barrels) and ships
-no wording of its own: every visible word comes from a prop.
+imports only Designer's `/shell/server`, `/atoms/server` and `/blocks/server`
+barrels) and ships no wording of its own: every visible word comes from a prop.
 
 ```tsx
 import { LandingView } from "@clossys/publisher/web";
@@ -871,15 +871,62 @@ Props, in addition to the standard `div` attributes (minus `children`) and `styl
   with `aria-hidden="true"` and `pointer-events-none`. It is absent from the
   markup when not supplied.
 - `legal`: the props of Designer's `SiteFooter.Legal`, passed straight through.
+- `ground` (`LandingViewGround`: `"base"` or `"inverse"`, default `"base"`): the
+  page's ground. Unlike the `ground` on the other views, which sets only the
+  header and footer plate, this one sets the ground of the whole page.
+  `"inverse"` paints `bg-surface-inverse` on the page root and gives every text
+  role the on-inverse ink from Designer's `SECTION_GROUND_CLASSES`:
+  `text-ink-on-inverse` on the root (which the banner inherits) and the heading,
+  `text-ink-on-inverse-muted` on the eyebrow and the description. The header and
+  footer get Designer's `ground="transparent-inverse"`, so they stay plate-less
+  over the backdrop and the footer's legal row takes
+  `text-ink-on-inverse-muted`.
+- `footer` (`LandingViewFooter`: `"transparent"` or `"surface"`, default
+  `"transparent"`): the footer's plate. `"surface"` gives the footer Designer's
+  `ground="base"` plate (`bg-surface-raised` with the base ink) across the full
+  width, with a hairline on its top edge only, stacked above the backdrop. The
+  banner and the hero are unchanged, on either `ground`.
+
+```tsx
+import { LandingView } from "@clossys/publisher/web";
+
+declare const brand: React.ReactNode; // the caller's brand mark, for example a Designer `Brandmark`
+declare const backdrop: React.ReactNode; // a dark visual, for example a scrimmed image
+declare const Link: React.FC<{ href: string; buttonVariant: "primary"; children: React.ReactNode }>; // Designer's `Link`, from its `/atoms` barrel
+
+export function DarkHomePage() {
+  return (
+    <LandingView
+      brand={brand}
+      headerAction={
+        <Link href="/start" buttonVariant="primary">
+          Start
+        </Link>
+      }
+      heading="A page that says one thing"
+      backdrop={backdrop}
+      ground="inverse"
+      footer="surface"
+      legal={{ entity: "Example Co", links: [{ label: "Privacy", href: "/privacy" }] }}
+    />
+  );
+}
+```
 
 What it guarantees: one banner, one main and one contentinfo landmark; one
-`<h1>`; a header and footer with `ground="transparent"`, so they carry no
-background, border or width cap and run the full viewport width; and text that
-comes only from props.
+`<h1>`; a backdrop that is `aria-hidden` and takes no pointer events; a header,
+and unless `footer` is `"surface"` a footer, with a transparent Designer
+ground, so they carry no background, border or width cap and run the full
+viewport width; and text that comes only from props. These hold for every
+`ground` and `footer`, and with both left at their defaults the markup is the
+same as before they existed.
 
 What it does not do: check the contrast of the page ink over your backdrop
-(that contract is issue #1523), or make anything you put inside the backdrop
-unfocusable. Keep focusable content out of `backdrop`.
+(that contract is issue #1523), restyle the actions you pass in, or make
+anything you put inside the backdrop unfocusable. On `"inverse"`, pass a call
+to action that carries its own fill, such as a `primary` Designer `Button` or
+`Link`; a bare link inherits the on-inverse ink. Keep focusable content out of
+`backdrop`.
 
 ### `ContactView`
 

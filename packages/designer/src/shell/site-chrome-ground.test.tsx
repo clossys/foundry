@@ -109,6 +109,49 @@ describe("site chrome: transparent ground", () => {
   });
 });
 
+describe("site chrome: transparent-inverse ground", () => {
+  const cases: ReadonlyArray<readonly [string, React.ReactElement]> = [
+    ["SiteHeader", <SiteHeader ground="transparent-inverse" brand={brand} nav={<nav>Nav</nav>} actions={<button type="button">Go</button>} />],
+    ["SiteFooter with columns", <SiteFooter ground="transparent-inverse" columns={columns} secondary={<span>Legal</span>} />],
+    ["SiteFooter without columns", <SiteFooter ground="transparent-inverse" secondary={<span>Legal</span>} />],
+    ["SiteFooter with the legal row", <SiteFooter ground="transparent-inverse" columns={columns} secondary={legal} />],
+  ];
+
+  for (const [name, node] of cases) {
+    it(`${name} renders no bg-* class, no border-* class and no border-width style`, () => {
+      const { classes, styles } = paint(html(node));
+      expect(classes.filter((c) => /(^|:)bg-/.test(c))).toEqual([]);
+      expect(classes.filter((c) => /(^|:)border(-|$)/.test(c))).toEqual([]);
+      expect(styles).not.toMatch(/border/i);
+      expect(styles).not.toMatch(/background/i);
+    });
+  }
+
+  it("carries the inverse ink on the footer and its secondary row, and no base ink", () => {
+    const host = document.createElement("div");
+    host.innerHTML = html(<SiteFooter ground="transparent-inverse" columns={columns} secondary={legal} />);
+    const footer = host.querySelector("footer")!;
+    expect(footer.classList).toContain("text-ink-on-inverse");
+    expect(footer.querySelector("nav")!.closest("footer > div > div")!.classList).toContain("text-ink-on-inverse-muted");
+    const { classes } = paint(host.innerHTML);
+    expect(classes.filter((c) => /^text-ink-(primary|secondary|muted)$/.test(c))).toEqual([]);
+  });
+
+  it("differs from transparent only in the footer's two ink classes", () => {
+    const transparent = html(<SiteFooter ground="transparent" columns={columns} secondary={legal} />);
+    const inverse = html(<SiteFooter ground="transparent-inverse" columns={columns} secondary={legal} />);
+    expect(inverse).toBe(
+      transparent.replace("text-ink-primary", "text-ink-on-inverse").replace("text-ink-secondary", "text-ink-on-inverse-muted"),
+    );
+  });
+
+  it("renders the header exactly as transparent does, since the header sets no ink", () => {
+    const header = (ground: "transparent" | "transparent-inverse") =>
+      html(<SiteHeader ground={ground} brand={brand} nav={<nav>Nav</nav>} actions={<button type="button">Go</button>} />);
+    expect(header("transparent-inverse")).toBe(header("transparent"));
+  });
+});
+
 describe("site chrome: full width", () => {
   const inners = (markup: string) => {
     const host = document.createElement("div");
@@ -116,7 +159,7 @@ describe("site chrome: full width", () => {
     return Array.from(host.querySelectorAll("*"));
   };
 
-  for (const ground of ["base", "inverse", "transparent"] as const) {
+  for (const ground of ["base", "inverse", "transparent", "transparent-inverse"] as const) {
     it(`carries no max-w-* class and no maxWidth style anywhere (${ground})`, () => {
       const markup =
         html(<SiteHeader ground={ground} brand={brand} nav={<nav>Nav</nav>} actions={<span>Act</span>} />) +

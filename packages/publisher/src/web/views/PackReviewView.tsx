@@ -68,7 +68,7 @@ export interface PackReviewViewProps {
    * `SiteFooter`.
    * @default "base"
    */
-  ground?: SiteHeaderProps["ground"];
+  ground?: import("../internal/viewChromeGround.js").ViewChromeGround;
   heading: ReactNode;
   description: ReactNode;
   pages: readonly PackReviewViewPage[];
