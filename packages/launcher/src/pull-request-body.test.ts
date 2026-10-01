@@ -273,6 +273,7 @@ describe("renderPullRequest: the longest package item id", () => {
   const OWNER = `e${"x".repeat(38)}`;
   const REPOSITORY = `${OWNER}/${"r".repeat(100)}`;
   const PACKAGE = `@example/w${"z".repeat(204)}`;
+  const VERSION = "0.7.0";
   const longest = (): RepositoryChangeSet =>
     mutateSet(world.apply, (draft) => {
       const text = JSON.stringify(draft)
@@ -293,7 +294,7 @@ describe("renderPullRequest: the longest package item id", () => {
     expect(id).toHaveLength(355);
     expect(set.items.some((item) => item.id === id)).toBe(true);
     const out = rendered(set, APPROVED_APPLY);
-    expect(out.body).toContain(`- \`${id}\` \`install\` \`${PACKAGE}@0.7.0\`\n`);
+    expect(out.body).toContain(`- \`${id}\` \`install\` \`${PACKAGE}@${VERSION}\`\n`);
   });
 });
 

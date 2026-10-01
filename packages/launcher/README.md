@@ -337,7 +337,7 @@ launcher-apply-plan plan
 launcher-apply-plan materialize --repo ./site-checkout
 launcher-apply-plan verify --repo ./site-checkout
 launcher-apply-plan status --repo ./site-checkout
-launcher-apply-plan body --repo example-owner/example-site --task-record 12
+launcher-apply-plan body --repo "<id>" --task-record 12
 launcher-apply-plan snapshot --request package-request.json
 ```
 
@@ -1290,11 +1290,12 @@ nothing else, then records the `bodySha256` of exactly the bytes it printed as
 the set's `pullRequest.bodySha256`. Open the pull request from that output.
 
 ```bash
-launcher-apply-plan body --repo example-owner/example-site --task-record 12 --supersedes 9
+launcher-apply-plan body --repo "<id>" --task-record 12 --supersedes 9
 ```
 
-`<id>` in the usage lines is the repository's id, `owner/name`; in a shell, type
-the id itself, because a literal `<id>` is read as a redirection.
+`<id>` is the repository's id, `owner/name`. It is quoted in the examples because
+an unquoted `<id>` pasted into a shell is read as a redirection; replace the
+whole quoted word with the id.
 
 The approval the body shows is what the hub decides at the time of the run, as
 `materialize` decides it, from the plan committed at the hub's HEAD: it is never
