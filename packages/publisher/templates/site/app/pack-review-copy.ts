@@ -2,16 +2,20 @@
  * The words on the dev-only pack-review page, as one catalog-shaped constant.
  *
  * The rest of this template holds copy ids and no wording; these entries are
- * the exception, and a temporary one. They follow the Writer front-door id
- * grammar (`front-door.<state>.<slot>`) so that each can move into Writer's
- * `frontDoor.*` catalog under the same id once that catalog carries a
- * pack-review state; until then this is the single place the page's words live.
+ * the exception. They follow the Writer front-door id grammar
+ * (`front-door.<state>.<slot>`) and use no `{token}` placeholder, so each
+ * entry satisfies Writer's rule F2 (a placeholder must be one of the closed
+ * `FRONT_DOOR_NOUNS`) as it stands and could be added to Writer's `frontDoor.*`
+ * catalog under the same id. They are not in that catalog today: this is the
+ * single place the page's words live. A review width and a frame's accessible
+ * name are assembled in `packReviewText` from the page, the state, the width
+ * and the unit entry, so no entry names a width, a page or a state.
  * No string appears in markup: the page resolves every label through
  * `createCopyResolver(PACK_REVIEW_COPY)` and hands the view plain props.
  *
- * Pure and client-safe: types only, no records, no environment. A `{token}` is
- * a placeholder declared on its entry and filled from values the page builds
- * from the template's own route and state lists, never from the request.
+ * Pure and client-safe: types only, no records, no environment. The values
+ * that are assembled come from the template's own route and state lists and
+ * the view's own widths, never from the request.
  */
 import type { PackReviewViewLabels } from "@clossys/publisher/web";
 import type { CopyRegistry, CopyRegistryEntry, CopyResolver } from "@clossys/writer";
@@ -34,9 +38,7 @@ const ENTRIES: ReadonlyArray<readonly [id: string, text: string, context: string
   ["front-door.pack-review-email-html.label", "Notification email", "pack review page: export kind, the HTML email"],
   ["front-door.pack-review-email-text.label", "Notification email, plain text", "pack review page: export kind, the plain-text email"],
   ["front-door.pack-review-other.label", "Other export", "pack review page: export kind, any other output"],
-  ["front-door.pack-review-width.label", "{width} px wide", "pack review page: the review width of an export"],
-  ["front-door.pack-review-frame.title", "{page} at {width} px", "pack review page: accessible name of a contact-sheet frame for a page"],
-  ["front-door.pack-review-frame-state.title", "{page}, state {state}, at {width} px", "pack review page: accessible name of a contact-sheet frame for a forced state"],
+  ["front-door.pack-review-width-unit.label", "px", "pack review page: the unit that follows a review width, in CSS pixels"],
   ["front-door.pack-review-unavailable.title", "The review is unavailable", "pack review page: heading when the pack manifest cannot be listed"],
   ["front-door.pack-review-unavailable.description", "The pack manifest could not be read or did not pass its checks.", "pack review page: line under the heading when the manifest cannot be listed"],
   ["front-door.pack-review-unavailable.primary", "Back to the site", "pack review page: link home when the manifest cannot be listed"],
@@ -83,10 +85,14 @@ export function packReviewText(resolve: CopyResolver): PackReviewText {
     if (resolution === undefined || resolution.text.trim().length === 0) throw new Error(`The pack review copy ${id} does not resolve.`);
     return resolution.text;
   };
+  const heading = text("front-door.pack-review.title");
+  const description = text("front-door.pack-review.description");
+  const surfaceLabel = text("front-door.pack-review-surface.label");
+  const unit = text("front-door.pack-review-width-unit.label");
   return {
-    heading: text("front-door.pack-review.title"),
-    description: text("front-door.pack-review.description"),
-    surfaceLabel: text("front-door.pack-review-surface.label"),
+    heading,
+    description,
+    surfaceLabel,
     labels: {
       pagesHeading: text("front-door.pack-review-pages.label"),
       exportsHeading: text("front-door.pack-review-exports.label"),
@@ -106,11 +112,8 @@ export function packReviewText(resolve: CopyResolver): PackReviewText {
         "email-text": text("front-door.pack-review-email-text.label"),
         other: text("front-door.pack-review-other.label"),
       },
-      exportWidth: (width) => text("front-door.pack-review-width.label", { width }),
-      frameTitle: ({ page, state, width }) =>
-        state === undefined
-          ? text("front-door.pack-review-frame.title", { page, width })
-          : text("front-door.pack-review-frame-state.title", { page, state, width }),
+      exportWidth: (width) => `${width} ${unit}`,
+      frameTitle: ({ page, state, width }) => [page, ...(state === undefined ? [] : [state]), `${width} ${unit}`].join(", "),
     },
     unavailable: {
       title: text("front-door.pack-review-unavailable.title"),
