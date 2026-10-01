@@ -1407,6 +1407,8 @@ const helpArticle: StructuredDocument = {
           content: [
             { kind: "text", text: ref("acme.overview.p1") },
             { kind: "link", text: ref("acme.overview.link"), href: "#pricing" }, // an in-document fragment link
+            { kind: "strong", content: [{ kind: "link", text: ref("acme.overview.bold"), href: "https://acme.example/docs" }] }, // a bold link
+            { kind: "em", content: [{ kind: "text", text: ref("acme.overview.italic") }] },
           ],
         },
         { kind: "list", style: "ordered", items: [[{ kind: "text", text: ref("acme.overview.item1") }]] },
@@ -1417,7 +1419,14 @@ const helpArticle: StructuredDocument = {
       id: "pricing",
       level: 2,
       heading: ref("acme.pricing.heading"),
-      blocks: [{ kind: "table", headers: [ref("acme.pricing.plan"), ref("acme.pricing.price")], rows: [[ref("acme.pricing.plan1"), ref("acme.pricing.price1")]] }],
+      blocks: [
+        {
+          kind: "table",
+          headers: [ref("acme.pricing.plan"), ref("acme.pricing.price")],
+          columnStyles: ["default", "mono"], // one entry per header; a "mono" column's body cells render in <code>
+          rows: [[ref("acme.pricing.plan1"), ref("acme.pricing.price1")]],
+        },
+      ],
     },
   ],
 };
@@ -1430,11 +1439,20 @@ const { element, resolutions } = renderStructuredDocument(helpArticle, { resolve
 discipline `SurfaceSlotBinding.copy` already holds document content to.
 `DocumentBlock` is a closed, six-member vocabulary (`section`, `paragraph`,
 `list`, `definition-list`, `table`, `callout`); `DocumentInline` (inside a
-paragraph, list item, or callout — never a block on its own) is `text` or
-`link`. A `DocumentSection` (`id`, `level: 2–6`, `heading`, `blocks`) is the
+paragraph, list item, or callout — never a block on its own) is `text`,
+`link`, `strong`, or `em`. A `DocumentSection` (`id`, `level: 2–6`, `heading`, `blocks`) is the
 one block kind that nests, and is also what `StructuredDocument.sections`
 is made of at the top level. See `src/document/types.ts` for the full
 shape and every field's own doc comment.
+
+`strong` and `em` are inline emphasis: each wraps a non-empty run of further
+`DocumentInline` in `content`, so they nest, and a bold link is a `strong`
+whose `content` holds a `link`. A table column can be set monospace through
+`columnStyles`, one `"default"` or `"mono"` entry per header.
+`renderStructuredDocument` renders `strong` as `<strong>`, `em` as `<em>`,
+and each body cell of a `"mono"` column as `<code>` around its text (the
+`<th>` is left plain); there is no class and no inline style. A table
+without `columnStyles` renders as before. The example above shows both.
 
 **What is validated (`validateStructuredDocument(value): ComposeFinding[]`)**
 — shape (every block/inline kind checked against its own fields, a
@@ -1486,6 +1504,11 @@ calling out:
     `StructuredDocument` can be rendered in more than one place; a link
     that means different things per mount point is a defect that would
     only surface on the second mount.
+- **Emphasis.** The link rules above apply to a `link` inside `strong` or
+  `em` the same as to one outside it. Emphasis nests at most four deep
+  (`"inline-emphasis-too-deep"`, reported once at the fifth level), an
+  empty `content` is `"inline-emphasis-empty"`, and an inline `kind` other
+  than `text`, `link`, `strong`, or `em` is `"inline-kind-unknown"`.
 - **Tables.** `headers` must be a non-empty `CopyRef[]`
   (`"table-headers-required"`); every row must have exactly
   `headers.length` cells, never padded or truncated
@@ -1495,6 +1518,10 @@ calling out:
   association an accessible table needs is therefore structural (the fixed
   cell count matching a real `<th>` per column), not left to visual
   alignment.
+  When `columnStyles` is present it must have `headers.length` entries
+  (`"table-column-styles-length-mismatch"`) and each entry must be
+  `"default"` or `"mono"` (`"table-column-style-unknown"`; a value that is
+  not an array is `"table-column-styles-shape"`).
 - **Anchors.** Every `DocumentSection.id`, at every nesting depth, must be
   unique across the **whole document**, not just among siblings — a
   duplicate is `"section-anchor-duplicate"`, reported for the second (and
@@ -2481,7 +2508,7 @@ cosmetic gap.
   `SiteMetadataTagSelector` types.
 - `document`: `validateStructuredDocument`, `renderStructuredDocument`,
   `RenderError`, and the `DocumentBlock`, `DocumentCallout`,
-  `DocumentDefinitionList`, `DocumentInline`, `DocumentList`,
+  `DocumentColumnStyle`, `DocumentDefinitionList`, `DocumentInline`, `DocumentList`,
   `DocumentParagraph`, `DocumentSection`, `DocumentTable`,
   `StructuredDocument`, `RenderStructuredDocumentOptions`,
   `RenderStructuredDocumentResult`, and `RenderErrorReason` types.

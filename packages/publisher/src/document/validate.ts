@@ -6,6 +6,22 @@
  * public package never forces a dependent onto one schema library's major
  * version for the sake of shape-checking a document).
  *
+ * The rules, by the `rule` name each finding carries:
+ *
+ *   - Inline: `inline-shape`, `inline-kind-unknown`, `inline-list-shape`,
+ *     `inline-link-href-shape`, `inline-emphasis-empty`,
+ *     `inline-emphasis-too-deep`, plus `copy-ref-shape` and the link rules
+ *     below. `"strong"` and `"em"` recurse through the same inline
+ *     validation as a paragraph's own content, so a link inside emphasis is
+ *     held to the same scheme and fragment rules, and emphasis nests at most
+ *     `MAX_EMPHASIS_DEPTH` (4) deep.
+ *   - Table: `table-caption-shape`, `table-headers-required`,
+ *     `table-headers-shape`, `table-rows-shape`, `table-row-shape`,
+ *     `table-row-length-mismatch`, `table-column-styles-shape`,
+ *     `table-column-styles-length-mismatch`, `table-column-style-unknown`.
+ *     `columnStyles`, when present, has one `"default"` or `"mono"` entry
+ *     per header.
+ *
  * Two checks are worth calling out because they are easy to mistake for
  * pedantry:
  *
@@ -81,6 +97,10 @@ function validateCopyRef(value: unknown, path: string, findings: ComposeFinding[
 const SECTION_LEVELS = [2, 3, 4, 5, 6] as const;
 const LIST_STYLES = ["ordered", "unordered"] as const;
 const CALLOUT_TONES = ["info", "warning", "success", "danger"] as const;
+const INLINE_KINDS = ["text", "link", "strong", "em"] as const;
+const COLUMN_STYLES = ["default", "mono"] as const;
+/** Emphasis (`"strong"`/`"em"`) may nest at most this many levels; the next one is `"inline-emphasis-too-deep"`. */
+const MAX_EMPHASIS_DEPTH = 4;
 const BLOCK_KINDS = ["section", "paragraph", "list", "definition-list", "table", "callout"] as const;
 const ALLOWED_LINK_SCHEMES = ["https:", "http:", "mailto:"] as const;
 
@@ -164,8 +184,9 @@ function validateHref(href: string, path: string, knownSectionIds: ReadonlySet<s
   }
 }
 
-// Rule: inline-shape, inline-kind-unknown, inline-link-href-shape (plus copy-ref-shape / link-scheme-not-allowed / link-fragment-unresolved, above)
-function validateInline(value: unknown, path: string, knownSectionIds: ReadonlySet<string>, findings: ComposeFinding[]): void {
+// Rule: inline-shape, inline-kind-unknown, inline-link-href-shape, inline-emphasis-empty, inline-emphasis-too-deep
+//       (plus copy-ref-shape / link-scheme-not-allowed / link-fragment-unresolved, above)
+function validateInline(value: unknown, path: string, knownSectionIds: ReadonlySet<string>, findings: ComposeFinding[], emphasisDepth = 0): void {
   if (!isPlainObject(value)) {
     findings.push({ rule: "inline-shape", severity: "error", message: `${path} must be an object.`, path });
     return;
@@ -183,15 +204,33 @@ function validateInline(value: unknown, path: string, knownSectionIds: ReadonlyS
     }
     return;
   }
-  findings.push({ rule: "inline-kind-unknown", severity: "error", message: `${path}.kind must be "text" or "link", got ${JSON.stringify((value as { kind?: unknown }).kind)}.`, path: `${path}.kind` });
+  if (value.kind === "strong" || value.kind === "em") {
+    const depth = emphasisDepth + 1;
+    // Reported once, at the first node past the limit; the walk keeps going so a deeper link or CopyRef is still checked.
+    if (depth === MAX_EMPHASIS_DEPTH + 1) {
+      findings.push({ rule: "inline-emphasis-too-deep", severity: "error", message: `${path} nests emphasis ${depth} deep; at most ${MAX_EMPHASIS_DEPTH} levels of "strong"/"em" are allowed.`, path });
+    }
+    if (Array.isArray(value.content) && value.content.length === 0) {
+      findings.push({ rule: "inline-emphasis-empty", severity: "error", message: `${path}.content must contain at least one inline entry.`, path: `${path}.content` });
+      return;
+    }
+    validateInlineList(value.content, `${path}.content`, knownSectionIds, findings, depth);
+    return;
+  }
+  findings.push({
+    rule: "inline-kind-unknown",
+    severity: "error",
+    message: `${path}.kind must be one of ${INLINE_KINDS.join(", ")}, got ${JSON.stringify((value as { kind?: unknown }).kind)}.`,
+    path: `${path}.kind`,
+  });
 }
 
-function validateInlineList(value: unknown, path: string, knownSectionIds: ReadonlySet<string>, findings: ComposeFinding[]): void {
+function validateInlineList(value: unknown, path: string, knownSectionIds: ReadonlySet<string>, findings: ComposeFinding[], emphasisDepth = 0): void {
   if (!Array.isArray(value)) {
     findings.push({ rule: "inline-list-shape", severity: "error", message: `${path} must be an array of inline content.`, path });
     return;
   }
-  value.forEach((inline, index) => validateInline(inline, `${path}.${index}`, knownSectionIds, findings));
+  value.forEach((inline, index) => validateInline(inline, `${path}.${index}`, knownSectionIds, findings, emphasisDepth));
 }
 
 // --------------------------------------------------------------- blocks
@@ -241,7 +280,8 @@ function validateDefinitionList(value: Record<string, unknown>, path: string, fi
   });
 }
 
-// Rule: table-caption-shape, table-headers-required, table-headers-shape, table-rows-shape, table-row-shape, table-row-length-mismatch
+// Rule: table-caption-shape, table-headers-required, table-headers-shape, table-rows-shape, table-row-shape, table-row-length-mismatch,
+//       table-column-styles-shape, table-column-styles-length-mismatch, table-column-style-unknown
 function validateTable(value: Record<string, unknown>, path: string, findings: ComposeFinding[]): void {
   if (value.caption !== undefined) {
     validateCopyRef(value.caption, `${path}.caption`, findings);
@@ -254,6 +294,31 @@ function validateTable(value: Record<string, unknown>, path: string, findings: C
     (value.headers as unknown[]).forEach((header, index) => validateCopyRef(header, `${path}.headers.${index}`, findings));
   }
   const headerLength = headersPresent ? (value.headers as unknown[]).length : undefined;
+
+  if (value.columnStyles !== undefined) {
+    if (!Array.isArray(value.columnStyles)) {
+      findings.push({ rule: "table-column-styles-shape", severity: "error", message: `${path}.columnStyles must be an array.`, path: `${path}.columnStyles` });
+    } else {
+      if (headerLength !== undefined && value.columnStyles.length !== headerLength) {
+        findings.push({
+          rule: "table-column-styles-length-mismatch",
+          severity: "error",
+          message: `${path}.columnStyles has ${value.columnStyles.length} entr${value.columnStyles.length === 1 ? "y" : "ies"}, but ${path}.headers declares ${headerLength}. Give one style per header.`,
+          path: `${path}.columnStyles`,
+        });
+      }
+      value.columnStyles.forEach((style, index) => {
+        if (!(COLUMN_STYLES as readonly unknown[]).includes(style)) {
+          findings.push({
+            rule: "table-column-style-unknown",
+            severity: "error",
+            message: `${path}.columnStyles.${index} must be one of ${COLUMN_STYLES.join(", ")}, got ${JSON.stringify(style)}.`,
+            path: `${path}.columnStyles.${index}`,
+          });
+        }
+      });
+    }
+  }
 
   if (!Array.isArray(value.rows)) {
     findings.push({ rule: "table-rows-shape", severity: "error", message: `${path}.rows must be an array.`, path: `${path}.rows` });
