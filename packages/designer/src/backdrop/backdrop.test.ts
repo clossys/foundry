@@ -9,8 +9,11 @@ import {
   checkBackdropContract,
   checkBackdropElement,
   type BackdropContract,
+  type BackdropCheckOptions,
   type BackdropKind,
 } from "../tokens/index.js";
+import { parseDeclarationsForSelector, parseRootDeclarations } from "../tokens/internal/parse-css.js";
+import { mergeDeclarations, registryFromDeclarations } from "../tokens/internal/registry-from-css.js";
 
 /** Fixture colors live in this file only; `contract.ts` carries none. */
 const DARK_WORST_CASE = "#6b6b6b";
@@ -18,9 +21,24 @@ const LIGHT_WORST_CASE = "#ffffff";
 
 const SCRIM = {
   token: "--color-overlay-scrim",
-  textToken: "--color-ink-on-inverse",
+  textToken: "--color-neutral-50",
   worstCaseBackdrop: DARK_WORST_CASE,
 } as const;
+
+/**
+ * The real dark theme, built from styles/tokens.css the way the contrast
+ * CLI builds it: the dark block layered over the light :root block.
+ */
+const tokensCss = readFileSync(join(dirname(fileURLToPath(import.meta.url)), "..", "..", "styles", "tokens.css"), "utf8");
+const LIGHT_DECLARATIONS = parseRootDeclarations(tokensCss);
+const DARK_TOKENS = registryFromDeclarations(
+  mergeDeclarations(LIGHT_DECLARATIONS, parseDeclarationsForSelector(tokensCss, ':root[data-theme="dark"]')),
+);
+
+/** Checks in both themes, against the shipped light and dark values, unless told otherwise. */
+function check(contract: BackdropContract, options: BackdropCheckOptions = {}) {
+  return checkBackdropContract(contract, { darkTokens: DARK_TOKENS, ...options });
+}
 
 const LOADING = { strategy: "lazy", budgetBytes: 500_000 } as const;
 const FRAME = { fallbackFrame: "frames/still.webp" } as const;
@@ -76,7 +94,7 @@ describe("fixtures", () => {
 
   for (const kind of BACKDROP_KINDS) {
     it(`passes Check A and Check B for the ${kind} fixture`, () => {
-      const contract = checkBackdropContract(FIXTURES[kind]);
+      const contract = check(FIXTURES[kind]);
       expect(contract).toEqual({ ok: true, findings: [], unchecked: [] });
 
       const element = checkBackdropElement(buildElement(kind));
@@ -86,48 +104,50 @@ describe("fixtures", () => {
 
   it("fails a video fixture that has no reduced-motion fallback", () => {
     const { reducedMotion: _omitted, ...withoutFallback } = FIXTURES.video as Extract<BackdropContract, { kind: "video" }>;
-    const report = checkBackdropContract(withoutFallback as unknown as BackdropContract);
+    const report = check(withoutFallback as unknown as BackdropContract);
     expect(report.ok).toBe(false);
     expect(report.findings.map((f) => f.rule)).toEqual(["reduced-motion-fallback"]);
   });
 
   it("lets an image be its own frame", () => {
     expect(FIXTURES.image).not.toHaveProperty("reducedMotion");
-    expect(checkBackdropContract(FIXTURES.image).ok).toBe(true);
+    expect(check(FIXTURES.image).ok).toBe(true);
   });
 });
 
 describe("rules", () => {
   it("scrim-contrast: text below AA over the composited scrim", () => {
-    const report = checkBackdropContract(variant("image", { scrim: { ...SCRIM, worstCaseBackdrop: LIGHT_WORST_CASE } }));
+    const report = check(variant("image", { scrim: { ...SCRIM, worstCaseBackdrop: LIGHT_WORST_CASE } }));
     expect(report.ok).toBe(false);
-    expect(report.findings.map((f) => f.rule)).toEqual(["scrim-contrast"]);
+    // One finding per theme: a white frame defeats the scrim in light and in dark.
+    expect(report.findings.map((f) => f.rule)).toEqual(["scrim-contrast", "scrim-contrast"]);
+    expect(report.findings.map((f) => /In the (light|dark) theme/.exec(f.message)?.[1])).toEqual(["light", "dark"]);
     expect(report.unchecked).toEqual([]);
   });
 
   it("scrim-contrast: composites the scrim over the backdrop before measuring", () => {
     // The scrim is translucent: against the same text, a mid backdrop passes only because the scrim darkens it.
-    const withScrim = checkBackdropContract(variant("image", { scrim: { ...SCRIM, worstCaseBackdrop: "#808080" } }));
+    const withScrim = check(variant("image", { scrim: { ...SCRIM, worstCaseBackdrop: "#808080" } }));
     expect(withScrim.ok).toBe(true);
     // An opaque stand-in for the scrim leaves the light backdrop in place and cannot pass.
-    const opaque = checkBackdropContract(variant("image", { scrim: { ...SCRIM, token: "--color-surface-base" } }));
+    const opaque = check(variant("image", { scrim: { ...SCRIM, token: "--color-surface-base" } }));
     expect(opaque.findings.map((f) => f.rule)).toEqual(["scrim-contrast"]);
   });
 
   it("aria-hidden: refuses a contract that does not hide the backdrop", () => {
-    const report = checkBackdropContract(variant("video", { ariaHidden: false }));
+    const report = check(variant("video", { ariaHidden: false }));
     expect(report.ok).toBe(false);
     expect(report.findings.map((f) => f.rule)).toEqual(["aria-hidden"]);
   });
 
   it("aria-hidden: refuses a chart that is not marked illustrative", () => {
-    const report = checkBackdropContract(variant("chart", { illustrative: false }));
+    const report = check(variant("chart", { illustrative: false }));
     expect(report.ok).toBe(false);
     expect(report.findings.map((f) => f.rule)).toEqual(["aria-hidden"]);
   });
 
   it("pointer-events: refuses anything but none", () => {
-    const report = checkBackdropContract(variant("canvas", { pointerEvents: "auto" }));
+    const report = check(variant("canvas", { pointerEvents: "auto" }));
     expect(report.ok).toBe(false);
     expect(report.findings.map((f) => f.rule)).toEqual(["pointer-events"]);
   });
@@ -135,7 +155,7 @@ describe("rules", () => {
   for (const kind of ["video", "canvas", "chart"] as const) {
     it(`reduced-motion-fallback: ${kind} needs a non-empty fallbackFrame`, () => {
       for (const reducedMotion of [undefined, {}, { fallbackFrame: "" }, { fallbackFrame: "   " }]) {
-        const report = checkBackdropContract(variant(kind, { reducedMotion }));
+        const report = check(variant(kind, { reducedMotion }));
         expect(report.ok).toBe(false);
         expect(report.findings.map((f) => f.rule)).toEqual(["reduced-motion-fallback"]);
       }
@@ -143,23 +163,23 @@ describe("rules", () => {
   }
 
   it("lazy-loading-budget: refuses an eager strategy", () => {
-    const report = checkBackdropContract(variant("image", { loading: { strategy: "eager", budgetBytes: 1000 } }));
+    const report = check(variant("image", { loading: { strategy: "eager", budgetBytes: 1000 } }));
     expect(report.ok).toBe(false);
     expect(report.findings.map((f) => f.rule)).toEqual(["lazy-loading-budget"]);
   });
 
   it("lazy-loading-budget: refuses a budget that is not a positive integer at or under the ceiling", () => {
     for (const budgetBytes of [0, -1, 1.5, Number.NaN, Number.POSITIVE_INFINITY, "1000", BACKDROP_BUDGET_CEILING_BYTES + 1]) {
-      const report = checkBackdropContract(variant("image", { loading: { strategy: "lazy", budgetBytes } }));
+      const report = check(variant("image", { loading: { strategy: "lazy", budgetBytes } }));
       expect(report.ok, String(budgetBytes)).toBe(false);
       expect(report.findings.map((f) => f.rule), String(budgetBytes)).toEqual(["lazy-loading-budget"]);
     }
-    const atCeiling = checkBackdropContract(variant("image", { loading: { strategy: "idle", budgetBytes: BACKDROP_BUDGET_CEILING_BYTES } }));
+    const atCeiling = check(variant("image", { loading: { strategy: "idle", budgetBytes: BACKDROP_BUDGET_CEILING_BYTES } }));
     expect(atCeiling.ok).toBe(true);
   });
 
   it("reports every violated rule once, in rule order", () => {
-    const report = checkBackdropContract(
+    const report = check(
       variant("video", {
         ariaHidden: false,
         pointerEvents: "auto",
@@ -178,37 +198,95 @@ describe("rules", () => {
   });
 
   it("every finding carries a rule id and a developer message", () => {
-    const report = checkBackdropContract(variant("video", { ariaHidden: false, pointerEvents: "auto" }));
+    const report = check(variant("video", { ariaHidden: false, pointerEvents: "auto" }));
     for (const finding of report.findings) {
       expect(finding.rule).toMatch(/^[a-z-]+$/);
       expect(finding.message.length).toBeGreaterThan(10);
     }
   });
 
+  describe("scrim-contrast in both themes", () => {
+    const INVERSE_INK = { ...SCRIM, textToken: "--color-ink-on-inverse" } as const;
+
+    it("fails --color-ink-on-inverse in dark mode even though it passes in light", () => {
+      const lightOnly = checkBackdropContract(variant("video", { scrim: INVERSE_INK }), { darkTokens: TOKENS });
+      expect(lightOnly.ok).toBe(true);
+      const report = check(variant("video", { scrim: INVERSE_INK }));
+      expect(report.ok).toBe(false);
+      expect(report.findings.map((f) => f.rule)).toEqual(["scrim-contrast"]);
+      expect(report.findings[0]?.message).toMatch(/^In the dark theme, --color-ink-on-inverse over --color-overlay-scrim/);
+      expect(report.unchecked).toEqual([]);
+    });
+
+    it("does not pass a theme-dependent pairing when no dark registry is given", () => {
+      for (const scrim of [SCRIM, INVERSE_INK]) {
+        const report = checkBackdropContract(variant("video", { scrim }));
+        expect(report.ok, scrim.textToken).toBe(false);
+        expect(report.findings, scrim.textToken).toEqual([]);
+        expect(report.unchecked.map((u) => [u.rule, u.reason]), scrim.textToken).toEqual([["scrim-contrast", "theme-unchecked"]]);
+        expect(report.unchecked[0]?.message, scrim.textToken).toContain("--color-overlay-scrim");
+      }
+    });
+
+    it("follows the alias chain to a theme-dependent token", () => {
+      // --color-ink-on-accent is not theme-dependent itself; it aliases --color-ink-on-inverse, which is.
+      const report = checkBackdropContract(variant("image", { scrim: { ...SCRIM, textToken: "--color-ink-on-accent" } }));
+      expect(report.unchecked.map((u) => u.reason)).toEqual(["theme-unchecked"]);
+      expect(report.unchecked[0]?.message).toContain("--color-ink-on-accent");
+    });
+
+    it("keeps TOKENS' theme flags when the supplied registry drops them", () => {
+      const flagless = registryFromDeclarations(LIGHT_DECLARATIONS);
+      expect(flagless["--color-overlay-scrim"]?.themeDependent).toBe(false);
+      const report = checkBackdropContract(FIXTURES.image, { tokens: flagless });
+      expect(report.unchecked.map((u) => u.reason)).toEqual(["theme-unchecked"]);
+    });
+
+    it("needs no dark registry for a pairing whose tokens never change with the theme", () => {
+      const tokens = {
+        ...TOKENS,
+        "--color-test-fixed-scrim": { ...TOKENS["--color-neutral-950"], property: "--color-test-fixed-scrim", value: "oklch(0 0 0 / 0.5)" },
+      };
+      const report = checkBackdropContract(variant("image", { scrim: { ...SCRIM, token: "--color-test-fixed-scrim" } }), { tokens });
+      expect(report).toEqual({ ok: true, findings: [], unchecked: [] });
+    });
+
+    it("reports a dark registry that lacks a token as unchecked, not as a pass", () => {
+      const { "--color-overlay-scrim": _dropped, ...darkTokens } = DARK_TOKENS;
+      const report = checkBackdropContract(FIXTURES.image, { darkTokens });
+      expect(report.ok).toBe(false);
+      expect(report.unchecked.map((u) => u.reason)).toEqual(["unresolvable-token"]);
+      expect(report.unchecked[0]?.message).toContain("dark scrim");
+    });
+  });
+
   describe("fails closed", () => {
     it("a scrim token naming no registry entry is unchecked and not ok", () => {
-      const report = checkBackdropContract(variant("image", { scrim: { ...SCRIM, token: "--color-overlay-nonexistent" } }));
+      const report = check(variant("image", { scrim: { ...SCRIM, token: "--color-overlay-nonexistent" } }));
       expect(report.ok).toBe(false);
       expect(report.findings).toEqual([]);
-      expect(report.unchecked.map((u) => u.rule)).toEqual(["scrim-contrast"]);
-      expect(report.unchecked[0]?.reason).toBe("unresolvable-token");
+      // Reported once per theme, since each registry is resolved on its own.
+      expect(report.unchecked.map((u) => [u.rule, u.reason])).toEqual([
+        ["scrim-contrast", "unresolvable-token"],
+        ["scrim-contrast", "unresolvable-token"],
+      ]);
     });
 
     it("a text token naming no registry entry is unchecked and not ok", () => {
-      const report = checkBackdropContract(variant("image", { scrim: { ...SCRIM, textToken: "--color-ink-nonexistent" } }));
+      const report = check(variant("image", { scrim: { ...SCRIM, textToken: "--color-ink-nonexistent" } }));
       expect(report.ok).toBe(false);
-      expect(report.unchecked.map((u) => u.reason)).toEqual(["unresolvable-token"]);
+      expect(report.unchecked.map((u) => u.reason)).toEqual(["unresolvable-token", "unresolvable-token"]);
     });
 
     it("a token whose value is not a color is unchecked and not ok", () => {
-      const report = checkBackdropContract(variant("image", { scrim: { ...SCRIM, token: "--ui-z-modal" } }));
+      const report = check(variant("image", { scrim: { ...SCRIM, token: "--ui-z-modal" } }));
       expect(report.ok).toBe(false);
-      expect(report.unchecked.map((u) => u.reason)).toEqual(["unparseable-token"]);
+      expect(report.unchecked.map((u) => u.reason)).toEqual(["unparseable-token", "unparseable-token"]);
     });
 
     it("an unparseable worst-case backdrop is unchecked and not ok", () => {
       for (const worstCaseBackdrop of ["not-a-color", "", "#fff", "oklch(0.5 0 0 / 0.5)"]) {
-        const report = checkBackdropContract(variant("image", { scrim: { ...SCRIM, worstCaseBackdrop } }));
+        const report = check(variant("image", { scrim: { ...SCRIM, worstCaseBackdrop } }));
         expect(report.ok, worstCaseBackdrop).toBe(false);
         expect(report.unchecked.map((u) => u.reason), worstCaseBackdrop).toEqual(["unparseable-backdrop"]);
       }
@@ -217,32 +295,32 @@ describe("rules", () => {
     it("a translucent text token is unchecked, not guessed at", () => {
       const tokens = {
         ...TOKENS,
-        "--color-ink-on-inverse": { ...TOKENS["--color-ink-on-inverse"], value: "oklch(1 0 0 / 0.5)" },
+        "--color-neutral-50": { ...TOKENS["--color-neutral-50"], value: "oklch(1 0 0 / 0.5)" },
       };
-      const report = checkBackdropContract(FIXTURES.image, { tokens });
+      const report = check(FIXTURES.image, { tokens, darkTokens: tokens });
       expect(report.ok).toBe(false);
-      expect(report.unchecked.map((u) => u.reason)).toEqual(["unparseable-token"]);
+      expect(report.unchecked.map((u) => u.reason)).toEqual(["unparseable-token", "unparseable-token"]);
     });
 
     it("uses the registry it is given instead of TOKENS", () => {
       const tokens = {
         ...TOKENS,
         "--color-overlay-scrim": { ...TOKENS["--color-overlay-scrim"], value: "oklch(0 0 0 / 0)" },
-        "--color-ink-on-inverse": { ...TOKENS["--color-ink-on-inverse"], value: "oklch(0.3 0 0)" },
+        "--color-neutral-50": { ...TOKENS["--color-neutral-50"], value: "oklch(0.3 0 0)" },
       };
-      const report = checkBackdropContract(FIXTURES.image, { tokens });
+      const report = check(FIXTURES.image, { tokens });
       expect(report.findings.map((f) => f.rule)).toEqual(["scrim-contrast"]);
     });
 
     it("an unknown kind leaves the reduced-motion rule unchecked", () => {
-      const report = checkBackdropContract(variant("image", { kind: "gif" }));
+      const report = check(variant("image", { kind: "gif" }));
       expect(report.ok).toBe(false);
       expect(report.unchecked.map((u) => [u.rule, u.reason])).toEqual([["reduced-motion-fallback", "unknown-kind"]]);
     });
 
     it("never throws on a malformed contract", () => {
       for (const value of [undefined, null, 0, "image", [], {}, { kind: "image" }, { kind: "image", scrim: null, loading: 3 }]) {
-        const report = checkBackdropContract(value as unknown as BackdropContract);
+        const report = check(value as unknown as BackdropContract);
         expect(report.ok, JSON.stringify(value)).toBe(false);
         expect(report.findings.length + report.unchecked.length, JSON.stringify(value)).toBeGreaterThan(0);
       }
@@ -277,6 +355,32 @@ describe("element", () => {
     const element = buildElement("canvas");
     element.style.removeProperty("pointer-events");
     expect(checkBackdropElement(element).findings.map((f) => f.rule)).toEqual(["element-pointer-events"]);
+  });
+
+  it("fails a descendant that sets pointer events back on", () => {
+    for (const value of ["auto", "all", "visiblePainted"]) {
+      const element = buildElement("chart");
+      const child = document.createElement("div");
+      const grandchild = document.createElement("span");
+      grandchild.style.setProperty("pointer-events", value);
+      child.appendChild(grandchild);
+      element.appendChild(child);
+      const report = checkBackdropElement(element);
+      expect(report.ok, value).toBe(false);
+      expect(report.findings.map((f) => f.rule), value).toEqual(["element-pointer-events"]);
+      expect(report.findings[0]?.message, value).toContain("span");
+    }
+  });
+
+  it("allows descendants that inherit or repeat pointer-events none", () => {
+    const element = buildElement("chart");
+    const inherits = document.createElement("div");
+    const repeats = document.createElement("div");
+    repeats.style.pointerEvents = "none";
+    const explicit = document.createElement("div");
+    explicit.style.setProperty("pointer-events", "inherit");
+    element.append(inherits, repeats, explicit);
+    expect(checkBackdropElement(element)).toEqual({ ok: true, findings: [], unchecked: [] });
   });
 
   it("fails an aria-hidden element holding a button", () => {

@@ -13,14 +13,14 @@
  *
  * TWO CHECKS, TWO SUBJECTS
  * -------------------------
- *   - `checkBackdropContract(contract, { tokens? })` judges the DECLARATION:
+ *   - `checkBackdropContract(contract, { tokens?, darkTokens? })` judges the DECLARATION:
  *     the contrast of the scrim and its text token over a stated worst-case
  *     backdrop color, the `ariaHidden` and `pointerEvents` promises, the
  *     reduced-motion fallback, and the lazy-loading budget. It is pure
  *     data in, data out.
  *   - `checkBackdropElement(element)` judges the RENDERED element a consumer
- *     built from it: `aria-hidden="true"`, `pointer-events: none`, and no
- *     focusable descendant.
+ *     built from it: `aria-hidden="true"`, `pointer-events: none` on the
+ *     layer and on every descendant, and no focusable descendant.
  *
  * Both return a report and never throw. Both fail closed: anything they
  * cannot evaluate (a token the registry does not hold, a value that is not
@@ -33,13 +33,12 @@
  * -------------------------
  *   - `scrim-contrast`: `scrim.token` is composited over
  *     `scrim.worstCaseBackdrop`, and `scrim.textToken` must reach AA
- *     (`AA`, 4.5) against the result. Both tokens are resolved through the
- *     token registry (default `TOKENS`, so the default values), the same
- *     alias-chain walk the contrast gate uses. The text token must be
- *     opaque: a translucent text color has no single background to measure
- *     against here, so it is `unchecked`. The default scrim token is
- *     `--color-overlay-scrim` and the default text token is
- *     `--color-ink-on-inverse`; a caller states them explicitly.
+ *     (`AA`, 4.5) against the result, in the light AND the dark theme (see
+ *     BOTH THEMES). Both tokens are resolved through the token registry
+ *     (default `TOKENS`, so the default light values), the same alias-chain
+ *     walk the contrast gate uses. The text token must be opaque: a
+ *     translucent text color has no single background to measure against
+ *     here, so it is `unchecked`.
  *   - `aria-hidden`: `ariaHidden` is `true`. A `chart` backdrop must also be
  *     `illustrative: true` — no information lives only in a layer that
  *     assistive technology skips — and that is reported under this rule.
@@ -50,6 +49,26 @@
  *   - `lazy-loading-budget`: `loading.strategy` is `"lazy"` or `"idle"`,
  *     never eager, and `loading.budgetBytes` is a positive integer at or
  *     under `BACKDROP_BUDGET_CEILING_BYTES`.
+ *
+ * BOTH THEMES
+ * -----------
+ * The scrim pairing must hold in the light and the dark theme, the same
+ * two themes the contrast gate checks. `TOKENS` holds light values only,
+ * and this module reads no stylesheet, so the dark theme is checked
+ * against `darkTokens` when the caller supplies it: a registry of the dark
+ * theme's values, layered over the light one the way the contrast gate
+ * layers its dark block. Without `darkTokens`, a scrim or text token whose
+ * alias chain touches a `themeDependent` token (in the supplied registry
+ * or in `TOKENS`) is `unchecked` with `theme-unchecked`: its dark value is
+ * unknown here, and a pairing that passes in light can fail in dark. A
+ * pairing whose tokens are all theme-invariant is the same in both themes
+ * and needs no `darkTokens`. A light-theme failure is still a finding.
+ *
+ * `--color-overlay-scrim` is the scrim token to use; it darkens in the dark
+ * theme. For the text, use a token that stays light in both themes, such
+ * as `--color-neutral-50`. `--color-ink-on-inverse` is not a hero-text
+ * token: it is the ink for the inverse plate, which turns light in the
+ * dark theme, so it turns dark there and fails over a darkened scrim.
  *
  * WHAT THIS DOES NOT DO
  * ----------------------
@@ -89,7 +108,11 @@ export const BACKDROP_BUDGET_CEILING_BYTES = 2 * 1024 * 1024;
 export interface BackdropScrim {
   /** A registry token naming the scrim color, for example `--color-overlay-scrim`. */
   token: string;
-  /** A registry token naming the hero text color, for example `--color-ink-on-inverse`. */
+  /**
+   * A registry token naming the hero text color. Use one that stays light in
+   * both themes, for example `--color-neutral-50`; `--color-ink-on-inverse`
+   * turns dark in the dark theme and fails over a darkened scrim.
+   */
   textToken: string;
   /** The lightest or busiest color the backdrop can show behind the text: an opaque hex or `oklch()` value. */
   worstCaseBackdrop: string;
@@ -139,6 +162,7 @@ export type BackdropUncheckedReason =
   | "unknown-kind"
   | "unresolvable-token"
   | "unparseable-token"
+  | "theme-unchecked"
   | "unparseable-backdrop"
   | "not-an-element";
 
@@ -165,10 +189,19 @@ export interface BackdropReport<Rule extends string = BackdropRuleId> {
 
 export interface BackdropCheckOptions {
   /**
-   * The token registry the scrim and text tokens resolve against. Defaults
-   * to this package's own `TOKENS`, which holds the default (light) values.
+   * The light-theme token registry the scrim and text tokens resolve
+   * against. Defaults to this package's own `TOKENS`, which holds the
+   * default (light) values.
    */
   tokens?: Readonly<Record<string, TokenDefinition>>;
+  /**
+   * The dark-theme token registry: the dark theme's values layered over the
+   * light registry. When given, the scrim pairing is checked in both themes.
+   * When absent, a scrim or text token that changes with the theme is
+   * `unchecked` (`theme-unchecked`), because its dark value is unknown. A
+   * page with no dark theme states that by passing its light registry here.
+   */
+  darkTokens?: Readonly<Record<string, TokenDefinition>>;
 }
 
 const CONTRACT_RULES: readonly BackdropRuleId[] = [
@@ -213,43 +246,25 @@ function resolveColorToken(
   return { value: resolved.value };
 }
 
-function checkScrim(scrim: unknown, tokens: Readonly<Record<string, TokenDefinition>>): BackdropFinding | BackdropUnchecked | undefined {
-  if (
-    !isRecord(scrim) ||
-    typeof scrim.token !== "string" ||
-    typeof scrim.textToken !== "string" ||
-    typeof scrim.worstCaseBackdrop !== "string"
-  ) {
-    return {
-      rule: "scrim-contrast",
-      reason: "malformed-contract",
-      message: "scrim must name token, textToken and worstCaseBackdrop, each as a string.",
-    };
-  }
-  const { token, textToken, worstCaseBackdrop } = scrim as { token: string; textToken: string; worstCaseBackdrop: string };
+type Registry = Readonly<Record<string, TokenDefinition>>;
 
-  const scrimValue = resolveColorToken(token, "scrim", tokens);
+type ScrimResult = BackdropFinding | BackdropUnchecked;
+
+/**
+ * Evaluates the scrim pairing against one theme's registry. `theme` only
+ * labels the messages. Returns `undefined` when the pairing reaches AA.
+ */
+function checkScrimInTheme(
+  scrim: { token: string; textToken: string; worstCaseBackdrop: string },
+  tokens: Registry,
+  theme: string,
+): ScrimResult | undefined {
+  const { token, textToken, worstCaseBackdrop } = scrim;
+
+  const scrimValue = resolveColorToken(token, `${theme} scrim`, tokens);
   if (!("value" in scrimValue)) return scrimValue;
-  const textValue = resolveColorToken(textToken, "text", tokens);
+  const textValue = resolveColorToken(textToken, `${theme} text`, tokens);
   if (!("value" in textValue)) return textValue;
-
-  let backdropLuminance: number;
-  try {
-    backdropLuminance = luminanceOf(worstCaseBackdrop);
-  } catch {
-    return {
-      rule: "scrim-contrast",
-      reason: "unparseable-backdrop",
-      message: `worstCaseBackdrop ${describe(worstCaseBackdrop)} is not an opaque six-digit hex or OKLCH color.`,
-    };
-  }
-  if (!Number.isFinite(backdropLuminance)) {
-    return {
-      rule: "scrim-contrast",
-      reason: "unparseable-backdrop",
-      message: `worstCaseBackdrop ${describe(worstCaseBackdrop)} did not produce a luminance.`,
-    };
-  }
 
   let composited: number;
   try {
@@ -258,7 +273,7 @@ function checkScrim(scrim: unknown, tokens: Readonly<Record<string, TokenDefinit
     return {
       rule: "scrim-contrast",
       reason: "unparseable-token",
-      message: `The scrim token ${token} resolves to ${describe(scrimValue.value)}, which is not a color this check can read.`,
+      message: `The ${theme} scrim token ${token} resolves to ${describe(scrimValue.value)}, which is not a color this check can read.`,
     };
   }
   let text: number;
@@ -268,14 +283,14 @@ function checkScrim(scrim: unknown, tokens: Readonly<Record<string, TokenDefinit
     return {
       rule: "scrim-contrast",
       reason: "unparseable-token",
-      message: `The text token ${textToken} resolves to ${describe(textValue.value)}, which is not an opaque color this check can read.`,
+      message: `The ${theme} text token ${textToken} resolves to ${describe(textValue.value)}, which is not an opaque color this check can read.`,
     };
   }
   if (!Number.isFinite(composited) || !Number.isFinite(text)) {
     return {
       rule: "scrim-contrast",
       reason: "unparseable-token",
-      message: `The scrim ${token} or text ${textToken} did not produce a luminance.`,
+      message: `The ${theme} scrim ${token} or text ${textToken} did not produce a luminance.`,
     };
   }
 
@@ -283,8 +298,73 @@ function checkScrim(scrim: unknown, tokens: Readonly<Record<string, TokenDefinit
   if (ratio >= AA) return undefined;
   return {
     rule: "scrim-contrast",
-    message: `${textToken} over ${token} composited on ${worstCaseBackdrop} has contrast ${ratio.toFixed(2)}:1; at least ${AA}:1 is required.`,
+    message: `In the ${theme} theme, ${textToken} over ${token} composited on ${worstCaseBackdrop} has contrast ${ratio.toFixed(2)}:1; at least ${AA}:1 is required.`,
   };
+}
+
+/**
+ * True when `property`'s alias chain touches a token that changes with the
+ * theme, according to the supplied registry or this package's `TOKENS`
+ * (so a registry that drops the flag cannot hide a known theme token).
+ */
+function isThemeDependent(property: string, tokens: Registry): boolean {
+  return resolveTokenValue(property, tokens).chain.some(
+    (name) => tokens[name]?.themeDependent === true || TOKENS[name]?.themeDependent === true,
+  );
+}
+
+function checkScrim(scrim: unknown, tokens: Registry, darkTokens: Registry | undefined): ScrimResult[] {
+  if (
+    !isRecord(scrim) ||
+    typeof scrim.token !== "string" ||
+    typeof scrim.textToken !== "string" ||
+    typeof scrim.worstCaseBackdrop !== "string"
+  ) {
+    return [{
+      rule: "scrim-contrast",
+      reason: "malformed-contract",
+      message: "scrim must name token, textToken and worstCaseBackdrop, each as a string.",
+    }];
+  }
+  const pairing = scrim as { token: string; textToken: string; worstCaseBackdrop: string };
+  const { token, textToken, worstCaseBackdrop } = pairing;
+
+  let backdropLuminance: number;
+  try {
+    backdropLuminance = luminanceOf(worstCaseBackdrop);
+  } catch {
+    return [{
+      rule: "scrim-contrast",
+      reason: "unparseable-backdrop",
+      message: `worstCaseBackdrop ${describe(worstCaseBackdrop)} is not an opaque six-digit hex or OKLCH color.`,
+    }];
+  }
+  if (!Number.isFinite(backdropLuminance)) {
+    return [{
+      rule: "scrim-contrast",
+      reason: "unparseable-backdrop",
+      message: `worstCaseBackdrop ${describe(worstCaseBackdrop)} did not produce a luminance.`,
+    }];
+  }
+
+  const results: ScrimResult[] = [];
+  const light = checkScrimInTheme(pairing, tokens, "light");
+  if (light !== undefined) results.push(light);
+
+  if (darkTokens !== undefined) {
+    const dark = checkScrimInTheme(pairing, darkTokens, "dark");
+    if (dark !== undefined) results.push(dark);
+  } else if (light === undefined || !("reason" in light)) {
+    const varying = [token, textToken].filter((name) => isThemeDependent(name, tokens));
+    if (varying.length > 0) {
+      results.push({
+        rule: "scrim-contrast",
+        reason: "theme-unchecked",
+        message: `${varying.join(" and ")} change${varying.length === 1 ? "s" : ""} with the theme, so the dark-theme pairing was not checked; pass darkTokens to check it.`,
+      });
+    }
+  }
+  return results;
 }
 
 function checkLoading(loading: unknown): BackdropFinding[] {
@@ -334,8 +414,7 @@ export function checkBackdropContract(contract: BackdropContract, options: Backd
     const findings: BackdropFinding[] = [];
     const unchecked: BackdropUnchecked[] = [];
 
-    const scrim = checkScrim(contract.scrim, tokens);
-    if (scrim !== undefined) {
+    for (const scrim of checkScrim(contract.scrim, tokens, options.darkTokens)) {
       if ("reason" in scrim) unchecked.push(scrim);
       else findings.push(scrim);
     }
@@ -413,7 +492,8 @@ function pointerEventsOf(element: Element): string {
 
 /**
  * Checks a rendered backdrop element: `aria-hidden="true"`,
- * `pointer-events: none`, and no focusable descendant (a link, button,
+ * `pointer-events: none` on the element with no descendant setting it to
+ * anything else, and no focusable descendant (a link, button,
  * form control, or an element with `tabindex` 0 or more). Never throws; a
  * value that is not an element is `unchecked`.
  */
@@ -440,15 +520,30 @@ export function checkBackdropElement(element: Element): BackdropReport<BackdropE
       findings.push({ rule: "element-aria-hidden", message: `aria-hidden is ${describe(hidden)}; it must be "true".` });
     }
 
+    const descendants = Array.from(element.querySelectorAll("*"));
     const pointer = pointerEventsOf(element);
     if (pointer !== "none") {
       findings.push({
         rule: "element-pointer-events",
         message: `pointer-events is ${pointer === "" ? "not set" : describe(pointer)}; it must be "none".`,
       });
+    } else {
+      // pointer-events inherits, so a descendant that sets nothing (or "inherit") stays "none";
+      // one that sets any other value takes pointer events back through the hidden layer.
+      const reclaiming = descendants.filter((node) => {
+        const value = pointerEventsOf(node);
+        return value !== "" && value !== "none" && value !== "inherit";
+      });
+      if (reclaiming.length > 0) {
+        const names = reclaiming.slice(0, 3).map((node) => `${node.localName} (${pointerEventsOf(node)})`).join(", ");
+        findings.push({
+          rule: "element-pointer-events",
+          message: `${reclaiming.length} descendant(s) set pointer-events back on (${names}); every descendant must leave it "none".`,
+        });
+      }
     }
 
-    const focusable = Array.from(element.querySelectorAll("*")).filter(isFocusable);
+    const focusable = descendants.filter(isFocusable);
     if (focusable.length > 0) {
       const names = focusable.slice(0, 3).map((node) => node.localName).join(", ");
       findings.push({

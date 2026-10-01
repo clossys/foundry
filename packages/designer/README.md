@@ -5366,18 +5366,22 @@ Every kind carries `scrim` (`BackdropScrim`: `token`, `textToken` and
 `worstCaseBackdrop`), `ariaHidden: true`, `pointerEvents: "none"`, and
 `loading` (`BackdropLoading`: `strategy` of `"lazy"` or `"idle"`, and
 `budgetBytes`). `reducedMotion` is a `BackdropReducedMotion`. `scrim.token`
-and `scrim.textToken` name registry tokens, for example
-`--color-overlay-scrim` and `--color-ink-on-inverse`, and
-`worstCaseBackdrop` is an opaque six-digit hex or `oklch()` color the
-author states as the lightest or busiest the backdrop can show.
+and `scrim.textToken` name registry tokens, and `worstCaseBackdrop` is an
+opaque six-digit hex or `oklch()` color the author states as the lightest
+or busiest the backdrop can show. Use `--color-overlay-scrim` for the scrim
+(it darkens in the dark theme) and a text token that stays light in both
+themes, such as `--color-neutral-50`. Do not use `--color-ink-on-inverse`
+for hero text: it is the ink for the inverse plate, which turns light in
+the dark theme, so the ink turns dark there and fails over the darkened
+scrim.
 
-**The five rules.** `checkBackdropContract(contract, { tokens? })` returns a
+**The five rules.** `checkBackdropContract(contract, { tokens?, darkTokens? })` returns a
 `BackdropReport` (`{ ok, findings, unchecked }`) and never throws. Each
 `BackdropFinding` carries a `BackdropRuleId` and a developer message.
 
 | Rule id                   | Passes when                                                                                                                                     |
 | ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| `scrim-contrast`          | `scrim.token` composited over `worstCaseBackdrop` gives `scrim.textToken` a contrast of at least 4.5 (the `AA` constant).                       |
+| `scrim-contrast`          | `scrim.token` composited over `worstCaseBackdrop` gives `scrim.textToken` a contrast of at least 4.5 (the `AA` constant), in light and dark.    |
 | `aria-hidden`             | `ariaHidden` is `true`, and a `chart` is `illustrative: true`.                                                                                  |
 | `pointer-events`          | `pointerEvents` is `"none"`.                                                                                                                    |
 | `reduced-motion-fallback` | A `video`, `canvas` or `chart` has a non-empty `reducedMotion.fallbackFrame`. An `image` needs none.                                            |
@@ -5389,12 +5393,24 @@ transferred bytes a backdrop may declare. The tokens resolve through
 default (light) values, following `var()` alias chains the way the contrast
 gate does.
 
+**Both themes.** The scrim pairing must hold in the light and the dark
+theme, the two themes the contrast gate checks. `TOKENS` holds light values
+only and the check reads no stylesheet, so pass the dark theme as
+`BackdropCheckOptions.darkTokens`: a registry of the dark theme's values
+layered over the light one. With it, each theme is measured and a failure
+names its theme. Without it, a scrim or text token whose alias chain
+touches a theme-dependent token is `unchecked` with `theme-unchecked`, and
+`ok` is `false`; a light-theme failure is still a finding. A pairing whose
+tokens never change with the theme needs no `darkTokens`, and a page with
+no dark theme says so by passing its light registry as `darkTokens`.
+
 **Fails closed.** A rule the check cannot evaluate is reported in
 `unchecked` (a `BackdropUnchecked`, with a `BackdropUncheckedReason`) and
 `ok` is `false`: a token the registry does not hold
 (`unresolvable-token`), a token or `worstCaseBackdrop` that is not a color
 it can read, or a translucent text token (`unparseable-token`,
-`unparseable-backdrop`), a `kind` outside the four (`unknown-kind`), and a
+`unparseable-backdrop`), a theme-dependent pairing with no dark registry
+(`theme-unchecked`), a `kind` outside the four (`unknown-kind`), and a
 malformed contract (`malformed-contract`). A finding means a rule was
 evaluated and broken; `unchecked` means it was not evaluated. Neither is a
 pass.
@@ -5402,7 +5418,9 @@ pass.
 **Checking the rendered element.** `checkBackdropElement(element)` returns
 the same report shape with its own rule ids (`BackdropElementRuleId`):
 `element-aria-hidden` (`aria-hidden="true"`), `element-pointer-events`
-(`pointer-events: none`, read from computed style, then inline style) and
+(`pointer-events: none`, read from computed style, then inline style, on
+the element; and no descendant setting it to anything but `none` or
+`inherit`) and
 `element-focusable-descendant` (no link, button, form control, `summary`,
 `iframe`, editable element, `video` or `audio` with `controls`, or element
 with `tabindex` 0 or more below it). A value that is not an element is
@@ -5411,13 +5429,19 @@ follow shadow roots or run script. The contract check does not measure a
 real asset's size or choose the worst-case color for you.
 
 ```ts
-import { checkBackdropContract, checkBackdropElement, type BackdropContract } from "@clossys/designer/tokens";
+import {
+  TOKENS,
+  checkBackdropContract,
+  checkBackdropElement,
+  type BackdropContract,
+  type TokenDefinition,
+} from "@clossys/designer/tokens";
 
 const backdrop: BackdropContract = {
   kind: "video",
   scrim: {
     token: "--color-overlay-scrim",
-    textToken: "--color-ink-on-inverse",
+    textToken: "--color-neutral-50",
     worstCaseBackdrop: "#6b6b6b",
   },
   ariaHidden: true,
@@ -5426,7 +5450,21 @@ const backdrop: BackdropContract = {
   loading: { strategy: "idle", budgetBytes: 1_500_000 },
 };
 
-const declared = checkBackdropContract(backdrop);
+// The dark theme's values layered over the light registry: here, the dark
+// scrim from the dark block of styles/tokens.css. --color-neutral-50 does
+// not change with the theme, so it needs no dark entry.
+const darkTokens: Record<string, TokenDefinition> = {
+  ...TOKENS,
+  "--color-overlay-scrim": {
+    property: "--color-overlay-scrim",
+    family: "overlay",
+    value: "oklch(0 0 0 / 0.6)",
+    brandable: false,
+    themeDependent: true,
+  },
+};
+
+const declared = checkBackdropContract(backdrop, { darkTokens });
 if (!declared.ok) {
   for (const finding of declared.findings) console.error(finding.rule, finding.message);
   for (const gap of declared.unchecked) console.error(gap.rule, gap.reason);

@@ -76,7 +76,8 @@
  * THE HERO BACKDROP CONTRACT. A per-brand hero visual — image, video,
  * canvas or chart — sits behind the hero text; `BackdropContract`
  * (`../backdrop/contract.ts`) states what every one must promise (a scrim
- * that keeps the text at AA over the worst-case backdrop, `aria-hidden`,
+ * that keeps the text at AA over the worst-case backdrop in the light and
+ * dark themes, `aria-hidden`,
  * `pointer-events: none`, a reduced-motion still frame, a lazy-loading
  * budget). `checkBackdropContract` judges the declaration against the token
  * registry and `checkBackdropElement` judges the rendered element; both
