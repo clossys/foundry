@@ -301,7 +301,7 @@ describe("storeApplyBundle / readStoredApplyBundle", () => {
   });
 
   it("a report replaces a genuine planned bundle stored under another digest name", () => {
-    // A planned bundle under its own digest name; BUNDLE is a report of another digest.
+    // A planned bundle under its own digest name; OTHER_BUNDLE is the report of another digest.
     const plannedPath = storeApplyBundle(hub, PLANNED);
     expect(readFileSync(plannedPath, "utf8")).toBe(bundleBytes(PLANNED));
     expect(plannedPath).toBe(bundleFile(PLANNED.bundleDigest));
