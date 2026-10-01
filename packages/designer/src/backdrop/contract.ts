@@ -13,7 +13,7 @@
  *
  * TWO CHECKS, TWO SUBJECTS
  * -------------------------
- *   - `checkBackdropContract(contract, { tokens?, darkTokens? })` judges the DECLARATION:
+ *   - `checkBackdropContract(contract, { tokens?, darkTokens?, themes? })` judges the DECLARATION:
  *     the contrast of the scrim and its text token over a stated worst-case
  *     backdrop color, the `ariaHidden` and `pointerEvents` promises, the
  *     reduced-motion fallback, and the lazy-loading budget. It is pure
@@ -53,16 +53,30 @@
  * BOTH THEMES
  * -----------
  * The scrim pairing must hold in the light and the dark theme, the same
- * two themes the contrast gate checks. `TOKENS` holds light values only,
- * and this module reads no stylesheet, so the dark theme is checked
- * against `darkTokens` when the caller supplies it: a registry of the dark
- * theme's values, layered over the light one the way the contrast gate
- * layers its dark block. Without `darkTokens`, a scrim or text token whose
- * alias chain touches a `themeDependent` token (in the supplied registry
- * or in `TOKENS`) is `unchecked` with `theme-unchecked`: its dark value is
- * unknown here, and a pairing that passes in light can fail in dark. A
- * pairing whose tokens are all theme-invariant is the same in both themes
- * and needs no `darkTokens`. A light-theme failure is still a finding.
+ * two themes the contrast gate checks: `styles/tokens.css` turns the dark
+ * theme on by itself under `prefers-color-scheme: dark` unless the page
+ * sets `data-theme="light"`. `TOKENS` holds light values only, and this
+ * module reads no stylesheet, so the dark theme is checked against
+ * `darkTokens` when the caller supplies it: a registry of the dark theme's
+ * values, layered over the light one the way the contrast gate layers its
+ * dark block.
+ *
+ * A token is theme-dependent when its registry entry (light or dark) or
+ * this package's `TOKENS` marks it `themeDependent`; the flag on a
+ * caller-defined token is trusted. Every theme-dependent token on the
+ * scrim's or the text's alias chain must carry its own dark value in
+ * `darkTokens`. One whose dark entry has the same value as its light entry
+ * (a registry spread from `TOKENS` with only some tokens overridden, or
+ * the light registry passed whole) is `unchecked` with `theme-unchecked`,
+ * naming the token, because its dark value was never stated. Without
+ * `darkTokens`, any theme-dependent token on either chain is
+ * `theme-unchecked` the same way. A pairing whose tokens are all
+ * theme-invariant is the same in both themes and needs no `darkTokens`. A
+ * light-theme failure is still a finding.
+ *
+ * A page that forces the light theme (`data-theme="light"` on the root)
+ * states it with `themes: "light-only"`: the dark pass is skipped, and the
+ * report's `themes` is `["light"]` so the result says what it covered.
  *
  * `--color-overlay-scrim` is the scrim token to use; it darkens in the dark
  * theme. For the text, use a token that stays light in both themes, such
@@ -76,7 +90,10 @@
  * find the worst-case backdrop color for the caller: `worstCaseBackdrop` is
  * a statement the author makes, and the check holds the scrim to it. Check
  * B reads the attributes and inline or computed style the element
- * reports; it does not follow shadow roots or run script. There is no
+ * reports, and walks open shadow roots (inside one it reads only inline
+ * `pointer-events`, since computed inheritance across the shadow boundary
+ * differs between DOM implementations); it cannot see into a closed shadow
+ * root, and it does not run script. There is no
  * Publisher slot, block or CSS here — the contract is the data a later
  * wiring step consumes.
  *
@@ -185,6 +202,12 @@ export interface BackdropReport<Rule extends string = BackdropRuleId> {
   ok: boolean;
   findings: BackdropFinding<Rule>[];
   unchecked: BackdropUnchecked<Rule>[];
+  /**
+   * On a contract report, the themes the scrim pairing was held to:
+   * `["light", "dark"]`, or `["light"]` under `themes: "light-only"`.
+   * Absent on an element report.
+   */
+  themes?: readonly ("light" | "dark")[];
 }
 
 export interface BackdropCheckOptions {
@@ -196,12 +219,20 @@ export interface BackdropCheckOptions {
   tokens?: Readonly<Record<string, TokenDefinition>>;
   /**
    * The dark-theme token registry: the dark theme's values layered over the
-   * light registry. When given, the scrim pairing is checked in both themes.
-   * When absent, a scrim or text token that changes with the theme is
-   * `unchecked` (`theme-unchecked`), because its dark value is unknown. A
-   * page with no dark theme states that by passing its light registry here.
+   * light registry. Every theme-dependent token on the scrim's or the
+   * text's alias chain must carry its own dark value here; one whose value
+   * is identical to its light entry, or a missing `darkTokens`, is
+   * `unchecked` (`theme-unchecked`), because its dark value is unknown.
    */
   darkTokens?: Readonly<Record<string, TokenDefinition>>;
+  /**
+   * `"both"` (the default) holds the scrim pairing to the light and dark
+   * themes. `"light-only"` is for a page that forces the light theme
+   * (`data-theme="light"` on the root): the dark pass is skipped and the
+   * report's `themes` is `["light"]`. Do not use it for a page that lets
+   * `prefers-color-scheme: dark` switch the theme.
+   */
+  themes?: "both" | "light-only";
 }
 
 const CONTRACT_RULES: readonly BackdropRuleId[] = [
@@ -307,13 +338,30 @@ function checkScrimInTheme(
  * theme, according to the supplied registry or this package's `TOKENS`
  * (so a registry that drops the flag cannot hide a known theme token).
  */
-function isThemeDependent(property: string, tokens: Registry): boolean {
-  return resolveTokenValue(property, tokens).chain.some(
-    (name) => tokens[name]?.themeDependent === true || TOKENS[name]?.themeDependent === true,
+function themeDependentOnChain(property: string, registries: readonly Registry[]): string[] {
+  const names = new Set<string>();
+  for (const registry of registries) {
+    for (const name of resolveTokenValue(property, registry).chain) names.add(name);
+  }
+  return [...names].filter(
+    (name) => registries.some((registry) => registry[name]?.themeDependent === true) || TOKENS[name]?.themeDependent === true,
   );
 }
 
-function checkScrim(scrim: unknown, tokens: Registry, darkTokens: Registry | undefined): ScrimResult[] {
+function themeUnchecked(names: readonly string[], why: string): BackdropUnchecked {
+  return {
+    rule: "scrim-contrast",
+    reason: "theme-unchecked",
+    message: `${names.join(" and ")} change${names.length === 1 ? "s" : ""} with the theme, ${why}`,
+  };
+}
+
+function checkScrim(
+  scrim: unknown,
+  tokens: Registry,
+  darkTokens: Registry | undefined,
+  lightOnly: boolean,
+): ScrimResult[] {
   if (
     !isRecord(scrim) ||
     typeof scrim.token !== "string" ||
@@ -351,17 +399,25 @@ function checkScrim(scrim: unknown, tokens: Registry, darkTokens: Registry | und
   const light = checkScrimInTheme(pairing, tokens, "light");
   if (light !== undefined) results.push(light);
 
+  if (lightOnly) return results;
+
   if (darkTokens !== undefined) {
+    // A theme-dependent token whose dark entry repeats its light value was never given a dark value:
+    // measuring it would score the light color as if it were the dark one.
+    const registries = [tokens, darkTokens];
+    const unstated = [...new Set([token, textToken].flatMap((name) => themeDependentOnChain(name, registries)))].filter(
+      (name) => darkTokens[name] !== undefined && darkTokens[name]?.value === tokens[name]?.value,
+    );
+    if (unstated.length > 0) {
+      results.push(themeUnchecked(unstated, "but darkTokens gives the same value as the light registry, so the dark-theme pairing was not checked; give each its dark value."));
+      return results;
+    }
     const dark = checkScrimInTheme(pairing, darkTokens, "dark");
     if (dark !== undefined) results.push(dark);
   } else if (light === undefined || !("reason" in light)) {
-    const varying = [token, textToken].filter((name) => isThemeDependent(name, tokens));
+    const varying = [token, textToken].filter((name) => themeDependentOnChain(name, [tokens]).length > 0);
     if (varying.length > 0) {
-      results.push({
-        rule: "scrim-contrast",
-        reason: "theme-unchecked",
-        message: `${varying.join(" and ")} change${varying.length === 1 ? "s" : ""} with the theme, so the dark-theme pairing was not checked; pass darkTokens to check it.`,
-      });
+      results.push(themeUnchecked(varying, "so the dark-theme pairing was not checked; pass darkTokens to check it."));
     }
   }
   return results;
@@ -393,11 +449,16 @@ function checkLoading(loading: unknown): BackdropFinding[] {
   return findings;
 }
 
-function allUnchecked(reason: BackdropUncheckedReason, message: string): BackdropReport {
+function themesOf(options: BackdropCheckOptions): readonly ("light" | "dark")[] {
+  return options.themes === "light-only" ? ["light"] : ["light", "dark"];
+}
+
+function allUnchecked(reason: BackdropUncheckedReason, message: string, options: BackdropCheckOptions): BackdropReport {
   return {
     ok: false,
     findings: [],
     unchecked: CONTRACT_RULES.map((rule) => ({ rule, reason, message })),
+    themes: themesOf(options),
   };
 }
 
@@ -408,13 +469,13 @@ function allUnchecked(reason: BackdropUncheckedReason, message: string): Backdro
 export function checkBackdropContract(contract: BackdropContract, options: BackdropCheckOptions = {}): BackdropReport {
   try {
     if (!isRecord(contract)) {
-      return allUnchecked("malformed-contract", "The contract must be an object.");
+      return allUnchecked("malformed-contract", "The contract must be an object.", options);
     }
     const tokens = options.tokens ?? TOKENS;
     const findings: BackdropFinding[] = [];
     const unchecked: BackdropUnchecked[] = [];
 
-    for (const scrim of checkScrim(contract.scrim, tokens, options.darkTokens)) {
+    for (const scrim of checkScrim(contract.scrim, tokens, options.darkTokens, options.themes === "light-only")) {
       if ("reason" in scrim) unchecked.push(scrim);
       else findings.push(scrim);
     }
@@ -455,9 +516,9 @@ export function checkBackdropContract(contract: BackdropContract, options: Backd
     const order = (rule: BackdropRuleId): number => CONTRACT_RULES.indexOf(rule);
     findings.sort((a, b) => order(a.rule) - order(b.rule));
     unchecked.sort((a, b) => order(a.rule) - order(b.rule));
-    return { ok: findings.length === 0 && unchecked.length === 0, findings, unchecked };
+    return { ok: findings.length === 0 && unchecked.length === 0, findings, unchecked, themes: themesOf(options) };
   } catch {
-    return allUnchecked("malformed-contract", "The contract could not be read.");
+    return allUnchecked("malformed-contract", "The contract could not be read.", options ?? {});
   }
 }
 
@@ -482,20 +543,54 @@ function isFocusable(node: Element): boolean {
   return node.matches(NATIVE_FOCUSABLE);
 }
 
+interface Descendant {
+  node: Element;
+  /** True when the node sits inside a shadow tree rather than the element's light DOM. */
+  inShadow: boolean;
+}
+
+function openShadowOf(node: Element): ShadowRoot | undefined {
+  return (node as Element & { shadowRoot?: ShadowRoot | null }).shadowRoot ?? undefined;
+}
+
+/**
+ * Every element below `root`, including the contents of open shadow roots
+ * at any depth (a closed one is invisible from outside, by design).
+ */
+function descendantsOf(root: Element): Descendant[] {
+  const found: Descendant[] = [];
+  const visit = (scope: Element | ShadowRoot, inShadow: boolean): void => {
+    for (const node of Array.from(scope.querySelectorAll("*"))) {
+      found.push({ node, inShadow });
+      const shadow = openShadowOf(node);
+      if (shadow) visit(shadow, true);
+    }
+  };
+  visit(root, false);
+  const own = openShadowOf(root);
+  if (own) visit(own, true);
+  return found;
+}
+
+function inlinePointerEventsOf(element: Element): string {
+  const inline = (element as Element & { style?: { getPropertyValue(name: string): string } }).style?.getPropertyValue("pointer-events") ?? "";
+  return inline.trim().toLowerCase();
+}
+
 function pointerEventsOf(element: Element): string {
   const view = element.ownerDocument?.defaultView;
   const computed = view?.getComputedStyle?.(element)?.getPropertyValue("pointer-events") ?? "";
   if (computed.trim() !== "") return computed.trim().toLowerCase();
-  const inline = (element as Element & { style?: { getPropertyValue(name: string): string } }).style?.getPropertyValue("pointer-events") ?? "";
-  return inline.trim().toLowerCase();
+  return inlinePointerEventsOf(element);
 }
 
 /**
  * Checks a rendered backdrop element: `aria-hidden="true"`,
  * `pointer-events: none` on the element with no descendant setting it to
  * anything else, and no focusable descendant (a link, button,
- * form control, or an element with `tabindex` 0 or more). Never throws; a
- * value that is not an element is `unchecked`.
+ * form control, or an element with `tabindex` 0 or more). Descendants
+ * include the contents of open shadow roots. Never throws; a value that is
+ * not an element is `unchecked`.
  */
 export function checkBackdropElement(element: Element): BackdropReport<BackdropElementRuleId> {
   const rules: readonly BackdropElementRuleId[] = ["element-aria-hidden", "element-pointer-events", "element-focusable-descendant"];
@@ -520,7 +615,7 @@ export function checkBackdropElement(element: Element): BackdropReport<BackdropE
       findings.push({ rule: "element-aria-hidden", message: `aria-hidden is ${describe(hidden)}; it must be "true".` });
     }
 
-    const descendants = Array.from(element.querySelectorAll("*"));
+    const descendants = descendantsOf(element);
     const pointer = pointerEventsOf(element);
     if (pointer !== "none") {
       findings.push({
@@ -530,12 +625,15 @@ export function checkBackdropElement(element: Element): BackdropReport<BackdropE
     } else {
       // pointer-events inherits, so a descendant that sets nothing (or "inherit") stays "none";
       // one that sets any other value takes pointer events back through the hidden layer.
-      const reclaiming = descendants.filter((node) => {
-        const value = pointerEventsOf(node);
+      // Inside a shadow tree only the inline style is read: DOM implementations differ on whether
+      // computed style inherits across the shadow boundary, and a wrong answer there is a false finding.
+      const valueOf = ({ node, inShadow }: Descendant): string => (inShadow ? inlinePointerEventsOf(node) : pointerEventsOf(node));
+      const reclaiming = descendants.filter((descendant) => {
+        const value = valueOf(descendant);
         return value !== "" && value !== "none" && value !== "inherit";
       });
       if (reclaiming.length > 0) {
-        const names = reclaiming.slice(0, 3).map((node) => `${node.localName} (${pointerEventsOf(node)})`).join(", ");
+        const names = reclaiming.slice(0, 3).map((descendant) => `${descendant.node.localName} (${valueOf(descendant)})`).join(", ");
         findings.push({
           rule: "element-pointer-events",
           message: `${reclaiming.length} descendant(s) set pointer-events back on (${names}); every descendant must leave it "none".`,
@@ -543,7 +641,7 @@ export function checkBackdropElement(element: Element): BackdropReport<BackdropE
       }
     }
 
-    const focusable = descendants.filter(isFocusable);
+    const focusable = descendants.map(({ node }) => node).filter(isFocusable);
     if (focusable.length > 0) {
       const names = focusable.slice(0, 3).map((node) => node.localName).join(", ");
       findings.push({

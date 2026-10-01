@@ -5375,8 +5375,8 @@ for hero text: it is the ink for the inverse plate, which turns light in
 the dark theme, so the ink turns dark there and fails over the darkened
 scrim.
 
-**The five rules.** `checkBackdropContract(contract, { tokens?, darkTokens? })` returns a
-`BackdropReport` (`{ ok, findings, unchecked }`) and never throws. Each
+**The five rules.** `checkBackdropContract(contract, { tokens?, darkTokens?, themes? })` returns a
+`BackdropReport` (`{ ok, findings, unchecked, themes }`) and never throws. Each
 `BackdropFinding` carries a `BackdropRuleId` and a developer message.
 
 | Rule id                   | Passes when                                                                                                                                     |
@@ -5394,23 +5394,39 @@ default (light) values, following `var()` alias chains the way the contrast
 gate does.
 
 **Both themes.** The scrim pairing must hold in the light and the dark
-theme, the two themes the contrast gate checks. `TOKENS` holds light values
-only and the check reads no stylesheet, so pass the dark theme as
+theme, the two themes the contrast gate checks: `styles/tokens.css` turns
+the dark theme on by itself under `prefers-color-scheme: dark` unless the
+page sets `data-theme="light"`. `TOKENS` holds light values only and the
+check reads no stylesheet, so pass the dark theme as
 `BackdropCheckOptions.darkTokens`: a registry of the dark theme's values
 layered over the light one. With it, each theme is measured and a failure
-names its theme. Without it, a scrim or text token whose alias chain
-touches a theme-dependent token is `unchecked` with `theme-unchecked`, and
-`ok` is `false`; a light-theme failure is still a finding. A pairing whose
-tokens never change with the theme needs no `darkTokens`, and a page with
-no dark theme says so by passing its light registry as `darkTokens`.
+names its theme.
+
+A token counts as theme-dependent when its entry in either registry, or in
+`TOKENS`, has `themeDependent: true`; the flag on a token you define
+yourself is trusted as you set it. Every theme-dependent token on the
+scrim's or the text's alias chain must carry its own dark value in
+`darkTokens`. One whose dark entry repeats its light value (a registry
+spread from `TOKENS` with only some tokens overridden, or the light
+registry passed whole) is `unchecked` with `theme-unchecked`, naming the
+token, and `ok` is `false`. Without `darkTokens`, any theme-dependent token
+on either chain is `theme-unchecked` the same way. A light-theme failure is
+still a finding, and a pairing whose tokens never change with the theme
+needs no `darkTokens`.
+
+A page that forces the light theme with `data-theme="light"` on its root
+states that with `themes: "light-only"` (the default is `"both"`): the dark
+pass is skipped, and the report's `themes` is `["light"]` rather than
+`["light", "dark"]`, so the result says what it covered. Do not use it for a
+page that lets `prefers-color-scheme: dark` switch the theme.
 
 **Fails closed.** A rule the check cannot evaluate is reported in
 `unchecked` (a `BackdropUnchecked`, with a `BackdropUncheckedReason`) and
 `ok` is `false`: a token the registry does not hold
 (`unresolvable-token`), a token or `worstCaseBackdrop` that is not a color
 it can read, or a translucent text token (`unparseable-token`,
-`unparseable-backdrop`), a theme-dependent pairing with no dark registry
-(`theme-unchecked`), a `kind` outside the four (`unknown-kind`), and a
+`unparseable-backdrop`), a theme-dependent token with no dark value of its
+own (`theme-unchecked`), a `kind` outside the four (`unknown-kind`), and a
 malformed contract (`malformed-contract`). A finding means a rule was
 evaluated and broken; `unchecked` means it was not evaluated. Neither is a
 pass.
@@ -5423,9 +5439,12 @@ the element; and no descendant setting it to anything but `none` or
 `inherit`) and
 `element-focusable-descendant` (no link, button, form control, `summary`,
 `iframe`, editable element, `video` or `audio` with `controls`, or element
-with `tabindex` 0 or more below it). A value that is not an element is
-`unchecked` with `not-an-element`. It reads the light DOM only: it does not
-follow shadow roots or run script. The contract check does not measure a
+with `tabindex` 0 or more below it). Descendants include the contents of
+open shadow roots at any depth; inside a shadow tree it reads only inline
+`pointer-events`, because DOM implementations differ on whether computed
+style inherits across the shadow boundary. It cannot see into a closed
+shadow root, and it does not run script. A value that is not an element is
+`unchecked` with `not-an-element`. The contract check does not measure a
 real asset's size or choose the worst-case color for you.
 
 ```ts
@@ -5450,9 +5469,11 @@ const backdrop: BackdropContract = {
   loading: { strategy: "idle", budgetBytes: 1_500_000 },
 };
 
-// The dark theme's values layered over the light registry: here, the dark
-// scrim from the dark block of styles/tokens.css. --color-neutral-50 does
-// not change with the theme, so it needs no dark entry.
+// Your copy of the dark theme's values, layered over the light registry:
+// here, the dark scrim as the dark block of styles/tokens.css sets it. Keep
+// it in step with the stylesheet you ship. --color-neutral-50 does not
+// change with the theme, so it needs no dark entry; a theme-dependent token
+// left at its light value here is reported as theme-unchecked.
 const darkTokens: Record<string, TokenDefinition> = {
   ...TOKENS,
   "--color-overlay-scrim": {
