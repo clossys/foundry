@@ -359,7 +359,8 @@ Name a shipped template when its slots cover the page:
   unavailable, `isDisabled` keeps the form on screen inside a disabled
   `<fieldset>` with the typed values still shown; the explanation goes in the
   form's own `submitError`, and a retry link in `secondaryAction` stays
-  enabled. The content column uses the
+  enabled. Switching `isDisabled` remounts the form, so the site keeps the
+  typed values in its own state. The content column uses the
   `--ui-width-form-max` form measure, and `description` is a required prop
   so every step decides on a supporting line. The form slot is filled with
   Designer's `Form` / `TextField` / `Button`. There is no mode prop, and

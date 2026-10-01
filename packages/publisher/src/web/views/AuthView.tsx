@@ -47,7 +47,9 @@ export interface AuthViewProps extends HTMLAttributes<HTMLDivElement> {
    * submitted. The notice that explains why is the form's own `submitError`,
    * the one banner region: this view adds no banner. A retry link goes in
    * `secondaryAction`, which sits outside the fieldset and stays enabled.
-   * When false or absent, `form` renders as given with no wrapper.
+   * When false or absent, `form` renders as given with no wrapper, so
+   * switching the prop remounts the form: keep what the person typed in the
+   * site's own state, not inside the form's uncontrolled inputs.
    */
   isDisabled?: boolean;
   /**
