@@ -611,6 +611,11 @@ export function renderWebDocumentAgainst(templates: ReadonlyMap<string, WebTempl
   const nothingResolvedAtAll = result.resolved.length === 0 && nodes.length === 0;
   if (result.missingRequired.length > 0 || result.unknownBindings.length > 0 || hasBindingErrors || nothingResolvedAtAll) {
     const parts: string[] = [];
+    // The names listed here are the template's own: a web template is a
+    // registered, fixed slot set declared by this package, so a required slot
+    // name is not a value from the caller's document. Email, print and image
+    // take their layout from the document itself, so there the same slot keys
+    // are caller-supplied and those channels report a count instead.
     if (result.missingRequired.length > 0) parts.push(`missing required slot(s): ${result.missingRequired.join(", ")}`);
     if (result.unknownBindings.length > 0) parts.push(`${result.unknownBindings.length} binding(s) targeting unknown slot(s)`);
     if (nothingResolvedAtAll) parts.push("no binding matched any slot in the template — nothing to render");

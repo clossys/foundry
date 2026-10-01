@@ -2041,10 +2041,10 @@ describe("createContactHandler — lone UTF-16 surrogates", () => {
     const { handler } = makeHandler();
     const result = await submit(handler, { ...valid, name: `${MARKER}${HIGH}`, email: "nope", message: `${MARKER}${LOW}` });
     expect(issuesOf(result)).toStrictEqual([
-      { field: "email", code: "malformed" },
       { field: "name", code: "malformed" },
+      { field: "email", code: "malformed" },
       { field: "message", code: "malformed" },
-    ].sort((a, b) => ["topic", "name", "email", "phone", "message"].indexOf(a.field) - ["topic", "name", "email", "phone", "message"].indexOf(b.field)));
+    ]);
     expect(JSON.stringify(result)).not.toContain(MARKER);
   });
 
@@ -2135,6 +2135,8 @@ describe("createContactHandler — port timeouts", () => {
 
   it("does not surface a delivery rejection that arrives after the timeout", { timeout: 5000 }, async () => {
     vi.useFakeTimers();
+    const unhandled = vi.fn();
+    process.on("unhandledRejection", unhandled);
     try {
       let fail: (error: Error) => void = () => undefined;
       const delivery = { channel: "email" as const, deliver: vi.fn((_message: ContactOutboundMessage) => new Promise<never>((_resolve, reject) => (fail = reject))) };
@@ -2142,9 +2144,14 @@ describe("createContactHandler — port timeouts", () => {
       expect(await settle(submit(handler, valid), 50)).toStrictEqual({ status: "unavailable" });
       fail(new Error(MARKER));
       await vi.advanceTimersByTimeAsync(1000);
-      // An unhandled rejection would fail this run; reaching here is the assertion.
+      // Node reports an unhandled rejection on a real-time macrotask turn, not
+      // inside the fake clock, so yield to it before asserting.
+      vi.useRealTimers();
+      await new Promise<void>((resolve) => setImmediate(resolve));
+      expect(unhandled).not.toHaveBeenCalled();
       expect(delivery.deliver).toHaveBeenCalledTimes(1);
     } finally {
+      process.off("unhandledRejection", unhandled);
       vi.useRealTimers();
     }
   });
@@ -2195,10 +2202,15 @@ describe("createContactHandler — port timeouts", () => {
   ])("refuses %s as limiterTimeoutMs and deliveryTimeoutMs at construction, naming the option and not the value", (_label, value) => {
     expect(() => makeHandler({ limiterTimeoutMs: value as never })).toThrow(/limiterTimeoutMs must be a positive integer no greater than 2147483647/);
     expect(() => makeHandler({ deliveryTimeoutMs: value as never })).toThrow(/deliveryTimeoutMs must be a positive integer no greater than 2147483647/);
-    try {
-      makeHandler({ limiterTimeoutMs: value as never });
-    } catch (error) {
-      expect((error as Error).message).not.toContain(String(value));
+    for (const option of ["limiterTimeoutMs", "deliveryTimeoutMs"] as const) {
+      let thrown: unknown;
+      try {
+        makeHandler({ [option]: value as never });
+      } catch (error) {
+        thrown = error;
+      }
+      expect(thrown).toBeInstanceOf(TypeError);
+      expect((thrown as Error).message).not.toContain(String(value));
     }
   });
 

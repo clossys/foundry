@@ -84,8 +84,8 @@ function describe(value: unknown): string {
   if (Array.isArray(value)) return `an array (${value.length} item(s))`;
   const t = typeof value;
   if (t === "object") return "an object";
-  if (t === "string") return JSON.stringify(value);
-  return String(value);
+  if (t === "string") return `a string (${(value as string).length} character(s))`;
+  return `a ${t}`;
 }
 
 const CHANNELS_REQUIRING_LAYOUT: readonly Channel[] = ["print", "slides", "image"];
@@ -436,7 +436,7 @@ function validateLayoutSpecShape(value: unknown, path: string): ComposeFinding[]
       findings.push({
         rule: "slot-key-unique",
         severity: "error",
-        message: `${path}.slots.${i}.key "${key}" duplicates ${path}.slots.${firstIndex}.key — every slot key must be unique within a LayoutSpec.`,
+        message: `${path}.slots.${i}.key duplicates ${path}.slots.${firstIndex}.key — every slot key must be unique within a LayoutSpec.`,
         path: `${path}.slots.${i}.key`,
       });
     }
@@ -754,7 +754,7 @@ export function validateComposeDocument(value: unknown): ComposeFinding[] {
       findings.push({
         rule: "meta-channel-mismatch",
         severity: "error",
-        message: `meta.channel (${describe(metaChannel)}) must equal channel (${describe(knownChannel)}).`,
+        message: `meta.channel (${describe(metaChannel)}) must equal channel ("${knownChannel}").`,
         path: "meta.channel",
       });
     }

@@ -659,7 +659,8 @@ slots; `features` (required) and `faq` (optional) are **repeating** slots,
 each bound via a `SurfaceRepeatingSlotBinding` and rendered through
 `@clossys/designer`'s `FeatureGrid`/`Faq` blocks respectively. An empty
 `features` group with no `featuresHeading` or `featuresDescription` omits
-the grid; a `faq` binding that
+the grid. An empty `faq` group (`items: []`) still renders its section with
+zero entries; a `faq` binding that
 was never authored at all omits the whole FAQ section instead, which is a
 different, equally valid outcome (see `MarketingView`'s own `faq` prop doc
 comment).

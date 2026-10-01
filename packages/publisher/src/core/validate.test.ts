@@ -132,11 +132,12 @@ describe("validateComposeDocument — root fields", () => {
     expect(hasRule(findings, "id-shape", "id")).toBe(true);
   });
 
-  it("flags an unknown channel with channel-known — sample: 'fax' is not a real Channel", () => {
+  it("flags an unknown channel with channel-known — sample: an unlisted channel is not a real Channel, and is not echoed", () => {
     const findings = validateComposeDocument({ ...validWeb, channel: "fax" });
     const finding = findings.find((f) => f.rule === "channel-known");
     expect(finding).toMatchObject({ severity: "error", path: "channel" });
-    expect(finding?.message).toContain("fax");
+    expect(finding?.message).toBe("channel must be one of web, email, print, slides, image, got a string (3 character(s)).");
+    expect(finding?.message).not.toContain("fax");
   });
 
   it("flags a missing template with template-shape", () => {
@@ -265,8 +266,8 @@ describe("validateComposeDocument — meta/channel discriminant", () => {
     const findings = validateComposeDocument({ ...validWeb, meta: { ...validEmail.meta } });
     const finding = findings.find((f) => f.rule === "meta-channel-mismatch");
     expect(finding).toMatchObject({ severity: "error", path: "meta.channel" });
-    expect(finding?.message).toContain("email");
-    expect(finding?.message).toContain("web");
+    expect(finding?.message).toBe('meta.channel (a string (5 character(s))) must equal channel ("web").');
+    expect(finding?.message).not.toContain("email");
   });
 
   it("flags a non-object meta with meta-shape", () => {
@@ -472,8 +473,30 @@ describe("validateComposeDocument — LayoutSpec/SlotSpec shape", () => {
     const finding = findings.find((f) => f.rule === "slot-key-unique");
     expect(finding).toMatchObject({ severity: "error", path: "layout.slots.1.key" });
     expect(finding?.message).toBe(
-      'layout.slots.1.key "dup" duplicates layout.slots.0.key — every slot key must be unique within a LayoutSpec.',
+      'layout.slots.1.key duplicates layout.slots.0.key — every slot key must be unique within a LayoutSpec.',
     );
+  });
+
+  it("never puts a caller-supplied slot key or got-value into a finding message", () => {
+    const findings = validateComposeDocument({
+      ...validPrint,
+      layout: {
+        slots: [
+          { key: "sentinel-key-61", element: "heading", frame: { x: 0, y: 0, w: 0.4, h: 0.4 } },
+          { key: "sentinel-key-61", element: "sentinel-element-61", frame: { x: 0.5, y: 0.5, w: 0.4, h: 0.4 } },
+        ],
+      },
+      bindings: [{ slot: "sentinel-key-61", copyId: 616161 }, { slot: 626262, value: "ok" }],
+    } as unknown as ComposeDocument);
+    expect(findings.some((f) => f.rule === "slot-key-unique")).toBe(true);
+    expect(findings.some((f) => f.rule === "slot-element-known")).toBe(true);
+    expect(findings.some((f) => f.rule === "binding-copy-id-shape")).toBe(true);
+    expect(findings.some((f) => f.rule === "binding-slot-shape")).toBe(true);
+    for (const finding of findings) {
+      expect(finding.message).not.toContain("sentinel-");
+      expect(finding.message).not.toContain("616161");
+      expect(finding.message).not.toContain("626262");
+    }
   });
 
   it("flags an unknown align with slot-align-known and an unknown vAlign with slot-valign-known", () => {

@@ -168,7 +168,7 @@ describe("refusal paths", () => {
       expect(error).toBeInstanceOf(RenderError);
       expect((error as RenderError).reason).toBe("empty-output");
       expect((error as RenderError).message).toContain("every matched slot produced no usable content");
-      expect((error as RenderError).message).toContain("Omitted slot(s): 1.");
+      expect((error as RenderError).message).toContain("1 matched slot(s) were omitted.");
       expect((error as RenderError).message).not.toContain("i2");
     }
   });
@@ -512,6 +512,15 @@ describe("refusal messages never echo a document id, copy id, asset id or slot n
     return expect.unreachable("expected renderImageDocument to throw");
   }
 
+  it("a malformed binding is reported as its path and rule, without the caller's value", () => {
+    const doc = baseDoc({ id: SENTINEL_DOC_ID, bindings: [{ slot: "headline", copyId: 424242 }, { slot: 515151, value: "x" }] as unknown as ComposeDocument["bindings"] });
+    const message = refusal(() => renderImageDocument(doc));
+    expect(message).toContain("malformed binding(s): bindings.0.copyId (binding-copy-id-shape)");
+    expect(message).not.toContain("424242");
+    expect(message).not.toContain("515151");
+    expect(message).not.toContain(SENTINEL_DOC_ID);
+  });
+
   it("an asset that does not resolve is refused without the document id or the asset id", () => {
     const doc = baseDoc({
       id: SENTINEL_DOC_ID,
@@ -543,7 +552,7 @@ describe("refusal messages never echo a document id, copy id, asset id or slot n
     });
     const message = refusal(() => renderImageDocument(doc, { resolveCopyId: () => "" }));
     expect(message).toBe(
-      "renderImageDocument resolved the document against its layout, but every matched slot produced no usable content (unresolved copyId(s)/assetId(s), or empty/ambiguous binding(s)) and the layout declares no background — there is nothing left to render. Omitted slot(s): 1.",
+      "renderImageDocument resolved the document against its layout, but every matched slot produced no usable content (unresolved copyId(s)/assetId(s), or empty/ambiguous binding(s)) and the layout declares no background — there is nothing left to render. 1 matched slot(s) were omitted.",
     );
     expect(message).not.toContain(SENTINEL_DOC_ID);
     expect(message).not.toContain("sentinel-slot-34");
