@@ -96,12 +96,22 @@ describe("resolveDocumentAssets", () => {
     expect(hasAssetProblems(assets)).toBe(true);
   });
 
+  it("counts, and does not name, a slot whose asset lookup could not even be attempted", () => {
+    const result = resolveDocument(docWithBindings([{ slot: "hero", assetId: "marketing.hero" }]), LAYOUT);
+    // Deliberately wrong-typed input, cast like the other fixtures here.
+    const assets = resolveDocumentAssets(result, "not-a-function" as unknown as () => unknown);
+    expect(assets.unchecked).toEqual(["hero"]);
+    expect(describeAssetProblems(assets)).toEqual(["1 slot(s) asset resolution could not even attempt to resolve"]);
+    expect(describeAssetProblems(assets).join(" ")).not.toContain("hero");
+  });
+
   it("records an unresolved assetId (lookup returns undefined) in unresolvedAssetIds", () => {
     const result = resolveDocument(docWithBindings([{ slot: "hero", assetId: "marketing.hero" }]), LAYOUT);
     const assets = resolveDocumentAssets(result, () => undefined);
     expect(assets.unresolvedAssetIds).toEqual(["marketing.hero"]);
     expect(hasAssetProblems(assets)).toBe(true);
-    expect(describeAssetProblems(assets).join(" ")).toContain("marketing.hero");
+    expect(describeAssetProblems(assets)).toEqual(["1 assetId(s) that did not resolve to a real asset"]);
+    expect(describeAssetProblems(assets).join(" ")).not.toContain("marketing.hero");
   });
 
   it("records a lookup that throws in `unchecked`, and does not propagate the throw", () => {
@@ -132,7 +142,11 @@ describe("resolveDocumentAssets", () => {
     expect(assets.unresolvedAssetIds).toEqual([]);
     expect(assets.invalid).toEqual([{ key: "hero", assetId: "marketing.hero" }]);
     expect(hasAssetProblems(assets)).toBe(true);
-    expect(describeAssetProblems(assets).join(" ")).toContain("marketing.hero (slot \"hero\")");
+    expect(describeAssetProblems(assets)).toEqual([
+      "1 assetId(s) that resolved to a value that did not match the required RenderImageAsset or RenderVideoAsset shape (see internal/assets.ts for the by-type-required fields)",
+    ]);
+    expect(describeAssetProblems(assets).join(" ")).not.toContain("marketing.hero");
+    expect(describeAssetProblems(assets).join(" ")).not.toContain("hero");
   });
 
   it("defers a copyId/value-only binding to deferredToCopy, never a problem", () => {
@@ -186,8 +200,11 @@ describe("hasAssetProblems / describeAssetProblems", () => {
     );
     const assets = resolveDocumentAssets(result, (id) => (id === "wrong-shape" ? { nope: true } : undefined));
     const problems = describeAssetProblems(assets);
-    expect(problems.some((p) => p.includes("unresolvable"))).toBe(true);
-    expect(problems.some((p) => p.includes("wrong-shape"))).toBe(true);
+    expect(problems).toHaveLength(2);
+    expect(problems[0]).toMatch(/^1 assetId\(s\) that did not resolve to a real asset$/);
+    expect(problems[1]).toMatch(/^1 assetId\(s\) that resolved to a value that did not match/);
+    expect(problems.join(" ")).not.toContain("unresolvable");
+    expect(problems.join(" ")).not.toContain("wrong-shape");
     expect(hasAssetProblems(assets)).toBe(true);
   });
 });
@@ -407,8 +424,8 @@ describe("resolveStaticAssets / describeStaticAssetProblems", () => {
     expect(staticAssets.posterlessVideo).toEqual(["hero"]);
     const problems = describeStaticAssetProblems(staticAssets);
     expect(problems).toHaveLength(1);
-    expect(problems[0]).toContain("hero");
-    expect(problems[0]).toMatch(/no poster/);
+    expect(problems[0]).toBe("1 slot(s) resolved to a video asset with no poster image, which this channel has no playback capability to render instead");
+    expect(problems[0]).not.toContain("hero");
   });
 
   it("handles a mix of image, poster-video, and posterless-video slots in one resolution", () => {

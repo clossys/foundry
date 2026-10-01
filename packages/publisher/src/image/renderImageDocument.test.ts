@@ -81,8 +81,9 @@ describe("refusal paths", () => {
       expect.unreachable("should have thrown");
     } catch (error) {
       expect(error).toBeInstanceOf(RenderError);
-      expect((error as RenderError).message).toContain("could not resolve the document against its layout: missing required slot(s): headline");
+      expect((error as RenderError).message).toContain("could not resolve the document against its layout: 1 missing required slot(s)");
       expect((error as RenderError).message).not.toContain("sentinel-doc-id-61");
+      expect((error as RenderError).message).not.toContain("headline");
     }
   });
 
@@ -94,7 +95,8 @@ describe("refusal paths", () => {
     } catch (error) {
       expect(error).toBeInstanceOf(RenderError);
       expect((error as RenderError).reason).toBe("resolution-failed");
-      expect((error as RenderError).message).toContain("missing required slot(s): headline");
+      expect((error as RenderError).message).toContain("1 missing required slot(s)");
+      expect((error as RenderError).message).not.toContain("headline");
     }
   });
 
@@ -111,7 +113,8 @@ describe("refusal paths", () => {
       expect.unreachable("should have thrown");
     } catch (error) {
       expect((error as RenderError).reason).toBe("resolution-failed");
-      expect((error as RenderError).message).toContain("does-not-exist");
+      expect((error as RenderError).message).toContain("1 binding(s) targeting unknown slot(s)");
+      expect((error as RenderError).message).not.toContain("does-not-exist");
     }
   });
 
@@ -128,7 +131,8 @@ describe("refusal paths", () => {
     } catch (error) {
       expect(error).toBeInstanceOf(RenderError);
       expect((error as RenderError).reason).toBe("empty-output");
-      expect((error as RenderError).message).toContain("headline");
+      expect((error as RenderError).message).toContain("1 required slot(s) produced no content");
+      expect((error as RenderError).message).not.toContain("headline");
     }
   });
 
@@ -163,8 +167,9 @@ describe("refusal paths", () => {
     } catch (error) {
       expect(error).toBeInstanceOf(RenderError);
       expect((error as RenderError).reason).toBe("empty-output");
-      expect((error as RenderError).message).toContain("i2");
-      expect((error as RenderError).message).toContain("s");
+      expect((error as RenderError).message).toContain("every matched slot produced no usable content");
+      expect((error as RenderError).message).toContain("Omitted slot(s): 1.");
+      expect((error as RenderError).message).not.toContain("i2");
     }
   });
 
@@ -211,7 +216,9 @@ describe("assetId refusal paths (never a blank box)", () => {
     } catch (error) {
       expect(error).toBeInstanceOf(RenderError);
       expect((error as RenderError).reason).toBe("empty-output");
-      expect((error as RenderError).message).toContain("marketing.hero");
+      expect((error as RenderError).message).toContain("resolved the document against its layout, but at least one assetId binding did not produce a real asset: 1 assetId(s) that did not resolve to a real asset");
+      expect((error as RenderError).message).not.toContain("marketing.hero");
+      expect((error as RenderError).message).not.toContain("acme-hero");
     }
   });
 
@@ -230,7 +237,8 @@ describe("assetId refusal paths (never a blank box)", () => {
     } catch (error) {
       expect(error).toBeInstanceOf(RenderError);
       expect((error as RenderError).reason).toBe("empty-output");
-      expect((error as RenderError).message).toContain("could not even attempt to resolve: hero");
+      expect((error as RenderError).message).toContain("1 slot(s) asset resolution could not even attempt to resolve");
+      expect((error as RenderError).message).not.toContain("registry down");
     }
   });
 
@@ -247,7 +255,8 @@ describe("assetId refusal paths (never a blank box)", () => {
       expect.unreachable();
     } catch (error) {
       expect((error as RenderError).reason).toBe("empty-output");
-      expect((error as RenderError).message).toContain("marketing.hero");
+      expect((error as RenderError).message).toContain("1 assetId(s) that resolved to a value that did not match the required RenderImageAsset or RenderVideoAsset shape");
+      expect((error as RenderError).message).not.toContain("marketing.hero");
     }
   });
 
@@ -485,5 +494,58 @@ describe("StyleBinding.typography overrides the ElementKind default font size", 
       expect((error as RenderError).reason).toBe("unknown-style-role");
       expect((error as RenderError).message).toContain("--text-does-not-exist");
     }
+  });
+});
+
+describe("refusal messages never echo a document id, copy id, asset id or slot name", () => {
+  const SENTINEL_DOC_ID = "sentinel-doc-id-34";
+  const SENTINEL_ASSET_ID = "sentinel.asset.34";
+  const SENTINEL_COPY_ID = "sentinel.copy.34";
+
+  function refusal(run: () => unknown): string {
+    try {
+      run();
+    } catch (error) {
+      expect(error).toBeInstanceOf(RenderError);
+      return (error as RenderError).message;
+    }
+    return expect.unreachable("expected renderImageDocument to throw");
+  }
+
+  it("an asset that does not resolve is refused without the document id or the asset id", () => {
+    const doc = baseDoc({
+      id: SENTINEL_DOC_ID,
+      layout: { slots: [{ key: "hero", element: "image", frame: { x: 0, y: 0, w: 1, h: 1 } }] },
+      bindings: [{ slot: "hero", assetId: SENTINEL_ASSET_ID }],
+    });
+    const message = refusal(() => renderImageDocument(doc));
+    expect(message).toBe(
+      "renderImageDocument resolved the document against its layout, but at least one assetId binding did not produce a real asset: 1 assetId(s) that did not resolve to a real asset. Rendering would silently ship a canvas with a broken or missing image, which this function refuses to do.",
+    );
+    expect(message).not.toContain(SENTINEL_DOC_ID);
+    expect(message).not.toContain(SENTINEL_ASSET_ID);
+  });
+
+  it("a required slot with no content is refused without the document id, the copy id or the slot name", () => {
+    const doc = baseDoc({ id: SENTINEL_DOC_ID, bindings: [{ slot: "headline", copyId: SENTINEL_COPY_ID }] });
+    const message = refusal(() => renderImageDocument(doc));
+    expect(message).toContain("resolved the document against its layout, but 1 required slot(s) produced no content");
+    expect(message).not.toContain(SENTINEL_DOC_ID);
+    expect(message).not.toContain(SENTINEL_COPY_ID);
+    expect(message).not.toContain("headline");
+  });
+
+  it("a total loss is refused without the document id or the omitted slot names", () => {
+    const doc = baseDoc({
+      id: SENTINEL_DOC_ID,
+      layout: { slots: [{ key: "sentinel-slot-34", element: "body", frame: { x: 0, y: 0, w: 1, h: 1 } }] },
+      bindings: [{ slot: "sentinel-slot-34", copyId: SENTINEL_COPY_ID }],
+    });
+    const message = refusal(() => renderImageDocument(doc, { resolveCopyId: () => "" }));
+    expect(message).toBe(
+      "renderImageDocument resolved the document against its layout, but every matched slot produced no usable content (unresolved copyId(s)/assetId(s), or empty/ambiguous binding(s)) and the layout declares no background — there is nothing left to render. Omitted slot(s): 1.",
+    );
+    expect(message).not.toContain(SENTINEL_DOC_ID);
+    expect(message).not.toContain("sentinel-slot-34");
   });
 });
