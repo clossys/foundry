@@ -53,6 +53,24 @@ describe("AuthView", () => {
     expect(screen.getByText("Welcome back.")).toBeInTheDocument();
   });
 
+  it("form measure: <main> max-width is the form-measure token with no raw-length fallback", () => {
+    render(<AuthView brand="Acme" heading="Sign in" description="Welcome back." form={<div>form</div>} />);
+    const main = screen.getByRole("main");
+    expect(main.style.maxWidth).toBe("var(--ui-width-form-max, none)");
+    expect(main.style.maxWidth).not.toMatch(/rem|px/);
+  });
+
+  it("description under heading: the description is the element directly after the <h1> inside the page header", () => {
+    render(<AuthView brand="Acme" heading="Sign in" description="Welcome back." form={<div>form</div>} />);
+    const h1 = screen.getByRole("heading", { level: 1 });
+    const next = h1.nextElementSibling as HTMLElement;
+    expect(next).not.toBeNull();
+    expect(next).toHaveTextContent("Welcome back.");
+    const pageHeader = h1.closest("header") as HTMLElement;
+    expect(pageHeader.closest("main")).not.toBeNull();
+    expect(pageHeader).toContainElement(next);
+  });
+
   it("renders the brand slot's content inside the site header banner", () => {
     render(<AuthView heading="Sign in" brand={<span>Acme</span>} form={<div>form</div>} />);
     // jsdom also maps PageHeader's <header> inside <main> to "banner"; the

@@ -3208,11 +3208,14 @@ function SignInPage() {
 
 A full-page authentication shell — sign-in, sign-up, password reset, email
 verification. In order: a site header (`SiteHeader`, holding the required
-`brand`), a page header (`heading` plus optional `description`), a card
+`brand`), a page header (`heading` plus the required `description`), a card
 (built on `atoms/Card`) holding the `form` slot and `secondaryAction`, an
 optional `footnote`, and a site footer (`SiteFooter`, fed by
 `footerSecondary`). `heading` (required) renders as the page's `<h1>`;
-`form` (required) is rendered exactly as given, with no wrapper.
+`description` (required) renders directly under it, so every step decides on
+a supporting line; `form` (required) is rendered exactly as given, with no
+wrapper. The content column is held to the `--ui-width-form-max` form
+measure (`38rem`).
 
 **`AuthView` implements no authentication of any kind** — no provider, no
 form state, no field validation, no submit handling. It renders whatever
@@ -3317,11 +3320,14 @@ correctly for a colorblind viewer, on a greyscale screen, or through a
 screen reader with no color channel at all.
 A full-page authentication shell — sign-in, sign-up, password reset, email
 verification. In order: a site header (`SiteHeader`, holding the required
-`brand`), a page header (`heading` plus optional `description`), a card
+`brand`), a page header (`heading` plus the required `description`), a card
 (built on `atoms/Card`) holding the `form` slot and `secondaryAction`, an
 optional `footnote`, and a site footer (`SiteFooter`, fed by
 `footerSecondary`). `heading` (required) renders as the page's `<h1>`;
-`form` (required) is rendered exactly as given, with no wrapper.
+`description` (required) renders directly under it, so every step decides on
+a supporting line; `form` (required) is rendered exactly as given, with no
+wrapper. The content column is held to the `--ui-width-form-max` form
+measure (`38rem`).
 
 **`AuthView` implements no authentication of any kind** — no provider, no
 form state, no field validation, no submit handling. It renders whatever
@@ -4804,7 +4810,7 @@ part of this package's public API" and reachable only by that one test.
   ratified from `contrast.test.ts`'s own hand-curated pair map rather than
   auto-derived from token names. An earlier design assumed this gate could
   self-extend, deriving one pair per `--<role>-on-<ground>`-shaped token
-  name; counted against this package's real 167 tokens, only 5 actually
+  name; counted against this package's real 168 tokens, only 5 actually
   follow that shape (`--color-ink-on-accent`, `--color-ink-on-inverse`,
   `--color-accent-on-inverse`, `--color-line-on-inverse`,
   `--ui-ring-on-inverse` — see `contrast-pairs.ts`'s own header for a 6th,
