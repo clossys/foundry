@@ -616,10 +616,10 @@ npx strategist-check brand-coverage ./brand-derivations.json ./brandable-slots.j
 ```
 
 ```
-Usage: strategist-check brand-coverage <derivations-file> <brandable-slots-file> [--surfaces <file>]
+Usage: strategist-check brand-coverage <derivations-file> [<brandable-slots-file>] [--surfaces <file>]
 
   derivations-file      Path to a JSON file containing an array of BrandDerivation objects. Required.
-  brandable-slots-file  Path to a JSON file containing an array of brandable token-slot name strings. Required.
+  brandable-slots-file  Path to a JSON file containing an array of brandable token-slot name strings. Optional; defaults to the custom properties declared in brand/brand.css.
 
 Options:
   --help                 Print this message and exit 0.
@@ -634,6 +634,16 @@ non-empty strings: the caller-supplied `brandableSlots` list
 `@clossys/designer/tokens` — a consumer collects that list itself, e.g.
 `Object.values(TOKENS).filter(t => t.brandable).map(t => t.property)`, and
 writes it to a file this subcommand reads).
+
+When `brandable-slots-file` is omitted, the subcommand reads
+`brand/brand.css` under the working directory, takes every custom property
+declared there as a brandable slot, and prints `Brand stylesheet: <path>` so
+the report names the stylesheet it proved.
+The `brand/brand.css` default path comes from clossys/foundry#1583. Rule:
+`clossys/strategist/` holds direction only, with no hex values or type
+pairings. This package does not yet enforce it. A
+missing `brand/brand.css` is a usage error, and a stylesheet declaring no
+custom properties is indeterminate (exit `2`).
 
 Exit codes map `checkBrandCoverage`'s own three-state result directly —
 note this is **not** the same 0/1/2 meaning as the facts-check exit codes
@@ -1348,6 +1358,13 @@ function does no filesystem work of its own.
 | `BrandDerivation` | type | `{ attribute, tokenSlots: string[], voiceRules: string[], rationale }`. |
 | `BrandCoverageResult` | type | `{ ok, slotsChecked, derivationsChecked, slotsMissingDerivation: string[], unknownSlotsInDerivations: string[], reason? }`. |
 | `BrandCoverageFailureReason` | type | `"no-slots-provided" \| "no-derivations-provided" \| "coverage-gap"`. |
+
+### Brand stylesheet (`brand-css.ts`)
+
+| Export | Kind | Purpose |
+| --- | --- | --- |
+| `extractBrandCssSlots(css)` | function | Pure. Returns every custom property a stylesheet declares (`--name:`), once each, in source order, at any nesting depth. Comments and quoted strings are ignored, and `var(--name)` uses are not declarations. |
+| `BRAND_CSS_SEGMENTS` | constant | `["brand", "brand.css"]` — the path segments of the default brand stylesheet, relative to the working directory. Join with `node:path` `join`. |
 
 ### Direction invalidation (`direction-invalidation.ts`)
 

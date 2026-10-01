@@ -1,8 +1,11 @@
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { spawnSync } from "node:child_process";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { CliInputError, main } from "./cli.js";
+import { TOKENS } from "./tokens.js";
 
 // Hermetic: every test operates on its own `mkdtemp` directory, removed
 // afterward, and calls the exported `main(argv)` directly rather than
@@ -33,7 +36,11 @@ describe("main — argument handling", () => {
     expect(main(["--help"])).toBe(0);
   });
 
-  it("throws CliInputError when brand-css-file is missing", () => {
+  it("throws CliInputError when no argument is given and the default brand/brand.css does not exist", () => {
+    // The default path is resolved against the working directory, so pin it
+    // to this test's empty temp directory rather than whatever cwd the runner
+    // happens to have.
+    vi.spyOn(process, "cwd").mockReturnValue(dir);
     expect(() => main([])).toThrow(CliInputError);
   });
 
@@ -89,5 +96,78 @@ describe("main — real runs", () => {
   it("returns 1 for a typo'd slot name", () => {
     const path = writeBrandCss(':root {\n  --color-surfac-base: oklch(0.9 0 0);\n}\n');
     expect(main([path])).toBe(1);
+  });
+});
+
+// The multi-application contract, run as the installed command: the built
+// `dist/tokens/cli.js` with its working directory set to a product root, so
+// the default `brand/brand.css` and `apps/` are resolved the way a consumer's
+// CI resolves them. `dist/` is built once by the package's vitest globalSetup.
+const CLI_PATH = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..", "dist", "tokens", "cli.js");
+
+function runCli(args: string[]): { status: number | null; stdout: string; stderr: string } {
+  const result = spawnSync(process.execPath, [CLI_PATH, ...args], { cwd: dir, encoding: "utf8", timeout: 30_000 });
+  return { status: result.status, stdout: result.stdout, stderr: result.stderr };
+}
+
+function writeProductFile(rel: string, content: string): void {
+  const path = join(dir, rel);
+  mkdirSync(join(path, ".."), { recursive: true });
+  writeFileSync(path, content);
+}
+
+// Every brandable slot declared, so the coverage check itself is clean and a
+// non-zero exit can only come from something else. Only non-emptiness matters
+// to coverage, so one placeholder value serves every slot.
+const FULLY_COVERED_BRAND_CSS = `:root {\n${Object.values(TOKENS)
+  .filter((def) => def.brandable)
+  .map((def) => `  ${def.property}: red;\n`)
+  .join("")}}\n`;
+
+describe("command line — one brand overlay under apps/", () => {
+  it("a fully covered brand file exits 0 without a second binder and 1 once apps/ adds one", () => {
+    writeProductFile("brand/brand.css", FULLY_COVERED_BRAND_CSS);
+    writeProductFile("apps/web/page.css", ".x { margin: 0; }\n");
+    const clean = runCli([]);
+    expect(clean.stdout).not.toContain("second-brand-binding");
+    expect(clean.status).toBe(0);
+
+    writeProductFile("apps/web/globals.css", ":root { --color-accent: #000000; }\n");
+    const second = runCli([]);
+    expect(second.stdout).toContain("second-brand-binding");
+    expect(second.stdout).toContain("globals.css");
+    expect(second.status).toBe(1);
+  });
+
+  it("exits 1 and names the file when a second stylesheet binds a --color-* slot", () => {
+    writeProductFile("brand/brand.css", ":root { --color-accent: #2a78d6; }\n");
+    writeProductFile("apps/web/globals.css", ":root { --color-accent: #000000; }\n");
+    const result = runCli([]);
+    expect(result.status).toBe(1);
+    expect(result.stdout).toContain("second-brand-binding");
+    expect(result.stdout).toContain("globals.css");
+  });
+
+  it("exits 2 when --apps names a directory that does not exist", () => {
+    writeProductFile("brand/brand.css", ":root { --color-accent: #2a78d6; }\n");
+    const result = runCli(["--apps", "missing-apps"]);
+    expect(result.status).toBe(2);
+    expect(result.stderr).toContain("missing-apps");
+  });
+
+  it("exits 2 when the default brand/brand.css does not exist", () => {
+    writeProductFile("apps/web/globals.css", ".x { margin: 0; }\n");
+    const result = runCli([]);
+    expect(result.status).toBe(2);
+    expect(result.stderr).toContain("brand/brand.css");
+  });
+
+  it("exits 1, not 0, when the apps are clean but the brand file leaves template slots uncovered", () => {
+    writeProductFile("brand/brand.css", ":root { --color-accent: #2a78d6; }\n");
+    writeProductFile("apps/web/globals.css", '@import "../../../brand/designer.css";\n.x { color: var(--color-accent, red); }\n');
+    const result = runCli([]);
+    expect(result.status).toBe(1);
+    expect(result.stdout).not.toContain("second-brand-binding");
+    expect(result.stdout).toContain("finding(s)");
   });
 });

@@ -160,6 +160,7 @@ smallest stable subpath that owns what you need:
 | `@clossys/designer/tokens.css` | Neutral primitive custom-property defaults; works without Tailwind. |
 | `@clossys/designer/theme.css` | Optional Tailwind v4 wiring; imports `tokens.css` itself. |
 | `@clossys/designer/compiled.css` | GENERATED, precompiled utility CSS for `atoms`, `blocks`, and `shell` — the default path for a pre-auth page without Tailwind. Imports nothing itself; load after `tokens.css`. See "Framework-portable components, without Tailwind" below. |
+| `@clossys/designer/utilities.css` | GENERATED run of `@source inline(...)` directives, one per line, listing the class candidates this package's components use. Import it after `theme.css` in a Tailwind v4 entry to generate this package's utilities without a path `@source` on `dist`. See "Setup" below. |
 | `@clossys/designer/brand-template.css` | Copy-and-fill template for a consumer brand binding. |
 | `@clossys/designer/icons` | Tree-shakeable glyph data. |
 | `@clossys/designer/atoms`, `/blocks`, `/shell`, `/charts` | Reusable React visual primitives. |
@@ -649,6 +650,58 @@ resolution entirely — at the cost of having to enumerate every class you
 actually use instead of Tailwind discovering them from `dist/`. If the
 directory form above silently produces no styling under Turbopack + pnpm in
 your project, try this instead.
+
+**Several applications, one product.** Applications that are cuts of one
+product share one brand binding and one Designer install:
+
+```text
+brand/brand.css        the only overlay, copied from brand-template.css, under :root[data-brand-bound]
+brand/extensions.css   optional, product prefix only (--acme-ext-*)
+brand/designer.css     the only CSS entry
+```
+
+`brand/designer.css` imports, in order, `tailwindcss`,
+`@clossys/designer/theme.css`, `./brand.css`, and
+`@clossys/designer/utilities.css`:
+
+```css
+@import "tailwindcss";
+@import "@clossys/designer/theme.css";
+@import "./brand.css";
+@import "@clossys/designer/utilities.css";
+```
+
+`@import "tailwindcss"` resolves from the repository root, so `tailwindcss`
+(and `@tailwindcss/postcss`, for a PostCSS build) must be declared in the
+root `package.json`; an application's own
+dependencies are not consulted.
+
+When the product has an extension file, add one line after `./brand.css`;
+an `@import` of a file that does not exist fails the build, so leave it out
+otherwise:
+
+```css
+@import "./extensions.css";
+```
+
+Every application stylesheet imports that one file and every document root
+sets `data-brand-bound`. Applications do not copy the block.
+
+`utilities.css` is generated from this package's components and holds
+`@source inline(...)` directives listing every class they render. It
+generates the utilities from the CSS file's own location, so it does not
+depend on a path `@source` resolving through a pnpm symlink (step 2), and the
+consumer keeps no class list.
+
+Only the repository root (or one workspace package) declares
+`@clossys/designer`. When an application cannot resolve
+`@clossys/designer/atoms/server`, `blocks/server`, or `shell/server` from that
+dependency under pnpm, add a workspace package that depends on
+`@clossys/designer` and re-exports those entries; applications depend on that
+package instead. `designer-brand-check` looks for `brand/brand.css` by
+default and, when an `apps/` directory exists (or `--apps <dir>` is given),
+exits 1 for any other stylesheet under it that declares a `--color-*`
+property.
 
 **3. If a component still renders unstyled, call `assertTokenStylesLoaded`
 first** — before chasing your Tailwind `@source` config or bundler setup.
@@ -5274,7 +5327,7 @@ given import needs depends on the subpath you import, not on the package as
 a whole.
 
 - No peers: `tokens`, every CSS subpath (`tokens.css`, `theme.css`,
-  `compiled.css`, `brand-template.css`), `icons`, `gate`, and
+  `compiled.css`, `utilities.css`, `brand-template.css`), `icons`, `gate`, and
   `render-environment`.
 - `react`: `atoms`, `blocks`, `shell`, `charts`, `theme`, and each `/server`
   subpath.

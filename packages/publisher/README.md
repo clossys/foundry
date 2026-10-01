@@ -151,7 +151,7 @@ Use explicit subpaths:
 - `@clossys/publisher/document` — the product-neutral structured-document contract (sections, paragraphs, lists, tables, callouts, safe links) and its renderer.
 - `@clossys/publisher/email`, `/print`, `/image`, `/slides` — channel renderers.
 - `@clossys/publisher/record` — the append-only, content-addressed publication ledger and its drift checker. See "`record` — the append-only publication ledger," below.
-- `@clossys/publisher/pack` — the v0 Launch pack manifest contract: types, schema validation, needs-graph readiness, adopt-don't-override detection, and the evidence-gated website seal (`publisher-seal`). See "The pack," below.
+- `@clossys/publisher/pack` — the v0 Launch pack manifest contract: types, schema validation, needs-graph readiness, adopt-don't-override detection, and the evidence-gated website seal (`publisher-seal`) and the rendered-head lint (`publisher-head-lint`). See "The pack," below.
 - `@clossys/publisher/surfaces` — the one-owner-per-file contract for surface documents under `clossys/publisher/surfaces/`. See "Surface documents move to Publisher," below.
 - `@clossys/publisher/materials` — the materials mini-site (overviews, pitch decks, audience variants). See "Materials site," below.
 - `@clossys/publisher/templates` — the pack's default templates and the channel spec registry. See "Templates and channel specs," below.
@@ -662,9 +662,8 @@ that picks one — see "Scope," above: this package still does not compose.
 slots; `features` (required) and `faq` (optional) are **repeating** slots,
 each bound via a `SurfaceRepeatingSlotBinding` and rendered through
 `@clossys/designer`'s `FeatureGrid`/`Faq` blocks respectively. An empty
-repeating group (`items: []`) renders that section with zero entries —
-never an error, the same "empty is a deliberate, valid choice" contract
-`SurfaceRepeatingSlotBinding` itself holds to, above; a `faq` binding that
+`features` group with no `featuresHeading` or `featuresDescription` omits
+the grid; a `faq` binding that
 was never authored at all omits the whole FAQ section instead, which is a
 different, equally valid outcome (see `MarketingView`'s own `faq` prop doc
 comment).
@@ -2550,12 +2549,16 @@ console.log(result.index.pages.length, result.index.exports.length);
 ### Sealing a website
 
 A website item moves from `kept` to `published` only on evidence. The caller
-supplies the evidence; Publisher checks it and never calls a provider.
+supplies the evidence; Publisher checks it and never calls a provider. Only
+the pack's `website` item can be sealed, and only on evidence that names it.
 
 `WebsiteSealEvidence` (`schemaVersion: 1`) is one bundle:
 
+- `itemId`: the pack item the evidence was taken for. It must equal the item
+  being sealed.
 - `commit`: the 40-hex commit being sealed, and `observedAt`, when the
-  evidence was taken.
+  evidence was taken. `observedAt` must be a real calendar date and time:
+  `2026-09-31T00:00:00Z` is refused as a bad shape.
 - `delivery`: `{ state: "ready", deployedCommit, productionUrl }`, with an
   `https` production URL.
 - `pages`: one `WebsiteSealPage` per observed page, each
@@ -2566,9 +2569,11 @@ supplies the evidence; Publisher checks it and never calls a provider.
   `{ kind: "none", reason }`. It is always stated; a missing value is refused
   and `none` needs a non-empty `reason`.
 
-`checkSealEvidence(evidence, { map, now })` returns `SealFinding[]`, each a
-`rule` and a `path`, and never throws. It refuses when:
+`checkSealEvidence(evidence, { map, now, itemId })` returns `SealFinding[]`,
+each a `rule` and a `path`, and never throws. `itemId` is optional; when
+given, the evidence's own `itemId` must equal it. It refuses when:
 
+- `itemId` is missing, or differs from the item being sealed;
 - `delivery.state` is not `ready`, or `deployedCommit` differs from `commit`;
 - a path on the `PublicationMap` has no page, or a page is not status 200, or
   its `servedCommit` differs from `commit`;
@@ -2577,13 +2582,15 @@ supplies the evidence; Publisher checks it and never calls a provider.
 - `contactIntake` is missing or malformed, or the map has no path entries.
 
 There is no waiver flag, option, or environment switch. A finding never
-repeats a digest, URL, reason, path, or commit from the input: it names a rule
-and an index path such as `pages[1].servedCommit`.
+repeats any text from the input: it names a fixed rule and a fixed field path
+or array index such as `pages[1].servedCommit`. A successful seal does return
+the entry id, which is derived from the item id and the commit.
 
 `sealWebsite({ manifest, ledger, itemId, evidence, map, now, strategyRevision })`
 is pure and returns `SealWebsiteResult`: `{ ok: true, manifest, ledger, entryId }`
 or `{ ok: false, findings }`. It refuses unless the evidence is clean, `itemId`
-is in `sealableItemIds(manifest)`, and the item is `public`. On accept the item
+is `website` and in `sealableItemIds(manifest)`, and the item is `public`
+(`item-not-website` otherwise). On accept the item
 is `published` with `verifiedAt` set to `now` and `publishedTo` set to the
 production URL, and the ledger gains one `web` entry through `appendEntry` with
 id `website-<itemId>-<first 12 of commit>`; the inputs are not changed. Sealing
@@ -2594,13 +2601,31 @@ The `publisher-seal` command runs it over files:
 
 ```sh
 publisher-seal clossys/publisher/pack.json clossys/publisher/record.json evidence.json map.json \
-  --item website --strategy-revision rev-1 [--now 2026-09-30T12:00:00Z]
+  --item website --strategy-revision rev-1
 ```
 
-It exits 0 when it sealed and wrote both files (each to a temp file, then
-renamed), 1 when it refused and wrote nothing, and 2 when it could not run: a
-missing or unreadable file, invalid JSON, a manifest, ledger, or map that is
-not itself valid, or bad arguments. `--now` defaults to the current time.
+It exits 0 when it sealed and wrote both files, 1 when it refused and wrote
+nothing, and 2 when it could not run: a missing or unreadable file, invalid
+JSON, a manifest, ledger, or map that is not itself valid, a manifest or
+ledger that is a symbolic link or has a second hard link, a lock held by
+another run, a file that changed while the run was deciding, a failed write, or
+bad arguments.
+
+The seal is made at the current time. There is no `--now`: a settable time
+would let a caller backdate the 24 hour evidence window, so passing it is an
+unknown flag and exits 2.
+
+Nothing is written before the gate has accepted. Then the command takes
+`<file>.seal.lock` on the manifest and the ledger (created exclusively, so a
+second run is refused instead of racing), re-reads both, and refuses if either
+changed since the gate looked. It writes each output, and a copy of the
+previous ledger, to a temp file created exclusively with the permissions of the
+file it replaces, then renames the ledger first and the manifest second. If the
+manifest rename fails, the previous ledger is renamed back and the run can be
+repeated; if that fails too, the error says the ledger was written and names
+the file that holds the previous ledger. A run removes only the temp and lock
+files it created; a lock left by a run that stopped is removed by hand once no
+run is active.
 
 ```ts
 import { checkSealEvidence } from "@clossys/publisher/pack";
@@ -2610,6 +2635,7 @@ const digest = "a".repeat(64);
 const findings = checkSealEvidence(
   {
     schemaVersion: 1,
+    itemId: "website",
     commit,
     observedAt: "2026-09-30T11:00:00Z",
     delivery: { state: "ready", deployedCommit: commit, productionUrl: "https://www.example.test/" },
@@ -2619,9 +2645,63 @@ const findings = checkSealEvidence(
   {
     map: { entries: [{ id: "home", template: "landing", documentId: "doc-home", location: { kind: "path", path: "/" } }] },
     now: "2026-09-30T12:00:00Z",
+    itemId: "website",
   },
 );
 console.log(findings.length === 0 ? "ready to seal" : findings.map((finding) => `${finding.rule} ${finding.path}`));
+```
+
+### Rendered head lint
+
+`lintRenderedHead({ siteName, pages })` checks the head of already rendered
+pages (`pages` is `{ path, html }[]`, `path` being the route) and returns
+`SealFinding[]`, each a `rule` and a `path` that is a route or `<route>#<tag>`
+(for example `/about#og:image`). It is pure, never throws, and a finding never
+repeats a title, URL or description taken from the HTML. Scanning is tolerant:
+attribute order and quote style do not matter, comments and `<script>`/`<style>`
+bodies are ignored, a few character references are decoded, and a value that is
+blank after trimming counts as missing. It stops at `</head>` or `<body`.
+
+Rules:
+
+- `head-missing`: a page lacks one of `<title>`, meta `description`, `robots`,
+  `theme-color`, `link rel=canonical`, `og:title`, `og:description`, `og:url`,
+  `og:image`, `og:site_name`, `twitter:card`, `twitter:title` or
+  `twitter:image` (path `<route>#<tag>`).
+- `title-format`: the title is not `<siteName> · <tagline>` on route `/` or
+  `<label> · <siteName>` on any other route. The separator is U+00B7 with one
+  space on each side, used once.
+- `title-separator`: the title uses `|` or a dash where the separator belongs.
+- `title-duplicate`: the head has more than one `<title>`.
+- `canonical-duplicate`: the head has more than one `link rel=canonical`.
+- `head-title-mismatch`: any `og:title` or `twitter:title` value differs from `<title>`.
+- `canonical-path`: the canonical pathname is not the route (a trailing slash
+  is ignored).
+- `canonical-origin`: the canonical URL is not absolute `http(s)`, or its origin
+  differs from the first page's.
+- `input-invalid`: `siteName` is blank, `pages` is not an array or is empty
+  (path `input` or `pages`), or a page's `path` is not a non-empty string
+  starting with `/` (path `pages[<index>]`).
+
+The `publisher-head-lint` command runs it over a directory:
+
+```sh
+publisher-head-lint dist/site --site-name "Example Co"
+```
+
+It reads every `.html` file under the directory (`index.html` maps to its
+directory's route, `a.html` to `/a`), skips symbolic links, and writes nothing.
+It exits 0 when clean, 1 with one `<rule> <path>` line per finding, and 2 when
+it could not run: bad arguments, or a missing, empty or unreadable directory.
+
+```ts
+import { lintRenderedHead } from "@clossys/publisher/pack";
+
+const findings = lintRenderedHead({
+  siteName: "Example Co",
+  pages: [{ path: "/about", html: "<html><head><title>About | Example Co</title></head><body></body></html>" }],
+});
+console.log(findings.map((finding) => `${finding.rule} ${finding.path}`));
 ```
 
 ## Surface documents move to Publisher

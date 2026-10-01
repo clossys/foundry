@@ -158,6 +158,17 @@ describe("resolveMessagingKit", () => {
       ]);
     });
 
+    it("refuses text the resolver would rewrite when no placeholders are declared", { timeout: 5000 }, () => {
+      const text = "An example {thing} elevator pitch text";
+      const result = resolveMessagingKit(registryOf(goodEntries({ 1: { text, approval: ownerApprovalFor(text) } })), { now });
+      expect(result.complete).toBe(false);
+      expect(result.kit).toBeUndefined();
+      expect(result.resolutions).toBeUndefined();
+      expect(result.issues).toEqual([
+        expect.objectContaining({ reason: "messaging-placeholder", field: "pitch.elevator", id: "messaging.pitch.elevator" }),
+      ]);
+    });
+
     it("refuses a blank entry text through registry validation", { timeout: 5000 }, () => {
       const result = resolveMessagingKit(registryOf(goodEntries({ 0: { text: "   ", approval: undefined } })), { now });
       expect(result.complete).toBe(false);
