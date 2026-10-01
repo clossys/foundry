@@ -1,3 +1,4 @@
+import { useId } from "react";
 import type { ReactNode } from "react";
 import { Badge, type BadgeVariant } from "@clossys/designer/atoms/server";
 import { PageHeader } from "@clossys/designer/blocks/server";
@@ -139,6 +140,10 @@ export function PackReviewView({
   footerSecondary,
 }: PackReviewViewProps) {
   const sheetWidths = requireWidths(widths);
+  // One id per section heading, so each section is named by its own h2 through `aria-labelledby`.
+  const pagesHeadingId = useId();
+  const exportsHeadingId = useId();
+  const sheetHeadingId = useId();
 
   pages.forEach((page, pageIndex) => {
     requireHref(page.href, `pages[${pageIndex}].href`);
@@ -164,8 +169,8 @@ export function PackReviewView({
       >
         <PageHeader title={heading} description={description} />
 
-        <section className="flex flex-col gap-md" aria-labelledby="pack-review-pages">
-          <h2 id="pack-review-pages" className="text-h2 text-ink-primary">
+        <section className="flex flex-col gap-md" aria-labelledby={pagesHeadingId}>
+          <h2 id={pagesHeadingId} className="text-h2 text-ink-primary">
             {labels.pagesHeading}
           </h2>
           {pages.length === 0 ? (
@@ -194,8 +199,8 @@ export function PackReviewView({
           )}
         </section>
 
-        <section className="flex flex-col gap-md" aria-labelledby="pack-review-exports">
-          <h2 id="pack-review-exports" className="text-h2 text-ink-primary">
+        <section className="flex flex-col gap-md" aria-labelledby={exportsHeadingId}>
+          <h2 id={exportsHeadingId} className="text-h2 text-ink-primary">
             {labels.exportsHeading}
           </h2>
           {exports.length === 0 ? (
@@ -216,8 +221,8 @@ export function PackReviewView({
           )}
         </section>
 
-        <section className="flex flex-col gap-md" aria-labelledby="pack-review-sheet">
-          <h2 id="pack-review-sheet" className="text-h2 text-ink-primary">
+        <section className="flex flex-col gap-md" aria-labelledby={sheetHeadingId}>
+          <h2 id={sheetHeadingId} className="text-h2 text-ink-primary">
             {labels.sheetHeading}
           </h2>
           {frames.length === 0 ? (
