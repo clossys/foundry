@@ -222,9 +222,9 @@ silent fallback.
 
 | Current directory | What happens |
 | --- | --- |
-| Empty | Creates `{owner}/workspace` from the in-package skeleton (package name `@owner/workspace`, pinning live `@clossys/advisor` and `@clossys/integrator` exactly in `devDependencies`), or clones that hub if it already exists. |
+| Empty | Creates `{owner}/workspace` from the in-package skeleton (package name `@owner/workspace`, pinning live `@clossys/advisor` and `@clossys/integrator` exactly in `devDependencies`), or, when that repository already exists, clones it and classifies its hub marker like a local run: a current marker resumes; a legacy `.clossys/` marker alone is migrated to `clossys/.state/`; both markers are refused before Launcher writes into the clone; with no marker, the clone is appointed as the hub (refused when its working tree has uncommitted changes; existing `README.md`, `AGENTS.md` and `CLAUDE.md` are kept, and a skeleton `package.json` is written only when the clone has none) and the apply message says "appointed". That appoint needs no inventory, but refuses when the clone carries an inventory that fails its contract or a `package.json` that is not a JSON object; every such refusal leaves the clone unchanged. |
 | Already a hub (generated marker; packed template `skeleton/clossys/.state/workspace.json`) | Resumes. No new repository. `--repositories` writes the repositories the founder chose again into `clossys/.state/inventory.json` before skills are composed (see "Choosing the hub's repositories" below). `--inventory` here is refused, and the refusal points at choosing the repositories again on Advisor's repository card and running `launcher --repositories`, instead of at hand-editing the file. A legacy `.clossys/` hub state is migrated automatically; see "Layout" above. For each hub engine whose live version the registry returned, pins that version exactly in `devDependencies` of the hub's existing `package.json`: a frozen older pin is bumped, a pin newer than live is kept, a missing Integrator pin is added, and a pin in another bucket is moved; other `@clossys/*` entries are left as they are, and the file is rewritten only when a pin changes. The report then names each change and the install to run next (see "Engine pins and the lockfile" above). |
-| Any other GitHub repository you control | Appoints it as the account hub. Keeps existing product files. Refuses when the working tree has uncommitted changes (`git status --porcelain` non-empty) — the refusal names the offending remote host when the origin is not on github.com. Refuses when `CLOSSYS_OWNER` names a different account than the repository's github.com origin owner. Writes the hub marker. Pins live `@clossys/advisor` and `@clossys/integrator`, each exactly, in `devDependencies`, relocating any pin left in another bucket, raising an older one (a pin newer than live is kept), and leaving other `@clossys/*` entries as they are; the report names each change and the install to run next. A dedicated `{owner}/workspace` checkout is named `@owner/workspace`; a product repository keeps its package name. Always reads the public Advisor and Integrator versions (needed to pin live, and to pin and grade health on resume); refuses as indeterminate when the registry returns either one unreadable. Refuses if the generated hub inventory is missing or empty (packed template `skeleton/clossys/.state/inventory.json`; that generated path does not ship), and the refusal points the founder at choosing the hub's repositories on Advisor's repository card and passing them to `--repositories`, which writes the inventory (see "Choosing the hub's repositories" below). `--inventory <path>` still supplies a populated document instead — and, when the on-disk inventory is already populated and `--inventory` is also supplied, merges the two by repository identity (on-disk order first, new repositories appended, the first occurrence of a repository kept, and every kept entry kept whole, its `packages` included). Does not rewrite the lockfile or dump the catalogue. Prints a read-only health report. |
+| Any other GitHub repository you control | Appoints it as the account hub. Keeps existing product files. Refuses when the working tree has uncommitted changes (`git status --porcelain` non-empty) — the refusal names the offending remote host when the origin is not on github.com. Refuses when `CLOSSYS_OWNER` names a different account than the repository's github.com origin owner. Writes the hub marker. Pins live `@clossys/advisor` and `@clossys/integrator`, each exactly, in `devDependencies`, relocating any pin left in another bucket, raising an older one (a pin newer than live is kept), and leaving other `@clossys/*` entries as they are; the report names each change and the install to run next. An existing `package.json` `name` is kept; a `{owner}/workspace` checkout whose manifest has no name is named `@owner/workspace`. Refuses, before writing anything, an existing `package.json` that is not a JSON object (unparseable, an array, or a primitive). Always reads the public Advisor and Integrator versions (needed to pin live, and to pin and grade health on resume); refuses as indeterminate when the registry returns either one unreadable. Refuses if the generated hub inventory is missing or empty (packed template `skeleton/clossys/.state/inventory.json`; that generated path does not ship), and the refusal points the founder at choosing the hub's repositories on Advisor's repository card and passing them to `--repositories`, which writes the inventory (see "Choosing the hub's repositories" below). `--inventory <path>` still supplies a populated document instead — and, when the on-disk inventory is already populated and `--inventory` is also supplied, merges the two by repository identity (on-disk order first, new repositories appended, the first occurrence of a repository kept, and every kept entry kept whole, its `packages` included). Does not rewrite the lockfile or dump the catalogue. Prints a read-only health report. |
 
 It does not have to be a brand-new exclusive repository, and it does not
 have to already match a Foundry layout. Informal "workspace-looking" trees
@@ -333,8 +333,11 @@ launcher-check --help
 launcher-check --input observation.json
 launcher-doctor
 launcher-apply-plan --plan plan.json --brief brief.json --repo ./product-checkout
+launcher-apply-plan plan
 launcher-apply-plan materialize --repo ./site-checkout
 launcher-apply-plan verify --repo ./site-checkout
+launcher-apply-plan status --repo ./site-checkout
+launcher-apply-plan body --repo <id> --task-record 12
 launcher-apply-plan snapshot --request package-request.json
 ```
 
@@ -368,7 +371,7 @@ Exit codes preserve the ternary:
 | `formatHubHealth()` | Human lines plus a `health:` JSON line for the same report. |
 | `hasAdvisorPin()` | True when a manifest already pins Advisor in any dependency bucket. |
 | `checkInventoryEntries()` | Read-only inventory id validation through `gh repo view` (batched; skips with a note when `gh` is unavailable). |
-| `DEFAULT_REPOSITORY_NAME` | Default new-hub repository name (`workspace`). Used only when creating, never when appointing. |
+| `DEFAULT_REPOSITORY_NAME` | Default hub repository name (`workspace`): the repository an empty-directory run creates, or clones when it already exists. |
 | `CLOSSYS_DIR_REL` | Relative path of the one visible per-repository Clossys folder (`clossys`). |
 | `STATE_DIR_REL` | Relative path of the machine-state folder (`clossys/.state`). |
 | `WORKSPACE_MARKER_REL` | Relative path of the hub marker. |
@@ -391,7 +394,8 @@ Exit codes preserve the ternary:
 | `isPlanApproved()` | True only when a plan's most recent decision (by timestamp) has `chosen === "approved"`. False when decisions at that latest time disagree, or when any decision time does not parse. It binds no bytes: it ignores `subjectDigest`, so it is also true for an approval that names no change. |
 | `applyEngagementBrief()` | Writes `clossys/brief.json` into a repository directory once the plan validates and is approved and the brief validates; refuses and writes nothing otherwise. Reports the plan's canonical digest. |
 | `planDigest()` / `canonicalJson()` / `canonicalDigest()` / `PLAN_DIGEST_EXCLUDED_FIELDS` | The canonical plan digest: `sha256:` over the RFC 8785 canonical JSON of the plan without `asOf` and `decisions`. Identical to Advisor's for every plan. `canonicalDigest()` is the shared step: `sha256:` over the canonical JSON of any value, which the plan, change-set and bundle digests all use. |
-| `planApplyBundle()` | The pure apply planner: from a validated plan, the hub brief, observations of each staffed repository's default branch (including the exact bytes of its installed-state ledger and its composed-skill manifest), the change sets the hub holds, the composed skill text, the producer version and the hub's Advisor and Integrator pins, computes one change set per staffed repository in the apply phase and returns a report-mode bundle. Trusts a repository's ledger only through held change sets, or skips the repository with the trust rule as its reason (`ledger-unreadable`, `identity`, `renamed`, `ledger-chain`, `ledger-foreign-row`); computes each owned path and key by compare-and-swap against the trusted ledger (add, keep, update, or a refusal: `unowned-existing`, `client-edited`, `deleted`), reported under V8; composes the Advisor voice with the staffed roles' voices; skips a repository in the setup phase (`setup-template-unbuilt`), one whose Controller profile needs root entries added when the observation omits the profile text (`root-entry-edit-unbuilt`), one whose owned package the lockfile no longer resolves to the recorded version and integrity (`integrity-mismatch`, violated), one whose ledger holds only some of a setup template's files (`template-rows-partial`), and one whose lockfile or ledger path has a case variant among the observed files (`case-variant-path`). Two or more observed files at the same path, compared case-insensitively, have no single base digest between them, so that path is never kept, updated or adopted. Refuses, by throwing before computing anything, a staffed role that is not a lowercase id token (`role-not-an-id`) and a planItem that is not its repository id, a colon and its package name (`plan-item-not-derived`). Reads no file, network, process or clock; the same inputs give the same bytes. Throws, naming positions and never values, on inputs it cannot plan from. |
+| `planApplyBundle()` | The pure apply planner: from a validated plan, the hub brief, observations of each staffed repository's default branch (including the exact bytes of its installed-state ledger and its composed-skill manifest), the change sets the hub holds, the composed skill text, the producer version and the hub's Advisor and Integrator pins, computes one change set per staffed repository (a setup set for a repository in the setup phase, an apply set otherwise) and returns a report-mode bundle. Trusts a repository's ledger only through held change sets, or skips the repository with the trust rule as its reason (`ledger-unreadable`, `identity`, `renamed`, `ledger-chain`, `ledger-foreign-row`); computes each owned path and key by compare-and-swap against the trusted ledger (add, keep, update, or a refusal: `unowned-existing`, `client-edited`, `deleted`), reported under V8; composes the Advisor voice with the staffed roles' voices; skips a repository, `indeterminate` and outside the bundle digest, when a setup set cannot be computed safely (`package-manager-unsupported`, `starter-pin-absent`, `starter-pin-unsupported`, `release-age-text-absent`, `starter-request-invalid`), when an apply set would change the Starter pin its request names (`starter-request-stale`), one whose Controller profile needs root entries added when the observation omits the profile text (`root-entry-edit-unbuilt`), one whose owned package the lockfile no longer resolves to the recorded version and integrity (`integrity-mismatch`, violated), one whose ledger holds only some of a setup template's files (`template-rows-partial`), and one whose lockfile or ledger path has a case variant among the observed files (`case-variant-path`). Two or more observed files at the same path, compared case-insensitively, have no single base digest between them, so that path is never kept, updated or adopted. Refuses, by throwing before computing anything, a staffed role that is not a lowercase id token (`role-not-an-id`) and a planItem that is not its repository id, a colon and its package name (`plan-item-not-derived`). Reads no file, network, process or clock; the same inputs give the same bytes. Throws, naming positions and never values, on inputs it cannot plan from. |
+| `AGENTS_GUIDE_PATH` / `AGENTS_GUIDE_TEXT` / `CLOSSYS_SKILL_PATTERNS` / `verifyAgentsGuide()` | The Launcher-owned guide, the `AGENTS.md` file inside `clossys/`: its path, its one constant text, the three `clossys-*` skill path patterns the text carves out, and a check that is true only for exactly those bytes. The text holds no plan text, repository name or client detail, and no marker sits inside it. |
 | `trustInstalledLedger()` / `reconcileWholeFile()` | Whether a repository's ledger bytes may be trusted: exactly canonical and valid (`ledger-unreadable`), for the observed node id (`identity`) and id, compared exactly -- a difference in letter case alone is still refused (`renamed`) -- every generation a held, valid change set whose digest recomputes and that agrees with its history entry (`ledger-chain`), and every row a write of the set it names (`ledger-foreign-row`); a refusal carries the rule only. `reconcileWholeFile()` is the compare-and-swap table for one whole file, with the generation-0 adoption pass allowed only in a setup set; `clossys/.state/skills.json` is adopted through that pass only when its base already holds the exact bytes the set would write, never merely because a skills manifest was read. Pure. Types: `LedgerTrust`, `LedgerTrustRule`, `WholeFileState`, `WholeFileOutcome`. |
 | `projectEngagementBrief()` / `serializeEngagementBrief()` / `PUBLIC_PROBLEM_PLACEHOLDER` | One repository's brief: the hub brief with `staffedHere` set to that repository's roles in plan order, and `problem` replaced by the brief contract's fixed placeholder unless the repository is private, members in the brief contract's order at every depth; and the exact bytes written for it (two-space JSON and a final newline). |
 | `changeSetDigest()` / `changeSetDigestSubject()` / `CHANGE_SET_DIGEST_EXCLUDED_FIELDS` / `DERIVED_FILE_DIGEST_FIELDS` | The change-set digest: `canonicalDigest()` of the change set without `changeSetDigest`, `branch`, `bundle`, `pullRequest`, `inverse`, `tooling` and `texts`, with each derived file reduced to `path`, `mode`, `derived`, `item` and `invariants`. |
@@ -399,7 +403,7 @@ Exit codes preserve the ternary:
 | `validateRepositoryChangeSet()` / `validateApplyBundle()` | Validation of a change set and a bundle against the shared change-set and bundle contracts, including their code rules (C1-C16 for a change set: references, allow-list and case-insensitive path rules, the ledger, the digest, only the ledger and lockfile derived, canonical order, each item's writes matching it -- discovery links, the skills manifest, the pointer files and the setup templates included -- a pin-starter in devDependencies and at most once, phase, a complete setup set, the release-age exemption's surface and scope, the root entries a Controller profile needs, no skill written through a symbolic link, every refusal at a path or key its item binds, every whole file changed only as its act's write kind allows (none deletes), and each planItem derived from the repository id and package name; A1-A7 for a bundle: unique ids, the digest, verdicts that are the worst of their checks, the authorization-mismatch and authorization-absent checks, no state or binding in a report bundle, and in a planned bundle a state only where all nine checks passed and a binding exactly where V3 passed). Unknown fields are refused; no reason echoes a value. |
 | `wouldViolateRootEntries()` / `isRootEntryName()` | Whether the root names some paths introduce (each path's first segment) would fail a Controller repository profile's closed root vocabulary: `satisfied` when the profile has no vocabulary Controller checks (schema version 1 or 2, or an empty `rootEntries`) or declares every name allowed or required; `violated`, with the undeclared and the prohibited names, sorted; `indeterminate` (`root-vocabulary-unknown`) for anything Controller could not read as a root vocabulary. Reads only `schemaVersion` and `rootEntries`, by the rules Controller's README states; pure. `isRootEntryName()` is Controller's rule for one direct-child name. |
 | `validateInstalledLedger()` / `readInstalledLedger()` / `ledgerSuccession()` / `serializeInstalledLedger()` / `renderInstalledLedger()` | The installed-state ledger (`clossys/.state/installed.json`): validation against the shared ledger contract and its code rules L1-L10 (history, each generation's approval binding, rows naming history, owned paths and link modes, keys matching packages, no act twice, canonical order, root entries in one Controller profile among fixed names, id-token roles in skill paths, and derived planItems); the contract's succession rules for a pull request's head ledger against its base's, each given as its exact bytes, a `Uint8Array` (both must be exactly canonical; then unchanged, or one next generation keeping the base's history, and an admitted generation installing exactly what the setup deferred and changing nothing else), reporting whether a next generation was proved `admitted` or only claims an approval (`approval-claimed`); the exact bytes of a valid ledger; a strict read of a ledger from its bytes, also a `Uint8Array` (null unless it is a `Uint8Array`, valid and exactly canonical -- decoded with the same strict, BOM- and invalid-UTF-8-refusing reader the plan and brief contracts use, never a caller's own decode); and the bytes of the next generation a change set writes over the previous ledger, under the contract's RENDER section (each deferred row takes its identity from the plan's package acts, `LedgerPackageIdentity`), refusing a set computed from another generation or for another repository, and an apply set that would adopt a file. A valid ledger is well formed, not trusted: see `trustInstalledLedger()`. |
-| `storeChangeSet()` / `storeApplyBundle()` / `readStoredChangeSet()` / `readStoredApplyBundle()` / `CHANGE_SET_STORE_REL` / `BUNDLE_STORE_REL` | The hub's content-addressed stores under `clossys/.state/apply/change-sets/` and `clossys/.state/apply/bundles/`, one file per digest named by its 64 hex digits: a write validates first, does nothing when the file already holds the same bytes, and refuses different bytes; a read is strict, validated, and returns the document only when its recomputed digest matches its name, else null. A digest argument that is not `sha256:` and 64 lowercase hex digits is refused before any path is built. A stored file's recomputed digest proves its integrity, not its provenance: anyone who can write the hub directory can add a set that verifies. Every store directory segment down to `change-sets/` or `bundles/` must be a real directory; a symbolic link anywhere in that chain is refused rather than followed, and a filesystem error other than a missing directory or file is rethrown naming only the operation and its error code, never a path. |
+| `storeChangeSet()` / `storeApplyBundle()` / `readStoredChangeSet()` / `readStoredApplyBundle()` / `CHANGE_SET_STORE_REL` / `BUNDLE_STORE_REL` | The hub's content-addressed stores under `clossys/.state/apply/change-sets/` and `clossys/.state/apply/bundles/`, one file per digest named by its 64 hex digits: a write validates first and does nothing when the file already holds the same bytes; a change set is append-only and different bytes under its name are refused, while a bundle's digest excludes its authorization, clock and verdicts, so storing a bundle under a digest that already names a file atomically replaces that one file with the newest computation (superseded computations are not recorded); a read is strict, validated, and returns the document only when its recomputed digest matches its name, else null. A digest argument that is not `sha256:` and 64 lowercase hex digits is refused before any path is built. A stored file's recomputed digest proves its integrity, not its provenance: anyone who can write the hub directory can add a set that verifies. Every store directory segment down to `change-sets/` or `bundles/` must be a real directory; a symbolic link anywhere in that chain is refused rather than followed, and a filesystem error other than a missing directory or file is rethrown naming only the operation and its error code, never a path. |
 | `CloneMissingOutcome` / `DoctorCheckHost` / `DoctorReport` / `DoctorStepId` / `DoctorStepResult` / `CloudBootstrapCheck` / `CloudBootstrapReport` / `ExternalInventoryDeclaration` / `InventoryDriftReport` / `DiscoveredHost` / `HostRecord` / `BudgetPreference` / `HostModelProfile` / `HostTierMapping` / `ModelResolution` / `PreferencesDocument` / `ReasoningTier` / `SupportedHost` / `AdvisorPlan` / `ApplyBriefResult` / `BlockerKind` / `EngagementBrief` / `EngagementBriefRole` / `EngagementContext` / `EngagementContextField` / `EngagementContextFieldId` / `GoalDirection` / `PlanBlocker` / `PlanDecision` / `PlanKit` / `PlanPackageAct` / `PlanStaffing` / `ValidationResult` / `PlanApplyBundleInputs` / `PlanApplyBundleResult` / `RepositoryObservation` / `SkippedRepositoryObservation` / `BundleDigestEntry` / `ApplyBundle` / `ApplyBundleRepository` / `ApplyCheck` / `ApplyCheckId` / `ChangeSetDeferral` / `ChangeSetItem` / `ChangeSetPhase` / `ChangeSetRefusal` / `CheckVerdict` / `ContentDigest` / `DependencyPlacement` / `DerivedFileChange` / `FileChange` / `KeyChange` / `LedgerInvariant` / `LockfileName` / `PackageInvariant` / `PackageManagerKind` / `PinnedPackage` / `RefusalReason` / `ReleaseAgeSurfaceKind` / `RepositoryChangeSet` / `RepositoryVisibility` / `WholeFileChange` / `ApprovalBinding` / `DiscoveryRoot` / `ExemptionSurfaceKind` / `WriteRecordSource` / `InstalledLedger` / `LedgerSuccession` / `LedgerViolation` / `RepositoryProfileObservation` / `RootEntryDeclaration` / `RootEntriesVerdict` | Typed contracts for the sections above. |
 
 ## Doctor
@@ -432,6 +436,63 @@ which of the three is missing. A launcher run in the hub writes nothing
 into a product repository, so until the repository is staffed in an approved
 plan and that plan's setup pull request merges, an unsatisfied
 `agents-pointer` check is the expected state; its note says so.
+
+### Setup templates
+
+`renderSetupTemplate()` and the renderers beside it are pure functions that
+return the exact bytes of the files a setup change writes. Nothing writes those
+bytes yet; a later step plans them into a change set. The renderers behind it
+are exported too: `renderStarterRequest()`, `renderAdoptionDecisionWorkflow()`,
+`renderProductCiWorkflow()`, `renderAdoptionEvidenceWorkflow()`,
+`renderSnapshotCollector()`, `renderPathScopeWorkflow()` and
+`renderPathScopeScript()`, the standalone script the path-scope workflow embeds.
+A `TemplateResult` is either `{ ok: true, files }`, a list of `TemplateFile`
+entries (`path` and `bytes`), or `{ ok: false, refusal }` with a
+`TemplateRefusal`; the package manager is a `SetupPackageManager` and the Starter
+pin a `StarterPinInput`.
+
+There are four acts, each with a fixed file list that `renderSetupTemplate()`
+returns in this order:
+
+- `add-caller-workflow` takes `{ packageManager }` and returns
+  `.github/workflows/clossys-adoption-evidence.yml`,
+  `.github/workflows/clossys-adoption-decision.yml` and
+  `.github/scripts/clossys-collect-adoption-snapshot.mjs`.
+- `write-starter-request` takes a `StarterRequestInput` and returns
+  `.starter/request.json`.
+- `add-ci-template` takes no input and returns `.github/workflows/clossys-ci.yml`.
+- `add-path-scope-job` takes no input and returns
+  `.github/workflows/clossys-path-scope.yml`.
+
+The request is in the admission phase and names the Starter as both its own
+engine and its target, and it names both evidence paths, the assessment file
+and the target-input file. It carries no advisor and no hub. The Starter pin must be an exact version in `>=0.2.0 <0.3.0`
+(`STARTER_PIN_RANGE`); any other pin is refused as `starter-pin-unsupported`,
+and a package manager other than npm or pnpm, Yarn included, is refused as
+`package-manager-unsupported`. A refusal names a position such as
+`starter.version` and never quotes the value it refused.
+
+The decision workflow starts only on `workflow_run` completion of the evidence
+workflow, and its job carries no condition, so it starts for every conclusion.
+It checks out the protected pull request base, runs one fixed frozen install
+(`npm ci --ignore-scripts` or `pnpm install --frozen-lockfile --ignore-scripts`),
+and runs the installed Starter's `admit` command over a sparse checkout of the
+`workflow_run` head that holds only `/clossys/.state/installed.json`. The
+trusted decision job never reads or trusts the snapshot artifact the evidence
+workflow uploads, because a pull request controls that workflow. The collector
+script is still written because the contract's file set for the caller
+workflows names it.
+
+The path-scope job applies to pull requests whose head branch starts with
+`clossys/apply-`, and fails when a changed path is outside the paths Clossys may
+own (`OWNED_PATH_PATTERNS`) or, apart from the ledger, `package.json` and the
+lockfiles, is not named by the pull request's own ledger. It runs in the pull
+request's own context, so it catches an agent's mistakes, not a hostile author;
+the admission job runs from the protected base.
+
+A change to any of these workflows, or to `.starter/request.json`, is proved
+only by the first pull request after it merges, because the decision runs from
+the base: a one-merge lag.
 
 ## Inventory: adopting an existing source
 
@@ -573,6 +634,62 @@ Advisor's job); it only validates the two shapes and writes the one file.
 The apply planner below is different: it projects each repository's brief
 from the hub brief itself.
 
+Launcher's packed skill carries the agent procedure that puts a stored change
+set into a staffed repository, under "Apply an approved plan" (#1762). The
+agent verifies, files the task-record issue, prints the pull request body with
+`launcher-apply-plan body`, commits and pushes only the set's `clossys/apply-`
+branch, opens the pull request, reads `launcher-apply-plan status`, and reports.
+Launcher never pushes, opens a pull request, files an issue or merges, and the
+procedure forbids merging and enabling auto-merge. `check-package-skills` pins
+each of those rules in the packed skill text.
+
+### Release-age exemption
+
+`editReleaseAgeExemption()` computes the edit that lists the publishing
+scope's `<scope>/*` entry as exempt from a package manager's release-age
+delay (#1178). It is pure: it does no I/O. It takes a surface
+(`pnpm-workspace` or `yarnrc`), the surface file's text or `null`, and, for
+pnpm, the `.npmrc` text or `null`. It returns `edited` with the exact new
+text, `unchanged` when the scope entry is already listed, or a refusal
+(`ReleaseAgeEdit`, with `ReleaseAgeEditInput` and
+`ReleaseAgeEditRefusalReason`).
+
+The entry goes under `minimumReleaseAgeExclude` (pnpm, single-quoted) or
+`npmPreapprovedPackages` (Yarn, double-quoted). A missing file becomes the
+key alone, a top-level block sequence of scalars gets one new entry after
+its last item, and a file without the key gets the key appended. Other
+bytes, including comments and the final newline, are kept. The function
+reads only the shapes it recognises: `release-age-surface-unparseable` covers
+a flow sequence, an anchor, an alias, a tag, a comment inside the list,
+several documents, a tab, a carriage return or byte order mark, a repeated
+key, and a value that is not a block sequence of scalars.
+
+For pnpm the `.npmrc` is read under a fixed grammar and refused otherwise.
+Every line must be blank, a comment (first non-space character `#` or `;`),
+or a plain `key=value` assignment, optionally spaced around the `=`, whose key
+is only ASCII letters, digits and `@ : _ . / -`. An `.npmrc` containing any
+line outside those shapes (a quoted or bracketed key, a comment or escape
+inside the key, a tab, a section header, a key with no `=`) is refused as
+`release-age-surface-unparseable`, because npm's ini reader could read such a
+line as the exclusion setting. A plain key that is `userconfig`,
+`globalconfig` or `prefix` (in any case, with `-` and `_` ignored) is refused
+the same way, because it points npm at another config file or prefix
+directory whose own exclusion list the editor cannot read. A plain key that is
+`minimum-release-age-exclude` in any case, with `-` and `_` ignored (so the
+camel-case spelling too), is refused as `release-age-surface-conflict`.
+Refusing is the default: an unrelated `.npmrc` line the grammar does not list
+also refuses the whole file, and the caller resolves the file by hand.
+
+`verifyReleaseAgeExemption()` takes the surface, the text before, the text
+after, and, for pnpm, the `.npmrc` text. It reports a `ReleaseAgeVerdict`, `{ verified: true, value }`
+(its input is a `ReleaseAgeVerifyInput`), only when the two texts differ by that one added entry, read again with the
+same rules; `value` is the `<scope>/*` string the installed-state ledger's
+`entries` row holds. It returns `{ verified: false }` for an unchanged file
+(`before` equal to `after`) and for any `.npmrc` that is a conflict or outside
+the grammar above, so a wiring unit must not verify after an `unchanged` or
+`refused` result. It says nothing about whether a given pnpm or Yarn
+version honours the key; that is proved separately with pinned tools.
+
 ### Computing each repository's change
 
 `planApplyBundle()` computes, for each repository a plan staffs, the change
@@ -603,15 +720,70 @@ in this package).
   installed-state ledger as a derived file. No act the plan authorizes is
   dropped and no other act is added. An act the default branch already
   satisfies exactly is kept with `satisfiedInBase: true` and writes nothing.
+- Each set also writes the Launcher's guide, an `AGENTS.md` file inside
+  `clossys/`, which covers `clossys/` and the `clossys-*` skills (`agents-guide` item, write-record
+  source `agents-guide`, bound by code rule C9 to that one path). Its bytes are
+  the constant `AGENTS_GUIDE_TEXT`, the same for every repository: it says that
+  `clossys/` and the `clossys-*` skills (`.agents/skills/clossys-*`,
+  `.claude/skills/clossys-*`, `.cursor/skills/clossys-*`) are Launcher-owned
+  and are not edited, renamed or duplicated, and that the repository's own
+  skill policy carves that namespace out. Ownership is the ledger row's digest
+  of the whole file, like any other whole file, with no marker inside it: an
+  existing guide file the ledger does not record is refused as
+  `unowned-existing`, and only a setup set adopts one whose bytes are already
+  exactly the guide. `verify` compares the head's bytes with the set's digest
+  and with `verifyAgentsGuide()`; any difference is `diverged`, and `status`
+  reports it as `agents-guide-mismatch`, printing only that token and the pull
+  request number, never file text. The repository's own root `AGENTS.md` and
+  `CLAUDE.md` are not touched. A follow-up will append one fixed pointer line
+  to the root `AGENTS.md`, only when it is absent, and never rewrite the
+  file.
 - A skill under a symbolic link on the default branch (`.agents`,
   `.agents/skills` or the role's own skill directory) is refused as
   `skills-root-is-link`: the planner never writes through a link.
-- A repository in the `setup` phase gets no change set yet: it is skipped
-  as `setup-template-unbuilt`, `indeterminate`, and left out of the bundle
-  digest. The change-set contract requires a setup set to carry the setup
-  templates (the caller workflows, the Starter request, the CI and
-  path-scope workflows, the Starter pin and, for pnpm or Yarn, the
-  release-age exemption), and the planner does not compute them yet.
+- A repository in the `setup` phase gets a setup set, which the change-set
+  contract requires to carry exactly one item for each of four setup
+  templates (`caller-workflow`, `starter-request`, `ci-template` and
+  `path-scope-job`), the plan's one Starter pin, and, for pnpm, one
+  release-age exemption. The template bytes come only from
+  `renderSetupTemplate()`; the template patterns join `pathAllowList` before
+  any template file is written, and the Starter request takes the package
+  manager, the repository id and the plan's pin and nothing else. A template
+  file the base does not have is created; one it has is adopted only when its
+  bytes are exactly the set's own, and is `unowned-existing` otherwise.
+  Adoption follows the same compare-and-swap table as any whole file, and is
+  the one place the generation-0 adoption pass runs: a composed skill is
+  adopted only when the base's skills manifest records the digest of its
+  bytes. The plan's `pin-starter` act is the set's Starter pin. Every
+  `install` act goes to `deferred` with the reason `after-setup`: it gets no
+  item, no key and no lockfile invariant, and is written by the apply set
+  that follows.
+- For pnpm, a setup set carries one `exempt-release-age` item, with the fixed
+  item id `release-age`, for the pnpm workspace file. Its text comes only from
+  `editReleaseAgeExemption()`, over the exact text of `pnpm-workspace.yaml`
+  and of `.npmrc` that the observation carries. An edit is a whole-file write
+  whose `before` is the digest the base has (or null, when the file is
+  created); an entry the file already lists gives the item and no file; a
+  file the editor will not read, or one whose `.npmrc` sets the same list,
+  gives a path refusal with the editor's reason
+  (`release-age-surface-unparseable`, `release-age-surface-conflict`) and a V6
+  `indeterminate` check with the same rule. A directory at the file's path is
+  refused as unparseable. An apply set carries the same item, with no file,
+  when its trusted ledger records that entry, so that it matches the setup
+  set item for item. npm has no exemption key, so an npm set has no item.
+- A repository is skipped, `indeterminate` and outside the bundle digest,
+  with a reason of its own, wherever a setup set cannot be computed safely:
+  `package-manager-unsupported` (neither npm nor pnpm), `starter-pin-absent`
+  (the plan names no single Starter pin there), `starter-pin-unsupported`
+  (a pin outside the templates' range, `STARTER_PIN_RANGE`),
+  `starter-request-invalid` (a request the renderer refuses, such as a
+  repository id that is not `owner/name`), and `release-age-text-absent` (a
+  pnpm repository whose workspace file or `.npmrc` is there and whose exact
+  text the observation does not carry). An apply set whose Starter pin would
+  write a key is skipped as `starter-request-stale`, because the request a
+  setup set wrote would then name another pin and an apply set does not
+  rewrite it. The planner throws if the text an observation carries is not
+  the file its `files` digest.
 - The planner reads the repository's installed-state ledger at the base
   and trusts it only through change sets the hub holds (see
   `trustInstalledLedger()` above): every generation must be a held set whose
@@ -637,9 +809,8 @@ in this package).
 - In an apply set, each setup template whose files all have ledger rows is
   carried as a no-op item, one keep entry per file (or `client-edited` /
   `deleted`); a template with only some of its files in the ledger skips the
-  repository as `template-rows-partial`. An apply set carries no release-age
-  item; its ledger rows for release age pass forward unchanged. Only apply
-  sets edit the Controller repository profile: when the observation carries
+  repository as `template-rows-partial`. A set edits the Controller repository
+  profile: when the observation carries
   its text and the edit is stable, a `declare-root-entry` item adds each root
   name the set introduces and the vocabulary lacks, as an allowed extension,
   changing nothing else in the profile (`editJsonPointer`, the same editor
@@ -673,18 +844,20 @@ in this package).
 - The bundle digest covers only the plan digest and each computed
   repository's id and change-set digest, so an approval can bind it and a
   repository can recompute it from digests alone.
-- The bundle's `mode` is `report`, and it records no repository state and
-  no binding. The bundle contract also defines a `planned` mode, where a
-  repository that passed all nine pre-apply checks and is bound by an
-  approval is `planned`, with that binding; nothing writes a planned bundle
-  yet, because the checks that would earn it -- the installed-state ledger
-  and package provenance -- are not run here. The bundle reports the
-  planner's own dry-materialization check (V6), which covers the file
+- The planner's bundle `mode` is `report`, and it records no repository
+  state and no binding. The bundle contract also defines a `planned` mode,
+  where a repository that passed all nine pre-apply checks and is bound by an
+  approval is `planned`, with that binding; the `plan` command writes one
+  only when the hub's committed plan carries an approval that names a bundle
+  the hub holds (see the plan command below). The planner reports its
+  own dry-materialization check (V6), which covers the file
   layout only: the part of V6 that regenerates the lockfile and checks its
-  invariants is not run, so a set that changes a lockfile carries V6
+  invariants is not run by the planner, so a set that changes a lockfile carries V6
   `indeterminate` with rule `lockfile-not-run`, and V6 is `satisfied` only
-  for a set with no lockfile change. A setup-phase repository is skipped
-  instead (see above). Compare-and-swap outcomes are reported under V8:
+  for a set with no lockfile change; the `plan` command replaces that entry
+  by running the rest of V6, and V9, in a temporary tree (see the plan
+  command below). A release-age path refusal adds V6
+  `indeterminate` with its reason as the rule. Compare-and-swap outcomes are reported under V8:
   `unowned-existing`, `client-edited`, `deleted` and `removal-unbuilt` each
   give V8 `indeterminate`, and a set with none of them gives V8 `satisfied`. Two V3 checks
   need no observation: when the authorization names a different plan
@@ -693,6 +866,16 @@ in this package).
   and no authorization is given, every computed repository gets a violated
   V3 check (`authorization-absent`). Each repository's verdict is the worst
   of its checks.
+
+What a setup set guarantees: it validates against the contract, every write
+is a compare-and-swap against the base, a file is adopted only by byte proof,
+template bytes come from the renderer alone, the Starter pin is one the
+templates support, and materialization and verification both prove that the
+release-age file is the base's bytes plus exactly the one scope entry. What it
+does not handle: root entries in a setup set (the apply set that follows is
+refused by admission because its items differ), lockfile regeneration and the
+provenance check (V9), which the `plan` command runs on a temporary tree, and
+a later change of the pin.
 
 Nothing here writes to a product repository, creates a branch or opens a
 pull request; the only files this part of the package writes are the hub's
@@ -703,6 +886,124 @@ repository -- including the setup pull request that brings a staffed
 repository `@clossys-advisor` and the voices of the roles staffed there --
 are not built yet, so until it ships no Launcher command puts those voices
 into a product repository.
+
+### Observing a repository
+
+`observeRepository({ id, clone, hubOwner?, ports })` turns one local clone
+into the `RepositoryObservation` that `planApplyBundle()` takes, or into a
+skipped observation `{ id, skipped, verdict }` with a reason id. The input is
+an `ObserveRepositoryInput`: a bare `id` is qualified by `hubOwner`, and the
+`RepositoryObservationPorts` supply the two values a clone cannot hold
+(`nodeId` and `visibility`) and, optionally, `originId`, which maps an origin
+URL to `owner/name`.
+
+```ts
+const observed = await observeRepository({
+  id: "acme/site",
+  clone: "/work/site",
+  ports: { nodeId, visibility },
+});
+if ("skipped" in observed) console.log(observed.skipped, observed.verdict);
+```
+
+- The rule: only this repository's own object database and refs are read,
+  through git plumbing, never the working tree and never an alternate object
+  store, `commondir` or submodule repository; anything unusual is refused,
+  not interpreted. What the object database holds is trusted to match its
+  ids: an observation is the committed head as the clone's object database
+  stores it. Every field is read from git objects at the default-branch
+  head; a file's digest is that of its bytes read as UTF-8 text, as
+  materialization computes it (a symbolic link's digest is the digest of its
+  target). Nothing is written to the clone: the remote tip is read with
+  `git ls-remote` run outside the clone, and the default branch comes from
+  the remote's `HEAD`.
+- The committed tree is listed first, and a submodule is refused
+  (`submodule-present`), before any command that reads the working tree runs;
+  `git status` never considers a submodule, because git would open the
+  submodule's own repository and read its configuration.
+- A clone is refused, not observed, when its directory is missing
+  (`clone-missing`, `indeterminate`); when its `origin` is another repository;
+  when its tree is dirty or has untracked files not ignored, or a tracked file is marked
+  skip-worktree or assume-unchanged; when its local head differs from the
+  remote tip; when it reads objects from another store
+  (`objects/info/alternates`); when its git directory holds a split index's
+  shared file (`sharedindex.*`), which git rewrites on every index read, so
+  observing it would write to the clone (`clone-config-unsafe`); or when `.git/config` holds a key outside a
+  short fixed list (`violated`). The config is read as data, so a filter,
+  hook path, pager, `fsmonitor` or alias entry is refused rather than run.
+- The default origin parser names only an exact `https://github.com/` or
+  `ssh` GitHub URL, and only those two transports fetch; an `originId` you
+  supply is the only way a local path is fetched. git is run from an absolute
+  path found among the absolute, non-empty `PATH` entries, never by a search
+  of the clone's own directory.
+- `files` lists whatever the head holds at a path the apply flow may write: a
+  file, a symbolic link, or, for a directory, each file under it, so a
+  directory where a link belongs reads as occupied. Root entries that differ
+  from `clossys`, `.agents`, `.claude` or `.cursor` only by letter case,
+  Unicode form or a trailing dot, and two spellings of `.github` or
+  `.starter`, are refused (`case-variant-owned-path`); a `consumerCi` workflow
+  is a regular file spelled `.github/workflows/`. A regular `.npmrc` is listed
+  as well, though the flow never writes it, because a pnpm setup reads it.
+- `pnpmWorkspaceText` and `npmrcText` are the exact UTF-8 text of
+  `pnpm-workspace.yaml` and `.npmrc` at the head, or null when the file is
+  absent or is not UTF-8; the planner reads a release-age exemption only from
+  them, and throws when one is not the file `files` digests.
+- `nodeId` and `visibility` come through the injected ports; a port that
+  throws or returns a malformed value is `indeterminate`.
+- `phase` is `apply` only when the base has a valid installed-state ledger,
+  every setup-template path is a regular file at the head, and
+  `manifestEntries` pins `@clossys/starter` at an exact `0.2.x` version, the
+  range the setup templates support (the templates' own predicate; `0.1.9`
+  and `0.3.0` read as `setup`), for which its lockfile has a row of that name
+  and version, not an alias (an `npm:` alias,
+  or another package under its name, is refused as `lockfile-unreadable`; the
+  host and integrity are the planner's to check); otherwise it is `setup`.
+- git runs without hooks, `fsmonitor` or a pager, and every tree, blob and
+  output read has a size bound. git inside the clone reads no configuration
+  but the vetted `.git/config` and fixed `-c` overrides: the system and
+  global configuration are switched off, and `GIT_CONFIG_COUNT` and its
+  key and value variables, `GIT_CONFIG_PARAMETERS`, `GIT_CONFIG_SYSTEM` and
+  `GIT_ATTR_SOURCE` are removed. `git ls-remote`, which runs outside the
+  clone, keeps the operator's global and system git config files (credential
+  helpers, proxy) and is given `GIT_CONFIG_COUNT`, `GIT_CONFIG_KEY_n` and
+  `GIT_CONFIG_VALUE_n`, so an origin that needs credentials supplied through
+  them is observed; a fixed `-c` override and `GIT_ALLOW_PROTOCOL` still win
+  over them. `GIT_CONFIG_PARAMETERS` (git's internal encoding of `-c`, not an
+  interface) and `GIT_CONFIG_SYSTEM` are not forwarded to it, so an origin that
+  needs either is skipped as `remote-tip-unreadable`. git's own `GIT_TEST_*`
+  switches (`GIT_TEST_SPLIT_INDEX` among them) reach no git command.
+
+| Verdict | Skip reasons |
+| --- | --- |
+| `violated` | `invalid-id`, `clone-config-unsafe`, `origin-mismatch`, `not-on-default-branch`, `remote-tip-mismatch`, `working-tree-dirty`, `package-manager-conflict` |
+| `indeterminate` | `clone-missing`, `clone-unreadable`, `id-owner-unknown`, `remote-tip-unreadable`, `node-id-unavailable`, `visibility-unavailable`, `tree-too-large`, `submodule-present`, `manifest-unreadable`, `lockfile-ambiguous`, `package-manager-unknown`, `lockfile-unreadable`, `release-age-surface-invalid`, `agents-link-unreportable`, `observation-too-large`, `case-variant-owned-path`, `ledger-unreadable`, `profile-ambiguous` |
+
+What it does not decide: it reports what the committed head holds, not
+whether applying is safe. The checks (configuration, head, index, status)
+and the reads run one after another and are not repeated; the clone is not
+locked. A process that changes the clone between a check and a read is not
+detected, and cannot be detected by checking again, since any later check
+has the same gap, and a process that can write the clone's `.git` can
+already plant a hook or filter that the operator's own git would run. What
+the observation reports is unaffected: every byte comes from an object at the
+remote tip's commit, which a later commit, checkout or edit in the clone does
+not change, so an observation states what that commit held, not that the
+clone stayed clean after it was checked. Object contents, and links inside
+`.git/objects`, are trusted to match their ids. Ignored files at owned paths
+read as absent (`base-mismatch` catches them); a symbolic link at `.github`,
+`.starter` or `clossys` is unreported here and refused by materialization
+(`symlink-ancestor`); conversion attributes (`eol`, `ident`, LFS) end in
+`base-mismatch`; lossy UTF-8 digests can collide, as in materialization; a
+clone clean only through a custom global `core.excludesFile`, or one that
+needs `safe.directory`, is refused, which fails closed. Ownership and trust
+are the planner's judgement, and so is whether the pinned Starter version implements the
+request beyond that template range.
+It is not a check of Windows short names or other alias spellings beyond case
+and Unicode-normalization folding, and which root names a particular set
+creates is the planner's contract check; the observation reports over
+`clossys`, `.agents`, `.claude` and `.cursor`, and, for a repository in its
+setup phase, `.github`, `.starter` and, for a pnpm repository whose workspace
+file the exemption edit will create, `pnpm-workspace.yaml`.
 
 ### The installed-state ledger
 
@@ -746,8 +1047,15 @@ here reads a ledger from a repository: the caller hands its bytes in.
 - The hub keeps every change set and bundle it computes under
   `clossys/.state/apply/change-sets/` and `clossys/.state/apply/bundles/`,
   one file per digest (`storeChangeSet()`, `storeApplyBundle()`). A stored
-  file is never replaced, and a read returns it only when its recomputed
-  digest matches its name.
+  change set is never replaced; a stored bundle is replaced atomically, and
+  only when the same `bundleDigest` is stored again, which covers the plan
+  digest and the change-set digests only, so only the authorization, verdict,
+  clock and mode fields can differ. A rerun replaces a stored bundle of the
+  same digest, planned or not, with one exception: a report-mode bundle never
+  replaces a stored planned one that verifies (`store-failed`), so an
+  approval-bound record is not downgraded by a run that lost the approval. A
+  stored file that does not verify is replaced. A read returns a file only
+  when its recomputed digest matches its name.
 - The succession rules compare what two ledgers claim, not the files: an
   admitted generation must install exactly the packages its setup deferred
   and change no other row, but whether the pull request's tree matches its
@@ -764,6 +1072,104 @@ here reads a ledger from a repository: the caller hands its bytes in.
   contract renders for it: a repeated key, a byte order mark or any other
   spelling is refused (`bytes`), never read as an unchanged ledger.
 
+### Planning and the approval sheet
+
+`launcher-apply-plan plan` runs in the hub and takes no option beyond `--help`.
+It computes the apply bundle for the plan file in the hub's working tree, reports whether
+that exact file is the one committed at `HEAD` (the sheet's `Plan committed:` line), and prints the
+approval sheet a client reads before approving it (RFC section 12.7). It
+reads the hub only: `clossys/advisor/plan.json` and `brief.json`, the composed
+skill of each staffed role and of the Advisor voice, the stored change sets,
+the inventory (a staffed repository the inventory does not list is skipped as
+`not-in-inventory`), the exact `@clossys/advisor` and `@clossys/integrator`
+versions in `package.json` with their integrity from the lockfile (a range, or
+a version the lockfile does not hold, is refused), and the execution
+authorization committed in `clossys/advisor/assessment-input.json`, read as
+the blob at `HEAD` and never from the working tree. No blob, or no
+`engagement.executionAuthorization`, is no authorization; one that is not an
+object, or lacks a string `planDigest` or `expiresAt`, is refused. Each staffed
+repository is observed from its clone, a sibling of the hub, by
+`observeRepository()`, and `planApplyBundle()` does the rest. No option carries
+an approval or a binding. The result is a `planned` bundle only when the plan
+is the committed one and the hub's committed plan, read as a git object at an
+attached `HEAD`, carries an approving decision for this plan digest whose
+subject is a bundle the hub stores and verifies. Then each repository's V3 is
+decided by the admission check (`decideSetBinding()`, over the installed-state
+ledger at the set's base commit), and only a bound repository gets a binding:
+V3 `violated` (exit 1) or `indeterminate` (exit 2) with its fixed rule token
+gives none, and a repository whose V3 the bundle already marks violated is
+not admitted and spawns no readiness run. A repository with a binding and
+V1 to V9 all satisfied is `planned`; V1, V2, V4, V5 and V7 are recorded
+satisfied, V9 satisfied only for a set with no derived lockfile (a set that
+changes one keeps the dry tree's V9, and is not `planned` without it). An apply
+set names the bundle that will be recorded in the ledger, and admission needs
+that bundle stored, so the first run after a setup set merges stores it with
+V3 `indeterminate` (`apply-bundle-unrecorded`) and the next run admits it. The
+digests, the change sets and the sheet, apart from its `Mode:` line, are the
+same as in report mode.
+
+It then stores the change sets and the bundle under `clossys/.state/apply/`,
+the only place it writes, and prints the sheet. Over unchanged inputs and an
+unchanged clock the sets, their digests and the bundle digest are the same on
+every run; the V6 and V9 checks stored with them come from the package manager,
+the registry and the Integrator, and the digest does not cover them. A rerun
+after the clock, the committed authorization or the result of a check changed
+keeps the same bundle digest, which covers the plan digest and the change-set
+digests only, and stores the newest computation under it: the one bundle file
+is replaced atomically, and the sheet is printed as before. Change sets stay
+append-only. Earlier computations under a digest are not recorded.
+
+```text
+Approve subjectDigest: sha256:<the bundle digest>
+
+| Repository | Kind | Item | Change | Digest |
+| --- | --- | --- | --- | --- |
+| example-owner/site | pin-starter | example-owner/site:@clossys/starter | @clossys/starter@0.2.0 | 3d2b4f88280d |
+| example-owner/site | compose-skills | skills | 10 paths | 3d2b4f88280d |
+```
+
+The sheet is ids and digests only: the bundle and plan digests, the mode, the
+authorization, one row for each item of each change set (`Change` is
+`name@version` for a package act, else a path count; `Digest` is the first 12
+hex digits of the set's digest), and then each deferred, refused or skipped
+entry by id or path and reason token. It carries no brief or plan prose, no
+stored text, no key value and no file contents. `renderApprovalSheet()` in
+this package builds it as a pure function of the bundle and its change sets,
+and refuses, by a fixed token that names no value, a set or bundle that does
+not validate, sets that are not exactly the bundle's, and any printed value
+that fails a strict pattern or holds `<`, `>`, a backtick, `|`, a carriage
+return or a line feed. Every refusal of the command is likewise a fixed token,
+printed as `launcher-apply-plan plan: <token>; nothing was stored`, except
+`store-failed` and an unexpected failure, which end without that clause because
+some of the sets may already be stored.
+
+Exit `0` when every repository is `satisfied`; `1` when any is `violated`;
+`2` when an input could not be read, the planner refused, or a repository is
+`indeterminate`. A bundle that was computed is stored and printed whatever the
+exit. A Starter pin or a package install changes a lockfile, whose
+regeneration (V6) the planner does not run, so the command dry-materializes
+each such repository before it prints the sheet. It reads the clone at the
+set's base commit through git's object database (`ls-tree` and `cat-file`; no
+checkout, worktree, index or ref is written), writes that tree and the set's
+changes into a directory of its own under the operating system's temporary
+directory, regenerates the lockfile there with the runner `materialize` uses
+(V6), and, only when that passes, runs the hub's provenance check (V9) on the
+same tree. The directory is removed before the command returns, whatever
+happened. A submodule, a link that could reach outside the tree, a link or file
+whose name a filesystem that folds case or normalization would read as a parent
+directory of another entry, a `..` or `.git` path segment or a tree over the
+size cap gives V6 `indeterminate` and launches nothing. A base file whose bytes
+differ from what the set names as its `before` gives V6 `violated`
+(`base-mismatch`), and set text whose bytes differ from its digest gives V6
+`indeterminate` (`change-set-invalid`). A failure of the dry tree gives V6
+`indeterminate` with rule `dry-tree-failed` for that repository only, and V9 is
+then `indeterminate` with rule `lockfile-not-regenerated`. Only V6 and V9 change: the sets, their
+digests and the bundle digest do not. A repository that has a refused path or
+key, or another check that is not satisfied, is not dry-materialized. No rule
+carries tool output, a path or an id. The tool version of pnpm and Yarn is not
+supplied, so a repository that uses one stays `indeterminate`. Supersede is
+not part of this command.
+
 ### Materializing and verifying a change set
 
 `launcher-apply-plan materialize --repo <id>` writes a stored repository
@@ -774,6 +1180,234 @@ set. Both commands are step 3 in
 [`docs/rfcs/apply-approved-plan.md`](../../docs/rfcs/apply-approved-plan.md)
 (section 11); a successful verify corresponds to the `materialized` row in
 section 4.4 of that RFC.
+
+### What authorizes a write
+
+`materialize` and `verify` decide, from the hub alone, on whose authority a
+change set is written, and record exactly that in the ledger; no flag, option
+or default supplies it. The decision reads the plan committed at the hub's
+current branch head (an uncommitted edit to `clossys/advisor/plan.json` is
+ignored, and a detached head refuses), the latest approving decision's
+subject digest, the stored bundle with that digest, and the stored change
+sets.
+
+- **Approved.** The set is a member of that bundle, by repository id and
+  change-set digest, and its plan digest equals the plan's. The ledger
+  records `approved` with the bundle's digest.
+- **Admitted.** An apply set that is not a member is admitted, with no second
+  approval, only when all of the following hold: it has the same plan digest
+  and the approving decision is still the latest; its package acts equal the
+  setup set's by plan item, it defers nothing, has the same `producer`, and
+  every whole-file entry is a no-op; and the base's trusted ledger ends with
+  that setup set, bound `approved` to the same subject, with every byte the
+  setup set wrote present in the base by content, so a squash or rebase merge
+  is admitted. The setup set must itself be a member of the approved bundle,
+  and the ledger the set would write must pass the succession rules as an
+  admitted generation.
+- **Otherwise** the step reports `indeterminate` with reason
+  `awaiting-approval` and a fixed detail token, and writes nothing.
+
+The hub's head must be its branch's upstream. `readHubAuthority()` resolves
+`HEAD` once to a commit id, requires the attached branch's configured upstream
+to resolve to that same commit (local refs only, nothing is fetched), and reads
+the plan from that commit id. A branch with no upstream, or one ahead of or
+behind it, is `indeterminate` with detail `hub-not-upstream`.
+
+A set with package acts also needs a current execution authorization: the
+hub's own `node_modules/.bin/advisor-execution-readiness` (never `npx`) runs
+against the committed `clossys/advisor/assessment-input.json` at the current
+instant, and the authorization must name the plan digest, the repository and
+every package act. The assessment is read at the commit id the plan was read
+from: a hub whose `HEAD` has since moved, detached, or stopped matching its
+upstream is `indeterminate` with detail `hub-head-moved`. The authorization's
+permitted packages must also equal the plan's packages, by `name@version#integrity`
+with each distinct package listed once; an extra, a missing or a repeated
+entry is `violated` with detail `packages-not-exact`. Readiness's own answer is
+kept: not current is `violated`; unreadable, absent or failing to run is `indeterminate`. `materialize` checks
+before its first write, and `verify` checks again, so a withdrawn approval or
+an expired authorization fails `verify`.
+
+`readHubAuthority()` reads the committed approval, `planPackagesFor()` gives
+the plan's package identities for one repository, and `decideSetBinding()`
+returns the binding or an `AdmissionRefusal` (exit code, reason and a fixed
+detail token). `HubAuthority` is what `readHubAuthority()` returns: the plan,
+its digest, the approved subject, and `head`, the commit id the plan was read
+from. A `ReadinessRunner` replaces the process launch of the readiness executable, for
+tests.
+
+This proves that the bytes are those the committed decision names, or that the
+one-approval rule admits. It does not prove who committed the decision; the
+hub repository's branch protection governs that.
+
+### Rendering the pull request
+
+`renderPullRequest({ set, binding, taskRecord, supersedes? })` returns the title and body of
+the pull request for one stored change set, and `bodySha256`, which is
+`sha256:` and the hex SHA-256 of the body's UTF-8 bytes. It is a pure function
+of its three inputs (`RenderPullRequestInput`): it reads no file, runs no command and opens nothing. The
+title is exactly `set.pullRequest.title`, which must be `Clossys: apply plan `
+and the first 12 hex digits of the set's own digest.
+
+The body is LF only and ends in one LF. Its first line is the marker
+`<!-- clossys-change-set: sha256:<64 hex> -->`, and no other line is a marker.
+It then names the repository id, the phase, and the change-set, plan and bundle
+digests; the binding you pass (`approved` with its subject digest, or `admitted`
+with its subject digest and setup change set); one line per item, in the set's
+own order, with `name@version` for `install` and `pin-starter`; each deferred or
+refused entry by item id and reason code only; and a `## Task record` section
+that links `#<n>`. With `supersedes`, a list of distinct positive safe integers
+that are not the task record, it also writes a `## Supersedes` section before
+the task record, one `- #<n>` line for each number, ascending; without it, or
+with an empty list, the body is byte for byte what it was. It carries ids, act names, versions and digests only, never
+brief or plan prose, file contents, key values or paths.
+
+`readChangeSetMarker(body)` returns the digest only when exactly one line of the
+body is exactly the marker and the marker appears nowhere else, and `null`
+otherwise.
+
+It returns a `PullRequestText`, or a `PullRequestRefusal` whose
+`PullRequestRefusalReason` is a fixed token that names no id, digest or input
+text, for a set that fails `validateRepositoryChangeSet` or
+whose digest does not recompute, a malformed binding, an `admitted` binding on
+a setup set, a task record that is not a positive safe integer, a `supersedes` list that is
+not distinct positive safe integers other than the task record
+(`supersedes-invalid`), and any value it
+cannot prove safe to write (each must match its own strict pattern and hold no
+`<`, `>`, backtick, `|`, carriage return or line feed).
+
+It does not decide the binding: it shows what you pass, so pass the result of
+`decideSetBinding()`. It does not check that the task-record issue exists, and
+it cannot stop a pull request's body being edited after it is opened; keeping
+`bodySha256` and the marker is what lets a later step notice that.
+
+### Recording the body
+
+`launcher-apply-plan body --repo <id> --task-record <n> [--supersedes <n>]...`
+prints the body of the pull request for the repository's stored change set, and
+nothing else, then records the `bodySha256` of exactly the bytes it printed as
+the set's `pullRequest.bodySha256`. Open the pull request from that output.
+
+```bash
+launcher-apply-plan body --repo <id> --task-record 12 --supersedes 9
+```
+
+The approval the body shows is what the hub decides at the time of the run, as
+`materialize` decides it, from the plan committed at the hub's HEAD: it is never
+an option or an argument, and a hub whose approval was withdrawn refuses with
+the same reason `materialize` gives, printing no body. If the hub stored a
+planned bundle for the set, that bundle must record exactly the same approval,
+or the run is refused as `binding-mismatch`. Each `--supersedes` is the number
+of the pull request of an older change set of the repository, once each and not
+the task record, and needs another change set of that repository in the hub's
+store (`supersedes-unfounded` otherwise). Every number is digits only.
+
+A set is bound to one body. Running `body` again with the same arguments prints
+the same body and changes nothing; a run that would produce another body is
+refused as `body-bound` and prints nothing, so an approval binds exactly the
+body that was opened. Recording the hash replaces the one stored file of the
+set atomically, refuses a symbolic link, and changes nothing else in the set:
+its digest, its file name and every other member stay as they were.
+
+Exit `0` prints the body and only the body. Exit `1` is a refusal and exit `2`
+is indeterminate or a usage error; each prints nothing on standard output and
+one line on standard error, `launcher-apply-plan body: refused (<reason>)` or
+`launcher-apply-plan body: indeterminate (<reason>)`, a fixed reason and never
+an argument, a path or any tool output.
+
+### Observing the pull request
+
+`launcher-apply-plan status --repo <id>` reports what the pull request for the
+repository's stored change set is doing. It runs after the agent has pushed the
+branch and opened the pull request from the text `renderPullRequest()` returned,
+and it changes nothing: it asks GitHub three read-only questions (who is
+asking, which pull requests are open, and where the default branch is) with
+`gh api --method GET`, reads only commits that are already in the local clone
+through git, and never fetches a pull request's head, checks anything out or
+writes a file, an index or any ref but one. It needs a full clone: a partial
+(promisor) clone, such as a blobless or treeless one, is refused up front as
+`partial-clone`, before any object is read, because git would fetch what such a
+clone lacks. All its git calls also run with lazy fetch off, and each has a
+30 second limit, including those of the preconditions it shares with `verify`
+except the base-commit reads made by the hub admission, which have no limit. The one
+ref it writes is the one `verify` writes: the fetch of the default branch into
+its remote-tracking ref (`refs/remotes/origin/<default branch>`), which also
+leaves `FETCH_HEAD` and any new objects of that branch in the clone. It runs the
+hub's readiness executable as `verify` does.
+
+```bash
+launcher-apply-plan status --repo ./site-checkout
+```
+
+It prints one line, `launcher-apply-plan status: <state>`, then a fixed reason
+in parentheses and `#<n>` for each pull request it is about, and nothing else:
+never a body, a title, a login, a branch, a path or any tool output.
+
+| State | Exit | Meaning |
+| --- | --- | --- |
+| `proposed` | `0` | An open pull request carries this set's marker, was opened by the person running this, from and into the set's own repository, on the set's branch and title, its body hashes to the `bodySha256` that `body` recorded, and its head commit passes every check `verify` makes, including the ledger's exact bytes. |
+| `applied` | `0` | The default branch's tip is in the clone and holds every `after` and every key the set writes, however it got there, with no open pull request needed. |
+| `planned` | `2` | Neither. |
+| `diverged` | `1` | The pull request that carries this set's marker does not match it: a different base branch, branch or title, a body whose hash is not the recorded `bodySha256` (`body-mismatch`), a head that is not in the clone, or a head that fails a `verify` check. |
+| `superseded` | `2` | An older change set this hub stored for the repository has an open pull request. It outranks `proposed`, so it is also the state when this set's own pull request is open beside the older one. |
+| `indeterminate` | `2` | Something could not be read or trusted, with one of the reasons below. |
+
+When more than one applies, the first of `indeterminate`, `diverged`,
+`superseded`, `proposed`, `applied` and `planned` wins. A pull request whose
+body names the marker counts only when its author is the person running this
+and its head and base are both the set's repository; any other is
+`foreign-marker`. A body that has a carriage return, a marker that is not the
+whole of its first line, or a marker `readChangeSetMarker()` cannot read is
+`marker-malformed`. Any open pull request whose body names the marker word, from
+anyone, therefore makes `status` `indeterminate` (`foreign-marker`) until it is
+closed: closing the stray pull request is the remedy.
+
+Every reason `indeterminate` can carry:
+
+- The set and the clone: `change-set-absent`, `change-set-invalid`,
+  `repository-invalid`, `missing-clone` and `partial-clone` (a blobless,
+  treeless or other partial clone; use a full clone).
+- GitHub: `port-failed`, `port-malformed` and `too-many-open`. Only the first
+  page of 100 open pull requests is read, so a listing of 100 or more cannot be
+  shown to be whole and is refused.
+- The markers: `foreign-marker`, `marker-malformed`, `unknown-digest` (a digest
+  this hub never stored) and `duplicate-digest`.
+- The body: `body-unbound`, when the set has no `bodySha256` because `body` never
+  ran for it. Such a set is never `proposed` and never `diverged`; run `body`,
+  which records the hash, and open the pull request from its output.
+- Git, over commits already in the clone: `tip-not-local` (the default branch's
+  tip is not in the clone), `tip-unreadable` (the tip's tree could not be read),
+  `object-unreadable` (a corrupt, missing or unreachable object of the pull
+  request's head, or a git call that timed out on it) and `status-failed` (any
+  other failure, including a git call that timed out, a git that cannot run or
+  an unexpected error; nothing is guessed from it).
+- The clone, the hub and the admission, which `verify` needs and which are
+  judged before the pull request's own fields: a refusal there, of either exit
+  code of `verify` (for example `remote-tip-mismatch`, when the local default
+  branch is not the remote's), is `indeterminate` here, because it is about the
+  clone and not about the pull request. `verify`'s own reasons for an
+  unreadable tree, such as `status-unreadable`, `symlink-ancestor` and
+  `lockfile-format-unsupported`, appear the same way.
+
+`proposed` does not check the head's ancestry to the base commit, and nothing in
+this unit does: it checks the head's tree and the paths that differ from the
+base, as `verify` does, so a head built on a newer default branch that reverts
+it can look the same. A reviewer reading the pull request's own diff on GitHub
+is what would notice.
+
+`status` does notice a body edited after it was opened. It hashes the body of
+this set's own pull request, as GitHub returned it, with no trimming and no
+change to line endings or the final line feed, and `proposed` needs
+`sha256:` and the hex SHA-256 of its UTF-8 bytes to equal the set's
+`bodySha256`. An appended line, a missing final line feed, a trailing space or
+a character that is not well-formed UTF-16 is `diverged` (`body-mismatch`). The
+body is checked after the base branch, branch and title and before the head, so
+the first of those that differs is the reason given. An older set's pull request
+is never hashed, and neither hash nor body is printed.
+
+`verify` now reads a path the set removes with a `lstat` alone. A file that is
+still there but that `verify` cannot read used to raise (exit 2, the usage
+line); it now reports `removal-present` (exit 1), which is the truth about a
+path that should be gone.
 
 ## Taking the registry snapshot
 
@@ -851,6 +1485,56 @@ unreadable or refused request, or a registry answer this step cannot record.
 A snapshot is a record of what the registry answered, not evidence of where
 a package came from; that is shown by verifying the package's provenance,
 which this step does not do.
+
+## Checking provenance (V9)
+
+`checkSetProvenance({ tree, hubRoot, items }, ports?)`
+returns, for one change set, its V9 `ApplyCheck` entries
+(`Promise<readonly ApplyCheck[]>`). `plan` runs it on its temporary tree,
+after the lockfile step passes; `materialize` and `verify` do not yet run it.
+
+- **Engine.** It runs the hub's own `node_modules/.bin/integrator-provenance-check --cwd <tree>`
+  (`PROVENANCE_CHECK_BIN`), never through `npx` and never looked up on `PATH`. If
+  that bin is missing, or its real path is not inside the hub's installed
+  `@clossys/integrator`, the result is indeterminate (`engine-missing-bin`).
+  The child gets an environment built from a fixed list of variables, so no
+  parent credential, proxy or CA-trust variable reaches it, and its time and
+  output are capped (`PROVENANCE_CHECK_TIMEOUT_MS`, `PROVENANCE_CHECK_MAX_BUFFER`).
+  The JSON report is parsed strictly; exit `2`, unreadable output, or output
+  that contradicts the exit code is indeterminate.
+- **What gates.** Every `install` and `pin-starter` item except one whose
+  `satisfiedInBase` is exactly `true`. Each must be `verified` at exactly its version. One
+  missing from the report is indeterminate; a verified version other than the
+  act's is violated (`version-mismatch`). Other `@clossys/*` packages in the
+  report never gate, so an unrelated violated legacy pin passes.
+- **No exception.** An unverified package is never satisfied. One the bin
+  reports `violated` stays violated (`provenance-unverified`), and one it
+  cannot decide stays indeterminate. The first-publication exception the
+  design allows for (D20) is deliberately not implemented: a registry
+  snapshot records only the one version `latest` names, so it cannot show
+  that a version is a package's first publication, and Integrator reports a
+  failed attestation the same way as a missing one. Any exception built on
+  that would also pass a package with earlier releases whose latest release
+  fails verification. Until the snapshot contract records evidence of a first
+  publication, an unattested first publication blocks the apply (fail
+  closed).
+- **Verdict.** Indeterminate outranks violated: when any indeterminate rule
+  applies, only indeterminate entries are returned. A set with nothing to gate
+  returns one satisfied entry with no rule, without running the engine.
+- **Soundness boundary.** A pass means every version the set installs or
+  updates is verified by the hub's pinned Integrator at check time, with no
+  exception. It does not cover transitive dependencies or a later republish.
+  The bin check accepts any regular file inside the installed
+  `@clossys/integrator` package and does not compare the installed version
+  with the hub's pin; the hub's `node_modules` is trusted.
+
+`registrySnapshotDigest(snapshot)` returns a registry snapshot's contract digest
+(`sha256:` and 64 lowercase hexadecimal digits) from the snapshot's contents,
+independent of fetch time and of the order of packages and versions; it throws a
+`TypeError` for a snapshot that does not validate. The provenance check does not
+read a snapshot; the digest is for the plan binding a later change wires in.
+
+Types: `ProvenanceGateInput`, `ProvenanceGatePorts`.
 
 ## Why this is not Advisor, Starter, Builder, installer, creator, or a connector
 

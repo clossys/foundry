@@ -146,12 +146,12 @@ function attestedInvocationUrl(audit, name, version) {
  * keeps its own equivalent internal check inside `buildReplay()`, so it is
  * not duplicated here. Throws — writing nothing — on any mismatch.
  */
-export async function verifyPublicationProvenance({ fetchImpl, name, version, sourceSha, runId, runAttempt, auditRun = execFileSync, env, packument }) {
+export async function verifyPublicationProvenance({ fetchImpl, name, version, sourceSha, runId, runAttempt, auditRun = execFileSync, env, packument, isExecutable }) {
   if (!/^[a-f0-9]{40}$/.test(sourceSha ?? "")) throw new Error("sourceSha must be a full 40-character commit hash");
   if (!Number.isSafeInteger(runId) || runId < 1) throw new Error("runId must be a positive integer");
   if (!Number.isSafeInteger(runAttempt) || runAttempt < 1) throw new Error("runAttempt must be a positive integer");
   const resolvedPackument = packument ?? (await fetchPackument({ fetchImpl, name }));
-  const audit = verifiedAnonymousAudit(name, version, auditRun, env);
+  const audit = verifiedAnonymousAudit(name, version, auditRun, env, { isExecutable });
   const result = inspectPublicNpmProvenance({ name, version, sourceSha, audit, packument: resolvedPackument });
   if (result.code !== 0) {
     throw new Error(`measured npm SLSA provenance attestation does not corroborate this run (${(result.failures ?? []).join("; ") || "unknown mismatch"})`);

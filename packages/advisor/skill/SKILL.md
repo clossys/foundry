@@ -119,7 +119,7 @@ Each of these is one proposed step the client approves before you write it, and 
 
 An approval is a decision you append — never an edit to an earlier one — with `chosen: "approved"` and `subjectDigest`: the digest of the exact change the client was shown. An approval without `subjectDigest` binds no bytes. Take that digest from the tool that showed the client the change, never from your own computation or memory; that tool arrives with the apply report step, and until it does, record the approval without one rather than invent it.
 
-From an approving decision until every repository it covers has been applied, or the client asks for a new plan, change nothing in `plan.json` that the plan digest covers: not `mandate`, `whereWeAre`, `recommendedNext`, `blockers`, `kits`, `staffing`, `packages` or `resolution`. Only appending a decision and updating `asOf` are allowed, because the digest excludes both; anything else changes the digest, and the approval no longer matches the plan. Report progress in conversation, not by editing the plan. If something covered must change, that is a new plan and a new approval.
+From an approving decision until every repository it covers has been applied, or the client asks for a new plan, change nothing in `plan.json` that the plan digest covers: not `mandate`, `whereWeAre`, `recommendedNext`, `blockers`, `kits`, `staffing`, `packages`, `resolution` or `delegatedCopyApproval`. Only appending a decision and updating `asOf` are allowed, because the digest excludes both; anything else changes the digest, and the approval no longer matches the plan. Report progress in conversation, not by editing the plan. If something covered must change, that is a new plan and a new approval.
 
 ## Kit verdicts (issue #1177)
 

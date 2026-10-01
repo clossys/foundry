@@ -12,19 +12,24 @@
  * `"production"` (the default target). A delegate-approved entry resolves
  * freely on `"preview"`, but on `"production"` is refused
  * (`delegate-approval-refused`) unless the caller opts in with
- * `acceptDelegateInProduction: true` — a delegate's sign-off is not, by
- * itself, sufficient evidence to publish, only to preview.
+ * `acceptDelegateInProduction: true`, or passes `approvalPlan`, the bytes of
+ * a plan whose latest approval names that plan's own digest and which
+ * declares `delegatedCopyApproval` covering the entry — a delegate's sign-off
+ * is not, by itself, sufficient evidence to publish, only to preview.
  */
 
 import type {
   CopyRef,
   CopyRegistry,
   CopyResolution,
+  CopyResolutionApproval,
   CopyResolver,
   CopyValue,
 } from "./types.js";
 import { validateCopyRegistryShape } from "./schema.js";
-import { isApprovalExpired, isApprovalStale } from "./approval.js";
+import { isApprovalExpired, isApprovalStale, isEntryInDelegateScope } from "./approval.js";
+import { isPlanBytes, planDelegateCopyAuthority } from "./plan-authority.js";
+import type { PlanDelegateCopyRefusal } from "./plan-authority.js";
 
 export type CopyResolveIssueReason =
   | "invalid-registry"
@@ -50,13 +55,26 @@ export interface CopyResolveOptions {
   acceptDelegateInProduction?: boolean;
   /** Defaults to `new Date()`, evaluated per call. */
   now?: Date;
+  /**
+   * The bytes of an Advisor plan record (a `Uint8Array`; Node's `Buffer` is
+   * one), read by the caller. Consulted only for a delegate-approved entry on
+   * `"production"` when `acceptDelegateInProduction` is not `true`: see
+   * `planDelegateCopyAuthority()`. Not a `Uint8Array`, or given together with
+   * `acceptDelegateInProduction: true`, is `"invalid-options"`.
+   */
+  approvalPlan?: Uint8Array;
 }
+
+/** Why an `approvalPlan` did not authorize an entry: the plan's own refusal, or that the entry is outside the scopes the plan declares. */
+export type CopyResolvePlanRefusal = PlanDelegateCopyRefusal | "entry-outside-plan-scopes";
 
 export interface CopyResolveIssue {
   reason: CopyResolveIssueReason;
   message: string;
   id?: string;
   placeholder?: string;
+  /** Only on `"delegate-approval-refused"` when an `approvalPlan` was given: why it did not authorize this entry. */
+  planRefusal?: CopyResolvePlanRefusal;
 }
 
 export interface CopyResolveResult {
@@ -81,19 +99,37 @@ function interpolate(text: string, values: Readonly<Record<string, CopyValue>>):
   return text.replace(/\{([^{}]+)\}/g, (_match, name: string) => String(values[name]!));
 }
 
+/** The options a call runs with, each read from the caller's object exactly once. */
+interface ResolveSettings {
+  target: CopyResolveTarget;
+  acceptDelegateInProduction: boolean;
+  now: Date;
+  approvalPlan: Uint8Array | undefined;
+}
+
 /**
- * True when `value` is a well-formed `CopyResolveOptions` — checked before
+ * Reads a well-formed `CopyResolveOptions`, or returns null — checked before
  * anything else so a malformed caller-supplied options object fails closed
- * rather than silently falling back to defaults.
+ * rather than silently falling back to defaults. Each property is read
+ * exactly once, into a local that is validated and then used, so a getter
+ * cannot answer differently at validation and at use.
  */
-function isValidResolveOptions(value: unknown): value is CopyResolveOptions {
-  if (value === undefined) return true;
-  if (!isPlainObject(value)) return false;
-  const { target, acceptDelegateInProduction, now } = value;
-  if (target !== undefined && target !== "preview" && target !== "production") return false;
-  if (acceptDelegateInProduction !== undefined && typeof acceptDelegateInProduction !== "boolean") return false;
-  if (now !== undefined && !(now instanceof Date && Number.isFinite(now.getTime()))) return false;
-  return true;
+function readResolveOptions(value: unknown): ResolveSettings | null {
+  if (value === undefined) return { target: "production", acceptDelegateInProduction: false, now: new Date(), approvalPlan: undefined };
+  if (!isPlainObject(value)) return null;
+  const { target, acceptDelegateInProduction, now, approvalPlan } = value;
+  if (target !== undefined && target !== "preview" && target !== "production") return null;
+  if (acceptDelegateInProduction !== undefined && typeof acceptDelegateInProduction !== "boolean") return null;
+  if (now !== undefined && !(now instanceof Date && Number.isFinite(now.getTime()))) return null;
+  if (approvalPlan !== undefined && !isPlanBytes(approvalPlan)) return null;
+  // Two authorities for one decision is an ambiguity, so it is refused: no precedence needs defining.
+  if (approvalPlan !== undefined && acceptDelegateInProduction === true) return null;
+  return {
+    target: target ?? "production",
+    acceptDelegateInProduction: acceptDelegateInProduction ?? false,
+    now: now ?? new Date(),
+    approvalPlan,
+  };
 }
 
 /**
@@ -108,15 +144,14 @@ export function resolveCopyRef(
   ref: CopyRef | unknown,
   options?: CopyResolveOptions | unknown,
 ): CopyResolveResult {
-  if (!isValidResolveOptions(options)) {
+  const settings = readResolveOptions(options);
+  if (settings === null) {
     return {
       issues: [{ reason: "invalid-options", message: "CopyResolveOptions is malformed." }],
       complete: false,
     };
   }
-  const target: CopyResolveTarget = options?.target ?? "production";
-  const acceptDelegateInProduction = options?.acceptDelegateInProduction ?? false;
-  const now = options?.now ?? new Date();
+  const { target, acceptDelegateInProduction, now, approvalPlan } = settings;
 
   const registryFindings = validateCopyRegistryShape(registry);
   if (registryFindings.length > 0) {
@@ -175,6 +210,8 @@ export function resolveCopyRef(
   }
 
   const approval = entry.approval;
+  // Set only when an approvalPlan, not the flag, authorized a delegate entry on production.
+  let authorizingPlanDigest: string | undefined;
   if (approval) {
     if (isApprovalStale(entry)) {
       return {
@@ -201,16 +238,37 @@ export function resolveCopyRef(
       };
     }
     if (approval.approvedBy === "delegate" && target === "production" && acceptDelegateInProduction !== true) {
-      return {
+      // The flag did not authorize this entry, so only a plan can. The plan is
+      // read here and nowhere else: never for preview, an owner entry, a
+      // record-less entry, or once the flag is true, and never before the
+      // entry's own staleness and expiry, which outrank it.
+      if (approvalPlan === undefined) {
+        return {
+          issues: [
+            {
+              reason: "delegate-approval-refused",
+              id: validRef.id,
+              message: `CopyRef "${validRef.id}" was approved by a delegate; production resolution requires acceptDelegateInProduction: true.`,
+            },
+          ],
+          complete: false,
+        };
+      }
+      const planRefused = (code: CopyResolvePlanRefusal): CopyResolveResult => ({
         issues: [
           {
             reason: "delegate-approval-refused",
             id: validRef.id,
-            message: `CopyRef "${validRef.id}" was approved by a delegate; production resolution requires acceptDelegateInProduction: true.`,
+            planRefusal: code,
+            message: `CopyRef "${validRef.id}" was approved by a delegate; the approvalPlan given does not authorize it on production (${code}).`,
           },
         ],
         complete: false,
-      };
+      });
+      const authority = planDelegateCopyAuthority(approvalPlan);
+      if (!authority.authorized) return planRefused(authority.refusal);
+      if (authority.scopes !== undefined && !isEntryInDelegateScope(entry.id, authority.scopes)) return planRefused("entry-outside-plan-scopes");
+      authorizingPlanDigest = authority.planDigest;
     }
   }
 
@@ -259,7 +317,16 @@ export function resolveCopyRef(
   // with no record resolves exactly as it did before this field existed,
   // with no `approval` key on the resolution at all.
   if (approval) {
-    resolution.approval = { approvedBy: approval.approvedBy, pendingOwnerReview: approval.pendingOwnerReview === true };
+    // Built explicitly, so the digest key exists only when a plan authorized the entry.
+    const facts: CopyResolutionApproval =
+      approval.approvedBy === "owner"
+        ? { approvedBy: "owner", pendingOwnerReview: false }
+        : {
+            approvedBy: "delegate",
+            pendingOwnerReview: approval.pendingOwnerReview === true,
+            ...(authorizingPlanDigest === undefined ? {} : { authorizingPlanDigest }),
+          };
+    resolution.approval = facts;
   }
 
   return { resolution, issues: [], complete: true };

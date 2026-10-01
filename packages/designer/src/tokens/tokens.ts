@@ -2,7 +2,7 @@
  * The token catalog: every custom property this package declares in
  * `styles/tokens.css`, as data. This file is the JS/TS half of the package;
  * `styles/tokens.css` is the CSS half. Both are hand-authored and both are
- * meant to describe the exact same 159 tokens — a test in this package
+ * meant to describe the exact same 168 tokens — a test in this package
  * (`parity.test.ts`) parses `styles/tokens.css` and asserts its custom
  * property names and values match this file entry-for-entry, in both
  * directions. That test is what keeps this file honest; nothing generates
@@ -35,7 +35,7 @@
  */
 
 /**
- * The 26 semantic groups the 159 tokens fall into. Each maps to exactly one
+ * The 27 semantic groups the 168 tokens fall into. Each maps to exactly one
  * CSS custom property prefix — see `FAMILY_PREFIX` in `parity.test.ts` (and
  * the README's naming table) for the concrete mapping.
  */
@@ -57,6 +57,7 @@ export type TokenFamily =
   | "layout"
   | "density"
   | "icon"
+  | "brandmark"
   | "radius"
   | "border"
   | "elevation"
@@ -260,12 +261,15 @@ export const TOKENS: Readonly<Record<string, TokenDefinition>> = {
   "--ui-width-display-max": { property: "--ui-width-display-max", family: "width", value: "var(--ui-width-wide-max, 72rem)", brandable: true, themeDependent: false },
   "--ui-width-prose-max": { property: "--ui-width-prose-max", family: "width", value: "48rem", brandable: true, themeDependent: false },
   "--ui-width-wide-max": { property: "--ui-width-wide-max", family: "width", value: "72rem", brandable: true, themeDependent: false },
+  "--ui-width-form-max": { property: "--ui-width-form-max", family: "width", value: "38rem", brandable: false, themeDependent: false },
   "--ui-width-page-padding-x": { property: "--ui-width-page-padding-x", family: "width", value: "clamp(16px, 4vw, 48px)", brandable: false, themeDependent: false },
 
   // ── UI · LAYOUT ─────────────────────────────────────────────────────
   "--ui-layout-sidebar-w": { property: "--ui-layout-sidebar-w", family: "layout", value: "256px", brandable: true, themeDependent: false },
   "--ui-layout-sidebar-rail-w": { property: "--ui-layout-sidebar-rail-w", family: "layout", value: "64px", brandable: false, themeDependent: false },
   "--ui-layout-aside-w": { property: "--ui-layout-aside-w", family: "layout", value: "320px", brandable: false, themeDependent: false },
+  "--ui-layout-drawer-w": { property: "--ui-layout-drawer-w", family: "layout", value: "min(20rem, 85vw)", brandable: false, themeDependent: false },
+  "--ui-layout-tap-target": { property: "--ui-layout-tap-target", family: "layout", value: "44px", brandable: false, themeDependent: false },
 
   // ── UI · DENSITY ────────────────────────────────────────────────────
   "--ui-density-pad": { property: "--ui-density-pad", family: "density", value: "var(--spacing-xl, 24px)", brandable: false, themeDependent: false },
@@ -278,6 +282,20 @@ export const TOKENS: Readonly<Record<string, TokenDefinition>> = {
   "--ui-icon-md": { property: "--ui-icon-md", family: "icon", value: "var(--spacing-xl, 24px)", brandable: false, themeDependent: false },
   "--ui-icon-lg": { property: "--ui-icon-lg", family: "icon", value: "var(--spacing-2xl, 32px)", brandable: false, themeDependent: false },
   "--ui-icon-stroke": { property: "--ui-icon-stroke", family: "icon", value: "2", brandable: true, themeDependent: false },
+
+  // ── UI · BRANDMARK (Brandmark shell component render contract — height
+  //    per size, and the mark-to-wordmark gap at the identity kit's 8/48
+  //    gap ratio: 24/36/48px heights give 4/6/8px gaps, all exact).
+  //    The gap is calc-derivable from the height, so it strictly fails
+  //    admission test (b) above; it is admitted as a deliberate, reviewed
+  //    exception because a brand's lockup spacing is independently
+  //    adjustable without moving the mark's size. ──────────────────────
+  "--ui-brandmark-height-sm": { property: "--ui-brandmark-height-sm", family: "brandmark", value: "24px", brandable: false, themeDependent: false },
+  "--ui-brandmark-height-md": { property: "--ui-brandmark-height-md", family: "brandmark", value: "36px", brandable: false, themeDependent: false },
+  "--ui-brandmark-height-lg": { property: "--ui-brandmark-height-lg", family: "brandmark", value: "48px", brandable: false, themeDependent: false },
+  "--ui-brandmark-gap-sm": { property: "--ui-brandmark-gap-sm", family: "brandmark", value: "4px", brandable: false, themeDependent: false },
+  "--ui-brandmark-gap-md": { property: "--ui-brandmark-gap-md", family: "brandmark", value: "6px", brandable: false, themeDependent: false },
+  "--ui-brandmark-gap-lg": { property: "--ui-brandmark-gap-lg", family: "brandmark", value: "8px", brandable: false, themeDependent: false },
 
   // ── RADIUS (Tailwind `--radius-*` namespace) ───────────────────────
   "--radius-sharp": { property: "--radius-sharp", family: "radius", value: "0px", brandable: false, themeDependent: false },
@@ -337,7 +355,7 @@ export const TOKENS: Readonly<Record<string, TokenDefinition>> = {
   "--ui-alpha-disabled": { property: "--ui-alpha-disabled", family: "alpha", value: "0.5", brandable: false, themeDependent: false },
 };
 
-/** The 26 semantic families, in the order they appear in the README's reference table. */
+/** The 27 semantic families, in the order they appear in the README's reference table. */
 export const TOKEN_FAMILIES: readonly TokenFamily[] = [
   "surface",
   "ink",
@@ -356,6 +374,7 @@ export const TOKEN_FAMILIES: readonly TokenFamily[] = [
   "layout",
   "density",
   "icon",
+  "brandmark",
   "radius",
   "border",
   "elevation",

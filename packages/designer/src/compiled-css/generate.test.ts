@@ -73,10 +73,19 @@ describe("generateCompiledCss", () => {
     expect(result.css).toContain("@layer foundry-ui-compiled {");
   });
 
-  it("never emits Tailwind's preflight (universal box-sizing/margin reset)", async () => {
+  it("never emits Tailwind's preflight, only the narrow foundry-ui-base box-sizing rule", async () => {
     const result = await generateCompiledCss({ stylesDir, candidates: ["bg-accent", "border", "flex"] });
-    expect(result.css).not.toContain("box-sizing: border-box");
+    const occurrences = result.css.split("box-sizing: border-box").length - 1;
+    expect(occurrences).toBe(1);
+    const baseStart = result.css.indexOf("@layer foundry-ui-base {");
+    const compiledStart = result.css.indexOf("@layer foundry-ui-compiled {");
+    const boxSizingAt = result.css.indexOf("box-sizing: border-box");
+    expect(baseStart).toBeGreaterThanOrEqual(0);
+    expect(boxSizingAt).toBeGreaterThan(baseStart);
+    expect(boxSizingAt).toBeLessThan(compiledStart);
     expect(result.css).not.toMatch(/\*,\s*::after,\s*::before/);
+    expect(result.css).not.toContain("::file-selector-button");
+    expect(result.css).not.toMatch(/\*[^{}]*\{[^}]*\bmargin:/);
   });
 
   it("never emits the redundant, unlayered :root, :host theme-reflection block", async () => {

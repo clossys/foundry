@@ -8,7 +8,7 @@ import {
   identityKitReport,
   judgeIdentityKit,
 } from "./identity-checks.js";
-import { generateIdentityDirections, type IdentityTokenInput, type IdentityVariantSet } from "./identity-kit.js";
+import { adoptSuppliedMark, generateIdentityDirections, recolorSvg, type IdentityTokenInput, type IdentityVariantSet } from "./identity-kit.js";
 
 // checkIdentityContrast's primary/mark pairing only reads `variants` for an
 // "adopted" direction (it needs the adopted mark's own rendered colour);
@@ -81,6 +81,68 @@ describe("checkIdentityContrast", () => {
       const primaryFinding = result.findings.find((f) => f.variant === "primary");
       expect(primaryFinding).toBeDefined();
       expect(primaryFinding!.ratio).toBeLessThan(IDENTITY_MIN_CONTRAST);
+    });
+
+    describe("the generated-<mask> strip matches only what recolorSvg emits (fails closed)", () => {
+      const judge = (mark: string) => checkIdentityContrast("adopted", { primary: mark, mark } as IdentityVariantSet, PASSING_TOKENS);
+      const GEN_HEAD = '<mask id="recolor-00000000-a" maskUnits="userSpaceOnUse" x="0" y="0" width="48" height="48">';
+      const GEN_RECT = '<rect x="0" y="0" width="48" height="48" fill="#fff" />';
+      const wrap = (inner: string): string => `<svg viewBox="0 0 48 48">${inner}</svg>`;
+      const LOW = '<rect width="48" height="48" fill="#eeeeee"/>';
+
+      it("a self-closing generated-looking mask does not swallow the visible paint after it", () => {
+        const crafted = wrap(`<path fill="#000000" d="M0 0h1v1H0z" /><mask id="recolor-00000000-a"/>${LOW}<mask id="m"></mask>`);
+        const result = judge(crafted);
+        expect(result.ok).toBe(false);
+        expect(result.findings.some((f) => f.variant === "primary" && f.ratio < IDENTITY_MIN_CONTRAST)).toBe(true);
+        expect(checkSingleColourLegibility(crafted).offendingColors).toEqual(["#000000", "#eeeeee"]);
+      });
+
+      it("a self-closing mask carrying the full generated header does not swallow it either", () => {
+        const crafted = wrap(`<path fill="#000000" d="M0 0h1v1H0z" />${GEN_HEAD.replace(/>$/, "/>")}${LOW}<mask id="m"></mask>`);
+        expect(judge(crafted).ok).toBe(false);
+        expect(checkSingleColourLegibility(crafted).offendingColors).toContain("#eeeeee");
+      });
+
+      it("visible paint after a well-formed generated mask is still judged", () => {
+        const crafted = wrap(`<defs>${GEN_HEAD}${GEN_RECT}<path d="M0 0h1v1H0z" fill="#000" /></mask></defs><path fill="#000000" d="M0 0h1v1H0z" />${LOW}`);
+        const result = judge(crafted);
+        expect(result.ok).toBe(false);
+        expect(checkSingleColourLegibility(crafted).offendingColors).toEqual(["#000000", "#eeeeee"]);
+      });
+
+      it("a generated-looking mask whose body holds visible paint is judged on that paint", () => {
+        const crafted = wrap(`<defs>${GEN_HEAD}${GEN_RECT}<path d="M0 0h1v1H0z" fill="#eeeeee" /></mask></defs><path fill="#000000" d="M0 0h1v1H0z" />`);
+        expect(judge(crafted).ok).toBe(false);
+        expect(checkSingleColourLegibility(crafted).offendingColors).toContain("#eeeeee");
+      });
+
+      it.each([
+        ["a nested element that is not a shape", `${GEN_HEAD}${GEN_RECT}<text fill="#eeeeee">x</text></mask>`],
+        ["a nested <mask>", `${GEN_HEAD}${GEN_RECT}<mask id="m" />${LOW}</mask>`],
+        ["an unbalanced group", `${GEN_HEAD}${GEN_RECT}<g>${LOW}</mask>`],
+        ["a stray </g>", `${GEN_HEAD}${GEN_RECT}</g>${LOW}</mask>`],
+        ["a shape that is not self-closed", `${GEN_HEAD}${GEN_RECT}<path d="M0 0" fill="#000">${LOW}</path></mask>`],
+        ["single-quoted attributes", `${GEN_HEAD}${GEN_RECT}<path d="M0 0" fill='#eeeeee' /></mask>`],
+        ["a prefixed paint name", `${GEN_HEAD}${GEN_RECT}<path d="M0 0" xlink:fill="#eeeeee" /></mask>`],
+        ["a missing closing tag", `${GEN_HEAD}${GEN_RECT}${LOW}`],
+        ["a header with an extra attribute", `${GEN_HEAD.replace(/>/g, ' fill="#eeeeee">')}${GEN_RECT}</mask>`],
+        ["a header id that is not the generated pattern", `${GEN_HEAD.replace("00000000-a", "0000000-a")}${GEN_RECT}<path d="M0 0" fill="#eeeeee" /></mask>`],
+      ])("is not stripped when the body has %s", (_name, mask) => {
+        const crafted = wrap(`<defs>${mask}</defs>`);
+        // The body's own paint stays counted, exactly as for any other mask.
+        expect(checkSingleColourLegibility(crafted).offendingColors).toContain("#eeeeee");
+      });
+
+      it("still strips exactly the masks recolorSvg emits, nested groups and strokes included", () => {
+        const twoTone = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><g transform="translate(1,1)"><rect width="48" height="48" fill="#1a1a1a" stroke="#1a1a1a" stroke-width="2" /><g><path d="M16 16h16v16H16z" fill="#f5f5f5" stroke="none" /></g></g></svg>';
+        const knockedOut = recolorSvg(twoTone, "currentColor");
+        expect(knockedOut).toContain("<mask");
+        expect(checkSingleColourLegibility(knockedOut)).toEqual({ ok: true, offendingColors: [] });
+        const direction = adoptSuppliedMark({ brand: { name: "Acme" }, suppliedSvg: twoTone, tokens: PASSING_TOKENS });
+        expect(checkSingleColourLegibility(direction.variants.mono)).toEqual({ ok: true, offendingColors: [] });
+        expect(checkSingleColourLegibility(direction.variants.favicon)).toEqual({ ok: true, offendingColors: [] });
+      });
     });
 
     it("is indeterminate, never silently satisfied, when the adopted mark has no explicit fill/stroke colour to check", () => {
@@ -181,6 +243,22 @@ describe("checkSingleColourLegibility", () => {
     const result = checkSingleColourLegibility("<svg><path fill = '#fff' data-fill=\"#000\" /></svg>");
     expect(result.ok).toBe(false);
     expect(result.offendingColors).toEqual(["#fff"]);
+  });
+
+  it("ignores paint inside a recolorSvg-generated <mask> (coverage, not rendered colour), but still catches an explicit colour outside one (issue #1537)", () => {
+    const masks = '<defs><mask id="recolor-0123abcd-a" maskUnits="userSpaceOnUse" x="0" y="0" width="48" height="48"><rect x="0" y="0" width="48" height="48" fill="#fff" /><path d="M0 0h1v1H0z" fill="#000" /></mask></defs>';
+    const knockedOut = checkSingleColourLegibility(`<svg viewBox="0 0 48 48">${masks}<g mask="url(#recolor-0123abcd-a)"><rect width="48" height="48" fill="currentColor" /></g></svg>`);
+    expect(knockedOut).toEqual({ ok: true, offendingColors: [] });
+    const leaked = checkSingleColourLegibility(`<svg viewBox="0 0 48 48">${masks}<g mask="url(#recolor-0123abcd-a)"><rect width="48" height="48" fill="#112233" /></g></svg>`);
+    expect(leaked.ok).toBe(false);
+    expect(leaked.offendingColors).toEqual(["#112233"]);
+  });
+
+  it("judges a mark's own <mask> exactly as before #1537: its paint still counts", () => {
+    const own = '<svg viewBox="0 0 48 48"><defs><mask id="m"><rect width="48" height="48" fill="#fff" /><path d="M0 0h1v1H0z" fill="#112233" /></mask></defs><g mask="url(#m)"><rect width="48" height="48" fill="currentColor" /></g></svg>';
+    const result = checkSingleColourLegibility(own);
+    expect(result.ok).toBe(false);
+    expect(result.offendingColors).toEqual(["#fff", "#112233"]);
   });
 });
 

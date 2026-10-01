@@ -1,4 +1,14 @@
-/* Reads the repository's own brand tokens (#1171: clossys/designer/brand.css)
-   rather than declaring a second token root. Adjust the relative path if
-   Launcher places clossys/ somewhere other than the repository root. */
+/* Tailwind path: Tailwind itself, then Designer's token layer (theme.css
+   pulls in the base tokens), then the repository's own brand tokens
+   (#1171: clossys/designer/brand.css) rather than a second token root.
+   Adjust the relative brand path if Launcher places clossys/ somewhere other
+   than the repository root. Every @import comes first: an @import after
+   other statements is not resolved. compiled.css is deliberately not
+   imported — one styling path only; Publisher views emit utility classes
+   compiled.css does not cover, so Tailwind scans both packages' dist. */
+@import "tailwindcss";
+@import "@clossys/designer/theme.css";
 @import "../../../clossys/designer/brand.css";
+
+@source "../node_modules/@clossys/designer/dist";
+@source "../node_modules/@clossys/publisher/dist";

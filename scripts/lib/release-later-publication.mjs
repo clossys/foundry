@@ -166,8 +166,9 @@ function replayRunQualification(findings, value, candidate, sourceSha, qualifica
 /**
  * The v3 exception is deliberately narrower than trusted v2: the selected
  * source must be strictly between immutable qualification and publication,
- * all package-owned joins must remain exact, and both root resolution hashes
- * must be newly observed rather than copied from qualification.
+ * all package-owned joins must remain exact, and at least one root resolution
+ * hash must differ from qualification. Each retained source hash must equal
+ * the value measured at the source, whether it drifted or not.
  */
 export function trustedReplaySourceEvidence(root, qualification, qualificationIntroduction, publicationIntroduction, source, { joinsAt = currentQualificationJoins, allowSourceAtPublication = false } = {}) {
   const findings = [];
@@ -175,8 +176,8 @@ export function trustedReplaySourceEvidence(root, qualification, qualificationIn
   closed(findings, source?.qualificationRoots, ["packageJsonSha256", "packageLockSha256"], "publication.source.qualificationRoots");
   closed(findings, source?.publicationSource, ["sha", "rootPackageJsonSha256", "rootPackageLockSha256"], "publication.source.publicationSource");
   const selected = source?.publicationSource;
-  if (source?.reviewedCommit !== qualification?.reviewedCommit || source?.qualificationRoots?.packageJsonSha256 !== qualification?.rootPackageJsonSha256 || source?.qualificationRoots?.packageLockSha256 !== qualification?.rootPackageLockSha256 || !SHA1.test(selected?.sha ?? "") || !SHA256.test(selected?.rootPackageJsonSha256 ?? "") || !SHA256.test(selected?.rootPackageLockSha256 ?? "") || selected.rootPackageJsonSha256 === qualification?.rootPackageJsonSha256 || selected.rootPackageLockSha256 === qualification?.rootPackageLockSha256) {
-    finding(findings, "replay-source-roots", "v3 must retain qualification roots separately and prove both source root hashes drifted.");
+  if (source?.reviewedCommit !== qualification?.reviewedCommit || source?.qualificationRoots?.packageJsonSha256 !== qualification?.rootPackageJsonSha256 || source?.qualificationRoots?.packageLockSha256 !== qualification?.rootPackageLockSha256 || !SHA1.test(selected?.sha ?? "") || !SHA256.test(selected?.rootPackageJsonSha256 ?? "") || !SHA256.test(selected?.rootPackageLockSha256 ?? "") || (selected.rootPackageJsonSha256 === qualification?.rootPackageJsonSha256 && selected.rootPackageLockSha256 === qualification?.rootPackageLockSha256)) {
+    finding(findings, "replay-source-roots", "v3 must retain qualification roots separately and prove at least one source root hash drifted.");
   }
   try {
     if (selected?.sha === qualificationIntroduction || (!allowSourceAtPublication && selected?.sha === publicationIntroduction)) throw new Error("source must strictly sit between introductions");

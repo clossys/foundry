@@ -36,6 +36,7 @@ export type {
   CopyRegistry,
   CopyRegistryEntry,
   CopyResolution,
+  CopyResolutionApproval,
   CopyResolver,
   CopySource,
   CopyTranslationProvenance,
@@ -55,9 +56,16 @@ export type {
   CopyResolveIssue,
   CopyResolveIssueReason,
   CopyResolveOptions,
+  CopyResolvePlanRefusal,
   CopyResolveResult,
   CopyResolveTarget,
 } from "./resolve.js";
+
+// Production authority from an approved plan: whether the bytes of an
+// Advisor plan record authorize delegate-approved copy on "production". See
+// plan-authority.ts's top doc comment for the rule and what it does not prove.
+export { planDelegateCopyAuthority } from "./plan-authority.js";
+export type { PlanDelegateCopyAuthority, PlanDelegateCopyRefusal } from "./plan-authority.js";
 
 // Delegated approval: is a registry entry's approval record current, is a
 // delegate's approval within the scope it was granted, and does consumer
@@ -78,6 +86,65 @@ export type {
   ApprovalBypassUncheckedItem,
   ApprovalBypassVerdict,
 } from "./approval-bypass.js";
+
+// Site identity: the site name and tagline as a reserved copy kind
+// (`site.name` / `site.tagline`), resolved through `resolveCopyRef` so the
+// same approval policy applies. See site-identity.ts's top doc comment.
+export {
+  resolveSiteIdentity,
+  SITE_IDENTITY_COPY_IDS,
+  SITE_NAME_COPY_ID,
+  SITE_TAGLINE_COPY_ID,
+} from "./site-identity.js";
+export type {
+  SiteIdentityField,
+  SiteIdentityIssue,
+  SiteIdentityIssueReason,
+  SiteIdentityOptions,
+  SiteIdentityResolution,
+} from "./site-identity.js";
+
+// Messaging kit: a pitch and a boilerplate in three lengths each, as a
+// reserved copy kind (`messaging.pitch.*` / `messaging.boilerplate.*`),
+// resolved through `resolveCopyRef`. See messaging-kit.ts's top doc comment.
+export {
+  resolveMessagingKit,
+  MESSAGING_KIT_COPY_IDS,
+  MESSAGING_PITCH_ONE_LINER_COPY_ID,
+  MESSAGING_PITCH_ELEVATOR_COPY_ID,
+  MESSAGING_PITCH_PARAGRAPH_COPY_ID,
+  MESSAGING_BOILERPLATE_SHORT_COPY_ID,
+  MESSAGING_BOILERPLATE_MEDIUM_COPY_ID,
+  MESSAGING_BOILERPLATE_LONG_COPY_ID,
+} from "./messaging-kit.js";
+export type {
+  MessagingKit,
+  MessagingKitField,
+  MessagingKitIssue,
+  MessagingKitIssueReason,
+  MessagingKitOptions,
+  MessagingKitResolution,
+  MessagingKitResolutions,
+} from "./messaging-kit.js";
+
+// Front-door copy: ten reserved sign-in ids with shipped English defaults and
+// a noun resolver, resolved through `resolveCopyRef`. See front-door.ts's top
+// doc comment.
+export {
+  resolveFrontDoorCopy,
+  isFrontDoorCopyId,
+  FRONT_DOOR_COPY_EN,
+  FRONT_DOOR_COPY_IDS,
+  FRONT_DOOR_NOUNS,
+} from "./front-door.js";
+export type {
+  FrontDoorCopyIssue,
+  FrontDoorCopyIssueReason,
+  FrontDoorCopyResolution,
+  FrontDoorKey,
+  FrontDoorNoun,
+  FrontDoorNouns,
+} from "./front-door.js";
 
 export { readCopyRecord } from "./registry.js";
 export type { CopyRegistryReadIssue, CopyRegistryReadIssueReason, CopyRegistryReadResult } from "./registry.js";

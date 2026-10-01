@@ -279,7 +279,7 @@ describe("MarketingView — fail-closed contracts", () => {
     } catch (error) {
       expect(error).toBeInstanceOf(RenderError);
       expect((error as RenderError).reason).toBe("empty-output");
-      expect((error as Error).message).toContain("acme.feature.icon.missing");
+      expect((error as Error).message).not.toContain("acme.feature.icon.missing");
     }
   });
 
@@ -293,5 +293,55 @@ describe("MarketingView — fail-closed contracts", () => {
     });
     const html = renderToStaticMarkup(element);
     expect(html).toContain('<img src="https://cdn.example/icon-a.svg" alt="Placeholder icon A" width="24" height="24"/>');
+  });
+});
+
+describe("MarketingView — refusal messages never echo a caller id", () => {
+  const SENTINEL_DOC_ID = "sentinel-doc-id-41";
+  const SENTINEL_ASSET_ID = "sentinel.asset.id.41";
+
+  function thrownMessage(render: () => unknown, reason: RenderError["reason"]): string {
+    try {
+      render();
+    } catch (error) {
+      expect(error).toBeInstanceOf(RenderError);
+      expect((error as RenderError).reason).toBe(reason);
+      return (error as RenderError).message;
+    }
+    return expect.unreachable("expected renderWebDocument to throw");
+  }
+
+  it("names neither the document id nor the template when a required repeating slot is missing", () => {
+    const resolved = resolveSurfaceDocument({ ...marketingDoc(baseBindings), id: SENTINEL_DOC_ID }, resolver);
+    const message = thrownMessage(() => renderWebDocument(resolved.document, { groups: resolved.groups }), "resolution-failed");
+    expect(message).toBe("renderWebDocument could not resolve the document against its template: missing required repeating slot(s): features.");
+    expect(message).not.toContain(SENTINEL_DOC_ID);
+    expect(message).not.toContain("MarketingView");
+  });
+
+  it("names neither the document id nor the template when a required flowed slot is unbound", () => {
+    const bindings = [{ slot: "heroHeading", copy: ref("acme.hero.heading") }, { slot: "ctaHeading", copy: ref("acme.cta.heading") }, { slot: "features", items: [] }];
+    const resolved = resolveSurfaceDocument({ ...marketingDoc(bindings), id: SENTINEL_DOC_ID }, resolver);
+    const message = thrownMessage(() => renderWebDocument(resolved.document, { groups: resolved.groups }), "resolution-failed");
+    expect(message).toContain("renderWebDocument could not resolve the document against its template: missing required slot(s): brand");
+    expect(message).not.toContain(SENTINEL_DOC_ID);
+    expect(message).not.toContain("MarketingView");
+  });
+
+  it("does not echo an unresolved assetId inside a repeating item", () => {
+    const resolved = resolveSurfaceDocument(marketingDoc([...baseBindings, { slot: "features", items: [{ assetId: SENTINEL_ASSET_ID }] }]), resolver);
+    const message = thrownMessage(() => renderWebDocument(resolved.document, { groups: resolved.groups, resolveAssetId: () => undefined }), "empty-output");
+    expect(message).toContain('could not resolve repeating slot "features" item 0\'s assetId into a real asset');
+    expect(message).not.toContain(SENTINEL_ASSET_ID);
+  });
+
+  it("does not echo an unresolved assetId inside a structured field", () => {
+    const resolved = resolveSurfaceDocument(
+      marketingDoc([...baseBindings, { slot: "features", items: [] }, { slot: "faq", items: [{ fields: { question: { assetId: SENTINEL_ASSET_ID }, answer: { copy: ref("acme.faq.answer.one") } } }] }]),
+      resolver,
+    );
+    const message = thrownMessage(() => renderWebDocument(resolved.document, { groups: resolved.groups, resolveAssetId: () => undefined }), "empty-output");
+    expect(message).toContain('could not resolve repeating slot "faq" item 0\'s field assetId into a real asset');
+    expect(message).not.toContain(SENTINEL_ASSET_ID);
   });
 });

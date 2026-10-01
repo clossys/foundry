@@ -118,12 +118,12 @@ describe("resolveSurfaceDocument — repeating-group resolution", () => {
     expect(fields.every((resolution) => resolution.locale === "en" && resolution.recordId === "acme-fixture")).toBe(true);
   });
 
-  it("fails the whole document and names the exact structured field when its CopyRef cannot resolve", () => {
+  it("fails the whole document and names the exact item when a structured field's CopyRef cannot resolve", () => {
     const structured: SurfaceDocument = {
       ...singleBindingOnly,
       bindings: [...singleBindingOnly.bindings, { slot: "faq", items: [{ fields: { question: { copy: ref("acme.faq.question") }, answer: { copy: ref("acme.faq.missing") } } }] }],
     };
-    expect(() => resolveSurfaceDocument(structured, resolver)).toThrow(/bindings\.1\.items\.0\.fields\.answer\.copy/);
+    expect(() => resolveSurfaceDocument(structured, resolver)).toThrow(/bindings\.1\.items\.0\.fields\.copy/);
   });
 
   it("resolves an explicit empty group to zero items, not an error", () => {
@@ -151,7 +151,7 @@ describe("resolveSurfaceDocument — repeating-group resolution", () => {
     }
     expect(thrown).toBeInstanceOf(SurfaceResolutionError);
     expect((thrown as SurfaceResolutionError).message).toContain("bindings.1.items.1.copy");
-    expect((thrown as SurfaceResolutionError).message).toContain("acme.capability.missing");
+    expect((thrown as SurfaceResolutionError).message).not.toContain("acme.capability.missing");
   });
 
   it("collects per-item provenance, not just per-slot, into collectCopyProvenance — no rendered text leaks in", () => {
@@ -224,5 +224,53 @@ describe("resolveSurfaceDocument — knownTemplates", () => {
   it("resolves when the template is listed in knownTemplates", () => {
     const resolved = resolveSurfaceDocument(singleBindingOnly, resolver, { knownTemplates: [singleBindingOnly.template] });
     expect(resolved.document.template).toBe(singleBindingOnly.template);
+  });
+});
+
+describe("resolveSurfaceDocument — unresolved-copy message never echoes a caller id or key", () => {
+  const SENTINEL_SURFACE_ID = "sentinel-surface-id-31";
+  const SENTINEL_REF_ID = "sentinel.ref.id.31";
+  const SENTINEL_KEY = "sentinel-key-31";
+
+  function unresolvedMessage(surface: SurfaceDocument): string {
+    try {
+      resolveSurfaceDocument(surface, resolver);
+    } catch (error) {
+      expect(error).toBeInstanceOf(SurfaceResolutionError);
+      expect((error as SurfaceResolutionError).reason).toBe("unresolved-copy");
+      return (error as SurfaceResolutionError).message;
+    }
+    return expect.unreachable("expected resolveSurfaceDocument to throw");
+  }
+
+  it("names the fixed binding path, not the unresolved CopyRef id or the surface id", () => {
+    const message = unresolvedMessage({ ...singleBindingOnly, id: SENTINEL_SURFACE_ID, bindings: [{ slot: "heading", copy: ref(SENTINEL_REF_ID) }] });
+    expect(message).toBe("resolveSurfaceDocument could not resolve a CopyRef at bindings.0.copy.");
+    expect(message).not.toContain(SENTINEL_REF_ID);
+    expect(message).not.toContain(SENTINEL_SURFACE_ID);
+  });
+
+  it("does not echo a caller-chosen structured field key", () => {
+    const message = unresolvedMessage({
+      ...singleBindingOnly,
+      bindings: [...singleBindingOnly.bindings, { slot: "faq", items: [{ fields: { [SENTINEL_KEY]: { copy: ref(SENTINEL_REF_ID) } } }] }],
+    });
+    expect(message).toBe("resolveSurfaceDocument could not resolve a CopyRef at bindings.1.items.0.fields.copy.");
+    expect(message).not.toContain(SENTINEL_KEY);
+    expect(message).not.toContain(SENTINEL_REF_ID);
+  });
+
+  it("does not echo a caller-chosen slide notes key", () => {
+    const message = unresolvedMessage({
+      id: "acme.deck",
+      channel: "slides",
+      meta: { channel: "slides", aspect: "16:9", notes: { [SENTINEL_KEY]: ref(SENTINEL_REF_ID) } },
+      template: "Deck",
+      layout: { slots: [{ key: "heading", element: "heading", frame: { x: 0, y: 0, w: 1, h: 0.2 } }] },
+      bindings: [{ slot: "heading", copy: ref("acme.heading") }],
+    } as SurfaceDocument);
+    expect(message).toBe("resolveSurfaceDocument could not resolve a CopyRef at meta.notes.");
+    expect(message).not.toContain(SENTINEL_KEY);
+    expect(message).not.toContain(SENTINEL_REF_ID);
   });
 });

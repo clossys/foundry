@@ -4,9 +4,11 @@
  * file is valid, not handoff-ready.
  */
 
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync } from "node:fs";
 import { join } from "node:path";
 import type { BrandDerivation } from "./brand-derivation.js";
+import { BRAND_FACTS_FILE, validateBrandFacts, type BrandFacts } from "./brand-facts.js";
+import { readJsonFile } from "./json-file.js";
 import {
   validateAudiences,
   validateBrand,
@@ -29,7 +31,7 @@ import {
   type StrategistClaim,
   type StrategyConstraint,
 } from "./schema.js";
-import { summarizeIssues, type Validator } from "./validation.js";
+import type { Validator } from "./validation.js";
 
 export type StrategyReadIssueReason = "unreadable" | "unparseable" | "invalid-schema" | "missing-required" | "retired-file";
 
@@ -51,41 +53,13 @@ export interface StrategyBundle {
   constraints?: StrategyConstraint[];
   brand?: BrandDocument;
   directions?: DirectionEntity[];
+  /** `brand-facts.json` — the recorded legal entity, brand name, domains, contact, and tagline references (see `brand-facts.ts`). */
+  brandFacts?: BrandFacts;
   issues: StrategyReadIssue[];
   complete: boolean;
 }
 
 const RETIRED_BRAND_FILES = ["brand-essence.json", "brand-attributes.json", "brand-derivations.json"] as const;
-
-function readJsonFile<T>(
-  path: string,
-  relLabel: string,
-  validate: Validator<T>,
-): { ok: true; value: T } | { ok: false; issue: StrategyReadIssue } {
-  let raw: string;
-  try {
-    raw = readFileSync(path, "utf8");
-  } catch (error) {
-    return {
-      ok: false,
-      issue: { file: relLabel, reason: "unreadable", detail: error instanceof Error ? error.message : String(error) },
-    };
-  }
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(raw);
-  } catch (error) {
-    return {
-      ok: false,
-      issue: { file: relLabel, reason: "unparseable", detail: error instanceof Error ? error.message : String(error) },
-    };
-  }
-  const result = validate(parsed);
-  if (!result.ok) {
-    return { ok: false, issue: { file: relLabel, reason: "invalid-schema", detail: summarizeIssues(result.issues) } };
-  }
-  return { ok: true, value: result.value };
-}
 
 export function readStrategy(root: string): StrategyBundle {
   const issues: StrategyReadIssue[] = [];
@@ -131,6 +105,7 @@ export function readStrategy(root: string): StrategyBundle {
   const constraints = readOptional("constraints.json", validateStrategyConstraints);
   const brand = readOptional("brand.json", validateBrand);
   const directions = readOptional("direction.json", validateDirectionEntities);
+  const brandFacts = readOptional(BRAND_FACTS_FILE, validateBrandFacts);
 
   return {
     root,
@@ -144,6 +119,7 @@ export function readStrategy(root: string): StrategyBundle {
     constraints,
     brand,
     directions,
+    brandFacts,
     issues,
     complete: issues.length === 0,
   };

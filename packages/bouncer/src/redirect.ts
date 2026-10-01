@@ -59,6 +59,7 @@ function hasUnsafeTargetSyntax(target: string): boolean {
     target !== target.trim() ||
     target.includes("\\") ||
     /%5c/i.test(target) ||
+    /[\u0000-\u001f\u007f]/.test(target) ||
     target.startsWith("//")
   );
 }
@@ -103,6 +104,9 @@ export function resolveSafeRedirect(
     const url = new URL(target, base);
     if ((url.protocol !== "http:" && url.protocol !== "https:") || url.username || url.password) return undefined;
     if (!policy.origins.includes(url.origin)) return undefined;
+    // `new URL` removes dot segments and encoded dots, so judge the normalised
+    // path: a leading `//` here would be read as a different host if relativised.
+    if (url.pathname.startsWith("//")) return undefined;
     return url.href;
   } catch {
     return undefined;

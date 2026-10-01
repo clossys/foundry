@@ -5,7 +5,7 @@ import { PACKAGE_SCOPE } from "./generated/package-scope.generated.js";
 import { PLAN_CONTRACTS } from "./generated/plan-contracts.generated.js";
 import { changeSetDigest } from "./change-set-digest.js";
 import {
-  contentDigest, isPathPattern, isSafeRelativePath, lockfilePath, matchesPathPattern, repositoryChangeSetViolations, validateRepositoryChangeSet,
+  WRITE_RECORD_PATHS, contentDigest, isPathPattern, isSafeRelativePath, lockfilePath, matchesPathPattern, repositoryChangeSetViolations, validateRepositoryChangeSet,
 } from "./change-set-contract.js";
 import type { RepositoryChangeSet } from "./change-set-contract.js";
 
@@ -447,6 +447,48 @@ describe("change-set code rules C1-C16", () => {
       fileAt(swappedFiles, "AGENTS.md").item = "claude";
       fileAt(swappedFiles, "CLAUDE.md").item = "agents";
       expect(ruleIds(reseal(swappedFiles))).toEqual(["C9"]);
+    });
+
+    it("source binds its path: an agents-guide item needs exactly one file or refusal at clossys/AGENTS.md", () => {
+      const withGuide = (): Loose => {
+        const set = loose(SET);
+        set.items.push({ id: "agents-guide", act: "write-record", source: "agents-guide" });
+        set.items.sort(byId);
+        set.files.push({ path: "clossys/AGENTS.md", mode: "100644", before: null, after: SAMPLE, item: "agents-guide" });
+        set.files.sort(byPath);
+        return set;
+      };
+      expect(WRITE_RECORD_PATHS["agents-guide"]).toBe("clossys/AGENTS.md");
+      expect(repositoryChangeSetViolations(reseal(withGuide()))).toEqual([]);
+
+      const atAgents = withGuide();
+      fileAt(atAgents, "clossys/AGENTS.md").path = "AGENTS.md";
+      atAgents.files.sort(byPath);
+      atAgents.pathAllowList = [...atAgents.pathAllowList, "AGENTS.md"].sort();
+      expect(rulesOf(reseal(atAgents))).toEqual([`C9 items[${itemIndex(atAgents, "agents-guide")}]`]);
+
+      const missing = withGuide();
+      missing.files = missing.files.filter((file: Loose) => file.path !== "clossys/AGENTS.md");
+      expect(rulesOf(reseal(missing))).toEqual([`C9 items[${itemIndex(missing, "agents-guide")}]`]);
+
+      const twice = withGuide();
+      twice.files.push({ path: "clossys/extra.md", mode: "100644", before: null, after: SAMPLE, item: "agents-guide" });
+      twice.files.sort(byPath);
+      expect(rulesOf(reseal(twice))).toEqual([`C9 items[${itemIndex(twice, "agents-guide")}]`]);
+
+      const refused = withGuide();
+      refused.files = refused.files.filter((file: Loose) => file.path !== "clossys/AGENTS.md");
+      refused.refused.push({ path: "clossys/AGENTS.md", reason: "unowned-existing", item: "agents-guide" });
+      expect(repositoryChangeSetViolations(reseal(refused))).toEqual([]);
+
+      const refusedElsewhere = withGuide();
+      refusedElsewhere.files = refusedElsewhere.files.filter((file: Loose) => file.path !== "clossys/AGENTS.md");
+      refusedElsewhere.refused.push({ path: "AGENTS.md", reason: "unowned-existing", item: "agents-guide" });
+      expect(ruleIds(reseal(refusedElsewhere))).toContain("C9");
+
+      const asBrief = withGuide();
+      itemAt(asBrief, "agents-guide").source = "engagement-brief";
+      expect(ruleIds(reseal(asBrief))).toEqual(["C9"]);
     });
 
     it("binds each setup template act to exactly its files", () => {

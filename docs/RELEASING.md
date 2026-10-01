@@ -371,6 +371,45 @@ owner-approved out-of-band minor, its dependent's in-band patch bump and
 range rewrite, and an unrelated ordinary changeset for a third package left
 untouched).
 
+### Packed template manifests move with the release
+
+`packages/publisher/templates/site/package.json` pins the four `@clossys/*`
+siblings with caret ranges, and the publisher's `files` list packs the whole
+`templates` tree — so it is a published manifest, even though it is not a
+workspace package and the sibling-range scan over `packages/<dir>/package.json`
+never reached it. Until issue #1644 a release PR edited it by hand, and any
+`0.x` minor broke guard 1 of `site-template-guards.test.ts` (a range must
+cover the on-disk version) until someone did.
+
+`scripts/apply-release-changesets.mjs` now scans every
+`packages/<dir>/templates/<name>/package.json` in the same fixed-point round as
+the workspace manifests, over all four dependency sections (the file is
+packed, so `devDependencies` counts here, unlike in a workspace manifest — see
+that script's header, "PACKED TEMPLATE MANIFESTS"):
+
+- A range the new version no longer covers is rewritten to `^<newVersion>`,
+  byte for byte elsewhere, in the same backed-up write phase as every other
+  file — a failing `npm install` restores the template too.
+- The owning package (`<dir>`) gets a dependent-only patch bump unless a
+  changeset already names it (one bump either way), and its changelog entry
+  gains `Updated templates/<name> dependency <dep> to <range>` after the
+  dependency bullets. A named owner's own minor is the same rule seen from the
+  other side: its template's range on itself moves.
+- A range the script cannot evaluate (`workspace:*`, anything outside a plain
+  pin, caret or tilde) refuses the whole run and names the template's path;
+  nothing is written.
+- `--dry-run` lists each rewrite as `template <path> (<section>) <dep>`, and
+  the owner's `applied` entry carries `templateUpdates`.
+
+On release day `evaluateReleasePrFootprint` (`scripts/lib/release-pr-footprint.mjs`)
+admits exactly that one extra shape: `packages/<dir>/templates/<name>/package.json`,
+status `modified`, only when `<dir>` is bumped in the same diff, where the four
+dependency sections change only to exactly `^<the version this diff bumped that
+package to>` (no key added, removed or reordered) and every other byte of the
+manifest, including its own `version`, is identical. The owner's changelog must
+then match the rebuilt bullets byte for byte. Any other template path, edit or
+status is still "not a release-PR-shaped change".
+
 ### Five defects fixed by independent review of PR #1353
 
 A fresh, blind reviewer of PR #1353 (composing #1316 + #1338/#1339) found

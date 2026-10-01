@@ -124,7 +124,7 @@ versioned packages.
 | `@clossys/controller/conventions/documents/*` | The shipped convention documents themselves (`branch-provenance.md`, `skill-grammar.md`, `agent-interoperability.md`, `routine-declaration.md`, `schedule-declaration.md`, `live-state-reconciliation.md`, `skill-registry.md`, `machine-guidance.md`, `machine-baseline.md`, `gate-naming.md`, `runner-conventions.md`, `ci-conventions.md`) as real files a provisioning step can copy or template onto a machine. |
 | `@clossys/controller/conventions/adapters/*` | The shipped adapter files (`agent-policy.rules`, `shell-integration.zsh`, `branch-provenance-hook.sh`, `heavy-cmd-hook.sh`, `scoped-main-push.sh`, `workspace-shell.zsh`) as real files, same shape as the documents above. |
 | `@clossys/controller/conventions/data/*` | Dated data files an evaluator reads as input, never hard-coded in code: `runner-pricing.json` (`asOf`, source URLs). |
-| `@clossys/controller/conventions/templates/*` | Ready-to-adopt CI workflow skeletons: `ci-workflow.yml`, which a test in this package proves passes `ci-conventions-check` as shipped. |
+| `@clossys/controller/conventions/templates/*` | Ready-to-adopt CI workflow templates: `ci-workflow.yml` and `product-ci-workflow.yml` (a lockfile-selected npm or pnpm workflow for a client product repository), each of which a test in this package proves passes `ci-conventions-check` as shipped. |
 | `@clossys/controller/policy` | The content-addressed `PolicyBinding` primitive: compute a digest, validate a binding's shape, verify a binding against materialized content. Zero I/O, zero dependency of its own — the primitive `./gates` and `./artifacts` bind rules and artifacts to documents with, without ever committing the document itself. |
 
 `@clossys/controller/positions` exports
@@ -2167,6 +2167,11 @@ straight through. `conventions/templates/ci-workflow.yml`, resolved by
 `templatePath("ci-workflow.yml")`, is a conforming skeleton a scaffold can
 compose into a new repository — a test in this package runs the real
 shipped file through `evaluateCiConventions` and asserts it passes.
+`product-ci-workflow.yml` is the single-job (`verify-product`) template for a
+client product repository, installed as `.github/workflows/clossys-ci.yml`; its
+own test does the same and also runs its install step against stubbed package
+managers to show a repository without exactly one of `package-lock.json` or
+`pnpm-lock.yaml` is refused.
 
 `ci-conventions.md`'s own **Weekly Sunday `@clossys/*` adoption** section
 (owner direction 2026-09-23, #1187/#1259's cadence rule) is a consuming
@@ -2452,6 +2457,35 @@ could not run. `verify-published` exits `0` on a digest match, `1` on a
 mismatch (or another binding finding), `2` when it could not run. Use
 `foundry-governance preflight --help` / `foundry-governance verify-published
 --help` for each subcommand's own invocation contract.
+
+`site-conformance-check <repoRoot> [--site <dir>]` is a report-mode conformance
+scan of a site's Next.js app directory (slice 1 of #1515). `<dir>` defaults to
+`apps/site`; it scans `<dir>/app/**` `.ts` and `.tsx` files, skipping
+`node_modules` and `.next`, and prints one JSON report
+`{ mode, site, filesScanned, findings: [{ rule, file, line }], waived }`. It
+never echoes matched source text and imports nothing from another package.
+
+- `site/route-not-publisher-view`: every `page.tsx`, `not-found.tsx` and
+  `error.tsx` must reach a view from `@clossys/publisher/web`, either by
+  importing it directly or through one relative import. The finding is at line 1.
+- `site/template-route-duplicate`: a `page.tsx` whose route (route groups
+  dropped) has a segment named like a template route (`privacy`, `terms`,
+  `legal`, `about` or `contact`, optionally with a `-suffix`) and is not a
+  route id in `<dir>/web-route-manifest.json`.
+- `site/raw-style-literal`: a hex colour in a quoted string, or `rgb(`,
+  `hsl(` or `oklch(`, on a line. Comment lines are skipped and a same-line
+  `token-gate:ignore` marker suppresses the finding.
+
+Waivers live in one file, `clossys/conformance-waivers.json`:
+`{ "version": 1, "waivers": [{ "rule", "path", "reason" }] }`, where `path` is
+an exact repository file. A matching waiver moves its finding to `waived` with
+its reason; a waiver that matches nothing is itself the finding
+`site/waiver-unused`.
+
+It exits `0` whenever the scan ran, with or without findings, and `2` when it
+could not run: a missing repository or site directory, no files, a missing or
+invalid manifest, an empty-reason, unknown-rule or duplicate waiver, bad JSON,
+or an unknown flag (including `--enforce`, which this slice does not offer).
 
 ## API
 

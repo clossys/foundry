@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { TOKENS } from "../tokens/tokens.js";
 import { NavShell } from "./NavShell.js";
 
 function Page() {
@@ -50,6 +51,15 @@ describe("NavShell", () => {
     const dialog = await screen.findByRole("dialog");
     expect(dialog).toHaveTextContent("Products");
     expect(dialog).toHaveTextContent("Pricing");
+  });
+
+  it("sizes the drawer panel from the drawer-width token", async () => {
+    const user = userEvent.setup();
+    render(<Page />);
+    await user.click(screen.getByRole("button", { name: "Menu" }));
+    const dialog = await screen.findByRole("dialog");
+    const panel = dialog.parentElement as HTMLElement;
+    expect(panel.style.width).toBe(`var(--ui-layout-drawer-w, ${TOKENS["--ui-layout-drawer-w"].value})`);
   });
 
   it("moves focus into the drawer on open, and restores it to the trigger on close", async () => {

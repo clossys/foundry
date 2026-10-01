@@ -10,6 +10,7 @@ import { createHash } from "node:crypto";
 import { formatContractViolation, validateAgainstContract } from "./generated/contract-schema.generated.js";
 import { PACKAGE_SCOPE } from "./generated/package-scope.generated.js";
 import { bundleDigest, changeSetDigest } from "./change-set-digest.js";
+import { AGENTS_GUIDE_PATH } from "./agents-guide.js";
 import { loadContract } from "./plan-contract.js";
 import type { ValidationResult } from "./plan-contract.js";
 
@@ -23,7 +24,7 @@ export type ExemptionSurfaceKind = "pnpm-workspace" | "yarnrc";
 export type DependencyPlacement = "dependencies" | "devDependencies";
 /** A discovery root: a directory agent hosts read skills from, holding a link to each composed skill. */
 export type DiscoveryRoot = ".claude/skills" | ".cursor/skills";
-export type WriteRecordSource = "engagement-brief" | "agents-pointer" | "claude-loader";
+export type WriteRecordSource = "engagement-brief" | "agents-pointer" | "claude-loader" | "agents-guide";
 
 /** One exact package: one version and one sha512 integrity value. */
 export interface PinnedPackage {
@@ -314,6 +315,7 @@ export const WRITE_RECORD_PATHS: Readonly<Record<WriteRecordSource, string>> = {
   "engagement-brief": BRIEF_PATH,
   "agents-pointer": "AGENTS.md",
   "claude-loader": "CLAUDE.md",
+  "agents-guide": AGENTS_GUIDE_PATH,
 };
 
 /** The setup template acts, each with exactly the files it writes (code rule C9). */

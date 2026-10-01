@@ -100,6 +100,14 @@ describe("renderPrintDocument — refusal paths", () => {
     expect(error.message).toContain("missing required slot(s): title");
   });
 
+  it("does not echo the document id when it refuses an unresolvable document", () => {
+    const doc = baseDoc({ id: "sentinel-doc-id-67", bindings: [{ slot: "body", value: "World" }] });
+    const error = thrown(() => renderPrintDocument(doc));
+    expect(error.reason).toBe("resolution-failed");
+    expect(error.message).toContain("renderPrintDocument could not resolve the document against its own layout:");
+    expect(error.message).not.toContain("sentinel-doc-id-67");
+  });
+
   it("REFUSES a document whose bindings target no slot in the layout at all — the 'empty' case", () => {
     const doc = baseDoc({ layout: { slots: [{ key: "title", element: "heading", frame: { x: 0, y: 0, w: 1, h: 0.2 }, required: true }] }, bindings: [] });
     const error = thrown(() => renderPrintDocument(doc));

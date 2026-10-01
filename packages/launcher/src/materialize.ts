@@ -16,6 +16,9 @@ import {
   writeFileSync,
 } from "node:fs";
 import { dirname, join } from "node:path";
+import { decideSetBinding, planPackagesFor, readHubAuthority } from "./admission.js";
+import { AGENTS_GUIDE_PATH, verifyAgentsGuide } from "./agents-guide.js";
+import type { AdmissionRefusal, PlanPackageIdentity, ReadinessRunner } from "./admission.js";
 import { storeChangeSet } from "./apply-store.js";
 import {
   CANONICAL_KEYS,
@@ -28,34 +31,41 @@ import {
   matchesPathPattern,
   validateRepositoryChangeSet,
 } from "./change-set-contract.js";
-import type { ApprovalBinding, ChangeSetItem, FileChange, PackageInvariant, RepositoryChangeSet, WholeFileChange } from "./change-set-contract.js";
+import type { ApprovalBinding, FileChange, PackageInvariant, RepositoryChangeSet, WholeFileChange } from "./change-set-contract.js";
 import { JsonEditUnstableError, editJsonPointer, valueAtJsonPointer } from "./key-editor.js";
 import { renderInstalledLedger } from "./ledger-contract.js";
-import type { InstalledLedger, LedgerPackageIdentity } from "./ledger-contract.js";
+import type { InstalledLedger } from "./ledger-contract.js";
 import { trustInstalledLedger } from "./ledger-trust.js";
-import type { PlanPackageActs } from "./ledger-trust.js";
 import { checkLockfileInvariants } from "./lockfile-invariants.js";
 import type { LockfileInvariantPackage } from "./lockfile-invariants.js";
 import { regenerateLockfile } from "./lockfile-regen.js";
 import type { LockfileSpawn } from "./lockfile-regen.js";
+import { verifyReleaseAgeExemption } from "./release-age-edit.js";
 
+// The approval binding a set's ledger records is never an input: admission
+// (admission.ts) computes it from the hub's committed plan and stored bundles,
+// and materialize and verify both use exactly that binding (#1178).
 export interface MaterializeInput {
   readonly clone: string;
   readonly hub: string;
   readonly set: RepositoryChangeSet;
   readonly texts: Readonly<Record<string, string>>;
-  readonly binding: ApprovalBinding;
   readonly heldChangeSets?: readonly RepositoryChangeSet[];
   readonly spawn?: LockfileSpawn;
+  /** The instant the execution authorization is judged at; the wall clock by default. */
   readonly now?: () => Date;
   readonly toolVersion?: string | null;
+  /** Runs the hub's advisor-execution-readiness; the hub's own installed executable by default. */
+  readonly runReadiness?: ReadinessRunner;
 }
 
 export interface VerifyInput {
   readonly clone: string;
+  readonly hub: string;
   readonly set: RepositoryChangeSet;
-  readonly binding: ApprovalBinding;
   readonly heldChangeSets?: readonly RepositoryChangeSet[];
+  readonly now?: () => Date;
+  readonly runReadiness?: ReadinessRunner;
 }
 
 export interface ApplyStepResult {
@@ -72,12 +82,20 @@ const TOOL_VERSION_SHAPE = /^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(?
 const LEFTOVER_SKILL = /^\.agents\/skills\/clossys-[^/]+(?:\/.*)?$/u;
 const RESERVED_ROOTS = new Set(["clossys", ".github", ".starter"]);
 
-type PackageItem = Extract<ChangeSetItem, { act: "install" | "pin-starter" }>;
-
 const isWhole = (file: FileChange): file is WholeFileChange => !("derived" in file);
 
 function result(exitCode: 0 | 1 | 2, verdict: ApplyStepResult["verdict"], reason?: string, detail?: string): ApplyStepResult {
   return detail === undefined ? { exitCode, verdict, reason } : { exitCode, verdict, reason, detail };
+}
+
+/**
+ * The time limit `status` puts on the git calls of the preconditions it shares with verify, through this variable; unset (verify's
+ * own case) there is no limit. A call that runs out of time has no status, which is read as a failure.
+ */
+export const GIT_TIMEOUT_ENV = "CLOSSYS_LAUNCHER_GIT_TIMEOUT_MS";
+function gitTimeout(): number | undefined {
+  const limit = Number(process.env[GIT_TIMEOUT_ENV]);
+  return Number.isSafeInteger(limit) && limit > 0 ? limit : undefined;
 }
 
 function git(root: string, args: readonly string[]): { status: number; stdout: string } {
@@ -85,6 +103,8 @@ function git(root: string, args: readonly string[]): { status: number; stdout: s
     cwd: root,
     encoding: "utf8",
     stdio: ["ignore", "pipe", "ignore"],
+    timeout: gitTimeout(),
+    killSignal: "SIGKILL",
   });
   return { status: run.status ?? 1, stdout: run.stdout ?? "" };
 }
@@ -94,21 +114,8 @@ function safeDefaultBranch(branch: string): boolean {
   return DEFAULT_BRANCH_SHAPE.test(branch);
 }
 
-function planPackagesFromSet(set: RepositoryChangeSet): (LedgerPackageIdentity & { readonly act: "install" | "pin-starter" })[] {
-  return set.items
-    .filter((item): item is PackageItem => item.act === "install" || item.act === "pin-starter")
-    .map(({ planItem, act, package: pkg, placement }) => ({
-      planItem,
-      act,
-      name: pkg.name,
-      version: pkg.version,
-      integrity: pkg.integrity,
-      placement,
-    }));
-}
-
-function planPackageActsForSet(set: RepositoryChangeSet): PlanPackageActs[] {
-  return [{ planDigest: set.planDigest, packages: planPackagesFromSet(set) }];
+function refusalResult(refusal: AdmissionRefusal): ApplyStepResult {
+  return result(refusal.exitCode, refusal.exitCode === 1 ? "violated" : "indeterminate", refusal.reason, refusal.detail);
 }
 
 function digestAtPath(root: string, relPath: string): string | null {
@@ -134,6 +141,8 @@ function gitShowBytes(root: string, ref: string, path: string): Uint8Array | nul
   const run = spawnSync("git", ["-c", "commit.gpgsign=false", "-c", "core.hooksPath=/dev/null", "show", `${ref}:${path}`], {
     cwd: root,
     stdio: ["ignore", "pipe", "ignore"],
+    timeout: gitTimeout(),
+    killSignal: "SIGKILL",
   });
   if ((run.status ?? 1) !== 0) return null;
   return run.stdout ?? null;
@@ -186,7 +195,7 @@ function ensureParentDir(root: string, relPath: string): ApplyStepResult | null 
   return null;
 }
 
-function writeRegularFile(root: string, relPath: string, text: string, after: string): ApplyStepResult | null {
+export function writeRegularFile(root: string, relPath: string, text: string, after: string): ApplyStepResult | null {
   const parent = ensureParentDir(root, relPath);
   if (parent !== null) return parent;
   const path = join(root, relPath);
@@ -208,7 +217,7 @@ function writeRegularFile(root: string, relPath: string, text: string, after: st
   return null;
 }
 
-function writeSymlink(root: string, relPath: string, target: string, after: string): ApplyStepResult | null {
+export function writeSymlink(root: string, relPath: string, target: string, after: string): ApplyStepResult | null {
   const parent = ensureParentDir(root, relPath);
   if (parent !== null) return parent;
   const path = join(root, relPath);
@@ -223,7 +232,7 @@ function writeSymlink(root: string, relPath: string, target: string, after: stri
   return null;
 }
 
-function removePath(root: string, relPath: string): ApplyStepResult | null {
+export function removePath(root: string, relPath: string): ApplyStepResult | null {
   if (hasSymlinkAncestor(root, relPath)) return result(2, "indeterminate", "symlink-ancestor");
   const path = join(root, relPath);
   try {
@@ -236,7 +245,7 @@ function removePath(root: string, relPath: string): ApplyStepResult | null {
   return null;
 }
 
-function resolveCloneRoot(clone: string): { root: string } | ApplyStepResult {
+export function resolveCloneRoot(clone: string): { root: string } | ApplyStepResult {
   try {
     const stat = lstatSync(clone);
     if (!stat.isDirectory() || stat.isSymbolicLink()) return result(2, "indeterminate", "missing-clone");
@@ -283,6 +292,31 @@ function digestAtRef(root: string, ref: string, relPath: string, mode: WholeFile
   return contentDigest(text);
 }
 
+/**
+ * Whether the bytes an exempt-release-age item writes at `path` are the base's bytes plus exactly the one scope entry, judged by
+ * verifyReleaseAgeExemption() over the base commit's own bytes (never the working tree) and its .npmrc. True for a file no such
+ * item names. The set carries the file's digest only, so this is the one place the "one entry, nothing else" rule is proved.
+ */
+function provesReleaseAgeEdit(root: string, set: RepositoryChangeSet, file: WholeFileChange, after: string): boolean {
+  return provesReleaseAgeEditWith((path) => gitShowUtf8(root, set.repository.baseCommit, path), set, file, after);
+}
+
+/**
+ * provesReleaseAgeEdit() over any reader of the base commit's own bytes: `readBase` returns the text of a path at the base
+ * commit, or null when there is none. The plan command's dry tree reads them from the clone's object database and never runs
+ * `git show`.
+ */
+export function provesReleaseAgeEditWith(readBase: (path: string) => string | null, set: RepositoryChangeSet, file: WholeFileChange, after: string): boolean {
+  const item = set.items.find((entry) => entry.id === file.item);
+  if (item === undefined || item.act !== "exempt-release-age") return true;
+  if (item.path !== file.path) return false;
+  const before = readBase(file.path);
+  // The digest the set names as `before` must be these very bytes, or the proof would be over another file.
+  if ((before === null ? null : contentDigest(before)) !== file.before) return false;
+  const npmrc = readBase(".npmrc");
+  return verifyReleaseAgeExemption({ surface: item.surface, before, after, npmrc }).verified;
+}
+
 function checkBaseCommitMovement(root: string, set: RepositoryChangeSet): ApplyStepResult | null {
   const branch = set.repository.defaultBranch;
   const tip = git(root, ["rev-parse", `refs/heads/${branch}`]);
@@ -310,32 +344,39 @@ function persistChangeSet(hub: string, set: RepositoryChangeSet): ApplyStepResul
   return null;
 }
 
-function checkChangeSetShape(set: RepositoryChangeSet): ApplyStepResult | null {
+export function checkChangeSetShape(set: RepositoryChangeSet): ApplyStepResult | null {
   if (!BRANCH_SHAPE.test(set.branch) || !COMMIT_SHAPE.test(set.repository.baseCommit)) return result(2, "indeterminate", "change-set-invalid");
   if (!validateRepositoryChangeSet(set).valid) return result(2, "indeterminate", "change-set-invalid");
   return null;
 }
 
+/**
+ * The base ledger, trusted against the acts of the plan committed at the hub
+ * (never the acts of the set being judged: a set cannot vouch for itself), with
+ * the exact bytes it was read from (null when the base has none).
+ */
 function baseLedgerTrust(
   root: string,
   set: RepositoryChangeSet,
   heldChangeSets: readonly RepositoryChangeSet[],
-): { ledger: InstalledLedger | null } | ApplyStepResult {
+  planDigest: string,
+  planPackages: readonly PlanPackageIdentity[],
+): { ledger: InstalledLedger | null; bytes: Uint8Array | null } | ApplyStepResult {
   const bytes = gitShowBytes(root, set.repository.baseCommit, LEDGER_PATH);
   const ledgerBytes = bytes ?? new Uint8Array(0);
   const trust = trustInstalledLedger(
     ledgerBytes.length === 0 ? null : ledgerBytes,
     { id: set.repository.id, nodeId: set.repository.nodeId },
     heldChangeSets,
-    { planPackageActs: planPackageActsForSet(set) },
+    { planPackageActs: [{ planDigest, packages: planPackages }] },
   );
   if (trust.state === "refused") return result(2, "indeterminate", trust.rule);
   const generation = trust.ledger?.generation ?? 0;
   if (generation !== set.ledger.generation) return result(1, "violated", "ledger-mismatch");
-  return { ledger: trust.ledger };
+  return { ledger: trust.ledger, bytes: ledgerBytes.length === 0 ? null : ledgerBytes };
 }
 
-function refuseReservedSymlinks(root: string, paths: readonly string[]): ApplyStepResult | null {
+export function refuseReservedSymlinks(root: string, paths: readonly string[]): ApplyStepResult | null {
   for (const reserved of RESERVED_ROOTS) {
     try {
       if (lstatSync(join(root, reserved)).isSymbolicLink()) return result(2, "indeterminate", "symlink-ancestor");
@@ -379,7 +420,7 @@ function declareRootEntryText(root: string, set: RepositoryChangeSet, path: stri
   }
 }
 
-function resolveFileText(root: string, set: RepositoryChangeSet, file: WholeFileChange, texts: Readonly<Record<string, string>>): string | ApplyStepResult {
+export function resolveFileText(root: string, set: RepositoryChangeSet, file: WholeFileChange, texts: Readonly<Record<string, string>>): string | ApplyStepResult {
   if (texts[file.path] !== undefined) return texts[file.path]!;
   if (file.mode === "120000") {
     const role = discoveryLinkRole(file.path);
@@ -395,7 +436,7 @@ function resolveFileText(root: string, set: RepositoryChangeSet, file: WholeFile
   return result(2, "indeterminate", "file-text-unavailable");
 }
 
-function packagesForLockfile(set: RepositoryChangeSet, invariants: readonly PackageInvariant[]): LockfileInvariantPackage[] | null {
+export function packagesForLockfile(set: RepositoryChangeSet, invariants: readonly PackageInvariant[]): LockfileInvariantPackage[] | null {
   const packages: LockfileInvariantPackage[] = [];
   for (const row of invariants) {
     const item = set.items.find((entry) => entry.id === row.item);
@@ -406,7 +447,7 @@ function packagesForLockfile(set: RepositoryChangeSet, invariants: readonly Pack
   return packages;
 }
 
-function derivedLockfile(set: RepositoryChangeSet): { path: string; invariants: PackageInvariant[] } | null {
+export function derivedLockfile(set: RepositoryChangeSet): { path: string; invariants: PackageInvariant[] } | null {
   const derived = set.files.find((file) => "derived" in file && file.path !== LEDGER_PATH);
   if (derived === undefined || !("derived" in derived)) return null;
   const invariants = derived.invariants.filter((row): row is PackageInvariant => "name" in row);
@@ -441,22 +482,92 @@ function diffPaths(root: string, baseCommit: string): GitPathList {
   };
 }
 
-function symlinkBeforeRead(root: string, relPaths: readonly string[]): ApplyStepResult | null {
+/** What one path is in a tree: a link and where it points, a regular file (and whether it is executable), or anything else. */
+export type TreeEntry =
+  | { readonly kind: "symlink"; readonly target: string }
+  | { readonly kind: "file"; readonly executable: boolean }
+  | { readonly kind: "other" };
+
+/**
+ * Everything verifyPrepared reads about the tree it judges, so the same checks run over the working tree (verify) or over one
+ * commit's tree with no checkout (status). Nothing here writes.
+ */
+export interface TreeReader {
+  /** Whether the tree is on `branch`: a working tree checks its HEAD; a commit reader is told its ref by its caller and answers true. */
+  onBranch(branch: string): boolean;
+  /** The paths that differ from `baseCommit`. */
+  changedPaths(baseCommit: string): GitPathList;
+  /** The paths git reports as modified or untracked; a commit has none. */
+  dirtyPaths(): GitPathList;
+  /** Whether a directory above `relPath` is a link. */
+  hasSymlinkAncestor(relPath: string): boolean;
+  /** What `relPath` is, or null when there is nothing there; throws when it cannot be told. */
+  entry(relPath: string): TreeEntry | null;
+  /** The bytes at `relPath`; throws when it cannot be read. */
+  bytes(relPath: string): Buffer;
+}
+
+export type { GitPathList };
+
+/** The reader verify uses: the clone's working tree and its git status. */
+function workingTreeReader(root: string): TreeReader {
+  return {
+    onBranch(branch) {
+      const head = git(root, ["rev-parse", "--abbrev-ref", "HEAD"]);
+      return head.status === 0 && head.stdout.trim() === branch;
+    },
+    changedPaths: (baseCommit) => diffPaths(root, baseCommit),
+    dirtyPaths: () => porcelainPaths(root),
+    hasSymlinkAncestor: (relPath) => hasSymlinkAncestor(root, relPath),
+    entry(relPath) {
+      const path = join(root, relPath);
+      let stat;
+      try {
+        stat = lstatSync(path);
+      } catch (cause) {
+        if ((cause as NodeJS.ErrnoException).code === "ENOENT") return null;
+        throw cause;
+      }
+      if (stat.isSymbolicLink()) return { kind: "symlink", target: readlinkSync(path) };
+      if (stat.isFile()) return { kind: "file", executable: (stat.mode & 0o111) !== 0 };
+      return { kind: "other" };
+    },
+    bytes: (relPath) => readFileSync(join(root, relPath)),
+  };
+}
+
+function symlinkBeforeRead(reader: TreeReader, relPaths: readonly string[]): ApplyStepResult | null {
   for (const relPath of relPaths) {
-    if (hasSymlinkAncestor(root, relPath)) return result(2, "indeterminate", "symlink-ancestor");
+    if (reader.hasSymlinkAncestor(relPath)) return result(2, "indeterminate", "symlink-ancestor");
   }
   return null;
 }
 
-function expectedLedgerBytes(previous: InstalledLedger | null, set: RepositoryChangeSet, binding: ApprovalBinding): Buffer {
-  return Buffer.from(renderInstalledLedger(previous, set, binding, planPackagesFromSet(set)), "utf8");
+function expectedLedgerBytes(
+  previous: InstalledLedger | null,
+  set: RepositoryChangeSet,
+  binding: ApprovalBinding,
+  planPackages: readonly PlanPackageIdentity[],
+): Buffer {
+  return Buffer.from(renderInstalledLedger(previous, set, binding, planPackages), "utf8");
 }
 
-async function runPreconditions(
+export interface Preconditions {
+  readonly root: string;
+  readonly previousLedger: InstalledLedger | null;
+  /** The binding admission computed from the hub: the only one a ledger may record. */
+  readonly binding: ApprovalBinding;
+  /** The committed plan's package acts for the set's repository: what RENDER writes ledger rows from. */
+  readonly planPackages: readonly PlanPackageIdentity[];
+}
+
+export async function runPreconditions(
   clone: string,
+  hub: string,
   set: RepositoryChangeSet,
   heldChangeSets: readonly RepositoryChangeSet[],
-): Promise<{ root: string; previousLedger: InstalledLedger | null } | ApplyStepResult> {
+  admission: { readonly now?: () => Date; readonly runReadiness?: ReadinessRunner },
+): Promise<Preconditions | ApplyStepResult> {
   const resolved = resolveCloneRoot(clone);
   if ("exitCode" in resolved) return resolved;
   const { root } = resolved;
@@ -466,62 +577,107 @@ async function runPreconditions(
   if (symlinks !== null) return symlinks;
   const remote = checkRemoteTip(root, set);
   if (remote !== null) return remote;
-  const trust = baseLedgerTrust(root, set, heldChangeSets);
+
+  let hubRoot = hub;
+  try {
+    hubRoot = realpathSync(hub);
+  } catch {
+    // readHubAuthority refuses a hub it cannot read.
+  }
+  const authority = readHubAuthority(hubRoot);
+  if ("state" in authority) return refusalResult(authority);
+  const planPackages = planPackagesFor(authority, set.repository.id);
+  const trust = baseLedgerTrust(root, set, heldChangeSets, authority.planDigest, planPackages);
   if ("exitCode" in trust) return trust;
-  return { root, previousLedger: trust.ledger };
+  const decided = await decideSetBinding({
+    hub: hubRoot,
+    clone: root,
+    set,
+    authority,
+    baseLedger: trust.ledger,
+    baseLedgerBytes: trust.bytes,
+    now: admission.now,
+    runReadiness: admission.runReadiness,
+  });
+  if (decided.state !== "bound") return refusalResult(decided);
+  return { root, previousLedger: trust.ledger, binding: decided.binding, planPackages };
 }
 
 export async function verifyRepository(input: VerifyInput): Promise<ApplyStepResult> {
-  const held = input.heldChangeSets ?? [];
-  const pre = await runPreconditions(input.clone, input.set, held);
+  const pre = await runPreconditions(input.clone, input.hub, input.set, input.heldChangeSets ?? [], input);
   if ("exitCode" in pre) return pre;
-  const { root, previousLedger } = pre;
-  const set = input.set;
+  return verifyPrepared(input.set, pre);
+}
+
+/**
+ * The body of verify, over preconditions (and so an admission) that were already computed, and over a reader of the tree it
+ * judges: the clone's working tree by default (verify), or one commit's tree (status).
+ */
+export function verifyPrepared(set: RepositoryChangeSet, pre: Preconditions, reader: TreeReader = workingTreeReader(pre.root)): ApplyStepResult {
+  const { root, previousLedger, binding, planPackages } = pre;
   const allowed = (path: string) => set.pathAllowList.some((pattern) => matchesPathPattern(path, pattern));
   const declared = declaredPaths(set);
 
-  const head = git(root, ["rev-parse", "--abbrev-ref", "HEAD"]);
-  if (head.status !== 0 || head.stdout.trim() !== set.branch) return result(1, "violated", "diverged");
+  if (!reader.onBranch(set.branch)) return result(1, "violated", "diverged");
 
-  const porcelainEarly = porcelainPaths(root);
+  const porcelainEarly = reader.dirtyPaths();
   if (!porcelainEarly.ok) return result(2, "indeterminate", "status-unreadable");
-  const diffEarly = diffPaths(root, set.repository.baseCommit);
+  const diffEarly = reader.changedPaths(set.repository.baseCommit);
   if (!diffEarly.ok) return result(2, "indeterminate", "status-unreadable");
 
   const lockEarly = derivedLockfile(set);
   const readPaths = [...declared, ...(lockEarly !== null ? [lockEarly.path] : [])];
-  const symlink = symlinkBeforeRead(root, readPaths);
+  const symlink = symlinkBeforeRead(reader, readPaths);
   if (symlink !== null) return symlink;
 
   for (const path of declared) {
     if (!allowed(path)) return result(1, "violated", "outside-allow-list");
   }
 
+  // The Launcher's guide is checked before the whole-file loop so a changed byte is named for what it is: the set's own digest,
+  // then the constant text (G5). The file's text is read here and never echoed.
+  if (set.items.some((item) => item.act === "write-record" && item.source === "agents-guide")) {
+    const guide = set.files.find((file) => isWhole(file) && file.path === AGENTS_GUIDE_PATH);
+    if (guide !== undefined && guide.after !== null) {
+      let text: string | null = null;
+      try {
+        const entry = reader.entry(AGENTS_GUIDE_PATH);
+        if (entry !== null && entry.kind === "file") text = reader.bytes(AGENTS_GUIDE_PATH).toString("utf8");
+      } catch {
+        text = null;
+      }
+      if (text === null || contentDigest(text) !== guide.after || !verifyAgentsGuide(text)) return result(1, "violated", "agents-guide-mismatch");
+    }
+  }
+
   for (const file of set.files.filter(isWhole)) {
     if (file.after !== null) {
-      const path = join(root, file.path);
       try {
-        const stat = lstatSync(path);
+        const entry = reader.entry(file.path);
+        if (entry === null) return result(1, "violated", "content-mismatch");
         if (file.mode === "120000") {
-          if (!stat.isSymbolicLink()) return result(1, "violated", "mode-mismatch");
-          if (contentDigest(readlinkSync(path)) !== file.after) return result(1, "violated", "content-mismatch");
+          if (entry.kind !== "symlink") return result(1, "violated", "mode-mismatch");
+          if (contentDigest(entry.target) !== file.after) return result(1, "violated", "content-mismatch");
         } else {
-          if (!stat.isFile() || stat.isSymbolicLink()) return result(1, "violated", "mode-mismatch");
-          const mode = stat.mode & 0o777;
-          if ((mode & 0o111) !== 0) return result(1, "violated", "mode-mismatch");
-          if (contentDigest(readFileSync(path, "utf8")) !== file.after) return result(1, "violated", "content-mismatch");
+          if (entry.kind !== "file") return result(1, "violated", "mode-mismatch");
+          if (entry.executable) return result(1, "violated", "mode-mismatch");
+          const onDisk = reader.bytes(file.path).toString("utf8");
+          if (contentDigest(onDisk) !== file.after) return result(1, "violated", "content-mismatch");
+          if (!provesReleaseAgeEdit(root, set, file, onDisk)) return result(1, "violated", "content-mismatch");
         }
       } catch {
         return result(1, "violated", "content-mismatch");
       }
-    } else if (digestAtPath(root, file.path) !== null) return result(1, "violated", "removal-present");
+    } else {
+      const present = reader.entry(file.path);
+      if (present !== null && present.kind !== "other") return result(1, "violated", "removal-present");
+    }
   }
 
   if (set.keys.length > 0) {
-    const manifestPath = join(root, "package.json");
     let manifest: string;
     try {
-      manifest = readFileSync(manifestPath, "utf8");
+      manifest = reader.bytes("package.json").toString("utf8");
     } catch {
       return result(1, "violated", "content-mismatch");
     }
@@ -541,7 +697,7 @@ export async function verifyRepository(input: VerifyInput): Promise<ApplyStepRes
     const base = gitShowUtf8(root, set.repository.baseCommit, lock.path) ?? "";
     let current: string;
     try {
-      current = readFileSync(join(root, lock.path), "utf8");
+      current = reader.bytes(lock.path).toString("utf8");
     } catch {
       return result(1, "violated", "lockfile-invariants");
     }
@@ -552,10 +708,10 @@ export async function verifyRepository(input: VerifyInput): Promise<ApplyStepRes
     if (checked.verdict === "indeterminate") return result(2, "indeterminate", checked.reason);
   }
 
-  const expectedLedger = expectedLedgerBytes(previousLedger, set, input.binding);
+  const expectedLedger = expectedLedgerBytes(previousLedger, set, binding, planPackages);
   let ledgerOnDisk: Buffer;
   try {
-    ledgerOnDisk = readFileSync(join(root, LEDGER_PATH));
+    ledgerOnDisk = reader.bytes(LEDGER_PATH);
   } catch {
     return result(1, "violated", "ledger-mismatch");
   }
@@ -575,16 +731,15 @@ export async function verifyRepository(input: VerifyInput): Promise<ApplyStepRes
   return result(0, "materialized");
 }
 
-function textsFromChangeSet(set: RepositoryChangeSet): Readonly<Record<string, string>> {
+export function textsFromChangeSet(set: RepositoryChangeSet): Readonly<Record<string, string>> {
   if (set.texts === undefined) return {};
   return Object.fromEntries(set.texts.map((row) => [row.path, row.text] as const));
 }
 
 export async function materializeRepository(input: MaterializeInput): Promise<ApplyStepResult> {
-  const held = input.heldChangeSets ?? [];
-  const pre = await runPreconditions(input.clone, input.set, held);
+  const pre = await runPreconditions(input.clone, input.hub, input.set, input.heldChangeSets ?? [], input);
   if ("exitCode" in pre) return pre;
-  const { root, previousLedger } = pre;
+  const { root, previousLedger, binding, planPackages } = pre;
   const set = input.set;
   const texts = { ...textsFromChangeSet(set), ...input.texts };
 
@@ -592,14 +747,14 @@ export async function materializeRepository(input: MaterializeInput): Promise<Ap
   if (baseMovement !== null) return baseMovement;
 
   if (git(root, ["show-ref", "--verify", "--quiet", `refs/heads/${set.branch}`]).status === 0) {
-    const verified = await verifyRepository({ clone: root, set, binding: input.binding, heldChangeSets: held });
+    const verified = verifyPrepared(set, pre);
     if (verified.exitCode === 0) {
       const stored = persistChangeSet(input.hub, set);
       if (stored !== null) return stored;
       return verified;
     }
     if (verified.verdict === "indeterminate") return verified;
-    return { exitCode: 1, verdict: "violated", reason: "diverged", detail: verified.detail };
+    return { exitCode: 1, verdict: "violated", reason: "diverged", detail: verified.reason === "agents-guide-mismatch" ? verified.reason : verified.detail };
   }
 
   for (const file of set.files.filter(isWhole)) {
@@ -617,6 +772,7 @@ export async function materializeRepository(input: MaterializeInput): Promise<Ap
     const resolved = resolveFileText(root, set, file, texts);
     if (typeof resolved !== "string") return resolved;
     if (file.after !== null && contentDigest(resolved) !== file.after) return result(1, "violated", "content-mismatch");
+    if (!provesReleaseAgeEdit(root, set, file, resolved)) return result(1, "violated", "content-mismatch");
     resolvedTexts.set(file.path, resolved);
   }
 
@@ -641,7 +797,7 @@ export async function materializeRepository(input: MaterializeInput): Promise<Ap
 
   let ledgerBytes: Buffer;
   try {
-    ledgerBytes = expectedLedgerBytes(previousLedger, set, input.binding);
+    ledgerBytes = expectedLedgerBytes(previousLedger, set, binding, planPackages);
   } catch (cause) {
     if (cause instanceof TypeError) return result(2, "indeterminate", "change-set-invalid");
     throw cause;

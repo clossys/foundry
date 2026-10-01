@@ -1,8 +1,11 @@
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { withDecisions } from "./admission-fixture.js";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { SNAPSHOT_USAGE, main, snapshotMain } from "./apply-plan-cli.js";
+import { buildMaterializedFixture, branchExists, readCloneLedger, writeSnapshot } from "./apply-step-fixture.js";
+import { APPLY_PLAN_USAGE, SNAPSHOT_USAGE, bodyMain, main, materializeMain, snapshotMain, statusMain, verifyMain } from "./apply-plan-cli.js";
+import { PLAN_USAGE, planMain } from "./plan-command.js";
 import { PACKAGE_SCOPE } from "./generated/package-scope.generated.js";
 import { createNodeHost } from "./host.js";
 import { REGISTRY_SNAPSHOT_REL, registrySnapshotViolations, type Transport } from "./registry-snapshot.js";
@@ -252,6 +255,16 @@ describe("launcher-apply-plan snapshot (#1178)", () => {
     expect(SNAPSHOT_USAGE).toMatch(/^Usage: launcher-apply-plan snapshot --request <file> \[--out <file>\]/);
     expect(main(["--help"], createNodeHost())).toBe(0);
     expect(String(log.mock.calls[1]?.[0])).toContain("launcher-apply-plan snapshot --request <file> [--out <file>]");
+    expect(String(log.mock.calls[1]?.[0])).toContain("launcher-apply-plan plan [--help]\n");
+    expect(String(log.mock.calls[1]?.[0])).toContain("launcher-apply-plan plan --help");
+  });
+
+  it("the plan subcommand's usage takes no option and names no approval", async () => {
+    const write = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
+    expect(await planMain(["--help"])).toBe(0);
+    expect(String(write.mock.calls[0]?.[0])).toBe(`${PLAN_USAGE}\n`);
+    expect(PLAN_USAGE).toMatch(/^Usage: launcher-apply-plan plan \[--help\]/);
+    expect(PLAN_USAGE).not.toMatch(/--approve|--subject|--binding/);
   });
 
   it("writes the snapshot to clossys/.state/apply/registry-snapshot.json under the hub by default, and exits 0", async () => {
@@ -356,4 +369,150 @@ describe("launcher-apply-plan snapshot (#1178)", () => {
     expect(await snapshotMain(["--request", "request.json", "--out", "taken/registry-snapshot.json"], { transport: registry().transport, cwd: hub, now: NOW })).toBe(2);
     expect(String(err.mock.calls.at(-1)?.[0])).toBe(`launcher-apply-plan snapshot: the snapshot could not be written to ${join(hub, "taken", "registry-snapshot.json")}; no snapshot was written`);
   });
+});
+
+describe("launcher-apply-plan materialize and verify decide the approval from the hub (#1178)", () => {
+  const SITE = "example-owner/site";
+  const FORGED = { kind: "approved", subjectDigest: `sha256:${"f".repeat(64)}` };
+
+  function quiet() {
+    return { log: vi.spyOn(console, "log").mockImplementation(() => {}), err: vi.spyOn(console, "error").mockImplementation(() => {}) };
+  }
+
+  it("5a: with only --repo, a stored set no committed plan approves is refused, and nothing is written", async () => {
+    const site = buildMaterializedFixture(roots, { storeSet: true, hub: { planMode: "absent" } });
+    const { err } = quiet();
+    const before = writeSnapshot(site.clone, site.hub);
+    expect(await materializeMain(["--repo", SITE], { cwd: site.hub, clone: site.clone })).toBe(2);
+    expect(String(err.mock.calls.at(-1)?.[0])).toBe("launcher-apply-plan materialize: indeterminate (awaiting-approval); plan-unreadable");
+    expect(writeSnapshot(site.clone, site.hub)).toBe(before);
+    expect(branchExists(site.clone, site.set.branch)).toBe(false);
+    expect(readCloneLedger(site.clone)).toBeNull();
+  });
+
+  it("5h: the options take no binding, so a plan that approves nothing writes no approved ledger, whatever a caller passes", async () => {
+    const site = buildMaterializedFixture(roots, { storeSet: true, hub: ({ plan }) => ({ plans: [withDecisions(plan, [])] }) });
+    quiet();
+    const before = writeSnapshot(site.clone, site.hub);
+    expect(await materializeMain(["--repo", SITE], { cwd: site.hub, clone: site.clone, binding: FORGED } as never)).toBe(2);
+    expect(await verifyMain(["--repo", SITE], { cwd: site.hub, clone: site.clone, set: site.set, binding: FORGED } as never)).toBe(2);
+    expect(writeSnapshot(site.clone, site.hub)).toBe(before);
+    expect(readCloneLedger(site.clone)).toBeNull();
+  });
+
+  it("5h and 5i: a set the hub approved materializes through the default readiness runner, and the ledger records the computed binding, never one passed in", async () => {
+    const site = buildMaterializedFixture(roots, { storeSet: true });
+    const { log } = quiet();
+    // No runReadiness and no now: the hub's own executable runs at the wall clock.
+    expect(await materializeMain(["--repo", SITE], { cwd: site.hub, clone: site.clone, binding: FORGED } as never)).toBe(0);
+    expect(String(log.mock.calls.at(-1)?.[0])).toBe("launcher-apply-plan materialize: materialized");
+    expect(readCloneLedger(site.clone)!.history[0].binding).toEqual({ kind: "approved", subjectDigest: site.bundle.bundleDigest });
+    expect(await verifyMain(["--repo", SITE], { cwd: site.hub, clone: site.clone })).toBe(0);
+  });
+
+  it("5i: a hub without the readiness executable is refused as authorization-unverified, writing nothing", async () => {
+    const site = buildMaterializedFixture(roots, { storeSet: true, hub: { readiness: false } });
+    const { err } = quiet();
+    const before = writeSnapshot(site.clone, site.hub);
+    expect(await materializeMain(["--repo", SITE], { cwd: site.hub, clone: site.clone })).toBe(2);
+    expect(String(err.mock.calls.at(-1)?.[0])).toBe("launcher-apply-plan materialize: indeterminate (authorization-unverified); readiness-bin-missing");
+    expect(writeSnapshot(site.clone, site.hub)).toBe(before);
+  });
+
+  it("passes an injected readiness runner and instant through to both commands", async () => {
+    const site = buildMaterializedFixture(roots, { storeSet: true });
+    const { err } = quiet();
+    const seen: string[] = [];
+    const runReadiness = (request: { asOf: string }) => {
+      seen.push(request.asOf);
+      return { status: 1 };
+    };
+    const now = () => new Date("2026-10-02T03:04:05Z");
+    expect(await materializeMain(["--repo", SITE], { cwd: site.hub, clone: site.clone, now, runReadiness })).toBe(1);
+    expect(String(err.mock.calls.at(-1)?.[0])).toBe("launcher-apply-plan materialize: violated (authorization-not-current); readiness-violated");
+    expect(await verifyMain(["--repo", SITE], { cwd: site.hub, clone: site.clone, set: site.set, now, runReadiness })).toBe(1);
+    expect(seen).toEqual(["2026-10-02T03:04:05.000Z", "2026-10-02T03:04:05.000Z"]);
+  });
+
+  it("the help texts say what an approval is and do not cite paths the package does not ship", () => {
+    const { log } = quiet();
+    return Promise.all([materializeMain(["--help"]), verifyMain(["--help"])]).then((codes) => {
+      expect(codes).toEqual([0, 0]);
+      const text = log.mock.calls.map((call) => String(call[0])).join("\n");
+      expect(text).toContain("Refuses, and writes nothing, unless the plan committed at the hub's HEAD");
+      expect(text).toContain("execution authorization");
+      expect(text).toContain("no longer verifies");
+      expect(text).not.toMatch(/docs\//);
+    });
+  });
+
+  it("status has a help text, is in the usage, and refuses a malformed --repo without echoing it", async () => {
+    const { log, err } = quiet();
+    expect(await statusMain(["--help"])).toBe(0);
+    const text = log.mock.calls.map((call) => String(call[0])).join("\n");
+    expect(text).toContain("launcher-apply-plan status --repo <id>");
+    expect(text).toContain("changes nothing");
+    expect(text).toContain("Exit codes: 0 = proposed or applied, 1 = diverged, 2 = anything else.");
+    expect(text).not.toMatch(/docs\//);
+    expect(APPLY_PLAN_USAGE).toContain("launcher-apply-plan status --repo <id>");
+    for (const argv of [[], ["--repo"], ["--repo", "no-slash"], ["--repo", "a/b", "--x"], ["--repo", "example-other/.."]]) {
+      expect(await statusMain(argv)).toBe(2);
+    }
+    const printed = err.mock.calls.map((call) => String(call[0])).join("\n");
+    expect(printed).toContain("usage: launcher-apply-plan status --repo <id>");
+    expect(printed).not.toContain("example-other");
+  });
+
+  it("body echoes nothing on refusal", async () => {
+    const written: string[] = [];
+    vi.spyOn(process.stdout, "write").mockImplementation(((chunk: string | Uint8Array) => {
+      written.push(String(chunk));
+      return true;
+    }) as never);
+    const { log, err } = quiet();
+    const SENTINEL = "example-other/sentinel-4d2c";
+    const JUNK = "junk-sentinel-9f3a";
+    const site = buildMaterializedFixture(roots, { storeSet: true });
+    const options = { cwd: site.hub, clone: site.clone };
+    // A well-formed repository the hub does not hold is indeterminate, by token only.
+    expect(await bodyMain(["--repo", SENTINEL, "--task-record", "12"], options)).toBe(2);
+    // Anything the parser cannot read as a repository and whole numbers is a usage error, echoing none of it.
+    const usage = [
+      [],
+      ["--repo"],
+      ["--repo", SENTINEL],
+      ["--repo", "example-owner/site", "--task-record", JUNK],
+      ["--repo", "example-owner/site", "--task-record", "1e3"],
+      ["--repo", "example-owner/site", "--task-record", "01"],
+      ["--repo", "example-owner/site", "--task-record", "-1"],
+      ["--repo", "example-owner/site", "--task-record", "9007199254740993"],
+      ["--repo", "example-owner/site", "--task-record", ""],
+      ["--repo", "example-owner/site", "--task-record", "12", "--supersedes", JUNK],
+      ["--repo", "example-owner/site", "--task-record", "12", "--supersedes"],
+      ["--repo", "example-owner/site", "--task-record", "12", "--binding", JUNK],
+      ["--repo", "example-owner/site", "--task-record", "12", "--task-record", "13"],
+      ["--repo", "no-slash-sentinel", "--task-record", "12"],
+      ["--repo", "example-other/..", "--task-record", "12"],
+      [JUNK],
+    ];
+    for (const argv of usage) expect(await bodyMain(argv, options), JSON.stringify(argv)).toBe(2);
+    expect(written).toEqual([]);
+    const printed = [...log.mock.calls, ...err.mock.calls].map((call) => String(call[0])).join("\n");
+    for (const secret of [SENTINEL, JUNK, "sentinel-4d2c", "1e3", "9007199254740993", "no-slash-sentinel"]) expect(printed).not.toContain(secret);
+    expect(err.mock.calls.map((call) => String(call[0]))).toEqual([
+      "launcher-apply-plan body: indeterminate (change-set-absent)",
+      ...usage.map(() => "launcher-apply-plan body: usage: launcher-apply-plan body --repo <id> --task-record <n> [--supersedes <n>]..."),
+    ]);
+    // A refusal by number (zero) also prints a token only.
+    expect(await bodyMain(["--repo", "example-owner/site", "--task-record", "0"], options)).toBe(1);
+    expect(String(err.mock.calls.at(-1)?.[0])).toBe("launcher-apply-plan body: refused (task-record-invalid)");
+    expect(written).toEqual([]);
+    // The help, and the usage of the command as a whole, name the command.
+    expect(await bodyMain(["--help"])).toBe(0);
+    const help = log.mock.calls.map((call) => String(call[0])).join("\n");
+    expect(help).toContain("launcher-apply-plan body --repo <id>");
+    expect(help).toContain("Exit codes: 0 = the body was printed");
+    expect(help).not.toMatch(/docs\//);
+    expect(APPLY_PLAN_USAGE).toContain("launcher-apply-plan body --repo <id> --task-record <n> [--supersedes <n>]...");
+  }, 120_000);
 });

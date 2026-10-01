@@ -4,6 +4,7 @@
 //
 //   node scripts/check-readme-parity.mjs <packageDir> [--json]
 //
+// Takes exactly one package dir; more than one is refused.
 // Exit 0 = README matches reality. Exit 1 = findings. Exit 2 = cannot run.
 //
 // WHY THIS GATE EXISTS
@@ -70,8 +71,10 @@ function die(msg, code = 2) {
   process.exit(code);
 }
 
-if (!pkgDirArg) {
-  die("usage: check-readme-parity.mjs <packageDir> [--json]");
+const USAGE = "usage: check-readme-parity.mjs <packageDir> [--json] (exactly one package dir)";
+
+if (!pkgDirArg || positional.length > 1) {
+  die(USAGE);
 }
 
 const pkgDir = resolve(pkgDirArg);

@@ -12,6 +12,8 @@ import { readInstalledLedger, renderInstalledLedger, serializeInstalledLedger } 
 import type { InstalledLedger } from "./ledger-contract.js";
 import * as keyEditor from "./key-editor.js";
 import { editJsonPointer } from "./key-editor.js";
+import { AGENTS_GUIDE_TEXT } from "./agents-guide.js";
+import { SITE_ID as SETUP_SITE_ID, setupInputs, setupObservation } from "./plan-bundle-setup-fixture.js";
 import { PUBLIC_PROBLEM_PLACEHOLDER, planApplyBundle, projectEngagementBrief, serializeComposedSkillsManifest, serializeEngagementBrief } from "./plan-bundle.js";
 import type { PlanApplyBundleInputs, RepositoryObservation } from "./plan-bundle.js";
 import type { AdvisorPlan, EngagementBrief } from "./plan-contract.js";
@@ -79,8 +81,9 @@ const DOCS: RepositoryObservation = {
   repositoryProfile: null,
   linkedAgentsPaths: [],
   files: [],
-  manifestEntries: [],
-  lockedPackages: [],
+  // An apply set that would change the Starter pin is skipped (starter-request-stale), so this repository already holds the pin.
+  manifestEntries: [{ placement: "devDependencies", name: STARTER.name, value: STARTER.version }],
+  lockedPackages: [{ name: STARTER.name, version: STARTER.version, integrity: STARTER.integrity }],
   ledger: null,
   skillsManifest: null,
 };
@@ -146,18 +149,19 @@ describe("planApplyBundle", () => {
     }
   });
 
-  it("skips a setup-phase repository as setup-template-unbuilt, outside the bundle digest, because a setup set must carry the templates it does not compute", () => {
+  it("skips a setup-phase repository as starter-request-invalid, outside the bundle digest, when the pin it names is not one the Starter request can name", () => {
+    // The corpus plan pins a Starter under another scope, which the setup templates never name; plan-bundle-setup.test.ts computes the setup sets.
     const { bundle, changeSets } = run(withRepository({ phase: "setup" }, DOCS.id));
     expect(changeSets.map((set) => set.repository.id)).toEqual([SITE.id]);
-    expect(bundle.repositories[1]).toEqual({ id: DOCS.id, verdict: "indeterminate", reason: "setup-template-unbuilt", checks: [] });
+    expect(bundle.repositories[1]).toEqual({ id: DOCS.id, verdict: "indeterminate", reason: "starter-request-invalid", checks: [] });
     expect(bundle.bundleDigest).toBe(bundleDigest(planDigest(PLAN), [{ id: SITE.id, changeSetDigest: changeSets[0]!.changeSetDigest }]));
     expect(validateApplyBundle(bundle)).toEqual({ valid: true });
   });
 
-  it("reports setup-template-unbuilt before root-entry-edit-unbuilt when a setup repository needs root entries and has no profile text", () => {
+  it("reports starter-request-invalid before root-entry-edit-unbuilt when a setup repository needs root entries and has no profile text", () => {
     const profile = { path: "governance/repository-profile.json", rootVocabulary: "checked" as const, undeclaredRoots: ["clossys"], prohibitedRoots: [] };
     const setup = run(withRepository({ phase: "setup", repositoryProfile: profile }));
-    expect(setup.bundle.repositories[0]).toEqual({ id: SITE.id, verdict: "indeterminate", reason: "setup-template-unbuilt", checks: [] });
+    expect(setup.bundle.repositories[0]).toEqual({ id: SITE.id, verdict: "indeterminate", reason: "starter-request-invalid", checks: [] });
     expect(setup.changeSets.map((set) => set.repository.id)).toEqual([DOCS.id]);
 
     const apply = run(withRepository({ phase: "apply", repositoryProfile: profile }));
@@ -173,7 +177,7 @@ describe("planApplyBundle", () => {
         files: [{ path: profile.path, sha256: sha(profileText) }],
       }),
     );
-    expect(setupWithText.bundle.repositories[0]).toEqual({ id: SITE.id, verdict: "indeterminate", reason: "setup-template-unbuilt", checks: [] });
+    expect(setupWithText.bundle.repositories[0]).toEqual({ id: SITE.id, verdict: "indeterminate", reason: "starter-request-invalid", checks: [] });
   });
 
   it("records a profile after digest from a decimal schemaVersion without rewriting it to an integer token", () => {
@@ -344,10 +348,9 @@ describe("planApplyBundle", () => {
     }
     const docs = setFor(changeSets, DOCS.id);
     expect(docs.deferred).toEqual([]);
-    expect(docs.keys).toEqual([
-      { file: "package.json", pointer: "/devDependencies/@example~1starter", before: null, after: "0.9.2", item: "example-owner/docs:@example/starter" },
-      { file: "package.json", pointer: "/devDependencies/@example~1writer", before: null, after: "0.7.0", item: "example-owner/docs:@example/writer" },
-    ]);
+    // The Starter pin is already in the base, so only the install writes a key.
+    expect(docs.items.find((item) => "planItem" in item && item.planItem === "example-owner/docs:@example/starter")).toMatchObject({ act: "pin-starter", satisfiedInBase: true });
+    expect(docs.keys).toEqual([{ file: "package.json", pointer: "/devDependencies/@example~1writer", before: null, after: "0.7.0", item: "example-owner/docs:@example/writer" }]);
     expect(docs.pathAllowList).toEqual([".agents/skills/clossys-*/**", ".claude/skills/clossys-*", ".cursor/skills/clossys-*", "clossys/**", "package.json", "pnpm-lock.yaml"]);
   });
 
@@ -357,7 +360,7 @@ describe("planApplyBundle", () => {
     delete plan.resolution;
     const { bundle, changeSets } = run({ ...INPUTS, plan: plan as unknown as AdvisorPlan, authorization: null });
     for (const set of changeSets) {
-      expect(set.items.map((item) => item.act)).toEqual(["write-record", "write-ledger", "compose-skills"]);
+      expect(set.items.map((item) => item.act)).toEqual(["write-record", "write-record", "write-ledger", "compose-skills"]);
       expect(set.keys).toEqual([]);
       expect(set.pathAllowList).toEqual([".agents/skills/clossys-*/**", ".claude/skills/clossys-*", ".cursor/skills/clossys-*", "clossys/**"]);
     }
@@ -721,6 +724,47 @@ const ledgerRowAfter = (ledger: InstalledLedger, path: string) => ledger.files.f
 const siteEntry = (result: ReturnType<typeof run>) => result.bundle.repositories.find((entry) => entry.id === SITE.id)!;
 const wholeFiles = (set: RepositoryChangeSet) => set.files.filter((file) => !("derived" in file));
 
+describe("the Launcher guide", () => {
+  const GUIDE_PATH = "clossys/AGENTS.md";
+  const setupSet = (observation = setupObservation()): RepositoryChangeSet => {
+    const { changeSets } = run(setupInputs(observation));
+    expect(changeSets).toHaveLength(1);
+    return changeSets[0]!;
+  };
+
+  it("guide item and file: one agents-guide item and a clossys/AGENTS.md file whose after is the digest of the constant text", () => {
+    const set = setupSet();
+    expect(validateRepositoryChangeSet(set)).toEqual({ valid: true });
+    expect(set.repository.id).toBe(SETUP_SITE_ID);
+    expect(set.items.filter((item) => item.id === "agents-guide")).toEqual([{ id: "agents-guide", act: "write-record", source: "agents-guide" }]);
+    expect(set.items.filter((item) => item.act === "write-record" && item.source === "agents-guide")).toHaveLength(1);
+    expect(set.files.filter((file) => file.path === GUIDE_PATH)).toEqual([{ path: GUIDE_PATH, mode: "100644", before: null, after: sha(AGENTS_GUIDE_TEXT), item: "agents-guide" }]);
+    expect(set.texts?.find((row) => row.path === GUIDE_PATH)?.text).toBe(AGENTS_GUIDE_TEXT);
+    expect(set.refused.filter((refusal) => "path" in refusal && refusal.path === GUIDE_PATH)).toEqual([]);
+    expect(set.pathAllowList).toContain("clossys/**");
+  });
+
+  it("writes the same bytes whatever the visibility: no plan text, repository name or client detail", () => {
+    const other = setupSet(setupObservation({ visibility: "public" }));
+    expect(other.files.find((file) => file.path === GUIDE_PATH)?.after).toBe(sha(AGENTS_GUIDE_TEXT));
+    expect(other.texts?.find((row) => row.path === GUIDE_PATH)?.text).toBe(AGENTS_GUIDE_TEXT);
+  });
+
+  it("refuses an unowned existing clossys/AGENTS.md as unowned-existing, and writes nothing at it", () => {
+    const set = setupSet(setupObservation({ files: [...setupObservation().files, { path: GUIDE_PATH, sha256: sha("a client file\n") }] }));
+    expect(set.refused).toContainEqual({ path: GUIDE_PATH, reason: "unowned-existing", item: "agents-guide" });
+    expect(set.files.map((file) => file.path)).not.toContain(GUIDE_PATH);
+    expect(set.items.filter((item) => item.id === "agents-guide")).toHaveLength(1);
+    expect(validateRepositoryChangeSet(set)).toEqual({ valid: true });
+  });
+
+  it("adopts a base file whose bytes are already exactly the guide, in a setup set only", () => {
+    const set = setupSet(setupObservation({ files: [...setupObservation().files, { path: GUIDE_PATH, sha256: sha(AGENTS_GUIDE_TEXT) }] }));
+    expect(set.files.find((file) => file.path === GUIDE_PATH)).toMatchObject({ before: sha(AGENTS_GUIDE_TEXT), after: sha(AGENTS_GUIDE_TEXT) });
+    expect(set.refused.filter((refusal) => "path" in refusal && refusal.path === GUIDE_PATH)).toEqual([]);
+  });
+});
+
 describe("the installed-state ledger", () => {
   const applyFirst = corpusSet("apply-after-setup");
   const second = merged(SITE, applyFirst, SETUP_GENERATION1());
@@ -739,7 +783,10 @@ describe("the installed-state ledger", () => {
       expect(file.before).toBe(row);
     }
     expect(site.keys).toEqual([]);
-    expect(site.refused).toEqual([{ path: ".agents/skills/clossys-advisor/SKILL.md", reason: "unowned-existing", item: "skills" }]);
+    expect(site.refused).toEqual([
+      { path: ".agents/skills/clossys-advisor/SKILL.md", reason: "unowned-existing", item: "skills" },
+      { path: "clossys/AGENTS.md", reason: "unowned-existing", item: "agents-guide" },
+    ]);
     expect(site.items.find((item) => "planItem" in item && item.planItem === STARTER.planItem)).toMatchObject({ satisfiedInBase: true });
     expect(site.ledger).toEqual({ generation: 2 });
     expect(site.files.find((file) => file.path === LEDGER)).toMatchObject({ derived: true, invariants: [{ ledgerGeneration: 3 }], before: sha(second.ledger!) });
@@ -1051,7 +1098,10 @@ describe("setup templates in an apply set", () => {
     expect(site.items.filter((item) => TEMPLATE_IDS.includes(item.id))).toEqual(corpus.items.filter((item) => TEMPLATE_IDS.includes(item.id)));
     expect(templateFiles(site)).toEqual(templateFiles(corpus));
     expect(site.pathAllowList).toEqual(corpus.pathAllowList);
-    expect(site.refused).toEqual([{ path: ".agents/skills/clossys-advisor/SKILL.md", reason: "unowned-existing", item: "skills" }]);
+    expect(site.refused).toEqual([
+      { path: ".agents/skills/clossys-advisor/SKILL.md", reason: "unowned-existing", item: "skills" },
+      { path: "clossys/AGENTS.md", reason: "unowned-existing", item: "agents-guide" },
+    ]);
     expect(siteEntry(result).checks).toContainEqual({ check: "V8", verdict: "indeterminate", rule: "unowned-existing" });
   });
 
@@ -1251,9 +1301,10 @@ describe("the planner is pure", () => {
     expect(result.findings).toEqual([]);
   });
 
-  it("reaches exactly the planner, the contract, digest and ledger modules, and the generated contract data", () => {
+  it("reaches exactly the planner, the guide text, the contract, digest, ledger, template and release-age editor modules, and the generated contract data", () => {
     expect([...result.visited].sort()).toEqual(
       [
+        "agents-guide.ts",
         "change-set-contract.ts",
         "change-set-digest.ts",
         "generated/contract-schema.generated.ts",
@@ -1266,6 +1317,9 @@ describe("the planner is pure", () => {
         "plan-contract.ts",
         "plan-digest.ts",
         "plan-rules.ts",
+        "release-age-edit.ts",
+        "setup-template-scripts.ts",
+        "setup-templates.ts",
       ]
         .map(at)
         .sort(),

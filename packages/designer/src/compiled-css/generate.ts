@@ -39,6 +39,18 @@
  * string into a declaration) — never `tailwindcss/preflight`, and never
  * the full `tailwindcss` entry point.
  *
+ * WHAT IS SHIPPED INSTEAD OF PREFLIGHT: A NARROW BASE LAYER
+ *
+ * Without any reset, a padded full-width box overflows its container and a
+ * `textarea` renders in the browser's monospace default; the Tailwind-native
+ * path avoids both because preflight covers them. `BASE_LAYER_CSS` below
+ * therefore emits exactly two rules in a `foundry-ui-base` layer:
+ * `*, ::before, ::after { box-sizing: border-box }` and
+ * `input, textarea, select, button { font: inherit }`. Nothing else from
+ * preflight (no margin, list or color reset) is shipped. The layer is
+ * emitted BEFORE `foundry-ui-compiled`, so utilities win over it, and a
+ * consumer's own unlayered CSS always wins over both.
+ *
  * WHY `@theme inline` (this package's own `theme.css`), UNCHANGED
  *
  * `theme.css`'s own header comment explains why its `@theme inline` block
@@ -143,6 +155,10 @@ const GENERATED_FILE_HEADER = `/* ═══════════════�
  * \`compiled.css\` path without Tailwind. \`charts\` and \`theme\` remain
  * Tailwind-native only.
  *
+ * Base: a narrow \`foundry-ui-base\` layer (border-box sizing and
+ * form-control font inheritance) comes first, before the utilities layer.
+ * Tailwind's preflight stays excluded.
+ *
  * Load this AFTER \`@clossys/designer/tokens.css\` (never instead of it —
  * every declaration below reads a token custom property this file does
  * NOT itself declare). Every generated rule lives inside the
@@ -150,6 +166,23 @@ const GENERATED_FILE_HEADER = `/* ═══════════════�
  * README.md's "Framework-portable components, without Tailwind" section
  * for the full override-precedence contract this layering produces.
  * ════════════════════════════════════════════════════════════════════ */
+
+`;
+
+/** The fixed base layer emitted between the generated-file header and the Tailwind output — see this file's header, "WHAT IS SHIPPED INSTEAD OF PREFLIGHT". Two rules only; no class selector, no margin, list or color reset. */
+const BASE_LAYER_CSS = `@layer foundry-ui-base {
+  *,
+  ::before,
+  ::after {
+    box-sizing: border-box;
+  }
+  input,
+  textarea,
+  select,
+  button {
+    font: inherit;
+  }
+}
 
 `;
 
@@ -353,7 +386,7 @@ export async function generateCompiledCss(options: GenerateCompiledCssOptions): 
   const rawCss = compiled.build(options.candidates);
   const stripped = stripThemeReflectionBlock(rawCss);
   const withFallbacks = addExplicitFallbacksForInternalProperties(stripped);
-  const finalCss = GENERATED_FILE_HEADER + withFallbacks.trimStart();
+  const finalCss = GENERATED_FILE_HEADER + BASE_LAYER_CSS + withFallbacks.trimStart();
 
   // Count distinct utility CLASS selectors actually emitted (not every
   // candidate — see `GenerateCompiledCssResult.classCount`'s own doc

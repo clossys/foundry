@@ -54,8 +54,9 @@
 // script never silently ignores one).
 //
 // --dry-run prints exactly what would change (every version bump, every
-// dependency-range rewrite, every CHANGELOG entry, every deleted changeset
-// file) without writing or deleting anything, and without invoking npm.
+// dependency-range rewrite, every packed-template range rewrite, every
+// CHANGELOG entry, every deleted changeset file) without writing or deleting
+// anything, and without invoking npm.
 //
 // --out-of-band RESTRICTS THIS RUN TO out-of-band CHANGESETS ONLY (second-
 // opinion fix, https://github.com/clossys/foundry/pull/1316#issuecomment-5800188207,
@@ -254,9 +255,40 @@
 // section without disagreeing on MEANING: this rewriter fixing a
 // devDependencies edge here does not depend on that gate also checking it.
 //
+// PACKED TEMPLATE MANIFESTS (issue #1644)
+// -------------------------------------------------------------------------
+// A package can ship a template with its own package.json:
+// packages/<dir>/templates/<name>/package.json (publisher's
+// packages/publisher/templates/site, which pins the four @clossys/* siblings
+// with caret ranges). The owner's `files` list packs the whole templates/
+// tree, so that manifest is published and a range in it is as
+// consumer-facing as a `dependencies` entry -- but it is not a workspace
+// package, so the scan over packages/<dir>/package.json never reached it,
+// and release PRs edited it by hand. The same fixed-point round that scans
+// each workspace manifest now also scans every template manifest of that
+// package, over ALL FOUR sections (the file is packed, so devDependencies
+// counts too), against the same `bumpedVersions`:
+//   - an update rewrites that range to `^<newVersion>` through
+//     bumpDependencyRangeText(), byte-preserving, in the same backed-up write
+//     phase as every other file, so a failure restores it too;
+//   - the OWNER gets a dependent-only patch bump unless a changeset already
+//     names it (then no second bump), with a bullet
+//     "Updated templates/<name> dependency <dep> to <range>" after the
+//     dependency bullets. A named owner's own minor is the same case seen
+//     from the other side: its template's range on itself is rewritten;
+//   - an unevaluable range (`workspace:*`, anything satisfies() cannot
+//     read) refuses the run naming the template's path, like any other
+//     range; a template that is not valid JSON does too;
+//   - the owner's `applied` entry carries `templateUpdates` and --dry-run
+//     prints them;
+//   - nothing else in a template is ever touched, and no lockfile entry
+//     exists for it, so package-lock.json is unaffected.
+// scripts/lib/release-pr-footprint.mjs admits exactly this one file shape
+// and rebuilds the bullets in this same order.
+//
 // Design: https://github.com/clossys/foundry/issues/1255#issuecomment-5790113827
 // Weekly calendar design (versioning unchanged): docs/RELEASING.md, refs #1187 #1265 #1266
-// Refs: #1322, #1327, #1332, #1340.
+// Refs: #1322, #1327, #1332, #1340, #1644.
 import { execFileSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
@@ -401,6 +433,11 @@ export function prependChangelogEntry(existingText, { version, date, bullets, br
 // moved to a shared location instead of being restated in a second file.
 export { DEPENDENCY_RANGE_SECTIONS, DEV_DEPENDENCY_RANGE_SECTIONS };
 
+// A packed template manifest is published whole, so every one of its four
+// dependency sections is publish-relevant, devDependencies included -- see
+// this file's header, "PACKED TEMPLATE MANIFESTS".
+const TEMPLATE_DEPENDENCY_RANGE_SECTIONS = [...DEPENDENCY_RANGE_SECTIONS, ...DEV_DEPENDENCY_RANGE_SECTIONS];
+
 // Is `range` a protocol this repository's own AGENTS.md forbids outright
 // ("No workspace:* or catalog: dependency protocols")? If so, this script
 // refuses to rewrite it -- and refuses the whole run, same as any other
@@ -508,12 +545,37 @@ function discoverWorkspacePackageDirs(root) {
     .sort();
 }
 
+// Every packed template manifest a package ships:
+// packages/<dir>/templates/<name>/package.json, sorted by <name>. The owner's
+// `files` list packs the whole templates/ tree, so a range in one of these
+// manifests is published exactly like a `dependencies` entry is. A template
+// directory with no package.json is not a manifest and is skipped. A
+// template is not a workspace: it has no lockfile entry and no version
+// bump of its own.
+function discoverWorkspaceTemplateManifests(root, dir) {
+  const templatesDir = join(root, "packages", dir, "templates");
+  if (!existsSync(templatesDir)) return [];
+  return readdirSync(templatesDir, { withFileTypes: true })
+    .filter((d) => d.isDirectory())
+    .map((d) => d.name)
+    .filter((name) => existsSync(join(templatesDir, name, "package.json")))
+    .sort()
+    .map((name) => ({ name, template: `templates/${name}`, relPath: `packages/${dir}/templates/${name}/package.json`, path: join(templatesDir, name, "package.json") }));
+}
+
+function templateUpdateBullets(updates) {
+  return updates.map((u) => `Updated ${u.template} dependency ${u.name} to ${u.toRange}`);
+}
+
 // Pure-ish core: computes and (unless dryRun) applies every bump. Returns
 // `{ applied, findings }` -- `applied` is one entry per package this run
 // changed (`{ package, fromVersion, toVersion, bump, outOfBand, breaking,
 // breakingSummaries, changesetFiles, dependencyUpdates? }`;
 // `dependencyUpdates` is present only when this package's own manifest also
 // had a sibling dependency range rewritten -- see this file's own header).
+// `templateUpdates` is present only when a packed template manifest of this
+// package had a range rewritten -- see this file's header, "PACKED TEMPLATE
+// MANIFESTS").
 // `findings` is one string per package that could not be applied (unknown
 // package directory, unreadable manifest, non-semver current version, an
 // unrewritable manifest or dependency-range shape, a dependency range this
@@ -701,6 +763,37 @@ export function applyReleaseChangesets({
     return info;
   }
 
+  // Packed template manifests (see this file's header, "PACKED TEMPLATE
+  // MANIFESTS"): read at most once per owner dir, like manifestInfoFor().
+  const templateInfosByDir = new Map(); // dir -> { name, template, relPath, path, manifestText, manifest }[]
+  function templateInfosFor(dir) {
+    if (templateInfosByDir.has(dir)) return templateInfosByDir.get(dir);
+    const infos = [];
+    for (const found of discoverWorkspaceTemplateManifests(root, dir)) {
+      try {
+        const manifestText = readFileSync(found.path, "utf8");
+        infos.push({ ...found, manifestText, manifest: JSON.parse(manifestText) });
+      } catch (error) {
+        findings.push(`${found.relPath} is not valid JSON: ${errorMessage(error)}`);
+      }
+    }
+    templateInfosByDir.set(dir, infos);
+    return infos;
+  }
+  // Every template range is publish-relevant (the file is packed), so all
+  // four sections are scanned in ONE call and any update counts.
+  function scanTemplates(dir) {
+    const updates = [];
+    const errors = [];
+    for (const info of templateInfosFor(dir)) {
+      const scan = collectDependencyUpdates(info.relPath, info.manifest, bumpedVersions, TEMPLATE_DEPENDENCY_RANGE_SECTIONS);
+      errors.push(...scan.errors);
+      for (const u of scan.updates) updates.push({ template: info.template, ...u });
+    }
+    return { updates, errors };
+  }
+  const templateDirs = new Set(); // owner dirs with at least one template range to rewrite
+
   const updateKey = (u) => `${u.section}\u0000${u.name}`;
   const updatesByDir = new Map(); // dir -> Map(updateKey -> update)  (dependencies/peerDependencies/optionalDependencies)
   const devUpdatesByDir = new Map(); // dir -> Map(updateKey -> update)  (devDependencies)
@@ -732,11 +825,13 @@ export function applyReleaseChangesets({
 
       const { updates, errors } = collectDependencyUpdates(`packages/${dir}/package.json`, info.manifest, bumpedVersions);
       const { updates: devUpdates, errors: devErrors } = collectDependencyUpdates(`packages/${dir}/package.json`, info.manifest, bumpedVersions, DEV_DEPENDENCY_RANGE_SECTIONS);
-      if (errors.length > 0 || devErrors.length > 0) {
-        findings.push(...errors, ...devErrors);
+      const { updates: templateUpdates, errors: templateErrors } = scanTemplates(dir);
+      if (errors.length > 0 || devErrors.length > 0 || templateErrors.length > 0) {
+        findings.push(...errors, ...devErrors, ...templateErrors);
         continue;
       }
-      if (updates.length === 0 && devUpdates.length === 0) continue;
+      if (updates.length === 0 && devUpdates.length === 0 && templateUpdates.length === 0) continue;
+      if (templateUpdates.length > 0) templateDirs.add(dir);
 
       if (updates.length > 0) {
         const dirUpdates = updatesByDir.get(dir) ?? new Map();
@@ -758,8 +853,10 @@ export function applyReleaseChangesets({
       // dir -- a named package (already bumped by PHASE A) never reaches
       // this branch at all, and a dir that already has a dependent-only
       // version from an earlier round is skipped here (it only gained MORE
-      // update entries above, not a second bump).
-      if (!namedPlanByDir.has(dir) && updates.length > 0 && !dependentOnlyVersionByDir.has(dir)) {
+      // update entries above, not a second bump). A template range rewrite
+      // triggers the same bump as a `dependencies` one: the template ships
+      // in the owner's tarball.
+      if (!namedPlanByDir.has(dir) && (updates.length > 0 || templateUpdates.length > 0) && !dependentOnlyVersionByDir.has(dir)) {
         let newVersion;
         try {
           newVersion = bumpVersion(info.manifest.version, "patch");
@@ -780,8 +877,18 @@ export function applyReleaseChangesets({
 
   if (findings.length > 0) return { applied: [], findings, changesetFindings: [] };
 
+  // One final scan against the CONVERGED `bumpedVersions`, so the bullets and
+  // writes come out in template order, then section order, then each
+  // manifest's own key order -- the order release-pr-footprint.mjs rebuilds
+  // them in -- regardless of which round first found each update. Every
+  // update an earlier round found is found again: `bumpedVersions` only ever
+  // grows and never changes a version once set.
+  const templateUpdatesByDir = new Map(); // dir -> { template, section, name, fromRange, toRange }[]
+  for (const dir of templateDirs) templateUpdatesByDir.set(dir, scanTemplates(dir).updates);
+
   const namedExtraUpdates = new Map(); // pkg -> updates[] (dependencies/peerDependencies/optionalDependencies)
   const namedExtraDevUpdates = new Map(); // pkg -> updates[] (devDependencies)
+  const namedExtraTemplateUpdates = new Map(); // pkg -> updates[] (packed template manifests)
   const dependentOnlyPlans = []; // { pkg, manifestPath, manifestText, manifest, newVersion, updates, devUpdates }
   const devDependencyOnlyPlans = []; // { pkg, manifestPath, manifestText, manifest, updates } -- devDependencies rewrite, no bump; see this file's header
 
@@ -791,19 +898,21 @@ export function applyReleaseChangesets({
 
     const updates = [...(updatesByDir.get(dir)?.values() ?? [])];
     const devUpdates = [...(devUpdatesByDir.get(dir)?.values() ?? [])];
-    if (updates.length === 0 && devUpdates.length === 0) continue;
+    const templateUpdates = templateUpdatesByDir.get(dir) ?? [];
+    if (updates.length === 0 && devUpdates.length === 0 && templateUpdates.length === 0) continue;
 
     const manifestPath = join(root, "packages", dir, "package.json");
 
     if (namedPlanByDir.has(dir)) {
       if (updates.length > 0) namedExtraUpdates.set(dir, updates);
       if (devUpdates.length > 0) namedExtraDevUpdates.set(dir, devUpdates);
+      if (templateUpdates.length > 0) namedExtraTemplateUpdates.set(dir, templateUpdates);
       continue;
     }
 
     const newVersion = dependentOnlyVersionByDir.get(dir);
     if (newVersion) {
-      dependentOnlyPlans.push({ pkg: dir, manifestPath, manifestText: info.manifestText, manifest: info.manifest, newVersion, updates, devUpdates });
+      dependentOnlyPlans.push({ pkg: dir, manifestPath, manifestText: info.manifestText, manifest: info.manifest, newVersion, updates, devUpdates, templateUpdates });
     } else {
       // DEVDEPENDENCIES-ONLY: never triggers a dependent bump -- see this
       // file's header, "devDependencies IS SCANNED AND REWRITTEN TOO, BUT
@@ -814,13 +923,28 @@ export function applyReleaseChangesets({
   }
 
   // ---------------------------------------------------------- PHASE C
+  // The new text of every template manifest of `dir` that has a range to
+  // rewrite, as `{ path, text }[]` for the write phase. Throws (and the
+  // caller turns it into a finding) when a manifest's shape cannot be
+  // rewritten safely, same as applyDependencyRewrites().
+  function templateWritesFor(dir, templateUpdates) {
+    const writes = [];
+    for (const info of templateInfosFor(dir)) {
+      const own = templateUpdates.filter((u) => u.template === info.template);
+      if (own.length > 0) writes.push({ path: info.path, text: applyDependencyRewrites(info.manifestText, own) });
+    }
+    return writes;
+  }
+
   const applied = [];
   const planned = []; // { manifestPath, newManifestText, changelogPath, newChangelog, changesetFiles }
 
   for (const p of namedPlans) {
     const updates = namedExtraUpdates.get(p.pkg) ?? [];
     const devUpdates = namedExtraDevUpdates.get(p.pkg) ?? [];
+    const templateUpdates = namedExtraTemplateUpdates.get(p.pkg) ?? [];
     let newManifestText;
+    let templateWrites;
     try {
       // #1327: bumpManifestText() throws on a manifest whose "version"
       // field this script cannot safely locate exactly once -- caught
@@ -828,6 +952,7 @@ export function applyReleaseChangesets({
       // than an uncaught exception.
       newManifestText = bumpManifestText(p.manifestText, p.newVersion);
       newManifestText = applyDependencyRewrites(newManifestText, [...updates, ...devUpdates]);
+      templateWrites = templateWritesFor(p.pkg, templateUpdates);
     } catch (error) {
       findings.push(`packages/${p.pkg}: ${errorMessage(error)}`);
       continue;
@@ -835,11 +960,11 @@ export function applyReleaseChangesets({
     // devUpdates deliberately do NOT contribute a CHANGELOG bullet --
     // devDependencies is never published/consumer-facing, see this file's
     // own header.
-    const bullets = [...p.ownBullets, ...dependencyUpdateBullets(updates)];
+    const bullets = [...p.ownBullets, ...dependencyUpdateBullets(updates), ...templateUpdateBullets(templateUpdates)];
     const existingChangelog = existsSync(p.changelogPath) ? readFileSync(p.changelogPath, "utf8") : null;
     const newChangelog = prependChangelogEntry(existingChangelog, { version: p.newVersion, date: today(), bullets, breakingBullets: p.breakingBullets });
 
-    planned.push({ manifestPath: p.manifestPath, newManifestText, changelogPath: p.changelogPath, newChangelog, changesetFiles: p.changesetFiles });
+    planned.push({ manifestPath: p.manifestPath, newManifestText, templateWrites, changelogPath: p.changelogPath, newChangelog, changesetFiles: p.changesetFiles });
     const appliedEntry = {
       package: p.pkg,
       fromVersion: p.manifest.version,
@@ -855,14 +980,17 @@ export function applyReleaseChangesets({
     // JSON output -- only the non-dev ones ever produced a CHANGELOG
     // bullet above.
     if (updates.length > 0 || devUpdates.length > 0) appliedEntry.dependencyUpdates = [...updates, ...devUpdates];
+    if (templateUpdates.length > 0) appliedEntry.templateUpdates = templateUpdates;
     applied.push(appliedEntry);
   }
 
   for (const d of dependentOnlyPlans) {
     let newManifestText;
+    let templateWrites;
     try {
       newManifestText = bumpManifestText(d.manifestText, d.newVersion);
       newManifestText = applyDependencyRewrites(newManifestText, [...d.updates, ...d.devUpdates]);
+      templateWrites = templateWritesFor(d.pkg, d.templateUpdates);
     } catch (error) {
       findings.push(`packages/${d.pkg}: ${errorMessage(error)}`);
       continue;
@@ -871,14 +999,14 @@ export function applyReleaseChangesets({
     const existingChangelog = existsSync(changelogPath) ? readFileSync(changelogPath, "utf8") : null;
     // devUpdates deliberately do NOT contribute a CHANGELOG bullet -- same
     // reasoning as the named-package path just above.
-    const newChangelog = prependChangelogEntry(existingChangelog, { version: d.newVersion, date: today(), bullets: dependencyUpdateBullets(d.updates) });
+    const newChangelog = prependChangelogEntry(existingChangelog, { version: d.newVersion, date: today(), bullets: [...dependencyUpdateBullets(d.updates), ...templateUpdateBullets(d.templateUpdates)] });
 
-    planned.push({ manifestPath: d.manifestPath, newManifestText, changelogPath, newChangelog, changesetFiles: [] });
+    planned.push({ manifestPath: d.manifestPath, newManifestText, templateWrites, changelogPath, newChangelog, changesetFiles: [] });
     // outOfBand/breaking are always false here -- see this file's header,
     // item 3: a dependent-only bump never consumes an out-of-band-flagged
     // changeset (it consumes none at all), and it can never be breaking
     // (breaking is major-only; this bump is always patch).
-    applied.push({
+    const dependentEntry = {
       package: d.pkg,
       fromVersion: d.manifest.version,
       toVersion: d.newVersion,
@@ -887,9 +1015,11 @@ export function applyReleaseChangesets({
       breaking: false,
       breakingSummaries: [],
       changesetFiles: [],
-      dependencyUpdates: [...d.updates, ...d.devUpdates],
       changelog: changelogRelPath(d.pkg),
-    });
+    };
+    if (d.updates.length > 0 || d.devUpdates.length > 0) dependentEntry.dependencyUpdates = [...d.updates, ...d.devUpdates];
+    if (d.templateUpdates.length > 0) dependentEntry.templateUpdates = d.templateUpdates;
+    applied.push(dependentEntry);
   }
 
   // DEVDEPENDENCIES-ONLY: rewritten silently -- no version bump, no
@@ -1010,6 +1140,13 @@ export function applyReleaseChangesets({
       for (const step of planned) {
         backupFile(step.manifestPath);
         writeFileSync(step.manifestPath, step.newManifestText);
+        // Packed template manifests of this owner (see this file's header,
+        // "PACKED TEMPLATE MANIFESTS"): backed up and written in this same
+        // phase, so a later failure restores them with everything else.
+        for (const write of step.templateWrites ?? []) {
+          backupFile(write.path);
+          writeFileSync(write.path, write.text);
+        }
         // A devDependencies-only step (see devDependencyOnlyPlans above) has
         // no changelogPath at all -- no version bump, nothing to log.
         if (step.changelogPath) {
@@ -1119,6 +1256,9 @@ function main() {
       console.log(`    changelog entry: ${a.changelog}`);
       for (const u of a.dependencyUpdates ?? []) {
         console.log(`    dependency ${u.name} (${u.section}): ${u.fromRange} -> ${u.toRange}`);
+      }
+      for (const u of a.templateUpdates ?? []) {
+        console.log(`    template ${u.template} (${u.section}) ${u.name}: ${u.fromRange} -> ${u.toRange}`);
       }
     }
     if (!dryRun) console.log("Regenerated package-lock.json and deleted the applied changesets.");

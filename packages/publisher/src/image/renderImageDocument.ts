@@ -66,7 +66,7 @@ export function renderImageDocument(doc: ComposeDocument, options: RenderImageOp
   if (layout === undefined) {
     throw new RenderError(
       "resolution-failed",
-      `renderImageDocument could not resolve document "${doc.id}": channel "image" requires a layout, but doc.layout is undefined.`,
+      `renderImageDocument could not resolve the document: channel "image" requires a layout, but doc.layout is undefined.`,
     );
   }
 

@@ -352,17 +352,21 @@ cleanly" below for why.
 | `--breakpoint-desktop` | `1280px` | no |
 | `--breakpoint-wide` | `1440px` | no |
 
-### `--ui-*` (36 tokens, case 2 — no Tailwind utility, raw `var()` only)
+### `--ui-*` (46 tokens, case 2 — no Tailwind utility, raw `var()` only)
 
 | Token | Default | Brandable |
 | --- | --- | --- |
 | `--ui-width-content-max` | `64rem` | yes |
 | `--ui-width-prose-max` | `48rem` | yes |
 | `--ui-width-wide-max` | `72rem` | yes |
+| `--ui-width-display-max` | `var(--ui-width-wide-max, 72rem)` | yes |
+| `--ui-width-form-max` | `38rem` | no |
 | `--ui-width-page-padding-x` | `clamp(16px, 4vw, 48px)` | no |
 | `--ui-layout-sidebar-w` | `256px` | yes |
 | `--ui-layout-sidebar-rail-w` | `64px` | no |
 | `--ui-layout-aside-w` | `320px` | no |
+| `--ui-layout-drawer-w` | `min(20rem, 85vw)` | no |
+| `--ui-layout-tap-target` | `44px` | no |
 | `--ui-density-pad` | alias of `--spacing-xl` | no |
 | `--ui-density-gap` | alias of `--spacing-lg` | no |
 | `--ui-density-row` | alias of `--spacing-3xl` | no |
@@ -370,6 +374,12 @@ cleanly" below for why.
 | `--ui-icon-md` | alias of `--spacing-xl` | no |
 | `--ui-icon-lg` | alias of `--spacing-2xl` | no |
 | `--ui-icon-stroke` | `2` | **yes** |
+| `--ui-brandmark-height-sm` | `24px` | no |
+| `--ui-brandmark-height-md` | `36px` | no |
+| `--ui-brandmark-height-lg` | `48px` | no |
+| `--ui-brandmark-gap-sm` | `4px` | no |
+| `--ui-brandmark-gap-md` | `6px` | no |
+| `--ui-brandmark-gap-lg` | `8px` | no |
 | `--ui-border-hairline` | `1px` | no |
 | `--ui-elevation-none` | `none` | no |
 | `--ui-elevation-raised` | `0 1px 0 var(--color-line-base)` | no |
@@ -398,12 +408,12 @@ one row per family rather than one row per step, so the row count in each
 table is lower than its token count. Per-family totals: surface 7, ink 7,
 line 3, accent 5, status 12, neutral 11, overlay 3, skeleton 1 (color, 49);
 text 13, font 3, tracking 4 (20); spacing 10, radius 5, easing 6,
-breakpoint 6 (27); width 4, layout 3, density 3, icon 4, border 1,
-elevation 3, ring 2, duration 6, z 9, alpha 1 (36, all `--ui-*`).
-49 + 20 + 27 + 36 = 132 tokens across 25 families, by this same
+breakpoint 6 (27); width 6, layout 5, density 3, icon 4, brandmark 6,
+border 1, elevation 3, ring 2, duration 6, z 9, alpha 1 (46, all `--ui-*`).
+49 + 20 + 27 + 46 = 142 tokens across 26 families, by this same
 1-family-added arithmetic. **Note:** this total (and the "128 tokens
 across 24 families" figure elsewhere in this README predating it) does not
-match `src/tokens.ts`'s real count (154 across 26 families) — a pre-existing
+match `src/tokens.ts`'s real count (168 across 27 families) — a pre-existing
 gap from the `chart` color family (22 tokens, added in `0.4.0`) never being
 folded into this reference table's totals. That gap predates this PR and is
 out of its scope; `src/tokens.ts`/`styles/tokens.css` are what `parity.test.ts`

@@ -430,6 +430,18 @@ regardless of import order). Per the CSS Cascading Layers spec:
   covered by every atom's own tests (e.g. `Button.test.tsx`) and does not
   change under the compiled-CSS path.
 
+**Base layer.** Ahead of `foundry-ui-compiled`, `compiled.css` emits a
+second named layer, `foundry-ui-base`, with two rules: `*, ::before, ::after`
+sets `box-sizing: border-box`, and `input, textarea, select, button` sets
+`font: inherit`. The Tailwind-native path gets both from Tailwind's own
+preflight; this layer gives the `tokens.css` + `compiled.css` path the same
+two behaviors while preflight itself stays out, so margin, list and color
+resets remain your choice. `foundry-ui-base` is declared before
+`foundry-ui-compiled`, so a utility class wins over it, and your own
+unlayered CSS wins over both. To override a base rule, write a rule for the
+same selector in unlayered CSS, or in a named layer declared after
+`foundry-ui-base`.
+
 **Load exactly one path, never both.** `compiled.css` and the Tailwind-native
 path (`theme.css` + a consumer's own `@source`-driven Tailwind build) both
 generate declarations for the same class names, in different layers. Loading
@@ -2166,10 +2178,59 @@ a deliberate follow-up.
 ### `Form`
 
 ```tsx
-import { Form, FieldGroup } from "@clossys/designer/blocks";
+import { Form, useFormValidation } from "@clossys/designer/blocks";
 import { TextField, Button } from "@clossys/designer/atoms";
 import { useState } from "react";
 
+// With useFormValidation: timing, focus and pending state come from the hook.
+async function sendMessage(values: { name: string; email: string; phone: string }): Promise<void> {
+  // Replace with the product's own request; a failure rejects.
+  if (values.email.length === 0) throw new Error("empty");
+}
+
+function ContactForm() {
+  const [sendFailed, setSendFailed] = useState(false);
+
+  const form = useFormValidation({
+    initialValues: { name: "", email: "", phone: "" },
+    validators: {
+      name: (value) => (value.trim() === "" ? "Enter your name." : undefined),
+      email: (value) => {
+        if (value.trim() === "") return "Enter your email address.";
+        if (!value.includes("@")) return "Enter an email address like name@example.com.";
+        return undefined;
+      },
+    },
+    onSubmit: async (values) => {
+      setSendFailed(false);
+      try {
+        await sendMessage(values);
+      } catch {
+        setSendFailed(true);
+      }
+    },
+  });
+
+  return (
+    <Form
+      heading="Contact us"
+      validation={form}
+      errorSummaryMessage={(count) => `${count} ${count === 1 ? "field needs" : "fields need"} attention`}
+      submitError={sendFailed ? "We could not send your message. Try again." : undefined}
+      actions={
+        <Button {...form.getSubmitButtonProps()} variant="primary">
+          Send message
+        </Button>
+      }
+    >
+      <TextField label="Name" {...form.getFieldProps("name")} />
+      <TextField label="Email" type="email" {...form.getFieldProps("email")} />
+      <TextField label="Phone (optional)" type="tel" {...form.getFieldProps("phone")} />
+    </Form>
+  );
+}
+
+// Without the hook: errors come from the consumer's own validation.
 function ProfileForm() {
   const [errors, setErrors] = useState<{ fieldId: string; message: string }[]>([]);
 
@@ -2177,6 +2238,7 @@ function ProfileForm() {
     <Form
       heading="Profile"
       errors={errors}
+      errorSummaryMessage={(count) => `Fix ${count} ${count === 1 ? "field" : "fields"} to continue`}
       onSubmit={(e) => {
         e.preventDefault();
         setErrors([{ fieldId: "email", message: "Enter a valid email address." }]);
@@ -2190,12 +2252,12 @@ function ProfileForm() {
 ```
 
 A form's own layout: an optional heading region, the fields region
-(`children`), an error-summary region, and an actions region — four
-regions that differ in kind, and a page can hold two `Form`s (two
-independent forms on one settings page), which is what makes this a block
-rather than a view.
+(`children`), an error-summary region, a submit-error region, and an actions
+region — five regions that differ in kind, and a page can hold two `Form`s
+(two independent forms on one settings page), which is what makes this a
+block rather than a view.
 
-**Implements no validation logic or form state, deliberately.**
+**`Form` implements no validation logic or form state, deliberately.**
 react-aria-components already carries validation through each field's own
 `isInvalid`/`validationErrors`, and most real consumers layer a form
 library of their own choice (React Hook Form, Formik, TanStack Form, ...)
@@ -2203,34 +2265,199 @@ on top of that. A shared UI package that tried to own validation would
 have to pick one of those, and every consumer using a different one would
 immediately need an escape hatch — the same structural-difference-through-
 a-mode-prop failure this README's variant rule warns against, just scoped
-to a form library instead of visual styling. `Form` provides three things
-only: the region layout, the error-summary region, and native `onSubmit`
-passthrough — nothing about *when* a field is invalid or *what* makes it
-so.
+to a form library instead of visual styling. So `Form` lays out the regions
+and renders whatever a consumer's validation already decided; nothing about
+*when* a field is invalid or *what* makes it so lives in it. The validation
+timing half of the pattern is a separate, optional hook,
+[`useFormValidation`](#useformvalidation), that a consumer opts into
+through the `validation` prop. Consumers on another form library keep
+passing `errors` from it and never call the hook.
 
-**The error summary is this component's real accessibility value.** A
-sighted user scanning a long form after a failed submit can see which
-fields turned red; a screen-reader user tabbing field-by-field cannot
-discover that without visiting every one. `errors` (an array of
-`{ fieldId, message }`) renders a summary region the moment it's non-empty:
-`role="alert"` plus a programmatic focus move onto the region itself (via
-a `tabIndex={-1}` ref), so it's both announced and immediately reachable by
-keyboard — a screen reader user lands directly on the list of what's
-wrong instead of discovering it field-by-field. Each entry is a real
-`<a href="#fieldId">`, linking it to the actual invalid control (a
-consumer-supplied `id`, matching react-aria-components' own convention of
-applying a supplied `id` to the field's real control, not a wrapper); a
-click or Enter on that link moves focus straight to the field.
-`errorSummaryMessage` is the summary heading. It is called with the number
-of entries in `errors` and defaults to "There is 1 error" when that count
-is 1 and "There are N errors" otherwise.
+**The error summary is opt-in.** It renders only when `errorSummaryMessage`
+is passed and there is at least one error; `Form` ships no heading text of
+its own, so there is no default in a language the consumer does not render.
+`errorSummaryMessage` is called with the number of entries and returns the
+heading. Without it, the inline error under each field carries the
+messages. When shown, the summary is a `role="alert"` region collecting
+every error, each entry a real `<a href="#fieldId">` to the actual invalid
+control (a consumer-supplied `id`, matching react-aria-components'
+convention of applying a supplied `id` to the field's real control, not a
+wrapper); a click or Enter on that link moves focus straight to the field.
+That gives a screen-reader user tabbing field-by-field a way to discover
+what is wrong without visiting every field.
 
-`errors` is controlled: `Form` tracks no validation state of its own, so a
-NEW array reference is the only "a submission just failed" signal it has
-— that's what triggers the focus move, keyed on `errors`' own identity
-rather than a derived count. A consumer must not construct an equivalent
-new array on every unrelated render, or the summary steals focus back on
-every one of those too.
+**Two ways in, two focus rules.**
+
+- With `validation` (the `useFormValidation` return value, or any
+  `FormValidationBinding`): `Form` submits through `validation.handleSubmit`,
+  sets `noValidate` so the browser's own constraint bubbles do not pre-empt
+  the pattern, sets `aria-busy` while a submit is pending, and uses
+  `validation.summaryErrors` as `errors` unless `errors` is passed. A failed
+  submit moves focus to the first invalid field in document order. If
+  `errorSummaryMessage` is also passed, the summary renders and is announced
+  through its `role="alert"` without taking focus, because taking focus
+  there as well would fight the field for it. The `onSubmit` prop is ignored
+  in this mode: the validation source owns submission, and calling both
+  would send twice.
+- With `errors` alone (no `validation`): `Form` tracks no validation state,
+  so a NEW non-empty `errors` array reference is the only "a submission
+  just failed" signal it has, and it moves focus to the summary (when
+  `errorSummaryMessage` is passed and the summary renders). A consumer must
+  not construct an equivalent new array on every unrelated render, or the
+  summary steals focus back on every one of those too.
+
+**`onSubmitError` receives a rejected send.** With `validation`, if the
+promise returned by `onSubmit` rejects, `Form` catches it, so it never becomes
+an unhandled promise rejection, and calls `onSubmitError(error)`. The
+pending state clears either way. The prop is optional and does nothing when
+omitted. `Form` renders no error text for it: set your own state in the
+callback and pass the message through `submitError`. It is not called for
+field validation failures.
+
+**`submitError` is for send failures only.** It renders one `role="alert"`
+region above the actions while set, with consumer content: the network or
+server refused a submission that passed validation. Field-level problems
+belong in the fields' own errors and the summary, not there.
+
+**Pending, not disabled.** The actions slot is the consumer's. Give the
+submit `Button` the pending state (`validation.getSubmitButtonProps()`),
+never `isDisabled`, so it keeps keyboard focus while the send runs.
+
+#### Error placement standard
+
+A failure appears in exactly one place. Where it goes depends on what it is
+about:
+
+- **Inline, under the field**: the field's own `isInvalid` plus `errorMessage`
+  on `TextField` (and the other fields), for client validation and for a
+  server error that names one field. For the second case the consumer maps
+  the server's field name to that field's `id` and sets that field invalid.
+- **Always inline**: a required field left empty. It never goes in the banner.
+- **`submitError`, the form's one banner region**: everything else, meaning an
+  account problem, a flow problem, a rate limit, a provider that is
+  unavailable, or an unknown failure.
+
+When several things go wrong at once:
+
+- Every invalid field shows its own inline message at the same time.
+- There is at most one banner, and only for a failure that is not a field's.
+  Several banner messages are nodes inside the one `submitError`, never
+  several alert regions.
+- A failure is never in a field and in a banner, and never in a summary list
+  that repeats the inline messages. A form following this standard therefore
+  does not pass `errorSummaryMessage`. The opt-in summary described above
+  stays as it is; it falls outside this standard.
+
+The tests in `Form.test.tsx` pin both rules: two invalid `TextField`s render
+both inline messages beside exactly one `role="alert"` (the `submitError`),
+and a `submitError` holding two nodes still renders one alert region.
+
+#### Multi-step forms
+
+For a flow that asks for an identifier first and then continues on later
+steps (a pattern only; Designer ships no copy):
+
+- Each later step shows the identifier in a line the consumer writes, for
+  example "Signing in as {identifier}" (consumer copy), with one change
+  control, a ghost `Button`, that returns to the first step with the value
+  still editable.
+- The browser Back button stays native. Add no in-card Back control besides
+  the change control.
+- The card's one primary action advances. Error recovery stays on the current
+  step, and there is one resend control where a code is sent.
+
+### `useFormValidation`
+
+The `ContactForm` example under [`Form`](#form) shows the hook end to end.
+
+`useFormValidation` is the validation-timing half of the form pattern. It
+renders nothing and holds the values, the errors currently shown, which
+fields the user has left, and the submit state. Pass its return value to
+`Form`'s `validation` prop, or, without `Form`, attach `formRef` and
+`handleSubmit` to your own `<form>`.
+
+**Options.** `initialValues` (also what `reset()` returns to), `validators`
+(one optional function per field; a field without one is always valid),
+`onSubmit` (called with the values only when every field is valid), and
+`idPrefix` (optional; defaults to React's `useId()`, and prefixes every DOM
+id the hook generates). A validator receives the field's value and every
+current value, and returns the error to show or nothing: `undefined`,
+`null`, `false` and `""` all mean valid, anything else is the message. It
+re-runs on its own field's change, blur and submit, not when another
+field it reads changes.
+
+**Return value.** `values`, `errors` (only those currently shown),
+`touched`, `submitCount`, `isSubmitting`, `fieldId(name)` and
+`errorId(name)` (stable DOM ids), `getFieldProps(name)`,
+`getNativeInputProps(name)`, `getSubmitButtonProps()`, `setFieldValue(name,
+value)`, `reset()`, and the `FormValidationBinding` members `Form` reads
+(`handleSubmit`, `summaryErrors`, `formRef`).
+
+**Timing.**
+
+- Before the first submit, typing shows no error. A field validates when
+  the user leaves it (blur).
+- A field that shows an error re-validates on every change, so the error
+  clears as soon as the value is valid instead of waiting for the next
+  blur.
+- After the first submit, every change re-validates.
+- A failed submit calls no `onSubmit`, marks every field touched, and shows
+  every error.
+
+**Focus.** A failed submit moves focus to the first invalid field in
+document order (not validator-key order), after React has committed the
+error, so a screen reader announces the field together with its
+`aria-describedby` text. The hook finds the field by the DOM id it
+generated, inside the form's own document or shadow root.
+
+**Pending state.** The submit button is never disabled. While an async
+`onSubmit` is pending, `isSubmitting` is true and `getSubmitButtonProps()`
+returns `{ type: "submit", isPending }`, which the `Button` atom maps to a
+pending state that stays focusable and is announced by
+react-aria-components. A second submit while one is pending is ignored,
+including two submits in the same tick before a re-render. Handle a send
+failure inside `onSubmit` (catch, then render your own message through
+`Form`'s `submitError`). `isSubmitting` is cleared whether `onSubmit`
+resolves or rejects, so the submit button is usable again. A rejection is
+re-thrown from `handleSubmit`: a caller that attaches `handleSubmit` to its
+own `<form>` must catch it, and `Form` catches it and passes it to its
+`onSubmitError` prop.
+
+**Error summary and `submitError`.** The summary is opt-in: it appears only
+when `errorSummaryMessage` is passed to `Form`. It shows the errors as of
+the last failed submit and does not shrink as the user fixes fields, since
+each change to a live alert is announced again; the inline error under each
+field is what clears live. `submitError` is one alert for send failures
+only, never for field errors.
+
+**Accessible error association.** `getFieldProps(name)` returns `id`,
+`name`, `value`, `onChange`, `onBlur`, `isInvalid`, `errorMessage` and
+`validationBehavior: "aria"`. Spread it on a designer field atom
+(`TextField`, `Textarea`, `Select`, ...) and react-aria-components wires
+`aria-invalid` and the `aria-describedby` link to the atom's own error
+element. `"aria"` keeps the browser's native constraint validation out of
+the way, since the hook owns when an error shows. For a plain `<input>`,
+`<textarea>` or `<select>`, `getNativeInputProps(name)` gives the same
+wiring: `aria-invalid` while the field shows an error, and
+`aria-describedby` pointing at `errorId(name)` only while an error shows.
+Render the error element yourself with `id={form.errorId(name)}`.
+
+**No built-in strings.** Every user-facing string comes from props or from
+validator return values: the hook ships no error text, and `Form` ships no
+summary heading. Write messages in the language the product renders, and
+say how to fix the problem rather than only that one exists. Mark optional
+fields with "(optional)" in the label, not an asterisk on required ones.
+
+**Benchmark.** The pattern follows what leading product sites converge on:
+inline errors beside the field, validation on leaving a field, live
+clearing once the value is fixed, focus on the first invalid field after a
+failed submit, and a submit button that stays focusable while it sends.
+WCAG 2.2 AA is the floor. Relevant success criteria: 3.3.1 Error
+Identification (the error is identified in text, next to the field), 3.3.3
+Error Suggestion (validators return correction guidance, which is consumer
+copy), 4.1.2 Name, Role, Value and 1.3.1 Info and Relationships (the error
+is programmatically associated with its field), and 2.4.3 Focus Order
+(focus moves to the first invalid field in reading order).
 
 ### `FieldGroup`
 
@@ -2978,14 +3205,13 @@ assuming one.
 // ErrorView is exported by @clossys/publisher/web.
 import { Button } from "@clossys/designer/atoms";
 
-function NotFoundPage() {
+function ServerErrorPage() {
   return (
     <ErrorView
-      status={404}
-      title="Page not found"
-      description="The page you're looking for doesn't exist or has moved."
-      action={<Button onPress={() => goHome()}>Go home</Button>}
-      details={<code>request id: 8f2a-91c0</code>}
+      status={500}
+      title="Something went wrong"
+      description="We couldn't load this page. Error: 8f2a91c0."
+      action={<Button onPress={() => retry()}>Try again</Button>}
     />
   );
 }
@@ -3002,10 +3228,11 @@ as text. `EmptyState`'s own `title` renders as an `<h2>` one level below
 it, so a page built from `ErrorView` has exactly one top-level heading (the
 status) with the error's description sitting under it — the same
 title/subtitle heading structure a `PageHeader` gives an ordinary page.
-`details` is an optional slot for diagnostic content (a request id, a
-correlation id, a stack trace), rendered inside a native `<details>`,
-collapsed by default: for the rare visitor who needs to report the error,
-not the page's primary reading order.
+A diagnostic reference (a request id or correlation id) is part of the
+message: put it in `description` as caller copy, for example `"Something went
+wrong. Error: 8f2a91c0."`, so it is visible without opening anything. `action`
+holds ONE primary control; a secondary destination (a support page, a status
+page) is a text link inside `description`, not a second button.
 
 ### `DetailView`
 
@@ -3075,11 +3302,18 @@ function SignInPage() {
 ```
 
 A full-page authentication shell — sign-in, sign-up, password reset, email
-verification. A centered card (built on `atoms/Card`) with five named
-regions: `brand`, `heading` (+ optional `description`), the `form` slot,
-`secondaryAction`, and `footnote`. `heading` (required) renders as the
-page's `<h1>`; `form` (required) is rendered exactly as given, with no
-wrapper.
+verification. In order: a site header (`SiteHeader`, holding the required
+`brand`), a page header (`heading` plus the required `description`), a card
+(built on `atoms/Card`) holding the `form` slot and `secondaryAction`, an
+optional `footnote`, and a site footer (`SiteFooter`, fed by
+`footerSecondary`). `heading` (required) renders as the page's `<h1>`;
+`description` (required) renders directly under it, so every step decides on
+a supporting line; `form` (required) is rendered exactly as given, with no
+wrapper. The content column is held to the `--ui-width-form-max` form
+measure (`38rem`). The optional `internalNote` (`{ label, message }`) renders
+a badge-labelled development note under the footnote, and a site passes it
+only in development. An auth page's `footerSecondary` holds a legal row only,
+never a locale switcher, because auth pages are single-locale.
 
 **`AuthView` implements no authentication of any kind** — no provider, no
 form state, no field validation, no submit handling. It renders whatever
@@ -3093,10 +3327,10 @@ same structural-difference-through-a-mode-prop failure "Placement rules"
 warns against, just scoped to authentication instead of visual styling.
 Composing that shape stays entirely the consumer's own job.
 
-`AuthView` also ships no `BrandLockup` — `brand` is a plain slot, for the
-same reason `Shell` ships no `SiteHeader`/`AppHeader` (see "Shell" below):
-a brand mark is per-product, and a pre-built one would recreate the
-`mode`-prop failure one layer up.
+`AuthView` also ships no `BrandLockup` — `brand` is required and supplied by
+the caller, for the same reason `Shell` ships no `SiteHeader`/`AppHeader`
+(see "Shell" below): a brand mark is per-product, and a pre-built one would
+recreate the `mode`-prop failure one layer up.
 
 ### `Pagination`
 
@@ -3182,29 +3416,6 @@ plus screen-reader-only text (`"Increase"`/`"Decrease"`/`"No change"`) both
 carry the same direction independently of color, so the delta reads
 correctly for a colorblind viewer, on a greyscale screen, or through a
 screen reader with no color channel at all.
-A full-page authentication shell — sign-in, sign-up, password reset, email
-verification. A centered card (built on `atoms/Card`) with five named
-regions: `brand`, `heading` (+ optional `description`), the `form` slot,
-`secondaryAction`, and `footnote`. `heading` (required) renders as the
-page's `<h1>`; `form` (required) is rendered exactly as given, with no
-wrapper.
-
-**`AuthView` implements no authentication of any kind** — no provider, no
-form state, no field validation, no submit handling. It renders whatever
-`ReactNode` is passed to `form` exactly as given, the same one-way slot
-boundary `Dialog`'s `trigger` and `EmptyState`'s `action` already
-establish. This is deliberate and non-negotiable: auth providers differ per
-product (a magic link here, a password-plus-OAuth flow there, a passkey
-flow somewhere else), and a shared UI package that tried to absorb any one
-of them would immediately need an escape hatch for every other one — the
-same structural-difference-through-a-mode-prop failure "Placement rules"
-warns against, just scoped to authentication instead of visual styling.
-Composing that shape stays entirely the consumer's own job.
-
-`AuthView` also ships no `BrandLockup` — `brand` is a plain slot, for the
-same reason `Shell` ships no `SiteHeader`/`AppHeader` (see "Shell" below):
-a brand mark is per-product, and a pre-built one would recreate the
-`mode`-prop failure one layer up.
 
 ## Shell
 
@@ -3425,6 +3636,38 @@ prop" shape every block in this README already follows; see `SiteHeader`'s
 own doc comment for why it's `shell`, not `blocks`, despite reading like a
 `PageHeader`-shaped composition of named regions.
 
+`navPlacement` (`"leading"` by default, the markup above) moves the same `nav`
+slot within the row: `"centered"` gives brand, nav, and trailing controls their
+own regions, with the brand and trailing regions growing equally so the nav
+centers on the header, in DOM, visual, and tab order. `secondaryAction` is a
+second trailing slot rendered directly before `actions`, in either placement.
+Both stay one `nav` slot, so the header holds one navigation landmark.
+
+```tsx
+<SiteHeader
+  navPlacement="centered"
+  brand={<Link href="/" variant="standalone">Acme</Link>}
+  nav={
+    <NavShell aria-label="Primary">
+      <Link href="/products" variant="standalone">Products</Link>
+      <Link href="/pricing" variant="standalone">Pricing</Link>
+    </NavShell>
+  }
+  secondaryAction={<Link href="/sign-in" variant="standalone">Sign in</Link>}
+  actions={<Link href="/pricing" variant="standalone">Pricing</Link>}
+/>
+```
+
+`surfaceLabel` names the surface a staff or demo host serves, such as `"admin"`
+or `"demo"`: a neutral `Badge` rendered last in the trailing region, after
+`secondaryAction` and `actions`, in either placement. It is text only by type,
+so no link, button or icon can be passed and it is never interactive; a member
+host omits it.
+
+```tsx
+<SiteHeader brand={<Link href="/" variant="standalone">Acme</Link>} surfaceLabel="admin" />
+```
+
 `NavShell` is the responsive half: an ordinary inline `<nav>` from the
 `tablet` breakpoint up, and a trigger-plus-drawer below it — CSS-only
 breakpoint switching, no JS media-query state, so the correct layout is
@@ -3459,6 +3702,187 @@ already use in this package, composed as JSX rather than a data array for
 the same reason `RadioGroup.Radio`'s own section documents: real footer
 columns differ column-by-column in a way that reads more naturally as
 hand-written markup.
+
+`SiteFooter.Legal` fills the `secondary` slot with a copyright line and a
+row of legal links, so a caller supplies data rather than composing the row
+by hand. It takes `entity` (a plain string) and `links` (a list of
+`{ label, href }` records), plus an optional `linksLabel`, the accessible
+name for the links region. When `linksLabel` is given, the links render
+inside a `<nav aria-label>`; otherwise they render as a plain list. The
+component ships no English of its own, so the caller supplies `linksLabel`
+in the page's language.
+
+```tsx
+import { SiteFooter } from "@clossys/designer/shell";
+
+export function Footer() {
+  return (
+    <SiteFooter
+      secondary={
+        <SiteFooter.Legal
+          entity="Example Co"
+          linksLabel="Legal"
+          links={[
+            { label: "Terms", href: "/terms" },
+            { label: "Privacy", href: "/privacy" },
+          ]}
+        />
+      }
+    />
+  );
+}
+```
+
+It renders one text string, `© {year} {entity}`, where the year is computed
+at render from the current date; there is no `year` prop. The component owns
+the layout: the links come first in DOM order; below the `desktop`
+breakpoint the two stack, centred, links first; from `desktop` up they sit on
+one line with the copyright on the left and the links on the right. Every
+link tap target is at least 44px. There is deliberately no disclaimer slot
+and no `children`, `className`, or `style` prop — regulatory text belongs in
+legal documents the links point to. `SiteFooter.Legal` does not import
+react-aria-components, so it is available from `@clossys/designer/shell/server`
+as well as `@clossys/designer/shell`, and its prop types
+(`SiteFooterLegalProps`, `SiteFooterLegalLink`) are exported from both.
+`secondary` continues to accept any node, so existing footers that
+compose their own row are unaffected.
+
+#### Transparent chrome and full width
+
+`SiteHeader` and `SiteFooter` accept `ground="transparent"` for chrome that
+sits over a page backdrop. It renders no `bg-*` class, no `border-*` class
+and no border-width style, and `SiteFooter` also omits the divider between
+`columns` and `secondary`. Ink is unchanged from `"base"`: `SiteFooter` still
+sets the base ink, and `SiteHeader` still sets none, so its content inherits
+its ink from the page. `ground` still defaults to
+`"base"`, and `"base"` and `"inverse"` render the same markup as before.
+`Shell.Header` and `Shell.Footer` keep `"base" | "inverse"`: passing
+`"transparent"` to either is a type error.
+
+```tsx
+import { SiteFooter, SiteHeader } from "@clossys/designer/shell";
+
+export function Chrome() {
+  return (
+    <>
+      <SiteHeader ground="transparent" brand={<a href="/">Example Co</a>} />
+      <SiteFooter
+        ground="transparent"
+        secondary={<SiteFooter.Legal entity="Example Co" links={[{ label: "Privacy", href: "/privacy" }]} />}
+      />
+    </>
+  );
+}
+```
+
+`brand` is still a slot that takes any node you supply, including a
+`Brandmark`. The inner containers of the header, the footer and the `SiteFooter.Legal`
+row carry no `max-w-*` class and no `maxWidth` style, so chrome content runs
+the full viewport width, inset only by the `--ui-width-page-padding-x` token;
+page content stays in `Shell.Main`'s container. A test pins this for every
+ground.
+
+`transparent` does not check the contrast of the chrome ink over whatever
+sits beneath it. That is the consumer's backdrop's job: choose a backdrop the
+base ink reads against, or use `ground="inverse"` over a dark one.
+
+### `Brandmark`
+
+`Brandmark` is the site's identity link, for `SiteHeader`'s `brand` slot or
+anywhere else a home link belongs. It ships from the same `/shell` subpath
+(and from `/shell/server`, since it has no hooks and no client directive).
+
+```tsx
+import { Brandmark, SiteHeader } from "@clossys/designer/shell";
+
+<SiteHeader
+  brand={
+    <Brandmark
+      variant="lockup"
+      size="md"
+      label="Acme home"
+      markSrc="/brand/acme-mark.svg"
+      wordmark="Acme"
+    />
+  }
+/>;
+```
+
+`label`, `markSrc` and `wordmark` are placeholders the example supplies;
+this package ships no default label, brand name or image. `variant` is
+`"mark"` (the image alone; `wordmark` is not accepted) or `"lockup"` (the
+image beside `wordmark`, which is required and is text: a `string`, never an
+element or image). `size` is `"sm"`, `"md"` or
+`"lg"`, mapped to the `--ui-brandmark-height-*` and `--ui-brandmark-gap-*`
+tokens. The exported types are `BrandmarkProps`, `BrandmarkVariant` and
+`BrandmarkSize`.
+
+What `Brandmark` does: it renders a plain `<a href="/">` whose accessible
+name is `label` (set as `aria-label`), so the name does not depend on the
+image or the wordmark text. The image is decorative (`alt=""`) and is set
+from `markSrc` as a URL, and `wordmark` renders as live text in the display
+font at a size derived from the mark's height; neither is injected as
+markup. The component spreads no props onto the anchor, so `href` and
+`aria-label` are not reachable through its props. What it does not do: it
+does not check that `markSrc` resolves or that the image is legible at the
+chosen size, it does not check that `label` is a meaningful name beyond the
+two refusals below, and it does not load the display font, so the wordmark
+falls back to whatever the page's font stack provides when the font is not
+loaded. A lockup without a wordmark value renders the mark alone.
+
+`Brandmark` refuses two `label` values by throwing a plain `Error` that
+names the prop and does not repeat its value. First, an empty,
+whitespace-only or non-string `label` is refused for both variants, because
+the image is decorative and the link would otherwise have no accessible
+name. Second, for `variant="lockup"` the `label` must contain the visible
+`wordmark` text, compared case-insensitively with whitespace normalised
+(`"Acme home"` for a wordmark of `"Acme"`), because `aria-label` replaces the
+visible text as the link's name and a label without it fails WCAG 2.5.3
+(label in name). The `mark` variant shows no text, so only the first refusal
+applies to it, and a lockup with an empty wordmark falls back to the mark
+alone and is held to the first refusal only. The component renders on the
+server, so a refused `label` fails that render.
+
+Declared boundary: the wordmark's size is the mark's height times the fixed
+22/48 ratio, so at `size="sm"` (a 24px mark) the wordmark is 11px. Sizes
+derive from that ratio and are not raised to a minimum, so use `"md"` or
+`"lg"` where an 11px wordmark is too small.
+
+#### Shared plate
+
+`plate` is `"self"` or `"shared"`, and defaults to `"self"`. With `"self"` or
+without the prop the markup is unchanged: the mark's own edge is its plate.
+With `"shared"`, `Brandmark` draws one rounded-square plate behind the mark in
+the base ink (`bg-ink-primary`), as a decorative `<span>` styled with CSS; no
+inline `<svg` is used. The plate's side is the size's height token and its
+corner radius is that side times `BADGE_RADIUS_SHARE` (7/32). The image is
+inset by `BADGE_INSET_SHARE` (0.18) on each side, so it is 64% of the side. In
+a lockup the plate wraps the mark only; the wordmark stays beside it. The
+exported type is `BrandmarkPlate`.
+
+```tsx
+<Brandmark
+  variant="mark"
+  size="md"
+  label="Acme home"
+  markSrc="/brand/acme-mark-on-ink.svg"
+  plate="shared"
+/>;
+```
+
+`badgePlatePath(size)` returns the same rounded square as SVG path data, from
+(0, 0) to (`size`, `size`), for a consumer that draws the plate itself. The
+radius is `size * BADGE_RADIUS_SHARE` and each number is rounded to 3
+decimals, so `badgePlatePath(32)` is
+`M7 0H25A7 7 0 0 1 32 7V25A7 7 0 0 1 25 32H7A7 7 0 0 1 0 25V7A7 7 0 0 1 7 0Z`.
+It throws a `TypeError` for a non-number and a `RangeError` for a non-finite
+or non-positive `size`; the message names `size` and does not repeat the
+value. `BADGE_RADIUS_SHARE`, `BADGE_INSET_SHARE` and `badgePlatePath` ship
+from `/shell`, `/shell/server` and the package root.
+
+What it does not do: it does not check that the mark reads on the base ink,
+so the consumer supplies a mark that does, and it does not check the
+contrast between them.
 
 ### `Toaster` and `toast`
 
@@ -4138,9 +4562,19 @@ not a grab-bag).
 | `Stat` | component | A single metric: label, value, optional delta/trend, optional description. |
 | `StatProps` | type | Props for `Stat`: `label`, `value`, `delta`, `trend`, `trendLabels` (default Increase / Decrease / No change), `description`, `className`, `style`, plus every native `<div>` attribute. |
 | `StatTrend` | type | `"up" \| "down" \| "neutral"`. |
-| `Form` | component | Form layout: optional heading, fields region, error-summary region (focused/announced on failure), actions region. No validation logic. |
-| `FormProps` | type | Props for `Form`: `heading`, `children`, `errors`, `errorSummaryMessage` (default "There is 1 error" / "There are N errors"), `actions`, `onSubmit`, `className`, `style`, plus every native `<form>` attribute. |
+| `Form` | component | Form layout: optional heading, fields region, opt-in error-summary region, submit-error region, actions region. Owns no validation logic; opts into `useFormValidation` through `validation`. |
+| `FormProps` | type | Props for `Form`: `heading`, `children`, `errors`, `errorSummaryMessage` (opt-in: the summary renders only when passed; no default text), `submitError`, `validation`, `onSubmitError` (optional; receives a rejection from the validated `onSubmit`, and does nothing when omitted), `actions`, `onSubmit` (ignored when `validation` is passed), `className`, `style`, plus every native `<form>` attribute. |
 | `FormError` | type | One error-summary entry: `fieldId`, `message`. |
+| `FormValidationBinding` | type | What `Form` reads from a validation source: `handleSubmit`, `summaryErrors`, `isSubmitting`, `formRef`. `useFormValidation`'s return value satisfies it. |
+| `useFormValidation` | function | Hook for the form validation timing: validate on blur, re-validate on change once a field shows an error or after the first submit, focus the first invalid field on a failed submit, pending (never disabled) submit. Returns `FormValidation`. |
+| `FormValidation` | type | Return of `useFormValidation`: `values`, `errors`, `touched`, `submitCount`, `isSubmitting`, `fieldId`, `errorId`, `getFieldProps`, `getNativeInputProps`, `getSubmitButtonProps`, `setFieldValue`, `reset`, plus the `FormValidationBinding` members. |
+| `UseFormValidationOptions` | type | Options for `useFormValidation`: `initialValues`, `validators`, `onSubmit`, `idPrefix`. |
+| `FieldValidator` | type | `(value, values) => ReactNode`: returns the error to show, or `undefined`/`null`/`false`/`""` when valid. |
+| `FormFieldName` | type | The string keys of a form's values type; each becomes part of a DOM id. |
+| `FormStringFieldName` | type | The field names whose value is a string, the ones `getNativeInputProps` accepts. |
+| `FormFieldProps` | type | Props `getFieldProps` returns for a designer field atom: `id`, `name`, `value`, `onChange`, `onBlur`, `isInvalid`, `errorMessage`, `validationBehavior`. |
+| `FormNativeInputProps` | type | Props `getNativeInputProps` returns for a plain input: `id`, `name`, `value`, `onChange`, `onBlur`, `aria-invalid`, `aria-describedby`. |
+| `FormSubmitButtonProps` | type | Props `getSubmitButtonProps` returns for the submit `Button`: `type: "submit"`, `isPending`. |
 | `FieldGroup` | component | A related set of fields under a shared `<fieldset>`/`<legend>`: legend, optional description, the fields. |
 | `FieldGroupProps` | type | Props for `FieldGroup`: `legend`, `description`, `layout`, `children`, `className`, `style`, plus every native `<fieldset>` attribute. |
 | `FieldGroupLayout` | type | `"single" \| "multi"`. |
@@ -4209,11 +4643,11 @@ not a grab-bag).
 | `ShellFooterProps` | type | Props for `Shell.Footer`: `children`, plus every native `<footer>` attribute. |
 | `SkipLink` | component | Keyboard affordance to bypass nav chrome and jump straight to a page's content. Visually hidden until focused. |
 | `SkipLinkProps` | type | Props for `SkipLink`: `targetId` (the jump target's `id`), `children` (the link's own visible text — no built-in copy), `className`. |
-| `SiteHeader` | component | Public-site top chrome: brand slot, primary navigation slot, actions slot. Renders the page's `banner` landmark. |
-| `SiteHeaderProps` | type | Props for `SiteHeader`: `brand` (required), `nav`, `actions`, plus every native `<header>` attribute. |
+| `SiteHeader` | component | Public-site top chrome: brand slot, primary navigation slot (leading or centered), secondary action slot, actions slot. Renders the page's `banner` landmark. |
+| `SiteHeaderProps` | type | Props for `SiteHeader`: `brand` (required), `nav`, `navPlacement` (`"leading"` default, or `"centered"`), `secondaryAction`, `actions`, `surfaceLabel` (text-only badge, last in the trailing region), plus every native `<header>` attribute. |
 | `NavShell` | component | The responsive half of a public site's navigation: an inline `<nav>` from `tablet` up, a trigger-plus-drawer below it. |
 | `NavShellProps` | type | Props for `NavShell`: `children` (the nav links, rendered in both the desktop row and the drawer), `aria-label` (default `"Primary"`), `triggerLabel` (default `"Menu"`), `closeLabel` (default `"Close menu"`), `className`, plus most of react-aria-components' own `DialogTrigger` props (`isOpen`, `defaultOpen`, `onOpenChange`). |
-| `SiteFooter` | component | Public-site bottom chrome: grouped link columns, a secondary/legal row. Carries `SiteFooter.Column`. Renders the page's `contentinfo` landmark. |
+| `SiteFooter` | component | Public-site bottom chrome: grouped link columns, a secondary/legal row. Carries `SiteFooter.Column` and `SiteFooter.Legal`. Renders the page's `contentinfo` landmark. |
 | `SiteFooterProps` | type | Props for `SiteFooter`: `columns`, `secondary`, plus every native `<footer>` attribute. |
 | `SiteFooterColumnProps` | type | Props for `SiteFooter.Column`: `heading`, `children` (the column's own links), `className`. |
 | `Toaster` | component | The toast viewport — mount once, anywhere in the same tree as `Shell`. |
@@ -4457,7 +4891,7 @@ part of this package's public API" and reachable only by that one test.
   ratified from `contrast.test.ts`'s own hand-curated pair map rather than
   auto-derived from token names. An earlier design assumed this gate could
   self-extend, deriving one pair per `--<role>-on-<ground>`-shaped token
-  name; counted against this package's real 154 tokens, only 5 actually
+  name; counted against this package's real 168 tokens, only 5 actually
   follow that shape (`--color-ink-on-accent`, `--color-ink-on-inverse`,
   `--color-accent-on-inverse`, `--color-line-on-inverse`,
   `--ui-ring-on-inverse` — see `contrast-pairs.ts`'s own header for a 6th,
@@ -4589,6 +5023,43 @@ ink-coloured (drawn via `currentColor` under a `color:` style set to the
 SVG's own colours, unchanged — only `mono`/`light`/`dark`/`favicon`/
 `appIcon` are recoloured onto token colours in both cases.
 
+**What the recolour does with a two-tone mark (#1537).** Flattening a
+two-tone mark onto one colour erases the contrast between its tones, so
+`recolorSvg` knocks a mark out instead, but only a mark it recognises as a
+flat two-tone mark. **Recognised:** the whole document is groups (carrying
+only `transform`) and basic shapes (`path`, `rect`, `circle`, `ellipse`,
+`polygon`, `polyline`, `line`), each with an explicit hex `fill`
+(`#rgb` or `#rrggbb`, no alpha; a `stroke` is `none` or the same hex);
+exactly two tones (`#fff` and `#FFFFFF` are one tone), every first-tone
+shape before every second-tone shape; a root carrying only `xmlns`, a
+parseable `viewBox`, `width`, `height`, `role`, `aria-label` and
+`data-clear-space`; no `id`, reference, `style`, class, text, comment or
+root paint. Such a mark is recoloured as a knockout: each tone is painted
+in the variant's single colour and masked out where the other tone paints,
+so the surface or badge shows through and the tones keep their contrast.
+The knockout's root is re-emitted from its parsed attributes (constant
+names, escaped values, double-quoted), never sliced out of the input.
+**Caps:** the recogniser reads at most 32 attributes on a tag, 2000
+elements in all (every `<g>` and every shape) and 32 groups deep, in one
+linear, non-backtracking pass, so its cost stays bounded on a crafted
+document and its recursion depth is bounded. An input over any cap is not
+recognised and stays flat, exactly as any other unrecognised input.
+**Everything else stays flat:** any other input (one tone, three or more
+tones, tones in an A-B-A order, root or group paint, `<use>`, `<style>`,
+`style=`, classes, ids, references, named/`rgb()`/`currentColor`/alpha
+paint, text, a value holding a quote, `<` or `&`, or an input over a cap)
+is recoloured exactly as before, every `fill`/`stroke` attribute onto the
+variant's colour, so its tones become one colour and their boundary is
+lost. That is byte-for-byte the flat recolour of the previous release: the
+derived variant is never broken by the knockout and never gains an
+attribute its input lacked. The contrast check skips only the `<mask>`s
+`recolorSvg` itself emits, matched by their exact generated form (the
+`recolor-<8 hex>-a|b` id, one white coverage `<rect>`, then only groups and
+self-closing shapes painted `#000` or `none`, closed by `</mask>`); a
+self-closing or malformed look-alike, and a mark's own `<mask>`, are judged
+on their paint as before. Treat the derived variants as a starting point
+for review.
+
 **Four checks judge every direction**, mirroring the "package owns
 judgment, every check reports satisfied/violated/indeterminate" split this
 repository holds every gate to:
@@ -4660,6 +5131,24 @@ identityKitReport(wordmark, tokens, "0.5.0");
 //   findings: [],
 // }
 ```
+
+**Composing a lockup from a supplied mark.** `composeLockup({ brand,
+suppliedSvg, tokens, wordmark, fontLicence, header })` returns a
+JSON-serialisable spec for a mark-plus-wordmark lockup: the supplied SVG
+trimmed but otherwise unchanged as `mark`, its `light` and `dark` recolours
+from `adoptSuppliedMark`, the `wordmark` text, the `fontLicence` record
+(`{ family, outlining }`), `gapRatio` and `wordmarkSizeRatio` (the gap and
+the wordmark's font size as ratios of the mark's height, taken from the
+generated wordmark direction), the `header` selection (`"mark"` or
+`"lockup"`) and `rendering: "live-text"`. A non-SVG mark, an empty
+wordmark, an unrecognised `header` or `fontLicence.outlining` value, or a
+`fontLicence.family` outside the font-family character set is refused with
+an `IdentityKitValidationError` that lists each reason. `composeLockup` does
+not outline glyphs (that needs a font parser, which this package does not
+depend on, so `outlining: "permitted"` records the licence and does not
+change the output), does not judge whether the mark is legible, and does
+not check that the font loads. `Brandmark` from `@clossys/designer/shell`
+renders a lockup as live text at the same proportions.
 
 ## Environment-declaration-consistency gate (`@clossys/designer/gate`, `designer-environment-check`)
 

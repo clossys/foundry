@@ -16,6 +16,13 @@
  */
 
 export { renderEmailDocument } from "./renderEmailDocument.js";
+export { renderContactNotificationEmail } from "./renderContactNotificationEmail.js";
+export type {
+  ContactNotificationEmail,
+  ContactNotificationInput,
+  ContactNotificationLabels,
+  RenderContactNotificationEmailOptions,
+} from "./renderContactNotificationEmail.js";
 
 export { RenderError } from "../internal/errors.js";
 export type { RenderErrorReason } from "../internal/errors.js";

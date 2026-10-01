@@ -95,7 +95,12 @@ describe("writePreviewGallery — every section renders", () => {
 
     // Sanity: fixture copy actually reached the rendered markup, not just a filename.
     expect(readFileSync(join(outDir, "site-home.html"), "utf8")).toContain("Everything your launch needs, out of the box");
-    expect(readFileSync(join(outDir, "materials-overview-short.html"), "utf8")).toContain("One-liner");
+    const overviewShort = readFileSync(join(outDir, "materials-overview-short.html"), "utf8");
+    expect(overviewShort).toContain("One-liner");
+    // The back link's own wrapper; the embedded DocumentView markup keeps its own fallback and is not asserted here.
+    const backLinkAt = overviewShort.indexOf('<a href="materials-index.html">');
+    const backLinkTag = overviewShort.slice(overviewShort.lastIndexOf("<p", backLinkAt), backLinkAt);
+    expect(backLinkTag).toContain("var(--ui-width-prose-max, none)");
     expect(readFileSync(join(outDir, "materials-pitch-deck.html"), "utf8")).toContain("Pitch deck");
     // The email's own HTML is embedded inside an `iframe[srcdoc]` attribute,
     // so its `&`/`'` get attribute-escaped once more on top of

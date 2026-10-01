@@ -1201,7 +1201,24 @@ describe("applyWorkspacePlan", () => {
     expect(manifest.devDependencies[ADVISOR_PACKAGE]).toBe("0.2.3");
   });
 
-  it("names a dedicated workspace hub @owner/workspace without rewriting a product name", () => {
+  it("names a nameless dedicated workspace hub @owner/workspace", () => {
+    const directory = tempDir();
+    writeFileSync(join(directory, "package.json"), `${JSON.stringify({ private: true }, null, 2)}\n`);
+    writeInventory(directory);
+    applyWorkspacePlan(
+      host(directory),
+      { action: "adopt", owner: "acme", repository: DEFAULT_REPOSITORY_NAME, directory, advisorVersion: "0.2.3", integratorVersion: "0.8.2" },
+      skeletonRoot,
+    );
+    const manifest = JSON.parse(readFileSync(join(directory, "package.json"), "utf8")) as {
+      name: string;
+      devDependencies: Record<string, string>;
+    };
+    expect(manifest.name).toBe("@acme/workspace");
+    expect(manifest.devDependencies[ADVISOR_PACKAGE]).toBe("0.2.3");
+  });
+
+  it("never rewrites an existing package name, even for a dedicated workspace hub (#1585)", () => {
     const directory = tempDir();
     writeFileSync(
       join(directory, "package.json"),
@@ -1217,7 +1234,7 @@ describe("applyWorkspacePlan", () => {
       name: string;
       devDependencies: Record<string, string>;
     };
-    expect(manifest.name).toBe("@acme/workspace");
+    expect(manifest.name).toBe("workspace-control-plane");
     expect(manifest.devDependencies[ADVISOR_PACKAGE]).toBe("0.2.3");
   });
 
@@ -1309,6 +1326,35 @@ describe("applyWorkspacePlan", () => {
     ).toThrow(/gitlab\.example\.net.*uncommitted changes/s);
     expect(JSON.parse(readFileSync(join(directory, "package.json"), "utf8"))).toEqual({ name: "product" });
     expect(existsSync(join(directory, WORKSPACE_MARKER_REL))).toBe(false);
+  });
+
+  it("appoint refuses a symlinked package.json before any write, naming no path", () => {
+    const directory = tempDir();
+    const outside = tempDir();
+    const target = join(outside, "records-manifest.json");
+    const targetBytes = `${JSON.stringify({ name: "records", private: true }, null, 2)}\n`;
+    writeFileSync(target, targetBytes);
+    symlinkSync(target, join(directory, "package.json"));
+    writeInventory(directory);
+    let message = "";
+    try {
+      applyWorkspacePlan(
+        host(directory),
+        { action: "adopt", owner: "acme", repository: "hub", directory, advisorVersion: "0.2.3", integratorVersion: "0.8.2" },
+        skeletonRoot,
+      );
+    } catch (error) {
+      message = error instanceof Error ? error.message : String(error);
+    }
+    expect(message).toMatch(/existing package\.json is a symbolic link/);
+    expect(message).not.toContain(directory);
+    expect(message).not.toContain(target);
+    expect(message).not.toContain(outside);
+    expect(readFileSync(target, "utf8")).toBe(targetBytes);
+    expect(lstatSync(join(directory, "package.json")).isSymbolicLink()).toBe(true);
+    expect(existsSync(join(directory, WORKSPACE_MARKER_REL))).toBe(false);
+    expect(existsSync(join(directory, "CLAUDE.md"))).toBe(false);
+    expect(existsSync(join(directory, ".gitignore"))).toBe(false);
   });
 
   it("names a github.com origin generically in the dirty-tree refusal", () => {
@@ -2572,5 +2618,339 @@ describe("inventory drift reporting, wired into applyWorkspacePlan (#1216)", () 
     );
     expect(result.health.inventoryDrift?.status).toBe("indeterminate");
     expect(result.message).toMatch(/inventory drift: indeterminate.*no mapping/);
+  });
+});
+
+describe("an existing unrelated repository appointed as the hub by cloning it (#1585)", () => {
+  const unrelatedAgents = "# Records service\n\nAgents working here follow the records team's own conventions.\n";
+  const unrelatedReadme = "# records\n\nAn existing project, not a hub.\n";
+  const unrelatedClaude = "Read AGENTS.md first.\n";
+
+  type CloneSeed = (directory: string) => void;
+
+  function unrelatedProject(options: { manifest?: boolean } = {}): CloneSeed {
+    return (directory) => {
+      writeFileSync(join(directory, "README.md"), unrelatedReadme);
+      writeFileSync(join(directory, "AGENTS.md"), unrelatedAgents);
+      writeFileSync(join(directory, "CLAUDE.md"), unrelatedClaude);
+      if (options.manifest !== false) {
+        writeFileSync(join(directory, "package.json"), `${JSON.stringify({ name: "records", private: true }, null, 2)}\n`);
+      }
+    };
+  }
+
+  /** An empty directory whose stubbed `gh repo clone acme/workspace <dir>` populates it with `seed`. */
+  function cloningHost(directory: string, seed: CloneSeed, overrides: Record<string, CommandResult> = {}): WorkspaceHost {
+    const base = host(directory, {
+      "gh --version": { status: 0, stdout: "gh 2.0.0\n", stderr: "" },
+      "git --version": { status: 0, stdout: "git 2.0.0\n", stderr: "" },
+      "gh api user --jq .login": { status: 0, stdout: "acme\n", stderr: "" },
+      "gh org list": { status: 0, stdout: "", stderr: "" },
+      "gh repo view acme/workspace --json name": { status: 0, stdout: '{"name":"workspace"}\n', stderr: "" },
+      "npm view @clossys/advisor version": { status: 0, stdout: "0.5.0\n", stderr: "" },
+      "npm view @clossys/integrator version": { status: 0, stdout: "0.8.2\n", stderr: "" },
+      "git status --porcelain": { status: 0, stdout: "", stderr: "" },
+      ...overrides,
+    });
+    return {
+      ...base,
+      run: (command, args, opts) => {
+        if (command === "gh" && args.join(" ") === `repo clone acme/workspace ${directory}`) {
+          mkdirSync(join(directory, ".git"), { recursive: true });
+          seed(directory);
+          return { status: 0, stdout: "Cloning into...\n", stderr: "" };
+        }
+        return base.run(command, args, opts);
+      },
+    };
+  }
+
+  function plannedFromEmptyDirectory(workspaceHost: WorkspaceHost) {
+    const plan = planWorkspace(observeWorkspace(workspaceHost), workspaceHost);
+    expect(plan).toMatchObject({ action: "resume", owner: "acme", repository: "workspace", clone: true });
+    if (plan.action !== "resume") throw new Error("expected a clone plan");
+    return plan;
+  }
+
+  /** Every file under `root` (`.git` excluded) mapped to a hash of its bytes, so any change or addition shows. */
+  function tree(root: string): Record<string, string> {
+    const out: Record<string, string> = {};
+    const walk = (dir: string, prefix: string): void => {
+      for (const name of readdirSync(dir).sort()) {
+        if (name === ".git") continue;
+        const path = join(dir, name);
+        const relative = prefix === "" ? name : `${prefix}/${name}`;
+        if (statSync(path).isDirectory()) {
+          out[`${relative}/`] = "dir";
+          walk(path, relative);
+        } else {
+          out[relative] = createHash("sha256").update(readFileSync(path)).digest("hex");
+        }
+      }
+    };
+    walk(root, "");
+    return out;
+  }
+
+  /** Runs the seed alone into a scratch directory, so a test knows the clone's exact post-clone tree. */
+  function treeAfterClone(seed: CloneSeed): Record<string, string> {
+    const scratch = tempDir();
+    seed(scratch);
+    return tree(scratch);
+  }
+
+  it("appoints an unmarked clone: writes the marker, keeps every existing file and the package name, pins both engines", () => {
+    const directory = tempDir();
+    const workspaceHost = cloningHost(directory, unrelatedProject());
+    const plan = plannedFromEmptyDirectory(workspaceHost);
+    const result = applyWorkspacePlan(workspaceHost, plan, skeletonRoot, composeApplyOptions(seedSkillCatalogue(["advisor"])));
+    expect(JSON.parse(readFileSync(join(directory, WORKSPACE_MARKER_REL), "utf8"))).toEqual({
+      schemaVersion: 1,
+      kind: "account-hub",
+      owner: "acme",
+      repository: "acme/workspace",
+    });
+    expect(readFileSync(join(directory, "README.md"), "utf8")).toBe(unrelatedReadme);
+    expect(readFileSync(join(directory, "AGENTS.md"), "utf8")).toBe(unrelatedAgents);
+    expect(readFileSync(join(directory, "CLAUDE.md"), "utf8")).toBe(unrelatedClaude);
+    const manifest = JSON.parse(readFileSync(join(directory, "package.json"), "utf8")) as {
+      name: string;
+      private: boolean;
+      devDependencies: Record<string, string>;
+    };
+    expect(manifest.name).toBe("records");
+    expect(manifest.private).toBe(true);
+    expect(manifest.devDependencies).toEqual({ [ADVISOR_PACKAGE]: "0.5.0", [INTEGRATOR_PACKAGE]: "0.8.2" });
+    expect(existsSync(join(directory, WORKSPACE_INVENTORY_REL))).toBe(false);
+    expect(result.message).toMatch(/^appointed acme\/workspace as the account hub\nExisting project files were kept\./);
+    expect(result.message).not.toMatch(/^resumed/);
+    expect(result.health.marker).toBe("present");
+  });
+
+  it("appoints an unmarked clone with no package.json by writing the skeleton manifest with both engine pins", () => {
+    const directory = tempDir();
+    const workspaceHost = cloningHost(directory, unrelatedProject({ manifest: false }));
+    const plan = plannedFromEmptyDirectory(workspaceHost);
+    const result = applyWorkspacePlan(workspaceHost, plan, skeletonRoot, composeApplyOptions(seedSkillCatalogue(["advisor"])));
+    const manifest = JSON.parse(readFileSync(join(directory, "package.json"), "utf8")) as {
+      name: string;
+      devDependencies: Record<string, string>;
+    };
+    expect(manifest.name).toBe("@acme/workspace");
+    expect(manifest.devDependencies[ADVISOR_PACKAGE]).toBe("0.5.0");
+    expect(manifest.devDependencies[INTEGRATOR_PACKAGE]).toBe("0.8.2");
+    expect(readFileSync(join(directory, "AGENTS.md"), "utf8")).toBe(unrelatedAgents);
+    expect(JSON.parse(readFileSync(join(directory, WORKSPACE_MARKER_REL), "utf8"))).toMatchObject({ kind: "account-hub", owner: "acme" });
+    expect(result.message).toMatch(/^appointed acme\/workspace as the account hub/);
+  });
+
+  it("keeps an existing valid inventory in an unmarked clone untouched", () => {
+    const directory = tempDir();
+    const seed: CloneSeed = (dir) => {
+      unrelatedProject()(dir);
+      writeInventory(dir, [{ id: "acme/app" }]);
+    };
+    const workspaceHost = cloningHost(directory, seed);
+    const plan = plannedFromEmptyDirectory(workspaceHost);
+    const before = treeAfterClone(seed)[WORKSPACE_INVENTORY_REL.split("\\").join("/")];
+    const result = applyWorkspacePlan(workspaceHost, plan, skeletonRoot, composeApplyOptions(seedSkillCatalogue(["advisor"])));
+    expect(tree(directory)[WORKSPACE_INVENTORY_REL.split("\\").join("/")]).toBe(before);
+    expect(result.health.inventory).toEqual({ status: "populated", count: 1 });
+    expect(result.message).toMatch(/^appointed/);
+  });
+
+  it("migrates a clone whose only marker is the legacy .clossys/ one, then resumes", () => {
+    const directory = tempDir();
+    const workspaceHost = cloningHost(directory, (dir) => {
+      unrelatedProject()(dir);
+      writeLegacyHub(dir, "acme", "workspace");
+    });
+    const plan = plannedFromEmptyDirectory(workspaceHost);
+    const result = applyWorkspacePlan(workspaceHost, plan, skeletonRoot, composeApplyOptions(seedSkillCatalogue(["advisor"])));
+    expect(existsSync(join(directory, ".clossys"))).toBe(false);
+    expect(JSON.parse(readFileSync(join(directory, WORKSPACE_MARKER_REL), "utf8"))).toMatchObject({
+      kind: "account-hub",
+      owner: "acme",
+      repository: "acme/workspace",
+    });
+    expect(inspectInventory(readFileSync(join(directory, WORKSPACE_INVENTORY_REL)), "acme")).toEqual({ status: "populated", count: 1 });
+    expect(result.health.migration).toEqual({ status: "migrated", from: ".clossys", to: join("clossys", ".state") });
+    expect(result.message).toMatch(/^resumed acme\/workspace as the account hub/);
+  });
+
+  it("resumes a clone that already carries a current marker for the same owner", () => {
+    const directory = tempDir();
+    const workspaceHost = cloningHost(directory, (dir) => {
+      unrelatedProject()(dir);
+      mkdirSync(dirname(join(dir, WORKSPACE_MARKER_REL)), { recursive: true });
+      writeFileSync(
+        join(dir, WORKSPACE_MARKER_REL),
+        `${JSON.stringify({ schemaVersion: 1, kind: "account-hub", owner: "acme", repository: "acme/workspace" }, null, 2)}\n`,
+      );
+    });
+    const plan = plannedFromEmptyDirectory(workspaceHost);
+    const result = applyWorkspacePlan(workspaceHost, plan, skeletonRoot, composeApplyOptions(seedSkillCatalogue(["advisor"])));
+    expect(result.message).toMatch(/^resumed acme\/workspace as the account hub/);
+  });
+
+  it("refuses, before writing anything, a clone whose current marker names another owner", () => {
+    const directory = tempDir();
+    const seed: CloneSeed = (dir) => {
+      unrelatedProject()(dir);
+      mkdirSync(dirname(join(dir, WORKSPACE_MARKER_REL)), { recursive: true });
+      writeFileSync(
+        join(dir, WORKSPACE_MARKER_REL),
+        `${JSON.stringify({ schemaVersion: 1, kind: "account-hub", owner: "other", repository: "other/workspace" }, null, 2)}\n`,
+      );
+    };
+    const workspaceHost = cloningHost(directory, seed);
+    const plan = plannedFromEmptyDirectory(workspaceHost);
+    expect(() => applyWorkspacePlan(workspaceHost, plan, skeletonRoot, composeApplyOptions(seedSkillCatalogue(["advisor"])))).toThrow(
+      /owned by "other".*"acme"/,
+    );
+    expect(tree(directory)).toEqual(treeAfterClone(seed));
+  });
+
+  it("refuses a clone carrying both markers and changes nothing in it after the clone", () => {
+    const directory = tempDir();
+    const seed: CloneSeed = (dir) => {
+      unrelatedProject()(dir);
+      writeLegacyHub(dir, "acme", "workspace");
+      mkdirSync(dirname(join(dir, WORKSPACE_MARKER_REL)), { recursive: true });
+      writeFileSync(
+        join(dir, WORKSPACE_MARKER_REL),
+        `${JSON.stringify({ schemaVersion: 1, kind: "account-hub", owner: "acme", repository: "acme/workspace" }, null, 2)}\n`,
+      );
+    };
+    const workspaceHost = cloningHost(directory, seed);
+    const plan = plannedFromEmptyDirectory(workspaceHost);
+    expect(() => applyWorkspacePlan(workspaceHost, plan, skeletonRoot, composeApplyOptions(seedSkillCatalogue(["advisor"])))).toThrow(
+      /both clossys\/\.state\/workspace\.json and the legacy \.clossys\/workspace\.json are present/,
+    );
+    expect(tree(directory)).toEqual(treeAfterClone(seed));
+  });
+
+  it("refuses, before writing anything, an unmarked clone when an engine version is missing from the plan", () => {
+    const directory = tempDir();
+    const seed = unrelatedProject();
+    const workspaceHost = cloningHost(directory, seed, {
+      "npm view @clossys/integrator version": { status: 1, stdout: "", stderr: "offline" },
+    });
+    const plan = plannedFromEmptyDirectory(workspaceHost);
+    expect(plan.integratorVersion).toBeUndefined();
+    expect(() => applyWorkspacePlan(workspaceHost, plan, skeletonRoot, composeApplyOptions(seedSkillCatalogue(["advisor"])))).toThrow(
+      /cannot read a public @clossys\/integrator version from the npm registry/,
+    );
+    expect(tree(directory)).toEqual(treeAfterClone(seed));
+  });
+
+  it("refuses, before writing anything, an unmarked clone whose on-disk inventory is invalid", () => {
+    const directory = tempDir();
+    const seed: CloneSeed = (dir) => {
+      unrelatedProject()(dir);
+      writeInventory(dir, [{ id: "acme/app", visibility: "public" }]);
+    };
+    const workspaceHost = cloningHost(directory, seed);
+    const plan = plannedFromEmptyDirectory(workspaceHost);
+    expect(() => applyWorkspacePlan(workspaceHost, plan, skeletonRoot, composeApplyOptions(seedSkillCatalogue(["advisor"])))).toThrow(
+      /inventory/,
+    );
+    expect(tree(directory)).toEqual(treeAfterClone(seed));
+  });
+
+  it.each([
+    ["an array", "[1,2]\n"],
+    ["a primitive", "null\n"],
+    ["invalid JSON", "{ not json"],
+  ])("refuses, before writing anything, an unmarked clone whose package.json is %s", (_label, manifest) => {
+    const directory = tempDir();
+    const seed: CloneSeed = (dir) => {
+      unrelatedProject({ manifest: false })(dir);
+      writeFileSync(join(dir, "package.json"), manifest);
+    };
+    const workspaceHost = cloningHost(directory, seed);
+    const plan = plannedFromEmptyDirectory(workspaceHost);
+    expect(() => applyWorkspacePlan(workspaceHost, plan, skeletonRoot, composeApplyOptions(seedSkillCatalogue(["advisor"])))).toThrow(
+      /existing package\.json is unreadable JSON/,
+    );
+    expect(tree(directory)).toEqual(treeAfterClone(seed));
+  });
+
+  it("refuses, before writing anything, an unmarked clone whose package.json is present but unreadable (a directory)", () => {
+    const directory = tempDir();
+    const seed: CloneSeed = (dir) => {
+      unrelatedProject({ manifest: false })(dir);
+      mkdirSync(join(dir, "package.json"));
+    };
+    const workspaceHost = cloningHost(directory, seed);
+    const plan = plannedFromEmptyDirectory(workspaceHost);
+    expect(() => applyWorkspacePlan(workspaceHost, plan, skeletonRoot, composeApplyOptions(seedSkillCatalogue(["advisor"])))).toThrow(
+      /existing package\.json is present but cannot be read/,
+    );
+    expect(tree(directory)).toEqual(treeAfterClone(seed));
+  });
+
+  it("refuses, before writing anything, an unmarked clone whose package.json is a symbolic link", () => {
+    const directory = tempDir();
+    const target = join(tempDir(), "records-manifest.json");
+    const targetBytes = `${JSON.stringify({ name: "records", private: true }, null, 2)}\n`;
+    writeFileSync(target, targetBytes);
+    const seed: CloneSeed = (dir) => {
+      unrelatedProject({ manifest: false })(dir);
+      symlinkSync(target, join(dir, "package.json"));
+    };
+    const workspaceHost = cloningHost(directory, seed);
+    const plan = plannedFromEmptyDirectory(workspaceHost);
+    let message = "";
+    try {
+      applyWorkspacePlan(workspaceHost, plan, skeletonRoot, composeApplyOptions(seedSkillCatalogue(["advisor"])));
+    } catch (error) {
+      message = error instanceof Error ? error.message : String(error);
+    }
+    expect(message).toMatch(/existing package\.json is a symbolic link/);
+    expect(message).not.toContain(directory);
+    expect(message).not.toContain(target);
+    expect(tree(directory)).toEqual(treeAfterClone(seed));
+    expect(readFileSync(target, "utf8")).toBe(targetBytes);
+  });
+
+  it("refuses, before writing anything, an unmarked clone that is the Foundry supplier tree", () => {
+    const directory = tempDir();
+    const seed: CloneSeed = (dir) => {
+      writeFileSync(join(dir, "package.json"), `${JSON.stringify({ name: "foundry-packages", private: true }, null, 2)}\n`);
+    };
+    const workspaceHost = cloningHost(directory, seed);
+    const plan = plannedFromEmptyDirectory(workspaceHost);
+    expect(() => applyWorkspacePlan(workspaceHost, plan, skeletonRoot, composeApplyOptions(seedSkillCatalogue(["advisor"])))).toThrow(
+      /Foundry supplier tree/,
+    );
+    expect(tree(directory)).toEqual(treeAfterClone(seed));
+  });
+});
+
+describe("appoint never overwrites an existing package name (#1585)", () => {
+  it("keeps an existing name when appointing a checkout whose origin is <owner>/workspace", () => {
+    const directory = tempDir();
+    mkdirSync(join(directory, ".git"));
+    writeFileSync(join(directory, "package.json"), `${JSON.stringify({ name: "records", private: true }, null, 2)}\n`);
+    writeInventory(directory, [{ id: "acme/app" }]);
+    const workspaceHost = host(directory, {
+      "gh --version": { status: 0, stdout: "gh 2.0.0\n", stderr: "" },
+      "git --version": { status: 0, stdout: "git 2.0.0\n", stderr: "" },
+      "git remote get-url origin": { status: 0, stdout: "git@github.com:acme/workspace.git\n", stderr: "" },
+      "gh api user --jq .login": { status: 0, stdout: "acme\n", stderr: "" },
+      "gh org list": { status: 0, stdout: "", stderr: "" },
+      "gh repo view acme/workspace --json name": { status: 0, stdout: '{"name":"workspace"}\n', stderr: "" },
+      "npm view @clossys/advisor version": { status: 0, stdout: "0.5.0\n", stderr: "" },
+      "npm view @clossys/integrator version": { status: 0, stdout: "0.8.2\n", stderr: "" },
+    });
+    const plan = planWorkspace(observeWorkspace(workspaceHost), workspaceHost);
+    expect(plan).toMatchObject({ action: "adopt", owner: "acme", repository: "workspace" });
+    if (plan.action === "refuse") throw new Error(plan.message);
+    const result = applyWorkspacePlan(workspaceHost, plan, skeletonRoot, composeApplyOptions(seedSkillCatalogue(["advisor"])));
+    const manifest = JSON.parse(readFileSync(join(directory, "package.json"), "utf8")) as { name: string; devDependencies: Record<string, string> };
+    expect(manifest.name).toBe("records");
+    expect(manifest.devDependencies).toEqual({ [ADVISOR_PACKAGE]: "0.5.0", [INTEGRATOR_PACKAGE]: "0.8.2" });
+    expect(result.message).toMatch(/^appointed acme\/workspace/);
   });
 });

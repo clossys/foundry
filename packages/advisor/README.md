@@ -296,7 +296,11 @@ repository can be public when the hub is not. So a snapshot carries only
 each field's fixed choice ids: `toEngagementBrief()` throws on a known
 field whose `value` is not one of them (a founder's own "something else"
 sentence, or a slugified form of it), and on a field id that appears
-twice, rather than copying it into the brief.
+twice, rather than copying it into the brief. A context whose
+`schemaVersion` is not 1 is refused the same way, and a rejected field id
+is never echoed in the error. Each field's `id`, `state` and `value` is
+read once, so a getter-backed field cannot pass the check and then write
+other text.
 
 The field ids double as reserved intake question ids: a role's own
 intake card may not reuse one, because that question belongs to the
@@ -304,7 +308,8 @@ context card above. Foundry's package-framework gate reports a reused
 id as `intake-card-duplicates-context-field` (report mode, a warning;
 `--enforce`, a finding). Intake and context ids are lowercase slugs, and
 the comparison ignores case and surrounding whitespace, so `Audience` or
-` audience` is the same reserved id.
+` audience` is the same reserved id. Only the package-framework gate runs
+this reused-id check; the package-conformance gate never does.
 
 ## Client problem vocabulary and confirmation
 
@@ -375,6 +380,12 @@ digits in each part and no prerelease or build suffix, and one canonical
 `sha512-` integrity value) and
 `resolution` (`{ snapshotDigest }`), typed as `AdvisorPlanKit`,
 `AdvisorPlanStaffing`, `AdvisorPlanPackageAct` and `AdvisorPlanResolution`.
+A plan may also declare `delegatedCopyApproval` (`{ target: "production", scopes? }`,
+typed as `AdvisorPlanDelegatedCopyApproval`, issue #1586): copy a delegate
+approved is accepted on production, in the listed copy entry-id namespaces or,
+without `scopes`, in every one. `@clossys/writer` honours it only through an
+approval that names this plan's digest; `scopes` is never empty, and a
+repeated item is redundant, not refused.
 A decision (`AdvisorPlanDecision`) may carry `subjectDigest`.
 Once the schema passes, `validateAdvisorPlan()` applies the code rules the
 contract's description defines, each finding with the rule
@@ -447,6 +458,8 @@ top-level object`) (#1475). A position, in this and every other strict-JSON
 message, is a 0-based index into the decoded text in UTF-16 code units
 (JavaScript's string index): it equals the byte offset only for ASCII
 text, and a character outside the Basic Multilingual Plane counts as two.
+
+When a plan carries `delegatedCopyApproval`, the "Recommended next" section ends with one more line after a blank one, so the person about to approve sees that approving also accepts delegate-approved copy on production: `Approving this plan also accepts delegate-approved copy on production, for every copy entry.` when the declaration has no `scopes`, or `Approving this plan also accepts delegate-approved copy on production, only for copy entries under: ` followed by each distinct scope once, in first-occurrence order, each as a code span and joined by `, `, and ending in `.` when it does. The line is built from the declaration's own digest-covered fields only, and a plan without the field renders exactly as before. `renderAdvisorStatus()` does not validate its input first, so it throws a `TypeError` naming the position, never the value, for a target other than `production`, an empty `scopes` list, a scope outside the shape the plan contract accepts for a copy entry-id namespace, or a member the declaration does not define. STATUS shows no digest and cannot prove the approver read it, or that a committed STATUS still matches its plan; the approval binds the plan's digest, not this text.
 
 ## Exact packages from a registry snapshot (issue #1178)
 

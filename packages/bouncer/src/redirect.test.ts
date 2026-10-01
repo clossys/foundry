@@ -36,6 +36,28 @@ describe("safe redirects", () => {
     expect(resolveSafeRedirect("/account", policy, "https://outside.example.test")).toBeUndefined();
   });
 
+  it("rejects targets whose normalised path is protocol-relative", () => {
+    for (const target of [
+      "/.//x",
+      "/%2e//x",
+      "/%2e%2e//x",
+      "/..//x",
+      "/a/..//x",
+      "https://app.example.test/.//x",
+    ]) {
+      expect(resolveSafeRedirect(target, policy, "https://app.example.test")).toBeUndefined();
+    }
+    // A percent-encoded dot that is itself escaped stays a literal segment, so
+    // the path keeps a single leading slash and remains on origin.
+    expect(resolveSafeRedirect("/%252e//x", policy, "https://app.example.test")).toBe("https://app.example.test/%252e//x");
+  });
+
+  it("rejects targets carrying control characters", () => {
+    for (const target of ["/acc\tount", "/account\nnext", "/.\t//x", "/x\u0000", "/x\u007f"]) {
+      expect(resolveSafeRedirect(target, policy, "https://app.example.test")).toBeUndefined();
+    }
+  });
+
   it("throws when a path-style target is given with no baseOrigin at all", () => {
     // Omitting baseOrigin entirely for a path-style target is a caller
     // programming error, not a security outcome — it must be distinguishable
