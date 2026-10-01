@@ -437,6 +437,49 @@ export function copyIdForSignInError(error: unknown, codes: SignInFailureCodeTab
 }
 ```
 
+## Front-door conformance
+
+`checkFrontDoorHttp` runs a host's handler through cookie-less GET requests
+and returns every way its responses break the gated-host rules, so a host that
+drifts fails in its own test. The expected values come from the helpers above
+and from the production variant of `createSiteSecurityHeaders`. It uses Fetch
+globals only and calls the handler in process: no test runner, browser,
+framework or network call. A handler that throws is a `handler-threw`
+violation, never a throw.
+
+| Rule | Checked on |
+| --- | --- |
+| `robots-tag` | Every response: `X-Robots-Tag` is the gated-host robots tag |
+| `no-store` | Sign-in, boundary and 503 responses: `Cache-Control` carries the `no-store` directive |
+| `sign-in-status` | A sign-in path answers a status below 400 |
+| `boundary-status` | A boundary path answers 301, 302, 303, 307 or 308 with a `Location`, or 401 or 403 |
+| `security-headers` | Sign-in responses: `Strict-Transport-Security`, `Referrer-Policy` and `Permissions-Policy` equal the production baseline, and `Content-Security-Policy` is non-empty |
+| `robots-txt` | The robots path answers 200 with the deny-all body |
+| `health` | The health path answers with the status and body of `createHealthRoute()()`, with no redirect |
+| `service-unavailable` | Your `serviceUnavailable` response is a 503 with a non-negative integer `Retry-After` and the body of `createServiceUnavailableResponse()` |
+| `handler-threw` | The handler or `serviceUnavailable` threw or rejected |
+
+`robotsPath` defaults to `/robots.txt` and `healthPath` to `/health`. A
+redirect is read as returned, never followed. `origin` must be an absolute URL,
+or the call rejects with `TypeError`.
+
+```ts
+import { assertFrontDoorHttp, createServiceUnavailableResponse } from "@clossys/bouncer";
+
+// `handle` is your host's request handler, for example your framework's fetch entry.
+export async function frontDoorConforms(handle: (request: Request) => Response | Promise<Response>) {
+  await assertFrontDoorHttp(
+    {
+      origin: "https://app.example",
+      signInPaths: ["/sign-in"],
+      boundaryPaths: ["/dashboard"],
+      serviceUnavailable: () => createServiceUnavailableResponse(),
+    },
+    handle,
+  );
+}
+```
+
 ## Exports
 
 ### Root — `@clossys/bouncer`
@@ -509,6 +552,8 @@ answer.
 | `GatedHostHeaderOptions`, `ServiceUnavailableOptions` | Their option types |
 | `SIGN_IN_FAILURE_CLASSES`, `classifySignInFailure`, `signInFailureCopyId` | Sign-in failure classes and their Writer copy ids. Never provider text |
 | `SignInFailureClass`, `SignInFailureShape`, `SignInFailureCodeTable`, `SignInFailureCopyId`, `ClassifySignInFailureOptions`, `SignInFailureCopyIdOptions` | Their types |
+| `checkFrontDoorHttp`, `assertFrontDoorHttp` | Front-door conformance kit, HTTP half: runs a handler through cookie-less GET requests and returns, or throws, every violation of the gated-host rules |
+| `FrontDoorHttpConfig`, `FrontDoorViolation`, `FrontDoorRule` | Its config, one violation, and the rule names |
 
 ### `./agent`
 
