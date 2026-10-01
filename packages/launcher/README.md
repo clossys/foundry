@@ -731,7 +731,11 @@ in this package).
   of the whole file, like any other whole file, with no marker inside it: an
   existing guide file the ledger does not record is refused as
   `unowned-existing`, and only a setup set adopts one whose bytes are already
-  exactly the guide. `verify` compares the head's bytes with the set's digest
+  exactly the guide. A repository set up before the guide existed has neither
+  a ledger row nor a file there, so an apply set adds the guide, and admission
+  and the ledger's succession rules accept that one add and no other, only
+  where the ledger has no row for it and nothing is on disk at its path.
+  `verify` compares the head's bytes with the set's digest
   and with `verifyAgentsGuide()`; any difference is `diverged`, and `status`
   reports it as `agents-guide-mismatch`, printing only that token and the pull
   request number, never file text. The repository's own root `AGENTS.md` and

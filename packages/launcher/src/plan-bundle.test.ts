@@ -12,7 +12,7 @@ import { readInstalledLedger, renderInstalledLedger, serializeInstalledLedger } 
 import type { InstalledLedger } from "./ledger-contract.js";
 import * as keyEditor from "./key-editor.js";
 import { editJsonPointer } from "./key-editor.js";
-import { AGENTS_GUIDE_TEXT } from "./agents-guide.js";
+import { AGENTS_GUIDE_PATH, AGENTS_GUIDE_TEXT } from "./agents-guide.js";
 import { SITE_ID as SETUP_SITE_ID, setupInputs, setupObservation } from "./plan-bundle-setup-fixture.js";
 import { PUBLIC_PROBLEM_PLACEHOLDER, planApplyBundle, projectEngagementBrief, serializeComposedSkillsManifest, serializeEngagementBrief } from "./plan-bundle.js";
 import type { PlanApplyBundleInputs, RepositoryObservation } from "./plan-bundle.js";
@@ -763,6 +763,37 @@ describe("the Launcher guide", () => {
     expect(set.files.find((file) => file.path === GUIDE_PATH)).toMatchObject({ before: sha(AGENTS_GUIDE_TEXT), after: sha(AGENTS_GUIDE_TEXT) });
     expect(set.refused.filter((refusal) => "path" in refusal && refusal.path === GUIDE_PATH)).toEqual([]);
   });
+
+  describe("an apply set over an install set up before the guide existed", () => {
+    const ADVISOR_SKILL = ".agents/skills/clossys-advisor/SKILL.md";
+    const applySite = (patch: Partial<RepositoryObservation> = {}) => setFor(applyOverSetup(patch).changeSets, SITE.id);
+    const guideRefusals = (set: RepositoryChangeSet) => set.refused.filter((refusal) => "path" in refusal && refusal.path === GUIDE_PATH);
+
+    it("pre-guide install adds the guide", () => {
+      expect(ledgerRowAfter(SETUP_GENERATION1(), GUIDE_PATH)).toBeUndefined();
+      const site = applySite();
+      expect(validateRepositoryChangeSet(site)).toEqual({ valid: true });
+      expect(site.phase).toBe("apply");
+      expect(guideRefusals(site)).toEqual([]);
+      expect(site.items.filter((item) => item.id === "agents-guide")).toEqual([{ id: "agents-guide", act: "write-record", source: "agents-guide" }]);
+      expect(site.files.filter((file) => file.path === GUIDE_PATH)).toEqual([{ path: GUIDE_PATH, mode: "100644", before: null, after: sha(AGENTS_GUIDE_TEXT), item: "agents-guide" }]);
+      expect(site.texts?.find((row) => row.path === GUIDE_PATH)?.text).toBe(AGENTS_GUIDE_TEXT);
+    });
+
+    it("existing unowned guide still refused", () => {
+      const site = applySite({ files: [...siteAfterSetup().files, { path: GUIDE_PATH, sha256: sha(AGENTS_GUIDE_TEXT) }] });
+      expect(validateRepositoryChangeSet(site)).toEqual({ valid: true });
+      expect(guideRefusals(site)).toEqual([{ path: GUIDE_PATH, reason: "unowned-existing", item: "agents-guide" }]);
+      expect(site.files.map((file) => file.path)).not.toContain(GUIDE_PATH);
+    });
+
+    it("other reserved paths unchanged", () => {
+      const site = applySite();
+      expect(site.refused).toEqual([{ path: ADVISOR_SKILL, reason: "unowned-existing", item: "skills" }]);
+      expect(site.files.map((file) => file.path)).not.toContain(ADVISOR_SKILL);
+      expect(site.texts?.map((row) => row.path)).not.toContain(ADVISOR_SKILL);
+    });
+  });
 });
 
 describe("the installed-state ledger", () => {
@@ -775,18 +806,20 @@ describe("the installed-state ledger", () => {
     const site = setFor(result.changeSets, SITE.id);
     expect(validateRepositoryChangeSet(site)).toEqual({ valid: true });
     const baseline = corpusSet("apply-after-setup");
-    expect(wholeFiles(site).map((file) => file.path)).toEqual(wholeFiles(baseline).map((file) => file.path));
+    // The corpus set predates the guide, and so does this install's ledger: the second run adds the guide and keeps every other file.
+    expect(wholeFiles(site).map((file) => file.path)).toEqual([...wholeFiles(baseline).map((file) => file.path), AGENTS_GUIDE_PATH].sort());
     const ledger = SETUP_GENERATION1();
     for (const file of wholeFiles(site)) {
+      if (file.path === AGENTS_GUIDE_PATH) {
+        expect(file).toMatchObject({ before: null, after: sha(AGENTS_GUIDE_TEXT), item: "agents-guide" });
+        continue;
+      }
       const row = ledgerRowAfter(ledger, file.path);
       expect(row, file.path).toBeDefined();
       expect(file.before).toBe(row);
     }
     expect(site.keys).toEqual([]);
-    expect(site.refused).toEqual([
-      { path: ".agents/skills/clossys-advisor/SKILL.md", reason: "unowned-existing", item: "skills" },
-      { path: "clossys/AGENTS.md", reason: "unowned-existing", item: "agents-guide" },
-    ]);
+    expect(site.refused).toEqual([{ path: ".agents/skills/clossys-advisor/SKILL.md", reason: "unowned-existing", item: "skills" }]);
     expect(site.items.find((item) => "planItem" in item && item.planItem === STARTER.planItem)).toMatchObject({ satisfiedInBase: true });
     expect(site.ledger).toEqual({ generation: 2 });
     expect(site.files.find((file) => file.path === LEDGER)).toMatchObject({ derived: true, invariants: [{ ledgerGeneration: 3 }], before: sha(second.ledger!) });
@@ -854,10 +887,15 @@ describe("the installed-state ledger", () => {
         ]),
       );
       expect(site.files.map((file) => file.path)).not.toContain(path);
-      expect(wholeFiles(site)).toHaveLength(wholeFiles(corpusSet("apply-after-setup")).length - 1);
+      // One owned file is refused and the guide is added: the count is the corpus set's.
+      expect(wholeFiles(site)).toHaveLength(wholeFiles(corpusSet("apply-after-setup")).length);
       const ledger = readInstalledLedger(second.ledger!)!;
       for (const file of wholeFiles(site)) {
         if (file.path === path) continue;
+        if (file.path === AGENTS_GUIDE_PATH) {
+          expect(file.before).toBeNull();
+          continue;
+        }
         expect(file.before, file.path).toBe(ledgerRowAfter(ledger, file.path));
       }
       expect(siteEntry(result)).toMatchObject({
@@ -1098,10 +1136,7 @@ describe("setup templates in an apply set", () => {
     expect(site.items.filter((item) => TEMPLATE_IDS.includes(item.id))).toEqual(corpus.items.filter((item) => TEMPLATE_IDS.includes(item.id)));
     expect(templateFiles(site)).toEqual(templateFiles(corpus));
     expect(site.pathAllowList).toEqual(corpus.pathAllowList);
-    expect(site.refused).toEqual([
-      { path: ".agents/skills/clossys-advisor/SKILL.md", reason: "unowned-existing", item: "skills" },
-      { path: "clossys/AGENTS.md", reason: "unowned-existing", item: "agents-guide" },
-    ]);
+    expect(site.refused).toEqual([{ path: ".agents/skills/clossys-advisor/SKILL.md", reason: "unowned-existing", item: "skills" }]);
     expect(siteEntry(result).checks).toContainEqual({ check: "V8", verdict: "indeterminate", rule: "unowned-existing" });
   });
 

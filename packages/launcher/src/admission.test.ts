@@ -3,6 +3,7 @@ import { existsSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { decideBinding, decideSetBinding, planPackagesFor, readHubAuthority, verifyAdmittedSuccession, checkSuccession } from "./admission.js";
 import type { AdmissionRefusal, DecideBindingInput, ReadinessRunner } from "./admission.js";
+import { AGENTS_GUIDE_PATH, AGENTS_GUIDE_TEXT } from "./agents-guide.js";
 import { approvedSubject } from "./apply-plan.js";
 import { LEDGER_PATH, contentDigest, dependencyPointer, validateRepositoryChangeSet } from "./change-set-contract.js";
 import type { RepositoryChangeSet } from "./change-set-contract.js";
@@ -1346,5 +1347,92 @@ describe("K11: the execution authorization is current (readiness)", () => {
       baseLedgerBytes: null,
     });
     expect(result).toEqual(approved(bundle.bundleDigest));
+  });
+});
+
+describe("an install set up before the Launcher guide existed", () => {
+  const GUIDE_ITEM = { id: "agents-guide", act: "write-record", source: "agents-guide" };
+  /** The apply set adds the guide: an item and a whole file, before null, whose bytes are the constant text. */
+  const addGuide = (a: Loose, texts: Record<string, string>, patch: { before?: string | null; after?: string; mode?: string } = {}): void => {
+    a.items.push(clone(GUIDE_ITEM));
+    a.files.push({
+      path: AGENTS_GUIDE_PATH,
+      mode: patch.mode ?? "100644",
+      before: patch.before === undefined ? null : patch.before,
+      after: patch.after ?? contentDigest(AGENTS_GUIDE_TEXT),
+      item: "agents-guide",
+    });
+    texts[AGENTS_GUIDE_PATH] = AGENTS_GUIDE_TEXT;
+    normalize(a);
+  };
+  const guideWorld = (patch: Parameters<typeof addGuide>[2] = {}, more: WorldOptions = {}) => world({ ...more, editApply: (a, texts) => addGuide(a, texts, patch) });
+  const withTree = (w: World, edit: (tree: World["tree"]) => void) => {
+    const tree = new Map(w.tree);
+    edit(tree);
+    return tree;
+  };
+
+  it("admits an apply set that adds the guide, and no other change", () => {
+    const w = guideWorld();
+    expect(validateRepositoryChangeSet(w.apply)).toEqual({ valid: true });
+    expect(w.setup.items.some((entry) => entry.id === "agents-guide")).toBe(false);
+    expect(run(w)).toEqual(admitted(w));
+  });
+
+  it("refuses the guide add when the base already holds anything at the guide's path", () => {
+    const w = guideWorld();
+    const held: [string, (tree: World["tree"]) => void][] = [
+      ["a file", (tree) => void tree.set(AGENTS_GUIDE_PATH, { mode: "100644", bytes: new TextEncoder().encode(AGENTS_GUIDE_TEXT) })],
+      ["a file with other bytes", (tree) => void tree.set(AGENTS_GUIDE_PATH, { mode: "100644", bytes: new TextEncoder().encode("a client file\n") })],
+      ["a directory", (tree) => void tree.set(`${AGENTS_GUIDE_PATH}/inner.md`, { mode: "100644", bytes: new Uint8Array(0) })],
+      ["a case variant", (tree) => void tree.set("clossys/agents.md", { mode: "100644", bytes: new TextEncoder().encode("a client file\n") })],
+    ];
+    for (const [label, edit] of held) expect(run(w, {}, { tree: withTree(w, edit) }), label).toEqual(aa("guide-not-absent"));
+  });
+
+  it("refuses the guide add when its bytes are not the constant text, and the contract itself refuses it as a link", () => {
+    const w = guideWorld({ after: contentDigest("another guide\n") });
+    expect(validateRepositoryChangeSet(w.apply)).toEqual({ valid: true });
+    expect(run(w)).toEqual(aa("file-not-setup"));
+    expect(validateRepositoryChangeSet(guideWorld({ mode: "120000" }).apply)).toMatchObject({ valid: false });
+  });
+
+  it("still refuses every other added whole file, with the guide added or not", () => {
+    for (const withGuide of [false, true]) {
+      const w = world({
+        editApply: (a, texts) => {
+          if (withGuide) addGuide(a, texts);
+          wholeFile(a, "clossys/brief.json").before = null;
+        },
+      });
+      expect(run(w), String(withGuide)).toEqual(aa("file-not-noop"));
+    }
+  });
+
+  it("still refuses the guide as a keep when the setup set did not write it, and any other item added beside it", () => {
+    expect(run(guideWorld({ before: contentDigest(AGENTS_GUIDE_TEXT) }))).toEqual(aa("file-not-setup"));
+    const extra = world({
+      editApply: (a, texts) => {
+        addGuide(a, texts);
+        a.items.push({ id: "agents-pointer", act: "write-record", source: "agents-pointer" });
+        a.files.push({ path: "AGENTS.md", mode: "100644", before: null, after: contentDigest("pointer\n"), item: "agents-pointer" });
+        a.pathAllowList.push("AGENTS.md");
+        normalize(a);
+      },
+    });
+    expect(run(extra)).toEqual(aa("items-differ"));
+  });
+
+  it("keeps the old rule once the setup set carries the guide: the apply set must keep it, and may not add it again", () => {
+    const setupWrites = (s: Loose, texts: Record<string, string>): void => {
+      s.items.push(clone(GUIDE_ITEM));
+      s.files.push({ path: AGENTS_GUIDE_PATH, mode: "100644", before: null, after: contentDigest(AGENTS_GUIDE_TEXT), item: "agents-guide" });
+      texts[AGENTS_GUIDE_PATH] = AGENTS_GUIDE_TEXT;
+      normalize(s);
+    };
+    const keeps = world({ editSetup: setupWrites, editApply: (a, texts) => addGuide(a, texts, { before: contentDigest(AGENTS_GUIDE_TEXT) }) });
+    expect(run(keeps)).toEqual(admitted(keeps));
+    const adds = world({ editSetup: setupWrites, editApply: (a, texts) => addGuide(a, texts) });
+    expect(run(adds)).toEqual(aa("file-not-noop"));
   });
 });
