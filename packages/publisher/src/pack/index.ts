@@ -38,3 +38,14 @@ export type {
   LegacyV0PackStatus,
   LegacyV0PackWriteResult,
 } from "./legacy-v0.js";
+
+export { checkSealEvidence, sealWebsite } from "./seal.js";
+export type {
+  CheckSealEvidenceOptions,
+  SealFinding,
+  SealWebsiteInput,
+  SealWebsiteResult,
+  WebsiteSealContactIntake,
+  WebsiteSealEvidence,
+  WebsiteSealPage,
+} from "./seal.js";
