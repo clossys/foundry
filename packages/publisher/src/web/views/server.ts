@@ -40,3 +40,7 @@ export type { ContactViewCopy, ContactViewDevPreview, ContactViewProps, ContactV
 export type { SignInFailure, SignInFormProps, SignInResult } from "./SignInForm.js";
 export { GlobalErrorDocument } from "./GlobalErrorDocument.js";
 export type { GlobalErrorDocumentProps } from "./GlobalErrorDocument.js";
+export { ActivateForm } from "./ActivateForm.server.js";
+export type { ActivateDetails, ActivateFailure, ActivateFormProps, ActivateResult } from "./ActivateForm.js";
+export { ResetForm } from "./ResetForm.server.js";
+export type { ResetDetails, ResetFailure, ResetFormProps, ResetResult } from "./ResetForm.js";

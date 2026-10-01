@@ -125,6 +125,8 @@ export { SignInForm } from "#publisher-web-views";
 export type { SignInFailure, SignInFormProps, SignInResult } from "#publisher-web-views";
 export { GlobalErrorDocument } from "#publisher-web-views";
 export type { GlobalErrorDocumentProps } from "#publisher-web-views";
+export { ActivateForm, ResetForm } from "#publisher-web-views";
+export type { ActivateDetails, ActivateFailure, ActivateFormProps, ActivateResult, ResetDetails, ResetFailure, ResetFormProps, ResetResult } from "#publisher-web-views";
 
 // Kept after the views: the share card reads Designer names newer than the views do, and a Designer that lacks the views' names must fail on those first.
 export {

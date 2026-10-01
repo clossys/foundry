@@ -105,6 +105,8 @@ export { SignInForm } from "./views/index.js";
 export type { SignInFailure, SignInFormProps, SignInResult } from "./views/index.js";
 export { GlobalErrorDocument } from "./views/index.js";
 export type { GlobalErrorDocumentProps } from "./views/index.js";
+export { ActivateForm, ResetForm } from "./views/index.js";
+export type { ActivateDetails, ActivateFailure, ActivateFormProps, ActivateResult, ResetDetails, ResetFailure, ResetFormProps, ResetResult } from "./views/index.js";
 
 // Kept after the views: the share card reads Designer names newer than the views do, and a Designer that lacks the views' names must fail on those first.
 export {
