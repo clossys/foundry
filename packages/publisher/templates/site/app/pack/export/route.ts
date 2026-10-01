@@ -1,6 +1,6 @@
-import { readFileSync, realpathSync } from "node:fs";
-import { resolve, sep } from "node:path";
+import { resolve } from "node:path";
 import { packReviewExportResponse, resolvePackReviewExport } from "../../pack-review";
+import { readPackReviewFile } from "../../pack-review-files";
 import { loadPackManifest } from "../../site-records";
 
 // The dev-only export route: the OG image, the notification email and its
@@ -11,13 +11,11 @@ import { loadPackManifest } from "../../site-records";
 export const dynamic = "force-dynamic";
 
 // An output path is relative to the repository root, two levels above the app.
-// The index has already refused an absolute path and a `..` segment; the
-// resolved path must also stay inside the root once links are followed.
+// The index has already refused an absolute path and a `..` segment;
+// `readPackReviewFile` also keeps the resolved path inside the root once links
+// are followed.
 function loadOutput(path: string): Uint8Array {
-  const root = realpathSync(resolve(process.cwd(), "..", ".."));
-  const target = realpathSync(resolve(root, path));
-  if (!target.startsWith(root + sep)) throw new Error("The export is outside the repository.");
-  return readFileSync(target);
+  return readPackReviewFile(resolve(process.cwd(), "..", ".."), path);
 }
 
 // The one request input is `name`: it is looked up among the review index's

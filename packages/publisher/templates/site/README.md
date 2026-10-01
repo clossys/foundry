@@ -81,7 +81,7 @@ applies at its cascade scope, or that the template builds.
   contact handler, client key, legal gate); `app/site-contact.ts` and
   `app/site-delivery.ts` assemble it.
 - `app/pack/page.tsx`, `app/pack/export/route.ts`, `app/pack-review.ts`,
-  `app/pack-review-copy.ts` — the dev-only pack review (`PackReviewView`):
+  `app/pack-review-files.ts`, `app/pack-review-copy.ts` — the dev-only pack review (`PackReviewView`):
   `/pack` lists each route in the manifest below with the contact page's forced
   states, the exports named in `clossys/publisher/pack.json`, and a lazy
   contact sheet at 390, 1024 and 1440 px. Each page, forced state and frame
@@ -90,16 +90,24 @@ applies at its cascade scope, or that the template builds.
   375 px entries) and the plain-text email from the path `pack.json` lists
   for that id; a name that is not an id of the index, or an output that cannot
   be read, answers 404. Both routes share one gate (`packReviewGate`): they are
-  served only when `SITE_TARGET` is `development` or `test` and `VERCEL_ENV` is
-  absent or `development`. On `production`, `preview`, an absent value and any
-  value not listed, or when `VERCEL_ENV` is `production`, `preview` or any
-  other value, the page's own decision answers the 404 page and the export
+  served only when `SITE_TARGET` is `development` or `test`, `VERCEL_ENV` is
+  absent or `development`, and `NODE_ENV` is absent, `development` or `test`
+  (`next dev` sets `development`; `next build` and `next start` set
+  `production`, so a self-hosted production build is closed). On `production`,
+  `preview`, an absent value and any value not listed, when `VERCEL_ENV` is
+  `production`, `preview` or any other value, or when `NODE_ENV` is
+  `production` or any other value (an empty string and a different letter case
+  included), the page's own decision answers the 404 page and the export
   route answers a bare 404, before any record or file is read. An unknown
   `SITE_TARGET` is closed too and no longer throws in the page. The template's
   root layout and `not-found.tsx` still read `SITE_TARGET` for the shared error
   copy, so an unknown value still fails there. An export is served with
-  `Content-Security-Policy: sandbox`, `nosniff` and `no-store`, and a type the
-  route does not list is a download. The page takes no request input; the
+  `Content-Security-Policy: sandbox`, `nosniff`, `no-store` and
+  `x-robots-tag: noindex, nofollow`, and a type the route does not list is a
+  download. The file is read through `app/pack-review-files.ts`, which resolves
+  the repository root and the file with `realpathSync` and serves only a file
+  inside the root, so a symlink that points outside it, a directory, the root
+  itself and a missing file each answer a bare 404. The page takes no request input; the
   export route takes only `name`, and uses it only to look an id up. Neither
   is in `web-route-manifest.json`, so neither is in the sitemap, and both
   render per request. `pack.json` is read at request time from
