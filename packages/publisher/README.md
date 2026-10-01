@@ -155,6 +155,7 @@ Use explicit subpaths:
 - `@clossys/publisher/surfaces` — the one-owner-per-file contract for surface documents under `clossys/publisher/surfaces/`. See "Surface documents move to Publisher," below.
 - `@clossys/publisher/materials` — the materials mini-site (overviews, pitch decks, audience variants). See "Materials site," below.
 - `@clossys/publisher/templates` — the pack's default templates and the channel spec registry. See "Templates and channel specs," below.
+- `@clossys/publisher/testing` — a test-support check that a consumer's front-door surfaces (sign-in, boundary and error pages) hold the shared invariants. See "Front-door conformance," below.
 
 The package has no root export. `core` is deliberately framework-agnostic;
 the web and document subpaths have optional React peers, while `web` also
@@ -353,8 +354,14 @@ Name a shipped template when its slots cover the page:
   "No account? Join the waitlist") renders below it, before the footnote, and
   is always the site's copy. An invitation or activation step never offers
   request-access or sign-up: the view has no mode and no `requestAccess`
-  prop, so each site's activation-page test asserts no request-access or
-  sign-up link. The content column uses the
+  prop, so each site's activation-page test should assert no request-access or
+  sign-up link. Pass each `secondaryAction` line as one element: text plus a
+  link in one fragment splits onto two lines. When the sign-in provider is
+  unavailable, `isDisabled` keeps the form on screen inside a disabled
+  `<fieldset>` with the typed values still shown; the explanation goes in the
+  form's own `submitError`, and a retry link in `secondaryAction` stays
+  enabled. Switching `isDisabled` remounts the form, so the site keeps the
+  typed values in its own state. The content column uses the
   `--ui-width-form-max` form measure, and `description` is a required prop
   so every step decides on a supporting line. The form slot is filled with
   Designer's `Form` / `TextField` / `Button`. There is no mode prop, and
@@ -362,7 +369,8 @@ Name a shipped template when its slots cover the page:
   (`{ label, message }`) renders a badge-labelled development note under the
   footnote, and a site passes it only in development. An auth page's
   `footerSecondary` holds a legal row only, never a locale switcher, because
-  auth pages are single-locale.
+  auth pages are single-locale. `SignInForm` fills the
+  form slot of a sign-in page.
 - **`ErrorView`** — error shell, including the sign-in-boundary states: not
   authorized (403), pending, revoked, and provider unavailable (503). It takes
   the same props for each; the status, title, description, and recovery
@@ -663,7 +671,8 @@ slots; `features` (required) and `faq` (optional) are **repeating** slots,
 each bound via a `SurfaceRepeatingSlotBinding` and rendered through
 `@clossys/designer`'s `FeatureGrid`/`Faq` blocks respectively. An empty
 `features` group with no `featuresHeading` or `featuresDescription` omits
-the grid; a `faq` binding that
+the grid. An empty `faq` group (`items: []`) still renders its section with
+zero entries; a `faq` binding that
 was never authored at all omits the whole FAQ section instead, which is a
 different, equally valid outcome (see `MarketingView`'s own `faq` prop doc
 comment).
@@ -1307,7 +1316,6 @@ const card = buildBrandShareCard({
   kicker: "Small tools",
   headline: "Made well, made to last",
   supporting: "A studio for small, useful tools.",
-  alt: "Example Studio",
   displayFontFamily: "Example Display", // optional, for the wordmark and headline
 });
 
@@ -1347,6 +1355,8 @@ const card = buildBrandShareCard({
   must have it.
 - **Refusals.** It throws `ShareCardError` with the existing closed reasons and
   no new one; the error text never echoes input.
+- **Route.** `createShareCardRoute` wraps this card as the exports of an
+  `opengraph-image` route; see [Share card route](#share-card-route--createsharecardroute).
 
 ## `media` — the asset registry contract, responsive images, and video (v2)
 
@@ -1934,6 +1944,12 @@ No theme script runs in this document, so it is pinned to the light theme
 Brand tokens are not imported here: import your brand stylesheet in the same
 global-error file that renders this component, as your root layout does.
 
+Brand fonts loaded through a framework font loader usually expose their CSS
+variables through a class that must sit on `<html>`, and brand tokens that
+reference those variables lose them when this document replaces the root
+layout. Pass that class as the optional `htmlClassName` prop; it is rendered as
+`className` on `<html>` only when it is a non-empty string.
+
 ```tsx
 "use client";
 
@@ -1959,13 +1975,130 @@ Next requires the global-error file to be a client module, so it starts with
 its own: put it in `description` as caller copy (`Error: <digest>.`). A
 segment `error` boundary keeps the layout, so use `ErrorView` there instead.
 
+### `SignInForm`
+
+`SignInForm`, exported from `@clossys/publisher/web`, is an identifier-first
+sign-in form for `AuthView`'s form slot: an identifier step, then a password
+step, then an optional code step. It imports no identity provider and reads no
+browser global; the caller injects the handlers (an adapter package can supply
+them) and decides where to go once signed in. It is a client component, so
+import it from a module that is a client boundary. Under the `react-server`
+condition the name is a stub that throws a `RenderError` when called. The
+page's `<h1>` stays `AuthView`'s.
+
+```tsx
+import { AuthView, SignInForm } from "@clossys/publisher/web";
+import type { SignInResult } from "@clossys/publisher/web";
+
+declare const brand: React.ReactNode;
+declare function lookUp(identifier: string): Promise<SignInResult>; // your handler
+declare function check(secret: string): Promise<SignInResult>; // your handler
+declare function checkCode(code: string): Promise<SignInResult>; // optional, for the code step
+declare function sendNewCode(): Promise<SignInResult>; // optional, for the code step
+declare function goToApp(): void;
+
+export function SignInPage() {
+  return (
+    <AuthView
+      brand={brand}
+      heading="Sign in"
+      description="Continue to Acme Console."
+      form={
+        <SignInForm
+          identify={lookUp}
+          verify={check}
+          verifyCode={checkCode}
+          resendCode={sendNewCode}
+          onSignedIn={goToApp}
+          nouns={{ surface: "Acme Console" }}
+        />
+      }
+    />
+  );
+}
+```
+
+Props:
+
+- `identify(identifier)` and `verify(secret)`: each resolves to a
+  `SignInResult`, `{ status: "ok" }`, `{ status: "needsCode" }` or
+  `{ status: SignInFailure }`, where `SignInFailure` is `"credential"`,
+  `"notFound"`, `"rateLimited"`, `"locked"`, `"network"` or `"unavailable"`.
+  The union is closed. `identify` receives the identifier trimmed. A handler
+  that throws, or answers anything outside the union, reads as `unavailable`.
+- `verifyCode(code)` (optional): checks the one-time code on the code step and
+  resolves to a `SignInResult`. It receives the code trimmed.
+- `resendCode()` (optional): sends a new code and resolves to a `SignInResult`.
+  Without it the code step has no resend control. Any cooldown is the
+  caller's: answer `rateLimited`.
+- `unavailable` (optional): shows `front-door.unavailable.notice` in the
+  form's alert from the first render, disables the submit and resend buttons,
+  and calls no handler, while the form stays on screen. Pair it with
+  `AuthView`'s `isDisabled`.
+- `onSignedIn()`: called once after `verify` or `verifyCode` answers `ok`. The
+  form does not navigate, set a cookie or redirect.
+- `nouns` (optional): the nouns of the shipped wording. Pass `surface`, which
+  the network notice names; every id the form shows is resolved on each render
+  through `resolveFrontDoorCopy`, so an incomplete set throws a `RenderError`
+  `resolution-failed` naming the id, never a noun. The `identifier` noun is
+  the visitor's own entry and is not a prop.
+
+Steps: the identifier step asks for the identifier. After `identify` answers
+`ok` the password step shows "Signing in as" the identifier
+(`front-door.password.description`), the password field, and one ghost button
+(`front-door.password.secondary`) that returns to the identifier step with the
+identifier kept and the password cleared. There is no Back control inside the
+card. A `verify` answer of `ok` calls `onSignedIn` once and the submit button
+stays pending.
+
+The code step is a second step after a correct password, not a first factor.
+It shows only when `verify` answers `needsCode` and `verifyCode` is given:
+`front-door.code.description`, a code field (`front-door.code.label`,
+`autocomplete="one-time-code"`), the `front-door.code.primary` submit, a
+`front-door.code.secondary` resend button when `resendCode` is given, and the
+same `front-door.password.secondary` button, which returns to the identifier
+step with the identifier kept and the password and code cleared. A
+`verifyCode` answer of `ok` calls `onSignedIn` once and the submit button stays
+pending. A resend that answers `ok` clears the code and its inline error; a
+failed one shows in the alert and keeps the step and the typed code. A
+`needsCode` from `identify` or `verifyCode`, or from `verify` without
+`verifyCode`, reads as `unavailable`, so the form never shows a step it cannot
+finish. Each step change moves focus to the new step's field.
+
+Where each failure shows, on the step it happened in:
+
+| Result | Where | Copy id |
+| --- | --- | --- |
+| empty identifier | inline on the field | `front-door.identifier-required.notice` |
+| empty password | inline on the field | `front-door.password-required.notice` |
+| empty code | inline on the field | `front-door.code-required.notice` |
+| `credential` or `notFound`, identifier step | inline on the field | `front-door.identifier-not-found.notice` |
+| `credential` or `notFound`, password step | inline on the field | `front-door.password.notice` |
+| `credential` or `notFound`, code step | inline on the field | `front-door.code.notice` |
+| `rateLimited` | the form's one `role="alert"` | `front-door.rate-limited.notice` |
+| `locked` | the form's one `role="alert"` | `front-door.locked.notice` |
+| `network` | the form's one `role="alert"` | `front-door.network.notice` |
+| `unavailable`, a stray `needsCode`, a throw, an unknown answer, or the `unavailable` prop | the form's one `role="alert"` | `front-door.unavailable.notice` |
+
+Nothing is validated before a submit or on blur, and an empty submit calls no
+handler. An inline error clears when its field changes. The submit and resend
+buttons are pending, never `disabled`, while a call is in flight, and a second
+submit or resend is ignored. Each step's `<form>` is labelled with
+`front-door.sign-in.title`, `front-door.password.title` or
+`front-door.code.title`, and the form has no error summary.
+
+What it does not do: offer a passkey, single sign-on, sign-up or one-time-code
+first factor, run a resend cooldown, show a password-reset link, or choose a
+return target.
+
 ### `PackReviewView`
 
 `PackReviewView`, exported from `@clossys/publisher/web`, is the dev-only
 review index for a site release. One page lists every page of the site with its
 forced states, every exported artifact, and a contact sheet that renders each
 page and state in a lazy frame at 390, 1024 and 1440 px. Each page and export
-carries a `draft`, `delegated` or `approved` badge. It is server-safe, reads
+carries a `draft`, `delegated` or `approved` badge; each forced state and each
+contact-sheet frame shows its page's badge. It is server-safe, reads
 nothing, and ships no wording: the caller builds the entries with
 [`buildPackReviewIndex`](#reviewing-a-pack) and passes every visible string.
 
@@ -2011,14 +2144,18 @@ Props:
   text. Every `href` must be a same-site address (one leading slash, no
   `//`, no backslash, no control character); anything else throws a
   `RenderError` naming the position, never the value.
-- `exports`: `{ id, kind, path, status, width? }[]`. `path` is shown as plain
-  text and is never a link; `width` is the review width of an email export.
+- `exports`: `{ id, kind, path, status, href?, width? }[]`. `path` is shown as
+  plain text and is never a link; `href` is an optional same-site address
+  (the same rule as a page's), and when given the kind's name links to it;
+  `width` is the review width of an email export.
 - `labels`: `pagesHeading`, `exportsHeading`, `sheetHeading`, `none`, the
   `statuses` and `kinds` word for each, `exportWidth(width)` and
   `frameTitle({ page, state?, width })`. The view has no default wording.
 - `widths` (default `[390, 1024, 1440]`): positive whole numbers; others throw.
 
-An unknown `status` throws. Entry text is rendered as text: no markup from an
+Each section is named by its own `h2` through `aria-labelledby`, and a frame's
+caption puts a text separator between the page and the state. An unknown
+`status` throws. Entry text is rendered as text: no markup from an
 entry is injected, and the frames use `loading="lazy"` and never `srcDoc`. The
 view does not know whether it is running in development: gating it is the
 caller's job (the site template does, see its README).
@@ -2565,7 +2702,19 @@ the pack's `website` item can be sealed, and only on evidence that names it.
   evidence was taken. `observedAt` must be a real calendar date and time:
   `2026-09-31T00:00:00Z` is refused as a bad shape.
 - `delivery`: `{ state: "ready", deployedCommit, productionUrl }`, with an
-  `https` production URL.
+  `https` production URL in canonical form: exactly the string
+  `new URL(productionUrl).href` writes, with no username or password. A URL
+  that carries a username or password, or any non-canonical spelling (a
+  backslash, an empty userinfo, a control character or space, an upper-case
+  scheme or host, a default port, no path, dot segments), is refused as
+  `production-url-shape`, because the value is written as given to the ledger
+  `url` and the manifest `publishedTo` and other URL readers parse those
+  spellings differently. A path, query string or fragment is not refused when
+  it is already canonical; one with a character the parser would
+  percent-encode (a double quote, an angle bracket, a raw space, a non-ASCII
+  character) is refused. The host must be letters, digits, hyphens and dots,
+  or a bracketed IPv6 or an IPv4 literal; a quote, brace, semicolon or other
+  punctuation in it is refused.
 - `pages`: one `WebsiteSealPage` per observed page, each
   `{ path, status, servedCommit, desktopDigest, mobileDigest }`, the digests
   being sha256 hex.
@@ -2575,10 +2724,11 @@ the pack's `website` item can be sealed, and only on evidence that names it.
   and `none` needs a non-empty `reason`.
 
 `checkSealEvidence(evidence, { map, now, itemId })` returns `SealFinding[]`,
-each a `rule` and a `path`, and never throws. `itemId` is optional; when
-given, the evidence's own `itemId` must equal it. It refuses when:
+each a `rule` and a `path`, and never throws. `itemId` is required: the
+evidence's own `itemId` must equal it, and a missing or empty `itemId` is
+refused as `item-id-invalid`. It refuses when:
 
-- `itemId` is missing, or differs from the item being sealed;
+- the evidence's `itemId` is missing, or differs from the item being sealed;
 - `delivery.state` is not `ready`, or `deployedCommit` differs from `commit`;
 - a path on the `PublicationMap` has no page, or a page is not status 200, or
   its `servedCommit` differs from `commit`;
@@ -2593,7 +2743,7 @@ the entry id, which is derived from the item id and the commit.
 
 `sealWebsite({ manifest, ledger, itemId, evidence, map, now, strategyRevision })`
 is pure and returns `SealWebsiteResult`: `{ ok: true, manifest, ledger, entryId }`
-or `{ ok: false, findings }`. It refuses unless the evidence is clean, `itemId`
+or `{ ok: false, findings }` (`resumed` is explained below). It refuses unless the evidence is clean, `itemId`
 is `website` and in `sealableItemIds(manifest)`, and the item is `public`
 (`item-not-website` otherwise). On accept the item
 is `published` with `verifiedAt` set to `now` and `publishedTo` set to the
@@ -2601,6 +2751,17 @@ production URL, and the ledger gains one `web` entry through `appendEntry` with
 id `website-<itemId>-<first 12 of commit>`; the inputs are not changed. Sealing
 the same commit again is refused as `seal-already-recorded`, and a refusal
 returns no manifest or ledger.
+
+One existing entry is finished instead of refused. A run stopped after its
+ledger write and before its manifest write leaves the ledger ahead of a
+manifest whose item is still `kept`. If the ledger entry is identical to the
+one this evidence would record (same id, `web` channel, url and strategy
+revision, no fact citations, and a `publishedAt` that is a real instant not
+before the evidence's `observedAt` and not after `now`) and every other check passes on the current evidence, the result
+is `{ ok: true, resumed: true }`: the ledger is returned as given and the
+manifest item is `published` with `verifiedAt` set to the entry's
+`publishedAt`. An entry that differs in any of those is
+`seal-already-recorded`, and stale evidence is still refused.
 
 The `publisher-seal` command runs it over files:
 
@@ -2612,25 +2773,46 @@ publisher-seal clossys/publisher/pack.json clossys/publisher/record.json evidenc
 It exits 0 when it sealed and wrote both files, 1 when it refused and wrote
 nothing, and 2 when it could not run: a missing or unreadable file, invalid
 JSON, a manifest, ledger, or map that is not itself valid, a manifest or
-ledger that is a symbolic link or has a second hard link, a lock held by
-another run, a file that changed while the run was deciding, a failed write, or
-bad arguments.
+ledger that is a symbolic link or has a second hard link, the manifest and
+ledger being one file under two spellings of its directory, a lock held by
+another run or one that could not be created, a file that changed while the run
+was deciding, a failed write, or bad arguments.
 
 The seal is made at the current time. There is no `--now`: a settable time
 would let a caller backdate the 24 hour evidence window, so passing it is an
 unknown flag and exits 2.
 
 Nothing is written before the gate has accepted. Then the command takes
-`<file>.seal.lock` on the manifest and the ledger (created exclusively, so a
-second run is refused instead of racing), re-reads both, and refuses if either
-changed since the gate looked. It writes each output, and a copy of the
-previous ledger, to a temp file created exclusively with the permissions of the
-file it replaces, then renames the ledger first and the manifest second. If the
-manifest rename fails, the previous ledger is renamed back and the run can be
-repeated; if that fails too, the error says the ledger was written and names
-the file that holds the previous ledger. A run removes only the temp and lock
-files it created; a lock left by a run that stopped is removed by hand once no
-run is active.
+`<name>.seal.lock` on the manifest and the ledger, created exclusively in the
+real directory of each file (the directory is resolved first, so two spellings
+of one directory, such as a symbolic-linked parent, contend for the same lock),
+re-reads both, and refuses if either changed since the gate looked. Only an
+existing lock is reported as another run holding it; any other failure to
+create the lock is reported with its own error code. It writes each output,
+and a copy of the previous ledger, to a temp file created exclusively with the
+permissions of the file it replaces, then renames the ledger first and the
+manifest second. If the manifest rename fails, the previous ledger is renamed
+back and the run can be repeated; if that fails too, the error says the ledger
+was written and names the file that holds the previous ledger.
+
+A run that is stopped between the two renames leaves the ledger ahead of the
+manifest, both lock files, and a restore copy of the previous ledger. Remove
+the two `.seal.lock` files once no run is active, then run the same command
+again with the same evidence and `--strategy-revision`. The ledger already
+holds the identical entry and the item is still `kept`, so the command leaves
+the ledger alone, writes only the manifest (its `verifiedAt` is the entry's
+`publishedAt`), prints that the entry was already recorded, and exits 0. The
+restore copy can then be deleted. If the entry differs, the run is refused as
+`seal-already-recorded` and changes nothing. A run removes only the temp and
+lock files it created.
+
+Known limit: the evidence is supplied by the caller. The commit and the host it
+names are checked against each other and against the clock, but not against an
+independent source, so a caller that supplies false evidence can still seal.
+The production URL check refuses credentials and non-canonical spellings only;
+it does not inspect the path, the query string or the fragment, so a secret
+placed in any of them by the caller is written to the ledger and the manifest
+as given.
 
 ```ts
 import { checkSealEvidence } from "@clossys/publisher/pack";
@@ -2812,10 +2994,45 @@ Issue #1208: a Next.js App Router template that ships in this package's
 `templates/site/` directory (`files` includes `templates`, so it is part
 of the published tarball) — **not compiled, typechecked, or tested by
 this repository's own build**, the same way `packages/designer/templates/
-brand-type.template.json` is shipped-but-not-compiled content. Launcher
-(#1215) copies it into a product repository's own `apps/site`; see
+brand-type.template.json` is shipped-but-not-compiled content. See
 `templates/site/README.md`, shipped alongside it, for the full file list
 and what each page reads from that repository's own `clossys/` records.
+
+### Instantiating it (`publisher-site-instantiate`)
+
+The Launcher never generates application content, so a Publisher command
+copies the template, run once inside a pull request:
+
+```bash
+publisher-site-instantiate --root ./example-project --pins pins.json
+```
+
+`pins.json` is a JSON object of exact versions, for example
+`{ "@clossys/designer": "1.2.3", "@clossys/publisher": "1.2.3" }`, with one entry
+for every `@clossys/*` range the template declares. The command never reads a
+plan; whoever runs it extracts the pins from the approved plan. It copies the
+template found next to the installed package into `<root>/apps/site` (or
+`--site-dir <relative path>`), byte for byte except `package.json`, whose
+`@clossys/*` ranges become the pins, and adds `apps/*` to the root
+`package.json` workspaces when no pattern already covers the site.
+
+It exits `0` when done, `1` when it refuses, and `2` when it could not run. A
+refusal writes nothing. It refuses when:
+
+- the target directory exists and is not empty;
+- a `@clossys/*` range the template declares has no pin, or a pin is not an
+  exact `x.y.z` version;
+- the root `package.json` is missing, is not a JSON object, or has `workspaces`
+  in a shape the command cannot edit safely (neither absent, an array of
+  strings, nor an object whose `packages` is an array of strings);
+- `--site-dir` is absolute, contains `..`, or reaches outside the root through
+  a symlink;
+- the template holds a symlink.
+
+The site is written into a sibling temporary directory and renamed into place,
+and the root manifest through a temporary file and a rename, so a failed run
+leaves no `apps/site` and no changed root manifest. A message names a rule and
+a relative path, never a pin, the root path or file content.
 
 ## Preview gallery (`publisher-preview`)
 
@@ -2918,11 +3135,12 @@ cosmetic gap.
   `lintSiteMetadataHtml`, `SITE_METADATA_REQUIRED_TAGS`, `SiteMetadataError`,
   `listWebTemplateNames`, `defineWebTemplate`, `createWebRenderer`,
   `AuthView`, `CaptureView`, `CollectionView`, `DocumentView`, `ErrorView`,
-  `LegalView`, `MarketingView`, `PackReviewView`, `SectionedView`, `RenderError`, and the `AuthViewProps`,
+  `LegalView`, `MarketingView`, `PackReviewView`, `SectionedView`, `SignInForm`, `RenderError`, and the `AuthViewProps`,
   `CaptureViewProps`, `CollectionViewEmptyState`, `CollectionViewEntry`,
   `CollectionViewLink`, `CollectionViewPagination`, `CollectionViewProps`,
   `DocumentViewEffectiveDate`, `DocumentViewProps`,
   `ErrorViewProps`, `LegalViewLabels`, `LegalViewProps`, `MarketingViewProps`, `MarketingFeatureItem`, `MarketingFaqItem`,
+  `SignInFailure`, `SignInFormProps`, `SignInResult`,
   `PackReviewViewExport`, `PackReviewViewLabels`, `PackReviewViewPage`, `PackReviewViewProps`, `PackReviewViewState`,
   `SectionedViewLandmark`, `SectionedViewProps`,
   `RenderErrorReason`, `AssetResolver`, `CopyResolver`, `RenderWebOptions`,
@@ -2934,7 +3152,7 @@ cosmetic gap.
   `SiteOpenGraphMetadata`, `SitePageInput`, `SitePageKind`, `SiteShareCard`,
   `SiteTwitterMetadata`, `SiteMetadataLintFinding`, `SiteMetadataLintResult`,
   `SiteMetadataLintRule`, `SiteMetadataRequiredTag`, and
-  `SiteMetadataTagSelector` types, plus `GlobalErrorDocument` and `GlobalErrorDocumentProps`.
+  `SiteMetadataTagSelector` types, plus `GlobalErrorDocument` and `GlobalErrorDocumentProps`, and `ActivateForm`, `ResetForm`, `ActivateDetails`, `ActivateFailure`, `ActivateFormProps`, `ActivateResult`, `ResetDetails`, `ResetFailure`, `ResetFormProps` and `ResetResult` (see "Activation and reset forms").
 - `document`: `validateStructuredDocument`, `renderStructuredDocument`,
   `RenderError`, and the `DocumentBlock`, `DocumentCallout`,
   `DocumentColumnStyle`, `DocumentDefinitionList`, `DocumentInline`, `DocumentList`,
@@ -2998,6 +3216,10 @@ cosmetic gap.
   `EmailSignatureLink`, `EmailSignaturePerson`, `ChannelImageSpec`,
   `ChannelTextLimit`, `SocialChannelSpec`, and `VideoCallBackgroundSpec`
   types. See "Templates and channel specs," above.
+- `testing`: `checkFrontDoor`, `expectFrontDoorConformance`,
+  `PRIMARY_ACTION_CLASS`, and the `FrontDoorConfig`, `FrontDoorFinding`,
+  `FrontDoorRule`, `FrontDoorSurface`, and `FrontDoorSurfaceCase` types.
+  See "Front-door conformance," below.
 
 Web page-level compositions belong here, not in `designer`; they consume
 design-system primitives and accept consumer-owned copy through slots.
@@ -3314,6 +3536,242 @@ becomes a `replyTo` address. It requires an ASCII dot-atom local part of at most
 addresses and quoted local parts are refused as `malformed`. Phone accepts only
 ASCII digits, space and `+ - ( ) . / # * x X`, with at least one digit. Bidirectional
 formatting characters are not refused.
+
+### Share card route — `createShareCardRoute`
+
+`createShareCardRoute(input)` wraps `buildBrandShareCard` as the exports of an
+`opengraph-image` route, so a site no longer writes that route by hand. It is
+exported from `@clossys/publisher/web` and its server entry. Publisher does not
+depend on `next`: you pass your own `ImageResponse` class, and the module
+imports nothing from `next`.
+
+```tsx
+import { createShareCardRoute } from "@clossys/publisher/web";
+import type { ShareCardRouteInput } from "@clossys/publisher/web";
+
+declare const ImageResponse: ShareCardRouteInput["ImageResponse"]; // your framework's image-response class
+declare const markDataUrl: string; // inline data URL
+
+const route = createShareCardRoute({
+  ImageResponse,
+  card: { markSrc: markDataUrl, wordmark: "Example Studio", headline: "Made well, made to last" },
+  alt: (headline) => `Example Studio: ${headline}`,
+});
+
+export const alt = route.alt;
+export const size = route.size;
+export const contentType = route.contentType;
+export default route.Image;
+```
+
+- **Input.** `{ ImageResponse, card, title?, alt }`. `card` is
+  `buildBrandShareCard`'s input without `alt`, so `headline` stays required
+  there. `ImageResponse` is
+  `new (element, { width, height }) => Response`.
+- **Title and alt.** When `title` is given it replaces `card.headline`. `alt` is
+  a string, returned as given, or a function called with the headline actually
+  drawn. Publisher builds no wording; every word is yours.
+- **Result.** `{ alt, size, contentType, shareCard, Image }`. `size` is the
+  card's `{ width, height }` (1200 by 630), `contentType` is `"image/png"`,
+  `shareCard` is the record `buildSiteMetadata` takes, and `Image()` returns
+  `new ImageResponse(element, size)`. Assign each export by name, as above;
+  Next reads them by name, so a destructured export is not found.
+- **Failure.** The card is built when `createShareCardRoute` is called, so bad
+  input fails when the route module loads. Errors are `ShareCardError`,
+  unchanged; a blank `title` throws `blank-text`, and an `ImageResponse` that is
+  not a function throws `invalid-input`.
+
+### Activation and reset forms — `ActivateForm` and `ResetForm`
+
+`ActivateForm` and `ResetForm`, exported from `@clossys/publisher/web`, are
+provider-free forms for `AuthView`'s form slot, built like `SignInForm`: they
+import no identity provider and read no browser global, the caller injects
+async handlers that answer a closed union of results, and the caller decides
+where to go next. Both are client components, so import them from a module that
+is a client boundary; under the `react-server` condition each name is a stub
+that throws a `RenderError` when called. The page's `<h1>` stays `AuthView`'s.
+
+```tsx
+import { ActivateForm, AuthView, ResetForm } from "@clossys/publisher/web";
+import type { ActivateDetails, ActivateResult, ResetDetails, ResetResult } from "@clossys/publisher/web";
+
+declare const brand: React.ReactNode;
+declare function setPassword(details: ActivateDetails): Promise<ActivateResult>; // your handler
+declare function sendCode(identifier: string): Promise<ResetResult>; // your handler
+declare function changePassword(details: ResetDetails): Promise<ResetResult>; // your handler
+declare function sendCodeAgain(): Promise<ResetResult>; // your handler
+declare function goToSignIn(): void;
+declare function goToApp(): void;
+declare const identityServiceIsConfigured: boolean;
+
+export function ActivatePage() {
+  return (
+    <AuthView
+      brand={brand}
+      heading="Set up your account"
+      description="You’re invited to Acme Console. Choose a password to finish."
+      isDisabled={!identityServiceIsConfigured}
+      form={<ActivateForm activate={setPassword} onActivated={goToApp} collectName unavailable={!identityServiceIsConfigured} nouns={{ surface: "Acme Console" }} />}
+    />
+  );
+}
+
+export function ResetPage() {
+  return (
+    <AuthView
+      brand={brand}
+      heading="Reset your password"
+      description="Enter your email and we’ll send you a code."
+      form={<ResetForm request={sendCode} reset={changePassword} resendCode={sendCodeAgain} onReset={goToSignIn} nouns={{ surface: "Acme Console" }} />}
+    />
+  );
+}
+```
+
+`ActivateForm` props:
+
+- `activate({ password, firstName?, lastName? })`: resolves to an
+  `ActivateResult`, `{ status: "ok" }` or `{ status: ActivateFailure }`, where
+  `ActivateFailure` is `"expired"`, `"weakPassword"`, `"rateLimited"`,
+  `"network"` or `"unavailable"`. It is called only on submit, with the
+  password as typed; the names are passed, trimmed, only with `collectName`.
+  A handler that throws, or answers anything outside the union, reads as
+  `unavailable`.
+- `onActivated()`: called once after `activate` answers `ok`. The form does not
+  navigate, set a cookie or sign anyone in.
+- `collectName` (optional): also asks for a first and a last name, both
+  required. When both are empty the notice shows once, on the first name.
+- `unavailable` (optional), `nouns` (optional): see below.
+
+The form asks for a password once, with no confirmation field, and shows no
+identifier.
+
+`ResetForm` props:
+
+- `request(identifier)`: asks for a code to be sent. It receives the
+  identifier trimmed. `reset({ code, password })`: sets the new password; the
+  code is trimmed. `resendCode()` (optional): sends the code again; without it
+  the form shows no resend control. Each resolves to a `ResetResult`,
+  `{ status: "ok" }` or `{ status: ResetFailure }`, where `ResetFailure` is
+  `"credential"`, `"notFound"`, `"weakPassword"`, `"rateLimited"`, `"locked"`,
+  `"network"` or `"unavailable"`. A handler that throws, or answers anything
+  outside the union, reads as `unavailable`.
+- `onReset()`: called once after `reset` answers `ok`. The form does not
+  navigate or sign anyone in, and has no link back to sign-in; the page adds
+  its own.
+- `unavailable` (optional), `nouns` (optional): see below.
+
+`ResetForm` steps: the identifier step asks for the identifier. After `request`
+answers `ok` the second step shows the code (`front-door.code.description`
+names the identifier), a code field, a new password field and the main button
+(`front-door.reset-code.primary`), and moves focus to the code field. A ghost
+button (`front-door.code.secondary`, only with `resendCode`) sends a new code,
+clearing the code field and any notice; another (`front-door.password.secondary`)
+returns to the identifier step with the identifier kept and the code and
+password cleared. A `reset` answer of `ok` calls `onReset` once and the submit
+button stays pending.
+
+Where each failure shows:
+
+| Form and step | Result | Where | Copy id |
+| --- | --- | --- | --- |
+| both | empty field | inline on that field, and focus moves to the first | `front-door.name-required.notice`, `front-door.password-required.notice`, `front-door.identifier-required.notice` or `front-door.code-required.notice` |
+| `ActivateForm` | `weakPassword` | inline on the password field | `front-door.password-weak.notice` |
+| `ActivateForm` | `expired` | the form's one `role="alert"` | `front-door.activation.notice` |
+| `ResetForm`, identifier step | `notFound` | inline on the identifier field | `front-door.identifier-not-found.notice` |
+| `ResetForm`, second step | `credential` | inline on the code field | `front-door.code.notice` |
+| `ResetForm`, second step | `weakPassword` | inline on the new password field | `front-door.password-weak.notice` |
+| both | `rateLimited` | the form's one `role="alert"` | `front-door.rate-limited.notice` |
+| `ResetForm` | `locked` | the form's one `role="alert"` | `front-door.locked.notice` |
+| both | `network` | the form's one `role="alert"` | `front-door.network.notice` |
+| both | `unavailable`, a throw, or an unknown answer | the form's one `role="alert"` | `front-door.unavailable.notice` |
+
+An answer that makes no sense for the call reads as `unavailable`: for
+`ResetForm`, `credential` or `weakPassword` from `request`, `notFound` from
+`reset`, and anything but `rateLimited`, `locked`, `network` or `unavailable`
+from `resendCode`; for `ActivateForm`, `locked`, which it has no notice for.
+
+Both forms share the rest of their behaviour. Nothing is validated before a
+submit or on blur, and an empty submit calls no handler. An inline error clears
+when its field changes. The submit button is pending, never `disabled`, while a
+call is in flight, and a second submit is ignored. Each form's `<form>` is
+labelled by its title id (`front-door.activation.title`,
+`front-door.reset.title` or `front-door.code.title`) and has no error summary.
+Every visible word is resolved on each render through `resolveFrontDoorCopy`,
+so an incomplete `nouns` throws a `RenderError` `resolution-failed` naming the
+id, never a noun; pass `surface`, which the network notice names. The
+`identifier` noun is the visitor's own entry and is not a prop.
+
+`unavailable` (optional, default `false`) is for a page that cannot reach its
+identity service, such as a missing configuration. The form stays visible, its
+fields and buttons are disabled, `front-door.unavailable.notice` shows in the
+form's one alert from the first render, and no handler is ever called. Pair it
+with `AuthView`'s `isDisabled`, as above.
+
+## Front-door conformance
+
+`@clossys/publisher/testing` is a test-support entry for the test step a
+consumer already has. It renders the consumer's own sign-in, activation,
+sign-out landing, reset, boundary, not-found, global-error and
+service-unavailable surfaces with `renderToStaticMarkup`, parses each with the
+caller's `DOMParser`, and reports every invariant a surface breaks. The kit
+builds no view and no copy: each `render` returns the consumer's own element.
+
+| Rule | Asks |
+| --- | --- |
+| `one-h1` | Exactly one `<h1>`. |
+| `form-measure` | The `<main>` of a sign-in, activation or reset surface carries `max-width:var(--ui-width-form-max, none)`. |
+| `one-primary-action` | Exactly one button, link or `[role=button]` with class token `bg-accent` (`PRIMARY_ACTION_CLASS`), inside `<main>` or, when there is none, the body. |
+| `page-title` | `formatPageTitle(title)` does not throw and, when `title.actual` is given, equals it. `title` is required on every surface except `global-error`. |
+| `global-error-head` | A `global-error` document has exactly one `<title>` equal to `formatPageTitle(title)` (or matching `<page> · <brand>` when no `title` is given), a robots meta containing `noindex`, and exactly one `link[rel=icon]`. |
+
+`checkFrontDoor({ surfaces })` returns the findings as `{ surface, rule,
+message }` objects. `expectFrontDoorConformance` throws one `Error` listing
+all of them. The entry imports only `react` (types), `react-dom/server` and
+the site-metadata module, so it needs the `react` and `react-dom` peers and
+nothing else. It needs a `DOMParser`, which the caller's DOM test environment
+(for example jsdom) provides, and throws a plain `Error` saying so when there
+is none.
+
+```tsx
+// @vitest-environment jsdom
+import { AuthView, BoundaryView } from "@clossys/publisher/web";
+import { PRIMARY_ACTION_CLASS, expectFrontDoorConformance } from "@clossys/publisher/testing";
+import { expect, it } from "vitest";
+
+it("keeps the front door conformant", () => {
+  expect(() =>
+    expectFrontDoorConformance({
+      surfaces: [
+        {
+          surface: "sign-in",
+          title: { page: "Sign in", brand: "Example Studio" },
+          render: () => (
+            <AuthView
+              brand="Example Studio"
+              heading="Sign in"
+              description="Welcome back."
+              form={<button type="submit" className={PRIMARY_ACTION_CLASS}>Sign in</button>}
+            />
+          ),
+        },
+        {
+          surface: "not-found",
+          title: { page: "Page not found", brand: "Example Studio" },
+          render: () => (
+            <BoundaryView
+              brand="Example Studio"
+              status="404"
+              title="Page not found"
+              action={<a href="/" className={PRIMARY_ACTION_CLASS}>Go home</a>}
+            />
+          ),
+        },
+      ],
+    }),
+  ).not.toThrow();
+});
+```
 
 ## Licence
 

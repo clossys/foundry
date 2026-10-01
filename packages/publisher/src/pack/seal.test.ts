@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { PublicationMap } from "../core/publication-map.js";
+import { citeFact } from "../record/fact.js";
 import type { Ledger } from "../record/types.js";
 import { validateLedger } from "../record/schema.js";
 import { checkSealEvidence, sealWebsite, type SealFinding } from "./seal.js";
@@ -15,6 +16,9 @@ const OTHER_COMMIT = "c".repeat(40);
 const DIGEST = "a".repeat(64);
 const PRODUCTION_URL = "https://www.example.test/";
 const STRATEGY_REVISION = "strategy-rev-1";
+/** Assembled so the text of a credentialed URL never appears literally in the source. */
+const BACKSLASH = String.fromCharCode(92);
+const AT = String.fromCharCode(64);
 
 const MAP: PublicationMap = {
   entries: [
@@ -105,119 +109,186 @@ function seal(overrides: Partial<Parameters<typeof sealWebsite>[0]> = {}) {
 
 describe("checkSealEvidence", () => {
   it("accepts complete, current evidence", TIMEOUT, () => {
-    expect(checkSealEvidence(evidence(), { map: MAP, now: NOW })).toEqual([]);
+    expect(checkSealEvidence(evidence(), { map: MAP, now: NOW, itemId: "website" })).toEqual([]);
   });
 
   it("stale or missing pages refused", TIMEOUT, () => {
     const stalePage = evidence({ pages: [page("/"), page("/contact", { servedCommit: OTHER_COMMIT })] });
-    expect(rulesAt(checkSealEvidence(stalePage, { map: MAP, now: NOW }))).toEqual(["page-commit-mismatch@pages[1].servedCommit"]);
+    expect(rulesAt(checkSealEvidence(stalePage, { map: MAP, now: NOW, itemId: "website" }))).toEqual(["page-commit-mismatch@pages[1].servedCommit"]);
 
     const staleDeploy = evidence({ delivery: { state: "ready", deployedCommit: OTHER_COMMIT, productionUrl: PRODUCTION_URL } });
-    expect(rulesAt(checkSealEvidence(staleDeploy, { map: MAP, now: NOW }))).toEqual(["delivery-commit-mismatch@delivery.deployedCommit"]);
+    expect(rulesAt(checkSealEvidence(staleDeploy, { map: MAP, now: NOW, itemId: "website" }))).toEqual(["delivery-commit-mismatch@delivery.deployedCommit"]);
 
     const missingPage = evidence({ pages: [page("/")] });
-    expect(rulesAt(checkSealEvidence(missingPage, { map: MAP, now: NOW }))).toEqual(["page-missing@map.paths[1]"]);
+    expect(rulesAt(checkSealEvidence(missingPage, { map: MAP, now: NOW, itemId: "website" }))).toEqual(["page-missing@map.paths[1]"]);
 
     const failingPage = evidence({ pages: [page("/"), page("/contact", { status: 500 })] });
-    expect(rulesAt(checkSealEvidence(failingPage, { map: MAP, now: NOW }))).toEqual(["page-status@pages[1].status"]);
+    expect(rulesAt(checkSealEvidence(failingPage, { map: MAP, now: NOW, itemId: "website" }))).toEqual(["page-status@pages[1].status"]);
 
     const notReady = evidence({ delivery: { state: "building", deployedCommit: COMMIT, productionUrl: PRODUCTION_URL } });
-    expect(rulesAt(checkSealEvidence(notReady, { map: MAP, now: NOW }))).toEqual(["delivery-not-ready@delivery.state"]);
+    expect(rulesAt(checkSealEvidence(notReady, { map: MAP, now: NOW, itemId: "website" }))).toEqual(["delivery-not-ready@delivery.state"]);
   });
 
   it("refuses a page that is not exactly status 200", TIMEOUT, () => {
     for (const status of [204, 301, 404, "200", null]) {
-      const found = checkSealEvidence(evidence({ pages: [page("/"), page("/contact", { status })] }), { map: MAP, now: NOW });
+      const found = checkSealEvidence(evidence({ pages: [page("/"), page("/contact", { status })] }), { map: MAP, now: NOW, itemId: "website" });
       expect(rulesAt(found), `status ${String(status)}`).toEqual(["page-status@pages[1].status"]);
     }
   });
 
   it("refuses a commit that is not 40 lowercase hex, and any digest that is not sha256 hex", TIMEOUT, () => {
-    expect(rulesAt(checkSealEvidence(evidence({ commit: "abc123" }), { map: MAP, now: NOW }))).toContain("commit-shape@commit");
+    expect(rulesAt(checkSealEvidence(evidence({ commit: "abc123" }), { map: MAP, now: NOW, itemId: "website" }))).toContain("commit-shape@commit");
     for (const field of ["desktopDigest", "mobileDigest"]) {
       for (const bad of ["a".repeat(63), "A".repeat(64), "g".repeat(64), 7, null]) {
-        const found = checkSealEvidence(evidence({ pages: [page("/"), page("/contact", { [field]: bad })] }), { map: MAP, now: NOW });
+        const found = checkSealEvidence(evidence({ pages: [page("/"), page("/contact", { [field]: bad })] }), { map: MAP, now: NOW, itemId: "website" });
         expect(rulesAt(found), `${field} ${String(bad)}`).toEqual([`page-digest-shape@pages[1].${field}`]);
       }
     }
   });
 
   it("refuses observedAt in the future or more than 24 hours old, and accepts exactly 24 hours", TIMEOUT, () => {
-    expect(rulesAt(checkSealEvidence(evidence({ observedAt: "2026-09-30T12:00:01Z" }), { map: MAP, now: NOW }))).toEqual(["observed-at-future@observedAt"]);
-    expect(rulesAt(checkSealEvidence(evidence({ observedAt: "2026-09-29T11:59:59Z" }), { map: MAP, now: NOW }))).toEqual(["observed-at-stale@observedAt"]);
-    expect(checkSealEvidence(evidence({ observedAt: "2026-09-29T12:00:00Z" }), { map: MAP, now: NOW })).toEqual([]);
-    expect(checkSealEvidence(evidence({ observedAt: NOW }), { map: MAP, now: NOW })).toEqual([]);
-    expect(rulesAt(checkSealEvidence(evidence({ observedAt: "yesterday" }), { map: MAP, now: NOW }))).toEqual(["observed-at-shape@observedAt"]);
+    expect(rulesAt(checkSealEvidence(evidence({ observedAt: "2026-09-30T12:00:01Z" }), { map: MAP, now: NOW, itemId: "website" }))).toEqual(["observed-at-future@observedAt"]);
+    expect(rulesAt(checkSealEvidence(evidence({ observedAt: "2026-09-29T11:59:59Z" }), { map: MAP, now: NOW, itemId: "website" }))).toEqual(["observed-at-stale@observedAt"]);
+    expect(checkSealEvidence(evidence({ observedAt: "2026-09-29T12:00:00Z" }), { map: MAP, now: NOW, itemId: "website" })).toEqual([]);
+    expect(checkSealEvidence(evidence({ observedAt: NOW }), { map: MAP, now: NOW, itemId: "website" })).toEqual([]);
+    expect(rulesAt(checkSealEvidence(evidence({ observedAt: "yesterday" }), { map: MAP, now: NOW, itemId: "website" }))).toEqual(["observed-at-shape@observedAt"]);
   });
 
   it("refuses a production URL that is not https", TIMEOUT, () => {
     for (const productionUrl of ["http://www.example.test/", "not a url", "", 7]) {
-      const found = checkSealEvidence(evidence({ delivery: { state: "ready", deployedCommit: COMMIT, productionUrl } }), { map: MAP, now: NOW });
+      const found = checkSealEvidence(evidence({ delivery: { state: "ready", deployedCommit: COMMIT, productionUrl } }), { map: MAP, now: NOW, itemId: "website" });
       expect(rulesAt(found), `url ${String(productionUrl)}`).toEqual(["production-url-shape@delivery.productionUrl"]);
     }
   });
 
+  it("refuses a production URL that carries credentials: username only, password only, or both", TIMEOUT, () => {
+    for (const productionUrl of ["https://marker-user@www.example.test/", "https://:marker-pass@www.example.test/", "https://marker-user:marker-pass@www.example.test/"]) {
+      const found = checkSealEvidence(evidence({ delivery: { state: "ready", deployedCommit: COMMIT, productionUrl } }), { map: MAP, now: NOW, itemId: "website" });
+      expect(rulesAt(found), "credentialed url").toEqual(["production-url-shape@delivery.productionUrl"]);
+      expect(JSON.stringify(found)).not.toContain("marker");
+    }
+    // A credentialed URL never reaches the ledger or the manifest.
+    const refused = refusal(seal({ evidence: evidence({ delivery: { state: "ready", deployedCommit: COMMIT, productionUrl: "https://marker-user:marker-pass@www.example.test/" } }) }));
+    expect(rulesAt(refused)).toEqual(["production-url-shape@delivery.productionUrl"]);
+    expect(JSON.stringify(refused)).not.toContain("marker");
+    // A port, a path, a query and an at sign after the host are not credentials.
+    for (const productionUrl of ["https://www.example.test:8443/", "https://www.example.test/a@b?c=d@e"]) {
+      expect(checkSealEvidence(evidence({ delivery: { state: "ready", deployedCommit: COMMIT, productionUrl } }), { map: MAP, now: NOW, itemId: "website" }), productionUrl).toEqual([]);
+    }
+  });
+
+  it("refuses a production URL that is not already in canonical form, even when the parser would read it as harmless", TIMEOUT, () => {
+    const spellings: Array<[string, string]> = [
+      // The WHATWG parser reads host www.example.test and no userinfo; an RFC 3986 reader sees host evil.test with a password.
+      ["backslash before userinfo", `https://www.example.test${BACKSLASH}${AT}marker-user:marker-pass${AT}marker-evil.test/`],
+      ["empty userinfo", "https://@www.example.test/"],
+      ["empty userinfo and password", "https://:@www.example.test/"],
+      ["trailing newline", "https://www.example.test/\n"],
+      ["trailing carriage return", "https://www.example.test/\r"],
+      ["embedded tab", "https://www.example.test/a\tb"],
+      ["leading space", " https://www.example.test/"],
+      ["trailing space", "https://www.example.test/ "],
+      ["uppercase scheme", "HTTPS://www.example.test/"],
+      ["uppercase host", "https://WWW.EXAMPLE.TEST/"],
+      ["no path", "https://www.example.test"],
+      ["default port", "https://www.example.test:443/"],
+      ["dot segments", "https://www.example.test/a/../b"],
+      ["unencoded space in the path", "https://www.example.test/a b"],
+    ];
+    for (const [label, productionUrl] of spellings) {
+      const delivery = { state: "ready", deployedCommit: COMMIT, productionUrl };
+      const found = checkSealEvidence(evidence({ delivery }), { map: MAP, now: NOW, itemId: "website" });
+      expect(rulesAt(found), label).toEqual(["production-url-shape@delivery.productionUrl"]);
+      expect(JSON.stringify(found), label).not.toContain("marker");
+      expect(Object.keys(found[0] as SealFinding).sort(), label).toEqual(["path", "rule"]);
+
+      // Refused as written: nothing reaches a manifest or a ledger.
+      const refused = refusal(seal({ evidence: evidence({ delivery }) }));
+      expect(rulesAt(refused), label).toEqual(["production-url-shape@delivery.productionUrl"]);
+      expect(JSON.stringify(refused), label).not.toContain("marker");
+    }
+    // The canonical form of each is accepted, and what is written is exactly what was supplied.
+    for (const productionUrl of [PRODUCTION_URL, "https://www.example.test/a/b?c=d#e", "https://sub.www.example.test:8443/x/"]) {
+      const sealed = seal({ evidence: evidence({ delivery: { state: "ready", deployedCommit: COMMIT, productionUrl } }) });
+      if (!sealed.ok) throw new Error(`expected a seal for ${productionUrl}`);
+      expect(sealed.ledger[0]?.url).toBe(productionUrl);
+      expect(sealed.manifest.items.find((candidate) => candidate.id === "website")?.publishedTo).toEqual([productionUrl]);
+    }
+  });
+
+  it("checkSealEvidence without an itemId is refused at run time (the option type requires it)", TIMEOUT, () => {
+    const withoutItemId = checkSealEvidence(evidence(), { map: MAP, now: NOW } as never);
+    expect(rulesAt(withoutItemId)).toContain("item-id-invalid@itemId");
+    for (const bad of [undefined, "", "  ", 3, null]) {
+      const found = checkSealEvidence(evidence(), { map: MAP, now: NOW, itemId: bad as never });
+      expect(rulesAt(found), String(bad)).toContain("item-id-invalid@itemId");
+    }
+    // Evidence that names no item is still its own finding, and an itemId that is given and matches adds none.
+    expect(rulesAt(checkSealEvidence(evidence({ itemId: undefined }), { map: MAP, now: NOW, itemId: "website" }))).toEqual(["evidence-item-shape@itemId"]);
+    expect(checkSealEvidence(evidence(), { map: MAP, now: NOW, itemId: "website" })).toEqual([]);
+  });
+
   it("fails closed on an empty publication map and never throws on malformed input", TIMEOUT, () => {
-    expect(rulesAt(checkSealEvidence(evidence(), { map: { entries: [] }, now: NOW }))).toEqual(["map-empty@map.paths"]);
+    expect(rulesAt(checkSealEvidence(evidence(), { map: { entries: [] }, now: NOW, itemId: "website" }))).toEqual(["map-empty@map.paths"]);
     const slideOnly: PublicationMap = { entries: [{ id: "s", template: "deck", documentId: "d", location: { kind: "slide", index: 0 } }] };
-    expect(rulesAt(checkSealEvidence(evidence(), { map: slideOnly, now: NOW }))).toEqual(["map-empty@map.paths"]);
+    expect(rulesAt(checkSealEvidence(evidence(), { map: slideOnly, now: NOW, itemId: "website" }))).toEqual(["map-empty@map.paths"]);
 
     for (const bad of [null, undefined, "evidence", 7, [], {}, { schemaVersion: 2 }]) {
-      const found = checkSealEvidence(bad, { map: MAP, now: NOW });
+      const found = checkSealEvidence(bad, { map: MAP, now: NOW, itemId: "website" });
       expect(found.length, String(bad)).toBeGreaterThan(0);
     }
-    expect(() => checkSealEvidence(evidence({ pages: "nope", delivery: null }), { map: MAP, now: NOW })).not.toThrow();
-    expect(() => checkSealEvidence(evidence(), { map: null as never, now: NOW })).not.toThrow();
-    expect(rulesAt(checkSealEvidence(evidence(), { map: null as never, now: NOW }))).toContain("map-shape@map");
-    expect(rulesAt(checkSealEvidence(evidence(), { map: MAP, now: "later" }))).toContain("now-invalid@now");
+    expect(() => checkSealEvidence(evidence({ pages: "nope", delivery: null }), { map: MAP, now: NOW, itemId: "website" })).not.toThrow();
+    expect(() => checkSealEvidence(evidence(), { map: null as never, now: NOW, itemId: "website" })).not.toThrow();
+    expect(rulesAt(checkSealEvidence(evidence(), { map: null as never, now: NOW, itemId: "website" }))).toContain("map-shape@map");
+    expect(rulesAt(checkSealEvidence(evidence(), { map: MAP, now: "later", itemId: "website" }))).toContain("now-invalid@now");
   });
 
   it("intake explicit", TIMEOUT, () => {
     const withoutIntake = evidence();
     delete withoutIntake.contactIntake;
-    expect(rulesAt(checkSealEvidence(withoutIntake, { map: MAP, now: NOW }))).toEqual(["contact-intake-missing@contactIntake"]);
-    expect(rulesAt(checkSealEvidence(evidence({ contactIntake: null }), { map: MAP, now: NOW }))).toEqual(["contact-intake-missing@contactIntake"]);
+    expect(rulesAt(checkSealEvidence(withoutIntake, { map: MAP, now: NOW, itemId: "website" }))).toEqual(["contact-intake-missing@contactIntake"]);
+    expect(rulesAt(checkSealEvidence(evidence({ contactIntake: null }), { map: MAP, now: NOW, itemId: "website" }))).toEqual(["contact-intake-missing@contactIntake"]);
 
     for (const reason of ["", "   "]) {
-      const found = checkSealEvidence(evidence({ contactIntake: { kind: "none", reason } }), { map: MAP, now: NOW });
+      const found = checkSealEvidence(evidence({ contactIntake: { kind: "none", reason } }), { map: MAP, now: NOW, itemId: "website" });
       expect(rulesAt(found), `reason ${JSON.stringify(reason)}`).toEqual(["contact-intake-reason-empty@contactIntake.reason"]);
     }
-    expect(rulesAt(checkSealEvidence(evidence({ contactIntake: { kind: "none" } }), { map: MAP, now: NOW }))).toEqual(["contact-intake-reason-empty@contactIntake.reason"]);
+    expect(rulesAt(checkSealEvidence(evidence({ contactIntake: { kind: "none" } }), { map: MAP, now: NOW, itemId: "website" }))).toEqual(["contact-intake-reason-empty@contactIntake.reason"]);
 
-    expect(checkSealEvidence(evidence({ contactIntake: { kind: "none", reason: "the site has no contact form" } }), { map: MAP, now: NOW })).toEqual([]);
-    expect(checkSealEvidence(evidence({ contactIntake: { kind: "present", path: "/contact", submissionDigest: DIGEST } }), { map: MAP, now: NOW })).toEqual([]);
+    expect(checkSealEvidence(evidence({ contactIntake: { kind: "none", reason: "the site has no contact form" } }), { map: MAP, now: NOW, itemId: "website" })).toEqual([]);
+    expect(checkSealEvidence(evidence({ contactIntake: { kind: "present", path: "/contact", submissionDigest: DIGEST } }), { map: MAP, now: NOW, itemId: "website" })).toEqual([]);
 
-    expect(rulesAt(checkSealEvidence(evidence({ contactIntake: { kind: "present", path: "/contact", submissionDigest: "nope" } }), { map: MAP, now: NOW }))).toEqual([
+    expect(rulesAt(checkSealEvidence(evidence({ contactIntake: { kind: "present", path: "/contact", submissionDigest: "nope" } }), { map: MAP, now: NOW, itemId: "website" }))).toEqual([
       "contact-intake-digest-shape@contactIntake.submissionDigest",
     ]);
-    expect(rulesAt(checkSealEvidence(evidence({ contactIntake: { kind: "present", path: "", submissionDigest: DIGEST } }), { map: MAP, now: NOW }))).toEqual([
+    expect(rulesAt(checkSealEvidence(evidence({ contactIntake: { kind: "present", path: "", submissionDigest: DIGEST } }), { map: MAP, now: NOW, itemId: "website" }))).toEqual([
       "contact-intake-path-shape@contactIntake.path",
     ]);
-    expect(rulesAt(checkSealEvidence(evidence({ contactIntake: { kind: "maybe" } }), { map: MAP, now: NOW }))).toEqual(["contact-intake-shape@contactIntake.kind"]);
+    expect(rulesAt(checkSealEvidence(evidence({ contactIntake: { kind: "maybe" } }), { map: MAP, now: NOW, itemId: "website" }))).toEqual(["contact-intake-shape@contactIntake.kind"]);
   });
 
   it("refuses an impossible calendar date or clock time, and accepts a real leap day", TIMEOUT, () => {
     const later = "2026-10-01T12:00:00Z";
     for (const observedAt of ["2026-09-31T00:00:00Z", "2026-02-29T00:00:00Z", "2026-04-31T23:00:00Z", "2026-09-30T24:00:00Z", "2026-13-01T00:00:00Z", "2026-00-10T00:00:00Z", "2026-09-00T00:00:00Z"]) {
-      expect(rulesAt(checkSealEvidence(evidence({ observedAt }), { map: MAP, now: later })), observedAt).toEqual(["observed-at-shape@observedAt"]);
+      expect(rulesAt(checkSealEvidence(evidence({ observedAt }), { map: MAP, now: later, itemId: "website" })), observedAt).toEqual(["observed-at-shape@observedAt"]);
     }
-    expect(rulesAt(checkSealEvidence(evidence(), { map: MAP, now: "2026-09-31T12:00:00Z" }))).toEqual(["now-invalid@now"]);
-    expect(rulesAt(checkSealEvidence(evidence(), { map: MAP, now: "2026-09-30T24:00:00Z" }))).toEqual(["now-invalid@now"]);
-    expect(checkSealEvidence(evidence({ observedAt: "2028-02-29T10:00:00Z" }), { map: MAP, now: "2028-02-29T12:00:00Z" })).toEqual([]);
-    expect(rulesAt(checkSealEvidence(evidence({ observedAt: "2027-02-29T10:00:00Z" }), { map: MAP, now: "2027-03-01T12:00:00Z" }))).toEqual(["observed-at-shape@observedAt"]);
+    expect(rulesAt(checkSealEvidence(evidence(), { map: MAP, now: "2026-09-31T12:00:00Z", itemId: "website" }))).toEqual(["now-invalid@now"]);
+    expect(rulesAt(checkSealEvidence(evidence(), { map: MAP, now: "2026-09-30T24:00:00Z", itemId: "website" }))).toEqual(["now-invalid@now"]);
+    expect(checkSealEvidence(evidence({ observedAt: "2028-02-29T10:00:00Z" }), { map: MAP, now: "2028-02-29T12:00:00Z", itemId: "website" })).toEqual([]);
+    expect(rulesAt(checkSealEvidence(evidence({ observedAt: "2027-02-29T10:00:00Z" }), { map: MAP, now: "2027-03-01T12:00:00Z", itemId: "website" }))).toEqual(["observed-at-shape@observedAt"]);
   });
 
   it("evidence names the item it was taken for, and a different item is refused", TIMEOUT, () => {
     expect(checkSealEvidence(evidence(), { map: MAP, now: NOW, itemId: "website" })).toEqual([]);
     expect(rulesAt(checkSealEvidence(evidence({ itemId: "email-kit" }), { map: MAP, now: NOW, itemId: "website" }))).toEqual(["evidence-item-mismatch@itemId"]);
     for (const missing of [undefined, "", "  ", 3, null]) {
-      expect(rulesAt(checkSealEvidence(evidence({ itemId: missing }), { map: MAP, now: NOW })), String(missing)).toEqual(["evidence-item-shape@itemId"]);
+      expect(rulesAt(checkSealEvidence(evidence({ itemId: missing }), { map: MAP, now: NOW, itemId: "website" })), String(missing)).toEqual(["evidence-item-shape@itemId"]);
     }
   });
 
   it("offers no waiver: an extra flag in the evidence or the options changes nothing", TIMEOUT, () => {
     const stale = evidence({ waive: true, force: true, pages: [page("/"), page("/contact", { servedCommit: OTHER_COMMIT, waive: true })] });
-    expect(checkSealEvidence(stale, { map: MAP, now: NOW, waive: true, force: true } as never).length).toBeGreaterThan(0);
+    expect(checkSealEvidence(stale, { map: MAP, now: NOW, itemId: "website", waive: true, force: true } as never).length).toBeGreaterThan(0);
   });
 });
 
@@ -276,12 +347,175 @@ describe("sealWebsite", () => {
   it("the same commit sealed again is seal-already-recorded", TIMEOUT, () => {
     const first = seal();
     if (!first.ok) throw new Error("expected a seal");
-    const again = refusal(seal({ ledger: first.ledger }));
-    expect(rulesAt(again)).toEqual(["seal-already-recorded@ledger"]);
-    // Against the sealed manifest the item is no longer sealable either.
+    // Against the sealed manifest the item is no longer sealable either, so nothing is left to finish.
     const afterwards = refusal(seal({ manifest: first.manifest, ledger: first.ledger }));
     expect(rulesAt(afterwards)).toContain("seal-already-recorded@ledger");
     expect(rulesAt(afterwards)).toContain("item-not-sealable@itemId");
+  });
+
+  it("an interrupted seal, the ledger ahead of a kept manifest, is finished from the identical entry", TIMEOUT, () => {
+    const first = seal();
+    if (!first.ok) throw new Error("expected a seal");
+    expect(first.resumed).toBe(false);
+
+    const later = "2026-09-30T13:30:00Z";
+    const frozenLedger = deepFreeze(structuredClone(first.ledger));
+    const frozenManifest = deepFreeze(manifest());
+    const finished = sealWebsite({ manifest: frozenManifest, ledger: frozenLedger, itemId: "website", evidence: evidence(), map: MAP, now: later, strategyRevision: STRATEGY_REVISION });
+    if (!finished.ok) throw new Error(`expected the interrupted seal to finish, got ${JSON.stringify(finished.findings)}`);
+    expect(finished.resumed).toBe(true);
+    expect(finished.entryId).toBe(`website-website-${COMMIT.slice(0, 12)}`);
+    // The ledger is not grown or rewritten, and the manifest carries the time the entry was recorded, not the rerun's time.
+    expect(finished.ledger).toEqual(first.ledger);
+    expect(finished.manifest.items.find((candidate) => candidate.id === "website")).toMatchObject({ status: "published", verifiedAt: NOW, publishedTo: [PRODUCTION_URL] });
+    expect(finished.manifest).toEqual(first.manifest);
+    expect(validatePackManifest(finished.manifest)).toEqual({ exitCode: 0, findings: [] });
+  });
+
+  it("an interrupted seal is finished only from an identical entry and only on evidence that still passes", TIMEOUT, () => {
+    const first = seal();
+    if (!first.ok) throw new Error("expected a seal");
+    const entry = first.ledger[0] as Ledger[number];
+    const differing: Array<[string, Ledger[number]]> = [
+      ["url", { ...entry, url: "https://other.example.test/" }],
+      ["strategyRevision", { ...entry, strategyRevision: "strategy-rev-2" }],
+      ["publishedAt in the future", { ...entry, publishedAt: "2026-09-30T12:00:01Z" }],
+      // A hand-added entry cannot backdate the verifiedAt a rerun copies into the manifest: evidence was observed at 11:00.
+      ["publishedAt before the evidence was observed", { ...entry, publishedAt: "2026-09-30T10:59:59Z" }],
+      ["channel", { ...entry, channel: "email" }],
+      ["factCitations", { ...entry, factCitations: [citeFact("active-customers", 4200)] }],
+      ["an extra key", { ...entry, note: "hand-added" } as Ledger[number]],
+    ];
+    for (const [label, changed] of differing) {
+      const found = rulesAt(refusal(seal({ ledger: [changed] })));
+      expect(found, label).toContain("seal-already-recorded@ledger");
+    }
+    // Stale evidence still refuses: the entry being there is not a waiver.
+    const stale = seal({ ledger: first.ledger, evidence: evidence({ observedAt: "2026-09-28T00:00:00Z" }) });
+    expect(rulesAt(refusal(stale))).toEqual(["observed-at-stale@observedAt"]);
+    // Another commit's entry does not stand in for this one.
+    const otherCommit = evidence({ commit: OTHER_COMMIT, delivery: { state: "ready", deployedCommit: OTHER_COMMIT, productionUrl: PRODUCTION_URL }, pages: [page("/", { servedCommit: OTHER_COMMIT }), page("/contact", { servedCommit: OTHER_COMMIT })] });
+    const sealedOther = seal({ ledger: first.ledger, evidence: otherCommit });
+    if (!sealedOther.ok) throw new Error("expected a normal seal for a new commit");
+    expect(sealedOther.resumed).toBe(false);
+    expect(sealedOther.ledger).toHaveLength(2);
+  });
+
+  it("a resumed seal accepts a recorded instant exactly at the evidence's observedAt and exactly at now, and refuses one second outside either", TIMEOUT, () => {
+    const first = seal();
+    if (!first.ok) throw new Error("expected a seal");
+    const entry = first.ledger[0] as Ledger[number];
+    // The bounds are inclusive: the evidence's observedAt is 11:00:00 and now is 12:00:00.
+    for (const publishedAt of ["2026-09-30T11:00:00Z", NOW]) {
+      const finished = seal({ ledger: [{ ...entry, publishedAt }] });
+      if (!finished.ok) throw new Error(`expected ${publishedAt} to resume, got ${JSON.stringify(finished.findings)}`);
+      expect(finished.resumed, publishedAt).toBe(true);
+      expect(finished.manifest.items.find((candidate) => candidate.id === "website"), publishedAt).toMatchObject({ status: "published", verifiedAt: publishedAt });
+    }
+    for (const publishedAt of ["2026-09-30T10:59:59Z", "2026-09-30T12:00:01Z"]) {
+      expect(rulesAt(refusal(seal({ ledger: [{ ...entry, publishedAt }] }))), publishedAt).toContain("seal-already-recorded@ledger");
+    }
+  });
+
+  it("a resumed seal compares the entry without regard to key order", TIMEOUT, () => {
+    const first = seal();
+    if (!first.ok) throw new Error("expected a seal");
+    const entry = first.ledger[0] as Ledger[number];
+    const reordered = { factCitations: entry.factCitations, strategyRevision: entry.strategyRevision, url: entry.url, channel: entry.channel, publishedAt: entry.publishedAt, id: entry.id } as Ledger[number];
+    expect(Object.keys(reordered)).not.toEqual(Object.keys(entry));
+    const finished = seal({ ledger: [reordered] });
+    if (!finished.ok) throw new Error(`expected the reordered entry to resume, got ${JSON.stringify(finished.findings)}`);
+    expect(finished.resumed).toBe(true);
+    expect(finished.ledger[0]).toBe(reordered);
+    // A reordered entry that differs in a value is still not the same entry.
+    expect(rulesAt(refusal(seal({ ledger: [{ ...reordered, url: "https://other.example.test/" }] })))).toContain("seal-already-recorded@ledger");
+  });
+
+  /** Reads of a property that a hostile caller can make answer differently each time: `values[n]` for the nth read, then the last value. */
+  function changing(target: Record<string, unknown>, key: string, values: readonly unknown[]): { reads: () => number } {
+    let count = 0;
+    Object.defineProperty(target, key, { enumerable: true, configurable: true, get: () => values[Math.min(count++, values.length - 1)] });
+    return { reads: () => count };
+  }
+
+  it("works from one snapshot of the evidence: a production URL that changes between reads is read once and stored as read", TIMEOUT, () => {
+    const hostile = `https://www.example.test${BACKSLASH}${AT}marker-user:marker-pass${AT}marker-evil.test/`;
+    // Canonical on the first two reads, hostile from the third on: only a snapshot read exactly once survives this.
+    const delivery: Record<string, unknown> = { state: "ready", deployedCommit: COMMIT };
+    const url = changing(delivery, "productionUrl", [PRODUCTION_URL, PRODUCTION_URL, hostile]);
+    const sealed = seal({ evidence: evidence({ delivery }) });
+    if (!sealed.ok) throw new Error(`expected a seal, got ${JSON.stringify(sealed.findings)}`);
+    expect(url.reads()).toBe(1);
+    expect(sealed.ledger[0]?.url).toBe(PRODUCTION_URL);
+    expect(sealed.manifest.items.find((candidate) => candidate.id === "website")?.publishedTo).toEqual([PRODUCTION_URL]);
+    // A value that is hostile on the one read is refused as written.
+    const bad: Record<string, unknown> = { state: "ready", deployedCommit: COMMIT };
+    changing(bad, "productionUrl", [hostile, PRODUCTION_URL]);
+    const refused = refusal(seal({ evidence: evidence({ delivery: bad }) }));
+    expect(rulesAt(refused)).toEqual(["production-url-shape@delivery.productionUrl"]);
+    expect(JSON.stringify(refused)).not.toContain("marker");
+  });
+
+  it("works from one snapshot of the evidence: a commit that changes between reads cannot name a different entry than the one checked", TIMEOUT, () => {
+    const source = evidence();
+    const commit = changing(source, "commit", [COMMIT, OTHER_COMMIT]);
+    const sealed = seal({ evidence: source });
+    if (!sealed.ok) throw new Error(`expected a seal, got ${JSON.stringify(sealed.findings)}`);
+    expect(commit.reads()).toBe(1);
+    expect(sealed.entryId).toBe(`website-website-${COMMIT.slice(0, 12)}`);
+    expect(sealed.ledger[0]?.id).toBe(`website-website-${COMMIT.slice(0, 12)}`);
+  });
+
+  it("works from one snapshot of the evidence: an observedAt that changes between reads cannot backdate a resumed seal", TIMEOUT, () => {
+    const first = seal();
+    if (!first.ok) throw new Error("expected a seal");
+    // The entry was recorded at 10:00, before the evidence (observed 11:00) existed: a hand-added backdated entry.
+    const backdated = { ...(first.ledger[0] as Ledger[number]), publishedAt: "2026-09-30T10:00:00Z" };
+    const source = evidence();
+    const observed = changing(source, "observedAt", ["2026-09-30T11:00:00Z", "2026-09-30T09:00:00Z"]);
+    expect(rulesAt(refusal(seal({ ledger: [backdated], evidence: source })))).toContain("seal-already-recorded@ledger");
+    expect(observed.reads()).toBe(1);
+  });
+
+  it("refuses evidence that cannot be copied, without throwing", TIMEOUT, () => {
+    const withFunction = evidence({ extra: () => "x" });
+    const throwing = evidence();
+    Object.defineProperty(throwing, "commit", { enumerable: true, get: () => { throw new Error("no"); } });
+    for (const [label, source] of [["a function", withFunction], ["a throwing getter", throwing], ["a symbol", evidence({ extra: Symbol("x") })]] as const) {
+      let result: ReturnType<typeof sealWebsite> | undefined;
+      expect(() => { result = seal({ evidence: source }); }, label).not.toThrow();
+      expect(rulesAt(refusal(result as ReturnType<typeof sealWebsite>)), label).toContain("evidence-shape@(root)");
+    }
+  });
+
+  it("refuses a host that is not letters, digits, hyphens and dots, or a bracketed IPv6 or IPv4 literal", TIMEOUT, () => {
+    const odd = ['https://a"b.example.test/', "https://a`b.example.test/", "https://a{b}.example.test/", "https://a;b.example.test/", "https://a=b.example.test/", "https://a(b).example.test/", "https://a*b.example.test/", "https://a'b.example.test/", "https://a_b.example.test/", "https://a,b.example.test/", "https://a$b.example.test/", "https://a!b.example.test/", "https://a+b.example.test/", "https://a&b.example.test/", "https://www.example.test./"];
+    for (const productionUrl of odd) {
+      // Each is already canonical, so it is the host rule that refuses it.
+      expect(new URL(productionUrl).href, productionUrl).toBe(productionUrl);
+      const found = checkSealEvidence(evidence({ delivery: { state: "ready", deployedCommit: COMMIT, productionUrl } }), { map: MAP, now: NOW, itemId: "website" });
+      expect(rulesAt(found), productionUrl).toEqual(["production-url-shape@delivery.productionUrl"]);
+      expect(Object.keys(found[0] as SealFinding).sort()).toEqual(["path", "rule"]);
+      expect(rulesAt(refusal(seal({ evidence: evidence({ delivery: { state: "ready", deployedCommit: COMMIT, productionUrl } }) }))), productionUrl).toEqual(["production-url-shape@delivery.productionUrl"]);
+    }
+    for (const productionUrl of ["https://192.0.2.1/", "https://[2001:db8::1]/", "https://[::1]:8443/", "https://a-b.c1.example.test:8443/x", "https://xn--e1afmkfd.example.test/"]) {
+      expect(new URL(productionUrl).href, productionUrl).toBe(productionUrl);
+      expect(checkSealEvidence(evidence({ delivery: { state: "ready", deployedCommit: COMMIT, productionUrl } }), { map: MAP, now: NOW, itemId: "website" }), productionUrl).toEqual([]);
+    }
+  });
+
+  it("an interrupted seal never resumes on a non-canonical URL, whether the stored entry or the evidence carries it", TIMEOUT, () => {
+    const first = seal();
+    if (!first.ok) throw new Error("expected a seal");
+    const entry = first.ledger[0] as Ledger[number];
+    for (const url of ["https://@www.example.test/", "https://WWW.example.test/", "https://www.example.test/\n", `https://www.example.test${BACKSLASH}${AT}marker-user:marker-pass${AT}marker-evil.test/`]) {
+      // The stored entry holds the odd spelling while the evidence is canonical: not the same entry.
+      expect(rulesAt(refusal(seal({ ledger: [{ ...entry, url }] }))), `entry ${JSON.stringify(url)}`).toContain("seal-already-recorded@ledger");
+      // The evidence and the stored entry both hold it: the evidence is refused, so the entry is never finished.
+      const both = refusal(seal({ ledger: [{ ...entry, url }], evidence: evidence({ delivery: { state: "ready", deployedCommit: COMMIT, productionUrl: url } }) }));
+      expect(rulesAt(both), `both ${JSON.stringify(url)}`).toContain("production-url-shape@delivery.productionUrl");
+      expect(JSON.stringify(both)).not.toContain("marker");
+    }
   });
 
   it("refuses without returning a partial manifest or ledger", TIMEOUT, () => {
@@ -334,7 +568,7 @@ describe("sealWebsite", () => {
       contactIntake: { kind: "none", reason: "" },
     });
     const refusedSeal = refusal(seal({ evidence: bad, itemId: "marker-item-leak", strategyRevision: markerRevision }));
-    const refusedCheck = checkSealEvidence(bad, { map: MAP, now: NOW });
+    const refusedCheck = checkSealEvidence(bad, { map: MAP, now: NOW, itemId: "website" });
     expect(refusedSeal.length).toBeGreaterThan(5);
 
     const text = JSON.stringify([refusedSeal, refusedCheck]);
@@ -347,7 +581,7 @@ describe("sealWebsite", () => {
 
     // A reason that is present and valid is also never echoed, even when another check refuses.
     const validReason = evidence({ contactIntake: { kind: "none", reason: "marker-reason-leak" }, pages: [page("/")] });
-    expect(JSON.stringify(checkSealEvidence(validReason, { map: MAP, now: NOW }))).not.toContain("marker-reason-leak");
+    expect(JSON.stringify(checkSealEvidence(validReason, { map: MAP, now: NOW, itemId: "website" }))).not.toContain("marker-reason-leak");
   });
 
   it("refuses a bad now, an empty strategy revision, an invalid manifest or ledger, and a now before approval", TIMEOUT, () => {

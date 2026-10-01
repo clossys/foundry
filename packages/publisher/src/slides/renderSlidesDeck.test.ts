@@ -102,7 +102,7 @@ describe("refusal paths", () => {
       expect(error).toBeInstanceOf(RenderError);
       expect((error as RenderError).reason).toBe("wrong-channel");
       expect((error as RenderError).message).toContain("slide 1");
-      expect((error as RenderError).message).toContain('id="bad"');
+      expect((error as RenderError).message).not.toContain('id="bad"');
     }
   });
 
@@ -118,6 +118,35 @@ describe("refusal paths", () => {
     }
   });
 
+  it("names slides by position only — never the deck id or a slide id", () => {
+    const DECK = "deck-sentinel-4471";
+    const sentinel = (n: number) => `slide-sentinel-${n}`;
+    const messageOf = (deck: SlidesDeckInput, options = {}): string => {
+      try {
+        renderSlidesDeck(deck, options);
+      } catch (error) {
+        expect(error).toBeInstanceOf(RenderError);
+        return (error as RenderError).message;
+      }
+      return expect.unreachable("should have thrown");
+    };
+    const cases: [string, string, string][] = [
+      ["zero slides", messageOf({ id: DECK, slides: [] }), "zero slides"],
+      [
+        "wrong channel",
+        messageOf({ id: DECK, slides: [slide(sentinel(1), "16:9", { channel: "image" as ComposeDocument["channel"] })] }),
+        "slide 0",
+      ],
+      ["inconsistent aspect", messageOf({ id: DECK, slides: [slide(sentinel(1), "16:9"), slide(sentinel(2), "4:3")] }), "slide 1 declares aspect"],
+      ["missing layout", messageOf({ id: DECK, slides: [slide(sentinel(1), "16:9", { layout: undefined })] }), "slide 0"],
+      ["failed resolution", messageOf({ id: DECK, slides: [slide(sentinel(1), "16:9", { bindings: [] })] }), "could not render slide 0:"],
+    ];
+    for (const [label, message, expected] of cases) {
+      expect(message, label).toContain(expected);
+      expect(message, label).not.toContain("sentinel-");
+    }
+  });
+
   it("inconsistent aspect across slides", () => {
     const deck: SlidesDeckInput = { id: "d", slides: [slide("s1", "16:9"), slide("s2", "4:3")] };
     try {
@@ -126,7 +155,7 @@ describe("refusal paths", () => {
     } catch (error) {
       expect(error).toBeInstanceOf(RenderError);
       expect((error as RenderError).reason).toBe("inconsistent-deck-aspect");
-      expect((error as RenderError).message).toContain('slide 1 (id="s2")');
+      expect((error as RenderError).message).toContain("slide 1 declares aspect");
     }
   });
 
@@ -139,7 +168,7 @@ describe("refusal paths", () => {
     } catch (error) {
       expect(error).toBeInstanceOf(RenderError);
       expect((error as RenderError).reason).toBe("resolution-failed");
-      expect((error as RenderError).message).toContain('slide 1 (id="bad")');
+      expect((error as RenderError).message).toContain("could not render slide 1:");
     }
   });
 
@@ -183,7 +212,7 @@ describe("refusal paths", () => {
     } catch (error) {
       expect(error).toBeInstanceOf(RenderError);
       expect((error as RenderError).reason).toBe("empty-output");
-      expect((error as RenderError).message).toContain('slide 0 (id="blank")');
+      expect((error as RenderError).message).toContain("could not render slide 0:");
     }
   });
 
@@ -204,7 +233,7 @@ describe("refusal paths", () => {
     } catch (error) {
       expect(error).toBeInstanceOf(RenderError);
       expect((error as RenderError).reason).toBe("empty-output");
-      expect((error as RenderError).message).toContain('slide 0 (id="blank-1")');
+      expect((error as RenderError).message).toContain("could not render slide 0:");
     }
   });
 
@@ -283,7 +312,7 @@ describe("assetId refusal paths", () => {
       expect.unreachable();
     } catch (error) {
       expect((error as RenderError).reason).toBe("empty-output");
-      expect((error as RenderError).message).toContain('slide 1 (id="bad-asset")');
+      expect((error as RenderError).message).toContain("could not render slide 1:");
     }
   });
 });

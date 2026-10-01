@@ -4,7 +4,7 @@ Issue #1208: a working marketing site template, wired to a product
 repository's own `clossys/` records from the first commit.
 
 **This directory is a template, copied into a consumer repository's
-`apps/site` by Launcher (#1215) — it does not run inside Foundry itself.**
+`apps/site` by `publisher-site-instantiate` — it does not run inside Foundry itself.**
 Foundry does not install Next.js or React as a dependency, and this
 template's own `package.json`/`tsconfig.json` are not part of Foundry's
 npm workspace, so the template itself is not built or typechecked, and its
@@ -80,23 +80,37 @@ applies at its cascade scope, or that the template builds.
 - `app/site-wiring.ts` — the pure server wiring (target, delivery choice,
   contact handler, client key, legal gate); `app/site-contact.ts` and
   `app/site-delivery.ts` assemble it.
-- `app/pack/page.tsx`, `app/pack-review.ts`, `app/pack-review-copy.ts` — the
-  dev-only pack review (`PackReviewView`): `/pack` lists each route in the
-  manifest below with the contact page's forced states, the exports named in
-  `clossys/publisher/pack.json`, and a lazy contact sheet at 390, 1024 and
-  1440 px. It is served only when `SITE_TARGET` is `development` or `test`
-  (`packReviewAvailable`): on `production`, `preview`, an absent value and any
-  value not listed it answers the 404 page before any record is read. The page
-  takes no query string or other request input. It is not in
-  `web-route-manifest.json`, so it is not in the sitemap, and it renders per
-  request. `pack.json` is read at request time from `clossys/publisher/` two
-  levels above the app and never imported, so a repository without one still
-  builds; a missing or invalid manifest shows the framed boundary page and
-  names nothing. The page's words are one catalog-shaped constant in
-  `app/pack-review-copy.ts`, in the Writer front-door id grammar
-  (`front-door.<state>.<slot>`), so they can move into Writer's `frontDoor.*`
-  catalog under the same ids; until then they are the one place in this
-  template that carries wording.
+- `app/pack/page.tsx`, `app/pack/export/route.ts`, `app/pack-review.ts`,
+  `app/pack-review-copy.ts` — the dev-only pack review (`PackReviewView`):
+  `/pack` lists each route in the manifest below with the contact page's forced
+  states, the exports named in `clossys/publisher/pack.json`, and a lazy
+  contact sheet at 390, 1024 and 1440 px. Each page, forced state and frame
+  shows the page's badge. Each export links to `/pack/export?name=<id>`, which
+  serves the OG image, the notification email (the same HTML for its 600 and
+  375 px entries) and the plain-text email from the path `pack.json` lists
+  for that id; a name that is not an id of the index, or an output that cannot
+  be read, answers 404. Both routes share one gate (`packReviewGate`): they are
+  served only when `SITE_TARGET` is `development` or `test` and `VERCEL_ENV` is
+  absent or `development`. On `production`, `preview`, an absent value and any
+  value not listed, or when `VERCEL_ENV` is `production`, `preview` or any
+  other value, the page's own decision answers the 404 page and the export
+  route answers a bare 404, before any record or file is read. An unknown
+  `SITE_TARGET` is closed too and no longer throws in the page. The template's
+  root layout and `not-found.tsx` still read `SITE_TARGET` for the shared error
+  copy, so an unknown value still fails there. An export is served with
+  `Content-Security-Policy: sandbox`, `nosniff` and `no-store`, and a type the
+  route does not list is a download. The page takes no request input; the
+  export route takes only `name`, and uses it only to look an id up. Neither
+  is in `web-route-manifest.json`, so neither is in the sitemap, and both
+  render per request. `pack.json` is read at request time from
+  `clossys/publisher/` two levels above the app and never imported, so a
+  repository without one still builds; a missing or invalid manifest shows the
+  framed boundary page and names nothing. The page's words are one
+  catalog-shaped constant in `app/pack-review-copy.ts`, in the Writer
+  front-door id grammar (`front-door.<state>.<slot>`). They use no `{token}`
+  placeholder, so none is outside Writer's closed `FRONT_DOOR_NOUNS`; they are
+  not in Writer's `frontDoor.*` catalog, and this constant is the one place in
+  this template that carries wording.
 - `app/robots.ts`, `app/sitemap.ts`, `app/opengraph-image.tsx` — Next's
   metadata route convention, each a thin wrapper over the pure functions in
   `app/site-wiring.ts` and `app/site-copy.ts` (see "Crawlers and the share
@@ -271,9 +285,6 @@ or its build fails: the four about ids `site.about.heading`,
 share card's alternative text, `site.share-card.alt` (`SHARE_CARD_ALT_ID`).
 
 ## Not yet wired
-
-Launcher applying this template into a consumer repository's `apps/site`
-(#1215) is a follow-up; this directory is the template content only.
 
 `app/error.tsx` covers a failure inside a page. A failure in the root layout
 itself (for example a missing copy entry the layout needs) is outside it and

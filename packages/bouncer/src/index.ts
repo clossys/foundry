@@ -55,6 +55,13 @@
  *      deny-all `robots.txt`, a `/health` route and a 503 with `Retry-After`,
  *      built on Fetch globals only.
  *
+ *   7. THE FRONT-DOOR CONFORMANCE KIT, HTTP HALF
+ *      (`front-door-conformance.ts`). `checkFrontDoorHttp` and
+ *      `assertFrontDoorHttp` run a host's handler through cookie-less GET
+ *      requests and report each way it breaks the gated-host rules, with the
+ *      expected values taken from items 5 and 6. Fetch globals only, for a
+ *      consumer's own test.
+ *
  * THE GATE COUNT: unreconciled grant surface — authority live here that no
  * provider still backs. `checkAuthorityReconciliation` counts it. That count
  * is 0 on an empty set and is not the charter metric.
@@ -146,6 +153,8 @@ export {
   createServiceUnavailableResponse,
 } from "./host-responses.js";
 export type { GatedHostHeaderOptions, ServiceUnavailableOptions } from "./host-responses.js";
+export { assertFrontDoorHttp, checkFrontDoorHttp } from "./front-door-conformance.js";
+export type { FrontDoorHttpConfig, FrontDoorRule, FrontDoorViolation } from "./front-door-conformance.js";
 
 export { SIGN_IN_FAILURE_CLASSES, classifySignInFailure, signInFailureCopyId } from "./sign-in-failure.js";
 export type {

@@ -124,7 +124,7 @@
  */
 
 import { resolveCopy, resolveDocument } from "../core/index.js";
-import type { ComposeDocument, EmailMeta } from "../core/index.js";
+import type { ComposeDocument, ComposeFinding, EmailMeta } from "../core/index.js";
 import { RenderError } from "../internal/errors.js";
 import { describeAssetProblems, describeStaticAssetProblems, hasAssetProblems, resolveDocumentAssets, resolveStaticAssets } from "../internal/assets.js";
 import { buildEmailHtml } from "./internal/emailDocument.js";
@@ -133,6 +133,11 @@ import type { GeometryEntry } from "./internal/geometry.js";
 import { buildPlainText } from "./internal/plainText.js";
 import { buildEmailPalette } from "./internal/styles.js";
 import type { EmailRenderResult, RenderEmailOptions } from "./types.js";
+
+/** A binding finding named by its position and rule only — never the caller's value. */
+function describeFinding(finding: ComposeFinding): string {
+  return `${finding.path ?? "bindings"} (${finding.rule})`;
+}
 
 export function renderEmailDocument(doc: ComposeDocument, options: RenderEmailOptions = {}): EmailRenderResult {
   if (doc.channel !== "email" || doc.meta.channel !== "email") {
@@ -157,7 +162,7 @@ export function renderEmailDocument(doc: ComposeDocument, options: RenderEmailOp
     }
     const bindingErrors = result.bindingFindings.filter((f) => f.severity === "error");
     if (bindingErrors.length > 0) {
-      parts.push(`malformed binding(s): ${bindingErrors.map((f) => f.message).join("; ")}`);
+      parts.push(`malformed binding(s): ${bindingErrors.map(describeFinding).join("; ")}`);
     }
     if (result.resolved.length === 0 && parts.length === 0) {
       parts.push("no binding matched any slot in the layout — nothing to render");

@@ -1,4 +1,7 @@
 import { describe, expect, it } from "vitest";
+import { FRONT_DOOR_NOUNS } from "@clossys/writer";
+import type { CopyRegistry } from "@clossys/writer";
+import { PACK_REVIEW_COPY } from "../../templates/site/app/pack-review-copy.js";
 import { buildPackReviewIndex, PACK_REVIEW_WIDTHS, packReviewStatus } from "./review-index.js";
 import type { PackItem, PackManifest } from "./types.js";
 import { validatePackManifest } from "./validate.js";
@@ -194,5 +197,27 @@ describe("buildPackReviewIndex refusals", () => {
     for (const input of [null, "x", [], {}, { routes: "x", states: {} }, { routes: [], states: [] }]) {
       expect(refused(fullManifest(), input).map((issue) => issue.rule)).toEqual(["invalid-input"]);
     }
+  });
+});
+
+/** Every `{token}` the registry's entries use that Writer's closed front-door noun set (rule F2) does not list, with its entry id. */
+function placeholdersOutsideNouns(registry: CopyRegistry): Array<[id: string, token: string]> {
+  const nouns: readonly string[] = FRONT_DOOR_NOUNS;
+  return registry.entries.flatMap((entry) =>
+    [...entry.text.matchAll(/\{([^{}]+)\}/g)].map((match) => [entry.id, match[1]!] as [string, string]).filter(([, token]) => !nouns.includes(token)),
+  );
+}
+
+describe("the pack-review copy and Writer's front-door nouns", () => {
+  it("uses no placeholder outside the catalog nouns", TIMEOUT, () => {
+    expect(placeholdersOutsideNouns(PACK_REVIEW_COPY)).toEqual([]);
+  });
+
+  it("flags a placeholder that is not a catalog noun, so the check can fail", TIMEOUT, () => {
+    const [first, ...rest] = PACK_REVIEW_COPY.entries;
+    const mutated: CopyRegistry = { ...PACK_REVIEW_COPY, entries: [{ ...first!, text: `${first!.text} {width}`, placeholders: ["width"] }, ...rest] };
+    expect(placeholdersOutsideNouns(mutated)).toEqual([[first!.id, "width"]]);
+    const allowed: CopyRegistry = { ...PACK_REVIEW_COPY, entries: [{ ...first!, text: `${first!.text} {brand}`, placeholders: ["brand"] }, ...rest] };
+    expect(placeholdersOutsideNouns(allowed)).toEqual([]);
   });
 });

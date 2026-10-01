@@ -2,6 +2,7 @@ import type { ComponentProps } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { Button } from "./Button.js";
 import { Link } from "./Link.js";
 
 describe("Link", () => {
@@ -110,5 +111,92 @@ describe("Link", () => {
       </Link>,
     );
     expect(screen.getByRole("link").style.boxShadow).toBe("none");
+  });
+  describe("button look", () => {
+    it("renders Button's exact classes on a custom link element, and a consumer className still wins", () => {
+      function CustomRouterLink(props: ComponentProps<"a">) {
+        return <a {...props} data-testid="custom-router-link" />;
+      }
+      const { unmount } = render(
+        <Button variant="secondary" size="lg">
+          Go
+        </Button>,
+      );
+      const buttonTokens = screen.getByRole("button", { name: "Go" }).className.split(" ").sort();
+      unmount();
+
+      render(
+        <Link
+          href="/go"
+          buttonVariant="secondary"
+          buttonSize="lg"
+          render={(props) => <CustomRouterLink {...props} />}
+        >
+          Go
+        </Link>,
+      );
+      const link = screen.getByTestId("custom-router-link");
+      expect(link.tagName).toBe("A");
+      expect(link).toHaveAttribute("href", "/go");
+      expect(screen.getByRole("link", { name: "Go" })).toBe(link);
+      expect(link.className.split(" ").sort()).toEqual(buttonTokens);
+    });
+
+    it("lets a consumer className win the merge in button mode", () => {
+      render(
+        <Link href="/go" buttonVariant="primary" className="bg-status-danger">
+          Go
+        </Link>,
+      );
+      const classes = screen.getByRole("link", { name: "Go" }).className.split(" ");
+      expect(classes).toContain("bg-status-danger");
+      expect(classes).not.toContain("bg-accent");
+    });
+
+    it("applies button classes when only buttonSize is set, defaulting the variant to primary", () => {
+      const { unmount } = render(<Button size="sm">Go</Button>);
+      const buttonTokens = screen.getByRole("button", { name: "Go" }).className.split(" ").sort();
+      unmount();
+      render(
+        <Link href="/go" buttonSize="sm">
+          Go
+        </Link>,
+      );
+      expect(screen.getByRole("link", { name: "Go" }).className.split(" ").sort()).toEqual(
+        buttonTokens,
+      );
+    });
+  });
+
+  describe("unchanged link", () => {
+    it("keeps the link classes when neither button prop is set", () => {
+      render(<Link href="/go">Go</Link>);
+      const classes = screen.getByRole("link", { name: "Go" }).className.split(" ");
+      expect(classes).toContain("text-ink-link");
+      expect(classes).not.toContain("rounded-control");
+    });
+
+    it("sets the disabled opacity style in button mode", () => {
+      render(
+        <Link href="/go" buttonVariant="primary" isDisabled>
+          Go
+        </Link>,
+      );
+      // jsdom cannot parse the `var()` opacity value, so read the attribute.
+      expect(screen.getByRole("link", { name: "Go" }).getAttribute("style") ?? "").toContain(
+        "opacity",
+      );
+    });
+
+    it("sets no opacity style on a plain link", () => {
+      render(
+        <Link href="/go" isDisabled>
+          Go
+        </Link>,
+      );
+      expect(screen.getByRole("link", { name: "Go" }).getAttribute("style") ?? "").not.toContain(
+        "opacity",
+      );
+    });
   });
 });

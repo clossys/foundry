@@ -340,7 +340,7 @@ describe("refusals and exports", () => {
   describe("derived alt", () => {
     function derived(overrides: Partial<BrandShareCardInput>): string {
       const { alt: _alt, ...rest } = input(overrides);
-      return buildBrandShareCard(rest as BrandShareCardInput).shareCard.alt;
+      return buildBrandShareCard(rest).shareCard.alt;
     }
 
     it("reads the visible text in order when alt is omitted", () => {

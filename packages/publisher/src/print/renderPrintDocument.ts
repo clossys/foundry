@@ -99,7 +99,7 @@
  */
 
 import { resolveCopy, resolveDocument } from "../core/index.js";
-import type { ComposeDocument, PrintMeta, ResolvedSlot } from "../core/index.js";
+import type { ComposeDocument, ComposeFinding, PrintMeta, ResolvedSlot } from "../core/index.js";
 import { RenderError } from "../internal/errors.js";
 import { describeAssetProblems, describeStaticAssetProblems, hasAssetProblems, resolveDocumentAssets, resolveStaticAssets } from "../internal/assets.js";
 import { flattenTokens } from "../internal/tokens.js";
@@ -108,6 +108,11 @@ import { buildPageAtRuleCss, resolvePageBox } from "./internal/page.js";
 import { buildImageSlotHtml, buildSlotHtml } from "./internal/slot.js";
 import { resolveStyleColors } from "./internal/style.js";
 import type { RenderPrintOptions, RenderPrintResult } from "./types.js";
+
+/** A binding finding named by its position and rule only — never the caller's value. */
+function describeFinding(finding: ComposeFinding): string {
+  return `${finding.path ?? "bindings"} (${finding.rule})`;
+}
 
 function hasRealLayout(doc: ComposeDocument): doc is ComposeDocument & { layout: NonNullable<ComposeDocument["layout"]> } {
   return doc.layout !== undefined && Array.isArray(doc.layout.slots);
@@ -141,7 +146,7 @@ export function renderPrintDocument(doc: ComposeDocument, options: RenderPrintOp
     if (result.missingRequired.length > 0) parts.push(`${result.missingRequired.length} missing required slot(s)`);
     if (result.unknownBindings.length > 0) parts.push(`${result.unknownBindings.length} binding(s) targeting unknown slot(s)`);
     if (result.resolved.length === 0) parts.push("no binding matched any slot in the layout — nothing to render");
-    const findingMessages = result.bindingFindings.map((f) => f.message);
+    const findingMessages = result.bindingFindings.map(describeFinding);
     if (findingMessages.length > 0) parts.push(`binding shape finding(s): ${findingMessages.join("; ")}`);
     throw new RenderError(
       "resolution-failed",

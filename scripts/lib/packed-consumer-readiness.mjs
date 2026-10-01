@@ -21,6 +21,7 @@ const publisherOmissionRow = ({ rejected = [], web = "imports" } = {}) => ({
 const bouncerExports = [
   "@clossys/bouncer",
   "@clossys/bouncer/agent",
+  "@clossys/bouncer/gate",
   "@clossys/bouncer/providers/clerk",
   "@clossys/bouncer/providers/clerk/web",
   "@clossys/bouncer/providers/clerk/web/client",
@@ -75,6 +76,7 @@ const publisherExports = [
   "@clossys/publisher/slides",
   "@clossys/publisher/surfaces",
   "@clossys/publisher/templates",
+  "@clossys/publisher/testing",
   "@clossys/publisher/web",
 ];
 
@@ -172,9 +174,9 @@ export const OPTIONAL_PEER_POLICY = {
   },
   "@clossys/publisher": {
     "@internationalized/date": publisherOmissionRow({ web: { default: "rejects", reactServer: "imports" } }),
-    react: publisherOmissionRow({ rejected: ["@clossys/publisher/document"], web: { default: "rejects", reactServer: "rejects" } }),
+    react: publisherOmissionRow({ rejected: ["@clossys/publisher/document", "@clossys/publisher/testing"], web: { default: "rejects", reactServer: "rejects" } }),
     "react-aria-components": publisherOmissionRow({ web: { default: "rejects", reactServer: "imports" } }),
-    "react-dom": publisherOmissionRow({ web: { default: "rejects", reactServer: "imports" } }),
+    "react-dom": publisherOmissionRow({ rejected: ["@clossys/publisher/testing"], web: { default: "rejects", reactServer: "imports" } }),
     // #749/#878: publisher/web reaches designer's cx() transitively
     // (publisher has no tailwind-merge import site of its own -- grep
     // confirms it appears only in fixture peer-name lists inside

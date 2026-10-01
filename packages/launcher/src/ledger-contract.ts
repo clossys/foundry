@@ -8,6 +8,7 @@
 // in this package writes a ledger yet. The TypeScript types below describe
 // the contract's shapes for callers; they validate nothing.
 
+import { AGENTS_GUIDE_PATH, AGENTS_GUIDE_TEXT } from "./agents-guide.js";
 import { formatContractViolation, readContractDocument, validateAgainstContract } from "./generated/contract-schema.generated.js";
 import {
   EXEMPTION_SURFACES,
@@ -17,6 +18,7 @@ import {
   LOCKFILE_NAMES,
   canonicalOrder,
   compareTuples,
+  contentDigest,
   derivedPlanItem,
   dependencyPointer,
   discoveryLinkRole,
@@ -26,6 +28,9 @@ import type { ApprovalBinding, ChangeSetPhase, DependencyPlacement, RepositoryCh
 import { changeSetDigest } from "./change-set-digest.js";
 import { loadContract } from "./plan-contract.js";
 import type { ValidationResult } from "./plan-contract.js";
+
+/** The digest of the Launcher guide's bytes: the only after an apply-phase add of the guide may carry (RENDER and S3). */
+const AGENTS_GUIDE_DIGEST = contentDigest(AGENTS_GUIDE_TEXT);
 
 /** One generation: the change set that wrote it, and on what authority. */
 export interface LedgerHistoryEntry {
@@ -325,7 +330,19 @@ function successionRuleViolations(base: InstalledLedger | null, head: InstalledL
   }
   // Already proved: L3 on the head makes the entry before an admitted one its approved setup entry, and S2 makes that entry the base's latest;
   // L3 makes an admitted entry an apply entry, and L4 leaves no deferred row after one.
-  if (!sameValue(head.files, base.files)) push("S3", "head.files", "differ from the base ledger's, and an admitted generation changes no file");
+  // The one file an admitted generation may add: the Launcher guide, for an install set up before it existed. Its row is the only change to
+  // the files, is written by this generation, holds the guide's own bytes, and so the base holds none at that path (L8 forbids a repeat in
+  // any letter case).
+  const addedFiles = head.files.filter((row) => !base.files.some((other) => sameValue(other, row)));
+  const droppedFiles = base.files.filter((row) => !head.files.some((other) => sameValue(other, row)));
+  const guideAdded =
+    droppedFiles.length === 0 &&
+    addedFiles.length === 1 &&
+    addedFiles[0]!.path === AGENTS_GUIDE_PATH &&
+    addedFiles[0]!.mode === "100644" &&
+    addedFiles[0]!.after === AGENTS_GUIDE_DIGEST &&
+    addedFiles[0]!.changeSet === last.changeSet;
+  if (addedFiles.length + droppedFiles.length > 0 && !guideAdded) push("S3", "head.files", "differ from the base ledger's, and an admitted generation changes no file but may add the guide's");
   if (!sameValue(head.entries, base.entries)) push("S3", "head.entries", "differ from the base ledger's, and an admitted generation changes no entry");
   const kept = <T>(rows: readonly T[], from: readonly T[]) => from.every((row) => rows.some((other) => sameValue(other, row)));
   if (!kept(head.keys, base.keys)) push("S3", "head.keys", "drop or change a key row the base ledger has");
@@ -480,7 +497,11 @@ const sameIdentity = (left: LedgerPackageRow, right: LedgerPackageRow): boolean 
  * (before equal to after) at a path previous holds no row for, which would
  * be an adoption row and only a setup set may adopt one; or an apply set
  * writes a whole file whose before does not match previous's after at that
- * path, or at a path previous holds no row for.
+ * path, or at a path previous holds no row for. The one apply-phase add is
+ * the Launcher guide (AGENTS_GUIDE_PATH, mode 100644, before null, after the
+ * digest of AGENTS_GUIDE_TEXT) over a previous ledger that holds no row for
+ * the path in any letter case: the row is written like any other. An add at
+ * any other path, or of other bytes, still throws.
  */
 export function renderInstalledLedger(
   previous: InstalledLedger | null,
@@ -518,7 +539,11 @@ export function renderInstalledLedger(
     const isKeep = file.before === file.after;
     if (isKeep && existing !== undefined && existing.after === file.after) return; // unchanged: previous's row already holds this after
     if (isKeep && set.phase === "apply") throw new TypeError(`files[${index}] keeps a file previous holds no row for, which only a setup set may adopt`);
-    if (set.phase === "apply" && !isKeep && (existing === undefined || existing.after !== file.before)) {
+    // The one apply-phase add: the Launcher guide's own bytes, for an install set up before it existed, where previous holds no row at its
+    // path. A row at that path that is not 100644 would also fail the output's own validation (L5) below.
+    const guideAdd =
+      previous !== null && file.path === AGENTS_GUIDE_PATH && file.before === null && file.mode === "100644" && file.after === AGENTS_GUIDE_DIGEST && existing === undefined;
+    if (set.phase === "apply" && !isKeep && !guideAdd && (existing === undefined || existing.after !== file.before)) {
       throw new TypeError(`files[${index}] has no matching previous row for an apply update`);
     }
     filesByPath.set(key, { path: file.path, mode: file.mode, after: file.after, changeSet: d });

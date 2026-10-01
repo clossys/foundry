@@ -2,6 +2,7 @@ import {
   Button as AriaButton,
   type ButtonProps as AriaButtonProps,
 } from "react-aria-components";
+import { buttonClassName } from "./button-classes.js";
 import { cx } from "./internal/cx.js";
 import { UI_ALPHA_DISABLED, UI_RING_FOCUS } from "./internal/ui-vars.js";
 
@@ -19,22 +20,6 @@ export interface ButtonProps extends AriaButtonProps {
   /** @default "md" */
   size?: ButtonSize;
 }
-
-const BASE =
-  "inline-flex items-center justify-center gap-sm rounded-control text-body font-body transition-colors motion-reduce:transition-none outline-none disabled:cursor-not-allowed";
-
-const VARIANT_CLASSES: Record<ButtonVariant, string> = {
-  primary: "bg-accent text-ink-on-accent hover:bg-accent-hover",
-  secondary: "bg-surface-raised text-ink-primary border border-line-base hover:bg-surface-sunken",
-  ghost: "text-ink-primary hover:bg-surface-sunken",
-  danger: "bg-status-danger text-ink-on-accent hover:bg-status-danger-text",
-};
-
-const SIZE_CLASSES: Record<ButtonSize, string> = {
-  sm: "px-sm py-xs text-body-s",
-  md: "px-md py-sm text-body",
-  lg: "px-lg py-md text-body-l",
-};
 
 /**
  * A pressable action. Built on react-aria-components' `Button` for its
@@ -57,9 +42,7 @@ export function Button({ variant = "primary", size = "md", className, style, ...
       {...rest}
       className={(renderProps) =>
         cx(
-          BASE,
-          SIZE_CLASSES[size],
-          VARIANT_CLASSES[variant],
+          buttonClassName(variant, size),
           typeof className === "function" ? className(renderProps) : className,
         )
       }

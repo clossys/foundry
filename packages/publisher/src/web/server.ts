@@ -121,8 +121,12 @@ export { LandingView } from "#publisher-web-views";
 export type { LandingViewProps } from "#publisher-web-views";
 export { ContactView } from "#publisher-web-views";
 export type { ContactViewCopy, ContactViewDevPreview, ContactViewProps, ContactViewTopic, ContactViewValues } from "#publisher-web-views";
+export { SignInForm } from "#publisher-web-views";
+export type { SignInFailure, SignInFormProps, SignInResult } from "#publisher-web-views";
 export { GlobalErrorDocument } from "#publisher-web-views";
 export type { GlobalErrorDocumentProps } from "#publisher-web-views";
+export { ActivateForm, ResetForm } from "#publisher-web-views";
+export type { ActivateDetails, ActivateFailure, ActivateFormProps, ActivateResult, ResetDetails, ResetFailure, ResetFormProps, ResetResult } from "#publisher-web-views";
 
 // Kept after the views: the share card reads Designer names newer than the views do, and a Designer that lacks the views' names must fail on those first.
 export {
@@ -143,3 +147,5 @@ export type {
   ShareCardMark,
   ShareCardRoles,
 } from "./shareCard.js";
+export { createShareCardRoute } from "./shareCardRoute.js";
+export type { ShareCardRoute, ShareCardRouteInput } from "./shareCardRoute.js";

@@ -40,6 +40,7 @@ const registry: CopyRegistry = {
     { id: "acme.hero.description", text: "Placeholder hero description.", context: "fixture", status: "approved" },
     { id: "acme.cta.heading", text: "Placeholder CTA heading", context: "fixture", status: "approved" },
     { id: "acme.features.heading", text: "Placeholder features heading", context: "fixture", status: "approved" },
+    { id: "acme.features.description", text: "Placeholder features description.", context: "fixture", status: "approved" },
     { id: "acme.feature.a", text: "Placeholder feature A", context: "fixture", status: "approved" },
     { id: "acme.feature.b", text: "Placeholder feature B", context: "fixture", status: "approved" },
     { id: "acme.feature.c", text: "Placeholder feature C", context: "fixture", status: "approved" },
@@ -135,6 +136,19 @@ describe("MarketingView — repeating 'features' slot: 0, 1, and many items", ()
     const { element } = renderWebDocument(resolved.document, { groups: resolved.groups });
     const html = renderToStaticMarkup(element);
     expect(html).toContain("Placeholder features heading");
+    expect(html).toContain("desktop:grid-cols-3");
+  });
+
+  it("keeps the feature band when a features description is bound with zero items", () => {
+    const doc = marketingDoc([
+      ...baseBindings,
+      { slot: "featuresDescription", copy: ref("acme.features.description") },
+      { slot: "features", items: [] },
+    ]);
+    const resolved = resolveSurfaceDocument(doc, resolver);
+    const { element } = renderWebDocument(resolved.document, { groups: resolved.groups });
+    const html = renderToStaticMarkup(element);
+    expect(html).toContain("Placeholder features description.");
     expect(html).toContain("desktop:grid-cols-3");
   });
 

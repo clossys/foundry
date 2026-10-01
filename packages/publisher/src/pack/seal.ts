@@ -65,8 +65,8 @@ export interface SealFinding {
 
 export interface CheckSealEvidenceOptions {
   map: PublicationMap;
-  /** When given, the evidence's own `itemId` must equal it. Without it, the evidence only has to name some item. */
-  itemId?: string;
+  /** The item being sealed. Required: the evidence's own `itemId` must equal it, and a missing or empty one is refused. */
+  itemId: string;
   /** ISO 8601 UTC instant the check is made at. */
   now: string;
 }
@@ -83,7 +83,8 @@ export interface SealWebsiteInput {
 }
 
 export type SealWebsiteResult =
-  | { ok: true; manifest: PackManifest; ledger: Ledger; entryId: string }
+  /** `resumed` is true when the ledger already held this seal's identical entry (an interrupted run) and only the manifest was finished; the ledger is then returned as given. */
+  | { ok: true; manifest: PackManifest; ledger: Ledger; entryId: string; resumed: boolean }
   | { ok: false; findings: readonly SealFinding[] };
 
 const COMMIT_RE = /^[0-9a-f]{40}$/;
@@ -116,16 +117,23 @@ function parseInstant(value: unknown): number | undefined {
   return Number.isFinite(ms) ? ms : undefined;
 }
 
-/** True when `value` is a real ISO 8601 UTC instant (`2026-09-30T12:00:00Z`, optional fraction). */
-export function isSealInstant(value: unknown): boolean {
-  return parseInstant(value) !== undefined;
-}
+/** Letters, digits, hyphens and dots only, or a bracketed IPv6 literal. The parser lower-cases a host and writes an IPv4 literal as dotted digits, so a canonical value needs no more. */
+const HOST_RE = /^(?:[a-z0-9-]+(?:\.[a-z0-9-]+)*|\[[0-9a-f:.]+\])$/;
 
-function isHttpsUrl(value: unknown): boolean {
+/**
+ * True only for an `https` URL with a plain host and no username or password that is already in the form the
+ * WHATWG parser writes (`new URL(value).href === value`). The value is stored as written in the ledger `url` and
+ * the manifest `publishedTo`, so a spelling the parser would rewrite is refused rather than normalised: other
+ * readers parse a backslash, an empty userinfo, a control character or an upper-case scheme differently (a
+ * backslash before what follows as userinfo makes the parser see one host, and an RFC 3986 reader another host
+ * with a password). The parser also lets a host carry characters such as a quote, a brace or a semicolon, which
+ * no real host needs and which the host rule refuses.
+ */
+function isCanonicalHttpsUrl(value: unknown): boolean {
   if (typeof value !== "string" || value.length === 0) return false;
   try {
     const url = new URL(value);
-    return url.protocol === "https:" && url.hostname.length > 0;
+    return url.href === value && url.protocol === "https:" && HOST_RE.test(url.hostname) && url.username === "" && url.password === "";
   } catch {
     return false;
   }
@@ -156,6 +164,7 @@ export function checkSealEvidence(evidence: unknown, options: CheckSealEvidenceO
 function checkEvidence(evidence: unknown, options: CheckSealEvidenceOptions | undefined, add: (rule: string, path: string) => void): void {
   const nowMs = parseInstant(options?.now);
   if (nowMs === undefined) add("now-invalid", "now");
+  if (!isNonEmptyString(options?.itemId)) add("item-id-invalid", "itemId");
 
   const map = options?.map;
   let mappedPaths: string[] = [];
@@ -174,7 +183,7 @@ function checkEvidence(evidence: unknown, options: CheckSealEvidenceOptions | un
   if (evidence.schemaVersion !== 1) add("schema-version", "schemaVersion");
 
   if (!isNonEmptyString(evidence.itemId)) add("evidence-item-shape", "itemId");
-  else if (options?.itemId !== undefined && evidence.itemId !== options.itemId) add("evidence-item-mismatch", "itemId");
+  else if (isNonEmptyString(options?.itemId) && evidence.itemId !== options.itemId) add("evidence-item-mismatch", "itemId");
 
   const commit = evidence.commit;
   if (typeof commit !== "string" || !COMMIT_RE.test(commit)) add("commit-shape", "commit");
@@ -194,7 +203,7 @@ function checkEvidence(evidence: unknown, options: CheckSealEvidenceOptions | un
     if (delivery.state !== "ready") add("delivery-not-ready", "delivery.state");
     if (typeof delivery.deployedCommit !== "string" || !COMMIT_RE.test(delivery.deployedCommit)) add("delivery-commit-shape", "delivery.deployedCommit");
     else if (delivery.deployedCommit !== commit) add("delivery-commit-mismatch", "delivery.deployedCommit");
-    if (!isHttpsUrl(delivery.productionUrl)) add("production-url-shape", "delivery.productionUrl");
+    if (!isCanonicalHttpsUrl(delivery.productionUrl)) add("production-url-shape", "delivery.productionUrl");
   }
 
   const pages = evidence.pages;
@@ -247,6 +256,20 @@ function packFindingsClean(manifest: unknown): boolean {
 }
 
 /**
+ * True when `existing` is the entry a seal on this id, url and strategy revision would have recorded at some
+ * earlier instant: not after `nowMs`, and not before the evidence was observed. The second bound is what keeps
+ * a hand-added entry from backdating the `verifiedAt` the rerun copies into the manifest.
+ */
+function isIdenticalEntry(existing: PublicationEntry, expected: { id: string; url: string; strategyRevision: string }, nowMs: number | undefined, observedMs: number | undefined): boolean {
+  const recordedMs = parseInstant(existing.publishedAt);
+  if (recordedMs === undefined || nowMs === undefined || observedMs === undefined || recordedMs > nowMs || recordedMs < observedMs) return false;
+  const wanted: PublicationEntry = { id: expected.id, publishedAt: existing.publishedAt, channel: "web", url: expected.url, strategyRevision: expected.strategyRevision, factCitations: [] };
+  // Key order is not part of the entry: a hand-formatted ledger is still the same entry.
+  const canonical = (entry: PublicationEntry): string => JSON.stringify(Object.entries(entry).sort(([left], [right]) => (left < right ? -1 : left > right ? 1 : 0)));
+  return canonical(existing) === canonical(wanted);
+}
+
+/**
  * Seals a website pack item. Pure: nothing passed in is mutated, and a
  * refusal returns findings only, never a partial manifest or ledger.
  *
@@ -257,7 +280,11 @@ function packFindingsClean(manifest: unknown): boolean {
  * commit>`) is not already in the ledger (`seal-already-recorded`). On accept
  * it returns a new manifest whose item is `published` with `verifiedAt` set to
  * `now` and `publishedTo` set to the production URL, and a ledger grown by
- * `appendEntry` with one `web` entry.
+ * `appendEntry` with one `web` entry. An entry id already in the ledger is
+ * finished rather than refused (`resumed: true`, ledger returned unchanged,
+ * `verifiedAt` the entry's own `publishedAt`) only when the entry is exactly
+ * the one this evidence would record, recorded between the evidence's
+ * `observedAt` and `now`, and the item is still `kept`.
  */
 export function sealWebsite(input: SealWebsiteInput): SealWebsiteResult {
   const findings: SealFinding[] = [];
@@ -270,10 +297,21 @@ export function sealWebsite(input: SealWebsiteInput): SealWebsiteResult {
   return { ok: false, findings };
 }
 
+/** A plain-data copy of the evidence, or `undefined` (which `checkSealEvidence` refuses as `evidence-shape`) when it cannot be copied: a function, a symbol, a proxy or a throwing getter. */
+function snapshotEvidence(evidence: unknown): unknown {
+  try {
+    return structuredClone(evidence);
+  } catch {
+    return undefined;
+  }
+}
+
 /** Returns the accepted seal, or undefined after pushing at least one finding. */
 function seal(input: SealWebsiteInput, findings: SealFinding[]): SealWebsiteResult | undefined {
   const add = (rule: string, path: string): void => void findings.push({ rule, path });
-  const { manifest, ledger, itemId, evidence, map, now, strategyRevision } = input;
+  const { manifest, ledger, itemId, map, now, strategyRevision } = input;
+  // Everything below reads this one plain-data copy, taken with each property read exactly once. The caller's own object is never read again, so a getter or proxy that answers differently on a later read cannot change what is checked against what is stored. Evidence that cannot be copied is refused as a bad shape.
+  const evidence = snapshotEvidence(input.evidence);
   for (const finding of checkSealEvidence(evidence, { map, now, itemId })) add(finding.rule, finding.path);
 
   if (itemId !== WEBSITE_ITEM_ID) add("item-not-website", "itemId");
@@ -294,24 +332,37 @@ function seal(input: SealWebsiteInput, findings: SealFinding[]): SealWebsiteResu
   }
 
   const commit = isPlainObject(evidence) ? evidence.commit : undefined;
-  const delivery = isPlainObject(evidence) && isPlainObject(evidence.delivery) ? evidence.delivery : undefined;
+  const delivery = isPlainObject(evidence) ? evidence.delivery : undefined;
   const validCommit = typeof commit === "string" && COMMIT_RE.test(commit) ? commit : undefined;
   const entryId = validCommit !== undefined && typeof itemId === "string" ? `website-${itemId}-${validCommit.slice(0, 12)}` : undefined;
-  if (entryId !== undefined && ledgerOk && ledger.some((existing) => existing.id === entryId)) add("seal-already-recorded", "ledger");
+  // The URL is stored and compared as written (here and in the resume check). That is safe because it comes from the same snapshot `checkSealEvidence` refused every non-canonical spelling on.
+  const productionUrl = isPlainObject(delivery) && typeof delivery.productionUrl === "string" ? delivery.productionUrl : undefined;
 
-  if (findings.length > 0 || target === undefined || entryId === undefined || typeof delivery?.productionUrl !== "string") return undefined;
+  // An entry already in the ledger is finished, not refused, only when it is exactly the one this evidence would record and the item is still kept.
+  let recorded: PublicationEntry | undefined;
+  if (entryId !== undefined && ledgerOk) {
+    const existing = ledger.find((candidate) => candidate.id === entryId);
+    if (existing !== undefined) {
+      if (target !== undefined && productionUrl !== undefined && isIdenticalEntry(existing, { id: entryId, url: productionUrl, strategyRevision }, parseInstant(now), isPlainObject(evidence) ? parseInstant(evidence.observedAt) : undefined)) recorded = existing;
+      else add("seal-already-recorded", "ledger");
+    }
+  }
 
-  const productionUrl = delivery.productionUrl;
+  if (findings.length > 0 || target === undefined || entryId === undefined || productionUrl === undefined) return undefined;
+
+  const verifiedAt = recorded?.publishedAt ?? now;
   const sealedManifest: PackManifest = {
     ...manifest,
     items: manifest.items.map((candidate): PackItem =>
-      candidate.id === itemId ? { ...structuredClone(candidate), status: "published", verifiedAt: now, publishedTo: [productionUrl] } : structuredClone(candidate),
+      candidate.id === itemId ? { ...structuredClone(candidate), status: "published", verifiedAt, publishedTo: [productionUrl] } : structuredClone(candidate),
     ),
   };
   if (!packFindingsClean(sealedManifest)) {
     add("manifest-invalid", "manifest");
     return undefined;
   }
+
+  if (recorded !== undefined) return { ok: true, manifest: sealedManifest, ledger, entryId, resumed: true };
 
   const entry: PublicationEntry = { id: entryId, publishedAt: now, channel: "web", url: productionUrl, strategyRevision, factCitations: [] };
   let grown: Ledger;
@@ -321,5 +372,5 @@ function seal(input: SealWebsiteInput, findings: SealFinding[]): SealWebsiteResu
     add("ledger-entry-invalid", "ledger");
     return undefined;
   }
-  return { ok: true, manifest: sealedManifest, ledger: grown, entryId };
+  return { ok: true, manifest: sealedManifest, ledger: grown, entryId, resumed: false };
 }

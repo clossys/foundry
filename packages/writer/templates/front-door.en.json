@@ -385,6 +385,42 @@
       "placeholders": [
         "surface"
       ]
+    },
+    {
+      "id": "front-door.password-weak.notice",
+      "text": "That password isn’t strong enough. Use a longer one you haven’t used anywhere else.",
+      "context": "reset and activation pages: notice when the new password is refused as too weak",
+      "status": "approved"
+    },
+    {
+      "id": "front-door.reset-code.primary",
+      "text": "Reset password",
+      "context": "reset page, code step: main button",
+      "status": "approved"
+    },
+    {
+      "id": "front-door.activation.label",
+      "text": "Password",
+      "context": "activation page: password field label",
+      "status": "approved"
+    },
+    {
+      "id": "front-door.activation-first-name.label",
+      "text": "First name",
+      "context": "activation page: first name field label",
+      "status": "approved"
+    },
+    {
+      "id": "front-door.activation-last-name.label",
+      "text": "Last name",
+      "context": "activation page: last name field label",
+      "status": "approved"
+    },
+    {
+      "id": "front-door.name-required.notice",
+      "text": "Enter your first and last name.",
+      "context": "activation page: notice when a name field is empty",
+      "status": "approved"
     }
   ]
 }

@@ -107,15 +107,17 @@ export function decide(plan: AdvisorPlan, chosen: string, at: string, subject?: 
   return withDecisions(plan, [...plan.decisions, decision(at, chosen, subject)]);
 }
 
-/** The head commit of the hub most recently built by hubRepo for a plan digest, so a test that has only the plan still holds the head its hub was read at. */
+/** The head commit of each hub hubRepo built, by the hub's path, so two hubs for one plan keep their own heads. */
 const HUB_HEADS = new Map<string, string>();
+/** The head of the hub most recently built for a plan digest, for a test that names the plan and no hub. */
+const LAST_HEADS = new Map<string, string>();
 
-/** What readHubAuthority returns for the plan: the head is that of the hub last built for this plan, or a placeholder commit id when none was. */
-export function authorityOf(plan: AdvisorPlan): HubAuthority {
+/** What readHubAuthority returns for the plan: the head is that of `hub`, else of the hub last built for this plan, or a placeholder commit id when none was. */
+export function authorityOf(plan: AdvisorPlan, hub?: string): HubAuthority {
   const subject = approvedSubject(plan);
   if (subject === null) throw new Error("the fixture plan is not approved");
   const digest = planDigest(plan);
-  return { plan, planDigest: digest, subject, head: HUB_HEADS.get(digest) ?? "0".repeat(40) };
+  return { plan, planDigest: digest, subject, head: (hub === undefined ? LAST_HEADS.get(digest) : HUB_HEADS.get(hub)) ?? "0".repeat(40) };
 }
 
 /** The plan's identity for each package act of one repository. */
@@ -520,12 +522,13 @@ export function hubRepo(roots: string[], options: HubOptions): HubFixture {
   }
   if (mode === "absent") writeFileSync(join(hub, PLAN_FILE), jsonText(last));
   if (options.readiness !== false) writeReadinessStub(hub);
+  const realHub = realpathSync(hub);
+  HUB_HEADS.set(realHub, commits[commits.length - 1]!);
   try {
-    HUB_HEADS.set(planDigest(last), commits[commits.length - 1]!);
+    LAST_HEADS.set(planDigest(last), commits[commits.length - 1]!);
   } catch {
     // An invalid plan has no digest, and no authority is built for it.
   }
-  const realHub = realpathSync(hub);
   for (const set of options.sets ?? []) storeChangeSet(realHub, set);
   for (const bundle of options.bundles ?? []) storeApplyBundle(realHub, bundle);
   return { hub: realHub, repository, commits, origin };

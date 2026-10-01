@@ -109,7 +109,7 @@ registered `CopyRecord`. It exits 0 when clean, 1 when it finds traceability
 issues, and 2 when it cannot run.
 
 This package does not resolve a claim's `factRef`, infer tone or grammar, or
-ship actual product language, except for the 57 English front-door defaults in
+ship actual product language, except for the 63 English front-door defaults in
 "Front-door copy" below. Those decisions remain with the consumer and the
 product's facts system.
 
@@ -294,6 +294,15 @@ one of three specific to this kind:
   It is reported on the later field. The two ladders are not compared with
   each other, and there are no other word targets.
 
+The placeholder-value reasons of `resolveCopyRef` (`"missing-placeholder-value"`
+and `"unexpected-placeholder-value"`) never surface from this function: a kit
+entry is literal text, so every one of them is reported as
+`"messaging-placeholder"`, once per field.
+
+This function judges approval and shape, not wording. For the words of a pitch
+or boilerplate, run `checkCopy` over each resolved text, and run
+`auditClaimsRegister` over the claims register that backs it.
+
 An FAQ and a tagline are out of scope (`site.tagline` already exists).
 
 ## Front-door copy (`front-door.*`)
@@ -301,7 +310,7 @@ An FAQ and a tagline are out of scope (`site.tagline` already exists).
 The words on a sign-in page and the pages around it are a reserved copy kind
 too, so each page does not carry its own. An id is
 `front-door.<state>.<slot>`, where the slot is one of `title`, `description`,
-`label`, `primary`, `secondary`, `notice` or `alt`. This version ships 57
+`label`, `primary`, `secondary`, `notice` or `alt`. This version ships 63
 ids, listed in `FRONT_DOOR_COPY_IDS` (typed as `FrontDoorKey`), as
 `FRONT_DOOR_COPY_EN`, a `CopyRegistry` with the id `front-door`, locale `en`
 and revision `1`; the same registry ships as data in
@@ -309,7 +318,8 @@ and revision `1`; the same registry ships as data in
 states: sign-in, password, code, reset, activation, request-access,
 forgot-password, identifier-not-found, the field notices (identifier-required,
 password-required, code-required, network), the status notices (unavailable,
-rate-limited, locked, expired, signed-out), and the pages error, not-found,
+rate-limited, locked, expired, signed-out), the weak-password and
+name-required notices, and the pages error, not-found,
 not-authorized, access-pending and service-unavailable, plus an internal-note
 label:
 
@@ -372,6 +382,12 @@ label:
 | `front-door.password-required.notice` | Enter your password. |
 | `front-door.code-required.notice` | Enter the code. |
 | `front-door.network.notice` | Couldn’t reach {surface}. Check your connection and try again. |
+| `front-door.password-weak.notice` | That password isn’t strong enough. Use a longer one you haven’t used anywhere else. |
+| `front-door.reset-code.primary` | Reset password |
+| `front-door.activation.label` | Password |
+| `front-door.activation-first-name.label` | First name |
+| `front-door.activation-last-name.label` | Last name |
+| `front-door.name-required.notice` | Enter your first and last name. |
 
 A `{token}` in a text is a noun from the closed set `FRONT_DOOR_NOUNS`:
 `brand`, `surface`, `identifier`, `digest` and `requestAccessLabel` (typed as

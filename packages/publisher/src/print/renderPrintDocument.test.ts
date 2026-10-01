@@ -450,6 +450,15 @@ describe("renderPrintDocument — refusal messages never echo a document id, cop
     expect(error.message).not.toContain(SENTINEL_DOC_ID);
   });
 
+  it("a malformed binding is reported as its path and rule, without the caller's value", () => {
+    const doc = baseDoc({ bindings: [{ slot: "title", copyId: 424242 }, { slot: 515151, value: "World" }] as unknown as ComposeDocument["bindings"] });
+    const error = thrown(() => renderPrintDocument(doc));
+    expect(error.reason).toBe("resolution-failed");
+    expect(error.message).toContain("binding shape finding(s): bindings.0.copyId (binding-copy-id-shape)");
+    expect(error.message).not.toContain("424242");
+    expect(error.message).not.toContain("515151");
+  });
+
   it("a slot whose copy does not resolve is refused without the document id or the copy id", () => {
     const error = thrown(() => renderPrintDocument(baseDoc({ id: SENTINEL_DOC_ID, bindings: [{ slot: "title", copyId: SENTINEL_COPY_ID }, { slot: "body", value: "World" }] })));
     expect(error.reason).toBe("empty-output");

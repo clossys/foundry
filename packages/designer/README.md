@@ -98,12 +98,12 @@ surfaces and live in `@clossys/publisher/web`.
   `Separator`, `Chip`.
 - **`blocks`** — owns the internal layout of multiple named regions,
   typically by composing one or more atoms (and/or layout) into something
-  with a real job on a page. Twenty-one ship: `PageHeader`, `EmptyState`,
+  with a real job on a page. Twenty-two ship: `PageHeader`, `EmptyState`,
   `DataTable`, `DetailView`, `Pagination`, `Stat`, `Form`, `FieldGroup`,
   `ConfirmDialog`, `Toolbar`, `NavGrid`, `SectionHeader`, `Hero`,
-  `MarketingChapter`, `FeatureGrid`, `OrderedStepSequence`, `StatusList`, `Faq`, `PricingTable`, `Testimonial`, `ArticleBody` — the
-  last eight are marketing/editorial content blocks, completing this layer
-  (see "Blocks" below).
+  `MarketingChapter`, `FeatureGrid`, `OrderedStepSequence`, `StatusList`, `Faq`, `PricingTable`, `Testimonial`, `ArticleBody`, `ConsentBanner` — the
+  last nine are marketing/editorial content blocks and a presentational
+  consent notice, completing this layer (see "Blocks" below).
 - **`shell`** — the persistent frame around content (nav, layout chrome)
   that provides the slots content fills. One per app; survives route
   changes that swap out the content underneath it. `Shell` ships with five
@@ -1195,6 +1195,16 @@ this component's own:
   Prompts
 </Link>
 ```
+
+`buttonVariant` (`ButtonVariant`, default `"primary"`) and `buttonSize`
+(`ButtonSize`, default `"md"`) give a link the look of a `Button`: setting
+either one applies exactly the classes `Button` applies for that variant and
+size, plus the same disabled opacity and focus ring, in place of the link
+`variant` classes. The element stays a link (`role="link"`, `href`,
+`render`), because navigation is a link and not a button; `Button` itself
+only renders a `<button>`. With neither prop set, `Link` is unchanged. For a
+framework link in button style, pass them alongside `render`:
+`<Link href="/prompts" buttonVariant="secondary" buttonSize="lg" render={(props) => <RouterLink {...props} to="/prompts" />}>`.
 
 ### `Checkbox`
 
@@ -2353,6 +2363,17 @@ The tests in `Form.test.tsx` pin both rules: two invalid `TextField`s render
 both inline messages beside exactly one `role="alert"` (the `submitError`),
 and a `submitError` holding two nodes still renders one alert region.
 
+#### Error copy
+
+Write failure messages in plain words. Say what happened and give one next
+step. Keep status codes, error codes and provider names out of a field
+message; a reference code goes only in the banner. Two generic examples:
+
+- "We couldn't find an account for that email. Check it for typos."
+- "Sign-in is unavailable right now. Try again in a few minutes."
+
+Designer ships no copy: the words stay in each site.
+
 #### Multi-step forms
 
 For a flow that asks for an identifier first and then continues on later
@@ -3112,6 +3133,53 @@ Measure and section padding come from the parent `SectionFrame` (`measure="prose
 article plus a sidebar callout, or two comparison columns), which is what
 keeps it at this layer rather than being a view (test 3).
 
+### `ConsentBanner`
+
+```tsx
+import { ConsentBanner } from "@clossys/designer/blocks";
+import { Link } from "@clossys/designer/atoms";
+
+function PageConsent({ onAccept, onReject }: { onAccept: () => void; onReject: () => void }) {
+  return (
+    <ConsentBanner
+      title="Banner title"
+      body="Banner body text."
+      acceptLabel="Accept label"
+      rejectLabel="Reject label"
+      onAccept={onAccept}
+      onReject={onReject}
+      privacyLink={<Link href="/privacy">Privacy link</Link>}
+    />
+  );
+}
+```
+
+A presentational consent notice, and nothing more: it holds no consent
+state, reads or writes no storage, and makes no network call. The consumer
+decides what `onAccept` and `onReject` do, whether to render it at all, and
+where it sits; it renders in flow, so a consumer who wants it pinned to the
+edge of the page positions it themselves. All copy arrives through props
+(`title`, `body`, `acceptLabel`, `rejectLabel`, and an optional
+`privacyLink` slot rendered after the body), so this package ships no
+wording of its own.
+
+The root is a `<section>` named by its own title heading, so assistive
+tech announces it as a region landmark. It is deliberately not a dialog: no
+`role="dialog"`, no `aria-modal`, no autofocus, no focus trap, no Escape
+handling, no portal and no timer, so keyboard users move past it with Tab
+like any other content. Accept and reject are both `Button` atoms with the
+same `variant` and `size`, which gives the two choices equal prominence
+(rejecting is a button, not a link). No form control renders inside it.
+
+The surface uses `bg-overlay-surface`, `border-overlay-border` and ink
+tokens only, so it is opaque. Actions stack at full width at the base size
+and sit in a row from the `tablet` breakpoint; the content width is capped
+with `max-w-display` from `tablet-lg`. The root carries `data-consent-banner`,
+a stable selector the consumer can pass in `overlayIntersectingFold` when the
+banner is positioned over the page. If you pin the banner to the bottom
+visually, render it early in DOM order so keyboard and assistive-tech users
+reach it without tabbing through the whole page first.
+
 ### Composing chrome and blocks
 
 Marketing/site chrome (`shell`) and marketing content blocks compose
@@ -3310,15 +3378,21 @@ lines below the card, an optional `footnote`, and a site footer (`SiteFooter`, f
 `footerSecondary`). `heading` (required) renders as the page's `<h1>`;
 `description` (required) renders directly under it, so every step decides on
 a supporting line; `form` (required) is rendered exactly as given, with no
-wrapper. The content column is held to the `--ui-width-form-max` form
+wrapper (the one exception is `isDisabled`: when the sign-in provider is
+unavailable, `form` renders inside a disabled `<fieldset>` so the form stays
+on screen with what the person typed still shown, the one notice is the
+form's own `submitError`, and a retry link in `secondaryAction` stays
+enabled). The content column is held to the `--ui-width-form-max` form
 measure (`38rem`). The optional `internalNote` (`{ label, message }`) renders
 a badge-labelled development note under the footnote, and a site passes it
 only in development. An auth page's `footerSecondary` holds a legal row only,
 never a locale switcher, because auth pages are single-locale.
 `secondaryAction` is always the site's copy, and an invitation or activation
 step never offers request-access or sign-up; the view has no mode and no
-`requestAccess` prop, so each site's activation-page test asserts no
-request-access or sign-up link.
+`requestAccess` prop, so each site's activation-page test should assert no
+request-access or sign-up link. Pass each `secondaryAction` line as one
+element: the lines stack in a column, so text plus a link in one fragment
+splits onto two lines.
 
 **`AuthView` implements no authentication of any kind** — no provider, no
 form state, no field validation, no submit handling. It renders whatever
@@ -4479,7 +4553,7 @@ not a grab-bag).
 | `BreadcrumbProps` | type | Props for `Breadcrumb`: `children`, `className`, `aria-label`, plus react-aria-components' own `Breadcrumbs` props. |
 | `BreadcrumbItemProps` | type | Props for `Breadcrumb.Item`: `href`, `children`, `className`. |
 | `Link` | component | Navigable link built on react-aria-components' `Link`. |
-| `LinkProps` | type | Props for `Link`: `variant`, plus everything react-aria-components' own `Link` accepts (including `render`, for a custom/router link element). |
+| `LinkProps` | type | Props for `Link`: `variant`, `buttonVariant`, `buttonSize`, plus everything react-aria-components' own `Link` accepts (including `render`, for a custom/router link element). |
 | `LinkVariant` | type | `"default" \| "muted" \| "standalone"`. |
 | `Checkbox` | component | Checkbox with indeterminate support, built on react-aria-components' `Checkbox`. |
 | `CheckboxProps` | type | Props for `Checkbox`: `children` (the visible label), plus everything react-aria-components' own `Checkbox` accepts (including `isIndeterminate`). |
@@ -4638,6 +4712,8 @@ not a grab-bag).
 | `SectionFrame` | component | Full-bleed marketing section band: a `ground` surface, vertical section rhythm, horizontal page padding, and a measured inner column. Sets `data-designer-section-frame` on its outer `<section>`. Compose `ArticleBody`, `Stat`, and other blocks that do not own their own band inside it. |
 | `SectionFrameProps` | type | Props for `SectionFrame`: `ground` (default `"base"`), `measure` (default `"content"`), `children`, `className`, `style`, plus every native `<section>` attribute. |
 | `SectionMeasure` | type | `"content" \| "wide" \| "prose"`. How wide `SectionFrame`'s inner column is: it maps to the `--ui-width-content-max`, `--ui-width-wide-max`, or `--ui-width-prose-max` token. |
+| `ConsentBanner` | component | Presentational consent notice: a region landmark named by its title, a body, an optional `privacyLink` slot after it, and two same-variant, same-size `Button`s for accept and reject. Props only: no consent state, storage, network call or built-in copy. Not a dialog. Sets `data-consent-banner` on its root. |
+| `ConsentBannerProps` | type | Props for `ConsentBanner`: `title`, `body`, `acceptLabel`, `rejectLabel` (all `ReactNode`), `onAccept`, `onReject` (both `() => void`), `privacyLink?`, `className?`, `style?`. |
 | `mergeUiClasses` | function | Merges token-aware Tailwind utility classes with last-argument precedence; used by surface-level compositions built from UI primitives. |
 | `Shell` | component | The persistent application frame. Carries `Shell.Header`, `Shell.SideNav`, `Shell.Main`, `Shell.Rail`, `Shell.Footer`. |
 | `ShellProps` | type | Props for `Shell`: `children` (any subset of the five slots above, in any order), `skipLinkLabel` (default `"Skip to content"`), plus every native `<div>` attribute. |
@@ -5256,10 +5332,10 @@ speculatively, just because a related component shipped, is the exact
 un-bounded growth this package's own "variant rule" warns against one level
 up. They get added here only once something real needs them.
 
-**Blocks:** twenty-one ship — `PageHeader`, `EmptyState`, `DataTable`,
+**Blocks:** twenty-two ship — `PageHeader`, `EmptyState`, `DataTable`,
 `DetailView`, `Pagination`, `Stat`, `Form`, `FieldGroup`, `ConfirmDialog`,
 `Toolbar`, `NavGrid`, `SectionHeader`, `Hero`, `MarketingChapter`, `FeatureGrid`, `OrderedStepSequence`, `StatusList`, `Faq`,
-`PricingTable`, `Testimonial`, `ArticleBody` — completing this layer. No
+`PricingTable`, `Testimonial`, `ArticleBody`, `ConsentBanner` — completing this layer. No
 `FilterBar` block:
 `DataTable`'s own `toolbar` slot (and `Toolbar`'s own `search` slot) are
 deliberately plain `ReactNode`s, not a block with its own opinion about
@@ -5340,6 +5416,162 @@ a whole.
 - Not imported by this package at all (consumer-owned): `react-dom` is
   your own render call, and `@internationalized/date` is only needed when
   you construct a `DateField` value.
+
+## Hero backdrop contract (`@clossys/designer/tokens`)
+
+A per-brand hero visual — the picture, video, canvas or chart behind the
+hero's text — has one sanctioned shape here. A bespoke backdrop has needed
+the same five fixes each time: text that stays readable over the visual's
+worst frame, a layer that never takes pointer events, a layer that assistive
+technology skips, a still frame for reduced motion, and a load cost that
+cannot block first paint. `BackdropContract` states those as data, and two
+checks hold a backdrop to it. This is data and checks only: it adds no
+component, CSS or token, and it is not wired into any Publisher block.
+
+**The four kinds.** `BACKDROP_KINDS` lists them, and `BackdropKind` is their
+union. `BackdropContract` is a union on `kind`:
+
+| `kind`   | Shape beyond the shared fields                                                      |
+| -------- | ----------------------------------------------------------------------------------- |
+| `image`  | `reducedMotion` is optional: an image is its own still frame.                       |
+| `video`  | `reducedMotion: { fallbackFrame }` is required.                                     |
+| `canvas` | `reducedMotion: { fallbackFrame }` is required.                                     |
+| `chart`  | `reducedMotion` is required, and `illustrative: true`: no information lives only there. |
+
+Every kind carries `scrim` (`BackdropScrim`: `token`, `textToken` and
+`worstCaseBackdrop`), `ariaHidden: true`, `pointerEvents: "none"`, and
+`loading` (`BackdropLoading`: `strategy` of `"lazy"` or `"idle"`, and
+`budgetBytes`). `reducedMotion` is a `BackdropReducedMotion`. `scrim.token`
+and `scrim.textToken` name registry tokens, and `worstCaseBackdrop` is an
+opaque six-digit hex or `oklch()` color the author states as the lightest
+or busiest the backdrop can show. Use `--color-overlay-scrim` for the scrim
+(it darkens in the dark theme) and a text token that stays light in both
+themes, such as `--color-neutral-50`. Do not use `--color-ink-on-inverse`
+for hero text: it is the ink for the inverse plate, which turns light in
+the dark theme, so the ink turns dark there and fails over the darkened
+scrim.
+
+**The five rules.** `checkBackdropContract(contract, { tokens?, darkTokens?, themes? })` returns a
+`BackdropReport` (`{ ok, findings, unchecked, themes }`) and never throws. Each
+`BackdropFinding` carries a `BackdropRuleId` and a developer message.
+
+| Rule id                   | Passes when                                                                                                                                     |
+| ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| `scrim-contrast`          | `scrim.token` composited over `worstCaseBackdrop` gives `scrim.textToken` a contrast of at least 4.5 (the `AA` constant), in light and dark.    |
+| `aria-hidden`             | `ariaHidden` is `true`, and a `chart` is `illustrative: true`.                                                                                  |
+| `pointer-events`          | `pointerEvents` is `"none"`.                                                                                                                    |
+| `reduced-motion-fallback` | A `video`, `canvas` or `chart` has a non-empty `reducedMotion.fallbackFrame`. An `image` needs none.                                            |
+| `lazy-loading-budget`     | `loading.strategy` is `"lazy"` or `"idle"`, and `loading.budgetBytes` is a positive integer no larger than `BACKDROP_BUDGET_CEILING_BYTES`.     |
+
+`BACKDROP_BUDGET_CEILING_BYTES` is 2 MiB (2,097,152 bytes), the most
+transferred bytes a backdrop may declare. The tokens resolve through
+`BackdropCheckOptions.tokens`, which defaults to `TOKENS` and so to the
+default (light) values, following `var()` alias chains the way the contrast
+gate does.
+
+**Both themes.** The scrim pairing must hold in the light and the dark
+theme, the two themes the contrast gate checks: `styles/tokens.css` turns
+the dark theme on by itself under `prefers-color-scheme: dark` unless the
+page sets `data-theme="light"`. `TOKENS` holds light values only and the
+check reads no stylesheet, so pass the dark theme as
+`BackdropCheckOptions.darkTokens`: a registry of the dark theme's values
+layered over the light one. With it, each theme is measured and a failure
+names its theme.
+
+A token counts as theme-dependent when its entry in either registry, or in
+`TOKENS`, has `themeDependent: true`; the flag on a token you define
+yourself is trusted as you set it. Every theme-dependent token on the
+scrim's or the text's alias chain must carry its own dark value in
+`darkTokens`. One whose dark entry repeats its light value (a registry
+spread from `TOKENS` with only some tokens overridden, or the light
+registry passed whole) is `unchecked` with `theme-unchecked`, naming the
+token, and `ok` is `false`. Without `darkTokens`, any theme-dependent token
+on either chain is `theme-unchecked` the same way. A light-theme failure is
+still a finding, and a pairing whose tokens never change with the theme
+needs no `darkTokens`.
+
+A page that forces the light theme with `data-theme="light"` on its root
+states that with `themes: "light-only"` (the default is `"both"`): the dark
+pass is skipped, and the report's `themes` is `["light"]` rather than
+`["light", "dark"]`, so the result says what it covered. Do not use it for a
+page that lets `prefers-color-scheme: dark` switch the theme.
+
+**Fails closed.** A rule the check cannot evaluate is reported in
+`unchecked` (a `BackdropUnchecked`, with a `BackdropUncheckedReason`) and
+`ok` is `false`: a token the registry does not hold
+(`unresolvable-token`), a token or `worstCaseBackdrop` that is not a color
+it can read, or a translucent text token (`unparseable-token`,
+`unparseable-backdrop`), a theme-dependent token with no dark value of its
+own (`theme-unchecked`), a `kind` outside the four (`unknown-kind`), and a
+malformed contract (`malformed-contract`). A finding means a rule was
+evaluated and broken; `unchecked` means it was not evaluated. Neither is a
+pass.
+
+**Checking the rendered element.** `checkBackdropElement(element)` returns
+the same report shape with its own rule ids (`BackdropElementRuleId`):
+`element-aria-hidden` (`aria-hidden="true"`), `element-pointer-events`
+(`pointer-events: none`, read from computed style, then inline style, on
+the element; and no descendant setting it to anything but `none` or
+`inherit`) and
+`element-focusable-descendant` (no link, button, form control, `summary`,
+`iframe`, editable element, `video` or `audio` with `controls`, or element
+with `tabindex` 0 or more below it). Descendants include the contents of
+open shadow roots at any depth; inside a shadow tree it reads only inline
+`pointer-events`, because DOM implementations differ on whether computed
+style inherits across the shadow boundary. It cannot see into a closed
+shadow root, and it does not run script. A value that is not an element is
+`unchecked` with `not-an-element`. The contract check does not measure a
+real asset's size or choose the worst-case color for you.
+
+```ts
+import {
+  TOKENS,
+  checkBackdropContract,
+  checkBackdropElement,
+  type BackdropContract,
+  type TokenDefinition,
+} from "@clossys/designer/tokens";
+
+const backdrop: BackdropContract = {
+  kind: "video",
+  scrim: {
+    token: "--color-overlay-scrim",
+    textToken: "--color-neutral-50",
+    worstCaseBackdrop: "#6b6b6b",
+  },
+  ariaHidden: true,
+  pointerEvents: "none",
+  reducedMotion: { fallbackFrame: "/hero/still.webp" },
+  loading: { strategy: "idle", budgetBytes: 1_500_000 },
+};
+
+// Your copy of the dark theme's values, layered over the light registry:
+// here, the dark scrim as the dark block of styles/tokens.css sets it. Keep
+// it in step with the stylesheet you ship. --color-neutral-50 does not
+// change with the theme, so it needs no dark entry; a theme-dependent token
+// left at its light value here is reported as theme-unchecked.
+const darkTokens: Record<string, TokenDefinition> = {
+  ...TOKENS,
+  "--color-overlay-scrim": {
+    property: "--color-overlay-scrim",
+    family: "overlay",
+    value: "oklch(0 0 0 / 0.6)",
+    brandable: false,
+    themeDependent: true,
+  },
+};
+
+const declared = checkBackdropContract(backdrop, { darkTokens });
+if (!declared.ok) {
+  for (const finding of declared.findings) console.error(finding.rule, finding.message);
+  for (const gap of declared.unchecked) console.error(gap.rule, gap.reason);
+}
+
+const layer = document.getElementById("hero-backdrop");
+if (layer !== null && !checkBackdropElement(layer).ok) {
+  console.error("The rendered backdrop breaks the contract.");
+}
+```
 
 ## Licence
 

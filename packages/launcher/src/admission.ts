@@ -39,6 +39,7 @@ import { createHash } from "node:crypto";
 import { mkdtempSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { AGENTS_GUIDE_PATH, AGENTS_GUIDE_TEXT } from "./agents-guide.js";
 import { approvedSubject } from "./apply-plan.js";
 import { readStoredApplyBundle, readStoredChangeSet } from "./apply-store.js";
 import { LEDGER_PATH, dependencyPointer, lockfilePath, validateRepositoryChangeSet } from "./change-set-contract.js";
@@ -183,21 +184,31 @@ type HubHead = { readonly state: "upstream"; readonly commit: string } | { reado
 
 /**
  * H1. Resolves the hub's HEAD to one commit id, and requires the branch's
- * configured upstream to resolve to that same commit. Local refs only: nothing
- * here fetches, so a hub whose upstream is stale is judged by what it holds.
+ * configured upstream to resolve to that same commit, and to be a remote-tracking
+ * ref (`refs/remotes/`), not a local branch. One `rev-parse` reads all three, so
+ * the read is atomic. Local refs only: nothing here fetches, so a hub whose
+ * upstream is stale is judged by what it holds.
  * HEAD must be attached to a branch (a detached HEAD may sit on an old commit
  * that still carries a since-revoked approval). No upstream, ahead and behind
  * are all `not-upstream`.
  */
 function resolveHubHead(hub: string): HubHead {
-  const symbolic = runGit(hub, ["symbolic-ref", "-q", "HEAD"]);
-  if (symbolic.status !== 0 || !symbolic.stdout.toString("utf8").trim().startsWith("refs/heads/")) return { state: "unreadable" };
-  const head = runGit(hub, ["rev-parse", "--verify", "-q", "HEAD^{commit}"]);
-  const commit = head.stdout.toString("utf8").trim();
-  if (head.status !== 0 || !OBJECT_ID.test(commit)) return { state: "unreadable" };
-  const upstream = runGit(hub, ["rev-parse", "--verify", "-q", "@{upstream}^{commit}"]);
-  if (upstream.status !== 0 || upstream.stdout.toString("utf8").trim() !== commit) return { state: "not-upstream" };
-  return { state: "upstream", commit };
+  // One read, so HEAD, its commit and its upstream come from one moment: the commit, the upstream's commit, then the full names of HEAD and of the upstream.
+  const read = runGit(hub, ["rev-parse", "HEAD^{commit}", "@{upstream}^{commit}", "--symbolic-full-name", "HEAD", "@{upstream}"]);
+  const lines = read.stdout.toString("utf8").split("\n");
+  const commit = lines[0] ?? "";
+  if (read.status !== 0) {
+    // Refused either way. A readable commit on an attached HEAD means the upstream is the part that failed.
+    if (!OBJECT_ID.test(commit)) return { state: "unreadable" };
+    const symbolic = runGit(hub, ["symbolic-ref", "-q", "HEAD"]);
+    return symbolic.status === 0 && symbolic.stdout.toString("utf8").trim().startsWith("refs/heads/") ? { state: "not-upstream" } : { state: "unreadable" };
+  }
+  const [head, upstreamCommit, headRef, upstreamRef, ...rest] = lines;
+  if (head === undefined || upstreamCommit === undefined || headRef === undefined || upstreamRef === undefined || rest.some((line) => line !== "")) return { state: "unreadable" };
+  if (!headRef.startsWith("refs/heads/") || !OBJECT_ID.test(head)) return { state: "unreadable" };
+  // The upstream must be a remote-tracking ref: a local branch (remote `.`) is this repository's own word, not the remote's.
+  if (!upstreamRef.startsWith("refs/remotes/") || upstreamCommit !== head) return { state: "not-upstream" };
+  return { state: "upstream", commit: head };
 }
 
 /**
@@ -393,13 +404,20 @@ function checkCondition2(set: RepositoryChangeSet, setup: RepositoryChangeSet, a
   for (const item of set.items) {
     if (isPackageItem(item) && setup.deferred.some((deferral) => deferral.planItem === item.planItem) && item.satisfiedInBase) return refuse("satisfied-unverified");
   }
-  const others = (value: RepositoryChangeSet) => value.items.filter((item) => !isPackageItem(item));
+  // The one addition: an install set up before the Launcher guide existed has a setup set that wrote none, so the apply set may add it.
+  const wrote = new Map(setup.files.filter(isWhole).flatMap((file) => (file.after === null ? [] : [[file.path, file] as const])));
+  // The guide item is matched whole, not by id: an item with the guide's id and another act or source is compared like any other item.
+  const mayAddGuide = !setup.items.some((item) => item.id === GUIDE_ITEM_ID) && !wrote.has(AGENTS_GUIDE_PATH);
+  const others = (value: RepositoryChangeSet) => value.items.filter((item) => !isPackageItem(item) && !(mayAddGuide && value === set && isGuideItem(item)));
   if (!same(others(set), others(setup))) return refuse("items-differ");
 
-  // Every whole file is a no-op over bytes the setup wrote.
-  const wrote = new Map(setup.files.filter(isWhole).flatMap((file) => (file.after === null ? [] : [[file.path, file] as const])));
+  // Every whole file is a no-op over bytes the setup wrote, except the guide add: absent before, the constant text after.
   for (const file of set.files) {
     if (!isWhole(file)) continue;
+    if (mayAddGuide && file.path === AGENTS_GUIDE_PATH) {
+      if (file.before !== null || file.mode !== "100644" || file.after !== sha256Of(Buffer.from(AGENTS_GUIDE_TEXT, "utf8")) || file.item !== GUIDE_ITEM_ID) return refuse("file-not-setup");
+      continue;
+    }
     if (file.after === null || file.before !== file.after) return refuse("file-not-noop");
     const original = wrote.get(file.path);
     if (original === undefined || original.after !== file.after || original.mode !== file.mode) return refuse("file-not-setup");
@@ -427,10 +445,38 @@ function checkCondition2(set: RepositoryChangeSet, setup: RepositoryChangeSet, a
   return null;
 }
 
+const GUIDE_ITEM_ID = "agents-guide";
+
+/** The one item an apply set may add: `{ id: "agents-guide", act: "write-record", source: "agents-guide" }`, and no other field. */
+const isGuideItem = (item: ChangeSetItem): boolean =>
+  same(item, { id: GUIDE_ITEM_ID, act: "write-record", source: "agents-guide" });
+
 // ---------------------------------------------------------------------------
 // K9: condition 3, the base tree
 
 const normalizeName = (name: string): string => name.normalize("NFC").toLowerCase();
+
+/**
+ * The guide an apply set adds is added only where the base has nothing there in any letter case, as the planner reads it: every root
+ * entry whose name is `clossys` in any case is listed, and none may hold an entry named `agents.md` in any case, file or directory. Null
+ * when the set adds no guide, or the path is clear.
+ */
+function checkGuideAbsent(set: RepositoryChangeSet, readers: AdmissionReaders): AdmissionRefusal | null {
+  if (!set.files.some((file) => isWhole(file) && file.path === AGENTS_GUIDE_PATH && file.before === null)) return null;
+  const entry = guarded(() => readers.baseEntry(AGENTS_GUIDE_PATH), "unreadable" as const);
+  if (entry === "unreadable") return refuse("base-unreadable");
+  if (entry !== null) return refuse("guide-not-absent");
+  const slash = AGENTS_GUIDE_PATH.lastIndexOf("/");
+  const [directory, base] = [normalizeName(AGENTS_GUIDE_PATH.slice(0, slash)), normalizeName(AGENTS_GUIDE_PATH.slice(slash + 1))];
+  const roots = guarded(() => readers.baseDirectory(""), "unreadable" as const);
+  if (roots === "unreadable" || roots === null) return refuse("base-unreadable");
+  for (const root of roots.filter((name) => normalizeName(name) === directory)) {
+    const names = guarded(() => readers.baseDirectory(root), "unreadable" as const);
+    if (names === "unreadable") return refuse("base-unreadable");
+    if (names !== null && names.some((name) => normalizeName(name) === base)) return refuse("guide-not-absent");
+  }
+  return null;
+}
 
 /** Every byte the setup wrote is in the base tree, by content: whole files, package.json keys, and its lockfile invariants. Null when it holds. */
 function checkBaseTree(setup: RepositoryChangeSet, readers: AdmissionReaders): AdmissionRefusal | null {
@@ -587,6 +633,8 @@ function decide(input: DecideBindingInput): AdmissionDecision {
   // K9: every byte the setup wrote is in the base, by content.
   const missing = checkBaseTree(setup, readers);
   if (missing !== null) return missing;
+  const occupied = checkGuideAbsent(set, readers);
+  if (occupied !== null) return occupied;
 
   // K10: the ledger the admitted set writes is exactly one admitted generation over the base's.
   return verifyAdmittedSuccession({ baseLedger, baseLedgerBytes, set, authority, setupChangeSet: setup.changeSetDigest });
@@ -643,7 +691,8 @@ function packageActsOf(set: RepositoryChangeSet, authority: HubAuthority): { nam
   return acts;
 }
 
-const packageKey = (entry: { readonly name: string; readonly version: string; readonly integrity: string }): string => `${entry.name}@${entry.version}#${entry.integrity}`;
+/** One key per (name, version, integrity): a JSON array, so no value can borrow another's separator. */
+const packageKey = (entry: { readonly name: string; readonly version: string; readonly integrity: string }): string => JSON.stringify([entry.name, entry.version, entry.integrity]);
 
 /** Whether two lists hold the same strings, the same number of times each, in any order. */
 function sameStrings(left: readonly string[], right: readonly string[]): boolean {
@@ -678,7 +727,7 @@ function defaultRunner(timeoutMs: number): ReadinessRunner {
  * the set (and of what it defers), and the hub's own
  * advisor-execution-readiness, run on those exact committed bytes at the
  * current instant, must exit 0. The permitted packages must also equal the
- * plan's packages exactly (H4): the distinct `name@version#integrity` keys of
+ * plan's packages exactly (H4): the distinct `(name, version, integrity)` keys of
  * every act in the plan, no more, no fewer and none repeated, else
  * `authorization-not-current` `packages-not-exact`; repositories stay a subset
  * check. Exit 1 is `authorization-not-current`; exit 2 and anything else is

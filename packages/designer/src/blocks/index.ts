@@ -131,3 +131,6 @@ export type { ArticleBodyProps } from "./ArticleBody.js";
 
 export { SectionFrame } from "./SectionFrame.js";
 export type { SectionFrameProps, SectionMeasure } from "./SectionFrame.js";
+
+export { ConsentBanner } from "./ConsentBanner.js";
+export type { ConsentBannerProps } from "./ConsentBanner.js";

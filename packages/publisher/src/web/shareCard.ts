@@ -6,7 +6,8 @@
  * loads no font, and fetches nothing.
  *
  * TEXT. `name` and `tagline` are the same plain values `buildSiteMetadata`
- * takes and follow its title-text rule; `alt` is supplied by the caller. No
+ * takes and follow its title-text rule; `alt` is supplied by the caller (the
+ * brand card derives it from its visible text when omitted). No
  * text comes from a copy registry and none is built in: the caller owns the
  * approval of every word on the card. Text is emitted verbatim, never trimmed
  * or collapsed, and a value that would need repair is refused.
@@ -415,7 +416,8 @@ export function buildBrandShareCard(input: BrandShareCardInput): ShareCard {
   const kicker = requireOptionalText(input["kicker"]);
   const headline = requireText(input["headline"]);
   const supporting = requireOptionalText(input["supporting"]);
-  const alt = input["alt"] === undefined ? deriveAlt([wordmark, kicker, headline, supporting]) : requireText(input["alt"]);
+  const givenAlt = input["alt"];
+  const alt = givenAlt === undefined ? deriveAlt([wordmark, kicker, headline, supporting]) : requireText(givenAlt);
   const path = requirePath(input["path"]);
   const overrides = requireTokenOverrides(input["tokenOverrides"]);
   const roles = requireBrandRoles(input["roles"]);
