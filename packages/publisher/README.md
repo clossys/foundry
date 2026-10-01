@@ -1896,6 +1896,48 @@ export function ServerErrorPage({ reference }: { reference: string }) {
 }
 ```
 
+### Global error document — `GlobalErrorDocument`
+
+`GlobalErrorDocument`, exported from `@clossys/publisher/web` and its server
+entry, is the whole document for a framework's global-error boundary. That
+boundary replaces the root layout, so it renders its own `<html>`, `<head>` and
+`<body>` and gets none of the layout's stylesheet, theme script or copy. The
+component renders a `<title>` built by `formatPageTitle` (`<page> · <brand>`,
+and a part with surrounding whitespace throws `SiteMetadataError`), a
+`noindex, nofollow` robots meta, one icon link, and an `ErrorView` with every
+other prop. It is a component, not a template: it is not in the template
+registry, takes no router, and is not a client module.
+
+No theme script runs in this document, so it is pinned to the light theme
+(`data-theme="light"` and `color-scheme: light`) and marked `data-brand-bound`.
+Brand tokens are not imported here: import your brand stylesheet in the same
+global-error file that renders this component, as your root layout does.
+
+```tsx
+"use client";
+
+import { GlobalErrorDocument } from "@clossys/publisher/web";
+
+export default function GlobalError({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
+  return (
+    <GlobalErrorDocument
+      lang="en"
+      documentTitle={{ page: "Something went wrong", brand: "Example Studio" }}
+      icon={{ href: "/icon.svg", type: "image/svg+xml" }}
+      status={500}
+      title="Something went wrong"
+      description={error.digest ? `Something went wrong. Error: ${error.digest}.` : "Something went wrong."}
+      action={<button type="button" onClick={reset}>Try again</button>}
+    />
+  );
+}
+```
+
+Next requires the global-error file to be a client module, so it starts with
+`"use client"`; the component itself is not one. The digest has no prop of
+its own: put it in `description` as caller copy (`Error: <digest>.`). A
+segment `error` boundary keeps the layout, so use `ErrorView` there instead.
+
 ## `record` — the append-only publication ledger
 
 `@clossys/publisher/record` is the return path: an append-only
@@ -2684,7 +2726,7 @@ cosmetic gap.
   `SiteOpenGraphMetadata`, `SitePageInput`, `SitePageKind`, `SiteShareCard`,
   `SiteTwitterMetadata`, `SiteMetadataLintFinding`, `SiteMetadataLintResult`,
   `SiteMetadataLintRule`, `SiteMetadataRequiredTag`, and
-  `SiteMetadataTagSelector` types.
+  `SiteMetadataTagSelector` types, plus `GlobalErrorDocument` and `GlobalErrorDocumentProps`.
 - `document`: `validateStructuredDocument`, `renderStructuredDocument`,
   `RenderError`, and the `DocumentBlock`, `DocumentCallout`,
   `DocumentColumnStyle`, `DocumentDefinitionList`, `DocumentInline`, `DocumentList`,
