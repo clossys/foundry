@@ -44,8 +44,8 @@ export function resolveInitialTopic(param: string | readonly string[] | undefine
   return CONTACT_TOPICS.find((topic) => topic === param);
 }
 
-/** The states `?preview=` may pin the contact view to. Mirrors `ContactViewDevPreview`, so a new state there fails to compile until it is listed here. */
-const DEV_PREVIEWS = ["idle", "submitting", "accepted", "invalid", "rate-limited", "unavailable"] as const satisfies readonly ContactViewDevPreview[];
+/** The states `?preview=` may pin the contact view to; the pack review lists the same ones. Mirrors `ContactViewDevPreview`, so a new state there fails to compile until it is listed here. */
+export const DEV_PREVIEWS = ["idle", "submitting", "accepted", "invalid", "rate-limited", "unavailable"] as const satisfies readonly ContactViewDevPreview[];
 
 /**
  * The state a `?preview=` query value pins the contact view to, or

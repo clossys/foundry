@@ -80,6 +80,23 @@ applies at its cascade scope, or that the template builds.
 - `app/site-wiring.ts` — the pure server wiring (target, delivery choice,
   contact handler, client key, legal gate); `app/site-contact.ts` and
   `app/site-delivery.ts` assemble it.
+- `app/pack/page.tsx`, `app/pack-review.ts`, `app/pack-review-copy.ts` — the
+  dev-only pack review (`PackReviewView`): `/pack` lists each route in the
+  manifest below with the contact page's forced states, the exports named in
+  `clossys/publisher/pack.json`, and a lazy contact sheet at 390, 1024 and
+  1440 px. It is served only when `SITE_TARGET` is `development` or `test`
+  (`packReviewAvailable`): on `production`, `preview`, an absent value and any
+  value not listed it answers the 404 page before any record is read. The page
+  takes no query string or other request input. It is not in
+  `web-route-manifest.json`, so it is not in the sitemap, and it renders per
+  request. `pack.json` is read at request time from `clossys/publisher/` two
+  levels above the app and never imported, so a repository without one still
+  builds; a missing or invalid manifest shows the framed boundary page and
+  names nothing. The page's words are one catalog-shaped constant in
+  `app/pack-review-copy.ts`, in the Writer front-door id grammar
+  (`front-door.<state>.<slot>`), so they can move into Writer's `frontDoor.*`
+  catalog under the same ids; until then they are the one place in this
+  template that carries wording.
 - `app/robots.ts`, `app/sitemap.ts`, `app/opengraph-image.tsx` — Next's
   metadata route convention, each a thin wrapper over the pure functions in
   `app/site-wiring.ts` and `app/site-copy.ts` (see "Crawlers and the share
@@ -124,7 +141,8 @@ records, and one file, `app/site-records.ts`, reads them:
   documents, whose text is copy ids into the same registry.
 
 Tokens come from `clossys/designer/brand.css`, as before. This template
-ships no copy and no tokens of its own.
+ships no copy and no tokens of its own, except the dev-only pack review's
+words (`app/pack-review-copy.ts`), which no public page shows.
 
 ## `NEXT_PUBLIC_SITE_URL`
 

@@ -31,7 +31,7 @@ export { defineWebTemplate } from "./internal/defineWebTemplate.js";
 export { createWebRenderer } from "./internal/createWebRenderer.js";
 export { evaluateWebRouteManifest, evaluateWebRouteManifestWithSources, scanRouteSourceForDirectComposition } from "./checkWebRoutes.js";
 export type { WebRouteCheckResult, WebRouteFinding, WebRouteManifest, WebRouteManifestEntry } from "./checkWebRoutes.js";
-export { AuthView, BoundaryView, BrandGuideView, CaptureView, CollectionView, DocumentView, ErrorView, MarketingView, SectionedView, SystemAuditView } from "#publisher-web-views";
+export { AuthView, BoundaryView, BrandGuideView, CaptureView, CollectionView, DocumentView, ErrorView, MarketingView, PackReviewView, SectionedView, SystemAuditView } from "#publisher-web-views";
 export type {
   AuthViewProps,
   BoundaryViewProps,
@@ -50,6 +50,11 @@ export type {
   MarketingFaqItem,
   MarketingFeatureItem,
   MarketingViewProps,
+  PackReviewViewExport,
+  PackReviewViewLabels,
+  PackReviewViewPage,
+  PackReviewViewProps,
+  PackReviewViewState,
   SectionedViewLandmark,
   SectionedViewProps,
   SystemAuditViewProps,

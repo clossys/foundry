@@ -10,7 +10,7 @@ import { buildGuideFixture } from "./plan-bundle-setup-fixture.js";
 import { reseal } from "./admission-fixture.js";
 import { statusMain } from "./apply-plan-cli.js";
 import type { RepositoryChangeSet } from "./change-set-contract.js";
-import { materializeRepository } from "./materialize.js";
+import { GIT_TIMEOUT_ENV, materializeRepository } from "./materialize.js";
 import { renderPullRequest } from "./pull-request-body.js";
 import { MAX_OPEN_PULL_REQUESTS, createGhPorts, formatStatus, safeReason, statusRepository } from "./status.js";
 import type { GhRun, StatusPorts, StatusResult } from "./status.js";
@@ -569,6 +569,59 @@ describe("status", () => {
       const full = await ask(join(parent, "full"));
       expect(full.result).toEqual({ exitCode: 2, state: "indeterminate", reason: "tip-not-local" });
       expect(full.calls.tip).toHaveLength(1);
+    },
+    TIMEOUT,
+  );
+
+  it(
+    "refuses a clone marked partial only by a remote's partialclonefilter or by a remote whose name holds a space",
+    async () => {
+      const world = await proposedWorld();
+      const parent = dirname(world.clone);
+      const ask = async (clone: string) => {
+        const { ports, calls } = fakePorts([], "0".repeat(40));
+        const result = await statusRepository({ clone, hub: world.hub, set: world.set, heldChangeSets: [], ports });
+        return { result, calls };
+      };
+      const refused = { exitCode: 2, state: "indeterminate", reason: "partial-clone" };
+      const fullClone = (name: string): string => {
+        git(parent, "clone", "-q", `file://${world.origin}`, name);
+        return join(parent, name);
+      };
+
+      // A filter recorded on the remote with no promisor flag, no extensions.partialclone and no promisor pack.
+      const filtered = fullClone("filter-only");
+      git(filtered, "config", "remote.origin.partialclonefilter", "blob:none");
+      const filter = await ask(filtered);
+      expect(filter.result).toEqual(refused);
+      expect(filter.calls).toEqual({ viewer: 0, open: [], tip: [] });
+
+      // A remote whose name holds a space: `config --get-regexp` without `-z` splits the key at that space.
+      const spaced = fullClone("spaced-name");
+      git(spaced, "config", "remote.my remote.promisor", "true");
+      const space = await ask(spaced);
+      expect(space.result).toEqual(refused);
+      expect(space.calls).toEqual({ viewer: 0, open: [], tip: [] });
+
+      // Neither is in the way of a full clone: it goes on to read the tip.
+      const full = await ask(fullClone("still-full"));
+      expect(full.result).toEqual({ exitCode: 2, state: "indeterminate", reason: "tip-not-local" });
+    },
+    TIMEOUT,
+  );
+
+  it(
+    "two status calls that overlap in one process leave the git environment variables as they found them",
+    async () => {
+      const world = await proposedWorld();
+      const before = { lazy: process.env.GIT_NO_LAZY_FETCH, limit: process.env[GIT_TIMEOUT_ENV] };
+      expect(before).toEqual({ lazy: undefined, limit: undefined });
+      const call = (gitTimeoutMs: number): Promise<StatusResult> =>
+        statusRepository({ clone: world.clone, hub: world.hub, set: world.set, heldChangeSets: [], ports: fakePorts([row(world)]).ports, gitTimeoutMs });
+      const results = await Promise.all([call(111_111), call(222_222)]);
+      for (const result of results) expect(result).toMatchObject({ state: "proposed" });
+      expect(process.env.GIT_NO_LAZY_FETCH).toBeUndefined();
+      expect(process.env[GIT_TIMEOUT_ENV]).toBeUndefined();
     },
     TIMEOUT,
   );
