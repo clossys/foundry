@@ -7,6 +7,9 @@
 export { ErrorView } from "./ErrorView.js";
 export type { ErrorViewProps } from "./ErrorView.js";
 
+export { BoundaryView } from "./BoundaryView.js";
+export type { BoundaryViewProps } from "./BoundaryView.js";
+
 export { AuthView } from "./AuthView.js";
 export type { AuthViewProps } from "./AuthView.js";
 

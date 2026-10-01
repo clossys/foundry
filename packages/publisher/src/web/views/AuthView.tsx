@@ -11,6 +11,12 @@ export interface AuthViewProps extends HTMLAttributes<HTMLDivElement> {
    */
   brand: ReactNode;
   /**
+   * Optional text-only label naming the surface, such as "admin" or "demo",
+   * shown as a non-interactive badge at the trailing end of the page banner.
+   * A member host omits it.
+   */
+  surfaceLabel?: string;
+  /**
    * The page's own name - the words for sign-in, account creation,
    * password reset, or verification. Renders as the page's `<h1>` through
    * Designer's `PageHeader`, above the card. Copy is the caller's; this
@@ -66,6 +72,7 @@ export interface AuthViewProps extends HTMLAttributes<HTMLDivElement> {
  */
 export function AuthView({
   brand,
+  surfaceLabel,
   heading,
   description,
   form,
@@ -78,7 +85,7 @@ export function AuthView({
 }: AuthViewProps) {
   return (
     <div {...rest} className={mergeUiClasses("flex min-h-dvh flex-col", className)} style={style}>
-      <SiteHeader brand={brand} />
+      <SiteHeader brand={brand} surfaceLabel={surfaceLabel} />
       <main
         className="mx-auto flex w-full flex-1 flex-col gap-xl px-lg py-2xl"
         style={{ maxWidth: "var(--ui-width-form-max, none)" }}

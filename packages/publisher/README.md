@@ -360,6 +360,13 @@ Name a shipped template when its slots cover the page:
   description (`"Something went wrong. Error: 8f2a91c0."`), there is no
   details disclosure, and `action` holds one primary control: a secondary
   destination is a text link inside the description.
+- **`BoundaryView`** — `ErrorView` inside one shared frame: Designer's
+  `SiteHeader` (`brand`, required), the `ErrorView` filling the main area,
+  and `SiteFooter` (`footerSecondary`, optional). It takes every
+  `ErrorViewProps` key and forwards it to `ErrorView`, so a site deletes its
+  private copy of the header/error/footer shell. It also frames the
+  sign-in-boundary states. It is not a built-in web template. See
+  [Boundary pages](#boundary-pages).
 
 If a required band is not a slot on any shipped template and not one of the
 six `SectionedView` kinds, **do not flatten** it into a one-item
@@ -1852,6 +1859,32 @@ section order, dates and a draft marker that cannot be suppressed. It says
 nothing about the legal adequacy of any text. It does not enforce the
 production gate: call `gateLegalDocument` separately before publishing.
 
+### Boundary pages
+
+`BoundaryView` is the whole page for a 500, a 404 or a sign-in boundary state: one
+retry action, and any second destination as a text link in the description.
+
+```tsx
+import { BoundaryView } from "@clossys/publisher/web";
+
+export function ServerErrorPage({ reference }: { reference: string }) {
+  return (
+    <BoundaryView
+      brand="Example Studio"
+      status={500}
+      title="Something went wrong"
+      description={
+        <>
+          Something went wrong. Error: {reference}. You can also{" "}
+          <a href="/contact">contact us</a>.
+        </>
+      }
+      action={<a href="/">Try again</a>}
+    />
+  );
+}
+```
+
 ### Global error document — `GlobalErrorDocument`
 
 `GlobalErrorDocument`, exported from `@clossys/publisher/web` and its server
@@ -1870,6 +1903,8 @@ Brand tokens are not imported here: import your brand stylesheet in the same
 global-error file that renders this component, as your root layout does.
 
 ```tsx
+"use client";
+
 import { GlobalErrorDocument } from "@clossys/publisher/web";
 
 export default function GlobalError({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
@@ -1887,9 +1922,10 @@ export default function GlobalError({ error, reset }: { error: Error & { digest?
 }
 ```
 
-The digest has no prop of its own: put it in `description` as caller copy
-(`Error: <digest>.`). A segment `error` boundary keeps the layout, so use
-`ErrorView` there instead.
+Next requires the global-error file to be a client module, so it starts with
+`"use client"`; the component itself is not one. The digest has no prop of
+its own: put it in `description` as caller copy (`Error: <digest>.`). A
+segment `error` boundary keeps the layout, so use `ErrorView` there instead.
 
 ## `record` — the append-only publication ledger
 

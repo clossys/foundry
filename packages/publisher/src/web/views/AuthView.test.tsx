@@ -80,6 +80,14 @@ describe("AuthView", () => {
     expect(within(siteHeader).getByText("Acme")).toBeInTheDocument();
   });
 
+  it("forwards surfaceLabel to the site header as a Badge inside the banner", () => {
+    render(<AuthView heading="Sign in" brand={<span>Acme</span>} surfaceLabel="admin" form={<div>form</div>} />);
+    const siteHeader = screen.getAllByRole("banner")[0] as HTMLElement;
+    const badge = within(siteHeader).getByText("admin");
+    expect(badge.tagName).toBe("SPAN");
+    expect(badge.className).toContain("bg-surface-sunken");
+  });
+
   it("has no mode prop: no mode attribute is rendered, and a stray mode changes no structure (the type error is asserted in AuthView.check.tsx)", () => {
     const baseline = render(<AuthView brand="Acme" heading="Sign in" form={<div>form</div>} />).container;
     expect(baseline.querySelector("[mode]")).toBeNull();

@@ -3630,6 +3630,16 @@ Both stay one `nav` slot, so the header holds one navigation landmark.
 />
 ```
 
+`surfaceLabel` names the surface a staff or demo host serves, such as `"admin"`
+or `"demo"`: a neutral `Badge` rendered last in the trailing region, after
+`secondaryAction` and `actions`, in either placement. It is text only by type,
+so no link, button or icon can be passed and it is never interactive; a member
+host omits it.
+
+```tsx
+<SiteHeader brand={<Link href="/" variant="standalone">Acme</Link>} surfaceLabel="admin" />
+```
+
 `NavShell` is the responsive half: an ordinary inline `<nav>` from the
 `tablet` breakpoint up, and a trigger-plus-drawer below it — CSS-only
 breakpoint switching, no JS media-query state, so the correct layout is
@@ -4606,7 +4616,7 @@ not a grab-bag).
 | `SkipLink` | component | Keyboard affordance to bypass nav chrome and jump straight to a page's content. Visually hidden until focused. |
 | `SkipLinkProps` | type | Props for `SkipLink`: `targetId` (the jump target's `id`), `children` (the link's own visible text — no built-in copy), `className`. |
 | `SiteHeader` | component | Public-site top chrome: brand slot, primary navigation slot (leading or centered), secondary action slot, actions slot. Renders the page's `banner` landmark. |
-| `SiteHeaderProps` | type | Props for `SiteHeader`: `brand` (required), `nav`, `navPlacement` (`"leading"` default, or `"centered"`), `secondaryAction`, `actions`, plus every native `<header>` attribute. |
+| `SiteHeaderProps` | type | Props for `SiteHeader`: `brand` (required), `nav`, `navPlacement` (`"leading"` default, or `"centered"`), `secondaryAction`, `actions`, `surfaceLabel` (text-only badge, last in the trailing region), plus every native `<header>` attribute. |
 | `NavShell` | component | The responsive half of a public site's navigation: an inline `<nav>` from `tablet` up, a trigger-plus-drawer below it. |
 | `NavShellProps` | type | Props for `NavShell`: `children` (the nav links, rendered in both the desktop row and the drawer), `aria-label` (default `"Primary"`), `triggerLabel` (default `"Menu"`), `closeLabel` (default `"Close menu"`), `className`, plus most of react-aria-components' own `DialogTrigger` props (`isOpen`, `defaultOpen`, `onOpenChange`). |
 | `SiteFooter` | component | Public-site bottom chrome: grouped link columns, a secondary/legal row. Carries `SiteFooter.Column` and `SiteFooter.Legal`. Renders the page's `contentinfo` landmark. |
