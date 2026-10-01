@@ -10,9 +10,14 @@
  * - `clossys/publisher/legal/terms.json` and `privacy.json`: the two legal
  *   documents, whose text is copy ids into the same registry.
  *
- * One more file is read here, and only by the dev-only pack review:
- * `clossys/publisher/pack.json`, through `loadPackManifest`, at request time
- * and never imported, so a repository without one still builds.
+ * Five more files are read here, and only by the dev-only pack review, each
+ * at request time and never imported, so a repository without one still
+ * builds: `clossys/publisher/pack.json` (`loadPackManifest`),
+ * `clossys/strategist/contract.json` (`loadStrategyContract`),
+ * `clossys/brief.json` (`loadEngagementBrief`), `clossys/writer/voice.json`
+ * (`loadVoiceRecord`) and `clossys/designer/brand.css`
+ * (`loadBrandDeclarations`). Each throws when its file is absent or
+ * unreadable, and the pack review treats a throw as an absent record.
  *
  * Server-only. Writer's root reads the file system, so this module and
  * everything that imports it stay out of client bundles: a server page
@@ -20,6 +25,7 @@
  */
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
+import { readBrandCss } from "@clossys/designer/tokens";
 import { createCopyResolver } from "@clossys/writer";
 import type { CopyResolver } from "@clossys/writer";
 import type { LegalDocument } from "@clossys/publisher/document";
@@ -106,4 +112,45 @@ export function legalTitle(document: LegalDocument, resolver: CopyResolver): str
  */
 export function loadPackManifest(): unknown {
   return JSON.parse(readFileSync(resolve(process.cwd(), "..", "..", "clossys", "publisher", "pack.json"), "utf8"));
+}
+
+/** A file in the repository's own `clossys/` directory, two levels above the app. */
+function packRecordPath(...segments: string[]): string {
+  return resolve(process.cwd(), "..", "..", "clossys", ...segments);
+}
+
+/** The Strategist contract, parsed and not yet validated. Read at request time; throws when absent or not JSON. */
+export function loadStrategyContract(): unknown {
+  return JSON.parse(readFileSync(packRecordPath("strategist", "contract.json"), "utf8"));
+}
+
+/** The engagement brief, parsed and not yet validated. Read at request time; throws when absent or not JSON. */
+export function loadEngagementBrief(): unknown {
+  return JSON.parse(readFileSync(packRecordPath("brief.json"), "utf8"));
+}
+
+/** The Writer voice record, parsed and not yet validated. Read at request time; throws when absent or not JSON. */
+export function loadVoiceRecord(): unknown {
+  return JSON.parse(readFileSync(packRecordPath("writer", "voice.json"), "utf8"));
+}
+
+/** The brand file's declarations, read at request time through Designer's reader. Throws, naming nothing, when it cannot be read. */
+export function loadBrandDeclarations(): Readonly<Record<string, string>> {
+  const read = readBrandCss(packRecordPath("designer", "brand.css"));
+  if (!read.complete) throw new Error("The brand file could not be read.");
+  return read.declarations;
+}
+
+/**
+ * The approved-copy resolver the pack review reads the repository's copy
+ * with. The review is served only on `development` and `test`, which both
+ * resolve with the preview policy, so it never reads `SITE_TARGET` itself.
+ */
+export function createPackReviewCopyResolver(): CopyResolver {
+  return createSiteCopyResolver("development");
+}
+
+/** Every id in the copy registry, in registry order. */
+export function siteCopyIds(): string[] {
+  return copyRegistryRecord.entries.map((entry) => entry.id);
 }

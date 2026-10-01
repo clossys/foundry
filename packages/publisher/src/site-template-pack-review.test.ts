@@ -37,6 +37,7 @@ import {
   packReviewGate,
   resolvePackReviewExport,
   resolvePackReviewPage,
+  resolvePackReviewSections,
 } from "../templates/site/app/pack-review.js";
 import { readPackReviewFile } from "../templates/site/app/pack-review-files.js";
 import { packReviewAvailable, packReviewHref, siteSitemap } from "../templates/site/app/site-wiring.js";
@@ -146,7 +147,7 @@ describe("app/pack/page.tsx source shape", () => {
     expect(body).toMatch(/^export default function PackReviewPage\(\) \{\s*const model = resolvePackReviewPage\(\{\s*env: process\.env,/);
     const gate = body.indexOf('if (model.kind === "not-found") notFound();');
     expect(gate).toBeGreaterThan(-1);
-    for (const read of ["loadText()", "loadBrandFacts()", "<BoundaryView", "<PackReviewView"]) {
+    for (const read of ["loadText()", "loadBrandFacts()", "resolvePackReviewSections(", "<BoundaryView", "<PackReviewView"]) {
       expect(body.indexOf(read), read).toBeGreaterThan(gate);
     }
     expect(body.slice(0, gate)).not.toMatch(/loadText|loadBrandFacts/);
@@ -159,9 +160,9 @@ describe("app/pack/page.tsx source shape", () => {
 
   it("takes no request input", TIMEOUT, () => {
     expect(page).not.toMatch(/searchParams|headers\(|cookies\(|\bparams\b|window\.|location|\bprops\b/);
-    // The environment is read only to decide the gate, and only as the two named arguments.
-    expect(page.match(/process\.env/g)).toHaveLength(2);
-    expect(page.match(/(?:env: |packReviewGate\()process\.env/g)).toHaveLength(2);
+    // The environment is read only to decide the gate, and only as the three named arguments.
+    expect(page.match(/process\.env/g)).toHaveLength(3);
+    expect(page.match(/(?:env: |packReviewGate\()process\.env/g)).toHaveLength(3);
     expect(body).toMatch(/^export default function PackReviewPage\(\) \{/);
   });
 
@@ -171,6 +172,29 @@ describe("app/pack/page.tsx source shape", () => {
     const files = ["site-records.ts", "site-copy.ts", "site-wiring.ts", "pack-review.ts", "pack-review-copy.ts", "pack-review-files.ts", "pack/page.tsx", "pack/export/route.ts"];
     const readers = files.filter((file) => code(readFileSync(join(APP_DIR, file), "utf8")).includes('"publisher", "pack.json"'));
     expect(readers).toEqual(["site-records.ts"]);
+  });
+
+  it("builds the record sections only for a listed review, after the unavailable page, and passes each to the view", TIMEOUT, () => {
+    const unavailable = body.indexOf('if (model.kind === "unavailable")');
+    const sections = body.indexOf("resolvePackReviewSections(");
+    expect(unavailable).toBeGreaterThan(-1);
+    expect(sections).toBeGreaterThan(unavailable);
+    expect(body.slice(sections)).toMatch(/^resolvePackReviewSections\(\{\s*env: process\.env,/);
+    for (const loader of ["loadStrategyContract", "loadEngagementBrief", "loadVoiceRecord", "loadBrandDeclarations"]) {
+      expect(body.slice(sections), loader).toMatch(new RegExp(`\\b${loader},`));
+    }
+    expect(body).toMatch(/resolveCopy: createPackReviewCopyResolver\(\),/);
+    expect(body).toMatch(/exports: model\.exports,/);
+    for (const name of ["strategy", "brandKit", "voice"]) expect(body).toMatch(new RegExp(`${name}=\\{sections\\.${name}\\}`));
+  });
+
+  it("reads each pack-review record only through site-records", TIMEOUT, () => {
+    expect(page).not.toMatch(/contract\.json|brief\.json|voice\.json|brand\.css|readBrandCss/);
+    const files = ["site-copy.ts", "site-wiring.ts", "pack-review.ts", "pack-review-copy.ts", "pack-review-files.ts", "pack/page.tsx", "pack/export/route.ts"];
+    for (const needle of ['"strategist", "contract.json"', '"brief.json"', '"writer", "voice.json"', '"designer", "brand.css"']) {
+      expect(code(readFileSync(join(APP_DIR, "site-records.ts"), "utf8")), needle).toContain(needle);
+      for (const file of files) expect(code(readFileSync(join(APP_DIR, file), "utf8")), `${file} ${needle}`).not.toContain(needle);
+    }
   });
 
   it("carries no wording of its own: no JSX text, no string passed as a visible prop", TIMEOUT, () => {
@@ -754,5 +778,348 @@ describe("app/pack/export/route.ts source shape", () => {
   it("is not a route the manifest or the sitemap knows", TIMEOUT, () => {
     const manifest = JSON.parse(readTemplate("web-route-manifest.json")) as { routes: Array<{ id: string }> };
     expect(manifest.routes.some((entry) => entry.id.startsWith("/pack"))).toBe(false);
+  });
+});
+
+// ------------------------------------------------------- the record sections, run
+
+const PROVENANCE = { source: "fictional-register", recordedAt: "2026-09-01" };
+
+const CONTRACT = {
+  id: "example-strategy",
+  revision: "1.0.0",
+  provenance: PROVENANCE,
+  records: [
+    { kind: "product", id: "example", revision: "1.0.0", provenance: PROVENANCE, name: "Example", summary: "A fictional product summary for the review." },
+    { kind: "evidence", id: "pilot-notes", revision: "1.0.0", provenance: PROVENANCE, productId: "example", evidenceKind: "observed-fact", statement: "Fictional pilot readers finished the first step." },
+    {
+      kind: "claim",
+      id: "approved-claim",
+      revision: "1.0.0",
+      provenance: PROVENANCE,
+      productId: "example",
+      claimKey: "approved-claim",
+      assertion: "A fictional approved claim.",
+      status: "approved",
+      evidenceIds: ["pilot-notes"],
+      approval: { approvedBy: "fictional-review", approvedAt: "2026-09-02" },
+    },
+    { kind: "claim", id: "open-claim", revision: "1.0.0", provenance: PROVENANCE, productId: "example", claimKey: "open-claim", assertion: "A fictional claim still to approve.", status: "hypothesis" },
+  ],
+};
+
+const BRIEF = {
+  schemaVersion: 1,
+  problem: "A fictional problem.",
+  roles: [{ role: "publisher", why: "A fictional reason.", goal: { metric: "verified publication rate", direction: "increase" }, inputsFrom: [], outputsTo: [] }],
+  sequence: ["publisher"],
+  deliverables: ["A fictional deliverable."],
+  context: {
+    schemaVersion: 1,
+    fields: [
+      { id: "business", state: "known", value: "product-or-service" },
+      { id: "product", state: "known", value: "software" },
+      { id: "audience", state: "known", value: "businesses" },
+      { id: "stage", state: "unknown" },
+      { id: "intent", state: "unknown" },
+      { id: "constraints", state: "unknown" },
+    ],
+  },
+};
+
+const VOICE_RECORD = {
+  id: "example-voice",
+  rules: {
+    person: { description: "Fictional person rule.", forbiddenPronouns: ["I"] },
+    tense: { description: "Fictional tense rule.", forbiddenMarkers: ["will"] },
+    formality: "neutral",
+    tone: ["direct", "plain"],
+  },
+  glossary: [],
+  claims: [],
+};
+
+const DECLARATIONS: Readonly<Record<string, string>> = {
+  "--color-brand": "#123456",
+  "--color-ink-primary": "#111111",
+  "--font-display": "\"Example Sans\", sans-serif",
+  "--font-body": "\"Example Serif\", serif",
+  "--font-display-weight": "700",
+  "--font-mono": "  ",
+  "--space-md": "16px",
+};
+
+const COPY: Readonly<Record<string, string>> = {
+  "site.tagline": "A fictional site tagline.",
+  "brand.tagline.primary": "A fictional brand tagline.",
+  "messaging.pitch.one-liner": "A fictional pitch.",
+  "messaging.pitch.elevator": "A fictional elevator pitch, a little longer.",
+  "messaging.boilerplate.short": "A fictional boilerplate.",
+  "faq.pricing.question": "A fictional question?",
+  "faq.pricing.answer": "A fictional answer.",
+  "faq.unanswered.question": "A fictional question with no answer?",
+};
+
+const SECTION_MANIFEST: PackManifest = {
+  schemaVersion: 1,
+  items: [
+    item("share-card", { outputPaths: ["out/share/og-image.png"] }),
+    item("brand-kit", { outputPaths: ["out/brand/logo.svg", "out/brand/favicon.ico", "out/brand/notes.txt"] }),
+  ],
+};
+
+const SECTION_TEXT = packReviewText(createCopyResolver(PACK_REVIEW_COPY, { target: "preview" }));
+
+interface SectionLoaders {
+  loadStrategyContract: () => unknown;
+  loadEngagementBrief: () => unknown;
+  loadVoiceRecord: () => unknown;
+  loadBrandDeclarations: () => Readonly<Record<string, string>>;
+}
+
+const absent = (): never => {
+  throw new Error("ENOENT /srv/private/clossys/record");
+};
+
+function presentLoaders(): SectionLoaders {
+  return {
+    loadStrategyContract: vi.fn(() => structuredClone(CONTRACT)),
+    loadEngagementBrief: vi.fn(() => structuredClone(BRIEF)),
+    loadVoiceRecord: vi.fn(() => structuredClone(VOICE_RECORD)),
+    loadBrandDeclarations: vi.fn(() => DECLARATIONS),
+  };
+}
+
+function absentLoaders(): SectionLoaders {
+  return { loadStrategyContract: vi.fn(absent), loadEngagementBrief: vi.fn(absent), loadVoiceRecord: vi.fn(absent), loadBrandDeclarations: vi.fn(absent) };
+}
+
+function sectionsFor(loaders: SectionLoaders, over: { env?: Record<string, string | undefined>; copy?: Readonly<Record<string, string>>; taglineCopyId?: string } = {}) {
+  const review = resolvePackReviewPage({ env: INSIDE, routes: ROUTES, states: STATES, loadManifest: () => SECTION_MANIFEST });
+  if (review.kind !== "review") throw new Error("expected a review");
+  const copy = over.copy ?? COPY;
+  return resolvePackReviewSections({
+    env: over.env ?? INSIDE,
+    ...loaders,
+    resolveCopy: createMapResolver(copy),
+    copyIds: Object.keys(copy),
+    brand: { label: "Example Studio", entity: "Example Studio Ltd", canonicalOrigin: "https://example.test", taglineCopyId: over.taglineCopyId },
+    exports: review.exports,
+    text: SECTION_TEXT,
+  });
+}
+
+describe("resolvePackReviewSections", () => {
+  it("calls no loader and returns no section when the gate is closed", TIMEOUT, () => {
+    for (const env of [{}, { SITE_TARGET: "production" }, { SITE_TARGET: "development", VERCEL_ENV: "preview" }, { SITE_TARGET: "development", NODE_ENV: "production" }]) {
+      const loaders = presentLoaders();
+      expect(sectionsFor(loaders, { env })).toEqual({});
+      for (const loader of Object.values(loaders)) expect(loader).not.toHaveBeenCalled();
+    }
+  });
+
+  it("returns no section when every record is absent and no copy resolves, so a fresh repository still renders", TIMEOUT, () => {
+    const sections = sectionsFor(absentLoaders(), { copy: {} });
+    expect(sections).toEqual({});
+    const html = renderToStaticMarkup(
+      createElement(PackReviewView, {
+        brand: "Example Studio",
+        surfaceLabel: SECTION_TEXT.surfaceLabel,
+        heading: SECTION_TEXT.heading,
+        description: SECTION_TEXT.description,
+        ...sections,
+        pages: [],
+        exports: [],
+        labels: SECTION_TEXT.labels,
+      }),
+    );
+    expect(html).toContain("No Strategist contract and no engagement brief context are recorded yet.");
+    expect(html).toContain("No brand file is recorded yet.");
+    expect(html).toContain("No voice record and no reusable copy are recorded yet.");
+    expect(html).not.toContain("private");
+  });
+
+  it("treats a record its owner's check refuses as absent, and carries nothing from it", TIMEOUT, () => {
+    const sections = sectionsFor(
+      {
+        loadStrategyContract: () => ({ ...CONTRACT, revision: "hostile-marker" }),
+        loadEngagementBrief: () => ({ ...BRIEF, hostile: "hostile-marker" }),
+        loadVoiceRecord: () => ({ ...VOICE_RECORD, rules: "hostile-marker" }),
+        loadBrandDeclarations: absent,
+      },
+      { copy: {} },
+    );
+    expect(sections).toEqual({});
+  });
+
+  it("builds the strategy brief from the Strategist contract and the engagement brief's context", TIMEOUT, () => {
+    const { strategy } = sectionsFor(presentLoaders());
+    expect(strategy).toEqual({
+      source: "Read from the Strategist contract.",
+      summary: "A fictional product summary for the review.",
+      context: [
+        { name: "Business", value: "product-or-service" },
+        { name: "Product", value: "software" },
+        { name: "Audience", value: "businesses" },
+      ],
+      openQuestions: [
+        "Claim to approve: A fictional claim still to approve.",
+        "What stage is the business at?",
+        "What should this engagement achieve first?",
+        "What constraints should the team work within?",
+      ],
+    });
+    expect(JSON.stringify(strategy)).not.toContain("A fictional approved claim.");
+    expect(JSON.stringify(strategy)).not.toContain("A fictional problem.");
+  });
+
+  it("falls back to the engagement brief's context when there is no Strategist contract", TIMEOUT, () => {
+    const { strategy } = sectionsFor({ ...presentLoaders(), loadStrategyContract: absent });
+    expect(strategy?.source).toBe("Read from the engagement brief's context. There is no Strategist contract yet.");
+    expect(strategy?.summary).toBeUndefined();
+    expect(strategy?.context.map((fact) => fact.name)).toEqual(["Business", "Product", "Audience"]);
+    expect(strategy?.openQuestions).toEqual(["What stage is the business at?", "What should this engagement achieve first?", "What constraints should the team work within?"]);
+  });
+
+  it("reads the contract alone when the brief is absent or carries no context", TIMEOUT, () => {
+    const { context: _dropped, ...withoutContext } = BRIEF;
+    for (const loadEngagementBrief of [absent, () => withoutContext]) {
+      const { strategy } = sectionsFor({ ...presentLoaders(), loadEngagementBrief });
+      expect(strategy?.source).toBe("Read from the Strategist contract.");
+      expect(strategy?.context).toEqual([]);
+      expect(strategy?.openQuestions).toEqual(["Claim to approve: A fictional claim still to approve."]);
+    }
+  });
+
+  it("builds the brand kit from the brand file, the brand facts and the review's brand-asset exports", TIMEOUT, () => {
+    const { brandKit } = sectionsFor(presentLoaders());
+    expect(brandKit?.title).toBe("Example Studio");
+    expect(brandKit?.usage).toBe("Brand assets from the pack manifest, and color and type tokens from the brand file.");
+    expect(brandKit?.colors).toEqual([
+      { name: "--color-brand", value: "#123456" },
+      { name: "--color-ink-primary", value: "#111111" },
+    ]);
+    expect(brandKit?.type.map((entry) => entry.name)).toEqual(["--font-display", "--font-body", "--font-display-weight"]);
+    expect(brandKit?.specimen).toEqual({
+      text: "Sphinx of black quartz, judge my vow. 0123456789",
+      faces: [
+        { name: "--font-display", value: "\"Example Sans\", sans-serif" },
+        { name: "--font-body", value: "\"Example Serif\", serif" },
+      ],
+    });
+    expect(brandKit?.facts).toEqual([
+      { name: "Brand", value: "Example Studio" },
+      { name: "Legal entity", value: "Example Studio Ltd" },
+      { name: "Canonical origin", value: "https://example.test" },
+    ]);
+    expect(brandKit?.assets).toEqual([
+      { role: "brand-kit:0", href: packReviewExportHref("brand-kit:0"), label: "Logo, out/brand/logo.svg" },
+      { role: "brand-kit:1", href: packReviewExportHref("brand-kit:1"), label: "Favicon, out/brand/favicon.ico" },
+    ]);
+  });
+
+  it("links every brand-kit asset to an export the export route serves inside the gate", TIMEOUT, () => {
+    const { brandKit } = sectionsFor(presentLoaders());
+    expect(brandKit?.assets.length).toBeGreaterThan(0);
+    for (const asset of brandKit?.assets ?? []) {
+      const name = new URL(asset.href, "http://localhost").searchParams.get("name");
+      const result = resolvePackReviewExport({ env: INSIDE, name, loadManifest: () => SECTION_MANIFEST, loadOutput: () => BYTES.png });
+      expect(result.kind).toBe("file");
+    }
+  });
+
+  it("builds the voice and copy from the voice record and the copy registry", TIMEOUT, () => {
+    const { voice } = sectionsFor(presentLoaders());
+    expect(voice).toEqual({
+      rules: [
+        { name: "Person", value: "Fictional person rule." },
+        { name: "Tense", value: "Fictional tense rule." },
+        { name: "Formality", value: "neutral" },
+        { name: "Tone", value: "direct, plain" },
+      ],
+      tagline: "A fictional site tagline.",
+      pitch: [
+        { name: "One line", value: "A fictional pitch." },
+        { name: "Elevator", value: "A fictional elevator pitch, a little longer." },
+      ],
+      boilerplate: [{ name: "Short", value: "A fictional boilerplate." }],
+      faq: [{ question: "A fictional question?", answer: "A fictional answer." }],
+    });
+  });
+
+  it("takes the tagline from the brand facts' first tagline when the record names one", TIMEOUT, () => {
+    expect(sectionsFor(presentLoaders(), { taglineCopyId: "brand.tagline.primary" }).voice?.tagline).toBe("A fictional brand tagline.");
+  });
+
+  it("shows the copy without a voice record, and the voice rules without copy", TIMEOUT, () => {
+    const copyOnly = sectionsFor({ ...presentLoaders(), loadVoiceRecord: absent }).voice;
+    expect(copyOnly?.rules).toEqual([]);
+    expect(copyOnly?.pitch).toHaveLength(2);
+    const rulesOnly = sectionsFor(presentLoaders(), { copy: {} }).voice;
+    expect(rulesOnly?.rules).toHaveLength(4);
+    expect(rulesOnly?.tagline).toBeUndefined();
+    expect([rulesOnly?.pitch, rulesOnly?.boilerplate, rulesOnly?.faq]).toEqual([[], [], []]);
+  });
+
+  it("renders every present section through the real view with the catalog's words", TIMEOUT, () => {
+    const review = resolvePackReviewPage({ env: INSIDE, routes: ROUTES, states: STATES, loadManifest: () => SECTION_MANIFEST });
+    if (review.kind !== "review") throw new Error("expected a review");
+    const html = renderToStaticMarkup(
+      createElement(PackReviewView, {
+        brand: "Example Studio",
+        surfaceLabel: SECTION_TEXT.surfaceLabel,
+        heading: SECTION_TEXT.heading,
+        description: SECTION_TEXT.description,
+        ...sectionsFor(presentLoaders()),
+        pages: review.pages,
+        exports: review.exports,
+        labels: SECTION_TEXT.labels,
+      }),
+    );
+    for (const words of [
+      "Strategy brief",
+      "Open questions for the owner",
+      "Brand kit",
+      "Assets",
+      "Color tokens",
+      "Type tokens",
+      "Type specimen",
+      "Voice and copy",
+      "Voice rules",
+      "Tagline",
+      "Pitch",
+      "Boilerplate",
+      "FAQ",
+      "A fictional product summary for the review.",
+      "A fictional answer.",
+    ]) {
+      expect(html, words).toContain(words);
+    }
+    expect(html).not.toContain("recorded yet");
+    expect(html.match(/<main/g)).toHaveLength(1);
+    expect(html.match(/<h1/g)).toHaveLength(1);
+  });
+});
+
+describe("the record-section loaders in site-records", () => {
+  const records = code(readTemplate("app/site-records.ts"));
+
+  it("reads each record at request time from the repository's clossys directory, and imports none of them", TIMEOUT, () => {
+    expect(records).toMatch(/resolve\(process\.cwd\(\), "\.\.", "\.\.", "clossys", \.\.\.segments\)/);
+    for (const [name, path] of [
+      ["loadStrategyContract", '"strategist", "contract.json"'],
+      ["loadEngagementBrief", '"brief.json"'],
+      ["loadVoiceRecord", '"writer", "voice.json"'],
+    ]) {
+      expect(records, name).toMatch(new RegExp(`export function ${name}\\(\\): unknown \\{\\s*return JSON\\.parse\\(readFileSync\\(packRecordPath\\(${path.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\), "utf8"\\)\\);`));
+    }
+    expect(records).toMatch(/readBrandCss\(packRecordPath\("designer", "brand\.css"\)\)/);
+    expect(records).not.toMatch(/import [^;]*(contract|brief|voice)\.json/);
+    expect(records).not.toMatch(/import [^;]*brand\.css/);
+  });
+
+  it("resolves the review's copy with the preview policy, without reading SITE_TARGET", TIMEOUT, () => {
+    const body = records.slice(records.indexOf("export function createPackReviewCopyResolver"));
+    expect(body).toMatch(/^export function createPackReviewCopyResolver\(\): CopyResolver \{\s*return createSiteCopyResolver\("development"\);\s*\}/);
   });
 });

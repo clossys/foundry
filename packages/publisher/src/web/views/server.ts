@@ -27,7 +27,7 @@ export { SectionedView } from "./SectionedView.server.js";
 export { BrandGuideView } from "./BrandGuideView.js";
 export { SystemAuditView } from "./SystemAuditView.js";
 export { PackReviewView } from "./PackReviewView.js";
-export type { PackReviewViewExport, PackReviewViewLabels, PackReviewViewPage, PackReviewViewProps, PackReviewViewState } from "./PackReviewView.js";
+export type { PackReviewViewBrandKit, PackReviewViewExport, PackReviewViewFact, PackReviewViewFaqItem, PackReviewViewLabels, PackReviewViewPage, PackReviewViewProps, PackReviewViewState, PackReviewViewStrategy, PackReviewViewVoice } from "./PackReviewView.js";
 export type { SectionedViewLandmark, SectionedViewProps } from "./SectionedView.js";
 
 export { LegalView } from "./LegalView.js";

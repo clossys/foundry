@@ -32,8 +32,9 @@ applies at its cascade scope, or that the template builds.
 
 - `package.json` — Next.js (App Router), `@clossys/publisher/web` and
   `@clossys/designer` as real dependencies once instantiated, plus
-  `@clossys/writer` (the copy resolver), `@clossys/messenger` and its
-  `resend` peer (the contact delivery), plus
+  `@clossys/writer` (the copy resolver), `@clossys/strategist` (the
+  contract checks the pack review reads the strategy brief through),
+  `@clossys/messenger` and its `resend` peer (the contact delivery), plus
   Tailwind (`tailwindcss`, and `@tailwindcss/postcss` for the build) and
   the peers Designer's components need at render time
   (`react-aria-components`, `tailwind-merge`).
@@ -85,9 +86,11 @@ applies at its cascade scope, or that the template builds.
   `app/site-delivery.ts` assemble it.
 - `app/pack/page.tsx`, `app/pack/export/route.ts`, `app/pack-review.ts`,
   `app/pack-review-files.ts`, `app/pack-review-copy.ts` — the dev-only pack review (`PackReviewView`):
-  `/pack` lists each route in the manifest below with the contact page's forced
-  states, the exports named in `clossys/publisher/pack.json`, and a lazy
-  contact sheet at 390, 1024 and 1440 px. Each page, forced state and frame
+  `/pack` shows the pack's strategy brief, brand kit and voice and copy (see
+  "What the pack review reads" below), then lists each route in the manifest
+  below with the contact page's forced states, the exports named in
+  `clossys/publisher/pack.json`, and a lazy contact sheet at 390, 1024 and
+  1440 px. Each page, forced state and frame
   shows the page's badge. Each export links to `/pack/export?name=<id>`, which
   serves the OG image, the notification email (the same HTML for its 600 and
   375 px entries) and the plain-text email from the path `pack.json` lists
@@ -168,6 +171,38 @@ records, and one file, `app/site-records.ts`, reads them:
 Tokens come from `clossys/designer/brand.css`, as before. This template
 ships no copy and no tokens of its own, except the dev-only pack review's
 words (`app/pack-review-copy.ts`), which no public page shows.
+
+## What the pack review reads
+
+The dev-only `/pack` page reads four more records, behind the same
+`packReviewGate`, at request time and never imported, through loaders in
+`app/site-records.ts`. Each is optional: a record that is absent, unreadable
+or refused by its owner's check is left out, and its section shows an empty
+label instead, so a repository with none of them still renders `/pack`.
+`resolvePackReviewSections` in `app/pack-review.ts` builds the three sections:
+
+- **Strategy brief** — `clossys/strategist/contract.json`, checked by
+  Strategist's `validateStrategyContract`: the first product record's
+  summary, and each claim still marked `hypothesis` as an open question.
+  `clossys/brief.json`, read through Strategist's
+  `readEngagementContextFromBriefData`: each answered engagement-context
+  field, and each unanswered one as an open question. Either record alone is
+  enough; with only the brief, the section says there is no Strategist
+  contract yet. The brief's `problem` is not shown.
+- **Brand kit** — rendered by Publisher's `BrandGuideView`: the `--color-*`
+  and `--font-*` tokens of `clossys/designer/brand.css`, read through
+  Designer's `readBrandCss`; a type specimen in the display, body and mono
+  faces it declares; the brand facts above; and the pack manifest's logo,
+  favicon and app-icon exports as assets, linked to `/pack/export`.
+- **Voice and copy** — the rules of `clossys/writer/voice.json`, checked by
+  Writer's `parseVoiceRecord`; and, from the copy registry above, the tagline
+  (the brand facts' first tagline, else `site.tagline`), the pitch and the
+  boilerplate (Writer's reserved `messaging.pitch.*` and
+  `messaging.boilerplate.*` ids), and every `faq.<slug>.question` that has a
+  `faq.<slug>.answer`. Writer has no FAQ record of its own, so this id pair is
+  the template's convention. The copy resolves with the preview policy, since
+  the review is served only on `development` and `test`; an entry that does
+  not resolve is left out.
 
 ## `NEXT_PUBLIC_SITE_URL`
 
