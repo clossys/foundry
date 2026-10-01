@@ -335,6 +335,7 @@ test("Publisher's optional-peer matrix binds both default and react-server web o
     "@clossys/publisher/slides",
     "@clossys/publisher/surfaces",
     "@clossys/publisher/templates",
+    "@clossys/publisher/testing",
     "@clossys/publisher/web",
   ];
   const expected = (rejected = [], web = { default: "imports", "react-server": "imports" }) => ({
@@ -346,9 +347,9 @@ test("Publisher's optional-peer matrix binds both default and react-server web o
   const rows = OPTIONAL_PEER_POLICY["@clossys/publisher"];
 
   assert.deepEqual(rows["@internationalized/date"], expected([], { default: "rejects", "react-server": "imports" }));
-  assert.deepEqual(rows.react, expected(["@clossys/publisher/document"], { default: "rejects", "react-server": "rejects" }));
+  assert.deepEqual(rows.react, expected(["@clossys/publisher/document", "@clossys/publisher/testing"], { default: "rejects", "react-server": "rejects" }));
   assert.deepEqual(rows["react-aria-components"], expected([], { default: "rejects", "react-server": "imports" }));
-  assert.deepEqual(rows["react-dom"], expected([], { default: "rejects", "react-server": "imports" }));
+  assert.deepEqual(rows["react-dom"], expected(["@clossys/publisher/testing"], { default: "rejects", "react-server": "imports" }));
   assert.deepEqual(rows["tailwind-merge"], expected([], { default: "imports", "react-server": "imports" }));
   assert.deepEqual(rows.tailwindcss, expected());
 });
