@@ -49,3 +49,6 @@ export type {
   WebsiteSealEvidence,
   WebsiteSealPage,
 } from "./seal.js";
+
+export { lintRenderedHead } from "./head-lint.js";
+export type { LintRenderedHeadInput, RenderedHeadPage } from "./head-lint.js";
