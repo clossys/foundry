@@ -30,7 +30,7 @@ export interface AuthViewProps extends HTMLAttributes<HTMLDivElement> {
    */
   description: ReactNode;
   /**
-   * The form slot. Rendered inside Designer's `Card`, exactly as given -
+   * The form slot. Rendered inside Designer's `Card`, exactly as given (the one exception is `isDisabled`) -
    * no `<form>` wrapper, no submit handling, no field state, no
    * validation. Fill it with Designer's `Form`, `TextField`, and `Button`.
    * Sign-in, sign-up, and password reset are three fillings of this slot,
@@ -39,14 +39,31 @@ export interface AuthViewProps extends HTMLAttributes<HTMLDivElement> {
    */
   form: ReactNode;
   /**
+   * Keeps the form on screen but disabled, for when the sign-in provider is
+   * unavailable. When true, `form` renders inside a native
+   * `<fieldset disabled>`, which disables every control in it while each keeps
+   * its displayed value, so an identifier the site keeps (state or
+   * `defaultValue`) stays visible; the controls are not focusable or
+   * submitted. The notice that explains why is the form's own `submitError`,
+   * the one banner region: this view adds no banner. A retry link goes in
+   * `secondaryAction`, which sits outside the fieldset and stays enabled.
+   * When false or absent, `form` renders as given with no wrapper, so
+   * switching the prop remounts the form: keep what the person typed in the
+   * site's own state, not inside the form's uncontrolled inputs.
+   */
+  isDisabled?: boolean;
+  /**
    * Slot for the alternate-step lines, rendered below the card and above the
    * footnote - "No account? Join the waitlist", "Forgot password?", "Already
-   * set up? Sign in". Pass one line or several; they stack. The card holds
+   * set up? Sign in". Pass one line or several; they stack, each child on its
+   * own line, so wrap each line in one element: text plus a link in one
+   * fragment splits onto two lines. The card holds
    * only the form and its one primary action. The text is always the site's
    * copy: this view has no `requestAccess` prop and no built-in link. An
    * invitation or activation step never offers request-access or sign-up -
    * the view has no mode and cannot tell it from sign-in, so the site keeps
-   * that rule.
+   * that rule, and its activation-page test should assert there is no
+   * request-access link.
    */
   secondaryAction?: ReactNode;
   /**
@@ -99,6 +116,7 @@ export function AuthView({
   form,
   secondaryAction,
   footnote,
+  isDisabled,
   internalNote,
   footerSecondary,
   className,
@@ -114,7 +132,13 @@ export function AuthView({
       >
         <PageHeader title={heading} description={description} />
         <Card className="flex flex-col gap-lg">
-          {form}
+          {isDisabled ? (
+            <fieldset disabled className="m-0 min-w-0 border-0 p-0">
+              {form}
+            </fieldset>
+          ) : (
+            form
+          )}
         </Card>
         {secondaryAction ? (
           <div className="flex flex-col gap-xs text-body-s text-ink-secondary">{secondaryAction}</div>

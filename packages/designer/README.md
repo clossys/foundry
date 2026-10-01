@@ -2363,6 +2363,17 @@ The tests in `Form.test.tsx` pin both rules: two invalid `TextField`s render
 both inline messages beside exactly one `role="alert"` (the `submitError`),
 and a `submitError` holding two nodes still renders one alert region.
 
+#### Error copy
+
+Write failure messages in plain words. Say what happened and give one next
+step. Keep status codes, error codes and provider names out of a field
+message; a reference code goes only in the banner. Two generic examples:
+
+- "We couldn't find an account for that email. Check it for typos."
+- "Sign-in is unavailable right now. Try again in a few minutes."
+
+Designer ships no copy: the words stay in each site.
+
 #### Multi-step forms
 
 For a flow that asks for an identifier first and then continues on later
@@ -3320,15 +3331,21 @@ lines below the card, an optional `footnote`, and a site footer (`SiteFooter`, f
 `footerSecondary`). `heading` (required) renders as the page's `<h1>`;
 `description` (required) renders directly under it, so every step decides on
 a supporting line; `form` (required) is rendered exactly as given, with no
-wrapper. The content column is held to the `--ui-width-form-max` form
+wrapper (the one exception is `isDisabled`: when the sign-in provider is
+unavailable, `form` renders inside a disabled `<fieldset>` so the form stays
+on screen with what the person typed still shown, the one notice is the
+form's own `submitError`, and a retry link in `secondaryAction` stays
+enabled). The content column is held to the `--ui-width-form-max` form
 measure (`38rem`). The optional `internalNote` (`{ label, message }`) renders
 a badge-labelled development note under the footnote, and a site passes it
 only in development. An auth page's `footerSecondary` holds a legal row only,
 never a locale switcher, because auth pages are single-locale.
 `secondaryAction` is always the site's copy, and an invitation or activation
 step never offers request-access or sign-up; the view has no mode and no
-`requestAccess` prop, so each site's activation-page test asserts no
-request-access or sign-up link.
+`requestAccess` prop, so each site's activation-page test should assert no
+request-access or sign-up link. Pass each `secondaryAction` line as one
+element: the lines stack in a column, so text plus a link in one fragment
+splits onto two lines.
 
 **`AuthView` implements no authentication of any kind** — no provider, no
 form state, no field validation, no submit handling. It renders whatever
