@@ -11,7 +11,7 @@
 
 export { renderWebDocument } from "./renderWebDocument.js";
 export { buildWebHeadMetadata } from "./headMetadata.js";
-export { SiteMetadataError, buildSiteMetadata } from "./siteMetadata.js";
+export { SiteMetadataError, buildSiteMetadata, formatPageTitle } from "./siteMetadata.js";
 export type {
   SiteIdentityInput,
   SiteLegalStatus,

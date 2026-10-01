@@ -156,6 +156,11 @@ function requireTitleText(value: unknown, field: string): string {
   return text;
 }
 
+/** The `<Page> · <Brand>` page title, each part under the same title-text rule `buildSiteMetadata` applies; throws `SiteMetadataError` (`invalid-input`) naming `page` or `brand`. */
+export function formatPageTitle({ page, brand }: { page: string; brand: string }): string {
+  return `${requireTitleText(page, "page")}${TITLE_SEPARATOR}${requireTitleText(brand, "brand")}`;
+}
+
 /** True when `text` has whitespace, a control character, or a backslash — none of which a path or URL here may carry. */
 function hasUnsafeCharacter(text: string): boolean {
   return /[\s\u0000-\u001f\u007f\\]/.test(text);
@@ -312,7 +317,7 @@ export function buildSiteMetadata(input: { site: SiteIdentityInput; page: SitePa
   const status = requireStatus(kind, page["status"]);
   const shareCard = requireShareCard(site["shareCard"], origin);
 
-  const title = kind === "home" ? `${name}${TITLE_SEPARATOR}${tagline}` : `${label}${TITLE_SEPARATOR}${name}`;
+  const title = kind === "home" ? `${name}${TITLE_SEPARATOR}${tagline}` : formatPageTitle({ page: label, brand: name });
   const canonical = `${origin}${path}`;
 
   return {

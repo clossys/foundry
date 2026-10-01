@@ -3,6 +3,7 @@ import { OG_SHARE_CARD_SPEC } from "../templates/channelSpecs.js";
 import {
   SiteMetadataError,
   buildSiteMetadata,
+  formatPageTitle,
   type SiteIdentityInput,
   type SitePageInput,
   type SitePageKind,
@@ -398,5 +399,41 @@ describe("buildSiteMetadata determinism", () => {
         ".twitter.imageAlt",
       ].sort(),
     );
+  });
+});
+
+describe("formatPageTitle pattern", () => {
+  it("joins page and brand with U+00B7 and one space on each side", () => {
+    expect(formatPageTitle({ page: "Sign in", brand: "Acme" })).toBe("Sign in · Acme");
+    expect(formatPageTitle({ page: "Sign in", brand: "Acme" })).toBe(`Sign in ${SEP} Acme`);
+  });
+
+  it("equals the title buildSiteMetadata builds for a custom page with that label and site name", () => {
+    const meta = build(site({ name: "Acme" }), page({ label: "Sign in" }));
+    expect(formatPageTitle({ page: "Sign in", brand: "Acme" })).toBe(meta.title);
+  });
+});
+
+describe("formatPageTitle refusals", () => {
+  const badParts: ReadonlyArray<[string, unknown]> = [
+    ["blank", "   "],
+    ["empty", ""],
+    ["a non-string", 5],
+    ["leading whitespace", " Acme"],
+    ["trailing whitespace", "Acme "],
+    ["a tab", "Ac\tme"],
+    ["a line break", "Ac\nme"],
+  ];
+
+  it.each(badParts)("refuses a page that is %s, naming the field", (_label, value) => {
+    const run = () => formatPageTitle({ page: value as never, brand: "Acme" });
+    expect(reasonOf(run)).toBe("invalid-input");
+    expect(run).toThrow(/page/);
+  });
+
+  it.each(badParts)("refuses a brand that is %s, naming the field", (_label, value) => {
+    const run = () => formatPageTitle({ page: "Sign in", brand: value as never });
+    expect(reasonOf(run)).toBe("invalid-input");
+    expect(run).toThrow(/brand/);
   });
 });
