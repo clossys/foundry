@@ -1263,6 +1263,52 @@ carries a pure mapping from `buildSiteMetadata`'s result onto Next.js
 metadata and viewport, and an `opengraph-image` route that draws this card from
 approved copy in Designer's default roles.
 
+### Brand share card — `buildBrandShareCard`
+
+`buildBrandShareCard(input)` builds one share card for any site, drawn like the
+site header: a plated mark beside the wordmark, or the plate alone. It returns
+the same `ShareCard` as `buildShareCard`, is exported from
+`@clossys/publisher/web` and its server entry, and renders nothing, loads no
+font, and fetches nothing.
+
+```typescript
+import { buildBrandShareCard } from "@clossys/publisher/web";
+
+const card = buildBrandShareCard({
+  markSrc: markDataUrl, // inline data URL
+  wordmark: "Example Studio", // omit to draw the plate alone
+  kicker: "Small tools",
+  headline: "Made well, made to last",
+  supporting: "A studio for small, useful tools.",
+  alt: "Example Studio",
+  displayFontFamily: "Example Display", // optional, for the wordmark and headline
+});
+
+// card.element  the React element, exactly 1200 by 630
+// card.shareCard { url: "/opengraph-image", alt, width: 1200, height: 630 }
+```
+
+- **Text.** `headline` and `alt` are required; `wordmark`, `kicker` and
+  `supporting` are optional. All follow `buildShareCard`'s text rule and are
+  emitted verbatim; a blank optional value is refused, not dropped.
+- **Lockup.** The plate is `BRAND_SHARE_CARD_PLATE_PX` (96) square. Its corner
+  radius, the mark's inset, the wordmark size and the gap all come from
+  Designer's published badge and lockup ratios rather than numbers kept here.
+  The kicker follows the lockup after a 2px rule in its own colour; `headline`
+  and `supporting` sit at the bottom.
+- **Colour.** Every colour is a Designer role token resolved through
+  `buildFlatTokenMap(tokenOverrides)`. The defaults are
+  `BRAND_SHARE_CARD_DEFAULT_ROLES` (`--color-surface-base` background;
+  `--color-ink-primary` plate, wordmark and headline; `--color-ink-secondary`
+  kicker and supporting); `roles` picks others.
+- **Mark.** `markSrc` follows the rule for `buildShareCard`'s `mark.src`: an
+  inline `data:image/svg+xml` or `data:image/png;base64` URL, never a remote one.
+- **Font.** `displayFontFamily` names a family for the wordmark and headline:
+  letters, digits, spaces and hyphens only. No font is loaded; the renderer
+  must have it.
+- **Refusals.** It throws `ShareCardError` with the existing closed reasons and
+  no new one; the error text never echoes input.
+
 ## `media` — the asset registry contract, responsive images, and video (v2)
 
 `@clossys/publisher/media` registers a consumer's own image and video

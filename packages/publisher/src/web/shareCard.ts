@@ -31,6 +31,8 @@
  */
 
 import { createElement, type CSSProperties, type ReactElement } from "react";
+import { BADGE_INSET_SHARE, BADGE_RADIUS_SHARE } from "@clossys/designer/shell/server";
+import { LOCKUP_GAP_RATIO, LOCKUP_WORDMARK_SIZE_RATIO } from "@clossys/designer/tokens";
 import { RenderError } from "../internal/errors.js";
 import { buildFlatTokenMap, resolveColorRole } from "../image/engine.js";
 import { OG_SHARE_CARD_SPEC } from "../templates/channelSpecs.js";
@@ -203,10 +205,7 @@ function resolveRole(role: string, flat: ReadonlyMap<string, string>): string {
   return resolved;
 }
 
-function requireMark(value: unknown): ShareCardMark | undefined {
-  if (value === undefined) return undefined;
-  if (!isRecord(value)) throw new ShareCardError("invalid-input");
-  const src = value["src"];
+function requireMarkSrc(src: unknown): string {
   if (
     typeof src !== "string" ||
     src.length > MAX_MARK_SRC_LENGTH ||
@@ -214,6 +213,13 @@ function requireMark(value: unknown): ShareCardMark | undefined {
   ) {
     throw new ShareCardError("invalid-mark-source");
   }
+  return src;
+}
+
+function requireMark(value: unknown): ShareCardMark | undefined {
+  if (value === undefined) return undefined;
+  if (!isRecord(value)) throw new ShareCardError("invalid-input");
+  const src = requireMarkSrc(value["src"]);
   const width = value["width"];
   const height = value["height"];
   const max = OG_SHARE_CARD_SPEC.heightPx;
@@ -295,6 +301,232 @@ export function buildShareCard(input: ShareCardInput): ShareCard {
       } satisfies CSSProperties,
     },
     ...children,
+  );
+
+  return {
+    element,
+    width: widthPx,
+    height: heightPx,
+    contentType: "image/png",
+    shareCard: { url: path, alt, width: widthPx, height: heightPx },
+  };
+}
+
+/** The Designer colour roles the brand share card reads, by use. */
+export interface BrandShareCardRoles {
+  /** The card background. Default `--color-surface-base`. */
+  background?: string;
+  /** The plate behind the mark. Default `--color-ink-primary`. */
+  plate?: string;
+  /** The `wordmark` text. Default `--color-ink-primary`. */
+  wordmark?: string;
+  /** The `kicker` text and the rule before it. Default `--color-ink-secondary`. */
+  kicker?: string;
+  /** The `headline` text. Default `--color-ink-primary`. */
+  headline?: string;
+  /** The `supporting` text. Default `--color-ink-secondary`. */
+  supporting?: string;
+}
+
+export interface BrandShareCardInput {
+  /** An inline `data:image/svg+xml` or `data:image/png;base64` URL, under `ShareCardMark.src`'s rule. */
+  markSrc: string;
+  /** The brand name beside the plate. Omit to draw the plate alone. */
+  wordmark?: string;
+  /** A short line after the lockup, behind a rule. */
+  kicker?: string;
+  /** The card's main line. */
+  headline: string;
+  /** A second line under the headline. */
+  supporting?: string;
+  /** The image's alternative text, supplied by the caller. */
+  alt: string;
+  /** The card's root-relative route. Default `/opengraph-image`. */
+  path?: string;
+  /** Brand overrides for `buildFlatTokenMap`. */
+  tokenOverrides?: Record<string, string>;
+  /** Colour roles to read; each defaults as documented on `BrandShareCardRoles`. */
+  roles?: BrandShareCardRoles;
+  /** A font family for the wordmark and headline: letters, digits, spaces and hyphens. */
+  displayFontFamily?: string;
+}
+
+export const BRAND_SHARE_CARD_PLATE_PX = 96;
+
+export const BRAND_SHARE_CARD_DEFAULT_ROLES: Readonly<Required<BrandShareCardRoles>> = Object.freeze({
+  background: "--color-surface-base",
+  plate: "--color-ink-primary",
+  wordmark: "--color-ink-primary",
+  kicker: "--color-ink-secondary",
+  headline: "--color-ink-primary",
+  supporting: "--color-ink-secondary",
+});
+
+const FONT_FAMILY_RE = /^[\p{L}\p{N} -]+$/u;
+
+function requireOptionalText(value: unknown): string | undefined {
+  return value === undefined ? undefined : requireText(value);
+}
+
+function requireFontFamily(value: unknown): string | undefined {
+  if (value === undefined) return undefined;
+  if (typeof value !== "string" || !FONT_FAMILY_RE.test(value)) throw new ShareCardError("invalid-input");
+  return value;
+}
+
+function requireBrandRoles(value: unknown): Required<BrandShareCardRoles> {
+  if (value === undefined) return { ...BRAND_SHARE_CARD_DEFAULT_ROLES };
+  if (!isRecord(value)) throw new ShareCardError("invalid-input");
+  const roles: Required<BrandShareCardRoles> = { ...BRAND_SHARE_CARD_DEFAULT_ROLES };
+  for (const key of Object.keys(BRAND_SHARE_CARD_DEFAULT_ROLES) as Array<keyof BrandShareCardRoles>) {
+    const given = value[key];
+    if (given === undefined) continue;
+    if (typeof given !== "string") throw new ShareCardError("invalid-input");
+    roles[key] = given;
+  }
+  return roles;
+}
+
+const KICKER_RULE_PX = 2;
+
+/**
+ * Builds the brand share card: the front-door lockup (a plated mark beside
+ * the wordmark, or the plate alone) top left, then the kicker after a rule,
+ * with the headline and supporting line at the bottom. The plate, wordmark
+ * size and gap are computed from Designer's published geometry; the output
+ * rules (size, inline styles, flex, deterministic, no fonts loaded) and the
+ * refusals are those of `buildShareCard`, with no new reason.
+ */
+export function buildBrandShareCard(input: BrandShareCardInput): ShareCard {
+  if (!isRecord(input)) throw new ShareCardError("invalid-input");
+
+  const markSrc = requireMarkSrc(input["markSrc"]);
+  const wordmark = requireOptionalText(input["wordmark"]);
+  const kicker = requireOptionalText(input["kicker"]);
+  const headline = requireText(input["headline"]);
+  const supporting = requireOptionalText(input["supporting"]);
+  const alt = requireText(input["alt"]);
+  const path = requirePath(input["path"]);
+  const overrides = requireTokenOverrides(input["tokenOverrides"]);
+  const roles = requireBrandRoles(input["roles"]);
+  const fontFamily = requireFontFamily(input["displayFontFamily"]);
+
+  let flat: Map<string, string>;
+  try {
+    flat = buildFlatTokenMap(overrides);
+  } catch (error) {
+    if (error instanceof RenderError) throw new ShareCardError("invalid-token-override");
+    throw error;
+  }
+
+  const background = resolveRole(roles.background, flat);
+  const plateColour = resolveRole(roles.plate, flat);
+  const wordmarkColour = resolveRole(roles.wordmark, flat);
+  const kickerColour = resolveRole(roles.kicker, flat);
+  const headlineColour = resolveRole(roles.headline, flat);
+  const supportingColour = resolveRole(roles.supporting, flat);
+
+  const { widthPx, heightPx } = OG_SHARE_CARD_SPEC;
+  const plate = BRAND_SHARE_CARD_PLATE_PX;
+  const imageSide = plate * (1 - 2 * BADGE_INSET_SHARE);
+  const gap = plate * LOCKUP_GAP_RATIO;
+  const family: CSSProperties = fontFamily === undefined ? {} : { fontFamily };
+
+  const lockup: ReactElement[] = [
+    createElement(
+      "div",
+      {
+        key: "plate",
+        style: {
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          width: plate,
+          height: plate,
+          borderRadius: plate * BADGE_RADIUS_SHARE,
+          backgroundColor: plateColour,
+        } satisfies CSSProperties,
+      },
+      createElement("img", {
+        src: markSrc,
+        width: imageSide,
+        height: imageSide,
+        alt: "",
+        style: { display: "flex", width: imageSide, height: imageSide },
+      }),
+    ),
+  ];
+  if (wordmark !== undefined) {
+    lockup.push(
+      createElement(
+        "div",
+        {
+          key: "wordmark",
+          style: {
+            display: "flex",
+            marginLeft: gap,
+            fontSize: plate * LOCKUP_WORDMARK_SIZE_RATIO,
+            lineHeight: 1,
+            fontWeight: 700,
+            color: wordmarkColour,
+            ...family,
+          } satisfies CSSProperties,
+        },
+        wordmark,
+      ),
+    );
+  }
+
+  const top: ReactElement[] = [
+    createElement("div", { key: "lockup", style: { display: "flex", alignItems: "center" } satisfies CSSProperties }, ...lockup),
+  ];
+  if (kicker !== undefined) {
+    top.push(
+      createElement("div", {
+        key: "rule",
+        style: { display: "flex", width: KICKER_RULE_PX, height: plate, marginLeft: gap, backgroundColor: kickerColour } satisfies CSSProperties,
+      }),
+      createElement(
+        "div",
+        { key: "kicker", style: { display: "flex", marginLeft: gap, fontSize: 32, lineHeight: 1.2, color: kickerColour } satisfies CSSProperties },
+        kicker,
+      ),
+    );
+  }
+
+  const bottom: ReactElement[] = [
+    createElement(
+      "div",
+      { key: "headline", style: { display: "flex", fontSize: 88, lineHeight: 1.1, fontWeight: 700, color: headlineColour, ...family } satisfies CSSProperties },
+      headline,
+    ),
+  ];
+  if (supporting !== undefined) {
+    bottom.push(
+      createElement(
+        "div",
+        { key: "supporting", style: { display: "flex", marginTop: 24, fontSize: 40, lineHeight: 1.3, color: supportingColour } satisfies CSSProperties },
+        supporting,
+      ),
+    );
+  }
+
+  const element = createElement(
+    "div",
+    {
+      style: {
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "space-between",
+        width: widthPx,
+        height: heightPx,
+        padding: PADDING_PX,
+        boxSizing: "border-box",
+        backgroundColor: background,
+      } satisfies CSSProperties,
+    },
+    createElement("div", { key: "top", style: { display: "flex", alignItems: "center" } satisfies CSSProperties }, ...top),
+    createElement("div", { key: "bottom", style: { display: "flex", flexDirection: "column" } satisfies CSSProperties }, ...bottom),
   );
 
   return {
