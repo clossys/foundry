@@ -292,10 +292,11 @@ describe("overflow guards", () => {
     expect(byKey(root, "kicker").props.style?.["flex"]).toBe(1);
   });
 
-  it("clamps the headline and supporting line to two lines", () => {
+  it("clamps the headline and supporting line to two lines on block elements, the only display the renderer clamps", () => {
     const root = buildBrandShareCard(input()).element as ReactElement<Props>;
     for (const key of ["headline", "supporting"]) {
       const style = byKey(root, key).props.style ?? {};
+      expect(style["display"]).toBe("block");
       expect(style["lineClamp"]).toBe(2);
       expect(style["overflow"]).toBe("hidden");
     }

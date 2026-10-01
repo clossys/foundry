@@ -518,7 +518,7 @@ export function buildBrandShareCard(input: BrandShareCardInput): ShareCard {
       "div",
       {
         key: "headline",
-        style: { display: "flex", lineClamp: 2, overflow: "hidden", fontSize: 88, lineHeight: 1.1, fontWeight: 700, color: headlineColour, ...family } satisfies CSSProperties,
+        style: { display: "block", lineClamp: 2, overflow: "hidden", fontSize: 88, lineHeight: 1.1, fontWeight: 700, color: headlineColour, ...family } satisfies CSSProperties,
       },
       headline,
     ),
@@ -529,7 +529,7 @@ export function buildBrandShareCard(input: BrandShareCardInput): ShareCard {
         "div",
         {
           key: "supporting",
-          style: { display: "flex", lineClamp: 2, overflow: "hidden", marginTop: 24, fontSize: 40, lineHeight: 1.3, color: supportingColour } satisfies CSSProperties,
+          style: { display: "block", lineClamp: 2, overflow: "hidden", marginTop: 24, fontSize: 40, lineHeight: 1.3, color: supportingColour } satisfies CSSProperties,
         },
         supporting,
       ),
