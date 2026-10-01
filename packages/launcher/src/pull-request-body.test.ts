@@ -149,6 +149,12 @@ describe("renderPullRequest: supersedes", () => {
     expect(out.body.endsWith("\n\n")).toBe(false);
     // The order the caller gave never shows.
     expect(withSupersedes([3, 9])).toEqual(out);
+    // Numbers sort as numbers, not as text: 9 comes before 10.
+    for (const given of [[10, 9], [9, 10]]) {
+      const wide = withSupersedes(given);
+      if (wide.state !== "rendered") throw new Error(`refused: ${wide.reason}`);
+      expect(wide.body).toContain("\n## Supersedes\n\n- #9\n- #10\n\n## Task record\n");
+    }
 
     // Absent, undefined and empty: the golden bytes, and the golden hash.
     for (const supersedes of [undefined, []]) {
@@ -258,6 +264,36 @@ describe("renderPullRequest: shape and purity", () => {
     const source = readFileSync(new URL("./pull-request-body.ts", import.meta.url), "utf8");
     const imports = [...source.matchAll(/^import .* from "([^"]+)";$/gmu)].map((match) => match[1]);
     expect(imports.sort()).toEqual(["./change-set-contract.js", "./change-set-contract.js", "./change-set-digest.js", "node:crypto"]);
+  });
+});
+
+describe("renderPullRequest: the longest package item id", () => {
+  // A package item's id is its planItem, `<repository id>:<package name>`: 39 + 1 + 100 characters of repository id, a colon and up to
+  // 214 of package name make 355, which the change-set contract accepts, so the renderer must not refuse it.
+  const OWNER = `e${"x".repeat(38)}`;
+  const REPOSITORY = `${OWNER}/${"r".repeat(100)}`;
+  const PACKAGE = `@example/w${"z".repeat(204)}`;
+  const longest = (): RepositoryChangeSet =>
+    mutateSet(world.apply, (draft) => {
+      const text = JSON.stringify(draft)
+        .split("@example/writer")
+        .join(PACKAGE)
+        .split("@example~1writer")
+        .join(PACKAGE.replace("/", "~1"))
+        .split("example-owner/site")
+        .join(REPOSITORY);
+      const replaced = JSON.parse(text) as Loose;
+      for (const key of Object.keys(draft)) delete draft[key];
+      Object.assign(draft, replaced);
+    });
+
+  it("renders an item id of 355 characters", () => {
+    const set = longest();
+    const id = `${REPOSITORY}:${PACKAGE}`;
+    expect(id).toHaveLength(355);
+    expect(set.items.some((item) => item.id === id)).toBe(true);
+    const out = rendered(set, APPROVED_APPLY);
+    expect(out.body).toContain(`- \`${id}\` \`install\` \`${PACKAGE}@0.7.0\`\n`);
   });
 });
 

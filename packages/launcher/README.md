@@ -337,7 +337,7 @@ launcher-apply-plan plan
 launcher-apply-plan materialize --repo ./site-checkout
 launcher-apply-plan verify --repo ./site-checkout
 launcher-apply-plan status --repo ./site-checkout
-launcher-apply-plan body --repo <id> --task-record 12
+launcher-apply-plan body --repo example-owner/example-site --task-record 12
 launcher-apply-plan snapshot --request package-request.json
 ```
 
@@ -1105,8 +1105,10 @@ changes one keeps the dry tree's V9, and is not `planned` without it). An apply
 set names the bundle that will be recorded in the ledger, and admission needs
 that bundle stored, so the first run after a setup set merges stores it with
 V3 `indeterminate` (`apply-bundle-unrecorded`) and the next run admits it. The
-digests, the change sets and the sheet, apart from its `Mode:` line, are the
-same as in report mode.
+digests and the change sets are the same as in report mode. So is the sheet,
+apart from its `Mode:` line and, under `Checks not satisfied`, the V3 row of a
+repository the hub refuses (and the V9 row of a set that changes a lockfile, when
+the dry tree ran no provenance check), which only planned mode adds.
 
 It then stores the change sets and the bundle under `clossys/.state/apply/`,
 the only place it writes, and prints the sheet. Over unchanged inputs and an
@@ -1244,7 +1246,7 @@ hub repository's branch protection governs that.
 `renderPullRequest({ set, binding, taskRecord, supersedes? })` returns the title and body of
 the pull request for one stored change set, and `bodySha256`, which is
 `sha256:` and the hex SHA-256 of the body's UTF-8 bytes. It is a pure function
-of its three inputs (`RenderPullRequestInput`): it reads no file, runs no command and opens nothing. The
+of its inputs (`RenderPullRequestInput`: the set, the binding, the task record and the optional superseded numbers): it reads no file, runs no command and opens nothing. The
 title is exactly `set.pullRequest.title`, which must be `Clossys: apply plan `
 and the first 12 hex digits of the set's own digest.
 
@@ -1288,8 +1290,11 @@ nothing else, then records the `bodySha256` of exactly the bytes it printed as
 the set's `pullRequest.bodySha256`. Open the pull request from that output.
 
 ```bash
-launcher-apply-plan body --repo <id> --task-record 12 --supersedes 9
+launcher-apply-plan body --repo example-owner/example-site --task-record 12 --supersedes 9
 ```
+
+`<id>` in the usage lines is the repository's id, `owner/name`; in a shell, type
+the id itself, because a literal `<id>` is read as a redirection.
 
 The approval the body shows is what the hub decides at the time of the run, as
 `materialize` decides it, from the plan committed at the hub's HEAD: it is never
@@ -1303,16 +1308,28 @@ store (`supersedes-unfounded` otherwise). Every number is digits only.
 
 A set is bound to one body. Running `body` again with the same arguments prints
 the same body and changes nothing; a run that would produce another body is
-refused as `body-bound` and prints nothing, so an approval binds exactly the
-body that was opened. Recording the hash replaces the one stored file of the
-set atomically, refuses a symbolic link, and changes nothing else in the set:
-its digest, its file name and every other member stay as they were.
+refused as `body-bound` and prints nothing, so the hash recorded for the set
+belongs to one body only; whether the pull request that was opened still carries
+that body is what `status` checks afterwards. Recording the hash replaces the one
+stored file of the set atomically, refuses a symbolic link, and changes nothing
+else in the set: its digest, its file name and every other member stay as they
+were.
+
+There is no command that undoes a binding, and no `--dry-run`. A `--task-record`
+or `--supersedes` number mistyped on a first run binds the set to that body, and
+every later run with other numbers is refused as `body-bound`; nothing in this
+package unbinds it. Check the numbers before running `body`.
+
+Hand the output to the pull request as a file, and open the pull request with
+`--body-file`, not with `--body "$(launcher-apply-plan body ...)"`: shell command
+substitution drops the final line feed, and the recorded hash covers it.
 
 Exit `0` prints the body and only the body. Exit `1` is a refusal and exit `2`
 is indeterminate or a usage error; each prints nothing on standard output and
-one line on standard error, `launcher-apply-plan body: refused (<reason>)` or
-`launcher-apply-plan body: indeterminate (<reason>)`, a fixed reason and never
-an argument, a path or any tool output.
+one line on standard error, `launcher-apply-plan body: refused (<reason>)`,
+`launcher-apply-plan body: indeterminate (<reason>)` or, for a usage error,
+`launcher-apply-plan body: usage: <the usage line>`, a fixed reason or the usage
+line and never an argument, a path or any tool output.
 
 ### Observing the pull request
 
@@ -1328,7 +1345,14 @@ writes a file, an index or any ref but one. It needs a full clone: a partial
 `partial-clone`, before any object is read, because git would fetch what such a
 clone lacks. All its git calls also run with lazy fetch off, and each has a
 30 second limit, including those of the preconditions it shares with `verify`
-except the base-commit reads made by the hub admission, which have no limit. The one
+except the base-commit reads made by the hub admission, which have no limit. A
+read of a base blob inside `verify`'s own checks (a base lockfile, for one) that
+fails or times out is taken as an absent file, so `status` can answer `diverged`
+where `indeterminate` is the truer answer. The limit reaches those shared
+reads through the environment variable `CLOSSYS_LAUNCHER_GIT_TIMEOUT_MS`, which
+`status` sets for the duration of its own checks, one `status` call at a time in
+a process; set in a shell, the same variable also limits the git calls of
+`verify` and `materialize`, which set none. The one
 ref it writes is the one `verify` writes: the fetch of the default branch into
 its remote-tracking ref (`refs/remotes/origin/<default branch>`), which also
 leaves `FETCH_HEAD` and any new objects of that branch in the clone. It runs the

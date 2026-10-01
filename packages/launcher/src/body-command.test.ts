@@ -5,7 +5,8 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { LATER_AT, commitHubPlan, decide, mutateSet } from "./admission-fixture.js";
 import { bindChangeSetBody, BUNDLE_STORE_REL, CHANGE_SET_STORE_REL, readStoredChangeSet, storeApplyBundle } from "./apply-store.js";
 import { bodyMain } from "./apply-plan-cli.js";
-import { buildMaterializedFixture, writeSnapshot } from "./apply-step-fixture.js";
+import { bodyRepository } from "./body-command.js";
+import { buildAdmittedFixture, buildMaterializedFixture, writeSnapshot } from "./apply-step-fixture.js";
 import type { ApplyBundle, ApprovalBinding, RepositoryChangeSet } from "./change-set-contract.js";
 import { renderPullRequest } from "./pull-request-body.js";
 
@@ -286,6 +287,72 @@ describe("launcher-apply-plan body", () => {
       expect(out.stdout.length).toBe(0);
       expect(out.stderr).toEqual(["launcher-apply-plan body: indeterminate (authorization-unverified)"]);
       expect(w.stored().pullRequest.bodySha256).toBeUndefined();
+    },
+    TIMEOUT,
+  );
+
+  it(
+    "a set that names another repository than the stored one under its digest renders nothing and stores nothing",
+    async () => {
+      const w = world();
+      const before = state(w);
+      const bytes = readFileSync(w.setPath);
+      // The same digest, so the store finds the set; only the repository id is another.
+      const foreign = { ...w.set, repository: { ...w.set.repository, id: "example-owner/docs" } } as RepositoryChangeSet;
+      const outcome = await bodyRepository({ clone: w.clone, hub: w.hub, set: foreign, heldChangeSets: [], taskRecord: 12 });
+      expect(outcome).toEqual({ exitCode: 2, reason: "change-set-absent" });
+      expect(readFileSync(w.setPath).equals(bytes)).toBe(true);
+      expect(w.stored().pullRequest.bodySha256).toBeUndefined();
+      expect(state(w)).toBe(before);
+    },
+    TIMEOUT,
+  );
+
+  it(
+    "the body is rendered from the stored set, not from the one passed in",
+    async () => {
+      const w = world();
+      // Members the digest leaves out, so the store still finds the set: the bundle the body prints is the stored one.
+      const passed = { ...w.set, bundle: `sha256:${"9".repeat(64)}` } as RepositoryChangeSet;
+      expect(passed.changeSetDigest).toBe(w.stored().changeSetDigest);
+      const outcome = await bodyRepository({ clone: w.clone, hub: w.hub, set: passed, heldChangeSets: [], taskRecord: 12 });
+      expect(outcome).toEqual({ exitCode: 0, body: expectedBody(w) });
+      if (outcome.exitCode === 0) expect(outcome.body).not.toContain("9".repeat(64));
+    },
+    TIMEOUT,
+  );
+
+  it(
+    "an admitted binding is held to the setup change set it names",
+    async () => {
+      const site = buildAdmittedFixture(roots, { storeApplySet: true });
+      const args = ["--repo", SITE, "--task-record", "12"];
+      const options = { cwd: site.hub, clone: site.clone, set: site.set, heldChangeSets: [site.setup, site.set], now: () => new Date("2026-10-01T00:00:00Z") };
+      const apply = readStoredChangeSet(site.hub, site.set.changeSetDigest)!;
+      const admitted: ApprovalBinding = { kind: "admitted", subjectDigest: site.world.approvedBundle.bundleDigest, setupChangeSet: site.setup.changeSetDigest };
+      const stored = (bundle: ApplyBundle): ApplyBundle => planned(bundle, admitted);
+
+      // Another setup change set, or another kind, in the recorded binding: not what the hub decides now.
+      for (const forged of [
+        { ...admitted, setupChangeSet: `sha256:${"b".repeat(64)}` },
+        { kind: "approved", subjectDigest: admitted.subjectDigest },
+      ] as ApprovalBinding[]) {
+        storeApplyBundle(site.hub, planned(site.world.applyBundle, forged));
+        const out = await run(args, options);
+        expect(out.stderr, JSON.stringify(forged)).toEqual(["launcher-apply-plan body: refused (binding-mismatch)"]);
+        expect(out.code).toBe(1);
+        expect(out.stdout.length).toBe(0);
+        expect(readStoredChangeSet(site.hub, site.set.changeSetDigest)!.pullRequest.bodySha256).toBeUndefined();
+      }
+
+      // The binding the hub decides now is held, and the body shows it.
+      storeApplyBundle(site.hub, stored(site.world.applyBundle));
+      const ok = await run(args, options);
+      expect(ok.stderr).toEqual([]);
+      expect(ok.code).toBe(0);
+      const rendered = renderPullRequest({ set: apply, binding: admitted, taskRecord: 12 });
+      if (rendered.state !== "rendered") throw new Error("not rendered");
+      expect(ok.stdout.toString("utf8")).toBe(rendered.body);
     },
     TIMEOUT,
   );

@@ -78,8 +78,11 @@ refusal is "store-failed".
 Writes only under clossys/.state/apply/: each change set, then the bundle.
 The sheet holds ids and digests only, never plan or brief text. This
 computes and records no approval: the approval is the plan's decision, made
-in the hub, for the subject digest the sheet names. The digests, the change
-sets and the sheet do not depend on the mode, except its line.
+in the hub, for the subject digest the sheet names. The digests and the change
+sets do not depend on the mode. Nor does the sheet, except its Mode line and,
+under "Checks not satisfied", the V3 row of a repository the hub refuses (and
+the V9 row of a set that changes a lockfile, when the dry tree ran no
+provenance check), which only planned mode adds.
 
 Every refusal is a fixed word and names nothing from the files it read. A
 refusal before anything is stored ends "; nothing was stored"; "store-failed"
