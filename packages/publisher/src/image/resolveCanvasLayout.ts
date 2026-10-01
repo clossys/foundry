@@ -132,8 +132,8 @@ export function resolveCanvasLayout(
   const result = resolveDocument(doc, layout);
   if (!result.ok) {
     const parts: string[] = [];
-    if (result.missingRequired.length > 0) parts.push(`missing required slot(s): ${result.missingRequired.join(", ")}`);
-    if (result.unknownBindings.length > 0) parts.push(`binding(s) targeting unknown slot(s): ${result.unknownBindings.map((b) => b.slot).join(", ")}`);
+    if (result.missingRequired.length > 0) parts.push(`${result.missingRequired.length} missing required slot(s)`);
+    if (result.unknownBindings.length > 0) parts.push(`${result.unknownBindings.length} binding(s) targeting unknown slot(s)`);
     if (result.resolved.length === 0) parts.push("no binding matched any slot in the layout — nothing to render");
     const bindingErrors = result.bindingFindings.filter((f) => f.severity === "error");
     if (bindingErrors.length > 0) parts.push(`malformed binding(s): ${bindingErrors.map((f) => f.message).join("; ")}`);
@@ -158,7 +158,7 @@ export function resolveCanvasLayout(
     const parts = [...describeAssetProblems(assetsResolution), ...describeStaticAssetProblems(staticAssets)];
     throw new RenderError(
       "empty-output",
-      `resolved document "${doc.id}" against its layout, but at least one assetId binding did not produce a real asset: ${parts.join("; ")}. Rendering would silently ship a canvas with a broken or missing image, which this function refuses to do.`,
+      `resolved the document against its layout, but at least one assetId binding did not produce a real asset: ${parts.join("; ")}. Rendering would silently ship a canvas with a broken or missing image, which this function refuses to do.`,
     );
   }
 
@@ -171,7 +171,7 @@ export function resolveCanvasLayout(
   if (missingRequiredContent.length > 0) {
     throw new RenderError(
       "empty-output",
-      `resolved document "${doc.id}" against its layout, but required slot(s) [${missingRequiredContent.join(", ")}] produced no content — every copyId binding must resolve via options.resolveCopyId, every value binding must be non-empty, and every assetId binding must resolve via options.resolveAssetId. Rendering would silently ship an incomplete canvas, which this function refuses to do.`,
+      `resolved the document against its layout, but ${missingRequiredContent.length} required slot(s) produced no content — every copyId binding must resolve via options.resolveCopyId, every value binding must be non-empty, and every assetId binding must resolve via options.resolveAssetId. Rendering would silently ship an incomplete canvas, which this function refuses to do.`,
     );
   }
 
@@ -187,7 +187,7 @@ export function resolveCanvasLayout(
   if (textByKey.size === 0 && assetByKey.size === 0 && backgroundFill === undefined) {
     throw new RenderError(
       "empty-output",
-      `resolved document "${doc.id}" against its layout, but every matched slot produced no usable content (unresolved copyId(s)/assetId(s), or empty/ambiguous binding(s)) and the layout declares no background — there is nothing left to render. Omitted slot(s): ${[...attemptedKeys].join(", ")}.`,
+      `resolved the document against its layout, but every matched slot produced no usable content (unresolved copyId(s)/assetId(s), or empty/ambiguous binding(s)) and the layout declares no background — there is nothing left to render. Omitted slot(s): ${attemptedKeys.size}.`,
     );
   }
 

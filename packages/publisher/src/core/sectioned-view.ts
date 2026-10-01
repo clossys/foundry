@@ -692,7 +692,7 @@ export function resolveSectionedViewDocument(document: SectionedViewDocument, re
     throw new SectionedViewResolutionError("invalid-document", `resolveSectionedViewDocument refused invalid document: ${findings.map((entry) => entry.message).join("; ")}`);
   }
   if (typeof resolver !== "function") {
-    throw new SectionedViewResolutionError("unresolved-copy", `resolveSectionedViewDocument needs a CopyResolver for document "${document.id}".`);
+    throw new SectionedViewResolutionError("unresolved-copy", "resolveSectionedViewDocument needs a CopyResolver.");
   }
   const resolutions: CopyResolution[] = [];
   const text = (ref: CopyRef, path: string): string => {

@@ -254,7 +254,15 @@ describe("MarketingView — fail-closed contracts", () => {
       { slot: "faq", items: [{ fields: { question: { copy: ref("acme.faq.question.one") }, answer: { copy: ref("acme.faq.answer.one") }, extra: { copy: ref("acme.feature.a") } } }] },
     ]);
     const resolved = resolveSurfaceDocument(doc, resolver);
-    expect(() => renderWebDocument(resolved.document, { groups: resolved.groups })).toThrow(/unknown field\(s\) extra/);
+    let message = "";
+    try {
+      renderWebDocument(resolved.document, { groups: resolved.groups });
+      expect.unreachable();
+    } catch (error) {
+      message = (error as Error).message;
+    }
+    expect(message).toContain("1 unknown field(s). Known field(s): question, answer.");
+    expect(message).not.toContain("extra");
   });
 
   it("throws RenderError('resolution-failed') when a repeating group targets a slot MarketingView does not declare as repeating", () => {
@@ -266,7 +274,8 @@ describe("MarketingView — fail-closed contracts", () => {
     } catch (error) {
       expect(error).toBeInstanceOf(RenderError);
       expect((error as RenderError).reason).toBe("resolution-failed");
-      expect((error as Error).message).toContain("not-a-real-repeating-slot");
+      expect((error as Error).message).toContain("received 1 repeating group(s) for slot(s) the template does not declare as repeating");
+      expect((error as Error).message).not.toContain("not-a-real-repeating-slot");
     }
   });
 
