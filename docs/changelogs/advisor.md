@@ -5,6 +5,13 @@ All notable changes to this package are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.7.0 - 2026-10-01
+
+- `toEngagementBrief()` reads a context's `schemaVersion`, `fields` and each field's `id`, `state` and `value` once, refuses a `schemaVersion` other than 1, and no longer echoes a rejected field id in its error (#1396). The intake-question-cards contract states the card id slug rule and which gate runs the reused-id check (#1397).
+- `validateAdvisorPlan()` accepts an optional `delegatedCopyApproval` (`{ target: "production", scopes? }`), typed as `AdvisorPlanDelegatedCopyApproval`, and `planDigest()` covers it (#1586).
+- The Advisor skill lists `delegatedCopyApproval` among the plan fields it leaves unchanged after an approval (#1586).
+- `renderAdvisorStatus()` adds one line to "Recommended next", after a blank one, when a plan declares `delegatedCopyApproval`: approving the plan also accepts delegate-approved copy on production, for every copy entry or only for the listed scopes (#1614). A plan without the field renders exactly as before. The renderer throws a `TypeError` naming the position, never the value, for a target other than `production`, an empty `scopes` list, or a scope outside the accepted copy entry-id namespace shape.
+
 ## 0.6.0 - 2026-09-28
 
 - `assessAdvisorEngagement()` and `validateAdvisorAssessmentInput()` findings name initiatives, targets, criteria, placement cells and addressed ids by their position in the input instead of quoting them (#1550).
