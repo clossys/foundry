@@ -137,9 +137,9 @@ export function siteFooterLegal(copy: SiteCopyMap, entity: string): SiteFooterLe
 
 const FOOTER_IDS: readonly string[] = Object.values(FOOTER_COPY_IDS);
 
-/** Every id the contact page resolves: the form, its topics and the footer. */
+/** Every id the contact page resolves: the form, its topics, the header's contact action (the landing page's) and the footer. */
 export function allContactPageCopyIds(): string[] {
-  return [...Object.values(CONTACT_COPY_IDS), ...CONTACT_TOPICS.map(topicCopyId), ...FOOTER_IDS];
+  return [...Object.values(CONTACT_COPY_IDS), ...CONTACT_TOPICS.map(topicCopyId), LANDING_COPY_IDS.contactAction, ...FOOTER_IDS];
 }
 
 // ------------------------------------------------------------------ landing

@@ -26,6 +26,7 @@ export default function AboutPage() {
   return (
     <MarketingView
       brand={facts.brandLabel}
+      headerAction={<a href="/contact">{copy[LANDING_COPY_IDS.contactAction]}</a>}
       heroHeading={copy[ABOUT_COPY_IDS.heading]}
       heroDescription={copy[ABOUT_COPY_IDS.description]}
       features={[]}

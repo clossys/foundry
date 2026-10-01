@@ -6,7 +6,8 @@
  * loads no font, and fetches nothing.
  *
  * TEXT. `name` and `tagline` are the same plain values `buildSiteMetadata`
- * takes and follow its title-text rule; `alt` is supplied by the caller. No
+ * takes and follow its title-text rule; `alt` is supplied by the caller (the
+ * brand card derives it from its visible text when omitted). No
  * text comes from a copy registry and none is built in: the caller owns the
  * approval of every word on the card. Text is emitted verbatim, never trimmed
  * or collapsed, and a value that would need repair is refused.
@@ -339,8 +340,8 @@ export interface BrandShareCardInput {
   headline: string;
   /** A second line under the headline. */
   supporting?: string;
-  /** The image's alternative text, supplied by the caller. */
-  alt: string;
+  /** The image's alternative text. Omit to derive it from the card's visible text. */
+  alt?: string;
   /** The card's root-relative route. Default `/opengraph-image`. */
   path?: string;
   /** Brand overrides for `buildFlatTokenMap`. */
@@ -389,6 +390,16 @@ function requireBrandRoles(value: unknown): Required<BrandShareCardRoles> {
 
 const KICKER_RULE_PX = 2;
 
+/** The card's visible text in reading order, joined so no punctuation doubles. */
+function deriveAlt(parts: ReadonlyArray<string | undefined>): string {
+  let alt = "";
+  for (const part of parts) {
+    if (part === undefined) continue;
+    alt = alt === "" ? part : /[.!?:]$/.test(alt) ? `${alt} ${part}` : `${alt}. ${part}`;
+  }
+  return alt;
+}
+
 /**
  * Builds the brand share card: the site-header lockup (a plated mark beside
  * the wordmark, or the plate alone) top left, then the kicker after a rule,
@@ -405,7 +416,8 @@ export function buildBrandShareCard(input: BrandShareCardInput): ShareCard {
   const kicker = requireOptionalText(input["kicker"]);
   const headline = requireText(input["headline"]);
   const supporting = requireOptionalText(input["supporting"]);
-  const alt = requireText(input["alt"]);
+  const givenAlt = input["alt"];
+  const alt = givenAlt === undefined ? deriveAlt([wordmark, kicker, headline, supporting]) : requireText(givenAlt);
   const path = requirePath(input["path"]);
   const overrides = requireTokenOverrides(input["tokenOverrides"]);
   const roles = requireBrandRoles(input["roles"]);

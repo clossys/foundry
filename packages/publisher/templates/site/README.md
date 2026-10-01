@@ -52,7 +52,10 @@ applies at its cascade scope, or that the template builds.
 - `app/layout.tsx` — root layout: sets `data-brand-bound` on `<html>`,
   injects Designer's theme init script into `<head>`, and sets `metadataBase`
   from `NEXT_PUBLIC_SITE_URL` (see "`NEXT_PUBLIC_SITE_URL`" below).
-- `app/page.tsx` — the landing route (`LandingView`).
+- `app/page.tsx` — the landing route (`LandingView`). Its header call to
+  action, a link to `/contact` worded by `site.landing.contact-action`, is
+  passed as `headerAction` on every framed route: landing, about, contact,
+  terms and privacy.
 - `app/contact/page.tsx` and `app/contact/contact-form.tsx` — the contact
   route (`ContactView`). The page is a server component holding an inline
   server action; the form is a client module, because `ContactView` is
@@ -72,7 +75,7 @@ applies at its cascade scope, or that the template builds.
   record and carries no wording.
 - `app/error.tsx` (a client error boundary) and `app/not-found.tsx` — the
   500 and 404 pages, both rendered by `app/site-error-view.tsx` through
-  `ErrorView`.
+  `ErrorView`, which has no header, so they carry no header call to action.
 - `app/site-records.ts` — the one file that reads the repository's records.
 - `app/site-copy.ts` — the copy ids and the plain copy map the client
   carries; pure and client-safe. `app/site-copy-context.tsx` provides the

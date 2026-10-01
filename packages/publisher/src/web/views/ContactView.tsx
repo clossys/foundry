@@ -6,7 +6,7 @@ import { Card, mergeUiClasses } from "@clossys/designer/atoms/server";
 import { Form, useFormValidation } from "@clossys/designer/blocks";
 import { PageHeader } from "@clossys/designer/blocks/server";
 import { SiteFooter, SiteHeader } from "@clossys/designer/shell/server";
-import type { SiteFooterLegalProps } from "@clossys/designer/shell/server";
+import type { SiteFooterLegalProps, SiteHeaderProps } from "@clossys/designer/shell/server";
 import { RenderError } from "../../internal/errors.js";
 import type { ContactResult } from "../contact/types.js";
 
@@ -79,8 +79,20 @@ export interface ContactViewValues {
 export type ContactViewDevPreview = "idle" | "submitting" | "accepted" | "invalid" | "rate-limited" | "unavailable";
 
 export interface ContactViewProps extends Omit<HTMLAttributes<HTMLDivElement>, "children" | "onSubmit"> {
-  /** Persistent site identity, rendered alone in the page banner. A slot: consumers typically pass a `Brandmark`. */
+  /** Persistent site identity, rendered in the page banner. A slot: consumers typically pass a `Brandmark`. */
   brand: ReactNode;
+  /** The site's call to action, rendered in the banner (`SiteHeader`'s `actions`). Absent from the markup when omitted. */
+  headerAction?: ReactNode;
+  /** A secondary call to action, rendered in the banner just before `headerAction`. Absent from the markup when omitted. */
+  secondaryAction?: ReactNode;
+  /** The primary navigation, rendered in the banner beside the brand. Absent from the markup when omitted. */
+  nav?: ReactNode;
+  /**
+   * The plate of the header and footer, passed to both `SiteHeader` and
+   * `SiteFooter`.
+   * @default "transparent"
+   */
+  ground?: SiteHeaderProps["ground"];
   /** The legal row, passed straight to `SiteFooter.Legal`. Every visible word in it comes from these props. */
   legal: SiteFooterLegalProps;
   /** The approved-copy resolver used for every string in `copy` and in `topics`. */
@@ -172,10 +184,10 @@ function looksLikeEmail(value: string): boolean {
 }
 
 /**
- * A single-screen contact page: a logo-only transparent banner, the page
- * header, one form in a card, and a transparent legal footer. The form asks
- * for a topic, a name, an email, an optional phone and a message, and carries
- * a hidden honeypot field.
+ * A single-screen contact page: a transparent banner holding the brand and
+ * any header slots given, the page header, one form in a card, and a
+ * transparent legal footer. The form asks for a topic, a name, an email, an
+ * optional phone and a message, and carries a hidden honeypot field.
  *
  * What it guarantees: exactly one `<h1>`, which never names the chosen topic;
  * topic, name, email and message are checked in the browser before anything
@@ -201,6 +213,10 @@ function looksLikeEmail(value: string): boolean {
  */
 export function ContactView({
   brand,
+  headerAction,
+  secondaryAction,
+  nav,
+  ground = "transparent",
   legal,
   resolveCopyId,
   copy,
@@ -319,7 +335,7 @@ export function ContactView({
 
   return (
     <div {...rest} className={mergeUiClasses("flex min-h-dvh flex-col", className)} style={style}>
-      <SiteHeader ground="transparent" brand={brand} />
+      <SiteHeader ground={ground} brand={brand} nav={nav} secondaryAction={secondaryAction} actions={headerAction} />
       <main className="mx-auto flex w-full flex-1 flex-col gap-xl px-lg py-2xl" style={{ maxWidth: "var(--ui-width-prose-max, none)" }}>
         <PageHeader title={text.heading} description={text.description} />
         <Card>
@@ -373,7 +389,7 @@ export function ContactView({
           )}
         </Card>
       </main>
-      <SiteFooter ground="transparent" secondary={<SiteFooter.Legal {...legal} />} />
+      <SiteFooter ground={ground} secondary={<SiteFooter.Legal {...legal} />} />
     </div>
   );
 }

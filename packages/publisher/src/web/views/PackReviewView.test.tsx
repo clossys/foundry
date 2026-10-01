@@ -334,3 +334,38 @@ describe("PackReviewView", () => {
     );
   });
 });
+
+describe("PackReviewView header slots", () => {
+  it("renders headerAction, secondaryAction and nav inside the banner landmark, before the surface badge", () => {
+    const { container } = render(
+      <PackReviewView
+        {...props({
+          headerAction: <a href="/contact">Marker action</a>,
+          secondaryAction: <a href="/sign-in">Marker secondary</a>,
+          nav: <nav aria-label="Primary">Marker nav</nav>,
+        })}
+      />,
+    );
+    const banner = container.querySelector(":scope > div > header") as HTMLElement;
+    const primary = within(banner).getByRole("link", { name: "Marker action" });
+    const secondary = within(banner).getByRole("link", { name: "Marker secondary" });
+    const badge = within(banner).getByText("Marker surface");
+    expect(within(banner).getByRole("navigation", { name: "Primary" })).toBeInTheDocument();
+    expect(secondary.compareDocumentPosition(primary) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(primary.compareDocumentPosition(badge) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(container.querySelector("main")).not.toHaveTextContent(/Marker action|Marker secondary|Marker nav/);
+    expect(container.querySelector("footer")).not.toHaveTextContent(/Marker action|Marker secondary|Marker nav/);
+  });
+
+  it("renders no header slot when they are omitted", () => {
+    const banner = render(<PackReviewView {...props()} />).container.querySelector(":scope > div > header") as HTMLElement;
+    expect(within(banner).queryAllByRole("link")).toHaveLength(0);
+    expect(within(banner).queryByRole("navigation")).toBeNull();
+  });
+
+  it("passes ground to both the header and the footer", () => {
+    const html = renderToStaticMarkup(<PackReviewView {...props({ ground: "transparent" })} />);
+    expect(html).toMatch(/^<div class="flex min-h-dvh flex-col"><header class="py-sm" /);
+    expect(html).toMatch(/<footer class="text-ink-primary py-lg" /);
+  });
+});

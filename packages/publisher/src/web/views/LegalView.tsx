@@ -3,6 +3,7 @@ import type { CopyRef, CopyResolver } from "@clossys/writer";
 import { mergeUiClasses } from "@clossys/designer/atoms/server";
 import { ArticleBody, PageHeader } from "@clossys/designer/blocks/server";
 import { SiteFooter, SiteHeader } from "@clossys/designer/shell/server";
+import type { SiteHeaderProps } from "@clossys/designer/shell/server";
 import { RenderError } from "../../internal/errors.js";
 import { renderStructuredDocument } from "../../document/render.js";
 import { validateLegalDocument } from "../../document/legal.js";
@@ -21,6 +22,18 @@ export interface LegalViewLabels {
 export interface LegalViewProps extends HTMLAttributes<HTMLDivElement> {
   /** Persistent site identity, rendered in the page banner. */
   brand: ReactNode;
+  /** The site's call to action, rendered in the banner (`SiteHeader`'s `actions`). Absent from the markup when omitted. */
+  headerAction?: ReactNode;
+  /** A secondary call to action, rendered in the banner just before `headerAction`. Absent from the markup when omitted. */
+  secondaryAction?: ReactNode;
+  /** The primary navigation, rendered in the banner beside the brand. Absent from the markup when omitted. */
+  nav?: ReactNode;
+  /**
+   * The plate of the header and footer, passed to both `SiteHeader` and
+   * `SiteFooter`. `"transparent"` matches `LandingView`'s chrome.
+   * @default "base"
+   */
+  ground?: SiteHeaderProps["ground"];
   /**
    * The legal document. LegalView always validates it with
    * validateLegalDocument and renders it through renderStructuredDocument
@@ -95,7 +108,21 @@ function formatDate(formatter: Intl.DateTimeFormat, value: string): string {
  * (entity, jurisdiction, contact) are not rendered and nothing is interpolated
  * into the copy.
  */
-export function LegalView({ brand, document, resolveCopyId, labels, locale, footerSecondary, className, style, ...rest }: LegalViewProps) {
+export function LegalView({
+  brand,
+  headerAction,
+  secondaryAction,
+  nav,
+  ground = "base",
+  document,
+  resolveCopyId,
+  labels,
+  locale,
+  footerSecondary,
+  className,
+  style,
+  ...rest
+}: LegalViewProps) {
   const findings = validateLegalDocument(document);
   if (findings.length > 0) {
     throw new RenderError(
@@ -120,7 +147,7 @@ export function LegalView({ brand, document, resolveCopyId, labels, locale, foot
 
   return (
     <div {...rest} className={mergeUiClasses("flex min-h-dvh flex-col", className)} style={style}>
-      <SiteHeader brand={brand} />
+      <SiteHeader ground={ground} brand={brand} nav={nav} secondaryAction={secondaryAction} actions={headerAction} />
       <main className="mx-auto flex w-full flex-1 flex-col gap-xl px-lg py-2xl" style={{ maxWidth: "var(--ui-width-prose-max, none)" }}>
         <PageHeader title={title} />
         <dl className="flex flex-col gap-xs text-body-s text-ink-secondary">
@@ -151,7 +178,7 @@ export function LegalView({ brand, document, resolveCopyId, labels, locale, foot
           {rendered.element}
         </ArticleBody>
       </main>
-      <SiteFooter secondary={footerSecondary} />
+      <SiteFooter ground={ground} secondary={footerSecondary} />
     </div>
   );
 }

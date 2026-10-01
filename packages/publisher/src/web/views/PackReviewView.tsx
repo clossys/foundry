@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { Badge, type BadgeVariant } from "@clossys/designer/atoms/server";
 import { PageHeader } from "@clossys/designer/blocks/server";
 import { SiteFooter, SiteHeader } from "@clossys/designer/shell/server";
+import type { SiteHeaderProps } from "@clossys/designer/shell/server";
 import { RenderError } from "../../internal/errors.js";
 import type { PackReviewExportKind, PackReviewStatus } from "../../pack/review-index.js";
 
@@ -56,6 +57,18 @@ export interface PackReviewViewProps {
   brand: ReactNode;
   /** Text-only label naming the surface, shown as `SiteHeader`'s non-interactive badge. Required: this view is never a member-facing page. */
   surfaceLabel: string;
+  /** A call to action, rendered in the banner (`SiteHeader`'s `actions`) before the surface badge. Absent from the markup when omitted. */
+  headerAction?: ReactNode;
+  /** A secondary call to action, rendered in the banner just before `headerAction`. Absent from the markup when omitted. */
+  secondaryAction?: ReactNode;
+  /** The primary navigation, rendered in the banner beside the brand. Absent from the markup when omitted. */
+  nav?: ReactNode;
+  /**
+   * The plate of the header and footer, passed to both `SiteHeader` and
+   * `SiteFooter`.
+   * @default "base"
+   */
+  ground?: SiteHeaderProps["ground"];
   heading: ReactNode;
   description: ReactNode;
   pages: readonly PackReviewViewPage[];
@@ -131,6 +144,10 @@ interface SheetFrame {
 export function PackReviewView({
   brand,
   surfaceLabel,
+  headerAction,
+  secondaryAction,
+  nav,
+  ground = "base",
   heading,
   description,
   pages,
@@ -162,7 +179,14 @@ export function PackReviewView({
 
   return (
     <div className="flex min-h-dvh flex-col">
-      <SiteHeader brand={brand} surfaceLabel={surfaceLabel} />
+      <SiteHeader
+        ground={ground}
+        brand={brand}
+        nav={nav}
+        secondaryAction={secondaryAction}
+        actions={headerAction}
+        surfaceLabel={surfaceLabel}
+      />
       <main
         className="mx-auto flex w-full flex-1 flex-col gap-xl px-lg py-2xl"
         style={{ maxWidth: "var(--ui-width-form-max, none)" }}
@@ -260,7 +284,7 @@ export function PackReviewView({
           )}
         </section>
       </main>
-      <SiteFooter secondary={footerSecondary} />
+      <SiteFooter ground={ground} secondary={footerSecondary} />
     </div>
   );
 }
