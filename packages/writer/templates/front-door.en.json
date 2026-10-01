@@ -1,0 +1,390 @@
+{
+  "id": "front-door",
+  "locale": "en",
+  "revision": "1",
+  "source": {
+    "kind": "imported",
+    "reference": "@clossys/writer/front-door.en.json"
+  },
+  "entries": [
+    {
+      "id": "front-door.sign-in.title",
+      "text": "Sign in",
+      "context": "sign-in page: heading",
+      "status": "approved"
+    },
+    {
+      "id": "front-door.sign-in.description",
+      "text": "Continue to {surface}.",
+      "context": "sign-in page: line under the heading",
+      "status": "approved",
+      "placeholders": [
+        "surface"
+      ]
+    },
+    {
+      "id": "front-door.sign-in.label",
+      "text": "Email",
+      "context": "sign-in page: email field label",
+      "status": "approved"
+    },
+    {
+      "id": "front-door.sign-in.primary",
+      "text": "Continue",
+      "context": "sign-in page: main button",
+      "status": "approved"
+    },
+    {
+      "id": "front-door.password.title",
+      "text": "Enter your password",
+      "context": "password page: heading",
+      "status": "approved"
+    },
+    {
+      "id": "front-door.password.description",
+      "text": "Signing in as {identifier}.",
+      "context": "password page: line under the heading",
+      "status": "approved",
+      "placeholders": [
+        "identifier"
+      ]
+    },
+    {
+      "id": "front-door.password.label",
+      "text": "Password",
+      "context": "password page: password field label",
+      "status": "approved"
+    },
+    {
+      "id": "front-door.password.primary",
+      "text": "Sign in",
+      "context": "password page: main button",
+      "status": "approved"
+    },
+    {
+      "id": "front-door.password.secondary",
+      "text": "Use a different email",
+      "context": "password page: link back to the email step",
+      "status": "approved"
+    },
+    {
+      "id": "front-door.identifier-not-found.notice",
+      "text": "We couldn’t find an account for that email. Check it and try again.",
+      "context": "sign-in page: notice when no account matches the email",
+      "status": "approved"
+    },
+    {
+      "id": "front-door.forgot-password.label",
+      "text": "Forgot password?",
+      "context": "sign-in page: link to start a password reset",
+      "status": "approved"
+    },
+    {
+      "id": "front-door.password.notice",
+      "text": "That password isn’t right. Try again or reset it.",
+      "context": "password page: notice when the password is wrong",
+      "status": "approved"
+    },
+    {
+      "id": "front-door.sign-in.alt",
+      "text": "Sign in to {brand}",
+      "context": "sign-in page: alt text for the brand mark",
+      "status": "approved",
+      "placeholders": [
+        "brand"
+      ]
+    },
+    {
+      "id": "front-door.code.title",
+      "text": "Check your email",
+      "context": "code page: heading",
+      "status": "approved"
+    },
+    {
+      "id": "front-door.code.description",
+      "text": "Enter the code sent to {identifier}.",
+      "context": "code page: line under the heading",
+      "status": "approved",
+      "placeholders": [
+        "identifier"
+      ]
+    },
+    {
+      "id": "front-door.code.label",
+      "text": "Code",
+      "context": "code page: code field label",
+      "status": "approved"
+    },
+    {
+      "id": "front-door.code.primary",
+      "text": "Verify",
+      "context": "code page: main button",
+      "status": "approved"
+    },
+    {
+      "id": "front-door.code.secondary",
+      "text": "Send a new code",
+      "context": "code page: link to request another code",
+      "status": "approved"
+    },
+    {
+      "id": "front-door.code.notice",
+      "text": "That code isn’t right or has expired. Try again or send a new code.",
+      "context": "code page: notice when the code is wrong or expired",
+      "status": "approved"
+    },
+    {
+      "id": "front-door.unavailable.notice",
+      "text": "Sign-in isn’t available right now. Try again in a few minutes.",
+      "context": "sign-in page: notice when sign-in is temporarily unavailable",
+      "status": "approved"
+    },
+    {
+      "id": "front-door.rate-limited.notice",
+      "text": "Too many attempts. Wait a few minutes, then try again.",
+      "context": "sign-in page: notice when attempts are rate limited",
+      "status": "approved"
+    },
+    {
+      "id": "front-door.locked.notice",
+      "text": "This account is temporarily locked after too many attempts. Try again later.",
+      "context": "sign-in page: notice when the account is temporarily locked",
+      "status": "approved"
+    },
+    {
+      "id": "front-door.expired.notice",
+      "text": "Your session expired. Sign in again to continue.",
+      "context": "sign-in page: notice when the session has expired",
+      "status": "approved"
+    },
+    {
+      "id": "front-door.signed-out.notice",
+      "text": "You’re signed out.",
+      "context": "sign-in page: notice after signing out",
+      "status": "approved"
+    },
+    {
+      "id": "front-door.error.title",
+      "text": "This page didn’t load",
+      "context": "error page: heading",
+      "status": "approved"
+    },
+    {
+      "id": "front-door.error.description",
+      "text": "Something went wrong. Error: {digest}.",
+      "context": "error page: line under the heading, with the error digest",
+      "status": "approved",
+      "placeholders": [
+        "digest"
+      ]
+    },
+    {
+      "id": "front-door.error.primary",
+      "text": "Try again",
+      "context": "error page: main button",
+      "status": "approved"
+    },
+    {
+      "id": "front-door.not-found.title",
+      "text": "Page not found",
+      "context": "not-found page: heading",
+      "status": "approved"
+    },
+    {
+      "id": "front-door.not-found.description",
+      "text": "This page doesn’t exist or has moved.",
+      "context": "not-found page: line under the heading",
+      "status": "approved"
+    },
+    {
+      "id": "front-door.not-found.primary",
+      "text": "Go to {surface}",
+      "context": "not-found page: main button back to the surface",
+      "status": "approved",
+      "placeholders": [
+        "surface"
+      ]
+    },
+    {
+      "id": "front-door.not-authorized.title",
+      "text": "You don’t have access",
+      "context": "not-authorized page: heading",
+      "status": "approved"
+    },
+    {
+      "id": "front-door.not-authorized.description",
+      "text": "{identifier} doesn’t have access to {surface}.",
+      "context": "not-authorized page: line under the heading",
+      "status": "approved",
+      "placeholders": [
+        "identifier",
+        "surface"
+      ]
+    },
+    {
+      "id": "front-door.not-authorized.primary",
+      "text": "Switch account",
+      "context": "not-authorized page: main button",
+      "status": "approved"
+    },
+    {
+      "id": "front-door.not-authorized.secondary",
+      "text": "Sign out",
+      "context": "not-authorized page: link to sign out",
+      "status": "approved"
+    },
+    {
+      "id": "front-door.access-pending.title",
+      "text": "Access pending",
+      "context": "access-pending page: heading",
+      "status": "approved"
+    },
+    {
+      "id": "front-door.access-pending.description",
+      "text": "Your access to {surface} awaits approval. Check back later.",
+      "context": "access-pending page: line under the heading",
+      "status": "approved",
+      "placeholders": [
+        "surface"
+      ]
+    },
+    {
+      "id": "front-door.access-pending.primary",
+      "text": "Sign out",
+      "context": "access-pending page: main button",
+      "status": "approved"
+    },
+    {
+      "id": "front-door.service-unavailable.title",
+      "text": "{surface} isn’t available",
+      "context": "service-unavailable page: heading",
+      "status": "approved",
+      "placeholders": [
+        "surface"
+      ]
+    },
+    {
+      "id": "front-door.service-unavailable.description",
+      "text": "This is temporary. Try again soon.",
+      "context": "service-unavailable page: line under the heading",
+      "status": "approved"
+    },
+    {
+      "id": "front-door.service-unavailable.primary",
+      "text": "Try again",
+      "context": "service-unavailable page: main button",
+      "status": "approved"
+    },
+    {
+      "id": "front-door.request-access.description",
+      "text": "Don’t have an account?",
+      "context": "sign-in page: line before the request-access link",
+      "status": "approved"
+    },
+    {
+      "id": "front-door.request-access.label",
+      "text": "{requestAccessLabel}",
+      "context": "sign-in page: request-access link label",
+      "status": "approved",
+      "placeholders": [
+        "requestAccessLabel"
+      ]
+    },
+    {
+      "id": "front-door.reset.title",
+      "text": "Reset your password",
+      "context": "reset page: heading",
+      "status": "approved"
+    },
+    {
+      "id": "front-door.reset.description",
+      "text": "Enter your email and we’ll send you a code.",
+      "context": "reset page: line under the heading",
+      "status": "approved"
+    },
+    {
+      "id": "front-door.reset.label",
+      "text": "New password",
+      "context": "reset page: new password field label",
+      "status": "approved"
+    },
+    {
+      "id": "front-door.reset.primary",
+      "text": "Send code",
+      "context": "reset page: main button",
+      "status": "approved"
+    },
+    {
+      "id": "front-door.reset.secondary",
+      "text": "Back to sign in",
+      "context": "reset page: link back to sign-in",
+      "status": "approved"
+    },
+    {
+      "id": "front-door.reset.notice",
+      "text": "Password updated. Sign in with your new password.",
+      "context": "sign-in page: notice after a password reset",
+      "status": "approved"
+    },
+    {
+      "id": "front-door.activation.title",
+      "text": "Set up your account",
+      "context": "activation page: heading",
+      "status": "approved"
+    },
+    {
+      "id": "front-door.activation.description",
+      "text": "You’re invited to {surface}. Choose a password to finish.",
+      "context": "activation page: line under the heading",
+      "status": "approved",
+      "placeholders": [
+        "surface"
+      ]
+    },
+    {
+      "id": "front-door.activation.primary",
+      "text": "Activate account",
+      "context": "activation page: main button",
+      "status": "approved"
+    },
+    {
+      "id": "front-door.activation.notice",
+      "text": "This invitation has expired or was already used. Ask for a new invitation.",
+      "context": "activation page: notice when the invitation is no longer valid",
+      "status": "approved"
+    },
+    {
+      "id": "front-door.internal-note.label",
+      "text": "Internal",
+      "context": "label marking a note visible only inside the organization",
+      "status": "approved"
+    },
+    {
+      "id": "front-door.identifier-required.notice",
+      "text": "Enter your email.",
+      "context": "sign-in page: notice when the email is empty",
+      "status": "approved"
+    },
+    {
+      "id": "front-door.password-required.notice",
+      "text": "Enter your password.",
+      "context": "password page: notice when the password is empty",
+      "status": "approved"
+    },
+    {
+      "id": "front-door.code-required.notice",
+      "text": "Enter the code.",
+      "context": "code page: notice when the code is empty",
+      "status": "approved"
+    },
+    {
+      "id": "front-door.network.notice",
+      "text": "Couldn’t reach {surface}. Check your connection and try again.",
+      "context": "any page: notice when the request could not reach the surface",
+      "status": "approved",
+      "placeholders": [
+        "surface"
+      ]
+    }
+  ]
+}

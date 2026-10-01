@@ -16,7 +16,8 @@
       "types": "./dist/voice/index.d.ts",
       "import": "./dist/voice/index.js"
     },
-    "./voice-record.template.jsonc": "./templates/voice-record.template.jsonc"
+    "./voice-record.template.jsonc": "./templates/voice-record.template.jsonc",
+    "./front-door.en.json": "./templates/front-door.en.json"
   },
   "bin": {
     "writer-check": "dist/cli.js",

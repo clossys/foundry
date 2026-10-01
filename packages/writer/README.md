@@ -66,6 +66,8 @@ remains the only required first-day assessment.
   `VoiceChannel`.
 - `@clossys/writer/voice-record.template.jsonc` is an annotated,
   unbound template to copy into a consumer repository and fill in.
+- `@clossys/writer/front-door.en.json` is the shipped English front-door
+  catalog (`FRONT_DOOR_COPY_EN`) as a `CopyRegistry` JSON file.
 
 ```ts
 import {
@@ -107,7 +109,7 @@ registered `CopyRecord`. It exits 0 when clean, 1 when it finds traceability
 issues, and 2 when it cannot run.
 
 This package does not resolve a claim's `factRef`, infer tone or grammar, or
-ship actual product language, except for the ten English sign-in defaults in
+ship actual product language, except for the 57 English front-door defaults in
 "Front-door copy" below. Those decisions remain with the consumer and the
 product's facts system.
 
@@ -299,10 +301,17 @@ An FAQ and a tagline are out of scope (`site.tagline` already exists).
 The words on a sign-in page and the pages around it are a reserved copy kind
 too, so each page does not carry its own. An id is
 `front-door.<state>.<slot>`, where the slot is one of `title`, `description`,
-`label`, `primary`, `secondary`, `notice` or `alt`. This version ships ten
-sign-in ids, listed in `FRONT_DOOR_COPY_IDS` (typed as `FrontDoorKey`), as
+`label`, `primary`, `secondary`, `notice` or `alt`. This version ships 57
+ids, listed in `FRONT_DOOR_COPY_IDS` (typed as `FrontDoorKey`), as
 `FRONT_DOOR_COPY_EN`, a `CopyRegistry` with the id `front-door`, locale `en`
-and revision `1`. They are US English:
+and revision `1`; the same registry ships as data in
+`@clossys/writer/front-door.en.json`. They are US English and cover these
+states: sign-in, password, code, reset, activation, request-access,
+forgot-password, identifier-not-found, the field notices (identifier-required,
+password-required, code-required, network), the status notices (unavailable,
+rate-limited, locked, expired, signed-out), and the pages error, not-found,
+not-authorized, access-pending and service-unavailable, plus an internal-note
+label:
 
 | Id | Text |
 | --- | --- |
@@ -316,6 +325,53 @@ and revision `1`. They are US English:
 | `front-door.password.primary` | Sign in |
 | `front-door.password.secondary` | Use a different email |
 | `front-door.identifier-not-found.notice` | We couldn’t find an account for that email. Check it and try again. |
+| `front-door.forgot-password.label` | Forgot password? |
+| `front-door.password.notice` | That password isn’t right. Try again or reset it. |
+| `front-door.sign-in.alt` | Sign in to {brand} |
+| `front-door.code.title` | Check your email |
+| `front-door.code.description` | Enter the code sent to {identifier}. |
+| `front-door.code.label` | Code |
+| `front-door.code.primary` | Verify |
+| `front-door.code.secondary` | Send a new code |
+| `front-door.code.notice` | That code isn’t right or has expired. Try again or send a new code. |
+| `front-door.unavailable.notice` | Sign-in isn’t available right now. Try again in a few minutes. |
+| `front-door.rate-limited.notice` | Too many attempts. Wait a few minutes, then try again. |
+| `front-door.locked.notice` | This account is temporarily locked after too many attempts. Try again later. |
+| `front-door.expired.notice` | Your session expired. Sign in again to continue. |
+| `front-door.signed-out.notice` | You’re signed out. |
+| `front-door.error.title` | This page didn’t load |
+| `front-door.error.description` | Something went wrong. Error: {digest}. |
+| `front-door.error.primary` | Try again |
+| `front-door.not-found.title` | Page not found |
+| `front-door.not-found.description` | This page doesn’t exist or has moved. |
+| `front-door.not-found.primary` | Go to {surface} |
+| `front-door.not-authorized.title` | You don’t have access |
+| `front-door.not-authorized.description` | {identifier} doesn’t have access to {surface}. |
+| `front-door.not-authorized.primary` | Switch account |
+| `front-door.not-authorized.secondary` | Sign out |
+| `front-door.access-pending.title` | Access pending |
+| `front-door.access-pending.description` | Your access to {surface} awaits approval. Check back later. |
+| `front-door.access-pending.primary` | Sign out |
+| `front-door.service-unavailable.title` | {surface} isn’t available |
+| `front-door.service-unavailable.description` | This is temporary. Try again soon. |
+| `front-door.service-unavailable.primary` | Try again |
+| `front-door.request-access.description` | Don’t have an account? |
+| `front-door.request-access.label` | {requestAccessLabel} |
+| `front-door.reset.title` | Reset your password |
+| `front-door.reset.description` | Enter your email and we’ll send you a code. |
+| `front-door.reset.label` | New password |
+| `front-door.reset.primary` | Send code |
+| `front-door.reset.secondary` | Back to sign in |
+| `front-door.reset.notice` | Password updated. Sign in with your new password. |
+| `front-door.activation.title` | Set up your account |
+| `front-door.activation.description` | You’re invited to {surface}. Choose a password to finish. |
+| `front-door.activation.primary` | Activate account |
+| `front-door.activation.notice` | This invitation has expired or was already used. Ask for a new invitation. |
+| `front-door.internal-note.label` | Internal |
+| `front-door.identifier-required.notice` | Enter your email. |
+| `front-door.password-required.notice` | Enter your password. |
+| `front-door.code-required.notice` | Enter the code. |
+| `front-door.network.notice` | Couldn’t reach {surface}. Check your connection and try again. |
 
 A `{token}` in a text is a noun from the closed set `FRONT_DOOR_NOUNS`:
 `brand`, `surface`, `identifier`, `digest` and `requestAccessLabel` (typed as

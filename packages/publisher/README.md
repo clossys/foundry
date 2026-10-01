@@ -348,7 +348,13 @@ Name a shipped template when its slots cover the page:
   `status-list`, `stat-grid`).
 - **`AuthView`** — one shell for every authentication step (sign-in, sign-up,
   password reset, verification): site header, page header, the form inside
-  Designer's `Card`, and site footer. The content column uses the
+  Designer's `Card`, and site footer. The card holds only the form;
+  `secondaryAction` (the alternate-step lines, such as "Forgot password?" or
+  "No account? Join the waitlist") renders below it, before the footnote, and
+  is always the site's copy. An invitation or activation step never offers
+  request-access or sign-up: the view has no mode and no `requestAccess`
+  prop, so each site's activation-page test asserts no request-access or
+  sign-up link. The content column uses the
   `--ui-width-form-max` form measure, and `description` is a required prop
   so every step decides on a supporting line. The form slot is filled with
   Designer's `Form` / `TextField` / `Button`. There is no mode prop, and
@@ -1323,6 +1329,13 @@ const card = buildBrandShareCard({
   `BRAND_SHARE_CARD_DEFAULT_ROLES` (`--color-surface-base` background;
   `--color-ink-primary` plate, wordmark and headline; `--color-ink-secondary`
   kicker and supporting); `roles` picks others.
+- **Truncation.** Long text is cut rather than overflowing the card: the
+  wordmark and the kicker each stay on one line and end in an ellipsis (the
+  kicker gives way first), and the headline and the supporting line each stop at
+  two lines. A mark that is not square keeps its ratio inside the plate.
+- **Contrast.** There is no contrast check on `roles`. Keep each text and
+  background pair at 4.5:1 or better; the default plate is dark on the light
+  surface.
 - **Mark.** `markSrc` follows the rule for `buildShareCard`'s `mark.src`: an
   inline `data:image/svg+xml` or `data:image/png;base64` URL, never a remote one.
 - **Font.** `displayFontFamily` names a family for the wordmark and headline:
@@ -1899,6 +1912,48 @@ export function ServerErrorPage({ reference }: { reference: string }) {
   );
 }
 ```
+
+### Global error document — `GlobalErrorDocument`
+
+`GlobalErrorDocument`, exported from `@clossys/publisher/web` and its server
+entry, is the whole document for a framework's global-error boundary. That
+boundary replaces the root layout, so it renders its own `<html>`, `<head>` and
+`<body>` and gets none of the layout's stylesheet, theme script or copy. The
+component renders a `<title>` built by `formatPageTitle` (`<page> · <brand>`,
+and a part with surrounding whitespace throws `SiteMetadataError`), a
+`noindex, nofollow` robots meta, one icon link, and an `ErrorView` with every
+other prop. It is a component, not a template: it is not in the template
+registry, takes no router, and is not a client module.
+
+No theme script runs in this document, so it is pinned to the light theme
+(`data-theme="light"` and `color-scheme: light`) and marked `data-brand-bound`.
+Brand tokens are not imported here: import your brand stylesheet in the same
+global-error file that renders this component, as your root layout does.
+
+```tsx
+"use client";
+
+import { GlobalErrorDocument } from "@clossys/publisher/web";
+
+export default function GlobalError({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
+  return (
+    <GlobalErrorDocument
+      lang="en"
+      documentTitle={{ page: "Something went wrong", brand: "Example Studio" }}
+      icon={{ href: "/icon.svg", type: "image/svg+xml" }}
+      status={500}
+      title="Something went wrong"
+      description={error.digest ? `Something went wrong. Error: ${error.digest}.` : "Something went wrong."}
+      action={<button type="button" onClick={reset}>Try again</button>}
+    />
+  );
+}
+```
+
+Next requires the global-error file to be a client module, so it starts with
+`"use client"`; the component itself is not one. The digest has no prop of
+its own: put it in `description` as caller copy (`Error: <digest>.`). A
+segment `error` boundary keeps the layout, so use `ErrorView` there instead.
 
 ### `PackReviewView`
 
@@ -2794,7 +2849,7 @@ cosmetic gap.
   `SiteOpenGraphMetadata`, `SitePageInput`, `SitePageKind`, `SiteShareCard`,
   `SiteTwitterMetadata`, `SiteMetadataLintFinding`, `SiteMetadataLintResult`,
   `SiteMetadataLintRule`, `SiteMetadataRequiredTag`, and
-  `SiteMetadataTagSelector` types.
+  `SiteMetadataTagSelector` types, plus `GlobalErrorDocument` and `GlobalErrorDocumentProps`.
 - `document`: `validateStructuredDocument`, `renderStructuredDocument`,
   `RenderError`, and the `DocumentBlock`, `DocumentCallout`,
   `DocumentColumnStyle`, `DocumentDefinitionList`, `DocumentInline`, `DocumentList`,
