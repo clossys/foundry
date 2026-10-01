@@ -360,6 +360,13 @@ Name a shipped template when its slots cover the page:
   description (`"Something went wrong. Error: 8f2a91c0."`), there is no
   details disclosure, and `action` holds one primary control: a secondary
   destination is a text link inside the description.
+- **`BoundaryView`** — `ErrorView` inside one shared frame: Designer's
+  `SiteHeader` (`brand`, required), the `ErrorView` filling the main area,
+  and `SiteFooter` (`footerSecondary`, optional). It takes every
+  `ErrorViewProps` key and forwards it to `ErrorView`, so a site deletes its
+  private copy of the header/error/footer shell. It also frames the
+  sign-in-boundary states. It is not a built-in web template. See
+  [Boundary pages](#boundary-pages).
 
 If a required band is not a slot on any shipped template and not one of the
 six `SectionedView` kinds, **do not flatten** it into a one-item
@@ -1805,6 +1812,32 @@ What it does:
 section order, dates and a draft marker that cannot be suppressed. It says
 nothing about the legal adequacy of any text. It does not enforce the
 production gate: call `gateLegalDocument` separately before publishing.
+
+### Boundary pages
+
+`BoundaryView` is the whole page for a 500, a 404 or a sign-in boundary state: one
+retry action, and any second destination as a text link in the description.
+
+```tsx
+import { BoundaryView } from "@clossys/publisher/web";
+
+export function ServerErrorPage({ reference }: { reference: string }) {
+  return (
+    <BoundaryView
+      brand="Example Studio"
+      status={500}
+      title="Something went wrong"
+      description={
+        <>
+          Something went wrong. Error: {reference}. You can also{" "}
+          <a href="/contact">contact us</a>.
+        </>
+      }
+      action={<a href="/">Try again</a>}
+    />
+  );
+}
+```
 
 ## `record` — the append-only publication ledger
 

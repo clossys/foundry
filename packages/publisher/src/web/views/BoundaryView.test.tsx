@@ -1,0 +1,121 @@
+// @vitest-environment jsdom
+
+import "@testing-library/jest-dom/vitest";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+import { afterEach, describe, expect, it } from "vitest";
+import { cleanup, render, screen, within } from "@testing-library/react";
+import { BoundaryView } from "./BoundaryView.js";
+
+afterEach(cleanup);
+
+const ALLOWED_IMPORT = /^(react|@clossys\/designer\/.+\/server|\.\/ErrorView\.js)$/;
+
+/**
+ * Every module specifier named by an `import` statement (bare, type, or
+ * side-effect) or an `export ... from` re-export. Anchored to the statement
+ * shape rather than scanning to the next string literal.
+ */
+const MODULE_SPECIFIER =
+  /^\s*(?:import\b[^;]*?|export\s+(?:type\s+)?(?:\*(?:\s+as\s+\w+)?|\{[^}]*\})\s*from\s*)["']([^"']+)["']/gm;
+
+function moduleSpecifiers(source: string): string[] {
+  return [...source.matchAll(MODULE_SPECIFIER)].map((m) => m[1] as string);
+}
+
+function renderBoundary(props: Partial<Parameters<typeof BoundaryView>[0]> = {}) {
+  return render(
+    <BoundaryView
+      brand={<span>Example Studio</span>}
+      status={500}
+      title="Something went wrong"
+      description="Please try again."
+      action={<button type="button">Try again</button>}
+      {...props}
+    />,
+  );
+}
+
+describe("BoundaryView", () => {
+  it("frame order: header, then one <main> holding the status <h1>, then footer", () => {
+    const { container } = renderBoundary();
+    const root = container.firstElementChild as HTMLElement;
+    const children = [...root.children];
+
+    expect(children).toHaveLength(3);
+    expect(children[0]?.tagName).toBe("HEADER");
+    expect(children[1]?.tagName).toBe("MAIN");
+    expect(children[2]?.tagName).toBe("FOOTER");
+
+    expect(container.querySelectorAll("main")).toHaveLength(1);
+    const headings = screen.getAllByRole("heading", { level: 1 });
+    expect(headings).toHaveLength(1);
+    expect(headings[0]?.textContent).toBe("500");
+    expect(within(children[1] as HTMLElement).getByRole("heading", { level: 1 })).toBe(headings[0]);
+  });
+
+  it("height handoff: the outer element owns min-h-dvh and the ErrorView fills <main>", () => {
+    const { container } = renderBoundary();
+    const root = container.firstElementChild as HTMLElement;
+    expect(root).toHaveClass("min-h-dvh");
+
+    const main = container.querySelector("main") as HTMLElement;
+    const errorRoot = main.firstElementChild as HTMLElement;
+    expect(errorRoot).toContainElement(screen.getByRole("heading", { level: 1 }));
+    expect(errorRoot).toHaveClass("min-h-0");
+    expect(errorRoot).toHaveClass("flex-1");
+    expect(errorRoot).not.toHaveClass("min-h-dvh");
+  });
+
+  it("merges a caller className onto the ErrorView root and the rest props too", () => {
+    const { container } = renderBoundary({
+      className: "bg-surface-raised",
+      style: { color: "red" },
+      "data-testid": "boundary-error",
+    } as never);
+    const errorRoot = screen.getByTestId("boundary-error");
+    expect(errorRoot).toHaveClass("bg-surface-raised", "min-h-0", "flex-1");
+    expect(errorRoot).toHaveStyle({ color: "rgb(255, 0, 0)" });
+    expect(container.firstElementChild).not.toHaveAttribute("data-testid");
+  });
+
+  it("forwarding: status, title, description and action reach the ErrorView; brand and footerSecondary reach the frame", () => {
+    const { container } = renderBoundary({
+      footerSecondary: <a href="/status">Service status</a>,
+    });
+    const main = container.querySelector("main") as HTMLElement;
+    expect(within(main).getByRole("heading", { level: 1 })).toHaveTextContent("500");
+    expect(within(main).getByRole("heading", { level: 2, name: "Something went wrong" })).toBeInTheDocument();
+    expect(within(main).getByText("Please try again.")).toBeInTheDocument();
+    expect(within(main).getByRole("button", { name: "Try again" })).toBeInTheDocument();
+
+    const header = container.querySelector("header") as HTMLElement;
+    const footer = container.querySelector("footer") as HTMLElement;
+    expect(within(header).getByText("Example Studio")).toBeInTheDocument();
+    expect(within(footer).getByRole("link", { name: "Service status" })).toBeInTheDocument();
+    expect(main).not.toHaveTextContent("Example Studio");
+    expect(main).not.toHaveTextContent("Service status");
+  });
+
+  it("imports only react, @clossys/designer/*/server and ./ErrorView.js (no router, no hooks)", () => {
+    const source = readFileSync(join(import.meta.dirname, "BoundaryView.tsx"), "utf8");
+    const specifiers = moduleSpecifiers(source);
+    expect(specifiers.length).toBeGreaterThan(0);
+    for (const specifier of specifiers) {
+      expect(specifier).toMatch(ALLOWED_IMPORT);
+    }
+    expect(source).not.toMatch(/\brequire\(|import\(/);
+    expect(source).not.toMatch(/["']use client["']/);
+  });
+
+  it("the import scan catches a router, a client barrel and a bare import", () => {
+    const sample = [
+      'import type { A } from "react";',
+      'import { Link } from "react-router";',
+      'import { SiteHeader } from "@clossys/designer/shell";',
+      'import "some-auth-provider";',
+    ].join("\n");
+    const offenders = moduleSpecifiers(sample).filter((specifier) => !ALLOWED_IMPORT.test(specifier));
+    expect(offenders).toEqual(["react-router", "@clossys/designer/shell", "some-auth-provider"]);
+  });
+});
