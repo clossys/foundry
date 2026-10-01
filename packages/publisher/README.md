@@ -353,8 +353,13 @@ Name a shipped template when its slots cover the page:
   "No account? Join the waitlist") renders below it, before the footnote, and
   is always the site's copy. An invitation or activation step never offers
   request-access or sign-up: the view has no mode and no `requestAccess`
-  prop, so each site's activation-page test asserts no request-access or
-  sign-up link. The content column uses the
+  prop, so each site's activation-page test should assert no request-access or
+  sign-up link. Pass each `secondaryAction` line as one element: text plus a
+  link in one fragment splits onto two lines. When the sign-in provider is
+  unavailable, `isDisabled` keeps the form on screen inside a disabled
+  `<fieldset>` with the typed values still shown; the explanation goes in the
+  form's own `submitError`, and a retry link in `secondaryAction` stays
+  enabled. The content column uses the
   `--ui-width-form-max` form measure, and `description` is a required prop
   so every step decides on a supporting line. The form slot is filled with
   Designer's `Form` / `TextField` / `Button`. There is no mode prop, and
