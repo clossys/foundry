@@ -3,8 +3,10 @@
 import "@testing-library/jest-dom/vitest";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, describe, expect, it } from "vitest";
 import { cleanup, render, screen, within } from "@testing-library/react";
+import { SiteFooter, SiteHeader } from "@clossys/designer/shell/server";
 import { BoundaryView } from "./BoundaryView.js";
 
 afterEach(cleanup);
@@ -95,6 +97,36 @@ describe("BoundaryView", () => {
     expect(within(footer).getByRole("link", { name: "Service status" })).toBeInTheDocument();
     expect(main).not.toHaveTextContent("Example Studio");
     expect(main).not.toHaveTextContent("Service status");
+  });
+
+  it("renders headerAction, secondaryAction and nav inside the banner landmark and nowhere else", () => {
+    const { container } = renderBoundary({
+      headerAction: <a href="/contact">Contact us</a>,
+      secondaryAction: <a href="/sign-in">Sign in</a>,
+      nav: <nav aria-label="Primary">NAV-SENTINEL</nav>,
+    });
+    const banner = screen.getByRole("banner");
+    const primary = within(banner).getByRole("link", { name: "Contact us" });
+    const secondary = within(banner).getByRole("link", { name: "Sign in" });
+    expect(within(banner).getByRole("navigation", { name: "Primary" })).toBeInTheDocument();
+    expect(secondary.compareDocumentPosition(primary) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(container.querySelector("main")).not.toHaveTextContent(/Contact us|Sign in|NAV-SENTINEL/);
+    expect(container.querySelector("footer")).not.toHaveTextContent(/Contact us|Sign in|NAV-SENTINEL/);
+    expect(container.querySelector("main [ground], main [nav]")).toBeNull();
+  });
+
+  it("renders the same header and footer as a bare SiteHeader and SiteFooter when every slot is omitted", () => {
+    const html = renderToStaticMarkup(
+      <BoundaryView brand="Example Studio" status={500} title="Something went wrong" footerSecondary={<span>FOOTER-SENTINEL</span>} />,
+    );
+    expect(html).toContain(renderToStaticMarkup(<SiteHeader brand="Example Studio" />) + "<main");
+    expect(html).toContain("</main>" + renderToStaticMarkup(<SiteFooter secondary={<span>FOOTER-SENTINEL</span>} />) + "</div>");
+  });
+
+  it("passes ground to both the header and the footer", () => {
+    const html = renderToStaticMarkup(<BoundaryView brand="Example Studio" status={500} title="Something went wrong" ground="transparent" />);
+    expect(html).toContain(renderToStaticMarkup(<SiteHeader ground="transparent" brand="Example Studio" />) + "<main");
+    expect(html).toContain("</main>" + renderToStaticMarkup(<SiteFooter ground="transparent" />) + "</div>");
   });
 
   it("imports only react, @clossys/designer/*/server and ./ErrorView.js (no router, no hooks)", () => {

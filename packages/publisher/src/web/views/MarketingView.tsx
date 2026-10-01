@@ -1,7 +1,7 @@
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
 import { mergeUiClasses } from "@clossys/designer/atoms";
 import { Faq, FeatureGrid, Hero, type SectionGround } from "@clossys/designer/blocks";
-import { SiteFooter, SiteHeader } from "@clossys/designer/shell";
+import { SiteFooter, SiteHeader, type SiteHeaderProps } from "@clossys/designer/shell";
 
 /**
  * One entry in {@link MarketingViewProps.features} — deliberately a single
@@ -36,6 +36,19 @@ export interface MarketingFaqItem {
 export interface MarketingViewProps extends HTMLAttributes<HTMLDivElement> {
   /** The site's identity — passed straight through to `SiteHeader.brand`. */
   brand: ReactNode;
+  /** The site's call to action, rendered in the banner (`SiteHeader`'s `actions`). Absent from the markup when omitted. */
+  headerAction?: ReactNode;
+  /** A secondary call to action, rendered in the banner just before `headerAction`. Absent from the markup when omitted. */
+  secondaryAction?: ReactNode;
+  /** The primary navigation, rendered in the banner beside the brand. Absent from the markup when omitted. */
+  nav?: ReactNode;
+  /**
+   * The plate of the header and footer, passed to both `SiteHeader` and
+   * `SiteFooter`. `"transparent"` matches `LandingView`'s chrome. The section
+   * bands keep their own `*Ground` props.
+   * @default "base"
+   */
+  ground?: SiteHeaderProps["ground"];
   /** Small label above the hero heading. */
   heroEyebrow?: ReactNode;
   /** The page's own primary message. Renders as the page's `<h1>` (`Hero`'s own default `headingLevel`). */
@@ -111,6 +124,10 @@ export interface MarketingViewProps extends HTMLAttributes<HTMLDivElement> {
  */
 export function MarketingView({
   brand,
+  headerAction,
+  secondaryAction,
+  nav,
+  ground = "base",
   heroEyebrow,
   heroHeading,
   heroDescription,
@@ -136,7 +153,7 @@ export function MarketingView({
 }: MarketingViewProps) {
   return (
     <div {...rest} className={mergeUiClasses("flex min-h-dvh flex-col", className)} style={style}>
-      <SiteHeader brand={brand} />
+      <SiteHeader ground={ground} brand={brand} nav={nav} secondaryAction={secondaryAction} actions={headerAction} />
       <main className="flex flex-col gap-2xl py-2xl">
         <Hero
           eyebrow={heroEyebrow}
@@ -153,7 +170,7 @@ export function MarketingView({
         {faq !== undefined ? <Faq heading={faqHeading} description={faqDescription} items={faq} ground={faqGround} /> : null}
         <Hero headingLevel={2} heading={ctaHeading} description={ctaDescription} actions={ctaAction} ground={ctaGround} />
       </main>
-      <SiteFooter secondary={footerSecondary} />
+      <SiteFooter ground={ground} secondary={footerSecondary} />
     </div>
   );
 }

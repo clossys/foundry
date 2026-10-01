@@ -8,6 +8,7 @@ import userEvent from "@testing-library/user-event";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { CopyRef, CopyResolver } from "@clossys/writer";
+import { SiteFooter, SiteHeader } from "@clossys/designer/shell/server";
 import { ContactView } from "./ContactView.js";
 import type { ContactViewCopy, ContactViewProps } from "./ContactView.js";
 import { ContactView as ContactViewServer } from "./ContactView.server.js";
@@ -164,6 +165,38 @@ describe("ContactView golden markup", () => {
     const headings = dom().querySelectorAll("h1");
     expect(headings).toHaveLength(1);
     expect(headings[0]?.textContent).toBe("HEADING-SENTINEL");
+  });
+});
+
+describe("ContactView header slots", () => {
+  const banner = (html: string) => /^<div[^>]*>(<header\b[\s\S]*?<\/header>)<main/.exec(html)?.[1] ?? "";
+  const footer = (html: string) => /(<footer\b[\s\S]*<\/footer>)<\/div>$/.exec(html)?.[1] ?? "";
+
+  it("renders headerAction, secondaryAction and nav inside the banner landmark and nowhere else", () => {
+    const host = dom({
+      headerAction: <a href="/contact">HEADER-ACTION-SENTINEL</a>,
+      secondaryAction: <a href="/sign-in">SECONDARY-ACTION-SENTINEL</a>,
+      nav: <nav aria-label="Primary">NAV-SENTINEL</nav>,
+    });
+    const header = host.querySelector(":scope > div > header") as HTMLElement;
+    expect(header.querySelector('a[href="/contact"]')).toHaveTextContent("HEADER-ACTION-SENTINEL");
+    expect(header.querySelector('a[href="/sign-in"]')).toHaveTextContent("SECONDARY-ACTION-SENTINEL");
+    expect(header.querySelector('nav[aria-label="Primary"]')).toHaveTextContent("NAV-SENTINEL");
+    expect(header.textContent!.indexOf("SECONDARY-ACTION-SENTINEL")).toBeLessThan(header.textContent!.indexOf("HEADER-ACTION-SENTINEL"));
+    expect(host.querySelector("main")).not.toHaveTextContent(/HEADER-ACTION|SECONDARY-ACTION|NAV-SENTINEL/);
+    expect(host.querySelector("footer")).not.toHaveTextContent(/HEADER-ACTION|SECONDARY-ACTION|NAV-SENTINEL/);
+  });
+
+  it("renders the same transparent header and footer as before when every slot is omitted", () => {
+    const html = markup();
+    expect(banner(html)).toBe(renderToStaticMarkup(<SiteHeader ground="transparent" brand={<a href="/">BRAND-SENTINEL</a>} />));
+    expect(footer(html)).toBe(renderToStaticMarkup(<SiteFooter ground="transparent" secondary={<SiteFooter.Legal {...LEGAL} />} />));
+  });
+
+  it("passes ground to both the header and the footer", () => {
+    const html = markup({ ground: "inverse" });
+    expect(banner(html)).toBe(renderToStaticMarkup(<SiteHeader ground="inverse" brand={<a href="/">BRAND-SENTINEL</a>} />));
+    expect(footer(html)).toBe(renderToStaticMarkup(<SiteFooter ground="inverse" secondary={<SiteFooter.Legal {...LEGAL} />} />));
   });
 });
 

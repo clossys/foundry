@@ -40,6 +40,7 @@ import {
   selectContactDelivery,
 } from "../templates/site/app/site-wiring.js";
 import {
+  LANDING_COPY_IDS,
   allContactPageCopyIds,
   contactViewCopy,
   createMapResolver,
@@ -648,6 +649,14 @@ describe("the template manifest", () => {
     expect(error.trimStart().startsWith('"use client"')).toBe(true);
     expect(importsFromWeb(error, "ErrorView") || /site-error-view/.test(error)).toBe(true);
     expect(/site-error-view/.test(notFound) || importsFromWeb(notFound, "ErrorView")).toBe(true);
+  });
+
+  it("passes the landing page's contact action as the header call to action on every framed route", () => {
+    const headerAction = /headerAction=\{<a href="\/contact">\{[^{}]*LANDING_COPY_IDS\.contactAction[^{}]*\}<\/a>\}/;
+    for (const file of ["app/page.tsx", "app/about/page.tsx", "app/contact/contact-form.tsx", "app/terms/page.tsx", "app/privacy/page.tsx"]) {
+      expect(readTemplate(file), file).toMatch(headerAction);
+    }
+    expect(allContactPageCopyIds()).toContain(LANDING_COPY_IDS.contactAction);
   });
 });
 

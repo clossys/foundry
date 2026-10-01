@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { LegalView } from "@clossys/publisher/web";
-import { legalViewLabels } from "../site-copy";
+import { LANDING_COPY_IDS, legalViewLabels, requireCopy } from "../site-copy";
 import { createSiteCopyResolver, legalTitle, loadBrandFacts, loadLegalDocument, siteLocale, siteTarget } from "../site-records";
 
 // Reads the terms legal document through the production gate: on
@@ -14,11 +14,14 @@ export function generateMetadata(): Metadata {
 
 export default function TermsPage() {
   const target = siteTarget();
+  const resolveCopyId = createSiteCopyResolver(target);
+  const copy = requireCopy(resolveCopyId, [LANDING_COPY_IDS.contactAction]);
   return (
     <LegalView
       brand={loadBrandFacts().brandLabel}
+      headerAction={<a href="/contact">{copy[LANDING_COPY_IDS.contactAction]}</a>}
       document={loadLegalDocument("terms", target)}
-      resolveCopyId={createSiteCopyResolver(target)}
+      resolveCopyId={resolveCopyId}
       labels={legalViewLabels()}
       locale={siteLocale()}
     />
