@@ -29,9 +29,10 @@
  * consumer's own.
  */
 
-import { resolveCopyRef } from "./resolve.js";
+import { prepareOptions, resolveField } from "./field-options.js";
+import type { FieldLabels } from "./field-options.js";
 import type { CopyResolveIssue, CopyResolveIssueReason, CopyResolveOptions } from "./resolve.js";
-import type { CopyRegistry, CopyRegistryEntry, CopyResolution } from "./types.js";
+import type { CopyRegistry, CopyResolution } from "./types.js";
 
 /** Reserved copy id for the site's name. */
 export const SITE_NAME_COPY_ID = "site.name";
@@ -79,95 +80,12 @@ const FIELDS: readonly { field: SiteIdentityField; id: string }[] = [
   { field: "tagline", id: SITE_TAGLINE_COPY_ID },
 ];
 
-type PreparedOptions =
-  | { ok: true; locale: string | undefined; resolveOptions: CopyResolveOptions }
-  | { ok: false };
-
-function isPlainObject(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
-/**
- * Splits `locale` (a ref field) from the options `resolveCopyRef` reads.
- * `resolveCopyRef` only looks at `target`, `acceptDelegateInProduction`
- * and `now`, so only those are forwarded; each property is read once.
- * When `now` is absent it is fixed here once, so both fields are judged
- * against the same instant. The forwarded values are not validated here —
- * `resolveCopyRef` still does that, and refuses a malformed one.
- */
-function prepareOptions(options: unknown): PreparedOptions {
-  if (options === undefined) return { ok: true, locale: undefined, resolveOptions: { now: new Date() } };
-  if (!isPlainObject(options)) return { ok: false };
-  try {
-    const { locale, target, acceptDelegateInProduction, now } = options;
-    if (locale !== undefined && (typeof locale !== "string" || locale.trim().length === 0)) return { ok: false };
-    const resolveOptions: Record<string, unknown> = { now: now === undefined ? new Date() : now };
-    if (target !== undefined) resolveOptions.target = target;
-    if (acceptDelegateInProduction !== undefined) resolveOptions.acceptDelegateInProduction = acceptDelegateInProduction;
-    return { ok: true, locale, resolveOptions: resolveOptions as CopyResolveOptions };
-  } catch {
-    return { ok: false };
-  }
-}
-
-function resolveField(
-  registry: unknown,
-  field: SiteIdentityField,
-  id: string,
-  prepared: PreparedOptions,
-): { resolution?: CopyResolution; issues: SiteIdentityIssue[] } {
-  if (!prepared.ok) {
-    return { issues: [{ reason: "invalid-options", field, id, message: "Site identity options are malformed." }] };
-  }
-  try {
-    const ref = prepared.locale === undefined ? { id } : { id, locale: prepared.locale };
-    const result = resolveCopyRef(registry, ref, prepared.resolveOptions);
-    if (!result.complete || !result.resolution) {
-      const issues: SiteIdentityIssue[] = [];
-      let placeholderReported = false;
-      for (const issue of result.issues) {
-        if (issue.reason === "missing-placeholder-value" || issue.reason === "unexpected-placeholder-value") {
-          if (placeholderReported) continue;
-          placeholderReported = true;
-          issues.push({
-            reason: "site-identity-placeholder",
-            field,
-            id,
-            message: `Site identity "${id}" must be literal text; an entry that declares placeholders cannot be used.`,
-          });
-        } else {
-          issues.push({ ...issue, field });
-        }
-      }
-      if (issues.length === 0) {
-        issues.push({ reason: "invalid-registry", field, id, message: `Site identity "${id}" could not be resolved.` });
-      }
-      return { issues };
-    }
-
-    const resolution = result.resolution;
-    if (resolution.text.trim().length === 0) {
-      return { issues: [{ reason: "site-identity-blank", field, id, message: `Site identity "${id}" resolved to blank text.` }] };
-    }
-    // The registry validated (resolution completed), so `entries` is a real array.
-    const entry = (registry as CopyRegistry).entries.find((candidate: CopyRegistryEntry) => candidate.id === id);
-    if (entry && ((entry.placeholders?.length ?? 0) > 0 || entry.text !== resolution.text)) {
-      return {
-        issues: [
-          {
-            reason: "site-identity-placeholder",
-            field,
-            id,
-            message: `Site identity "${id}" must be literal text; its entry declares placeholders or contains text the resolver would rewrite.`,
-          },
-        ],
-      };
-    }
-    return { resolution, issues: [] };
-  } catch {
-    return { issues: [{ reason: "invalid-registry", field, id, message: `Site identity "${id}" could not be resolved.` }] };
-  }
-}
+const LABELS: FieldLabels<"site-identity-placeholder" | "site-identity-blank"> = {
+  optionsSubject: "Site identity",
+  entrySubject: (id) => `Site identity "${id}"`,
+  placeholderReason: "site-identity-placeholder",
+  blankReason: "site-identity-blank",
+};
 
 /**
  * Resolves the site's name and tagline from `registry`, under
@@ -190,7 +108,7 @@ export function resolveSiteIdentity(
   const issues: SiteIdentityIssue[] = [];
   const resolved: Partial<Record<SiteIdentityField, CopyResolution>> = {};
   for (const { field, id } of FIELDS) {
-    const outcome = resolveField(registry, field, id, prepared);
+    const outcome = resolveField(registry, field, id, prepared, LABELS);
     issues.push(...outcome.issues);
     if (outcome.resolution) resolved[field] = outcome.resolution;
   }
