@@ -95,11 +95,16 @@
  */
 
 import { requiredSlotKeys, resolveCopy, resolveDocument } from "../core/index.js";
-import type { AssetLookup, ComposeDocument, CopyLookup, LayoutSpec } from "../core/index.js";
+import type { AssetLookup, ComposeDocument, ComposeFinding, CopyLookup, LayoutSpec } from "../core/index.js";
 import { RenderError } from "../internal/errors.js";
 import { describeAssetProblems, describeStaticAssetProblems, hasAssetProblems, resolveDocumentAssets, resolveStaticAssets } from "../internal/assets.js";
 import { buildFlatTokenMap, resolveColorRole, type CanvasPixelSize } from "./engine.js";
 import { renderSlotsToSvg } from "./renderSlots.js";
+
+/** A binding finding named by its position and rule only — never the caller's value. */
+function describeFinding(finding: ComposeFinding): string {
+  return `${finding.path ?? "bindings"} (${finding.rule})`;
+}
 
 export interface ResolveCanvasLayoutOptions {
   resolveCopyId?: CopyLookup;
@@ -136,7 +141,7 @@ export function resolveCanvasLayout(
     if (result.unknownBindings.length > 0) parts.push(`${result.unknownBindings.length} binding(s) targeting unknown slot(s)`);
     if (result.resolved.length === 0) parts.push("no binding matched any slot in the layout — nothing to render");
     const bindingErrors = result.bindingFindings.filter((f) => f.severity === "error");
-    if (bindingErrors.length > 0) parts.push(`malformed binding(s): ${bindingErrors.map((f) => f.message).join("; ")}`);
+    if (bindingErrors.length > 0) parts.push(`malformed binding(s): ${bindingErrors.map(describeFinding).join("; ")}`);
     throw new RenderError(
       "resolution-failed",
       `could not resolve the document against its layout: ${parts.join("; ")}.`,
@@ -187,7 +192,7 @@ export function resolveCanvasLayout(
   if (textByKey.size === 0 && assetByKey.size === 0 && backgroundFill === undefined) {
     throw new RenderError(
       "empty-output",
-      `resolved the document against its layout, but every matched slot produced no usable content (unresolved copyId(s)/assetId(s), or empty/ambiguous binding(s)) and the layout declares no background — there is nothing left to render. Omitted slot(s): ${attemptedKeys.size}.`,
+      `resolved the document against its layout, but every matched slot produced no usable content (unresolved copyId(s)/assetId(s), or empty/ambiguous binding(s)) and the layout declares no background — there is nothing left to render. ${attemptedKeys.size} matched slot(s) were omitted.`,
     );
   }
 

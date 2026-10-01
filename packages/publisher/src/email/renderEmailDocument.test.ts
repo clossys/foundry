@@ -493,3 +493,27 @@ describe("SlotSpec.style.typography overrides the ElementKind default font size"
     expect((caught as RenderError).message).toContain("--text-not-real");
   });
 });
+
+describe("refusal: malformed bindings are named by position, never by the value they carried", () => {
+  it("reports each malformed binding as its path and rule, without the caller's value", () => {
+    const doc = {
+      id: "x",
+      channel: "email",
+      template: "T",
+      meta: { channel: "email", subject: "s", preheader: "p" },
+      bindings: [{ slot: "a", copyId: 424242 }, { slot: 515151, value: "x" }],
+    } as unknown as ComposeDocument;
+
+    let caught: unknown;
+    try {
+      renderEmailDocument(doc, { layout: SINGLE_SLOT_LAYOUT });
+    } catch (error) {
+      caught = error;
+    }
+    expect(caught).toBeInstanceOf(RenderError);
+    const message = (caught as RenderError).message;
+    expect(message).toContain("malformed binding(s): bindings.0.copyId (binding-copy-id-shape)");
+    expect(message).not.toContain("424242");
+    expect(message).not.toContain("515151");
+  });
+});

@@ -70,7 +70,7 @@ export function renderSlidesDeck(deck: SlidesDeckInput, options: RenderSlidesOpt
   if (deck.slides.length === 0) {
     throw new RenderError(
       "resolution-failed",
-      `renderSlidesDeck could not render deck "${deck.id}": it has zero slides — nothing to render.`,
+      "renderSlidesDeck could not render the deck: it has zero slides — nothing to render.",
     );
   }
 
@@ -78,7 +78,7 @@ export function renderSlidesDeck(deck: SlidesDeckInput, options: RenderSlidesOpt
     if (slide.channel !== "slides" || slide.meta.channel !== "slides") {
       throw new RenderError(
         "wrong-channel",
-        `renderSlidesDeck only renders channel "slides" documents, but deck "${deck.id}" slide ${index} (id="${slide.id}") has document.channel="${slide.channel}" / document.meta.channel="${slide.meta.channel}".`,
+        `renderSlidesDeck only renders channel "slides" documents, but slide ${index} has document.channel="${slide.channel}" / document.meta.channel="${slide.meta.channel}".`,
       );
     }
   });
@@ -90,7 +90,7 @@ export function renderSlidesDeck(deck: SlidesDeckInput, options: RenderSlidesOpt
     if (meta.aspect !== aspect) {
       throw new RenderError(
         "inconsistent-deck-aspect",
-        `renderSlidesDeck could not render deck "${deck.id}": slide 0 (id="${deck.slides[0]!.id}") declares aspect "${aspect}", but slide ${index} (id="${slide.id}") declares aspect "${meta.aspect}" — every slide in a deck must share one canvas aspect.`,
+        `renderSlidesDeck could not render the deck: slide 0 declares aspect "${aspect}", but slide ${index} declares aspect "${meta.aspect}" — every slide in a deck must share one canvas aspect.`,
       );
     }
   });
@@ -102,7 +102,7 @@ export function renderSlidesDeck(deck: SlidesDeckInput, options: RenderSlidesOpt
     if (slide.layout === undefined) {
       throw new RenderError(
         "resolution-failed",
-        `renderSlidesDeck could not render deck "${deck.id}" slide ${index} (id="${slide.id}"): channel "slides" requires a layout, but layout is undefined.`,
+        `renderSlidesDeck could not render slide ${index}: channel "slides" requires a layout, but layout is undefined.`,
       );
     }
 
@@ -113,7 +113,7 @@ export function renderSlidesDeck(deck: SlidesDeckInput, options: RenderSlidesOpt
       if (error instanceof RenderError) {
         throw new RenderError(
           error.reason,
-          `renderSlidesDeck could not render deck "${deck.id}" slide ${index} (id="${slide.id}"): ${error.message}`,
+          `renderSlidesDeck could not render slide ${index}: ${error.message}`,
         );
       }
       throw error;
