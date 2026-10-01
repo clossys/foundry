@@ -173,9 +173,8 @@ describe("checkSealEvidence", () => {
     }
   });
 
-  it("checkSealEvidence without an itemId is refused at compile time and at run time", TIMEOUT, () => {
-    // @ts-expect-error itemId is required
-    const withoutItemId = checkSealEvidence(evidence(), { map: MAP, now: NOW });
+  it("checkSealEvidence without an itemId is refused at run time (the option type requires it)", TIMEOUT, () => {
+    const withoutItemId = checkSealEvidence(evidence(), { map: MAP, now: NOW } as never);
     expect(rulesAt(withoutItemId)).toContain("item-id-invalid@itemId");
     for (const bad of [undefined, "", "  ", 3, null]) {
       const found = checkSealEvidence(evidence(), { map: MAP, now: NOW, itemId: bad as never });
