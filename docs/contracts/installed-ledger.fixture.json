@@ -11799,6 +11799,185 @@
       "sha256": "sha256:fa33b459553a218869fce0eb36d398d6f5db1c3eed0328c0d9cafe56efa2428a"
     },
     {
+      "name": "admitted-adds-guide-drops-file",
+      "note": "admitted-adds-guide with the base row for clossys/brief.json removed: the one guide row is added and one owned file is dropped.",
+      "valid": true,
+      "ledger": {
+        "schemaVersion": 1,
+        "kind": "clossys.installed-ledger",
+        "repository": {
+          "id": "example-owner/site",
+          "nodeId": "R_exampleSite1"
+        },
+        "generation": 2,
+        "history": [
+          {
+            "generation": 1,
+            "changeSet": "sha256:3c79c63c9e69406df85c2f3b13d55c8465e85885fcee79009a14ffbc98bc8b8f",
+            "phase": "setup",
+            "planDigest": "sha256:40e9c27d0c677c522f131e47740185d8182367c9f286fd4746e72c55b1275a18",
+            "bundle": "sha256:1ff6d587580c9d41fc0450b85460d264fefd1182987038a3514d3bfd581e3f9e",
+            "baseCommit": "b9943520d44a7c5584afd9cff2fb9f3ce9fbfd62",
+            "binding": {
+              "kind": "approved",
+              "subjectDigest": "sha256:1ff6d587580c9d41fc0450b85460d264fefd1182987038a3514d3bfd581e3f9e"
+            }
+          },
+          {
+            "generation": 2,
+            "changeSet": "sha256:0e445fec515b8f0806993c8280314ac84ba53dca2901d2f85e4c48eff1d597a9",
+            "phase": "apply",
+            "planDigest": "sha256:40e9c27d0c677c522f131e47740185d8182367c9f286fd4746e72c55b1275a18",
+            "bundle": "sha256:d801c68e8c1e3a9dac2a06e0beecbd323728ceee139f56622caf7e0fb51f989c",
+            "baseCommit": "e108374bf5dd0d002f45544ee949711de32f6eb3",
+            "binding": {
+              "kind": "admitted",
+              "subjectDigest": "sha256:1ff6d587580c9d41fc0450b85460d264fefd1182987038a3514d3bfd581e3f9e",
+              "setupChangeSet": "sha256:3c79c63c9e69406df85c2f3b13d55c8465e85885fcee79009a14ffbc98bc8b8f"
+            }
+          }
+        ],
+        "files": [
+          {
+            "path": ".agents/skills/clossys-strategist/SKILL.md",
+            "mode": "100644",
+            "after": "sha256:10a0edc2b0a6f35b6735a9423cbcf326138c80f0a152bb937b655ee278b26c1f",
+            "changeSet": "sha256:3c79c63c9e69406df85c2f3b13d55c8465e85885fcee79009a14ffbc98bc8b8f"
+          },
+          {
+            "path": ".agents/skills/clossys-writer/SKILL.md",
+            "mode": "100644",
+            "after": "sha256:e0d4b7ccb4dbdcf1f9e6e94ac05fa6f2d05c9cb3797ccde260ce3c9d59ea35b1",
+            "changeSet": "sha256:3c79c63c9e69406df85c2f3b13d55c8465e85885fcee79009a14ffbc98bc8b8f"
+          },
+          {
+            "path": ".claude/skills/clossys-strategist",
+            "mode": "120000",
+            "after": "sha256:6fcf44a7a74900e9b603bcd3fd1791faabb61295667fff05c16c3668e938fcb2",
+            "changeSet": "sha256:3c79c63c9e69406df85c2f3b13d55c8465e85885fcee79009a14ffbc98bc8b8f"
+          },
+          {
+            "path": ".claude/skills/clossys-writer",
+            "mode": "120000",
+            "after": "sha256:c321e19de7bbbe3ffa43bc4dcdab6d244be829275306f1011c9d5f66646c3b38",
+            "changeSet": "sha256:3c79c63c9e69406df85c2f3b13d55c8465e85885fcee79009a14ffbc98bc8b8f"
+          },
+          {
+            "path": ".cursor/skills/clossys-strategist",
+            "mode": "120000",
+            "after": "sha256:6fcf44a7a74900e9b603bcd3fd1791faabb61295667fff05c16c3668e938fcb2",
+            "changeSet": "sha256:3c79c63c9e69406df85c2f3b13d55c8465e85885fcee79009a14ffbc98bc8b8f"
+          },
+          {
+            "path": ".cursor/skills/clossys-writer",
+            "mode": "120000",
+            "after": "sha256:c321e19de7bbbe3ffa43bc4dcdab6d244be829275306f1011c9d5f66646c3b38",
+            "changeSet": "sha256:3c79c63c9e69406df85c2f3b13d55c8465e85885fcee79009a14ffbc98bc8b8f"
+          },
+          {
+            "path": ".github/scripts/clossys-collect-adoption-snapshot.mjs",
+            "mode": "100644",
+            "after": "sha256:b59b797434d58f8475861e3e1a59fc78e9e821cee7b238d3c912d16f2f6c766a",
+            "changeSet": "sha256:3c79c63c9e69406df85c2f3b13d55c8465e85885fcee79009a14ffbc98bc8b8f"
+          },
+          {
+            "path": ".github/workflows/clossys-adoption-decision.yml",
+            "mode": "100644",
+            "after": "sha256:6ec7773d47efe9a085cc4ae930a208db74d6ed06446e615905bc6171aa880652",
+            "changeSet": "sha256:3c79c63c9e69406df85c2f3b13d55c8465e85885fcee79009a14ffbc98bc8b8f"
+          },
+          {
+            "path": ".github/workflows/clossys-adoption-evidence.yml",
+            "mode": "100644",
+            "after": "sha256:f7e9765395d2391daf2c3cbc6d675001f25490482e413ca6d3a5e54ce2539cd4",
+            "changeSet": "sha256:3c79c63c9e69406df85c2f3b13d55c8465e85885fcee79009a14ffbc98bc8b8f"
+          },
+          {
+            "path": ".github/workflows/clossys-ci.yml",
+            "mode": "100644",
+            "after": "sha256:dc1be01dc993c80302834f6c1094a99a2a95e36d104139f12d92250174b132d9",
+            "changeSet": "sha256:3c79c63c9e69406df85c2f3b13d55c8465e85885fcee79009a14ffbc98bc8b8f"
+          },
+          {
+            "path": ".github/workflows/clossys-path-scope.yml",
+            "mode": "100644",
+            "after": "sha256:c6870928c2ffa1008ddbc5ed52d1b75833509c95dced7189c784dd4a2036c772",
+            "changeSet": "sha256:3c79c63c9e69406df85c2f3b13d55c8465e85885fcee79009a14ffbc98bc8b8f"
+          },
+          {
+            "path": ".starter/request.json",
+            "mode": "100644",
+            "after": "sha256:67d274123625780584078df3484b4961d254490674fcc0e4d1150ccf4442eae3",
+            "changeSet": "sha256:3c79c63c9e69406df85c2f3b13d55c8465e85885fcee79009a14ffbc98bc8b8f"
+          },
+          {
+            "path": "clossys/.state/skills.json",
+            "mode": "100644",
+            "after": "sha256:ac10d9424665550641c606987d4da2c554fd3e7f67b1845c4f96662e5220500e",
+            "changeSet": "sha256:3c79c63c9e69406df85c2f3b13d55c8465e85885fcee79009a14ffbc98bc8b8f"
+          },
+          {
+            "path": "clossys/AGENTS.md",
+            "mode": "100644",
+            "after": "sha256:6f3d39117a95abeb969656c3e11eea52ad27bdafd2341b98ead38b67944e7a53",
+            "changeSet": "sha256:0e445fec515b8f0806993c8280314ac84ba53dca2901d2f85e4c48eff1d597a9"
+          }
+        ],
+        "keys": [
+          {
+            "file": "package.json",
+            "pointer": "/devDependencies/@example~1starter",
+            "value": "0.9.2",
+            "changeSet": "sha256:3c79c63c9e69406df85c2f3b13d55c8465e85885fcee79009a14ffbc98bc8b8f"
+          },
+          {
+            "file": "package.json",
+            "pointer": "/devDependencies/@example~1strategist",
+            "value": "1.4.0",
+            "changeSet": "sha256:0e445fec515b8f0806993c8280314ac84ba53dca2901d2f85e4c48eff1d597a9"
+          },
+          {
+            "file": "package.json",
+            "pointer": "/devDependencies/@example~1writer",
+            "value": "0.7.0",
+            "changeSet": "sha256:0e445fec515b8f0806993c8280314ac84ba53dca2901d2f85e4c48eff1d597a9"
+          }
+        ],
+        "entries": [],
+        "packages": [
+          {
+            "planItem": "example-owner/site:@example/starter",
+            "act": "pin-starter",
+            "name": "@example/starter",
+            "version": "0.9.2",
+            "integrity": "sha512-hJiP5Qe0sBUnWOs7+hC2bcIg2ye4C0X3hmWVHIo4IfibnbGns3pFL8QPV4R3MuWxVlbU9dWJ/HeYE42ABQie/w==",
+            "placement": "devDependencies",
+            "changeSet": "sha256:3c79c63c9e69406df85c2f3b13d55c8465e85885fcee79009a14ffbc98bc8b8f"
+          },
+          {
+            "planItem": "example-owner/site:@example/strategist",
+            "act": "install",
+            "name": "@example/strategist",
+            "version": "1.4.0",
+            "integrity": "sha512-UWlOIr0jGHG4u420oMkUOeVW5r6Ab4kxuaUU4UWjjGebkzXM634IHDtxqLqMGCRebanNaxZBudK29XyAQgk5sQ==",
+            "placement": "devDependencies",
+            "changeSet": "sha256:0e445fec515b8f0806993c8280314ac84ba53dca2901d2f85e4c48eff1d597a9"
+          },
+          {
+            "planItem": "example-owner/site:@example/writer",
+            "act": "install",
+            "name": "@example/writer",
+            "version": "0.7.0",
+            "integrity": "sha512-GW995IgPwvbujjoIUYbT6dge9ZrLCEa1JOYNnU+LYrdaWcbU9wOs0vpm53wXR1kQBUbFftpxA8LkpD4AtU/dQQ==",
+            "placement": "devDependencies",
+            "changeSet": "sha256:0e445fec515b8f0806993c8280314ac84ba53dca2901d2f85e4c48eff1d597a9"
+          }
+        ],
+        "deferred": []
+      },
+      "sha256": "sha256:9032f9c9569ef18f16e9b95ea068055007834fd778826b4ea9328052f3573991"
+    },
+    {
       "name": "admitted-guide-stamped-by-setup",
       "note": "admitted-adds-guide whose guide row is stamped by the setup generation, not by the admitted generation that adds it.",
       "valid": true,
@@ -12641,6 +12820,17 @@
       "note": "An admitted head that adds one file row at another path than the guide's.",
       "base": "setup-generation-1",
       "head": "admitted-adds-other-file",
+      "change": "next-generation",
+      "admission": null,
+      "rules": [
+        "S3"
+      ]
+    },
+    {
+      "name": "adds-guide-drops-file",
+      "note": "An admitted head that adds the guide row and drops one owned file row.",
+      "base": "setup-generation-1",
+      "head": "admitted-adds-guide-drops-file",
       "change": "next-generation",
       "admission": null,
       "rules": [
