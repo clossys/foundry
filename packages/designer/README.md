@@ -5341,6 +5341,103 @@ a whole.
   your own render call, and `@internationalized/date` is only needed when
   you construct a `DateField` value.
 
+## Hero backdrop contract (`@clossys/designer/tokens`)
+
+A per-brand hero visual — the picture, video, canvas or chart behind the
+hero's text — has one sanctioned shape here. A bespoke backdrop has needed
+the same five fixes each time: text that stays readable over the visual's
+worst frame, a layer that never takes pointer events, a layer that assistive
+technology skips, a still frame for reduced motion, and a load cost that
+cannot block first paint. `BackdropContract` states those as data, and two
+checks hold a backdrop to it. This is data and checks only: it adds no
+component, CSS or token, and it is not wired into any Publisher block.
+
+**The four kinds.** `BACKDROP_KINDS` lists them, and `BackdropKind` is their
+union. `BackdropContract` is a union on `kind`:
+
+| `kind`   | Shape beyond the shared fields                                                      |
+| -------- | ----------------------------------------------------------------------------------- |
+| `image`  | `reducedMotion` is optional: an image is its own still frame.                       |
+| `video`  | `reducedMotion: { fallbackFrame }` is required.                                     |
+| `canvas` | `reducedMotion: { fallbackFrame }` is required.                                     |
+| `chart`  | `reducedMotion` is required, and `illustrative: true`: no information lives only there. |
+
+Every kind carries `scrim` (`BackdropScrim`: `token`, `textToken` and
+`worstCaseBackdrop`), `ariaHidden: true`, `pointerEvents: "none"`, and
+`loading` (`BackdropLoading`: `strategy` of `"lazy"` or `"idle"`, and
+`budgetBytes`). `reducedMotion` is a `BackdropReducedMotion`. `scrim.token`
+and `scrim.textToken` name registry tokens, for example
+`--color-overlay-scrim` and `--color-ink-on-inverse`, and
+`worstCaseBackdrop` is an opaque six-digit hex or `oklch()` color the
+author states as the lightest or busiest the backdrop can show.
+
+**The five rules.** `checkBackdropContract(contract, { tokens? })` returns a
+`BackdropReport` (`{ ok, findings, unchecked }`) and never throws. Each
+`BackdropFinding` carries a `BackdropRuleId` and a developer message.
+
+| Rule id                   | Passes when                                                                                                                                     |
+| ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| `scrim-contrast`          | `scrim.token` composited over `worstCaseBackdrop` gives `scrim.textToken` a contrast of at least 4.5 (the `AA` constant).                       |
+| `aria-hidden`             | `ariaHidden` is `true`, and a `chart` is `illustrative: true`.                                                                                  |
+| `pointer-events`          | `pointerEvents` is `"none"`.                                                                                                                    |
+| `reduced-motion-fallback` | A `video`, `canvas` or `chart` has a non-empty `reducedMotion.fallbackFrame`. An `image` needs none.                                            |
+| `lazy-loading-budget`     | `loading.strategy` is `"lazy"` or `"idle"`, and `loading.budgetBytes` is a positive integer no larger than `BACKDROP_BUDGET_CEILING_BYTES`.     |
+
+`BACKDROP_BUDGET_CEILING_BYTES` is 2 MiB (2,097,152 bytes), the most
+transferred bytes a backdrop may declare. The tokens resolve through
+`BackdropCheckOptions.tokens`, which defaults to `TOKENS` and so to the
+default (light) values, following `var()` alias chains the way the contrast
+gate does.
+
+**Fails closed.** A rule the check cannot evaluate is reported in
+`unchecked` (a `BackdropUnchecked`, with a `BackdropUncheckedReason`) and
+`ok` is `false`: a token the registry does not hold
+(`unresolvable-token`), a token or `worstCaseBackdrop` that is not a color
+it can read, or a translucent text token (`unparseable-token`,
+`unparseable-backdrop`), a `kind` outside the four (`unknown-kind`), and a
+malformed contract (`malformed-contract`). A finding means a rule was
+evaluated and broken; `unchecked` means it was not evaluated. Neither is a
+pass.
+
+**Checking the rendered element.** `checkBackdropElement(element)` returns
+the same report shape with its own rule ids (`BackdropElementRuleId`):
+`element-aria-hidden` (`aria-hidden="true"`), `element-pointer-events`
+(`pointer-events: none`, read from computed style, then inline style) and
+`element-focusable-descendant` (no link, button, form control, `summary`,
+`iframe`, editable element, `video` or `audio` with `controls`, or element
+with `tabindex` 0 or more below it). A value that is not an element is
+`unchecked` with `not-an-element`. It reads the light DOM only: it does not
+follow shadow roots or run script. The contract check does not measure a
+real asset's size or choose the worst-case color for you.
+
+```ts
+import { checkBackdropContract, checkBackdropElement, type BackdropContract } from "@clossys/designer/tokens";
+
+const backdrop: BackdropContract = {
+  kind: "video",
+  scrim: {
+    token: "--color-overlay-scrim",
+    textToken: "--color-ink-on-inverse",
+    worstCaseBackdrop: "#6b6b6b",
+  },
+  ariaHidden: true,
+  pointerEvents: "none",
+  reducedMotion: { fallbackFrame: "/hero/still.webp" },
+  loading: { strategy: "idle", budgetBytes: 1_500_000 },
+};
+
+const declared = checkBackdropContract(backdrop);
+if (!declared.ok) {
+  for (const finding of declared.findings) console.error(finding.rule, finding.message);
+  for (const gap of declared.unchecked) console.error(gap.rule, gap.reason);
+}
+
+const layer = document.getElementById("hero-backdrop");
+if (layer !== null && !checkBackdropElement(layer).ok) {
+  console.error("The rendered backdrop breaks the contract.");
+}
+```
+
 ## Licence
 
 MIT
