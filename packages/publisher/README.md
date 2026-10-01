@@ -2936,10 +2936,45 @@ Issue #1208: a Next.js App Router template that ships in this package's
 `templates/site/` directory (`files` includes `templates`, so it is part
 of the published tarball) — **not compiled, typechecked, or tested by
 this repository's own build**, the same way `packages/designer/templates/
-brand-type.template.json` is shipped-but-not-compiled content. Launcher
-(#1215) copies it into a product repository's own `apps/site`; see
+brand-type.template.json` is shipped-but-not-compiled content. See
 `templates/site/README.md`, shipped alongside it, for the full file list
 and what each page reads from that repository's own `clossys/` records.
+
+### Instantiating it (`publisher-site-instantiate`)
+
+The Launcher never generates application content, so a Publisher command
+copies the template, run once inside a pull request:
+
+```bash
+publisher-site-instantiate --root ./example-project --pins pins.json
+```
+
+`pins.json` is a JSON object of exact versions, for example
+`{ "@clossys/designer": "1.2.3", "@clossys/publisher": "1.2.3" }`, with one entry
+for every `@clossys/*` range the template declares. The command never reads a
+plan; whoever runs it extracts the pins from the approved plan. It copies the
+template found next to the installed package into `<root>/apps/site` (or
+`--site-dir <relative path>`), byte for byte except `package.json`, whose
+`@clossys/*` ranges become the pins, and adds `apps/*` to the root
+`package.json` workspaces when no pattern already covers the site.
+
+It exits `0` when done, `1` when it refuses, and `2` when it could not run. A
+refusal writes nothing. It refuses when:
+
+- the target directory exists and is not empty;
+- a `@clossys/*` range the template declares has no pin, or a pin is not an
+  exact `x.y.z` version;
+- the root `package.json` is missing, is not a JSON object, or has `workspaces`
+  in a shape the command cannot edit safely (neither absent, an array of
+  strings, nor an object whose `packages` is an array of strings);
+- `--site-dir` is absolute, contains `..`, or reaches outside the root through
+  a symlink;
+- the template holds a symlink.
+
+The site is written into a sibling temporary directory and renamed into place,
+and the root manifest through a temporary file and a rename, so a failed run
+leaves no `apps/site` and no changed root manifest. A message names a rule and
+a relative path, never a pin, the root path or file content.
 
 ## Preview gallery (`publisher-preview`)
 
