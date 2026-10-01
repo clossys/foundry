@@ -17,8 +17,12 @@ export interface AuthViewProps extends HTMLAttributes<HTMLDivElement> {
    * view has no mode that picks a heading.
    */
   heading: ReactNode;
-  /** A line of supporting copy under `heading`. */
-  description?: ReactNode;
+  /**
+   * A line of supporting copy under `heading`. Required, so every step
+   * decides on a supporting line and sign-in always passes one; a step with
+   * nothing to say passes `undefined` or `null` explicitly.
+   */
+  description: ReactNode;
   /**
    * The form slot. Rendered inside Designer's `Card`, exactly as given -
    * no `<form>` wrapper, no submit handling, no field state, no
@@ -77,7 +81,7 @@ export function AuthView({
       <SiteHeader brand={brand} />
       <main
         className="mx-auto flex w-full flex-1 flex-col gap-xl px-lg py-2xl"
-        style={{ maxWidth: "var(--ui-width-prose-max, 48rem)" }}
+        style={{ maxWidth: "var(--ui-width-form-max, none)" }}
       >
         <PageHeader title={heading} description={description} />
         <Card className="flex flex-col gap-lg">

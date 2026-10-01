@@ -2,7 +2,7 @@
  * The token catalog: every custom property this package declares in
  * `styles/tokens.css`, as data. This file is the JS/TS half of the package;
  * `styles/tokens.css` is the CSS half. Both are hand-authored and both are
- * meant to describe the exact same 167 tokens — a test in this package
+ * meant to describe the exact same 168 tokens — a test in this package
  * (`parity.test.ts`) parses `styles/tokens.css` and asserts its custom
  * property names and values match this file entry-for-entry, in both
  * directions. That test is what keeps this file honest; nothing generates
@@ -35,7 +35,7 @@
  */
 
 /**
- * The 27 semantic groups the 167 tokens fall into. Each maps to exactly one
+ * The 27 semantic groups the 168 tokens fall into. Each maps to exactly one
  * CSS custom property prefix — see `FAMILY_PREFIX` in `parity.test.ts` (and
  * the README's naming table) for the concrete mapping.
  */
@@ -261,6 +261,7 @@ export const TOKENS: Readonly<Record<string, TokenDefinition>> = {
   "--ui-width-display-max": { property: "--ui-width-display-max", family: "width", value: "var(--ui-width-wide-max, 72rem)", brandable: true, themeDependent: false },
   "--ui-width-prose-max": { property: "--ui-width-prose-max", family: "width", value: "48rem", brandable: true, themeDependent: false },
   "--ui-width-wide-max": { property: "--ui-width-wide-max", family: "width", value: "72rem", brandable: true, themeDependent: false },
+  "--ui-width-form-max": { property: "--ui-width-form-max", family: "width", value: "38rem", brandable: false, themeDependent: false },
   "--ui-width-page-padding-x": { property: "--ui-width-page-padding-x", family: "width", value: "clamp(16px, 4vw, 48px)", brandable: false, themeDependent: false },
 
   // ── UI · LAYOUT ─────────────────────────────────────────────────────

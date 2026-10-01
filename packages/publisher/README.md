@@ -348,7 +348,9 @@ Name a shipped template when its slots cover the page:
   `status-list`, `stat-grid`).
 - **`AuthView`** — one shell for every authentication step (sign-in, sign-up,
   password reset, verification): site header, page header, the form inside
-  Designer's `Card`, and site footer. The form slot is filled with
+  Designer's `Card`, and site footer. The content column uses the
+  `--ui-width-form-max` form measure, and `description` is a required prop
+  so every step decides on a supporting line. The form slot is filled with
   Designer's `Form` / `TextField` / `Button`. There is no mode prop, and
   the view does not call an auth provider.
 - **`ErrorView`** — error shell, including the sign-in-boundary states: not
