@@ -3,15 +3,14 @@ import { notFound } from "next/navigation";
 import { BoundaryView, PackReviewView } from "@clossys/publisher/web";
 import { createCopyResolver } from "@clossys/writer";
 import routeManifest from "../../web-route-manifest.json" with { type: "json" };
-import { resolvePackReviewPage } from "../pack-review";
+import { packReviewOpen, resolvePackReviewPage } from "../pack-review";
 import { PACK_REVIEW_COPY, packReviewText } from "../pack-review-copy";
 import { DEV_PREVIEWS } from "../site-copy";
-import { loadBrandFacts, loadPackManifest, siteTarget } from "../site-records";
-import { packReviewAvailable } from "../site-wiring";
+import { loadBrandFacts, loadPackManifest } from "../site-records";
 
 // The review index is dev-only. It is not in `web-route-manifest.json`, so it
-// is not in the sitemap, and it renders per request so the target is read on
-// every request and never baked in at build time.
+// is not in the sitemap, and it renders per request so the environment is read
+// on every request and never baked in at build time.
 export const dynamic = "force-dynamic";
 
 function loadText() {
@@ -19,17 +18,19 @@ function loadText() {
 }
 
 export function generateMetadata(): Metadata {
-  if (!packReviewAvailable(siteTarget())) return {};
+  if (!packReviewOpen(process.env)) return {};
   return { title: loadText().heading, robots: { index: false, follow: false } };
 }
 
 // The page takes no request input at all: the pages come from the route
 // manifest, the states from the contact view's own state list, and the exports
-// from the pack manifest. A target that `packReviewAvailable` does not list
-// gets the 404 page before any record is read or any markup is built.
+// from the pack manifest. A request that `packReviewOpen` refuses (a target
+// that is not development or test, a production or preview host, or an
+// unknown `SITE_TARGET`) gets the 404 page before any record is read or any
+// markup is built. The exports open through `app/pack/export/route.ts`.
 export default function PackReviewPage() {
   const model = resolvePackReviewPage({
-    target: siteTarget(),
+    env: process.env,
     routes: routeManifest.routes,
     states: { "/contact": [...DEV_PREVIEWS] },
     loadManifest: loadPackManifest,

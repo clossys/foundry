@@ -80,23 +80,34 @@ applies at its cascade scope, or that the template builds.
 - `app/site-wiring.ts` — the pure server wiring (target, delivery choice,
   contact handler, client key, legal gate); `app/site-contact.ts` and
   `app/site-delivery.ts` assemble it.
-- `app/pack/page.tsx`, `app/pack-review.ts`, `app/pack-review-copy.ts` — the
-  dev-only pack review (`PackReviewView`): `/pack` lists each route in the
-  manifest below with the contact page's forced states, the exports named in
-  `clossys/publisher/pack.json`, and a lazy contact sheet at 390, 1024 and
-  1440 px. It is served only when `SITE_TARGET` is `development` or `test`
-  (`packReviewAvailable`): on `production`, `preview`, an absent value and any
-  value not listed it answers the 404 page before any record is read. The page
-  takes no query string or other request input. It is not in
-  `web-route-manifest.json`, so it is not in the sitemap, and it renders per
-  request. `pack.json` is read at request time from `clossys/publisher/` two
-  levels above the app and never imported, so a repository without one still
-  builds; a missing or invalid manifest shows the framed boundary page and
-  names nothing. The page's words are one catalog-shaped constant in
-  `app/pack-review-copy.ts`, in the Writer front-door id grammar
-  (`front-door.<state>.<slot>`), so they can move into Writer's `frontDoor.*`
-  catalog under the same ids; until then they are the one place in this
-  template that carries wording.
+- `app/pack/page.tsx`, `app/pack/export/route.ts`, `app/pack-review.ts`,
+  `app/pack-review-copy.ts` — the dev-only pack review (`PackReviewView`):
+  `/pack` lists each route in the manifest below with the contact page's forced
+  states, the exports named in `clossys/publisher/pack.json`, and a lazy
+  contact sheet at 390, 1024 and 1440 px, with the page's badge beside each
+  state and frame. Each export links to `/pack/export?name=<export id>`, which
+  serves that output's bytes: the OG image, the plain-text email, and the HTML
+  email once for each of its 600 and 375 px review entries. The name is
+  compared with the ids the manifest lists and is never a path, so an unknown
+  name is a 404; a response is not cached or sniffed, and an HTML or SVG file
+  runs in a sandbox with no script. Both are served only when the gate
+  (`packReviewOpen`) is open: `SITE_TARGET` is `development` or `test`
+  (`packReviewAvailable`) **and** `VERCEL_ENV` is absent or `development`. On
+  `production`, `preview`, an absent `SITE_TARGET`, any `SITE_TARGET` not
+  listed (it is a 404, not a 500), and a `VERCEL_ENV` of `production`,
+  `preview` or anything else, they answer 404 before any record or file is
+  read. The page takes no query string or other request input, and the
+  export route takes only `name`. Neither is in `web-route-manifest.json`, so
+  neither is in the sitemap, and both render per request. `pack.json` is read
+  at request time from `clossys/publisher/` two levels above the app and never
+  imported, so a repository without one still builds; a missing or invalid
+  manifest shows the framed boundary page and names nothing. The page's words
+  are one catalog-shaped constant in `app/pack-review-copy.ts`, in the Writer
+  front-door id grammar (`front-door.<state>.<slot>`). They use no
+  `{placeholder}`, so none needs a noun outside the closed set in Writer's
+  `src/front-door.ts` (rule F2), but they are not in Writer's `frontDoor.*`
+  catalog: it has no pack-review state, and until it does this is the one
+  place in this template that carries wording.
 - `app/robots.ts`, `app/sitemap.ts`, `app/opengraph-image.tsx` — Next's
   metadata route convention, each a thin wrapper over the pure functions in
   `app/site-wiring.ts` and `app/site-copy.ts` (see "Crawlers and the share

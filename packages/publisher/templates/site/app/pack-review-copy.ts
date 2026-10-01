@@ -2,21 +2,29 @@
  * The words on the dev-only pack-review page, as one catalog-shaped constant.
  *
  * The rest of this template holds copy ids and no wording; these entries are
- * the exception, and a temporary one. They follow the Writer front-door id
- * grammar (`front-door.<state>.<slot>`) so that each can move into Writer's
- * `frontDoor.*` catalog under the same id once that catalog carries a
- * pack-review state; until then this is the single place the page's words live.
- * No string appears in markup: the page resolves every label through
+ * the exception. They follow the Writer front-door id grammar
+ * (`front-door.<state>.<slot>`), and none uses a `{token}` placeholder, so
+ * none needs a noun outside Writer's closed set (rule F2 in
+ * `packages/writer/src/front-door.ts`). The wording is not in Writer's
+ * `frontDoor.*` catalog yet: that catalog carries no pack-review state, and
+ * until it does this is the single place the page's words live. No string
+ * appears in markup: the page resolves every label through
  * `createCopyResolver(PACK_REVIEW_COPY)` and hands the view plain props.
  *
- * Pure and client-safe: types only, no records, no environment. A `{token}` is
- * a placeholder declared on its entry and filled from values the page builds
- * from the template's own route and state lists, never from the request.
+ * What would have been a placeholder is composed here instead. A review width
+ * is one entry per width the review lists (`PACK_REVIEW_WIDTHS` and
+ * `PACK_REVIEW_EMAIL_WIDTHS`), and a frame's accessible name joins one fixed
+ * label with the page, state and width labels; the page and state are the
+ * template's own route and slug, shown as they are and never reworded.
+ *
+ * Pure: no records, no environment and no file read of its own. It takes the
+ * review widths from the pack subpath, so like the page it stays on the server.
  */
+import { PACK_REVIEW_EMAIL_WIDTHS, PACK_REVIEW_WIDTHS } from "@clossys/publisher/pack";
 import type { PackReviewViewLabels } from "@clossys/publisher/web";
 import type { CopyRegistry, CopyRegistryEntry, CopyResolver } from "@clossys/writer";
 
-const ENTRIES: ReadonlyArray<readonly [id: string, text: string, context: string]> = [
+const TEXT_ENTRIES: ReadonlyArray<readonly [id: string, text: string, context: string]> = [
   ["front-door.pack-review.title", "Pack review", "pack review page: heading"],
   ["front-door.pack-review.description", "Pages, forced states and exports of this site, listed from the pack manifest.", "pack review page: line under the heading"],
   ["front-door.pack-review-surface.label", "Review", "pack review page: surface badge in the page banner"],
@@ -34,13 +42,24 @@ const ENTRIES: ReadonlyArray<readonly [id: string, text: string, context: string
   ["front-door.pack-review-email-html.label", "Notification email", "pack review page: export kind, the HTML email"],
   ["front-door.pack-review-email-text.label", "Notification email, plain text", "pack review page: export kind, the plain-text email"],
   ["front-door.pack-review-other.label", "Other export", "pack review page: export kind, any other output"],
-  ["front-door.pack-review-width.label", "{width} px wide", "pack review page: the review width of an export"],
-  ["front-door.pack-review-frame.title", "{page} at {width} px", "pack review page: accessible name of a contact-sheet frame for a page"],
-  ["front-door.pack-review-frame-state.title", "{page}, state {state}, at {width} px", "pack review page: accessible name of a contact-sheet frame for a forced state"],
+  ["front-door.pack-review-frame.label", "Preview frame", "pack review page: first words of the accessible name of a contact-sheet frame"],
   ["front-door.pack-review-unavailable.title", "The review is unavailable", "pack review page: heading when the pack manifest cannot be listed"],
   ["front-door.pack-review-unavailable.description", "The pack manifest could not be read or did not pass its checks.", "pack review page: line under the heading when the manifest cannot be listed"],
   ["front-door.pack-review-unavailable.primary", "Back to the site", "pack review page: link home when the manifest cannot be listed"],
 ];
+
+/** Every review width, once: the contact sheet's and the notification email's. */
+const WIDTHS: readonly number[] = [...new Set<number>([...PACK_REVIEW_WIDTHS, ...PACK_REVIEW_EMAIL_WIDTHS])];
+
+const widthId = (width: number): string => `front-door.pack-review-width-${width}.label`;
+
+const WIDTH_ENTRIES: ReadonlyArray<readonly [id: string, text: string, context: string]> = WIDTHS.map((width) => [
+  widthId(width),
+  `${width} px wide`,
+  "pack review page: a review width, in CSS pixels",
+]);
+
+const ENTRIES = [...TEXT_ENTRIES, ...WIDTH_ENTRIES];
 
 function placeholdersOf(text: string): string[] {
   return [...new Set([...text.matchAll(/\{([^{}]+)\}/g)].map((match) => match[1]!))];
@@ -78,10 +97,14 @@ export interface PackReviewText {
  * catalog, never something to render around.
  */
 export function packReviewText(resolve: CopyResolver): PackReviewText {
-  const text = (id: string, values?: Record<string, string | number>): string => {
-    const resolution = resolve(values === undefined ? { id } : { id, values });
+  const text = (id: string): string => {
+    const resolution = resolve({ id });
     if (resolution === undefined || resolution.text.trim().length === 0) throw new Error(`The pack review copy ${id} does not resolve.`);
     return resolution.text;
+  };
+  const widthText = (width: number): string => {
+    if (!WIDTHS.includes(width)) throw new Error("The pack review copy has no label for that width.");
+    return text(widthId(width));
   };
   return {
     heading: text("front-door.pack-review.title"),
@@ -106,11 +129,9 @@ export function packReviewText(resolve: CopyResolver): PackReviewText {
         "email-text": text("front-door.pack-review-email-text.label"),
         other: text("front-door.pack-review-other.label"),
       },
-      exportWidth: (width) => text("front-door.pack-review-width.label", { width }),
+      exportWidth: widthText,
       frameTitle: ({ page, state, width }) =>
-        state === undefined
-          ? text("front-door.pack-review-frame.title", { page, width })
-          : text("front-door.pack-review-frame-state.title", { page, state, width }),
+        [text("front-door.pack-review-frame.label"), page, ...(state === undefined ? [] : [state]), widthText(width)].join(", "),
     },
     unavailable: {
       title: text("front-door.pack-review-unavailable.title"),

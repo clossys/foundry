@@ -24,11 +24,13 @@ export interface PackReviewViewExport {
   /** Unique across the exports. */
   id: string;
   kind: PackReviewExportKind;
-  /** The output path, shown as plain text; the view makes no link of it. */
+  /** The output path, shown as text; a link only when `href` is given. */
   path: string;
   status: PackReviewStatus;
   /** The review width in CSS pixels, for an export that is reviewed at one. */
   width?: number;
+  /** A same-site address that opens the export. Without one the path is plain text. */
+  href?: string;
 }
 
 /** Every visible string. The view owns no wording: a host passes approved copy for each. */
@@ -99,18 +101,28 @@ function requireWidths(widths: readonly number[]): readonly number[] {
   return widths;
 }
 
+/** Ties each section to its own heading, so the section's name is the h2 text and is never repeated as an attribute. */
+const HEADING_IDS = {
+  pages: "pack-review-pages-heading",
+  exports: "pack-review-exports-heading",
+  sheet: "pack-review-sheet-heading",
+} as const;
+
 interface SheetFrame {
   key: string;
   page: string;
   state?: string;
   href: string;
+  status: PackReviewStatus;
 }
 
 /**
  * The dev-only review index: one page listing a site's pages and their forced
  * states, its exported artifacts, and a contact sheet that renders each page
  * and state in a lazy frame at each width. Every entry carries an iteration
- * badge (`draft`, `delegated` or `approved`).
+ * badge (`draft`, `delegated` or `approved`): each page, each forced state
+ * and each contact-sheet caption shows its page's badge, and each export its
+ * own. Each section is named by its own heading (`aria-labelledby`).
  *
  * The frame is the other Publisher views': Designer's `SiteHeader` with the
  * surface badge, a `PageHeader`, and `SiteFooter`, with the page held to the
@@ -119,7 +131,7 @@ interface SheetFrame {
  *
  * Server-safe: no client hooks. It reads nothing and fetches nothing; the
  * caller builds the entries (`buildPackReviewIndex`) and the addresses, and
- * the view refuses any address that is not same-site, an unknown badge, and a
+ * the view refuses any address (page, state or export) that is not same-site, an unknown badge, and a
  * width that is not a positive whole number, naming the position and never
  * the value. Text is rendered as text; no markup from an entry is injected.
  */
@@ -141,11 +153,14 @@ export function PackReviewView({
     requireStatus(page.status, `pages[${pageIndex}].status`);
     page.states.forEach((state, stateIndex) => requireHref(state.href, `pages[${pageIndex}].states[${stateIndex}].href`));
   });
-  exports.forEach((entry, index) => requireStatus(entry.status, `exports[${index}].status`));
+  exports.forEach((entry, index) => {
+    requireStatus(entry.status, `exports[${index}].status`);
+    if (entry.href !== undefined) requireHref(entry.href, `exports[${index}].href`);
+  });
 
   const frames: SheetFrame[] = pages.flatMap((page) => [
-    { key: page.id, page: page.id, href: page.href },
-    ...page.states.map((state) => ({ key: `${page.id}:${state.id}`, page: page.id, state: state.id, href: state.href })),
+    { key: page.id, page: page.id, href: page.href, status: page.status },
+    ...page.states.map((state) => ({ key: `${page.id}:${state.id}`, page: page.id, state: state.id, href: state.href, status: page.status })),
   ]);
 
   return (
@@ -157,8 +172,8 @@ export function PackReviewView({
       >
         <PageHeader title={heading} description={description} />
 
-        <section className="flex flex-col gap-md" aria-label={labels.pagesHeading}>
-          <h2 className="text-h2 text-ink-primary">
+        <section className="flex flex-col gap-md" aria-labelledby={HEADING_IDS.pages}>
+          <h2 id={HEADING_IDS.pages} className="text-h2 text-ink-primary">
             {labels.pagesHeading}
           </h2>
           {pages.length === 0 ? (
@@ -174,8 +189,9 @@ export function PackReviewView({
                   {page.states.length > 0 ? (
                     <ul className="flex flex-wrap gap-sm ps-lg text-body-s">
                       {page.states.map((state) => (
-                        <li key={state.id}>
+                        <li key={state.id} className="flex items-center gap-xs">
                           <a href={state.href}>{state.id}</a>
+                          <Badge variant={STATUS_VARIANT[page.status]}>{labels.statuses[page.status]}</Badge>
                         </li>
                       ))}
                     </ul>
@@ -186,8 +202,8 @@ export function PackReviewView({
           )}
         </section>
 
-        <section className="flex flex-col gap-md" aria-label={labels.exportsHeading}>
-          <h2 className="text-h2 text-ink-primary">
+        <section className="flex flex-col gap-md" aria-labelledby={HEADING_IDS.exports}>
+          <h2 id={HEADING_IDS.exports} className="text-h2 text-ink-primary">
             {labels.exportsHeading}
           </h2>
           {exports.length === 0 ? (
@@ -199,15 +215,21 @@ export function PackReviewView({
                   <Badge variant={STATUS_VARIANT[entry.status]}>{labels.statuses[entry.status]}</Badge>
                   <span className="text-ink-primary">{labels.kinds[entry.kind]}</span>
                   {entry.width === undefined ? null : <span className="text-ink-secondary">{labels.exportWidth(entry.width)}</span>}
-                  <code className="break-all text-ink-secondary">{entry.path}</code>
+                  {entry.href === undefined ? (
+                    <code className="break-all text-ink-secondary">{entry.path}</code>
+                  ) : (
+                    <a href={entry.href}>
+                      <code className="break-all">{entry.path}</code>
+                    </a>
+                  )}
                 </li>
               ))}
             </ul>
           )}
         </section>
 
-        <section className="flex flex-col gap-md" aria-label={labels.sheetHeading}>
-          <h2 className="text-h2 text-ink-primary">
+        <section className="flex flex-col gap-md" aria-labelledby={HEADING_IDS.sheet}>
+          <h2 id={HEADING_IDS.sheet} className="text-h2 text-ink-primary">
             {labels.sheetHeading}
           </h2>
           {frames.length === 0 ? (
@@ -216,9 +238,15 @@ export function PackReviewView({
             <div className="flex flex-col gap-xl overflow-x-auto">
               {frames.map((frame) => (
                 <div key={frame.key} className="flex flex-col gap-sm">
-                  <p className="flex gap-xs text-body-s text-ink-secondary">
+                  <p className="flex items-center gap-xs text-body-s text-ink-secondary">
                     <span>{frame.page}</span>
-                    {frame.state === undefined ? null : <span>{frame.state}</span>}
+                    {frame.state === undefined ? null : (
+                      <>
+                        <span aria-hidden="true">,</span>
+                        <span>{frame.state}</span>
+                      </>
+                    )}
+                    <Badge variant={STATUS_VARIANT[frame.status]}>{labels.statuses[frame.status]}</Badge>
                   </p>
                   <div className="flex gap-lg">
                     {sheetWidths.map((width) => (

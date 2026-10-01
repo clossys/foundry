@@ -4,11 +4,14 @@
  * The route is gated twice here. Source shape: the page asks
  * `resolvePackReviewPage` first and answers `notFound()` before it reads any
  * copy or record, it takes nothing from the request, and it is not in the
- * route manifest (so not in the sitemap). Behaviour: `resolvePackReviewPage`,
- * which holds the page's whole decision, is run with spy loaders, and on every
- * target but `development` and `test` it answers `not-found` without calling
- * them. The page's JSX is not run here: the template's own tsconfig preserves
- * JSX, so it is checked by shape, as the other template pages are.
+ * route manifest (so not in the sitemap). Behaviour: `resolvePackReviewPage`
+ * and `resolvePackReviewExport`, which hold the page's and the export route's
+ * whole decisions, are run with spy loaders, and unless `SITE_TARGET` is
+ * `development` or `test` and the hosting environment (`VERCEL_ENV`) is
+ * neither `production` nor `preview` they answer `not-found` without calling
+ * them. The JSX and the route handler are not run here: the template's own
+ * tsconfig preserves JSX and the template's records are not in this
+ * package, so both are checked by shape, as the other template pages are.
  *
  * Every string below is a fictional fixture.
  */
@@ -21,13 +24,20 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 import { createCopyResolver, parseCopyRegistry } from "@clossys/writer";
 import type { PackManifest } from "./pack/types.js";
+import { PACK_REVIEW_EMAIL_WIDTHS, PACK_REVIEW_WIDTHS } from "./pack/review-index.js";
 import { PackReviewView } from "./web/views/PackReviewView.js";
 import {
   DEV_PREVIEWS,
   createMapResolver,
 } from "../templates/site/app/site-copy.js";
 import { PACK_REVIEW_COPY, PACK_REVIEW_COPY_IDS, packReviewText } from "../templates/site/app/pack-review-copy.js";
-import { resolvePackReviewPage } from "../templates/site/app/pack-review.js";
+import {
+  packReviewExportHref,
+  packReviewOpen,
+  resolvePackReviewExport,
+  resolvePackReviewPage,
+} from "../templates/site/app/pack-review.js";
+import type { PackReviewEnv } from "../templates/site/app/pack-review.js";
 import { packReviewAvailable, packReviewHref, siteSitemap } from "../templates/site/app/site-wiring.js";
 import type { SiteTarget } from "../templates/site/app/site-wiring.js";
 
@@ -50,6 +60,43 @@ describe("packReviewAvailable", () => {
   it("fails closed on any value it does not list", TIMEOUT, () => {
     for (const value of ["Development", "development ", "", "prod", "staging", undefined, null, 1, {}, ["development"]]) {
       expect(packReviewAvailable(value as unknown as SiteTarget)).toBe(false);
+    }
+  });
+});
+
+describe("packReviewOpen", () => {
+  const open = (env: PackReviewEnv): boolean => packReviewOpen(env);
+
+  it("opens on a development or test target with no hosting environment, or a development one", TIMEOUT, () => {
+    for (const target of ["development", "test"]) {
+      expect(open({ SITE_TARGET: target })).toBe(true);
+      expect(open({ SITE_TARGET: target, VERCEL_ENV: "development" })).toBe(true);
+    }
+  });
+
+  it("refuses when VERCEL_ENV is production or preview, whatever SITE_TARGET says", TIMEOUT, () => {
+    for (const target of ["development", "test"]) {
+      expect(open({ SITE_TARGET: target, VERCEL_ENV: "production" })).toBe(false);
+      expect(open({ SITE_TARGET: target, VERCEL_ENV: "preview" })).toBe(false);
+    }
+  });
+
+  it("fails closed on any other hosting value", TIMEOUT, () => {
+    for (const value of ["Production", "staging", "", " development"]) {
+      expect(open({ SITE_TARGET: "development", VERCEL_ENV: value })).toBe(false);
+    }
+  });
+
+  it("refuses production, preview and an absent SITE_TARGET, which reads as production", TIMEOUT, () => {
+    expect(open({ SITE_TARGET: "production" })).toBe(false);
+    expect(open({ SITE_TARGET: "preview" })).toBe(false);
+    expect(open({})).toBe(false);
+  });
+
+  it("refuses an unknown SITE_TARGET and does not throw", TIMEOUT, () => {
+    for (const value of ["Development", "staging", "", "dev"]) {
+      expect(() => open({ SITE_TARGET: value })).not.toThrow();
+      expect(open({ SITE_TARGET: value })).toBe(false);
     }
   });
 });
@@ -87,16 +134,29 @@ describe("the pack-review copy catalog", () => {
     }
   });
 
-  it("resolves every label the page uses, filling the tokens", TIMEOUT, () => {
+  it("needs no placeholder at all, so no noun has to be added to Writer's closed set", TIMEOUT, () => {
+    for (const entry of PACK_REVIEW_COPY.entries) {
+      expect(entry.text, entry.id).not.toMatch(/[{}]/);
+      expect(entry.placeholders ?? [], entry.id).toEqual([]);
+    }
+  });
+
+  it("resolves every label the page uses", TIMEOUT, () => {
     const text = packReviewText(createCopyResolver(PACK_REVIEW_COPY, { target: "preview" }));
     expect(text.heading).toBe("Pack review");
     expect(text.surfaceLabel).toBe("Review");
     expect(text.labels.statuses).toEqual({ draft: "Draft", delegated: "Delegated", approved: "Approved" });
     expect(Object.keys(text.labels.kinds).sort()).toEqual(["app-icon", "email-html", "email-text", "favicon", "logo", "og-image", "other"]);
-    expect(text.labels.exportWidth(600)).toBe("600 px wide");
-    expect(text.labels.frameTitle({ page: "/contact", width: 390 })).toBe("/contact at 390 px");
-    expect(text.labels.frameTitle({ page: "/contact", state: "idle", width: 390 })).toBe("/contact, state idle, at 390 px");
+    for (const width of [...PACK_REVIEW_WIDTHS, ...PACK_REVIEW_EMAIL_WIDTHS]) expect(text.labels.exportWidth(width)).toBe(`${width} px wide`);
+    expect(text.labels.frameTitle({ page: "/contact", width: 390 })).toBe("Preview frame, /contact, 390 px wide");
+    expect(text.labels.frameTitle({ page: "/contact", state: "idle", width: 390 })).toBe("Preview frame, /contact, idle, 390 px wide");
     expect(text.unavailable.action).toBe("Back to the site");
+  });
+
+  it("throws, naming no value, for a width the review does not list", TIMEOUT, () => {
+    const text = packReviewText(createCopyResolver(PACK_REVIEW_COPY, { target: "preview" }));
+    expect(() => text.labels.exportWidth(123)).toThrow("The pack review copy has no label for that width.");
+    expect(() => text.labels.frameTitle({ page: "/", width: 123 })).toThrow("The pack review copy has no label for that width.");
   });
 
   it("throws, naming only the copy id, when a label does not resolve", TIMEOUT, () => {
@@ -125,7 +185,7 @@ describe("app/pack/page.tsx source shape", () => {
   });
 
   it("asks the model first and answers the 404 before it reads any copy or record", TIMEOUT, () => {
-    expect(body).toMatch(/^export default function PackReviewPage\(\) \{\s*const model = resolvePackReviewPage\(\{\s*target: siteTarget\(\),/);
+    expect(body).toMatch(/^export default function PackReviewPage\(\) \{\s*const model = resolvePackReviewPage\(\{\s*env: process\.env,/);
     const gate = body.indexOf('if (model.kind === "not-found") notFound();');
     expect(gate).toBeGreaterThan(-1);
     for (const read of ["loadText()", "loadBrandFacts()", "<BoundaryView", "<PackReviewView"]) {
@@ -135,18 +195,22 @@ describe("app/pack/page.tsx source shape", () => {
   });
 
   it("gates its metadata on the same check", TIMEOUT, () => {
-    expect(page).toMatch(/export function generateMetadata\(\): Metadata \{\s*if \(!packReviewAvailable\(siteTarget\(\)\)\) return \{\};/);
+    expect(page).toMatch(/export function generateMetadata\(\): Metadata \{\s*if \(!packReviewOpen\(process\.env\)\) return \{\};/);
+    expect(page).not.toMatch(/siteTarget|packReviewAvailable/);
   });
 
   it("takes no request input", TIMEOUT, () => {
-    expect(page).not.toMatch(/searchParams|headers\(|cookies\(|\bparams\b|process\.env|window\.|location|\bprops\b/);
+    expect(page).not.toMatch(/searchParams|headers\(|cookies\(|\bparams\b|window\.|location|\bprops\b/);
+    // The only environment read is the hosting gate's, handed whole to the pure model.
+    expect(code(raw).match(/process\.env/g)).toHaveLength(2);
+    expect(code(raw).match(/(?:env: |packReviewOpen\()process\.env/g)).toHaveLength(2);
     expect(body).toMatch(/^export default function PackReviewPage\(\) \{/);
   });
 
   it("reads the manifest only through site-records, and the pack path nowhere else", TIMEOUT, () => {
     expect(page).toMatch(/loadManifest: loadPackManifest/);
     expect(page).not.toMatch(/pack\.json|node:fs/);
-    const files = ["site-records.ts", "site-copy.ts", "site-wiring.ts", "pack-review.ts", "pack-review-copy.ts", "pack/page.tsx"];
+    const files = ["site-records.ts", "site-copy.ts", "site-wiring.ts", "pack-review.ts", "pack-review-copy.ts", "pack/page.tsx", "pack/export/route.ts"];
     const readers = files.filter((file) => code(readFileSync(join(APP_DIR, file), "utf8")).includes('"publisher", "pack.json"'));
     expect(readers).toEqual(["site-records.ts"]);
   });
@@ -207,8 +271,9 @@ const MANIFEST: PackManifest = {
 const ROUTES = [{ id: "/" }, { id: "/about" }, { id: "/contact" }];
 const STATES = { "/contact": [...DEV_PREVIEWS] };
 
-function resolveModel(target: SiteTarget | string, loadManifest: () => unknown) {
-  return resolvePackReviewPage({ target: target as SiteTarget, routes: ROUTES, states: STATES, loadManifest });
+function resolveModel(env: PackReviewEnv | string, loadManifest: () => unknown) {
+  const resolved: PackReviewEnv = typeof env === "string" ? { SITE_TARGET: env } : env;
+  return resolvePackReviewPage({ env: resolved, routes: ROUTES, states: STATES, loadManifest });
 }
 
 describe("resolvePackReviewPage", () => {
@@ -216,6 +281,31 @@ describe("resolvePackReviewPage", () => {
     const load = vi.fn(() => MANIFEST);
     expect(resolveModel(target, load)).toEqual({ kind: "not-found" });
     expect(load).not.toHaveBeenCalled();
+  });
+
+  it("answers an absent SITE_TARGET with not-found", TIMEOUT, () => {
+    const load = vi.fn(() => MANIFEST);
+    expect(resolveModel({}, load)).toEqual({ kind: "not-found" });
+    expect(load).not.toHaveBeenCalled();
+  });
+
+  it.each(["production", "preview"])("answers VERCEL_ENV %s with not-found even on a development target, and never calls the loader", TIMEOUT, (hosting) => {
+    const load = vi.fn(() => MANIFEST);
+    for (const target of ["development", "test"]) {
+      expect(resolveModel({ SITE_TARGET: target, VERCEL_ENV: hosting }, load)).toEqual({ kind: "not-found" });
+    }
+    expect(load).not.toHaveBeenCalled();
+  });
+
+  it("answers an unknown SITE_TARGET with not-found, not a throw", TIMEOUT, () => {
+    const load = vi.fn(() => MANIFEST);
+    expect(() => resolveModel("devel", load)).not.toThrow();
+    expect(resolveModel("devel", load)).toEqual({ kind: "not-found" });
+    expect(load).not.toHaveBeenCalled();
+  });
+
+  it("lists a development target on a development hosting environment", TIMEOUT, () => {
+    expect(resolveModel({ SITE_TARGET: "development", VERCEL_ENV: "development" }, () => MANIFEST).kind).toBe("review");
   });
 
   it.each(["development", "test"])("lists pages, states and exports on %s", TIMEOUT, (target) => {
@@ -227,6 +317,12 @@ describe("resolvePackReviewPage", () => {
       ["/contact", "/contact", "delegated", DEV_PREVIEWS.length],
     ]);
     expect(model.pages[2]!.states.map((entry) => entry.href)).toEqual(DEV_PREVIEWS.map((preview) => `/contact?preview=${preview}`));
+    expect(model.exports.map((entry) => [entry.id, entry.href])).toEqual([
+      ["share-card:0", "/pack/export?name=share-card%3A0"],
+      ["notification-email:0:600", "/pack/export?name=notification-email%3A0%3A600"],
+      ["notification-email:0:375", "/pack/export?name=notification-email%3A0%3A375"],
+      ["notification-email:1", "/pack/export?name=notification-email%3A1"],
+    ]);
     expect(model.exports.map((entry) => [entry.kind, entry.path, entry.width, entry.status])).toEqual([
       ["og-image", "out/share/og-image.png", undefined, "approved"],
       ["email-html", "out/email/contact.html", 600, "draft"],
@@ -255,6 +351,7 @@ describe("resolvePackReviewPage", () => {
     expect(html).toContain("600 px wide");
     expect(html).toContain("375 px wide");
     expect(html).toContain("Notification email, plain text");
+    for (const entry of model.exports) expect(html).toContain(`href="${entry.href}"`);
     expect(html.match(/<iframe /g)).toHaveLength((ROUTES.length + DEV_PREVIEWS.length) * 3);
     expect(html.match(/loading="lazy"/g)).toHaveLength((ROUTES.length + DEV_PREVIEWS.length) * 3);
   });
@@ -277,5 +374,154 @@ describe("resolvePackReviewPage", () => {
       const model = resolveModel("development", () => manifest);
       expect(model).toEqual({ kind: "unavailable" });
     }
+  });
+});
+
+// ---------------------------------------------------------- the export route
+
+const ENCODER = new TextEncoder();
+const OUTPUT_BYTES: Readonly<Record<string, Uint8Array>> = {
+  "out/share/og-image.png": Uint8Array.from([0x89, 0x50, 0x4e, 0x47]),
+  "out/email/contact.html": ENCODER.encode("<p>Example notification</p>"),
+  "out/email/contact.txt": ENCODER.encode("Example notification"),
+};
+
+function exportFor(env: PackReviewEnv, name: string | null, spies = { load: vi.fn(() => MANIFEST), read: vi.fn((path: string) => OUTPUT_BYTES[path]) }) {
+  return { spies, model: resolvePackReviewExport({ env, name, loadManifest: spies.load, readOutput: spies.read }) };
+}
+
+const OPEN: PackReviewEnv = { SITE_TARGET: "development" };
+
+describe("packReviewExportHref", () => {
+  it("is the export route pinned to one export name", TIMEOUT, () => {
+    expect(packReviewExportHref("share-card:0")).toBe("/pack/export?name=share-card%3A0");
+  });
+});
+
+describe("resolvePackReviewExport", () => {
+  const NAMES: ReadonlyArray<readonly [string, string, string]> = [
+    ["share-card:0", "out/share/og-image.png", "image/png"],
+    ["notification-email:0:600", "out/email/contact.html", "text/html; charset=utf-8"],
+    ["notification-email:0:375", "out/email/contact.html", "text/html; charset=utf-8"],
+    ["notification-email:1", "out/email/contact.txt", "text/plain; charset=utf-8"],
+  ];
+
+  it.each(NAMES)("returns the bytes of %s inside the gate", TIMEOUT, (name, path, contentType) => {
+    for (const env of [{ SITE_TARGET: "development" }, { SITE_TARGET: "test" }, { SITE_TARGET: "development", VERCEL_ENV: "development" }]) {
+      const { model, spies } = exportFor(env, name);
+      if (model.kind !== "file") throw new Error("expected a file");
+      expect(model.bytes).toEqual(OUTPUT_BYTES[path]);
+      expect(model.headers["content-type"]).toBe(contentType);
+      expect(spies.read).toHaveBeenCalledWith(path);
+    }
+  });
+
+  it("covers every export the page lists, so none is listed that cannot be opened", TIMEOUT, () => {
+    const page = resolveModel(OPEN, () => MANIFEST);
+    if (page.kind !== "review") throw new Error("expected a review");
+    for (const entry of page.exports) {
+      const name = new URL(entry.href, "https://example.test").searchParams.get("name");
+      expect(exportFor(OPEN, name).model.kind, entry.id).toBe("file");
+    }
+  });
+
+  it("serves a file with a sealed response: no sniffing, no caching, no script, no sub-resource", TIMEOUT, () => {
+    const { model } = exportFor(OPEN, "notification-email:0:600");
+    if (model.kind !== "file") throw new Error("expected a file");
+    expect(model.headers["x-content-type-options"]).toBe("nosniff");
+    expect(model.headers["cache-control"]).toBe("no-store");
+    expect(model.headers["content-security-policy"]).toMatch(/^sandbox; default-src 'none'/);
+    expect(model.headers["content-security-policy"]).not.toMatch(/script-src|https?:/);
+  });
+
+  it("answers not-found outside the gate and reads nothing", TIMEOUT, () => {
+    const outside: PackReviewEnv[] = [
+      {},
+      { SITE_TARGET: "production" },
+      { SITE_TARGET: "preview" },
+      { SITE_TARGET: "staging" },
+      { SITE_TARGET: "development", VERCEL_ENV: "production" },
+      { SITE_TARGET: "test", VERCEL_ENV: "preview" },
+    ];
+    for (const env of outside) {
+      for (const [name] of NAMES) {
+        const { model, spies } = exportFor(env, name);
+        expect(model, JSON.stringify(env)).toEqual({ kind: "not-found" });
+        expect(spies.load).not.toHaveBeenCalled();
+        expect(spies.read).not.toHaveBeenCalled();
+      }
+    }
+  });
+
+  it("refuses an unknown export name with not-found, and reads no output", TIMEOUT, () => {
+    for (const name of [null, "", "unknown", "share-card", "share-card:1", "share-card:0 ", "../share-card:0", "out/share/og-image.png", "SHARE-CARD:0", "website:0"]) {
+      const { model, spies } = exportFor(OPEN, name);
+      expect(model, String(name)).toEqual({ kind: "not-found" });
+      expect(spies.read).not.toHaveBeenCalled();
+    }
+  });
+
+  it("answers not-found when the manifest cannot be read or is invalid, naming nothing", TIMEOUT, () => {
+    const throws = { load: vi.fn((): never => { throw new Error("ENOENT /srv/private/pack.json"); }), read: vi.fn(() => undefined) };
+    expect(exportFor(OPEN, "share-card:0", throws).model).toEqual({ kind: "not-found" });
+    const invalid = { load: vi.fn(() => ({ items: "hostile-marker" })), read: vi.fn(() => undefined) };
+    expect(exportFor(OPEN, "share-card:0", invalid).model).toEqual({ kind: "not-found" });
+    expect(invalid.read).not.toHaveBeenCalled();
+  });
+
+  it("answers not-found when the listed output is missing", TIMEOUT, () => {
+    const missing = { load: vi.fn(() => MANIFEST), read: vi.fn(() => undefined) };
+    expect(exportFor(OPEN, "share-card:0", missing).model).toEqual({ kind: "not-found" });
+  });
+
+  it("serves an unlisted file type as a download, never inline", TIMEOUT, () => {
+    const manifest: PackManifest = { schemaVersion: 1, items: [item("brand-kit", { layer: "identity", outputPaths: ["out/brand/palette.json", "out/brand/logo.svg"] })] };
+    const spies = { load: vi.fn(() => manifest), read: vi.fn(() => Uint8Array.from([1])) };
+    const palette = exportFor(OPEN, "brand-kit:0", spies).model;
+    if (palette.kind !== "file") throw new Error("expected a file");
+    expect(palette.headers["content-type"]).toBe("application/octet-stream");
+    expect(palette.headers["content-disposition"]).toBe("attachment");
+    const logo = exportFor(OPEN, "brand-kit:1", spies).model;
+    if (logo.kind !== "file") throw new Error("expected a file");
+    expect(logo.headers["content-type"]).toBe("image/svg+xml");
+  });
+});
+
+describe("app/pack/export/route.ts source shape", () => {
+  const raw = readTemplate("app/pack/export/route.ts");
+  const route = code(raw);
+  const body = route.slice(route.indexOf("export function GET"));
+
+  it("is a server route that renders per request and answers only GET", TIMEOUT, () => {
+    expect(route.trimStart().startsWith('"use client"')).toBe(false);
+    expect(route).toMatch(/export const dynamic = "force-dynamic";/);
+    expect(route.match(/export (?:async )?function (\w+)/g)).toEqual(["export function GET"]);
+    expect(route).not.toMatch(/export (?:const|let|var) (?!dynamic\b)/);
+  });
+
+  it("asks the model, with the process environment, before it reads any file or builds any response body", TIMEOUT, () => {
+    expect(body).toMatch(/^export function GET\(request: Request\): Response \{\s*const model = resolvePackReviewExport\(\{\s*env: process\.env,/);
+    const gate = body.indexOf('if (model.kind !== "file")');
+    expect(gate).toBeGreaterThan(-1);
+    expect(body.indexOf("new Response(model.bytes")).toBeGreaterThan(gate);
+    expect(body.slice(0, gate)).not.toMatch(/readFileSync|new Response/);
+    expect(body).toMatch(/loadManifest: loadPackManifest/);
+  });
+
+  it("takes the export name from the query string and nothing else from the request", TIMEOUT, () => {
+    expect(body).toMatch(/searchParams\.get\("name"\)/);
+    expect(route).not.toMatch(/headers\(|cookies\(|request\.headers|request\.body|\.json\(\)|\.formData\(\)|window\.|location/);
+    expect(route.match(/process\.env/g)).toHaveLength(1);
+  });
+
+  it("reads an output only from inside the repository root, and the name never forms a path", TIMEOUT, () => {
+    expect(route).toMatch(/relative\(root, file\)/);
+    expect(route).toMatch(/startsWith\(".."\)/);
+    expect(route.match(/readFileSync\(/g)).toHaveLength(1);
+    expect(route).not.toMatch(/readFileSync\([^)]*name/);
+  });
+
+  it("answers an empty 404 for anything the model does not return as a file", TIMEOUT, () => {
+    expect(body).toMatch(/new Response\(null, \{ status: 404/);
   });
 });

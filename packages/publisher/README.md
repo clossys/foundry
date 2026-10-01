@@ -1959,8 +1959,10 @@ segment `error` boundary keeps the layout, so use `ErrorView` there instead.
 `PackReviewView`, exported from `@clossys/publisher/web`, is the dev-only
 review index for a site release. One page lists every page of the site with its
 forced states, every exported artifact, and a contact sheet that renders each
-page and state in a lazy frame at 390, 1024 and 1440 px. Each page and export
-carries a `draft`, `delegated` or `approved` badge. It is server-safe, reads
+page and state in a lazy frame at 390, 1024 and 1440 px. Each page, each
+forced state, each contact-sheet frame and each export carries a `draft`,
+`delegated` or `approved` badge (a state and a frame show their page's). Each
+section is named by its own heading (`aria-labelledby`). It is server-safe, reads
 nothing, and ships no wording: the caller builds the entries with
 [`buildPackReviewIndex`](#reviewing-a-pack) and passes every visible string.
 
@@ -1991,7 +1993,15 @@ export function ReviewPage() {
           states: [{ id: "accepted", href: "/contact?preview=accepted" }],
         },
       ]}
-      exports={[{ id: "share-card:0", kind: "og-image", path: "out/share/og-image.png", status: "approved" }]}
+      exports={[
+        {
+          id: "share-card:0",
+          kind: "og-image",
+          path: "out/share/og-image.png",
+          status: "approved",
+          href: "/pack/export?name=share-card%3A0",
+        },
+      ]}
       labels={labels}
     />
   );
@@ -2006,8 +2016,9 @@ Props:
   text. Every `href` must be a same-site address (one leading slash, no
   `//`, no backslash, no control character); anything else throws a
   `RenderError` naming the position, never the value.
-- `exports`: `{ id, kind, path, status, width? }[]`. `path` is shown as plain
-  text and is never a link; `width` is the review width of an email export.
+- `exports`: `{ id, kind, path, status, width?, href? }[]`. `path` is shown as
+  text, and is a link only when `href` is given; an `href` must be a
+  same-site address, as above. `width` is the review width of an email export.
 - `labels`: `pagesHeading`, `exportsHeading`, `sheetHeading`, `none`, the
   `statuses` and `kinds` word for each, `exportWidth(width)` and
   `frameTitle({ page, state?, width })`. The view has no default wording.

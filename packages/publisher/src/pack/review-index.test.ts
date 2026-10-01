@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import { FRONT_DOOR_NOUNS } from "@clossys/writer";
+import { PACK_REVIEW_COPY } from "../../templates/site/app/pack-review-copy.js";
 import { buildPackReviewIndex, PACK_REVIEW_WIDTHS, packReviewStatus } from "./review-index.js";
 import type { PackItem, PackManifest } from "./types.js";
 import { validatePackManifest } from "./validate.js";
@@ -194,5 +196,18 @@ describe("buildPackReviewIndex refusals", () => {
     for (const input of [null, "x", [], {}, { routes: "x", states: {} }, { routes: [], states: [] }]) {
       expect(refused(fullManifest(), input).map((issue) => issue.rule)).toEqual(["invalid-input"]);
     }
+  });
+});
+
+describe("the pack-review copy", () => {
+  // Rule F2 of Writer's front door: a `{token}` in a text is one of its closed nouns. The
+  // review's own words use none that are not, so they can move into that catalog as they are.
+  it("uses no placeholder outside the front-door nouns", TIMEOUT, () => {
+    const nouns: readonly string[] = FRONT_DOOR_NOUNS;
+    const outside = PACK_REVIEW_COPY.entries.flatMap((entry) => [
+      ...[...entry.text.matchAll(/\{([^{}]*)\}/g)].map((match) => match[1]!),
+      ...(entry.placeholders ?? []),
+    ]).filter((token) => !nouns.includes(token));
+    expect(outside).toEqual([]);
   });
 });

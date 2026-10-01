@@ -32,6 +32,15 @@ const LABELS: PackReviewViewLabels = {
   frameTitle: ({ page, state, width }) => `Marker frame ${page} ${state ?? "base"} ${width}`,
 };
 
+/** The section a heading labels: found through `aria-labelledby`, so a section named by `aria-label` alone is not found. */
+function sectionLabelledBy(container: HTMLElement, heading: string): HTMLElement {
+  const h2 = [...container.querySelectorAll("h2")].find((node) => node.textContent === heading);
+  if (h2 === undefined) throw new Error("no such heading");
+  const section = container.querySelector(`section[aria-labelledby="${h2.id}"]`);
+  if (section === null) throw new Error("no section labelled by that heading");
+  return section as HTMLElement;
+}
+
 function props(over: Partial<PackReviewViewProps> = {}): PackReviewViewProps {
   return {
     brand: <span>Example Studio</span>,
@@ -80,7 +89,7 @@ describe("PackReviewView", () => {
 
   it("lists each page with its badge and links each page and each forced state", () => {
     const { container } = render(<PackReviewView {...props()} />);
-    const section = container.querySelector('section[aria-label="Marker pages"]') as HTMLElement;
+    const section = sectionLabelledBy(container, "Marker pages");
     expect(within(section).getByRole("heading", { level: 2 }).textContent).toBe("Marker pages");
     const links = [...section.querySelectorAll("a")].map((a) => [a.textContent, a.getAttribute("href")]);
     expect(links).toEqual([
@@ -89,13 +98,56 @@ describe("PackReviewView", () => {
       ["idle", "/contact?preview=idle"],
       ["accepted", "/contact?preview=accepted"],
     ]);
-    expect(within(section).getByText("Marker draft")).toBeInTheDocument();
-    expect(within(section).getByText("Marker delegated")).toBeInTheDocument();
+    expect(within(section).getAllByText("Marker draft")).toHaveLength(1);
+    expect(within(section).getAllByText("Marker delegated")).toHaveLength(3);
+  });
+
+  it("shows the page's surface badge next to each of its forced states", () => {
+    const { container } = render(<PackReviewView {...props()} />);
+    const section = sectionLabelledBy(container, "Marker pages");
+    const stateRows = [...section.querySelectorAll("li li")].map((li) => li.textContent);
+    expect(stateRows).toEqual(["idleMarker delegated", "acceptedMarker delegated"]);
+  });
+
+  it("shows the page's surface badge in the caption of each contact-sheet frame", () => {
+    const { container } = render(<PackReviewView {...props()} />);
+    const section = sectionLabelledBy(container, "Marker contact sheet");
+    const captions = [...section.querySelectorAll("p")].map((p) => p.textContent);
+    expect(captions).toEqual([
+      "/Marker draft",
+      "/contactMarker delegated",
+      "/contact,idleMarker delegated",
+      "/contact,acceptedMarker delegated",
+    ]);
+  });
+
+  it("names every section by its own h2 through aria-labelledby, never by a repeated aria-label", () => {
+    const { container } = render(<PackReviewView {...props()} />);
+    const sections = [...container.querySelectorAll("main > section")];
+    expect(sections).toHaveLength(3);
+    const ids = new Set<string>();
+    for (const section of sections) {
+      expect(section.hasAttribute("aria-label")).toBe(false);
+      const id = section.getAttribute("aria-labelledby");
+      expect(id).toBeTruthy();
+      ids.add(id as string);
+      const heading = container.ownerDocument.getElementById(id as string);
+      expect(heading?.tagName).toBe("H2");
+      expect(section.querySelector("h2")).toBe(heading);
+    }
+    expect(ids.size).toBe(3);
+    expect(container.querySelector("[aria-label]")).toBeNull();
+  });
+
+  it("separates the two parts of a frame caption with text", () => {
+    const { container } = render(<PackReviewView {...props()} />);
+    const caption = [...container.querySelectorAll("iframe")][6]!.closest("div")!.parentElement!.querySelector("p")!;
+    expect(caption.textContent).toContain("/contact,idle");
   });
 
   it("lists each export with its kind, badge, path as text, and a width only where one is given", () => {
     const { container } = render(<PackReviewView {...props()} />);
-    const section = container.querySelector('section[aria-label="Marker exports"]') as HTMLElement;
+    const section = sectionLabelledBy(container, "Marker exports");
     const rows = [...section.querySelectorAll("li")].map((li) => li.textContent);
     expect(rows).toEqual([
       "Marker approvedMarker og imageout/share/og-image.png",
@@ -104,6 +156,30 @@ describe("PackReviewView", () => {
       "Marker draftMarker email textout/email/contact.txt",
     ]);
     expect(section.querySelectorAll("a")).toHaveLength(0);
+  });
+
+  it("links an export's path to its same-site address when one is given, and to nothing otherwise", () => {
+    const exports = [
+      { id: "share-card:0", kind: "og-image" as const, path: "out/share/og-image.png", status: "approved" as const, href: "/pack/export?name=share-card%3A0" },
+      { id: "email:1", kind: "email-text" as const, path: "out/email/contact.txt", status: "draft" as const },
+    ];
+    const { container } = render(<PackReviewView {...props({ exports })} />);
+    const section = sectionLabelledBy(container, "Marker exports");
+    const links = [...section.querySelectorAll("a")];
+    expect(links.map((a) => [a.textContent, a.getAttribute("href")])).toEqual([["out/share/og-image.png", "/pack/export?name=share-card%3A0"]]);
+    expect(links[0]!.querySelector("code")?.textContent).toBe("out/share/og-image.png");
+  });
+
+  it("refuses an export address that is not same-site, naming the position and not the value", () => {
+    const exports = [{ id: "x", kind: "other" as const, path: "p", status: "draft" as const, href: "https://example.test/" }];
+    let message = "";
+    try {
+      renderToStaticMarkup(<PackReviewView {...props({ exports })} />);
+    } catch (caught) {
+      message = (caught as Error).message;
+    }
+    expect(message).toContain("exports[0].href");
+    expect(message).not.toContain("example.test");
   });
 
   it("renders one lazy frame per page, state and width, in that order", () => {
@@ -232,25 +308,28 @@ describe("PackReviewView", () => {
       "<header class=\"flex flex-col gap-md\"><div class=\"flex flex-wrap items-start justify-between gap-lg\">" +
       "<div class=\"flex flex-col gap-xs\"><h1 class=\"text-h1 font-display text-ink-primary\">Marker heading</h1>" +
       "<p class=\"text-body text-ink-secondary\">Marker description</p></div></div></header>" +
-      "<section class=\"flex flex-col gap-md\" aria-label=\"Marker pages\">" +
-      "<h2 class=\"text-h2 text-ink-primary\">Marker pages</h2><ul class=\"flex flex-col gap-md\">" +
+      "<section class=\"flex flex-col gap-md\" aria-labelledby=\"pack-review-pages-heading\">" +
+      "<h2 id=\"pack-review-pages-heading\" class=\"text-h2 text-ink-primary\">Marker pages</h2><ul class=\"flex flex-col gap-md\">" +
       "<li class=\"flex flex-col gap-xs\"><span class=\"flex items-center gap-xs text-body\">" +
       "<a href=\"/contact\">/contact</a>" +
       "<span class=\"inline-flex items-center rounded-pill px-sm py-xs text-caption font-body tracking-meta bg-status-warning-tint text-status-warning-text\">Marker delegated</span>" +
-      "</span><ul class=\"flex flex-wrap gap-sm ps-lg text-body-s\"><li><a href=\"/contact?preview=idle\">idle</a></li>" +
-      "</ul></li></ul></section><section class=\"flex flex-col gap-md\" aria-label=\"Marker exports\">" +
-      "<h2 class=\"text-h2 text-ink-primary\">Marker exports</h2><ul class=\"flex flex-col gap-sm\">" +
+      "</span><ul class=\"flex flex-wrap gap-sm ps-lg text-body-s\"><li class=\"flex items-center gap-xs\"><a href=\"/contact?preview=idle\">idle</a>" +
+      "<span class=\"inline-flex items-center rounded-pill px-sm py-xs text-caption font-body tracking-meta bg-status-warning-tint text-status-warning-text\">Marker delegated</span></li>" +
+      "</ul></li></ul></section><section class=\"flex flex-col gap-md\" aria-labelledby=\"pack-review-exports-heading\">" +
+      "<h2 id=\"pack-review-exports-heading\" class=\"text-h2 text-ink-primary\">Marker exports</h2><ul class=\"flex flex-col gap-sm\">" +
       "<li class=\"flex flex-wrap items-center gap-xs text-body-s\">" +
       "<span class=\"inline-flex items-center rounded-pill px-sm py-xs text-caption font-body tracking-meta bg-status-success-tint text-status-success-text\">Marker approved</span>" +
       "<span class=\"text-ink-primary\">Marker og image</span>" +
       "<code class=\"break-all text-ink-secondary\">out/share/og-image.png</code></li></ul></section>" +
-      "<section class=\"flex flex-col gap-md\" aria-label=\"Marker contact sheet\">" +
-      "<h2 class=\"text-h2 text-ink-primary\">Marker contact sheet</h2>" +
+      "<section class=\"flex flex-col gap-md\" aria-labelledby=\"pack-review-sheet-heading\">" +
+      "<h2 id=\"pack-review-sheet-heading\" class=\"text-h2 text-ink-primary\">Marker contact sheet</h2>" +
       "<div class=\"flex flex-col gap-xl overflow-x-auto\"><div class=\"flex flex-col gap-sm\">" +
-      "<p class=\"flex gap-xs text-body-s text-ink-secondary\"><span>/contact</span></p><div class=\"flex gap-lg\">" +
+      "<p class=\"flex items-center gap-xs text-body-s text-ink-secondary\"><span>/contact</span>" +
+      "<span class=\"inline-flex items-center rounded-pill px-sm py-xs text-caption font-body tracking-meta bg-status-warning-tint text-status-warning-text\">Marker delegated</span></p><div class=\"flex gap-lg\">" +
       "<iframe src=\"/contact\" title=\"Marker frame /contact base 390\" width=\"390\" height=\"640\" loading=\"lazy\" class=\"shrink-0 border border-line-base\">" +
-      "</iframe></div></div><div class=\"flex flex-col gap-sm\"><p class=\"flex gap-xs text-body-s text-ink-secondary\">" +
-      "<span>/contact</span><span>idle</span></p><div class=\"flex gap-lg\">" +
+      "</iframe></div></div><div class=\"flex flex-col gap-sm\"><p class=\"flex items-center gap-xs text-body-s text-ink-secondary\">" +
+      "<span>/contact</span><span aria-hidden=\"true\">,</span><span>idle</span>" +
+      "<span class=\"inline-flex items-center rounded-pill px-sm py-xs text-caption font-body tracking-meta bg-status-warning-tint text-status-warning-text\">Marker delegated</span></p><div class=\"flex gap-lg\">" +
       "<iframe src=\"/contact?preview=idle\" title=\"Marker frame /contact idle 390\" width=\"390\" height=\"640\" loading=\"lazy\" class=\"shrink-0 border border-line-base\">" +
       "</iframe></div></div></div></section></main>" +
       "<footer class=\"bg-surface-raised text-ink-primary py-lg border-t border-line-base\" style=\"position:relative;z-index:var(--ui-z-shell, 20);border-top-width:var(--ui-border-hairline, 1px)\">" +
