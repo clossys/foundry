@@ -274,6 +274,18 @@ describe("resolver", () => {
     }
   });
 
+  it("refuses a key that cannot be converted to a string without throwing", () => {
+    const nullPrototype = Object.create(null) as unknown as FrontDoorKey;
+    const throwingToString = { toString(): string { throw new Error("boom"); } } as unknown as FrontDoorKey;
+    for (const key of [nullPrototype, throwingToString, Symbol("x") as unknown as FrontDoorKey]) {
+      expect(() => resolveFrontDoorCopy(key, {})).not.toThrow();
+      const result = resolveFrontDoorCopy(key, {});
+      expect(result.complete).toBe(false);
+      expect(result.issues.map((issue) => issue.reason)).toEqual(["unknown-copy-id"]);
+      expect(typeof result.issues[0]?.id).toBe("string");
+    }
+  });
+
   it("does not modify the nouns it is given", () => {
     const nouns = Object.freeze({ identifier: "ana@example.test", brand: "Acme" });
     expect(resolveFrontDoorCopy("front-door.password.description", nouns).complete).toBe(true);
