@@ -103,37 +103,37 @@ function leftovers(dir: string): string[] {
 
 describe("instantiateSite: the target directory", () => {
   it("refuses a non-empty target and writes nothing", () => {
-    const rootFile = writeRoot({ name: "example-repo", private: true });
+    const rootFile = writeRoot({ name: "example-project", private: true });
     mkdirSync(join(root, "apps", "site"), { recursive: true });
     writeFileSync(join(root, "apps", "site", "keep.txt"), "kept");
     const before = snapshot(root);
     const error = expectRefused("target-not-empty", () => instantiateSite({ root, pins: fullPins() }));
     expect(error.message).toContain("apps/site");
     expect(snapshot(root)).toEqual(before);
-    expect(readFileSync(rootFile, "utf8")).toBe(`${JSON.stringify({ name: "example-repo", private: true }, null, 2)}\n`);
+    expect(readFileSync(rootFile, "utf8")).toBe(`${JSON.stringify({ name: "example-project", private: true }, null, 2)}\n`);
   });
 
   it("refuses a target that is a file", () => {
-    writeRoot({ name: "example-repo" });
+    writeRoot({ name: "example-project" });
     mkdirSync(join(root, "apps"));
     writeFileSync(join(root, "apps", "site"), "not a directory");
     expectRefused("target-not-empty", () => instantiateSite({ root, pins: fullPins() }));
   });
 
   it("accepts an empty directory and a missing one", () => {
-    writeRoot({ name: "example-repo" });
+    writeRoot({ name: "example-project" });
     mkdirSync(join(root, "apps", "site"), { recursive: true });
     instantiateSite({ root, pins: fullPins() });
     expect(existsSync(join(root, "apps", "site", "package.json"))).toBe(true);
 
     rmSync(join(root, "apps"), { recursive: true });
-    writeRoot({ name: "example-repo" });
+    writeRoot({ name: "example-project" });
     instantiateSite({ root, pins: fullPins() });
     expect(existsSync(join(root, "apps", "site", "package.json"))).toBe(true);
   });
 
   it("honours --site-dir and refuses an absolute or parent-escaping one without echoing it", () => {
-    writeRoot({ name: "example-repo" });
+    writeRoot({ name: "example-project" });
     const result = instantiateSite({ root, pins: fullPins(), siteDir: "web/marketing" });
     expect(result.siteDir).toBe("web/marketing");
     expect(existsSync(join(root, "web", "marketing", "package.json"))).toBe(true);
@@ -147,7 +147,7 @@ describe("instantiateSite: the target directory", () => {
   });
 
   it("refuses a target path that leaves the root through a symlinked directory", () => {
-    writeRoot({ name: "example-repo" });
+    writeRoot({ name: "example-project" });
     const outside = join(work, "outside");
     mkdirSync(outside);
     symlinkSync(outside, join(root, "apps"));
@@ -160,7 +160,7 @@ describe("instantiateSite: the target directory", () => {
 
 describe("instantiateSite: pins", () => {
   it("refuses a missing pin for a range the template declares, before writing anything", () => {
-    writeRoot({ name: "example-repo" });
+    writeRoot({ name: "example-project" });
     const before = snapshot(root);
     for (const name of Object.keys(fullPins())) {
       const pins = fullPins();
@@ -172,7 +172,7 @@ describe("instantiateSite: pins", () => {
   });
 
   it("refuses a pin that is not an exact version rather than falling back to the template range", () => {
-    writeRoot({ name: "example-repo" });
+    writeRoot({ name: "example-project" });
     const before = snapshot(root);
     const [first] = Object.keys(fullPins());
     for (const bad of ["^9.1.0", "~9.1.0", "9.1", ">=9.1.0", "latest", "9.1.0-rc.1", "workspace:*", "", 9, null, ["9.1.0"]]) {
@@ -184,7 +184,7 @@ describe("instantiateSite: pins", () => {
   });
 
   it("refuses a pins document that is not an object", () => {
-    writeRoot({ name: "example-repo" });
+    writeRoot({ name: "example-project" });
     for (const bad of [null, [], "9.1.0", 3]) {
       expectRefused("pins-not-object", () => instantiateSite({ root, pins: bad }));
     }
@@ -233,7 +233,7 @@ describe("instantiateSite: the root manifest", () => {
 
 describe("instantiateSite: the copied tree", () => {
   it("is byte-for-byte the template except package.json, with exact pins applied", () => {
-    writeRoot({ name: "example-repo", private: true });
+    writeRoot({ name: "example-project", private: true });
     const pins = fullPins();
     const result = instantiateSite({ root, pins });
     expect(result.siteDir).toBe("apps/site");
@@ -262,7 +262,7 @@ describe("instantiateSite: the copied tree", () => {
   });
 
   it("skips node_modules and .next in the template and never copies a symlink", () => {
-    writeRoot({ name: "example-repo" });
+    writeRoot({ name: "example-project" });
     const template = join(work, "template");
     mkdirSync(join(template, "app"), { recursive: true });
     mkdirSync(join(template, "node_modules", "dep"), { recursive: true });
@@ -277,7 +277,7 @@ describe("instantiateSite: the copied tree", () => {
   });
 
   it("refuses a run when the template itself holds a symlink, naming only its relative path", () => {
-    writeRoot({ name: "example-repo" });
+    writeRoot({ name: "example-project" });
     const template = join(work, "template");
     mkdirSync(join(template, "app"), { recursive: true });
     writeFileSync(join(template, "package.json"), `${JSON.stringify({ name: "site" })}\n`);
@@ -295,7 +295,7 @@ describe("instantiateSite: the copied tree", () => {
     // That file's range and custom-property guards are private to it, so they
     // are not re-run here; every file they read is asserted byte-identical to
     // the template above.
-    writeRoot({ name: "example-repo" });
+    writeRoot({ name: "example-project" });
     instantiateSite({ root, pins: fullPins() });
     const scan = scanStyleSources(join(root, "apps", "site"), {
       skipDirs: ["node_modules", ".git", "dist", "build", "coverage", ".next"],
@@ -314,7 +314,7 @@ describe("instantiateSite: root workspaces", () => {
     JSON.parse(readFileSync(join(root, "package.json"), "utf8")) as Record<string, unknown>;
 
   it("adds apps/* once when workspaces is absent, keeping existing keys in order", () => {
-    writeRoot({ name: "example-repo", private: true, scripts: { build: "echo ok" } });
+    writeRoot({ name: "example-project", private: true, scripts: { build: "echo ok" } });
     expect(instantiateSite({ root, pins: fullPins() }).workspacesAdded).toBe(true);
     const manifest = read();
     expect(manifest.workspaces).toEqual(["apps/*"]);
@@ -323,7 +323,7 @@ describe("instantiateSite: root workspaces", () => {
   });
 
   it("appends to an array and to the packages array, without duplicating", () => {
-    writeRoot({ name: "example-repo", workspaces: ["packages/*"] });
+    writeRoot({ name: "example-project", workspaces: ["packages/*"] });
     instantiateSite({ root, pins: fullPins() });
     expect(read().workspaces).toEqual(["packages/*", "apps/*"]);
 
@@ -332,7 +332,7 @@ describe("instantiateSite: root workspaces", () => {
     expect(read().workspaces).toEqual(["packages/*", "apps/*"]);
 
     rmSync(join(root, "apps"), { recursive: true });
-    writeRoot({ name: "example-repo", workspaces: { packages: ["packages/*"], nohoist: ["x"] } });
+    writeRoot({ name: "example-project", workspaces: { packages: ["packages/*"], nohoist: ["x"] } });
     instantiateSite({ root, pins: fullPins() });
     expect(read().workspaces).toEqual({ packages: ["packages/*", "apps/*"], nohoist: ["x"] });
   });
@@ -340,7 +340,7 @@ describe("instantiateSite: root workspaces", () => {
   it("leaves the root manifest byte-identical when a pattern already covers the site", () => {
     for (const covering of ["apps/*", "./apps/*/", "apps/**", "apps/site"]) {
       rmSync(join(root, "apps"), { recursive: true, force: true });
-      const raw = `{"name":"example-repo","workspaces":[${JSON.stringify(covering)}]}`;
+      const raw = `{"name":"example-project","workspaces":[${JSON.stringify(covering)}]}`;
       writeRoot(undefined, raw);
       const result = instantiateSite({ root, pins: fullPins() });
       expect(result.workspacesAdded).toBe(false);
@@ -349,13 +349,13 @@ describe("instantiateSite: root workspaces", () => {
   });
 
   it("keeps the manifest's indentation and trailing newline when it adds the pattern", () => {
-    writeRoot(undefined, `{\n\t"name": "example-repo"\n}`);
+    writeRoot(undefined, `{\n\t"name": "example-project"\n}`);
     instantiateSite({ root, pins: fullPins() });
-    expect(readFileSync(join(root, "package.json"), "utf8")).toBe(`{\n\t"name": "example-repo",\n\t"workspaces": [\n\t\t"apps/*"\n\t]\n}`);
+    expect(readFileSync(join(root, "package.json"), "utf8")).toBe(`{\n\t"name": "example-project",\n\t"workspaces": [\n\t\t"apps/*"\n\t]\n}`);
   });
 
   it("adds a pattern for a custom site directory's parent", () => {
-    writeRoot({ name: "example-repo" });
+    writeRoot({ name: "example-project" });
     instantiateSite({ root, pins: fullPins(), siteDir: "web/marketing" });
     expect(read().workspaces).toEqual(["web/*"]);
   });
@@ -365,7 +365,7 @@ describe("instantiateSite: root workspaces", () => {
 
 describe("instantiateSite: a failed run leaves nothing behind", () => {
   it("rolls back the site directory and keeps the root manifest when the root write cannot happen", () => {
-    const rootFile = writeRoot({ name: "example-repo" });
+    const rootFile = writeRoot({ name: "example-project" });
     const before = readFileSync(rootFile);
     expect(() =>
       instantiateSite({
@@ -382,7 +382,7 @@ describe("instantiateSite: a failed run leaves nothing behind", () => {
   });
 
   it("restores a pre-existing empty target directory on rollback", () => {
-    writeRoot({ name: "example-repo" });
+    writeRoot({ name: "example-project" });
     mkdirSync(join(root, "apps", "site"), { recursive: true });
     expect(() =>
       instantiateSite({
@@ -398,7 +398,7 @@ describe("instantiateSite: a failed run leaves nothing behind", () => {
   });
 
   it("leaves no temp directory next to a finished site", () => {
-    writeRoot({ name: "example-repo" });
+    writeRoot({ name: "example-project" });
     instantiateSite({ root, pins: fullPins() });
     expect(readdirSync(join(root, "apps"))).toEqual(["site"]);
     expect(lstatSync(join(root, "apps", "site")).isDirectory()).toBe(true);

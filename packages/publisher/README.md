@@ -2708,7 +2708,7 @@ The Launcher never generates application content, so a Publisher command
 copies the template, run once inside a pull request:
 
 ```bash
-publisher-site-instantiate --root ./example-repo --pins pins.json
+publisher-site-instantiate --root ./example-project --pins pins.json
 ```
 
 `pins.json` is a JSON object of exact versions, for example

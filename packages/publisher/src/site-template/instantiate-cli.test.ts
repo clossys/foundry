@@ -26,7 +26,7 @@ function pinsFile(overrides: Record<string, unknown> = {}): string {
   return path;
 }
 
-function writeRootManifest(text = `${JSON.stringify({ name: "example-repo" }, null, 2)}\n`): string {
+function writeRootManifest(text = `${JSON.stringify({ name: "example-project" }, null, 2)}\n`): string {
   const path = join(root, "package.json");
   writeFileSync(path, text);
   return path;
@@ -58,7 +58,7 @@ describe("publisher-site-instantiate: exit codes", () => {
   });
 
   it("exits 1 on a refusal and leaves no partial output", () => {
-    const rootFile = writeRootManifest(`{"name":"example-repo","workspaces":"packages/*"}`);
+    const rootFile = writeRootManifest(`{"name":"example-project","workspaces":"packages/*"}`);
     const before = readFileSync(rootFile);
     expect(main(["--root", root, "--pins", pinsFile()])).toBe(1);
     expect(existsSync(join(root, "apps"))).toBe(false);
