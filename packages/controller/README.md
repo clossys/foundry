@@ -2458,6 +2458,35 @@ mismatch (or another binding finding), `2` when it could not run. Use
 `foundry-governance preflight --help` / `foundry-governance verify-published
 --help` for each subcommand's own invocation contract.
 
+`site-conformance-check <repoRoot> [--site <dir>]` is a report-mode conformance
+scan of a site's Next.js app directory (slice 1 of #1515). `<dir>` defaults to
+`apps/site`; it scans `<dir>/app/**` `.ts` and `.tsx` files, skipping
+`node_modules` and `.next`, and prints one JSON report
+`{ mode, site, filesScanned, findings: [{ rule, file, line }], waived }`. It
+never echoes matched source text and imports nothing from another package.
+
+- `site/route-not-publisher-view`: every `page.tsx`, `not-found.tsx` and
+  `error.tsx` must reach a view from `@clossys/publisher/web`, either by
+  importing it directly or through one relative import. The finding is at line 1.
+- `site/template-route-duplicate`: a `page.tsx` whose route (route groups
+  dropped) has a segment named like a template route (`privacy`, `terms`,
+  `legal`, `about` or `contact`, optionally with a `-suffix`) and is not a
+  route id in `<dir>/web-route-manifest.json`.
+- `site/raw-style-literal`: a hex colour in a quoted string, or `rgb(`,
+  `hsl(` or `oklch(`, on a line. Comment lines are skipped and a same-line
+  `token-gate:ignore` marker suppresses the finding.
+
+Waivers live in one file, `clossys/conformance-waivers.json`:
+`{ "version": 1, "waivers": [{ "rule", "path", "reason" }] }`, where `path` is
+an exact repository file. A matching waiver moves its finding to `waived` with
+its reason; a waiver that matches nothing is itself the finding
+`site/waiver-unused`.
+
+It exits `0` whenever the scan ran, with or without findings, and `2` when it
+could not run: a missing repository or site directory, no files, a missing or
+invalid manifest, an empty-reason, unknown-rule or duplicate waiver, bad JSON,
+or an unknown flag (including `--enforce`, which this slice does not offer).
+
 ## API
 
 | Export | Kind | Purpose |
