@@ -151,7 +151,7 @@ Use explicit subpaths:
 - `@clossys/publisher/document` — the product-neutral structured-document contract (sections, paragraphs, lists, tables, callouts, safe links) and its renderer.
 - `@clossys/publisher/email`, `/print`, `/image`, `/slides` — channel renderers.
 - `@clossys/publisher/record` — the append-only, content-addressed publication ledger and its drift checker. See "`record` — the append-only publication ledger," below.
-- `@clossys/publisher/pack` — the v0 Launch pack manifest contract: types, schema validation, needs-graph readiness, adopt-don't-override detection, and the evidence-gated website seal (`publisher-seal`). See "The pack," below.
+- `@clossys/publisher/pack` — the v0 Launch pack manifest contract: types, schema validation, needs-graph readiness, adopt-don't-override detection, and the evidence-gated website seal (`publisher-seal`) and the rendered-head lint (`publisher-head-lint`). See "The pack," below.
 - `@clossys/publisher/surfaces` — the one-owner-per-file contract for surface documents under `clossys/publisher/surfaces/`. See "Surface documents move to Publisher," below.
 - `@clossys/publisher/materials` — the materials mini-site (overviews, pitch decks, audience variants). See "Materials site," below.
 - `@clossys/publisher/templates` — the pack's default templates and the channel spec registry. See "Templates and channel specs," below.
@@ -2541,6 +2541,59 @@ const findings = checkSealEvidence(
   },
 );
 console.log(findings.length === 0 ? "ready to seal" : findings.map((finding) => `${finding.rule} ${finding.path}`));
+```
+
+### Rendered head lint
+
+`lintRenderedHead({ siteName, pages })` checks the head of already rendered
+pages (`pages` is `{ path, html }[]`, `path` being the route) and returns
+`SealFinding[]`, each a `rule` and a `path` that is a route or `<route>#<tag>`
+(for example `/about#og:image`). It is pure, never throws, and a finding never
+repeats a title, URL or description taken from the HTML. Scanning is tolerant:
+attribute order and quote style do not matter, comments and `<script>`/`<style>`
+bodies are ignored, a few character references are decoded, and a value that is
+blank after trimming counts as missing. It stops at `</head>` or `<body`.
+
+Rules:
+
+- `head-missing`: a page lacks one of `<title>`, meta `description`, `robots`,
+  `theme-color`, `link rel=canonical`, `og:title`, `og:description`, `og:url`,
+  `og:image`, `og:site_name`, `twitter:card`, `twitter:title` or
+  `twitter:image` (path `<route>#<tag>`).
+- `title-format`: the title is not `<siteName> · <tagline>` on route `/` or
+  `<label> · <siteName>` on any other route. The separator is U+00B7 with one
+  space on each side, used once.
+- `title-separator`: the title uses `|` or a dash where the separator belongs.
+- `title-duplicate`: the head has more than one `<title>`.
+- `canonical-duplicate`: the head has more than one `link rel=canonical`.
+- `head-title-mismatch`: any `og:title` or `twitter:title` value differs from `<title>`.
+- `canonical-path`: the canonical pathname is not the route (a trailing slash
+  is ignored).
+- `canonical-origin`: the canonical URL is not absolute `http(s)`, or its origin
+  differs from the first page's.
+- `input-invalid`: `siteName` is blank, `pages` is not an array or is empty
+  (path `input` or `pages`), or a page's `path` is not a non-empty string
+  starting with `/` (path `pages[<index>]`).
+
+The `publisher-head-lint` command runs it over a directory:
+
+```sh
+publisher-head-lint dist/site --site-name "Example Co"
+```
+
+It reads every `.html` file under the directory (`index.html` maps to its
+directory's route, `a.html` to `/a`), skips symbolic links, and writes nothing.
+It exits 0 when clean, 1 with one `<rule> <path>` line per finding, and 2 when
+it could not run: bad arguments, or a missing, empty or unreadable directory.
+
+```ts
+import { lintRenderedHead } from "@clossys/publisher/pack";
+
+const findings = lintRenderedHead({
+  siteName: "Example Co",
+  pages: [{ path: "/about", html: "<html><head><title>About | Example Co</title></head><body></body></html>" }],
+});
+console.log(findings.map((finding) => `${finding.rule} ${finding.path}`));
 ```
 
 ## Surface documents move to Publisher

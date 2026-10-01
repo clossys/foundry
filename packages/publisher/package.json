@@ -107,7 +107,8 @@
     "publisher-rate-check": "dist/verified-publication-rate-cli.js",
     "publisher-web-route-check": "dist/web/checkWebRoutesCli.js",
     "publisher-preview": "dist/preview/cli.js",
-    "publisher-seal": "dist/pack/seal-cli.js"
+    "publisher-seal": "dist/pack/seal-cli.js",
+    "publisher-head-lint": "dist/pack/head-lint-cli.js"
   },
   "foundry": {
     "assessment": {
