@@ -1,4 +1,5 @@
 import type { HTMLAttributes, ReactNode } from "react";
+import { Badge } from "../atoms/Badge.js";
 import { cx } from "../atoms/internal/cx.js";
 import { SITE_CHROME_GROUND_CLASSES, siteChromeHasBorder, type SiteChromeGround } from "./internal/shell-ground.js";
 import { UI_BORDER_HAIRLINE, UI_WIDTH_PAGE_PADDING_X, UI_Z_SHELL } from "./internal/shell-vars.js";
@@ -31,6 +32,14 @@ export interface SiteHeaderProps extends Omit<HTMLAttributes<HTMLElement>, "chil
    * adjacent in DOM, visual, and tab order.
    */
   secondaryAction?: ReactNode;
+  /**
+   * A short text label naming the surface, such as "admin" or "demo", shown
+   * as a neutral `Badge` at the trailing end of the header, after
+   * `secondaryAction` and `actions`, in both layouts. Text only by type: no
+   * link, button or icon can be passed, so it is never interactive. A member
+   * host omits it.
+   */
+  surfaceLabel?: string;
   /**
    * Where the `nav` slot sits in the row. `"leading"` keeps it beside the
    * brand; `"centered"` gives brand, nav, and trailing controls their own
@@ -80,6 +89,7 @@ export function SiteHeader({
   nav,
   actions,
   secondaryAction,
+  surfaceLabel,
   navPlacement = "leading",
   ground = "base",
   className,
@@ -110,6 +120,7 @@ export function SiteHeader({
           <div className="flex flex-1 items-center justify-end gap-sm">
             {secondaryAction}
             {actions}
+            {surfaceLabel ? <Badge variant="neutral">{surfaceLabel}</Badge> : null}
           </div>
         </div>
       ) : (
@@ -121,10 +132,11 @@ export function SiteHeader({
             {brand}
             {nav}
           </div>
-          {secondaryAction || actions ? (
+          {secondaryAction || actions || surfaceLabel ? (
             <div className="flex items-center gap-sm">
               {secondaryAction}
               {actions}
+              {surfaceLabel ? <Badge variant="neutral">{surfaceLabel}</Badge> : null}
             </div>
           ) : null}
         </div>

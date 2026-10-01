@@ -90,4 +90,48 @@ describe("SiteHeader", () => {
     expect(row.className).toContain("justify-between");
     expect(secondary.nextElementSibling).toBe(primary);
   });
+
+  describe("surface badge placement", () => {
+    it.each(["leading", "centered"] as const)(
+      "renders the surface label as the last trailing item with navPlacement=%s",
+      (navPlacement) => {
+        render(
+          <SiteHeader
+            navPlacement={navPlacement}
+            brand={<span>Acme</span>}
+            nav={<nav aria-label="Primary">Links</nav>}
+            secondaryAction={<a href="/sign-in">Sign in</a>}
+            actions={<button type="button">Get started</button>}
+            surfaceLabel="admin"
+          />,
+        );
+        const badge = screen.getByText("admin");
+        const trailing = badge.parentElement as HTMLElement;
+        expect(trailing).toContainElement(screen.getByRole("button", { name: "Get started" }));
+        expect(trailing.lastElementChild).toBe(badge);
+        expect(badge.tagName).toBe("SPAN");
+        expect(badge.className).toContain("bg-surface-sunken");
+        expect(badge).not.toHaveAttribute("href");
+        expect(badge).not.toHaveAttribute("tabindex");
+      },
+    );
+  });
+
+  describe("badge alone", () => {
+    it("the leading layout renders the trailing region when only a surface label is given", () => {
+      render(<SiteHeader brand={<span>Acme</span>} surfaceLabel="demo" />);
+      const row = screen.getByRole("banner").firstElementChild as HTMLElement;
+      expect(row.children).toHaveLength(2);
+      const trailing = row.lastElementChild as HTMLElement;
+      expect(trailing).toHaveTextContent("demo");
+      expect(trailing.children).toHaveLength(1);
+    });
+
+    it("renders no badge, and no trailing region, without a surface label", () => {
+      render(<SiteHeader brand={<span>Acme</span>} />);
+      const row = screen.getByRole("banner").firstElementChild as HTMLElement;
+      expect(row.children).toHaveLength(1);
+      expect(screen.getByRole("banner")).not.toHaveTextContent("admin");
+    });
+  });
 });
