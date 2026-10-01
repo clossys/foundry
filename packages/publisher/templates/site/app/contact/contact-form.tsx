@@ -4,7 +4,7 @@ import { useMemo } from "react";
 import type { SiteFooterLegalProps } from "@clossys/designer/shell/server";
 import { ContactView } from "@clossys/publisher/web";
 import type { ContactResult, ContactViewDevPreview, ContactViewValues } from "@clossys/publisher/web";
-import { contactViewCopy, contactViewTopics, createMapResolver } from "../site-copy";
+import { LANDING_COPY_IDS, contactViewCopy, contactViewTopics, createMapResolver, siteText } from "../site-copy";
 import type { ContactTopic, SiteCopyMap } from "../site-copy";
 
 export interface ContactFormProps {
@@ -32,6 +32,7 @@ export function ContactForm({ brand, legal, copy, initialTopic, devPreview, onSu
   return (
     <ContactView
       brand={brand}
+      headerAction={<a href="/contact">{siteText(copy, LANDING_COPY_IDS.contactAction)}</a>}
       legal={legal}
       resolveCopyId={resolveCopyId}
       copy={viewCopy}

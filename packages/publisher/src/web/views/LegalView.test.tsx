@@ -2,6 +2,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 import type { CopyRegistry, CopyResolver } from "@clossys/writer";
 import { createCopyResolver } from "@clossys/writer";
+import { SiteFooter, SiteHeader } from "@clossys/designer/shell/server";
 import { RenderError } from "../../internal/errors.js";
 import { LEGAL_SECTION_IDS } from "../../document/legal.js";
 import type { LegalDocument, LegalDocumentKind } from "../../document/legal.js";
@@ -344,6 +345,40 @@ describe("LegalView title", () => {
     expect(thrown).toBeInstanceOf(Error);
     expect((thrown as Error).message).toMatch(/title/);
     expect((thrown as Error).message).not.toContain("sentinel-doc-id-42");
+  });
+});
+
+describe("LegalView header slots", () => {
+  const doc = legalDoc("terms");
+  const view = (props: Partial<Parameters<typeof LegalView>[0]> = {}) =>
+    renderToStaticMarkup(<LegalView brand="Acme" document={doc} resolveCopyId={resolver} labels={LABELS} locale="en" {...props} />);
+  const banner = (html: string) => /^<div[^>]*>(<header\b[\s\S]*?<\/header>)<main/.exec(html)?.[1] ?? "";
+  const footer = (html: string) => /(<footer\b[\s\S]*<\/footer>)<\/div>$/.exec(html)?.[1] ?? "";
+
+  it("renders headerAction, secondaryAction and nav inside the banner landmark and nowhere else", () => {
+    const html = view({
+      headerAction: <a href="/contact">HEADER-ACTION-SENTINEL</a>,
+      secondaryAction: <a href="/sign-in">SECONDARY-ACTION-SENTINEL</a>,
+      nav: <nav aria-label="Primary">NAV-SENTINEL</nav>,
+    });
+    const header = banner(html);
+    for (const sentinel of ["HEADER-ACTION-SENTINEL", "SECONDARY-ACTION-SENTINEL", "NAV-SENTINEL"]) {
+      expect(header).toContain(sentinel);
+      expect(html.split(sentinel)).toHaveLength(2);
+    }
+    expect(header.indexOf("SECONDARY-ACTION-SENTINEL")).toBeLessThan(header.indexOf("HEADER-ACTION-SENTINEL"));
+  });
+
+  it("renders the same header and footer as a bare SiteHeader and SiteFooter when every slot is omitted", () => {
+    const html = view({ footerSecondary: <span>FOOTER-SENTINEL</span> });
+    expect(banner(html)).toBe(renderToStaticMarkup(<SiteHeader brand="Acme" />));
+    expect(footer(html)).toBe(renderToStaticMarkup(<SiteFooter secondary={<span>FOOTER-SENTINEL</span>} />));
+  });
+
+  it("passes ground to both the header and the footer", () => {
+    const html = view({ ground: "transparent" });
+    expect(banner(html)).toBe(renderToStaticMarkup(<SiteHeader ground="transparent" brand="Acme" />));
+    expect(footer(html)).toBe(renderToStaticMarkup(<SiteFooter ground="transparent" />));
   });
 });
 

@@ -733,6 +733,39 @@ each declared repeating slot's resolved items onto `MarketingView`'s
 missing/unknown single-slot binding already produces for `AuthView`/
 `ErrorView`.
 
+Rendered directly as a component, `MarketingView` also takes the header
+slots `LandingView`'s banner uses. They are props, not template slots, so a
+`SurfaceDocument` cannot bind them:
+
+- `headerAction` (optional): the site's call to action in the banner,
+  passed to Designer `SiteHeader`'s `actions`.
+- `secondaryAction` (optional): a second call to action, just before
+  `headerAction`.
+- `nav` (optional): the primary navigation, beside the brand.
+- `ground` (`"base"`, `"inverse"` or `"transparent"`, default `"base"`): the
+  plate of both the header and the footer. `"transparent"` matches
+  `LandingView`. The section bands keep their own `*Ground` props.
+
+Each slot is absent from the markup when omitted, so a page that passes none
+renders exactly as before.
+
+```tsx
+import { MarketingView } from "@clossys/publisher/web";
+
+export function AboutPage() {
+  return (
+    <MarketingView
+      brand="Example Studio"
+      headerAction={<a href="/contact">Contact</a>}
+      ground="transparent"
+      heroHeading="About the studio"
+      features={[]}
+      ctaHeading="Start a project"
+    />
+  );
+}
+```
+
 ### `CaptureView`, `DocumentView`, and `CollectionView` — fixed publisher page shells
 
 These exports are direct, server-safe page shells rather than new
@@ -851,8 +884,8 @@ unfocusable. Keep focusable content out of `backdrop`.
 ### `ContactView`
 
 `ContactView`, exported from `@clossys/publisher/web`, is a single-screen
-contact page: a logo-only transparent banner, a page header, one form in a
-card, and a transparent legal footer. The form asks for a topic, a name, an
+contact page: a transparent banner, a page header, one form in a card, and a
+transparent legal footer. The form asks for a topic, a name, an
 email, an optional phone and a message, and carries a hidden honeypot field.
 It is a client component: it needs Designer's React Aria fields, so import it
 from a module that is a client boundary. Under the `react-server` condition
@@ -873,6 +906,7 @@ export function ContactPage() {
   return (
     <ContactView
       brand={brand}
+      headerAction={<a href="/start">Start</a>}
       legal={{ entity: "Example Co", links: [{ label: "Privacy", href: "/privacy" }] }}
       resolveCopyId={resolveCopyId}
       copy={copy}
@@ -890,7 +924,14 @@ export function ContactPage() {
 Props, in addition to the standard `div` attributes (minus `children` and
 `onSubmit`) and `style`:
 
-- `brand`: the identity slot in the banner, which holds nothing else.
+- `brand`: the identity slot in the banner.
+- `headerAction`, `secondaryAction`, `nav` (optional): the header slots, as on
+  `LandingView`. `headerAction` is the banner call to action (Designer
+  `SiteHeader`'s `actions`), `secondaryAction` sits just before it and `nav`
+  sits beside the brand. Each is absent from the markup when omitted, so the
+  banner then holds the brand alone.
+- `ground` (`"base"`, `"inverse"` or `"transparent"`, default
+  `"transparent"`): the plate of both the header and the footer.
 - `legal`: the props of Designer's `SiteFooter.Legal`, passed straight through.
 - `resolveCopyId` and `copy`: the approved-copy resolver and one `CopyRef` per
   string (heading, description, every label, the button, the client-side error
@@ -920,8 +961,8 @@ order, `aria-hidden` and `autocomplete="off"`, and its value reaches
 `onSubmit`; the submit button is pending, never `disabled`, while sending;
 `accepted` replaces the form with a `role="status"` confirmation and focuses
 its heading; `invalid`, `rate-limited` and `unavailable` each show a
-`role="alert"` led by the failure label, keep every typed value and focus the submit button; the banner
-and footer carry no background, border or width cap; and an entry that does not
+`role="alert"` led by the failure label, keep every typed value and focus the submit button; with
+the default `ground` the banner and footer carry no background, border or width cap; and an entry that does not
 resolve throws an error naming its path, never its id.
 
 What it does not do: show which field a server `invalid` result refers to (the
@@ -1833,7 +1874,8 @@ variables.
 
 `LegalView`, exported from `@clossys/publisher/web` next to `DocumentView`,
 renders a `LegalDocument` in the same site chrome and layout as
-`DocumentView`. It is server-safe and has no summary or action props.
+`DocumentView`. It is server-safe and has no summary or in-page action
+props; its banner takes the same header slots as `LandingView`.
 
 ```tsx
 import { LegalView } from "@clossys/publisher/web";
@@ -1853,13 +1895,29 @@ const labels: LegalViewLabels = {
 };
 
 export function TermsPage() {
-  return <LegalView brand={brand} document={terms} resolveCopyId={resolveCopyId} labels={labels} locale="en-GB" />;
+  return (
+    <LegalView
+      brand={brand}
+      headerAction={<a href="/contact">Contact</a>}
+      document={terms}
+      resolveCopyId={resolveCopyId}
+      labels={labels}
+      locale="en-GB"
+    />
+  );
 }
 ```
 
 Props, in addition to the standard `div` attributes and `style`:
 
 - `brand`: the brand node placed in the page chrome.
+- `headerAction`, `secondaryAction`, `nav` (optional): the header slots, as on
+  `LandingView`. `headerAction` is the banner call to action (Designer
+  `SiteHeader`'s `actions`), `secondaryAction` sits just before it and `nav`
+  sits beside the brand. Each is absent from the markup when omitted.
+- `ground` (`"base"`, `"inverse"` or `"transparent"`, default `"base"`): the
+  plate of both the header and the footer. `"transparent"` matches
+  `LandingView`.
 - `document`: the `LegalDocument` to render.
 - `resolveCopyId`: `@clossys/writer`'s ref-based `CopyResolver`
   (`(ref: CopyRef) => CopyResolution | undefined`) that turns every `CopyRef`
@@ -1909,6 +1967,7 @@ export function ServerErrorPage({ reference }: { reference: string }) {
   return (
     <BoundaryView
       brand="Example Studio"
+      headerAction={<a href="/contact">Contact</a>}
       status={500}
       title="Something went wrong"
       description={
@@ -1922,6 +1981,22 @@ export function ServerErrorPage({ reference }: { reference: string }) {
   );
 }
 ```
+
+`brand`, `footerSecondary` and the header slots belong to the frame; every
+other prop goes to the `ErrorView` inside it. The header slots are the ones
+`LandingView`'s banner uses, so a boundary page can carry the same header as
+the rest of the site:
+
+- `headerAction` (optional): the banner call to action, passed to Designer
+  `SiteHeader`'s `actions`.
+- `secondaryAction` (optional): a second call to action, just before
+  `headerAction`.
+- `nav` (optional): the primary navigation, beside the brand.
+- `ground` (`"base"`, `"inverse"` or `"transparent"`, default `"base"`): the
+  plate of both the header and the footer. `"transparent"` matches
+  `LandingView`.
+
+Each slot is absent from the markup when omitted.
 
 ### Global error document — `GlobalErrorDocument`
 
@@ -2115,6 +2190,7 @@ export function ReviewPage() {
     <PackReviewView
       brand={<span>Example Studio</span>}
       surfaceLabel="Review"
+      headerAction={<a href="/">Back to the site</a>}
       heading="Pack review"
       description="Pages, states and exports of this site."
       pages={[
@@ -2136,6 +2212,13 @@ Props:
 
 - `brand`, `surfaceLabel`, `heading`, `description`, `footerSecondary`
   (optional): the frame, as above.
+- `headerAction`, `secondaryAction`, `nav` (optional): the header slots, as on
+  `LandingView`. `headerAction` is a banner call to action (Designer
+  `SiteHeader`'s `actions`), shown before the surface badge;
+  `secondaryAction` sits just before it and `nav` sits beside the brand. Each
+  is absent from the markup when omitted.
+- `ground` (`"base"`, `"inverse"` or `"transparent"`, default `"base"`): the
+  plate of both the header and the footer.
 - `pages`: `{ id, href, status, states: { id, href }[] }[]`. `id` is shown as
   text. Every `href` must be a same-site address (one leading slash, no
   `//`, no backslash, no control character); anything else throws a

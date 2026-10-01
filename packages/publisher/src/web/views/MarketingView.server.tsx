@@ -12,6 +12,10 @@ import type { MarketingViewProps } from "./MarketingView.js";
  */
 export function MarketingView({
   brand,
+  headerAction,
+  secondaryAction,
+  nav,
+  ground = "base",
   heroEyebrow,
   heroHeading,
   heroDescription,
@@ -37,7 +41,7 @@ export function MarketingView({
 }: MarketingViewProps) {
   return (
     <div {...rest} className={mergeUiClasses("flex min-h-dvh flex-col", className)} style={style}>
-      <SiteHeader brand={brand} />
+      <SiteHeader ground={ground} brand={brand} nav={nav} secondaryAction={secondaryAction} actions={headerAction} />
       <main className="flex flex-col gap-2xl py-2xl">
         <Hero
           eyebrow={heroEyebrow}
@@ -54,7 +58,7 @@ export function MarketingView({
         {faq !== undefined ? <Faq heading={faqHeading} description={faqDescription} items={faq} ground={faqGround} /> : null}
         <Hero headingLevel={2} heading={ctaHeading} description={ctaDescription} actions={ctaAction} ground={ctaGround} />
       </main>
-      <SiteFooter secondary={footerSecondary} />
+      <SiteFooter ground={ground} secondary={footerSecondary} />
     </div>
   );
 }
