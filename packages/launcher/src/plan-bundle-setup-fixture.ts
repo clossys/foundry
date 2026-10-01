@@ -165,7 +165,7 @@ export function setupInputs(observation: RepositoryObservation | null, plan: Adv
 
 /**
  * The materialized fixture of apply-step-fixture.ts, its set extended with the `agents-guide` item and the whole file
- * clossys/AGENTS.md (the constant text, or `guideText` to put other bytes in the set), resealed, and bundled, approved and stored in the hub over the extended set. The clone
+ * the guide file at AGENTS_GUIDE_PATH (the constant text, or `guideText` to put other bytes in the set), resealed, and bundled, approved and stored in the hub over the extended set. The clone
  * is on the default branch with nothing written: materialize writes the guide from `texts`.
  */
 export function buildGuideFixture(roots: string[], guideText: string = AGENTS_GUIDE_TEXT) {

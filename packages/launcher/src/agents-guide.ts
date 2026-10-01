@@ -1,4 +1,4 @@
-// The Launcher-owned guide the apply flow writes to clossys/AGENTS.md (RFC apply-approved-plan D30). Pure: no node builtin, no
+// The Launcher-owned guide the apply flow writes as AGENTS_GUIDE_PATH (RFC apply-approved-plan D30). Pure: no node builtin, no
 // clock, no file read. The text is one constant -- no plan text, repository name or client detail -- so every repository gets the
 // same bytes, and ownership is the installed-state ledger's digest of the whole file (D10): no marker sits inside the file.
 
