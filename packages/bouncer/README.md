@@ -274,6 +274,46 @@ import { createHealthRoute } from "@clossys/bouncer";
 export const GET = createHealthRoute();
 ```
 
+## Front-door conformance
+
+`checkFrontDoorHttp` runs a host's handler through cookie-less GET requests
+and returns every way its responses break the gated-host rules, so a host that
+drifts fails in its own test. The expected values come from the helpers above
+and from the production variant of `createSiteSecurityHeaders`. It uses Fetch
+globals only and calls the handler in process: no test runner, browser,
+framework or network call. A handler that throws is a `handler-threw`
+violation, never a throw.
+
+| Rule | Checked on |
+| --- | --- |
+| `robots-tag` | Every response: `X-Robots-Tag` is the gated-host robots tag |
+| `no-store` | Sign-in, boundary and 503 responses: `Cache-Control` is `no-store` |
+| `boundary-status` | A boundary path answers 3xx, 401 or 403 |
+| `security-headers` | Sign-in responses: `Strict-Transport-Security`, `Referrer-Policy` and `Permissions-Policy` equal the production baseline, and `Content-Security-Policy` is non-empty |
+| `robots-txt` | The robots path answers 200 with the deny-all body |
+| `health` | The health path answers with the status and body of `createHealthRoute()()`, with no redirect |
+| `service-unavailable` | Your `serviceUnavailable` response is a 503 with a non-negative integer `Retry-After` and the body of `createServiceUnavailableResponse()` |
+| `handler-threw` | The handler or `serviceUnavailable` threw or rejected |
+
+`robotsPath` defaults to `/robots.txt` and `healthPath` to `/health`. A
+redirect is read as returned, never followed. `origin` must be an absolute URL,
+or the call rejects with `TypeError`.
+
+```ts
+import { assertFrontDoorHttp, createServiceUnavailableResponse } from "@clossys/bouncer";
+import { handle } from "./front-door";
+
+await assertFrontDoorHttp(
+  {
+    origin: "https://app.example",
+    signInPaths: ["/sign-in"],
+    boundaryPaths: ["/dashboard"],
+    serviceUnavailable: () => createServiceUnavailableResponse(),
+  },
+  handle,
+);
+```
+
 ## Exports
 
 ### Root — `@clossys/bouncer`
@@ -344,6 +384,8 @@ answer.
 | `GATED_HOST_ROBOTS_TAG`, `GATED_HOST_ROBOTS_TXT` | The robots tag value and the deny-all `robots.txt` body of a gated host |
 | `applyGatedHostHeaders`, `createRobotsTxtRoute`, `createHealthRoute`, `createServiceUnavailableResponse` | Gated-host response helpers: robots tag, `no-store`, deny-all `robots.txt`, `/health`, and a 503 with `Retry-After` |
 | `GatedHostHeaderOptions`, `ServiceUnavailableOptions` | Their option types |
+| `checkFrontDoorHttp`, `assertFrontDoorHttp` | Front-door conformance kit, HTTP half: runs a handler through cookie-less GET requests and returns, or throws, every violation of the gated-host rules |
+| `FrontDoorHttpConfig`, `FrontDoorViolation`, `FrontDoorRule` | Its config, one violation, and the rule names |
 
 ### `./agent`
 
