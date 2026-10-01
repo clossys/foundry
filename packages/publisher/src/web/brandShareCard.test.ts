@@ -224,6 +224,98 @@ describe("colours and structure", () => {
   });
 });
 
+function childrenOf(element: ReactElement<Props>): ReactElement<Props>[] {
+  const children = element.props.children;
+  const list = Array.isArray(children) ? children : children === undefined ? [] : [children];
+  return list.filter((child) => isValidElement(child)) as ReactElement<Props>[];
+}
+
+function byKey(root: ReactElement<Props>, key: string): ReactElement<Props> {
+  const found = collect(root, ({ element }) => element.key === key);
+  expect(found).toHaveLength(1);
+  return found[0]!.element;
+}
+
+describe("lockup order", () => {
+  it("puts the plate then the wordmark in the lockup, and the plate alone without a wordmark", () => {
+    const card = buildBrandShareCard(input());
+    const lockup = byKey(card.element as ReactElement<Props>, "lockup");
+    expect(childrenOf(lockup).map((child) => child.key)).toEqual(["plate", "wordmark"]);
+
+    const { wordmark: _omitted, ...rest } = input();
+    const plain = buildBrandShareCard(rest);
+    expect(childrenOf(byKey(plain.element as ReactElement<Props>, "lockup")).map((child) => child.key)).toEqual(["plate"]);
+  });
+});
+
+describe("top row order", () => {
+  it("puts the lockup, the rule, then the kicker in the top row", () => {
+    const card = buildBrandShareCard(input());
+    const top = byKey(card.element as ReactElement<Props>, "top");
+    expect(childrenOf(top).map((child) => child.key)).toEqual(["lockup", "rule", "kicker"]);
+  });
+});
+
+describe("headline at the bottom", () => {
+  it("spaces the root between the top row and a bottom block that starts with the headline", () => {
+    const root = buildBrandShareCard(input()).element as ReactElement<Props>;
+    expect(root.props.style?.["justifyContent"]).toBe("space-between");
+    const rootChildren = childrenOf(root);
+    const bottom = rootChildren[rootChildren.length - 1]!;
+    expect(bottom.key).toBe("bottom");
+    expect(childrenOf(bottom)[0]!.key).toBe("headline");
+  });
+});
+
+describe("overflow guards", () => {
+  it("keeps the plate and rule from shrinking and the mark in ratio", () => {
+    const root = buildBrandShareCard(input()).element as ReactElement<Props>;
+    expect(byKey(root, "plate").props.style?.["flexShrink"]).toBe(0);
+    expect(byKey(root, "rule").props.style?.["flexShrink"]).toBe(0);
+    const images = collect(root, ({ element }) => element.type === "img");
+    expect(images).toHaveLength(1);
+    expect(images[0]!.element.props.style?.["objectFit"]).toBe("contain");
+  });
+
+  it("lets the lockup shrink and truncates the wordmark and kicker to one line", () => {
+    const root = buildBrandShareCard(input()).element as ReactElement<Props>;
+    const lockup = byKey(root, "lockup").props.style ?? {};
+    expect(lockup["minWidth"]).toBe(0);
+    expect(lockup["maxWidth"]).toBe("100%");
+    for (const key of ["wordmark", "kicker"]) {
+      const style = byKey(root, key).props.style ?? {};
+      expect(style["minWidth"]).toBe(0);
+      expect(style["overflow"]).toBe("hidden");
+      expect(style["whiteSpace"]).toBe("nowrap");
+      expect(style["textOverflow"]).toBe("ellipsis");
+    }
+    expect(byKey(root, "kicker").props.style?.["flex"]).toBe(1);
+  });
+
+  it("clamps the headline and supporting line to two lines", () => {
+    const root = buildBrandShareCard(input()).element as ReactElement<Props>;
+    for (const key of ["headline", "supporting"]) {
+      const style = byKey(root, key).props.style ?? {};
+      expect(style["lineClamp"]).toBe(2);
+      expect(style["overflow"]).toBe("hidden");
+    }
+  });
+});
+
+describe("field-neutral message", () => {
+  it("does not name buildShareCard or tagline when a blank kicker is refused", () => {
+    let message = "";
+    try {
+      buildBrandShareCard(input({ kicker: "   " }));
+    } catch (error) {
+      message = (error as Error).message;
+    }
+    expect(message).not.toBe("");
+    expect(message).not.toContain("buildShareCard");
+    expect(message).not.toContain("tagline");
+  });
+});
+
 describe("refusals and exports", () => {
   it("refuses a markSrc that is not an inline image data URL", () => {
     for (const markSrc of ["https://example.com/mark.png", "//example.com/mark.png", "/mark.png", "javascript:alert(1)", "data:text/html;base64,AAAA", ""]) {
