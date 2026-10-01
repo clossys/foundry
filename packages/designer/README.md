@@ -2271,6 +2271,49 @@ belong in the fields' own errors and the summary, not there.
 submit `Button` the pending state (`validation.getSubmitButtonProps()`),
 never `isDisabled`, so it keeps keyboard focus while the send runs.
 
+#### Error placement standard
+
+A failure appears in exactly one place. Where it goes depends on what it is
+about:
+
+- **Inline, under the field**: the field's own `isInvalid` plus `errorMessage`
+  on `TextField` (and the other fields), for client validation and for a
+  server error that names one field. For the second case the consumer maps
+  the server's field name to that field's `id` and sets that field invalid.
+- **Always inline**: a required field left empty. It never goes in the banner.
+- **`submitError`, the form's one banner region**: everything else, meaning an
+  account problem, a flow problem, a rate limit, a provider that is
+  unavailable, or an unknown failure.
+
+When several things go wrong at once:
+
+- Every invalid field shows its own inline message at the same time.
+- There is at most one banner, and only for a failure that is not a field's.
+  Several banner messages are nodes inside the one `submitError`, never
+  several alert regions.
+- A failure is never in a field and in a banner, and never in a summary list
+  that repeats the inline messages. A form following this standard therefore
+  does not pass `errorSummaryMessage`. The opt-in summary described above
+  stays as it is; it falls outside this standard.
+
+The tests in `Form.test.tsx` pin both rules: two invalid `TextField`s render
+both inline messages beside exactly one `role="alert"` (the `submitError`),
+and a `submitError` holding two nodes still renders one alert region.
+
+#### Multi-step forms
+
+For a flow that asks for an identifier first and then continues on later
+steps (a pattern only; Designer ships no copy):
+
+- Each later step shows the identifier in a line the consumer writes, for
+  example "Signing in as {identifier}" (consumer copy), with one change
+  control, a ghost `Button`, that returns to the first step with the value
+  still editable.
+- The browser Back button stays native. Add no in-card Back control besides
+  the change control.
+- The card's one primary action advances. Error recovery stays on the current
+  step, and there is one resend control where a code is sent.
+
 ### `useFormValidation`
 
 The `ContactForm` example under [`Form`](#form) shows the hook end to end.

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { TextField } from "../atoms/TextField.js";
 import { Form, type FormError } from "./Form.js";
 
 // Every summary heading is consumer copy — `Form` ships none of its own.
@@ -201,5 +202,44 @@ describe("Form", () => {
     );
     const form = container.querySelector("form") as HTMLFormElement;
     expect(form.style.marginTop).toBe("8px");
+  });
+
+  it("shows every field error inline at once with one banner", () => {
+    const errors: FormError[] = [
+      { fieldId: "name", message: "Enter your name" },
+      { fieldId: "email", message: "Enter an email address" },
+    ];
+    render(
+      <Form errors={errors} submitError="Try again in a few minutes">
+        <TextField id="name" label="Name" isInvalid errorMessage="Enter your name" />
+        <TextField id="email" label="Email" isInvalid errorMessage="Enter an email address" />
+      </Form>,
+    );
+    expect(screen.getByText("Enter your name")).toBeInTheDocument();
+    expect(screen.getByText("Enter an email address")).toBeInTheDocument();
+    const alerts = screen.getAllByRole("alert");
+    expect(alerts).toHaveLength(1);
+    expect(alerts[0]).toHaveTextContent("Try again in a few minutes");
+    expect(alerts[0]).not.toHaveTextContent("Enter your name");
+    expect(alerts[0]).not.toHaveTextContent("Enter an email address");
+  });
+
+  it("keeps submitError to one region", () => {
+    render(
+      <Form
+        submitError={
+          <>
+            <p>We could not send your message.</p>
+            <p>Check your connection and try again.</p>
+          </>
+        }
+      >
+        <input aria-label="Name" />
+      </Form>,
+    );
+    const alerts = screen.getAllByRole("alert");
+    expect(alerts).toHaveLength(1);
+    expect(alerts[0]).toHaveTextContent("We could not send your message.");
+    expect(alerts[0]).toHaveTextContent("Check your connection and try again.");
   });
 });
