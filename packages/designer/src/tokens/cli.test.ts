@@ -5,6 +5,7 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { CliInputError, main } from "./cli.js";
+import { TOKENS } from "./tokens.js";
 
 // Hermetic: every test operates on its own `mkdtemp` directory, removed
 // afterward, and calls the exported `main(argv)` directly rather than
@@ -35,7 +36,11 @@ describe("main — argument handling", () => {
     expect(main(["--help"])).toBe(0);
   });
 
-  it("throws CliInputError when brand-css-file is missing", () => {
+  it("throws CliInputError when no argument is given and the default brand/brand.css does not exist", () => {
+    // The default path is resolved against the working directory, so pin it
+    // to this test's empty temp directory rather than whatever cwd the runner
+    // happens to have.
+    vi.spyOn(process, "cwd").mockReturnValue(dir);
     expect(() => main([])).toThrow(CliInputError);
   });
 
@@ -111,7 +116,29 @@ function writeProductFile(rel: string, content: string): void {
   writeFileSync(path, content);
 }
 
+// Every brandable slot declared, so the coverage check itself is clean and a
+// non-zero exit can only come from something else. Only non-emptiness matters
+// to coverage, so one placeholder value serves every slot.
+const FULLY_COVERED_BRAND_CSS = `:root {\n${Object.values(TOKENS)
+  .filter((def) => def.brandable)
+  .map((def) => `  ${def.property}: red;\n`)
+  .join("")}}\n`;
+
 describe("command line — one brand overlay under apps/", () => {
+  it("a fully covered brand file exits 0 without a second binder and 1 once apps/ adds one", () => {
+    writeProductFile("brand/brand.css", FULLY_COVERED_BRAND_CSS);
+    writeProductFile("apps/web/page.css", ".x { margin: 0; }\n");
+    const clean = runCli([]);
+    expect(clean.stdout).not.toContain("second-brand-binding");
+    expect(clean.status).toBe(0);
+
+    writeProductFile("apps/web/globals.css", ":root { --color-accent: #000000; }\n");
+    const second = runCli([]);
+    expect(second.stdout).toContain("second-brand-binding");
+    expect(second.stdout).toContain("globals.css");
+    expect(second.status).toBe(1);
+  });
+
   it("exits 1 and names the file when a second stylesheet binds a --color-* slot", () => {
     writeProductFile("brand/brand.css", ":root { --color-accent: #2a78d6; }\n");
     writeProductFile("apps/web/globals.css", ":root { --color-accent: #000000; }\n");

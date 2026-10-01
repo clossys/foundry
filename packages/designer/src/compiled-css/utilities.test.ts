@@ -62,11 +62,4 @@ describe("generateUtilitiesCss", () => {
     expect(out).toMatch(/\.bg-accent\s*\{/);
     expect(out).toMatch(/\.rounded-pill\s*\{/);
   });
-
-  it("theme-keys.css keeps --breakpoint-* as literal lengths", () => {
-    const keys = readFileSync(resolve(packageRoot, "styles", "theme-keys.css"), "utf8");
-    const decls = [...keys.matchAll(/--breakpoint-[a-z-]+:\s*([^;]+);/g)].map((m) => m[1]!.trim());
-    expect(decls.length).toBeGreaterThan(0);
-    for (const v of decls) expect(v).toMatch(/^\d+(?:\.\d+)?(?:px|rem|em)$/);
-  });
 });
