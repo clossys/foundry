@@ -140,11 +140,47 @@ describe("AuthView", () => {
   });
 
 
-  it("renders the secondaryAction slot's content", () => {
-    render(
-      <AuthView brand="Acme" heading="Sign in" description="Welcome back." form={<div>form</div>} secondaryAction={<a href="/signup">Sign up</a>} />,
+  it("secondary line below the card: the secondaryAction content is outside the card, is its next sibling, and comes before the footnote", () => {
+    const { container } = render(
+      <AuthView
+        brand="Acme"
+        heading="Sign in"
+        description="Welcome back."
+        form={<div>form</div>}
+        secondaryAction={<a href="/signup">No account? Join the waitlist</a>}
+        footnote="Terms apply."
+      />,
     );
-    expect(screen.getByRole("link", { name: "Sign up" })).toBeInTheDocument();
+    const link = screen.getByRole("link", { name: "No account? Join the waitlist" });
+    const card = container.querySelector(".rounded-control") as HTMLElement;
+    expect(card).not.toBeNull();
+    expect(card).not.toContainElement(link);
+    const line = link.closest("main > div") as HTMLElement;
+    expect(line).not.toBeNull();
+    expect(card.nextElementSibling).toBe(line);
+    expect(line.className).toContain("flex flex-col gap-xs text-body-s text-ink-secondary");
+    expect(line.nextElementSibling).toBe(screen.getByText("Terms apply."));
+  });
+
+  it("secondaryAction takes several lines: each line renders in the one below-card wrapper", () => {
+    render(
+      <AuthView
+        brand="Acme"
+        heading="Sign in"
+        description="Welcome back."
+        form={<div>form</div>}
+        secondaryAction={
+          <>
+            <a href="/forgot">Forgot password?</a>
+            <span>No account? Join the waitlist</span>
+          </>
+        }
+      />,
+    );
+    const first = screen.getByRole("link", { name: "Forgot password?" });
+    const second = screen.getByText("No account? Join the waitlist");
+    expect(first.parentElement).toBe(second.parentElement);
+    expect(first.parentElement?.parentElement).toBe(screen.getByRole("main"));
   });
 
   it("renders the footnote slot's content", () => {
@@ -188,11 +224,24 @@ describe("AuthView", () => {
 
   it("puts the page heading above a card that holds the form, for sign-in and sign-up alike", () => {
     const { container, unmount } = render(
-      <AuthView brand="Acme" heading="Sign in" description="Welcome back." form={<form aria-label="Sign in form"><button type="submit">Continue</button></form>} />,
+      <AuthView
+        brand="Acme"
+        heading="Sign in"
+        description="Welcome back."
+        form={<form aria-label="Sign in form"><button type="submit">Continue</button></form>}
+        secondaryAction={<a href="/signup">No account? Join the waitlist</a>}
+        footnote="Terms apply."
+      />,
     );
-    const card = container.querySelector(".rounded-control");
+    const card = container.querySelector(".rounded-control") as HTMLElement;
     expect(card).not.toBeNull();
-    expect(card).toContainElement(screen.getByRole("form", { name: "Sign in form" }));
+    const signInForm = screen.getByRole("form", { name: "Sign in form" });
+    expect(card).toContainElement(signInForm);
+    // The card holds only the form slot: neither the alternate-step line nor the footnote is inside it.
+    expect(card.children).toHaveLength(1);
+    expect(card.firstElementChild).toBe(signInForm);
+    expect(card).not.toContainElement(screen.getByText("Terms apply."));
+    expect(card).not.toContainElement(screen.getByRole("link", { name: "No account? Join the waitlist" }));
     expect(card).not.toContainElement(screen.getByRole("heading", { level: 1 }));
     unmount();
     render(

@@ -348,7 +348,13 @@ Name a shipped template when its slots cover the page:
   `status-list`, `stat-grid`).
 - **`AuthView`** — one shell for every authentication step (sign-in, sign-up,
   password reset, verification): site header, page header, the form inside
-  Designer's `Card`, and site footer. The content column uses the
+  Designer's `Card`, and site footer. The card holds only the form;
+  `secondaryAction` (the alternate-step lines, such as "Forgot password?" or
+  "No account? Join the waitlist") renders below it, before the footnote, and
+  is always the site's copy. An invitation or activation step never offers
+  request-access or sign-up: the view has no mode and no `requestAccess`
+  prop, so each site's activation-page test asserts no request-access or
+  sign-up link. The content column uses the
   `--ui-width-form-max` form measure, and `description` is a required prop
   so every step decides on a supporting line. The form slot is filled with
   Designer's `Form` / `TextField` / `Button`. There is no mode prop, and
