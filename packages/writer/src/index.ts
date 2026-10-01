@@ -127,6 +127,25 @@ export type {
   MessagingKitResolutions,
 } from "./messaging-kit.js";
 
+// Front-door copy: ten reserved sign-in ids with shipped English defaults and
+// a noun resolver, resolved through `resolveCopyRef`. See front-door.ts's top
+// doc comment.
+export {
+  resolveFrontDoorCopy,
+  isFrontDoorCopyId,
+  FRONT_DOOR_COPY_EN,
+  FRONT_DOOR_COPY_IDS,
+  FRONT_DOOR_NOUNS,
+} from "./front-door.js";
+export type {
+  FrontDoorCopyIssue,
+  FrontDoorCopyIssueReason,
+  FrontDoorCopyResolution,
+  FrontDoorKey,
+  FrontDoorNoun,
+  FrontDoorNouns,
+} from "./front-door.js";
+
 export { readCopyRecord } from "./registry.js";
 export type { CopyRegistryReadIssue, CopyRegistryReadIssueReason, CopyRegistryReadResult } from "./registry.js";
 
