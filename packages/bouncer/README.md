@@ -301,24 +301,47 @@ The gate is closed by construction:
 
 - Nothing is rendered before the decision. `next` runs only after the provider
   has answered and, on a gated route, the permission check has returned `true`.
+  The exceptions are the sign-in routes and `isPublicPath` paths, which run
+  without a sign-in, and the not-authorized route, which renders for any
+  signed-in principal without the permission check (a signed-out visitor is
+  still sent to sign-in).
+- Every pass-through to a gated route (a permitted principal, the sign-in
+  routes and the not-authorized route) is `Cache-Control: private, no-store`
+  and `Vary: Cookie, Authorization`, whatever `next` returned: a `public` or
+  `s-maxage` value is replaced and any existing `Vary` value is kept. A path
+  `isPublicPath` approves is left as `next` rendered it. A shared cache or
+  CDN therefore cannot keep a protected page and serve it to a signed-out
+  visitor.
 - `isPermitted` is required and only the answer `true` permits; a throw or any
   other answer denies. There is no permit-everyone default.
 - Every absolute URL in a response comes from `origin`, `siblingOrigins` and
   `protectedResourceMetadata`. The request's host and headers are never read
   into a response, and error bodies and construction errors are fixed strings
   that do not quote a configured value.
-- A path with an encoded slash, backslash, dot or percent sign, a doubled
-  slash or a dot segment is ambiguous. It is never passed through as a
-  sign-in sub-route or a public path, so it is gated like any other path.
+- A path with an encoded slash, backslash, dot, percent sign, null or
+  semicolon, a literal semicolon, a doubled slash or a non-ASCII character
+  (percent-encoded as `%80` and above) is ambiguous. It is never passed
+  through as a sign-in sub-route or a public path, so it is gated like any
+  other path.
 - `signInPath`, `notAuthorizedPath` and each `apiPathPrefixes` entry must be
   plain same-host paths, and the two routes must differ and not overlap the
-  metadata path. Otherwise construction throws `TypeError`.
+  metadata path. `signInPath` and `notAuthorizedPath` must not be, or sit
+  under, `/api`, `/_next` or an `apiPathPrefixes` entry, because a sign-in
+  route is passed to `next` without a sign-in. Otherwise construction throws
+  `TypeError`.
+- A signed-out navigation whose `Location` would pass 2048 characters returns
+  to `/` after sign-in instead of the long path and query.
 
 The `403` and `503` are set on the response `next` returns, so they apply only
 when `next` returns the final response. Under a Next.js proxy,
 `NextResponse.next()` or a rewrite can discard that status: the not-authorized
 page must return its own `403` (for example with `forbidden()`) and the sign-in
 page its own `503`, or `next` must render the page itself.
+
+The not-authorized route is matched exactly. With `trailingSlash: true` in the
+Next.js config, a request for `/not-authorized/` is a different path to the
+gate, so the caller must handle the trailing-slash form of `notAuthorizedPath`
+itself, before calling the gate; the gate does not match it.
 
 The sign-in page must run its incoming `redirect_url` through
 `createReturnUrlResolver`, which accepts a relative path on `origin` or an

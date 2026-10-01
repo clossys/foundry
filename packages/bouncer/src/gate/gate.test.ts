@@ -204,7 +204,7 @@ describe("rule 4: authentication versus authorization", () => {
     expect(nav.headers.get("cache-control")).toBe("no-store");
     const landing = await g(req("/not-authorized", html), () => new Response("denied page", { status: 200 }));
     expect(landing.status).toBe(403);
-    expect(landing.headers.get("cache-control")).toBe("no-store");
+    expect(landing.headers.get("cache-control")).toBe("private, no-store");
     expect(await landing.text()).toBe("denied page");
   });
 
@@ -287,7 +287,7 @@ describe("rule 5: provider unavailable or unconfigured", () => {
     const prod = await gate({ state: "unavailable" }, { production: true, retryAfterSeconds: 60 })(req("/sign-in"), next);
     expect(prod.status).toBe(503);
     expect(prod.headers.get("retry-after")).toBe("60");
-    expect(prod.headers.get("cache-control")).toBe("no-store");
+    expect(prod.headers.get("cache-control")).toBe("private, no-store");
     expect(await prod.text()).toBe("sign-in page");
     const shared = createServiceUnavailableResponse({ retryAfterSeconds: 60 });
     expect(prod.headers.get("retry-after")).toBe(shared.headers.get("retry-after"));
@@ -575,5 +575,125 @@ describe("unknown or malformed input is refused", () => {
     ];
     for (const patch of bad) expect(() => createGatedHostGate({ ...base, ...patch }), JSON.stringify(patch)).toThrow(TypeError);
     expect(() => createGatedHostGate({ ...base, retryAfterSeconds: 0 })).not.toThrow();
+  });
+});
+
+describe("review fixes: shared caches never keep a gated pass-through", () => {
+  const cacheable = (vary?: string) => () =>
+    new Response("page", {
+      status: 200,
+      headers: { "Cache-Control": "public, s-maxage=31536000", ...(vary === undefined ? {} : { Vary: vary }) },
+    });
+  const expectPrivate = (res: Response, vary: string) => {
+    expect(res.headers.get("cache-control")).toBe("private, no-store");
+    expect(res.headers.get("vary")).toBe(vary);
+  };
+
+  it("sets private, no-store and Vary on a permitted pass-through", async () => {
+    expectPrivate(await gate(admin)(req("/reports", html), cacheable()), "Cookie, Authorization");
+    expectPrivate(await gate(admin)(req("/reports", html), cacheable("Accept-Encoding")), "Accept-Encoding, Cookie, Authorization");
+  });
+
+  it("sets private, no-store and Vary on a sign-in pass-through, signed out and signed in", async () => {
+    for (const state of [signedOut, admin, viewer]) {
+      expectPrivate(await gate(state)(req("/sign-in", html), cacheable()), "Cookie, Authorization");
+      expectPrivate(await gate(state)(req("/sign-in/callback", html), cacheable("Accept-Encoding")), "Accept-Encoding, Cookie, Authorization");
+    }
+  });
+
+  it("sets private, no-store and Vary on the not-authorized page, which stays a 403", async () => {
+    const res = await gate(viewer)(req("/not-authorized", html), cacheable());
+    expect(res.status).toBe(403);
+    expectPrivate(res, "Cookie, Authorization");
+  });
+
+  it("does not repeat a Vary value next already set, in any case, and keeps Vary: *", async () => {
+    expectPrivate(await gate(admin)(req("/r", html), cacheable("cookie, Accept-Language")), "cookie, Accept-Language, Authorization");
+    expectPrivate(await gate(admin)(req("/r", html), cacheable("*")), "*");
+  });
+
+  it("leaves a public path as next rendered it", async () => {
+    const res = await gate(signedOut, { isPublicPath: (p) => p === "/health" })(req("/health"), cacheable());
+    expect(res.headers.get("cache-control")).toBe("public, s-maxage=31536000");
+    expect(res.headers.get("vary")).toBeNull();
+  });
+});
+
+describe("review fixes: construction refuses routes next could expose", () => {
+  it("rejects a signInPath or notAuthorizedPath that is or sits under /api or /_next", () => {
+    const base = options(admin);
+    for (const path of ["/api", "/api/sign-in", "/_next", "/_next/static"]) {
+      expect(() => createGatedHostGate({ ...base, signInPath: path }), `signInPath ${path}`).toThrow(TypeError);
+      expect(() => createGatedHostGate({ ...base, notAuthorizedPath: path }), `notAuthorizedPath ${path}`).toThrow(TypeError);
+    }
+    for (const path of ["/apix", "/_nextish", "/my-api/in"]) {
+      expect(() => createGatedHostGate({ ...base, signInPath: path }), path).not.toThrow();
+    }
+  });
+
+  it("rejects a route that sits under a configured apiPathPrefixes entry", () => {
+    const base = options(admin, { apiPathPrefixes: ["/internal/"] });
+    expect(() => createGatedHostGate({ ...base, signInPath: "/internal/login" })).toThrow(TypeError);
+    expect(() => createGatedHostGate({ ...base, notAuthorizedPath: "/internal" })).toThrow(TypeError);
+  });
+});
+
+describe("review fixes: the not-authorized route is an exact match", () => {
+  it("redirects or 403s a signed-in viewer on a lookalike path and never calls next", async () => {
+    let reached = 0;
+    const next = () => {
+      reached += 1;
+      return page();
+    };
+    for (const path of ["/not-authorized/x", "/not-authorizedX"]) {
+      const nav = await gate(viewer)(req(path, html), next);
+      expect(nav.status, path).toBe(307);
+      expect(nav.headers.get("location"), path).toBe("/not-authorized");
+      expect((await gate(viewer)(req(path, { accept: "application/json" }), next)).status, path).toBe(403);
+    }
+    expect(reached).toBe(0);
+  });
+});
+
+describe("review fixes: ambiguous paths that reach the guard", () => {
+  it("keeps semicolon, encoded semicolon, null, encoded-dot and non-ASCII paths out of the pass-throughs", async () => {
+    let reached = 0;
+    const next = () => {
+      reached += 1;
+      return page();
+    };
+    const g = gate(signedOut, { isPublicPath: (p) => p.startsWith("/public") });
+    for (const path of [
+      "/sign-in/x%2e%2e",
+      "/sign-in/a%00b",
+      "/sign-in/..;/admin",
+      "/sign-in/%3b/admin",
+      "/sign-in/%3B/admin",
+      "/sign-in/a;b",
+      "/sign-in/%EF%BC%8Fadmin",
+      "/sign-in/\u00e9",
+      "/public/..;/admin",
+      "/public/%3b/admin",
+      "/public/%EF%BC%8Fadmin",
+    ]) {
+      const res = await g(req(path, html), next);
+      expect(res.status, path).toBe(307);
+    }
+    expect(reached).toBe(0);
+  });
+});
+
+describe("review fixes: an oversized return URL", () => {
+  it("falls back to / when the Location header would pass 2048 characters, and keeps one at the limit", async () => {
+    const fits = `/${"a".repeat(2023)}`;
+    const tooLong = `/${"a".repeat(2024)}`;
+    const keep = await gate(signedOut)(req(fits, navigate), page);
+    expect(keep.headers.get("location")).toBe(signInTarget(fits));
+    expect(keep.headers.get("location")?.length).toBe(2048);
+    const res = await gate(signedOut)(req(tooLong, navigate), page);
+    expect(res.status).toBe(307);
+    expect(res.headers.get("location")).toBe(signInTarget("/"));
+    const query = await gate(signedOut)(req(`/x?q=${"b".repeat(3000)}`, navigate), page);
+    expect(query.headers.get("location")).toBe(signInTarget("/"));
   });
 });

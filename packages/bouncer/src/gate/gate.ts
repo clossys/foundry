@@ -14,15 +14,21 @@
  *      and never gated.
  *   3. The sign-in path and its sub-routes pass through to `next`; a path
  *      the consumer marks public (`isPublicPath`) passes through without
- *      asking the provider. A path with an encoded slash, backslash, dot or
- *      percent sign, a doubled slash or a dot segment is ambiguous: it takes
- *      neither pass-through and is gated like any other.
+ *      asking the provider. A path with an encoded slash, backslash, dot,
+ *      percent sign, null, semicolon or non-ASCII byte, a semicolon or a
+ *      doubled slash is ambiguous: it takes neither pass-through and is gated
+ *      like any other.
  *   4. Anything not signed in, including an unavailable provider, fails
  *      closed: a navigation gets a 307 to the sign-in route, any other
  *      request (and any API route) a 401 with an RFC 9728 challenge.
  *   5. A signed-in principal the permission check does not approve with
  *      exactly `true` gets a 307 to the not-authorized route (navigation) or
  *      a 403 (anything else). The not-authorized route is forced to 403.
+ *
+ * Every pass-through to a gated route (a permitted principal, the sign-in
+ * route, the not-authorized route) is `Cache-Control: private, no-store` and
+ * varies on `Cookie` and `Authorization`, whatever `next` set. A path
+ * `isPublicPath` approves is left as `next` rendered it.
  *
  * Every URL the gate writes comes from configuration or from the request's
  * own path and query, never from the request's host or any header, and every
@@ -112,10 +118,38 @@ function isApiPrefix(value: unknown): value is string {
   return typeof value === "string" && value.length > 1 && value.endsWith("/") && isPlainOwnPath(value.slice(0, -1));
 }
 
-/** A path a downstream router could read as a different route than the one matched here. */
+/**
+ * A path a downstream router could read as a different route than the one
+ * matched here: a doubled slash, a semicolon (a path parameter to some
+ * routers), or an encoded slash, backslash, dot, percent sign, null,
+ * semicolon or non-ASCII byte (`%80` and above, which is how the URL parser
+ * writes a non-ASCII character).
+ *
+ * The pathname always comes from the URL parser, which turns a raw backslash
+ * into `/`, resolves literal and `%2e` dot segments and percent-encodes
+ * non-ASCII characters, so none of those can reach this check in raw form.
+ */
+const AMBIGUOUS_PATH = /\/\/|;|%(?:2f|5c|2e|25|00|3b|[89a-f][0-9a-f])/i;
+
 function isAmbiguousPath(pathname: string): boolean {
-  if (pathname.includes("\\") || pathname.includes("//") || /%(?:2f|5c|2e|25|00)/i.test(pathname)) return true;
-  return pathname.split("/").some(isDotSegment);
+  return AMBIGUOUS_PATH.test(pathname);
+}
+
+/** The Location header of a sign-in redirect is kept to this many characters. */
+const MAX_LOCATION_LENGTH = 2048;
+const NO_STORE_PRIVATE = "private, no-store";
+const VARY_BY_CREDENTIALS = ["Cookie", "Authorization"];
+
+/** Adds Cookie and Authorization to `Vary`, keeping what is there and not repeating a value (`*` stays `*`). */
+function varyByCredentials(headers: Headers): void {
+  const existing = (headers.get("Vary") ?? "")
+    .split(",")
+    .map((value) => value.trim())
+    .filter((value) => value.length > 0);
+  if (existing.includes("*")) return;
+  const seen = new Set(existing.map((value) => value.toLowerCase()));
+  const added = VARY_BY_CREDENTIALS.filter((value) => !seen.has(value.toLowerCase()));
+  headers.set("Vary", [...existing, ...added].join(", "));
 }
 
 function acceptsHtml(accept: string): boolean {
@@ -261,6 +295,12 @@ export function createGatedHostGate<P = unknown>(options: GatedHostGateOptions<P
   if (!Array.isArray(apiPrefixes) || !apiPrefixes.every(isApiPrefix)) {
     throw new TypeError("apiPathPrefixes must be an array of plain paths that end in a slash.");
   }
+  const reserved = ["/api", "/_next", ...apiPrefixes.filter(isApiPrefix).map((prefix) => prefix.slice(0, -1))];
+  for (const route of [signInPath, notAuthorizedPath]) {
+    if (reserved.some((root) => route === root || route.startsWith(`${root}/`))) {
+      throw new TypeError("signInPath and notAuthorizedPath must not be or sit under /api, /_next or an apiPathPrefixes entry.");
+    }
+  }
   if (options.production !== undefined && typeof options.production !== "boolean") throw new TypeError("production must be a boolean.");
 
   const returnUrl = createReturnUrlResolver({ origin: options.origin, siblingOrigins: options.siblingOrigins });
@@ -295,14 +335,24 @@ export function createGatedHostGate<P = unknown>(options: GatedHostGateOptions<P
       );
     }
 
-    /** Renders `next`; a throw or a non-Response becomes a 503, and `status` overrides the rendered one. */
-    const render = async (providerUnavailable: boolean, status?: number): Promise<Response> => {
+    /**
+     * Renders `next`; a throw or a non-Response becomes a 503, and `status`
+     * overrides the rendered one. A gated pass-through (anything but a public
+     * path) is always `private, no-store` and varies on credentials, whatever
+     * `next` set, so a shared cache cannot keep it for a signed-out visitor.
+     */
+    const render = async (providerUnavailable: boolean, status?: number, gated = true): Promise<Response> => {
       try {
         const rendered = await next({ providerUnavailable });
         if (!(rendered instanceof Response)) return unavailable();
         const response = reissue(rendered, status ?? rendered.status);
         if (status === 503) response.headers.set("Retry-After", retryAfter);
-        return applyGatedHostHeaders(response, status === undefined ? undefined : { noStore: true });
+        applyGatedHostHeaders(response, gated ? { noStore: true } : undefined);
+        if (gated) {
+          response.headers.set("Cache-Control", NO_STORE_PRIVATE);
+          varyByCredentials(response.headers);
+        }
+        return response;
       } catch {
         return unavailable();
       }
@@ -318,7 +368,7 @@ export function createGatedHostGate<P = unknown>(options: GatedHostGateOptions<P
       } catch {
         isPublic = false;
       }
-      if (isPublic) return render(false);
+      if (isPublic) return render(false, undefined, false);
     }
 
     let state: GatePrincipalState<P>;
@@ -338,7 +388,9 @@ export function createGatedHostGate<P = unknown>(options: GatedHostGateOptions<P
 
     if (state.state !== "signed-in") {
       if (navigation) {
-        const location = `${signInPath}?redirect_url=${encodeURIComponent(returnUrl(`${pathname}${url.search}`))}`;
+        const signInLocation = (target: string) => `${signInPath}?redirect_url=${encodeURIComponent(target)}`;
+        let location = signInLocation(returnUrl(`${pathname}${url.search}`));
+        if (location.length > MAX_LOCATION_LENGTH) location = signInLocation("/");
         return applyGatedHostHeaders(new Response(null, { status: 307, headers: { Location: location } }));
       }
       return jsonResponse(401, { error: "unauthorized" }, { "WWW-Authenticate": challenge });
