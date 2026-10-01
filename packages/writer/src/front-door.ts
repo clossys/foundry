@@ -239,6 +239,15 @@ function readNouns(nouns: unknown): Map<string, unknown> {
   return read;
 }
 
+/** Names a lookup key for a message; a key that cannot be stringified (a null-prototype object, a throwing `toString`) reads as its type. */
+function describeKey(key: unknown): string {
+  try {
+    return String(key);
+  } catch {
+    return `<${typeof key}>`;
+  }
+}
+
 /**
  * Resolves one front-door entry from the shipped English defaults, naming
  * the nouns it declares. Only nouns the entry declares reach
@@ -252,7 +261,7 @@ export function resolveFrontDoorCopy(key: FrontDoorKey, nouns: FrontDoorNouns): 
   if (!isFrontDoorCopyId(key)) {
     return {
       complete: false,
-      issues: [{ reason: "unknown-copy-id", id: String(key), message: `Front-door copy id "${String(key)}" is not a reserved id.` }],
+      issues: [{ reason: "unknown-copy-id", id: describeKey(key), message: `Front-door copy id "${describeKey(key)}" is not a reserved id.` }],
     };
   }
 
