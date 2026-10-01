@@ -186,7 +186,7 @@ describe("packed Publisher web React-server boundary", () => {
     );
     writeFileSync(
       join(adversarialRoot, "dist", "atoms", "server.js"),
-      "export const Card = ({ children }) => children; export const mergeUiClasses = (...names) => names.filter(Boolean).join(' ');\n",
+      "export const Badge = ({ children }) => children; export const Card = ({ children }) => children; export const mergeUiClasses = (...names) => names.filter(Boolean).join(' ');\n",
     );
     writeFileSync(
       join(adversarialRoot, "dist", "blocks", "server.js"),
@@ -308,7 +308,7 @@ describe("packed Publisher web React-server boundary", () => {
     );
     writeFileSync(
       join(adversarialRoot, "dist", "atoms", "server.js"),
-      "export const Card = ({ children }) => children; export const mergeUiClasses = (...names) => names.filter(Boolean).join(' ');\n",
+      "export const Badge = ({ children }) => children; export const Card = ({ children }) => children; export const mergeUiClasses = (...names) => names.filter(Boolean).join(' ');\n",
     );
     // Every block Publisher's web graph names, at the shape Designer 0.4.7
     // actually ships it — deliberately without `MarketingChapter`, which
