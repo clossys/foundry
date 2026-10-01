@@ -29,7 +29,7 @@ function moduleSpecifiers(source: string): string[] {
 
 describe("AuthView", () => {
   it("renders heading as the page's <h1>", () => {
-    render(<AuthView brand="Acme" heading="Sign in" form={<div>form goes here</div>} />);
+    render(<AuthView brand="Acme" heading="Sign in" description="Welcome back." form={<div>form goes here</div>} />);
     const heading = screen.getByRole("heading", { name: "Sign in" });
     expect(heading.tagName).toBe("H1");
   });
@@ -72,7 +72,7 @@ describe("AuthView", () => {
   });
 
   it("renders the brand slot's content inside the site header banner", () => {
-    render(<AuthView heading="Sign in" brand={<span>Acme</span>} form={<div>form</div>} />);
+    render(<AuthView heading="Sign in" description="Welcome back." brand={<span>Acme</span>} form={<div>form</div>} />);
     // jsdom also maps PageHeader's <header> inside <main> to "banner"; the
     // site header is the first one and sits outside <main>.
     const siteHeader = screen.getAllByRole("banner")[0] as HTMLElement;
@@ -81,12 +81,12 @@ describe("AuthView", () => {
   });
 
   it("has no mode prop: no mode attribute is rendered, and a stray mode changes no structure (the type error is asserted in AuthView.check.tsx)", () => {
-    const baseline = render(<AuthView brand="Acme" heading="Sign in" form={<div>form</div>} />).container;
+    const baseline = render(<AuthView brand="Acme" heading="Sign in" description="Welcome back." form={<div>form</div>} />).container;
     expect(baseline.querySelector("[mode]")).toBeNull();
     const baselineHtml = baseline.innerHTML;
     cleanup();
     const stray = { mode: "signin" } as object;
-    const { container } = render(<AuthView brand="Acme" heading="Sign in" form={<div>form</div>} {...stray} />);
+    const { container } = render(<AuthView brand="Acme" heading="Sign in" description="Welcome back." form={<div>form</div>} {...stray} />);
     // An unknown attribute is forwarded like any other rest prop; the view
     // itself reads no mode, so nothing else about the shell changes.
     (container.firstElementChild as HTMLElement).removeAttribute("mode");
@@ -95,7 +95,7 @@ describe("AuthView", () => {
 
   it("renders the footerSecondary slot's content inside the site footer", () => {
     render(
-      <AuthView brand="Acme" heading="Sign in" form={<div>form</div>} footerSecondary={<span>Support line</span>} />,
+      <AuthView brand="Acme" heading="Sign in" description="Welcome back." form={<div>form</div>} footerSecondary={<span>Support line</span>} />,
     );
     expect(within(screen.getByRole("contentinfo")).getByText("Support line")).toBeInTheDocument();
   });
@@ -134,26 +134,53 @@ describe("AuthView", () => {
 
   it("renders the secondaryAction slot's content", () => {
     render(
-      <AuthView brand="Acme" heading="Sign in" form={<div>form</div>} secondaryAction={<a href="/signup">Sign up</a>} />,
+      <AuthView brand="Acme" heading="Sign in" description="Welcome back." form={<div>form</div>} secondaryAction={<a href="/signup">Sign up</a>} />,
     );
     expect(screen.getByRole("link", { name: "Sign up" })).toBeInTheDocument();
   });
 
   it("renders the footnote slot's content", () => {
-    render(<AuthView brand="Acme" heading="Sign in" form={<div>form</div>} footnote="Terms apply." />);
+    render(<AuthView brand="Acme" heading="Sign in" description="Welcome back." form={<div>form</div>} footnote="Terms apply." />);
     expect(screen.getByText("Terms apply.")).toBeInTheDocument();
   });
 
   it("renders the site header and footer, and omits the secondary link and footnote when none is given", () => {
-    const { container } = render(<AuthView brand="Acme" heading="Sign in" form={<div>form</div>} />);
+    const { container } = render(<AuthView brand="Acme" heading="Sign in" description="Welcome back." form={<div>form</div>} />);
     expect(container.querySelector("header")).not.toBeNull();
     expect(container.querySelector("footer")).not.toBeNull();
     expect(screen.queryByRole("link")).not.toBeInTheDocument();
+    // No internal note by default: Designer's Badge is the only `rounded-pill`
+    // element this view could render inside <main>.
+    expect(screen.getByRole("main").querySelector(".rounded-pill")).toBeNull();
+  });
+
+  it("internal note placement: the note is the element after the footnote, outside the card, led by a Badge with the label", () => {
+    const { container } = render(
+      <AuthView
+        brand="Acme"
+        heading="Sign in"
+        description="Welcome back."
+        form={<div>form</div>}
+        footnote="Terms apply."
+        internalNote={{ label: "Internal", message: "Use the test account." }}
+      />,
+    );
+    const footnote = screen.getByText("Terms apply.");
+    const note = footnote.nextElementSibling as HTMLElement;
+    expect(note).not.toBeNull();
+    expect(note.tagName).toBe("P");
+    expect(note.parentElement).toBe(screen.getByRole("main"));
+    expect(container.querySelector(".rounded-control")).not.toContainElement(note);
+    const badge = note.firstElementChild as HTMLElement;
+    expect(badge.className).toContain("rounded-pill");
+    expect(badge.textContent).toBe("Internal");
+    expect(note).toHaveTextContent("InternalUse the test account.");
+    expect(screen.getByRole("main").querySelectorAll(".rounded-pill")).toHaveLength(1);
   });
 
   it("puts the page heading above a card that holds the form, for sign-in and sign-up alike", () => {
     const { container, unmount } = render(
-      <AuthView brand="Acme" heading="Sign in" form={<form aria-label="Sign in form"><button type="submit">Continue</button></form>} />,
+      <AuthView brand="Acme" heading="Sign in" description="Welcome back." form={<form aria-label="Sign in form"><button type="submit">Continue</button></form>} />,
     );
     const card = container.querySelector(".rounded-control");
     expect(card).not.toBeNull();
@@ -161,7 +188,7 @@ describe("AuthView", () => {
     expect(card).not.toContainElement(screen.getByRole("heading", { level: 1 }));
     unmount();
     render(
-      <AuthView brand="Acme" heading="Create an account" form={<form aria-label="Create account"><button type="submit">Create account</button></form>} secondaryAction={<a href="/sign-in">Back to sign in</a>} />,
+      <AuthView brand="Acme" heading="Create an account" description="Start with your email." form={<form aria-label="Create account"><button type="submit">Create account</button></form>} secondaryAction={<a href="/sign-in">Back to sign in</a>} />,
     );
     expect(screen.getByRole("heading", { level: 1, name: "Create an account" })).toBeInTheDocument();
     expect(document.querySelector("footer")).not.toBeNull();
@@ -172,6 +199,7 @@ describe("AuthView", () => {
       <AuthView
         brand="Acme"
         heading="Sign in"
+        description="Welcome back."
         form={
           <form aria-label="Sign in form">
             <label htmlFor="email">Email</label>
@@ -193,6 +221,7 @@ describe("AuthView", () => {
       <AuthView
         brand="Acme"
         heading="Sign in"
+        description="Welcome back."
         form={
           <form aria-label="Sign in form" onSubmit={onSubmit}>
             <button type="submit">Continue</button>
@@ -207,7 +236,7 @@ describe("AuthView", () => {
 
   it("adds no <form> of its own when the consumer's form slot isn't one", () => {
     const { container } = render(
-      <AuthView brand="Acme" heading="Sign in" form={<div data-testid="not-a-form">Magic link sent.</div>} />,
+      <AuthView brand="Acme" heading="Sign in" description="Welcome back." form={<div data-testid="not-a-form">Magic link sent.</div>} />,
     );
     expect(container.querySelectorAll("form")).toHaveLength(0);
     expect(screen.getByTestId("not-a-form")).toBeInTheDocument();
@@ -215,7 +244,7 @@ describe("AuthView", () => {
 
   it("forwards className, and the consumer's conflicting class wins the merge", () => {
     const { container } = render(
-      <AuthView brand="Acme" heading="Sign in" form={<div>form</div>} className="min-h-screen" />,
+      <AuthView brand="Acme" heading="Sign in" description="Welcome back." form={<div>form</div>} className="min-h-screen" />,
     );
     const root = container.firstElementChild as HTMLElement;
     expect(root.className).toContain("min-h-screen");
@@ -225,7 +254,7 @@ describe("AuthView", () => {
 
   it("merges a consumer style prop rather than dropping it", () => {
     const { container } = render(
-      <AuthView brand="Acme" heading="Sign in" form={<div>form</div>} style={{ marginTop: "8px" }} />,
+      <AuthView brand="Acme" heading="Sign in" description="Welcome back." form={<div>form</div>} style={{ marginTop: "8px" }} />,
     );
     const root = container.firstElementChild as HTMLElement;
     expect(root.style.marginTop).toBe("8px");
@@ -240,6 +269,7 @@ describe("AuthView", () => {
             Sign in to <strong>Acme</strong>
           </>
         }
+        description="Welcome back."
         form={<div>form</div>}
       />,
     );

@@ -352,7 +352,11 @@ Name a shipped template when its slots cover the page:
   `--ui-width-form-max` form measure, and `description` is a required prop
   so every step decides on a supporting line. The form slot is filled with
   Designer's `Form` / `TextField` / `Button`. There is no mode prop, and
-  the view does not call an auth provider.
+  the view does not call an auth provider. The optional `internalNote`
+  (`{ label, message }`) renders a badge-labelled development note under the
+  footnote, and a site passes it only in development. An auth page's
+  `footerSecondary` holds a legal row only, never a locale switcher, because
+  auth pages are single-locale.
 - **`ErrorView`** — error shell, including the sign-in-boundary states: not
   authorized (403), pending, revoked, and provider unavailable (503). It takes
   the same props for each; the status, title, description, and recovery

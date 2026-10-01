@@ -1,5 +1,5 @@
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
-import { Card, mergeUiClasses } from "@clossys/designer/atoms/server";
+import { Badge, Card, mergeUiClasses } from "@clossys/designer/atoms/server";
 import { PageHeader } from "@clossys/designer/blocks/server";
 import { SiteFooter, SiteHeader } from "@clossys/designer/shell/server";
 
@@ -41,7 +41,21 @@ export interface AuthViewProps extends HTMLAttributes<HTMLDivElement> {
    * Slot for a short legal line under the card and above the site footer.
    */
   footnote?: ReactNode;
-  /** Persistent footer content, rendered by Designer's `SiteFooter`. */
+  /**
+   * An optional development-only note under the footnote - which test
+   * sign-in to use, which environment this is. `label` is the caller's copy
+   * (for example "Internal"), rendered in a neutral Designer `Badge`, then
+   * `message`. The view cannot know it runs in development, so the site
+   * passes this prop only there; nothing renders when it is absent. Keep it
+   * out of `footnote`, which is the legal line.
+   */
+  internalNote?: { label: string; message: ReactNode };
+  /**
+   * Persistent footer content, rendered by Designer's `SiteFooter`. On an
+   * auth page this holds a legal row only (for example `SiteFooter.Legal`),
+   * never a locale switcher: auth pages are single-locale. This view renders
+   * no picker itself, so the rule is the caller's to keep.
+   */
   footerSecondary?: ReactNode;
   /** Merged onto the outer element's inline style, after this component's own. */
   style?: CSSProperties;
@@ -71,6 +85,7 @@ export function AuthView({
   form,
   secondaryAction,
   footnote,
+  internalNote,
   footerSecondary,
   className,
   style,
@@ -89,6 +104,12 @@ export function AuthView({
           {secondaryAction ? <div className="text-body-s text-ink-secondary">{secondaryAction}</div> : null}
         </Card>
         {footnote ? <p className="text-body-s text-ink-muted">{footnote}</p> : null}
+        {internalNote ? (
+          <p className="flex items-center gap-xs text-body-s text-ink-muted">
+            <Badge variant="neutral">{internalNote.label}</Badge>
+            {internalNote.message}
+          </p>
+        ) : null}
       </main>
       <SiteFooter secondary={footerSecondary} />
     </div>
