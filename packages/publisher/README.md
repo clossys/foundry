@@ -2386,12 +2386,16 @@ console.log(result.manifest.items.length);
 ### Sealing a website
 
 A website item moves from `kept` to `published` only on evidence. The caller
-supplies the evidence; Publisher checks it and never calls a provider.
+supplies the evidence; Publisher checks it and never calls a provider. Only
+the pack's `website` item can be sealed, and only on evidence that names it.
 
 `WebsiteSealEvidence` (`schemaVersion: 1`) is one bundle:
 
+- `itemId`: the pack item the evidence was taken for. It must equal the item
+  being sealed.
 - `commit`: the 40-hex commit being sealed, and `observedAt`, when the
-  evidence was taken.
+  evidence was taken. `observedAt` must be a real calendar date and time:
+  `2026-09-31T00:00:00Z` is refused as a bad shape.
 - `delivery`: `{ state: "ready", deployedCommit, productionUrl }`, with an
   `https` production URL.
 - `pages`: one `WebsiteSealPage` per observed page, each
@@ -2402,9 +2406,11 @@ supplies the evidence; Publisher checks it and never calls a provider.
   `{ kind: "none", reason }`. It is always stated; a missing value is refused
   and `none` needs a non-empty `reason`.
 
-`checkSealEvidence(evidence, { map, now })` returns `SealFinding[]`, each a
-`rule` and a `path`, and never throws. It refuses when:
+`checkSealEvidence(evidence, { map, now, itemId })` returns `SealFinding[]`,
+each a `rule` and a `path`, and never throws. `itemId` is optional; when
+given, the evidence's own `itemId` must equal it. It refuses when:
 
+- `itemId` is missing, or differs from the item being sealed;
 - `delivery.state` is not `ready`, or `deployedCommit` differs from `commit`;
 - a path on the `PublicationMap` has no page, or a page is not status 200, or
   its `servedCommit` differs from `commit`;
@@ -2413,13 +2419,15 @@ supplies the evidence; Publisher checks it and never calls a provider.
 - `contactIntake` is missing or malformed, or the map has no path entries.
 
 There is no waiver flag, option, or environment switch. A finding never
-repeats a digest, URL, reason, path, or commit from the input: it names a rule
-and an index path such as `pages[1].servedCommit`.
+repeats any text from the input: it names a fixed rule and a fixed field path
+or array index such as `pages[1].servedCommit`. A successful seal does return
+the entry id, which is derived from the item id and the commit.
 
 `sealWebsite({ manifest, ledger, itemId, evidence, map, now, strategyRevision })`
 is pure and returns `SealWebsiteResult`: `{ ok: true, manifest, ledger, entryId }`
 or `{ ok: false, findings }`. It refuses unless the evidence is clean, `itemId`
-is in `sealableItemIds(manifest)`, and the item is `public`. On accept the item
+is `website` and in `sealableItemIds(manifest)`, and the item is `public`
+(`item-not-website` otherwise). On accept the item
 is `published` with `verifiedAt` set to `now` and `publishedTo` set to the
 production URL, and the ledger gains one `web` entry through `appendEntry` with
 id `website-<itemId>-<first 12 of commit>`; the inputs are not changed. Sealing
@@ -2430,13 +2438,31 @@ The `publisher-seal` command runs it over files:
 
 ```sh
 publisher-seal clossys/publisher/pack.json clossys/publisher/record.json evidence.json map.json \
-  --item website --strategy-revision rev-1 [--now 2026-09-30T12:00:00Z]
+  --item website --strategy-revision rev-1
 ```
 
-It exits 0 when it sealed and wrote both files (each to a temp file, then
-renamed), 1 when it refused and wrote nothing, and 2 when it could not run: a
-missing or unreadable file, invalid JSON, a manifest, ledger, or map that is
-not itself valid, or bad arguments. `--now` defaults to the current time.
+It exits 0 when it sealed and wrote both files, 1 when it refused and wrote
+nothing, and 2 when it could not run: a missing or unreadable file, invalid
+JSON, a manifest, ledger, or map that is not itself valid, a manifest or
+ledger that is a symbolic link or has a second hard link, a lock held by
+another run, a file that changed while the run was deciding, a failed write, or
+bad arguments.
+
+The seal is made at the current time. There is no `--now`: a settable time
+would let a caller backdate the 24 hour evidence window, so passing it is an
+unknown flag and exits 2.
+
+Nothing is written before the gate has accepted. Then the command takes
+`<file>.seal.lock` on the manifest and the ledger (created exclusively, so a
+second run is refused instead of racing), re-reads both, and refuses if either
+changed since the gate looked. It writes each output, and a copy of the
+previous ledger, to a temp file created exclusively with the permissions of the
+file it replaces, then renames the ledger first and the manifest second. If the
+manifest rename fails, the previous ledger is renamed back and the run can be
+repeated; if that fails too, the error says the ledger was written and names
+the file that holds the previous ledger. A run removes only the temp and lock
+files it created; a lock left by a run that stopped is removed by hand once no
+run is active.
 
 ```ts
 import { checkSealEvidence } from "@clossys/publisher/pack";
@@ -2446,6 +2472,7 @@ const digest = "a".repeat(64);
 const findings = checkSealEvidence(
   {
     schemaVersion: 1,
+    itemId: "website",
     commit,
     observedAt: "2026-09-30T11:00:00Z",
     delivery: { state: "ready", deployedCommit: commit, productionUrl: "https://www.example.test/" },
@@ -2455,6 +2482,7 @@ const findings = checkSealEvidence(
   {
     map: { entries: [{ id: "home", template: "landing", documentId: "doc-home", location: { kind: "path", path: "/" } }] },
     now: "2026-09-30T12:00:00Z",
+    itemId: "website",
   },
 );
 console.log(findings.length === 0 ? "ready to seal" : findings.map((finding) => `${finding.rule} ${finding.path}`));
