@@ -4,12 +4,13 @@
  * source text -- a finding is a rule id, a repository-relative file and a
  * line, nothing else.
  */
-import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync, realpathSync, statSync } from "node:fs";
 import { isAbsolute, join, posix, relative, resolve, sep } from "node:path";
 
 export const SITE_CONFORMANCE_RULES = ["site/route-not-publisher-view", "site/template-route-duplicate", "site/raw-style-literal"] as const;
 export type SiteConformanceRule = (typeof SITE_CONFORMANCE_RULES)[number];
-export type SiteConformanceFindingRule = SiteConformanceRule | "site/waiver-unused";
+/** `site/waiver-unused` and `site/symlink-unscanned` are never waivable: a waiver cannot vouch for what was not read. */
+export type SiteConformanceFindingRule = SiteConformanceRule | "site/waiver-unused" | "site/symlink-unscanned";
 
 export const DEFAULT_SITE = "apps/site";
 export const WAIVERS_PATH = "clossys/conformance-waivers.json";
@@ -33,7 +34,7 @@ export interface SiteConformanceResult {
   readonly waived: readonly SiteConformanceWaived[];
 }
 
-/** The scan could not run (exit 2): a missing directory, zero files, a bad waiver file or manifest. */
+/** The scan could not run (exit 2): a missing directory, zero files, an unreadable file, a symlinked site, a bad waiver file or manifest. */
 export class SiteConformanceError extends Error {
   constructor(message: string) {
     super(message);
@@ -49,7 +50,6 @@ const IGNORE_MARKER = "token-gate:ignore";
 const HEX_COLOUR_RE = /(?<![0-9A-Za-z_-])#(?:[0-9a-fA-F]{8}|[0-9a-fA-F]{6}|[0-9a-fA-F]{3,4})(?![0-9A-Za-z_-])/;
 const COLOUR_FUNCTION_RE = /\b(?:rgb|hsl|oklch)\(/;
 const STRING_RE = /"(?:[^"\\\n]|\\.)*"|'(?:[^'\\\n]|\\.)*'|`(?:[^`\\\n]|\\.)*`/g;
-const IMPORT_RE = /(?:\bfrom|\bimport)\s*\(?\s*["']([^"'\n]+)["']/g;
 
 function readJson(path: string, what: string): unknown {
   try {
@@ -71,18 +71,157 @@ function isDirectory(path: string): boolean {
   }
 }
 
-function collectSources(dir: string, out: string[]): void {
-  for (const entry of readdirSync(dir, { withFileTypes: true })) {
-    if (entry.isDirectory()) {
-      if (!SKIPPED_DIRS.has(entry.name)) collectSources(join(dir, entry.name), out);
+/** Reads a source file; any failure is "could not run", never a raw system error and never a clean result. */
+function readSource(path: string): string {
+  try {
+    return readFileSync(path, "utf8");
+  } catch {
+    throw new SiteConformanceError("a source file under the site could not be read");
+  }
+}
+
+/** Whether a symlink in the app tree hides source this scan would otherwise have read. */
+function hidesSource(path: string, name: string): boolean {
+  if (name.endsWith(".ts") || name.endsWith(".tsx")) return true;
+  try {
+    return statSync(path).isDirectory();
+  } catch {
+    return true; // a dangling link cannot be shown to hide nothing
+  }
+}
+
+function collectSources(dir: string, out: string[], links: string[]): void {
+  let entries;
+  try {
+    entries = readdirSync(dir, { withFileTypes: true });
+  } catch {
+    throw new SiteConformanceError("a site directory could not be read");
+  }
+  for (const entry of entries) {
+    const path = join(dir, entry.name);
+    if (entry.isSymbolicLink()) {
+      if (hidesSource(path, entry.name)) links.push(path);
+    } else if (entry.isDirectory()) {
+      if (!SKIPPED_DIRS.has(entry.name)) collectSources(path, out, links);
     } else if (entry.isFile() && (entry.name.endsWith(".ts") || entry.name.endsWith(".tsx"))) {
-      out.push(join(dir, entry.name));
+      out.push(path);
     }
   }
 }
 
+function isIdentifierChar(code: number): boolean {
+  return (code >= 48 && code <= 57) || (code >= 65 && code <= 90) || (code >= 97 && code <= 122) || code === 95 || code === 36 || code > 127;
+}
+
+/** Index just past whitespace and comments starting at `i`. */
+function skipTrivia(source: string, i: number): number {
+  const n = source.length;
+  while (i < n) {
+    const ch = source.charCodeAt(i);
+    if (ch === 32 || ch === 9 || ch === 10 || ch === 13 || ch === 11 || ch === 12 || ch === 0xa0 || ch === 0xfeff) {
+      i += 1;
+    } else if (ch === 47 && source.charCodeAt(i + 1) === 47) {
+      const end = source.indexOf("\n", i);
+      i = end === -1 ? n : end;
+    } else if (ch === 47 && source.charCodeAt(i + 1) === 42) {
+      const end = source.indexOf("*/", i + 2);
+      i = end === -1 ? n : end + 2;
+    } else {
+      break;
+    }
+  }
+  return i;
+}
+
+/** Reads a quoted string opening at `start`; `end` is just past it, `value` is undefined when it ran to a newline or the end. */
+function readQuoted(source: string, start: number): { readonly end: number; readonly value: string | undefined } {
+  const quote = source.charCodeAt(start);
+  const n = source.length;
+  let i = start + 1;
+  while (i < n) {
+    const ch = source.charCodeAt(i);
+    if (ch === quote) return { end: i + 1, value: source.slice(start + 1, i) };
+    if (ch === 10 || ch === 13) return { end: i, value: undefined };
+    i += ch === 92 ? 2 : 1;
+  }
+  return { end: n, value: undefined };
+}
+
+/**
+ * Module specifiers named by `from "x"`, `import "x"` and `import("x")`, found
+ * in one linear pass that tracks comments, strings and template literals, so
+ * a commented-out or quoted import never counts and no input can make the
+ * scan superlinear. A single pass is not a grammar: regular-expression
+ * literals are not recognised (one containing a quote ends at its line).
+ */
 function importSpecifiers(source: string): string[] {
-  return [...source.matchAll(IMPORT_RE)].map((match) => match[1] ?? "");
+  const specs: string[] = [];
+  const n = source.length;
+  const templates: number[] = []; // open `${` brace depth, one entry per template being interpolated
+  let i = 0;
+  let previous = 0; // previous significant character code
+  let inTemplate = false;
+  while (i < n) {
+    if (inTemplate) {
+      const ch = source.charCodeAt(i);
+      if (ch === 92) {
+        i += 2;
+      } else if (ch === 96) {
+        inTemplate = false;
+        previous = ch;
+        i += 1;
+      } else if (ch === 36 && source.charCodeAt(i + 1) === 123) {
+        templates.push(0);
+        inTemplate = false;
+        previous = 123;
+        i += 2;
+      } else {
+        i += 1;
+      }
+      continue;
+    }
+    const ch = source.charCodeAt(i);
+    if (ch === 47 && (source.charCodeAt(i + 1) === 47 || source.charCodeAt(i + 1) === 42)) {
+      i = skipTrivia(source, i);
+    } else if (ch === 34 || ch === 39) {
+      i = readQuoted(source, i).end;
+      previous = ch;
+    } else if (ch === 96) {
+      inTemplate = true;
+      i += 1;
+    } else if (ch === 123 && templates.length > 0) {
+      templates[templates.length - 1] = (templates[templates.length - 1] as number) + 1;
+      previous = ch;
+      i += 1;
+    } else if (ch === 125 && templates.length > 0) {
+      if (templates[templates.length - 1] === 0) {
+        templates.pop();
+        inTemplate = true;
+      } else {
+        templates[templates.length - 1] = (templates[templates.length - 1] as number) - 1;
+      }
+      previous = ch;
+      i += 1;
+    } else if (isIdentifierChar(ch)) {
+      const start = i;
+      while (i < n && isIdentifierChar(source.charCodeAt(i))) i += 1;
+      const word = source.slice(start, i);
+      if ((word === "from" || word === "import") && previous !== 46) {
+        let j = skipTrivia(source, i);
+        if (source.charCodeAt(j) === 40) j = skipTrivia(source, j + 1);
+        const next = source.charCodeAt(j);
+        if (next === 34 || next === 39) {
+          const { value } = readQuoted(source, j);
+          if (value !== undefined && value !== "") specs.push(value);
+        }
+      }
+      previous = source.charCodeAt(i - 1);
+    } else {
+      if (ch > 32) previous = ch;
+      i += 1;
+    }
+  }
+  return specs;
 }
 
 function importsPublisherWeb(source: string): boolean {
@@ -180,6 +319,21 @@ function hasRawStyleLiteral(line: string): boolean {
   return (line.match(STRING_RE) ?? []).some((literal) => HEX_COLOUR_RE.test(literal));
 }
 
+/** Every component of `path` below the repository root must be a real directory: a symlink can point outside the repository. */
+function assertNoSymlink(root: string, path: string, rootRelative: string, what: string): void {
+  let realRoot: string;
+  let realPath: string;
+  try {
+    realRoot = realpathSync(root);
+    realPath = realpathSync(path);
+  } catch {
+    throw new SiteConformanceError(`${what} could not be resolved`);
+  }
+  if (realPath !== join(realRoot, rootRelative)) {
+    throw new SiteConformanceError(`${what} must not be, or be reached through, a symlink`);
+  }
+}
+
 function byLocation(a: SiteConformanceFinding, b: SiteConformanceFinding): number {
   return a.file < b.file ? -1 : a.file > b.file ? 1 : a.line - b.line || (a.rule < b.rule ? -1 : a.rule > b.rule ? 1 : 0);
 }
@@ -194,19 +348,24 @@ export function scanSiteConformance(repoRoot: string, options: { readonly site?:
     throw new SiteConformanceError("site directory must be a directory inside the repository root");
   }
   if (!isDirectory(siteDir)) throw new SiteConformanceError("site directory does not exist");
+  assertNoSymlink(root, siteDir, siteRelative, "site directory");
   const manifestIds = loadManifestRouteIds(siteDir);
   const waivers = loadWaivers(root);
 
   const appDir = join(siteDir, "app");
   const files: string[] = [];
-  if (isDirectory(appDir)) collectSources(appDir, files);
+  const links: string[] = [];
+  if (isDirectory(appDir)) {
+    assertNoSymlink(root, appDir, relative(root, appDir), "site app directory");
+    collectSources(appDir, files, links);
+  }
   files.sort();
   if (files.length === 0) throw new SiteConformanceError("site app directory has no .ts/.tsx files");
 
   const raw: SiteConformanceFinding[] = [];
   for (const file of files) {
     const rel = relative(root, file).split(sep).join(posix.sep);
-    const source = readFileSync(file, "utf8");
+    const source = readSource(file);
     const name = file.slice(file.lastIndexOf(sep) + 1);
     if (VIEW_FILES.has(name) && !reachesPublisherView(file, source)) {
       raw.push({ rule: "site/route-not-publisher-view", file: rel, line: 1 });
@@ -221,6 +380,10 @@ export function scanSiteConformance(repoRoot: string, options: { readonly site?:
       if (isCommentLine(line.trim()) || line.includes(IGNORE_MARKER)) return;
       if (hasRawStyleLiteral(line)) raw.push({ rule: "site/raw-style-literal", file: rel, line: index + 1 });
     });
+  }
+
+  for (const link of links) {
+    raw.push({ rule: "site/symlink-unscanned", file: relative(root, link).split(sep).join(posix.sep), line: 1 });
   }
 
   const findings: SiteConformanceFinding[] = [];
