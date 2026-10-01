@@ -81,22 +81,29 @@ applies at its cascade scope, or that the template builds.
   contact handler, client key, legal gate); `app/site-contact.ts` and
   `app/site-delivery.ts` assemble it.
 - `app/pack/page.tsx`, `app/pack/export/route.ts`, `app/pack-review.ts`,
-  `app/pack-review-copy.ts` — the dev-only pack review (`PackReviewView`):
+  `app/pack-review-output.ts`, `app/pack-review-copy.ts` — the dev-only pack review (`PackReviewView`):
   `/pack` lists each route in the manifest below with the contact page's forced
   states, the exports named in `clossys/publisher/pack.json`, and a lazy
   contact sheet at 390, 1024 and 1440 px, with the page's badge beside each
   state and frame. Each export links to `/pack/export?name=<export id>`, which
-  serves that output's bytes: the OG image, the plain-text email, and the HTML
-  email once for each of its 600 and 375 px review entries. The name is
-  compared with the ids the manifest lists and is never a path, so an unknown
-  name is a 404; a response is not cached or sniffed, and an HTML or SVG file
-  runs in a sandbox with no script. Both are served only when the gate
+  serves that output's bytes: the OG image, the plain-text email, the HTML
+  email once for each of its 600 and 375 px review entries, and the brand-kit
+  outputs (favicon, app icon, logo and any other file the kit lists). The name
+  is compared with the ids the manifest lists and is never a path, so an
+  unknown name is a 404; a response is not cached, sniffed or indexed
+  (`x-robots-tag: noindex, nofollow`), and an HTML or SVG file runs in a
+  sandbox with no script. The file is read through `app/pack-review-output.ts`,
+  which resolves the repository root and the file with `realpathSync` before
+  the containment check, so a symlink that points outside the root is a 404
+  like a `..` segment or an absolute path. Both are served only when the gate
   (`packReviewOpen`) is open: `SITE_TARGET` is `development` or `test`
-  (`packReviewAvailable`) **and** `VERCEL_ENV` is absent or `development`. On
+  (`packReviewAvailable`), `VERCEL_ENV` is absent or `development`, **and**
+  `NODE_ENV` is not `production` (a self-hosted production build sets no
+  `VERCEL_ENV`; only `SITE_TARGET=test` runs in production mode). On
   `production`, `preview`, an absent `SITE_TARGET`, any `SITE_TARGET` not
-  listed (it is a 404, not a 500), and a `VERCEL_ENV` of `production`,
-  `preview` or anything else, they answer 404 before any record or file is
-  read. The page takes no query string or other request input, and the
+  listed (it is a 404, not a 500), a `VERCEL_ENV` of `production`, `preview` or
+  anything else, and a production `NODE_ENV`, they answer 404 before any record
+  or file is read. The page takes no query string or other request input, and the
   export route takes only `name`. Neither is in `web-route-manifest.json`, so
   neither is in the sitemap, and both render per request. `pack.json` is read
   at request time from `clossys/publisher/` two levels above the app and never

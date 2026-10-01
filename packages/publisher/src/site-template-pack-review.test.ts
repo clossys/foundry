@@ -7,16 +7,19 @@
  * route manifest (so not in the sitemap). Behaviour: `resolvePackReviewPage`
  * and `resolvePackReviewExport`, which hold the page's and the export route's
  * whole decisions, are run with spy loaders, and unless `SITE_TARGET` is
- * `development` or `test` and the hosting environment (`VERCEL_ENV`) is
- * neither `production` nor `preview` they answer `not-found` without calling
- * them. The JSX and the route handler are not run here: the template's own
+ * `development` or `test`, the hosting environment (`VERCEL_ENV`) is
+ * neither `production` nor `preview`, and `NODE_ENV` is not `production`
+ * (unless the target is `test`), they answer `not-found` without calling
+ * them. The export route's file read (`pack-review-output.ts`) is run against
+ * a real temporary directory. The JSX and the route handler are not run here: the template's own
  * tsconfig preserves JSX and the template's records are not in this
  * package, so both are checked by shape, as the other template pages are.
  *
  * Every string below is a fictional fixture.
  */
 
-import { readFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createElement } from "react";
@@ -38,6 +41,7 @@ import {
   resolvePackReviewPage,
 } from "../templates/site/app/pack-review.js";
 import type { PackReviewEnv } from "../templates/site/app/pack-review.js";
+import { readReviewOutput } from "../templates/site/app/pack-review-output.js";
 import { packReviewAvailable, packReviewHref, siteSitemap } from "../templates/site/app/site-wiring.js";
 import type { SiteTarget } from "../templates/site/app/site-wiring.js";
 
@@ -85,6 +89,18 @@ describe("packReviewOpen", () => {
     for (const value of ["Production", "staging", "", " development"]) {
       expect(open({ SITE_TARGET: "development", VERCEL_ENV: value })).toBe(false);
     }
+  });
+
+  it("refuses a production-mode build on a development target with no hosting environment (self-hosted), unless the target is test", TIMEOUT, () => {
+    expect(open({ SITE_TARGET: "development", NODE_ENV: "production" })).toBe(false);
+    expect(open({ SITE_TARGET: "development", NODE_ENV: "production", VERCEL_ENV: "development" })).toBe(false);
+    expect(open({ SITE_TARGET: "test", NODE_ENV: "production" })).toBe(true);
+    expect(open({ SITE_TARGET: "test", NODE_ENV: "production", VERCEL_ENV: "production" })).toBe(false);
+  });
+
+  it("serves a development build on a development target with no hosting environment", TIMEOUT, () => {
+    expect(open({ SITE_TARGET: "development", NODE_ENV: "development" })).toBe(true);
+    expect(open({ SITE_TARGET: "development", NODE_ENV: "test" })).toBe(true);
   });
 
   it("refuses production, preview and an absent SITE_TARGET, which reads as production", TIMEOUT, () => {
@@ -432,6 +448,15 @@ describe("resolvePackReviewExport", () => {
     expect(model.headers["cache-control"]).toBe("no-store");
     expect(model.headers["content-security-policy"]).toMatch(/^sandbox; default-src 'none'/);
     expect(model.headers["content-security-policy"]).not.toMatch(/script-src|https?:/);
+    expect(model.headers["x-robots-tag"]).toBe("noindex, nofollow");
+  });
+
+  it("marks an image response and a text response not indexable", TIMEOUT, () => {
+    for (const name of ["share-card:0", "notification-email:1"]) {
+      const { model } = exportFor(OPEN, name);
+      if (model.kind !== "file") throw new Error("expected a file");
+      expect(model.headers["x-robots-tag"], name).toBe("noindex, nofollow");
+    }
   });
 
   it("answers not-found outside the gate and reads nothing", TIMEOUT, () => {
@@ -442,6 +467,7 @@ describe("resolvePackReviewExport", () => {
       { SITE_TARGET: "staging" },
       { SITE_TARGET: "development", VERCEL_ENV: "production" },
       { SITE_TARGET: "test", VERCEL_ENV: "preview" },
+      { SITE_TARGET: "development", NODE_ENV: "production" },
     ];
     for (const env of outside) {
       for (const [name] of NAMES) {
@@ -487,6 +513,80 @@ describe("resolvePackReviewExport", () => {
   });
 });
 
+describe("readReviewOutput (the contained file read, run against a real directory)", () => {
+  const SECRET = "outside-the-root-marker";
+
+  /** A repository root holding one listed output, a sibling directory outside it, and a directory inside it. */
+  function withTree(run: (root: string, outside: string) => void): void {
+    const base = realpathSync(mkdtempSync(join(tmpdir(), "pack-review-output-")));
+    try {
+      const root = join(base, "repo");
+      const outside = join(base, "outside");
+      mkdirSync(join(root, "out", "share"), { recursive: true });
+      mkdirSync(join(root, "out", "dir"), { recursive: true });
+      mkdirSync(outside);
+      writeFileSync(join(root, "out", "share", "og.png"), "inside-bytes");
+      writeFileSync(join(outside, "secret.txt"), SECRET);
+      run(root, outside);
+    } finally {
+      rmSync(base, { recursive: true, force: true });
+    }
+  }
+
+  it("reads a file inside the root", TIMEOUT, () => {
+    withTree((root) => {
+      expect(Buffer.from(readReviewOutput(root, "out/share/og.png") ?? []).toString()).toBe("inside-bytes");
+    });
+  });
+
+  it("refuses a .. traversal out of the root", TIMEOUT, () => {
+    withTree((root) => {
+      expect(readReviewOutput(root, "../outside/secret.txt")).toBeUndefined();
+      expect(readReviewOutput(root, "out/../../outside/secret.txt")).toBeUndefined();
+    });
+  });
+
+  it("refuses an absolute path, even one that exists", TIMEOUT, () => {
+    withTree((root, outside) => {
+      expect(readReviewOutput(root, join(outside, "secret.txt"))).toBeUndefined();
+    });
+  });
+
+  it("refuses a symlink inside the root that points at a file outside it", TIMEOUT, () => {
+    withTree((root, outside) => {
+      symlinkSync(join(outside, "secret.txt"), join(root, "out", "share", "link.png"));
+      expect(readReviewOutput(root, "out/share/link.png")).toBeUndefined();
+    });
+  });
+
+  it("refuses a path that goes through a symlinked directory pointing outside the root", TIMEOUT, () => {
+    withTree((root, outside) => {
+      symlinkSync(outside, join(root, "out", "escape"), "dir");
+      expect(readReviewOutput(root, "out/escape/secret.txt")).toBeUndefined();
+    });
+  });
+
+  it("still reads through a symlinked root, and through a symlink that stays inside it", TIMEOUT, () => {
+    withTree((root) => {
+      symlinkSync(join(root, "out", "share", "og.png"), join(root, "out", "inside-link.png"));
+      expect(Buffer.from(readReviewOutput(root, "out/inside-link.png") ?? []).toString()).toBe("inside-bytes");
+      const viaLink = join(root, "..", "repo-link");
+      symlinkSync(root, viaLink, "dir");
+      expect(Buffer.from(readReviewOutput(viaLink, "out/share/og.png") ?? []).toString()).toBe("inside-bytes");
+    });
+  });
+
+  it("answers undefined, and does not throw, for a directory, the root itself and a missing file", TIMEOUT, () => {
+    withTree((root) => {
+      expect(() => readReviewOutput(root, "out/dir")).not.toThrow();
+      expect(readReviewOutput(root, "out/dir")).toBeUndefined();
+      expect(readReviewOutput(root, "")).toBeUndefined();
+      expect(readReviewOutput(root, ".")).toBeUndefined();
+      expect(readReviewOutput(root, "out/share/missing.png")).toBeUndefined();
+    });
+  });
+});
+
 describe("app/pack/export/route.ts source shape", () => {
   const raw = readTemplate("app/pack/export/route.ts");
   const route = code(raw);
@@ -514,11 +614,19 @@ describe("app/pack/export/route.ts source shape", () => {
     expect(route.match(/process\.env/g)).toHaveLength(1);
   });
 
-  it("reads an output only from inside the repository root, and the name never forms a path", TIMEOUT, () => {
-    expect(route).toMatch(/relative\(root, file\)/);
-    expect(route).toMatch(/startsWith\(".."\)/);
-    expect(route.match(/readFileSync\(/g)).toHaveLength(1);
-    expect(route).not.toMatch(/readFileSync\([^)]*name/);
+  it("reads an output only through the contained reader, and the name never forms a path", TIMEOUT, () => {
+    expect(route).toMatch(/readReviewOutput\(resolve\(process\.cwd\(\), "\.\.", "\.\."\), path\)/);
+    expect(route).not.toMatch(/readFileSync|node:fs/);
+    const reader = code(readTemplate("app/pack-review-output.ts"));
+    expect(reader).toMatch(/relative\(root, file\)/);
+    expect(reader).toMatch(/startsWith\(".."\)/);
+    // On POSIX `relative` never returns an absolute path, so no behavioural test can observe this
+    // clause (it matters on Windows, across drives); the source pin is the only guard.
+    expect(reader).toMatch(/\|\| isAbsolute\(inside\)/);
+    expect(reader).toMatch(/realpathSync\(resolve\(rootDir\)\)/);
+    expect(reader).toMatch(/realpathSync\(resolve\(root, path\)\)/);
+    expect(reader.match(/readFileSync\(/g)).toHaveLength(1);
+    expect(reader).not.toMatch(/readFileSync\([^)]*name/);
   });
 
   it("answers an empty 404 for anything the model does not return as a file", TIMEOUT, () => {

@@ -1,6 +1,6 @@
-import { readFileSync } from "node:fs";
-import { isAbsolute, relative, resolve } from "node:path";
+import { resolve } from "node:path";
 import { resolvePackReviewExport } from "../../pack-review";
+import { readReviewOutput } from "../../pack-review-output";
 import { loadPackManifest } from "../../site-records";
 
 // The dev-only export route of the pack review: it serves the bytes of one
@@ -11,15 +11,7 @@ export const dynamic = "force-dynamic";
 
 /** Reads one listed output, only from inside the repository root that holds `clossys/` (two levels above the app). */
 function readOutput(path: string): Uint8Array | undefined {
-  const root = resolve(process.cwd(), "..", "..");
-  const file = resolve(root, path);
-  const inside = relative(root, file);
-  if (inside === "" || inside.startsWith("..") || isAbsolute(inside)) return undefined;
-  try {
-    return readFileSync(file);
-  } catch {
-    return undefined;
-  }
+  return readReviewOutput(resolve(process.cwd(), "..", ".."), path);
 }
 
 // The only request input is the export name, and the model only compares it

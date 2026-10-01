@@ -36,6 +36,10 @@ const OPEN_HOSTING: readonly (string | undefined)[] = [undefined, "development"]
  *   `production` on a production deployment and `preview` on a preview one,
  *   and a deployment that carries a development `SITE_TARGET` is still public,
  *   so either of those refuses; so does any value not listed.
+ * - `NODE_ENV` is not `production`, unless `SITE_TARGET` is `test`. A
+ *   self-hosted production build sets no `VERCEL_ENV`, so this is the check
+ *   that refuses it; the test target is the one production-mode run the
+ *   template's own tests make.
  */
 export function packReviewOpen(env: PackReviewEnv): boolean {
   let target: ReturnType<typeof resolveSiteTarget>;
@@ -44,7 +48,8 @@ export function packReviewOpen(env: PackReviewEnv): boolean {
   } catch {
     return false;
   }
-  return packReviewAvailable(target) && OPEN_HOSTING.includes(env["VERCEL_ENV"]);
+  if (!packReviewAvailable(target) || !OPEN_HOSTING.includes(env["VERCEL_ENV"])) return false;
+  return env["NODE_ENV"] !== "production" || target === "test";
 }
 
 export type PackReviewPageModel =
@@ -102,7 +107,7 @@ const CONTENT_TYPES: Readonly<Record<string, string>> = {
 };
 
 /**
- * Every served file is sealed: it is not sniffed, not cached, and runs in a
+ * Every served file is sealed: it is not sniffed, not cached, not indexed, and runs in a
  * sandbox with no script and no sub-resource but inline styles and `data:`
  * images, so an HTML email or an SVG cannot reach the site's own origin.
  */
@@ -110,6 +115,7 @@ const SEALED_HEADERS: Readonly<Record<string, string>> = {
   "x-content-type-options": "nosniff",
   "cache-control": "no-store",
   "content-security-policy": "sandbox; default-src 'none'; img-src data:; style-src 'unsafe-inline'",
+  "x-robots-tag": "noindex, nofollow",
 };
 
 function extensionOf(path: string): string {
