@@ -74,7 +74,23 @@ const EXPECTED_IDS = [
   "front-door.password-required.notice",
   "front-door.code-required.notice",
   "front-door.network.notice",
+  "front-door.password-weak.notice",
+  "front-door.reset-code.primary",
+  "front-door.activation.label",
+  "front-door.activation-first-name.label",
+  "front-door.activation-last-name.label",
+  "front-door.name-required.notice",
 ] as const;
+
+/** The entries the reset and activation forms added, with the exact text they ship. */
+const ACTIVATE_RESET_TEXT: ReadonlyArray<[string, string]> = [
+  ["front-door.password-weak.notice", "That password isn’t strong enough. Use a longer one you haven’t used anywhere else."],
+  ["front-door.reset-code.primary", "Reset password"],
+  ["front-door.activation.label", "Password"],
+  ["front-door.activation-first-name.label", "First name"],
+  ["front-door.activation-last-name.label", "Last name"],
+  ["front-door.name-required.notice", "Enter your first and last name."],
+];
 
 function tokensIn(text: string): string[] {
   return [...text.matchAll(/\{([^{}]+)\}/g)].map((match) => match[1]!);
@@ -89,7 +105,7 @@ describe("catalog shape", () => {
     expect(validateCopyRegistryShape(FRONT_DOOR_COPY_EN)).toEqual([]);
     expect(FRONT_DOOR_COPY_IDS).toEqual(EXPECTED_IDS);
     expect(FRONT_DOOR_COPY_EN.entries.map((entry) => entry.id)).toEqual([...FRONT_DOOR_COPY_IDS]);
-    expect(FRONT_DOOR_COPY_EN.entries).toHaveLength(57);
+    expect(FRONT_DOOR_COPY_EN.entries).toHaveLength(63);
   });
 
   it("identifies itself as the shipped English revision 1 catalog", () => {
@@ -118,13 +134,31 @@ describe("catalog shape", () => {
   });
 });
 
+describe("activation and reset entries", () => {
+  it("ships the six entries with their exact text, none naming a noun", () => {
+    for (const [id, text] of ACTIVATE_RESET_TEXT) {
+      const entry = FRONT_DOOR_COPY_EN.entries.find((candidate) => candidate.id === id);
+      expect(entry?.text, id).toBe(text);
+      expect(entry?.placeholders, id).toBeUndefined();
+      expect(resolveFrontDoorCopy(id as FrontDoorKey, {}).text, id).toBe(text);
+    }
+  });
+
+  it("reads the same for any brand: no first-person plural and no brand name in these texts", () => {
+    for (const [id, text] of ACTIVATE_RESET_TEXT) {
+      expect(text, id).not.toMatch(/\b(we|we’ll|we’re|our|us)\b/i);
+      expect(text, id).not.toMatch(/\{/);
+    }
+  });
+});
+
 describe("catalog file", () => {
   const filePath = new URL("../templates/front-door.en.json", import.meta.url);
 
   it("parses as a registry and deep-equals the shipped catalog", () => {
     const data: unknown = JSON.parse(readFileSync(filePath, "utf8"));
     expect(() => parseCopyRegistry(data)).not.toThrow();
-    expect(parseCopyRegistry(data).entries).toHaveLength(57);
+    expect(parseCopyRegistry(data).entries).toHaveLength(63);
     expect(data).toEqual(FRONT_DOOR_COPY_EN);
   });
 
@@ -155,7 +189,7 @@ describe("voice", () => {
   it("has no error finding under the test voice", () => {
     const report = checkCopyRecord(FRONT_DOOR_COPY_EN, voice);
     expect(report.complete).toBe(true);
-    expect(report.checkedCount).toBe(57);
+    expect(report.checkedCount).toBe(63);
     expect(report.findings.filter((finding) => finding.severity === "error")).toEqual([]);
   });
 

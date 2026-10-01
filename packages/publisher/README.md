@@ -3148,7 +3148,7 @@ cosmetic gap.
   `SiteOpenGraphMetadata`, `SitePageInput`, `SitePageKind`, `SiteShareCard`,
   `SiteTwitterMetadata`, `SiteMetadataLintFinding`, `SiteMetadataLintResult`,
   `SiteMetadataLintRule`, `SiteMetadataRequiredTag`, and
-  `SiteMetadataTagSelector` types, plus `GlobalErrorDocument` and `GlobalErrorDocumentProps`.
+  `SiteMetadataTagSelector` types, plus `GlobalErrorDocument` and `GlobalErrorDocumentProps`, and `ActivateForm`, `ResetForm`, `ActivateDetails`, `ActivateFailure`, `ActivateFormProps`, `ActivateResult`, `ResetDetails`, `ResetFailure`, `ResetFormProps` and `ResetResult` (see "Activation and reset forms").
 - `document`: `validateStructuredDocument`, `renderStructuredDocument`,
   `RenderError`, and the `DocumentBlock`, `DocumentCallout`,
   `DocumentColumnStyle`, `DocumentDefinitionList`, `DocumentInline`, `DocumentList`,
@@ -3576,6 +3576,133 @@ export default route.Image;
   input fails when the route module loads. Errors are `ShareCardError`,
   unchanged; a blank `title` throws `blank-text`, and an `ImageResponse` that is
   not a function throws `invalid-input`.
+
+### Activation and reset forms — `ActivateForm` and `ResetForm`
+
+`ActivateForm` and `ResetForm`, exported from `@clossys/publisher/web`, are
+provider-free forms for `AuthView`'s form slot, built like `SignInForm`: they
+import no identity provider and read no browser global, the caller injects
+async handlers that answer a closed union of results, and the caller decides
+where to go next. Both are client components, so import them from a module that
+is a client boundary; under the `react-server` condition each name is a stub
+that throws a `RenderError` when called. The page's `<h1>` stays `AuthView`'s.
+
+```tsx
+import { ActivateForm, AuthView, ResetForm } from "@clossys/publisher/web";
+import type { ActivateDetails, ActivateResult, ResetDetails, ResetResult } from "@clossys/publisher/web";
+
+declare const brand: React.ReactNode;
+declare function setPassword(details: ActivateDetails): Promise<ActivateResult>; // your handler
+declare function sendCode(identifier: string): Promise<ResetResult>; // your handler
+declare function changePassword(details: ResetDetails): Promise<ResetResult>; // your handler
+declare function sendCodeAgain(): Promise<ResetResult>; // your handler
+declare function goToSignIn(): void;
+declare function goToApp(): void;
+declare const identityServiceIsConfigured: boolean;
+
+export function ActivatePage() {
+  return (
+    <AuthView
+      brand={brand}
+      heading="Set up your account"
+      description="You’re invited to Acme Console. Choose a password to finish."
+      isDisabled={!identityServiceIsConfigured}
+      form={<ActivateForm activate={setPassword} onActivated={goToApp} collectName unavailable={!identityServiceIsConfigured} nouns={{ surface: "Acme Console" }} />}
+    />
+  );
+}
+
+export function ResetPage() {
+  return (
+    <AuthView
+      brand={brand}
+      heading="Reset your password"
+      description="Enter your email and we’ll send you a code."
+      form={<ResetForm request={sendCode} reset={changePassword} resendCode={sendCodeAgain} onReset={goToSignIn} nouns={{ surface: "Acme Console" }} />}
+    />
+  );
+}
+```
+
+`ActivateForm` props:
+
+- `activate({ password, firstName?, lastName? })`: resolves to an
+  `ActivateResult`, `{ status: "ok" }` or `{ status: ActivateFailure }`, where
+  `ActivateFailure` is `"expired"`, `"weakPassword"`, `"rateLimited"`,
+  `"network"` or `"unavailable"`. It is called only on submit, with the
+  password as typed; the names are passed, trimmed, only with `collectName`.
+  A handler that throws, or answers anything outside the union, reads as
+  `unavailable`.
+- `onActivated()`: called once after `activate` answers `ok`. The form does not
+  navigate, set a cookie or sign anyone in.
+- `collectName` (optional): also asks for a first and a last name, both
+  required. When both are empty the notice shows once, on the first name.
+- `unavailable` (optional), `nouns` (optional): see below.
+
+The form asks for a password once, with no confirmation field, and shows no
+identifier.
+
+`ResetForm` props:
+
+- `request(identifier)`: asks for a code to be sent. It receives the
+  identifier trimmed. `reset({ code, password })`: sets the new password; the
+  code is trimmed. `resendCode()` (optional): sends the code again; without it
+  the form shows no resend control. Each resolves to a `ResetResult`,
+  `{ status: "ok" }` or `{ status: ResetFailure }`, where `ResetFailure` is
+  `"credential"`, `"notFound"`, `"weakPassword"`, `"rateLimited"`, `"locked"`,
+  `"network"` or `"unavailable"`. A handler that throws, or answers anything
+  outside the union, reads as `unavailable`.
+- `onReset()`: called once after `reset` answers `ok`. The form does not
+  navigate or sign anyone in, and has no link back to sign-in; the page adds
+  its own.
+- `unavailable` (optional), `nouns` (optional): see below.
+
+`ResetForm` steps: the identifier step asks for the identifier. After `request`
+answers `ok` the second step shows the code (`front-door.code.description`
+names the identifier), a code field, a new password field and the main button
+(`front-door.reset-code.primary`), and moves focus to the code field. A ghost
+button (`front-door.code.secondary`, only with `resendCode`) sends a new code,
+clearing the code field and any notice; another (`front-door.password.secondary`)
+returns to the identifier step with the identifier kept and the code and
+password cleared. A `reset` answer of `ok` calls `onReset` once and the submit
+button stays pending.
+
+Where each failure shows:
+
+| Form and step | Result | Where | Copy id |
+| --- | --- | --- | --- |
+| both | empty field | inline on that field, and focus moves to the first | `front-door.name-required.notice`, `front-door.password-required.notice`, `front-door.identifier-required.notice` or `front-door.code-required.notice` |
+| `ActivateForm` | `weakPassword` | inline on the password field | `front-door.password-weak.notice` |
+| `ActivateForm` | `expired` | the form's one `role="alert"` | `front-door.activation.notice` |
+| `ResetForm`, identifier step | `notFound` | inline on the identifier field | `front-door.identifier-not-found.notice` |
+| `ResetForm`, second step | `credential` | inline on the code field | `front-door.code.notice` |
+| `ResetForm`, second step | `weakPassword` | inline on the new password field | `front-door.password-weak.notice` |
+| both | `rateLimited` | the form's one `role="alert"` | `front-door.rate-limited.notice` |
+| `ResetForm` | `locked` | the form's one `role="alert"` | `front-door.locked.notice` |
+| both | `network` | the form's one `role="alert"` | `front-door.network.notice` |
+| both | `unavailable`, a throw, or an unknown answer | the form's one `role="alert"` | `front-door.unavailable.notice` |
+
+An answer that makes no sense for the call reads as `unavailable`: for
+`ResetForm`, `credential` or `weakPassword` from `request`, `notFound` from
+`reset`, and anything but `rateLimited`, `locked`, `network` or `unavailable`
+from `resendCode`; for `ActivateForm`, `locked`, which it has no notice for.
+
+Both forms share the rest of their behaviour. Nothing is validated before a
+submit or on blur, and an empty submit calls no handler. An inline error clears
+when its field changes. The submit button is pending, never `disabled`, while a
+call is in flight, and a second submit is ignored. Each form's `<form>` is
+labelled by its title id (`front-door.activation.title`,
+`front-door.reset.title` or `front-door.code.title`) and has no error summary.
+Every visible word is resolved on each render through `resolveFrontDoorCopy`,
+so an incomplete `nouns` throws a `RenderError` `resolution-failed` naming the
+id, never a noun; pass `surface`, which the network notice names. The
+`identifier` noun is the visitor's own entry and is not a prop.
+
+`unavailable` (optional, default `false`) is for a page that cannot reach its
+identity service, such as a missing configuration. The form stays visible, its
+fields and buttons are disabled, `front-door.unavailable.notice` shows in the
+form's one alert from the first render, and no handler is ever called. Pair it
+with `AuthView`'s `isDisabled`, as above.
 
 ## Front-door conformance
 

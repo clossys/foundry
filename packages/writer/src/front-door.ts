@@ -12,7 +12,7 @@
  *
  * - F1: an id is `front-door.<state>.<slot>`, where the slot is one of
  *   `title`, `description`, `label`, `primary`, `secondary`, `notice` or
- *   `alt`. This version ships 57 ids; `FRONT_DOOR_COPY_IDS` is
+ *   `alt`. This version ships 63 ids; `FRONT_DOOR_COPY_IDS` is
  *   the closed list and `FrontDoorKey` its element union.
  * - F2: a `{token}` in a default text is a noun from `FRONT_DOOR_NOUNS`
  *   and is declared in the entry's `placeholders`. The nouns are a closed
@@ -96,6 +96,12 @@ export const FRONT_DOOR_COPY_IDS = [
   "front-door.password-required.notice",
   "front-door.code-required.notice",
   "front-door.network.notice",
+  "front-door.password-weak.notice",
+  "front-door.reset-code.primary",
+  "front-door.activation.label",
+  "front-door.activation-first-name.label",
+  "front-door.activation-last-name.label",
+  "front-door.name-required.notice",
 ] as const;
 
 /** A reserved front-door copy id. */
@@ -195,6 +201,15 @@ const DEFAULTS: Readonly<Record<FrontDoorKey, { text: string; context: string }>
   "front-door.password-required.notice": { text: "Enter your password.", context: "password page: notice when the password is empty" },
   "front-door.code-required.notice": { text: "Enter the code.", context: "code page: notice when the code is empty" },
   "front-door.network.notice": { text: "Couldn’t reach {surface}. Check your connection and try again.", context: "any page: notice when the request could not reach the surface" },
+  "front-door.password-weak.notice": {
+    text: "That password isn’t strong enough. Use a longer one you haven’t used anywhere else.",
+    context: "reset and activation pages: notice when the new password is refused as too weak",
+  },
+  "front-door.reset-code.primary": { text: "Reset password", context: "reset page, code step: main button" },
+  "front-door.activation.label": { text: "Password", context: "activation page: password field label" },
+  "front-door.activation-first-name.label": { text: "First name", context: "activation page: first name field label" },
+  "front-door.activation-last-name.label": { text: "Last name", context: "activation page: last name field label" },
+  "front-door.name-required.notice": { text: "Enter your first and last name.", context: "activation page: notice when a name field is empty" },
 };
 
 function placeholdersOf(text: string): string[] {
