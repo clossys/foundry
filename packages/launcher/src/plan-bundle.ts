@@ -419,13 +419,16 @@ function computeChangeSet(
       return false;
     }
     const desired = contentDigest(text);
-    const outcome = reconcile(path, desired);
+    // A repository set up before the guide existed has a trusted ledger with no row for it, so an apply set may add the guide, and only
+    // the guide, and only where nothing at all is on disk. A file or directory already there is the client's: it falls through to reconcile.
+    const guideAdd = observation.phase === "apply" && ledger !== null && path === AGENTS_GUIDE_PATH && fileRowAt(path) === null && !presentAt(path);
+    const outcome = guideAdd ? ({ write: true, before: null } as const) : reconcile(path, desired);
     if (!outcome.write) {
       refused.push({ path, reason: outcome.reason, item });
       return false;
     }
     // An apply set may keep or update only where the trusted ledger already has a row (issue #1545 fix 7).
-    if (observation.phase === "apply" && fileRowAt(path) === null && outcome.before === null) {
+    if (observation.phase === "apply" && fileRowAt(path) === null && outcome.before === null && !guideAdd) {
       refused.push({ path, reason: "unowned-existing", item });
       return false;
     }

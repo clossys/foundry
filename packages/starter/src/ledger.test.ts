@@ -145,6 +145,22 @@ describe("ledger succession", () => {
     expect(ledgerSuccession(bytesOf("setup-generation-1"), utf8(text(relabelled))).admission).toBe("approval-claimed");
   });
 
+  it("admits the one guide row the contract's S3 names, by its path, mode and the digest of the guide's bytes, and no other add", () => {
+    // Starter holds no copy of the guide's text: the digest it admits is the one the contract states, and the corpus row carries it.
+    const GUIDE_DIGEST = "sha256:6f3d39117a95abeb969656c3e11eea52ad27bdafd2341b98ead38b67944e7a53";
+    const description = String(LEDGER_CONTRACT.description);
+    expect([...new Set(description.match(/after sha256:[0-9a-f]{64}/gu))]).toEqual([`after ${GUIDE_DIGEST}`]);
+    const added = ledger("admitted-adds-guide").files.filter((row) => !ledger("admitted-generation-2").files.some((other) => other.path === row.path));
+    expect(added.map((row) => [row.path, row.mode, row.after])).toEqual([["clossys/AGENTS.md", "100644", GUIDE_DIGEST]]);
+    expect(ledgerSuccession(bytesOf("setup-generation-1"), bytesOf("admitted-adds-guide"))).toEqual({ change: "next-generation", admission: "admitted", violations: [] });
+    // The same add with a file row dropped, or a second row added beside it, is refused.
+    const dropped = loose(ledger("admitted-adds-guide"));
+    dropped.files = dropped.files.filter((row: { path: string }) => row.path !== "clossys/brief.json");
+    const twice = loose(ledger("admitted-adds-guide"));
+    twice.files = [...twice.files, { ...twice.files.find((row: { path: string }) => row.path === "clossys/AGENTS.md"), path: "clossys/notes.md" }];
+    for (const head of [dropped, twice]) expect(ledgerSuccession(bytesOf("setup-generation-1"), utf8(text(head))).violations.map(label)).toEqual(["S3"]);
+  });
+
   it("refuses non-canonical bytes and never reads them as unchanged", () => {
     const canonicalText = text(ledger("setup-generation-1"));
     const canonical = utf8(canonicalText);
