@@ -35,6 +35,17 @@ const CONTROL_SINGLE_LINE = new RegExp("[\\u0000-\\u001f\\u007f-\\u009f\\u2028\\
 // The message field keeps TAB (U+0009), LF (U+000A) and CR (U+000D).
 const CONTROL_MESSAGE = new RegExp("[\\u0000-\\u0008\\u000b\\u000c\\u000e-\\u001f\\u007f-\\u009f]");
 
+// A high surrogate not followed by a low one, or a low surrogate not preceded
+// by a high one. Without the `u` flag the pattern reads code units, which is
+// what a lone surrogate is.
+const LONE_SURROGATE = /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/;
+// Fields whose text reaches the notification unconstrained by a shape check.
+const WELL_FORMED_FIELDS: readonly ContactFieldName[] = ["name", "message"];
+
+// The largest delay setTimeout honours; a larger one fires at once.
+const TIMEOUT_MAX_MS = 2_147_483_647;
+const TIMED_OUT = Symbol("timed-out");
+
 const EMAIL_LOCAL_ATOM = /^[A-Za-z0-9!#$%&'*+/=?^_`{|}~-]+$/;
 const EMAIL_LABEL = /^[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?$/;
 const EMAIL_LOCAL_MAX_LENGTH = 64;
@@ -83,6 +94,34 @@ function resolveTopics(value: unknown, topicCap: number): readonly string[] {
     topics.push(topic);
   }
   return topics;
+}
+
+function resolveTimeout(name: string, value: unknown): number | undefined {
+  if (value === undefined) return undefined;
+  if (typeof value !== "number" || !Number.isSafeInteger(value) || value <= 0 || value > TIMEOUT_MAX_MS) {
+    fail(`${name} must be a positive integer no greater than ${TIMEOUT_MAX_MS}`);
+  }
+  return value;
+}
+
+/**
+ * Runs `call` and settles with its outcome, or with TIMED_OUT once `ms` have
+ * passed. The call is made synchronously either way and is never cancelled;
+ * an outcome that arrives after the timeout, including a rejection, is
+ * discarded. The timer is always cleared.
+ */
+async function settleWithin(call: () => unknown, ms: number | undefined): Promise<unknown> {
+  if (ms === undefined) return call();
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<typeof TIMED_OUT>((resolve) => {
+    timer = setTimeout(() => resolve(TIMED_OUT), ms);
+  });
+  const work = (async () => call())();
+  try {
+    return await Promise.race([work, timeout]);
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 function resolveRecipients(value: unknown): readonly [string, ...string[]] {
@@ -159,7 +198,8 @@ function isPhoneShape(phone: string): boolean {
 
 /**
  * One field's checks, in the documented order, stopping at the first failure:
- * not-a-string, too-long, control-character, required, shape. Length is checked
+ * not-a-string, too-long, control-character, lone surrogate (name and message),
+ * required, shape. Length is checked
  * before any scan so later checks cost at most the cap.
  */
 function checkField(
@@ -176,6 +216,7 @@ function checkField(
   if (length > cap) return { issue: "too-long", value: undefined, length };
   const control = field === "message" ? CONTROL_MESSAGE : CONTROL_SINGLE_LINE;
   if (control.test(raw)) return { issue: "control-character", value: undefined, length };
+  if (WELL_FORMED_FIELDS.includes(field) && LONE_SURROGATE.test(raw)) return { issue: "malformed", value: undefined, length };
   const trimmed = raw.trim();
   if (trimmed.length === 0) return { issue: field === "phone" ? undefined : "required", value: undefined, length };
 
@@ -243,7 +284,8 @@ function validateSubmission(
  * configured. The config is read once: later mutation of the object or its
  * arrays does not change the handler. The same holds for the ports: `deliver`
  * and `check` are each read once here, and a later reassignment on the port
- * has no effect. Each is called with its own port as `this`.
+ * has no effect. Each is called with its own port as `this`. The optional
+ * timeouts are validated and read here too.
  */
 export function createContactHandler(config: ContactHandlerConfig): ContactHandler {
   if (typeof config !== "object" || config === null) fail("config must be an object");
@@ -261,6 +303,8 @@ export function createContactHandler(config: ContactHandlerConfig): ContactHandl
   const subject = requireLine("subject", config.subject);
   if (subject.trim().length === 0) fail("subject must not be blank");
   const honeypotField = resolveHoneypot(config.honeypotField);
+  const limiterTimeoutMs = resolveTimeout("limiterTimeoutMs", config.limiterTimeoutMs);
+  const deliveryTimeoutMs = resolveTimeout("deliveryTimeoutMs", config.deliveryTimeoutMs);
 
   const createMessageId: unknown = config.createMessageId;
   if (createMessageId !== undefined && typeof createMessageId !== "function") {
@@ -315,10 +359,11 @@ export function createContactHandler(config: ContactHandlerConfig): ContactHandl
     // 4. Limiter: only exactly true proceeds.
     let answer: unknown;
     try {
-      answer = await Reflect.apply(check, limiter, [clientKey]);
+      answer = await settleWithin(() => Reflect.apply(check, limiter, [clientKey]), limiterTimeoutMs);
     } catch {
       return unavailable("limiter-failed");
     }
+    if (answer === TIMED_OUT) return unavailable("limiter-timeout");
     if (answer === false) return { status: "rate-limited" };
     if (answer !== true) return unavailable("limiter-non-boolean");
 
@@ -353,7 +398,8 @@ export function createContactHandler(config: ContactHandlerConfig): ContactHandl
       html: rendered.html,
     };
     try {
-      await Reflect.apply(deliver, delivery, [message]);
+      const outcome = await settleWithin(() => Reflect.apply(deliver, delivery, [message]), deliveryTimeoutMs);
+      if (outcome === TIMED_OUT) return unavailable("delivery-timeout");
     } catch {
       return unavailable("delivery-failed");
     }
