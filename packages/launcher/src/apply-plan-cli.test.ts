@@ -265,6 +265,8 @@ describe("launcher-apply-plan snapshot (#1178)", () => {
     expect(String(write.mock.calls[0]?.[0])).toBe(`${PLAN_USAGE}\n`);
     expect(PLAN_USAGE).toMatch(/^Usage: launcher-apply-plan plan \[--help\]/);
     expect(PLAN_USAGE).not.toMatch(/--approve|--subject|--binding/);
+    // Planned mode adds the V3 row of a refused repository to the sheet, so the usage does not say the sheet differs only by its mode line.
+    expect(PLAN_USAGE).toContain('under "Checks not satisfied", the V3 row of a repository the hub refuses');
   });
 
   it("writes the snapshot to clossys/.state/apply/registry-snapshot.json under the hub by default, and exits 0", async () => {
@@ -512,6 +514,9 @@ describe("launcher-apply-plan materialize and verify decide the approval from th
     const help = log.mock.calls.map((call) => String(call[0])).join("\n");
     expect(help).toContain("launcher-apply-plan body --repo <id>");
     expect(help).toContain("Exit codes: 0 = the body was printed");
+    // A mistaken binding has no way out, and the body goes to the pull request as a file.
+    expect(help).toContain("refused as body-bound");
+    expect(help).toContain("--body-file");
     expect(help).not.toMatch(/docs\//);
     expect(APPLY_PLAN_USAGE).toContain("launcher-apply-plan body --repo <id> --task-record <n> [--supersedes <n>]...");
   }, 120_000);
