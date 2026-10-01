@@ -155,6 +155,7 @@ Use explicit subpaths:
 - `@clossys/publisher/surfaces` — the one-owner-per-file contract for surface documents under `clossys/publisher/surfaces/`. See "Surface documents move to Publisher," below.
 - `@clossys/publisher/materials` — the materials mini-site (overviews, pitch decks, audience variants). See "Materials site," below.
 - `@clossys/publisher/templates` — the pack's default templates and the channel spec registry. See "Templates and channel specs," below.
+- `@clossys/publisher/testing` — a test-support check that a consumer's front-door surfaces (sign-in, boundary and error pages) hold the shared invariants. See "Front-door conformance," below.
 
 The package has no root export. `core` is deliberately framework-agnostic;
 the web and document subpaths have optional React peers, while `web` also
@@ -2879,6 +2880,10 @@ cosmetic gap.
   `EmailSignatureLink`, `EmailSignaturePerson`, `ChannelImageSpec`,
   `ChannelTextLimit`, `SocialChannelSpec`, and `VideoCallBackgroundSpec`
   types. See "Templates and channel specs," above.
+- `testing`: `checkFrontDoor`, `expectFrontDoorConformance`,
+  `PRIMARY_ACTION_CLASS`, and the `FrontDoorConfig`, `FrontDoorFinding`,
+  `FrontDoorRule`, `FrontDoorSurface`, and `FrontDoorSurfaceCase` types.
+  See "Front-door conformance," below.
 
 Web page-level compositions belong here, not in `designer`; they consume
 design-system primitives and accept consumer-owned copy through slots.
@@ -3195,6 +3200,71 @@ becomes a `replyTo` address. It requires an ASCII dot-atom local part of at most
 addresses and quoted local parts are refused as `malformed`. Phone accepts only
 ASCII digits, space and `+ - ( ) . / # * x X`, with at least one digit. Bidirectional
 formatting characters are not refused.
+
+## Front-door conformance
+
+`@clossys/publisher/testing` is a test-support entry for the test step a
+consumer already has. It renders the consumer's own sign-in, activation,
+sign-out landing, reset, boundary, not-found, global-error and
+service-unavailable surfaces with `renderToStaticMarkup`, parses each with the
+caller's `DOMParser`, and reports every invariant a surface breaks. The kit
+builds no view and no copy: each `render` returns the consumer's own element.
+
+| Rule | Asks |
+| --- | --- |
+| `one-h1` | Exactly one `<h1>`. |
+| `form-measure` | The `<main>` of a sign-in, activation or reset surface carries `max-width:var(--ui-width-form-max, none)`. |
+| `one-primary-action` | Exactly one button, link or `[role=button]` with class token `bg-accent` (`PRIMARY_ACTION_CLASS`), inside `<main>` or, when there is none, the body. |
+| `page-title` | `formatPageTitle(title)` does not throw and, when `title.actual` is given, equals it. `title` is required on every surface except `global-error`. |
+| `global-error-head` | A `global-error` document has exactly one `<title>` equal to `formatPageTitle(title)` (or matching `<page> · <brand>` when no `title` is given), a robots meta containing `noindex`, and exactly one `link[rel=icon]`. |
+
+`checkFrontDoor({ surfaces })` returns the findings as `{ surface, rule,
+message }` objects. `expectFrontDoorConformance` throws one `Error` listing
+all of them. The entry imports only `react` (types), `react-dom/server` and
+the site-metadata module, so it needs the `react` and `react-dom` peers and
+nothing else. It needs a `DOMParser`, which the caller's DOM test environment
+(for example jsdom) provides, and throws a plain `Error` saying so when there
+is none.
+
+```tsx
+// @vitest-environment jsdom
+import { AuthView, BoundaryView } from "@clossys/publisher/web";
+import { PRIMARY_ACTION_CLASS, expectFrontDoorConformance } from "@clossys/publisher/testing";
+import { expect, it } from "vitest";
+
+it("keeps the front door conformant", () => {
+  expect(() =>
+    expectFrontDoorConformance({
+      surfaces: [
+        {
+          surface: "sign-in",
+          title: { page: "Sign in", brand: "Example Studio" },
+          render: () => (
+            <AuthView
+              brand="Example Studio"
+              heading="Sign in"
+              description="Welcome back."
+              form={<button type="submit" className={PRIMARY_ACTION_CLASS}>Sign in</button>}
+            />
+          ),
+        },
+        {
+          surface: "not-found",
+          title: { page: "Page not found", brand: "Example Studio" },
+          render: () => (
+            <BoundaryView
+              brand="Example Studio"
+              status="404"
+              title="Page not found"
+              action={<a href="/" className={PRIMARY_ACTION_CLASS}>Go home</a>}
+            />
+          ),
+        },
+      ],
+    }),
+  ).not.toThrow();
+});
+```
 
 ## Licence
 

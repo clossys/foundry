@@ -92,6 +92,10 @@
     "./templates": {
       "types": "./dist/templates/index.d.ts",
       "import": "./dist/templates/index.js"
+    },
+    "./testing": {
+      "types": "./dist/testing/index.d.ts",
+      "import": "./dist/testing/index.js"
     }
   },
   "imports": {
