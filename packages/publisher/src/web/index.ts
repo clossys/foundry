@@ -31,8 +31,6 @@ export type {
   SiteMetadataRequiredTag,
   SiteMetadataTagSelector,
 } from "./siteMetadataLint.js";
-export { ShareCardError, SHARE_CARD_DEFAULT_PATH, SHARE_CARD_DEFAULT_ROLES, buildShareCard } from "./shareCard.js";
-export type { ShareCard, ShareCardErrorReason, ShareCardInput, ShareCardMark, ShareCardRoles } from "./shareCard.js";
 export { brandAssetHeadLinks, publicationMapEmitsBrandAssets } from "./brandAssetHead.js";
 export { listWebTemplateNames } from "./internal/webTemplates.js";
 export { defineWebTemplate } from "./internal/defineWebTemplate.js";
@@ -103,3 +101,23 @@ export { LandingView } from "./views/index.js";
 export type { LandingViewProps } from "./views/index.js";
 export { ContactView } from "./views/index.js";
 export type { ContactViewCopy, ContactViewProps, ContactViewTopic, ContactViewValues } from "./views/index.js";
+
+// Kept after the views: the share card reads Designer names newer than the views do, and a Designer that lacks the views' names must fail on those first.
+export {
+  BRAND_SHARE_CARD_DEFAULT_ROLES,
+  BRAND_SHARE_CARD_PLATE_PX,
+  ShareCardError,
+  SHARE_CARD_DEFAULT_PATH,
+  SHARE_CARD_DEFAULT_ROLES,
+  buildBrandShareCard,
+  buildShareCard,
+} from "./shareCard.js";
+export type {
+  BrandShareCardInput,
+  BrandShareCardRoles,
+  ShareCard,
+  ShareCardErrorReason,
+  ShareCardInput,
+  ShareCardMark,
+  ShareCardRoles,
+} from "./shareCard.js";
