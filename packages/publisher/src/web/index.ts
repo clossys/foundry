@@ -100,7 +100,7 @@ export type {
 export { LandingView } from "./views/index.js";
 export type { LandingViewProps } from "./views/index.js";
 export { ContactView } from "./views/index.js";
-export type { ContactViewCopy, ContactViewProps, ContactViewTopic, ContactViewValues } from "./views/index.js";
+export type { ContactViewCopy, ContactViewDevPreview, ContactViewProps, ContactViewTopic, ContactViewValues } from "./views/index.js";
 export { GlobalErrorDocument } from "./views/index.js";
 export type { GlobalErrorDocumentProps } from "./views/index.js";
 

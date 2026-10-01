@@ -115,7 +115,7 @@ export type {
 export { LandingView } from "#publisher-web-views";
 export type { LandingViewProps } from "#publisher-web-views";
 export { ContactView } from "#publisher-web-views";
-export type { ContactViewCopy, ContactViewProps, ContactViewTopic, ContactViewValues } from "#publisher-web-views";
+export type { ContactViewCopy, ContactViewDevPreview, ContactViewProps, ContactViewTopic, ContactViewValues } from "#publisher-web-views";
 export { GlobalErrorDocument } from "#publisher-web-views";
 export type { GlobalErrorDocumentProps } from "#publisher-web-views";
 

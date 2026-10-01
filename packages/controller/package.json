@@ -89,7 +89,8 @@
     "foundry-loop-status": "dist/loop/bin.js",
     "ci-conventions-check": "dist/conventions/ci-conventions-cli.js",
     "foundry-schema-migrate": "dist/migrate/bin.js",
-    "foundry-heartbeat": "dist/heartbeat/bin.js"
+    "foundry-heartbeat": "dist/heartbeat/bin.js",
+    "site-conformance-check": "dist/site-conformance/bin.js"
   },
   "files": [
     "dist",

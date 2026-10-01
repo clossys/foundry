@@ -524,3 +524,86 @@ describe("ContactView entries", () => {
     expect(source).not.toMatch(/react-aria|@clossys\/designer/);
   });
 });
+
+describe("ContactView devPreview", () => {
+  const STATES = [
+    ["idle", "SUBMIT-SENTINEL"],
+    ["submitting", "SUBMITTING-SENTINEL"],
+    ["accepted", "SENTHEADING-SENTINEL"],
+    ["invalid", "INVALID-SENTINEL"],
+    ["rate-limited", "RATELIMITED-SENTINEL"],
+    ["unavailable", "UNAVAILABLE-SENTINEL"],
+  ] as const;
+
+  it.each(STATES)("renders the %s state without sending", async (devPreview, sentinel) => {
+    const onSubmit = vi.fn(async (): Promise<ContactResult> => ({ status: "accepted" }));
+    const html = dom({ devPreview, onSubmit });
+    if (devPreview === "accepted") {
+      expect(html.querySelector('[role="status"]')).toHaveTextContent(sentinel);
+      expect(html.querySelector("form")).toBeNull();
+    } else if (devPreview === "invalid" || devPreview === "rate-limited" || devPreview === "unavailable") {
+      expect(html.querySelector('[role="alert"]')).toHaveTextContent(sentinel);
+      expect(html.querySelector("form")).not.toBeNull();
+    } else {
+      expect(html.querySelector('[role="alert"]')).toBeNull();
+      expect(html.querySelector('[role="status"]')).toBeNull();
+      expect(html.querySelector("button[id$=\"-submit\"]")).toHaveTextContent(sentinel);
+    }
+    // Only the pinned state's text is on the page.
+    for (const [other, otherSentinel] of STATES) {
+      if (other !== devPreview && other !== "idle" && other !== "submitting") expect(html.textContent).not.toContain(otherSentinel);
+    }
+
+    render(<ContactView {...props({ devPreview, onSubmit })} />);
+    const form = document.querySelector("form");
+    if (form !== null) {
+      const u = user();
+      await fill(u);
+      await u.click(submitButton());
+      expect(onSubmit).not.toHaveBeenCalled();
+      // The submit changed nothing: still the same pinned state, no error summary, no focus pulled.
+      expect(screen.queryByText("ERRORSUMMARY-SENTINEL")).toBeNull();
+      expect(screen.getByText(sentinel)).toBeInTheDocument();
+      expect(screen.getByRole("textbox", { name: /MESSAGELABEL-SENTINEL/ })).toHaveValue("A message.");
+    } else {
+      expect(screen.getByText(sentinel)).toBeInTheDocument();
+    }
+    expect(onSubmit).not.toHaveBeenCalled();
+  });
+
+  it("shows the pending button, never disabled, for submitting", () => {
+    render(<ContactView {...props({ devPreview: "submitting" })} />);
+    const button = submitButton();
+    expect(button).toHaveTextContent("SUBMITTING-SENTINEL");
+    expect(button).not.toHaveAttribute("disabled");
+    expect(button).toHaveAttribute("aria-disabled", "true");
+  });
+
+  it("does not move focus on its own for a failure or the confirmation", async () => {
+    for (const devPreview of ["accepted", "unavailable"] as const) {
+      render(<ContactView {...props({ devPreview })} />);
+      await Promise.resolve();
+      expect(document.body).toHaveFocus();
+      cleanup();
+    }
+  });
+
+  it("is closed: an unknown value throws a RenderError naming devPreview and never the value", () => {
+    for (const bogus of ["bogus", "", "ACCEPTED", "__proto__", null, 3, ["accepted"]]) {
+      const attempt = () => markup({ devPreview: bogus as never });
+      expect(attempt).toThrow(RenderError);
+      expect(attempt).toThrow(/devPreview/);
+      expect(attempt).not.toThrow(/bogus|ACCEPTED|__proto__/);
+    }
+  });
+
+  it("leaves the idle markup unchanged when absent", () => {
+    expect(markup({ devPreview: undefined })).toBe(markup());
+    expect(markup({ devPreview: "idle" })).toBe(markup());
+  });
+
+  it("is exported as a type from both entries without adding a runtime export", () => {
+    expect(Object.keys(webEntry)).not.toContain("ContactViewDevPreview");
+    expect(Object.keys(webServerEntry)).not.toContain("ContactViewDevPreview");
+  });
+});

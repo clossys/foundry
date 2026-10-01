@@ -755,12 +755,6 @@
       "src/web/renderWebDocument.ts": [
         "../types.ts",
         "renderWebDocument.test.ts"
-      ],
-      "src/web/views/internal/view-vars.ts": [
-        "atoms/internal/ui-vars.ts",
-        "ladder.test.ts",
-        "shell/internal/shell-vars.ts",
-        "styles/tokens.css"
       ]
     },
     "starter": {

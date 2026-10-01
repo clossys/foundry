@@ -39,6 +39,6 @@ export type { LegalViewLabels, LegalViewProps } from "./LegalView.js";
 export { LandingView } from "./LandingView.js";
 export type { LandingViewProps } from "./LandingView.js";
 export { ContactView } from "./ContactView.js";
-export type { ContactViewCopy, ContactViewProps, ContactViewTopic, ContactViewValues } from "./ContactView.js";
+export type { ContactViewCopy, ContactViewDevPreview, ContactViewProps, ContactViewTopic, ContactViewValues } from "./ContactView.js";
 export { GlobalErrorDocument } from "./GlobalErrorDocument.js";
 export type { GlobalErrorDocumentProps } from "./GlobalErrorDocument.js";

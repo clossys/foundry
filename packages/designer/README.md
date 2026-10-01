@@ -3153,13 +3153,13 @@ assuming one.
 // ErrorView is exported by @clossys/publisher/web.
 import { Button } from "@clossys/designer/atoms";
 
-function NotFoundPage() {
+function ServerErrorPage() {
   return (
     <ErrorView
-      status={404}
-      title="Page not found"
-      description="Something went wrong. Error: 8f2a91c0."
-      action={<Button onPress={() => goHome()}>Go home</Button>}
+      status={500}
+      title="Something went wrong"
+      description="We couldn't load this page. Error: 8f2a91c0."
+      action={<Button onPress={() => retry()}>Try again</Button>}
     />
   );
 }
@@ -3258,7 +3258,10 @@ optional `footnote`, and a site footer (`SiteFooter`, fed by
 `description` (required) renders directly under it, so every step decides on
 a supporting line; `form` (required) is rendered exactly as given, with no
 wrapper. The content column is held to the `--ui-width-form-max` form
-measure (`38rem`).
+measure (`38rem`). The optional `internalNote` (`{ label, message }`) renders
+a badge-labelled development note under the footnote, and a site passes it
+only in development. An auth page's `footerSecondary` holds a legal row only,
+never a locale switcher, because auth pages are single-locale.
 
 **`AuthView` implements no authentication of any kind** — no provider, no
 form state, no field validation, no submit handling. It renders whatever
@@ -3361,33 +3364,6 @@ plus screen-reader-only text (`"Increase"`/`"Decrease"`/`"No change"`) both
 carry the same direction independently of color, so the delta reads
 correctly for a colorblind viewer, on a greyscale screen, or through a
 screen reader with no color channel at all.
-A full-page authentication shell — sign-in, sign-up, password reset, email
-verification. In order: a site header (`SiteHeader`, holding the required
-`brand`), a page header (`heading` plus the required `description`), a card
-(built on `atoms/Card`) holding the `form` slot and `secondaryAction`, an
-optional `footnote`, and a site footer (`SiteFooter`, fed by
-`footerSecondary`). `heading` (required) renders as the page's `<h1>`;
-`description` (required) renders directly under it, so every step decides on
-a supporting line; `form` (required) is rendered exactly as given, with no
-wrapper. The content column is held to the `--ui-width-form-max` form
-measure (`38rem`).
-
-**`AuthView` implements no authentication of any kind** — no provider, no
-form state, no field validation, no submit handling. It renders whatever
-`ReactNode` is passed to `form` exactly as given, the same one-way slot
-boundary `Dialog`'s `trigger` and `EmptyState`'s `action` already
-establish. This is deliberate and non-negotiable: auth providers differ per
-product (a magic link here, a password-plus-OAuth flow there, a passkey
-flow somewhere else), and a shared UI package that tried to absorb any one
-of them would immediately need an escape hatch for every other one — the
-same structural-difference-through-a-mode-prop failure "Placement rules"
-warns against, just scoped to authentication instead of visual styling.
-Composing that shape stays entirely the consumer's own job.
-
-`AuthView` also ships no `BrandLockup` — `brand` is required and supplied by
-the caller, for the same reason `Shell` ships no `SiteHeader`/`AppHeader`
-(see "Shell" below): a brand mark is per-product, and a pre-built one would
-recreate the `mode`-prop failure one layer up.
 
 ## Shell
 

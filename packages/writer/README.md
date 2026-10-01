@@ -107,7 +107,8 @@ registered `CopyRecord`. It exits 0 when clean, 1 when it finds traceability
 issues, and 2 when it cannot run.
 
 This package does not resolve a claim's `factRef`, infer tone or grammar, or
-ship actual product language. Those decisions remain with the consumer and the
+ship actual product language, except for the ten English sign-in defaults in
+"Front-door copy" below. Those decisions remain with the consumer and the
 product's facts system.
 
 ## Resolving copy for a surface
@@ -292,6 +293,65 @@ one of three specific to this kind:
   each other, and there are no other word targets.
 
 An FAQ and a tagline are out of scope (`site.tagline` already exists).
+
+## Front-door copy (`front-door.*`)
+
+The words on a sign-in page and the pages around it are a reserved copy kind
+too, so each page does not carry its own. An id is
+`front-door.<state>.<slot>`, where the slot is one of `title`, `description`,
+`label`, `primary`, `secondary`, `notice` or `alt`. This version ships ten
+sign-in ids, listed in `FRONT_DOOR_COPY_IDS` (typed as `FrontDoorKey`), as
+`FRONT_DOOR_COPY_EN`, a `CopyRegistry` with the id `front-door`, locale `en`
+and revision `1`. They are US English:
+
+| Id | Text |
+| --- | --- |
+| `front-door.sign-in.title` | Sign in |
+| `front-door.sign-in.description` | Continue to {surface}. |
+| `front-door.sign-in.label` | Email |
+| `front-door.sign-in.primary` | Continue |
+| `front-door.password.title` | Enter your password |
+| `front-door.password.description` | Signing in as {identifier}. |
+| `front-door.password.label` | Password |
+| `front-door.password.primary` | Sign in |
+| `front-door.password.secondary` | Use a different email |
+| `front-door.identifier-not-found.notice` | We couldn’t find an account for that email. Check it and try again. |
+
+A `{token}` in a text is a noun from the closed set `FRONT_DOOR_NOUNS`:
+`brand`, `surface`, `identifier`, `digest` and `requestAccessLabel` (typed as
+`FrontDoorNoun`; a caller's values are `FrontDoorNouns`). The defaults are
+marked `approved` and carry no approval record: that is the package's own
+statement about shipped defaults, not a consumer's sign-off.
+
+`resolveFrontDoorCopy(key, nouns)` resolves one entry through
+`resolveCopyRef` and never throws. It hands the resolver only the nouns that
+entry declares, so a known noun the entry does not use is dropped. The result
+is `{ complete, text?, resolution?, issues }`; `text` and `resolution` exist
+only when `issues` is empty. An issue's `reason` is one of:
+
+- `"unknown-copy-id"` — the id is not in `FRONT_DOOR_COPY_IDS`.
+- `"missing-noun"` — a noun the entry declares is absent or blank.
+- `"unknown-noun"` — a noun name outside `FRONT_DOOR_NOUNS`.
+
+```ts
+import { resolveFrontDoorCopy } from "@clossys/writer";
+
+const heading = resolveFrontDoorCopy("front-door.password.title", {});
+const line = resolveFrontDoorCopy("front-door.password.description", {
+  identifier: "ana@example.test",
+  brand: "Acme",
+});
+
+if (line.complete) {
+  console.log(heading.text, line.text); // "Enter your password" "Signing in as ana@example.test."
+} else {
+  for (const issue of line.issues) console.error(issue.reason, issue.noun, issue.message);
+}
+```
+
+A site overrides one entry by registering the same id in its own registry and
+resolving it with `resolveCopyRef`; the defaults are the fallback, not a lock.
+Other states and a JSON file of the catalog are not in this version.
 
 ## Delegated approval — who approved this copy, and is it still that text?
 
@@ -1121,6 +1181,10 @@ The root entry point exports the copy registry and traceability surface:
   `MessagingKit`, `MessagingKitField`, `MessagingKitIssue`,
   `MessagingKitIssueReason`, `MessagingKitOptions`, `MessagingKitResolution`,
   and `MessagingKitResolutions`.
+- Front-door copy (see above): `resolveFrontDoorCopy`, `isFrontDoorCopyId`,
+  `FRONT_DOOR_COPY_EN`, `FRONT_DOOR_COPY_IDS`, `FRONT_DOOR_NOUNS`,
+  `FrontDoorKey`, `FrontDoorNoun`, `FrontDoorNouns`, `FrontDoorCopyIssue`,
+  `FrontDoorCopyIssueReason`, and `FrontDoorCopyResolution`.
 - Translation provenance and fingerprinting (see "Where this package sits
   on i18n" above): `CopyTranslationProvenance`, `computeCopyFingerprint`,
   and `COPY_FINGERPRINT_ALGORITHM`.

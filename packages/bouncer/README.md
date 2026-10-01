@@ -252,6 +252,28 @@ if (variants.production.ok) {
 }
 ```
 
+## Gated-host responses
+
+A gated host answers the public with nothing, and says so the same way every
+time. These helpers use Fetch globals only and import no framework or
+provider.
+
+| Export | What it does |
+| --- | --- |
+| `applyGatedHostHeaders(response, options?)` | Sets, never appends, `X-Robots-Tag: noindex, nofollow` on `response.headers`. Sets `Cache-Control: no-store` for status 300-399, 401, 403 and 503, or when `options.noStore` is true (a sign-in page). Otherwise leaves `Cache-Control` alone |
+| `createRobotsTxtRoute()` | Returns `() => Response`: 200, `text/plain; charset=utf-8`, a deny-all body, and the robots tag |
+| `createHealthRoute()` | Returns `() => Response`: 200, `{"status":"ok"}`, `no-store`, and the robots tag. It takes no options and probes nothing |
+| `createServiceUnavailableResponse(options?)` | A 503 with `{"error":"unavailable"}`, `Retry-After` of `retryAfterSeconds` (default 30), `no-store`, and the robots tag. A negative or non-integer value throws `TypeError` |
+
+`/robots.txt` and `/health` must be public routes of the proxy that gates the
+host. A 401 or a redirect there hides the deny-all rule and fails monitors.
+
+```ts
+import { createHealthRoute } from "@clossys/bouncer";
+
+export const GET = createHealthRoute();
+```
+
 ## Exports
 
 ### Root — `@clossys/bouncer`
@@ -319,6 +341,9 @@ answer.
 | `AllowedOriginPolicy` | Its type |
 | `createSiteSecurityHeaders` | Site security-headers baseline. One call returns the development variant and the production variant |
 | `SiteSecurityHeadersInput`, `SiteSecurityHeadersVariants`, `SiteSecurityHeadersResult`, `SiteSecurityHeaders`, `SiteSecurityHeaderWarning` | Its input, the two variants, the acceptance-or-refusal result, the header map, and the static-mode warning |
+| `GATED_HOST_ROBOTS_TAG`, `GATED_HOST_ROBOTS_TXT` | The robots tag value and the deny-all `robots.txt` body of a gated host |
+| `applyGatedHostHeaders`, `createRobotsTxtRoute`, `createHealthRoute`, `createServiceUnavailableResponse` | Gated-host response helpers: robots tag, `no-store`, deny-all `robots.txt`, `/health`, and a 503 with `Retry-After` |
+| `GatedHostHeaderOptions`, `ServiceUnavailableOptions` | Their option types |
 
 ### `./agent`
 
