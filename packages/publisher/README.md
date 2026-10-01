@@ -1338,6 +1338,8 @@ const card = buildBrandShareCard({
   must have it.
 - **Refusals.** It throws `ShareCardError` with the existing closed reasons and
   no new one; the error text never echoes input.
+- **Route.** `createShareCardRoute` wraps this card as the exports of an
+  `opengraph-image` route; see [Share card route](#share-card-route--createsharecardroute).
 
 ## `media` — the asset registry contract, responsive images, and video (v2)
 
@@ -3195,6 +3197,50 @@ becomes a `replyTo` address. It requires an ASCII dot-atom local part of at most
 addresses and quoted local parts are refused as `malformed`. Phone accepts only
 ASCII digits, space and `+ - ( ) . / # * x X`, with at least one digit. Bidirectional
 formatting characters are not refused.
+
+### Share card route — `createShareCardRoute`
+
+`createShareCardRoute(input)` wraps `buildBrandShareCard` as the exports of an
+`opengraph-image` route, so a site no longer writes that route by hand. It is
+exported from `@clossys/publisher/web` and its server entry. Publisher does not
+depend on `next`: you pass your own `ImageResponse` class, and the module
+imports nothing from `next`.
+
+```tsx
+import { createShareCardRoute } from "@clossys/publisher/web";
+import type { ShareCardRouteInput } from "@clossys/publisher/web";
+
+declare const ImageResponse: ShareCardRouteInput["ImageResponse"]; // your framework's image-response class
+declare const markDataUrl: string; // inline data URL
+
+const route = createShareCardRoute({
+  ImageResponse,
+  card: { markSrc: markDataUrl, wordmark: "Example Studio", headline: "Made well, made to last" },
+  alt: (headline) => `Example Studio: ${headline}`,
+});
+
+export const alt = route.alt;
+export const size = route.size;
+export const contentType = route.contentType;
+export default route.Image;
+```
+
+- **Input.** `{ ImageResponse, card, title?, alt }`. `card` is
+  `buildBrandShareCard`'s input without `alt`, so `headline` stays required
+  there. `ImageResponse` is
+  `new (element, { width, height }) => Response`.
+- **Title and alt.** When `title` is given it replaces `card.headline`. `alt` is
+  a string, returned as given, or a function called with the headline actually
+  drawn. Publisher builds no wording; every word is yours.
+- **Result.** `{ alt, size, contentType, shareCard, Image }`. `size` is the
+  card's `{ width, height }` (1200 by 630), `contentType` is `"image/png"`,
+  `shareCard` is the record `buildSiteMetadata` takes, and `Image()` returns
+  `new ImageResponse(element, size)`. Assign each export by name, as above;
+  Next reads them by name, so a destructured export is not found.
+- **Failure.** The card is built when `createShareCardRoute` is called, so bad
+  input fails when the route module loads. Errors are `ShareCardError`,
+  unchanged; a blank `title` throws `blank-text`, and an `ImageResponse` that is
+  not a function throws `invalid-input`.
 
 ## Licence
 
