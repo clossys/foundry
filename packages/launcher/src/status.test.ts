@@ -4,7 +4,9 @@ import { chmodSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync 
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { AGENTS_GUIDE_PATH, AGENTS_GUIDE_TEXT } from "./agents-guide.js";
 import { branchExists, buildMaterializedFixture, writeSnapshot } from "./apply-step-fixture.js";
+import { buildGuideFixture } from "./plan-bundle-setup-fixture.js";
 import { reseal } from "./admission-fixture.js";
 import { statusMain } from "./apply-plan-cli.js";
 import type { RepositoryChangeSet } from "./change-set-contract.js";
@@ -51,8 +53,8 @@ function objectFiles(clone: string): string[] {
 }
 
 /** A materialized clone whose branch holds one commit (the pull request's head), with the clone back on the default branch. */
-async function proposedWorld(edit?: (clone: string) => void) {
-  const fixture = buildMaterializedFixture(roots);
+async function proposedWorld(edit?: (clone: string) => void, build: (roots: string[]) => ReturnType<typeof buildMaterializedFixture> = buildMaterializedFixture) {
+  const fixture = build(roots);
   const outcome = await materializeRepository({ clone: fixture.clone, hub: fixture.hub, set: fixture.set, texts: fixture.texts, heldChangeSets: [] });
   expect(outcome).toEqual({ exitCode: 0, verdict: "materialized" });
   edit?.(fixture.clone);
@@ -195,6 +197,25 @@ describe("status", () => {
         writeFileSync(path, `${readFileSync(path, "utf8")}\n`);
       });
       expect(await statusOf(ledger, fakePorts([row(ledger)]).ports)).toEqual({ exitCode: 1, state: "diverged", reason: "ledger-mismatch", pullRequests: [7] });
+    },
+    TIMEOUT,
+  );
+
+  it(
+    "verify checks the guide: a head with one changed byte in clossys/AGENTS.md is diverged (agents-guide-mismatch), printing only the token and the number",
+    async () => {
+      const guide = (r: string[]) => buildGuideFixture(r);
+      const untouched = await proposedWorld(undefined, guide);
+      expect(await statusOf(untouched, fakePorts([row(untouched)]).ports)).toEqual({ exitCode: 0, state: "proposed", pullRequests: [7] });
+
+      const changed = AGENTS_GUIDE_TEXT.replace("Do not", "Do NOT");
+      expect(changed).not.toBe(AGENTS_GUIDE_TEXT);
+      const world = await proposedWorld((clone) => writeFileSync(join(clone, AGENTS_GUIDE_PATH), changed), guide);
+      const result = await statusOf(world, fakePorts([row(world)]).ports);
+      expect(result).toEqual({ exitCode: 1, state: "diverged", reason: "agents-guide-mismatch", pullRequests: [7] });
+      const line = formatStatus(result);
+      expect(line).toBe("launcher-apply-plan status: diverged (agents-guide-mismatch) #7");
+      for (const fragment of ["Do NOT", "Do not", "clossys", AGENTS_GUIDE_PATH]) expect(line.includes(fragment), fragment).toBe(false);
     },
     TIMEOUT,
   );

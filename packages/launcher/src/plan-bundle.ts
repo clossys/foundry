@@ -45,6 +45,7 @@
 import type { AdvisorPlan, EngagementBrief, EngagementBriefRole, EngagementContext, PlanPackageAct } from "./plan-contract.js";
 import { loadContract, validateAdvisorPlan, validateEngagementBrief } from "./plan-contract.js";
 import { planDigest } from "./plan-digest.js";
+import { AGENTS_GUIDE_PATH, AGENTS_GUIDE_TEXT } from "./agents-guide.js";
 import { HUB_ONLY_ROLES } from "./plan-rules.js";
 import { bundleDigest, changeSetDigest } from "./change-set-digest.js";
 import {
@@ -202,7 +203,8 @@ const TEMPLATE_ALLOW_LIST = [".github/scripts/clossys-*", ".github/workflows/clo
 /** The one exempt-release-age item a pnpm set carries: a fixed id no plan text can spell, because a planItem is `repository:package`. */
 const RELEASE_AGE_ITEM = "release-age";
 const RELEASE_AGE_SURFACE = "pnpm-workspace";
-const RESERVED_ITEM_IDS = new Set(["brief", "skills", "ledger", ROOT_ENTRIES_ITEM, RELEASE_AGE_ITEM, ...TEMPLATE_ITEMS.map((template) => template.id)]);
+const AGENTS_GUIDE_ITEM = "agents-guide";
+const RESERVED_ITEM_IDS = new Set(["brief", AGENTS_GUIDE_ITEM, "skills", "ledger", ROOT_ENTRIES_ITEM, RELEASE_AGE_ITEM, ...TEMPLATE_ITEMS.map((template) => template.id)]);
 const NPMRC_PATH = ".npmrc";
 
 /**
@@ -440,6 +442,10 @@ function computeChangeSet(
   if (!briefValidation.valid) throw new TypeError(`a projected brief does not validate: ${briefValidation.reason}`);
   writeWhole(BRIEF_PATH, serializeEngagementBrief(brief), "brief");
 
+  // The Launcher's own guide to clossys/ and the clossys-* skills: constant bytes, owned by the ledger row's digest (D10, D30).
+  items.push({ id: AGENTS_GUIDE_ITEM, act: "write-record", source: "agents-guide" });
+  writeWhole(AGENTS_GUIDE_PATH, AGENTS_GUIDE_TEXT, AGENTS_GUIDE_ITEM);
+
   // Every staffed repository gets the Advisor voice beside its staffed roles' voices (D33), first, then plan order.
   const voices = [ADVISOR_VOICE, ...roles];
   items.push({ id: "skills", act: "compose-skills", roles: voices });
@@ -493,7 +499,7 @@ function computeChangeSet(
   const invariants: PackageInvariant[] = [];
   for (const act of acts) {
     if (RESERVED_ITEM_IDS.has(act.planItem)) {
-      throw new TypeError("a package act's planItem is an item id the change set reserves (brief, skills, ledger, root-entries, release-age, caller-workflow, starter-request, ci-template or path-scope-job)");
+      throw new TypeError("a package act's planItem is an item id the change set reserves (brief, agents-guide, skills, ledger, root-entries, release-age, caller-workflow, starter-request, ci-template or path-scope-job)");
     }
     // A setup set defers every install until after setup (code rule C10): no item, no key, no invariant.
     if (observation.phase === "setup" && act.act === "install") {

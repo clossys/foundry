@@ -7,6 +7,11 @@
 
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
+import { SITE_ID as MATERIALIZED_SITE_ID, approvedPlan, basePlan, bundleOf, committedPlanPackages, reseal } from "./admission-fixture.js";
+import { AGENTS_GUIDE_PATH, AGENTS_GUIDE_TEXT } from "./agents-guide.js";
+import { buildMaterializedFixture } from "./apply-step-fixture.js";
+import { CANONICAL_KEYS, canonicalOrder, contentDigest } from "./change-set-contract.js";
+import type { ApplyBundle, ChangeSetItem, RepositoryChangeSet } from "./change-set-contract.js";
 import type { RepositoryObservation, PlanApplyBundleInputs } from "./plan-bundle.js";
 import type { AdvisorPlan, EngagementBrief } from "./plan-contract.js";
 import { planDigest } from "./plan-digest.js";
@@ -155,5 +160,41 @@ export function setupInputs(observation: RepositoryObservation | null, plan: Adv
     computedAt: "2026-09-24T12:00:00Z",
     heldChangeSets: [],
     ...patch,
+  };
+}
+
+/**
+ * The materialized fixture of apply-step-fixture.ts, its set extended with the `agents-guide` item and the whole file
+ * clossys/AGENTS.md (the constant text, or `guideText` to put other bytes in the set), resealed, and bundled, approved and stored in the hub over the extended set. The clone
+ * is on the default branch with nothing written: materialize writes the guide from `texts`.
+ */
+export function buildGuideFixture(roots: string[], guideText: string = AGENTS_GUIDE_TEXT) {
+  let extended: { set: RepositoryChangeSet; plan: AdvisorPlan; bundle: ApplyBundle } | null = null;
+  const fixture = buildMaterializedFixture(roots, {
+    hub: ({ set }) => {
+      const loose = clone(set) as unknown as Loose;
+      loose.items = canonicalOrder([...(loose.items as ChangeSetItem[]), { id: "agents-guide", act: "write-record", source: "agents-guide" } as ChangeSetItem], CANONICAL_KEYS.item);
+      loose.files = canonicalOrder(
+        [...(loose.files as RepositoryChangeSet["files"][number][]), { path: AGENTS_GUIDE_PATH, mode: "100644", before: null, after: contentDigest(guideText), item: "agents-guide" } as RepositoryChangeSet["files"][number]],
+        CANONICAL_KEYS.file,
+      );
+      const sealed = reseal(loose);
+      const plan0 = basePlan() as unknown as AdvisorPlan;
+      const bundle = bundleOf(plan0, [{ id: MATERIALIZED_SITE_ID, set: sealed }]);
+      const plan = approvedPlan(bundle.bundleDigest, plan0);
+      extended = { set: { ...sealed, bundle: bundle.bundleDigest } as RepositoryChangeSet, plan, bundle };
+      return { plans: [plan], bundles: [bundle] };
+    },
+  });
+  if (extended === null) throw new Error("the fixture did not build its hub");
+  const { set, plan, bundle } = extended as { set: RepositoryChangeSet; plan: AdvisorPlan; bundle: ApplyBundle };
+  return {
+    ...fixture,
+    set,
+    plan,
+    bundle,
+    binding: { kind: "approved" as const, subjectDigest: bundle.bundleDigest },
+    planPackages: committedPlanPackages(plan, MATERIALIZED_SITE_ID),
+    texts: { ...fixture.texts, [AGENTS_GUIDE_PATH]: guideText },
   };
 }
