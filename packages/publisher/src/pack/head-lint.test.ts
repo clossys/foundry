@@ -60,6 +60,27 @@ function rules(findings: { rule: string }[]): string[] {
 }
 
 describe("lintRenderedHead", () => {
+  describe("input", () => {
+    it("fails closed on an empty page list, as the seal does on an empty map", () => {
+      expect(lintRenderedHead({ siteName: SITE, pages: [] })).toEqual([{ rule: "input-invalid", path: "pages" }]);
+    });
+
+    it("reports a page whose path is not a non-empty string starting with a slash at its index", () => {
+      const bad: unknown[] = [5, undefined, "", null, "about", `https://${MARKER_URL}`, {}, ["/"]];
+      for (const path of bad) {
+        const findings = lintRenderedHead({ siteName: SITE, pages: [{ path: "/", html: head() }, { path, html: head() } as never] });
+        expect(findings, String(path)).toEqual([{ rule: "input-invalid", path: "pages[1]" }]);
+        expect(JSON.stringify(findings)).not.toContain("marker-url");
+      }
+      // a non-object entry is the same refusal, and the other pages are still linted
+      const mixed = lintRenderedHead({ siteName: SITE, pages: [null as never, { path: "/about", html: head({ route: "/about", omit: ["og:image"] }) }] });
+      expect(mixed).toEqual([
+        { rule: "input-invalid", path: "pages[0]" },
+        { rule: "head-missing", path: "/about#og:image" },
+      ]);
+    });
+  });
+
   it("passes a complete head on the home route and on another route", () => {
     expect(lint(head())).toEqual([]);
     expect(lint(head({ route: "/about" }), "/about")).toEqual([]);
@@ -118,8 +139,7 @@ describe("lintRenderedHead", () => {
         `<meta content='A fictional description.' name=description>`,
         `<META CONTENT="index, follow" NAME="robots" />`,
         `<meta name="theme-color" content=#112233>`,
-        `<link href="${ORIGIN}/" rel="canonical">`,
-        `<link rel="Alternate CANONICAL" href='${ORIGIN}/'>`,
+        `<link href='${ORIGIN}/' rel="Alternate CANONICAL">`,
         `<meta property="og:title" content="${SITE} &#183; A fictional tagline">`,
         `<meta name="og:description" content="d">`,
         `<meta content="${ORIGIN}/" property="og:url">`,
@@ -193,12 +213,27 @@ describe("lintRenderedHead", () => {
         pages: [
           { path: "/", html: head() },
           { path: "/about", html: head({ route: "/about", override: { canonical: "https://other.example.test/about" } }) },
-          { path: "/team", html: head({ route: "/team", override: { canonical: "http://example.test/team" } }).replace("About ·", "Team ·") },
+          { path: "/team", html: head({ route: "/team", override: { canonical: "http://example.test/team" } }) },
         ],
       });
       expect(findings).toContainEqual({ rule: "canonical-origin", path: "/about#canonical" });
       expect(findings).toContainEqual({ rule: "canonical-origin", path: "/team#canonical" });
       expect(findings.filter((finding) => finding.rule === "canonical-origin")).toHaveLength(2);
+      expect(rules(findings)).not.toContain("head-title-mismatch");
+      expect(findings).toHaveLength(2);
+    });
+
+    it("reports a second canonical link, and a second og:title or twitter:title that differs from the title", () => {
+      const second = (extra: string) => head().replace("</head>", `${extra}</head>`);
+      expect(lint(second(`<link rel="canonical" href="${ORIGIN}/">`))).toEqual([{ rule: "canonical-duplicate", path: "/#canonical" }]);
+      expect(lint(second(`<link rel="canonical" href="${ORIGIN}/elsewhere">`))).toEqual([{ rule: "canonical-duplicate", path: "/#canonical" }]);
+      expect(lint(second(`<meta property="og:title" content="Something else">`))).toEqual([{ rule: "head-title-mismatch", path: "/#og:title" }]);
+      expect(lint(second(`<meta name="twitter:title" content="Something else">`))).toEqual([{ rule: "head-title-mismatch", path: "/#twitter:title" }]);
+      // a repeat that agrees with the title is not a conflict, and a blank repeat does not count
+      expect(lint(second(`<meta property="og:title" content="${SITE} · A fictional tagline">`))).toEqual([]);
+      expect(lint(second(`<meta property="og:title" content="  "><link rel="canonical" href="  ">`))).toEqual([]);
+      // one finding per tag, however many values disagree
+      expect(lint(second(`<meta property="og:title" content="A"><meta property="og:title" content="B">`))).toEqual([{ rule: "head-title-mismatch", path: "/#og:title" }]);
     });
   });
 
@@ -230,9 +265,10 @@ describe("lintRenderedHead", () => {
       expect(lintRenderedHead({ siteName: SITE, pages: "no" as never })).toEqual([{ rule: "input-invalid", path: "input" }]);
     });
 
-    it("keys a page with an unusable route on its index, not on the value", () => {
-      const findings = lintRenderedHead({ siteName: SITE, pages: [{ path: `https://${MARKER_URL}`, html: "" }] });
+    it("keys a page with an unsafe route on its index, not on the value", () => {
+      const findings = lintRenderedHead({ siteName: SITE, pages: [{ path: `/${MARKER_URL}`, html: "" }] });
       expect(findings[0]).toEqual({ rule: "head-missing", path: "pages[0]#title" });
+      expect(JSON.stringify(findings)).not.toContain("marker-url");
     });
   });
 });

@@ -151,7 +151,7 @@ Use explicit subpaths:
 - `@clossys/publisher/document` — the product-neutral structured-document contract (sections, paragraphs, lists, tables, callouts, safe links) and its renderer.
 - `@clossys/publisher/email`, `/print`, `/image`, `/slides` — channel renderers.
 - `@clossys/publisher/record` — the append-only, content-addressed publication ledger and its drift checker. See "`record` — the append-only publication ledger," below.
-- `@clossys/publisher/pack` — the v0 Launch pack manifest contract: types, schema validation, needs-graph readiness, adopt-don't-override detection, and the evidence-gated website seal (`publisher-seal`), and the rendered-head lint (`publisher-head-lint`). See "The pack," below.
+- `@clossys/publisher/pack` — the v0 Launch pack manifest contract: types, schema validation, needs-graph readiness, adopt-don't-override detection, and the evidence-gated website seal (`publisher-seal`) and the rendered-head lint (`publisher-head-lint`). See "The pack," below.
 - `@clossys/publisher/surfaces` — the one-owner-per-file contract for surface documents under `clossys/publisher/surfaces/`. See "Surface documents move to Publisher," below.
 - `@clossys/publisher/materials` — the materials mini-site (overviews, pitch decks, audience variants). See "Materials site," below.
 - `@clossys/publisher/templates` — the pack's default templates and the channel spec registry. See "Templates and channel specs," below.
@@ -2482,12 +2482,15 @@ Rules:
   space on each side, used once.
 - `title-separator`: the title uses `|` or a dash where the separator belongs.
 - `title-duplicate`: the head has more than one `<title>`.
-- `head-title-mismatch`: `og:title` or `twitter:title` differs from `<title>`.
+- `canonical-duplicate`: the head has more than one `link rel=canonical`.
+- `head-title-mismatch`: any `og:title` or `twitter:title` value differs from `<title>`.
 - `canonical-path`: the canonical pathname is not the route (a trailing slash
   is ignored).
 - `canonical-origin`: the canonical URL is not absolute `http(s)`, or its origin
   differs from the first page's.
-- `input-invalid`: `siteName` is blank or `pages` is not an array.
+- `input-invalid`: `siteName` is blank, `pages` is not an array or is empty
+  (path `input` or `pages`), or a page's `path` is not a non-empty string
+  starting with `/` (path `pages[<index>]`).
 
 The `publisher-head-lint` command runs it over a directory:
 

@@ -237,12 +237,19 @@ export function lintRenderedHead(input: LintRenderedHeadInput): SealFinding[] {
 function lint(input: LintRenderedHeadInput): SealFinding[] {
   const siteName = typeof input?.siteName === "string" ? input.siteName.trim() : "";
   if (siteName === "" || !Array.isArray(input.pages)) return [{ rule: "input-invalid", path: "input" }];
+  // Nothing to lint is not "clean": the seal refuses an empty map the same way (`map-empty`).
+  if (input.pages.length === 0) return [{ rule: "input-invalid", path: "pages" }];
 
   const findings: SealFinding[] = [];
   let canonicalOrigin: string | undefined;
 
   input.pages.forEach((entry: unknown, index) => {
     const record = (typeof entry === "object" && entry !== null ? entry : {}) as Partial<RenderedHeadPage>;
+    // A page with no usable route cannot be keyed, matched to its canonical or told apart as the home page.
+    if (typeof record.path !== "string" || !record.path.startsWith("/")) {
+      findings.push({ rule: "input-invalid", path: `pages[${index}]` });
+      return;
+    }
     const route = reportRoute(record.path, index);
     const html = typeof record.html === "string" ? record.html : "";
     const scan = scanHead(html);
@@ -258,13 +265,14 @@ function lint(input: LintRenderedHeadInput): SealFinding[] {
 
     // title shape (L4)
     if (scan.titles.length > 1) findings.push({ rule: "title-duplicate", path: route });
+    if (scan.canonicals.length > 1) findings.push({ rule: "canonical-duplicate", path: at("canonical") });
     if (title !== undefined) {
       const rule = titleRule(title, siteName, record.path === "/");
       if (rule !== undefined) findings.push({ rule, path: route });
       // consistency (L5)
       for (const tag of ["og:title", "twitter:title"]) {
-        const value = first(tag);
-        if (value !== undefined && value !== title) findings.push({ rule: "head-title-mismatch", path: at(tag) });
+        // Every value counts, not just the first: a share card scraper may read any of them.
+        if (scan.metas.get(tag)?.some((value) => value !== title)) findings.push({ rule: "head-title-mismatch", path: at(tag) });
       }
     }
 
