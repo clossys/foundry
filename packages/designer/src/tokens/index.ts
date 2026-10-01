@@ -73,6 +73,17 @@
  * entirely: that one flags hardcoded literals against the registry; this
  * one computes luminance for declared pairs).
  *
+ * THE HERO BACKDROP CONTRACT. A per-brand hero visual — image, video,
+ * canvas or chart — sits behind the hero text; `BackdropContract`
+ * (`../backdrop/contract.ts`) states what every one must promise (a scrim
+ * that keeps the text at AA over the worst-case backdrop in the light and
+ * dark themes, `aria-hidden`,
+ * `pointer-events: none`, a reduced-motion still frame, a lazy-loading
+ * budget). `checkBackdropContract` judges the declaration against the token
+ * registry and `checkBackdropElement` judges the rendered element; both
+ * return a report, never throw, and report what they cannot evaluate as
+ * `unchecked`. See the README's "Hero backdrop contract" section.
+ *
  * THE TOKEN CSS PRESENCE CHECK. Every one of the checks above assumes
  * `styles/tokens.css` was actually imported; nothing until now told a
  * consumer when it wasn't, which is exactly the silent-unstyled-render gap
@@ -131,6 +142,27 @@ export type {
   TypeRecordParseResult,
   TypeRecordWrap,
 } from "../type-record/check-type-record.js";
+
+export {
+  BACKDROP_BUDGET_CEILING_BYTES,
+  BACKDROP_KINDS,
+  checkBackdropContract,
+  checkBackdropElement,
+} from "../backdrop/contract.js";
+export type {
+  BackdropCheckOptions,
+  BackdropContract,
+  BackdropElementRuleId,
+  BackdropFinding,
+  BackdropKind,
+  BackdropLoading,
+  BackdropReducedMotion,
+  BackdropReport,
+  BackdropRuleId,
+  BackdropScrim,
+  BackdropUnchecked,
+  BackdropUncheckedReason,
+} from "../backdrop/contract.js";
 
 export { parseBrandDeclarations, readBrandCss } from "./read-brand-css.js";
 export type {

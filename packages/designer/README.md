@@ -5368,6 +5368,162 @@ a whole.
   your own render call, and `@internationalized/date` is only needed when
   you construct a `DateField` value.
 
+## Hero backdrop contract (`@clossys/designer/tokens`)
+
+A per-brand hero visual — the picture, video, canvas or chart behind the
+hero's text — has one sanctioned shape here. A bespoke backdrop has needed
+the same five fixes each time: text that stays readable over the visual's
+worst frame, a layer that never takes pointer events, a layer that assistive
+technology skips, a still frame for reduced motion, and a load cost that
+cannot block first paint. `BackdropContract` states those as data, and two
+checks hold a backdrop to it. This is data and checks only: it adds no
+component, CSS or token, and it is not wired into any Publisher block.
+
+**The four kinds.** `BACKDROP_KINDS` lists them, and `BackdropKind` is their
+union. `BackdropContract` is a union on `kind`:
+
+| `kind`   | Shape beyond the shared fields                                                      |
+| -------- | ----------------------------------------------------------------------------------- |
+| `image`  | `reducedMotion` is optional: an image is its own still frame.                       |
+| `video`  | `reducedMotion: { fallbackFrame }` is required.                                     |
+| `canvas` | `reducedMotion: { fallbackFrame }` is required.                                     |
+| `chart`  | `reducedMotion` is required, and `illustrative: true`: no information lives only there. |
+
+Every kind carries `scrim` (`BackdropScrim`: `token`, `textToken` and
+`worstCaseBackdrop`), `ariaHidden: true`, `pointerEvents: "none"`, and
+`loading` (`BackdropLoading`: `strategy` of `"lazy"` or `"idle"`, and
+`budgetBytes`). `reducedMotion` is a `BackdropReducedMotion`. `scrim.token`
+and `scrim.textToken` name registry tokens, and `worstCaseBackdrop` is an
+opaque six-digit hex or `oklch()` color the author states as the lightest
+or busiest the backdrop can show. Use `--color-overlay-scrim` for the scrim
+(it darkens in the dark theme) and a text token that stays light in both
+themes, such as `--color-neutral-50`. Do not use `--color-ink-on-inverse`
+for hero text: it is the ink for the inverse plate, which turns light in
+the dark theme, so the ink turns dark there and fails over the darkened
+scrim.
+
+**The five rules.** `checkBackdropContract(contract, { tokens?, darkTokens?, themes? })` returns a
+`BackdropReport` (`{ ok, findings, unchecked, themes }`) and never throws. Each
+`BackdropFinding` carries a `BackdropRuleId` and a developer message.
+
+| Rule id                   | Passes when                                                                                                                                     |
+| ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| `scrim-contrast`          | `scrim.token` composited over `worstCaseBackdrop` gives `scrim.textToken` a contrast of at least 4.5 (the `AA` constant), in light and dark.    |
+| `aria-hidden`             | `ariaHidden` is `true`, and a `chart` is `illustrative: true`.                                                                                  |
+| `pointer-events`          | `pointerEvents` is `"none"`.                                                                                                                    |
+| `reduced-motion-fallback` | A `video`, `canvas` or `chart` has a non-empty `reducedMotion.fallbackFrame`. An `image` needs none.                                            |
+| `lazy-loading-budget`     | `loading.strategy` is `"lazy"` or `"idle"`, and `loading.budgetBytes` is a positive integer no larger than `BACKDROP_BUDGET_CEILING_BYTES`.     |
+
+`BACKDROP_BUDGET_CEILING_BYTES` is 2 MiB (2,097,152 bytes), the most
+transferred bytes a backdrop may declare. The tokens resolve through
+`BackdropCheckOptions.tokens`, which defaults to `TOKENS` and so to the
+default (light) values, following `var()` alias chains the way the contrast
+gate does.
+
+**Both themes.** The scrim pairing must hold in the light and the dark
+theme, the two themes the contrast gate checks: `styles/tokens.css` turns
+the dark theme on by itself under `prefers-color-scheme: dark` unless the
+page sets `data-theme="light"`. `TOKENS` holds light values only and the
+check reads no stylesheet, so pass the dark theme as
+`BackdropCheckOptions.darkTokens`: a registry of the dark theme's values
+layered over the light one. With it, each theme is measured and a failure
+names its theme.
+
+A token counts as theme-dependent when its entry in either registry, or in
+`TOKENS`, has `themeDependent: true`; the flag on a token you define
+yourself is trusted as you set it. Every theme-dependent token on the
+scrim's or the text's alias chain must carry its own dark value in
+`darkTokens`. One whose dark entry repeats its light value (a registry
+spread from `TOKENS` with only some tokens overridden, or the light
+registry passed whole) is `unchecked` with `theme-unchecked`, naming the
+token, and `ok` is `false`. Without `darkTokens`, any theme-dependent token
+on either chain is `theme-unchecked` the same way. A light-theme failure is
+still a finding, and a pairing whose tokens never change with the theme
+needs no `darkTokens`.
+
+A page that forces the light theme with `data-theme="light"` on its root
+states that with `themes: "light-only"` (the default is `"both"`): the dark
+pass is skipped, and the report's `themes` is `["light"]` rather than
+`["light", "dark"]`, so the result says what it covered. Do not use it for a
+page that lets `prefers-color-scheme: dark` switch the theme.
+
+**Fails closed.** A rule the check cannot evaluate is reported in
+`unchecked` (a `BackdropUnchecked`, with a `BackdropUncheckedReason`) and
+`ok` is `false`: a token the registry does not hold
+(`unresolvable-token`), a token or `worstCaseBackdrop` that is not a color
+it can read, or a translucent text token (`unparseable-token`,
+`unparseable-backdrop`), a theme-dependent token with no dark value of its
+own (`theme-unchecked`), a `kind` outside the four (`unknown-kind`), and a
+malformed contract (`malformed-contract`). A finding means a rule was
+evaluated and broken; `unchecked` means it was not evaluated. Neither is a
+pass.
+
+**Checking the rendered element.** `checkBackdropElement(element)` returns
+the same report shape with its own rule ids (`BackdropElementRuleId`):
+`element-aria-hidden` (`aria-hidden="true"`), `element-pointer-events`
+(`pointer-events: none`, read from computed style, then inline style, on
+the element; and no descendant setting it to anything but `none` or
+`inherit`) and
+`element-focusable-descendant` (no link, button, form control, `summary`,
+`iframe`, editable element, `video` or `audio` with `controls`, or element
+with `tabindex` 0 or more below it). Descendants include the contents of
+open shadow roots at any depth; inside a shadow tree it reads only inline
+`pointer-events`, because DOM implementations differ on whether computed
+style inherits across the shadow boundary. It cannot see into a closed
+shadow root, and it does not run script. A value that is not an element is
+`unchecked` with `not-an-element`. The contract check does not measure a
+real asset's size or choose the worst-case color for you.
+
+```ts
+import {
+  TOKENS,
+  checkBackdropContract,
+  checkBackdropElement,
+  type BackdropContract,
+  type TokenDefinition,
+} from "@clossys/designer/tokens";
+
+const backdrop: BackdropContract = {
+  kind: "video",
+  scrim: {
+    token: "--color-overlay-scrim",
+    textToken: "--color-neutral-50",
+    worstCaseBackdrop: "#6b6b6b",
+  },
+  ariaHidden: true,
+  pointerEvents: "none",
+  reducedMotion: { fallbackFrame: "/hero/still.webp" },
+  loading: { strategy: "idle", budgetBytes: 1_500_000 },
+};
+
+// Your copy of the dark theme's values, layered over the light registry:
+// here, the dark scrim as the dark block of styles/tokens.css sets it. Keep
+// it in step with the stylesheet you ship. --color-neutral-50 does not
+// change with the theme, so it needs no dark entry; a theme-dependent token
+// left at its light value here is reported as theme-unchecked.
+const darkTokens: Record<string, TokenDefinition> = {
+  ...TOKENS,
+  "--color-overlay-scrim": {
+    property: "--color-overlay-scrim",
+    family: "overlay",
+    value: "oklch(0 0 0 / 0.6)",
+    brandable: false,
+    themeDependent: true,
+  },
+};
+
+const declared = checkBackdropContract(backdrop, { darkTokens });
+if (!declared.ok) {
+  for (const finding of declared.findings) console.error(finding.rule, finding.message);
+  for (const gap of declared.unchecked) console.error(gap.rule, gap.reason);
+}
+
+const layer = document.getElementById("hero-backdrop");
+if (layer !== null && !checkBackdropElement(layer).ok) {
+  console.error("The rendered backdrop breaks the contract.");
+}
+```
+
 ## Licence
 
 MIT
