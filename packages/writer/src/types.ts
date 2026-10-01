@@ -28,13 +28,15 @@
  * This file ships no example content of anyone's real copy. Every field
  * here is either required-and-generic or a structural placeholder —
  * filling in an actual product's actual sentences is a consumer's job.
- * See "The single most important constraint" in the README: this package
- * is to `@clossys/writer/voice` what `@example/ui` is to
- * `@example/ui/tokens` — a vocabulary layer over a contract layer,
- * never a source of real words. If a doc comment, a test fixture, or a
- * README example in this package ever reads like something a product
- * would actually show a user, that is a bug in this package, not a
- * feature of it.
+ * The one exemption is the shipped US English front-door defaults
+ * (`front-door.ts`, `FRONT_DOOR_COPY_EN`, and the README's "Front-door
+ * copy" section): a closed, reserved set of ids, owned by this package, whose
+ * words ship as data so every sign-in surface need not carry its own. Outside
+ * that set this package is to `@clossys/writer/voice` what `@example/ui` is
+ * to `@example/ui/tokens` — a vocabulary layer over a contract layer, never a
+ * source of real words. If a doc comment, a test fixture, or a README example
+ * outside the front-door set ever reads like something a product would
+ * actually show a user, that is a bug in this package, not a feature of it.
  */
 
 // ---------------------------------------------------------------------------

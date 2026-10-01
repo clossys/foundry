@@ -17,6 +17,7 @@
  * product copy, per this repository's own public-safety rules.
  */
 
+import { readFileSync } from "node:fs";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import type { CopyRegistry, CopyResolver } from "@clossys/writer";
@@ -38,6 +39,7 @@ const registry: CopyRegistry = {
     { id: "acme.hero.heading", text: "Placeholder hero heading", context: "fixture", status: "approved" },
     { id: "acme.hero.description", text: "Placeholder hero description.", context: "fixture", status: "approved" },
     { id: "acme.cta.heading", text: "Placeholder CTA heading", context: "fixture", status: "approved" },
+    { id: "acme.features.heading", text: "Placeholder features heading", context: "fixture", status: "approved" },
     { id: "acme.feature.a", text: "Placeholder feature A", context: "fixture", status: "approved" },
     { id: "acme.feature.b", text: "Placeholder feature B", context: "fixture", status: "approved" },
     { id: "acme.feature.c", text: "Placeholder feature C", context: "fixture", status: "approved" },
@@ -111,6 +113,38 @@ describe("MarketingView — repeating 'features' slot: 0, 1, and many items", ()
     const html = renderToStaticMarkup(element);
     expect(html).toContain("Placeholder feature A");
     expect(html).not.toContain("Placeholder feature B");
+  });
+
+  it("omits the feature band when there are no features, heading or description", () => {
+    const doc = marketingDoc([...baseBindings, { slot: "features", items: [] }]);
+    const resolved = resolveSurfaceDocument(doc, resolver);
+    const { element } = renderWebDocument(resolved.document, { groups: resolved.groups });
+    const html = renderToStaticMarkup(element);
+    expect(html).not.toContain("desktop:grid-cols-3");
+    expect(html).toContain("Placeholder hero heading");
+    expect(html).toContain("Placeholder CTA heading");
+  });
+
+  it("keeps the feature band when a features heading is bound with zero items", () => {
+    const doc = marketingDoc([
+      ...baseBindings,
+      { slot: "featuresHeading", copy: ref("acme.features.heading") },
+      { slot: "features", items: [] },
+    ]);
+    const resolved = resolveSurfaceDocument(doc, resolver);
+    const { element } = renderWebDocument(resolved.document, { groups: resolved.groups });
+    const html = renderToStaticMarkup(element);
+    expect(html).toContain("Placeholder features heading");
+    expect(html).toContain("desktop:grid-cols-3");
+  });
+
+  it("both marketing view files carry the same empty-features guard", () => {
+    const guard = "features.length > 0 || featuresHeading !== undefined || featuresDescription !== undefined";
+    for (const name of ["MarketingView.tsx", "MarketingView.server.tsx"]) {
+      const source = readFileSync(new URL(`./views/${name}`, import.meta.url), "utf8");
+      const occurrences = source.split(guard).length - 1;
+      expect(occurrences).toBe(1);
+    }
   });
 
   it("renders cleanly with many items, and preserves authored order end to end", () => {
@@ -254,7 +288,15 @@ describe("MarketingView — fail-closed contracts", () => {
       { slot: "faq", items: [{ fields: { question: { copy: ref("acme.faq.question.one") }, answer: { copy: ref("acme.faq.answer.one") }, extra: { copy: ref("acme.feature.a") } } }] },
     ]);
     const resolved = resolveSurfaceDocument(doc, resolver);
-    expect(() => renderWebDocument(resolved.document, { groups: resolved.groups })).toThrow(/unknown field\(s\) extra/);
+    let message = "";
+    try {
+      renderWebDocument(resolved.document, { groups: resolved.groups });
+      expect.unreachable();
+    } catch (error) {
+      message = (error as Error).message;
+    }
+    expect(message).toContain("1 unknown field(s). Known field(s): question, answer.");
+    expect(message).not.toContain("extra");
   });
 
   it("throws RenderError('resolution-failed') when a repeating group targets a slot MarketingView does not declare as repeating", () => {
@@ -266,7 +308,8 @@ describe("MarketingView — fail-closed contracts", () => {
     } catch (error) {
       expect(error).toBeInstanceOf(RenderError);
       expect((error as RenderError).reason).toBe("resolution-failed");
-      expect((error as Error).message).toContain("not-a-real-repeating-slot");
+      expect((error as Error).message).toContain("received 1 repeating group(s) for slot(s) the template does not declare as repeating");
+      expect((error as Error).message).not.toContain("not-a-real-repeating-slot");
     }
   });
 

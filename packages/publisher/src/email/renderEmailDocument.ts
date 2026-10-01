@@ -150,10 +150,10 @@ export function renderEmailDocument(doc: ComposeDocument, options: RenderEmailOp
   if (!result.ok) {
     const parts: string[] = [];
     if (result.missingRequired.length > 0) {
-      parts.push(`missing required slot(s): ${result.missingRequired.join(", ")}`);
+      parts.push(`${result.missingRequired.length} missing required slot(s)`);
     }
     if (result.unknownBindings.length > 0) {
-      parts.push(`binding(s) targeting unknown slot(s): ${result.unknownBindings.map((b) => b.slot).join(", ")}`);
+      parts.push(`${result.unknownBindings.length} binding(s) targeting unknown slot(s)`);
     }
     const bindingErrors = result.bindingFindings.filter((f) => f.severity === "error");
     if (bindingErrors.length > 0) {
@@ -182,10 +182,10 @@ export function renderEmailDocument(doc: ComposeDocument, options: RenderEmailOp
   if (!copyResult.ok || hasAssetProblems(assetsResolution) || staticAssets.posterlessVideo.length > 0) {
     const parts: string[] = [];
     if (copyResult.unresolvedCopyIds.length > 0) {
-      parts.push(`copyId(s) that did not resolve to real text: ${copyResult.unresolvedCopyIds.join(", ")}`);
+      parts.push(`${copyResult.unresolvedCopyIds.length} copyId(s) that did not resolve to real text`);
     }
     if (copyResult.unchecked.length > 0) {
-      parts.push(`slot(s) resolveCopy could not even attempt to resolve: ${copyResult.unchecked.join(", ")}`);
+      parts.push(`${copyResult.unchecked.length} slot(s) resolveCopy could not even attempt to resolve`);
     }
     parts.push(...describeAssetProblems(assetsResolution));
     parts.push(...describeStaticAssetProblems(staticAssets));
@@ -194,7 +194,7 @@ export function renderEmailDocument(doc: ComposeDocument, options: RenderEmailOp
     }
     throw new RenderError(
       "empty-output",
-      `renderEmailDocument resolved document "${doc.id}" against its layout, but not every bound slot produced real content: ${parts.join("; ")}. Rendering would silently ship an incomplete email, which this function refuses to do.`,
+      `renderEmailDocument resolved the document against its layout, but not every bound slot produced real content: ${parts.join("; ")}. Rendering would silently ship an incomplete email, which this function refuses to do.`,
     );
   }
 

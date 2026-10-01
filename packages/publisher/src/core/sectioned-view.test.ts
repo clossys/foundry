@@ -154,6 +154,19 @@ describe("SectionedViewDocument core contract", () => {
     expect((thrown as Error).message).not.toContain("sentinel-view-id-9");
   });
 
+  it("a missing CopyResolver is refused without the document id", () => {
+    let thrown: unknown;
+    try {
+      resolveSectionedViewDocument({ ...document, id: "sentinel-view-id-33" }, undefined as unknown as CopyResolver);
+    } catch (error) {
+      thrown = error;
+    }
+    expect(thrown).toBeInstanceOf(SectionedViewResolutionError);
+    expect((thrown as SectionedViewResolutionError).reason).toBe("unresolved-copy");
+    expect((thrown as SectionedViewResolutionError).message).toBe("resolveSectionedViewDocument needs a CopyResolver.");
+    expect((thrown as Error).message).not.toContain("sentinel-view-id-33");
+  });
+
   it("rejects sparse sections, repeated items, status groups, and status items at their authored paths", () => {
     const sparseSections = { id: document.id, sections: [document.sections[0], , document.sections[2]] };
     const sparseItems = { id: document.id, sections: [{ ...document.sections[1], items: [document.sections[1].items[0], , document.sections[1].items[1]] }] };

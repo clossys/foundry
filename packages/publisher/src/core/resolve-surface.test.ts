@@ -123,7 +123,7 @@ describe("resolveSurfaceDocument — repeating-group resolution", () => {
       ...singleBindingOnly,
       bindings: [...singleBindingOnly.bindings, { slot: "faq", items: [{ fields: { question: { copy: ref("acme.faq.question") }, answer: { copy: ref("acme.faq.missing") } } }] }],
     };
-    expect(() => resolveSurfaceDocument(structured, resolver)).toThrow(/bindings\.1\.items\.0\.fields\.copy/);
+    expect(() => resolveSurfaceDocument(structured, resolver)).toThrow(/bindings\.1\.items\.0\.fields\.1\.copy/);
   });
 
   it("resolves an explicit empty group to zero items, not an error", () => {
@@ -183,7 +183,7 @@ describe("resolveSurfaceDocument — single-binding node, opt-in via options.nod
     expect(thrown).toBeInstanceOf(SurfaceResolutionError);
     expect((thrown as SurfaceResolutionError).reason).toBe("unsupported-node");
     expect((thrown as SurfaceResolutionError).message).toContain("bindings.1");
-    expect((thrown as SurfaceResolutionError).message).toContain("widget");
+    expect((thrown as SurfaceResolutionError).message).not.toContain("widget");
   });
 
   it("still refuses when nodeSlots is supplied but does not name this binding's slot", () => {
@@ -217,7 +217,8 @@ describe("resolveSurfaceDocument — knownTemplates", () => {
     } catch (error) {
       expect(error).toBeInstanceOf(SurfaceResolutionError);
       expect((error as SurfaceResolutionError).reason).toBe("unsupported-template");
-      expect((error as Error).message).toContain("AuthView");
+      expect((error as Error).message).toBe("resolveSurfaceDocument cannot resolve the surface: its template is not registered. Known template(s): MarketingView, ErrorView.");
+      expect((error as Error).message).not.toContain("AuthView");
     }
   });
 
@@ -255,7 +256,7 @@ describe("resolveSurfaceDocument — unresolved-copy message never echoes a call
       ...singleBindingOnly,
       bindings: [...singleBindingOnly.bindings, { slot: "faq", items: [{ fields: { [SENTINEL_KEY]: { copy: ref(SENTINEL_REF_ID) } } }] }],
     });
-    expect(message).toBe("resolveSurfaceDocument could not resolve a CopyRef at bindings.1.items.0.fields.copy.");
+    expect(message).toBe("resolveSurfaceDocument could not resolve a CopyRef at bindings.1.items.0.fields.0.copy.");
     expect(message).not.toContain(SENTINEL_KEY);
     expect(message).not.toContain(SENTINEL_REF_ID);
   });
@@ -272,5 +273,61 @@ describe("resolveSurfaceDocument — unresolved-copy message never echoes a call
     expect(message).toBe("resolveSurfaceDocument could not resolve a CopyRef at meta.notes.");
     expect(message).not.toContain(SENTINEL_KEY);
     expect(message).not.toContain(SENTINEL_REF_ID);
+  });
+});
+
+describe("resolveSurfaceDocument — other refusals never echo a caller id, template or slot", () => {
+  const SENTINEL_SURFACE_ID = "sentinel-surface-id-34";
+  const SENTINEL_TEMPLATE = "SentinelTemplate34";
+  const SENTINEL_SLOT = "sentinel-slot-34";
+
+  function refusal(run: () => unknown): SurfaceResolutionError {
+    try {
+      run();
+    } catch (error) {
+      expect(error).toBeInstanceOf(SurfaceResolutionError);
+      return error as SurfaceResolutionError;
+    }
+    return expect.unreachable("expected resolveSurfaceDocument to throw");
+  }
+
+  it("an invalid surface is refused without its id", () => {
+    const error = refusal(() => resolveSurfaceDocument({ ...singleBindingOnly, id: SENTINEL_SURFACE_ID, bindings: "not-an-array" } as unknown as SurfaceDocument, resolver));
+    expect(error.reason).toBe("invalid-surface");
+    expect(error.message).toBe("resolveSurfaceDocument refused an invalid surface: bindings must be an array.");
+    expect(error.message).not.toContain(SENTINEL_SURFACE_ID);
+  });
+
+  it("a missing CopyResolver is refused without the surface id", () => {
+    const error = refusal(() => resolveSurfaceDocument({ ...singleBindingOnly, id: SENTINEL_SURFACE_ID }, undefined as unknown as typeof resolver));
+    expect(error.reason).toBe("unresolved-copy");
+    expect(error.message).toBe("resolveSurfaceDocument needs a CopyResolver.");
+    expect(error.message).not.toContain(SENTINEL_SURFACE_ID);
+  });
+
+  it("an unregistered template is refused without the surface id or the template name", () => {
+    const error = refusal(() => resolveSurfaceDocument({ ...singleBindingOnly, id: SENTINEL_SURFACE_ID, template: SENTINEL_TEMPLATE }, resolver, { knownTemplates: ["MarketingView"] }));
+    expect(error.reason).toBe("unsupported-template");
+    expect(error.message).toBe("resolveSurfaceDocument cannot resolve the surface: its template is not registered. Known template(s): MarketingView.");
+    expect(error.message).not.toContain(SENTINEL_SURFACE_ID);
+    expect(error.message).not.toContain(SENTINEL_TEMPLATE);
+  });
+
+  it("a node binding on a slot that is not a node slot is refused without the slot name", () => {
+    const error = refusal(() =>
+      resolveSurfaceDocument({ ...singleBindingOnly, bindings: [...singleBindingOnly.bindings, { slot: SENTINEL_SLOT, node: { kind: "consumer-widget" } }] }, resolver),
+    );
+    expect(error.reason).toBe("unsupported-node");
+    expect(error.message).toContain("cannot lower caller-owned node binding at bindings.1;");
+    expect(error.message).not.toContain(SENTINEL_SLOT);
+  });
+
+  it("a structured-field copy failure names the field by position, so the first and second field are distinguishable", () => {
+    const failingAt = (fields: Record<string, { copy: ReturnType<typeof ref> }>) =>
+      refusal(() => resolveSurfaceDocument({ ...singleBindingOnly, bindings: [...singleBindingOnly.bindings, { slot: "faq", items: [{ fields }] }] }, resolver)).message;
+    expect(failingAt({ [SENTINEL_SLOT]: { copy: ref("acme.faq.missing") } })).toBe("resolveSurfaceDocument could not resolve a CopyRef at bindings.1.items.0.fields.0.copy.");
+    expect(failingAt({ question: { copy: ref("acme.faq.question") }, [SENTINEL_SLOT]: { copy: ref("acme.faq.missing") } })).toBe(
+      "resolveSurfaceDocument could not resolve a CopyRef at bindings.1.items.0.fields.1.copy.",
+    );
   });
 });

@@ -107,8 +107,13 @@ export interface ContactSubmission {
  * 3. `control-character` — see "Control characters" below. Its own code rather
  *    than `malformed`, because it is the header/line-injection refusal and a
  *    rendering layer may want to say so specifically.
- * 4. `required` — missing, or empty after `trim()`. (Never reported for `phone`.)
- * 5. Field shape: `unknown-topic` (topic is not exactly one of the configured
+ * 4. `malformed` for `name` and `message` only — the value contains a lone
+ *    UTF-16 surrogate (a high surrogate not followed by a low one, or a low
+ *    surrogate not preceded by a high one). A well-formed pair is accepted.
+ *    A lone surrogate cannot be encoded as UTF-8 and would reach the
+ *    notification as a replacement character.
+ * 5. `required` — missing, or empty after `trim()`. (Never reported for `phone`.)
+ * 6. Field shape: `unknown-topic` (topic is not exactly one of the configured
  *    ids) or `malformed` (email / phone shape, below).
  *
  * Control characters:
@@ -135,10 +140,10 @@ export interface ContactSubmission {
  */
 export interface ContactFieldCodeMap {
   readonly topic: "not-a-string" | "too-long" | "control-character" | "required" | "unknown-topic";
-  readonly name: "not-a-string" | "too-long" | "control-character" | "required";
+  readonly name: "not-a-string" | "too-long" | "control-character" | "required" | "malformed";
   readonly email: "not-a-string" | "too-long" | "control-character" | "required" | "malformed";
   readonly phone: "not-a-string" | "too-long" | "control-character" | "malformed";
-  readonly message: "not-a-string" | "too-long" | "control-character" | "required";
+  readonly message: "not-a-string" | "too-long" | "control-character" | "required" | "malformed";
 }
 
 /** Every code a single field can report. */
@@ -164,8 +169,9 @@ export type ContactFieldIssue =
  *   `email`, `phone`, `message`, then `submission`, at most one per target.
  * - `rate-limited` — the limiter returned exactly `false`.
  * - `unavailable` — the handler could not proceed safely: bad client key,
- *   limiter threw / rejected / returned a non-boolean, message id generation
- *   failed, or delivery threw / rejected. Deliberately one undifferentiated
+ *   limiter threw / rejected / returned a non-boolean / did not settle within
+ *   `limiterTimeoutMs`, message id generation failed, or delivery threw /
+ *   rejected / did not settle within `deliveryTimeoutMs`. Deliberately one undifferentiated
  *   code toward the client; the cause goes to {@link ContactHandlerConfig.onUnavailable}.
  */
 export type ContactResult =
@@ -187,6 +193,8 @@ export type ContactUnavailableReason =
   | "limiter-non-boolean"
   | "message-id-failed"
   | "delivery-failed"
+  | "limiter-timeout"
+  | "delivery-timeout"
   | "internal-error";
 
 // ---------------------------------------------------------------------------
@@ -237,7 +245,9 @@ export const CONTACT_CLIENT_KEY_MAX_LENGTH = 256;
  * - anything else — a throw, a rejected promise, or a resolved/returned value
  *   that is not a boolean (`1`, `"true"`, `undefined`, an object) ⇒
  *   `unavailable` (reason `limiter-failed` / `limiter-non-boolean`). A limiter
- *   that cannot give a clear answer never allows.
+ *   that cannot give a clear answer never allows. With `limiterTimeoutMs` set,
+ *   a call that has not settled by then is `unavailable` (`limiter-timeout`);
+ *   the call is not cancelled and a late answer is discarded.
  *
  * Atomicity under concurrent calls for the same key is the limiter's
  * responsibility; the handler awaits the answer and does nothing else with it.
@@ -361,7 +371,9 @@ export interface ContactOutboundMessage {
  *
  * The handler calls `deliver` at most once per `handle()`, awaits it, ignores
  * the resolved value, and maps a throw or rejection to `unavailable`
- * (reason `delivery-failed`). It never retries.
+ * (reason `delivery-failed`). It never retries. With `deliveryTimeoutMs` set,
+ * a call that has not settled by then is `unavailable` (`delivery-timeout`);
+ * the call is not cancelled, so a late success is possible and unobserved.
  *
  * The handler reads `deliver` once, at construction, and calls that function
  * with the delivery as `this`; reassigning `deliver` afterwards has no effect.
@@ -495,6 +507,24 @@ export interface ContactHandlerConfig {
    * changes the result.
    */
   readonly onUnavailable?: (reason: ContactUnavailableReason) => void;
+  /**
+   * Optional bound, in milliseconds, on the `limiter.check` call. Default: none.
+   * When the call has not settled by then, `handle()` resolves `unavailable`
+   * (reason `limiter-timeout`) and nothing is delivered; an answer that
+   * arrives later is discarded. A positive integer no greater than
+   * 2147483647; anything else throws at construction.
+   */
+  readonly limiterTimeoutMs?: number;
+  /**
+   * Optional bound, in milliseconds, on the `delivery.deliver` call. Default:
+   * none. When the call has not settled by then, `handle()` resolves
+   * `unavailable` (reason `delivery-timeout`). The call is not cancelled and is
+   * not retried, so the message may still be delivered after the answer: the
+   * outcome of a timed-out delivery is unknown, and a client that submits
+   * again can produce a second message. A positive integer no greater than
+   * 2147483647; anything else throws at construction.
+   */
+  readonly deliveryTimeoutMs?: number;
 }
 
 export interface ContactHandler {
@@ -534,6 +564,8 @@ export type ValidatedContactSubmission = {
 //   b. `target === "production"` and `STUB_CONTACT_DELIVERY in delivery` ⇒ throw.
 //   c. `delivery.channel === "email"`, `deliver` and `limiter.check` are functions.
 //   d. topics / from / to / subject / honeypotField / caps valid as documented.
+//   e. `limiterTimeoutMs` and `deliveryTimeoutMs`, when present, are positive
+//      integers no greater than 2147483647; otherwise throw.
 //
 // `handle(submission, options)` — each step fails closed, and a step that ends
 // the call skips every later step:
@@ -557,6 +589,7 @@ export type ValidatedContactSubmission = {
 //
 //   4. Limiter: `await limiter.check(clientKey)` exactly once.
 //      throw / reject ⇒ `unavailable` (`limiter-failed`);
+//      no settlement within `limiterTimeoutMs` ⇒ `unavailable` (`limiter-timeout`);
 //      non-boolean   ⇒ `unavailable` (`limiter-non-boolean`);
 //      `false`       ⇒ `rate-limited`;
 //      `true`        ⇒ continue.
@@ -565,7 +598,9 @@ export type ValidatedContactSubmission = {
 //   5. Build the ContactOutboundMessage from the ValidatedContactSubmission and
 //      config (id failure ⇒ `unavailable`, `message-id-failed`), then
 //      `await delivery.deliver(message)` exactly once.
-//      throw / reject ⇒ `unavailable` (`delivery-failed`); resolve ⇒ `accepted`.
+//      throw / reject ⇒ `unavailable` (`delivery-failed`);
+//      no settlement within `deliveryTimeoutMs` ⇒ `unavailable` (`delivery-timeout`);
+//      resolve ⇒ `accepted`.
 //      No retry. The rate slot consumed in step 4 is not refunded.
 //
 // Any unexpected throw anywhere in `handle()` is caught and becomes `unavailable`.

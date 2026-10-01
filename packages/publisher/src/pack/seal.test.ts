@@ -30,6 +30,7 @@ function page(path: string, overrides: Record<string, unknown> = {}): Record<str
 function evidence(overrides: Record<string, unknown> = {}): Record<string, any> {
   return {
     schemaVersion: 1,
+    itemId: "website",
     commit: COMMIT,
     observedAt: "2026-09-30T11:00:00Z",
     delivery: { state: "ready", deployedCommit: COMMIT, productionUrl: PRODUCTION_URL },
@@ -94,7 +95,7 @@ function seal(overrides: Partial<Parameters<typeof sealWebsite>[0]> = {}) {
     manifest: manifest(),
     ledger: [],
     itemId: "website",
-    evidence: evidence(),
+    evidence: evidence({ itemId: overrides.itemId ?? "website" }),
     map: MAP,
     now: NOW,
     strategyRevision: STRATEGY_REVISION,
@@ -195,6 +196,25 @@ describe("checkSealEvidence", () => {
     expect(rulesAt(checkSealEvidence(evidence({ contactIntake: { kind: "maybe" } }), { map: MAP, now: NOW }))).toEqual(["contact-intake-shape@contactIntake.kind"]);
   });
 
+  it("refuses an impossible calendar date or clock time, and accepts a real leap day", TIMEOUT, () => {
+    const later = "2026-10-01T12:00:00Z";
+    for (const observedAt of ["2026-09-31T00:00:00Z", "2026-02-29T00:00:00Z", "2026-04-31T23:00:00Z", "2026-09-30T24:00:00Z", "2026-13-01T00:00:00Z", "2026-00-10T00:00:00Z", "2026-09-00T00:00:00Z"]) {
+      expect(rulesAt(checkSealEvidence(evidence({ observedAt }), { map: MAP, now: later })), observedAt).toEqual(["observed-at-shape@observedAt"]);
+    }
+    expect(rulesAt(checkSealEvidence(evidence(), { map: MAP, now: "2026-09-31T12:00:00Z" }))).toEqual(["now-invalid@now"]);
+    expect(rulesAt(checkSealEvidence(evidence(), { map: MAP, now: "2026-09-30T24:00:00Z" }))).toEqual(["now-invalid@now"]);
+    expect(checkSealEvidence(evidence({ observedAt: "2028-02-29T10:00:00Z" }), { map: MAP, now: "2028-02-29T12:00:00Z" })).toEqual([]);
+    expect(rulesAt(checkSealEvidence(evidence({ observedAt: "2027-02-29T10:00:00Z" }), { map: MAP, now: "2027-03-01T12:00:00Z" }))).toEqual(["observed-at-shape@observedAt"]);
+  });
+
+  it("evidence names the item it was taken for, and a different item is refused", TIMEOUT, () => {
+    expect(checkSealEvidence(evidence(), { map: MAP, now: NOW, itemId: "website" })).toEqual([]);
+    expect(rulesAt(checkSealEvidence(evidence({ itemId: "email-kit" }), { map: MAP, now: NOW, itemId: "website" }))).toEqual(["evidence-item-mismatch@itemId"]);
+    for (const missing of [undefined, "", "  ", 3, null]) {
+      expect(rulesAt(checkSealEvidence(evidence({ itemId: missing }), { map: MAP, now: NOW })), String(missing)).toEqual(["evidence-item-shape@itemId"]);
+    }
+  });
+
   it("offers no waiver: an extra flag in the evidence or the options changes nothing", TIMEOUT, () => {
     const stale = evidence({ waive: true, force: true, pages: [page("/"), page("/contact", { servedCommit: OTHER_COMMIT, waive: true })] });
     expect(checkSealEvidence(stale, { map: MAP, now: NOW, waive: true, force: true } as never).length).toBeGreaterThan(0);
@@ -275,17 +295,29 @@ describe("sealWebsite", () => {
     expect(sealableItemIds(all)).toEqual(["website", "materials-site"]);
 
     // Kept and sealable, but internal: never sealed as a website.
-    expect(rulesAt(refusal(seal({ itemId: "materials-site" })))).toEqual(["item-not-public@itemId"]);
+    expect(rulesAt(refusal(seal({ itemId: "materials-site" })))).toEqual(["item-not-website@itemId", "item-not-public@itemId"]);
     // Public and kept, but its need is not yet published.
-    expect(rulesAt(refusal(seal({ itemId: "email-kit" })))).toEqual(["item-not-sealable@itemId"]);
+    expect(rulesAt(refusal(seal({ itemId: "email-kit" })))).toEqual(["item-not-website@itemId", "item-not-sealable@itemId"]);
     // Already published.
-    expect(rulesAt(refusal(seal({ itemId: "strategy-brief" })))).toEqual(["item-not-sealable@itemId"]);
+    expect(rulesAt(refusal(seal({ itemId: "strategy-brief" })))).toEqual(["item-not-website@itemId", "item-not-sealable@itemId"]);
     // Not in the manifest at all.
-    expect(rulesAt(refusal(seal({ itemId: "no-such-item" })))).toEqual(["item-not-sealable@itemId"]);
+    expect(rulesAt(refusal(seal({ itemId: "no-such-item" })))).toEqual(["item-not-website@itemId", "item-not-sealable@itemId"]);
 
     const blocked = manifest();
     blocked.items[1] = item({ id: "website", needs: ["strategy-brief"], condition: "blocked" });
     expect(rulesAt(refusal(seal({ manifest: blocked })))).toEqual(["item-not-sealable@itemId"]);
+  });
+
+  it("seals only the website item, and only on evidence taken for that item", TIMEOUT, () => {
+    // Evidence for another item cannot seal the website.
+    expect(rulesAt(refusal(seal({ evidence: evidence({ itemId: "email-kit" }) })))).toEqual(["evidence-item-mismatch@itemId"]);
+    expect(rulesAt(refusal(seal({ evidence: evidence({ itemId: undefined }) })))).toEqual(["evidence-item-shape@itemId"]);
+    // A public, sealable item that is not the website cannot be sealed with otherwise clean evidence for itself.
+    const other = manifest();
+    other.items[3] = item({ id: "email-kit", needs: ["strategy-brief"] });
+    expect(sealableItemIds(other)).toContain("email-kit");
+    expect(rulesAt(refusal(seal({ manifest: other, itemId: "email-kit" })))).toEqual(["item-not-website@itemId"]);
+    expect(seal({ manifest: other, itemId: "website" }).ok).toBe(true);
   });
 
   it("no echo: a finding holds a rule and a path, never a value from the input", TIMEOUT, () => {
@@ -295,6 +327,7 @@ describe("sealWebsite", () => {
     const markerPath = "/marker-path-leak";
     const markerRevision = "marker-revision-leak";
     const bad = evidence({
+      itemId: "marker-evidence-item-leak",
       commit: markerCommit,
       delivery: { state: "building", deployedCommit: "e".repeat(40), productionUrl: markerUrl },
       pages: [page("/", { desktopDigest: markerDigest, servedCommit: "f".repeat(40) }), page(markerPath, { status: 503, mobileDigest: markerDigest })],
@@ -305,7 +338,7 @@ describe("sealWebsite", () => {
     expect(refusedSeal.length).toBeGreaterThan(5);
 
     const text = JSON.stringify([refusedSeal, refusedCheck]);
-    for (const marker of [markerUrl, "marker-url", markerDigest, markerCommit, "e".repeat(40), "f".repeat(40), markerPath, "marker-item-leak", "building"]) {
+    for (const marker of [markerUrl, "marker-url", markerDigest, markerCommit, "e".repeat(40), "f".repeat(40), markerPath, "marker-item-leak", "marker-evidence-item-leak", "building"]) {
       expect(text, marker).not.toContain(marker);
     }
     for (const finding of [...refusedSeal, ...refusedCheck]) {

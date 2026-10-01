@@ -60,7 +60,7 @@ describe("refusal: resolution-failed", () => {
     expect(caught).toBeInstanceOf(RenderError);
     expect((caught as RenderError).reason).toBe("resolution-failed");
     expect((caught as RenderError).message).toBe(
-      'renderEmailDocument could not resolve the document against its layout: missing required slot(s): a; binding(s) targeting unknown slot(s): nonexistent.',
+      'renderEmailDocument could not resolve the document against its layout: 1 missing required slot(s); 1 binding(s) targeting unknown slot(s).',
     );
   });
 
@@ -127,7 +127,7 @@ describe("refusal: empty-output", () => {
     expect(caught).toBeInstanceOf(RenderError);
     expect((caught as RenderError).reason).toBe("empty-output");
     expect((caught as RenderError).message).toBe(
-      'renderEmailDocument resolved document "x" against its layout, but not every bound slot produced real content: copyId(s) that did not resolve to real text: missing.copy. Rendering would silently ship an incomplete email, which this function refuses to do.',
+      'renderEmailDocument resolved the document against its layout, but not every bound slot produced real content: 1 copyId(s) that did not resolve to real text. Rendering would silently ship an incomplete email, which this function refuses to do.',
     );
   });
 
@@ -141,6 +141,30 @@ describe("refusal: empty-output", () => {
     };
 
     expect(() => renderEmailDocument(doc, { layout: SINGLE_SLOT_LAYOUT, lookup: () => undefined })).toThrow(RenderError);
+  });
+
+  it("counts, and does not name, a slot whose copy could not even be attempted", () => {
+    const doc: ComposeDocument = {
+      id: "sentinel-doc-id-34",
+      channel: "email",
+      template: "T",
+      meta: { channel: "email", subject: "s", preheader: "p" },
+      bindings: [{ slot: "a", copyId: "missing.copy" }],
+    };
+
+    let caught: unknown;
+    try {
+      // Deliberately wrong-typed input, cast like the other fixtures here.
+      renderEmailDocument(doc, { layout: SINGLE_SLOT_LAYOUT, lookup: 42 as unknown as () => undefined });
+    } catch (error) {
+      caught = error;
+    }
+
+    expect(caught).toBeInstanceOf(RenderError);
+    expect((caught as RenderError).reason).toBe("empty-output");
+    expect((caught as RenderError).message).toBe(
+      "renderEmailDocument resolved the document against its layout, but not every bound slot produced real content: 1 slot(s) resolveCopy could not even attempt to resolve. Rendering would silently ship an incomplete email, which this function refuses to do.",
+    );
   });
 });
 
@@ -160,7 +184,8 @@ describe("refusal: assetId problems (never a blank box)", () => {
     } catch (error) {
       expect(error).toBeInstanceOf(RenderError);
       expect((error as RenderError).reason).toBe("empty-output");
-      expect((error as Error).message).toContain("marketing.hero");
+      expect((error as Error).message).toContain("1 assetId(s) that did not resolve to a real asset");
+      expect((error as Error).message).not.toContain("marketing.hero");
     }
   });
 
@@ -182,7 +207,8 @@ describe("refusal: assetId problems (never a blank box)", () => {
     } catch (error) {
       expect(error).toBeInstanceOf(RenderError);
       expect((error as RenderError).reason).toBe("empty-output");
-      expect((error as Error).message).toContain("could not even attempt to resolve: a");
+      expect((error as Error).message).toContain("1 slot(s) asset resolution could not even attempt to resolve");
+      expect((error as Error).message).not.toContain("registry down");
     }
   });
 
@@ -204,7 +230,8 @@ describe("refusal: assetId problems (never a blank box)", () => {
       expect.unreachable();
     } catch (error) {
       expect((error as RenderError).reason).toBe("empty-output");
-      expect((error as Error).message).toContain("marketing.hero");
+      expect((error as Error).message).toContain("1 assetId(s) that resolved to a value that did not match the required RenderImageAsset or RenderVideoAsset shape");
+      expect((error as Error).message).not.toContain("marketing.hero");
     }
   });
 });

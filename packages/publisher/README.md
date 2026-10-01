@@ -151,7 +151,7 @@ Use explicit subpaths:
 - `@clossys/publisher/document` — the product-neutral structured-document contract (sections, paragraphs, lists, tables, callouts, safe links) and its renderer.
 - `@clossys/publisher/email`, `/print`, `/image`, `/slides` — channel renderers.
 - `@clossys/publisher/record` — the append-only, content-addressed publication ledger and its drift checker. See "`record` — the append-only publication ledger," below.
-- `@clossys/publisher/pack` — the v0 Launch pack manifest contract: types, schema validation, needs-graph readiness, adopt-don't-override detection, and the evidence-gated website seal (`publisher-seal`). See "The pack," below.
+- `@clossys/publisher/pack` — the v0 Launch pack manifest contract: types, schema validation, needs-graph readiness, adopt-don't-override detection, and the evidence-gated website seal (`publisher-seal`) and the rendered-head lint (`publisher-head-lint`). See "The pack," below.
 - `@clossys/publisher/surfaces` — the one-owner-per-file contract for surface documents under `clossys/publisher/surfaces/`. See "Surface documents move to Publisher," below.
 - `@clossys/publisher/materials` — the materials mini-site (overviews, pitch decks, audience variants). See "Materials site," below.
 - `@clossys/publisher/templates` — the pack's default templates and the channel spec registry. See "Templates and channel specs," below.
@@ -659,9 +659,8 @@ that picks one — see "Scope," above: this package still does not compose.
 slots; `features` (required) and `faq` (optional) are **repeating** slots,
 each bound via a `SurfaceRepeatingSlotBinding` and rendered through
 `@clossys/designer`'s `FeatureGrid`/`Faq` blocks respectively. An empty
-repeating group (`items: []`) renders that section with zero entries —
-never an error, the same "empty is a deliberate, valid choice" contract
-`SurfaceRepeatingSlotBinding` itself holds to, above; a `faq` binding that
+`features` group with no `featuresHeading` or `featuresDescription` omits
+the grid; a `faq` binding that
 was never authored at all omits the whole FAQ section instead, which is a
 different, equally valid outcome (see `MarketingView`'s own `faq` prop doc
 comment).
@@ -2519,12 +2518,16 @@ console.log(result.manifest.items.length);
 ### Sealing a website
 
 A website item moves from `kept` to `published` only on evidence. The caller
-supplies the evidence; Publisher checks it and never calls a provider.
+supplies the evidence; Publisher checks it and never calls a provider. Only
+the pack's `website` item can be sealed, and only on evidence that names it.
 
 `WebsiteSealEvidence` (`schemaVersion: 1`) is one bundle:
 
+- `itemId`: the pack item the evidence was taken for. It must equal the item
+  being sealed.
 - `commit`: the 40-hex commit being sealed, and `observedAt`, when the
-  evidence was taken.
+  evidence was taken. `observedAt` must be a real calendar date and time:
+  `2026-09-31T00:00:00Z` is refused as a bad shape.
 - `delivery`: `{ state: "ready", deployedCommit, productionUrl }`, with an
   `https` production URL.
 - `pages`: one `WebsiteSealPage` per observed page, each
@@ -2535,9 +2538,11 @@ supplies the evidence; Publisher checks it and never calls a provider.
   `{ kind: "none", reason }`. It is always stated; a missing value is refused
   and `none` needs a non-empty `reason`.
 
-`checkSealEvidence(evidence, { map, now })` returns `SealFinding[]`, each a
-`rule` and a `path`, and never throws. It refuses when:
+`checkSealEvidence(evidence, { map, now, itemId })` returns `SealFinding[]`,
+each a `rule` and a `path`, and never throws. `itemId` is optional; when
+given, the evidence's own `itemId` must equal it. It refuses when:
 
+- `itemId` is missing, or differs from the item being sealed;
 - `delivery.state` is not `ready`, or `deployedCommit` differs from `commit`;
 - a path on the `PublicationMap` has no page, or a page is not status 200, or
   its `servedCommit` differs from `commit`;
@@ -2546,13 +2551,15 @@ supplies the evidence; Publisher checks it and never calls a provider.
 - `contactIntake` is missing or malformed, or the map has no path entries.
 
 There is no waiver flag, option, or environment switch. A finding never
-repeats a digest, URL, reason, path, or commit from the input: it names a rule
-and an index path such as `pages[1].servedCommit`.
+repeats any text from the input: it names a fixed rule and a fixed field path
+or array index such as `pages[1].servedCommit`. A successful seal does return
+the entry id, which is derived from the item id and the commit.
 
 `sealWebsite({ manifest, ledger, itemId, evidence, map, now, strategyRevision })`
 is pure and returns `SealWebsiteResult`: `{ ok: true, manifest, ledger, entryId }`
 or `{ ok: false, findings }`. It refuses unless the evidence is clean, `itemId`
-is in `sealableItemIds(manifest)`, and the item is `public`. On accept the item
+is `website` and in `sealableItemIds(manifest)`, and the item is `public`
+(`item-not-website` otherwise). On accept the item
 is `published` with `verifiedAt` set to `now` and `publishedTo` set to the
 production URL, and the ledger gains one `web` entry through `appendEntry` with
 id `website-<itemId>-<first 12 of commit>`; the inputs are not changed. Sealing
@@ -2563,13 +2570,31 @@ The `publisher-seal` command runs it over files:
 
 ```sh
 publisher-seal clossys/publisher/pack.json clossys/publisher/record.json evidence.json map.json \
-  --item website --strategy-revision rev-1 [--now 2026-09-30T12:00:00Z]
+  --item website --strategy-revision rev-1
 ```
 
-It exits 0 when it sealed and wrote both files (each to a temp file, then
-renamed), 1 when it refused and wrote nothing, and 2 when it could not run: a
-missing or unreadable file, invalid JSON, a manifest, ledger, or map that is
-not itself valid, or bad arguments. `--now` defaults to the current time.
+It exits 0 when it sealed and wrote both files, 1 when it refused and wrote
+nothing, and 2 when it could not run: a missing or unreadable file, invalid
+JSON, a manifest, ledger, or map that is not itself valid, a manifest or
+ledger that is a symbolic link or has a second hard link, a lock held by
+another run, a file that changed while the run was deciding, a failed write, or
+bad arguments.
+
+The seal is made at the current time. There is no `--now`: a settable time
+would let a caller backdate the 24 hour evidence window, so passing it is an
+unknown flag and exits 2.
+
+Nothing is written before the gate has accepted. Then the command takes
+`<file>.seal.lock` on the manifest and the ledger (created exclusively, so a
+second run is refused instead of racing), re-reads both, and refuses if either
+changed since the gate looked. It writes each output, and a copy of the
+previous ledger, to a temp file created exclusively with the permissions of the
+file it replaces, then renames the ledger first and the manifest second. If the
+manifest rename fails, the previous ledger is renamed back and the run can be
+repeated; if that fails too, the error says the ledger was written and names
+the file that holds the previous ledger. A run removes only the temp and lock
+files it created; a lock left by a run that stopped is removed by hand once no
+run is active.
 
 ```ts
 import { checkSealEvidence } from "@clossys/publisher/pack";
@@ -2579,6 +2604,7 @@ const digest = "a".repeat(64);
 const findings = checkSealEvidence(
   {
     schemaVersion: 1,
+    itemId: "website",
     commit,
     observedAt: "2026-09-30T11:00:00Z",
     delivery: { state: "ready", deployedCommit: commit, productionUrl: "https://www.example.test/" },
@@ -2588,9 +2614,63 @@ const findings = checkSealEvidence(
   {
     map: { entries: [{ id: "home", template: "landing", documentId: "doc-home", location: { kind: "path", path: "/" } }] },
     now: "2026-09-30T12:00:00Z",
+    itemId: "website",
   },
 );
 console.log(findings.length === 0 ? "ready to seal" : findings.map((finding) => `${finding.rule} ${finding.path}`));
+```
+
+### Rendered head lint
+
+`lintRenderedHead({ siteName, pages })` checks the head of already rendered
+pages (`pages` is `{ path, html }[]`, `path` being the route) and returns
+`SealFinding[]`, each a `rule` and a `path` that is a route or `<route>#<tag>`
+(for example `/about#og:image`). It is pure, never throws, and a finding never
+repeats a title, URL or description taken from the HTML. Scanning is tolerant:
+attribute order and quote style do not matter, comments and `<script>`/`<style>`
+bodies are ignored, a few character references are decoded, and a value that is
+blank after trimming counts as missing. It stops at `</head>` or `<body`.
+
+Rules:
+
+- `head-missing`: a page lacks one of `<title>`, meta `description`, `robots`,
+  `theme-color`, `link rel=canonical`, `og:title`, `og:description`, `og:url`,
+  `og:image`, `og:site_name`, `twitter:card`, `twitter:title` or
+  `twitter:image` (path `<route>#<tag>`).
+- `title-format`: the title is not `<siteName> · <tagline>` on route `/` or
+  `<label> · <siteName>` on any other route. The separator is U+00B7 with one
+  space on each side, used once.
+- `title-separator`: the title uses `|` or a dash where the separator belongs.
+- `title-duplicate`: the head has more than one `<title>`.
+- `canonical-duplicate`: the head has more than one `link rel=canonical`.
+- `head-title-mismatch`: any `og:title` or `twitter:title` value differs from `<title>`.
+- `canonical-path`: the canonical pathname is not the route (a trailing slash
+  is ignored).
+- `canonical-origin`: the canonical URL is not absolute `http(s)`, or its origin
+  differs from the first page's.
+- `input-invalid`: `siteName` is blank, `pages` is not an array or is empty
+  (path `input` or `pages`), or a page's `path` is not a non-empty string
+  starting with `/` (path `pages[<index>]`).
+
+The `publisher-head-lint` command runs it over a directory:
+
+```sh
+publisher-head-lint dist/site --site-name "Example Co"
+```
+
+It reads every `.html` file under the directory (`index.html` maps to its
+directory's route, `a.html` to `/a`), skips symbolic links, and writes nothing.
+It exits 0 when clean, 1 with one `<rule> <path>` line per finding, and 2 when
+it could not run: bad arguments, or a missing, empty or unreadable directory.
+
+```ts
+import { lintRenderedHead } from "@clossys/publisher/pack";
+
+const findings = lintRenderedHead({
+  siteName: "Example Co",
+  pages: [{ path: "/about", html: "<html><head><title>About | Example Co</title></head><body></body></html>" }],
+});
+console.log(findings.map((finding) => `${finding.rule} ${finding.path}`));
 ```
 
 ## Surface documents move to Publisher
@@ -3026,8 +3106,10 @@ const result = await handler.handle(body, { clientKey });
 `body` is whatever your framework parsed from the request; the handler reads it
 as `unknown`. `from`, `to` and `subject` come from configuration, not from
 the submission. The other config fields are `honeypotField`
-(default `"website"`), `caps`, `createMessageId` and `onUnavailable` (called
-with a reason code only). Construction throws on invalid configuration. The
+(default `"website"`), `caps`, `createMessageId`, `onUnavailable` (called
+with a reason code only), and the optional `limiterTimeoutMs` and
+`deliveryTimeoutMs` (positive integers, at most 2147483647 milliseconds; no
+timeout by default). Construction throws on invalid configuration. The
 handler reads `delivery.deliver` and `limiter.check` once, at construction, and
 calls each with its own port as `this`; reassigning either later has no effect.
 
@@ -3036,9 +3118,9 @@ calls each with its own port as `this`; reassigning either later has no effect.
 | Status | Meaning |
 | --- | --- |
 | `accepted` | The delivery port's promise resolved, or the honeypot field was filled and nothing was delivered. The two are indistinguishable to the caller. |
-| `invalid` | One or more `fields` issues, ordered `topic`, `name`, `email`, `phone`, `message`, then `submission`. Each issue is a field plus a code: `not-a-string`, `too-long`, `control-character`, `required`, `unknown-topic` (topic) or `malformed` (email, phone). The `submission` issue is `too-long` for the total cap. |
+| `invalid` | One or more `fields` issues, ordered `topic`, `name`, `email`, `phone`, `message`, then `submission`. Each issue is a field plus a code: `not-a-string`, `too-long`, `control-character`, `required`, `unknown-topic` (topic) or `malformed` (email, phone, and name or message that contain a lone UTF-16 surrogate). The `submission` issue is `too-long` for the total cap. |
 | `rate-limited` | The limiter answered `false`. |
-| `unavailable` | The handler could not proceed: invalid client key, the limiter threw, rejected or answered a non-boolean, message id generation failed, delivery threw or rejected, or something else threw unexpectedly. The reason goes to `onUnavailable`, not to the client. |
+| `unavailable` | The handler could not proceed: invalid client key, the limiter threw, rejected or answered a non-boolean, the limiter or delivery did not settle within its timeout, message id generation failed, delivery threw or rejected, or something else threw unexpectedly. The reason goes to `onUnavailable`, not to the client. |
 
 Results carry codes only: no English text, and no part of the input is echoed
 back. Mapping codes to words belongs to your rendering layer. Length caps
@@ -3059,17 +3141,32 @@ ends the call skips the rest:
    `invalid` with no limiter call, so correcting a typo does not use up the
    allowance.
 4. Limiter: `check(clientKey)` is awaited once. `true` continues, `false`
-   resolves `rate-limited`, and a throw, rejection or non-boolean resolves
-   `unavailable`.
+   resolves `rate-limited`, and a throw, rejection, non-boolean or a call that
+   has not settled within `limiterTimeoutMs` resolves `unavailable`.
 5. Delivery: the outbound message is built and `deliver` is awaited once. A
-   resolve is `accepted`; a throw or rejection is `unavailable`. There is no
-   retry, and the limiter use is not refunded.
+   resolve is `accepted`; a throw, a rejection or a call that has not settled
+   within `deliveryTimeoutMs` is `unavailable`. There is no retry, and the
+   limiter use is not refunded.
 
 The outbound message carries a text body and an escaped HTML body. Name, email,
 phone, topic and message appear only in those two bodies, and the submitted
 email is the sole `replyTo`. Control
 characters are refused in every field, except that `message` may contain tab,
-line feed and carriage return; single-line fields also refuse U+2028 and U+2029.
+line feed and carriage return; single-line fields also refuse U+2028 and U+2029. `name` and `message` also
+refuse a lone UTF-16 surrogate as `malformed`, since it cannot be encoded in the
+notification; a well-formed pair, such as an emoji, is accepted.
+
+### Timeouts
+
+With no timeout configured, `handle()` waits as long as the limiter or delivery
+port takes. `limiterTimeoutMs` and `deliveryTimeoutMs` bound each call
+separately. When a call has not settled in time, `handle()` resolves
+`unavailable` with the reason `limiter-timeout` or `delivery-timeout`, and an
+answer or rejection that arrives later is discarded. The handler does not cancel
+the call. A timed-out limiter call delivers nothing. A timed-out delivery may
+still complete, so its outcome is unknown, and a client that submits again can
+produce a second message. If your delivery port accepts an abort signal or has
+its own timeout, set that as well.
 
 ### Notification email
 
@@ -3157,6 +3254,13 @@ It does not provide:
   process (`limit`, `windowMs`, an injected `now`, and `maxKeys`, default
   10 000), so several instances or serverless invocations each hold their own
   window. Inject a shared `ContactRateLimiter` for those deployments.
+- A limiter that keeps serving new clients when its store is full. Once
+  `createMemoryRateLimiter` holds `maxKeys` keys that still have a live window,
+  it answers `false` for every new key, so `handle()` resolves `rate-limited`
+  for new clients until some window ends. Keys already in the store keep their
+  own limit. A flood of distinct client keys can therefore lock new clients out
+  for up to `windowMs`; derive the client key from something a client cannot
+  vary freely, or inject a shared limiter.
 - A check on the caller's client key. The handler does not verify that it
   identifies a real client, so a key taken from a spoofable header gives a
   spoofable limit.

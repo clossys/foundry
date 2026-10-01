@@ -172,6 +172,29 @@ describe("SectionedView hero media and stat-grid (issue #1028)", () => {
     expect(() => renderToStaticMarkup(<SectionedView document={withMedia} />)).toThrow(/sections\.0\.media\.assetId/);
   });
 
+  it("names only the fixed path when hero media cannot be resolved, never the asset id", () => {
+    const withMedia: ResolvedSectionedViewDocument = {
+      ...document,
+      sections: [{ ...document.sections[0], media: { assetId: "sentinel.asset.id.33", alt: "Placeholder product still" } }],
+    };
+    const thrownMessage = (resolveAssetId: (id: string) => unknown): string => {
+      try {
+        renderToStaticMarkup(<SectionedView document={withMedia} resolveAssetId={resolveAssetId} />);
+      } catch (error) {
+        return (error as Error).message;
+      }
+      return expect.unreachable("expected the render to throw");
+    };
+    const unresolved = thrownMessage(() => undefined);
+    expect(unresolved).toBe("SectionedView refused an invalid resolved document: sections.0.media.assetId did not resolve to a paintable asset.");
+    expect(unresolved).not.toContain("sentinel.asset.id.33");
+    const throwing = thrownMessage(() => {
+      throw new Error("registry down");
+    });
+    expect(throwing).toBe("SectionedView refused an invalid resolved document: sections.0.media.assetId could not be resolved.");
+    expect(throwing).not.toContain("sentinel.asset.id.33");
+  });
+
   it("renders a stat-grid section through Designer Stat blocks", () => {
     const withStats: ResolvedSectionedViewDocument = {
       ...document,

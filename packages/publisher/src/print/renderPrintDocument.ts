@@ -124,7 +124,7 @@ export function renderPrintDocument(doc: ComposeDocument, options: RenderPrintOp
   if (!hasRealLayout(doc)) {
     throw new RenderError(
       "missing-layout",
-      `renderPrintDocument could not render document "${doc.id}": doc.layout is required for a "print" document ` +
+      `renderPrintDocument could not render the document: doc.layout is required for a "print" document ` +
         `(@clossys/publisher/core's own contract — see its types.ts's LayoutSpec doc comment, "Required for ` +
         `print/slides/image") but was ${doc.layout === undefined ? "absent" : "not a valid LayoutSpec (slots must be an array)"}.`,
     );
@@ -138,8 +138,8 @@ export function renderPrintDocument(doc: ComposeDocument, options: RenderPrintOp
   const result = resolveDocument(doc, layout);
   if (!result.ok) {
     const parts: string[] = [];
-    if (result.missingRequired.length > 0) parts.push(`missing required slot(s): ${result.missingRequired.join(", ")}`);
-    if (result.unknownBindings.length > 0) parts.push(`binding(s) targeting unknown slot(s): ${result.unknownBindings.map((b) => b.slot).join(", ")}`);
+    if (result.missingRequired.length > 0) parts.push(`${result.missingRequired.length} missing required slot(s)`);
+    if (result.unknownBindings.length > 0) parts.push(`${result.unknownBindings.length} binding(s) targeting unknown slot(s)`);
     if (result.resolved.length === 0) parts.push("no binding matched any slot in the layout — nothing to render");
     const findingMessages = result.bindingFindings.map((f) => f.message);
     if (findingMessages.length > 0) parts.push(`binding shape finding(s): ${findingMessages.join("; ")}`);
@@ -162,14 +162,14 @@ export function renderPrintDocument(doc: ComposeDocument, options: RenderPrintOp
 
   if (!copyResult.ok || hasAssetProblems(assetsResolution) || staticAssets.posterlessVideo.length > 0) {
     const parts: string[] = [];
-    if (copyResult.unresolvedCopyIds.length > 0) parts.push(`copyId(s) that resolved to no text: ${copyResult.unresolvedCopyIds.join(", ")}`);
-    if (copyResult.unchecked.length > 0) parts.push(`slot(s) with no usable, unambiguous source of text: ${copyResult.unchecked.join(", ")}`);
+    if (copyResult.unresolvedCopyIds.length > 0) parts.push(`${copyResult.unresolvedCopyIds.length} copyId(s) that resolved to no text`);
+    if (copyResult.unchecked.length > 0) parts.push(`${copyResult.unchecked.length} slot(s) with no usable, unambiguous source of text`);
     parts.push(...describeAssetProblems(assetsResolution));
     parts.push(...describeStaticAssetProblems(staticAssets));
     if (parts.length === 0) parts.push("no slot produced any content");
     throw new RenderError(
       "empty-output",
-      `renderPrintDocument resolved document "${doc.id}" against its layout, but at least one matched slot ` +
+      `renderPrintDocument resolved the document against its layout, but at least one matched slot ` +
         `produced no real content: ${parts.join("; ")}. Rendering would silently ship an incomplete page, which this ` +
         `function refuses to do.`,
     );

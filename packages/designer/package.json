@@ -38,6 +38,7 @@
     "./tokens.css": "./styles/tokens.css",
     "./theme.css": "./styles/theme.css",
     "./theme-keys.css": "./styles/theme-keys.css",
+    "./utilities.css": "./styles/utilities.css",
     "./compiled.css": "./styles/compiled.css",
     "./brand-template.css": "./styles/brand-template.css",
     "./atoms": {

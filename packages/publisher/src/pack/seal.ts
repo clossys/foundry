@@ -6,11 +6,18 @@
  * a provider, or a clock of its own. `now` is always passed in.
  *
  * Both functions are pure. A refusal fails closed and carries findings made
- * of a rule and a path only (an index path such as `pages[1].servedCommit`),
- * never a digest, URL, reason, path or commit taken from the input, so a
- * refusal can be logged or posted without leaking what was refused. There is
- * no waiver: nothing in the evidence, the options, or the environment turns a
- * finding off.
+ * of a fixed rule name and a fixed field path or an array index (for example
+ * `pages[1].servedCommit`). No finding contains any text taken from the
+ * evidence, the map, the manifest, the ledger or the item id, so a refusal can
+ * be logged or posted without leaking what was refused. That promise covers
+ * findings only: a successful seal still returns the entry id, which is
+ * derived from the item id and the first 12 characters of the commit, and the
+ * accepted manifest and ledger, by design. There is no waiver: nothing in the
+ * evidence, the options, or the environment turns a finding off.
+ *
+ * Only the website pack item can be sealed here, and only on evidence that
+ * names that item (`itemId`): the evidence is taken for one item, and another
+ * item's evidence, or a different public item, is refused.
  */
 
 import { listPublicationMapPaths, type PublicationMap } from "../core/publication-map.js";
@@ -39,6 +46,8 @@ export type WebsiteSealContactIntake =
 
 export interface WebsiteSealEvidence {
   schemaVersion: 1;
+  /** The pack item the evidence was taken for; it must equal the item being sealed, which is always `website`. */
+  itemId: string;
   /** The 40-hex commit the seal is for. */
   commit: string;
   /** ISO 8601 UTC instant the evidence was observed. */
@@ -56,6 +65,8 @@ export interface SealFinding {
 
 export interface CheckSealEvidenceOptions {
   map: PublicationMap;
+  /** When given, the evidence's own `itemId` must equal it. Without it, the evidence only has to name some item. */
+  itemId?: string;
   /** ISO 8601 UTC instant the check is made at. */
   now: string;
 }
@@ -77,7 +88,9 @@ export type SealWebsiteResult =
 
 const COMMIT_RE = /^[0-9a-f]{40}$/;
 const DIGEST_RE = /^[0-9a-f]{64}$/;
-const INSTANT_RE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z$/;
+const INSTANT_RE = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.\d+)?Z$/;
+/** The only item a website seal may name. */
+const WEBSITE_ITEM_ID = "website";
 const MAX_EVIDENCE_AGE_MS = 24 * 60 * 60 * 1000;
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
@@ -88,10 +101,24 @@ function isNonEmptyString(value: unknown): value is string {
   return typeof value === "string" && value.trim().length > 0;
 }
 
+function daysInMonth(year: number, month: number): number {
+  return new Date(Date.UTC(year, month, 0)).getUTCDate();
+}
+
+/** Milliseconds for a real ISO 8601 UTC instant, or undefined. `Date.parse` alone rolls 2026-09-31 over to October, so the calendar and clock fields are checked first. */
 function parseInstant(value: unknown): number | undefined {
-  if (typeof value !== "string" || !INSTANT_RE.test(value)) return undefined;
+  if (typeof value !== "string") return undefined;
+  const match = INSTANT_RE.exec(value);
+  if (match === null) return undefined;
+  const [year, month, day, hour, minute, second] = match.slice(1, 7).map(Number) as [number, number, number, number, number, number];
+  if (month < 1 || month > 12 || day < 1 || day > daysInMonth(year, month) || hour > 23 || minute > 59 || second > 59) return undefined;
   const ms = Date.parse(value);
   return Number.isFinite(ms) ? ms : undefined;
+}
+
+/** True when `value` is a real ISO 8601 UTC instant (`2026-09-30T12:00:00Z`, optional fraction). */
+export function isSealInstant(value: unknown): boolean {
+  return parseInstant(value) !== undefined;
 }
 
 function isHttpsUrl(value: unknown): boolean {
@@ -145,6 +172,9 @@ function checkEvidence(evidence: unknown, options: CheckSealEvidenceOptions | un
   }
 
   if (evidence.schemaVersion !== 1) add("schema-version", "schemaVersion");
+
+  if (!isNonEmptyString(evidence.itemId)) add("evidence-item-shape", "itemId");
+  else if (options?.itemId !== undefined && evidence.itemId !== options.itemId) add("evidence-item-mismatch", "itemId");
 
   const commit = evidence.commit;
   if (typeof commit !== "string" || !COMMIT_RE.test(commit)) add("commit-shape", "commit");
@@ -221,7 +251,8 @@ function packFindingsClean(manifest: unknown): boolean {
  * refusal returns findings only, never a partial manifest or ledger.
  *
  * It refuses unless `checkSealEvidence` is clean, `itemId` is in
- * `sealableItemIds(manifest)`, the item is `public`, the manifest and ledger
+ * `sealableItemIds(manifest)`, `itemId` is the website item, the evidence names
+ * that same item, the item is `public`, the manifest and ledger
  * are themselves valid, and the entry id (`website-<itemId>-<first 12 of the
  * commit>`) is not already in the ledger (`seal-already-recorded`). On accept
  * it returns a new manifest whose item is `published` with `verifiedAt` set to
@@ -243,7 +274,9 @@ export function sealWebsite(input: SealWebsiteInput): SealWebsiteResult {
 function seal(input: SealWebsiteInput, findings: SealFinding[]): SealWebsiteResult | undefined {
   const add = (rule: string, path: string): void => void findings.push({ rule, path });
   const { manifest, ledger, itemId, evidence, map, now, strategyRevision } = input;
-  for (const finding of checkSealEvidence(evidence, { map, now })) add(finding.rule, finding.path);
+  for (const finding of checkSealEvidence(evidence, { map, now, itemId })) add(finding.rule, finding.path);
+
+  if (itemId !== WEBSITE_ITEM_ID) add("item-not-website", "itemId");
 
   if (!isNonEmptyString(strategyRevision)) add("strategy-revision-invalid", "strategyRevision");
 

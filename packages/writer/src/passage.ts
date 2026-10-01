@@ -37,7 +37,8 @@
  *
  * This file ships no example content of anyone's real copy — the same
  * "vocabulary layer, never a source of real words" constraint `types.ts`
- * documents for `CopyEntry`/`CopyRecord`. Every fixture in this package's
+ * documents for `CopyEntry`/`CopyRecord` (its one exemption is the shipped
+ * front-door defaults, which this file does not touch). Every fixture in this package's
  * own tests is structural placeholder text, never something a product
  * would actually show a user.
  *
