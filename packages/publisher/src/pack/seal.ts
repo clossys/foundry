@@ -244,10 +244,14 @@ function packFindingsClean(manifest: unknown): boolean {
   }
 }
 
-/** True when `existing` is the entry a seal on this id, url and strategy revision would have recorded at some earlier instant that is not after `nowMs`. */
-function isIdenticalEntry(existing: PublicationEntry, expected: { id: string; url: string; strategyRevision: string }, nowMs: number | undefined): boolean {
+/**
+ * True when `existing` is the entry a seal on this id, url and strategy revision would have recorded at some
+ * earlier instant: not after `nowMs`, and not before the evidence was observed. The second bound is what keeps
+ * a hand-added entry from backdating the `verifiedAt` the rerun copies into the manifest.
+ */
+function isIdenticalEntry(existing: PublicationEntry, expected: { id: string; url: string; strategyRevision: string }, nowMs: number | undefined, observedMs: number | undefined): boolean {
   const recordedMs = parseInstant(existing.publishedAt);
-  if (recordedMs === undefined || nowMs === undefined || recordedMs > nowMs) return false;
+  if (recordedMs === undefined || nowMs === undefined || observedMs === undefined || recordedMs > nowMs || recordedMs < observedMs) return false;
   const wanted: PublicationEntry = { id: expected.id, publishedAt: existing.publishedAt, channel: "web", url: expected.url, strategyRevision: expected.strategyRevision, factCitations: [] };
   // Key order is not part of the entry: a hand-formatted ledger is still the same entry.
   const canonical = (entry: PublicationEntry): string => JSON.stringify(Object.entries(entry).sort(([left], [right]) => (left < right ? -1 : left > right ? 1 : 0)));
@@ -265,7 +269,11 @@ function isIdenticalEntry(existing: PublicationEntry, expected: { id: string; ur
  * commit>`) is not already in the ledger (`seal-already-recorded`). On accept
  * it returns a new manifest whose item is `published` with `verifiedAt` set to
  * `now` and `publishedTo` set to the production URL, and a ledger grown by
- * `appendEntry` with one `web` entry.
+ * `appendEntry` with one `web` entry. An entry id already in the ledger is
+ * finished rather than refused (`resumed: true`, ledger returned unchanged,
+ * `verifiedAt` the entry's own `publishedAt`) only when the entry is exactly
+ * the one this evidence would record, recorded between the evidence's
+ * `observedAt` and `now`, and the item is still `kept`.
  */
 export function sealWebsite(input: SealWebsiteInput): SealWebsiteResult {
   const findings: SealFinding[] = [];
@@ -312,7 +320,7 @@ function seal(input: SealWebsiteInput, findings: SealFinding[]): SealWebsiteResu
   if (entryId !== undefined && ledgerOk) {
     const existing = ledger.find((candidate) => candidate.id === entryId);
     if (existing !== undefined) {
-      if (target !== undefined && productionUrl !== undefined && isIdenticalEntry(existing, { id: entryId, url: productionUrl, strategyRevision }, parseInstant(now))) recorded = existing;
+      if (target !== undefined && productionUrl !== undefined && isIdenticalEntry(existing, { id: entryId, url: productionUrl, strategyRevision }, parseInstant(now), isPlainObject(evidence) ? parseInstant(evidence.observedAt) : undefined)) recorded = existing;
       else add("seal-already-recorded", "ledger");
     }
   }

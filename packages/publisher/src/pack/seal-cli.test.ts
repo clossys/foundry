@@ -479,7 +479,12 @@ describe("publisher-seal", () => {
       expect(ledgerAhead).not.toBe(original.ledger);
       expect(readFileSync(paths.manifest, "utf8")).toBe(original.manifest);
 
+      // Nothing is renamed onto the ledger: a byte-identical rewrite would pass the content check below.
+      const renamedOnto: string[] = [];
+      hooks.rename = (_from, to) => void renamedOnto.push(to);
       expect(rerun(paths)).toBe(0);
+      hooks.rename = undefined;
+      expect(renamedOnto).toEqual([paths.manifest]);
       expect(err).toEqual([]);
       expect(out.join("\n")).toContain("already recorded");
       // The ledger is left exactly as it was: no second entry and not rewritten.

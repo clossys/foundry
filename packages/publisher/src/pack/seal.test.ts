@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { PublicationMap } from "../core/publication-map.js";
+import { citeFact } from "../record/fact.js";
 import type { Ledger } from "../record/types.js";
 import { validateLedger } from "../record/schema.js";
 import { checkSealEvidence, sealWebsite, type SealFinding } from "./seal.js";
@@ -337,6 +338,11 @@ describe("sealWebsite", () => {
       ["url", { ...entry, url: "https://other.example.test/" }],
       ["strategyRevision", { ...entry, strategyRevision: "strategy-rev-2" }],
       ["publishedAt in the future", { ...entry, publishedAt: "2026-09-30T12:00:01Z" }],
+      // A hand-added entry cannot backdate the verifiedAt a rerun copies into the manifest: evidence was observed at 11:00.
+      ["publishedAt before the evidence was observed", { ...entry, publishedAt: "2026-09-30T10:59:59Z" }],
+      ["channel", { ...entry, channel: "email" }],
+      ["factCitations", { ...entry, factCitations: [citeFact("active-customers", 4200)] }],
+      ["an extra key", { ...entry, note: "hand-added" } as Ledger[number]],
     ];
     for (const [label, changed] of differing) {
       const found = rulesAt(refusal(seal({ ledger: [changed] })));

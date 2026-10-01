@@ -2495,7 +2495,7 @@ ledger write and before its manifest write leaves the ledger ahead of a
 manifest whose item is still `kept`. If the ledger entry is identical to the
 one this evidence would record (same id, `web` channel, url and strategy
 revision, no fact citations, and a `publishedAt` that is a real instant not
-after `now`) and every other check passes on the current evidence, the result
+before the evidence's `observedAt` and not after `now`) and every other check passes on the current evidence, the result
 is `{ ok: true, resumed: true }`: the ledger is returned as given and the
 manifest item is `published` with `verifiedAt` set to the entry's
 `publishedAt`. An entry that differs in any of those is
