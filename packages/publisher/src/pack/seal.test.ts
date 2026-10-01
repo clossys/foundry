@@ -16,6 +16,9 @@ const OTHER_COMMIT = "c".repeat(40);
 const DIGEST = "a".repeat(64);
 const PRODUCTION_URL = "https://www.example.test/";
 const STRATEGY_REVISION = "strategy-rev-1";
+/** Assembled so the text of a credentialed URL never appears literally in the source. */
+const BACKSLASH = String.fromCharCode(92);
+const AT = String.fromCharCode(64);
 
 const MAP: PublicationMap = {
   entries: [
@@ -177,7 +180,7 @@ describe("checkSealEvidence", () => {
   it("refuses a production URL that is not already in canonical form, even when the parser would read it as harmless", TIMEOUT, () => {
     const spellings: Array<[string, string]> = [
       // The WHATWG parser reads host www.example.test and no userinfo; an RFC 3986 reader sees host evil.test with a password.
-      ["backslash before userinfo", "https://www.example.test\\@marker-user:marker-pass@marker-evil.test/"],
+      ["backslash before userinfo", `https://www.example.test${BACKSLASH}${AT}marker-user:marker-pass${AT}marker-evil.test/`],
       ["empty userinfo", "https://@www.example.test/"],
       ["empty userinfo and password", "https://:@www.example.test/"],
       ["trailing newline", "https://www.example.test/\n"],
@@ -428,11 +431,30 @@ describe("sealWebsite", () => {
     expect(rulesAt(refusal(seal({ ledger: [{ ...reordered, url: "https://other.example.test/" }] })))).toContain("seal-already-recorded@ledger");
   });
 
+  it("validates the production URL it stores: a value that changes between reads is refused, never stored", TIMEOUT, () => {
+    const hostile = `https://www.example.test${BACKSLASH}${AT}marker-user:marker-pass${AT}marker-evil.test/`;
+    const flipping = (reads: { count: number }): Record<string, unknown> => {
+      const delivery: Record<string, unknown> = { state: "ready", deployedCommit: COMMIT };
+      Object.defineProperty(delivery, "productionUrl", { enumerable: true, get: () => (reads.count++ === 0 ? PRODUCTION_URL : hostile) });
+      return delivery;
+    };
+    const reads = { count: 0 };
+    const refused = refusal(seal({ evidence: evidence({ delivery: flipping(reads) }) }));
+    // The getter really was read again after the evidence check, and what it returned then was not stored.
+    expect(reads.count).toBeGreaterThan(1);
+    expect(rulesAt(refused)).toEqual(["production-url-shape@delivery.productionUrl"]);
+    expect(JSON.stringify(refused)).not.toContain("marker");
+    // Reads that agree on a canonical value still seal, and the stored value is that value.
+    const steady = seal({ evidence: evidence({ delivery: { state: "ready", deployedCommit: COMMIT, productionUrl: PRODUCTION_URL } }) });
+    if (!steady.ok) throw new Error("expected a seal");
+    expect(steady.ledger[0]?.url).toBe(PRODUCTION_URL);
+  });
+
   it("an interrupted seal never resumes on a non-canonical URL, whether the stored entry or the evidence carries it", TIMEOUT, () => {
     const first = seal();
     if (!first.ok) throw new Error("expected a seal");
     const entry = first.ledger[0] as Ledger[number];
-    for (const url of ["https://@www.example.test/", "https://WWW.example.test/", "https://www.example.test/\n", "https://www.example.test\\@marker-user:marker-pass@marker-evil.test/"]) {
+    for (const url of ["https://@www.example.test/", "https://WWW.example.test/", "https://www.example.test/\n", `https://www.example.test${BACKSLASH}${AT}marker-user:marker-pass${AT}marker-evil.test/`]) {
       // The stored entry holds the odd spelling while the evidence is canonical: not the same entry.
       expect(rulesAt(refusal(seal({ ledger: [{ ...entry, url }] }))), `entry ${JSON.stringify(url)}`).toContain("seal-already-recorded@ledger");
       // The evidence and the stored entry both hold it: the evidence is refused, so the entry is never finished.

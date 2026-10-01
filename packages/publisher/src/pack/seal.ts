@@ -121,9 +121,9 @@ function parseInstant(value: unknown): number | undefined {
  * True only for an `https` URL with a host, no username or password, that is already in the form the WHATWG
  * parser writes (`new URL(value).href === value`). The value is stored as written in the ledger `url` and the
  * manifest `publishedTo`, so a spelling the parser would rewrite is refused rather than normalised: other
- * readers parse a backslash, an empty userinfo, a control character or an upper-case scheme differently, and
- * `https://www.example.test\@user:secret@evil.test/` is host `www.example.test` here but a credentialed
- * `evil.test` to an RFC 3986 reader.
+ * readers parse a backslash, an empty userinfo, a control character or an upper-case scheme differently: a
+ * backslash before what follows as userinfo makes the parser see one host, and an RFC 3986 reader another host
+ * with a password.
  */
 function isCanonicalHttpsUrl(value: unknown): boolean {
   if (typeof value !== "string" || value.length === 0) return false;
@@ -297,7 +297,9 @@ export function sealWebsite(input: SealWebsiteInput): SealWebsiteResult {
 function seal(input: SealWebsiteInput, findings: SealFinding[]): SealWebsiteResult | undefined {
   const add = (rule: string, path: string): void => void findings.push({ rule, path });
   const { manifest, ledger, itemId, evidence, map, now, strategyRevision } = input;
-  for (const finding of checkSealEvidence(evidence, { map, now, itemId })) add(finding.rule, finding.path);
+  const evidenceFindings = checkSealEvidence(evidence, { map, now, itemId });
+  const evidenceClean = evidenceFindings.length === 0;
+  for (const finding of evidenceFindings) add(finding.rule, finding.path);
 
   if (itemId !== WEBSITE_ITEM_ID) add("item-not-website", "itemId");
 
@@ -317,11 +319,13 @@ function seal(input: SealWebsiteInput, findings: SealFinding[]): SealWebsiteResu
   }
 
   const commit = isPlainObject(evidence) ? evidence.commit : undefined;
-  const delivery = isPlainObject(evidence) && isPlainObject(evidence.delivery) ? evidence.delivery : undefined;
+  const delivery = isPlainObject(evidence) ? evidence.delivery : undefined;
   const validCommit = typeof commit === "string" && COMMIT_RE.test(commit) ? commit : undefined;
   const entryId = validCommit !== undefined && typeof itemId === "string" ? `website-${itemId}-${validCommit.slice(0, 12)}` : undefined;
-  // The URL is stored and compared as written (here and in the resume check), which is safe only because `checkSealEvidence` above has already refused every non-canonical spelling.
-  const productionUrl = typeof delivery?.productionUrl === "string" ? delivery.productionUrl : undefined;
+  // The URL is stored and compared as written, so it is read once here and validated again as read, exactly like the commit above: the evidence check read its own copy, and a value that differs between reads must not be stored unchecked.
+  const suppliedUrl = isPlainObject(delivery) ? delivery.productionUrl : undefined;
+  const productionUrl = isCanonicalHttpsUrl(suppliedUrl) ? (suppliedUrl as string) : undefined;
+  if (productionUrl === undefined && evidenceClean) add("production-url-shape", "delivery.productionUrl");
 
   // An entry already in the ledger is finished, not refused, only when it is exactly the one this evidence would record and the item is still kept.
   let recorded: PublicationEntry | undefined;

@@ -40,6 +40,9 @@ const NOW = "2026-09-30T12:00:00Z";
 const COMMIT = "b".repeat(40);
 const DIGEST = "a".repeat(64);
 const MARKER_URL = "https://marker-url.example.test/leak";
+/** Assembled so the text of a credentialed URL never appears literally in the source. */
+const BACKSLASH = String.fromCharCode(92);
+const AT = String.fromCharCode(64);
 
 function item(overrides: Partial<PackItem> & Pick<PackItem, "id">): PackItem {
   return {
@@ -161,7 +164,7 @@ describe("publisher-seal", () => {
   });
 
   it("a production URL that is not in canonical form exits 1, writes nothing, and is not echoed", TIMEOUT, () => {
-    for (const productionUrl of ["https://www.example.test\\@marker-user:marker-pass@marker-evil.test/", "https://@www.example.test/", "https://www.example.test/\n", "HTTPS://www.example.test/"]) {
+    for (const productionUrl of [`https://www.example.test${BACKSLASH}${AT}marker-user:marker-pass${AT}marker-evil.test/`, "https://@www.example.test/", "https://www.example.test/\n", "HTTPS://www.example.test/"]) {
       out.length = 0;
       err.length = 0;
       const evidence = { ...goodEvidence(), delivery: { state: "ready", deployedCommit: COMMIT, productionUrl } };

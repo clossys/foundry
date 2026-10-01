@@ -2658,7 +2658,10 @@ the pack's `website` item can be sealed, and only on evidence that names it.
   scheme or host, a default port, no path, dot segments), is refused as
   `production-url-shape`, because the value is written as given to the ledger
   `url` and the manifest `publishedTo` and other URL readers parse those
-  spellings differently. A query string or fragment is not refused.
+  spellings differently. A path, query string or fragment is not refused when
+  it is already canonical; one with a character the parser would
+  percent-encode (a double quote, an angle bracket, a raw space, a non-ASCII
+  character) is refused.
 - `pages`: one `WebsiteSealPage` per observed page, each
   `{ path, status, servedCommit, desktopDigest, mobileDigest }`, the digests
   being sha256 hex.
@@ -2754,8 +2757,9 @@ Known limit: the evidence is supplied by the caller. The commit and the host it
 names are checked against each other and against the clock, but not against an
 independent source, so a caller that supplies false evidence can still seal.
 The production URL check refuses credentials and non-canonical spellings only;
-it does not inspect a query string or fragment, so a secret placed there by the
-caller is written to the ledger as given.
+it does not inspect the path, the query string or the fragment, so a secret
+placed in any of them by the caller is written to the ledger and the manifest
+as given.
 
 ```ts
 import { checkSealEvidence } from "@clossys/publisher/pack";
