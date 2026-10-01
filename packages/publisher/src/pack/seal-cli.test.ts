@@ -1,4 +1,4 @@
-import { chmodSync, linkSync, lstatSync, mkdtempSync, readdirSync, readFileSync, renameSync, rmSync, statSync, symlinkSync, writeFileSync } from "node:fs";
+import { chmodSync, linkSync, lstatSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, renameSync, rmSync, statSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -411,6 +411,207 @@ describe("publisher-seal", () => {
       rmSync(lock);
       err.length = 0;
     }
+  });
+
+  it("lock error mapping: only EEXIST says another run holds the lock; any other error keeps its own cause", TIMEOUT, () => {
+    const lockOpen = (code: string) => (path: string, flags: unknown) => {
+      if (flags === "wx" && path.endsWith(".seal.lock")) throw Object.assign(new Error("marker-lock-message-leak"), { code });
+    };
+
+    const exists = files();
+    const beforeExists = snapshot(exists);
+    hooks.open = lockOpen("EEXIST");
+    expect(run(exists)).toBe(2);
+    expect(err.join("\n")).toContain("another publisher-seal run holds");
+    expect(snapshot(exists)).toEqual(beforeExists);
+
+    for (const code of ["EACCES", "ENOSPC", "EROFS"]) {
+      err.length = 0;
+      const paths = files();
+      const before = snapshot(paths);
+      hooks.open = lockOpen(code);
+      expect(run(paths), code).toBe(2);
+      const text = err.join("\n");
+      expect(text, code).not.toContain("another publisher-seal run");
+      expect(text, code).toContain(code);
+      expect(text, code).toContain(".seal.lock");
+      // Only the cause's code is kept: the message of the underlying error is never repeated.
+      expect(text, code).not.toContain("marker-lock-message-leak");
+      expect(snapshot(paths), code).toEqual(before);
+    }
+
+    // An error that has no code at all is not mistaken for a held lock either.
+    err.length = 0;
+    const plain = files();
+    hooks.open = (path, flags) => {
+      if (flags === "wx" && path.endsWith(".seal.lock")) throw new Error("marker-lock-message-leak");
+    };
+    expect(run(plain)).toBe(2);
+    expect(err.join("\n")).not.toContain("another publisher-seal run");
+    expect(err.join("\n")).not.toContain("marker-lock-message-leak");
+  });
+
+  describe("an interrupted run: the ledger renamed, the manifest not", () => {
+    const LATER = "2026-09-30T13:30:00Z";
+    const rerun = (paths: ReturnType<typeof files>, extra: string[] = ["--item", "website", "--strategy-revision", "strategy-rev-1"]): number =>
+      main([paths.manifest, paths.ledger, paths.evidence, paths.map, ...extra], { now: () => new Date(LATER) });
+
+    /** The second rename fails, and so does the rename that would restore the ledger: the state a stopped run leaves. */
+    function interrupt(paths: ReturnType<typeof files>): void {
+      let ledgerRenames = 0;
+      hooks.rename = (_from, to) => {
+        if (to === paths.manifest) throw new Error("injected");
+        if (to === paths.ledger && (ledgerRenames += 1) > 1) throw new Error("injected restore");
+      };
+      expect(run(paths)).toBe(2);
+      hooks.rename = undefined;
+      out.length = 0;
+      err.length = 0;
+    }
+
+    it("a rerun with the identical entry finishes the manifest and exits 0", TIMEOUT, () => {
+      const paths = files();
+      const original = snapshot(paths);
+      chmodSync(paths.manifest, 0o640);
+      const manifestMode = statSync(paths.manifest).mode & 0o777;
+      interrupt(paths);
+      const ledgerAhead = readFileSync(paths.ledger, "utf8");
+      expect(ledgerAhead).not.toBe(original.ledger);
+      expect(readFileSync(paths.manifest, "utf8")).toBe(original.manifest);
+
+      // Nothing is renamed onto the ledger: a byte-identical rewrite would pass the content check below.
+      const renamedOnto: string[] = [];
+      hooks.rename = (_from, to) => void renamedOnto.push(to);
+      expect(rerun(paths)).toBe(0);
+      hooks.rename = undefined;
+      expect(renamedOnto).toEqual([paths.manifest]);
+      expect(err).toEqual([]);
+      expect(out.join("\n")).toContain("already recorded");
+      // The ledger is left exactly as it was: no second entry and not rewritten.
+      expect(readFileSync(paths.ledger, "utf8")).toBe(ledgerAhead);
+      const manifest = JSON.parse(readFileSync(paths.manifest, "utf8")) as PackManifest;
+      // The manifest carries the time the entry was recorded, not the time of the rerun.
+      expect(manifest.items.find((entry) => entry.id === "website")).toMatchObject({ status: "published", verifiedAt: NOW, publishedTo: ["https://www.example.test/"] });
+      expect(validatePackManifest(manifest)).toEqual({ exitCode: 0, findings: [] });
+      expect(statSync(paths.manifest).mode & 0o777).toBe(manifestMode);
+      // The only file left over is the kept copy of the previous ledger, which a rerun never touches.
+      expect(readdirSync(dir).filter((name) => !original.listing.includes(name))).toHaveLength(1);
+
+      // And a further run is refused: the seal is complete.
+      expect(rerun(paths)).toBe(1);
+      expect(readFileSync(paths.ledger, "utf8")).toBe(ledgerAhead);
+    });
+
+    it("a rerun that cannot be proved identical is refused (1) and changes nothing", TIMEOUT, () => {
+      const revised = files();
+      interrupt(revised);
+      const revisedLedger = readFileSync(revised.ledger, "utf8");
+      const revisedManifest = readFileSync(revised.manifest, "utf8");
+      const revisedListing = readdirSync(dir).sort();
+      expect(rerun(revised, ["--item", "website", "--strategy-revision", "strategy-rev-2"])).toBe(1);
+      expect(out.join("\n")).toContain("seal-already-recorded");
+      expect(readFileSync(revised.ledger, "utf8")).toBe(revisedLedger);
+      expect(readFileSync(revised.manifest, "utf8")).toBe(revisedManifest);
+      expect(readdirSync(dir).sort()).toEqual(revisedListing);
+    });
+
+    it("a rerun on evidence for a different production URL is not the same entry", TIMEOUT, () => {
+      const paths = files();
+      interrupt(paths);
+      writeFileSync(paths.evidence, `${JSON.stringify({ ...goodEvidence(), delivery: { state: "ready", deployedCommit: COMMIT, productionUrl: "https://other.example.test/" } })}\n`);
+      const ledgerAhead = readFileSync(paths.ledger, "utf8");
+      const manifestBefore = readFileSync(paths.manifest, "utf8");
+      expect(rerun(paths)).toBe(1);
+      expect(out.join("\n")).toContain("seal-already-recorded");
+      expect(readFileSync(paths.ledger, "utf8")).toBe(ledgerAhead);
+      expect(readFileSync(paths.manifest, "utf8")).toBe(manifestBefore);
+    });
+
+    it("a rerun whose manifest write fails again changes nothing and can be repeated", TIMEOUT, () => {
+      const paths = files();
+      interrupt(paths);
+      const ledgerAhead = readFileSync(paths.ledger, "utf8");
+      const manifestBefore = readFileSync(paths.manifest, "utf8");
+      const listing = readdirSync(dir).sort();
+      hooks.rename = (_from, to) => {
+        if (to === paths.manifest) throw new Error("injected");
+      };
+      expect(rerun(paths)).toBe(2);
+      expect(err.join("\n")).toContain("nothing was changed");
+      expect(err.join("\n")).not.toContain("injected");
+      expect(readFileSync(paths.ledger, "utf8")).toBe(ledgerAhead);
+      expect(readFileSync(paths.manifest, "utf8")).toBe(manifestBefore);
+      expect(readdirSync(dir).sort()).toEqual(listing);
+
+      hooks.rename = undefined;
+      expect(rerun(paths)).toBe(0);
+      expect(readFileSync(paths.ledger, "utf8")).toBe(ledgerAhead);
+    });
+
+    it("locks left behind by a run that was killed are named, and the rerun finishes once they are removed", TIMEOUT, () => {
+      const paths = files();
+      interrupt(paths);
+      const locks = [`${paths.ledger}.seal.lock`, `${paths.manifest}.seal.lock`];
+      for (const lock of locks) writeFileSync(lock, "");
+      const ledgerAhead = readFileSync(paths.ledger, "utf8");
+      const manifestBefore = readFileSync(paths.manifest, "utf8");
+
+      expect(rerun(paths)).toBe(2);
+      const text = err.join("\n");
+      expect(text).toContain("another publisher-seal run");
+      expect(text).toContain("remove it only once no run is active");
+      expect(locks.some((lock) => text.includes(lock))).toBe(true);
+      expect(readFileSync(paths.ledger, "utf8")).toBe(ledgerAhead);
+      expect(readFileSync(paths.manifest, "utf8")).toBe(manifestBefore);
+
+      for (const lock of locks) rmSync(lock);
+      expect(rerun(paths)).toBe(0);
+      expect(readFileSync(paths.ledger, "utf8")).toBe(ledgerAhead);
+      expect((JSON.parse(readFileSync(paths.manifest, "utf8")) as PackManifest).items.find((entry) => entry.id === "website")?.status).toBe("published");
+    });
+  });
+
+  describe("two spellings of one directory", () => {
+    /** The four inputs live in `real/`; `link` is a symbolic link to it, so each file has two spellings. */
+    function linked(): { real: ReturnType<typeof files>; viaLink: ReturnType<typeof files>; realDir: string } {
+      const paths = files();
+      const realDir = join(dir, "real");
+      mkdirSync(realDir);
+      const real = { manifest: join(realDir, "pack.json"), ledger: join(realDir, "record.json"), evidence: join(realDir, "evidence.json"), map: join(realDir, "map.json") };
+      for (const name of ["manifest", "ledger", "evidence", "map"] as const) renameSync(paths[name], real[name]);
+      symlinkSync(realDir, join(dir, "link"));
+      const viaLink = { manifest: join(dir, "link", "pack.json"), ledger: join(dir, "link", "record.json"), evidence: join(dir, "link", "evidence.json"), map: join(dir, "link", "map.json") };
+      return { real, viaLink, realDir };
+    }
+
+    it("a lock taken through one spelling is refused through the other, and the locks are on the real directory", TIMEOUT, () => {
+      const { real, viaLink, realDir } = linked();
+      const lock = `${real.manifest}.seal.lock`;
+      writeFileSync(lock, "held by another run");
+      const before = [readFileSync(real.manifest, "utf8"), readFileSync(real.ledger, "utf8")];
+      expect(run(viaLink)).toBe(2);
+      expect(err.join("\n")).toContain("another publisher-seal run");
+      expect(readFileSync(lock, "utf8")).toBe("held by another run");
+      expect([readFileSync(real.manifest, "utf8"), readFileSync(real.ledger, "utf8")]).toEqual(before);
+      rmSync(lock);
+
+      const taken: string[] = [];
+      hooks.open = (path, flags) => {
+        if (flags === "wx" && path.endsWith(".seal.lock")) taken.push(path);
+      };
+      expect(run(viaLink)).toBe(0);
+      const trueDir = realpathSync(realDir);
+      expect(taken.sort()).toEqual([join(trueDir, "pack.json.seal.lock"), join(trueDir, "record.json.seal.lock")]);
+    });
+
+    it("the manifest and the ledger given as two spellings of one file are refused as one file", TIMEOUT, () => {
+      const { real, viaLink } = linked();
+      const before = [readFileSync(real.manifest, "utf8"), readFileSync(real.ledger, "utf8"), readdirSync(join(dir, "real")).sort()];
+      const same = { ...viaLink, manifest: real.manifest, ledger: viaLink.manifest };
+      expect(run(same)).toBe(2);
+      expect(err.join("\n")).toContain("must be different files");
+      expect([readFileSync(real.manifest, "utf8"), readFileSync(real.ledger, "utf8"), readdirSync(join(dir, "real")).sort()]).toEqual(before);
+    });
   });
 
   it("a file that changed after the gate accepted is not overwritten", TIMEOUT, () => {

@@ -45,7 +45,8 @@ describe("createWebRenderer — no arguments knows ZERO templates, not the three
     }
     expect(thrown).toBeInstanceOf(RenderError);
     expect((thrown as RenderError).reason).toBe("unknown-template");
-    expect((thrown as RenderError).message).toContain("DashboardView");
+    expect((thrown as RenderError).message).toBe("renderWebDocument does not know the document's template. Known templates: (none).");
+    expect((thrown as RenderError).message).not.toContain("DashboardView");
   });
 });
 

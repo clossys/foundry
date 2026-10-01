@@ -294,6 +294,15 @@ one of three specific to this kind:
   It is reported on the later field. The two ladders are not compared with
   each other, and there are no other word targets.
 
+The placeholder-value reasons of `resolveCopyRef` (`"missing-placeholder-value"`
+and `"unexpected-placeholder-value"`) never surface from this function: a kit
+entry is literal text, so every one of them is reported as
+`"messaging-placeholder"`, once per field.
+
+This function judges approval and shape, not wording. For the words of a pitch
+or boilerplate, run `checkCopy` over each resolved text, and run
+`auditClaimsRegister` over the claims register that backs it.
+
 An FAQ and a tagline are out of scope (`site.tagline` already exists).
 
 ## Front-door copy (`front-door.*`)

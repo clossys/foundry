@@ -16,6 +16,10 @@
       "types": "./dist/agent/index.d.ts",
       "import": "./dist/agent/index.js"
     },
+    "./gate": {
+      "types": "./dist/gate/index.d.ts",
+      "import": "./dist/gate/index.js"
+    },
     "./providers/clerk": {
       "types": "./dist/providers/clerk/index.d.ts",
       "import": "./dist/providers/clerk/index.js"
@@ -112,7 +116,7 @@
   },
   "devDependencies": {
     "@clerk/nextjs": "7.9.4",
-    "@types/node": "^26.5.1",
+    "@types/node": "^26.6.3",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "next": "16.3.6",

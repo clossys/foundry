@@ -432,21 +432,19 @@ export function hasAssetProblems(resolution: RenderAssetResolution): boolean {
   return resolution.unresolvedAssetIds.length > 0 || resolution.invalid.length > 0 || resolution.unchecked.length > 0;
 }
 
-/** Every real asset problem in `resolution`, as human-readable clauses — the shared wording every channel's own `RenderError("empty-output", ...)` message is built from, so a caller sees the identical explanation regardless of which channel refused. */
+/** Every real asset problem in `resolution`, as human-readable clauses that carry counts only, never an asset id or slot key — the shared wording every channel's own `RenderError("empty-output", ...)` message is built from, so a caller sees the identical explanation regardless of which channel refused. */
 export function describeAssetProblems(resolution: RenderAssetResolution): string[] {
   const parts: string[] = [];
   if (resolution.unresolvedAssetIds.length > 0) {
-    parts.push(`assetId(s) that did not resolve to a real asset: ${resolution.unresolvedAssetIds.join(", ")}`);
+    parts.push(`${resolution.unresolvedAssetIds.length} assetId(s) that did not resolve to a real asset`);
   }
   if (resolution.invalid.length > 0) {
     parts.push(
-      `assetId(s) that resolved to a value that did not match the required RenderImageAsset or RenderVideoAsset shape (see internal/assets.ts for the by-type-required fields): ${resolution.invalid
-        .map((issue) => `${issue.assetId} (slot "${issue.key}")`)
-        .join(", ")}`,
+      `${resolution.invalid.length} assetId(s) that resolved to a value that did not match the required RenderImageAsset or RenderVideoAsset shape (see internal/assets.ts for the by-type-required fields)`,
     );
   }
   if (resolution.unchecked.length > 0) {
-    parts.push(`slot(s) asset resolution could not even attempt to resolve: ${resolution.unchecked.join(", ")}`);
+    parts.push(`${resolution.unchecked.length} slot(s) asset resolution could not even attempt to resolve`);
   }
   return parts;
 }
@@ -527,6 +525,6 @@ export function resolveStaticAssets(resolution: RenderAssetResolution): StaticAs
 export function describeStaticAssetProblems(staticAssets: StaticAssetResolution): string[] {
   if (staticAssets.posterlessVideo.length === 0) return [];
   return [
-    `slot(s) resolved to a video asset with no poster image, which this channel has no playback capability to render instead: ${staticAssets.posterlessVideo.join(", ")}`,
+    `${staticAssets.posterlessVideo.length} slot(s) resolved to a video asset with no poster image, which this channel has no playback capability to render instead`,
   ];
 }

@@ -45,7 +45,8 @@ describe("renderWebDocument — refuses a document that resolves nothing", () =>
       expect.unreachable();
     } catch (error) {
       expect((error as RenderError).reason).toBe("resolution-failed");
-      expect((error as Error).message).toContain("does-not-exist");
+      expect((error as Error).message).toContain("1 binding(s) targeting unknown slot(s)");
+      expect((error as Error).message).not.toContain("does-not-exist");
     }
   });
 
@@ -188,7 +189,10 @@ describe("renderWebDocument — assetId refusal paths (never a blank box)", () =
     } catch (error) {
       expect(error).toBeInstanceOf(RenderError);
       expect((error as RenderError).reason).toBe("empty-output");
-      expect((error as Error).message).toContain("marketing.logo");
+      expect((error as Error).message).toContain("resolved the document against its template, but at least one assetId binding did not produce a real asset: 1 assetId(s) that did not resolve to a real asset");
+      expect((error as Error).message).not.toContain("marketing.logo");
+      expect((error as Error).message).not.toContain("acme-signin");
+      expect((error as Error).message).not.toContain("AuthView");
     }
   });
 
@@ -198,7 +202,8 @@ describe("renderWebDocument — assetId refusal paths (never a blank box)", () =
       expect.unreachable();
     } catch (error) {
       expect((error as RenderError).reason).toBe("empty-output");
-      expect((error as Error).message).toContain("marketing.logo");
+      expect((error as Error).message).toContain("1 assetId(s) that did not resolve to a real asset");
+      expect((error as Error).message).not.toContain("marketing.logo");
     }
   });
 
@@ -213,7 +218,8 @@ describe("renderWebDocument — assetId refusal paths (never a blank box)", () =
     } catch (error) {
       expect(error).toBeInstanceOf(RenderError);
       expect((error as RenderError).reason).toBe("empty-output");
-      expect((error as Error).message).toContain("brand");
+      expect((error as Error).message).toContain("1 slot(s) asset resolution could not even attempt to resolve");
+      expect((error as Error).message).not.toContain("registry unavailable");
     }
   });
 
@@ -235,7 +241,8 @@ describe("renderWebDocument — assetId refusal paths (never a blank box)", () =
       expect.unreachable();
     } catch (error) {
       expect((error as RenderError).reason).toBe("empty-output");
-      expect((error as Error).message).toContain("marketing.logo");
+      expect((error as Error).message).toContain("1 assetId(s) that resolved to a value that did not match the required RenderImageAsset or RenderVideoAsset shape");
+      expect((error as Error).message).not.toContain("marketing.logo");
     }
   });
 
@@ -254,7 +261,7 @@ describe("renderWebDocument — other refusals", () => {
       expect.unreachable();
     } catch (error) {
       expect((error as RenderError).reason).toBe("unknown-template");
-      expect((error as Error).message).toContain("DashboardView");
+      expect((error as Error).message).not.toContain("DashboardView");
       expect((error as Error).message).toContain("AuthView");
       expect((error as Error).message).toContain("ErrorView");
     }
@@ -435,7 +442,8 @@ describe("renderWebDocument — node-kind slots (options.nodes), via a consumer-
     } catch (error) {
       expect(error).toBeInstanceOf(RenderError);
       expect((error as RenderError).reason).toBe("resolution-failed");
-      expect((error as Error).message).toContain("does-not-exist");
+      expect((error as Error).message).toContain("a node binding for a slot the template does not declare as a flowed slot");
+      expect((error as Error).message).not.toContain("does-not-exist");
     }
   });
 
@@ -447,8 +455,9 @@ describe("renderWebDocument — node-kind slots (options.nodes), via a consumer-
     } catch (error) {
       expect(error).toBeInstanceOf(RenderError);
       expect((error as RenderError).reason).toBe("resolution-failed");
-      expect((error as Error).message).toContain("heading");
-      expect((error as Error).message).toContain("node");
+      expect((error as Error).message).toContain('a node binding for a slot whose declared content kind(s) (copy, asset) do not include "node"');
+      expect((error as Error).message).not.toContain("heading");
+      expect((error as Error).message).not.toContain("acme-widget");
     }
   });
 
@@ -485,8 +494,8 @@ describe("renderWebDocument — node-kind slots (options.nodes), via a consumer-
     } catch (error) {
       expect(error).toBeInstanceOf(RenderError);
       expect((error as RenderError).reason).toBe("resolution-failed");
-      expect((error as Error).message).toContain("widget");
-      expect((error as Error).message).toContain("copy");
+      expect((error as Error).message).toContain('a copy binding for a slot whose declared content kind(s) (node) do not include "copy"');
+      expect((error as Error).message).not.toContain("widget");
     }
   });
 
@@ -538,5 +547,128 @@ describe("the react peer-version guard (#182)", () => {
     // above, so reaching this test at all is itself the assertion that
     // it didn't throw against the real react this workspace has installed.
     expect(REACT_DECLARED_RANGE).toBe(">=18");
+  });
+});
+
+describe("renderWebDocument — refusal messages never echo a document id, template name, slot or field key", () => {
+  const SENTINEL_DOC_ID = "sentinel-doc-id-34";
+  const SENTINEL_TEMPLATE = "SentinelTemplate34";
+  const SENTINEL_SLOT = "sentinel-slot-34";
+  const SENTINEL_FIELD = "sentinel-field-34";
+
+  const template = (name: string) =>
+    defineWebTemplate({
+      name,
+      flow: { slots: [{ key: "heading", required: true }, { key: "widget" }] },
+      slotKinds: { widget: ["node"] },
+      repeatingSlots: [{ key: "items" }],
+      blocks: [
+        { kind: "page-header", title: "heading" },
+        { kind: "node-chapter", node: "widget" },
+        { kind: "stat-grid", repeating: "items" },
+      ],
+    });
+  const doc = (overrides: Partial<ComposeDocument> = {}): ComposeDocument => ({
+    id: SENTINEL_DOC_ID,
+    channel: "web",
+    template: SENTINEL_TEMPLATE,
+    meta: { channel: "web", title: "Sentinel", description: "d" },
+    bindings: [{ slot: "heading", value: "Sentinel heading" }],
+    ...overrides,
+  });
+  const renderer = () => createWebRenderer({ templates: [template(SENTINEL_TEMPLATE)] });
+
+  function refusal(run: () => unknown, reason: RenderError["reason"]): string {
+    try {
+      run();
+    } catch (error) {
+      expect(error).toBeInstanceOf(RenderError);
+      expect((error as RenderError).reason).toBe(reason);
+      return (error as RenderError).message;
+    }
+    return expect.unreachable("expected renderWebDocument to throw");
+  }
+
+  function expectNoEchoes(message: string): void {
+    expect(message).not.toContain(SENTINEL_DOC_ID);
+    expect(message).not.toContain(SENTINEL_TEMPLATE);
+    expect(message).not.toContain(SENTINEL_SLOT);
+    expect(message).not.toContain(SENTINEL_FIELD);
+  }
+
+  it("an unknown template is refused without the template name", () => {
+    const message = refusal(() => createWebRenderer({ templates: [template("OtherView")] }).renderWebDocument(doc()), "unknown-template");
+    expect(message).toBe("renderWebDocument does not know the document's template. Known templates: OtherView.");
+    expectNoEchoes(message);
+  });
+
+  it("a structured fields item on a slot whose template declares no fields is refused without the template name", () => {
+    const message = refusal(
+      () => renderer().renderWebDocument(doc(), { groups: [{ slot: "items", items: [{ index: 0, fields: { [SENTINEL_FIELD]: { value: "v" } } }] }] }),
+      "resolution-failed",
+    );
+    expect(message).toBe('renderWebDocument received a structured fields item for repeating slot "items", but the template does not declare fields for that slot.');
+    expectNoEchoes(message);
+  });
+
+  it("repeating groups for undeclared slots are refused without the slot names", () => {
+    const message = refusal(() => renderer().renderWebDocument(doc(), { groups: [{ slot: SENTINEL_SLOT, items: [{ index: 0, value: "v" }] }] }), "resolution-failed");
+    expect(message).toBe("renderWebDocument received 1 repeating group(s) for slot(s) the template does not declare as repeating. Known repeating slot(s): items.");
+    expectNoEchoes(message);
+  });
+
+  it("an assetId binding on a node-only slot is refused without the slot or template name", () => {
+    const message = refusal(
+      () =>
+        renderer().renderWebDocument(doc({ bindings: [{ slot: "heading", value: "h" }, { slot: "widget", assetId: "sentinel.asset.34" }] }), {
+          resolveAssetId: () => ({ type: "image", src: "https://cdn.example/icon.svg", width: 1, height: 1, alt: "Placeholder icon" }),
+        }),
+      "resolution-failed",
+    );
+    expect(message).toBe('renderWebDocument received an assetId binding for a slot whose declared content kind(s) (node) do not include "asset".');
+    expectNoEchoes(message);
+    expect(message).not.toContain("sentinel.asset.34");
+  });
+
+  it("a single node binding on a repeating slot is refused without the slot or template name", () => {
+    const message = refusal(() => renderer().renderWebDocument(doc(), { nodes: [{ slot: "items", node: {} }] }), "resolution-failed");
+    expect(message).toContain("received a single node binding for a slot that is a REPEATING slot on this template");
+    expectNoEchoes(message);
+  });
+
+  it("a node binding on a slot the template does not declare is refused without the slot or template name", () => {
+    const message = refusal(() => renderer().renderWebDocument(doc(), { nodes: [{ slot: SENTINEL_SLOT, node: {} }] }), "resolution-failed");
+    expect(message).toBe("renderWebDocument received a node binding for a slot the template does not declare as a flowed slot at all. Known flowed slot(s): heading, widget.");
+    expectNoEchoes(message);
+  });
+
+  it("a node colliding with a copy binding on the same slot is refused without the slot or template name", () => {
+    const message = refusal(
+      () => createWebRenderer({ templates: [defineWebTemplate({ name: SENTINEL_TEMPLATE, flow: { slots: [{ key: "heading", required: true }, { key: "widget" }] }, slotKinds: { widget: ["node", "copy"] }, blocks: [{ kind: "page-header", title: "heading" }, { kind: "node-chapter", node: "widget" }] })] }).renderWebDocument(doc({ bindings: [{ slot: "heading", value: "h" }, { slot: "widget", value: "text" }] }), { nodes: [{ slot: "widget", node: {} }] }),
+      "resolution-failed",
+    );
+    expect(message).toBe("renderWebDocument received both a node binding (options.nodes) and a copy/asset binding (doc.bindings) for one slot — a slot may resolve from exactly one source.");
+    expectNoEchoes(message);
+  });
+
+  it("a required slot that resolves to no content is refused without the document id or template name", () => {
+    const message = refusal(() => renderer().renderWebDocument(doc({ bindings: [{ slot: "heading", copyId: "sentinel.copy.34" }] })), "empty-output");
+    expect(message).toContain("renderWebDocument resolved the document against its template, but required slot(s) [heading] produced no content");
+    expectNoEchoes(message);
+    expect(message).not.toContain("sentinel.copy.34");
+  });
+
+  it.each([
+    ["an unknown key in a field binding", { bogus: 1 }, "fields[1] must be a plain value/assetId binding with no unknown keys."],
+    ["a field binding with neither source", {}, "fields[1] must set exactly one of value/assetId."],
+    ["a blank field value", { value: "  " }, "fields[1].value must be a non-whitespace string when supplied."],
+    ["a blank field assetId", { assetId: "  " }, "fields[1].assetId must be a non-whitespace string when supplied."],
+  ])("%s is named by field position, not by the field key", (_label, binding, tail) => {
+    const message = refusal(
+      () => renderer().renderWebDocument(doc(), { groups: [{ slot: "items", items: [{ index: 0, fields: { first: { value: "v" }, [SENTINEL_FIELD]: binding } }] }] as never }),
+      "resolution-failed",
+    );
+    expect(message).toBe(`renderWebDocument refused malformed RenderWebOptions.groups: groups[0].items[0].${tail}`);
+    expectNoEchoes(message);
   });
 });

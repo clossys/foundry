@@ -110,6 +110,12 @@ const ORDER = {
 };
 
 const LEDGER_PATH = "clossys/.state/installed.json";
+/**
+ * The Launcher guide's path and the digest of its bytes, as the contract's SUCCESSION rule S3 names them: the one file row an admitted
+ * generation may add. Starter holds no copy of the guide's text, so the digest is the constant the contract states, which a test pins.
+ */
+const AGENTS_GUIDE_PATH = "clossys/AGENTS.md";
+const AGENTS_GUIDE_DIGEST = "sha256:6f3d39117a95abeb969656c3e11eea52ad27bdafd2341b98ead38b67944e7a53";
 const LOCKFILE_NAMES: readonly string[] = ["package-lock.json", "pnpm-lock.yaml", "yarn.lock"];
 /** A lowercase id token, such as a role. */
 const ID_TOKEN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/u;
@@ -326,7 +332,20 @@ function successionRuleViolations(base: InstalledLedger | null, head: InstalledL
   const at = `head.history[${head.history.length - 1}].binding`;
   if (base === null) { push("S3", at, "is admitted, but the base has no ledger holding the setup it follows"); return out; }
   // L3 on the head makes the entry before an admitted one its approved setup, which S2 makes the base's latest; L3 makes it apply, and L4 leaves it no deferred row.
-  if (!sameValue(head.files, base.files)) push("S3", "head.files", "differ from the base ledger's, and an admitted generation changes no file");
+  // The one file an admitted generation may add: the Launcher guide, for an install set up before it existed. Its row is the only change to
+  // the files, is written by this generation and names the guide's own bytes, so the base holds none at that path (L8 forbids a repeat in
+  // any letter case). This compares ledger rows only: Starter's admission reads the two ledgers' bytes, not the head tree, so it cannot
+  // check that the file at that path holds those bytes.
+  const addedFiles = head.files.filter((row) => !base.files.some((other) => sameValue(other, row)));
+  const droppedFiles = base.files.filter((row) => !head.files.some((other) => sameValue(other, row)));
+  const guideAdded =
+    droppedFiles.length === 0 &&
+    addedFiles.length === 1 &&
+    addedFiles[0]!.path === AGENTS_GUIDE_PATH &&
+    addedFiles[0]!.mode === "100644" &&
+    addedFiles[0]!.after === AGENTS_GUIDE_DIGEST &&
+    addedFiles[0]!.changeSet === last.changeSet;
+  if (addedFiles.length + droppedFiles.length > 0 && !guideAdded) push("S3", "head.files", "differ from the base ledger's, and an admitted generation changes no file but may add the guide's");
   if (!sameValue(head.entries, base.entries)) push("S3", "head.entries", "differ from the base ledger's, and an admitted generation changes no entry");
   const kept = <T>(rows: readonly T[], from: readonly T[]) => from.every((row) => rows.some((other) => sameValue(other, row)));
   if (!kept(head.keys, base.keys)) push("S3", "head.keys", "drop or change a key row the base ledger has");
@@ -352,7 +371,8 @@ function successionRuleViolations(base: InstalledLedger | null, head: InstalledL
  * read as unchanged, even when both sides decode to the same text. Otherwise
  * byte-identical sides are no change (S1); anything else must be one next
  * generation (S2), and an admitted one must install exactly what the base's
- * setup deferred and change no other row (S3). An approved next generation is
+ * setup deferred and change no other row, except that it may add the one
+ * Launcher guide row (S3). An approved next generation is
  * only ever approval-claimed. It checks what the ledgers claim, not the tree.
  */
 export function ledgerSuccession(baseBytes: Uint8Array | null, headBytes: Uint8Array): LedgerSuccession {

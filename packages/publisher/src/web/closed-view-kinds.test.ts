@@ -50,7 +50,8 @@ describe("defineWebTemplate — statement band not expressible as a SectionedVie
     } catch (error) {
       expect(error).toBeInstanceOf(SurfaceResolutionError);
       expect((error as SurfaceResolutionError).reason).toBe("unsupported-template");
-      expect((error as Error).message).toContain("StatementPageView");
+      expect((error as Error).message).toBe("resolveSurfaceDocument cannot resolve the surface: its template is not registered. Known template(s): MarketingView.");
+      expect((error as Error).message).not.toContain("StatementPageView");
     }
   });
 

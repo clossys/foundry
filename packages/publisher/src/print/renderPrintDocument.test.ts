@@ -97,7 +97,8 @@ describe("renderPrintDocument — refusal paths", () => {
     const doc = baseDoc({ bindings: [{ slot: "body", value: "World" }] });
     const error = thrown(() => renderPrintDocument(doc));
     expect(error.reason).toBe("resolution-failed");
-    expect(error.message).toContain("missing required slot(s): title");
+    expect(error.message).toContain("1 missing required slot(s)");
+    expect(error.message).not.toContain("title");
   });
 
   it("does not echo the document id when it refuses an unresolvable document", () => {
@@ -119,7 +120,8 @@ describe("renderPrintDocument — refusal paths", () => {
     const doc = baseDoc({ bindings: [{ slot: "title", value: "Hello" }, { slot: "does-not-exist", value: "x" }] });
     const error = thrown(() => renderPrintDocument(doc));
     expect(error.reason).toBe("resolution-failed");
-    expect(error.message).toContain("unknown slot(s): does-not-exist");
+    expect(error.message).toContain("1 binding(s) targeting unknown slot(s)");
+    expect(error.message).not.toContain("does-not-exist");
   });
 
   it("REFUSES (empty-output) when a required slot's copyId never resolves — no resolveCopyId given at all", () => {
@@ -131,7 +133,24 @@ describe("renderPrintDocument — refusal paths", () => {
     });
     const error = thrown(() => renderPrintDocument(doc));
     expect(error.reason).toBe("empty-output");
-    expect(error.message).toContain("flyer.title");
+    expect(error.message).toContain("1 copyId(s) that resolved to no text");
+    expect(error.message).not.toContain("flyer.title");
+  });
+
+  it("counts, and does not name, a slot whose copy could not even be attempted", () => {
+    const doc = baseDoc({
+      id: "sentinel-doc-id-34",
+      bindings: [
+        { slot: "title", copyId: "flyer.title" },
+        { slot: "body", value: "World" },
+      ],
+    });
+    // Deliberately wrong-typed input, cast like the other fixtures here.
+    const error = thrown(() => renderPrintDocument(doc, { resolveCopyId: 42 as unknown as () => undefined }));
+    expect(error.reason).toBe("empty-output");
+    expect(error.message).toBe(
+      "renderPrintDocument resolved the document against its layout, but at least one matched slot produced no real content: 2 slot(s) with no usable, unambiguous source of text. Rendering would silently ship an incomplete page, which this function refuses to do.",
+    );
   });
 
   it("REFUSES (empty-output) when the supplied resolveCopyId returns undefined for a bound copyId", () => {
@@ -207,7 +226,8 @@ describe("renderPrintDocument — assetId refusal paths (never a blank box)", ()
   it("REFUSES (empty-output) an unresolved assetId — no resolveAssetId given at all", () => {
     const error = thrown(() => renderPrintDocument(assetDoc));
     expect(error.reason).toBe("empty-output");
-    expect(error.message).toContain("marketing.hero");
+    expect(error.message).toContain("1 assetId(s) that did not resolve to a real asset");
+    expect(error.message).not.toContain("marketing.hero");
   });
 
   it("REFUSES (empty-output) when resolveAssetId returns undefined for a bound assetId", () => {
@@ -224,7 +244,8 @@ describe("renderPrintDocument — assetId refusal paths (never a blank box)", ()
       }),
     );
     expect(error.reason).toBe("empty-output");
-    expect(error.message).toContain("could not even attempt to resolve: hero");
+    expect(error.message).toContain("1 slot(s) asset resolution could not even attempt to resolve");
+    expect(error.message).not.toContain("registry down");
   });
 
   it("REFUSES (empty-output) when resolveAssetId is not a function", () => {
@@ -238,7 +259,8 @@ describe("renderPrintDocument — assetId refusal paths (never a blank box)", ()
   it("REFUSES (empty-output) when resolveAssetId resolves to a value missing the required src/width/height/alt shape", () => {
     const error = thrown(() => renderPrintDocument(assetDoc, { resolveAssetId: () => ({ nope: true }) }));
     expect(error.reason).toBe("empty-output");
-    expect(error.message).toContain("marketing.hero");
+    expect(error.message).toContain("1 assetId(s) that resolved to a value that did not match the required RenderImageAsset or RenderVideoAsset shape");
+    expect(error.message).not.toContain("marketing.hero");
   });
 
   it("an unresolved assetId on a NON-required slot is still fatal — assets get no leniency at all", () => {
@@ -414,5 +436,27 @@ describe("renderPrintDocument — successful render, structural properties", () 
     expect(html.match(/data-slot="title"/g)).toHaveLength(1);
     expect(html).toContain(">Second<");
     expect(html).not.toContain(">First<");
+  });
+});
+
+describe("renderPrintDocument — refusal messages never echo a document id, copy id or slot name", () => {
+  const SENTINEL_DOC_ID = "sentinel-doc-id-34";
+  const SENTINEL_COPY_ID = "sentinel.copy.34";
+
+  it("a document with no layout is refused without the document id", () => {
+    const error = thrown(() => renderPrintDocument(baseDoc({ id: SENTINEL_DOC_ID, layout: undefined })));
+    expect(error.reason).toBe("missing-layout");
+    expect(error.message).toContain("renderPrintDocument could not render the document: doc.layout is required");
+    expect(error.message).not.toContain(SENTINEL_DOC_ID);
+  });
+
+  it("a slot whose copy does not resolve is refused without the document id or the copy id", () => {
+    const error = thrown(() => renderPrintDocument(baseDoc({ id: SENTINEL_DOC_ID, bindings: [{ slot: "title", copyId: SENTINEL_COPY_ID }, { slot: "body", value: "World" }] })));
+    expect(error.reason).toBe("empty-output");
+    expect(error.message).toBe(
+      "renderPrintDocument resolved the document against its layout, but at least one matched slot produced no real content: 1 copyId(s) that resolved to no text. Rendering would silently ship an incomplete page, which this function refuses to do.",
+    );
+    expect(error.message).not.toContain(SENTINEL_DOC_ID);
+    expect(error.message).not.toContain(SENTINEL_COPY_ID);
   });
 });

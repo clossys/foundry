@@ -384,7 +384,10 @@ approval. --task-record is the number of the task-record issue in the
 repository; each --supersedes is the number of the pull request of an older
 change set of this repository that this one replaces, and needs another stored
 change set of the repository. A change set already bound to another body is
-refused, and one already bound to this body prints it again.
+refused, and one already bound to this body prints it again. There is no way to
+undo a binding: a mistyped --task-record or --supersedes leaves the change set
+refused as body-bound. Pass the output to the pull request as a file with
+--body-file; --body "$(...)" drops the final line feed the recorded hash covers.
 
 Exit codes: 0 = the body was printed, 1 = refused (a fixed token on standard
 error, nothing on standard output), 2 = indeterminate or a usage error.`;

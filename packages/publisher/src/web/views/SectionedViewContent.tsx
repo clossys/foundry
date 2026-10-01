@@ -376,10 +376,10 @@ function resolveHeroMedia(media: ResolvedSectionedViewHeroMedia | undefined, pat
   try {
     looked = options.resolveAssetId(media.assetId);
   } catch {
-    throw new Error(`${path}.assetId "${media.assetId}" could not be resolved.`);
+    throw new Error(`${path}.assetId could not be resolved.`);
   }
   if (!isRenderAsset(looked)) {
-    throw new Error(`${path}.assetId "${media.assetId}" did not resolve to a paintable asset.`);
+    throw new Error(`${path}.assetId did not resolve to a paintable asset.`);
   }
   return buildAssetElement(looked, { prefersReducedMotion: options.prefersReducedMotion, altOverride: media.alt });
 }

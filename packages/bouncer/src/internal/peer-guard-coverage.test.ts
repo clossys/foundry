@@ -153,6 +153,7 @@ describe("peer guard coverage (#889) — derived from package.json's own exports
     expect(Object.keys(manifest.exports).sort()).toEqual([
       ".",
       "./agent",
+      "./gate",
       "./providers/clerk",
       "./providers/clerk/web",
       "./providers/clerk/web/client",
