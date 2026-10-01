@@ -5,6 +5,8 @@ import { PLAN_CONTRACTS } from "./generated/plan-contracts.generated.js";
 import type { ApprovalBinding, RepositoryChangeSet } from "./change-set-contract.js";
 import { LEDGER_MEMBER_ORDER, installedLedgerViolations, ledgerSuccession, readInstalledLedger, serializeInstalledLedger, validateInstalledLedger } from "./ledger-contract.js";
 import { trustInstalledLedger } from "./ledger-trust.js";
+import { AGENTS_GUIDE_TEXT } from "./agents-guide.js";
+import { contentDigest } from "./change-set-contract.js";
 import type { InstalledLedger } from "./ledger-contract.js";
 
 /*
@@ -275,6 +277,79 @@ describe("ledger succession (a pull request's head against its base)", () => {
     const result = ledgerSuccession(bytesOf("setup-generation-1"), toBytes(text(head)));
     expect(result.violations.map(label)).toContain("S3");
     expect(result.admission).toBeNull();
+  });
+
+  describe("S3 and the Launcher guide", () => {
+    const GUIDE = "clossys/AGENTS.md";
+    const byPath = (a: Loose, b: Loose) => (a.path.toLowerCase() < b.path.toLowerCase() ? -1 : 1);
+    /** The admitted generation over setup-generation-1, with `rows` added to its files. */
+    const headWith = (rows: Loose[]) => {
+      const head = loose(ledger("admitted-generation-2"));
+      head.files = [...head.files, ...rows].sort(byPath);
+      return head;
+    };
+    const lastChangeSet = () => ledger("admitted-generation-2").history.at(-1)!.changeSet;
+    /** The digest of the guide's bytes: the only after S3 accepts for the added row. */
+    const GUIDE_AFTER = contentDigest(AGENTS_GUIDE_TEXT);
+    const guideRow = (patch: Loose = {}) => ({ path: GUIDE, mode: "100644", after: GUIDE_AFTER, changeSet: lastChangeSet(), ...patch });
+    const check = (head: Loose, base: InstalledLedger = ledger("setup-generation-1")) => ledgerSuccession(toBytes(text(base)), toBytes(text(head)));
+
+    it("admits a generation that also adds the guide's files row, written by that generation, and nothing else", () => {
+      expect(ledger("setup-generation-1").files.some((row) => row.path === GUIDE)).toBe(false);
+      expect(check(headWith([guideRow()]))).toEqual({ change: "next-generation", admission: "admitted", violations: [] });
+    });
+
+    it("states the one apply-phase add in the contract's RENDER and S3 sections, and names no other path", () => {
+      const description = LEDGER.description as string;
+      const render = description.slice(description.indexOf("RENDER."), description.indexOf("CODE RULES"));
+      const succession = description.slice(description.indexOf("SUCCESSION,"));
+      expect(render).toContain(`the only file with a before of null that RENDER writes a row for is the Launcher guide (path clossys/AGENTS.md, mode 100644, after ${GUIDE_AFTER}, the digest of the guide's bytes)`);
+      expect(render).toContain("only where a previous ledger P exists and holds no row at that path in any letter case");
+      expect(succession).toContain(`head.files equal base's or add exactly one row and drop none, the row for clossys/AGENTS.md with mode 100644, after ${GUIDE_AFTER}`);
+      expect(succession).toContain("changes no other row, apart from that one files row");
+      expect(description.match(/clossys\/AGENTS\.md/g)).toHaveLength(2);
+      // The contract names the guide's bytes by one digest, and it is the digest of the text this package writes.
+      expect([...new Set(description.match(/after (sha256:[0-9a-f]{64})/g))]).toEqual([`after ${GUIDE_AFTER}`]);
+    });
+
+    it("refuses the guide row when its after is not the digest of the guide's bytes", () => {
+      for (const after of [sha("the guide\n"), sha(`${AGENTS_GUIDE_TEXT}\n`), sha(AGENTS_GUIDE_TEXT.replace(/\n/g, "\r\n"))]) {
+        const result = check(headWith([guideRow({ after })]));
+        expect(result.violations.map(label), after).toContain("S3");
+        expect(result.admission, after).toBeNull();
+      }
+    });
+
+    it("refuses an admitted generation that adds a files row at any other path", () => {
+      for (const path of ["clossys/unowned-note.txt", "clossys/AGENTS.md.bak", ".agents/skills/clossys-advisor/SKILL.md"]) {
+        const result = check(headWith([guideRow({ path })]));
+        expect(result.violations.map(label), path).toContain("S3");
+        expect(result.admission, path).toBeNull();
+      }
+    });
+
+    it("refuses the guide row when it is not written by the admitted generation itself, or is a link, or comes with another added row", () => {
+      const first = ledger("admitted-generation-2").history[0]!.changeSet;
+      for (const head of [headWith([guideRow({ changeSet: first })]), headWith([guideRow({ mode: "120000" })]), headWith([guideRow(), guideRow({ path: "clossys/unowned-note.txt" })])]) {
+        const result = check(head);
+        expect(result.admission).toBeNull();
+        expect(result.violations.length).toBeGreaterThan(0);
+      }
+      expect(check(headWith([guideRow({ changeSet: first })])).violations.map(label)).toContain("S3");
+      expect(check(headWith([guideRow(), guideRow({ path: "clossys/unowned-note.txt" })])).violations.map(label)).toContain("S3");
+    });
+
+    it("refuses an admitted generation that changes or drops a guide row the base already has", () => {
+      const base = loose(ledger("setup-generation-1"));
+      base.files = [...base.files, guideRow({ changeSet: base.history[0].changeSet })].sort(byPath);
+      for (const rows of [[guideRow({ after: sha("another guide\n") })], []]) {
+        const head = loose(ledger("admitted-generation-2"));
+        head.files = [...head.files, ...rows].sort(byPath);
+        const result = check(head, base as InstalledLedger);
+        expect(result.violations.map(label)).toContain("S3");
+        expect(result.admission).toBeNull();
+      }
+    });
   });
 
   it("reports only the refused ledger's own reasons when either ledger breaks the contract", () => {

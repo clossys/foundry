@@ -30,8 +30,8 @@ export interface ConsentBannerProps {
  * Not a dialog: no `role="dialog"`, no modal wiring, no autofocus, no
  * focus trap, no Escape handling, no portal and no timer. It renders in
  * flow, so the page stays usable around it. The root carries
- * `data-consent-banner` so the fold gate can name it as an overlay
- * selector when a consumer positions it over the page.
+ * `data-consent-banner` so a consumer can pass it as an overlay selector
+ * (`overlayIntersectingFold`) when positioning it over the page.
  */
 export function ConsentBanner({
   title,
@@ -60,7 +60,7 @@ export function ConsentBanner({
           {title}
         </h2>
         <div className="text-body-s text-ink-secondary">{body}</div>
-        {privacyLink ? <div className="text-body-s">{privacyLink}</div> : null}
+        {privacyLink != null && privacyLink !== false ? <div className="text-body-s">{privacyLink}</div> : null}
       </div>
       <div className="flex flex-col gap-sm tablet:shrink-0 tablet:flex-row">
         <Button variant="secondary" size="md" className="w-full tablet:w-auto" onPress={() => onAccept()}>

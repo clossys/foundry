@@ -274,6 +274,110 @@ import { createHealthRoute } from "@clossys/bouncer";
 export const GET = createHealthRoute();
 ```
 
+## Gated-host gate
+
+`@clossys/bouncer/gate` is one opt-in gate for a host that serves nothing to
+the public. It is framework-neutral: it takes a Fetch `Request` and a
+pass-through renderer and always returns a `Response`. The identity provider
+is a seam (`resolvePrincipal`); the gate imports no provider and no framework.
+Its response headers come from the gated-host response helpers above and its
+return-URL rules from the redirect allowlist.
+
+| Request | Answer |
+| --- | --- |
+| Signed-out navigation: `Sec-Fetch-Mode: navigate`, `Accept: text/html` with a quality above zero, or a Next.js `RSC` header or `_rsc` parameter | `307` to `signInPath` with a relative `redirect_url` and `no-store`. Never a 301 or 308 |
+| Signed-out non-navigation, or any path under `apiPathPrefixes` (default `/api/`) | `401` `{"error":"unauthorized"}` with `WWW-Authenticate: Bearer resource_metadata="<origin>/.well-known/oauth-protected-resource"` |
+| `/.well-known/oauth-protected-resource` | `200` with the RFC 9728 document built from `protectedResourceMetadata`, for `GET` and `HEAD`; `405` for any other method |
+| Signed in, `isPermitted` did not answer `true` | `307` to `notAuthorizedPath` for a navigation, `403` `{"error":"forbidden"}` otherwise. The not-authorized route itself is forced to `403` |
+| `signInPath` and its sub-routes, or a path `isPublicPath` approves | Passed to `next`. Sign-in is rendered with `providerUnavailable` set when the provider did not answer, and in production the response is `503` with `Retry-After` |
+| Provider throws, answers `null` or answers an unknown shape | Treated as unavailable. Gated routes fail closed exactly like signed-out; nothing answers 500 |
+| `next` throws or returns a non-`Response` | `503` with `Retry-After` |
+| A request URL that is not http(s) | `400` `{"error":"bad_request"}` |
+
+Every response, including a pass-through, carries `X-Robots-Tag: noindex,
+nofollow`.
+
+The gate is closed by construction:
+
+- Nothing is rendered before the decision. `next` runs only after the provider
+  has answered and, on a gated route, the permission check has returned `true`.
+  The exceptions are the sign-in routes and `isPublicPath` paths, which run
+  without a sign-in, and the not-authorized route, which renders for any
+  signed-in principal without the permission check (a signed-out visitor is
+  still sent to sign-in).
+- Every pass-through to a gated route (a permitted principal, the sign-in
+  routes and the not-authorized route) is `Cache-Control: private, no-store`
+  and `Vary: Cookie, Authorization`, whatever `next` returned: a `public` or
+  `s-maxage` value is replaced and any existing `Vary` value is kept. A path
+  `isPublicPath` approves is left as `next` rendered it. CDN-specific cache
+  headers (every `CDN-Cache-Control` variant, such as
+  `Vercel-CDN-Cache-Control`, and `Surrogate-Control`) are removed from those
+  gated responses too. A shared cache or CDN therefore cannot keep a protected
+  page and serve it to a signed-out visitor. The header guarantee holds only
+  for the response `next` returns to the gate; a framework that rewrites cache
+  headers after the proxy runs is outside it. The downstream router must route
+  on the same `Request` URL the gate saw.
+- `isPermitted` is required and only the answer `true` permits; a throw or any
+  other answer denies. There is no permit-everyone default.
+- Every absolute URL in a response comes from `origin`, `siblingOrigins` and
+  `protectedResourceMetadata`. The request's host and headers are never read
+  into a response, and error bodies and construction errors are fixed strings
+  that do not quote a configured value.
+- A path with an encoded slash, backslash, dot, percent sign, null or
+  semicolon, a literal semicolon, a doubled slash or a non-ASCII character
+  (percent-encoded as `%80` and above) is ambiguous. It is never passed
+  through as a sign-in sub-route or a public path, so it is gated like any
+  other path.
+- `signInPath`, `notAuthorizedPath` and each `apiPathPrefixes` entry must be
+  plain same-host paths, and the two routes must differ and not overlap the
+  metadata path. `signInPath` and `notAuthorizedPath` must not be, or sit
+  under, `/api`, `/_next` or an `apiPathPrefixes` entry, because a sign-in
+  route is passed to `next` without a sign-in. Otherwise construction throws
+  `TypeError`.
+- A signed-out navigation whose `Location` would pass 2048 characters returns
+  to `/` after sign-in instead of the long path and query.
+
+The `403` and `503` are set on the response `next` returns, so they apply only
+when `next` returns the final response. Under a Next.js proxy,
+`NextResponse.next()` or a rewrite can discard that status: the not-authorized
+page must return its own `403` (for example with `forbidden()`) and the sign-in
+page its own `503`, or `next` must render the page itself.
+
+The not-authorized route is matched exactly. With `trailingSlash: true` in the
+Next.js config, a request for `/not-authorized/` is a different path to the
+gate, so the caller must handle the trailing-slash form of `notAuthorizedPath`
+itself, before calling the gate; the gate does not match it.
+
+The sign-in page must run its incoming `redirect_url` through
+`createReturnUrlResolver`, which accepts a relative path on `origin` or an
+absolute URL on one of `siblingOrigins` and falls back to `/` for everything
+else. The gate builds only relative return URLs, so `siblingOrigins` matters
+on the sign-in page.
+
+```ts
+import { createGatedHostGate, createReturnUrlResolver } from "@clossys/bouncer/gate";
+
+const origin = "https://admin.example.test";
+const siblingOrigins = ["https://app.example.test"];
+
+const gate = createGatedHostGate<{ readonly roles: readonly string[] }>({
+  origin,
+  signInPath: "/sign-in",
+  notAuthorizedPath: "/not-authorized",
+  siblingOrigins,
+  protectedResourceMetadata: { authorization_servers: ["https://idp.example.test"] },
+  resolvePrincipal: async () => ({ state: "signed-out" }),
+  isPermitted: (principal) => principal.roles.includes("admin"),
+  isPublicPath: (pathname) => pathname === "/robots.txt" || pathname === "/health",
+});
+
+export const resolveReturn = createReturnUrlResolver({ origin, siblingOrigins });
+
+export function proxy(request: Request): Promise<Response> {
+  return gate(request, () => new Response("page"));
+}
+```
+
 ## Sign-in failure classes
 
 A sign-in provider's error text can reveal whether an account exists.
@@ -330,6 +434,49 @@ import type { SignInFailureCodeTable } from "@clossys/bouncer";
 export function copyIdForSignInError(error: unknown, codes: SignInFailureCodeTable) {
   const failureClass = classifySignInFailure(error, { codes, hideAccountExistence: true });
   return signInFailureCopyId(failureClass, { factor: "password" });
+}
+```
+
+## Front-door conformance
+
+`checkFrontDoorHttp` runs a host's handler through cookie-less GET requests
+and returns every way its responses break the gated-host rules, so a host that
+drifts fails in its own test. The expected values come from the helpers above
+and from the production variant of `createSiteSecurityHeaders`. It uses Fetch
+globals only and calls the handler in process: no test runner, browser,
+framework or network call. A handler that throws is a `handler-threw`
+violation, never a throw.
+
+| Rule | Checked on |
+| --- | --- |
+| `robots-tag` | Every response: `X-Robots-Tag` is the gated-host robots tag |
+| `no-store` | Sign-in, boundary and 503 responses: `Cache-Control` carries the `no-store` directive |
+| `sign-in-status` | A sign-in path answers a status below 400 |
+| `boundary-status` | A boundary path answers 301, 302, 303, 307 or 308 with a `Location`, or 401 or 403 |
+| `security-headers` | Sign-in responses: `Strict-Transport-Security`, `Referrer-Policy` and `Permissions-Policy` equal the production baseline, and `Content-Security-Policy` is non-empty |
+| `robots-txt` | The robots path answers 200 with the deny-all body |
+| `health` | The health path answers with the status and body of `createHealthRoute()()`, with no redirect |
+| `service-unavailable` | Your `serviceUnavailable` response is a 503 with a non-negative integer `Retry-After` and the body of `createServiceUnavailableResponse()` |
+| `handler-threw` | The handler or `serviceUnavailable` threw or rejected |
+
+`robotsPath` defaults to `/robots.txt` and `healthPath` to `/health`. A
+redirect is read as returned, never followed. `origin` must be an absolute URL,
+or the call rejects with `TypeError`.
+
+```ts
+import { assertFrontDoorHttp, createServiceUnavailableResponse } from "@clossys/bouncer";
+
+// `handle` is your host's request handler, for example your framework's fetch entry.
+export async function frontDoorConforms(handle: (request: Request) => Response | Promise<Response>) {
+  await assertFrontDoorHttp(
+    {
+      origin: "https://app.example",
+      signInPaths: ["/sign-in"],
+      boundaryPaths: ["/dashboard"],
+      serviceUnavailable: () => createServiceUnavailableResponse(),
+    },
+    handle,
+  );
 }
 ```
 
@@ -405,6 +552,8 @@ answer.
 | `GatedHostHeaderOptions`, `ServiceUnavailableOptions` | Their option types |
 | `SIGN_IN_FAILURE_CLASSES`, `classifySignInFailure`, `signInFailureCopyId` | Sign-in failure classes and their Writer copy ids. Never provider text |
 | `SignInFailureClass`, `SignInFailureShape`, `SignInFailureCodeTable`, `SignInFailureCopyId`, `ClassifySignInFailureOptions`, `SignInFailureCopyIdOptions` | Their types |
+| `checkFrontDoorHttp`, `assertFrontDoorHttp` | Front-door conformance kit, HTTP half: runs a handler through cookie-less GET requests and returns, or throws, every violation of the gated-host rules |
+| `FrontDoorHttpConfig`, `FrontDoorViolation`, `FrontDoorRule` | Its config, one violation, and the rule names |
 
 ### `./agent`
 
@@ -416,6 +565,16 @@ subpath `delegation-ceiling` reads records for.
 `AgentAuthorizationError`, and the types `GenericAgentContext`,
 `AgentLifecycleState`, `AgentAuthorizationFailureReason`,
 `BaseAgentAuditRecord`, `IsoDateTime`.
+
+### `./gate`
+
+One opt-in gate contract for gated application hosts. Framework-neutral and
+provider-neutral; see "Gated-host gate" above for its behavior.
+
+`createGatedHostGate`, `createReturnUrlResolver`, `isNavigationRequest`,
+`PROTECTED_RESOURCE_METADATA_PATH`, and the types `GatedHostGate`,
+`GatedHostGateOptions`, `GatedHostNext`, `GatePrincipalState`,
+`ProtectedResourceMetadata`, `ReturnUrlResolverOptions`.
 
 ### `./providers/clerk` and its subpaths
 

@@ -22,7 +22,7 @@ function packPackage(packageRoot: string, destinationRoot = packedRoot) {
   return join(destinationRoot, filename);
 }
 
-function extractPackage(tarball: string, packageName: "designer" | "publisher") {
+function extractPackage(tarball: string, packageName: "designer" | "publisher" | "writer") {
   const destination = join(consumerRoot, "node_modules", "@clossys", packageName);
   mkdirSync(destination, { recursive: true });
   execFileSync("tar", ["-xzf", tarball, "--strip-components=1", "-C", destination], {
@@ -115,6 +115,7 @@ beforeAll(() => {
   mkdirSync(packedRoot, { recursive: true });
   mkdirSync(join(consumerRoot, "node_modules", "@clossys"), { recursive: true });
   extractPackage(packPackage(join(repoRoot, "packages", "designer")), "designer");
+  extractPackage(packPackage(join(repoRoot, "packages", "writer")), "writer");
   publisherTarball = packPackage(publisherRoot);
   extractPackage(publisherTarball, "publisher");
   for (const peer of ["react", "react-dom", "react-aria-components", "tailwind-merge", "@internationalized/date"]) {

@@ -2,8 +2,10 @@ import {
   Link as AriaLink,
   type LinkProps as AriaLinkProps,
 } from "react-aria-components";
+import type { ButtonSize, ButtonVariant } from "./Button.js";
+import { buttonClassName } from "./button-classes.js";
 import { cx } from "./internal/cx.js";
-import { UI_RING_FOCUS } from "./internal/ui-vars.js";
+import { UI_ALPHA_DISABLED, UI_RING_FOCUS } from "./internal/ui-vars.js";
 
 export type LinkVariant = "default" | "muted" | "standalone";
 
@@ -19,6 +21,21 @@ export interface LinkProps extends AriaLinkProps {
    * @default "default"
    */
   variant?: LinkVariant;
+  /**
+   * Renders the link with exactly the classes `Button` applies for this
+   * variant, plus the same disabled opacity and focus indicator, instead of the
+   * link `variant` classes. Semantics stay a link (`role="link"`, `href`,
+   * `render`). Setting either this or `buttonSize` turns button mode on;
+   * with neither set the link is unchanged.
+   * @default "primary" (once button mode is on)
+   */
+  buttonVariant?: ButtonVariant;
+  /**
+   * Size of the button look, as for `Button`'s `size`. Setting either this
+   * or `buttonVariant` turns button mode on.
+   * @default "md" (once button mode is on)
+   */
+  buttonSize?: ButtonSize;
 }
 
 const BASE = "text-body font-body outline-none disabled:cursor-not-allowed";
@@ -48,15 +65,39 @@ const VARIANT_CLASSES: Record<LinkVariant, string> = {
  *   Prompts
  * </Link>
  * ```
+ *
+ * `buttonVariant` / `buttonSize` give a link — including one rendered
+ * through `render` — the same look as `Button`, since `Button` itself can
+ * only render a `<button>`:
+ *
+ * ```tsx
+ * <Link
+ *   href="/prompts"
+ *   buttonVariant="secondary"
+ *   render={(props) => <RouterLink {...props} to="/prompts" />}
+ * >
+ *   Prompts
+ * </Link>
+ * ```
  */
-export function Link({ variant = "default", className, style, ...rest }: LinkProps) {
+export function Link({
+  variant = "default",
+  buttonVariant,
+  buttonSize,
+  className,
+  style,
+  ...rest
+}: LinkProps) {
+  const isButtonLook = buttonVariant !== undefined || buttonSize !== undefined;
+  const lookClassName = isButtonLook
+    ? buttonClassName(buttonVariant ?? "primary", buttonSize ?? "md")
+    : [BASE, VARIANT_CLASSES[variant]].join(" ");
   return (
     <AriaLink
       {...rest}
       className={(renderProps) =>
         cx(
-          BASE,
-          VARIANT_CLASSES[variant],
+          lookClassName,
           typeof className === "function" ? className(renderProps) : className,
         )
       }
@@ -68,6 +109,7 @@ export function Link({ variant = "default", className, style, ...rest }: LinkPro
       // `isFocusVisible`; this one did not, so a keyboard user tabbing
       // through a page had no idea where they were.
       style={(renderProps) => ({
+        opacity: isButtonLook && renderProps.isDisabled ? UI_ALPHA_DISABLED : undefined,
         boxShadow: renderProps.isFocusVisible ? UI_RING_FOCUS : undefined,
         ...(typeof style === "function" ? style(renderProps) : style),
       })}

@@ -353,8 +353,14 @@ Name a shipped template when its slots cover the page:
   "No account? Join the waitlist") renders below it, before the footnote, and
   is always the site's copy. An invitation or activation step never offers
   request-access or sign-up: the view has no mode and no `requestAccess`
-  prop, so each site's activation-page test asserts no request-access or
-  sign-up link. The content column uses the
+  prop, so each site's activation-page test should assert no request-access or
+  sign-up link. Pass each `secondaryAction` line as one element: text plus a
+  link in one fragment splits onto two lines. When the sign-in provider is
+  unavailable, `isDisabled` keeps the form on screen inside a disabled
+  `<fieldset>` with the typed values still shown; the explanation goes in the
+  form's own `submitError`, and a retry link in `secondaryAction` stays
+  enabled. Switching `isDisabled` remounts the form, so the site keeps the
+  typed values in its own state. The content column uses the
   `--ui-width-form-max` form measure, and `description` is a required prop
   so every step decides on a supporting line. The form slot is filled with
   Designer's `Form` / `TextField` / `Button`. There is no mode prop, and
@@ -362,7 +368,8 @@ Name a shipped template when its slots cover the page:
   (`{ label, message }`) renders a badge-labelled development note under the
   footnote, and a site passes it only in development. An auth page's
   `footerSecondary` holds a legal row only, never a locale switcher, because
-  auth pages are single-locale.
+  auth pages are single-locale. `SignInForm` fills the
+  form slot of a sign-in page.
 - **`ErrorView`** — error shell, including the sign-in-boundary states: not
   authorized (403), pending, revoked, and provider unavailable (503). It takes
   the same props for each; the status, title, description, and recovery
@@ -1342,6 +1349,8 @@ const card = buildBrandShareCard({
   must have it.
 - **Refusals.** It throws `ShareCardError` with the existing closed reasons and
   no new one; the error text never echoes input.
+- **Route.** `createShareCardRoute` wraps this card as the exports of an
+  `opengraph-image` route; see [Share card route](#share-card-route--createsharecardroute).
 
 ## `media` — the asset registry contract, responsive images, and video (v2)
 
@@ -1954,13 +1963,91 @@ Next requires the global-error file to be a client module, so it starts with
 its own: put it in `description` as caller copy (`Error: <digest>.`). A
 segment `error` boundary keeps the layout, so use `ErrorView` there instead.
 
+### `SignInForm`
+
+`SignInForm`, exported from `@clossys/publisher/web`, is an identifier-first
+sign-in form for `AuthView`'s form slot: an identifier step, then a password
+step. It imports no identity provider and reads no browser global; the caller
+injects the two handlers (an adapter package can supply them) and decides where
+to go once signed in. It is a client component, so import it from a module that
+is a client boundary. Under the `react-server` condition the name is a stub
+that throws a `RenderError` when called. The page's `<h1>` stays `AuthView`'s.
+
+```tsx
+import { AuthView, SignInForm } from "@clossys/publisher/web";
+import type { SignInResult } from "@clossys/publisher/web";
+
+declare const brand: React.ReactNode;
+declare function lookUp(identifier: string): Promise<SignInResult>; // your handler
+declare function check(secret: string): Promise<SignInResult>; // your handler
+declare function goToApp(): void;
+
+export function SignInPage() {
+  return (
+    <AuthView
+      brand={brand}
+      heading="Sign in"
+      description="Continue to Acme Console."
+      form={<SignInForm identify={lookUp} verify={check} onSignedIn={goToApp} nouns={{ surface: "Acme Console" }} />}
+    />
+  );
+}
+```
+
+Props:
+
+- `identify(identifier)` and `verify(secret)`: each resolves to a
+  `SignInResult`, `{ status: "ok" }` or `{ status: SignInFailure }`, where
+  `SignInFailure` is `"credential"`, `"notFound"`, `"rateLimited"`,
+  `"locked"`, `"network"` or `"unavailable"`. The union is closed. `identify`
+  receives the identifier trimmed. A handler that throws, or answers anything
+  outside the union, reads as `unavailable`.
+- `onSignedIn()`: called once after `verify` answers `ok`. The form does not
+  navigate, set a cookie or redirect.
+- `nouns` (optional): the nouns of the shipped wording. Pass `surface`, which
+  the network notice names; every id the form shows is resolved on each render
+  through `resolveFrontDoorCopy`, so an incomplete set throws a `RenderError`
+  `resolution-failed` naming the id, never a noun. The `identifier` noun is
+  the visitor's own entry and is not a prop.
+
+Steps: the identifier step asks for the identifier. After `identify` answers
+`ok` the password step shows "Signing in as" the identifier
+(`front-door.password.description`), the password field, and one ghost button
+(`front-door.password.secondary`) that returns to the identifier step with the
+identifier kept and the password cleared. There is no Back control inside the
+card. A `verify` answer of `ok` calls `onSignedIn` once and the submit button
+stays pending.
+
+Where each failure shows, on the step it happened in:
+
+| Result | Where | Copy id |
+| --- | --- | --- |
+| empty identifier | inline on the field | `front-door.identifier-required.notice` |
+| empty password | inline on the field | `front-door.password-required.notice` |
+| `credential` or `notFound`, identifier step | inline on the field | `front-door.identifier-not-found.notice` |
+| `credential` or `notFound`, password step | inline on the field | `front-door.password.notice` |
+| `rateLimited` | the form's one `role="alert"` | `front-door.rate-limited.notice` |
+| `locked` | the form's one `role="alert"` | `front-door.locked.notice` |
+| `network` | the form's one `role="alert"` | `front-door.network.notice` |
+| `unavailable`, a throw, or an unknown answer | the form's one `role="alert"` | `front-door.unavailable.notice` |
+
+Nothing is validated before a submit or on blur, and an empty submit calls no
+handler. An inline error clears when its field changes. The submit button is
+pending, never `disabled`, while a call is in flight, and a second submit is
+ignored. Each step's `<form>` is labelled with `front-door.sign-in.title` or
+`front-door.password.title`, and the form has no error summary.
+
+What it does not do: offer a passkey, single sign-on, sign-up or one-time-code
+first factor, show a password-reset link, or choose a return target.
+
 ### `PackReviewView`
 
 `PackReviewView`, exported from `@clossys/publisher/web`, is the dev-only
 review index for a site release. One page lists every page of the site with its
 forced states, every exported artifact, and a contact sheet that renders each
 page and state in a lazy frame at 390, 1024 and 1440 px. Each page and export
-carries a `draft`, `delegated` or `approved` badge. It is server-safe, reads
+carries a `draft`, `delegated` or `approved` badge; each forced state and each
+contact-sheet frame shows its page's badge. It is server-safe, reads
 nothing, and ships no wording: the caller builds the entries with
 [`buildPackReviewIndex`](#reviewing-a-pack) and passes every visible string.
 
@@ -2006,14 +2093,18 @@ Props:
   text. Every `href` must be a same-site address (one leading slash, no
   `//`, no backslash, no control character); anything else throws a
   `RenderError` naming the position, never the value.
-- `exports`: `{ id, kind, path, status, width? }[]`. `path` is shown as plain
-  text and is never a link; `width` is the review width of an email export.
+- `exports`: `{ id, kind, path, status, href?, width? }[]`. `path` is shown as
+  plain text and is never a link; `href` is an optional same-site address
+  (the same rule as a page's), and when given the kind's name links to it;
+  `width` is the review width of an email export.
 - `labels`: `pagesHeading`, `exportsHeading`, `sheetHeading`, `none`, the
   `statuses` and `kinds` word for each, `exportWidth(width)` and
   `frameTitle({ page, state?, width })`. The view has no default wording.
 - `widths` (default `[390, 1024, 1440]`): positive whole numbers; others throw.
 
-An unknown `status` throws. Entry text is rendered as text: no markup from an
+Each section is named by its own `h2` through `aria-labelledby`, and a frame's
+caption puts a text separator between the page and the state. An unknown
+`status` throws. Entry text is rendered as text: no markup from an
 entry is injected, and the frames use `loading="lazy"` and never `srcDoc`. The
 view does not know whether it is running in development: gating it is the
 caller's job (the site template does, see its README).
@@ -2560,7 +2651,8 @@ the pack's `website` item can be sealed, and only on evidence that names it.
   evidence was taken. `observedAt` must be a real calendar date and time:
   `2026-09-31T00:00:00Z` is refused as a bad shape.
 - `delivery`: `{ state: "ready", deployedCommit, productionUrl }`, with an
-  `https` production URL.
+  `https` production URL that carries no username or password, so a secret
+  cannot reach the ledger `url` or the manifest `publishedTo`.
 - `pages`: one `WebsiteSealPage` per observed page, each
   `{ path, status, servedCommit, desktopDigest, mobileDigest }`, the digests
   being sha256 hex.
@@ -2570,10 +2662,11 @@ the pack's `website` item can be sealed, and only on evidence that names it.
   and `none` needs a non-empty `reason`.
 
 `checkSealEvidence(evidence, { map, now, itemId })` returns `SealFinding[]`,
-each a `rule` and a `path`, and never throws. `itemId` is optional; when
-given, the evidence's own `itemId` must equal it. It refuses when:
+each a `rule` and a `path`, and never throws. `itemId` is required: the
+evidence's own `itemId` must equal it, and a missing or empty `itemId` is
+refused as `item-id-invalid`. It refuses when:
 
-- `itemId` is missing, or differs from the item being sealed;
+- the evidence's `itemId` is missing, or differs from the item being sealed;
 - `delivery.state` is not `ready`, or `deployedCommit` differs from `commit`;
 - a path on the `PublicationMap` has no page, or a page is not status 200, or
   its `servedCommit` differs from `commit`;
@@ -2588,7 +2681,7 @@ the entry id, which is derived from the item id and the commit.
 
 `sealWebsite({ manifest, ledger, itemId, evidence, map, now, strategyRevision })`
 is pure and returns `SealWebsiteResult`: `{ ok: true, manifest, ledger, entryId }`
-or `{ ok: false, findings }`. It refuses unless the evidence is clean, `itemId`
+or `{ ok: false, findings }` (`resumed` is explained below). It refuses unless the evidence is clean, `itemId`
 is `website` and in `sealableItemIds(manifest)`, and the item is `public`
 (`item-not-website` otherwise). On accept the item
 is `published` with `verifiedAt` set to `now` and `publishedTo` set to the
@@ -2596,6 +2689,17 @@ production URL, and the ledger gains one `web` entry through `appendEntry` with
 id `website-<itemId>-<first 12 of commit>`; the inputs are not changed. Sealing
 the same commit again is refused as `seal-already-recorded`, and a refusal
 returns no manifest or ledger.
+
+One existing entry is finished instead of refused. A run stopped after its
+ledger write and before its manifest write leaves the ledger ahead of a
+manifest whose item is still `kept`. If the ledger entry is identical to the
+one this evidence would record (same id, `web` channel, url and strategy
+revision, no fact citations, and a `publishedAt` that is a real instant not
+before the evidence's `observedAt` and not after `now`) and every other check passes on the current evidence, the result
+is `{ ok: true, resumed: true }`: the ledger is returned as given and the
+manifest item is `published` with `verifiedAt` set to the entry's
+`publishedAt`. An entry that differs in any of those is
+`seal-already-recorded`, and stale evidence is still refused.
 
 The `publisher-seal` command runs it over files:
 
@@ -2607,25 +2711,42 @@ publisher-seal clossys/publisher/pack.json clossys/publisher/record.json evidenc
 It exits 0 when it sealed and wrote both files, 1 when it refused and wrote
 nothing, and 2 when it could not run: a missing or unreadable file, invalid
 JSON, a manifest, ledger, or map that is not itself valid, a manifest or
-ledger that is a symbolic link or has a second hard link, a lock held by
-another run, a file that changed while the run was deciding, a failed write, or
-bad arguments.
+ledger that is a symbolic link or has a second hard link, the manifest and
+ledger being one file under two spellings of its directory, a lock held by
+another run or one that could not be created, a file that changed while the run
+was deciding, a failed write, or bad arguments.
 
 The seal is made at the current time. There is no `--now`: a settable time
 would let a caller backdate the 24 hour evidence window, so passing it is an
 unknown flag and exits 2.
 
 Nothing is written before the gate has accepted. Then the command takes
-`<file>.seal.lock` on the manifest and the ledger (created exclusively, so a
-second run is refused instead of racing), re-reads both, and refuses if either
-changed since the gate looked. It writes each output, and a copy of the
-previous ledger, to a temp file created exclusively with the permissions of the
-file it replaces, then renames the ledger first and the manifest second. If the
-manifest rename fails, the previous ledger is renamed back and the run can be
-repeated; if that fails too, the error says the ledger was written and names
-the file that holds the previous ledger. A run removes only the temp and lock
-files it created; a lock left by a run that stopped is removed by hand once no
-run is active.
+`<name>.seal.lock` on the manifest and the ledger, created exclusively in the
+real directory of each file (the directory is resolved first, so two spellings
+of one directory, such as a symbolic-linked parent, contend for the same lock),
+re-reads both, and refuses if either changed since the gate looked. Only an
+existing lock is reported as another run holding it; any other failure to
+create the lock is reported with its own error code. It writes each output,
+and a copy of the previous ledger, to a temp file created exclusively with the
+permissions of the file it replaces, then renames the ledger first and the
+manifest second. If the manifest rename fails, the previous ledger is renamed
+back and the run can be repeated; if that fails too, the error says the ledger
+was written and names the file that holds the previous ledger.
+
+A run that is stopped between the two renames leaves the ledger ahead of the
+manifest, both lock files, and a restore copy of the previous ledger. Remove
+the two `.seal.lock` files once no run is active, then run the same command
+again with the same evidence and `--strategy-revision`. The ledger already
+holds the identical entry and the item is still `kept`, so the command leaves
+the ledger alone, writes only the manifest (its `verifiedAt` is the entry's
+`publishedAt`), prints that the entry was already recorded, and exits 0. The
+restore copy can then be deleted. If the entry differs, the run is refused as
+`seal-already-recorded` and changes nothing. A run removes only the temp and
+lock files it created.
+
+Known limit: the evidence is supplied by the caller. The commit and the host it
+names are checked against each other and against the clock, but not against an
+independent source, so a caller that supplies false evidence can still seal.
 
 ```ts
 import { checkSealEvidence } from "@clossys/publisher/pack";
@@ -2913,11 +3034,12 @@ cosmetic gap.
   `lintSiteMetadataHtml`, `SITE_METADATA_REQUIRED_TAGS`, `SiteMetadataError`,
   `listWebTemplateNames`, `defineWebTemplate`, `createWebRenderer`,
   `AuthView`, `CaptureView`, `CollectionView`, `DocumentView`, `ErrorView`,
-  `LegalView`, `MarketingView`, `PackReviewView`, `SectionedView`, `RenderError`, and the `AuthViewProps`,
+  `LegalView`, `MarketingView`, `PackReviewView`, `SectionedView`, `SignInForm`, `RenderError`, and the `AuthViewProps`,
   `CaptureViewProps`, `CollectionViewEmptyState`, `CollectionViewEntry`,
   `CollectionViewLink`, `CollectionViewPagination`, `CollectionViewProps`,
   `DocumentViewEffectiveDate`, `DocumentViewProps`,
   `ErrorViewProps`, `LegalViewLabels`, `LegalViewProps`, `MarketingViewProps`, `MarketingFeatureItem`, `MarketingFaqItem`,
+  `SignInFailure`, `SignInFormProps`, `SignInResult`,
   `PackReviewViewExport`, `PackReviewViewLabels`, `PackReviewViewPage`, `PackReviewViewProps`, `PackReviewViewState`,
   `SectionedViewLandmark`, `SectionedViewProps`,
   `RenderErrorReason`, `AssetResolver`, `CopyResolver`, `RenderWebOptions`,
@@ -3309,6 +3431,50 @@ becomes a `replyTo` address. It requires an ASCII dot-atom local part of at most
 addresses and quoted local parts are refused as `malformed`. Phone accepts only
 ASCII digits, space and `+ - ( ) . / # * x X`, with at least one digit. Bidirectional
 formatting characters are not refused.
+
+### Share card route — `createShareCardRoute`
+
+`createShareCardRoute(input)` wraps `buildBrandShareCard` as the exports of an
+`opengraph-image` route, so a site no longer writes that route by hand. It is
+exported from `@clossys/publisher/web` and its server entry. Publisher does not
+depend on `next`: you pass your own `ImageResponse` class, and the module
+imports nothing from `next`.
+
+```tsx
+import { createShareCardRoute } from "@clossys/publisher/web";
+import type { ShareCardRouteInput } from "@clossys/publisher/web";
+
+declare const ImageResponse: ShareCardRouteInput["ImageResponse"]; // your framework's image-response class
+declare const markDataUrl: string; // inline data URL
+
+const route = createShareCardRoute({
+  ImageResponse,
+  card: { markSrc: markDataUrl, wordmark: "Example Studio", headline: "Made well, made to last" },
+  alt: (headline) => `Example Studio: ${headline}`,
+});
+
+export const alt = route.alt;
+export const size = route.size;
+export const contentType = route.contentType;
+export default route.Image;
+```
+
+- **Input.** `{ ImageResponse, card, title?, alt }`. `card` is
+  `buildBrandShareCard`'s input without `alt`, so `headline` stays required
+  there. `ImageResponse` is
+  `new (element, { width, height }) => Response`.
+- **Title and alt.** When `title` is given it replaces `card.headline`. `alt` is
+  a string, returned as given, or a function called with the headline actually
+  drawn. Publisher builds no wording; every word is yours.
+- **Result.** `{ alt, size, contentType, shareCard, Image }`. `size` is the
+  card's `{ width, height }` (1200 by 630), `contentType` is `"image/png"`,
+  `shareCard` is the record `buildSiteMetadata` takes, and `Image()` returns
+  `new ImageResponse(element, size)`. Assign each export by name, as above;
+  Next reads them by name, so a destructured export is not found.
+- **Failure.** The card is built when `createShareCardRoute` is called, so bad
+  input fails when the route module loads. Errors are `ShareCardError`,
+  unchanged; a blank `title` throws `blank-text`, and an `ImageResponse` that is
+  not a function throws `invalid-input`.
 
 ## Licence
 

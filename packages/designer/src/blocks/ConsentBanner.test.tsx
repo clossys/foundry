@@ -136,6 +136,14 @@ describe("ConsentBanner: structure", () => {
     expect(root.querySelector("a")).toBeNull();
   });
 
+  it("renders a privacy slot of 0 and omits a false one", () => {
+    const { root, unmount } = setup({ privacyLink: 0 });
+    expect(root.textContent).toContain("0");
+    unmount();
+    const { root: other } = setup({ privacyLink: false });
+    expect(other.querySelectorAll(".text-body-s")).toHaveLength(1);
+  });
+
   it("renders no form control", () => {
     const { root } = setup();
     expect(root.querySelector("input, select, textarea")).toBeNull();
