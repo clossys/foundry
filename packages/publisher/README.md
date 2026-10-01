@@ -151,7 +151,7 @@ Use explicit subpaths:
 - `@clossys/publisher/document` — the product-neutral structured-document contract (sections, paragraphs, lists, tables, callouts, safe links) and its renderer.
 - `@clossys/publisher/email`, `/print`, `/image`, `/slides` — channel renderers.
 - `@clossys/publisher/record` — the append-only, content-addressed publication ledger and its drift checker. See "`record` — the append-only publication ledger," below.
-- `@clossys/publisher/pack` — the v0 Launch pack manifest contract: types, schema validation, needs-graph readiness, and adopt-don't-override detection. See "The pack," below.
+- `@clossys/publisher/pack` — the v0 Launch pack manifest contract: types, schema validation, needs-graph readiness, adopt-don't-override detection, and the evidence-gated website seal (`publisher-seal`). See "The pack," below.
 - `@clossys/publisher/surfaces` — the one-owner-per-file contract for surface documents under `clossys/publisher/surfaces/`. See "Surface documents move to Publisher," below.
 - `@clossys/publisher/materials` — the materials mini-site (overviews, pitch decks, audience variants). See "Materials site," below.
 - `@clossys/publisher/templates` — the pack's default templates and the channel spec registry. See "Templates and channel specs," below.
@@ -2381,6 +2381,83 @@ const result = importLegacyV0Pack({
 });
 if (!result.ok) throw new Error(result.issues.map((issue) => issue.path).join(", "));
 console.log(result.manifest.items.length);
+```
+
+### Sealing a website
+
+A website item moves from `kept` to `published` only on evidence. The caller
+supplies the evidence; Publisher checks it and never calls a provider.
+
+`WebsiteSealEvidence` (`schemaVersion: 1`) is one bundle:
+
+- `commit`: the 40-hex commit being sealed, and `observedAt`, when the
+  evidence was taken.
+- `delivery`: `{ state: "ready", deployedCommit, productionUrl }`, with an
+  `https` production URL.
+- `pages`: one `WebsiteSealPage` per observed page, each
+  `{ path, status, servedCommit, desktopDigest, mobileDigest }`, the digests
+  being sha256 hex.
+- `contactIntake` (`WebsiteSealContactIntake`): either
+  `{ kind: "present", path, submissionDigest }` or
+  `{ kind: "none", reason }`. It is always stated; a missing value is refused
+  and `none` needs a non-empty `reason`.
+
+`checkSealEvidence(evidence, { map, now })` returns `SealFinding[]`, each a
+`rule` and a `path`, and never throws. It refuses when:
+
+- `delivery.state` is not `ready`, or `deployedCommit` differs from `commit`;
+- a path on the `PublicationMap` has no page, or a page is not status 200, or
+  its `servedCommit` differs from `commit`;
+- a digest is not sha256 hex;
+- `observedAt` is in the future or more than 24 hours before `now`;
+- `contactIntake` is missing or malformed, or the map has no path entries.
+
+There is no waiver flag, option, or environment switch. A finding never
+repeats a digest, URL, reason, path, or commit from the input: it names a rule
+and an index path such as `pages[1].servedCommit`.
+
+`sealWebsite({ manifest, ledger, itemId, evidence, map, now, strategyRevision })`
+is pure and returns `SealWebsiteResult`: `{ ok: true, manifest, ledger, entryId }`
+or `{ ok: false, findings }`. It refuses unless the evidence is clean, `itemId`
+is in `sealableItemIds(manifest)`, and the item is `public`. On accept the item
+is `published` with `verifiedAt` set to `now` and `publishedTo` set to the
+production URL, and the ledger gains one `web` entry through `appendEntry` with
+id `website-<itemId>-<first 12 of commit>`; the inputs are not changed. Sealing
+the same commit again is refused as `seal-already-recorded`, and a refusal
+returns no manifest or ledger.
+
+The `publisher-seal` command runs it over files:
+
+```sh
+publisher-seal clossys/publisher/pack.json clossys/publisher/record.json evidence.json map.json \
+  --item website --strategy-revision rev-1 [--now 2026-09-30T12:00:00Z]
+```
+
+It exits 0 when it sealed and wrote both files (each to a temp file, then
+renamed), 1 when it refused and wrote nothing, and 2 when it could not run: a
+missing or unreadable file, invalid JSON, a manifest, ledger, or map that is
+not itself valid, or bad arguments. `--now` defaults to the current time.
+
+```ts
+import { checkSealEvidence } from "@clossys/publisher/pack";
+
+const commit = "b".repeat(40);
+const digest = "a".repeat(64);
+const findings = checkSealEvidence(
+  {
+    schemaVersion: 1,
+    commit,
+    observedAt: "2026-09-30T11:00:00Z",
+    delivery: { state: "ready", deployedCommit: commit, productionUrl: "https://www.example.test/" },
+    pages: [{ path: "/", status: 200, servedCommit: commit, desktopDigest: digest, mobileDigest: digest }],
+    contactIntake: { kind: "none", reason: "the site has no contact form" },
+  },
+  {
+    map: { entries: [{ id: "home", template: "landing", documentId: "doc-home", location: { kind: "path", path: "/" } }] },
+    now: "2026-09-30T12:00:00Z",
+  },
+);
+console.log(findings.length === 0 ? "ready to seal" : findings.map((finding) => `${finding.rule} ${finding.path}`));
 ```
 
 ## Surface documents move to Publisher
