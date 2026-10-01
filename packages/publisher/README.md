@@ -1090,7 +1090,14 @@ package.
   Values are emitted verbatim — nothing is trimmed — so a `name`, `tagline`,
   or `label` with leading or trailing whitespace, or with a tab, a line break,
   or any other control character anywhere in it, is refused rather than
-  repaired. A single internal space is fine.
+  repaired. A single internal space is fine. For a page that does not go
+  through `buildSiteMetadata` (sign-in, admin, error), `formatPageTitle({ page,
+  brand })` builds the same `${page} · ${brand}` title under the same rule and
+  throws `SiteMetadataError` (`invalid-input`) naming `page` or `brand`;
+  `formatPageTitle({ page: "Sign in", brand: "Example Studio" })` is
+  `Sign in · Example Studio`. The share-card `alt` stays caller-owned because
+  it must describe the image; a per-page card whose image shows the page title
+  uses `formatPageTitle` for its `alt` too.
 - **Fallbacks.** `canonical` is `origin` plus `path`; `og:url` is the
   canonical; `og:title` and `twitter:title` are the title; `og:description`
   and `twitter:description` are the page description; `og:site_name` is the
@@ -2491,7 +2498,7 @@ cosmetic gap.
   `AssetCoverageReport`, `AssetTypeCounts`, `ImageAssetEntry`,
   `ImageSource`, `VideoAssetEntry`, `VideoCaption`, and
   `VideoReducedMotionBehavior` types. The CLI is `publisher-media-check`.
-- `web`: `renderWebDocument`, `buildWebHeadMetadata`, `buildSiteMetadata`,
+- `web`: `renderWebDocument`, `buildWebHeadMetadata`, `buildSiteMetadata`, `formatPageTitle`,
   `lintSiteMetadataHtml`, `SITE_METADATA_REQUIRED_TAGS`, `SiteMetadataError`,
   `listWebTemplateNames`, `defineWebTemplate`, `createWebRenderer`,
   `AuthView`, `CaptureView`, `CollectionView`, `DocumentView`, `ErrorView`,
