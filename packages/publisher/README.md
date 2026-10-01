@@ -1131,9 +1131,9 @@ package.
   brand })` builds the same `${page} · ${brand}` title under the same rule and
   throws `SiteMetadataError` (`invalid-input`) naming `page` or `brand`;
   `formatPageTitle({ page: "Sign in", brand: "Example Studio" })` is
-  `Sign in · Example Studio`. The share-card `alt` stays caller-owned because
-  it must describe the image; a per-page card whose image shows the page title
-  uses `formatPageTitle` for its `alt` too.
+  `Sign in · Example Studio`. Titles keep `<page> · <brand>`. A share card's
+  `alt` is not a title: `buildBrandShareCard` derives it from the card's
+  visible text when `alt` is omitted, and a caller may still pass one.
 - **Fallbacks.** `canonical` is `origin` plus `path`; `og:url` is the
   canonical; `og:title` and `twitter:title` are the title; `og:description`
   and `twitter:description` are the page description; `og:site_name` is the
@@ -1316,7 +1316,6 @@ const card = buildBrandShareCard({
   kicker: "Small tools",
   headline: "Made well, made to last",
   supporting: "A studio for small, useful tools.",
-  alt: "Example Studio",
   displayFontFamily: "Example Display", // optional, for the wordmark and headline
 });
 
@@ -1324,9 +1323,14 @@ const card = buildBrandShareCard({
 // card.shareCard { url: "/opengraph-image", alt, width: 1200, height: 630 }
 ```
 
-- **Text.** `headline` and `alt` are required; `wordmark`, `kicker` and
-  `supporting` are optional. All follow `buildShareCard`'s text rule and are
-  emitted verbatim; a blank optional value is refused, not dropped.
+- **Text.** `headline` is required; `wordmark`, `kicker` and `supporting` are
+  optional. All follow `buildShareCard`'s text rule and are emitted verbatim; a
+  blank optional value is refused, not dropped.
+- **Alt.** `alt` is optional. When omitted, `buildBrandShareCard` derives it from
+  the card's visible text in reading order (`wordmark`, `kicker`, `headline`,
+  `supporting`, skipping any that are omitted), joined with `". "`, or with a
+  single space after a part that already ends in `.`, `!`, `?` or `:`. A
+  supplied `alt` is returned unchanged and is refused when blank, as before.
 - **Lockup.** The plate is `BRAND_SHARE_CARD_PLATE_PX` (96) square. Its corner
   radius, the mark's inset, the wordmark size and the gap all come from
   Designer's published badge and lockup ratios rather than numbers kept here.
