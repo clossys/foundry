@@ -13,8 +13,9 @@
  * client module, which reads it back through `createMapResolver`.
  */
 import type { SiteFooterLegalProps } from "@clossys/designer/shell/server";
-import type { ContactViewCopy, ContactViewTopic, LegalViewLabels } from "@clossys/publisher/web";
+import type { ContactViewCopy, ContactViewDevPreview, ContactViewTopic, LegalViewLabels } from "@clossys/publisher/web";
 import type { CopyRef, CopyResolver } from "@clossys/writer";
+import type { SiteTarget } from "./site-wiring";
 
 /** Resolved copy, id to text. Plain data: it crosses the server/client boundary as props. */
 export type SiteCopyMap = Readonly<Record<string, string>>;
@@ -41,6 +42,23 @@ export type ContactTopic = (typeof CONTACT_TOPICS)[number];
 export function resolveInitialTopic(param: string | readonly string[] | undefined): ContactTopic | undefined {
   if (typeof param !== "string") return undefined;
   return CONTACT_TOPICS.find((topic) => topic === param);
+}
+
+/** The states `?preview=` may pin the contact view to. Mirrors `ContactViewDevPreview`, so a new state there fails to compile until it is listed here. */
+const DEV_PREVIEWS = ["idle", "submitting", "accepted", "invalid", "rate-limited", "unavailable"] as const satisfies readonly ContactViewDevPreview[];
+
+/**
+ * The state a `?preview=` query value pins the contact view to, or
+ * `undefined`. On a production target it is always `undefined` and the value
+ * is not inspected. Elsewhere only a string equal to one listed state counts:
+ * an array, a different case, an empty string and an object's inherited names
+ * select nothing. It never reads the environment: the caller passes the
+ * target it already resolved. The value is compared and never echoed.
+ */
+export function resolveDevPreview(target: SiteTarget, param: string | readonly string[] | undefined): ContactViewDevPreview | undefined {
+  if (target === "production") return undefined;
+  if (typeof param !== "string") return undefined;
+  return DEV_PREVIEWS.find((state) => state === param);
 }
 
 const topicCopyId = (topic: ContactTopic): string => `site.contact.topic.${topic}`;

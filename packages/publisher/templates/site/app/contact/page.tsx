@@ -6,6 +6,7 @@ import {
   CONTACT_HEADING_ID,
   allContactPageCopyIds,
   requireCopy,
+  resolveDevPreview,
   resolveInitialTopic,
   siteFooterLegal,
   siteText,
@@ -38,7 +39,12 @@ interface ContactPageProps {
 export default async function ContactPage({ searchParams }: ContactPageProps) {
   // `?topic=<id>` preselects that topic; a repeated or unlisted value selects
   // nothing. The value is only compared, never rendered or logged.
-  const initialTopic = resolveInitialTopic((await searchParams).topic);
+  const params = await searchParams;
+  const initialTopic = resolveInitialTopic(params.topic);
+  // `?preview=<state>` pins the form to one state, and only when the site
+  // target is not production; on production the value is never read. It is
+  // never rendered or logged, and the title above ignores it.
+  const devPreview = resolveDevPreview(siteTarget(), params.preview);
   const facts = loadBrandFacts();
   const copy = loadCopy();
   return (
@@ -47,6 +53,7 @@ export default async function ContactPage({ searchParams }: ContactPageProps) {
       legal={siteFooterLegal(copy, facts.entity)}
       copy={copy}
       initialTopic={initialTopic}
+      devPreview={devPreview}
       onSubmit={submit}
     />
   );

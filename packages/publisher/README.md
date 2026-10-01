@@ -871,6 +871,13 @@ Props, in addition to the standard `div` attributes (minus `children` and
   is a `CopyRef`.
 - `initialTopic` (optional): a topic id to preselect. An id that is not in
   `topics` is ignored.
+- `devPreview` (optional): `"idle"`, `"submitting"`, `"accepted"`, `"invalid"`,
+  `"rate-limited"` or `"unavailable"` (the exported type `ContactViewDevPreview`).
+  It pins the view to that state, for a review page that must show each state
+  without a real send, and makes it inert: submitting never calls `onSubmit`
+  and nothing moves focus on its own. The view never reads the URL or the
+  environment to choose a state, and any other value throws a `RenderError`
+  naming `devPreview`, never the value. A production page must not pass it.
 - `honeypotField` (default `"website"`): the hidden field's name. Match the
   `honeypotField` you gave `createContactHandler`.
 - `onSubmit(values)`: resolves to a `ContactResult`. `values` holds `topic`,

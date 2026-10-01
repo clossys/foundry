@@ -58,7 +58,12 @@ applies at its cascade scope, or that the template builds.
   server action; the form is a client module, because `ContactView` is
   interactive and its server-side export is a stub that throws.
   `/contact?topic=<id>` preselects that topic; an unlisted or repeated value
-  selects nothing. Reading `searchParams` makes the route render per request.
+  selects nothing. `/contact?preview=<state>` pins the form to one state
+  (`idle`, `submitting`, `accepted`, `invalid`, `rate-limited` or
+  `unavailable`) without a real send, and works only when `SITE_TARGET` is not
+  `production`: on production the parameter is not read and the page must not
+  pass `devPreview` to the view. Reading `searchParams` makes the route render
+  per request.
 - `app/terms/page.tsx`, `app/privacy/page.tsx` — the legal routes
   (`LegalView`), behind the production legal gate.
 - `app/about/page.tsx` — the about route (`MarketingView`). It reads the

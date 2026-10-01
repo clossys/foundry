@@ -72,6 +72,12 @@ export interface ContactViewValues {
   readonly [field: string]: string;
 }
 
+/**
+ * A state the view can be pinned to without a real send, for a review page.
+ * The set is closed: any other value throws.
+ */
+export type ContactViewDevPreview = "idle" | "submitting" | "accepted" | "invalid" | "rate-limited" | "unavailable";
+
 export interface ContactViewProps extends Omit<HTMLAttributes<HTMLDivElement>, "children" | "onSubmit"> {
   /** Persistent site identity, rendered alone in the page banner. A slot: consumers typically pass a `Brandmark`. */
   brand: ReactNode;
@@ -91,6 +97,13 @@ export interface ContactViewProps extends Omit<HTMLAttributes<HTMLDivElement>, "
   honeypotField?: string;
   /** Sends the form. Its `ContactResult` decides what the view shows next; a rejection is read as `unavailable`. */
   onSubmit: (values: ContactViewValues) => Promise<ContactResult>;
+  /**
+   * Pins the view to one state and makes it inert: submitting never calls
+   * `onSubmit`. For a review page only. A production page must not pass it,
+   * and the view never reads the URL or the environment to choose one itself.
+   * A value outside `ContactViewDevPreview` throws.
+   */
+  devPreview?: ContactViewDevPreview;
   style?: CSSProperties;
 }
 
@@ -110,6 +123,16 @@ const HONEYPOT_STYLE: CSSProperties = {
 const SUBMIT_ID_SUFFIX = "submit";
 
 type Outcome = "idle" | "accepted" | "invalid" | "rate-limited" | "unavailable";
+
+const DEV_PREVIEWS: readonly ContactViewDevPreview[] = ["idle", "submitting", "accepted", "invalid", "rate-limited", "unavailable"];
+
+function validateDevPreview(value: unknown): void {
+  if (value === undefined) return;
+  // The message names the prop, never the value: the value is caller data.
+  if (typeof value !== "string" || !DEV_PREVIEWS.includes(value as ContactViewDevPreview)) {
+    throw new RenderError("resolution-failed", "ContactView requires devPreview to be one of the listed states.");
+  }
+}
 
 function resolveCopy(ref: CopyRef | undefined, path: string, resolver: CopyResolver): string {
   const resolution = ref === undefined || ref === null ? undefined : resolver(ref);
@@ -167,6 +190,10 @@ function looksLikeEmail(value: string): boolean {
  * `resolveCopyId` (an entry that does not resolve throws an error naming its
  * path, never its id).
  *
+ * With `devPreview` set, the view shows that one state and is inert: a submit
+ * never calls `onSubmit`, and no focus moves on its own. Only a page that is
+ * not production should pass it.
+ *
  * What it does not do: it does not show which field a server `invalid` result
  * refers to (that is a later unit), it does not decide the result (that is
  * `createContactHandler`), and it does not detect bots beyond leaving the
@@ -181,12 +208,14 @@ export function ContactView({
   initialTopic,
   honeypotField = "website",
   onSubmit,
+  devPreview,
   className,
   style,
   ...rest
 }: ContactViewProps) {
   validateTopics(topics);
   validateHoneypotField(honeypotField);
+  validateDevPreview(devPreview);
 
   const text = {
     heading: resolveCopy(copy.heading, "copy.heading", resolveCopyId),
@@ -245,32 +274,40 @@ export function ContactView({
   });
 
   // The previous outcome is cleared at the start of every submit attempt, including one a client-side check refuses, so a stale failure never sits beside a new error summary and a repeated failure is announced again.
+  // A pinned preview is inert: submitting sends nothing and changes nothing.
+  const previewing = devPreview !== undefined;
   const binding = useMemo(
     () => ({
       ...validation,
+      isSubmitting: previewing ? devPreview === "submitting" : validation.isSubmitting,
       handleSubmit: (event?: Parameters<typeof validation.handleSubmit>[0]) => {
+        if (previewing) {
+          event?.preventDefault();
+          return Promise.resolve();
+        }
         setOutcome("idle");
         return validation.handleSubmit(event);
       },
     }),
-    [validation],
+    [validation, previewing, devPreview],
   );
+  const shown = devPreview ?? outcome;
 
   const submitId = validation.fieldId(SUBMIT_ID_SUFFIX);
 
   // Sent: the heading takes focus so the change of state is announced from a known place.
   useEffect(() => {
-    if (outcome === "accepted") sentHeadingRef.current?.focus();
-  }, [outcome]);
+    if (!previewing && outcome === "accepted") sentHeadingRef.current?.focus();
+  }, [outcome, previewing]);
 
   // Failed: focus returns to the submit button, values untouched.
   useEffect(() => {
-    if (outcome === "invalid" || outcome === "rate-limited" || outcome === "unavailable") {
+    if (!previewing && (outcome === "invalid" || outcome === "rate-limited" || outcome === "unavailable")) {
       document.getElementById(submitId)?.focus();
     }
-  }, [outcome, submitId]);
+  }, [outcome, previewing, submitId]);
 
-  const failureMessage = outcome === "invalid" ? text.invalid : outcome === "rate-limited" ? text.rateLimited : outcome === "unavailable" ? text.unavailable : null;
+  const failureMessage = shown === "invalid" ? text.invalid : shown === "rate-limited" ? text.rateLimited : shown === "unavailable" ? text.unavailable : null;
   const failure =
     failureMessage === null ? null : (
       <div className="flex flex-col gap-xs">
@@ -286,7 +323,7 @@ export function ContactView({
       <main className="mx-auto flex w-full flex-1 flex-col gap-xl px-lg py-2xl" style={{ maxWidth: "var(--ui-width-prose-max, none)" }}>
         <PageHeader title={text.heading} description={text.description} />
         <Card>
-          {outcome === "accepted" ? (
+          {shown === "accepted" ? (
             <div role="status" className="flex flex-col gap-sm">
               <h2 ref={sentHeadingRef} tabIndex={-1} className="text-h2 font-display text-ink-primary outline-none">
                 {text.sentHeading}
@@ -299,8 +336,8 @@ export function ContactView({
               errorSummaryMessage={() => text.errorSummary}
               submitError={failure}
               actions={
-                <Button id={submitId} type="submit" isPending={validation.isSubmitting}>
-                  {validation.isSubmitting ? text.submitting : text.submit}
+                <Button id={submitId} type="submit" isPending={binding.isSubmitting}>
+                  {binding.isSubmitting ? text.submitting : text.submit}
                 </Button>
               }
             >
