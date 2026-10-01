@@ -19,6 +19,10 @@ Rules:
                                   contact) outside <dir>/web-route-manifest.json
   site/raw-style-literal          a hex colour or rgb(, hsl(, oklch( on a
                                   line; a same-line token-gate:ignore skips it
+  site/symlink-unscanned          a symlink under <dir>/app that points at a
+                                  .ts/.tsx file, a directory or nothing; it
+                                  is not followed, so what it names was not
+                                  scanned (never waivable)
 
 Waivers: ${WAIVERS_PATH}
   { "version": 1, "waivers": [{ "rule", "path", "reason" }] }
@@ -27,7 +31,8 @@ finding site/waiver-unused.
 
 Prints { mode, site, filesScanned, findings, waived }. Exit codes: 0 = the
 scan ran (findings or not), 2 = it could not run (missing repository or
-site directory, no files, bad waiver file or manifest, unknown flag).`;
+site directory, a symlinked site or app directory, no files, an unreadable
+file or directory, bad waiver file or manifest, unknown flag).`;
 
 export function main(argv: readonly string[] = process.argv.slice(2)): number {
   if (argv.includes("--help") || argv.includes("-h")) {
@@ -61,10 +66,10 @@ export function main(argv: readonly string[] = process.argv.slice(2)): number {
     console.log(JSON.stringify(scanSiteConformance(positional[0] as string, site === undefined ? {} : { site }), null, 2));
     return 0;
   } catch (error) {
-    if (error instanceof SiteConformanceError) {
-      console.error(`site-conformance-check: ${error.message}`);
-      return 2;
-    }
-    throw error;
+    // Any failure means the scan did not complete, which is "could not run"
+    // (2), never a crash code that a caller could read as findings. Only a
+    // SiteConformanceError message is shown: it never carries source text.
+    console.error(`site-conformance-check: ${error instanceof SiteConformanceError ? error.message : "the scan failed unexpectedly"}`);
+    return 2;
   }
 }
