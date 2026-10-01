@@ -174,6 +174,7 @@ describe("import detection reads tokens, not text", () => {
       string: `const s = 'import x from "@clossys/publisher/web"';\nexport default s;\n`,
       template: "const s = `import x from \"@clossys/publisher/web\"`;\nexport default s;\n",
       member: `export default loader.from("@clossys/publisher/web");\n`,
+      "plain-from-call": `export default from("@clossys/publisher/web");\n`,
     };
     for (const [name, source] of Object.entries(cases)) {
       put("apps/site/app/page.tsx", source);
@@ -213,6 +214,15 @@ describe("import detection reads tokens, not text", () => {
     const started = Date.now();
     expect(rules()).toEqual(["site/route-not-publisher-view"]);
     expect(Date.now() - started).toBeLessThan(1500);
+  });
+
+  it("scans a long run of escaped quotes after an unclosed string in linear time", () => {
+    baseSite();
+    put("apps/site/app/page.tsx", `import { V } from "@clossys/publisher/web";\nconst x = "${'\\"'.repeat(40_000)}\nconst y = "#a1b2c3";\nexport default V;\n`);
+    const started = Date.now();
+    const result = scanSiteConformance(root);
+    expect(Date.now() - started).toBeLessThan(1500);
+    expect(result.findings).toEqual([{ rule: "site/raw-style-literal", file: "apps/site/app/page.tsx", line: 3 }]);
   });
 
   it("reaches the end of an unterminated string or comment without hanging or crashing", () => {
@@ -299,5 +309,43 @@ describe("symlinks", () => {
     put("real/apps/site/app/page.tsx", VIEW_PAGE);
     symlinkSync(join(root, "real"), join(root, "link"));
     expect(scanSiteConformance(join(root, "link")).findings).toEqual([]);
+  });
+});
+
+describe("symlinked and non-UTF-8 inputs", () => {
+  it("refuses a symlinked route manifest", () => {
+    put("apps/site/app/page.tsx", VIEW_PAGE);
+    put("elsewhere/manifest.json", MANIFEST);
+    symlinkSync(join(root, "elsewhere/manifest.json"), join(root, "apps/site/web-route-manifest.json"));
+    expect(() => scanSiteConformance(root)).toThrow(/route manifest.*symlink/);
+  });
+
+  it("refuses a symlinked waiver file, and a dangling one, instead of ignoring it", () => {
+    baseSite();
+    put("apps/site/app/page.tsx", VIEW_PAGE);
+    put("elsewhere/waivers.json", JSON.stringify({ version: 1, waivers: [] }));
+    mkdirSync(join(root, "clossys"), { recursive: true });
+    symlinkSync(join(root, "elsewhere/waivers.json"), join(root, "clossys/conformance-waivers.json"));
+    expect(() => scanSiteConformance(root)).toThrow(/waiver file.*symlink/);
+    rmSync(join(root, "clossys/conformance-waivers.json"));
+    symlinkSync(join(root, "elsewhere/missing.json"), join(root, "clossys/conformance-waivers.json"));
+    expect(() => scanSiteConformance(root)).toThrow(SiteConformanceError);
+  });
+
+  it("treats a source file that is not valid UTF-8 as could-not-run, without echoing it", () => {
+    baseSite();
+    put("apps/site/app/page.tsx", VIEW_PAGE);
+    writeFileSync(join(root, "apps/site/app/bad.ts"), Buffer.concat([Buffer.from('const a = "'), Buffer.from([0x23, 0x66, 0x66, 0xff, 0xfe, 0x30, 0x30]), Buffer.from('";\n')]));
+    expect(() => scanSiteConformance(root)).toThrow(SiteConformanceError);
+    expect(() => scanSiteConformance(root)).toThrow(/not valid UTF-8/);
+    expect(() => scanSiteConformance(root)).toThrow(/^(?!.*bad\.ts)/s);
+  });
+
+  it("treats a relative import that is not valid UTF-8 as could-not-run", () => {
+    baseSite();
+    put("apps/site/app/page.tsx", `import { a } from "../lib/view";\nexport default a;\n`);
+    mkdirSync(join(root, "apps/site/lib"), { recursive: true });
+    writeFileSync(join(root, "apps/site/lib/view.ts"), Buffer.from([0xff, 0xfe, 0x30]));
+    expect(() => scanSiteConformance(root)).toThrow(/not valid UTF-8/);
   });
 });

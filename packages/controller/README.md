@@ -2468,15 +2468,16 @@ never echoes matched source text and imports nothing from another package.
 - `site/route-not-publisher-view`: every `page.tsx`, `not-found.tsx` and
   `error.tsx` must reach a view from `@clossys/publisher/web`, either by
   importing it directly or through one relative import. Imports are read as
-  tokens in one linear pass, so a commented-out, quoted or `.from(` import
-  does not count. The finding is at line 1.
+  tokens in one linear pass, so a commented-out, quoted, `.from(` or plain
+  `from(` call does not count. The finding is at line 1.
 - `site/template-route-duplicate`: a `page.tsx` whose route (route groups
   dropped) has a segment named like a template route (`privacy`, `terms`,
   `legal`, `about` or `contact`, optionally with a `-suffix`) and is not a
   route id in `<dir>/web-route-manifest.json`.
-- `site/raw-style-literal`: a hex colour in a quoted string, or `rgb(`,
-  `hsl(` or `oklch(`, on a line. Comment lines are skipped and a same-line
-  `token-gate:ignore` marker suppresses the finding.
+- `site/raw-style-literal`: a hex colour in a quoted string (found in one
+  linear pass per line), or `rgb(`, `hsl(` or `oklch(`, on a line. Comment
+  lines are skipped and a same-line `token-gate:ignore` marker suppresses the
+  finding.
 - `site/symlink-unscanned`: a symlink under `<dir>/app` that names a `.ts` or
   `.tsx` file, a directory, or nothing (a dangling link). It is not followed,
   so what it names was not scanned. This finding cannot be waived.
@@ -2490,10 +2491,11 @@ its reason; a waiver that matches nothing is itself the finding
 It exits `0` whenever the scan ran, with or without findings, and `2` when it
 could not run: a missing repository or site directory, no files, a missing or
 invalid manifest, an empty-reason, unknown-rule or duplicate waiver, bad JSON,
-a source file or directory that cannot be read, a `--site` or `<dir>/app` that
-is, or is reached through, a symlink, any other unexpected failure, or an
-unknown flag (including `--enforce`, which this slice does not offer). The
-scan matches source with line and token rules, not a full parse of the
+a source file or directory that cannot be read, a source file that is not valid
+UTF-8, a `--site` or `<dir>/app` that is, or is reached through, a symlink, a
+route manifest or waiver file that is itself a symlink, any other unexpected
+failure, or an unknown flag (including `--enforce`, which this slice does not
+offer). The scan matches source with line and token rules, not a full parse of the
 language; `--enforce` is not offered until it does.
 
 ## API

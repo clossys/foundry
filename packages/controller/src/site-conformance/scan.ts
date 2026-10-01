@@ -4,7 +4,7 @@
  * source text -- a finding is a rule id, a repository-relative file and a
  * line, nothing else.
  */
-import { existsSync, readFileSync, readdirSync, realpathSync, statSync } from "node:fs";
+import { existsSync, lstatSync, readFileSync, readdirSync, realpathSync, statSync } from "node:fs";
 import { isAbsolute, join, posix, relative, resolve, sep } from "node:path";
 
 export const SITE_CONFORMANCE_RULES = ["site/route-not-publisher-view", "site/template-route-duplicate", "site/raw-style-literal"] as const;
@@ -49,7 +49,7 @@ const TEMPLATE_SEGMENT_RE = /^(privacy|terms|legal|about|contact)(-.+)?$/;
 const IGNORE_MARKER = "token-gate:ignore";
 const HEX_COLOUR_RE = /(?<![0-9A-Za-z_-])#(?:[0-9a-fA-F]{8}|[0-9a-fA-F]{6}|[0-9a-fA-F]{3,4})(?![0-9A-Za-z_-])/;
 const COLOUR_FUNCTION_RE = /\b(?:rgb|hsl|oklch)\(/;
-const STRING_RE = /"(?:[^"\\\n]|\\.)*"|'(?:[^'\\\n]|\\.)*'|`(?:[^`\\\n]|\\.)*`/g;
+const UTF8 = new TextDecoder("utf-8", { fatal: true });
 
 function readJson(path: string, what: string): unknown {
   try {
@@ -71,13 +71,24 @@ function isDirectory(path: string): boolean {
   }
 }
 
+/** Strict UTF-8: bytes that are not valid text are "could not run", never a lossy decode that could hide a literal. */
+function decodeSource(bytes: Uint8Array): string {
+  try {
+    return UTF8.decode(bytes);
+  } catch {
+    throw new SiteConformanceError("a source file under the site is not valid UTF-8");
+  }
+}
+
 /** Reads a source file; any failure is "could not run", never a raw system error and never a clean result. */
 function readSource(path: string): string {
+  let bytes: Uint8Array;
   try {
-    return readFileSync(path, "utf8");
+    bytes = readFileSync(path);
   } catch {
     throw new SiteConformanceError("a source file under the site could not be read");
   }
+  return decodeSource(bytes);
 }
 
 /** Whether a symlink in the app tree hides source this scan would otherwise have read. */
@@ -208,7 +219,7 @@ function importSpecifiers(source: string): string[] {
       const word = source.slice(start, i);
       if ((word === "from" || word === "import") && previous !== 46) {
         let j = skipTrivia(source, i);
-        if (source.charCodeAt(j) === 40) j = skipTrivia(source, j + 1);
+        if (word === "import" && source.charCodeAt(j) === 40) j = skipTrivia(source, j + 1);
         const next = source.charCodeAt(j);
         if (next === 34 || next === 39) {
           const { value } = readQuoted(source, j);
@@ -247,11 +258,13 @@ function reachesPublisherView(file: string, source: string): boolean {
     if (!spec.startsWith(".")) continue;
     const target = resolveRelative(file, spec);
     if (target === undefined) continue;
+    let bytes: Uint8Array;
     try {
-      if (importsPublisherWeb(readFileSync(target, "utf8"))) return true;
+      bytes = readFileSync(target);
     } catch {
-      // an unreadable import is not a Publisher view
+      continue; // an unreadable import is not a Publisher view
     }
+    if (importsPublisherWeb(decodeSource(bytes))) return true;
   }
   return false;
 }
@@ -264,9 +277,10 @@ function routeOf(appDir: string, file: string): string {
   return `/${segments.join("/")}`;
 }
 
-function loadManifestRouteIds(siteDir: string): ReadonlySet<string> {
+function loadManifestRouteIds(root: string, siteDir: string): ReadonlySet<string> {
   const manifestPath = join(siteDir, ROUTE_MANIFEST_FILE);
-  if (!existsSync(manifestPath)) throw new SiteConformanceError(`${ROUTE_MANIFEST_FILE} is missing from the site directory`);
+  if (!existsOrIsLink(manifestPath)) throw new SiteConformanceError(`${ROUTE_MANIFEST_FILE} is missing from the site directory`);
+  assertNoSymlink(root, manifestPath, relative(root, manifestPath), "route manifest");
   const manifest = readJson(manifestPath, ROUTE_MANIFEST_FILE);
   const routes = isRecord(manifest) ? manifest.routes : undefined;
   if (!Array.isArray(routes)) throw new SiteConformanceError(`${ROUTE_MANIFEST_FILE} has no routes array`);
@@ -287,7 +301,8 @@ interface Waiver {
 
 function loadWaivers(repoRoot: string): readonly Waiver[] {
   const path = join(repoRoot, WAIVERS_PATH);
-  if (!existsSync(path)) return [];
+  if (!existsOrIsLink(path)) return [];
+  assertNoSymlink(repoRoot, path, relative(repoRoot, path), "waiver file");
   const doc = readJson(path, WAIVERS_PATH);
   if (!isRecord(doc) || doc.version !== 1 || !Array.isArray(doc.waivers)) {
     throw new SiteConformanceError(`${WAIVERS_PATH} must be { "version": 1, "waivers": [...] }`);
@@ -314,9 +329,69 @@ function isCommentLine(trimmed: string): boolean {
   return trimmed.startsWith("//") || trimmed.startsWith("/*") || trimmed.startsWith("*") || trimmed.startsWith("{/*");
 }
 
+/** `.` in a regular expression does not match these, so a backslash before one cannot escape it. */
+function isLineTerminator(code: number): boolean {
+  return code === 10 || code === 13 || code === 0x2028 || code === 0x2029;
+}
+
+/**
+ * The quoted literals ("", '' and ``) on one line, quotes included, in one
+ * linear pass. A literal runs to the next unescaped quote of its own kind; one
+ * that never closes yields nothing and scanning resumes just after its opening
+ * quote. Every later quote of that kind inside the failed span was escaped, so
+ * it would fail at the same point: remembering where each kind last failed
+ * keeps the whole line linear, with the same result as a backtracking pattern.
+ */
+function quotedLiterals(line: string): string[] {
+  const literals: string[] = [];
+  const n = line.length;
+  const failedAt = new Map<number, number>();
+  let i = 0;
+  while (i < n) {
+    const quote = line.charCodeAt(i);
+    if ((quote !== 34 && quote !== 39 && quote !== 96) || i < (failedAt.get(quote) ?? 0)) {
+      i += 1;
+      continue;
+    }
+    let j = i + 1;
+    let end = -1;
+    while (j < n) {
+      const ch = line.charCodeAt(j);
+      if (ch === quote) {
+        end = j + 1;
+        break;
+      }
+      if (ch === 92) {
+        if (j + 1 >= n || isLineTerminator(line.charCodeAt(j + 1))) break;
+        j += 2;
+      } else {
+        j += 1;
+      }
+    }
+    if (end === -1) {
+      failedAt.set(quote, j >= n ? n : j);
+      i += 1;
+    } else {
+      literals.push(line.slice(i, end));
+      i = end;
+    }
+  }
+  return literals;
+}
+
 function hasRawStyleLiteral(line: string): boolean {
   if (COLOUR_FUNCTION_RE.test(line)) return true;
-  return (line.match(STRING_RE) ?? []).some((literal) => HEX_COLOUR_RE.test(literal));
+  return quotedLiterals(line).some((literal) => HEX_COLOUR_RE.test(literal));
+}
+
+/** Whether something is at `path`, counting a dangling symlink (which `existsSync` reports as absent). */
+function existsOrIsLink(path: string): boolean {
+  try {
+    lstatSync(path);
+    return true;
+  } catch {
+    return existsSync(path);
+  }
 }
 
 /** Every component of `path` below the repository root must be a real directory: a symlink can point outside the repository. */
@@ -349,7 +424,7 @@ export function scanSiteConformance(repoRoot: string, options: { readonly site?:
   }
   if (!isDirectory(siteDir)) throw new SiteConformanceError("site directory does not exist");
   assertNoSymlink(root, siteDir, siteRelative, "site directory");
-  const manifestIds = loadManifestRouteIds(siteDir);
+  const manifestIds = loadManifestRouteIds(root, siteDir);
   const waivers = loadWaivers(root);
 
   const appDir = join(siteDir, "app");
