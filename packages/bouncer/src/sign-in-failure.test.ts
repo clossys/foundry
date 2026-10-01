@@ -82,6 +82,41 @@ describe("rules", () => {
     expect(classifySignInFailure({ errors: [{ code: "constructor" }] }, { codes })).toBe("unknown");
   });
 
+  it("ignores an inherited table entry, since the lookup is own-key", () => {
+    const codes = Object.create({ x: "credential" }) as never;
+    expect(classifySignInFailure({ code: "x" }, { codes })).toBe("unknown");
+    expect(classifySignInFailure({ errors: [{ code: "x" }] }, { codes })).toBe("unknown");
+    expect(classifySignInFailure({ code: "x", status: 429 }, { codes })).toBe("rateLimited");
+  });
+
+  it("reads at most 16 entries of errors", () => {
+    const codes = CLERK_SIGN_IN_FAILURE_CODES;
+    const filler = Array.from({ length: 15 }, () => ({ code: "x" }));
+    expect(
+      classifySignInFailure({ errors: [...filler, { code: "form_password_incorrect" }] }, { codes }),
+    ).toBe("credential");
+    expect(
+      classifySignInFailure(
+        { errors: [...filler, { code: "x" }, { code: "form_password_incorrect" }] },
+        { codes },
+      ),
+    ).toBe("unknown");
+  });
+
+  it("returns promptly for an errors array with a hostile length", () => {
+    const codes = CLERK_SIGN_IN_FAILURE_CODES;
+    const sparse: Array<{ code?: string }> = [];
+    sparse.length = 2 ** 32 - 1;
+    const proxied = new Proxy([] as Array<{ code?: string }>, {
+      get: (target, key, receiver) =>
+        key === "length" ? 2 ** 32 - 1 : Reflect.get(target, key, receiver),
+    });
+    const started = Date.now();
+    expect(classifySignInFailure({ errors: sparse, status: 503 }, { codes })).toBe("unavailable");
+    expect(classifySignInFailure({ errors: proxied }, { codes })).toBe("unknown");
+    expect(Date.now() - started).toBeLessThan(1_000);
+  });
+
   it("ignores a table value that is not a class other than unknown", () => {
     const codes = { a: "unknown", b: "bogus" } as never;
     expect(classifySignInFailure({ code: "a" }, { codes })).toBe("unknown");
@@ -102,9 +137,11 @@ describe("Clerk table", () => {
   it("maps each verified code to its class", () => {
     expect(CLERK_SIGN_IN_FAILURE_CODES).toEqual({
       form_password_incorrect: "credential",
+      form_password_or_identifier_incorrect: "credential",
       form_code_incorrect: "credential",
       form_identifier_not_found: "notFound",
       user_locked: "locked",
+      clerk_offline: "network",
     });
     for (const [code, failureClass] of Object.entries(CLERK_SIGN_IN_FAILURE_CODES)) {
       expect(classifySignInFailure({ code }, { codes: CLERK_SIGN_IN_FAILURE_CODES })).toBe(
@@ -113,8 +150,22 @@ describe("Clerk table", () => {
     }
   });
 
-  it("has four keys", () => {
-    expect(Object.keys(CLERK_SIGN_IN_FAILURE_CODES)).toHaveLength(4);
+  it("has six keys", () => {
+    expect(Object.keys(CLERK_SIGN_IN_FAILURE_CODES)).toHaveLength(6);
+  });
+
+  it("reads the code Clerk sends with enumeration protection on as credential", () => {
+    const codes = CLERK_SIGN_IN_FAILURE_CODES;
+    const failure = { status: 422, errors: [{ code: "form_password_or_identifier_incorrect" }] };
+    expect(classifySignInFailure(failure, { codes })).toBe("credential");
+    expect(classifySignInFailure(failure, { codes, hideAccountExistence: true })).toBe("credential");
+  });
+
+  it("reads clerk_offline as network, so that class is reachable", () => {
+    const codes = CLERK_SIGN_IN_FAILURE_CODES;
+    expect(classifySignInFailure({ code: "clerk_offline" }, { codes })).toBe("network");
+    expect(classifySignInFailure({ errors: [{ code: "clerk_offline" }] }, { codes })).toBe("network");
+    expect(signInFailureCopyId("network")).toBe("front-door.unavailable.notice");
   });
 });
 

@@ -8,7 +8,9 @@ import type { SignInFailureCodeTable } from "../../../sign-in-failure.js";
  */
 export const CLERK_SIGN_IN_FAILURE_CODES = {
   form_password_incorrect: "credential",
+  form_password_or_identifier_incorrect: "credential",
   form_code_incorrect: "credential",
   form_identifier_not_found: "notFound",
   user_locked: "locked",
+  clerk_offline: "network",
 } as const satisfies SignInFailureCodeTable;

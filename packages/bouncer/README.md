@@ -293,7 +293,7 @@ Both are pure and never throw.
 `SIGN_IN_FAILURE_CLASSES` lists the seven in that order. The rules, in order:
 
 1. A failure that is not an object is `unknown`.
-2. Each `errors[i].code` in turn, then `code`: the first one that is an own key
+2. Each `errors[i].code` in turn (the first 16 entries), then `code`: the first one that is an own key
    of `options.codes` wins. A name such as `toString` is never a match.
 3. Otherwise status 429 is `rateLimited`, 423 is `locked`, and 500-599 is
    `unavailable`.
@@ -301,14 +301,21 @@ Both are pure and never throw.
    is `unknown`: `notFound` comes only from a provider code.
 
 `hideAccountExistence: true` reads `notFound` as `credential` and `locked` as
-`rateLimited`, so a visitor cannot tell whether an account exists or is
-locked. The default keeps `notFound`.
+`rateLimited`, which changes the copy the page shows and nothing else. It does
+not stop a visitor learning whether an account exists: some codes, such as
+`strategy_for_user_invalid`, `user_banned` and `form_password_pwned` or
+`form_password_compromised`, still read as `unknown` while an unknown account
+reads `credential`, and the raw Clerk code stays visible in the browser's
+devtools. For that guarantee, use Clerk's own enumeration protection. The
+default keeps `notFound`.
 
 The Clerk table, `CLERK_SIGN_IN_FAILURE_CODES`, ships from
 `./providers/clerk/web` and `./providers/clerk/web/client`. It holds
-`form_password_incorrect` and `form_code_incorrect` (`credential`),
-`form_identifier_not_found` (`notFound`) and `user_locked` (`locked`), each
-checked against the installed Clerk packages. Clerk codes not in it read as
+`form_password_incorrect`, `form_password_or_identifier_incorrect` (the code
+Clerk sends with enumeration protection on) and `form_code_incorrect`
+(`credential`), `form_identifier_not_found` (`notFound`), `user_locked`
+(`locked`) and `clerk_offline` (`network`), each checked against the installed
+Clerk packages. Clerk codes not in it read as
 `unknown`, or by status when one is set. `humaniseClerkError` returns the
 provider's own text, which can name an account; use this path where that text
 must not reach the page.

@@ -30,6 +30,9 @@ export interface SignInFailureShape {
   readonly errors?: ReadonlyArray<{ readonly code?: string }>;
 }
 
+/** The most `errors[]` entries `classifySignInFailure` reads; a longer array is read up to here. */
+const MAX_ERRORS_READ = 16;
+
 /** Provider error code -> class. `unknown` is the absence of an entry, never a value. */
 export type SignInFailureCodeTable = Readonly<Record<string, Exclude<SignInFailureClass, "unknown">>>;
 
@@ -79,7 +82,8 @@ function read(failure: object, codes: SignInFailureCodeTable | undefined): SignI
   if (codes !== undefined && codes !== null && typeof codes === "object") {
     const errors = shape.errors;
     if (Array.isArray(errors)) {
-      for (let index = 0; index < errors.length; index += 1) {
+      const length = Math.min(errors.length, MAX_ERRORS_READ);
+      for (let index = 0; index < length; index += 1) {
         const entry: unknown = errors[index];
         if (typeof entry !== "object" || entry === null) continue;
         const matched = tableClass(codes, (entry as { code?: unknown }).code);
