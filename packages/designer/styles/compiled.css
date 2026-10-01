@@ -867,8 +867,14 @@
     .tablet\:h-px {
       height: 1px;
     }
+    .tablet\:w-auto {
+      width: auto;
+    }
     .tablet\:w-lg {
       width: var(--spacing-lg, 16px);
+    }
+    .tablet\:shrink-0 {
+      flex-shrink: 0;
     }
     .tablet\:grid-cols-2 {
       grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -884,6 +890,11 @@
     }
     .tablet\:justify-between {
       justify-content: space-between;
+    }
+  }
+  @media (width >= 1024px) {
+    .tablet-lg\:max-w-display {
+      max-width: var(--ui-width-display-max, 72rem);
     }
   }
   @media (width >= 1280px) {
@@ -916,6 +927,11 @@
     }
     .desktop\:whitespace-nowrap {
       white-space: nowrap;
+    }
+  }
+  @media (width >= 1440px) {
+    .wide\:max-w-display {
+      max-width: var(--ui-width-display-max, 72rem);
     }
   }
 }

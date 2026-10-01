@@ -98,12 +98,12 @@ surfaces and live in `@clossys/publisher/web`.
   `Separator`, `Chip`.
 - **`blocks`** — owns the internal layout of multiple named regions,
   typically by composing one or more atoms (and/or layout) into something
-  with a real job on a page. Twenty-one ship: `PageHeader`, `EmptyState`,
+  with a real job on a page. Twenty-two ship: `PageHeader`, `EmptyState`,
   `DataTable`, `DetailView`, `Pagination`, `Stat`, `Form`, `FieldGroup`,
   `ConfirmDialog`, `Toolbar`, `NavGrid`, `SectionHeader`, `Hero`,
-  `MarketingChapter`, `FeatureGrid`, `OrderedStepSequence`, `StatusList`, `Faq`, `PricingTable`, `Testimonial`, `ArticleBody` — the
-  last eight are marketing/editorial content blocks, completing this layer
-  (see "Blocks" below).
+  `MarketingChapter`, `FeatureGrid`, `OrderedStepSequence`, `StatusList`, `Faq`, `PricingTable`, `Testimonial`, `ArticleBody`, `ConsentBanner` — the
+  last nine are marketing/editorial content blocks and a presentational
+  consent notice, completing this layer (see "Blocks" below).
 - **`shell`** — the persistent frame around content (nav, layout chrome)
   that provides the slots content fills. One per app; survives route
   changes that swap out the content underneath it. `Shell` ships with five
@@ -3112,6 +3112,50 @@ Measure and section padding come from the parent `SectionFrame` (`measure="prose
 article plus a sidebar callout, or two comparison columns), which is what
 keeps it at this layer rather than being a view (test 3).
 
+### `ConsentBanner`
+
+```tsx
+import { ConsentBanner } from "@clossys/designer/blocks";
+import { Link } from "@clossys/designer/atoms";
+
+function PageConsent({ onAccept, onReject }: { onAccept: () => void; onReject: () => void }) {
+  return (
+    <ConsentBanner
+      title="Banner title"
+      body="Banner body text."
+      acceptLabel="Accept label"
+      rejectLabel="Reject label"
+      onAccept={onAccept}
+      onReject={onReject}
+      privacyLink={<Link href="/privacy">Privacy link</Link>}
+    />
+  );
+}
+```
+
+A presentational consent notice, and nothing more: it holds no consent
+state, reads or writes no storage, and makes no network call. The consumer
+decides what `onAccept` and `onReject` do, whether to render it at all, and
+where it sits; it renders in flow, so a consumer who wants it pinned to the
+edge of the page positions it themselves. All copy arrives through props
+(`title`, `body`, `acceptLabel`, `rejectLabel`, and an optional
+`privacyLink` slot rendered after the body), so this package ships no
+wording of its own.
+
+The root is a `<section>` named by its own title heading, so assistive
+tech announces it as a region landmark. It is deliberately not a dialog: no
+`role="dialog"`, no `aria-modal`, no autofocus, no focus trap, no Escape
+handling, no portal and no timer, so keyboard users move past it with Tab
+like any other content. Accept and reject are both `Button` atoms with the
+same `variant` and `size`, which gives the two choices equal prominence
+(rejecting is a button, not a link). No form control renders inside it.
+
+The surface uses `bg-overlay-surface`, `border-overlay-border` and ink
+tokens only, so it is opaque. Actions stack at full width at the base size
+and sit in a row from the `tablet` breakpoint; the content width is capped
+with `max-w-display` from `tablet-lg`. The root carries `data-consent-banner`,
+the selector the fold check already names as an overlay.
+
 ### Composing chrome and blocks
 
 Marketing/site chrome (`shell`) and marketing content blocks compose
@@ -4638,6 +4682,8 @@ not a grab-bag).
 | `SectionFrame` | component | Full-bleed marketing section band: a `ground` surface, vertical section rhythm, horizontal page padding, and a measured inner column. Sets `data-designer-section-frame` on its outer `<section>`. Compose `ArticleBody`, `Stat`, and other blocks that do not own their own band inside it. |
 | `SectionFrameProps` | type | Props for `SectionFrame`: `ground` (default `"base"`), `measure` (default `"content"`), `children`, `className`, `style`, plus every native `<section>` attribute. |
 | `SectionMeasure` | type | `"content" \| "wide" \| "prose"`. How wide `SectionFrame`'s inner column is: it maps to the `--ui-width-content-max`, `--ui-width-wide-max`, or `--ui-width-prose-max` token. |
+| `ConsentBanner` | component | Presentational consent notice: a region landmark named by its title, a body, an optional `privacyLink` slot after it, and two same-variant, same-size `Button`s for accept and reject. Props only: no consent state, storage, network call or built-in copy. Not a dialog. Sets `data-consent-banner` on its root. |
+| `ConsentBannerProps` | type | Props for `ConsentBanner`: `title`, `body`, `acceptLabel`, `rejectLabel` (all `ReactNode`), `onAccept`, `onReject` (both `() => void`), `privacyLink?`, `className?`, `style?`. |
 | `mergeUiClasses` | function | Merges token-aware Tailwind utility classes with last-argument precedence; used by surface-level compositions built from UI primitives. |
 | `Shell` | component | The persistent application frame. Carries `Shell.Header`, `Shell.SideNav`, `Shell.Main`, `Shell.Rail`, `Shell.Footer`. |
 | `ShellProps` | type | Props for `Shell`: `children` (any subset of the five slots above, in any order), `skipLinkLabel` (default `"Skip to content"`), plus every native `<div>` attribute. |
@@ -5256,10 +5302,10 @@ speculatively, just because a related component shipped, is the exact
 un-bounded growth this package's own "variant rule" warns against one level
 up. They get added here only once something real needs them.
 
-**Blocks:** twenty-one ship — `PageHeader`, `EmptyState`, `DataTable`,
+**Blocks:** twenty-two ship — `PageHeader`, `EmptyState`, `DataTable`,
 `DetailView`, `Pagination`, `Stat`, `Form`, `FieldGroup`, `ConfirmDialog`,
 `Toolbar`, `NavGrid`, `SectionHeader`, `Hero`, `MarketingChapter`, `FeatureGrid`, `OrderedStepSequence`, `StatusList`, `Faq`,
-`PricingTable`, `Testimonial`, `ArticleBody` — completing this layer. No
+`PricingTable`, `Testimonial`, `ArticleBody`, `ConsentBanner` — completing this layer. No
 `FilterBar` block:
 `DataTable`'s own `toolbar` slot (and `Toolbar`'s own `search` slot) are
 deliberately plain `ReactNode`s, not a block with its own opinion about

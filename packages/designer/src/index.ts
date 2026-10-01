@@ -133,6 +133,7 @@ export {
   Testimonial,
   ArticleBody,
   SectionFrame,
+  ConsentBanner,
   SECTION_GROUND_CLASSES,
 } from "./blocks/index.js";
 export type {
@@ -198,6 +199,7 @@ export type {
   TestimonialProps,
   ArticleBodyProps,
   SectionFrameProps,
+  ConsentBannerProps,
   SectionMeasure,
 } from "./blocks/index.js";
 
