@@ -35,25 +35,43 @@ describe("ErrorView", () => {
     expect(screen.getByRole("button", { name: "Go home" })).toBeInTheDocument();
   });
 
-  it("omits the details block entirely when none is given", () => {
-    const { container } = render(<ErrorView status={404} title="Page not found" />);
+  it("renders the reference inline in the description, with no disclosure", () => {
+    const { container } = render(
+      <ErrorView status={500} title="Something went wrong" description="Something went wrong. Error: 8f2a91c0." />,
+    );
+    const text = screen.getByText("Something went wrong. Error: 8f2a91c0.");
+    expect(text.tagName).toBe("P");
     expect(container.querySelector("details")).toBeNull();
+    expect(container.querySelector("summary")).toBeNull();
+    expect(text.closest("details")).toBeNull();
   });
 
-  it("renders the details slot inside a native <details>, collapsed by default", () => {
-    render(
+  it("keeps one primary action, with a secondary destination as a text link inside the description", () => {
+    const { container } = render(
       <ErrorView
-        status={500}
-        title="Something went wrong"
-        details={<code>request id: abc-123</code>}
-        detailsLabel="Technical details"
+        status={403}
+        title="Not authorized"
+        description={
+          <>
+            You do not have access. <a href="/help">Contact support</a>.
+          </>
+        }
+        action={<button type="button">Go home</button>}
       />,
     );
-    const details = document.querySelector("details") as HTMLDetailsElement;
-    expect(details).not.toBeNull();
-    expect(details.open).toBe(false);
-    expect(details.querySelector("summary")).not.toBeNull();
-    expect(screen.getByText("request id: abc-123")).toBeInTheDocument();
+    const link = screen.getByRole("link", { name: "Contact support" });
+    const description = link.closest("p") as HTMLElement;
+    expect(description).not.toBeNull();
+    expect(description.textContent).toContain("You do not have access.");
+    const button = screen.getByRole("button", { name: "Go home" });
+    const actionArea = button.parentElement as HTMLElement;
+    expect(actionArea.contains(description)).toBe(false);
+    expect(actionArea.querySelectorAll("button, a, input, select, textarea")).toHaveLength(1);
+    expect(container.querySelectorAll("button")).toHaveLength(1);
+    // The description is read before the action area.
+    expect(
+      description.compareDocumentPosition(actionArea) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
   });
 
   it("forwards className, and the consumer's conflicting class wins the merge", () => {

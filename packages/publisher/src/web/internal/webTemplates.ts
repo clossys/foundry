@@ -105,8 +105,6 @@ const ERROR_VIEW_TEMPLATE: WebTemplate = {
       { key: "title", required: true },
       { key: "description" },
       { key: "action" },
-      { key: "details" },
-      { key: "detailsLabel" },
     ],
   },
   build: (content) =>
@@ -115,8 +113,6 @@ const ERROR_VIEW_TEMPLATE: WebTemplate = {
       title: content.title,
       description: content.description,
       action: content.action,
-      details: content.details,
-      detailsLabel: content.detailsLabel,
     }),
 };
 

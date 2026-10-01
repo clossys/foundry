@@ -3115,9 +3115,8 @@ function NotFoundPage() {
     <ErrorView
       status={404}
       title="Page not found"
-      description="The page you're looking for doesn't exist or has moved."
+      description="Something went wrong. Error: 8f2a91c0."
       action={<Button onPress={() => goHome()}>Go home</Button>}
-      details={<code>request id: 8f2a-91c0</code>}
     />
   );
 }
@@ -3134,10 +3133,11 @@ as text. `EmptyState`'s own `title` renders as an `<h2>` one level below
 it, so a page built from `ErrorView` has exactly one top-level heading (the
 status) with the error's description sitting under it — the same
 title/subtitle heading structure a `PageHeader` gives an ordinary page.
-`details` is an optional slot for diagnostic content (a request id, a
-correlation id, a stack trace), rendered inside a native `<details>`,
-collapsed by default: for the rare visitor who needs to report the error,
-not the page's primary reading order.
+A diagnostic reference (a request id or correlation id) is part of the
+message: put it in `description` as caller copy, for example `"Something went
+wrong. Error: 8f2a91c0."`, so it is visible without opening anything. `action`
+holds ONE primary control; a secondary destination (a support page, a status
+page) is a text link inside `description`, not a second button.
 
 ### `DetailView`
 
