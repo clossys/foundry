@@ -104,8 +104,8 @@ applies at its cascade scope, or that the template builds.
   manifest shows the framed boundary page and names nothing. The page's words
   are one catalog-shaped constant in `app/pack-review-copy.ts`, in the Writer
   front-door id grammar (`front-door.<state>.<slot>`). They use no
-  `{placeholder}`, so none needs a noun outside the closed set in Writer's
-  `src/front-door.ts` (rule F2), but they are not in Writer's `frontDoor.*`
+  `{placeholder}`, so none needs a noun outside Writer's closed front-door
+  noun set (its rule F2), but they are not in Writer's `frontDoor.*`
   catalog: it has no pack-review state, and until it does this is the one
   place in this template that carries wording.
 - `app/robots.ts`, `app/sitemap.ts`, `app/opengraph-image.tsx` — Next's

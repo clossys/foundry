@@ -4,8 +4,8 @@
  * The rest of this template holds copy ids and no wording; these entries are
  * the exception. They follow the Writer front-door id grammar
  * (`front-door.<state>.<slot>`), and none uses a `{token}` placeholder, so
- * none needs a noun outside Writer's closed set (rule F2 in
- * `packages/writer/src/front-door.ts`). The wording is not in Writer's
+ * none needs a noun outside Writer's closed front-door noun set (its rule
+ * F2). The wording is not in Writer's
  * `frontDoor.*` catalog yet: that catalog carries no pack-review state, and
  * until it does this is the single place the page's words live. No string
  * appears in markup: the page resolves every label through
