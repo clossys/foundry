@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { SiteFooter, SiteHeader } from "@clossys/designer/shell/server";
-import type { SiteHeaderProps } from "@clossys/designer/shell/server";
+import type { ViewChromeGround } from "../internal/viewChromeGround.js";
 import { ErrorView, type ErrorViewProps } from "./ErrorView.js";
 
 export interface BoundaryViewProps extends ErrorViewProps {
@@ -21,7 +21,7 @@ export interface BoundaryViewProps extends ErrorViewProps {
    * `SiteFooter`. `"transparent"` matches `LandingView`'s chrome.
    * @default "base"
    */
-  ground?: SiteHeaderProps["ground"];
+  ground?: ViewChromeGround;
   /** Persistent footer content, rendered by Designer's `SiteFooter`. */
   footerSecondary?: ReactNode;
 }

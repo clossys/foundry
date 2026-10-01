@@ -11,7 +11,7 @@ import { BoundaryView } from "./BoundaryView.js";
 
 afterEach(cleanup);
 
-const ALLOWED_IMPORT = /^(react|@clossys\/designer\/.+\/server|\.\/ErrorView\.js)$/;
+const ALLOWED_IMPORT = /^(react|@clossys\/designer\/.+\/server|\.\/ErrorView\.js|\.\.\/internal\/viewChromeGround\.js)$/;
 
 /**
  * Every module specifier named by an `import` statement (bare, type, or
@@ -129,7 +129,7 @@ describe("BoundaryView", () => {
     expect(html).toContain("</main>" + renderToStaticMarkup(<SiteFooter ground="transparent" />) + "</div>");
   });
 
-  it("imports only react, @clossys/designer/*/server and ./ErrorView.js (no router, no hooks)", () => {
+  it("imports only react, @clossys/designer/*/server, ./ErrorView.js and ../internal/viewChromeGround.js (no router, no hooks)", () => {
     const source = readFileSync(join(import.meta.dirname, "BoundaryView.tsx"), "utf8");
     const specifiers = moduleSpecifiers(source);
     expect(specifiers.length).toBeGreaterThan(0);
