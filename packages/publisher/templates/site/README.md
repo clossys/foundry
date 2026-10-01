@@ -4,7 +4,7 @@ Issue #1208: a working marketing site template, wired to a product
 repository's own `clossys/` records from the first commit.
 
 **This directory is a template, copied into a consumer repository's
-`apps/site` by Launcher (#1215) — it does not run inside Foundry itself.**
+`apps/site` by `publisher-site-instantiate` — it does not run inside Foundry itself.**
 Foundry does not install Next.js or React as a dependency, and this
 template's own `package.json`/`tsconfig.json` are not part of Foundry's
 npm workspace, so the template itself is not built or typechecked, and its
@@ -253,9 +253,6 @@ or its build fails: the four about ids `site.about.heading`,
 share card's alternative text, `site.share-card.alt` (`SHARE_CARD_ALT_ID`).
 
 ## Not yet wired
-
-Launcher applying this template into a consumer repository's `apps/site`
-(#1215) is a follow-up; this directory is the template content only.
 
 `app/error.tsx` covers a failure inside a page. A failure in the root layout
 itself (for example a missing copy entry the layout needs) is outside it and
