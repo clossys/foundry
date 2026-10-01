@@ -203,7 +203,7 @@ export function ResetForm({ request, reset, resendCode, onReset, unavailable = f
 
   async function resend() {
     const send = handlers.current.resendCode;
-    if (send === undefined || handlers.current.unavailable || inFlight.current) return;
+    if (send === undefined || inFlight.current) return;
     const status = await call("resend", send);
     if (status === "ok") {
       setCode("");
