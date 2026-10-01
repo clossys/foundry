@@ -1226,8 +1226,11 @@ sets.
 The hub's head must be its branch's upstream. `readHubAuthority()` resolves
 `HEAD` once to a commit id, requires the attached branch's configured upstream
 to resolve to that same commit (local refs only, nothing is fetched), and reads
-the plan from that commit id. A branch with no upstream, or one ahead of or
-behind it, is `indeterminate` with detail `hub-not-upstream`.
+the plan from that commit id. `HEAD`, its commit and its upstream are read by
+one `git rev-parse`, and the upstream must be a remote-tracking ref (under
+`refs/remotes/`). A branch with no upstream, an upstream that is a local
+branch, or one ahead of or behind it, is `indeterminate` with detail
+`hub-not-upstream`.
 
 A set with package acts also needs a current execution authorization: the
 hub's own `node_modules/.bin/advisor-execution-readiness` (never `npx`) runs
@@ -1235,9 +1238,12 @@ against the committed `clossys/advisor/assessment-input.json` at the current
 instant, and the authorization must name the plan digest, the repository and
 every package act. The assessment is read at the commit id the plan was read
 from: a hub whose `HEAD` has since moved, detached, or stopped matching its
-upstream is `indeterminate` with detail `hub-head-moved`. The authorization's
-permitted packages must also equal the plan's packages, by `name@version#integrity`
-with each distinct package listed once; an extra, a missing or a repeated
+upstream is `indeterminate` with detail `hub-head-moved`. A set with no package
+acts skips this step, so its hub head is read once, when the plan is read, and
+not checked a second time. The authorization's permitted packages must also
+equal the plan's packages, by name, version and integrity (each compared as one
+unit, so an empty name cannot stand in for another entry) with each distinct
+package listed once; an extra, a missing or a repeated
 entry is `violated` with detail `packages-not-exact`. Readiness's own answer is
 kept: not current is `violated`; unreadable, absent or failing to run is `indeterminate`. `materialize` checks
 before its first write, and `verify` checks again, so a withdrawn approval or

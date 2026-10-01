@@ -184,21 +184,31 @@ type HubHead = { readonly state: "upstream"; readonly commit: string } | { reado
 
 /**
  * H1. Resolves the hub's HEAD to one commit id, and requires the branch's
- * configured upstream to resolve to that same commit. Local refs only: nothing
- * here fetches, so a hub whose upstream is stale is judged by what it holds.
+ * configured upstream to resolve to that same commit, and to be a remote-tracking
+ * ref (`refs/remotes/`), not a local branch. One `rev-parse` reads all three, so
+ * the read is atomic. Local refs only: nothing here fetches, so a hub whose
+ * upstream is stale is judged by what it holds.
  * HEAD must be attached to a branch (a detached HEAD may sit on an old commit
  * that still carries a since-revoked approval). No upstream, ahead and behind
  * are all `not-upstream`.
  */
 function resolveHubHead(hub: string): HubHead {
-  const symbolic = runGit(hub, ["symbolic-ref", "-q", "HEAD"]);
-  if (symbolic.status !== 0 || !symbolic.stdout.toString("utf8").trim().startsWith("refs/heads/")) return { state: "unreadable" };
-  const head = runGit(hub, ["rev-parse", "--verify", "-q", "HEAD^{commit}"]);
-  const commit = head.stdout.toString("utf8").trim();
-  if (head.status !== 0 || !OBJECT_ID.test(commit)) return { state: "unreadable" };
-  const upstream = runGit(hub, ["rev-parse", "--verify", "-q", "@{upstream}^{commit}"]);
-  if (upstream.status !== 0 || upstream.stdout.toString("utf8").trim() !== commit) return { state: "not-upstream" };
-  return { state: "upstream", commit };
+  // One read, so HEAD, its commit and its upstream come from one moment: the commit, the upstream's commit, then the full names of HEAD and of the upstream.
+  const read = runGit(hub, ["rev-parse", "HEAD^{commit}", "@{upstream}^{commit}", "--symbolic-full-name", "HEAD", "@{upstream}"]);
+  const lines = read.stdout.toString("utf8").split("\n");
+  const commit = lines[0] ?? "";
+  if (read.status !== 0) {
+    // Refused either way. A readable commit on an attached HEAD means the upstream is the part that failed.
+    if (!OBJECT_ID.test(commit)) return { state: "unreadable" };
+    const symbolic = runGit(hub, ["symbolic-ref", "-q", "HEAD"]);
+    return symbolic.status === 0 && symbolic.stdout.toString("utf8").trim().startsWith("refs/heads/") ? { state: "not-upstream" } : { state: "unreadable" };
+  }
+  const [head, upstreamCommit, headRef, upstreamRef, ...rest] = lines;
+  if (head === undefined || upstreamCommit === undefined || headRef === undefined || upstreamRef === undefined || rest.some((line) => line !== "")) return { state: "unreadable" };
+  if (!headRef.startsWith("refs/heads/") || !OBJECT_ID.test(head)) return { state: "unreadable" };
+  // The upstream must be a remote-tracking ref: a local branch (remote `.`) is this repository's own word, not the remote's.
+  if (!upstreamRef.startsWith("refs/remotes/") || upstreamCommit !== head) return { state: "not-upstream" };
+  return { state: "upstream", commit: head };
 }
 
 /**
@@ -681,7 +691,8 @@ function packageActsOf(set: RepositoryChangeSet, authority: HubAuthority): { nam
   return acts;
 }
 
-const packageKey = (entry: { readonly name: string; readonly version: string; readonly integrity: string }): string => `${entry.name}@${entry.version}#${entry.integrity}`;
+/** One key per (name, version, integrity): a JSON array, so no value can borrow another's separator. */
+const packageKey = (entry: { readonly name: string; readonly version: string; readonly integrity: string }): string => JSON.stringify([entry.name, entry.version, entry.integrity]);
 
 /** Whether two lists hold the same strings, the same number of times each, in any order. */
 function sameStrings(left: readonly string[], right: readonly string[]): boolean {
@@ -716,7 +727,7 @@ function defaultRunner(timeoutMs: number): ReadinessRunner {
  * the set (and of what it defers), and the hub's own
  * advisor-execution-readiness, run on those exact committed bytes at the
  * current instant, must exit 0. The permitted packages must also equal the
- * plan's packages exactly (H4): the distinct `name@version#integrity` keys of
+ * plan's packages exactly (H4): the distinct `(name, version, integrity)` keys of
  * every act in the plan, no more, no fewer and none repeated, else
  * `authorization-not-current` `packages-not-exact`; repositories stay a subset
  * check. Exit 1 is `authorization-not-current`; exit 2 and anything else is
