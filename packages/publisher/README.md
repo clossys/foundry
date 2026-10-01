@@ -1319,6 +1319,13 @@ const card = buildBrandShareCard({
   `BRAND_SHARE_CARD_DEFAULT_ROLES` (`--color-surface-base` background;
   `--color-ink-primary` plate, wordmark and headline; `--color-ink-secondary`
   kicker and supporting); `roles` picks others.
+- **Truncation.** Long text is cut rather than overflowing the card: the
+  wordmark and the kicker each stay on one line and end in an ellipsis (the
+  kicker gives way first), and the headline and the supporting line each stop at
+  two lines. A mark that is not square keeps its ratio inside the plate.
+- **Contrast.** There is no contrast check on `roles`. Keep each text and
+  background pair at 4.5:1 or better; the default plate is dark on the light
+  surface.
 - **Mark.** `markSrc` follows the rule for `buildShareCard`'s `mark.src`: an
   inline `data:image/svg+xml` or `data:image/png;base64` URL, never a remote one.
 - **Font.** `displayFontFamily` names a family for the wordmark and headline:
