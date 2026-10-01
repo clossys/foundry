@@ -2,6 +2,8 @@ import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import type { ApprovalBinding, RepositoryChangeSet } from "./change-set-contract.js";
+import { AGENTS_GUIDE_TEXT } from "./agents-guide.js";
+import { contentDigest } from "./change-set-contract.js";
 import { changeSetDigest } from "./change-set-digest.js";
 import { ledgerSuccession, renderInstalledLedger, serializeInstalledLedger } from "./ledger-contract.js";
 import type { InstalledLedger, LedgerPackageIdentity } from "./ledger-contract.js";
@@ -120,6 +122,71 @@ describe("renderInstalledLedger (RENDER)", () => {
     adopted.files = [...adopted.files, { path: "clossys/unowned-note.txt", mode: "100644", before: extraDigest, after: extraDigest, item: "brief" }];
     adopted.changeSetDigest = changeSetDigest(adopted);
     expect(() => renderInstalledLedger(previous, adopted, render.binding, render.planPackages)).toThrow(TypeError);
+  });
+
+  describe("the one apply-phase add: the Launcher guide", () => {
+    const GUIDE = "clossys/AGENTS.md";
+    /** The digest of the guide's bytes: the only after RENDER accepts for the add. */
+    const GUIDE_AFTER = contentDigest(AGENTS_GUIDE_TEXT);
+    const render = () => CORPUS.renders.find((entry) => entry.name === "admitted-apply")!;
+    const previousLedger = () => clone(ledgerNamed(render().previous!));
+    /** The admitted-apply set with one more whole file, before null, as an apply set over an install that predates the guide would carry. */
+    const withAdd = (path: string, patch: { mode?: "100644" | "120000"; before?: string | null; after?: string } = {}) => {
+      const set = clone(setNamed(render().changeSet));
+      set.files = [...set.files, { path, mode: patch.mode ?? "100644", before: patch.before === undefined ? null : patch.before, after: patch.after ?? GUIDE_AFTER, item: "brief" }];
+      set.changeSetDigest = changeSetDigest(set);
+      return set;
+    };
+    const renderOver = (previous: InstalledLedger, set: RepositoryChangeSet) => renderInstalledLedger(previous, set, render().binding, render().planPackages);
+
+    it("adds a row for the guide where previous holds none, and the result is an admitted next generation", () => {
+      const previous = previousLedger();
+      expect(previous.files.some((row) => row.path.toLowerCase() === GUIDE.toLowerCase())).toBe(false);
+      const set = withAdd(GUIDE);
+      const bytes = renderOver(previous, set);
+      const head = JSON.parse(bytes) as InstalledLedger;
+      expect(head.files.filter((row) => row.path === GUIDE)).toEqual([{ path: GUIDE, mode: "100644", after: GUIDE_AFTER, changeSet: set.changeSetDigest }]);
+      expect(head.files.filter((row) => row.path !== GUIDE)).toEqual(previous.files);
+      expect(ledgerSuccession(Buffer.from(serializeInstalledLedger(previous), "utf8"), Buffer.from(bytes, "utf8"))).toEqual({ change: "next-generation", admission: "admitted", violations: [] });
+    });
+
+    it("still refuses an apply-phase add at any other path", () => {
+      for (const path of ["clossys/unowned-note.txt", "clossys/AGENTS.md.bak", ".agents/skills/clossys-advisor/SKILL.md", "clossys/agents-guide.md"]) {
+        expect(() => renderOver(previousLedger(), withAdd(path)), path).toThrow(/files\[\d+\]/);
+      }
+    });
+
+    it("refuses the guide add when previous already holds a row for the path, in any letter case", () => {
+      for (const rowPath of [GUIDE, "clossys/agents.md"]) {
+        const previous = previousLedger();
+        previous.files = [...previous.files, { path: rowPath, mode: "100644", after: sha("older guide\n"), changeSet: previous.history[0]!.changeSet }].sort((a, b) => (a.path.toLowerCase() < b.path.toLowerCase() ? -1 : 1));
+        expect(() => renderOver(previous, withAdd(GUIDE)), rowPath).toThrow(/files\[\d+\]/);
+      }
+    });
+
+    it("refuses the guide add when its after is not the digest of the guide's bytes", () => {
+      for (const after of [sha("added bytes\n"), sha(`${AGENTS_GUIDE_TEXT}\n`)]) {
+        expect(() => renderOver(previousLedger(), withAdd(GUIDE, { after })), after).toThrow(/files\[\d+\]/);
+      }
+    });
+
+    it("refuses the guide add as a link, and an update of it (before not null) where previous holds no row", () => {
+      expect(() => renderOver(previousLedger(), withAdd(GUIDE, { mode: "120000" }))).toThrow(/files\[\d+\]/);
+      expect(() => renderOver(previousLedger(), withAdd(GUIDE, { before: sha("some bytes\n") }))).toThrow(/files\[\d+\]/);
+    });
+
+    it("refuses the guide add where there is no previous ledger at all, as it refuses every other add", () => {
+      const set = clone(setNamed("apply-with-packages"));
+      expect(set.ledger.generation).toBe(0);
+      set.files = [...set.files.filter((file) => "derived" in file), { path: GUIDE, mode: "100644", before: null, after: GUIDE_AFTER, item: "brief" }];
+      set.changeSetDigest = changeSetDigest(set);
+      expect(() => renderInstalledLedger(null, set, render().binding, render().planPackages)).toThrow(/files\[\d+\]/);
+    });
+
+    it("still refuses an apply keep at the guide's path where previous holds no row: an adoption only a setup set may write", () => {
+      const set = withAdd(GUIDE, { before: GUIDE_AFTER });
+      expect(() => renderOver(previousLedger(), set)).toThrow(/keeps a file previous holds no row for/);
+    });
   });
 
   it("throws when a deferred row's planItem names no plan package identity, naming only its position", () => {
