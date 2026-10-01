@@ -3,6 +3,26 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## 0.6.0 - 2026-10-01
+
+- Each package skill's section for when the package is not installed speaks of the repositories the team is set up in, instead of every inventoried repository.
+- Each package skill says the whole team is composed in the hub and a repository staffed in an approved plan gets `@clossys-advisor` and the voices of the roles staffed there once that plan's setup pull request has merged, so a missing `@clossys-<package>` mention is a bug only in the hub.
+- Adds `pendingAudienceIntakeQuestions` (issue #1173). When the brief's `audience` field is unknown, it first points the founder back to Advisor's own `audience` context card rather than asking a Strategist-owned copy of that question; either way, it always asks Strategist's three questions about a named audience's name, situation, and pains.
+- `strategist-check brand-coverage` now reads the custom properties declared in `brand/brand.css` when no brandable-slots file is given, and names that stylesheet in its report and in its extra-slot findings (#1583).
+- The package now exports `extractBrandCssSlots`, which lists the custom properties a stylesheet declares, and `BRAND_CSS_SEGMENTS`, the repository-relative path segments of `brand/brand.css` (#1583).
+- Add a `strategist-check brand-facts` subcommand that runs the brand-facts drift check and exits 0 when clean, 1 on drift and 2 when it could not run.
+- Add `checkBrandFactsDrift`, which reports a conflicting legal name, incorporation, jurisdiction, brand casing, domain, canonical origin, contact email or tagline in scanned files, and reports indeterminate instead of clean when it scanned nothing or cannot resolve taglines. The check runs in linear time per line and reads lines up to 16,384 characters; a longer line makes the result indeterminate, never clean. Detection is lexical: it catches only the forms listed under Residual risk, and a conflict stated any other way is not detected. An ignore marker silences its whole physical line.
+- Add a `brand-facts.json` record (legal entity, brand casing, domains, canonical origin, contact email and tagline copy ids) with `validateBrandFacts` and `readBrandFacts`, and have `readStrategy` read it into `StrategyBundle.brandFacts`.
+- Brand CSS slot extraction now reads a custom property name that ends in a hex escape and its trailing space, such as `--a\30 b`.
+- The `BRAND_CSS_SEGMENTS` documentation now describes the overlay stylesheet location as relative to the working directory.
+- The brand-facts drift check's jurisdiction place scan does bounded work per line: a place is read from at most 256 characters after each phrase, and at most 16 differing places are collected per line. Places past that cap on the same line are not reported.
+- The facts gate's CSS declaration percent scan now runs in linear time on long lines, replacing a regular expression that could take quadratic time; it matches exactly what it matched before.
+- The facts gate now scans declaration-shaped CSS percentages in linear time, and its timing tests cover 100,000-character lines made of one long digit run, repeated digit-and-dot pairs, and many declaration starts.
+- The README now links to the package's changelog at its real location in this repository instead of citing a CHANGELOG that no longer ships in the package.
+- Adds `readEngagementContext` and `readEngagementContextFromBriefData` (issue #1173), which read a consumer's `clossys/brief.json` validated against the shared brief contract (issue #1475: the engagement brief contract with its engagement context contract) that `@clossys/advisor` and `@clossys/launcher` also validate against — this package's build packs a generated, gitignored copy of those two contract files and of the one checker Advisor uses for them into `src/generated/`, so Strategist validates against the same definition with no `dependencies` entry on `@clossys/advisor`. Reading is all-or-nothing: a brief that does not fully validate reads as every field unknown, the same as no brief at all, and any note is a fixed reason, an OS error code, or a JSON syntax position only — never file text or founder text, and never a value read from a field that happened to look fine inside an otherwise invalid document.
+- Adds `seedAudienceFromContext` (issue #1173), which proposes a starting `audiences.json` entry from the brief's coarse `audience` field — its `situation` is a neutral sentence built from the choice id, not a copy of Advisor's own card label — and refuses to seed anything once `audiences.json` already has an entry, so a detailed record is never overwritten by a coarse brief guess.
+- A strategy directory can now hold `strategy-brief.json`, a record of claims the strategy will not make, and `strategist-check wont-claim <strategy-dir> <scan-dir>` exits 1 when a scanned surface uses one of an entry's literal match phrases, with `readStrategyBrief`, `validateStrategyBrief` and `checkWontClaimDrift` exported for callers.
+
 ## 0.5.0 - 2026-09-24
 
 - The `foundry` manifest block now declares `capabilities` (manifest schema
