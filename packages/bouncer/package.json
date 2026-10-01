@@ -16,6 +16,10 @@
       "types": "./dist/agent/index.d.ts",
       "import": "./dist/agent/index.js"
     },
+    "./gate": {
+      "types": "./dist/gate/index.d.ts",
+      "import": "./dist/gate/index.js"
+    },
     "./providers/clerk": {
       "types": "./dist/providers/clerk/index.d.ts",
       "import": "./dist/providers/clerk/index.js"

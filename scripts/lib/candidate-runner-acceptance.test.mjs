@@ -44,11 +44,11 @@ test("the production runner qualifies Bouncer's four framework exports in one is
   });
   assert.equal(transcript.ok, true);
   assert.deepEqual(transcript.coverage, {
-    declaredExportKeys: 7,
-    concreteTargets: 14,
-    runtimeImports: 3,
+    declaredExportKeys: 8,
+    concreteTargets: 16,
+    runtimeImports: 4,
     reactServerImports: 0,
-    staticTargets: 7,
+    staticTargets: 8,
     frameworkExports: 4,
     frameworkBuilds: 1,
     failed: 0,
