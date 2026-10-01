@@ -2661,7 +2661,9 @@ the pack's `website` item can be sealed, and only on evidence that names it.
   spellings differently. A path, query string or fragment is not refused when
   it is already canonical; one with a character the parser would
   percent-encode (a double quote, an angle bracket, a raw space, a non-ASCII
-  character) is refused.
+  character) is refused. The host must be letters, digits, hyphens and dots,
+  or a bracketed IPv6 or an IPv4 literal; a quote, brace, semicolon or other
+  punctuation in it is refused.
 - `pages`: one `WebsiteSealPage` per observed page, each
   `{ path, status, servedCommit, desktopDigest, mobileDigest }`, the digests
   being sha256 hex.

@@ -431,23 +431,77 @@ describe("sealWebsite", () => {
     expect(rulesAt(refusal(seal({ ledger: [{ ...reordered, url: "https://other.example.test/" }] })))).toContain("seal-already-recorded@ledger");
   });
 
-  it("validates the production URL it stores: a value that changes between reads is refused, never stored", TIMEOUT, () => {
+  /** Reads of a property that a hostile caller can make answer differently each time: `values[n]` for the nth read, then the last value. */
+  function changing(target: Record<string, unknown>, key: string, values: readonly unknown[]): { reads: () => number } {
+    let count = 0;
+    Object.defineProperty(target, key, { enumerable: true, configurable: true, get: () => values[Math.min(count++, values.length - 1)] });
+    return { reads: () => count };
+  }
+
+  it("works from one snapshot of the evidence: a production URL that changes between reads is read once and stored as read", TIMEOUT, () => {
     const hostile = `https://www.example.test${BACKSLASH}${AT}marker-user:marker-pass${AT}marker-evil.test/`;
-    const flipping = (reads: { count: number }): Record<string, unknown> => {
-      const delivery: Record<string, unknown> = { state: "ready", deployedCommit: COMMIT };
-      Object.defineProperty(delivery, "productionUrl", { enumerable: true, get: () => (reads.count++ === 0 ? PRODUCTION_URL : hostile) });
-      return delivery;
-    };
-    const reads = { count: 0 };
-    const refused = refusal(seal({ evidence: evidence({ delivery: flipping(reads) }) }));
-    // The getter really was read again after the evidence check, and what it returned then was not stored.
-    expect(reads.count).toBeGreaterThan(1);
+    // Canonical on the first two reads, hostile from the third on: only a snapshot read exactly once survives this.
+    const delivery: Record<string, unknown> = { state: "ready", deployedCommit: COMMIT };
+    const url = changing(delivery, "productionUrl", [PRODUCTION_URL, PRODUCTION_URL, hostile]);
+    const sealed = seal({ evidence: evidence({ delivery }) });
+    if (!sealed.ok) throw new Error(`expected a seal, got ${JSON.stringify(sealed.findings)}`);
+    expect(url.reads()).toBe(1);
+    expect(sealed.ledger[0]?.url).toBe(PRODUCTION_URL);
+    expect(sealed.manifest.items.find((candidate) => candidate.id === "website")?.publishedTo).toEqual([PRODUCTION_URL]);
+    // A value that is hostile on the one read is refused as written.
+    const bad: Record<string, unknown> = { state: "ready", deployedCommit: COMMIT };
+    changing(bad, "productionUrl", [hostile, PRODUCTION_URL]);
+    const refused = refusal(seal({ evidence: evidence({ delivery: bad }) }));
     expect(rulesAt(refused)).toEqual(["production-url-shape@delivery.productionUrl"]);
     expect(JSON.stringify(refused)).not.toContain("marker");
-    // Reads that agree on a canonical value still seal, and the stored value is that value.
-    const steady = seal({ evidence: evidence({ delivery: { state: "ready", deployedCommit: COMMIT, productionUrl: PRODUCTION_URL } }) });
-    if (!steady.ok) throw new Error("expected a seal");
-    expect(steady.ledger[0]?.url).toBe(PRODUCTION_URL);
+  });
+
+  it("works from one snapshot of the evidence: a commit that changes between reads cannot name a different entry than the one checked", TIMEOUT, () => {
+    const source = evidence();
+    const commit = changing(source, "commit", [COMMIT, OTHER_COMMIT]);
+    const sealed = seal({ evidence: source });
+    if (!sealed.ok) throw new Error(`expected a seal, got ${JSON.stringify(sealed.findings)}`);
+    expect(commit.reads()).toBe(1);
+    expect(sealed.entryId).toBe(`website-website-${COMMIT.slice(0, 12)}`);
+    expect(sealed.ledger[0]?.id).toBe(`website-website-${COMMIT.slice(0, 12)}`);
+  });
+
+  it("works from one snapshot of the evidence: an observedAt that changes between reads cannot backdate a resumed seal", TIMEOUT, () => {
+    const first = seal();
+    if (!first.ok) throw new Error("expected a seal");
+    // The entry was recorded at 10:00, before the evidence (observed 11:00) existed: a hand-added backdated entry.
+    const backdated = { ...(first.ledger[0] as Ledger[number]), publishedAt: "2026-09-30T10:00:00Z" };
+    const source = evidence();
+    const observed = changing(source, "observedAt", ["2026-09-30T11:00:00Z", "2026-09-30T09:00:00Z"]);
+    expect(rulesAt(refusal(seal({ ledger: [backdated], evidence: source })))).toContain("seal-already-recorded@ledger");
+    expect(observed.reads()).toBe(1);
+  });
+
+  it("refuses evidence that cannot be copied, without throwing", TIMEOUT, () => {
+    const withFunction = evidence({ extra: () => "x" });
+    const throwing = evidence();
+    Object.defineProperty(throwing, "commit", { enumerable: true, get: () => { throw new Error("no"); } });
+    for (const [label, source] of [["a function", withFunction], ["a throwing getter", throwing], ["a symbol", evidence({ extra: Symbol("x") })]] as const) {
+      let result: ReturnType<typeof sealWebsite> | undefined;
+      expect(() => { result = seal({ evidence: source }); }, label).not.toThrow();
+      expect(rulesAt(refusal(result as ReturnType<typeof sealWebsite>)), label).toContain("evidence-shape@(root)");
+    }
+  });
+
+  it("refuses a host that is not letters, digits, hyphens and dots, or a bracketed IPv6 or IPv4 literal", TIMEOUT, () => {
+    const odd = ['https://a"b.example.test/', "https://a`b.example.test/", "https://a{b}.example.test/", "https://a;b.example.test/", "https://a=b.example.test/", "https://a(b).example.test/", "https://a*b.example.test/", "https://a'b.example.test/", "https://a_b.example.test/", "https://a,b.example.test/", "https://a$b.example.test/", "https://a!b.example.test/", "https://a+b.example.test/", "https://a&b.example.test/", "https://www.example.test./"];
+    for (const productionUrl of odd) {
+      // Each is already canonical, so it is the host rule that refuses it.
+      expect(new URL(productionUrl).href, productionUrl).toBe(productionUrl);
+      const found = checkSealEvidence(evidence({ delivery: { state: "ready", deployedCommit: COMMIT, productionUrl } }), { map: MAP, now: NOW, itemId: "website" });
+      expect(rulesAt(found), productionUrl).toEqual(["production-url-shape@delivery.productionUrl"]);
+      expect(Object.keys(found[0] as SealFinding).sort()).toEqual(["path", "rule"]);
+      expect(rulesAt(refusal(seal({ evidence: evidence({ delivery: { state: "ready", deployedCommit: COMMIT, productionUrl } }) }))), productionUrl).toEqual(["production-url-shape@delivery.productionUrl"]);
+    }
+    for (const productionUrl of ["https://192.0.2.1/", "https://[2001:db8::1]/", "https://[::1]:8443/", "https://a-b.c1.example.test:8443/x", "https://xn--e1afmkfd.example.test/"]) {
+      expect(new URL(productionUrl).href, productionUrl).toBe(productionUrl);
+      expect(checkSealEvidence(evidence({ delivery: { state: "ready", deployedCommit: COMMIT, productionUrl } }), { map: MAP, now: NOW, itemId: "website" }), productionUrl).toEqual([]);
+    }
   });
 
   it("an interrupted seal never resumes on a non-canonical URL, whether the stored entry or the evidence carries it", TIMEOUT, () => {
