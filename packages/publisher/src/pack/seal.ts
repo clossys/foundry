@@ -117,12 +117,19 @@ function parseInstant(value: unknown): number | undefined {
   return Number.isFinite(ms) ? ms : undefined;
 }
 
-function isHttpsUrl(value: unknown): boolean {
+/**
+ * True only for an `https` URL with a host, no username or password, that is already in the form the WHATWG
+ * parser writes (`new URL(value).href === value`). The value is stored as written in the ledger `url` and the
+ * manifest `publishedTo`, so a spelling the parser would rewrite is refused rather than normalised: other
+ * readers parse a backslash, an empty userinfo, a control character or an upper-case scheme differently, and
+ * `https://www.example.test\@user:secret@evil.test/` is host `www.example.test` here but a credentialed
+ * `evil.test` to an RFC 3986 reader.
+ */
+function isCanonicalHttpsUrl(value: unknown): boolean {
   if (typeof value !== "string" || value.length === 0) return false;
   try {
     const url = new URL(value);
-    // Credentials in the URL would reach the ledger `url` and the manifest `publishedTo`.
-    return url.protocol === "https:" && url.hostname.length > 0 && url.username === "" && url.password === "";
+    return url.href === value && url.protocol === "https:" && url.hostname.length > 0 && url.username === "" && url.password === "";
   } catch {
     return false;
   }
@@ -192,7 +199,7 @@ function checkEvidence(evidence: unknown, options: CheckSealEvidenceOptions | un
     if (delivery.state !== "ready") add("delivery-not-ready", "delivery.state");
     if (typeof delivery.deployedCommit !== "string" || !COMMIT_RE.test(delivery.deployedCommit)) add("delivery-commit-shape", "delivery.deployedCommit");
     else if (delivery.deployedCommit !== commit) add("delivery-commit-mismatch", "delivery.deployedCommit");
-    if (!isHttpsUrl(delivery.productionUrl)) add("production-url-shape", "delivery.productionUrl");
+    if (!isCanonicalHttpsUrl(delivery.productionUrl)) add("production-url-shape", "delivery.productionUrl");
   }
 
   const pages = evidence.pages;
@@ -313,6 +320,7 @@ function seal(input: SealWebsiteInput, findings: SealFinding[]): SealWebsiteResu
   const delivery = isPlainObject(evidence) && isPlainObject(evidence.delivery) ? evidence.delivery : undefined;
   const validCommit = typeof commit === "string" && COMMIT_RE.test(commit) ? commit : undefined;
   const entryId = validCommit !== undefined && typeof itemId === "string" ? `website-${itemId}-${validCommit.slice(0, 12)}` : undefined;
+  // The URL is stored and compared as written (here and in the resume check), which is safe only because `checkSealEvidence` above has already refused every non-canonical spelling.
   const productionUrl = typeof delivery?.productionUrl === "string" ? delivery.productionUrl : undefined;
 
   // An entry already in the ledger is finished, not refused, only when it is exactly the one this evidence would record and the item is still kept.

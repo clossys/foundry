@@ -160,6 +160,22 @@ describe("publisher-seal", () => {
     expect(text).not.toContain("c".repeat(40));
   });
 
+  it("a production URL that is not in canonical form exits 1, writes nothing, and is not echoed", TIMEOUT, () => {
+    for (const productionUrl of ["https://www.example.test\\@marker-user:marker-pass@marker-evil.test/", "https://@www.example.test/", "https://www.example.test/\n", "HTTPS://www.example.test/"]) {
+      out.length = 0;
+      err.length = 0;
+      const evidence = { ...goodEvidence(), delivery: { state: "ready", deployedCommit: COMMIT, productionUrl } };
+      const paths = files(evidence);
+      const before = snapshot(paths);
+      expect(run(paths), productionUrl).toBe(1);
+      expect(snapshot(paths), productionUrl).toEqual(before);
+      const text = [...out, ...err].join("\n");
+      expect(text).toContain("production-url-shape");
+      expect(text).not.toContain("marker");
+      expect(text).not.toContain("example.test");
+    }
+  });
+
   it("exit codes and files: good evidence exits 0 and rewrites both files", TIMEOUT, () => {
     const paths = files();
     const before = snapshot(paths);
