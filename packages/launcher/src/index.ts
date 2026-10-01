@@ -36,6 +36,7 @@ export type {
 export { PLAN_DIGEST_EXCLUDED_FIELDS, canonicalDigest, canonicalJson, planDigest } from "./plan-digest.js";
 export { CHANGE_SET_DIGEST_EXCLUDED_FIELDS, DERIVED_FILE_DIGEST_FIELDS, bundleDigest, changeSetDigest, changeSetDigestSubject } from "./change-set-digest.js";
 export type { BundleDigestEntry } from "./change-set-digest.js";
+export { AGENTS_GUIDE_PATH, AGENTS_GUIDE_TEXT, CLOSSYS_SKILL_PATTERNS, verifyAgentsGuide } from "./agents-guide.js";
 export { validateApplyBundle, validateRepositoryChangeSet } from "./change-set-contract.js";
 export type {
   ApplyBundle, ApplyBundleRepository, ApplyCheck, ApplyCheckId, ApprovalBinding, ChangeSetDeferral, ChangeSetItem, ChangeSetPhase, ChangeSetRefusal, CheckVerdict, ContentDigest,

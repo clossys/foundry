@@ -66,7 +66,7 @@ describe("planApplyBundle: a setup set for npm", () => {
     expect(validateApplyBundle(bundle)).toEqual({ valid: true });
     expect(set.phase).toBe("setup");
     expect(set.ledger.generation).toBe(0);
-    expect(set.items.map((item) => item.id)).toEqual(["brief", "caller-workflow", "ci-template", STARTER_PLAN_ITEM, "ledger", "path-scope-job", "skills", "starter-request"]);
+    expect(set.items.map((item) => item.id)).toEqual(["agents-guide", "brief", "caller-workflow", "ci-template", STARTER_PLAN_ITEM, "ledger", "path-scope-job", "skills", "starter-request"]);
     for (const act of ["add-caller-workflow", "write-starter-request", "add-ci-template", "add-path-scope-job", "pin-starter"] as const) {
       expect(set.items.filter((item) => item.act === act)).toHaveLength(1);
     }

@@ -17,6 +17,7 @@ import {
 } from "node:fs";
 import { dirname, join } from "node:path";
 import { decideSetBinding, planPackagesFor, readHubAuthority } from "./admission.js";
+import { AGENTS_GUIDE_PATH, verifyAgentsGuide } from "./agents-guide.js";
 import type { AdmissionRefusal, PlanPackageIdentity, ReadinessRunner } from "./admission.js";
 import { storeChangeSet } from "./apply-store.js";
 import {
@@ -633,6 +634,22 @@ export function verifyPrepared(set: RepositoryChangeSet, pre: Preconditions, rea
     if (!allowed(path)) return result(1, "violated", "outside-allow-list");
   }
 
+  // The Launcher's guide is checked before the whole-file loop so a changed byte is named for what it is: the set's own digest,
+  // then the constant text (G5). The file's text is read here and never echoed.
+  if (set.items.some((item) => item.act === "write-record" && item.source === "agents-guide")) {
+    const guide = set.files.find((file) => isWhole(file) && file.path === AGENTS_GUIDE_PATH);
+    if (guide !== undefined && guide.after !== null) {
+      let text: string | null = null;
+      try {
+        const entry = reader.entry(AGENTS_GUIDE_PATH);
+        if (entry !== null && entry.kind === "file") text = reader.bytes(AGENTS_GUIDE_PATH).toString("utf8");
+      } catch {
+        text = null;
+      }
+      if (text === null || contentDigest(text) !== guide.after || !verifyAgentsGuide(text)) return result(1, "violated", "agents-guide-mismatch");
+    }
+  }
+
   for (const file of set.files.filter(isWhole)) {
     if (file.after !== null) {
       try {
@@ -737,7 +754,7 @@ export async function materializeRepository(input: MaterializeInput): Promise<Ap
       return verified;
     }
     if (verified.verdict === "indeterminate") return verified;
-    return { exitCode: 1, verdict: "violated", reason: "diverged", detail: verified.detail };
+    return { exitCode: 1, verdict: "violated", reason: "diverged", detail: verified.reason === "agents-guide-mismatch" ? verified.reason : verified.detail };
   }
 
   for (const file of set.files.filter(isWhole)) {

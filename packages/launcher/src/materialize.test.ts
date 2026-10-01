@@ -8,7 +8,9 @@ import type { Loose } from "./admission-fixture.js";
 import type { ReadinessRunner } from "./admission.js";
 import { buildAdmittedFixture, buildMaterializedFixture, readCloneLedger, writeSnapshot } from "./apply-step-fixture.js";
 import { BUNDLE_STORE_REL, CHANGE_SET_STORE_REL, storeChangeSet } from "./apply-store.js";
+import { AGENTS_GUIDE_PATH, AGENTS_GUIDE_TEXT } from "./agents-guide.js";
 import { LEDGER_PATH, contentDigest, skillPath } from "./change-set-contract.js";
+import { buildGuideFixture } from "./plan-bundle-setup-fixture.js";
 import { renderInstalledLedger } from "./ledger-contract.js";
 import { materializeRepository, verifyRepository } from "./materialize.js";
 
@@ -266,6 +268,47 @@ describe("materializeRepository", () => {
     });
     expect(outcome).toEqual({ exitCode: 2, verdict: "indeterminate", reason: "change-set-invalid" });
     expect(applyBranchExists(fixture.clone, fixture.set.branch)).toBe(false);
+  });
+});
+
+describe("materializeRepository: the Launcher guide", () => {
+  const inputOf = (fixture: ReturnType<typeof buildGuideFixture>) => ({ clone: fixture.clone, hub: fixture.hub, set: fixture.set, texts: fixture.texts, heldChangeSets: [] as [], now: () => new Date("2026-10-01T00:00:00Z") });
+
+  it("writes clossys/AGENTS.md from the constant text, and verify accepts it", async () => {
+    const fixture = buildGuideFixture(roots);
+    const input = inputOf(fixture);
+    expect(await materializeRepository(input)).toEqual({ exitCode: 0, verdict: "materialized" });
+    expect(readFileSync(join(fixture.clone, AGENTS_GUIDE_PATH), "utf8")).toBe(AGENTS_GUIDE_TEXT);
+    expect(await verifyRepository(input)).toEqual({ exitCode: 0, verdict: "materialized" });
+  });
+
+  it("verify checks the guide: a head with one changed byte is diverged (agents-guide-mismatch)", async () => {
+    const fixture = buildGuideFixture(roots);
+    const input = inputOf(fixture);
+    expect((await materializeRepository(input)).exitCode).toBe(0);
+    const changed = AGENTS_GUIDE_TEXT.replace("Do not", "Do NOT");
+    expect(changed).not.toBe(AGENTS_GUIDE_TEXT);
+    writeFileSync(join(fixture.clone, AGENTS_GUIDE_PATH), changed);
+    expect(await verifyRepository(input)).toEqual({ exitCode: 1, verdict: "violated", reason: "agents-guide-mismatch" });
+    expect(await materializeRepository(input)).toEqual({ exitCode: 1, verdict: "violated", reason: "diverged", detail: "agents-guide-mismatch" });
+    expect(readFileSync(join(fixture.clone, AGENTS_GUIDE_PATH), "utf8")).toBe(changed);
+  });
+
+  it("verify also holds the file to the constant text, not only to the set's digest", async () => {
+    const other = `${AGENTS_GUIDE_TEXT}An extra line.\n`;
+    const fixture = buildGuideFixture(roots, other);
+    const input = inputOf(fixture);
+    expect((await materializeRepository(input)).exitCode).toBe(0);
+    expect(readFileSync(join(fixture.clone, AGENTS_GUIDE_PATH), "utf8")).toBe(other);
+    expect(await verifyRepository(input)).toEqual({ exitCode: 1, verdict: "violated", reason: "agents-guide-mismatch" });
+  });
+
+  it("a deleted guide is the same mismatch", async () => {
+    const fixture = buildGuideFixture(roots);
+    const input = inputOf(fixture);
+    expect((await materializeRepository(input)).exitCode).toBe(0);
+    rmSync(join(fixture.clone, AGENTS_GUIDE_PATH));
+    expect(await verifyRepository(input)).toEqual({ exitCode: 1, verdict: "violated", reason: "agents-guide-mismatch" });
   });
 });
 
