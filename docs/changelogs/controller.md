@@ -17,9 +17,8 @@ section alongside the cost/speed/quality/security MECE four, covering one
 grouped `@clossys/*` dependency-update pull request per repository per
 week scheduled for Sunday, a security-advisory bypass, the no-other-day
 rule, and the required `integrator-provenance-check` on the adoption PR.
-Adds `evaluateWeeklyAdoption`, the
-pure evaluator for those four rules, and wires it into
-`evaluateCiConventions` via the new, opt-in
+Adds `evaluateWeeklyAdoption`, the pure evaluator for those four rules,
+and wires it into `evaluateCiConventions` via the new, opt-in
 `CiConventionsDeclaration.weeklyAdoption` field. Does not apply to this
 repository, which produces `@clossys/*` rather than consuming it.
 - Each package skill's section for when the package is not installed speaks of the repositories the team is set up in, instead of every inventoried repository.
