@@ -1627,3 +1627,16 @@ MIT.
 ## Changelog
 
 Release notes for every version are in the [changelog](https://github.com/clossys/foundry/blob/main/docs/changelogs/launcher.md), kept in the public repository rather than in the installed package.
+
+
+### Apply branch provenance
+
+`launcher-apply-plan plan --agent codex` selects an agent namespace for the
+computed apply branches. The supported choices are `codex`, `claude`, and
+`cursor`. The choice is covered by each change-set digest and the bundle
+approval subject; use the same choice when recomputing an approved bundle.
+Omitting `--agent` preserves legacy `clossys/apply-<digest12>` branches and
+stored change sets. Materialize and apply use the stored branch binding.
+Explicit provenance also renders setup path-scope checks for legacy and
+supported agent apply branches, refusing malformed or unsupported apply
+namespaces. Existing legacy template bytes remain unchanged.

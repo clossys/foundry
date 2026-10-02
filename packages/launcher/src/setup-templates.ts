@@ -452,7 +452,8 @@ function renderFixedFile(input: unknown, path: string, bytes: () => string): Tem
 /**
  * Render the files one setup act writes, or refuse. `add-caller-workflow` takes
  * `{ packageManager }`, `write-starter-request` takes a `StarterRequestInput`,
- * and `add-ci-template` and `add-path-scope-job` take no input. The returned
+ * `add-ci-template` takes no input, and `add-path-scope-job` optionally takes
+ * `{ agentProvenance }`. The returned
  * paths are always `TEMPLATE_PATHS[act]`, in that order.
  */
 export function renderSetupTemplate(act: TemplateAct, input?: unknown): TemplateResult {
@@ -465,7 +466,12 @@ export function renderSetupTemplate(act: TemplateAct, input?: unknown): Template
       return checked(name, renderStarterRequest(input));
     case "add-ci-template":
       return checked(name, renderFixedFile(input, CI_WORKFLOW_PATH, renderProductCiWorkflow));
-    case "add-path-scope-job":
-      return checked(name, renderFixedFile(input, PATH_SCOPE_WORKFLOW_PATH, renderPathScopeWorkflow));
+    case "add-path-scope-job": {
+      if (input === undefined) return checked(name, renderFixedFile(input, PATH_SCOPE_WORKFLOW_PATH, renderPathScopeWorkflow));
+      if (!isPlainRecord(input, new Set(["agentProvenance"])) || Reflect.ownKeys(input).length !== 1) return refuse("input-invalid", "input");
+      const agent = ownValue(input, "agentProvenance");
+      if (agent !== "codex" && agent !== "claude" && agent !== "cursor") return refuse("input-invalid", "input");
+      return checked(name, { ok: true, files: [{ path: PATH_SCOPE_WORKFLOW_PATH, bytes: renderPathScopeWorkflow(agent) }] });
+    }
   }
 }

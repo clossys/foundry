@@ -46,7 +46,7 @@ const INTEGRATOR: PinnedPackage = { name: "@clossys/integrator", version: "0.6.0
 const DEP_INTEGRITY = `sha512-${Buffer.alloc(64, 3).toString("base64")}`;
 
 const gitEnv: NodeJS.ProcessEnv = {
-  ...Object.fromEntries(Object.entries(process.env).filter(([key]) => !key.startsWith("GIT_"))),
+  PATH: process.env.PATH,
   GIT_CONFIG_GLOBAL: devNull,
   GIT_CONFIG_NOSYSTEM: "1",
   GIT_OPTIONAL_LOCKS: "0",
@@ -376,6 +376,36 @@ const storedSetBytes = (world: World): string[] => readdirSync(join(world.hub, C
 // ---------------------------------------------------------------------------
 
 describe("launcher-apply-plan plan", () => {
+  it("stores explicit Codex provenance and refuses unsupported or ambiguous CLI choices", async () => {
+    const world = makeWorld();
+    expect(await run(world, ["--agent", "codex"])).toBe(0);
+    const sets = listStoredChangeSets(world.hub);
+    expect(sets.length).toBeGreaterThan(0);
+    for (const set of sets) {
+      expect(set.agentProvenance).toBe("codex");
+      expect(set.branch).toBe(`codex/apply-${set.changeSetDigest.slice(7, 19)}`);
+    }
+    const before = storedSetBytes(world);
+    const digest = SUBJECT.exec(world.out.join(""))![1]!;
+    approveAndCommit(world, digest);
+    world.out.length = 0;
+    expect(await run(world, ["--agent", "codex"])).toBe(0);
+    expect(readStoredApplyBundle(world.hub, digest)!.mode).toBe("planned");
+    expect(storedSetBytes(world)).toEqual(before);
+    await materializeAndMerge(world);
+    world.out.length = 0;
+    expect(await run(world, ["--agent", "codex"])).toBe(2); // first stores the apply bundle
+    expect(await run(world, ["--agent", "codex"])).toBe(0); // then admits it against setup
+    world.out.length = 0;
+    expect(await run(world, ["--agent", "claude"])).toBe(2);
+    expect(world.out.join("")).toContain("agent-provenance-differs");
+    const after = storedSetBytes(world);
+    for (const args of [["--agent"], ["--agent", "agent"], ["--agent", "Codex"], ["--agent", "codex", "--agent", "claude"]]) {
+      expect(await run(world, args)).toBe(2);
+      expect(storedSetBytes(world)).toEqual(after);
+    }
+  }, TEST_TIMEOUT_MS);
+
   it("--help prints the usage and exits 0; anything else on the command line is a usage error", async () => {
     const world = makeWorld();
     expect(await run(world, ["--help"])).toBe(0);

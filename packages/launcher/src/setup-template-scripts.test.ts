@@ -296,10 +296,10 @@ interface Outcome {
   readonly all: string;
 }
 
-function runScope(cwd: string, env: Record<string, string | undefined>, home: string): Outcome {
+function runScope(cwd: string, env: Record<string, string | undefined>, home: string, agentProvenance?: "codex" | "claude" | "cursor"): Outcome {
   const clean: NodeJS.ProcessEnv = { PATH: process.env.PATH, HOME: home, GIT_CONFIG_NOSYSTEM: "1", GIT_CONFIG_GLOBAL: "/dev/null" };
   for (const [key, value] of Object.entries(env)) if (value !== undefined) clean[key] = value;
-  const result = spawnSync(process.execPath, ["--input-type=module", "-"], { cwd, input: renderPathScopeScript(), env: clean, encoding: "utf8", timeout: 60_000 });
+  const result = spawnSync(process.execPath, ["--input-type=module", "-"], { cwd, input: renderPathScopeScript(agentProvenance), env: clean, encoding: "utf8", timeout: 60_000 });
   return { status: result.status, stdout: result.stdout, stderr: result.stderr, all: `${result.stdout}${result.stderr}` };
 }
 
@@ -1370,5 +1370,32 @@ describe("evaluateCiConventions over the rendered workflows", () => {
     // Measured, not assumed: any error-severity finding fails this test and names the rule.
     expect(result.findings.filter((finding) => finding.severity === "error").map((finding) => `${finding.rule} ${finding.path ?? ""}`)).toEqual([]);
     expect(result.verdict).toBe("satisfied");
+  });
+});
+
+
+describe("explicit agent path-scope verification", () => {
+  it("checks owned and unowned changes on legacy and every supported agent branch", () => {
+    for (const namespace of ["clossys", "codex", "claude", "cursor"]) {
+      for (const unowned of [false, true]) {
+        const path = unowned ? "src/unowned.ts" : "clossys/notes.md";
+        const prepared = scenario({ head: { [path]: "change\n" }, ledgerNames: [path] });
+        const result = runScope(prepared.repo.dir, { HEAD_REF: `${namespace}/apply-abc123def456`, BASE_SHA: prepared.base, HEAD_SHA: prepared.head }, tempDir("agent-scope-home-"), "codex");
+        expect(result.status).toBe(unowned ? 1 : 0);
+        expect(result.stdout).not.toContain("nothing to check");
+        if (unowned) expect(result.stderr).toContain("finding");
+      }
+    }
+  });
+
+  it("refuses unsupported and malformed apply branches instead of skipping their checks", () => {
+    for (const ref of ["agent/apply-abc123def456", "feat/apply-abc123def456", "codex/apply-x", "Codex/apply-abc123def456", "codex/apply-abc123def456/extra"]) {
+      const result = runScope(tempDir("agent-refusal-"), { HEAD_REF: ref }, tempDir("agent-scope-home-"), "codex");
+      expect(result.status).toBe(2);
+      expect(result.stderr).toContain("unsupported or malformed apply branch");
+      expect(result.stdout).not.toContain("nothing to check");
+    }
+    expect(() => renderPathScopeScript("agent" as "codex")).toThrow("unsupported agent provenance");
+    expect(renderPathScopeWorkflow("codex")).toContain(renderPathScopeScript("codex").split("\n")[1]!);
   });
 });

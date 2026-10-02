@@ -40,6 +40,11 @@ The plan digest is `canonicalDigest` of the plan without `asOf` and
 Everything else is kept exactly as it is, including every nested member and
 the order of every array.
 
+The optional `agentProvenance` is one of `codex`, `claude`, or `cursor`. It
+stays covered by the digest, so changing it changes the approval subject.
+Omission preserves legacy sets and their digests. Branches cannot be renamed
+independently of this covered choice (code rule C5).
+
 ### What is excluded, and why
 
 Each exclusion removes something that is computed from the digest, from
@@ -52,7 +57,7 @@ branch, on every run.
 | Excluded | Why |
 | --- | --- |
 | `changeSetDigest` | It is the digest. |
-| `branch` | It is named after the digest: `clossys/apply-` and the digest's first 12 hexadecimal digits. |
+| `branch` | It is named after the digest: the covered `agentProvenance` namespace (or `clossys` when omitted), `/apply-`, and the digest's first 12 hexadecimal digits. |
 | `bundle` | It is the bundle digest, which covers this set's digest. |
 | `pullRequest` | Its title ends with the digest's first 12 hexadecimal digits, and its body carries the digest as a marker, so `bodySha256` changes with the digest. Both are rendered from ids and digests only. |
 | `inverse` | It is the digest of the change set that reverts this one, which is computed from this one. |

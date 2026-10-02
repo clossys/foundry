@@ -39,7 +39,7 @@ export const clone = <T>(value: T): T => structuredClone(value);
 export function reseal(set: Loose): RepositoryChangeSet {
   const digest = changeSetDigest(set as RepositoryChangeSet);
   set.changeSetDigest = digest;
-  set.branch = `clossys/apply-${digest.slice(7, 19)}`;
+  set.branch = `${set.agentProvenance ?? "clossys"}/apply-${digest.slice(7, 19)}`;
   set.pullRequest = { title: `Clossys: apply plan ${digest.slice(7, 19)}` };
   return set as RepositoryChangeSet;
 }
