@@ -1,6 +1,5 @@
 ---
 architect: minor
-bouncer: minor
 butler: minor
 customer: minor
 giver: minor
