@@ -5,6 +5,26 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.10.0 - 2026-10-02
+
+- `site-conformance-check` now exits 2 instead of 1 when a source file or directory cannot be read, and for any unexpected failure. Import detection reads tokens in one linear pass, so long whitespace runs no longer take quadratic time and a commented-out, quoted or member-call import no longer satisfies `site/route-not-publisher-view`. A symlink under the app directory is the unwaivable finding `site/symlink-unscanned`. A `--site` or app directory reached through a symlink, a symlinked route manifest or waiver file, and a source file, or a `.ts` or `.tsx` file reached by a relative import, that is not valid UTF-8 are refused (#1820); a relative import of any other file type, such as an image, is skipped unread. The raw-colour string scan is also one linear pass.
+- Add a `product-ci-workflow.yml` template that runs install, build and test for a client product repository, selecting npm or pnpm from its lockfile and refusing a repository with neither or both.
+- New `site-conformance-check <repoRoot> [--site <dir>]` bin: a report-mode scan of a site's `app` directory for routes that do not render a Publisher view, template routes outside the web route manifest, and raw colour literals, with a single waiver file. It exits 0 whenever it ran and 2 when it could not (#1515).
+- Add the weekly Sunday `@clossys/*` adoption convention for consuming
+repositories (owner direction 2026-09-23, #1187/#1259's cadence rule):
+extends `conventions/documents/ci-conventions.md` with a fifth, orthogonal
+section alongside the cost/speed/quality/security MECE four, covering one
+grouped `@clossys/*` dependency-update pull request per repository per
+week scheduled for Sunday, a security-advisory bypass, the no-other-day
+rule, and the required `integrator-provenance-check` on the adoption PR.
+Adds `evaluateWeeklyAdoption`, the
+pure evaluator for those four rules, and wires it into
+`evaluateCiConventions` via the new, opt-in
+`CiConventionsDeclaration.weeklyAdoption` field. Does not apply to this
+repository, which produces `@clossys/*` rather than consuming it.
+- Each package skill's section for when the package is not installed speaks of the repositories the team is set up in, instead of every inventoried repository.
+- Each package skill says the whole team is composed in the hub and a repository staffed in an approved plan gets `@clossys-advisor` and the voices of the roles staffed there once that plan's setup pull request has merged, so a missing `@clossys-<package>` mention is a bug only in the hub.
+
 ## 0.9.23 - 2026-09-24
 
 - A caller that passes an exact copy of a previously shipped canonical

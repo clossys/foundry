@@ -3,6 +3,26 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## 0.5.0 - 2026-10-02
+
+- Each package skill's section for when the package is not installed speaks of the repositories the team is set up in, instead of every inventoried repository.
+- Each package skill says the whole team is composed in the hub and a repository staffed in an approved plan gets `@clossys-advisor` and the voices of the roles staffed there once that plan's setup pull request has merged, so a missing `@clossys-<package>` mention is a bug only in the hub.
+- `CopyResolveOptions` accepts `approvalPlan`, the bytes of an Advisor plan record: a delegate-approved entry then resolves on `production` when that plan validates, declares `delegatedCopyApproval` covering the entry, and its latest decision approves the plan's own digest (#1586).
+- Passing `approvalPlan` together with `acceptDelegateInProduction: true`, or an `approvalPlan` that is not a `Uint8Array`, is refused as `invalid-options` (#1586).
+- A copy registry entry can now carry an owner or delegate approval record, written by `writer-check approve`.
+- `writer-check approval-state` reports approval state set in source, copy read from the registry without the resolver, and stale, expired or pending approvals.
+- A resolution that an `approvalPlan` authorized carries that plan's digest as `approval.authorizingPlanDigest`, typed by the new `CopyResolutionApproval`; a resolution the `acceptDelegateInProduction` flag authorized carries no digest (#1586).
+- The front-door catalog adds six plain-language entries for a password reset and an account activation form: a weak-password notice, a reset-code button, an activation password label, first-name and last-name labels, and a name-required notice.
+- Callers can resolve 57 reserved English front-door copy ids, now covering the code, reset, activation and error pages and their notices, and can import the same catalog as `@clossys/writer/front-door.en.json`.
+- Callers can resolve ten reserved English sign-in front-door copy ids from a shipped catalog, naming the brand, surface or identifier through a closed noun set that reports a missing, blank or unknown noun instead of throwing.
+- `resolveFrontDoorCopy()` no longer throws when its copy id is a null-prototype object or any other value that cannot be converted to a string; it reports `"unknown-copy-id"` like any other unknown id. The `types.ts` documentation now states the front-door defaults as the one exemption from the package shipping no real words (#1777).
+- `resolveMessagingKit()` and `resolveSiteIdentity()` now share one option and field resolver with unchanged results, and the README says that the placeholder-value reasons surface as `"messaging-placeholder"` and points pitch and boilerplate wording at `checkCopy` and `auditClaimsRegister` (#1777).
+- `resolveMessagingKit()` resolves a pitch and a boilerplate in three lengths each from six reserved copy ids (`MESSAGING_KIT_COPY_IDS`), through the same approval rules as any other copy, and returns the kit only when all six are approved.
+- `planDelegateCopyAuthority()` reports whether a plan's bytes authorize delegate-approved copy on `production`, returning the plan digest and scopes when they do and a `PlanDelegateCopyRefusal` code when they do not (#1586).
+- A `delegate-approval-refused` issue names why the given `approvalPlan` did not authorize the entry in `planRefusal`, typed as `CopyResolvePlanRefusal` (#1586).
+- `resolveCopyRef` and `createCopyResolver` accept a `target` option, rendering delegate approvals on `preview` and refusing them on `production` unless `acceptDelegateInProduction` is set.
+- `resolveSiteIdentity` resolves a site's name and tagline from the `site.name` and `site.tagline` copy entries, applying the same approval checks as `resolveCopyRef` and returning either both strings or a list of issues tagged by field.
+
 ## 0.4.0 - 2026-09-24
 
 - The `foundry` manifest block now declares `capabilities` (manifest schema
