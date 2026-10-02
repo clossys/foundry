@@ -39,6 +39,10 @@
 // what "join" means here). A `false` entry is likewise a claim, not a
 // default -- read each one's own reason.
 export const GATED_SCRIPT_PROSE_INPUTS = {
+  "node:scripts/launcher-qualification-fixtures.test.mjs": {
+    prose: false,
+    reason: "Reads external qualification JSON observations and adapter cases, and runs the compiled Launcher check CLI; reads no prose-tier paths.",
+  },
   // ---- Genuinely prose-tier readers (issue #1420's own three categories:
   // .changesets/*.md, docs/**/*.md, a root *.md file) ----------------------
   "node:scripts/collect-changesets.mjs": {
