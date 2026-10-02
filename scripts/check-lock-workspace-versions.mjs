@@ -43,6 +43,17 @@
 // the lock is CURRENTLY truthful, not whether some past record's pin still
 // holds — those are different questions with different answers.
 //
+// BIN MAPS
+// --------
+// The same lock entry also records the member's `bin` map. A pull request
+// that adds a bin to packages/<dir>/package.json without regenerating the
+// lock leaves the next release run's `npm install --package-lock-only` to
+// add it, and the release commit then fails check-release-pr-shape.mjs's
+// lockfile rule for a package it did not bump. Bins are compared only when
+// the lock and manifest versions agree: a bin mismatch on such an entry is a
+// finding, while an entry whose version already differs is reported (or
+// waived by the ratchet below) on its version alone.
+//
 // RATCHET
 // -------
 // A package.json version bump is packed content: fixing a stale lock entry
@@ -66,7 +77,7 @@
 // packages/ directory is never actually empty.
 
 import { existsSync, readFileSync, readdirSync } from "node:fs";
-import { join, resolve } from "node:path";
+import { join, posix, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const repoRoot = process.cwd();
@@ -129,6 +140,54 @@ function loadLock() {
     return { error: `${lockPath} has no "packages" key — not an npm lockfile (v2/v3) this gate can read` };
   }
   return { lock };
+}
+
+// ---------------------------------------------------------------- bin maps
+//
+// npm records a workspace member's `bin` in its lock entry as an object, even
+// when the manifest declares a bare string (keyed by the unscoped package
+// name), reduces each key to its basename, and normalizes each path ("\"
+// becomes "/"; "./", "//" and "/./" collapse). Anything this repository
+// should never publish — the array form, a non-string or empty path, a key
+// with no basename — throws rather than being guessed at.
+function normalizeBin(bin, packageName) {
+  if (bin === undefined || bin === null) return {};
+  const where = `${packageName}'s "bin"`;
+  const normalizePath = (name, path) => {
+    if (typeof path !== "string" || path.length === 0) {
+      throw new Error(`${where} entry "${name}" must be a non-empty string path, got ${JSON.stringify(path)}`);
+    }
+    const normalized = posix.normalize(path.replace(/\\/g, "/")).replace(/^\.\//, "");
+    if (normalized === "" || normalized === ".") throw new Error(`${where} entry "${name}" has an empty path`);
+    return normalized;
+  };
+  if (typeof bin === "string") {
+    const name = packageName.replace(/^@[^/]+\//, "");
+    return { [name]: normalizePath(name, bin) };
+  }
+  if (Array.isArray(bin) || typeof bin !== "object") {
+    throw new Error(`${where} must be a string or an object map of command name to path, got ${Array.isArray(bin) ? "an array" : typeof bin}`);
+  }
+  const normalized = {};
+  for (const [key, path] of Object.entries(bin)) {
+    const name = posix.basename(key.replace(/[\\:]/g, "/"));
+    if (!name) throw new Error(`${where} key ${JSON.stringify(key)} has no basename to use as a command name`);
+    normalized[name] = normalizePath(key, path);
+  }
+  return normalized;
+}
+
+function describeBinDrift(manifest, lockEntry) {
+  const declared = normalizeBin(manifest.bin, manifest.name);
+  const recorded = normalizeBin(lockEntry.bin, manifest.name);
+  const missing = Object.keys(declared).filter((name) => !Object.hasOwn(recorded, name)).sort();
+  const extra = Object.keys(recorded).filter((name) => !Object.hasOwn(declared, name)).sort();
+  const changed = Object.keys(declared).filter((name) => Object.hasOwn(recorded, name) && declared[name] !== recorded[name]).sort();
+  const parts = [];
+  if (missing.length) parts.push(`missing ${missing.join(", ")}`);
+  if (extra.length) parts.push(`not in the manifest ${extra.join(", ")}`);
+  if (changed.length) parts.push(`different path for ${changed.join(", ")}`);
+  return parts.length ? parts.join("; ") : null;
 }
 
 // ------------------------------------------------------------------ allowlist
@@ -226,6 +285,25 @@ function main() {
       continue;
     }
     if (lockVersion === manifest.version) {
+      let binDrift;
+      try {
+        binDrift = describeBinDrift(manifest, lockEntry);
+      } catch (error) {
+        results.push({ package: manifest.name, status: "error", detail: `cannot compare "bin" maps for "${lockKey}": ${error.message}` });
+        continue;
+      }
+      if (binDrift) {
+        results.push({
+          package: manifest.name,
+          status: "finding",
+          detail:
+            `package-lock.json's "${lockKey}" records ${lockVersion}, matching the manifest, but its "bin" map does not match ` +
+            `packages/${dirName}/package.json's: ${binDrift}. A release run's \`npm install --package-lock-only\` rewrites that map, ` +
+            "so the release commit's lockfile then changes beyond its version fields and fails check-release-pr-shape.mjs. " +
+            "Regenerate package-lock.json in the same pull request as the bin change.",
+        });
+        continue;
+      }
       results.push({ package: manifest.name, status: "pass", detail: `package-lock.json's "${lockKey}" records ${lockVersion}, matching the manifest` });
       continue;
     }
@@ -306,11 +384,11 @@ function main() {
     console.log(
       worst === 0
         ? (waived.length
-          ? `PASS — every packages/* entry in package-lock.json matches its manifest version (${waived.length} known, waived mismatch(es) above; a waived run is not a clean one).`
-          : "PASS — every packages/* entry in package-lock.json matches its manifest version.")
+          ? `PASS — every packages/* entry in package-lock.json matches its manifest's version and bin map (${waived.length} known, waived mismatch(es) above; a waived run is not a clean one).`
+          : "PASS — every packages/* entry in package-lock.json matches its manifest's version and bin map.")
         : worst === 2
           ? "ERROR — could not evaluate at least one package, the lockfile, or the allowlist (see ERROR lines above)."
-          : "FAIL — the FIND lines above mean package-lock.json is currently false about at least one workspace member's version: a fresh `npm ci` will trust the stale number. Regenerate package-lock.json (see detail above).",
+          : "FAIL — the FIND lines above mean package-lock.json is currently false about at least one workspace member's version or bin map: a fresh `npm ci` will trust the stale record. Regenerate package-lock.json (see detail above).",
     );
   }
   process.exit(worst);
@@ -318,4 +396,4 @@ function main() {
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) main();
 
-export { discoverPackages, loadAllowlist, loadLock, loadManifest };
+export { describeBinDrift, discoverPackages, loadAllowlist, loadLock, loadManifest, normalizeBin };
