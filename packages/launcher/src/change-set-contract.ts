@@ -26,6 +26,22 @@ export type DependencyPlacement = "dependencies" | "devDependencies";
 export type DiscoveryRoot = ".claude/skills" | ".cursor/skills";
 export type WriteRecordSource = "engagement-brief" | "agents-pointer" | "claude-loader" | "agents-guide";
 
+/** Bounded stable registry semver declarations: exact, caret or tilde, with a resolved lower-bound match. */
+export function existingDeclarationVersionMatches(literal: string, resolved: string): boolean {
+  const match=/^([~^]?)(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$/.exec(literal);
+  const actual=/^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$/.exec(resolved);
+  if(!match || !actual)return false;
+  const lower=match.slice(2).map(value=>BigInt(value));
+  const version=actual.slice(1).map(value=>BigInt(value));
+  const compared=version[0]!==lower[0]?version[0]!>lower[0]!:version[1]!==lower[1]?version[1]!>lower[1]!:version[2]!>=lower[2]!;
+  if(!compared)return false;
+  if(match[1] === "")return resolved === literal;
+  if(match[1] === "~")return version[0]===lower[0] && version[1]===lower[1];
+  if(lower[0]!==0n)return version[0]===lower[0];
+  if(lower[1]!==0n)return version[0]===0n && version[1]===lower[1];
+  return version[0]===0n && version[1]===0n && version[2]===lower[2];
+}
+
 /** One exact package: one version and one sha512 integrity value. */
 export interface PinnedPackage {
   readonly name: string;
@@ -103,6 +119,19 @@ export interface DerivedFileChange {
 
 export type FileChange = WholeFileChange | DerivedFileChange;
 
+/** Explicit consent for one existing root declaration; registry metadata is not installed-byte evidence. */
+export interface ExistingDeclarationAdoption {
+  readonly file: "package.json";
+  readonly placement: DependencyPlacement;
+  readonly name: string;
+  readonly beforeVersion: string;
+  readonly beforeResolved: PinnedPackage;
+  readonly desired: PinnedPackage & {readonly planItem: string; readonly act: "install" | "pin-starter"; readonly placement: DependencyPlacement};
+  readonly observedBaseCommit: string;
+  readonly desiredSnapshotDigest: string;
+  readonly consent: "adopt-existing-declaration";
+}
+
 /** One owned key inside package.json, by JSON pointer. */
 export interface KeyChange {
   readonly file: "package.json";
@@ -139,6 +168,7 @@ export type AgentProvenance = "codex" | "claude" | "cursor";
 export interface RepositoryChangeSet {
   readonly schemaVersion: 1;
   readonly kind: "clossys.repository-change-set";
+  readonly existingDeclarationAdoptions?: readonly ExistingDeclarationAdoption[];
   readonly producer: { readonly name: string; readonly version: string };
   readonly planDigest: string;
   readonly repository: {
@@ -714,6 +744,22 @@ export function changeSetRuleViolations(set: RepositoryChangeSet): RuleViolation
     if (first !== undefined && isPackageInvariant(first) && file.item !== first.item) push("C9", `files[${index}].item`, "is not the item of its first invariant");
   });
 
+  if (set.existingDeclarationAdoptions !== undefined) {
+    const seen = new Set<string>();
+    for (const [index,row] of set.existingDeclarationAdoptions.entries()) {
+      const item = set.items.find(item => isPackageItem(item) && item.planItem === row.desired.planItem);
+      const at = `existingDeclarationAdoptions[${index}]`;
+      if (seen.has(row.name) || row.name !== row.beforeResolved.name || row.name !== row.desired.name || row.placement !== row.desired.placement || row.desired.planItem !== `${set.repository.id}:${row.name}`) push("C9",at,"do not identify one root declaration");
+      seen.add(row.name);
+      if (set.phase === "setup" && row.observedBaseCommit !== set.repository.baseCommit) push("C9",at,"name another observed setup base");
+      if (set.phase === "setup" && row.desired.act === "install") {
+        if (!set.deferred.some(deferral => deferral.planItem === row.desired.planItem)) push("C9",at,"do not name a deferred install");
+      } else if (!item || !isPackageItem(item) || item.package.name !== row.name || item.package.version !== row.desired.version || item.package.integrity !== row.desired.integrity || item.placement !== row.placement || item.act !== row.desired.act) push("C9",at,"do not match desired package item");
+      if (item && isPackageItem(item) && !(set.phase === "apply" && row.desired.act === "pin-starter")) {
+        if (item.satisfiedInBase || !set.keys.some(key => key.item === item.id && key.before === row.beforeVersion && key.after === row.desired.version)) push("C9",at,"do not emit an explicit compare-and-swap");
+      }
+    }
+  }
   // C10
   const starters = set.items.map((item, index) => ({ item, index })).filter(({ item }) => item.act === "pin-starter");
   if (starters.length > 1) push("C10", `items[${starters[1]!.index}]`, "is a second pin-starter item; a set pins Starter at most once");

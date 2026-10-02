@@ -1,3 +1,4 @@
+import {unambiguousPnpmAdoptionMetadata} from "./pnpm.js";
 import { describe, expect, it } from "vitest";
 import { evaluateStarter, evaluateProcessResult, isNormalizedRelativePath, validateStarterRequest } from "./core.js";
 import { validateNpmIdentity } from "./npm.js";
@@ -293,5 +294,32 @@ describe("fixed install adapters", () => {
       `package.json devDependencies does not declare ${advisor.name} at exact ${advisor.version}`,
       `pnpm package entry for ${advisor.name} does not match exact resolution integrity`,
     ]));
+  });
+});
+
+describe("new proof native pnpm serialization subset",()=>{
+  it.each([
+    "importers: {}\n'importers': {}\n",
+    "root:\n  resolution: {integrity: example, 'integrity': other}\n",
+    "root: &anchor {}\n",
+    "root: *anchor\n",
+    "root:\n  '<<': {}\n",
+    "root: [*anchor]\n",
+    "root:\n  - *anchor\n",
+    "root: {integrity: *anchor}\n",
+    "root: {nested: {integrity: example}}\n",
+    "root: !!str example\n",
+    "!!str importers: {}\nimporters: {}\n",
+    "01: {}\n'1': {}\n",
+    ".5: {}\n",
+    ".5: {}\n'0.5': {}\n",
+    "@scope/package: {}\n",
+    "root: |\n  example\n",
+    '"ro\\ot": {}\n',
+  ])("refuses ambiguous or unsupported serialization #%#",text=>{
+    expect(unambiguousPnpmAdoptionMetadata(text)).toBe(false);
+  });
+  it("accepts native mapping, simple keys, scalar sequences and flat inline maps",()=>{
+    expect(unambiguousPnpmAdoptionMetadata("lockfileVersion: '9.0'\nimporters:\n  .: {}\nroot:\n  resolution: {integrity: sha512-example}\n  cpu: [arm64, x64]\n  peers:\n    - '@scope/package'\n")).toBe(true);
   });
 });

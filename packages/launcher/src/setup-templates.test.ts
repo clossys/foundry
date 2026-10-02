@@ -61,7 +61,7 @@ const expectedRequest = (packageManager: string) =>
 
 describe("renderStarterRequest", () => {
   it("names the documented pin range", () => {
-    expect(STARTER_PIN_RANGE).toBe(">=0.2.0 <0.3.0");
+    expect(STARTER_PIN_RANGE).toBe(">=0.2.0 <0.4.0");
   });
 
   it.each(["npm", "pnpm"] as const)("writes byte-exact 2-space JSON with a final newline for %s", (packageManager) => {
@@ -86,7 +86,7 @@ describe("renderStarterRequest", () => {
 
   it("accepts 0.2.0 and 0.2.7 and refuses every other version shape at starter.version", () => {
     for (const version of ["0.2.0", "0.2.7", "0.2.10", "0.2.999"]) expect(renderStarterRequest(input({ starter: pin({ version }) })).ok, version).toBe(true);
-    for (const version of ["0.1.9", "0.3.0", "0.2.0-rc.1", "1.0.0", "0.2", "v0.2.1", "0.2.01", "0.02.1", "00.2.1", "0.2.1+build", "0.2.1\n", " 0.2.1", "0.2.1 ", "0.2.x", "^0.2.0", ">=0.2.0 <0.3.0", "", "0.2.1.0", "0.2.9999999999999", 2, null, undefined, {}]) {
+    for (const version of ["0.1.9", "0.4.0", "0.2.0-rc.1", "1.0.0", "0.2", "v0.2.1", "0.2.01", "0.02.1", "00.2.1", "0.2.1+build", "0.2.1\n", " 0.2.1", "0.2.1 ", "0.2.x", "^0.2.0", ">=0.2.0 <0.3.0", "", "0.2.1.0", "0.2.9999999999999", 2, null, undefined, {}]) {
       expect(refusal(renderStarterRequest(input({ starter: pin({ version }) })), ), String(version)).toEqual({ reason: "starter-pin-unsupported", at: "starter.version" });
     }
   });
@@ -624,7 +624,7 @@ describe("renderSetupTemplate", () => {
   });
 
   it("refuses a Starter pin outside the supported range through the dispatcher", () => {
-    for (const version of ["0.1.9", "0.3.0"]) {
+    for (const version of ["0.1.9", "0.4.0"]) {
       expect(refusal(renderSetupTemplate("write-starter-request", input({ starter: pin({ version }) })))).toEqual({ reason: "starter-pin-unsupported", at: "starter.version" });
     }
   });

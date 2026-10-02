@@ -127,12 +127,12 @@ describe.each(["npm", "pnpm"] as const)("the rendered request against Starter (%
 
 describe("a pin outside the supported range", () => {
   it("is refused by the renderer, so nothing reaches Starter", () => {
-    for (const version of ["0.1.9", "0.3.0", "0.2.0-rc.1", "1.0.0"]) {
+    for (const version of ["0.1.9", "0.4.0", "0.2.0-rc.1", "1.0.0"]) {
       const result = renderStarterRequest(input("npm", { version }));
       expect(result).toEqual({ ok: false, refusal: { reason: "starter-pin-unsupported", at: "starter.version" } });
     }
     // Starter itself accepts these; only the renderer's range refuses them.
-    const outside = { ...(rendered("npm") as object), starter: { name: "@clossys/starter", version: "0.3.0", integrity: INTEGRITY, bin: "foundry-starter" } };
+    const outside = { ...(rendered("npm") as object), starter: { name: "@clossys/starter", version: "0.4.0", integrity: INTEGRITY, bin: "foundry-starter" } };
     expect(validateStarterRequest(outside).findings.map((entry) => entry.rule)).not.toContain("starter-contract");
   });
 });

@@ -49,10 +49,10 @@ export type TemplateResult =
 
 /**
  * The Starter versions a setup may pin, for documentation. The check below is
- * the rule: an exact `0.2.PATCH`, with no range, prerelease, build metadata, or
+ * the rule: an exact `0.2.PATCH` or `0.3.PATCH`, with no range, prerelease, build metadata, or
  * leading zero.
  */
-export const STARTER_PIN_RANGE = ">=0.2.0 <0.3.0";
+export const STARTER_PIN_RANGE = ">=0.2.0 <0.4.0";
 
 const REQUEST_PATH = ".starter/request.json";
 const DECISION_WORKFLOW_PATH = ".github/workflows/clossys-adoption-decision.yml";
@@ -61,7 +61,7 @@ const STARTER_NAME = "@clossys/starter";
 const STARTER_BIN = "foundry-starter";
 const SNAPSHOT_MAX_AGE_MS = 3_600_000;
 
-const STARTER_VERSION = /^0\.2\.(?:0|[1-9][0-9]{0,8})$/u;
+const STARTER_VERSION = /^0\.[23]\.(?:0|[1-9][0-9]{0,8})$/u;
 
 /**
  * Whether `version` is a Starter version the templates support: exactly the
@@ -305,9 +305,10 @@ const LAST_STEPS: readonly string[] = [
   "",
 ];
 
-function decisionWorkflow(manager: SetupPackageManager): string {
+function decisionWorkflow(manager: SetupPackageManager, adoptionProofs = false): string {
   const install = manager === "npm" ? NPM_INSTALL : PNPM_INSTALL;
-  return [...workflowTop(manager), ...FIRST_STEPS, ...install, ...LAST_STEPS].join("\n");
+  const bytes = [...workflowTop(manager), ...FIRST_STEPS, ...install, ...LAST_STEPS].join("\n");
+  return adoptionProofs ? bytes.replace("            /clossys/.state/installed.json", "            /clossys/.state/installed.json\n            /package.json\n            /" + (manager === "npm" ? "package-lock.json" : "pnpm-lock.yaml")) : bytes;
 }
 
 /** Render `.github/workflows/clossys-adoption-decision.yml` for npm or pnpm, or refuse at `packageManager`. */
@@ -416,7 +417,7 @@ export function renderProductCiWorkflow(): string {
 // The dispatcher
 // ---------------------------------------------------------------------------
 
-const CALLER_KEYS: ReadonlySet<string> = new Set(["packageManager"]);
+const CALLER_KEYS: ReadonlySet<string> = new Set(["packageManager", "existingDeclarationAdoptions"]);
 
 function isTemplateAct(value: unknown): value is TemplateAct {
   return typeof value === "string" && Object.prototype.hasOwnProperty.call(TEMPLATE_PATHS, value);
@@ -431,9 +432,10 @@ function checked(act: TemplateAct, result: TemplateResult): TemplateResult {
 }
 
 function renderCallerWorkflows(input: unknown): TemplateResult {
-  if (!isPlainRecord(input, CALLER_KEYS) || Reflect.ownKeys(input).length !== 1) return refuse("input-invalid", "input");
-  const decision = renderAdoptionDecisionWorkflow(ownValue(input, "packageManager"));
-  if (!decision.ok) return decision;
+  if (!isPlainRecord(input, CALLER_KEYS) || (Reflect.ownKeys(input).length !== 1 && (Reflect.ownKeys(input).length !== 2 || ownValue(input,"existingDeclarationAdoptions") !== true))) return refuse("input-invalid", "input");
+  const manager = ownValue(input,"packageManager");
+  if (!isPackageManager(manager)) return refuse("package-manager-unsupported", "packageManager");
+  const decision = {ok:true as const, files:[{path:DECISION_WORKFLOW_PATH, bytes:decisionWorkflow(manager,ownValue(input,"existingDeclarationAdoptions") === true)}]};
   return {
     ok: true,
     files: [

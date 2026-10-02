@@ -305,9 +305,9 @@ describe("ledger succession (a pull request's head against its base)", () => {
       const succession = description.slice(description.indexOf("SUCCESSION,"));
       expect(render).toContain(`the only file with a before of null that RENDER writes a row for is the Launcher guide (path clossys/AGENTS.md, mode 100644, after ${GUIDE_AFTER}, the digest of the guide's bytes)`);
       expect(render).toContain("only where a previous ledger P exists and holds no row at that path in any letter case");
-      expect(succession).toContain(`head.files equal base's or add exactly one row and drop none, the row for clossys/AGENTS.md with mode 100644, after ${GUIDE_AFTER}`);
+      expect(succession).toContain(`head.files equal base's or add exactly one row and drop none, the row whose files[].path is the canonical Launcher guide artifact path (AGENTS_GUIDE_PATH), with mode 100644, after ${GUIDE_AFTER}`);
       expect(succession).toContain("changes no other row, apart from that one files row");
-      expect(description.match(/clossys\/AGENTS\.md/g)).toHaveLength(2);
+      expect(description.match(/clossys\/AGENTS\.md/g)).toHaveLength(1);
       // The contract names the guide's bytes by one digest, and it is the digest of the text this package writes.
       expect([...new Set(description.match(/after (sha256:[0-9a-f]{64})/g))]).toEqual([`after ${GUIDE_AFTER}`]);
     });

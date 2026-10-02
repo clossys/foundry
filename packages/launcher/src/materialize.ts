@@ -1,3 +1,6 @@
+import { readContractDocument } from "./generated/contract-schema.generated.js";
+import { readLockfile, isUnreadable } from "./lockfile-readers.js";
+import { PACKAGE_SCOPE } from "./generated/package-scope.generated.js";
 // Write an approved repository change set into a clean local clone and verify
 // the result (RFC apply-approved-plan §7 V4 and V8, migration step 3).
 
@@ -22,6 +25,7 @@ import type { AdmissionRefusal, PlanPackageIdentity, ReadinessRunner } from "./a
 import { storeChangeSet } from "./apply-store.js";
 import {
   CANONICAL_KEYS,
+  dependencyPointer,
   LEDGER_PATH,
   canonicalOrder,
   contentDigest,
@@ -589,6 +593,31 @@ export async function runPreconditions(
   const planPackages = planPackagesFor(authority, set.repository.id);
   const trust = baseLedgerTrust(root, set, heldChangeSets, authority.planDigest, planPackages);
   if ("exitCode" in trust) return trust;
+  if (set.existingDeclarationAdoptions !== undefined) {
+    const lockPath = lockfilePath(set.observed);
+    if (lockPath !== "package-lock.json" && lockPath !== "pnpm-lock.yaml") return result(2,"indeterminate","lockfile-format-unsupported");
+    const manifestText = gitShowUtf8(root,set.repository.baseCommit,"package.json");
+    const lockText = gitShowUtf8(root,set.repository.baseCommit,lockPath);
+    if (manifestText === null || lockText === null) return result(1,"violated","base-mismatch");
+    for (const path of ["package.json",lockPath]) if (!git(root,["ls-tree",set.repository.baseCommit,"--",path]).stdout.startsWith("100644 ")) return result(1,"violated","base-mismatch");
+    try { readContractDocument(Buffer.from(manifestText)); if (lockPath === "package-lock.json") readContractDocument(Buffer.from(lockText)); }
+    catch { return result(1,"violated","base-mismatch"); }
+    const locked = readLockfile(lockPath === "package-lock.json" ? "npm":"pnpm",lockText);
+    if (isUnreadable(locked)) return result(1,"violated","base-mismatch");
+    for (const proof of set.existingDeclarationAdoptions) {
+      const consumed = set.phase === "apply" && proof.desired.act === "pin-starter";
+      const expected = consumed ? proof.desired : proof.beforeResolved;
+      const literal = consumed ? proof.desired.version : proof.beforeVersion;
+      const pointer = dependencyPointer(proof.placement,proof.name);
+      const other = dependencyPointer(proof.placement === "dependencies"?"devDependencies":"dependencies",proof.name);
+      const at = valueAtJsonPointer(manifestText,pointer);
+      const edges = locked.root.filter(row=>row.name===proof.name);
+      const packages = locked.entries.filter(row=>row.installedName === proof.name && row.version === expected.version);
+      const registryTarball=`${PACKAGE_SCOPE.registry}/${expected.name}/-/${expected.name.slice(expected.name.indexOf("/")+1)}-${expected.version}.tgz`;
+      if (packages.some(row=>row.name !== proof.name || row.link || row.otherResolutionKeys.length !== 0 || row.integrity !== expected.integrity || (lockPath === "package-lock.json" ? row.tarball !== registryTarball : row.tarball !== null && row.tarball !== registryTarball))) return result(1,"violated","base-mismatch");
+      if (!at.found || at.value !== literal || valueAtJsonPointer(manifestText,other).found || edges.length !== 1 || edges[0]?.placement !== proof.placement || edges[0].specifier !== literal || edges[0].version !== expected.version || edges[0].integrity !== expected.integrity || edges[0].link || edges[0].rawVersion?.includes("patch_hash")) return result(1,"violated","base-mismatch");
+    }
+  }
   const decided = await decideSetBinding({
     hub: hubRoot,
     clone: root,

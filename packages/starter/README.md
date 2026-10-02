@@ -293,3 +293,31 @@ MIT.
 ## Changelog
 
 Release notes for every version are in the [changelog](https://github.com/clossys/foundry/blob/main/docs/changelogs/starter.md), kept in the public repository rather than in the installed package.
+
+### Protected existing-declaration adoption
+
+Starter 0.3 adds admission for explicitly scoped existing first-party root
+declarations carried by an approved Launcher setup. Optional canonical ledger
+proof rows bind source base, bucket/name, literal prior declaration, prior root
+resolution identity, desired public snapshot identity and adoption consent. A
+protected setup's `pin-starter` proof is already consumed and matches the desired
+base pin; deferred install proofs match prior base metadata and desired head
+metadata. Proof rows must remain unchanged in the admitted next generation.
+
+The required admission adapter reads head `package.json` and the manager's root
+lock as data in addition to the ledger. It does not execute head code. Without
+these data files an opted-in apply refuses. Manifest data outside approved
+deferred declaration keys stays unchanged, and head root identities match all
+protected desired package rows. Resolution metadata is not installed-byte proof;
+existing installation and execution evidence remain independent. No option or
+caller request authenticates approval, and `approval-claimed` still refuses.
+Legacy ledgers omit proof rows and retain their existing admission behavior.
+
+`validateNpmIdentity` and `validatePnpmIdentity` accept an optional fifth literal
+`declaration` argument for matching a protected prior registry declaration while
+keeping the resolved version/integrity exact. Omission still requires the exact
+resolved version as the declaration. This argument grants no adoption authority.
+
+Existing-declaration consent supports stable exact, caret and tilde root declarations in their existing dependency bucket. The prior resolved version must satisfy that declaration. Cross-bucket moves, aliases, file references and prereleases are refused. Proof rows remain immutable; this capability covers initial setup and its first admitted apply. It grants no installed-byte or later-generation lifecycle evidence.
+
+For explicit adoption only, pnpm lock metadata accepts native indentation maps, simple quoted keys, ordinary unquoted string keys, scalar sequences and arrays, and flat inline maps. Duplicate semantic keys, including differently quoted spellings, are refused in protected and head metadata. Unquoted keys with numeric or boolean/null spellings, escaped quotes, tags, anchors, aliases, merge keys, block scalars and nested inline maps are unsupported. This bounded check is not a general YAML parser; absent-proof behavior is unchanged.

@@ -29,6 +29,9 @@ function temporaryRoot(): string { const root = join(tmpdir(), `starter-pack-${D
  * The consumer, never the invoking job, owns package-manager configuration.
  */
 function consumerEnvironment(root: string): NodeJS.ProcessEnv {
+  // Both config files belong to the disposable fixture; no ambient global config participates.
+  const globalConfig = join(root, "global-npmrc");
+  writeFileSync(globalConfig, "");
   const environment: NodeJS.ProcessEnv = {};
   for (const name of RUNTIME_ENVIRONMENT_NAMES) {
     const value = process.env[name];
@@ -41,6 +44,7 @@ function consumerEnvironment(root: string): NodeJS.ProcessEnv {
     XDG_CONFIG_HOME: join(root, ".config"),
     XDG_CACHE_HOME: join(root, ".cache"),
     NPM_CONFIG_USERCONFIG: join(root, ".npmrc"),
+    NPM_CONFIG_GLOBALCONFIG: globalConfig,
     NPM_CONFIG_CACHE: join(root, ".npm-cache"),
     PNPM_HOME: join(root, ".pnpm-home"),
   };
@@ -125,7 +129,7 @@ async function localRegistry(packages: readonly PackedPackage[]): Promise<{ read
 }
 
 function writeRegistryConfig(root: string, registryUrl: string): void {
-  writeFileSync(join(root, ".npmrc"), `@clossys:registry=${registryUrl}\n@fixture:registry=${registryUrl}\n`);
+  writeFileSync(join(root, ".npmrc"), `registry=${registryUrl}\n@clossys:registry=${registryUrl}\n@fixture:registry=${registryUrl}\n`);
 }
 
 async function withHostilePublishEnvironment<T>(root: string, action: () => Promise<T>): Promise<T> {
@@ -241,6 +245,18 @@ async function installPnpmConsumer(root: string, registryUrl: string, installed:
 afterEach(() => { for (const root of roots.splice(0)) rmSync(root, { recursive: true, force: true }); });
 
 describe("packed installed activation canaries", () => {
+  it("binds every fixture registry route and isolates user and global configuration", () => {
+    const root = temporaryRoot();
+    const registryUrl = "http://127.0.0.1:9/";
+    writeRegistryConfig(root, registryUrl);
+    const lines = readFileSync(join(root, ".npmrc"), "utf8").trim().split("\n");
+    expect(lines).toEqual([`registry=${registryUrl}`, `@clossys:registry=${registryUrl}`, `@fixture:registry=${registryUrl}`]);
+    const environment = consumerEnvironment(root);
+    expect(environment.NPM_CONFIG_USERCONFIG).toBe(join(root, ".npmrc"));
+    expect(environment.NPM_CONFIG_GLOBALCONFIG).toBe(join(root, "global-npmrc"));
+    expect(environment.NPM_CONFIG_GLOBALCONFIG).not.toBe(environment.NPM_CONFIG_USERCONFIG);
+    expect(readFileSync(environment.NPM_CONFIG_GLOBALCONFIG!, "utf8")).toBe("");
+  });
   it("isolates real npm and pnpm consumers from hostile publish settings and preserves 0/1/2 outcomes", async () => {
     const fixtureRoot = temporaryRoot();
     await withHostilePublishEnvironment(fixtureRoot, async () => {

@@ -37,7 +37,7 @@ const PM_VERSION = "10.9.0";
 const DEP_INTEGRITY = `sha512-${Buffer.alloc(64, 3).toString("base64")}`;
 
 const gitEnv: NodeJS.ProcessEnv = {
-  ...Object.fromEntries(Object.entries(process.env).filter(([key]) => !key.startsWith("GIT_"))),
+  ...Object.fromEntries(["PATH", "TMPDIR", "SYSTEMROOT"].flatMap(key => process.env[key] === undefined ? [] : [[key,process.env[key]]])),
   GIT_CONFIG_GLOBAL: devNull,
   GIT_CONFIG_NOSYSTEM: "1",
   GIT_OPTIONAL_LOCKS: "0",
@@ -481,7 +481,7 @@ describe("observeRepository reads the phase from a Starter pin the templates sup
     expect((await observe(site)).phase).toBe("apply");
   }, TEST_TIMEOUT_MS);
 
-  it.each([["0.1.9"], ["0.3.0"]])("reads Starter %s, though exact and locked, as setup", async (version) => {
+  it.each([["0.1.9"], ["0.4.0"]])("reads Starter %s, though exact and locked, as setup", async (version) => {
     const site = makeSite("npm", pinnedFiles(version));
     expect((await observe(site)).phase).toBe("setup");
   }, TEST_TIMEOUT_MS);
@@ -529,3 +529,76 @@ describe("observeRepository reads the phase from a Starter pin the templates sup
     expect(observation.repositoryProfile).toMatchObject({ rootVocabulary: "checked", undeclaredRoots: [] });
   }, TEST_TIMEOUT_MS);
 });
+
+for (const kind of ["npm", "pnpm"] as const) for (const alreadyCurrent of [false,true]) it(`${kind}: approved existing declaration (${alreadyCurrent ? "equal version" : "update"}) through apply and required Starter admission`, async () => {
+  const {evaluateAdmission,admissionExitCode}=await import("../../starter/src/core.js");
+  const plan=setupPlan({starterVersion:"0.3.0"});
+  const desired=plan.packages!.find(act=>act.act==="install")!;
+  const oldLiteral=alreadyCurrent ? desired.version : "^0.1.0", oldVersion=alreadyCurrent ? desired.version : "0.1.2";
+  const makeLock=(manifest:{devDependencies:Record<string,string>})=>{
+    const entries=Object.entries(manifest.devDependencies);
+    const identity=(name:string,spec:string)=>({version:name===desired.name && spec===oldLiteral?oldVersion:spec,integrity:name===desired.name?desired.integrity:name===STARTER_NAME?STARTER_INTEGRITY:DEP_INTEGRITY});
+    if(kind==="npm") return json({lockfileVersion:3,packages:{"":{devDependencies:manifest.devDependencies},...Object.fromEntries(entries.map(([name,spec])=>[`node_modules/${name}`,{...identity(name,spec),resolved:`https://registry.npmjs.org/${name}/-/${name.split("/").at(-1)}-${identity(name,spec).version}.tgz` }]))}});
+    return ["lockfileVersion: '9.0'","importers:","  .:","    devDependencies:",...entries.flatMap(([name,spec])=>[`      '${name}':`,`        specifier: '${spec}'`,`        version: ${identity(name,spec).version}`]),"packages:",...entries.flatMap(([name,spec])=>[`  '${name}@${identity(name,spec).version}':`,`    resolution: {integrity: ${identity(name,spec).integrity}}`]),"snapshots:",...entries.map(([name,spec])=>`  '${name}@${identity(name,spec).version}': {}`),""].join("\n");
+  };
+  const initial={...JSON.parse(manifestText(kind)),devDependencies:{"example-dep":"1.0.0",[desired.name]:oldLiteral}};
+  const site=makeSite(kind,{"package.json":json(initial),[lockName(kind)]:makeLock(initial)});
+  const observation=await observe(site);
+  const proof={file:"package.json" as const,placement:desired.placement,name:desired.name,beforeVersion:oldLiteral,beforeResolved:{name:desired.name,version:oldVersion,integrity:desired.integrity},desired:{name:desired.name,version:desired.version,integrity:desired.integrity,planItem:desired.planItem,act:desired.act,placement:desired.placement},observedBaseCommit:observation.baseCommit,desiredSnapshotDigest:plan.resolution!.snapshotDigest,consent:"adopt-existing-declaration" as const};
+  const computed=planApplyBundle(setupInputs(observation,plan,{existingDeclarationAdoptions:{[SITE_ID]:[proof]}}));
+  const setup=computed.changeSets[0]!;
+  expect(setup.existingDeclarationAdoptions).toEqual([proof]);
+  const approved=approvedPlan(computed.bundle.bundleDigest,plan);
+  const spawn:LockfileSpawn=async request=>{
+    if(request.args.includes("--version")) return {status:0,stdout:PM_VERSION+"\n",stderr:""};
+    writeFileSync(join(request.cwd,lockName(kind)),makeLock(JSON.parse(readFileSync(join(request.cwd,"package.json"),"utf8"))));
+    return {status:0,stdout:"",stderr:""};
+  };
+  // Caller-supplied observation/consent cannot substitute for the actual protected Git source.
+  const forgedProof={...proof,beforeResolved:{...proof.beforeResolved,integrity:STARTER_INTEGRITY}};
+  const forgedObservation={...observation,lockedPackages:observation.lockedPackages.map(pkg=>pkg.name===desired.name?{...pkg,integrity:STARTER_INTEGRITY}:pkg)};
+  const forged=planApplyBundle(setupInputs(forgedObservation,plan,{existingDeclarationAdoptions:{[SITE_ID]:[forgedProof]}}));
+  const forgedSet=forged.changeSets[0]!;
+  const forgedApproved=approvedPlan(forged.bundle.bundleDigest,plan);
+  const forgedHub=hubRepo(roots,{plans:[forgedApproved],sets:[forgedSet],bundles:[forged.bundle]}).hub;
+  expect(await materializeRepository({clone:site.clone,hub:forgedHub,set:forgedSet,texts:{},spawn,toolVersion:toolVersionFor(kind),now:NOW,runReadiness:READY})).toMatchObject({exitCode:1,verdict:"violated",reason:"base-mismatch"});
+  const nonRegistryLock=kind === "npm" ? (()=>{
+    const value=JSON.parse(makeLock(initial));value.packages[`node_modules/${desired.name}`].resolved="https://example.invalid/package.tgz";return json(value);
+  })() : makeLock(initial).replace(`resolution: {integrity: ${desired.integrity}}`,`resolution: {integrity: ${desired.integrity}, tarball: 'file:../package'}`);
+  const nonRegistrySite=makeSite(kind,{"package.json":json(initial),[lockName(kind)]:nonRegistryLock});
+  const nonRegistryObservation=await observe(nonRegistrySite);
+  const nonRegistryProof={...proof,observedBaseCommit:nonRegistryObservation.baseCommit};
+  const nonRegistry=planApplyBundle(setupInputs(nonRegistryObservation,plan,{existingDeclarationAdoptions:{[SITE_ID]:[nonRegistryProof]}}));
+  const nonRegistrySet=nonRegistry.changeSets[0]!;
+  const nonRegistryApproved=approvedPlan(nonRegistry.bundle.bundleDigest,plan);
+  const nonRegistryHub=hubRepo(roots,{plans:[nonRegistryApproved],sets:[nonRegistrySet],bundles:[nonRegistry.bundle]}).hub;
+  expect(await materializeRepository({clone:nonRegistrySite.clone,hub:nonRegistryHub,set:nonRegistrySet,texts:{},spawn:()=>{throw new Error("non-registry source reached native tool");},toolVersion:toolVersionFor(kind),now:NOW,runReadiness:READY})).toMatchObject({exitCode:1,verdict:"violated",reason:"base-mismatch"});
+  const hub=hubRepo(roots,{plans:[approved],sets:[setup],bundles:[computed.bundle]}).hub;
+  const run:SetupRun={site,plan,approved,hub,setup,approvedBundle:computed.bundle.bundleDigest,observation};
+  const setupResult=await materializeRepository({clone:site.clone,hub,set:setup,texts:{},spawn,toolVersion:toolVersionFor(kind),now:NOW,runReadiness:READY});
+  expect(setupResult.exitCode,JSON.stringify(setupResult)).toBe(0);
+  merge(run);
+  const frozen=()=>({manifest:JSON.parse(read(site,"package.json")),lock:kind==="npm"?JSON.parse(read(site,lockName(kind))):read(site,lockName(kind))});
+  const baseLedger=Buffer.from(read(site,LEDGER_PATH)), install=frozen(), request=JSON.parse(read(site,".starter/request.json"));
+  const {apply,decided}=await applyDecision(run);
+  expect(decided,JSON.stringify(decided)).toMatchObject({state:"bound",binding:{kind:"admitted"}});
+  expect(apply.keys.find(key=>key.item===desired.planItem)).toMatchObject({before:oldLiteral,after:desired.version});
+  const applyResult=await materializeRepository({clone:site.clone,hub,set:apply,heldChangeSets:[setup],texts:{},spawn,toolVersion:toolVersionFor(kind),now:NOW,runReadiness:READY});
+  expect(applyResult.exitCode,JSON.stringify(applyResult)).toBe(0);
+  expect(await verifyRepository({clone:site.clone,hub,set:apply,heldChangeSets:[setup],now:NOW,runReadiness:READY})).toMatchObject({exitCode:0});
+  const input={request,baseLedger,headLedger:Buffer.from(read(site,LEDGER_PATH)),install,headInstall:frozen()};
+  expect(evaluateAdmission(input)).toMatchObject({state:"satisfied"});
+  const dropped=JSON.parse(input.headLedger.toString("utf8"));delete dropped.existingDeclarationAdoptions;
+  expect(admissionExitCode(evaluateAdmission({...input,headLedger:Buffer.from(serializeInstalledLedger(dropped as InstalledLedger))}))).toBe(1);
+  expect(admissionExitCode(evaluateAdmission({...input,headInstall:null}))).toBe(1);
+  const collateral=structuredClone(input.headInstall);collateral.manifest.private=false;
+  expect(admissionExitCode(evaluateAdmission({...input,headInstall:collateral}))).toBe(1);
+  const collateralLock=structuredClone(input.headInstall);
+  if(kind==="npm") collateralLock.lock.packages["node_modules/example-dep"].integrity=STARTER_INTEGRITY;
+  else collateralLock.lock=collateralLock.lock.replace(`resolution: {integrity: ${DEP_INTEGRITY}}`,`resolution: {integrity: ${STARTER_INTEGRITY}}`);
+  expect(evaluateAdmission({...input,headInstall:collateralLock}).findings.map(f=>f.rule)).toContain("adoption-collateral-root-resolution");
+  const wrongPrior=structuredClone(install);wrongPrior.manifest.devDependencies[desired.name]="^9.0.0";
+  expect(admissionExitCode(evaluateAdmission({...input,install:wrongPrior}))).toBe(1);
+  const wrongDesired=structuredClone(input.headInstall);wrongDesired.manifest.devDependencies[desired.name]="9.0.0";
+  expect(admissionExitCode(evaluateAdmission({...input,headInstall:wrongDesired}))).toBe(1);
+},TEST_TIMEOUT_MS);

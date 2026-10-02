@@ -697,7 +697,11 @@ const tarballPath = (entry: FixturePackage): string => `/${entry.name}/-/${entry
 /** Serves packuments and tarballs on 127.0.0.1, tarballs on the registry origin at `/<name>/-/<basename>-<version>.tgz`. Versions are published an hour ago. */
 async function fixtureRegistry(packages: readonly FixturePackage[]): Promise<FixtureRegistry> {
   const requests: string[] = [];
-  const byPackument = new Map(packages.map((entry) => [`/${entry.name}`, entry]));
+  const byPackument = new Map<string, FixturePackage[]>();
+  for (const entry of packages) {
+    const key=`/${entry.name}`;
+    byPackument.set(key,[...(byPackument.get(key) ?? []),entry]);
+  }
   const byTarball = new Map(packages.map((entry) => [tarballPath(entry), entry]));
   const published = new Date(Date.now() - 3_600_000).toISOString();
   const server = createServer((request, response) => {
@@ -714,7 +718,8 @@ async function fixtureRegistry(packages: readonly FixturePackage[]): Promise<Fix
       response.end(archive.bytes);
       return;
     }
-    const entry = byPackument.get(pathname);
+    const versions = byPackument.get(pathname);
+    const entry = versions?.at(-1);
     if (entry === undefined) {
       response.writeHead(404, { "content-type": "application/json" });
       response.end("{}");
@@ -725,8 +730,8 @@ async function fixtureRegistry(packages: readonly FixturePackage[]): Promise<Fix
     response.end(JSON.stringify({
       name: entry.name,
       "dist-tags": { latest: entry.version },
-      time: { created: published, modified: published, [entry.version]: published },
-      versions: { [entry.version]: { name: entry.name, version: entry.version, dependencies: entry.dependencies, dist: { tarball: `${origin}${tarballPath(entry)}`, integrity: entry.integrity } } },
+      time: { created: published, modified: published, ...Object.fromEntries(versions!.map(item=>[item.version,published])) },
+      versions: Object.fromEntries(versions!.map(item=>[item.version,{name:item.name,version:item.version,dependencies:item.dependencies,dist:{tarball:`${origin}${tarballPath(item)}`,integrity:item.integrity}}])),
     }));
   });
   await new Promise<void>((resolveListen, rejectListen) => { server.once("error", rejectListen); server.listen(0, "127.0.0.1", resolveListen); });
@@ -1002,3 +1007,106 @@ describe("regenerateLockfile with real npm and pnpm", () => {
     }
   });
 });
+
+// Native package-manager composition: no spawn port supplies a lockfile or desired result.
+// Protected setup merge/materialize and installed-byte proof are covered separately, not claimed here.
+it("fixture registry binds publish time for every advertised version",async()=>{
+  const before=fixturePackage(`${scope}/writer`,"0.1.2");
+  const desired=fixturePackage(before.name,"0.2.0");
+  const registry=await fixtureRegistry([before,desired]);
+  try {
+    const metadata=await fetch(new URL(encodeURIComponent(before.name),registry.url)).then(response=>response.json()) as {versions:Record<string,unknown>;time:Record<string,string>};
+    expect(Object.keys(metadata.time).filter(key=>key!=="created" && key!=="modified").sort()).toEqual(Object.keys(metadata.versions).sort());
+    for(const version of Object.keys(metadata.versions)) {
+      expect(metadata.time[version]).toBe(metadata.time.created);
+      expect(Number.isFinite(Date.parse(metadata.time[version]!))).toBe(true);
+    }
+  }finally{await registry.close();}
+});
+
+for (const manager of ["npm","pnpm"] as const) for (const equalVersion of [false,true]) it.skipIf(manager === "pnpm" && pnpmMissing)(`${manager}: native consent CAS and Starter metadata admission (${equalVersion ? "equal" : "update"})`, async () => {
+  const {createExistingDeclarationAdoptions,planApplyBundle}=await import("./plan-bundle.js");
+  const {setupPlan,setupObservation,setupInputs,SITE_ID}=await import("./plan-bundle-setup-fixture.js");
+  const {readLockfile,isUnreadable}=await import("./lockfile-readers.js");
+  const {renderInstalledLedger}=await import("./ledger-contract.js");
+  const {derivedLockfile,packagesForLockfile}=await import("./materialize.js");
+  const {editJsonPointer}=await import("./key-editor.js");
+  const {evaluateAdmission,admissionExitCode}=await import("../../starter/src/core.js");
+  const plan=structuredClone(setupPlan({starterVersion:"0.3.0"}));
+  const desired=plan.packages!.find(act=>act.act === "install")!;
+  const starter=plan.packages!.find(act=>act.act === "pin-starter")!;
+  const current=fixturePackage(desired.name,desired.version);
+  const old=equalVersion?current:fixturePackage(desired.name,"0.1.2");
+  const pin=fixturePackage(starter.name,starter.version);
+  const priorPin=equalVersion?pin:fixturePackage(starter.name,"0.2.1");
+  const pinLiteral=equalVersion?pin.version:"~0.2.0";
+  Object.assign(desired,{integrity:current.integrity});Object.assign(starter,{integrity:pin.integrity});
+  const registry=await fixtureRegistry(equalVersion?[current,pin]:[old,current,priorPin,pin]);
+  const root=tempDir("native-adoption-");
+  const home=tempDir("native-adoption-home-");
+  const lockName=manager === "npm" ? "package-lock.json":"pnpm-lock.yaml";
+  const literal=equalVersion?current.version:"^0.1.0";
+  writeJson(join(root,"package.json"),{name:"fixture-adoption",version:"1.0.0",private:true,devDependencies:{[desired.name]:literal,[starter.name]:pinLiteral}});
+  writeFileSync(join(home,"user-npmrc"),"");writeFileSync(join(home,"global-npmrc"),"");
+  const env={npm_config_userconfig:join(home,"user-npmrc"),npm_config_globalconfig:join(home,"global-npmrc"),npm_config_cache:join(home,"npm-cache"),PATH:process.env.PATH ?? "/usr/bin:/bin",HOME:home,XDG_CONFIG_HOME:home,XDG_CACHE_HOME:home,XDG_DATA_HOME:home,XDG_STATE_HOME:home,npm_config_update_notifier:"false",pnpm_config_update_notifier:"false"};
+  const args=manager === "npm" ? ["install","--package-lock-only","--ignore-scripts","--no-audit","--no-fund",`--${scope}:registry=${registry.url}`] : ["install","--lockfile-only","--ignore-scripts","--ignore-pnpmfile",`--config.${scope}:registry=${registry.url}`,"--config.minimum-release-age=0"];
+  try {
+    const native=await spawnLockfileTool({command:manager,args,cwd:root,env,timeoutMs:60_000,maxBuffer:2_000_000});
+    expect(native.status, native.stderr || native.stdout || String(native.failure ?? "")).toBe(0);
+    const read=()=>({manifest:JSON.parse(readFileSync(join(root,"package.json"),"utf8")),lock:manager === "npm"?JSON.parse(readFileSync(join(root,lockName),"utf8")):readFileSync(join(root,lockName),"utf8")});
+    const observation=setupObservation({packageManager:manager,lockfile:lockName,files:[{path:lockName,sha256:`sha256:${sha256hex(readFileSync(join(root,lockName)))}`}],manifestEntries:[{placement:desired.placement,name:desired.name,value:literal},{placement:starter.placement,name:starter.name,value:pinLiteral}],lockedPackages:[{name:old.name,version:old.version,integrity:old.integrity},{name:priorPin.name,version:priorPin.version,integrity:priorPin.integrity}]});
+    const proof=createExistingDeclarationAdoptions(observation,plan,[desired.name,starter.name],"adopt-existing-declaration");
+    const computed=planApplyBundle(setupInputs(observation,plan,{existingDeclarationAdoptions:{[SITE_ID]:proof}}));
+    const setup=computed.changeSets[0]!;
+    const setupBinding={kind:"approved" as const,subjectDigest:computed.bundle.bundleDigest};
+    const setupLedger=renderInstalledLedger(null,setup,setupBinding,plan.packages!);
+    const cas=(set:typeof setup)=>{
+      const before=readFileSync(join(root,"package.json"),"utf8");
+      const parsed=JSON.parse(before);
+      for(const key of set.keys){const parts=key.pointer.split("/").slice(1).map(x=>x.replace(/~1/g,"/").replace(/~0/g,"~"));expect(parsed[parts[0]!] ?. [parts[1]! ] ?? null).toBe(key.before);}
+      writeFileSync(join(root,"package.json"),editJsonPointer(before,set.keys.map(key=>({pointer:key.pointer,value:key.after}))));
+    };
+    const regen=async(set:typeof setup)=>{
+      const lock=derivedLockfile(set)!;const packages=packagesForLockfile(set,lock.invariants)!;
+      const result=await regenerateLockfile({root,packageManager:manager,lockfile:lockName,toolVersion:manager === "npm"?null:PNPM_VERSION,baseLockfile:readFileSync(join(root,lockName),"utf8"),packages,now:()=>new Date()},{registry:registry.url,spawn:manager === "pnpm"?pnpmFromPath():spawnLockfileTool});
+      expect(result.verdict).toBe("satisfied");
+      expect(result.tooling?.version).toBe(manager === "npm"?NPM_VERSION:PNPM_VERSION);
+    };
+    cas(setup);await regen(setup);
+    const base=read();const lockText=readFileSync(join(root,lockName),"utf8");const view=readLockfile(manager,lockText);if(isUnreadable(view))throw new Error("native fixture lock unreadable");
+    const files=setup.files.map(file=>({path:file.path,sha256:"derived" in file?(file.path===lockName?`sha256:${sha256hex(lockText)}`:`sha256:${sha256hex(setupLedger)}`):file.after!}));
+    const next=setupObservation({phase:"apply",packageManager:manager,lockfile:lockName,baseCommit:"b".repeat(40),ledger:Buffer.from(setupLedger),files,manifestEntries:Object.entries(base.manifest.devDependencies).map(([name,value])=>({placement:"devDependencies" as const,name,value:value as string})),lockedPackages:view.root.flatMap(edge=>edge.version && edge.integrity?[{name:edge.name,version:edge.version,integrity:edge.integrity}]:[]),skillsManifest:null});
+    const applied=planApplyBundle(setupInputs(next,plan,{heldChangeSets:[setup]}));
+    const apply=applied.changeSets[0]!;expect(apply,JSON.stringify(applied.bundle.repositories)).toBeDefined();
+    expect(apply.keys.find(key=>key.item===desired.planItem)).toMatchObject({before:literal,after:desired.version});
+    cas(apply);await regen(apply);
+    const headLedger=renderInstalledLedger(JSON.parse(setupLedger),apply,{kind:"admitted",subjectDigest:computed.bundle.bundleDigest,setupChangeSet:setup.changeSetDigest},plan.packages!);
+    const request=JSON.parse(setup.texts!.find(row=>row.path===".starter/request.json")!.text);
+    const input={request,baseLedger:Buffer.from(setupLedger),headLedger:Buffer.from(headLedger),install:base,headInstall:read()};
+    expect(evaluateAdmission({request,baseLedger:Buffer.from(setupLedger),headLedger:Buffer.from(setupLedger),install:base,headInstall:null})).toMatchObject({state:"satisfied"});
+    expect(evaluateAdmission(input)).toMatchObject({state:"satisfied"});
+    const changed=structuredClone(input.headInstall);
+    if(manager === "npm") changed.lock.packages[`node_modules/${desired.name}`].integrity=pin.integrity;
+    else changed.lock=changed.lock.replace(current.integrity,pin.integrity);
+    expect(admissionExitCode(evaluateAdmission({...input,headInstall:changed}))).toBe(1);
+    if(manager === "pnpm") {
+      const ambiguous=structuredClone(input.headInstall);
+      ambiguous.lock=ambiguous.lock.replace("importers:","\"importers\": {}\nimporters:");
+      expect(evaluateAdmission({...input,headInstall:ambiguous}).findings.map(f=>f.rule)).toContain("adoption-source-ambiguous");
+      const ambiguousBase=structuredClone(base);
+      ambiguousBase.lock=ambiguousBase.lock.replace("importers:","'importers': {}\nimporters:");
+      expect(evaluateAdmission({...input,install:ambiguousBase}).findings.map(f=>f.rule)).toContain("adoption-source-ambiguous");
+      for (const side of ["install","headInstall"] as const) {
+        const leadingDot=structuredClone(input[side]);
+        leadingDot.lock=".5: {}\n'0.5': {}\n"+leadingDot.lock;
+        expect.soft(evaluateAdmission({...input,[side]:leadingDot}).findings.map(f=>f.rule),side).toContain("adoption-source-ambiguous");
+      }
+      const duplicateIntegrity=structuredClone(input.headInstall);
+      duplicateIntegrity.lock=duplicateIntegrity.lock.replace(`integrity: ${current.integrity}`,`integrity: ${current.integrity}, 'integrity': ${pin.integrity}`);
+      expect(evaluateAdmission({...input,headInstall:duplicateIntegrity}).findings.map(f=>f.rule)).toContain("adoption-source-ambiguous");
+    }
+
+    expect(registry.requests.length).toBeGreaterThan(0);
+    expect(registry.requests.every(path=>registry.served.has(path))).toBe(true);
+  }finally{await registry.close();}
+},120_000);
