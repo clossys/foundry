@@ -255,15 +255,16 @@ describe("launcher-apply-plan snapshot (#1178)", () => {
     expect(SNAPSHOT_USAGE).toMatch(/^Usage: launcher-apply-plan snapshot --request <file> \[--out <file>\]/);
     expect(main(["--help"], createNodeHost())).toBe(0);
     expect(String(log.mock.calls[1]?.[0])).toContain("launcher-apply-plan snapshot --request <file> [--out <file>]");
-    expect(String(log.mock.calls[1]?.[0])).toContain("launcher-apply-plan plan [--help]\n");
+    expect(String(log.mock.calls[1]?.[0])).toContain("launcher-apply-plan plan [--agent codex|claude|cursor] [--help]\n");
     expect(String(log.mock.calls[1]?.[0])).toContain("launcher-apply-plan plan --help");
   });
 
-  it("the plan subcommand's usage takes no option and names no approval", async () => {
+  it("the plan subcommand's usage names optional covered agent provenance and no approval option", async () => {
     const write = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
     expect(await planMain(["--help"])).toBe(0);
     expect(String(write.mock.calls[0]?.[0])).toBe(`${PLAN_USAGE}\n`);
-    expect(PLAN_USAGE).toMatch(/^Usage: launcher-apply-plan plan \[--help\]/);
+    expect(PLAN_USAGE).toMatch(/^Usage: launcher-apply-plan plan \[--agent codex\|claude\|cursor\] \[--help\]/);
+    expect(PLAN_USAGE).toContain("choice is covered by the change-set and approval digests");
     expect(PLAN_USAGE).not.toMatch(/--approve|--subject|--binding/);
     // Planned mode adds the V3 row of a refused repository to the sheet, so the usage does not say the sheet differs only by its mode line.
     expect(PLAN_USAGE).toContain('under "Checks not satisfied", the V3 row of a repository the hub refuses');

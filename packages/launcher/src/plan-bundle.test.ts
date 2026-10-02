@@ -1386,3 +1386,44 @@ describe("the planner is pure", () => {
     expect(purity([at("apply-plan-cli.ts")]).findings.map((finding) => finding.rule)).toContain("builtin-not-allowed");
   });
 });
+
+
+describe("covered agent branch provenance", () => {
+  it("preserves omitted legacy bytes and derives each explicit branch from covered inputs", () => {
+    expect(run({ ...INPUTS, agentProvenance: undefined })).toEqual(run(INPUTS));
+    const legacy = run(INPUTS);
+    for (const agentProvenance of ["codex", "claude", "cursor"] as const) {
+      const result = run({ ...INPUTS, agentProvenance });
+      expect(result.bundle.bundleDigest).not.toBe(legacy.bundle.bundleDigest);
+      for (const set of result.changeSets) {
+        expect(set.agentProvenance).toBe(agentProvenance);
+        expect(set.branch).toBe(`${agentProvenance}/apply-${set.changeSetDigest.slice(7, 19)}`);
+        expect(validateRepositoryChangeSet(set).valid).toBe(true);
+        expect(changeSetDigest(set)).toBe(set.changeSetDigest);
+        const mutated = { ...set, agentProvenance: agentProvenance === "codex" ? "claude" : "codex" };
+        expect(changeSetDigest(mutated)).not.toBe(set.changeSetDigest);
+        expect(validateRepositoryChangeSet(mutated).valid).toBe(false);
+        expect(validateRepositoryChangeSet({ ...set, branch: `clossys/apply-${set.changeSetDigest.slice(7, 19)}` }).valid).toBe(false);
+      }
+    }
+    expect(() => run({ ...INPUTS, agentProvenance: "agent" as "codex" })).toThrow("unsupported agent provenance");
+  });
+
+  it("covers the expanded setup path-scope bytes and keeps legacy setup unchanged", () => {
+    const inputs = setupInputs(setupObservation());
+    const legacy = run(inputs);
+    const explicit = run({ ...inputs, agentProvenance: "codex" });
+    for (const set of explicit.changeSets) {
+      expect(validateRepositoryChangeSet(set).valid).toBe(true);
+      const text = set.texts!.find((entry) => entry.path === ".github/workflows/clossys-path-scope.yml")!.text;
+      expect(text).toContain("const APPLY_BRANCH =");
+      expect(text).toContain("codex|claude|cursor");
+      expect(text).toContain("unsupported or malformed apply branch");
+      const file = set.files.find((entry) => entry.path === ".github/workflows/clossys-path-scope.yml")!;
+      expect(file.after).toBe(contentDigest(text));
+      const old = setFor(legacy.changeSets, set.repository.id);
+      expect(old.texts!.find((entry) => entry.path === file.path)!.text).not.toBe(text);
+      expect(old.changeSetDigest).not.toBe(set.changeSetDigest);
+    }
+  });
+});

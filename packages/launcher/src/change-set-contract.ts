@@ -134,6 +134,8 @@ export interface ChangeSetDeferral {
 }
 
 /** One repository's change set (repository-change-set.json, in the public repository, not shipped in this package). */
+export type AgentProvenance = "codex" | "claude" | "cursor";
+
 export interface RepositoryChangeSet {
   readonly schemaVersion: 1;
   readonly kind: "clossys.repository-change-set";
@@ -170,6 +172,8 @@ export interface RepositoryChangeSet {
   readonly refused: readonly ChangeSetRefusal[];
   readonly deferred: readonly ChangeSetDeferral[];
   readonly pathAllowList: readonly string[];
+  /** Optional authoring agent namespace, covered by the change-set digest. */
+  readonly agentProvenance?: AgentProvenance;
   readonly branch: string;
   readonly bundle: string;
   readonly pullRequest: { readonly title: string; readonly bodySha256?: string };
@@ -570,7 +574,7 @@ export function changeSetRuleViolations(set: RepositoryChangeSet): RuleViolation
   const digest = changeSetDigest(set);
   if (set.changeSetDigest !== digest) push("C5", "changeSetDigest", "is not this change set's digest");
   const short = digest.slice("sha256:".length, "sha256:".length + 12);
-  if (set.branch !== `clossys/apply-${short}`) push("C5", "branch", "is not clossys/apply- and the first 12 digits of this change set's digest");
+  if (set.branch !== `${set.agentProvenance ?? "clossys"}/apply-${short}`) push("C5", "branch", "does not match the covered agent provenance and the first 12 digits of this change set's digest");
   if (!set.pullRequest.title.endsWith(short)) push("C5", "pullRequest.title", "does not end with the first 12 digits of this change set's digest");
 
   // C6

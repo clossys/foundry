@@ -334,7 +334,15 @@ describe("plannedBundle", () => {
     "a replace ref in the clone does not change the base ledger that is read",
     async () => {
       const s = scene();
-      const git = (...args: string[]): string => execFileSync("git", args, { cwd: s.clone, encoding: "utf8", stdio: ["pipe", "pipe", "ignore"], input: "not a ledger\n" }).trim();
+      const git = (...args: string[]): string => {
+        const writesBlob = args.length === 3 && args[0] === "hash-object" && args[1] === "-w" && args[2] === "--stdin";
+        return execFileSync("git", args, {
+          cwd: s.clone,
+          encoding: "utf8",
+          stdio: [writesBlob ? "pipe" : "ignore", "pipe", "ignore"],
+          ...(writesBlob ? { input: "not a ledger\n" } : {}),
+        }).trim();
+      };
       const real = git("rev-parse", `${s.w.apply.repository.baseCommit}:${LEDGER_PATH}`);
       const decoy = git("hash-object", "-w", "--stdin");
       git("replace", real, decoy);

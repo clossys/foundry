@@ -375,6 +375,7 @@ function checkCondition2(set: RepositoryChangeSet, setup: RepositoryChangeSet, a
   // U11: a refusal in either set means a set that could never have been materialized.
   if (setup.refused.length > 0 || set.refused.length > 0) return refuse("refusal-present");
   if (set.deferred.length > 0) return refuse("deferred-present");
+  if (set.agentProvenance !== setup.agentProvenance) return refuse("agent-provenance-differs");
   if (!same(set.producer, setup.producer)) return refuse("producer-differs");
   if (!same(set.engine, setup.engine) || !same(set.integrator, setup.integrator)) return refuse("engine-differs");
   const repository = (value: RepositoryChangeSet["repository"]) => ({ id: value.id, nodeId: value.nodeId, visibility: value.visibility, defaultBranch: value.defaultBranch });

@@ -1,7 +1,9 @@
 /**
  * Pure renderers for the setup template acts' script and workflow files.
  *
- * Each renderer takes no input and returns the exact bytes of one file, so
+ * Each renderer returns exact file bytes; path scope optionally takes the
+ * supported authoring agent provenance. With no input it preserves legacy
+ * bytes. Rendering is pure, so
  * the text is a pure function of this module alone: no clock, no randomness,
  * no filesystem, no environment. Everything that reads a clock or a
  * repository does so inside the emitted script, when a workflow runs it, and
@@ -505,8 +507,14 @@ try {
  * The standalone path-scope script (its text ends in one LF). The
  * path-scope workflow embeds it; a test runs it with `node` directly.
  */
-export function renderPathScopeScript(): string {
-  return PATH_SCOPE_SCRIPT;
+export function renderPathScopeScript(agentProvenance: "codex" | "claude" | "cursor" | undefined = undefined): string {
+  if (agentProvenance === undefined) return PATH_SCOPE_SCRIPT;
+  if (!["codex", "claude", "cursor"].includes(agentProvenance)) throw new TypeError("unsupported agent provenance");
+  // Keep legacy bytes unchanged. Explicit provenance opts into the expanded
+  // branch recognizer; every supported namespace still runs the full checks.
+  return PATH_SCOPE_SCRIPT
+    .replace('const APPLY_PREFIX = "clossys/apply-";', 'const APPLY_PREFIX = "a supported apply branch";\nconst APPLY_BRANCH = /^(clossys|codex|claude|cursor)\\/apply-[0-9a-f]{12}$/;')
+    .replace('if (!headRef.startsWith(APPLY_PREFIX)) {', 'if (!APPLY_BRANCH.test(headRef)) {\n    if (headRef.includes("/apply")) refuse("unsupported or malformed apply branch");');
 }
 
 const PATH_SCOPE_WORKFLOW_HEAD = [
@@ -563,9 +571,10 @@ const PATH_SCOPE_WORKFLOW_HEAD = [
 const RUN_BODY_INDENT = "          ";
 
 /** The bytes of `.github/workflows/clossys-path-scope.yml`: the script embedded in a quoted heredoc. */
-export function renderPathScopeWorkflow(): string {
-  const body = PATH_SCOPE_SCRIPT.slice(0, -1)
+export function renderPathScopeWorkflow(agentProvenance: "codex" | "claude" | "cursor" | undefined = undefined): string {
+  const body = renderPathScopeScript(agentProvenance).slice(0, -1)
     .split("\n")
     .map((line) => (line === "" ? "" : `${RUN_BODY_INDENT}${line}`));
-  return [...PATH_SCOPE_WORKFLOW_HEAD, ...body, `${RUN_BODY_INDENT}${HEREDOC_TERMINATOR}`, ""].join("\n");
+  const head = agentProvenance === undefined ? PATH_SCOPE_WORKFLOW_HEAD : PATH_SCOPE_WORKFLOW_HEAD.map((line) => line.replace("head branch starts with clossys/apply-.", "head branch is a legacy or supported agent apply branch."));
+  return [...head, ...body, `${RUN_BODY_INDENT}${HEREDOC_TERMINATOR}`, ""].join("\n");
 }

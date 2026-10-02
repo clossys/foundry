@@ -149,6 +149,8 @@ export interface SkippedRepositoryObservation {
 export interface PlanApplyBundleInputs {
   /** The plan, clossys/advisor/plan.json. It must validate and have `staffing`. */
   readonly plan: AdvisorPlan;
+  /** Explicit authoring agent namespace; omission preserves legacy changes and bytes. */
+  readonly agentProvenance?: "codex" | "claude" | "cursor";
   /** The hub brief, clossys/advisor/brief.json: validated, and without `staffedHere`. Each repository gets its own projection of it. */
   readonly hubBrief: EngagementBrief;
   /** One entry per staffed repository; a staffed repository with no entry is skipped as `not-observed`. */
@@ -317,7 +319,7 @@ interface SetupTemplate {
  * takes the manager, the repository id and the plan's one Starter pin, and
  * nothing else reaches a template.
  */
-function prepareSetup(observation: RepositoryObservation, acts: readonly PlanPackageAct[]): { readonly templates: readonly SetupTemplate[] } | { readonly skip: string } {
+function prepareSetup(observation: RepositoryObservation, acts: readonly PlanPackageAct[], agentProvenance?: "codex" | "claude" | "cursor"): { readonly templates: readonly SetupTemplate[] } | { readonly skip: string } {
   const packageManager = observation.packageManager;
   if (packageManager !== "npm" && packageManager !== "pnpm") return { skip: "package-manager-unsupported" };
   const pins = acts.filter((act) => act.act === "pin-starter");
@@ -335,7 +337,7 @@ function prepareSetup(observation: RepositoryObservation, acts: readonly PlanPac
   }
   const templates: SetupTemplate[] = [];
   for (const { act, id } of TEMPLATE_ITEMS) {
-    const rendered = act === "write-starter-request" ? request : renderSetupTemplate(act, act === "add-caller-workflow" ? { packageManager } : undefined);
+    const rendered = act === "write-starter-request" ? request : renderSetupTemplate(act, act === "add-caller-workflow" ? { packageManager } : act === "add-path-scope-job" && agentProvenance !== undefined ? { agentProvenance } : undefined);
     if (!rendered.ok) throw new TypeError(`the setup template ${act} does not render`);
     templates.push({ id, files: rendered.files });
   }
@@ -689,6 +691,7 @@ function computeChangeSet(
       schemaVersion: 1,
       kind: "clossys.repository-change-set",
       producer: { name: inputs.producer.name, version: inputs.producer.version },
+      ...(inputs.agentProvenance !== undefined ? { agentProvenance: inputs.agentProvenance } : {}),
       planDigest: planDigestValue,
       repository: {
         id: observation.id,
@@ -829,6 +832,7 @@ function computeChangeSet(
  * fails its contract.
  */
 export function planApplyBundle(inputs: PlanApplyBundleInputs): PlanApplyBundleResult {
+  if (inputs.agentProvenance !== undefined && !["codex", "claude", "cursor"].includes(inputs.agentProvenance)) throw new TypeError("unsupported agent provenance");
   const planValidation = validateAdvisorPlan(inputs.plan);
   if (!planValidation.valid) throw new TypeError(`the plan does not validate: ${planValidation.reason}`);
   const staffing = inputs.plan.staffing;
@@ -894,7 +898,7 @@ export function planApplyBundle(inputs: PlanApplyBundleInputs): PlanApplyBundleR
     let setupTemplates: readonly SetupTemplate[] | null = null;
     if (observation.phase === "setup") {
       // A setup set holds the setup templates (code rule C11); anything that stops them being rendered or the pin being safe is a skip.
-      const prepared = prepareSetup(observation, acts);
+      const prepared = prepareSetup(observation, acts, inputs.agentProvenance);
       if ("skip" in prepared) {
         entries.push({ id: staffingEntry.repository, verdict: "indeterminate", reason: prepared.skip, checks: [] });
         continue;
@@ -920,7 +924,7 @@ export function planApplyBundle(inputs: PlanApplyBundleInputs): PlanApplyBundleR
     const { changeSet, checks } = result;
     const digest = changeSetDigest(changeSet);
     const short = digest.slice("sha256:".length, "sha256:".length + 12);
-    const set = { ...changeSet, branch: `clossys/apply-${short}`, pullRequest: { title: `Clossys: apply plan ${short}` }, changeSetDigest: digest };
+    const set = { ...changeSet, branch: `${changeSet.agentProvenance ?? "clossys"}/apply-${short}`, pullRequest: { title: `Clossys: apply plan ${short}` }, changeSetDigest: digest };
     entries.push({ pending: computed.length });
     computed.push({ id: staffingEntry.repository, staffingIndex, phase: observation.phase, set, checks });
   }

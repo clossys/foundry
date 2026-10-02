@@ -75,7 +75,7 @@ export interface ApplyStepResult {
   readonly detail?: string;
 }
 
-const BRANCH_SHAPE = /^clossys\/apply-[0-9a-f]{12}$/u;
+const BRANCH_SHAPE = /^(clossys|codex|claude|cursor)\/apply-[0-9a-f]{12}$/u;
 const DEFAULT_BRANCH_SHAPE = /^[A-Za-z0-9][A-Za-z0-9._/-]*$/u;
 const COMMIT_SHAPE = /^[0-9a-f]{40}$/u;
 const TOOL_VERSION_SHAPE = /^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(?:-[0-9A-Za-z.-]+)?$/u;

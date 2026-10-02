@@ -37,7 +37,12 @@ import type { PlanApplyBundleResult, RepositoryObservation, SkippedRepositoryObs
 import { validateAdvisorPlan, validateEngagementBrief } from "./plan-contract.js";
 import type { AdvisorPlan, EngagementBrief } from "./plan-contract.js";
 
-export const PLAN_USAGE = `Usage: launcher-apply-plan plan [--help]
+export const PLAN_USAGE = `Usage: launcher-apply-plan plan [--agent codex|claude|cursor] [--help]
+
+--agent selects the authoring agent namespace for generated apply branches.
+The choice is covered by the change-set and approval digests. Omitting it
+preserves legacy clossys/apply branches and stored change sets. Use the same
+choice when recomputing an approved bundle.
 
 Run in the hub. Computes the apply bundle for the plan file in the working
 tree, reports whether that file is the one committed at HEAD, and prints the
@@ -436,7 +441,11 @@ export async function planMain(argv: readonly string[], options: PlanCommandOpti
       stdout(`${PLAN_USAGE}\n`);
       return 0;
     }
-    if (argv.length !== 0) return refuse("usage");
+    let agentProvenance: "codex" | "claude" | "cursor" | undefined;
+    if (argv.length !== 0) {
+      if (argv.length !== 2 || argv[0] !== "--agent" || !["codex", "claude", "cursor"].includes(argv[1]!)) return refuse("usage");
+      agentProvenance = argv[1] as "codex" | "claude" | "cursor";
+    }
     let hub: string;
     try {
       hub = realpathSync(options.cwd ?? process.cwd());
@@ -475,6 +484,7 @@ export async function planMain(argv: readonly string[], options: PlanCommandOpti
         authorization,
         computedAt,
         heldChangeSets,
+        ...(agentProvenance !== undefined ? { agentProvenance } : {}),
       });
     } catch {
       return refuse("planner-refused");
