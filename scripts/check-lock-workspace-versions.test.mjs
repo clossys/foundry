@@ -6,6 +6,8 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
 
+import { normalizeBin } from "./check-lock-workspace-versions.mjs";
+
 // Hermetic end-to-end coverage, same convention as
 // check-workspace-links.test.mjs: every fixture is a real, throwaway
 // directory under mkdtemp, and the real script is spawned exactly the way
@@ -33,16 +35,18 @@ function withDir(build) {
   }
 }
 
-function writePackage(root, dirName, { name, version }) {
+function writePackage(root, dirName, { name, version, bin }) {
   const pkgDir = join(root, "packages", dirName);
   mkdirSync(pkgDir, { recursive: true });
-  writeFileSync(join(pkgDir, "package.json"), JSON.stringify({ name, version, license: "MIT" }, null, 2) + "\n");
+  writeFileSync(join(pkgDir, "package.json"), JSON.stringify({ name, version, license: "MIT", bin }, null, 2) + "\n");
 }
 
+// An entry is either a version string or { version, bin }.
 function writeLock(root, entries) {
   const packages = {};
-  for (const [dirName, version] of Object.entries(entries)) {
-    packages[`packages/${dirName}`] = { name: `@scope/${dirName}`, version, license: "MIT" };
+  for (const [dirName, entry] of Object.entries(entries)) {
+    const { version, bin } = typeof entry === "string" ? { version: entry } : entry;
+    packages[`packages/${dirName}`] = { name: `@scope/${dirName}`, version, license: "MIT", bin };
   }
   writeFileSync(join(root, "package-lock.json"), JSON.stringify({ lockfileVersion: 3, packages }, null, 2) + "\n");
 }
@@ -130,6 +134,125 @@ test("a package missing from the lock entirely is an error, not a silent pass", 
     assert.equal(finding.status, "error");
     assert.match(finding.detail, /no "packages\/orphan" entry/);
   });
+});
+
+// ------------------------------------------------------------------ bin maps
+
+test("a lock entry missing a bin the manifest declares is a finding even though the versions match", () => {
+  withDir((root) => {
+    writePackage(root, "publisher", {
+      name: "@scope/publisher",
+      version: "0.7.0",
+      bin: { "publisher-preview": "dist/preview/cli.js", "publisher-seal": "dist/pack/seal-cli.js" },
+    });
+    writeLock(root, { publisher: { version: "0.7.0", bin: { "publisher-preview": "dist/preview/cli.js" } } });
+
+    const r = run(["--json"], root);
+    assert.equal(r.code, 1, `expected exit 1, got ${r.code}: ${r.out}`);
+    const finding = JSON.parse(r.out).results.find((x) => x.package === "@scope/publisher");
+    assert.equal(finding.status, "finding");
+    assert.match(finding.detail, /"bin" map does not match/);
+    assert.match(finding.detail, /missing publisher-seal/);
+    assert.match(finding.detail, /check-release-pr-shape/);
+  });
+});
+
+test("a bin map that matches after npm's normalization (string form, leading ./) passes", () => {
+  withDir((root) => {
+    writePackage(root, "launcher", { name: "@scope/launcher", version: "0.3.1", bin: "./dist/cli.js" });
+    writePackage(root, "starter", { name: "@scope/starter", version: "0.2.0", bin: { "starter-check": "./dist/check.js" } });
+    writeLock(root, {
+      launcher: { version: "0.3.1", bin: { launcher: "dist/cli.js" } },
+      starter: { version: "0.2.0", bin: { "starter-check": "dist/check.js" } },
+    });
+
+    const r = run(["--json"], root);
+    assert.equal(r.code, 0, `expected exit 0, got ${r.code}: ${r.out}`);
+    assert.ok(JSON.parse(r.out).results.every((x) => x.status === "pass"));
+  });
+});
+
+test("a lock bin the manifest no longer declares, or one at a different path, is a finding", () => {
+  withDir((root) => {
+    writePackage(root, "alpha", { name: "@scope/alpha", version: "1.0.0", bin: { "alpha-a": "dist/a.js" } });
+    writeLock(root, { alpha: { version: "1.0.0", bin: { "alpha-a": "dist/old-a.js", "alpha-gone": "dist/gone.js" } } });
+
+    const r = run(["--json"], root);
+    assert.equal(r.code, 1, `expected exit 1, got ${r.code}: ${r.out}`);
+    const finding = JSON.parse(r.out).results.find((x) => x.package === "@scope/alpha");
+    assert.match(finding.detail, /not in the manifest alpha-gone/);
+    assert.match(finding.detail, /different path for alpha-a/);
+  });
+});
+
+test("a lock bin on a manifest that declares no bin at all is a finding", () => {
+  withDir((root) => {
+    writePackage(root, "alpha", { name: "@scope/alpha", version: "1.0.0" });
+    writeLock(root, { alpha: { version: "1.0.0", bin: { alpha: "dist/cli.js" } } });
+
+    const r = run(["--json"], root);
+    assert.equal(r.code, 1, `expected exit 1, got ${r.code}: ${r.out}`);
+    const finding = JSON.parse(r.out).results.find((x) => x.package === "@scope/alpha");
+    assert.equal(finding.status, "finding");
+    assert.match(finding.detail, /not in the manifest alpha/);
+  });
+});
+
+test("a manifest bin npm would reject is an error, not a guess", () => {
+  withDir((root) => {
+    writePackage(root, "alpha", { name: "@scope/alpha", version: "1.0.0", bin: ["dist/cli.js"] });
+    writeLock(root, { alpha: "1.0.0" });
+
+    const r = run(["--json"], root);
+    assert.equal(r.code, 2, `expected exit 2, got ${r.code}: ${r.out}`);
+    const result = JSON.parse(r.out).results.find((x) => x.package === "@scope/alpha");
+    assert.equal(result.status, "error");
+    assert.match(result.detail, /must be a string or an object map/);
+  });
+});
+
+test("normalizeBin keys a string bin by the unscoped package name", () => {
+  assert.deepEqual(normalizeBin("./dist/cli.js", "@scope/launcher"), { launcher: "dist/cli.js" });
+  assert.deepEqual(normalizeBin("dist/cli.js", "plain"), { plain: "dist/cli.js" });
+});
+
+test("normalizeBin collapses ./, // and /./ in paths the way npm does", () => {
+  assert.deepEqual(normalizeBin({ a: "./dist/a.js", b: "dist//b.js", c: "dist/./c.js", d: ".//dist/d.js" }, "@scope/x"), {
+    a: "dist/a.js",
+    b: "dist/b.js",
+    c: "dist/c.js",
+    d: "dist/d.js",
+  });
+});
+
+test("normalizeBin reduces each key to its basename", () => {
+  assert.deepEqual(normalizeBin({ "nested/dir/tool": "dist/tool.js" }, "@scope/x"), { tool: "dist/tool.js" });
+});
+
+test("normalizeBin converts backslashes in paths and keys the way npm does", () => {
+  assert.deepEqual(normalizeBin({ "tools\\cli": "bin\\cli.js" }, "@scope/x"), { cli: "bin/cli.js" });
+  assert.deepEqual(normalizeBin(".\\dist\\cli.js", "@scope/x"), { x: "dist/cli.js" });
+});
+
+test("a lock bin named like an Object.prototype property is still an extra bin", () => {
+  withDir((root) => {
+    writePackage(root, "alpha", { name: "@scope/alpha", version: "1.0.0" });
+    writeLock(root, { alpha: { version: "1.0.0", bin: { toString: "dist/cli.js" } } });
+
+    const r = run(["--json"], root);
+    assert.equal(r.code, 1, `expected exit 1, got ${r.code}: ${r.out}`);
+    const finding = JSON.parse(r.out).results.find((x) => x.package === "@scope/alpha");
+    assert.match(finding.detail, /not in the manifest toString/);
+  });
+});
+
+test("normalizeBin throws on forms npm rejects: array, non-string or empty path", () => {
+  assert.equal(Object.keys(normalizeBin(undefined, "@scope/x")).length, 0);
+  assert.throws(() => normalizeBin(["dist/a.js"], "@scope/x"), /an array/);
+  assert.throws(() => normalizeBin({ a: 42 }, "@scope/x"), /non-empty string path/);
+  assert.throws(() => normalizeBin({ a: "" }, "@scope/x"), /non-empty string path/);
+  assert.throws(() => normalizeBin({ a: "./" }, "@scope/x"), /empty path/);
+  assert.throws(() => normalizeBin(7, "@scope/x"), /got number/);
 });
 
 // ------------------------------------------------------------------ ratchet
