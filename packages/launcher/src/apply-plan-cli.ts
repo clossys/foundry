@@ -26,7 +26,7 @@ import type { RepositoryChangeSet } from "./change-set-contract.js";
 import type { LockfileSpawn } from "./lockfile-regen.js";
 
 export const APPLY_PLAN_USAGE = `Usage: launcher-apply-plan --plan <plan.json> --brief <brief.json> --repo <directory>
-       launcher-apply-plan plan [--help]
+       launcher-apply-plan plan [--agent codex|claude|cursor] [--help]
        launcher-apply-plan materialize --repo <id>
        launcher-apply-plan verify --repo <id>
        launcher-apply-plan status --repo <id>
