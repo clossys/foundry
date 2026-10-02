@@ -1,4 +1,5 @@
-import { TOKENS } from "../../tokens/index.js";
+// Component imports need token data, not the token tools' Node-only guards.
+import { TOKENS } from "../../tokens/tokens.js";
 
 /**
  * `tailwind-merge`'s default config only recognizes Tailwind's OWN built-in
