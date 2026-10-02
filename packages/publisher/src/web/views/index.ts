@@ -29,13 +29,13 @@ export { SectionedView } from "./SectionedView.js";
 export type { SectionedViewLandmark, SectionedViewProps } from "./SectionedView.js";
 
 export { BrandGuideView } from "./BrandGuideView.js";
-export type { BrandGuideAssetLink, BrandGuideFact, BrandGuideViewProps } from "./BrandGuideView.js";
+export type { BrandGuideAssetLink, BrandGuideFact, BrandGuideSpecimen, BrandGuideViewProps } from "./BrandGuideView.js";
 
 export { SystemAuditView } from "./SystemAuditView.js";
 export type { SystemAuditViewProps } from "./SystemAuditView.js";
 
 export { PackReviewView } from "./PackReviewView.js";
-export type { PackReviewViewExport, PackReviewViewLabels, PackReviewViewPage, PackReviewViewProps, PackReviewViewState } from "./PackReviewView.js";
+export type { PackReviewViewBrandKit, PackReviewViewExport, PackReviewViewFact, PackReviewViewFaqItem, PackReviewViewLabels, PackReviewViewPage, PackReviewViewProps, PackReviewViewState, PackReviewViewStrategy, PackReviewViewVoice } from "./PackReviewView.js";
 
 export { LegalView } from "./LegalView.js";
 export type { LegalViewLabels, LegalViewProps } from "./LegalView.js";

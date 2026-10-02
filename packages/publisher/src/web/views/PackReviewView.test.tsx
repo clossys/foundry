@@ -9,11 +9,30 @@ import { cleanup, render, within } from "@testing-library/react";
 import { RenderError } from "../../internal/errors.js";
 import { PACK_REVIEW_WIDTHS } from "../../pack/review-index.js";
 import { PackReviewView } from "./PackReviewView.js";
-import type { PackReviewViewLabels, PackReviewViewProps } from "./PackReviewView.js";
+import type { PackReviewViewBrandKit, PackReviewViewLabels, PackReviewViewProps, PackReviewViewStrategy, PackReviewViewVoice } from "./PackReviewView.js";
 
 afterEach(cleanup);
 
 const LABELS: PackReviewViewLabels = {
+  strategy: { heading: "Marker strategy", empty: "Marker no strategy", summary: "Marker summary", context: "Marker context", openQuestions: "Marker open questions" },
+  brandKit: {
+    heading: "Marker brand kit",
+    empty: "Marker no brand kit",
+    assets: "Marker assets",
+    colors: "Marker colors",
+    type: "Marker type",
+    specimen: "Marker specimen",
+    facts: "Marker brand facts",
+  },
+  voice: {
+    heading: "Marker voice",
+    empty: "Marker no voice",
+    rules: "Marker rules",
+    tagline: "Marker tagline",
+    pitch: "Marker pitch",
+    boilerplate: "Marker boilerplate",
+    faq: "Marker faq",
+  },
   pagesHeading: "Marker pages",
   exportsHeading: "Marker exports",
   sheetHeading: "Marker contact sheet",
@@ -105,7 +124,7 @@ describe("PackReviewView", () => {
   it("names each section by its own h2 through aria-labelledby, with a matching id and no aria-label", () => {
     const { container } = render(<PackReviewView {...props()} />);
     const sections = [...container.querySelectorAll("main > section")];
-    expect(sections).toHaveLength(3);
+    expect(sections).toHaveLength(6);
     const ids = new Set<string>();
     for (const section of sections) {
       expect(section.hasAttribute("aria-label")).toBe(false);
@@ -115,7 +134,7 @@ describe("PackReviewView", () => {
       expect(h2.getAttribute("id")).toBe(labelledby);
       ids.add(labelledby as string);
     }
-    expect(ids.size).toBe(3);
+    expect(ids.size).toBe(6);
     expect(container.querySelectorAll("[aria-label]")).toHaveLength(0);
   });
 
@@ -203,6 +222,18 @@ describe("PackReviewView", () => {
     expect(container.querySelectorAll("iframe")).toHaveLength(0);
   });
 
+  it("orders the sections strategy, brand kit, voice, pages, exports, contact sheet", () => {
+    const { container } = render(<PackReviewView {...props()} />);
+    expect([...container.querySelectorAll("main > section > h2")].map((h2) => h2.textContent)).toEqual([
+      "Marker strategy",
+      "Marker brand kit",
+      "Marker voice",
+      "Marker pages",
+      "Marker exports",
+      "Marker contact sheet",
+    ]);
+  });
+
   it("renders entry text as inert text", () => {
     const hostile = '<script>globalThis.hit=1</script><img src=x onerror="globalThis.hit=1">';
     const html = renderToStaticMarkup(
@@ -287,8 +318,8 @@ describe("PackReviewView", () => {
     );
     // React's generated ids differ by version; each must appear as an h2 id and as its section's aria-labelledby.
     const ids = [...html.matchAll(/<h2 id="([^"]+)"/g)].map((match) => match[1]!);
-    expect(ids).toHaveLength(3);
-    expect(new Set(ids).size).toBe(3);
+    expect(ids).toHaveLength(6);
+    expect(new Set(ids).size).toBe(6);
     ids.forEach((id, index) => {
       expect(html.match(new RegExp(`aria-labelledby="${id.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}"`, "g"))).toHaveLength(1);
       html = html.replaceAll(`"${id}"`, `"heading-id-${index}"`);
@@ -305,20 +336,29 @@ describe("PackReviewView", () => {
       "<div class=\"flex flex-col gap-xs\"><h1 class=\"text-h1 font-display text-ink-primary\">Marker heading</h1>" +
       "<p class=\"text-body text-ink-secondary\">Marker description</p></div></div></header>" +
       "<section class=\"flex flex-col gap-md\" aria-labelledby=\"heading-id-0\">" +
-      "<h2 id=\"heading-id-0\" class=\"text-h2 text-ink-primary\">Marker pages</h2><ul class=\"flex flex-col gap-md\">" +
+      "<h2 id=\"heading-id-0\" class=\"text-h2 text-ink-primary\">Marker strategy</h2>" +
+      "<p class=\"text-body-s text-ink-muted\">Marker no strategy</p></section>" +
+      "<section class=\"flex flex-col gap-md\" aria-labelledby=\"heading-id-1\">" +
+      "<h2 id=\"heading-id-1\" class=\"text-h2 text-ink-primary\">Marker brand kit</h2>" +
+      "<p class=\"text-body-s text-ink-muted\">Marker no brand kit</p></section>" +
+      "<section class=\"flex flex-col gap-md\" aria-labelledby=\"heading-id-2\">" +
+      "<h2 id=\"heading-id-2\" class=\"text-h2 text-ink-primary\">Marker voice</h2>" +
+      "<p class=\"text-body-s text-ink-muted\">Marker no voice</p></section>" +
+      "<section class=\"flex flex-col gap-md\" aria-labelledby=\"heading-id-3\">" +
+      "<h2 id=\"heading-id-3\" class=\"text-h2 text-ink-primary\">Marker pages</h2><ul class=\"flex flex-col gap-md\">" +
       "<li class=\"flex flex-col gap-xs\"><span class=\"flex items-center gap-xs text-body\">" +
       "<a href=\"/contact\">/contact</a>" +
       "<span class=\"inline-flex items-center rounded-pill px-sm py-xs text-caption font-body tracking-meta bg-status-warning-tint text-status-warning-text\">Marker delegated</span>" +
       "</span><ul class=\"flex flex-wrap gap-sm ps-lg text-body-s\"><li class=\"flex items-center gap-xs\"><a href=\"/contact?preview=idle\">idle</a>" +
       "<span class=\"inline-flex items-center rounded-pill px-sm py-xs text-caption font-body tracking-meta bg-status-warning-tint text-status-warning-text\">Marker delegated</span></li>" +
-      "</ul></li></ul></section><section class=\"flex flex-col gap-md\" aria-labelledby=\"heading-id-1\">" +
-      "<h2 id=\"heading-id-1\" class=\"text-h2 text-ink-primary\">Marker exports</h2><ul class=\"flex flex-col gap-sm\">" +
+      "</ul></li></ul></section><section class=\"flex flex-col gap-md\" aria-labelledby=\"heading-id-4\">" +
+      "<h2 id=\"heading-id-4\" class=\"text-h2 text-ink-primary\">Marker exports</h2><ul class=\"flex flex-col gap-sm\">" +
       "<li class=\"flex flex-wrap items-center gap-xs text-body-s\">" +
       "<span class=\"inline-flex items-center rounded-pill px-sm py-xs text-caption font-body tracking-meta bg-status-success-tint text-status-success-text\">Marker approved</span>" +
       "<span class=\"text-ink-primary\">Marker og image</span>" +
       "<code class=\"break-all text-ink-secondary\">out/share/og-image.png</code></li></ul></section>" +
-      "<section class=\"flex flex-col gap-md\" aria-labelledby=\"heading-id-2\">" +
-      "<h2 id=\"heading-id-2\" class=\"text-h2 text-ink-primary\">Marker contact sheet</h2>" +
+      "<section class=\"flex flex-col gap-md\" aria-labelledby=\"heading-id-5\">" +
+      "<h2 id=\"heading-id-5\" class=\"text-h2 text-ink-primary\">Marker contact sheet</h2>" +
       "<div class=\"flex flex-col gap-xl overflow-x-auto\"><div class=\"flex flex-col gap-sm\">" +
       "<p class=\"flex items-center gap-xs text-body-s text-ink-secondary\"><span>/contact</span>" +
       "<span class=\"inline-flex items-center rounded-pill px-sm py-xs text-caption font-body tracking-meta bg-status-warning-tint text-status-warning-text\">Marker delegated</span></p><div class=\"flex gap-lg\">" +
@@ -367,5 +407,158 @@ describe("PackReviewView header slots", () => {
     const html = renderToStaticMarkup(<PackReviewView {...props({ ground: "transparent" })} />);
     expect(html).toMatch(/^<div class="flex min-h-dvh flex-col"><header class="py-sm" /);
     expect(html).toMatch(/<footer class="text-ink-primary py-lg" /);
+  });
+});
+
+const STRATEGY: PackReviewViewStrategy = {
+  source: "Marker source",
+  summary: "Marker summary text",
+  context: [{ name: "Marker audience", value: "businesses" }],
+  openQuestions: ["Marker question one", "Marker question two"],
+};
+
+const BRAND_KIT: PackReviewViewBrandKit = {
+  title: "Example Studio",
+  usage: "Marker usage",
+  assets: [{ role: "logo:0", href: "/pack/export?name=logo%3A0", label: "Marker logo asset" }],
+  colors: [{ name: "--color-brand", value: "#123456" }],
+  type: [{ name: "--font-display", value: "\"Example Sans\", sans-serif" }],
+  facts: [{ name: "Marker fact", value: "Marker fact value" }],
+  specimen: { text: "Marker specimen text", faces: [{ name: "--font-display", value: "\"Example Sans\", sans-serif" }] },
+};
+
+const VOICE: PackReviewViewVoice = {
+  rules: [{ name: "Marker person", value: "Marker person rule" }],
+  tagline: "Marker tagline text",
+  pitch: [{ name: "Marker one line", value: "Marker pitch text" }],
+  boilerplate: [{ name: "Marker short", value: "Marker boilerplate text" }],
+  faq: [{ question: "Marker faq question", answer: "Marker faq answer" }],
+};
+
+describe("PackReviewView record sections", () => {
+  it("shows each section's own empty label when its record is absent, and no guide markup", () => {
+    const { container } = render(<PackReviewView {...props()} />);
+    expect(within(sectionOf(container, "Marker strategy")).getByText("Marker no strategy")).toBeInTheDocument();
+    expect(within(sectionOf(container, "Marker brand kit")).getByText("Marker no brand kit")).toBeInTheDocument();
+    expect(within(sectionOf(container, "Marker voice")).getByText("Marker no voice")).toBeInTheDocument();
+    expect(container.querySelectorAll("main h3, main h4, main main")).toHaveLength(0);
+  });
+
+  it("renders the strategy brief: source, summary, context and open questions", () => {
+    const { container } = render(<PackReviewView {...props({ strategy: STRATEGY })} />);
+    const section = sectionOf(container, "Marker strategy");
+    expect(within(section).queryByText("Marker no strategy")).toBeNull();
+    expect([...section.querySelectorAll("h3")].map((h3) => h3.textContent)).toEqual(["Marker summary", "Marker context", "Marker open questions"]);
+    expect(within(section).getByText("Marker source")).toBeInTheDocument();
+    expect(within(section).getByText("Marker summary text")).toBeInTheDocument();
+    expect([...section.querySelectorAll("dt")].map((dt) => dt.textContent)).toEqual(["Marker audience"]);
+    expect([...section.querySelectorAll("dd")].map((dd) => dd.textContent)).toEqual(["businesses"]);
+    expect([...section.querySelectorAll("li")].map((li) => li.textContent)).toEqual(["Marker question one", "Marker question two"]);
+  });
+
+  it("shows the none label for a strategy brief with no summary, context or open question", () => {
+    const { container } = render(<PackReviewView {...props({ strategy: { source: "Marker source", context: [], openQuestions: [] } })} />);
+    expect(within(sectionOf(container, "Marker strategy")).getAllByText("Marker none")).toHaveLength(3);
+  });
+
+  it("renders the brand kit through BrandGuideView, embedded: no second main or h1, a visible heading per part", () => {
+    const { container } = render(<PackReviewView {...props({ brandKit: BRAND_KIT })} />);
+    const section = sectionOf(container, "Marker brand kit");
+    expect(container.querySelectorAll("main")).toHaveLength(1);
+    expect(container.querySelectorAll("h1")).toHaveLength(1);
+    expect(section.querySelector("h3")?.textContent).toBe("Example Studio");
+    expect(within(section).getByText("Marker usage")).toBeInTheDocument();
+    expect([...section.querySelectorAll("h4")].map((h4) => h4.textContent)).toEqual([
+      "Marker assets",
+      "Marker colors",
+      "Marker type",
+      "Marker specimen",
+      "Marker brand facts",
+    ]);
+    for (const part of section.querySelectorAll("h4")) {
+      expect(part.closest("section")?.getAttribute("aria-labelledby")).toBe(part.getAttribute("id"));
+    }
+    expect([...section.querySelectorAll("a")].map((a) => [a.textContent, a.getAttribute("href")])).toEqual([["Marker logo asset", "/pack/export?name=logo%3A0"]]);
+    expect(within(section).getByText("#123456")).toBeInTheDocument();
+    expect(within(section).getByText("Marker fact value")).toBeInTheDocument();
+    const specimen = within(section).getByText("Marker specimen text");
+    expect(specimen.style.fontFamily).toContain("Example Sans");
+    expect(container.querySelectorAll("[aria-label]")).toHaveLength(0);
+  });
+
+  it("shows the none label for a brand kit list with no entries", () => {
+    const empty: PackReviewViewBrandKit = { title: "Example Studio", usage: "Marker usage", assets: [], colors: [], type: [], facts: [] };
+    const { container } = render(<PackReviewView {...props({ brandKit: empty })} />);
+    const section = sectionOf(container, "Marker brand kit");
+    expect(within(section).getAllByText("Marker none")).toHaveLength(4);
+    expect([...section.querySelectorAll("h4")].map((h4) => h4.textContent)).not.toContain("Marker specimen");
+  });
+
+  it("refuses a brand-kit asset address that is not same-site, naming the position and not the value", () => {
+    for (const href of ["https://example.test/logo.svg", "//example.test/logo.svg", "javascript:alert(1)", "logo.svg"]) {
+      let message = "";
+      try {
+        renderToStaticMarkup(<PackReviewView {...props({ brandKit: { ...BRAND_KIT, assets: [{ role: "logo:0", href, label: "x" }] } })} />);
+      } catch (caught) {
+        expect(caught).toBeInstanceOf(RenderError);
+        message = (caught as Error).message;
+      }
+      expect(message, href).toContain("brandKit.assets[0].href");
+      expect(message).not.toContain("example.test");
+      expect(message).not.toContain("alert");
+    }
+  });
+
+  it("renders the voice and copy: rules, tagline, pitch, boilerplate and FAQ", () => {
+    const { container } = render(<PackReviewView {...props({ voice: VOICE })} />);
+    const section = sectionOf(container, "Marker voice");
+    expect([...section.querySelectorAll("h3")].map((h3) => h3.textContent)).toEqual([
+      "Marker rules",
+      "Marker tagline",
+      "Marker pitch",
+      "Marker boilerplate",
+      "Marker faq",
+    ]);
+    expect([...section.querySelectorAll("dt")].map((dt) => dt.textContent)).toEqual(["Marker person", "Marker one line", "Marker short", "Marker faq question"]);
+    expect([...section.querySelectorAll("dd")].map((dd) => dd.textContent)).toEqual(["Marker person rule", "Marker pitch text", "Marker boilerplate text", "Marker faq answer"]);
+    expect(within(section).getByText("Marker tagline text")).toBeInTheDocument();
+  });
+
+  it("shows the none label for each empty voice part and a missing tagline", () => {
+    const { container } = render(<PackReviewView {...props({ voice: { rules: [], pitch: [], boilerplate: [], faq: [] } })} />);
+    expect(within(sectionOf(container, "Marker voice")).getAllByText("Marker none")).toHaveLength(5);
+  });
+
+  it("renders record text in every section as inert text", () => {
+    const hostile = '<script>globalThis.hit=1</script><img src=x onerror="globalThis.hit=1">';
+    const html = renderToStaticMarkup(
+      <PackReviewView
+        {...props({
+          strategy: { source: hostile, summary: hostile, context: [{ name: hostile, value: hostile }], openQuestions: [hostile] },
+          brandKit: {
+            title: hostile,
+            usage: hostile,
+            assets: [{ role: "a", href: "/a", label: hostile }],
+            colors: [{ name: hostile, value: hostile }],
+            type: [{ name: hostile, value: hostile }],
+            facts: [{ name: hostile, value: hostile }],
+            specimen: { text: hostile, faces: [{ name: hostile, value: hostile }] },
+          },
+          voice: { rules: [{ name: hostile, value: hostile }], tagline: hostile, pitch: [{ name: hostile, value: hostile }], boilerplate: [], faq: [{ question: hostile, answer: hostile }] },
+        })}
+      />,
+    );
+    expect(html).not.toContain("<script");
+    expect(html).not.toContain("<img");
+    expect(html).toContain("&lt;script&gt;");
+    expect(html).not.toMatch(/font-family:[^"]*onerror/);
+  });
+
+  it("reuses BrandGuideView for the brand kit rather than rendering tokens itself", () => {
+    const source = readFileSync(join(import.meta.dirname, "PackReviewView.tsx"), "utf8");
+    expect(source).toMatch(/import \{ BrandGuideView \} from "\.\/BrandGuideView\.js";/);
+    expect(source.match(/<BrandGuideView\b/g)).toHaveLength(1);
+    expect(source).toMatch(/<BrandGuideView\s+embedded\b/);
+    expect(source).not.toMatch(/brandKit\.(colors|type|facts)\.map|fontFamily|lockupSvg/);
   });
 });

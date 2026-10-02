@@ -385,10 +385,12 @@ Name a shipped template when its slots cover the page:
   private copy of the header/error/footer shell. It also frames the
   sign-in-boundary states. It is not a built-in web template. See
   [Boundary pages](#boundary-pages).
-- **`PackReviewView`** — the dev-only review index: a site's pages, their
-  forced states, its exported artifacts and a lazy contact sheet, each entry
-  with a `draft`, `delegated` or `approved` badge. It uses the same frame as
-  `AuthView`. See [`PackReviewView`](#packreviewview).
+- **`PackReviewView`** — the dev-only review index: the pack's strategy
+  brief, brand kit (through `BrandGuideView`) and voice and copy, then a
+  site's pages, their forced states, its exported artifacts and a lazy
+  contact sheet, each page and export with a `draft`, `delegated` or
+  `approved` badge. It uses the same frame as `AuthView`. See
+  [`PackReviewView`](#packreviewview).
 
 If a required band is not a slot on any shipped template and not one of the
 six `SectionedView` kinds, **do not flatten** it into a one-item
@@ -816,7 +818,17 @@ entry list, each entry's tag list, and the pagination landmark.
 
 `BrandGuideView` names its sections with `lockupLabel` (default "Lockup"),
 `downloadsLabel` (default "Downloads"), `colorLabel` (default "Color"),
-`typeLabel` (default "Type"), and `factsLabel` (default "Strategy facts").
+`typeLabel` (default "Type"), `specimenLabel` (default "Type specimen"), and
+`factsLabel` (default "Strategy facts"). `lockupSvg` is optional: when it is
+omitted the lockup section is absent. `specimen` (`{ text, faces }`, optional)
+adds a type specimen that sets `text` in each face's font family; a face value
+that is not a plain family list (letters, digits, spaces, commas, quotes,
+dots, hyphens and underscores) keeps the text and drops the style.
+`emptyLabel` (optional) is shown in place of a list with no entries. With
+`embedded`, the guide renders inside another page's `main`: a `div` instead
+of a `main`, the title as an `h3` instead of a `PageHeader`, and each section
+named by a visible `h4` through `aria-labelledby` instead of an `aria-label`.
+`PackReviewView` renders its brand kit this way.
 `SystemAuditView` names its gallery link and sections with `galleryLabel`
 (default "Preview gallery"), `brandSectionLabel` (default "Brand file"),
 and `contrastLabel` (default "Contrast"), and its coverage status line with
@@ -2216,12 +2228,16 @@ return target.
 ### `PackReviewView`
 
 `PackReviewView`, exported from `@clossys/publisher/web`, is the dev-only
-review index for a site release. One page lists every page of the site with its
-forced states, every exported artifact, and a contact sheet that renders each
-page and state in a lazy frame at 390, 1024 and 1440 px. Each page and export
-carries a `draft`, `delegated` or `approved` badge; each forced state and each
-contact-sheet frame shows its page's badge. It is server-safe, reads
-nothing, and ships no wording: the caller builds the entries with
+review index for a site release. One page shows, in this order, the pack's
+strategy brief, its brand kit, its voice and copy, every page of the site with
+its forced states, every exported artifact, and a contact sheet that renders
+each page and state in a lazy frame at 390, 1024 and 1440 px. Each page and
+export carries a `draft`, `delegated` or `approved` badge; each forced state
+and each contact-sheet frame shows its page's badge. The strategy brief, brand
+kit and voice and copy are each optional: a section the caller passes nothing
+for shows its own empty label, and a list inside a section with no entries
+shows the none label. It is server-safe, reads nothing, and ships no wording:
+the caller builds the entries with
 [`buildPackReviewIndex`](#reviewing-a-pack) and passes every visible string.
 
 The frame is the one `AuthView` uses: Designer's `SiteHeader` with the
@@ -2263,6 +2279,17 @@ Props:
 
 - `brand`, `surfaceLabel`, `heading`, `description`, `footerSecondary`
   (optional): the frame, as above.
+- `strategy` (optional): `{ source, summary?, context, openQuestions }`.
+  `source` is a line naming the record the brief was read from; `context` is
+  `{ name, value }[]`; `openQuestions` is `string[]`, one list item each.
+- `brandKit` (optional): `{ title, usage, assets, colors, type, facts,
+  specimen? }`, rendered by `BrandGuideView` (see
+  [the fixed page shells](#captureview-documentview-and-collectionview--fixed-publisher-page-shells)) with `embedded`, no
+  lockup markup, and the labels below. Every `assets[].href` must be a
+  same-site address, as a page's must.
+- `voice` (optional): `{ rules, tagline?, pitch, boilerplate, faq }`.
+  `rules`, `pitch` and `boilerplate` are `{ name, value }[]`; `faq` is
+  `{ question, answer }[]`.
 - `headerAction`, `secondaryAction`, `nav` (optional): the header slots, as on
   `LandingView`. `headerAction` is a banner call to action (Designer
   `SiteHeader`'s `actions`), shown before the surface badge;
@@ -2278,12 +2305,17 @@ Props:
   plain text and is never a link; `href` is an optional same-site address
   (the same rule as a page's), and when given the kind's name links to it;
   `width` is the review width of an email export.
-- `labels`: `pagesHeading`, `exportsHeading`, `sheetHeading`, `none`, the
-  `statuses` and `kinds` word for each, `exportWidth(width)` and
-  `frameTitle({ page, state?, width })`. The view has no default wording.
+- `labels`: `strategy` (`heading`, `empty`, `summary`, `context`,
+  `openQuestions`), `brandKit` (`heading`, `empty`, `assets`, `colors`,
+  `type`, `specimen`, `facts`), `voice` (`heading`, `empty`, `rules`,
+  `tagline`, `pitch`, `boilerplate`, `faq`), `pagesHeading`,
+  `exportsHeading`, `sheetHeading`, `none`, the `statuses` and `kinds` word
+  for each, `exportWidth(width)` and `frameTitle({ page, state?, width })`.
+  The view has no default wording.
 - `widths` (default `[390, 1024, 1440]`): positive whole numbers; others throw.
 
-Each section is named by its own `h2` through `aria-labelledby`, and a frame's
+Each section is named by its own `h2` through `aria-labelledby`, and each
+part inside the strategy brief and the voice and copy by an `h3`; a frame's
 caption puts a text separator between the page and the state. An unknown
 `status` throws. Entry text is rendered as text: no markup from an
 entry is injected, and the frames use `loading="lazy"` and never `srcDoc`. The
@@ -3271,7 +3303,8 @@ cosmetic gap.
   `DocumentViewEffectiveDate`, `DocumentViewProps`,
   `ErrorViewProps`, `LegalViewLabels`, `LegalViewProps`, `MarketingViewProps`, `MarketingFeatureItem`, `MarketingFaqItem`,
   `SignInFailure`, `SignInFormProps`, `SignInResult`,
-  `PackReviewViewExport`, `PackReviewViewLabels`, `PackReviewViewPage`, `PackReviewViewProps`, `PackReviewViewState`,
+  `PackReviewViewBrandKit`, `PackReviewViewExport`, `PackReviewViewFact`, `PackReviewViewFaqItem`, `PackReviewViewLabels`,
+  `PackReviewViewPage`, `PackReviewViewProps`, `PackReviewViewState`, `PackReviewViewStrategy`, `PackReviewViewVoice`,
   `SectionedViewLandmark`, `SectionedViewProps`,
   `RenderErrorReason`, `AssetResolver`, `CopyResolver`, `RenderWebOptions`,
   `RenderWebResult`, `RepeatingWebSlotFieldSpec`, `RepeatingWebSlotSpec`, `ResolvedWebGroupField`, `ResolvedWebGroupItem`,
