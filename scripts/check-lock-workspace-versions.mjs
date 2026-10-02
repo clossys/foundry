@@ -146,10 +146,10 @@ function loadLock() {
 //
 // npm records a workspace member's `bin` in its lock entry as an object, even
 // when the manifest declares a bare string (keyed by the unscoped package
-// name), reduces each key to its basename, and normalizes each path
-// ("./", "//" and "/./" collapse). Anything this repository should never
-// publish — the array form, a non-string or empty path, a key with no
-// basename — throws rather than being guessed at.
+// name), reduces each key to its basename, and normalizes each path ("\"
+// becomes "/"; "./", "//" and "/./" collapse). Anything this repository
+// should never publish — the array form, a non-string or empty path, a key
+// with no basename — throws rather than being guessed at.
 function normalizeBin(bin, packageName) {
   if (bin === undefined || bin === null) return {};
   const where = `${packageName}'s "bin"`;
@@ -157,7 +157,7 @@ function normalizeBin(bin, packageName) {
     if (typeof path !== "string" || path.length === 0) {
       throw new Error(`${where} entry "${name}" must be a non-empty string path, got ${JSON.stringify(path)}`);
     }
-    const normalized = posix.normalize(path).replace(/^\.\//, "");
+    const normalized = posix.normalize(path.replace(/\\/g, "/")).replace(/^\.\//, "");
     if (normalized === "" || normalized === ".") throw new Error(`${where} entry "${name}" has an empty path`);
     return normalized;
   };
@@ -170,7 +170,7 @@ function normalizeBin(bin, packageName) {
   }
   const normalized = {};
   for (const [key, path] of Object.entries(bin)) {
-    const name = posix.basename(key);
+    const name = posix.basename(key.replace(/[\\:]/g, "/"));
     if (!name) throw new Error(`${where} key ${JSON.stringify(key)} has no basename to use as a command name`);
     normalized[name] = normalizePath(key, path);
   }
@@ -180,9 +180,9 @@ function normalizeBin(bin, packageName) {
 function describeBinDrift(manifest, lockEntry) {
   const declared = normalizeBin(manifest.bin, manifest.name);
   const recorded = normalizeBin(lockEntry.bin, manifest.name);
-  const missing = Object.keys(declared).filter((name) => !(name in recorded)).sort();
-  const extra = Object.keys(recorded).filter((name) => !(name in declared)).sort();
-  const changed = Object.keys(declared).filter((name) => name in recorded && declared[name] !== recorded[name]).sort();
+  const missing = Object.keys(declared).filter((name) => !Object.hasOwn(recorded, name)).sort();
+  const extra = Object.keys(recorded).filter((name) => !Object.hasOwn(declared, name)).sort();
+  const changed = Object.keys(declared).filter((name) => Object.hasOwn(recorded, name) && declared[name] !== recorded[name]).sort();
   const parts = [];
   if (missing.length) parts.push(`missing ${missing.join(", ")}`);
   if (extra.length) parts.push(`not in the manifest ${extra.join(", ")}`);

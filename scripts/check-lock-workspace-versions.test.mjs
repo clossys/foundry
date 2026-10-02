@@ -229,6 +229,23 @@ test("normalizeBin reduces each key to its basename", () => {
   assert.deepEqual(normalizeBin({ "nested/dir/tool": "dist/tool.js" }, "@scope/x"), { tool: "dist/tool.js" });
 });
 
+test("normalizeBin converts backslashes in paths and keys the way npm does", () => {
+  assert.deepEqual(normalizeBin({ "tools\\cli": "bin\\cli.js" }, "@scope/x"), { cli: "bin/cli.js" });
+  assert.deepEqual(normalizeBin(".\\dist\\cli.js", "@scope/x"), { x: "dist/cli.js" });
+});
+
+test("a lock bin named like an Object.prototype property is still an extra bin", () => {
+  withDir((root) => {
+    writePackage(root, "alpha", { name: "@scope/alpha", version: "1.0.0" });
+    writeLock(root, { alpha: { version: "1.0.0", bin: { toString: "dist/cli.js" } } });
+
+    const r = run(["--json"], root);
+    assert.equal(r.code, 1, `expected exit 1, got ${r.code}: ${r.out}`);
+    const finding = JSON.parse(r.out).results.find((x) => x.package === "@scope/alpha");
+    assert.match(finding.detail, /not in the manifest toString/);
+  });
+});
+
 test("normalizeBin throws on forms npm rejects: array, non-string or empty path", () => {
   assert.equal(Object.keys(normalizeBin(undefined, "@scope/x")).length, 0);
   assert.throws(() => normalizeBin(["dist/a.js"], "@scope/x"), /an array/);
