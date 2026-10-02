@@ -723,7 +723,7 @@ describe("template file rules", () => {
       version: string;
       peerDependencies: Record<string, string>;
     };
-    expect(manifest.dependencies["@clossys/writer"]).toBe("^0.4.0");
+    expect(manifest.dependencies["@clossys/writer"]).toBe("^0.5.0");
     expect(manifest.dependencies["@clossys/messenger"]).toBe("^0.2.0");
     expect(manifest.dependencies["resend"]).toBe(messenger.peerDependencies["resend"]);
   });

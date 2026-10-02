@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## 0.11.0 - 2026-10-02
+
+- Adds deploy record types and `verifyDeployRecord` on `@clossys/builder/deployment` (issues #1518 and #360): a caller declares production branch, preview branches, preview URL, protection mode, and required environment names per target, then compares that record to a provider observation that carries names and settings only. The verifier fails closed on branch, preview URL, environment target, scope, classification, and protection drift, rejects the unsafe release-ref pairing when main is deploy-enabled while production is not the release branch, and reports indeterminate when an observation includes a secret value field.
+- `builder hosting install --surface <id>` checks each declared private scope's registry route and runs a frozen install, and it reports a rejected credential, a missing credential, and a mis-routed scope as different errors, while `builder hosting should-build --surface <id>` prints the changed input when the only changed file is the install command.
+- A deployment surface record can declare `localPort`, and the surface's dev script is checked against that port.
+- `verifyDeployRecord` requires matching `productionCommit`, `builtCommit`, and `publicCommit` SHAs on provider observations, and `@clossys/builder/deployment` adds `planProductionRefUpdate` and `verifyProductionRefUpdate` for fast-forward and merge production-ref advances (#1518).
+- Each package skill's section for when the package is not installed speaks of the repositories the team is set up in, instead of every inventoried repository.
+- Each package skill says the whole team is composed in the hub and a repository staffed in an approved plan gets `@clossys-advisor` and the voices of the roles staffed there once that plan's setup pull request has merged, so a missing `@clossys-<package>` mention is a bug only in the hub.
+- Updated dependency @clossys/controller to ^0.10.0
+
 ## 0.10.2 - 2026-09-24
 
 - The changelog is no longer included in the package; it now lives in the public repository, linked from the README.

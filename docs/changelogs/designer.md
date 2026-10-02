@@ -3,6 +3,49 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## 0.7.0 - 2026-10-02
+
+- `@clossys/designer/tokens` now exports `BackdropContract`, `checkBackdropContract` and `checkBackdropElement`, which check a hero backdrop's scrim contrast, `aria-hidden`, `pointer-events`, reduced-motion fallback frame, lazy-loading budget and focusable descendants. The scrim contrast is held to the light and the dark theme: the dark theme is read from a `darkTokens` registry the caller supplies, a theme-dependent token with no dark value of its own is reported as unchecked rather than passed, and a page that forces the light theme opts out with `themes: "light-only"`.
+- A page on the `tokens.css` and `compiled.css` path now gets border-box sizing and inherited form-control fonts from a `foundry-ui-base` layer that comes before the utilities layer and that unlayered consumer CSS overrides.
+- The second-binder scan now matches `--color-*` property names case-sensitively, so a property that differs only by case is no longer reported.
+- The second-binder scan now ignores `//` line comments in `.postcss` stylesheets, as it does in `.pcss` and `.scss`.
+- `designer-brand-check` now looks for the brand overlay at `brand/brand.css` by default, so a multi-application product no longer has to pass the path.
+- `designer-brand-check` now exits 1 when any other `.css`, `.scss`, `.sass`, `.less`, `.pcss` or `.postcss` file under `apps/` (or `--apps <dir>`) declares a `--color-*` property, resets a colour family with `--color-*: initial` or `--color-red-*: initial`, or declares one in `@apply`, so an existing caller that has an `apps/` folder can now fail this check until it keeps one overlay.
+- `Brandmark` accepts `plate="shared"` to draw one rounded-square plate behind the mark (default `"self"`, whose markup is unchanged), and the package exports `badgePlatePath(size)` with the shares `BADGE_RADIUS_SHARE` and `BADGE_INSET_SHARE` that describe the same plate geometry (#1535).
+- `Brandmark`, exported from `@clossys/designer/shell` and `@clossys/designer/shell/server`, renders a home link named by a caller-supplied `label` around a decorative mark image and an optional live-text wordmark, sized by six new `--ui-brandmark-height-*` and `--ui-brandmark-gap-*` tokens.
+- `composeLockup` no longer carries a source comment about passing its input whole to `adoptSuppliedMark`.
+- `composeLockup`, exported from `@clossys/designer/tokens`, turns a supplied SVG mark, a wordmark string, a font-licence record and a `"mark"` or `"lockup"` header choice into a JSON-serialisable live-text lockup spec, and refuses a non-SVG mark, an empty wordmark or an unrecognised header or licence value with an `IdentityKitValidationError`.
+- `@clossys/designer/blocks` exports `ConsentBanner`, a props-only region with a title, body, optional privacy-link slot and equal-prominence accept and reject buttons that holds no consent state and makes no storage or network call.
+- Document the `--ui-width-display-max` token in the token reference and make the `ErrorView` README example a 500 page.
+- The designer adds the `--ui-layout-drawer-w` (navigation drawer width) and `--ui-layout-tap-target` (44px minimum tap target) layout tokens, which the site chrome now reads instead of arbitrary values.
+- The README's `ErrorView` section shows the diagnostic reference inline in `description` instead of a details slot and states that `action` holds one primary control.
+- The Designer README now states where `Form` errors belong (inline under the field, or in the one `submitError` banner) and how multi-step forms that ask for an identifier first should navigate, with tests pinning the one-banner behaviour.
+- `Form` now renders its error summary only when `errorSummaryMessage` is passed, and it no longer has a built-in heading text.
+- Callers can pass `onSubmitError` to `Form` to receive the error when the promise returned by a validated `onSubmit` rejects, and `Form` now catches that rejection instead of leaving an unhandled promise rejection while the pending state clears.
+- Callers can spread `useFormValidation`'s `getSubmitButtonProps()` onto the submit `Button` to show a focusable pending state while an async submit runs, and a second submit during that time does not call `onSubmit` again.
+- Callers can pass `submitError` to `Form` to render one alert above the actions for a submission that failed to send.
+- Adds the non-brandable `--ui-width-form-max` token (`38rem`), a content-column measure for single-form pages; the curated token set is now 168.
+- `Link` accepts `buttonVariant` and `buttonSize` to render with exactly the classes `Button` applies for that variant and size, so a framework link element can look like a `Button` while staying a link; a `Link` with neither prop is unchanged.
+- The Setup section of the README now says only the repository root declares `@clossys/designer`, and lists the `theme.css` and `utilities.css` entries among those a workspace package re-exports; the compiled CSS check's usage text names `styles/utilities.css`.
+- The README Setup and skill now describe one `brand/designer.css` entry and one `@clossys/designer` dependency shared by every application of a product.
+- `NavShell` indents the drawer panel's props consistently with the surrounding source.
+- The README's `AuthView` section no longer repeats itself after the `Stat` section, and now documents `internalNote` and the legal-row-only footer rule.
+- The `AuthView` section of the README now says the card holds only the form, that `secondaryAction` sits below it, and that an activation step never offers request-access or sign-up.
+- The README now describes AuthView's site shell, with `brand` required.
+- The Form standard in the Designer README gains an Error copy section on how to word a failure message, and the `AuthView` entry names the `isDisabled` exception to rendering the form as given.
+- `recolorSvg`, and so `adoptSuppliedMark`'s `light`, `dark`, `mono`, `favicon` and `appIcon` variants, now knocks out a supplied mark when the whole document is a recognised flat two-tone mark (groups and basic shapes with explicit hex fills, two tones, every first-tone shape before every second-tone shape, no ids, references, styles, classes, text or root paint), so the surface shows through where one tone overlaps the other (#1537). Recognition is one linear pass capped at 32 attributes on a tag, 2000 elements and 32 groups deep; any other input, including one over a cap, is recoloured flat as in the previous release. The contrast check skips only `<mask>`s in the form `recolorSvg` emits.
+- Callers can pass `errorSummaryMessage` on Form, `skipLinkLabel` on Shell, `tableFallbackLabel` on ChartFrame, BarChart, and LineChart, `barLabel` and `categoryColumnLabel` on BarChart, `overlayLabel` and `xColumnLabel` on LineChart, `tableFallbackLabel` and `valueColumnLabel` on Sparkline, `noResultsLabel`, `rangeSummaryMessage`, `pageSummaryMessage`, and `pageSizeLabel` on Pagination, `trendLabels` on Stat, `preferenceLabels`, `toggleLabel`, and `preferenceAnnouncement` on ThemeToggle, and `placeholder` on Select.
+- `SiteFooter` accepts `ground="transparent"`, which renders the footer with no background class, no border class, no border width and no divider between its columns and secondary row, keeping the base ink.
+- `SiteHeader` accepts `ground="transparent"`, which renders the header with no background class, no border class and no border width; like `base`, it sets no ink class.
+- `SiteHeader` and `SiteFooter` accept `ground="transparent-inverse"`: no plate and no border, like `"transparent"`, with the on-inverse ink on the footer and its secondary row, for chrome over a page on the inverse ground.
+- `SiteFooter.Legal` renders the copyright line and legal links in the footer's `secondary` slot from a caller-supplied `entity`, `links`, and optional `linksLabel`, with the year computed at render and the responsive layout handled by the component.
+- `SiteHeader` accepts `navPlacement="centered"` to center its navigation between the brand and the trailing controls, and a `secondaryAction` slot rendered before `actions`.
+- `SiteHeader` accepts an optional text-only `surfaceLabel`, such as "admin" or "demo", shown as a neutral non-interactive badge at the trailing end of the header in both nav placements.
+- Callers can use the new `useFormValidation` hook with `Form` to validate a field on blur, re-validate a field that shows an error on change, re-validate every change after the first submit, and move focus to the first invalid field in document order when a submit fails.
+- A shared CSS entry can now import `@clossys/designer/utilities.css`, a generated list of `@source inline(...)` directives for this package's component classes, instead of a path `@source` on `dist` and a hand-kept class list.
+- Each package skill's section for when the package is not installed speaks of the repositories the team is set up in, instead of every inventoried repository.
+- Each package skill says the whole team is composed in the hub and a repository staffed in an approved plan gets `@clossys-advisor` and the voices of the roles staffed there once that plan's setup pull request has merged, so a missing `@clossys-<package>` mention is a bug only in the hub.
+
 ## 0.6.0 - 2026-09-24
 
 - The `foundry` manifest block now declares `capabilities` (manifest schema
