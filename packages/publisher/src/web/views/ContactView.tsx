@@ -6,7 +6,8 @@ import { Card, mergeUiClasses } from "@clossys/designer/atoms/server";
 import { Form, useFormValidation } from "@clossys/designer/blocks";
 import { PageHeader } from "@clossys/designer/blocks/server";
 import { SiteFooter, SiteHeader } from "@clossys/designer/shell/server";
-import type { SiteFooterLegalProps, SiteHeaderProps } from "@clossys/designer/shell/server";
+import type { SiteFooterLegalProps } from "@clossys/designer/shell/server";
+import type { ViewChromeGround } from "../internal/viewChromeGround.js";
 import { RenderError } from "../../internal/errors.js";
 import type { ContactResult } from "../contact/types.js";
 
@@ -92,7 +93,7 @@ export interface ContactViewProps extends Omit<HTMLAttributes<HTMLDivElement>, "
    * `SiteFooter`.
    * @default "transparent"
    */
-  ground?: SiteHeaderProps["ground"];
+  ground?: ViewChromeGround;
   /** The legal row, passed straight to `SiteFooter.Legal`. Every visible word in it comes from these props. */
   legal: SiteFooterLegalProps;
   /** The approved-copy resolver used for every string in `copy` and in `topics`. */

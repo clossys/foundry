@@ -31,16 +31,19 @@ export const SHELL_GROUND_CLASSES = {
 /**
  * Ground vocabulary for the site chrome (`SiteHeader`, `SiteFooter`) only.
  * `transparent` paints no plate and no border — the page beneath shows
- * through — and keeps the base ink. `Shell.Header` and `Shell.Footer` stay on
+ * through — and keeps the base ink. `transparent-inverse` paints no plate and
+ * no border either, and carries the inverse ink, for chrome over a page that
+ * is itself on the inverse ground. `Shell.Header` and `Shell.Footer` stay on
  * the closed `ShellGround` set: widening this type does not widen theirs.
  */
-export type SiteChromeGround = ShellGround | "transparent";
+export type SiteChromeGround = ShellGround | "transparent" | "transparent-inverse";
 
 /**
  * Plate policy for the site chrome. `base` and `inverse` are the same
- * entries `SHELL_GROUND_CLASSES` holds; `transparent` carries no surface and
- * no border class at all (an empty string, so nothing renders) and the base
- * ink. Whether a border WIDTH renders is decided by `siteChromeHasBorder`,
+ * entries `SHELL_GROUND_CLASSES` holds; `transparent` and
+ * `transparent-inverse` carry no surface and no border class at all (an empty
+ * string, so nothing renders) and the base or the inverse ink respectively.
+ * Whether a border WIDTH renders is decided by `siteChromeHasBorder`,
  * because the width lives in an inline style rather than a class.
  */
 export const SITE_CHROME_GROUND_CLASSES = {
@@ -52,9 +55,15 @@ export const SITE_CHROME_GROUND_CLASSES = {
     secondary: SHELL_GROUND_CLASSES.base.secondary,
     border: "",
   },
+  "transparent-inverse": {
+    surface: "",
+    primary: SHELL_GROUND_CLASSES.inverse.primary,
+    secondary: SHELL_GROUND_CLASSES.inverse.secondary,
+    border: "",
+  },
 } as const satisfies Readonly<Record<SiteChromeGround, ShellGroundClasses>>;
 
 /** Whether the site chrome paints any border for this ground: no class, no width, no divider. */
 export function siteChromeHasBorder(ground: SiteChromeGround): boolean {
-  return ground !== "transparent";
+  return ground !== "transparent" && ground !== "transparent-inverse";
 }

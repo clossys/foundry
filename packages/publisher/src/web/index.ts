@@ -98,7 +98,7 @@ export type {
 } from "./contact/index.js";
 
 export { LandingView } from "./views/index.js";
-export type { LandingViewProps } from "./views/index.js";
+export type { LandingViewFooter, LandingViewGround, LandingViewProps } from "./views/index.js";
 export { ContactView } from "./views/index.js";
 export type { ContactViewCopy, ContactViewDevPreview, ContactViewProps, ContactViewTopic, ContactViewValues } from "./views/index.js";
 export { SignInForm } from "./views/index.js";
