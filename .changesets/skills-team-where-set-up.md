@@ -1,6 +1,5 @@
 ---
 architect: minor
-bouncer: minor
 builder: minor
 butler: minor
 controller: minor
