@@ -43,6 +43,16 @@
 // the lock is CURRENTLY truthful, not whether some past record's pin still
 // holds — those are different questions with different answers.
 //
+// BIN MAPS
+// --------
+// The same lock entry also records the member's `bin` map. A pull request
+// that adds a bin to packages/<dir>/package.json without regenerating the
+// lock leaves the next release run's `npm install --package-lock-only` to
+// add it, and the release commit then fails check-release-pr-shape.mjs's
+// lockfile rule for a package it did not bump. A bin mismatch on an entry
+// whose version matches is a finding; the version ratchet below never
+// waives it.
+//
 // RATCHET
 // -------
 // A package.json version bump is packed content: fixing a stale lock entry
@@ -129,6 +139,32 @@ function loadLock() {
     return { error: `${lockPath} has no "packages" key — not an npm lockfile (v2/v3) this gate can read` };
   }
   return { lock };
+}
+
+// ---------------------------------------------------------------- bin maps
+//
+// npm records a workspace member's `bin` in its lock entry as an object, even
+// when the manifest declares a bare string (keyed by the unscoped package
+// name), and drops a leading "./" from each path.
+function normalizeBin(bin, packageName) {
+  if (bin === undefined || bin === null) return {};
+  const strip = (path) => (typeof path === "string" ? path.replace(/^\.\//, "") : path);
+  if (typeof bin === "string") return { [packageName.replace(/^@[^/]+\//, "")]: strip(bin) };
+  if (typeof bin !== "object") return { "(invalid)": String(bin) };
+  return Object.fromEntries(Object.entries(bin).map(([name, path]) => [name, strip(path)]));
+}
+
+function describeBinDrift(manifest, lockEntry) {
+  const declared = normalizeBin(manifest.bin, manifest.name);
+  const recorded = normalizeBin(lockEntry.bin, manifest.name);
+  const missing = Object.keys(declared).filter((name) => !(name in recorded)).sort();
+  const extra = Object.keys(recorded).filter((name) => !(name in declared)).sort();
+  const changed = Object.keys(declared).filter((name) => name in recorded && declared[name] !== recorded[name]).sort();
+  const parts = [];
+  if (missing.length) parts.push(`missing ${missing.join(", ")}`);
+  if (extra.length) parts.push(`not in the manifest ${extra.join(", ")}`);
+  if (changed.length) parts.push(`different path for ${changed.join(", ")}`);
+  return parts.length ? parts.join("; ") : null;
 }
 
 // ------------------------------------------------------------------ allowlist
@@ -226,6 +262,19 @@ function main() {
       continue;
     }
     if (lockVersion === manifest.version) {
+      const binDrift = describeBinDrift(manifest, lockEntry);
+      if (binDrift) {
+        results.push({
+          package: manifest.name,
+          status: "finding",
+          detail:
+            `package-lock.json's "${lockKey}" records ${lockVersion}, matching the manifest, but its "bin" map does not match ` +
+            `packages/${dirName}/package.json's: ${binDrift}. A release run's \`npm install --package-lock-only\` rewrites that map, ` +
+            "so the release commit's lockfile then changes beyond its version fields and fails check-release-pr-shape.mjs. " +
+            "Regenerate package-lock.json in the same pull request as the bin change.",
+        });
+        continue;
+      }
       results.push({ package: manifest.name, status: "pass", detail: `package-lock.json's "${lockKey}" records ${lockVersion}, matching the manifest` });
       continue;
     }
@@ -318,4 +367,4 @@ function main() {
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) main();
 
-export { discoverPackages, loadAllowlist, loadLock, loadManifest };
+export { describeBinDrift, discoverPackages, loadAllowlist, loadLock, loadManifest, normalizeBin };
