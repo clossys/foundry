@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## 0.2.1 - 2026-10-02
+
+- Starter's ledger succession check now admits an apply generation that adds the row for the Launcher guide, the `AGENTS.md` file inside the repository's `clossys/` directory, with the digest of the guide's bytes, as the installed-ledger contract's rule S3 states.
+
 ## 0.2.0 - 2026-09-28
 
 - Each package skill's section for when the package is not installed speaks of the repositories the team is set up in, instead of every inventoried repository.
