@@ -313,11 +313,20 @@ function ledgerPackages(bytes: Uint8Array): readonly LedgerPackage[] | null {
   return packages;
 }
 
-function manifestSpec(manifest: unknown, placement: LedgerPlacement, name: string): unknown {
+/** Manifest declarations must be own properties, never inherited properties. */
+function manifestBucket(manifest: unknown, placement: LedgerPlacement): UnknownRecord | undefined {
   if (!record(manifest)) return undefined;
-  const section = manifest[placement];
-  if (!record(section)) return undefined;
-  return section[name];
+  const section = placement === "dependencies"
+    ? (Object.hasOwn(manifest, "dependencies") ? manifest.dependencies : undefined)
+    : placement === "devDependencies"
+      ? (Object.hasOwn(manifest, "devDependencies") ? manifest.devDependencies : undefined)
+      : undefined;
+  return record(section) ? section : undefined;
+}
+
+function manifestSpec(manifest: unknown, placement: LedgerPlacement, name: string): unknown {
+  const section = manifestBucket(manifest, placement);
+  return section !== undefined && Object.hasOwn(section, name) ? section[name] : undefined;
 }
 
 /**
@@ -364,10 +373,16 @@ function adoptionSourceFindings(input: AdmissionEvaluationInput, manager: Starte
     if (!record(value)) return null;
     const copy = structuredClone(value);
     for (const pkg of base.deferred) {
-      const bucket = copy[pkg.placement];
-      if (record(bucket)) {
-        delete bucket[pkg.name];
-        if (Object.keys(bucket).length === 0) delete copy[pkg.placement];
+      const bucket = manifestBucket(copy, pkg.placement);
+      if (bucket === undefined) continue;
+      // Filter a cloned own bucket rather than traversing or mutating a caller-selected key.
+      const retained = Object.fromEntries(Object.entries(bucket).filter(([name]) => name !== pkg.name));
+      if (pkg.placement === "dependencies") {
+        if (Object.keys(retained).length === 0) delete copy.dependencies;
+        else copy.dependencies = retained;
+      } else if (pkg.placement === "devDependencies") {
+        if (Object.keys(retained).length === 0) delete copy.devDependencies;
+        else copy.devDependencies = retained;
       }
     }
     return copy;

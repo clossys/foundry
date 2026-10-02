@@ -1,6 +1,9 @@
+import { readFileSync } from "node:fs";
+import { serializeInstalledLedger } from "./ledger.js";
+import type { InstalledLedger } from "./ledger.js";
 import {unambiguousPnpmAdoptionMetadata} from "./pnpm.js";
 import { describe, expect, it } from "vitest";
-import { evaluateStarter, evaluateProcessResult, isNormalizedRelativePath, validateStarterRequest } from "./core.js";
+import { evaluateAdmission, evaluateStarter, evaluateProcessResult, isNormalizedRelativePath, validateStarterRequest } from "./core.js";
 import { validateNpmIdentity } from "./npm.js";
 import { validatePnpmIdentity } from "./pnpm.js";
 
@@ -321,5 +324,107 @@ describe("new proof native pnpm serialization subset",()=>{
   });
   it("accepts native mapping, simple keys, scalar sequences and flat inline maps",()=>{
     expect(unambiguousPnpmAdoptionMetadata("lockfileVersion: '9.0'\nimporters:\n  .: {}\nroot:\n  resolution: {integrity: sha512-example}\n  cpu: [arm64, x64]\n  peers:\n    - '@scope/package'\n")).toBe(true);
+  });
+});
+
+
+// Use valid canonical corpus succession as the public admission boundary, not a private helper stub.
+const corpus = JSON.parse(readFileSync(new URL("../../../docs/contracts/installed-ledger.fixture.json", import.meta.url), "utf8")) as {
+  ledgers: { name: string; ledger: InstalledLedger }[];
+};
+type Mutable<T> = T extends readonly (infer Row)[] ? Mutable<Row>[]
+  : T extends object ? { -readonly [Key in keyof T]: Mutable<T[Key]> } : T;
+type Placement = "dependencies" | "devDependencies";
+
+function adoptionFixture(placement: Placement = "dependencies") {
+  const load = (name: string): Mutable<InstalledLedger> => JSON.parse(
+    JSON.stringify(corpus.ledgers.find(entry => entry.name === name)!.ledger)
+      .replaceAll("@example/strategist", "@clossys/strategist")
+      .replaceAll("@example~1strategist", "@clossys~1strategist"),
+  );
+  const base = load("setup-generation-1");
+  const head = load("admitted-generation-2");
+  const name = "@clossys/strategist";
+  const compare = (left: string, right: string) => left < right ? -1 : left > right ? 1 : 0;
+  for (const ledger of [base, head]) {
+    for (const rows of [ledger.packages, ledger.deferred]) {
+      for (const row of rows) if (row.name === name) row.placement = placement;
+    }
+    for (const row of ledger.keys) {
+      if (row.pointer.endsWith("@clossys~1strategist")) row.pointer = row.pointer.replace("/devDependencies/", `/${placement}/`);
+    }
+    ledger.packages.sort((a, b) => compare(a.planItem, b.planItem));
+    ledger.deferred.sort((a, b) => compare(a.planItem, b.planItem));
+    ledger.keys.sort((a, b) => compare(a.pointer, b.pointer));
+  }
+  const pkg = base.deferred.find(row => row.name === name)!;
+  const {changeSet, reason: _reason, ...desired} = pkg;
+  const row = {
+    file: "package.json" as const, placement, name, beforeVersion: "1.4.0",
+    beforeResolved: {name, version: "1.4.0", integrity: pkg.integrity}, desired,
+    observedBaseCommit: base.history[0]!.baseCommit,
+    desiredSnapshotDigest: `sha256:${"a".repeat(64)}`,
+    consent: "adopt-existing-declaration" as const, changeSet,
+  };
+  base.existingDeclarationAdoptions = [row];
+  head.existingDeclarationAdoptions = [structuredClone(row)];
+  const bytes = (ledger: InstalledLedger) => Buffer.from(serializeInstalledLedger(ledger));
+  function install(rows: readonly {name: string; version: string; integrity: string; placement: Placement}[]) {
+    const manifest: Record<Placement, Record<string, string>> = {dependencies: {}, devDependencies: {}};
+    for (const pkg of rows) manifest[pkg.placement][pkg.name] = pkg.version;
+    const lock = {packages: {
+      "": structuredClone(manifest),
+      ...Object.fromEntries(rows.map(pkg => [`node_modules/${pkg.name}`, {version: pkg.version, integrity: pkg.integrity}])),
+    }};
+    return {manifest, lock};
+  }
+  return {base, head, input: {
+    request: request({phase: "admission"}), baseLedger: bytes(base), headLedger: bytes(head),
+    install: install([...base.packages, pkg]), headInstall: install(head.packages),
+  }};
+}
+
+describe("adoption manifest own-property boundaries", () => {
+  for (const placement of ["dependencies", "devDependencies"] as const) {
+    it(`${placement}: accepts ordinary own declaration sections and package names`, () => {
+      expect(evaluateAdmission(adoptionFixture(placement).input).state).toBe("satisfied");
+    });
+    it(`${placement}: refuses an inherited declaration section`, () => {
+      const {input} = adoptionFixture(placement);
+      const bucket = input.headInstall.manifest[placement];
+      delete input.headInstall.manifest[placement];
+      Object.setPrototypeOf(input.headInstall.manifest, {[placement]: bucket});
+      expect(evaluateAdmission(input).state).toBe("violated");
+      expect(Object.hasOwn(bucket, "@clossys/strategist")).toBe(true);
+    });
+    it(`${placement}: refuses an inherited package declaration`, () => {
+      const {input} = adoptionFixture(placement);
+      const bucket = input.headInstall.manifest[placement];
+      const value = bucket["@clossys/strategist"];
+      delete bucket["@clossys/strategist"];
+      Object.setPrototypeOf(bucket, {"@clossys/strategist": value});
+      expect(evaluateAdmission(input).state).toBe("violated");
+    });
+    it(`${placement}: never mutates a bucket inherited from Object.prototype`, () => {
+      const {input} = adoptionFixture(placement);
+      const shared = input.install.manifest[placement];
+      const before = structuredClone(shared);
+      delete input.install.manifest[placement];
+      delete input.headInstall.manifest[placement];
+      const descriptor = Object.getOwnPropertyDescriptor(Object.prototype, placement);
+      try {
+        Object.defineProperty(Object.prototype, placement, {value: shared, writable: true, enumerable: false, configurable: true});
+        expect(evaluateAdmission(input).state).toBe("violated");
+        expect(shared).toEqual(before);
+      } finally {
+        if (descriptor) Object.defineProperty(Object.prototype, placement, descriptor);
+        else Reflect.deleteProperty(Object.prototype, placement);
+      }
+    });
+  }
+  it.each(["__proto__", "constructor", "prototype"])("refuses unsupported ledger placement %s before manifest traversal", placement => {
+    const {input,base} = adoptionFixture();
+    (base.deferred[0]! as unknown as {placement: string}).placement = placement;
+    expect(evaluateAdmission({...input,baseLedger:Buffer.from(JSON.stringify(base,null,2)+"\n")}).state).toBe("violated");
   });
 });
