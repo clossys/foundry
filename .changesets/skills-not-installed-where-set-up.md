@@ -7,7 +7,6 @@ customer: minor
 designer: minor
 giver: minor
 influencer: minor
-inspector: minor
 keeper: minor
 locksmith: minor
 observer: minor
