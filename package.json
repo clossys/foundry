@@ -102,7 +102,7 @@
     "//check-locksmith-catalog": "Foundry's own value-free credential catalogue names the workflow credential classes this repository actually requires, never their values. Run the built locksmith CLI by its dist path after `npm run build`; this is author-side staging evidence, not a provider connection or consumer adoption (#494, #496).",
     "check:locksmith-catalog": "node packages/locksmith/dist/infisical/cli.js catalog --catalog governance/locksmith-catalog.json",
     "//check-launcher-help": "Launcher get-started help, invoked by dist path after `npm run build`. The script exists so package-evidence has a packages/launcher/dist site — the bin name `launcher` would otherwise fire invocation-by-bin-name against a clone that cites the package but has no dist-path site. Needs compiled dist/; keep out of check:gates. Wired into ci.yml's post-build job (#414).",
-    "check:launcher-help": "node packages/launcher/dist/cli.js --help",
+    "check:launcher-help": "node packages/launcher/dist/cli.js --help && node --test scripts/launcher-qualification-fixtures.test.mjs",
     "//check-strategist-subject": "Foundry's wired strategist facts subject (clossys/strategist/facts.json) traced against docs/PUBLISHING.md only. Invoked by packages/strategist/dist/cli.js after build; wired into ci.yml's post-build job (#500).",
     "check:strategist-subject": "node --test scripts/check-strategist-subject.test.mjs && node scripts/check-strategist-subject.mjs",
     "//check-supersession": "Foundry's public, repository-owned donor map is evaluated against this repository's own root manifest through integrator's built CLI. It is deliberately outside publish.yml's bootstrap discovery, which runs before node_modules and dist exist (#495, #496).",

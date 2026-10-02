@@ -50,6 +50,8 @@ export const GATE_TEST_SCAN_ROOTS = ["scripts", ".github/scripts"];
  * by its own check:* script" are real reasons; "not ready" is not.
  */
 export const GATE_TEST_EXCLUSIONS = Object.freeze({
+  "scripts/launcher-qualification-fixtures.test.mjs":
+    "runs the real, compiled packages/launcher/dist/check-cli.js against the external qualification fixtures -- needs `npm run build` first. Run by check:launcher-help in ci.yml's post-build job; it cannot run in the dependency-free safety job.",
   "scripts/lib/candidate-runner-acceptance.test.mjs":
     "runs the real, built candidate-runner framework end to end -- needs `npm run build` first. Its own check:candidate-runner-acceptance script runs it in ci.yml's build job, after install and build (see scripts/check-workflow-references.test.mjs's dedicated test for this exact ordering).",
   "scripts/observation-bundle.test.mjs":
