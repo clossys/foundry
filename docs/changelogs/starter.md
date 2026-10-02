@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## 0.2.1 - 2026-10-02
 
-- Starter's ledger succession check now admits an apply generation that adds the row for the Launcher guide installed in the hub, with the digest of the guide's bytes, as the installed-ledger contract's rule S3 states.
+- Starter's ledger succession check now admits an apply generation that adds the row for the Launcher guide, the `AGENTS.md` file inside the repository's `clossys/` directory, with the digest of the guide's bytes, as the installed-ledger contract's rule S3 states.
 
 ## 0.2.0 - 2026-09-28
 
