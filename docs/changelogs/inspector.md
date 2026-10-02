@@ -6,11 +6,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## 0.4.0 - 2026-10-02
+## 0.3.1 - 2026-10-02
 
 - `checkReviewEvidence` now accepts an optional `carriedApproval` option naming an earlier approved head a caller proved carries forward to the current one, and echoes it back on `ReviewEvidenceReport.carriedApproval` (and the rendered `verify-standards` report line) purely for visibility — it changes nothing about whether a change passes or fails review.
-- Each package skill's section for when the package is not installed speaks of the repositories the team is set up in, instead of every inventoried repository.
-- Each package skill says the whole team is composed in the hub and a repository staffed in an approved plan gets `@clossys-advisor` and the voices of the roles staffed there once that plan's setup pull request has merged, so a missing `@clossys-<package>` mention is a bug only in the hub.
 - Updated dependency @clossys/controller to ^0.10.0
 
 ## 0.3.0 - 2026-09-24

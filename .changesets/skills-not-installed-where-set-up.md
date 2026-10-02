@@ -5,6 +5,7 @@ butler: minor
 customer: minor
 giver: minor
 influencer: minor
+inspector: minor
 keeper: minor
 locksmith: minor
 observer: minor
