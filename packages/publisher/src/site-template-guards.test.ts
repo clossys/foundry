@@ -41,6 +41,7 @@ const PUBLISHER_DIR = join(REPO_ROOT, "packages", "publisher");
 const DESIGNER_DIR = join(REPO_ROOT, "packages", "designer");
 const WRITER_DIR = join(REPO_ROOT, "packages", "writer");
 const MESSENGER_DIR = join(REPO_ROOT, "packages", "messenger");
+const STRATEGIST_DIR = join(REPO_ROOT, "packages", "strategist");
 const TEMPLATE_DIR = join(PUBLISHER_DIR, "templates", "site");
 const FIXTURES = join(PUBLISHER_DIR, "test-fixtures", "site-template-guards");
 
@@ -131,7 +132,7 @@ function rangeCovers(rangeText: unknown, installedText: string | undefined): Ran
 }
 
 const DEPENDENCY_SECTIONS = ["dependencies", "devDependencies", "peerDependencies", "optionalDependencies"] as const;
-const REQUIRED_SIBLINGS = ["@clossys/designer", "@clossys/messenger", "@clossys/publisher", "@clossys/writer"] as const;
+const REQUIRED_SIBLINGS = ["@clossys/designer", "@clossys/messenger", "@clossys/publisher", "@clossys/strategist", "@clossys/writer"] as const;
 const REQUIRED_FRAMEWORK = ["next", "react", "react-dom"] as const;
 
 /**
@@ -198,10 +199,12 @@ function siblingVersionsOnDisk(): Record<string, string> {
   const designer = readManifestVersion(DESIGNER_DIR);
   const messenger = readManifestVersion(MESSENGER_DIR);
   const publisher = readManifestVersion(PUBLISHER_DIR);
+  const strategist = readManifestVersion(STRATEGIST_DIR);
   const writer = readManifestVersion(WRITER_DIR);
   if (designer !== undefined) out["@clossys/designer"] = designer;
   if (messenger !== undefined) out["@clossys/messenger"] = messenger;
   if (publisher !== undefined) out["@clossys/publisher"] = publisher;
+  if (strategist !== undefined) out["@clossys/strategist"] = strategist;
   if (writer !== undefined) out["@clossys/writer"] = writer;
   return out;
 }
@@ -226,6 +229,7 @@ function currentManifest(onDisk: Record<string, string>, locked: Record<string, 
       "@clossys/designer": `^${onDisk["@clossys/designer"]}`,
       "@clossys/messenger": `^${onDisk["@clossys/messenger"]}`,
       "@clossys/publisher": `~${onDisk["@clossys/publisher"]}`,
+      "@clossys/strategist": `^${onDisk["@clossys/strategist"]}`,
       "@clossys/writer": `^${onDisk["@clossys/writer"]}`,
       next: `^${locked["next"]}`,
       react: `^${locked["react"]}`,
@@ -243,6 +247,7 @@ describe("guard 1: template dependency ranges", () => {
       "@clossys/designer",
       "@clossys/messenger",
       "@clossys/publisher",
+      "@clossys/strategist",
       "@clossys/writer",
     ]);
     expect(Object.keys(locked).sort()).toEqual(["next", "react", "react-dom"]);
@@ -270,7 +275,7 @@ describe("guard 1: template dependency ranges", () => {
     expect(checkTemplateRanges(currentManifest(onDisk, locked), onDisk, locked)).toEqual([]);
   });
 
-  it("requires both siblings and all three framework packages to be declared", () => {
+  it("requires every sibling and all three framework packages to be declared", () => {
     for (const name of [...REQUIRED_SIBLINGS, ...REQUIRED_FRAMEWORK]) {
       const manifest = currentManifest(onDisk, locked) as { dependencies: Record<string, string> };
       delete manifest.dependencies[name];
