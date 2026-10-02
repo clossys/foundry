@@ -6,6 +6,8 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
 
+import { normalizeBin } from "./check-lock-workspace-versions.mjs";
+
 // Hermetic end-to-end coverage, same convention as
 // check-workspace-links.test.mjs: every fixture is a real, throwaway
 // directory under mkdtemp, and the real script is spawned exactly the way
@@ -181,6 +183,59 @@ test("a lock bin the manifest no longer declares, or one at a different path, is
     assert.match(finding.detail, /not in the manifest alpha-gone/);
     assert.match(finding.detail, /different path for alpha-a/);
   });
+});
+
+test("a lock bin on a manifest that declares no bin at all is a finding", () => {
+  withDir((root) => {
+    writePackage(root, "alpha", { name: "@scope/alpha", version: "1.0.0" });
+    writeLock(root, { alpha: { version: "1.0.0", bin: { alpha: "dist/cli.js" } } });
+
+    const r = run(["--json"], root);
+    assert.equal(r.code, 1, `expected exit 1, got ${r.code}: ${r.out}`);
+    const finding = JSON.parse(r.out).results.find((x) => x.package === "@scope/alpha");
+    assert.equal(finding.status, "finding");
+    assert.match(finding.detail, /not in the manifest alpha/);
+  });
+});
+
+test("a manifest bin npm would reject is an error, not a guess", () => {
+  withDir((root) => {
+    writePackage(root, "alpha", { name: "@scope/alpha", version: "1.0.0", bin: ["dist/cli.js"] });
+    writeLock(root, { alpha: "1.0.0" });
+
+    const r = run(["--json"], root);
+    assert.equal(r.code, 2, `expected exit 2, got ${r.code}: ${r.out}`);
+    const result = JSON.parse(r.out).results.find((x) => x.package === "@scope/alpha");
+    assert.equal(result.status, "error");
+    assert.match(result.detail, /must be a string or an object map/);
+  });
+});
+
+test("normalizeBin keys a string bin by the unscoped package name", () => {
+  assert.deepEqual(normalizeBin("./dist/cli.js", "@scope/launcher"), { launcher: "dist/cli.js" });
+  assert.deepEqual(normalizeBin("dist/cli.js", "plain"), { plain: "dist/cli.js" });
+});
+
+test("normalizeBin collapses ./, // and /./ in paths the way npm does", () => {
+  assert.deepEqual(normalizeBin({ a: "./dist/a.js", b: "dist//b.js", c: "dist/./c.js", d: ".//dist/d.js" }, "@scope/x"), {
+    a: "dist/a.js",
+    b: "dist/b.js",
+    c: "dist/c.js",
+    d: "dist/d.js",
+  });
+});
+
+test("normalizeBin reduces each key to its basename", () => {
+  assert.deepEqual(normalizeBin({ "nested/dir/tool": "dist/tool.js" }, "@scope/x"), { tool: "dist/tool.js" });
+});
+
+test("normalizeBin throws on forms npm rejects: array, non-string or empty path", () => {
+  assert.equal(Object.keys(normalizeBin(undefined, "@scope/x")).length, 0);
+  assert.throws(() => normalizeBin(["dist/a.js"], "@scope/x"), /an array/);
+  assert.throws(() => normalizeBin({ a: 42 }, "@scope/x"), /non-empty string path/);
+  assert.throws(() => normalizeBin({ a: "" }, "@scope/x"), /non-empty string path/);
+  assert.throws(() => normalizeBin({ a: "./" }, "@scope/x"), /empty path/);
+  assert.throws(() => normalizeBin(7, "@scope/x"), /got number/);
 });
 
 // ------------------------------------------------------------------ ratchet
