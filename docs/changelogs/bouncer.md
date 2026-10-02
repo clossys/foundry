@@ -4,6 +4,18 @@ All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 
+## 0.2.0 - 2026-10-02
+
+- Callers can run a host's handler through checkFrontDoorHttp or assertFrontDoorHttp in their own test to catch any response that breaks the gated-host rules.
+- Add an opt-in `@clossys/bouncer/gate` export. `createGatedHostGate` answers a gated host's requests with a 307 to sign-in for a signed-out navigation, a 401 with an RFC 9728 challenge for any other signed-out request, a 403 not-authorized route for a signed-in principal without permission, and a fail-closed sign-in redirect when the identity provider is unavailable. It builds on the gated-host response helpers and the redirect allowlist, requires a permission check, reads no host or header value into a response, and refuses ambiguous paths and malformed request URLs.
+- Callers can set the robots tag and no-store headers on gated-host responses and serve a deny-all robots.txt, a health route and a 503 with Retry-After from the package root.
+- `resolveSafeRedirect()` now returns `undefined` for a target carrying a control character or whose normalised path starts with `//` (for example `/.//x` or `/%2e%2e//x`), so a returned redirect can no longer be read as a different host (#1736).
+- Callers can classify a sign-in failure into one of seven classes and map each class to a Writer front-door copy id from the package root, with a Clerk code table for the classes it can name from the Clerk web subpaths.
+- Callers can build a site security-headers baseline whose development and production variants come from one call, with a production script policy of nonce or static, a warning when static emits a declared framework exception, and a refusal that omits the refused token from the emitted policy.
+- Callers verifying a Clerk webhook now get a signing-secret guard that refuses a missing, prefix-only, malformed or short key before any header is read, a distinct `payload-invalid` code for a signed body that is not a JSON event object, and errors that never carry key material or body text.
+- Each package skill's section for when the package is not installed speaks of the repositories the team is set up in, instead of every inventoried repository.
+- Each package skill says the whole team is composed in the hub and a repository staffed in an approved plan gets `@clossys-advisor` and the voices of the roles staffed there once that plan's setup pull request has merged, so a missing `@clossys-<package>` mention is a bug only in the hub.
+
 ## 0.1.12 - 2026-09-24
 
 - The changelog is no longer included in the package; it now lives in the public repository, linked from the README.

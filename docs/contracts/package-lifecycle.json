@@ -98,7 +98,7 @@
       "status": "retired",
       "replacement": {
         "name": "@clossys/bouncer",
-        "range": "^0.1.0"
+        "range": ">=0.1.0 <0.3.0"
       },
       "deprecatedOn": "2026-08-22",
       "retiredOn": "2026-08-24",
