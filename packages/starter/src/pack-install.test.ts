@@ -20,8 +20,8 @@ const requireFromStarter = createRequire(import.meta.url);
 /** The canary uses its own admitted real runtime, never a PATH-selected manager. */
 function pnpmRuntime(manifestPath = requireFromStarter.resolve("pnpm")): string {
   const manifest = JSON.parse(readFileSync(manifestPath, "utf8")) as { name?: string; version?: string; bin?: { pnpm?: string } };
-  if (manifest.name !== "pnpm" || manifest.version !== "10.33.0" || manifest.bin?.pnpm !== "bin/pnpm.cjs") {
-    throw new Error("packed canary requires the admitted pnpm 10.33.0 runtime");
+  if (manifest.name !== "pnpm" || manifest.version !== "10.34.6" || manifest.bin?.pnpm !== "bin/pnpm.cjs") {
+    throw new Error("packed canary requires the admitted pnpm 10.34.6 runtime");
   }
   const packageRoot = realpathSync(dirname(manifestPath));
   const entry = realpathSync(resolve(packageRoot, manifest.bin.pnpm));
@@ -246,7 +246,7 @@ async function installNpmConsumer(root: string, registryUrl: string, installed: 
 
 async function installPnpmConsumer(root: string, registryUrl: string, installed: ReturnType<typeof identities>): Promise<void> {
   const pnpmCli = pnpmRuntime();
-  writeJson(join(root, "package.json"), { name: "fixture-pnpm-consumer", private: true, version: "1.0.0", packageManager: "pnpm@10.33.0", devDependencies: Object.fromEntries(Object.values(installed).map(({ name, version }) => [name, version])) });
+  writeJson(join(root, "package.json"), { name: "fixture-pnpm-consumer", private: true, version: "1.0.0", packageManager: "pnpm@10.34.6", devDependencies: Object.fromEntries(Object.values(installed).map(({ name, version }) => [name, version])) });
   mkdirSync(join(root, "packages", "fixture-member"), { recursive: true });
   writeJson(join(root, "packages", "fixture-member", "package.json"), { name: "fixture-pnpm-member", private: true, version: "1.0.0" });
   writeFileSync(join(root, "pnpm-workspace.yaml"), "packages:\n  - 'packages/*'\n");
@@ -266,7 +266,7 @@ afterEach(() => { for (const root of roots.splice(0)) rmSync(root, { recursive: 
 describe("packed installed activation canaries", () => {
   it("binds the real Starter-local pnpm runtime to its exact admitted version", () => {
     const root = temporaryRoot();
-    expect(run(process.execPath, [pnpmRuntime(), "--version"], root).trim()).toBe("10.33.0");
+    expect(run(process.execPath, [pnpmRuntime(), "--version"], root).trim()).toBe("10.34.6");
   });
   it("refuses a substituted pnpm identity, version or entry before execution", () => {
     const root = temporaryRoot();
@@ -275,12 +275,12 @@ describe("packed installed activation canaries", () => {
     // Boundary-only negative controls never execute this file.
     writeFileSync(join(root, "bin", "pnpm.cjs"), "");
     for (const manifest of [
-      { name: "substituted", version: "10.33.0", bin: { pnpm: "bin/pnpm.cjs" } },
+      { name: "substituted", version: "10.34.6", bin: { pnpm: "bin/pnpm.cjs" } },
       { name: "pnpm", version: "12.7.0", bin: { pnpm: "bin/pnpm.cjs" } },
-      { name: "pnpm", version: "10.33.0", bin: { pnpm: "../outside.cjs" } },
+      { name: "pnpm", version: "10.34.6", bin: { pnpm: "../outside.cjs" } },
     ]) {
       writeJson(path, manifest);
-      expect(() => pnpmRuntime(path)).toThrow("requires the admitted pnpm 10.33.0 runtime");
+      expect(() => pnpmRuntime(path)).toThrow("requires the admitted pnpm 10.34.6 runtime");
     }
   });
   it("binds every fixture registry route and isolates user and global configuration", () => {
