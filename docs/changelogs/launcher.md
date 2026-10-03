@@ -5,6 +5,10 @@ All notable changes to this package are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.5.0 - 2026-10-03
+
+- Allow an explicit agent namespace for apply branches, covered by the change-set digest and setup path-scope checks.
+
 ## 0.4.0 - 2026-10-02
 
 - The packed brief contract names Launcher's `planApplyBundle()` as the one producer of a per-repository brief, in the present tense, and says it computes that brief without writing any file (#1178).
