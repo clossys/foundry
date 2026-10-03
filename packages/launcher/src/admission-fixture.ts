@@ -362,6 +362,19 @@ export function siteRepo(roots: string[], tree: BaseTree, options: SiteRepoOptio
   const writeAll = () => {
     for (const [path, entry] of tree) if (path !== "README.md") writeTreeEntry(clonePath, path, entry);
     git(clonePath, "add", "-A");
+    // The admitted base is a Git tree. A case-insensitive worktree cannot
+    // materialize two distinct raw paths, so bind each index entry to its
+    // supplied bytes instead of trusting the filesystem's spelling/content.
+    for (const [path, entry] of tree) if (path !== "README.md") {
+      const blob = execFileSync("git", ["hash-object", "-w", "--stdin"], {
+        cwd: clonePath,
+        env: gitEnv,
+        input: entry.bytes,
+        encoding: "utf8",
+        stdio: ["pipe", "pipe", "pipe"],
+      }).trim();
+      git(clonePath, "-c", "core.ignorecase=false", "update-index", "--add", "--cacheinfo", entry.mode, blob, path);
+    }
   };
   if (options.mergeStyle === "squash") {
     git(clonePath, "checkout", "-b", "setup");
