@@ -11,19 +11,19 @@ export const NPM_CI_IGNORE_SCRIPTS = Object.freeze({
 type UnknownRecord = Record<string, unknown>;
 const ROOT_DEPENDENCY_SECTION = "devDependencies";
 function record(value: unknown): value is UnknownRecord { return typeof value === "object" && value !== null && !Array.isArray(value); }
-function declaredVersion(value: unknown, expected: ExactPackage, section: "dependencies" | "devDependencies" = ROOT_DEPENDENCY_SECTION): boolean {
+function declaredVersion(value: unknown, expected: ExactPackage, section: "dependencies" | "devDependencies" = ROOT_DEPENDENCY_SECTION, declaration = expected.version): boolean {
   if (!record(value)) return false;
   const dependencies = record(value[section]) ? value[section] : {};
-  return dependencies[expected.name] === expected.version;
+  return dependencies[expected.name] === declaration;
 }
 
 /** Validates npm's root dependency entry and lock-v3 package entry without accepting a range or a borrowed section. */
-export function validateNpmIdentity(manifest: unknown, lock: unknown, expected: ExactPackage, placement: "dependencies" | "devDependencies" = ROOT_DEPENDENCY_SECTION): string[] {
+export function validateNpmIdentity(manifest: unknown, lock: unknown, expected: ExactPackage, placement: "dependencies" | "devDependencies" = ROOT_DEPENDENCY_SECTION, declaration = expected.version): string[] {
   const findings: string[] = [];
-  if (!declaredVersion(manifest, expected, placement)) findings.push(`package.json ${placement} does not declare ${expected.name} at exact ${expected.version}`);
+  if (!declaredVersion(manifest, expected, placement, declaration)) findings.push(`package.json ${placement} does not declare ${expected.name} at exact ${expected.version}`);
   if (!record(lock) || !record(lock.packages)) return [...findings, "package-lock.json has no packages object"];
   const root = lock.packages[""];
-  if (!declaredVersion(root, expected, placement)) findings.push(`package-lock root ${placement} does not declare ${expected.name} at exact ${expected.version}`);
+  if (!declaredVersion(root, expected, placement, declaration)) findings.push(`package-lock root ${placement} does not declare ${expected.name} at exact ${expected.version}`);
   const entry = lock.packages[`node_modules/${expected.name}`];
   if (!record(entry) || entry.version !== expected.version || entry.integrity !== expected.integrity) {
     findings.push(`package-lock entry for ${expected.name} does not match exact version and integrity`);
@@ -251,4 +251,20 @@ export function compareHeadHiddenLockfile(headLock: unknown, hiddenLock: unknown
     }
   });
   return { state: violations.length > 0 ? "violated" : "satisfied", violations };
+}
+
+/** Internal admission comparison: preserve every root identity outside approved declaration writes. */
+export function validateNpmCollateralRoots(baseManifest: unknown, baseLock: unknown, headManifest: unknown, headLock: unknown, changed: readonly string[]): boolean {
+  if (!record(baseManifest) || !record(headManifest) || !record(baseLock) || !record(baseLock.packages)) return false;
+  for (const placement of ["dependencies", "devDependencies"] as const) {
+    const declarations=baseManifest[placement];
+    if (!record(declarations)) continue;
+    for (const [name,literal] of Object.entries(declarations)) {
+      if (changed.includes(name)) continue;
+      const entry=baseLock.packages[`node_modules/${name}`];
+      if (typeof literal !== "string" || !record(entry) || typeof entry.version !== "string" || typeof entry.integrity !== "string") return false;
+      if (validateNpmIdentity(headManifest,headLock,{name,version:entry.version,integrity:entry.integrity},placement,literal).length !== 0) return false;
+    }
+  }
+  return true;
 }

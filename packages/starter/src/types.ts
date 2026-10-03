@@ -189,6 +189,8 @@ export interface AdmissionEvaluationInput {
   /** The head ledger file was present but could not be read as a regular file. */
   readonly headUnreadable?: boolean;
   readonly install: AdmissionInstall | null;
+  /** Pull-request manifest and lock read strictly as data, never executed. */
+  readonly headInstall?: AdmissionInstall | null;
 }
 
 /** The admission comparison of the two installed-state ledgers. */

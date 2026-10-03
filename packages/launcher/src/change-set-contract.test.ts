@@ -5,7 +5,7 @@ import { PACKAGE_SCOPE } from "./generated/package-scope.generated.js";
 import { PLAN_CONTRACTS } from "./generated/plan-contracts.generated.js";
 import { changeSetDigest } from "./change-set-digest.js";
 import {
-  WRITE_RECORD_PATHS, contentDigest, isPathPattern, isSafeRelativePath, lockfilePath, matchesPathPattern, repositoryChangeSetViolations, validateRepositoryChangeSet,
+  WRITE_RECORD_PATHS, existingDeclarationVersionMatches, contentDigest, isPathPattern, isSafeRelativePath, lockfilePath, matchesPathPattern, repositoryChangeSetViolations, validateRepositoryChangeSet,
 } from "./change-set-contract.js";
 import type { RepositoryChangeSet } from "./change-set-contract.js";
 
@@ -861,5 +861,20 @@ describe("change-set code rules C1-C16", () => {
     const validation = validateRepositoryChangeSet(reseal(set));
     expect(validation.valid).toBe(false);
     if (!validation.valid) expect(validation.reason).not.toContain("a-secret-value");
+  });
+});
+
+describe("bounded existing declaration resolution",()=>{
+  it.each([
+    ["1.2.3","1.2.3",true],["1.2.3","1.2.4",false],
+    ["^1.2.3","1.9.0",true],["^1.2.3","2.0.0",false],["^1.2.3","1.2.2",false],
+    ["^0.2.3","0.2.9",true],["^0.2.3","0.3.0",false],
+    ["^0.0.3","0.0.3",true],["^0.0.3","0.0.4",false],
+    ["~1.2.3","1.2.9",true],["~1.2.3","1.3.0",false],
+    ["^01.2.3","1.2.3",false],["^1.2.3-rc.01","1.2.3",false],
+    ["npm:@clossys/advisor@1.2.3","1.2.3",false],["file:../other","1.2.3",false],
+    ["^9007199254740993.0.0","9007199254740992.9.9",false],
+  ])("%s resolves %s: %s",(literal,resolved,expected)=>{
+    expect(existingDeclarationVersionMatches(literal as string,resolved as string)).toBe(expected);
   });
 });

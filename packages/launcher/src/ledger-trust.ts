@@ -1,3 +1,4 @@
+import { canonicalDigest } from "./plan-digest.js";
 // Whether the apply planner may trust a repository's installed-state ledger
 // (issue #1178; docs/rfcs/apply-approved-plan.md §12.1, §12.2 and §12.8), and
 // the one compare-and-swap table for a whole file. A ledger is a claim anyone
@@ -118,6 +119,10 @@ function deferredRowWritten(ledger: InstalledLedger, row: LedgerDeferredRow, set
 function rowsWritten(ledger: InstalledLedger, bySet: ReadonlyMap<string, RepositoryChangeSet>, planPackageActs: readonly PlanPackageActs[] | undefined): boolean {
   const setOf = (changeSet: string) => bySet.get(changeSet);
   return (
+    (ledger.existingDeclarationAdoptions ?? []).every(({changeSet, ...proof}) => {
+      const set = setOf(changeSet);
+      return set !== undefined && set.phase === "setup" && set.existingDeclarationAdoptions?.some(row => canonicalDigest(row) === canonicalDigest(proof)) === true;
+    }) &&
     ledger.files.every((row) => {
       const set = setOf(row.changeSet);
       return set !== undefined && set.files.some((file) => isWhole(file) && file.path === row.path && file.mode === row.mode && file.after === row.after);

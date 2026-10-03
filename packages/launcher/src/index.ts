@@ -53,7 +53,7 @@ export type { RootEntriesVerdict } from "./root-entries.js";
 export { editReleaseAgeExemption, verifyReleaseAgeExemption } from "./release-age-edit.js";
 export type { ReleaseAgeEdit, ReleaseAgeEditInput, ReleaseAgeEditRefusalReason, ReleaseAgeVerdict, ReleaseAgeVerifyInput } from "./release-age-edit.js";
 export type { InstalledLedger, LedgerPackageIdentity, LedgerSuccession, LedgerViolation } from "./ledger-contract.js";
-export { PUBLIC_PROBLEM_PLACEHOLDER, planApplyBundle, projectEngagementBrief, serializeEngagementBrief } from "./plan-bundle.js";
+export { PUBLIC_PROBLEM_PLACEHOLDER, createExistingDeclarationAdoptions, planApplyBundle, projectEngagementBrief, serializeEngagementBrief } from "./plan-bundle.js";
 export type { PlanApplyBundleInputs, PlanApplyBundleResult, RepositoryObservation, SkippedRepositoryObservation } from "./plan-bundle.js";
 export { observeRepository } from "./observe-repository.js";
 export type { ObserveRepositoryInput, RepositoryObservationPorts } from "./observe-repository.js";
@@ -138,3 +138,5 @@ export type { ProvenanceGateInput, ProvenanceGatePorts } from "./provenance-gate
 
 export { decideSetBinding, planPackagesFor, readHubAuthority } from "./admission.js";
 export type { AdmissionDecision, AdmissionRefusal, HubAuthority, ReadinessRunner } from "./admission.js";
+
+export type {ExistingDeclarationAdoption} from "./change-set-contract.js";

@@ -1,10 +1,11 @@
 import { spawn, spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { chmodSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { chmodSync, existsSync, mkdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { createServer } from "node:http";
 import type { AddressInfo } from "node:net";
 import { tmpdir } from "node:os";
-import { basename, dirname, join, resolve } from "node:path";
+import { createRequire } from "node:module";
+import { basename, dirname, isAbsolute, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, describe, expect, it } from "vitest";
 
@@ -14,6 +15,22 @@ const sha256 = (character: string) => character.repeat(64);
 const gitSha = (character: string) => character.repeat(40);
 const integrityFor = (path: string) => `sha512-${createHash("sha512").update(readFileSync(path)).digest("base64")}`;
 const RUNTIME_ENVIRONMENT_NAMES = ["PATH", "TMPDIR", "TMP", "TEMP", "SystemRoot", "WINDIR", "ComSpec", "PATHEXT", "LANG", "LC_ALL", "LC_CTYPE", "TZ"] as const;
+const requireFromStarter = createRequire(import.meta.url);
+
+/** The canary uses its own admitted real runtime, never a PATH-selected manager. */
+function pnpmRuntime(manifestPath = requireFromStarter.resolve("pnpm")): string {
+  const manifest = JSON.parse(readFileSync(manifestPath, "utf8")) as { name?: string; version?: string; bin?: { pnpm?: string } };
+  if (manifest.name !== "pnpm" || manifest.version !== "10.33.0" || manifest.bin?.pnpm !== "bin/pnpm.cjs") {
+    throw new Error("packed canary requires the admitted pnpm 10.33.0 runtime");
+  }
+  const packageRoot = realpathSync(dirname(manifestPath));
+  const entry = realpathSync(resolve(packageRoot, manifest.bin.pnpm));
+  const entryPath = relative(packageRoot, entry);
+  if (isAbsolute(entryPath) || entryPath === ".." || entryPath.startsWith(`..${process.platform === "win32" ? "\\" : "/"}`)) {
+    throw new Error("packed canary pnpm entry must remain inside its package");
+  }
+  return entry;
+}
 
 interface PackedPackage {
   readonly name: string;
@@ -29,6 +46,9 @@ function temporaryRoot(): string { const root = join(tmpdir(), `starter-pack-${D
  * The consumer, never the invoking job, owns package-manager configuration.
  */
 function consumerEnvironment(root: string): NodeJS.ProcessEnv {
+  // Both config files belong to the disposable fixture; no ambient global config participates.
+  const globalConfig = join(root, "global-npmrc");
+  writeFileSync(globalConfig, "");
   const environment: NodeJS.ProcessEnv = {};
   for (const name of RUNTIME_ENVIRONMENT_NAMES) {
     const value = process.env[name];
@@ -41,6 +61,7 @@ function consumerEnvironment(root: string): NodeJS.ProcessEnv {
     XDG_CONFIG_HOME: join(root, ".config"),
     XDG_CACHE_HOME: join(root, ".cache"),
     NPM_CONFIG_USERCONFIG: join(root, ".npmrc"),
+    NPM_CONFIG_GLOBALCONFIG: globalConfig,
     NPM_CONFIG_CACHE: join(root, ".npm-cache"),
     PNPM_HOME: join(root, ".pnpm-home"),
   };
@@ -125,7 +146,7 @@ async function localRegistry(packages: readonly PackedPackage[]): Promise<{ read
 }
 
 function writeRegistryConfig(root: string, registryUrl: string): void {
-  writeFileSync(join(root, ".npmrc"), `@clossys:registry=${registryUrl}\n@fixture:registry=${registryUrl}\n`);
+  writeFileSync(join(root, ".npmrc"), `registry=${registryUrl}\n@clossys:registry=${registryUrl}\n@fixture:registry=${registryUrl}\n`);
 }
 
 async function withHostilePublishEnvironment<T>(root: string, action: () => Promise<T>): Promise<T> {
@@ -224,23 +245,56 @@ async function installNpmConsumer(root: string, registryUrl: string, installed: 
 }
 
 async function installPnpmConsumer(root: string, registryUrl: string, installed: ReturnType<typeof identities>): Promise<void> {
+  const pnpmCli = pnpmRuntime();
   writeJson(join(root, "package.json"), { name: "fixture-pnpm-consumer", private: true, version: "1.0.0", packageManager: "pnpm@10.33.0", devDependencies: Object.fromEntries(Object.values(installed).map(({ name, version }) => [name, version])) });
   mkdirSync(join(root, "packages", "fixture-member"), { recursive: true });
   writeJson(join(root, "packages", "fixture-member", "package.json"), { name: "fixture-pnpm-member", private: true, version: "1.0.0" });
   writeFileSync(join(root, "pnpm-workspace.yaml"), "packages:\n  - 'packages/*'\n");
   writeRegistryConfig(root, registryUrl);
-  await runAsync("pnpm", ["install", "--ignore-scripts"], root);
+  await runAsync(process.execPath, [pnpmCli, "install", "--ignore-scripts"], root);
   expect(existsSync(join(root, "package-lock.json"))).toBe(false);
   const lock = readFileSync(join(root, "pnpm-lock.yaml"), "utf8");
   expect(lock).toContain(installed.starter.name);
   expect(lock).toContain(`version: ${installed.target.version}(${installed.advisor.name}@${installed.advisor.version})`);
   rmSync(join(root, "node_modules"), { recursive: true, force: true });
-  await runAsync("pnpm", ["install", "--frozen-lockfile", "--ignore-scripts"], root);
+  await runAsync(process.execPath, [pnpmCli, "install", "--frozen-lockfile", "--ignore-scripts"], root);
+  expect(readFileSync(join(root, "pnpm-lock.yaml"), "utf8")).toBe(lock);
 }
 
 afterEach(() => { for (const root of roots.splice(0)) rmSync(root, { recursive: true, force: true }); });
 
 describe("packed installed activation canaries", () => {
+  it("binds the real Starter-local pnpm runtime to its exact admitted version", () => {
+    const root = temporaryRoot();
+    expect(run(process.execPath, [pnpmRuntime(), "--version"], root).trim()).toBe("10.33.0");
+  });
+  it("refuses a substituted pnpm identity, version or entry before execution", () => {
+    const root = temporaryRoot();
+    const path = join(root, "package.json");
+    mkdirSync(join(root, "bin"));
+    // Boundary-only negative controls never execute this file.
+    writeFileSync(join(root, "bin", "pnpm.cjs"), "");
+    for (const manifest of [
+      { name: "substituted", version: "10.33.0", bin: { pnpm: "bin/pnpm.cjs" } },
+      { name: "pnpm", version: "12.7.0", bin: { pnpm: "bin/pnpm.cjs" } },
+      { name: "pnpm", version: "10.33.0", bin: { pnpm: "../outside.cjs" } },
+    ]) {
+      writeJson(path, manifest);
+      expect(() => pnpmRuntime(path)).toThrow("requires the admitted pnpm 10.33.0 runtime");
+    }
+  });
+  it("binds every fixture registry route and isolates user and global configuration", () => {
+    const root = temporaryRoot();
+    const registryUrl = "http://127.0.0.1:9/";
+    writeRegistryConfig(root, registryUrl);
+    const lines = readFileSync(join(root, ".npmrc"), "utf8").trim().split("\n");
+    expect(lines).toEqual([`registry=${registryUrl}`, `@clossys:registry=${registryUrl}`, `@fixture:registry=${registryUrl}`]);
+    const environment = consumerEnvironment(root);
+    expect(environment.NPM_CONFIG_USERCONFIG).toBe(join(root, ".npmrc"));
+    expect(environment.NPM_CONFIG_GLOBALCONFIG).toBe(join(root, "global-npmrc"));
+    expect(environment.NPM_CONFIG_GLOBALCONFIG).not.toBe(environment.NPM_CONFIG_USERCONFIG);
+    expect(readFileSync(environment.NPM_CONFIG_GLOBALCONFIG!, "utf8")).toBe("");
+  });
   it("isolates real npm and pnpm consumers from hostile publish settings and preserves 0/1/2 outcomes", async () => {
     const fixtureRoot = temporaryRoot();
     await withHostilePublishEnvironment(fixtureRoot, async () => {

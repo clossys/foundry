@@ -18,6 +18,22 @@ import { ContractDocumentError, formatContractViolation, readContractDocument, v
 import type { ContractSchema } from "./generated/contract-schema.generated.js";
 import { LEDGER_CONTRACT } from "./generated/ledger-contract.generated.js";
 
+/** Bounded stable registry semver declarations: exact, caret or tilde, with a resolved lower-bound match. */
+function existingDeclarationVersionMatches(literal: string, resolved: string): boolean {
+  const match=/^([~^]?)(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$/.exec(literal);
+  const actual=/^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$/.exec(resolved);
+  if(!match || !actual)return false;
+  const lower=match.slice(2).map(value=>BigInt(value));
+  const version=actual.slice(1).map(value=>BigInt(value));
+  const compared=version[0]!==lower[0]?version[0]!>lower[0]!:version[1]!==lower[1]?version[1]!>lower[1]!:version[2]!>=lower[2]!;
+  if(!compared)return false;
+  if(match[1] === "")return resolved === literal;
+  if(match[1] === "~")return version[0]===lower[0] && version[1]===lower[1];
+  if(lower[0]!==0n)return version[0]===lower[0];
+  if(lower[1]!==0n)return version[0]===0n && version[1]===lower[1];
+  return version[0]===0n && version[1]===0n && version[2]===lower[2];
+}
+
 type Binding = { readonly kind: "approved"; readonly subjectDigest: string } | { readonly kind: "admitted"; readonly subjectDigest: string; readonly setupChangeSet: string };
 interface HistoryEntry { readonly generation: number; readonly changeSet: string; readonly phase: "setup" | "apply"; readonly planDigest: string; readonly bundle: string; readonly baseCommit: string; readonly binding: Binding }
 interface FileRow { readonly path: string; readonly mode: "100644" | "120000"; readonly after: string; readonly changeSet: string }
@@ -28,7 +44,20 @@ interface PackageRow extends PackageIdentity { readonly changeSet: string }
 interface DeferredRow extends PackageIdentity { readonly reason: "after-setup"; readonly changeSet: string }
 
 /** clossys/.state/installed.json, as installed-ledger.json shapes it. The type validates nothing. */
+export interface ExistingDeclarationAdoption {
+  readonly file: "package.json";
+  readonly placement: "dependencies" | "devDependencies";
+  readonly name: string;
+  readonly beforeVersion: string;
+  readonly beforeResolved: {readonly name:string; readonly version:string; readonly integrity:string};
+  readonly desired: PackageIdentity;
+  readonly observedBaseCommit: string;
+  readonly desiredSnapshotDigest: string;
+  readonly consent: "adopt-existing-declaration";
+  readonly changeSet: string;
+}
 export interface InstalledLedger {
+  readonly existingDeclarationAdoptions?: readonly ExistingDeclarationAdoption[];
   readonly schemaVersion: 1;
   readonly kind: "clossys.installed-ledger";
   readonly repository: { readonly id: string; readonly nodeId: string };
@@ -225,6 +254,15 @@ function ledgerRuleViolations(ledger: InstalledLedger): RuleViolation[] {
   });
 
   // L7: one act per package across packages and deferred. L10 derives each planItem from its name, so a repeated planItem is a repeated name.
+  if (ledger.existingDeclarationAdoptions !== undefined) {
+    const setup = ledger.history[0];
+    const rows = ledger.existingDeclarationAdoptions;
+    if (new Set(rows.map(row => row.name)).size !== rows.length) push("L7", "existingDeclarationAdoptions", "repeat a package");
+    rows.forEach((row,index) => {
+      const desired = [...ledger.packages, ...ledger.deferred].find(pkg => pkg.planItem === row.desired.planItem);
+      if (!setup || setup.phase !== "setup" || setup.binding.kind !== "approved" || row.changeSet !== setup.changeSet || row.observedBaseCommit !== setup.baseCommit || !existingDeclarationVersionMatches(row.beforeVersion,row.beforeResolved.version) || row.name !== row.beforeResolved.name || row.name !== row.desired.name || row.placement !== row.desired.placement || row.desired.planItem !== `${ledger.repository.id}:${row.name}` || !desired || !["name","version","integrity","placement","act"].every(key => desired[key as keyof typeof desired] === row.desired[key as keyof typeof row.desired])) push("L4", `existingDeclarationAdoptions[${index}]`, "do not match protected setup and desired identity");
+    });
+  }
   const acts = [...ledger.packages.map((row, index) => ({ row, path: `packages[${index}]` })), ...ledger.deferred.map((row, index) => ({ row, path: `deferred[${index}]` }))];
   for (const { index, first } of repeats(acts, (entry) => entry.row.name)) push("L7", `${acts[index]?.path}.name`, `repeats ${acts[first]?.path}.name`);
 
@@ -290,6 +328,11 @@ export function serializeInstalledLedger(ledger: InstalledLedger): string {
     entries: ledger.entries.map((row) => ordered(row, ORDER.entry)),
     packages: ledger.packages.map((row) => ordered(row, ORDER.package)),
     deferred: ledger.deferred.map((row) => ordered(row, ORDER.deferred)),
+    ...(ledger.existingDeclarationAdoptions !== undefined ? {existingDeclarationAdoptions: ledger.existingDeclarationAdoptions.map(row => ({
+      ...ordered(row, declared(definition("existingDeclarationAdoption"))),
+      beforeResolved: ordered(row.beforeResolved, declared(definition("adoptionResolution"))),
+      desired: ordered(row.desired, declared(definition("adoptionDesired"))),
+    }))} : {}),
   };
   return `${JSON.stringify(canonical, null, 2)}\n`;
 }
@@ -347,6 +390,7 @@ function successionRuleViolations(base: InstalledLedger | null, head: InstalledL
     addedFiles[0]!.changeSet === last.changeSet;
   if (addedFiles.length + droppedFiles.length > 0 && !guideAdded) push("S3", "head.files", "differ from the base ledger's, and an admitted generation changes no file but may add the guide's");
   if (!sameValue(head.entries, base.entries)) push("S3", "head.entries", "differ from the base ledger's, and an admitted generation changes no entry");
+  if (!sameValue(base.existingDeclarationAdoptions, head.existingDeclarationAdoptions)) push("S3", "head.existingDeclarationAdoptions", "change protected adoption consent");
   const kept = <T>(rows: readonly T[], from: readonly T[]) => from.every((row) => rows.some((other) => sameValue(other, row)));
   if (!kept(head.keys, base.keys)) push("S3", "head.keys", "drop or change a key row the base ledger has");
   if (!kept(head.packages, base.packages)) push("S3", "head.packages", "drop or change a package row the base ledger has");
