@@ -1,7 +1,7 @@
 import { ledgerSuccession } from "./ledger.js";
 import type { LedgerSuccession } from "./ledger.js";
-import { isRegistrySpec, validateNpmIdentity } from "./npm.js";
-import { validatePnpmIdentity } from "./pnpm.js";
+import { isRegistrySpec, validateNpmCollateralRoots, validateNpmIdentity } from "./npm.js";
+import { unambiguousPnpmAdoptionMetadata, validatePnpmCollateralRoots, validatePnpmIdentity } from "./pnpm.js";
 import type {
   AdmissionEvaluationInput,
   AdmissionReport,
@@ -313,11 +313,20 @@ function ledgerPackages(bytes: Uint8Array): readonly LedgerPackage[] | null {
   return packages;
 }
 
-function manifestSpec(manifest: unknown, placement: LedgerPlacement, name: string): unknown {
+/** Manifest declarations must be own properties, never inherited properties. */
+function manifestBucket(manifest: unknown, placement: LedgerPlacement): UnknownRecord | undefined {
   if (!record(manifest)) return undefined;
-  const section = manifest[placement];
-  if (!record(section)) return undefined;
-  return section[name];
+  const section = placement === "dependencies"
+    ? (Object.hasOwn(manifest, "dependencies") ? manifest.dependencies : undefined)
+    : placement === "devDependencies"
+      ? (Object.hasOwn(manifest, "devDependencies") ? manifest.devDependencies : undefined)
+      : undefined;
+  return record(section) ? section : undefined;
+}
+
+function manifestSpec(manifest: unknown, placement: LedgerPlacement, name: string): unknown {
+  const section = manifestBucket(manifest, placement);
+  return section !== undefined && Object.hasOwn(section, name) ? section[name] : undefined;
 }
 
 /**
@@ -335,6 +344,62 @@ function ledgerInstallFindings(manager: StarterRequest["packageManager"], manife
     const messages = manager === "npm" ? validateNpmIdentity(manifest, lock, expected, pkg.placement) : validatePnpmIdentity(manifest, lock, expected, pkg.placement);
     for (const message of messages) findings.push(find("ledger-install", message));
   });
+  return findings;
+}
+
+/** Compares protected consent to frozen manifest/lock data. No installed-byte claim is made. */
+function adoptionSourceFindings(input: AdmissionEvaluationInput, manager: StarterRequest["packageManager"]): StarterFinding[] {
+  if (input.baseLedger === null) return [];
+  // ledgerSuccession already verified strict canonical bytes and proof structure.
+  const base = JSON.parse(new TextDecoder().decode(input.baseLedger)) as import("./ledger.js").InstalledLedger;
+  const rows = base.existingDeclarationAdoptions;
+  if (rows === undefined || base.history.at(-1)?.phase !== "setup") return [];
+  if (input.install === null || input.headInstall == null) return [find("adoption-source-absent", "Protected and head declaration metadata are required for explicit adoption.")];
+  const findings: StarterFinding[] = [];
+  if(manager === "pnpm" && (!unambiguousPnpmAdoptionMetadata(input.install.lock) || !unambiguousPnpmAdoptionMetadata(input.headInstall.lock))) return [find("adoption-source-ambiguous","Protected and head lock metadata must use the supported unambiguous native serialization.")];
+  const check = (install: {manifest:unknown;lock:unknown}, row: typeof rows[number], prior: boolean) => {
+    const identity = prior ? row.beforeResolved : row.desired;
+    const literal = prior ? row.beforeVersion : row.desired.version;
+    if (manifestSpec(install.manifest,row.placement,row.name) !== literal || manifestSpec(install.manifest,row.placement === "dependencies" ? "devDependencies" : "dependencies",row.name) !== undefined) findings.push(find("adoption-declaration", "An adoption declaration differs or is repeated in another section."));
+    const messages = manager === "npm" ? validateNpmIdentity(install.manifest, install.lock, identity, row.placement, literal) : validatePnpmIdentity(install.manifest, install.lock, identity, row.placement, literal);
+    if (messages.length) findings.push(find("adoption-resolution", "An adoption root resolution differs from its protected identity."));
+  };
+  for (const row of rows) {
+    check(input.install,row,row.desired.act === "install");
+    check(input.headInstall,row,false);
+  }
+  // An apply may change only its deferred declaration keys. All other manifest data stays exact.
+  const strip = (value:unknown) => {
+    if (!record(value)) return null;
+    const copy = structuredClone(value);
+    for (const pkg of base.deferred) {
+      const bucket = manifestBucket(copy, pkg.placement);
+      if (bucket === undefined) continue;
+      // Filter a cloned own bucket rather than traversing or mutating a caller-selected key.
+      const retained = Object.fromEntries(Object.entries(bucket).filter(([name]) => name !== pkg.name));
+      if (pkg.placement === "dependencies") {
+        if (Object.keys(retained).length === 0) delete copy.dependencies;
+        else copy.dependencies = retained;
+      } else if (pkg.placement === "devDependencies") {
+        if (Object.keys(retained).length === 0) delete copy.devDependencies;
+        else copy.devDependencies = retained;
+      }
+    }
+    return copy;
+  };
+  const equal = (left:unknown,right:unknown):boolean => {
+    if (left === right) return true;
+    if (Array.isArray(left) && Array.isArray(right)) return left.length === right.length && left.every((v,i)=>equal(v,right[i]));
+    if (!record(left) || !record(right)) return false;
+    const keys = Object.keys(left);
+    return keys.length === Object.keys(right).length && keys.every(key=>Object.hasOwn(right,key) && equal(left[key],right[key]));
+  };
+  if (!equal(strip(input.install.manifest),strip(input.headInstall.manifest))) findings.push(find("adoption-collateral-manifest", "The head changes manifest content outside approved deferred keys."));
+  const changed=base.deferred.map(pkg=>pkg.name);
+  const collateralRoots=manager === "npm" ? validateNpmCollateralRoots(input.install.manifest,input.install.lock,input.headInstall.manifest,input.headInstall.lock,changed) : validatePnpmCollateralRoots(input.install.manifest,input.install.lock,input.headInstall.manifest,input.headInstall.lock,changed);
+  if (!collateralRoots) findings.push(find("adoption-collateral-root-resolution", "The head changes a root resolution outside approved deferred declarations."));
+  const desiredFindings = ledgerInstallFindings(manager,input.headInstall.manifest,input.headInstall.lock,[...base.packages,...base.deferred]);
+  if (desiredFindings.length) findings.push(find("adoption-head-identity", "The head metadata does not match all protected desired package identities."));
   return findings;
 }
 
@@ -367,7 +432,7 @@ export function evaluateAdmission(input: AdmissionEvaluationInput): AdmissionRep
   const packages = ledgerPackages(input.baseLedger);
   if (packages === null) return admissionReport("indeterminate", "admission", [find("base-ledger-packages", "the protected base ledger's package rows could not be read."), ...hubFindings]);
   if (input.install === null) return admissionReport("indeterminate", "admission", [find("ledger-install-absent", "the frozen base install could not be read, so it was not compared with the base ledger's packages."), ...hubFindings]);
-  const installFindings = ledgerInstallFindings(request.packageManager, input.install.manifest, input.install.lock, packages);
+  const installFindings = [...ledgerInstallFindings(request.packageManager, input.install.manifest, input.install.lock, packages), ...(succession.admission === "admitted" ? adoptionSourceFindings(input,request.packageManager) : [])];
   if (installFindings.length > 0) return admissionReport("violated", "admission", [...installFindings, ...hubFindings]);
   return admissionReport("satisfied", "admission", hubFindings);
 }

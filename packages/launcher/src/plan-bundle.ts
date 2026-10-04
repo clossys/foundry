@@ -51,11 +51,11 @@ import { bundleDigest, changeSetDigest } from "./change-set-digest.js";
 import {
   AUTHORIZATION_ABSENT, AUTHORIZATION_PLAN_MISMATCH, BRIEF_PATH, CANONICAL_KEYS, DISCOVERY_ROOTS, EXEMPTION_SURFACES, ID_TOKEN, LEDGER_PATH, derivedPlanItem, SKILLS_MANIFEST_PATH, TEMPLATE_PATHS, canonicalOrder, contentDigest,
   dependencyPointer, discoveryLinkPath, discoveryLinkTarget, isSafeRelativePath, lockfilePath, matchesPathPattern, skillPath, validateApplyBundle, validateRepositoryChangeSet,
-  worstVerdict,
+  worstVerdict, existingDeclarationVersionMatches,
 } from "./change-set-contract.js";
 import type {
   ApplyBundle, ApplyBundleRepository, ApplyCheck, ChangeSetDeferral, ChangeSetItem, ChangeSetPhase, ChangeSetRefusal, DependencyPlacement, DiscoveryRoot,
-  FileChange, KeyChange, LockfileName, PackageInvariant, PackageManagerKind, PinnedPackage, ReleaseAgeSurfaceKind, RepositoryChangeSet, RepositoryProfileObservation,
+  ExistingDeclarationAdoption, FileChange, KeyChange, LockfileName, PackageInvariant, PackageManagerKind, PinnedPackage, ReleaseAgeSurfaceKind, RepositoryChangeSet, RepositoryProfileObservation,
   RepositoryVisibility, TemplateAct,
 } from "./change-set-contract.js";
 import type { InstalledLedger } from "./ledger-contract.js";
@@ -139,6 +139,20 @@ export interface RepositoryObservation {
   readonly npmrcText?: string | null;
 }
 
+/** Derives proof fields from observed source and desired plan acts after explicit scoped consent. */
+export function createExistingDeclarationAdoptions(observation: RepositoryObservation, plan: AdvisorPlan, names: readonly string[], consent: "adopt-existing-declaration"): readonly ExistingDeclarationAdoption[] {
+  const acts = plan.packages ?? [];
+  if (!validateAdvisorPlan(plan).valid || !plan.resolution) throw new TypeError("existing declaration consent needs a resolved desired plan");
+  if (observation.phase !== "setup" || consent !== "adopt-existing-declaration" || names.length === 0 || new Set(names).size !== names.length) throw new TypeError("existing declaration consent is not explicit setup scope");
+  return canonicalOrder(names.map(name => {
+    const act = acts.find(act => act.name === name && act.planItem === `${observation.id}:${name}`);
+    const entries = observation.manifestEntries.filter(entry => entry.name === name);
+    const resolved = observation.lockedPackages.filter(pkg => pkg.name === name);
+    if (!act || !name.startsWith("@clossys/") || entries.length !== 1 || entries[0]?.placement !== act.placement || resolved.length !== 1 || !existingDeclarationVersionMatches(entries[0]!.value,resolved[0]!.version)) throw new TypeError("existing declaration source is not unique and scoped");
+    return {file:"package.json" as const, placement:act.placement, name, beforeVersion:entries[0]!.value, beforeResolved:resolved[0]!, desired:{name:act.name,version:act.version,integrity:act.integrity,planItem:act.planItem,act:act.act,placement:act.placement},observedBaseCommit:observation.baseCommit,desiredSnapshotDigest:plan.resolution!.snapshotDigest,consent};
+  }),row=>[row.name]);
+}
+
 /** A staffed repository no change set is computed for, and why, as an id such as `not-in-inventory`. */
 export interface SkippedRepositoryObservation {
   readonly id: string;
@@ -147,6 +161,8 @@ export interface SkippedRepositoryObservation {
 }
 
 export interface PlanApplyBundleInputs {
+  /** Explicit setup consent, indexed by staffed repository; omitted by default. */
+  readonly existingDeclarationAdoptions?: Readonly<Record<string, readonly ExistingDeclarationAdoption[]>>;
   /** The plan, clossys/advisor/plan.json. It must validate and have `staffing`. */
   readonly plan: AdvisorPlan;
   /** Explicit authoring agent namespace; omission preserves legacy changes and bytes. */
@@ -337,7 +353,7 @@ function prepareSetup(observation: RepositoryObservation, acts: readonly PlanPac
   }
   const templates: SetupTemplate[] = [];
   for (const { act, id } of TEMPLATE_ITEMS) {
-    const rendered = act === "write-starter-request" ? request : renderSetupTemplate(act, act === "add-caller-workflow" ? { packageManager } : act === "add-path-scope-job" && agentProvenance !== undefined ? { agentProvenance } : undefined);
+    const rendered = act === "write-starter-request" ? request : renderSetupTemplate(act, act === "add-caller-workflow" ? { packageManager, ...(/^0\.3\./.test(pin.version) ? {existingDeclarationAdoptions:true} : {}) } : act === "add-path-scope-job" && agentProvenance !== undefined ? { agentProvenance } : undefined);
     if (!rendered.ok) throw new TypeError(`the setup template ${act} does not render`);
     templates.push({ id, files: rendered.files });
   }
@@ -364,6 +380,30 @@ function computeChangeSet(
   skillContent: ReadonlyMap<string, string>,
   setupTemplates: readonly SetupTemplate[] | null,
 ): ComputedSet | SkippedSet {
+  const requested = inputs.existingDeclarationAdoptions?.[observation.id];
+  // Retained consent is historical after its first admitted apply.
+  const protectedRows = ledger?.history.at(-1)?.phase === "setup"
+    ? ledger.existingDeclarationAdoptions?.map(({changeSet: _changeSet, ...row}) => row)
+    : undefined;
+  const adoptions = observation.phase === "setup" ? requested : protectedRows;
+  if (observation.phase !== "setup" && requested !== undefined) return {skip: {verdict: "violated", reason: "adoption-consent-not-setup"}};
+  if (adoptions !== undefined) {
+    const starter = acts.find(act => act.act === "pin-starter");
+    if (!starter || !/^0\.3\.[0-9]+$/.test(starter.version)) return {skip: {verdict: "indeterminate", reason: "adoption-starter-unsupported"}};
+    if (!adoptions.length || new Set(adoptions.map(row => row.name)).size !== adoptions.length) return {skip: {verdict: "violated", reason: "adoption-proof-invalid"}};
+    for (const row of adoptions) {
+      const act = acts.find(act => act.planItem === row.desired.planItem);
+      const desired = act && {planItem:act.planItem, act:act.act, name:act.name, version:act.version, integrity:act.integrity, placement:act.placement};
+      const entries = observation.manifestEntries.filter(entry => entry.name === row.name);
+      const consumed = observation.phase === "apply" && row.desired.act === "pin-starter";
+      const prior = consumed ? row.desired : row.beforeResolved;
+      if (row.desiredSnapshotDigest !== inputs.plan.resolution?.snapshotDigest || row.consent !== "adopt-existing-declaration" || row.file !== "package.json" || row.name !== row.desired.name || row.name !== row.beforeResolved.name || row.placement !== row.desired.placement || !row.name.startsWith("@clossys/") ||
+          !existingDeclarationVersionMatches(row.beforeVersion,row.beforeResolved.version) ||
+          (observation.phase === "setup" && row.observedBaseCommit !== observation.baseCommit) ||
+          (!desired || !["planItem","act","name","version","integrity","placement"].every(key => desired[key as keyof typeof desired] === row.desired[key as keyof typeof row.desired])) || entries.length !== 1 || entries[0]?.placement !== row.placement || entries[0]?.value !== (consumed ? row.desired.version : row.beforeVersion) ||
+          !observation.lockedPackages.some(pkg => pkg.name === prior.name && pkg.version === prior.version && pkg.integrity === prior.integrity)) return {skip:{verdict:"violated",reason:"adoption-proof-mismatch"}};
+    }
+  }
   // Paths compare case-insensitively (code rule C3): a base file that differs only in case is the same file on many checkouts.
   // Two (or more) observed files at the same lowercase path -- distinct case variants, or a repeated entry -- have no single
   // base digest between them: the path is occupied by other bytes than any one of them, so it can never be kept, updated or
@@ -521,8 +561,9 @@ function computeChangeSet(
     // when the base happens to already carry the version the plan wants, so it is never waved through as satisfied.
     const row = keyRows.get(pointer);
     const baseAt = entries.find((entry) => entry.placement === act.placement);
-    const own = row === undefined ? (baseAt === undefined ? null : "unowned-existing") : baseAt === undefined ? "deleted" : baseAt.value !== row ? "client-edited" : null;
-    const satisfiedInBase =
+    const adoption = adoptions?.find(proof => proof.name === act.name && proof.desired.act === act.act && !(observation.phase === "apply" && act.act === "pin-starter"));
+    const own = row === undefined ? (baseAt === undefined || adoption !== undefined ? null : "unowned-existing") : baseAt === undefined ? "deleted" : baseAt.value !== row ? "client-edited" : null;
+    const satisfiedInBase = adoption === undefined &&
       entries.length === 1 &&
       baseAt !== undefined &&
       baseAt.value === act.version &&
@@ -545,11 +586,11 @@ function computeChangeSet(
       refused.push({ file: "package.json", pointer, reason: own, item: act.planItem });
       continue;
     }
-    if (row === undefined || act.version !== row) {
+    if (adoption !== undefined || row === undefined || act.version !== row) {
       // The request a setup set wrote names this pin; an apply set that changes it would leave the request naming another, and
       // rewriting the request is not something an apply set does.
       if (act.act === "pin-starter" && observation.phase === "apply") return { skip: { verdict: "indeterminate", reason: "starter-request-stale" } };
-      keys.push({ file: "package.json", pointer, before: row ?? null, after: act.version, item: act.planItem });
+      keys.push({ file: "package.json", pointer, before: adoption?.beforeVersion ?? row ?? null, after: act.version, item: act.planItem });
       invariants.push({ item: act.planItem, ...pinned });
       continue;
     }
@@ -692,6 +733,7 @@ function computeChangeSet(
       kind: "clossys.repository-change-set",
       producer: { name: inputs.producer.name, version: inputs.producer.version },
       ...(inputs.agentProvenance !== undefined ? { agentProvenance: inputs.agentProvenance } : {}),
+      ...(adoptions !== undefined ? {existingDeclarationAdoptions: adoptions} : {}),
       planDigest: planDigestValue,
       repository: {
         id: observation.id,
@@ -837,6 +879,10 @@ export function planApplyBundle(inputs: PlanApplyBundleInputs): PlanApplyBundleR
   if (!planValidation.valid) throw new TypeError(`the plan does not validate: ${planValidation.reason}`);
   const staffing = inputs.plan.staffing;
   if (staffing === undefined) throw new TypeError("the plan has no staffing, so no repository has a change set");
+  if (inputs.existingDeclarationAdoptions !== undefined) {
+    const mapping = inputs.existingDeclarationAdoptions;
+    if (mapping === null || Array.isArray(mapping) || typeof mapping !== "object" || Reflect.ownKeys(mapping).some(key => typeof key !== "string" || !staffing.some(row => row.repository === key) || !Object.hasOwn(Object.getOwnPropertyDescriptor(mapping,key) ?? {},"value") || !Array.isArray(mapping[key]))) throw new TypeError("existing declaration scope is not a closed staffed mapping");
+  }
   const briefValidation = validateEngagementBrief(inputs.hubBrief);
   if (!briefValidation.valid) throw new TypeError(`the hub brief does not validate: ${briefValidation.reason}`);
   if (inputs.hubBrief.staffedHere !== undefined) throw new TypeError("the hub brief must not have staffedHere; each repository's brief is projected from it");

@@ -466,7 +466,7 @@ returns in this order:
 
 The request is in the admission phase and names the Starter as both its own
 engine and its target, and it names both evidence paths, the assessment file
-and the target-input file. It carries no advisor and no hub. The Starter pin must be an exact version in `>=0.2.0 <0.3.0`
+and the target-input file. It carries no advisor and no hub. The Starter pin must be an exact version in `>=0.2.0 <0.4.0`
 (`STARTER_PIN_RANGE`); any other pin is refused as `starter-pin-unsupported`,
 and a package manager other than npm or pnpm, Yarn included, is refused as
 `package-manager-unsupported`. A refusal names a position such as
@@ -963,7 +963,7 @@ if ("skipped" in observed) console.log(observed.skipped, observed.verdict);
   every setup-template path is a regular file at the head, and
   `manifestEntries` pins `@clossys/starter` at an exact `0.2.x` version, the
   range the setup templates support (the templates' own predicate; `0.1.9`
-  and `0.3.0` read as `setup`), for which its lockfile has a row of that name
+  and `0.4.0` read as `setup`), for which its lockfile has a row of that name
   and version, not an alias (an `npm:` alias,
   or another package under its name, is refused as `lockfile-unreadable`; the
   host and integrity are the planner's to check); otherwise it is `setup`.
@@ -1640,3 +1640,39 @@ stored change sets. Materialize and apply use the stored branch binding.
 Explicit provenance also renders setup path-scope checks for legacy and
 supported agent apply branches, refusing malformed or unsupported apply
 namespaces. Existing legacy template bytes remain unchanged.
+
+### Opt in to existing root dependency declarations
+
+Existing declarations are refused by default. To adopt or update an existing
+first-party root `package.json` declaration, select the existing bucket and
+explicitly consent before approving setup. `createExistingDeclarationAdoptions`
+derives proof rows from a complete `RepositoryObservation`, a validated resolved
+`AdvisorPlan`, selected package names and the literal
+`"adopt-existing-declaration"`. Pass these rows under the repository id in
+`PlanApplyBundleInputs.existingDeclarationAdoptions`, or save that mapping as
+JSON and pass `launcher-apply-plan plan --adopt-existing <consent.json>`.
+This option supplies scope, never an approval. The approval sheet displays prior
+literal declaration, prior resolved version/integrity, desired public identity
+and observed base. The set and bundle digests cover the consent and desired
+registry snapshot digest. Omission retains all legacy behavior.
+
+This bounded path requires Starter **0.3.x**. Starter 0.2.x remains supported for
+legacy setup, but cannot accept this proof. Only a single declaration in the
+existing root dependency bucket is eligible; cross-bucket relocation, duplicate
+placements, aliases and file/git/tarball declarations refuse. Prior literals may
+be exact, caret or tilde versions with all three numeric components. Align
+unsupported placements in an ordinary reviewed manifest/native-lock change
+before taking a fresh setup observation. Nested application manifests are outside
+this capability.
+
+Setup renders the approved rows into its canonical ledger with the setup digest.
+The protected merged setup is the trust anchor; a newly claimed approved head
+still fails required admission. The next apply retains the proof unchanged and
+emits a real compare-and-swap, even when prior and desired versions are equal.
+Launcher independently checks immutable source keys and root lock identities.
+Starter reads protected base and pull-request head manifest/lock files as data,
+checks prior and desired identities and forbids collateral manifest changes.
+Head code is never executed by this admission check. These checks prove declared
+resolution metadata; installed-byte execution evidence remains a separate proof.
+
+Existing-declaration consent supports stable exact, caret and tilde root declarations in their existing dependency bucket. The prior resolved version must satisfy that declaration. Cross-bucket moves, aliases, file references and prereleases are refused. Proof rows remain immutable; this capability covers initial setup and its first admitted apply. It grants no installed-byte or later-generation lifecycle evidence.

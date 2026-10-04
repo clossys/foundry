@@ -54,11 +54,15 @@ import type { HubOptions, Loose, World, WorldOptions } from "./admission-fixture
  */
 
 // The test double over the module's git reads: it records every spawn and still runs the real git.
-const spawned = vi.hoisted(() => ({ calls: [] as string[][] }));
+const spawned = vi.hoisted(() => ({ calls: [] as string[][], readinessEnvKeys: [] as string[][] }));
 vi.mock("node:child_process", async (importOriginal) => {
   const actual = await importOriginal<typeof import("node:child_process")>();
   const recording: typeof SpawnSync = ((command: string, args?: readonly string[], ...rest: unknown[]) => {
     if (command === "git") spawned.calls.push([...(args ?? [])]);
+    if (command.endsWith("/node_modules/.bin/advisor-execution-readiness")) {
+      const options = rest[0] as { env?: Record<string, string | undefined> } | undefined;
+      spawned.readinessEnvKeys.push(Object.keys(options?.env ?? {}).sort());
+    }
     return (actual.spawnSync as (...all: unknown[]) => unknown)(command, args, ...rest);
   }) as typeof SpawnSync;
   return { ...actual, spawnSync: recording };
@@ -1167,6 +1171,10 @@ describe("decideSetBinding over a real hub and a real clone", () => {
 
   it("C3-20: a case variant in the base tree is base-case-variant", async () => {
     const s = scene({ tree: (tree) => void tree.set("clossys/Brief.json", { mode: "100644", bytes: Buffer.from("x\n") }) });
+    expect(git(s.clone, "ls-tree", "-r", "--name-only", s.baseCommit).split("\n").filter((path) => path.toLowerCase() === "clossys/brief.json").sort())
+      .toEqual(["clossys/Brief.json", "clossys/brief.json"]);
+    expect(git(s.clone, "show", `${s.baseCommit}:clossys/brief.json`)).toBe(Buffer.from(s.w.tree.get("clossys/brief.json")!.bytes).toString("utf8"));
+    expect(git(s.clone, "show", `${s.baseCommit}:clossys/Brief.json`)).toBe("x\n");
     expect(await bind(s)).toEqual(aa("base-case-variant"));
   });
 
@@ -1241,11 +1249,27 @@ describe("K11: the execution authorization is current (readiness)", () => {
     const bin = `${s.hub}/${READINESS_BIN}`;
     writeFileSync(
       bin,
-      '#!/usr/bin/env node\nconst fs = require("node:fs");\nconst path = require("node:path");\nfs.writeFileSync(path.join(__dirname, "seen-env.txt"), Object.keys(process.env).sort().join(","));\nprocess.exit(0);\n',
+      '#!/usr/bin/env node\nconst fs = require("node:fs");\nconst path = require("node:path");\nfs.writeFileSync(path.join(__dirname, "seen-env.txt"), JSON.stringify({ keys: Object.keys(process.env).sort(), hostileCredentialPresent: Object.hasOwn(process.env, "NPM_TOKEN") }));\nprocess.exit(0);\n',
       { mode: 0o755 },
     );
-    expect(await bind(s, { now: () => NOW })).toEqual(admitted(s.w));
-    expect(readFileSync(`${s.hub}/node_modules/.bin/seen-env.txt`, "utf8")).toBe("PATH");
+    const pathOnly = { PATH: process.env.PATH ?? "" };
+    // Compare runtime-added platform keys against a genuine bare Node child.
+    // Observe keys only: a platform bootstrap variable's value is never read.
+    const platformKeys = JSON.parse(execFileSync(process.execPath, ["-e", "process.stdout.write(JSON.stringify(Object.keys(process.env).sort()))"], {
+      env: pathOnly,
+      encoding: "utf8",
+    })) as string[];
+    spawned.readinessEnvKeys.length = 0;
+    vi.stubEnv("NPM_TOKEN", "fixture-only-sentinel");
+    try {
+      expect(await bind(s, { now: () => NOW })).toEqual(admitted(s.w));
+      expect(spawned.readinessEnvKeys).toEqual([["PATH"]]);
+      const observed = JSON.parse(readFileSync(`${s.hub}/node_modules/.bin/seen-env.txt`, "utf8")) as { keys: string[]; hostileCredentialPresent: boolean };
+      expect(observed.keys).toEqual(platformKeys);
+      expect(observed.hostileCredentialPresent).toBe(false);
+    } finally {
+      vi.unstubAllEnvs();
+    }
   });
 
   it("an authorization for another plan digest is authorization-not-current", async () => {

@@ -37,12 +37,16 @@ import type { PlanApplyBundleResult, RepositoryObservation, SkippedRepositoryObs
 import { validateAdvisorPlan, validateEngagementBrief } from "./plan-contract.js";
 import type { AdvisorPlan, EngagementBrief } from "./plan-contract.js";
 
-export const PLAN_USAGE = `Usage: launcher-apply-plan plan [--agent codex|claude|cursor] [--help]
+export const PLAN_USAGE = `Usage: launcher-apply-plan plan [--agent codex|claude|cursor] [--adopt-existing <consent.json>] [--help]
 
 --agent selects the authoring agent namespace for generated apply branches.
 The choice is covered by the change-set and approval digests. Omitting it
 preserves legacy clossys/apply branches and stored change sets. Use the same
 choice when recomputing an approved bundle.
+
+--adopt-existing reads an explicit repository-to-proof-row mapping for setup.
+It supplies scope, not approval, and requires Starter 0.3.x. Omit it for apply;
+the protected setup ledger supplies the frozen scope automatically.
 
 Run in the hub. Computes the apply bundle for the plan file in the working
 tree, reports whether that file is the one committed at HEAD, and prints the
@@ -442,9 +446,17 @@ export async function planMain(argv: readonly string[], options: PlanCommandOpti
       return 0;
     }
     let agentProvenance: "codex" | "claude" | "cursor" | undefined;
-    if (argv.length !== 0) {
-      if (argv.length !== 2 || argv[0] !== "--agent" || !["codex", "claude", "cursor"].includes(argv[1]!)) return refuse("usage");
-      agentProvenance = argv[1] as "codex" | "claude" | "cursor";
+    let adoptionPath: string | undefined;
+    for (let index=0; index<argv.length; index+=2) {
+      const flag=argv[index]; const value=argv[index+1];
+      if (flag === "--agent" && agentProvenance === undefined && value !== undefined && ["codex","claude","cursor"].includes(value)) agentProvenance=value as "codex"|"claude"|"cursor";
+      else if (flag === "--adopt-existing" && adoptionPath === undefined && value !== undefined) adoptionPath=value;
+      else return refuse("usage");
+    }
+    let existingDeclarationAdoptions: import("./plan-bundle.js").PlanApplyBundleInputs["existingDeclarationAdoptions"];
+    if (adoptionPath !== undefined) {
+      try { existingDeclarationAdoptions=readContractDocument(readFileSync(adoptionPath)) as NonNullable<typeof existingDeclarationAdoptions>; }
+      catch { return refuse("usage"); }
     }
     let hub: string;
     try {
@@ -485,6 +497,7 @@ export async function planMain(argv: readonly string[], options: PlanCommandOpti
         computedAt,
         heldChangeSets,
         ...(agentProvenance !== undefined ? { agentProvenance } : {}),
+        ...(existingDeclarationAdoptions !== undefined ? {existingDeclarationAdoptions} : {}),
       });
     } catch {
       return refuse("planner-refused");

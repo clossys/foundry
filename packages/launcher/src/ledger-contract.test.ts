@@ -305,9 +305,9 @@ describe("ledger succession (a pull request's head against its base)", () => {
       const succession = description.slice(description.indexOf("SUCCESSION,"));
       expect(render).toContain(`the only file with a before of null that RENDER writes a row for is the Launcher guide (path clossys/AGENTS.md, mode 100644, after ${GUIDE_AFTER}, the digest of the guide's bytes)`);
       expect(render).toContain("only where a previous ledger P exists and holds no row at that path in any letter case");
-      expect(succession).toContain(`head.files equal base's or add exactly one row and drop none, the row for clossys/AGENTS.md with mode 100644, after ${GUIDE_AFTER}`);
+      expect(succession).toContain(`head.files equal base's or add exactly one row and drop none, the row whose files[].path is the canonical Launcher guide artifact path (AGENTS_GUIDE_PATH), with mode 100644, after ${GUIDE_AFTER}`);
       expect(succession).toContain("changes no other row, apart from that one files row");
-      expect(description.match(/clossys\/AGENTS\.md/g)).toHaveLength(2);
+      expect(description.match(/clossys\/AGENTS\.md/g)).toHaveLength(1);
       // The contract names the guide's bytes by one digest, and it is the digest of the text this package writes.
       expect([...new Set(description.match(/after (sha256:[0-9a-f]{64})/g))]).toEqual([`after ${GUIDE_AFTER}`]);
     });
@@ -357,4 +357,60 @@ describe("ledger succession (a pull request's head against its base)", () => {
     expect([...new Set(result.violations.map(label))]).toEqual(["base.L4"]);
     expect(result.violations[0]!.message).toMatch(/^base\./);
   });
+});
+
+
+describe("historical existing-declaration consent", () => {
+  const withConsent = (name: string) => {
+    const value=loose(ledger(name));
+    const desired=[...value.packages,...value.deferred].find((row: Loose)=>row.name==="@example/writer");
+    desired.name="@clossys/writer";desired.planItem=`${value.repository.id}:${desired.name}`;
+    for(const row of value.keys) row.pointer=row.pointer.replace("@example~1writer","@clossys~1writer");
+    value.packages.sort((a:Loose,b:Loose)=>a.planItem<b.planItem?-1:a.planItem>b.planItem?1:0);
+    value.deferred.sort((a:Loose,b:Loose)=>a.planItem<b.planItem?-1:a.planItem>b.planItem?1:0);
+    value.keys.sort((a:Loose,b:Loose)=>a.file<b.file?-1:a.file>b.file?1:a.pointer<b.pointer?-1:a.pointer>b.pointer?1:0);
+    value.existingDeclarationAdoptions=[{file:"package.json",placement:desired.placement,name:desired.name,
+      beforeVersion:"^0.1.0",beforeResolved:{name:desired.name,version:"0.1.2",integrity:desired.integrity},
+      desired:Object.fromEntries(["name","version","integrity","planItem","act","placement"].map(key=>[key,desired[key]])),
+      observedBaseCommit:value.history[0].baseCommit,desiredSnapshotDigest:`sha256:${"8".repeat(64)}`,
+      consent:"adopt-existing-declaration",changeSet:value.history[0].changeSet}];
+    return value;
+  };
+  const upgrade = (value: Loose) => {
+    const desired=[...value.packages,...value.deferred].find((row: Loose)=>row.name==="@clossys/writer");
+    desired.version="0.8.0";
+    for(const row of value.keys) if(row.pointer.endsWith("@clossys~1writer")) row.value="0.8.0";
+  };
+  for(const name of ["setup-generation-1","admitted-generation-2","approved-generation-2"]) {
+    it(`${name} retains desired-current protection`,()=>{
+      const value=withConsent(name);expect(installedLedgerViolations(value)).toEqual([]);
+      upgrade(value);expect(ruleIds(value)).toContain("L4");
+    });
+  }
+  for(const name of ["admitted-generation-2","approved-generation-2"]) {
+    it(`${name} permits archival consent only after a prior apply`,()=>{
+      const value=withConsent(name);
+      const consent=structuredClone(value.existingDeclarationAdoptions);
+      value.generation=3;
+      value.history.push({...value.history[1],generation:3,changeSet:`sha256:${"9".repeat(64)}`,
+        binding:{kind:"approved",subjectDigest:value.history[1].bundle}});
+      upgrade(value);
+      expect(installedLedgerViolations(value)).toEqual([]);
+      expect(value.existingDeclarationAdoptions).toEqual(consent);
+      expect(ledgerSuccession(Buffer.from(serializeInstalledLedger(withConsent(name))),Buffer.from(serializeInstalledLedger(value)))).toMatchObject({admission:"approval-claimed",violations:[]});
+      for(const patch of [
+        {name:"@clossys/starter"},{placement:"dependencies"},{observedBaseCommit:"f".repeat(40)},
+        {changeSet:`sha256:${"7".repeat(64)}`},{beforeVersion:"^9.0.0"},
+        {desired:{...consent[0].desired,planItem:"other:@clossys/writer"}},
+      ]) {
+        const forged=structuredClone(value);Object.assign(forged.existingDeclarationAdoptions[0],patch);
+        expect(ruleIds(forged)).toContain("L4");
+      }
+      const noPriorApply=structuredClone(value);
+      noPriorApply.history[1]={...noPriorApply.history[1],phase:"setup",binding:{kind:"approved",subjectDigest:noPriorApply.history[1].bundle}};
+      expect(ruleIds(noPriorApply)).toContain("L4");
+      const invalidPosition=structuredClone(value);invalidPosition.history[1].generation=3;
+      expect(ruleIds(invalidPosition)).toContain("L4");
+    });
+  }
 });

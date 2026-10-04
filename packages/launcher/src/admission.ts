@@ -424,10 +424,12 @@ function checkCondition2(set: RepositoryChangeSet, setup: RepositoryChangeSet, a
     if (original === undefined || original.after !== file.after || original.mode !== file.mode) return refuse("file-not-setup");
   }
 
+  if (!same(set.existingDeclarationAdoptions ?? null, setup.existingDeclarationAdoptions ?? null)) return refuse("key-not-deferred");
   const byId = new Map(set.items.map((item) => [item.id, item] as const));
   for (const key of set.keys) {
     const item = byId.get(key.item);
-    if (!deferredInstall(item, setup) || key.before !== null) return refuse("key-not-deferred");
+    const proof = setup.existingDeclarationAdoptions?.find(row => row.desired.planItem === key.item && row.desired.act === "install");
+    if (!deferredInstall(item, setup) || key.before !== (proof?.beforeVersion ?? null)) return refuse("key-not-deferred");
   }
   for (const file of set.files) {
     if (isWhole(file) || file.path === LEDGER_PATH) continue;

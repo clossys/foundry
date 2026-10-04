@@ -23,8 +23,9 @@ import {
   dependencyPointer,
   discoveryLinkRole,
   matchesPathPattern,
+  existingDeclarationVersionMatches,
 } from "./change-set-contract.js";
-import type { ApprovalBinding, ChangeSetPhase, DependencyPlacement, RepositoryChangeSet } from "./change-set-contract.js";
+import type { ApprovalBinding, ExistingDeclarationAdoption, ChangeSetPhase, DependencyPlacement, RepositoryChangeSet } from "./change-set-contract.js";
 import { changeSetDigest } from "./change-set-digest.js";
 import { loadContract } from "./plan-contract.js";
 import type { ValidationResult } from "./plan-contract.js";
@@ -89,6 +90,7 @@ export interface LedgerDeferredRow extends LedgerPackageIdentity {
 
 /** clossys/.state/installed.json (installed-ledger.json, in the public repository, not shipped in this package). */
 export interface InstalledLedger {
+  readonly existingDeclarationAdoptions?: readonly (ExistingDeclarationAdoption & {readonly changeSet: string})[];
   readonly schemaVersion: 1;
   readonly kind: "clossys.installed-ledger";
   readonly repository: { readonly id: string; readonly nodeId: string };
@@ -236,6 +238,19 @@ export function ledgerRuleViolations(ledger: InstalledLedger): RuleViolation[] {
   });
 
   // L7
+  if (ledger.existingDeclarationAdoptions !== undefined) {
+    const setup = ledger.history[0];
+    // Setup and its immediate apply protect the live desired identity. A later
+    // generation retains that consent as evidence of an earlier apply.
+    const appliedBefore = ledger.history.slice(1, -1).some((entry, index) =>
+      entry.phase === "apply" && entry.generation === index + 2);
+    const rows = ledger.existingDeclarationAdoptions;
+    if (new Set(rows.map(row => row.name)).size !== rows.length) push("L7", "existingDeclarationAdoptions", "repeat a package");
+    rows.forEach((row,index) => {
+      const desired = [...ledger.packages, ...ledger.deferred].find(pkg => pkg.planItem === row.desired.planItem);
+      if (!setup || setup.phase !== "setup" || setup.binding.kind !== "approved" || row.changeSet !== setup.changeSet || row.observedBaseCommit !== setup.baseCommit || !existingDeclarationVersionMatches(row.beforeVersion,row.beforeResolved.version) || row.name !== row.beforeResolved.name || row.name !== row.desired.name || row.placement !== row.desired.placement || row.desired.planItem !== `${ledger.repository.id}:${row.name}` || (!appliedBefore && (!desired || !["name","version","integrity","placement","act"].every(key => desired[key as keyof typeof desired] === row.desired[key as keyof typeof row.desired])))) push("L4", `existingDeclarationAdoptions[${index}]`, "do not match protected setup and desired identity");
+    });
+  }
   const acts = [...ledger.packages.map((row, index) => ({ row, path: `packages[${index}]` })), ...ledger.deferred.map((row, index) => ({ row, path: `deferred[${index}]` }))];
   // A repeated planItem is a repeated name: L10 derives each planItem from its name.
   for (const { index, first } of repeats(acts, (entry) => entry.row.name)) push("L7", `${acts[index]!.path}.name`, `repeats ${acts[first]!.path}.name`);
@@ -329,6 +344,7 @@ function successionRuleViolations(base: InstalledLedger | null, head: InstalledL
     return out;
   }
   // Already proved: L3 on the head makes the entry before an admitted one its approved setup entry, and S2 makes that entry the base's latest;
+  if (!sameValue(base.existingDeclarationAdoptions, head.existingDeclarationAdoptions)) push("S3", "head.existingDeclarationAdoptions", "change protected adoption consent");
   // L3 makes an admitted entry an apply entry, and L4 leaves no deferred row after one.
   // The one file an admitted generation may add: the Launcher guide, for an install set up before it existed. Its row is the only change to
   // the files, is written by this generation, holds the guide's own bytes, and so the base holds none at that path (L8 forbids a repeat in
@@ -430,7 +446,7 @@ export function ledgerSuccession(baseBytes: Uint8Array | null, headBytes: Uint8A
 
 /** Every object's members, in the order installed-ledger.json declares them (RENDER). */
 export const LEDGER_MEMBER_ORDER = {
-  ledger: ["schemaVersion", "kind", "repository", "generation", "history", "files", "keys", "entries", "packages", "deferred"],
+  ledger: ["schemaVersion", "kind", "repository", "generation", "history", "files", "keys", "entries", "packages", "deferred", "existingDeclarationAdoptions"],
   repository: ["id", "nodeId"],
   history: ["generation", "changeSet", "phase", "planDigest", "bundle", "baseCommit", "binding"],
   approvedBinding: ["kind", "subjectDigest"],
@@ -469,6 +485,12 @@ export function serializeInstalledLedger(ledger: InstalledLedger): string {
     entries: ledger.entries.map((row) => ordered(row, order.entry)),
     packages: ledger.packages.map((row) => ordered(row, order.package)),
     deferred: ledger.deferred.map((row) => ordered(row, order.deferred)),
+    ...(ledger.existingDeclarationAdoptions !== undefined ? {existingDeclarationAdoptions: ledger.existingDeclarationAdoptions.map(row => ({
+      file: row.file, placement: row.placement, name: row.name, beforeVersion: row.beforeVersion,
+      beforeResolved: {name:row.beforeResolved.name, version:row.beforeResolved.version, integrity:row.beforeResolved.integrity},
+      desired: {name:row.desired.name, version:row.desired.version, integrity:row.desired.integrity, planItem:row.desired.planItem, act:row.desired.act, placement:row.desired.placement},
+      observedBaseCommit:row.observedBaseCommit, consent:row.consent, changeSet:row.changeSet, desiredSnapshotDigest:row.desiredSnapshotDigest,
+    }))} : {}),
   };
   return `${JSON.stringify(canonical, null, 2)}\n`;
 }
@@ -632,6 +654,7 @@ export function renderInstalledLedger(
     entries: orderedEntries,
     packages: orderedPackages,
     deferred: orderedDeferred,
+    ...(set.phase === "setup" && set.existingDeclarationAdoptions !== undefined ? {existingDeclarationAdoptions: set.existingDeclarationAdoptions.map(row => ({...row, changeSet:d}))} : previous?.existingDeclarationAdoptions !== undefined ? {existingDeclarationAdoptions: previous.existingDeclarationAdoptions} : {}),
   };
   return serializeInstalledLedger(ledger);
 }

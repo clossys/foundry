@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { CANONICAL_KEYS, canonicalOrder, contentDigest, validateApplyBundle, validateRepositoryChangeSet } from "./change-set-contract.js";
 import type { ApplyBundle, RepositoryChangeSet, TemplateAct } from "./change-set-contract.js";
 import { bundleDigest } from "./change-set-digest.js";
-import { planApplyBundle } from "./plan-bundle.js";
+import { createExistingDeclarationAdoptions, planApplyBundle } from "./plan-bundle.js";
 import type { PlanApplyBundleInputs, RepositoryObservation } from "./plan-bundle.js";
 import {
   SITE_ID,
@@ -297,7 +297,7 @@ describe("planApplyBundle: what a setup repository is skipped for", () => {
   });
 
   it("skips a pin outside STARTER_PIN_RANGE as starter-pin-unsupported", () => {
-    for (const starterVersion of ["0.1.9", "0.3.0", "1.0.0"]) skipped(setupInputs(setupObservation(), setupPlan({ starterVersion })), "starter-pin-unsupported");
+    for (const starterVersion of ["0.1.9", "0.4.0", "1.0.0"]) skipped(setupInputs(setupObservation(), setupPlan({ starterVersion })), "starter-pin-unsupported");
   });
 
   it("skips a pnpm surface or .npmrc without its exact text as release-age-text-absent", () => {
@@ -385,4 +385,47 @@ describe("planApplyBundle: canonical order", () => {
     expect(set.deferred).toEqual(canonicalOrder(set.deferred, CANONICAL_KEYS.deferral));
     expect(set.pathAllowList).toEqual(canonicalOrder(set.pathAllowList, CANONICAL_KEYS.pattern));
   });
+});
+
+// #1932: consent must be covered before any existing declaration can be adopted.
+it("freezes explicit existing-declaration consent into the approved setup", () => {
+  const plan = setupPlan({starterVersion: "0.3.0"});
+  const act = plan.packages!.find(row => row.planItem === WRITER_PLAN_ITEM)!;
+  const observation = setupObservation({
+    manifestEntries: [{placement: act.placement, name: act.name, value: "^0.1.0"}],
+    lockedPackages: [{name: act.name, version: "0.1.0", integrity: act.integrity}],
+  });
+  const proof = {file: "package.json", placement: act.placement, name: act.name,
+    beforeVersion: "^0.1.0", beforeResolved: {name: act.name, version: "0.1.0", integrity: act.integrity},
+    desired: {planItem: act.planItem, act: act.act, name: act.name, version: act.version, integrity: act.integrity, placement: act.placement},
+    observedBaseCommit: observation.baseCommit, desiredSnapshotDigest:plan.resolution!.snapshotDigest, consent: "adopt-existing-declaration"};
+  const input = {...setupInputs(observation, plan), existingDeclarationAdoptions: {[observation.id]: [proof]}};
+  const set = only(input);
+  expect((set as unknown as {existingDeclarationAdoptions: unknown}).existingDeclarationAdoptions).toEqual([proof]);
+  expect(only(setupInputs(observation, plan))).not.toHaveProperty("existingDeclarationAdoptions");
+});
+
+it("constructs consent from observed sources and rejects unsupported scope", () => {
+  const plan=setupPlan({starterVersion:"0.3.0"});
+  const act=plan.packages!.find(row=>row.act === "install")!;
+  const observation=setupObservation({manifestEntries:[{placement:act.placement,name:act.name,value:"^0.1.0"}],lockedPackages:[{name:act.name,version:"0.1.2",integrity:act.integrity}]});
+  const rows=createExistingDeclarationAdoptions(observation,plan,[act.name],"adopt-existing-declaration");
+  expect(rows[0]).toMatchObject({beforeVersion:"^0.1.0",desiredSnapshotDigest:plan.resolution!.snapshotDigest,consent:"adopt-existing-declaration"});
+  for (const names of [[],[act.name,act.name],["@clossys/advisor"]]) expect(()=>createExistingDeclarationAdoptions(observation,plan,names,"adopt-existing-declaration")).toThrow();
+  expect(()=>createExistingDeclarationAdoptions({...observation,phase:"apply"},plan,[act.name],"adopt-existing-declaration")).toThrow();
+  const cross={...observation,manifestEntries:[{placement:"dependencies" as const,name:act.name,value:"^0.1.0"}]};
+  expect(()=>createExistingDeclarationAdoptions(cross,plan,[act.name],"adopt-existing-declaration")).toThrow();
+  for(const literal of ["npm:@clossys/advisor@1.0.0","file:../package","^0.2.0","0.1.0","^00.1.0","^0.1.0-rc.01"]){
+    const unsupported={...observation,manifestEntries:[{placement:act.placement,name:act.name,value:literal}]};
+    expect(()=>createExistingDeclarationAdoptions(unsupported,plan,[act.name],"adopt-existing-declaration")).toThrow();
+  }
+  const input=setupInputs(observation,plan,{existingDeclarationAdoptions:{[observation.id]:rows}});
+  const original=only(input);
+  const changed=only({...input,existingDeclarationAdoptions:{[observation.id]:[{...rows[0]!,beforeResolved:{...rows[0]!.beforeResolved,integrity:STARTER_INTEGRITY}}]},repositories:[{...observation,lockedPackages:[{name:act.name,version:"0.1.2",integrity:STARTER_INTEGRITY}]}]});
+  expect(changed.changeSetDigest).not.toBe(original.changeSetDigest);
+  for (const patch of [{consent:"approved"},{beforeVersion:"npm:@clossys/advisor@1.0.0"},{desiredSnapshotDigest:"sha256:"+"f".repeat(64)}]) {
+    const tampered={...input,existingDeclarationAdoptions:{[observation.id]:[{...rows[0]!,...patch}]}};
+    expect(planApplyBundle(tampered as typeof input).changeSets).toEqual([]);
+  }
+  expect(planApplyBundle({...input,plan:setupPlan()}).changeSets).toEqual([]);
 });

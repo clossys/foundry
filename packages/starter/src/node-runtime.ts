@@ -374,8 +374,8 @@ function readLedgerFile(root: string): { status: "present"; bytes: Uint8Array } 
 
 function readFrozenInstall(root: string, manager: StarterRequest["packageManager"]): { manifest: unknown; lock: unknown } | null {
   try {
-    const manifest = JSON.parse(readContainedRegularFile(root, "package.json").toString("utf8"));
-    if (manager === "npm") return { manifest, lock: JSON.parse(readContainedRegularFile(root, NPM_CI_IGNORE_SCRIPTS.lockPath).toString("utf8")) };
+    const manifest = readContractDocument(readContainedRegularFile(root, "package.json"));
+    if (manager === "npm") return { manifest, lock: readContractDocument(readContainedRegularFile(root, NPM_CI_IGNORE_SCRIPTS.lockPath)) };
     return { manifest, lock: readContainedRegularFile(root, PNPM_INSTALL_FROZEN_IGNORE_SCRIPTS.lockPath).toString("utf8") };
   } catch { return null; }
 }
@@ -402,5 +402,6 @@ export function checkAdmission(requestPath: string, baseRoot: string, headRoot: 
     baseUnreadable: base.status === "unreadable",
     headUnreadable: head.status === "unreadable",
     install,
+    headInstall: parsed.request?.phase === "admission" ? readFrozenInstall(headRoot,parsed.request.packageManager) : null,
   }));
 }
