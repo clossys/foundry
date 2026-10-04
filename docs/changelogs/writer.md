@@ -3,6 +3,12 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## 0.5.1 - 2026-10-04
+
+- Add immutable front-door defaults and a browser client entry for provider-free forms, preserving strict registry resolution through the existing entries.
+
+Use neutral verification and password notices without assuming email delivery or reset/resend capabilities.
+
 ## 0.5.0 - 2026-10-02
 
 - Each package skill's section for when the package is not installed speaks of the repositories the team is set up in, instead of every inventoried repository.
