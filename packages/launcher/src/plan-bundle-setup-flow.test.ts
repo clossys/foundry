@@ -15,7 +15,7 @@ import { decideSetBinding } from "./admission.js";
 import { storeApplyBundle } from "./apply-store.js";
 import { LEDGER_PATH, TEMPLATE_PATHS, contentDigest } from "./change-set-contract.js";
 import type { RepositoryChangeSet } from "./change-set-contract.js";
-import { serializeInstalledLedger } from "./ledger-contract.js";
+import { installedLedgerViolations, renderInstalledLedger, serializeInstalledLedger } from "./ledger-contract.js";
 import type { InstalledLedger } from "./ledger-contract.js";
 import { trustInstalledLedger } from "./ledger-trust.js";
 import type { LockfileSpawn } from "./lockfile-regen.js";
@@ -530,7 +530,7 @@ describe("observeRepository reads the phase from a Starter pin the templates sup
   }, TEST_TIMEOUT_MS);
 });
 
-for (const kind of ["npm", "pnpm"] as const) for (const alreadyCurrent of [false,true]) it(`${kind}: approved existing declaration (${alreadyCurrent ? "equal version" : "update"}) through apply and required Starter admission`, async () => {
+for (const kind of ["npm", "pnpm"] as const) for (const alreadyCurrent of [false,true]) it(`${kind}: approved existing declaration (${alreadyCurrent ? "equal version" : "update"}) through apply, next plan and required Starter admission`, async () => {
   const {evaluateAdmission,admissionExitCode}=await import("../../starter/src/core.js");
   const plan=setupPlan({starterVersion:"0.3.0"});
   const desired=plan.packages!.find(act=>act.act==="install")!;
@@ -601,4 +601,53 @@ for (const kind of ["npm", "pnpm"] as const) for (const alreadyCurrent of [false
   expect(admissionExitCode(evaluateAdmission({...input,install:wrongPrior}))).toBe(1);
   const wrongDesired=structuredClone(input.headInstall);wrongDesired.manifest.devDependencies[desired.name]="9.0.0";
   expect(admissionExitCode(evaluateAdmission({...input,headInstall:wrongDesired}))).toBe(1);
+
+  // Consent remains historical after the first admitted apply; it must not
+  // require the old declaration again when planning the following generation.
+  merge({...run,setup:apply});
+  const afterApply=await observe(site);
+  expect(afterApply.phase).toBe("apply");
+  const afterLedger=JSON.parse(read(site,LEDGER_PATH)) as InstalledLedger;
+  expect(afterLedger.history.at(-1)?.phase).toBe("apply");
+  expect(afterLedger.existingDeclarationAdoptions).toEqual(JSON.parse(baseLedger.toString("utf8")).existingDeclarationAdoptions);
+  const next=planApplyBundle(setupInputs(afterApply,plan,{heldChangeSets:[setup,apply]}));
+  expect(next.changeSets,JSON.stringify(next.bundle.repositories)).toHaveLength(1);
+  expect(next.changeSets[0]).not.toHaveProperty("existingDeclarationAdoptions");
+
+  // A later real package upgrade must retain consent as historical evidence.
+  const upgradedPlan=cloneValue(plan);
+  const upgradedAct=upgradedPlan.packages!.find(act=>act.planItem===desired.planItem)!;
+  Object.assign(upgradedAct,{version:"0.8.0",integrity:`sha512-${Buffer.alloc(64,8).toString("base64")}`});
+  const upgraded=planApplyBundle(setupInputs(afterApply,upgradedPlan,{
+    heldChangeSets:[setup,apply],
+    planPackageActs:[{planDigest:authorityOf(approved).planDigest,packages:committedPlanPackages(approved,SITE_ID)}],
+  }));
+  expect(upgraded.changeSets,JSON.stringify(upgraded.bundle.repositories)).toHaveLength(1);
+  const upgradeSet=upgraded.changeSets[0]!;
+  expect(upgradeSet).not.toHaveProperty("existingDeclarationAdoptions");
+  const upgradeApproved=approvedPlan(upgraded.bundle.bundleDigest,upgradedPlan);
+  const upgradedLedger=JSON.parse(renderInstalledLedger(afterLedger,upgradeSet,
+    {kind:"approved",subjectDigest:upgraded.bundle.bundleDigest},committedPlanPackages(upgradeApproved,SITE_ID))) as InstalledLedger;
+  expect(upgradedLedger.packages.find(pkg=>pkg.name===desired.name)?.version).toBe("0.8.0");
+  expect(upgradedLedger.existingDeclarationAdoptions).toEqual(afterLedger.existingDeclarationAdoptions);
+  const {installedLedgerViolations:starterLedgerViolations}=await import("../../starter/src/ledger.js");
+  expect({launcher:installedLedgerViolations(upgradedLedger),starter:starterLedgerViolations(upgradedLedger)}).toEqual({launcher:[],starter:[]});
+  const heldUpgrade=[setup,apply,upgradeSet];
+  const planPackageActs=[
+    {planDigest:authorityOf(approved).planDigest,packages:committedPlanPackages(approved,SITE_ID)},
+    {planDigest:authorityOf(upgradeApproved).planDigest,packages:committedPlanPackages(upgradeApproved,SITE_ID)},
+  ];
+  const trustUpgrade=(value:InstalledLedger)=>trustInstalledLedger(Buffer.from(serializeInstalledLedger(value)),
+    {id:SITE_ID,nodeId:SITE_NODE_ID},heldUpgrade,{planPackageActs});
+  expect(trustUpgrade(upgradedLedger)).toMatchObject({state:"trusted"});
+  // Structural validity never authenticates an edited archival proof.
+  const forgedHistory=cloneValue(upgradedLedger);
+  Object.assign(forgedHistory.existingDeclarationAdoptions![0]!,{desiredSnapshotDigest:`sha256:${"f".repeat(64)}`});
+  expect(installedLedgerViolations(forgedHistory)).toEqual([]);
+  expect(trustUpgrade(forgedHistory)).toMatchObject({state:"refused",rule:"ledger-foreign-row"});
+  const fakeAppend=cloneValue(upgradedLedger);
+  Object.assign(fakeAppend,{generation:4,history:[...fakeAppend.history,
+    {...fakeAppend.history.at(-1)!,generation:4,changeSet:`sha256:${"e".repeat(64)}`} ]});
+  expect(installedLedgerViolations(fakeAppend)).toEqual([]);
+  expect(trustUpgrade(fakeAppend)).toMatchObject({state:"refused",rule:"ledger-chain"});
 },TEST_TIMEOUT_MS);

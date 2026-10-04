@@ -256,11 +256,15 @@ function ledgerRuleViolations(ledger: InstalledLedger): RuleViolation[] {
   // L7: one act per package across packages and deferred. L10 derives each planItem from its name, so a repeated planItem is a repeated name.
   if (ledger.existingDeclarationAdoptions !== undefined) {
     const setup = ledger.history[0];
+    // Setup and its immediate apply protect the live desired identity. A later
+    // generation retains that consent as evidence of an earlier apply.
+    const appliedBefore = ledger.history.slice(1, -1).some((entry, index) =>
+      entry.phase === "apply" && entry.generation === index + 2);
     const rows = ledger.existingDeclarationAdoptions;
     if (new Set(rows.map(row => row.name)).size !== rows.length) push("L7", "existingDeclarationAdoptions", "repeat a package");
     rows.forEach((row,index) => {
       const desired = [...ledger.packages, ...ledger.deferred].find(pkg => pkg.planItem === row.desired.planItem);
-      if (!setup || setup.phase !== "setup" || setup.binding.kind !== "approved" || row.changeSet !== setup.changeSet || row.observedBaseCommit !== setup.baseCommit || !existingDeclarationVersionMatches(row.beforeVersion,row.beforeResolved.version) || row.name !== row.beforeResolved.name || row.name !== row.desired.name || row.placement !== row.desired.placement || row.desired.planItem !== `${ledger.repository.id}:${row.name}` || !desired || !["name","version","integrity","placement","act"].every(key => desired[key as keyof typeof desired] === row.desired[key as keyof typeof row.desired])) push("L4", `existingDeclarationAdoptions[${index}]`, "do not match protected setup and desired identity");
+      if (!setup || setup.phase !== "setup" || setup.binding.kind !== "approved" || row.changeSet !== setup.changeSet || row.observedBaseCommit !== setup.baseCommit || !existingDeclarationVersionMatches(row.beforeVersion,row.beforeResolved.version) || row.name !== row.beforeResolved.name || row.name !== row.desired.name || row.placement !== row.desired.placement || row.desired.planItem !== `${ledger.repository.id}:${row.name}` || (!appliedBefore && (!desired || !["name","version","integrity","placement","act"].every(key => desired[key as keyof typeof desired] === row.desired[key as keyof typeof row.desired])))) push("L4", `existingDeclarationAdoptions[${index}]`, "do not match protected setup and desired identity");
     });
   }
   const acts = [...ledger.packages.map((row, index) => ({ row, path: `packages[${index}]` })), ...ledger.deferred.map((row, index) => ({ row, path: `deferred[${index}]` }))];

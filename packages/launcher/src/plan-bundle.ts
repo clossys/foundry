@@ -381,7 +381,10 @@ function computeChangeSet(
   setupTemplates: readonly SetupTemplate[] | null,
 ): ComputedSet | SkippedSet {
   const requested = inputs.existingDeclarationAdoptions?.[observation.id];
-  const protectedRows = ledger?.existingDeclarationAdoptions?.map(({changeSet: _changeSet, ...row}) => row);
+  // Retained consent is historical after its first admitted apply.
+  const protectedRows = ledger?.history.at(-1)?.phase === "setup"
+    ? ledger.existingDeclarationAdoptions?.map(({changeSet: _changeSet, ...row}) => row)
+    : undefined;
   const adoptions = observation.phase === "setup" ? requested : protectedRows;
   if (observation.phase !== "setup" && requested !== undefined) return {skip: {verdict: "violated", reason: "adoption-consent-not-setup"}};
   if (adoptions !== undefined) {
