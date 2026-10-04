@@ -3,6 +3,16 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## 0.8.1 - 2026-10-04
+
+- Add immutable front-door defaults and a browser client entry for provider-free forms, preserving strict registry resolution through the existing entries.
+
+Use neutral verification and password notices without assuming email delivery or reset/resend capabilities.
+- Use a fixed invalid-surface error message when resolution refuses malformed input; detailed validation findings remain available through the validator.
+
+- Updated dependency @clossys/writer to ^0.5.1
+- Updated dependency @clossys/designer to ^0.7.1
+
 ## 0.8.0 - 2026-10-02
 
 - `@clossys/publisher/web` exports `ActivateForm`, a form for setting a password from an invitation, and `ResetForm`, a form that asks for a code and then a new password, both with no identity-provider import and with injected handlers whose results show each failure in one place.

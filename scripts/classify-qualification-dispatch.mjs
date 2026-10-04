@@ -86,6 +86,8 @@
 //
 // A blocked candidate is re-examined on every later push to main, so it is
 // dispatched automatically on the first push after its sibling publishes.
+// Launcher also needs the exact current Starter source version as a
+// qualification input. This is not a runtime dependency or a range fallback.
 import { appendFileSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -100,6 +102,13 @@ function die(message, code = 2) {
 }
 
 const candidateKey = (c) => `${c.package}\0${c.version}`;
+
+function canonicalPublishedVersion(version) {
+  if (typeof version !== "string") return false;
+  const match = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?(?:\+([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?$/.exec(version);
+  return match !== null && match.slice(1, 4).every((part) => Number.isSafeInteger(Number(part))) &&
+    (match[4] === undefined || match[4].split(".").every((part) => !/^0\d+$/.test(part)));
+}
 
 /**
  * The first-party runtime dependency edges the qualification install
@@ -198,6 +207,32 @@ export async function classifyCandidates({ unqualified, pending, scope, readMani
     const blockers = [];
     const uncertain = [];
     const unevaluated = [];
+    if (candidate.package === "launcher") {
+      let starter;
+      try {
+        if (typeof scope !== "string" || !/^@[a-z0-9][a-z0-9._-]*$/.test(scope) || manifest.name !== `${scope}/launcher`) {
+          throw new Error("Launcher identity does not match package-scope.json");
+        }
+        starter = readManifest("starter");
+        if (!starter || typeof starter !== "object" || Array.isArray(starter) || starter.name !== `${scope}/starter` || !canonicalPublishedVersion(starter.version) || !/^\d+\.\d+\.\d+$/.test(starter.version)) {
+          throw new Error("Starter requires its scoped source name and exact stable version");
+        }
+      } catch (error) {
+        rows.push({ ...base, classification: "indeterminate", detail: `could not establish Launcher qualification input: ${error instanceof Error ? error.message : String(error)}` });
+        continue;
+      }
+      const edge = { name: starter.name, range: starter.version };
+      const published = await lookup(edge.name);
+      // Check exact membership separately from parseRange(): an unsupported
+      // runtime range must never waive this qualification-input requirement.
+      const validVersions = published?.kind === "found" && Array.isArray(published.versions) && published.versions.every(canonicalPublishedVersion);
+      if (published?.kind === "absent" || (validVersions && !published.versions.includes(starter.version))) {
+        blockers.push({ ...edge, detail: "exact current Starter qualification input is not published" });
+      } else if (!validVersions) {
+        rows.push({ ...base, classification: "indeterminate", uncertain: [{ ...edge, detail: published?.detail ?? "Starter registry version list is unavailable or malformed" }] });
+        continue;
+      }
+    }
     for (const edge of firstPartyRuntimeRanges(manifest, scope)) {
       // Evaluability is a property of the range alone (the same parse
       // evaluateRange() itself gates on) — decide it before touching the

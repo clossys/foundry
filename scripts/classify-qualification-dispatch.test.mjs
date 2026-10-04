@@ -243,6 +243,109 @@ test("replay 2026-09-24: publisher@0.6.0 stays blocked even after that, on desig
 
 // --------------------------------------------------- real registry adapter path
 
+test("Launcher missing-exact regression: older published Starter versions never permit dispatch", async () => {
+  const root = resolve(dirname(scriptPath), "..");
+  const { scope } = JSON.parse(readFileSync(join(root, "package-scope.json"), "utf8"));
+  const readManifest = (pkg) => JSON.parse(readFileSync(join(root, "packages", pkg, "package.json"), "utf8"));
+  const launcher = readManifest("launcher");
+  const starter = readManifest("starter");
+  const candidate = { package: "launcher", name: launcher.name, version: launcher.version };
+  assert.notEqual(starter.version, "0.0.0", "the retained native Starter source is newer than this published fixture");
+  const { lookupVersions, calls } = fakeRegistry({ [starter.name]: ["0.0.0"] });
+  const [row] = await classifyCandidates({ unqualified: [candidate], pending: [candidate], scope, readManifest, lookupVersions });
+  assert.equal(row.classification, "blocked-on-sibling");
+  assert.equal(row.blockers[0].name, starter.name);
+  assert.equal(row.blockers[0].range, starter.version);
+  assert.deepEqual(calls, [starter.name]);
+});
+
+async function launcherFixture({ scope = `${SCOPE}-fixture`, starter, published = { kind: "found", versions: ["3.4.5"] }, launcherName, dependencies = {} } = {}) {
+  const candidate = { package: "launcher", name: launcherName ?? `${scope}/launcher`, version: "1.2.3" };
+  const manifests = {
+    launcher: { name: candidate.name, version: candidate.version, dependencies },
+    starter: starter === undefined ? { name: `${scope}/starter`, version: "3.4.5" } : starter,
+  };
+  const reads = [], calls = [];
+  const [row] = await classifyCandidates({
+    unqualified: [candidate], pending: [candidate], scope,
+    readManifest: (pkg) => {
+      reads.push(pkg);
+      if (manifests[pkg] instanceof Error) throw manifests[pkg];
+      return manifests[pkg];
+    },
+    lookupVersions: async (name) => { calls.push(name); return published; },
+  });
+  return { row, reads, calls };
+}
+
+test("Launcher: exact Starter present dispatches; absence, older, newer and prerelease-only versions block", async () => {
+  const { row, reads, calls } = await launcherFixture();
+  assert.equal(row.classification, "dispatch");
+  assert.deepEqual(reads, ["launcher", "starter"]);
+  assert.deepEqual(calls, [`${SCOPE}-fixture/starter`]);
+  for (const published of [{ kind: "absent" }, { kind: "found", versions: [] }, { kind: "found", versions: ["3.4.4", "3.4.6", "3.4.5-rc.1"] }]) {
+    const { row } = await launcherFixture({ published });
+    assert.equal(row.classification, "blocked-on-sibling");
+    assert.equal(row.blockers[0].range, "3.4.5");
+  }
+});
+
+test("Launcher: missing, unreadable, malformed or wrong-scope Starter source is indeterminate without a registry read", async () => {
+  for (const starter of [null, [], "malformed", {}, new Error("ENOENT"), new SyntaxError("malformed JSON"), { name: `${SCOPE}/starter`, version: "3.4.5" }, { name: `${SCOPE}-fixture/other`, version: "3.4.5" }, ...[undefined, 345, "^3.4.5", "3.4.5-rc.1", "3.4.5+build", "03.4.5", "9007199254740992.4.5", "3.4.5 "].map((version) => ({ name: `${SCOPE}-fixture/starter`, version }))]) {
+    const { row, calls } = await launcherFixture({ starter });
+    assert.equal(row.classification, "indeterminate");
+    assert.deepEqual(calls, []);
+  }
+  for (const options of [{ scope: "invalid" }, { scope: null }, { launcherName: `${SCOPE}/launcher` }]) {
+    const { row, calls } = await launcherFixture(options);
+    assert.equal(row.classification, "indeterminate");
+    assert.deepEqual(calls, []);
+  }
+});
+
+test("Launcher: malformed or uncertain registry results never dispatch or claim definite absence", async () => {
+  for (const published of [null, {}, { kind: "error", detail: "HTTP 503" }, { kind: "found" }, { kind: "found", versions: "3.4.5" }, { kind: "found", versions: [null] }, ...["not-a-version", "3.4.5-.", "3.4.5-01", "9007199254740992.4.5"].map((invalid) => ({ kind: "found", versions: ["3.4.5", invalid] }))]) {
+    const { row } = await launcherFixture({ published });
+    assert.equal(row.classification, "indeterminate");
+  }
+});
+
+test("Launcher: anonymous registry adapter preserves malformed/transport uncertainty and definite 404 absence", async () => {
+  const name = `${SCOPE}-fixture/starter`;
+  for (const route of [new Error("ECONNRESET"), { status: 503 }, { body: { name, versions: [] } }, { body: { name: `${SCOPE}-fixture/other`, versions: {} } }]) {
+    const published = await lookupPublishedVersions(name, { registry: PUBLIC_NPM_REGISTRY, fetchImpl: fakeFetch({ [packumentUrl(name)]: route }) });
+    assert.equal((await launcherFixture({ published })).row.classification, "indeterminate");
+  }
+  const present = await lookupPublishedVersions(name, { registry: PUBLIC_NPM_REGISTRY, fetchImpl: fakeFetch({ [packumentUrl(name)]: { body: { name, versions: { "3.4.5": {} } } } }) });
+  assert.equal((await launcherFixture({ published: present })).row.classification, "dispatch");
+  const absent = await lookupPublishedVersions(name, { registry: PUBLIC_NPM_REGISTRY, fetchImpl: fakeFetch({}) });
+  assert.equal((await launcherFixture({ published: absent })).row.classification, "blocked-on-sibling");
+});
+
+test("Launcher: qualification input cannot use the unevaluable runtime-range fallback", async () => {
+  const { row } = await launcherFixture({ dependencies: { [`${SCOPE}-fixture/starter`]: ">=3.0.0" }, published: { kind: "found", versions: ["3.4.4"] } });
+  assert.equal(row.classification, "blocked-on-sibling");
+  assert.equal(row.blockers[0].range, "3.4.5");
+  assert.equal((await launcherFixture({ dependencies: { [`${SCOPE}-fixture/starter`]: ">=3.0.0" } })).row.classification, "dispatch");
+});
+
+test("Launcher: exact input shares lookup caching with runtime dependencies and other candidates", async () => {
+  const scope = `${SCOPE}-fixture`, name = `${scope}/starter`;
+  const launcher = { package: "launcher", name: `${scope}/launcher`, version: "1.2.3" };
+  const other = { package: "other", name: `${scope}/other`, version: "1.0.0" };
+  const { lookupVersions, calls } = fakeRegistry({ [name]: ["3.4.5"] });
+  const reads = [];
+  const manifests = { launcher: { name: launcher.name, version: launcher.version, dependencies: { [name]: "^3.4.0" }, peerDependencies: { [name]: "~3.4.0" } }, starter: { name, version: "3.4.5" }, other: { name: other.name, version: other.version, dependencies: { [name]: "^3.0.0" } } };
+  const rows = await classifyCandidates({ unqualified: [launcher, other], pending: [launcher, other], scope, readManifest: (pkg) => { reads.push(pkg); return manifestsFrom(manifests)(pkg); }, lookupVersions });
+  assert.deepEqual(rows.map((row) => row.classification), ["dispatch", "dispatch"]);
+  assert.deepEqual(calls, [name]);
+  assert.deepEqual(reads, ["launcher", "starter", "other"]);
+  manifests.launcher.peerDependencies[name] = "^4.0.0";
+  const [blocked] = await classifyCandidates({ unqualified: [launcher], pending: [launcher], scope, readManifest: manifestsFrom(manifests), lookupVersions });
+  assert.equal(blocked.classification, "blocked-on-sibling");
+  assert.equal(blocked.blockers[0].range, "^4.0.0", "required runtime peers remain enforced even with an exact qualification input");
+});
+
 function fakeFetch(routes) {
   return async (url) => {
     const route = routes[url];
@@ -271,6 +374,33 @@ test("lookupPublishedVersions: a registry other than public npm is never guessed
 });
 
 // ---------------------------------------------------------------- CLI coverage
+
+test("CLI: Launcher reads the source Starter manifest and withholds uncertain inputs from dispatch stdout", async () => {
+  const root = mkdtempSync(join(tmpdir(), "launcher-qualification-input-test-"));
+  try {
+    writeFileSync(join(root, "package-scope.json"), JSON.stringify({ scope: SCOPE, registry: "https://registry.example.test" }));
+    for (const pkg of ["launcher", "leaf", "starter"]) mkdirSync(join(root, "packages", pkg), { recursive: true });
+    const pending = ["launcher", "leaf"].map((pkg) => ({ package: pkg, name: `${SCOPE}/${pkg}`, version: "1.0.0" }));
+    for (const candidate of pending) writeFileSync(join(root, "packages", candidate.package, "package.json"), JSON.stringify({ name: candidate.name, version: candidate.version }));
+    writeFileSync(join(root, "pending.json"), JSON.stringify(pending));
+    const starterPath = join(root, "packages", "starter", "package.json");
+    for (const bytes of [null, "{", JSON.stringify({ name: `${SCOPE}/other`, version: "3.4.5" }), JSON.stringify({ name: `${SCOPE}/starter`, version: "3.4.5" })]) {
+      if (bytes !== null) writeFileSync(starterPath, bytes);
+      const result = await spawnCapture(process.execPath, [scriptPath, join(root, "pending.json"), join(root, "pending.json"), "--json", "--root", root], { cwd: root });
+      assert.equal(result.status, 0, result.stderr);
+      assert.deepEqual(JSON.parse(result.stdout), [pending[1]]);
+      assert.match(result.stderr, /indeterminate: `launcher`/);
+      if (bytes === null || bytes === "{") assert.match(result.stderr, /could not establish Launcher qualification input/);
+      else if (JSON.parse(bytes).name !== `${SCOPE}/starter`) assert.match(result.stderr, /Starter requires its scoped source name/);
+      else {
+        assert.ok(result.stderr.includes(`${SCOPE}/starter@3.4.5`));
+        assert.match(result.stderr, /anonymous npm verification supports only/);
+      }
+    }
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
 
 test("CLI: prints only dispatchable rows as JSON and writes a four-way step summary (hermetic: no registry reads)", async () => {
   const root = mkdtempSync(join(tmpdir(), "classify-qualification-dispatch-test-"));
