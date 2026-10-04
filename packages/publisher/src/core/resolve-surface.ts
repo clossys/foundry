@@ -175,7 +175,7 @@ export interface ResolvedSurfaceDocument {
 export function resolveSurfaceDocument(surface: SurfaceDocument, resolver: CopyResolver, options: ResolveSurfaceDocumentOptions = {}): ResolvedSurfaceDocument {
   const findings = validateSurfaceDocument(surface);
   if (findings.some((finding) => finding.severity === "error")) {
-    throw new SurfaceResolutionError("invalid-surface", `resolveSurfaceDocument refused an invalid surface: ${findings.map((finding) => finding.message).join("; ")}`);
+    throw new SurfaceResolutionError("invalid-surface", "resolveSurfaceDocument refused an invalid surface.");
   }
   if (typeof resolver !== "function") {
     throw new SurfaceResolutionError("unresolved-copy", "resolveSurfaceDocument needs a CopyResolver.");

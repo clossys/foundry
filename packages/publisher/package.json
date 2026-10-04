@@ -96,6 +96,10 @@
     "./testing": {
       "types": "./dist/testing/index.d.ts",
       "import": "./dist/testing/index.js"
+    },
+    "./web/client": {
+      "types": "./dist/web/client.d.ts",
+      "import": "./dist/web/client.js"
     }
   },
   "imports": {
@@ -430,7 +434,8 @@
     "tailwind-merge": "^3.7.0",
     "tailwindcss": "^4.3.3",
     "typescript": "~6.0.0",
-    "vitest": "^5.0.1"
+    "vitest": "^5.0.1",
+    "esbuild": "0.28.2"
   },
   "publishConfig": {
     "registry": "https://registry.npmjs.org",

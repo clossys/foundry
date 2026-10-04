@@ -13,9 +13,10 @@ const conditionOutcomes = (defaultOutcome, reactServerOutcome) => ({
   default: defaultOutcome,
   "react-server": reactServerOutcome,
 });
-const publisherOmissionRow = ({ rejected = [], web = "imports" } = {}) => ({
+const publisherOmissionRow = ({ rejected = [], web = "imports", client = "imports" } = {}) => ({
   ...omissionRow(publisherExports, rejected),
   "@clossys/publisher/web": typeof web === "string" ? web : conditionOutcomes(web.default, web.reactServer),
+  "@clossys/publisher/web/client": client,
 });
 
 const bouncerExports = [
@@ -78,6 +79,7 @@ const publisherExports = [
   "@clossys/publisher/templates",
   "@clossys/publisher/testing",
   "@clossys/publisher/web",
+  "@clossys/publisher/web/client",
 ];
 
 /**
@@ -173,10 +175,10 @@ export const OPTIONAL_PEER_POLICY = {
     resend: { "@clossys/messenger": "imports", "@clossys/messenger/providers/resend": "rejects" },
   },
   "@clossys/publisher": {
-    "@internationalized/date": publisherOmissionRow({ web: { default: "rejects", reactServer: "imports" } }),
-    react: publisherOmissionRow({ rejected: ["@clossys/publisher/document", "@clossys/publisher/testing"], web: { default: "rejects", reactServer: "rejects" } }),
-    "react-aria-components": publisherOmissionRow({ web: { default: "rejects", reactServer: "imports" } }),
-    "react-dom": publisherOmissionRow({ rejected: ["@clossys/publisher/testing"], web: { default: "rejects", reactServer: "imports" } }),
+    "@internationalized/date": publisherOmissionRow({ web: { default: "rejects", reactServer: "imports" }, client: "rejects" }),
+    react: publisherOmissionRow({ rejected: ["@clossys/publisher/document", "@clossys/publisher/testing"], web: { default: "rejects", reactServer: "rejects" }, client: "rejects" }),
+    "react-aria-components": publisherOmissionRow({ web: { default: "rejects", reactServer: "imports" }, client: "rejects" }),
+    "react-dom": publisherOmissionRow({ rejected: ["@clossys/publisher/testing"], web: { default: "rejects", reactServer: "imports" }, client: "rejects" }),
     // #749/#878: publisher/web reaches designer's cx() transitively
     // (publisher has no tailwind-merge import site of its own -- grep
     // confirms it appears only in fixture peer-name lists inside

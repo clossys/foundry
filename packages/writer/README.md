@@ -66,6 +66,11 @@ remains the only required first-day assessment.
   `VoiceChannel`.
 - `@clossys/writer/voice-record.template.jsonc` is an annotated,
   unbound template to copy into a consumer repository and fill in.
+- `@clossys/writer/front-door` exports `resolveFrontDoorCopy` and its types
+  for browser rendering with immutable shipped English defaults. It accepts
+  only key and nouns; it exposes no registry or approval overrides. Returned
+  values and provenance do not share private catalog state. Package defaults
+  are not consumer approval; consumer registries use the strict root APIs.
 - `@clossys/writer/front-door.en.json` is the shipped English front-door
   catalog (`FRONT_DOOR_COPY_EN`) as a `CopyRegistry` JSON file.
 
@@ -336,14 +341,14 @@ label:
 | `front-door.password.secondary` | Use a different email |
 | `front-door.identifier-not-found.notice` | We couldn’t find an account for that email. Check it and try again. |
 | `front-door.forgot-password.label` | Forgot password? |
-| `front-door.password.notice` | That password isn’t right. Try again or reset it. |
+| `front-door.password.notice` | That password isn’t right. Try again. |
 | `front-door.sign-in.alt` | Sign in to {brand} |
-| `front-door.code.title` | Check your email |
-| `front-door.code.description` | Enter the code sent to {identifier}. |
+| `front-door.code.title` | Verify your sign-in |
+| `front-door.code.description` | Enter your verification code to continue. |
 | `front-door.code.label` | Code |
 | `front-door.code.primary` | Verify |
 | `front-door.code.secondary` | Send a new code |
-| `front-door.code.notice` | That code isn’t right or has expired. Try again or send a new code. |
+| `front-door.code.notice` | That code isn’t right or has expired. Try again. |
 | `front-door.unavailable.notice` | Sign-in isn’t available right now. Try again in a few minutes. |
 | `front-door.rate-limited.notice` | Too many attempts. Wait a few minutes, then try again. |
 | `front-door.locked.notice` | This account is temporarily locked after too many attempts. Try again later. |

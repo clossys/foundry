@@ -67,6 +67,23 @@ const MODULE_SPECIFIER =
 const ALLOWED_IMPORT = /^(react|@clossys\/designer\/.+|@clossys\/writer|\.{1,2}\/.+)$/;
 
 describe("ResetForm :: steps", () => {
+  it("supplies the entered identifier when a legacy custom description declares it", async () => {
+    const entry = FRONT_DOOR_COPY_EN.entries.find(candidate => candidate.id === "front-door.code.description")!;
+    const saved = { ...entry };
+    try {
+      entry.text = "Use the verification code for {identifier}.";
+      entry.placeholders = ["identifier"];
+      const { user } = setup();
+      await reachResetStep(user);
+      expect(await screen.findByText(`Use the verification code for ${IDENTIFIER}.`)).toBeInTheDocument();
+    } finally {
+      Object.assign(entry, saved);
+      if (!Object.hasOwn(saved, "placeholders")) delete entry.placeholders;
+      cleanup();
+    }
+    expect(entry).toEqual(saved);
+  });
+
   it("request ok shows the code step and focuses the code; reset ok calls onReset once and stays pending", async () => {
     const { handlers, user, container } = setup();
 
@@ -76,7 +93,7 @@ describe("ResetForm :: steps", () => {
     await user.click(requestButton());
 
     expect(handlers.request).toHaveBeenCalledExactlyOnceWith(IDENTIFIER);
-    expect(await screen.findByText(`Enter the code sent to ${IDENTIFIER}.`)).toBeInTheDocument();
+    expect(await screen.findByText(defaultText("code.description"))).toBeInTheDocument();
     expect(screen.getByRole("form", { name: defaultText("code.title") })).toBeInTheDocument();
     expect(codeField()).toHaveAttribute("autocomplete", "one-time-code");
     expect(passwordField()).toHaveAttribute("type", "password");
@@ -559,7 +576,7 @@ describe("ResetForm :: copy and source", () => {
   });
 
   it("imports only react, designer, writer and relative paths, and reads no browser global", () => {
-    for (const file of ["ResetForm.tsx", "frontDoorFormSupport.ts"]) {
+    for (const file of ["ResetForm.tsx", "internal/createResetForm.tsx", "frontDoorFormSupport.ts"]) {
       const source = readFileSync(join(import.meta.dirname, file), "utf8");
       const specifiers = [...source.matchAll(MODULE_SPECIFIER)].map((match) => match[1] as string);
       expect(specifiers.length).toBeGreaterThan(0);

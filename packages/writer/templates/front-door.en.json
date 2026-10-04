@@ -81,7 +81,7 @@
     },
     {
       "id": "front-door.password.notice",
-      "text": "That password isn’t right. Try again or reset it.",
+      "text": "That password isn’t right. Try again.",
       "context": "password page: notice when the password is wrong",
       "status": "approved"
     },
@@ -96,18 +96,15 @@
     },
     {
       "id": "front-door.code.title",
-      "text": "Check your email",
+      "text": "Verify your sign-in",
       "context": "code page: heading",
       "status": "approved"
     },
     {
       "id": "front-door.code.description",
-      "text": "Enter the code sent to {identifier}.",
+      "text": "Enter your verification code to continue.",
       "context": "code page: line under the heading",
-      "status": "approved",
-      "placeholders": [
-        "identifier"
-      ]
+      "status": "approved"
     },
     {
       "id": "front-door.code.label",
@@ -129,7 +126,7 @@
     },
     {
       "id": "front-door.code.notice",
-      "text": "That code isn’t right or has expired. Try again or send a new code.",
+      "text": "That code isn’t right or has expired. Try again.",
       "context": "code page: notice when the code is wrong or expired",
       "status": "approved"
     },

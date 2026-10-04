@@ -319,7 +319,7 @@ describe("ActivateForm :: copy and source", () => {
   });
 
   it("imports only react, designer, writer and relative paths, and reads no browser global", () => {
-    for (const file of ["ActivateForm.tsx", "frontDoorFormSupport.ts"]) {
+    for (const file of ["ActivateForm.tsx", "internal/createActivateForm.tsx", "frontDoorFormSupport.ts"]) {
       const source = readFileSync(join(import.meta.dirname, file), "utf8");
       const specifiers = [...source.matchAll(MODULE_SPECIFIER)].map((match) => match[1] as string);
       expect(specifiers.length).toBeGreaterThan(0);

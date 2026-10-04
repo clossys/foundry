@@ -1,9 +1,10 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import type { CopyRegistry, CopyResolver } from "@clossys/writer";
 import { createCopyResolver } from "@clossys/writer";
 import { collectCopyProvenance } from "./output-manifest.js";
 import { resolveSurfaceDocument, SurfaceResolutionError } from "./resolve-surface.js";
 import type { SurfaceDocument } from "./types.js";
+import { validateSurfaceDocument } from "./validate.js";
 
 // Minimal, obviously-fictional fixtures — the same "acme" placeholder
 // convention this package's other tests already use. Never real product
@@ -294,7 +295,7 @@ describe("resolveSurfaceDocument — other refusals never echo a caller id, temp
   it("an invalid surface is refused without its id", () => {
     const error = refusal(() => resolveSurfaceDocument({ ...singleBindingOnly, id: SENTINEL_SURFACE_ID, bindings: "not-an-array" } as unknown as SurfaceDocument, resolver));
     expect(error.reason).toBe("invalid-surface");
-    expect(error.message).toBe("resolveSurfaceDocument refused an invalid surface: bindings must be an array.");
+    expect(error.message).toBe("resolveSurfaceDocument refused an invalid surface.");
     expect(error.message).not.toContain(SENTINEL_SURFACE_ID);
   });
 
@@ -329,5 +330,45 @@ describe("resolveSurfaceDocument — other refusals never echo a caller id, temp
     expect(failingAt({ question: { copy: ref("acme.faq.question") }, [SENTINEL_SLOT]: { copy: ref("acme.faq.missing") } })).toBe(
       "resolveSurfaceDocument could not resolve a CopyRef at bindings.1.items.0.fields.1.copy.",
     );
+  });
+});
+
+
+describe("resolveSurfaceDocument — invalid-surface diagnostics are value-free", () => {
+  const noteKey = "sentinel-note-key-86";
+  const numericFrame = -0.314159;
+  const slideSurface: SurfaceDocument = {
+    ...singleBindingOnly,
+    channel: "slides",
+    meta: { channel: "slides", aspect: "16:9" },
+    layout: { slots: [{ key: "heading", element: "heading", frame: { x: 0, y: 0, w: 1, h: 0.2 } }] },
+  };
+
+  it.each([
+    ["note-key", { ...slideSurface, meta: { channel: "slides", aspect: "16:9", notes: { [noteKey]: { id: "" } } } } as SurfaceDocument, noteKey],
+    ["numeric-frame", { ...slideSurface, layout: { slots: [{ key: "heading", element: "heading", frame: { x: numericFrame, y: 0, w: 1, h: 0.2 } }] } }, String(numericFrame)],
+  ] as const)("refuses a sentinel %s without echoing its value or resolving copy", (_kind, surface, sentinel) => {
+    const before = structuredClone(surface);
+    const findings = validateSurfaceDocument(surface);
+    expect(findings.some(finding => finding.severity === "error")).toBe(true);
+    // Detailed caller-owned findings remain available through the public validator.
+    expect(JSON.stringify(findings)).toContain(sentinel);
+    const copyResolver = vi.fn(resolver);
+    let result: ReturnType<typeof resolveSurfaceDocument> | undefined;
+    let thrown: unknown;
+    try {
+      result = resolveSurfaceDocument(surface, copyResolver);
+    } catch (error) {
+      thrown = error;
+    }
+    expect(thrown).toBeInstanceOf(SurfaceResolutionError);
+    expect((thrown as SurfaceResolutionError).name).toBe("SurfaceResolutionError");
+    expect((thrown as SurfaceResolutionError).reason).toBe("invalid-surface");
+    expect((thrown as Error).message).toBe("resolveSurfaceDocument refused an invalid surface.");
+    expect(String(thrown)).not.toContain(sentinel);
+    expect(copyResolver).not.toHaveBeenCalled();
+    expect(result).toBeUndefined();
+    expect(surface).toEqual(before);
+    expect(validateSurfaceDocument(surface)).toEqual(findings);
   });
 });

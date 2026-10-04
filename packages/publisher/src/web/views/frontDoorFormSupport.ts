@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
-import { resolveFrontDoorCopy } from "@clossys/writer";
-import type { FrontDoorKey, FrontDoorNouns } from "@clossys/writer";
+import type { FrontDoorKey, FrontDoorNouns, FrontDoorCopyResolution } from "@clossys/writer";
 import { RenderError } from "../../internal/errors.js";
+
+export type FrontDoorResolver = (key: FrontDoorKey, nouns: FrontDoorNouns) => FrontDoorCopyResolution;
 
 /**
  * Shared by the provider-free front-door forms. Resolves every entry of
@@ -9,10 +10,10 @@ import { RenderError } from "../../internal/errors.js";
  * `resolution-failed` for the first that cannot resolve. The message names
  * the form and the id's position in the catalog, never the caller's nouns.
  */
-export function resolveFormCopy<K extends FrontDoorKey>(form: string, keys: readonly K[], nouns: FrontDoorNouns): Record<K, string> {
+export function resolveFormCopy<K extends FrontDoorKey>(resolveCopy: FrontDoorResolver, form: string, keys: readonly K[], nouns: FrontDoorNouns): Record<K, string> {
   const words = {} as Record<K, string>;
   for (const key of keys) {
-    const resolved = resolveFrontDoorCopy(key, nouns);
+    const resolved = resolveCopy(key, nouns);
     if (!resolved.complete || resolved.text === undefined) {
       throw new RenderError("resolution-failed", `${form} could not resolve front-door copy "${key}".`);
     }

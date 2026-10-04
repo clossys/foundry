@@ -337,19 +337,21 @@ test("Publisher's optional-peer matrix binds both default and react-server web o
     "@clossys/publisher/templates",
     "@clossys/publisher/testing",
     "@clossys/publisher/web",
+    "@clossys/publisher/web/client",
   ];
-  const expected = (rejected = [], web = { default: "imports", "react-server": "imports" }) => ({
+  const expected = (rejected = [], web = { default: "imports", "react-server": "imports" }, client = "imports") => ({
     ...Object.fromEntries(
     publisherExports.map((specifier) => [specifier, rejected.includes(specifier) ? "rejects" : "imports"]),
     ),
     "@clossys/publisher/web": web,
+    "@clossys/publisher/web/client": client,
   });
   const rows = OPTIONAL_PEER_POLICY["@clossys/publisher"];
 
-  assert.deepEqual(rows["@internationalized/date"], expected([], { default: "rejects", "react-server": "imports" }));
-  assert.deepEqual(rows.react, expected(["@clossys/publisher/document", "@clossys/publisher/testing"], { default: "rejects", "react-server": "rejects" }));
-  assert.deepEqual(rows["react-aria-components"], expected([], { default: "rejects", "react-server": "imports" }));
-  assert.deepEqual(rows["react-dom"], expected(["@clossys/publisher/testing"], { default: "rejects", "react-server": "imports" }));
+  assert.deepEqual(rows["@internationalized/date"], expected([], { default: "rejects", "react-server": "imports" }, "rejects"));
+  assert.deepEqual(rows.react, expected(["@clossys/publisher/document", "@clossys/publisher/testing"], { default: "rejects", "react-server": "rejects" }, "rejects"));
+  assert.deepEqual(rows["react-aria-components"], expected([], { default: "rejects", "react-server": "imports" }, "rejects"));
+  assert.deepEqual(rows["react-dom"], expected(["@clossys/publisher/testing"], { default: "rejects", "react-server": "imports" }, "rejects"));
   assert.deepEqual(rows["tailwind-merge"], expected([], { default: "imports", "react-server": "imports" }));
   assert.deepEqual(rows.tailwindcss, expected());
 });
