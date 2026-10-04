@@ -326,3 +326,22 @@ describe("resolver", () => {
     expect(nouns).toEqual({ identifier: "ana@example.test", brand: "Acme" });
   });
 });
+
+
+describe("capability-neutral password notice", () => {
+  it("does not promise a password-reset capability", () => {
+    expect(resolveFrontDoorCopy("front-door.password.notice", {}).text).toBe("That password isn’t right. Try again.");
+  });
+});
+
+
+describe("capability-neutral verification defaults", () => {
+  it("does not assume email delivery, identifier display or code resend", () => {
+    expect(resolveFrontDoorCopy("front-door.code.title", {}).text).toBe("Verify your sign-in");
+    const result = resolveFrontDoorCopy("front-door.code.description", { identifier: "unused" });
+    expect(result.text).toBe("Enter your verification code to continue.");
+    expect(result.resolution?.ref.values).toEqual({});
+    expect(FRONT_DOOR_COPY_EN.entries.find(entry => entry.id === "front-door.code.description")).not.toHaveProperty("placeholders");
+    expect(resolveFrontDoorCopy("front-door.code.notice", {}).text).toBe("That code isn’t right or has expired. Try again.");
+  });
+});

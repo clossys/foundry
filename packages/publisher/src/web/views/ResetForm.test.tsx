@@ -76,7 +76,7 @@ describe("ResetForm :: steps", () => {
     await user.click(requestButton());
 
     expect(handlers.request).toHaveBeenCalledExactlyOnceWith(IDENTIFIER);
-    expect(await screen.findByText(`Enter the code sent to ${IDENTIFIER}.`)).toBeInTheDocument();
+    expect(await screen.findByText(defaultText("code.description"))).toBeInTheDocument();
     expect(screen.getByRole("form", { name: defaultText("code.title") })).toBeInTheDocument();
     expect(codeField()).toHaveAttribute("autocomplete", "one-time-code");
     expect(passwordField()).toHaveAttribute("type", "password");
@@ -559,7 +559,7 @@ describe("ResetForm :: copy and source", () => {
   });
 
   it("imports only react, designer, writer and relative paths, and reads no browser global", () => {
-    for (const file of ["ResetForm.tsx", "frontDoorFormSupport.ts"]) {
+    for (const file of ["ResetForm.tsx", "internal/createResetForm.tsx", "frontDoorFormSupport.ts"]) {
       const source = readFileSync(join(import.meta.dirname, file), "utf8");
       const specifiers = [...source.matchAll(MODULE_SPECIFIER)].map((match) => match[1] as string);
       expect(specifiers.length).toBeGreaterThan(0);

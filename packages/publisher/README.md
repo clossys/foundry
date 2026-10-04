@@ -3943,3 +3943,30 @@ MIT
 ## Changelog
 
 Release notes for every version are in the [changelog](https://github.com/clossys/foundry/blob/main/docs/changelogs/publisher.md), kept in the public repository rather than in the installed package.
+
+## Browser front-door client
+
+`@clossys/publisher/web/client` exports `SignInForm`, `ActivateForm`,
+`ResetForm`, `AuthView`, `BoundaryView` and their props/result types.
+The forms bind immutable Writer package defaults once when the module loads;
+consumer registry mutations cannot change or authorize those defaults.
+Use the existing `@clossys/publisher/web` forms for strict mutable registry
+resolution and its approval refusals. Both entries keep the same form UI,
+handlers, focus behavior and sanitized copy errors. No resolver prop or
+registry override is exposed by the browser entry.
+
+```tsx
+import { SignInForm, AuthView } from "@clossys/publisher/web/client";
+
+const form = <SignInForm
+  nouns={{ surface: "Example" }}
+  identify={async () => ({ status: "ok" })}
+  verify={async () => ({ status: "ok" })}
+  onSignedIn={() => {}}
+/>;
+const page = <AuthView brand="Example" heading="Sign in" description="Continue" form={form} />;
+```
+
+This entry requires the same declared React and Designer peers as the existing
+web forms. It does not import the mixed web renderer or any Writer registry
+approval implementation. It implements no authentication provider.

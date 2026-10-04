@@ -147,7 +147,7 @@ describe("SignInForm :: steps", () => {
   });
 
   it("imports only react, designer, writer and relative paths", () => {
-    const source = readFileSync(join(import.meta.dirname, "SignInForm.tsx"), "utf8");
+    const source = ["SignInForm.tsx", "internal/createSignInForm.tsx"].map(file => readFileSync(join(import.meta.dirname, file), "utf8")).join("\n");
     const specifiers = [...source.matchAll(MODULE_SPECIFIER)].map((match) => match[1] as string);
     expect(specifiers.length).toBeGreaterThan(0);
     for (const specifier of specifiers) expect(specifier).toMatch(ALLOWED_IMPORT);
