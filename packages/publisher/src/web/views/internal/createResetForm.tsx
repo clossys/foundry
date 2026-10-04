@@ -122,7 +122,7 @@ export function createResetForm(resolveCopy: FrontDoorResolver) {
 
     // Resolved on every render, so incomplete nouns fail where the form is wired rather than when a failure first shows.
     const words = resolveFormCopy(resolveCopy, "ResetForm", KEYS, { ...nouns });
-    // The identifier is the visitor's own entry, so this line can only resolve once the second step shows it.
+    // Show verification instructions in the reset step; legacy custom entries may use the visitor's identifier.
     const codeDescription = step === "reset" ? resolveFormCopy(resolveCopy, "ResetForm", ["front-door.code.description"], { ...nouns, identifier: identifier.trim() })["front-door.code.description"] : null;
 
     /** Marks a call in flight, clears the shown notices and returns the answer's status; a handler that throws answers `unavailable`. */

@@ -294,6 +294,46 @@ describe("resolver", () => {
     expect(result.issues[0]?.id).toBe("front-door.sign-in.heading");
   });
 
+  it("refuses a missing catalog entry for a reserved id without throwing", () => {
+    const key = "front-door.password.notice";
+    const savedEntries = [...FRONT_DOOR_COPY_EN.entries];
+    try {
+      const index = FRONT_DOOR_COPY_EN.entries.findIndex((entry) => entry.id === key);
+      expect(index).toBeGreaterThanOrEqual(0);
+      FRONT_DOOR_COPY_EN.entries.splice(index, 1);
+      expect(() => resolveFrontDoorCopy(key, {})).not.toThrow();
+      const result = resolveFrontDoorCopy(key, {});
+      expect(result.complete).toBe(false);
+      expect(result.issues.map((issue) => issue.reason)).toEqual(["unknown-copy-id"]);
+      expect(result.issues[0]?.id).toBe(key);
+      expect(result).not.toHaveProperty("text");
+      expect(result).not.toHaveProperty("resolution");
+    } finally {
+      FRONT_DOOR_COPY_EN.entries.splice(0, FRONT_DOOR_COPY_EN.entries.length, ...savedEntries);
+    }
+    expect(FRONT_DOOR_COPY_EN.entries).toEqual(savedEntries);
+  });
+
+  it("refuses a missing catalog entry for an appended accepted id without throwing", () => {
+    const ids = FRONT_DOOR_COPY_IDS as unknown as string[];
+    const savedIds = [...ids];
+    const key = "front-door.absent.title" as FrontDoorKey;
+    try {
+      ids.push(key);
+      expect(isFrontDoorCopyId(key)).toBe(true);
+      expect(() => resolveFrontDoorCopy(key, {})).not.toThrow();
+      const result = resolveFrontDoorCopy(key, {});
+      expect(result.complete).toBe(false);
+      expect(result.issues.map((issue) => issue.reason)).toEqual(["unknown-copy-id"]);
+      expect(result.issues[0]?.id).toBe(key);
+      expect(result).not.toHaveProperty("text");
+      expect(result).not.toHaveProperty("resolution");
+    } finally {
+      ids.splice(0, ids.length, ...savedIds);
+    }
+    expect(FRONT_DOOR_COPY_IDS).toEqual(savedIds);
+  });
+
   it("never throws, whatever it is given", () => {
     const hostile = { get identifier(): string { throw new Error("boom"); } };
     const inputs: unknown[] = [undefined, null, 7, "x", [], hostile, Object.create({ identifier: "inherited" })];

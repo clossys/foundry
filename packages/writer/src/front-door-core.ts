@@ -234,6 +234,14 @@ export function prepareFrontDoorCopy(key: FrontDoorKey, nouns: FrontDoorNouns, c
     };
   }
 
+  const entry = catalog.entries.find((candidate) => candidate.id === key);
+  if (!entry) {
+    return {
+      complete: false as const,
+      issues: [{ reason: "unknown-copy-id", id: key, message: `Front-door copy "${key}" is not present in the catalog.` }],
+    };
+  }
+
   const supplied = readNouns(nouns);
   const issues: FrontDoorCopyIssue[] = [];
   for (const name of supplied.keys()) {
@@ -242,7 +250,6 @@ export function prepareFrontDoorCopy(key: FrontDoorKey, nouns: FrontDoorNouns, c
     }
   }
 
-  const entry = catalog.entries.find((candidate) => candidate.id === key)!;
   const values: Record<string, string> = {};
   for (const name of entry.placeholders ?? []) {
     const value = supplied.get(name);

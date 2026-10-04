@@ -67,6 +67,23 @@ const MODULE_SPECIFIER =
 const ALLOWED_IMPORT = /^(react|@clossys\/designer\/.+|@clossys\/writer|\.{1,2}\/.+)$/;
 
 describe("ResetForm :: steps", () => {
+  it("supplies the entered identifier when a legacy custom description declares it", async () => {
+    const entry = FRONT_DOOR_COPY_EN.entries.find(candidate => candidate.id === "front-door.code.description")!;
+    const saved = { ...entry };
+    try {
+      entry.text = "Use the verification code for {identifier}.";
+      entry.placeholders = ["identifier"];
+      const { user } = setup();
+      await reachResetStep(user);
+      expect(await screen.findByText(`Use the verification code for ${IDENTIFIER}.`)).toBeInTheDocument();
+    } finally {
+      Object.assign(entry, saved);
+      if (!Object.hasOwn(saved, "placeholders")) delete entry.placeholders;
+      cleanup();
+    }
+    expect(entry).toEqual(saved);
+  });
+
   it("request ok shows the code step and focuses the code; reset ok calls onReset once and stays pending", async () => {
     const { handlers, user, container } = setup();
 

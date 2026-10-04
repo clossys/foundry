@@ -24,6 +24,27 @@ describe("immutable browser front-door defaults", () => {
     expect(refused.issues.map(i => i.reason)).toEqual(["unknown-noun", "missing-noun", "missing-noun"]);
     expect(refused).not.toHaveProperty("text"); expect(refused).not.toHaveProperty("resolution");
   });
+  it("keeps private defaults when legacy entries are removed or accepted ids are appended", () => {
+    const key = "front-door.password.notice";
+    const addedKey = "front-door.absent.title";
+    const baseline = browser(key, {});
+    const unknownBaseline = browser(addedKey as never, {});
+    const savedEntries = [...FRONT_DOOR_COPY_EN.entries];
+    const ids = FRONT_DOOR_COPY_IDS as unknown as string[];
+    const savedIds = [...ids];
+    try {
+      FRONT_DOOR_COPY_EN.entries.splice(FRONT_DOOR_COPY_EN.entries.findIndex(entry => entry.id === key), 1);
+      ids.push(addedKey);
+      expect(browser(key, {})).toEqual(baseline);
+      expect(browser(addedKey as never, {})).toEqual(unknownBaseline);
+      expect(unknownBaseline.complete).toBe(false);
+    } finally {
+      FRONT_DOOR_COPY_EN.entries.splice(0, FRONT_DOOR_COPY_EN.entries.length, ...savedEntries);
+      ids.splice(0, ids.length, ...savedIds);
+    }
+    expect(FRONT_DOOR_COPY_EN.entries).toEqual(savedEntries);
+    expect(FRONT_DOOR_COPY_IDS).toEqual(savedIds);
+  });
   it("isolates private defaults from mutable root catalog and prior returned provenance", () => {
     const baseline = browser("front-door.sign-in.description", nouns);
     const entry = FRONT_DOOR_COPY_EN.entries.find(e => e.id === "front-door.sign-in.description")!;

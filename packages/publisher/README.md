@@ -3825,8 +3825,8 @@ identifier.
 - `unavailable` (optional), `nouns` (optional): see below.
 
 `ResetForm` steps: the identifier step asks for the identifier. After `request`
-answers `ok` the second step shows the code (`front-door.code.description`
-names the identifier), a code field, a new password field and the main button
+answers `ok` the second step shows verification instructions
+(`front-door.code.description`), a code field, a new password field and the main button
 (`front-door.reset-code.primary`), and moves focus to the code field. A ghost
 button (`front-door.code.secondary`, only with `resendCode`) sends a new code,
 clearing the code field and any notice; another (`front-door.password.secondary`)
