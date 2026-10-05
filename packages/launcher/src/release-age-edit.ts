@@ -82,13 +82,17 @@ type NpmrcState = "clear" | "conflict" | "unparseable";
  * Reads a pnpm surface's .npmrc under a fixed grammar. Every line must be
  * blank (spaces only), a comment (first non-space character `#` or `;`), or a
  * plain assignment: optional spaces, a key of ASCII letters, digits and
- * `@ : _ . / -`, optional spaces, `=`, then any value. Any other line shape
+ * `@ : _ . / -`, optionally one immediate empty `[]` array suffix, optional
+ * spaces, `=`, then any value (opaque to this reader). This is npm's documented
+ * array-key assignment shape: https://docs.npmjs.com/cli/v11/configuring-npm/npmrc.
+ * Any other line shape
  * (a quoted or bracketed key, a comment before the `=`, a backslash, a tab, a
  * section header, a key with no `=`) makes the whole file `unparseable`,
  * because npm's ini reader could read such a line as the exclusion key. A plain
- * key that reduces (in the same way) to `userconfig`, `globalconfig` or `prefix`
+ * base key that reduces (in the same way) to `userconfig`, `globalconfig` or `prefix`
  * is `unparseable` too: it redirects the read to a file this reader cannot
- * see. A plain key that reduces to the exclusion setting is a `conflict`.
+ * see, including an array form. A base key that reduces to the exclusion
+ * setting is a `conflict`, including an array form. Malformed suffixes refuse.
  * Index scans only.
  */
 function readNpmrc(surface: ExemptionSurfaceKind, npmrc: string | null | undefined): NpmrcState {
@@ -102,11 +106,14 @@ function readNpmrc(surface: ExemptionSurfaceKind, npmrc: string | null | undefin
     let keyEnd = start;
     while (keyEnd < line.length && isNpmrcKeyCharacter(line.charCodeAt(keyEnd))) keyEnd += 1;
     if (keyEnd === start) return "unparseable";
-    let equals = keyEnd;
-    while (equals < line.length && line[equals] === " ") equals += 1;
-    if (line[equals] !== "=") return "unparseable";
+    // Normalize the base key before admitting any suffix, so [] cannot hide
+    // an exclusion setting or redirect the read to another configuration.
     const reduced = line.slice(start, keyEnd).replace(/[-_]/g, "").toLowerCase();
     if (NPMRC_REDIRECT_KEYS.has(reduced)) return "unparseable";
+    let equals = keyEnd;
+    if (line[equals] === "[" && line[equals + 1] === "]") equals += 2;
+    while (equals < line.length && line[equals] === " ") equals += 1;
+    if (line[equals] !== "=") return "unparseable";
     if (reduced === NPMRC_CONFLICT_KEY) conflict = true;
   }
   return conflict ? "conflict" : "clear";
