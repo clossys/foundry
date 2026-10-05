@@ -385,7 +385,8 @@ describe.each(SURFACES)("verifyReleaseAgeExemption ($surface)", (s) => {
 
 describe("editReleaseAgeExemption: the .npmrc fixed safe grammar", () => {
   // An .npmrc is accepted only when every line is blank, a comment, or a plain
-  // `key=value` whose key is ASCII letters, digits and `@ : _ . / -`. Any other
+  // `key=value` or `key[]=value` whose base key is ASCII letters, digits and
+  // `@ : _ . / -`. The array suffix is a single, immediate, empty `[]`. Any other
   // line shape refuses the whole file as unparseable; a plain key that reads
   // as the exclusion list, in any case and with `-` and `_` ignored, is a
   // conflict. Each spelling below is one npm's ini reader reads as the key.
@@ -400,7 +401,7 @@ describe("editReleaseAgeExemption: the .npmrc fixed safe grammar", () => {
     ["a JSON escape inside a quoted key", `"minimum-release-age-exclud\\u0065"=@a/*\n`, UNPARSEABLE],
     ["the camel-case spelling", `${key}=@a/*\n`, CONFLICT],
     ["the camel-case spelling in other case", `MINIMUMRELEASEAGEEXCLUDE=@a/*\n`, CONFLICT],
-    ["an array suffix", `${K}[]=x\n`, UNPARSEABLE],
+    ["an exclusion array suffix", `${K}[]=x\n`, CONFLICT],
     ["a key with no equals sign", `${K}\n`, UNPARSEABLE],
     ["a key with no equals sign after a comment", `; c\n${K}`, UNPARSEABLE],
     ["a section header", `[a]\n${K}=x\n`, UNPARSEABLE],
@@ -494,6 +495,63 @@ describe("editReleaseAgeExemption: the .npmrc fixed safe grammar", () => {
       verify("pnpm-workspace", null, `${key}:\n  - '${VALUE}'\n`, `${line}\n`);
       expect(performance.now() - start).toBeLessThan(budgetMs);
     }
+  });
+});
+
+describe("release-age edit and verification: unrelated .npmrc arrays", () => {
+  const key = "minimumReleaseAgeExclude";
+  const before = `# keep\na: 1\n${key}:\n  - 'x'\nb: 2\n`;
+  const after = `# keep\na: 1\n${key}:\n  - 'x'\n  - '${VALUE}'\nb: 2\n`;
+  const already = `# keep\n${key}:\n  - '${VALUE}'\n`;
+  const created = `${key}:\n  - '${VALUE}'\n`;
+
+  it.each([
+    ["documented public hoist pattern", "public-hoist-pattern[]=*\n"],
+    ["repeated assignments", "public-hoist-pattern[]=a\npublic-hoist-pattern[]=b\n"],
+    ["spaces around assignment", "  public-hoist-pattern[]  =  x  \n"],
+    ["empty value", "public-hoist-pattern[]=\n"],
+    ["opaque value punctuation", "public-hoist-pattern[]=b\"'c;d#e=f[]\\g\t\n"],
+    ["plain key alphabet", "@scope:some_key.name/path-1[]=x\n"],
+    ["BOM and CRLF", "\uFEFF; c\r\npublic-hoist-pattern[]=x\r\nregistry=y\r\n"],
+    ["bare CR and no final newline", "registry=x\rpublic-hoist-pattern[]=y"],
+    ["similar protected names", "minimum-release-age-exclude-more[]=x\nuserconfigs[]=y\nmy-prefix[]=z\n"],
+    ["protected names only in values and comments", "other[]=minimum-release-age-exclude\n; prefix[]=x\n# userconfig[]=x\n"],
+  ])("edits and verifies beside %s", (_name, npmrc) => {
+    expect(edit("pnpm-workspace", null, npmrc)).toEqual({ kind: "edited", text: created });
+    expect(verify("pnpm-workspace", null, created, npmrc)).toEqual({ verified: true, value: VALUE });
+    expect(edit("pnpm-workspace", before, npmrc)).toEqual({ kind: "edited", text: after });
+    expect(verify("pnpm-workspace", before, after, npmrc)).toEqual({ verified: true, value: VALUE });
+    expect(edit("pnpm-workspace", already, npmrc)).toEqual({ kind: "unchanged" });
+    expect(verify("pnpm-workspace", already, already, npmrc)).toEqual({ verified: false });
+    expect(verify("pnpm-workspace", before, after.replace("# keep", "# changed"), npmrc)).toEqual({ verified: false });
+    expect(edit("pnpm-workspace", "a: &x 1\n", npmrc)).toEqual(UNPARSEABLE);
+  });
+
+  const protectedArrays: ReadonlyArray<readonly [string, typeof CONFLICT]> = [
+    ["minimum-release-age-exclude", CONFLICT], ["minimumReleaseAgeExclude", CONFLICT], ["MINIMUM_RELEASE_AGE_EXCLUDE", CONFLICT], ["-minimum_Release-age_Exclude-", CONFLICT],
+    ["userconfig", UNPARSEABLE], ["User-Config", UNPARSEABLE], ["_USER_CONFIG_", UNPARSEABLE],
+    ["globalconfig", UNPARSEABLE], ["Global-Config", UNPARSEABLE], ["GLOBAL_CONFIG", UNPARSEABLE],
+    ["prefix", UNPARSEABLE], ["PRE_FIX", UNPARSEABLE], ["-Prefix_", UNPARSEABLE],
+  ];
+  it.each(protectedArrays)("refuses the normalized protected array key %s", (baseKey, reason) => {
+    const npmrc = `public-hoist-pattern[]=x\n  ${baseKey}[]  =  y\n`;
+    expect(edit("pnpm-workspace", null, npmrc)).toEqual(reason);
+    expect(edit("pnpm-workspace", before, npmrc)).toEqual(reason);
+    expect(edit("pnpm-workspace", already, npmrc)).toEqual(reason);
+    expect(verify("pnpm-workspace", null, created, npmrc)).toEqual({ verified: false });
+    expect(verify("pnpm-workspace", before, after, npmrc)).toEqual({ verified: false });
+  });
+
+  it.each([
+    "other[0]=x", "other[ ]=x", "other[=x", "other]=x", "other[][]=x", "other[]suffix=x", "other []=x",
+    "other[[]]=x", "other['']=x", "other[\"\"]=x", "other[] =x\nother[]=x\n[]=x", "other[]", "other[]#c=x", "other[];c=x",
+    "\"other[]\"=x", "'other[]'=x", "\"other\"[]=x", "other\\[]=x", "other[]\t=x", "[other][]=x", "other［］=x",
+    "minimum-release-age-exclude[][]=x", "minimum-release-age-exclude []=x", "userconfig[0]=x", "prefix[][]=x",
+    "public-hoist-pattern[]=x\n[section]", "minimum-release-age-exclude[]=x\n\"other\"=y",
+  ].map((npmrc, i) => ({ name: `shape ${i + 1}`, npmrc })))("refuses malformed or ambiguous array $name", ({ npmrc }) => {
+    expect(edit("pnpm-workspace", null, npmrc)).toEqual(UNPARSEABLE);
+    expect(edit("pnpm-workspace", already, npmrc)).toEqual(UNPARSEABLE);
+    expect(verify("pnpm-workspace", before, after, npmrc)).toEqual({ verified: false });
   });
 });
 
