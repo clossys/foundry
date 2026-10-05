@@ -208,11 +208,44 @@ function shellQuote(value) {
   return `'${value.replaceAll("'", "'\\''")}'`;
 }
 
+test("non-TTY relay recognizes complete and split generic Enter prompts without emitting capabilities", () => {
+  const output = "Authenticate your account at:\nhttps://www.npmjs.com/auth/cli/cli_Ab9-\nPress ENTER to open in the browser...";
+  // Control delivery here: the relay can recognize already-delivered bytes,
+  // independently of a real child's immediate non-TTY termination below.
+  for (let split = 0; split <= output.length; split += 1) {
+    const prompts = [], requests = [];
+    const relay = createOwnerPromptRelay((line) => prompts.push(line));
+    const context = { ownerInputAvailable: false, ownerInputRequested: () => requests.push("refuse") };
+    relay(Buffer.from(output.slice(0, split)), context);
+    relay(Buffer.from(output.slice(split)), context);
+    assert.deepEqual(prompts, ["Press ENTER to continue npm authentication.\n"], `split ${split}`);
+    assert.equal(requests.length, 2, `URL and Enter both request refusal at split ${split}`);
+    relay(Buffer.from("\n"), context);
+    assert.equal(prompts.length, 1, "the generic prompt is emitted exactly once");
+    assert.equal(requests.length, 2, "repeated output cannot request another prompt");
+  }
+});
+
+test("non-TTY relay requests immediate refusal at the URL-before-prompt boundary", () => {
+  const url = "https://www.npmjs.com/auth/cli/cli_Ab9-\n";
+  const prompts = [], requests = [];
+  const relay = createOwnerPromptRelay((line) => prompts.push(line));
+  const context = { ownerInputAvailable: false, ownerInputRequested: () => requests.push("refuse") };
+  relay(Buffer.from(url.slice(0, -1)), context);
+  assert.deepEqual(requests, [], "an unterminated URL must not be recognized");
+  assert.deepEqual(prompts, []);
+  relay(Buffer.from("\n"), context);
+  assert.deepEqual(requests, ["refuse"], "refusal precedes any trailing Enter prompt");
+  assert.deepEqual(prompts, [], "the completed capability is suppressed");
+  // Do not deliver a hypothetical later prompt after this refusal boundary.
+  // The separate controlled-delivery test owns generic Enter recognition.
+});
+
 test("non-TTY browser authentication fails closed without relaying an opaque CLI URL", { skip: process.stdin.isTTY === true }, async (t) => {
   const root = await mkdtemp(join(tmpdir(), "qualified-non-tty-browser-test-")), child = join(root, "browser-fixture.mjs");
   t.after(() => rm(root, { recursive: true, force: true }));
   await writeFile(child, [
-    "process.stdout.write('Authenticate your account at:\\nhttps://www.npmjs.com/auth/cli/cli_Ab9-\\nPress ENTER to open in the browser...');",
+    "process.stdout.write('Authenticate your account at:\\nhttps://www.npmjs.com/auth/cli/cli_Ab9-\\n');",
     "setInterval(() => {}, 1000);",
   ].join("\n"));
   const prompts = [], relay = createOwnerPromptRelay((line) => prompts.push(line));
@@ -226,8 +259,20 @@ test("non-TTY browser authentication fails closed without relaying an opaque CLI
     : ["-q", "/dev/null", process.execPath, child];
   const result = await runInteractiveChild("/usr/bin/script", ptyArgs, { cwd: root, env: { PATH: process.env.PATH, HOME: root }, stdio: ["inherit", "pipe", "pipe"] }, relay);
   assert.notEqual(result.status, 0, "browser owner input must fail closed without a TTY");
+  assert.match(result.stdout, /https:\/\/www\.npmjs\.com\/auth\/cli\/cli_Ab9-/, "the real PTY delivered the refusal-triggering URL");
   assert.equal(prompts.some((line) => line.includes("/auth/cli/")), false, "opaque browser capabilities must never reach a non-TTY owner channel");
-  assert.deepEqual(prompts, ["Press ENTER to continue npm authentication.\n"]);
+  assert.deepEqual(prompts, [], "the real PTY must refuse at the URL without requiring later prompt delivery");
+});
+
+test("real PTY transport preserves a child nonzero exit status", async (t) => {
+  const root = await mkdtemp(join(tmpdir(), "qualified-pty-exit-test-")), child = join(root, "exit-fixture.mjs");
+  t.after(() => rm(root, { recursive: true, force: true }));
+  await writeFile(child, "process.exit(17);\n");
+  const args = process.platform === "linux"
+    ? ["-e", "-q", "/dev/null", "-c", `${shellQuote(process.execPath)} ${shellQuote(child)}`]
+    : ["-q", "/dev/null", process.execPath, child];
+  const result = await runInteractiveChild("/usr/bin/script", args, { cwd: root, env: { PATH: process.env.PATH, HOME: root }, stdio: ["inherit", "pipe", "pipe"] });
+  assert.equal(result.status, 17, "a successful script session cannot conceal the child failure");
 });
 
 test("non-TTY browser capability URL alone terminates a waiting child", { skip: process.stdin.isTTY === true }, async (t) => {
@@ -518,6 +563,11 @@ test("PTY-mediated browser authentication relays only a strict npm CLI URL and E
 test("browser authentication relay rejects lookalikes, queries, fragments, controls, and injected instructions", () => {
   const cases = [
     "https://npmjs.com/auth/cli/cli_Ab9-\nPress ENTER to open in the browser...\n",
+    "https://www.npmjs.com.example.test/auth/cli/cli_Ab9-\nPress ENTER to open in the browser...\n",
+    "https://www.npmjs.com/auth/cli/\nPress ENTER to open in the browser...\n",
+    `https://www.npmjs.com/auth/cli/${"a".repeat(257)}\nPress ENTER to open in the browser...\n`,
+    "https://www.npmjs.com/auth/cli/cli_Ab9-/extra\nPress ENTER to open in the browser...\n",
+    "https://www.npmjs.com/auth/cli/cli_Ab9-\u001b\nPress ENTER to open in the browser...\n",
     "https://www.npmjs.com/auth/cli/cli_Ab9-?x=1\nPress ENTER to open in the browser...\n",
     "https://www.npmjs.com/auth/cli/cli_Ab9-#fragment\nPress ENTER to open in the browser...\n",
     "https://www.npmjs.com/auth/cli/cli_Ab9-%0aother\nPress ENTER to open in the browser...\n",
