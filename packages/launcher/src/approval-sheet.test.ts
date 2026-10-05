@@ -3,14 +3,30 @@ import { ApprovalSheetError, renderApprovalSheet } from "./approval-sheet.js";
 import type { ApprovalSheetInput, ApprovalSheetRefusal } from "./approval-sheet.js";
 import { bundleDigest, changeSetDigest } from "./change-set-digest.js";
 import { validateApplyBundle, validateRepositoryChangeSet } from "./change-set-contract.js";
-import type { ApplyBundle, RepositoryChangeSet } from "./change-set-contract.js";
-import { planApplyBundle } from "./plan-bundle.js";
+import type { ApplyBundle, DependencyPlacement, RepositoryChangeSet } from "./change-set-contract.js";
+import { createExistingDeclarationAdoptions, planApplyBundle } from "./plan-bundle.js";
 import { clone, setupInputs, setupObservation, setupPlan, SITE_ID } from "./plan-bundle-setup-fixture.js";
 import type { Loose } from "./plan-bundle-setup-fixture.js";
 
 /** A bundle and its one change set, planned from the setup fixture: a real planner result, not a hand-built one. */
 function planned(): ApprovalSheetInput {
   const { bundle, changeSets } = planApplyBundle(setupInputs(setupObservation()));
+  return { bundle, changeSets };
+}
+
+/** Native consent for an observed declaration, retained by the setup planner. */
+function plannedAdoption(placement: DependencyPlacement): ApprovalSheetInput {
+  const base = setupPlan({ starterVersion: "0.3.0" });
+  const plan = { ...base, packages: base.packages!.map((act) => act.act === "install" ? { ...act, placement } : act) };
+  const act = plan.packages.find((candidate) => candidate.act === "install")!;
+  const observation = setupObservation({
+    manifestEntries: [{ placement, name: act.name, value: "^0.1.0" }],
+    lockedPackages: [{ name: act.name, version: "0.1.2", integrity: act.integrity }],
+  });
+  const proofs = createExistingDeclarationAdoptions(observation, plan, [act.name], "adopt-existing-declaration");
+  const { bundle, changeSets } = planApplyBundle(setupInputs(observation, plan, { existingDeclarationAdoptions: { [observation.id]: proofs } }));
+  expect(changeSets).toHaveLength(1);
+  expect(changeSets[0]!.existingDeclarationAdoptions).toEqual(proofs);
   return { bundle, changeSets };
 }
 
@@ -43,6 +59,29 @@ function refusal(input: ApprovalSheetInput): ApprovalSheetRefusal {
 describe("renderApprovalSheet", () => {
   it("renders the golden sheet: the bundle's ids and digests, one row per item, then what was held back", () => {
     expect(renderApprovalSheet(planned())).toBe(GOLDEN);
+  });
+
+  it.each(["dependencies", "devDependencies"] as const)("renders native adoption consent for %s without changing its input or digests", (placement) => {
+    const input = plannedAdoption(placement);
+    expect(validateApplyBundle(input.bundle)).toEqual({ valid: true });
+    expect(validateRepositoryChangeSet(input.changeSets[0])).toEqual({ valid: true });
+    const before = clone(input);
+    const set = input.changeSets[0]!;
+    const proof = set.existingDeclarationAdoptions![0]!;
+    const sheet = renderApprovalSheet(input);
+    expect(sheet).toContain(`\nExisting declaration adoption consent:\n- ${set.repository.id} ${proof.desired.planItem} ${placement} ${proof.beforeVersion} (${proof.beforeResolved.version}, ${proof.beforeResolved.integrity}) -> ${proof.desired.version} (${proof.desired.integrity}); explicit adoption consent; observed base ${proof.observedBaseCommit}; desired snapshot ${proof.desiredSnapshotDigest}\n`);
+    expect(sheet.split("\n").filter((line) => line.startsWith("Approve "))).toEqual([`Approve subjectDigest: ${input.bundle.bundleDigest}`]);
+    expect(input).toEqual(before);
+    expect(changeSetDigest(set)).toBe(set.changeSetDigest);
+    expect(bundleDigest(input.bundle.plan.digest, [{ id: set.repository.id, changeSetDigest: set.changeSetDigest }])).toBe(input.bundle.bundleDigest);
+  });
+
+  it.each(["optionalDependencies", "peerDependencies", "dev-dependencies", "Dependencies", "dependencies\n", "devDependencies|other", ""])("refuses malformed adoption placement %j with a fixed token", (placement) => {
+    const input = edited(plannedAdoption("devDependencies"), (set) => {
+      set.existingDeclarationAdoptions[0].placement = placement;
+      set.existingDeclarationAdoptions[0].desired.placement = placement;
+    });
+    expect(refusal(input)).toBe("change-set-invalid");
   });
 
   it("prints Plan committed from the bundle's flag: yes when committed, no when not", () => {

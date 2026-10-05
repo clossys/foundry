@@ -37,6 +37,7 @@ export interface ApprovalSheetInput {
 
 const REPOSITORY = /^[A-Za-z0-9._-]{1,100}(?:\/[A-Za-z0-9._-]{1,100})?$/u;
 const TOKEN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/u;
+const PLACEMENT = /^(?:dependencies|devDependencies)$/u;
 const CHECK = /^V[1-9]$/u;
 const DIGEST = /^sha256:[0-9a-f]{64}$/u;
 const ITEM = /^[A-Za-z0-9._@/:~+-]{1,300}$/u;
@@ -145,7 +146,7 @@ export function renderApprovalSheet(input: ApprovalSheetInput): string {
     const set = sets.get(entry.changeSet)!;
     for (const proof of set.existingDeclarationAdoptions ?? []) {
       // The schema already closes literal syntax; never print arbitrary caller prose.
-      adoptions.push(`- ${id} ${safe(proof.desired.planItem, ITEM)} ${safe(proof.placement,TOKEN)} ${safe(proof.beforeVersion,/^[~^]?[0-9A-Za-z.+-]{1,100}$/u)} (${safe(proof.beforeResolved.version,VERSION)}, ${safe(proof.beforeResolved.integrity,/^sha512-[A-Za-z0-9+/]{86}==$/u)}) -> ${safe(proof.desired.version,VERSION)} (${safe(proof.desired.integrity,/^sha512-[A-Za-z0-9+/]{86}==$/u)}); explicit adoption consent; observed base ${safe(proof.observedBaseCommit,/^[0-9a-f]{40}([0-9a-f]{24})?$/u)}; desired snapshot ${safe(proof.desiredSnapshotDigest,DIGEST)}`);
+      adoptions.push(`- ${id} ${safe(proof.desired.planItem, ITEM)} ${safe(proof.placement, PLACEMENT)} ${safe(proof.beforeVersion,/^[~^]?[0-9A-Za-z.+-]{1,100}$/u)} (${safe(proof.beforeResolved.version,VERSION)}, ${safe(proof.beforeResolved.integrity,/^sha512-[A-Za-z0-9+/]{86}==$/u)}) -> ${safe(proof.desired.version,VERSION)} (${safe(proof.desired.integrity,/^sha512-[A-Za-z0-9+/]{86}==$/u)}); explicit adoption consent; observed base ${safe(proof.observedBaseCommit,/^[0-9a-f]{40}([0-9a-f]{24})?$/u)}; desired snapshot ${safe(proof.desiredSnapshotDigest,DIGEST)}`);
     }
     for (const item of set.deferred) deferred.push(`- ${id} ${safe(item.planItem, ITEM)} ${safe(item.reason, TOKEN)}`);
     for (const item of set.refused) {
