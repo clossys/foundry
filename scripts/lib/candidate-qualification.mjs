@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { mkdtempSync, readFileSync, realpathSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { TRIO_PUBLICATION_PATH, TRIO_PUBLICATION_TRANSITION_BASE, TRIO_PUBLICATION_TRANSITION_PATHS, validateTrioPublicationTransition } from "./release-publication-cohort.mjs";
@@ -393,11 +393,73 @@ export function realPathTouches(root, range, path, introducedBlob) {
   return commits.filter((commit) => blobOid(root, commit, path) !== introducedBlob);
 }
 const POLICY_PATH = "governance/release-qualification-policy.json";
-function selectedPolicy(root, candidate, ref) {
-  const policy = parseStrictJson(content(root, ref, POLICY_PATH));
+function selectedPolicyEntry(policy, candidate) {
   const entry = policy.packages?.[candidate.name];
   if (!entry || typeof entry.recordStem !== "string" || typeof entry.packageDir !== "string" || typeof entry.adapterPath !== "string" || typeof entry.fixturePath !== "string") throw new Error("selected policy package entry");
   return entry;
+}
+function selectedPolicy(root, candidate, ref) {
+  return selectedPolicyEntry(parseStrictJson(content(root, ref, POLICY_PATH)), candidate);
+}
+
+// Reuse belongs to one validation run, repository and resolved commit. Only
+// immutable Git inputs are memoized; retained bytes and WORKTREE policy are
+// always read again. A failed lookup is retained for that exact input too,
+// so an unrelated record's error is still reported on its own validation.
+function immutableLookup(cache, key, read) {
+  if (!cache.has(key)) {
+    try { cache.set(key, { value: read() }); }
+    catch (error) { cache.set(key, { error }); }
+  }
+  const result = cache.get(key);
+  if (own(result, "error")) throw result.error;
+  return result.value;
+}
+class QualificationHistory {
+  #root;
+  #gitDirectory;
+  #head;
+  #introductions = new Map();
+  #policies = new Map();
+  #sealed = new Map();
+  constructor(root, head) {
+    this.#root = realpathSync(root);
+    this.#gitDirectory = realpathSync(git(root, ["rev-parse", "--absolute-git-dir"]));
+    this.#head = git(root, ["rev-parse", "--verify", `${head}^{commit}`]);
+    Object.freeze(this);
+  }
+  get head() { return this.#head; }
+  assertMatches(root, head) {
+    if (realpathSync(root) !== this.#root ||
+        realpathSync(git(root, ["rev-parse", "--absolute-git-dir"])) !== this.#gitDirectory ||
+        git(root, ["rev-parse", "--verify", `${head}^{commit}`]) !== this.#head) {
+      throw new Error("qualification history view does not match its repository and head");
+    }
+  }
+  introduction(candidate, path) {
+    return immutableLookup(this.#introductions, path, () => qualificationIntroductionCommit(this.#root, candidate, this.#head, path));
+  }
+  reviewedPath(candidate, ref) {
+    // Never memoize a mutable alias (including HEAD or WORKTREE). The normal
+    // reviewedCommit is an exact SHA; other public-helper inputs stay fresh.
+    if (!SHA1.test(ref)) return qualificationPath(this.#root, candidate, ref);
+    const policy = immutableLookup(this.#policies, ref, () => parseStrictJson(content(this.#root, ref, POLICY_PATH)));
+    const entry = selectedPolicyEntry(policy, candidate);
+    return `governance/release-qualifications/${entry.recordStem}-${candidate.version}.json`;
+  }
+  sealedPaths() {
+    const paths = immutableLookup(this.#sealed, TRIO_PUBLICATION_TRANSITION_BASE, () => sealedQualificationPathsAtTransitionBase(this.#root));
+    return new Set(paths);
+  }
+}
+export function createQualificationHistory(root = process.cwd(), head = "HEAD") {
+  return new QualificationHistory(root, head);
+}
+function matchingHistory(history, root, head) {
+  if (history === null) return null;
+  if (!(history instanceof QualificationHistory)) throw new Error("invalid qualification history view");
+  history.assertMatches(root, head);
+  return history;
 }
 export function qualificationPath(root, candidate, ref = "WORKTREE") {
   const entry = selectedPolicy(root, candidate, ref);
@@ -763,12 +825,12 @@ export function sealedQualificationPathsAtTransitionBase(root = process.cwd(), b
 // which is why qualify-candidate.yml commits a deferral removal in a
 // separate commit from the record introduction it shares no commit with
 // (see that workflow's own two-commits comment).
-function validateForwardQualificationIntroduction(r, { root, head, trioRecords, sealedPaths }) {
+function validateForwardQualificationIntroduction(r, { root, head, trioRecords, sealedPaths, history }) {
   const a = [];
   let path, introduction;
   try {
-    path = qualificationPath(root, r.candidate, r.reviewedCommit);
-    introduction = qualificationIntroductionCommit(root, r.candidate, head, path);
+    path = history ? history.reviewedPath(r.candidate, r.reviewedCommit) : qualificationPath(root, r.candidate, r.reviewedCommit);
+    introduction = history ? history.introduction(r.candidate, path) : qualificationIntroductionCommit(root, r.candidate, head, path);
   } catch (error) {
     fail(a, "forward-record-history", error instanceof Error ? error.message : "qualification record history could not be resolved.");
     return a;
@@ -791,8 +853,8 @@ function validateForwardQualificationIntroduction(r, { root, head, trioRecords, 
       try {
         const retainedCandidatePath = qualificationPath(root, record.candidate);
         if (sealedPaths.has(retainedCandidatePath)) continue;
-        const candidatePath = qualificationPath(root, record.candidate, record.reviewedCommit);
-        const candidateIntroduction = qualificationIntroductionCommit(root, record.candidate, head, candidatePath);
+        const candidatePath = history ? history.reviewedPath(record.candidate, record.reviewedCommit) : qualificationPath(root, record.candidate, record.reviewedCommit);
+        const candidateIntroduction = history ? history.introduction(record.candidate, candidatePath) : qualificationIntroductionCommit(root, record.candidate, head, candidatePath);
         if (candidateIntroduction === introduction) jointPaths.push(candidatePath);
       } catch {
         continue;
@@ -814,11 +876,15 @@ function validateForwardQualificationIntroduction(r, { root, head, trioRecords, 
   }
   return a;
 }
-export function validatePrepublicationPrTail(r, { root = process.cwd(), head = "HEAD", recordPath = null, trioRecords = [], forwardRecords = trioRecords, cohort = null, cohortBytes, quarantine = null, controlTailAuthorization = null, publication = null, publicationClosureValid = false } = {}) {
+export function validatePrepublicationPrTail(r, { root = process.cwd(), head = "HEAD", recordPath = null, trioRecords = [], forwardRecords = trioRecords, cohort = null, cohortBytes, quarantine = null, controlTailAuthorization = null, publication = null, publicationClosureValid = false, history = null } = {}) {
   const a = []; if (r?.timing !== "pre-publication") return a;
   if (publicationClosureValid) {
     let sealedPaths;
-    try { sealedPaths = sealedQualificationPathsAtTransitionBase(root); }
+    try {
+      history = matchingHistory(history, root, head);
+      if (history) head = history.head;
+      sealedPaths = history ? history.sealedPaths() : sealedQualificationPathsAtTransitionBase(root);
+    }
     catch (error) { fail(a, "forward-record-history", error instanceof Error ? error.message : "sealed predecessor paths could not be resolved."); return a; }
     let path;
     try { path = recordPath ?? qualificationPath(root, r.candidate); }
@@ -826,7 +892,7 @@ export function validatePrepublicationPrTail(r, { root = process.cwd(), head = "
     if (sealedPaths.has(path)) return a;
     try { execFileSync("git", ["merge-base", "--is-ancestor", r.reviewedCommit, head], { cwd: root, stdio: "ignore" }); }
     catch { fail(a, "reviewed-ancestor", "not ancestor"); return a; }
-    return validateForwardQualificationIntroduction(r, { root, head, trioRecords: forwardRecords, sealedPaths });
+    return validateForwardQualificationIntroduction(r, { root, head, trioRecords: forwardRecords, sealedPaths, history });
   }
   try { execFileSync("git", ["merge-base", "--is-ancestor", r.reviewedCommit, head], { cwd: root, stdio: "ignore" }); }
   catch { fail(a, "reviewed-ancestor", "not ancestor"); return a; }
