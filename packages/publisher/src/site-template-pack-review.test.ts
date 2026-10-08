@@ -1113,6 +1113,7 @@ describe("the record-section loaders in site-records", () => {
     ]) {
       expect(records, name).toMatch(new RegExp(`export function ${name}\\(\\): unknown \\{\\s*return JSON\\.parse\\(readFileSync\\(packRecordPath\\(${path.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\), "utf8"\\)\\);`));
     }
+    expect(records).toMatch(/import \{ readBrandCss \} from "@clossys\/designer\/tokens\/server"/);
     expect(records).toMatch(/readBrandCss\(packRecordPath\("designer", "brand\.css"\)\)/);
     expect(records).not.toMatch(/import [^;]*(contract|brief|voice)\.json/);
     expect(records).not.toMatch(/import [^;]*brand\.css/);

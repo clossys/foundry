@@ -567,9 +567,6 @@
         "parity.test.ts",
         "theme-parity.test.ts"
       ],
-      "src/tokens/read-brand-css.ts": [
-        "scripts/check-public-safety.mjs"
-      ],
       "src/tokens/tokens.ts": [
         "parity.test.ts",
         "src/theme-parity.test.ts"

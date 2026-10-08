@@ -35,6 +35,10 @@
       "types": "./dist/tokens/index.d.ts",
       "import": "./dist/tokens/index.js"
     },
+    "./tokens/server": {
+      "types": "./dist/tokens/server.d.ts",
+      "import": "./dist/tokens/server.js"
+    },
     "./tokens.css": "./styles/tokens.css",
     "./theme.css": "./styles/theme.css",
     "./theme-keys.css": "./styles/theme-keys.css",

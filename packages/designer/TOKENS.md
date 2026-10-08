@@ -456,6 +456,9 @@ prefix — never inside a fork of this package's namespace.
 
 The CSS is the primary artifact; this is the JS/TS half, for code that
 wants a token's name or default value without parsing CSS.
+`@clossys/designer/tokens` is browser-safe; Node file reading and installed-peer
+checks use `@clossys/designer/tokens/server` instead. This is a deliberate
+import migration in the pending minor release, unavailable in published `0.7.1`.
 
 | Export | Kind | Purpose |
 | --- | --- | --- |
@@ -470,13 +473,9 @@ wants a token's name or default value without parsing CSS.
 | `BrandFileCoverageFindingRule` | type | `"uncovered-brandable-slot" \| "unknown-slot" \| "non-brandable-override"`. |
 | `BrandFileCoverageUnchecked` | type | `{ key, reason }` — a declaration key `checkBrandFileCoverage` could not classify at all. |
 | `BrandFileCoverageFailureReason` | type | `"nothing-to-check" \| "coverage-gap"` — why `BrandFileCoverageReport.ok` is `false`, when it is. |
-| `readBrandCss` | function | `(path) => BrandCssReadResult` — reads and parses a real `.css` file's custom-property declarations. See "Checking a real brand.css", below. |
 | `parseBrandDeclarations` | function | `(css) => ParsedBrandCss` — the pure, no-I/O half of `readBrandCss`, for CSS text already in hand. |
-| `BrandCssReadResult` | type | `{ path, declarations, unchecked, issues, complete }` — `readBrandCss`'s return shape. |
 | `ParsedBrandCss` | type | `{ declarations, unchecked }` — `parseBrandDeclarations`'s return shape. |
 | `BrandCssUnchecked` | type | `{ line, detail }` — one region of CSS the reader recognized but could not resolve into a declaration. |
-| `BrandCssReadIssue` | type | `{ reason, detail }` — why `readBrandCss` could not read `path` at all. |
-| `BrandCssReadIssueReason` | type | `"unreadable"` — the closed set of `BrandCssReadIssue.reason` values. |
 | `contrastRatio` | function | `(a, b, compositeBackground?) => number` — the real WCAG contrast ratio between two CSS color values (`oklch(...)` or a 6-digit hex), each optionally translucent. |
 | `luminanceOf` | function | `(value, backgroundValue?) => number` — the relative luminance of one CSS color value, compositing over `backgroundValue` first if it carries alpha < 1. |
 | `oklchToLinearSRGB` | function | `(color: Oklch) => readonly [number, number, number]` — OKLCH -> linear sRGB. |
@@ -507,6 +506,19 @@ const surfaceRaised = TOKENS["--color-surface-raised"];
 console.log(surfaceRaised.value, surfaceRaised.brandable); // "oklch(1 0 0)" true
 ```
 
+### Node-only API (`@clossys/designer/tokens/server`)
+
+These file-reading exports moved from `tokens`. The peer-version check is also
+an explicit Node-only import; importing the entry does not call either helper.
+
+| Export | Kind | Purpose |
+| --- | --- | --- |
+| `readBrandCss` | function | `(path) => BrandCssReadResult` — reads and parses a real `.css` file's custom-property declarations. See "Checking a real brand.css", below. |
+| `BrandCssReadResult` | type | `{ path, declarations, unchecked, issues, complete }` — `readBrandCss`'s return shape. |
+| `BrandCssReadIssue` | type | `{ reason, detail }` — why `readBrandCss` could not read `path` at all. |
+| `BrandCssReadIssueReason` | type | `"unreadable"` — the closed set of `BrandCssReadIssue.reason` values. |
+| `assertTailwindMergeVersion` | function | Checks the installed optional `tailwind-merge` peer version when explicitly called from Node tooling. See README Setup. |
+
 ## Checking a real brand.css
 
 `TOKENS` and `styles/brand-template.css` are a vocabulary and a template —
@@ -518,7 +530,8 @@ contract package in this ecosystem ships (`@example/copy/voice`'s
 `@example/strategy`'s `checkFactsTraceability`):
 
 ```ts
-import { checkBrandFileCoverage, readBrandCss } from "@clossys/designer/tokens";
+import { checkBrandFileCoverage } from "@clossys/designer/tokens";
+import { readBrandCss } from "@clossys/designer/tokens/server";
 
 const { declarations, unchecked } = readBrandCss("src/styles/brand.css");
 const report = checkBrandFileCoverage(declarations);
@@ -590,7 +603,8 @@ comparing it against a similar one:
 
 ## Requirements
 
-Node 20+. ESM only. No runtime dependencies.
+Node 20+ for `tokens/server` and the CLIs. The pure `tokens` entry also works
+in browser bundles. ESM only. No runtime dependencies.
 
 ## Licence
 
