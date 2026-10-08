@@ -510,13 +510,17 @@ describe("AuthView", () => {
     expect(within(footer).getByRole("link", { name: "Terms" })).toHaveAttribute("href", "/terms");
   });
 
-  it("drops a stray internalNote key so it never reaches the root element, framed or legacy", () => {
-    const stray = { internalNote: { label: "Internal", message: "Keys are not set." } } as Record<string, unknown>;
-    const framed = renderToStaticMarkup(<AuthView heading="Sign in" description="Welcome back." form={<div>f</div>} {...stray} />);
-    const legacy = renderToStaticMarkup(<AuthView brand="Acme" heading="Sign in" description="Welcome back." form={<div>f</div>} {...stray} />);
+  it("accepts the deprecated internalNote and renders nothing from it, framed or legacy", () => {
+    const note = { label: "Internal badge", message: "Keys are not set." };
+    const framed = renderToStaticMarkup(<AuthView heading="Sign in" description="Welcome back." form={<div>f</div>} internalNote={note} />);
+    const legacy = renderToStaticMarkup(<AuthView brand="Acme" heading="Sign in" description="Welcome back." form={<div>f</div>} internalNote={note} />);
+    const withoutNote = renderToStaticMarkup(<AuthView heading="Sign in" description="Welcome back." form={<div>f</div>} />);
     for (const html of [framed, legacy]) {
       expect(html).not.toMatch(/internalnote/i);
+      expect(html).not.toContain("Internal badge");
       expect(html).not.toContain("Keys are not set.");
     }
+    // The framed markup is identical to a call without the prop.
+    expect(framed).toBe(withoutNote);
   });
 });

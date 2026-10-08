@@ -146,6 +146,13 @@ export interface AuthViewProps extends HTMLAttributes<HTMLDivElement> {
    * default links and no copy.
    */
   footerSecondary?: ReactNode;
+  /**
+   * @deprecated Accepted and ignored for one release, then removed: nothing
+   * renders, on the frame or the legacy page. A page shows no developer text;
+   * report a missing sign-in provider setting in the server log instead (see
+   * the README). Delete the prop from the call site.
+   */
+  internalNote?: { label: string; message: ReactNode };
   /** Merged onto the outer element's inline style, after this component's own. */
   style?: CSSProperties;
 }
@@ -191,14 +198,12 @@ export function AuthView({
   footnote,
   isDisabled,
   footerSecondary,
+  // Deprecated and ignored: taken out of `rest` so it never reaches the root element.
+  internalNote: _ignoredInternalNote,
   className,
   style,
-  ...restWithStray
+  ...rest
 }: AuthViewProps) {
-  // `internalNote` was removed from this view. A host still spreading it
-  // would otherwise see the key land on the root element, so drop it for
-  // this release.
-  const { internalNote: _strayInternalNote, ...rest } = restWithStray as typeof restWithStray & { internalNote?: unknown };
   if (notes !== undefined && secondaryAction !== undefined) {
     throw new Error("AuthView takes notes or its deprecated name secondaryAction, not both.");
   }

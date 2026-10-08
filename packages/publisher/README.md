@@ -348,8 +348,11 @@ Name a shipped template when its slots cover the page:
   closed six kinds (`hero`, `feature-grid`, `faq`, `ordered-step-sequence`,
   `status-list`, `stat-grid`).
 - **`AuthView`** — one shell for every authentication step (sign-in, sign-up,
-  password reset, verification): site header, page header, the form inside
-  Designer's `Card`, and site footer. The card holds only the form;
+  password reset, verification): the page header and the form inside
+  Designer's `Card`, rendered chrome-free inside a
+  [`SiteFrame`](#site-frame--siteframe); any deprecated chrome prop selects
+  the legacy page, which adds Designer's site header and site footer. The
+  card holds only the form;
   `notes` (the alternate-step lines, such as "Forgot password?" or
   "No account? Join the waitlist") renders below it, before the footnote, and
   is always the site's copy. `secondaryAction` is the deprecated name of
@@ -371,7 +374,9 @@ Name a shipped template when its slots cover the page:
   (for the Clerk adapter, `createClerkSignInPage` in
   `@clossys/bouncer/providers/clerk/web/server` names the missing settings
   there, never their values), and the page shows only the user-facing
-  unavailable message. An auth page's
+  unavailable message. `internalNote` is deprecated: it is still accepted,
+  with its earlier `{ label, message }` shape, for one release and renders
+  nothing; delete it from the call site. An auth page's
   `footerSecondary` holds a legal row only, never a locale switcher, because
   auth pages are single-locale. `SignInForm` fills the
   form slot of a sign-in page. The header slots are listed under

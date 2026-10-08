@@ -2,4 +2,4 @@
 publisher: minor
 ---
 
-Remove the `internalNote` prop from `AuthView`: the page no longer renders a developer-only line, and a host that passed `internalNote` drops the prop and reports a missing sign-in provider setting in its server log instead.
+Deprecate `AuthView`'s `internalNote` prop: it is still accepted with its `{ label, message }` shape for one release but renders nothing on the frame or the legacy page, so a host drops it and reports a missing sign-in provider setting in its server log instead.
