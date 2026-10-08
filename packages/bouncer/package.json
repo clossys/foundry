@@ -95,7 +95,7 @@
     "next": ">=16 <17",
     "react": ">=19 <20",
     "react-dom": ">=19 <20",
-    "svix": "^1.96.0"
+    "svix": "^2.6.2"
   },
   "peerDependenciesMeta": {
     "@clerk/nextjs": {
@@ -122,7 +122,7 @@
     "next": "16.3.8",
     "react": "19.3.0",
     "react-dom": "19.3.0",
-    "svix": "^1.96.0",
+    "svix": "^2.6.2",
     "typescript": "~6.0.0",
     "vitest": "^5.0.1"
   },
