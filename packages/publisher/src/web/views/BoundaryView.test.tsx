@@ -6,12 +6,13 @@ import { join } from "node:path";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, describe, expect, it } from "vitest";
 import { cleanup, render, screen, within } from "@testing-library/react";
+import { Home, Settings } from "@clossys/designer/icons";
 import { SiteFooter, SiteHeader } from "@clossys/designer/shell/server";
 import { BoundaryView } from "./BoundaryView.js";
 
 afterEach(cleanup);
 
-const ALLOWED_IMPORT = /^(react|@clossys\/designer\/.+\/server|\.\/ErrorView\.js|\.\.\/internal\/viewChromeGround\.js)$/;
+const ALLOWED_IMPORT = /^(react|@clossys\/designer\/.+\/server|\.\/ErrorView\.js|\.\.\/internal\/PageLayout\.js|\.\.\/internal\/viewChromeGround\.js|\.\.\/internal\/viewContentRoot\.js)$/;
 
 /**
  * Every module specifier named by an `import` statement (bare, type, or
@@ -56,32 +57,61 @@ describe("BoundaryView", () => {
     expect(within(children[1] as HTMLElement).getByRole("heading", { level: 1 })).toBe(headings[0]);
   });
 
-  it("height handoff: the outer element owns min-h-dvh and the ErrorView fills <main>", () => {
-    const { container } = renderBoundary();
-    const root = container.firstElementChild as HTMLElement;
-    expect(root).toHaveClass("min-h-dvh");
-
+  it("body structure: a page header block (status <h1>, title <h2>, description), then the action in a card, then the notes", () => {
+    const { container } = renderBoundary({ notes: <a href="/support">Contact support</a> });
     const main = container.querySelector("main") as HTMLElement;
-    const errorRoot = main.firstElementChild as HTMLElement;
-    expect(errorRoot).toContainElement(screen.getByRole("heading", { level: 1 }));
-    expect(errorRoot).toHaveClass("min-h-0");
-    expect(errorRoot).toHaveClass("flex-1");
-    expect(errorRoot).not.toHaveClass("min-h-dvh");
+    const blocks = [...main.children] as HTMLElement[];
+    expect(blocks).toHaveLength(3);
+    const [headerBlock, card, notes] = blocks as [HTMLElement, HTMLElement, HTMLElement];
+    expect(headerBlock.children[0]?.tagName).toBe("H1");
+    expect(headerBlock.children[0]).toHaveTextContent("500");
+    expect(headerBlock.children[1]?.tagName).toBe("H2");
+    expect(headerBlock.children[1]).toHaveTextContent("Something went wrong");
+    expect(headerBlock.children[2]).toHaveTextContent("Please try again.");
+    expect(card).toHaveClass("rounded-control");
+    expect(card).toContainElement(screen.getByRole("button", { name: "Try again" }));
+    expect(card.children).toHaveLength(1);
+    expect(notes).toContainElement(screen.getByRole("link", { name: "Contact support" }));
+    expect(notes.className).toContain("flex flex-col gap-xs text-body-s text-ink-secondary");
   });
 
-  it("merges a caller className onto the ErrorView root and the rest props too", () => {
+  it("omits the card when there is no action and the notes block when there are no notes", () => {
+    const { container } = renderBoundary({ action: undefined });
+    const main = container.querySelector("main") as HTMLElement;
+    expect(main.children).toHaveLength(1);
+    expect(main.querySelector(".rounded-control")).toBeNull();
+  });
+
+  it("omits the notes block when notes are empty: an empty list, an empty string or a boolean", () => {
+    for (const notes of [[], "", false]) {
+      const { container, unmount } = renderBoundary({ action: undefined, notes });
+      const main = container.querySelector("main") as HTMLElement;
+      expect(main.children).toHaveLength(1);
+      unmount();
+    }
+  });
+
+  it("shares AuthView's form-measure column with no raw-length fallback", () => {
+    const { container } = renderBoundary();
+    const main = container.querySelector("main") as HTMLElement;
+    expect(main.style.maxWidth).toBe("var(--ui-width-form-max, none)");
+    expect(main.style.maxWidth).not.toMatch(/rem|px/);
+  });
+
+  it("the outer element owns min-h-dvh and takes a caller className, style and the rest props (break: they no longer reach an ErrorView root)", () => {
     const { container } = renderBoundary({
       className: "bg-surface-raised",
       style: { color: "red" },
-      "data-testid": "boundary-error",
+      "data-testid": "boundary-root",
     } as never);
-    const errorRoot = screen.getByTestId("boundary-error");
-    expect(errorRoot).toHaveClass("bg-surface-raised", "min-h-0", "flex-1");
-    expect(errorRoot).toHaveStyle({ color: "rgb(255, 0, 0)" });
-    expect(container.firstElementChild).not.toHaveAttribute("data-testid");
+    const root = screen.getByTestId("boundary-root");
+    expect(root).toBe(container.firstElementChild);
+    expect(root).toHaveClass("bg-surface-raised", "min-h-dvh", "flex-col");
+    expect(root).toHaveStyle({ color: "rgb(255, 0, 0)" });
+    expect(container.querySelector("main")?.querySelector("[data-testid]")).toBeNull();
   });
 
-  it("forwarding: status, title, description and action reach the ErrorView; brand and footerSecondary reach the frame", () => {
+  it("forwarding: status, title, description and action reach <main>; brand and footerSecondary reach the frame", () => {
     const { container } = renderBoundary({
       footerSecondary: <a href="/status">Service status</a>,
     });
@@ -129,7 +159,7 @@ describe("BoundaryView", () => {
     expect(html).toContain("</main>" + renderToStaticMarkup(<SiteFooter ground="transparent" />) + "</div>");
   });
 
-  it("imports only react, @clossys/designer/*/server, ./ErrorView.js and ../internal/viewChromeGround.js (no router, no hooks)", () => {
+  it("imports only react, @clossys/designer/*/server, ./ErrorView.js, ../internal/viewChromeGround.js and ../internal/viewContentRoot.js (no router, no hooks)", () => {
     const source = readFileSync(join(import.meta.dirname, "BoundaryView.tsx"), "utf8");
     const specifiers = moduleSpecifiers(source);
     expect(specifiers.length).toBeGreaterThan(0);
@@ -149,5 +179,41 @@ describe("BoundaryView", () => {
     ].join("\n");
     const offenders = moduleSpecifiers(sample).filter((specifier) => !ALLOWED_IMPORT.test(specifier));
     expect(offenders).toEqual(["react-router", "@clossys/designer/shell", "some-auth-provider"]);
+  });
+
+  it("one front-door shell: environment links in the banner, one <h1>, one top-level banner, one contentinfo holding SiteFooter.Legal", () => {
+    const { container } = renderBoundary({
+      status: 404,
+      title: "Page not found",
+      headerAction: (
+        <>
+          <SiteHeader.ActionLink href="https://app.example.com/" label="App" icon={Home} isCurrent />
+          <SiteHeader.ActionLink href="https://admin.example.com/" label="Admin" icon={Settings} />
+        </>
+      ),
+      footerSecondary: (
+        <SiteFooter.Legal
+          entity="Acme"
+          links={[
+            { label: "Privacy", href: "/privacy" },
+            { label: "Terms", href: "/terms" },
+          ]}
+        />
+      ),
+    });
+    const root = container.firstElementChild as HTMLElement;
+    const topLevelHeaders = [...root.querySelectorAll("header")].filter((header) => header.closest("main") === null);
+    expect(topLevelHeaders).toHaveLength(1);
+    const banner = topLevelHeaders[0] as HTMLElement;
+    const app = within(banner).getByRole("link", { name: "App" });
+    const admin = within(banner).getByRole("link", { name: "Admin" });
+    expect(app).toHaveAttribute("aria-current", "true");
+    expect(admin).not.toHaveAttribute("aria-current");
+    expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
+    const footers = screen.getAllByRole("contentinfo");
+    expect(footers).toHaveLength(1);
+    expect(within(footers[0] as HTMLElement).getByText(/^© \d{4} Acme$/)).toBeInTheDocument();
+    expect(within(footers[0] as HTMLElement).getByRole("link", { name: "Privacy" })).toHaveAttribute("href", "/privacy");
+    expect(within(footers[0] as HTMLElement).getByRole("link", { name: "Terms" })).toHaveAttribute("href", "/terms");
   });
 });

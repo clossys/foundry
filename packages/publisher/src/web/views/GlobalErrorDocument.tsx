@@ -1,6 +1,6 @@
 import type { ReactElement } from "react";
 import { formatPageTitle } from "../siteMetadata.js";
-import { ErrorView } from "./ErrorView.js";
+import { ErrorViewBody } from "./ErrorView.js";
 import type { ErrorViewProps } from "./ErrorView.js";
 
 export interface GlobalErrorDocumentProps extends Omit<ErrorViewProps, "lang"> {
@@ -30,7 +30,9 @@ export interface GlobalErrorDocumentProps extends Omit<ErrorViewProps, "lang"> {
  *
  * The head carries a title (`formatPageTitle`), a `noindex, nofollow` robots
  * meta and one icon link. The body is an `ErrorView` receiving every prop
- * other than `lang`, `documentTitle`, `icon` and `htmlClassName`. A diagnostic reference such as
+ * other than `lang`, `documentTitle`, `icon` and `htmlClassName`. Unlike `ErrorView`
+ * inside a `SiteFrame`, it does not refuse a landmark `role` on the content root: the
+ * document has no frame and no `<main>`. A diagnostic reference such as
  * a digest belongs in `description` as caller copy
  * (`Error: <digest>.`); there is no digest prop.
  *
@@ -62,7 +64,7 @@ export function GlobalErrorDocument({
         <link rel="icon" href={icon.href} type={icon.type} />
       </head>
       <body>
-        <ErrorView {...errorViewProps} />
+        <ErrorViewBody {...errorViewProps} />
       </body>
     </html>
   );

@@ -1,4 +1,4 @@
-import type { FrontDoorResolver } from "../frontDoorFormSupport.js";
+import { useFocusRequest, type FrontDoorResolver } from "../frontDoorFormSupport.js";
 import { useEffect, useId, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import type { FrontDoorKey, FrontDoorNouns } from "@clossys/writer";
@@ -38,8 +38,8 @@ export interface SignInFormProps {
   resendCode?: () => Promise<SignInResult>;
   /**
    * Keeps the form on screen with the unavailable notice in its alert from the
-   * first render, and its submit and resend controls disabled; no handler is
-   * called. Pair it with `AuthView`'s `isDisabled`.
+   * first render, and its fields and its submit, resend and back controls
+   * disabled; no handler is called. Pair it with `AuthView`'s `isDisabled`.
    */
   unavailable?: boolean;
   /** Called once, after `verify` or `verifyCode` answers `ok`. Navigation is the caller's. */
@@ -109,25 +109,26 @@ export function createSignInForm(resolveCopy: FrontDoorResolver) {
    * step it cannot finish.
    *
    * What it guarantees: nothing is validated before a submit or on blur, and an
-   * empty submit shows its notice inline and calls no handler; `credential` and
-   * `notFound` show inline on the step's own field (the identify step reads
-   * both as "no account", the password step as "wrong password", the code step
-   * as "wrong or expired code"), and `rateLimited`, `locked`, `network` and
-   * `unavailable` show in the form's one `submitError` alert, so a failure is
-   * never shown twice; an inline error clears when its field changes; the
-   * submit and resend buttons are pending, never `disabled`, while a call is in
-   * flight, and a second submit or resend is ignored; a resend that answers
-   * `ok` clears the code and its error, and a failed one shows in the alert and
-   * keeps the step; after `verify` or `verifyCode` answers `ok` the button stays
-   * pending and `onSignedIn` is called once; a handler that throws, or answers
-   * anything outside `SignInResult`, reads as `unavailable`; the one back
-   * control returns to the identifier step with the identifier kept and the
-   * password and code cleared; a step change moves focus to the new step's
-   * field; `unavailable` shows its notice from the first render, disables the
-   * submit and resend buttons and calls nothing, and keeps the form on screen;
-   * and every visible word is resolved through `resolveFrontDoorCopy`, so
-   * incomplete `nouns` throw `RenderError` `resolution-failed` on render,
-   * naming the id and never a noun.
+   * empty submit shows its notice inline, moves focus to the step's field and
+   * calls no handler; `credential` and `notFound` show inline on the step's own
+   * field, which takes focus (the identify step reads both as "no account", the
+   * password step as "wrong password", the code step as "wrong or expired
+   * code"), and `rateLimited`, `locked`, `network` and `unavailable` show in
+   * the form's one `submitError` alert, so a failure is never shown twice; an
+   * inline error clears when its field changes; the submit and resend buttons
+   * are pending, never `disabled`, while a call is in flight, and a second
+   * submit or resend is ignored; a resend that answers `ok` clears the code and
+   * its error and moves focus to the code field, and a failed one shows in the
+   * alert and keeps the step; after `verify` or `verifyCode` answers `ok` the
+   * button stays pending and `onSignedIn` is called once; a handler that
+   * throws, or answers anything outside `SignInResult`, reads as `unavailable`;
+   * the one back control returns to the identifier step with the identifier
+   * kept and the password and code cleared; a step change moves focus to the
+   * new step's field; `unavailable` shows its notice from the first render,
+   * disables the fields and the submit, resend and back controls and calls
+   * nothing, and keeps the form on screen; and every visible word is resolved
+   * through `resolveFrontDoorCopy`, so incomplete `nouns` throw `RenderError`
+   * `resolution-failed` on render, naming the id and never a noun.
    *
    * What it does not do: no passkey, SSO, sign-up or one-time-code first
    * factor, no redirect, no resend cooldown, and no password reset link.
@@ -148,6 +149,7 @@ export function createSignInForm(resolveCopy: FrontDoorResolver) {
     const signedIn = useRef(false);
     const previousStep = useRef<Step>("identify");
     const fieldId = useId();
+    const focus = useFocusRequest(fieldId);
 
     // A step change, not the first render, moves focus to the new step's field.
     useEffect(() => {
@@ -212,6 +214,7 @@ export function createSignInForm(resolveCopy: FrontDoorResolver) {
       if (value === "") {
         setAlertNotice(null);
         setFieldNotice(REQUIRED_FOR_STEP[step]);
+        focus(step);
         return;
       }
 
@@ -239,6 +242,7 @@ export function createSignInForm(resolveCopy: FrontDoorResolver) {
         setStep("code");
       } else if (status === "credential" || status === "notFound") {
         setFieldNotice(FIELD_ERROR_FOR_STEP[step]);
+        focus(step);
       } else {
         // Anything else, including a stray `needsCode` or a status outside the union, is a failure to sign in, never silence.
         setAlertNotice(alertFor(status));
@@ -259,6 +263,7 @@ export function createSignInForm(resolveCopy: FrontDoorResolver) {
       if (status === "ok") {
         setCode("");
         setFieldNotice(null);
+        focus("code");
       } else {
         setAlertNotice(alertFor(status));
       }
@@ -268,7 +273,7 @@ export function createSignInForm(resolveCopy: FrontDoorResolver) {
 
     // The code needs no clearing here: entering the code step always starts it empty.
     function changeIdentifier() {
-      if (inFlight.current) return;
+      if (inFlight.current || handlers.current.unavailable) return;
       setSecret("");
       setFieldNotice(null);
       setAlertNotice(null);
@@ -301,6 +306,7 @@ export function createSignInForm(resolveCopy: FrontDoorResolver) {
               setIdentifier(value);
               setFieldNotice(null);
             }}
+            isDisabled={unavailable}
             isInvalid={fieldError !== undefined}
             errorMessage={fieldError}
             validationBehavior="aria"
@@ -310,7 +316,7 @@ export function createSignInForm(resolveCopy: FrontDoorResolver) {
     }
 
     const back = (
-      <Button type="button" variant="ghost" onPress={changeIdentifier}>
+      <Button type="button" variant="ghost" onPress={changeIdentifier} isDisabled={unavailable}>
         {text.passwordSecondary}
       </Button>
     );
@@ -347,6 +353,7 @@ export function createSignInForm(resolveCopy: FrontDoorResolver) {
               setCode(value);
               setFieldNotice(null);
             }}
+            isDisabled={unavailable}
             isInvalid={fieldError !== undefined}
             errorMessage={fieldError}
             validationBehavior="aria"
@@ -382,6 +389,7 @@ export function createSignInForm(resolveCopy: FrontDoorResolver) {
             setSecret(value);
             setFieldNotice(null);
           }}
+          isDisabled={unavailable}
           isInvalid={fieldError !== undefined}
           errorMessage={fieldError}
           validationBehavior="aria"

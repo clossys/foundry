@@ -87,20 +87,21 @@ export function createResetForm(resolveCopy: FrontDoorResolver) {
    * `notFound` shows inline on the field; on the second step `credential` shows
    * inline on the code field and `weakPassword` inline on the new password
    * field; `rateLimited`, `locked`, `network` and `unavailable` show in the
-   * form's one `submitError` alert, so a failure is never shown twice. An answer
-   * that makes no sense for the call (`credential` or `weakPassword` from
-   * `request`, `notFound` from `reset`, anything but the alert failures from
-   * `resendCode`) reads as `unavailable`, as does a handler that throws or
-   * answers outside `ResetResult`. An inline error clears when its field
-   * changes; the submit button is pending, never `disabled`, while a call is in
-   * flight and a second submit is ignored; after `reset` answers `ok` the button
-   * stays pending and `onReset` is called once; a `request` answer of `ok` moves
-   * focus to the code field; the one ghost control returns to the identifier
-   * step with the identifier kept and the code and password cleared; with
-   * `unavailable` set the form stays visible, disabled, with the unavailable
-   * notice, and calls nothing; and every visible word is resolved through
-   * `resolveFrontDoorCopy`, so incomplete `nouns` throw `RenderError`
-   * `resolution-failed` on render, naming the id and never a noun.
+   * form's one `submitError` alert, so a failure is never shown twice, and the
+   * field that shows an inline answer takes focus. An answer that makes no
+   * sense for the call (`credential` or `weakPassword` from `request`,
+   * `notFound` from `reset`, anything but the alert failures from `resendCode`)
+   * reads as `unavailable`, as does a handler that throws or answers outside
+   * `ResetResult`. An inline error clears when its field changes; the submit
+   * button is pending, never `disabled`, while a call is in flight and a second
+   * submit is ignored; after `reset` answers `ok` the button stays pending and
+   * `onReset` is called once; a `request` answer of `ok` moves focus to the
+   * code field; the one ghost control returns to the identifier step with the
+   * identifier kept and the code and password cleared; with `unavailable` set
+   * the form stays visible, disabled, with the unavailable notice, and calls
+   * nothing; and every visible word is resolved through `resolveFrontDoorCopy`,
+   * so incomplete `nouns` throw `RenderError` `resolution-failed` on render,
+   * naming the id and never a noun.
    *
    * What it does not do: no sign-in after the reset, no redirect, and no link
    * back to sign-in; those belong to the page.
@@ -168,6 +169,7 @@ export function createResetForm(resolveCopy: FrontDoorResolver) {
           focus("code");
         } else if (status === "notFound") {
           setFieldNotices({ identifier: "front-door.identifier-not-found.notice" });
+          focus("identifier");
         } else {
           showAlert(status);
         }
@@ -206,7 +208,7 @@ export function createResetForm(resolveCopy: FrontDoorResolver) {
 
     async function resend() {
       const send = handlers.current.resendCode;
-      if (send === undefined || inFlight.current) return;
+      if (send === undefined || handlers.current.unavailable || inFlight.current) return;
       const status = await call("resend", send);
       if (status === "ok") {
         setCode("");

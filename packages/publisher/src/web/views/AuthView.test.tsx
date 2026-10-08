@@ -8,11 +8,16 @@ import { describe, expect, it, vi } from "vitest";
 import { cleanup, render, screen, within } from "@testing-library/react";
 import { afterEach } from "vitest";
 import userEvent from "@testing-library/user-event";
+import { renderToStaticMarkup } from "react-dom/server";
+import { Home, Settings } from "@clossys/designer/icons";
+import { SiteFooter, SiteHeader } from "@clossys/designer/shell/server";
+import { FRONT_DOOR_COPY_EN } from "@clossys/writer";
 import { AuthView } from "./AuthView.js";
+import { SignInForm } from "./SignInForm.js";
 
 afterEach(cleanup);
 
-const ALLOWED_IMPORT = /^(react|@clossys\/designer\/.+)$/;
+const ALLOWED_IMPORT = /^(react|@clossys\/designer\/.+|\.\.\/internal\/PageLayout\.js|\.\.\/internal\/viewChromeGround\.js|\.\.\/internal\/viewContentRoot\.js)$/;
 
 /**
  * Every module specifier named by an `import` statement (bare, type, or
@@ -60,15 +65,16 @@ describe("AuthView", () => {
     expect(main.style.maxWidth).not.toMatch(/rem|px/);
   });
 
-  it("description under heading: the description is the element directly after the <h1> inside the page header", () => {
+  it("description under heading: the description is the element directly after the <h1> inside the title block", () => {
     render(<AuthView brand="Acme" heading="Sign in" description="Welcome back." form={<div>form</div>} />);
     const h1 = screen.getByRole("heading", { level: 1 });
     const next = h1.nextElementSibling as HTMLElement;
     expect(next).not.toBeNull();
     expect(next).toHaveTextContent("Welcome back.");
-    const pageHeader = h1.closest("header") as HTMLElement;
-    expect(pageHeader.closest("main")).not.toBeNull();
-    expect(pageHeader).toContainElement(next);
+    const titleBlock = h1.parentElement as HTMLElement;
+    expect(titleBlock.tagName).toBe("DIV");
+    expect(titleBlock.closest("main")).not.toBeNull();
+    expect(titleBlock).toContainElement(next);
   });
 
   it("renders the brand slot's content inside the site header banner", () => {
@@ -108,7 +114,7 @@ describe("AuthView", () => {
     expect(within(screen.getByRole("contentinfo")).getByText("Support line")).toBeInTheDocument();
   });
 
-  it("imports only react and @clossys/designer/* (no auth provider)", () => {
+  it("imports only react, @clossys/designer/*, the shared page layout, the chrome-ground type and the content-root guard (no auth provider)", () => {
     const source = readFileSync(join(import.meta.dirname, "AuthView.tsx"), "utf8");
     const specifiers = moduleSpecifiers(source);
     expect(specifiers.length).toBeGreaterThan(0);
@@ -158,7 +164,7 @@ describe("AuthView", () => {
     const line = link.closest("main > div") as HTMLElement;
     expect(line).not.toBeNull();
     expect(card.nextElementSibling).toBe(line);
-    expect(line.className).toContain("flex flex-col gap-xs text-body-s text-ink-secondary");
+    expect(line.className).toContain("flex flex-col items-center gap-xs text-center text-body-s text-ink-secondary");
     expect(line.nextElementSibling).toBe(screen.getByText("Terms apply."));
   });
 
@@ -254,34 +260,46 @@ describe("AuthView", () => {
     expect(container.querySelector("header")).not.toBeNull();
     expect(container.querySelector("footer")).not.toBeNull();
     expect(screen.queryByRole("link")).not.toBeInTheDocument();
-    // No internal note by default: Designer's Badge is the only `rounded-pill`
-    // element this view could render inside <main>.
     expect(screen.getByRole("main").querySelector(".rounded-pill")).toBeNull();
   });
 
-  it("internal note placement: the note is the element after the footnote, outside the card, led by a Badge with the label", () => {
-    const { container } = render(
-      <AuthView
-        brand="Acme"
-        heading="Sign in"
-        description="Welcome back."
-        form={<div>form</div>}
-        footnote="Terms apply."
-        internalNote={{ label: "Internal", message: "Use the test account." }}
-      />,
-    );
-    const footnote = screen.getByText("Terms apply.");
-    const note = footnote.nextElementSibling as HTMLElement;
-    expect(note).not.toBeNull();
-    expect(note.tagName).toBe("P");
-    expect(note.parentElement).toBe(screen.getByRole("main"));
-    expect(container.querySelector(".rounded-control")).not.toContainElement(note);
-    const badge = note.firstElementChild as HTMLElement;
-    expect(badge.className).toContain("rounded-pill");
-    expect(badge.textContent).toBe("Internal");
-    expect(note).toHaveTextContent("InternalUse the test account.");
-    expect(screen.getByRole("main").querySelectorAll(".rounded-pill")).toHaveLength(1);
-  });
+  it.each(["development", "production"])(
+    "provider settings missing, in %s: the form is disabled with the user-facing unavailable message and no developer text",
+    (nodeEnv) => {
+      vi.stubEnv("NODE_ENV", nodeEnv);
+      const unavailable = FRONT_DOOR_COPY_EN.entries.find((entry) => entry.id === "front-door.unavailable.notice")!.text;
+      const unavailableForm = (
+        <SignInForm unavailable nouns={{ surface: "Acme" }} identify={async () => ({ status: "ok" })} verify={async () => ({ status: "ok" })} onSignedIn={() => undefined} />
+      );
+      const legacy = render(
+        <AuthView
+          brand="Acme"
+          heading="Sign in"
+          description="Welcome back."
+          isDisabled
+          form={unavailableForm}
+        />,
+      );
+      const frameless = render(
+        <AuthView
+          heading="Sign in"
+          description="Welcome back."
+          isDisabled
+          form={unavailableForm}
+        />,
+      );
+      for (const container of [legacy.container, frameless.container]) {
+        const alerts = within(container).getAllByRole("alert");
+        expect(alerts).toHaveLength(1);
+        expect(alerts[0]).toHaveTextContent(unavailable);
+        expect(container.querySelector("fieldset")).toBeDisabled();
+        // Nothing but the page header, the card and the unavailable message: no badge and no developer line.
+        expect(container.querySelector(".rounded-pill")).toBeNull();
+        expect(container.textContent).not.toMatch(/\b(key|keys|setting|settings|restart|dev server|environment|internal)\b/i);
+      }
+      vi.unstubAllEnvs();
+    },
+  );
 
   it("puts the page heading above a card that holds the form, for sign-in and sign-up alike", () => {
     const { container, unmount } = render(
@@ -392,5 +410,117 @@ describe("AuthView", () => {
       />,
     );
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Sign in to Acme");
+  });
+
+  it("notes renders in the below-card block, in the same place secondaryAction always has", () => {
+    const { container } = render(
+      <AuthView brand="Acme" heading="Sign in" description="Welcome back." form={<div>form</div>} notes={<a href="/signup">Create an account</a>} footnote="Terms apply." />,
+    );
+    const link = screen.getByRole("link", { name: "Create an account" });
+    const card = container.querySelector(".rounded-control") as HTMLElement;
+    const line = link.closest("main > div") as HTMLElement;
+    expect(card.nextElementSibling).toBe(line);
+    expect(line.className).toContain("flex flex-col items-center gap-xs text-center text-body-s text-ink-secondary");
+    expect(line.nextElementSibling).toBe(screen.getByText("Terms apply."));
+  });
+
+  it("notes and its deprecated name secondaryAction render identical markup", () => {
+    const viaNotes = renderToStaticMarkup(<AuthView brand="Acme" heading="Sign in" description={null} form="form" notes={<a href="/x">X</a>} />);
+    const viaAlias = renderToStaticMarkup(<AuthView brand="Acme" heading="Sign in" description={null} form="form" secondaryAction={<a href="/x">X</a>} />);
+    expect(viaNotes).toBe(viaAlias);
+  });
+
+  it("throws when both notes and secondaryAction are passed", () => {
+    expect(() =>
+      renderToStaticMarkup(<AuthView brand="Acme" heading="Sign in" description={null} form="form" notes="a" secondaryAction="b" />),
+    ).toThrow(/notes or its deprecated name secondaryAction, not both/);
+  });
+
+  it("renders nav, headerSecondaryAction and headerAction inside the one top-level banner, in that order", () => {
+    const { container } = render(
+      <AuthView
+        brand="Acme"
+        heading="Sign in"
+        description="Welcome back."
+        form={<div>form</div>}
+        nav={<nav aria-label="Primary">NAV-SENTINEL</nav>}
+        headerSecondaryAction={<a href="/help">Help</a>}
+        headerAction={<a href="/contact">Contact us</a>}
+      />,
+    );
+    const root = container.firstElementChild as HTMLElement;
+    const topLevelHeaders = [...root.querySelectorAll("header")].filter((header) => header.closest("main") === null);
+    expect(topLevelHeaders).toHaveLength(1);
+    const banner = topLevelHeaders[0] as HTMLElement;
+    expect(within(banner).getByRole("navigation", { name: "Primary" })).toBeInTheDocument();
+    const secondary = within(banner).getByRole("link", { name: "Help" });
+    const primary = within(banner).getByRole("link", { name: "Contact us" });
+    expect(secondary.compareDocumentPosition(primary) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(screen.getByRole("main")).not.toHaveTextContent(/Help|Contact us|NAV-SENTINEL/);
+  });
+
+  it("passes ground to both the header and the footer, and keeps the bare chrome (with surfaceLabel) when every header slot is omitted", () => {
+    const bare = renderToStaticMarkup(<AuthView brand="Acme" surfaceLabel="demo" heading="Sign in" description={null} form="form" />);
+    expect(bare).toContain(renderToStaticMarkup(<SiteHeader brand="Acme" surfaceLabel="demo" />) + "<main");
+    expect(bare).toContain("</main>" + renderToStaticMarkup(<SiteFooter />) + "</div>");
+    const grounded = renderToStaticMarkup(<AuthView brand="Acme" heading="Sign in" description={null} form="form" ground="transparent" />);
+    expect(grounded).toContain(renderToStaticMarkup(<SiteHeader ground="transparent" brand="Acme" />) + "<main");
+    expect(grounded).toContain("</main>" + renderToStaticMarkup(<SiteFooter ground="transparent" />) + "</div>");
+  });
+
+  it("one front-door shell: environment links (icon-only accessible name, aria-current), one <h1>, one top-level banner, one contentinfo holding SiteFooter.Legal", () => {
+    const { container } = render(
+      <AuthView
+        brand={<a href="https://example.com/">Acme</a>}
+        heading="Sign in"
+        description="Welcome back."
+        form={<div>form</div>}
+        headerAction={
+          <>
+            <SiteHeader.ActionLink href="https://app.example.com/" label="App" icon={Home} isCurrent />
+            <SiteHeader.ActionLink href="https://admin.example.com/" label="Admin" icon={Settings} />
+          </>
+        }
+        footerSecondary={
+          <SiteFooter.Legal
+            entity="Acme"
+            links={[
+              { label: "Privacy", href: "/privacy" },
+              { label: "Terms", href: "/terms" },
+            ]}
+          />
+        }
+      />,
+    );
+    const root = container.firstElementChild as HTMLElement;
+    const topLevelHeaders = [...root.querySelectorAll("header")].filter((header) => header.closest("main") === null);
+    expect(topLevelHeaders).toHaveLength(1);
+    const banner = topLevelHeaders[0] as HTMLElement;
+    expect(within(banner).getByRole("link", { name: "Acme" })).toHaveAttribute("href", "https://example.com/");
+    const app = within(banner).getByRole("link", { name: "App" });
+    expect(app).toHaveAttribute("aria-current", "true");
+    expect(app.querySelector("svg")).toHaveAttribute("aria-hidden", "true");
+    expect(within(banner).getByRole("link", { name: "Admin" })).not.toHaveAttribute("aria-current");
+    expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
+    const footers = screen.getAllByRole("contentinfo");
+    expect(footers).toHaveLength(1);
+    const footer = footers[0] as HTMLElement;
+    expect(within(footer).getByText(/^© \d{4} Acme$/)).toBeInTheDocument();
+    expect(within(footer).getByRole("link", { name: "Privacy" })).toHaveAttribute("href", "/privacy");
+    expect(within(footer).getByRole("link", { name: "Terms" })).toHaveAttribute("href", "/terms");
+  });
+
+  it("accepts the deprecated internalNote and renders nothing from it, framed or legacy", () => {
+    const note = { label: "Internal badge", message: "Keys are not set." };
+    const framed = renderToStaticMarkup(<AuthView heading="Sign in" description="Welcome back." form={<div>f</div>} internalNote={note} />);
+    const legacy = renderToStaticMarkup(<AuthView brand="Acme" heading="Sign in" description="Welcome back." form={<div>f</div>} internalNote={note} />);
+    const withoutNote = renderToStaticMarkup(<AuthView heading="Sign in" description="Welcome back." form={<div>f</div>} />);
+    for (const html of [framed, legacy]) {
+      expect(html).not.toMatch(/internalnote/i);
+      expect(html).not.toContain("Internal badge");
+      expect(html).not.toContain("Keys are not set.");
+    }
+    // The framed markup is identical to a call without the prop.
+    expect(framed).toBe(withoutNote);
   });
 });
