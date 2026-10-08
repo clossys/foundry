@@ -49,7 +49,8 @@ text" below lists each known conflict.
    A withdrawal that fails is reported at the time and never left silent,
    so a grant that survives in storage was never presented as withdrawn.
    Storage that cannot be read is never permission. SDK work is off by
-   default and cancellable, and events are redacted. Pure roots never
+   default; a provider load that resolves after a withdrawal is discarded
+   and never initialized, and events are redacted. Pure roots never
    initialize an SDK or touch storage.
 
 ## Ownership
@@ -165,7 +166,8 @@ no in-memory choice and Global Privacy Control off.
   `expiryMonths` is not a whole number of at least 1.
 - **C-7 A record is live** when it parses and
   `isWithinWindow(new Date(decidedAt), new Date(expiresAt), now)` holds, so
-  the end instant is outside (C-40 caps `expiresAt` first). Its policy
+  the end instant is outside (C-40 caps `expiresAt` first), except for
+  C-40's future-dated denial, which is live until its capped `expiresAt`. Its policy
   version must also equal `policy.version`. A denial is the exception when
   `invalidateDenialOnPolicyBump` is `false`. A record that is expired,
   corrupt, of an unknown shape, or under another policy (subject to that
@@ -224,6 +226,8 @@ function parseStoredChoice(raw: unknown, policy: ConsentPolicy): StoredChoice | 
 function effectiveChoice(stored: StoredInput, signals: ConsentSignals, policy: ConsentPolicy, now: Date): EffectiveChoice;
 function isAllowed(stored: StoredInput, signals: ConsentSignals, regime: unknown, policy: ConsentPolicy, now: Date): boolean;
 function shouldPromptAutomatically(stored: StoredInput, signals: ConsentSignals, regime: unknown, policy: ConsentPolicy, now: Date): boolean;
+interface SequencedChoice { choice: StoredChoice; sequence: number }
+function shouldApplyEvidence(incoming: SequencedChoice, current: SequencedChoice | null): boolean; // C-41
 ```
 
 These functions are pure and safe to call before hydration. The lifecycle
@@ -264,18 +268,18 @@ interface ConsentLifecycle {
   getSnapshot(): ConsentSnapshot;   // stable identity until a change
   subscribe(listener: () => void): () => void;
   grant(): ConsentSnapshot;
-  refuse(): ConsentSnapshot;        // also withdraws when the prior snapshot was allowed
-  refresh(): ConsentSnapshot;       // re-read storage, re-evaluate against the clock
+  refuse(): ConsentSnapshot;        // a withdrawal when the prior snapshot or a read-back allows (C-13)
+  refresh(): ConsentSnapshot;       // a re-read under C-54
   dispose(): void;
 }
 function createConsentLifecycle(options: {
   storage: ConsentStoragePort;
-  evidence?: ConsentEvidencePort;
+  evidence?: ConsentEvidencePort | false | undefined; // false or absent: no evidence port
   policy: ConsentPolicy;
   regime: unknown;
   signals: ConsentSignals;
   clock: () => Date;
-  simulated?: boolean;              // review seam only (C-42)
+  simulated?: boolean | undefined;  // review seam only (C-42)
 }): ConsentLifecycle;
 const NO_DECISION_SNAPSHOT: ConsentSnapshot; // the server and pre-mount snapshot
 ```
@@ -294,10 +298,12 @@ A host that wants durable server-side evidence implements
 store.
 
 Transitions. `seq` is the lifecycle's in-memory decision counter. "Prior
-allowed" is the `allowed` field of the snapshot before the call.
-"Read-back" means reading storage again, parsing it, and evaluating
-`isAllowed` under the current regime and signals while ignoring the
-in-memory choice.
+allowed" is the `allowed` field of the snapshot before the call. A
+"read-back" reads storage again, parses it, and evaluates `isAllowed` under
+the current regime and signals while ignoring any in-memory choice; its
+result is `allowed`, `not allowed` or `unreadable`. An "in-memory choice"
+is the record `decideChoice` produced for a choice whose result was
+`persistence: "memory"`; it lasts for the visit (C-11, C-54).
 
 | From | Event | Effect | Result |
 | --- | --- | --- | --- |
@@ -305,40 +311,57 @@ in-memory choice.
 | mount | read `empty`, or a value that parses to no choice (C-7, C-10, C-40) | nothing rewritten | `none` |
 | mount | live record | none | the record's status, persistence `stored` |
 | any | `grant()` with GPC on and not overridable | no-op (C-39) | unchanged, `gpcInForce: true` |
-| `none`, `unknown`, `denied` or `granted` | `grant()`, write `ok` | fresh record (C-38), `seq+1`, evidence `pending` if a port exists, otherwise `none` | `granted`, `stored` |
-| `none`, `unknown`, `denied` or `granted` | `grant()`, write `unavailable` | grant held in memory for this visit; no evidence call (C-41) | `granted`, `memory`, evidence `none` |
-| prior allowed `false` (`none` under `prompt`, `unknown`, `denied`) | `refuse()`, write `ok` | fresh denial (C-38), `seq+1`, evidence `pending` if a port exists | `denied`, `stored` |
-| prior allowed `false` | `refuse()`, write `unavailable` | denial held in memory; no evidence call | `denied`, `memory` |
-| prior allowed `true` (`granted`, or `none` under `notice`) | `refuse()` | a **withdrawal**: publish `allowed: false` to subscribers before anything else, then `seq+1`, abort any in-flight evidence, write a denial, read back | the next three rows |
-| withdrawal | write `ok`, read-back not allowed | evidence `pending` if a port exists | `denied`, `stored` |
-| withdrawal | write `unavailable`, `remove()` `ok`, read-back not allowed | record removed (possible under `prompt` only) | `denied`, `memory` |
-| withdrawal | read-back allowed, whatever the write and removal returned | denial held in memory for this visit | `denied`, `memory`, `withdrawal: "failed"` |
+| `none`, `unknown`, `denied` or `granted` | `grant()`, write `ok` | fresh record (C-38), `seq+1`, any in-memory choice dropped, `withdrawal` back to `idle`, evidence `pending` if a port exists, otherwise `none` | `granted`, `stored` |
+| `none`, `unknown`, `denied` or `granted` | `grant()`, write `unavailable` | grant becomes the in-memory choice; `withdrawal` back to `idle`; no evidence call (C-41) | `granted`, `memory`, evidence `none` |
+| prior allowed `false` and read-back not `allowed` | `refuse()`, write `ok` | fresh denial (C-38), `seq+1`, evidence `pending` if a port exists | `denied`, `stored` |
+| prior allowed `false` and read-back not `allowed` | `refuse()`, write `unavailable` | denial becomes the in-memory choice; no evidence call | `denied`, `memory` |
+| prior allowed `true` (`granted`, or `none` under `notice`), **or** read-back `allowed` (for example a second refusal after a failed withdrawal) | `refuse()` | a **withdrawal**: publish `allowed: false` to subscribers before anything else, then `seq+1`, abort any in-flight evidence, write a denial (and `remove()` if the write fails), then read back | the next three rows |
+| withdrawal | write `ok`, read-back `not allowed` | evidence `pending` if a port exists | `denied`, `stored`, `withdrawal: "idle"` |
+| withdrawal | write `unavailable`, `remove()` `ok`, read-back `not allowed` | record removed (possible under `prompt` only); denial becomes the in-memory choice | `denied`, `memory`, `withdrawal: "idle"` |
+| withdrawal | read-back `allowed` or `unreadable`, whatever the write and removal returned | denial becomes the in-memory choice | `denied`, `memory`, `withdrawal: "failed"` |
 | any | evidence result for an older `seq` | ignored | unchanged |
 | evidence `pending` | `saved` for the current `seq` | none | evidence `saved` |
 | evidence `pending` | `conflict` | local record re-read; a conflict never upgrades to `granted` | evidence `conflict` |
 | evidence `pending` | `unavailable`, or a throw | local choice kept | evidence `unavailable` |
-| any | external change (another tab) | re-read; last write wins; no `onChange` | re-evaluated |
-| any | `refresh()` | re-read and re-evaluate against the clock; nothing rewritten | an expired record becomes `none` |
+| any | `refresh()`, or an external change from another tab | a re-read under C-54: evaluated as at mount against the clock, except that an in-memory choice is kept unless the read-back record is newer; `withdrawal: "failed"` is re-checked; nothing rewritten; no `onChange` | an expired stored record becomes `none`; an in-memory choice and a failed withdrawal survive |
 
 - **C-11 A failed save never reports a stored choice.** After a failed
   write the snapshot is `persistence: "memory"` and evidence is never
-  `saved`. The in-memory choice ends with the visit.
+  `saved`. The in-memory choice, a grant or a denial, governs the rest of
+  the visit: no re-read replaces it (C-54).
 - **C-12 A stale grant never overrides a withdrawal.** Every asynchronous
   completion carries the `seq` it started under and is discarded when
   `seq` has moved on. A grant's durable acknowledgement that arrives after a
   refusal changes nothing.
-- **C-13 A withdrawal completes only on verified read-back.** Any
-  `refuse()` whose prior snapshot was allowed is a withdrawal: from a grant
-  under either regime, and from no choice under `notice`. It reports
-  success only when the read-back is not allowed under the current regime.
+- **C-13 A withdrawal completes only on verified read-back.** A `refuse()`
+  is a withdrawal when the prior snapshot was allowed (from a grant under
+  either regime, or from no choice under `notice`) **or** a read-back taken
+  at the call is `allowed`. The second case covers a repeated refusal after
+  a failed withdrawal, whose snapshot is already not allowed while storage
+  still allows. A withdrawal reports success only when the read-back after
+  the write is `not allowed`; `allowed` and `unreadable` both fail it.
   Under `notice`, a missing record is allowed, so removal alone never
-  completes a withdrawal there. Otherwise the snapshot carries
-  `withdrawal: "failed"`, and the assembly keeps the notice open with the
-  `withdrawalFailed` status (C-25). The denial holds in memory for the rest
-  of the visit, and the status tells the visitor so. If storage keeps
+  completes a withdrawal there. On failure the snapshot carries
+  `withdrawal: "failed"` and the notice stays open with the
+  `withdrawalFailed` status (C-55). The denial holds in memory for the rest
+  of the visit, and the status tells the visitor so. `withdrawal: "failed"`
+  persists, through further refusals and every re-read, until a read-back
+  is `not allowed`, the visitor grants, or a newer record from another tab
+  replaces the in-memory denial (C-54); only then does it return to `idle`. If storage keeps
   returning the old grant, or under `notice` holds no record at all, a
   later document load reads it as allowed; that residual case is open
   question 7.
+- **C-54 Re-reads never override a choice made this visit.** A re-read is
+  `refresh()`, the assembly's `pageshow` and `visibilitychange` triggers
+  (C-46), or a cross-tab change from the storage port's `subscribe`. It
+  re-evaluates storage as at mount, against the clock. When the lifecycle
+  holds an in-memory choice, the re-read keeps it, and a stored record
+  replaces it only when that record's `decidedAt` is later than the
+  in-memory choice's (a newer choice made in another tab), which also
+  returns `withdrawal` to `idle`. Otherwise a re-read never clears
+  `withdrawal: "failed"` while the read-back is `allowed` or
+  `unreadable`. A re-read changes the snapshot only through these rules
+  and never fires `onChange`.
 - **C-14 Durable acknowledgement is separate from the choice.** Gating
   follows the local record. It never waits for evidence, and evidence never
   grants. With no evidence port (browser-only mode), a full grant-and-refuse
@@ -350,14 +373,23 @@ in-memory choice.
   called only after a local write returned `ok`, for grants and denials
   alike. A choice held only in memory never reaches it, because a durable
   record the browser does not hold could disagree with the browser on the
-  next visit. Each call carries the lifecycle's `sequence`. An
-  implementation must never let a record with an earlier `decidedAt`, or
-  the same `decidedAt` and a lower `sequence`, overwrite a later one; it
-  answers `conflict` instead.
-- **C-42 A simulated lifecycle never allows.** With `simulated: true`, the
+  next visit. Each call carries the lifecycle's `sequence`. Ordering is
+  asymmetric, and Butler's pure `shouldApplyEvidence` states it for every
+  implementation to call: a **denial always applies** durably, whatever
+  the stored record's `decidedAt` or `sequence`, so it never answers
+  `conflict` because of an older `decidedAt`, including a denial dated
+  earlier by a clock moved back (C-40). A **grant applies only when it is
+  strictly newer** than the stored record: a later `decidedAt`, or the same
+  `decidedAt` and a higher `sequence`. A grant that is not strictly newer
+  answers `conflict` and changes nothing.
+- **C-42 A simulated Butler lifecycle never allows.** This rule binds
+  Butler's `createConsentLifecycle` only. With `simulated: true`, its
   snapshot reports `simulated: true` and `allowed: false` whatever the
-  record says, and the lifecycle never calls an evidence port. The review
-  seam alone creates one (C-50).
+  record says, and it never calls an evidence port. The review seam alone
+  creates one (C-50). The fixed-clock preview's lifecycle is a different
+  implementation: its rows may carry `allowed: true` together with
+  `simulated: true` (C-51), and the assembly's masking (C-23, C-45)
+  keeps such a snapshot from enabling analytics.
 
 ### Browser storage adapter (Butler, isolated)
 
@@ -379,8 +411,12 @@ function createLocalStorageConsentPort(options: {
 
 ```ts
 interface AnalyticsLocation { href: string; referrer?: string }
+interface ProviderInitContext {
+  sanitizeUrl(href: string): string | null;  // the transport's own C-20 rules
+  eventNames: readonly string[];             // "$pageview" plus the allowed conversions
+}
 interface AnalyticsProviderPort {
-  init(): void;            // forced options already fixed by the adapter (C-44)
+  init(context: ProviderInitContext): void;  // throws if the provider cannot be set up safely (C-44)
   capture(event: SanitizedAnalyticsEvent): void;
   optIn(): void;
   optOut(): void;          // stop sending and clear provider persistence; queue behaviour is open question 6
@@ -400,7 +436,7 @@ function createAnalyticsTransport(options: {
   loadProvider: () => Promise<AnalyticsProviderPort>;
   allowedConversions: readonly string[];
   allowedProperties?: Readonly<Record<string, readonly string[]>>;
-  normalizePath?: (pathname: string) => string;
+  normalizePath?: (pathname: string) => string; // the single source of path normalisation
   scheduler?: AnalyticsScheduler;   // default: globalThis timers, looked up at call time
   maxQueued?: number;               // default 50; overflow drops the oldest
 }): AnalyticsTransport;
@@ -409,22 +445,22 @@ function sanitizeAnalyticsEvent(
   allow: { conversions: readonly string[]; properties?: Readonly<Record<string, readonly string[]>>; normalizePath?: (pathname: string) => string },
 ): SanitizedAnalyticsEvent | null;
 interface PostHogLike {
-  init(apiKey: string, config: Record<string, unknown>): unknown;
+  init(apiKey: string, config: Record<string, unknown>, name: string): PostHogLike | undefined | void;
   capture(eventName: string, properties?: Record<string, unknown>): unknown;
   opt_in_capturing(): void;
   opt_out_capturing(): void;
 }
-function createPostHogProvider(sdk: PostHogLike, config: {
-  key: string;
-  apiHost: string;
-  normalizePath?: (pathname: string) => string;
-}): AnalyticsProviderPort;
+function createPostHogProvider(sdk: PostHogLike, config: { key: string; apiHost: string }): AnalyticsProviderPort;
 ```
 
 `PostHogLike` is the subset of the provider SDK object that the adapter
 calls, declared structurally so that the package never imports the SDK
 (C-3). The key and host are host values (O-7). The provider adapter takes
 no other option; nothing a host passes can reach the SDK's configuration.
+The transport's `normalizePath` option is the single place where a path
+normaliser is supplied: the transport passes it to
+`sanitizeAnalyticsEvent`, and hands the resulting URL sanitizer to the
+provider through `init(context)`.
 
 - **C-17 Off by default.** Permission starts `false`. While permission is
   unknown or denied, the transport never calls `loadProvider`, never
@@ -432,10 +468,10 @@ no other option; nothing a host passes can reach the SDK's configuration.
   dropped, not queued.
 - **C-18 Initialization is lazy and happens once.** An initial
   `setPermission(true)` starts one load. When the load resolves, the
-  transport calls `init()` and then `optIn()`. Captures made while loading
-  go into the bounded memory queue (C-43). The provider is initialized at
-  most once per page. A later grant after a withdrawal calls `optIn()` and
-  never a second `init()`.
+  transport calls `init(context)` and then `optIn()`. Captures made while
+  loading go into the bounded memory queue (C-43). The provider is
+  initialized at most once per page. A later grant after a withdrawal
+  calls `optIn()` and never a second `init()`.
 - **C-19 Withdrawal cancels everything pending.** `setPermission(false)`
   advances a generation counter. It clears the queue and every scheduled
   retry or delayed capture, and calls `optOut()` if the provider was
@@ -446,35 +482,61 @@ no other option; nothing a host passes can reach the SDK's configuration.
   runs on the path, and its output is accepted only if it still starts with
   `/` and contains no `?` or `#`; otherwise the event is dropped. The
   referrer is reduced to an origin. Only pageviews and allowlisted
-  conversions are sent. Properties are allowlisted per event and limited to
-  bounded primitive values. No `identify` call exists on any port.
+  conversions are sent, and an allowlisted conversion name that begins
+  with `$` is refused, so it can never collide with a provider's reserved
+  event names. Properties are allowlisted per event and limited to bounded
+  primitive values. No `identify` call exists on any port.
 - **C-43 Transport limits are fixed and typed for any runtime.** A failed
   load schedules one retry after 5000 milliseconds through the scheduler;
-  if the retry fails, the transport stays off for the page load and drops
-  captures. The default scheduler looks up `globalThis.setTimeout` and
-  `globalThis.clearTimeout` when it schedules, never at module scope. The
-  queue holds at most `maxQueued` events (default 50), and an overflow drops
-  the oldest. The subtree uses no DOM type: it compiles under Observer's
-  existing compiler settings (ES2022 library without DOM,
+  if the retry fails, the transport is `failed` for the page load and drops
+  captures. A provider whose `init(context)` throws is `failed` at once,
+  with no retry. The default scheduler looks up `globalThis.setTimeout`
+  and `globalThis.clearTimeout` when it schedules, never at module scope.
+  The queue holds at most `maxQueued` events (default 50), and an overflow
+  drops the oldest. The subtree uses no DOM type: it compiles under
+  Observer's existing compiler settings (ES2022 library without DOM,
   `exactOptionalPropertyTypes`, NodeNext resolution with explicit file
   extensions in relative imports) with no change to them.
-- **C-44 The provider adapter forces safe options and sanitizes the SDK's
-  own properties.** `init()` calls the SDK's `init` with the host key and
-  a configuration that the adapter alone writes:
-  `api_host` (the host value), `autocapture: false`,
-  `capture_pageview: false`, `capture_pageleave: false`,
-  `disable_session_recording: true`, `disable_surveys: true`,
-  `advanced_disable_feature_flags: true`,
-  `advanced_disable_feature_flags_on_first_load: true`,
-  `person_profiles: "identified_only"` (no `identify` call exists, so no
-  person profile is created), `persistence: "memory"`,
-  `opt_out_capturing_by_default: true`, and a `before_send` hook. The hook
-  drops any event whose name the transport did not send, reduces every
-  URL-valued property the SDK adds (the current URL, the path, the
-  referrer and their initial-visit variants, listed as one constant in the
-  adapter) by the rules of C-20, and leaves the SDK's own delivery fields
-  alone. Whether these option names behave as named in the SDK version a
-  host installs is separate evidence (see "Separate evidence").
+- **C-44 The provider adapter forces safe options, owns its instance, and
+  allowlists the SDK's own properties.**
+  - *Instance.* `init(context)` calls
+    `sdk.init(key, config, POSTHOG_INSTANCE_NAME)` with a fixed instance
+    name and from then on calls methods only on the instance that call
+    returns. If it returns nothing, or returns the host-supplied object
+    itself, the adapter throws (C-43), so an SDK object that the host has
+    already initialized with its own configuration is never used.
+  - *Forced configuration,* written by the adapter alone: `api_host` (the
+    host value), `autocapture: false`, `rageclick: false`,
+    `capture_pageview: false`, `capture_pageleave: false`,
+    `capture_dead_clicks: false`, `capture_exceptions: false`,
+    `capture_performance: false` (web vitals and network timing),
+    `enable_heatmaps: false`, `disable_session_recording: true`,
+    `disable_surveys: true`, `disable_web_experiments: true`,
+    `advanced_disable_feature_flags: true`,
+    `advanced_disable_feature_flags_on_first_load: true`,
+    `person_profiles: "identified_only"` (no `identify` call exists, so no
+    person profile is created), `persistence: "memory"`,
+    `opt_out_capturing_by_default: true`, and a `before_send` hook.
+  - *Event names.* A sanitized pageview is captured as `$pageview` with
+    the sanitized URL as its current-URL property and the referrer origin
+    as its referrer property. A conversion is captured under its
+    allowlisted name, unchanged.
+  - *`before_send`.* The hook drops every event whose name is not in
+    `context.eventNames`, which removes any event the SDK emits by itself,
+    such as an opt-in marker. It removes any person-property payload
+    (`$set`, `$set_once`). It keeps only the properties named in one
+    exhaustive constant, `POSTHOG_PROPERTY_ALLOWLIST`, plus the transport's
+    own sanitized properties for that event, and drops every other
+    property. The allowlist names the delivery fields (`token`,
+    `distinct_id`, `$lib`, `$lib_version`, `$insert_id`, `$time`), the
+    profile-suppression field `$process_person_profile`, and the URL
+    fields (`$current_url`, `$host`, `$pathname`, `$referrer`,
+    `$referring_domain`). It passes each URL field through
+    `context.sanitizeUrl` (the referrer fields reduced to an origin or
+    host) and drops the event if any URL field fails it.
+  - Whether these option and property names behave as named in the SDK
+    version a host installs is separate evidence (see "Separate
+    evidence").
 
 ### Presentation (Designer)
 
@@ -539,9 +601,16 @@ including `regime`, except that `evidence` may also be `"simulated-saved"`,
 which only the preview produces (C-34). There is no `regime` prop: the
 lifecycle's snapshot is the single regime source, and the host passes the
 regime to `createConsentLifecycle` inside its factory. `ConsentStatusView`
-is `{ persistence, storage, evidence, withdrawal, gpcInForce, simulated }`,
-where `simulated` is `false` or the active review-seam value.
-`ResolvedConsentCopy` is defined under Copy.
+is `{ persistence, storage, evidence, withdrawal, gpcInForce, simulated }`.
+Its `simulated` field is `false` for a live lifecycle, the active
+review-seam value (`"fresh"`, `"granted"`, `"refused"` or `"gpc"`) under
+the seam, and `"preview"` for any other lifecycle whose snapshot reports
+`simulated: true`, which in practice is the fixed-clock preview's.
+`ResolvedConsentCopy` is defined under Copy. The structural port types
+(`ConsentStoragePortView`, `ConsentLifecycleInput`, `ConsentLifecyclePort`,
+`ConsentSnapshotView`, `AnalyticsPermissionPort`) are exported as types
+from `@clossys/publisher/web/consent`, which is where unit E's
+conformance test imports them from (C-53).
 
 - **C-22 Hydration-safe.** The server render and the initial client render
   use the no-decision snapshot. No notice renders, and `useAnalyticsAllowed()`
@@ -550,6 +619,11 @@ where `simulated` is `false` or the active review-seam value.
   never depends on a stored choice and never mismatches on hydration.
 - **C-23 Both gate conditions are required.** Analytics may start only when
   `required` is true **and** a non-simulated lifecycle reports allowed.
+  `useAnalyticsAllowed()` returns exactly
+  `required && snapshot.allowed && !snapshot.simulated && !seamActive`,
+  where `seamActive` is true while a review-seam value other than `live`
+  is in force. A preview or seam snapshot that carries `allowed: true`
+  therefore reads as `false`.
   With `required={false}` and no active review-seam value, the notice never
   shows, reopening does nothing, `createLifecycle` is never called, the
   transport is never bound and `useAnalyticsAllowed()` is `false`. With
@@ -562,11 +636,11 @@ where `simulated` is `false` or the active review-seam value.
   choice; it is never a permission signal. Hosts gate analytics on
   `useAnalyticsAllowed()` or the bound transport, never on `onChange`.
 - **C-25 One notice, and what stays visible.** The notice opens by itself
-  only when the snapshot's `promptAutomatically` holds. It otherwise opens
-  only through reopen. A choice closes it, with one exception: after a
-  failed withdrawal it stays open with the `withdrawalFailed` status
-  (C-13). A no-op accept (C-39) is not a choice, so the notice stays as it
-  was, showing `gpcInForce`. Every other status (`memoryOnly`,
+  only when the snapshot's `promptAutomatically` holds, or under C-55. It
+  otherwise opens only through reopen. A choice closes it, with one
+  exception: after a failed withdrawal it stays open with the
+  `withdrawalFailed` status (C-13, C-55). A no-op accept (C-39) is not a
+  choice, so the notice stays as it was, showing `gpcInForce`. Every other status (`memoryOnly`,
   `storageUnavailable`, `evidenceUnavailable`, `evidenceConflict`) closes
   with the choice and is shown the next time the notice opens and through
   `useConsentStatus()`. Focus returns as C-26 describes. No other consent
@@ -576,7 +650,8 @@ where `simulated` is `false` or the active review-seam value.
   current page view, in memory. It records nothing, calls no port, fires no
   `onChange` and changes no permission. A full document load starts a new
   page view; a client-side route change does not. While `withdrawal` is
-  `failed`, Escape does nothing, so it never hides the sole failure signal.
+  `failed`, Escape does nothing, so it never hides the sole failure signal
+  (C-55).
   When the notice closes by Escape or by a choice, focus returns to the
   element that held focus before it opened if that element is still in
   the document, and otherwise to the `main` landmark.
@@ -608,7 +683,16 @@ where `simulated` is `false` or the active review-seam value.
 - **C-46 Expiry is noticed without timers.** The assembly calls
   `refresh()` when the document becomes visible again (`visibilitychange`),
   on `pageshow` (including a restore from the back/forward cache) and
-  before opening on reopen. It sets no timer for expiry.
+  before opening on reopen. It sets no timer for expiry. Each of these is a
+  re-read under C-54, so none of them replaces a choice made in memory
+  this visit or clears a failed withdrawal.
+- **C-55 A failed withdrawal keeps the notice open.** Whenever the
+  snapshot's `withdrawal` is `"failed"`, the notice is open with the
+  `withdrawalFailed` status: after the refusal that failed, on arrival
+  (as the preview's `withdrawal-failed` state shows), after every re-read
+  and re-render, and after an earlier Escape. Neither Escape (C-26) nor a
+  repeated refusal closes it; it closes only when `withdrawal` returns to
+  `"idle"` (C-13).
 - **C-47 Focus on open.** A notice that opens by itself does not move
   focus. A notice opened by the fragment or the event receives focus on
   its region, through a wrapper the assembly owns, so Designer still has no
@@ -622,7 +706,11 @@ where `simulated` is `false` or the active review-seam value.
   creates a new one.
 - **C-49 Boundaries are refused by the export map.** The subpaths are
   conditional exports whose refused condition maps to a module that throws
-  at import with an error naming the subpath and the condition:
+  at import with an error naming the subpath and the condition. Condition
+  order matters, because resolvers take the earliest matching key: each
+  subpath lists `types` first, then the refused or server condition
+  (`react-server` or `browser`) before any `development` or `default`
+  key:
   `./web/consent` maps `react-server` to a refusal and its default to the
   client entry, whose modules begin with the `"use client"` directive
   (Publisher's existing `.client.tsx` convention); `./web/consent/preview`
@@ -633,7 +721,9 @@ where `simulated` is `false` or the active review-seam value.
   not a refusal), so #1941 establishes the pattern and P-22 proves it.
   Common bundlers set the `development` condition but Node does not by
   default, so the preview factory also refuses `production` at run time
-  (C-4), and tests pass the condition explicitly.
+  (C-4), and tests pass the condition explicitly. A production build sets
+  `production` instead of `development`, so the preview entry cannot be
+  resolved in one; the refusal module is what such a build reaches.
 
 ### Review seam (Publisher, real build)
 
@@ -658,12 +748,25 @@ where `simulated` is `false` or the active review-seam value.
   `live`, the assembly calls `createLifecycle` with
   `{ signals: { gpc: value === "gpc" }, storage, evidence: false,
   simulated: true }`, where `storage` is an in-memory port that the assembly
-  defines structurally and that starts empty. For `granted` and `refused`
-  the assembly then calls `grant()` or `refuse()` once on that lifecycle,
-  so the seeded state comes from Butler's own rules, with no fixture and no
-  re-implemented rule. The host's factory honours these fields (H-3). If
-  the returned lifecycle's snapshot does not report `simulated: true`, the
-  assembly disposes it, reports a development error and shows nothing.
+  defines structurally, that starts empty and that records each write. The
+  host's factory honours these fields (H-3). The assembly then checks, in
+  this order:
+  1. Immediately after `createLifecycle` returns, and before any `grant()`
+     or `refuse()`, `getSnapshot().simulated` must be `true`.
+  2. For `granted` and `refused` only, the assembly calls `grant()` or
+     `refuse()` once, so the seeded state comes from Butler's own rules,
+     with no fixture and no re-implemented rule. The in-memory port must
+     then hold the seeded write.
+
+  If either check fails, the assembly disposes the lifecycle, reports a
+  development error, and renders the notice from the fixed no-decision
+  snapshot (C-22) with inert actions. A non-conforming factory's lifecycle
+  therefore receives no `grant()` or `refuse()` and can write nothing,
+  under the real key or any other. Under the seam, a refusal after
+  `granted` is a withdrawal (C-13, through the read-back) and succeeds
+  against the in-memory port. The seam cannot show a failed withdrawal,
+  because its port never fails; the preview's `withdrawal-failed` state
+  covers that.
 
 ### Fixed-clock preview (Publisher, isolated)
 
@@ -690,17 +793,24 @@ function createConsentPreview(options: {
   network, no timers, no SDK, no Butler or Observer import and no clock
   read. Asynchronous outcomes happen only on an explicit `settle()`.
   `dispose()` releases every listener. Its lifecycle always reports
-  `simulated: true`, so the transport is never bound to it (C-45).
+  `simulated: true`, so the transport is never bound to it (C-45) and
+  `useAnalyticsAllowed()` is `false` for every state (C-23). Some of its
+  rows carry `allowed: true` to show what a live visitor would see; that
+  is display state, not permission. C-42 binds Butler's lifecycle only and
+  does not apply here.
 - **C-34 Simulated never reads as durable.** The preview can produce
   `simulated-saved` and can never produce `saved`. The live lifecycle can
   never produce `simulated-saved`, and the two are distinct types.
-  `expired` renders byte-identically to `fresh-prompt`, with no expiry
-  wording. The dialog-only "cancel" state of earlier revisions no longer
+  An expired record renders identically to its regime's fresh state, with
+  no expiry wording: the `expired` state is the `prompt` case and is
+  byte-identical to `fresh-prompt`, and under `notice` an expired record is
+  `fresh-notice`. The dialog-only "cancel" state of earlier revisions no longer
   exists.
 - **C-51 The preview states are exactly this table.** Each state produces
   the snapshot fields listed (every field not listed has its
   `NO_DECISION_SNAPSHOT` value, except `simulated: true`), the `required`
-  value, and the notice behaviour on arrival and on reopen.
+  value, and the notice behaviour on arrival and on reopen. Rows with
+  `allowed: true` are display state only (C-33).
 
 | State | Snapshot fields | `required` | On arrival | On reopen |
 | --- | --- | --- | --- | --- |
@@ -758,11 +868,19 @@ function resolveConsentCopy(input: {
   `CopyResolver` is Writer's type. The host creates it with Writer's
   `createCopyResolver(registry, { target, now, ... })`, so it is already
   bound to a target and a clock, and `resolveConsentCopy` takes no clock.
-  Hosts map their environment to a target: `development` and `preview`
-  use `"preview"`, and `production` uses `"production"`. Under
-  `"production"`, a resolution with no `approval` is refused, and so is
-  synthetic copy. Writer has no fixture marker, so consent copy treats a
-  registry whose `source.kind` is `"generated"` as synthetic.
+  Hosts map their deployment environment to a target: `development` and
+  `preview` use `"preview"`, and `production` uses `"production"` (H-8).
+  Under `"production"`, a resolution is accepted only with an owner
+  approval (`approval.approvedBy === "owner"`): a resolution with no
+  `approval` is refused, a delegate approval is refused however it was
+  authorized, and synthetic copy is refused. Writer has no fixture marker,
+  so consent copy treats a registry whose `source.kind` is `"generated"`
+  as synthetic. The production rules do not depend on the declared target
+  alone: when `process.env.NODE_ENV` is `"production"` at call time (read
+  inside the call, never at import, C-1), `resolveConsentCopy` throws if
+  `target` is `"preview"` and applies the production rules to every field.
+  A host that declares `"preview"` in a production build therefore gets an
+  error, never delegate-approved or preview copy.
 
 ### Bouncer interactions (#1947, independent)
 
@@ -810,6 +928,10 @@ that exposes the relevant API.
 - **H-7 Pre-hydration callers apply `required` and the seam.** A host that
   calls the pure decision functions before hydration applies `required` and
   the review seam itself, and starts no analytics before mount.
+- **H-8 Bind the copy target to the deployment.** The host derives the
+  copy `target`, and the `target` it passes to `createCopyResolver`, from
+  its build or deployment environment, never from a request, a query
+  parameter or another value a visitor can set (C-52).
 
 ## Superseded ticket text
 
@@ -827,6 +949,11 @@ Where an issue body says the following, this document controls.
 - **#1938 legacy flag on the adapter.** Migration lives in
   `parseStoredChoice` through `policy.legacy` (C-10); the adapter has no
   legacy option.
+- **#1938 lifecycle options and evidence ordering.** #1938's scope now
+  includes `evidence?: ConsentEvidencePort | false | undefined` and
+  `simulated?: boolean | undefined` on `createConsentLifecycle`, so that
+  Publisher's factory input maps onto them directly (C-53), and the pure
+  `shouldApplyEvidence` helper (C-41).
 - **#1560, #1941 and #1981 dialog, preferences panel and footer reopen.**
   Superseded by the single notice reopened by an anchor link or an event
   (decision 1, C-25, C-27).
@@ -885,9 +1012,12 @@ expiry behaviour is built in #1938, and its reopen seam and copy in #1941.
   `record`, `decision`, `lifecycle` and `adapters/local-storage`, and an
   internal `index` barrel, with the tests named below. The package root and
   the manifest stay untouched.
-- API: the record and decision rules, the lifecycle and ports, and the
-  storage adapter, as specified in Contracts.
-- State transitions: the transition table; C-5 to C-16 and C-37 to C-42.
+- API: the record and decision rules (including `shouldApplyEvidence`),
+  the lifecycle and ports (including the `evidence` and `simulated` option
+  types that C-53 relies on), and the storage adapter, as specified in
+  Contracts.
+- State transitions: the transition table; C-5 to C-16, C-37 to C-42 and
+  C-54.
 - Fixtures: a fixed clock, an in-memory storage port with switchable
   failure modes (read unavailable, write fails, remove fails, read returns
   a stale grant), a deferred evidence port that resolves on demand and
@@ -902,10 +1032,23 @@ expiry behaviour is built in #1938, and its reopen seam and copy in #1941.
   untouched.
 - API: the transport, the sanitizer and the provider adapter, as specified
   in Contracts.
-- State transitions: `off` → (`setPermission(true)`) `loading` → `ready`;
-  `loading` → (load fails) `retry-scheduled` → `loading` once, then
-  `failed` for the page load; any state → (`setPermission(false)`) `off`
-  with the generation advanced; `ready` → (re-grant) `ready` via `optIn()`.
+- State transitions:
+  - `off` (never initialized) → `setPermission(true)` → `loading`.
+  - `loading` → load resolves and `init(context)` succeeds → `ready`
+    (`init` then `optIn()`).
+  - `loading` → load fails → `retry-scheduled` → `loading` once; a second
+    failure → `failed`.
+  - `loading` → `init(context)` throws → `failed`, with no retry.
+  - `loading` or `retry-scheduled` → `setPermission(false)` → `off`, with
+    the generation advanced, the retry cancelled and any late load
+    discarded; a later `setPermission(true)` starts a new load with a new
+    single retry.
+  - `ready` → `setPermission(false)` → `opted-out` (initialized; `optOut()`
+    called, queue cleared).
+  - `opted-out` → `setPermission(true)` → `ready` through `optIn()`, never
+    a second `init()`.
+  - `failed` → any `setPermission` → `failed` for the page load:
+    permission is recorded, nothing loads, and captures are dropped.
 - Fixtures: a fake provider that records every call, a deferred loader, a
   manual scheduler, and a `PostHogLike` fake object that records the
   `init` configuration and runs its `before_send` hook. No real SDK is
@@ -954,7 +1097,13 @@ expiry behaviour is built in #1938, and its reopen seam and copy in #1941.
   its parity check requires them, one `.changesets/` entry naming `butler`
   and `observer`, each at `minor` (a new public subpath on a 0.x package),
   and a repository-level conformance test outside every package's shipped
-  source.
+  source. It is a new repository-level script test with the stem
+  `consent-port-conformance`, beside the existing repository script tests,
+  that runs the TypeScript compiler with no emit over a fixture directory
+  of the same name under the script fixtures, after the build. The
+  fixture imports the real types by package name from the Butler and
+  Observer subpaths above and the structural port types from
+  `@clossys/publisher/web/consent`.
 - Export keys: `@clossys/butler/browser-consent` (the pure functions, the
   lifecycle and the types, with no adapter),
   `@clossys/butler/browser-consent/local-storage` (the storage adapter
@@ -963,11 +1112,23 @@ expiry behaviour is built in #1938, and its reopen seam and copy in #1941.
   provider adapter alone). Adapters ship in their own subpaths so that
   importing the decision functions never reaches one (O-5).
 - **C-53 The real implementations satisfy Publisher's structural ports.**
-  Butler's `ConsentLifecycle` is assignable to `ConsentLifecyclePort`,
-  Butler's `ConsentStoragePort` to and from `ConsentStoragePortView`,
-  Butler's lifecycle options accept every `ConsentLifecycleInput` field,
-  and Observer's `AnalyticsTransport` is assignable to
-  `AnalyticsPermissionPort`.
+  Under the repository's strict compiler settings, including
+  `exactOptionalPropertyTypes`:
+  - Butler's `ConsentLifecycle` is assignable to `ConsentLifecyclePort`,
+    and `ConsentSnapshot` to `ConsentSnapshotView`.
+  - Butler's `ConsentStoragePort` and `ConsentStoragePortView` are
+    assignable to each other.
+  - Observer's `AnalyticsTransport` is assignable to
+    `AnalyticsPermissionPort`.
+  - A reference host factory type-checks with no cast:
+    `(input) => createConsentLifecycle({ ...hostOptions, signals: input.signals,
+    storage: input.storage ?? hostStorage, evidence: input.evidence ?? hostEvidence,
+    simulated: input.simulated })`. This holds because #1938 declares
+    `evidence?: ConsentEvidencePort | false | undefined` and
+    `simulated?: boolean | undefined`. Butler's `storage` stays required:
+    a lifecycle with no storage port has no defined behaviour, so the
+    factory, not Butler, chooses between the seam's port and the real one
+    (H-3).
 - Proof: P-31.
 
 ### Unowned work
@@ -991,35 +1152,35 @@ passes. "Covers" lists the rules each proof holds.
 | --- | --- | --- | --- | --- |
 | P-1 | #1978 | `calendar-months` :: month-end clamping fixtures and exclusive end | C-6, C-7 | drop the clamp (`setUTCMonth(getUTCMonth() + n)`) |
 | P-2 | #1938 | `lifecycle` :: stale grant cannot override withdrawal | C-12 | remove the `seq` guard |
-| P-3 | #1938 | `persistence` :: a failed save never reports a stored choice, and a memory-only choice never reaches the evidence port | C-11, C-41 | report `stored` after an `unavailable` write; call evidence after a failed write |
+| P-3 | #1938 | `persistence` :: a failed save never reports a stored choice; a memory-only choice never reaches the evidence port; a memory-only grant and a memory-only denial both survive `refresh()` and a cross-tab event carrying an older record, and are replaced only by a newer record | C-11, C-41, C-54 | report `stored` after an `unavailable` write; call evidence after a failed write; let `refresh()` re-evaluate from storage alone |
 | P-4 | #1938 | `expiry` :: expiry fixed at decision and not renewed by reads or reopenings; every explicit choice writes a fresh record; expired reads as no choice; reading caps expiry; a future-dated denial stays live and a future-dated grant does not | C-6, C-38, C-40 | recompute `expiresAt` on read; skip the read-time cap; treat a future-dated denial as no choice |
 | P-5 | #1938 | `decision` :: regime (`prompt`, `notice`, missing) × GPC (on, off) × record (none, granted, granted with override, denied, expired, older policy, corrupt, unreadable) | C-5, C-7, C-8, C-9, C-37 | default a missing regime to `notice`; treat unreadable as no choice under `notice` |
-| P-6 | #1938 | `withdrawal` :: a refusal from a grant, and from no choice under `notice`, is a withdrawal; `allowed: false` is published before the write; write and removal both failing with a grant still readable is `failed`; under `notice`, a failed write with a successful removal is `failed` | C-13, C-15 | report success without read-back; treat a refusal from no choice under `notice` as a plain refusal |
+| P-6 | #1938 | `withdrawal` :: a refusal from a grant, and from no choice under `notice`, is a withdrawal; `allowed: false` is published before the write; write and removal both failing with a grant still readable is `failed`; under `notice`, a failed write with a successful removal is `failed`; an unreadable read-back is `failed`; after a failed withdrawal, `refresh()` keeps `allowed: false` and `withdrawal: "failed"`; a second refusal while the read-back still shows the grant stays `failed`; `failed` returns to `idle` only once a read-back is `not allowed` | C-13, C-15, C-54 | report success without read-back; treat a refusal from no choice under `notice` as a plain refusal; let `refresh()` re-evaluate from storage alone; classify a refusal as a withdrawal from the in-memory snapshot only |
 | P-7 | #1938 | `browser-only` :: with no evidence port, a grant-and-refuse cycle makes zero `fetch` or `sendBeacon` calls and evidence is never `saved` | C-14 | report `saved` without a port |
 | P-8 | #1938 | `isolation` :: no core module reads a browser global at module scope or imports an adapter; a legacy record parses only with `policy.legacy`, takes `assumedPolicyVersion`, keeps its original expiry and is never rewritten | C-2, C-10 | add a module-scope `localStorage` read; rewrite a legacy record on read; treat a dateless legacy record as live |
 | P-9 | #1940 | `transport` :: unknown consent never loads or captures | C-17 | initialize while permission is unknown |
 | P-10 | #1940 | `transport` :: withdrawal blocks a pending retry and a late load | C-19 | send a queued capture after withdrawal; initialize a load that resolved after withdrawal |
-| P-11 | #1940 | `sanitize` and `posthog` :: initialization happens once; queries and fragments are removed; the referrer becomes an origin; an invalid `normalizePath` result drops the event; the `before_send` hook reduces every SDK-added URL property and drops events the transport did not send | C-18, C-20, C-44 | initialize on every capture; keep the query string; pass SDK-added properties through unchanged |
-| P-12 | #1940 | `posthog` :: the `init` configuration holds every forced key with its value, `opt_out_capturing_by_default` is set, no host value except key and host reaches it, and the adapter imports no SDK | C-3, C-44 | omit a forced init key |
+| P-11 | #1940 | `sanitize` and `posthog` :: initialization happens once; queries and fragments are removed; the referrer becomes an origin; an invalid `normalizePath` result drops the event; a `$`-prefixed conversion name is refused; pageviews are captured as `$pageview` and conversions under their own name; the `before_send` hook keeps only `POSTHOG_PROPERTY_ALLOWLIST` plus the transport's properties, sanitizes every URL field with the transport's sanitizer, removes `$set` and `$set_once`, and drops events the transport did not send (including an opt-in marker) | C-18, C-20, C-44 | initialize on every capture; keep the query string; pass an SDK-added property outside the allowlist through unchanged |
+| P-12 | #1940 | `posthog` :: the `init` configuration holds every forced key with its value, no host value except key and host reaches it, and the adapter imports no SDK; `init` passes the fixed instance name and every later call goes to the returned instance; an `init` that returns nothing or returns the host-supplied object makes the adapter throw, the transport `failed` with no retry, and the host-supplied object receives no capture | C-3, C-43, C-44 | omit a forced init key; call `capture` on the host-supplied object instead of the returned instance |
 | P-13 | #1940 | `root-isolation` :: the Observer root import graph reaches no `browser-analytics` module | O-4, C-1 | re-export the transport from the root |
 | P-14 | D | `ConsentBanner` :: the polite live region is always mounted, empty without a status; both actions stay enabled and equal | O-2, C-21 | disable reject while a status shows; mount the live region only with a status |
 | P-15 | #1941 | `ConsentExperience` :: `required={false}` creates no lifecycle, binds no transport and ignores reopen; `onChange` fires on an acted-on choice only and never for a no-op accept | C-23, C-24, C-39 | fire `onChange` on mount or on a stored read; fire `onChange("granted")` for a no-op accept |
-| P-16 | #1941 | `ConsentExperience` :: Escape records nothing and returns focus; Escape does nothing while a withdrawal has failed; withdrawal stays enabled while a grant is pending; a failed withdrawal keeps the notice open with its status; other statuses close with the choice | C-13, C-15, C-25, C-26 | persist Escape; close on a failed withdrawal; let Escape hide a failed-withdrawal notice |
+| P-16 | #1941 | `ConsentExperience` :: Escape records nothing and returns focus; Escape does nothing while a withdrawal has failed; withdrawal stays enabled while a grant is pending; a lifecycle whose snapshot has `withdrawal: "failed"` at mount shows the notice open with its status; a failed withdrawal keeps the notice open through a repeated refusal and a re-read; other statuses close with the choice | C-13, C-15, C-25, C-26, C-55 | persist Escape; close on a failed withdrawal; let Escape hide a failed-withdrawal notice; open the failed-withdrawal notice only after a refusal in this render |
 | P-17 | #1941 | `ConsentExperience` :: server and initial client render match the no-decision snapshot | C-22 | read storage during render |
 | P-18 | #1941 | `reopen` :: fragment and event open once, a leading `#` is ignored, the fragment is cleared, focus moves to the reopened notice, and `refresh()` runs on reopen, on `visibilitychange` and on `pageshow` | C-27, C-46, C-47 | open a second notice on a repeated trigger; skip `refresh()` on reopen |
-| P-19 | #1941 | `review-seam` :: each value on loopback; ignored elsewhere; the factory receives the in-memory port, `evidence: false` and `simulated: true`; a factory that returns a non-simulated lifecycle disables the seam; the real key is never written; the transport is never bound; the value lasts for the tab | C-30, C-31, C-32, C-50 | accept a non-loopback host; bind the transport to a seeded lifecycle |
-| P-20 | #1941 | `consent-copy/resolve` :: both leads and every status key required; draft, stale, expired-delegate, out-of-scope, wrong-locale, blank and placeholder copy refused; under `production`, unapproved and generated-source copy refused | C-35, C-52 | omit the `notice` lead; accept generated-source copy under `production` |
+| P-19 | #1941 | `review-seam` :: each value on loopback; ignored elsewhere; the factory receives the in-memory port, `evidence: false` and `simulated: true`; a factory whose lifecycle does not report `simulated: true` is disposed before any `grant()` or `refuse()` reaches it, nothing is written under the real key or any other, and the fixed no-decision notice renders; a seed whose write the in-memory port did not receive disables the seam the same way; the real key is never written; the transport is never bound; `useAnalyticsAllowed()` is `false` under `granted`; the value lasts for the tab | C-23, C-30, C-31, C-32, C-50 | accept a non-loopback host; seed before checking `simulated`; bind the transport to a seeded lifecycle |
+| P-20 | #1941 | `consent-copy/resolve` :: both leads and every status key required; draft, stale, expired-delegate, out-of-scope, wrong-locale, blank and placeholder copy refused; under `production`, unapproved, delegate-approved and generated-source copy refused; with `NODE_ENV` set to `production`, a declared `preview` target throws and delegate-approved copy that a preview-bound resolver returned is refused | C-35, C-52 | omit the `notice` lead; accept generated-source copy under `production`; trust the declared target when `NODE_ENV` is `production` |
 | P-21 | #1941 | `preview/adapter` :: each of the fifteen states produces its table row; zero I/O and no timers; explicit settle; `expired` identical to `fresh-prompt`; no `saved` from the preview; `production` refused | C-33, C-34, C-51 | auto-settle; return `saved`; give `withdrawal-failed` the `withdrawn` snapshot |
 | P-22 | #1941 | `browser-import-closure` and `react-server-artifact` :: production closures exclude the preview and Designer's `/shell`; the client entry refuses `react-server` through its condition module; copy resolution refuses `browser`; the preview subpath refuses outside `development` | O-6, C-1, C-4, C-29, C-49 | import the preview or a Writer registry into the client entry; map `react-server` to the client entry |
 | P-23 | #1938 | `gpc` :: a grant under a non-overridable signal writes nothing and calls no evidence port; a grant under an overridable signal records `gpcOverride`; a grant without it never overrides a signal that is on | C-8, C-39 | write a grant under a non-overridable signal; let a grant without `gpcOverride` override the signal |
-| P-24 | #1938 | `evidence-order` :: every evidence call carries an increasing `sequence`; a conflict never upgrades to `granted` | C-12, C-41 | pass a constant `sequence` |
+| P-24 | #1938 | `evidence-order` :: every evidence call carries an increasing `sequence`; a conflict never upgrades to `granted`; `shouldApplyEvidence` applies a denial over a stored grant with a later `decidedAt` (a clock moved back) and refuses a grant with the same `decidedAt` and a lower or equal `sequence` | C-12, C-40, C-41 | pass a constant `sequence`; make a denial subject to the recency check |
 | P-25 | #1938 | `simulated` :: a simulated lifecycle reports `allowed: false` after a grant and never calls an evidence port | C-42 | drop the simulated override |
 | P-26 | #1938 | `local-storage` :: blocked or throwing storage reads `unavailable` without throwing; only a `storage` event for the configured key reaches the listener; raw values come back unmigrated; nothing else is written | C-16 | let a throwing `getItem` propagate; notify for another key's event |
 | P-27 | #1940 | `transport-limits` :: one retry after the fixed delay through the injected scheduler; the default scheduler is resolved when scheduling; the queue's default bound drops the oldest; the subtree compiles without the DOM library | C-43 | drop the newest event instead of the oldest; resolve `setTimeout` at module scope |
 | P-28 | #1941 | `ConsentExperience` :: the body uses the lead that matches the snapshot's `regime` | C-28 | always use the `prompt` lead |
 | P-29 | #1941 | `bind-transport` :: `setPermission(false)` has happened before `refuse()` returns; unbinding sets `false`; a simulated snapshot never sets `true` | C-45 | move `setPermission` into a React effect |
-| P-30 | #1941 | `hooks` :: hooks outside a `ConsentExperience` report not allowed and the no-decision status; unmount and a `required` change dispose the lifecycle; a development double mount leaves one live lifecycle | C-48 | keep the lifecycle from the discarded mount alive |
-| P-31 | E | `consent-port-conformance` :: type-level assignability of each real implementation to its structural port | O-3, C-53 | rename or retype one `ConsentSnapshot` field in Butler |
+| P-30 | #1941 | `hooks` :: hooks outside a `ConsentExperience` report not allowed and the no-decision status; `useAnalyticsAllowed()` is `false` for the preview's `remembered-granted` and `fresh-notice` states and `useConsentStatus().simulated` is `"preview"`; unmount and a `required` change dispose the lifecycle; a development double mount leaves one live lifecycle | C-23, C-48 | keep the lifecycle from the discarded mount alive; return `snapshot.allowed` without the simulated mask |
+| P-31 | E | `consent-port-conformance` :: type-level assignability of each real implementation to its structural port, and the reference host factory compiling with no cast | O-3, C-53 | rename or retype one `ConsentSnapshot` field in Butler; narrow Butler's `evidence` option to `ConsentEvidencePort` only |
 
 ### Review proofs for this document
 
@@ -1045,11 +1206,23 @@ Covers cell.
 ### Separate evidence
 
 Each unit's proofs show that it is implemented. They do not show that it is
-staged, published or adopted. A full publish-safety pass, packed-consumer
-proof, release qualification, behaviour against a real provider SDK
-(including the forced option names in C-44 and open question 6), and
-adoption in a consumer's tree are separate evidence, recorded by their own
-owners.
+staged, published or adopted. These are separate evidence, recorded by
+their own owners:
+
+- a full publish-safety pass, packed-consumer proof and release
+  qualification;
+- adoption in a consumer's tree;
+- behaviour against a real provider SDK, measured against the version a
+  host installs:
+  - that each forced option and allowlisted property name in C-44 exists
+    and behaves as named;
+  - that a named instance from `init` ignores an earlier default instance;
+  - whether `opt_in_capturing()` emits an opt-in marker event (the
+    `before_send` hook must drop it);
+  - where the SDK keeps its own opt-in and opt-out state, which may be a
+    storage key of its own that `persistence: "memory"` does not govern;
+  - whether its send queue drops queued events on opt-out (open question
+    6).
 
 ## Open questions
 
@@ -1077,9 +1250,11 @@ that builders follow until the owner decides otherwise.
    drops queued events on opt-out is behaviour of the real SDK. A fake
    cannot prove it. Proposed default: no package text claims that queued
    events are dropped until there is evidence from the real SDK.
-7. **Storage that will not record a refusal.** Two cases reach C-13's
+7. **Storage that will not record a refusal.** Three cases reach C-13's
    residual state: storage that refuses both writing and removal and keeps
-   returning the grant, and, under `notice`, a failed write with a
-   successful removal, which leaves no record and so reads as allowed.
+   returning the grant; under `notice`, a failed write with a successful
+   removal, which leaves no record and so reads as allowed; and a
+   read-back that cannot be read at all, which cannot confirm the
+   refusal.
    Proposed default: no session-scoped marker. The refusal holds in memory
    for the visit and the visitor is told.
