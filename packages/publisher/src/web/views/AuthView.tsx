@@ -77,9 +77,9 @@ export interface AuthViewProps extends HTMLAttributes<HTMLDivElement> {
   ground?: SiteChromeGround;
   /**
    * The page's own name - the words for sign-in, account creation,
-   * password reset, or verification. Renders as the page's `<h1>` through
-   * Designer's `PageHeader`, above the card. Copy is the caller's; this
-   * view has no mode that picks a heading.
+   * password reset, or verification. Renders as the page's `<h1>` in the
+   * shared page layout's title block (`PageLayoutHeader`), above the card.
+   * Copy is the caller's; this view has no mode that picks a heading.
    */
   heading: ReactNode;
   /**
@@ -105,7 +105,8 @@ export interface AuthViewProps extends HTMLAttributes<HTMLDivElement> {
    * `defaultValue`) stays visible; the controls are not focusable or
    * submitted. The notice that explains why is the form's own `submitError`,
    * the one banner region: this view adds no banner. A retry link goes in
-   * `secondaryAction`, which sits outside the fieldset and stays enabled.
+   * `notes` (`secondaryAction` is its deprecated alias), which sits outside the
+   * fieldset and stays enabled.
    * When false or absent, `form` renders as given with no wrapper, so
    * switching the prop remounts the form: keep what the person typed in the
    * site's own state, not inside the form's uncontrolled inputs.
@@ -192,8 +193,12 @@ export function AuthView({
   footerSecondary,
   className,
   style,
-  ...rest
+  ...restWithStray
 }: AuthViewProps) {
+  // `internalNote` was removed from this view. A host still spreading it
+  // would otherwise see the key land on the root element, so drop it for
+  // this release.
+  const { internalNote: _strayInternalNote, ...rest } = restWithStray as typeof restWithStray & { internalNote?: unknown };
   if (notes !== undefined && secondaryAction !== undefined) {
     throw new Error("AuthView takes notes or its deprecated name secondaryAction, not both.");
   }

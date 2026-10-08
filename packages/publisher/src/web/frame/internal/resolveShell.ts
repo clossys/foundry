@@ -200,6 +200,9 @@ function icon(value: unknown, path: string): IconNode {
     for (const [name, attribute] of Object.entries(attributes as Record<string, unknown>)) {
       if (ICON_STRIPPED_ATTRIBUTES.has(name) && typeof attribute === "string") continue;
       if (!ICON_ATTRIBUTES.has(name) || typeof attribute !== "string" || /url\s*\(/i.test(attribute)) refuse();
+      // A CSS escape (`u\72l(`) can spell `url(` past the check above, so a backslash is never valid
+      // in icon data, and an open parenthesis is valid only in `transform` (`rotate(45)`).
+      if ((attribute as string).includes("\\") || (name !== "transform" && (attribute as string).includes("("))) refuse();
       copy[name] = attribute as string;
     }
     return Object.freeze([tag, Object.freeze(copy)] as const);

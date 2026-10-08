@@ -199,13 +199,12 @@ describe("page layout: header, body card and notes", () => {
       expect(root.lastElementChild).toBe(body);
     });
 
-    it("renders no header, footer or main of its own: only the title block is a header", () => {
+    it("renders no header, footer or main of its own, and exactly one h1", () => {
       const { container } = render(fixture.build({ notes: NOTES }));
       expect(container.firstElementChild?.tagName).toBe("DIV");
-      expect(container.querySelector("main, footer, nav, [role='main'], [role='banner'], [role='contentinfo']")).toBeNull();
-      const headers = container.querySelectorAll("header");
-      expect(headers).toHaveLength(1);
-      expect(headers[0]).toContainElement(screen.getByRole("heading", { level: 1 }));
+      expect(container.querySelector("header, main, footer, nav, [role='main'], [role='banner'], [role='contentinfo']")).toBeNull();
+      expect(container.querySelectorAll("h1")).toHaveLength(1);
+      expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
     });
 
     it("inside SiteFrame leaves exactly one skip link, banner, main (with the frame's id), contentinfo and h1", () => {

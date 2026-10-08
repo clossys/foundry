@@ -37,10 +37,10 @@ export interface PageLayoutHeaderProps {
  */
 export function PageLayoutHeader({ title, subtitle }: PageLayoutHeaderProps) {
   return (
-    <header className="flex flex-col items-center gap-xs text-center">
+    <div className="flex flex-col items-center gap-xs text-center">
       <h1 className="text-h1 font-display text-ink-primary">{title}</h1>
       {subtitle ? <p className="text-body text-ink-secondary">{subtitle}</p> : null}
-    </header>
+    </div>
   );
 }
 
@@ -60,8 +60,8 @@ export interface PageLayoutProps extends PageLayoutHeaderProps {
  * The layout shared by `CaptureView`, `DocumentView` and `AuthView`: the
  * header (title and subtitle), the body card and the optional notes, centered
  * in that order. It returns the three slots only, for the view to place in its
- * own column, and renders no header landmark of its own beyond the title block,
- * no footer and no `<main>`: the page frame owns those. Every string is a prop.
+ * own column, and renders no header, footer or `<main>` landmark: the page frame
+ * owns those. Every string is a prop.
  */
 export function PageLayout({ title, subtitle, children, notes, cardLabel }: PageLayoutProps) {
   const card = <Card className="flex flex-col gap-lg text-start">{children}</Card>;

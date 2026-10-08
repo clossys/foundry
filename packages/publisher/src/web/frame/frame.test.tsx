@@ -281,6 +281,9 @@ describe("SiteFrame", () => {
       ["a non-string attribute", [["path", { d: 1 }]]],
       ["a url() value", [["path", { d: "M0 0", fill: "url(https://evil.example/x)" }]]],
       ["a spaced url () value", [["path", { d: "M0 0", stroke: "URL (#x)" }]]],
+      ["a CSS-escaped url value", [["path", { d: "M0 0", fill: "u\\72l(https://x/y.svg#p)" }]]],
+      ["a backslash in a transform", [["path", { d: "M0 0", transform: "u\\72l(#x)" }]]],
+      ["an open parenthesis outside transform", [["path", { d: "M0 0", stroke: "rgb(0 0 0)" }]]],
       ["dangerouslySetInnerHTML", [["g", { dangerouslySetInnerHTML: { __html: "<script></script>" } }]]],
       ["children", [["g", { children: "x" }]]],
       ["ref", [["path", { d: "M0 0", ref: "x" }]]],
@@ -293,6 +296,11 @@ describe("SiteFrame", () => {
     ])("refuses icon data with %s", (_name, icon) => {
       expect(render$(withIcon(icon))).toThrow(/SiteFrame: shell\.environments\[0\]\.icon is not plain SVG shape data\./);
       expect(render$(withIcon(icon))).not.toThrow(/evil|script/);
+    });
+
+    it("accepts a transform value, the one icon attribute whose value may hold a parenthesis", () => {
+      const resolved = resolveShell(withIcon([["g", { transform: "rotate(45 12 12)" }]]) as SiteShellInput, resolveCopy, resolveAsset).environments[0]?.icon;
+      expect(resolved).toEqual([["g", { transform: "rotate(45 12 12)" }]]);
     });
 
     it("accepts Designer's generated icon shape, strips its list key and renders a frozen copy, not the caller's object", () => {
@@ -431,10 +439,9 @@ describe.each(CHROME_FREE_VIEWS)("$name chrome-free", ({ element, h1 }) => {
     expect(found.h1s[0]).toHaveTextContent(h1);
   });
 
-  it("alone: any <header> it renders is its page-header block (holding the h1), never site chrome", () => {
+  it("alone: renders no <header> and no site chrome of its own", () => {
     const { container } = render(element);
-    for (const header of container.querySelectorAll("header")) expect(header.querySelector("h1")).not.toBeNull();
-    expect(container.querySelectorAll("header a, header nav, header img")).toHaveLength(0);
+    expect(container.querySelectorAll("header, header a, header nav, header img")).toHaveLength(0);
   });
 
   it("inside the frame: one skip link, one main with the fixed id, the frame's banner and contentinfo, one h1", () => {

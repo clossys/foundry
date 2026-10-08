@@ -2,6 +2,18 @@ import { describe, expect, it, vi } from "vitest";
 import { createMissingSettingsReporter, missingProviderSettings } from "./missing-settings.js";
 
 describe("missingProviderSettings", () => {
+  it("reads process.env when no environment is passed", () => {
+    vi.stubEnv("NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY", "");
+    vi.stubEnv("CLERK_SECRET_KEY", "sk");
+    try {
+      expect(missingProviderSettings()).toEqual(["NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY"]);
+      vi.stubEnv("NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY", "pk");
+      expect(missingProviderSettings()).toEqual([]);
+    } finally {
+      vi.unstubAllEnvs();
+    }
+  });
+
   it("names both settings when neither is set", () => {
     expect(missingProviderSettings({ environment: {} })).toEqual(["NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY", "CLERK_SECRET_KEY"]);
   });

@@ -10,13 +10,22 @@ export interface MissingProviderSettingsInput {
   readonly environment?: AuthEnvironment;
 }
 
+function runtimeEnvironment(): AuthEnvironment {
+  // Direct public-property reads let framework bundlers replace the same
+  // value in both server and client bundles, as dev-bypass.ts does.
+  return {
+    [PUBLISHABLE_KEY_SETTING]: process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,
+    [SECRET_KEY_SETTING]: process.env.CLERK_SECRET_KEY,
+  };
+}
+
 function isSet(value: string | undefined): boolean {
   return typeof value === "string" && value.trim().length > 0;
 }
 
 /** The names, never the values, of the Clerk settings that are not set. */
 export function missingProviderSettings(input: MissingProviderSettingsInput = {}): string[] {
-  const environment = input.environment ?? process.env;
+  const environment = input.environment ?? runtimeEnvironment();
   const missing: string[] = [];
   if (!isSet(input.publishableKey) && !isSet(environment[PUBLISHABLE_KEY_SETTING])) missing.push(PUBLISHABLE_KEY_SETTING);
   if (!isSet(environment[SECRET_KEY_SETTING])) missing.push(SECRET_KEY_SETTING);

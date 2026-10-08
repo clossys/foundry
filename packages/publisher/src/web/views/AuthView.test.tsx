@@ -65,15 +65,16 @@ describe("AuthView", () => {
     expect(main.style.maxWidth).not.toMatch(/rem|px/);
   });
 
-  it("description under heading: the description is the element directly after the <h1> inside the page header", () => {
+  it("description under heading: the description is the element directly after the <h1> inside the title block", () => {
     render(<AuthView brand="Acme" heading="Sign in" description="Welcome back." form={<div>form</div>} />);
     const h1 = screen.getByRole("heading", { level: 1 });
     const next = h1.nextElementSibling as HTMLElement;
     expect(next).not.toBeNull();
     expect(next).toHaveTextContent("Welcome back.");
-    const pageHeader = h1.closest("header") as HTMLElement;
-    expect(pageHeader.closest("main")).not.toBeNull();
-    expect(pageHeader).toContainElement(next);
+    const titleBlock = h1.parentElement as HTMLElement;
+    expect(titleBlock.tagName).toBe("DIV");
+    expect(titleBlock.closest("main")).not.toBeNull();
+    expect(titleBlock).toContainElement(next);
   });
 
   it("renders the brand slot's content inside the site header banner", () => {
@@ -507,5 +508,15 @@ describe("AuthView", () => {
     expect(within(footer).getByText(/^© \d{4} Acme$/)).toBeInTheDocument();
     expect(within(footer).getByRole("link", { name: "Privacy" })).toHaveAttribute("href", "/privacy");
     expect(within(footer).getByRole("link", { name: "Terms" })).toHaveAttribute("href", "/terms");
+  });
+
+  it("drops a stray internalNote key so it never reaches the root element, framed or legacy", () => {
+    const stray = { internalNote: { label: "Internal", message: "Keys are not set." } } as Record<string, unknown>;
+    const framed = renderToStaticMarkup(<AuthView heading="Sign in" description="Welcome back." form={<div>f</div>} {...stray} />);
+    const legacy = renderToStaticMarkup(<AuthView brand="Acme" heading="Sign in" description="Welcome back." form={<div>f</div>} {...stray} />);
+    for (const html of [framed, legacy]) {
+      expect(html).not.toMatch(/internalnote/i);
+      expect(html).not.toContain("Keys are not set.");
+    }
   });
 });

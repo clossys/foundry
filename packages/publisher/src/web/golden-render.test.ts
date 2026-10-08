@@ -111,10 +111,10 @@ describe("golden: AuthView", () => {
         '<div class="mx-auto flex w-full flex-wrap items-center justify-between gap-md" style="padding-inline:var(--ui-width-page-padding-x, clamp(16px, 4vw, 48px))">' +
         '<div class="flex items-center gap-lg">Acme</div></div></header>' +
         '<main class="mx-auto flex w-full flex-1 flex-col gap-xl px-lg py-2xl" style="max-width:var(--ui-width-form-max, none)">' +
-        '<header class="flex flex-col items-center gap-xs text-center">' +
+        '<div class="flex flex-col items-center gap-xs text-center">' +
         '<h1 class="text-h1 font-display text-ink-primary">Sign in</h1>' +
         '<p class="text-body text-ink-secondary">Welcome back.</p>' +
-        "</header>" +
+        "</div>" +
         '<div class="rounded-control bg-surface-raised p-lg flex flex-col gap-lg text-start" style="box-shadow:var(--ui-elevation-raised, 0 1px 0 var(--color-line-base, oklch(0.8761 0 0)))">' +
         "email + password form</div>" +
         '<p class="text-center text-body-s text-ink-muted">\u00A9 2026 Acme</p></main>' +
@@ -154,9 +154,9 @@ describe("golden: assetId — a real <img>, byte for byte, alt text and intrinsi
         '<img src="https://cdn.example/logo.svg" alt="Acme logo" width="120" height="40"/>' +
         "</div></div></header>" +
         '<main class="mx-auto flex w-full flex-1 flex-col gap-xl px-lg py-2xl" style="max-width:var(--ui-width-form-max, none)">' +
-        '<header class="flex flex-col items-center gap-xs text-center">' +
+        '<div class="flex flex-col items-center gap-xs text-center">' +
         '<h1 class="text-h1 font-display text-ink-primary">Sign in</h1>' +
-        "</header>" +
+        "</div>" +
         '<div class="rounded-control bg-surface-raised p-lg flex flex-col gap-lg text-start" style="box-shadow:var(--ui-elevation-raised, 0 1px 0 var(--color-line-base, oklch(0.8761 0 0)))">' +
         "email + password form</div></main>" +
         '<footer class="bg-surface-raised text-ink-primary py-lg border-t border-line-base" style="position:relative;z-index:var(--ui-z-shell, 20);border-top-width:var(--ui-border-hairline, 1px)">' +

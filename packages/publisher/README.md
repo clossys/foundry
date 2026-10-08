@@ -383,10 +383,12 @@ Name a shipped template when its slots cover the page:
   description (`"Something went wrong. Error: 8f2a91c0."`), there is no
   details disclosure, and `action` holds one primary control: a secondary
   destination is a text link inside the description.
-- **`BoundaryView`** — a boundary page in the front-door shell: Designer's
-  `SiteHeader` (`brand`, required), then the page header block (`status`,
+- **`BoundaryView`** — a boundary page: the page header block (`status`,
   `title`, `description`), the `action` in a `Card` and the `notes` below
-  it, then `SiteFooter` (`footerSecondary`, optional). It takes every
+  it. Inside a `SiteFrame` it renders that content only; passing any
+  deprecated chrome prop (`brand` is optional) selects the legacy page, which
+  adds Designer's `SiteHeader` (`brand`) and `SiteFooter` (`footerSecondary`,
+  optional). It takes every
   `ErrorViewProps` key, so a site deletes its private copy of the
   header/error/footer shell. It also frames the sign-in-boundary states. It
   is not a built-in web template. See [Boundary pages](#boundary-pages).
@@ -2090,8 +2092,8 @@ Each slot is absent from the markup when omitted.
 `<main>`, in this order: a skip link, the banner (Designer's `SiteHeader`
 with a `Brandmark`), `<main id={SITE_MAIN_ID} tabIndex={-1}>` holding the
 view, then the contentinfo (Designer's `SiteFooter`). The view passed as
-`children` renders chrome-free: `AuthView`, `CaptureView`, `BoundaryView` and
-`ErrorView` carry no `<main>`, no banner and no contentinfo of their own when
+`children` renders chrome-free: `AuthView`, `CaptureView`, `DocumentView`,
+`BoundaryView` and `ErrorView` carry no `<main>`, no banner and no contentinfo of their own when
 no chrome prop is passed, so a framed page has exactly one of each.
 
 ```tsx
@@ -2235,12 +2237,26 @@ extensions: copy, tokens, backdrop and the signature visual. A band the
 frame or a view lacks is a package candidate, to be added here or in
 Designer, not a local fork of the frame or a view.
 
+**Chrome props inside a frame.** Never pass a legacy chrome prop (`brand`,
+`header`, `footer`, `mainId`, ...) to a view that sits inside `SiteFrame`: the
+view then renders its own `<main>` and banner, nested inside the frame's. At
+runtime, `brand={undefined}` counts as not passed and selects the chrome-free
+content, while `brand={null}` counts as passed and selects the legacy page. The
+`AuthView` web template always passes `brand`, so it renders the legacy page
+only and is not for use inside a frame.
+
+A chrome-free view's content root refuses a landmark `role` (`main`, `banner`,
+`contentinfo`, `navigation`) and the frame's main id, because the frame owns
+those. `GlobalErrorDocument` is the exception: its body is an `ErrorView` with
+no frame and no `<main>`, so that root may carry `role="main"`.
+
 **Deprecated view chrome.** The chrome props on `AuthView`, `CaptureView`,
 `DocumentView` and `BoundaryView` (`brand`, `header`, `footer`, `mainId`, `nav`,
 `headerAction`, the secondary header action, `ground`, `footerSecondary`, and
 `surfaceLabel` on `AuthView`) are deprecated. They still work: passing any one
-of them selects the legacy page, unchanged, with the view's own header,
-`<main>` and footer (see [Front-door shell](#front-door-shell)). Omit all of
+of them selects the legacy page: the view's own header, `<main>` and footer,
+laid out per [Page layout](#page-layout), which changed the legacy markup
+(see [Front-door shell](#front-door-shell)). Omit all of
 them and render the view inside `SiteFrame` instead. `brand` is no longer
 required by the type.
 
@@ -2248,7 +2264,7 @@ required by the type.
 
 Deprecated: page chrome now belongs to [`SiteFrame`](#site-frame--siteframe).
 This section describes the legacy page a view renders when any of its chrome
-props is passed; it keeps working unchanged.
+props is passed. It keeps working, laid out per [Page layout](#page-layout).
 
 `AuthView`, `CaptureView` and `BoundaryView` share one shell, so every
 front-door page reads the same way:
@@ -2388,7 +2404,9 @@ unconstrained column.
 
 The deprecated chrome props still select the legacy page, which renders its
 own header, `<main>` and footer around the same layout. `DocumentView` takes
-`brand` and `footerSecondary` for it, and `brand` is no longer required.
+`brand` and `footerSecondary` for it, and `brand` is no longer required. On
+the legacy `DocumentView` the document sits in a `Card` and `action` is rendered
+after the document, as the notes line.
 
 The title block (`PageLayoutHeader`) is a Publisher-internal component, so a
 sibling layout without the card shares its header and spacing.
