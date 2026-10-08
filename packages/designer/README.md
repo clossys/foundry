@@ -3747,6 +3747,36 @@ host omits it.
 <SiteHeader brand={<Link href="/" variant="standalone">Acme</Link>} surfaceLabel="admin" />
 ```
 
+`surfaceLabel` is superseded by environment links and stays for existing
+callers. `SiteHeader.ActionLink` is one header call to action: a real
+`<a>` with a caller-supplied `IconNode` glyph and a `label`. From the
+`tablet` breakpoint up it shows the icon and the label; below it the label is
+visually hidden and stays the link's accessible name, so the icon-only link
+still announces its label. `isCurrent` sets `aria-current="true"` and adds
+an underline-style inset rule, so the current link is not marked by colour
+alone. The link is at least the layout tap target in both directions and
+shows the accent focus outline. The package ships no hrefs and no copy: the
+caller passes both. Pass one per environment in `actions`, with the brand
+linking to the main site home.
+
+```tsx
+import { Home, Settings } from "@clossys/designer/icons";
+
+<SiteHeader
+  brand={<Link href="https://example.com/" variant="standalone">Acme</Link>}
+  actions={
+    <>
+      <SiteHeader.ActionLink href="https://app.example.com/" label="App" icon={Home} isCurrent />
+      <SiteHeader.ActionLink href="https://admin.example.com/" label="Admin" icon={Settings} />
+    </>
+  }
+/>
+```
+
+`variant` takes `"primary"`, `"secondary"` (default) or `"ghost"`, the same
+looks as `Button` at its small size. `ActionLink` is a server-safe component
+from both `@clossys/designer/shell` and `@clossys/designer/shell/server`.
+
 `NavShell` is the responsive half: an ordinary inline `<nav>` from the
 `tablet` breakpoint up, and a trigger-plus-drawer below it — CSS-only
 breakpoint switching, no JS media-query state, so the correct layout is
