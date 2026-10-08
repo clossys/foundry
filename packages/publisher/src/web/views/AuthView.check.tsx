@@ -6,9 +6,13 @@
  */
 import { AuthView } from "./AuthView.js";
 
-// `brand` is required: SiteHeader needs the site identity.
-// @ts-expect-error brand is required
+// Without any chrome prop the view is chrome-free content for a `SiteFrame`:
+// `brand` is optional and deprecated, like every other chrome prop.
 export const withoutBrand = <AuthView heading="Sign in" description="Welcome back." form={null} />;
+
+// Chrome-free content still requires its own content: the heading.
+// @ts-expect-error heading is required
+export const withoutHeading = <AuthView description="Welcome back." form={null} />;
 
 // There is no mode prop: a step differs by heading, form, and notes.
 // @ts-expect-error AuthView has no mode prop

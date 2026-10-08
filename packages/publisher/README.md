@@ -2050,7 +2050,9 @@ export function ServerErrorPage({ reference }: { reference: string }) {
 }
 ```
 
-The page follows the [front-door shell](#front-door-shell): the page header
+Inside a [`SiteFrame`](#site-frame--siteframe), pass no chrome prop and the
+view renders its content only. With any chrome prop (deprecated) the page
+follows the [front-door shell](#front-door-shell). The page header
 block holds `status` (the page's one `<h1>`), `title` (an `<h2>`) and
 `description`; the body block is a Designer `Card` around `action`, omitted
 when there is no action; `notes` (optional) renders below the card. The
@@ -2061,8 +2063,8 @@ Breaking change: `BoundaryView` no longer renders `ErrorView`. `className`,
 owns `min-h-dvh`, instead of an inner `ErrorView` root, and the status, title
 and action are left-aligned in the column instead of centred.
 
-The header slots are the ones `LandingView`'s banner uses, so a boundary page
-can carry the same header as the rest of the site:
+The deprecated header slots are the ones `LandingView`'s banner uses, so a
+legacy boundary page can carry the same header as the rest of the site:
 
 - `headerAction` (optional): the banner call to action, passed to Designer
   `SiteHeader`'s `actions`.
@@ -2075,7 +2077,109 @@ can carry the same header as the rest of the site:
 
 Each slot is absent from the markup when omitted.
 
+### Site frame — `SiteFrame`
+
+`SiteFrame` is the page frame. It owns the page's chrome and its one
+`<main>`, in this order: a skip link, the banner (Designer's `SiteHeader`
+with a `Brandmark`), `<main id={SITE_MAIN_ID} tabIndex={-1}>` holding the
+view, then the contentinfo (Designer's `SiteFooter`). The view passed as
+`children` renders chrome-free: `AuthView`, `CaptureView`, `BoundaryView` and
+`ErrorView` carry no `<main>`, no banner and no contentinfo of their own when
+no chrome prop is passed, so a framed page has exactly one of each.
+
+```tsx
+import { AuthView, SiteFrame, siteShellFor } from "@clossys/publisher/web";
+import type { SiteFrameConfig } from "@clossys/publisher/web";
+
+const frame: SiteFrameConfig = {
+  brand: { assetId: "brand-mark", label: { id: "brand.name" }, size: "md", variant: "mark" },
+  skipLink: { id: "shell.skipLink" },
+  origin: "https://example.com",
+  site: {
+    nav: { label: { id: "nav.label" }, links: [{ href: "/pricing", label: { id: "nav.pricing" } }] },
+    actions: [{ href: "/contact", label: { id: "nav.contact" } }],
+  },
+  environments: [
+    { surface: "front-door", href: "https://app.example.com/", label: { id: "env.app" }, icon: Home },
+    { surface: "admin", href: "https://admin.example.com/", label: { id: "env.admin" }, icon: Settings },
+  ],
+  legal: {
+    entity: { id: "legal.entity" },
+    links: [
+      { href: "/privacy", label: { id: "legal.privacy" } },
+      { href: "/terms", label: { id: "legal.terms" } },
+    ],
+  },
+};
+
+export function SignInPage() {
+  return (
+    <SiteFrame shell={siteShellFor(frame, "front-door")} resolveCopy={resolveCopy} resolveAsset={resolveAsset}>
+      <AuthView heading="Sign in" description="Use your work email." form={<SignInForm {...signIn} />} />
+    </SiteFrame>
+  );
+}
+```
+
+`Home` and `Settings` are Designer `IconNode` values from its `icons` entry;
+`resolveCopy` and `resolveAsset` are the same ports `renderWebDocument` takes.
+
+- **The shell is data.** `shell` (`SiteShellInput`) holds copy references,
+  an asset id and links, never a node: there is no `header`, `footer` or
+  mark slot. Labels resolve through `resolveCopy` (Writer's `CopyResolver`);
+  the brand mark resolves through `resolveAsset` and must be an image asset.
+  A `lockup` brand takes a `wordmark` copy reference; a `mark` brand takes
+  none.
+- **Fails closed.** An unknown field, copy that does not resolve (or resolves
+  blank), a non-image brand asset, a disallowed link, icon data that is not
+  plain SVG shape data, a malformed `origin` or more than one current
+  environment throws an `Error` that names the field (`SiteFrame: shell.nav.links[0].href ...`)
+  and never echoes the value. Links may be root-relative paths, fragments,
+  queries, or absolute `https:`, `http:`, `mailto:` or `tel:` URLs; a
+  protocol-relative `//host` link is refused.
+- **One main.** The main id is fixed (`SITE_MAIN_ID`); the frame takes no
+  main-id prop and the skip link always targets it. A chrome-free view
+  refuses `role="main"`, `"banner"`, `"contentinfo"` or `"navigation"` and the
+  frame's main id on its content root.
+- **Server-safe.** `SiteFrame` uses no hooks. The skip link, which moves
+  focus on activation, is a small `"use client"` island that receives strings
+  only.
+
+**Per surface kind.** One brand declares one `SiteFrameConfig`;
+`siteShellFor(config, kind)` returns the shell for each of the four
+`SITE_SURFACE_KINDS`:
+
+| Kind | Banner | Footer | Links |
+| --- | --- | --- | --- |
+| `"site"` | brand, `site.nav`, `site.actions`, `site.secondaryAction` | `site.columns`, then the legal row | as given |
+| `"front-door"`, `"admin"`, `"demo"` | brand, the `environments` links (the one whose `surface` matches marked current) | the legal row only | root-relative links resolve against `origin` |
+
+Every kind shares the brand, the skip link, the ground and the legal row. A
+surface served from another host (a sign-in host, an admin host) therefore
+links its legal row to the public site's `/privacy` and `/terms` on
+`origin`, not to routes its own host may not serve. An unknown kind throws.
+
+**Page layers.** `SITE_PAGE_LAYERS` is the page-assembly contract as frozen
+data: nine layers (request edge, document and head, providers, shell and
+chrome, view, per-page head, machine surfaces, system states, forms and
+APIs), each with its owning package, who mounts it and how far the frame work
+implements it. This release implements layers 4, 5 and 8; per-page head
+(layer 6) is named in the contract and not yet implemented.
+
+**Deprecated view chrome.** The chrome props on `AuthView`, `CaptureView` and
+`BoundaryView` (`brand`, `header`, `footer`, `mainId`, `nav`,
+`headerAction`, the secondary header action, `ground`, `footerSecondary`, and
+`surfaceLabel` on `AuthView`) are deprecated. They still work: passing any of
+them selects the legacy page, unchanged, with the view's own header, `<main>`
+and footer (see [Front-door shell](#front-door-shell)). Omit all of them and
+render the view inside `SiteFrame` instead. `brand` is no longer required by
+the type.
+
 ### Front-door shell
+
+Deprecated: page chrome now belongs to [`SiteFrame`](#site-frame--siteframe).
+This section describes the legacy page a view renders when any of its chrome
+props is passed; it keeps working unchanged.
 
 `AuthView`, `CaptureView` and `BoundaryView` share one shell, so every
 front-door page reads the same way:
@@ -2100,7 +2204,7 @@ front-door page reads the same way:
    are privacy and terms as same-host routes, so a visitor is not sent off
    the host mid-flow. The package supplies no default links and no copy.
 
-**Bring your own chrome.** A consumer that already carries its own site
+**Bring your own chrome** (deprecated; use `SiteFrame`). A consumer that already carries its own site
 header and footer passes them as `header` and `footer` on any of the three
 views. Each one **replaces** the Designer `SiteHeader` or `SiteFooter`
 entirely, and the other half keeps its default, so a consumer can replace one
@@ -2108,8 +2212,7 @@ or both. The value is rendered as given, in the same place, so it should hold
 the page's one banner landmark (`header`) or one contentinfo landmark
 (`footer`) and nothing else: the view adds no wrapper and no second landmark.
 While `header` is given, `brand`, `nav`, `headerAction`, the secondary header
-action and `ground` are not used for the header (`brand` stays required by
-the type); while `footer` is given, `footerSecondary` is not used. `undefined`
+action and `ground` are not used for the header; while `footer` is given, `footerSecondary` is not used. `undefined`
 keeps the default; `null` is an explicit opt-out that renders no banner or no
 contentinfo. Today a consumer can pass its own v1 chrome here; later it passes
 Designer's. The skip link, if the chrome has one, is the consumer's too.
@@ -2144,7 +2247,8 @@ import { AuthView, SignInForm } from "@clossys/publisher/web";
 />
 ```
 
-**Skip-link target.** Pass `mainId` on any of the three views to give the
+**Skip-link target** (deprecated; `SiteFrame` owns the skip link and the
+main id). Pass `mainId` on any of the three views to give the
 page's `<main>` that `id` and `tabIndex={-1}`, so a skip link in the host's
 own chrome can point at it and move focus there. When `mainId` is unset (or
 empty) the markup is unchanged: no `id` and no `tabindex`.
@@ -3407,7 +3511,7 @@ cosmetic gap.
   `SiteOpenGraphMetadata`, `SitePageInput`, `SitePageKind`, `SiteShareCard`,
   `SiteTwitterMetadata`, `SiteMetadataLintFinding`, `SiteMetadataLintResult`,
   `SiteMetadataLintRule`, `SiteMetadataRequiredTag`, and
-  `SiteMetadataTagSelector` types, plus `GlobalErrorDocument` and `GlobalErrorDocumentProps`, and `ActivateForm`, `ResetForm`, `ActivateDetails`, `ActivateFailure`, `ActivateFormProps`, `ActivateResult`, `ResetDetails`, `ResetFailure`, `ResetFormProps` and `ResetResult` (see "Activation and reset forms").
+  `SiteMetadataTagSelector` types, plus `GlobalErrorDocument` and `GlobalErrorDocumentProps`, and `SiteFrame`, `siteShellFor`, `SITE_SURFACE_KINDS`, `SITE_PAGE_LAYERS`, `SITE_MAIN_ID` and the `SiteBrandInput`, `SiteChromeGround`, `SiteEnvironmentLinkInput`, `SiteFooterInput`, `SiteFrameConfig`, `SiteFrameInput`, `SiteFrameProps`, `SiteLinkInput`, `SitePageLayer`, `SiteShellInput` and `SiteSurfaceKind` types (see "Site frame"), and `ActivateForm`, `ResetForm`, `ActivateDetails`, `ActivateFailure`, `ActivateFormProps`, `ActivateResult`, `ResetDetails`, `ResetFailure`, `ResetFormProps` and `ResetResult` (see "Activation and reset forms").
 - `document`: `validateStructuredDocument`, `renderStructuredDocument`,
   `RenderError`, and the `DocumentBlock`, `DocumentCallout`,
   `DocumentColumnStyle`, `DocumentDefinitionList`, `DocumentInline`, `DocumentList`,

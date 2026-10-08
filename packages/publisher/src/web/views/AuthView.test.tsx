@@ -15,7 +15,7 @@ import { AuthView } from "./AuthView.js";
 
 afterEach(cleanup);
 
-const ALLOWED_IMPORT = /^(react|@clossys\/designer\/.+|\.\.\/internal\/viewChromeGround\.js)$/;
+const ALLOWED_IMPORT = /^(react|@clossys\/designer\/.+|\.\.\/internal\/viewChromeGround\.js|\.\.\/internal\/viewContentRoot\.js)$/;
 
 /**
  * Every module specifier named by an `import` statement (bare, type, or
@@ -111,7 +111,7 @@ describe("AuthView", () => {
     expect(within(screen.getByRole("contentinfo")).getByText("Support line")).toBeInTheDocument();
   });
 
-  it("imports only react, @clossys/designer/* and the shared chrome-ground type (no auth provider)", () => {
+  it("imports only react, @clossys/designer/*, the shared chrome-ground type and the content-root guard (no auth provider)", () => {
     const source = readFileSync(join(import.meta.dirname, "AuthView.tsx"), "utf8");
     const specifiers = moduleSpecifiers(source);
     expect(specifiers.length).toBeGreaterThan(0);

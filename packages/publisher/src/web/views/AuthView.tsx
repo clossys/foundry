@@ -3,25 +3,31 @@ import { Badge, Card, mergeUiClasses } from "@clossys/designer/atoms/server";
 import { PageHeader } from "@clossys/designer/blocks/server";
 import { SiteFooter, SiteHeader } from "@clossys/designer/shell/server";
 import type { ViewChromeGround } from "../internal/viewChromeGround.js";
+import { assertViewContentRoot, usesLegacyChrome } from "../internal/viewContentRoot.js";
 
 export interface AuthViewProps extends HTMLAttributes<HTMLDivElement> {
   /**
-   * Persistent site identity, rendered in the page banner. Required:
-   * `SiteHeader` announces which site this is, and this package ships no
-   * brand mark of its own.
+   * @deprecated Page chrome belongs to `SiteFrame`. Render the view inside a
+   * `SiteFrame` and pass no chrome props: the view is then chrome-free.
+   *
+   * Persistent site identity, rendered in the page banner. Passing it (or any
+   * other deprecated chrome prop below) selects the legacy page, in which the
+   * view renders its own header, `<main>` and footer as before.
    */
-  brand: ReactNode;
+  brand?: ReactNode;
   /**
+   * @deprecated Chrome belongs to `SiteFrame`; see `brand`.
    * The page's own banner, replacing Designer's `SiteHeader` entirely, for a
    * consumer that carries its own site chrome. When given (including `null`,
    * which renders no banner) it is rendered as-is in place of the header: it
    * should hold the page's one banner landmark, and `brand`, `nav`,
    * `headerAction`, `headerSecondaryAction` and `ground` are not used for the header.
-   * `brand` stays required and is not rendered while `header` is given.
+   * `brand` is not rendered while `header` is given.
    * When `undefined`, the Designer header renders as before.
    */
   header?: ReactNode;
   /**
+   * @deprecated Chrome belongs to `SiteFrame`; see `brand`.
    * The page's own footer, replacing Designer's `SiteFooter` entirely. When
    * given (including `null`, which renders no footer) it is rendered as-is
    * and should hold the page's one contentinfo landmark; `footerSecondary`
@@ -29,6 +35,7 @@ export interface AuthViewProps extends HTMLAttributes<HTMLDivElement> {
    */
   footer?: ReactNode;
   /**
+   * @deprecated Chrome belongs to `SiteFrame`; see `brand`.
    * The `id` of the page's `<main>`, so a skip link rendered by the host (its
    * own chrome) can target it. When set to a non-empty string, `<main>` gets
    * that `id` and `tabIndex={-1}` so the link can move focus there. When
@@ -36,6 +43,7 @@ export interface AuthViewProps extends HTMLAttributes<HTMLDivElement> {
    */
   mainId?: string;
   /**
+   * @deprecated Chrome belongs to `SiteFrame`; see `brand`.
    * Optional text-only label naming the surface, such as "admin" or "demo",
    * shown as a non-interactive badge at the trailing end of the page banner.
    * A member host omits it. Superseded by environment links: pass one
@@ -43,15 +51,17 @@ export interface AuthViewProps extends HTMLAttributes<HTMLDivElement> {
    * `isCurrent` on this page's environment. Kept for existing callers.
    */
   surfaceLabel?: string;
-  /** The primary navigation, rendered in the banner beside the brand. Absent from the markup when omitted. */
+  /** @deprecated Chrome belongs to `SiteFrame`; see `brand`. The primary navigation, rendered in the banner beside the brand. Absent from the markup when omitted. */
   nav?: ReactNode;
   /**
+   * @deprecated Chrome belongs to `SiteFrame`; see `brand`.
    * The banner's call to action (`SiteHeader`'s `actions`), such as one
    * `SiteHeader.ActionLink` per environment. Absent from the markup when
    * omitted.
    */
   headerAction?: ReactNode;
   /**
+   * @deprecated Chrome belongs to `SiteFrame`; see `brand`.
    * A secondary call to action in the banner, rendered just before
    * `headerAction` (`SiteHeader`'s `secondaryAction`). Named apart from
    * `secondaryAction`, which on this view has always been the lines below
@@ -59,6 +69,7 @@ export interface AuthViewProps extends HTMLAttributes<HTMLDivElement> {
    */
   headerSecondaryAction?: ReactNode;
   /**
+   * @deprecated Chrome belongs to `SiteFrame`; see `brand`.
    * The plate of the header and footer, passed to both `SiteHeader` and
    * `SiteFooter`.
    * @default "base"
@@ -133,6 +144,7 @@ export interface AuthViewProps extends HTMLAttributes<HTMLDivElement> {
    */
   internalNote?: { label: string; message: ReactNode };
   /**
+   * @deprecated Chrome belongs to `SiteFrame`; see `brand`.
    * Persistent footer content, rendered by Designer's `SiteFooter`. On an
    * auth page this holds a legal row only - Designer's `SiteFooter.Legal`,
    * copyright at one end and legal links at the other - never a locale
@@ -152,8 +164,11 @@ export interface AuthViewProps extends HTMLAttributes<HTMLDivElement> {
  * auth page or it isn't - there is no page that reasonably shows two
  * auth forms side by side.
  *
- * The shell is Designer's, in order: `SiteHeader`, then the three body
- * blocks every front-door view shares - the page header block (`PageHeader`:
+ * Inside a `SiteFrame` (the default, with no chrome prop) it renders its
+ * content only, landmark-free, under the frame's single `<main>`. With any
+ * deprecated chrome prop it renders the legacy page, whose shell is
+ * Designer's, in order: `SiteHeader`, then the three body blocks every
+ * front-door view shares - the page header block (`PageHeader`:
  * heading and description), the body block (`Card` around the form slot)
  * and the notes block (`notes`, below the card) - then the footnote, the
  * internal note, `SiteFooter`. There is no `mode` prop. A step
@@ -175,7 +190,7 @@ export function AuthView({
   header,
   footer,
   mainId,
-  ground = "base",
+  ground,
   heading,
   description,
   form,
@@ -193,13 +208,51 @@ export function AuthView({
     throw new Error("AuthView takes notes or its deprecated name secondaryAction, not both.");
   }
   const notesBlock = notes ?? secondaryAction;
+  const content = (
+    <>
+      <PageHeader title={heading} description={description} />
+      <Card className="flex flex-col gap-lg">
+        {isDisabled ? (
+          <fieldset disabled className="m-0 min-w-0 border-0 p-0">
+            {form}
+          </fieldset>
+        ) : (
+          form
+        )}
+      </Card>
+      {notesBlock ? <div className="flex flex-col gap-xs text-body-s text-ink-secondary">{notesBlock}</div> : null}
+      {footnote ? <p className="text-body-s text-ink-muted">{footnote}</p> : null}
+      {internalNote ? (
+        <p className="flex items-center gap-xs text-body-s text-ink-muted">
+          <Badge variant="neutral">{internalNote.label}</Badge>
+          {internalNote.message}
+        </p>
+      ) : null}
+    </>
+  );
+
+  const legacyChrome = usesLegacyChrome({ brand, surfaceLabel, nav, headerAction, headerSecondaryAction, header, footer, mainId, ground, footerSecondary });
+  if (!legacyChrome) {
+    assertViewContentRoot("AuthView", rest);
+    return (
+      <div
+        {...rest}
+        className={mergeUiClasses("mx-auto flex w-full flex-1 flex-col gap-xl px-lg py-2xl", className)}
+        style={{ maxWidth: "var(--ui-width-form-max, none)", ...style }}
+      >
+        {content}
+      </div>
+    );
+  }
+
+  const chromeGround = ground ?? "base";
   return (
     <div {...rest} className={mergeUiClasses("flex min-h-dvh flex-col", className)} style={style}>
       {header !== undefined ? (
         header
       ) : (
         <SiteHeader
-          ground={ground}
+          ground={chromeGround}
           brand={brand}
           nav={nav}
           secondaryAction={headerSecondaryAction}
@@ -213,26 +266,9 @@ export function AuthView({
         className="mx-auto flex w-full flex-1 flex-col gap-xl px-lg py-2xl"
         style={{ maxWidth: "var(--ui-width-form-max, none)" }}
       >
-        <PageHeader title={heading} description={description} />
-        <Card className="flex flex-col gap-lg">
-          {isDisabled ? (
-            <fieldset disabled className="m-0 min-w-0 border-0 p-0">
-              {form}
-            </fieldset>
-          ) : (
-            form
-          )}
-        </Card>
-        {notesBlock ? <div className="flex flex-col gap-xs text-body-s text-ink-secondary">{notesBlock}</div> : null}
-        {footnote ? <p className="text-body-s text-ink-muted">{footnote}</p> : null}
-        {internalNote ? (
-          <p className="flex items-center gap-xs text-body-s text-ink-muted">
-            <Badge variant="neutral">{internalNote.label}</Badge>
-            {internalNote.message}
-          </p>
-        ) : null}
+        {content}
       </main>
-      {footer !== undefined ? footer : <SiteFooter ground={ground} secondary={footerSecondary} />}
+      {footer !== undefined ? footer : <SiteFooter ground={chromeGround} secondary={footerSecondary} />}
     </div>
   );
 }

@@ -108,6 +108,22 @@ export type { GlobalErrorDocumentProps } from "./views/index.js";
 export { ActivateForm, ResetForm } from "./views/index.js";
 export type { ActivateDetails, ActivateFailure, ActivateFormProps, ActivateResult, ResetDetails, ResetFailure, ResetFormProps, ResetResult } from "./views/index.js";
 
+// The page frame: owns the skip link, banner, the page's one <main> and contentinfo; views render chrome-free inside it.
+export { SITE_MAIN_ID, SITE_PAGE_LAYERS, SITE_SURFACE_KINDS, SiteFrame, siteShellFor } from "./frame/index.js";
+export type {
+  SiteBrandInput,
+  SiteChromeGround,
+  SiteEnvironmentLinkInput,
+  SiteFooterInput,
+  SiteFrameConfig,
+  SiteFrameInput,
+  SiteFrameProps,
+  SiteLinkInput,
+  SitePageLayer,
+  SiteShellInput,
+  SiteSurfaceKind,
+} from "./frame/index.js";
+
 // Kept after the views: the share card reads Designer names newer than the views do, and a Designer that lacks the views' names must fail on those first.
 export {
   BRAND_SHARE_CARD_DEFAULT_ROLES,
