@@ -1448,8 +1448,11 @@ const card = buildBrandShareCard({
 - **Alt.** `alt` is optional. When omitted, `buildBrandShareCard` derives it from
   the card's visible text in reading order (`wordmark`, `kicker`, `headline`,
   `supporting`, skipping any that are omitted), joined with `". "`, or with a
-  single space after a part that already ends in `.`, `!`, `?` or `:`. A
-  supplied `alt` is returned unchanged and is refused when blank, as before.
+  single space after a part that ends in `.`, `!`, `?`, `:`, `;`, `…`, `。`,
+  `！`, `？` or `；`, optionally followed by any number of the closing characters
+  `"`, `'`, `”`, `’`, `)`, `]`, `»`, `」`, `』`, `）` or `】`. Other characters,
+  such as `,` or the full-width `：`, do not end a part. A supplied `alt` is
+  returned unchanged and is refused when blank, as before.
 - **Lockup.** The plate is `BRAND_SHARE_CARD_PLATE_PX` (96) square. Its corner
   radius, the mark's inset, the wordmark size and the gap all come from
   Designer's published badge and lockup ratios rather than numbers kept here.
@@ -4093,7 +4096,8 @@ export default route.Image;
   `alt` and `shareCard.alt` both contain that derived text. An explicit `alt`
   is a string, returned as given, or a function called with the headline actually
   drawn, for example `` alt: (headline) => `Share card: ${headline}` ``.
-  Publisher builds no wording; every word is yours.
+  A derived `alt` adds only the separator between parts (the single space or
+  `". "` described under `buildBrandShareCard`); every word is yours.
 - **Result.** `{ alt, size, contentType, shareCard, Image }`. `size` is the
   card's `{ width, height }` (1200 by 630), `contentType` is `"image/png"`,
   `shareCard` is the record `buildSiteMetadata` takes, and `Image()` returns
