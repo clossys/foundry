@@ -12,6 +12,7 @@ import type { IconNode } from "@clossys/designer/atoms/server";
 import { AuthView } from "../views/AuthView.js";
 import { BoundaryView } from "../views/BoundaryView.js";
 import { CaptureView } from "../views/CaptureView.js";
+import { DocumentView } from "../views/DocumentView.js";
 import { ErrorView } from "../views/ErrorView.js";
 import { SITE_MAIN_ID, SITE_SURFACE_KINDS, SiteFrame, siteShellFor } from "./index.js";
 import type { SiteFrameConfig, SiteShellInput } from "./index.js";
@@ -42,6 +43,9 @@ const COPY: Readonly<Record<string, string>> = {
   "legal.terms": "Terms",
   "legal.label": "Legal",
   "surface.admin": "Admin",
+  "doc.title": "Privacy notice",
+  "doc.section": "Details",
+  "doc.body": "Document body.",
 };
 
 function ref(id: string): CopyRef {
@@ -111,11 +115,26 @@ function landmarks(container: HTMLElement) {
   };
 }
 
+const DOCUMENT = {
+  id: "doc",
+  title: ref("doc.title"),
+  sections: [
+    {
+      kind: "section" as const,
+      id: "details",
+      level: 2 as const,
+      heading: ref("doc.section"),
+      blocks: [{ kind: "paragraph" as const, content: [{ kind: "text" as const, text: ref("doc.body") }] }],
+    },
+  ],
+};
+
 const FRONT_DOOR_SHELL = siteShellFor(CONFIG, "front-door");
 
 const CHROME_FREE_VIEWS: ReadonlyArray<{ name: string; element: ReactElement; h1: string }> = [
   { name: "AuthView", element: <AuthView heading="Sign in" description="Welcome back." form={<p>form</p>} notes={<p>notes</p>} />, h1: "Sign in" },
   { name: "CaptureView", element: <CaptureView heading="Request access" form={<p>form</p>} />, h1: "Request access" },
+  { name: "DocumentView", element: <DocumentView document={DOCUMENT} resolveCopyId={resolveCopy} action={<a href="/terms">Terms</a>} />, h1: "Privacy notice" },
   { name: "BoundaryView", element: <BoundaryView status={404} title="Not found" action={<a href="/">Home</a>} />, h1: "404" },
   { name: "ErrorView", element: <ErrorView status={500} title="Something went wrong" />, h1: "500" },
 ];
@@ -474,6 +493,11 @@ const LEGACY_KEYS: ReadonlyArray<readonly [string, (chrome: Record<string, unkno
     "CaptureView",
     (chrome) => <CaptureView heading="Contact" form={<p>form</p>} {...chrome} />,
     ["brand", "header", "footer", "mainId", "nav", "headerAction", "headerSecondaryAction", "ground", "footerSecondary"],
+  ],
+  [
+    "DocumentView",
+    (chrome) => <DocumentView document={DOCUMENT} resolveCopyId={resolveCopy} {...chrome} />,
+    ["brand", "footerSecondary"],
   ],
   [
     "BoundaryView",

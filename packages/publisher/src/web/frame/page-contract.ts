@@ -42,7 +42,7 @@ export const SITE_PAGE_LAYERS: readonly SitePageLayer[] = freezeRows([
     owner: "Publisher shipped views and registry",
     mountOwner: "Publisher frame",
     implementationScope: "implemented",
-    deferred: ["chrome-free LandingView, MarketingView, CollectionView, DocumentView, LegalView, ContactView, PackReviewView, BrandGuideView and SystemAuditView"],
+    deferred: ["chrome-free LandingView, MarketingView, CollectionView, LegalView, ContactView, PackReviewView, BrandGuideView and SystemAuditView"],
   },
   { id: 6, name: "Per-page head", owner: "Publisher", mountOwner: "Publisher pageHead", implementationScope: "contract-only", deferred: ["pageHead"] },
   {

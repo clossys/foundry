@@ -1,7 +1,7 @@
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
-import { Card, mergeUiClasses } from "@clossys/designer/atoms/server";
-import { PageHeader } from "@clossys/designer/blocks/server";
+import { mergeUiClasses } from "@clossys/designer/atoms/server";
 import { SiteFooter, SiteHeader } from "@clossys/designer/shell/server";
+import { PAGE_COLUMN_CLASSES, PageLayout, pageColumnStyle } from "../internal/PageLayout.js";
 import type { SiteChromeGround } from "../internal/viewChromeGround.js";
 import { assertViewContentRoot, usesLegacyChrome } from "../internal/viewContentRoot.js";
 
@@ -179,16 +179,10 @@ export function CaptureView({
     );
 
   const content = (
-    <>
-      <PageHeader title={heading} description={description} />
-      <section aria-label={formLabel}>
-        <Card className="flex flex-col gap-lg">
-          {activeContent}
-          {secondaryAction === undefined ? null : <div className="text-body-s text-ink-secondary">{secondaryAction}</div>}
-        </Card>
-      </section>
-      {notes ? <div className="flex flex-col gap-xs text-body-s text-ink-secondary">{notes}</div> : null}
-    </>
+    <PageLayout title={heading} subtitle={description} notes={notes} cardLabel={formLabel}>
+      {activeContent}
+      {secondaryAction === undefined ? null : <div className="text-body-s text-ink-secondary">{secondaryAction}</div>}
+    </PageLayout>
   );
 
   const legacyChrome = usesLegacyChrome({ brand, header, footer, mainId, nav, headerAction, headerSecondaryAction, ground, footerSecondary });
@@ -197,8 +191,8 @@ export function CaptureView({
     return (
       <div
         {...rest}
-        className={mergeUiClasses("mx-auto flex w-full flex-1 flex-col gap-xl px-lg py-2xl", className)}
-        style={{ maxWidth: "var(--ui-width-prose-max, none)", ...style }}
+        className={mergeUiClasses(PAGE_COLUMN_CLASSES, className)}
+        style={pageColumnStyle("prose", style)}
       >
         {content}
       </div>
@@ -213,7 +207,7 @@ export function CaptureView({
       ) : (
         <SiteHeader ground={chromeGround} brand={brand} nav={nav} secondaryAction={headerSecondaryAction} actions={headerAction} />
       )}
-      <main id={mainId || undefined} tabIndex={mainId ? -1 : undefined} className="mx-auto flex w-full flex-1 flex-col gap-xl px-lg py-2xl" style={{ maxWidth: "var(--ui-width-prose-max, none)" }}>
+      <main id={mainId || undefined} tabIndex={mainId ? -1 : undefined} className={PAGE_COLUMN_CLASSES} style={pageColumnStyle("prose")}>
         {content}
       </main>
       {footer !== undefined ? footer : <SiteFooter ground={chromeGround} secondary={footerSecondary} />}

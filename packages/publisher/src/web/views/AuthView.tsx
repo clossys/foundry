@@ -1,7 +1,7 @@
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
-import { Card, mergeUiClasses } from "@clossys/designer/atoms/server";
-import { PageHeader } from "@clossys/designer/blocks/server";
+import { mergeUiClasses } from "@clossys/designer/atoms/server";
 import { SiteFooter, SiteHeader } from "@clossys/designer/shell/server";
+import { PAGE_COLUMN_CLASSES, PageLayout, pageColumnStyle } from "../internal/PageLayout.js";
 import type { SiteChromeGround } from "../internal/viewChromeGround.js";
 import { assertViewContentRoot, usesLegacyChrome } from "../internal/viewContentRoot.js";
 
@@ -158,9 +158,9 @@ export interface AuthViewProps extends HTMLAttributes<HTMLDivElement> {
  * Inside a `SiteFrame` (the default, with no chrome prop) it renders its
  * content only, landmark-free, under the frame's single `<main>`. With any
  * deprecated chrome prop it renders the legacy page, whose shell is
- * Designer's, in order: `SiteHeader`, then the three body blocks every
- * front-door view shares - the page header block (`PageHeader`:
- * heading and description), the body block (`Card` around the form slot)
+ * Designer's, in order: `SiteHeader`, then the page layout every
+ * front-door view shares (see `PageLayout`) - the header block
+ * (heading and description), the body block (`Card` around the form slot)
  * and the notes block (`notes`, below the card) - then the footnote,
  * `SiteFooter`. There is no `mode` prop. A step
  * differs by the heading, the form slot, and the alternate-step lines the
@@ -200,8 +200,7 @@ export function AuthView({
   const notesBlock = notes ?? secondaryAction;
   const content = (
     <>
-      <PageHeader title={heading} description={description} />
-      <Card className="flex flex-col gap-lg">
+      <PageLayout title={heading} subtitle={description} notes={notesBlock}>
         {isDisabled ? (
           <fieldset disabled className="m-0 min-w-0 border-0 p-0">
             {form}
@@ -209,9 +208,8 @@ export function AuthView({
         ) : (
           form
         )}
-      </Card>
-      {notesBlock ? <div className="flex flex-col gap-xs text-body-s text-ink-secondary">{notesBlock}</div> : null}
-      {footnote ? <p className="text-body-s text-ink-muted">{footnote}</p> : null}
+      </PageLayout>
+      {footnote ? <p className="text-center text-body-s text-ink-muted">{footnote}</p> : null}
     </>
   );
 
@@ -221,8 +219,8 @@ export function AuthView({
     return (
       <div
         {...rest}
-        className={mergeUiClasses("mx-auto flex w-full flex-1 flex-col gap-xl px-lg py-2xl", className)}
-        style={{ maxWidth: "var(--ui-width-form-max, none)", ...style }}
+        className={mergeUiClasses(PAGE_COLUMN_CLASSES, className)}
+        style={pageColumnStyle("form", style)}
       >
         {content}
       </div>
@@ -247,8 +245,8 @@ export function AuthView({
       <main
         id={mainId || undefined}
         tabIndex={mainId ? -1 : undefined}
-        className="mx-auto flex w-full flex-1 flex-col gap-xl px-lg py-2xl"
-        style={{ maxWidth: "var(--ui-width-form-max, none)" }}
+        className={PAGE_COLUMN_CLASSES}
+        style={pageColumnStyle("form")}
       >
         {content}
       </main>

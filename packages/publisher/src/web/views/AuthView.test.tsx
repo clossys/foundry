@@ -17,7 +17,7 @@ import { SignInForm } from "./SignInForm.js";
 
 afterEach(cleanup);
 
-const ALLOWED_IMPORT = /^(react|@clossys\/designer\/.+|\.\.\/internal\/viewChromeGround\.js|\.\.\/internal\/viewContentRoot\.js)$/;
+const ALLOWED_IMPORT = /^(react|@clossys\/designer\/.+|\.\.\/internal\/PageLayout\.js|\.\.\/internal\/viewChromeGround\.js|\.\.\/internal\/viewContentRoot\.js)$/;
 
 /**
  * Every module specifier named by an `import` statement (bare, type, or
@@ -113,7 +113,7 @@ describe("AuthView", () => {
     expect(within(screen.getByRole("contentinfo")).getByText("Support line")).toBeInTheDocument();
   });
 
-  it("imports only react, @clossys/designer/*, the shared chrome-ground type and the content-root guard (no auth provider)", () => {
+  it("imports only react, @clossys/designer/*, the shared page layout, the chrome-ground type and the content-root guard (no auth provider)", () => {
     const source = readFileSync(join(import.meta.dirname, "AuthView.tsx"), "utf8");
     const specifiers = moduleSpecifiers(source);
     expect(specifiers.length).toBeGreaterThan(0);
@@ -163,7 +163,7 @@ describe("AuthView", () => {
     const line = link.closest("main > div") as HTMLElement;
     expect(line).not.toBeNull();
     expect(card.nextElementSibling).toBe(line);
-    expect(line.className).toContain("flex flex-col gap-xs text-body-s text-ink-secondary");
+    expect(line.className).toContain("flex flex-col items-center gap-xs text-center text-body-s text-ink-secondary");
     expect(line.nextElementSibling).toBe(screen.getByText("Terms apply."));
   });
 
@@ -419,7 +419,7 @@ describe("AuthView", () => {
     const card = container.querySelector(".rounded-control") as HTMLElement;
     const line = link.closest("main > div") as HTMLElement;
     expect(card.nextElementSibling).toBe(line);
-    expect(line.className).toContain("flex flex-col gap-xs text-body-s text-ink-secondary");
+    expect(line.className).toContain("flex flex-col items-center gap-xs text-center text-body-s text-ink-secondary");
     expect(line.nextElementSibling).toBe(screen.getByText("Terms apply."));
   });
 

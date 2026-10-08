@@ -93,7 +93,8 @@ describe("CaptureView", () => {
   });
 
   it("carries no raw length literal in a var() fallback", () => {
-    const source = readFileSync(join(import.meta.dirname, "CaptureView.tsx"), "utf8");
+    // The column's measure token lives in the shared page layout, which the view builds its column from.
+    const source = ["CaptureView.tsx", join("..", "internal", "PageLayout.tsx")].map((file) => readFileSync(join(import.meta.dirname, file), "utf8")).join("\n");
     expect(varCalls(source).length).toBeGreaterThan(0);
     expect(hasRawLengthFallback(source)).toBe(false);
     const html = renderToStaticMarkup(<CaptureView brand="Acme" heading="Keep in touch" form="Fields" />);
@@ -123,7 +124,7 @@ describe("CaptureView", () => {
     const notes = blocks[2] as HTMLElement;
     expect(card).not.toContainElement(notes);
     expect(notes).toHaveTextContent("We use your email only to reply.");
-    expect(notes.className).toContain("flex flex-col gap-xs text-body-s text-ink-secondary");
+    expect(notes.className).toContain("flex flex-col items-center gap-xs text-center text-body-s text-ink-secondary");
   });
 
   it("omits the notes block when no notes are given", () => {

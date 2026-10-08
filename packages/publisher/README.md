@@ -779,9 +779,10 @@ These exports are direct, server-safe page shells rather than new
 `SurfaceDocument.template` registrations. They deliberately do not select
 content, load a CMS, own a router, or add client state.
 
-`CaptureView` provides the site chrome, one heading, a consumer-owned form
-inside Designer's `Card`, an optional `notes` block below the card, and a
-footer. `secondaryAction` stays inside the card, under the form or the
+`CaptureView` provides one heading, a consumer-owned form inside Designer's
+`Card` and an optional `notes` block below the card, as the shared
+[page layout](#page-layout); the deprecated chrome props add a site header and
+a footer. `secondaryAction` stays inside the card, under the form or the
 confirmation. The header slots are listed under
 [Front-door shell](#front-door-shell). The consumer owns form fields, submission, validation,
 and network effects. On a failed client-side submission, pass both
@@ -794,7 +795,10 @@ the region that holds the form or the confirmation, and defaults to
 "Capture form".
 
 `DocumentView` accepts a `StructuredDocument` and an approved-copy resolver,
-then calls `renderStructuredDocument` itself. A caller cannot supply a
+then calls `renderStructuredDocument` itself. Inside a `SiteFrame` it renders
+the [page layout](#page-layout) shared with `CaptureView` and `AuthView`: the
+document title and optional summary as the header, the effective date and the
+article in the card, and the optional `action` as the notes line below it. A caller cannot supply a
 pre-rendered article node or skip heading and in-document-fragment validation
 on this path. The document title becomes the page `h1`; optional summary and
 effective-date labels remain `CopyRef`s. An effective date is
@@ -844,7 +848,7 @@ and `contrastLabel` (default "Contrast"), and its coverage status line with
 "Brand file coverage failed." from `brandOk`).
 
 There is intentionally no `EntryView`. A document-backed entry page uses
-`DocumentView`, with its optional header action linking back to the
+`DocumentView`, with its optional `action` linking back to the
 collection, rather than duplicating the validated document page contract.
 This is the narrow disposition for entry pages; it does not add CMS, parser,
 or taxonomy behavior. A future Designer-block integration is separately
@@ -2189,7 +2193,7 @@ links its legal row to the public site's `/privacy` and `/terms` on
 
 | Safe inside `SiteFrame` (no `<main>` of their own when no chrome prop is passed) | Still render their own `<main>` |
 | --- | --- |
-| `AuthView`, `CaptureView`, `BoundaryView`, `ErrorView` | `LandingView`, `MarketingView`, `CollectionView`, `DocumentView`, `LegalView`, `ContactView`, `PackReviewView`, `BrandGuideView`, `SystemAuditView` |
+| `AuthView`, `CaptureView`, `DocumentView`, `BoundaryView`, `ErrorView` | `LandingView`, `MarketingView`, `CollectionView`, `LegalView`, `ContactView`, `PackReviewView`, `BrandGuideView`, `SystemAuditView` |
 
 `SectionedView` renders its own `<main>` by default; pass `landmark="none"`
 to place it inside the frame. The built-in registry `AuthView` template
@@ -2231,8 +2235,8 @@ extensions: copy, tokens, backdrop and the signature visual. A band the
 frame or a view lacks is a package candidate, to be added here or in
 Designer, not a local fork of the frame or a view.
 
-**Deprecated view chrome.** The chrome props on `AuthView`, `CaptureView` and
-`BoundaryView` (`brand`, `header`, `footer`, `mainId`, `nav`,
+**Deprecated view chrome.** The chrome props on `AuthView`, `CaptureView`,
+`DocumentView` and `BoundaryView` (`brand`, `header`, `footer`, `mainId`, `nav`,
 `headerAction`, the secondary header action, `ground`, `footerSecondary`, and
 `surfaceLabel` on `AuthView`) are deprecated. They still work: passing any one
 of them selects the legacy page, unchanged, with the view's own header,
@@ -2260,7 +2264,9 @@ front-door page reads the same way:
    caller-supplied `IconNode`; below the tablet breakpoint the label is
    visually hidden and stays the link's accessible name. `surfaceLabel` on
    `AuthView` still renders and is superseded by these links.
-2. **Page header block.** The page's one `<h1>` and its supporting line.
+2. **Page header block.** The page's one `<h1>` and its supporting line,
+   centered on `AuthView` and `CaptureView`, which use the shared [page
+   layout](#page-layout).
 3. **Body block.** The form or action inside a Designer `Card`.
 4. **Notes block.** `notes`, below the card.
 5. **Footer.** Designer's `SiteFooter`, whose `footerSecondary` slot holds
@@ -2318,7 +2324,74 @@ page's `<main>` that `id` and `tabIndex={-1}`, so a skip link in the host's
 own chrome can point at it and move focus there. When `mainId` is unset (or
 empty) the markup is unchanged: no `id` and no `tabindex`.
 
-`LegalView` and `DocumentView` keep their current structure.
+`LegalView` keeps its current structure.
+
+### Page layout
+
+`CaptureView`, `DocumentView` and `AuthView` share one page layout, so a
+site's contact, document and sign-in pages read the same way. It has three
+slots, centered in one column:
+
+1. **Header.** The page title, which is the page's one `<h1>`, and an
+   optional subtitle under it.
+2. **Body card.** The page content inside Designer's `Card`, start-aligned for
+   reading: the form on `CaptureView` and `AuthView`, the document on
+   `DocumentView` (its effective date first, then the article).
+3. **Notes.** An optional footnote-like line under the card, usually one
+   alternative link. The element is absent from the markup when the slot is
+   empty (`null`, `undefined`, `false`, an empty string or an empty list).
+
+| Slot | `CaptureView` | `DocumentView` | `AuthView` |
+| --- | --- | --- | --- |
+| Header title | `heading` | the document's title | `heading` |
+| Header subtitle | `description` | `summary` | `description` |
+| Body card | `form` (or `submitted`) | `document` and `effectiveDate` | `form` |
+| Notes | `notes` | `action` | `notes` |
+
+```tsx
+<SiteFrame shell={shell} resolveCopy={resolveCopy} resolveAsset={resolveAsset}>
+  <CaptureView
+    heading="Talk to us"
+    description="We reply within a week."
+    form={<ContactForm />}
+    notes={<a href="/help">Need help instead? Visit support</a>}
+  />
+</SiteFrame>
+
+<SiteFrame shell={shell} resolveCopy={resolveCopy} resolveAsset={resolveAsset}>
+  <DocumentView
+    document={privacyDocument}
+    resolveCopyId={resolveCopyId}
+    summary={{ id: "privacy.summary" }}
+    action={<a href="/terms">Read the terms</a>}
+  />
+</SiteFrame>
+
+<SiteFrame shell={shell} resolveCopy={resolveCopy} resolveAsset={resolveAsset}>
+  <AuthView
+    heading="Sign in"
+    description="Use your work email."
+    form={<SignInForm identify={identify} verify={verify} onSignedIn={goHome} />}
+    notes={<a href="/reset">Forgot password?</a>}
+  />
+</SiteFrame>
+```
+
+Every string is a prop, so the views ship no copy. The layout renders no
+header, footer or `<main>` of its own: inside a `SiteFrame` the page keeps
+the frame's one banner, one `<main>` and one contentinfo, and the layout adds
+only its title block, which holds the one `<h1>`. The header and notes are
+centered and the card's own content is not. The column takes the
+`--ui-width-form-max` measure on `AuthView` and `--ui-width-prose-max` on the
+other two, with no fallback length: a host without the token gets an
+unconstrained column.
+
+The deprecated chrome props still select the legacy page, which renders its
+own header, `<main>` and footer around the same layout. `DocumentView` takes
+`brand` and `footerSecondary` for it, and `brand` is no longer required.
+
+The title block (`PageLayoutHeader`) is a Publisher-internal component, so a
+sibling layout without the card shares its header and spacing.
 
 ### Global error document — `GlobalErrorDocument`
 
