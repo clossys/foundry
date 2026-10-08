@@ -1432,7 +1432,7 @@ scroll lock for as long as the dialog is open. None of it reimplemented
 here.
 
 `size`: `"sm" | "md" | "lg"` (default `"md"`), controlling the dialog
-surface's max width. A legitimate prop rather than three separate
+surface's max width (24rem, 28rem and 42rem). A legitimate prop rather than three separate
 components under this package's variant rule: the region set — one dialog
 surface, one scrim — is identical at every size; only the width changes.
 

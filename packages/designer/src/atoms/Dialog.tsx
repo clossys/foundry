@@ -14,15 +14,15 @@ import { UI_ELEVATION_FLOATING, UI_Z_MODAL } from "./internal/ui-vars.js";
 
 export type DialogSize = "sm" | "md" | "lg";
 
-// Tailwind's own built-in max-width scale, not this package's token scale
-// — the same choice `Select` already made for its popover (`min-w-40`,
-// `max-h-64`): there's no token for "how wide should an overlay surface
-// be", and a plain built-in class here doesn't confuse token-parity.test.ts
-// (its `PREFIX_CANDIDATE_FAMILIES` doesn't include `max-w`).
+// Explicit arbitrary widths, not named max-width utilities: this package's
+// named spacing tokens (`--spacing-sm`, `--spacing-md`, `--spacing-2xl`)
+// capture those names, so a named max-width class would compile to a column
+// 8 to 32px wide. The bracketed values cannot collide with a spacing name;
+// the guard in `compiled-css/width-utility-collision.test.ts` keeps it that way.
 const SIZE_CLASSES: Record<DialogSize, string> = {
-  sm: "max-w-sm",
-  md: "max-w-md",
-  lg: "max-w-2xl",
+  sm: "max-w-[24rem]",
+  md: "max-w-[28rem]",
+  lg: "max-w-[42rem]",
 };
 
 export interface DialogProps extends Omit<AriaDialogTriggerProps, "children"> {
