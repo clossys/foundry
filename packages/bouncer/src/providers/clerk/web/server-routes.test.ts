@@ -164,11 +164,61 @@ describe("createClerkSignInPage", () => {
     vi.stubEnv("NODE_ENV", "development");
     vi.stubEnv("NEXT_PUBLIC_DEV_NO_AUTH", "1");
     vi.stubEnv("NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY", "");
+    vi.stubEnv("CLERK_SECRET_KEY", "configured");
     provider.auth.mockResolvedValue({ userId: null });
     const page = createClerkSignInPage({ publishableKey: "configured" });
 
     await expect(page()).resolves.toBeTruthy();
     expect(provider.auth).toHaveBeenCalledOnce();
+  });
+
+  describe("missing provider settings", () => {
+    beforeEach(() => {
+      vi.clearAllMocks();
+      vi.stubEnv("NEXT_PUBLIC_DEV_NO_AUTH", "");
+      vi.stubEnv("NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY", "");
+      vi.stubEnv("CLERK_SECRET_KEY", "");
+      provider.auth.mockResolvedValue({ userId: null });
+    });
+
+    it("writes one server log line naming the missing settings, once for the page, with no values", async () => {
+      const log = vi.spyOn(console, "error").mockImplementation(() => undefined);
+      try {
+        const page = createClerkSignInPage();
+        await page();
+        await page();
+        const lines = log.mock.calls.map((call) => String(call[0])).filter((line) => line.includes("[bouncer]"));
+        expect(lines).toHaveLength(1);
+        expect(lines[0]).toContain("NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY");
+        expect(lines[0]).toContain("CLERK_SECRET_KEY");
+      } finally {
+        log.mockRestore();
+      }
+    });
+
+    it("writes nothing when the settings are present", async () => {
+      vi.stubEnv("NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY", "configured-public");
+      vi.stubEnv("CLERK_SECRET_KEY", "configured-secret");
+      const log = vi.spyOn(console, "error").mockImplementation(() => undefined);
+      try {
+        await createClerkSignInPage()();
+        expect(log).not.toHaveBeenCalled();
+      } finally {
+        log.mockRestore();
+      }
+    });
+
+    it("writes nothing in the explicit keyless development bypass", async () => {
+      vi.stubEnv("NODE_ENV", "development");
+      vi.stubEnv("NEXT_PUBLIC_DEV_NO_AUTH", "1");
+      const log = vi.spyOn(console, "error").mockImplementation(() => undefined);
+      try {
+        await createClerkSignInPage()();
+        expect(log).not.toHaveBeenCalled();
+      } finally {
+        log.mockRestore();
+      }
+    });
   });
 });
 

@@ -31,3 +31,11 @@ export const withRequestAccess = <AuthView brand="Acme" heading="Sign in" descri
 export const withOwnChrome = (
   <AuthView brand={null} header={<header />} footer={<footer />} heading="Sign in" description="Welcome back." form={null} />
 );
+
+// The view has no development-note slot: a page never prints developer text, so
+// a missing sign-in provider is reported at the server and the page shows only
+// the user-facing unavailable message. Both the frame and the legacy page refuse it.
+// @ts-expect-error AuthView has no internalNote prop
+export const withInternalNote = <AuthView heading="Sign in" description="Welcome back." form={null} internalNote={{ label: "Internal", message: "Keys are not set." }} />;
+// @ts-expect-error AuthView has no internalNote prop on the legacy page either
+export const withInternalNoteOnLegacyPage = <AuthView brand="Acme" heading="Sign in" description="Welcome back." form={null} internalNote={{ label: "Internal", message: "Keys are not set." }} />;

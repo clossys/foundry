@@ -3383,9 +3383,9 @@ unavailable, `form` renders inside a disabled `<fieldset>` so the form stays
 on screen with what the person typed still shown, the one notice is the
 form's own `submitError`, and a retry link in `secondaryAction` stays
 enabled). The content column is held to the `--ui-width-form-max` form
-measure (`38rem`). The optional `internalNote` (`{ label, message }`) renders
-a badge-labelled development note under the footnote, and a site passes it
-only in development. An auth page's `footerSecondary` holds a legal row only,
+measure (`38rem`). The view prints no developer text; a missing sign-in
+provider setting is reported in the server log, not on the page. An auth
+page's `footerSecondary` holds a legal row only,
 never a locale switcher, because auth pages are single-locale.
 `secondaryAction` is always the site's copy, and an invitation or activation
 step never offers request-access or sign-up; the view has no mode and no

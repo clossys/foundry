@@ -1,5 +1,5 @@
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
-import { Badge, Card, mergeUiClasses } from "@clossys/designer/atoms/server";
+import { Card, mergeUiClasses } from "@clossys/designer/atoms/server";
 import { PageHeader } from "@clossys/designer/blocks/server";
 import { SiteFooter, SiteHeader } from "@clossys/designer/shell/server";
 import type { SiteChromeGround } from "../internal/viewChromeGround.js";
@@ -135,15 +135,6 @@ export interface AuthViewProps extends HTMLAttributes<HTMLDivElement> {
    */
   footnote?: ReactNode;
   /**
-   * An optional development-only note under the footnote - which test
-   * sign-in to use, which environment this is. `label` is the caller's copy
-   * (for example "Internal"), rendered in a neutral Designer `Badge`, then
-   * `message`. The view cannot know it runs in development, so the site
-   * passes this prop only there; nothing renders when it is absent. Keep it
-   * out of `footnote`, which is the legal line.
-   */
-  internalNote?: { label: string; message: ReactNode };
-  /**
    * @deprecated Chrome belongs to `SiteFrame`; see `brand`.
    * Persistent footer content, rendered by Designer's `SiteFooter`. On an
    * auth page this holds a legal row only - Designer's `SiteFooter.Legal`,
@@ -170,8 +161,8 @@ export interface AuthViewProps extends HTMLAttributes<HTMLDivElement> {
  * Designer's, in order: `SiteHeader`, then the three body blocks every
  * front-door view shares - the page header block (`PageHeader`:
  * heading and description), the body block (`Card` around the form slot)
- * and the notes block (`notes`, below the card) - then the footnote, the
- * internal note, `SiteFooter`. There is no `mode` prop. A step
+ * and the notes block (`notes`, below the card) - then the footnote,
+ * `SiteFooter`. There is no `mode` prop. A step
  * differs by the heading, the form slot, and the alternate-step lines the
  * caller passes in.
  *
@@ -198,7 +189,6 @@ export function AuthView({
   secondaryAction,
   footnote,
   isDisabled,
-  internalNote,
   footerSecondary,
   className,
   style,
@@ -222,12 +212,6 @@ export function AuthView({
       </Card>
       {notesBlock ? <div className="flex flex-col gap-xs text-body-s text-ink-secondary">{notesBlock}</div> : null}
       {footnote ? <p className="text-body-s text-ink-muted">{footnote}</p> : null}
-      {internalNote ? (
-        <p className="flex items-center gap-xs text-body-s text-ink-muted">
-          <Badge variant="neutral">{internalNote.label}</Badge>
-          {internalNote.message}
-        </p>
-      ) : null}
     </>
   );
 

@@ -366,9 +366,12 @@ Name a shipped template when its slots cover the page:
   `--ui-width-form-max` form measure, and `description` is a required prop
   so every step decides on a supporting line. The form slot is filled with
   Designer's `Form` / `TextField` / `Button`. There is no mode prop, and
-  the view does not call an auth provider. The optional `internalNote`
-  (`{ label, message }`) renders a badge-labelled development note under the
-  footnote, and a site passes it only in development. An auth page's
+  the view does not call an auth provider. The view prints no developer
+  text: a missing sign-in provider setting is reported once in the server log
+  (for the Clerk adapter, `createClerkSignInPage` in
+  `@clossys/bouncer/providers/clerk/web/server` names the missing settings
+  there, never their values), and the page shows only the user-facing
+  unavailable message. An auth page's
   `footerSecondary` holds a legal row only, never a locale switcher, because
   auth pages are single-locale. `SignInForm` fills the
   form slot of a sign-in page. The header slots are listed under

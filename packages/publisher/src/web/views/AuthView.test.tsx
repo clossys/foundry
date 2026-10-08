@@ -11,7 +11,9 @@ import userEvent from "@testing-library/user-event";
 import { renderToStaticMarkup } from "react-dom/server";
 import { Home, Settings } from "@clossys/designer/icons";
 import { SiteFooter, SiteHeader } from "@clossys/designer/shell/server";
+import { FRONT_DOOR_COPY_EN } from "@clossys/writer";
 import { AuthView } from "./AuthView.js";
+import { SignInForm } from "./SignInForm.js";
 
 afterEach(cleanup);
 
@@ -257,34 +259,46 @@ describe("AuthView", () => {
     expect(container.querySelector("header")).not.toBeNull();
     expect(container.querySelector("footer")).not.toBeNull();
     expect(screen.queryByRole("link")).not.toBeInTheDocument();
-    // No internal note by default: Designer's Badge is the only `rounded-pill`
-    // element this view could render inside <main>.
     expect(screen.getByRole("main").querySelector(".rounded-pill")).toBeNull();
   });
 
-  it("internal note placement: the note is the element after the footnote, outside the card, led by a Badge with the label", () => {
-    const { container } = render(
-      <AuthView
-        brand="Acme"
-        heading="Sign in"
-        description="Welcome back."
-        form={<div>form</div>}
-        footnote="Terms apply."
-        internalNote={{ label: "Internal", message: "Use the test account." }}
-      />,
-    );
-    const footnote = screen.getByText("Terms apply.");
-    const note = footnote.nextElementSibling as HTMLElement;
-    expect(note).not.toBeNull();
-    expect(note.tagName).toBe("P");
-    expect(note.parentElement).toBe(screen.getByRole("main"));
-    expect(container.querySelector(".rounded-control")).not.toContainElement(note);
-    const badge = note.firstElementChild as HTMLElement;
-    expect(badge.className).toContain("rounded-pill");
-    expect(badge.textContent).toBe("Internal");
-    expect(note).toHaveTextContent("InternalUse the test account.");
-    expect(screen.getByRole("main").querySelectorAll(".rounded-pill")).toHaveLength(1);
-  });
+  it.each(["development", "production"])(
+    "provider settings missing, in %s: the form is disabled with the user-facing unavailable message and no developer text",
+    (nodeEnv) => {
+      vi.stubEnv("NODE_ENV", nodeEnv);
+      const unavailable = FRONT_DOOR_COPY_EN.entries.find((entry) => entry.id === "front-door.unavailable.notice")!.text;
+      const unavailableForm = (
+        <SignInForm unavailable nouns={{ surface: "Acme" }} identify={async () => ({ status: "ok" })} verify={async () => ({ status: "ok" })} onSignedIn={() => undefined} />
+      );
+      const legacy = render(
+        <AuthView
+          brand="Acme"
+          heading="Sign in"
+          description="Welcome back."
+          isDisabled
+          form={unavailableForm}
+        />,
+      );
+      const frameless = render(
+        <AuthView
+          heading="Sign in"
+          description="Welcome back."
+          isDisabled
+          form={unavailableForm}
+        />,
+      );
+      for (const container of [legacy.container, frameless.container]) {
+        const alerts = within(container).getAllByRole("alert");
+        expect(alerts).toHaveLength(1);
+        expect(alerts[0]).toHaveTextContent(unavailable);
+        expect(container.querySelector("fieldset")).toBeDisabled();
+        // Nothing but the page header, the card and the unavailable message: no badge and no developer line.
+        expect(container.querySelector(".rounded-pill")).toBeNull();
+        expect(container.textContent).not.toMatch(/\b(key|keys|setting|settings|restart|dev server|environment|internal)\b/i);
+      }
+      vi.unstubAllEnvs();
+    },
+  );
 
   it("puts the page heading above a card that holds the form, for sign-in and sign-up alike", () => {
     const { container, unmount } = render(
