@@ -1,6 +1,7 @@
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
 import { mergeUiClasses } from "@clossys/designer/atoms/server";
 import { EmptyState } from "@clossys/designer/blocks/server";
+import { assertViewContentRoot } from "../internal/viewContentRoot.js";
 
 export interface ErrorViewProps extends Omit<HTMLAttributes<HTMLDivElement>, "title"> {
   /**
@@ -61,7 +62,18 @@ export interface ErrorViewProps extends Omit<HTMLAttributes<HTMLDivElement>, "ti
  * this component importing or assuming one. See the README for why this
  * package never bundles routing.
  */
-export function ErrorView({
+export function ErrorView(props: ErrorViewProps) {
+  assertViewContentRoot("ErrorView", { role: props.role, id: props.id });
+  return <ErrorViewBody {...props} />;
+}
+
+/**
+ * The error page's markup without the content-root guard. Internal to this
+ * package, not exported from its entry points: `GlobalErrorDocument` renders
+ * this as the whole `<body>`, with no page frame and no `<main>`, so a host
+ * may give its content root `role="main"` there.
+ */
+export function ErrorViewBody({
   status,
   title,
   description,

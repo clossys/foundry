@@ -2,7 +2,7 @@ import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
 import { mergeUiClasses } from "@clossys/designer/atoms";
 import { Faq, FeatureGrid, Hero, type SectionGround } from "@clossys/designer/blocks";
 import { SiteFooter, SiteHeader } from "@clossys/designer/shell";
-import type { ViewChromeGround } from "../internal/viewChromeGround.js";
+import type { SiteChromeGround } from "../internal/viewChromeGround.js";
 
 /**
  * One entry in {@link MarketingViewProps.features} — deliberately a single
@@ -49,7 +49,7 @@ export interface MarketingViewProps extends HTMLAttributes<HTMLDivElement> {
    * bands keep their own `*Ground` props.
    * @default "base"
    */
-  ground?: ViewChromeGround;
+  ground?: SiteChromeGround;
   /** Small label above the hero heading. */
   heroEyebrow?: ReactNode;
   /** The page's own primary message. Renders as the page's `<h1>` (`Hero`'s own default `headingLevel`). */

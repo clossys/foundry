@@ -156,7 +156,8 @@ smallest stable subpath that owns what you need:
 
 | Subpath | Owns |
 | --- | --- |
-| `@clossys/designer/tokens` | Typed `TOKENS`, brand CSS parsing, the brand-coverage gate, WCAG colour math (`contrastRatio` and friends), the contrast gate (`checkTokenContrast`, `CONTRAST_PAIRS`), and `assertTokenStylesLoaded` (dev-only token-CSS presence check — see "Setup" below). No React runtime. |
+| `@clossys/designer/tokens` | Browser-safe typed `TOKENS`, pure brand CSS parsing, the brand-coverage gate, WCAG colour math (`contrastRatio` and friends), the contrast gate (`checkTokenContrast`, `CONTRAST_PAIRS`), and `assertTokenStylesLoaded` (dev-only token-CSS presence check — see "Setup" below). No React runtime. |
+| `@clossys/designer/tokens/server` | Node-only `readBrandCss`, `assertTailwindMergeVersion`, and file-reading result types. Neither helper runs automatically on import. |
 | `@clossys/designer/tokens.css` | Neutral primitive custom-property defaults; works without Tailwind. |
 | `@clossys/designer/theme.css` | Optional Tailwind v4 wiring; imports `tokens.css` itself. |
 | `@clossys/designer/compiled.css` | GENERATED, precompiled utility CSS for `atoms`, `blocks`, and `shell` — the default path for a pre-auth page without Tailwind. Imports nothing itself; load after `tokens.css`. See "Framework-portable components, without Tailwind" below. |
@@ -168,6 +169,29 @@ smallest stable subpath that owns what you need:
 | `@clossys/designer/theme` | `getThemeInitScript`, `ThemeProvider`/`useTheme`, `ThemeToggle` — the runtime half of theming. Not to be confused with the CSS `/theme.css` subpath above. |
 | `@clossys/designer/gate` | Token-purity scanner/gate and the environment-conformance gate (`checkEnvironmentConformance`). |
 | `@clossys/designer/render-environment` | `RENDER_ENVIRONMENT` — a plain data declaration of every subpath's render environment (`"server-safe"` \| `"client-only"`). See "Server Components" below. |
+
+### Node token helper migration
+
+The browser-safe token boundary introduces a breaking source-import change:
+`readBrandCss`, `assertTailwindMergeVersion`, `BrandCssReadIssue`,
+`BrandCssReadIssueReason`, and `BrandCssReadResult` move from
+`@clossys/designer/tokens` to `@clossys/designer/tokens/server`. Pure token
+exports, including `parseBrandDeclarations`, `ParsedBrandCss`, and
+`BrandCssUnchecked`, retain their imports and behavior. Node callers using
+both a pure check and a reader split their imports:
+
+```ts
+import { checkBrandFileCoverage } from "@clossys/designer/tokens";
+import { readBrandCss } from "@clossys/designer/tokens/server";
+
+const read = readBrandCss("src/styles/brand.css");
+const coverage = checkBrandFileCoverage(read.declarations);
+```
+
+The new server subpath belongs to the pending minor release; published
+`0.7.1` does not provide it. Release application must update dependent package
+and packed-template ranges together, and the resulting release cohort still
+needs its normal qualification before publication.
 
 `ui` never exports page views, routes, metadata, strategy facts, or copy.
 Components receive resolved `ReactNode`s, labels, data, callbacks, and URLs
@@ -754,7 +778,7 @@ break bundling this package's components for the browser. Call
 build script, a setup step, or a test — never from component code):
 
 ```ts
-import { assertTailwindMergeVersion } from "@clossys/designer/tokens";
+import { assertTailwindMergeVersion } from "@clossys/designer/tokens/server";
 
 assertTailwindMergeVersion();
 ```
@@ -3383,9 +3407,9 @@ unavailable, `form` renders inside a disabled `<fieldset>` so the form stays
 on screen with what the person typed still shown, the one notice is the
 form's own `submitError`, and a retry link in `secondaryAction` stays
 enabled). The content column is held to the `--ui-width-form-max` form
-measure (`38rem`). The optional `internalNote` (`{ label, message }`) renders
-a badge-labelled development note under the footnote, and a site passes it
-only in development. An auth page's `footerSecondary` holds a legal row only,
+measure (`38rem`). The view prints no developer text; a missing sign-in
+provider setting is reported in the server log, not on the page. An auth
+page's `footerSecondary` holds a legal row only,
 never a locale switcher, because auth pages are single-locale.
 `secondaryAction` is always the site's copy, and an invitation or activation
 step never offers request-access or sign-up; the view has no mode and no
@@ -3746,6 +3770,36 @@ host omits it.
 ```tsx
 <SiteHeader brand={<Link href="/" variant="standalone">Acme</Link>} surfaceLabel="admin" />
 ```
+
+`surfaceLabel` is superseded by environment links and stays for existing
+callers. `SiteHeader.ActionLink` is one header call to action: a real
+`<a>` with a caller-supplied `IconNode` glyph and a `label`. From the
+`tablet` breakpoint up it shows the icon and the label; below it the label is
+visually hidden and stays the link's accessible name, so the icon-only link
+still announces its label. `isCurrent` sets `aria-current="true"` and adds
+an underline-style inset rule, so the current link is not marked by colour
+alone. The link is at least the layout tap target in both directions and
+shows the accent focus outline. The package ships no hrefs and no copy: the
+caller passes both. Pass one per environment in `actions`, with the brand
+linking to the main site home.
+
+```tsx
+import { Home, Settings } from "@clossys/designer/icons";
+
+<SiteHeader
+  brand={<Link href="https://example.com/" variant="standalone">Acme</Link>}
+  actions={
+    <>
+      <SiteHeader.ActionLink href="https://app.example.com/" label="App" icon={Home} isCurrent />
+      <SiteHeader.ActionLink href="https://admin.example.com/" label="Admin" icon={Settings} />
+    </>
+  }
+/>
+```
+
+`variant` takes `"primary"`, `"secondary"` (default) or `"ghost"`, the same
+looks as `Button` at its small size. `ActionLink` is a server-safe component
+from both `@clossys/designer/shell` and `@clossys/designer/shell/server`.
 
 `NavShell` is the responsive half: an ordinary inline `<nav>` from the
 `tablet` breakpoint up, and a trigger-plus-drawer below it — CSS-only
@@ -5426,17 +5480,17 @@ the same per-subpath pattern `@clossys/publisher` documents: which ones a
 given import needs depends on the subpath you import, not on the package as
 a whole.
 
-- No peers: `tokens`, every CSS subpath (`tokens.css`, `theme.css`,
+- No peers on import: `tokens`, `tokens/server`, every CSS subpath (`tokens.css`, `theme.css`,
   `compiled.css`, `utilities.css`, `brand-template.css`), `icons`, `gate`, and
   `render-environment`.
 - `react`: `atoms`, `blocks`, `shell`, `charts`, `theme`, and each `/server`
-  subpath.
+  component subpath. `tokens/server` does not require React.
 - `react-aria-components`: `atoms`, `blocks`, and `shell` only — `charts`
   and `theme` render without it.
 - `tailwind-merge`: imported by every React component subpath through the
   shared class-merge helper; a missing install degrades to an unmerged
   class join rather than failing, and `assertTailwindMergeVersion()` from
-  `tokens` catches an installed-but-out-of-range version.
+  `tokens/server` catches an installed-but-out-of-range version.
 - Not imported by this package at all (consumer-owned): `react-dom` is
   your own render call, and `@internationalized/date` is only needed when
   you construct a `DateField` value.

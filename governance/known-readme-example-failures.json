@@ -18,7 +18,7 @@
     ],
     "designer": [
       {
-        "block": 55,
+        "block": 56,
         "code": "TS2741",
         "reason": "README.md:2529's ArticleBodyProps example omits the required `children` property — see issue #908."
       }

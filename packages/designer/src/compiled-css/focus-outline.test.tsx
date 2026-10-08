@@ -4,6 +4,8 @@ import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { Banner } from "../atoms/Banner.js";
 import { Faq } from "../blocks/Faq.server.js";
+import { Home } from "../icons/index.js";
+import { SiteHeader } from "../shell/SiteHeader.js";
 
 const compiledCss = readFileSync(resolve(import.meta.dirname, "../../styles/compiled.css"), "utf8");
 
@@ -30,16 +32,18 @@ function resolvedFocusOutlineStyle(className: string): string {
 }
 
 describe("compiled focus-outline cascade", () => {
-  it("resolves a paintable outline for Banner dismiss and server-native FAQ controls", () => {
+  it("resolves a paintable outline for Banner dismiss, server-native FAQ controls and SiteHeader.ActionLink", () => {
     const { container } = render(
       <>
         <Banner onDismiss={() => {}}>Notice</Banner>
         <Faq items={[{ id: "one", question: "Question", answer: "Answer" }]} />
+        <SiteHeader.ActionLink href="/" label="Home" icon={Home} />
       </>,
     );
     const controls = [
       screen.getByRole("button", { name: "Dismiss" }),
       container.querySelector("details > summary"),
+      screen.getByRole("link", { name: "Home" }),
     ];
 
     expect(outlineNoneRule).toMatch(/--tw-outline-style:\s*none/);
