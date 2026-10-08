@@ -13,6 +13,8 @@ import {
   isNavigationRequest,
   type GatePrincipalState,
   type GatedHostGateOptions,
+  type HardenedGatedHostGateOptions,
+  type ReturnUrlResolverOptions,
 } from "./index.js";
 
 const ORIGIN = "https://admin.example.test";
@@ -733,5 +735,177 @@ describe("review fixes: an oversized return URL", () => {
     expect(res.headers.get("location")).toBe(signInTarget("/"));
     const query = await gate(signedOut)(req(`/x?q=${"b".repeat(3000)}`, navigate), page);
     expect(query.headers.get("location")).toBe(signInTarget("/"));
+  });
+});
+
+describe("hardened gate (explicit opt-in only)", () => {
+  type Answer = boolean | "permitted" | "denied" | "unavailable";
+  function hardened(
+    state: GatePrincipalState<Principal> | Error,
+    answer: Answer | Error | (() => Answer) = "permitted",
+    extra: Partial<HardenedGatedHostGateOptions<Principal>> = {},
+  ) {
+    return createGatedHostGate<Principal>({
+      hardened: true,
+      origin: ORIGIN,
+      signInPath: "/sign-in",
+      notAuthorizedPath: "/not-authorized",
+      siblingOrigins: [SIBLING],
+      protectedResourceMetadata: { authorization_servers: [IDP] },
+      resolvePrincipal: () => {
+        if (state instanceof Error) throw state;
+        return state;
+      },
+      isPermitted: () => {
+        if (answer instanceof Error) throw answer;
+        return typeof answer === "function" ? answer() : answer;
+      },
+      ...extra,
+    });
+  }
+  const browser = { accept: "text/html,application/xhtml+xml", "sec-fetch-mode": "navigate" };
+
+  it("is not entered by default, by hardened: false, or by an inherited hardened flag", async () => {
+    const legacy = gate(viewer, { isPermitted: () => "permitted" as unknown as boolean });
+    expect((await legacy(req("/x", browser), page)).status).toBe(307);
+    const explicitFalse = createGatedHostGate<Principal>({ ...options(signedOut), hardened: false });
+    expect((await explicitFalse(req("/x", { rsc: "1" }), page)).status).toBe(307);
+    // An inherited flag carries no authority: the gate stays legacy and an RSC request is still navigation.
+    const inherited = Object.assign(Object.create({ hardened: true }) as object, options(signedOut));
+    expect((await createGatedHostGate(inherited as GatedHostGateOptions<Principal>)(req("/x", { rsc: "1" }), page)).status).toBe(307);
+    expect(() => createGatedHostGate({ ...options(signedOut), hardened: "yes" } as unknown as GatedHostGateOptions<Principal>)).toThrow(TypeError);
+  });
+
+  it("accepts permitted, denied and unavailable answers, and keeps 503 for uncertainty", async () => {
+    expect((await hardened(admin, "permitted")(req("/x", browser), page)).status).toBe(200);
+    expect((await hardened(admin, true)(req("/x", browser), page)).status).toBe(200);
+    const denied = await hardened(admin, "denied")(req("/x", browser), page);
+    expect(denied.status).toBe(307);
+    expect(denied.headers.get("location")).toBe("/not-authorized");
+    expect((await hardened(admin, false)(req("/api/x"), page)).status).toBe(403);
+    for (const answer of ["unavailable", new Error("down")] as const) {
+      const res = await hardened(admin, answer)(req("/x", browser), page);
+      expect(res.status).toBe(503);
+      expect(res.headers.get("retry-after")).toBe("30");
+      expect(res.headers.get("cache-control")).toBe("no-store");
+    }
+    // An unknown answer never permits.
+    expect((await hardened(admin, (() => "yes") as unknown as () => Answer)(req("/api/x"), page)).status).toBe(403);
+  });
+
+  it("answers an unavailable provider with 503 on a gated path instead of sending the visitor to sign in", async () => {
+    for (const state of [{ state: "unavailable" } as const, new Error("down")]) {
+      let rendered = false;
+      const res = await hardened(state)(req("/x", browser), () => {
+        rendered = true;
+        return page();
+      });
+      expect(res.status).toBe(503);
+      expect(res.headers.get("retry-after")).toBe("30");
+      expect(rendered).toBe(false);
+    }
+  });
+
+  it("counts only a GET or HEAD with a positive text/html quality as navigation, never an action or router request", async () => {
+    const signedOutGate = hardened(signedOut);
+    const status = async (init: RequestInit & { path?: string }) =>
+      (await signedOutGate(new Request(`${ORIGIN}${init.path ?? "/x"}`, init), page)).status;
+    expect(await status({ headers: browser })).toBe(307);
+    expect(await status({ method: "HEAD", headers: { accept: "text/html" } })).toBe(307);
+    expect(await status({ headers: { accept: "text/html;q=0.001" } })).toBe(307);
+    expect(await status({ method: "POST", headers: browser })).toBe(401);
+    expect(await status({ headers: { "sec-fetch-mode": "navigate", accept: "*/*" } })).toBe(401);
+    expect(await status({ headers: { ...browser, rsc: "1" } })).toBe(401);
+    expect(await status({ path: "/x?_rsc=abc", headers: browser })).toBe(401);
+    expect(await status({ headers: { ...browser, "next-router-state-tree": "x" } })).toBe(401);
+    expect(await status({ headers: { ...browser, "next-action": "abc" } })).toBe(401);
+    expect(await status({ method: "POST", headers: { ...browser, "next-action": "abc" } })).toBe(401);
+    for (const accept of ["text/html;q=0", "text/html;q=0.000", "text/html;q=abc", "text/html;q=1.5", "text/html;q=", "text/html;q=0.0001"]) {
+      expect(await status({ headers: { accept } }), accept).toBe(401);
+    }
+  });
+
+  it("uses decoding and case folding only to deny: an encoded or case-variant path never takes a pass-through", async () => {
+    const isPublicPath = (pathname: string) => pathname.toLowerCase() === "/health" || pathname === "/caf%C3%A9";
+    const res = async (path: string) => {
+      let rendered = false;
+      const response = await hardened(signedOut, "permitted", { isPublicPath })(req(path, browser), () => {
+        rendered = true;
+        return page();
+      });
+      return { status: response.status, rendered };
+    };
+    expect(await res("/health")).toEqual({ status: 200, rendered: true });
+    expect(await res("/sign-in")).toEqual({ status: 200, rendered: true });
+    for (const path of ["/%68ealth", "/caf%C3%A9", "/sign%2Din", "/%73ign-in/x"]) {
+      expect(await res(path), path).toEqual({ status: 307, rendered: false });
+    }
+    // Case folding and decoding classify a path as an API route (no redirect), never the reverse.
+    for (const path of ["/API/x", "/%61pi/x"]) {
+      expect((await res(path)).status, path).toBe(401);
+    }
+  });
+
+  it("writes a return URL that is never an excluded route, at any representation, and falls back to a validated path", async () => {
+    const signedOutGate = hardened(signedOut, "permitted", { excludedReturnPaths: ["/sign-out"], returnFallbackPath: "/home" });
+    const location = async (path: string) => (await signedOutGate(req(path, browser), page)).headers.get("location");
+    expect(await location("/reports?q=1")).toBe(signInTarget("/reports?q=1"));
+    for (const path of ["/sign-out", "/SIGN-OUT", "/sign%2Dout", "/not-authorized", "/Not-Authorized", PROTECTED_RESOURCE_METADATA_PATH.toUpperCase()]) {
+      expect(await location(path), path).toBe(signInTarget("/home"));
+    }
+    expect(await location(`/${"a".repeat(2100)}`)).toBe(signInTarget("/home"));
+    expect(await location(`/a?x=${"%22".repeat(700)}`)).toBe(signInTarget("/home"));
+  });
+
+  it("refuses at construction a fallback that is excluded, and an excluded / without an explicit alternative", () => {
+    const build = (extra: Partial<HardenedGatedHostGateOptions<Principal>>) => () => hardened(signedOut, "permitted", extra);
+    expect(build({ excludedReturnPaths: ["/"] })).toThrow(TypeError);
+    expect(build({ excludedReturnPaths: ["/"], returnFallbackPath: "/home" })).not.toThrow();
+    expect(build({ returnFallbackPath: "/sign-in/x" })).toThrow(TypeError);
+    expect(build({ returnFallbackPath: "https://app.example.test/" })).toThrow(TypeError);
+    expect(build({ returnFallbackPath: "/a/../b" })).toThrow(TypeError);
+    expect(build({ excludedReturnPaths: ["sign-out"] })).toThrow(TypeError);
+    expect(build({ excludedReturnPaths: Array.from({ length: 17 }, (_, i) => `/r${i}`) })).toThrow(TypeError);
+  });
+
+  it("reads only own data options: an accessor or a non-plain options object is refused", () => {
+    const base = {
+      hardened: true as const,
+      origin: ORIGIN,
+      signInPath: "/sign-in",
+      notAuthorizedPath: "/not-authorized",
+      protectedResourceMetadata: { authorization_servers: [IDP] },
+      resolvePrincipal: () => signedOut,
+      isPermitted: () => true,
+    };
+    expect(() => createGatedHostGate(base)).not.toThrow();
+    const withGetter = { ...base };
+    Object.defineProperty(withGetter, "isPermitted", { get: () => () => true, enumerable: true });
+    expect(() => createGatedHostGate(withGetter)).toThrow(TypeError);
+    expect(() => createGatedHostGate({ ...base, siblingOrigins: [, SIBLING] as unknown as string[] })).toThrow(TypeError);
+  });
+});
+
+describe("hardened return-URL resolver (explicit opt-in only)", () => {
+  it("keeps the legacy resolver unchanged and refuses hardened-only options without the flag", () => {
+    const legacy = createReturnUrlResolver({ origin: ORIGIN });
+    expect(legacy("/SIGN-IN")).toBe("/SIGN-IN");
+    expect(() => createReturnUrlResolver({ origin: ORIGIN, excludedPaths: ["/x"] } as unknown as ReturnUrlResolverOptions)).toThrow(TypeError);
+    expect(() => createReturnUrlResolver({ origin: ORIGIN, fallbackPath: "/x" } as unknown as ReturnUrlResolverOptions)).toThrow(TypeError);
+  });
+
+  it("returns the target as written, preserves siblings, and falls back to / or the explicit alternative", () => {
+    const resolve = createReturnUrlResolver({ hardened: true, origin: ORIGIN, siblingOrigins: [SIBLING], excludedPaths: ["/sign-in"] });
+    expect(resolve("/reports?q=1#top")).toBe("/reports?q=1#top");
+    expect(resolve(`${SIBLING}/home`)).toBe(`${SIBLING}/home`);
+    expect(resolve(`${SIBLING}/sign-in`)).toBe(`${SIBLING}/sign-in`);
+    for (const value of ["/sign-in", "/Sign-In", "/sign%2din", "https://@admin.example.test/x", "/a/../x", null, undefined, "x"]) {
+      expect(resolve(value), String(value)).toBe("/");
+    }
+    const withFallback = createReturnUrlResolver({ hardened: true, origin: ORIGIN, excludedPaths: ["/"], fallbackPath: "/home" });
+    expect(withFallback("/")).toBe("/home");
+    expect(withFallback("/reports")).toBe("/reports");
+    expect(() => createReturnUrlResolver({ hardened: true, origin: ORIGIN, excludedPaths: ["/"] })).toThrow(TypeError);
+    expect(() => createReturnUrlResolver({ hardened: true, origin: ORIGIN, excludedPaths: ["/home"], fallbackPath: "/HOME" })).toThrow(TypeError);
   });
 });
