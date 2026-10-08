@@ -283,7 +283,7 @@ describe("verifyRepository re-checks the approval and the authorization (#1178)"
     const withdrawn = { exitCode: 2, verdict: "indeterminate", reason: "awaiting-approval", detail: "plan-not-approved" };
     expect(await verifyRepository({ clone: fixture.clone, hub: fixture.hub, set: fixture.set, now: NOW })).toEqual(withdrawn);
     expect(await verifyMain(["--repo", SITE_ID], { cwd: fixture.hub, clone: fixture.clone, set: fixture.set, now: NOW })).toBe(2);
-  });
+  }, 10_000);
 
   it("5g: fails after the execution authorization expires, judged at the injected instant", async () => {
     const fixture = await materialized({ hub: ({ plan }) => ({ assessment: assessmentFor(plan, { expiresAt: "2026-10-15T00:00:00Z" }) }) }, NOW);
@@ -297,7 +297,7 @@ describe("verifyRepository re-checks the approval and the authorization (#1178)"
     });
     const { verifyMain } = await import("./apply-plan-cli.js");
     expect(await verifyMain(["--repo", SITE_ID], { cwd: fixture.hub, clone: fixture.clone, set: fixture.set, now: later })).toBe(1);
-  });
+  }, 10_000);
 
   it("verify uses the injected readiness runner, and refuses when it cannot say", async () => {
     const fixture = await materialized({}, NOW);

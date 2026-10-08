@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { assertTailwindMergeVersion } from "./assert-tailwind-merge-version.js";
+import { assertTailwindMergeVersion } from "./server.js";
 
 describe("assertTailwindMergeVersion", () => {
   afterEach(() => {
@@ -18,7 +18,7 @@ describe("assertTailwindMergeVersion", () => {
     vi.doMock("../internal/resolve-installed-peer-version.js", () => ({
       resolveInstalledPeerVersion: () => undefined,
     }));
-    const { assertTailwindMergeVersion: assertWithMock } = await import("./assert-tailwind-merge-version.js");
+    const { assertTailwindMergeVersion: assertWithMock } = await import("./server.js");
     expect(() => assertWithMock()).toThrow(/tailwind-merge is required for this import but is not installed/);
   });
 
@@ -26,7 +26,7 @@ describe("assertTailwindMergeVersion", () => {
     vi.doMock("../internal/resolve-installed-peer-version.js", () => ({
       resolveInstalledPeerVersion: () => "1.0.0",
     }));
-    const { assertTailwindMergeVersion: assertWithMock } = await import("./assert-tailwind-merge-version.js");
+    const { assertTailwindMergeVersion: assertWithMock } = await import("./server.js");
     expect(() => assertWithMock()).toThrow(/tailwind-merge@1\.0\.0 is installed, but this package requires tailwind-merge@"\^3\.7\.0"/);
   });
 
@@ -40,7 +40,7 @@ describe("assertTailwindMergeVersion", () => {
     }));
     const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
     try {
-      const { assertTailwindMergeVersion: assertWithMock } = await import("./assert-tailwind-merge-version.js");
+      const { assertTailwindMergeVersion: assertWithMock } = await import("./server.js");
       expect(() => assertWithMock()).not.toThrow();
       expect(warn).toHaveBeenCalledTimes(1);
       expect(warn.mock.calls[0]?.[0]).toMatch(/prerelease identifier/);

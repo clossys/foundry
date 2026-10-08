@@ -585,6 +585,13 @@ webhook verification) plus `./providers/clerk/web`,
 `./providers/clerk/web/proxy`, split so importing the edge-safe proxy entry
 never pulls `next/headers`, `next/navigation`, React, or client components.
 
+`createClerkSignInPage` (from `./providers/clerk/web/server`) writes one line
+to the server log, the first time its page renders without a sign-in provider
+setting, naming the missing settings (`NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`,
+`CLERK_SECRET_KEY`) and never their values. It stays quiet in the explicit
+keyless development bypass. The page shows no developer text; the host renders
+its user-facing unavailable message.
+
 #### Webhook verification contract
 
 `verifyClerkWebhook` and `verifyAndMapClerkWebhook` check in a fixed order:

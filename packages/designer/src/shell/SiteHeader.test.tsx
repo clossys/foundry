@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { Home, Settings } from "../icons/index.js";
 import { SiteHeader } from "./SiteHeader.js";
+import { SiteHeader as ServerSiteHeader } from "./server.js";
 
 describe("SiteHeader", () => {
   it("renders the brand, nav, and actions slots", () => {
@@ -132,6 +135,89 @@ describe("SiteHeader", () => {
       const row = screen.getByRole("banner").firstElementChild as HTMLElement;
       expect(row.children).toHaveLength(1);
       expect(screen.getByRole("banner")).not.toHaveTextContent("admin");
+    });
+  });
+
+  describe("SiteHeader.ActionLink", () => {
+    function renderEnvironments(current: "app" | "admin" | null = "admin") {
+      return render(
+        <SiteHeader
+          brand={<a href="/">Acme</a>}
+          actions={
+            <>
+              <SiteHeader.ActionLink href="https://app.example.com/" label="App" icon={Home} isCurrent={current === "app"} />
+              <SiteHeader.ActionLink href="https://admin.example.com/" label="Admin" icon={Settings} isCurrent={current === "admin"} />
+            </>
+          }
+        />,
+      );
+    }
+
+    it("renders a real link whose accessible name is the label, with a decorative icon", () => {
+      renderEnvironments();
+      const banner = screen.getByRole("banner");
+      const app = within(banner).getByRole("link", { name: "App" });
+      expect(app).toHaveAttribute("href", "https://app.example.com/");
+      const svg = app.querySelector("svg") as SVGElement;
+      expect(svg).toHaveAttribute("aria-hidden", "true");
+      expect(svg).not.toHaveAttribute("aria-label");
+      expect(app).not.toHaveAttribute("aria-label");
+    });
+
+    it("keeps the label in the DOM, visually hidden below tablet and shown from tablet up", () => {
+      renderEnvironments();
+      const label = within(screen.getByRole("link", { name: "Admin" })).getByText("Admin");
+      expect(label.tagName).toBe("SPAN");
+      expect(label.className.split(" ")).toEqual(["sr-only", "tablet:not-sr-only"]);
+    });
+
+    it("marks only the current link with aria-current=true and a non-colour cue", () => {
+      renderEnvironments("admin");
+      const app = screen.getByRole("link", { name: "App" });
+      const admin = screen.getByRole("link", { name: "Admin" });
+      expect(admin).toHaveAttribute("aria-current", "true");
+      expect(app).not.toHaveAttribute("aria-current");
+      expect(admin.style.boxShadow).toContain("inset");
+      expect(app.style.boxShadow).toBe("");
+    });
+
+    it("renders no aria-current when no link is current", () => {
+      renderEnvironments(null);
+      for (const link of screen.getAllByRole("link")) expect(link).not.toHaveAttribute("aria-current");
+    });
+
+    it("reaches the tap-target token in both dimensions", () => {
+      renderEnvironments();
+      const app = screen.getByRole("link", { name: "App" });
+      expect(app.style.minHeight).toBe("var(--ui-layout-tap-target, 44px)");
+      expect(app.style.minWidth).toBe("var(--ui-layout-tap-target, 44px)");
+    });
+
+    it("borrows the small button look without the outline-none that would hide its focus outline", () => {
+      render(<SiteHeader.ActionLink href="/" label="Home" icon={Home} variant="primary" />);
+      const classes = screen.getByRole("link", { name: "Home" }).className.split(" ");
+      expect(classes).toContain("bg-accent");
+      expect(classes).toContain("px-sm");
+      expect(classes).not.toContain("outline-none");
+      expect(classes).toEqual(expect.arrayContaining(["focus-visible:outline-2", "focus-visible:outline-offset-2", "focus-visible:outline-accent"]));
+    });
+
+    it("defaults to the secondary look", () => {
+      render(<SiteHeader.ActionLink href="/" label="Home" icon={Home} />);
+      expect(screen.getByRole("link", { name: "Home" }).className).toContain("bg-surface-raised");
+    });
+
+    it("keeps one banner and no navigation landmark when several links fill actions", () => {
+      renderEnvironments();
+      expect(screen.getAllByRole("banner")).toHaveLength(1);
+      expect(screen.queryByRole("navigation")).not.toBeInTheDocument();
+    });
+
+    it("ships from the server entry and renders without client code", () => {
+      const html = renderToStaticMarkup(<ServerSiteHeader.ActionLink href="/" label="Home" icon={Home} isCurrent />);
+      expect(html).toContain('href="/"');
+      expect(html).toContain('aria-current="true"');
+      expect(html).toContain(">Home</span>");
     });
   });
 });

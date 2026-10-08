@@ -3,7 +3,7 @@ import type { CopyRef, CopyResolver } from "@clossys/writer";
 import { mergeUiClasses } from "@clossys/designer/atoms/server";
 import { ArticleBody, PageHeader } from "@clossys/designer/blocks/server";
 import { SiteFooter, SiteHeader } from "@clossys/designer/shell/server";
-import type { ViewChromeGround } from "../internal/viewChromeGround.js";
+import type { SiteChromeGround } from "../internal/viewChromeGround.js";
 import { RenderError } from "../../internal/errors.js";
 import { renderStructuredDocument } from "../../document/render.js";
 import { validateLegalDocument } from "../../document/legal.js";
@@ -33,7 +33,7 @@ export interface LegalViewProps extends HTMLAttributes<HTMLDivElement> {
    * `SiteFooter`. `"transparent"` matches `LandingView`'s chrome.
    * @default "base"
    */
-  ground?: ViewChromeGround;
+  ground?: SiteChromeGround;
   /**
    * The legal document. LegalView always validates it with
    * validateLegalDocument and renders it through renderStructuredDocument

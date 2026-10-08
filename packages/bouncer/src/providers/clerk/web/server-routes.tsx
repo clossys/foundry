@@ -6,6 +6,7 @@ import { NextResponse } from "next/server";
 import type { ReactNode } from "react";
 import { ClerkSignInBlock, type ClerkSignInProps } from "./client.js";
 import { devAuthBypassIsKeyless } from "./dev-bypass.js";
+import { createMissingSettingsReporter } from "./missing-settings.js";
 import { assertPeerVersion } from "../../../internal/peer-version.js";
 import { resolveInstalledPeerVersion } from "../../../internal/resolve-installed-peer-version.js";
 
@@ -95,8 +96,12 @@ export interface ClerkSignInPageOptions {
 export function createClerkSignInPage(options: ClerkSignInPageOptions = {}) {
   const configuredRedirect = options.redirectUrl ? assertLocalPath(options.redirectUrl) : undefined;
   const configuredSignedInRedirect = options.signedInRedirect ? assertLocalPath(options.signedInRedirect) : undefined;
+  const reportMissingSettings = createMissingSettingsReporter();
   return async function ClerkSignInPage({ searchParams }: PageProps = {}) {
     const keylessBypass = devAuthBypassIsKeyless() && !options.publishableKey?.trim();
+    // The page shows only the user-facing unavailable message; the missing
+    // settings are named once in the server log, never on the page.
+    if (!keylessBypass) reportMissingSettings({ publishableKey: options.publishableKey });
     const parameters = options.redirectFromSearchParam ? await searchParams : undefined;
     const requested = options.redirectFromSearchParam ? firstParameter(parameters, options.redirectFromSearchParam) : undefined;
     const dynamicRedirect = options.redirectOrigin ? resolveRequestRedirect(options.redirectOrigin, [requested], options.allowedRedirectOrigins) : undefined;

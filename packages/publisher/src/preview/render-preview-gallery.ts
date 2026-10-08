@@ -1,7 +1,8 @@
 import { copyFileSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { join, resolve } from "node:path";
-import { checkBrandFileCoverage, readBrandCss } from "@clossys/designer/tokens";
+import { checkBrandFileCoverage } from "@clossys/designer/tokens";
+import { readBrandCss } from "@clossys/designer/tokens/server";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { resolveSectionedViewDocument } from "../core/sectioned-view.js";

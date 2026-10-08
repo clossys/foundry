@@ -849,6 +849,16 @@
     }
   }
   @media (width >= 768px) {
+    .tablet\:not-sr-only {
+      position: static;
+      width: auto;
+      height: auto;
+      padding: 0;
+      margin: 0;
+      overflow: visible;
+      clip-path: none;
+      white-space: normal;
+    }
     .tablet\:col-span-2 {
       grid-column: span 2 / span 2;
     }

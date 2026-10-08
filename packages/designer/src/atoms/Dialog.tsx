@@ -18,7 +18,8 @@ export type DialogSize = "sm" | "md" | "lg";
 // named spacing tokens (`--spacing-sm`, `--spacing-md`, `--spacing-2xl`)
 // capture those names, so a named max-width class would compile to a column
 // 8 to 32px wide. The bracketed values cannot collide with a spacing name;
-// the guard in `compiled-css/width-utility-collision.test.ts` keeps it that way.
+// a width-collision test in the package's compiled-css sources (not shipped)
+// keeps it that way.
 const SIZE_CLASSES: Record<DialogSize, string> = {
   sm: "max-w-[24rem]",
   md: "max-w-[28rem]",
