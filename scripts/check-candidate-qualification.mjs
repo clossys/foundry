@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
 import { readFileSync, readdirSync } from "node:fs";
-import { blobOid, parseStrictJson, qualificationPath, realPathTouches, sealedQualificationPathsAtTransitionBase, validatePrepublicationPrTail, validateRetainedCandidateQualification, validateTrioPublicationClosure } from "./lib/candidate-qualification.mjs";
+import { blobOid, createQualificationHistory, parseStrictJson, qualificationPath, realPathTouches, sealedQualificationPathsAtTransitionBase, validatePrepublicationPrTail, validateRetainedCandidateQualification, validateTrioPublicationClosure } from "./lib/candidate-qualification.mjs";
 import { findUnrecognisedArgument, resolvePackageArgs, resolveShardArgs, selectedForRederivation } from "./lib/candidate-qualification-shard.mjs";
 import { loadTransitionPolicy } from "./lib/package-identity-transition.mjs";
 import { TRIO_PUBLICATION_PATH, TRIO_PUBLICATION_TRANSITION_BASE, validateTrioFirstPublication } from "./lib/release-publication-cohort.mjs";
@@ -161,6 +161,7 @@ const publicationClosureFindings = publication ? validateTrioPublicationClosure(
 for (const item of publicationClosureFindings) console.error("[" + item.rule + "] " + TRIO_PUBLICATION_PATH + ": " + item.message);
 failed ||= publicationClosureFindings.length > 0;
 const publicationStateValid = publication !== null && publicationFindings.length === 0 && publicationClosureFindings.length === 0;
+const history = publicationStateValid ? createQualificationHistory() : null;
 try { readValidatedLaterPublishedPackages(process.cwd()); }
 catch (error) { console.error("[later-publication-records] " + (error instanceof Error ? error.message : "unknown error")); failed = true; }
 if (cohort) {
@@ -177,7 +178,7 @@ if (publication && publicationClosureFindings.length > 0) {
 }
 for (const [index, { path, record }] of records.entries()) {
   const findings = recordFindings.get(path) ?? [];
-  if (selectedForRederivation(index, path, { shard, packageRecordPath }) && record.timing === "pre-publication" && record.candidate?.name?.startsWith(`${sourceIdentity.scope}/`)) findings.push(...validatePrepublicationPrTail(record, { recordPath: path, trioRecords, forwardRecords, cohort: cohort?.value, cohortBytes: cohort?.bytes, quarantine: quarantine?.value, controlTailAuthorization: controlTailAuthorization?.value, publication: publication?.value, publicationClosureValid: publicationStateValid }));
+  if (selectedForRederivation(index, path, { shard, packageRecordPath }) && record.timing === "pre-publication" && record.candidate?.name?.startsWith(`${sourceIdentity.scope}/`)) findings.push(...validatePrepublicationPrTail(record, { recordPath: path, trioRecords, forwardRecords, cohort: cohort?.value, cohortBytes: cohort?.bytes, quarantine: quarantine?.value, controlTailAuthorization: controlTailAuthorization?.value, publication: publication?.value, publicationClosureValid: publicationStateValid, history }));
   for (const finding of findings) console.error("[" + finding.rule + "] " + path + ": " + finding.message);
   failed ||= findings.length > 0;
 }

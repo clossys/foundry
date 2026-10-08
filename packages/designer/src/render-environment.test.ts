@@ -59,6 +59,7 @@ function importKeysNormally(distRelPath: string): string[] {
 
 describe("server-safe entry points resolve under react-server (test 1)", () => {
   const serverEntries: Array<{ distRelPath: string; expectedExports: string[] }> = [
+    { distRelPath: "tokens/server.js", expectedExports: ["readBrandCss", "assertTailwindMergeVersion"] },
     { distRelPath: "atoms/server.js", expectedExports: ["Badge", "Banner", "Card", "Field", "Icon", "Skeleton", "Spinner", "mergeUiClasses"] },
     {
       distRelPath: "blocks/server.js",
@@ -177,10 +178,13 @@ describe("render-environment declaration exhaustiveness (test 4)", () => {
     }
   });
 
-  it("marks every new */server subpath server-safe, and its original barrel client-only", () => {
-    for (const layer of ["atoms", "blocks", "shell", "charts", "theme"]) {
-      expect(RENDER_ENVIRONMENT[`./${layer}/server`]).toBe("server-safe");
-      expect(RENDER_ENVIRONMENT[`./${layer}`]).toBe("client-only");
+  it("marks server subpaths server-safe and keeps the pure tokens entry server-safe", () => {
+    const serverSubpaths = [...realSubpaths].filter((subpath) => subpath.endsWith("/server"));
+    expect(serverSubpaths.length).toBeGreaterThan(0);
+    for (const subpath of serverSubpaths) {
+      expect(RENDER_ENVIRONMENT[subpath]).toBe("server-safe");
+      const original = subpath.slice(0, -"/server".length);
+      expect(RENDER_ENVIRONMENT[original]).toBe(original === "./tokens" ? "server-safe" : "client-only");
     }
   });
 });

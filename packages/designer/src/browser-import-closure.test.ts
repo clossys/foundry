@@ -7,10 +7,10 @@ import { describe, expect, it } from "vitest";
 
 const packageDir = dirname(dirname(fileURLToPath(import.meta.url)));
 const manifest = JSON.parse(readFileSync(join(packageDir, "package.json"), "utf8"));
-// Component/data barrels use dist/<domain>/index.js. The tokens barrel also
-// exports explicit Node tools and is deliberately outside this client surface.
+// Discover public component/data barrels, including the pure tokens entry.
+// Explicit */server entries are Node tooling, outside this browser surface.
 const entries = Object.values(manifest.exports as Record<string, { import?: string }>)
-  .map((entry) => entry?.import?.match(/^\.\/dist\/(?!tokens\/)([^/]+)\/index\.js$/)?.[1])
+  .map((entry) => entry?.import?.match(/^\.\/dist\/([^/]+)\/index\.js$/)?.[1])
   .filter((domain): domain is string => Boolean(domain))
   .map((domain) => join(packageDir, "src", domain, "index.ts"));
 const peers = Object.keys(manifest.peerDependencies as Record<string, string>);
@@ -35,20 +35,21 @@ async function bundle(entryPoints: string[], plugins: Plugin[] = []) {
 describe("client entry import closure", () => {
   it("discovers public component barrels and bundles them for a browser", async () => {
     expect(entries.length).toBeGreaterThan(0);
+    expect(entries).toContain(join(packageDir, "src", "tokens", "index.ts"));
     await expect(bundle(entries)).resolves.toBeDefined();
   });
 
-  it("rejects the regression when cx imports the Node-capable tokens barrel", async () => {
-    const restoreBarrel: Plugin = {
-      name: "restore-token-barrel-regression",
+  it("rejects a reachable Node builtin added to the public tokens entry", async () => {
+    const nodeImport: Plugin = {
+      name: "token-node-import-regression",
       setup(builder) {
-        builder.onLoad({ filter: /[/\\]atoms[/\\]internal[/\\]cx\.ts$/ }, ({ path }) => ({
-          contents: readFileSync(path, "utf8").replace("../../tokens/tokens.js", "../../tokens/index.js"),
+        builder.onLoad({ filter: /[/\\]tokens[/\\]index\.ts$/ }, ({ path }) => ({
+          contents: readFileSync(path, "utf8") + '\nexport { readFileSync as readNodeFile } from "node:fs";\n',
           loader: "ts",
         }));
       },
     };
-    await expect(bundle([join(packageDir, "src", "atoms", "index.ts")], [restoreBarrel]))
-      .rejects.toThrow(/node:(?:fs|module)/);
+    await expect(bundle([join(packageDir, "src", "tokens", "index.ts")], [nodeImport]))
+      .rejects.toThrow(/node:fs/);
   });
 });

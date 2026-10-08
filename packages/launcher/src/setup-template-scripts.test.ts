@@ -1375,18 +1375,18 @@ describe("evaluateCiConventions over the rendered workflows", () => {
 
 
 describe("explicit agent path-scope verification", () => {
-  it("checks owned and unowned changes on legacy and every supported agent branch", () => {
-    for (const namespace of ["clossys", "codex", "claude", "cursor"]) {
-      for (const unowned of [false, true]) {
+  for (const namespace of ["clossys", "codex", "claude", "cursor"]) {
+    for (const unowned of [false, true]) {
+      it(`checks ${namespace} ${unowned ? "unowned" : "owned"} changes`, () => {
         const path = unowned ? "src/unowned.ts" : "clossys/notes.md";
         const prepared = scenario({ head: { [path]: "change\n" }, ledgerNames: [path] });
         const result = runScope(prepared.repo.dir, { HEAD_REF: `${namespace}/apply-abc123def456`, BASE_SHA: prepared.base, HEAD_SHA: prepared.head }, tempDir("agent-scope-home-"), "codex");
         expect(result.status).toBe(unowned ? 1 : 0);
         expect(result.stdout).not.toContain("nothing to check");
         if (unowned) expect(result.stderr).toContain("finding");
-      }
+      });
     }
-  });
+  }
 
   it("refuses unsupported and malformed apply branches instead of skipping their checks", () => {
     for (const ref of ["agent/apply-abc123def456", "feat/apply-abc123def456", "codex/apply-x", "Codex/apply-abc123def456", "codex/apply-abc123def456/extra"]) {

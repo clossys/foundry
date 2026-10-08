@@ -1,3 +1,4 @@
+import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -13,6 +14,7 @@ const packageJson = JSON.parse(readFileSync(join(packageRoot, "package.json"), "
 
 const JS_SUBPATHS = [
   "./tokens",
+  "./tokens/server",
   "./atoms",
   "./atoms/server",
   "./icons",
@@ -42,9 +44,9 @@ function sourceFiles(dir: string, out: string[] = []): string[] {
 describe("public UI contract", () => {
   it("exports only intentional token, visual, and gate subpaths — never a root barrel or views", () => {
     expect(Object.keys(packageJson.exports)).toEqual([
-      JS_SUBPATHS[0],
+      ...JS_SUBPATHS.slice(0, 2),
       ...CSS_SUBPATHS,
-      ...JS_SUBPATHS.slice(1),
+      ...JS_SUBPATHS.slice(2),
     ]);
     expect(packageJson.exports["."]).toBeUndefined();
     expect(packageJson.exports["./views"]).toBeUndefined();
@@ -211,5 +213,76 @@ describe("public UI contract", () => {
     // implied, so a shell regression fails HERE with the issue named,
     // instead of as one anonymous line in the `added` diff above.
     expect([...found].filter((hit) => hit.startsWith("src/shell/")), "#687 regression in src/shell/").toEqual([]);
+  });
+});
+
+// Pinned before the split: 57 values, subtract only the two Node helpers.
+const PURE_TOKEN_VALUES = [
+  "AA",
+  "AA_LARGE",
+  "BACKDROP_BUDGET_CEILING_BYTES",
+  "BACKDROP_KINDS",
+  "CONTRAST_PAIRS",
+  "IDENTITY_MIN_CONTRAST",
+  "IDENTITY_VARIANT_ROLES",
+  "IdentityKitValidationError",
+  "LOCKUP_FONT_OUTLINING",
+  "LOCKUP_GAP",
+  "LOCKUP_GAP_RATIO",
+  "LOCKUP_HEADERS",
+  "LOCKUP_MARK_HEIGHT",
+  "LOCKUP_WORDMARK_SIZE",
+  "LOCKUP_WORDMARK_SIZE_RATIO",
+  "MASTER_MARK_ICON_SHELL_STYLE",
+  "MasterMarkValidationError",
+  "TOKENS",
+  "TOKEN_FAMILIES",
+  "TOKEN_STYLES_SENTINEL_PROPERTY",
+  "TYPE_RECORD_SCHEMA_VERSION",
+  "adoptSuppliedMark",
+  "assertTokenStylesLoaded",
+  "checkBackdropContract",
+  "checkBackdropElement",
+  "checkBrandFileCoverage",
+  "checkClearSpace",
+  "checkIdentityContrast",
+  "checkMinimumSize",
+  "checkSingleColourLegibility",
+  "checkTokenContrast",
+  "checkTypeRecord",
+  "checkTypeRecordOverlay",
+  "composeLockup",
+  "contrastPairsForTheme",
+  "contrastRatio",
+  "deriveInitials",
+  "formatParseFailure",
+  "generateIdentityDirections",
+  "hexToLinearSRGB",
+  "iconMarkSvg",
+  "identityKitReport",
+  "isPlaceholderAuthoredValue",
+  "isValidCssColor",
+  "isValidCssFontFamily",
+  "judgeIdentityKit",
+  "luminanceOf",
+  "oklchToLinearSRGB",
+  "parseBrandDeclarations",
+  "parseOklch",
+  "parseTypeRecord",
+  "recolorSvg",
+  "relativeLuminance",
+  "validateIdentityTokenInput",
+  "validateMasterMark"
+];
+
+describe("compiled public token namespaces", () => {
+  function publicKeys(subpath: string): string[] {
+    return JSON.parse(execFileSync(process.execPath, ["--input-type=module", "-e", `import * as tokens from ${JSON.stringify(subpath)}; process.stdout.write(JSON.stringify(Object.keys(tokens).sort()));`], { cwd: packageRoot, encoding: "utf8" }));
+  }
+
+  it("preserves the exact pure namespace and moves only the two Node values", () => {
+    expect(PURE_TOKEN_VALUES.length).toBeGreaterThan(0);
+    expect(publicKeys("@clossys/designer/tokens")).toEqual(PURE_TOKEN_VALUES);
+    expect(publicKeys("@clossys/designer/tokens/server")).toEqual(["assertTailwindMergeVersion", "readBrandCss"]);
   });
 });

@@ -23,7 +23,8 @@
  * (`@example/copy/voice`'s `checkCopy`, `@example/copy`'s
  * `checkCopyTraceability`, `@example/strategy`'s
  * `checkFactsTraceability`): given already-parsed custom-property
- * declarations (see `readBrandCss`/`parseBrandDeclarations` for how to get
+ * declarations (see `parseBrandDeclarations`, or `readBrandCss` from
+ * `@clossys/designer/tokens/server`, for how to get
  * those from a real `.css` file), it reports every brandable slot with no
  * real declaration, every declaration naming a slot this package doesn't
  * recognize (almost always a typo), and every declaration targeting a
@@ -108,7 +109,8 @@
  * wiring that check in automatically would break browser bundling for
  * every consumer. `assertTailwindMergeVersion` (`assert-tailwind-
  * merge-version.ts`) ships the same real version-range check as an
- * explicit, opt-in, Node-only call instead — see that file's own header
+ * explicit, opt-in, Node-only call from `@clossys/designer/tokens/server`
+ * instead — see that file's own header
  * for the full reasoning, and the README's Setup section for the call.
  */
 
@@ -164,14 +166,8 @@ export type {
   BackdropUncheckedReason,
 } from "../backdrop/contract.js";
 
-export { parseBrandDeclarations, readBrandCss } from "./read-brand-css.js";
-export type {
-  BrandCssReadIssue,
-  BrandCssReadIssueReason,
-  BrandCssReadResult,
-  BrandCssUnchecked,
-  ParsedBrandCss,
-} from "./read-brand-css.js";
+export { parseBrandDeclarations } from "./parse-brand-declarations.js";
+export type { BrandCssUnchecked, ParsedBrandCss } from "./parse-brand-declarations.js";
 
 export type { Oklch } from "./color.js";
 export { contrastRatio, hexToLinearSRGB, luminanceOf, oklchToLinearSRGB, parseOklch, relativeLuminance } from "./color.js";
@@ -193,8 +189,6 @@ export type {
 
 export { assertTokenStylesLoaded, TOKEN_STYLES_SENTINEL_PROPERTY } from "./assert-token-styles-loaded.js";
 export type { AssertTokenStylesLoadedOptions } from "./assert-token-styles-loaded.js";
-
-export { assertTailwindMergeVersion } from "./assert-tailwind-merge-version.js";
 
 export {
   iconMarkSvg,

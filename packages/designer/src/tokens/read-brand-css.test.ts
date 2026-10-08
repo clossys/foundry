@@ -2,7 +2,8 @@ import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { parseBrandDeclarations, readBrandCss } from "./read-brand-css.js";
+import { parseBrandDeclarations } from "./index.js";
+import { readBrandCss } from "./server.js";
 
 describe("parseBrandDeclarations — the four shapes it must handle", () => {
   it("a bare :root block", () => {
