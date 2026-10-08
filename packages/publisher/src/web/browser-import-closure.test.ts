@@ -13,7 +13,7 @@ const nativeNpm = resolve(dirname(process.execPath), "../lib/node_modules/npm/bi
 const digest = (bytes: Buffer) => "sha512-" + createHash("sha512").update(bytes).digest("base64");
 
 it("bundles real installed packed client/views and rejects an actual Writer-root import", async () => {
-  const fixture = mkdtempSync(join(tmpdir(), "publisher-browser-packed-"));
+  const fixture = realpathSync(mkdtempSync(join(tmpdir(), "publisher-browser-packed-")));
   const home = join(fixture, "home"), packs = join(fixture, "packs"), consumer = join(fixture, "consumer");
   for (const path of [home, packs, consumer]) mkdirSync(path);
   const userconfig = join(fixture, "user.npmrc"), globalconfig = join(fixture, "global.npmrc");

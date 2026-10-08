@@ -1,12 +1,13 @@
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { readFileSync, readdirSync } from "node:fs";
-import { cp, mkdir, mkdtemp, rename, rm, writeFile } from "node:fs/promises";
+import { chmod, cp, mkdir, mkdtemp, rename, rm, writeFile } from "node:fs/promises";
 import { execFile as execFileCallback } from "node:child_process";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import test from "node:test";
 import { promisify } from "node:util";
+import * as qualification from "./candidate-qualification.mjs";
 import { comparableTranscriptProjection, comparableTranscriptSha256, currentQualificationJoins, parseStrictJson, qualificationIntroductionCommit, qualificationPath, qualificationRecordHistory, sealedQualificationPathsAtTransitionBase, validateCandidateQualification, validatePrepublicationPrTail, validateRetainedCandidateQualification, validateTrioControlTailAuthorization, validateTrioPublicationClosure } from "./candidate-qualification.mjs";
 import { TRIO_PUBLICATION_PATH, TRIO_PUBLICATION_TRANSITION_BASE, TRIO_PUBLICATION_TRANSITION_PATHS } from "./release-publication-cohort.mjs";
 import { TRIO, TRIO_COHORT_PATH, TRIO_CONTROL_TAIL_AUTHORIZATION_PATH, TRIO_CONTROL_TAIL_BASE_COMMIT, TRIO_CONTROL_TAIL_PATHS, TRIO_QUARANTINE_PATH, TRIO_RELEASE } from "./release-qualification-trio.mjs";
@@ -363,8 +364,8 @@ async function writeRetainedPartialFailureQuarantine(fixture, completedPackages 
   await commit(fixture.root, "retain future partial failure quarantine");
   return quarantine;
 }
-async function appendForwardTrioQualifications(fixture, { interveningPath = null, introductionExtraPath = null, corruptJoin = false } = {}) {
-  const versions = ["9.1.1", "9.1.2", "9.1.3"];
+async function appendForwardTrioQualifications(fixture, { interveningPath = null, introductionExtraPath = null, corruptJoin = false, versionOffset = 0 } = {}) {
+  const versions = TRIO.map((_, index) => `9.1.${index + 1 + versionOffset}`);
   for (const [index, key] of TRIO.entries()) {
     const manifestPath = join(fixture.root, `packages/${key}/package.json`);
     const manifest = parseStrictJson(readFileSync(manifestPath, "utf8"));
@@ -1198,4 +1199,176 @@ test("publish content joins do not use candidate commit ancestry", () => {
   const syntheticSquashCommit = "f".repeat(40);
   assert.notEqual(syntheticSquashCommit, record.publishedCommit);
   assert.deepEqual(rules(record, { mode: "prepublish", expected, freshTranscript: record.transcript }).filter((rule) => rule !== "bootstrap-timing"), []);
+});
+
+// These counts observe the real Git processes, without a performance switch
+// or elapsed-time threshold. The wrapper is active only during synchronous
+// validation; all fixture setup and teardown use the ordinary Git executable.
+async function recordingHistoryGit(parent) {
+  const realGit = (await execFile("sh", ["-c", "command -v git"])).stdout.trim();
+  const bin = join(parent, "history-recording-bin");
+  const log = join(parent, "history-git-invocations.log");
+  const shellQuote = (value) => `'${value.replaceAll("'", "'\\''")}'`;
+  await mkdir(bin, { recursive: true });
+  await writeFile(join(bin, "git"), `#!/bin/sh\nprintf '%s\\n' "$*" >> ${shellQuote(log)}\nexec ${shellQuote(realGit)} "$@"\n`);
+  await chmod(join(bin, "git"), 0o755);
+  return async (validate) => {
+    await writeFile(log, "");
+    const previous = process.env.PATH;
+    try {
+      process.env.PATH = `${bin}:${previous ?? ""}`;
+      const findings = validate();
+      const calls = readFileSync(log, "utf8").trim().split("\n").filter(Boolean);
+      return {
+        findings,
+        introductions: calls.filter((line) => line.startsWith("log --full-history --diff-filter=A ")).length,
+        reviewedPolicies: calls.filter((line) => line.startsWith("show ") && line.endsWith(":governance/release-qualification-policy.json")).length,
+      };
+    } finally {
+      if (previous === undefined) delete process.env.PATH;
+      else process.env.PATH = previous;
+    }
+  };
+}
+function requiredQualificationHistory(root) {
+  assert.equal(typeof qualification.createQualificationHistory, "function", "a run must own its immutable qualification history view");
+  return qualification.createQualificationHistory(root);
+}
+function forwardHistoryFindings(fixture, records, history = null) {
+  return records.map((record) => validatePrepublicationPrTail(record, {
+    root: fixture.root,
+    forwardRecords: records,
+    publication: fixture.publication,
+    publicationClosureValid: true,
+    history,
+  }));
+}
+
+test("qualification history Git lookup counts follow distinct inputs at two record sizes with identical refusals", async (t) => {
+  for (const count of [3, 6]) {
+    const fixture = await clonePendingPublicationTransition();
+    t.after(() => removeFixtureDirectory(fixture.parent));
+    const first = await appendForwardTrioQualifications(fixture);
+    const records = [...first.records];
+    if (count === 6) records.push(...(await appendForwardTrioQualifications(fixture, { versionOffset: 3 })).records);
+    assert.equal(records.length, count);
+
+    // A broken, unrelated introduction must be both reusable and attributed
+    // to that record alone; success caching without error caching is not enough.
+    const broken = { candidate: { name: "@clossys/advisor", version: "9.9.5" }, timing: "pre-publication", reviewedCommit: first.reviewedCommit };
+    const brokenPath = qualificationPath(fixture.root, broken.candidate, broken.reviewedCommit);
+    await writeFile(join(fixture.root, brokenPath), "ambiguous\n");
+    await commit(fixture.root, "introduce unrelated ambiguous history");
+    await rm(join(fixture.root, brokenPath));
+    await commit(fixture.root, "delete unrelated ambiguous history");
+    await writeFile(join(fixture.root, brokenPath), "ambiguous\n");
+    await commit(fixture.root, "restore unrelated ambiguous history");
+    const drifting = structuredClone(records[0]);
+    drifting.candidate.packageManifestSha256 = "0".repeat(64);
+    const inputs = [drifting, ...records.slice(1), broken];
+    const reference = forwardHistoryFindings(fixture, inputs);
+    assert.ok(reference[0].some((finding) => finding.rule === "forward-record-join"));
+    for (const findings of reference.slice(1, -1)) assert.deepEqual(findings, []);
+    assert.deepEqual(reference.at(-1).map((finding) => finding.rule), ["forward-record-history"]);
+
+    const observe = await recordingHistoryGit(fixture.parent);
+    const observed = await observe(() => {
+      // On the original source this is absent, so the tests-first baseline
+      // reaches the real count assertions instead of failing at an import.
+      const history = qualification.createQualificationHistory?.(fixture.root);
+      return forwardHistoryFindings(fixture, inputs, history);
+    });
+    assert.deepEqual(observed.findings, reference, "memoization must preserve complete findings and error attribution");
+    const distinctPaths = new Set(inputs.map((record) => qualificationPath(fixture.root, record.candidate, record.reviewedCommit))).size;
+    const distinctReviewedCommits = new Set(inputs.map((record) => record.reviewedCommit)).size;
+    assert.ok(observed.introductions <= distinctPaths,
+      `${count} good records: ${observed.introductions} introduction walks for ${distinctPaths} distinct paths`);
+    // Existing join re-derivation still reads one policy for each good record.
+    // Only path resolution shares a policy read for each exact reviewed commit.
+    assert.ok(observed.reviewedPolicies <= count + distinctReviewedCommits,
+      `${count} good records: ${observed.reviewedPolicies} policy reads for ${distinctReviewedCommits} distinct reviewed commits plus ${count} joins`);
+  }
+});
+
+test("qualification history view rejects changed heads and freshly reads retained WORKTREE bytes", async (t) => {
+  const fixture = await clonePendingPublicationTransition();
+  t.after(() => removeFixtureDirectory(fixture.parent));
+  const forward = await appendForwardTrioQualifications(fixture);
+  const history = requiredQualificationHistory(fixture.root);
+  assert.ok(Object.isFrozen(history));
+  assert.deepEqual(forwardHistoryFindings(fixture, forward.records, history), forward.records.map(() => []));
+  const path = qualificationPath(fixture.root, forward.records[0].candidate, forward.reviewedCommit);
+  const retained = readFileSync(join(fixture.root, path));
+
+  await writeFile(join(fixture.root, path), `${retained.toString("utf8")}\n`);
+  assert.deepEqual(forwardHistoryFindings(fixture, forward.records, history)[0].map((finding) => finding.rule), ["forward-record-bytes"]);
+  await writeFile(join(fixture.root, path), retained);
+  assert.deepEqual(forwardHistoryFindings(fixture, forward.records, history), forward.records.map(() => []));
+
+  await writeFile(join(fixture.root, path), `${retained.toString("utf8")}\n`);
+  await commit(fixture.root, "rewrite retained forward record");
+  await writeFile(join(fixture.root, path), retained);
+  await commit(fixture.root, "restore retained forward record");
+  const stale = forwardHistoryFindings(fixture, forward.records, history);
+  for (const findings of stale) {
+    assert.deepEqual(findings.map((finding) => finding.rule), ["forward-record-history"]);
+    assert.match(findings[0].message, /history view does not match its repository and head/);
+  }
+  const fresh = forwardHistoryFindings(fixture, forward.records, requiredQualificationHistory(fixture.root));
+  assert.deepEqual(fresh, forwardHistoryFindings(fixture, forward.records));
+  assert.ok(fresh[0].some((finding) => finding.rule === "forward-record-touches"));
+  for (const findings of fresh.slice(1)) assert.deepEqual(findings, []);
+});
+
+test("qualification history view rejects cross-repository reuse for the same candidates and paths after policy drift", async (t) => {
+  const fixture = await clonePendingPublicationTransition();
+  t.after(() => removeFixtureDirectory(fixture.parent));
+  const forward = await appendForwardTrioQualifications(fixture);
+  const original = requiredQualificationHistory(fixture.root);
+  assert.deepEqual(forwardHistoryFindings(fixture, forward.records, original), forward.records.map(() => []));
+
+  const root = join(fixture.parent, "other-repository");
+  await execFile("git", ["clone", "--local", "--no-hardlinks", fixture.root, root]);
+  await disableFixtureMaintenance(root);
+  await git(root, ["config", "user.email", "test@example.invalid"]);
+  await git(root, ["config", "user.name", "Qualification Test"]);
+  const other = { ...fixture, root };
+  assert.equal((await git(root, ["rev-parse", "HEAD"])).stdout.trim(), (await git(fixture.root, ["rev-parse", "HEAD"])).stdout.trim());
+  const wrongRepository = forwardHistoryFindings(other, forward.records, original);
+  for (const findings of wrongRepository) {
+    assert.deepEqual(findings.map((finding) => finding.rule), ["forward-record-history"]);
+    assert.match(findings[0].message, /history view does not match its repository and head/);
+  }
+  const priorClean = requiredQualificationHistory(root);
+  assert.deepEqual(forwardHistoryFindings(other, forward.records, priorClean), forward.records.map(() => []));
+
+  // Retain the same candidate/version/path under a new reviewed policy. The
+  // old record's joins must not clear this new immutable repository input.
+  await git(root, ["checkout", "--detach", forward.reviewedCommit]);
+  const policyPath = join(root, "governance/release-qualification-policy.json");
+  const policy = parseStrictJson(readFileSync(policyPath, "utf8"));
+  policy.packages[forward.records[0].candidate.name].dimensions.position = { status: "unsupported", reason: "changed reviewed policy" };
+  await writeFile(policyPath, `${JSON.stringify(policy, null, 2)}\n`);
+  const reviewedCommit = await commit(root, "change reviewed qualification policy");
+  const changed = forward.records.map((record) => ({
+    ...structuredClone(record),
+    reviewedCommit,
+    candidateReview: { headSha: reviewedCommit, reference: "changed policy review" },
+  }));
+  for (const record of changed) {
+    const path = qualificationPath(root, record.candidate, reviewedCommit);
+    assert.equal(path, qualificationPath(fixture.root, record.candidate, forward.reviewedCommit));
+    await mkdir(dirname(join(root, path)), { recursive: true });
+    await writeFile(join(root, path), `${JSON.stringify(record, null, 2)}\n`);
+  }
+  await commit(root, "retain forward records under changed policy");
+  for (const history of [original, priorClean]) {
+    for (const findings of forwardHistoryFindings(other, changed, history)) {
+      assert.deepEqual(findings.map((finding) => finding.rule), ["forward-record-history"]);
+    }
+  }
+  const fresh = forwardHistoryFindings(other, changed, requiredQualificationHistory(root));
+  assert.deepEqual(fresh, forwardHistoryFindings(other, changed));
+  assert.ok(fresh[0].some((finding) => finding.rule === "forward-record-join"));
+  for (const findings of fresh.slice(1)) assert.deepEqual(findings, []);
 });

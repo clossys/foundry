@@ -108,4 +108,9 @@ describe("ErrorView", () => {
   it("renders usably with no action or router of any kind", () => {
     expect(() => render(<ErrorView status={404} title="Page not found" />)).not.toThrow();
   });
+
+  it("refuses a landmark role or the frame's main id on its content root", () => {
+    expect(() => render(<ErrorView status={404} title="Page not found" role="main" />)).toThrow(/content root cannot take a landmark role/);
+    expect(() => render(<ErrorView status={404} title="Page not found" id="publisher-main-content" />)).toThrow(/content root cannot take the frame's main id/);
+  });
 });

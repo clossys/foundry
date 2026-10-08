@@ -123,7 +123,7 @@ export interface PackReviewViewProps {
    * `SiteFooter`.
    * @default "base"
    */
-  ground?: import("../internal/viewChromeGround.js").ViewChromeGround;
+  ground?: import("../internal/viewChromeGround.js").SiteChromeGround;
   heading: ReactNode;
   description: ReactNode;
   /** The strategy brief. When omitted, its section shows `labels.strategy.empty`. */

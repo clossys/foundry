@@ -57,6 +57,14 @@ describe("GlobalErrorDocument", () => {
     });
   });
 
+  describe("content root", () => {
+    it("accepts a landmark role on the content root, since the document has no frame and no <main>", () => {
+      const body = parse({ ...baseProps, role: "main" }).body;
+      expect(body.querySelectorAll('[role="main"]')).toHaveLength(1);
+      expect(body.querySelectorAll("h1")).toHaveLength(1);
+    });
+  });
+
   describe("head", () => {
     it("carries one title, one noindex robots meta and one icon link", () => {
       const doc = parse();

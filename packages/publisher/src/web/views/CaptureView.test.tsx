@@ -1,7 +1,16 @@
+// @vitest-environment jsdom
+
+import "@testing-library/jest-dom/vitest";
 import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
+import { cleanup, render, screen, within } from "@testing-library/react";
+import { Home, Settings } from "@clossys/designer/icons";
+import { SiteFooter, SiteHeader } from "@clossys/designer/shell/server";
 import { CaptureView } from "./CaptureView.js";
+
+afterEach(cleanup);
 
 /** Every `var(` call in `source`, found by balanced parentheses so a nested `var()` in a fallback stays inside its outer call. */
 function varCalls(source: string): string[] {
@@ -84,11 +93,118 @@ describe("CaptureView", () => {
   });
 
   it("carries no raw length literal in a var() fallback", () => {
-    const source = readFileSync(new URL("./CaptureView.tsx", import.meta.url), "utf8");
+    // The column's measure token lives in the shared page layout, which the view builds its column from.
+    const source = ["CaptureView.tsx", join("..", "internal", "PageLayout.tsx")].map((file) => readFileSync(join(import.meta.dirname, file), "utf8")).join("\n");
     expect(varCalls(source).length).toBeGreaterThan(0);
     expect(hasRawLengthFallback(source)).toBe(false);
     const html = renderToStaticMarkup(<CaptureView brand="Acme" heading="Keep in touch" form="Fields" />);
     const mainTag = html.slice(html.indexOf("<main"), html.indexOf(">", html.indexOf("<main")) + 1);
     expect(mainTag).toContain("max-width:var(--ui-width-prose-max, none)");
+  });
+
+  it("body structure: page header block, then the card holding the form and secondaryAction, then the notes below the card", () => {
+    const { container } = render(
+      <CaptureView
+        brand="Acme"
+        heading="Keep in touch"
+        description="We reply within a week."
+        form={<form aria-label="Contact form">Fields</form>}
+        secondaryAction={<a href="/">Back to home</a>}
+        notes={<p>We use your email only to reply.</p>}
+      />,
+    );
+    const main = screen.getByRole("main");
+    const blocks = [...main.children] as HTMLElement[];
+    expect(blocks).toHaveLength(3);
+    expect(within(blocks[0] as HTMLElement).getByRole("heading", { level: 1, name: "Keep in touch" })).toBeInTheDocument();
+    const card = container.querySelector(".rounded-control") as HTMLElement;
+    expect(blocks[1]).toContainElement(card);
+    expect(card).toContainElement(screen.getByRole("form", { name: "Contact form" }));
+    expect(card).toContainElement(screen.getByRole("link", { name: "Back to home" }));
+    const notes = blocks[2] as HTMLElement;
+    expect(card).not.toContainElement(notes);
+    expect(notes).toHaveTextContent("We use your email only to reply.");
+    expect(notes.className).toContain("flex flex-col items-center gap-xs text-center text-body-s text-ink-secondary");
+  });
+
+  it("adds no secondaryAction wrapper when secondaryAction is null, an empty string or an empty list", () => {
+    const bare = renderToStaticMarkup(<CaptureView brand="Acme" heading="Keep in touch" form="Fields" />);
+    for (const secondaryAction of [null, "", []]) {
+      expect(renderToStaticMarkup(<CaptureView brand="Acme" heading="Keep in touch" form="Fields" secondaryAction={secondaryAction} />)).toBe(bare);
+    }
+  });
+
+  it("omits the notes block when no notes are given", () => {
+    render(<CaptureView brand="Acme" heading="Keep in touch" form="Fields" />);
+    expect(screen.getByRole("main").children).toHaveLength(2);
+  });
+
+  it("renders nav, headerSecondaryAction and headerAction inside the one top-level banner, in that order", () => {
+    const { container } = render(
+      <CaptureView
+        brand="Acme"
+        heading="Keep in touch"
+        form="Fields"
+        nav={<nav aria-label="Primary">NAV-SENTINEL</nav>}
+        headerSecondaryAction={<a href="/sign-in">Sign in</a>}
+        headerAction={<a href="/contact">Contact us</a>}
+      />,
+    );
+    const root = container.firstElementChild as HTMLElement;
+    const topLevelHeaders = [...root.querySelectorAll("header")].filter((header) => header.closest("main") === null);
+    expect(topLevelHeaders).toHaveLength(1);
+    const banner = topLevelHeaders[0] as HTMLElement;
+    expect(within(banner).getByRole("navigation", { name: "Primary" })).toBeInTheDocument();
+    const secondary = within(banner).getByRole("link", { name: "Sign in" });
+    const primary = within(banner).getByRole("link", { name: "Contact us" });
+    expect(secondary.compareDocumentPosition(primary) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(screen.getByRole("main")).not.toHaveTextContent(/Sign in|Contact us|NAV-SENTINEL/);
+  });
+
+  it("passes ground to both the header and the footer, and renders the bare chrome when every slot is omitted", () => {
+    const bare = renderToStaticMarkup(<CaptureView brand="Acme" heading="Keep in touch" form="Fields" />);
+    expect(bare).toContain(renderToStaticMarkup(<SiteHeader brand="Acme" />) + "<main");
+    expect(bare).toContain("</main>" + renderToStaticMarkup(<SiteFooter />) + "</div>");
+    const grounded = renderToStaticMarkup(<CaptureView brand="Acme" heading="Keep in touch" form="Fields" ground="transparent" />);
+    expect(grounded).toContain(renderToStaticMarkup(<SiteHeader ground="transparent" brand="Acme" />) + "<main");
+    expect(grounded).toContain("</main>" + renderToStaticMarkup(<SiteFooter ground="transparent" />) + "</div>");
+  });
+
+  it("one front-door shell: environment links with aria-current, one <h1>, one top-level banner, one contentinfo holding SiteFooter.Legal", () => {
+    const { container } = render(
+      <CaptureView
+        brand="Acme"
+        heading="Keep in touch"
+        form="Fields"
+        headerAction={
+          <>
+            <SiteHeader.ActionLink href="https://example.com/" label="Site" icon={Home} isCurrent />
+            <SiteHeader.ActionLink href="https://admin.example.com/" label="Admin" icon={Settings} />
+          </>
+        }
+        footerSecondary={
+          <SiteFooter.Legal
+            entity="Acme"
+            links={[
+              { label: "Privacy", href: "/privacy" },
+              { label: "Terms", href: "/terms" },
+            ]}
+          />
+        }
+      />,
+    );
+    const root = container.firstElementChild as HTMLElement;
+    const topLevelHeaders = [...root.querySelectorAll("header")].filter((header) => header.closest("main") === null);
+    expect(topLevelHeaders).toHaveLength(1);
+    const banner = topLevelHeaders[0] as HTMLElement;
+    expect(within(banner).getByRole("link", { name: "Site" })).toHaveAttribute("aria-current", "true");
+    expect(within(banner).getByRole("link", { name: "Admin" })).not.toHaveAttribute("aria-current");
+    expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
+    const footers = screen.getAllByRole("contentinfo");
+    expect(footers).toHaveLength(1);
+    const footer = footers[0] as HTMLElement;
+    expect(within(footer).getByText(/^© \d{4} Acme$/)).toBeInTheDocument();
+    expect(within(footer).getByRole("link", { name: "Privacy" })).toHaveAttribute("href", "/privacy");
+    expect(within(footer).getByRole("link", { name: "Terms" })).toHaveAttribute("href", "/terms");
   });
 });

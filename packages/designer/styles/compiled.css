@@ -239,20 +239,20 @@
   .w-px {
     width: 1px;
   }
-  .max-w-2xl {
-    max-width: var(--spacing-2xl, 32px);
+  .max-w-\[24rem\] {
+    max-width: 24rem;
+  }
+  .max-w-\[28rem\] {
+    max-width: 28rem;
+  }
+  .max-w-\[42rem\] {
+    max-width: 42rem;
   }
   .max-w-display {
     max-width: var(--ui-width-display-max, 72rem);
   }
   .max-w-full {
     max-width: 100%;
-  }
-  .max-w-md {
-    max-width: var(--spacing-md, 12px);
-  }
-  .max-w-sm {
-    max-width: var(--spacing-sm, 8px);
   }
   .min-w-0 {
     min-width: 0px;
@@ -849,6 +849,16 @@
     }
   }
   @media (width >= 768px) {
+    .tablet\:not-sr-only {
+      position: static;
+      width: auto;
+      height: auto;
+      padding: 0;
+      margin: 0;
+      overflow: visible;
+      clip-path: none;
+      white-space: normal;
+    }
     .tablet\:col-span-2 {
       grid-column: span 2 / span 2;
     }

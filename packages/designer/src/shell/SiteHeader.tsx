@@ -1,8 +1,10 @@
-import type { HTMLAttributes, ReactNode } from "react";
+import type { AnchorHTMLAttributes, HTMLAttributes, ReactNode } from "react";
 import { Badge } from "../atoms/Badge.js";
+import { buttonClassName } from "../atoms/button-classes.js";
+import { Icon, type IconNode } from "../atoms/Icon.js";
 import { cx } from "../atoms/internal/cx.js";
 import { SITE_CHROME_GROUND_CLASSES, siteChromeHasBorder, type SiteChromeGround } from "./internal/shell-ground.js";
-import { UI_BORDER_HAIRLINE, UI_WIDTH_PAGE_PADDING_X, UI_Z_SHELL } from "./internal/shell-vars.js";
+import { UI_BORDER_HAIRLINE, UI_LAYOUT_TAP_TARGET, UI_WIDTH_PAGE_PADDING_X, UI_Z_SHELL } from "./internal/shell-vars.js";
 
 export interface SiteHeaderProps extends Omit<HTMLAttributes<HTMLElement>, "children"> {
   /**
@@ -38,6 +40,12 @@ export interface SiteHeaderProps extends Omit<HTMLAttributes<HTMLElement>, "chil
    * `secondaryAction` and `actions`, in both layouts. Text only by type: no
    * link, button or icon can be passed, so it is never interactive. A member
    * host omits it.
+   *
+   * Superseded by `SiteHeader.ActionLink`: a site with more than one
+   * environment (an app, an admin, a demo) passes one `ActionLink` per
+   * environment in `actions`, with `isCurrent` on the environment the page
+   * belongs to, instead of a text badge. `surfaceLabel` keeps rendering for
+   * existing callers.
    */
   surfaceLabel?: string;
   /**
@@ -85,7 +93,7 @@ export interface SiteHeaderProps extends Omit<HTMLAttributes<HTMLElement>, "chil
  * `secondaryAction` slot. A single `nav` slot keeps the header at one
  * navigation landmark by construction.
  */
-export function SiteHeader({
+function SiteHeaderRoot({
   brand,
   nav,
   actions,
@@ -145,3 +153,99 @@ export function SiteHeader({
     </header>
   );
 }
+
+/** The `Button` looks an `ActionLink` can take. `danger` is not a header call to action. */
+export type SiteHeaderActionLinkVariant = "primary" | "secondary" | "ghost";
+
+export interface SiteHeaderActionLinkProps
+  extends Omit<AnchorHTMLAttributes<HTMLAnchorElement>, "children" | "href" | "aria-current" | "aria-label"> {
+  /** The destination, rendered as a real `<a href>`. Required: the component assumes no route. */
+  href: string;
+  /**
+   * The link's words, supplied by the caller. Visible beside the icon from the
+   * `tablet` breakpoint up; below it the text is visually hidden and stays the
+   * link's accessible name, so the icon-only link is still announced.
+   */
+  label: string;
+  /** The glyph shown before the label, at every width. Decorative: `label` names the link. */
+  icon: IconNode;
+  /**
+   * Marks this link as the current item of its set, for example the
+   * environment the page belongs to. Renders `aria-current="true"` and an
+   * inset bar along the bottom edge, visible in the icon-only layout too.
+   * The value is `true` rather than `page` because the link points to the
+   * set member's home, which is not necessarily the page being shown.
+   */
+  isCurrent?: boolean;
+  /**
+   * The `Button` look to borrow, at size `sm`.
+   * @default "secondary"
+   */
+  variant?: SiteHeaderActionLinkVariant;
+}
+
+const ACTION_LINK_FOCUS =
+  "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent";
+
+/**
+ * `buttonClassName` carries `outline-none`, which sets the outline style to
+ * none and so would also suppress the `focus-visible` outline below. The link
+ * keeps the rest of the button look and puts its own outline back.
+ */
+function actionLinkLook(variant: SiteHeaderActionLinkVariant): string {
+  return buttonClassName(variant, "sm")
+    .split(" ")
+    .filter((token) => token !== "outline-none" && token !== "disabled:cursor-not-allowed")
+    .join(" ");
+}
+
+/**
+ * A call-to-action link for `SiteHeader`'s `actions` or `secondaryAction`
+ * slot: an icon plus a label from the `tablet` breakpoint up, the icon alone
+ * below it. Built for an environment switcher - one link per environment (an
+ * app, an admin, a demo), each to that environment's home, with `isCurrent`
+ * on the one the page belongs to - but nothing in it is specific to
+ * environments.
+ *
+ * Why a component rather than a composed `Link` with `buttonVariant` and an
+ * `Icon`: the label must stay the accessible name while it is hidden below
+ * `tablet`, which needs a responsive visually-hidden class that a consumer on
+ * the `compiled.css` path cannot generate from its own source; the tap target
+ * must reach `--ui-layout-tap-target` at the small button size; the current
+ * item needs a cue that is not colour alone and survives the icon-only layout;
+ * and `Link` is a client component, while site chrome renders on the server.
+ * This component imports no react-aria-components, so it ships from
+ * `@clossys/designer/shell/server` as well.
+ *
+ * It ships no copy and no route: `href`, `label` and `icon` are required props.
+ */
+function SiteHeaderActionLink({
+  href,
+  label,
+  icon,
+  isCurrent = false,
+  variant = "secondary",
+  className,
+  style,
+  ...rest
+}: SiteHeaderActionLinkProps) {
+  return (
+    <a
+      {...rest}
+      href={href}
+      aria-current={isCurrent ? "true" : undefined}
+      className={cx(actionLinkLook(variant), ACTION_LINK_FOCUS, className)}
+      style={{
+        minHeight: UI_LAYOUT_TAP_TARGET,
+        minWidth: UI_LAYOUT_TAP_TARGET,
+        ...(isCurrent ? { boxShadow: `inset 0 calc(-2 * ${UI_BORDER_HAIRLINE}) 0 currentColor` } : {}),
+        ...style,
+      }}
+    >
+      <Icon glyph={icon} decorative size="sm" />
+      <span className="sr-only tablet:not-sr-only">{label}</span>
+    </a>
+  );
+}
+
+export const SiteHeader = Object.assign(SiteHeaderRoot, { ActionLink: SiteHeaderActionLink });
