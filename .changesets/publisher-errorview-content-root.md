@@ -2,4 +2,4 @@
 publisher: minor
 ---
 
-A chrome-free view's content root, including `ErrorView`'s, now refuses a landmark `role` and the frame's main id because the page frame owns them, while `GlobalErrorDocument`, which has no frame and no `<main>`, accepts a landmark `role` on its content root.
+`AuthView`, `CaptureView`, `BoundaryView`, `DocumentView` and `ErrorView` now throw when their content root is given a landmark `role` (`main`, `banner`, `contentinfo` or `navigation`) or the `SiteFrame` main id, because the frame owns those landmarks; `GlobalErrorDocument`, which has no frame and no `<main>`, accepts a landmark `role` on its content root.
