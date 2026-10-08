@@ -1,7 +1,7 @@
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
 import { mergeUiClasses } from "@clossys/designer/atoms/server";
 import { SiteFooter, SiteHeader } from "@clossys/designer/shell/server";
-import { PAGE_COLUMN_CLASSES, PageLayout, pageColumnStyle } from "../internal/PageLayout.js";
+import { PAGE_COLUMN_CLASSES, PageLayout, hasContent, pageColumnStyle } from "../internal/PageLayout.js";
 import type { SiteChromeGround } from "../internal/viewChromeGround.js";
 import { assertViewContentRoot, usesLegacyChrome } from "../internal/viewContentRoot.js";
 
@@ -181,7 +181,7 @@ export function CaptureView({
   const content = (
     <PageLayout title={heading} subtitle={description} notes={notes} cardLabel={formLabel}>
       {activeContent}
-      {secondaryAction === undefined ? null : <div className="text-body-s text-ink-secondary">{secondaryAction}</div>}
+      {hasContent(secondaryAction) ? <div className="text-body-s text-ink-secondary">{secondaryAction}</div> : null}
     </PageLayout>
   );
 

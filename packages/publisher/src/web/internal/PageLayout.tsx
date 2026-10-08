@@ -18,7 +18,7 @@ export function pageColumnStyle(measure: "form" | "prose", style?: CSSProperties
 }
 
 /** True when a slot has something to render: `null`, `undefined`, booleans, `""` and an empty list do not. */
-function hasContent(node: ReactNode): boolean {
+export function hasContent(node: ReactNode): boolean {
   return Children.toArray(node).some((child) => child !== "");
 }
 

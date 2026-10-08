@@ -12,7 +12,7 @@ import { BoundaryView } from "./BoundaryView.js";
 
 afterEach(cleanup);
 
-const ALLOWED_IMPORT = /^(react|@clossys\/designer\/.+\/server|\.\/ErrorView\.js|\.\.\/internal\/viewChromeGround\.js|\.\.\/internal\/viewContentRoot\.js)$/;
+const ALLOWED_IMPORT = /^(react|@clossys\/designer\/.+\/server|\.\/ErrorView\.js|\.\.\/internal\/PageLayout\.js|\.\.\/internal\/viewChromeGround\.js|\.\.\/internal\/viewContentRoot\.js)$/;
 
 /**
  * Every module specifier named by an `import` statement (bare, type, or
@@ -80,6 +80,15 @@ describe("BoundaryView", () => {
     const main = container.querySelector("main") as HTMLElement;
     expect(main.children).toHaveLength(1);
     expect(main.querySelector(".rounded-control")).toBeNull();
+  });
+
+  it("omits the notes block when notes are empty: an empty list, an empty string or a boolean", () => {
+    for (const notes of [[], "", false]) {
+      const { container, unmount } = renderBoundary({ action: undefined, notes });
+      const main = container.querySelector("main") as HTMLElement;
+      expect(main.children).toHaveLength(1);
+      unmount();
+    }
   });
 
   it("shares AuthView's form-measure column with no raw-length fallback", () => {

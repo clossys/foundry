@@ -127,6 +127,13 @@ describe("CaptureView", () => {
     expect(notes.className).toContain("flex flex-col items-center gap-xs text-center text-body-s text-ink-secondary");
   });
 
+  it("adds no secondaryAction wrapper when secondaryAction is null, an empty string or an empty list", () => {
+    const bare = renderToStaticMarkup(<CaptureView brand="Acme" heading="Keep in touch" form="Fields" />);
+    for (const secondaryAction of [null, "", []]) {
+      expect(renderToStaticMarkup(<CaptureView brand="Acme" heading="Keep in touch" form="Fields" secondaryAction={secondaryAction} />)).toBe(bare);
+    }
+  });
+
   it("omits the notes block when no notes are given", () => {
     render(<CaptureView brand="Acme" heading="Keep in touch" form="Fields" />);
     expect(screen.getByRole("main").children).toHaveLength(2);

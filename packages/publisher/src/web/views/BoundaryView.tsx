@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { Card, mergeUiClasses } from "@clossys/designer/atoms/server";
 import { SiteFooter, SiteHeader } from "@clossys/designer/shell/server";
+import { PAGE_COLUMN_CLASSES, hasContent, pageColumnStyle } from "../internal/PageLayout.js";
 import type { SiteChromeGround } from "../internal/viewChromeGround.js";
 import { assertViewContentRoot, usesLegacyChrome } from "../internal/viewContentRoot.js";
 import type { ErrorViewProps } from "./ErrorView.js";
@@ -131,7 +132,7 @@ export function BoundaryView({
         {description ? <p className="text-body text-ink-secondary">{description}</p> : null}
       </div>
       {action ? <Card className="flex flex-col gap-lg">{action}</Card> : null}
-      {notes ? <div className="flex flex-col gap-xs text-body-s text-ink-secondary">{notes}</div> : null}
+      {hasContent(notes) ? <div className="flex flex-col gap-xs text-body-s text-ink-secondary">{notes}</div> : null}
     </>
   );
 
@@ -139,11 +140,7 @@ export function BoundaryView({
   if (!legacyChrome) {
     assertViewContentRoot("BoundaryView", rest);
     return (
-      <div
-        {...rest}
-        className={mergeUiClasses("mx-auto flex w-full flex-1 flex-col gap-xl px-lg py-2xl", className)}
-        style={{ maxWidth: "var(--ui-width-form-max, none)", ...style }}
-      >
+      <div {...rest} className={mergeUiClasses(PAGE_COLUMN_CLASSES, className)} style={pageColumnStyle("form", style)}>
         {content}
       </div>
     );
@@ -157,12 +154,7 @@ export function BoundaryView({
       ) : (
         <SiteHeader ground={chromeGround} brand={brand} nav={nav} secondaryAction={secondaryAction} actions={headerAction} />
       )}
-      <main
-        id={mainId || undefined}
-        tabIndex={mainId ? -1 : undefined}
-        className="mx-auto flex w-full flex-1 flex-col gap-xl px-lg py-2xl"
-        style={{ maxWidth: "var(--ui-width-form-max, none)" }}
-      >
+      <main id={mainId || undefined} tabIndex={mainId ? -1 : undefined} className={PAGE_COLUMN_CLASSES} style={pageColumnStyle("form")}>
         {content}
       </main>
       {footer !== undefined ? footer : <SiteFooter ground={chromeGround} secondary={footerSecondary} />}
