@@ -472,11 +472,13 @@ provider through `init(context)`.
   loading go into the bounded memory queue (C-43). The provider is
   initialized at most once per page. A later grant after a withdrawal
   calls `optIn()` and never a second `init()`.
-- **C-19 Withdrawal cancels everything pending.** `setPermission(false)`
-  advances a generation counter. It clears the queue and every scheduled
-  retry or delayed capture, and calls `optOut()` if the provider was
-  initialized. A load that resolves after a withdrawal is discarded and
-  never initialized.
+- **C-19 Withdrawal stops everything the transport controls.**
+  `setPermission(false)` advances a generation counter. It clears the
+  queue, cancels every scheduled retry or delayed capture, and calls
+  `optOut()` if the provider was initialized. `loadProvider` takes no
+  cancellation signal, so an in-flight load is not stopped: when it
+  resolves under an older generation, its result is discarded and never
+  initialized, and nothing is captured through it (P-10).
 - **C-20 Events are redacted before capture.** URLs keep the origin and
   path, and lose the query and fragment. When `normalizePath` is given, it
   runs on the path, and its output is accepted only if it still starts with
@@ -1159,7 +1161,7 @@ passes. "Covers" lists the rules each proof holds.
 | P-7 | #1938 | `browser-only` :: with no evidence port, a grant-and-refuse cycle makes zero `fetch` or `sendBeacon` calls and evidence is never `saved` | C-14 | report `saved` without a port |
 | P-8 | #1938 | `isolation` :: no core module reads a browser global at module scope or imports an adapter; a legacy record parses only with `policy.legacy`, takes `assumedPolicyVersion`, keeps its original expiry and is never rewritten | C-2, C-10 | add a module-scope `localStorage` read; rewrite a legacy record on read; treat a dateless legacy record as live |
 | P-9 | #1940 | `transport` :: unknown consent never loads or captures | C-17 | initialize while permission is unknown |
-| P-10 | #1940 | `transport` :: withdrawal blocks a pending retry and a late load | C-19 | send a queued capture after withdrawal; initialize a load that resolved after withdrawal |
+| P-10 | #1940 | `transport` :: withdrawal during loading leaves the provider uninitialized when the deferred load later resolves, with no capture through it; withdrawal cancels a pending retry | C-19 | send a queued capture after withdrawal; initialize a load that resolved after withdrawal |
 | P-11 | #1940 | `sanitize` and `posthog` :: initialization happens once; queries and fragments are removed; the referrer becomes an origin; an invalid `normalizePath` result drops the event; a `$`-prefixed conversion name is refused; pageviews are captured as `$pageview` and conversions under their own name; the `before_send` hook keeps only `POSTHOG_PROPERTY_ALLOWLIST` plus the transport's properties, sanitizes every URL field with the transport's sanitizer, removes `$set` and `$set_once`, and drops events the transport did not send (including an opt-in marker) | C-18, C-20, C-44 | initialize on every capture; keep the query string; pass an SDK-added property outside the allowlist through unchanged |
 | P-12 | #1940 | `posthog` :: the `init` configuration holds every forced key with its value, no host value except key and host reaches it, and the adapter imports no SDK; `init` passes the fixed instance name and every later call goes to the returned instance; an `init` that returns nothing or returns the host-supplied object makes the adapter throw, the transport `failed` with no retry, and the host-supplied object receives no capture | C-3, C-43, C-44 | omit a forced init key; call `capture` on the host-supplied object instead of the returned instance |
 | P-13 | #1940 | `root-isolation` :: the Observer root import graph reaches no `browser-analytics` module | O-4, C-1 | re-export the transport from the root |
