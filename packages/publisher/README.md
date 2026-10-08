@@ -2100,6 +2100,20 @@ front-door page reads the same way:
    are privacy and terms as same-host routes, so a visitor is not sent off
    the host mid-flow. The package supplies no default links and no copy.
 
+**Bring your own chrome.** A consumer that already carries its own site
+header and footer passes them as `header` and `footer` on any of the three
+views. Each one **replaces** the Designer `SiteHeader` or `SiteFooter`
+entirely, and the other half keeps its default, so a consumer can replace one
+or both. The value is rendered as given, in the same place, so it should hold
+the page's one banner landmark (`header`) or one contentinfo landmark
+(`footer`) and nothing else: the view adds no wrapper and no second landmark.
+While `header` is given, `brand`, `nav`, `headerAction`, the secondary header
+action and `ground` are not used for the header (`brand` stays required by
+the type); while `footer` is given, `footerSecondary` is not used. `undefined`
+keeps the default; `null` is an explicit opt-out that renders no banner or no
+contentinfo. Today a consumer can pass its own v1 chrome here; later it passes
+Designer's. The skip link, if the chrome has one, is the consumer's too.
+
 In this example `SiteHeader` and `SiteFooter` come from Designer's
 `shell/server` entry and `Home` and `Settings` from its `icons` entry.
 

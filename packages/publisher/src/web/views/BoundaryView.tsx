@@ -11,6 +11,23 @@ export interface BoundaryViewProps extends ErrorViewProps {
    * no default brand.
    */
   brand: ReactNode;
+  /**
+   * The page's own banner, replacing Designer's `SiteHeader` entirely, for a
+   * consumer that carries its own site chrome. When given (including `null`,
+   * which renders no banner) it is rendered as-is in place of the header: it
+   * should hold the page's one banner landmark, and `brand`, `nav`,
+   * `headerAction`, `secondaryAction` and `ground` are not used for the header.
+   * `brand` stays required and is not rendered while `header` is given.
+   * When `undefined`, the Designer header renders as before.
+   */
+  header?: ReactNode;
+  /**
+   * The page's own footer, replacing Designer's `SiteFooter` entirely. When
+   * given (including `null`, which renders no footer) it is rendered as-is
+   * and should hold the page's one contentinfo landmark; `footerSecondary`
+   * is not used. When `undefined`, the Designer footer renders as before.
+   */
+  footer?: ReactNode;
   /** The site's call to action, rendered in the banner (`SiteHeader`'s `actions`). Absent from the markup when omitted. */
   headerAction?: ReactNode;
   /** A secondary call to action, rendered in the banner just before `headerAction`. Absent from the markup when omitted. */
@@ -58,6 +75,8 @@ export interface BoundaryViewProps extends ErrorViewProps {
  */
 export function BoundaryView({
   brand,
+  header,
+  footer,
   headerAction,
   secondaryAction,
   nav,
@@ -74,7 +93,11 @@ export function BoundaryView({
 }: BoundaryViewProps) {
   return (
     <div {...rest} className={mergeUiClasses("flex min-h-dvh flex-col", className)} style={style}>
-      <SiteHeader ground={ground} brand={brand} nav={nav} secondaryAction={secondaryAction} actions={headerAction} />
+      {header !== undefined ? (
+        header
+      ) : (
+        <SiteHeader ground={ground} brand={brand} nav={nav} secondaryAction={secondaryAction} actions={headerAction} />
+      )}
       <main
         className="mx-auto flex w-full flex-1 flex-col gap-xl px-lg py-2xl"
         style={{ maxWidth: "var(--ui-width-form-max, none)" }}
@@ -87,7 +110,7 @@ export function BoundaryView({
         {action ? <Card className="flex flex-col gap-lg">{action}</Card> : null}
         {notes ? <div className="flex flex-col gap-xs text-body-s text-ink-secondary">{notes}</div> : null}
       </main>
-      <SiteFooter ground={ground} secondary={footerSecondary} />
+      {footer !== undefined ? footer : <SiteFooter ground={ground} secondary={footerSecondary} />}
     </div>
   );
 }

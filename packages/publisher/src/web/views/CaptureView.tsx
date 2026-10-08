@@ -7,6 +7,23 @@ import type { ViewChromeGround } from "../internal/viewChromeGround.js";
 export interface CaptureViewProps extends HTMLAttributes<HTMLDivElement> {
   /** Persistent site identity, rendered in the page banner. */
   brand: ReactNode;
+  /**
+   * The page's own banner, replacing Designer's `SiteHeader` entirely, for a
+   * consumer that carries its own site chrome. When given (including `null`,
+   * which renders no banner) it is rendered as-is in place of the header: it
+   * should hold the page's one banner landmark, and `brand`, `nav`,
+   * `headerAction`, `headerSecondaryAction` and `ground` are not used for the header.
+   * `brand` stays required and is not rendered while `header` is given.
+   * When `undefined`, the Designer header renders as before.
+   */
+  header?: ReactNode;
+  /**
+   * The page's own footer, replacing Designer's `SiteFooter` entirely. When
+   * given (including `null`, which renders no footer) it is rendered as-is
+   * and should hold the page's one contentinfo landmark; `footerSecondary`
+   * is not used. When `undefined`, the Designer footer renders as before.
+   */
+  footer?: ReactNode;
   /** The primary navigation, rendered in the banner beside the brand. Absent from the markup when omitted. */
   nav?: ReactNode;
   /**
@@ -84,6 +101,8 @@ export interface CaptureViewProps extends HTMLAttributes<HTMLDivElement> {
  */
 export function CaptureView({
   brand,
+  header,
+  footer,
   nav,
   headerAction,
   headerSecondaryAction,
@@ -130,7 +149,11 @@ export function CaptureView({
 
   return (
     <div {...rest} className={mergeUiClasses("flex min-h-dvh flex-col", className)} style={style}>
-      <SiteHeader ground={ground} brand={brand} nav={nav} secondaryAction={headerSecondaryAction} actions={headerAction} />
+      {header !== undefined ? (
+        header
+      ) : (
+        <SiteHeader ground={ground} brand={brand} nav={nav} secondaryAction={headerSecondaryAction} actions={headerAction} />
+      )}
       <main className="mx-auto flex w-full flex-1 flex-col gap-xl px-lg py-2xl" style={{ maxWidth: "var(--ui-width-prose-max, none)" }}>
         <PageHeader title={heading} description={description} />
         <section aria-label={formLabel}>
@@ -141,7 +164,7 @@ export function CaptureView({
         </section>
         {notes ? <div className="flex flex-col gap-xs text-body-s text-ink-secondary">{notes}</div> : null}
       </main>
-      <SiteFooter ground={ground} secondary={footerSecondary} />
+      {footer !== undefined ? footer : <SiteFooter ground={ground} secondary={footerSecondary} />}
     </div>
   );
 }

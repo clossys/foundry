@@ -22,3 +22,8 @@ export const withoutDescription = <AuthView brand="Acme" heading="Sign in" form=
 // built-in request-access link. An alternate step arrives only as `notes`.
 // @ts-expect-error AuthView has no requestAccess prop
 export const withRequestAccess = <AuthView brand="Acme" heading="Sign in" description="Welcome back." requestAccess={null} form={null} />;
+
+// `header` and `footer` replace the Designer chrome and take any node; the page still names its brand.
+export const withOwnChrome = (
+  <AuthView brand={null} header={<header />} footer={<footer />} heading="Sign in" description="Welcome back." form={null} />
+);
