@@ -10,6 +10,12 @@ export type { ErrorViewProps } from "./ErrorView.js";
 export { BoundaryView } from "./BoundaryView.js";
 export type { BoundaryViewProps } from "./BoundaryView.js";
 
+export { StatusView } from "./StatusView.js";
+export type { StatusViewProps } from "./StatusView.js";
+
+export { ConstructionView } from "./ConstructionView.js";
+export type { ConstructionViewProps } from "./ConstructionView.js";
+
 export { AuthView } from "./AuthView.js";
 export type { AuthViewProps } from "./AuthView.js";
 
