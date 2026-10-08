@@ -185,7 +185,7 @@ export function CaptureView({
     </PageLayout>
   );
 
-  const legacyChrome = usesLegacyChrome({ brand, header, footer, mainId, nav, headerAction, headerSecondaryAction, ground, footerSecondary });
+  const legacyChrome = usesLegacyChrome({ brand, header, footer, mainId: mainId || undefined, nav, headerAction, headerSecondaryAction, ground, footerSecondary });
   if (!legacyChrome) {
     assertViewContentRoot("CaptureView", rest);
     return (

@@ -172,3 +172,18 @@ describe.each(VIEWS)("$name host-set main id", ({ render: view }) => {
     expect(main.hasAttribute("tabindex")).toBe(false);
   });
 });
+
+describe("an empty mainId is absent, not a chrome prop", () => {
+  const CHROME_FREE: ReadonlyArray<{ name: string; element: ReactElement }> = [
+    { name: "AuthView", element: <AuthView heading="Sign in" description="Welcome back." form={<p>form</p>} mainId="" /> },
+    { name: "CaptureView", element: <CaptureView heading="Contact" form={<p>form</p>} mainId="" /> },
+    { name: "BoundaryView", element: <BoundaryView status={404} title="Not found" mainId="" /> },
+  ];
+
+  it.each(CHROME_FREE)("$name: mainId=\"\" alone stays chrome-free, with no main, banner or contentinfo", ({ element }) => {
+    const { container } = render(element);
+    expect(container.querySelector("main")).toBeNull();
+    expect(container.querySelector("header")).toBeNull();
+    expect(container.querySelector("footer")).toBeNull();
+  });
+});

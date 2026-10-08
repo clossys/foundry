@@ -223,7 +223,7 @@ export function AuthView({
     </>
   );
 
-  const legacyChrome = usesLegacyChrome({ brand, surfaceLabel, nav, headerAction, headerSecondaryAction, header, footer, mainId, ground, footerSecondary });
+  const legacyChrome = usesLegacyChrome({ brand, surfaceLabel, nav, headerAction, headerSecondaryAction, header, footer, mainId: mainId || undefined, ground, footerSecondary });
   if (!legacyChrome) {
     assertViewContentRoot("AuthView", rest);
     return (

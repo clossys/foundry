@@ -136,7 +136,7 @@ export function BoundaryView({
     </>
   );
 
-  const legacyChrome = usesLegacyChrome({ brand, header, footer, mainId, headerAction, secondaryAction, nav, ground, footerSecondary });
+  const legacyChrome = usesLegacyChrome({ brand, header, footer, mainId: mainId || undefined, headerAction, secondaryAction, nav, ground, footerSecondary });
   if (!legacyChrome) {
     assertViewContentRoot("BoundaryView", rest);
     return (
