@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { Card, mergeUiClasses } from "@clossys/designer/atoms/server";
 import { SiteFooter, SiteHeader } from "@clossys/designer/shell/server";
-import type { ViewChromeGround } from "../internal/viewChromeGround.js";
+import type { SiteChromeGround } from "../internal/viewChromeGround.js";
 import { assertViewContentRoot, usesLegacyChrome } from "../internal/viewContentRoot.js";
 import type { ErrorViewProps } from "./ErrorView.js";
 
@@ -66,7 +66,7 @@ export interface BoundaryViewProps extends ErrorViewProps {
    * @default "base"
    * @deprecated Chrome belongs to `SiteFrame`; see `brand`.
    */
-  ground?: ViewChromeGround;
+  ground?: SiteChromeGround;
   /**
    * The notes block below the card: supporting lines such as a support
    * contact or a reference to quote. Absent from the markup when omitted.

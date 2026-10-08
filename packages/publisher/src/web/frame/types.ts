@@ -1,8 +1,8 @@
 import type { ReactNode } from "react";
 import type { CopyRef, CopyResolver } from "@clossys/writer";
 import type { IconNode } from "@clossys/designer/atoms/server";
-import type { SiteHeaderProps } from "@clossys/designer/shell/server";
 import type { AssetResolver } from "../types.js";
+import type { SiteChromeGround } from "../internal/viewChromeGround.js";
 
 /**
  * The fixed `id` of the one `<main>` a `SiteFrame` renders, and the target of
@@ -48,8 +48,8 @@ export interface SiteEnvironmentLinkInput {
   readonly isCurrent?: boolean;
 }
 
-/** The plate of the banner and footer: Designer's site-chrome grounds. */
-export type SiteChromeGround = NonNullable<SiteHeaderProps["ground"]>;
+export { SITE_CHROME_GROUNDS } from "../internal/viewChromeGround.js";
+export type { SiteChromeGround } from "../internal/viewChromeGround.js";
 
 /** The footer: optional link columns, then the legal row. */
 export interface SiteFooterInput {
@@ -138,5 +138,14 @@ export interface SitePageLayer {
   readonly name: string;
   readonly owner: string;
   readonly mountOwner: string;
-  readonly implementationScope: "contract-only" | "supplier" | "this-unit" | "out-of-scope";
+  /**
+   * What this Publisher release does for the layer:
+   * - `"implemented"`: the frame mounts it.
+   * - `"supplier"`: Publisher ships parts a host mounts itself; the frame does not mount them yet.
+   * - `"contract-only"`: named in the contract; nothing ships in Publisher for it yet.
+   * - `"out-of-scope"`: not part of the page contract.
+   */
+  readonly implementationScope: "implemented" | "supplier" | "contract-only" | "out-of-scope";
+  /** Named parts of the layer that are not yet built, so a consumer does not assume them. */
+  readonly deferred: readonly string[];
 }

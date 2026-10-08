@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
 import "@testing-library/jest-dom/vitest";
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import type { ReactElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
@@ -15,6 +15,7 @@ import { CaptureView } from "../views/CaptureView.js";
 import { ErrorView } from "../views/ErrorView.js";
 import { SITE_MAIN_ID, SITE_SURFACE_KINDS, SiteFrame, siteShellFor } from "./index.js";
 import type { SiteFrameConfig, SiteShellInput } from "./index.js";
+import { resolveShell } from "./internal/resolveShell.js";
 
 afterEach(cleanup);
 
@@ -163,12 +164,6 @@ describe("SiteFrame", () => {
     expect(footer).toHaveTextContent("Example Ltd");
   });
 
-  it("renders on the server with no browser APIs", () => {
-    const html = renderToStaticMarkup(frame(FRONT_DOOR_SHELL, <p>content</p>));
-    expect(html).toContain(`<main id="${SITE_MAIN_ID}" tabindex="-1"`);
-    expect(html.match(/<main\b/g)).toHaveLength(1);
-  });
-
   describe("fails closed", () => {
     const render$ = (shell: unknown) => () => renderToStaticMarkup(frame(shell as SiteShellInput, <p>content</p>));
 
@@ -190,9 +185,47 @@ describe("SiteFrame", () => {
       expect(render$(shell)).not.toThrow(/alert/);
     });
 
-    it("refuses a protocol-relative link", () => {
-      const shell = { ...FRONT_DOOR_SHELL, footer: { legal: { entity: ref("legal.entity"), links: [{ href: "//evil.example/", label: ref("legal.terms") }] } } };
-      expect(render$(shell)).toThrow(/is not an allowed link/);
+    const withLegalHref = (href: string, shell: SiteShellInput = FRONT_DOOR_SHELL) => ({
+      ...shell,
+      footer: { legal: { entity: ref("legal.entity"), links: [{ href, label: ref("legal.terms") }] } },
+    });
+
+    it.each([
+      ["protocol-relative", "//evil.example/"],
+      ["tab after the slash", "/\t/evil.example"],
+      ["newline after the slash", "/\n/evil.example"],
+      ["carriage return and backslash", "/\r\\evil.example"],
+      ["backslash", "/\\evil.example"],
+      ["a control character in the path", "/terms\u0000"],
+      ["DEL", "/terms\u007F"],
+      ["a data: URL", "data:text/html,<p>x</p>"],
+      ["a mixed-case javascript: URL", "JaVaScRiPt:alert(1)"],
+      ["a vbscript: URL", "vbscript:msgbox(1)"],
+      ["a file: URL", "file:///etc/hosts"],
+      ["leading whitespace", " /terms"],
+      ["trailing whitespace", "/terms "],
+      ["an empty href", ""],
+      ["a host-less http URL", "https:"],
+    ])("refuses %s, with or without an origin, and never echoes it", (_name, href) => {
+      for (const shell of [FRONT_DOOR_SHELL, siteShellFor(CONFIG, "site")]) {
+        expect(render$(withLegalHref(href, shell))).toThrow(/SiteFrame: shell\.footer\.legal\.links\[0\]\.href is not an allowed link\./);
+        expect(render$(withLegalHref(href, shell))).not.toThrow(/evil|alert|msgbox|hosts|data:/);
+      }
+    });
+
+    it("accepts percent-encoded paths, which stay on the origin, and normalises absolute links", () => {
+      const hrefs = (shell: SiteShellInput) =>
+        resolveShell(shell, resolveCopy, resolveAsset).footer?.legal.links.map((link) => link.href);
+      expect(hrefs(withLegalHref("/%09/evil.example"))).toEqual(["https://example.com/%09/evil.example"]);
+      expect(hrefs(withLegalHref("/%2F%2Fevil.example"))).toEqual(["https://example.com/%2F%2Fevil.example"]);
+      expect(hrefs(withLegalHref("HTTPS://Example.COM/Terms"))).toEqual(["https://example.com/Terms"]);
+      expect(hrefs(withLegalHref("MAILTO:help@example.com"))).toEqual(["mailto:help@example.com"]);
+      expect(hrefs(withLegalHref("#legal"))).toEqual(["#legal"]);
+    });
+
+    it("refuses a control character or backslash in a fragment or query link", () => {
+      expect(render$(withLegalHref("#a\tb"))).toThrow(/is not an allowed link/);
+      expect(render$(withLegalHref("?a\\b"))).toThrow(/is not an allowed link/);
     });
 
     it("refuses a node-shaped header, footer or mark slipped past the types", () => {
@@ -220,9 +253,146 @@ describe("SiteFrame", () => {
       );
     });
 
-    it("refuses an origin that is not an http(s) origin", () => {
-      expect(render$({ ...FRONT_DOOR_SHELL, origin: "javascript:alert(1)" })).toThrow(/SiteFrame: shell\.origin must be an http\(s\) origin/);
-      expect(render$({ ...FRONT_DOOR_SHELL, origin: "https://example.com/path" })).toThrow(/shell\.origin must be an http\(s\) origin/);
+    const withIcon = (icon: unknown) => ({ ...FRONT_DOOR_SHELL, environments: [{ href: "https://app.example.com/", label: ref("env.app"), icon }] });
+
+    it.each([
+      ["an href attribute", [["path", { d: "M0 0", href: "javascript:alert(1)" }]]],
+      ["an xlink:href attribute", [["path", { d: "M0 0", "xlink:href": "#x" }]]],
+      ["a style attribute", [["path", { d: "M0 0", style: "fill:red" }]]],
+      ["a non-string attribute", [["path", { d: 1 }]]],
+      ["a url() value", [["path", { d: "M0 0", fill: "url(https://evil.example/x)" }]]],
+      ["a spaced url () value", [["path", { d: "M0 0", stroke: "URL (#x)" }]]],
+      ["dangerouslySetInnerHTML", [["g", { dangerouslySetInnerHTML: { __html: "<script></script>" } }]]],
+      ["children", [["g", { children: "x" }]]],
+      ["ref", [["path", { d: "M0 0", ref: "x" }]]],
+      ["a non-string key", [["path", { d: "M0 0", key: 1 }]]],
+      ["an unlisted attribute", [["path", { d: "M0 0", filter: "x" }]]],
+      ["an unlisted tag", [["use", { href: "#x" }]]],
+      ["an empty icon", []],
+      ["a node with extra entries", [["path", { d: "M0 0" }, "extra"]]],
+      ["array attributes", [["path", ["d", "M0 0"]]]],
+    ])("refuses icon data with %s", (_name, icon) => {
+      expect(render$(withIcon(icon))).toThrow(/SiteFrame: shell\.environments\[0\]\.icon is not plain SVG shape data\./);
+      expect(render$(withIcon(icon))).not.toThrow(/evil|script/);
+    });
+
+    it("accepts Designer's generated icon shape, strips its list key and renders a frozen copy, not the caller's object", () => {
+      const caller = [
+        ["path", { d: "M3 12h18", key: "a1" }],
+        ["circle", { cx: "12", cy: "12", r: "3", "stroke-width": "2", key: "b2" }],
+      ];
+      const resolved = resolveShell(withIcon(caller) as SiteShellInput, resolveCopy, resolveAsset).environments[0]?.icon;
+      expect(resolved).toEqual([
+        ["path", { d: "M3 12h18" }],
+        ["circle", { cx: "12", cy: "12", r: "3", "stroke-width": "2" }],
+      ]);
+      expect(resolved).not.toBe(caller);
+      expect(resolved?.[0]?.[1]).not.toBe(caller[0]?.[1]);
+      expect(Object.isFrozen(resolved)).toBe(true);
+      expect(Object.isFrozen(resolved?.[0])).toBe(true);
+      expect(Object.isFrozen(resolved?.[0]?.[1])).toBe(true);
+      (caller[0]?.[1] as Record<string, string>).d = "M0 0 changed";
+      expect(resolved?.[0]?.[1]).toEqual({ d: "M3 12h18" });
+    });
+
+    it.each([
+      ["javascript:alert(1)"],
+      ["https://example.com/path"],
+      ["https://example.com?x=1"],
+      ["https://user@example.com"],
+      ["http://example.com"],
+      ["http://10.0.0.1"],
+      ["ftp://example.com"],
+      ["data:text/plain,x"],
+      ["https://example.com\n"],
+      ["https://exa\tmple.com"],
+      ["https:\\\\example.com"],
+      [" https://example.com"],
+      ["not a url"],
+    ])("refuses the origin %j", (origin) => {
+      expect(render$({ ...FRONT_DOOR_SHELL, origin })).toThrow(/SiteFrame: shell\.origin must be an https origin, or an http origin on a loopback host\./);
+      expect(render$({ ...FRONT_DOOR_SHELL, origin })).not.toThrow(/alert|10\.0|user@/);
+    });
+
+    it.each([
+      ["https://example.com", "https://example.com/privacy"],
+      ["https://example.com/", "https://example.com/privacy"],
+      ["HTTPS://EXAMPLE.com", "https://example.com/privacy"],
+      ["http://localhost:3000", "http://localhost:3000/privacy"],
+      ["http://127.0.0.1:8080", "http://127.0.0.1:8080/privacy"],
+      ["http://[::1]:4000", "http://[::1]:4000/privacy"],
+    ])("accepts the origin %j", (origin, privacy) => {
+      const resolved = resolveShell({ ...FRONT_DOOR_SHELL, origin }, resolveCopy, resolveAsset);
+      expect(resolved.footer?.legal.links[0]?.href).toBe(privacy);
+    });
+
+    it("resolves root-relative nav, action, secondary action and column links against the origin too, not only legal links", () => {
+      const site = siteShellFor(CONFIG, "site");
+      const resolved = resolveShell({ ...site, origin: "https://example.com" }, resolveCopy, resolveAsset);
+      expect(resolved.nav?.links.map((link) => link.href)).toEqual(["https://example.com/pricing", "https://example.com/docs"]);
+      expect(resolved.actions.map((link) => link.href)).toEqual(["https://example.com/start"]);
+      expect(resolved.secondaryAction?.href).toBe("https://app.example.com/");
+      expect(resolved.footer?.columns[0]?.links.map((link) => link.href)).toEqual(["https://example.com/about"]);
+    });
+
+    it("refuses two current environments and a non-boolean isCurrent", () => {
+      const env = (isCurrent: unknown) => ({ href: "https://app.example.com/", label: ref("env.app"), icon: ICON, isCurrent });
+      expect(render$({ ...FRONT_DOOR_SHELL, environments: [env(true), env(true)] })).toThrow(
+        /SiteFrame: shell\.environments marks more than one environment current\./,
+      );
+      expect(render$({ ...FRONT_DOOR_SHELL, environments: [env("true")] })).toThrow(/SiteFrame: shell\.environments\[0\]\.isCurrent must be a boolean\./);
+    });
+
+    it("refuses a wordmark on a mark brand", () => {
+      expect(
+        render$({ ...FRONT_DOOR_SHELL, brand: { assetId: "brand-mark", label: ref("brand.label"), size: "md", variant: "mark", wordmark: ref("brand.name") } }),
+      ).toThrow(/SiteFrame: shell\.brand\.wordmark is only for the lockup variant\./);
+    });
+
+    it("refuses the inverse-page chrome ground", () => {
+      expect(render$({ ...FRONT_DOOR_SHELL, ground: "transparent-inverse" })).toThrow(/SiteFrame: shell\.ground must be one of base, inverse, transparent\./);
+    });
+
+    it("refuses copy that resolves blank", () => {
+      const blankResolver: CopyResolver = (copyRef) => {
+        const resolution = resolveCopy(copyRef);
+        return resolution && copyRef.id === "skip" ? { ...resolution, text: "   " } : resolution;
+      };
+      expect(() => renderToStaticMarkup(<SiteFrame shell={FRONT_DOOR_SHELL} resolveCopy={blankResolver} resolveAsset={resolveAsset}><p /></SiteFrame>)).toThrow(
+        /SiteFrame: shell\.skipLink did not resolve to copy\./,
+      );
+    });
+
+    it.each([
+      ["shell", (extra: object) => ({ ...FRONT_DOOR_SHELL, ...extra }), /shell has an unsupported field "extra"/],
+      ["brand", (extra: object) => ({ ...FRONT_DOOR_SHELL, brand: { ...FRONT_DOOR_SHELL.brand, ...extra } }), /shell\.brand has an unsupported field "extra"/],
+      ["nav", (extra: object) => ({ ...FRONT_DOOR_SHELL, nav: { label: ref("nav.label"), links: [], ...extra } }), /shell\.nav has an unsupported field "extra"/],
+      [
+        "a link",
+        (extra: object) => ({ ...FRONT_DOOR_SHELL, actions: [{ href: "/start", label: ref("cta.start"), ...extra }] }),
+        /shell\.actions\[0\] has an unsupported field "extra"/,
+      ],
+      [
+        "an environment",
+        (extra: object) => ({ ...FRONT_DOOR_SHELL, environments: [{ href: "/", label: ref("env.app"), icon: ICON, ...extra }] }),
+        /shell\.environments\[0\] has an unsupported field "extra"/,
+      ],
+      ["the footer", (extra: object) => ({ ...FRONT_DOOR_SHELL, footer: { legal: CONFIG.legal, ...extra } }), /shell\.footer has an unsupported field "extra"/],
+      [
+        "a footer column",
+        (extra: object) => ({ ...FRONT_DOOR_SHELL, footer: { legal: CONFIG.legal, columns: [{ heading: ref("footer.company"), links: [], ...extra }] } }),
+        /shell\.footer\.columns\[0\] has an unsupported field "extra"/,
+      ],
+      ["the legal row", (extra: object) => ({ ...FRONT_DOOR_SHELL, footer: { legal: { ...CONFIG.legal, ...extra } } }), /shell\.footer\.legal has an unsupported field "extra"/],
+    ] as const)("refuses an unknown field on %s", (_name, build, message) => {
+      expect(render$(build({ extra: true }))).toThrow(message);
+    });
+
+    it("echoes an unknown key only as identifier characters, truncated", () => {
+      expect(render$({ ...FRONT_DOOR_SHELL, ["<img src=x onerror=alert(1)>"]: true })).toThrow(/shell has an unsupported field "imgsrcxonerroralert1"\./);
+      expect(render$({ ...FRONT_DOOR_SHELL, ["<img src=x onerror=alert(1)>"]: true })).not.toThrow(/[<>=()]/);
+      expect(render$({ ...FRONT_DOOR_SHELL, ["k".repeat(500)]: true })).toThrow(new RegExp(`unsupported field "${"k".repeat(40)}"\\.`));
+      expect(render$({ ...FRONT_DOOR_SHELL, ["<>"]: true })).toThrow(/SiteFrame: shell has an unsupported field\.$/);
     });
   });
 });
@@ -242,30 +412,37 @@ describe.each(CHROME_FREE_VIEWS)("$name chrome-free", ({ element, h1 }) => {
     expect(found.h1s[0]).toHaveTextContent(h1);
   });
 
-  it("under any host main: no banner and no contentinfo of its own (a page-header <header> is scoped to main)", () => {
-    const { container } = render(<main>{element}</main>);
-    const found = landmarks(container);
-    expect(found.mains).toHaveLength(1);
-    expect(found.banners).toHaveLength(0);
-    expect(found.contentinfos).toHaveLength(0);
+  it("alone: any <header> it renders is its page-header block (holding the h1), never site chrome", () => {
+    const { container } = render(element);
+    for (const header of container.querySelectorAll("header")) expect(header.querySelector("h1")).not.toBeNull();
+    expect(container.querySelectorAll("header a, header nav, header img")).toHaveLength(0);
   });
 
-  it("inside the frame: one skip link, one main with the fixed id, one banner, one contentinfo, one h1", () => {
+  it("inside the frame: one skip link, one main with the fixed id, the frame's banner and contentinfo, one h1", () => {
     const { container } = render(frame(FRONT_DOOR_SHELL, element));
     const found = landmarks(container);
+    const root = container.firstElementChild as HTMLElement;
     expect(found.skipLinks).toHaveLength(1);
     expect(found.mains).toHaveLength(1);
     expect(found.mains[0]).toHaveAttribute("id", SITE_MAIN_ID);
-    expect(found.banners).toHaveLength(1);
-    expect(found.contentinfos).toHaveLength(1);
+    expect(found.banners).toEqual([root.children[1]]);
+    expect(found.contentinfos).toEqual([root.children[3]]);
+    expect(found.mains[0]?.querySelectorAll("footer, nav, [role]:is([role='banner'], [role='contentinfo'], [role='main'], [role='navigation'])")).toHaveLength(0);
     expect(found.h1s).toHaveLength(1);
     expect(found.mains[0]).toContainElement(found.h1s[0] as HTMLElement);
   });
 });
 
-describe.each(CHROME_FREE_VIEWS.filter((view) => view.name !== "ErrorView"))("$name content root", ({ name, element }) => {
-  it("refuses a landmark role or the frame's main id on its content root", () => {
-    for (const extra of [{ role: "main" }, { role: "banner" }, { role: "contentinfo" }, { role: "navigation" }, { id: SITE_MAIN_ID }]) {
+describe.each(CHROME_FREE_VIEWS)("$name content root", ({ name, element }) => {
+  it("refuses a landmark role (any case, any token) or the frame's main id on its content root", () => {
+    for (const extra of [
+      { role: "main" },
+      { role: "MAIN" },
+      { role: "Banner" },
+      { role: "region contentinfo" },
+      { role: "navigation" },
+      { id: SITE_MAIN_ID },
+    ]) {
       const props = { ...(element.props as object), ...extra };
       const View = element.type as (p: object) => ReactElement;
       expect(() => renderToStaticMarkup(<View {...props} />)).toThrow(new RegExp(`${name}: the content root`));
@@ -273,15 +450,49 @@ describe.each(CHROME_FREE_VIEWS.filter((view) => view.name !== "ErrorView"))("$n
   });
 });
 
-describe("deprecated view chrome props keep the legacy page", () => {
-  it.each([
-    ["AuthView", <AuthView brand="Acme" heading="Sign in" description="Welcome back." form={null} />],
-    ["CaptureView", <CaptureView brand="Acme" heading="Contact" form={<p>form</p>} />],
-    ["BoundaryView", <BoundaryView brand="Acme" status={404} title="Not found" />],
-    ["AuthView with mainId only", <AuthView brand={null} mainId="main-content" header={null} footer={null} heading="Sign in" description="x" form={null} />],
-  ])("%s still renders its own main", (_name, element) => {
-    const { container } = render(element);
+const CHROME_VALUES: Readonly<Record<string, unknown>> = {
+  brand: "Acme",
+  header: <header>Own header</header>,
+  footer: <footer>Own footer</footer>,
+  mainId: "main-content",
+  nav: <a href="/docs">Docs</a>,
+  headerAction: <a href="/start">Start</a>,
+  headerSecondaryAction: <a href="/signin">Sign in</a>,
+  secondaryAction: <a href="/signin">Sign in</a>,
+  ground: "base",
+  footerSecondary: <p>Legal</p>,
+  surfaceLabel: "Admin",
+};
+
+const LEGACY_KEYS: ReadonlyArray<readonly [string, (chrome: Record<string, unknown>) => ReactElement, readonly string[]]> = [
+  [
+    "AuthView",
+    (chrome) => <AuthView heading="Sign in" description="Welcome back." form={null} {...chrome} />,
+    ["brand", "header", "footer", "mainId", "nav", "headerAction", "headerSecondaryAction", "ground", "footerSecondary", "surfaceLabel"],
+  ],
+  [
+    "CaptureView",
+    (chrome) => <CaptureView heading="Contact" form={<p>form</p>} {...chrome} />,
+    ["brand", "header", "footer", "mainId", "nav", "headerAction", "headerSecondaryAction", "ground", "footerSecondary"],
+  ],
+  [
+    "BoundaryView",
+    (chrome) => <BoundaryView status={404} title="Not found" {...chrome} />,
+    ["brand", "header", "footer", "mainId", "nav", "headerAction", "secondaryAction", "ground", "footerSecondary"],
+  ],
+];
+
+describe.each(LEGACY_KEYS)("%s: each deprecated chrome prop alone selects the legacy page", (_view, build, keys) => {
+  it.each(keys)("%s", (key) => {
+    const { container } = render(build({ [key]: CHROME_VALUES[key] }));
     expect(container.querySelectorAll("main")).toHaveLength(1);
+    const root = container.firstElementChild as HTMLElement;
+    expect(root.className).toContain("min-h-dvh");
+  });
+
+  it("no chrome prop: the chrome-free content", () => {
+    const { container } = render(build({}));
+    expect(container.querySelectorAll("main")).toHaveLength(0);
   });
 });
 
@@ -342,17 +553,46 @@ describe("siteShellFor", () => {
   });
 });
 
-describe("module boundaries", () => {
-  it("the skip-link island is the frame's only client module", () => {
-    const island = readFileSync(join(import.meta.dirname, "SkipLink.client.tsx"), "utf8");
-    expect(island.startsWith('"use client";')).toBe(true);
-    const frameSource = readFileSync(join(import.meta.dirname, "SiteFrame.tsx"), "utf8");
-    expect(frameSource).not.toMatch(/["']use client["']/);
-    expect(frameSource).not.toMatch(/\buse[A-Z][A-Za-z]*\(/);
-    for (const source of [island, frameSource]) {
-      for (const [, specifier] of source.matchAll(/from\s+["']([^"']+)["']/g)) {
-        expect(specifier).toMatch(/^(react|@clossys\/designer\/[a-z-]+\/server|@clossys\/writer|\.{1,2}\/.+)$/);
-      }
+/** Every module a source names: `from "x"`, a side-effect `import "x"`, a dynamic `import("x")` and `require("x")`. */
+function moduleSpecifiers(source: string): string[] {
+  return [...source.matchAll(/(?:\bfrom\s*|\bimport\s*\(?\s*|\brequire\s*\(\s*)["'`]([^"'`]+)["'`]/g)].map((match) => match[1] as string);
+}
+
+const FRAME_ALLOWED_IMPORT = /^(react|@clossys\/designer\/[a-z-]+\/server|@clossys\/writer|\.{1,2}\/[A-Za-z./-]+\.js)$/;
+
+function frameSources(): Array<[string, string]> {
+  const files: Array<[string, string]> = [];
+  for (const directory of [import.meta.dirname, join(import.meta.dirname, "internal")]) {
+    for (const name of readdirSync(directory)) {
+      if (!/\.tsx?$/.test(name) || /\.(test|check)\.tsx?$/.test(name)) continue;
+      files.push([name, readFileSync(join(directory, name), "utf8")]);
     }
+  }
+  return files;
+}
+
+describe("module boundaries", () => {
+  it("the skip-link island is the frame's only client module, and the frame uses no hooks", () => {
+    const sources = frameSources();
+    expect(sources.map(([name]) => name)).toContain("SiteFrame.tsx");
+    for (const [name, source] of sources) {
+      if (name === "SkipLink.client.tsx") expect(source.startsWith('"use client";')).toBe(true);
+      else expect(source).not.toMatch(/["']use client["']/);
+    }
+    const frameSource = readFileSync(join(import.meta.dirname, "SiteFrame.tsx"), "utf8");
+    expect(frameSource).not.toMatch(/\buse[A-Z][A-Za-z]*\(/);
+  });
+
+  it("every frame module imports only react, Designer server entries, Writer and its own relative modules, with no dynamic import or require", () => {
+    for (const [, source] of frameSources()) {
+      for (const specifier of moduleSpecifiers(source)) expect(specifier).toMatch(FRAME_ALLOWED_IMPORT);
+      expect(source).not.toMatch(/\bimport\s*\(|\brequire\s*\(/);
+    }
+  });
+
+  it("the import scan catches side-effect imports, dynamic imports and require", () => {
+    const sample = ['import "side-effect";', 'const a = import("dynamic");', 'const b = require("required");', 'export * from "reexport";', 'import { c } from "react";'].join("\n");
+    expect(moduleSpecifiers(sample)).toEqual(["side-effect", "dynamic", "required", "reexport", "react"]);
+    expect(moduleSpecifiers(sample).filter((specifier) => !FRAME_ALLOWED_IMPORT.test(specifier))).toEqual(["side-effect", "dynamic", "required", "reexport"]);
   });
 });

@@ -2,7 +2,7 @@ import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
 import { Card, mergeUiClasses } from "@clossys/designer/atoms/server";
 import { PageHeader } from "@clossys/designer/blocks/server";
 import { SiteFooter, SiteHeader } from "@clossys/designer/shell/server";
-import type { ViewChromeGround } from "../internal/viewChromeGround.js";
+import type { SiteChromeGround } from "../internal/viewChromeGround.js";
 import { assertViewContentRoot, usesLegacyChrome } from "../internal/viewContentRoot.js";
 
 export interface CaptureViewProps extends HTMLAttributes<HTMLDivElement> {
@@ -70,7 +70,7 @@ export interface CaptureViewProps extends HTMLAttributes<HTMLDivElement> {
    * @default "base"
    * @deprecated Chrome belongs to `SiteFrame`; see `brand`.
    */
-  ground?: ViewChromeGround;
+  ground?: SiteChromeGround;
   /** The page's one `<h1>`. */
   heading: ReactNode;
   /** Supporting copy under the heading. */

@@ -1,6 +1,7 @@
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
 import { mergeUiClasses } from "@clossys/designer/atoms/server";
 import { EmptyState } from "@clossys/designer/blocks/server";
+import { assertViewContentRoot } from "../internal/viewContentRoot.js";
 
 export interface ErrorViewProps extends Omit<HTMLAttributes<HTMLDivElement>, "title"> {
   /**
@@ -70,6 +71,7 @@ export function ErrorView({
   style,
   ...rest
 }: ErrorViewProps) {
+  assertViewContentRoot("ErrorView", rest);
   return (
     <div
       {...rest}

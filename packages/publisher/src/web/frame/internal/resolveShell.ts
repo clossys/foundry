@@ -2,6 +2,7 @@ import type { CopyRef, CopyResolver } from "@clossys/writer";
 import type { IconNode } from "@clossys/designer/atoms/server";
 import { isRenderImageAsset } from "../../../internal/assets.js";
 import type { AssetResolver } from "../../types.js";
+import { SITE_CHROME_GROUNDS } from "../types.js";
 import type { SiteChromeGround, SiteShellInput } from "../types.js";
 
 export interface ResolvedSiteLink {
@@ -52,19 +53,72 @@ const FOOTER_KEYS = new Set(["columns", "legal"]);
 const COLUMN_KEYS = new Set(["heading", "links"]);
 const LEGAL_KEYS = new Set(["entity", "links", "linksLabel"]);
 
-const GROUNDS: readonly SiteChromeGround[] = ["base", "inverse", "transparent", "transparent-inverse"];
 const LINK_PROTOCOLS = new Set(["https:", "http:", "mailto:", "tel:"]);
+/** C0 controls, DEL and backslash: a URL parser strips or rewrites them, so a link that holds one is refused before it is classified. */
+const UNSAFE_URL_CHARACTER = /[\u0000-\u001F\u007F\\]/;
+/** Hosts an `http:` origin may name: loopback only, for local development. */
+const LOOPBACK_HOSTS = new Set(["localhost", "127.0.0.1", "[::1]"]);
 const ICON_TAGS = new Set(["path", "circle", "ellipse", "line", "polyline", "polygon", "rect", "g"]);
-const ICON_ATTRIBUTE = /^[a-z][a-z-]*$/i;
+/** The SVG presentation and geometry attributes icon data may carry. Anything else is refused. */
+const ICON_ATTRIBUTES = new Set([
+  "d",
+  "cx",
+  "cy",
+  "r",
+  "rx",
+  "ry",
+  "x",
+  "y",
+  "x1",
+  "y1",
+  "x2",
+  "y2",
+  "width",
+  "height",
+  "points",
+  "pathLength",
+  "transform",
+  "fill",
+  "fillRule",
+  "fill-rule",
+  "fillOpacity",
+  "fill-opacity",
+  "clipRule",
+  "clip-rule",
+  "stroke",
+  "strokeWidth",
+  "stroke-width",
+  "strokeLinecap",
+  "stroke-linecap",
+  "strokeLinejoin",
+  "stroke-linejoin",
+  "strokeOpacity",
+  "stroke-opacity",
+  "opacity",
+]);
+/**
+ * Designer's generated icons carry a React list `key` per node. It is stripped
+ * from the copy rather than refused, so Designer's own icons are accepted, and
+ * never reaches the rendered element.
+ */
+const ICON_STRIPPED_ATTRIBUTES = new Set(["key"]);
+const SAFE_KEY_CHARACTER = /[^A-Za-z0-9_$]/g;
+const MAX_ECHOED_KEY_LENGTH = 40;
 
 function fail(message: string): never {
   throw new Error(`SiteFrame: ${message}`);
 }
 
+/** A caller-supplied key, reduced to identifier characters and truncated, so an error message cannot carry markup or a long payload. */
+function echoKey(key: string): string {
+  const safe = key.replace(SAFE_KEY_CHARACTER, "").slice(0, MAX_ECHOED_KEY_LENGTH);
+  return safe === "" ? "" : ` "${safe}"`;
+}
+
 function record(value: unknown, path: string, allowed: ReadonlySet<string>): Record<string, unknown> {
   if (typeof value !== "object" || value === null || Array.isArray(value)) fail(`${path} must be a plain object.`);
   for (const key of Object.keys(value)) {
-    if (!allowed.has(key)) fail(`${path} has an unsupported field "${key}".`);
+    if (!allowed.has(key)) fail(`${path} has an unsupported field${echoKey(key)}.`);
   }
   return value as Record<string, unknown>;
 }
@@ -91,52 +145,66 @@ function isRootRelative(href: string): boolean {
 }
 
 function href(value: unknown, path: string, origin: string | undefined): string {
-  if (typeof value !== "string" || value.trim() === "" || value !== value.trim()) fail(`${path} is not an allowed link.`);
-  if (isRootRelative(value)) return origin === undefined ? value : new URL(value, origin).href;
-  if (value.startsWith("#") || value.startsWith("?")) return value;
+  const refuse = (): never => fail(`${path} is not an allowed link.`);
+  if (typeof value !== "string" || value.trim() === "" || value !== value.trim() || UNSAFE_URL_CHARACTER.test(value)) refuse();
+  const link = value as string;
+  if (isRootRelative(link)) {
+    if (origin === undefined) return link;
+    const resolved = new URL(link, origin);
+    if (resolved.origin !== origin) refuse();
+    return resolved.href;
+  }
+  if (link.startsWith("#") || link.startsWith("?")) return link;
   let url: URL;
   try {
-    url = new URL(value);
+    url = new URL(link);
   } catch {
-    fail(`${path} is not an allowed link.`);
+    refuse();
   }
-  if (!LINK_PROTOCOLS.has(url.protocol)) fail(`${path} is not an allowed link.`);
-  return value;
+  if (!LINK_PROTOCOLS.has(url!.protocol)) refuse();
+  if ((url!.protocol === "https:" || url!.protocol === "http:") && url!.hostname === "") refuse();
+  return url!.href;
 }
 
 function origin(value: unknown): string | undefined {
   if (value === undefined) return undefined;
-  if (typeof value !== "string") fail("shell.origin must be an http(s) origin.");
+  const refuse = (): never => fail("shell.origin must be an https origin, or an http origin on a loopback host.");
+  if (typeof value !== "string" || UNSAFE_URL_CHARACTER.test(value) || value !== value.trim()) refuse();
   let url: URL;
   try {
-    url = new URL(value);
+    url = new URL(value as string);
   } catch {
-    fail("shell.origin must be an http(s) origin.");
+    refuse();
   }
-  const bare = url.pathname === "/" && url.search === "" && url.hash === "" && url.username === "" && url.password === "";
-  if ((url.protocol !== "https:" && url.protocol !== "http:") || !bare) fail("shell.origin must be an http(s) origin.");
-  return url.origin;
+  const parsed = url!;
+  const bare = parsed.pathname === "/" && parsed.search === "" && parsed.hash === "" && parsed.username === "" && parsed.password === "";
+  const allowedProtocol = parsed.protocol === "https:" || (parsed.protocol === "http:" && LOOPBACK_HOSTS.has(parsed.hostname));
+  if (!allowedProtocol || !bare) refuse();
+  return parsed.origin;
 }
 
+/**
+ * Validates icon data against an allowlist of SVG shape tags and attributes
+ * and returns a frozen deep copy, so the caller's object is never rendered
+ * and cannot change after validation.
+ */
 function icon(value: unknown, path: string): IconNode {
-  const ok =
-    Array.isArray(value) &&
-    value.length > 0 &&
-    value.every(
-      (node) =>
-        Array.isArray(node) &&
-        node.length === 2 &&
-        typeof node[0] === "string" &&
-        ICON_TAGS.has(node[0]) &&
-        typeof node[1] === "object" &&
-        node[1] !== null &&
-        Object.entries(node[1] as Record<string, unknown>).every(
-          ([name, attribute]) =>
-            ICON_ATTRIBUTE.test(name) && !/^on/i.test(name) && !/href$/i.test(name) && name.toLowerCase() !== "style" && typeof attribute === "string",
-        ),
-    );
-  if (!ok) fail(`${path} is not plain SVG shape data.`);
-  return value as IconNode;
+  const refuse = (): never => fail(`${path} is not plain SVG shape data.`);
+  if (!Array.isArray(value) || value.length === 0) refuse();
+  const nodes = (value as unknown[]).map((node) => {
+    if (!Array.isArray(node) || node.length !== 2) refuse();
+    const [tag, attributes] = node as [unknown, unknown];
+    if (typeof tag !== "string" || !ICON_TAGS.has(tag)) refuse();
+    if (typeof attributes !== "object" || attributes === null || Array.isArray(attributes)) refuse();
+    const copy: Record<string, string> = {};
+    for (const [name, attribute] of Object.entries(attributes as Record<string, unknown>)) {
+      if (ICON_STRIPPED_ATTRIBUTES.has(name) && typeof attribute === "string") continue;
+      if (!ICON_ATTRIBUTES.has(name) || typeof attribute !== "string" || /url\s*\(/i.test(attribute)) refuse();
+      copy[name] = attribute as string;
+    }
+    return Object.freeze([tag, Object.freeze(copy)] as const);
+  });
+  return Object.freeze(nodes) as unknown as IconNode;
 }
 
 /**
@@ -224,7 +292,7 @@ export function resolveShell(input: SiteShellInput, resolveCopy: CopyResolver, r
     environments,
     ...(shell.surfaceLabel === undefined ? {} : { surfaceLabel: copy(shell.surfaceLabel, "shell.surfaceLabel", resolveCopy) }),
     navPlacement: shell.navPlacement === undefined ? "leading" : oneOf(shell.navPlacement, "shell.navPlacement", ["leading", "centered"] as const),
-    ground: shell.ground === undefined ? "base" : oneOf(shell.ground, "shell.ground", GROUNDS),
+    ground: shell.ground === undefined ? "base" : oneOf(shell.ground, "shell.ground", SITE_CHROME_GROUNDS),
     ...(footer === undefined ? {} : { footer }),
   };
 }

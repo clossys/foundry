@@ -2,7 +2,7 @@ import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
 import { Badge, Card, mergeUiClasses } from "@clossys/designer/atoms/server";
 import { PageHeader } from "@clossys/designer/blocks/server";
 import { SiteFooter, SiteHeader } from "@clossys/designer/shell/server";
-import type { ViewChromeGround } from "../internal/viewChromeGround.js";
+import type { SiteChromeGround } from "../internal/viewChromeGround.js";
 import { assertViewContentRoot, usesLegacyChrome } from "../internal/viewContentRoot.js";
 
 export interface AuthViewProps extends HTMLAttributes<HTMLDivElement> {
@@ -74,7 +74,7 @@ export interface AuthViewProps extends HTMLAttributes<HTMLDivElement> {
    * `SiteFooter`.
    * @default "base"
    */
-  ground?: ViewChromeGround;
+  ground?: SiteChromeGround;
   /**
    * The page's own name - the words for sign-in, account creation,
    * password reset, or verification. Renders as the page's `<h1>` through

@@ -2132,15 +2132,38 @@ export function SignInPage() {
   none.
 - **Fails closed.** An unknown field, copy that does not resolve (or resolves
   blank), a non-image brand asset, a disallowed link, icon data that is not
-  plain SVG shape data, a malformed `origin` or more than one current
-  environment throws an `Error` that names the field (`SiteFrame: shell.nav.links[0].href ...`)
-  and never echoes the value. Links may be root-relative paths, fragments,
-  queries, or absolute `https:`, `http:`, `mailto:` or `tel:` URLs; a
-  protocol-relative `//host` link is refused.
+  plain SVG shape data, a malformed `origin`, a `ground` outside `base`,
+  `inverse` and `transparent`, or more than one current environment throws an
+  `Error` that names the field (`SiteFrame: shell.nav.links[0].href ...`). It
+  does not echo the value; an unknown key is echoed only as its identifier
+  characters, cut to 40.
+- **Links.** A link may be a root-relative path, a fragment, a query, or an
+  absolute `https:`, `http:`, `mailto:` or `tel:` URL (any letter case). A
+  link with surrounding whitespace, any control character (tab, newline and
+  carriage return included) or a backslash anywhere is refused, so
+  `"/\t/host"` and `"/\\host"` cannot turn into a link to another host; a
+  protocol-relative `//host` link and any other scheme (`javascript:`,
+  `data:`, `file:` and so on) are refused too. Percent-encoded paths such as
+  `/%2F%2Fhost` stay on the origin and are allowed. An absolute link is
+  returned normalised (`HTTPS://Example.COM/a` becomes
+  `https://example.com/a`), and with an `origin` a root-relative link becomes
+  an absolute URL on that origin, in every slot of a shell that sets one:
+  nav, actions, columns, environments and the legal row.
+- **Origin.** `origin` is a bare `https:` origin; `http:` is accepted only for
+  `localhost`, `127.0.0.1` and `[::1]`, for local development.
+- **Icons.** An environment `icon` is Designer `IconNode` data: `path`,
+  `circle`, `line`, `rect`, `polyline`, `polygon`, `ellipse` or `g` nodes whose
+  attributes come from an allowlist of SVG shape attributes (geometry, fill,
+  stroke and opacity) with string values. `style`, `href`, event handlers,
+  `ref`, `children`, `dangerouslySetInnerHTML` and any `url(...)` value are
+  refused. The string `key` Designer's generated icons carry is dropped. The
+  frame renders a frozen copy, so changing the caller's data afterwards has
+  no effect.
 - **One main.** The main id is fixed (`SITE_MAIN_ID`); the frame takes no
   main-id prop and the skip link always targets it. A chrome-free view
-  refuses `role="main"`, `"banner"`, `"contentinfo"` or `"navigation"` and the
-  frame's main id on its content root.
+  (`ErrorView` included) refuses a `role` holding `main`, `banner`,
+  `contentinfo` or `navigation` in any letter case, and the frame's main id,
+  on its content root.
 - **Server-safe.** `SiteFrame` uses no hooks. The skip link, which moves
   focus on activation, is a small `"use client"` island that receives strings
   only.
@@ -2151,7 +2174,7 @@ export function SignInPage() {
 
 | Kind | Banner | Footer | Links |
 | --- | --- | --- | --- |
-| `"site"` | brand, `site.nav`, `site.actions`, `site.secondaryAction` | `site.columns`, then the legal row | as given |
+| `"site"` | brand, `site.nav`, `site.actions`, `site.secondaryAction` | `site.columns`, then the legal row | as given (`siteShellFor` sets no `origin` for the site itself) |
 | `"front-door"`, `"admin"`, `"demo"` | brand, the `environments` links (the one whose `surface` matches marked current) | the legal row only | root-relative links resolve against `origin` |
 
 Every kind shares the brand, the skip link, the ground and the legal row. A
@@ -2159,21 +2182,60 @@ surface served from another host (a sign-in host, an admin host) therefore
 links its legal row to the public site's `/privacy` and `/terms` on
 `origin`, not to routes its own host may not serve. An unknown kind throws.
 
+**Which views fit inside the frame.**
+
+| Safe inside `SiteFrame` (no `<main>` of their own when no chrome prop is passed) | Still render their own `<main>` |
+| --- | --- |
+| `AuthView`, `CaptureView`, `BoundaryView`, `ErrorView` | `LandingView`, `MarketingView`, `CollectionView`, `DocumentView`, `LegalView`, `ContactView`, `PackReviewView`, `BrandGuideView`, `SystemAuditView` |
+
+`SectionedView` renders its own `<main>` by default; pass `landmark="none"`
+to place it inside the frame. The built-in registry `AuthView` template
+always passes `brand`, so a registry-rendered sign-in page is still the
+legacy full page, not a framed one.
+
+`ErrorView`'s root keeps its `min-h-dvh` (full viewport height) class, so
+inside the frame the page is taller than the viewport and scrolls past the
+footer. A frame-aware `ErrorView` root is a follow-up; it is listed as
+deferred under layer 8.
+
+**Known gaps.** The `Brandmark` links to `/` on the current host and does not
+follow `origin`, so on a sign-in or admin host the logo goes to that host's
+home, not the public site; that is a Designer follow-up. A call-to-action is
+text only (no icon), and Designer has no server-safe link component yet, so
+the frame renders plain anchors.
+
 **Page layers.** `SITE_PAGE_LAYERS` is the page-assembly contract as frozen
-data: nine layers (request edge, document and head, providers, shell and
-chrome, view, per-page head, machine surfaces, system states, forms and
-APIs), each with its owning package, who mounts it and how far the frame work
-implements it. This release implements layers 4, 5 and 8; per-page head
-(layer 6) is named in the contract and not yet implemented.
+data: nine layers, each with its owning package, who mounts it, its
+`implementationScope` and a `deferred` list of the parts not yet built. The
+scopes mean: `implemented`, the frame mounts it; `supplier`, Publisher ships
+parts a host mounts itself; `contract-only`, named in the contract with
+nothing shipped for it yet; `out-of-scope`, not part of the page contract.
+
+| Layer | Owner | Scope | Deferred |
+| --- | --- | --- | --- |
+| 1. Request edge | Bouncer | `contract-only` | |
+| 2. Document and head | Publisher | `supplier` | the document function (`html`, `body`, `lang`, `dir`, fonts, theme bootstrap, viewport) |
+| 3. Providers and runtime | their owning packages (telemetry contracts: Observer) | `contract-only` | provider mount points |
+| 4. Shell and chrome | Designer, mounted by the Publisher frame | `implemented` | signature slot (`defineSiteSignature`), consent card, locale switcher, backdrop |
+| 5. View | Publisher | `implemented` | chrome-free versions of the views in the right-hand column above |
+| 6. Per-page head | Publisher | `contract-only` | `pageHead` |
+| 7. Machine surfaces | Publisher | `contract-only` | robots, sitemap from the route manifest, web manifest, icons, health |
+| 8. System states | Publisher views | `implemented` | loading state, degraded state, frame-aware `ErrorView` root |
+| 9. Forms and APIs | their owning form and API packages | `out-of-scope` | |
+
+**Extending a page.** A consumer differs only through declared brand
+extensions: copy, tokens, backdrop and the signature visual. A band the
+frame or a view lacks is a package candidate, to be added here or in
+Designer, not a local fork of the frame or a view.
 
 **Deprecated view chrome.** The chrome props on `AuthView`, `CaptureView` and
 `BoundaryView` (`brand`, `header`, `footer`, `mainId`, `nav`,
 `headerAction`, the secondary header action, `ground`, `footerSecondary`, and
-`surfaceLabel` on `AuthView`) are deprecated. They still work: passing any of
-them selects the legacy page, unchanged, with the view's own header, `<main>`
-and footer (see [Front-door shell](#front-door-shell)). Omit all of them and
-render the view inside `SiteFrame` instead. `brand` is no longer required by
-the type.
+`surfaceLabel` on `AuthView`) are deprecated. They still work: passing any one
+of them selects the legacy page, unchanged, with the view's own header,
+`<main>` and footer (see [Front-door shell](#front-door-shell)). Omit all of
+them and render the view inside `SiteFrame` instead. `brand` is no longer
+required by the type.
 
 ### Front-door shell
 
