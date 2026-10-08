@@ -25,7 +25,7 @@
  */
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { readBrandCss } from "@clossys/designer/tokens";
+import { readBrandCss } from "@clossys/designer/tokens/server";
 import { createCopyResolver } from "@clossys/writer";
 import type { CopyResolver } from "@clossys/writer";
 import type { LegalDocument } from "@clossys/publisher/document";

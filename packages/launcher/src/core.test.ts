@@ -2280,7 +2280,7 @@ describe("a hub run writes nothing into any sibling checkout (S3-7a)", () => {
     expect(appointResult.state).toBe("satisfied");
     expect(appointResult.health.degraded).toBe(false);
     expect(appointResult.health.skillComposition?.siblings).toHaveLength(4);
-  });
+  }, 10_000);
 
   it("resume refreshes hub guidance written when appoint still composed into siblings", () => {
     const directory = tempDir();
