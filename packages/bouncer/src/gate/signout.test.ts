@@ -258,6 +258,27 @@ describe("POST: one safe 303 with reserved local cleanup", () => {
     expect(seen).toBeUndefined();
   });
 
+  it("sends a request over a cleanup bound to the fallback page, not the terminal page, even when the provider finishes", async () => {
+    const handler = createSignOutHandler(options({ terminalPath: "/signed-out", fallbackPath: "/sign-out-incomplete" }));
+    const location = async (cookie: string) => (await handler(post({ origin: ORIGIN, cookie }))).headers.get("location");
+    const atLimit = `__session_a=${"v".repeat(16384 - "__session_a=".length)}`;
+    expect(await location(atLimit)).toBe(`${ORIGIN}/signed-out`);
+    expect(await location(`${atLimit}v`)).toBe(`${ORIGIN}/sign-out-incomplete`);
+    const names = (count: number) => Array.from({ length: count }, (_, i) => `__session_s${i}=v`).join("; ");
+    expect(await location(names(16))).toBe(`${ORIGIN}/signed-out`);
+    expect(await location(names(17))).toBe(`${ORIGIN}/sign-out-incomplete`);
+  });
+
+  it("measures the Cookie header limit in UTF-8 bytes, not characters", async () => {
+    let seen: SignOutContext["cookies"] | "unset" = "unset";
+    const handler = createSignOutHandler(options({ signOut: (context) => void (seen = context.cookies) }));
+    // 16384 characters, 16385 bytes: the last character takes two bytes in UTF-8.
+    const cookie = `__session_a=${"v".repeat(16384 - "__session_a=".length - 1)}\u00e9`;
+    expect(cookie.length).toBe(16384);
+    await handler(post({ origin: ORIGIN, cookie }));
+    expect(seen).toBeUndefined();
+  });
+
   it("expires at most 16 recognised names and then stops verification without claiming complete removal", async () => {
     let seen: SignOutContext["cookies"] | "unset" = "unset";
     const handler = createSignOutHandler(options({ signOut: (context) => void (seen = context.cookies) }));

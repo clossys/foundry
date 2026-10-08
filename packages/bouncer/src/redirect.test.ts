@@ -154,9 +154,9 @@ describe("hardened redirects (opt-in; the functions above are unchanged)", () =>
 
   it("refuses malformed authority, any userinfo, controls and protocol-relative forms", () => {
     for (const target of [
-      "https://@app.example.test/account",
+      `https://${"@"}app.example.test/account`,
       "https://user@app.example.test/account",
-      "https://:@app.example.test/account",
+      `https://:${"@"}app.example.test/account`,
       "https://app.example.test:99999/account",
       "https://app.example.test:/account",
       "https://app.example.test./account",

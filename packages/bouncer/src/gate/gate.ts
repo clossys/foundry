@@ -285,7 +285,7 @@ export function createReturnUrlResolver(
       excluded,
       readOwnData(options, "fallbackPath", "fallbackPath"),
       "fallbackPath",
-    );
+    ).resolve;
   }
   refuseHardenedOnly(options, ["excludedPaths", "fallbackPath"]);
   if (typeof options.origin !== "string") throw new TypeError("origin must be an http(s) origin string.");
@@ -319,15 +319,24 @@ function refuseHardenedOnly(options: object, keys: readonly string[]): void {
   }
 }
 
+/** Upper bound on every hardened option array (sibling origins, API prefixes, metadata lists). */
+const MAX_HARDENED_LIST = 16;
+
+/** A hardened resolver and the validated fallback it returns for anything it refuses. */
+interface HardenedResolver {
+  readonly resolve: (value: string | null | undefined) => string;
+  readonly fallback: string;
+}
+
 function createHardenedResolver(
   originInput: unknown,
   siblingsInput: unknown,
   excluded: readonly string[],
   fallbackInput: unknown,
   fallbackName: string,
-): (value: string | null | undefined) => string {
+): HardenedResolver {
   if (typeof originInput !== "string") throw new TypeError("origin must be an http(s) origin string.");
-  const siblings = siblingsInput === undefined ? [] : readDenseArray(siblingsInput, "siblingOrigins", Number.MAX_SAFE_INTEGER);
+  const siblings = siblingsInput === undefined ? [] : readDenseArray(siblingsInput, "siblingOrigins", MAX_HARDENED_LIST);
   if (!siblings.every((sibling): sibling is string => typeof sibling === "string")) {
     throw new TypeError("siblingOrigins must be an array of origins.");
   }
@@ -336,18 +345,20 @@ function createHardenedResolver(
   if (fallbackInput === undefined && excluded.some((path) => path === "/")) {
     throw new TypeError(`Excluding / requires an explicit ${fallbackName}.`);
   }
-  const fallbackValue = fallbackInput ?? "/";
-  if (typeof fallbackValue !== "string" || !fallbackValue.startsWith("/")) throw new TypeError(`${fallbackName} must be a same-host path.`);
-  const fallbackResolved = resolveHardenedTarget(fallbackValue, policy, base, excluded);
+  const fallback = fallbackInput ?? "/";
+  if (typeof fallback !== "string" || !fallback.startsWith("/")) throw new TypeError(`${fallbackName} must be a same-host path.`);
+  const fallbackResolved = resolveHardenedTarget(fallback, policy, base, excluded);
   if (fallbackResolved === undefined || new URL(fallbackResolved).origin !== base) {
     throw new TypeError(`${fallbackName} must be a plain, non-excluded same-host path.`);
   }
-  const fallback = fallbackValue;
-  return (value) => {
-    const resolved = resolveHardenedTarget(value, policy, base, excluded);
-    if (resolved === undefined) return fallback;
-    const url = new URL(resolved);
-    return url.origin === base ? `${url.pathname}${url.search}${url.hash}` : resolved;
+  return {
+    fallback,
+    resolve: (value) => {
+      const resolved = resolveHardenedTarget(value, policy, base, excluded);
+      if (resolved === undefined) return fallback;
+      const url = new URL(resolved);
+      return url.origin === base ? `${url.pathname}${url.search}${url.hash}` : resolved;
+    },
   };
 }
 
@@ -410,11 +421,11 @@ const HARDENED_QUALITY = /^(?:0(?:\.[0-9]{0,3})?|1(?:\.0{0,3})?)$/;
 /** Next.js router, prefetch and server-action request headers: never a navigation in hardened mode. */
 const ROUTER_OR_ACTION_HEADERS = ["rsc", "next-action", "next-router-state-tree", "next-router-prefetch", "next-router-segment-prefetch"];
 
-/** `text/html` named exactly, with no quality or a valid RFC 9110 quality above zero. */
+/** `text/html` (media type compared case-insensitively), with no quality or a valid RFC 9110 quality above zero. */
 function acceptsHtmlHardened(accept: string): boolean {
   return accept.split(",").some((entry) => {
     const [type, ...params] = entry.split(";").map((part) => part.trim());
-    if (type !== "text/html") return false;
+    if (type?.toLowerCase() !== "text/html") return false;
     let quality = 1;
     for (const param of params) {
       const equals = param.indexOf("=");
@@ -475,14 +486,14 @@ function snapshotHardenedOptions<P>(input: object): HardenedGatedHostGateOptions
   for (const key of HARDENED_GATE_KEYS) {
     let value = readOwnData(input, key, key);
     if ((key === "siblingOrigins" || key === "apiPathPrefixes") && value !== undefined) {
-      value = readDenseArray(value, key, Number.MAX_SAFE_INTEGER);
+      value = readDenseArray(value, key, MAX_HARDENED_LIST);
     }
     if (key === "protectedResourceMetadata" && value !== null && typeof value === "object") {
       assertPlainObject(value, key);
       const metadata: Record<string, unknown> = {};
       for (const field of METADATA_KEYS) {
         let fieldValue = readOwnData(value, field, field);
-        if (field !== "resource" && fieldValue !== undefined) fieldValue = readDenseArray(fieldValue, field, Number.MAX_SAFE_INTEGER);
+        if (field !== "resource" && fieldValue !== undefined) fieldValue = readDenseArray(fieldValue, field, MAX_HARDENED_LIST);
         if (fieldValue !== undefined) metadata[field] = fieldValue;
       }
       value = metadata;
@@ -552,15 +563,26 @@ export function createGatedHostGate<P = unknown>(
   }
   if (options.production !== undefined && typeof options.production !== "boolean") throw new TypeError("production must be a boolean.");
 
-  const returnUrl = hardened
-    ? createHardenedResolver(
-        options.origin,
-        options.siblingOrigins,
-        [signInPath, notAuthorizedPath, PROTECTED_RESOURCE_METADATA_PATH, ...readExcludedPaths(options.excludedReturnPaths, "excludedReturnPaths")],
-        options.returnFallbackPath,
-        "returnFallbackPath",
-      )
-    : createReturnUrlResolver({ origin: options.origin, siblingOrigins: options.siblingOrigins });
+  const signInLocation = (target: string) => `${signInPath}?redirect_url=${encodeURIComponent(target)}`;
+  let returnUrl: (value: string | null | undefined) => string;
+  // The return target used when the encoded sign-in Location would be too long.
+  let overflowTarget = "/";
+  if (hardened) {
+    const resolver = createHardenedResolver(
+      options.origin,
+      options.siblingOrigins,
+      [signInPath, notAuthorizedPath, PROTECTED_RESOURCE_METADATA_PATH, ...readExcludedPaths(options.excludedReturnPaths, "excludedReturnPaths")],
+      options.returnFallbackPath,
+      "returnFallbackPath",
+    );
+    returnUrl = resolver.resolve;
+    overflowTarget = resolver.fallback;
+    if (signInLocation(overflowTarget).length > MAX_LOCATION_LENGTH) {
+      throw new TypeError(`returnFallbackPath must encode into a sign-in Location of at most ${MAX_LOCATION_LENGTH} characters.`);
+    }
+  } else {
+    returnUrl = createReturnUrlResolver({ origin: options.origin, siblingOrigins: options.siblingOrigins });
+  }
   const origin = new URL(options.origin).origin;
   const metadataBody = buildMetadataDocument(origin, options.protectedResourceMetadata);
   const challenge = `Bearer resource_metadata="${origin}${PROTECTED_RESOURCE_METADATA_PATH}"`;
@@ -656,9 +678,8 @@ export function createGatedHostGate<P = unknown>(
 
     if (state.state !== "signed-in") {
       if (navigation) {
-        const signInLocation = (target: string) => `${signInPath}?redirect_url=${encodeURIComponent(target)}`;
         let location = signInLocation(returnUrl(`${pathname}${url.search}`));
-        if (location.length > MAX_LOCATION_LENGTH) location = signInLocation("/");
+        if (location.length > MAX_LOCATION_LENGTH) location = signInLocation(overflowTarget);
         return applyGatedHostHeaders(new Response(null, { status: 307, headers: { Location: location } }));
       }
       return jsonResponse(401, { error: "unauthorized" }, { "WWW-Authenticate": challenge });

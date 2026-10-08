@@ -252,7 +252,16 @@ function pathRepresentations(rawPath: string, parsedPath: string): string[] | un
   return representations;
 }
 
+/** UTF-8 byte length of `value`, the unit every hardened size limit is stated in. @internal */
+export function utf8ByteLength(value: string): number {
+  return new TextEncoder().encode(value).byteLength;
+}
+
 /**
+ * Test-only entry point: production code goes through
+ * `resolveHardenedTarget` via the gate, the return-URL resolver and the
+ * sign-out handler. It is deliberately not exported from the package root.
+ *
  * The hardened counterpart of {@link resolveSafeRedirect}: it resolves only a
  * target that every reader reads the same way, and returns `undefined` for
  * everything else, never throwing on the target.

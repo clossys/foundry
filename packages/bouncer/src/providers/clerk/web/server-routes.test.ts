@@ -29,9 +29,11 @@ import {
   NEXT_DECLARED_RANGE,
   resolveRequestRedirect,
 } from "./server-routes.js";
+import { SIGN_OUT_DEADLINE_MS } from "../../../gate/signout.js";
 
 afterEach(() => {
   vi.unstubAllEnvs();
+  vi.useRealTimers();
 });
 
 describe("resolveRequestRedirect", () => {
@@ -416,10 +418,94 @@ describe("createSignOutRoute hardened (explicit opt-in only)", () => {
     ["empty sources", { expiredSessionFallback: { ...fallback, sources: [] } }],
     ["no authorized parties", { expiredSessionFallback: { ...fallback, authorizedParties: [] } }],
     ["an unsafe age", { expiredSessionFallback: { ...fallback, maxExpiredAgeMs: Number.MAX_SAFE_INTEGER + 1 } }],
+    ["an age over 24 hours", { expiredSessionFallback: { ...fallback, maxExpiredAgeMs: 86_400_001 } }],
+    ["a zero age", { expiredSessionFallback: { ...fallback, maxExpiredAgeMs: 0 } }],
     ["an over-wide future skew", { expiredSessionFallback: { ...fallback, futureSkewMs: 60_001 } }],
     ["a self-looping confirmation", { confirmationPath: "/sign-out/confirm" }],
   ])("refuses hardened options with %s at construction", (_label, extra) => {
     expect(() => hardened(extra)).toThrow(TypeError);
+  });
+
+  it("accepts an expired age of exactly 24 hours", () => {
+    expect(() => hardened({ expiredSessionFallback: { ...fallback, maxExpiredAgeMs: 86_400_000 } })).not.toThrow();
+  });
+
+  it.each([
+    ["the configured claims (control)", () => claims(), true],
+    ["an authorized party outside the configured list", () => claims({ azp: "https://other.example.test" }), false],
+    ["an authorized party that is not a string", () => claims({ azp: [ORIGIN] }), false],
+    ["an expiry exactly the configured age ago", () => claims({ iat: nowSeconds() - 660, exp: nowSeconds() - 600 }), false],
+    ["an expiry older than the configured age", () => claims({ iat: nowSeconds() - 700, exp: nowSeconds() - 640 }), false],
+  ])("re-checks %s locally, whatever verifyToken returned", async (_label, payload, revokes) => {
+    vi.useFakeTimers({ now: Date.UTC(2026, 0, 1), toFake: ["Date"] });
+    provider.verifyToken.mockResolvedValue(payload());
+    const response = await hardened()(post({ Cookie: `__session=${sign(claims())}` }));
+    expect(response.status).toBe(303);
+    expect(provider.verifyToken).toHaveBeenCalledOnce();
+    if (revokes) expect(provider.revokeSession).toHaveBeenCalledExactlyOnceWith("sess_expired1");
+    else expect(provider.revokeSession).not.toHaveBeenCalled();
+  });
+
+  describe("after the sign-out deadline", () => {
+    const later = <T,>(value: T, ms = SIGN_OUT_DEADLINE_MS + 1000) =>
+      new Promise<T>((resolve) => {
+        setTimeout(() => resolve(value), ms);
+      });
+    const route = () => hardened({ terminalPath: "/signed-out", fallbackPath: "/signed-out/retry" });
+    async function settle(pending: Promise<Response>): Promise<Response> {
+      await vi.advanceTimersByTimeAsync(SIGN_OUT_DEADLINE_MS);
+      const response = await pending;
+      // Let the late provider work resolve; nothing may be revoked once the deadline has passed.
+      await vi.advanceTimersByTimeAsync(2000);
+      return response;
+    }
+
+    beforeEach(() => {
+      vi.useFakeTimers();
+    });
+
+    it("revokes nothing when auth() answers after the deadline, and sends the fallback page", async () => {
+      provider.auth.mockImplementation(() => later({ sessionId: "sess_active1" }));
+      const response = await settle(route()(post()));
+      expect(response.headers.get("location")).toBe(`${ORIGIN}/signed-out/retry`);
+      expect(provider.auth).toHaveBeenCalledOnce();
+      expect(provider.revokeSession).not.toHaveBeenCalled();
+    });
+
+    it("revokes nothing when verifyToken answers after the deadline, and sends the fallback page", async () => {
+      provider.verifyToken.mockImplementation(() => later(claims()));
+      const response = await settle(route()(post({ Cookie: `__session=${sign(claims())}` })));
+      expect(response.headers.get("location")).toBe(`${ORIGIN}/signed-out/retry`);
+      expect(provider.verifyToken).toHaveBeenCalledOnce();
+      expect(provider.revokeSession).not.toHaveBeenCalled();
+    });
+
+    it("revokes nothing when the Clerk client arrives after the deadline, and sends the fallback page", async () => {
+      provider.auth.mockResolvedValue({ sessionId: "sess_active1" });
+      provider.clerkClient.mockImplementation(() => later({ sessions: { revokeSession: provider.revokeSession } }));
+      const response = await settle(route()(post()));
+      expect(response.headers.get("location")).toBe(`${ORIGIN}/signed-out/retry`);
+      expect(provider.clerkClient).toHaveBeenCalledOnce();
+      expect(provider.revokeSession).not.toHaveBeenCalled();
+    });
+
+    it("still revokes and sends the terminal page when every step answers before the deadline", async () => {
+      provider.auth.mockImplementation(() => later({ sessionId: "sess_active1" }, 100));
+      const response = await settle(route()(post()));
+      expect(response.headers.get("location")).toBe(`${ORIGIN}/signed-out`);
+      expect(provider.revokeSession).toHaveBeenCalledExactlyOnceWith("sess_active1");
+    });
+  });
+
+  it("ignores hardened-only keys left undefined on the legacy route, as the gate does, and still refuses set ones", async () => {
+    let legacy: ((request: Request) => Promise<Response>) | undefined;
+    expect(() => {
+      legacy = createSignOutRoute({ redirectTo: "/", confirmationPath: undefined, expiredSessionFallback: undefined } as never);
+    }).not.toThrow();
+    expect((await legacy?.(new Request(`${ORIGIN}/sign-out`)))?.status).toBe(405);
+    const accessor = Object.defineProperty({}, "origin", { get: () => undefined, enumerable: true });
+    expect(() => createSignOutRoute(accessor as never)).toThrow(TypeError);
+    expect(() => hardened({ redirectTo: undefined, signOut: undefined })).not.toThrow();
   });
 
   it("keeps the legacy route legacy and refuses hardened-only keys without the flag", async () => {

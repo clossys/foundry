@@ -2,6 +2,7 @@ import { AuthProvider } from "./client.js";
 import { createSiteProxy as createEdgeSafeSiteProxy } from "./proxy-entry.js";
 import { createSiteProxy } from "./proxy.js";
 import { createSignOutRoute } from "./server.js";
+import type { LegacySignOutRouteOptions, SignOutRouteOptions } from "./server.js";
 
 // @ts-expect-error Middleware helpers must remain isolated from the route-only server entry.
 import { createSiteProxy as serverEntryIsNotEdgeSafe } from "./server.js";
@@ -46,3 +47,26 @@ export const legacyRefusesHardenedKeys = () => createSignOutRoute({ confirmation
 export const fallbackNeedsOneKeySource = () =>
   // @ts-expect-error The expired-session fallback takes exactly one of jwtKey or secretKey.
   createSignOutRoute({ ...hardenedSignOut, expiredSessionFallback: { jwtKey: "pem", secretKey: "sk", issuer: "https://clerk.example.test", authorizedParties: ["https://app.example.test"], maxExpiredAgeMs: 1 } });
+
+// A caller that forwards a value typed as the union still compiles (the third overload).
+export const wrapSignOutRoute = (options: SignOutRouteOptions) => createSignOutRoute(options);
+export const wrapOptionalSignOutRoute = (options?: SignOutRouteOptions) => createSignOutRoute(options);
+// TypeScript cannot extend a union; a caller's own options interface extends the legacy shape instead.
+interface AppSignOutOptions extends LegacySignOutRouteOptions {
+  readonly label?: string;
+}
+export const extendedLegacySignOutRoute = (options: AppSignOutOptions) => createSignOutRoute(options);
+
+// Variables, not fresh literals: excess-property checks do not apply, so only the `never` markers refuse these.
+const hardenedWithRedirectTo = { ...hardenedSignOut, redirectTo: "/" };
+const legacyWithOrigin = { redirectTo: "/", origin: "https://app.example.test" };
+const legacyWithPath = { redirectTo: "/", path: "/sign-out" };
+const legacyWithConfirmation = { redirectTo: "/", confirmationPath: "/signed-out/confirm" };
+// @ts-expect-error The hardened `redirectTo?: never` marker refuses a variable that carries one.
+export const hardenedVariableRefusesRedirectTo = () => createSignOutRoute(hardenedWithRedirectTo);
+// @ts-expect-error The legacy `origin?: never` marker refuses a variable that carries one.
+export const legacyVariableRefusesOrigin = () => createSignOutRoute(legacyWithOrigin);
+// @ts-expect-error The legacy `path?: never` marker refuses a variable that carries one.
+export const legacyVariableRefusesPath = () => createSignOutRoute(legacyWithPath);
+// @ts-expect-error The legacy `confirmationPath?: never` marker refuses a variable that carries one.
+export const legacyVariableRefusesConfirmation = () => createSignOutRoute(legacyWithConfirmation);

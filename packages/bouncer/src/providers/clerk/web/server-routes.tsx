@@ -1,4 +1,4 @@
-import { assertPlainObject, createAllowedOriginPolicy, readDenseArray, readOwnData, resolveSafeRedirect } from "../../../redirect.js";
+import { assertPlainObject, createAllowedOriginPolicy, readDenseArray, readOwnData, resolveSafeRedirect, utf8ByteLength } from "../../../redirect.js";
 import { createSignOutHandler, type SignOutContext, type SignOutCookieRule } from "../../../gate/signout.js";
 import { auth, clerkClient, verifyToken } from "@clerk/nextjs/server";
 import { cookies } from "next/headers";
@@ -119,7 +119,15 @@ export function createRedirectRoute(target: string) {
   return async function GET() { permanentRedirect(safeTarget); };
 }
 
-/** The original sign-out options. Unchanged: a POST-only route that may follow a configured or dynamic target. */
+/**
+ * The original sign-out options: a POST-only route that may follow a
+ * configured or dynamic target. Its fields are unchanged; the `never`
+ * markers only refuse the hardened-only keys at compile time.
+ *
+ * `SignOutRouteOptions` is now a union, and TypeScript cannot `extend` a
+ * union: an interface that extended `SignOutRouteOptions` should extend this
+ * type instead.
+ */
 export interface LegacySignOutRouteOptions {
   readonly hardened?: false;
   extraCookiesToClear?: readonly string[];
@@ -146,7 +154,7 @@ interface ExpiredSessionFallbackClaims {
   readonly audience?: string | readonly string[];
   /** Cookie names to read the expired token from, tried in order. Default `["__session"]`; 1–4. */
   readonly sources?: readonly string[];
-  /** How long after `exp` a token may still name the session to revoke, in milliseconds. A positive safe integer. */
+  /** How long after `exp` a token may still name the session to revoke, in milliseconds. A positive integer, at most 86400000 (24 hours). */
   readonly maxExpiredAgeMs: number;
   /** How far in the future `iat` and `nbf` may be, in milliseconds, independent of `maxExpiredAgeMs`. Default 5000; at most 60000. */
   readonly futureSkewMs?: number;
@@ -213,12 +221,22 @@ const DEFAULT_COOKIE_RULES: readonly SignOutCookieRule[] = Object.freeze([
   Object.freeze({ name: "__session", matchSuffixes: true }),
   Object.freeze({ name: "__client_uat", matchSuffixes: true }),
 ]);
-const FALLBACK_LIMITS = Object.freeze({ sources: 4, tokenBytes: 16384, attempts: 3, revokeIds: 3, parties: 16, futureSkewMs: 60000 });
+const FALLBACK_LIMITS = Object.freeze({
+  sources: 4,
+  tokenBytes: 16384,
+  attempts: 3,
+  revokeIds: 3,
+  parties: 16,
+  futureSkewMs: 60000,
+  maxExpiredAgeMs: 86_400_000,
+});
 const COOKIE_NAME = /^[!#$%&'*+\-.^_`|~0-9A-Za-z]{1,256}$/;
 const SESSION_ID = /^sess_[A-Za-z0-9]{1,64}$/;
 
-function hasOwn(source: object, key: string): boolean {
-  return Object.getOwnPropertyDescriptor(source, key) !== undefined;
+/** An own property that is set: an accessor, or a data property whose value is not `undefined`. */
+function isSetOwn(source: object, key: string): boolean {
+  const descriptor = Object.getOwnPropertyDescriptor(source, key);
+  return descriptor !== undefined && (!("value" in descriptor) || descriptor.value !== undefined);
 }
 
 function readStringList(value: unknown, name: string, max: number): string[] {
@@ -275,8 +293,13 @@ function readFallback(input: unknown): Fallback | undefined {
   const sources = sourcesInput === undefined ? ["__session"] : readStringList(sourcesInput, "expiredSessionFallback.sources", FALLBACK_LIMITS.sources);
   if (sources.some((source) => !COOKIE_NAME.test(source))) throw new TypeError("expiredSessionFallback.sources must hold cookie names.");
   const maxExpiredAgeMs = read("maxExpiredAgeMs");
-  if (typeof maxExpiredAgeMs !== "number" || !Number.isSafeInteger(maxExpiredAgeMs) || maxExpiredAgeMs <= 0) {
-    throw new TypeError("expiredSessionFallback.maxExpiredAgeMs must be a positive safe integer.");
+  if (
+    typeof maxExpiredAgeMs !== "number" ||
+    !Number.isSafeInteger(maxExpiredAgeMs) ||
+    maxExpiredAgeMs <= 0 ||
+    maxExpiredAgeMs > FALLBACK_LIMITS.maxExpiredAgeMs
+  ) {
+    throw new TypeError(`expiredSessionFallback.maxExpiredAgeMs must be an integer from 1 to ${FALLBACK_LIMITS.maxExpiredAgeMs}.`);
   }
   const futureSkewMs = read("futureSkewMs") ?? 5000;
   if (typeof futureSkewMs !== "number" || !Number.isSafeInteger(futureSkewMs) || futureSkewMs < 0 || futureSkewMs > FALLBACK_LIMITS.futureSkewMs) {
@@ -344,7 +367,7 @@ async function expiredSessionIds(fallback: Fallback, context: SignOutContext): P
   for (const source of fallback.sources) {
     if (attempts >= FALLBACK_LIMITS.attempts || ids.length >= FALLBACK_LIMITS.revokeIds || !context.isActive()) break;
     const token = cookies.get(source);
-    if (token === undefined || token.length === 0 || token.length > FALLBACK_LIMITS.tokenBytes) continue;
+    if (token === undefined || token.length === 0 || utf8ByteLength(token) > FALLBACK_LIMITS.tokenBytes) continue;
     attempts += 1;
     let payload: unknown;
     try {
@@ -367,7 +390,7 @@ async function expiredSessionIds(fallback: Fallback, context: SignOutContext): P
 function createHardenedSignOutRoute(options: object): (request: Request) => Promise<Response> {
   assertPlainObject(options, "Sign-out route options");
   for (const key of LEGACY_ONLY_KEYS) {
-    if (hasOwn(options, key)) throw new TypeError(`The hardened sign-out route does not take ${key}.`);
+    if (isSetOwn(options, key)) throw new TypeError(`The hardened sign-out route does not take ${key}.`);
   }
   const read = (key: string) => readOwnData(options, key, key);
   const publishableKey = read("publishableKey");
@@ -413,6 +436,8 @@ function createHardenedSignOutRoute(options: object): (request: Request) => Prom
  */
 export function createSignOutRoute(options?: LegacySignOutRouteOptions): (request: Request) => Promise<Response>;
 export function createSignOutRoute(options: HardenedSignOutRouteOptions): (request: Request) => Promise<Response>;
+/** Either shape, for a caller that forwards a `SignOutRouteOptions` value it did not build itself. */
+export function createSignOutRoute(options?: SignOutRouteOptions): (request: Request) => Promise<Response>;
 export function createSignOutRoute(options: SignOutRouteOptions = {}) {
   const flag = Object.getOwnPropertyDescriptor(options, "hardened");
   if (flag !== undefined) {
@@ -421,8 +446,9 @@ export function createSignOutRoute(options: SignOutRouteOptions = {}) {
     }
     if (flag.value === true) return createHardenedSignOutRoute(options);
   }
+  // A hardened-only key left undefined is ignored, as the gate does; a set one is refused.
   for (const key of HARDENED_ONLY_KEYS) {
-    if (hasOwn(options, key)) throw new TypeError(`${key} needs hardened: true.`);
+    if (isSetOwn(options, key)) throw new TypeError(`${key} needs hardened: true.`);
   }
   const legacy = options as LegacySignOutRouteOptions;
   return async function POST(request: Request) {

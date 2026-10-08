@@ -33,6 +33,11 @@ export const legacyGate = () =>
 export const legacyRefusesExclusions = () =>
   // @ts-expect-error Hardened-only keys need `hardened: true`.
   createGatedHostGate<Principal>({ ...base, isPermitted: () => true, excludedReturnPaths: ["/sign-out"] });
+// A variable, not a fresh literal: excess-property checks do not apply, so only the `never` marker refuses it.
+const legacyWithExclusions = { ...base, isPermitted: () => true, excludedReturnPaths: ["/sign-out"] };
+export const legacyVariableRefusesExclusions = () =>
+  // @ts-expect-error The legacy `excludedReturnPaths?: never` marker refuses a variable that carries one.
+  createGatedHostGate<Principal>(legacyWithExclusions);
 export const legacyRefusesTriState = () =>
   // @ts-expect-error Only the hardened gate accepts an "unavailable" answer.
   createGatedHostGate<Principal>({ ...base, isPermitted: () => "unavailable" as const });

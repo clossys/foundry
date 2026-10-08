@@ -857,6 +857,50 @@ describe("hardened gate (explicit opt-in only)", () => {
     expect(await location(`/a?x=${"%22".repeat(700)}`)).toBe(signInTarget("/home"));
   });
 
+  it("uses the validated fallback, never /, when a resolved return URL encodes past the Location limit", async () => {
+    const signedOutGate = hardened(signedOut, "permitted", { excludedReturnPaths: ["/"], returnFallbackPath: "/home" });
+    // Resolves under 2048 characters as written, but each %22 encodes to %2522, so the Location would pass 2048.
+    const path = `/a?x=${"%22".repeat(600)}`;
+    expect(path.length).toBeLessThan(2048);
+    const res = await signedOutGate(req(path, browser), page);
+    expect(res.status).toBe(307);
+    expect(res.headers.get("location")).toBe(signInTarget("/home"));
+    expect(res.headers.get("location")).not.toBe(signInTarget("/"));
+    // A fallback the resolver accepts but whose encoded Location would pass 2048 characters is refused at construction.
+    const longFallback = "/a".repeat(700);
+    expect(`${ORIGIN}${longFallback}`.length).toBeLessThan(2048);
+    expect(() => hardened(signedOut, "permitted", { returnFallbackPath: "/a".repeat(500) })).not.toThrow();
+    expect(() => hardened(signedOut, "permitted", { returnFallbackPath: longFallback })).toThrow(TypeError);
+  });
+
+  it("matches the text/html media type case-insensitively", async () => {
+    const signedOutGate = hardened(signedOut);
+    for (const accept of ["TEXT/HTML", "Text/Html;q=0.5"]) {
+      expect((await signedOutGate(req("/x", { accept }), page)).status, accept).toBe(307);
+    }
+    expect((await signedOutGate(req("/x", { accept: "TEXT/HTML;q=0" }), page)).status).toBe(401);
+  });
+
+  it("caps sibling origins, API prefixes and metadata lists at 16 entries", () => {
+    const many = (make: (i: number) => string, length: number) => Array.from({ length }, (_, i) => make(i));
+    const origin = (i: number) => `https://s${i}.example.test`;
+    expect(() => hardened(signedOut, "permitted", { siblingOrigins: many(origin, 16) })).not.toThrow();
+    expect(() => hardened(signedOut, "permitted", { siblingOrigins: many(origin, 17) })).toThrow(TypeError);
+    expect(() => hardened(signedOut, "permitted", { apiPathPrefixes: many((i) => `/v${i}/`, 16) })).not.toThrow();
+    expect(() => hardened(signedOut, "permitted", { apiPathPrefixes: many((i) => `/v${i}/`, 17) })).toThrow(TypeError);
+    const metadata = (field: string, length: number) => ({
+      protectedResourceMetadata: { authorization_servers: [IDP], [field]: many((i) => `s${i}`, length) },
+    });
+    for (const field of ["scopes_supported", "bearer_methods_supported"]) {
+      expect(() => hardened(signedOut, "permitted", metadata(field, 16)), field).not.toThrow();
+      expect(() => hardened(signedOut, "permitted", metadata(field, 17)), field).toThrow(TypeError);
+    }
+    const servers = { protectedResourceMetadata: { authorization_servers: many((i) => `https://idp${i}.example.test`, 17) } };
+    expect(() => hardened(signedOut, "permitted", servers)).toThrow(TypeError);
+    // The legacy gate keeps its unbounded lists.
+    expect(() => gate(signedOut, { siblingOrigins: many(origin, 17) })).not.toThrow();
+  });
+
   it("refuses at construction a fallback that is excluded, and an excluded / without an explicit alternative", () => {
     const build = (extra: Partial<HardenedGatedHostGateOptions<Principal>>) => () => hardened(signedOut, "permitted", extra);
     expect(build({ excludedReturnPaths: ["/"] })).toThrow(TypeError);
@@ -899,7 +943,7 @@ describe("hardened return-URL resolver (explicit opt-in only)", () => {
     expect(resolve("/reports?q=1#top")).toBe("/reports?q=1#top");
     expect(resolve(`${SIBLING}/home`)).toBe(`${SIBLING}/home`);
     expect(resolve(`${SIBLING}/sign-in`)).toBe(`${SIBLING}/sign-in`);
-    for (const value of ["/sign-in", "/Sign-In", "/sign%2din", "https://@admin.example.test/x", "/a/../x", null, undefined, "x"]) {
+    for (const value of ["/sign-in", "/Sign-In", "/sign%2din", `https://${"@"}admin.example.test/x`, "/a/../x", null, undefined, "x"]) {
       expect(resolve(value), String(value)).toBe("/");
     }
     const withFallback = createReturnUrlResolver({ hardened: true, origin: ORIGIN, excludedPaths: ["/"], fallbackPath: "/home" });

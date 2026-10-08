@@ -18,7 +18,8 @@
  *      provider under one fixed {@link SIGN_OUT_DEADLINE_MS} deadline that
  *      covers everything the provider does. Whatever happens (success,
  *      error, timeout) it answers exactly one `303`: to the terminal page
- *      when the provider finished in time, otherwise to the fallback page.
+ *      when the provider finished in time and the request stayed within
+ *      the cleanup bounds, otherwise to the fallback page.
  *      Both carry the same cleanup. Nothing in the response claims that the
  *      remote session was revoked.
  *
@@ -28,7 +29,8 @@
  * no request header ever chooses a domain. A rule may also expire
  * `<name>_<suffix>` cookies the request carries; those are bounded, and an
  * oversized or overfull request skips them (and provider verification)
- * rather than claiming complete removal.
+ * and is sent to the fallback page rather than claiming complete removal.
+ * Size limits are measured in UTF-8 bytes.
  *
  * Every target is validated at construction, including that none of them is
  * this endpoint (at any representation), so the endpoint never loops on
@@ -47,6 +49,7 @@ import {
   readExcludedPaths,
   readOwnData,
   resolveHardenedTarget,
+  utf8ByteLength,
 } from "../redirect.js";
 
 /** The fixed whole deadline of a sign-out POST, in milliseconds. */
@@ -106,7 +109,7 @@ export interface SignOutHandlerOptions {
   readonly confirmationPath: string;
   /** Same-host page after a sign-out the provider finished in time. Default `/`; required when `/` is excluded. */
   readonly terminalPath?: string;
-  /** Same-host page after a provider error or timeout. Default `terminalPath`. */
+  /** Same-host page after a provider error or timeout, or a request over a cleanup bound. Default `terminalPath`. */
   readonly fallbackPath?: string;
   /** Further same-host paths no target may name. At most 16. */
   readonly excludedPaths?: readonly string[];
@@ -199,7 +202,7 @@ interface Cleanup {
 function readCookieHeader(header: string | null): Map<string, string> | undefined {
   const cookies = new Map<string, string>();
   if (header === null) return cookies;
-  if (header.length > LIMITS.cookieHeaderBytes) return undefined;
+  if (utf8ByteLength(header) > LIMITS.cookieHeaderBytes) return undefined;
   for (const part of header.split(";")) {
     const equals = part.indexOf("=");
     if (equals <= 0) continue;
@@ -265,7 +268,7 @@ export function createSignOutHandler(options: SignOutHandlerOptions): SignOutHan
       reservedKeys.add(key);
       const value = expiry(rule.name, scope, secure);
       reserved.push(value);
-      reservedBytes += value.length;
+      reservedBytes += utf8ByteLength(value);
     }
   }
   if (reserved.length > LIMITS.expiryTuples || reservedBytes > LIMITS.setCookieBytes) {
@@ -294,7 +297,7 @@ export function createSignOutHandler(options: SignOutHandlerOptions): SignOutHan
       }
       if (tuples.length === 0) continue;
       names += 1;
-      const added = tuples.reduce((sum, tuple) => sum + tuple.value.length, 0);
+      const added = tuples.reduce((sum, tuple) => sum + utf8ByteLength(tuple.value), 0);
       if (names > LIMITS.dynamicNames || values.length + tuples.length > LIMITS.expiryTuples || bytes + added > LIMITS.setCookieBytes) {
         return { values, withinBounds: false, cookies: undefined };
       }
@@ -360,8 +363,9 @@ export function createSignOutHandler(options: SignOutHandlerOptions): SignOutHan
 
     const cleanup = cleanupFor(request);
     const completed = await runProvider(request, cleanup.withinBounds ? cleanup.cookies : undefined);
+    // The terminal page claims a whole sign-out: the provider finished and every matching cookie was expired.
     const headers = new Headers({
-      Location: completed ? terminal : fallback,
+      Location: completed && cleanup.withinBounds ? terminal : fallback,
       "Cache-Control": "no-store",
       "Clear-Site-Data": SIGN_OUT_CLEAR_SITE_DATA,
     });
