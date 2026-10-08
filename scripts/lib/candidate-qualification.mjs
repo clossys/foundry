@@ -1,8 +1,8 @@
 import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { mkdtempSync, readFileSync, realpathSync, rmSync, statSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 import { TRIO_PUBLICATION_PATH, TRIO_PUBLICATION_TRANSITION_BASE, TRIO_PUBLICATION_TRANSITION_PATHS, validateTrioPublicationTransition } from "./release-publication-cohort.mjs";
 import { TRIO, TRIO_COHORT_PATH, TRIO_CONTROL_TAIL_AUTHORIZATION_PATH, TRIO_CONTROL_TAIL_BASE_COMMIT, TRIO_CONTROL_TAIL_PATHS, TRIO_QUARANTINE_PATH, isTrioCandidate, validateTrioPartialFailureQuarantine } from "./release-qualification-trio.mjs";
 
@@ -183,6 +183,43 @@ export function parseStrictJson(input) {
 const git = (root, args) => execFileSync("git", args, { cwd: root, encoding: "utf8" }).trim();
 const blob = (root, ref, path) => execFileSync("git", ["show", ref + ":" + path], { cwd: root, encoding: "utf8" });
 const content = (root, ref, path) => ref === "WORKTREE" ? readFileSync(join(root, path)) : blob(root, ref, path);
+/** One invocation's immutable Git results. Nothing mutable (including WORKTREE
+ * policy or retained record bytes) enters this memo. Errors retain their own
+ * input key so an unrelated broken record cannot poison a good record.
+ */
+export function createQualificationContext() {
+  const results = new Map();
+  return {
+    read(root, input, load) {
+      const canonicalRoot = realpathSync(root);
+      const marker = join(canonicalRoot, ".git");
+      const markerIdentity = statSync(marker);
+      // A linked worktree's .git file points at its actual Git directory.
+      // Bind both identities so replacing/repointing either cannot reuse the
+      // previous repository's history at the same working path.
+      const gitDirectory = markerIdentity.isFile()
+        ? realpathSync(resolve(canonicalRoot, readFileSync(marker, "utf8").trim().replace(/^gitdir: /, "")))
+        : realpathSync(marker);
+      const identity = statSync(gitDirectory);
+      const repository = [canonicalRoot, markerIdentity.dev, markerIdentity.ino, gitDirectory, identity.dev, identity.ino];
+      const key = JSON.stringify([repository, input]);
+      if (!results.has(key)) {
+        try { results.set(key, { value: load() }); }
+        catch (error) { results.set(key, { error }); }
+      }
+      const result = results.get(key);
+      if (Object.hasOwn(result, "error")) throw result.error;
+      return result.value;
+    },
+  };
+}
+function immutablePolicyBytes(root, ref, context) {
+  const load = () => content(root, ref, POLICY_PATH);
+  // Only full object IDs are immutable. Public calls using a branch, HEAD or
+  // WORKTREE keep their original fresh-read behavior.
+  return context && SHA1.test(ref) ? context.read(root, ["policy", ref], load) : load();
+}
+
 // --- artifact-scoped digests (schemaVersion 3; issue #879) ---------------
 //
 // A qualification record proves a specific TARBALL installs and behaves.
@@ -393,36 +430,38 @@ export function realPathTouches(root, range, path, introducedBlob) {
   return commits.filter((commit) => blobOid(root, commit, path) !== introducedBlob);
 }
 const POLICY_PATH = "governance/release-qualification-policy.json";
-function selectedPolicy(root, candidate, ref) {
-  const policy = parseStrictJson(content(root, ref, POLICY_PATH));
+function selectedPolicy(root, candidate, ref, context) {
+  const policy = parseStrictJson(immutablePolicyBytes(root, ref, context));
   const entry = policy.packages?.[candidate.name];
   if (!entry || typeof entry.recordStem !== "string" || typeof entry.packageDir !== "string" || typeof entry.adapterPath !== "string" || typeof entry.fixturePath !== "string") throw new Error("selected policy package entry");
   return entry;
 }
-export function qualificationPath(root, candidate, ref = "WORKTREE") {
-  const entry = selectedPolicy(root, candidate, ref);
+export function qualificationPath(root, candidate, ref = "WORKTREE", context) {
+  const entry = selectedPolicy(root, candidate, ref, context);
   return `governance/release-qualifications/${entry.recordStem}-${candidate.version}.json`;
 }
-export function qualificationIntroductionCommit(root, candidate, head = "HEAD", recordPath = qualificationPath(root, candidate)) {
+export function qualificationIntroductionCommit(root, candidate, head = "HEAD", recordPath = qualificationPath(root, candidate), context) {
   const path = recordPath;
-  const commits = git(root, ["log", "--full-history", "--diff-filter=A", "--format=%H", head, "--", path]).split("\n").filter(Boolean);
+  const resolvedHead = context && !SHA1.test(head) ? git(root, ["rev-parse", head]) : head;
+  const load = () => git(root, ["log", "--full-history", "--diff-filter=A", "--format=%H", resolvedHead, "--", path]);
+  const commits = (context ? context.read(root, ["introductions", resolvedHead, path], load) : load()).split("\n").filter(Boolean);
   if (commits.length !== 1 || !SHA1.test(commits[0])) throw new Error("qualification record must have one introduction commit");
   return commits[0];
 }
-export function qualificationRecordHistory(root, path, candidate, head = "HEAD", expectedPath = qualificationPath(root, candidate)) {
+export function qualificationRecordHistory(root, path, candidate, head = "HEAD", expectedPath = qualificationPath(root, candidate), context) {
   if (path !== expectedPath) throw new Error("qualification record path does not match its candidate");
-  const introductionCommit = qualificationIntroductionCommit(root, candidate, head, expectedPath);
+  const introductionCommit = qualificationIntroductionCommit(root, candidate, head, expectedPath, context);
   return {
     introductionCommit,
     introducedRecordSha256: digest(content(root, introductionCommit, path)),
     retainedRecordSha256: digest(readFileSync(join(root, path))),
   };
 }
-export function validateRetainedCandidateQualification(r, { root = process.cwd(), path, head = "HEAD", expectedPath, sealedBase = null } = {}) {
+export function validateRetainedCandidateQualification(r, { root = process.cwd(), path, head = "HEAD", expectedPath, sealedBase = null, context } = {}) {
   if (typeof path !== "string") throw new Error("qualification record path is required");
-  const introductionCommit = qualificationIntroductionCommit(root, r.candidate, head, path);
-  const resolvedExpectedPath = sealedBase ? qualificationPath(root, r.candidate, introductionCommit) : expectedPath ?? qualificationPath(root, r.candidate);
-  const history = qualificationRecordHistory(root, path, r.candidate, head, resolvedExpectedPath);
+  const introductionCommit = qualificationIntroductionCommit(root, r.candidate, head, path, context);
+  const resolvedExpectedPath = sealedBase ? qualificationPath(root, r.candidate, introductionCommit, context) : expectedPath ?? qualificationPath(root, r.candidate);
+  const history = qualificationRecordHistory(root, path, r.candidate, head, resolvedExpectedPath, context);
   const joinCommit = sealedBase ? history.introductionCommit : r.timing === "pre-publication" ? r.reviewedCommit : history.introductionCommit;
   // The retained record's OWN declared schemaVersion selects the digest
   // formula used to recompute what it should say — never the caller's or
@@ -431,7 +470,7 @@ export function validateRetainedCandidateQualification(r, { root = process.cwd()
   // rewritten: this function recomputes it the same way it was written,
   // at the same commit, every time. A schema-3 (artifact-scoped) record
   // gets the new formula. See issue #879.
-  const expected = { name: r.candidate?.name, version: r.candidate?.version, ...currentQualificationJoins(root, r.candidate, joinCommit, { schemaVersion: r.schemaVersion }) };
+  const expected = { name: r.candidate?.name, version: r.candidate?.version, ...currentQualificationJoins(root, r.candidate, joinCommit, { schemaVersion: r.schemaVersion, context }) };
   const findings = validateCandidateQualification(r, { expected });
   if (history.introducedRecordSha256 !== history.retainedRecordSha256) fail(findings, "record-history-join", "retained record bytes differ from their exact introduction blob.");
   if (sealedBase) {
@@ -472,8 +511,8 @@ function frameworkObservationIds(manifest) {
   if (ids.length === 0) throw new Error("empty source framework verification mapping");
   return ids.sort();
 }
-export function currentQualificationJoins(root, candidate, ref = "WORKTREE", { schemaVersion = 2 } = {}) {
-  const selected = selectedPolicy(root, candidate, ref), treeRef = ref === "WORKTREE" ? "HEAD" : ref;
+export function currentQualificationJoins(root, candidate, ref = "WORKTREE", { schemaVersion = 2, context } = {}) {
+  const selected = selectedPolicy(root, candidate, ref, context), treeRef = ref === "WORKTREE" ? "HEAD" : ref;
   const adapter = parseStrictJson(content(root, ref, selected.adapterPath));
   const manifestBytes = content(root, ref, selected.packageDir + "/package.json");
   const manifest = parseStrictJson(manifestBytes);
@@ -763,12 +802,13 @@ export function sealedQualificationPathsAtTransitionBase(root = process.cwd(), b
 // which is why qualify-candidate.yml commits a deferral removal in a
 // separate commit from the record introduction it shares no commit with
 // (see that workflow's own two-commits comment).
-function validateForwardQualificationIntroduction(r, { root, head, trioRecords, sealedPaths }) {
+function validateForwardQualificationIntroduction(r, { root, head, trioRecords, sealedPaths, context }) {
   const a = [];
   let path, introduction;
   try {
-    path = qualificationPath(root, r.candidate, r.reviewedCommit);
-    introduction = qualificationIntroductionCommit(root, r.candidate, head, path);
+    if (context && !SHA1.test(head)) head = git(root, ["rev-parse", head]);
+    path = qualificationPath(root, r.candidate, r.reviewedCommit, context);
+    introduction = qualificationIntroductionCommit(root, r.candidate, head, path, context);
   } catch (error) {
     fail(a, "forward-record-history", error instanceof Error ? error.message : "qualification record history could not be resolved.");
     return a;
@@ -791,8 +831,8 @@ function validateForwardQualificationIntroduction(r, { root, head, trioRecords, 
       try {
         const retainedCandidatePath = qualificationPath(root, record.candidate);
         if (sealedPaths.has(retainedCandidatePath)) continue;
-        const candidatePath = qualificationPath(root, record.candidate, record.reviewedCommit);
-        const candidateIntroduction = qualificationIntroductionCommit(root, record.candidate, head, candidatePath);
+        const candidatePath = qualificationPath(root, record.candidate, record.reviewedCommit, context);
+        const candidateIntroduction = qualificationIntroductionCommit(root, record.candidate, head, candidatePath, context);
         if (candidateIntroduction === introduction) jointPaths.push(candidatePath);
       } catch {
         continue;
@@ -806,7 +846,7 @@ function validateForwardQualificationIntroduction(r, { root, head, trioRecords, 
     const laterTouches = realPathTouches(root, `${introduction}..${head}`, path, blobOid(root, introduction, path));
     if (laterTouches.length > 0) fail(a, "forward-record-touches", "a new qualification record must not be touched after its introduction.");
 
-    const expected = currentQualificationJoins(root, r.candidate, r.reviewedCommit, { schemaVersion: r.schemaVersion });
+    const expected = currentQualificationJoins(root, r.candidate, r.reviewedCommit, { schemaVersion: r.schemaVersion, context });
     for (const key of Object.keys(expected).filter((item) => !["archetypes", "dimensions", "frameworkObservationsSha256"].includes(item))) if (expected[key] !== (r[key] ?? r.candidate?.[key])) fail(a, "forward-record-join", `qualification record does not bind ${key} at its reviewed commit.`);
     if (JSON.stringify(expected.archetypes) !== JSON.stringify(r.archetypes) || JSON.stringify(expected.dimensions) !== JSON.stringify(r.transcript?.dimensions)) fail(a, "forward-record-join", "qualification record policy derivation does not bind its reviewed commit.");
   } catch (error) {
@@ -814,7 +854,7 @@ function validateForwardQualificationIntroduction(r, { root, head, trioRecords, 
   }
   return a;
 }
-export function validatePrepublicationPrTail(r, { root = process.cwd(), head = "HEAD", recordPath = null, trioRecords = [], forwardRecords = trioRecords, cohort = null, cohortBytes, quarantine = null, controlTailAuthorization = null, publication = null, publicationClosureValid = false } = {}) {
+export function validatePrepublicationPrTail(r, { root = process.cwd(), head = "HEAD", recordPath = null, trioRecords = [], forwardRecords = trioRecords, cohort = null, cohortBytes, quarantine = null, controlTailAuthorization = null, publication = null, publicationClosureValid = false, context } = {}) {
   const a = []; if (r?.timing !== "pre-publication") return a;
   if (publicationClosureValid) {
     let sealedPaths;
@@ -826,7 +866,7 @@ export function validatePrepublicationPrTail(r, { root = process.cwd(), head = "
     if (sealedPaths.has(path)) return a;
     try { execFileSync("git", ["merge-base", "--is-ancestor", r.reviewedCommit, head], { cwd: root, stdio: "ignore" }); }
     catch { fail(a, "reviewed-ancestor", "not ancestor"); return a; }
-    return validateForwardQualificationIntroduction(r, { root, head, trioRecords: forwardRecords, sealedPaths });
+    return validateForwardQualificationIntroduction(r, { root, head, trioRecords: forwardRecords, sealedPaths, context });
   }
   try { execFileSync("git", ["merge-base", "--is-ancestor", r.reviewedCommit, head], { cwd: root, stdio: "ignore" }); }
   catch { fail(a, "reviewed-ancestor", "not ancestor"); return a; }

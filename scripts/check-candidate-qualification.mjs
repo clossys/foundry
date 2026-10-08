@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
 import { readFileSync, readdirSync } from "node:fs";
-import { blobOid, parseStrictJson, qualificationPath, realPathTouches, sealedQualificationPathsAtTransitionBase, validatePrepublicationPrTail, validateRetainedCandidateQualification, validateTrioPublicationClosure } from "./lib/candidate-qualification.mjs";
+import { createQualificationContext, blobOid, parseStrictJson, qualificationPath, realPathTouches, sealedQualificationPathsAtTransitionBase, validatePrepublicationPrTail, validateRetainedCandidateQualification, validateTrioPublicationClosure } from "./lib/candidate-qualification.mjs";
 import { findUnrecognisedArgument, resolvePackageArgs, resolveShardArgs, selectedForRederivation } from "./lib/candidate-qualification-shard.mjs";
 import { loadTransitionPolicy } from "./lib/package-identity-transition.mjs";
 import { TRIO_PUBLICATION_PATH, TRIO_PUBLICATION_TRANSITION_BASE, validateTrioFirstPublication } from "./lib/release-publication-cohort.mjs";
@@ -113,6 +113,8 @@ for (const sealedPath of sealedQualificationPaths) {
   console.error("[sealed-record-set] " + sealedPath + ": transition-base predecessor record must remain present and readable.");
   failed = true;
 }
+const context = createQualificationContext();
+const qualificationHead = execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" }).trim();
 const recordFindings = new Map();
 for (const [index, { path, record }] of records.entries()) {
   if (!selectedForRederivation(index, path, { shard, packageRecordPath })) {
@@ -137,7 +139,7 @@ for (const [index, { path, record }] of records.entries()) {
     const expectedPath = historical
       ? `${directory}/${record.candidate.name.slice(record.candidate.name.indexOf("/") + 1)}-${record.candidate.version}.json`
       : qualificationPath(process.cwd(), record.candidate);
-    const findings = validateRetainedCandidateQualification(record, { root: process.cwd(), path, expectedPath, sealedBase });
+    const findings = validateRetainedCandidateQualification(record, { root: process.cwd(), path, expectedPath, sealedBase, head: qualificationHead, context });
     recordFindings.set(path, findings);
   } catch (error) { console.error("Cannot read " + path + ": " + (error instanceof Error ? error.message : "unknown error")); recordFindings.set(path, [{ rule: "record-read", message: "record validation could not run." }]); failed = true; }
 }
@@ -177,7 +179,7 @@ if (publication && publicationClosureFindings.length > 0) {
 }
 for (const [index, { path, record }] of records.entries()) {
   const findings = recordFindings.get(path) ?? [];
-  if (selectedForRederivation(index, path, { shard, packageRecordPath }) && record.timing === "pre-publication" && record.candidate?.name?.startsWith(`${sourceIdentity.scope}/`)) findings.push(...validatePrepublicationPrTail(record, { recordPath: path, trioRecords, forwardRecords, cohort: cohort?.value, cohortBytes: cohort?.bytes, quarantine: quarantine?.value, controlTailAuthorization: controlTailAuthorization?.value, publication: publication?.value, publicationClosureValid: publicationStateValid }));
+  if (selectedForRederivation(index, path, { shard, packageRecordPath }) && record.timing === "pre-publication" && record.candidate?.name?.startsWith(`${sourceIdentity.scope}/`)) findings.push(...validatePrepublicationPrTail(record, { head: qualificationHead, context, recordPath: path, trioRecords, forwardRecords, cohort: cohort?.value, cohortBytes: cohort?.bytes, quarantine: quarantine?.value, controlTailAuthorization: controlTailAuthorization?.value, publication: publication?.value, publicationClosureValid: publicationStateValid }));
   for (const finding of findings) console.error("[" + finding.rule + "] " + path + ": " + finding.message);
   failed ||= findings.length > 0;
 }

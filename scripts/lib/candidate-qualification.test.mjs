@@ -2,7 +2,9 @@ import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { readFileSync, readdirSync } from "node:fs";
 import { cp, mkdir, mkdtemp, rename, rm, writeFile } from "node:fs/promises";
-import { execFile as execFileCallback } from "node:child_process";
+import childProcess, { execFile as execFileCallback } from "node:child_process";
+import { syncBuiltinESMExports } from "node:module";
+import * as qualificationLibrary from "./candidate-qualification.mjs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import test from "node:test";
@@ -1198,4 +1200,109 @@ test("publish content joins do not use candidate commit ancestry", () => {
   const syntheticSquashCommit = "f".repeat(40);
   assert.notEqual(syntheticSquashCommit, record.publishedCommit);
   assert.deepEqual(rules(record, { mode: "prepublish", expected, freshTranscript: record.transcript }).filter((rule) => rule !== "bootstrap-timing"), []);
+});
+
+// Count actual subprocess calls, including failed history resolutions. Restore
+// the built-in binding before fixture work or the next test can run.
+function measuredQualificationCalls(run) {
+  const original = childProcess.execFileSync;
+  const counts = { introductions: 0, reviewedPolicy: 0 };
+  childProcess.execFileSync = (file, args, ...rest) => {
+    if (file === "git" && args[0] === "log" && args.includes("--diff-filter=A") && args.at(-1).startsWith("governance/release-qualifications/")) counts.introductions++;
+    if (file === "git" && args[0] === "show" && /^[a-f0-9]{40}:governance\/release-qualification-policy\.json$/.test(args[1])) counts.reviewedPolicy++;
+    return original(file, args, ...rest);
+  };
+  syncBuiltinESMExports();
+  try { return { findings: run(), counts }; }
+  finally { childProcess.execFileSync = original; syncBuiltinESMExports(); }
+}
+
+async function multiRecordQualifications(t, size) {
+  const fixture = await clonePendingPublicationTransition();
+  t.after(() => removeFixtureDirectory(fixture.parent));
+  await writeFile(join(fixture.root, "review-marker.txt"), "reviewed candidates\n");
+  const reviewedCommit = await commit(fixture.root, "review count fixture");
+  const joins = fixture.records.map((record) => currentQualificationJoins(fixture.root, record.candidate, reviewedCommit));
+  const records = [];
+  for (let index = 0; index < size; index++) {
+    const record = structuredClone(fixture.records[index % 3]);
+    record.candidate.version = `9.8.${index}`;
+    record.reviewedCommit = reviewedCommit;
+    bindCurrentJoins(record, joins[index % 3]);
+    await writeFile(join(fixture.root, qualificationPath(fixture.root, record.candidate, reviewedCommit)), JSON.stringify(record));
+    records.push(record);
+  }
+  await commit(fixture.root, "introduce count fixture records jointly");
+  const broken = { timing: "pre-publication", reviewedCommit, candidate: { ...records[0].candidate, version: "9.9.99" } };
+  return { ...fixture, records, broken, reviewedCommit };
+}
+
+for (const size of [3, 6]) test(`qualification reuse bounds distinct Git inputs at ${size} records`, async (t) => {
+  const fixture = await multiRecordQualifications(t, size);
+  const records = [...fixture.records, fixture.broken];
+  const head = (await git(fixture.root, ["rev-parse", "HEAD"])).stdout.trim();
+  const validate = (context) => records.map((record) => validatePrepublicationPrTail(record, {
+    root: fixture.root, head, forwardRecords: records, publicationClosureValid: true, context,
+  }));
+  const uncached = measuredQualificationCalls(() => validate());
+  const context = qualificationLibrary.createQualificationContext?.();
+  const cached = measuredQualificationCalls(() => validate(context));
+  t.diagnostic(JSON.stringify({ size, uncached: uncached.counts, cached: cached.counts }));
+  assert.deepEqual(cached.findings, uncached.findings);
+  assert.deepEqual(cached.findings.slice(0, size), Array.from({ length: size }, () => []));
+  assert.deepEqual(cached.findings.at(-1).map((item) => item.rule), ["forward-record-history"]);
+  assert.ok(cached.counts.introductions <= records.length, JSON.stringify({ size, uncached: uncached.counts, cached: cached.counts }));
+  assert.ok(cached.counts.reviewedPolicy <= 1, JSON.stringify({ size, uncached: uncached.counts, cached: cached.counts }));
+  // Defaults remain uncached; a second pass through the same explicit context
+  // performs no repeated immutable-input history or policy lookup.
+  assert.ok(uncached.counts.introductions > records.length);
+  assert.deepEqual(measuredQualificationCalls(() => validate(context)).counts, { introductions: 0, reviewedPolicy: 0 });
+});
+
+test("qualification reuse reads changed heads, repositories, policies and WORKTREE bytes fresh", async (t) => {
+  const fixture = await multiRecordQualifications(t, 3);
+  const context = qualificationLibrary.createQualificationContext?.();
+  assert.ok(context, "explicit qualification context is required");
+  const record = fixture.records[0];
+  const path = qualificationPath(fixture.root, record.candidate, record.reviewedCommit);
+  const validate = (root = fixture.root) => validatePrepublicationPrTail(record, {
+    root, forwardRecords: fixture.records, publicationClosureValid: true, context,
+  });
+  assert.deepEqual(validate(), []);
+  const retained = readFileSync(join(fixture.root, path));
+  await writeFile(join(fixture.root, path), Buffer.concat([retained, Buffer.from("\n")]));
+  assert.ok(validate().some((item) => item.rule === "forward-record-bytes"));
+  await writeFile(join(fixture.root, path), retained);
+  assert.deepEqual(validate(), []);
+  const oldHead = (await git(fixture.root, ["rev-parse", "HEAD"])).stdout.trim();
+  const shallowRoot = join(fixture.parent, "shallow-repo");
+  await execFile("git", ["clone", "--no-local", "--depth", "1", `file://${fixture.root}`, shallowRoot]);
+  await disableFixtureMaintenance(shallowRoot);
+  assert.equal((await git(shallowRoot, ["rev-parse", "HEAD"])).stdout.trim(), oldHead);
+  assert.throws(() => qualificationPath(shallowRoot, record.candidate, record.reviewedCommit, context));
+  await rm(join(fixture.root, path)); await commit(fixture.root, "remove prior clean introduction");
+  await writeFile(join(fixture.root, path), retained); await commit(fixture.root, "reintroduce prior clean record");
+  assert.deepEqual(validate().map((item) => item.rule), ["forward-record-history"]);
+  const otherRoot = join(fixture.parent, "other-repo");
+  await execFile("git", ["clone", "--local", "--no-hardlinks", fixture.root, otherRoot]);
+  await disableFixtureMaintenance(otherRoot);
+  await git(otherRoot, ["checkout", "--detach", oldHead]);
+  assert.deepEqual(validate(otherRoot), []);
+  const policyPath = join(otherRoot, "governance/release-qualification-policy.json");
+  const policy = parseStrictJson(readFileSync(policyPath, "utf8"));
+  policy.packages[record.candidate.name].recordStem = "different-record";
+  await writeFile(policyPath, JSON.stringify(policy));
+  assert.notEqual(qualificationPath(otherRoot, record.candidate, "WORKTREE", context), path);
+  assert.deepEqual(validate(otherRoot), validatePrepublicationPrTail(record, { root: otherRoot, forwardRecords: fixture.records, publicationClosureValid: true }));
+  await git(otherRoot, ["config", "user.email", "test@example.invalid"]);
+  await git(otherRoot, ["config", "user.name", "Qualification Test"]);
+  const policyCommit = await commit(otherRoot, "change reviewed policy");
+  assert.notEqual(qualificationPath(otherRoot, record.candidate, policyCommit, context), path);
+  const changedRecord = { ...record, reviewedCommit: policyCommit };
+  assert.deepEqual(validatePrepublicationPrTail(changedRecord, { root: otherRoot, recordPath: path, forwardRecords: [changedRecord], publicationClosureValid: true, context }).map((item) => item.rule), ["forward-record-history"]);
+  assert.equal(qualificationPath(fixture.root, record.candidate, record.reviewedCommit, context), path);
+  // An identical candidate/path in a separate repository with no record history
+  // cannot borrow a clean introduction from this context.
+  await git(otherRoot, ["checkout", "--detach", record.reviewedCommit]);
+  assert.deepEqual(validate(otherRoot).map((item) => item.rule), ["forward-record-history"]);
 });
