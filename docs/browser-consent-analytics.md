@@ -323,12 +323,13 @@ is the record `decideChoice` produced for a choice whose result was
 | evidence `pending` | `saved` for the current `seq` | none | evidence `saved` |
 | evidence `pending` | `conflict` | local record re-read; a conflict never upgrades to `granted` | evidence `conflict` |
 | evidence `pending` | `unavailable`, or a throw | local choice kept | evidence `unavailable` |
-| any | `refresh()`, or an external change from another tab | a re-read under C-54: evaluated as at mount against the clock, except that an in-memory choice is kept unless the read-back record is newer; `withdrawal: "failed"` is re-checked; nothing rewritten; no `onChange` | an expired stored record becomes `none`; an in-memory choice and a failed withdrawal survive |
+| any | `refresh()`, or an external change from another tab | a re-read under C-54: evaluated as at mount against the clock, except that an in-memory choice is kept unless the read-back record is live and newer, and not dated after `now`; `withdrawal: "failed"` is re-checked; nothing rewritten; no `onChange` | an expired stored record becomes `none`; an in-memory choice and a failed withdrawal survive |
 
 - **C-11 A failed save never reports a stored choice.** After a failed
   write the snapshot is `persistence: "memory"` and evidence is never
   `saved`. The in-memory choice, a grant or a denial, governs the rest of
-  the visit: no re-read replaces it (C-54).
+  the visit: only a live, newer record from another tab replaces it on a
+  re-read (C-54).
 - **C-12 A stale grant never overrides a withdrawal.** Every asynchronous
   completion carries the `seq` it started under and is discarded when
   `seq` has moved on. A grant's durable acknowledgement that arrives after a
@@ -346,8 +347,9 @@ is the record `decideChoice` produced for a choice whose result was
   `withdrawalFailed` status (C-55). The denial holds in memory for the rest
   of the visit, and the status tells the visitor so. `withdrawal: "failed"`
   persists, through further refusals and every re-read, until a read-back
-  is `not allowed`, the visitor grants, or a newer record from another tab
-  replaces the in-memory denial (C-54); only then does it return to `idle`. If storage keeps
+  is `not allowed`, the visitor grants, or a live, newer record from another
+  tab replaces the in-memory denial (C-54); only then does it return to
+  `idle`. If storage keeps
   returning the old grant, or under `notice` holds no record at all, a
   later document load reads it as allowed; that residual case is open
   question 7.
@@ -356,12 +358,22 @@ is the record `decideChoice` produced for a choice whose result was
   (C-46), or a cross-tab change from the storage port's `subscribe`. It
   re-evaluates storage as at mount, against the clock. When the lifecycle
   holds an in-memory choice, the re-read keeps it, and a stored record
-  replaces it only when that record's `decidedAt` is later than the
-  in-memory choice's (a newer choice made in another tab), which also
-  returns `withdrawal` to `idle`. Otherwise a re-read never clears
-  `withdrawal: "failed"` while the read-back is `allowed` or
-  `unreadable`. A re-read changes the snapshot only through these rules
-  and never fires `onChange`.
+  replaces it only when both of these hold: the record is **live** under
+  this lifecycle's policy (C-7, C-40: the current `policy.version`, subject
+  to C-7's denial exception, not a future-dated grant, not expired), and
+  its `decidedAt` is later than the in-memory choice's and not later than
+  `now` (a newer choice made in another tab). Liveness is checked first; a
+  record that is not live never replaces an in-memory choice, whatever its
+  `decidedAt`. Two cases follow. With the clock moved back, a future-dated
+  grant in storage never replaces a refusal held in memory after a failed
+  write, on `refresh()`, `pageshow`, `visibilitychange` or a cross-tab
+  change. A newer denial written by another tab under a different
+  `policy.version`, which parses here as no choice, never replaces an
+  in-memory denial either (that denial stays, so the result is the same
+  refusal, still `memory`). A replacement also returns `withdrawal` to
+  `idle`. Otherwise a re-read never clears `withdrawal: "failed"` while
+  the read-back is `allowed` or `unreadable`. A re-read changes the
+  snapshot only through these rules and never fires `onChange`.
 - **C-14 Durable acknowledgement is separate from the choice.** Gating
   follows the local record. It never waits for evidence, and evidence never
   grants. With no evidence port (browser-only mode), a full grant-and-refuse
@@ -381,7 +393,13 @@ is the record `decideChoice` produced for a choice whose result was
   earlier by a clock moved back (C-40). A **grant applies only when it is
   strictly newer** than the stored record: a later `decidedAt`, or the same
   `decidedAt` and a higher `sequence`. A grant that is not strictly newer
-  answers `conflict` and changes nothing.
+  answers `conflict` and changes nothing. One consequence is accepted on
+  purpose: a delayed, older denial that arrives after a newer grant
+  overwrites that grant durably. This is a privacy-first trade-off; the
+  visitor's next grant restores it. `sequence` is a per-lifecycle counter
+  (one document load), so the same-`decidedAt` tie-break orders choices
+  only within one lifecycle; across lifecycles, `decidedAt` alone orders a
+  grant.
 - **C-42 A simulated Butler lifecycle never allows.** This rule binds
   Butler's `createConsentLifecycle` only. With `simulated: true`, its
   snapshot reports `simulated: true` and `allowed: false` whatever the
@@ -446,6 +464,7 @@ function sanitizeAnalyticsEvent(
 ): SanitizedAnalyticsEvent | null;
 interface PostHogLike {
   init(apiKey: string, config: Record<string, unknown>, name: string): PostHogLike | undefined | void;
+  readonly config?: { readonly before_send?: unknown }; // read only to check the instance identity (C-44)
   capture(eventName: string, properties?: Record<string, unknown>): unknown;
   opt_in_capturing(): void;
   opt_out_capturing(): void;
@@ -501,12 +520,21 @@ provider through `init(context)`.
   extensions in relative imports) with no change to them.
 - **C-44 The provider adapter forces safe options, owns its instance, and
   allowlists the SDK's own properties.**
-  - *Instance.* `init(context)` calls
-    `sdk.init(key, config, POSTHOG_INSTANCE_NAME)` with a fixed instance
-    name and from then on calls methods only on the instance that call
-    returns. If it returns nothing, or returns the host-supplied object
-    itself, the adapter throws (C-43), so an SDK object that the host has
-    already initialized with its own configuration is never used.
+  - *Instance.* `init(context)` calls `sdk.init(key, config, name)` and
+    from then on calls methods only on the instance that call returns. The
+    SDK's `init` on a name it has already loaded returns the existing
+    instance unchanged, ignoring the new configuration, so a fixed name is
+    not enough. The adapter therefore does both of these. It uses a name
+    unique to this adapter: the fixed prefix `POSTHOG_INSTANCE_PREFIX` plus
+    a suffix generated when `createPostHogProvider` is called (never at
+    import, C-1), so two adapters in one page never share it. And it
+    requires the returned instance to carry this adapter's own
+    `before_send` hook: `returned.config.before_send` must be the very
+    function the adapter passed (identity, not equality). If `init` returns
+    nothing, returns the host-supplied object itself, or returns an
+    instance whose `before_send` is not this adapter's hook, the adapter
+    throws (C-43), so an instance that the host or another adapter already
+    initialized with its own configuration is never used.
   - *Forced configuration,* written by the adapter alone: `api_host` (the
     host value), `autocapture: false`, `rageclick: false`,
     `capture_pageview: false`, `capture_pageleave: false`,
@@ -533,9 +561,19 @@ provider through `init(context)`.
     `distinct_id`, `$lib`, `$lib_version`, `$insert_id`, `$time`), the
     profile-suppression field `$process_person_profile`, and the URL
     fields (`$current_url`, `$host`, `$pathname`, `$referrer`,
-    `$referring_domain`). It passes each URL field through
-    `context.sanitizeUrl` (the referrer fields reduced to an origin or
-    host) and drops the event if any URL field fails it.
+    `$referring_domain`). The URL fields are never kept as the SDK set
+    them; the hook overwrites all five. `context.sanitizeUrl` takes a full
+    URL, so the hook passes the SDK's `$current_url` through it once and
+    drops the event if it returns `null`. It then sets `$current_url` to
+    that sanitized URL, and derives `$pathname` (the path) and `$host`
+    (the host) from that same sanitized URL, never from the SDK's own
+    `$pathname` or `$host`. For a captured transport event, `$current_url`
+    is already the transport's sanitized `url` (see *Event names*), so
+    sanitizing it again leaves it unchanged. When the transport supplied a
+    `referrerOrigin` for the event, the hook sets `$referrer` to that
+    origin and `$referring_domain` to its host; otherwise it removes both.
+    A referrer value the SDK set by itself, such as a direct-entry marker
+    or a full referrer URL, never passes through.
   - Whether these option and property names behave as named in the SDK
     version a host installs is separate evidence (see "Separate
     evidence").
@@ -750,11 +788,16 @@ conformance test imports them from (C-53).
   `live`, the assembly calls `createLifecycle` with
   `{ signals: { gpc: value === "gpc" }, storage, evidence: false,
   simulated: true }`, where `storage` is an in-memory port that the assembly
-  defines structurally, that starts empty and that records each write. The
-  host's factory honours these fields (H-3). The assembly then checks, in
-  this order:
+  defines structurally, that starts empty and that records each read and
+  each write. The host's factory honours these fields (H-3). The assembly
+  then checks, in this order:
   1. Immediately after `createLifecycle` returns, and before any `grant()`
-     or `refuse()`, `getSnapshot().simulated` must be `true`.
+     or `refuse()`, `getSnapshot().simulated` must be `true`, **and** the
+     in-memory port must already have recorded the lifecycle's mount
+     `read()`, made during `createLifecycle`. A factory that passes
+     `simulated: true` through but wires its own storage (for example the
+     host's real storage port) instead of the supplied port never reads the
+     in-memory port, so it fails here, before any seeding call.
   2. For `granted` and `refused` only, the assembly calls `grant()` or
      `refuse()` once, so the seeded state comes from Butler's own rules,
      with no fixture and no re-implemented rule. The in-memory port must
@@ -762,9 +805,13 @@ conformance test imports them from (C-53).
 
   If either check fails, the assembly disposes the lifecycle, reports a
   development error, and renders the notice from the fixed no-decision
-  snapshot (C-22) with inert actions. A non-conforming factory's lifecycle
-  therefore receives no `grant()` or `refuse()` and can write nothing,
-  under the real key or any other. Under the seam, a refusal after
+  snapshot (C-22) with inert actions. A lifecycle that fails check 1
+  therefore receives no `grant()` or `refuse()` from the assembly, so
+  nothing the seam does can make it write, under the real key or any
+  other. What a factory does inside `createLifecycle` itself is outside
+  the assembly's reach: Butler's lifecycle writes nothing at mount (the
+  transition table), and a factory that writes there breaches H-3.
+  Under the seam, a refusal after
   `granted` is a withdrawal (C-13, through the read-back) and succeeds
   against the in-memory port. The seam cannot show a failed withdrawal,
   because its port never fails; the preview's `withdrawal-failed` state
@@ -882,7 +929,12 @@ function resolveConsentCopy(input: {
   inside the call, never at import, C-1), `resolveConsentCopy` throws if
   `target` is `"preview"` and applies the production rules to every field.
   A host that declares `"preview"` in a production build therefore gets an
-  error, never delegate-approved or preview copy.
+  error, never delegate-approved or preview copy. The check reads
+  `process` through `globalThis`, so a runtime with no `process` (an edge
+  or worker runtime) does not throw on the read; there, and wherever
+  `NODE_ENV` is absent or any value other than `"production"`, the build is
+  treated as **not** production, and only the declared `target` decides.
+  Such a host must declare `"production"` itself (H-8).
 
 ### Bouncer interactions (#1947, independent)
 
@@ -1105,7 +1157,32 @@ expiry behaviour is built in #1938, and its reopen seam and copy in #1941.
   of the same name under the script fixtures, after the build. The
   fixture imports the real types by package name from the Butler and
   Observer subpaths above and the structural port types from
-  `@clossys/publisher/web/consent`.
+  `@clossys/publisher/web/consent`. Because it resolves those names to
+  built declaration output, it also needs four existing files, named here
+  by their location rather than by path: the gate test set module in the
+  script library (`gate-test-set.mjs`), the root `package.json`, the main
+  CI workflow (`ci.yml`) and the gated-script prose input table in the
+  script library (`gated-script-prose-inputs.mjs`).
+- Wiring, verified against the default branch at the time of writing:
+  `check:gates` runs every script test that the gate test set module
+  discovers, in the dependency-free safety job, before any build exists.
+  A test that needs built packages is excluded there by name and run after
+  the build, as the launcher qualification and fleet coverage tests are.
+  Unit E follows that pattern:
+  1. adds the new test to `GATE_TEST_EXCLUSIONS` in the gate test set
+     module, with the reason that it type-checks
+     against the built Butler, Observer and Publisher declarations and
+     needs `npm run build` first;
+  2. adds a root script `check:consent-port-conformance` to `package.json`
+     that runs the test with `node --test`, a matching `//` comment entry
+     in the manifest's own style, and that script in the root `check`
+     chain after its `npm run build` step;
+  3. adds a step that runs `npm run check:consent-port-conformance` to the
+     `build` job (`build and test`) in the main CI workflow, after
+     that job's `npm run build`, beside the launcher help step;
+  4. adds the test's entry, `prose: false`, to the gated-script prose
+     input table, which the workflow reference test requires for every
+     script the main CI workflow invokes.
 - Export keys: `@clossys/butler/browser-consent` (the pure functions, the
   lifecycle and the types, with no adapter),
   `@clossys/butler/browser-consent/local-storage` (the storage adapter
@@ -1132,6 +1209,13 @@ expiry behaviour is built in #1938, and its reopen seam and copy in #1941.
     factory, not Butler, chooses between the seam's port and the real one
     (H-3).
 - Proof: P-31.
+- Done when: `npm run check:gates` passes without running the new test
+  (it is excluded by name); after `npm run build`,
+  `npm run check:consent-port-conformance` passes; the workflow reference
+  test (the repository script test with the stem
+  `check-workflow-references`) passes,
+  which proves the new root script is invoked by a workflow and has its
+  declared-table entry; and the `build and test` job runs the new step.
 
 ### Unowned work
 
@@ -1154,35 +1238,35 @@ passes. "Covers" lists the rules each proof holds.
 | --- | --- | --- | --- | --- |
 | P-1 | #1978 | `calendar-months` :: month-end clamping fixtures and exclusive end | C-6, C-7 | drop the clamp (`setUTCMonth(getUTCMonth() + n)`) |
 | P-2 | #1938 | `lifecycle` :: stale grant cannot override withdrawal | C-12 | remove the `seq` guard |
-| P-3 | #1938 | `persistence` :: a failed save never reports a stored choice; a memory-only choice never reaches the evidence port; a memory-only grant and a memory-only denial both survive `refresh()` and a cross-tab event carrying an older record, and are replaced only by a newer record | C-11, C-41, C-54 | report `stored` after an `unavailable` write; call evidence after a failed write; let `refresh()` re-evaluate from storage alone |
+| P-3 | #1938 | `persistence` :: a failed save never reports a stored choice; a memory-only choice never reaches the evidence port; a memory-only grant and a memory-only denial both survive `refresh()` and a cross-tab event carrying an older record, and are replaced only by a live, newer record not dated after `now`; with the clock moved back, a future-dated grant in storage never replaces a refusal held in memory after a failed write, on `refresh()`, `visibilitychange`, `pageshow` or a cross-tab re-read; a newer denial written under another `policy.version`, which parses here as no choice, never replaces an in-memory denial | C-7, C-11, C-40, C-41, C-54 | report `stored` after an `unavailable` write; call evidence after a failed write; let `refresh()` re-evaluate from storage alone; compare `decidedAt` before checking liveness |
 | P-4 | #1938 | `expiry` :: expiry fixed at decision and not renewed by reads or reopenings; every explicit choice writes a fresh record; expired reads as no choice; reading caps expiry; a future-dated denial stays live and a future-dated grant does not | C-6, C-38, C-40 | recompute `expiresAt` on read; skip the read-time cap; treat a future-dated denial as no choice |
 | P-5 | #1938 | `decision` :: regime (`prompt`, `notice`, missing) × GPC (on, off) × record (none, granted, granted with override, denied, expired, older policy, corrupt, unreadable) | C-5, C-7, C-8, C-9, C-37 | default a missing regime to `notice`; treat unreadable as no choice under `notice` |
-| P-6 | #1938 | `withdrawal` :: a refusal from a grant, and from no choice under `notice`, is a withdrawal; `allowed: false` is published before the write; write and removal both failing with a grant still readable is `failed`; under `notice`, a failed write with a successful removal is `failed`; an unreadable read-back is `failed`; after a failed withdrawal, `refresh()` keeps `allowed: false` and `withdrawal: "failed"`; a second refusal while the read-back still shows the grant stays `failed`; `failed` returns to `idle` only once a read-back is `not allowed` | C-13, C-15, C-54 | report success without read-back; treat a refusal from no choice under `notice` as a plain refusal; let `refresh()` re-evaluate from storage alone; classify a refusal as a withdrawal from the in-memory snapshot only |
+| P-6 | #1938 | `withdrawal` :: a refusal from a grant, and from no choice under `notice`, is a withdrawal; `allowed: false` is published before the write; write and removal both failing with a grant still readable is `failed`; under `notice`, a failed write with a successful removal is `failed`; an unreadable read-back is `failed`; after a failed withdrawal, `refresh()` keeps `allowed: false` and `withdrawal: "failed"`; a second refusal while the read-back still shows the grant stays `failed`; `failed` returns to `idle` only once a read-back is `not allowed`; after a failed withdrawal with the clock moved back, a future-dated grant in storage never replaces the in-memory denial on `visibilitychange`, `pageshow` or a cross-tab re-read, and `withdrawal` stays `failed`; a newer denial another tab wrote under a different `policy.version` (no choice here) never replaces the in-memory denial | C-7, C-13, C-15, C-40, C-54 | report success without read-back; treat a refusal from no choice under `notice` as a plain refusal; let `refresh()` re-evaluate from storage alone; classify a refusal as a withdrawal from the in-memory snapshot only; compare `decidedAt` before checking liveness |
 | P-7 | #1938 | `browser-only` :: with no evidence port, a grant-and-refuse cycle makes zero `fetch` or `sendBeacon` calls and evidence is never `saved` | C-14 | report `saved` without a port |
 | P-8 | #1938 | `isolation` :: no core module reads a browser global at module scope or imports an adapter; a legacy record parses only with `policy.legacy`, takes `assumedPolicyVersion`, keeps its original expiry and is never rewritten | C-2, C-10 | add a module-scope `localStorage` read; rewrite a legacy record on read; treat a dateless legacy record as live |
 | P-9 | #1940 | `transport` :: unknown consent never loads or captures | C-17 | initialize while permission is unknown |
 | P-10 | #1940 | `transport` :: withdrawal during loading leaves the provider uninitialized when the deferred load later resolves, with no capture through it; withdrawal cancels a pending retry | C-19 | send a queued capture after withdrawal; initialize a load that resolved after withdrawal |
-| P-11 | #1940 | `sanitize` and `posthog` :: initialization happens once; queries and fragments are removed; the referrer becomes an origin; an invalid `normalizePath` result drops the event; a `$`-prefixed conversion name is refused; pageviews are captured as `$pageview` and conversions under their own name; the `before_send` hook keeps only `POSTHOG_PROPERTY_ALLOWLIST` plus the transport's properties, sanitizes every URL field with the transport's sanitizer, removes `$set` and `$set_once`, and drops events the transport did not send (including an opt-in marker) | C-18, C-20, C-44 | initialize on every capture; keep the query string; pass an SDK-added property outside the allowlist through unchanged |
-| P-12 | #1940 | `posthog` :: the `init` configuration holds every forced key with its value, no host value except key and host reaches it, and the adapter imports no SDK; `init` passes the fixed instance name and every later call goes to the returned instance; an `init` that returns nothing or returns the host-supplied object makes the adapter throw, the transport `failed` with no retry, and the host-supplied object receives no capture | C-3, C-43, C-44 | omit a forced init key; call `capture` on the host-supplied object instead of the returned instance |
+| P-11 | #1940 | `sanitize` and `posthog` :: initialization happens once; queries and fragments are removed; the referrer becomes an origin; an invalid `normalizePath` result drops the event; a `$`-prefixed conversion name is refused; pageviews are captured as `$pageview` and conversions under their own name; the `before_send` hook keeps only `POSTHOG_PROPERTY_ALLOWLIST` plus the transport's properties, removes `$set` and `$set_once`, and drops events the transport did not send (including an opt-in marker); `$current_url` is the sanitized full URL, `$pathname` and `$host` are derived from that sanitized URL even when the SDK set different values, `$referrer` is the referrer origin and `$referring_domain` its host, an SDK referrer with no transport origin removes both, and an event whose `$current_url` the sanitizer rejects is dropped | C-18, C-20, C-44 | initialize on every capture; keep the query string; pass an SDK-added property outside the allowlist through unchanged; keep the SDK's own `$pathname` or `$referrer`; pass a path rather than the full URL to `sanitizeUrl` |
+| P-12 | #1940 | `posthog` :: the `init` configuration holds every forced key with its value, no host value except key and host reaches it, and the adapter imports no SDK; `init` passes a name with the fixed prefix that differs between two adapters in one page, and every later call goes to the returned instance; an `init` that returns nothing, returns the host-supplied object, or returns an already-loaded instance whose `config.before_send` is not this adapter's own hook (identity) makes the adapter throw, the transport `failed` with no retry, and neither object receives a capture | C-3, C-43, C-44 | omit a forced init key; call `capture` on the host-supplied object instead of the returned instance; accept a returned instance without the `before_send` identity check; reuse one fixed instance name |
 | P-13 | #1940 | `root-isolation` :: the Observer root import graph reaches no `browser-analytics` module | O-4, C-1 | re-export the transport from the root |
 | P-14 | D | `ConsentBanner` :: the polite live region is always mounted, empty without a status; both actions stay enabled and equal | O-2, C-21 | disable reject while a status shows; mount the live region only with a status |
 | P-15 | #1941 | `ConsentExperience` :: `required={false}` creates no lifecycle, binds no transport and ignores reopen; `onChange` fires on an acted-on choice only and never for a no-op accept | C-23, C-24, C-39 | fire `onChange` on mount or on a stored read; fire `onChange("granted")` for a no-op accept |
 | P-16 | #1941 | `ConsentExperience` :: Escape records nothing and returns focus; Escape does nothing while a withdrawal has failed; withdrawal stays enabled while a grant is pending; a lifecycle whose snapshot has `withdrawal: "failed"` at mount shows the notice open with its status; a failed withdrawal keeps the notice open through a repeated refusal and a re-read; other statuses close with the choice | C-13, C-15, C-25, C-26, C-55 | persist Escape; close on a failed withdrawal; let Escape hide a failed-withdrawal notice; open the failed-withdrawal notice only after a refusal in this render |
 | P-17 | #1941 | `ConsentExperience` :: server and initial client render match the no-decision snapshot | C-22 | read storage during render |
 | P-18 | #1941 | `reopen` :: fragment and event open once, a leading `#` is ignored, the fragment is cleared, focus moves to the reopened notice, and `refresh()` runs on reopen, on `visibilitychange` and on `pageshow` | C-27, C-46, C-47 | open a second notice on a repeated trigger; skip `refresh()` on reopen |
-| P-19 | #1941 | `review-seam` :: each value on loopback; ignored elsewhere; the factory receives the in-memory port, `evidence: false` and `simulated: true`; a factory whose lifecycle does not report `simulated: true` is disposed before any `grant()` or `refuse()` reaches it, nothing is written under the real key or any other, and the fixed no-decision notice renders; a seed whose write the in-memory port did not receive disables the seam the same way; the real key is never written; the transport is never bound; `useAnalyticsAllowed()` is `false` under `granted`; the value lasts for the tab | C-23, C-30, C-31, C-32, C-50 | accept a non-loopback host; seed before checking `simulated`; bind the transport to a seeded lifecycle |
-| P-20 | #1941 | `consent-copy/resolve` :: both leads and every status key required; draft, stale, expired-delegate, out-of-scope, wrong-locale, blank and placeholder copy refused; under `production`, unapproved, delegate-approved and generated-source copy refused; with `NODE_ENV` set to `production`, a declared `preview` target throws and delegate-approved copy that a preview-bound resolver returned is refused | C-35, C-52 | omit the `notice` lead; accept generated-source copy under `production`; trust the declared target when `NODE_ENV` is `production` |
+| P-19 | #1941 | `review-seam` :: each value on loopback; ignored elsewhere; the factory receives the in-memory port, `evidence: false` and `simulated: true`; a factory whose lifecycle does not report `simulated: true` is disposed before any `grant()` or `refuse()` reaches it, nothing is written under the real key or any other; a factory that reports `simulated: true` but wires the host's storage, so the in-memory port records no mount `read()`, is disposed the same way before any seeding call and the host storage records no write; in both cases the fixed no-decision notice renders; a seed whose write the in-memory port did not receive disables the seam the same way; the real key is never written; the transport is never bound; `useAnalyticsAllowed()` is `false` under `granted`; the value lasts for the tab | C-23, C-30, C-31, C-32, C-50 | accept a non-loopback host; seed before checking `simulated`; bind the transport to a seeded lifecycle; check only `simulated` and not the mount `read()` on the in-memory port |
+| P-20 | #1941 | `consent-copy/resolve` :: both leads and every status key required; draft, stale, expired-delegate, out-of-scope, wrong-locale, blank and placeholder copy refused; under `production`, unapproved, delegate-approved and generated-source copy refused; with `NODE_ENV` set to `production`, a declared `preview` target throws and delegate-approved copy that a preview-bound resolver returned is refused; with no `process` global, or with `NODE_ENV` absent, nothing throws on the read and the declared target decides | C-35, C-52 | omit the `notice` lead; accept generated-source copy under `production`; trust the declared target when `NODE_ENV` is `production` |
 | P-21 | #1941 | `preview/adapter` :: each of the fifteen states produces its table row; zero I/O and no timers; explicit settle; `expired` identical to `fresh-prompt`; no `saved` from the preview; `production` refused | C-33, C-34, C-51 | auto-settle; return `saved`; give `withdrawal-failed` the `withdrawn` snapshot |
 | P-22 | #1941 | `browser-import-closure` and `react-server-artifact` :: production closures exclude the preview and Designer's `/shell`; the client entry refuses `react-server` through its condition module; copy resolution refuses `browser`; the preview subpath refuses outside `development` | O-6, C-1, C-4, C-29, C-49 | import the preview or a Writer registry into the client entry; map `react-server` to the client entry |
 | P-23 | #1938 | `gpc` :: a grant under a non-overridable signal writes nothing and calls no evidence port; a grant under an overridable signal records `gpcOverride`; a grant without it never overrides a signal that is on | C-8, C-39 | write a grant under a non-overridable signal; let a grant without `gpcOverride` override the signal |
-| P-24 | #1938 | `evidence-order` :: every evidence call carries an increasing `sequence`; a conflict never upgrades to `granted`; `shouldApplyEvidence` applies a denial over a stored grant with a later `decidedAt` (a clock moved back) and refuses a grant with the same `decidedAt` and a lower or equal `sequence` | C-12, C-40, C-41 | pass a constant `sequence`; make a denial subject to the recency check |
+| P-24 | #1938 | `evidence-order` :: every evidence call carries an increasing `sequence`; a conflict never upgrades to `granted`; `shouldApplyEvidence` applies a denial over a stored grant with a later `decidedAt` (a clock moved back) and refuses a grant with the same `decidedAt` and a lower or equal `sequence`; a delayed, older denial applies over a newer stored grant | C-12, C-40, C-41 | pass a constant `sequence`; make a denial subject to the recency check |
 | P-25 | #1938 | `simulated` :: a simulated lifecycle reports `allowed: false` after a grant and never calls an evidence port | C-42 | drop the simulated override |
 | P-26 | #1938 | `local-storage` :: blocked or throwing storage reads `unavailable` without throwing; only a `storage` event for the configured key reaches the listener; raw values come back unmigrated; nothing else is written | C-16 | let a throwing `getItem` propagate; notify for another key's event |
 | P-27 | #1940 | `transport-limits` :: one retry after the fixed delay through the injected scheduler; the default scheduler is resolved when scheduling; the queue's default bound drops the oldest; the subtree compiles without the DOM library | C-43 | drop the newest event instead of the oldest; resolve `setTimeout` at module scope |
 | P-28 | #1941 | `ConsentExperience` :: the body uses the lead that matches the snapshot's `regime` | C-28 | always use the `prompt` lead |
 | P-29 | #1941 | `bind-transport` :: `setPermission(false)` has happened before `refuse()` returns; unbinding sets `false`; a simulated snapshot never sets `true` | C-45 | move `setPermission` into a React effect |
 | P-30 | #1941 | `hooks` :: hooks outside a `ConsentExperience` report not allowed and the no-decision status; `useAnalyticsAllowed()` is `false` for the preview's `remembered-granted` and `fresh-notice` states and `useConsentStatus().simulated` is `"preview"`; unmount and a `required` change dispose the lifecycle; a development double mount leaves one live lifecycle | C-23, C-48 | keep the lifecycle from the discarded mount alive; return `snapshot.allowed` without the simulated mask |
-| P-31 | E | `consent-port-conformance` :: type-level assignability of each real implementation to its structural port, and the reference host factory compiling with no cast | O-3, C-53 | rename or retype one `ConsentSnapshot` field in Butler; narrow Butler's `evidence` option to `ConsentEvidencePort` only |
+| P-31 | E | `consent-port-conformance` :: type-level assignability of each real implementation to its structural port, and the reference host factory compiling with no cast | O-3, C-53 | rename or retype one `ConsentSnapshot` field in Butler; narrow Butler's `evidence` option to `ConsentEvidencePort` only; drop the test's `GATE_TEST_EXCLUSIONS` entry, so `check:gates` sweeps in a suite that imports workspace packages and the workflow reference test fails |
 
 ### Review proofs for this document
 
@@ -1219,6 +1303,14 @@ their own owners:
   - that each forced option and allowlisted property name in C-44 exists
     and behaves as named;
   - that a named instance from `init` ignores an earlier default instance;
+  - that `init` on an already-loaded name returns the existing instance
+    unchanged, and that the returned instance exposes the configured
+    `before_send` hook as `config.before_send` by identity, so the
+    adapter's identity check (C-44) rejects a reused instance and accepts
+    its own;
+  - that `before_send` receives `$current_url`, `$pathname`, `$host`,
+    `$referrer` and `$referring_domain` as event properties the hook can
+    overwrite, and that the SDK sends the overwritten values;
   - whether `opt_in_capturing()` emits an opt-in marker event (the
     `before_send` hook must drop it);
   - where the SDK keeps its own opt-in and opt-out state, which may be a
