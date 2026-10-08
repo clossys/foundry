@@ -5,7 +5,9 @@
  * real `tsc` run, so a `@ts-expect-error` inside one asserts nothing. Nothing
  * imports this file at runtime.
  */
+import type { AuthViewProps } from "../views/AuthView.js";
 import type { BoundaryViewProps } from "../views/BoundaryView.js";
+import type { CaptureViewProps } from "../views/CaptureView.js";
 import type { ContactViewProps } from "../views/ContactView.js";
 import type { LandingViewProps } from "../views/LandingView.js";
 import type { LegalViewProps } from "../views/LegalView.js";
@@ -15,6 +17,10 @@ import type { PackReviewViewProps } from "../views/PackReviewView.js";
 export const boundaryTransparent: BoundaryViewProps["ground"] = "transparent";
 export const boundaryInverse: BoundaryViewProps["ground"] = "inverse";
 
+// @ts-expect-error AuthView keeps the base surface
+export const authTransparentInverse: AuthViewProps["ground"] = "transparent-inverse";
+// @ts-expect-error CaptureView keeps the base surface
+export const captureTransparentInverse: CaptureViewProps["ground"] = "transparent-inverse";
 // @ts-expect-error BoundaryView keeps the base surface, so on-inverse chrome ink would sit on a light page
 export const boundaryTransparentInverse: BoundaryViewProps["ground"] = "transparent-inverse";
 // @ts-expect-error ContactView keeps the base surface

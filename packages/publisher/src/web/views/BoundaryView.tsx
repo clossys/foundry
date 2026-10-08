@@ -1,7 +1,8 @@
 import type { ReactNode } from "react";
+import { Card, mergeUiClasses } from "@clossys/designer/atoms/server";
 import { SiteFooter, SiteHeader } from "@clossys/designer/shell/server";
 import type { ViewChromeGround } from "../internal/viewChromeGround.js";
-import { ErrorView, type ErrorViewProps } from "./ErrorView.js";
+import type { ErrorViewProps } from "./ErrorView.js";
 
 export interface BoundaryViewProps extends ErrorViewProps {
   /**
@@ -22,24 +23,35 @@ export interface BoundaryViewProps extends ErrorViewProps {
    * @default "base"
    */
   ground?: ViewChromeGround;
-  /** Persistent footer content, rendered by Designer's `SiteFooter`. */
+  /**
+   * The notes block below the card: supporting lines such as a support
+   * contact or a reference to quote. Absent from the markup when omitted.
+   */
+  notes?: ReactNode;
+  /**
+   * Persistent footer content, rendered by Designer's `SiteFooter`. On a
+   * boundary page this holds a legal row only - Designer's
+   * `SiteFooter.Legal`, with privacy and terms as same-host routes. This
+   * view supplies no default links and no copy.
+   */
   footerSecondary?: ReactNode;
 }
 
 /**
- * One framed boundary page: `SiteHeader`, an `ErrorView` filling the main
- * area, then `SiteFooter`. Use it for whole-page boundary states — not
- * found, a failure, and the sign-in boundary states (access pending,
- * revoked, not authorized), which are not errors, hence the name.
+ * One framed boundary page: `SiteHeader`, the three body blocks every
+ * front-door view shares, then `SiteFooter`. Use it for whole-page boundary
+ * states - not found, a failure, and the sign-in boundary states (access
+ * pending, revoked, not authorized), which are not errors, hence the name.
  *
- * Every `ErrorViewProps` key (`status`, `title`, `description`, `action`,
- * `className`, `style`, and the rest) is forwarded to `ErrorView`; `brand`,
- * the header slots (`headerAction`, `secondaryAction`, `nav`), `ground` and
- * `footerSecondary` belong to the frame and are not. The outer element
- * owns the page height (`min-h-dvh`), so the `ErrorView` root takes
- * `min-h-0 flex-1` in place of its own full-height class and fills the
- * space between header and footer. The page has exactly one `<h1>`, the
- * status.
+ * Inside `<main>`, on the same form-measure column as `AuthView`: the page
+ * header block (`status` as the page's one `<h1>`, `title` as an `<h2>`,
+ * then `description`), the body block (Designer's `Card` around `action`,
+ * omitted when there is no action) and the notes block (`notes`, below the
+ * card).
+ *
+ * It takes `ErrorViewProps` but no longer renders `ErrorView`: `className`,
+ * `style` and the other HTML attributes land on the outer element, which
+ * owns the page height (`min-h-dvh`).
  *
  * Server-safe: no client hooks, no router, no auth provider. `action` is a
  * plain slot, so the caller supplies its own link or button.
@@ -51,14 +63,29 @@ export function BoundaryView({
   nav,
   ground = "base",
   footerSecondary,
+  notes,
+  status,
+  title,
+  description,
+  action,
   className,
-  ...errorProps
+  style,
+  ...rest
 }: BoundaryViewProps) {
   return (
-    <div className="flex min-h-dvh flex-col">
+    <div {...rest} className={mergeUiClasses("flex min-h-dvh flex-col", className)} style={style}>
       <SiteHeader ground={ground} brand={brand} nav={nav} secondaryAction={secondaryAction} actions={headerAction} />
-      <main className="flex w-full flex-1 flex-col">
-        <ErrorView {...errorProps} className={["min-h-0 flex-1", className].filter(Boolean).join(" ")} />
+      <main
+        className="mx-auto flex w-full flex-1 flex-col gap-xl px-lg py-2xl"
+        style={{ maxWidth: "var(--ui-width-form-max, none)" }}
+      >
+        <div className="flex flex-col gap-xs">
+          <h1 className="text-display-l font-display text-ink-primary">{status}</h1>
+          <h2 className="text-h2 font-display text-ink-primary">{title}</h2>
+          {description ? <p className="text-body text-ink-secondary">{description}</p> : null}
+        </div>
+        {action ? <Card className="flex flex-col gap-lg">{action}</Card> : null}
+        {notes ? <div className="flex flex-col gap-xs text-body-s text-ink-secondary">{notes}</div> : null}
       </main>
       <SiteFooter ground={ground} secondary={footerSecondary} />
     </div>

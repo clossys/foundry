@@ -10,7 +10,7 @@ import { AuthView } from "./AuthView.js";
 // @ts-expect-error brand is required
 export const withoutBrand = <AuthView heading="Sign in" description="Welcome back." form={null} />;
 
-// There is no mode prop: a step differs by heading, form, and secondaryAction.
+// There is no mode prop: a step differs by heading, form, and notes.
 // @ts-expect-error AuthView has no mode prop
 export const withMode = <AuthView brand="Acme" heading="Sign in" description="Welcome back." mode="signin" form={null} />;
 
@@ -19,6 +19,6 @@ export const withMode = <AuthView brand="Acme" heading="Sign in" description="We
 export const withoutDescription = <AuthView brand="Acme" heading="Sign in" form={null} />;
 
 // The view stays copy-free: it has no request-access prop, so it cannot grow a
-// built-in request-access link. An alternate step arrives only as `secondaryAction`.
+// built-in request-access link. An alternate step arrives only as `notes`.
 // @ts-expect-error AuthView has no requestAccess prop
 export const withRequestAccess = <AuthView brand="Acme" heading="Sign in" description="Welcome back." requestAccess={null} form={null} />;

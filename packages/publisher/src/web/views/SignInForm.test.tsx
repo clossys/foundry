@@ -538,8 +538,8 @@ describe("SignInForm :: code step", () => {
 });
 
 describe("SignInForm :: unavailable", () => {
-  it("shows the unavailable notice from the first render, disables submission, keeps the form, and calls nothing", async () => {
-    const { handlers, user, container } = setup({ unavailable: true });
+  it("shows the unavailable notice from the first render, disables the field and submission, keeps the form, and calls nothing", async () => {
+    const { handlers, container } = setup({ unavailable: true });
 
     const alerts = screen.getAllByRole("alert");
     expect(alerts).toHaveLength(1);
@@ -548,10 +548,8 @@ describe("SignInForm :: unavailable", () => {
     const field = screen.getByLabelText(defaultText("sign-in.label"));
     const submit = screen.getByRole("button", { name: defaultText("sign-in.primary") });
     expect(submit).toBeDisabled();
+    expect(field).toBeDisabled();
 
-    await user.type(field, IDENTIFIER);
-    expect(field).toHaveValue(IDENTIFIER);
-    await user.type(field, "{Enter}");
     fireEvent.submit(container.querySelector("form") as HTMLFormElement);
     await Promise.resolve();
     expect(handlers.identify).not.toHaveBeenCalled();
@@ -575,10 +573,57 @@ describe("SignInForm :: unavailable", () => {
     expect(screen.getByRole("alert")).toHaveTextContent(defaultText("unavailable.notice"));
     expect(screen.getByRole("button", { name: defaultText("code.primary") })).toBeDisabled();
     expect(screen.getByRole("button", { name: defaultText("code.secondary") })).toBeDisabled();
+    expect(screen.getByRole("button", { name: defaultText("password.secondary") })).toBeDisabled();
+    expect(screen.getByLabelText(defaultText("code.label"))).toBeDisabled();
     fireEvent.submit(container.querySelector("form") as HTMLFormElement);
     await Promise.resolve();
     expect(handlers.verifyCode).not.toHaveBeenCalled();
     expect(handlers.resendCode).not.toHaveBeenCalled();
     expect(screen.getByLabelText(defaultText("code.label"))).toHaveValue("123456");
+  });
+});
+
+describe("SignInForm :: focus", () => {
+  it("moves focus to the identifier field on an empty submit", async () => {
+    const { handlers, user } = setup();
+    await user.click(screen.getByRole("button", { name: defaultText("sign-in.primary") }));
+    expect(await screen.findByText(defaultText("identifier-required.notice"))).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByLabelText(defaultText("sign-in.label"))).toHaveFocus());
+    expect(handlers.identify).not.toHaveBeenCalled();
+  });
+
+  it("moves focus to the password field on an empty submit and on a credential answer", async () => {
+    const { user } = setup({ verify: vi.fn(async () => ({ status: "credential" }) as SignInResult) });
+    await reachPasswordStep(user);
+    const field = screen.getByLabelText(defaultText("password.label"));
+    const submit = screen.getByRole("button", { name: defaultText("password.primary") });
+
+    await user.click(submit);
+    expect(await screen.findByText(defaultText("password-required.notice"))).toBeInTheDocument();
+    await waitFor(() => expect(field).toHaveFocus());
+
+    await user.type(field, "wrong horse");
+    await user.click(submit);
+    expect(await screen.findByText(defaultText("password.notice"))).toBeInTheDocument();
+    await waitFor(() => expect(field).toHaveFocus());
+  });
+
+  it("moves focus to the identifier field on a notFound answer", async () => {
+    const { user } = setup({ identify: vi.fn(async () => ({ status: "notFound" }) as SignInResult) });
+    const field = screen.getByLabelText(defaultText("sign-in.label"));
+    await user.type(field, IDENTIFIER);
+    await user.click(screen.getByRole("button", { name: defaultText("sign-in.primary") }));
+    expect(await screen.findByText(defaultText("identifier-not-found.notice"))).toBeInTheDocument();
+    await waitFor(() => expect(field).toHaveFocus());
+  });
+
+  it("moves focus to the cleared code field after a resend that answers ok", async () => {
+    const { user } = setupCodeStep();
+    const field = await reachCodeStep(user);
+    await user.type(field, "123456");
+    const resend = screen.getByRole("button", { name: defaultText("code.secondary") });
+    await user.click(resend);
+    await waitFor(() => expect(field).toHaveValue(""));
+    await waitFor(() => expect(field).toHaveFocus());
   });
 });

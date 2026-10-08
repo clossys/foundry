@@ -91,7 +91,8 @@ const AUTH_VIEW_TEMPLATE: WebTemplate = {
       heading: content.heading,
       description: content.description,
       form: content.form,
-      secondaryAction: content.secondaryAction,
+      // The document slot keeps its published key; it fills AuthView's notes block.
+      notes: content.secondaryAction,
       footnote: content.footnote,
       footerSecondary: content.footerSecondary,
     }),

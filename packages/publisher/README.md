@@ -350,16 +350,17 @@ Name a shipped template when its slots cover the page:
 - **`AuthView`** — one shell for every authentication step (sign-in, sign-up,
   password reset, verification): site header, page header, the form inside
   Designer's `Card`, and site footer. The card holds only the form;
-  `secondaryAction` (the alternate-step lines, such as "Forgot password?" or
+  `notes` (the alternate-step lines, such as "Forgot password?" or
   "No account? Join the waitlist") renders below it, before the footnote, and
-  is always the site's copy. An invitation or activation step never offers
+  is always the site's copy. `secondaryAction` is the deprecated name of
+  `notes` and renders in the same place; passing both throws. An invitation or activation step never offers
   request-access or sign-up: the view has no mode and no `requestAccess`
   prop, so each site's activation-page test should assert no request-access or
-  sign-up link. Pass each `secondaryAction` line as one element: text plus a
+  sign-up link. Pass each `notes` line as one element: text plus a
   link in one fragment splits onto two lines. When the sign-in provider is
   unavailable, `isDisabled` keeps the form on screen inside a disabled
   `<fieldset>` with the typed values still shown; the explanation goes in the
-  form's own `submitError`, and a retry link in `secondaryAction` stays
+  form's own `submitError`, and a retry link in `notes` stays
   enabled. Switching `isDisabled` remounts the form, so the site keeps the
   typed values in its own state. The content column uses the
   `--ui-width-form-max` form measure, and `description` is a required prop
@@ -370,7 +371,8 @@ Name a shipped template when its slots cover the page:
   footnote, and a site passes it only in development. An auth page's
   `footerSecondary` holds a legal row only, never a locale switcher, because
   auth pages are single-locale. `SignInForm` fills the
-  form slot of a sign-in page.
+  form slot of a sign-in page. The header slots are listed under
+  [Front-door shell](#front-door-shell).
 - **`ErrorView`** — error shell, including the sign-in-boundary states: not
   authorized (403), pending, revoked, and provider unavailable (503). It takes
   the same props for each; the status, title, description, and recovery
@@ -378,13 +380,13 @@ Name a shipped template when its slots cover the page:
   description (`"Something went wrong. Error: 8f2a91c0."`), there is no
   details disclosure, and `action` holds one primary control: a secondary
   destination is a text link inside the description.
-- **`BoundaryView`** — `ErrorView` inside one shared frame: Designer's
-  `SiteHeader` (`brand`, required), the `ErrorView` filling the main area,
-  and `SiteFooter` (`footerSecondary`, optional). It takes every
-  `ErrorViewProps` key and forwards it to `ErrorView`, so a site deletes its
-  private copy of the header/error/footer shell. It also frames the
-  sign-in-boundary states. It is not a built-in web template. See
-  [Boundary pages](#boundary-pages).
+- **`BoundaryView`** — a boundary page in the front-door shell: Designer's
+  `SiteHeader` (`brand`, required), then the page header block (`status`,
+  `title`, `description`), the `action` in a `Card` and the `notes` below
+  it, then `SiteFooter` (`footerSecondary`, optional). It takes every
+  `ErrorViewProps` key, so a site deletes its private copy of the
+  header/error/footer shell. It also frames the sign-in-boundary states. It
+  is not a built-in web template. See [Boundary pages](#boundary-pages).
 - **`PackReviewView`** — the dev-only review index: the pack's strategy
   brief, brand kit (through `BrandGuideView`) and voice and copy, then a
   site's pages, their forced states, its exported artifacts and a lazy
@@ -775,7 +777,10 @@ These exports are direct, server-safe page shells rather than new
 content, load a CMS, own a router, or add client state.
 
 `CaptureView` provides the site chrome, one heading, a consumer-owned form
-inside Designer's `Card`, and a footer. The consumer owns form fields, submission, validation,
+inside Designer's `Card`, an optional `notes` block below the card, and a
+footer. `secondaryAction` stays inside the card, under the form or the
+confirmation. The header slots are listed under
+[Front-door shell](#front-door-shell). The consumer owns form fields, submission, validation,
 and network effects. On a failed client-side submission, pass both
 `errorSummary` and `errorSummaryId`, focus that id, and keep the summary
 before the form; the view makes it a focusable `role="alert"`. On success,
@@ -2045,10 +2050,19 @@ export function ServerErrorPage({ reference }: { reference: string }) {
 }
 ```
 
-`brand`, `footerSecondary` and the header slots belong to the frame; every
-other prop goes to the `ErrorView` inside it. The header slots are the ones
-`LandingView`'s banner uses, so a boundary page can carry the same header as
-the rest of the site:
+The page follows the [front-door shell](#front-door-shell): the page header
+block holds `status` (the page's one `<h1>`), `title` (an `<h2>`) and
+`description`; the body block is a Designer `Card` around `action`, omitted
+when there is no action; `notes` (optional) renders below the card. The
+content column is the `--ui-width-form-max` measure `AuthView` uses.
+
+Breaking change: `BoundaryView` no longer renders `ErrorView`. `className`,
+`style` and the other HTML attributes now land on the outer element, which
+owns `min-h-dvh`, instead of an inner `ErrorView` root, and the status, title
+and action are left-aligned in the column instead of centred.
+
+The header slots are the ones `LandingView`'s banner uses, so a boundary page
+can carry the same header as the rest of the site:
 
 - `headerAction` (optional): the banner call to action, passed to Designer
   `SiteHeader`'s `actions`.
@@ -2060,6 +2074,63 @@ the rest of the site:
   `LandingView`.
 
 Each slot is absent from the markup when omitted.
+
+### Front-door shell
+
+`AuthView`, `CaptureView` and `BoundaryView` share one shell, so every
+front-door page reads the same way:
+
+1. **Header.** Designer's `SiteHeader`, with the brand linking to the main
+   site home. Each view takes `nav`, `headerAction` and `ground`, and a
+   secondary banner action: `headerSecondaryAction` on `AuthView` and
+   `CaptureView` (their `secondaryAction` was already taken), and
+   `secondaryAction` on `BoundaryView`, as on `LegalView`. Environments
+   (app, admin, demo) are call-to-action links in `headerAction`, one
+   Designer `SiteHeader.ActionLink` each, with `isCurrent` on the page's own
+   environment. Each links to its environment's home. The icon is a
+   caller-supplied `IconNode`; below the tablet breakpoint the label is
+   visually hidden and stays the link's accessible name. `surfaceLabel` on
+   `AuthView` still renders and is superseded by these links.
+2. **Page header block.** The page's one `<h1>` and its supporting line.
+3. **Body block.** The form or action inside a Designer `Card`.
+4. **Notes block.** `notes`, below the card.
+5. **Footer.** Designer's `SiteFooter`, whose `footerSecondary` slot holds
+   `SiteFooter.Legal` and nothing else on auth and boundary pages: the
+   copyright at one end and the legal links at the other. The minimum links
+   are privacy and terms as same-host routes, so a visitor is not sent off
+   the host mid-flow. The package supplies no default links and no copy.
+
+In this example `SiteHeader` and `SiteFooter` come from Designer's
+`shell/server` entry and `Home` and `Settings` from its `icons` entry.
+
+```tsx
+import { AuthView, SignInForm } from "@clossys/publisher/web";
+
+<AuthView
+  brand={<a href="https://example.com/">Acme</a>}
+  headerAction={
+    <>
+      <SiteHeader.ActionLink href="/" label="App" icon={Home} isCurrent />
+      <SiteHeader.ActionLink href="https://admin.example.com/" label="Admin" icon={Settings} />
+    </>
+  }
+  heading="Sign in"
+  description="Use your work email."
+  form={<SignInForm identify={identify} verify={verify} onSignedIn={goHome} />}
+  notes={<a href="/reset">Forgot password?</a>}
+  footerSecondary={
+    <SiteFooter.Legal
+      entity="Acme"
+      links={[
+        { label: "Privacy", href: "/privacy" },
+        { label: "Terms", href: "/terms" },
+      ]}
+    />
+  }
+/>
+```
+
+`LegalView` and `DocumentView` keep their current structure.
 
 ### Global error document — `GlobalErrorDocument`
 
@@ -2166,8 +2237,9 @@ Props:
   Without it the code step has no resend control. Any cooldown is the
   caller's: answer `rateLimited`.
 - `unavailable` (optional): shows `front-door.unavailable.notice` in the
-  form's alert from the first render, disables the submit and resend buttons,
-  and calls no handler, while the form stays on screen. Pair it with
+  form's alert from the first render, disables the fields and the submit,
+  resend and back buttons, and calls no handler, while the form stays on
+  screen. Pair it with
   `AuthView`'s `isDisabled`.
 - `onSignedIn()`: called once after `verify` or `verifyCode` answers `ok`. The
   form does not navigate, set a cookie or redirect.
@@ -2193,8 +2265,8 @@ It shows only when `verify` answers `needsCode` and `verifyCode` is given:
 same `front-door.password.secondary` button, which returns to the identifier
 step with the identifier kept and the password and code cleared. A
 `verifyCode` answer of `ok` calls `onSignedIn` once and the submit button stays
-pending. A resend that answers `ok` clears the code and its inline error; a
-failed one shows in the alert and keeps the step and the typed code. A
+pending. A resend that answers `ok` clears the code and its inline error and
+moves focus to the code field; a failed one shows in the alert and keeps the step and the typed code. A
 `needsCode` from `identify` or `verifyCode`, or from `verify` without
 `verifyCode`, reads as `unavailable`, so the form never shows a step it cannot
 finish. Each step change moves focus to the new step's field.
@@ -2215,7 +2287,8 @@ Where each failure shows, on the step it happened in:
 | `unavailable`, a stray `needsCode`, a throw, an unknown answer, or the `unavailable` prop | the form's one `role="alert"` | `front-door.unavailable.notice` |
 
 Nothing is validated before a submit or on blur, and an empty submit calls no
-handler. An inline error clears when its field changes. The submit and resend
+handler. A field that shows an inline error, from an empty submit or an
+answer, takes focus. An inline error clears when its field changes. The submit and resend
 buttons are pending, never `disabled`, while a call is in flight, and a second
 submit or resend is ignored. Each step's `<form>` is labelled with
 `front-door.sign-in.title`, `front-door.password.title` or

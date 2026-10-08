@@ -2,10 +2,31 @@ import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
 import { Card, mergeUiClasses } from "@clossys/designer/atoms/server";
 import { PageHeader } from "@clossys/designer/blocks/server";
 import { SiteFooter, SiteHeader } from "@clossys/designer/shell/server";
+import type { ViewChromeGround } from "../internal/viewChromeGround.js";
 
 export interface CaptureViewProps extends HTMLAttributes<HTMLDivElement> {
   /** Persistent site identity, rendered in the page banner. */
   brand: ReactNode;
+  /** The primary navigation, rendered in the banner beside the brand. Absent from the markup when omitted. */
+  nav?: ReactNode;
+  /**
+   * The banner's call to action (`SiteHeader`'s `actions`), such as one
+   * Designer `SiteHeader.ActionLink` per environment. Absent from the markup
+   * when omitted.
+   */
+  headerAction?: ReactNode;
+  /**
+   * A secondary call to action in the banner, rendered just before
+   * `headerAction`. Named apart from `secondaryAction`, which on this view
+   * sits inside the card. Absent from the markup when omitted.
+   */
+  headerSecondaryAction?: ReactNode;
+  /**
+   * The plate of the header and footer, passed to both `SiteHeader` and
+   * `SiteFooter`.
+   * @default "base"
+   */
+  ground?: ViewChromeGround;
   /** The page's one `<h1>`. */
   heading: ReactNode;
   /** Supporting copy under the heading. */
@@ -31,9 +52,18 @@ export interface CaptureViewProps extends HTMLAttributes<HTMLDivElement> {
    * position, rather than navigating away.
    */
   submitted?: ReactNode;
-  /** Optional secondary navigation below the active form or confirmation. */
+  /** Optional secondary navigation below the active form or confirmation, inside the card. */
   secondaryAction?: ReactNode;
-  /** Persistent footer content. */
+  /**
+   * The notes block below the card: supporting lines such as how the
+   * submission is used. Absent from the markup when omitted.
+   */
+  notes?: ReactNode;
+  /**
+   * Persistent footer content, rendered by Designer's `SiteFooter`, such as
+   * Designer's `SiteFooter.Legal` with privacy and terms as same-host
+   * routes. This view supplies no default links and no copy.
+   */
   footerSecondary?: ReactNode;
   /**
    * Accessible name for the region that holds the form or the confirmation.
@@ -44,14 +74,20 @@ export interface CaptureViewProps extends HTMLAttributes<HTMLDivElement> {
 }
 
 /**
- * A page shell for a consumer-owned capture form. Site header, page
- * header, the form inside Designer's `Card`, and site footer. It owns
+ * A page shell for a consumer-owned capture form. Site header, then the
+ * three body blocks every front-door view shares - the page header block
+ * (heading and description), the body block (the form inside Designer's
+ * `Card`) and the notes block (`notes`, below the card) - then site footer. It owns
  * neither network submission nor validation state: the only state rule it
  * applies is presentational and fail-closed-`submitted` replaces the form
  * in place, still inside the card.
  */
 export function CaptureView({
   brand,
+  nav,
+  headerAction,
+  headerSecondaryAction,
+  ground = "base",
   heading,
   description,
   form,
@@ -59,6 +95,7 @@ export function CaptureView({
   errorSummaryId,
   submitted,
   secondaryAction,
+  notes,
   footerSecondary,
   formLabel = "Capture form",
   className,
@@ -93,7 +130,7 @@ export function CaptureView({
 
   return (
     <div {...rest} className={mergeUiClasses("flex min-h-dvh flex-col", className)} style={style}>
-      <SiteHeader brand={brand} />
+      <SiteHeader ground={ground} brand={brand} nav={nav} secondaryAction={headerSecondaryAction} actions={headerAction} />
       <main className="mx-auto flex w-full flex-1 flex-col gap-xl px-lg py-2xl" style={{ maxWidth: "var(--ui-width-prose-max, none)" }}>
         <PageHeader title={heading} description={description} />
         <section aria-label={formLabel}>
@@ -102,8 +139,9 @@ export function CaptureView({
             {secondaryAction === undefined ? null : <div className="text-body-s text-ink-secondary">{secondaryAction}</div>}
           </Card>
         </section>
+        {notes ? <div className="flex flex-col gap-xs text-body-s text-ink-secondary">{notes}</div> : null}
       </main>
-      <SiteFooter secondary={footerSecondary} />
+      <SiteFooter ground={ground} secondary={footerSecondary} />
     </div>
   );
 }

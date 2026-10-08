@@ -8,11 +8,14 @@ import { describe, expect, it, vi } from "vitest";
 import { cleanup, render, screen, within } from "@testing-library/react";
 import { afterEach } from "vitest";
 import userEvent from "@testing-library/user-event";
+import { renderToStaticMarkup } from "react-dom/server";
+import { Home, Settings } from "@clossys/designer/icons";
+import { SiteFooter, SiteHeader } from "@clossys/designer/shell/server";
 import { AuthView } from "./AuthView.js";
 
 afterEach(cleanup);
 
-const ALLOWED_IMPORT = /^(react|@clossys\/designer\/.+)$/;
+const ALLOWED_IMPORT = /^(react|@clossys\/designer\/.+|\.\.\/internal\/viewChromeGround\.js)$/;
 
 /**
  * Every module specifier named by an `import` statement (bare, type, or
@@ -108,7 +111,7 @@ describe("AuthView", () => {
     expect(within(screen.getByRole("contentinfo")).getByText("Support line")).toBeInTheDocument();
   });
 
-  it("imports only react and @clossys/designer/* (no auth provider)", () => {
+  it("imports only react, @clossys/designer/* and the shared chrome-ground type (no auth provider)", () => {
     const source = readFileSync(join(import.meta.dirname, "AuthView.tsx"), "utf8");
     const specifiers = moduleSpecifiers(source);
     expect(specifiers.length).toBeGreaterThan(0);
@@ -392,5 +395,103 @@ describe("AuthView", () => {
       />,
     );
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Sign in to Acme");
+  });
+
+  it("notes renders in the below-card block, in the same place secondaryAction always has", () => {
+    const { container } = render(
+      <AuthView brand="Acme" heading="Sign in" description="Welcome back." form={<div>form</div>} notes={<a href="/signup">Create an account</a>} footnote="Terms apply." />,
+    );
+    const link = screen.getByRole("link", { name: "Create an account" });
+    const card = container.querySelector(".rounded-control") as HTMLElement;
+    const line = link.closest("main > div") as HTMLElement;
+    expect(card.nextElementSibling).toBe(line);
+    expect(line.className).toContain("flex flex-col gap-xs text-body-s text-ink-secondary");
+    expect(line.nextElementSibling).toBe(screen.getByText("Terms apply."));
+  });
+
+  it("notes and its deprecated name secondaryAction render identical markup", () => {
+    const viaNotes = renderToStaticMarkup(<AuthView brand="Acme" heading="Sign in" description={null} form="form" notes={<a href="/x">X</a>} />);
+    const viaAlias = renderToStaticMarkup(<AuthView brand="Acme" heading="Sign in" description={null} form="form" secondaryAction={<a href="/x">X</a>} />);
+    expect(viaNotes).toBe(viaAlias);
+  });
+
+  it("throws when both notes and secondaryAction are passed", () => {
+    expect(() =>
+      renderToStaticMarkup(<AuthView brand="Acme" heading="Sign in" description={null} form="form" notes="a" secondaryAction="b" />),
+    ).toThrow(/notes or its deprecated name secondaryAction, not both/);
+  });
+
+  it("renders nav, headerSecondaryAction and headerAction inside the one top-level banner, in that order", () => {
+    const { container } = render(
+      <AuthView
+        brand="Acme"
+        heading="Sign in"
+        description="Welcome back."
+        form={<div>form</div>}
+        nav={<nav aria-label="Primary">NAV-SENTINEL</nav>}
+        headerSecondaryAction={<a href="/help">Help</a>}
+        headerAction={<a href="/contact">Contact us</a>}
+      />,
+    );
+    const root = container.firstElementChild as HTMLElement;
+    const topLevelHeaders = [...root.querySelectorAll("header")].filter((header) => header.closest("main") === null);
+    expect(topLevelHeaders).toHaveLength(1);
+    const banner = topLevelHeaders[0] as HTMLElement;
+    expect(within(banner).getByRole("navigation", { name: "Primary" })).toBeInTheDocument();
+    const secondary = within(banner).getByRole("link", { name: "Help" });
+    const primary = within(banner).getByRole("link", { name: "Contact us" });
+    expect(secondary.compareDocumentPosition(primary) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(screen.getByRole("main")).not.toHaveTextContent(/Help|Contact us|NAV-SENTINEL/);
+  });
+
+  it("passes ground to both the header and the footer, and keeps the bare chrome (with surfaceLabel) when every header slot is omitted", () => {
+    const bare = renderToStaticMarkup(<AuthView brand="Acme" surfaceLabel="demo" heading="Sign in" description={null} form="form" />);
+    expect(bare).toContain(renderToStaticMarkup(<SiteHeader brand="Acme" surfaceLabel="demo" />) + "<main");
+    expect(bare).toContain("</main>" + renderToStaticMarkup(<SiteFooter />) + "</div>");
+    const grounded = renderToStaticMarkup(<AuthView brand="Acme" heading="Sign in" description={null} form="form" ground="transparent" />);
+    expect(grounded).toContain(renderToStaticMarkup(<SiteHeader ground="transparent" brand="Acme" />) + "<main");
+    expect(grounded).toContain("</main>" + renderToStaticMarkup(<SiteFooter ground="transparent" />) + "</div>");
+  });
+
+  it("one front-door shell: environment links (icon-only accessible name, aria-current), one <h1>, one top-level banner, one contentinfo holding SiteFooter.Legal", () => {
+    const { container } = render(
+      <AuthView
+        brand={<a href="https://example.com/">Acme</a>}
+        heading="Sign in"
+        description="Welcome back."
+        form={<div>form</div>}
+        headerAction={
+          <>
+            <SiteHeader.ActionLink href="https://app.example.com/" label="App" icon={Home} isCurrent />
+            <SiteHeader.ActionLink href="https://admin.example.com/" label="Admin" icon={Settings} />
+          </>
+        }
+        footerSecondary={
+          <SiteFooter.Legal
+            entity="Acme"
+            links={[
+              { label: "Privacy", href: "/privacy" },
+              { label: "Terms", href: "/terms" },
+            ]}
+          />
+        }
+      />,
+    );
+    const root = container.firstElementChild as HTMLElement;
+    const topLevelHeaders = [...root.querySelectorAll("header")].filter((header) => header.closest("main") === null);
+    expect(topLevelHeaders).toHaveLength(1);
+    const banner = topLevelHeaders[0] as HTMLElement;
+    expect(within(banner).getByRole("link", { name: "Acme" })).toHaveAttribute("href", "https://example.com/");
+    const app = within(banner).getByRole("link", { name: "App" });
+    expect(app).toHaveAttribute("aria-current", "true");
+    expect(app.querySelector("svg")).toHaveAttribute("aria-hidden", "true");
+    expect(within(banner).getByRole("link", { name: "Admin" })).not.toHaveAttribute("aria-current");
+    expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
+    const footers = screen.getAllByRole("contentinfo");
+    expect(footers).toHaveLength(1);
+    const footer = footers[0] as HTMLElement;
+    expect(within(footer).getByText(/^© \d{4} Acme$/)).toBeInTheDocument();
+    expect(within(footer).getByRole("link", { name: "Privacy" })).toHaveAttribute("href", "/privacy");
+    expect(within(footer).getByRole("link", { name: "Terms" })).toHaveAttribute("href", "/terms");
   });
 });

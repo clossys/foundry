@@ -2,6 +2,7 @@ import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
 import { Badge, Card, mergeUiClasses } from "@clossys/designer/atoms/server";
 import { PageHeader } from "@clossys/designer/blocks/server";
 import { SiteFooter, SiteHeader } from "@clossys/designer/shell/server";
+import type { ViewChromeGround } from "../internal/viewChromeGround.js";
 
 export interface AuthViewProps extends HTMLAttributes<HTMLDivElement> {
   /**
@@ -13,9 +14,32 @@ export interface AuthViewProps extends HTMLAttributes<HTMLDivElement> {
   /**
    * Optional text-only label naming the surface, such as "admin" or "demo",
    * shown as a non-interactive badge at the trailing end of the page banner.
-   * A member host omits it.
+   * A member host omits it. Superseded by environment links: pass one
+   * Designer `SiteHeader.ActionLink` per environment in `headerAction`, with
+   * `isCurrent` on this page's environment. Kept for existing callers.
    */
   surfaceLabel?: string;
+  /** The primary navigation, rendered in the banner beside the brand. Absent from the markup when omitted. */
+  nav?: ReactNode;
+  /**
+   * The banner's call to action (`SiteHeader`'s `actions`), such as one
+   * `SiteHeader.ActionLink` per environment. Absent from the markup when
+   * omitted.
+   */
+  headerAction?: ReactNode;
+  /**
+   * A secondary call to action in the banner, rendered just before
+   * `headerAction` (`SiteHeader`'s `secondaryAction`). Named apart from
+   * `secondaryAction`, which on this view has always been the lines below
+   * the card. Absent from the markup when omitted.
+   */
+  headerSecondaryAction?: ReactNode;
+  /**
+   * The plate of the header and footer, passed to both `SiteHeader` and
+   * `SiteFooter`.
+   * @default "base"
+   */
+  ground?: ViewChromeGround;
   /**
    * The page's own name - the words for sign-in, account creation,
    * password reset, or verification. Renders as the page's `<h1>` through
@@ -53,7 +77,7 @@ export interface AuthViewProps extends HTMLAttributes<HTMLDivElement> {
    */
   isDisabled?: boolean;
   /**
-   * Slot for the alternate-step lines, rendered below the card and above the
+   * The notes block below the card: the alternate-step lines, rendered below the card and above the
    * footnote - "No account? Join the waitlist", "Forgot password?", "Already
    * set up? Sign in". Pass one line or several; they stack, each child on its
    * own line, so wrap each line in one element: text plus a link in one
@@ -64,6 +88,11 @@ export interface AuthViewProps extends HTMLAttributes<HTMLDivElement> {
    * the view has no mode and cannot tell it from sign-in, so the site keeps
    * that rule, and its activation-page test should assert there is no
    * request-access link.
+   */
+  notes?: ReactNode;
+  /**
+   * @deprecated Use `notes`. The same slot under its earlier name, rendered
+   * in the same place; passing both throws.
    */
   secondaryAction?: ReactNode;
   /**
@@ -81,9 +110,12 @@ export interface AuthViewProps extends HTMLAttributes<HTMLDivElement> {
   internalNote?: { label: string; message: ReactNode };
   /**
    * Persistent footer content, rendered by Designer's `SiteFooter`. On an
-   * auth page this holds a legal row only (for example `SiteFooter.Legal`),
-   * never a locale switcher: auth pages are single-locale. This view renders
-   * no picker itself, so the rule is the caller's to keep.
+   * auth page this holds a legal row only - Designer's `SiteFooter.Legal`,
+   * copyright at one end and legal links at the other - never a locale
+   * switcher: auth pages are single-locale. The minimum links are privacy and
+   * terms, as same-host routes (for example `/privacy` and `/terms`) so a
+   * visitor is not sent off the host mid sign-in. This view supplies no
+   * default links and no copy.
    */
   footerSecondary?: ReactNode;
   /** Merged onto the outer element's inline style, after this component's own. */
@@ -96,9 +128,11 @@ export interface AuthViewProps extends HTMLAttributes<HTMLDivElement> {
  * auth page or it isn't - there is no page that reasonably shows two
  * auth forms side by side.
  *
- * The shell is Designer's, in order: `SiteHeader`, `PageHeader`, `Card`
- * around the form slot, the `secondaryAction` lines below the card, the
- * footnote, the internal note, `SiteFooter`. There is no `mode` prop. A step
+ * The shell is Designer's, in order: `SiteHeader`, then the three body
+ * blocks every front-door view shares - the page header block (`PageHeader`:
+ * heading and description), the body block (`Card` around the form slot)
+ * and the notes block (`notes`, below the card) - then the footnote, the
+ * internal note, `SiteFooter`. There is no `mode` prop. A step
  * differs by the heading, the form slot, and the alternate-step lines the
  * caller passes in.
  *
@@ -111,9 +145,14 @@ export interface AuthViewProps extends HTMLAttributes<HTMLDivElement> {
 export function AuthView({
   brand,
   surfaceLabel,
+  nav,
+  headerAction,
+  headerSecondaryAction,
+  ground = "base",
   heading,
   description,
   form,
+  notes,
   secondaryAction,
   footnote,
   isDisabled,
@@ -123,9 +162,20 @@ export function AuthView({
   style,
   ...rest
 }: AuthViewProps) {
+  if (notes !== undefined && secondaryAction !== undefined) {
+    throw new Error("AuthView takes notes or its deprecated name secondaryAction, not both.");
+  }
+  const notesBlock = notes ?? secondaryAction;
   return (
     <div {...rest} className={mergeUiClasses("flex min-h-dvh flex-col", className)} style={style}>
-      <SiteHeader brand={brand} surfaceLabel={surfaceLabel} />
+      <SiteHeader
+        ground={ground}
+        brand={brand}
+        nav={nav}
+        secondaryAction={headerSecondaryAction}
+        actions={headerAction}
+        surfaceLabel={surfaceLabel}
+      />
       <main
         className="mx-auto flex w-full flex-1 flex-col gap-xl px-lg py-2xl"
         style={{ maxWidth: "var(--ui-width-form-max, none)" }}
@@ -140,9 +190,7 @@ export function AuthView({
             form
           )}
         </Card>
-        {secondaryAction ? (
-          <div className="flex flex-col gap-xs text-body-s text-ink-secondary">{secondaryAction}</div>
-        ) : null}
+        {notesBlock ? <div className="flex flex-col gap-xs text-body-s text-ink-secondary">{notesBlock}</div> : null}
         {footnote ? <p className="text-body-s text-ink-muted">{footnote}</p> : null}
         {internalNote ? (
           <p className="flex items-center gap-xs text-body-s text-ink-muted">
@@ -151,7 +199,7 @@ export function AuthView({
           </p>
         ) : null}
       </main>
-      <SiteFooter secondary={footerSecondary} />
+      <SiteFooter ground={ground} secondary={footerSecondary} />
     </div>
   );
 }
