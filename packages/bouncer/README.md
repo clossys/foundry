@@ -195,6 +195,12 @@ result and a `production` result, both `SiteSecurityHeadersResult`. The
 caller passes a `SiteSecurityHeadersInput` and applies the header map. This
 package does not invent a package declaration.
 
+Extending `img-src`, `font-src`, `connect-src`, `media-src` or `worker-src`
+keeps `'self'` first and appends the extension sources in both variants, so
+same-origin requests remain allowed. A caller-listed `'self'` is deduplicated.
+An extended `frame-src` contains only the caller-listed sources; extending it
+does not imply same-origin framing.
+
 Production script policy is one of two modes:
 
 | Mode | `script-src` | Result |

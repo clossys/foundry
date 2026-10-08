@@ -525,7 +525,10 @@ function buildVariant(spec: ReadySpec, variant: Variant): SiteSecurityHeadersRes
   for (const extension of spec.extensions) {
     if (extension.directive === "script-src" || extension.directive === "style-src") continue;
     if (!EXTENSION_DIRECTIVES.has(extension.directive)) continue;
-    addSources(directives, extension.directive, [extension.source]);
+    const sources = extension.directive === "frame-src"
+      ? [extension.source]
+      : ["'self'", extension.source];
+    addSources(directives, extension.directive, sources);
   }
 
   const missing = missingRequired(directives);
