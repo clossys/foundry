@@ -21,8 +21,9 @@ function TextLink({ link }: { readonly link: ResolvedSiteLink }) {
 function LinkList({ links, className }: { readonly links: readonly ResolvedSiteLink[]; readonly className: string }) {
   return (
     <ul role="list" className={className}>
-      {links.map((link) => (
-        <li key={`${link.href} ${link.label}`}>
+      {links.map((link, index) => (
+        // Keyed by position: two links may share an href and label, and the list never reorders.
+        <li key={index}>
           <TextLink link={link} />
         </li>
       ))}
@@ -64,12 +65,12 @@ export function SiteFrame({ shell, resolveCopy, resolveAsset, children }: SiteFr
   const actions =
     resolved.actions.length > 0 || resolved.environments.length > 0 ? (
       <>
-        {resolved.actions.map((link) => (
-          <TextLink key={`${link.href} ${link.label}`} link={link} />
+        {resolved.actions.map((link, index) => (
+          <TextLink key={`action-${index}`} link={link} />
         ))}
-        {resolved.environments.map((environment) => (
+        {resolved.environments.map((environment, index) => (
           <SiteHeader.ActionLink
-            key={`${environment.href} ${environment.label}`}
+            key={`environment-${index}`}
             href={environment.href}
             label={environment.label}
             icon={environment.icon}
@@ -99,10 +100,10 @@ export function SiteFrame({ shell, resolveCopy, resolveAsset, children }: SiteFr
           ground={resolved.ground}
           columns={
             footer.columns.length > 0
-              ? footer.columns.map((column) => (
-                  <SiteFooter.Column key={column.heading} heading={column.heading}>
-                    {column.links.map((link) => (
-                      <TextLink key={`${link.href} ${link.label}`} link={link} />
+              ? footer.columns.map((column, columnIndex) => (
+                  <SiteFooter.Column key={columnIndex} heading={column.heading}>
+                    {column.links.map((link, linkIndex) => (
+                      <TextLink key={linkIndex} link={link} />
                     ))}
                   </SiteFooter.Column>
                 ))

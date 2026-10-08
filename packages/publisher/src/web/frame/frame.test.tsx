@@ -5,7 +5,7 @@ import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import type { ReactElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render } from "@testing-library/react";
 import type { CopyRef, CopyResolution, CopyResolver } from "@clossys/writer";
 import type { IconNode } from "@clossys/designer/atoms/server";
@@ -625,5 +625,36 @@ describe("module boundaries", () => {
     const sample = ['import "side-effect";', 'const a = import("dynamic");', 'const b = require("required");', 'export * from "reexport";', 'import { c } from "react";'].join("\n");
     expect(moduleSpecifiers(sample)).toEqual(["side-effect", "dynamic", "required", "reexport", "react"]);
     expect(moduleSpecifiers(sample).filter((specifier) => !FRAME_ALLOWED_IMPORT.test(specifier))).toEqual(["side-effect", "dynamic", "required", "reexport"]);
+  });
+});
+
+describe("SiteFrame list keys", () => {
+  it("renders repeated headings and links in full, with no duplicate-key warning", () => {
+    const repeated = { href: "/about", label: ref("footer.about") };
+    const shell: SiteShellInput = {
+      ...siteShellFor(CONFIG, "site"),
+      nav: { label: ref("nav.label"), links: [repeated, repeated] },
+      actions: [repeated, repeated],
+      footer: {
+        columns: [
+          { heading: ref("footer.company"), links: [repeated, repeated] },
+          { heading: ref("footer.company"), links: [repeated] },
+        ],
+        // The legal row is keyed inside Designer's SiteFooter.Legal, so it keeps distinct links here.
+        legal: CONFIG.legal,
+      },
+    };
+    const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+    try {
+      const { container } = render(frame(shell, <p>content</p>));
+      const keyWarnings = consoleError.mock.calls.filter((call) => call.some((part) => typeof part === "string" && /same key/i.test(part)));
+      expect(keyWarnings).toEqual([]);
+      expect(container.querySelectorAll("header nav li")).toHaveLength(2);
+      const footer = container.querySelector("footer") as HTMLElement;
+      expect([...footer.querySelectorAll("h2, h3, h4, p")].filter((node) => node.textContent === "Company")).toHaveLength(2);
+      expect([...container.querySelectorAll("a")].filter((link) => link.textContent === "About")).toHaveLength(2 + 2 + 2 + 1);
+    } finally {
+      consoleError.mockRestore();
+    }
   });
 });
