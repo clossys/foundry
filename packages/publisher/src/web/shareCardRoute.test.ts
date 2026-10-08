@@ -100,6 +100,28 @@ describe("route exports", () => {
 });
 
 describe("title and alt", () => {
+  it("derives alt when omitted or undefined from the visible card text", () => {
+    const { ImageResponse } = recordingImageResponse();
+    const built = buildBrandShareCard(card());
+    const omitted = createShareCardRoute({ ImageResponse, card: card() });
+    const undefinedAlt = createShareCardRoute({ ImageResponse, card: card(), alt: undefined });
+    for (const route of [omitted, undefinedAlt]) {
+      expect(route.alt).toBe(built.shareCard.alt);
+      expect(route.shareCard.alt).toBe(built.shareCard.alt);
+    }
+    const titled = createShareCardRoute({ ImageResponse, card: card(), title: "A page title" });
+    expect(titled.alt).toBe(buildBrandShareCard(card({ headline: "A page title" })).shareCard.alt);
+    expect(titled.shareCard.alt).toBe(titled.alt);
+  });
+
+  it("refuses null and numeric alt with invalid-input", () => {
+    const { ImageResponse } = recordingImageResponse();
+    for (const alt of [null, 4]) {
+      const input = { ImageResponse, card: card(), alt } as unknown as ShareCardRouteInput;
+      expect(reasonOf(() => createShareCardRoute(input))).toBe("invalid-input");
+    }
+  });
+
   it("draws the title in place of card.headline and hands that title to an alt function", () => {
     const { ImageResponse, calls } = recordingImageResponse();
     const seen: string[] = [];

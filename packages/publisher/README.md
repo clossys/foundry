@@ -3718,7 +3718,6 @@ declare const markDataUrl: string; // inline data URL
 const route = createShareCardRoute({
   ImageResponse,
   card: { markSrc: markDataUrl, wordmark: "Example Studio", headline: "Made well, made to last" },
-  alt: (headline) => `Example Studio: ${headline}`,
 });
 
 export const alt = route.alt;
@@ -3727,13 +3726,17 @@ export const contentType = route.contentType;
 export default route.Image;
 ```
 
-- **Input.** `{ ImageResponse, card, title?, alt }`. `card` is
+- **Input.** `{ ImageResponse, card, title?, alt? }`. `card` is
   `buildBrandShareCard`'s input without `alt`, so `headline` stays required
   there. `ImageResponse` is
   `new (element, { width, height }) => Response`.
-- **Title and alt.** When `title` is given it replaces `card.headline`. `alt` is
-  a string, returned as given, or a function called with the headline actually
-  drawn. Publisher builds no wording; every word is yours.
+- **Title and alt.** When `title` is given it replaces `card.headline`. Omit
+  `alt` (or pass `undefined`) to derive it from the card's visible text in
+  reading order: wordmark, kicker, headline and supporting text. The route's
+  `alt` and `shareCard.alt` both contain that derived text. An explicit `alt`
+  is a string, returned as given, or a function called with the headline actually
+  drawn, for example `` alt: (headline) => `Share card: ${headline}` ``.
+  Publisher builds no wording; every word is yours.
 - **Result.** `{ alt, size, contentType, shareCard, Image }`. `size` is the
   card's `{ width, height }` (1200 by 630), `contentType` is `"image/png"`,
   `shareCard` is the record `buildSiteMetadata` takes, and `Image()` returns
