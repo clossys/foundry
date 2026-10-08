@@ -13,8 +13,8 @@ afterEach(cleanup);
 /**
  * The page's landmarks as a browser computes them: a `<header>` or `<footer>`
  * is the banner or contentinfo only as a direct child of the frame, outside
- * `<main>` (the page header block's `<header>` inside `<main>` is not a
- * banner, though testing-library's role query counts it).
+ * `<main>` (a `<header>` or `<footer>` nested inside `<main>` is not a banner or
+ * contentinfo, though testing-library's role query counts it).
  */
 function landmarks(container: HTMLElement) {
   const root = container.firstElementChild as HTMLElement;
