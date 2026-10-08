@@ -2144,6 +2144,11 @@ import { AuthView, SignInForm } from "@clossys/publisher/web";
 />
 ```
 
+**Skip-link target.** Pass `mainId` on any of the three views to give the
+page's `<main>` that `id` and `tabIndex={-1}`, so a skip link in the host's
+own chrome can point at it and move focus there. When `mainId` is unset (or
+empty) the markup is unchanged: no `id` and no `tabindex`.
+
 `LegalView` and `DocumentView` keep their current structure.
 
 ### Global error document — `GlobalErrorDocument`

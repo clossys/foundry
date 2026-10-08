@@ -29,6 +29,13 @@ export interface AuthViewProps extends HTMLAttributes<HTMLDivElement> {
    */
   footer?: ReactNode;
   /**
+   * The `id` of the page's `<main>`, so a skip link rendered by the host (its
+   * own chrome) can target it. When set to a non-empty string, `<main>` gets
+   * that `id` and `tabIndex={-1}` so the link can move focus there. When
+   * `undefined` (or empty) the markup is unchanged: no `id`, no `tabindex`.
+   */
+  mainId?: string;
+  /**
    * Optional text-only label naming the surface, such as "admin" or "demo",
    * shown as a non-interactive badge at the trailing end of the page banner.
    * A member host omits it. Superseded by environment links: pass one
@@ -167,6 +174,7 @@ export function AuthView({
   headerSecondaryAction,
   header,
   footer,
+  mainId,
   ground = "base",
   heading,
   description,
@@ -200,6 +208,8 @@ export function AuthView({
         />
       )}
       <main
+        id={mainId || undefined}
+        tabIndex={mainId ? -1 : undefined}
         className="mx-auto flex w-full flex-1 flex-col gap-xl px-lg py-2xl"
         style={{ maxWidth: "var(--ui-width-form-max, none)" }}
       >

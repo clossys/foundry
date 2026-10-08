@@ -24,6 +24,13 @@ export interface CaptureViewProps extends HTMLAttributes<HTMLDivElement> {
    * is not used. When `undefined`, the Designer footer renders as before.
    */
   footer?: ReactNode;
+  /**
+   * The `id` of the page's `<main>`, so a skip link rendered by the host (its
+   * own chrome) can target it. When set to a non-empty string, `<main>` gets
+   * that `id` and `tabIndex={-1}` so the link can move focus there. When
+   * `undefined` (or empty) the markup is unchanged: no `id`, no `tabindex`.
+   */
+  mainId?: string;
   /** The primary navigation, rendered in the banner beside the brand. Absent from the markup when omitted. */
   nav?: ReactNode;
   /**
@@ -103,6 +110,7 @@ export function CaptureView({
   brand,
   header,
   footer,
+  mainId,
   nav,
   headerAction,
   headerSecondaryAction,
@@ -154,7 +162,7 @@ export function CaptureView({
       ) : (
         <SiteHeader ground={ground} brand={brand} nav={nav} secondaryAction={headerSecondaryAction} actions={headerAction} />
       )}
-      <main className="mx-auto flex w-full flex-1 flex-col gap-xl px-lg py-2xl" style={{ maxWidth: "var(--ui-width-prose-max, none)" }}>
+      <main id={mainId || undefined} tabIndex={mainId ? -1 : undefined} className="mx-auto flex w-full flex-1 flex-col gap-xl px-lg py-2xl" style={{ maxWidth: "var(--ui-width-prose-max, none)" }}>
         <PageHeader title={heading} description={description} />
         <section aria-label={formLabel}>
           <Card className="flex flex-col gap-lg">

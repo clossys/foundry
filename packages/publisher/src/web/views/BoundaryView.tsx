@@ -28,6 +28,13 @@ export interface BoundaryViewProps extends ErrorViewProps {
    * is not used. When `undefined`, the Designer footer renders as before.
    */
   footer?: ReactNode;
+  /**
+   * The `id` of the page's `<main>`, so a skip link rendered by the host (its
+   * own chrome) can target it. When set to a non-empty string, `<main>` gets
+   * that `id` and `tabIndex={-1}` so the link can move focus there. When
+   * `undefined` (or empty) the markup is unchanged: no `id`, no `tabindex`.
+   */
+  mainId?: string;
   /** The site's call to action, rendered in the banner (`SiteHeader`'s `actions`). Absent from the markup when omitted. */
   headerAction?: ReactNode;
   /** A secondary call to action, rendered in the banner just before `headerAction`. Absent from the markup when omitted. */
@@ -77,6 +84,7 @@ export function BoundaryView({
   brand,
   header,
   footer,
+  mainId,
   headerAction,
   secondaryAction,
   nav,
@@ -99,6 +107,8 @@ export function BoundaryView({
         <SiteHeader ground={ground} brand={brand} nav={nav} secondaryAction={secondaryAction} actions={headerAction} />
       )}
       <main
+        id={mainId || undefined}
+        tabIndex={mainId ? -1 : undefined}
         className="mx-auto flex w-full flex-1 flex-col gap-xl px-lg py-2xl"
         style={{ maxWidth: "var(--ui-width-form-max, none)" }}
       >

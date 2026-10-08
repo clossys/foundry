@@ -36,7 +36,7 @@ const OWN_FOOTER = (
   </footer>
 );
 
-const VIEWS: ReadonlyArray<{ name: string; render: (extra: { header?: ReactElement | null; footer?: ReactElement | null }) => ReactElement }> = [
+const VIEWS: ReadonlyArray<{ name: string; render: (extra: { header?: ReactElement | null; footer?: ReactElement | null; mainId?: string }) => ReactElement }> = [
   {
     name: "AuthView",
     render: (extra) => (
@@ -127,5 +127,48 @@ describe.each(VIEWS)("$name header and footer replacement", ({ render: view }) =
     expect(banners).toHaveLength(0);
     expect(contentinfos).toHaveLength(0);
     expect(container.querySelectorAll("main")).toHaveLength(1);
+  });
+});
+
+describe.each(VIEWS)("$name host-set main id", ({ render: view }) => {
+  it("unset: <main> carries no id and no tabindex, and the markup matches an explicit undefined", () => {
+    const { container } = render(view({}));
+    const main = container.querySelector("main") as HTMLElement;
+    expect(main.hasAttribute("id")).toBe(false);
+    expect(main.hasAttribute("tabindex")).toBe(false);
+    const withUndefined = render(view({ mainId: undefined }));
+    expect(withUndefined.container.innerHTML).toBe(container.innerHTML);
+  });
+
+  it("set: <main> gets the id and tabIndex -1 so a host skip link can target and focus it", () => {
+    const { container } = render(view({ mainId: "main-content" }));
+    const mains = container.querySelectorAll("main");
+    expect(mains).toHaveLength(1);
+    const main = mains[0] as HTMLElement;
+    expect(main).toHaveAttribute("id", "main-content");
+    expect(main).toHaveAttribute("tabindex", "-1");
+    expect(container.ownerDocument.getElementById("main-content")).toBe(main);
+  });
+
+  it("set: mainId does not leak onto the outer frame element", () => {
+    const { container } = render(view({ mainId: "main-content" }));
+    const root = container.firstElementChild as HTMLElement;
+    expect(root.hasAttribute("id")).toBe(false);
+    expect(root.hasAttribute("mainid")).toBe(false);
+    expect(root.hasAttribute("mainId")).toBe(false);
+  });
+
+  it("set with a host-owned header: the id still lands on <main>, the landmarks are unchanged", () => {
+    const { container } = render(view({ mainId: "main-content", header: OWN_HEADER, footer: OWN_FOOTER }));
+    const { root } = landmarks(container);
+    expect([...root.children].map((child) => child.tagName)).toEqual(["HEADER", "MAIN", "FOOTER"]);
+    expect(container.querySelector("main")).toHaveAttribute("id", "main-content");
+  });
+
+  it("an empty string is treated as unset, not rendered as an empty id", () => {
+    const { container } = render(view({ mainId: "" }));
+    const main = container.querySelector("main") as HTMLElement;
+    expect(main.hasAttribute("id")).toBe(false);
+    expect(main.hasAttribute("tabindex")).toBe(false);
   });
 });
