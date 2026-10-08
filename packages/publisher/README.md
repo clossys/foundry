@@ -398,12 +398,10 @@ Name a shipped template when its slots cover the page:
   header/error/footer shell. It also frames the sign-in-boundary states. It
   is not a built-in web template. See [Boundary pages](#boundary-pages).
 - **`StatusView`** — a whole-page status (not found, server error, no access,
-  expired link, unavailable) on the [card-free layout](#card-free-layout):
-  `status` as the one `<h1>`, one `subtitle`, one primary `action` and
-  optional `notes`. Chrome-free only.
-- **`ConstructionView`** — a linked page that is not built yet, on the
-  [card-free layout](#card-free-layout): `title`, optional `subtitle`,
-  optional `action` and `notes`. Chrome-free only.
+  expired link, unavailable, or a placeholder for a page that is not built
+  yet) on the [card-free layout](#card-free-layout): `status` as the one
+  `<h1>` (a code or a short title), plus optional `subtitle`, `action` and
+  `notes`. Chrome-free only.
 - **`PackReviewView`** — the dev-only review index: the pack's strategy
   brief, brand kit (through `BrandGuideView`) and voice and copy, then a
   site's pages, their forced states, its exported artifacts and a lazy
@@ -2426,30 +2424,26 @@ sibling layout without the card shares its header and spacing.
 
 ### Card-free layout
 
-`ConstructionView` and `StatusView` share the second standard layout: the
-same header as the page layout above (the title as the one `<h1>`, then the
-subtitle), followed by one primary call to action on the page background with
-no card around it, and an optional notes line for quiet secondary links. The
-action and notes elements are absent from the markup when their slot is empty.
-The column uses the `--ui-width-form-max` measure and centres its content in
-the frame's `<main>`.
+`StatusView` renders the second standard layout: the same header as the page
+layout above (the title as the one `<h1>`, then the subtitle), followed by a
+primary call to action on the page background with no card around it, and an
+optional notes line for quiet secondary links. The action and notes elements
+are absent from the markup when their slot is empty. The column uses the
+`--ui-width-form-max` measure and centres its content in the frame's `<main>`.
 
-| Slot | `ConstructionView` | `StatusView` |
-| --- | --- | --- |
-| Header title | `title` | `status` |
-| Header subtitle | `subtitle` (optional) | `subtitle` |
-| Action | `action` (optional) | `action` |
-| Notes | `notes` (optional) | `notes` (optional) |
+| Slot | `StatusView` prop |
+| --- | --- |
+| Header title | `status` (required): a code such as `404`, or a short title |
+| Header subtitle | `subtitle` (optional) |
+| Action | `action` (optional) |
+| Notes | `notes` (optional) |
+
+For an error or not-found page, the intended shape is a code, one subtitle and
+one primary action. The props are optional so the same view also serves a page
+with no recovery control (a 403) and a placeholder for a route that is linked
+but not built yet.
 
 ```tsx
-<SiteFrame shell={shell} resolveCopy={resolveCopy} resolveAsset={resolveAsset}>
-  <ConstructionView
-    title="Careers"
-    subtitle="This page is on its way."
-    action={<a href="/">Back to home</a>}
-  />
-</SiteFrame>
-
 <SiteFrame shell={shell} resolveCopy={resolveCopy} resolveAsset={resolveAsset}>
   <StatusView
     status={404}
@@ -2457,14 +2451,23 @@ the frame's `<main>`.
     action={<a href="/">Back to home</a>}
   />
 </SiteFrame>
+
+<SiteFrame shell={shell} resolveCopy={resolveCopy} resolveAsset={resolveAsset}>
+  <StatusView
+    status="Careers"
+    subtitle="This page is on its way."
+    action={<a href="/">Back to home</a>}
+  />
+</SiteFrame>
 ```
 
-Both views are chrome-free only: they take no header, footer or `mainId`
-prop and render no landmark, and every string is a prop. Give a construction
-route the `construction` page kind of `buildSiteMetadata`, which marks it
-`noindex, nofollow`, and answer a status page with the matching HTTP status
-from the host's own route. `ErrorView` and `BoundaryView` keep their earlier
-markup.
+The view is chrome-free only: it takes no header, footer or `mainId` prop and
+renders no landmark, and every string is a prop. Answer a status page with the
+matching HTTP status from the host's own route. Give a placeholder route the
+`construction` page kind of `buildSiteMetadata`, which marks it
+`noindex, nofollow`; that page kind is metadata only and does not depend on
+which view the route renders. `ErrorView` and `BoundaryView` keep their
+earlier markup.
 
 ### Global error document — `GlobalErrorDocument`
 

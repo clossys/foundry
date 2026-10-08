@@ -14,7 +14,6 @@ import { BoundaryView } from "../views/BoundaryView.js";
 import { CaptureView } from "../views/CaptureView.js";
 import { DocumentView } from "../views/DocumentView.js";
 import { ErrorView } from "../views/ErrorView.js";
-import { ConstructionView } from "../views/ConstructionView.js";
 import { StatusView } from "../views/StatusView.js";
 import { SITE_MAIN_ID, SITE_SURFACE_KINDS, SiteFrame, siteShellFor } from "./index.js";
 import type { SiteFrameConfig, SiteShellInput } from "./index.js";
@@ -139,7 +138,7 @@ const CHROME_FREE_VIEWS: ReadonlyArray<{ name: string; element: ReactElement; h1
   { name: "DocumentView", element: <DocumentView document={DOCUMENT} resolveCopyId={resolveCopy} action={<a href="/terms">Terms</a>} />, h1: "Privacy notice" },
   { name: "BoundaryView", element: <BoundaryView status={404} title="Not found" action={<a href="/">Home</a>} />, h1: "404" },
   { name: "ErrorView", element: <ErrorView status={500} title="Something went wrong" />, h1: "500" },
-  { name: "ConstructionView", element: <ConstructionView title="Careers" subtitle="On its way." action={<a href="/">Home</a>} />, h1: "Careers" },
+  { name: "StatusView", element: <StatusView status="Coming soon" />, h1: "Coming soon" },
   { name: "StatusView", element: <StatusView status={404} subtitle="This page does not exist." action={<a href="/">Home</a>} />, h1: "404" },
 ];
 

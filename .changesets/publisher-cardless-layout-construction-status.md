@@ -2,4 +2,4 @@
 publisher: minor
 ---
 
-`@clossys/publisher/web` exports `ConstructionView`, for a linked page that is not built yet, and `StatusView`, for a whole-page status such as not found or a server error; both render the card-free page layout (the shared title and subtitle header, then one call to action and optional notes with no card) without a header, footer or `<main>` of their own, and `buildSiteMetadata` accepts a `construction` page kind whose robots value is `noindex, nofollow`.
+`@clossys/publisher/web` exports `StatusView`, a whole-page status on a new card-free page layout (the shared title and subtitle header, then an optional call to action and optional notes with no card, and no header, footer or `<main>` of its own), where `status` is the page's one `<h1>` and `subtitle`, `action` and `notes` are optional, so one view serves error, not-found, boundary and placeholder pages; `buildSiteMetadata` accepts a `construction` page kind whose robots value is `noindex, nofollow`.

@@ -10,7 +10,6 @@ import type { CopyRef, CopyResolution, CopyResolver } from "@clossys/writer";
 import { SITE_MAIN_ID, SiteFrame, siteShellFor } from "../frame/index.js";
 import type { SiteFrameConfig } from "../frame/index.js";
 import { CaptureView } from "../views/CaptureView.js";
-import { ConstructionView } from "../views/ConstructionView.js";
 import { StatusView } from "../views/StatusView.js";
 import * as webIndex from "../index.js";
 import * as webServer from "../server.js";
@@ -32,12 +31,6 @@ interface Fixture {
 }
 
 const FIXTURES: readonly Fixture[] = [
-  {
-    name: "ConstructionView",
-    build: ({ action = ACTION, notes, subtitle = "Page subtitle." } = {}) => (
-      <ConstructionView title="Page title" subtitle={subtitle} action={action} notes={notes} />
-    ),
-  },
   {
     name: "StatusView",
     build: ({ action = ACTION, notes, subtitle = "Page subtitle." } = {}) => (
@@ -183,31 +176,31 @@ describe("card-free layout: header, action and notes", () => {
     }
   });
 
-  it("renders a title-only construction page as the header alone", () => {
-    const { container } = render(<ConstructionView title="Only a title" />);
+  it("renders a status-only placeholder page as the header alone", () => {
+    const { container } = render(<StatusView status="Only a title" />);
     const { root } = slots(container);
     expect(root.children).toHaveLength(1);
     expect(root.querySelector("p")).toBeNull();
   });
 
   it("ships no copy of its own: the only words are the props", () => {
-    expect(render(<ConstructionView title="T" subtitle="S" action={<a href="/">A</a>} notes={<p>N</p>} />).container.textContent).toBe("TSAN");
+    expect(render(<StatusView status="T" subtitle="S" action={<a href="/">A</a>} notes={<p>N</p>} />).container.textContent).toBe("TSAN");
     cleanup();
     expect(render(<StatusView status={404} subtitle="S" action={<a href="/">A</a>} notes={<p>N</p>} />).container.textContent).toBe("404SAN");
   });
 
   it("is exported from the web entry, its server entry and, for StatusView, the browser client entry", () => {
-    expect(webIndex.ConstructionView).toBe(ConstructionView);
     expect(webIndex.StatusView).toBe(StatusView);
     // The server entry reaches the views through the package's own import map, a separate module instance.
-    expect(webServer.ConstructionView.name).toBe("ConstructionView");
+    expect("ConstructionView" in webIndex).toBe(false);
+    expect("ConstructionView" in webServer).toBe(false);
     expect(webServer.StatusView.name).toBe("StatusView");
     expect(webClient.StatusView).toBe(StatusView);
   });
 });
 
 describe("the README", () => {
-  it("shows ConstructionView and StatusView in the card-free layout section and marks construction pages noindex", () => {
+  it("shows StatusView in the card-free layout section and marks construction pages noindex", () => {
     const readme = readFileSync(join(import.meta.dirname, "..", "..", "..", "README.md"), "utf8");
     const start = readme.indexOf("\n### Card-free layout");
     expect(start).toBeGreaterThan(-1);
@@ -215,7 +208,8 @@ describe("the README", () => {
     const end = rest.search(/\n##+ /);
     const section = end === -1 ? rest : rest.slice(0, end);
     const fences = [...section.matchAll(/```tsx\n([\s\S]*?)```/g)].map((match) => match[1]!);
-    expect(fences.find((fence) => ["ConstructionView", "StatusView"].every((view) => fence.includes(`<${view}`)))).toBeDefined();
+    expect(fences.find((fence) => fence.includes("<StatusView"))).toBeDefined();
+    expect(readme).not.toContain("ConstructionView");
     expect(section).toContain("`construction` page kind");
   });
 });

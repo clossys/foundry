@@ -98,7 +98,7 @@ export interface CardlessPageLayoutProps extends PageLayoutHeaderProps {
 }
 
 /**
- * The card-free layout shared by `ConstructionView` and `StatusView`: the same
+ * The card-free layout used by `StatusView`: the same
  * header as `PageLayout` (title and subtitle), then one primary action and the
  * optional notes, centered, with no card. It returns the slots only, for the
  * view to place in its own column, and renders no header, footer or `<main>`
