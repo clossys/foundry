@@ -70,6 +70,41 @@ const SPAN_CLASSES: Record<CardGridSpan, string> = {
 };
 
 /**
+ * A third that would sit alone in its `tablet` row (thirds take half a row
+ * there, so three thirds or a third beside a two-thirds card leave one
+ * stranded) takes the full `tablet` row instead, back to its third from
+ * `tablet-lg`.
+ */
+const LONE_THIRD_CLASSES = "tablet:col-span-12 tablet-lg:col-span-4";
+
+/** Units of a 12-unit row each span takes at `tablet`. */
+const TABLET_UNITS: Readonly<Record<CardGridSpan, number>> = { third: 6, half: 6, [TWO_THIRDS]: 12, full: 12 };
+
+/** For each card, whether it is a third left alone in its `tablet` row. */
+function loneTabletThirds(spans: readonly CardGridSpan[]): boolean[] {
+  const lone = spans.map(() => false);
+  let index = 0;
+  while (index < spans.length) {
+    const span = spans[index] as CardGridSpan;
+    const next = spans[index + 1];
+    if (TABLET_UNITS[span] === 6 && (next === undefined || TABLET_UNITS[next] === 12)) {
+      lone[index] = span === "third";
+      index += 1;
+    } else {
+      index += TABLET_UNITS[span] === 6 ? 2 : 1;
+    }
+  }
+  return lone;
+}
+
+/** Card icons carry the brand accent (`accent-on-inverse` on an inverse band): the icon marks the card, the words carry it. */
+const ICON_ACCENT_CLASSES: Record<SectionGround, string> = {
+  base: "text-accent",
+  sunken: "text-accent",
+  inverse: "text-accent-on-inverse",
+};
+
+/**
  * Throws unless the cards fill whole 12-unit rows in order: two-thirds and a
  * third (either order), three thirds, two halves, or one full card per row,
  * 2 to 6 cards in all.
@@ -107,8 +142,12 @@ export function assertCardGridSpans(spans: readonly CardGridSpan[]): void {
  * Spans are a closed set and must fill whole 12-unit rows (validated: an
  * invalid sequence throws a `RangeError`, a data error rather than a layout
  * to draw). The grid is one column below `tablet`; at `tablet` a two-thirds
- * card takes the full row and thirds take halves; the 12-unit spans apply
- * from `tablet-lg`, with `gap-lg` between cards.
+ * card takes the full row and thirds take halves, except a third that would
+ * be left alone in its row, which takes the full row; the 12-unit spans
+ * apply from `tablet-lg`, with `gap-lg` between cards.
+ *
+ * Card copy is set for reading: a `text-body` description, a `text-body-s`
+ * medium eyebrow, and an icon in the brand accent.
  *
  * A card's text sits at the top and its `visual` is pinned to the bottom
  * (`mt-auto`), so headings line up across a row whatever the visuals hold.
@@ -118,6 +157,7 @@ export function CardGrid({ items, headingLevel = 3, ground = "base", className, 
   assertCardGridSpans(items.map((item) => item.span));
   const HeadingTag = HEADING_TAGS[headingLevel];
   const colors = SECTION_GROUND_CLASSES[ground];
+  const lone = loneTabletThirds(items.map((item) => item.span));
 
   return (
     <div
@@ -126,28 +166,33 @@ export function CardGrid({ items, headingLevel = 3, ground = "base", className, 
       className={cx("grid grid-cols-1 gap-lg tablet:grid-cols-12", className)}
       style={style}
     >
-      {items.map((item) => (
-        <article key={item.id} data-card-grid-item="" data-span={item.span} className={cx("flex min-w-0", SPAN_CLASSES[item.span])}>
+      {items.map((item, index) => (
+        <article
+          key={item.id}
+          data-card-grid-item=""
+          data-span={item.span}
+          className={cx("flex min-w-0", lone[index] ? LONE_THIRD_CLASSES : SPAN_CLASSES[item.span])}
+        >
           <Card
             variant="plate"
             ground={ground}
             className="flex w-full flex-col gap-md tablet:p-xl desktop:p-2xl"
           >
             {item.icon ? (
-              <span aria-hidden="true" className={cx("inline-flex", colors.muted)}>
+              <span aria-hidden="true" className={cx("inline-flex", ICON_ACCENT_CLASSES[ground])}>
                 {item.icon}
               </span>
             ) : null}
             <div className="flex flex-col gap-xs">
               {item.eyebrow ? (
                 // Secondary, not muted: the plate is a raised or sunken fill, where muted ink is only AA-large.
-                <p className={cx("text-caption uppercase tracking-label", colors.secondary)}>{item.eyebrow}</p>
+                <p className={cx("text-body-s font-medium uppercase tracking-label", colors.secondary)}>{item.eyebrow}</p>
               ) : null}
               <HeadingTag className={cx("text-h2 font-display leading-heading text-balance", colors.primary)}>
                 {item.heading}
               </HeadingTag>
               {item.description ? (
-                <p className={cx("text-body-s text-pretty", colors.secondary)}>{item.description}</p>
+                <p className={cx("text-body text-pretty", colors.secondary)}>{item.description}</p>
               ) : null}
             </div>
             {item.visual ? (

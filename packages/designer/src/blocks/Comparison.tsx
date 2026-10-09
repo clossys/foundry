@@ -72,7 +72,7 @@ function SideBody({ side, tone, headingLevel, ground }: SideBodyProps) {
     <>
       <div className="flex flex-col gap-xs">
         {/* Secondary on both sides: muted ink is only AA-large on a sunken ground or a plate. */}
-        <HeadingTag className={cx("text-caption uppercase tracking-label", colors.secondary)}>
+        <HeadingTag className={cx("text-body-s font-medium uppercase tracking-label", colors.secondary)}>
           {side.label}
         </HeadingTag>
         {hasNode(side.heading) ? (

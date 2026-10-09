@@ -11,7 +11,7 @@ export interface TopicListItem {
   id: string;
   /** Optional icon before the text, where it tells items apart. Decorative (`aria-hidden`). */
   icon?: ReactNode;
-  /** The topic, at body scale. */
+  /** The topic, at item-heading scale (`body-l`). */
   heading: ReactNode;
   /** One short line under the heading. */
   description?: ReactNode;
@@ -32,8 +32,9 @@ export interface TopicListProps extends Omit<HTMLAttributes<HTMLUListElement>, "
  * Many short, scannable topics where cards would be heavy: what a review
  * covers, which records are kept, who a team serves. A real `<ul>`; each
  * row is topped by a hairline rule (`--ui-border-hairline`, `line-base`),
- * with the heading at body scale in `font-medium` and an optional
- * description in `body-s` secondary ink under it.
+ * with the heading at `body-l` in `font-medium` (an item heading, like a
+ * `FeatureGrid` or step heading) and an optional description in `body`
+ * secondary ink under it.
  *
  * Two columns from `tablet` (`gap-x-3xl`), one below. Rows carry `py-lg`.
  * No check marks or other completion marks: a topic list states coverage,
@@ -63,9 +64,9 @@ export function TopicList({ items, columns = 2, ground = "base", className, styl
             </span>
           ) : null}
           <div className="flex min-w-0 flex-col gap-xs">
-            <p className={cx("text-body font-body font-medium", colors.primary)}>{item.heading}</p>
+            <p className={cx("text-body-l font-body font-medium", colors.primary)}>{item.heading}</p>
             {item.description ? (
-              <p className={cx("text-body-s text-pretty", colors.secondary)}>{item.description}</p>
+              <p className={cx("text-body text-pretty", colors.secondary)}>{item.description}</p>
             ) : null}
           </div>
         </li>

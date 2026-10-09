@@ -145,7 +145,7 @@ describe("Specimen", () => {
 
   it("stacks panels down one column", () => {
     const { container } = renderSpecimen({ arrangement: "stack", panels: [PANEL, PANEL_B] });
-    expect(container.querySelector("figure > div")).toHaveClass("flex", "flex-col", "gap-md");
+    expect(container.querySelector("figure > div")).toHaveClass("flex", "flex-col", "gap-lg");
   });
 
   it("joins flow panels with a hairline connector and shows the caption once", () => {
@@ -206,32 +206,34 @@ describe("Specimen", () => {
 });
 
 describe("SpecimenPanel", () => {
-  it("is an outline card: raised fill, one hairline, rounded-surface, p-lg then p-xl", () => {
+  it("is a lifted outline card: raised fill, one hairline, rounded-surface, the floating elevation, padding by its own width", () => {
     const { container } = render(<SpecimenPanel parts={[FIELDS]} title="Order" />);
-    const panel = container.querySelector("[data-specimen-panel]");
+    const panel = container.querySelector<HTMLElement>("[data-specimen-panel]");
     expect(panel).toHaveAttribute("data-variant", "outline");
-    expect(panel).toHaveClass("bg-surface-raised", "border-line-base", "rounded-surface", "p-lg", "desktop:p-xl");
-    expect(panel?.className).not.toMatch(/shadow/);
+    expect(panel).toHaveClass("bg-surface-raised", "border-line-base", "rounded-surface", "@container", "p-0");
+    expect(panel?.style.boxShadow).toBe("var(--ui-elevation-floating, 0 8px 24px rgba(0, 0, 0, 0.10))");
+    const body = panel?.querySelector(":scope > [data-specimen-panel-body]");
+    expect(body).toHaveClass("flex", "flex-col", "gap-lg", "p-lg", "@md:p-xl");
   });
 
   it("shows title, meta and state as text, with no heading element", () => {
     render(<SpecimenPanel {...PANEL} />);
-    expect(screen.getByText("Order 1042")).toHaveClass("text-body", "font-medium");
-    expect(screen.getByText("Placed 1 Mar")).toHaveClass("text-caption", "text-ink-secondary");
+    expect(screen.getByText("Order 1042")).toHaveClass("text-body-l", "font-medium");
+    expect(screen.getByText("Placed 1 Mar")).toHaveClass("text-body-s", "text-ink-secondary");
     expect(screen.getByText("Open").closest("[data-tone]")).toHaveAttribute("data-tone", "info");
     expect(screen.queryByRole("heading")).toBeNull();
   });
 
   it("separates header, parts and footer with hairlines", () => {
     const { container } = render(<SpecimenPanel {...PANEL} />);
-    const divided = container.querySelectorAll<HTMLElement>("[data-specimen-panel] > .border-t");
+    const divided = container.querySelectorAll<HTMLElement>("[data-specimen-panel-body] > .border-t");
     expect(divided).toHaveLength(4); // three parts and the footer
     for (const el of divided) expect(el.style.borderBlockStartWidth).toBe("var(--ui-border-hairline, 1px)");
   });
 
   it("omits the first divider when there is no header", () => {
     const { container } = render(<SpecimenPanel parts={[FIELDS, FILES]} />);
-    expect(container.querySelectorAll("[data-specimen-panel] > .border-t")).toHaveLength(1);
+    expect(container.querySelectorAll("[data-specimen-panel-body] > .border-t")).toHaveLength(1);
   });
 
   it("shows the assignee's name as text and hides the initials disc", () => {
@@ -239,7 +241,7 @@ describe("SpecimenPanel", () => {
     expect(screen.getByText("Alex Lane")).toHaveClass("text-ink-primary");
     const disc = screen.getByText("AL");
     expect(disc).toHaveAttribute("aria-hidden", "true");
-    expect(disc).toHaveClass("size-xl", "rounded-pill");
+    expect(disc).toHaveClass("size-2xl", "rounded-pill", "bg-accent-tint", "text-accent-text");
     expect(screen.getByText("Nothing is sent until someone reviews it.")).toHaveClass("text-ink-secondary");
   });
 
@@ -250,13 +252,15 @@ describe("SpecimenPanel", () => {
 });
 
 describe("Specimen parts", () => {
-  it("renders fields as a description list, at most two columns at 390px", () => {
+  it("renders fields as a description list, two columns until the panel itself is wide", () => {
     const { container } = render(<SpecimenPanel parts={[FIELDS]} />);
     const list = container.querySelector("dl");
-    expect(list).toHaveClass("grid-cols-2", "tablet-lg:grid-cols-4");
+    expect(list).toHaveClass("grid-cols-2", "@lg:grid-cols-4");
+    expect(list?.className).not.toMatch(/tablet/);
     expect(within(list as HTMLElement).getByText("ORD-1042")).toHaveClass("tabular-nums");
     expect(container.querySelectorAll("dt")).toHaveLength(4);
-    expect(screen.getByText("Order")).toHaveClass("text-caption", "uppercase", "tracking-label", "text-ink-secondary");
+    expect(screen.getByText("Order")).toHaveClass("text-body-s", "text-ink-secondary");
+    expect(screen.getByText("Order").className).not.toMatch(/uppercase|text-caption/);
   });
 
   it("defaults fields to two columns and allows one", () => {
@@ -272,7 +276,7 @@ describe("Specimen parts", () => {
     render(<SpecimenPanel parts={[STATUS_ROWS]} />);
     const items = within(screen.getByRole("list")).getAllByRole("listitem");
     expect(items).toHaveLength(2);
-    expect(items[1]).toHaveClass("border-t", "pt-sm");
+    expect(items[1]).toHaveClass("border-t", "pt-md");
     expect(screen.getByText("In progress")).toBeInTheDocument();
     expect(screen.getByText("2 of 3 aisles")).toHaveClass("tabular-nums");
   });
@@ -282,7 +286,9 @@ describe("Specimen parts", () => {
     expect(screen.getByText("38 units")).toBeInTheDocument();
     expect(screen.getByText("floor 25")).toBeInTheDocument();
     expect(screen.getByText("Above floor")).toBeInTheDocument();
-    expect(screen.getByText("13 units of headroom")).toHaveClass("text-caption");
+    expect(screen.getByText("13 units of headroom")).toHaveClass("text-body-s");
+    expect(container.querySelector("[data-emphasis]")).toHaveAttribute("data-emphasis", "figure");
+    expect(screen.getByText("38 units")).toHaveClass("text-h1", "@md:text-h0", "tabular-nums");
     expect(container.querySelector('[data-direction="min"]')).not.toBeNull();
   });
 
@@ -295,16 +301,17 @@ describe("Specimen parts", () => {
     expect(within(table).getAllByRole("cell")).toHaveLength(4);
   });
 
-  it("reflows the table into stacked records below tablet", () => {
+  it("reflows the table into stacked records until the panel itself is wide (@md), whatever the viewport", () => {
     const { container } = render(<SpecimenPanel parts={[TABLE]} />);
-    expect(container.querySelector("table")).toHaveClass("grid", "grid-cols-1", "tablet:table");
-    expect(container.querySelector("thead")).toHaveClass("sr-only", "tablet:not-sr-only", "tablet:table-header-group");
-    expect(container.querySelector("tbody tr")).toHaveClass("flex", "flex-col", "tablet:table-row");
+    expect(container.querySelector("table")).toHaveClass("grid", "grid-cols-1", "@md:table");
+    expect(container.querySelector("thead")).toHaveClass("sr-only", "@md:not-sr-only", "@md:table-header-group");
+    expect(container.querySelector("tbody tr")).toHaveClass("flex", "flex-col", "@md:table-row");
     const cell = container.querySelector("td") as HTMLElement;
-    expect(cell).toHaveClass("flex", "justify-between", "tablet:table-cell");
+    expect(cell).toHaveClass("flex", "justify-between", "@md:table-cell");
     const label = cell.querySelector("span");
     expect(label).toHaveAttribute("aria-hidden", "true");
-    expect(label).toHaveClass("tablet:hidden");
+    expect(label).toHaveClass("@md:hidden");
+    expect(container.querySelector("table")?.closest("[data-specimen-panel]")).toHaveClass("@container");
     expect(label).toHaveTextContent("Jan");
   });
 
@@ -342,8 +349,8 @@ describe("Specimen parts", () => {
 
   it("renders files with a mono format tag, name and source", () => {
     render(<SpecimenPanel parts={[FILES]} />);
-    expect(screen.getByText("PDF")).toHaveClass("font-mono", "text-caption", "uppercase", "border");
-    expect(screen.getByText("Delivery note")).toHaveClass("text-body-s");
+    expect(screen.getByText("PDF")).toHaveClass("font-mono", "text-body-s", "uppercase", "border");
+    expect(screen.getByText("Delivery note")).toHaveClass("text-body");
     expect(screen.getByText("Shared drive")).toHaveClass("text-ink-secondary");
   });
 

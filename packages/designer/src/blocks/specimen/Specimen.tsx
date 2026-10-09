@@ -12,16 +12,20 @@ export type SpecimenArrangement = "single" | "row" | "stack" | "flow";
  * `tablet` (the third takes the full row) and three across from `desktop`.
  */
 const ROW_CLASSES: Record<2 | 3, string> = {
-  2: "grid grid-cols-1 gap-lg tablet:grid-cols-2",
-  3: "grid grid-cols-1 gap-lg tablet:grid-cols-2 desktop:grid-cols-3",
+  2: "grid grid-cols-1 gap-xl tablet:grid-cols-2",
+  3: "grid grid-cols-1 gap-xl tablet:grid-cols-2 desktop:grid-cols-3",
 };
 const ROW_THIRD_PANEL = "tablet:col-span-2 desktop:col-span-1";
-const STACK_CLASSES = "flex flex-col gap-md";
+const STACK_CLASSES = "flex flex-col gap-lg";
 const FLOW_CLASSES = "flex flex-col";
-/** The connector's inset follows the panel padding, so its rule lines up with the panel text. */
-const CONNECTOR_CLASSES = "flex items-center gap-sm py-sm ps-lg desktop:ps-xl";
+/**
+ * The connector's inset follows the panel padding, so its rule lines up with
+ * the panel text: both read the same width (the figure is a size container
+ * and a flow's panels are as wide as the figure).
+ */
+const CONNECTOR_CLASSES = "flex items-center gap-sm py-sm ps-lg @md:ps-xl";
 const CONNECTOR_RULE_CLASSES = "block h-xl shrink-0 border-s border-line-strong";
-const CONNECTOR_TEXT_CLASSES = "m-0 text-caption text-ink-secondary";
+const CONNECTOR_TEXT_CLASSES = "m-0 text-body-s text-ink-secondary";
 
 const HAIRLINE_INLINE_START: CSSProperties = { borderInlineStartWidth: UI_BORDER_HAIRLINE };
 
@@ -129,7 +133,7 @@ export function Specimen({ label, arrangement = "single", connector, panels, cla
       aria-label={label}
       data-specimen=""
       data-arrangement={arrangement}
-      className={cx("m-0 w-full min-w-0", className)}
+      className={cx("@container m-0 w-full min-w-0", className)}
       style={style}
     >
       {body}

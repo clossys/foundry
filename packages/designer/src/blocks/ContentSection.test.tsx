@@ -15,6 +15,14 @@ describe("ContentSection", () => {
     expect(screen.getByText("Description")).toHaveClass("text-body-l", "text-pretty");
   });
 
+  it("sets a statement band at the display emphasis, keeping the semantic level", () => {
+    render(<ContentSection heading="Statement" emphasis="display" />);
+    const heading = screen.getByRole("heading", { name: "Statement" });
+    expect(heading.tagName).toBe("H2");
+    expect(heading).toHaveClass("text-display-m", "tablet:text-display-l", "leading-display");
+    expect(heading.closest("[data-section-intro]")).toHaveAttribute("data-section-intro", "display");
+  });
+
   it("holds the header group to the prose measure and sets one step between it and every module", () => {
     const { container } = render(
       <ContentSection heading="Heading">

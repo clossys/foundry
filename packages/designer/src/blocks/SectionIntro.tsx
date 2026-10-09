@@ -53,6 +53,18 @@ const HEADING_CLASSES: Record<SectionIntroEmphasis, string> = {
 };
 
 /**
+ * The eyebrow per ground: `text-body-s` medium, tracked uppercase, in the
+ * brand's accent text ink (`accent-on-inverse` on an inverse band). The
+ * eyebrow is where a page states its sections' topics, so it carries the
+ * accent instead of a 12px muted caption that reads as chrome.
+ */
+const EYEBROW_CLASSES: Record<SectionGround, string> = {
+  base: "text-body-s font-medium uppercase tracking-label text-accent-text",
+  sunken: "text-body-s font-medium uppercase tracking-label text-accent-text",
+  inverse: "text-body-s font-medium uppercase tracking-label text-accent-on-inverse",
+};
+
+/**
  * The vertical rhythm per emphasis: eyebrow to heading is the smallest step;
  * heading to description is clearly wider than the gap between the
  * heading's own wrapped lines (at least half the heading's size), so the
@@ -108,7 +120,7 @@ export function SectionIntro({
       className={cx("flex w-full flex-col", centred ? "mx-auto items-center text-center" : "items-start", className)}
       style={{ maxWidth: SECTION_MEASURE_MAX.prose, ...style }}
     >
-      {hasEyebrow ? <p className={cx("text-caption uppercase tracking-label", colors.muted)}>{eyebrow}</p> : null}
+      {hasEyebrow ? <p className={EYEBROW_CLASSES[ground]}>{eyebrow}</p> : null}
       {hasHeading ? (
         <HeadingTag className={cx(HEADING_CLASSES[emphasis], colors.primary, hasEyebrow ? rhythm.heading : undefined)}>
           {heading}
@@ -122,7 +134,7 @@ export function SectionIntro({
       {actions ? (
         <div
           className={cx(
-            "flex flex-wrap items-center gap-sm",
+            "flex flex-wrap items-center gap-x-lg gap-y-sm",
             centred ? "justify-center" : undefined,
             hasEyebrow || hasHeading || hasDescription ? rhythm.actions : undefined,
           )}

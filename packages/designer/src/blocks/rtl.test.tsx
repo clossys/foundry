@@ -139,7 +139,7 @@ describe("blocks and atoms RTL logical-direction utilities (#951)", () => {
     );
     expect(container.querySelector("ol")).toHaveClass("border-s", "ps-lg");
     expect(container.querySelector("[data-specimen-connector] span")).toHaveClass("border-s");
-    expect(container.querySelector("td span:last-child")).toHaveClass("text-end", "tablet:text-start");
+    expect(container.querySelector("td span:last-child")).toHaveClass("text-end", "@md:text-start");
     for (const el of container.querySelectorAll<HTMLElement>("[class]")) expect(el.className).not.toMatch(PHYSICAL);
   });
 });

@@ -42,14 +42,18 @@ export interface OrderedStepSequenceProps extends Omit<HTMLAttributes<HTMLElemen
 }
 
 /**
- * The connector and ordinal ring per ground: `line-strong` on the light
- * grounds (a hairline that stays visible in light and dark schemes without
- * competing with the copy), the inverse line on an inverse band.
+ * The connector and ordinal disc per ground. The connector is `line-strong`
+ * on the light grounds (a hairline that stays visible in light and dark
+ * schemes without competing with the copy), the inverse line on an inverse
+ * band. The ordinal is a 32px disc: the brand's accent tint with an
+ * accent-text numeral on the light grounds (the sequence is where the page
+ * marks progress, so it carries the accent), an inverse-line ring with
+ * on-inverse ink on an inverse band.
  */
-const STEP_LINE_CLASSES: Record<SectionGround, { line: string; ring: string }> = {
-  base: { line: "bg-line-strong", ring: "border-line-strong" },
-  sunken: { line: "bg-line-strong", ring: "border-line-strong" },
-  inverse: { line: "bg-line-on-inverse", ring: "border-line-on-inverse" },
+const STEP_LINE_CLASSES: Record<SectionGround, { line: string; ordinal: string }> = {
+  base: { line: "bg-line-strong", ordinal: "bg-accent-tint text-accent-text" },
+  sunken: { line: "bg-line-strong", ordinal: "bg-accent-tint text-accent-text" },
+  inverse: { line: "bg-line-on-inverse", ordinal: "border border-line-on-inverse text-ink-on-inverse" },
 };
 
 /**
@@ -64,7 +68,7 @@ const LAYOUT_CLASSES = {
     item: "flex min-w-0 flex-1 flex-row gap-md tablet:flex-col tablet:gap-lg",
     marker: "flex shrink-0 flex-col items-center tablet:flex-row",
     connector: "my-sm w-px flex-1 tablet:my-0 tablet:ms-md tablet:-me-md tablet:h-px tablet:w-auto",
-    gap: "pb-xl tablet:pb-0",
+    gap: "pb-2xl tablet:pb-0",
   },
   visual: {
     list: "flex flex-col tablet-lg:grid tablet-lg:grid-flow-col tablet-lg:auto-cols-fr tablet-lg:gap-x-xl",
@@ -83,10 +87,11 @@ const LAYOUT_CLASSES = {
  * generated counter so it is available to assistive technology too.
  *
  * Type follows the content-block hierarchy: a step heading is an item
- * heading, set like a `FeatureGrid` or `TopicList` item heading (`text-body`,
- * body font, medium weight), with its actor `label` as a caption above it
- * and its description at `text-body-s`. Plate headings (`CardGrid`,
- * `Comparison`) sit one step up at `text-h2` in the display font.
+ * heading, set like a `FeatureGrid` or `TopicList` item heading
+ * (`text-body-l`, body font, medium weight), with its actor `label` as a
+ * small tracked label above it and its description at `text-body`. Plate
+ * headings (`CardGrid`, `Comparison`) sit one step up at `text-h2` in the
+ * display font.
  *
  * The connector is decorative (`aria-hidden`) because the list semantics and
  * ordinal already communicate sequence. It is emitted only between adjacent
@@ -135,10 +140,10 @@ export function OrderedStepSequence({
         {items.map((item, index) => {
           const last = index === items.length - 1;
           const text = (
-            <div data-step-text="" className={cx("flex min-w-0 flex-col gap-xs", withVisuals || last ? undefined : LAYOUT_CLASSES.plain.gap)}>
-              {item.label ? <p className={cx("text-caption uppercase tracking-label", colors.secondary)}>{item.label}</p> : null}
-              <ItemHeadingTag className={cx("text-body font-body font-medium", colors.primary)}>{item.heading}</ItemHeadingTag>
-              {item.description ? <p className={cx("text-body-s text-pretty", colors.secondary)}>{item.description}</p> : null}
+            <div data-step-text="" className={cx("flex min-w-0 flex-col gap-sm", withVisuals || last ? undefined : LAYOUT_CLASSES.plain.gap)}>
+              {item.label ? <p className={cx("text-body-s font-medium uppercase tracking-label", colors.secondary)}>{item.label}</p> : null}
+              <ItemHeadingTag className={cx("text-body-l font-body font-medium", colors.primary)}>{item.heading}</ItemHeadingTag>
+              {item.description ? <p className={cx("text-body text-pretty", colors.secondary)}>{item.description}</p> : null}
             </div>
           );
           return (
@@ -146,9 +151,8 @@ export function OrderedStepSequence({
               <div className={layout.marker}>
                 <span
                   className={cx(
-                    "flex size-xl shrink-0 items-center justify-center rounded-pill border text-body-s font-body font-medium tabular-nums",
-                    lines.ring,
-                    colors.primary,
+                    "flex size-2xl shrink-0 items-center justify-center rounded-pill text-body font-body font-medium tabular-nums",
+                    lines.ordinal,
                   )}
                 >
                   {item.ordinal}

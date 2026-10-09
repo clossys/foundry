@@ -2,19 +2,27 @@ import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
 import { Card } from "../../atoms/Card.js";
 import { StatusMark } from "../../atoms/StatusMark.js";
 import { cx } from "../../atoms/internal/cx.js";
-import { UI_BORDER_HAIRLINE } from "../../atoms/internal/ui-vars.js";
+import { UI_BORDER_HAIRLINE, UI_ELEVATION_FLOATING } from "../../atoms/internal/ui-vars.js";
 import { SpecimenPartView, type SpecimenPart, type SpecimenStatus } from "./parts.js";
 
-const PANEL_CLASSES = "flex h-full min-w-0 flex-col gap-md font-body desktop:p-xl";
+/**
+ * The panel is a size container (`@container`): its padding, table and
+ * field columns follow the panel's own width, so the same panel reads at a
+ * third of a row, half a row, or the full width of a phone.
+ */
+const PANEL_CLASSES = "@container h-full min-w-0 p-0";
+const PANEL_BODY_CLASSES = "flex h-full min-w-0 flex-col gap-lg p-lg font-body @md:p-xl";
 const SECTION_DIVIDER = "border-t border-line-base pt-md";
 const HEADER_CLASSES = "flex flex-wrap items-start justify-between gap-x-md gap-y-xs";
-const TITLE_CLASSES = "m-0 text-body font-medium text-ink-primary text-balance";
-const META_CLASSES = "m-0 text-caption text-ink-secondary tabular-nums";
+const TITLE_CLASSES = "m-0 text-body-l font-medium text-ink-primary text-balance";
+const META_CLASSES = "m-0 text-body-s text-ink-secondary tabular-nums";
 /** The assignee's initials: a decorative disc (`aria-hidden`); the name beside it is the text. */
 const INITIALS_CLASSES =
-  "inline-flex size-xl shrink-0 items-center justify-center rounded-pill bg-surface-sunken text-caption text-ink-secondary";
+  "inline-flex size-2xl shrink-0 items-center justify-center rounded-pill bg-accent-tint text-body-s font-medium text-accent-text";
 
 const HAIRLINE_BLOCK_START: CSSProperties = { borderBlockStartWidth: UI_BORDER_HAIRLINE };
+/** Lifted off its ground: the outline hairline plus the floating elevation, so the panel reads as product UI on a stage, not a box drawn on the page. */
+const LIFTED: CSSProperties = { boxShadow: UI_ELEVATION_FLOATING };
 
 /** Parts one panel may hold. */
 export const SPECIMEN_PANEL_MAX_PARTS = 3;
@@ -65,9 +73,12 @@ function present(node: ReactNode): boolean {
 /**
  * One product-UI panel: a title row (title, meta, state), 1 to 3 parts and
  * an optional footer, each separated by a hairline. The surface is the
- * `Card` outline: raised fill, one hairline edge, `rounded-surface`, never
- * a shadow and never dark, with `p-lg`, `p-xl` from `desktop`. All small
- * text is secondary ink, which holds AA on the raised fill.
+ * `Card` outline lifted by `--ui-elevation-floating`: raised fill, one
+ * hairline edge, `rounded-surface`, a soft shadow, never dark. The panel is
+ * a size container: `p-lg`, `p-xl` once the panel itself is `@md` (28rem)
+ * wide, and its parts reflow on the same measure. Text is `text-body`
+ * with `text-body-s` secondary lines (never smaller); all secondary text is
+ * secondary ink, which holds AA on the raised fill.
  *
  * Static evidence only: no link, button, input, hover state or focus stop,
  * and no internal scroll. `Specimen` renders these inside its labelled
@@ -84,39 +95,41 @@ export function SpecimenPanel({ title, meta, status, parts, footer, className, s
   const hasFooter = assignee !== undefined || present(footer?.note);
 
   return (
-    <Card {...rest} variant="outline" ground="base" data-specimen-panel="" className={cx(PANEL_CLASSES, className)} style={style}>
-      {hasHeader ? (
-        <div data-specimen-panel-header="" className={HEADER_CLASSES}>
-          <div className="flex min-w-0 flex-col gap-xs">
-            {present(title) ? <p className={TITLE_CLASSES}>{title}</p> : null}
-            {present(meta) ? <p className={META_CLASSES}>{meta}</p> : null}
-          </div>
-          {status ? <StatusMark tone={status.tone}>{status.label}</StatusMark> : null}
-        </div>
-      ) : null}
-      {parts.map((part, index) => (
-        <div
-          key={part.id}
-          className={hasHeader || index > 0 ? SECTION_DIVIDER : undefined}
-          style={hasHeader || index > 0 ? HAIRLINE_BLOCK_START : undefined}
-        >
-          <SpecimenPartView part={part} />
-        </div>
-      ))}
-      {hasFooter ? (
-        <div data-specimen-panel-footer="" className={cx(SECTION_DIVIDER, "flex flex-col gap-xs text-body-s")} style={HAIRLINE_BLOCK_START}>
-          {assignee ? (
-            <div className="flex flex-wrap items-center gap-x-sm gap-y-xs">
-              <span aria-hidden="true" className={INITIALS_CLASSES}>
-                {assignee.initials}
-              </span>
-              <span className="text-ink-primary">{assignee.name}</span>
-              {present(assignee.note) ? <span className="text-ink-secondary">{assignee.note}</span> : null}
+    <Card {...rest} variant="outline" ground="base" data-specimen-panel="" className={cx(PANEL_CLASSES, className)} style={{ ...LIFTED, ...style }}>
+      <div data-specimen-panel-body="" className={PANEL_BODY_CLASSES}>
+        {hasHeader ? (
+          <div data-specimen-panel-header="" className={HEADER_CLASSES}>
+            <div className="flex min-w-0 flex-col gap-xs">
+              {present(title) ? <p className={TITLE_CLASSES}>{title}</p> : null}
+              {present(meta) ? <p className={META_CLASSES}>{meta}</p> : null}
             </div>
-          ) : null}
-          {present(footer?.note) ? <p className="m-0 text-ink-secondary text-pretty">{footer?.note}</p> : null}
-        </div>
-      ) : null}
+            {status ? <StatusMark tone={status.tone}>{status.label}</StatusMark> : null}
+          </div>
+        ) : null}
+        {parts.map((part, index) => (
+          <div
+            key={part.id}
+            className={hasHeader || index > 0 ? SECTION_DIVIDER : undefined}
+            style={hasHeader || index > 0 ? HAIRLINE_BLOCK_START : undefined}
+          >
+            <SpecimenPartView part={part} />
+          </div>
+        ))}
+        {hasFooter ? (
+          <div data-specimen-panel-footer="" className={cx(SECTION_DIVIDER, "flex flex-col gap-xs text-body-s")} style={HAIRLINE_BLOCK_START}>
+            {assignee ? (
+              <div className="flex flex-wrap items-center gap-x-sm gap-y-xs">
+                <span aria-hidden="true" className={INITIALS_CLASSES}>
+                  {assignee.initials}
+                </span>
+                <span className="text-ink-primary">{assignee.name}</span>
+                {present(assignee.note) ? <span className="text-ink-secondary">{assignee.note}</span> : null}
+              </div>
+            ) : null}
+            {present(footer?.note) ? <p className="m-0 text-ink-secondary text-pretty">{footer?.note}</p> : null}
+          </div>
+        ) : null}
+      </div>
     </Card>
   );
 }

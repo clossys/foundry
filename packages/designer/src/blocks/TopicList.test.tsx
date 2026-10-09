@@ -34,10 +34,10 @@ describe("TopicList", () => {
     }
   });
 
-  it("sets the heading at body scale and the description in secondary body-s", () => {
+  it("sets the heading at item-heading scale and the description in secondary body", () => {
     render(<TopicList items={ITEMS} />);
-    expect(screen.getByText("Ownership records")).toHaveClass("text-body", "font-medium");
-    expect(screen.getByText("Who holds what, and since when.")).toHaveClass("text-body-s", "text-ink-secondary");
+    expect(screen.getByText("Ownership records")).toHaveClass("text-body-l", "font-medium");
+    expect(screen.getByText("Who holds what, and since when.")).toHaveClass("text-body", "text-ink-secondary");
     expect(screen.getByTestId("icon").parentElement).toHaveAttribute("aria-hidden", "true");
     expect(screen.queryByRole("heading")).toBeNull();
   });

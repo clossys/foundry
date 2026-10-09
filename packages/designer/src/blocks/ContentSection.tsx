@@ -1,6 +1,6 @@
 import { Children, type CSSProperties, type HTMLAttributes, type ReactNode } from "react";
 import { cx } from "../atoms/internal/cx.js";
-import { SectionIntro } from "./SectionIntro.js";
+import { SectionIntro, type SectionIntroEmphasis } from "./SectionIntro.js";
 import type { SectionGround } from "./section-ground.js";
 
 export type ContentSectionHeadingLevel = 2 | 3 | 4 | 5 | 6;
@@ -13,6 +13,14 @@ export type ContentSectionLayout = "stacked" | "split";
 
 /** Which side of a `split` the visual sits on, from `tablet-lg` up. */
 export type ContentSectionMediaSide = "end" | "start";
+
+/**
+ * The header group's scale. `section`: the section title step. `display`:
+ * the display step and its wider rhythm, for a statement band whose header
+ * is its content (no module, no media), so the band carries a moment of
+ * scale instead of reading as a thin strip.
+ */
+export type ContentSectionEmphasis = SectionIntroEmphasis;
 
 interface ContentSectionBaseProps extends Omit<HTMLAttributes<HTMLDivElement>, "title"> {
   /**
@@ -28,6 +36,8 @@ interface ContentSectionBaseProps extends Omit<HTMLAttributes<HTMLDivElement>, "
   actions?: ReactNode;
   /** Which heading element `heading` renders as. @default 2 */
   headingLevel?: ContentSectionHeadingLevel;
+  /** The header group's scale (see `ContentSectionEmphasis`). Semantic level stays `headingLevel`. @default "section" */
+  emphasis?: ContentSectionEmphasis;
   /** The ground the section sits on; selects the header group's ink. It paints no surface. @default "base" */
   ground?: SectionGround;
   /**
@@ -78,9 +88,10 @@ const MODULE_GAP = "gap-2xl tablet-lg:gap-3xl";
  * renders; by convention every section has one.
  *
  * Spacing is fixed here so sections cannot drift: the header group is a
- * `SectionIntro` at the `section` emphasis (the section-title step at
- * `leading-heading`, its own rhythm, the prose measure: the same anatomy a
- * `Hero` uses at the `display` emphasis); the header group and each module
+ * `SectionIntro` at the `section` emphasis by default (the section-title
+ * step at `leading-heading`, its own rhythm, the prose measure: the same
+ * anatomy a `Hero` uses at the `display` emphasis; `emphasis="display"`
+ * gives a statement band that step); the header group and each module
  * sit one step apart (`gap-2xl`, `gap-3xl` from `tablet-lg`); modules take
  * the full column. The
  * band around it (ground, padding, column) is the caller's `SectionFrame`.
@@ -106,6 +117,7 @@ export function ContentSection({
   description,
   actions,
   headingLevel = 2,
+  emphasis,
   align,
   ground = "base",
   layout = "stacked",
@@ -148,7 +160,7 @@ export function ContentSection({
           {hasHeader ? (
             <SectionIntro
               data-content-section-header=""
-              emphasis="section"
+              emphasis={emphasis}
               headingLevel={headingLevel}
               align="start"
               ground={ground}
@@ -189,7 +201,7 @@ export function ContentSection({
       {hasHeader ? (
         <SectionIntro
           data-content-section-header=""
-          emphasis="section"
+          emphasis={emphasis}
           headingLevel={headingLevel}
           align={centred ? "center" : "start"}
           ground={ground}

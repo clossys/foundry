@@ -84,6 +84,22 @@ describe("Meter", () => {
     expect(() => renderToStaticMarkup(<Meter {...props} tone="info" valueText="x" />)).toThrow(RangeError);
   });
 
+  it("fills in the brand accent for the accent tone", () => {
+    const markup = renderToStaticMarkup(<Meter value={3} scaleMax={4} tone="accent" valueText="75%" />);
+    expect(part(markup, "fill")).toContain("bg-accent");
+  });
+
+  it("sets the value as a large, light focal figure with emphasis figure, body-small by default", () => {
+    const { unmount } = render(<Meter value={3} scaleMax={4} limit={2} tone="info" valueText="3.0x" limitText="limit 2.0x" />);
+    expect(screen.getByText("3.0x").closest("[data-emphasis]")).toHaveAttribute("data-emphasis", "default");
+    expect(screen.getByText("3.0x").parentElement).toHaveClass("text-body-s");
+    unmount();
+    render(<Meter value={3} scaleMax={4} limit={2} tone="info" emphasis="figure" valueText="3.0x" limitText="limit 2.0x" />);
+    expect(screen.getByText("3.0x").closest("[data-emphasis]")).toHaveAttribute("data-emphasis", "figure");
+    expect(screen.getByText("3.0x")).toHaveClass("text-h1", "@md:text-h0", "font-normal", "tabular-nums");
+    expect(screen.getByText("limit 2.0x")).toHaveClass("text-body-s", "text-ink-secondary");
+  });
+
   it("forwards className and other div attributes", () => {
     render(<Meter id="m" className="gap-sm" value={1} scaleMax={2} tone="info" valueText="50%" />);
     const root = document.getElementById("m");

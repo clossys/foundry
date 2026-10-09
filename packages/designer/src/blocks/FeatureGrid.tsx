@@ -77,6 +77,31 @@ const CATALOG_COLUMN_CLASSES: Record<FeatureGridColumns, string> = {
   4: "grid grid-cols-1 gap-x-2xl gap-y-3xl tablet:grid-cols-2 tablet-lg:grid-cols-4",
 };
 
+/**
+ * Plates are bounded shapes: the gap between them is the same both ways
+ * (`gap-2xl`), so a wrapped row of plates reads as one grid. Plain and
+ * rule items keep the wider row gap that separates unbounded copy.
+ */
+const TREATMENT_GAP_CLASSES: Record<FeatureGridTreatment, string | undefined> = {
+  plain: undefined,
+  rule: undefined,
+  plate: "gap-y-2xl",
+};
+
+/**
+ * The last item of an odd run takes the whole row at `tablet` (two
+ * columns), so a three- or four-column grid never leaves one item beside an
+ * empty half at tablet width; from `tablet-lg` it takes its own column again.
+ */
+const LONE_LAST_ITEM_CLASSES = "tablet:col-span-2 tablet-lg:col-span-1";
+
+/** Catalog item icons carry the brand accent (`accent-on-inverse` on an inverse band): the icon marks the item, the words carry it. */
+const ICON_ACCENT_CLASSES: Record<SectionGround, string> = {
+  base: "text-accent",
+  sunken: "text-accent",
+  inverse: "text-accent-on-inverse",
+};
+
 /** The emphasis rule's colour per ground: `line-strong` on the light grounds, the inverse line on an inverse band. */
 const RULE_BORDER_CLASSES: Record<SectionGround, string> = {
   base: "border-line-strong",
@@ -93,11 +118,11 @@ function hasNode(node: ReactNode): boolean {
  * eyebrow is secondary ink, not muted: on a plate muted ink is only
  * AA-large. Without an eyebrow the heading is emitted alone, unchanged.
  */
-function withEyebrow(eyebrow: ReactNode, heading: ReactNode, ink: string): ReactNode {
+function withEyebrow(eyebrow: ReactNode, heading: ReactNode, ink: string, catalog = false): ReactNode {
   if (!hasNode(eyebrow)) return heading;
   return (
     <div data-feature-grid-eyebrow="" className="flex flex-col gap-xs">
-      <p className={cx("text-caption uppercase tracking-label", ink)}>{eyebrow}</p>
+      <p className={cx(catalog ? "text-body-s font-medium" : "text-caption", "uppercase tracking-label", ink)}>{eyebrow}</p>
       {heading}
     </div>
   );
@@ -118,14 +143,16 @@ function CatalogGrid({ items, columns = 3, treatment = "plain", emphasis = "item
   const colors = SECTION_GROUND_CLASSES[ground];
   const statement = emphasis === "statement";
   const showIcons = treatment !== "rule";
+  const loneLast = columns > 2 && items.length % 2 === 1;
 
   return (
-    <div data-feature-grid-columns={columns} data-treatment={treatment} data-emphasis={emphasis} className={CATALOG_COLUMN_CLASSES[columns]}>
-      {items.map((item) => {
+    <div data-feature-grid-columns={columns} data-treatment={treatment} data-emphasis={emphasis} className={cx(CATALOG_COLUMN_CLASSES[columns], TREATMENT_GAP_CLASSES[treatment])}>
+      {items.map((item, index) => {
+        const span = loneLast && index === items.length - 1 ? LONE_LAST_ITEM_CLASSES : undefined;
         const body = (
           <>
             {showIcons && item.icon ? (
-              <span aria-hidden="true" className={cx("inline-flex", colors.muted)}>
+              <span aria-hidden="true" className={cx("inline-flex", ICON_ACCENT_CLASSES[ground])}>
                 {item.icon}
               </span>
             ) : null}
@@ -133,16 +160,17 @@ function CatalogGrid({ items, columns = 3, treatment = "plain", emphasis = "item
               item.eyebrow,
               <p
                 className={cx(
-                  statement ? "text-h1 font-display leading-heading text-balance" : "text-body font-body font-medium",
+                  statement ? "text-h1 font-display leading-heading text-balance" : "text-body-l font-body font-medium",
                   colors.primary,
                 )}
               >
                 {item.heading}
               </p>,
               colors.secondary,
+              true,
             )}
             {item.description ? (
-              <p className={cx(statement ? "text-body text-pretty" : "text-body-s text-pretty", colors.secondary)}>
+              <p className={cx(statement ? "text-body-l text-pretty" : "text-body text-pretty", colors.secondary)}>
                 {item.description}
               </p>
             ) : null}
@@ -156,7 +184,7 @@ function CatalogGrid({ items, columns = 3, treatment = "plain", emphasis = "item
               variant="plate"
               ground={ground}
               data-feature-grid-item=""
-              className="flex h-full flex-col items-start gap-sm tablet:p-xl"
+              className={cx("flex h-full flex-col items-start gap-sm tablet:p-xl", span)}
             >
               {body}
             </Card>
@@ -168,7 +196,7 @@ function CatalogGrid({ items, columns = 3, treatment = "plain", emphasis = "item
             <div
               key={item.id}
               data-feature-grid-item=""
-              className={cx("flex flex-col items-start gap-sm border-t pt-lg", RULE_BORDER_CLASSES[ground])}
+              className={cx("flex flex-col items-start gap-sm border-t pt-lg", RULE_BORDER_CLASSES[ground], span)}
               style={{ borderBlockStartWidth: UI_BORDER_RULE }}
             >
               {body}
@@ -177,7 +205,7 @@ function CatalogGrid({ items, columns = 3, treatment = "plain", emphasis = "item
         }
 
         return (
-          <div key={item.id} data-feature-grid-item="" className="flex flex-col items-start gap-sm">
+          <div key={item.id} data-feature-grid-item="" className={cx("flex flex-col items-start gap-sm", span)}>
             {body}
           </div>
         );
@@ -221,11 +249,15 @@ function CatalogGrid({ items, columns = 3, treatment = "plain", emphasis = "item
  *
  * **Catalog layout.** Passing any of `columns`, `treatment` or `emphasis`
  * switches to the content-catalog grid: one column below `tablet`, two from
- * `tablet`, `columns` (default 3) from `tablet-lg`, `gap-x-2xl gap-y-3xl`.
+ * `tablet`, `columns` (default 3) from `tablet-lg`, `gap-x-2xl gap-y-3xl`
+ * (`gap-2xl` both ways between plates).
  * `treatment="rule"` tops each item with a `--ui-border-rule` rule in
  * `line-strong` and `pt-lg`; `treatment="plate"` sets each item on a
  * `Card` plate (the other ground). `emphasis="statement"` sets each item
- * heading in the display font at `text-h1`, for a short run of principles.
+ * heading in the display font at `text-h1`, for a short run of principles;
+ * `item` sets it at `text-body-l` medium over a `text-body` description.
+ * Icons take the brand accent. With three or four columns, the last item
+ * of an odd count spans the row at `tablet`, so no item sits alone.
  * Icons render only with `plain` and `plate`: a rule already marks the item,
  * so an icon under it is clutter and is dropped. With none of the three
  * props set the original markup is emitted byte for byte, so existing

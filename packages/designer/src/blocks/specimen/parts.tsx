@@ -7,19 +7,29 @@ import { UI_BORDER_HAIRLINE } from "../../atoms/internal/ui-vars.js";
 // Class records first: the compiled-CSS scan reads string literals in file
 // order, so every class lives here, above any code.
 
-/** Field grids. Never more than two columns below `tablet-lg`, so a 390px panel stays readable. */
+/**
+ * Field grids. Columns follow the PANEL's width, not the viewport's (the
+ * panel is a size container, see `SpecimenPanel`): never more than two
+ * columns until the panel itself is wide (`@lg`, 32rem), so a panel in a
+ * third-width card or at 390px stays readable.
+ */
 const FIELDS_COLUMN_CLASSES: Record<1 | 2 | 4, string> = {
   1: "m-0 grid grid-cols-1 gap-y-md",
   2: "m-0 grid grid-cols-2 gap-x-lg gap-y-md",
-  4: "m-0 grid grid-cols-2 gap-x-lg gap-y-md tablet-lg:grid-cols-4",
+  4: "m-0 grid grid-cols-2 gap-x-lg gap-y-md @lg:grid-cols-4",
 };
 
-const PART_LABEL_CLASSES = "m-0 text-caption uppercase tracking-label text-ink-secondary";
+/**
+ * Panel type sits one step above the old caption scale: body text at
+ * `text-body`, secondary lines at `text-body-s`, and a part label in
+ * sentence case at `text-body-s` medium, never a 12px tracked caption.
+ */
+const PART_LABEL_CLASSES = "m-0 text-body-s font-medium text-ink-secondary";
 const ROW_CLASSES = "flex flex-wrap items-start justify-between gap-x-md gap-y-xs";
 const ROW_TEXT_CLASSES = "flex min-w-0 flex-col gap-xs";
-const PRIMARY_TEXT = "text-body-s text-ink-primary";
-const SECONDARY_CAPTION = "text-caption text-ink-secondary";
-const DIVIDED_ROW = "border-t border-line-base pt-sm";
+const PRIMARY_TEXT = "text-body text-ink-primary";
+const SECONDARY_CAPTION = "text-body-s text-ink-secondary";
+const DIVIDED_ROW = "border-t border-line-base pt-md";
 /**
  * Lists, definition lists, paragraphs, table cells and the figure reset their
  * own user-agent margin and padding, so a specimen renders the same with or
@@ -28,34 +38,37 @@ const DIVIDED_ROW = "border-t border-line-base pt-sm";
 const LIST_RESET_CLASSES = "m-0 flex flex-col p-0";
 
 /**
- * Table classes. Below `tablet` each row reflows into a stacked record: the
- * row header on its own line, then one label/value pair per cell, with the
- * column headers kept for assistive technology only (`sr-only`). From
- * `tablet` it is an ordinary table.
+ * Table classes. Until the PANEL is wide enough for real columns (`@md`,
+ * 28rem, measured on the panel's own size container, not the viewport)
+ * each row reflows into a stacked record: the row header on its own line,
+ * then one label/value pair per cell, with the column headers kept for
+ * assistive technology only (`sr-only`). From `@md` it is an ordinary
+ * table. So a table in a third-width card stacks at every viewport instead
+ * of wrapping each cell over two lines.
  */
 const TABLE_CLASSES = {
-  table: "grid w-full grid-cols-1 text-body-s tablet:table tablet:border-collapse",
+  table: "grid w-full grid-cols-1 text-body @md:table @md:border-collapse",
   caption: "sr-only",
-  head: "sr-only tablet:not-sr-only tablet:table-header-group",
-  headRow: "tablet:table-row",
-  columnHeader: "p-0 pb-sm text-start align-bottom text-caption font-normal text-ink-secondary tablet:pe-md",
-  body: "flex flex-col tablet:table-row-group",
-  row: "flex flex-col gap-xs border-t border-line-base py-sm tablet:table-row",
-  rowHeader: "block p-0 text-start font-medium text-ink-primary tablet:table-cell tablet:py-sm tablet:pe-md tablet:align-top",
-  cell: "flex items-baseline p-0 justify-between gap-md tablet:table-cell tablet:py-sm tablet:pe-md tablet:align-top",
-  cellLabel: "text-ink-secondary tablet:hidden",
-  cellValue: "min-w-0 text-end text-ink-primary tabular-nums tablet:text-start",
+  head: "sr-only @md:not-sr-only @md:table-header-group",
+  headRow: "@md:table-row",
+  columnHeader: "p-0 pb-sm text-start align-bottom text-body-s font-normal text-ink-secondary @md:pe-md",
+  body: "flex flex-col @md:table-row-group",
+  row: "flex flex-col gap-xs border-t border-line-base py-md @md:table-row",
+  rowHeader: "block p-0 text-start font-medium text-ink-primary @md:table-cell @md:py-md @md:pe-md @md:align-top",
+  cell: "flex items-baseline p-0 justify-between gap-md @md:table-cell @md:py-md @md:pe-md @md:align-top",
+  cellLabel: "text-body-s text-ink-secondary @md:hidden",
+  cellValue: "min-w-0 text-end text-ink-primary tabular-nums @md:text-start",
 } as const;
 
 const SCHEDULE_CLASSES = {
-  list: "m-0 flex flex-col gap-md border-s border-line-strong ps-lg",
+  list: "m-0 flex flex-col gap-lg border-s border-line-strong ps-lg",
   item: "flex flex-wrap items-start justify-between gap-x-md gap-y-xs",
   trailing: "flex flex-col items-end gap-xs",
-  amount: "text-body-s text-ink-primary tabular-nums",
+  amount: "text-body font-medium text-ink-primary tabular-nums",
 } as const;
 
 const FILE_FORMAT_CLASSES =
-  "inline-flex shrink-0 rounded-subtle border border-line-base px-xs font-mono text-caption uppercase text-ink-secondary";
+  "inline-flex shrink-0 rounded-subtle border border-line-base px-xs font-mono text-body-s uppercase text-ink-secondary";
 
 const HAIRLINE_BLOCK_START: CSSProperties = { borderBlockStartWidth: UI_BORDER_HAIRLINE };
 const HAIRLINE_INLINE_START: CSSProperties = { borderInlineStartWidth: UI_BORDER_HAIRLINE };
@@ -325,6 +338,7 @@ function MeterBody({ part }: { part: SpecimenMeterPart }) {
         tone={part.tone}
         valueText={part.valueText}
         limitText={part.limitText}
+        emphasis="figure"
       />
       {part.note ? <p className={cx(SECONDARY_CAPTION, "m-0")}>{part.note}</p> : null}
     </div>
@@ -414,7 +428,7 @@ function SharesBody({ part }: { part: SpecimenSharesPart }) {
             <span className={cx(PRIMARY_TEXT, "min-w-0")}>{item.name}</span>
             <Status status={item.status} />
           </div>
-          <Meter value={item.share} scaleMax={100} tone="neutral" valueText={item.shareText} />
+          <Meter value={item.share} scaleMax={100} tone="accent" valueText={item.shareText} />
         </li>
       ))}
     </ul>

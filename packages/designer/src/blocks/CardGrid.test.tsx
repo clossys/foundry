@@ -30,15 +30,42 @@ describe("CardGrid", () => {
   });
 
   it("maps spans: two-thirds is full at tablet, thirds are halves at tablet", () => {
-    const { container } = render(<CardGrid items={cards(["two-thirds", "third"])} />);
-    const [wide, narrow] = Array.from(container.querySelectorAll<HTMLElement>("[data-card-grid-item]"));
+    const { container } = render(<CardGrid items={cards(["two-thirds", "third", "third", "third", "third"])} />);
+    const [wide, ...thirds] = Array.from(container.querySelectorAll<HTMLElement>("[data-card-grid-item]"));
     expect(wide).toHaveClass("tablet:col-span-12", "tablet-lg:col-span-8");
-    expect(narrow).toHaveClass("tablet:col-span-6", "tablet-lg:col-span-4");
+    for (const third of thirds) expect(third).toHaveClass("tablet:col-span-6", "tablet-lg:col-span-4");
     const full = render(<CardGrid items={cards(["full", "half", "half"])} />);
     const items = full.container.querySelectorAll<HTMLElement>("[data-card-grid-item]");
     expect(items[0]).toHaveClass("tablet:col-span-12");
     expect(items[1]).toHaveClass("tablet:col-span-6");
     expect(items[1]!.className).not.toMatch(/tablet-lg:col-span/);
+  });
+
+  it("gives a third left alone in its tablet row the full row, never an orphan beside an empty half", () => {
+    const spans = (pattern: CardGridSpan[]) =>
+      Array.from(render(<CardGrid items={cards(pattern)} />).container.querySelectorAll<HTMLElement>("[data-card-grid-item]")).map((item) =>
+        item.classList.contains("tablet:col-span-12") ? 12 : 6,
+      );
+    expect(spans(["third", "third", "third"])).toEqual([6, 6, 12]);
+    expect(spans(["two-thirds", "third"])).toEqual([12, 12]);
+    expect(spans(["third", "two-thirds"])).toEqual([12, 12]);
+    expect(spans(["two-thirds", "third", "third", "third", "third"])).toEqual([12, 6, 6, 6, 6]);
+    expect(spans(["third", "third", "third", "third", "third", "third"])).toEqual([6, 6, 6, 6, 6, 6]);
+    expect(spans(["half", "half"])).toEqual([6, 6]);
+  });
+
+  it("sets card copy for reading and marks the card with an accent icon", () => {
+    const items: CardGridItem[] = [
+      { id: "a", icon: <svg data-testid="icon" />, eyebrow: "Eyebrow", heading: "One", description: "Body copy.", span: "half" },
+      { id: "b", heading: "Two", span: "half" },
+    ];
+    const { unmount } = render(<CardGrid items={items} />);
+    expect(screen.getByText("Body copy.")).toHaveClass("text-body", "text-ink-secondary");
+    expect(screen.getByText("Eyebrow")).toHaveClass("text-body-s", "font-medium");
+    expect(screen.getByTestId("icon").parentElement).toHaveClass("text-accent");
+    unmount();
+    render(<CardGrid items={items} ground="inverse" />);
+    expect(screen.getByTestId("icon").parentElement).toHaveClass("text-accent-on-inverse");
   });
 
   it("sets every card on a plate of the other ground", () => {

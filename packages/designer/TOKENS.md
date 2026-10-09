@@ -305,7 +305,7 @@ shipped as-is regardless of brand.
 | --- | --- | --- |
 | `--text-display-xl` | `72px` | no (fixed ramp) |
 | `--text-display-l` | `56px` | no |
-| `--text-display-m` | `40px` | no |
+| `--text-display-m` | `44px` | no |
 | `--text-h0` | `32px` | no |
 | `--text-h1` | `28px` | no |
 | `--text-h2` | `18px` | no |
@@ -319,7 +319,7 @@ shipped as-is regardless of brand.
 | `--font-display` | system-sans stack | yes |
 | `--font-body` | system-sans stack | yes |
 | `--font-mono` | system-mono stack | yes |
-| `--tracking-tight` | `-0.01em` | no |
+| `--tracking-tight` | `-0.02em` | no |
 | `--tracking-meta` | `0.06em` | no |
 | `--tracking-nav` | `0.12em` | no |
 | `--tracking-label` | `0.18em` | no |

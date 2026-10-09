@@ -117,6 +117,7 @@ export type {
   MeterProps,
   MeterTone,
   MeterDirection,
+  MeterEmphasis,
 } from "./atoms/index.js";
 
 export {
@@ -199,6 +200,7 @@ export type {
   ContentSectionSplitProps,
   ContentSectionLayout,
   ContentSectionMediaSide,
+  ContentSectionEmphasis,
   SectionIntroProps,
   SectionIntroHeadingLevel,
   SectionIntroEmphasis,

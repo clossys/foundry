@@ -71,13 +71,13 @@ describe("SectionIntro", () => {
   });
 
   it.each([
-    ["base", "text-ink-primary", "text-ink-secondary", "text-ink-muted"],
-    ["inverse", "text-ink-on-inverse", "text-ink-on-inverse-muted", "text-ink-on-inverse-muted"],
-  ] as const)("takes its ink from the %s ground and paints no surface", (ground, primary, secondary, muted) => {
+    ["base", "text-ink-primary", "text-ink-secondary", "text-accent-text"],
+    ["inverse", "text-ink-on-inverse", "text-ink-on-inverse-muted", "text-accent-on-inverse"],
+  ] as const)("takes its ink from the %s ground and paints no surface", (ground, primary, secondary, eyebrowInk) => {
     const { container } = render(<SectionIntro ground={ground} eyebrow="Eyebrow" heading="Heading" description="Description" />);
     const root = container.firstElementChild as HTMLElement;
     expect(root.className).not.toMatch(/\bbg-/);
-    expect(screen.getByText("Eyebrow")).toHaveClass(muted);
+    expect(screen.getByText("Eyebrow")).toHaveClass(eyebrowInk, "text-body-s", "font-medium", "uppercase", "tracking-label");
     expect(screen.getByRole("heading")).toHaveClass(primary);
     expect(screen.getByText("Description")).toHaveClass(secondary);
   });

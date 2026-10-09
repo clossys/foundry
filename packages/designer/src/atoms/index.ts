@@ -168,7 +168,7 @@ export { StatusMark } from "./StatusMark.js";
 export type { StatusMarkProps, StatusMarkTone } from "./StatusMark.js";
 
 export { Meter } from "./Meter.js";
-export type { MeterProps, MeterTone, MeterDirection } from "./Meter.js";
+export type { MeterProps, MeterTone, MeterDirection, MeterEmphasis } from "./Meter.js";
 
 /** Merge token-aware Tailwind class names with last-argument precedence. */
 export { cx as mergeUiClasses } from "./internal/cx.js";

@@ -135,6 +135,7 @@ export type {
   ContentSectionAlign,
   ContentSectionLayout,
   ContentSectionMediaSide,
+  ContentSectionEmphasis,
 } from "./ContentSection.js";
 export { SectionIntro } from "./SectionIntro.js";
 export type { SectionIntroProps, SectionIntroHeadingLevel, SectionIntroEmphasis, SectionIntroAlign } from "./SectionIntro.js";

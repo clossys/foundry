@@ -75,7 +75,7 @@ export { Icon } from "./Icon.js";
 export type { IconProps, IconSize, IconAccessibilityProps, IconNode } from "./Icon.js";
 
 export { Meter } from "./Meter.js";
-export type { MeterProps, MeterTone, MeterDirection } from "./Meter.js";
+export type { MeterProps, MeterTone, MeterDirection, MeterEmphasis } from "./Meter.js";
 
 export { Skeleton } from "./Skeleton.js";
 export type { SkeletonProps, SkeletonShape } from "./Skeleton.js";

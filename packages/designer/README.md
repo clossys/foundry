@@ -2160,6 +2160,12 @@ visible text (`valueText`, then `limitText`) above a thin bar. `limit`
 draws a tick at the `--ui-border-rule` width and shades the disallowed
 side: after the limit for `direction="max"` (a cap, the default), before it
 for `direction="min"` (a floor). Without a limit it reads as a share.
+`tone` (`MeterTone`) is a status tone, `"neutral"` for a plain quantity, or
+`"accent"` for a plain quantity in the brand accent (a share or an
+allocation, never a state). `emphasis` (`MeterEmphasis`, default
+`"default"`) set to `"figure"` makes the value the focal number of its
+panel: `text-h1`, `text-h0` once its container is `@md` wide, normal weight,
+tabular, with the limit beside it in secondary ink and the bar under both.
 
 The bar is `aria-hidden` and there is no `<meter>` element: the visible
 text carries the meaning for every reader. Positions use logical inline
@@ -2983,7 +2989,9 @@ opening (`text-display-m`, `text-display-l` from `tablet`, `leading-display`;
 gaps `mt-sm` / `mt-2xl` / `mt-3xl`), `emphasis="section"` (the default)
 every band after it (the section-title step, `leading-heading`; gaps
 `mt-sm` / `mt-xl` / `mt-2xl`). Each gap is larger than the heading's own
-line gap and grows toward the action, so the group reads as one unit.
+line gap and grows toward the action, so the group reads as one unit. The
+eyebrow is a small tracked label (`text-body-s`, medium, uppercase) in the
+ground's accent ink (`accent-text`, `accent-on-inverse` on an inverse band).
 `Hero` and `ContentSection` both compose it; use it directly only for a
 header group outside those blocks. It paints no surface: `ground` picks the
 ink only.
@@ -3025,6 +3033,10 @@ display step under `Hero`'s, and the description sits at `text-body-l`. `align` 
 `"start"`) lines the header group up; modules always take the full column.
 `ground` selects the header group's ink and paints no surface. The band
 around it (ground surface, padding and column) is a `SectionFrame`'s.
+`emphasis` (`ContentSectionEmphasis`: `"section"` or `"display"`, default
+`"section"`) sets the header group's scale; `"display"` gives a statement
+band (a header and its actions, no module or media) the `SectionIntro`
+display step and rhythm. `headingLevel` still sets the element.
 
 Use it instead of `SectionHeader` (settings scale, `text-h3`) for a
 marketing section, and instead of `MarketingChapter` when the section needs
@@ -3166,14 +3178,20 @@ three from `desktop` — the same responsive grid `NavGrid` uses.
 switches to the content-catalog grid; with none of them set the original
 markup above is emitted unchanged. `columns` (`FeatureGridColumns`: `2`,
 `3` or `4`, default `3`) is the column count from `tablet-lg` (two from
-`tablet`, one below), with `gap-x-2xl gap-y-3xl`. `treatment`
+`tablet`, one below), with `gap-x-2xl gap-y-3xl` (`gap-2xl` both ways
+between plates). `treatment`
 (`FeatureGridTreatment`) is `"plain"` (the default), `"rule"` (a
 `--ui-border-rule` rule in `line-strong` above each item, then `pt-lg`) or
 `"plate"` (each item on a `Card` plate, the other ground). `emphasis`
-(`FeatureGridEmphasis`) is `"item"` (the default) or `"statement"`, which
-sets each item heading in the display font at `text-h1`, for a short run of
-principles. Icons render with `plain` and `plate` only; under a rule they
-are dropped.
+(`FeatureGridEmphasis`) is `"item"` (the default: heading `text-body-l`,
+medium, description `text-body`) or `"statement"`, which sets each item
+heading in the display font at `text-h1` (description `text-body-l`), for a
+short run of principles. An item eyebrow is a `text-body-s` medium tracked
+label. Icons render with `plain` and `plate` only, in the brand accent
+(`accent-on-inverse` on an inverse band); under a rule they are dropped.
+With three or four columns and an odd item count, the last item takes the
+whole `tablet` row instead of sitting beside an empty half, and returns to
+one column from `tablet-lg`.
 
 ```tsx
 import { FeatureGrid } from "@clossys/designer/blocks";
@@ -3209,10 +3227,13 @@ authored text, while decorative connectors are hidden from assistive technology
 and render only between adjacent items. The sequence changes from a vertical
 column with a rail running from one ordinal down to the next to a horizontal
 row with a hairline running from one ordinal across to the next at `tablet`;
-connector and ordinal ring are `line-strong`, so they stay visible in light
-and dark schemes. Step headings are item headings, set like `FeatureGrid` and
-`TopicList` item headings (`text-body`, body font, medium weight); plate
-headings (`CardGrid`, `Comparison`) sit one step up at `text-h2` in the
+the connector is `line-strong`, so it stays visible in light and dark
+schemes. The ordinal is a 32px disc in the accent tint with an
+`accent-text` numeral (an inverse-line ring with on-inverse ink on an
+inverse band). Step headings are item headings, set like `FeatureGrid` and
+`TopicList` item headings (`text-body-l`, body font, medium weight), the
+`label` above as a small tracked label and the description at `text-body`;
+plate headings (`CardGrid`, `Comparison`) sit one step up at `text-h2` in the
 display font. Set
 `ground="sunken"` or `ground="inverse"` selects the shared matching painted
 surface, ink, border, and connector policy. Base inherits its surrounding
@@ -3249,16 +3270,18 @@ import { CardGrid } from "@clossys/designer/blocks";
 A mixed grid of content cards where one item may deserve more room. Each
 card is an `<article>` holding a `Card` plate (the other ground,
 `rounded-surface`, no stroke, no shadow) with an optional `icon`
-(`aria-hidden`), `eyebrow`, a real heading at `headingLevel`
-(`CardGridHeadingLevel`, default `3`: one below the section heading), a
-`description`, and an optional `visual` pinned to the bottom of the card so
+(`aria-hidden`, in the brand accent), `eyebrow` (a `text-body-s` medium
+tracked label), a real heading at `headingLevel` (`CardGridHeadingLevel`,
+default `3`: one below the section heading), a `description` at
+`text-body`, and an optional `visual` pinned to the bottom of the card so
 headings line up across a row. `span` (`CardGridSpan`) is `"third"`,
 `"half"`, `"two-thirds"` or `"full"`; spans must fill whole 12-unit rows in
 order (two-thirds and a third in either order, three thirds, two halves, or
 one full card), 2 to 6 cards, or the block throws a `RangeError`. One
 column below `tablet`; at `tablet` a two-thirds card takes the full row and
-a third takes half; the 12-unit spans apply from `tablet-lg`, `gap-lg`
-apart.
+a third takes half, except a third left alone in its `tablet` row (beside
+a full-row card or last), which takes the whole row instead of leaving an
+empty half; the 12-unit spans apply from `tablet-lg`, `gap-lg` apart.
 
 ### `Comparison`
 
@@ -3303,8 +3326,8 @@ import { TopicList } from "@clossys/designer/blocks";
 
 Many short, scannable topics where cards would be heavy. A real `<ul>`;
 each row is topped by a hairline rule in `line-base` and carries `py-lg`,
-with the `heading` at body scale in `font-medium` and an optional
-`description` in `body-s` secondary ink. `columns` (`TopicListColumns`: `1`
+with the `heading` at `text-body-l` in `font-medium` and an optional
+`description` at `text-body` in secondary ink. `columns` (`TopicListColumns`: `1`
 or `2`, default `2`) applies from `tablet` with `gap-x-3xl`; one column
 below. An even count reads best in two columns. No check marks: a topic
 list states coverage, not progress. Optional icons are `aria-hidden` and
@@ -3373,21 +3396,32 @@ across from `desktop`: put a row of three in a stacked band, not in a
 split's visual column), `"stack"` (one column) or `"flow"` (one column
 joined by a hairline connector; `connector` is the short caption after the
 first panel, allowed only with `flow`). A `SpecimenPanel` is the `Card`
-outline (raised fill, one hairline, `rounded-surface`, `p-lg` then `p-xl`
-from `desktop`): a title row (`title`, `meta`, `status`), 1 to 3 `parts`
-and an optional `footer` (an assignee's decorative initials beside their
-name, a note), each separated by a hairline. All small text is secondary
-ink, which holds AA on the raised fill.
+outline lifted by the floating elevation (raised fill, one hairline,
+`rounded-surface`, the `--ui-elevation-floating` shadow), so it reads as
+product UI on a stage: a title row (`title` at `text-body-l`, `meta`,
+`status`), 1 to 3 `parts` and an optional `footer` (an assignee's initials
+on an accent-tint disc beside their name, a note), each separated by a
+hairline. Body text is `text-body`, labels and secondary lines
+`text-body-s`, never smaller; part labels are sentence case. All small text
+is secondary ink, which holds AA on the raised fill.
+
+The figure and each panel are size containers (`@container`), so a panel
+responds to its own width, not the viewport's: padding is `p-lg`, `p-xl`
+once the panel is `@md` (28rem) wide; a table is a stacked record until
+`@md`; four field columns wait for `@lg` (32rem). A panel in a third-width
+card or a split column therefore keeps the narrow layout even on a wide
+screen.
 
 Parts (`SpecimenPart`, by `type`): `"fields"` (a `<dl>` in 1, 2 or 4
-columns, default 2, never more than two below `tablet-lg`); `"status-rows"`
+columns, default 2, never more than two below the `@lg` container width); `"status-rows"`
 (a `<ul>` of label, detail and `StatusMark`); `"meter"` (the `Meter` atom
-with its label, state and note); `"table"` (a real `<table>` of at most 4
-columns and 5 rows with a visually hidden `caption`; below `tablet` each
-row reflows to a stacked record of label/value pairs, with explicit table
+at `emphasis="figure"`, the value as the panel's focal number, with its
+label, state and note); `"table"` (a real `<table>` of at most 4
+columns and 5 rows with a visually hidden `caption`; below the `@md`
+container width each row reflows to a stacked record of label/value pairs, with explicit table
 roles so the semantics survive the display change); `"schedule"` (an
-`<ol>` of dated rows on a hairline rail); `"shares"` (names with a
-percentage `Meter` on a scale of 100); `"files"` (a mono format tag, a
+`<ol>` of dated rows on a hairline rail); `"shares"` (names with an
+accent percentage `Meter` on a scale of 100); `"files"` (a mono format tag, a
 name and a source).
 
 Static by design: no link, button, input, hover state or focus stop, no

@@ -52,15 +52,16 @@ describe("OrderedStepSequence", () => {
   it("sets step headings as item headings, the same type as FeatureGrid and TopicList items", () => {
     render(<OrderedStepSequence items={ITEMS} />);
     const heading = screen.getByRole("heading", { name: "Discover" });
-    expect(heading).toHaveClass("text-body", "font-body", "font-medium");
+    expect(heading).toHaveClass("text-body-l", "font-body", "font-medium");
     expect(heading.className).not.toMatch(/font-display|text-h\d/);
-    expect(screen.getByText("Understand the need.")).toHaveClass("text-body-s", "text-pretty");
+    expect(screen.getByText("Understand the need.")).toHaveClass("text-body", "text-pretty");
   });
 
-  it("draws the connector and the ordinal ring in line-strong on the light grounds", () => {
+  it("draws the connector in line-strong and the ordinal as an accent-tint disc on the light grounds", () => {
     const { container } = render(<OrderedStepSequence items={ITEMS} />);
     expect(container.querySelector("[data-step-connector]")).toHaveClass("bg-line-strong");
-    expect(screen.getByText("01")).toHaveClass("border-line-strong", "tabular-nums");
+    expect(screen.getByText("01")).toHaveClass("bg-accent-tint", "text-accent-text", "rounded-pill", "size-2xl", "tabular-nums");
+    expect(screen.getByText("01").className).not.toMatch(/\bborder\b/);
   });
 
   it("uses inverse ink and line tokens only when explicitly placed on the inverse ground", () => {

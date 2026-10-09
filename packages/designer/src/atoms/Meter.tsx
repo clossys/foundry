@@ -2,7 +2,20 @@ import type { CSSProperties, HTMLAttributes } from "react";
 import { cx } from "./internal/cx.js";
 import { UI_BORDER_RULE } from "./internal/ui-vars.js";
 
-export type MeterTone = "success" | "warning" | "danger" | "info" | "neutral";
+/**
+ * Fill colour. The four status tones repeat a state; `neutral` is a plain
+ * quantity; `accent` is a plain quantity in the brand accent (a share of a
+ * whole, an allocation), never a state.
+ */
+export type MeterTone = "success" | "warning" | "danger" | "info" | "neutral" | "accent";
+
+/**
+ * `default`: value and limit as one row of body text above the bar.
+ * `figure`: the value set large and light (`text-h1`, `text-h0` once its
+ * container is `@md` wide, normal weight, tabular) as the panel's focal
+ * number, the limit beside it in secondary ink, the bar under both.
+ */
+export type MeterEmphasis = "default" | "figure";
 
 /**
  * Which side of the limit is allowed. `"max"`: the value should stay at or
@@ -29,6 +42,8 @@ export interface MeterProps extends Omit<HTMLAttributes<HTMLDivElement>, "childr
   valueText: string;
   /** Optional visible limit text ("limit 3.0x"), shown after the value. */
   limitText?: string;
+  /** @default "default" */
+  emphasis?: MeterEmphasis;
 }
 
 const FILL_CLASSES: Record<MeterTone, string> = {
@@ -37,7 +52,25 @@ const FILL_CLASSES: Record<MeterTone, string> = {
   danger: "bg-status-danger",
   info: "bg-status-info",
   neutral: "bg-ink-secondary",
+  accent: "bg-accent",
 };
+
+/** The value row per emphasis: the row, the value, and the limit. */
+const VALUE_ROW_CLASSES: Record<MeterEmphasis, { row: string; value: string; limit: string }> = {
+  default: {
+    row: "flex flex-wrap items-baseline justify-between gap-x-sm text-body-s",
+    value: "text-ink-primary tabular-nums",
+    limit: "text-ink-secondary tabular-nums",
+  },
+  figure: {
+    row: "flex flex-wrap items-baseline justify-between gap-x-md gap-y-xs",
+    value: "text-h1 @md:text-h0 font-normal leading-heading text-ink-primary tabular-nums",
+    limit: "text-body-s text-ink-secondary tabular-nums",
+  },
+};
+
+/** The gap between the value row and the bar: a figure takes a little more air. */
+const ROOT_GAP_CLASSES: Record<MeterEmphasis, string> = { default: "gap-xs", figure: "gap-sm" };
 
 function percentOf(amount: number, scaleMax: number): number {
   return Math.min(100, Math.max(0, (amount / scaleMax) * 100));
@@ -52,7 +85,8 @@ function assertFiniteNonNegative(name: string, amount: number): void {
 /**
  * A value drawn against a scale, optionally against a limit: a covenant
  * ratio against its threshold, a share of a whole, used capacity against
- * a cap. One row of visible text (value, then limit) above a thin bar.
+ * a cap. One row of visible text (value, then limit) above a thin bar;
+ * `emphasis="figure"` sets the value as the focal number of its panel.
  *
  * The bar is `aria-hidden` and there is no `<meter>` element: the visible
  * `valueText`/`limitText` carry the meaning for every reader, and a
@@ -73,6 +107,7 @@ export function Meter({
   tone,
   valueText,
   limitText,
+  emphasis = "default",
   className,
   ...rest
 }: MeterProps) {
@@ -108,11 +143,12 @@ export function Meter({
       {...rest}
       data-direction={direction}
       data-tone={tone}
-      className={cx("flex flex-col gap-xs font-body", className)}
+      data-emphasis={emphasis}
+      className={cx("flex flex-col font-body", ROOT_GAP_CLASSES[emphasis], className)}
     >
-      <div className="flex flex-wrap items-baseline justify-between gap-x-sm text-body-s">
-        <span className="text-ink-primary tabular-nums">{valueText}</span>
-        {limitText ? <span className="text-ink-secondary tabular-nums">{limitText}</span> : null}
+      <div className={VALUE_ROW_CLASSES[emphasis].row}>
+        <span className={VALUE_ROW_CLASSES[emphasis].value}>{valueText}</span>
+        {limitText ? <span className={VALUE_ROW_CLASSES[emphasis].limit}>{limitText}</span> : null}
       </div>
       <div aria-hidden="true" className="relative h-2 w-full overflow-hidden rounded-pill bg-surface-sunken">
         {zoneStyle ? <span data-part="zone" className="absolute inset-y-0 bg-line-base" style={zoneStyle} /> : null}

@@ -218,7 +218,7 @@ export const TOKENS: Readonly<Record<string, TokenDefinition>> = {
   // ── TEXT (font-size ramp — fixed scale, not brand-bound) ──────────────
   "--text-display-xl": { property: "--text-display-xl", family: "text", value: "72px", brandable: false, themeDependent: false },
   "--text-display-l": { property: "--text-display-l", family: "text", value: "56px", brandable: false, themeDependent: false },
-  "--text-display-m": { property: "--text-display-m", family: "text", value: "40px", brandable: false, themeDependent: false },
+  "--text-display-m": { property: "--text-display-m", family: "text", value: "44px", brandable: false, themeDependent: false },
   "--text-h0": { property: "--text-h0", family: "text", value: "32px", brandable: false, themeDependent: false },
   "--text-h1": { property: "--text-h1", family: "text", value: "28px", brandable: false, themeDependent: false },
   "--text-h2": { property: "--text-h2", family: "text", value: "18px", brandable: false, themeDependent: false },
@@ -236,7 +236,7 @@ export const TOKENS: Readonly<Record<string, TokenDefinition>> = {
   "--font-mono": { property: "--font-mono", family: "font", value: "ui-monospace, \"SF Mono\", Menlo, Consolas, monospace", brandable: true, themeDependent: false },
 
   // ── TRACKING (fixed role scale) ────────────────────────────────────
-  "--tracking-tight": { property: "--tracking-tight", family: "tracking", value: "-0.01em", brandable: false, themeDependent: false },
+  "--tracking-tight": { property: "--tracking-tight", family: "tracking", value: "-0.02em", brandable: false, themeDependent: false },
   "--tracking-meta": { property: "--tracking-meta", family: "tracking", value: "0.06em", brandable: false, themeDependent: false },
   "--tracking-nav": { property: "--tracking-nav", family: "tracking", value: "0.12em", brandable: false, themeDependent: false },
   "--tracking-label": { property: "--tracking-label", family: "tracking", value: "0.18em", brandable: false, themeDependent: false },
