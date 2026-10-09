@@ -2889,8 +2889,10 @@ sit `gap-md` apart and never run wider than the prose measure
 apart (`gap-2xl`, `gap-3xl` from `tablet-lg`); modules take the full column.
 
 `headingLevel` (`ContentSectionHeadingLevel`: `2` to `6`, default `2`) picks
-the heading element; the heading is marketing scale (`text-h2`) at every
-level. `align` (`ContentSectionAlign`: `"start"` or `"center"`, default
+the heading element; at every level the heading is a section title in the
+display face that scales with the viewport (`text-h1`, `text-h0` from
+`tablet`, `text-display-m` from `tablet-lg`, with `leading-tight`), one
+display step under `Hero`'s, and the description sits at `text-body-l`. `align` (`ContentSectionAlign`: `"start"` or `"center"`, default
 `"start"`) lines the header group up; modules always take the full column.
 `ground` selects the header group's ink and paints no surface. The band
 around it (ground surface, padding and column) is a `SectionFrame`'s.
@@ -3073,12 +3075,19 @@ are a homogeneous repeat. A page can hold two `Faq`s (a general FAQ block
 and a product-specific one further down the page), which is what makes it
 a block rather than a view (test 3).
 
-**Built on this package's own `Disclosure` atom, one per item** — see
-`Disclosure`'s own section above for the accessibility contract it already
-supplies (real `aria-expanded`/`aria-controls` wiring, Enter/Space-and-
-click toggling, collapsed content kept in the DOM rather than unmounted).
-None of that is reimplemented here: `Faq` renders one `Disclosure` per
-question and nothing more. Each pair expands and collapses
+**Built on react-aria-components' own `Disclosure`/`DisclosurePanel`, one
+per item** — the primitives the `Disclosure` atom wraps, with the same
+accessibility contract (real `aria-expanded`/`aria-controls` wiring,
+Enter/Space-and-click toggling, collapsed content kept in the DOM rather
+than unmounted). `Faq` composes them directly so each row takes the FAQ
+recipe, shared with the server implementation: the whole row is the hit
+area (full width, generous vertical padding), the question sits at the
+`body-l` step, a Designer `ChevronDown` at the row's end turns half a turn
+when open (no transition under reduced motion), and the answer wraps at
+the prose measure. Questions sit between ground-matched hairlines, and
+the trigger carries the package-standard focus-visible outline. The
+server implementation hides `summary`'s native marker so the chevron is
+the one open/closed cue. Each pair expands and collapses
 INDEPENDENTLY — `Faq` holds no shared "which one is open" state and
 renders no `DisclosureGroup`, so opening one question never closes
 another, unlike a coordinated accordion.
@@ -4859,7 +4868,7 @@ not a grab-bag).
 | `StatusListState` | type | `"available" \| "partial" \| "planned"`. |
 | `StatusListDisposition` | type | `"not-offered"`, a deliberate non-capability outside the readiness axis. |
 | `StatusListHeadingLevel` | type | `2 \| 3 \| 4 \| 5 \| 6`. |
-| `Faq` | component | Expand/collapse question/answer list, under an optional heading region. Each item is this package's own `Disclosure` atom — independent, not a coordinated accordion. |
+| `Faq` | component | Expand/collapse question/answer list, under an optional heading region. Each item is a react-aria-components disclosure (native `details`/`summary` from `blocks/server`) with a turning `ChevronDown` — independent, not a coordinated accordion. |
 | `FaqProps` | type | Props for `Faq`: `eyebrow`, `heading`, `description`, `items`, `headingLevel`, `ground`, `className`, `style`, plus every native `<div>` attribute. |
 | `FaqItem` | type | One item: `id`, `question`, `answer`. |
 | `FaqHeadingLevel` | type | `2 \| 3 \| 4 \| 5 \| 6`. |

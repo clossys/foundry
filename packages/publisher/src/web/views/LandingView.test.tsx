@@ -102,8 +102,11 @@ describe("LandingView", () => {
     const closing: ResolvedSectionedViewDocument = { ...SHARED, id: "acme-closing", sections: [{ id: "closing", kind: "hero", ground: "base", eyebrow: "E-SENTINEL", heading: "CLOSING-SENTINEL", description: "D-SENTINEL" }] };
     const band = dom({ document: PAGE, trailing: [closing] }).querySelector("#closing") as HTMLElement;
     const heading = band.querySelector("h2") as HTMLElement;
-    expect(heading.className).toContain("text-h2");
-    expect(heading.className).not.toContain("text-display");
+    // The band title is Designer ContentSection's section-title step (h1 ->
+    // h0 -> display-m), never the opening hero's display-l.
+    expect(heading.className).toContain("text-h1");
+    expect(heading.className).not.toContain("text-display-l");
+    expect(band.querySelectorAll("h1")).toHaveLength(0);
   });
 
   it("holds the centred hero and call to action copy to the same prose measure", () => {

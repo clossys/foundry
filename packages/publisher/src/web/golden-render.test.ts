@@ -343,13 +343,13 @@ describe("golden: MarketingView", () => {
         "</div>" +
         "</div>" +
         '<div class="flex flex-col gap-lg">' +
-        '<div class="flex flex-col">' +
-        '<div class="flex flex-col" data-rac="">' +
-        '<button id="react-aria-_R_6eH1_" class="flex w-full items-center gap-sm rounded-default py-sm text-start text-body text-ink-primary outline-none disabled:cursor-not-allowed" data-rac="" type="button" tabindex="0" data-react-aria-pressable="true" aria-expanded="false" aria-controls="react-aria-_R_6eH2_" slot="trigger">' +
-        '<span aria-hidden="true" class="inline-block transition-transform motion-reduce:transition-none">▸</span>' +
-        "Placeholder question A?" +
+        '<div class="flex flex-col border-t border-line-base">' +
+        '<div class="group/faq flex flex-col border-b border-line-base" data-rac="">' +
+        '<button id="react-aria-_R_6eH1_" class="flex w-full cursor-pointer items-center justify-between gap-lg rounded-default py-lg text-start text-body-l font-medium tablet:py-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent summary-marker-none text-ink-primary" data-rac="" type="button" tabindex="0" data-react-aria-pressable="true" aria-expanded="false" aria-controls="react-aria-_R_6eH2_" slot="trigger">' +
+        "<span>Placeholder question A?</span>" +
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" class="shrink-0 transition-transform motion-reduce:transition-none" style="width:var(--ui-icon-md, var(--spacing-xl, 24px));height:var(--ui-icon-md, var(--spacing-xl, 24px));flex-shrink:0;stroke-width:var(--ui-icon-stroke, 2)" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg>' +
         "</button>" +
-        '<div class="ps-lg text-body-s text-ink-secondary" data-rac="" id="react-aria-_R_6eH2_" role="group" aria-labelledby="react-aria-_R_6eH1_" aria-hidden="true" hidden="">Placeholder answer A.</div>' +
+        '<div class="pb-lg pe-2xl text-body text-pretty tablet:pb-xl text-ink-secondary" style="max-width:var(--ui-width-prose-max, 48rem)" data-rac="" id="react-aria-_R_6eH2_" role="group" aria-labelledby="react-aria-_R_6eH1_" aria-hidden="true" hidden="">Placeholder answer A.</div>' +
         "</div>" +
         "</div>" +
         "</div>" +

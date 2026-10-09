@@ -155,3 +155,15 @@
   letter-spacing: var(--tracking-tight, -0.01em);
   transform: scaleX(var(--font-display-scale-x, 1));
 }
+
+/*
+ * Hides a `<summary>`'s native disclosure marker in every engine (`::marker`
+ * through `list-style`, WebKit through its own pseudo-element), for a
+ * disclosure that draws its own cue (the `Faq` block's chevron).
+ */
+@utility summary-marker-none {
+  list-style: none;
+  &::-webkit-details-marker {
+    display: none;
+  }
+}

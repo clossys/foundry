@@ -120,6 +120,12 @@
   .mt-xs {
     margin-top: var(--spacing-xs, 4px);
   }
+  .summary-marker-none {
+    list-style: none;
+    &::-webkit-details-marker {
+      display: none;
+    }
+  }
   .block {
     display: block;
   }
@@ -285,6 +291,9 @@
   }
   .rotate-90 {
     rotate: 90deg;
+  }
+  .rotate-180 {
+    rotate: 180deg;
   }
   .font-display {
     font-family: var(--font-display, system-ui, ui-sans-serif, -apple-system, "Segoe UI", sans-serif);
@@ -568,6 +577,9 @@
   .py-sm {
     padding-block: var(--spacing-sm, 8px);
   }
+  .py-xl {
+    padding-block: var(--spacing-xl, 24px);
+  }
   .py-xs {
     padding-block: var(--spacing-xs, 4px);
   }
@@ -589,8 +601,8 @@
   .pt-lg {
     padding-top: var(--spacing-lg, 16px);
   }
-  .pt-xs {
-    padding-top: var(--spacing-xs, 4px);
+  .pb-lg {
+    padding-bottom: var(--spacing-lg, 16px);
   }
   .text-center {
     text-align: center;
@@ -634,6 +646,10 @@
   .leading-none {
     --tw-leading: 1;
     line-height: 1;
+  }
+  .leading-tight {
+    --tw-leading: var(--leading-tight, 1.25);
+    line-height: var(--leading-tight, 1.25);
   }
   .font-medium {
     --tw-font-weight: var(--font-weight-medium, 500);
@@ -756,6 +772,9 @@
   .not-last\:border-b:not(:last-child) {
     border-bottom-style: var(--tw-border-style, solid);
     border-bottom-width: 1px;
+  }
+  .group-open\/faq\:rotate-180:is(:where(.group\/faq):is([open], :popover-open, :open) *) {
+    rotate: 180deg;
   }
   .not-last\:after\:text-ink-muted:not(:last-child)::after {
     content: var(--tw-content, "");
@@ -913,6 +932,15 @@
     .tablet\:justify-between {
       justify-content: space-between;
     }
+    .tablet\:py-xl {
+      padding-block: var(--spacing-xl, 24px);
+    }
+    .tablet\:pb-xl {
+      padding-bottom: var(--spacing-xl, 24px);
+    }
+    .tablet\:text-h0 {
+      font-size: var(--text-h0, 32px);
+    }
   }
   @media (width >= 1024px) {
     .tablet-lg\:max-w-display {
@@ -920,6 +948,9 @@
     }
     .tablet-lg\:gap-3xl {
       gap: var(--spacing-3xl, 48px);
+    }
+    .tablet-lg\:text-display-m {
+      font-size: var(--text-display-m, 40px);
     }
   }
   @media (width >= 1280px) {

@@ -37,6 +37,15 @@ export interface ContentSectionProps extends Omit<HTMLAttributes<HTMLDivElement>
 const MODULE_GAP = "gap-2xl tablet-lg:gap-3xl";
 
 /**
+ * The section title: the display face on the heading ramp's section steps,
+ * scaling with the viewport (h1 28px, h0 32px from tablet, display-m 40px
+ * from tablet-lg), one display step under a `Hero`'s display-l, so a body
+ * section reads as a title next to the opening rather than a label. The
+ * ramp bundles no line-height, so the title pairs with `leading-tight`.
+ */
+const SECTION_TITLE_CLASS = "text-h1 tablet:text-h0 tablet-lg:text-display-m font-display leading-tight text-balance";
+
+/**
  * One section anatomy for long-form marketing pages: a header group
  * (eyebrow, heading, description, actions) followed by a module slot.
  *
@@ -86,7 +95,7 @@ export function ContentSection({
           style={{ maxWidth: SECTION_MEASURE_MAX.prose }}
         >
           {eyebrow ? <p className={cx("text-caption uppercase tracking-label", colors.muted)}>{eyebrow}</p> : null}
-          {heading ? <HeadingTag className={cx("text-h2 font-display text-balance", colors.primary)}>{heading}</HeadingTag> : null}
+          {heading ? <HeadingTag className={cx(SECTION_TITLE_CLASS, colors.primary)}>{heading}</HeadingTag> : null}
           {description ? <p className={cx("text-body-l text-pretty", colors.secondary)}>{description}</p> : null}
           {actions ? (
             <div className={centred ? "flex flex-wrap items-center justify-center gap-sm" : "flex flex-wrap items-center gap-sm"}>{actions}</div>

@@ -144,9 +144,12 @@ describe("packed Publisher web React-server boundary", () => {
     expect(server.summaryClasses[0]).toContain("focus-visible:outline-accent");
   });
 
-  it("keeps the packed native summary's list-item disclosure marker", () => {
+  it("hides the packed native summary's marker in favour of the Designer chevron", () => {
     expect(server.summaryClasses).toHaveLength(1);
-    expect(server.summaryClasses[0]).not.toMatch(/\b(?:flex|inline-flex|block|list-none)\b/);
+    expect(server.summaryClasses[0]).toContain("summary-marker-none");
+    // The chevron is the Designer Icon (a forwardRef the probe does not
+    // descend into); what must not ship is a text-glyph marker.
+    expect(server.text ?? []).not.toContain("▸");
   });
 
   it("keeps the ordinary packed entry on the React Aria FAQ implementation", () => {

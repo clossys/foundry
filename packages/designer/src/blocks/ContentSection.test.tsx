@@ -9,7 +9,9 @@ describe("ContentSection", () => {
     render(<ContentSection eyebrow="Eyebrow" heading="Heading" description="Description" headingLevel={3} />);
     const heading = screen.getByRole("heading", { name: "Heading" });
     expect(heading.tagName).toBe("H3");
-    expect(heading).toHaveClass("text-h2", "text-balance");
+    expect(heading).toHaveClass("text-h1", "tablet:text-h0", "tablet-lg:text-display-m", "font-display", "leading-tight", "text-balance");
+    expect(heading).not.toHaveClass("text-h2");
+    expect(screen.getByText("Description")).toHaveClass("text-body-l");
     expect(screen.getByText("Description")).toHaveClass("text-body-l", "text-pretty");
   });
 

@@ -18,12 +18,36 @@ describe("Faq server-native disclosure", () => {
     );
   });
 
-  it("keeps summary's native list-item display and disclosure marker", () => {
+  it("hides summary's native marker and shows a Designer chevron that turns on open, reduced-motion safe", () => {
     const { container } = render(<Faq items={ITEMS} />);
-    const summary = container.querySelector("details > summary");
+    const details = container.querySelector("details") as HTMLElement;
+    const summary = container.querySelector("details > summary") as HTMLElement;
+    const chevron = summary.querySelector("svg") as SVGElement;
 
-    expect(summary).toBeInstanceOf(HTMLElement);
-    expect(summary?.className).not.toMatch(/\b(?:flex|inline-flex|block|list-none)\b/);
+    expect(summary).toHaveClass("summary-marker-none");
+    expect(chevron).toBeInstanceOf(SVGElement);
+    expect(chevron).toHaveAttribute("aria-hidden", "true");
+    expect(details).toHaveClass("group/faq");
+    expect(chevron).toHaveClass("group-open/faq:rotate-180", "transition-transform", "motion-reduce:transition-none");
+  });
+
+  it("makes the whole row the hit area, the question at body-l, the answer at the prose measure", () => {
+    const { container } = render(<Faq items={ITEMS} />);
+    const summary = container.querySelector("details > summary") as HTMLElement;
+    const answer = container.querySelector("details > div") as HTMLElement;
+
+    expect(summary).toHaveClass("w-full", "py-lg", "tablet:py-xl", "text-body-l");
+    expect(summary.textContent).toBe("Question one");
+    expect(answer).toHaveClass("text-body");
+    expect(answer.style.maxWidth).toContain("--ui-width-prose-max");
+  });
+
+  it("puts every question between ground-matched hairlines", () => {
+    const { container } = render(<Faq items={[...ITEMS, { id: "two", question: "Question two", answer: "Answer two." }]} ground="inverse" />);
+    const list = container.querySelector("details")?.parentElement as HTMLElement;
+
+    expect(list).toHaveClass("border-t", "border-line-on-inverse");
+    for (const details of container.querySelectorAll("details")) expect(details).toHaveClass("border-b", "border-line-on-inverse");
   });
 
   it.each([
