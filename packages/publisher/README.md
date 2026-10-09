@@ -3641,9 +3641,10 @@ composes those and passes them in.
   lifecycle, and moves focus to it; focus returns to the opener when it
   closes. A failed withdrawal keeps the notice open with its status. A
   lifecycle that throws, or returns a malformed snapshot, is disposed and
-  analytics is not allowed; when that came from `refuse()` while analytics
-  was allowed, or followed a failed withdrawal, the notice stays open with
-  the failed withdrawal status.
+  analytics is not allowed; when that came from a `refuse()` called while
+  analytics was allowed, even after it published its refusal, or followed a
+  failed withdrawal, the notice stays open with the failed withdrawal
+  status.
 - **Review seam.** On a loopback host only, the `consent-review` query
   parameter (`fresh`, `granted`, `refused` or `gpc`, or `live` to clear it)
   builds a simulated lifecycle over an in-memory store with no evidence

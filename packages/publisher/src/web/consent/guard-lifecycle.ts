@@ -11,8 +11,8 @@ export interface GuardedLifecycle extends ConsentLifecyclePort {
 }
 
 /**
- * The failure snapshot after a throw from `refuse()` while analytics was
- * allowed, or after a snapshot that showed a failed withdrawal.
+ * The failure snapshot after a failure during a `refuse()` called while
+ * analytics was allowed, or after a snapshot that showed a failed withdrawal.
  */
 export const FAILED_WITHDRAWAL_VIEW: ConsentSnapshotView = Object.freeze({ ...NO_DECISION_VIEW, withdrawal: "failed" });
 
@@ -39,13 +39,21 @@ function notify(listeners: Set<() => void>): void {
 /**
  * Wraps the host's lifecycle so a throw or a malformed snapshot from any of
  * its calls never reaches React. The first failure is logged and every
- * later read returns the failure snapshot: `FAILED_WITHDRAWAL_VIEW` when the
- * failure came from `refuse()` while the last snapshot read allowed
- * analytics, or when that snapshot showed a failed withdrawal, and the
- * no-decision snapshot otherwise. The microtask that notifies listeners
- * from `subscribeDeferred`, then runs `onFailure`, is queued first; then
+ * later read returns the failure snapshot.
+ *
+ * The failure snapshot is `FAILED_WITHDRAWAL_VIEW` when the failure happens
+ * during a `refuse()` that began while analytics was allowed, or when the
+ * last snapshot showed a failed withdrawal; it is the no-decision snapshot
+ * otherwise. Both facts come only from outermost reads that completed
+ * before the failing call. A read made during a call, such as a listener's
+ * read while the lifecycle publishes, never updates them, because a
+ * lifecycle publishes a withdrawal before its call returns.
+ *
+ * On failure the microtask that notifies listeners from
+ * `subscribeDeferred`, then runs `onFailure`, is queued first; then
  * listeners from `subscribe` are notified synchronously, so a bound
  * transport reads the failure snapshot before the failing call returns.
+ * Each listener call is caught, so one cannot stop the others.
  */
 export function guardLifecycle(lifecycle: ConsentLifecyclePort, onFailure: () => void): GuardedLifecycle {
   let failed = false;
@@ -53,12 +61,16 @@ export function guardLifecycle(lifecycle: ConsentLifecyclePort, onFailure: () =>
   let failureView = NO_DECISION_VIEW;
   let lastAllowed = false;
   let withdrawalFailed = false;
+  /** Calls in progress: reads at a depth above zero are nested in another call. */
+  let depth = 0;
+  /** True while a `refuse()` that began with analytics allowed is in progress. */
+  let withdrawing = false;
   const syncListeners = new Set<() => void>();
   const deferredListeners = new Set<() => void>();
-  const fail = (fromRefuse: boolean, log: () => void): ConsentSnapshotView => {
+  const fail = (log: () => void): ConsentSnapshotView => {
     if (!failed) {
       failed = true;
-      if ((fromRefuse && lastAllowed) || withdrawalFailed) failureView = FAILED_WITHDRAWAL_VIEW;
+      if (withdrawing || withdrawalFailed) failureView = FAILED_WITHDRAWAL_VIEW;
       log();
       queueMicrotask(() => {
         notify(deferredListeners);
@@ -76,16 +88,30 @@ export function guardLifecycle(lifecycle: ConsentLifecyclePort, onFailure: () =>
   };
   const read = (call: () => ConsentSnapshotView, fromRefuse = false): ConsentSnapshotView => {
     if (failed) return failureView;
-    let view: unknown;
+    // Captured before the call: the call may publish, and its listeners read.
+    const outermost = depth === 0;
+    const wasWithdrawing = withdrawing;
+    if (fromRefuse && lastAllowed) withdrawing = true;
+    depth += 1;
     try {
-      view = call();
-    } catch (error) {
-      return fail(fromRefuse, threw(error));
+      let view: unknown;
+      try {
+        view = call();
+      } catch (error) {
+        return fail(threw(error));
+      }
+      // A read made during the call failed: the call's own result is stale.
+      if (failed) return failureView;
+      if (!isSnapshotView(view)) return fail(malformed);
+      if (outermost) {
+        lastAllowed = view.allowed;
+        withdrawalFailed = view.withdrawal === "failed";
+      }
+      return view;
+    } finally {
+      depth -= 1;
+      withdrawing = wasWithdrawing;
     }
-    if (!isSnapshotView(view)) return fail(fromRefuse, malformed);
-    lastAllowed = view.allowed;
-    withdrawalFailed = view.withdrawal === "failed";
-    return view;
   };
   const listen = (listeners: Set<() => void>, listener: () => void): (() => void) => {
     if (failed) return () => {};
@@ -93,7 +119,7 @@ export function guardLifecycle(lifecycle: ConsentLifecyclePort, onFailure: () =>
     try {
       unsubscribe = lifecycle.subscribe(listener);
     } catch (error) {
-      fail(false, threw(error));
+      fail(threw(error));
       return () => {};
     }
     listeners.add(listener);

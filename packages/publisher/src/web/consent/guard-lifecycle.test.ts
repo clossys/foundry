@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { bindTransport } from "./bind-transport.js";
 import { FAILED_WITHDRAWAL_VIEW, guardLifecycle } from "./guard-lifecycle.js";
 import { NO_DECISION_VIEW } from "./ports.js";
 import type { ConsentLifecyclePort, ConsentSnapshotView } from "./ports.js";
@@ -32,6 +33,37 @@ function rawLifecycle(throwing: Set<string>, snapshot: ConsentSnapshotView = GRA
   };
   return { lifecycle, calls };
 }
+
+/**
+ * A lifecycle whose `refuse()` publishes first, as the spec requires: it
+ * notifies its subscribers of `allowed: false` before it throws or returns
+ * a malformed value. Starts from `start`.
+ */
+function publishingLifecycle(outcome: "throws" | "returns a malformed value", start: ConsentSnapshotView = GRANTED) {
+  let snapshot = start;
+  const listeners = new Set<() => void>();
+  const lifecycle: ConsentLifecyclePort = {
+    getSnapshot: () => snapshot,
+    subscribe(listener) {
+      listeners.add(listener);
+      return () => {
+        listeners.delete(listener);
+      };
+    },
+    grant: () => snapshot,
+    refuse() {
+      snapshot = { ...snapshot, effective: "denied", allowed: false, withdrawal: "idle", sequence: snapshot.sequence + 1 };
+      for (const listener of [...listeners]) listener();
+      if (outcome === "throws") throw new Error("refuse failed");
+      return {} as ConsentSnapshotView;
+    },
+    refresh: () => snapshot,
+    dispose: () => {},
+  };
+  return lifecycle;
+}
+
+const OUTCOMES = ["throws", "returns a malformed value"] as const;
 
 describe("guardLifecycle", () => {
   it("stays failed between the throw and the microtask: later reads and subscriptions never reach the lifecycle", async () => {
@@ -125,6 +157,95 @@ describe("guardLifecycle", () => {
     expect(() => guard.grant()).not.toThrow();
     await Promise.resolve();
     expect(order).toEqual(["sync throws", "sync", "deferred", "onFailure"]);
+  });
+
+  it.each(OUTCOMES)("reads as a failed withdrawal, with a bound transport, when refuse() publishes allowed: false and then %s", (outcome) => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const guard = guardLifecycle(publishingLifecycle(outcome), () => {});
+    const transport = { setPermission: vi.fn() };
+    const unbind = bindTransport(guard, transport);
+    expect(transport.setPermission).toHaveBeenLastCalledWith(true);
+    expect(guard.refuse()).toBe(FAILED_WITHDRAWAL_VIEW);
+    expect(guard.getSnapshot()).toBe(FAILED_WITHDRAWAL_VIEW);
+    expect(transport.setPermission).toHaveBeenLastCalledWith(false);
+    unbind();
+  });
+
+  it.each(OUTCOMES)("reads as a failed withdrawal, with only a React-style reader, when refuse() publishes allowed: false and then %s", async (outcome) => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const onFailure = vi.fn();
+    const guard = guardLifecycle(publishingLifecycle(outcome), onFailure);
+    const reads: ConsentSnapshotView[] = [guard.getSnapshot()];
+    // React's store listener reads the snapshot as soon as it is notified.
+    guard.subscribeDeferred(() => reads.push(guard.getSnapshot()));
+    expect(guard.refuse()).toBe(FAILED_WITHDRAWAL_VIEW);
+    await Promise.resolve();
+    expect(onFailure).toHaveBeenCalledTimes(1);
+    expect(reads.map((read) => read.allowed)).toEqual([true, false, false]);
+    expect(reads.at(-1)).toBe(FAILED_WITHDRAWAL_VIEW);
+  });
+
+  it.each(OUTCOMES)("keeps a failed withdrawal from the last snapshot when refuse() publishes a cleared one and then %s", (outcome) => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const failedWithdrawal: ConsentSnapshotView = { ...NO_DECISION_VIEW, withdrawal: "failed" };
+    const guard = guardLifecycle(publishingLifecycle(outcome, failedWithdrawal), () => {});
+    guard.subscribe(() => guard.getSnapshot());
+    expect(guard.getSnapshot()).toBe(failedWithdrawal);
+    expect(guard.refuse()).toBe(FAILED_WITHDRAWAL_VIEW);
+  });
+
+  it("reads as no decision when a call throws after a refuse() that completed", () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const throwing = new Set<string>();
+    const { lifecycle } = rawLifecycle(throwing);
+    const denied: ConsentSnapshotView = { ...NO_DECISION_VIEW, effective: "denied", persistence: "stored" };
+    lifecycle.refuse = () => denied;
+    const guard = guardLifecycle(lifecycle, () => {});
+    expect(guard.getSnapshot()).toBe(GRANTED);
+    expect(guard.refuse()).toBe(denied);
+    throwing.add("refresh");
+    expect(guard.refresh()).toBe(NO_DECISION_VIEW);
+  });
+
+  it("returns the failure snapshot, not the call's own result, when a read during the call failed", () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const { lifecycle } = rawLifecycle(new Set());
+    let publishing = false;
+    const listeners = new Set<() => void>();
+    lifecycle.subscribe = (listener) => {
+      listeners.add(listener);
+      return () => {};
+    };
+    lifecycle.getSnapshot = () => {
+      if (publishing) throw new Error("snapshot read failed");
+      return NO_DECISION_VIEW;
+    };
+    lifecycle.grant = () => {
+      publishing = true;
+      for (const listener of [...listeners]) listener();
+      publishing = false;
+      return GRANTED;
+    };
+    const guard = guardLifecycle(lifecycle, () => {});
+    guard.subscribe(() => guard.getSnapshot());
+    expect(guard.grant()).toBe(NO_DECISION_VIEW);
+    expect(guard.failed()).toBe(true);
+    expect(guard.getSnapshot()).toBe(NO_DECISION_VIEW);
+  });
+
+  it("queues the deferred notification before it notifies synchronous listeners", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const throwing = new Set<string>();
+    const { lifecycle } = rawLifecycle(throwing);
+    const order: string[] = [];
+    const guard = guardLifecycle(lifecycle, () => order.push("onFailure"));
+    guard.subscribe(() => queueMicrotask(() => order.push("sync listener's microtask")));
+    guard.subscribeDeferred(() => order.push("deferred"));
+    throwing.add("grant");
+    guard.grant();
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(order).toEqual(["deferred", "onFailure", "sync listener's microtask"]);
   });
 
   it.each([

@@ -613,6 +613,43 @@ describe("ConsentExperience: a lifecycle that throws on a press (C-24, C-45)", (
     expect(banner()).not.toBeNull();
   });
 
+  it.each([
+    ["throws", "a transport"],
+    ["throws", "no transport"],
+    ["returns a malformed value", "a transport"],
+    ["returns a malformed value", "no transport"],
+  ] as const)("keeps the failed withdrawal status when refuse() publishes allowed: false and then %s, with %s", async (outcome, bound) => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const transport = bound === "a transport" ? { setPermission: vi.fn() } : undefined;
+    const { factory, created } = recordingFactory(() => {
+      const lifecycle = fakeLifecycle({ ...GRANTED_STORED, promptAutomatically: true });
+      const publish = lifecycle.refuse;
+      lifecycle.refuse = () => {
+        // Publishes first: every subscriber reads the guarded snapshot now.
+        publish();
+        if (outcome === "throws") throw new Error("refuse failed");
+        return {} as ConsentSnapshotView;
+      };
+      return lifecycle;
+    });
+    render(
+      <ConsentExperience copy={COPY} createLifecycle={factory} transport={transport} {...NOTICE_REVIEW_OFF}>
+        <Probe />
+      </ConsentExperience>,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Reject" }));
+    if (transport !== undefined) expect(transport.setPermission).toHaveBeenLastCalledWith(false);
+    await act(async () => {});
+    expect(created[0]!.disposed).toBe(true);
+    expect(banner()).not.toBeNull();
+    expect(screen.getByRole("status")).toHaveTextContent("Status withdrawal failed.");
+    expect(probe()).toEqual({ allowed: false, status: expect.objectContaining({ withdrawal: "failed" }) });
+    if (transport !== undefined) expect(transport.setPermission).toHaveBeenLastCalledWith(false);
+    fireEvent.keyDown(banner()!, { key: "Escape" });
+    expect(banner()).not.toBeNull();
+    expect(screen.getByRole("status")).toHaveTextContent("Status withdrawal failed.");
+  });
+
   it("keeps a failed withdrawal's status visible when the lifecycle throws after it", async () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
     let broken = false;
@@ -807,6 +844,40 @@ describe("ConsentExperience: incomplete hand-built copy", () => {
       document.dispatchEvent(new Event("privacy-choices:open"));
     });
     expect(banner()).toBeNull();
+  });
+
+  it("logs missing notice copy when the notice is not visible, over a stored grant", () => {
+    const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+    const copy = { ...COPY, title: undefined } as unknown as ResolvedConsentCopy;
+    const { factory } = recordingFactory(() => fakeLifecycle(GRANTED_STORED));
+    render(<ConsentExperience copy={copy} createLifecycle={factory} {...NOTICE_REVIEW_OFF} />);
+    expect(banner()).toBeNull();
+    expect(consoleError).toHaveBeenCalledWith("ConsentExperience: the copy is missing a notice field, so the notice was omitted and analytics is not allowed.");
+  });
+
+  it("follows the copy across re-renders: complete, missing, complete, missing", () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const missing = { ...COPY, rejectLabel: undefined } as unknown as ResolvedConsentCopy;
+    const transport = { setPermission: vi.fn() };
+    const { factory } = recordingFactory(() => fakeLifecycle(GRANTED_STORED));
+    const view = (copy: ResolvedConsentCopy) => (
+      <ConsentExperience copy={copy} createLifecycle={factory} transport={transport} {...NOTICE_REVIEW_OFF}>
+        <Probe />
+      </ConsentExperience>
+    );
+    const { rerender } = render(view(COPY));
+    expect(transport.setPermission).toHaveBeenLastCalledWith(true);
+    expect(probe().allowed).toBe(true);
+    rerender(view(missing));
+    expect(transport.setPermission).toHaveBeenLastCalledWith(false);
+    expect(probe().allowed).toBe(false);
+    rerender(view(COPY));
+    expect(transport.setPermission).toHaveBeenLastCalledWith(true);
+    expect(probe().allowed).toBe(true);
+    rerender(view(missing));
+    expect(transport.setPermission).toHaveBeenLastCalledWith(false);
+    expect(probe().allowed).toBe(false);
+    expect(factory).toHaveBeenCalledTimes(1);
   });
 
   it("omits the policy link, and keeps the notice, when the link label is missing", () => {
