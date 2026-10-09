@@ -201,8 +201,10 @@ no in-memory choice and Global Privacy Control off.
   `denied` with GPC on). It is not allowed under either regime, and the
   notice does not open by itself. It opens on reopen with the
   `storageUnavailable` status. A choice the visitor makes then holds in
-  memory for the visit, and a later re-read that finds storage unreadable
-  never drops a choice made this visit to `unknown` (C-58).
+  memory for the visit. A later re-read that finds storage unreadable never
+  drops a refusal made this visit, or a grant held only in memory, to
+  `unknown`; a grant this visit stored can no longer be confirmed and
+  drops, failing closed (C-58).
 - **C-38 Every explicit choice writes a fresh record.** Each `grant()` or
   `refuse()` that writes, including `grant()` over a live grant and
   `refuse()` over a live denial, writes a new `decidedAt` and `expiresAt`.
@@ -326,14 +328,22 @@ Transitions. `seq` is the lifecycle's in-memory decision counter. "Prior
 allowed" is the `allowed` field of the snapshot before the call. A
 "read-back" reads storage again, parses it, and evaluates `isAllowed` under
 the current regime and signals while ignoring any in-memory choice; its
-result is `allowed`, `not allowed` or `unreadable`. An "in-memory choice"
-is the record `decideChoice` produced for a choice whose result was
-`persistence: "memory"`; it lasts for the visit (C-11, C-54). "This
-visit's choice" is the latest `grant()` or `refuse()` that changed state
-through this lifecycle, stored or in memory. When it is a refusal, it is
-the **refusal floor** (C-56). The **withdrawal watermark** is the
-`decidedAt` of the record a withdrawal's read-back saw when the withdrawal
-failed (C-57).
+result is `allowed`, `not allowed` or `unreadable`. Every read-back, the
+one taken at a `refuse()` call to classify it and the one after a
+withdrawal's write, differs from a plain `isAllowed` in one way (C-57): a
+grant that is not live only because its `decidedAt` is after `now` counts
+as `allowed` when it would be allowed once live, that is, when `isAllowed`
+holds for it evaluated at its own `decidedAt` (so a grant barred by a
+non-overridable signal still does not count). With no valid `now`, C-61
+classifies a read-back instead. A re-read never uses this rule to lift
+a choice: lifting still requires a live record (C-54, C-56). An
+"in-memory choice" is the record `decideChoice` produced for a choice
+whose result was `persistence: "memory"`; it lasts for the visit (C-11,
+C-54). "This visit's choice" is the latest `grant()` or `refuse()` that
+changed state through this lifecycle, stored or in memory. When it is a
+refusal, it is the **refusal floor** (C-56). The **withdrawal watermark**
+is the latest `decidedAt` of a record that a failed withdrawal's
+read-back saw (C-57).
 
 | From | Event | Effect | Result |
 | --- | --- | --- | --- |
@@ -345,21 +355,23 @@ failed (C-57).
 | `none`, `unknown`, `denied` or `granted` | `grant()`, write `unavailable` | grant becomes the in-memory choice; `withdrawal` back to `idle`; no evidence call (C-41) | `granted`, `memory`, evidence `none` |
 | prior allowed `false` and read-back not `allowed` | `refuse()`, write `ok` | fresh denial (C-38), `seq+1`, evidence `pending` if a port exists | `denied`, `stored` |
 | prior allowed `false` and read-back not `allowed` | `refuse()`, write `unavailable` | denial becomes the in-memory choice; no evidence call | `denied`, `memory` |
-| prior allowed `true` (`granted`, or `none` under `notice`), **or** read-back `allowed` (for example a second refusal after a failed withdrawal) | `refuse()` | a **withdrawal**: publish `allowed: false` to subscribers before anything else, including before reading the clock (C-61), then `seq+1`, abort any in-flight evidence, write a denial (and `remove()` if the write fails), then read back | the next three rows |
+| prior allowed `true` (`granted`, or `none` under `notice`), **or** read-back at the call `allowed` (for example a second refusal after a failed withdrawal, or a grant dated after `now` that would be allowed once live, C-57) | `refuse()` | a **withdrawal**: publish `allowed: false` to subscribers before anything else, including before reading the clock (C-61), then `seq+1`, abort any in-flight evidence, write a denial (and `remove()` if the write fails), then read back | the next three rows |
 | withdrawal | write `ok`, read-back `not allowed` | evidence `pending` if a port exists | `denied`, `stored`, `withdrawal: "idle"` |
 | withdrawal | write `unavailable`, `remove()` `ok`, read-back `not allowed` | record removed (possible under `prompt` only); denial becomes the in-memory choice | `denied`, `memory`, `withdrawal: "idle"` |
-| withdrawal | read-back `allowed` (a grant that is not live only because it is dated after `now` counts, C-57) or `unreadable`, whatever the write and removal returned | denial becomes the in-memory choice; the record the read-back saw sets the withdrawal watermark (C-57) | `denied`, `memory`, `withdrawal: "failed"` |
-| any, after mount | `refuse()` while `clock()` returns an invalid date or throws | after the publish, nothing is written; handled as a write that returned `unavailable` (a withdrawal still calls `remove()` and reads back); the refusal is an undated in-memory denial that no re-read lifts (C-61) | `denied`, `memory` |
-| any | an evidence call is due for a choice whose `seq` is no longer the latest (a synchronous subscriber made a newer choice during the publish) | the call is never made; the older choice's evidence is aborted (C-41) | unchanged |
+| withdrawal | read-back `allowed` (including a grant dated after `now` that would be allowed once live, C-57) or `unreadable`, whatever the write and removal returned | denial becomes the in-memory choice; the record the read-back saw, if any, moves the withdrawal watermark forward (C-57) | `denied`, `memory`, `withdrawal: "failed"` |
+| any, after mount | `refuse()` while `clock()` returns an invalid date or throws | after the publish, nothing is written; a withdrawal whenever the prior snapshot allowed or the read-back at the call, under C-61's no-clock rule, is `allowed` (storage holds any grant, or under `notice` no record); a withdrawal calls `remove()` and reads back under the same rule; the refusal is an undated in-memory denial that no re-read lifts and only the visitor's `grant()` replaces (C-61) | `denied`, `memory`; `withdrawal: "failed"` when the read-back is `allowed` or `unreadable` |
+| any, after mount | `grant()` while `clock()` returns an invalid date or throws | no-op, no throw, nothing written, no evidence (C-61) | unchanged |
+| any | an evidence call is due for a choice whose `seq` is no longer the latest (a synchronous subscriber made a newer choice during the publish) | the call is never made, and the snapshot never shows `pending` for that choice (C-41) | evidence follows the newer choice |
 | any | evidence result for an older `seq` | ignored | unchanged |
 | evidence `pending` | `saved` for the current `seq` | none | evidence `saved` |
-| evidence `pending` | `conflict` | local record re-read; a conflict never upgrades to `granted` | evidence `conflict` |
+| evidence `pending` | `conflict` | local record re-read; a conflict never upgrades to `granted`; if that re-read switches the snapshot to another tab's record, the switch wins (C-41) | evidence `conflict`, or `none` after a switch |
 | evidence `pending` | `unavailable`, or a throw | local choice kept | evidence `unavailable` |
-| any | `refresh()`, or an external change from another tab | a re-read under C-54: evaluated as at mount against the clock, except that an in-memory choice is kept unless the read-back record is live and newer, and not dated after `now`; `withdrawal: "failed"` is re-checked; nothing rewritten; no `onChange` | an expired stored record becomes `none`; an in-memory choice and a failed withdrawal survive |
-| refusal floor | a re-read that finds no live grant later than the refusal's `decidedAt` and not after `now` (the record cleared, a denial under another `policy.version` that parses as no choice, an older or watermarked grant, or storage unreadable) | the refusal is kept; if storage no longer reads back as this refusal, persistence drops to `memory`; nothing rewritten; no `onChange` (C-56) | `denied`, not allowed, no automatic prompt, `memory` or `stored`, `storage` as read |
+| any | `refresh()`, or an external change from another tab | a re-read under C-54, subject to the C-56 to C-58 rows below: evaluated as at mount against the clock, except that an in-memory choice is kept unless the read-back record is live and newer, and not dated after `now`; `withdrawal: "failed"` is re-checked; nothing rewritten; no `onChange` | an expired stored record becomes `none`; an in-memory choice and a failed withdrawal survive |
+| refusal floor | a re-read that finds no live grant later than the refusal's `decidedAt` and not after `now` (the record cleared, a denial under another `policy.version` that parses as no choice, an older or watermarked grant, or storage unreadable) | the refusal is kept; persistence is `stored` while storage holds a live denial (this one or another tab's), otherwise `memory`; nothing rewritten; no `onChange` (C-56) | `denied`, not allowed, no automatic prompt, `stored` or `memory`, `storage` as read |
 | this visit's grant | a re-read that finds another tab's live denial (for an in-memory grant, one later than it and not after `now`, C-54) | the denial replaces the grant; the floor is one-sided, so nothing holds a grant against a refusal (C-56) | `denied`, `stored` |
-| this visit's choice | a re-read whose storage read is `unavailable` | the choice is kept, never `unknown` (C-58) | its status, `memory`, `storage: "unreadable"` |
-| any | a re-read that switches the snapshot to a record another tab wrote | results for the replaced choice are ignored from then on (C-41) | evidence `none` |
+| this visit's refusal, or a grant held only in memory | a re-read whose storage read is `unavailable` | the choice is kept, never `unknown` (C-58) | its status, `memory`, `storage: "unreadable"` |
+| this visit's grant, `stored` | a re-read whose storage read is `unavailable` | the grant can no longer be confirmed and is dropped; fails closed (C-58) | `unknown` (or `denied` with GPC on), not allowed, `storage: "unreadable"`, persistence `none` |
+| any | a re-read that switches the snapshot to a record another tab wrote | `seq` does not move; results for the replaced choice are ignored from then on, by its per-choice token (C-41) | evidence `none`, persistence `stored` |
 
 - **C-11 A failed save never reports a stored choice.** After a failed
   write the snapshot is `persistence: "memory"` and evidence is never
@@ -373,10 +385,14 @@ failed (C-57).
 - **C-13 A withdrawal completes only on verified read-back.** A `refuse()`
   is a withdrawal when the prior snapshot was allowed (from a grant under
   either regime, or from no choice under `notice`) **or** a read-back taken
-  at the call is `allowed`. The second case covers a repeated refusal after
-  a failed withdrawal, whose snapshot is already not allowed while storage
-  still allows. A withdrawal reports success only when the read-back after
-  the write is `not allowed`; `allowed` and `unreadable` both fail it.
+  at the call is `allowed`. Both read-backs follow the definition above, so
+  a grant dated after `now` that would be allowed once live counts as
+  `allowed` at the call as well as after the write (C-57). The second case
+  covers a repeated refusal after a failed withdrawal, whose snapshot is
+  already not allowed while storage still allows, and a refusal of a grant
+  stored under a clock that has since moved back, whose snapshot was never
+  allowed. A withdrawal reports success only when the read-back after the
+  write is `not allowed`; `allowed` and `unreadable` both fail it.
   Under `notice`, a missing record is allowed, so removal alone never
   completes a withdrawal there. On failure the snapshot carries
   `withdrawal: "failed"` and the notice stays open with the
@@ -385,7 +401,8 @@ failed (C-57).
   persists, through further refusals and every re-read, until a read-back
   is `not allowed`, the visitor grants, or a live, newer record from another
   tab, dated after the withdrawal watermark, replaces the in-memory denial
-  (C-54, C-57); only then does it return to `idle`. If storage keeps
+  (C-54, C-57; never an undated denial, C-61); only then does it return to
+  `idle`. If storage keeps
   returning the old grant, or under `notice` holds no record at all, a
   later document load reads it as allowed; that residual case is open
   question 7.
@@ -421,35 +438,59 @@ failed (C-57).
   automatic prompt. That includes storage cleared in another tab (for
   example by a sign-out), a denial written under another `policy.version`
   that parses here as no choice (which under `notice` would otherwise read
-  as allowed), an expired or older record, and unreadable storage. When the
-  re-read no longer finds this refusal stored, persistence drops from
-  `stored` to `memory`, because the refusal is no longer stored, and the
-  refusal becomes the in-memory choice. The floor is one-sided: nothing
-  holds a grant against a refusal, so a re-read still moves this visit's
-  grant to `denied` when another tab withdraws or refuses (C-54). A
-  `grant()` by the visitor replaces the floor, as any new choice does.
+  as allowed), an expired or older record, and unreadable storage.
+  Persistence follows what the re-read finds: `stored` while storage holds
+  a live denial, this refusal or another tab's, and `memory` otherwise,
+  with the refusal becoming the in-memory choice. A live, newer denial from
+  another tab that replaces the floor or a grant (C-54) is therefore
+  `stored`, not `memory`. The floor is one-sided: nothing holds a grant
+  against a refusal, so a re-read still moves this visit's grant to
+  `denied` when another tab withdraws or refuses (C-54). A `grant()` by the
+  visitor replaces the floor, as any new choice does.
 - **C-57 A failed withdrawal remembers what it saw.** When a withdrawal
-  fails, the lifecycle keeps the `decidedAt` of the record its read-back
-  saw as the withdrawal watermark for the rest of the visit. That record,
-  and any record dated at or before the watermark, never replaces the
-  in-memory denial afterwards, even once the clock is corrected and the
-  record would otherwise be live and newer than the denial; only a record
-  dated strictly after the watermark can (and then only under C-54 and
-  C-56). For a withdrawal's read-back, a grant that is not live only
-  because its `decidedAt` is after `now` counts as `allowed`: it becomes
-  live once the clock catches up, so a withdrawal that left it in storage
-  has failed. Example: a grant is stored at T0; the clock moves back a
-  day; `refuse()` fails to write and to remove, and its read-back sees the
-  T0 grant, so the withdrawal is `failed` with watermark T0; the clock is
-  corrected to two hours after T0; `refresh()` still reports `denied` with
-  `withdrawal: "failed"`. A `grant()` by the visitor clears the watermark.
-- **C-58 An unreadable re-read keeps this visit's choice.** A re-read
-  whose storage read is `unavailable` never drops a choice made this visit
-  to `unknown`, for a grant as for a refusal. The choice is kept with
-  `persistence: "memory"` (its storage can no longer be confirmed), and
-  `storage` reports `"unreadable"`; a later readable re-read is judged
-  again under C-54 to C-57. With no choice made this visit, an unreadable
-  re-read reads as at mount (C-37).
+  fails, the lifecycle keeps the `decidedAt` of the record its read-back saw
+  as the withdrawal watermark for the rest of the visit. A read-back that
+  saw no record (under `notice`) or was `unreadable` sets nothing, and
+  across repeated failed withdrawals the watermark only moves forward, to
+  the latest `decidedAt` seen. That record, and any record dated at or
+  before the watermark, never replaces the in-memory denial afterwards, even
+  once the clock is corrected and the record would otherwise be live and
+  newer than the denial; only a record dated strictly after the watermark
+  can (and then only under C-54 and C-56). For every read-back, at the call
+  and after the write, a grant that is not live only because its `decidedAt`
+  is after `now` counts as `allowed` when it would be allowed once live (not
+  when a non-overridable signal bars it): it becomes live once the clock
+  catches up, so a refusal of it is a withdrawal, and a withdrawal that left
+  it in storage has failed. Example: a grant is stored at T0; the clock
+  moves back a day; `refuse()` fails to write and to remove, and its
+  read-back sees the T0 grant, so the withdrawal is `failed` with watermark
+  T0; the clock is corrected to two hours after T0; `refresh()` still
+  reports `denied` with `withdrawal: "failed"`. The same holds when storage
+  holds a grant dated T0 plus a day while the clock reads T0 (moved back):
+  the snapshot was never allowed, but the read-back at the call counts the
+  grant, so the refusal is a withdrawal, its failed write reaches a failed
+  read-back, and once the clock is corrected past T0 plus a day the
+  watermark still bars that grant. The watermark may also hold out a
+  legitimate grant another tab made, dated at or before it, for the rest of
+  the visit; that fails closed, and a `grant()` by the visitor clears the
+  watermark.
+- **C-58 An unreadable re-read fails closed, one-sided.** A re-read whose
+  storage read is `unavailable` never drops a refusal made this visit, or
+  a grant held only in memory after a failed write (C-11), to `unknown`:
+  the choice is kept with `persistence: "memory"` and `storage:
+  "unreadable"`. A grant this visit stored (`persistence: "stored"`) can no
+  longer be confirmed, so it is dropped: the snapshot reads as at mount
+  with storage unreadable, `unknown` (or `denied` with GPC on), not
+  allowed, `storage: "unreadable"`, persistence `none` (C-37). A later
+  readable re-read is judged again under C-54 to C-57. With no choice made
+  this visit, an unreadable re-read reads as at mount (C-37).
+
+Known limitation. A denial another tab writes under a different
+`policy.version` parses here as no choice (C-7, C-60). It therefore does
+not stop this tab's grant, stored or in memory, or a `notice` tab with no
+choice, until the next document load. Revision 6 does not close this; it
+is tracked as a follow-up for #1942.
+
 - **C-14 Durable acknowledgement is separate from the choice.** Gating
   follows the local record. It never waits for evidence, and evidence never
   grants. With no evidence port (browser-only mode), a full grant-and-refuse
@@ -460,11 +501,24 @@ failed (C-57).
 - **C-61 A bad clock never blocks a refusal.** `refuse()` publishes
   `allowed: false` before it reads the clock. If `clock()` then returns an
   invalid date or throws at that call, after mount, `refuse()` writes
-  nothing and continues as if the write had returned `unavailable`: a
-  withdrawal still calls `remove()` and reads back (C-13). The refusal is
-  held as an undated in-memory denial, which no re-read lifts for the rest
-  of the visit (C-56), and `refuse()` returns the `denied` snapshot without
-  throwing.
+  nothing and returns the `denied` snapshot without throwing. With no valid
+  `now`, a read-back cannot judge liveness, so it is classified without the
+  clock: `allowed` whenever storage holds a grant of any date, or under
+  `notice` holds no record; `unreadable` when the read is `unavailable`;
+  otherwise `not allowed`. The refusal is a withdrawal when the prior
+  snapshot allowed or that read-back at the call is `allowed`; a withdrawal
+  then calls `remove()` and reads back under the same rule (C-13), and stays
+  `withdrawal: "failed"`, never returning to `idle`, for as long as that
+  read-back is `allowed` or `unreadable`. The refusal is held as an
+  **undated denial**: an in-memory denial with no `decidedAt`, kept outside
+  `StoredChoice` because it is never written, never sent to the evidence
+  port and never compared by `shouldApplyEvidence`. `seq` still advances, so
+  results for older choices are discarded (C-12). No re-read lifts it,
+  whatever the record or clock it later finds, and its persistence follows
+  C-56; only the visitor's `grant()` replaces it. `grant()` while `clock()`
+  returns an invalid date or throws, after mount, is a no-op that does not
+  throw: nothing is written, no evidence is sent and the snapshot is
+  unchanged.
 - **C-41 Evidence follows a local write, in order.** The evidence port is
   called only after a local write returned `ok`, for grants and denials
   alike. A choice held only in memory never reaches it, because a durable
@@ -487,11 +541,16 @@ failed (C-57).
   `sequence` is still the lifecycle's latest at the moment of sending. A
   synchronous subscriber that makes a newer choice inside the publish of
   an older one therefore never causes the older grant's evidence to be
-  sent after the newer denial's: the older choice's call is never made and
-  its evidence is aborted. A re-read that switches the snapshot to a record
-  another tab wrote (C-54, C-56) resets `evidence` to `none`, and a result
-  that arrives later for the replaced choice is ignored, as C-12 ignores a
-  result for an older `seq`.
+  sent after the newer denial's: the older choice's call is never made,
+  and the snapshot never shows `pending` for it. A re-read that switches
+  the snapshot to a record another tab wrote (C-54, C-56) resets
+  `evidence` to `none`, and a result that arrives later for the replaced
+  choice is ignored. Such a switch does not advance `seq`, so an
+  implementation needs a per-choice token, separate from `seq`, to tell
+  that result apart from one for the current choice. When an evidence
+  `conflict` triggers the re-read and that re-read switches the snapshot,
+  the switch wins: evidence is `none`, not `conflict`, consistent with
+  C-12's rule that a result for a replaced choice changes nothing.
 - **C-42 A simulated Butler lifecycle never allows.** This rule binds
   Butler's `createConsentLifecycle` only. With `simulated: true`, its
   snapshot reports `simulated: true` and `allowed: false` whatever the
@@ -1339,10 +1398,10 @@ passes. "Covers" lists the rules each proof holds.
 | --- | --- | --- | --- | --- |
 | P-1 | #1978 | `calendar-months` :: month-end clamping fixtures and exclusive end | C-6, C-7 | drop the clamp (`setUTCMonth(getUTCMonth() + n)`) |
 | P-2 | #1938 | `lifecycle` :: stale grant cannot override withdrawal | C-12 | remove the `seq` guard |
-| P-3 | #1938 | `persistence` :: a failed save never reports a stored choice; a memory-only choice never reaches the evidence port; a memory-only grant and a memory-only denial both survive `refresh()` and a cross-tab event carrying an older record, and are replaced only by a live, newer record not dated after `now`; with the clock moved back, a future-dated grant in storage never replaces a refusal held in memory after a failed write, on `refresh()`, `visibilitychange`, `pageshow` or a cross-tab re-read; a newer denial written under another `policy.version`, which parses here as no choice, never replaces an in-memory denial; a re-read whose storage read is `unavailable` keeps this visit's grant and this visit's refusal (never `unknown`) with `persistence: "memory"` and `storage: "unreadable"`; a stored refusal made this visit that a re-read no longer finds is reported as `memory`, not `stored` | C-7, C-11, C-40, C-41, C-54, C-56, C-58 | report `stored` after an `unavailable` write; call evidence after a failed write; let `refresh()` re-evaluate from storage alone; compare `decidedAt` before checking liveness; drop this visit's choice to `unknown` on an unreadable re-read; keep `persistence: "stored"` after the stored refusal disappears |
+| P-3 | #1938 | `persistence` :: a failed save never reports a stored choice; a memory-only choice never reaches the evidence port; a memory-only grant and a memory-only denial both survive `refresh()` and a cross-tab event carrying an older record, and are replaced only by a live, newer record not dated after `now`; with the clock moved back, a future-dated grant in storage never replaces a refusal held in memory after a failed write, on `refresh()`, `visibilitychange`, `pageshow` or a cross-tab re-read; a newer denial written under another `policy.version`, which parses here as no choice, never replaces an in-memory denial; a re-read whose storage read is `unavailable` keeps this visit's refusal, stored or in memory, and a grant held only in memory (never `unknown`) with `persistence: "memory"` and `storage: "unreadable"`; the same re-read drops a grant this visit stored to `unknown` (or `denied` with GPC on), not allowed, `storage: "unreadable"`, persistence `none`; a stored refusal made this visit that a re-read no longer finds is reported as `memory`, not `stored` | C-7, C-11, C-37, C-40, C-41, C-54, C-56, C-58 | report `stored` after an `unavailable` write; call evidence after a failed write; let `refresh()` re-evaluate from storage alone; compare `decidedAt` before checking liveness; drop this visit's refusal or memory-only grant to `unknown` on an unreadable re-read; keep a stored grant allowed on an unreadable re-read; keep `persistence: "stored"` after the stored refusal disappears |
 | P-4 | #1938 | `expiry` :: expiry fixed at decision and not renewed by reads or reopenings; every explicit choice writes a fresh record; expired reads as no choice; reading caps expiry; a future-dated denial stays live and a future-dated grant does not | C-6, C-38, C-40 | recompute `expiresAt` on read; skip the read-time cap; treat a future-dated denial as no choice |
 | P-5 | #1938 | `decision` :: regime (`prompt`, `notice`, missing) × GPC (on, off) × record (none, granted, granted with override, denied, expired, older policy, corrupt, unreadable) | C-5, C-7, C-8, C-9, C-37 | default a missing regime to `notice`; treat unreadable as no choice under `notice` |
-| P-6 | #1938 | `withdrawal` :: a refusal from a grant, and from no choice under `notice`, is a withdrawal; `allowed: false` is published before the write; write and removal both failing with a grant still readable is `failed`; under `notice`, a failed write with a successful removal is `failed`; an unreadable read-back is `failed`; after a failed withdrawal, `refresh()` keeps `allowed: false` and `withdrawal: "failed"`; a second refusal while the read-back still shows the grant stays `failed`; `failed` returns to `idle` only once a read-back is `not allowed`; after a failed withdrawal with the clock moved back, a future-dated grant in storage never replaces the in-memory denial on `visibilitychange`, `pageshow` or a cross-tab re-read, and `withdrawal` stays `failed`; a newer denial another tab wrote under a different `policy.version` (no choice here) never replaces the in-memory denial; a grant stored at T0, the clock moved back a day, a `refuse()` whose write and removal both fail and whose read-back sees the T0 grant, then the clock corrected to T0 plus two hours and `refresh()`: still `denied` with `withdrawal: "failed"`; a `clock()` that returns an invalid date or throws at `refuse()` after mount: `allowed: false` is published first, nothing is written, `refuse()` does not throw, and no later re-read lifts the refusal | C-7, C-13, C-15, C-40, C-54, C-57, C-61 | report success without read-back; treat a refusal from no choice under `notice` as a plain refusal; let `refresh()` re-evaluate from storage alone; classify a refusal as a withdrawal from the in-memory snapshot only; compare `decidedAt` before checking liveness; forget the record the failed read-back saw; count a future-dated grant as `not allowed` in a withdrawal's read-back; read the clock before publishing `allowed: false` |
+| P-6 | #1938 | `withdrawal` :: a refusal from a grant, and from no choice under `notice`, is a withdrawal; `allowed: false` is published before the write; write and removal both failing with a grant still readable is `failed`; under `notice`, a failed write with a successful removal is `failed`; an unreadable read-back is `failed`; after a failed withdrawal, `refresh()` keeps `allowed: false` and `withdrawal: "failed"`; a second refusal while the read-back still shows the grant stays `failed`; `failed` returns to `idle` only once a read-back is `not allowed`; after a failed withdrawal with the clock moved back, a future-dated grant in storage never replaces the in-memory denial on `visibilitychange`, `pageshow` or a cross-tab re-read, and `withdrawal` stays `failed`; a newer denial another tab wrote under a different `policy.version` (no choice here) never replaces the in-memory denial; a grant stored at T0, the clock moved back a day, a `refuse()` whose write and removal both fail and whose read-back sees the T0 grant, then the clock corrected to T0 plus two hours and `refresh()`: still `denied` with `withdrawal: "failed"`; a grant dated T0 plus a day in storage while the clock reads T0, so the snapshot is not allowed, then `refuse()` whose write fails: the read-back at the call counts the grant, so the refusal is a withdrawal with `withdrawal: "failed"` and watermark T0 plus a day, and after the clock is corrected past it, `refresh()` still reports `denied`; a failed withdrawal whose read-back saw no record (under `notice`) sets no watermark, and a second failed withdrawal that sees an older record leaves the watermark at the later date; a `clock()` that returns an invalid date or throws at `refuse()` after mount: `allowed: false` is published first, nothing is written, `refuse()` does not throw, a grant of any date in storage (or no record under `notice`) makes it a withdrawal that stays `failed` and never returns to `idle` while the clock stays invalid, the undated denial is never sent to evidence, and no later re-read lifts it, even one that finds a newer live grant once the clock recovers; only `grant()` replaces it; `grant()` under an invalid clock after mount is a no-op that does not throw | C-7, C-13, C-15, C-40, C-54, C-57, C-61 | report success without read-back; treat a refusal from no choice under `notice` as a plain refusal; let `refresh()` re-evaluate from storage alone; classify a refusal as a withdrawal from the in-memory snapshot only; compare `decidedAt` before checking liveness; forget the record the failed read-back saw; count a future-dated grant as `not allowed` in a withdrawal's read-back; classify the read-back at the call with plain `isAllowed`; move the watermark backward, or set it from a read-back that saw no record; read the clock before publishing `allowed: false`; date the undated denial with the epoch or the last valid `now`; return to `idle` under an invalid clock while storage holds a grant; throw from `grant()` under an invalid clock |
 | P-7 | #1938 | `browser-only` :: with no evidence port, a grant-and-refuse cycle makes zero `fetch` or `sendBeacon` calls and evidence is never `saved` | C-14 | report `saved` without a port |
 | P-8 | #1938 | `isolation` :: no core module reads a browser global at module scope or imports an adapter; a legacy record parses only with `policy.legacy`, takes `assumedPolicyVersion`, keeps its original expiry and is never rewritten; a legacy-shaped value with a `gpcOverride` field reads as no choice; `parseStoredChoice` returns `null` without throwing for an out-of-range date, as read or once capped, and for a current-shape date that is date-only, local, offset other than `Z` or in another format | C-2, C-10, C-60 | add a module-scope `localStorage` read; rewrite a legacy record on read; treat a dateless legacy record as live; carry `gpcOverride` through on a legacy record; let an out-of-range date throw from `parseStoredChoice`; accept a date with a `+00:00` offset |
 | P-9 | #1940 | `transport` :: unknown consent never loads or captures | C-17 | initialize while permission is unknown |
@@ -1360,7 +1419,7 @@ passes. "Covers" lists the rules each proof holds.
 | P-21 | #1941 | `preview/adapter` :: each of the fifteen states produces its table row; zero I/O and no timers; explicit settle; `expired` identical to `fresh-prompt`; no `saved` from the preview; `production` refused | C-33, C-34, C-51 | auto-settle; return `saved`; give `withdrawal-failed` the `withdrawn` snapshot |
 | P-22 | #1941 | `browser-import-closure` and `react-server-artifact` :: production closures exclude the preview and Designer's `/shell`; the client entry refuses `react-server` through its condition module; copy resolution refuses `browser`; the preview subpath refuses outside `development` | O-6, C-1, C-4, C-29, C-49 | import the preview or a Writer registry into the client entry; map `react-server` to the client entry |
 | P-23 | #1938 | `gpc` :: a grant under a non-overridable signal writes nothing and calls no evidence port; a grant under an overridable signal records `gpcOverride`; a grant without it never overrides a signal that is on; a truthy non-boolean signal (`1`, `"1"`) counts as on in the lifecycle (`gpcInForce`), in `effectiveChoice`, `isAllowed` and `shouldPromptAutomatically`, and in `decideChoice` | C-8, C-39, C-59 | write a grant under a non-overridable signal; let a grant without `gpcOverride` override the signal; compare `signals.gpc === true` in any one reader |
-| P-24 | #1938 | `evidence-order` :: every evidence call carries an increasing `sequence`; a conflict never upgrades to `granted`; `shouldApplyEvidence` applies a denial over a stored grant with a later `decidedAt` (a clock moved back) and refuses a grant with the same `decidedAt` and a lower or equal `sequence`; a delayed, older denial applies over a newer stored grant; a synchronous subscriber that calls `refuse()` inside the publish of a grant leaves exactly one evidence call, for the denial, and the grant's evidence is aborted; a re-read that switches to another tab's record reports evidence `none`, and a later `saved` for the replaced choice leaves it `none` | C-12, C-40, C-41 | pass a constant `sequence`; make a denial subject to the recency check; send evidence without checking that its `sequence` is still the latest; keep the replaced choice's `evidence` after a re-read switch |
+| P-24 | #1938 | `evidence-order` :: every evidence call carries an increasing `sequence`; a conflict never upgrades to `granted`; `shouldApplyEvidence` applies a denial over a stored grant with a later `decidedAt` (a clock moved back) and refuses a grant with the same `decidedAt` and a lower or equal `sequence`; a delayed, older denial applies over a newer stored grant; a synchronous subscriber that calls `refuse()` inside the publish of a grant leaves exactly one evidence call, for the denial, and the grant's evidence is aborted; the snapshot never shows `pending` for the grant whose call was never made; a re-read that switches to another tab's record reports evidence `none`, and a later `saved` for the replaced choice leaves it `none`; a `conflict` whose re-read switches to another tab's record reports evidence `none`, not `conflict` | C-12, C-40, C-41 | pass a constant `sequence`; make a denial subject to the recency check; send evidence without checking that its `sequence` is still the latest; show `pending` for a choice whose call was never made; keep the replaced choice's `evidence` after a re-read switch; match a late result to the current choice by `seq` alone; report `conflict` after the conflict's re-read switched records |
 | P-25 | #1938 | `simulated` :: a simulated lifecycle reports `allowed: false` after a grant and never calls an evidence port | C-42 | drop the simulated override |
 | P-26 | #1938 | `local-storage` :: blocked or throwing storage reads `unavailable` without throwing; a `storage` event for the configured key, and one with a `null` key from the adapter's own storage area, reach the listener; an event for another key, or a `null`-key event from another storage area, does not; raw values come back unmigrated; nothing else is written | C-16 | let a throwing `getItem` propagate; notify for another key's event; drop a `null`-key clear event; forward a `null`-key event from another storage area |
 | P-27 | #1940 | `transport-limits` :: one retry after the fixed delay through the injected scheduler; the default scheduler is resolved when scheduling; the queue's default bound drops the oldest; the subtree compiles without the DOM library | C-43 | drop the newest event instead of the oldest; resolve `setTimeout` at module scope |
@@ -1368,7 +1427,7 @@ passes. "Covers" lists the rules each proof holds.
 | P-29 | #1941 | `bind-transport` :: `setPermission(false)` has happened before `refuse()` returns; unbinding sets `false`; a simulated snapshot never sets `true` | C-45 | move `setPermission` into a React effect |
 | P-30 | #1941 | `hooks` :: hooks outside a `ConsentExperience` report not allowed and the no-decision status; `useAnalyticsAllowed()` is `false` for the preview's `remembered-granted` and `fresh-notice` states and `useConsentStatus().simulated` is `"preview"`; unmount and a `required` change dispose the lifecycle; a development double mount leaves one live lifecycle | C-23, C-48 | keep the lifecycle from the discarded mount alive; return `snapshot.allowed` without the simulated mask |
 | P-31 | E | `consent-port-conformance` :: type-level assignability of each real implementation to its structural port, and the reference host factory compiling with no cast | O-3, C-53 | rename or retype one `ConsentSnapshot` field in Butler; narrow Butler's `evidence` option to `ConsentEvidencePort` only; drop the test's `GATE_TEST_EXCLUSIONS` entry, so `check:gates` sweeps in a suite that imports workspace packages and the workflow reference test fails |
-| P-32 | #1938 | `refusal-floor` :: under `notice`, a refusal stored this visit and then a denial another tab wrote under another `policy.version` (no choice here): the re-read keeps `denied`, `allowed: false`, no automatic prompt, `memory`; under `notice`, a refusal stored this visit, the storage then cleared from outside and `refresh()`: the same; unreadable at mount, `refuse()` whose write reports `ok`, a read that then returns empty, and `refresh()`: still `denied`, `memory`; only a live grant dated after the refusal and not after `now` lifts the floor; a grant made this visit still moves to `denied` when another tab's denial arrives | C-54, C-56 | re-evaluate a stored refusal made this visit from storage alone; lift the floor with a record that parses as no choice; lift the floor with a future-dated grant; hold a grant made this visit against another tab's denial |
+| P-32 | #1938 | `refusal-floor` :: under `notice`, a refusal stored this visit and then a denial another tab wrote under another `policy.version` (no choice here): the re-read keeps `denied`, `allowed: false`, no automatic prompt, `memory`; under `notice`, a refusal stored this visit, the storage then cleared from outside and `refresh()`: the same; unreadable at mount, `refuse()` whose write reports `ok`, a read that then returns empty, and `refresh()`: still `denied`, `memory`; only a live grant dated after the refusal and not after `now` lifts the floor; a grant made this visit still moves to `denied` when another tab's denial arrives, with persistence `stored`; a refusal held in memory that a re-read replaces with another tab's live, newer denial reports `stored`; a grant dated T0 plus a day stored while the clock reads T0, `refuse()` whose write fails, the clock corrected past T0 plus a day and `refresh()`: still `denied`, not allowed, `withdrawal: "failed"` | C-54, C-56, C-57 | re-evaluate a stored refusal made this visit from storage alone; lift the floor with a record that parses as no choice; lift the floor with a future-dated grant; hold a grant made this visit against another tab's denial; report `memory` when another tab's live denial replaces the choice; classify the read-back at the call with plain `isAllowed` |
 
 ### Review proofs for this document
 
