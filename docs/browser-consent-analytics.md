@@ -2,7 +2,8 @@
 
 Contract for one optional browser purpose, first-party analytics, on public
 pre-authentication web surfaces. This document is the specification that
-#1938, #1940 and #1941 build against (issue #1560, specification revision 6).
+#1938, #1940, #1941 and unit F build against (issue #1560, specification
+revision 7).
 It ships no code. Every package it names is still in the **designed** state
 for this capability as [LIFECYCLE.md](LIFECYCLE.md) defines it. Nothing here
 is implemented, staged, published or adopted until that package's own
@@ -24,7 +25,9 @@ still says something different, these decisions control. "Superseded ticket
 text" below lists each known conflict. Revision 6 keeps every decision below
 and closes re-read, evidence-order and parsing gaps found while building
 #1938: it adds C-56 to C-61 and tightens C-10, C-13, C-16, C-37, C-41 and
-C-54.
+C-54. Revision 7 keeps every decision of revision 6 and adds two
+optional, consent-gated capture classes to the Observer provider adapter,
+autocapture and session replay (decision 7, C-62 to C-69, unit F).
 
 1. **One compact notice with two equal actions.** There is no preferences
    dialog and no secondary reopen control in the footer. Reopening is a link
@@ -55,6 +58,22 @@ C-54.
    default; a provider load that resolves after a withdrawal is discarded
    and never initialized, and events are redacted. Pure roots never
    initialize an SDK or touch storage.
+7. **Autocapture and session replay are opt-in classes behind the same
+   gate.** Each is a separate host flag, off by default, and runs only while
+   the transport is granted. Every event class leaves through the same final
+   `before_send` gate. Autocapture records only elements that opt in by one
+   data attribute and never their text, links or input values. Replay masks
+   all text and all inputs as a constant that no option turns off. The
+   host attests through its capability probe, and the adapter's read-back
+   confirms, that masking is configured; the hook enforces it by decoding
+   every recording and dropping any that is not in masked form. Without the
+   attestation and the read-back, replay stays off. A withdrawal closes the
+   gate before anything else, and every grant starts a new session. URLs
+   keep C-20's rules: there is no query parameter allowlist, and a
+   recording made while the page address carries a query or a fragment
+   never leaves. Which regime or
+   region a visitor is under stays a host decision (O-7), and experiments
+   and feature flags stay out of scope.
 
 ## Ownership
 
@@ -64,6 +83,7 @@ C-54.
 | Stored record, decision rules, lifecycle, ports | Butler | `packages/butler/src/browser-consent/` | #1938 |
 | Browser storage adapter | Butler | `packages/butler/src/browser-consent/adapters/` | #1938 |
 | Analytics transport and provider adapter | Observer | `packages/observer/src/browser-analytics/` | #1940 |
+| Autocapture and session replay in the provider adapter | Observer | `packages/observer/src/browser-analytics/providers/` | unit F |
 | Notice presentation | Designer | `ConsentBanner` block | existing, plus unit D |
 | Assembly, hooks, transport binding, reopen, review seam, preview | Publisher | `packages/publisher/src/web/consent/` | #1941 |
 | Copy resolution against Writer approval | Publisher | `packages/publisher/src/consent-copy/` | #1941 |
@@ -72,7 +92,7 @@ C-54.
 | Security headers, sign-out storage clearing | Bouncer | `packages/bouncer/src/` | #1947, independent |
 | Versions and changelogs for the cohort | release preparation | manifests, changelogs | #1942 |
 
-Unit D and unit E have no ticket yet (see "Unowned work").
+Unit D, unit E and unit F have no ticket yet (see "Unowned work").
 
 - **O-1 Butler owns the lifecycle and nothing visual.** Butler owns the
   record, the decision rules, expiry, withdrawal, the storage port and the
@@ -632,7 +652,9 @@ function createPostHogProvider(sdk: PostHogLike, config: { key: string; apiHost:
 `PostHogLike` is the subset of the provider SDK object that the adapter
 calls, declared structurally so that the package never imports the SDK
 (C-3). The key and host are host values (O-7). The provider adapter takes
-no other option; nothing a host passes can reach the SDK's configuration.
+no other option except the two optional feature blocks of C-62, which reach
+the SDK's configuration only as the fixed values C-64 lists; nothing else a
+host passes can reach it.
 The transport's `normalizePath` option is the single place where a path
 normaliser is supplied: the transport passes it to
 `sanitizeAnalyticsEvent`, and hands the resulting URL sanitizer to the
@@ -734,6 +756,357 @@ provider through `init(context)`.
   - Whether these option and property names behave as named in the SDK
     version a host installs is separate evidence (see "Separate
     evidence").
+
+### Autocapture and session replay (Observer, isolated)
+
+Revision 7 adds two capture classes that the provider SDK emits by itself:
+autocapture (`$autocapture`) and session replay (`$snapshot`). Both live in
+the provider adapter of C-44 and are built by unit F. The transport, its
+states and its rules (C-17 to C-20, C-43) are unchanged: permission still
+reaches the adapter solely as the transport's `init`, `optIn()` and
+`optOut()` calls.
+
+```ts
+interface PostHogLike {                 // C-44's subset, plus optional members used only by these classes
+  init(apiKey: string, config: Record<string, unknown>, name: string): PostHogLike | undefined | void;
+  readonly config?: {
+    readonly before_send?: unknown;       // identity check (C-44)
+    readonly session_recording?: unknown; // read back by value (C-68)
+    readonly enable_recording_console_log?: unknown;
+  };
+  capture(eventName: string, properties?: Record<string, unknown>): unknown;
+  opt_in_capturing(): void;
+  opt_out_capturing(): void;
+  startSessionRecording?(): void;
+  stopSessionRecording?(): void;
+  reset?(): void;
+  get_session_id?(): unknown;
+}
+interface ReplayCapability {            // what the host's evidence shows for the SDK version it installed
+  masksAllText: boolean;
+  masksAllInputs: boolean;
+  honoursBlockSelector: boolean;
+  recordsNoNetworkPayloads: boolean;
+  recordsNoConsole: boolean;
+  recordsNoCanvas: boolean;
+  recordsNavigationAddress: boolean;
+  snapshotsPassBeforeSend: boolean;
+}
+interface PostHogProviderConfig {
+  key: string;
+  apiHost: string;
+  autocapture?: { enabled: boolean };
+  replay?: {
+    enabled: boolean;
+    sampleRate: number;                    // required; 0 means off
+    blockSelectors?: readonly string[];    // may only add to PRIVATE_SUBTREE_SELECTORS; each in BLOCK_SELECTOR_GRAMMAR
+    probe: () => ReplayCapability;         // synchronous; supplied by the host's loader
+  };
+}
+const ANALYTICS_ELEMENT_ATTRIBUTE: "data-analytics-id";
+const PRIVATE_SUBTREE_SELECTORS: readonly string[];
+const REPLAY_RECORDING_OPTIONS: Readonly<Record<string, unknown>>;
+const BLOCK_SELECTOR_GRAMMAR: RegExp;                   // one host block selector (C-63, C-68)
+const REPLAY_RECORD_KINDS: readonly string[];           // the record kinds a $snapshot may carry (C-68)
+const MASKED_TEXT_PATTERN: RegExp;                      // /^[\s*]*$/: masked form (C-68)
+const POSTHOG_AUTOCAPTURE_PROPERTIES: readonly string[]; // "$event_type", "$elements_chain"
+const POSTHOG_REPLAY_PROPERTIES: readonly string[];      // "$snapshot_data", "$session_id", "$window_id"
+```
+
+`PRIVATE_SUBTREE_SELECTORS` is one exhaustive constant: `[data-private]`,
+`[data-consent-banner]` (the notice's root marker),
+`input[type="password"]` and `[autocomplete^="cc-"]`. The replay
+configuration type has no masking key at all: masking is the constant
+`REPLAY_RECORDING_OPTIONS` (C-68), and a host can only add block selectors.
+`BLOCK_SELECTOR_GRAMMAR` accepts one narrow selector and nothing else: one
+or more compound selectors joined by a single space or by ` > `, where a
+compound is an optional lower-case tag name (`[a-z][a-z0-9-]*`) followed by
+any number of `.name`, `#name`, `[attr]` or `[attr="value"]` parts, and is
+never empty. Names match `[A-Za-z_][A-Za-z0-9_-]*`, attribute names
+`[a-z][a-z0-9_-]*` and values `[A-Za-z0-9 _.:/-]*`. A comma at any level, a
+pseudo-class or pseudo-element, a parenthesis, an escape, any other
+combinator and a space at either end do not match. A selector is at most
+`MAX_PROPERTY_STRING_LENGTH` (200) characters, checked before the
+expression runs (a longer one already throws under C-63). The literal
+expressions follow: `BLOCK_SELECTOR_PART` and `BLOCK_SELECTOR_COMPOUND`
+name the pieces of `BLOCK_SELECTOR_GRAMMAR`, which is the whole check:
+
+```ts
+const BLOCK_SELECTOR_PART = /(?:[.#][A-Za-z_][A-Za-z0-9_-]*|\[[a-z][a-z0-9_-]*(?:="[A-Za-z0-9 _.:\/-]*")?\])/;
+const BLOCK_SELECTOR_COMPOUND = /(?:[a-z][a-z0-9-]*(?:[.#][A-Za-z_][A-Za-z0-9_-]*|\[[a-z][a-z0-9_-]*(?:="[A-Za-z0-9 _.:\/-]*")?\])*|(?:[.#][A-Za-z_][A-Za-z0-9_-]*|\[[a-z][a-z0-9_-]*(?:="[A-Za-z0-9 _.:\/-]*")?\])+)/;
+const BLOCK_SELECTOR_GRAMMAR =
+  /^(?:[a-z][a-z0-9-]*(?:[.#][A-Za-z_][A-Za-z0-9_-]*|\[[a-z][a-z0-9_-]*(?:="[A-Za-z0-9 _.:\/-]*")?\])*|(?:[.#][A-Za-z_][A-Za-z0-9_-]*|\[[a-z][a-z0-9_-]*(?:="[A-Za-z0-9 _.:\/-]*")?\])+)(?:(?: | > )(?:[a-z][a-z0-9-]*(?:[.#][A-Za-z_][A-Za-z0-9_-]*|\[[a-z][a-z0-9_-]*(?:="[A-Za-z0-9 _.:\/-]*")?\])*|(?:[.#][A-Za-z_][A-Za-z0-9_-]*|\[[a-z][a-z0-9_-]*(?:="[A-Za-z0-9 _.:\/-]*")?\])+))*$/;
+```
+
+Each part starts with a distinct character (`.`, `#` or `[`) and no
+quantified group can match the same text two ways, so the expression runs
+in time linear in the selector's length. The check is a regular
+expression over the string, since the package takes no DOM type (C-43).
+It exists so that one malformed host selector cannot invalidate
+the joined block selector, and with it the private selectors, while the
+by-value read-back still matches.
+
+- **C-62 Autocapture and replay are separate flags, off by default, never
+  ahead of permission.** With no `autocapture` and no `replay` block, or
+  with `enabled` anything other than `true`, the adapter behaves exactly as
+  C-44 describes, and its `init` configuration is identical to C-44's. A
+  class runs only while its flag is on **and** the transport has granted:
+  the provider is initialized and opted in (C-17, C-18). Before any grant
+  on the page nothing exists to run it: the transport never calls the host's
+  loader (C-17), and the loader, a dynamic import in the host's own code
+  (C-3), is never evaluated, so no SDK code runs. Region and regime stay
+  host-owned (O-7): the adapter reads no regime, region or browser signal
+  itself, the host decides whether to pass each flag, and the consent
+  lifecycle alone decides permission. Experiments and feature flags stay
+  out of scope: their forced disables in C-44 hold under every flag, and no
+  flag event (for example a flag-called event) passes the gate (C-65).
+- **C-63 Configuration fails closed.** `createPostHogProvider` validates
+  both blocks when it is called. A block must be a plain object holding
+  only the keys in the type above, with those types. Under `replay` with
+  `enabled: true`, `sampleRate` must be a finite number from 0 to 1,
+  `probe` must be a function, and `blockSelectors`, when present, an array
+  of at most 50 non-empty strings of at most `MAX_PROPERTY_STRING_LENGTH`
+  characters each. Any other key, including any masking key (for example
+  `maskAll`, `maskAllText`, `maskAllInputs` or an unmask list), and any
+  wrong type makes `createPostHogProvider` throw a `TypeError`, as a
+  missing key or host already does. The host calls it inside its loader,
+  so the load fails: the transport retries once and is then `failed` for
+  the page load, with nothing initialized and nothing captured (C-43). One
+  retry, never a retry loop. `sampleRate: 0` is valid and means replay is
+  off. A host block selector of the right type that does not match
+  `BLOCK_SELECTOR_GRAMMAR` does not throw: it leaves replay off for the
+  page load (C-68), so pageviews, conversions and autocapture still run.
+- **C-64 Each flag changes a fixed set of forced options, and only those.**
+  The adapter alone writes these keys; every other key of C-44's forced
+  configuration keeps its C-44 value under every flag, including
+  `rageclick`, `capture_pageview`, `capture_pageleave`,
+  `capture_dead_clicks`, `capture_exceptions`, `capture_performance`
+  (`false`: no network timing), `enable_heatmaps`, the survey, experiment
+  and feature-flag disables, `person_profiles`, `persistence: "memory"`,
+  `opt_out_capturing_by_default` and `before_send`. With both flags on,
+  both columns apply.
+
+  | Option | Both flags off (C-44) | `autocapture` on | `replay` on |
+  | --- | --- | --- | --- |
+  | `autocapture` | `false` | `{ dom_event_allowlist: ["click", "submit"], css_selector_allowlist: [AUTOCAPTURE_ELEMENT_SELECTOR], capture_copied_text: false }` | unchanged |
+  | `mask_all_text` | not set | `true` | unchanged |
+  | `respect_dnt` | not set | `true` | `true` |
+  | `disable_session_recording` | `true` | unchanged | unchanged, `true` at `init`; replay starts only by the adapter's explicit call (C-68) |
+  | `session_recording` | not set | unchanged | `REPLAY_RECORDING_OPTIONS`, with the host's `blockSelectors` appended to the private ones |
+  | `enable_recording_console_log` | not set | unchanged | `false` |
+
+  `AUTOCAPTURE_ELEMENT_SELECTOR` is a constant built from
+  `ANALYTICS_ELEMENT_ATTRIBUTE` and `PRIVATE_SUBTREE_SELECTORS`: an element
+  carrying the attribute, that is not itself a form field (`input`,
+  `textarea`, `select`, `[contenteditable]`) and that is neither a private
+  element nor inside one. `REPLAY_RECORDING_OPTIONS` is `maskAllInputs:
+  true`, `maskTextSelector: "*"`, `blockSelector` (the private selectors,
+  then the host's), `recordHeaders: false`, `recordBody: false`,
+  `recordCanvas: false`, `compressEvents: false` (so the hook can decode
+  every record, C-68) and `recordCrossOriginIframes: false`.
+  `respect_dnt: true` means a browser's
+  Do Not Track signal also stops the SDK while either class is on; Global
+  Privacy Control already refuses through the lifecycle (C-8), so a
+  standing refusal always wins. The selector and the SDK's own masking are
+  defence in depth: the gate (C-65, C-66) and the payload check of C-68 do
+  not depend on them.
+- **C-65 Every event class passes the same final gate.** The adapter's one
+  `before_send` hook, checked by identity on the returned instance (C-44),
+  is the single exit for every event: `$pageview`, allowlisted conversions,
+  `$autocapture` and `$snapshot` alike. It accepts an event by one of two
+  arms, and drops everything else:
+  - a **transport event**, recognized as in C-44 while the adapter's own
+    `capture` call is on the stack, under a name in `context.eventNames`;
+  - an **SDK-originated class**: `$autocapture` while autocapture is on,
+    and `$snapshot` while replay has started for the current grant
+    (C-68), each only while the capture gate (C-67) is open.
+
+  Every accepted event then takes the same final steps, in this order, and
+  no class skips one: the event is rebuilt from `POSTHOG_EVENT_FIELDS`
+  alone; its properties are the delivery fields of
+  `POSTHOG_PROPERTY_ALLOWLIST` plus that class's own exhaustive list
+  (none for a pageview, the transport's sanitized properties for a
+  conversion, `POSTHOG_AUTOCAPTURE_PROPERTIES` for `$autocapture`,
+  `POSTHOG_REPLAY_PROPERTIES` for `$snapshot`), each kept only after its
+  own rule (C-66, C-68); the five URL fields are overwritten from the
+  SDK's `$current_url` passed once through `context.sanitizeUrl`, exactly
+  as C-44 describes, and the event is dropped when that returns `null`;
+  `$set`, `$set_once` and `$unset` never pass; every other property is
+  dropped. URL rules stay C-20's: no query parameter is ever kept, so there
+  is no query parameter allowlist.
+- **C-66 Autocapture records allowlisted elements, never their content.**
+  The allowlist is the element attribute `ANALYTICS_ELEMENT_ATTRIBUTE`: an
+  element is captured only when it carries it, and the host opts an element
+  in by adding it. There is no host selector option. Its value must match
+  `^[a-z0-9][a-z0-9._:-]{0,63}$`; otherwise the event is dropped. Only
+  `click` and `submit` events are captured, so no change or input event,
+  and so no input value, ever reaches an event. The hook does not trust the
+  SDK's selector: from the element data the SDK attaches (its elements
+  chain or elements list), it finds the target element and drops the event
+  when that data is missing or cannot be parsed, when the target lacks the
+  attribute or carries an invalid value, when the target is a form field,
+  or when the target or any ancestor in that data carries a private marker
+  it can see (`data-private`, `data-consent-banner`, a `password` type or
+  an `autocomplete` value beginning `cc-`). The SDK's leak paths never
+  pass: `$el_text`, `$elements`, `$external_click_url` and every
+  `attr__*` property, `href` among them, are dropped. `$elements_chain` is
+  replaced by a chain the hook rebuilds from the target alone: its
+  lower-case tag name (letters and digits only, otherwise the event is
+  dropped) and the allowlisted attribute with its validated value, in the
+  SDK's chain grammar, with no text, `href`, class, id, position or
+  ancestor. `$event_type` passes only as `click` or `submit`. The URL
+  fields come from the sanitized current URL (C-44, C-65), never from an
+  element's `href`. Every kept string is at most
+  `MAX_PROPERTY_STRING_LENGTH` characters; a longer one drops the event.
+- **C-67 Withdrawal closes the capture gate first, synchronously.** The
+  adapter holds a capture gate and a grant generation. The adapter awaits
+  nothing: each step below is synchronous. Withdrawal reaches it as
+  `optOut()`, called synchronously by the transport (C-19), which the
+  assembly calls synchronously from the lifecycle's publish (C-45), so an
+  expiry noticed by a re-read (C-46) and a standing refusal (C-8) take the
+  same path. `optOut()` runs these steps, in this order: (1) close the
+  gate and advance the generation, before any SDK call; (2) call
+  `stopSessionRecording()` if replay started; (3) call
+  `opt_out_capturing()`; (4) call `reset()` when either flag is on
+  (C-69). Each SDK call's error is swallowed (as in #1940); a throw never
+  reopens the gate and never skips a later step. From step 1 the hook drops
+  every SDK-originated event, including a recording buffer the SDK flushes
+  late and an autocapture listener that still fires, and `capture()` makes
+  no SDK call. After `optOut()` returns, the adapter makes no SDK call
+  until the next `optIn()`. `optIn()` runs: advance the generation; on a
+  re-grant, `reset()` (C-69); `opt_in_capturing()`; open the gate; then
+  start replay when C-68 allows. Re-entrant calls, for example from a
+  subscriber or an SDK callback inside one of these steps: an `optIn()`
+  during `optOut()` is deferred until the stop steps have all run, and then
+  runs as a re-grant; an `optOut()` during `optOut()` does nothing; an
+  `optOut()` during `optIn()` closes the gate at once, and the remaining
+  `optIn()` steps see the moved generation and stop, so replay never
+  starts. Late resolution never starts capture: a provider load that
+  resolves after a withdrawal is discarded by the transport's generation
+  and never initialized (C-19), so no flag reaches the SDK; anything the
+  SDK loads lazily by itself (for example a recorder script) resolves into
+  a closed gate, and whatever it emits is dropped. The gate acts when an
+  event reaches the hook, which is at capture time: an event the hook
+  accepted before the withdrawal and that still waits in the SDK's own
+  send queue may still be sent after `optOut()` returns. C-67 drops only
+  what is captured after step 1; whether the SDK discards its queue is
+  open question 6, and no package text claims it does.
+- **C-68 Replay runs only when masking is attested and enforced, and
+  masking is constant.** Masking is applied inside the SDK while it
+  records. The host attests that the SDK version it installed applies it
+  (the probe, H-11), the adapter reads back that the SDK holds the forced
+  configuration, and the hook enforces it: `$snapshot_data` reaches
+  `before_send` as data, so the hook decodes every recording and drops any
+  that is not in masked form. Replay is eligible for the page load only
+  when all of these hold at `init`:
+  1. the flag is on and `sampleRate` is above 0;
+  2. the returned instance has `startSessionRecording`,
+     `stopSessionRecording`, `reset` and `get_session_id` as functions;
+  3. every host block selector matches `BLOCK_SELECTOR_GRAMMAR`;
+  4. the returned instance's `config.session_recording` holds every key of
+     `REPLAY_RECORDING_OPTIONS` with the forced value (compared by value,
+     the joined block selector exactly), and its
+     `config.enable_recording_console_log` is `false`;
+  5. the host's `probe()`, called once inside a `try`, returns an object
+     whose eight fields are each exactly `true`. A missing probe, a throw,
+     a returned promise, a non-boolean or any `false` fails.
+
+  Any failure leaves replay off for the page load, with no retry;
+  pageviews, conversions and autocapture are unaffected, and the forced
+  `disable_session_recording: true` keeps the SDK from recording by
+  itself. The adapter repeats the read-back of condition 4 immediately
+  before every `startSessionRecording()` call, on every grant; a mismatch
+  skips that call and leaves replay off for the rest of the page load.
+  The probe's `snapshotsPassBeforeSend` field matters because a
+  `$snapshot` that bypasses the hook would bypass C-65: where the host
+  cannot show that recordings pass through `before_send`, replay stays
+  off. Masking is not configurable: no public type has a key that turns
+  it off or unmasks a selector, the host can only append block selectors,
+  and C-63 refuses any other key at run time. When replay is eligible,
+  each grant draws once against `sampleRate`, from the same random source
+  as the instance suffix (C-44; with no secure source, replay is off), and
+  only a selected grant records the session id from `get_session_id()` and
+  then calls `startSessionRecording()`.
+
+  The hook accepts a `$snapshot` only when every check below passes, in
+  this order, and otherwise drops the whole event; it never passes part of
+  a payload except as item 2 and item 5 describe:
+  1. the gate is open, replay started under the current generation, and
+     the event's `$session_id` is the recorded one;
+  2. the payload decodes: `$snapshot_data` is an array of plain records,
+     each of a kind in `REPLAY_RECORD_KINDS`, and every field the checks
+     below read has the type the record format gives it: node lists, child
+     lists, mutation lists (adds, removals, text changes and attribute
+     changes) and attribute maps are arrays or plain objects as the format
+     defines them, and text, input text and attribute values are strings.
+     A record that carries a compression marker, a record or any such field
+     of another type (for example a mutation whose data is an object but
+     whose adds, text changes or attributes are an encoded string), a
+     record that cannot be parsed, or a record whose kind is not listed
+     drops the event; a field is never skipped because of its type.
+     `REPLAY_RECORD_KINDS` is exhaustive: the full snapshot, the meta
+     record, the recorder's custom records, and the incremental records for
+     DOM mutation, pointer movement and interaction, touch movement,
+     scroll, viewport resize, input, media interaction and style changes,
+     which are exactly the style sheet rule, style declaration and adopted
+     style sheet records. Console records (a
+     console plugin record or a log incremental record), network records
+     (a network plugin record), canvas records (a canvas mutation record)
+     and every other plugin record are not listed, so any of them drops the
+     event. Custom records, the SDK's own annotations, are removed from the
+     payload after item 4 has read their addresses;
+  3. every value that can hold page text is in masked form, matching
+     `MASKED_TEXT_PATTERN` (only `*` and whitespace), at any depth,
+     including inside shadow roots and same-origin iframe documents: each
+     text node in a full snapshot and in a mutation's added nodes, except
+     the text of a `style` element; each text change in a mutation; each
+     input record's text; and each `value` attribute in a snapshot, in an
+     added node or in an attribute mutation. One that does not match drops
+     the event. A `script` element's text gets no exemption (open
+     question 10);
+  4. the page address carries no query and no fragment: neither the page's
+     current address (`location.href`, read in the hook), nor the
+     document's load address (the navigation timing entry's `name`, from
+     `performance.getEntriesByType("navigation")[0]`, where the browser
+     provides one), nor any address the payload carries (each meta
+     record's `href` and each address in a custom record), read before any
+     rewrite, has a non-empty query or a non-empty fragment. The load
+     address matters because a page that strips a token from its address on
+     load (for example with `history.replaceState`) before the visitor
+     grants still holds server-rendered attributes built from the original
+     address. A failure drops the event and every later
+     `$snapshot` of that grant, because records made on such a page can
+     carry its query or fragment in attribute values (H-10), for example a
+     canonical or alternate-language link, a social preview URL or a form
+     action. This check relies on the recorder writing an address record on
+     every in-page navigation, in the same payload as the records that
+     follow it; the probe's `recordsNavigationAddress` field attests that,
+     and without it replay stays off;
+  5. each meta record's `href` is rewritten through `context.sanitizeUrl`;
+     if one cannot be rewritten, the event is dropped.
+
+  Attribute values other than `value`, recorded outside blocked subtrees,
+  are not rewritten (H-10). No network payload, console output or canvas
+  content is recorded: `recordHeaders`, `recordBody`, `recordCanvas`,
+  `capture_performance` and `enable_recording_console_log` are forced off,
+  the probe attests that the SDK honours them, and item 2 drops any such
+  record that appears anyway.
+- **C-69 Every grant starts a new session; nothing resumes.** With either
+  flag on, withdrawal ends with `reset()` (C-67 step 4), which clears the
+  in-memory distinct id and session id (`persistence: "memory"`, C-44).
+  On each re-grant (an `optIn()` after an earlier one on this page), the
+  adapter calls `reset()` before `opt_in_capturing()`, then reads
+  `get_session_id()`. Replay starts for that grant only when the id is a
+  non-empty string that differs from every session id this adapter has
+  recorded on this page; otherwise replay stays off for that grant. A
+  recording buffer the SDK keeps across a stop never leaves: its
+  `$snapshot` events carry an earlier session id, or arrive while the gate
+  is closed, and are dropped (C-65, C-68). A session id the SDK rotates by
+  itself during a grant, for example after a period of inactivity, no
+  longer matches the recorded one, so every later `$snapshot` of that grant
+  is dropped and replay output stops without a signal; the adapter accepts
+  this and does not restart replay until the next grant. With both flags
+  off, the adapter calls no `reset()`, exactly as C-44.
 
 ### Presentation (Designer)
 
@@ -1143,6 +1516,25 @@ that exposes the relevant API.
   copy `target`, and the `target` it passes to `createCopyResolver`, from
   its build or deployment environment, never from a request, a query
   parameter or another value a visitor can set (C-52).
+- **H-9 Mark private subtrees.** On a surface where autocapture or replay
+  runs, the host puts `data-private` on every subtree that holds
+  authentication, payment or other personal data, and opts elements into
+  autocapture only with `ANALYTICS_ELEMENT_ATTRIBUTE` values that carry no
+  personal data (C-66). The consent notice is excluded by its own root
+  marker.
+- **H-10 Replay only where attributes are safe.** Replay masks text and
+  inputs but records attribute values outside blocked subtrees as the page
+  has them. The host runs replay only on surfaces whose markup carries no
+  token or personal data in attribute values (link targets, image sources,
+  data attributes, and `title`, `alt`, `aria-label` and `placeholder`
+  text), and otherwise marks that subtree `data-private` or adds a block
+  selector (C-68).
+- **H-11 The probe reports evidence, not intent.** The host's replay
+  `probe()` returns `true` for a field only when the host's own evidence
+  for the SDK version it installed shows it (see "Separate evidence"), and
+  `false` for anything unproven. The host decides per surface, and for
+  whichever regime or region it serves, whether to pass each flag; the
+  package never does (O-7, C-62).
 
 ## Superseded ticket text
 
@@ -1197,9 +1589,11 @@ Dependency order for builders:
    and the preview, so presentation never waits for a backend.
 5. **Unit E Butler and Observer exports and port conformance.** Depends on
    #1938, #1940 and #1941.
-6. **#1942 release preparation.** Depends on #1978, #1938, #1940, unit D,
-   #1941 and unit E.
-7. **#1947 Bouncer.** Independent of every unit above.
+6. **Unit F Observer autocapture and session replay.** Depends on this
+   document (revision 7) and #1940 only.
+7. **#1942 release preparation.** Depends on #1978, #1938, #1940, unit D,
+   #1941, unit E and unit F.
+8. **#1947 Bouncer.** Independent of every unit above.
 
 #1981 is a behaviour issue, not a build unit. Its record, decision and
 expiry behaviour is built in #1938, and its reopen seam and copy in #1941.
@@ -1377,6 +1771,52 @@ expiry behaviour is built in #1938, and its reopen seam and copy in #1941.
   which proves the new root script is invoked by a workflow and has its
   declared-table entry; and the `build and test` job runs the new step.
 
+### Unit F Observer autocapture and session replay
+
+- Paths: `packages/observer/src/browser-analytics/providers/` and its
+  tests in `packages/observer/src/browser-analytics/`, the Observer README,
+  and one `.changesets/` entry for `observer` at `minor`. The transport,
+  the sanitizer, the Observer root, the manifest and the compiler settings
+  stay untouched; public subpath exports remain unit E's, except that
+  unit F adds its names to the posthog subpath's entry module when unit E
+  has landed first.
+- API: the `PostHogProviderConfig` feature blocks, `ReplayCapability`, the
+  optional `PostHogLike` members and the constants named under
+  "Autocapture and session replay", as specified in C-62 to C-69. The
+  README states that the classes are not yet part of the consent
+  assembly's API.
+- Fixtures: a fake SDK that records every call in order, with the capture
+  gate's state at each call, returns a named instance whose `config`
+  echoes the configuration it received (and variants that drop or alter a
+  masking key), runs its `before_send` hook for transport, autocapture and
+  snapshot events, and can call back into the adapter from inside any
+  method; a deferred host loader; a scripted probe; a session id source; a
+  deterministic random source; an autocapture corpus (below); a snapshot
+  corpus of recorder payloads (masked and unmasked text, input and `value`
+  attributes, compressed data, console, network, canvas and unknown
+  records, custom records, and meta and custom addresses with and without a
+  query or a fragment); a settable page address. No real SDK
+  is installed or imported, and nothing reads the environment.
+- Test obligations, each a named test with a mutation row below:
+  (a) zero SDK calls before any grant and zero after a withdrawal's
+  stop steps return, under every flag combination (P-37);
+  (b) a provider load resolving after a withdrawal starts nothing:
+  no `init`, no `opt_in_capturing`, no `startSessionRecording` (P-37);
+  (c) a re-entrant subscriber or SDK callback during the stop steps: the
+  steps all run in order, the gate is already closed when any SDK call is
+  made, and a re-entrant grant runs afterwards as a re-grant with a new
+  session (P-37, P-39);
+  (d) a corpus of SDK `$el_text`, `$elements_chain`, `$elements`,
+  `$external_click_url` and `attr__href` values (link text, a link with a
+  query token, a target inside each private marker, a form field, a missing
+  or invalid attribute, a `change` event, an overlong value) never yields
+  text, an `href`, a query or a token at the seam, and no raw input value
+  reaches the seam (P-36);
+  (e) every guard in C-62 to C-69 has a mutation row in the table below,
+  in the same format, with its Covers cell.
+- Proof: P-33 to P-43. P-40 is a compile-time test in unit F's own tests,
+  so it needs no export from unit E.
+
 ### Unowned work
 
 - **Unit D** has no ticket. The `ConsentBanner` block source is outside the
@@ -1384,6 +1824,12 @@ expiry behaviour is built in #1938, and its reopen seam and copy in #1941.
 - **Unit E** has no ticket. #1938 and #1940 forbid their package index and
   manifests, #1941 forbids both packages, and #1942 forbids source. Hosts
   cannot import Butler's or Observer's new subpaths until unit E lands.
+  Unit F's public types and constants reach hosts through unit E's
+  `@clossys/observer/browser-analytics/posthog` subpath; whichever of the
+  two lands second adds them to that entry. Neither unit depends on the
+  other.
+- **Unit F** has no ticket. It is the Observer change specified by C-62 to
+  C-69.
 
 ## Proof cases
 
@@ -1428,6 +1874,17 @@ passes. "Covers" lists the rules each proof holds.
 | P-30 | #1941 | `hooks` :: hooks outside a `ConsentExperience` report not allowed and the no-decision status; `useAnalyticsAllowed()` is `false` for the preview's `remembered-granted` and `fresh-notice` states and `useConsentStatus().simulated` is `"preview"`; unmount and a `required` change dispose the lifecycle; a development double mount leaves one live lifecycle | C-23, C-48 | keep the lifecycle from the discarded mount alive; return `snapshot.allowed` without the simulated mask |
 | P-31 | E | `consent-port-conformance` :: type-level assignability of each real implementation to its structural port, and the reference host factory compiling with no cast | O-3, C-53 | rename or retype one `ConsentSnapshot` field in Butler; narrow Butler's `evidence` option to `ConsentEvidencePort` only; drop the test's `GATE_TEST_EXCLUSIONS` entry, so `check:gates` sweeps in a suite that imports workspace packages and the workflow reference test fails |
 | P-32 | #1938 | `refusal-floor` :: under `notice`, a refusal stored this visit and then a denial another tab wrote under another `policy.version` (no choice here): the re-read keeps `denied`, `allowed: false`, no automatic prompt, `memory`; under `notice`, a refusal stored this visit, the storage then cleared from outside and `refresh()`: the same; unreadable at mount, `refuse()` whose write reports `ok`, a read that then returns empty, and `refresh()`: still `denied`, `memory`; only a live grant dated after the refusal and not after `now` lifts the floor; a grant made this visit still moves to `denied` when another tab's denial arrives, with persistence `stored`; a refusal held in memory that a re-read replaces with another tab's live, newer denial reports `stored`; a grant dated T0 plus a day stored while the clock reads T0, `refuse()` whose write fails, the clock corrected past T0 plus a day and `refresh()`: still `denied`, not allowed, `withdrawal: "failed"` | C-54, C-56, C-57 | re-evaluate a stored refusal made this visit from storage alone; lift the floor with a record that parses as no choice; lift the floor with a future-dated grant; hold a grant made this visit against another tab's denial; report `memory` when another tab's live denial replaces the choice; classify the read-back at the call with plain `isAllowed` |
+| P-33 | F | `posthog-config` :: with no block, or `enabled` not `true`, the `init` configuration equals C-44's exactly; an unknown key (including `maskAll`, `maskAllInputs: false` or an unmask list), a wrong type, a missing or out-of-range `sampleRate` (`NaN`, `-0.1`, `1.1`) or a missing `probe` under `enabled: true` makes `createPostHogProvider` throw; through the transport, that loader failure retries once and ends `failed`, with no `init` and no capture | C-62, C-63 | accept an unknown key; default a missing `sampleRate` to 1; initialize the SDK when a block is invalid |
+| P-34 | F | `posthog-forced-options` :: for each of the four flag combinations, every key of the `init` configuration has exactly the value of C-44 and the C-64 table, the experiment and feature-flag disables included; the host's block selectors follow the private ones and never replace them | C-64 | omit `respect_dnt`; set `disable_session_recording: false` under replay; drop `capture_copied_text: false`; set `recordHeaders`, `recordBody`, `recordCanvas` or `enable_recording_console_log` to `true`, or `compressEvents` to `true`, under replay; let host selectors replace `PRIVATE_SUBTREE_SELECTORS` |
+| P-35 | F | `posthog-gate` :: a `$pageview`, a conversion, an `$autocapture` and a `$snapshot`, each with SDK-added `$set`, an unlisted property and a `$current_url` carrying a query, leave with only `POSTHOG_EVENT_FIELDS`, the delivery fields, their class's list and URL fields rebuilt from the sanitized URL; an `$autocapture` with the flag off, a `$snapshot` before replay started, any SDK-originated event while the gate is closed, and a flag-called event are dropped | C-65 | skip the URL rebuild for an SDK-originated class; let an SDK-originated class bypass the property allowlist; accept `$autocapture` while its flag is off |
+| P-36 | F | `posthog-autocapture` :: test obligation (d): over the corpus, no output holds element text, an `href`, a query or a token; `$elements_chain` holds only the target's tag and allowlisted attribute; targets inside `data-private`, `data-consent-banner`, a `password` field or a `cc-` autocomplete field, form-field targets, a missing or invalid attribute value, a `change` event, unparseable element data and an overlong value are dropped; no raw input value reaches the fake seam in any recorded call or hook output | C-66 | keep `$el_text`; take the URL fields from the element's `href`; keep ancestors in the rebuilt chain; accept a `change` event; skip the private-ancestor check |
+| P-37 | F | `posthog-lifecycle` :: test obligations (a) to (c): zero SDK calls before any grant and after the stop steps return, under every flag combination; a deferred load resolving after a withdrawal makes no `init`, `opt_in_capturing` or `startSessionRecording` call; the gate is already closed at every SDK call `optOut()` makes; a throwing `stopSessionRecording`, `opt_out_capturing` or `reset` leaves the gate closed and the later steps still run; an `optIn()` re-entered during the stop steps runs only after them, as a re-grant; an `optOut()` during `optIn()` stops it before `startSessionRecording` | C-67 | close the gate after `opt_out_capturing`; skip later stop steps after a throw; apply a re-entrant grant in the middle of the stop steps; start replay after a withdrawal during `optIn()` |
+| P-38 | F | `posthog-replay` :: replay starts only when all five C-68 eligibility conditions hold; a missing, throwing, promise-returning or any-`false` or non-boolean probe (each of the eight fields in turn), a read-back with one masking key altered, a missing method, `sampleRate: 0` or an unselected draw never calls `startSessionRecording`, and pageviews and autocapture still work; on a re-grant, a read-back altered after `init` skips that start and every later one; a `$snapshot` meta `href` is rewritten to the sanitized URL, and one that cannot be rewritten drops the event | C-68 | skip the read-back; read back only at `init`; treat a missing probe as success; accept a probe field of `"true"`; ignore `recordsNoCanvas`; ignore `recordsNavigationAddress`; pass `$snapshot_data` without rewriting the meta `href` |
+| P-39 | F | `posthog-session` :: withdrawal calls `reset()` after `opt_out_capturing()` when a flag is on, and never with both flags off; a re-grant calls `reset()` before `opt_in_capturing()`; a session id equal to an earlier one leaves replay off for that grant; a `$snapshot` carrying an earlier session id, or flushed after the stop, is dropped | C-69 | skip `reset()` on a re-grant; accept a `$snapshot` from an earlier session; start replay when the session id did not change |
+| P-40 | F | `posthog-config-types` :: a compile-time test in unit F's own tests: the replay block's type admits no masking key, `blockSelectors` is its only selector key, and a configuration with only `key` and `apiHost` still type-checks | C-68 | add `maskAll?: boolean` to the replay block's type |
+| P-41 | F | `posthog-replay` :: payload check, over the snapshot corpus: a `$snapshot` whose payload holds a compressed or string-encoded record, a record carrying a compression marker, a mutation whose data is an object but whose adds, text changes or attributes are an encoded string, an unparsable record, a record of an unlisted kind, a console plugin or log record, a network plugin record, a canvas mutation record, an unmasked text node (in a full snapshot, in a mutation's added nodes, inside a shadow root or inside a same-origin iframe document), an unmasked text change, an unmasked input record or an unmasked `value` attribute is dropped whole; a fully masked payload passes with its custom records removed and `style` text kept; no corpus string other than masked text reaches the fake seam | C-68 | accept a compressed record; accept a record whose fields, not its data, are encoded; skip a field whose type is not the expected one instead of dropping the event; check text nodes only in full snapshots, not in mutation adds or text changes; skip shadow roots or iframe documents; accept an unlisted record kind; accept a console, network or canvas record; skip the masked-form check for input records or for `value` attributes; pass custom records through |
+| P-42 | F | `posthog-replay` :: query and fragment check: with the page address carrying a non-empty query or a non-empty fragment, a clean page address but a load address (navigation entry) carrying one, or a meta or custom address in the payload carrying one, the `$snapshot` is dropped, and every later `$snapshot` of that grant is dropped even after the address is clean; on a page with neither, a payload whose attribute values hold a link is accepted; a new grant on a clean address records again | C-68, C-20 | check only the meta `href`; ignore the load address; check the address after the rewrite; accept later `$snapshot` events of the same grant once the address is clean; ignore the fragment |
+| P-43 | F | `posthog-block-selectors` :: each host block selector is checked against `BLOCK_SELECTOR_GRAMMAR`: one with a top-level comma, a pseudo-class, a parenthesis, an escape, a `~` or `+` combinator, an unbalanced bracket, a space at the start, or a long adversarial string (tens of thousands of repeated `.a` or `[a="` fragments ending in an invalid character, tested against the expression directly and returning promptly) leaves replay off with no `startSessionRecording` call and no throw, while pageviews and autocapture still run; valid selectors (`aside`, `.card [data-x="a b"]`, `main > #pane`) follow the private selectors in the joined block selector | C-63, C-68 | skip the grammar check; skip the length cap before the expression; accept a comma; throw instead of leaving replay off; place host selectors before the private ones |
 
 ### Review proofs for this document
 
@@ -1478,6 +1935,31 @@ their own owners:
     storage key of its own that `persistence: "memory"` does not govern;
   - whether its send queue drops queued events on opt-out (open question
     6).
+  - for unit F: that each option name in the C-64 table exists and
+    behaves as named, including the autocapture selector allowlist with a
+    compound `:not()` selector; that `startSessionRecording()` records
+    after an `init` with `disable_session_recording: true`, and that
+    `stopSessionRecording()` stops it; that `$autocapture` and `$snapshot`
+    events reach `before_send` with the fields C-66 and C-68 read, and
+    that the provider accepts the rebuilt `$elements_chain`; that the
+    recorder applies `REPLAY_RECORDING_OPTIONS` and where its meta records
+    carry the page URL; that `reset()` yields a new session id and
+    distinct id under `persistence: "memory"`; whether the SDK discards its
+    recording buffer on stop (the hook drops it either way, C-69); the
+    recorder's record format as the hook decodes it (the record kinds in
+    `REPLAY_RECORD_KINDS`, where text nodes, text changes, input text and
+    `value` attributes sit, and that masked text matches
+    `MASKED_TEXT_PATTERN`), and that `compressEvents: false` leaves every
+    record's data uncompressed, without which every `$snapshot` is dropped;
+    whether the recorder writes a record carrying the new address, in the
+    same payload as the records that follow it, on every in-page navigation,
+    which the query and fragment check of C-68 relies on to notice a
+    navigation between two flushes (the probe's `recordsNavigationAddress`);
+    whether the recorder replaces an inline script's text with a fixed
+    placeholder, and its exact string (open question 10); and when the SDK rotates its session
+    id by itself (for example after inactivity), which silently stops
+    replay output for the rest of that grant (C-69). Each of the probe's
+    fields is answered from this evidence (H-11).
 
 ## Open questions
 
@@ -1513,3 +1995,17 @@ that builders follow until the owner decides otherwise.
    refusal.
    Proposed default: no session-scoped marker. The refusal holds in memory
    for the visit and the visitor is told.
+8. **Reset with both flags off.** Revision 7 calls `reset()` on withdrawal
+   only when autocapture or replay is on, so the adapter of C-44 is
+   unchanged. Proposed default: keep this; a re-grant with both flags off
+   keeps the in-memory distinct id for the rest of the page load.
+9. **Recorded attribute values.** Replay masks text, inputs and `value`
+   attributes but not other attribute values (H-10). Proposed default: no attribute masking option
+   in the package; hosts block the subtrees they cannot vouch for.
+10. **Recorded script text.** A recorder may replace an inline `script`
+    element's text with a fixed placeholder that does not match
+    `MASKED_TEXT_PATTERN`; C-68 item 3 then drops every full snapshot of a
+    page with an inline script. Proposed default: no exemption until the
+    separate evidence names the exact placeholder string; the owner may
+    then exempt that exact string, for `script` element text only, with a
+    proof row of its own.

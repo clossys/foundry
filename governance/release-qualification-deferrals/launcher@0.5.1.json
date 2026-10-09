@@ -1,6 +1,0 @@
-{
-  "package": "launcher",
-  "version": "0.5.1",
-  "reason": "Launcher source has advanced; exact-version candidate qualification is pending.",
-  "issue": 1959
-}
