@@ -166,6 +166,101 @@ describe("ConsentBanner: structure", () => {
   });
 });
 
+describe("ConsentBanner: status slot", () => {
+  function liveRegion(root: HTMLElement) {
+    return root.querySelector('[role="status"]') as HTMLElement | null;
+  }
+
+  it("mounts a polite live region with no status, and it is empty", () => {
+    const { root } = setup();
+    const region = liveRegion(root);
+    expect(region).not.toBeNull();
+    expect(root.querySelectorAll('[role="status"]')).toHaveLength(1);
+    expect(region).toHaveAttribute("aria-live", "polite");
+    expect(region!.textContent).toBe("");
+    expect(region!.childElementCount).toBe(0);
+    expect(screen.getByRole("status")).toBe(region);
+  });
+
+  it.each([[false], [null], [undefined], [true]])("keeps the region mounted and empty for status %s", (value) => {
+    const { root } = setup({ status: value as never });
+    const region = liveRegion(root);
+    expect(region).not.toBeNull();
+    expect(region).toHaveAttribute("aria-live", "polite");
+    expect(region!.textContent).toBe("");
+  });
+
+  it("renders the status content inside the live region, in body, status, actions order", () => {
+    const { root } = setup({ status: "Status text", privacyLink: <a href="/privacy">Privacy link</a> });
+    const region = liveRegion(root)!;
+    expect(region).toHaveTextContent("Status text");
+    expect(screen.getByRole("status")).toHaveTextContent("Status text");
+    const body = screen.getByText("Banner body");
+    const accept = screen.getByRole("button", { name: "Accept label" });
+    const reject = screen.getByRole("button", { name: "Reject label" });
+    expect(body.compareDocumentPosition(region) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(region.compareDocumentPosition(accept) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(region.compareDocumentPosition(reject) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(root.contains(region)).toBe(true);
+  });
+
+  it("renders a status of 0 and ReactNode content", () => {
+    const { root, unmount } = setup({ status: 0 });
+    expect(liveRegion(root)).toHaveTextContent("0");
+    unmount();
+    setup({ status: <strong>Saved</strong> });
+    expect(screen.getByRole("status")).toContainElement(screen.getByText("Saved"));
+  });
+
+  it("re-renders status changes into the same live region node", () => {
+    const props = {
+      title: "Banner title",
+      body: "Banner body",
+      acceptLabel: "Accept label",
+      rejectLabel: "Reject label",
+      onAccept: vi.fn(),
+      onReject: vi.fn(),
+    };
+    const { container, rerender } = render(<ConsentBanner {...props} />);
+    const region = container.querySelector('[role="status"]') as HTMLElement;
+    expect(region.textContent).toBe("");
+    rerender(<ConsentBanner {...props} status="First status" />);
+    expect(container.querySelector('[role="status"]')).toBe(region);
+    expect(region).toHaveTextContent("First status");
+    rerender(<ConsentBanner {...props} status="Second status" />);
+    expect(container.querySelector('[role="status"]')).toBe(region);
+    expect(region).toHaveTextContent("Second status");
+    expect(region).not.toHaveTextContent("First status");
+    rerender(<ConsentBanner {...props} />);
+    expect(container.querySelector('[role="status"]')).toBe(region);
+    expect(region.textContent).toBe("");
+  });
+
+  it("leaves both actions enabled and equal, with no disabled state anywhere, while a status shows", async () => {
+    const user = userEvent.setup();
+    const { root, onAccept, onReject } = setup({ status: "Status text" });
+    const accept = screen.getByRole("button", { name: "Accept label" });
+    const reject = screen.getByRole("button", { name: "Reject label" });
+    expect(accept).toBeEnabled();
+    expect(reject).toBeEnabled();
+    expect(accept.className).toBe(reject.className);
+    expect(root.querySelector("[disabled], [aria-disabled]")).toBeNull();
+    await user.click(accept);
+    await user.click(reject);
+    expect(onAccept).toHaveBeenCalledTimes(1);
+    expect(onReject).toHaveBeenCalledTimes(1);
+    expect(root.querySelector("[disabled], [aria-disabled]")).toBeNull();
+  });
+
+  it("keeps the region landmark and the not-a-dialog contract with a status showing", () => {
+    const { root } = setup({ status: "Status text" });
+    expect(screen.getByRole("region", { name: "Banner title" })).toBe(root);
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(root).not.toHaveAttribute("aria-modal");
+    expect(root).not.toHaveAttribute("role");
+  });
+});
+
 describe("ConsentBanner: no side effects", () => {
   it("touches no storage, cookie, network or beacon on render or either click", async () => {
     const user = userEvent.setup();
