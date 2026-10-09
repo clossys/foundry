@@ -1,3 +1,4 @@
+import { buttonLinkClassName } from "@clossys/designer/atoms/server";
 import { SECTION_GROUND_CLASSES } from "@clossys/designer/blocks/server";
 import type { ReactNode } from "react";
 import type { ResolvedSectionedViewAction, ResolvedSectionedViewDocument, ResolvedSectionedViewHeroMedia, ResolvedSectionedViewSection, SectionedViewGround, SectionedViewStatTrend, SectionedViewStatus, SectionedViewStatusDisposition } from "../../core/sectioned-view.js";
@@ -381,10 +382,14 @@ const ACTION_INK: Record<SectionedViewGround, string> = {
   inverse: "text-ink-on-inverse",
 };
 
-function renderActions(actions: readonly ResolvedSectionedViewAction[] | undefined, ground: SectionedViewGround): ReactNode {
+/** How a hero's document-declared actions render: underlined text links, or Designer primary buttons. */
+export type SectionedViewHeroActions = "link" | "button";
+
+function renderActions(actions: readonly ResolvedSectionedViewAction[] | undefined, ground: SectionedViewGround, look: SectionedViewHeroActions): ReactNode {
   if (actions === undefined) return undefined;
+  const className = look === "button" ? buttonLinkClassName("primary", "lg") : `text-body font-body underline ${ACTION_INK[ground]}`;
   return actions.map((action) => (
-    <a key={action.id} href={action.href} className={`text-body font-body underline ${ACTION_INK[ground]}`}>
+    <a key={action.id} href={action.href} className={className}>
       {action.label}
     </a>
   ));
@@ -393,6 +398,14 @@ function renderActions(actions: readonly ResolvedSectionedViewAction[] | undefin
 export interface SectionedViewRenderOptions {
   resolveAssetId?: AssetResolver;
   prefersReducedMotion?: boolean;
+  /**
+   * How hero actions render. `"link"` (the SectionedView default) keeps
+   * underlined text links; `"button"` renders each as a Designer primary
+   * button-styled link (`buttonLinkClassName("primary", "lg")`), the same
+   * treatment a marketing page's closing call to action takes.
+   * @default "link"
+   */
+  heroActions?: SectionedViewHeroActions;
 }
 
 function resolveHeroMedia(media: ResolvedSectionedViewHeroMedia | undefined, path: string, options: SectionedViewRenderOptions): ReactNode {
@@ -452,7 +465,7 @@ function renderSection(section: ResolvedSectionedViewSection, index: number, blo
           eyebrow={section.eyebrow}
           heading={section.heading}
           description={section.description}
-          actions={renderActions(section.actions, section.ground)}
+          actions={renderActions(section.actions, section.ground, options.heroActions ?? "link")}
           media={heroMedia}
           {...(heroMedia ? { composition: "split" as const } : {})}
           headingLevel={index === 0 ? 1 : 2}

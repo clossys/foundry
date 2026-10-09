@@ -1078,9 +1078,15 @@ header region inside the same slot.
 
 **Measure and rhythm.** Centred copy, in the hero block and the call to
 action, is held to the prose measure (`--ui-width-prose-max`) inside the
-column, so its lines wrap sooner than the column. Bands take `py-3xl`
-(`py-4xl` from `tablet-lg`); the call to action takes `py-4xl` (`py-5xl`
-from `tablet-lg`); the hero block takes `py-5xl` under an overlay header.
+column, so its lines wrap sooner than the column. Body bands take `py-4xl`
+(`py-5xl` from `tablet-lg`); the call to action stands one step above them
+at every width, `py-5xl` (`py-6xl` from `tablet-lg`); the hero block takes
+`py-5xl` under an overlay header. Both copy blocks are Designer
+`SectionIntro`: the hero at the `display` emphasis (the page's one `<h1>`),
+the call to action at the `section` emphasis like every band heading. A
+hero section's document actions render as Designer primary button links
+(`buttonLinkClassName("primary", "lg")`), the call to action's treatment;
+omit a hero's `actions` for a message-only opening.
 The view paints the base surface on its root, so a band on the `base`
 ground shows the base surface whatever the page behind it is.
 
@@ -1097,8 +1103,9 @@ under the `"view"` rhythm, between the bands:
   of `base` and `sunken` that differs from the band below it;
 - an explicit section ground wins, outside the closing pair.
 
-The call to action ends with a full-width hairline in the on-inverse line
-colour, so it stays a separate band above an `inverse` site footer.
+The view draws no rule at either edge of the call to action: the ground
+change from the band above is its top seam, and the site footer's own top
+hairline (Designer `SiteFooter`) is its foot, so the seam is drawn once.
 
 `planLandingViewGrounds(document, trailing, { callToAction })` returns the
 same plan as a `LandingViewGroundPlan`: each band's `id`, `role`

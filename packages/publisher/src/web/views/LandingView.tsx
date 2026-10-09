@@ -46,7 +46,9 @@ export interface LandingViewCallToAction {
   description?: ReactNode;
   /**
    * The one action. A slot: pass a button-styled link (the page's primary
-   * call to action). It is not restyled here.
+   * call to action, Designer `buttonLinkClassName("primary", "lg")`, the
+   * same treatment the view gives the hero's actions). It is not restyled
+   * here.
    */
   action: ReactNode;
 }
@@ -119,9 +121,11 @@ const HERO_FILL = {
   peek: "calc(100dvh - var(--spacing-5xl, 6rem))",
 } as const;
 
-/** Vertical rhythm of a content band and of the closing band. */
-const BAND_CLASS = "py-3xl tablet-lg:py-4xl";
-const CALL_TO_ACTION_CLASS = "py-4xl tablet-lg:py-5xl";
+/** Vertical rhythm of every body band after the hero: 64px, 96px from `tablet-lg`. */
+const BAND_CLASS = "py-4xl tablet-lg:py-5xl";
+
+/** The closing call to action stands apart: one step above a body band at every width (96px, 128px from `tablet-lg`). */
+const CALL_TO_ACTION_BAND_CLASS = "py-5xl tablet-lg:py-6xl";
 
 /** Section kinds whose header group and module the bands compose through `ContentSection`. */
 const ANATOMY_KINDS: ReadonlySet<string> = new Set(["hero", "feature-grid", "faq", "ordered-step-sequence", "status-list"]);
@@ -190,18 +194,24 @@ function bandBlocks(afterSection: Readonly<Record<string, ReactNode>>): Sectione
  * anything placed `afterSection`), one spacing step apart. Sections render
  * through the same validated mapping as `SectionedView`. The hero block is
  * Designer `Hero` (`align`, default centred) on the hero section's ground,
- * with an optional `backdrop`; the call to action is Designer `Hero` at
- * `<h2>`, centred, with one action. A centred `Hero` holds its copy to the
- * same prose measure, so the opening and the close wrap alike.
+ * with an optional `backdrop`, and its document actions render as Designer
+ * primary buttons (`buttonLinkClassName("primary", "lg")`); the call to
+ * action is a centred `ContentSection` at `<h2>` with one action. Both copy
+ * blocks are Designer `SectionIntro`: the hero at the `display` emphasis
+ * (the page's one `<h1>`), the close at the `section` emphasis like every
+ * other band's heading, held to the same prose measure.
  *
  * Rhythm: the hero block fills the first screen under an overlay header
- * (`py-5xl`); each band is `py-3xl`, `py-4xl` from `tablet-lg`; the call to
- * action is one step taller (`py-4xl`, `py-5xl` from `tablet-lg`).
+ * (`py-5xl`); every body band after it is `py-4xl`, `py-5xl` from
+ * `tablet-lg`; the call to action sits one step above that at every width
+ * (`py-5xl`, `py-6xl` from `tablet-lg`).
  *
  * Grounds (`planLandingViewGrounds`): the hero keeps its section's ground.
  * With a call to action, the closing pair is fixed by the view: the last
- * band on `base`, the call to action on `inverse` with a hairline at its
- * foot (the seam to a footer on the same ground). Sections that omit
+ * band on `base`, the call to action on `inverse`. The view draws no rule
+ * at either edge of the call to action: the ground change from the band
+ * above is its top seam, and the frame footer's own top hairline (Designer
+ * `SiteFooter`) is its foot, so the seam is drawn once. Sections that omit
  * `ground` under the `"view"` rhythm alternate `base`/`sunken` counting
  * upward from the last band, so no page needs an even or odd section count;
  * an explicit ground still wins. Each band carries `data-landing-ground`.
@@ -233,6 +243,7 @@ export function LandingView({
   ...rest
 }: LandingViewProps) {
   const options = { resolveAssetId, prefersReducedMotion };
+  const heroOptions = { ...options, heroActions: "button" as const };
   for (const entry of [document, ...trailing]) {
     try {
       assertRenderableSectionedViewDocument(entry);
@@ -253,7 +264,7 @@ export function LandingView({
       ...sectionedViewBlocks,
       Hero: (props) => <Hero {...props} headingLevel={1} align={align} className={hasBackdrop ? "bg-transparent" : undefined} />,
     },
-    options,
+    heroOptions,
     "LandingView",
   );
   const blocks = bandBlocks(afterSection);
@@ -318,10 +329,10 @@ export function LandingView({
 }
 
 /**
- * The closing band: Designer `Hero` at `<h2>`, centred, with its one action,
- * on the inverse ground. Its foot is a full-bleed hairline in that ground's
- * line token, so a frame footer on the same ground meets it at a drawn seam
- * rather than running on without one.
+ * The closing band: a centred Designer `ContentSection` at `<h2>` (the
+ * `section` emphasis every band heading takes), with its one action, on the
+ * inverse ground, at the band rhythm. It draws no edge rule of its own: a
+ * frame footer on the same ground carries the one hairline between them.
  */
 function CallToActionBand({ id, eyebrow, heading, description, action, measure }: LandingViewCallToAction & { measure: SectionMeasure }) {
   const ground = LANDING_VIEW_CALL_TO_ACTION_GROUND;
@@ -332,9 +343,9 @@ function CallToActionBand({ id, eyebrow, heading, description, action, measure }
       data-landing-ground={ground}
       ground={ground}
       measure={measure}
-      className={mergeUiClasses(CALL_TO_ACTION_CLASS, "border-b", SECTION_GROUND_CLASSES[ground].border)}
+      className={CALL_TO_ACTION_BAND_CLASS}
     >
-      <Hero headingLevel={2} align="center" ground={ground} eyebrow={eyebrow} heading={heading} description={description} actions={action} />
+      <ContentSection headingLevel={2} align="center" ground={ground} eyebrow={eyebrow} heading={heading} description={description} actions={action} />
     </SectionFrame>
   );
 }

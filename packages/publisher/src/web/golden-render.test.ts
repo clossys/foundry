@@ -327,10 +327,10 @@ describe("golden: MarketingView", () => {
         "</header>" +
         '<main class="flex flex-col gap-2xl py-2xl">' +
         '<section class="flex flex-col gap-xl">' +
-        '<div class="flex flex-col items-start gap-md">' +
+        '<div data-section-intro="display" class="flex w-full flex-col items-start" style="max-width:var(--ui-width-prose-max, 48rem)">' +
         '<p class="text-caption uppercase tracking-label text-ink-muted">Placeholder eyebrow</p>' +
-        '<h1 class="text-display-l font-display max-w-display text-ink-primary">Placeholder hero heading</h1>' +
-        '<p class="text-body-l max-w-display text-ink-secondary">Placeholder hero description.</p>' +
+        '<h1 class="text-display-m tablet:text-display-l font-display leading-display text-balance text-ink-primary mt-sm">Placeholder hero heading</h1>' +
+        '<p class="text-body-l text-pretty text-ink-secondary mt-2xl">Placeholder hero description.</p>' +
         "</div>" +
         "</section>" +
         '<div class="flex flex-col gap-lg bg-surface-sunken">' +
@@ -344,19 +344,21 @@ describe("golden: MarketingView", () => {
         "</div>" +
         '<div class="flex flex-col gap-lg">' +
         '<div class="flex flex-col border-t border-line-base">' +
-        '<div class="group/faq flex flex-col border-b border-line-base" data-rac="">' +
+        '<div class="group/faq block border-b border-line-base" data-rac="">' +
         '<button id="react-aria-_R_6eH1_" class="flex w-full cursor-pointer items-center justify-between gap-lg rounded-default py-lg text-start text-body-l font-medium tablet:py-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent summary-marker-none text-ink-primary" data-rac="" type="button" tabindex="0" data-react-aria-pressable="true" aria-expanded="false" aria-controls="react-aria-_R_6eH2_" slot="trigger">' +
         "<span>Placeholder question A?</span>" +
-        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" class="shrink-0 transition-transform motion-reduce:transition-none" style="width:var(--ui-icon-md, var(--spacing-xl, 24px));height:var(--ui-icon-md, var(--spacing-xl, 24px));flex-shrink:0;stroke-width:var(--ui-icon-stroke, 2)" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg>' +
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" class="shrink-0 disclosure-icon-motion" style="width:var(--ui-icon-md, var(--spacing-xl, 24px));height:var(--ui-icon-md, var(--spacing-xl, 24px));flex-shrink:0;stroke-width:var(--ui-icon-stroke, 2)" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg>' +
         "</button>" +
-        '<div class="pb-lg pe-2xl text-body text-pretty tablet:pb-xl text-ink-secondary" style="max-width:var(--ui-width-prose-max, 48rem)" data-rac="" id="react-aria-_R_6eH2_" role="group" aria-labelledby="react-aria-_R_6eH1_" aria-hidden="true" hidden="">Placeholder answer A.</div>' +
+        '<div class="disclosure-panel-motion" data-rac="" id="react-aria-_R_6eH2_" role="group" aria-labelledby="react-aria-_R_6eH1_" aria-hidden="true" hidden="">' +
+        '<div class="pb-lg pe-2xl text-body text-pretty tablet:pb-xl text-ink-secondary" style="max-width:var(--ui-width-prose-max, 48rem)">Placeholder answer A.</div>' +
+        "</div>" +
         "</div>" +
         "</div>" +
         "</div>" +
         '<section class="bg-surface-sunken flex flex-col gap-xl">' +
-        '<div class="flex flex-col items-start gap-md">' +
-        '<h2 class="text-display-l font-display max-w-display text-ink-primary">Placeholder CTA heading</h2>' +
-        '<p class="text-body-l max-w-display text-ink-secondary">Placeholder CTA description.</p>' +
+        '<div data-section-intro="display" class="flex w-full flex-col items-start" style="max-width:var(--ui-width-prose-max, 48rem)">' +
+        '<h2 class="text-display-m tablet:text-display-l font-display leading-display text-balance text-ink-primary">Placeholder CTA heading</h2>' +
+        '<p class="text-body-l text-pretty text-ink-secondary mt-2xl">Placeholder CTA description.</p>' +
         "</div>" +
         "</section>" +
         "</main>" +
@@ -420,8 +422,8 @@ describe("golden: MarketingView", () => {
         "</div>" +
         "</header>" +
         '<main class="flex flex-col gap-2xl py-2xl">' +
-        '<section class="flex flex-col gap-xl"><div class="flex flex-col items-start gap-md"><h1 class="text-display-l font-display max-w-display text-ink-primary">Placeholder hero heading</h1></div></section>' +
-        '<section class="bg-surface-sunken flex flex-col gap-xl"><div class="flex flex-col items-start gap-md"><h2 class="text-display-l font-display max-w-display text-ink-primary">Placeholder CTA heading</h2></div></section>' +
+        '<section class="flex flex-col gap-xl"><div data-section-intro="display" class="flex w-full flex-col items-start" style="max-width:var(--ui-width-prose-max, 48rem)"><h1 class="text-display-m tablet:text-display-l font-display leading-display text-balance text-ink-primary">Placeholder hero heading</h1></div></section>' +
+        '<section class="bg-surface-sunken flex flex-col gap-xl"><div data-section-intro="display" class="flex w-full flex-col items-start" style="max-width:var(--ui-width-prose-max, 48rem)"><h2 class="text-display-m tablet:text-display-l font-display leading-display text-balance text-ink-primary">Placeholder CTA heading</h2></div></section>' +
         "</main>" +
         '<footer class="bg-surface-raised text-ink-primary py-lg border-t border-line-base" style="position:relative;z-index:var(--ui-z-shell, 20);border-top-width:var(--ui-border-hairline, 1px)">' +
         '<div class="mx-auto flex w-full flex-col gap-lg" style="padding-inline:var(--ui-width-page-padding-x, clamp(16px, 4vw, 48px))"></div>' +

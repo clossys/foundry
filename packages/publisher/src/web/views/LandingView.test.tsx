@@ -160,15 +160,43 @@ describe("LandingView", () => {
     expect(nested.querySelector("div[data-landing-view]")).not.toBeNull();
   });
 
-  it("fixes the closing pair: the last band on base, the call to action on inverse with a hairline at its foot", () => {
+  it("fixes the closing pair: the last band on base, the call to action on inverse with no edge rule of its own", () => {
     const root = dom({ document: PAGE, trailing: [{ ...SHARED, sections: [{ ...SHARED.sections[0]!, ground: "sunken" }] }], callToAction: CALL_TO_ACTION });
     const frames = [...root.querySelectorAll("[data-landing-view] > section")];
     expect(frames.map((frame) => frame.getAttribute("data-landing-ground"))).toEqual(["inverse", "sunken", "base", "inverse"]);
     expect(root.querySelector("[data-landing-view]")?.className).toContain("bg-surface-base");
     const close = root.querySelector("[data-landing-call-to-action]");
     expect(close?.className).toContain("bg-surface-inverse");
-    expect(close?.className).toContain("border-b");
-    expect(close?.className).toContain("border-line-on-inverse");
+    // The footer's own top hairline is the one seam; the ground change is the top edge.
+    expect(close?.className).not.toMatch(/\bborder-/);
+  });
+
+  it("renders the call to action as a centred section-emphasis ContentSection one rhythm step above a body band, never the display step", () => {
+    const root = dom({ document: PAGE, trailing: [SHARED], callToAction: CALL_TO_ACTION });
+    const close = root.querySelector("[data-landing-call-to-action]") as HTMLElement;
+    const band = root.querySelector("#features")?.closest("section") as HTMLElement;
+    const padding = (element: HTMLElement) => element.className.split(/\s+/).filter((name) => /(^|:)py-/.test(name));
+    expect(padding(band)).toEqual(["py-4xl", "tablet-lg:py-5xl"]);
+    expect(padding(close)).toEqual(["py-5xl", "tablet-lg:py-6xl"]);
+    const rest = (element: HTMLElement) => element.className.split(/\s+/).filter((name) => !/(^|:)py-/.test(name) && !name.startsWith("bg-surface-"));
+    expect(rest(close)).toEqual(rest(band));
+    const intro = close.querySelector("[data-section-intro]") as HTMLElement;
+    expect(intro.getAttribute("data-section-intro")).toBe("section");
+    const heading = close.querySelector("h2") as HTMLElement;
+    expect(heading.className).toContain("leading-heading");
+    expect(heading.className).not.toMatch(/(^|\s)text-display-l\b/);
+    const hero = root.querySelector("[data-landing-hero] [data-section-intro]") as HTMLElement;
+    expect(hero.getAttribute("data-section-intro")).toBe("display");
+    expect(root.querySelector("[data-landing-hero] h1")?.className).toContain("leading-display");
+  });
+
+  it("renders the hero's document actions as Designer primary buttons, the call to action's treatment", () => {
+    const withActions: ResolvedSectionedViewDocument = { ...PAGE, sections: [{ ...PAGE.sections[0]!, actions: [{ id: "demo", label: "DEMO-SENTINEL", href: "/demo" }] } as ResolvedSectionedViewDocument["sections"][number], ...PAGE.sections.slice(1)] };
+    const link = dom({ document: withActions }).querySelector("[data-landing-hero] a") as HTMLElement;
+    expect(link.textContent).toBe("DEMO-SENTINEL");
+    expect(link.className).toContain("bg-accent");
+    expect(link.className).toContain("text-ink-on-accent");
+    expect(link.className).not.toContain("underline");
   });
 });
 
