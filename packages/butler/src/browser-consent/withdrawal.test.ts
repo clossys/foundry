@@ -11,12 +11,14 @@
  * the in-memory denial on `visibilitychange`, `pageshow` or a cross-tab
  * re-read, and `withdrawal` stays `failed`; a newer denial another tab
  * wrote under a different `policy.version` never replaces the in-memory
- * denial; the record a failed read-back saw, and anything decided at or
- * before it, never replaces the denial once the clock is corrected (the
- * watermark only moves forward, and an empty read-back bars nothing); a
- * grant dated after now counts as allowed at the call and on read-back; a
- * second refusal after a failed withdrawal is a withdrawal even when
- * storage is unreadable at the call. Covers C-7, C-13, C-15, C-40, C-54.
+ * denial; the records a failed withdrawal read at the call and on
+ * read-back, and anything decided at or before them, never replace the
+ * denial once the clock is corrected (the watermark only moves forward,
+ * and an empty or unreadable read-back still bars the record read at the
+ * call); the visitor's own grant clears the watermark; a grant dated after
+ * now counts as allowed at the call and on read-back; a second refusal
+ * after a failed withdrawal is a withdrawal even when storage is
+ * unreadable at the call. Covers P-32, C-7, C-13, C-15, C-40, C-54, C-57.
  *
  * `visibilitychange` and `pageshow` are modelled as the assembly wires
  * them: listeners that call `refresh()` (C-46).
@@ -254,7 +256,7 @@ describe("withdrawal is never harder than granting (C-15)", () => {
   });
 });
 
-describe("the watermark of a failed withdrawal (C-13, C-40, C-54)", () => {
+describe("the watermark of a failed withdrawal (P-32, C-13, C-40, C-54, C-57)", () => {
   it("grant at T0, clock back a day, refusal fails write and removal, clock to T0+2h: refresh keeps the denial and failed", () => {
     const h = harness();
     h.lifecycle.grant();
@@ -297,7 +299,8 @@ describe("the watermark of a failed withdrawal (C-13, C-40, C-54)", () => {
     expect(h.snap()).toMatchObject({ effective: "denied", allowed: false, persistence: "memory", withdrawal: "failed" });
   });
 
-  it("a read-back that saw no record bars nothing", () => {
+  // Fail-closed beyond rev 6: the record read at the call also raises the watermark, so a read-back that saw none bars it too.
+  it("a read-back that saw no record still bars the record read at the call, and a grant decided after it lifts the denial", () => {
     const h = harness({ regime: "notice", initial: futureDated("granted", T0, DAY) });
     h.storage.modes.writeFails = true;
     h.lifecycle.refuse();
@@ -305,6 +308,43 @@ describe("the watermark of a failed withdrawal (C-13, C-40, C-54)", () => {
     expect(h.snap()).toMatchObject({ effective: "denied", allowed: false, withdrawal: "failed" });
     h.time.set(plusMs(T0, 2 * DAY));
     h.storage.setExternally(futureDated("granted", T0, DAY));
+    h.lifecycle.refresh();
+    expect(h.snap()).toMatchObject({ effective: "denied", allowed: false, persistence: "memory", withdrawal: "failed" });
+    h.storage.setExternally(futureDated("granted", T0, DAY + HOUR));
+    h.lifecycle.refresh();
+    expect(h.snap()).toMatchObject({ effective: "granted", allowed: true, persistence: "stored", withdrawal: "idle" });
+  });
+
+  it("an unreadable read-back still bars the record read at the call", () => {
+    const grant = futureDated("granted", T0, DAY);
+    const h = harness({ initial: grant });
+    h.storage.modes.writeFails = true;
+    h.storage.modes.removeFails = true;
+    h.storage.scriptedReads.push({ kind: "value", value: grant }, { kind: "unavailable" });
+    h.lifecycle.refuse();
+    expect(h.storage.reads.slice(-2).map((read) => read.kind)).toEqual(["value", "unavailable"]);
+    expect(h.snap()).toMatchObject({ effective: "denied", allowed: false, persistence: "memory", withdrawal: "failed" });
+    h.time.set(plusMs(T0, 2 * DAY));
+    h.lifecycle.refresh();
+    expect(h.storage.value).toEqual(grant);
+    expect(h.snap()).toMatchObject({ effective: "denied", allowed: false, persistence: "memory", withdrawal: "failed" });
+  });
+
+  it("the visitor's own grant clears the watermark: a later outside grant dated before it applies after the visitor refuses again", () => {
+    const h = harness();
+    h.lifecycle.grant();
+    h.time.set(plusMs(T0, -DAY));
+    h.storage.modes.writeFails = true;
+    h.storage.modes.removeFails = true;
+    h.lifecycle.refuse();
+    expect(h.snap()).toMatchObject({ effective: "denied", allowed: false, withdrawal: "failed" });
+    h.storage.modes.writeFails = false;
+    h.storage.modes.removeFails = false;
+    expect(h.lifecycle.grant()).toMatchObject({ effective: "granted", allowed: true, persistence: "stored", withdrawal: "idle" });
+    h.time.advance(HOUR);
+    expect(h.lifecycle.refuse()).toMatchObject({ effective: "denied", allowed: false, persistence: "stored", withdrawal: "idle" });
+    h.time.set(plusMs(T0, -HOUR));
+    h.storage.setExternally(decidedAt("granted", plusMs(T0, -2 * HOUR)));
     h.lifecycle.refresh();
     expect(h.snap()).toMatchObject({ effective: "granted", allowed: true, persistence: "stored", withdrawal: "idle" });
   });
@@ -343,7 +383,7 @@ describe("a refusal after a failed withdrawal is a withdrawal (C-13)", () => {
   });
 });
 
-describe("the failed-withdrawal re-check counts a grant dated after now as allowed (C-13, C-40)", () => {
+describe("the failed-withdrawal re-check counts a grant dated after now as allowed (P-32, C-13, C-40, C-57)", () => {
   it("prompt: with the clock still moved back, a re-read keeps withdrawal failed", () => {
     const h = harness();
     h.lifecycle.grant();

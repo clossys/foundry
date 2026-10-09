@@ -9,9 +9,10 @@
  * written under another `policy.version` never replaces an in-memory
  * denial; a refusal made this visit is a floor that only a live, newer
  * grant lifts, and a re-read that finds the stored refusal gone keeps it in
- * memory; a memory-only grant is not replaced by a denial dated after now;
- * on an unreadable re-read a refusal and a memory-only grant hold while a
- * stored grant drops to `unknown`. Covers C-7, C-11, C-37, C-40, C-41, C-54.
+ * memory; the visitor's own grant ends the floor; a memory-only grant is
+ * not replaced by a denial dated after now; on an unreadable re-read a
+ * refusal and a memory-only grant hold while a stored grant drops to
+ * `unknown`. Covers P-32, C-7, C-11, C-37, C-40, C-41, C-54, C-56, C-58.
  *
  * `visibilitychange` and `pageshow` are modelled as the assembly wires
  * them: listeners that call `refresh()` (C-46).
@@ -142,7 +143,7 @@ describe("another policy version (C-7, C-54)", () => {
   }
 });
 
-describe("a refusal made this visit is a floor (C-54)", () => {
+describe("a refusal made this visit is a floor (P-32, C-54, C-56)", () => {
   it("notice: a stored refusal, then another tab's denial under another policy version and a cross-tab event, stays refused", () => {
     const h = harness({ regime: "notice" });
     h.lifecycle.refuse();
@@ -174,6 +175,17 @@ describe("a refusal made this visit is a floor (C-54)", () => {
     h.lifecycle.refresh();
     expect(h.storage.reads.at(-1)).toEqual({ kind: "empty" });
     expect(h.snap()).toMatchObject({ effective: "denied", allowed: false, persistence: "memory" });
+  });
+
+  it("the visitor's own grant ends the floor: storage cleared elsewhere afterwards is no choice", () => {
+    const h = harness({ regime: "notice" });
+    h.lifecycle.refuse();
+    h.time.advance(HOUR);
+    expect(h.lifecycle.grant()).toMatchObject({ effective: "granted", allowed: true, persistence: "stored" });
+    h.time.advance(HOUR);
+    h.storage.setExternally(undefined);
+    h.lifecycle.refresh();
+    expect(h.snap()).toMatchObject({ effective: "none", allowed: true });
   });
 
   it("a live grant decided after the refusal and not after now lifts the floor", () => {
@@ -227,7 +239,7 @@ describe("a memory-only grant against a denial dated after now (C-40, C-54)", ()
   });
 });
 
-describe("an unreadable re-read (C-37, C-11, C-54)", () => {
+describe("an unreadable re-read (C-37, C-11, C-54, C-58)", () => {
   it("a stored grant that can no longer be confirmed drops to unknown, not allowed", () => {
     const h = harness();
     h.lifecycle.grant();

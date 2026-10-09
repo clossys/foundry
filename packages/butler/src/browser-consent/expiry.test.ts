@@ -134,16 +134,29 @@ describe("future-dated records (C-40)", () => {
   });
 });
 
-describe("reading the current shape's dates (C-40)", () => {
+describe("reading the current shape's dates (P-8, C-40, C-60)", () => {
   it("accepts only ISO 8601 UTC instants for decidedAt and expiresAt", () => {
     const record = decidedAt("granted", T0);
     expect(parseStoredChoice(record, POLICY)).toEqual(record);
     expect(parseStoredChoice({ ...record, decidedAt: "2026-03-10T12:00:00Z" }, POLICY)?.decidedAt).toBe(T0);
-    for (const date of ["March 10, 2026", "2026-03-10", "2026-03-10T12:00:00.000+01:00", "2026-02-30T00:00:00.000Z", " " + T0]) {
+    for (const date of [
+      "March 10, 2026",
+      "2026-03-10",
+      "2026-03-10T12:00:00.000+01:00",
+      "2026-03-10T12:00:00.000+00:00",
+      "2026-02-30T00:00:00.000Z",
+      " " + T0,
+    ]) {
       expect(parseStoredChoice({ ...record, decidedAt: date }, POLICY), date).toBeNull();
     }
     // Each names an instant after decidedAt, so only the format rejects it.
-    for (const date of ["September 10, 2026", "2026-09-10", "2026-09-10T12:00:00.000+01:00", "2026-04-31T00:00:00.000Z"]) {
+    for (const date of [
+      "September 10, 2026",
+      "2026-09-10",
+      "2026-09-10T12:00:00.000+01:00",
+      "2026-03-10T12:00:00.000+00:00",
+      "2026-04-31T00:00:00.000Z",
+    ]) {
       expect(parseStoredChoice({ ...record, expiresAt: date }, POLICY), date).toBeNull();
     }
   });

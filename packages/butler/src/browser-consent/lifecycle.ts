@@ -340,21 +340,23 @@ export function createConsentLifecycle(options: ConsentLifecycleOptions): Consen
     return true;
   }
 
-  /** Marks evidence pending and returns the call to make once the snapshot is published. */
+  /**
+   * Returns the evidence call to make once the choice is published. The
+   * choice is published with evidence `none`; it shows `pending` only once
+   * its call is actually sent.
+   */
   function prepareEvidence(choice: StoredChoice): (() => void) | null {
-    if (evidencePort === undefined) {
-      evidence = "none";
-      evidenceFor = null;
-      return null;
-    }
-    evidence = "pending";
-    evidenceFor = choice;
+    evidence = "none";
+    evidenceFor = null;
+    if (evidencePort === undefined) return null;
     const sequence = seq;
     const owner = token;
     const port = evidencePort;
     return () => {
       // Sent only while this choice is still the latest: a choice made meanwhile (a subscriber may call refuse() inside publish()) supersedes it unsent.
       if (disposed || owner !== token) return;
+      evidence = "pending";
+      evidenceFor = choice;
       const controller = new AbortController();
       inflight.add(controller);
       let pending: Promise<EvidenceResult>;
@@ -367,6 +369,7 @@ export function createConsentLifecycle(options: ConsentLifecycleOptions): Consen
         (result) => settleEvidence(owner, controller, result),
         () => settleEvidence(owner, controller, { kind: "unavailable" }),
       );
+      publish();
     };
   }
 
@@ -472,6 +475,8 @@ export function createConsentLifecycle(options: ConsentLifecycleOptions): Consen
     withdrawal = "idle";
     undatedDenial = false;
     floor = null;
+    // The visitor's own grant ends what a failed withdrawal remembered (C-57).
+    watermark = Number.NEGATIVE_INFINITY;
     let sendEvidence: (() => void) | null = null;
     if (writeOk(choice)) {
       memory = null;
@@ -523,7 +528,8 @@ export function createConsentLifecycle(options: ConsentLifecycleOptions): Consen
     }
     const now = readClock();
     if (now === null) return refuseUndated(priorAllowed);
-    const atCall = classify(readStorage(), now);
+    const atCallRead = readStorage();
+    const atCall = classify(atCallRead, now);
     const choice = decideChoice("denied", now, policy, signals);
     evalNow = now;
     undatedDenial = false;
@@ -552,6 +558,8 @@ export function createConsentLifecycle(options: ConsentLifecycleOptions): Consen
     token += 1;
     memory = { choice, at: now };
     publish();
+    // A choice a subscriber made during that publish never shares this denial's evidence token.
+    token += 1;
     seq += 1;
     abortInflight();
     const wrote = writeOk(choice);
@@ -572,6 +580,8 @@ export function createConsentLifecycle(options: ConsentLifecycleOptions): Consen
       withdrawal = "failed";
       evidence = "none";
       evidenceFor = null;
+      // Both reads count: the record seen at the call may be the one the read-back could not see (fail-closed).
+      raiseWatermark(atCallRead);
       raiseWatermark(after);
     }
     publish();

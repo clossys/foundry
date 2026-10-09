@@ -5,14 +5,16 @@
  * a grant with the same `decidedAt` and a lower or equal `sequence`; a
  * delayed, older denial applies over a newer stored grant; evidence for a
  * choice is sent only while that choice is still the latest, so a choice
- * made inside a subscriber never sends out of order; a re-read or a
+ * made inside a subscriber never sends out of order, and a choice shows
+ * `pending` only once its call is sent; a choice made during a
+ * withdrawal's publish never settles the denial's evidence; a re-read or a
  * conflict that switches to another tab's record resets evidence to none
  * and ignores the replaced choice's late result. Covers C-12, C-40, C-41.
  */
 
 import { describe, expect, it } from "vitest";
 import { shouldApplyEvidence, type SequencedChoice } from "./decision.js";
-import { DAY, HOUR, T0, decidedAt, flush, harness, plusMs } from "./fixtures.test.js";
+import { DAY, HOUR, T0, decidedAt, flush, futureDated, harness, plusMs } from "./fixtures.test.js";
 import type { ConsentLifecycle } from "./lifecycle.js";
 
 const sequenced = (status: "granted" | "denied", iso: string, sequence: number): SequencedChoice => ({
@@ -129,12 +131,35 @@ describe("evidence is sent only for the latest choice (C-41)", () => {
     });
   }
 
-  it("a refusal made by a subscriber inside grant()'s publish sends only the denial", () => {
+  it("a refusal made by a subscriber inside grant()'s publish sends only the denial, and no subscriber sees the grant pending", () => {
     const h = harness();
+    const seen: { effective: string; evidence: string }[] = [];
+    h.lifecycle.subscribe(() => seen.push({ effective: h.snap().effective, evidence: h.snap().evidence }));
     once(h.lifecycle, () => h.snap().effective === "granted", () => h.lifecycle.refuse());
     h.lifecycle.grant();
+    expect(h.evidence.calls.map((call) => call.choice.status)).toEqual(["denied"]);
     expect(h.evidence.calls.map((call) => [call.choice.status, call.sequence])).toEqual([["denied", 2]]);
+    expect(seen).toContainEqual({ effective: "granted", evidence: "none" });
+    expect(seen.filter((entry) => entry.effective === "granted" && entry.evidence === "pending")).toEqual([]);
     expect(h.snap()).toMatchObject({ effective: "denied", allowed: false, persistence: "stored", evidence: "pending" });
+  });
+
+  it("a grant made by a subscriber inside a withdrawal's publish never settles the denial's evidence", async () => {
+    const h = harness({ initial: futureDated("granted", T0, DAY) });
+    once(
+      h.lifecycle,
+      () => h.snap().effective === "denied" && h.snap().persistence === "memory",
+      () => h.lifecycle.grant(),
+    );
+    h.lifecycle.refuse();
+    expect(h.evidence.calls.map((call) => call.choice.status)).toEqual(["granted", "denied"]);
+    expect(h.snap()).toMatchObject({ effective: "denied", allowed: false, persistence: "stored", evidence: "pending" });
+    h.evidence.calls[0]?.resolve({ kind: "saved" });
+    await flush();
+    expect(h.snap()).toMatchObject({ effective: "denied", allowed: false, persistence: "stored", evidence: "pending" });
+    h.evidence.calls[1]?.resolve({ kind: "saved" });
+    await flush();
+    expect(h.snap()).toMatchObject({ effective: "denied", evidence: "saved" });
   });
 
   it("a grant made by a subscriber inside a plain refusal's publish sends only the grant", () => {

@@ -6,7 +6,7 @@
  */
 
 import { describe, expect, it, vi } from "vitest";
-import { effectiveChoice, isAllowed } from "./decision.js";
+import { effectiveChoice, isAllowed, shouldPromptAutomatically } from "./decision.js";
 import { DAY, GPC_OFF, GPC_ON, POLICY, T0, at, decidedAt, flush, harness, plusMs } from "./fixtures.test.js";
 import { BrowserConsentError, decideChoice } from "./record.js";
 
@@ -74,7 +74,7 @@ describe("a grant without gpcOverride never overrides a signal that is on (C-8)"
   });
 });
 
-describe("any truthy signal counts as on, fail-closed (C-8)", () => {
+describe("any truthy signal counts as on, fail-closed (C-8, C-59)", () => {
   const truthy = { gpc: 1 } as unknown as typeof GPC_ON;
 
   it("the lifecycle treats gpc: 1 as on: in force, and a grant is a no-op", () => {
@@ -91,4 +91,28 @@ describe("any truthy signal counts as on, fail-closed (C-8)", () => {
     expect(() => decideChoice("granted", at(T0), POLICY, truthy)).toThrow(BrowserConsentError);
     expect(decideChoice("granted", at(T0), OVERRIDABLE, truthy).gpcOverride).toBe(true);
   });
+
+  for (const value of [1, "1"]) {
+    const signals = { gpc: value } as unknown as typeof GPC_ON;
+
+    it(`isAllowed and shouldPromptAutomatically treat gpc: ${JSON.stringify(value)} as on`, () => {
+      const grant = decidedAt("granted", plusMs(T0, -DAY), OVERRIDABLE);
+      // No choice under notice would allow, and under prompt would prompt, with the signal off.
+      expect(isAllowed(null, GPC_OFF, "notice", POLICY, at(T0))).toBe(true);
+      expect(isAllowed(null, signals, "notice", POLICY, at(T0))).toBe(false);
+      expect(shouldPromptAutomatically(null, GPC_OFF, "prompt", POLICY, at(T0))).toBe(true);
+      expect(shouldPromptAutomatically(null, signals, "prompt", POLICY, at(T0))).toBe(false);
+      // A grant without an override allows only while the signal is off.
+      expect(isAllowed(grant, GPC_OFF, "prompt", OVERRIDABLE, at(T0))).toBe(true);
+      expect(isAllowed(grant, signals, "prompt", OVERRIDABLE, at(T0))).toBe(false);
+      expect(isAllowed("unreadable", signals, "notice", POLICY, at(T0))).toBe(false);
+    });
+
+    it(`the lifecycle treats gpc: ${JSON.stringify(value)} as on`, () => {
+      const h = harness({ signals, regime: "notice" });
+      expect(h.snap()).toMatchObject({ gpcInForce: true, effective: "denied", allowed: false, promptAutomatically: false });
+      h.lifecycle.grant();
+      expect(h.storage.writes).toEqual([]);
+    });
+  }
 });
