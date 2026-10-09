@@ -1,0 +1,5 @@
+---
+publisher: minor
+---
+
+`SectionedViewDocument` gains a tenth kind, `content-section`: a `stacked` or `split` band with at most one closed `module` (`features`, `cards`, `comparison`, `topics`, `steps`, `faq`) and at most one `specimen` media built from closed panel parts, every visible string a `CopyRef`. `feature-grid` items may name an `icon` from the closed `ContentIconName` set (`CONTENT_ICON_NAMES`). New `checkSectionVariety` returns advisory `warning` findings for repetitive page rhythm and leaves validation unchanged. Contract only: the `SectionedView` web renderer still refuses `content-section` and item icons.

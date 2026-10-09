@@ -31,7 +31,52 @@ export type SectionedViewSectionKind =
   | "stat-grid"
   | "pricing"
   | "testimonial"
-  | "stat";
+  | "stat"
+  | "content-section";
+
+/**
+ * The closed set of icon names a content item may carry, one per item, to
+ * tell list items apart (never to decorate a heading). Each name is a Designer
+ * icon; the web layer imports those icons explicitly by name, so there is no
+ * open name registry and an unused icon still tree-shakes away.
+ */
+export type ContentIconName =
+  | "briefcase"
+  | "building-2"
+  | "calendar"
+  | "clock"
+  | "file-check"
+  | "file-text"
+  | "folder"
+  | "globe"
+  | "landmark"
+  | "layers"
+  | "lock"
+  | "receipt"
+  | "scale"
+  | "search"
+  | "shield-check"
+  | "users";
+
+/** Every `ContentIconName`, in a stable order, for validation and for a renderer's exhaustive name-to-icon map. */
+export const CONTENT_ICON_NAMES: readonly ContentIconName[] = [
+  "briefcase",
+  "building-2",
+  "calendar",
+  "clock",
+  "file-check",
+  "file-text",
+  "folder",
+  "globe",
+  "landmark",
+  "layers",
+  "lock",
+  "receipt",
+  "scale",
+  "search",
+  "shield-check",
+  "users",
+];
 
 /** Direction a stat row's optional `delta` represents — mirrors Designer `Stat`'s closed `trend` prop. */
 export type SectionedViewStatTrend = "up" | "down" | "neutral";
@@ -93,6 +138,8 @@ export interface SectionedViewStatGridSection {
 
 export interface SectionedViewFeatureItem {
   id: string;
+  /** Optional item icon. Optional and additive: an item without one renders exactly as it did before. */
+  icon?: ContentIconName;
   heading: CopyRef;
   description?: CopyRef;
 }
@@ -232,6 +279,329 @@ export interface SectionedViewStatusListSection {
   items?: SectionedViewStatusItem[];
 }
 
+// ---------------------------------------------------------------------------
+// content-section: one band anatomy (header, text module, visual module)
+// ---------------------------------------------------------------------------
+
+/** How a content section arranges its text and its visual. `split` puts them side by side and needs `media`. */
+export type SectionedViewContentLayout = "stacked" | "split";
+/** Which side a split section's visual sits on. Reading order never changes: header, module, then visual. */
+export type SectionedViewContentMediaSide = "end" | "start";
+/** Header alignment of a stacked section. */
+export type SectionedViewContentAlign = "start" | "center";
+
+/** The closed status tones a specimen may show; the product's own data states, never availability or roadmap. */
+export type SectionedViewSpecimenTone = "success" | "warning" | "danger" | "info" | "neutral";
+
+/** A status shown as text with a toned mark. The text always carries the meaning; tone is reinforcement. */
+export interface SectionedViewSpecimenStatus {
+  tone: SectionedViewSpecimenTone;
+  label: CopyRef;
+}
+
+export interface SectionedViewSpecimenField {
+  id: string;
+  label: CopyRef;
+  value: CopyRef;
+}
+
+/** Key-value pairs. `columns` defaults to 2. */
+export interface SectionedViewSpecimenFieldsPart {
+  id: string;
+  type: "fields";
+  label?: CopyRef;
+  columns?: 1 | 2 | 4;
+  items: SectionedViewSpecimenField[];
+}
+
+export interface SectionedViewSpecimenStatusRow {
+  id: string;
+  label: CopyRef;
+  detail?: CopyRef;
+  status: SectionedViewSpecimenStatus;
+}
+
+export interface SectionedViewSpecimenStatusRowsPart {
+  id: string;
+  type: "status-rows";
+  label?: CopyRef;
+  items: SectionedViewSpecimenStatusRow[];
+}
+
+/**
+ * One measured value against an optional limit. Numbers are plain, finite and
+ * non-negative; `scaleMax` is greater than zero. The visible `valueText` (and
+ * `limitText`) carries the meaning; the bar is reinforcement.
+ */
+export interface SectionedViewSpecimenMeterPart {
+  id: string;
+  type: "meter";
+  label: CopyRef;
+  value: number;
+  scaleMax: number;
+  limit?: number;
+  /** Whether the limit is a ceiling (`max`, the default) or a floor (`min`). */
+  direction?: "max" | "min";
+  tone: SectionedViewSpecimenTone;
+  valueText: CopyRef;
+  /** Only with `limit`. */
+  limitText?: CopyRef;
+  status?: SectionedViewSpecimenStatus;
+  note?: CopyRef;
+}
+
+export interface SectionedViewSpecimenTableColumn {
+  id: string;
+  label: CopyRef;
+}
+
+/** One table cell: text, or a status. */
+export type SectionedViewSpecimenTableCell = { text: CopyRef; status?: never } | { status: SectionedViewSpecimenStatus; text?: never };
+
+export interface SectionedViewSpecimenTableRow {
+  id: string;
+  /** One cell per column, in column order. The first cell is the row header. */
+  cells: SectionedViewSpecimenTableCell[];
+}
+
+/** A small real table: at most 4 columns and 5 rows. `caption` names it for assistive technology. */
+export interface SectionedViewSpecimenTablePart {
+  id: string;
+  type: "table";
+  label?: CopyRef;
+  caption: CopyRef;
+  columns: SectionedViewSpecimenTableColumn[];
+  rows: SectionedViewSpecimenTableRow[];
+}
+
+export interface SectionedViewSpecimenScheduleItem {
+  id: string;
+  date: CopyRef;
+  label: CopyRef;
+  amount?: CopyRef;
+  status?: SectionedViewSpecimenStatus;
+}
+
+export interface SectionedViewSpecimenSchedulePart {
+  id: string;
+  type: "schedule";
+  label?: CopyRef;
+  items: SectionedViewSpecimenScheduleItem[];
+}
+
+/** One share: a percentage from 0 to 100 with its visible text. */
+export interface SectionedViewSpecimenShare {
+  id: string;
+  name: CopyRef;
+  share: number;
+  shareText: CopyRef;
+  status?: SectionedViewSpecimenStatus;
+}
+
+export interface SectionedViewSpecimenSharesPart {
+  id: string;
+  type: "shares";
+  label?: CopyRef;
+  items: SectionedViewSpecimenShare[];
+}
+
+export interface SectionedViewSpecimenFile {
+  id: string;
+  /** Short file-type tag, for example a three-letter extension. */
+  format: CopyRef;
+  name: CopyRef;
+  source?: CopyRef;
+}
+
+export interface SectionedViewSpecimenFilesPart {
+  id: string;
+  type: "files";
+  label?: CopyRef;
+  items: SectionedViewSpecimenFile[];
+}
+
+/** One part of a specimen panel. Every part holds at most 6 rows (a table at most 5). */
+export type SectionedViewSpecimenPart =
+  | SectionedViewSpecimenFieldsPart
+  | SectionedViewSpecimenStatusRowsPart
+  | SectionedViewSpecimenMeterPart
+  | SectionedViewSpecimenTablePart
+  | SectionedViewSpecimenSchedulePart
+  | SectionedViewSpecimenSharesPart
+  | SectionedViewSpecimenFilesPart;
+
+export type SectionedViewSpecimenPartType = SectionedViewSpecimenPart["type"];
+
+export interface SectionedViewSpecimenAssignee {
+  initials: CopyRef;
+  name: CopyRef;
+  note?: CopyRef;
+}
+
+/** A panel footer: an assignee, a note, or both. */
+export interface SectionedViewSpecimenFooter {
+  assignee?: SectionedViewSpecimenAssignee;
+  note?: CopyRef;
+}
+
+/**
+ * One product-UI panel: a title, optional meta and status, 1-3 parts and an
+ * optional footer. Static evidence only: no control, link, input or focus
+ * stop is expressible here.
+ */
+export interface SectionedViewSpecimenPanel {
+  id: string;
+  title: CopyRef;
+  meta?: CopyRef;
+  status?: SectionedViewSpecimenStatus;
+  parts: SectionedViewSpecimenPart[];
+  footer?: SectionedViewSpecimenFooter;
+}
+
+/** How a specimen arranges its panels. `single` (the default) holds exactly one; the others hold two or three. */
+export type SectionedViewSpecimenArrangement = "single" | "row" | "stack" | "flow";
+
+/**
+ * A section's visual: one labelled figure of 1-3 panels. `label` is the
+ * figure's accessible name and describes what is shown. `connector` is the
+ * short caption between `flow` panels, and only allowed there.
+ */
+export interface SectionedViewSpecimenMedia {
+  type: "specimen";
+  label: CopyRef;
+  arrangement?: SectionedViewSpecimenArrangement;
+  connector?: CopyRef;
+  panels: SectionedViewSpecimenPanel[];
+}
+
+/** One parallel item of a features, cards or topics module. */
+export interface SectionedViewContentItem {
+  id: string;
+  icon?: ContentIconName;
+  eyebrow?: CopyRef;
+  heading: CopyRef;
+  description?: CopyRef;
+}
+
+/** A card's share of a 12-column row. */
+export type SectionedViewContentCardSpan = "third" | "half" | "two-thirds" | "full";
+
+/** A card: an item with its span and an optional one-part visual (at most 5 rows). */
+export interface SectionedViewContentCard extends SectionedViewContentItem {
+  span: SectionedViewContentCardSpan;
+  visual?: SectionedViewSpecimenPart;
+}
+
+/**
+ * One side of a comparison: a label, an optional heading, and exactly one of
+ * `description` or 2-4 `points`. Both sides use the same form, the same point
+ * count, and either both carry a `visual` or neither does.
+ */
+export interface SectionedViewComparisonSide {
+  label: CopyRef;
+  heading?: CopyRef;
+  description?: CopyRef;
+  points?: CopyRef[];
+  visual?: SectionedViewSpecimenPanel;
+}
+
+export interface SectionedViewContentStep {
+  id: string;
+  ordinal: CopyRef;
+  /** The actor tag for the step. */
+  label?: CopyRef;
+  heading: CopyRef;
+  description?: CopyRef;
+  visual?: SectionedViewSpecimenPanel;
+}
+
+export type SectionedViewFeaturesTreatment = "plain" | "rule" | "plate";
+export type SectionedViewFeaturesEmphasis = "item" | "statement";
+
+/**
+ * Parallel items of equal weight: 2-4 items, exactly 3 with `statement`
+ * emphasis. `columns` defaults to 3, `treatment` to `plain`, `emphasis` to
+ * `item`. Item icons are allowed with `plain` and `plate` only.
+ */
+export interface SectionedViewFeaturesModule {
+  type: "features";
+  columns?: 2 | 3 | 4;
+  treatment?: SectionedViewFeaturesTreatment;
+  emphasis?: SectionedViewFeaturesEmphasis;
+  items: SectionedViewContentItem[];
+}
+
+/**
+ * A mixed card grid of 2-6 cards. Spans fill whole 12-column rows, each row
+ * one of: two-thirds + third (either order), three thirds, two halves, or one
+ * full card.
+ */
+export interface SectionedViewCardsModule {
+  type: "cards";
+  items: SectionedViewContentCard[];
+}
+
+export interface SectionedViewComparisonModule {
+  type: "comparison";
+  before: SectionedViewComparisonSide;
+  after: SectionedViewComparisonSide;
+}
+
+/** Many short, scannable items: 2-8 items, an even count in 2 columns. `columns` defaults to 2. */
+export interface SectionedViewTopicsModule {
+  type: "topics";
+  columns?: 1 | 2;
+  items: SectionedViewContentItem[];
+}
+
+/** A process of 3-4 steps. */
+export interface SectionedViewStepsModule {
+  type: "steps";
+  items: SectionedViewContentStep[];
+}
+
+/** 4-6 question and answer pairs. */
+export interface SectionedViewFaqModule {
+  type: "faq";
+  items: SectionedViewFaqItem[];
+}
+
+/** The text module of a content section. */
+export type SectionedViewContentModule =
+  | SectionedViewFeaturesModule
+  | SectionedViewCardsModule
+  | SectionedViewComparisonModule
+  | SectionedViewTopicsModule
+  | SectionedViewStepsModule
+  | SectionedViewFaqModule;
+
+export type SectionedViewContentModuleType = SectionedViewContentModule["type"];
+
+/**
+ * One band: a header (eyebrow, heading, description, optional text-link
+ * actions), an optional text module and an optional visual. With neither
+ * module nor media it is an intro band. `mediaSide` is allowed only on a
+ * `split`, `align` only on a stacked section, and a `split` needs `media`.
+ */
+export interface SectionedViewContentSection {
+  id: string;
+  kind: "content-section";
+  ground?: SectionedViewGround;
+  eyebrow?: CopyRef;
+  heading: CopyRef;
+  description?: CopyRef;
+  /** Rendered as text links. */
+  actions?: SectionedViewAction[];
+  /** @default "stacked" */
+  layout?: SectionedViewContentLayout;
+  /** Split only. @default "end" */
+  mediaSide?: SectionedViewContentMediaSide;
+  /** Stacked only. */
+  align?: SectionedViewContentAlign;
+  module?: SectionedViewContentModule;
+  media?: SectionedViewSpecimenMedia;
+}
+
 /** One fully data-shaped section: there is deliberately no node, class, style, or render callback escape hatch. */
 export type SectionedViewSection =
   | SectionedViewHeroSection
@@ -242,7 +612,8 @@ export type SectionedViewSection =
   | SectionedViewStatGridSection
   | SectionedViewPricingSection
   | SectionedViewTestimonialSection
-  | SectionedViewStatSection;
+  | SectionedViewStatSection
+  | SectionedViewContentSection;
 
 /** Canonical, Designer-independent input for a long public site page. */
 export interface SectionedViewDocument {
@@ -266,6 +637,30 @@ export type ResolvedSectionedViewAction = Omit<SectionedViewAction, "label"> & {
 
 export type ResolvedSectionedViewHeroMedia = Omit<SectionedViewHeroMedia, "alt"> & { alt: ResolvedCopy };
 
+/**
+ * `T` with every `CopyRef` replaced by its resolved text and every other
+ * field kept as authored. An object counts as a `CopyRef` only when it has
+ * no keys beyond a CopyRef's own, so an item that carries an `id` is never
+ * mistaken for one.
+ */
+type ResolvedCopyTree<T> = T extends CopyRef
+  ? Exclude<keyof T, keyof CopyRef> extends never
+    ? ResolvedCopy
+    : { [K in keyof T]: ResolvedCopyTree<T[K]> }
+  : T extends readonly (infer U)[]
+    ? ResolvedCopyTree<U>[]
+    : T extends object
+      ? { [K in keyof T]: ResolvedCopyTree<T[K]> }
+      : T;
+
+/** A specimen with its copy resolved; numbers, tones and arrangement travel unchanged. */
+export type ResolvedSectionedViewSpecimenMedia = ResolvedCopyTree<SectionedViewSpecimenMedia>;
+export type ResolvedSectionedViewSpecimenPanel = ResolvedCopyTree<SectionedViewSpecimenPanel>;
+export type ResolvedSectionedViewSpecimenPart = ResolvedCopyTree<SectionedViewSpecimenPart>;
+export type ResolvedSectionedViewContentModule = ResolvedCopyTree<SectionedViewContentModule>;
+/** A content section with its copy resolved and its ground applied. Absent optional fields stay absent. */
+export type ResolvedSectionedViewContentSection = Omit<ResolvedCopyTree<SectionedViewContentSection>, "ground"> & { ground: SectionedViewGround };
+
 export type ResolvedSectionedViewSection =
   | Omit<SectionedViewHeroSection, "eyebrow" | "heading" | "description" | "actions" | "media" | "ground"> & { ground: SectionedViewGround; eyebrow?: ResolvedCopy; heading: ResolvedCopy; description?: ResolvedCopy; actions?: ResolvedSectionedViewAction[]; media?: ResolvedSectionedViewHeroMedia }
   | Omit<SectionedViewFeatureGridSection, "eyebrow" | "heading" | "description" | "items" | "ground"> & { ground: SectionedViewGround; eyebrow?: ResolvedCopy; heading: ResolvedCopy; description?: ResolvedCopy; items: Array<Omit<SectionedViewFeatureItem, "heading" | "description"> & { heading: ResolvedCopy; description?: ResolvedCopy }> }
@@ -275,7 +670,8 @@ export type ResolvedSectionedViewSection =
   | Omit<SectionedViewStatGridSection, "eyebrow" | "heading" | "description" | "items" | "ground"> & { ground: SectionedViewGround; eyebrow?: ResolvedCopy; heading: ResolvedCopy; description?: ResolvedCopy; items: Array<Omit<SectionedViewStatItem, "label" | "value" | "delta" | "description"> & { label: ResolvedCopy; value: ResolvedCopy; delta?: ResolvedCopy; description?: ResolvedCopy }> }
   | Omit<SectionedViewPricingSection, "eyebrow" | "heading" | "description" | "items" | "ground"> & { ground: SectionedViewGround; eyebrow?: ResolvedCopy; heading: ResolvedCopy; description?: ResolvedCopy; items: Array<Omit<SectionedViewPricingItem, "name" | "price" | "description" | "features" | "cta"> & { name: ResolvedCopy; price: ResolvedCopy; description?: ResolvedCopy; features: ResolvedCopy[]; cta?: ResolvedCopy }> }
   | Omit<SectionedViewTestimonialSection, "heading" | "items" | "ground"> & { ground: SectionedViewGround; heading?: ResolvedCopy; items: Array<Omit<SectionedViewTestimonialItem, "quote" | "attributorName" | "attributorRole"> & { quote: ResolvedCopy; attributorName: ResolvedCopy; attributorRole?: ResolvedCopy }> }
-  | Omit<SectionedViewStatSection, "heading" | "items" | "ground"> & { ground: SectionedViewGround; heading?: ResolvedCopy; items: Array<Omit<SectionedViewStatSectionItem, "label" | "value" | "delta"> & { label: ResolvedCopy; value: ResolvedCopy; delta?: ResolvedCopy }> };
+  | Omit<SectionedViewStatSection, "heading" | "items" | "ground"> & { ground: SectionedViewGround; heading?: ResolvedCopy; items: Array<Omit<SectionedViewStatSectionItem, "label" | "value" | "delta"> & { label: ResolvedCopy; value: ResolvedCopy; delta?: ResolvedCopy }> }
+  | ResolvedSectionedViewContentSection;
 
 export interface ResolvedSectionedViewDocument {
   id: string;
@@ -301,6 +697,7 @@ const SECTION_KINDS: readonly SectionedViewSectionKind[] = [
   "pricing",
   "testimonial",
   "stat",
+  "content-section",
 ];
 
 const STAT_TRENDS: readonly SectionedViewStatTrend[] = ["up", "down", "neutral"];
@@ -484,7 +881,8 @@ export function validateSectionedViewDocument(value: unknown): ComposeFinding[] 
         if (section.media !== undefined) validateHeroMedia(section.media, `${path}.media`, findings);
         break;
       case "feature-grid":
-        validateRepeatedSection(section, path, ["id", "kind", "ground", "eyebrow", "heading", "description", "items"], ["id", "heading", "description"], findings, (item, itemPath) => {
+        validateRepeatedSection(section, path, ["id", "kind", "ground", "eyebrow", "heading", "description", "items"], ["id", "icon", "heading", "description"], findings, (item, itemPath) => {
+          if (hasOwn(item, "icon")) validateIcon(item.icon, `${itemPath}.icon`, findings);
           validateCopy(item.heading, `${itemPath}.heading`, findings);
           if (item.description !== undefined) validateCopy(item.description, `${itemPath}.description`, findings);
         });
@@ -559,6 +957,9 @@ export function validateSectionedViewDocument(value: unknown): ComposeFinding[] 
         });
         if (section.heading !== undefined) validateCopy(section.heading, `${path}.heading`, findings);
         break;
+      case "content-section":
+        validateContentSection(section, path, findings);
+        break;
       default:
         findings.push(finding("sectioned-view-section-kind", `${path}.kind`, unsupportedSectionKindMessage(path, section.kind)));
     }
@@ -574,7 +975,7 @@ function validateRepeatedSection(section: Record<string, unknown>, path: string,
   for (let itemIndex = 0; itemIndex < section.items.length; itemIndex += 1) {
     const item = section.items[itemIndex];
     const itemPath = `${path}.items.${itemIndex}`;
-    const requiredItemKeys = itemKeys.filter((key) => !["description", "label", "delta", "trend", "cta", "attributorRole"].includes(key));
+    const requiredItemKeys = itemKeys.filter((key) => !["icon", "description", "label", "delta", "trend", "cta", "attributorRole"].includes(key));
     if (!isPlainObject(item) || !hasOnlyOwnKeys(item, itemKeys) || !hasOwnKeys(item, requiredItemKeys) || !isNonWhitespaceString(item.id)) {
       findings.push(finding("sectioned-view-item-shape", itemPath, `${itemPath} must be a plain item with a non-whitespace id and only its kind's fields.`));
       continue;
@@ -696,6 +1097,393 @@ function validateStatusItems(value: unknown, path: string, findings: ComposeFind
     if (item.detail !== undefined) validateCopy(item.detail, `${itemPath}.detail`, findings);
     if (hasState && !STATUSES.includes(item.state as SectionedViewStatus)) findings.push(finding("sectioned-view-status-state", `${itemPath}.state`, `${itemPath}.state must be one of ${STATUSES.join(", ")}.`));
     if (hasDisposition && !DISPOSITIONS.includes(item.disposition as SectionedViewStatusDisposition)) findings.push(finding("sectioned-view-status-disposition", `${itemPath}.disposition`, `${itemPath}.disposition must be one of ${DISPOSITIONS.join(", ")}.`));
+  }
+}
+
+// ---------------------------------------------------------------------------
+// content-section validation
+// ---------------------------------------------------------------------------
+
+const CONTENT_SECTION_KEYS = ["id", "kind", "ground", "eyebrow", "heading", "description", "actions", "layout", "mediaSide", "align", "module", "media"] as const;
+const CONTENT_LAYOUTS: readonly SectionedViewContentLayout[] = ["stacked", "split"];
+const CONTENT_MEDIA_SIDES: readonly SectionedViewContentMediaSide[] = ["end", "start"];
+const CONTENT_ALIGNS: readonly SectionedViewContentAlign[] = ["start", "center"];
+const CONTENT_MODULE_TYPES: readonly SectionedViewContentModuleType[] = ["features", "cards", "comparison", "topics", "steps", "faq"];
+const FEATURES_COLUMNS: readonly number[] = [2, 3, 4];
+const FEATURES_TREATMENTS: readonly SectionedViewFeaturesTreatment[] = ["plain", "rule", "plate"];
+const FEATURES_EMPHASES: readonly SectionedViewFeaturesEmphasis[] = ["item", "statement"];
+const TOPICS_COLUMNS: readonly number[] = [1, 2];
+const CARD_SPAN_UNITS: Readonly<Record<SectionedViewContentCardSpan, number>> = { third: 4, half: 6, "two-thirds": 8, full: 12 };
+const CARD_SPANS = Object.keys(CARD_SPAN_UNITS) as SectionedViewContentCardSpan[];
+const CARD_ROW_UNITS = 12;
+const SPECIMEN_TONES: readonly SectionedViewSpecimenTone[] = ["success", "warning", "danger", "info", "neutral"];
+const SPECIMEN_ARRANGEMENTS: readonly SectionedViewSpecimenArrangement[] = ["single", "row", "stack", "flow"];
+const SPECIMEN_PART_TYPES: readonly SectionedViewSpecimenPartType[] = ["fields", "status-rows", "meter", "table", "schedule", "shares", "files"];
+const FIELDS_COLUMNS: readonly number[] = [1, 2, 4];
+const METER_DIRECTIONS: readonly string[] = ["max", "min"];
+const CONTENT_ITEM_KEYS = ["id", "icon", "eyebrow", "heading", "description"] as const;
+/** Rows one specimen part may hold; a card's visual holds at most `CARD_VISUAL_MAX_ROWS`. */
+const PART_MAX_ROWS = 6;
+const CARD_VISUAL_MAX_ROWS = 5;
+const TABLE_MAX_COLUMNS = 4;
+const TABLE_MAX_ROWS = 5;
+const PANEL_MAX_PARTS = 3;
+const MEDIA_MAX_PANELS = 3;
+
+interface CountBounds {
+  min: number;
+  max: number;
+}
+
+function countFinding(path: string, bounds: CountBounds, count: number, unit = "items"): ComposeFinding {
+  const range = bounds.min === bounds.max ? `exactly ${bounds.min}` : `${bounds.min}-${bounds.max}`;
+  return finding("sectioned-view-content-count", path, `${path} must hold ${range} ${unit}; it holds ${count}.`);
+}
+
+function isNonNegativeNumber(value: unknown): value is number {
+  return typeof value === "number" && Number.isFinite(value) && value >= 0;
+}
+
+function validateEnumField(record: Record<string, unknown>, key: string, allowed: readonly unknown[], rule: string, path: string, findings: ComposeFinding[]): void {
+  if (record[key] !== undefined && !allowed.includes(record[key])) findings.push(finding(rule, `${path}.${key}`, `${path}.${key} must be one of ${allowed.join(", ")}.`));
+}
+
+function validateOptionalCopyFields(record: Record<string, unknown>, keys: readonly string[], path: string, findings: ComposeFinding[]): void {
+  for (const key of keys) if (record[key] !== undefined) validateCopy(record[key], `${path}.${key}`, findings);
+}
+
+function validateIcon(value: unknown, path: string, findings: ComposeFinding[]): void {
+  if (!CONTENT_ICON_NAMES.includes(value as ContentIconName)) findings.push(finding("sectioned-view-content-icon", path, `${path} must be one of ${CONTENT_ICON_NAMES.join(", ")}.`));
+}
+
+/**
+ * A dense, non-empty array of id-bearing records within its count bounds,
+ * each with only `keys` and at least `required`. Returns the records that
+ * passed the shape check, after their own field validation.
+ */
+function validateRecords(
+  value: unknown,
+  path: string,
+  findings: ComposeFinding[],
+  bounds: CountBounds,
+  keys: readonly string[],
+  required: readonly string[],
+  validateRecord: (record: Record<string, unknown>, recordPath: string) => void,
+): Record<string, unknown>[] {
+  if (!validateDenseArray(value, path, findings, "sectioned-view-items-shape", `${path} must be a non-empty array.`)) return [];
+  if (value.length < bounds.min || value.length > bounds.max) findings.push(countFinding(path, bounds, value.length));
+  validateItemIds(value, path, findings);
+  const records: Record<string, unknown>[] = [];
+  for (let index = 0; index < value.length; index += 1) {
+    const record = value[index];
+    const recordPath = `${path}.${index}`;
+    if (!isPlainObject(record) || !hasOnlyOwnKeys(record, keys) || !hasOwnKeys(record, ["id", ...required]) || !isNonWhitespaceString(record.id)) {
+      findings.push(finding("sectioned-view-item-shape", recordPath, `${recordPath} must be a plain item with a non-whitespace id, its required fields, and only its own fields.`));
+      continue;
+    }
+    validateRecord(record, recordPath);
+    records.push(record);
+  }
+  return records;
+}
+
+function validateContentSection(section: Record<string, unknown>, path: string, findings: ComposeFinding[]): void {
+  if (!hasOnlyOwnKeys(section, CONTENT_SECTION_KEYS) || !hasOwn(section, "heading")) findings.push(finding("sectioned-view-section-keys", path, `${path} has keys not allowed for content-section.`));
+  validateCopy(section.heading, `${path}.heading`, findings);
+  validateOptionalCopyFields(section, ["eyebrow", "description"], path, findings);
+  if (section.actions !== undefined) validateActions(section.actions, `${path}.actions`, findings);
+  validateEnumField(section, "layout", CONTENT_LAYOUTS, "sectioned-view-content-layout", path, findings);
+  validateEnumField(section, "mediaSide", CONTENT_MEDIA_SIDES, "sectioned-view-content-layout", path, findings);
+  validateEnumField(section, "align", CONTENT_ALIGNS, "sectioned-view-content-layout", path, findings);
+  const split = section.layout === "split";
+  if (section.mediaSide !== undefined && !split) findings.push(finding("sectioned-view-content-media-side", `${path}.mediaSide`, `${path}.mediaSide is allowed only when ${path}.layout is split.`));
+  if (section.align !== undefined && split) findings.push(finding("sectioned-view-content-align", `${path}.align`, `${path}.align is allowed only on a stacked section.`));
+  if (split && section.media === undefined) findings.push(finding("sectioned-view-content-split-media", `${path}.media`, `${path} is a split section and needs media.`));
+  if (section.module !== undefined) validateContentModule(section.module, `${path}.module`, findings);
+  if (section.media !== undefined) validateSpecimenMedia(section.media, `${path}.media`, findings);
+}
+
+function validateContentItemFields(item: Record<string, unknown>, path: string, findings: ComposeFinding[]): void {
+  if (item.icon !== undefined) validateIcon(item.icon, `${path}.icon`, findings);
+  validateCopy(item.heading, `${path}.heading`, findings);
+  validateOptionalCopyFields(item, ["eyebrow", "description"], path, findings);
+}
+
+function validateModuleKeys(module: Record<string, unknown>, keys: readonly string[], required: readonly string[], path: string, findings: ComposeFinding[]): void {
+  if (!hasOnlyOwnKeys(module, keys) || !hasOwnKeys(module, required)) findings.push(finding("sectioned-view-content-module-shape", path, `${path} has keys not allowed for a ${String(module.type)} module.`));
+}
+
+function validateContentModule(value: unknown, path: string, findings: ComposeFinding[]): void {
+  if (!isPlainObject(value) || !hasEnumerableOwnDataKeys(value) || !isNonWhitespaceString(value.type)) {
+    findings.push(finding("sectioned-view-content-module-shape", path, `${path} must be a module object with a type.`));
+    return;
+  }
+  switch (value.type) {
+    case "features": {
+      validateModuleKeys(value, ["type", "columns", "treatment", "emphasis", "items"], ["items"], path, findings);
+      validateEnumField(value, "columns", FEATURES_COLUMNS, "sectioned-view-content-module-option", path, findings);
+      validateEnumField(value, "treatment", FEATURES_TREATMENTS, "sectioned-view-content-module-option", path, findings);
+      validateEnumField(value, "emphasis", FEATURES_EMPHASES, "sectioned-view-content-module-option", path, findings);
+      const statement = value.emphasis === "statement";
+      const iconsAllowed = value.treatment !== "rule";
+      validateRecords(value.items, `${path}.items`, findings, statement ? { min: 3, max: 3 } : { min: 2, max: 4 }, CONTENT_ITEM_KEYS, ["heading"], (item, itemPath) => {
+        validateContentItemFields(item, itemPath, findings);
+        if (item.icon !== undefined && !iconsAllowed) findings.push(finding("sectioned-view-content-icon-treatment", `${itemPath}.icon`, `${itemPath}.icon is allowed only with the plain and plate treatments.`));
+      });
+      return;
+    }
+    case "cards": {
+      validateModuleKeys(value, ["type", "items"], ["items"], path, findings);
+      const cards = validateRecords(value.items, `${path}.items`, findings, { min: 2, max: 6 }, [...CONTENT_ITEM_KEYS, "span", "visual"], ["heading", "span"], (card, cardPath) => {
+        validateContentItemFields(card, cardPath, findings);
+        validateEnumField(card, "span", CARD_SPANS, "sectioned-view-content-card-span", cardPath, findings);
+        if (card.visual !== undefined) validateSpecimenPart(card.visual, `${cardPath}.visual`, findings, CARD_VISUAL_MAX_ROWS);
+      });
+      if (Array.isArray(value.items) && cards.length === value.items.length && cards.every((card) => CARD_SPANS.includes(card.span as SectionedViewContentCardSpan))) {
+        validateCardRows(cards.map((card) => card.span as SectionedViewContentCardSpan), `${path}.items`, findings);
+      }
+      return;
+    }
+    case "comparison": {
+      validateModuleKeys(value, ["type", "before", "after"], ["before", "after"], path, findings);
+      const before = validateComparisonSide(value.before, `${path}.before`, findings);
+      const after = validateComparisonSide(value.after, `${path}.after`, findings);
+      if (before !== undefined && after !== undefined) {
+        const form = (side: Record<string, unknown>) => (side.points !== undefined ? `points:${Array.isArray(side.points) ? side.points.length : 0}` : "description");
+        if (form(before) !== form(after)) findings.push(finding("sectioned-view-content-comparison-sides", path, `${path}.before and ${path}.after must use the same form: both a description, or both the same number of points.`));
+        if ((before.visual === undefined) !== (after.visual === undefined)) findings.push(finding("sectioned-view-content-comparison-sides", path, `${path}.before and ${path}.after must both carry a visual or neither.`));
+      }
+      return;
+    }
+    case "topics": {
+      validateModuleKeys(value, ["type", "columns", "items"], ["items"], path, findings);
+      validateEnumField(value, "columns", TOPICS_COLUMNS, "sectioned-view-content-module-option", path, findings);
+      validateRecords(value.items, `${path}.items`, findings, { min: 2, max: 8 }, CONTENT_ITEM_KEYS, ["heading"], (item, itemPath) => validateContentItemFields(item, itemPath, findings));
+      const twoColumns = value.columns === undefined || value.columns === 2;
+      if (twoColumns && Array.isArray(value.items) && value.items.length % 2 === 1) {
+        findings.push(finding("sectioned-view-content-count", `${path}.items`, `${path}.items must hold an even number of items in 2 columns; it holds ${value.items.length}.`));
+      }
+      return;
+    }
+    case "steps":
+      validateModuleKeys(value, ["type", "items"], ["items"], path, findings);
+      validateRecords(value.items, `${path}.items`, findings, { min: 3, max: 4 }, ["id", "ordinal", "label", "heading", "description", "visual"], ["ordinal", "heading"], (step, stepPath) => {
+        validateCopy(step.ordinal, `${stepPath}.ordinal`, findings);
+        validateCopy(step.heading, `${stepPath}.heading`, findings);
+        validateOptionalCopyFields(step, ["label", "description"], stepPath, findings);
+        if (step.visual !== undefined) validateSpecimenPanel(step.visual, `${stepPath}.visual`, findings);
+      });
+      return;
+    case "faq":
+      validateModuleKeys(value, ["type", "items"], ["items"], path, findings);
+      validateRecords(value.items, `${path}.items`, findings, { min: 4, max: 6 }, ["id", "question", "answer"], ["question", "answer"], (item, itemPath) => {
+        validateCopy(item.question, `${itemPath}.question`, findings);
+        validateCopy(item.answer, `${itemPath}.answer`, findings);
+      });
+      return;
+    default:
+      findings.push(finding("sectioned-view-content-module-type", `${path}.type`, `${path}.type "${value.type}" is not a content module type; supported types are ${CONTENT_MODULE_TYPES.join(", ")}.`));
+  }
+}
+
+/**
+ * Cards fill whole 12-column rows in order: two-thirds + third (either
+ * order), three thirds, two halves, or one full card. Any other sequence
+ * overflows a row or leaves the last one short.
+ */
+function validateCardRows(spans: readonly SectionedViewContentCardSpan[], path: string, findings: ComposeFinding[]): void {
+  let filled = 0;
+  for (let index = 0; index < spans.length; index += 1) {
+    filled += CARD_SPAN_UNITS[spans[index]!];
+    if (filled > CARD_ROW_UNITS) {
+      findings.push(finding("sectioned-view-content-card-spans", `${path}.${index}.span`, `${path}.${index}.span overflows its row; cards must fill whole rows (two-thirds + third, three thirds, two halves, or one full card).`));
+      return;
+    }
+    if (filled === CARD_ROW_UNITS) filled = 0;
+  }
+  if (filled !== 0) findings.push(finding("sectioned-view-content-card-spans", path, `${path} leaves its last row unfilled; cards must fill whole rows (two-thirds + third, three thirds, two halves, or one full card).`));
+}
+
+function validateComparisonSide(value: unknown, path: string, findings: ComposeFinding[]): Record<string, unknown> | undefined {
+  if (!isPlainObject(value) || !hasOnlyOwnKeys(value, ["label", "heading", "description", "points", "visual"]) || !hasOwn(value, "label")) {
+    findings.push(finding("sectioned-view-content-comparison-side", path, `${path} must be a plain side with a label and only label, heading, description, points, and visual.`));
+    return undefined;
+  }
+  validateCopy(value.label, `${path}.label`, findings);
+  validateOptionalCopyFields(value, ["heading", "description"], path, findings);
+  if ((value.description === undefined) === (value.points === undefined)) {
+    findings.push(finding("sectioned-view-content-comparison-side", path, `${path} must have exactly one of description or points.`));
+  }
+  if (value.points !== undefined && validateDenseArray(value.points, `${path}.points`, findings, "sectioned-view-items-shape", `${path}.points must be a non-empty array of CopyRefs.`)) {
+    if (value.points.length < 2 || value.points.length > 4) findings.push(countFinding(`${path}.points`, { min: 2, max: 4 }, value.points.length, "points"));
+    value.points.forEach((point, index) => validateCopy(point, `${path}.points.${index}`, findings));
+  }
+  if (value.visual !== undefined) validateSpecimenPanel(value.visual, `${path}.visual`, findings);
+  return value;
+}
+
+function validateSpecimenStatus(value: unknown, path: string, findings: ComposeFinding[]): void {
+  if (!isPlainObject(value) || !hasOnlyOwnKeys(value, ["tone", "label"]) || !hasOwnKeys(value, ["tone", "label"])) {
+    findings.push(finding("sectioned-view-specimen-status-shape", path, `${path} must be a plain { tone, label } status.`));
+    return;
+  }
+  validateEnumField(value, "tone", SPECIMEN_TONES, "sectioned-view-specimen-tone", path, findings);
+  validateCopy(value.label, `${path}.label`, findings);
+}
+
+function validateOptionalStatus(record: Record<string, unknown>, path: string, findings: ComposeFinding[]): void {
+  if (record.status !== undefined) validateSpecimenStatus(record.status, `${path}.status`, findings);
+}
+
+function validateSpecimenMedia(value: unknown, path: string, findings: ComposeFinding[]): void {
+  if (!isPlainObject(value) || !hasOnlyOwnKeys(value, ["type", "label", "arrangement", "connector", "panels"]) || !hasOwnKeys(value, ["type", "label", "panels"])) {
+    findings.push(finding("sectioned-view-content-media-shape", path, `${path} must be a plain specimen with type, label, and panels, and optionally arrangement and connector.`));
+    return;
+  }
+  if (value.type !== "specimen") findings.push(finding("sectioned-view-content-media-type", `${path}.type`, `${path}.type must be specimen.`));
+  validateCopy(value.label, `${path}.label`, findings);
+  validateEnumField(value, "arrangement", SPECIMEN_ARRANGEMENTS, "sectioned-view-specimen-arrangement", path, findings);
+  const arrangement = value.arrangement ?? "single";
+  if (value.connector !== undefined) {
+    validateCopy(value.connector, `${path}.connector`, findings);
+    if (arrangement !== "flow") findings.push(finding("sectioned-view-specimen-connector", `${path}.connector`, `${path}.connector is allowed only with the flow arrangement.`));
+  }
+  const bounds = arrangement === "single" ? { min: 1, max: 1 } : { min: 2, max: MEDIA_MAX_PANELS };
+  if (!validateDenseArray(value.panels, `${path}.panels`, findings, "sectioned-view-items-shape", `${path}.panels must be a non-empty array.`)) return;
+  if (value.panels.length < bounds.min || value.panels.length > bounds.max) findings.push(countFinding(`${path}.panels`, bounds, value.panels.length, `panels for the ${String(arrangement)} arrangement`));
+  validateItemIds(value.panels, `${path}.panels`, findings);
+  value.panels.forEach((panel, index) => validateSpecimenPanel(panel, `${path}.panels.${index}`, findings));
+}
+
+function validateSpecimenPanel(value: unknown, path: string, findings: ComposeFinding[]): void {
+  if (!isPlainObject(value) || !hasOnlyOwnKeys(value, ["id", "title", "meta", "status", "parts", "footer"]) || !hasOwnKeys(value, ["id", "title", "parts"]) || !isNonWhitespaceString(value.id)) {
+    findings.push(finding("sectioned-view-specimen-panel-shape", path, `${path} must be a plain panel with a non-whitespace id, a title, and parts.`));
+    return;
+  }
+  validateCopy(value.title, `${path}.title`, findings);
+  validateOptionalCopyFields(value, ["meta"], path, findings);
+  validateOptionalStatus(value, path, findings);
+  if (validateDenseArray(value.parts, `${path}.parts`, findings, "sectioned-view-items-shape", `${path}.parts must be a non-empty array.`)) {
+    if (value.parts.length > PANEL_MAX_PARTS) findings.push(countFinding(`${path}.parts`, { min: 1, max: PANEL_MAX_PARTS }, value.parts.length, "parts"));
+    validateItemIds(value.parts, `${path}.parts`, findings);
+    value.parts.forEach((part, index) => validateSpecimenPart(part, `${path}.parts.${index}`, findings, PART_MAX_ROWS));
+  }
+  if (value.footer !== undefined) {
+    const footer = value.footer;
+    const footerPath = `${path}.footer`;
+    if (!isPlainObject(footer) || !hasOnlyOwnKeys(footer, ["assignee", "note"]) || (footer.assignee === undefined && footer.note === undefined)) {
+      findings.push(finding("sectioned-view-specimen-footer-shape", footerPath, `${footerPath} must be a plain footer with an assignee, a note, or both.`));
+      return;
+    }
+    validateOptionalCopyFields(footer, ["note"], footerPath, findings);
+    if (footer.assignee !== undefined) {
+      const assignee = footer.assignee;
+      const assigneePath = `${footerPath}.assignee`;
+      if (!isPlainObject(assignee) || !hasOnlyOwnKeys(assignee, ["initials", "name", "note"]) || !hasOwnKeys(assignee, ["initials", "name"])) {
+        findings.push(finding("sectioned-view-specimen-footer-shape", assigneePath, `${assigneePath} must be a plain assignee with initials and name, and optionally a note.`));
+      } else {
+        validateCopy(assignee.initials, `${assigneePath}.initials`, findings);
+        validateCopy(assignee.name, `${assigneePath}.name`, findings);
+        validateOptionalCopyFields(assignee, ["note"], assigneePath, findings);
+      }
+    }
+  }
+}
+
+function validatePartKeys(part: Record<string, unknown>, keys: readonly string[], required: readonly string[], path: string, findings: ComposeFinding[]): void {
+  if (!hasOnlyOwnKeys(part, ["id", "type", ...keys]) || !hasOwnKeys(part, required)) findings.push(finding("sectioned-view-specimen-part-shape", path, `${path} has keys not allowed for a ${String(part.type)} part.`));
+}
+
+function validateSpecimenPart(value: unknown, path: string, findings: ComposeFinding[], maxRows: number): void {
+  if (!isPlainObject(value) || !hasEnumerableOwnDataKeys(value) || !isNonWhitespaceString(value.id) || !isNonWhitespaceString(value.type)) {
+    findings.push(finding("sectioned-view-specimen-part-shape", path, `${path} must be a specimen part with a non-whitespace id and a type.`));
+    return;
+  }
+  const rows = { min: 1, max: maxRows };
+  switch (value.type) {
+    case "fields":
+      validatePartKeys(value, ["label", "columns", "items"], ["items"], path, findings);
+      validateOptionalCopyFields(value, ["label"], path, findings);
+      validateEnumField(value, "columns", FIELDS_COLUMNS, "sectioned-view-content-module-option", path, findings);
+      validateRecords(value.items, `${path}.items`, findings, rows, ["id", "label", "value"], ["label", "value"], (field, fieldPath) => {
+        validateCopy(field.label, `${fieldPath}.label`, findings);
+        validateCopy(field.value, `${fieldPath}.value`, findings);
+      });
+      return;
+    case "status-rows":
+      validatePartKeys(value, ["label", "items"], ["items"], path, findings);
+      validateOptionalCopyFields(value, ["label"], path, findings);
+      validateRecords(value.items, `${path}.items`, findings, rows, ["id", "label", "detail", "status"], ["label", "status"], (row, rowPath) => {
+        validateCopy(row.label, `${rowPath}.label`, findings);
+        validateOptionalCopyFields(row, ["detail"], rowPath, findings);
+        validateSpecimenStatus(row.status, `${rowPath}.status`, findings);
+      });
+      return;
+    case "meter":
+      validatePartKeys(value, ["label", "value", "scaleMax", "limit", "direction", "tone", "valueText", "limitText", "status", "note"], ["label", "value", "scaleMax", "tone", "valueText"], path, findings);
+      validateCopy(value.label, `${path}.label`, findings);
+      validateCopy(value.valueText, `${path}.valueText`, findings);
+      validateOptionalCopyFields(value, ["limitText", "note"], path, findings);
+      if (!isNonNegativeNumber(value.value)) findings.push(finding("sectioned-view-specimen-number", `${path}.value`, `${path}.value must be a finite number of zero or more.`));
+      if (!isNonNegativeNumber(value.scaleMax) || value.scaleMax === 0) findings.push(finding("sectioned-view-specimen-number", `${path}.scaleMax`, `${path}.scaleMax must be a finite number greater than zero.`));
+      if (value.limit !== undefined && !isNonNegativeNumber(value.limit)) findings.push(finding("sectioned-view-specimen-number", `${path}.limit`, `${path}.limit must be a finite number of zero or more.`));
+      if (value.limitText !== undefined && value.limit === undefined) findings.push(finding("sectioned-view-specimen-limit-text", `${path}.limitText`, `${path}.limitText is allowed only with ${path}.limit.`));
+      validateEnumField(value, "direction", METER_DIRECTIONS, "sectioned-view-content-module-option", path, findings);
+      validateEnumField(value, "tone", SPECIMEN_TONES, "sectioned-view-specimen-tone", path, findings);
+      validateOptionalStatus(value, path, findings);
+      return;
+    case "table": {
+      validatePartKeys(value, ["label", "caption", "columns", "rows"], ["caption", "columns", "rows"], path, findings);
+      validateOptionalCopyFields(value, ["label"], path, findings);
+      validateCopy(value.caption, `${path}.caption`, findings);
+      const columns = validateRecords(value.columns, `${path}.columns`, findings, { min: 1, max: TABLE_MAX_COLUMNS }, ["id", "label"], ["label"], (column, columnPath) => validateCopy(column.label, `${columnPath}.label`, findings));
+      const columnCount = Array.isArray(value.columns) && columns.length === value.columns.length ? columns.length : undefined;
+      validateRecords(value.rows, `${path}.rows`, findings, { min: 1, max: Math.min(TABLE_MAX_ROWS, maxRows) }, ["id", "cells"], ["cells"], (row, rowPath) => {
+        if (!validateDenseArray(row.cells, `${rowPath}.cells`, findings, "sectioned-view-items-shape", `${rowPath}.cells must be a non-empty array.`)) return;
+        if (columnCount !== undefined && row.cells.length !== columnCount) findings.push(finding("sectioned-view-specimen-table-cells", `${rowPath}.cells`, `${rowPath}.cells must hold one cell per column (${columnCount}); it holds ${row.cells.length}.`));
+        row.cells.forEach((cell, cellIndex) => {
+          const cellPath = `${rowPath}.cells.${cellIndex}`;
+          if (!isPlainObject(cell) || !hasOnlyOwnKeys(cell, ["text", "status"]) || hasOwn(cell, "text") === hasOwn(cell, "status")) {
+            findings.push(finding("sectioned-view-specimen-table-cells", cellPath, `${cellPath} must be a plain cell with exactly one of text or status.`));
+            return;
+          }
+          if (hasOwn(cell, "text")) validateCopy(cell.text, `${cellPath}.text`, findings);
+          else validateSpecimenStatus(cell.status, `${cellPath}.status`, findings);
+        });
+      });
+      return;
+    }
+    case "schedule":
+      validatePartKeys(value, ["label", "items"], ["items"], path, findings);
+      validateOptionalCopyFields(value, ["label"], path, findings);
+      validateRecords(value.items, `${path}.items`, findings, rows, ["id", "date", "label", "amount", "status"], ["date", "label"], (item, itemPath) => {
+        validateCopy(item.date, `${itemPath}.date`, findings);
+        validateCopy(item.label, `${itemPath}.label`, findings);
+        validateOptionalCopyFields(item, ["amount"], itemPath, findings);
+        validateOptionalStatus(item, itemPath, findings);
+      });
+      return;
+    case "shares":
+      validatePartKeys(value, ["label", "items"], ["items"], path, findings);
+      validateOptionalCopyFields(value, ["label"], path, findings);
+      validateRecords(value.items, `${path}.items`, findings, rows, ["id", "name", "share", "shareText", "status"], ["name", "share", "shareText"], (item, itemPath) => {
+        validateCopy(item.name, `${itemPath}.name`, findings);
+        validateCopy(item.shareText, `${itemPath}.shareText`, findings);
+        if (!isNonNegativeNumber(item.share) || item.share > 100) findings.push(finding("sectioned-view-specimen-number", `${itemPath}.share`, `${itemPath}.share must be a finite percentage from 0 to 100.`));
+        validateOptionalStatus(item, itemPath, findings);
+      });
+      return;
+    case "files":
+      validatePartKeys(value, ["label", "items"], ["items"], path, findings);
+      validateOptionalCopyFields(value, ["label"], path, findings);
+      validateRecords(value.items, `${path}.items`, findings, rows, ["id", "format", "name", "source"], ["format", "name"], (item, itemPath) => {
+        validateCopy(item.format, `${itemPath}.format`, findings);
+        validateCopy(item.name, `${itemPath}.name`, findings);
+        validateOptionalCopyFields(item, ["source"], itemPath, findings);
+      });
+      return;
+    default:
+      findings.push(finding("sectioned-view-specimen-part-type", `${path}.type`, `${path}.type "${value.type}" is not a specimen part type; supported types are ${SPECIMEN_PART_TYPES.join(", ")}.`));
   }
 }
 
@@ -839,10 +1627,348 @@ function resolveSection(section: SectionedViewSection & { ground: SectionedViewG
           delta: optional(item.delta, `${path}.items.${index}.delta`),
         })),
       };
+    case "content-section":
+      return resolveContentSection(section, path, text);
     default:
       throw new SectionedViewResolutionError(
         "unsupported-section-kind",
         `resolveSectionedViewDocument refused section at ${path}: ${unsupportedSectionKindMessage(path, (section as { kind: string }).kind)}`,
       );
   }
+}
+
+// ---------------------------------------------------------------------------
+// content-section resolution
+// ---------------------------------------------------------------------------
+
+type ResolveText = (ref: CopyRef, path: string) => string;
+
+/**
+ * `{ [key]: resolved text }` when `ref` is present, otherwise `{}`, so an
+ * absent optional field stays absent (never a key holding `undefined`).
+ * Spread these in field order: resolution order is the call order.
+ */
+function copyField<K extends string>(key: K, ref: CopyRef | undefined, path: string, text: ResolveText): Partial<Record<K, string>> {
+  return ref === undefined ? {} : ({ [key]: text(ref, `${path}.${key}`) } as Record<K, string>);
+}
+
+function resolveSpecimenStatus(status: SectionedViewSpecimenStatus | undefined, path: string, text: ResolveText): { status?: { tone: SectionedViewSpecimenTone; label: string } } {
+  return status === undefined ? {} : { status: { tone: status.tone, label: text(status.label, `${path}.status.label`) } };
+}
+
+/** A part without its authored `label`, with that label resolved when present. */
+function partBase<P extends { label?: CopyRef }>(part: P, path: string, text: ResolveText): Omit<P, "label"> & { label?: string } {
+  const { label, ...rest } = part;
+  return { ...rest, ...copyField("label", label, path, text) };
+}
+
+function resolveSpecimenPart(part: SectionedViewSpecimenPart, path: string, text: ResolveText): ResolvedSectionedViewSpecimenPart {
+  switch (part.type) {
+    case "fields":
+      return { ...partBase(part, path, text), items: part.items.map((item, index) => ({ id: item.id, label: text(item.label, `${path}.items.${index}.label`), value: text(item.value, `${path}.items.${index}.value`) })) };
+    case "status-rows":
+      return {
+        ...partBase(part, path, text),
+        items: part.items.map((item, index) => {
+          const itemPath = `${path}.items.${index}`;
+          return { id: item.id, label: text(item.label, `${itemPath}.label`), ...copyField("detail", item.detail, itemPath, text), status: { tone: item.status.tone, label: text(item.status.label, `${itemPath}.status.label`) } };
+        }),
+      };
+    case "meter":
+      return {
+        ...part,
+        label: text(part.label, `${path}.label`),
+        valueText: text(part.valueText, `${path}.valueText`),
+        ...copyField("limitText", part.limitText, path, text),
+        ...resolveSpecimenStatus(part.status, path, text),
+        ...copyField("note", part.note, path, text),
+      } as ResolvedSectionedViewSpecimenPart;
+    case "table":
+      return {
+        ...partBase(part, path, text),
+        caption: text(part.caption, `${path}.caption`),
+        columns: part.columns.map((column, index) => ({ id: column.id, label: text(column.label, `${path}.columns.${index}.label`) })),
+        rows: part.rows.map((row, rowIndex) => ({
+          id: row.id,
+          cells: row.cells.map((cell, cellIndex) => {
+            const cellPath = `${path}.rows.${rowIndex}.cells.${cellIndex}`;
+            return cell.status !== undefined ? { status: { tone: cell.status.tone, label: text(cell.status.label, `${cellPath}.status.label`) } } : { text: text(cell.text, `${cellPath}.text`) };
+          }),
+        })),
+      } as ResolvedSectionedViewSpecimenPart;
+    case "schedule":
+      return {
+        ...partBase(part, path, text),
+        items: part.items.map((item, index) => {
+          const itemPath = `${path}.items.${index}`;
+          return { id: item.id, date: text(item.date, `${itemPath}.date`), label: text(item.label, `${itemPath}.label`), ...copyField("amount", item.amount, itemPath, text), ...resolveSpecimenStatus(item.status, itemPath, text) };
+        }),
+      };
+    case "shares":
+      return {
+        ...partBase(part, path, text),
+        items: part.items.map((item, index) => {
+          const itemPath = `${path}.items.${index}`;
+          return { id: item.id, name: text(item.name, `${itemPath}.name`), share: item.share, shareText: text(item.shareText, `${itemPath}.shareText`), ...resolveSpecimenStatus(item.status, itemPath, text) };
+        }),
+      };
+    case "files":
+      return {
+        ...partBase(part, path, text),
+        items: part.items.map((item, index) => {
+          const itemPath = `${path}.items.${index}`;
+          return { id: item.id, format: text(item.format, `${itemPath}.format`), name: text(item.name, `${itemPath}.name`), ...copyField("source", item.source, itemPath, text) };
+        }),
+      };
+  }
+}
+
+function resolveSpecimenPanel(panel: SectionedViewSpecimenPanel, path: string, text: ResolveText): ResolvedSectionedViewSpecimenPanel {
+  const footer = panel.footer;
+  return {
+    id: panel.id,
+    title: text(panel.title, `${path}.title`),
+    ...copyField("meta", panel.meta, path, text),
+    ...resolveSpecimenStatus(panel.status, path, text),
+    parts: panel.parts.map((part, index) => resolveSpecimenPart(part, `${path}.parts.${index}`, text)),
+    ...(footer === undefined
+      ? {}
+      : {
+          footer: {
+            ...(footer.assignee === undefined
+              ? {}
+              : {
+                  assignee: {
+                    initials: text(footer.assignee.initials, `${path}.footer.assignee.initials`),
+                    name: text(footer.assignee.name, `${path}.footer.assignee.name`),
+                    ...copyField("note", footer.assignee.note, `${path}.footer.assignee`, text),
+                  },
+                }),
+            ...copyField("note", footer.note, `${path}.footer`, text),
+          },
+        }),
+  };
+}
+
+function resolveContentItem<T extends SectionedViewContentItem>(item: T, path: string, text: ResolveText) {
+  return {
+    ...item,
+    ...copyField("eyebrow", item.eyebrow, path, text),
+    heading: text(item.heading, `${path}.heading`),
+    ...copyField("description", item.description, path, text),
+  };
+}
+
+function resolveComparisonSide(side: SectionedViewComparisonSide, path: string, text: ResolveText) {
+  return {
+    label: text(side.label, `${path}.label`),
+    ...copyField("heading", side.heading, path, text),
+    ...copyField("description", side.description, path, text),
+    ...(side.points === undefined ? {} : { points: side.points.map((point, index) => text(point, `${path}.points.${index}`)) }),
+    ...(side.visual === undefined ? {} : { visual: resolveSpecimenPanel(side.visual, `${path}.visual`, text) }),
+  };
+}
+
+function resolveContentModule(module: SectionedViewContentModule, path: string, text: ResolveText): ResolvedSectionedViewContentModule {
+  switch (module.type) {
+    case "features":
+    case "topics":
+      return { ...module, items: module.items.map((item, index) => resolveContentItem(item, `${path}.items.${index}`, text)) } as ResolvedSectionedViewContentModule;
+    case "cards":
+      return {
+        ...module,
+        items: module.items.map((card, index) => {
+          const cardPath = `${path}.items.${index}`;
+          const { visual, ...rest } = resolveContentItem(card, cardPath, text);
+          return { ...rest, ...(card.visual === undefined ? {} : { visual: resolveSpecimenPart(card.visual, `${cardPath}.visual`, text) }) };
+        }),
+      } as ResolvedSectionedViewContentModule;
+    case "comparison":
+      return { type: "comparison", before: resolveComparisonSide(module.before, `${path}.before`, text), after: resolveComparisonSide(module.after, `${path}.after`, text) };
+    case "steps":
+      return {
+        ...module,
+        items: module.items.map((step, index) => {
+          const stepPath = `${path}.items.${index}`;
+          return {
+            id: step.id,
+            ordinal: text(step.ordinal, `${stepPath}.ordinal`),
+            ...copyField("label", step.label, stepPath, text),
+            heading: text(step.heading, `${stepPath}.heading`),
+            ...copyField("description", step.description, stepPath, text),
+            ...(step.visual === undefined ? {} : { visual: resolveSpecimenPanel(step.visual, `${stepPath}.visual`, text) }),
+          };
+        }),
+      } as ResolvedSectionedViewContentModule;
+    case "faq":
+      return { ...module, items: module.items.map((item, index) => ({ id: item.id, question: text(item.question, `${path}.items.${index}.question`), answer: text(item.answer, `${path}.items.${index}.answer`) })) };
+  }
+}
+
+function resolveContentSection(section: SectionedViewContentSection & { ground: SectionedViewGround }, path: string, text: ResolveText): ResolvedSectionedViewContentSection {
+  const { module, media, actions, ...base } = section;
+  return {
+    ...base,
+    ...copyField("eyebrow", section.eyebrow, path, text),
+    heading: text(section.heading, `${path}.heading`),
+    ...copyField("description", section.description, path, text),
+    ...(actions === undefined ? {} : { actions: actions.map((action, index) => ({ ...action, label: text(action.label, `${path}.actions.${index}.label`) })) }),
+    ...(module === undefined ? {} : { module: resolveContentModule(module, `${path}.module`, text) }),
+    ...(media === undefined
+      ? {}
+      : {
+          media: {
+            ...media,
+            label: text(media.label, `${path}.media.label`),
+            ...copyField("connector", media.connector, `${path}.media`, text),
+            panels: media.panels.map((panel, index) => resolveSpecimenPanel(panel, `${path}.media.panels.${index}`, text)),
+          },
+        }),
+  } as ResolvedSectionedViewContentSection;
+}
+
+// ---------------------------------------------------------------------------
+// checkSectionVariety: page rhythm warnings
+// ---------------------------------------------------------------------------
+
+/** What the variety lint reads from one section. */
+interface BandShape {
+  path: string;
+  index: number;
+  kind: SectionedViewSectionKind;
+  layout: SectionedViewContentLayout;
+  mediaSide?: SectionedViewContentMediaSide;
+  module: string;
+  visual: "none" | "specimen";
+  /** Carries a specimen (as media or inside its module) or a table: a dense band. */
+  dense: boolean;
+  ground?: SectionedViewGround;
+  /** The module's treatment, for telling two uses of one module type apart. */
+  treatment: string;
+  cardCount: number;
+}
+
+function hasModuleVisual(module: SectionedViewContentModule): boolean {
+  switch (module.type) {
+    case "cards":
+      return module.items.some((card) => card.visual !== undefined);
+    case "steps":
+      return module.items.some((step) => step.visual !== undefined);
+    case "comparison":
+      return module.before.visual !== undefined || module.after.visual !== undefined;
+    default:
+      return false;
+  }
+}
+
+function moduleTreatment(module: SectionedViewContentModule): string {
+  switch (module.type) {
+    case "features":
+      return `${module.treatment ?? "plain"}/${module.emphasis ?? "item"}`;
+    case "topics":
+      return `columns-${module.columns ?? 2}`;
+    case "steps":
+      return hasModuleVisual(module) ? "visual" : "plain";
+    default:
+      return "default";
+  }
+}
+
+function bandShape(section: SectionedViewSection, path: string, index: number): BandShape {
+  if (section.kind !== "content-section") {
+    return { path, index, kind: section.kind, layout: "stacked", module: section.kind, visual: "none", dense: false, ground: section.ground, treatment: "default", cardCount: 0 };
+  }
+  const module = section.module;
+  const layout = section.layout ?? "stacked";
+  return {
+    path,
+    index,
+    kind: section.kind,
+    layout,
+    ...(layout === "split" ? { mediaSide: section.mediaSide ?? "end" } : {}),
+    module: module?.type ?? (section.media === undefined ? "intro" : "none"),
+    visual: section.media === undefined ? "none" : "specimen",
+    dense: section.media !== undefined || (module !== undefined && hasModuleVisual(module)),
+    ground: section.ground,
+    treatment: module === undefined ? "default" : moduleTreatment(module),
+    cardCount: module?.type === "cards" ? module.items.length : 0,
+  };
+}
+
+function varietyWarning(rule: string, path: string, message: string): ComposeFinding {
+  return { rule, severity: "warning", path, message };
+}
+
+/**
+ * Warns where a page's bands repeat or crowd each other. Every finding is a
+ * `warning`: the page still validates and resolves; the warnings say where its
+ * rhythm reads as a template. Pass one document, or every document one page
+ * renders in order (their sections are read as one page, with paths
+ * `documents.N.sections.M`). Call it on documents
+ * `validateSectionedViewDocument` accepts; malformed sections are skipped.
+ *
+ * Rules (each finding's `rule` in brackets):
+ * 1. Neighbouring bands never share one layout, module type and visual type
+ *    [`sectioned-view-variety-repeat`].
+ * 2. A split follows a split only with the opposite `mediaSide`
+ *    [`sectioned-view-variety-split-side`]; never three splits in a row
+ *    [`sectioned-view-variety-split-run`].
+ * 3. A dense band (a specimen, as media or inside its module) is followed by
+ *    an airy one [`sectioned-view-variety-density`].
+ * 4. A specimen never sits on an inverse ground
+ *    [`sectioned-view-variety-specimen-ground`]; at most one body band (any
+ *    band after the first) is inverse [`sectioned-view-variety-inverse-bands`].
+ * 5. At most one band with four or more cards
+ *    [`sectioned-view-variety-card-bands`], and at most one comparison
+ *    [`sectioned-view-variety-comparison-count`].
+ * 6. One module type used twice needs a different treatment
+ *    [`sectioned-view-variety-treatment`].
+ *
+ * Whether a visual repeats its module's words cannot be judged before copy
+ * resolves, so that rule stays with the writer.
+ */
+export function checkSectionVariety(input: SectionedViewDocument | readonly SectionedViewDocument[]): ComposeFinding[] {
+  const documents = Array.isArray(input) ? (input as readonly SectionedViewDocument[]) : [input as SectionedViewDocument];
+  const many = Array.isArray(input);
+  const bands: BandShape[] = [];
+  documents.forEach((document, documentIndex) => {
+    if (!isPlainObject(document) || !Array.isArray(document.sections)) return;
+    document.sections.forEach((section, sectionIndex) => {
+      if (!isPlainObject(section) || !SECTION_KINDS.includes(section.kind)) return;
+      const path = many ? `documents.${documentIndex}.sections.${sectionIndex}` : `sections.${sectionIndex}`;
+      bands.push(bandShape(section, path, bands.length));
+    });
+  });
+
+  const findings: ComposeFinding[] = [];
+  bands.forEach((band, position) => {
+    const previous = bands[position - 1];
+    if (previous === undefined) return;
+    if (previous.layout === band.layout && previous.module === band.module && previous.visual === band.visual) {
+      findings.push(varietyWarning("sectioned-view-variety-repeat", band.path, `${band.path} repeats the layout, module and visual of the band before it (${band.layout}, ${band.module}, ${band.visual}); vary one of them.`));
+    }
+    if (previous.layout === "split" && band.layout === "split") {
+      if (previous.mediaSide === band.mediaSide) findings.push(varietyWarning("sectioned-view-variety-split-side", band.path, `${band.path} is a split after a split with the same mediaSide (${band.mediaSide}); flip its mediaSide.`));
+      if (bands[position - 2]?.layout === "split") findings.push(varietyWarning("sectioned-view-variety-split-run", band.path, `${band.path} is the third split in a row; make one of them stacked.`));
+    }
+    if (previous.dense && band.dense) findings.push(varietyWarning("sectioned-view-variety-density", band.path, `${band.path} is a dense band right after another; put an airy band (features, topics, plain steps, intro or FAQ) between them.`));
+  });
+
+  bands.forEach((band) => {
+    if (band.ground === "inverse" && band.dense) findings.push(varietyWarning("sectioned-view-variety-specimen-ground", band.path, `${band.path} puts a specimen on an inverse ground; product UI sits on base or sunken.`));
+  });
+  const inverseBodyBands = bands.filter((band) => band.index > 0 && band.ground === "inverse");
+  inverseBodyBands.slice(1).forEach((band) => findings.push(varietyWarning("sectioned-view-variety-inverse-bands", band.path, `${band.path} is a second inverse body band; keep at most one.`)));
+  bands.filter((band) => band.cardCount >= 4).slice(1).forEach((band) => findings.push(varietyWarning("sectioned-view-variety-card-bands", band.path, `${band.path} is a second band with four or more cards; keep at most one.`)));
+  bands.filter((band) => band.kind === "content-section" && band.module === "comparison").slice(1).forEach((band) => findings.push(varietyWarning("sectioned-view-variety-comparison-count", band.path, `${band.path} is a second comparison; keep at most one.`)));
+
+  const seen = new Map<string, BandShape>();
+  for (const band of bands) {
+    if (band.kind !== "content-section" || band.module === "intro" || band.module === "none" || band.module === "comparison") continue;
+    const key = `${band.module}|${band.treatment}`;
+    const first = seen.get(key);
+    if (first !== undefined) findings.push(varietyWarning("sectioned-view-variety-treatment", band.path, `${band.path} uses the ${band.module} module with the same treatment as ${first.path}; give it a different treatment.`));
+    else seen.set(key, band);
+  }
+  return findings;
 }

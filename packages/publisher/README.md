@@ -481,12 +481,12 @@ that document assembler is not the pre-auth path.
 
 `@clossys/publisher/core` now owns the closed, data-only source model for a
 long public site page: `SectionedViewDocument`. It requires one or more
-ordered sections with unique lowercase fragment-safe ids and one of nine
+ordered sections with unique lowercase fragment-safe ids and one of ten
 named kinds: `hero`, `feature-grid`, `faq`, `ordered-step-sequence`,
 `status-list`, `stat-grid`, `pricing` (a heading and plan items, each with a
 name, a price, features and an optional call to action), `testimonial`
-(quotes with an attributor name and optional role) or `stat` (label and value
-items with an optional delta). Grounds are the closed `base`/`sunken`/`inverse` vocabulary;
+(quotes with an attributor name and optional role), `stat` (label and value
+items with an optional delta) or `content-section` (see below). Grounds are the closed `base`/`sunken`/`inverse` vocabulary;
 status values are the closed `available`/`partial`/`planned` readiness axis,
 with a separate `not-offered` disposition for deliberate non-capabilities.
 Every audience-facing label, heading, description, question, answer, ordinal,
@@ -515,6 +515,48 @@ uses Designer `0.4.0`'s server-safe site-block API, including the separate
 `not-offered` disposition and its caller-localized `labels.dispositions` map,
 the non-hero `eyebrow` slot, the per-row `detail` slot, and the flat `items`
 alternative to `StatusList`'s `groups`.
+
+#### `content-section` and content icons
+
+`content-section` is one general content band: an optional `eyebrow`, a
+`heading`, an optional `description` and `actions`, then at most one `module`
+and at most one `media`. `layout` is `stacked` (the default; `align` may be
+`start` or `center`) or `split` (requires `media`; `mediaSide` is `end` by
+default or `start`). A band with neither module nor media is an intro band.
+
+- `module` is one of six closed types: `features` (2-4 items; exactly 3 with
+  `emphasis: "statement"`; `treatment` `plain`, `plate` or `rule`, and `rule`
+  takes no icons), `cards` (2-6 cards whose `span`s fill whole 12-unit rows,
+  each with an optional one-part `visual` of at most 5 rows), `comparison`
+  (a `before` and an `after` side of the same form — a description each, or
+  the same number of 2-4 points — and a panel `visual` on both or neither),
+  `topics` (2-8 items; an even count in the default 2 columns), `steps`
+  (3-4 steps, each with an optional panel `visual`) or `faq` (4-6 items).
+- `media` is a `specimen`: a labelled arrangement (`single` with one panel,
+  or `row`, `stack` or `flow` with 2-3; only `flow` takes a `connector`) of
+  panels. A panel has a title, optional meta, status and footer, and 1-3
+  parts of the closed types `fields`, `status-rows`, `meter`, `table`,
+  `schedule`, `shares` and `files`, each at most 6 rows (a table at most 4
+  columns and 5 rows). Status tones are `success`, `warning`, `danger`,
+  `info` and `neutral`; numbers are finite and non-negative.
+- Item icons (on `content-section` items and, optionally, on `feature-grid`
+  items) name one of the closed `ContentIconName` set, listed at runtime as
+  `CONTENT_ICON_NAMES`. They are names, not nodes: a renderer maps each name
+  to its Designer icon.
+
+Every visible string is a `CopyRef` and resolves in field order (eyebrow,
+heading, description, actions, module, media). The `SectionedView` web
+renderer does not render `content-section` or feature-grid item icons yet; it
+refuses them rather than dropping them.
+
+`checkSectionVariety(document | documents[])` is an advisory page-rhythm lint
+over one or more documents read as one page. It returns `warning` findings
+only and never changes validation: neighbouring bands that repeat the same
+layout, module and visual; a split after a split on the same side or a third
+split in a row; a dense band right after a dense band; a specimen on an
+inverse ground or a second inverse body band; a second band of four or more
+cards; a second comparison; and one module type repeated with the same
+treatment.
 
 `SectionedView` is now the dedicated web renderer after that Designer floor is
 available. Resolve the CopyRef document first, retain its `resolutions` as the
@@ -4001,7 +4043,7 @@ cosmetic gap.
   `createOutputManifest`,
   `collectCopyProvenance`, `createResolvedOutputManifest`,
   `resolveSurfaceDocument`, `validateSectionedViewDocument`,
-  `resolveSectionedViewDocument`,
+  `resolveSectionedViewDocument`, `checkSectionVariety`, `CONTENT_ICON_NAMES`,
   `resolveDocument`, `resolveCopy`, `resolveAssets`, `frameToInches`,
   `frameToPercent`, `getSlotSpec`, `listSlotKeys`, `requiredSlotKeys`, and
   the `Channel`, `ChannelMeta`, `ComposeDocument`, `ComposeFinding`,
@@ -4024,7 +4066,35 @@ cosmetic gap.
   `SectionedViewStatusGroup`, `SectionedViewStatusItem`, `SectionedViewStatus`,
   `SectionedViewStatusDisposition`,
   `ResolvedSectionedViewAction`, `ResolvedSectionedViewDocument`,
-  `ResolvedSectionedViewSection`, and
+  `ResolvedSectionedViewSection`, `SectionedViewPricingSection`,
+  `SectionedViewPricingItem`, `SectionedViewTestimonialSection`,
+  `SectionedViewTestimonialItem`, `SectionedViewStatSection`,
+  `SectionedViewStatSectionItem`, `SectionedViewSectionGroundRhythm`, the
+  content-section types `ContentIconName`, `SectionedViewContentSection`,
+  `SectionedViewContentLayout`, `SectionedViewContentMediaSide`,
+  `SectionedViewContentAlign`, `SectionedViewContentItem`,
+  `SectionedViewContentCard`, `SectionedViewContentCardSpan`,
+  `SectionedViewContentStep`, `SectionedViewComparisonSide`,
+  `SectionedViewContentModule`, `SectionedViewContentModuleType`,
+  `SectionedViewFeaturesModule`, `SectionedViewFeaturesTreatment`,
+  `SectionedViewFeaturesEmphasis`, `SectionedViewCardsModule`,
+  `SectionedViewComparisonModule`, `SectionedViewTopicsModule`,
+  `SectionedViewStepsModule`, `SectionedViewFaqModule`,
+  `ResolvedSectionedViewContentSection`, `ResolvedSectionedViewContentModule`,
+  the specimen types `SectionedViewSpecimenMedia`,
+  `SectionedViewSpecimenArrangement`, `SectionedViewSpecimenPanel`,
+  `SectionedViewSpecimenFooter`, `SectionedViewSpecimenAssignee`,
+  `SectionedViewSpecimenPart`, `SectionedViewSpecimenPartType`,
+  `SectionedViewSpecimenFieldsPart`, `SectionedViewSpecimenField`,
+  `SectionedViewSpecimenStatusRowsPart`, `SectionedViewSpecimenStatusRow`,
+  `SectionedViewSpecimenMeterPart`, `SectionedViewSpecimenTablePart`,
+  `SectionedViewSpecimenTableColumn`, `SectionedViewSpecimenTableRow`,
+  `SectionedViewSpecimenTableCell`, `SectionedViewSpecimenSchedulePart`,
+  `SectionedViewSpecimenScheduleItem`, `SectionedViewSpecimenSharesPart`,
+  `SectionedViewSpecimenShare`, `SectionedViewSpecimenFilesPart`,
+  `SectionedViewSpecimenFile`, `SectionedViewSpecimenStatus`,
+  `SectionedViewSpecimenTone`, `ResolvedSectionedViewSpecimenMedia`,
+  `ResolvedSectionedViewSpecimenPanel`, `ResolvedSectionedViewSpecimenPart`, and
   `SectionedViewResolutionReason` types. `SurfaceResolutionError` and
   `SectionedViewResolutionError` are thrown when their canonical resolution
   paths fail closed.
