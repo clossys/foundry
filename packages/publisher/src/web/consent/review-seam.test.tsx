@@ -319,6 +319,41 @@ describe("review seam (P-19)", () => {
     expect(transport.setPermission).not.toHaveBeenCalled();
   });
 
+  it("shows the fixed no-decision notice when the seam lifecycle throws after mount", async () => {
+    goTo("http://localhost/?consent-review=granted");
+    const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+    const host = hostStorage();
+    const { factory: inner } = hostFactory(host);
+    let broken = false;
+    const factory = vi.fn((input: ConsentLifecycleInput): ConsentLifecyclePort => {
+      const lifecycle = inner(input);
+      return {
+        ...lifecycle,
+        refresh: () => {
+          if (broken) throw new Error("refresh failed");
+          return lifecycle.refresh();
+        },
+      };
+    });
+    render(
+      <ConsentExperience copy={COPY} createLifecycle={factory}>
+        <Probe />
+      </ConsentExperience>,
+    );
+    expect(banner()).toBeNull();
+    broken = true;
+    act(() => {
+      document.dispatchEvent(new Event("privacy-choices:open"));
+    });
+    await act(async () => {});
+    expect(consoleError).toHaveBeenCalled();
+    expect(banner()).not.toBeNull();
+    expect(banner()).toHaveTextContent("Prompt lead sentence.");
+    expect(screen.getByRole("status")).toBeEmptyDOMElement();
+    expect(probe()).toEqual({ allowed: false, simulated: "granted" });
+    expect(host.writes).toEqual([]);
+  });
+
   it("keeps a value for the tab, and live clears it", () => {
     goTo("http://localhost/?consent-review=granted");
     expect(readReviewSeamValue("consent-review")).toBe("granted");

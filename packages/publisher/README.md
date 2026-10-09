@@ -3639,7 +3639,10 @@ composes those and passes them in.
   records nothing). The `#privacy-choices` fragment or the
   `privacy-choices:open` document event reopens it, re-reads the
   lifecycle, and moves focus to it; focus returns to the opener when it
-  closes. A failed withdrawal keeps the notice open with its status.
+  closes. A failed withdrawal keeps the notice open with its status. A
+  lifecycle that throws is disposed and analytics is not allowed; when the
+  throw came from `refuse()`, or followed a failed withdrawal, the notice
+  stays open with the failed withdrawal status.
 - **Review seam.** On a loopback host only, the `consent-review` query
   parameter (`fresh`, `granted`, `refused` or `gpc`, or `live` to clear it)
   builds a simulated lifecycle over an in-memory store with no evidence
@@ -3700,7 +3703,7 @@ The host owes these obligations:
   `createCopyResolver`, from the build or deployment environment, never
   from a request, a query parameter or another value a visitor can set.
 
-Two further usage requirements, not numbered in the specification:
+Three further usage requirements, not numbered in the specification:
 
 - Mount one `ConsentExperience` per page. Two mounted instances can
   disagree after a choice: storage events do not fire in the document that
@@ -3710,6 +3713,9 @@ Two further usage requirements, not numbered in the specification:
   memoised. An inline object is a new reference on every render, so the
   transport is rebound each time and its permission flips to `false` and
   back.
+- Pass `copy` from `resolveConsentCopy`, which refuses a missing field.
+  Hand-built copy that lacks a notice field omits the notice, and copy that
+  lacks `privacyLinkLabel` omits the policy link.
 
 ## API
 

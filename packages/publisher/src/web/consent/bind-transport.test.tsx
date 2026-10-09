@@ -2,7 +2,7 @@
 import "@testing-library/jest-dom/vitest";
 import { act, cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import type { ResolvedConsentCopy, ResolvedCopyField } from "../../consent-copy/types.js";
 import { bindTransport } from "./bind-transport.js";
 import { ConsentExperience } from "./ConsentExperience.client.js";
@@ -11,6 +11,7 @@ import type { AnalyticsPermissionPort, ConsentLifecyclePort, ConsentSnapshotView
 
 afterEach(() => {
   cleanup();
+  vi.restoreAllMocks();
   history.replaceState(null, "", "/");
 });
 
@@ -83,6 +84,53 @@ describe("bindTransport (P-29)", () => {
     lifecycle.grant();
     unbind();
     expect(log.filter((entry) => entry.startsWith("permission"))).not.toContain("permission true");
+  });
+});
+
+describe("bindTransport: a throwing transport or lifecycle", () => {
+  it("catches a throwing setPermission on bind, on notification and on unbind, and logs no value", () => {
+    const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+    const log: string[] = [];
+    const { lifecycle } = loggingLifecycle(log, {});
+    const transport: AnalyticsPermissionPort = {
+      setPermission: (allowed) => {
+        log.push(`permission ${String(allowed)}`);
+        throw new Error("transport failed");
+      },
+    };
+    let unbind: () => void = () => {};
+    expect(() => {
+      unbind = bindTransport(lifecycle, transport);
+    }).not.toThrow();
+    expect(() => lifecycle.grant()).not.toThrow();
+    expect(() => unbind()).not.toThrow();
+    expect(log).toEqual(["permission false", "permission true", "grant returned", "permission false"]);
+    expect(consoleError).toHaveBeenCalledTimes(3);
+    for (const call of consoleError.mock.calls) expect(call).toEqual(["bindTransport: the transport's setPermission threw."]);
+  });
+
+  it("sets false when the snapshot cannot be read", () => {
+    const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+    const log: string[] = [];
+    const { lifecycle } = loggingLifecycle(log, { effective: "granted", allowed: true, persistence: "stored" });
+    lifecycle.getSnapshot = () => {
+      throw new Error("snapshot read failed");
+    };
+    expect(() => bindTransport(lifecycle, loggingTransport(log))).not.toThrow();
+    expect(log).toEqual(["permission false"]);
+    expect(consoleError).toHaveBeenCalledWith("bindTransport: the lifecycle's getSnapshot threw, so permission is false.");
+  });
+
+  it("still sets false on unbind when unsubscribe throws", () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const log: string[] = [];
+    const { lifecycle } = loggingLifecycle(log, { effective: "granted", allowed: true, persistence: "stored" });
+    lifecycle.subscribe = () => () => {
+      throw new Error("unsubscribe failed");
+    };
+    const unbind = bindTransport(lifecycle, loggingTransport(log));
+    expect(() => unbind()).not.toThrow();
+    expect(log).toEqual(["permission true", "permission false"]);
   });
 });
 
