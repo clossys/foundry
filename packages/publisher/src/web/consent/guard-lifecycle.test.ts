@@ -79,9 +79,10 @@ describe("guardLifecycle", () => {
     expect(consoleError).toHaveBeenCalledTimes(1);
   });
 
-  it("reads as a failed withdrawal after a throw from refuse(), and as no decision after any other throw", () => {
+  it("reads as a failed withdrawal after a throw from refuse() while allowed, and as no decision after any other throw", () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
     const refused = guardLifecycle(rawLifecycle(new Set(["refuse"])).lifecycle, () => {});
+    expect(refused.getSnapshot()).toBe(GRANTED);
     expect(refused.refuse()).toBe(FAILED_WITHDRAWAL_VIEW);
     expect(refused.getSnapshot()).toBe(FAILED_WITHDRAWAL_VIEW);
     expect(FAILED_WITHDRAWAL_VIEW).toMatchObject({ allowed: false, withdrawal: "failed" });
@@ -97,5 +98,51 @@ describe("guardLifecycle", () => {
     expect(guard.getSnapshot()).toBe(failedWithdrawal);
     throwing.add("refresh");
     expect(guard.refresh()).toBe(FAILED_WITHDRAWAL_VIEW);
+  });
+
+  it("reads as no decision after a throw from refuse() when the last snapshot did not allow analytics", () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const fresh = guardLifecycle(rawLifecycle(new Set(["refuse"]), NO_DECISION_VIEW).lifecycle, () => {});
+    expect(fresh.getSnapshot()).toBe(NO_DECISION_VIEW);
+    expect(fresh.refuse()).toBe(NO_DECISION_VIEW);
+    const unread = guardLifecycle(rawLifecycle(new Set(["refuse"])).lifecycle, () => {});
+    expect(unread.refuse()).toBe(NO_DECISION_VIEW);
+  });
+
+  it("runs every listener and onFailure when a synchronous listener throws", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const throwing = new Set<string>();
+    const { lifecycle } = rawLifecycle(throwing);
+    const order: string[] = [];
+    const guard = guardLifecycle(lifecycle, () => order.push("onFailure"));
+    guard.subscribe(() => {
+      order.push("sync throws");
+      throw new Error("listener failed");
+    });
+    guard.subscribe(() => order.push("sync"));
+    guard.subscribeDeferred(() => order.push("deferred"));
+    throwing.add("grant");
+    expect(() => guard.grant()).not.toThrow();
+    await Promise.resolve();
+    expect(order).toEqual(["sync throws", "sync", "deferred", "onFailure"]);
+  });
+
+  it.each([
+    ["undefined", undefined],
+    ["null", null],
+    ["a number", 5],
+    ["an empty object", {}],
+    ["a snapshot with a string allowed", { ...GRANTED, allowed: "true" }],
+    ["a snapshot without sequence", { ...GRANTED, sequence: undefined }],
+  ])("fails closed on %s from a lifecycle call, and logs no value", (_label, value) => {
+    const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+    const { lifecycle } = rawLifecycle(new Set());
+    lifecycle.grant = () => value as unknown as ConsentSnapshotView;
+    const guard = guardLifecycle(lifecycle, () => {});
+    expect(guard.getSnapshot()).toBe(GRANTED);
+    expect(guard.grant()).toBe(NO_DECISION_VIEW);
+    expect(guard.failed()).toBe(true);
+    expect(guard.getSnapshot()).toBe(NO_DECISION_VIEW);
+    expect(consoleError.mock.calls).toEqual([["ConsentExperience: the lifecycle returned a malformed snapshot, so analytics is not allowed."]]);
   });
 });

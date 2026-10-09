@@ -10,6 +10,11 @@ function setPermission(transport: AnalyticsPermissionPort, allowed: boolean): vo
   }
 }
 
+/** Sets permission to `false`, catching a throwing transport as a binding does. Internal to the assembly. */
+export function denyPermission(transport: AnalyticsPermissionPort): void {
+  setPermission(transport, false);
+}
+
 /**
  * Binds an analytics transport to a consent lifecycle synchronously.
  *

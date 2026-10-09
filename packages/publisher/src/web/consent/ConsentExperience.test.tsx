@@ -691,6 +691,68 @@ describe("ConsentExperience: a lifecycle that throws on a press (C-24, C-45)", (
     expect(messages).toEqual(["ConsentExperience: the lifecycle threw, so analytics is not allowed."]);
   });
 
+  it("closes the notice with no status when refuse() throws and analytics was not allowed", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const onChange = vi.fn();
+    const { factory } = recordingFactory(() => throwingOn("refuse", { promptAutomatically: true }));
+    render(
+      <ConsentExperience copy={COPY} createLifecycle={factory} onChange={onChange} {...NOTICE_REVIEW_OFF}>
+        <Probe />
+      </ConsentExperience>,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Reject" }));
+    await act(async () => {});
+    expect(banner()).toBeNull();
+    expect(probe()).toEqual({ allowed: false, status: expect.objectContaining({ withdrawal: "idle" }) });
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it("fails closed when getSnapshot returns undefined", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const transport = { setPermission: vi.fn() };
+    const { factory, created } = recordingFactory(() => {
+      const lifecycle = fakeLifecycle(GRANTED_STORED);
+      lifecycle.getSnapshot = () => undefined as unknown as ConsentSnapshotView;
+      return lifecycle;
+    });
+    render(
+      <ConsentExperience copy={COPY} createLifecycle={factory} transport={transport} {...NOTICE_REVIEW_OFF}>
+        <p>Page content</p>
+        <Probe />
+      </ConsentExperience>,
+    );
+    await act(async () => {});
+    expect(screen.getByText("Page content")).toBeInTheDocument();
+    expect(probe().allowed).toBe(false);
+    expect(transport.setPermission).not.toHaveBeenCalledWith(true);
+    expect(created[0]!.disposed).toBe(true);
+  });
+
+  it.each([
+    ["an empty object", {}],
+    ["a number", 5],
+  ])("reports nothing when grant() returns %s", async (_label, value) => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const onChange = vi.fn();
+    const transport = { setPermission: vi.fn() };
+    const { factory } = recordingFactory(() => {
+      const lifecycle = fakeLifecycle({ promptAutomatically: true });
+      lifecycle.grant = () => value as unknown as ConsentSnapshotView;
+      return lifecycle;
+    });
+    render(
+      <ConsentExperience copy={COPY} createLifecycle={factory} transport={transport} onChange={onChange} {...NOTICE_REVIEW_OFF}>
+        <Probe />
+      </ConsentExperience>,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Accept" }));
+    await act(async () => {});
+    expect(onChange).not.toHaveBeenCalled();
+    expect(probe().allowed).toBe(false);
+    expect(transport.setPermission).not.toHaveBeenCalledWith(true);
+    expect(banner()).toBeNull();
+  });
+
   it("keeps the page when the host transport throws", () => {
     const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
     const transport = {
@@ -724,7 +786,27 @@ describe("ConsentExperience: incomplete hand-built copy", () => {
     );
     expect(screen.getByText("Page content")).toBeInTheDocument();
     expect(banner()).toBeNull();
-    expect(consoleError).toHaveBeenCalledWith("ConsentExperience: the copy is missing a notice field, so the notice was omitted.");
+    expect(consoleError).toHaveBeenCalledWith("ConsentExperience: the copy is missing a notice field, so the notice was omitted and analytics is not allowed.");
+  });
+
+  it.each(["title", "rejectLabel"] as const)("does not allow analytics over a stored grant when %s is missing", (missing) => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const copy = { ...COPY, [missing]: undefined } as unknown as ResolvedConsentCopy;
+    const transport = { setPermission: vi.fn() };
+    const { factory } = recordingFactory(() => fakeLifecycle(GRANTED_STORED));
+    render(
+      <ConsentExperience copy={copy} createLifecycle={factory} transport={transport} {...NOTICE_REVIEW_OFF}>
+        <Probe />
+      </ConsentExperience>,
+    );
+    expect(probe().allowed).toBe(false);
+    expect(transport.setPermission).toHaveBeenCalled();
+    expect(transport.setPermission).not.toHaveBeenCalledWith(true);
+    expect(transport.setPermission).toHaveBeenLastCalledWith(false);
+    act(() => {
+      document.dispatchEvent(new Event("privacy-choices:open"));
+    });
+    expect(banner()).toBeNull();
   });
 
   it("omits the policy link, and keeps the notice, when the link label is missing", () => {

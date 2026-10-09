@@ -6,7 +6,7 @@ import { Link } from "@clossys/designer/atoms";
 import { ConsentBanner } from "@clossys/designer/blocks";
 import type { ResolvedConsentCopy, ResolvedCopyField } from "../../consent-copy/types.js";
 import { isSanctionedHref } from "../../internal/href.js";
-import { bindTransport } from "./bind-transport.js";
+import { bindTransport, denyPermission } from "./bind-transport.js";
 import { ConsentContext } from "./context.js";
 import type { ConsentContextValue } from "./context.js";
 import { guardLifecycle } from "./guard-lifecycle.js";
@@ -208,14 +208,30 @@ export function ConsentExperience(props: ConsentExperienceProps): ReactNode {
   const liveSnapshot = useSyncExternalStore(subscribe, getSnapshot, noDecision);
   const snapshot = seamFailed ? NO_DECISION_VIEW : liveSnapshot;
 
+  const lead = snapshot.regime === "notice" ? copy.noticeLead : copy.promptLead;
+  // Copy from `resolveConsentCopy` is complete. Hand-built copy missing a
+  // notice field fails like a mount failure: no notice, and analytics is not
+  // allowed, because a visitor who cannot see the notice cannot withdraw.
+  // Copy missing only the link label omits the link.
+  const title = copyText(copy.title);
+  const body = copyText(lead);
+  const acceptLabel = copyText(copy.acceptLabel);
+  const rejectLabel = copyText(copy.rejectLabel);
+  const linkLabel = copyText(copy.privacyLinkLabel);
+  const noticeCopyMissing = title === undefined || body === undefined || acceptLabel === undefined || rejectLabel === undefined;
+
   // The transport is bound only while required, only to a non-simulated
-  // lifecycle, and never under the review seam.
+  // lifecycle, never under the review seam, and never without notice copy.
   useEffect(() => {
     if (!required || seamActive || lifecycle === null || transport === undefined) return undefined;
     const simulated = lifecycle.getSnapshot().simulated;
     if (lifecycle.failed() || simulated !== false) return undefined;
+    if (noticeCopyMissing) {
+      denyPermission(transport);
+      return undefined;
+    }
     return bindTransport(lifecycle, transport);
-  }, [required, seamActive, lifecycle, transport]);
+  }, [required, seamActive, lifecycle, transport, noticeCopyMissing]);
 
   // Expiry is noticed without timers: a re-read when the page is shown again.
   useEffect(() => {
@@ -310,7 +326,7 @@ export function ConsentExperience(props: ConsentExperienceProps): ReactNode {
   );
 
   // Strict, as `bindTransport` is: only the boolean `true` and `false` count.
-  const allowed = required && !seamActive && snapshot.allowed === true && snapshot.simulated === false;
+  const allowed = required && !seamActive && !noticeCopyMissing && snapshot.allowed === true && snapshot.simulated === false;
   const status: ConsentStatusView = useMemo(
     () => ({
       persistence: snapshot.persistence,
@@ -328,15 +344,6 @@ export function ConsentExperience(props: ConsentExperienceProps): ReactNode {
   // Copy missing a status entry omits the status text and keeps the notice.
   const statusCopy: ResolvedCopyField | undefined = statusKey === null ? undefined : copy.status?.[statusKey];
   const statusCopyMissing = statusKey !== null && typeof statusCopy?.text !== "string";
-  const lead = snapshot.regime === "notice" ? copy.noticeLead : copy.promptLead;
-  // Copy from `resolveConsentCopy` is complete; hand-built copy missing a
-  // notice field omits the notice, and one missing the link label omits the link.
-  const title = copyText(copy.title);
-  const body = copyText(lead);
-  const acceptLabel = copyText(copy.acceptLabel);
-  const rejectLabel = copyText(copy.rejectLabel);
-  const linkLabel = copyText(copy.privacyLinkLabel);
-  const noticeCopyMissing = title === undefined || body === undefined || acceptLabel === undefined || rejectLabel === undefined;
 
   const policyHref = policyLink === undefined || policyLink === false ? undefined : policyLink.href;
   const policySanctioned = policyHref !== undefined && isSanctionedHref(policyHref);
@@ -349,10 +356,10 @@ export function ConsentExperience(props: ConsentExperienceProps): ReactNode {
   }, [policyHref, policySanctioned]);
 
   useEffect(() => {
-    if (visible && noticeCopyMissing) {
-      console.error("ConsentExperience: the copy is missing a notice field, so the notice was omitted.");
+    if (active && noticeCopyMissing) {
+      console.error("ConsentExperience: the copy is missing a notice field, so the notice was omitted and analytics is not allowed.");
     }
-  }, [visible, noticeCopyMissing]);
+  }, [active, noticeCopyMissing]);
 
   useEffect(() => {
     if (visible && policyHref !== undefined && linkLabel === undefined) {
