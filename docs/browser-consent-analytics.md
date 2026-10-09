@@ -1001,22 +1001,12 @@ configuration type has no masking key at all: masking is the constant
 
 ### Presentation (Designer)
 
-`ConsentBanner` keeps its current contract: a region landmark, one body, an
-optional policy-link slot, and accept and reject as two `Button`s of the
-same variant and size. The landmark's accessible name comes from copy (the
-`title` field, C-35) as an `aria-label` or a visually hidden heading, not a
-visible title. It is a compact corner card, not a modal dialog, and has no
-focus trap, autofocus, Escape handling, portal or timer. Actions stack at
-the base size and sit in a row from `tablet`. Logical properties keep it
-correct in right-to-left layouts.
-
-Presentation note (guidance, not a rule): the card is pinned at the
-bottom-start corner, placed with logical properties; on mobile it spans the
-full width minus the page gutter. It holds one sentence, the privacy-policy
-link and two identical outlined buttons. Naming the landmark from copy
-instead of a visible title changes the block's props (a visible `title`
-becomes an accessible name). That is a later Designer change stacked on
-unit D; until it lands, the block's current visible title stands.
+`ConsentBanner` keeps its current contract: a region landmark named by its
+title, one body, an optional policy-link slot, and accept and reject as two
+`Button`s of the same variant and size. It is not a dialog and has no focus
+trap, autofocus, Escape handling, portal or timer. Actions stack at the base
+size and sit in a row from `tablet`. Logical properties keep it correct in
+right-to-left layouts.
 
 - **C-21 A status line is presentation, not state.** Unit D adds one
   optional prop, `status?: ReactNode`. The block always renders a polite
