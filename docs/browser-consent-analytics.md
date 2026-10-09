@@ -27,7 +27,11 @@ and closes re-read, evidence-order and parsing gaps found while building
 #1938: it adds C-56 to C-61 and tightens C-10, C-13, C-16, C-37, C-41 and
 C-54. Revision 7 keeps every decision of revision 6 and adds two
 optional, consent-gated capture classes to the Observer provider adapter,
-autocapture and session replay (decision 7, C-62 to C-69, unit F). Revision 7 also records the compact corner-card presentation of the notice (C-70, unit G): the title becomes visually hidden but keeps naming the region, with no change to any other rule.
+autocapture and session replay (decision 7, C-62 to C-69, unit F).
+Revision 7 also records the compact corner-card presentation of the
+notice (C-70, unit G): the title becomes visually hidden but keeps naming
+the region, and C-47 is tightened so that focus on reopen lands on that
+named region.
 
 1. **One compact notice with two equal actions.** There is no preferences
    dialog and no secondary reopen control in the footer. Reopening is a link
@@ -1613,8 +1617,8 @@ Dependency order for builders:
    independent of each other and may run in parallel.
 3. **Unit D Designer status slot.** Depends on this document.
    **Unit G Designer notice naming** depends on unit D and is stacked
-   after it. Nothing else depends on unit G: the `title` prop keeps its
-   type, so #1941 and #1942 do not wait for it.
+   after it. Only #1942 depends on unit G: the `title` prop keeps its
+   type, so #1941 does not wait for it.
 4. **#1941 Publisher assembly and Publisher exports.** Depends on this
    document and unit D only. It builds against its own structural ports
    and the preview, so presentation never waits for a backend.
@@ -1623,7 +1627,7 @@ Dependency order for builders:
 6. **Unit F Observer autocapture and session replay.** Depends on this
    document (revision 7) and #1940 only.
 7. **#1942 release preparation.** Depends on #1978, #1938, #1940, unit D,
-   #1941, unit E and unit F.
+   unit G, #1941, unit E and unit F.
 8. **#1947 Bouncer.** Independent of every unit above.
 
 #1981 is a behaviour issue, not a build unit. Its record, decision and
