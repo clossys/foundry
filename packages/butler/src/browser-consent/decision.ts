@@ -9,6 +9,7 @@
 
 import { isWithinWindow } from "../calendar-months.js";
 import {
+  gpcOn,
   normalizeRegime,
   parseStoredChoice,
   type ConsentPolicy,
@@ -54,10 +55,10 @@ export function effectiveChoice(
   now: Date,
 ): EffectiveChoice {
   if (stored === "unreadable") {
-    return signals.gpc ? "denied" : "unknown";
+    return gpcOn(signals) ? "denied" : "unknown";
   }
   const live = liveChoice(stored, policy, now);
-  if (signals.gpc) {
+  if (gpcOn(signals)) {
     const overrides =
       live !== null && live.status === "granted" && live.gpcOverride === true && policy.gpcOverridable === true;
     return overrides ? "granted" : "denied";

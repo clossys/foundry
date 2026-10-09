@@ -2,13 +2,15 @@
  * P-4: expiry is fixed at decision and not renewed by reads or reopenings;
  * every explicit choice writes a fresh record; expired reads as no choice;
  * reading caps expiry; a future-dated denial stays live and a future-dated
- * grant does not. Covers C-6, C-38, C-40.
+ * grant does not; the current shape takes only ISO 8601 UTC instants; a
+ * date whose expiry falls outside the Date range reads as no choice without
+ * throwing. Covers C-6, C-38, C-40.
  */
 
 import { describe, expect, it } from "vitest";
 import { effectiveChoice, isLiveChoice } from "./decision.js";
 import { DAY, GPC_OFF, HOUR, POLICY, T0, at, decidedAt, futureDated, harness, plusMs } from "./fixtures.test.js";
-import { BrowserConsentError, decideChoice, parseStoredChoice } from "./record.js";
+import { BrowserConsentError, decideChoice, parseStoredChoice, type ConsentPolicy } from "./record.js";
 
 describe("expiry fixed at decision (C-6)", () => {
   it("is the calendar-month end of the decision instant", () => {
@@ -129,5 +131,29 @@ describe("future-dated records (C-40)", () => {
     expect(effectiveChoice(grant, GPC_OFF, POLICY, at(T0))).toBe("none");
     const h = harness({ initial: grant });
     expect(h.snap()).toMatchObject({ effective: "none", allowed: false, persistence: "none" });
+  });
+});
+
+describe("reading the current shape's dates (C-40)", () => {
+  it("accepts only ISO 8601 UTC instants for decidedAt and expiresAt", () => {
+    const record = decidedAt("granted", T0);
+    expect(parseStoredChoice(record, POLICY)).toEqual(record);
+    expect(parseStoredChoice({ ...record, decidedAt: "2026-03-10T12:00:00Z" }, POLICY)?.decidedAt).toBe(T0);
+    for (const date of ["March 10, 2026", "2026-03-10", "2026-03-10T12:00:00.000+01:00", "2026-02-30T00:00:00.000Z", " " + T0]) {
+      expect(parseStoredChoice({ ...record, decidedAt: date }, POLICY), date).toBeNull();
+    }
+    // Each names an instant after decidedAt, so only the format rejects it.
+    for (const date of ["September 10, 2026", "2026-09-10", "2026-09-10T12:00:00.000+01:00", "2026-04-31T00:00:00.000Z"]) {
+      expect(parseStoredChoice({ ...record, expiresAt: date }, POLICY), date).toBeNull();
+    }
+  });
+
+  it("an instant whose expiry falls outside the Date range reads as no choice and never throws", () => {
+    const policy: ConsentPolicy = { ...POLICY, legacy: { accept: true, assumedPolicyVersion: POLICY.version } };
+    const edge = { status: "denied", decidedAt: 8.64e15 };
+    expect(() => parseStoredChoice(edge, policy)).not.toThrow();
+    expect(parseStoredChoice(edge, policy)).toBeNull();
+    const h = harness({ policy, initial: edge });
+    expect(h.snap()).toMatchObject({ effective: "none", persistence: "none" });
   });
 });

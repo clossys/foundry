@@ -1,6 +1,13 @@
 /**
  * P-2: a stale grant cannot override a withdrawal (C-12), plus the mount
- * rows of the transition table and the snapshot's identity contract.
+ * rows of the transition table, the snapshot's identity contract, and a
+ * clock that gives no valid instant after mount: a refusal publishes
+ * `allowed: false` before it reads the clock and is held undated, which no
+ * re-read lifts and the visitor's next dated choice replaces; it is
+ * `stored` only while storage holds a denial; without a clock any grant,
+ * or no record under `notice`, reads back as allowed, and a failed
+ * withdrawal ends only on a read-back that is not; a grant is a no-op.
+ * Covers C-61.
  */
 
 import { describe, expect, it, vi } from "vitest";
@@ -191,5 +198,196 @@ describe("snapshot identity and subscription", () => {
     h.storage.setExternally(decidedAt("granted", T0));
     h.storage.emitExternalChange();
     expect(h.snap()).toMatchObject({ effective: "granted", persistence: "stored" });
+  });
+});
+
+describe("a clock with no valid instant after mount (C-13, C-15)", () => {
+  function brokenClockHarness(options: Parameters<typeof harness>[0] = {}) {
+    const h = harness(options);
+    let broken = false;
+    const value = h.time.clock;
+    const clock = (): Date => (broken ? new Date(Number.NaN) : value());
+    const lifecycle = createConsentLifecycle({
+      storage: h.storage.port,
+      evidence: h.evidence.port,
+      policy: options.policy ?? POLICY,
+      regime: options.regime,
+      signals: GPC_OFF,
+      clock,
+    });
+    return { ...h, lifecycle, snap: () => lifecycle.getSnapshot(), breakClock: (on: boolean) => (broken = on) };
+  }
+
+  it("a refusal publishes allowed: false first, never throws, and writes nothing undated", () => {
+    const h = brokenClockHarness({ initial: decidedAt("granted", plusMs(T0, -DAY)) });
+    const seen: boolean[] = [];
+    h.lifecycle.subscribe(() => seen.push(h.snap().allowed));
+    h.breakClock(true);
+    expect(() => h.lifecycle.refuse()).not.toThrow();
+    expect(seen[0]).toBe(false);
+    expect(h.storage.writes).toEqual([]);
+    expect(h.storage.removes).toEqual([{ kind: "ok" }]);
+    expect(h.snap()).toMatchObject({ effective: "denied", allowed: false, persistence: "memory", withdrawal: "idle", evidence: "none" });
+  });
+
+  it("a refusal publishes allowed: false before it reads the clock, valid or not (C-61)", () => {
+    for (const broken of [false, true]) {
+      const h = harness({ initial: decidedAt("granted", plusMs(T0, -DAY)) });
+      const heard: boolean[] = [];
+      let refusing = false;
+      let heardWhenClockRead: boolean[] | undefined;
+      const lifecycle = createConsentLifecycle({
+        storage: h.storage.port,
+        policy: POLICY,
+        regime: "prompt",
+        signals: GPC_OFF,
+        clock: () => {
+          if (refusing && heardWhenClockRead === undefined) heardWhenClockRead = [...heard];
+          return refusing && broken ? new Date(Number.NaN) : h.time.clock();
+        },
+      });
+      lifecycle.subscribe(() => heard.push(lifecycle.getSnapshot().allowed));
+      expect(lifecycle.getSnapshot().allowed).toBe(true);
+      refusing = true;
+      lifecycle.refuse();
+      expect(heardWhenClockRead).toEqual([false]);
+      expect(lifecycle.getSnapshot()).toMatchObject({ effective: "denied", allowed: false });
+    }
+  });
+
+  it("a clock that throws behaves the same", () => {
+    const h = harness({ initial: decidedAt("granted", plusMs(T0, -DAY)) });
+    let calls = 0;
+    const lifecycle = createConsentLifecycle({
+      storage: h.storage.port,
+      policy: POLICY,
+      regime: "prompt",
+      signals: GPC_OFF,
+      clock: () => {
+        calls += 1;
+        if (calls > 1) throw new Error("clock unavailable");
+        return new Date(T0);
+      },
+    });
+    expect(() => lifecycle.refuse()).not.toThrow();
+    expect(lifecycle.getSnapshot()).toMatchObject({ effective: "denied", allowed: false });
+  });
+
+  it("a grant is a no-op that never throws", () => {
+    const h = brokenClockHarness();
+    h.breakClock(true);
+    const before = h.snap();
+    expect(() => h.lifecycle.grant()).not.toThrow();
+    expect(h.snap()).toBe(before);
+    expect(h.storage.writes).toEqual([]);
+  });
+
+  it("with the grant still readable the withdrawal fails; no re-read lifts the undated denial, and failed ends only on a read-back not allowed", () => {
+    const grant = decidedAt("granted", plusMs(T0, -DAY));
+    const h = brokenClockHarness({ initial: grant });
+    h.storage.modes.removeFails = true;
+    h.breakClock(true);
+    h.lifecycle.refuse();
+    expect(h.snap()).toMatchObject({ effective: "denied", allowed: false, persistence: "memory", withdrawal: "failed" });
+    h.breakClock(false);
+    h.time.advance(HOUR);
+    h.storage.setExternally(decidedAt("granted", plusMs(T0, HOUR / 2)));
+    h.lifecycle.refresh();
+    expect(h.snap()).toMatchObject({ effective: "denied", allowed: false, persistence: "memory", withdrawal: "failed" });
+    h.storage.setExternally(decidedAt("denied", plusMs(T0, HOUR / 2)));
+    h.storage.emitExternalChange();
+    expect(h.snap()).toMatchObject({ effective: "denied", allowed: false, persistence: "stored", withdrawal: "idle" });
+    expect(h.lifecycle.grant()).toMatchObject({ effective: "granted", allowed: true, withdrawal: "idle" });
+  });
+
+  it("while the clock stays invalid a re-read judges the failed withdrawal under the no-clock rule", () => {
+    const h = brokenClockHarness({ initial: decidedAt("granted", plusMs(T0, -DAY)) });
+    h.storage.modes.removeFails = true;
+    h.breakClock(true);
+    h.lifecycle.refuse();
+    expect(h.snap().withdrawal).toBe("failed");
+    // A grant of any date, even one the policy no longer accepts, still reads back as allowed without a clock.
+    h.storage.setExternally({ ...decidedAt("granted", plusMs(T0, -DAY)), policyVersion: "policy-0" });
+    h.lifecycle.refresh();
+    expect(h.snap()).toMatchObject({ effective: "denied", allowed: false, withdrawal: "failed" });
+    h.storage.setExternally(undefined);
+    h.lifecycle.refresh();
+    expect(h.snap()).toMatchObject({ effective: "denied", allowed: false, persistence: "memory", withdrawal: "idle" });
+  });
+
+  it("without a clock any stored grant makes a refusal a withdrawal, even one a signal bars", () => {
+    const h = harness({ initial: decidedAt("granted", plusMs(T0, -DAY)) });
+    let broken = false;
+    const lifecycle = createConsentLifecycle({
+      storage: h.storage.port,
+      policy: POLICY,
+      regime: "prompt",
+      signals: GPC_ON,
+      clock: () => (broken ? new Date(Number.NaN) : h.time.clock()),
+    });
+    expect(lifecycle.getSnapshot()).toMatchObject({ effective: "denied", allowed: false });
+    broken = true;
+    lifecycle.refuse();
+    expect(h.storage.removes).toEqual([{ kind: "ok" }]);
+    expect(lifecycle.getSnapshot()).toMatchObject({ effective: "denied", allowed: false, withdrawal: "idle" });
+  });
+
+  it("any refusal is a withdrawal while storage holds a grant, and under notice no record reads back as allowed", () => {
+    const h = brokenClockHarness();
+    expect(h.snap().allowed).toBe(false);
+    h.storage.setExternally(decidedAt("granted", plusMs(T0, -HOUR)));
+    h.breakClock(true);
+    h.lifecycle.refuse();
+    expect(h.storage.removes).toEqual([{ kind: "ok" }]);
+    expect(h.snap()).toMatchObject({ withdrawal: "idle", allowed: false });
+
+    const notice = brokenClockHarness({ regime: "notice" });
+    notice.breakClock(true);
+    notice.lifecycle.refuse();
+    expect(notice.snap()).toMatchObject({ effective: "denied", allowed: false, withdrawal: "failed" });
+  });
+});
+
+describe("the undated denial (C-13)", () => {
+  function brokenClock(initial?: unknown) {
+    const h = harness({ initial });
+    let broken = false;
+    const lifecycle = createConsentLifecycle({
+      storage: h.storage.port,
+      evidence: h.evidence.port,
+      policy: POLICY,
+      regime: "prompt",
+      signals: GPC_OFF,
+      clock: () => (broken ? new Date(Number.NaN) : h.time.clock()),
+    });
+    return { ...h, lifecycle, snap: () => lifecycle.getSnapshot(), breakClock: (on: boolean) => (broken = on) };
+  }
+
+  it("advances seq, and is stored only while storage holds a denial", () => {
+    const h = brokenClock(decidedAt("denied", plusMs(T0, -DAY)));
+    expect(h.snap().sequence).toBe(0);
+    h.breakClock(true);
+    h.lifecycle.refuse();
+    expect(h.snap()).toMatchObject({ effective: "denied", allowed: false, persistence: "stored", sequence: 1 });
+    h.storage.setExternally(undefined);
+    h.lifecycle.refresh();
+    expect(h.snap()).toMatchObject({ effective: "denied", allowed: false, persistence: "memory" });
+  });
+
+  it("a later refusal with a valid clock dates it and replaces it", () => {
+    const h = brokenClock();
+    h.breakClock(true);
+    h.lifecycle.refuse();
+    expect(h.snap()).toMatchObject({ effective: "denied", persistence: "memory" });
+    h.breakClock(false);
+    h.time.advance(HOUR);
+    h.lifecycle.refuse();
+    expect(h.storage.writes.map((write) => write.decidedAt)).toEqual([plusMs(T0, HOUR)]);
+    expect(h.snap()).toMatchObject({ effective: "denied", allowed: false, persistence: "stored", sequence: 2 });
+    // Now an ordinary dated floor: a live grant decided after it lifts it on a re-read.
+    h.time.advance(2 * HOUR);
+    h.storage.setExternally(decidedAt("granted", plusMs(T0, 2 * HOUR)));
+    h.lifecycle.refresh();
+    expect(h.snap()).toMatchObject({ effective: "granted", allowed: true, persistence: "stored" });
   });
 });

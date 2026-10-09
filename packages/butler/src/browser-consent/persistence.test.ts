@@ -7,7 +7,14 @@
  * replaces a refusal held in memory after a failed write, on `refresh()`,
  * `visibilitychange`, `pageshow` or a cross-tab re-read; a newer denial
  * written under another `policy.version` never replaces an in-memory
- * denial. Covers C-7, C-11, C-40, C-41, C-54.
+ * denial; a refusal made this visit is a floor that only a live, newer
+ * grant lifts, and a re-read that finds the stored refusal gone keeps it in
+ * memory; a memory-only grant is not replaced by a denial dated after now;
+ * on an unreadable re-read a refusal and a memory-only grant hold while a
+ * stored grant drops to `unknown`. Covers C-7, C-11, C-37, C-40, C-41, C-54.
+ *
+ * `visibilitychange` and `pageshow` are modelled as the assembly wires
+ * them: listeners that call `refresh()` (C-46).
  */
 
 import { describe, expect, it } from "vitest";
@@ -133,4 +140,118 @@ describe("another policy version (C-7, C-54)", () => {
       expect(h.snap()).toMatchObject({ effective: "denied", allowed: false, persistence: "memory" });
     });
   }
+});
+
+describe("a refusal made this visit is a floor (C-54)", () => {
+  it("notice: a stored refusal, then another tab's denial under another policy version and a cross-tab event, stays refused", () => {
+    const h = harness({ regime: "notice" });
+    h.lifecycle.refuse();
+    expect(h.snap()).toMatchObject({ effective: "denied", allowed: false, persistence: "stored" });
+    h.time.advance(2 * HOUR);
+    h.storage.setExternally(decidedAt("denied", plusMs(T0, HOUR), { ...POLICY, version: "policy-3" }));
+    h.storage.emitExternalChange();
+    expect(h.snap()).toMatchObject({ effective: "denied", allowed: false, persistence: "memory" });
+  });
+
+  it("notice: a stored refusal, then storage cleared elsewhere and refresh(), stays refused", () => {
+    const h = harness({ regime: "notice" });
+    h.lifecycle.refuse();
+    h.time.advance(HOUR);
+    h.storage.setExternally(undefined);
+    h.lifecycle.refresh();
+    expect(h.snap()).toMatchObject({ effective: "denied", allowed: false, persistence: "memory" });
+  });
+
+  it("notice: unreadable at mount, a refusal whose write reports ok but is lost, then refresh(), stays refused", () => {
+    const h = harness({ regime: "notice", beforeMount: (storage) => (storage.modes.readUnavailable = true) });
+    expect(h.snap()).toMatchObject({ effective: "unknown", allowed: false });
+    h.storage.modes.readUnavailable = false;
+    h.storage.scriptedReads.push({ kind: "unavailable" });
+    h.storage.modes.writeLost = true;
+    h.lifecycle.refuse();
+    expect(h.storage.writes.map((write) => write.status)).toEqual(["denied"]);
+    h.time.advance(HOUR);
+    h.lifecycle.refresh();
+    expect(h.storage.reads.at(-1)).toEqual({ kind: "empty" });
+    expect(h.snap()).toMatchObject({ effective: "denied", allowed: false, persistence: "memory" });
+  });
+
+  it("a live grant decided after the refusal and not after now lifts the floor", () => {
+    const h = harness({ regime: "notice" });
+    h.lifecycle.refuse();
+    h.time.advance(2 * HOUR);
+    h.storage.setExternally(decidedAt("granted", plusMs(T0, HOUR)));
+    h.lifecycle.refresh();
+    expect(h.snap()).toMatchObject({ effective: "granted", allowed: true, persistence: "stored" });
+  });
+
+  it("an older grant, or a grant dated after now, never lifts the floor", () => {
+    const h = harness({ regime: "notice" });
+    h.lifecycle.refuse();
+    h.time.advance(HOUR);
+    h.storage.setExternally(decidedAt("granted", plusMs(T0, -HOUR)));
+    h.lifecycle.refresh();
+    expect(h.snap()).toMatchObject({ effective: "denied", allowed: false, persistence: "memory" });
+    h.storage.setExternally(futureDated("granted", T0, 2 * HOUR));
+    h.lifecycle.refresh();
+    expect(h.snap()).toMatchObject({ effective: "denied", allowed: false, persistence: "memory" });
+  });
+
+  it("one-sided: a re-read still moves a grant made this visit to another tab's newer denial, stored", () => {
+    const h = harness();
+    h.lifecycle.grant();
+    h.time.advance(2 * HOUR);
+    h.storage.setExternally(decidedAt("denied", plusMs(T0, HOUR)));
+    h.storage.emitExternalChange();
+    expect(h.snap()).toMatchObject({ effective: "denied", allowed: false, persistence: "stored" });
+  });
+
+  it("another tab's live, newer denial that replaces an in-memory refusal is stored", () => {
+    const h = harness({ beforeMount: (storage) => (storage.modes.writeFails = true) });
+    h.lifecycle.refuse();
+    h.time.advance(2 * HOUR);
+    h.storage.setExternally(decidedAt("denied", plusMs(T0, HOUR)));
+    h.lifecycle.refresh();
+    expect(h.snap()).toMatchObject({ effective: "denied", allowed: false, persistence: "stored" });
+  });
+});
+
+describe("a memory-only grant against a denial dated after now (C-40, C-54)", () => {
+  it("a live denial dated after now never replaces a memory-only grant", () => {
+    const h = harness({ beforeMount: (storage) => (storage.modes.writeFails = true) });
+    h.lifecycle.grant();
+    h.time.advance(HOUR);
+    h.storage.setExternally(futureDated("denied", T0, DAY));
+    h.lifecycle.refresh();
+    expect(h.snap()).toMatchObject({ effective: "granted", allowed: true, persistence: "memory" });
+  });
+});
+
+describe("an unreadable re-read (C-37, C-11, C-54)", () => {
+  it("a stored grant that can no longer be confirmed drops to unknown, not allowed", () => {
+    const h = harness();
+    h.lifecycle.grant();
+    h.storage.modes.readUnavailable = true;
+    h.time.advance(HOUR);
+    h.lifecycle.refresh();
+    expect(h.snap()).toMatchObject({ effective: "unknown", allowed: false, persistence: "none", storage: "unreadable" });
+  });
+
+  it("a memory-only grant holds for the visit", () => {
+    const h = harness({ beforeMount: (storage) => (storage.modes.writeFails = true) });
+    h.lifecycle.grant();
+    h.storage.modes.readUnavailable = true;
+    h.time.advance(HOUR);
+    h.lifecycle.refresh();
+    expect(h.snap()).toMatchObject({ effective: "granted", allowed: true, persistence: "memory", storage: "unreadable" });
+  });
+
+  it("a stored refusal holds in memory", () => {
+    const h = harness({ regime: "notice" });
+    h.lifecycle.refuse();
+    h.storage.modes.readUnavailable = true;
+    h.time.advance(HOUR);
+    h.lifecycle.refresh();
+    expect(h.snap()).toMatchObject({ effective: "denied", allowed: false, persistence: "memory", storage: "unreadable" });
+  });
 });

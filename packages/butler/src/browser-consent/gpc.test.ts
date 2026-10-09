@@ -1,8 +1,8 @@
 /**
  * P-23: a grant under a non-overridable signal writes nothing and calls no
  * evidence port; a grant under an overridable signal records
- * `gpcOverride`; a grant without it never overrides a signal that is on.
- * Covers C-8, C-39.
+ * `gpcOverride`; a grant without it never overrides a signal that is on;
+ * any truthy signal counts as on. Covers C-8, C-39.
  */
 
 import { describe, expect, it, vi } from "vitest";
@@ -71,5 +71,24 @@ describe("a grant without gpcOverride never overrides a signal that is on (C-8)"
     const overrideGrant = decidedAt("granted", plusMs(T0, -DAY), OVERRIDABLE, GPC_ON);
     expect(effectiveChoice(overrideGrant, GPC_ON, OVERRIDABLE, at(T0))).toBe("granted");
     expect(effectiveChoice(overrideGrant, GPC_ON, POLICY, at(T0))).toBe("denied");
+  });
+});
+
+describe("any truthy signal counts as on, fail-closed (C-8)", () => {
+  const truthy = { gpc: 1 } as unknown as typeof GPC_ON;
+
+  it("the lifecycle treats gpc: 1 as on: in force, and a grant is a no-op", () => {
+    const h = harness({ signals: truthy });
+    expect(h.snap()).toMatchObject({ gpcInForce: true, effective: "denied", allowed: false });
+    h.lifecycle.grant();
+    expect(h.storage.writes).toEqual([]);
+    expect(h.snap()).toMatchObject({ effective: "denied", allowed: false });
+  });
+
+  it("the decision rules and decideChoice treat gpc: 1 as on", () => {
+    expect(effectiveChoice("unreadable", truthy, POLICY, at(T0))).toBe("denied");
+    expect(effectiveChoice(decidedAt("granted", plusMs(T0, -DAY), OVERRIDABLE), truthy, OVERRIDABLE, at(T0))).toBe("denied");
+    expect(() => decideChoice("granted", at(T0), POLICY, truthy)).toThrow(BrowserConsentError);
+    expect(decideChoice("granted", at(T0), OVERRIDABLE, truthy).gpcOverride).toBe(true);
   });
 });

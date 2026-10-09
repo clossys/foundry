@@ -11,7 +11,7 @@
  * Pure: no storage, no clock, no browser global.
  */
 
-import { addCalendarMonthsUtc } from "../calendar-months.js";
+import { CalendarMonthsError, addCalendarMonthsUtc } from "../calendar-months.js";
 
 /** How the host treats a visitor who has made no choice. */
 export type ConsentRegime = "prompt" | "notice";
@@ -68,9 +68,14 @@ export function assertConsentPolicy(policy: ConsentPolicy): void {
   }
 }
 
+/** Fail-closed reading of the signal: any truthy `gpc` counts as on. */
+export function gpcOn(signals: ConsentSignals | null | undefined): boolean {
+  return Boolean(signals?.gpc);
+}
+
 /** True when GPC is on and this policy does not let a grant override it. */
 export function gpcInForce(signals: ConsentSignals, policy: ConsentPolicy): boolean {
-  return signals.gpc && policy.gpcOverridable !== true;
+  return gpcOn(signals) && policy.gpcOverridable !== true;
 }
 
 /** `"notice"` only for the exact string `"notice"`; anything else, including a missing value, is `"prompt"`. */
@@ -105,7 +110,7 @@ export function decideChoice(
     expiresAt: addCalendarMonthsUtc(now, policy.expiryMonths).toISOString(),
     policyVersion: policy.version,
   };
-  if (status === "granted" && signals.gpc) {
+  if (status === "granted" && gpcOn(signals)) {
     choice.gpcOverride = true;
   }
   return choice;
@@ -117,6 +122,17 @@ function instant(value: unknown): Date | null {
   if (typeof value === "number" && !Number.isFinite(value)) return null;
   const date = new Date(value);
   return Number.isFinite(date.getTime()) ? date : null;
+}
+
+const ISO_UTC = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?Z$/;
+
+/** An ISO 8601 UTC instant (`YYYY-MM-DDTHH:mm:ss[.sss]Z`) naming a real calendar date, or `null`. */
+function isoUtcInstant(value: unknown): Date | null {
+  if (typeof value !== "string" || !ISO_UTC.test(value)) return null;
+  const date = new Date(value);
+  if (!Number.isFinite(date.getTime())) return null;
+  // Rejects a date the parser would roll over, such as 30 February.
+  return date.toISOString().slice(0, 19) === value.slice(0, 19) ? date : null;
 }
 
 function isRecordObject(value: unknown): value is Record<string, unknown> {
@@ -153,7 +169,8 @@ export function parseStoredChoice(raw: unknown, policy: ConsentPolicy): StoredCh
   let storedExpiry: Date | null;
   let policyVersion: string;
 
-  if (!hasExpiry && !hasVersion) {
+  const legacy = !hasExpiry && !hasVersion;
+  if (legacy) {
     // Legacy shape.
     if (policy.legacy?.accept !== true) return null;
     decidedAt = instant(value["decidedAt"]);
@@ -161,18 +178,25 @@ export function parseStoredChoice(raw: unknown, policy: ConsentPolicy): StoredCh
     storedExpiry = null;
     policyVersion = policy.legacy.assumedPolicyVersion;
   } else {
-    if (typeof value["decidedAt"] !== "string" || typeof value["expiresAt"] !== "string") return null;
     if (typeof value["policyVersion"] !== "string") return null;
-    decidedAt = instant(value["decidedAt"]);
-    storedExpiry = instant(value["expiresAt"]);
+    decidedAt = isoUtcInstant(value["decidedAt"]);
+    storedExpiry = isoUtcInstant(value["expiresAt"]);
     if (decidedAt === null || storedExpiry === null) return null;
     policyVersion = value["policyVersion"];
   }
 
-  const gpcOverride = value["gpcOverride"];
+  // A legacy record never carries an override; one found there is ignored.
+  const gpcOverride = legacy ? undefined : value["gpcOverride"];
   if (status === "granted" && gpcOverride !== undefined && gpcOverride !== true) return null;
 
-  const policyCap = addCalendarMonthsUtc(decidedAt, policy.expiryMonths);
+  let policyCap: Date;
+  try {
+    policyCap = addCalendarMonthsUtc(decidedAt, policy.expiryMonths);
+  } catch (error) {
+    // An instant whose expiry falls outside the Date range reads as no choice.
+    if (error instanceof CalendarMonthsError) return null;
+    throw error;
+  }
   const expiresAt =
     storedExpiry !== null && storedExpiry.getTime() < policyCap.getTime() ? storedExpiry : policyCap;
   if (decidedAt.getTime() > expiresAt.getTime()) return null;

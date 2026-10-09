@@ -99,6 +99,8 @@ export interface StorageModes {
   readThrows: boolean;
   /** `write()` reports `unavailable` and keeps nothing. */
   writeFails: boolean;
+  /** `write()` reports `ok` and keeps nothing. */
+  writeLost: boolean;
   /** `remove()` reports `unavailable` and keeps the value. */
   removeFails: boolean;
   /** When set, `read()` returns this value whatever was written or removed. */
@@ -113,6 +115,8 @@ export interface MemoryStorage {
   readonly reads: StorageRead[];
   readonly writes: StoredChoice[];
   readonly removes: StorageWrite[];
+  /** One-shot results the next `read()` calls return, in order, before any mode applies. */
+  readonly scriptedReads: StorageRead[];
   /** Writes a value as another tab would, without notifying. */
   setExternally(value: unknown): void;
   /** Delivers a cross-tab change notification to every subscriber. */
@@ -126,6 +130,7 @@ export function memoryStorage(initial?: unknown): MemoryStorage {
     readUnavailable: false,
     readThrows: false,
     writeFails: false,
+    writeLost: false,
     removeFails: false,
     staleRead: undefined,
   };
@@ -135,6 +140,7 @@ export function memoryStorage(initial?: unknown): MemoryStorage {
     reads: [],
     writes: [],
     removes: [],
+    scriptedReads: [],
     setExternally(value) {
       fixture.value = value === undefined ? undefined : structuredClone(value);
     },
@@ -144,6 +150,11 @@ export function memoryStorage(initial?: unknown): MemoryStorage {
     subscriberCount: () => listeners.size,
     port: {
       read(): StorageRead {
+        const scripted = fixture.scriptedReads.shift();
+        if (scripted !== undefined) {
+          fixture.reads.push(scripted);
+          return structuredClone(scripted);
+        }
         if (modes.readThrows) throw new Error("storage read blocked");
         let result: StorageRead;
         if (modes.readUnavailable) {
@@ -158,6 +169,7 @@ export function memoryStorage(initial?: unknown): MemoryStorage {
       write(choice: StoredChoice): StorageWrite {
         fixture.writes.push(structuredClone(choice));
         if (modes.writeFails) return { kind: "unavailable" };
+        if (modes.writeLost) return { kind: "ok" };
         fixture.value = structuredClone(choice);
         return { kind: "ok" };
       },
@@ -279,6 +291,16 @@ if (collectingThisFile) {
       expect(storage.port.read()).toEqual({ kind: "unavailable" });
       storage.modes.readThrows = true;
       expect(() => storage.port.read()).toThrow();
+    });
+
+    it("scripted reads come first, once each, and a lost write reports ok but keeps nothing", () => {
+      const storage = memoryStorage();
+      storage.scriptedReads.push({ kind: "unavailable" });
+      expect(storage.port.read()).toEqual({ kind: "unavailable" });
+      expect(storage.port.read()).toEqual({ kind: "empty" });
+      storage.modes.writeLost = true;
+      expect(storage.port.write(decidedAt("denied", T0))).toEqual({ kind: "ok" });
+      expect(storage.port.read()).toEqual({ kind: "empty" });
     });
 
     it("the deferred evidence port records each sequence and resolves on demand", async () => {

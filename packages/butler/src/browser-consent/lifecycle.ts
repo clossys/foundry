@@ -8,7 +8,8 @@
  * evidence port. A withdrawal publishes `allowed: false` before anything
  * else and counts as done only when a read-back of storage says not
  * allowed. Re-reads never replace a choice made this visit with a record
- * that is not live or not newer.
+ * that is not live or not newer, and a refusal made this visit is a floor:
+ * only a live, newer grant lifts it.
  *
  * Nothing here runs at import. Every port is called only from a function
  * the host calls.
@@ -25,6 +26,7 @@ import {
   assertConsentPolicy,
   decideChoice,
   gpcInForce,
+  gpcOn,
   normalizeRegime,
   parseStoredChoice,
   type ConsentPolicy,
@@ -136,6 +138,24 @@ function sameSnapshot(a: ConsentSnapshot, b: ConsentSnapshot): boolean {
   return SNAPSHOT_KEYS.every((key) => a[key] === b[key]);
 }
 
+function decidedMs(choice: StoredChoice): number {
+  return Date.parse(choice.decidedAt);
+}
+
+function sameRecord(a: StoredChoice, b: StoredChoice): boolean {
+  return a.status === b.status && a.decidedAt === b.decidedAt && a.policyVersion === b.policyVersion;
+}
+
+function asRecord(read: StoredInput): StoredChoice | null {
+  return read === null || read === "unreadable" ? null : read;
+}
+
+function validInstant(value: unknown): Date | null {
+  if (typeof value !== "object" || value === null || typeof (value as Date).getTime !== "function") return null;
+  const time = (value as Date).getTime();
+  return Number.isFinite(time) ? new Date(time) : null;
+}
+
 function reportAsync(error: unknown): void {
   queueMicrotask(() => {
     throw error;
@@ -146,21 +166,51 @@ export function createConsentLifecycle(options: ConsentLifecycleOptions): Consen
   const { storage, policy, clock } = options;
   assertConsentPolicy(policy);
   const regime = normalizeRegime(options.regime);
-  const signals: ConsentSignals = { gpc: options.signals.gpc === true };
+  const signals: ConsentSignals = { gpc: gpcOn(options.signals) };
   const simulated = options.simulated === true;
   const evidencePort = simulated || !options.evidence ? undefined : options.evidence;
   const signalInForce = gpcInForce(signals, policy);
 
   let seq = 0;
+  /** Moves on with every choice and every record switch; a late evidence result for an older token is ignored. */
+  let token = 0;
   let memory: MemoryChoice | null = null;
+  /** A refusal made while the clock gave no valid instant: no date and no record; only the visitor's next choice replaces it. */
+  let undatedDenial = false;
+  /** The latest refusal made this visit: a floor that only a live, newer grant lifts on a re-read. */
+  let floor: MemoryChoice | null = null;
+  /** No record decided at or before this instant replaces a refusal: a failed withdrawal's read-back still saw it. */
+  let watermark = Number.NEGATIVE_INFINITY;
   let stored: StoredInput = null;
   let storageReadable = true;
   let evidence: EvidenceStatus = "none";
+  /** The record the current evidence status describes. */
+  let evidenceFor: StoredChoice | null = null;
   let withdrawal: "idle" | "failed" = "idle";
-  let evalNow = clock();
+  let lastValidNow = new Date(0);
   let disposed = false;
   const inflight = new Set<AbortController>();
   const listeners = new Set<() => void>();
+
+  /** The clock's reading, or `null` when it throws or is not a valid instant. */
+  function readClock(): Date | null {
+    let value: unknown;
+    try {
+      value = clock();
+    } catch {
+      return null;
+    }
+    const now = validInstant(value);
+    if (now !== null) lastValidNow = now;
+    return now;
+  }
+
+  /** The instant a re-read evaluates against: the clock, or its last valid reading. */
+  function evaluationInstant(): Date {
+    return readClock() ?? lastValidNow;
+  }
+
+  let evalNow = evaluationInstant();
 
   function safeRead(): StoredInput {
     let result: StorageRead;
@@ -203,8 +253,21 @@ export function createConsentLifecycle(options: ConsentLifecycleOptions): Consen
     return read;
   }
 
-  function classify(read: StoredInput, now: Date): ReadBack {
+  /** Whether a record allows as of its own `decidedAt`: what a grant dated after now allows once the clock reaches it. */
+  function allowsWhenLive(record: StoredChoice): boolean {
+    return isAllowed(record, signals, regime, policy, new Date(record.decidedAt));
+  }
+
+  /**
+   * A read-back (C-57). A grant that is not live only because it is dated
+   * after `now` counts as allowed when it would allow once the clock reaches
+   * it. With no valid instant liveness cannot be judged (C-61): any grant,
+   * or no record under `notice`, is allowed.
+   */
+  function classify(read: StoredInput, now: Date | null): ReadBack {
     if (read === "unreadable") return "unreadable";
+    if (now === null) return (read === null ? regime === "notice" : read.status === "granted") ? "allowed" : "not allowed";
+    if (read !== null && read.status === "granted" && decidedMs(read) > now.getTime() && allowsWhenLive(read)) return "allowed";
     return isAllowed(read, signals, regime, policy, now) ? "allowed" : "not allowed";
   }
 
@@ -213,7 +276,13 @@ export function createConsentLifecycle(options: ConsentLifecycleOptions): Consen
     let allowed: boolean;
     let promptAutomatically: boolean;
     let persistence: ConsentSnapshot["persistence"];
-    if (memory !== null) {
+    if (undatedDenial) {
+      effective = "denied";
+      allowed = false;
+      promptAutomatically = false;
+      // Stored only while storage holds a denial; no liveness check, which would need a clock.
+      persistence = asRecord(stored)?.status === "denied" ? "stored" : "memory";
+    } else if (memory !== null) {
       effective = effectiveChoice(memory.choice, signals, policy, memory.at);
       allowed = isAllowed(memory.choice, signals, regime, policy, memory.at);
       promptAutomatically = shouldPromptAutomatically(memory.choice, signals, regime, policy, memory.at);
@@ -254,16 +323,38 @@ export function createConsentLifecycle(options: ConsentLifecycleOptions): Consen
     }
   }
 
+  /** The record that governs the snapshot now, if any. */
+  function governingRecord(now: Date): StoredChoice | null {
+    if (undatedDenial) return null;
+    return memory !== null ? memory.choice : liveChoice(stored, policy, now);
+  }
+
+  /** Once another record governs, the evidence status no longer describes it. */
+  function dropEvidenceIfSwitched(now: Date): boolean {
+    if (evidence === "none") return false;
+    const governing = governingRecord(now);
+    if (governing !== null && evidenceFor !== null && sameRecord(governing, evidenceFor)) return false;
+    evidence = "none";
+    evidenceFor = null;
+    token += 1;
+    return true;
+  }
+
   /** Marks evidence pending and returns the call to make once the snapshot is published. */
   function prepareEvidence(choice: StoredChoice): (() => void) | null {
     if (evidencePort === undefined) {
       evidence = "none";
+      evidenceFor = null;
       return null;
     }
     evidence = "pending";
+    evidenceFor = choice;
     const sequence = seq;
+    const owner = token;
     const port = evidencePort;
     return () => {
+      // Sent only while this choice is still the latest: a choice made meanwhile (a subscriber may call refuse() inside publish()) supersedes it unsent.
+      if (disposed || owner !== token) return;
       const controller = new AbortController();
       inflight.add(controller);
       let pending: Promise<EvidenceResult>;
@@ -273,40 +364,94 @@ export function createConsentLifecycle(options: ConsentLifecycleOptions): Consen
         pending = Promise.reject(error);
       }
       pending.then(
-        (result) => settleEvidence(sequence, controller, result),
-        () => settleEvidence(sequence, controller, { kind: "unavailable" }),
+        (result) => settleEvidence(owner, controller, result),
+        () => settleEvidence(owner, controller, { kind: "unavailable" }),
       );
     };
   }
 
-  function settleEvidence(sequence: number, controller: AbortController, result: EvidenceResult): void {
+  function settleEvidence(owner: number, controller: AbortController, result: EvidenceResult): void {
     inflight.delete(controller);
-    // Only the latest choice's acknowledgement may settle; an aborted call always belongs to an older one.
-    if (disposed || sequence !== seq || evidence !== "pending") return;
+    // Only the current choice's acknowledgement may settle; an aborted call always belongs to an older one.
+    if (disposed || owner !== token || evidence !== "pending") return;
     const kind = typeof result === "object" && result !== null ? result.kind : undefined;
     if (kind === "saved") {
       evidence = "saved";
     } else if (kind === "conflict") {
-      rereadAfterConflict();
-      evidence = "conflict";
+      // A re-read that switches to another record wins over the conflict.
+      if (!rereadAfterConflict()) evidence = "conflict";
     } else {
       evidence = "unavailable";
     }
     publish();
   }
 
-  /** A conflict re-reads the local record, and never upgrades the choice to allowed or granted. */
-  function rereadAfterConflict(): void {
-    if (memory !== null) return;
-    const now = clock();
-    const read = safeRead();
-    const upgrades =
-      (effectiveChoice(read, signals, policy, now) === "granted" && snapshot.effective !== "granted") ||
-      (isAllowed(read, signals, regime, policy, now) && !snapshot.allowed);
-    if (upgrades) return;
-    stored = read;
-    storageReadable = read !== "unreadable";
+  /**
+   * A conflict re-reads the local record, and never upgrades the choice to
+   * allowed or granted. Returns whether the re-read switched to another record.
+   */
+  function rereadAfterConflict(): boolean {
+    if (memory !== null || undatedDenial) return false;
+    const clockNow = readClock();
+    const now = clockNow ?? lastValidNow;
+    const saved = { stored, storageReadable, memory, withdrawal, evalNow };
+    reconcile(readStorage(), now, clockNow);
     evalNow = now;
+    const next = compute(now);
+    const upgrades =
+      (next.effective === "granted" && snapshot.effective !== "granted") || (next.allowed && !snapshot.allowed);
+    if (upgrades) {
+      ({ stored, storageReadable, memory, withdrawal, evalNow } = saved);
+      return false;
+    }
+    return dropEvidenceIfSwitched(now);
+  }
+
+  /**
+   * A live record decided after `held` and not after `now`. Over a refusal it
+   * must also be decided after the watermark, whatever the clock says later.
+   */
+  function newerLive(record: StoredChoice | null, held: StoredChoice, now: Date): record is StoredChoice {
+    if (record === null || !isLiveChoice(record, policy, now)) return false;
+    const decided = decidedMs(record);
+    if (!(decided > decidedMs(held) && decided <= now.getTime())) return false;
+    return held.status === "granted" || decided > watermark;
+  }
+
+  /** A failed withdrawal's read-back raises the watermark to the record it still saw; it only moves forward. */
+  function raiseWatermark(read: StoredInput): void {
+    const record = asRecord(read);
+    if (record === null) return;
+    const decided = decidedMs(record);
+    if (decided > watermark) watermark = decided;
+  }
+
+  /**
+   * Applies a re-read (C-54) to the choice made this visit. `now` is the
+   * instant liveness is judged at; `clockNow` is the clock's own reading, or
+   * `null` when it gave no valid instant, for re-checking a failed withdrawal.
+   */
+  function reconcile(read: StoredInput, now: Date, clockNow: Date | null): void {
+    if (undatedDenial) {
+      // No re-read lifts an undated refusal (C-61); its failed withdrawal ends once a read-back is not allowed.
+      if (withdrawal === "failed" && classify(read, clockNow) === "not allowed") withdrawal = "idle";
+      return;
+    }
+    const record = asRecord(read);
+    if (memory !== null) {
+      const ours = record !== null && sameRecord(record, memory.choice) && isLiveChoice(record, policy, now);
+      if (ours || newerLive(record, memory.choice, now)) {
+        memory = null;
+        withdrawal = "idle";
+      } else if (withdrawal === "failed" && classify(read, clockNow) === "not allowed") {
+        withdrawal = "idle";
+      }
+    }
+    if (memory !== null || floor === null) return;
+    // The refusal floor: storage must still refuse, or hold a live grant made after the refusal.
+    const live = record !== null && isLiveChoice(record, policy, now) ? record : null;
+    const holds = live !== null && (live.status === "denied" || newerLive(live, floor.choice, now));
+    if (!holds) memory = floor;
   }
 
   function abortInflight(): void {
@@ -317,11 +462,16 @@ export function createConsentLifecycle(options: ConsentLifecycleOptions): Consen
   function grant(): ConsentSnapshot {
     if (disposed) return snapshot;
     if (signalInForce) return snapshot;
-    const now = clock();
+    // A grant needs a valid instant; with none it is not recorded.
+    const now = readClock();
+    if (now === null) return snapshot;
     const choice = decideChoice("granted", now, policy, signals);
     seq += 1;
+    token += 1;
     evalNow = now;
     withdrawal = "idle";
+    undatedDenial = false;
+    floor = null;
     let sendEvidence: (() => void) | null = null;
     if (writeOk(choice)) {
       memory = null;
@@ -330,23 +480,59 @@ export function createConsentLifecycle(options: ConsentLifecycleOptions): Consen
     } else {
       memory = { choice, at: now };
       evidence = "none";
+      evidenceFor = null;
     }
     publish();
     sendEvidence?.();
     return snapshot;
   }
 
+  /**
+   * A refusal while the clock gives no valid instant. It cannot be dated, so
+   * nothing is written; it is held in memory, and as a withdrawal it removes
+   * the record and reads back.
+   */
+  function refuseUndated(priorAllowed: boolean): ConsentSnapshot {
+    const atCall = classify(readStorage(), null);
+    const isWithdrawal = priorAllowed || atCall === "allowed" || withdrawal === "failed";
+    seq += 1;
+    token += 1;
+    undatedDenial = true;
+    memory = null;
+    floor = null;
+    evidence = "none";
+    evidenceFor = null;
+    publish();
+    if (isWithdrawal) {
+      abortInflight();
+      removeOk();
+      if (classify(readStorage(), null) !== "not allowed") withdrawal = "failed";
+    }
+    publish();
+    return snapshot;
+  }
+
   function refuse(): ConsentSnapshot {
     if (disposed) return snapshot;
-    const now = clock();
     const priorAllowed = snapshot.allowed;
+    if (priorAllowed) {
+      // allowed: false reaches subscribers before the clock is read, held undated until the refusal is dated (C-61).
+      token += 1;
+      undatedDenial = true;
+      publish();
+    }
+    const now = readClock();
+    if (now === null) return refuseUndated(priorAllowed);
     const atCall = classify(readStorage(), now);
     const choice = decideChoice("denied", now, policy, signals);
     evalNow = now;
+    undatedDenial = false;
+    floor = { choice, at: now };
     const isWithdrawal = priorAllowed || atCall === "allowed" || withdrawal === "failed";
 
     if (!isWithdrawal) {
       seq += 1;
+      token += 1;
       let sendEvidence: (() => void) | null = null;
       if (writeOk(choice)) {
         memory = null;
@@ -355,13 +541,15 @@ export function createConsentLifecycle(options: ConsentLifecycleOptions): Consen
       } else {
         memory = { choice, at: now };
         evidence = "none";
+        evidenceFor = null;
       }
       publish();
       sendEvidence?.();
       return snapshot;
     }
 
-    // A withdrawal: allowed: false reaches subscribers before anything else.
+    // A withdrawal: the dated denial is held in memory until the read-back confirms it.
+    token += 1;
     memory = { choice, at: now };
     publish();
     seq += 1;
@@ -378,10 +566,13 @@ export function createConsentLifecycle(options: ConsentLifecycleOptions): Consen
         sendEvidence = prepareEvidence(choice);
       } else {
         evidence = "none";
+        evidenceFor = null;
       }
     } else {
       withdrawal = "failed";
       evidence = "none";
+      evidenceFor = null;
+      raiseWatermark(after);
     }
     publish();
     sendEvidence?.();
@@ -390,24 +581,11 @@ export function createConsentLifecycle(options: ConsentLifecycleOptions): Consen
 
   function refresh(): ConsentSnapshot {
     if (disposed) return snapshot;
-    const now = clock();
+    const clockNow = readClock();
+    const now = clockNow ?? lastValidNow;
     evalNow = now;
-    const read = readStorage();
-    if (memory !== null) {
-      const record = read === null || read === "unreadable" ? null : read;
-      const decided = record === null ? Number.NaN : Date.parse(record.decidedAt);
-      const replaces =
-        record !== null &&
-        isLiveChoice(record, policy, now) &&
-        decided > Date.parse(memory.choice.decidedAt) &&
-        decided <= now.getTime();
-      if (replaces) {
-        memory = null;
-        withdrawal = "idle";
-      } else if (withdrawal === "failed" && classify(read, now) === "not allowed") {
-        withdrawal = "idle";
-      }
-    }
+    reconcile(readStorage(), now, clockNow);
+    dropEvidenceIfSwitched(now);
     publish();
     return snapshot;
   }

@@ -1,8 +1,9 @@
 /**
  * P-25: a simulated lifecycle reports `allowed: false` after a grant and
- * never calls an evidence port (C-42). Also holds the option types C-53
- * relies on: a reference host factory maps a structural factory input onto
- * `createConsentLifecycle` with no cast.
+ * never calls an evidence port (C-42). Also a smoke check of the option
+ * types C-53 relies on: a reference host factory maps a structural factory
+ * input onto `createConsentLifecycle` with no cast. It is not C-53's gate,
+ * which belongs to the assembly's own test (P-31).
  */
 
 import { describe, expect, it } from "vitest";

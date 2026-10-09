@@ -1,8 +1,8 @@
 /**
  * P-8: no core module reads a browser global at module scope or imports an
  * adapter; a legacy record parses only with `policy.legacy`, takes
- * `assumedPolicyVersion`, keeps its original expiry and is never
- * rewritten. Covers C-2, C-10.
+ * `assumedPolicyVersion`, keeps its original expiry, never carries
+ * `gpcOverride` and is never rewritten. Covers C-2, C-10.
  */
 
 import { readFileSync, readdirSync } from "node:fs";
@@ -27,8 +27,14 @@ const BROWSER_GLOBALS = [
   "fetch",
 ] as const;
 
-const CORE_MODULES = ["./record.js", "./decision.js", "./lifecycle.js", "./index.js"];
-const ADAPTER_MODULES = ["./adapters/local-storage.js"];
+/** Static loaders, so every module is named literally in an import the bundler can see. */
+const MODULE_LOADERS: Record<string, () => Promise<Record<string, unknown>>> = {
+  "./record.js": () => import("./record.js"),
+  "./decision.js": () => import("./decision.js"),
+  "./lifecycle.js": () => import("./lifecycle.js"),
+  "./index.js": () => import("./index.js"),
+  "./adapters/local-storage.js": () => import("./adapters/local-storage.js"),
+};
 
 describe("no module touches a browser global at module scope (C-2)", () => {
   const saved = new Map<string, PropertyDescriptor | undefined>();
@@ -57,12 +63,12 @@ describe("no module touches a browser global at module scope (C-2)", () => {
     }
   }
 
-  for (const specifier of [...CORE_MODULES, ...ADAPTER_MODULES]) {
+  for (const [specifier, load] of Object.entries(MODULE_LOADERS)) {
     it(`evaluating ${specifier} reads no browser global`, async () => {
       const touched: string[] = [];
       vi.resetModules();
       trapGlobals(touched);
-      const loaded = (await import(/* @vite-ignore */ specifier)) as Record<string, unknown>;
+      const loaded = await load();
       expect(Object.keys(loaded).length).toBeGreaterThan(0);
       expect(touched).toEqual([]);
     });
@@ -189,5 +195,26 @@ describe("legacy records migrate in parsing, without renewal (C-10)", () => {
     h.time.advance(HOUR);
     h.lifecycle.grant();
     expect(Object.keys(h.storage.writes[0] ?? {}).sort()).toEqual(["decidedAt", "expiresAt", "policyVersion", "status"]);
+  });
+});
+
+describe("a legacy record never carries gpcOverride (C-10, C-8)", () => {
+  const overridable: ConsentPolicy = { ...LEGACY_CURRENT, gpcOverridable: true };
+
+  it("an override found on a legacy grant is ignored, whatever its value", () => {
+    for (const gpcOverride of [true, "yes"]) {
+      const parsed = parseStoredChoice({ ...legacyRecord("granted", plusMs(T0, -DAY)), gpcOverride }, overridable);
+      expect(parsed).not.toBeNull();
+      expect(parsed && "gpcOverride" in parsed).toBe(false);
+    }
+  });
+
+  it("so a legacy grant never overrides a signal that is on", () => {
+    const h = harness({
+      policy: overridable,
+      signals: { gpc: true },
+      initial: { ...legacyRecord("granted", plusMs(T0, -DAY)), gpcOverride: true },
+    });
+    expect(h.snap()).toMatchObject({ effective: "denied", allowed: false });
   });
 });

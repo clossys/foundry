@@ -94,9 +94,14 @@ export function createLocalStorageConsentPort(options: LocalStorageConsentPortOp
       return () => {};
     }
     const listener = (event: StorageEventLike): void => {
-      // Only an event for the configured key; a whole-area clear() (`key: null`) is picked up by the next re-read.
-      if (event.key !== key) return;
       const storage = resolve();
+      if (event.key === null) {
+        // A whole-area clear() names no key: a re-read trigger only when it cleared this port's storage area.
+        if (storage !== undefined && event.storageArea === storage) onExternalChange();
+        return;
+      }
+      // Otherwise only an event for the configured key, in this port's storage area when the event names one.
+      if (event.key !== key) return;
       if (event.storageArea !== null && storage !== undefined && event.storageArea !== storage) return;
       onExternalChange();
     };

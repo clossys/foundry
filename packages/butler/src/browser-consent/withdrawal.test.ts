@@ -11,7 +11,15 @@
  * the in-memory denial on `visibilitychange`, `pageshow` or a cross-tab
  * re-read, and `withdrawal` stays `failed`; a newer denial another tab
  * wrote under a different `policy.version` never replaces the in-memory
- * denial. Covers C-7, C-13, C-15, C-40, C-54.
+ * denial; the record a failed read-back saw, and anything decided at or
+ * before it, never replaces the denial once the clock is corrected (the
+ * watermark only moves forward, and an empty read-back bars nothing); a
+ * grant dated after now counts as allowed at the call and on read-back; a
+ * second refusal after a failed withdrawal is a withdrawal even when
+ * storage is unreadable at the call. Covers C-7, C-13, C-15, C-40, C-54.
+ *
+ * `visibilitychange` and `pageshow` are modelled as the assembly wires
+ * them: listeners that call `refresh()` (C-46).
  */
 
 import { describe, expect, it } from "vitest";
@@ -243,5 +251,109 @@ describe("withdrawal is never harder than granting (C-15)", () => {
     h.evidence.calls[0]?.resolve({ kind: "saved" });
     await flush();
     expect(h.snap()).toMatchObject({ effective: "denied", allowed: false });
+  });
+});
+
+describe("the watermark of a failed withdrawal (C-13, C-40, C-54)", () => {
+  it("grant at T0, clock back a day, refusal fails write and removal, clock to T0+2h: refresh keeps the denial and failed", () => {
+    const h = harness();
+    h.lifecycle.grant();
+    h.time.set(plusMs(T0, -DAY));
+    h.storage.modes.writeFails = true;
+    h.storage.modes.removeFails = true;
+    h.lifecycle.refuse();
+    expect(h.snap()).toMatchObject({ effective: "denied", allowed: false, persistence: "memory", withdrawal: "failed" });
+    h.time.set(plusMs(T0, 2 * HOUR));
+    h.lifecycle.refresh();
+    expect(h.snap()).toMatchObject({ effective: "denied", allowed: false, persistence: "memory", withdrawal: "failed" });
+  });
+
+  it("a record decided after the refusal but at or before the stale record never replaces the denial either", () => {
+    const h = harness();
+    h.lifecycle.grant();
+    h.time.set(plusMs(T0, -DAY));
+    h.storage.modes.writeFails = true;
+    h.storage.modes.removeFails = true;
+    h.lifecycle.refuse();
+    h.time.set(plusMs(T0, 2 * HOUR));
+    h.storage.setExternally(decidedAt("granted", plusMs(T0, -HOUR)));
+    h.lifecycle.refresh();
+    expect(h.snap()).toMatchObject({ effective: "denied", allowed: false, withdrawal: "failed" });
+    h.storage.setExternally(decidedAt("granted", plusMs(T0, HOUR)));
+    h.lifecycle.refresh();
+    expect(h.snap()).toMatchObject({ effective: "granted", allowed: true, persistence: "stored", withdrawal: "idle" });
+  });
+
+  it("a grant dated after now counts as allowed at the call: the refusal is a withdrawal, fails, and the grant never replaces it later", () => {
+    const h = harness({ initial: futureDated("granted", T0, DAY) });
+    expect(h.snap()).toMatchObject({ effective: "none", allowed: false });
+    h.storage.modes.writeFails = true;
+    h.storage.modes.removeFails = true;
+    h.lifecycle.refuse();
+    expect(h.storage.removes).toEqual([{ kind: "unavailable" }]);
+    expect(h.snap()).toMatchObject({ effective: "denied", allowed: false, persistence: "memory", withdrawal: "failed" });
+    h.time.set(plusMs(T0, DAY + HOUR));
+    h.lifecycle.refresh();
+    expect(h.snap()).toMatchObject({ effective: "denied", allowed: false, persistence: "memory", withdrawal: "failed" });
+  });
+
+  it("a read-back that saw no record bars nothing", () => {
+    const h = harness({ regime: "notice", initial: futureDated("granted", T0, DAY) });
+    h.storage.modes.writeFails = true;
+    h.lifecycle.refuse();
+    expect(h.storage.value).toBeUndefined();
+    expect(h.snap()).toMatchObject({ effective: "denied", allowed: false, withdrawal: "failed" });
+    h.time.set(plusMs(T0, 2 * DAY));
+    h.storage.setExternally(futureDated("granted", T0, DAY));
+    h.lifecycle.refresh();
+    expect(h.snap()).toMatchObject({ effective: "granted", allowed: true, persistence: "stored", withdrawal: "idle" });
+  });
+
+  it("across repeated failed withdrawals the watermark only moves forward", () => {
+    const h = harness();
+    stuckGrant(h, futureDated("granted", T0, 2 * DAY));
+    h.lifecycle.refuse();
+    expect(h.snap().withdrawal).toBe("failed");
+    h.storage.modes.staleRead = futureDated("granted", T0, DAY);
+    h.lifecycle.refuse();
+    expect(h.snap().withdrawal).toBe("failed");
+    h.time.set(plusMs(T0, 3 * DAY));
+    h.storage.modes.staleRead = futureDated("granted", T0, DAY + DAY / 2);
+    h.lifecycle.refresh();
+    expect(h.snap()).toMatchObject({ effective: "denied", allowed: false, persistence: "memory", withdrawal: "failed" });
+  });
+});
+
+describe("a refusal after a failed withdrawal is a withdrawal (C-13)", () => {
+  it("even when storage is unreadable at the call and the write reports ok, a stale grant read back keeps it failed", () => {
+    const h = harness();
+    h.lifecycle.grant();
+    h.time.advance(HOUR);
+    stuckGrant(h, decidedAt("granted", T0));
+    h.lifecycle.refuse();
+    expect(h.snap()).toMatchObject({ allowed: false, withdrawal: "failed" });
+    h.time.advance(HOUR);
+    h.storage.modes.writeFails = false;
+    h.storage.scriptedReads.push({ kind: "unavailable" });
+    const second = h.lifecycle.refuse();
+    expect(second).toMatchObject({ effective: "denied", allowed: false, persistence: "memory", withdrawal: "failed", evidence: "none" });
+    expect(h.evidence.calls.map((call) => call.choice.status)).toEqual(["granted"]);
+    h.lifecycle.refresh();
+    expect(h.snap()).toMatchObject({ effective: "denied", allowed: false, withdrawal: "failed" });
+  });
+});
+
+describe("the failed-withdrawal re-check counts a grant dated after now as allowed (C-13, C-40)", () => {
+  it("prompt: with the clock still moved back, a re-read keeps withdrawal failed", () => {
+    const h = harness();
+    h.lifecycle.grant();
+    h.time.set(plusMs(T0, -DAY));
+    h.storage.modes.writeFails = true;
+    h.storage.modes.removeFails = true;
+    h.lifecycle.refuse();
+    expect(h.snap().withdrawal).toBe("failed");
+    h.time.advance(HOUR);
+    h.lifecycle.refresh();
+    expect(h.snap()).toMatchObject({ effective: "denied", allowed: false, persistence: "memory", withdrawal: "failed" });
   });
 });

@@ -1,13 +1,16 @@
 // @vitest-environment jsdom
 /**
  * P-26: blocked or throwing storage reads `unavailable` without throwing;
- * only a `storage` event for the configured key reaches the listener; raw
- * values come back unmigrated; nothing else is written. Covers C-16.
+ * only a `storage` event for the configured key, or a whole-area clear of
+ * this port's storage area, reaches the listener, and such a clear re-reads
+ * without overriding a choice made this visit; raw values come back
+ * unmigrated; nothing else is written. Covers C-16, C-54.
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createLocalStorageConsentPort } from "./adapters/local-storage.js";
-import { DAY, GPC_ON, POLICY, T0, decidedAt, legacyRecord, plusMs } from "./fixtures.test.js";
+import { DAY, GPC_OFF, GPC_ON, HOUR, POLICY, T0, decidedAt, fixedClock, legacyRecord, plusMs } from "./fixtures.test.js";
+import { createConsentLifecycle } from "./lifecycle.js";
 
 const KEY = "site-consent";
 
@@ -141,7 +144,7 @@ describe("raw values, unmigrated, and nothing else written (C-16, C-10)", () => 
   });
 });
 
-describe("only a storage event for the configured key reaches the listener (C-16)", () => {
+describe("only a storage event for the configured key, or a clear of this area, reaches the listener (C-16)", () => {
   it("filters by key and by storage area, and stops after unsubscribe", () => {
     const port = createLocalStorageConsentPort({ key: KEY });
     const listener = vi.fn();
@@ -150,7 +153,7 @@ describe("only a storage event for the configured key reaches the listener (C-16
 
     window.dispatchEvent(storageEvent("another-key"));
     expect(listener).not.toHaveBeenCalled();
-    window.dispatchEvent(storageEvent(null));
+    window.dispatchEvent(storageEvent(null, window.sessionStorage));
     expect(listener).not.toHaveBeenCalled();
     window.dispatchEvent(storageEvent(KEY, window.sessionStorage));
     expect(listener).not.toHaveBeenCalled();
@@ -161,6 +164,36 @@ describe("only a storage event for the configured key reaches the listener (C-16
     unsubscribe?.();
     window.dispatchEvent(storageEvent(KEY));
     expect(listener).toHaveBeenCalledTimes(1);
+  });
+
+  it("a whole-area clear (key null) of this port's storage area is a re-read trigger; of another area it is not", () => {
+    const port = createLocalStorageConsentPort({ key: KEY });
+    const listener = vi.fn();
+    const unsubscribe = port.subscribe?.(listener);
+    window.dispatchEvent(storageEvent(null, window.sessionStorage));
+    window.dispatchEvent(storageEvent(null, null));
+    expect(listener).not.toHaveBeenCalled();
+    window.dispatchEvent(storageEvent(null, window.localStorage));
+    expect(listener).toHaveBeenCalledTimes(1);
+    unsubscribe?.();
+  });
+
+  it("a clear in another tab re-reads, and never overrides a refusal made this visit (C-54)", () => {
+    const time = fixedClock(T0);
+    const lifecycle = createConsentLifecycle({
+      storage: createLocalStorageConsentPort({ key: KEY }),
+      policy: POLICY,
+      regime: "notice",
+      signals: GPC_OFF,
+      clock: time.clock,
+    });
+    lifecycle.refuse();
+    expect(lifecycle.getSnapshot()).toMatchObject({ effective: "denied", allowed: false, persistence: "stored" });
+    time.advance(HOUR);
+    window.localStorage.clear();
+    window.dispatchEvent(storageEvent(null, window.localStorage));
+    expect(lifecycle.getSnapshot()).toMatchObject({ effective: "denied", allowed: false, persistence: "memory" });
+    lifecycle.dispose();
   });
 
   it("subscribing adds no listener until called and reads nothing", () => {
