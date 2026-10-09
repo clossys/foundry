@@ -509,6 +509,13 @@ export function createConsentLifecycle(options: ConsentLifecycleOptions): Consen
     evidenceFor = null;
     publish();
     if (isWithdrawal) {
+      // A choice a subscriber made during that publish may have ended this refusal; it finishes later, so it holds again.
+      token += 1;
+      undatedDenial = true;
+      memory = null;
+      floor = null;
+      evidence = "none";
+      evidenceFor = null;
       abortInflight();
       removeOk();
       if (classify(readStorage(), null) !== "not allowed") withdrawal = "failed";
@@ -558,6 +565,10 @@ export function createConsentLifecycle(options: ConsentLifecycleOptions): Consen
     token += 1;
     memory = { choice, at: now };
     publish();
+    // A choice a subscriber made during that publish may have cleared this denial (a grant clears the floor too); it finishes later, so it holds again.
+    memory = { choice, at: now };
+    undatedDenial = false;
+    if (floor === null) floor = memory;
     // A choice a subscriber made during that publish never shares this denial's evidence token.
     token += 1;
     seq += 1;

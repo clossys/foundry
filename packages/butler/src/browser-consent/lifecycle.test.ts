@@ -346,6 +346,23 @@ describe("a clock with no valid instant after mount (C-13, C-15)", () => {
     notice.lifecycle.refuse();
     expect(notice.snap()).toMatchObject({ effective: "denied", allowed: false, withdrawal: "failed" });
   });
+
+  it("under notice, a grant a subscriber makes once the clock recovers during the undated withdrawal's publish never ends it", () => {
+    const h = brokenClockHarness({ regime: "notice", initial: decidedAt("denied", plusMs(T0, -DAY)) });
+    h.storage.setExternally(decidedAt("granted", plusMs(T0, -HOUR)));
+    let done = false;
+    h.lifecycle.subscribe(() => {
+      if (done || h.snap().effective !== "denied") return;
+      done = true;
+      h.breakClock(false);
+      h.lifecycle.grant();
+    });
+    h.breakClock(true);
+    h.lifecycle.refuse();
+    expect(h.storage.writes.map((write) => write.status)).toEqual(["granted"]);
+    expect(h.storage.removes).toEqual([{ kind: "ok" }]);
+    expect(h.snap()).toMatchObject({ effective: "denied", allowed: false, withdrawal: "failed", evidence: "none" });
+  });
 });
 
 describe("the undated denial (C-13)", () => {

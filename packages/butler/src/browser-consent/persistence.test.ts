@@ -218,6 +218,57 @@ describe("a refusal made this visit is a floor (P-32, C-54, C-56)", () => {
     expect(h.snap()).toMatchObject({ effective: "denied", allowed: false, persistence: "stored" });
   });
 
+  /** Mounted on a stored denial under `notice`; another tab's grant makes the next refusal a withdrawal. */
+  function withdrawalOverAnotherTabsGrant(): Harness {
+    const h = harness({ regime: "notice", initial: decidedAt("denied", plusMs(T0, -DAY)) });
+    h.storage.setExternally(decidedAt("granted", plusMs(T0, -HOUR)));
+    return h;
+  }
+
+  /** Calls `act` once, from inside the withdrawal's first publish (its denial held in memory). */
+  function duringFirstPublish(h: Harness, act: () => void): void {
+    let done = false;
+    h.lifecycle.subscribe(() => {
+      if (done || h.snap().effective !== "denied" || h.snap().persistence !== "memory") return;
+      done = true;
+      act();
+    });
+  }
+
+  it("notice: a grant made by a subscriber during a withdrawal's first publish never ends the withdrawal's floor", () => {
+    const h = withdrawalOverAnotherTabsGrant();
+    duringFirstPublish(h, () => h.lifecycle.grant());
+    h.lifecycle.refuse();
+    expect(h.storage.writes.map((write) => write.status)).toEqual(["granted", "denied"]);
+    expect(h.snap()).toMatchObject({ effective: "denied", allowed: false, persistence: "stored", withdrawal: "idle" });
+    h.time.advance(HOUR);
+    h.storage.setExternally(undefined);
+    h.lifecycle.refresh();
+    expect(h.snap()).toMatchObject({ effective: "denied", allowed: false, persistence: "memory" });
+  });
+
+  it("notice: with that grant stored, a failed denial write and a successful removal still end refused", () => {
+    const h = withdrawalOverAnotherTabsGrant();
+    duringFirstPublish(h, () => {
+      h.lifecycle.grant();
+      h.storage.modes.writeFails = true;
+    });
+    h.lifecycle.refuse();
+    expect(h.storage.removes).toEqual([{ kind: "ok" }]);
+    expect(h.snap()).toMatchObject({ effective: "denied", allowed: false, persistence: "memory", withdrawal: "failed" });
+  });
+
+  it("notice: a refusal a subscriber confirmed during that publish never leaves the withdrawal without its denial", () => {
+    const h = withdrawalOverAnotherTabsGrant();
+    duringFirstPublish(h, () => {
+      h.lifecycle.refuse();
+      h.storage.modes.writeFails = true;
+    });
+    h.lifecycle.refuse();
+    expect(h.storage.removes).toEqual([{ kind: "ok" }]);
+    expect(h.snap()).toMatchObject({ effective: "denied", allowed: false, persistence: "memory", withdrawal: "failed" });
+  });
+
   it("another tab's live, newer denial that replaces an in-memory refusal is stored", () => {
     const h = harness({ beforeMount: (storage) => (storage.modes.writeFails = true) });
     h.lifecycle.refuse();
