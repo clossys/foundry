@@ -3163,7 +3163,7 @@ keeps it at this layer rather than being a view (test 3).
 import { ConsentBanner } from "@clossys/designer/blocks";
 import { Link } from "@clossys/designer/atoms";
 
-function PageConsent({ onAccept, onReject }: { onAccept: () => void; onReject: () => void }) {
+function PageConsent({ onAccept, onReject, status }: { onAccept: () => void; onReject: () => void; status?: string }) {
   return (
     <ConsentBanner
       title="Banner title"
@@ -3173,6 +3173,7 @@ function PageConsent({ onAccept, onReject }: { onAccept: () => void; onReject: (
       onAccept={onAccept}
       onReject={onReject}
       privacyLink={<Link href="/privacy">Privacy link</Link>}
+      status={status}
     />
   );
 }
@@ -3184,8 +3185,15 @@ decides what `onAccept` and `onReject` do, whether to render it at all, and
 where it sits; it renders in flow, so a consumer who wants it pinned to the
 edge of the page positions it themselves. All copy arrives through props
 (`title`, `body`, `acceptLabel`, `rejectLabel`, and an optional
-`privacyLink` slot rendered after the body), so this package ships no
-wording of its own.
+`privacyLink` slot rendered after the body, and an optional `status` line), so
+this package ships no wording of its own.
+
+`status` renders inside a polite live region (`role="status"`,
+`aria-live="polite"`) placed after the body and before the actions. The
+region is always mounted and empty while `status` is absent, so a status
+passed later is announced rather than inserted with its region. It is
+presentation only: neither button is ever disabled, accept and reject stay
+the same variant and size, and the block still holds no consent state.
 
 The root is a `<section>` named by its own title heading, so assistive
 tech announces it as a region landmark. It is deliberately not a dialog: no
@@ -4790,8 +4798,8 @@ not a grab-bag).
 | `SectionFrame` | component | Full-bleed marketing section band: a `ground` surface, vertical section rhythm, horizontal page padding, and a measured inner column. Sets `data-designer-section-frame` on its outer `<section>`. Compose `ArticleBody`, `Stat`, and other blocks that do not own their own band inside it. |
 | `SectionFrameProps` | type | Props for `SectionFrame`: `ground` (default `"base"`), `measure` (default `"content"`), `children`, `className`, `style`, plus every native `<section>` attribute. |
 | `SectionMeasure` | type | `"content" \| "wide" \| "prose"`. How wide `SectionFrame`'s inner column is: it maps to the `--ui-width-content-max`, `--ui-width-wide-max`, or `--ui-width-prose-max` token. |
-| `ConsentBanner` | component | Presentational consent notice: a region landmark named by its title, a body, an optional `privacyLink` slot after it, and two same-variant, same-size `Button`s for accept and reject. Props only: no consent state, storage, network call or built-in copy. Not a dialog. Sets `data-consent-banner` on its root. |
-| `ConsentBannerProps` | type | Props for `ConsentBanner`: `title`, `body`, `acceptLabel`, `rejectLabel` (all `ReactNode`), `onAccept`, `onReject` (both `() => void`), `privacyLink?`, `className?`, `style?`. |
+| `ConsentBanner` | component | Presentational consent notice: a region landmark named by its title, a body, an optional `privacyLink` slot after it, and two same-variant, same-size `Button`s for accept and reject. Props only: no consent state, storage, network call or built-in copy. Not a dialog. Always mounts an empty polite `role="status"` live region for an optional `status`. Sets `data-consent-banner` on its root. |
+| `ConsentBannerProps` | type | Props for `ConsentBanner`: `title`, `body`, `acceptLabel`, `rejectLabel` (all `ReactNode`), `onAccept`, `onReject` (both `() => void`), `privacyLink?`, `status?` (a `ReactNode` rendered in an always-mounted polite live region), `className?`, `style?`. |
 | `mergeUiClasses` | function | Merges token-aware Tailwind utility classes with last-argument precedence; used by surface-level compositions built from UI primitives. |
 | `Shell` | component | The persistent application frame. Carries `Shell.Header`, `Shell.SideNav`, `Shell.Main`, `Shell.Rail`, `Shell.Footer`. |
 | `ShellProps` | type | Props for `Shell`: `children` (any subset of the five slots above, in any order), `skipLinkLabel` (default `"Skip to content"`), plus every native `<div>` attribute. |
