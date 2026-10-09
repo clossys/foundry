@@ -345,8 +345,8 @@ source file's own header for the exact probe and its result). Today that's:
 
 | Subpath | Server-safe members |
 | --- | --- |
-| `@clossys/designer/atoms/server` | `Badge`, `Banner`, `Card`, `Field`, `Icon`, `Skeleton`, `Spinner`, `mergeUiClasses` |
-| `@clossys/designer/blocks/server` | `ArticleBody`, `ContentSection`, `DetailView`, `EmptyState`, `Faq`, `FeatureGrid`, `FieldGroup`, `Hero`, `MarketingChapter`, `MediaFigure`, `OrderedStepSequence`, `PageHeader`, `PricingTable`, `SectionFrame`, `SectionHeader`, `Stat`, `StatusList` |
+| `@clossys/designer/atoms/server` | `Badge`, `Banner`, `Card`, `Field`, `Icon`, `Skeleton`, `Spinner`, `buttonLinkClassName`, `mergeUiClasses` |
+| `@clossys/designer/blocks/server` | `ArticleBody`, `ContentSection`, `DetailView`, `EmptyState`, `Faq`, `FeatureGrid`, `FieldGroup`, `Hero`, `MarketingChapter`, `MediaFigure`, `OrderedStepSequence`, `PageHeader`, `PricingTable`, `SectionFrame`, `SectionHeader`, `SectionIntro`, `Stat`, `StatusList` |
 | `@clossys/designer/shell/server` | `Shell`, `SiteFooter`, `SiteHeader`, `SkipLink` |
 | `@clossys/designer/charts/server` | `ChartFrame`, `Sparkline` |
 | `@clossys/designer/theme/server` | `getThemeInitScript` |
@@ -1020,6 +1020,18 @@ function SaveButton() {
 `"primary"`). `size`: `"sm" | "md" | "lg"` (default `"md"`). Accepts every
 prop react-aria-components' own `Button` does — `isDisabled`, `onPress`,
 `type`, and so on.
+
+A call to action that navigates is a link, not a button. Give a plain `<a>`
+the button look with `buttonLinkClassName(variant, size)` (server-safe, from
+`@clossys/designer/atoms` or `/atoms/server`): the same variant and size
+classes, the package-standard `focus-visible` outline, and none of the
+disabled styling a link never needs.
+
+```tsx
+import { buttonLinkClassName } from "@clossys/designer/atoms/server";
+
+<a href="/contact" className={buttonLinkClassName("primary", "lg")}>Book a call</a>;
+```
 
 ### `Icon`
 
@@ -2861,6 +2873,27 @@ composition keeps its two columns.
 <Hero heading="Heading text" description="Subheading copy goes here." actions={<Button>CTA label</Button>} align="center" />
 ```
 
+### `SectionIntro`
+
+```tsx
+import { SectionIntro } from "@clossys/designer/blocks/server";
+
+<SectionIntro eyebrow="Eyebrow" heading="Section heading" description="One line of how." />;
+```
+
+A section's header group: eyebrow, heading, description and optional
+actions, in that order, with one rhythm. The eyebrow says what the section
+is, the heading why it matters, the description how; the module (a grid,
+a figure, a list) follows the intro. `emphasis="display"` is a page's
+opening (`text-display-m`, `text-display-l` from `tablet`, `leading-display`;
+gaps `mt-sm` / `mt-2xl` / `mt-3xl`), `emphasis="section"` (the default)
+every band after it (the section-title step, `leading-heading`; gaps
+`mt-sm` / `mt-xl` / `mt-2xl`). Each gap is larger than the heading's own
+line gap and grows toward the action, so the group reads as one unit.
+`Hero` and `ContentSection` both compose it; use it directly only for a
+header group outside those blocks. It paints no surface: `ground` picks the
+ink only.
+
 ### `ContentSection`
 
 ```tsx
@@ -2883,15 +2916,17 @@ optional eyebrow, heading, description and actions row) followed by a
 module slot holding one or more content modules — a `FeatureGrid`,
 `StatusList`, `OrderedStepSequence` or `Faq` rendered without its own
 heading region, a `MediaFigure`, or any combination. Spacing is fixed by the
-block so sections composed with it do not drift: the header group's lines
-sit `gap-md` apart and never run wider than the prose measure
+block so sections composed with it do not drift: the header group is a
+`SectionIntro` at the section emphasis (eyebrow `mt-sm` to the heading,
+heading `mt-xl` to the description, `mt-2xl` to the actions, each gap wider
+than the one before it) and never runs wider than the prose measure
 (`--ui-width-prose-max`); the header group and each module sit one step
 apart (`gap-2xl`, `gap-3xl` from `tablet-lg`); modules take the full column.
 
 `headingLevel` (`ContentSectionHeadingLevel`: `2` to `6`, default `2`) picks
 the heading element; at every level the heading is a section title in the
 display face that scales with the viewport (`text-h1`, `text-h0` from
-`tablet`, `text-display-m` from `tablet-lg`, with `leading-tight`), one
+`tablet`, `text-display-m` from `tablet-lg`, with `leading-heading`), one
 display step under `Hero`'s, and the description sits at `text-body-l`. `align` (`ContentSectionAlign`: `"start"` or `"center"`, default
 `"start"`) lines the header group up; modules always take the full column.
 `ground` selects the header group's ink and paints no surface. The band
@@ -2918,12 +2953,16 @@ function Screenshot() {
 }
 ```
 
-Large media as a section module: the media in a rounded frame drawn with the
-ground's line (`framed`, default `true`), and an optional caption underneath
-as the `<figcaption>`, `gap-sm` below the media in the ground's muted ink.
+Large media as a section module: the media straight on the section ground
+(no panel, fill, padding or shadow) and an optional caption underneath as the
+`<figcaption>`, `gap-sm` below the media in the ground's muted ink. `framed`
+(default `false`) draws one hairline, the ground's line with rounded corners,
+around the media; use it only when the media has no edge of its own. Give
+the media a fluid width so it fits the column at every width and never
+scrolls inside the figure.
 `measure` (`MediaFigureMeasure`: `"column"` or `"content"`, default
 `"column"`) runs it across the whole column or holds it to the content
-measure (`--ui-width-content-max`). `ground` selects the frame line and the
+measure (`--ui-width-content-max`). `ground` selects the hairline and the
 caption ink. Props are `MediaFigureProps`: those, plus `children` (the
 media), `className`, `style` and every native `<figure>` attribute. Give an
 image its own alt text.
@@ -3087,7 +3126,12 @@ when open (no transition under reduced motion), and the answer wraps at
 the prose measure. Questions sit between ground-matched hairlines, and
 the trigger carries the package-standard focus-visible outline. The
 server implementation hides `summary`'s native marker so the chevron is
-the one open/closed cue. Each pair expands and collapses
+the one open/closed cue. The answer's height eases open and shut, CSS
+only, on the motion tokens and instant under reduced motion: the server
+rows ease `::details-content` (`details-motion`; a row must stay in block
+flow, since a flex `details` does not ease its content height), the client
+rows ease React Aria's `--disclosure-panel-height`
+(`disclosure-panel-motion`). Each pair expands and collapses
 INDEPENDENTLY — `Faq` holds no shared "which one is open" state and
 renders no `DisclosureGroup`, so opening one question never closes
 another, unlike a coordinated accordion.
@@ -5143,7 +5187,7 @@ part of this package's public API" and reachable only by that one test.
   ratified from `contrast.test.ts`'s own hand-curated pair map rather than
   auto-derived from token names. An earlier design assumed this gate could
   self-extend, deriving one pair per `--<role>-on-<ground>`-shaped token
-  name; counted against this package's real 168 tokens, only 5 actually
+  name; counted against this package's real 170 tokens, only 5 actually
   follow that shape (`--color-ink-on-accent`, `--color-ink-on-inverse`,
   `--color-accent-on-inverse`, `--color-line-on-inverse`,
   `--ui-ring-on-inverse` — see `contrast-pairs.ts`'s own header for a 6th,

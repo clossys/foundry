@@ -1,7 +1,7 @@
 import { Children, type CSSProperties, type HTMLAttributes, type ReactNode } from "react";
 import { cx } from "../atoms/internal/cx.js";
-import { SECTION_MEASURE_MAX } from "./internal/block-vars.js";
-import { SECTION_GROUND_CLASSES, type SectionGround } from "./section-ground.js";
+import { SectionIntro } from "./SectionIntro.js";
+import type { SectionGround } from "./section-ground.js";
 
 export type ContentSectionHeadingLevel = 2 | 3 | 4 | 5 | 6;
 
@@ -9,11 +9,14 @@ export type ContentSectionHeadingLevel = 2 | 3 | 4 | 5 | 6;
 export type ContentSectionAlign = "start" | "center";
 
 export interface ContentSectionProps extends Omit<HTMLAttributes<HTMLDivElement>, "title"> {
-  /** Small label above the heading. */
+  /**
+   * Small label above the heading: what the section is about. Optional so
+   * nothing crashes, but every section carries one by convention.
+   */
   eyebrow?: ReactNode;
-  /** The section's heading, at `headingLevel`. */
+  /** The section's heading, at `headingLevel`: why it matters. */
   heading?: ReactNode;
-  /** A line of supporting copy under the heading. */
+  /** A line of supporting copy under the heading: how. */
   description?: ReactNode;
   /** The section's own actions, under the description (typically button-styled links). */
   actions?: ReactNode;
@@ -37,27 +40,21 @@ export interface ContentSectionProps extends Omit<HTMLAttributes<HTMLDivElement>
 const MODULE_GAP = "gap-2xl tablet-lg:gap-3xl";
 
 /**
- * The section title: the display face on the heading ramp's section steps,
- * scaling with the viewport (h1 28px, h0 32px from tablet, display-m 40px
- * from tablet-lg), one display step under a `Hero`'s display-l, so a body
- * section reads as a title next to the opening rather than a label. The
- * ramp bundles no line-height, so the title pairs with `leading-tight`.
- */
-const SECTION_TITLE_CLASS = "text-h1 tablet:text-h0 tablet-lg:text-display-m font-display leading-tight text-balance";
-
-/**
  * One section anatomy for long-form marketing pages: a header group
- * (eyebrow, heading, description, actions) followed by a module slot.
+ * (eyebrow = what, heading = why, description = how, then actions) followed
+ * by a module slot (the content). A section without an eyebrow still
+ * renders; by convention every section has one.
  *
- * Spacing is fixed here so sections cannot drift: the header group's lines
- * sit `gap-md` apart and never run wider than the prose measure
- * (`--ui-width-prose-max`), so a heading wraps (balanced) before it runs the
- * width of the column; the header group and each module sit one step apart
- * (`gap-2xl`, `gap-3xl` from `tablet-lg`); modules take the full column. The
+ * Spacing is fixed here so sections cannot drift: the header group is a
+ * `SectionIntro` at the `section` emphasis (the section-title step at
+ * `leading-heading`, its own rhythm, the prose measure: the same anatomy a
+ * `Hero` uses at the `display` emphasis); the header group and each module
+ * sit one step apart (`gap-2xl`, `gap-3xl` from `tablet-lg`); modules take
+ * the full column. The
  * band around it (ground, padding, column) is the caller's `SectionFrame`.
  *
  * Unlike `SectionHeader` (settings scale, `text-h3`, a title row with
- * trailing actions) this is marketing scale (`text-h2`); unlike
+ * trailing actions) this is marketing scale (the section-title step); unlike
  * `MarketingChapter` it paints no band of its own, takes an eyebrow and
  * actions, and holds any number of modules. Renders a plain `<div>`; the
  * section's landmark, if any, is the caller's.
@@ -75,8 +72,6 @@ export function ContentSection({
   style,
   ...rest
 }: ContentSectionProps) {
-  const HeadingTag = `h${headingLevel}` as `h${ContentSectionHeadingLevel}`;
-  const colors = SECTION_GROUND_CLASSES[ground];
   const centred = align === "center";
   const hasHeader = eyebrow !== undefined || heading !== undefined || description !== undefined || actions !== undefined;
   const hasModules = Children.toArray(children).length > 0;
@@ -89,18 +84,17 @@ export function ContentSection({
       style={style}
     >
       {hasHeader ? (
-        <div
+        <SectionIntro
           data-content-section-header=""
-          className={centred ? "flex flex-col items-center gap-md text-center" : "flex flex-col items-start gap-md"}
-          style={{ maxWidth: SECTION_MEASURE_MAX.prose }}
-        >
-          {eyebrow ? <p className={cx("text-caption uppercase tracking-label", colors.muted)}>{eyebrow}</p> : null}
-          {heading ? <HeadingTag className={cx(SECTION_TITLE_CLASS, colors.primary)}>{heading}</HeadingTag> : null}
-          {description ? <p className={cx("text-body-l text-pretty", colors.secondary)}>{description}</p> : null}
-          {actions ? (
-            <div className={centred ? "flex flex-wrap items-center justify-center gap-sm" : "flex flex-wrap items-center gap-sm"}>{actions}</div>
-          ) : null}
-        </div>
+          emphasis="section"
+          headingLevel={headingLevel}
+          align={align}
+          ground={ground}
+          eyebrow={eyebrow}
+          heading={heading}
+          description={description}
+          actions={actions}
+        />
       ) : null}
       {hasModules ? (
         <div data-content-section-modules="" className={cx("flex w-full flex-col", MODULE_GAP)}>

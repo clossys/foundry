@@ -1,6 +1,6 @@
 import type { AnchorHTMLAttributes, HTMLAttributes, ReactNode } from "react";
 import { Badge } from "../atoms/Badge.js";
-import { buttonClassName } from "../atoms/button-classes.js";
+import { buttonLinkClassName } from "../atoms/button-classes.js";
 import { Icon, type IconNode } from "../atoms/Icon.js";
 import { cx } from "../atoms/internal/cx.js";
 import { SITE_CHROME_GROUND_CLASSES, siteChromeHasBorder, type SiteChromeGround } from "./internal/shell-ground.js";
@@ -184,21 +184,6 @@ export interface SiteHeaderActionLinkProps
   variant?: SiteHeaderActionLinkVariant;
 }
 
-const ACTION_LINK_FOCUS =
-  "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent";
-
-/**
- * `buttonClassName` carries `outline-none`, which sets the outline style to
- * none and so would also suppress the `focus-visible` outline below. The link
- * keeps the rest of the button look and puts its own outline back.
- */
-function actionLinkLook(variant: SiteHeaderActionLinkVariant): string {
-  return buttonClassName(variant, "sm")
-    .split(" ")
-    .filter((token) => token !== "outline-none" && token !== "disabled:cursor-not-allowed")
-    .join(" ");
-}
-
 /**
  * A call-to-action link for `SiteHeader`'s `actions` or `secondaryAction`
  * slot: an icon plus a label from the `tablet` breakpoint up, the icon alone
@@ -229,12 +214,13 @@ function SiteHeaderActionLink({
   style,
   ...rest
 }: SiteHeaderActionLinkProps) {
+  const look = buttonLinkClassName(variant, "sm");
   return (
     <a
       {...rest}
       href={href}
       aria-current={isCurrent ? "true" : undefined}
-      className={cx(actionLinkLook(variant), ACTION_LINK_FOCUS, className)}
+      className={cx(look, className)}
       style={{
         minHeight: UI_LAYOUT_TAP_TARGET,
         minWidth: UI_LAYOUT_TAP_TARGET,

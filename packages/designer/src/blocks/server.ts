@@ -84,6 +84,8 @@ export type { HeroProps, HeroHeadingLevel, HeroComposition, HeroAlign } from "./
 
 export { ContentSection } from "./ContentSection.js";
 export type { ContentSectionProps, ContentSectionHeadingLevel, ContentSectionAlign } from "./ContentSection.js";
+export { SectionIntro } from "./SectionIntro.js";
+export type { SectionIntroProps, SectionIntroHeadingLevel, SectionIntroEmphasis, SectionIntroAlign } from "./SectionIntro.js";
 
 export { MediaFigure } from "./MediaFigure.js";
 export type { MediaFigureProps, MediaFigureMeasure } from "./MediaFigure.js";

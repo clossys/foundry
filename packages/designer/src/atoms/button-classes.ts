@@ -23,3 +23,20 @@ const SIZE_CLASSES: Record<ButtonSize, string> = {
 export function buttonClassName(variant: ButtonVariant, size: ButtonSize): string {
   return [BASE, SIZE_CLASSES[size], VARIANT_CLASSES[variant]].join(" ");
 }
+
+/** The package-standard keyboard focus outline, for a link that takes the button look. */
+const LINK_FOCUS_CLASSES = "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent";
+
+/**
+ * The `Button` look for a plain `<a>` (no React Aria, so server-safe): the
+ * same variant and size classes, without `outline-none` (which would also
+ * suppress the focus outline) and `disabled:cursor-not-allowed` (a link is
+ * never disabled), plus the package-standard `focus-visible` outline. For a
+ * call to action that navigates, such as a hero or closing band's action.
+ */
+export function buttonLinkClassName(variant: ButtonVariant, size: ButtonSize): string {
+  const look = buttonClassName(variant, size)
+    .split(" ")
+    .filter((token) => token !== "outline-none" && token !== "disabled:cursor-not-allowed");
+  return [...look, LINK_FOCUS_CLASSES].join(" ");
+}

@@ -299,7 +299,7 @@ shipped as-is regardless of brand.
 | `--color-overlay-scrim` | `oklch(0 0 0 / 0.4)` | no |
 | `--color-skeleton-fill` | alias of `--color-surface-sunken` | no (inherits) |
 
-### Text, font, tracking (20 tokens, case 1)
+### Text, font, tracking, leading (22 tokens, case 1)
 
 | Token | Default | Brandable |
 | --- | --- | --- |
@@ -323,11 +323,16 @@ shipped as-is regardless of brand.
 | `--tracking-meta` | `0.06em` | no |
 | `--tracking-nav` | `0.12em` | no |
 | `--tracking-label` | `0.18em` | no |
+| `--leading-display` | `1.05` | no |
+| `--leading-heading` | `1.15` | no |
 
 `--text-*` is font-size only, deliberately — it does not bundle a
-line-height. Pair it with your own value, or with Tailwind's own
-`leading-*` scale if you're using `theme.css`; see "What didn't translate
-cleanly" below for why.
+line-height. Headings pair it with a `--leading-*` role (`leading-display`
+for the display steps, `leading-heading` for section titles and smaller
+headings, utilities via `theme.css`); without one a heading inherits the
+body's leading, which reads far too open at display sizes. Body copy uses
+your own value or Tailwind's `leading-*` scale; see "What didn't translate
+cleanly" below for why the ramp carries no line-height.
 
 ### Spacing, radius, breakpoint, easing (27 tokens, case 1)
 
@@ -413,7 +418,7 @@ border 1, elevation 3, ring 2, duration 6, z 9, alpha 1 (46, all `--ui-*`).
 49 + 20 + 27 + 46 = 142 tokens across 26 families, by this same
 1-family-added arithmetic. **Note:** this total (and the "128 tokens
 across 24 families" figure elsewhere in this README predating it) does not
-match `src/tokens.ts`'s real count (168 across 27 families) — a pre-existing
+match `src/tokens.ts`'s real count (170 across 28 families) — a pre-existing
 gap from the `chart` color family (22 tokens, added in `0.4.0`) never being
 folded into this reference table's totals. That gap predates this PR and is
 out of its scope; `src/tokens.ts`/`styles/tokens.css` are what `parity.test.ts`
@@ -431,6 +436,11 @@ of ones it does:
 ```css
 /* A translucent variant of an existing color */
 background: color-mix(in oklch, var(--color-accent), transparent 90%);
+
+/* A lighter or darker step of an existing color: mix in oklab, not oklch.
+   White and black have no hue; Chromium keeps that missing hue through an
+   oklch/lch/hsl/hwb mix and paints the result at hue 0 (a red cast). */
+background: color-mix(in oklab, var(--color-surface-inverse) 94%, white);
 
 /* Placeholder text on an inverse surface */
 color: rgb(from var(--color-ink-on-inverse) r g b / 0.4);

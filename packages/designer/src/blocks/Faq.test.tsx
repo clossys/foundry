@@ -104,7 +104,7 @@ describe("Faq", () => {
     const chevron = trigger.querySelector("svg") as SVGElement;
 
     expect(chevron).toHaveAttribute("aria-hidden", "true");
-    expect(chevron).toHaveClass("transition-transform", "motion-reduce:transition-none");
+    expect(chevron).toHaveClass("disclosure-icon-motion");
     expect(chevron).not.toHaveClass("rotate-180");
     await user.click(trigger);
     expect(chevron).toHaveClass("rotate-180");
@@ -144,7 +144,9 @@ describe("Faq", () => {
     const firstTrigger = screen.getByRole("button", { name: "Question one text" });
     const secondTrigger = screen.getByRole("button", { name: "Question two text" });
     expect(firstTrigger).toHaveClass(primary);
-    expect(document.getElementById(firstTrigger.getAttribute("aria-controls") as string)).toHaveClass(secondary);
+    const panel = document.getElementById(firstTrigger.getAttribute("aria-controls") as string) as HTMLElement;
+    expect(panel).toHaveClass("disclosure-panel-motion");
+    expect(panel.firstElementChild).toHaveClass(secondary);
     expect(secondTrigger.parentElement).toHaveClass(border);
   });
 });

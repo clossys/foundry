@@ -28,7 +28,12 @@ describe("Faq server-native disclosure", () => {
     expect(chevron).toBeInstanceOf(SVGElement);
     expect(chevron).toHaveAttribute("aria-hidden", "true");
     expect(details).toHaveClass("group/faq");
-    expect(chevron).toHaveClass("group-open/faq:rotate-180", "transition-transform", "motion-reduce:transition-none");
+    expect(chevron).toHaveClass("group-open/faq:rotate-180", "disclosure-icon-motion");
+    // The row's height animates through ::details-content (CSS only, instant under reduced motion).
+    expect(details).toHaveClass("details-motion");
+    // A flex details does not ease ::details-content (Chromium jumps); the row stays in block flow.
+    expect(details).toHaveClass("block");
+    expect(details.className).not.toMatch(/(^|\s)(flex|grid|inline-flex)(\s|$)/);
   });
 
   it("makes the whole row the hit area, the question at body-l, the answer at the prose measure", () => {

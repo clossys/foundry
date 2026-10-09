@@ -2,7 +2,7 @@
  * The token catalog: every custom property this package declares in
  * `styles/tokens.css`, as data. This file is the JS/TS half of the package;
  * `styles/tokens.css` is the CSS half. Both are hand-authored and both are
- * meant to describe the exact same 168 tokens — a test in this package
+ * meant to describe the exact same 170 tokens — a test in this package
  * (`parity.test.ts`) parses `styles/tokens.css` and asserts its custom
  * property names and values match this file entry-for-entry, in both
  * directions. That test is what keeps this file honest; nothing generates
@@ -35,7 +35,7 @@
  */
 
 /**
- * The 27 semantic groups the 168 tokens fall into. Each maps to exactly one
+ * The 28 semantic groups the 170 tokens fall into. Each maps to exactly one
  * CSS custom property prefix — see `FAMILY_PREFIX` in `parity.test.ts` (and
  * the README's naming table) for the concrete mapping.
  */
@@ -52,6 +52,7 @@ export type TokenFamily =
   | "text"
   | "font"
   | "tracking"
+  | "leading"
   | "spacing"
   | "width"
   | "layout"
@@ -72,7 +73,7 @@ export type TokenFamily =
 export interface TokenDefinition {
   /** The full CSS custom property name, including the leading `--`. */
   readonly property: string;
-  /** Which of the 25 semantic groups this token belongs to. */
+  /** Which of the 28 semantic groups this token belongs to. */
   readonly family: TokenFamily;
   /** The value declared for this property in `styles/tokens.css`'s `:root` block. */
   readonly value: string;
@@ -240,6 +241,10 @@ export const TOKENS: Readonly<Record<string, TokenDefinition>> = {
   "--tracking-nav": { property: "--tracking-nav", family: "tracking", value: "0.12em", brandable: false, themeDependent: false },
   "--tracking-label": { property: "--tracking-label", family: "tracking", value: "0.18em", brandable: false, themeDependent: false },
 
+  // ── LEADING (fixed heading line-height role scale) ─────────────────
+  "--leading-display": { property: "--leading-display", family: "leading", value: "1.05", brandable: false, themeDependent: false },
+  "--leading-heading": { property: "--leading-heading", family: "leading", value: "1.15", brandable: false, themeDependent: false },
+
   // ── SPACING (fixed 4px-rooted scale) ───────────────────────────────
   "--spacing-xs": { property: "--spacing-xs", family: "spacing", value: "4px", brandable: false, themeDependent: false },
   "--spacing-sm": { property: "--spacing-sm", family: "spacing", value: "8px", brandable: false, themeDependent: false },
@@ -355,7 +360,7 @@ export const TOKENS: Readonly<Record<string, TokenDefinition>> = {
   "--ui-alpha-disabled": { property: "--ui-alpha-disabled", family: "alpha", value: "0.5", brandable: false, themeDependent: false },
 };
 
-/** The 27 semantic families, in the order they appear in the README's reference table. */
+/** The 28 semantic families, in the order they appear in the README's reference table. */
 export const TOKEN_FAMILIES: readonly TokenFamily[] = [
   "surface",
   "ink",
@@ -369,6 +374,7 @@ export const TOKEN_FAMILIES: readonly TokenFamily[] = [
   "text",
   "font",
   "tracking",
+  "leading",
   "spacing",
   "width",
   "layout",

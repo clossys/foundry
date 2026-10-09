@@ -1,15 +1,7 @@
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
 import { cx } from "../atoms/internal/cx.js";
-import { DISPLAY_HEADING_CLASS, SECTION_MEASURE_MAX } from "./internal/block-vars.js";
+import { SectionIntro } from "./SectionIntro.js";
 import { SECTION_GROUND_CLASSES, type SectionGround } from "./section-ground.js";
-
-/**
- * `class-scan.ts` skips `blocks/internal/` (where `DISPLAY_HEADING_CLASS`
- * lives). This literal keeps `text-display-l` in the compiled.css candidate
- * set so display headings stay styled on the tokens.css + compiled.css path.
- */
-const COMPILED_CSS_CLASS_SCAN_ANCHOR = "text-display-l";
-void COMPILED_CSS_CLASS_SCAN_ANCHOR;
 
 export type HeroHeadingLevel = 1 | 2;
 
@@ -62,11 +54,10 @@ export interface HeroProps extends HTMLAttributes<HTMLElement> {
   /**
    * How the eyebrow, heading, description and actions line up. `"center"`
    * centres each line and the actions row on the hero's column (an opening
-   * hero over a backdrop, a closing call to action), and narrows the text
-   * block to the prose measure (`--ui-width-prose-max`) with a balanced
-   * heading and a pretty-wrapped description, so a centred lockup wraps
-   * sooner than the column it sits in. It applies to the text block only; a
-   * `split` composition keeps its two columns.
+   * hero over a backdrop). The text block is a `SectionIntro` at the
+   * `display` emphasis, so it keeps to the prose measure with a balanced
+   * heading either way. It applies to the text block only; a `split`
+   * composition keeps its two columns.
    * @default "start"
    */
   align?: HeroAlign;
@@ -78,7 +69,9 @@ export interface HeroProps extends HTMLAttributes<HTMLElement> {
  * A page's primary above-the-fold message: an optional eyebrow, a heading,
  * an optional description, and an optional row of calls to action — the
  * same title/description/actions shape `PageHeader` gives an application
- * page, sized and composed for a marketing/content page instead.
+ * page, sized and composed for a marketing/content page instead. The copy is
+ * a `SectionIntro` at the `display` emphasis, the same anatomy every later
+ * section uses at the `section` emphasis; `Hero` adds the ground and media.
  */
 export function Hero({
   eyebrow,
@@ -94,27 +87,21 @@ export function Hero({
   style,
   ...rest
 }: HeroProps) {
-  const HeadingTag = headingLevel === 1 ? "h1" : "h2";
   const colors = SECTION_GROUND_CLASSES[ground];
   const splitLayout = Boolean(media) && composition === "split";
   const centred = align === "center";
 
   const content = (
-    <div
-      className={centred ? "mx-auto flex w-full flex-col items-center gap-md text-center" : "flex flex-col items-start gap-md"}
-      style={centred ? { maxWidth: SECTION_MEASURE_MAX.prose } : undefined}
-    >
-      {eyebrow ? (
-        <p className={cx("text-caption uppercase tracking-label", colors.muted)}>{eyebrow}</p>
-      ) : null}
-      <HeadingTag className={cx(DISPLAY_HEADING_CLASS, colors.primary, centred ? "text-balance" : undefined)}>{heading}</HeadingTag>
-      {description ? (
-        <p className={cx("text-body-l max-w-display", colors.secondary, centred ? "text-pretty" : undefined)}>{description}</p>
-      ) : null}
-      {actions ? (
-        <div className={centred ? "flex flex-wrap items-center justify-center gap-sm" : "flex flex-wrap items-center gap-sm"}>{actions}</div>
-      ) : null}
-    </div>
+    <SectionIntro
+      emphasis="display"
+      headingLevel={headingLevel}
+      align={align}
+      ground={ground}
+      eyebrow={eyebrow}
+      heading={heading}
+      description={description}
+      actions={actions}
+    />
   );
 
   return (

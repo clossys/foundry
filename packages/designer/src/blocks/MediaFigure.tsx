@@ -17,7 +17,12 @@ export interface MediaFigureProps extends HTMLAttributes<HTMLElement> {
   caption?: ReactNode;
   /** @default "column" */
   measure?: MediaFigureMeasure;
-  /** Draw the media in a rounded frame with the ground's line. @default true */
+  /**
+   * Draw one hairline (the ground's line, rounded) around the media. Off by
+   * default: the media sits straight on the section ground. Turn it on only
+   * when the media has no edge of its own, such as a screenshot on the same
+   * color as the ground. @default false
+   */
   framed?: boolean;
   /** The ground the figure sits on; selects the frame line and caption ink. @default "base" */
   ground?: SectionGround;
@@ -26,8 +31,11 @@ export interface MediaFigureProps extends HTMLAttributes<HTMLElement> {
 }
 
 /**
- * Large media as a section module: the media, optionally framed, and its
- * caption underneath at a fixed `gap-sm`, in the section ground's muted ink.
+ * Large media as a section module: the media on the section ground (no
+ * panel, fill, padding or shadow; at most one hairline with `framed`), and
+ * its caption underneath at a fixed `gap-sm`, in the section ground's muted
+ * ink. The media fits the column: give it a fluid width rather than a fixed
+ * one, so it never scrolls inside the figure.
  * Sits in a `ContentSection`'s module slot, so its spacing to the header
  * group and to other modules is the section's, not its own.
  */
@@ -35,7 +43,7 @@ export function MediaFigure({
   children,
   caption,
   measure = "column",
-  framed = true,
+  framed = false,
   ground = "base",
   className,
   style,

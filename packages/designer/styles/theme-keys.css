@@ -108,6 +108,10 @@
   --tracking-nav:                  var(--tracking-nav, 0.12em);
   --tracking-label:                var(--tracking-label, 0.18em);
 
+  /* ── LEADING ──────────────────────────────────────────────────── */
+  --leading-display:               var(--leading-display, 1.05);
+  --leading-heading:               var(--leading-heading, 1.15);
+
   /* ── SPACING ──────────────────────────────────────────────────── */
   --spacing-xs:                    var(--spacing-xs, 4px);
   --spacing-sm:                    var(--spacing-sm, 8px);
@@ -165,5 +169,65 @@
   list-style: none;
   &::-webkit-details-marker {
     display: none;
+  }
+}
+
+/*
+ * Disclosure motion, CSS only, for the `Faq` block's rows. Height eases
+ * open and shut at `--ui-duration-default` on `--ease-default`; reduced
+ * motion is instant. Progressive: an engine without `::details-content` or
+ * `interpolate-size` opens and closes instantly, as before.
+ *
+ * - `details-motion` on a native `<details>`: its `::details-content`
+ *   transitions `block-size` between 0 and `auto` (`interpolate-size`), and
+ *   `content-visibility` discretely so a closed row's content stays out of
+ *   the tab order and accessibility tree only once the closing ease ends.
+ * - `disclosure-panel-motion` on a React Aria `DisclosurePanel`: it
+ *   transitions `block-size` through the `--disclosure-panel-height` value
+ *   React Aria sets for exactly this (it waits for the transition before
+ *   hiding the panel).
+ * - `disclosure-icon-motion` on the row's chevron: its rotation, on the
+ *   same duration and easing.
+ *
+ * The row's own padding belongs to the content inside the panel, never the
+ * panel, so a closed panel is truly zero high and nothing jumps.
+ */
+@utility details-motion {
+  interpolate-size: allow-keywords;
+  &::details-content {
+    block-size: 0;
+    overflow-y: clip;
+    transition-property: block-size, content-visibility;
+    transition-duration: var(--ui-duration-default, 240ms);
+    transition-timing-function: var(--ease-default, cubic-bezier(.2, 0, 0, 1));
+    transition-behavior: allow-discrete;
+  }
+  &[open]::details-content {
+    block-size: auto;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    &::details-content {
+      transition-duration: 0s;
+    }
+  }
+}
+
+@utility disclosure-panel-motion {
+  block-size: var(--disclosure-panel-height, auto);
+  overflow-y: clip;
+  transition-property: block-size;
+  transition-duration: var(--ui-duration-default, 240ms);
+  transition-timing-function: var(--ease-default, cubic-bezier(.2, 0, 0, 1));
+  @media (prefers-reduced-motion: reduce) {
+    transition-duration: 0s;
+  }
+}
+
+@utility disclosure-icon-motion {
+  transition-property: transform, translate, scale, rotate;
+  transition-duration: var(--ui-duration-default, 240ms);
+  transition-timing-function: var(--ease-default, cubic-bezier(.2, 0, 0, 1));
+  @media (prefers-reduced-motion: reduce) {
+    transition-duration: 0s;
   }
 }

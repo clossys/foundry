@@ -100,7 +100,7 @@ describe("coverage: real rendered classes are all present in compiled.css", () =
       result.unmount();
     }
 
-    for (const required of ["text-display-l", "font-display", "bg-accent", "rounded-control", "tablet:grid-cols-2"]) {
+    for (const required of ["text-display-m", "tablet:text-display-l", "font-display", "bg-accent", "rounded-control", "tablet:grid-cols-2"]) {
       expect(renderedClasses.has(required)).toBe(true);
     }
 

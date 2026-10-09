@@ -9,7 +9,7 @@ describe("ContentSection", () => {
     render(<ContentSection eyebrow="Eyebrow" heading="Heading" description="Description" headingLevel={3} />);
     const heading = screen.getByRole("heading", { name: "Heading" });
     expect(heading.tagName).toBe("H3");
-    expect(heading).toHaveClass("text-h1", "tablet:text-h0", "tablet-lg:text-display-m", "font-display", "leading-tight", "text-balance");
+    expect(heading).toHaveClass("text-h1", "tablet:text-h0", "tablet-lg:text-display-m", "font-display", "leading-heading", "text-balance");
     expect(heading).not.toHaveClass("text-h2");
     expect(screen.getByText("Description")).toHaveClass("text-body-l");
     expect(screen.getByText("Description")).toHaveClass("text-body-l", "text-pretty");
@@ -64,16 +64,29 @@ describe("ContentSection", () => {
 });
 
 describe("MediaFigure", () => {
-  it("frames the media and captions it underneath", () => {
+  it("puts the media straight on the ground by default and captions it underneath", () => {
     const { container } = render(
       <MediaFigure caption="Caption">
         <div data-media="">MEDIA</div>
       </MediaFigure>,
     );
     const figure = container.querySelector("figure") as HTMLElement;
+    const media = figure.firstElementChild as HTMLElement;
     expect(figure.lastElementChild?.tagName).toBe("FIGCAPTION");
-    expect(figure.firstElementChild).toHaveClass("rounded-control", "border", "border-line-base");
+    expect(media.className).toBe("w-full");
+    expect(`${figure.className} ${media.className}`).not.toMatch(/(^|\s)(border|rounded-\S+|shadow\S*|bg-\S+|p[xy]?-\S+)(\s|$)/);
     expect(figure.style.maxWidth).toBe("");
+  });
+
+  it("draws one hairline around the media when framed", () => {
+    const { container } = render(
+      <MediaFigure framed ground="sunken">
+        <div>MEDIA</div>
+      </MediaFigure>,
+    );
+    const media = container.querySelector("figure")?.firstElementChild as HTMLElement;
+    expect(media).toHaveClass("rounded-control", "border", "border-line-base");
+    expect(media.className).not.toMatch(/(^|\s)(shadow\S*|bg-\S+|p[xy]?-\S+)(\s|$)/);
   });
 
   it("runs at the content measure on request, and unframed", () => {

@@ -60,7 +60,7 @@ function importKeysNormally(distRelPath: string): string[] {
 describe("server-safe entry points resolve under react-server (test 1)", () => {
   const serverEntries: Array<{ distRelPath: string; expectedExports: string[] }> = [
     { distRelPath: "tokens/server.js", expectedExports: ["readBrandCss", "assertTailwindMergeVersion"] },
-    { distRelPath: "atoms/server.js", expectedExports: ["Badge", "Banner", "Card", "Field", "Icon", "Skeleton", "Spinner", "mergeUiClasses"] },
+    { distRelPath: "atoms/server.js", expectedExports: ["Badge", "Banner", "Card", "Field", "Icon", "Skeleton", "Spinner", "buttonLinkClassName", "mergeUiClasses"] },
     {
       distRelPath: "blocks/server.js",
       expectedExports: [
@@ -80,6 +80,7 @@ describe("server-safe entry points resolve under react-server (test 1)", () => {
         "SECTION_GROUND_CLASSES",
         "SectionFrame",
         "SectionHeader",
+        "SectionIntro",
         "Stat",
         "StatusList",
       ],

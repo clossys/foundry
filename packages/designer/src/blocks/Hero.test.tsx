@@ -60,9 +60,12 @@ describe("Hero", () => {
     expect(section.className).toContain("tablet:grid-cols-2");
   });
 
-  it("caps display heading width", () => {
-    render(<Hero heading="Heading text" />);
-    expect(screen.getByRole("heading")).toHaveClass("max-w-display");
+  it("holds the copy to the prose measure, the heading at the display step with its own leading", () => {
+    const { container } = render(<Hero heading="Heading text" />);
+    const block = container.querySelector("section > div") as HTMLElement;
+    expect(block).toHaveAttribute("data-section-intro", "display");
+    expect(block.style.maxWidth).toBe("var(--ui-width-prose-max, 48rem)");
+    expect(screen.getByRole("heading")).toHaveClass("text-display-m", "tablet:text-display-l", "font-display", "leading-display", "text-balance");
   });
 
   it("omits the media region entirely when none is given", () => {
@@ -121,8 +124,7 @@ describe("Hero align", () => {
     const block = container.querySelector("section > div") as HTMLElement;
     expect(block).toHaveClass("items-start");
     expect(block).not.toHaveClass("text-center");
-    expect(block.style.maxWidth).toBe("");
-    expect(screen.getByRole("heading")).not.toHaveClass("text-balance");
+    expect(block.style.maxWidth).toBe("var(--ui-width-prose-max, 48rem)");
   });
 
   it("centres every line and the actions row when align is center", () => {

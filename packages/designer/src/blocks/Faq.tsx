@@ -61,7 +61,10 @@ export interface FaqProps extends Omit<HTMLAttributes<HTMLDivElement>, "title"> 
  * not through the atom, so the row can take the FAQ recipe
  * (`FAQ_ROW_CLASSES`, shared with the server implementation): the whole row
  * as the hit area, the question at the body-l step, and a Designer
- * `ChevronDown` at the end that turns when open. Each
+ * `ChevronDown` at the end that turns when open, and the answer's height
+ * eases open and shut (`disclosure-panel-motion`, CSS on the
+ * `--disclosure-panel-height` React Aria sets; instant under reduced
+ * motion). Each
  * question/answer pair expands and collapses INDEPENDENTLY — `Faq` renders
  * no `DisclosureGroup` and holds no shared "which one is open" state of its
  * own, so opening one question never closes another (the single-section
@@ -98,7 +101,7 @@ export function Faq({
         <div className="flex flex-col gap-xs">
           {eyebrow ? <p className={cx("text-caption uppercase tracking-label", colors.muted)}>{eyebrow}</p> : null}
           {heading ? (
-            <HeadingTag className={cx("text-h2 font-display", colors.primary)}>{heading}</HeadingTag>
+            <HeadingTag className={cx("text-h2 font-display leading-heading", colors.primary)}>{heading}</HeadingTag>
           ) : null}
           {description ? (
             <p className={cx("text-body", colors.secondary)}>{description}</p>
@@ -119,8 +122,10 @@ export function Faq({
                     className={cx(FAQ_ROW_CLASSES.chevron, isExpanded ? FAQ_ROW_CLASSES.chevronOpen : undefined)}
                   />
                 </AriaButton>
-                <AriaDisclosurePanel className={cx(FAQ_ROW_CLASSES.answer, colors.secondary)} style={FAQ_ANSWER_STYLE}>
-                  {item.answer}
+                <AriaDisclosurePanel className={FAQ_ROW_CLASSES.panel}>
+                  <div className={cx(FAQ_ROW_CLASSES.answer, colors.secondary)} style={FAQ_ANSWER_STYLE}>
+                    {item.answer}
+                  </div>
                 </AriaDisclosurePanel>
               </>
             )}

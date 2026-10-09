@@ -77,3 +77,6 @@ export type { SpinnerProps, SpinnerSize } from "./Spinner.js";
 
 /** Merge token-aware Tailwind class names with last-argument precedence. Pure string logic — no React import at all. */
 export { cx as mergeUiClasses } from "./internal/cx.js";
+
+/** The `Button` look for a plain `<a>`, with the focus outline put back. Pure string logic — no React import at all. */
+export { buttonLinkClassName } from "./button-classes.js";

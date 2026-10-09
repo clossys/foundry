@@ -44,6 +44,7 @@ export {
   Separator,
   Chip,
   mergeUiClasses,
+  buttonLinkClassName,
 } from "./atoms/index.js";
 export type {
   ButtonProps,
@@ -126,6 +127,7 @@ export {
   Hero,
   MarketingChapter,
   ContentSection,
+  SectionIntro,
   MediaFigure,
   FeatureGrid,
   OrderedStepSequence,
@@ -179,6 +181,10 @@ export type {
   ContentSectionProps,
   ContentSectionHeadingLevel,
   ContentSectionAlign,
+  SectionIntroProps,
+  SectionIntroHeadingLevel,
+  SectionIntroEmphasis,
+  SectionIntroAlign,
   MediaFigureProps,
   MediaFigureMeasure,
   MarketingChapterHeadingLevel,

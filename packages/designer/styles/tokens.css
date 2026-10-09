@@ -348,9 +348,9 @@ html:not([data-brand-bound]):not([data-suppress-brand-banner])::before {
   --color-chart-diverging-neutral:  var(--color-line-base, oklch(0.8761 0 0));
 
   /* ════════════════════════════════════════════════════════════════
-   * TEXT (13 · fixed font-size ramp — pair with your own line-height
-   * or Tailwind's `leading-*` scale; this package doesn't bundle one,
-   * see the README)
+   * TEXT (13 · fixed font-size ramp — font-size only; headings pair it
+   * with the LEADING role tokens below, body copy with Tailwind's
+   * `leading-*` scale or the inherited body leading, see the README)
    * ════════════════════════════════════════════════════════════════ */
   --text-display-xl:              72px;
   --text-display-l:               56px;
@@ -387,6 +387,13 @@ html:not([data-brand-bound]):not([data-suppress-brand-banner])::before {
   --tracking-meta:                0.06em;   /* dates, counts, mono metadata */
   --tracking-nav:                 0.12em;   /* nav links, tabs, badges */
   --tracking-label:               0.18em;   /* section labels, mono caps */
+
+  /* ════════════════════════════════════════════════════════════════
+   * LEADING (2 · fixed heading line-height role scale: the `--text-*`
+   * ramp stays font-size only, so a heading names its leading role)
+   * ════════════════════════════════════════════════════════════════ */
+  --leading-display:              1.05;     /* display steps: hero headings */
+  --leading-heading:              1.15;     /* section titles and smaller headings */
 
   /* ════════════════════════════════════════════════════════════════
    * SPACING (10 · 4px-rooted scale, t-shirt names — deliberately NOT
@@ -744,7 +751,7 @@ html:not([data-brand-bound]):not([data-suppress-brand-banner])::before {
  * parse-css.ts`, used by `parity.test.ts`, `contrast.test.ts`, and
  * `dark-mode-cascade.test.ts`) parses only the FIRST top-level `:root {`
  * block in this file as "the real token layer" and asserts it declares
- * exactly this package's curated 168 tokens; this sentinel is not a
+ * exactly this package's curated 170 tokens; this sentinel is not a
  * design token — it is a structural presence marker — so it stays out
  * of `src/tokens/tokens.ts`'s registry and out of that block entirely,
  * in a second `:root` rule the browser cascades in fine (CSS allows any
