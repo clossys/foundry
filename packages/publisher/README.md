@@ -1944,6 +1944,15 @@ provenance) but is **never rendered into the output tree** — the page's
 own `<h1>` stays the caller's job, the same discipline `ErrorView` already
 holds between its own `<h1>` and `EmptyState`'s `<h2>`.
 
+The result also carries `sectionBodies`: each top-level section's blocks,
+keyed by section id, without the `<section>` wrapper or its heading. Use it
+when a view draws each section's heading itself — for example a
+`LandingView` band, whose header group (eyebrow, heading, description)
+comes from a sectioned document while the document's prose, lists and
+links go in that band's module slot (`afterSection`), inside Designer's
+`ArticleBody`. It holds the same elements as `element`, from the same
+validated render; nothing is resolved twice.
+
 **`resolveCopyId`'s type, and the `{ element, resolutions }` return
 shape.** `RenderStructuredDocumentOptions.resolveCopyId` is
 `@clossys/writer`'s own ref-based `CopyResolver` —
