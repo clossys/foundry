@@ -22,6 +22,15 @@
  * flight keeps running; when it resolves under an older generation its
  * result is discarded and never initialized.
  *
+ * A provider may call back into the transport from inside its own methods.
+ * A withdrawal from inside `init` leaves the provider initialized and opted
+ * out, never opted in; a withdrawal during the queue flush stops the flush.
+ * An error thrown by a provider method or the scheduler never escapes the
+ * transport: a throwing `capture` drops that event, a throwing `optIn`
+ * leaves the provider opted out, a throwing `optOut` still leaves the
+ * transport sending nothing, and a scheduler that cannot schedule the retry
+ * is `failed`.
+ *
  * The module touches no global at import. The default scheduler looks up
  * `globalThis.setTimeout` and `globalThis.clearTimeout` each time it is used.
  */
@@ -106,7 +115,41 @@ export function createAnalyticsTransport(options: AnalyticsTransportOptions): An
     if (retryHandle) {
       const handle = retryHandle.value;
       retryHandle = null;
-      scheduler.clearTimeout(handle);
+      try {
+        scheduler.clearTimeout(handle);
+      } catch {
+        // The retry callback checks its own handle, so a failed clear is harmless.
+      }
+    }
+  }
+
+  /** Calls `optOut()`, swallowing its error: the transport's own state already stops sending. */
+  function optOutQuietly(target: AnalyticsProviderPort): void {
+    try {
+      target.optOut();
+    } catch {
+      // Nothing further is sent: the state is already opted-out or disposed.
+    }
+  }
+
+  /** Calls `optIn()`; when it throws, the provider is left opted out instead. */
+  function optInOrOptOut(target: AnalyticsProviderPort): boolean {
+    try {
+      target.optIn();
+      return true;
+    } catch {
+      state = "opted-out";
+      queue = [];
+      optOutQuietly(target);
+      return false;
+    }
+  }
+
+  function captureQuietly(target: AnalyticsProviderPort, event: SanitizedAnalyticsEvent): void {
+    try {
+      target.capture(event);
+    } catch {
+      // The event is dropped.
     }
   }
 
@@ -140,11 +183,27 @@ export function createAnalyticsTransport(options: AnalyticsTransportOptions): An
       return;
     }
     provider = loaded;
+    if (disposed || !permission) {
+      // Withdrawn from inside init: initialized, but never opted in.
+      state = "opted-out";
+      queue = [];
+      optOutQuietly(loaded);
+      return;
+    }
+    // A withdrawal and a re-grant from inside init leave permission granted:
+    // this provider serves the current generation, and the load the re-grant
+    // started is discarded when it resolves, because the state is no longer
+    // loading.
+    const current = generation;
     state = "ready";
-    loaded.optIn();
+    if (!optInOrOptOut(loaded)) return;
     const queued = queue;
     queue = [];
-    for (const event of queued) loaded.capture(event);
+    for (const event of queued) {
+      // A withdrawal from inside optIn or a capture stops the flush.
+      if (disposed || current !== generation || state !== "ready" || provider !== loaded) return;
+      captureQuietly(loaded, event);
+    }
   }
 
   function onLoadFailed(forGeneration: number, isRetry: boolean): void {
@@ -156,12 +215,18 @@ export function createAnalyticsTransport(options: AnalyticsTransportOptions): An
     state = "retry-scheduled";
     const handle = { value: undefined as unknown };
     retryHandle = handle;
-    handle.value = scheduler.setTimeout(() => {
-      if (retryHandle !== handle) return;
+    try {
+      handle.value = scheduler.setTimeout(() => {
+        if (retryHandle !== handle) return;
+        retryHandle = null;
+        if (disposed || forGeneration !== generation || state !== "retry-scheduled") return;
+        attemptLoad(forGeneration, true);
+      }, ANALYTICS_RETRY_DELAY_MS);
+    } catch {
+      // No retry can be scheduled.
       retryHandle = null;
-      if (disposed || forGeneration !== generation || state !== "retry-scheduled") return;
-      attemptLoad(forGeneration, true);
-    }, ANALYTICS_RETRY_DELAY_MS);
+      fail();
+    }
   }
 
   function withdraw(): void {
@@ -170,7 +235,7 @@ export function createAnalyticsTransport(options: AnalyticsTransportOptions): An
     cancelRetry();
     if (provider) {
       state = "opted-out";
-      provider.optOut();
+      optOutQuietly(provider);
     } else {
       state = "off";
     }
@@ -179,7 +244,7 @@ export function createAnalyticsTransport(options: AnalyticsTransportOptions): An
   function deliver(event: SanitizedAnalyticsEvent | null): void {
     if (event === null) return;
     if (state === "ready" && provider) {
-      provider.capture(event);
+      captureQuietly(provider, event);
       return;
     }
     if (state === "loading" || state === "retry-scheduled") {
@@ -209,7 +274,7 @@ export function createAnalyticsTransport(options: AnalyticsTransportOptions): An
       }
       if (provider) {
         state = "ready";
-        provider.optIn();
+        optInOrOptOut(provider);
         return;
       }
       attemptLoad(generation, false);
@@ -232,15 +297,18 @@ export function createAnalyticsTransport(options: AnalyticsTransportOptions): An
 
     dispose(): void {
       if (disposed) return;
-      if (permission && state !== "failed") {
+      const active = permission && state !== "failed";
+      // Set first, so a provider that calls back into the transport from
+      // inside optOut finds it already disposed.
+      disposed = true;
+      permission = false;
+      if (active) {
         withdraw();
       } else {
         generation += 1;
         queue = [];
         cancelRetry();
       }
-      permission = false;
-      disposed = true;
     },
   };
 }

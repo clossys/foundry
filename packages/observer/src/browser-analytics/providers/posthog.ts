@@ -18,9 +18,10 @@
  * - captures a sanitized pageview as `$pageview` and a conversion under its
  *   allowlisted name;
  * - runs a `before_send` hook that drops every event the transport did not
- *   send, removes person-property payloads, keeps only
- *   `POSTHOG_PROPERTY_ALLOWLIST` plus the transport's own properties, and
- *   overwrites every URL field from the sanitized URL. It recognizes a
+ *   send, rebuilds the event from `POSTHOG_EVENT_FIELDS` alone (so
+ *   person-property payloads such as `$set`, `$set_once` and `$unset` never
+ *   pass), keeps only `POSTHOG_PROPERTY_ALLOWLIST` plus the transport's own
+ *   properties, and overwrites every URL field from the sanitized URL. It recognizes a
  *   transport event only while the adapter's own `capture` call is on the
  *   stack, so an SDK that ran the hook later would have every event
  *   dropped: it fails closed.
@@ -69,6 +70,13 @@ export const POSTHOG_PROPERTY_ALLOWLIST: readonly string[] = Object.freeze([
   "$referrer",
   "$referring_domain",
 ]);
+
+/**
+ * The only top-level fields of a captured event that pass the hook. The
+ * event is rebuilt from these, with `properties` replaced by the hook's own;
+ * every other top-level field is dropped.
+ */
+export const POSTHOG_EVENT_FIELDS: readonly string[] = Object.freeze(["uuid", "event", "timestamp"]);
 
 const URL_FIELDS: ReadonlySet<string> = new Set(["$current_url", "$host", "$pathname", "$referrer", "$referring_domain"]);
 const DELIVERY_FIELDS: ReadonlySet<string> = new Set(POSTHOG_PROPERTY_ALLOWLIST.filter((name) => !URL_FIELDS.has(name)));
@@ -146,10 +154,11 @@ function pathOf(url: string): string | null {
  * `init(context)`.
  */
 export function createPostHogProvider(sdk: PostHogLike, config: PostHogProviderConfig): AnalyticsProviderPort {
-  if (typeof config.key !== "string" || config.key === "") throw new TypeError("A PostHog provider needs a key.");
-  if (typeof config.apiHost !== "string" || config.apiHost === "") throw new TypeError("A PostHog provider needs an apiHost.");
-  const key = config.key;
-  const apiHost = config.apiHost;
+  // Each value is read once; the validated local is the one used.
+  const key: unknown = config.key;
+  const apiHost: unknown = config.apiHost;
+  if (typeof key !== "string" || key === "") throw new TypeError("A PostHog provider needs a key.");
+  if (typeof apiHost !== "string" || apiHost === "") throw new TypeError("A PostHog provider needs an apiHost.");
   const name = `${POSTHOG_INSTANCE_PREFIX}${instanceSuffix()}`;
 
   let initStarted = false;
@@ -196,9 +205,11 @@ export function createPostHogProvider(sdk: PostHogLike, config: PostHogProviderC
       if (!Object.prototype.hasOwnProperty.call(properties, field)) properties[field] = value;
     }
 
-    const output: Record<string, unknown> = { ...input, properties };
-    delete output.$set;
-    delete output.$set_once;
+    const output: Record<string, unknown> = {};
+    for (const field of POSTHOG_EVENT_FIELDS) {
+      if (Object.prototype.hasOwnProperty.call(input, field)) output[field] = input[field];
+    }
+    output.properties = properties;
     return output;
   }
 

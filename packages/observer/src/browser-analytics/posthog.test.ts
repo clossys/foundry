@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import {
+  POSTHOG_EVENT_FIELDS,
   POSTHOG_INSTANCE_PREFIX,
   POSTHOG_PROPERTY_ALLOWLIST,
   createPostHogProvider,
@@ -50,7 +51,13 @@ const SDK_AUTO_PROPERTIES: Readonly<Record<string, unknown>> = {
  * name it has already loaded is initialized again.
  */
 function fakeSdk(
-  options: { initBehaviour?: InitBehaviour; sdkPropertiesWin?: boolean; auto?: Record<string, unknown>; deferHook?: boolean } = {},
+  options: {
+    initBehaviour?: InitBehaviour;
+    sdkPropertiesWin?: boolean;
+    auto?: Record<string, unknown>;
+    deferHook?: boolean;
+    extraTopLevel?: Record<string, unknown>;
+  } = {},
 ) {
   const behaviour = options.initBehaviour ?? "instance";
   const auto = { ...SDK_AUTO_PROPERTIES, ...options.auto };
@@ -77,6 +84,7 @@ function fakeSdk(
           timestamp: "2026-01-01T00:00:00.000Z",
           $set: { email: "person@example.test" },
           $set_once: { first_seen: "2026-01-01" },
+          ...options.extraTopLevel,
         };
         const runHook = () => {
           const hook = config.before_send;
@@ -242,6 +250,16 @@ describe("P-11 posthog: initialization and event names (C-18, C-44)", () => {
     expect(JSON.stringify(result)).not.toContain("person@example.test");
     expect(result.uuid).toBe("uuid-1");
     expect(result.timestamp).toBe("2026-01-01T00:00:00.000Z");
+  });
+
+  it("rebuilds the event from POSTHOG_EVENT_FIELDS and the hook's properties, dropping every other top-level field", async () => {
+    const fake = fakeSdk({ extraTopLevel: { $unset: ["email"], extra: { email: "person@example.test" } } });
+    const { transport } = await readyTransport(fake);
+    transport.pageview({ href: "https://example.test/a" });
+    expect(POSTHOG_EVENT_FIELDS).toEqual(["uuid", "event", "timestamp"]);
+    expect(fake.sent).toHaveLength(1);
+    expect(Object.keys(fake.sent[0]!).sort()).toEqual(["event", "properties", "timestamp", "uuid"]);
+    expect(fake.sent[0]).toMatchObject({ uuid: "uuid-1", event: "$pageview", timestamp: "2026-01-01T00:00:00.000Z" });
   });
 
   it("names exactly the delivery, profile-suppression and URL fields in the allowlist", () => {
@@ -478,6 +496,25 @@ describe("P-12 posthog: forced configuration and owned instance (C-3, C-43, C-44
       expect(fake.instanceCalls).toEqual([]);
       expect(fake.sent).toEqual([]);
     }
+  });
+
+  it("reads the key and host once each and initializes with the values it validated", () => {
+    const fake = fakeSdk();
+    const reads = { key: 0, apiHost: 0 };
+    const config = {
+      get key() {
+        reads.key += 1;
+        return reads.key === 1 ? HOST_CONFIG.key : "other-project-key";
+      },
+      get apiHost() {
+        reads.apiHost += 1;
+        return reads.apiHost === 1 ? HOST_CONFIG.apiHost : "https://other.example.test";
+      },
+    };
+    createPostHogProvider(fake.sdk, config).init({ sanitizeUrl: (href) => href, eventNames: ["$pageview"] });
+    expect(reads).toEqual({ key: 1, apiHost: 1 });
+    expect(fake.inits[0]?.apiKey).toBe(HOST_CONFIG.key);
+    expect(fake.inits[0]?.config.api_host).toBe(HOST_CONFIG.apiHost);
   });
 
   it("refuses a missing key or host at construction, before any SDK call", () => {

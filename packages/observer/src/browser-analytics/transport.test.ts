@@ -396,3 +396,234 @@ describe("transport state machine (C-18, C-43)", () => {
     }
   });
 });
+
+// ------------------------------------------------- re-entrancy and errors
+
+/** The provider calls as short labels: a capture shows its path or name. */
+function trace(fake: ReturnType<typeof fakeProvider>): string[] {
+  return fake.calls.map((call) =>
+    call.method === "capture"
+      ? `capture:${call.event.kind === "pageview" ? new URL(call.event.url).pathname : call.event.name}`
+      : call.method,
+  );
+}
+
+/** Records unhandled promise rejections until `stop()`; waits one macrotask so pending ones surface. */
+function watchRejections() {
+  const seen: unknown[] = [];
+  const listener = (reason: unknown) => seen.push(reason);
+  process.on("unhandledRejection", listener);
+  return {
+    async stop() {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      process.off("unhandledRejection", listener);
+      return seen;
+    },
+  };
+}
+
+describe("transport re-entrancy (C-19)", () => {
+  it("a withdrawal from inside a flushed capture stops the flush; nothing reaches the provider after optOut", async () => {
+    const { loader, transport } = setup();
+    const fake = fakeProvider();
+    const port: AnalyticsProviderPort = {
+      ...fake.provider,
+      capture(event) {
+        fake.provider.capture(event);
+        if (event.kind === "pageview" && event.url.endsWith("/a")) transport.setPermission(false);
+      },
+    };
+    transport.setPermission(true);
+    transport.pageview(page("/a"));
+    transport.pageview(page("/b"));
+    transport.pageview(page("/c"));
+    loader.resolve(0, port);
+    await flush();
+    expect(trace(fake)).toEqual(["init", "optIn", "capture:/a", "optOut"]);
+  });
+
+  it("a withdrawal from inside init leaves the provider opted out, never opted in, and a later grant opts in without a second init", async () => {
+    const { loader, transport } = setup();
+    const fake = fakeProvider();
+    const port: AnalyticsProviderPort = {
+      ...fake.provider,
+      init(context) {
+        fake.provider.init(context);
+        transport.setPermission(false);
+      },
+    };
+    transport.setPermission(true);
+    transport.pageview(page("/a"));
+    loader.resolve(0, port);
+    await flush();
+    expect(trace(fake)).toEqual(["init", "optOut"]);
+    transport.pageview(page("/b"));
+    transport.setPermission(false);
+    transport.setPermission(true);
+    transport.pageview(page("/c"));
+    transport.setPermission(false);
+    await flush();
+    expect(trace(fake)).toEqual(["init", "optOut", "optIn", "capture:/c", "optOut"]);
+    expect(loader.calls).toBe(1);
+  });
+
+  it("a withdrawal and a re-grant from inside init opt the provider in for the re-grant, and the second load is discarded", async () => {
+    const { loader, transport } = setup();
+    const fake = fakeProvider();
+    const port: AnalyticsProviderPort = {
+      ...fake.provider,
+      init(context) {
+        fake.provider.init(context);
+        transport.setPermission(false);
+        transport.setPermission(true);
+        transport.pageview(page("/after-regrant"));
+      },
+    };
+    transport.setPermission(true);
+    transport.pageview(page("/before-withdrawal"));
+    loader.resolve(0, port);
+    await flush();
+    expect(trace(fake)).toEqual(["init", "optIn", "capture:/after-regrant"]);
+    expect(loader.calls).toBe(2);
+    const late = fakeProvider();
+    loader.resolve(1, late.provider);
+    await flush();
+    expect(late.calls).toEqual([]);
+    transport.pageview(page("/d"));
+    expect(trace(fake)).toEqual(["init", "optIn", "capture:/after-regrant", "capture:/d"]);
+  });
+
+  it("a provider that calls back into the transport from inside optOut during dispose cannot opt it in again", async () => {
+    const { loader, transport } = setup();
+    const fake = fakeProvider();
+    let reentered = false;
+    const port: AnalyticsProviderPort = {
+      ...fake.provider,
+      optOut() {
+        fake.provider.optOut();
+        if (reentered) return;
+        reentered = true;
+        transport.setPermission(false);
+        transport.setPermission(true);
+      },
+    };
+    transport.setPermission(true);
+    loader.resolve(0, port);
+    await flush();
+    transport.dispose();
+    transport.pageview(page("/after"));
+    expect(trace(fake)).toEqual(["init", "optIn", "optOut"]);
+  });
+});
+
+describe("provider and scheduler errors never escape the transport (C-19, C-43)", () => {
+  it("dispose with a throwing optOut does not throw, and nothing is sent or loaded afterwards", async () => {
+    const { loader, transport } = setup();
+    const fake = fakeProvider();
+    const port: AnalyticsProviderPort = {
+      ...fake.provider,
+      optOut() {
+        fake.provider.optOut();
+        throw new Error("opt-out failed");
+      },
+    };
+    transport.setPermission(true);
+    loader.resolve(0, port);
+    await flush();
+    expect(() => transport.dispose()).not.toThrow();
+    transport.setPermission(true);
+    transport.pageview(page("/after"));
+    await flush();
+    expect(trace(fake)).toEqual(["init", "optIn", "optOut"]);
+    expect(loader.calls).toBe(1);
+  });
+
+  it("a withdrawal with a throwing optOut does not throw, and later captures are dropped", async () => {
+    const { loader, transport } = setup();
+    const fake = fakeProvider();
+    const port: AnalyticsProviderPort = {
+      ...fake.provider,
+      optOut() {
+        fake.provider.optOut();
+        throw new Error("opt-out failed");
+      },
+    };
+    transport.setPermission(true);
+    loader.resolve(0, port);
+    await flush();
+    expect(() => transport.setPermission(false)).not.toThrow();
+    transport.pageview(page("/after"));
+    expect(trace(fake)).toEqual(["init", "optIn", "optOut"]);
+  });
+
+  it("a throwing capture drops that event only, in the flush and directly, with no unhandled rejection", async () => {
+    const rejections = watchRejections();
+    const { loader, transport } = setup();
+    const fake = fakeProvider();
+    const port: AnalyticsProviderPort = {
+      ...fake.provider,
+      capture(event) {
+        fake.provider.capture(event);
+        if (event.kind === "pageview" && (event.url.endsWith("/a") || event.url.endsWith("/c"))) throw new Error("capture failed");
+      },
+    };
+    transport.setPermission(true);
+    transport.pageview(page("/a"));
+    transport.pageview(page("/b"));
+    loader.resolve(0, port);
+    await flush();
+    expect(() => transport.pageview(page("/c"))).not.toThrow();
+    transport.pageview(page("/d"));
+    expect(await rejections.stop()).toEqual([]);
+    expect(trace(fake)).toEqual(["init", "optIn", "capture:/a", "capture:/b", "capture:/c", "capture:/d"]);
+  });
+
+  it("a throwing optIn leaves the provider opted out with the queue dropped, and a later grant opts in again", async () => {
+    const rejections = watchRejections();
+    const { loader, transport } = setup();
+    const fake = fakeProvider();
+    let optInFails = true;
+    const port: AnalyticsProviderPort = {
+      ...fake.provider,
+      optIn() {
+        fake.provider.optIn();
+        if (optInFails) throw new Error("opt-in failed");
+      },
+    };
+    transport.setPermission(true);
+    transport.pageview(page("/queued"));
+    loader.resolve(0, port);
+    await flush();
+    transport.pageview(page("/dropped"));
+    expect(await rejections.stop()).toEqual([]);
+    expect(trace(fake)).toEqual(["init", "optIn", "optOut"]);
+    optInFails = false;
+    transport.setPermission(false);
+    transport.setPermission(true);
+    transport.pageview(page("/sent"));
+    expect(trace(fake)).toEqual(["init", "optIn", "optOut", "optOut", "optIn", "capture:/sent"]);
+  });
+
+  it("a scheduler that cannot schedule the retry is failed for the page load, with no unhandled rejection", async () => {
+    const rejections = watchRejections();
+    const loader = deferredLoader();
+    const transport = createAnalyticsTransport({
+      loadProvider: loader.load,
+      allowedConversions: [],
+      scheduler: {
+        setTimeout() {
+          throw new Error("no timers");
+        },
+        clearTimeout() {},
+      },
+    });
+    transport.setPermission(true);
+    loader.reject(0);
+    await flush();
+    transport.setPermission(false);
+    transport.setPermission(true);
+    await flush();
+    expect(await rejections.stop()).toEqual([]);
+    expect(loader.calls).toBe(1);
+  });
+});
