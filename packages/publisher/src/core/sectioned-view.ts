@@ -218,6 +218,14 @@ export interface SectionedViewFaqSection {
   eyebrow?: CopyRef;
   heading: CopyRef;
   description?: CopyRef;
+  /**
+   * `split` sets the header group in the narrow text column and the rows in
+   * the wide column beside it, top-aligned, the same band a `content-section`
+   * with a split `faq` module renders. Optional and additive: without it (or
+   * with `stacked`) the section renders exactly as it did before.
+   * @default "stacked"
+   */
+  layout?: SectionedViewContentLayout;
   items: SectionedViewFaqItem[];
 }
 
@@ -478,7 +486,11 @@ export interface SectionedViewSpecimenMedia {
 export interface SectionedViewContentItem {
   id: string;
   icon?: ContentIconName;
-  /** Cards items only; a features or topics item with an eyebrow is refused. */
+  /**
+   * Cards and features items only; a topics item with an eyebrow is refused.
+   * A features item eyebrow is a small label above the item heading and
+   * resolves to at most `FEATURES_ITEM_EYEBROW_MAX_CHARACTERS` characters.
+   */
   eyebrow?: CopyRef;
   heading: CopyRef;
   description?: CopyRef;
@@ -582,9 +594,11 @@ export type SectionedViewContentModuleType = SectionedViewContentModule["type"];
  * One band: a header (eyebrow, heading, description, optional text-link
  * actions), an optional text module and an optional visual. With neither
  * module nor media it is an intro band. `mediaSide` is allowed only on a
- * `split`, `align` only on a stacked section, and a `split` needs `media`.
- * A split FAQ module is the exception: its rows take the visual column
- * beside the header, so it takes no `media`.
+ * `split`, `align` only on a stacked section, and a `split` needs `media`,
+ * with two exceptions where the module itself takes the visual column, top
+ * aligned beside the header: a split FAQ module (which then takes no
+ * `media`), and a text-only split, a `topics` module or a two-column
+ * `features` module (not `statement` emphasis) with no `media`.
  */
 export interface SectionedViewContentSection {
   id: string;
@@ -894,10 +908,11 @@ export function validateSectionedViewDocument(value: unknown): ComposeFinding[] 
         if (section.description !== undefined) validateCopy(section.description, `${path}.description`, findings);
         break;
       case "faq":
-        validateRepeatedSection(section, path, ["id", "kind", "ground", "eyebrow", "heading", "description", "items"], ["id", "question", "answer"], findings, (item, itemPath) => {
+        validateRepeatedSection(section, path, ["id", "kind", "ground", "eyebrow", "heading", "description", "layout", "items"], ["id", "question", "answer"], findings, (item, itemPath) => {
           validateCopy(item.question, `${itemPath}.question`, findings);
           validateCopy(item.answer, `${itemPath}.answer`, findings);
         });
+        validateEnumField(section, "layout", CONTENT_LAYOUTS, "sectioned-view-faq-layout", path, findings);
         validateCopy(section.heading, `${path}.heading`, findings);
         if (section.eyebrow !== undefined) validateCopy(section.eyebrow, `${path}.eyebrow`, findings);
         if (section.description !== undefined) validateCopy(section.description, `${path}.description`, findings);
@@ -1125,6 +1140,14 @@ const SPECIMEN_PART_TYPES: readonly SectionedViewSpecimenPartType[] = ["fields",
 const FIELDS_COLUMNS: readonly number[] = [1, 2, 4];
 const METER_DIRECTIONS: readonly string[] = ["max", "min"];
 const CONTENT_ITEM_KEYS = ["id", "icon", "eyebrow", "heading", "description"] as const;
+/** Modules that may take a split's visual column themselves when the split has no media: the text-only split. */
+const TEXT_SPLIT_MODULE_TYPES: readonly SectionedViewContentModuleType[] = ["topics", "features"];
+/**
+ * The most characters a features item eyebrow may resolve to: the eyebrow
+ * budget of the content cookbook. Checked when copy resolves, since a CopyRef
+ * carries no text before then.
+ */
+export const FEATURES_ITEM_EYEBROW_MAX_CHARACTERS = 32;
 /** Rows one specimen part may hold; a card's visual holds at most `CARD_VISUAL_MAX_ROWS`. */
 const PART_MAX_ROWS = 6;
 const CARD_VISUAL_MAX_ROWS = 5;
@@ -1203,17 +1226,23 @@ function validateContentSection(section: Record<string, unknown>, path: string, 
   if (section.align !== undefined && split) findings.push(finding("sectioned-view-content-align", `${path}.align`, `${path}.align is allowed only on a stacked section.`));
   const faqModule = isPlainObject(section.module) && section.module.type === "faq";
   if (split && faqModule && section.media !== undefined) findings.push(finding("sectioned-view-content-faq-split-media", `${path}.media`, `${path} is a split FAQ section; its rows take the visual column, so it takes no media.`));
-  if (split && !faqModule && section.media === undefined) findings.push(finding("sectioned-view-content-split-media", `${path}.media`, `${path} is a split section and needs media.`));
+  if (split && !faqModule && section.media === undefined) {
+    const textModule = isPlainObject(section.module) && TEXT_SPLIT_MODULE_TYPES.includes(section.module.type as SectionedViewContentModuleType);
+    if (!textModule) findings.push(finding("sectioned-view-content-split-media", `${path}.media`, `${path} is a split section and needs media, unless its module is faq, topics or features.`));
+    else if (isPlainObject(section.module) && section.module.type === "features" && (section.module.columns !== 2 || section.module.emphasis === "statement")) {
+      findings.push(finding("sectioned-view-content-text-split", `${path}.module`, `${path} is a text-only split; its features module takes the visual column, so it needs columns: 2 and item emphasis.`));
+    }
+  }
   if (section.module !== undefined) validateContentModule(section.module, `${path}.module`, findings);
   if (section.media !== undefined) validateSpecimenMedia(section.media, `${path}.media`, findings);
 }
 
-/** An item's icon, heading and description; only a cards item (`eyebrowAllowed`) carries an eyebrow. */
+/** An item's icon, heading and description; only a cards or features item (`eyebrowAllowed`) carries an eyebrow. */
 function validateContentItemFields(item: Record<string, unknown>, path: string, findings: ComposeFinding[], eyebrowAllowed = false): void {
   if (item.icon !== undefined) validateIcon(item.icon, `${path}.icon`, findings);
   validateCopy(item.heading, `${path}.heading`, findings);
   validateOptionalCopyFields(item, ["eyebrow", "description"], path, findings);
-  if (item.eyebrow !== undefined && !eyebrowAllowed) findings.push(finding("sectioned-view-content-item-eyebrow", `${path}.eyebrow`, `${path}.eyebrow is allowed only on cards items.`));
+  if (item.eyebrow !== undefined && !eyebrowAllowed) findings.push(finding("sectioned-view-content-item-eyebrow", `${path}.eyebrow`, `${path}.eyebrow is allowed only on cards and features items.`));
 }
 
 function validateModuleKeys(module: Record<string, unknown>, keys: readonly string[], required: readonly string[], path: string, findings: ComposeFinding[]): void {
@@ -1234,7 +1263,7 @@ function validateContentModule(value: unknown, path: string, findings: ComposeFi
       const statement = value.emphasis === "statement";
       const iconsAllowed = value.treatment !== "rule";
       validateRecords(value.items, `${path}.items`, findings, statement ? { min: 3, max: 3 } : { min: 2, max: 4 }, CONTENT_ITEM_KEYS, ["heading"], (item, itemPath) => {
-        validateContentItemFields(item, itemPath, findings);
+        validateContentItemFields(item, itemPath, findings, true);
         if (item.icon !== undefined && !iconsAllowed) findings.push(finding("sectioned-view-content-icon-treatment", `${itemPath}.icon`, `${itemPath}.icon is allowed only with the plain and plate treatments.`));
       });
       return;
@@ -1779,6 +1808,17 @@ function resolveComparisonSide(side: SectionedViewComparisonSide, path: string, 
 function resolveContentModule(module: SectionedViewContentModule, path: string, text: ResolveText): ResolvedSectionedViewContentModule {
   switch (module.type) {
     case "features":
+      return {
+        ...module,
+        items: module.items.map((item, index) => {
+          const resolved = resolveContentItem(item, `${path}.items.${index}`, text);
+          const characters = resolved.eyebrow === undefined ? 0 : [...resolved.eyebrow.trim()].length;
+          if (characters > FEATURES_ITEM_EYEBROW_MAX_CHARACTERS) {
+            throw new SectionedViewResolutionError("invalid-document", `resolveSectionedViewDocument refused invalid document: ${path}.items.${index}.eyebrow resolves to ${characters} characters; a features item eyebrow holds at most ${FEATURES_ITEM_EYEBROW_MAX_CHARACTERS}.`);
+          }
+          return resolved;
+        }),
+      } as ResolvedSectionedViewContentModule;
     case "topics":
       return { ...module, items: module.items.map((item, index) => resolveContentItem(item, `${path}.items.${index}`, text)) } as ResolvedSectionedViewContentModule;
     case "cards":
@@ -1882,6 +1922,10 @@ function moduleTreatment(module: SectionedViewContentModule): string {
 }
 
 function bandShape(section: SectionedViewSection, path: string, index: number): BandShape {
+  if (section.kind === "faq" && section.layout === "split") {
+    // A split legacy FAQ is the same band as a split content-section FAQ: its rows take the end column.
+    return { path, index, kind: section.kind, layout: "split", mediaSide: "end", module: section.kind, visual: "none", dense: false, ground: section.ground, treatment: "default", cardCount: 0 };
+  }
   if (section.kind !== "content-section") {
     return { path, index, kind: section.kind, layout: "stacked", module: section.kind, visual: "none", dense: false, ground: section.ground, treatment: "default", cardCount: 0 };
   }

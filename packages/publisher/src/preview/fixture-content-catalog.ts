@@ -366,6 +366,27 @@ function assetPanel(id: string, title: string, meta: string, tone: SectionedView
   };
 }
 
+const splitText: SectionedViewContentSection = {
+  id: "catalog-split-text",
+  kind: "content-section",
+  ground: "base",
+  layout: "split",
+  eyebrow: copy("split-text.eyebrow", "Reporting"),
+  heading: copy("split-text.heading", "Every audit question has a record behind it"),
+  description: copy("split-text.description", "Reports are built from the records your team already keeps each day, so nothing is retyped for an auditor or a client."),
+  module: {
+    type: "features",
+    columns: 2,
+    treatment: "plain",
+    items: [
+      { id: "compliance", eyebrow: copy("split-text.compliance.eyebrow", "Compliance"), heading: copy("split-text.compliance.heading", "Statutory checks on time"), description: copy("split-text.compliance.description", "Each check shows its due date, its last result and who signed it.") },
+      { id: "spend", eyebrow: copy("split-text.spend.eyebrow", "Spend"), heading: copy("split-text.spend.heading", "Cost per asset and site"), description: copy("split-text.spend.description", "Labour and parts roll up from each job, so budgets follow the work.") },
+      { id: "workload", eyebrow: copy("split-text.workload.eyebrow", "Workload"), heading: copy("split-text.workload.heading", "Backlog by trade"), description: copy("split-text.workload.description", "Open jobs grouped by trade and age show where to add a shift.") },
+      { id: "reliability", eyebrow: copy("split-text.reliability.eyebrow", "Reliability"), heading: copy("split-text.reliability.heading", "Repeat failures flagged"), description: copy("split-text.reliability.description", "Assets that fail twice in ninety days rise to the top of the list.") },
+    ],
+  },
+};
+
 const specimenRow: SectionedViewContentSection = {
   id: "catalog-specimen-row",
   kind: "content-section",
@@ -956,6 +977,7 @@ export const contentCatalogDocument: SectionedViewDocument = {
     featuresRule,
     splitStart,
     featuresStatement,
+    splitText,
     specimenRow,
     featuresPlate,
     specimenStack,
@@ -991,6 +1013,7 @@ export const CONTENT_CATALOG_CAPTIONS: readonly ContentCatalogCaption[] = [
   { sectionId: "catalog-features-rule", title: "Features, rule, 4 columns", detail: "base · no icons (rule takes none)", budget: "max" },
   { sectionId: "catalog-split-start", title: "Split, text + specimen, media start", detail: "sunken · topics in 1 column in the text column · table panel", budget: "max" },
   { sectionId: "catalog-features-statement", title: "Features, statement emphasis", detail: "inverse (the one inverse body band) · centred header · exactly 3 items", budget: "typical" },
+  { sectionId: "catalog-split-text", title: "Split, text only, features in the visual column", detail: "base · no media · 2 columns with item eyebrows, top-aligned beside the header", budget: "typical" },
   { sectionId: "catalog-specimen-row", title: "Specimen, stacked, row of 3", detail: "sunken · three panels, each a meter and one field", budget: "typical" },
   { sectionId: "catalog-features-plate", title: "Features, plate, 2 columns, icons", detail: "base · 2-column plates take the longest item copy", budget: "max" },
   { sectionId: "catalog-specimen-stack", title: "Specimen, stacked, stack", detail: "sunken · two panels: meter and shares, then a table with a footer note", budget: "typical" },

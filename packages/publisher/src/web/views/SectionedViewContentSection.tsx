@@ -101,7 +101,7 @@ function renderModule(module: ResolvedSectionedViewContentModule, ground: Sectio
     case "features":
       return (
         <FeatureGrid
-          items={module.items.map((item) => ({ id: item.id, icon: icon(item.icon), heading: item.heading, description: item.description }))}
+          items={module.items.map((item) => ({ id: item.id, icon: icon(item.icon), eyebrow: item.eyebrow, heading: item.heading, description: item.description }))}
           columns={module.columns ?? FEATURES_DEFAULTS.columns}
           treatment={module.treatment ?? FEATURES_DEFAULTS.treatment}
           emphasis={module.emphasis ?? FEATURES_DEFAULTS.emphasis}
@@ -155,7 +155,9 @@ function renderModule(module: ResolvedSectionedViewContentModule, ground: Sectio
  * text-link actions), then the text module and anything placed after it,
  * then the specimen. A `split` puts the text beside the specimen; a split FAQ
  * module is the FAQ band, its rows taking the visual column beside a
- * top-aligned header. Module item headings are one level below the section.
+ * top-aligned header, and a text-only split (topics or features, no media)
+ * places its module in the visual column the same way. Module item headings
+ * are one level below the section.
  */
 export function createContentSectionBlock(Faq: ContentSectionFaq) {
   return function ContentSectionBlock({ section, actions, className, after }: ContentSectionBlockProps) {
@@ -165,6 +167,14 @@ export function createContentSectionBlock(Faq: ContentSectionFaq) {
     if (section.layout === "split" && section.module?.type === "faq") {
       return (
         <ContentSection {...header} layout="split" mediaSide={section.mediaSide} media={module} data-content-section-faq="" className={[className, "tablet-lg:items-start"].filter(Boolean).join(" ")}>
+          {after}
+        </ContentSection>
+      );
+    }
+    if (section.layout === "split" && section.media === undefined) {
+      // A text-only split: the topics or features module takes the visual column, top-aligned beside the header.
+      return (
+        <ContentSection {...header} layout="split" mediaSide={section.mediaSide} media={module} data-content-section-text-split="" className={[className, "tablet-lg:items-start"].filter(Boolean).join(" ")}>
           {after}
         </ContentSection>
       );

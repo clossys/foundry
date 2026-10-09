@@ -522,15 +522,20 @@ alternative to `StatusList`'s `groups`.
 `heading`, an optional `description` and `actions`, then at most one `module`
 and at most one `media`. `layout` is `stacked` (the default; `align` may be
 `start` or `center`) or `split` (requires `media`; `mediaSide` is `end` by
-default or `start`). A split `faq` module is the exception: it takes no
-`media`, and its rows fill the visual column beside the header group. A band
-with neither module nor media is an intro band.
+default or `start`). Two exceptions let the module itself take the visual
+column, top-aligned beside the header group: a split `faq` module, which
+takes no `media`, and a text-only split, a `topics` module or a `features`
+module with `columns: 2` and item emphasis, with no `media`. A band with
+neither module nor media is an intro band.
 
 - `module` is one of six closed types: `features` (2-4 items; exactly 3 with
   `emphasis: "statement"`; `treatment` `plain`, `plate` or `rule`, and `rule`
-  takes no icons), `cards` (2-6 cards whose `span`s fill whole 12-unit rows,
-  each with an optional `eyebrow` and an optional one-part `visual` of at
-  most 5 rows; only cards take an item `eyebrow`), `comparison`
+  takes no icons; each item may carry an `eyebrow`, a small label above its
+  heading that resolves to at most `FEATURES_ITEM_EYEBROW_MAX_CHARACTERS`
+  (32) characters, or resolution refuses the document), `cards` (2-6 cards
+  whose `span`s fill whole 12-unit rows, each with an optional `eyebrow` and
+  an optional one-part `visual` of at most 5 rows; topics items take no
+  `eyebrow`), `comparison`
   (a `before` and an `after` side of the same form — a description each, or
   the same number of 2-4 points — and a panel `visual` on both or neither),
   `topics` (2-8 items; an even count in the default 2 columns), `steps`
@@ -589,7 +594,7 @@ const page = <SectionedView document={resolved} />;
 
 #### Optional fields the document may also carry
 
-Four slots are optional and additive: a document written without them
+These slots are optional and additive: a document written without them
 validates and renders exactly as it did before they existed.
 
 - **`eyebrow` on every section kind.** `hero` always had one; `feature-grid`,
@@ -613,6 +618,11 @@ validates and renders exactly as it did before they existed.
   (`up` | `down` | `neutral`, only with `delta`), and optional `description`.
   The view maps each row onto Designer `Stat`; do not flatten metrics into
   `feature-grid`.
+- **`layout` on the faq section.** `stacked` (the default, unchanged) or
+  `split`: the header group in the narrow text column and the rows in the
+  wide column beside it, top-aligned. It renders the same band as a
+  `content-section` with a split `faq` module, so the two read alike on one
+  page.
 - **`detail` on a status-list item.** An optional `CopyRef` carrying that
   row's own explanation, including the reasoning behind a `not-offered`
   answer. It renders as a second description of the same row, so the
@@ -4112,6 +4122,7 @@ app styles Publisher's views with its own build (see
   `collectCopyProvenance`, `createResolvedOutputManifest`,
   `resolveSurfaceDocument`, `validateSectionedViewDocument`,
   `resolveSectionedViewDocument`, `checkSectionVariety`, `CONTENT_ICON_NAMES`,
+  `FEATURES_ITEM_EYEBROW_MAX_CHARACTERS`,
   `resolveDocument`, `resolveCopy`, `resolveAssets`, `frameToInches`,
   `frameToPercent`, `getSlotSpec`, `listSlotKeys`, `requiredSlotKeys`, and
   the `Channel`, `ChannelMeta`, `ComposeDocument`, `ComposeFinding`,

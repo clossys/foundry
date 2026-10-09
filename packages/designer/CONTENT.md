@@ -42,13 +42,19 @@ Pick the module from what the information is. Write the copy after that.
 | A before and after, or a without and with | `comparison` | at most one per page |
 | A checklist of 4-8 short topics | `topics` | 2 columns; 1 column beside a specimen |
 | An ordered process with a hand-off between people | `steps` | 3-4 steps; actor labels name who acts |
-| Questions a buyer asks before acting | `faq` | split band: header beside the rows |
+| Questions a buyer asks before acting | `faq` | split band: header beside the rows (the legacy `faq` section opts in with `layout: "split"`) |
 | What the product shows on screen: a record, a matrix, a schedule, a result | specimen media | `single`, `row` (2-3 peers), `stack` (2-3 related views), `flow` (a hand-off from one panel to the next) |
 
 Use a split layout (`layout: "split"`) when the text and the specimen explain
 each other: the header and a short module sit in the text column, and the
 specimen sits beside them. Use stacked when the specimen needs the full width
 or the module stands alone.
+
+A split may also go without media when its module is `faq`, `topics`, or
+2-column `features` with item emphasis: the module takes the visual column,
+top-aligned beside the header. Use it when the items are the evidence and
+there is no specimen to show. Cards, steps and comparison always need media in
+a split.
 
 ## Modules
 
@@ -67,7 +73,10 @@ another page. Do not put a list into the description.
 words; description 6-20 words (up to 25 for 2-column `plate`). Statement
 emphasis: exactly 3 items, heading 2-3 words, description at most 12 words.
 Items are parallel: same grammar, same length, one idea each. Icons go with
-`plain` and `plate` only, and only when they tell items apart.
+`plain` and `plate` only, and only when they tell items apart. An item may
+carry an optional eyebrow above its heading: 1-3 words, at most 32
+characters (Publisher refuses a longer one), naming the item's area or role ("Compliance", "Spend"). Give every
+item an eyebrow or none, and do not pair an eyebrow with an icon.
 
 **cards (bento).** 2-6 cards whose spans fill whole rows. A row is
 two-thirds + third (either order), three thirds, two halves, or one full card.

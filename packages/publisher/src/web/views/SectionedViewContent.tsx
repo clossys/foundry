@@ -1,8 +1,8 @@
 import { buttonLinkClassName } from "@clossys/designer/atoms/server";
 import { SECTION_GROUND_CLASSES } from "@clossys/designer/blocks/server";
 import type { ReactNode } from "react";
-import { CONTENT_ICON_NAMES } from "../../core/sectioned-view.js";
-import type { ContentIconName, ResolvedSectionedViewAction, ResolvedSectionedViewDocument, ResolvedSectionedViewHeroMedia, ResolvedSectionedViewSection, SectionedViewGround, SectionedViewStatTrend, SectionedViewStatus, SectionedViewStatusDisposition } from "../../core/sectioned-view.js";
+import { CONTENT_ICON_NAMES, FEATURES_ITEM_EYEBROW_MAX_CHARACTERS } from "../../core/sectioned-view.js";
+import type { ContentIconName, ResolvedSectionedViewAction, ResolvedSectionedViewContentSection, ResolvedSectionedViewDocument, ResolvedSectionedViewHeroMedia, ResolvedSectionedViewSection, SectionedViewGround, SectionedViewStatTrend, SectionedViewStatus, SectionedViewStatusDisposition } from "../../core/sectioned-view.js";
 import { isRenderAsset } from "../../internal/assets.js";
 import { RenderError } from "../../internal/errors.js";
 import { isSanctionedHref } from "../../internal/href.js";
@@ -368,7 +368,7 @@ function assertSpecimenMedia(value: unknown, path: string): void {
   value.panels.forEach((panel, index) => assertSpecimenPanel(panel, `${path}.panels.${index}`));
 }
 
-/** Features and topics items: an icon from the closed set, a heading, an optional description. Only cards carry an item eyebrow. */
+/** Content items: an icon from the closed set, a heading, an optional description and (cards and features only; the caller's `records` keys decide) an eyebrow. */
 function assertContentItems(items: Record<string, unknown>[], path: string, iconsAllowed = true): void {
   items.forEach((item, index) => {
     const itemPath = `${path}.${index}`;
@@ -404,8 +404,11 @@ function assertContentModule(value: unknown, path: string): void {
       oneOf(module.treatment, ["plain", "rule", "plate"], `${path}.treatment`, "features treatment");
       oneOf(module.emphasis, ["item", "statement"], `${path}.emphasis`, "features emphasis");
       const statement = module.emphasis === "statement";
-      records(module.items, `${path}.items`, ["id", "icon", "heading", "description"], statement ? 3 : 2, statement ? 3 : 4, "items");
+      records(module.items, `${path}.items`, ["id", "icon", "eyebrow", "heading", "description"], statement ? 3 : 2, statement ? 3 : 4, "items");
       assertContentItems(module.items, `${path}.items`, module.treatment !== "rule");
+      module.items.forEach((item, index) => {
+        if (typeof item.eyebrow === "string" && [...item.eyebrow.trim()].length > FEATURES_ITEM_EYEBROW_MAX_CHARACTERS) throw new Error(`${path}.items.${index}.eyebrow holds more than ${FEATURES_ITEM_EYEBROW_MAX_CHARACTERS} characters.`);
+      });
       return;
     }
     case "cards": {
@@ -462,7 +465,8 @@ function assertContentModule(value: unknown, path: string): void {
  * A resolved content section, held to the same closed shapes and budgets the
  * document contract validates, so no Designer block throws while rendering.
  * A split needs a specimen, except a split FAQ, whose rows take the visual
- * column and which takes no media.
+ * column and which takes no media, and a text-only split, whose topics or
+ * two-column features module takes the visual column.
  */
 function assertContentSection(record: Record<string, unknown>, path: string): void {
   if (!closed(record, CONTENT_SECTION_KEYS)) throw new Error(`${path} has keys not allowed for a content-section section.`);
@@ -477,7 +481,11 @@ function assertContentSection(record: Record<string, unknown>, path: string): vo
   if (record.media !== undefined) assertSpecimenMedia(record.media, `${path}.media`);
   const faq = plain(record.module) && record.module.type === "faq";
   if (split && faq && record.media !== undefined) throw new Error(`${path}.media is not allowed on a split FAQ section; its rows take the visual column.`);
-  if (split && !faq && record.media === undefined) throw new Error(`${path} is a split section and needs media.`);
+  if (split && !faq && record.media === undefined) {
+    const module = plain(record.module) ? record.module : undefined;
+    if (module === undefined || (module.type !== "topics" && module.type !== "features")) throw new Error(`${path} is a split section and needs media, unless its module is faq, topics or features.`);
+    if (module.type === "features" && (module.columns !== 2 || module.emphasis === "statement")) throw new Error(`${path} is a text-only split; its features module needs columns: 2 and item emphasis.`);
+  }
 }
 
 /** Validates the direct resolved-model boundary before any Designer block receives props. */
@@ -567,8 +575,9 @@ export function assertRenderableSectionedViewDocument(document: unknown): assert
       }
       continue;
     }
-    const sectionKeys = ["id", "kind", "ground", "eyebrow", "heading", "description", "items"];
+    const sectionKeys = record.kind === "faq" ? ["id", "kind", "ground", "eyebrow", "heading", "description", "layout", "items"] : ["id", "kind", "ground", "eyebrow", "heading", "description", "items"];
     if (!closed(record, sectionKeys)) throw new Error(`${path} has keys not allowed for its section kind.`);
+    if (record.kind === "faq") oneOf(record.layout, ["stacked", "split"], `${path}.layout`, "faq layout");
     dense(record.items, `${path}.items`);
     const itemKeys = record.kind === "faq" ? ["id", "question", "answer"] : record.kind === "ordered-step-sequence" ? ["id", "ordinal", "label", "heading", "description"] : ["id", "heading", "description"];
     closedItems(record.items, `${path}.items`, itemKeys);
@@ -722,6 +731,24 @@ const STAT_GRID_GROUND: Record<SectionedViewGround, { surface: string; primary: 
   inverse: { surface: "bg-surface-inverse", primary: "text-ink-on-inverse", secondary: "text-ink-on-inverse-muted", muted: "text-ink-on-inverse-muted" },
 };
 
+/**
+ * A split `faq` section as the content-section band it reads as: the header
+ * group in the text column and the rows, as a split `faq` module, in the
+ * visual column. One renderer for both spellings keeps them identical.
+ */
+function splitFaqSection(section: Extract<ResolvedSectionedViewSection, { kind: "faq" }>): ResolvedSectionedViewContentSection {
+  return {
+    id: section.id,
+    kind: "content-section",
+    ground: section.ground,
+    ...(section.eyebrow === undefined ? {} : { eyebrow: section.eyebrow }),
+    heading: section.heading,
+    ...(section.description === undefined ? {} : { description: section.description }),
+    layout: "split",
+    module: { type: "faq", items: section.items },
+  };
+}
+
 function renderSection(section: ResolvedSectionedViewSection, index: number, blocks: SectionedViewBlockSet, options: SectionedViewRenderOptions): ReactNode {
   const mediaPath = `sections.${index}.media`;
   switch (section.kind) {
@@ -743,7 +770,9 @@ function renderSection(section: ResolvedSectionedViewSection, index: number, blo
       );
     }
     case "feature-grid": return <blocks.FeatureGrid key={section.id} id={section.id} eyebrow={section.eyebrow} heading={section.heading} description={section.description} items={section.items} headingLevel={2} ground={section.ground} />;
-    case "faq": return <blocks.Faq key={section.id} id={section.id} eyebrow={section.eyebrow} heading={section.heading} description={section.description} items={section.items} headingLevel={2} ground={section.ground} />;
+    case "faq":
+      if (section.layout === "split") return <blocks.ContentSection key={section.id} section={splitFaqSection(section)} className={SECTION_GROUND_CLASSES[section.ground].surface || undefined} />;
+      return <blocks.Faq key={section.id} id={section.id} eyebrow={section.eyebrow} heading={section.heading} description={section.description} items={section.items} headingLevel={2} ground={section.ground} />;
     case "ordered-step-sequence": return <blocks.OrderedStepSequence key={section.id} id={section.id} eyebrow={section.eyebrow} heading={section.heading} description={section.description} items={section.items} headingLevel={2} ground={section.ground} />;
     case "status-list": return <blocks.StatusList key={section.id} id={section.id} eyebrow={section.eyebrow} heading={section.heading} description={section.description} labels={section.labels} groups={section.groups} items={section.items} legendLabel={section.heading} headingLevel={2} ground={section.ground} />;
     case "stat-grid": return renderStatGrid(section, blocks);

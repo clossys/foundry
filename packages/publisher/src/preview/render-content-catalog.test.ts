@@ -37,6 +37,8 @@ describe("content catalog fixture", () => {
     const splits = contentSections.filter((section) => section.layout === "split");
     expect(new Set(splits.filter((section) => section.media !== undefined).map((section) => section.mediaSide ?? "end"))).toEqual(new Set(["end", "start"]));
     expect(splits.some((section) => section.module?.type === "faq" && section.media === undefined)).toBe(true);
+    expect(splits.some((section) => (section.module?.type === "features" || section.module?.type === "topics") && section.media === undefined)).toBe(true);
+    expect(features.some((module) => module.items.some((item) => item.eyebrow !== undefined))).toBe(true);
 
     const cardRows = contentSections.flatMap((section) => (section.module?.type === "cards" ? [section.module.items.map((card) => card.span)] : []));
     const spans = cardRows.flat();
@@ -57,7 +59,7 @@ describe("content catalog fixture", () => {
     expect(grounds).toEqual(new Set(["base", "sunken", "inverse"]));
   });
 
-  it("only breaks the page-variety rules a catalog must (two card bands, two comparisons, repeated card treatment)", () => {
+  it("only breaks the page-variety rules a catalog must (two card bands, two comparisons, repeated module treatments)", () => {
     const rules = new Set(checkSectionVariety(contentCatalogDocument).map((finding) => finding.rule));
     for (const rule of rules) {
       expect(["sectioned-view-variety-card-bands", "sectioned-view-variety-comparison-count", "sectioned-view-variety-treatment"]).toContain(rule);
@@ -107,6 +109,8 @@ describe("content catalog fixture", () => {
           const statement = module.emphasis === "statement";
           const limit = statement ? 12 : module.treatment === "plate" && module.columns === 2 ? 25 : 20;
           for (const item of module.items) {
+            expect(words(item.eyebrow), `${at} ${item.id} eyebrow`).toBeLessThanOrEqual(3);
+            expect((item.eyebrow ?? "").length, `${at} ${item.id} eyebrow`).toBeLessThanOrEqual(32);
             expect(words(item.heading), `${at} ${item.id}`).toBeLessThanOrEqual(statement ? 3 : 5);
             expect(words(item.description), `${at} ${item.id}`).toBeLessThanOrEqual(limit);
           }

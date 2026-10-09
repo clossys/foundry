@@ -10,6 +10,7 @@ import type { CopyRef, CopyRegistry } from "@clossys/writer";
 import {
   checkSectionVariety,
   CONTENT_ICON_NAMES,
+  FEATURES_ITEM_EYEBROW_MAX_CHARACTERS,
   resolveSectionedViewDocument,
   SectionedViewResolutionError,
   validateSectionedViewDocument,
@@ -114,6 +115,7 @@ const stepsModule: SectionedViewContentModule = {
     { id: "three", ordinal: ref("acme.step.three.ordinal"), heading: ref("acme.step.three.heading") },
   ],
 };
+type SectionedViewFaqItemShape = { id: string; question: CopyRef; answer: CopyRef };
 const faqModule: SectionedViewContentModule = {
   type: "faq",
   items: ["q1", "q2", "q3", "q4"].map((id) => ({ id, question: ref(`acme.faq.${id}.question`), answer: ref(`acme.faq.${id}.answer`) })),
@@ -178,8 +180,27 @@ describe("content-section — validation", () => {
   it("refuses mediaSide without split, align on a split, and a split without media", () => {
     expect(rules(docWith(section("a", { mediaSide: "end" })))).toEqual(["sectioned-view-content-media-side"]);
     expect(rules(docWith(section("a", { layout: "split", align: "center", media: specimen([panelB]) })))).toEqual(["sectioned-view-content-align"]);
-    expect(rules(docWith(section("a", { layout: "split", module: topicsModule })))).toEqual(["sectioned-view-content-split-media"]);
+    expect(rules(docWith(section("a", { layout: "split" })))).toEqual(["sectioned-view-content-split-media"]);
+    expect(rules(docWith(section("a", { layout: "split", module: cardsModule })))).toEqual(["sectioned-view-content-split-media"]);
+    expect(rules(docWith(section("a", { layout: "split", module: stepsModule })))).toEqual(["sectioned-view-content-split-media"]);
+    expect(rules(docWith(section("a", { layout: "split", module: comparisonModule })))).toEqual(["sectioned-view-content-split-media"]);
     expect(rules(docWith(section("a", { layout: "grid" as never })))).toEqual(["sectioned-view-content-layout"]);
+  });
+
+  it("accepts a text-only split: topics, or two-column item features, taking the visual column without media", () => {
+    expect(rules(docWith(section("a", { layout: "split", module: topicsModule })))).toEqual([]);
+    expect(rules(docWith(section("a", { layout: "split", mediaSide: "start", module: { type: "topics", columns: 1, items: [item("a"), item("b"), item("c")] } })))).toEqual([]);
+    expect(rules(docWith(section("a", { layout: "split", module: { type: "features", columns: 2, treatment: "rule", items: [item("a"), item("b")] } })))).toEqual([]);
+    // A text-only split still takes media when it has some: then the module stays in the text column.
+    expect(rules(docWith(section("a", { layout: "split", module: topicsModule, media: specimen([panelB]) })))).toEqual([]);
+  });
+
+  it("holds a text-only split's features to two columns with item emphasis", () => {
+    expect(rules(docWith(section("a", { layout: "split", module: featuresModule })))).toEqual(["sectioned-view-content-text-split"]);
+    expect(rules(docWith(section("a", { layout: "split", module: { type: "features", items: [item("a"), item("b")] } })))).toEqual(["sectioned-view-content-text-split"]);
+    expect(rules(docWith(section("a", { layout: "split", module: { type: "features", columns: 2, emphasis: "statement", items: [item("a"), item("b"), item("c")] } })))).toEqual(["sectioned-view-content-text-split"]);
+    // With media the features module is in the text column, so any column count stays valid.
+    expect(rules(docWith(section("a", { layout: "split", module: featuresModule, media: specimen([panelB]) })))).toEqual([]);
   });
 
   it("accepts a split FAQ without media, its rows taking the visual column, and refuses one with media", () => {
@@ -189,8 +210,19 @@ describe("content-section — validation", () => {
     expect(rules(docWith(section("a", { module: faqModule, media: specimen([panelB]) })))).toEqual([]);
   });
 
-  it("allows an item eyebrow on cards items only", () => {
-    expect(rules(moduleDoc({ type: "features", items: [item("a", { eyebrow: ref("acme.e") }), item("b")] }))).toEqual(["sectioned-view-content-item-eyebrow"]);
+  it("lets a faq section opt into the split layout, stacked staying the default", () => {
+    const faq = (extra: Record<string, unknown>) => docWith({ id: "q", kind: "faq", heading: ref("acme.q.heading"), items: (faqModule as { items: SectionedViewFaqItemShape[] }).items, ...extra } as SectionedViewSection);
+    expect(rules(faq({}))).toEqual([]);
+    expect(rules(faq({ layout: "stacked" }))).toEqual([]);
+    expect(rules(faq({ layout: "split" }))).toEqual([]);
+    expect(rules(faq({ layout: "grid" }))).toEqual(["sectioned-view-faq-layout"]);
+    expect(rules(faq({ layout: "split", mediaSide: "start" }))).toEqual(["sectioned-view-section-keys"]);
+  });
+
+  it("allows an item eyebrow on cards and features items, not on topics items", () => {
+    expect(rules(moduleDoc({ type: "features", items: [item("a", { eyebrow: ref("acme.e") }), item("b")] }))).toEqual([]);
+    expect(rules(moduleDoc({ type: "features", treatment: "rule", items: [item("a", { eyebrow: ref("acme.e") }), item("b", { eyebrow: ref("acme.e") })] }))).toEqual([]);
+    expect(rules(moduleDoc({ type: "features", items: [item("a", { eyebrow: "Area" }), item("b")] }))).toEqual(["sectioned-view-copy-ref-shape"]);
     expect(rules(moduleDoc({ type: "topics", columns: 1, items: [item("a", { eyebrow: ref("acme.e") }), item("b")] }))).toEqual(["sectioned-view-content-item-eyebrow"]);
     expect(rules(moduleDoc({ type: "cards", items: [{ ...item("a", { eyebrow: ref("acme.e") }), span: "half" }, { ...item("b"), span: "half" }] }))).toEqual([]);
   });
@@ -386,6 +418,26 @@ describe("content-section — resolution", () => {
     }
   });
 
+  it("resolves a features item eyebrow and holds it to the eyebrow budget", () => {
+    expect(FEATURES_ITEM_EYEBROW_MAX_CHARACTERS).toBe(32);
+    const features = (eyebrowId: string) => docWith(section("bounded", { module: { type: "features", columns: 2, items: [item("ea", { eyebrow: ref(eyebrowId) }), item("eb")] } }));
+    const short = features("acme.e.short");
+    const resolved = resolveSectionedViewDocument(short, createCopyResolver(registryFor(copyIds)));
+    const module = (resolved.sections[0] as ResolvedSectionedViewContentSection).module;
+    expect(module?.type === "features" && module.items[0]!.eyebrow).toBe("Text for acme.e.short");
+    expect(module?.type === "features" && Object.hasOwn(module.items[1]!, "eyebrow")).toBe(false);
+    // "Text for " plus a 24-character id is 33 characters: one over.
+    const long = features("acme.e.twenty-four-chars");
+    try {
+      resolveSectionedViewDocument(long, createCopyResolver(registryFor(copyIds)));
+      expect.unreachable();
+    } catch (error) {
+      expect(error).toBeInstanceOf(SectionedViewResolutionError);
+      expect((error as SectionedViewResolutionError).reason).toBe("invalid-document");
+      expect((error as Error).message).toContain("sections.0.module.items.0.eyebrow resolves to 33 characters");
+    }
+  });
+
   it("refuses an invalid content section before resolving any copy", () => {
     let calls = 0;
     const counting = (copyRef: CopyRef) => {
@@ -464,6 +516,18 @@ describe("checkSectionVariety", () => {
     const rule: SectionedViewContentModule = { ...featuresModule, treatment: "rule", items: featuresModule.type === "features" ? featuresModule.items.map(({ icon: _icon, ...rest }) => rest) : [] };
     expect(ruleList(section("a", { module: featuresModule }), section("gap", { module: faqModule }), section("b", { module: rule }))).toEqual([]);
     expect(ruleList(section("a", { module: featuresModule }), section("gap", { module: faqModule }), section("b", { module: featuresModule }))).toEqual(["sectioned-view-variety-treatment"]);
+  });
+
+  it("reads a text-only split as a split without a visual, and a split legacy FAQ as a split on the end side", () => {
+    const textSplit = section("t", { layout: "split", module: topicsModule });
+    // Not dense (no specimen), so it may sit beside a dense band; still a split for the side rules.
+    expect(ruleList(section("a", { module: cardsModule }), textSplit)).toEqual([]);
+    const faqSplit: SectionedViewSection = { id: "q", kind: "faq", layout: "split", heading: ref("acme.q.heading"), items: (faqModule as { items: SectionedViewFaqItemShape[] }).items };
+    expect(ruleList(textSplit, faqSplit)).toEqual(["sectioned-view-variety-split-side"]);
+    expect(ruleList(section("t2", { layout: "split", mediaSide: "start", module: topicsModule }), faqSplit)).toEqual([]);
+    const stackedFaq: SectionedViewSection = { ...faqSplit, layout: "stacked" };
+    expect(ruleList(textSplit, stackedFaq)).toEqual([]);
+    expect(ruleList(section("a", { layout: "split", media: specimen([panelB]) }), section("b", { layout: "split", mediaSide: "start", module: topicsModule }), faqSplit)).toEqual(["sectioned-view-variety-split-run"]);
   });
 
   it("reads several documents as one page and names each finding's document", () => {

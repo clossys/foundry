@@ -102,7 +102,7 @@ export { getSlotSpec, listSlotKeys, requiredSlotKeys } from "./slots.js";
 export { collectCopyProvenance, createOutputManifest, createResolvedOutputManifest } from "./output-manifest.js";
 
 export { resolveSurfaceDocument, SurfaceResolutionError } from "./resolve-surface.js";
-export { checkSectionVariety, CONTENT_ICON_NAMES, resolveSectionedViewDocument, SectionedViewResolutionError, validateSectionedViewDocument } from "./sectioned-view.js";
+export { checkSectionVariety, CONTENT_ICON_NAMES, FEATURES_ITEM_EYEBROW_MAX_CHARACTERS, resolveSectionedViewDocument, SectionedViewResolutionError, validateSectionedViewDocument } from "./sectioned-view.js";
 export type {
   ResolvedSectionedViewAction,
   ResolvedSectionedViewDocument,
