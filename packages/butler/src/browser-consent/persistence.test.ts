@@ -269,6 +269,19 @@ describe("a refusal made this visit is a floor (P-32, C-54, C-56)", () => {
     expect(h.snap()).toMatchObject({ effective: "denied", allowed: false, persistence: "memory", withdrawal: "failed" });
   });
 
+  it("a later refusal a subscriber made during that publish keeps its later floor", () => {
+    const h = withdrawalOverAnotherTabsGrant();
+    duringFirstPublish(h, () => {
+      h.time.advance(HOUR);
+      h.lifecycle.refuse();
+    });
+    h.lifecycle.refuse();
+    expect(h.snap()).toMatchObject({ effective: "denied", allowed: false });
+    h.storage.setExternally(decidedAt("granted", plusMs(T0, HOUR / 2)));
+    h.lifecycle.refresh();
+    expect(h.snap()).toMatchObject({ effective: "denied", allowed: false, persistence: "memory" });
+  });
+
   it("another tab's live, newer denial that replaces an in-memory refusal is stored", () => {
     const h = harness({ beforeMount: (storage) => (storage.modes.writeFails = true) });
     h.lifecycle.refuse();

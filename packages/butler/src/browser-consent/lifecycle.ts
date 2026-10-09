@@ -566,8 +566,8 @@ export function createConsentLifecycle(options: ConsentLifecycleOptions): Consen
     memory = { choice, at: now };
     publish();
     // A choice a subscriber made during that publish may have cleared this denial (a grant clears the floor too); it finishes later, so it holds again.
+    // An undated refusal made there stays undated: only the visitor's grant clears it (C-61).
     memory = { choice, at: now };
-    undatedDenial = false;
     if (floor === null) floor = memory;
     // A choice a subscriber made during that publish never shares this denial's evidence token.
     token += 1;

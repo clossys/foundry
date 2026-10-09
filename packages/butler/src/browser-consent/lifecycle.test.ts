@@ -366,14 +366,14 @@ describe("a clock with no valid instant after mount (C-13, C-15)", () => {
 });
 
 describe("the undated denial (C-13)", () => {
-  function brokenClock(initial?: unknown) {
+  function brokenClock(initial?: unknown, regime: unknown = "prompt") {
     const h = harness({ initial });
     let broken = false;
     const lifecycle = createConsentLifecycle({
       storage: h.storage.port,
       evidence: h.evidence.port,
       policy: POLICY,
-      regime: "prompt",
+      regime,
       signals: GPC_OFF,
       clock: () => (broken ? new Date(Number.NaN) : h.time.clock()),
     });
@@ -406,5 +406,25 @@ describe("the undated denial (C-13)", () => {
     h.storage.setExternally(decidedAt("granted", plusMs(T0, 2 * HOUR)));
     h.lifecycle.refresh();
     expect(h.snap()).toMatchObject({ effective: "granted", allowed: true, persistence: "stored" });
+  });
+
+  it("an undated refusal a subscriber makes during a dated withdrawal's publish outlasts that withdrawal: no re-read lifts it", () => {
+    const h = brokenClock(decidedAt("denied", plusMs(T0, -DAY)), "notice");
+    h.storage.setExternally(decidedAt("granted", plusMs(T0, -HOUR)));
+    let done = false;
+    h.lifecycle.subscribe(() => {
+      if (done || h.snap().effective !== "denied" || h.snap().persistence !== "memory") return;
+      done = true;
+      h.breakClock(true);
+      h.lifecycle.refuse();
+    });
+    h.lifecycle.refuse();
+    h.breakClock(false);
+    expect(h.snap()).toMatchObject({ effective: "denied", allowed: false });
+    h.time.advance(HOUR);
+    h.storage.setExternally(decidedAt("granted", plusMs(T0, HOUR / 2)));
+    h.lifecycle.refresh();
+    expect(h.snap()).toMatchObject({ effective: "denied", allowed: false });
+    expect(h.lifecycle.grant()).toMatchObject({ effective: "granted", allowed: true });
   });
 });
