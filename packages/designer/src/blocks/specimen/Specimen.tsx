@@ -21,7 +21,7 @@ const FLOW_CLASSES = "flex flex-col";
 /** The connector's inset follows the panel padding, so its rule lines up with the panel text. */
 const CONNECTOR_CLASSES = "flex items-center gap-sm py-sm ps-lg desktop:ps-xl";
 const CONNECTOR_RULE_CLASSES = "block h-xl shrink-0 border-s border-line-strong";
-const CONNECTOR_TEXT_CLASSES = "text-caption text-ink-secondary";
+const CONNECTOR_TEXT_CLASSES = "m-0 text-caption text-ink-secondary";
 
 const HAIRLINE_INLINE_START: CSSProperties = { borderInlineStartWidth: UI_BORDER_HAIRLINE };
 
@@ -129,7 +129,7 @@ export function Specimen({ label, arrangement = "single", connector, panels, cla
       aria-label={label}
       data-specimen=""
       data-arrangement={arrangement}
-      className={cx("w-full min-w-0", className)}
+      className={cx("m-0 w-full min-w-0", className)}
       style={style}
     >
       {body}

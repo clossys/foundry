@@ -4086,6 +4086,19 @@ registry.ts` (never hardcoded in a renderer):
 there means a file this command claims to write is missing, not a
 cosmetic gap.
 
+Every page links three copied stylesheets, in this order: Designer's
+`tokens.css` (as `designer-tokens.css`), this package's
+`styles/preview.css` (as `publisher-preview.css`), then the brand file (as
+`brand.css`). `styles/preview.css` stands in for a consumer's own Tailwind
+build: Tailwind's preflight in the `foundry-ui-base` layer, then one compile
+of Designer's component classes and every class Publisher's views emit
+(band padding, grids, gaps), which Designer's `compiled.css` alone does not
+cover. It is generated (`npm run generate:preview-css`), and
+`src/preview/preview-css.test.ts` fails when it is stale or when a class
+the preview pages render has no rule in it. It is for the preview only; an
+app styles Publisher's views with its own build (see
+`templates/site/app/globals.css`).
+
 ## API
 
 

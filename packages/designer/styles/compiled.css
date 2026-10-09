@@ -1205,6 +1205,9 @@
     .tablet-lg\:items-center {
       align-items: center;
     }
+    .tablet-lg\:items-start {
+      align-items: flex-start;
+    }
     .tablet-lg\:gap-3xl {
       gap: var(--spacing-3xl, 48px);
     }

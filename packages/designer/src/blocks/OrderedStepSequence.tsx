@@ -56,8 +56,9 @@ export interface OrderedStepSequenceProps extends Omit<HTMLAttributes<HTMLElemen
  *
  * When any step carries a `visual`, the row starts at `tablet-lg` instead of
  * `tablet` (a visual needs a wider column, so the sequence stays a vertical
- * list with its rail on tablets), and each visual sits under its step text,
- * pinned to the bottom (`mt-auto`) so visuals line up across the row.
+ * list with its rail on tablets), the steps are top-aligned
+ * (`tablet-lg:items-start`) and each visual follows its step text directly,
+ * so steps with parallel copy put their visuals on one top line.
  * Without visuals the markup is unchanged.
  */
 export function OrderedStepSequence({
@@ -86,7 +87,7 @@ export function OrderedStepSequence({
           {description ? <p className={cx("text-body", colors.secondary)}>{description}</p> : null}
         </div>
       ) : null}
-      <ol className={withVisuals ? "flex flex-col tablet-lg:flex-row" : "flex flex-col tablet:flex-row"}>
+      <ol className={withVisuals ? "flex flex-col tablet-lg:flex-row tablet-lg:items-start" : "flex flex-col tablet:flex-row"}>
         {items.map((item, index) => (
           <li
             key={item.id}
@@ -113,7 +114,7 @@ export function OrderedStepSequence({
                 <ItemHeadingTag className={cx("text-h3 font-display", colors.primary)}>{item.heading}</ItemHeadingTag>
                 {item.description ? <p className={cx("text-body-s", colors.secondary)}>{item.description}</p> : null}
                 {item.visual ? (
-                  <div data-step-visual="" className="mt-auto w-full min-w-0 pt-lg">
+                  <div data-step-visual="" className="w-full min-w-0 pt-lg">
                     {item.visual}
                   </div>
                 ) : null}

@@ -16,6 +16,7 @@ import { BrandGuideView } from "../web/views/BrandGuideView.js";
 import { SystemAuditView } from "../web/views/SystemAuditView.js";
 import { CERTIFICATION_FIXTURE_COPY } from "./certification-fixtures.js";
 import { buildContentCatalogHtml, CONTENT_CATALOG_FILENAME } from "./render-content-catalog.js";
+import { PREVIEW_UTILITIES_BASENAME, previewUtilitiesSourcePath } from "./preview-stylesheet.js";
 import {
   previewAuthDocument,
   previewCaptureViewProps,
@@ -45,7 +46,6 @@ export const PREVIEW_GALLERY_FILENAME = "gallery.html";
 export const BRAND_GUIDE_FILENAME = "guide.html";
 export const SYSTEM_AUDIT_FILENAME = "audit.html";
 const DESIGNER_TOKENS_BASENAME = "designer-tokens.css";
-const DESIGNER_COMPILED_BASENAME = "designer-compiled.css";
 const BRAND_COPY_BASENAME = "brand.css";
 
 export interface PreviewBrandValidationFailure {
@@ -145,7 +145,7 @@ export function buildPreviewGalleryHtml(entries: PreviewGalleryEntry[]): string 
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Publisher shipped view preview</title>
   <link rel="stylesheet" href="${DESIGNER_TOKENS_BASENAME}" />
-  <link rel="stylesheet" href="${DESIGNER_COMPILED_BASENAME}" />
+  <link rel="stylesheet" href="${PREVIEW_UTILITIES_BASENAME}" />
   <link rel="stylesheet" href="${BRAND_COPY_BASENAME}" />
   <style>
     body { margin: 0; font-family: system-ui, sans-serif; background: var(--color-surface-base, #f5f5f5); }
@@ -320,7 +320,7 @@ export function writePreviewGallery(options: WritePreviewGalleryOptions): WriteP
 
   copyFileSync(validation.brandCssPath, join(outputDir, BRAND_COPY_BASENAME));
   copyFileSync(resolveDesignerStylesheet("tokens.css"), join(outputDir, DESIGNER_TOKENS_BASENAME));
-  copyFileSync(resolveDesignerStylesheet("compiled.css"), join(outputDir, DESIGNER_COMPILED_BASENAME));
+  copyFileSync(previewUtilitiesSourcePath(), join(outputDir, PREVIEW_UTILITIES_BASENAME));
 
   const entries = renderPreviewGalleryEntries();
   const galleryPath = join(outputDir, PREVIEW_GALLERY_FILENAME);

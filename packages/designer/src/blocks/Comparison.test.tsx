@@ -39,7 +39,19 @@ describe("Comparison", () => {
     const root = container.querySelector("[data-comparison]") as HTMLElement;
     expect(root).toHaveClass("tablet-lg:grid-cols-2");
     expect(root.className).not.toMatch(/(^|\s)tablet:grid-cols-2/);
-    for (const visual of container.querySelectorAll("[data-comparison-visual]")) expect(visual).toHaveClass("mt-auto");
+    // Top alignment: the sides start on one line and each visual follows its own copy, never pinned to a shared bottom.
+    expect(root).toHaveClass("items-start");
+    const visuals = container.querySelectorAll("[data-comparison-visual]");
+    expect(visuals).toHaveLength(2);
+    for (const visual of visuals) {
+      expect(visual).toHaveClass("w-full", "min-w-0", "pt-md");
+      expect(visual).not.toHaveClass("mt-auto");
+    }
+  });
+
+  it("keeps stretched sides when neither side carries a visual", () => {
+    const { container } = render(<Comparison before={BEFORE} after={AFTER} />);
+    expect(container.querySelector("[data-comparison]")).not.toHaveClass("items-start");
   });
 
   it("sets after on a plate in primary ink and before on the ground in secondary ink", () => {

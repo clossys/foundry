@@ -3,6 +3,7 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { resolveSectionedViewDocument } from "../core/sectioned-view.js";
 import { LandingView } from "../web/views/LandingView.js";
+import { PREVIEW_UTILITIES_BASENAME } from "./preview-stylesheet.js";
 import { CONTENT_CATALOG_CALL_TO_ACTION, CONTENT_CATALOG_CAPTIONS, contentCatalogCopyResolver, contentCatalogDocument, type ContentCatalogCaption } from "./fixture-content-catalog.js";
 
 /**
@@ -24,15 +25,15 @@ export const CONTENT_CATALOG_FILENAME = "content-catalog.html";
 export interface ContentCatalogStylesheets {
   /** Href of Designer's `tokens.css`. */
   designerTokens: string;
-  /** Href of Designer's `compiled.css`. */
-  designerCompiled: string;
+  /** Href of the preview utility stylesheet (`styles/preview.css`, copied as `publisher-preview.css`): preflight plus every class Designer's components and Publisher's views emit. */
+  utilities: string;
   /** Href of the consumer's brand stylesheet, linked last so it wins. `null` renders Designer's defaults only. */
   brand: string | null;
 }
 
 export const DEFAULT_CONTENT_CATALOG_STYLESHEETS: ContentCatalogStylesheets = {
   designerTokens: "designer-tokens.css",
-  designerCompiled: "designer-compiled.css",
+  utilities: PREVIEW_UTILITIES_BASENAME,
   brand: "brand.css",
 };
 
@@ -177,13 +178,13 @@ const CHROME_STYLE = `
     .catalog-caption[data-catalog-budget="max"] .catalog-caption-budget { background: #1f1f1f; border-color: #1f1f1f; color: #f3f3f1; }`;
 
 /**
- * The catalog page: the stylesheets (Designer tokens, Designer compiled
- * classes, then the brand file when given), the chrome header, and the
+ * The catalog page: the stylesheets (Designer tokens, the preview utility
+ * stylesheet, then the brand file when given), the chrome header, and the
  * LandingView root with one chrome caption before each band.
  */
 export function buildContentCatalogHtml(stylesheets: ContentCatalogStylesheets = DEFAULT_CONTENT_CATALOG_STYLESHEETS): string {
   const render = renderContentCatalog();
-  const links = [stylesheets.designerTokens, stylesheets.designerCompiled, ...(stylesheets.brand === null ? [] : [stylesheets.brand])]
+  const links = [stylesheets.designerTokens, stylesheets.utilities, ...(stylesheets.brand === null ? [] : [stylesheets.brand])]
     .map((href) => `  <link rel="stylesheet" href="${escapeHtml(href)}" />`)
     .join("\n");
   const bands = render.bands.map((band, index) => `${captionHtml(band.caption, index)}\n${band.markup}`).join("\n");

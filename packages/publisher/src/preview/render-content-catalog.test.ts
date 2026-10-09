@@ -200,13 +200,16 @@ describe("content catalog page", () => {
     expect(dom.querySelectorAll("figure[data-specimen] a, figure[data-specimen] button")).toHaveLength(0);
   });
 
-  it("links Designer's stylesheets, then the brand stylesheet when given", () => {
-    const withBrand = buildContentCatalogHtml({ designerTokens: "t.css", designerCompiled: "c.css", brand: "../brand/brand.css" });
+  it("links Designer's tokens, the preview utility stylesheet, then the brand stylesheet when given", () => {
+    const defaults = [...buildContentCatalogHtml().matchAll(/<link rel="stylesheet" href="([^"]+)"/g)].map((match) => match[1]);
+    expect(defaults).toEqual(["designer-tokens.css", "publisher-preview.css", "brand.css"]);
+
+    const withBrand = buildContentCatalogHtml({ designerTokens: "t.css", utilities: "c.css", brand: "../brand/brand.css" });
     const hrefs = [...withBrand.matchAll(/<link rel="stylesheet" href="([^"]+)"/g)].map((match) => match[1]);
     expect(hrefs).toEqual(["t.css", "c.css", "../brand/brand.css"]);
     expect(withBrand).toContain('<html lang="en" data-brand-bound>');
 
-    const withoutBrand = buildContentCatalogHtml({ designerTokens: "t.css", designerCompiled: "c.css", brand: null });
+    const withoutBrand = buildContentCatalogHtml({ designerTokens: "t.css", utilities: "c.css", brand: null });
     expect([...withoutBrand.matchAll(/<link rel="stylesheet" href="([^"]+)"/g)].map((match) => match[1])).toEqual(["t.css", "c.css"]);
   });
 

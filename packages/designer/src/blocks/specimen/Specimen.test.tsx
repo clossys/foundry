@@ -177,6 +177,32 @@ describe("Specimen", () => {
       unmount();
     }
   });
+
+  it("resets its own user-agent margins and padding, so it needs no consumer CSS reset", () => {
+    // Every part type, a flow connector caption, a panel header and footer.
+    const { container } = render(
+      <Specimen label={LABEL} arrangement="flow" connector="Then" panels={[PANEL, PANEL_B, PANEL_C]} />,
+    );
+    const figure = container.querySelector("figure") as HTMLElement;
+    expect(figure).toHaveClass("m-0");
+    const resets: Array<[string, string[]]> = [
+      ["p", ["m-0"]],
+      ["dl", ["m-0"]],
+      ["dd", ["m-0"]],
+      ["ul", ["m-0", "p-0"]],
+      ["ol", ["m-0"]],
+      ["th", ["p-0"]],
+      ["td", ["p-0"]],
+    ];
+    for (const [selector, classes] of resets) {
+      const elements = container.querySelectorAll(selector);
+      expect(elements.length, selector).toBeGreaterThan(0);
+      for (const el of elements) expect(el, selector).toHaveClass(...classes);
+    }
+    // The schedule rail keeps its own inline-start padding; its rows are flex boxes, so no list marker renders.
+    expect(container.querySelector("ol")).toHaveClass("ps-lg");
+    for (const li of container.querySelectorAll("li")) expect(li).toHaveClass("flex");
+  });
 });
 
 describe("SpecimenPanel", () => {

@@ -9,17 +9,23 @@ import { UI_BORDER_HAIRLINE } from "../../atoms/internal/ui-vars.js";
 
 /** Field grids. Never more than two columns below `tablet-lg`, so a 390px panel stays readable. */
 const FIELDS_COLUMN_CLASSES: Record<1 | 2 | 4, string> = {
-  1: "grid grid-cols-1 gap-y-md",
-  2: "grid grid-cols-2 gap-x-lg gap-y-md",
-  4: "grid grid-cols-2 gap-x-lg gap-y-md tablet-lg:grid-cols-4",
+  1: "m-0 grid grid-cols-1 gap-y-md",
+  2: "m-0 grid grid-cols-2 gap-x-lg gap-y-md",
+  4: "m-0 grid grid-cols-2 gap-x-lg gap-y-md tablet-lg:grid-cols-4",
 };
 
-const PART_LABEL_CLASSES = "text-caption uppercase tracking-label text-ink-secondary";
+const PART_LABEL_CLASSES = "m-0 text-caption uppercase tracking-label text-ink-secondary";
 const ROW_CLASSES = "flex flex-wrap items-start justify-between gap-x-md gap-y-xs";
 const ROW_TEXT_CLASSES = "flex min-w-0 flex-col gap-xs";
 const PRIMARY_TEXT = "text-body-s text-ink-primary";
 const SECONDARY_CAPTION = "text-caption text-ink-secondary";
 const DIVIDED_ROW = "border-t border-line-base pt-sm";
+/**
+ * Lists, definition lists, paragraphs, table cells and the figure reset their
+ * own user-agent margin and padding, so a specimen renders the same with or
+ * without a consumer CSS reset. Markers need no reset: every row is a flex box.
+ */
+const LIST_RESET_CLASSES = "m-0 flex flex-col p-0";
 
 /**
  * Table classes. Below `tablet` each row reflows into a stacked record: the
@@ -32,17 +38,17 @@ const TABLE_CLASSES = {
   caption: "sr-only",
   head: "sr-only tablet:not-sr-only tablet:table-header-group",
   headRow: "tablet:table-row",
-  columnHeader: "pb-sm text-start align-bottom text-caption font-normal text-ink-secondary tablet:pe-md",
+  columnHeader: "p-0 pb-sm text-start align-bottom text-caption font-normal text-ink-secondary tablet:pe-md",
   body: "flex flex-col tablet:table-row-group",
   row: "flex flex-col gap-xs border-t border-line-base py-sm tablet:table-row",
-  rowHeader: "block text-start font-medium text-ink-primary tablet:table-cell tablet:py-sm tablet:pe-md tablet:align-top",
-  cell: "flex items-baseline justify-between gap-md tablet:table-cell tablet:py-sm tablet:pe-md tablet:align-top",
+  rowHeader: "block p-0 text-start font-medium text-ink-primary tablet:table-cell tablet:py-sm tablet:pe-md tablet:align-top",
+  cell: "flex items-baseline p-0 justify-between gap-md tablet:table-cell tablet:py-sm tablet:pe-md tablet:align-top",
   cellLabel: "text-ink-secondary tablet:hidden",
   cellValue: "min-w-0 text-end text-ink-primary tabular-nums tablet:text-start",
 } as const;
 
 const SCHEDULE_CLASSES = {
-  list: "flex flex-col gap-md border-s border-line-strong ps-lg",
+  list: "m-0 flex flex-col gap-md border-s border-line-strong ps-lg",
   item: "flex flex-wrap items-start justify-between gap-x-md gap-y-xs",
   trailing: "flex flex-col items-end gap-xs",
   amount: "text-body-s text-ink-primary tabular-nums",
@@ -278,7 +284,7 @@ function FieldsBody({ part }: { part: SpecimenFieldsPart }) {
       {part.items.map((field) => (
         <div key={field.id} className={ROW_TEXT_CLASSES}>
           <dt className={SECONDARY_CAPTION}>{field.label}</dt>
-          <dd className={cx(PRIMARY_TEXT, "tabular-nums")}>{field.value}</dd>
+          <dd className={cx(PRIMARY_TEXT, "m-0 tabular-nums")}>{field.value}</dd>
         </div>
       ))}
     </dl>
@@ -287,7 +293,7 @@ function FieldsBody({ part }: { part: SpecimenFieldsPart }) {
 
 function StatusRowsBody({ part }: { part: SpecimenStatusRowsPart }) {
   return (
-    <ul className="flex flex-col">
+    <ul className={LIST_RESET_CLASSES}>
       {part.items.map((row, index) => {
         const divided = dividedRow(index, part.items.length);
         return (
@@ -320,7 +326,7 @@ function MeterBody({ part }: { part: SpecimenMeterPart }) {
         valueText={part.valueText}
         limitText={part.limitText}
       />
-      {part.note ? <p className={SECONDARY_CAPTION}>{part.note}</p> : null}
+      {part.note ? <p className={cx(SECONDARY_CAPTION, "m-0")}>{part.note}</p> : null}
     </div>
   );
 }
@@ -401,7 +407,7 @@ function ScheduleBody({ part }: { part: SpecimenSchedulePart }) {
 
 function SharesBody({ part }: { part: SpecimenSharesPart }) {
   return (
-    <ul className="flex flex-col gap-md">
+    <ul className="m-0 flex flex-col gap-md p-0">
       {part.items.map((item) => (
         <li key={item.id} className="flex flex-col gap-xs">
           <div className={ROW_CLASSES}>
@@ -417,7 +423,7 @@ function SharesBody({ part }: { part: SpecimenSharesPart }) {
 
 function FilesBody({ part }: { part: SpecimenFilesPart }) {
   return (
-    <ul className="flex flex-col">
+    <ul className={LIST_RESET_CLASSES}>
       {part.items.map((file, index) => {
         const divided = dividedRow(index, part.items.length);
         return (

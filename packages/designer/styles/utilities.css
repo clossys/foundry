@@ -200,7 +200,7 @@
 @source inline("tablet-lg:col-start-1 tablet-lg:col-start-8 tablet-lg:flex tablet-lg:flex-col tablet-lg:flex-row");
 @source inline("tablet-lg:gap-3xl tablet-lg:gap-x-4xl tablet-lg:gap-y-0 tablet-lg:grid-cols-12 tablet-lg:grid-cols-2");
 @source inline("tablet-lg:grid-cols-3 tablet-lg:grid-cols-4 tablet-lg:h-px tablet-lg:items-center");
-@source inline("tablet-lg:max-w-display tablet-lg:mx-md tablet-lg:my-xl tablet-lg:row-start-1");
+@source inline("tablet-lg:items-start tablet-lg:max-w-display tablet-lg:mx-md tablet-lg:my-xl tablet-lg:row-start-1");
 @source inline("tablet-lg:text-display-m tablet-lg:w-lg tablet:align-top tablet:border-collapse tablet:col-span-12");
 @source inline("tablet:col-span-2 tablet:col-span-6 tablet:flex tablet:flex-col tablet:flex-row tablet:gap-x-3xl");
 @source inline("tablet:gap-x-4xl tablet:grid-cols-12 tablet:grid-cols-2 tablet:h-px tablet:hidden");

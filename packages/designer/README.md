@@ -473,7 +473,12 @@ sets `box-sizing: border-box`, and `input, textarea, select, button` sets
 `font: inherit`. The Tailwind-native path gets both from Tailwind's own
 preflight; this layer gives the `tokens.css` + `compiled.css` path the same
 two behaviors while preflight itself stays out, so margin, list and color
-resets remain your choice. `foundry-ui-base` is declared before
+resets remain your choice. The blocks set their own spacing and are drawn
+against zero default margins on headings, paragraphs, lists and figures, the
+way Tailwind's preflight leaves them; on the `compiled.css` path without a
+reset, browser default margins add to that spacing (`Specimen` resets its
+own). Publisher's preview pages link a preflight copy for this
+reason. `foundry-ui-base` is declared before
 `foundry-ui-compiled`, so a utility class wins over it, and your own
 unlayered CSS wins over both. To override a base rule, write a rule for the
 same selector in unlayered CSS, or in a named layer declared after
@@ -3210,8 +3215,9 @@ Each item's `label` is its actor tag ("Your team", "The reviewer"), set
 above the step heading. An item may carry a small `visual` (typically a
 one-panel `Specimen`) under its text. When any step has one, the row starts
 at `tablet-lg` instead of `tablet` (a visual needs the wider column; tablets
-keep the vertical list and its rail), and each visual is pinned to the
-bottom of its step (`mt-auto`) so the visuals line up across the row.
+keep the vertical list and its rail), the steps are top-aligned
+(`tablet-lg:items-start`) and each visual follows its step text directly, so
+steps with parallel copy put their visuals on one top line.
 
 ### `CardGrid`
 
@@ -3259,7 +3265,9 @@ Before and after, side by side. Two `<section>`s, each named by its
 `label` as a real heading at `headingLevel` (`ComparisonHeadingLevel`,
 default `3`), with an optional `heading` line, then either a `description`
 or 2 to 4 `points` (the same form and count on both sides), and an optional
-`visual` (on both sides or neither) pinned to the bottom. `before` sits on
+`visual` (on both sides or neither) directly under the side's copy; with
+visuals the sides are top-aligned (`items-start`), so parallel copy puts both
+panels on one top line. `before` sits on
 the ground in secondary ink, its points marked by a short muted dash;
 `after` is a `Card` plate in primary ink, its points marked by an accent
 check. The marks and the arrow between the columns are `aria-hidden`: the
@@ -3375,6 +3383,11 @@ on an inverse band. Budgets are validated and throw rather than crowd the
 panel: 3 panels, 3 parts per panel, 6 rows per part, a 4 by 5 table with
 one cell per column, shares from 0 to 100, and a non-blank `label`
 (`TypeError`).
+
+A specimen resets its own user-agent spacing (`m-0` on the figure,
+paragraphs, `<dl>`/`<dd>` and lists, `p-0` on lists and table cells), so it
+renders the same with or without a CSS reset; its list rows are flex boxes,
+so no marker shows either way.
 
 ### `StatusList`
 

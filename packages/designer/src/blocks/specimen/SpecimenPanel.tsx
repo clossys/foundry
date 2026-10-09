@@ -8,8 +8,8 @@ import { SpecimenPartView, type SpecimenPart, type SpecimenStatus } from "./part
 const PANEL_CLASSES = "flex h-full min-w-0 flex-col gap-md font-body desktop:p-xl";
 const SECTION_DIVIDER = "border-t border-line-base pt-md";
 const HEADER_CLASSES = "flex flex-wrap items-start justify-between gap-x-md gap-y-xs";
-const TITLE_CLASSES = "text-body font-medium text-ink-primary text-balance";
-const META_CLASSES = "text-caption text-ink-secondary tabular-nums";
+const TITLE_CLASSES = "m-0 text-body font-medium text-ink-primary text-balance";
+const META_CLASSES = "m-0 text-caption text-ink-secondary tabular-nums";
 /** The assignee's initials: a decorative disc (`aria-hidden`); the name beside it is the text. */
 const INITIALS_CLASSES =
   "inline-flex size-xl shrink-0 items-center justify-center rounded-pill bg-surface-sunken text-caption text-ink-secondary";
@@ -114,7 +114,7 @@ export function SpecimenPanel({ title, meta, status, parts, footer, className, s
               {present(assignee.note) ? <span className="text-ink-secondary">{assignee.note}</span> : null}
             </div>
           ) : null}
-          {present(footer?.note) ? <p className="text-ink-secondary text-pretty">{footer?.note}</p> : null}
+          {present(footer?.note) ? <p className="m-0 text-ink-secondary text-pretty">{footer?.note}</p> : null}
         </div>
       ) : null}
     </Card>

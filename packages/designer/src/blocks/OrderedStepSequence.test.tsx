@@ -103,16 +103,18 @@ describe("OrderedStepSequence visuals", () => {
   it("keeps the tablet row when no step has a visual", () => {
     const { container } = render(<OrderedStepSequence items={steps.map(({ visual: _visual, ...step }) => step)} />);
     expect(container.querySelector("ol")).toHaveClass("tablet:flex-row");
+    expect(container.querySelector("ol")?.className).not.toMatch(/items-start/);
     expect(container.querySelector("[data-step-visual]")).toBeNull();
   });
 
-  it("moves the row to tablet-lg and pins each visual to the bottom of its step", () => {
+  it("moves the row to tablet-lg and top-aligns the steps so each visual follows its own text", () => {
     const { container } = render(<OrderedStepSequence items={steps} />);
     const list = container.querySelector("ol") as HTMLElement;
-    expect(list).toHaveClass("flex-col", "tablet-lg:flex-row");
+    expect(list).toHaveClass("flex-col", "tablet-lg:flex-row", "tablet-lg:items-start");
     expect(list.className).not.toMatch(/(^|\s)tablet:/);
     const visual = container.querySelector("[data-step-visual]") as HTMLElement;
-    expect(visual).toHaveClass("mt-auto", "min-w-0");
+    expect(visual).toHaveClass("w-full", "min-w-0", "pt-lg");
+    expect(visual).not.toHaveClass("mt-auto");
     expect(visual.parentElement).toHaveClass("flex-1");
     const connector = container.querySelector("li span[aria-hidden]") as HTMLElement;
     expect(connector).toHaveClass("tablet-lg:h-px", "tablet-lg:w-lg");

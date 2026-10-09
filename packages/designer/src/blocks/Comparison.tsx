@@ -98,7 +98,7 @@ function SideBody({ side, tone, headingLevel, ground }: SideBodyProps) {
         </ul>
       ) : null}
       {hasNode(side.visual) ? (
-        <div data-comparison-visual="" className="mt-auto w-full min-w-0 pt-md">
+        <div data-comparison-visual="" className="w-full min-w-0 pt-md">
           {side.visual}
         </div>
       ) : null}
@@ -116,8 +116,10 @@ function SideBody({ side, tone, headingLevel, ground }: SideBodyProps) {
  * ground) in primary ink, its points marked with an accent check. The marks
  * and the arrow between the columns are `aria-hidden`: the contrast is in
  * the words, never in colour or marks alone. Both sides carry the same
- * padding, so their first lines align, and stretch to one height with any
- * visual pinned to the bottom (`mt-auto`).
+ * padding, so their first lines align. Without visuals the sides stretch
+ * to one height; with visuals they are top-aligned (`items-start`) and each
+ * visual follows its own copy directly, so parallel copy puts both panels
+ * on one top line rather than pinning them to a shared bottom.
  *
  * Two columns from `tablet` (from `tablet-lg` when the sides carry visuals,
  * which need the room), stacked below with `before` first. The arrow
@@ -133,7 +135,7 @@ export function Comparison({ before, after, headingLevel = 3, ground = "base", c
       data-comparison=""
       className={cx(
         withVisuals
-          ? "relative grid grid-cols-1 gap-lg tablet-lg:grid-cols-2 tablet-lg:gap-x-4xl"
+          ? "relative grid grid-cols-1 items-start gap-lg tablet-lg:grid-cols-2 tablet-lg:gap-x-4xl"
           : "relative grid grid-cols-1 gap-lg tablet:grid-cols-2 tablet:gap-x-4xl",
         className,
       )}

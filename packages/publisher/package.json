@@ -377,6 +377,7 @@
     "README.md",
     "LICENSE",
     "skill",
+    "styles",
     "templates",
     "fit-signals.json"
   ],
@@ -384,7 +385,9 @@
     "build": "tsc -p tsconfig.json",
     "prepublishOnly": "node ../../scripts/check-name-collision.mjs . && npm run build",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "generate:preview-css": "node scripts/preview-css.mjs --write",
+    "check:preview-css": "node scripts/preview-css.mjs --check"
   },
   "dependencies": {
     "@clossys/writer": "^0.5.1",
