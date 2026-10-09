@@ -84,7 +84,7 @@ autocapture and session replay (decision 7, C-62 to C-69, unit F).
 | Browser storage adapter | Butler | `packages/butler/src/browser-consent/adapters/` | #1938 |
 | Analytics transport and provider adapter | Observer | `packages/observer/src/browser-analytics/` | #1940 |
 | Autocapture and session replay in the provider adapter | Observer | `packages/observer/src/browser-analytics/providers/` | unit F |
-| Notice presentation | Designer | `ConsentBanner` block | existing, plus unit D |
+| Notice presentation | Designer | `ConsentBanner` block | existing, plus unit D and unit G |
 | Assembly, hooks, transport binding, reopen, review seam, preview | Publisher | `packages/publisher/src/web/consent/` | #1941 |
 | Copy resolution against Writer approval | Publisher | `packages/publisher/src/consent-copy/` | #1941 |
 | Butler and Observer subpath exports, structural port conformance | Butler, Observer | manifests and public entry modules | unit E |
@@ -92,7 +92,7 @@ autocapture and session replay (decision 7, C-62 to C-69, unit F).
 | Security headers, sign-out storage clearing | Bouncer | `packages/bouncer/src/` | #1947, independent |
 | Versions and changelogs for the cohort | release preparation | manifests, changelogs | #1942 |
 
-Unit D, unit E and unit F have no ticket yet (see "Unowned work").
+Unit D, unit E, unit F and unit G have no ticket yet (see "Unowned work").
 
 - **O-1 Butler owns the lifecycle and nothing visual.** Butler owns the
   record, the decision rules, expiry, withdrawal, the storage port and the
@@ -1110,12 +1110,19 @@ by-value read-back still matches.
 
 ### Presentation (Designer)
 
-`ConsentBanner` keeps its current contract: a region landmark named by its
-title, one body, an optional policy-link slot, and accept and reject as two
-`Button`s of the same variant and size. It is not a dialog and has no focus
-trap, autofocus, Escape handling, portal or timer. Actions stack at the base
-size and sit in a row from `tablet`. Logical properties keep it correct in
-right-to-left layouts.
+`ConsentBanner` is a region landmark named by its title, one body, an
+optional policy-link slot, and accept and reject as two `Button`s of the
+same variant and size. It is a compact corner card, not a modal dialog, and
+has no focus trap, autofocus, Escape handling, portal or timer. Actions
+stack at the base size and sit in a row from `tablet`. Logical properties
+keep it correct in right-to-left layouts. Unit D adds the status line
+(C-21); unit G makes the title visually hidden (C-70).
+
+Presentation note (guidance, not a rule): the host pins the card at the
+bottom-start corner of the viewport with logical properties, and on mobile
+it spans the full width minus the page gutter. Its visible content is the
+one-sentence body (C-28), the privacy-policy link and two identical
+outlined buttons.
 
 - **C-21 A status line is presentation, not state.** Unit D adds one
   optional prop, `status?: ReactNode`. The block always renders a polite
@@ -1123,6 +1130,16 @@ right-to-left layouts.
   empty when `status` is absent, so that a status added later is announced.
   Neither action is ever disabled. The assembly decides which status to
   pass (C-25).
+- **C-70 The title names the region without being shown.** Unit G
+  renders the `title` prop inside a heading that carries Designer's
+  visually hidden utility (`sr-only`), and the region keeps its name
+  through `aria-labelledby` pointing at that heading. No visible title is
+  rendered. The prop keeps its name, its `ReactNode` type and its
+  requiredness, and its value still comes from the copy's `title` field
+  (C-35), so no consumer changes; an `aria-label` string is not used,
+  because a `ReactNode` title cannot become one. The region is never given
+  `role="dialog"` or `aria-modal`. Focus on reopen still lands on the named
+  region (C-47).
 
 ### Assembly (Publisher)
 
@@ -1584,6 +1601,9 @@ Dependency order for builders:
    **#1940 Observer transport** depends on this document. The two are
    independent of each other and may run in parallel.
 3. **Unit D Designer status slot.** Depends on this document.
+   **Unit G Designer notice naming** depends on unit D and is stacked
+   after it. Nothing else depends on unit G: the `title` prop keeps its
+   type, so #1941 and #1942 do not wait for it.
 4. **#1941 Publisher assembly and Publisher exports.** Depends on this
    document and unit D only. It builds against its own structural ports
    and the preview, so presentation never waits for a backend.
@@ -1673,6 +1693,18 @@ expiry behaviour is built in #1938, and its reopen seam and copy in #1941.
 - API: `ConsentBannerProps.status?: ReactNode`, rendered per C-21. Every
   other prop is unchanged.
 - Proof: P-14.
+
+### Unit G Designer notice naming
+
+- Paths: the `ConsentBanner` block source in `packages/designer/src/blocks/`,
+  its test, its README entry, and one `.changesets/` entry for `designer`
+  at `minor`. It uses the `sr-only` utility already present in Designer's
+  compiled stylesheet.
+- API: `ConsentBannerProps.title` keeps its name, type and requiredness;
+  only its rendering changes, per C-70. Every other prop is unchanged.
+- Stacking: it is built after unit D, on the same block source, so the two
+  never edit the block at the same time; P-14 keeps passing.
+- Proof: P-44.
 
 ### #1941 Publisher assembly and exports
 
@@ -1821,6 +1853,8 @@ expiry behaviour is built in #1938, and its reopen seam and copy in #1941.
 
 - **Unit D** has no ticket. The `ConsentBanner` block source is outside the
   paths #1941 lists.
+- **Unit G** has no ticket. It is the Designer change specified by C-70,
+  stacked after unit D.
 - **Unit E** has no ticket. #1938 and #1940 forbid their package index and
   manifests, #1941 forbids both packages, and #1942 forbids source. Hosts
   cannot import Butler's or Observer's new subpaths until unit E lands.
@@ -1885,6 +1919,7 @@ passes. "Covers" lists the rules each proof holds.
 | P-41 | F | `posthog-replay` :: payload check, over the snapshot corpus: a `$snapshot` whose payload holds a compressed or string-encoded record, a record carrying a compression marker, a mutation whose data is an object but whose adds, text changes or attributes are an encoded string, an unparsable record, a record of an unlisted kind, a console plugin or log record, a network plugin record, a canvas mutation record, an unmasked text node (in a full snapshot, in a mutation's added nodes, inside a shadow root or inside a same-origin iframe document), an unmasked text change, an unmasked input record or an unmasked `value` attribute is dropped whole; a fully masked payload passes with its custom records removed and `style` text kept; no corpus string other than masked text reaches the fake seam | C-68 | accept a compressed record; accept a record whose fields, not its data, are encoded; skip a field whose type is not the expected one instead of dropping the event; check text nodes only in full snapshots, not in mutation adds or text changes; skip shadow roots or iframe documents; accept an unlisted record kind; accept a console, network or canvas record; skip the masked-form check for input records or for `value` attributes; pass custom records through |
 | P-42 | F | `posthog-replay` :: query and fragment check: with the page address carrying a non-empty query or a non-empty fragment, a clean page address but a load address (navigation entry) carrying one, or a meta or custom address in the payload carrying one, the `$snapshot` is dropped, and every later `$snapshot` of that grant is dropped even after the address is clean; on a page with neither, a payload whose attribute values hold a link is accepted; a new grant on a clean address records again | C-68, C-20 | check only the meta `href`; ignore the load address; check the address after the rewrite; accept later `$snapshot` events of the same grant once the address is clean; ignore the fragment |
 | P-43 | F | `posthog-block-selectors` :: each host block selector is checked against `BLOCK_SELECTOR_GRAMMAR`: one with a top-level comma, a pseudo-class, a parenthesis, an escape, a `~` or `+` combinator, an unbalanced bracket, a space at the start, or a long adversarial string (tens of thousands of repeated `.a` or `[a="` fragments ending in an invalid character, tested against the expression directly and returning promptly) leaves replay off with no `startSessionRecording` call and no throw, while pageviews and autocapture still run; valid selectors (`aside`, `.card [data-x="a b"]`, `main > #pane`) follow the private selectors in the joined block selector | C-63, C-68 | skip the grammar check; skip the length cap before the expression; accept a comma; throw instead of leaving replay off; place host selectors before the private ones |
+| P-44 | G | `ConsentBanner` :: the region's accessible name is the `title` content, through `aria-labelledby` on a heading that carries `sr-only`; no title is rendered visibly; the region has no `role="dialog"` and no `aria-modal`; a `ReactNode` title with markup still names the region; both actions stay two `Button`s of the same variant and size | C-70 | render the heading without `sr-only`; name the region with an `aria-label` string; drop `aria-labelledby`; add `role="dialog"` |
 
 ### Review proofs for this document
 
