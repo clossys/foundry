@@ -346,7 +346,7 @@ source file's own header for the exact probe and its result). Today that's:
 | Subpath | Server-safe members |
 | --- | --- |
 | `@clossys/designer/atoms/server` | `Badge`, `Banner`, `Card`, `Field`, `Icon`, `Skeleton`, `Spinner`, `mergeUiClasses` |
-| `@clossys/designer/blocks/server` | `ArticleBody`, `DetailView`, `EmptyState`, `Faq`, `FeatureGrid`, `FieldGroup`, `Hero`, `MarketingChapter`, `OrderedStepSequence`, `PageHeader`, `PricingTable`, `SectionFrame`, `SectionHeader`, `Stat`, `StatusList` |
+| `@clossys/designer/blocks/server` | `ArticleBody`, `ContentSection`, `DetailView`, `EmptyState`, `Faq`, `FeatureGrid`, `FieldGroup`, `Hero`, `MarketingChapter`, `MediaFigure`, `OrderedStepSequence`, `PageHeader`, `PricingTable`, `SectionFrame`, `SectionHeader`, `Stat`, `StatusList` |
 | `@clossys/designer/shell/server` | `Shell`, `SiteFooter`, `SiteHeader`, `SkipLink` |
 | `@clossys/designer/charts/server` | `ChartFrame`, `Sparkline` |
 | `@clossys/designer/theme/server` | `getThemeInitScript` |
@@ -2850,6 +2850,82 @@ Use `ground="sunken"` or `ground="inverse"` for those semantic section
 grounds; the block applies the matching painted surface and ink policy as one
 unit. The default base ground inherits the surrounding base surface.
 
+`align` (`HeroAlign`: `"start"` or `"center"`, default `"start"`) sets how the
+text block lines up. `"center"` centres each line and the actions row, holds
+the text block to the prose measure (`--ui-width-prose-max`), balances the
+heading's lines and pretty-wraps the description, so a centred opening or
+closing message wraps sooner than the column it sits in. A `split`
+composition keeps its two columns.
+
+```tsx
+<Hero heading="Heading text" description="Subheading copy goes here." actions={<Button>CTA label</Button>} align="center" />
+```
+
+### `ContentSection`
+
+```tsx
+import { ContentSection, FeatureGrid, MediaFigure } from "@clossys/designer/blocks";
+
+function ProductSection() {
+  return (
+    <ContentSection eyebrow="Eyebrow text" heading="Section heading" description="One supporting line.">
+      <FeatureGrid items={[{ id: "one", heading: "Item heading", description: "Item copy." }]} />
+      <MediaFigure caption="Caption text">
+        <img src="/media.png" alt="Media description" />
+      </MediaFigure>
+    </ContentSection>
+  );
+}
+```
+
+One section anatomy for long-form marketing pages: a header group (an
+optional eyebrow, heading, description and actions row) followed by a
+module slot holding one or more content modules — a `FeatureGrid`,
+`StatusList`, `OrderedStepSequence` or `Faq` rendered without its own
+heading region, a `MediaFigure`, or any combination. Spacing is fixed by the
+block so sections composed with it do not drift: the header group's lines
+sit `gap-md` apart and never run wider than the prose measure
+(`--ui-width-prose-max`); the header group and each module sit one step
+apart (`gap-2xl`, `gap-3xl` from `tablet-lg`); modules take the full column.
+
+`headingLevel` (`ContentSectionHeadingLevel`: `2` to `6`, default `2`) picks
+the heading element; the heading is marketing scale (`text-h2`) at every
+level. `align` (`ContentSectionAlign`: `"start"` or `"center"`, default
+`"start"`) lines the header group up; modules always take the full column.
+`ground` selects the header group's ink and paints no surface. The band
+around it (ground surface, padding and column) is a `SectionFrame`'s.
+
+Use it instead of `SectionHeader` (settings scale, `text-h3`) for a
+marketing section, and instead of `MarketingChapter` when the section needs
+an eyebrow, actions, or modules other than prose, or already sits in a
+`SectionFrame`. Props are `ContentSectionProps`: the regions above, plus
+`children`, `className`, `style` and every native `<div>` attribute except
+`title`.
+
+### `MediaFigure`
+
+```tsx
+import { MediaFigure } from "@clossys/designer/blocks";
+
+function Screenshot() {
+  return (
+    <MediaFigure caption="Caption text" measure="content">
+      <img src="/media.png" alt="Media description" />
+    </MediaFigure>
+  );
+}
+```
+
+Large media as a section module: the media in a rounded frame drawn with the
+ground's line (`framed`, default `true`), and an optional caption underneath
+as the `<figcaption>`, `gap-sm` below the media in the ground's muted ink.
+`measure` (`MediaFigureMeasure`: `"column"` or `"content"`, default
+`"column"`) runs it across the whole column or holds it to the content
+measure (`--ui-width-content-max`). `ground` selects the frame line and the
+caption ink. Props are `MediaFigureProps`: those, plus `children` (the
+media), `className`, `style` and every native `<figure>` attribute. Give an
+image its own alt text.
+
 ### `MarketingChapter`
 
 ```tsx
@@ -4751,11 +4827,19 @@ not a grab-bag).
 | `SectionGround` | type | `"base" \| "sunken" \| "inverse"`. |
 | `SectionGroundClasses` | type | The complete class-map shape for one section ground, including readiness `status` and separately named neutral `offAxis` mark. |
 | `SectionStatusTone` | type | `"success" \| "warning" \| "info"`; closed readiness-dot tones. A separate off-axis disposition uses neutral structural ink. |
-| `HeroProps` | type | Props for `Hero`: `eyebrow`, `heading`, `description`, `actions`, `media`, `headingLevel`, `ground`, `className`, `style`, plus every native `<section>` attribute. |
+| `HeroProps` | type | Props for `Hero`: `eyebrow`, `heading`, `description`, `actions`, `media`, `headingLevel`, `ground`, `align`, `className`, `style`, plus every native `<section>` attribute. |
+| `HeroAlign` | type | `"start" \| "center"`. |
 | `HeroHeadingLevel` | type | `1 \| 2`. |
 | `MarketingChapter` | component | Full-bleed marketing chapter band: marketing-scale title, optional description, prose slot. `headingLevel` picks its heading element. |
 | `MarketingChapterProps` | type | Props for `MarketingChapter`: `title`, `description`, `children`, `headingLevel`, `ground`, `className`, `style`, plus every native `<section>` attribute except `title`. |
 | `MarketingChapterHeadingLevel` | type | `2 \| 3`. |
+| `ContentSection` | component | One marketing section anatomy: a header group (eyebrow, heading, description, actions) held to the prose measure, then a module slot for one or more content modules, at fixed spacing. |
+| `ContentSectionProps` | type | Props for `ContentSection`: `eyebrow`, `heading`, `description`, `actions`, `headingLevel`, `align`, `ground`, `children`, `className`, `style`, plus every native `<div>` attribute except `title`. |
+| `ContentSectionHeadingLevel` | type | `2 \| 3 \| 4 \| 5 \| 6`. |
+| `ContentSectionAlign` | type | `"start" \| "center"`. |
+| `MediaFigure` | component | Large media as a section module: framed media with an optional caption underneath. |
+| `MediaFigureProps` | type | Props for `MediaFigure`: `children`, `caption`, `measure`, `framed`, `ground`, `className`, `style`, plus every native `<figure>` attribute. |
+| `MediaFigureMeasure` | type | `"column" \| "content"`. |
 | `FeatureGrid` | component | Titled collection of feature items: optional eyebrow/heading/description region, a grid of icon/heading/description items. |
 | `FeatureGridProps` | type | Props for `FeatureGrid`: `eyebrow`, `heading`, `description`, `items`, `headingLevel`, `ground`, `className`, `style`, plus every native `<div>` attribute. |
 | `FeatureGridItem` | type | One item: `id`, `icon?`, `heading`, `description?`. |

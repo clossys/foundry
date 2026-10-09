@@ -1,6 +1,6 @@
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
 import { cx } from "../atoms/internal/cx.js";
-import { DISPLAY_HEADING_CLASS } from "./internal/block-vars.js";
+import { DISPLAY_HEADING_CLASS, SECTION_MEASURE_MAX } from "./internal/block-vars.js";
 import { SECTION_GROUND_CLASSES, type SectionGround } from "./section-ground.js";
 
 /**
@@ -12,6 +12,9 @@ const COMPILED_CSS_CLASS_SCAN_ANCHOR = "text-display-l";
 void COMPILED_CSS_CLASS_SCAN_ANCHOR;
 
 export type HeroHeadingLevel = 1 | 2;
+
+/** How the hero's text lines up: along the start edge, or centred on the column. */
+export type HeroAlign = "start" | "center";
 
 /** Layout composition when `media` is present — media presence is not a layout. */
 export type HeroComposition = "editorial" | "split";
@@ -56,6 +59,17 @@ export interface HeroProps extends HTMLAttributes<HTMLElement> {
   headingLevel?: HeroHeadingLevel;
   /** Semantic section ground; selects the complete matching surface and foreground policy. @default "base" */
   ground?: SectionGround;
+  /**
+   * How the eyebrow, heading, description and actions line up. `"center"`
+   * centres each line and the actions row on the hero's column (an opening
+   * hero over a backdrop, a closing call to action), and narrows the text
+   * block to the prose measure (`--ui-width-prose-max`) with a balanced
+   * heading and a pretty-wrapped description, so a centred lockup wraps
+   * sooner than the column it sits in. It applies to the text block only; a
+   * `split` composition keeps its two columns.
+   * @default "start"
+   */
+  align?: HeroAlign;
   className?: string;
   style?: CSSProperties;
 }
@@ -75,6 +89,7 @@ export function Hero({
   composition = "editorial",
   headingLevel = 1,
   ground = "base",
+  align = "start",
   className,
   style,
   ...rest
@@ -82,18 +97,22 @@ export function Hero({
   const HeadingTag = headingLevel === 1 ? "h1" : "h2";
   const colors = SECTION_GROUND_CLASSES[ground];
   const splitLayout = Boolean(media) && composition === "split";
+  const centred = align === "center";
 
   const content = (
-    <div className="flex flex-col items-start gap-md">
+    <div
+      className={centred ? "mx-auto flex w-full flex-col items-center gap-md text-center" : "flex flex-col items-start gap-md"}
+      style={centred ? { maxWidth: SECTION_MEASURE_MAX.prose } : undefined}
+    >
       {eyebrow ? (
         <p className={cx("text-caption uppercase tracking-label", colors.muted)}>{eyebrow}</p>
       ) : null}
-      <HeadingTag className={cx(DISPLAY_HEADING_CLASS, colors.primary)}>{heading}</HeadingTag>
+      <HeadingTag className={cx(DISPLAY_HEADING_CLASS, colors.primary, centred ? "text-balance" : undefined)}>{heading}</HeadingTag>
       {description ? (
-        <p className={cx("text-body-l max-w-display", colors.secondary)}>{description}</p>
+        <p className={cx("text-body-l max-w-display", colors.secondary, centred ? "text-pretty" : undefined)}>{description}</p>
       ) : null}
       {actions ? (
-        <div className="flex flex-wrap items-center gap-sm">{actions}</div>
+        <div className={centred ? "flex flex-wrap items-center justify-center gap-sm" : "flex flex-wrap items-center gap-sm"}>{actions}</div>
       ) : null}
     </div>
   );
@@ -111,7 +130,7 @@ export function Hero({
       style={style}
     >
       {content}
-      {media ? <div className={cx("w-full", splitLayout ? "" : "max-w-display")}>{media}</div> : null}
+      {media ? <div className={cx("w-full", splitLayout ? "" : "max-w-display", centred && !splitLayout ? "mx-auto" : "")}>{media}</div> : null}
     </section>
   );
 }

@@ -88,7 +88,13 @@ export { SectionHeader } from "./SectionHeader.js";
 export type { SectionHeaderProps, SectionHeaderLevel } from "./SectionHeader.js";
 
 export { Hero } from "./Hero.js";
-export type { HeroProps, HeroHeadingLevel, HeroComposition } from "./Hero.js";
+export type { HeroProps, HeroHeadingLevel, HeroComposition, HeroAlign } from "./Hero.js";
+
+export { ContentSection } from "./ContentSection.js";
+export type { ContentSectionProps, ContentSectionHeadingLevel, ContentSectionAlign } from "./ContentSection.js";
+
+export { MediaFigure } from "./MediaFigure.js";
+export type { MediaFigureProps, MediaFigureMeasure } from "./MediaFigure.js";
 
 export { MarketingChapter } from "./MarketingChapter.js";
 export type { MarketingChapterProps, MarketingChapterHeadingLevel } from "./MarketingChapter.js";

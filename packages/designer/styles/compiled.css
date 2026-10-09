@@ -345,6 +345,12 @@
   .gap-0\.5 {
     gap: calc(var(--spacing, 0.25rem) * 0.5);
   }
+  .gap-2xl {
+    gap: var(--spacing-2xl, 32px);
+  }
+  .gap-3xl {
+    gap: var(--spacing-3xl, 48px);
+  }
   .gap-lg {
     gap: var(--spacing-lg, 16px);
   }
@@ -645,6 +651,12 @@
     --tw-tracking: var(--tracking-meta, 0.06em);
     letter-spacing: var(--tracking-meta, 0.06em);
   }
+  .text-balance {
+    text-wrap: balance;
+  }
+  .text-pretty {
+    text-wrap: pretty;
+  }
   .text-accent-text {
     color: var(--color-accent-text, oklch(0.36 0 0));
   }
@@ -905,6 +917,9 @@
   @media (width >= 1024px) {
     .tablet-lg\:max-w-display {
       max-width: var(--ui-width-display-max, 72rem);
+    }
+    .tablet-lg\:gap-3xl {
+      gap: var(--spacing-3xl, 48px);
     }
   }
   @media (width >= 1280px) {

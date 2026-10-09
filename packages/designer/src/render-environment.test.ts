@@ -65,6 +65,7 @@ describe("server-safe entry points resolve under react-server (test 1)", () => {
       distRelPath: "blocks/server.js",
       expectedExports: [
         "ArticleBody",
+        "ContentSection",
         "DetailView",
         "EmptyState",
         "Faq",
@@ -72,6 +73,7 @@ describe("server-safe entry points resolve under react-server (test 1)", () => {
         "FieldGroup",
         "Hero",
         "MarketingChapter",
+        "MediaFigure",
         "OrderedStepSequence",
         "PageHeader",
         "PricingTable",

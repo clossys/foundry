@@ -114,3 +114,30 @@ describe("Hero", () => {
     expect(screen.getByText("Description")).toHaveClass(secondary);
   });
 });
+
+describe("Hero align", () => {
+  it("lines the text block up along the start edge by default", () => {
+    const { container } = render(<Hero heading="Heading text" actions={<a href="/x">Action</a>} />);
+    const block = container.querySelector("section > div") as HTMLElement;
+    expect(block).toHaveClass("items-start");
+    expect(block).not.toHaveClass("text-center");
+    expect(block.style.maxWidth).toBe("");
+    expect(screen.getByRole("heading")).not.toHaveClass("text-balance");
+  });
+
+  it("centres every line and the actions row when align is center", () => {
+    const { container } = render(<Hero heading="Heading text" description="Description" actions={<a href="/x">Action</a>} align="center" />);
+    const block = container.querySelector("section > div") as HTMLElement;
+    expect(block).toHaveClass("items-center", "text-center");
+    expect(screen.getByRole("link").parentElement).toHaveClass("justify-center");
+  });
+
+  it("narrows a centred text block to the prose measure, balanced, so it wraps before the column does", () => {
+    const { container } = render(<Hero heading="Heading text" description="Description" align="center" />);
+    const block = container.querySelector("section > div") as HTMLElement;
+    expect(block.style.maxWidth).toBe("var(--ui-width-prose-max, 48rem)");
+    expect(block).toHaveClass("mx-auto");
+    expect(screen.getByRole("heading")).toHaveClass("text-balance");
+    expect(screen.getByText("Description")).toHaveClass("text-pretty");
+  });
+});
