@@ -283,7 +283,7 @@ export interface SectionedViewStatusListSection {
 // content-section: one band anatomy (header, text module, visual module)
 // ---------------------------------------------------------------------------
 
-/** How a content section arranges its text and its visual. `split` puts them side by side and needs `media`. */
+/** How a content section arranges its text and its visual. `split` puts them side by side and needs `media`, except a split FAQ, whose rows take the visual column. */
 export type SectionedViewContentLayout = "stacked" | "split";
 /** Which side a split section's visual sits on. Reading order never changes: header, module, then visual. */
 export type SectionedViewContentMediaSide = "end" | "start";
@@ -478,6 +478,7 @@ export interface SectionedViewSpecimenMedia {
 export interface SectionedViewContentItem {
   id: string;
   icon?: ContentIconName;
+  /** Cards items only; a features or topics item with an eyebrow is refused. */
   eyebrow?: CopyRef;
   heading: CopyRef;
   description?: CopyRef;
@@ -582,6 +583,8 @@ export type SectionedViewContentModuleType = SectionedViewContentModule["type"];
  * actions), an optional text module and an optional visual. With neither
  * module nor media it is an intro band. `mediaSide` is allowed only on a
  * `split`, `align` only on a stacked section, and a `split` needs `media`.
+ * A split FAQ module is the exception: its rows take the visual column
+ * beside the header, so it takes no `media`.
  */
 export interface SectionedViewContentSection {
   id: string;
@@ -1198,15 +1201,19 @@ function validateContentSection(section: Record<string, unknown>, path: string, 
   const split = section.layout === "split";
   if (section.mediaSide !== undefined && !split) findings.push(finding("sectioned-view-content-media-side", `${path}.mediaSide`, `${path}.mediaSide is allowed only when ${path}.layout is split.`));
   if (section.align !== undefined && split) findings.push(finding("sectioned-view-content-align", `${path}.align`, `${path}.align is allowed only on a stacked section.`));
-  if (split && section.media === undefined) findings.push(finding("sectioned-view-content-split-media", `${path}.media`, `${path} is a split section and needs media.`));
+  const faqModule = isPlainObject(section.module) && section.module.type === "faq";
+  if (split && faqModule && section.media !== undefined) findings.push(finding("sectioned-view-content-faq-split-media", `${path}.media`, `${path} is a split FAQ section; its rows take the visual column, so it takes no media.`));
+  if (split && !faqModule && section.media === undefined) findings.push(finding("sectioned-view-content-split-media", `${path}.media`, `${path} is a split section and needs media.`));
   if (section.module !== undefined) validateContentModule(section.module, `${path}.module`, findings);
   if (section.media !== undefined) validateSpecimenMedia(section.media, `${path}.media`, findings);
 }
 
-function validateContentItemFields(item: Record<string, unknown>, path: string, findings: ComposeFinding[]): void {
+/** An item's icon, heading and description; only a cards item (`eyebrowAllowed`) carries an eyebrow. */
+function validateContentItemFields(item: Record<string, unknown>, path: string, findings: ComposeFinding[], eyebrowAllowed = false): void {
   if (item.icon !== undefined) validateIcon(item.icon, `${path}.icon`, findings);
   validateCopy(item.heading, `${path}.heading`, findings);
   validateOptionalCopyFields(item, ["eyebrow", "description"], path, findings);
+  if (item.eyebrow !== undefined && !eyebrowAllowed) findings.push(finding("sectioned-view-content-item-eyebrow", `${path}.eyebrow`, `${path}.eyebrow is allowed only on cards items.`));
 }
 
 function validateModuleKeys(module: Record<string, unknown>, keys: readonly string[], required: readonly string[], path: string, findings: ComposeFinding[]): void {
@@ -1235,7 +1242,7 @@ function validateContentModule(value: unknown, path: string, findings: ComposeFi
     case "cards": {
       validateModuleKeys(value, ["type", "items"], ["items"], path, findings);
       const cards = validateRecords(value.items, `${path}.items`, findings, { min: 2, max: 6 }, [...CONTENT_ITEM_KEYS, "span", "visual"], ["heading", "span"], (card, cardPath) => {
-        validateContentItemFields(card, cardPath, findings);
+        validateContentItemFields(card, cardPath, findings, true);
         validateEnumField(card, "span", CARD_SPANS, "sectioned-view-content-card-span", cardPath, findings);
         if (card.visual !== undefined) validateSpecimenPart(card.visual, `${cardPath}.visual`, findings, CARD_VISUAL_MAX_ROWS);
       });

@@ -89,11 +89,11 @@ const specimen = (panels: SectionedViewSpecimenPanel[], arrangement?: SectionedV
 
 const item = (id: string, extra: Record<string, unknown> = {}) => ({ id, heading: ref(`acme.item.${id}.heading`), description: ref(`acme.item.${id}.description`), ...extra });
 
-const featuresModule: SectionedViewContentModule = { type: "features", columns: 3, treatment: "plate", items: [item("a", { icon: "landmark" }), item("b", { icon: "scale", eyebrow: ref("acme.item.b.eyebrow") }), item("c")] };
+const featuresModule: SectionedViewContentModule = { type: "features", columns: 3, treatment: "plate", items: [item("a", { icon: "landmark" }), item("b", { icon: "scale" }), item("c")] };
 const cardsModule: SectionedViewContentModule = {
   type: "cards",
   items: [
-    { ...item("wide"), span: "two-thirds", icon: "layers", visual: fieldsPart("wide-visual", 5) },
+    { ...item("wide"), span: "two-thirds", icon: "layers", eyebrow: ref("acme.item.wide.eyebrow"), visual: fieldsPart("wide-visual", 5) },
     { ...item("narrow"), span: "third" },
     { ...item("t1"), span: "third" },
     { ...item("t2"), span: "third" },
@@ -180,6 +180,19 @@ describe("content-section — validation", () => {
     expect(rules(docWith(section("a", { layout: "split", align: "center", media: specimen([panelB]) })))).toEqual(["sectioned-view-content-align"]);
     expect(rules(docWith(section("a", { layout: "split", module: topicsModule })))).toEqual(["sectioned-view-content-split-media"]);
     expect(rules(docWith(section("a", { layout: "grid" as never })))).toEqual(["sectioned-view-content-layout"]);
+  });
+
+  it("accepts a split FAQ without media, its rows taking the visual column, and refuses one with media", () => {
+    expect(rules(docWith(section("a", { layout: "split", module: faqModule })))).toEqual([]);
+    expect(rules(docWith(section("a", { layout: "split", mediaSide: "start", module: faqModule })))).toEqual([]);
+    expect(rules(docWith(section("a", { layout: "split", module: faqModule, media: specimen([panelB]) })))).toEqual(["sectioned-view-content-faq-split-media"]);
+    expect(rules(docWith(section("a", { module: faqModule, media: specimen([panelB]) })))).toEqual([]);
+  });
+
+  it("allows an item eyebrow on cards items only", () => {
+    expect(rules(moduleDoc({ type: "features", items: [item("a", { eyebrow: ref("acme.e") }), item("b")] }))).toEqual(["sectioned-view-content-item-eyebrow"]);
+    expect(rules(moduleDoc({ type: "topics", columns: 1, items: [item("a", { eyebrow: ref("acme.e") }), item("b")] }))).toEqual(["sectioned-view-content-item-eyebrow"]);
+    expect(rules(moduleDoc({ type: "cards", items: [{ ...item("a", { eyebrow: ref("acme.e") }), span: "half" }, { ...item("b"), span: "half" }] }))).toEqual([]);
   });
 
   it("refuses keys a content section, a module, or an item does not own", () => {
@@ -326,12 +339,13 @@ describe("content-section — resolution", () => {
       treatment: "plate",
       items: [
         { id: "a", icon: "landmark", heading: "Text for acme.item.a.heading", description: "Text for acme.item.a.description" },
-        { id: "b", icon: "scale", eyebrow: "Text for acme.item.b.eyebrow", heading: "Text for acme.item.b.heading", description: "Text for acme.item.b.description" },
+        { id: "b", icon: "scale", heading: "Text for acme.item.b.heading", description: "Text for acme.item.b.description" },
         { id: "c", heading: "Text for acme.item.c.heading", description: "Text for acme.item.c.description" },
       ],
     });
     const cards = (resolved.sections[3] as ResolvedSectionedViewContentSection).module;
     expect(cards?.type === "cards" && cards.items[0]!.visual?.type).toBe("fields");
+    expect(cards?.type === "cards" && cards.items[0]!.eyebrow).toBe("Text for acme.item.wide.eyebrow");
     const intro = resolved.sections[6] as ResolvedSectionedViewContentSection;
     expect(intro.actions).toEqual([{ id: "more", label: "Text for acme.intro.more", href: "/more" }]);
     expect(Object.hasOwn(intro, "module")).toBe(false);

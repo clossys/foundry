@@ -66,6 +66,15 @@ function runProbe(reactServer: boolean) {
           { id: "hero", kind: "hero", ground: "base", heading: "Server-safe sections" },
           { id: "steps", kind: "ordered-step-sequence", ground: "sunken", heading: "Steps", items: [{ id: "one", ordinal: "1", heading: "Start" }] },
           { id: "status", kind: "status-list", ground: "inverse", heading: "Status", labels: { available: "Available", partial: "Partial", planned: "Planned", dispositions: { "not-offered": "Not offered" } }, groups: [{ id: "core", heading: "Core", items: [{ id: "one", label: "Sections", state: "available" }] }] },
+          {
+            id: "content",
+            kind: "content-section",
+            ground: "base",
+            heading: "Content band",
+            layout: "split",
+            module: { type: "topics", columns: 1, items: [{ id: "a", heading: "Server topic" }, { id: "b", heading: "Second topic" }] },
+            media: { type: "specimen", label: "A placeholder record shown as native markup", panels: [{ id: "record", title: "Server record", parts: [{ id: "fields", type: "fields", items: [{ id: "a", label: "Server field", value: "Server value" }] }] }] },
+          },
         ],
       },
     });
@@ -166,6 +175,13 @@ describe("packed Publisher web React-server boundary", () => {
   it("renders the packed SectionedView through server-safe ordered-step and status blocks", () => {
     expect(server.tags).toEqual(expect.arrayContaining(["ol", "dl"]));
     expect(server.text).toEqual(expect.arrayContaining(["Server-safe sections", "Steps", "Status"]));
+  });
+
+  it("renders a packed content-section band (text module and specimen) through server-safe blocks on both targets", () => {
+    expect(server.tags).toEqual(expect.arrayContaining(["figure", "ul"]));
+    expect(server.text).toEqual(expect.arrayContaining(["Content band", "Server topic", "Server record", "Server field", "Server value"]));
+    expect(normal.html).toContain('data-layout="split"');
+    expect(normal.html).toMatch(/<figure[^>]*data-specimen/);
   });
 
   it("rejects a packed Designer 0.2.5 graph that the former lower bound accepted before SectionedView's missing blocks fail at import", () => {

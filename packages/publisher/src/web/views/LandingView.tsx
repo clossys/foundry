@@ -128,7 +128,7 @@ const BAND_CLASS = "py-4xl tablet-lg:py-5xl";
 const CALL_TO_ACTION_BAND_CLASS = "py-5xl tablet-lg:py-6xl";
 
 /** Section kinds whose header group and module the bands compose through `ContentSection`. */
-const ANATOMY_KINDS: ReadonlySet<string> = new Set(["hero", "feature-grid", "faq", "ordered-step-sequence", "status-list"]);
+const ANATOMY_KINDS: ReadonlySet<string> = new Set(["hero", "feature-grid", "faq", "ordered-step-sequence", "status-list", "content-section"]);
 
 /**
  * Blocks for the bands, each one section anatomy: Designer `ContentSection`
@@ -136,7 +136,8 @@ const ANATOMY_KINDS: ReadonlySet<string> = new Set(["hero", "feature-grid", "faq
  * actions) as its header group, then the section's content as a module
  * rendered without a heading region of its own, then whatever `afterSection`
  * places there. A hero in a band is a header group with its media as the
- * module, never a second display heading.
+ * module, never a second display heading. A `content-section` is already
+ * that anatomy: it renders as itself, leaving its ground to the band.
  */
 function bandBlocks(afterSection: Readonly<Record<string, ReactNode>>): SectionedViewBlockSet {
   const after = (id: string) => afterSection[id] ?? null;
@@ -176,6 +177,7 @@ function bandBlocks(afterSection: Readonly<Record<string, ReactNode>>): Sectione
         {after(id)}
       </ContentSection>
     ),
+    ContentSection: ({ section, actions }) => <sectionedViewBlocks.ContentSection section={section} actions={actions} after={after(section.id)} />,
   };
 }
 

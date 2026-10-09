@@ -522,12 +522,15 @@ alternative to `StatusList`'s `groups`.
 `heading`, an optional `description` and `actions`, then at most one `module`
 and at most one `media`. `layout` is `stacked` (the default; `align` may be
 `start` or `center`) or `split` (requires `media`; `mediaSide` is `end` by
-default or `start`). A band with neither module nor media is an intro band.
+default or `start`). A split `faq` module is the exception: it takes no
+`media`, and its rows fill the visual column beside the header group. A band
+with neither module nor media is an intro band.
 
 - `module` is one of six closed types: `features` (2-4 items; exactly 3 with
   `emphasis: "statement"`; `treatment` `plain`, `plate` or `rule`, and `rule`
   takes no icons), `cards` (2-6 cards whose `span`s fill whole 12-unit rows,
-  each with an optional one-part `visual` of at most 5 rows), `comparison`
+  each with an optional `eyebrow` and an optional one-part `visual` of at
+  most 5 rows; only cards take an item `eyebrow`), `comparison`
   (a `before` and an `after` side of the same form — a description each, or
   the same number of 2-4 points — and a panel `visual` on both or neither),
   `topics` (2-8 items; an even count in the default 2 columns), `steps`
@@ -545,9 +548,11 @@ default or `start`). A band with neither module nor media is an intro band.
   to its Designer icon.
 
 Every visible string is a `CopyRef` and resolves in field order (eyebrow,
-heading, description, actions, module, media). The `SectionedView` web
-renderer does not render `content-section` or feature-grid item icons yet; it
-refuses them rather than dropping them.
+heading, description, actions, module, media). `SectionedView` and
+`LandingView` render `content-section` as one Designer `ContentSection` (see
+LandingView's section anatomy below); its actions render as text links. The
+web renderer does not render feature-grid item icons yet; it refuses them
+rather than dropping them.
 
 `checkSectionVariety(document | documents[])` is an advisory page-rhythm lint
 over one or more documents read as one page. It returns `warning` findings
@@ -1064,18 +1069,42 @@ is server-safe and ships no wording of its own: every visible word comes from
 the resolved documents or a prop.
 
 ```tsx
-import type { ResolvedSectionedViewDocument } from "@clossys/publisher/core";
+import { resolveSectionedViewDocument, type ResolvedSectionedViewDocument } from "@clossys/publisher/core";
 import { LandingView } from "@clossys/publisher/web";
 
 declare const page: ResolvedSectionedViewDocument; // from resolveSectionedViewDocument; its first section is a hero
 declare const faq: ResolvedSectionedViewDocument; // a shared FAQ document
 declare const screenshot: React.ReactNode; // for example a Designer `MediaFigure`
+declare const resolveCopy: Parameters<typeof resolveSectionedViewDocument>[1];
+
+// One content-section band: topics beside a one-panel specimen.
+const records = resolveSectionedViewDocument({
+  id: "records",
+  sectionGroundRhythm: "view",
+  sections: [{
+    id: "records",
+    kind: "content-section",
+    heading: { id: "records.heading" },
+    layout: "split",
+    module: { type: "topics", items: [
+      { id: "kept", icon: "folder", heading: { id: "records.kept" } },
+      { id: "shared", icon: "users", heading: { id: "records.shared" } },
+    ] },
+    media: { type: "specimen", label: { id: "records.label" }, panels: [{
+      id: "record",
+      title: { id: "records.panel" },
+      parts: [{ id: "fields", type: "fields", items: [
+        { id: "owner", label: { id: "records.owner" }, value: { id: "records.owner.value" } },
+      ] }],
+    }] },
+  }],
+}, resolveCopy);
 
 export function ProductPage() {
   return (
     <LandingView
       document={page}
-      trailing={[faq]}
+      trailing={[records, faq]}
       afterSection={{ features: screenshot }}
       callToAction={{ heading: "Closing heading", description: "One supporting line.", action: <a href="/start">Start</a> }}
     />
@@ -1110,13 +1139,27 @@ Props, in addition to the standard `<main>` attributes (minus `children`),
   `prefersReducedMotion`, as for `SectionedView`.
 
 **Section anatomy.** Every band with a feature grid, ordered steps, a status
-list, an FAQ or a hero is one Designer `ContentSection`: the section's
+list, an FAQ, a hero or a `content-section` is one Designer `ContentSection`: the section's
 eyebrow, heading and description as the header group (start-aligned, held to
 the prose measure), then the content as a module rendered without its own
 heading region, then the `afterSection` content. A hero in a later band is a
 header group (an `<h2>`, never a second display heading) with its actions,
 and its media as the module. Other section kinds keep their block's own
 header region inside the same slot.
+
+**Content-section bands.** A `content-section` band (the `records` document
+above) maps its module and specimen straight onto Designer blocks: features
+to `FeatureGrid`, cards to `CardGrid`, comparison to `Comparison`, topics to
+`TopicList`, steps to `OrderedStepSequence`, faq to `Faq`, and `media` to a
+labelled `Specimen` figure. Item icons render their Designer icon; actions
+render as text links. A `split` band puts the text beside the specimen on its
+`mediaSide`; a split FAQ puts its rows in the visual column beside a
+top-aligned header group. A stacked band takes its `align` and shows the
+specimen after the module. `afterSection` content follows the module (in a
+split FAQ, it closes the header group's column). Specimens are static
+records: they hold no links, buttons or other focusable content. A section
+that would not render as authored is refused with a `RenderError` naming its
+path.
 
 **Measure and rhythm.** Centred copy, in the hero block and the call to
 action, is held to the prose measure (`--ui-width-prose-max`) inside the

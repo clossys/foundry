@@ -400,3 +400,57 @@ describe("SectionedView resolve-then-render contract", () => {
     expect(html).toContain("Fixture capability");
   });
 });
+
+describe("SectionedView content-section", () => {
+  const panel = { id: "record", title: "Placeholder record", parts: [{ id: "fields", type: "fields", items: [{ id: "a", label: "Field", value: "Value" }] }] };
+  const media = { type: "specimen", label: "Placeholder specimen of one record", panels: [panel] };
+  const faqItems = ["q1", "q2", "q3", "q4"].map((id) => ({ id, question: `Question ${id}?`, answer: `Answer ${id}.` }));
+  const contentDocument = (section: Record<string, unknown>) =>
+    ({ ...document, sections: [{ id: "band", kind: "content-section", ground: "base", heading: "Band", ...section }] }) as unknown as ResolvedSectionedViewDocument;
+  const refusal = (section: Record<string, unknown>) => {
+    try {
+      renderToStaticMarkup(<SectionedView document={contentDocument(section)} />);
+    } catch (error) {
+      return (error as Error).message;
+    }
+    return "rendered";
+  };
+
+  it("renders a split FAQ through the entry's React Aria rows in the visual column", () => {
+    const host = renderToStaticMarkup(<SectionedView document={contentDocument({ layout: "split", module: { type: "faq", items: faqItems } })} />);
+    expect(host).toContain('data-layout="split"');
+    expect(host).toContain("data-content-section-faq");
+    expect(host).toMatch(/data-content-section-media=""[^>]*>[\s\S]*data-rac/);
+    expect(host).not.toContain("<summary");
+  });
+
+  it("renders a stacked band's specimen after its module and its actions as text links", () => {
+    const host = renderToStaticMarkup(
+      <SectionedView document={contentDocument({ actions: [{ id: "more", label: "More", href: "/more" }], module: { type: "topics", columns: 1, items: [{ id: "a", heading: "A" }, { id: "b", heading: "B" }] }, media })} />,
+    );
+    expect(host).toMatch(/data-topic-list[\s\S]*data-content-section-media[\s\S]*<figure[^>]*data-specimen/);
+    expect(host).toContain('<a href="/more" class="text-body font-body underline text-ink-link">More</a>');
+  });
+
+  it("refuses an invalid module or specimen before any Designer block renders, naming the exact path", () => {
+    const prefix = "SectionedView refused an invalid resolved document: ";
+    const cards = (...spans: string[]) => ({ type: "cards", items: spans.map((span, index) => ({ id: `c${index}`, heading: `Card ${index}`, span })) });
+    const cases: Array<[Record<string, unknown>, string]> = [
+      [{ module: cards("third", "third") }, "sections.0.module.items leaves its last row unfilled; cards must fill whole 12-unit rows."],
+      [{ module: cards("half", "two-thirds") }, "sections.0.module.items.1.span overflows its row; cards must fill whole 12-unit rows."],
+      [{ module: { type: "topics", columns: 1, items: [{ id: "a", heading: "A", icon: "rocket" }, { id: "b", heading: "B" }] } }, "sections.0.module.items.0.icon is not a content icon name."],
+      [{ module: { type: "features", items: [{ id: "a", heading: "A", eyebrow: "E" }, { id: "b", heading: "B" }] } }, "sections.0.module.items.0 must be a closed resolved item object."],
+      [{ module: { type: "slider", items: [] } }, "sections.0.module.type is not a supported content module type."],
+      [{ media: { ...media, panels: [{ ...panel, parts: ["a", "b", "c", "d"].map((id) => ({ ...panel.parts[0], id })) }] } }, "sections.0.media.panels.0.parts must hold 1 to 3 parts; it holds 4."],
+      [{ media: { ...media, panels: [{ ...panel, title: { id: "unresolved" } }] } }, "sections.0.media.panels.0.title must be resolved non-blank copy."],
+      [{ media: { ...media, arrangement: "row" } }, "sections.0.media.panels must hold 2 to 3 panels for the row arrangement; it holds 1."],
+      [{ media: { ...media, panels: [{ ...panel, parts: [{ id: "m", type: "meter", label: "M", value: 1, scaleMax: 0, tone: "info", valueText: "1" }] }] } }, "sections.0.media.panels.0.parts.0.scaleMax must be a finite number greater than zero."],
+      [{ media: { ...media, panels: [{ ...panel, parts: [{ id: "t", type: "table", caption: "T", columns: [{ id: "a", label: "A" }, { id: "b", label: "B" }], rows: [{ id: "r", cells: [{ text: "x" }] }] }] }] } }, "sections.0.media.panels.0.parts.0.rows.0.cells must hold one cell per column (2); it holds 1."],
+      [{ layout: "split", module: { type: "topics", columns: 1, items: [{ id: "a", heading: "A" }, { id: "b", heading: "B" }] } }, "sections.0 is a split section and needs media."],
+      [{ layout: "split", module: { type: "faq", items: faqItems }, media }, "sections.0.media is not allowed on a split FAQ section; its rows take the visual column."],
+      [{ mediaSide: "start", media }, "sections.0.mediaSide is allowed only on a split section."],
+      [{ items: [] }, "sections.0 has keys not allowed for a content-section section."],
+    ];
+    for (const [section, message] of cases) expect(refusal(section)).toBe(`${prefix}${message}`);
+  });
+});

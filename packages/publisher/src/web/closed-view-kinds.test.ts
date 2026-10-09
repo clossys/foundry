@@ -8,10 +8,11 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import type { CopyRegistry, CopyResolver } from "@clossys/writer";
 import { createCopyResolver } from "@clossys/writer";
-import { resolveSurfaceDocument, SurfaceResolutionError } from "../core/index.js";
+import { resolveSurfaceDocument, SurfaceResolutionError, validateSectionedViewDocument } from "../core/index.js";
 import type { SurfaceDocument } from "../core/index.js";
 import { createWebRenderer } from "./internal/createWebRenderer.js";
 import { defineWebTemplate } from "./internal/defineWebTemplate.js";
+import { assertRenderableSectionedViewDocument } from "./views/SectionedViewContent.js";
 
 const ref = (id: string) => ({ id });
 
@@ -62,5 +63,34 @@ describe("defineWebTemplate — statement band not expressible as a SectionedVie
     const html = renderToStaticMarkup(element);
     expect(html).toContain("Acme placeholder statement copy.");
     expect(html).toContain("text-h2");
+  });
+});
+
+describe("SectionedView render boundary — the same closed kinds as the document contract", () => {
+  /** The kinds the document contract names when it refuses an unknown one. */
+  const contractKinds = (): string[] => {
+    const message = validateSectionedViewDocument({ id: "acme-kinds", sections: [{ id: "x", kind: "statement-band", ground: "base", heading: ref("acme.hero.heading") }] } as never).find((entry) => entry.rule === "sectioned-view-section-kind")?.message ?? "";
+    return (/supported kinds are (.+)\.$/.exec(message)?.[1] ?? "").split(", ");
+  };
+  const kindRefusal = (kind: string): boolean => {
+    const resolved = {
+      id: "acme-kinds",
+      resolutions: [{ ref: { id: "acme.hero.heading" }, text: "Acme placeholder heading", recordId: "acme", revision: "1", locale: "en", source: { kind: "consumer", reference: "fixture" }, entryId: "acme.hero.heading" }],
+      sections: [{ id: "x", kind, ground: "base", heading: "Acme placeholder heading" }],
+    };
+    try {
+      assertRenderableSectionedViewDocument(resolved);
+    } catch (error) {
+      return (error as Error).message === "sections.0.kind is not a supported SectionedView kind.";
+    }
+    return false;
+  };
+
+  it("accepts exactly the ten contract kinds, content-section included, and refuses any other", () => {
+    const kinds = contractKinds();
+    expect(kinds).toHaveLength(10);
+    expect(kinds).toContain("content-section");
+    expect(kinds.filter(kindRefusal)).toEqual([]);
+    expect(kindRefusal("statement-band")).toBe(true);
   });
 });
