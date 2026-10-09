@@ -27,7 +27,7 @@ and closes re-read, evidence-order and parsing gaps found while building
 #1938: it adds C-56 to C-61 and tightens C-10, C-13, C-16, C-37, C-41 and
 C-54. Revision 7 keeps every decision of revision 6 and adds two
 optional, consent-gated capture classes to the Observer provider adapter,
-autocapture and session replay (decision 7, C-62 to C-69, unit F).
+autocapture and session replay (decision 7, C-62 to C-69, unit F). Revision 7 also records the compact corner-card presentation of the notice (C-70, unit G): the title becomes visually hidden but keeps naming the region, with no change to any other rule.
 
 1. **One compact notice with two equal actions.** There is no preferences
    dialog and no secondary reopen control in the footer. Reopening is a link
@@ -1121,8 +1121,13 @@ keep it correct in right-to-left layouts. Unit D adds the status line
 Presentation note (guidance, not a rule): the host pins the card at the
 bottom-start corner of the viewport with logical properties, and on mobile
 it spans the full width minus the page gutter. Its visible content is the
-one-sentence body (C-28), the privacy-policy link and two identical
-outlined buttons.
+one-sentence body (C-28), the privacy-policy link only when the host passes
+one (`policyLink` is optional), the status line (C-21) whenever one is
+passed, and the two actions. The title is the only part that is hidden: a
+failed withdrawal (C-29, C-55) is always shown to a sighted visitor in the
+notice itself. A pinned card can cover keyboard-focused content (WCAG 2.4.11
+Focus Not Obscured); the host reserves `scroll-padding-bottom` at least as
+tall as the card.
 
 - **C-21 A status line is presentation, not state.** Unit D adds one
   optional prop, `status?: ReactNode`. The block always renders a polite
@@ -1138,8 +1143,13 @@ outlined buttons.
   requiredness, and its value still comes from the copy's `title` field
   (C-35), so no consumer changes; an `aria-label` string is not used,
   because a `ReactNode` title cannot become one. The region is never given
-  `role="dialog"` or `aria-modal`. Focus on reopen still lands on the named
-  region (C-47).
+  `role="dialog"` or `aria-modal`. The region is the block's root element
+  (the one that carries `data-consent-banner`) and Designer gives it no
+  `tabindex`. Focus on reopen lands on that named element: C-47's wrapper
+  does not take focus itself; the assembly sets `tabindex="-1"` on the
+  `[data-consent-banner]` element inside its wrapper and focuses it, so the
+  focused element carries `aria-labelledby` and its accessible name equals
+  the title. No focus-target prop is added to `ConsentBannerProps`.
 
 ### Assembly (Publisher)
 
@@ -1283,7 +1293,8 @@ conformance test imports them from (C-53).
 - **C-47 Focus on open.** A notice that opens by itself does not move
   focus. A notice opened by the fragment or the event receives focus on
   its region, through a wrapper the assembly owns, so Designer still has no
-  autofocus.
+  autofocus. The assembly focuses the region element itself (C-70), not the
+  wrapper, so that focus lands on a named element.
 - **C-48 Hooks and lifecycle ownership.** Outside a `ConsentExperience`,
   `useAnalyticsAllowed()` returns `false` and `useConsentStatus()` returns
   the no-decision status. The assembly creates the lifecycle in a mount
@@ -1698,8 +1709,8 @@ expiry behaviour is built in #1938, and its reopen seam and copy in #1941.
 
 - Paths: the `ConsentBanner` block source in `packages/designer/src/blocks/`,
   its test, its README entry, and one `.changesets/` entry for `designer`
-  at `minor`. It uses the `sr-only` utility already present in Designer's
-  compiled stylesheet.
+  at `minor`, which ships in the cohort release with #1942. It uses the
+  `sr-only` utility already present in Designer's compiled stylesheet.
 - API: `ConsentBannerProps.title` keeps its name, type and requiredness;
   only its rendering changes, per C-70. Every other prop is unchanged.
 - Stacking: it is built after unit D, on the same block source, so the two
@@ -1893,7 +1904,7 @@ passes. "Covers" lists the rules each proof holds.
 | P-15 | #1941 | `ConsentExperience` :: `required={false}` creates no lifecycle, binds no transport and ignores reopen; `onChange` fires on an acted-on choice only and never for a no-op accept | C-23, C-24, C-39 | fire `onChange` on mount or on a stored read; fire `onChange("granted")` for a no-op accept |
 | P-16 | #1941 | `ConsentExperience` :: Escape records nothing and returns focus; Escape does nothing while a withdrawal has failed; withdrawal stays enabled while a grant is pending; a lifecycle whose snapshot has `withdrawal: "failed"` at mount shows the notice open with its status; a failed withdrawal keeps the notice open through a repeated refusal and a re-read; other statuses close with the choice | C-13, C-15, C-25, C-26, C-55 | persist Escape; close on a failed withdrawal; let Escape hide a failed-withdrawal notice; open the failed-withdrawal notice only after a refusal in this render |
 | P-17 | #1941 | `ConsentExperience` :: server and initial client render match the no-decision snapshot | C-22 | read storage during render |
-| P-18 | #1941 | `reopen` :: fragment and event open once, a leading `#` is ignored, the fragment is cleared, focus moves to the reopened notice, and `refresh()` runs on reopen, on `visibilitychange` and on `pageshow` | C-27, C-46, C-47 | open a second notice on a repeated trigger; skip `refresh()` on reopen |
+| P-18 | #1941 | `reopen` :: fragment and event open once, a leading `#` is ignored, the fragment is cleared, focus moves to the reopened notice: `document.activeElement` is the `[data-consent-banner]` element, which carries `aria-labelledby` and whose accessible name equals the title; and `refresh()` runs on reopen, on `visibilitychange` and on `pageshow` | C-27, C-46, C-47, C-70 | open a second notice on a repeated trigger; skip `refresh()` on reopen; focus the wrapper `div` instead of the region |
 | P-19 | #1941 | `review-seam` :: each value on loopback; ignored elsewhere; the factory receives the in-memory port, `evidence: false` and `simulated: true`; a factory whose lifecycle does not report `simulated: true` is disposed before any `grant()` or `refuse()` reaches it, nothing is written under the real key or any other; a factory that reports `simulated: true` but wires the host's storage, so the in-memory port records no mount `read()`, is disposed the same way before any seeding call and the host storage records no write; in both cases the fixed no-decision notice renders; a seed whose write the in-memory port did not receive disables the seam the same way; the real key is never written; the transport is never bound; `useAnalyticsAllowed()` is `false` under `granted`; the value lasts for the tab | C-23, C-30, C-31, C-32, C-50 | accept a non-loopback host; seed before checking `simulated`; bind the transport to a seeded lifecycle; check only `simulated` and not the mount `read()` on the in-memory port |
 | P-20 | #1941 | `consent-copy/resolve` :: both leads and every status key required; draft, stale, expired-delegate, out-of-scope, wrong-locale, blank and placeholder copy refused; under `production`, unapproved, delegate-approved and generated-source copy refused; with `NODE_ENV` set to `production`, a declared `preview` target throws and delegate-approved copy that a preview-bound resolver returned is refused; with no `process` global, or with `NODE_ENV` absent, nothing throws on the read and the declared target decides | C-35, C-52 | omit the `notice` lead; accept generated-source copy under `production`; trust the declared target when `NODE_ENV` is `production` |
 | P-21 | #1941 | `preview/adapter` :: each of the fifteen states produces its table row; zero I/O and no timers; explicit settle; `expired` identical to `fresh-prompt`; no `saved` from the preview; `production` refused | C-33, C-34, C-51 | auto-settle; return `saved`; give `withdrawal-failed` the `withdrawn` snapshot |
@@ -1919,7 +1930,7 @@ passes. "Covers" lists the rules each proof holds.
 | P-41 | F | `posthog-replay` :: payload check, over the snapshot corpus: a `$snapshot` whose payload holds a compressed or string-encoded record, a record carrying a compression marker, a mutation whose data is an object but whose adds, text changes or attributes are an encoded string, an unparsable record, a record of an unlisted kind, a console plugin or log record, a network plugin record, a canvas mutation record, an unmasked text node (in a full snapshot, in a mutation's added nodes, inside a shadow root or inside a same-origin iframe document), an unmasked text change, an unmasked input record or an unmasked `value` attribute is dropped whole; a fully masked payload passes with its custom records removed and `style` text kept; no corpus string other than masked text reaches the fake seam | C-68 | accept a compressed record; accept a record whose fields, not its data, are encoded; skip a field whose type is not the expected one instead of dropping the event; check text nodes only in full snapshots, not in mutation adds or text changes; skip shadow roots or iframe documents; accept an unlisted record kind; accept a console, network or canvas record; skip the masked-form check for input records or for `value` attributes; pass custom records through |
 | P-42 | F | `posthog-replay` :: query and fragment check: with the page address carrying a non-empty query or a non-empty fragment, a clean page address but a load address (navigation entry) carrying one, or a meta or custom address in the payload carrying one, the `$snapshot` is dropped, and every later `$snapshot` of that grant is dropped even after the address is clean; on a page with neither, a payload whose attribute values hold a link is accepted; a new grant on a clean address records again | C-68, C-20 | check only the meta `href`; ignore the load address; check the address after the rewrite; accept later `$snapshot` events of the same grant once the address is clean; ignore the fragment |
 | P-43 | F | `posthog-block-selectors` :: each host block selector is checked against `BLOCK_SELECTOR_GRAMMAR`: one with a top-level comma, a pseudo-class, a parenthesis, an escape, a `~` or `+` combinator, an unbalanced bracket, a space at the start, or a long adversarial string (tens of thousands of repeated `.a` or `[a="` fragments ending in an invalid character, tested against the expression directly and returning promptly) leaves replay off with no `startSessionRecording` call and no throw, while pageviews and autocapture still run; valid selectors (`aside`, `.card [data-x="a b"]`, `main > #pane`) follow the private selectors in the joined block selector | C-63, C-68 | skip the grammar check; skip the length cap before the expression; accept a comma; throw instead of leaving replay off; place host selectors before the private ones |
-| P-44 | G | `ConsentBanner` :: the region's accessible name is the `title` content, through `aria-labelledby` on a heading that carries `sr-only`; no title is rendered visibly; the region has no `role="dialog"` and no `aria-modal`; a `ReactNode` title with markup still names the region; both actions stay two `Button`s of the same variant and size | C-70 | render the heading without `sr-only`; name the region with an `aria-label` string; drop `aria-labelledby`; add `role="dialog"` |
+| P-44 | G | `ConsentBanner` :: the region's accessible name is the `title` content, through a structural `aria-labelledby` that resolves to a heading carrying `sr-only`; the title text appears exactly once, inside that heading, and nowhere visible; the region has no `role="dialog"`, no `aria-modal` (not `"true"`, not `"false"`) and no `tabindex`; a `ReactNode` title with markup keeps its markup and still names the region; with a status and a policy link passed, both render visibly; both actions stay two `Button`s of the same variant and size (P-14) | C-70, C-21 | render the heading without `sr-only`; name the region with an `aria-label` string, or `String(title)`, or drop non-text children; drop `aria-labelledby`; add `role="dialog"`; add `aria-modal="true"`; render the title a second time outside the hidden heading; hide the status line or the policy link with the title |
 
 ### Review proofs for this document
 
