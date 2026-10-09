@@ -49,7 +49,9 @@ const SDK_AUTO_PROPERTIES: Readonly<Record<string, unknown>> = {
  * what would be sent, and returns an existing instance unchanged when a
  * name it has already loaded is initialized again.
  */
-function fakeSdk(options: { initBehaviour?: InitBehaviour; sdkPropertiesWin?: boolean; auto?: Record<string, unknown> } = {}) {
+function fakeSdk(
+  options: { initBehaviour?: InitBehaviour; sdkPropertiesWin?: boolean; auto?: Record<string, unknown>; deferHook?: boolean } = {},
+) {
   const behaviour = options.initBehaviour ?? "instance";
   const auto = { ...SDK_AUTO_PROPERTIES, ...options.auto };
   const inits: Array<{ apiKey: string; config: Record<string, unknown>; name: string }> = [];
@@ -76,10 +78,15 @@ function fakeSdk(options: { initBehaviour?: InitBehaviour; sdkPropertiesWin?: bo
           $set: { email: "person@example.test" },
           $set_once: { first_seen: "2026-01-01" },
         };
-        const hook = config.before_send;
-        const out = typeof hook === "function" ? (hook as (r: CaptureResult) => CaptureResult | null)(result) : result;
-        if (out) sent.push(out);
-        else dropped.push(eventName);
+        const runHook = () => {
+          const hook = config.before_send;
+          const out = typeof hook === "function" ? (hook as (r: CaptureResult) => CaptureResult | null)(result) : result;
+          if (out) sent.push(out);
+          else dropped.push(eventName);
+        };
+        // deferHook: an SDK that runs the hook after capture has returned.
+        if (options.deferHook) queueMicrotask(runHook);
+        else runHook();
       },
       opt_in_capturing() {
         instanceCalls.push("opt_in_capturing");
@@ -276,6 +283,17 @@ describe("P-11 posthog: initialization and event names (C-18, C-44)", () => {
     transport.pageview({ href: "https://example.test/real" });
     expect(fake.dropped).toEqual(["$opt_in", "$autocapture", "$pageleave", "$pageview"]);
     expect(fake.sent.map((r) => r.event)).toEqual(["$pageview"]);
+  });
+
+  it("an SDK that runs before_send after capture returns has every transport event dropped", async () => {
+    const fake = fakeSdk({ deferHook: true });
+    const { transport } = await readyTransport(fake);
+    transport.pageview({ href: "https://example.test/a" });
+    transport.conversion("signup_started", { href: "https://example.test/b" }, { plan: "pro" });
+    await flush();
+    expect(fake.instanceCalls).toEqual(expect.arrayContaining(["capture:$pageview", "capture:signup_started"]));
+    expect(fake.sent).toEqual([]);
+    expect(fake.dropped).toEqual(expect.arrayContaining(["$pageview", "signup_started"]));
   });
 
   it("drops an event whose name the init context does not list, even when captured through the adapter", () => {
