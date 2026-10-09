@@ -238,6 +238,8 @@ written; `npm install` got the right tarball, the following `import` line
       (`docs/DECISIONS.md` entry 26), and its own `optional-peer-manifest`
       rule stops asking anything of a package once its version has moved past
       what a frozen row measured — which every unpublished new subpath has.
+      A subpath that refuses a condition by design (it throws at import under
+      that condition) is declared in `BY_DESIGN_REFUSALS` in the same file.
 
 ## 4. Write the furniture
 
