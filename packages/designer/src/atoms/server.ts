@@ -7,7 +7,9 @@
  * `react-aria-components`, which reads `useContext` at module scope and
  * fails to import under React's `react-server` condition — a packaging
  * problem, not an architectural one, because several individual atoms
- * (`Badge`, `Banner`, `Card`, `Field`, `Icon`, `Skeleton`, `Spinner`) plus
+ * (`Badge`, `Banner`, `Card`, `Field`, `Icon`, `Meter`, `Skeleton`,
+ * `Spinner`, `StatusMark`, and the hook-free `Avatar.server.tsx` variant
+ * of `Avatar`) plus
  * this package's own `cx` class-merge helper import cleanly under that
  * same condition. This file is that verified-safe subset, published as
  * its own compiled entry (`./dist/atoms/server.js`) so a React Server
@@ -54,6 +56,9 @@ import { REACT_DECLARED_RANGE } from "../internal/declared-peer-ranges.js";
  */
 assertPeerVersion({ peer: "react", declaredRange: REACT_DECLARED_RANGE, foundVersion: reactVersion });
 
+export { Avatar } from "./Avatar.server.js";
+export type { AvatarProps, AvatarSize } from "./Avatar.js";
+
 export { Badge } from "./Badge.js";
 export type { BadgeProps, BadgeVariant } from "./Badge.js";
 
@@ -61,7 +66,7 @@ export { Banner } from "./Banner.js";
 export type { BannerProps, BannerVariant } from "./Banner.js";
 
 export { Card } from "./Card.js";
-export type { CardProps } from "./Card.js";
+export type { CardProps, CardVariant, CardGround } from "./Card.js";
 
 export { Field } from "./Field.js";
 export type { FieldProps, FieldRenderProps } from "./Field.js";
@@ -69,11 +74,17 @@ export type { FieldProps, FieldRenderProps } from "./Field.js";
 export { Icon } from "./Icon.js";
 export type { IconProps, IconSize, IconAccessibilityProps, IconNode } from "./Icon.js";
 
+export { Meter } from "./Meter.js";
+export type { MeterProps, MeterTone, MeterDirection } from "./Meter.js";
+
 export { Skeleton } from "./Skeleton.js";
 export type { SkeletonProps, SkeletonShape } from "./Skeleton.js";
 
 export { Spinner } from "./Spinner.js";
 export type { SpinnerProps, SpinnerSize } from "./Spinner.js";
+
+export { StatusMark } from "./StatusMark.js";
+export type { StatusMarkProps, StatusMarkTone } from "./StatusMark.js";
 
 /** Merge token-aware Tailwind class names with last-argument precedence. Pure string logic — no React import at all. */
 export { cx as mergeUiClasses } from "./internal/cx.js";

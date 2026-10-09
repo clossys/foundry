@@ -79,23 +79,25 @@ same way `tokens` sits below all of `ui`). See "Placement rules" below for
 what distinguishes reusable atoms and blocks. Whole-page compositions are
 surfaces and live in `@clossys/publisher/web`.
 
-- **`icons`** — glyph data only, no components: 32 `IconNode` exports
-  (`AlertTriangle`, `BookOpen`, `Box`, `Building2`, `Calendar`, `Check`,
-  `CheckCircle`, `ChevronDown`, `ChevronLeft`, `ChevronRight`, `ChevronUp`,
-  `Clock`, `CreditCard`, `ExternalLink`, `FileText`, `Folder`, `Grid3x3`,
-  `Home`, `Info`, `List`, `Lock`, `Monitor`, `Moon`, `Plug`, `Receipt`,
-  `Search`, `Settings`, `Sun`, `User`, `Users`, `X`, `XCircle`) — each a
+- **`icons`** — glyph data only, no components: 40 `IconNode` exports
+  (`AlertTriangle`, `ArrowRight`, `BookOpen`, `Box`, `Briefcase`,
+  `Building2`, `Calendar`, `Check`, `CheckCircle`, `ChevronDown`,
+  `ChevronLeft`, `ChevronRight`, `ChevronUp`, `Clock`, `CreditCard`,
+  `ExternalLink`, `FileCheck`, `FileText`, `Folder`, `Globe`, `Grid3x3`,
+  `Home`, `Info`, `Landmark`, `Layers`, `List`, `Lock`, `Monitor`, `Moon`,
+  `Plug`, `Receipt`, `Scale`, `Search`, `Settings`, `ShieldCheck`, `Sun`,
+  `User`, `Users`, `X`, `XCircle`) — each a
   `ReadonlyArray<readonly [tag: string, attrs: Record<string, string>]>`,
   meant to be passed to the `Icon` atom's `glyph` prop. See "Icon glyph
   data" below.
 - **`atoms`** — single-purpose: composes no other atom, or its parts are
-  homogeneous repeats rather than named regions. Thirty-one ship, the
-  complete set for this layer: `Button`, `Icon`, `TextField`, `Badge`,
+  homogeneous repeats rather than named regions. Thirty-three ship:
+  `Button`, `Icon`, `TextField`, `Badge`,
   `Card`, `Breadcrumb`, `Link`, `Checkbox`, `Switch`, `Select`, `Textarea`,
   `Avatar`, `Spinner`, `Menu`, `Dialog`, `Tabs`, `Table`, `Field`,
   `Skeleton`, `Tooltip`, `Banner`, `RadioGroup`, `Popover`, `DateField`,
   `ComboBox`, `SearchField`, `FileTrigger`, `Disclosure`, `ProgressBar`,
-  `Separator`, `Chip`.
+  `Separator`, `Chip`, `StatusMark`, `Meter`.
 - **`blocks`** — owns the internal layout of multiple named regions,
   typically by composing one or more atoms (and/or layout) into something
   with a real job on a page. Twenty-two ship: `PageHeader`, `EmptyState`,
@@ -345,7 +347,7 @@ source file's own header for the exact probe and its result). Today that's:
 
 | Subpath | Server-safe members |
 | --- | --- |
-| `@clossys/designer/atoms/server` | `Badge`, `Banner`, `Card`, `Field`, `Icon`, `Skeleton`, `Spinner`, `buttonLinkClassName`, `mergeUiClasses` |
+| `@clossys/designer/atoms/server` | `Avatar`, `Badge`, `Banner`, `Card`, `Field`, `Icon`, `Meter`, `Skeleton`, `Spinner`, `StatusMark`, `buttonLinkClassName`, `mergeUiClasses` |
 | `@clossys/designer/blocks/server` | `ArticleBody`, `ContentSection`, `DetailView`, `EmptyState`, `Faq`, `FeatureGrid`, `FieldGroup`, `Hero`, `MarketingChapter`, `MediaFigure`, `OrderedStepSequence`, `PageHeader`, `PricingTable`, `SectionFrame`, `SectionHeader`, `SectionIntro`, `Stat`, `StatusList` |
 | `@clossys/designer/shell/server` | `Shell`, `SiteFooter`, `SiteHeader`, `SkipLink` |
 | `@clossys/designer/charts/server` | `ChartFrame`, `Sparkline` |
@@ -1158,8 +1160,35 @@ function Panel() {
 }
 ```
 
-Accepts every prop a plain `<div>` does. No variants — a single raised
-surface, styled with this package's elevation token.
+Accepts every prop a plain `<div>` does, plus `variant` and `ground`:
+
+- `variant="raised"` (default, unchanged): raised fill, `rounded-control`,
+  the hairline elevation shadow.
+- `variant="plate"`: a content plate. It takes the other ground from the
+  section it sits on (on a base section a sunken fill, on a sunken section
+  a raised fill, on an inverse section the inverse raised fill), with
+  `rounded-surface` and no stroke or shadow. The card is made by the change
+  of ground, not by a box.
+- `variant="outline"`: a product panel. Raised fill, one hairline edge
+  (`--ui-border-hairline`, `line-base`, or `line-on-inverse` on an inverse
+  section), `rounded-surface`, never a shadow.
+
+`ground` (`"base" | "sunken" | "inverse"`, default `"base"`) names the
+section the card sits on. An atom cannot see its section, so the block
+that places a plate passes the ground it already knows.
+
+```tsx
+import { Card } from "@clossys/designer/atoms/server";
+
+function Plates() {
+  return (
+    <div className="grid gap-lg">
+      <Card variant="plate" ground="sunken">A plate on a sunken band.</Card>
+      <Card variant="outline">A product panel.</Card>
+    </div>
+  );
+}
+```
 
 ### `Breadcrumb`
 
@@ -1358,6 +1387,11 @@ function UserAvatar() {
 `src` is omitted, or the image fails to load, falls back to initials
 derived from `alt`. Not interactive and composes no other atom — plain
 markup, like `Badge`/`Card`.
+
+`@clossys/designer/atoms/server` exports a hook-free `Avatar` with the same
+props and markup. It shows the image when `src` is given and the initials
+otherwise; it cannot switch to initials when an image fails to load (that
+needs state), so use the client `Avatar` for image URLs that may break.
 
 ### `Spinner`
 
@@ -2074,6 +2108,50 @@ control is react-aria-components' own `Button` (not this package's own
 `Button` atom, the same layering reasoning `Select`'s and `Disclosure`'s
 own sections already document), for the same keyboard/focus-visible
 handling every other interactive control in this package gets.
+
+### `StatusMark`
+
+```tsx
+import { StatusMark } from "@clossys/designer/atoms/server";
+
+function ReportState() {
+  return <StatusMark tone="success">Received</StatusMark>;
+}
+```
+
+A small dot and a label for one data state in a row, a table cell or a
+panel header. `tone`: `"success" | "warning" | "danger" | "info" |
+"neutral"`. The label is required and always visible; the dot is
+`aria-hidden`, so colour only repeats what the words say. The label uses
+the tone's `status-*-text` colour (neutral: `ink-secondary`), checked at AA
+against the raised surface in both themes (`designer-contrast-check`).
+Lighter than `Badge`, which has a tinted pill: use `StatusMark` where
+several states sit close together. Server-safe.
+
+### `Meter`
+
+```tsx
+import { Meter } from "@clossys/designer/atoms/server";
+
+function LeverageRow() {
+  return (
+    <Meter value={3.4} scaleMax={5} limit={3} direction="max" tone="danger" valueText="3.4x" limitText="limit 3.0x" />
+  );
+}
+```
+
+A value drawn against a scale, optionally against a limit. One row of
+visible text (`valueText`, then `limitText`) above a thin bar. `limit`
+draws a tick at the `--ui-border-rule` width and shades the disallowed
+side: after the limit for `direction="max"` (a cap, the default), before it
+for `direction="min"` (a floor). Without a limit it reads as a share.
+
+The bar is `aria-hidden` and there is no `<meter>` element: the visible
+text carries the meaning for every reader. Positions use logical inline
+properties, so the bar fills from the inline start in both directions. A
+value beyond `scaleMax` draws a full bar. A non-finite or non-positive
+`scaleMax`, or a non-finite or negative `value`/`limit`, throws a
+`RangeError`. Server-safe.
 
 ## Blocks
 
@@ -4551,10 +4629,10 @@ import { Search } from "@clossys/designer/icons";
 <Icon glyph={Search} label="Search" />;
 ```
 
-32 `IconNode` exports — plain data, no components, no rendering logic of
+40 `IconNode` exports — plain data, no components, no rendering logic of
 any kind. See "Icon" (above, under "Atoms") for the render contract that
 consumes this data; this section covers the data itself: where it came
-from, how the 32 were chosen, and how to keep it current.
+from, how the 40 were chosen, and how to keep it current.
 
 ### A subpath of `ui`, not a separate package
 
@@ -4581,7 +4659,7 @@ it is not repeated here.
 **The argument that DOES hold, and is why this data is still vendored
 rather than a direct `lucide-react` dependency:** insulation from upstream
 renaming and churn. This set already crossed one Lucide rename in the
-version it's pinned at — four of its 32 names resolve to a Lucide glyph
+version it's pinned at — four of its 40 names resolve to a Lucide glyph
 published under a *different* name in the pinned release (`AlertTriangle`
 → `triangle-alert`, `Home` → `house`, `CheckCircle` → `circle-check-big`,
 `XCircle` → `circle-x`; see "Third-party notices" below for the full
@@ -4590,11 +4668,14 @@ Lucide's own renames as they happen (churn a consumer of THIS package never
 asked for) or pinning a `lucide-react` version directly (which still drifts
 from whatever else in a consumer's own tree might depend on a newer one).
 Vendoring the path data once, under this package's own stable names, means
-this set's 32 names never move under a consumer's feet regardless of what
+this set's 40 names never move under a consumer's feet regardless of what
 Lucide does next — Lucide itself has moved on to 1.30 already; this data
-stays pinned at 1.23.0 until a deliberate refresh (see below).
+stays pinned at 1.23.0 until a deliberate refresh (see below). The eight
+content glyphs added later (see the last tier below) were copied from
+Lucide 1.24.0, the release current when they were added; the original
+32 were not refreshed.
 
-### How the 32 were chosen
+### How the 40 were chosen
 
 The standing instruction for this program is explicit: don't build a
 design asset just because an existing consumer repo happens to use it — an
@@ -4667,10 +4748,21 @@ concept `SearchField` is named after), and `ExternalLink` complete this
 tier on the same "present in both full registries, and an unambiguous
 interaction primitive rather than domain vocabulary" basis.
 
+A third tier, added later, serves content lists rather than interface
+chrome: a feature or topic list on a marketing page where a small line
+glyph tells items apart (one per item, muted, never on a heading).
+`Landmark`, `Briefcase`, `Globe`, `ShieldCheck`, `Scale`, `ArrowRight`,
+`FileCheck` and `Layers` are the glyphs such lists actually needed and the
+set above could not supply (a bank or institution, a client role, a
+cross-border topic, a safeguard, a rule or balance, a next step, a
+verified document, a layered stack). They exist because the sectioned
+content blocks name them as allowed item icons, not because one site
+asked for them; a content list may use only that named subset.
+
 22 (3-way intersection) + 2 (status-family completion) + 8 (interaction
-primitives) = **32** — the exact number every count in this section and
-every test in `src/icons/` checks against; nothing was added and then
-quietly dropped to make the arithmetic round.
+primitives) + 8 (content-list disambiguation) = **40** — the exact number
+every count in this section and every test in `src/icons/` checks against;
+nothing was added and then quietly dropped to make the arithmetic round.
 
 Bias throughout was toward leaving an icon OUT rather than in: every name
 above either survived a genuine 3-way intersection, completes a family this
@@ -4696,7 +4788,7 @@ No `Icon` suffix (`Clock`, not `ClockIcon`) — two reasons, both deliberate:
    instead of the redundant `<Icon glyph={ClockIcon} label="..." />`.
 
 The one place this convention has a real cost, not just a stylistic one:
-three of the 32 names are now a literal prefix of another (`Check` of
+three of the 40 names are now a literal prefix of another (`Check` of
 `CheckCircle`, `User` of `Users`, `X` of `XCircle`) — a collision the old
 `*Icon`-suffixed names happened to avoid (`UserIcon` is not a contiguous
 substring of `UsersIcon`, because the plural's extra `s` sits between
@@ -4706,11 +4798,12 @@ these three pairs) and the fix used instead.
 
 ### Third-party notices
 
-The 32 glyphs here are visually derived from [Lucide](https://lucide.dev)
+The 40 glyphs here are visually derived from [Lucide](https://lucide.dev)
 (ISC License) and, for a subset of those, [Feather](https://feathericons.com)
 (MIT License) before that — this package does not depend on `lucide-react`
 at runtime (see "A subpath of `ui`, not a separate package" above), but the
-SVG path data was copied from it, pinned at Lucide **1.23.0**. Full
+SVG path data was copied from it, pinned at Lucide **1.23.0** (the eight
+content-list glyphs at **1.24.0**). Full
 attribution, the rename table, and both license texts:
 [THIRD-PARTY-NOTICES.md](./THIRD-PARTY-NOTICES.md) — required reading
 before touching `scripts/icon-source-data.json`, and shipped in this
@@ -4732,14 +4825,14 @@ changelog, then run `node scripts/generate-icons.mjs` and `npm test`
 — `src/icons/icons.test.ts` and `src/icons/tree-shake.test.ts` both
 re-verify the regenerated data. See `scripts/generate-icons.mjs`'s own
 header comment for the full procedure, including adding a genuinely new
-name (follow "How the 32 were chosen" above first — this set is curated,
+name (follow "How the 40 were chosen" above first — this set is curated,
 not a grab-bag).
 
 ## API
 
 | Export | Kind | Description |
 | --- | --- | --- |
-| `AlertTriangle`, `BookOpen`, `Box`, `Building2`, `Calendar`, `Check`, `CheckCircle`, `ChevronDown`, `ChevronLeft`, `ChevronRight`, `ChevronUp`, `Clock`, `CreditCard`, `ExternalLink`, `FileText`, `Folder`, `Grid3x3`, `Home`, `Info`, `List`, `Lock`, `Monitor`, `Moon`, `Plug`, `Receipt`, `Search`, `Settings`, `Sun`, `User`, `Users`, `X`, `XCircle` | data | The 32 shipped icon glyphs, each an `IconNode` — see "Icon glyph data" above. |
+| `AlertTriangle`, `ArrowRight`, `BookOpen`, `Box`, `Briefcase`, `Building2`, `Calendar`, `Check`, `CheckCircle`, `ChevronDown`, `ChevronLeft`, `ChevronRight`, `ChevronUp`, `Clock`, `CreditCard`, `ExternalLink`, `FileCheck`, `FileText`, `Folder`, `Globe`, `Grid3x3`, `Home`, `Info`, `Landmark`, `Layers`, `List`, `Lock`, `Monitor`, `Moon`, `Plug`, `Receipt`, `Scale`, `Search`, `Settings`, `ShieldCheck`, `Sun`, `User`, `Users`, `X`, `XCircle` | data | The 40 shipped icon glyphs, each an `IconNode` — see "Icon glyph data" above. |
 | `Button` | component | Pressable action built on react-aria-components' `Button`. |
 | `ButtonProps` | type | Props for `Button`: `variant`, `size`, plus everything react-aria-components' own `Button` accepts. |
 | `ButtonVariant` | type | `"primary" \| "secondary" \| "ghost" \| "danger"`. |
@@ -4754,8 +4847,10 @@ not a grab-bag).
 | `Badge` | component | Small status/label pill. Plain markup — not interactive, composes no other atom. |
 | `BadgeProps` | type | Props for `Badge`: `variant`, plus every native `<span>` attribute. |
 | `BadgeVariant` | type | `"neutral" \| "success" \| "warning" \| "danger" \| "info"`. |
-| `Card` | component | Raised content surface. Plain markup — not interactive, composes no other atom. |
-| `CardProps` | type | Props for `Card`: every native `<div>` attribute. |
+| `Card` | component | Content surface: `raised` (default), `plate` (ground-relative fill) or `outline` (hairline panel). Plain markup — not interactive, composes no other atom. |
+| `CardProps` | type | Props for `Card`: `variant`, `ground`, plus every native `<div>` attribute. |
+| `CardVariant` | type | `"raised" \| "plate" \| "outline"`. |
+| `CardGround` | type | `"base" \| "sunken" \| "inverse"`: the section ground a `Card` sits on. |
 | `Breadcrumb` | component | Breadcrumb trail built on react-aria-components' `Breadcrumbs`/`Breadcrumb`/`Link`. Carries `Breadcrumb.Item`. An atom: its items are a homogeneous repeat, not distinct named regions. |
 | `BreadcrumbProps` | type | Props for `Breadcrumb`: `children`, `className`, `aria-label`, plus react-aria-components' own `Breadcrumbs` props. |
 | `BreadcrumbItemProps` | type | Props for `Breadcrumb.Item`: `href`, `children`, `className`. |
@@ -4832,6 +4927,13 @@ not a grab-bag).
 | `SeparatorProps` | type | Props for `Separator`: `orientation`, `decorative`, `className`, `style`, plus most of react-aria-components' own `Separator` props. |
 | `Chip` | component | A removable label: a label region plus a remove-affordance region. Distinct from `Badge`, which is static. |
 | `ChipProps` | type | Props for `Chip`: `children`, `isDisabled`, `className`, `style`, plus `onRemove`/`removeLabel` (typed together — `removeLabel` is required whenever `onRemove` is supplied). |
+| `StatusMark` | component | A dot and a visible label for one data state. Server-safe. |
+| `StatusMarkProps` | type | Props for `StatusMark`: `tone`, `children` (required), plus every native `<span>` attribute. |
+| `StatusMarkTone` | type | `"success" \| "warning" \| "danger" \| "info" \| "neutral"`. |
+| `Meter` | component | A value against a scale and an optional limit, with visible value and limit text and a decorative bar. Server-safe. |
+| `MeterProps` | type | Props for `Meter`: `value`, `scaleMax`, `limit`, `direction`, `tone`, `valueText`, `limitText`, plus every native `<div>` attribute except `children`. |
+| `MeterTone` | type | `"success" \| "warning" \| "danger" \| "info" \| "neutral"`. |
+| `MeterDirection` | type | `"max" \| "min"`: whether the limit is a cap or a floor. |
 | `PageHeader` | component | Page banner: breadcrumb slot, title, description, actions slot. |
 | `PageHeaderProps` | type | Props for `PageHeader`: `title`, `description`, `actions`, `breadcrumb`, plus every native `<header>` attribute. |
 | `EmptyState` | component | Zero-item placeholder: icon slot, title, description, action slot. |
@@ -5187,7 +5289,7 @@ part of this package's public API" and reachable only by that one test.
   ratified from `contrast.test.ts`'s own hand-curated pair map rather than
   auto-derived from token names. An earlier design assumed this gate could
   self-extend, deriving one pair per `--<role>-on-<ground>`-shaped token
-  name; counted against this package's real 170 tokens, only 5 actually
+  name; counted against this package's real 172 tokens, only 5 actually
   follow that shape (`--color-ink-on-accent`, `--color-ink-on-inverse`,
   `--color-accent-on-inverse`, `--color-line-on-inverse`,
   `--ui-ring-on-inverse` — see `contrast-pairs.ts`'s own header for a 6th,
@@ -5529,12 +5631,14 @@ over the IDENTICAL fixture in the same test, exits `0`.
 
 ## What's deliberately not here
 
-**Atoms:** thirty-one ship, and this is the FINAL rung of this layer —
+**Atoms:** thirty-three ship —
 `Button`, `Icon`, `TextField`, `Badge`, `Card`, `Breadcrumb`, `Link`,
 `Checkbox`, `Switch`, `Select`, `Textarea`, `Avatar`, `Spinner`, `Menu`,
 `Dialog`, `Tabs`, `Table`, `Field`, `Skeleton`, `Tooltip`, `Banner`,
 `RadioGroup`, `Popover`, `DateField`, `ComboBox`, `SearchField`,
-`FileTrigger`, `Disclosure`, `ProgressBar`, `Separator`, `Chip`. No `Modal` exposed as a public atom of
+`FileTrigger`, `Disclosure`, `ProgressBar`, `Separator`, `Chip`,
+`StatusMark`, `Meter` (the last two added for data shown inside content
+specimens). No `Modal` exposed as a public atom of
 its own beyond what `Dialog` and `Popover` already compose internally —
 that gets added here only once something real needs a bare modal overlay
 with neither `Dialog`'s fixed trigger/content shape nor `Popover`'s

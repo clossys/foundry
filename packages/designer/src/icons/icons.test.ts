@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import * as Icons from "./index.js";
 
 /**
- * Data-shape checks for the 32 shipped glyphs — this directory's own
+ * Data-shape checks for the 40 shipped glyphs — this directory's own
  * concern is that the DATA is well-formed (see `atoms/Icon.test.tsx` for
  * rendering/accessibility/colour-contract coverage, which now lives with
  * the render contract rather than here, per this package's ladder: `icons`
@@ -11,8 +11,8 @@ import * as Icons from "./index.js";
 const glyphEntries = Object.entries(Icons) as [string, unknown][];
 
 describe("shipped icon glyph data", () => {
-  it("ships exactly 32 glyphs — the evidence-picked core carried over from the pre-merge icons package (see README.md)", () => {
-    expect(glyphEntries.length).toBe(32);
+  it("ships exactly 40 glyphs — the evidence-picked core carried over from the pre-merge icons package plus eight content-list glyphs (see README.md)", () => {
+    expect(glyphEntries.length).toBe(40);
   });
 
   it("no exported name ends in \"Icon\" — these are data, not components (see README.md \"Naming convention\")", () => {

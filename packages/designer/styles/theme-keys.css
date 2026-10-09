@@ -130,6 +130,7 @@
   --radius-default:                var(--radius-default, 3px);
   --radius-control:                var(--radius-control, 6px);
   --radius-pill:                   var(--radius-pill, 999px);
+  --radius-surface:                var(--radius-surface, var(--radius-default, 3px));
 
   /* ── EASING ───────────────────────────────────────────────────── */
   --ease-default:                  var(--ease-default, cubic-bezier(.2, 0, 0, 1));

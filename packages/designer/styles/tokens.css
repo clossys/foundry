@@ -479,18 +479,22 @@ html:not([data-brand-bound]):not([data-suppress-brand-banner])::before {
   --ui-brandmark-gap-lg:          8px;
 
   /* ════════════════════════════════════════════════════════════════
-   * RADIUS (5 · Tailwind `--radius-*` namespace)
+   * RADIUS (6 · Tailwind `--radius-*` namespace)
    * ════════════════════════════════════════════════════════════════ */
   --radius-sharp:                 0px;
   --radius-subtle:                2px;
   --radius-default:               3px;     /* brandable — the one radius most brands change */
   --radius-control:               6px;
   --radius-pill:                  999px;
+  /* Content surfaces (plates, product panels) follow the brand radius,
+   * while controls keep --radius-control. A role alias, not a brand lever. */
+  --radius-surface:               var(--radius-default, 3px);
 
   /* ════════════════════════════════════════════════════════════════
-   * UI · BORDER (1 · no Tailwind namespace)
+   * UI · BORDER (2 · no Tailwind namespace)
    * ════════════════════════════════════════════════════════════════ */
   --ui-border-hairline:           1px;
+  --ui-border-rule:               2px;      /* emphasis rule above a column or list */
 
   /* ════════════════════════════════════════════════════════════════
    * UI · ELEVATION (3 · no shadows beyond a hairline — no Tailwind namespace)
@@ -751,7 +755,7 @@ html:not([data-brand-bound]):not([data-suppress-brand-banner])::before {
  * parse-css.ts`, used by `parity.test.ts`, `contrast.test.ts`, and
  * `dark-mode-cascade.test.ts`) parses only the FIRST top-level `:root {`
  * block in this file as "the real token layer" and asserts it declares
- * exactly this package's curated 170 tokens; this sentinel is not a
+ * exactly this package's curated 172 tokens; this sentinel is not a
  * design token — it is a structural presence marker — so it stays out
  * of `src/tokens/tokens.ts`'s registry and out of that block entirely,
  * in a second `:root` rule the browser cascades in fine (CSS allows any

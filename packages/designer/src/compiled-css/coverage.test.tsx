@@ -36,9 +36,11 @@ import { Card } from "../atoms/Card.js";
 import { Checkbox } from "../atoms/Checkbox.js";
 import { Chip } from "../atoms/Chip.js";
 import { Link } from "../atoms/Link.js";
+import { Meter } from "../atoms/Meter.js";
 import { Separator } from "../atoms/Separator.js";
 import { Skeleton } from "../atoms/Skeleton.js";
 import { Spinner } from "../atoms/Spinner.js";
+import { StatusMark } from "../atoms/StatusMark.js";
 import { Switch } from "../atoms/Switch.js";
 import { TextField } from "../atoms/TextField.js";
 import { Textarea } from "../atoms/Textarea.js";
@@ -127,6 +129,17 @@ describe("coverage: real rendered classes are all present in compiled.css", () =
     trees.push(["Badge danger", render(<Badge variant="danger">Active</Badge>)]);
     trees.push(["Badge info", render(<Badge variant="info">Active</Badge>)]);
     trees.push(["Card", render(<Card>Content</Card>)]);
+    for (const ground of ["base", "sunken", "inverse"] as const) {
+      trees.push([`Card plate ${ground}`, render(<Card variant="plate" ground={ground}>Content</Card>)]);
+      trees.push([`Card outline ${ground}`, render(<Card variant="outline" ground={ground}>Content</Card>)]);
+    }
+    for (const tone of ["success", "warning", "danger", "info", "neutral"] as const) {
+      trees.push([`StatusMark ${tone}`, render(<StatusMark tone={tone}>State</StatusMark>)]);
+      trees.push([
+        `Meter ${tone}`,
+        render(<Meter value={2} scaleMax={4} limit={3} tone={tone} valueText="2.0x" limitText="limit 3.0x" />),
+      ]);
+    }
     trees.push(["Avatar sm", render(<Avatar alt="A" size="sm" />)]);
     trees.push(["Avatar md", render(<Avatar alt="A" size="md" />)]);
     trees.push(["Avatar lg", render(<Avatar alt="A" size="lg" />)]);

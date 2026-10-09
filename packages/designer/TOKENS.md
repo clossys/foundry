@@ -334,7 +334,7 @@ body's leading, which reads far too open at display sizes. Body copy uses
 your own value or Tailwind's `leading-*` scale; see "What didn't translate
 cleanly" below for why the ramp carries no line-height.
 
-### Spacing, radius, breakpoint, easing (27 tokens, case 1)
+### Spacing, radius, breakpoint, easing (28 tokens, case 1)
 
 | Token | Default | Brandable |
 | --- | --- | --- |
@@ -344,6 +344,7 @@ cleanly" below for why the ramp carries no line-height.
 | `--radius-default` | `3px` | **yes** |
 | `--radius-control` | `6px` | no |
 | `--radius-pill` | `999px` | no |
+| `--radius-surface` | alias of `--radius-default` | no (inherits) |
 | `--ease-default` | `cubic-bezier(.2, 0, 0, 1)` | no |
 | `--ease-decelerate` | `cubic-bezier(0, 0, .2, 1)` | no |
 | `--ease-accelerate` | `cubic-bezier(.4, 0, 1, 1)` | no |
@@ -357,7 +358,14 @@ cleanly" below for why the ramp carries no line-height.
 | `--breakpoint-desktop` | `1280px` | no |
 | `--breakpoint-wide` | `1440px` | no |
 
-### `--ui-*` (46 tokens, case 2 — no Tailwind utility, raw `var()` only)
+`--radius-surface` (`rounded-surface`) is the corner for content surfaces:
+plates, product panels, anything that is not a control. It aliases
+`--radius-default`, so it follows the brand radius, while controls keep
+`--radius-control`. `--ui-border-rule` (below) is the 2px emphasis rule a
+column or list may carry on its top edge; dividers stay on
+`--ui-border-hairline`.
+
+### `--ui-*` (47 tokens, case 2 — no Tailwind utility, raw `var()` only)
 
 | Token | Default | Brandable |
 | --- | --- | --- |
@@ -386,6 +394,7 @@ cleanly" below for why the ramp carries no line-height.
 | `--ui-brandmark-gap-md` | `6px` | no |
 | `--ui-brandmark-gap-lg` | `8px` | no |
 | `--ui-border-hairline` | `1px` | no |
+| `--ui-border-rule` | `2px` | no |
 | `--ui-elevation-none` | `none` | no |
 | `--ui-elevation-raised` | `0 1px 0 var(--color-line-base)` | no |
 | `--ui-elevation-floating` | `0 8px 24px rgba(0, 0, 0, 0.10)` | no |
@@ -412,13 +421,13 @@ The `--spacing-*` and `--color-neutral-*` ranges above are each written as
 one row per family rather than one row per step, so the row count in each
 table is lower than its token count. Per-family totals: surface 7, ink 7,
 line 3, accent 5, status 12, neutral 11, overlay 3, skeleton 1 (color, 49);
-text 13, font 3, tracking 4 (20); spacing 10, radius 5, easing 6,
-breakpoint 6 (27); width 6, layout 5, density 3, icon 4, brandmark 6,
-border 1, elevation 3, ring 2, duration 6, z 9, alpha 1 (46, all `--ui-*`).
-49 + 20 + 27 + 46 = 142 tokens across 26 families, by this same
+text 13, font 3, tracking 4 (20); spacing 10, radius 6, easing 6,
+breakpoint 6 (28); width 6, layout 5, density 3, icon 4, brandmark 6,
+border 2, elevation 3, ring 2, duration 6, z 9, alpha 1 (47, all `--ui-*`).
+49 + 20 + 28 + 47 = 144 tokens across 26 families, by this same
 1-family-added arithmetic. **Note:** this total (and the "128 tokens
 across 24 families" figure elsewhere in this README predating it) does not
-match `src/tokens.ts`'s real count (170 across 28 families) — a pre-existing
+match `src/tokens.ts`'s real count (172 across 28 families) — a pre-existing
 gap from the `chart` color family (22 tokens, added in `0.4.0`) never being
 folded into this reference table's totals. That gap predates this PR and is
 out of its scope; `src/tokens.ts`/`styles/tokens.css` are what `parity.test.ts`
@@ -451,7 +460,7 @@ font-size: clamp(var(--text-h1), 5vw, var(--text-display-m));
 /* A spacing step half-way between two scale steps */
 gap: calc((var(--spacing-lg) + var(--spacing-xl)) / 2);
 
-/* A custom radius not in the 5-step scale */
+/* A custom radius not in the radius scale */
 border-radius: calc(var(--radius-control) * 2);
 
 /* A one-off motion duration */

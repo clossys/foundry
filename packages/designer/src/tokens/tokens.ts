@@ -2,7 +2,7 @@
  * The token catalog: every custom property this package declares in
  * `styles/tokens.css`, as data. This file is the JS/TS half of the package;
  * `styles/tokens.css` is the CSS half. Both are hand-authored and both are
- * meant to describe the exact same 170 tokens — a test in this package
+ * meant to describe the exact same 172 tokens — a test in this package
  * (`parity.test.ts`) parses `styles/tokens.css` and asserts its custom
  * property names and values match this file entry-for-entry, in both
  * directions. That test is what keeps this file honest; nothing generates
@@ -35,7 +35,7 @@
  */
 
 /**
- * The 28 semantic groups the 170 tokens fall into. Each maps to exactly one
+ * The 28 semantic groups the 172 tokens fall into. Each maps to exactly one
  * CSS custom property prefix — see `FAMILY_PREFIX` in `parity.test.ts` (and
  * the README's naming table) for the concrete mapping.
  */
@@ -308,9 +308,11 @@ export const TOKENS: Readonly<Record<string, TokenDefinition>> = {
   "--radius-default": { property: "--radius-default", family: "radius", value: "3px", brandable: true, themeDependent: false },
   "--radius-control": { property: "--radius-control", family: "radius", value: "6px", brandable: false, themeDependent: false },
   "--radius-pill": { property: "--radius-pill", family: "radius", value: "999px", brandable: false, themeDependent: false },
+  "--radius-surface": { property: "--radius-surface", family: "radius", value: "var(--radius-default, 3px)", brandable: false, themeDependent: false },
 
   // ── UI · BORDER ─────────────────────────────────────────────────────
   "--ui-border-hairline": { property: "--ui-border-hairline", family: "border", value: "1px", brandable: false, themeDependent: false },
+  "--ui-border-rule": { property: "--ui-border-rule", family: "border", value: "2px", brandable: false, themeDependent: false },
 
   // ── UI · ELEVATION ──────────────────────────────────────────────────
   "--ui-elevation-none": { property: "--ui-elevation-none", family: "elevation", value: "none", brandable: false, themeDependent: false },

@@ -64,3 +64,18 @@ export const UI_Z_MODAL = "var(--ui-z-modal, 50)";
  * tooltip.
  */
 export const UI_Z_TOOLTIP = "var(--ui-z-tooltip, 80)";
+
+/**
+ * Hairline edge width for `Card`'s `outline` variant. Tailwind's `border`
+ * utility only ever reaches its own hardcoded `1px`; this reads the token
+ * so a brand that changes `--ui-border-hairline` changes the edge too.
+ * Border COLOR stays a Tailwind class (`border-line-base`).
+ */
+export const UI_BORDER_HAIRLINE = "var(--ui-border-hairline, 1px)";
+
+/**
+ * Emphasis rule width (`--ui-border-rule`). `Meter` uses it as the width
+ * of its limit tick, so the tick and a rule-topped column share one
+ * weight.
+ */
+export const UI_BORDER_RULE = "var(--ui-border-rule, 2px)";

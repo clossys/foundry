@@ -336,6 +336,40 @@ export const CONTRAST_PAIRS: readonly ContrastPair[] = [
     description: "An info banner/badge. Mirrors contrast.test.ts's \"info-text / info-tint\".",
   },
 
+  // ── status -text on the raised surface (StatusMark, no tint): AA ──────
+  {
+    id: "status-success-text/surface-raised",
+    foreground: "--color-status-success-text",
+    background: "--color-surface-raised",
+    level: "AA",
+    minimumRatio: AA,
+    description: "StatusMark's success label: status text with no tint behind it, on a card or panel surface.",
+  },
+  {
+    id: "status-warning-text/surface-raised",
+    foreground: "--color-status-warning-text",
+    background: "--color-surface-raised",
+    level: "AA",
+    minimumRatio: AA,
+    description: "StatusMark's warning label: status text with no tint behind it, on a card or panel surface.",
+  },
+  {
+    id: "status-danger-text/surface-raised",
+    foreground: "--color-status-danger-text",
+    background: "--color-surface-raised",
+    level: "AA",
+    minimumRatio: AA,
+    description: "StatusMark's danger label: status text with no tint behind it, on a card or panel surface.",
+  },
+  {
+    id: "status-info-text/surface-raised",
+    foreground: "--color-status-info-text",
+    background: "--color-surface-raised",
+    level: "AA",
+    minimumRatio: AA,
+    description: "StatusMark's info label: status text with no tint behind it, on a card or panel surface.",
+  },
+
   // ── status dots on the page ground: WCAG non-text contrast ───────────
   {
     id: "status-success/surface-base",
