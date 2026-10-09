@@ -109,7 +109,9 @@ const publisherExports = [
  * `rejects` -- only where `BY_DESIGN_REFUSALS` (below) declares that exact
  * specifier and condition, and such a cell must read `refuses`: the target
  * throws its declared refusal whatever is installed, so the omitted peer
- * plays no part in it. Everywhere else `refuses` is an invalid outcome.
+ * plays no part in it. Everywhere else `refuses` is an invalid outcome. A
+ * failure that happens only when a peer is omitted is not a by-design
+ * refusal: it stays `rejects`, and it must name the omitted peer.
  *
  * `governance/public-npm-aggregate-canary.json` carries rows of the same shape
  * and is NOT the file to edit -- it is frozen measurement of already-published
@@ -211,32 +213,45 @@ export const OPTIONAL_PEER_POLICY = {
  * A declared target is excluded from "every runtime target imports" and from
  * "an omission failure names the omitted peer". In their place it must FAIL
  * to import, in the all-peers-present consumer and in every omission
- * consumer, by throwing an error whose own message contains the marker.
- * Anything else is a finding: importing successfully (the declaration is
- * stale), a different message, a Node module-resolution error (a missing peer
- * or a broken path is breakage, not a refusal, even when its message happens
- * to quote the marker), a timeout, a launch failure, or a process exit that
- * never reached the thrown error. The message is read from a report the
- * probe writes after catching the error, never from free-form output, so a
- * crash that merely prints or quotes the marker cannot pass. An undeclared
+ * consumer, by throwing an error whose own message contains the marker and
+ * which carries no string `code` (a plain `Error`, as a refusal module
+ * throws). Anything else is a finding: importing successfully (the
+ * declaration is stale), a different message, an error with a string `code`
+ * (a missing peer, a broken path or a missing file -- `ERR_*`,
+ * `MODULE_NOT_FOUND`, `ENOENT` and the like -- is breakage, not a refusal,
+ * even when its message happens to quote the marker), a timeout, a launch
+ * failure, or a process exit that never reached the thrown error. The
+ * message is read from a report the probe writes after catching the error,
+ * never from free-form output, so accidental breakage that prints or quotes
+ * the marker on its way to crashing does not pass. That is the threat model:
+ * accidental breakage in a first-party module. It is not proof against a
+ * module written to forge the probe's report and exit code. An undeclared
  * target that throws is still a finding, exactly as before.
  *
  * Declaring a specifier also makes the engine measure each of its
  * `development` and `browser` targets as its own condition (with node's
- * `--conditions` flag) instead of folding them into `default`, because the
- * conditions a refusing subpath does NOT refuse under are exactly the ones it
- * must work under. `react-server` is measured for every export, as before.
- * `browser` is node's resolver with that condition set, not a browser: it
- * proves which module resolves and that a refusal throws, and it requires a
- * non-refusing browser target to evaluate in node.
+ * `--conditions` flag) instead of folding them into `default`. The
+ * conditions a refusing subpath does not refuse under are where it is
+ * expected to work, so measuring all of them is the closed default.
+ * `react-server` is measured for every export, as before. Measuring a
+ * condition means importing with that condition set; node still applies its
+ * own `node`, `import` and `default` conditions, so when an export map lists
+ * one of those ahead of the labelled key, the file that ran is that earlier
+ * one, not the labelled target. `browser` is node's resolver with that
+ * condition set, not a browser: it proves which module resolves and that a
+ * refusal throws, and it requires a non-refusing browser target to evaluate
+ * in node.
  *
  * The declaration is closed against the manifest: a package, specifier or
- * condition the manifest does not export as a raw runtime target is stale. A
- * non-`default` marker must name its condition, so one refusal message cannot
- * stand in for another condition's. Only literal export keys can be declared;
- * wildcard and Next-context subpaths cannot.
+ * condition the manifest does not export as a raw runtime target is stale.
+ * A marker must be at least MIN_REFUSAL_MARKER_LENGTH (16) characters once
+ * trimmed, so a bare condition name or a short path fragment cannot pass for
+ * a refusal message, and a non-`default` marker must name its condition, so
+ * one refusal message cannot stand in for another condition's. Only literal
+ * export keys can be declared; wildcard and Next-context subpaths cannot.
  */
 export const BY_DESIGN_REFUSALS = {};
+export const MIN_REFUSAL_MARKER_LENGTH = 16;
 
 const IMPORT_CONDITIONS = ["default", "react-server", "development", "browser"];
 const MEASURED_CONDITIONS = ["react-server"];
@@ -555,8 +570,9 @@ function policyOutcomeShapeFindings(manifest, peer, specifier, value, conditions
 /**
  * Closes `BY_DESIGN_REFUSALS` against the selected manifests: every declared
  * package, specifier and condition must be a literal raw runtime export
- * target, and every marker a non-empty string that names its condition
- * unless that condition is `default`.
+ * target, and every marker a string of at least MIN_REFUSAL_MARKER_LENGTH
+ * trimmed characters that names its condition unless that condition is
+ * `default`.
  */
 export function validateByDesignRefusals(packages, refusals, { allowUnselected = false } = {}) {
   const findings = [];
@@ -587,7 +603,9 @@ export function validateByDesignRefusals(packages, refusals, { allowUnselected =
           findings.push(`${prefix} ${condition} is stale: the manifest exports no ${condition} runtime target for it`);
         }
         if (typeof marker !== "string" || marker.trim() === "") findings.push(`${prefix} ${condition} needs a non-empty refusal marker`);
-        else if (condition !== "default" && !marker.includes(condition)) findings.push(`${prefix} ${condition} marker must name the ${condition} condition`);
+        else if (marker.trim().length < MIN_REFUSAL_MARKER_LENGTH) {
+          findings.push(`${prefix} ${condition} marker is shorter than ${MIN_REFUSAL_MARKER_LENGTH} characters and cannot identify a refusal message`);
+        } else if (condition !== "default" && !marker.includes(condition)) findings.push(`${prefix} ${condition} marker must name the ${condition} condition`);
       }
     }
   }
@@ -938,8 +956,11 @@ export async function importSpecifier(specifier, consumer, env, condition = "def
  * Judges one refusal-probe result against its declared marker. Returns null
  * for the declared refusal and a reason for anything else. Only the probe's
  * own final report line is read: free-form stdout/stderr is never searched
- * for the marker, and a Node module error (missing package, unexported path,
- * and the like) is breakage even when its message quotes the marker.
+ * for the marker, and an error with any string `code` (a Node module error
+ * for a missing package or unexported path, a file-system error such as
+ * ENOENT, and the like) is breakage even when its message quotes the marker.
+ * This guards against accidental breakage; a module written to forge the
+ * report and exit code is outside the threat model.
  */
 export function byDesignRefusalFinding(result, marker) {
   if (result.timedOut) return "timed out instead of throwing its declared refusal";
@@ -956,8 +977,8 @@ export function byDesignRefusalFinding(result, marker) {
     report = undefined;
   }
   if (typeof report?.message !== "string") return "threw without a readable refusal report";
-  if (typeof report.code === "string" && /^(?:ERR_|MODULE_NOT_FOUND$)/.test(report.code)) {
-    return `failed with Node module error ${report.code}, not its declared refusal: ${report.message}`;
+  if (typeof report.code === "string") {
+    return `failed with error code ${report.code}, which is breakage, not its declared refusal: ${report.message}`;
   }
   if (!report.message.includes(marker)) return `threw a different error than its declared refusal: ${report.message}`;
   return null;
@@ -991,6 +1012,20 @@ export async function judgeRuntimeImport({ packageName, specifier, condition, ma
     throw new Error(`${packageName} omission row ${peer} makes ${condition} ${specifier} fail without naming the omitted peer`);
   }
   return "rejects";
+}
+
+function sortedKeys(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return value;
+  return Object.fromEntries(Object.keys(value).sort().map((key) => [key, sortedKeys(value[key])]));
+}
+
+/**
+ * Whether an observed omission row differs from its policy row. Key order is
+ * not part of the row: specifiers and conditions are compared by key, so a
+ * policy row need not list them in the order the run observes them.
+ */
+export function omissionRowDrifted(observed, expected) {
+  return JSON.stringify(sortedKeys(observed)) !== JSON.stringify(sortedKeys(expected));
 }
 
 /** Declared refusals the packed shape never measures as a raw runtime target. */
@@ -1068,11 +1103,13 @@ export async function runPackedConsumerReadiness({ root, selected, skipBuild = f
     const packed = await packPackages(packDirectory, packages, env);
     await notePeak();
     const packedPackages = packed.map((entry) => ({ ...entry, manifest: entry.packedManifest }));
-    const policyFindings = [
-      ...validateByDesignRefusals(packedPackages, refusals, { allowUnselected: Boolean(selected) }),
-      ...validateOptionalPeerPolicy(packedPackages, policy, { allowUnselected: Boolean(selected), refusals }),
-    ];
-    if (policyFindings.length > 0) throw new Error(`optional-peer policy is not closed:\n- ${policyFindings.join("\n- ")}`);
+    const closureFailures = [
+      ["by-design refusals are not closed", validateByDesignRefusals(packedPackages, refusals, { allowUnselected: Boolean(selected) })],
+      ["optional-peer policy is not closed", validateOptionalPeerPolicy(packedPackages, policy, { allowUnselected: Boolean(selected), refusals })],
+    ].filter(([, findings]) => findings.length > 0);
+    if (closureFailures.length > 0) {
+      throw new Error(closureFailures.map(([header, findings]) => `${header}:\n- ${findings.join("\n- ")}`).join("\n"));
+    }
 
     const peers = allOptionalPeers(packed);
     const consumer = join(scratch, "consumer");
@@ -1201,7 +1238,7 @@ export async function runPackedConsumerReadiness({ root, selected, skipBuild = f
           }));
           omission.push({ package: entry.packedManifest.name, peer, outcomes });
           const expected = rows[peer];
-          if (JSON.stringify(outcomes) !== JSON.stringify(expected)) {
+          if (omissionRowDrifted(outcomes, expected)) {
             throw new Error(`${entry.packedManifest.name} omission row ${peer} drifted: expected ${JSON.stringify(expected)}, received ${JSON.stringify(outcomes)}`);
           }
         } finally {
