@@ -13,10 +13,12 @@ const conditionOutcomes = (defaultOutcome, reactServerOutcome) => ({
   default: defaultOutcome,
   "react-server": reactServerOutcome,
 });
-const publisherOmissionRow = ({ rejected = [], web = "imports", client = "imports" } = {}) => ({
+const publisherOmissionRow = ({ rejected = [], web = "imports", client = "imports", consent = "imports" } = {}) => ({
   ...omissionRow(publisherExports, rejected),
   "@clossys/publisher/web": typeof web === "string" ? web : conditionOutcomes(web.default, web.reactServer),
   "@clossys/publisher/web/client": client,
+  "@clossys/publisher/web/consent": conditionOutcomes(consent, "rejects"),
+  "@clossys/publisher/web/consent/preview": conditionOutcomes("rejects", "rejects"),
 });
 
 const bouncerExports = [
@@ -66,6 +68,7 @@ const designerReactExports = [
 ];
 const publisherExports = [
   "@clossys/publisher/assessment",
+  "@clossys/publisher/consent-copy",
   "@clossys/publisher/core",
   "@clossys/publisher/document",
   "@clossys/publisher/email",
@@ -81,6 +84,8 @@ const publisherExports = [
   "@clossys/publisher/testing",
   "@clossys/publisher/web",
   "@clossys/publisher/web/client",
+  "@clossys/publisher/web/consent",
+  "@clossys/publisher/web/consent/preview",
 ];
 
 /**
@@ -176,10 +181,22 @@ export const OPTIONAL_PEER_POLICY = {
     resend: { "@clossys/messenger": "imports", "@clossys/messenger/providers/resend": "rejects" },
   },
   "@clossys/publisher": {
-    "@internationalized/date": publisherOmissionRow({ web: { default: "rejects", reactServer: "imports" }, client: "rejects" }),
-    react: publisherOmissionRow({ rejected: ["@clossys/publisher/document", "@clossys/publisher/testing"], web: { default: "rejects", reactServer: "rejects" }, client: "rejects" }),
-    "react-aria-components": publisherOmissionRow({ web: { default: "rejects", reactServer: "imports" }, client: "rejects" }),
-    "react-dom": publisherOmissionRow({ rejected: ["@clossys/publisher/testing"], web: { default: "rejects", reactServer: "imports" }, client: "rejects" }),
+    // #1941's consent subpaths. `consent` is the measured default outcome of
+    // `./web/consent` (the client entry reaches Designer's atoms and blocks).
+    // The other consent cells are refusals that throw at import whatever is
+    // installed, so they read `rejects` in every row: `react-server` on
+    // `./web/consent` and `./web/consent/preview`, and the preview's `default`,
+    // because its real entry sits under `development`, which this matrix never
+    // sets. `./consent-copy` maps `browser` to a refusal, which this matrix
+    // folds into `default`, so only its server entry is measured (`imports`).
+    // Neither the `development` nor the `browser` target is measured here.
+    // These rows close the policy, but `check:packed-consumer` still refuses
+    // a refusal cell: it requires every declared target to import with all
+    // peers present, and a peer-omission failure to name the omitted peer.
+    "@internationalized/date": publisherOmissionRow({ web: { default: "rejects", reactServer: "imports" }, client: "rejects", consent: "rejects" }),
+    react: publisherOmissionRow({ rejected: ["@clossys/publisher/document", "@clossys/publisher/testing"], web: { default: "rejects", reactServer: "rejects" }, client: "rejects", consent: "rejects" }),
+    "react-aria-components": publisherOmissionRow({ web: { default: "rejects", reactServer: "imports" }, client: "rejects", consent: "rejects" }),
+    "react-dom": publisherOmissionRow({ rejected: ["@clossys/publisher/testing"], web: { default: "rejects", reactServer: "imports" }, client: "rejects", consent: "rejects" }),
     // #749/#878: publisher/web reaches designer's cx() transitively
     // (publisher has no tailwind-merge import site of its own -- grep
     // confirms it appears only in fixture peer-name lists inside

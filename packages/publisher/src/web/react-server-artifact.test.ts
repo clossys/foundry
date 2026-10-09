@@ -419,3 +419,50 @@ describe("packed Publisher web React-server boundary", () => {
     expect(corrected.output).toMatch(/@clossys(?:%2f|\/)designer/i);
   }, 60_000);
 });
+
+// P-22: each consent subpath refuses its forbidden condition at import with
+// an error naming the subpath and the condition, and resolves its allowed
+// condition to the real entry, in the packed artifact.
+function importOutcome(specifier: string, conditions: string[]) {
+  try {
+    const stdout = execFileSync(
+      process.execPath,
+      [...conditions.map((condition) => `--conditions=${condition}`), "--input-type=module", "-e", `const m = await import(${JSON.stringify(specifier)}); process.stdout.write(JSON.stringify(Object.keys(m).sort()));`],
+      { cwd: consumerRoot, encoding: "utf8", timeout: 30_000, stdio: ["ignore", "pipe", "pipe"] },
+    );
+    return { ok: true as const, keys: JSON.parse(stdout) as string[] };
+  } catch (error) {
+    const failure = error as { stdout?: string; stderr?: string };
+    return { ok: false as const, output: `${failure.stdout ?? ""}\n${failure.stderr ?? ""}` };
+  }
+}
+
+describe("packed Publisher consent export conditions (P-22)", () => {
+  it.each([
+    ["@clossys/publisher/web/consent", "react-server"],
+    ["@clossys/publisher/web/consent/preview", "react-server"],
+    ["@clossys/publisher/consent-copy", "browser"],
+  ])("%s refuses the %s condition at import", (specifier, condition) => {
+    const outcome = importOutcome(specifier, [condition]);
+    expect(outcome.ok).toBe(false);
+    if (outcome.ok) return;
+    expect(outcome.output).toContain(`The ${specifier.replace("@clossys/publisher/", "")} subpath of the publisher package`);
+    expect(outcome.output).toContain(`"${condition}"`);
+  });
+
+  it("refuses the preview entry without the development condition and resolves it with one", () => {
+    const refused = importOutcome("@clossys/publisher/web/consent/preview", []);
+    expect(refused.ok).toBe(false);
+    if (!refused.ok) {
+      expect(refused.output).toContain("The web/consent/preview subpath of the publisher package");
+      expect(refused.output).toContain('"development"');
+    }
+    expect(importOutcome("@clossys/publisher/web/consent/preview", ["development"])).toEqual({ ok: true, keys: ["createConsentPreview"] });
+  });
+
+  it("resolves the client and server entries under their own conditions", () => {
+    const client = importOutcome("@clossys/publisher/web/consent", []);
+    expect(client.ok && client.keys).toEqual(["ConsentExperience", "bindTransport", "useAnalyticsAllowed", "useConsentStatus"]);
+    expect(importOutcome("@clossys/publisher/consent-copy", [])).toEqual({ ok: true, keys: ["resolveConsentCopy"] });
+  });
+});

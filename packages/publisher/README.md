@@ -148,6 +148,9 @@ Use explicit subpaths:
   `react-server` export condition it resolves a server-safe target with the
   same runtime export names and Designer's server-only component barrels;
   ordinary imports retain the interactive React Aria FAQ.
+- `@clossys/publisher/web/consent` — the client-only browser consent assembly: `ConsentExperience`, `bindTransport`, `useAnalyticsAllowed` and `useConsentStatus`. Under `react-server` it resolves a module that throws at import. See "Browser consent," below.
+- `@clossys/publisher/web/consent/preview` — the fixed-clock consent preview for development review. It resolves only under the `development` condition; every other condition, and `react-server`, resolves a module that throws at import.
+- `@clossys/publisher/consent-copy` — server-only consent copy resolution, `resolveConsentCopy`. Under the `browser` condition it resolves a module that throws at import.
 - `@clossys/publisher/document` — the product-neutral structured-document contract (sections, paragraphs, lists, tables, callouts, safe links) and its renderer.
 - `@clossys/publisher/email`, `/print`, `/image`, `/slides` — channel renderers.
 - `@clossys/publisher/record` — the append-only, content-addressed publication ledger and its drift checker. See "`record` — the append-only publication ledger," below.
@@ -3604,6 +3607,119 @@ registry.ts` (never hardcoded in a renderer):
 there means a file this command claims to write is missing, not a
 cosmetic gap.
 
+## Browser consent
+
+`@clossys/publisher/web/consent` assembles the browser consent notice for a
+public pre-authentication surface. It renders Designer's `ConsentBanner`,
+reads a consent lifecycle the host builds, and tells the host's analytics
+transport whether it may send. It declares the lifecycle and transport ports
+structurally and imports no consent or analytics implementation: the host
+composes those and passes them in.
+
+- **Copy is resolved on the server.** `resolveConsentCopy` from
+  `@clossys/publisher/consent-copy` resolves every notice and status string
+  through a Writer `CopyResolver` and refuses a missing field, a draft,
+  stale or expired entry, another locale, blank text or a placeholder.
+  Under the `production` target, or in a build whose `NODE_ENV` is
+  `production`, it also refuses copy not approved by the owner and copy
+  whose registry source is not consumer or imported. The client receives
+  the resolved strings, never a resolver or a registry.
+- **The lifecycle is created on mount.** `createLifecycle` is called in a
+  mount effect and disposed on unmount, so the server render and the first
+  client render use the no-decision snapshot and hydrate cleanly. Turning
+  `required` off disposes the lifecycle and withdraws permission.
+- **Permission follows the snapshot.** `useAnalyticsAllowed()` is true only
+  while `required` is on, the snapshot allows analytics, the snapshot is not
+  simulated and the review seam is not active. With `transport`, the
+  permission is set inside each lifecycle notification, so a withdrawal
+  reaches the transport before `refuse()` returns. `onChange` reports a
+  choice the lifecycle acted on; it is not a permission signal.
+- **One notice.** The notice opens when the lifecycle asks for it, closes
+  with a choice, and is set aside for the page view by Escape (which
+  records nothing). The `#privacy-choices` fragment or the
+  `privacy-choices:open` document event reopens it, re-reads the
+  lifecycle, and moves focus to it; focus returns to the opener when it
+  closes. A failed withdrawal keeps the notice open with its status. A
+  lifecycle that throws, or returns a malformed snapshot, is disposed and
+  analytics is not allowed; when that came from a `refuse()` called while
+  analytics was allowed, even after it published its refusal, or followed a
+  failed withdrawal, the notice stays open with the failed withdrawal
+  status.
+- **Review seam.** On a loopback host only, the `consent-review` query
+  parameter (`fresh`, `granted`, `refused` or `gpc`, or `live` to clear it)
+  builds a simulated lifecycle over an in-memory store with no evidence
+  port. The seam binds no transport and reports no choice; a factory that
+  ignores the simulated input is disposed and the fixed no-decision notice
+  is shown instead.
+- **Preview.** `createConsentPreview` from
+  `@clossys/publisher/web/consent/preview` returns a simulated lifecycle for
+  each of fifteen named states at a fixed instant, with no I/O, timers or
+  clock reads; pending evidence settles only through `settle()`.
+
+```tsx
+import type { ReactNode } from "react";
+import { ConsentExperience } from "@clossys/publisher/web/consent";
+import type { AnalyticsPermissionPort, ConsentLifecyclePort, ResolvedConsentCopy } from "@clossys/publisher/web/consent";
+
+declare const copy: ResolvedConsentCopy;
+declare const transport: AnalyticsPermissionPort;
+declare function buildLifecycle(): ConsentLifecyclePort;
+
+export function PublicShell({ children }: { children: ReactNode }) {
+  return (
+    <ConsentExperience copy={copy} createLifecycle={() => buildLifecycle()} transport={transport} policyLink={{ href: "/privacy" }}>
+      {children}
+    </ConsentExperience>
+  );
+}
+```
+
+The host owes these obligations:
+
+- **H-1** Run the transport only on public pre-authentication surfaces,
+  never on application, administration or demonstration surfaces.
+- **H-2** Gate on permission: read `useAnalyticsAllowed()` or bind the
+  transport through the `transport` prop, and do not treat `onChange` as
+  permission.
+- **H-3** Honour the factory input: `createLifecycle` uses `input.storage`
+  in place of its real storage port when present, passes no evidence port
+  when `input.evidence` is `false`, passes `simulated: true` when
+  `input.simulated` is set, binds no transport itself, and has no side
+  effect beyond constructing the lifecycle.
+- **H-4** Send pageviews yourself: one for each navigation while analytics
+  is allowed, and one for the current page when permission becomes true.
+  The transport does not synthesize a pageview, and a pageview sent before
+  permission is dropped.
+- **H-5** Under the `notice` regime, a sign-out that clears site storage
+  also clears a visitor's refusal, so analytics becomes allowed again on
+  their next public page unless Global Privacy Control is on. Serve the
+  public pre-authentication surface from an origin the sign-out response
+  does not clear, or omit `storage` from that response's
+  `Clear-Site-Data` directive where hardening allows.
+- **H-6** A host whose production build is served from a loopback origin
+  passes `reviewSeam={false}`.
+- **H-7** A host that calls the pure decision functions before hydration
+  applies `required` and the review seam itself, and starts no analytics
+  before mount.
+- **H-8** Derive the copy `target`, and the `target` passed to
+  `createCopyResolver`, from the build or deployment environment, never
+  from a request, a query parameter or another value a visitor can set.
+
+Three further usage requirements, not numbered in the specification:
+
+- Mount one `ConsentExperience` per page. Two mounted instances can
+  disagree after a choice: storage events do not fire in the document that
+  wrote the value, so the second instance corrects itself only on its next
+  re-read.
+- Pass `transport` as a stable reference, created once outside render or
+  memoised. An inline object is a new reference on every render, so the
+  transport is rebound each time and its permission flips to `false` and
+  back.
+- Pass `copy` from `resolveConsentCopy`, which refuses a missing field.
+  Hand-built copy that lacks a notice field omits the notice, and analytics
+  is not allowed, because a visitor who cannot see the notice cannot
+  withdraw. Copy that lacks only `privacyLinkLabel` omits the policy link.
+
 ## API
 
 
@@ -3736,6 +3852,20 @@ cosmetic gap.
   `EmailSignatureLink`, `EmailSignaturePerson`, `ChannelImageSpec`,
   `ChannelTextLimit`, `SocialChannelSpec`, and `VideoCallBackgroundSpec`
   types. See "Templates and channel specs," above.
+- `web/consent`: `ConsentExperience`, `bindTransport`,
+  `useAnalyticsAllowed`, `useConsentStatus`, and the
+  `ConsentExperienceProps`, `AnalyticsPermissionPort`,
+  `ConsentLifecycleInput`, `ConsentLifecyclePort`, `ConsentRegimeView`,
+  `ConsentReviewValue`, `ConsentSnapshotView`, `ConsentStatusView`,
+  `ConsentStoragePortView`, `EffectiveChoiceView`, `EvidenceStatusView`,
+  `ResolvedConsentCopy`, `ResolvedConsentStatusCopy`, and
+  `ResolvedCopyField` types. See "Browser consent," above.
+- `web/consent/preview`: `createConsentPreview` and the `ConsentPreview`,
+  `ConsentPreviewOptions`, `ConsentPreviewSettleResult`, and
+  `ConsentPreviewState` types.
+- `consent-copy`: `resolveConsentCopy` and the `ConsentCopyRefs`,
+  `ConsentCopyTarget`, `ResolveConsentCopyInput`, `ResolvedConsentCopy`,
+  `ResolvedConsentStatusCopy`, and `ResolvedCopyField` types.
 - `testing`: `checkFrontDoor`, `expectFrontDoorConformance`,
   `PRIMARY_ACTION_CLASS`, and the `FrontDoorConfig`, `FrontDoorFinding`,
   `FrontDoorRule`, `FrontDoorSurface`, and `FrontDoorSurfaceCase` types.
