@@ -1,3 +1,5 @@
+"use client";
+
 /**
  * Structural ports for the browser consent assembly.
  *

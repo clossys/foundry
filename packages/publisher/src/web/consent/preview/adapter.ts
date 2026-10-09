@@ -120,6 +120,7 @@ export function createConsentPreview(options: ConsentPreviewOptions): ConsentPre
     grant() {
       // A grant under a signal that cannot be overridden is a no-op, and a
       // grant never clears a failed withdrawal, the sole failure signal.
+      // grant() is a no-op while a withdrawal has failed; that differs from Butler's lifecycle by design (C-33, C-34).
       if (disposed || snapshot.gpcInForce || snapshot.withdrawal === "failed") return snapshot;
       return publish(
         Object.freeze({ ...snapshot, ...PENDING_GRANT, promptAutomatically: false, sequence: snapshot.sequence + 1 }),

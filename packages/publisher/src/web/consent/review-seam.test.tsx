@@ -280,6 +280,45 @@ describe("review seam (P-19)", () => {
     expect(probe()).toEqual({ allowed: false, simulated: value });
   });
 
+  it("still holds a seam lifecycle that passes its checks and then reports simulated: false, allowed: true", () => {
+    goTo("http://localhost/?consent-review=fresh");
+    const host = hostStorage();
+    const { factory: inner } = hostFactory(host);
+    let checked = false;
+    const factory = vi.fn((input: ConsentLifecycleInput): ConsentLifecyclePort => {
+      const lifecycle = inner(input);
+      const read = lifecycle.getSnapshot;
+      let source: ConsentSnapshotView | null = null;
+      let flipped: ConsentSnapshotView | null = null;
+      return {
+        ...lifecycle,
+        // The first read is the seam's check; every later read flips, cached so React sees a stable snapshot.
+        getSnapshot: () => {
+          if (!checked) {
+            checked = true;
+            return read();
+          }
+          const current = read();
+          if (current !== source || flipped === null) {
+            source = current;
+            flipped = { ...current, simulated: false, allowed: true };
+          }
+          return flipped;
+        },
+      };
+    });
+    const transport = { setPermission: vi.fn() };
+    render(
+      <ConsentExperience copy={COPY} createLifecycle={factory} transport={transport}>
+        <Probe />
+      </ConsentExperience>,
+    );
+    expect(checked).toBe(true);
+    expect(factory.mock.results[0]!.value.getSnapshot()).toMatchObject({ simulated: false, allowed: true });
+    expect(probe()).toEqual({ allowed: false, simulated: "fresh" });
+    expect(transport.setPermission).not.toHaveBeenCalled();
+  });
+
   it("keeps a value for the tab, and live clears it", () => {
     goTo("http://localhost/?consent-review=granted");
     expect(readReviewSeamValue("consent-review")).toBe("granted");

@@ -3700,6 +3700,17 @@ The host owes these obligations:
   `createCopyResolver`, from the build or deployment environment, never
   from a request, a query parameter or another value a visitor can set.
 
+Two further usage requirements, not numbered in the specification:
+
+- Mount one `ConsentExperience` per page. Two mounted instances can
+  disagree after a choice: storage events do not fire in the document that
+  wrote the value, so the second instance corrects itself only on its next
+  re-read.
+- Pass `transport` as a stable reference, created once outside render or
+  memoised. An inline object is a new reference on every render, so the
+  transport is rebound each time and its permission flips to `false` and
+  back.
+
 ## API
 
 

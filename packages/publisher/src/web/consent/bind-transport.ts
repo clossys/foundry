@@ -1,3 +1,5 @@
+"use client";
+
 import type { AnalyticsPermissionPort, ConsentLifecyclePort } from "./ports.js";
 
 /**

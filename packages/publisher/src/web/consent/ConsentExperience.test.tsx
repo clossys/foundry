@@ -4,12 +4,16 @@ import { act, cleanup, fireEvent, render, screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event";
 import { hydrateRoot } from "react-dom/client";
 import { renderToString } from "react-dom/server";
+import { readdirSync, readFileSync } from "node:fs";
+import { join } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { ResolvedConsentCopy, ResolvedCopyField } from "../../consent-copy/types.js";
 import { ConsentExperience } from "./ConsentExperience.client.js";
 import { useAnalyticsAllowed, useConsentStatus } from "./hooks.js";
 import { NO_DECISION_VIEW } from "./ports.js";
 import type { ConsentLifecycleInput, ConsentLifecyclePort, ConsentSnapshotView } from "./ports.js";
+import { createConsentPreview } from "./preview/adapter.js";
+import type { ConsentPreviewState } from "./preview/adapter.js";
 
 afterEach(() => {
   cleanup();
@@ -226,7 +230,7 @@ describe("ConsentExperience: Escape, failed withdrawal and statuses (P-16)", () 
     expect(document.activeElement).toBe(document.body);
   });
 
-  it("Escape returns focus to main when the opener is gone", () => {
+  it("Escape after an automatic open returns focus to main, because focus was on the body", () => {
     const { factory } = recordingFactory(() => fakeLifecycle({ promptAutomatically: true }));
     render(
       <main>
@@ -287,6 +291,87 @@ describe("ConsentExperience: Escape, failed withdrawal and statuses (P-16)", () 
     expect(screen.getByRole("status")).toHaveTextContent("Status withdrawal failed.");
   });
 
+  it("shows withdrawalFailed over storageUnavailable and memoryOnly after a refusal", async () => {
+    const user = userEvent.setup();
+    const { factory } = recordingFactory(() =>
+      fakeLifecycle(
+        { effective: "granted", allowed: true, persistence: "stored" },
+        { refuse: () => ({ effective: "denied", allowed: false, withdrawal: "failed", storage: "unreadable", persistence: "memory" }) },
+      ),
+    );
+    render(<ConsentExperience copy={COPY} createLifecycle={factory} {...NOTICE_REVIEW_OFF} />);
+    act(() => {
+      document.dispatchEvent(new Event("privacy-choices:open"));
+    });
+    await user.click(screen.getByRole("button", { name: "Reject" }));
+    expect(banner()).not.toBeNull();
+    expect(screen.getByRole("status")).toHaveTextContent("Status withdrawal failed.");
+  });
+
+  it("shows withdrawalFailed over gpcInForce at mount", () => {
+    const { factory } = recordingFactory(() => fakeLifecycle({ effective: "denied", withdrawal: "failed", gpcInForce: true }));
+    render(<ConsentExperience copy={COPY} createLifecycle={factory} {...NOTICE_REVIEW_OFF} />);
+    expect(banner()).not.toBeNull();
+    expect(screen.getByRole("status")).toHaveTextContent("Status withdrawal failed.");
+  });
+
+  it("returns focus to the opener after a choice made from a reopened notice", async () => {
+    const user = userEvent.setup();
+    const { factory } = recordingFactory(() => fakeLifecycle({ effective: "granted", allowed: true, persistence: "stored" }));
+    render(
+      <ConsentExperience copy={COPY} createLifecycle={factory} {...NOTICE_REVIEW_OFF}>
+        <button type="button">Opener</button>
+      </ConsentExperience>,
+    );
+    const opener = screen.getByRole("button", { name: "Opener" });
+    opener.focus();
+    act(() => {
+      document.dispatchEvent(new Event("privacy-choices:open"));
+    });
+    expect(document.activeElement).not.toBe(opener);
+    await user.click(screen.getByRole("button", { name: "Reject" }));
+    expect(banner()).toBeNull();
+    expect(document.activeElement).toBe(opener);
+  });
+
+  it("returns focus to main after a choice when the opener left the document while the notice was open", async () => {
+    const user = userEvent.setup();
+    const { factory } = recordingFactory(() => fakeLifecycle({ effective: "denied", persistence: "stored" }));
+    const tree = (withOpener: boolean) => (
+      <main>
+        <ConsentExperience copy={COPY} createLifecycle={factory} {...NOTICE_REVIEW_OFF}>
+          {withOpener ? <button type="button">Opener</button> : null}
+        </ConsentExperience>
+      </main>
+    );
+    const view = render(tree(true));
+    screen.getByRole("button", { name: "Opener" }).focus();
+    act(() => {
+      document.dispatchEvent(new Event("privacy-choices:open"));
+    });
+    view.rerender(tree(false));
+    expect(screen.queryByRole("button", { name: "Opener" })).toBeNull();
+    await user.click(screen.getByRole("button", { name: "Accept" }));
+    expect(banner()).toBeNull();
+    expect(document.activeElement).toBe(document.querySelector("main"));
+  });
+
+  it("keeps the notice and omits the status text when the copy has no entry for the status", () => {
+    const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+    const { withdrawalFailed: _omitted, ...status } = COPY.status;
+    const copy = { ...COPY, status } as unknown as ResolvedConsentCopy;
+    const { factory } = recordingFactory(() => fakeLifecycle({ effective: "denied", persistence: "memory", withdrawal: "failed" }));
+    render(
+      <ConsentExperience copy={copy} createLifecycle={factory} {...NOTICE_REVIEW_OFF}>
+        <p>Page content</p>
+      </ConsentExperience>,
+    );
+    expect(screen.getByText("Page content")).toBeInTheDocument();
+    expect(banner()).not.toBeNull();
+    expect(screen.getByRole("status")).toBeEmptyDOMElement();
+    expect(consoleError).toHaveBeenCalled();
+  });
+
   it("keeps withdrawal enabled while a grant's evidence is pending", async () => {
     const user = userEvent.setup();
     const { factory, created } = recordingFactory(() =>
@@ -322,6 +407,157 @@ describe("ConsentExperience: Escape, failed withdrawal and statuses (P-16)", () 
       document.dispatchEvent(new Event("privacy-choices:open"));
     });
     expect(screen.getByRole("status")).toHaveTextContent("Status memory only.");
+  });
+});
+
+/** C-51's "On arrival" and "On reopen" columns: `null` is closed, a string is open with that status, "" is open with none. */
+const PREVIEW_TABLE: readonly (readonly [ConsentPreviewState, string | null, string | null])[] = [
+  ["fresh-prompt", "", ""],
+  ["fresh-notice", null, ""],
+  ["remembered-granted", null, ""],
+  ["remembered-refused", null, ""],
+  ["withdrawn", null, ""],
+  ["expired", "", ""],
+  ["gpc", null, "Status signal in force."],
+  ["not-required", null, null],
+  ["pending-grant", null, ""],
+  ["simulated-saved", null, ""],
+  ["conflict", null, "Status evidence conflict."],
+  ["unavailable", null, "Status evidence unavailable."],
+  ["pending-withdrawal", null, ""],
+  ["withdrawal-failed", "Status withdrawal failed.", "Status withdrawal failed."],
+  ["reopen-unreadable", null, "Status storage unavailable."],
+];
+
+function expectNotice(expected: string | null): void {
+  if (expected === null) {
+    expect(banner()).toBeNull();
+    return;
+  }
+  expect(banner()).not.toBeNull();
+  if (expected === "") expect(screen.getByRole("status")).toBeEmptyDOMElement();
+  else expect(screen.getByRole("status")).toHaveTextContent(expected);
+}
+
+describe("ConsentExperience: the fifteen preview states (C-51)", () => {
+  it("covers every preview state", () => {
+    expect(PREVIEW_TABLE).toHaveLength(15);
+  });
+
+  it.each(PREVIEW_TABLE)("%s: arrival and reopen match the table", (state, onArrival, onReopen) => {
+    const preview = createConsentPreview({ state, now: "2026-01-01T00:00:00.000Z", environment: "development" });
+    render(
+      <ConsentExperience copy={COPY} createLifecycle={() => preview.lifecycle} required={preview.required} {...NOTICE_REVIEW_OFF}>
+        <Probe />
+      </ConsentExperience>,
+    );
+    expectNotice(onArrival);
+    act(() => {
+      document.dispatchEvent(new Event("privacy-choices:open"));
+    });
+    expectNotice(onReopen);
+    expect(probe().allowed).toBe(false);
+  });
+});
+
+describe("ConsentExperience: a throwing lifecycle mounts as failed", () => {
+  it("logs a throwing factory and keeps the page, with no notice, no transport and analytics not allowed", () => {
+    const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+    const transport = { setPermission: vi.fn() };
+    const factory = vi.fn((): ConsentLifecyclePort => {
+      throw new Error("expiryMonths must be a whole number from 1 to 13");
+    });
+    render(
+      <ConsentExperience copy={COPY} createLifecycle={factory} transport={transport} {...NOTICE_REVIEW_OFF}>
+        <p>Page content</p>
+        <Probe />
+      </ConsentExperience>,
+    );
+    expect(factory).toHaveBeenCalledTimes(1);
+    expect(consoleError).toHaveBeenCalled();
+    expect(screen.getByText("Page content")).toBeInTheDocument();
+    expect(probe().allowed).toBe(false);
+    expect(transport.setPermission).not.toHaveBeenCalled();
+    act(() => {
+      document.dispatchEvent(new Event("privacy-choices:open"));
+    });
+    expect(banner()).toBeNull();
+  });
+
+  it("never binds the transport to a lifecycle whose first snapshot read throws", async () => {
+    const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+    const transport = { setPermission: vi.fn() };
+    const { factory, created } = recordingFactory(() => {
+      const lifecycle = fakeLifecycle({ effective: "granted", allowed: true, persistence: "stored" });
+      lifecycle.getSnapshot = () => {
+        throw new Error("snapshot read failed");
+      };
+      return lifecycle;
+    });
+    render(
+      <ConsentExperience copy={COPY} createLifecycle={factory} transport={transport} {...NOTICE_REVIEW_OFF}>
+        <p>Page content</p>
+        <Probe />
+      </ConsentExperience>,
+    );
+    await act(async () => {});
+    expect(consoleError).toHaveBeenCalledTimes(1);
+    expect(screen.getByText("Page content")).toBeInTheDocument();
+    expect(probe().allowed).toBe(false);
+    expect(transport.setPermission).not.toHaveBeenCalled();
+    expect(created[0]!.disposed).toBe(true);
+  });
+
+  it("logs a snapshot read that throws after mount, unbinds, disposes and falls back to no decision", async () => {
+    const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+    const transport = { setPermission: vi.fn() };
+    let broken = false;
+    const { factory, created } = recordingFactory(() => {
+      const lifecycle = fakeLifecycle({ effective: "granted", allowed: true, persistence: "stored" });
+      const read = lifecycle.getSnapshot;
+      lifecycle.getSnapshot = () => {
+        if (broken) throw new Error("snapshot read failed");
+        return read();
+      };
+      return lifecycle;
+    });
+    render(
+      <ConsentExperience copy={COPY} createLifecycle={factory} transport={transport} {...NOTICE_REVIEW_OFF}>
+        <p>Page content</p>
+        <Probe />
+      </ConsentExperience>,
+    );
+    expect(probe().allowed).toBe(true);
+    expect(transport.setPermission).toHaveBeenLastCalledWith(true);
+    broken = true;
+    created[0]!.set({ sequence: 5 });
+    await act(async () => {});
+    expect(consoleError).toHaveBeenCalled();
+    expect(screen.getByText("Page content")).toBeInTheDocument();
+    expect(probe()).toEqual({ allowed: false, status: expect.objectContaining({ persistence: "none", withdrawal: "idle" }) });
+    expect(transport.setPermission).toHaveBeenLastCalledWith(false);
+    expect(created[0]!.disposed).toBe(true);
+    act(() => {
+      document.dispatchEvent(new Event("privacy-choices:open"));
+    });
+    expect(banner()).toBeNull();
+  });
+});
+
+describe("ConsentExperience: strict permission", () => {
+  it.each([
+    ["allowed is a truthy string", { allowed: "false" as unknown as boolean }],
+    ["simulated is missing", { allowed: true, simulated: undefined as unknown as boolean }],
+  ])("is not allowed when %s", (_label, fields) => {
+    const transport = { setPermission: vi.fn() };
+    const { factory } = recordingFactory(() => fakeLifecycle({ effective: "granted", persistence: "stored", ...fields }));
+    render(
+      <ConsentExperience copy={COPY} createLifecycle={factory} transport={transport} {...NOTICE_REVIEW_OFF}>
+        <Probe />
+      </ConsentExperience>,
+    );
+    expect(probe().allowed).toBe(false);
+    expect(transport.setPermission).not.toHaveBeenCalledWith(true);
   });
 });
 
@@ -385,5 +621,47 @@ describe("ConsentExperience: regime-aware copy (P-28)", () => {
     const { factory } = recordingFactory(() => fakeLifecycle({ promptAutomatically: true }));
     render(<ConsentExperience copy={COPY} createLifecycle={factory} policyLink={{ href: "/privacy" }} {...NOTICE_REVIEW_OFF} />);
     expect(screen.getByRole("link", { name: "Policy" })).toHaveAttribute("href", "/privacy");
+  });
+
+  it.each(["#policy", "/privacy", "https://example.test/privacy", "mailto:privacy@example.test"])("renders an allowed policy href %s", (href) => {
+    const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+    const { factory } = recordingFactory(() => fakeLifecycle({ promptAutomatically: true }));
+    render(<ConsentExperience copy={COPY} createLifecycle={factory} policyLink={{ href }} {...NOTICE_REVIEW_OFF} />);
+    expect(screen.getByRole("link", { name: "Policy" })).toHaveAttribute("href", href);
+    expect(consoleError).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    "//evil.example/x",
+    "data:text/html,<p>x</p>",
+    "https://user:pw@evil.example/",
+    "vbscript:msgbox(1)",
+    "javascript:alert(1)",
+  ])("omits the policy link for %s and logs it", (href) => {
+    const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+    const { factory } = recordingFactory(() => fakeLifecycle({ promptAutomatically: true }));
+    render(<ConsentExperience copy={COPY} createLifecycle={factory} policyLink={{ href }} {...NOTICE_REVIEW_OFF} />);
+    expect(banner()).not.toBeNull();
+    // The decision is the assembly's: no anchor is created at all, whatever React would do with the href.
+    expect(banner()!.querySelector("a")).toBeNull();
+    expect(screen.queryByText("Policy")).toBeNull();
+    expect(consoleError).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("ConsentExperience: client entry directive (C-49)", () => {
+  /** Every runtime module of the client entry: this directory's sources except tests and the refusal module. */
+  const CLIENT_ENTRY_MODULES = ["ConsentExperience.client.tsx", "bind-transport.ts", "context.ts", "hooks.ts", "index.ts", "ports.ts", "reopen.ts", "review-seam.ts"];
+
+  it("lists every runtime module in the client entry's directory", () => {
+    const sources = readdirSync(import.meta.dirname)
+      .filter((name) => /\.tsx?$/.test(name) && !/\.test\.tsx?$/.test(name) && !name.startsWith("refuse-"))
+      .sort();
+    expect(sources).toEqual(CLIENT_ENTRY_MODULES);
+  });
+
+  it.each(CLIENT_ENTRY_MODULES)("%s begins with the use client directive", (file) => {
+    const source = readFileSync(join(import.meta.dirname, file), "utf8");
+    expect(source.startsWith('"use client";\n')).toBe(true);
   });
 });

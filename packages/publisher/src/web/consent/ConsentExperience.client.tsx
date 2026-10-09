@@ -4,7 +4,8 @@ import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore
 import type { KeyboardEvent, ReactNode } from "react";
 import { Link } from "@clossys/designer/atoms";
 import { ConsentBanner } from "@clossys/designer/blocks";
-import type { ResolvedConsentCopy } from "../../consent-copy/types.js";
+import type { ResolvedConsentCopy, ResolvedCopyField } from "../../consent-copy/types.js";
+import { isSanctionedHref } from "../../internal/href.js";
 import { bindTransport } from "./bind-transport.js";
 import { ConsentContext } from "./context.js";
 import type { ConsentContextValue } from "./context.js";
@@ -25,11 +26,20 @@ export interface ConsentExperienceProps {
   copy: ResolvedConsentCopy;
   /** Builds the lifecycle. Called on client mount only, and honours every field of its input. */
   createLifecycle: (input: ConsentLifecycleInput) => ConsentLifecyclePort;
-  /** Bound synchronously to a non-simulated lifecycle while `required` is true. */
+  /**
+   * Bound synchronously to a non-simulated lifecycle while `required` is true.
+   * Pass a stable reference: a new object on each render rebinds the
+   * transport every render, and each rebind sets permission to `false` before
+   * setting it again.
+   */
   transport?: AnalyticsPermissionPort;
   /** Whether this surface runs analytics at all. Defaults to `true`. */
   required?: boolean;
-  /** The policy page, labelled by `copy.privacyLinkLabel`. */
+  /**
+   * The policy page, labelled by `copy.privacyLinkLabel`. The link renders
+   * only for an anchor, a one-origin path, an HTTP(S) URL without
+   * credentials or a mail link; any other href omits it.
+   */
   policyLink?: { href: string } | false;
   /** The fragment and the document event that reopen the notice; `false` disables one. */
   reopen?: { fragment?: string | false; eventName?: string | false };
@@ -49,17 +59,83 @@ type NoticeMode = "auto" | "open" | "closed" | "set-aside";
 
 type StatusKey = keyof ResolvedConsentCopy["status"];
 
+/** A lifecycle whose calls cannot throw into React: a failure reads as the no-decision snapshot. */
+interface GuardedLifecycle extends ConsentLifecyclePort {
+  failed(): boolean;
+}
+
 interface Mounted {
-  lifecycle: ConsentLifecyclePort | null;
+  lifecycle: GuardedLifecycle | null;
   seam: ConsentReviewValue | null;
   seamFailed: boolean;
 }
 
+/** Also the failed state of a live lifecycle: nothing mounted, analytics not allowed. */
 const UNMOUNTED: Mounted = { lifecycle: null, seam: null, seamFailed: false };
 
 const noopSubscribe = (): (() => void) => () => {};
 const noDecision = (): ConsentSnapshotView => NO_DECISION_VIEW;
 const inert = (): void => {};
+
+/**
+ * Wraps the host's lifecycle so a throw from any of its calls never reaches
+ * React. The first throw is logged, every later read returns the
+ * no-decision snapshot, and `onFailure` runs once in a microtask, because a
+ * read can happen during render.
+ */
+function guardLifecycle(lifecycle: ConsentLifecyclePort, onFailure: () => void): GuardedLifecycle {
+  let failed = false;
+  let disposed = false;
+  const fail = (error: unknown): ConsentSnapshotView => {
+    if (!failed) {
+      failed = true;
+      console.error("ConsentExperience: the lifecycle threw, so the notice is off and analytics is not allowed.", error);
+      queueMicrotask(onFailure);
+    }
+    return NO_DECISION_VIEW;
+  };
+  const read = (call: () => ConsentSnapshotView): ConsentSnapshotView => {
+    if (failed) return NO_DECISION_VIEW;
+    try {
+      return call();
+    } catch (error) {
+      return fail(error);
+    }
+  };
+  return {
+    failed: () => failed,
+    getSnapshot: () => read(() => lifecycle.getSnapshot()),
+    subscribe(listener) {
+      if (failed) return () => {};
+      let unsubscribe: () => void;
+      try {
+        unsubscribe = lifecycle.subscribe(listener);
+      } catch (error) {
+        fail(error);
+        return () => {};
+      }
+      return () => {
+        try {
+          unsubscribe();
+        } catch {
+          // A lifecycle that cannot unsubscribe is disposed with the assembly.
+        }
+      };
+    },
+    grant: () => read(() => lifecycle.grant()),
+    refuse: () => read(() => lifecycle.refuse()),
+    refresh: () => read(() => lifecycle.refresh()),
+    dispose() {
+      if (disposed) return;
+      disposed = true;
+      try {
+        lifecycle.dispose();
+      } catch {
+        // Disposal failure leaves nothing for the assembly to do.
+      }
+    },
+  };
+}
 
 function readGpcSignal(): boolean {
   try {
@@ -141,7 +217,7 @@ export function ConsentExperience(props: ConsentExperienceProps): ReactNode {
       setMounted(UNMOUNTED);
       return undefined;
     }
-    let lifecycle: ConsentLifecyclePort;
+    let raw: ConsentLifecyclePort;
     if (seam !== null) {
       const result = buildSeamLifecycle(createLifecycleRef.current, seam);
       if (!result.ok) {
@@ -150,10 +226,25 @@ export function ConsentExperience(props: ConsentExperienceProps): ReactNode {
         setMode("auto");
         return undefined;
       }
-      lifecycle = result.lifecycle;
+      raw = result.lifecycle;
     } else {
-      lifecycle = createLifecycleRef.current({ signals: { gpc: readGpcSignal() } });
+      try {
+        raw = createLifecycleRef.current({ signals: { gpc: readGpcSignal() } });
+      } catch (error) {
+        console.error("ConsentExperience: the lifecycle factory threw, so the notice is off and analytics is not allowed.", error);
+        setMounted(UNMOUNTED);
+        setMode("auto");
+        return undefined;
+      }
     }
+    // A failure after mount disposes the lifecycle and leaves the failed state:
+    // the fixed no-decision notice under the seam, and nothing otherwise.
+    const lifecycle: GuardedLifecycle = guardLifecycle(raw, () => {
+      lifecycle.dispose();
+      setMounted((current) =>
+        current.lifecycle === lifecycle ? (seam === null ? UNMOUNTED : { lifecycle: null, seam, seamFailed: true }) : current,
+      );
+    });
     setMounted({ lifecycle, seam, seamFailed: false });
     setMode("auto");
     return () => {
@@ -176,7 +267,8 @@ export function ConsentExperience(props: ConsentExperienceProps): ReactNode {
   // lifecycle, and never under the review seam.
   useEffect(() => {
     if (!required || seamActive || lifecycle === null || transport === undefined) return undefined;
-    if (lifecycle.getSnapshot().simulated !== false) return undefined;
+    const simulated = lifecycle.getSnapshot().simulated;
+    if (lifecycle.failed() || simulated !== false) return undefined;
     return bindTransport(lifecycle, transport);
   }, [required, seamActive, lifecycle, transport]);
 
@@ -270,7 +362,8 @@ export function ConsentExperience(props: ConsentExperienceProps): ReactNode {
     [seamFailed, snapshot.withdrawal],
   );
 
-  const allowed = required && snapshot.allowed && !snapshot.simulated && !seamActive;
+  // Strict, as `bindTransport` is: only the boolean `true` and `false` count.
+  const allowed = required && !seamActive && snapshot.allowed === true && snapshot.simulated === false;
   const status: ConsentStatusView = useMemo(
     () => ({
       persistence: snapshot.persistence,
@@ -285,7 +378,25 @@ export function ConsentExperience(props: ConsentExperienceProps): ReactNode {
   const contextValue: ConsentContextValue = useMemo(() => ({ allowed, status }), [allowed, status]);
 
   const statusKey = statusFor(snapshot);
+  // Copy missing a status entry omits the status text and keeps the notice.
+  const statusCopy: ResolvedCopyField | undefined = statusKey === null ? undefined : copy.status?.[statusKey];
+  const statusCopyMissing = statusKey !== null && typeof statusCopy?.text !== "string";
   const lead = snapshot.regime === "notice" ? copy.noticeLead : copy.promptLead;
+
+  const policyHref = policyLink === undefined || policyLink === false ? undefined : policyLink.href;
+  const policySanctioned = policyHref !== undefined && isSanctionedHref(policyHref);
+
+  useEffect(() => {
+    if (policyHref !== undefined && !policySanctioned) {
+      console.error("ConsentExperience: the policy link was omitted because its href is not an allowed link target.");
+    }
+  }, [policyHref, policySanctioned]);
+
+  useEffect(() => {
+    if (visible && statusCopyMissing) {
+      console.error(`ConsentExperience: the copy has no "${statusKey}" status, so the status text was omitted.`);
+    }
+  }, [visible, statusCopyMissing, statusKey]);
 
   return (
     <ConsentContext.Provider value={contextValue}>
@@ -299,12 +410,8 @@ export function ConsentExperience(props: ConsentExperienceProps): ReactNode {
             rejectLabel={copy.rejectLabel.text}
             onAccept={seamFailed ? inert : handleAccept}
             onReject={seamFailed ? inert : handleReject}
-            privacyLink={
-              policyLink === undefined || policyLink === false ? undefined : (
-                <Link href={policyLink.href}>{copy.privacyLinkLabel.text}</Link>
-              )
-            }
-            status={statusKey === null ? undefined : copy.status[statusKey].text}
+            privacyLink={policySanctioned ? <Link href={policyHref}>{copy.privacyLinkLabel.text}</Link> : undefined}
+            status={statusCopyMissing ? undefined : statusCopy?.text}
           />
         </div>
       ) : null}
