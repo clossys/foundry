@@ -46,6 +46,9 @@
 /*! tailwindcss v4.3.3 | MIT License | https://tailwindcss.com */
 @layer properties;
 @layer foundry-ui-compiled {
+  .pointer-events-none {
+    pointer-events: none;
+  }
   .collapse {
     visibility: collapse;
   }
@@ -93,6 +96,9 @@
   .bottom-md {
     bottom: var(--spacing-md, 12px);
   }
+  .row-start-1 {
+    grid-row-start: 1;
+  }
   .m-0 {
     margin: 0px;
   }
@@ -119,6 +125,9 @@
   }
   .mt-3xl {
     margin-top: var(--spacing-3xl, 48px);
+  }
+  .mt-auto {
+    margin-top: auto;
   }
   .mt-sm {
     margin-top: var(--spacing-sm, 8px);
@@ -161,6 +170,10 @@
   }
   .aspect-square {
     aspect-ratio: 1 / 1;
+  }
+  .size-lg {
+    width: var(--spacing-lg, 16px);
+    height: var(--spacing-lg, 16px);
   }
   .size-xl {
     width: var(--spacing-xl, 24px);
@@ -253,6 +266,9 @@
   }
   .w-px {
     width: 1px;
+  }
+  .w-sm {
+    width: var(--spacing-sm, 8px);
   }
   .max-w-2xl {
     max-width: var(--spacing-2xl, 32px);
@@ -387,8 +403,23 @@
   .gap-xs {
     gap: var(--spacing-xs, 4px);
   }
+  .gap-x-2xl {
+    column-gap: var(--spacing-2xl, 32px);
+  }
+  .gap-x-3xl {
+    column-gap: var(--spacing-3xl, 48px);
+  }
+  .gap-x-4xl {
+    column-gap: var(--spacing-4xl, 64px);
+  }
   .gap-x-sm {
     column-gap: var(--spacing-sm, 8px);
+  }
+  .gap-y-2xl {
+    row-gap: var(--spacing-2xl, 32px);
+  }
+  .gap-y-3xl {
+    row-gap: var(--spacing-3xl, 48px);
   }
   .truncate {
     overflow: hidden;
@@ -492,6 +523,9 @@
   .border-line-on-inverse {
     border-color: var(--color-line-on-inverse, oklch(0.9702 0 0 / 0.14));
   }
+  .border-line-strong {
+    border-color: var(--color-line-strong, oklch(0.7763 0 0));
+  }
   .border-overlay-border {
     border-color: var(--color-overlay-border, oklch(0.8761 0 0));
   }
@@ -515,6 +549,9 @@
   }
   .bg-ink-muted {
     background-color: var(--color-ink-muted, oklch(0.5658 0 0));
+  }
+  .bg-ink-on-inverse-muted {
+    background-color: var(--color-ink-on-inverse-muted, oklch(0.7763 0 0));
   }
   .bg-ink-primary {
     background-color: var(--color-ink-primary, oklch(0.2178 0 0));
@@ -651,6 +688,9 @@
   .pt-lg {
     padding-top: var(--spacing-lg, 16px);
   }
+  .pt-md {
+    padding-top: var(--spacing-md, 12px);
+  }
   .pb-lg {
     padding-bottom: var(--spacing-lg, 16px);
   }
@@ -726,6 +766,12 @@
   }
   .text-pretty {
     text-wrap: pretty;
+  }
+  .text-accent {
+    color: var(--color-accent, oklch(0.4748 0 0));
+  }
+  .text-accent-on-inverse {
+    color: var(--color-accent-on-inverse, oklch(0.7763 0 0));
   }
   .text-accent-text {
     color: var(--color-accent-text, oklch(0.36 0 0));
@@ -955,6 +1001,12 @@
     .tablet\:col-span-2 {
       grid-column: span 2 / span 2;
     }
+    .tablet\:col-span-6 {
+      grid-column: span 6 / span 6;
+    }
+    .tablet\:col-span-12 {
+      grid-column: span 12 / span 12;
+    }
     .tablet\:mx-md {
       margin-inline: var(--spacing-md, 12px);
     }
@@ -982,6 +1034,9 @@
     .tablet\:grid-cols-2 {
       grid-template-columns: repeat(2, minmax(0, 1fr));
     }
+    .tablet\:grid-cols-12 {
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+    }
     .tablet\:flex-col {
       flex-direction: column;
     }
@@ -993,6 +1048,15 @@
     }
     .tablet\:justify-between {
       justify-content: space-between;
+    }
+    .tablet\:gap-x-3xl {
+      column-gap: var(--spacing-3xl, 48px);
+    }
+    .tablet\:gap-x-4xl {
+      column-gap: var(--spacing-4xl, 64px);
+    }
+    .tablet\:p-xl {
+      padding: var(--spacing-xl, 24px);
     }
     .tablet\:py-xl {
       padding-block: var(--spacing-xl, 24px);
@@ -1008,11 +1072,74 @@
     }
   }
   @media (width >= 1024px) {
+    .tablet-lg\:col-span-4 {
+      grid-column: span 4 / span 4;
+    }
+    .tablet-lg\:col-span-5 {
+      grid-column: span 5 / span 5;
+    }
+    .tablet-lg\:col-span-7 {
+      grid-column: span 7 / span 7;
+    }
+    .tablet-lg\:col-span-8 {
+      grid-column: span 8 / span 8;
+    }
+    .tablet-lg\:col-start-1 {
+      grid-column-start: 1;
+    }
+    .tablet-lg\:col-start-8 {
+      grid-column-start: 8;
+    }
+    .tablet-lg\:row-start-1 {
+      grid-row-start: 1;
+    }
+    .tablet-lg\:mx-md {
+      margin-inline: var(--spacing-md, 12px);
+    }
+    .tablet-lg\:my-xl {
+      margin-block: var(--spacing-xl, 24px);
+    }
+    .tablet-lg\:flex {
+      display: flex;
+    }
+    .tablet-lg\:h-px {
+      height: 1px;
+    }
+    .tablet-lg\:w-lg {
+      width: var(--spacing-lg, 16px);
+    }
     .tablet-lg\:max-w-display {
       max-width: var(--ui-width-display-max, 72rem);
     }
+    .tablet-lg\:grid-cols-2 {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .tablet-lg\:grid-cols-3 {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+    .tablet-lg\:grid-cols-4 {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+    .tablet-lg\:grid-cols-12 {
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+    }
+    .tablet-lg\:flex-col {
+      flex-direction: column;
+    }
+    .tablet-lg\:flex-row {
+      flex-direction: row;
+    }
+    .tablet-lg\:items-center {
+      align-items: center;
+    }
     .tablet-lg\:gap-3xl {
       gap: var(--spacing-3xl, 48px);
+    }
+    .tablet-lg\:gap-x-4xl {
+      column-gap: var(--spacing-4xl, 64px);
+    }
+    .tablet-lg\:gap-y-0 {
+      row-gap: 0px;
     }
     .tablet-lg\:text-display-m {
       font-size: var(--text-display-m, 40px);
@@ -1043,6 +1170,9 @@
     .desktop\:justify-end {
       justify-content: flex-end;
     }
+    .desktop\:p-2xl {
+      padding: var(--spacing-2xl, 32px);
+    }
     .desktop\:text-start {
       text-align: start;
     }
@@ -1054,6 +1184,10 @@
     .wide\:max-w-display {
       max-width: var(--ui-width-display-max, 72rem);
     }
+  }
+  .rtl\:-scale-x-100:where(:dir(rtl), [dir="rtl"], [dir="rtl"] *) {
+    --tw-scale-x: calc(100% * -1);
+    scale: var(--tw-scale-x, 1) var(--tw-scale-y, 1);
   }
 }
 @property --tw-translate-x {
@@ -1183,6 +1317,21 @@
   initial-value: "";
   inherits: false;
 }
+@property --tw-scale-x {
+  syntax: "*";
+  inherits: false;
+  initial-value: 1;
+}
+@property --tw-scale-y {
+  syntax: "*";
+  inherits: false;
+  initial-value: 1;
+}
+@property --tw-scale-z {
+  syntax: "*";
+  inherits: false;
+  initial-value: 1;
+}
 @keyframes spin {
   to {
     transform: rotate(360deg);
@@ -1224,6 +1373,9 @@
       --tw-ring-offset-shadow: 0 0 #0000;
       --tw-outline-style: solid;
       --tw-content: "";
+      --tw-scale-x: 1;
+      --tw-scale-y: 1;
+      --tw-scale-z: 1;
     }
   }
 }

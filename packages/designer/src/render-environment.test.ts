@@ -65,6 +65,8 @@ describe("server-safe entry points resolve under react-server (test 1)", () => {
       distRelPath: "blocks/server.js",
       expectedExports: [
         "ArticleBody",
+        "CardGrid",
+        "Comparison",
         "ContentSection",
         "DetailView",
         "EmptyState",
@@ -83,6 +85,7 @@ describe("server-safe entry points resolve under react-server (test 1)", () => {
         "SectionIntro",
         "Stat",
         "StatusList",
+        "TopicList",
       ],
     },
     { distRelPath: "shell/server.js", expectedExports: ["BADGE_INSET_SHARE", "BADGE_RADIUS_SHARE", "Brandmark", "Shell", "SiteFooter", "SiteHeader", "SkipLink", "badgePlatePath"] },

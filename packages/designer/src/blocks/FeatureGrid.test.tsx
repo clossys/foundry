@@ -89,3 +89,66 @@ describe("FeatureGrid", () => {
     expect(screen.getByText("Feature one heading")).toHaveClass(primary);
   });
 });
+
+describe("FeatureGrid catalog layout", () => {
+  const three: FeatureGridItem[] = [
+    { id: "a", heading: "First principle", description: "A line of support.", icon: <svg data-testid="icon-a" /> },
+    { id: "b", heading: "Second principle", description: "A line of support.", icon: <svg data-testid="icon-b" /> },
+    { id: "c", heading: "Third principle", description: "A line of support.", icon: <svg data-testid="icon-c" /> },
+  ];
+
+  it("keeps the original grid byte for byte when no catalog prop is set", () => {
+    const { container } = render(<FeatureGrid items={ITEMS} />);
+    const grid = container.firstElementChild?.lastElementChild as HTMLElement;
+    expect(grid.className).toBe("grid grid-cols-1 gap-lg tablet:grid-cols-2 desktop:grid-cols-3");
+    expect(container.querySelector("[data-feature-grid-item]")).toBeNull();
+  });
+
+  it("sets 1, 2 then N columns with the catalog gaps", () => {
+    for (const [columns, widest] of [
+      [2, undefined],
+      [3, "tablet-lg:grid-cols-3"],
+      [4, "tablet-lg:grid-cols-4"],
+    ] as const) {
+      const { container, unmount } = render(<FeatureGrid items={three} columns={columns} />);
+      const grid = container.querySelector("[data-feature-grid-columns]") as HTMLElement;
+      expect(grid).toHaveClass("grid", "grid-cols-1", "tablet:grid-cols-2", "gap-x-2xl", "gap-y-3xl");
+      if (widest) expect(grid).toHaveClass(widest);
+      expect(grid.className).not.toMatch(/desktop:grid-cols-3/);
+      unmount();
+    }
+  });
+
+  it("tops each item with the token rule weight in rule treatment and drops icons", () => {
+    const { container } = render(<FeatureGrid items={three} treatment="rule" />);
+    const items = container.querySelectorAll<HTMLElement>("[data-feature-grid-item]");
+    expect(items).toHaveLength(3);
+    for (const item of items) {
+      expect(item).toHaveClass("border-t", "border-line-strong", "pt-lg");
+      expect(item.style.borderBlockStartWidth).toBe("var(--ui-border-rule, 2px)");
+    }
+    expect(screen.queryByTestId("icon-a")).toBeNull();
+  });
+
+  it("uses the inverse line for the rule on an inverse ground", () => {
+    const { container } = render(<FeatureGrid items={three} treatment="rule" ground="inverse" />);
+    expect(container.querySelector("[data-feature-grid-item]")).toHaveClass("border-line-on-inverse");
+  });
+
+  it("sets each item on a plate of the other ground in plate treatment, icons kept and hidden", () => {
+    const { container } = render(<FeatureGrid items={three} treatment="plate" ground="sunken" />);
+    const item = container.querySelector("[data-feature-grid-item]") as HTMLElement;
+    expect(item).toHaveAttribute("data-variant", "plate");
+    expect(item).toHaveClass("bg-surface-raised", "rounded-surface");
+    expect(screen.getByTestId("icon-a").parentElement).toHaveAttribute("aria-hidden", "true");
+  });
+
+  it("sets statement headings in the display font at h1 size, still not heading elements", () => {
+    render(<FeatureGrid items={three} emphasis="statement" treatment="rule" />);
+    const heading = screen.getByText("First principle");
+    expect(heading.tagName).toBe("P");
+    expect(heading).toHaveClass("text-h1", "font-display", "leading-heading");
+    expect(screen.queryByRole("heading")).toBeNull();
+  });
+});
+

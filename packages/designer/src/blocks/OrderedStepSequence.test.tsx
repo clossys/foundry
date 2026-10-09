@@ -92,3 +92,37 @@ describe("OrderedStepSequence eyebrow", () => {
     expect((bare.firstElementChild as HTMLElement).firstElementChild?.tagName).toBe("OL");
   });
 });
+
+describe("OrderedStepSequence visuals", () => {
+  const steps = [
+    { id: "one", ordinal: "01", label: "Your team", heading: "Send", description: "Share the documents you have." },
+    { id: "two", ordinal: "02", label: "The reviewer", heading: "Check", description: "Each item is checked.", visual: <div data-testid="visual-two">VISUAL</div> },
+    { id: "three", ordinal: "03", label: "Your team", heading: "Decide", description: "Act on the findings." },
+  ];
+
+  it("keeps the tablet row when no step has a visual", () => {
+    const { container } = render(<OrderedStepSequence items={steps.map(({ visual: _visual, ...step }) => step)} />);
+    expect(container.querySelector("ol")).toHaveClass("tablet:flex-row");
+    expect(container.querySelector("[data-step-visual]")).toBeNull();
+  });
+
+  it("moves the row to tablet-lg and pins each visual to the bottom of its step", () => {
+    const { container } = render(<OrderedStepSequence items={steps} />);
+    const list = container.querySelector("ol") as HTMLElement;
+    expect(list).toHaveClass("flex-col", "tablet-lg:flex-row");
+    expect(list.className).not.toMatch(/(^|\s)tablet:/);
+    const visual = container.querySelector("[data-step-visual]") as HTMLElement;
+    expect(visual).toHaveClass("mt-auto", "min-w-0");
+    expect(visual.parentElement).toHaveClass("flex-1");
+    const connector = container.querySelector("li span[aria-hidden]") as HTMLElement;
+    expect(connector).toHaveClass("tablet-lg:h-px", "tablet-lg:w-lg");
+  });
+
+  it("renders the actor label above the step heading", () => {
+    render(<OrderedStepSequence items={steps} headingLevel={2} />);
+    const heading = screen.getByRole("heading", { name: "Check" });
+    expect(heading.tagName).toBe("H3");
+    expect(heading.previousElementSibling).toHaveTextContent("The reviewer");
+  });
+});
+

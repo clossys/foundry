@@ -4,6 +4,12 @@ import { ArticleBody } from "./ArticleBody.js";
 import { SearchField } from "../atoms/SearchField.js";
 import { Chip } from "../atoms/Chip.js";
 import { Toolbar } from "./Toolbar.js";
+import { ContentSection } from "./ContentSection.js";
+import { Comparison } from "./Comparison.js";
+import { TopicList } from "./TopicList.js";
+import { FeatureGrid } from "./FeatureGrid.js";
+
+const PHYSICAL = /(^|\s)([a-z-]+:)*(ml|mr|pl|pr|left|right|border-l|border-r|text-left|text-right|rounded-[tb]?[lr])(-|\s|$)/;
 
 describe("blocks and atoms RTL logical-direction utilities (#951)", () => {
   it("places SearchField's clear control at inline-end under dir=rtl", () => {
@@ -54,5 +60,46 @@ describe("blocks and atoms RTL logical-direction utilities (#951)", () => {
     const article = container.querySelector("article") as HTMLElement;
     expect(article.className).toContain("[&_ul]:ps-lg");
     expect(article.className).not.toContain("[&_ul]:pl-lg");
+  });
+
+  it("moves a split's visual to the start with grid columns only, keeping DOM order", () => {
+    const { container } = render(
+      <div dir="rtl">
+        <ContentSection layout="split" mediaSide="start" heading="Heading" media={<div>Visual</div>}>
+          <p>Module</p>
+        </ContentSection>
+      </div>,
+    );
+    const root = container.querySelector("[data-content-section]") as HTMLElement;
+    expect(root.firstElementChild).toHaveAttribute("data-content-section-text");
+    expect(root.lastElementChild).toHaveClass("tablet-lg:col-start-1");
+    for (const el of root.querySelectorAll<HTMLElement>("[class]")) expect(el.className).not.toMatch(PHYSICAL);
+  });
+
+  it("flips the Comparison arrow under dir=rtl and uses no physical utilities", () => {
+    const { container } = render(
+      <div dir="rtl">
+        <Comparison before={{ label: "Before", points: ["One", "Two"] }} after={{ label: "After", points: ["One", "Two"] }} />
+      </div>,
+    );
+    const arrow = container.querySelector("[data-comparison-arrow] svg") as SVGElement;
+    expect(arrow.classList.contains("rtl:-scale-x-100")).toBe(true);
+    for (const el of container.querySelectorAll<HTMLElement>("[data-comparison] [class]")) {
+      const classes = el.getAttribute("class") ?? "";
+      expect(classes).not.toMatch(PHYSICAL);
+    }
+  });
+
+  it("rules TopicList and rule-treatment FeatureGrid items on the block axis only", () => {
+    const { container } = render(
+      <div dir="rtl">
+        <TopicList items={[{ id: "a", heading: "A" }, { id: "b", heading: "B" }]} />
+        <FeatureGrid treatment="rule" items={[{ id: "a", heading: "A" }, { id: "b", heading: "B" }]} />
+      </div>,
+    );
+    for (const el of container.querySelectorAll<HTMLElement>("li, [data-feature-grid-item]")) {
+      expect(el).toHaveClass("border-t");
+      expect(el.className).not.toMatch(PHYSICAL);
+    }
   });
 });

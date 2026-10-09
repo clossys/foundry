@@ -63,6 +63,60 @@ describe("ContentSection", () => {
   });
 });
 
+describe("ContentSection layouts", () => {
+  it("adds a stacked visual after the text module, in the same column", () => {
+    const { container } = render(
+      <ContentSection heading="Heading" media={<div data-testid="visual">VISUAL</div>}>
+        <p data-testid="module">Module</p>
+      </ContentSection>,
+    );
+    const modules = container.querySelector("[data-content-section-modules]") as HTMLElement;
+    expect(modules.lastElementChild).toHaveAttribute("data-content-section-media");
+    expect(modules.firstElementChild).toBe(screen.getByTestId("module"));
+    expect(container.querySelector("[data-content-section]")).not.toHaveAttribute("data-layout");
+  });
+
+  it("splits text 5/12 and visual 7/12 from tablet-lg, stacked below", () => {
+    const { container } = render(
+      <ContentSection layout="split" eyebrow="Eyebrow" heading="Heading" media={<div>VISUAL</div>}>
+        <p>Module</p>
+      </ContentSection>,
+    );
+    const root = container.querySelector("[data-content-section]") as HTMLElement;
+    expect(root).toHaveAttribute("data-layout", "split");
+    expect(root).toHaveClass("grid", "grid-cols-1", "gap-y-2xl", "tablet-lg:grid-cols-12", "tablet-lg:gap-x-4xl", "tablet-lg:items-center");
+    const text = container.querySelector("[data-content-section-text]") as HTMLElement;
+    const media = container.querySelector("[data-content-section-media]") as HTMLElement;
+    expect(text).toHaveClass("tablet-lg:col-span-5");
+    expect(media).toHaveClass("tablet-lg:col-span-7", "min-w-0");
+    expect(text.querySelector("[data-content-section-header]")).not.toBeNull();
+    expect(text.querySelector("[data-content-section-modules]")).not.toBeNull();
+  });
+
+  it("keeps header, text module, visual in DOM order when the visual moves to the start", () => {
+    const { container } = render(
+      <ContentSection layout="split" mediaSide="start" heading="Heading" media={<div>VISUAL</div>}>
+        <p>Module</p>
+      </ContentSection>,
+    );
+    const root = container.querySelector("[data-content-section]") as HTMLElement;
+    expect(root).toHaveAttribute("data-media-side", "start");
+    expect(root.firstElementChild).toHaveAttribute("data-content-section-text");
+    expect(root.lastElementChild).toHaveAttribute("data-content-section-media");
+    expect(root.firstElementChild).toHaveClass("tablet-lg:col-start-8", "tablet-lg:row-start-1");
+    expect(root.lastElementChild).toHaveClass("tablet-lg:col-start-1", "tablet-lg:row-start-1");
+  });
+
+  it("refuses a split without media", () => {
+    expect(() =>
+      render(
+        // @ts-expect-error a split requires media
+        <ContentSection layout="split" heading="Heading" />,
+      ),
+    ).toThrow(TypeError);
+  });
+});
+
 describe("MediaFigure", () => {
   it("puts the media straight on the ground by default and captions it underneath", () => {
     const { container } = render(

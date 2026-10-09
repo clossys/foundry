@@ -91,7 +91,15 @@ export { Hero } from "./Hero.js";
 export type { HeroProps, HeroHeadingLevel, HeroComposition, HeroAlign } from "./Hero.js";
 
 export { ContentSection } from "./ContentSection.js";
-export type { ContentSectionProps, ContentSectionHeadingLevel, ContentSectionAlign } from "./ContentSection.js";
+export type {
+  ContentSectionProps,
+  ContentSectionStackedProps,
+  ContentSectionSplitProps,
+  ContentSectionHeadingLevel,
+  ContentSectionAlign,
+  ContentSectionLayout,
+  ContentSectionMediaSide,
+} from "./ContentSection.js";
 export { SectionIntro } from "./SectionIntro.js";
 export type { SectionIntroProps, SectionIntroHeadingLevel, SectionIntroEmphasis, SectionIntroAlign } from "./SectionIntro.js";
 
@@ -102,7 +110,20 @@ export { MarketingChapter } from "./MarketingChapter.js";
 export type { MarketingChapterProps, MarketingChapterHeadingLevel } from "./MarketingChapter.js";
 
 export { FeatureGrid } from "./FeatureGrid.js";
-export type { FeatureGridProps, FeatureGridItem, FeatureGridHeadingLevel } from "./FeatureGrid.js";
+export type {
+  FeatureGridProps,
+  FeatureGridItem,
+  FeatureGridHeadingLevel,
+  FeatureGridColumns,
+  FeatureGridTreatment,
+  FeatureGridEmphasis,
+} from "./FeatureGrid.js";
+export { CardGrid } from "./CardGrid.js";
+export type { CardGridProps, CardGridItem, CardGridSpan, CardGridHeadingLevel } from "./CardGrid.js";
+export { Comparison } from "./Comparison.js";
+export type { ComparisonProps, ComparisonSide, ComparisonHeadingLevel } from "./Comparison.js";
+export { TopicList } from "./TopicList.js";
+export type { TopicListProps, TopicListItem, TopicListColumns } from "./TopicList.js";
 
 export { OrderedStepSequence } from "./OrderedStepSequence.js";
 export type {

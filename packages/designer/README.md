@@ -100,12 +100,14 @@ surfaces and live in `@clossys/publisher/web`.
   `Separator`, `Chip`, `StatusMark`, `Meter`.
 - **`blocks`** — owns the internal layout of multiple named regions,
   typically by composing one or more atoms (and/or layout) into something
-  with a real job on a page. Twenty-two ship: `PageHeader`, `EmptyState`,
+  with a real job on a page. Twenty-five ship: `PageHeader`, `EmptyState`,
   `DataTable`, `DetailView`, `Pagination`, `Stat`, `Form`, `FieldGroup`,
   `ConfirmDialog`, `Toolbar`, `NavGrid`, `SectionHeader`, `Hero`,
-  `MarketingChapter`, `FeatureGrid`, `OrderedStepSequence`, `StatusList`, `Faq`, `PricingTable`, `Testimonial`, `ArticleBody`, `ConsentBanner` — the
-  last nine are marketing/editorial content blocks and a presentational
-  consent notice, completing this layer (see "Blocks" below).
+  `MarketingChapter`, `FeatureGrid`, `CardGrid`, `Comparison`, `TopicList`,
+  `OrderedStepSequence`, `StatusList`, `Faq`, `PricingTable`, `Testimonial`,
+  `ArticleBody`, `ConsentBanner` — the last twelve are marketing/editorial
+  content blocks and a presentational consent notice, completing this layer
+  (see "Blocks" below).
 - **`shell`** — the persistent frame around content (nav, layout chrome)
   that provides the slots content fills. One per app; survives route
   changes that swap out the content underneath it. `Shell` ships with five
@@ -348,7 +350,7 @@ source file's own header for the exact probe and its result). Today that's:
 | Subpath | Server-safe members |
 | --- | --- |
 | `@clossys/designer/atoms/server` | `Avatar`, `Badge`, `Banner`, `Card`, `Field`, `Icon`, `Meter`, `Skeleton`, `Spinner`, `StatusMark`, `buttonLinkClassName`, `mergeUiClasses` |
-| `@clossys/designer/blocks/server` | `ArticleBody`, `ContentSection`, `DetailView`, `EmptyState`, `Faq`, `FeatureGrid`, `FieldGroup`, `Hero`, `MarketingChapter`, `MediaFigure`, `OrderedStepSequence`, `PageHeader`, `PricingTable`, `SectionFrame`, `SectionHeader`, `SectionIntro`, `Stat`, `StatusList` |
+| `@clossys/designer/blocks/server` | `ArticleBody`, `CardGrid`, `Comparison`, `ContentSection`, `DetailView`, `EmptyState`, `Faq`, `FeatureGrid`, `FieldGroup`, `Hero`, `MarketingChapter`, `MediaFigure`, `OrderedStepSequence`, `PageHeader`, `PricingTable`, `SectionFrame`, `SectionHeader`, `SectionIntro`, `Stat`, `StatusList`, `TopicList` |
 | `@clossys/designer/shell/server` | `Shell`, `SiteFooter`, `SiteHeader`, `SkipLink` |
 | `@clossys/designer/charts/server` | `ChartFrame`, `Sparkline` |
 | `@clossys/designer/theme/server` | `getThemeInitScript` |
@@ -2864,8 +2866,9 @@ exactly that reason: this package owns visual vocabulary, never copy (see
 "Public contract" above — audience-facing words belong to
 `@clossys/writer`).
 
-`Hero`, `FeatureGrid`, `Faq` (including its server implementation),
-`OrderedStepSequence`, and `StatusList` share one closed `ground` contract:
+`Hero`, `FeatureGrid`, `CardGrid`, `Comparison`, `TopicList`, `Faq`
+(including its server implementation), `OrderedStepSequence`, and
+`StatusList` share one closed `ground` contract:
 `"base" | "sunken" | "inverse"` (default `"base"`). Base inherits the
 ambient page surface, preserving existing composition and markup, while
 sunken and inverse paint their semantic surfaces explicitly. Every ground
@@ -3017,6 +3020,43 @@ an eyebrow, actions, or modules other than prose, or already sits in a
 `children`, `className`, `style` and every native `<div>` attribute except
 `title`.
 
+**Layouts.** `layout` (`ContentSectionLayout`) is `"stacked"` (the default)
+or `"split"`. A stacked section may also take `media`, a visual module (a
+`Specimen`, a `MediaFigure`) rendered after the text module in the same
+column. A split section requires `media` (`ContentSectionSplitProps`; a
+split without it throws a `TypeError`, since a text-only band is stacked):
+from `tablet-lg` the header group and text module share a 5/12 column and
+the visual takes 7/12, `gap-x-4xl` apart and vertically centred; below
+`tablet-lg` it stacks header, text module, visual. `mediaSide`
+(`ContentSectionMediaSide`: `"end"`, the default, or `"start"`) moves the
+visual with `col-start-*` only, so the reading order is always header, text
+module, visual. `align` is stacked only; a split's header lines up at the
+start. The 5/12 to 7/12 ratio is fixed so split bands line up down a page.
+
+```tsx
+import { ContentSection, TopicList } from "@clossys/designer/blocks";
+
+function SplitSection() {
+  return (
+    <ContentSection
+      layout="split"
+      mediaSide="start"
+      eyebrow="Eyebrow text"
+      heading="Section heading"
+      media={<img src="/media.png" alt="Media description" />}
+    >
+      <TopicList
+        columns={1}
+        items={[
+          { id: "one", heading: "Topic one" },
+          { id: "two", heading: "Topic two" },
+        ]}
+      />
+    </ContentSection>
+  );
+}
+```
+
 ### `MediaFigure`
 
 ```tsx
@@ -3106,6 +3146,34 @@ region. Items lay out one per row on narrow viewports, two from `tablet`,
 three from `desktop` — the same responsive grid `NavGrid` uses.
 `ground` uses the shared closed section-ground contract above.
 
+**Catalog layout.** Setting any of `columns`, `treatment` or `emphasis`
+switches to the content-catalog grid; with none of them set the original
+markup above is emitted unchanged. `columns` (`FeatureGridColumns`: `2`,
+`3` or `4`, default `3`) is the column count from `tablet-lg` (two from
+`tablet`, one below), with `gap-x-2xl gap-y-3xl`. `treatment`
+(`FeatureGridTreatment`) is `"plain"` (the default), `"rule"` (a
+`--ui-border-rule` rule in `line-strong` above each item, then `pt-lg`) or
+`"plate"` (each item on a `Card` plate, the other ground). `emphasis`
+(`FeatureGridEmphasis`) is `"item"` (the default) or `"statement"`, which
+sets each item heading in the display font at `text-h1`, for a short run of
+principles. Icons render with `plain` and `plate` only; under a rule they
+are dropped.
+
+```tsx
+import { FeatureGrid } from "@clossys/designer/blocks";
+
+<FeatureGrid
+  columns={3}
+  treatment="rule"
+  emphasis="statement"
+  items={[
+    { id: "one", heading: "Principle one", description: "Supporting line one." },
+    { id: "two", heading: "Principle two", description: "Supporting line two." },
+    { id: "three", heading: "Principle three", description: "Supporting line three." },
+  ]}
+/>;
+```
+
 ### `OrderedStepSequence`
 
 ```tsx
@@ -3129,6 +3197,89 @@ surface, ink, border, and connector policy. Base inherits its surrounding
 surface. `headingLevel` controls the real heading
 elements (default `2`). `eyebrow` is the same optional label slot `Hero` and
 `FeatureGrid` ship, rendered above the heading when supplied.
+
+Each item's `label` is its actor tag ("Your team", "The reviewer"), set
+above the step heading. An item may carry a small `visual` (typically a
+one-panel `Specimen`) under its text. When any step has one, the row starts
+at `tablet-lg` instead of `tablet` (a visual needs the wider column; tablets
+keep the vertical list and its rail), and each visual is pinned to the
+bottom of its step (`mt-auto`) so the visuals line up across the row.
+
+### `CardGrid`
+
+```tsx
+import { CardGrid } from "@clossys/designer/blocks";
+
+<CardGrid
+  headingLevel={3}
+  items={[
+    { id: "one", eyebrow: "Eyebrow", heading: "Wide card", description: "Card copy.", span: "two-thirds" },
+    { id: "two", heading: "Narrow card", description: "Card copy.", span: "third" },
+    { id: "three", heading: "Card three", span: "third" },
+    { id: "four", heading: "Card four", span: "third" },
+    { id: "five", heading: "Card five", span: "third" },
+  ]}
+/>;
+```
+
+A mixed grid of content cards where one item may deserve more room. Each
+card is an `<article>` holding a `Card` plate (the other ground,
+`rounded-surface`, no stroke, no shadow) with an optional `icon`
+(`aria-hidden`), `eyebrow`, a real heading at `headingLevel`
+(`CardGridHeadingLevel`, default `3`: one below the section heading), a
+`description`, and an optional `visual` pinned to the bottom of the card so
+headings line up across a row. `span` (`CardGridSpan`) is `"third"`,
+`"half"`, `"two-thirds"` or `"full"`; spans must fill whole 12-unit rows in
+order (two-thirds and a third in either order, three thirds, two halves, or
+one full card), 2 to 6 cards, or the block throws a `RangeError`. One
+column below `tablet`; at `tablet` a two-thirds card takes the full row and
+a third takes half; the 12-unit spans apply from `tablet-lg`, `gap-lg`
+apart.
+
+### `Comparison`
+
+```tsx
+import { Comparison } from "@clossys/designer/blocks";
+
+<Comparison
+  before={{ label: "Before", heading: "Side heading", points: ["Point one", "Point two"] }}
+  after={{ label: "After", heading: "Side heading", points: ["Point one", "Point two"] }}
+/>;
+```
+
+Before and after, side by side. Two `<section>`s, each named by its
+`label` as a real heading at `headingLevel` (`ComparisonHeadingLevel`,
+default `3`), with an optional `heading` line, then either a `description`
+or 2 to 4 `points` (the same form and count on both sides), and an optional
+`visual` (on both sides or neither) pinned to the bottom. `before` sits on
+the ground in secondary ink, its points marked by a short muted dash;
+`after` is a `Card` plate in primary ink, its points marked by an accent
+check. The marks and the arrow between the columns are `aria-hidden`: the
+contrast is in the words. Two columns from `tablet` (from `tablet-lg` when
+the sides carry visuals), stacked below with `before` first; the arrow
+flips under `dir="rtl"`.
+
+### `TopicList`
+
+```tsx
+import { TopicList } from "@clossys/designer/blocks";
+
+<TopicList
+  items={[
+    { id: "one", heading: "Topic one", description: "A short line." },
+    { id: "two", heading: "Topic two", description: "A short line." },
+  ]}
+/>;
+```
+
+Many short, scannable topics where cards would be heavy. A real `<ul>`;
+each row is topped by a hairline rule in `line-base` and carries `py-lg`,
+with the `heading` at body scale in `font-medium` and an optional
+`description` in `body-s` secondary ink. `columns` (`TopicListColumns`: `1`
+or `2`, default `2`) applies from `tablet` with `gap-x-3xl`; one column
+below. An even count reads best in two columns. No check marks: a topic
+list states coverage, not progress. Optional icons are `aria-hidden` and
+muted.
 
 ### `StatusList`
 
@@ -4988,20 +5139,40 @@ not a grab-bag).
 | `MarketingChapter` | component | Full-bleed marketing chapter band: marketing-scale title, optional description, prose slot. `headingLevel` picks its heading element. |
 | `MarketingChapterProps` | type | Props for `MarketingChapter`: `title`, `description`, `children`, `headingLevel`, `ground`, `className`, `style`, plus every native `<section>` attribute except `title`. |
 | `MarketingChapterHeadingLevel` | type | `2 \| 3`. |
-| `ContentSection` | component | One marketing section anatomy: a header group (eyebrow, heading, description, actions) held to the prose measure, then a module slot for one or more content modules, at fixed spacing. |
-| `ContentSectionProps` | type | Props for `ContentSection`: `eyebrow`, `heading`, `description`, `actions`, `headingLevel`, `align`, `ground`, `children`, `className`, `style`, plus every native `<div>` attribute except `title`. |
+| `ContentSection` | component | One marketing section anatomy: a header group (eyebrow, heading, description, actions) held to the prose measure, then a module slot for one or more content modules, at fixed spacing; stacked, or split with a visual in a 7/12 column. |
+| `ContentSectionProps` | type | `ContentSectionStackedProps \| ContentSectionSplitProps`: `eyebrow`, `heading`, `description`, `actions`, `headingLevel`, `ground`, `layout`, `media`, `mediaSide` (split), `align` (stacked), `children`, `className`, `style`, plus every native `<div>` attribute except `title`. |
+| `ContentSectionStackedProps` | type | Stacked section: `layout?: "stacked"`, `align?`, optional `media` after the text module. |
+| `ContentSectionSplitProps` | type | Split section: `layout: "split"`, required `media`, `mediaSide?`. |
+| `ContentSectionLayout` | type | `"stacked" \| "split"`. |
+| `ContentSectionMediaSide` | type | `"end" \| "start"`. |
 | `ContentSectionHeadingLevel` | type | `2 \| 3 \| 4 \| 5 \| 6`. |
 | `ContentSectionAlign` | type | `"start" \| "center"`. |
 | `MediaFigure` | component | Large media as a section module: framed media with an optional caption underneath. |
 | `MediaFigureProps` | type | Props for `MediaFigure`: `children`, `caption`, `measure`, `framed`, `ground`, `className`, `style`, plus every native `<figure>` attribute. |
 | `MediaFigureMeasure` | type | `"column" \| "content"`. |
 | `FeatureGrid` | component | Titled collection of feature items: optional eyebrow/heading/description region, a grid of icon/heading/description items. |
-| `FeatureGridProps` | type | Props for `FeatureGrid`: `eyebrow`, `heading`, `description`, `items`, `headingLevel`, `ground`, `className`, `style`, plus every native `<div>` attribute. |
+| `FeatureGridProps` | type | Props for `FeatureGrid`: `eyebrow`, `heading`, `description`, `items`, `headingLevel`, `ground`, `columns`, `treatment`, `emphasis`, `className`, `style`, plus every native `<div>` attribute. |
 | `FeatureGridItem` | type | One item: `id`, `icon?`, `heading`, `description?`. |
 | `FeatureGridHeadingLevel` | type | `2 \| 3 \| 4 \| 5 \| 6`. |
+| `FeatureGridColumns` | type | `2 \| 3 \| 4`. |
+| `FeatureGridTreatment` | type | `"plain" \| "rule" \| "plate"`. |
+| `FeatureGridEmphasis` | type | `"item" \| "statement"`. |
+| `CardGrid` | component | Mixed grid of content cards on plates; spans fill whole 12-unit rows (validated); optional bottom-pinned visual per card. |
+| `CardGridProps` | type | Props for `CardGrid`: `items`, `headingLevel`, `ground`, `className`, `style`, plus every native `<div>` attribute except `title`. |
+| `CardGridItem` | type | One card: `id`, `icon?`, `eyebrow?`, `heading`, `description?`, `span`, `visual?`. |
+| `CardGridSpan` | type | `"third" \| "half" \| "two-thirds" \| "full"`. |
+| `CardGridHeadingLevel` | type | `2 \| 3 \| 4 \| 5 \| 6`. |
+| `Comparison` | component | Before and after side by side: two labelled sections, the after side on a plate. |
+| `ComparisonProps` | type | Props for `Comparison`: `before`, `after`, `headingLevel`, `ground`, `className`, `style`, plus every native `<div>` attribute except `title`. |
+| `ComparisonSide` | type | One side: `label`, `heading?`, `description?`, `points?`, `visual?`. |
+| `ComparisonHeadingLevel` | type | `2 \| 3 \| 4 \| 5 \| 6`. |
+| `TopicList` | component | Hairline-ruled list of short topics in one or two columns. |
+| `TopicListProps` | type | Props for `TopicList`: `items`, `columns`, `ground`, `className`, `style`, plus every native `<ul>` attribute except `title`. |
+| `TopicListItem` | type | One topic: `id`, `icon?`, `heading`, `description?`. |
+| `TopicListColumns` | type | `1 \| 2`. |
 | `OrderedStepSequence` | component | Editorial ordered sequence: optional heading region, authored ordinal/label/heading/body steps, responsive decorative connectors. |
 | `OrderedStepSequenceProps` | type | Props for `OrderedStepSequence`: `eyebrow`, `heading`, `description`, `items`, `headingLevel`, `ground`, `className`, `style`, plus every native `<section>` attribute. |
-| `OrderedStepSequenceItem` | type | One step: `id`, `ordinal`, `label?`, `heading`, `description?`. |
+| `OrderedStepSequenceItem` | type | One step: `id`, `ordinal`, `label?` (the actor tag), `heading`, `description?`, `visual?`. |
 | `OrderedStepSequenceHeadingLevel` | type | `2 \| 3 \| 4 \| 5 \| 6`. |
 | `OrderedStepSequenceGround` | type | Sequence-specific alias of the shared `SectionGround`: `"base" \| "sunken" \| "inverse"`. |
 | `StatusList` | component | Grouped editorial status list: one legend and a definition list per group. |

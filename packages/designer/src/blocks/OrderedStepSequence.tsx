@@ -10,12 +10,18 @@ export interface OrderedStepSequenceItem {
   id: string;
   /** Authored ordinal, exposed as text rather than generated decoration. */
   ordinal: string | number;
-  /** A short label above the step heading. */
+  /** A short label above the step heading: the actor tag for the step ("Your team", "The reviewer"). */
   label?: ReactNode;
   /** The step's own heading. */
   heading: ReactNode;
   /** Supporting editorial copy for this step. */
   description?: ReactNode;
+  /**
+   * Optional small visual under the step text (typically a one-panel
+   * `Specimen`). When any step carries one, the sequence switches to the
+   * visual layout described on the component.
+   */
+  visual?: ReactNode;
 }
 
 export interface OrderedStepSequenceProps extends Omit<HTMLAttributes<HTMLElement>, "title"> {
@@ -47,6 +53,12 @@ export interface OrderedStepSequenceProps extends Omit<HTMLAttributes<HTMLElemen
  * `tablet` breakpoint where the list changes from a column to a row. `ground`
  * is deliberately closed so the connector never borrows a base-ground line
  * token when it sits on the inverse surface.
+ *
+ * When any step carries a `visual`, the row starts at `tablet-lg` instead of
+ * `tablet` (a visual needs a wider column, so the sequence stays a vertical
+ * list with its rail on tablets), and each visual sits under its step text,
+ * pinned to the bottom (`mt-auto`) so visuals line up across the row.
+ * Without visuals the markup is unchanged.
  */
 export function OrderedStepSequence({
   eyebrow,
@@ -63,6 +75,7 @@ export function OrderedStepSequence({
   const ItemHeadingTag = `h${Math.min(headingLevel + 1, 6)}` as `h${OrderedStepSequenceHeadingLevel}`;
   const colors = SECTION_GROUND_CLASSES[ground];
   const hasHeadingRegion = eyebrow !== undefined || heading !== undefined || description !== undefined;
+  const withVisuals = items.some((item) => item.visual !== undefined && item.visual !== null && item.visual !== false);
 
   return (
     <section {...rest} className={cx("flex flex-col gap-lg", colors.surface, className)} style={style}>
@@ -73,10 +86,19 @@ export function OrderedStepSequence({
           {description ? <p className={cx("text-body", colors.secondary)}>{description}</p> : null}
         </div>
       ) : null}
-      <ol className="flex flex-col tablet:flex-row">
+      <ol className={withVisuals ? "flex flex-col tablet-lg:flex-row" : "flex flex-col tablet:flex-row"}>
         {items.map((item, index) => (
-          <li key={item.id} className="flex min-w-0 flex-1 flex-col tablet:flex-row">
-            <div className="flex min-w-0 flex-1 flex-row gap-md tablet:flex-col">
+          <li
+            key={item.id}
+            className={withVisuals ? "flex min-w-0 flex-1 flex-col tablet-lg:flex-row" : "flex min-w-0 flex-1 flex-col tablet:flex-row"}
+          >
+            <div
+              className={
+                withVisuals
+                  ? "flex min-w-0 flex-1 flex-row gap-md tablet-lg:flex-col"
+                  : "flex min-w-0 flex-1 flex-row gap-md tablet:flex-col"
+              }
+            >
               <span
                 className={cx(
                   "flex size-xl shrink-0 items-center justify-center rounded-pill border text-body-s font-body font-medium",
@@ -86,16 +108,26 @@ export function OrderedStepSequence({
               >
                 {item.ordinal}
               </span>
-              <div className="flex min-w-0 flex-col gap-xs">
+              <div className={withVisuals ? "flex min-w-0 flex-1 flex-col gap-xs" : "flex min-w-0 flex-col gap-xs"}>
                 {item.label ? <p className={cx("text-caption uppercase tracking-label", colors.secondary)}>{item.label}</p> : null}
                 <ItemHeadingTag className={cx("text-h3 font-display", colors.primary)}>{item.heading}</ItemHeadingTag>
                 {item.description ? <p className={cx("text-body-s", colors.secondary)}>{item.description}</p> : null}
+                {item.visual ? (
+                  <div data-step-visual="" className="mt-auto w-full min-w-0 pt-lg">
+                    {item.visual}
+                  </div>
+                ) : null}
               </div>
             </div>
             {index < items.length - 1 ? (
               <span
                 aria-hidden="true"
-                className={cx("ms-lg my-sm block h-lg w-px shrink-0 tablet:mx-md tablet:my-xl tablet:h-px tablet:w-lg", colors.line)}
+                className={cx(
+                  withVisuals
+                    ? "ms-lg my-sm block h-lg w-px shrink-0 tablet-lg:mx-md tablet-lg:my-xl tablet-lg:h-px tablet-lg:w-lg"
+                    : "ms-lg my-sm block h-lg w-px shrink-0 tablet:mx-md tablet:my-xl tablet:h-px tablet:w-lg",
+                  colors.line,
+                )}
               />
             ) : null}
           </li>

@@ -45,6 +45,12 @@ import { Switch } from "../atoms/Switch.js";
 import { TextField } from "../atoms/TextField.js";
 import { Textarea } from "../atoms/Textarea.js";
 import { Hero } from "../blocks/Hero.js";
+import { CardGrid } from "../blocks/CardGrid.js";
+import { Comparison } from "../blocks/Comparison.js";
+import { ContentSection } from "../blocks/ContentSection.js";
+import { FeatureGrid } from "../blocks/FeatureGrid.js";
+import { OrderedStepSequence } from "../blocks/OrderedStepSequence.js";
+import { TopicList } from "../blocks/TopicList.js";
 import { scanCompiledCssSources } from "./scan-sources.js";
 import { generateCompiledCss } from "./generate.js";
 
@@ -190,4 +196,83 @@ describe("coverage: real rendered classes are all present in compiled.css", () =
 
     expect(missing).toEqual([]);
   });
+
+  it("content layout blocks render classes present in a fresh compiled.css", async () => {
+    const trees: Array<ReturnType<typeof render>> = [];
+    const item = (id: string) => ({ id, heading: `Heading ${id}`, description: "Description.", icon: <span>i</span> });
+    for (const ground of ["base", "sunken", "inverse"] as const) {
+      for (const mediaSide of ["end", "start"] as const) {
+        trees.push(
+          render(
+            <ContentSection layout="split" mediaSide={mediaSide} ground={ground} eyebrow="E" heading="H" media={<div>M</div>}>
+              <p>T</p>
+            </ContentSection>,
+          ),
+        );
+      }
+      trees.push(render(<ContentSection ground={ground} heading="H" media={<div>M</div>} />));
+      for (const columns of [2, 3, 4] as const) {
+        for (const treatment of ["plain", "rule", "plate"] as const) {
+          trees.push(render(<FeatureGrid ground={ground} columns={columns} treatment={treatment} items={[item("a"), item("b")]} />));
+        }
+      }
+      trees.push(render(<FeatureGrid ground={ground} emphasis="statement" items={[item("a"), item("b"), item("c")]} />));
+      trees.push(
+        render(
+          <CardGrid
+            ground={ground}
+            items={[
+              { ...item("a"), eyebrow: "E", span: "two-thirds", visual: <div>V</div> },
+              { ...item("b"), span: "third" },
+              { ...item("c"), span: "half" },
+              { ...item("d"), span: "half" },
+              { ...item("e"), span: "full" },
+            ]}
+          />,
+        ),
+      );
+      for (const visual of [undefined, <div key="v">V</div>]) {
+        trees.push(
+          render(
+            <Comparison
+              ground={ground}
+              before={{ label: "B", heading: "H", points: ["One", "Two"], visual }}
+              after={{ label: "A", heading: "H", points: ["One", "Two"], visual }}
+            />,
+          ),
+        );
+        trees.push(
+          render(
+            <OrderedStepSequence
+              ground={ground}
+              items={[
+                { id: "1", ordinal: "01", label: "L", heading: "H", description: "D", visual },
+                { id: "2", ordinal: "02", heading: "H" },
+              ]}
+            />,
+          ),
+        );
+      }
+      trees.push(render(<TopicList ground={ground} items={[item("a"), item("b")]} />));
+      trees.push(render(<TopicList ground={ground} columns={1} items={[item("a"), item("b")]} />));
+    }
+
+    const renderedClasses = new Set<string>();
+    for (const result of trees) {
+      for (const c of collectClassNames(result.container)) renderedClasses.add(c);
+      result.unmount();
+    }
+    for (const required of ["tablet-lg:col-span-5", "tablet-lg:col-span-7", "tablet-lg:col-start-8", "gap-y-3xl", "rtl:-scale-x-100", "tablet-lg:col-span-8"]) {
+      expect(renderedClasses.has(required)).toBe(true);
+    }
+
+    const scan = scanCompiledCssSources(packageRoot);
+    const generated = await generateCompiledCss({ stylesDir: resolve(packageRoot, "styles"), candidates: scan.candidates });
+    const missing: string[] = [];
+    for (const className of renderedClasses) {
+      if (!generated.css.includes(toSelectorText(className))) missing.push(className);
+    }
+    expect(missing).toEqual([]);
+  });
 });
+
