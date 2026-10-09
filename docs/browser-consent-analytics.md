@@ -828,8 +828,8 @@ pseudo-class or pseudo-element, a parenthesis, an escape, any other
 combinator and a space at either end do not match. A selector is at most
 `MAX_PROPERTY_STRING_LENGTH` (200) characters, checked before the
 expression runs (a longer one already throws under C-63). The literal
-expressions follow; the first two name the pieces of the third, which is
-the whole check:
+expressions follow: `BLOCK_SELECTOR_PART` and `BLOCK_SELECTOR_COMPOUND`
+name the pieces of `BLOCK_SELECTOR_GRAMMAR`, which is the whole check:
 
 ```ts
 const BLOCK_SELECTOR_PART = /(?:[.#][A-Za-z_][A-Za-z0-9_-]*|\[[a-z][a-z0-9_-]*(?:="[A-Za-z0-9 _.:\/-]*")?\])/;
