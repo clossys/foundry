@@ -152,3 +152,36 @@ describe("FeatureGrid catalog layout", () => {
   });
 });
 
+
+describe("FeatureGrid item eyebrow", () => {
+  const items: FeatureGridItem[] = [
+    { id: "one", eyebrow: "Intake", heading: "Documents in one place", description: "Every file lands against its record." },
+    { id: "two", heading: "Dates tracked", description: "Each due date carries an owner." },
+  ];
+
+  it("sets the eyebrow as a caption above the item heading, grouped tightly with it", () => {
+    render(<FeatureGrid items={items} columns={2} />);
+    const eyebrow = screen.getByText("Intake");
+    expect(eyebrow.tagName).toBe("P");
+    expect(eyebrow).toHaveClass("text-caption", "uppercase", "tracking-label", "text-ink-secondary");
+    expect(eyebrow.nextElementSibling).toHaveTextContent("Documents in one place");
+    expect(eyebrow.parentElement).toHaveAttribute("data-feature-grid-eyebrow");
+    expect(eyebrow.parentElement).toHaveClass("flex", "flex-col", "gap-xs");
+    expect(screen.queryByRole("heading")).toBeNull();
+  });
+
+  it("emits an item without an eyebrow exactly as before", () => {
+    const { container } = render(<FeatureGrid items={items} columns={2} />);
+    const withoutEyebrow = render(<FeatureGrid items={[items[1]!]} columns={2} />).container;
+    const second = container.querySelectorAll("[data-feature-grid-item]")[1] as HTMLElement;
+    expect(second.outerHTML).toBe((withoutEyebrow.querySelector("[data-feature-grid-item]") as HTMLElement).outerHTML);
+    expect(second.querySelector("[data-feature-grid-eyebrow]")).toBeNull();
+  });
+
+  it("uses the inverse secondary ink on an inverse ground and works in the original grid", () => {
+    render(<FeatureGrid items={items} ground="inverse" treatment="plate" />);
+    expect(screen.getByText("Intake")).toHaveClass("text-ink-on-inverse-muted");
+    const { getAllByText } = render(<FeatureGrid items={items} />);
+    expect(getAllByText("Intake").at(-1)?.nextElementSibling).toHaveTextContent("Documents in one place");
+  });
+});

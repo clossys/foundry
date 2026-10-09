@@ -11,6 +11,12 @@ export interface FeatureGridItem {
   id: string;
   /** Icon slot, rendered above the item's own heading. Decorative — see the component doc comment. */
   icon?: ReactNode;
+  /**
+   * A short label above the item heading (an area, a role, a stage), set as
+   * a caption in secondary ink. Optional: an item without one renders as
+   * before.
+   */
+  eyebrow?: ReactNode;
   /** The feature's own name. */
   heading: ReactNode;
   /** Supporting copy under the item's heading. */
@@ -78,6 +84,25 @@ const RULE_BORDER_CLASSES: Record<SectionGround, string> = {
   inverse: "border-line-on-inverse",
 };
 
+function hasNode(node: ReactNode): boolean {
+  return node !== undefined && node !== null && node !== false && node !== "";
+}
+
+/**
+ * The item heading, or the item eyebrow and heading as one tight group. The
+ * eyebrow is secondary ink, not muted: on a plate muted ink is only
+ * AA-large. Without an eyebrow the heading is emitted alone, unchanged.
+ */
+function withEyebrow(eyebrow: ReactNode, heading: ReactNode, ink: string): ReactNode {
+  if (!hasNode(eyebrow)) return heading;
+  return (
+    <div data-feature-grid-eyebrow="" className="flex flex-col gap-xs">
+      <p className={cx("text-caption uppercase tracking-label", ink)}>{eyebrow}</p>
+      {heading}
+    </div>
+  );
+}
+
 interface CatalogGridProps {
   items: readonly FeatureGridItem[];
   /** @default 3 */
@@ -104,14 +129,18 @@ function CatalogGrid({ items, columns = 3, treatment = "plain", emphasis = "item
                 {item.icon}
               </span>
             ) : null}
-            <p
-              className={cx(
-                statement ? "text-h1 font-display leading-heading text-balance" : "text-body font-body font-medium",
-                colors.primary,
-              )}
-            >
-              {item.heading}
-            </p>
+            {withEyebrow(
+              item.eyebrow,
+              <p
+                className={cx(
+                  statement ? "text-h1 font-display leading-heading text-balance" : "text-body font-body font-medium",
+                  colors.primary,
+                )}
+              >
+                {item.heading}
+              </p>,
+              colors.secondary,
+            )}
             {item.description ? (
               <p className={cx(statement ? "text-body text-pretty" : "text-body-s text-pretty", colors.secondary)}>
                 {item.description}
@@ -182,7 +211,8 @@ function CatalogGrid({ items, columns = 3, treatment = "plain", emphasis = "item
  * `icon` is `aria-hidden` — decorative reinforcement for a heading that's
  * already the item's real content, not a second source of meaning a screen
  * reader needs to parse separately, the same treatment `NavGrid`'s own
- * `icon` slot gets.
+ * `icon` slot gets. An item's optional `eyebrow` is a caption in secondary
+ * ink directly above its heading, naming the item's area or role.
  *
  * Items lay out one per row on narrow viewports, two from the `tablet`
  * breakpoint, three from `desktop` — the same plain Tailwind responsive
@@ -252,7 +282,7 @@ export function FeatureGrid({
                   {item.icon}
                 </span>
               ) : null}
-              <p className={cx("text-body font-body font-medium", colors.primary)}>{item.heading}</p>
+              {withEyebrow(item.eyebrow, <p className={cx("text-body font-body font-medium", colors.primary)}>{item.heading}</p>, colors.secondary)}
               {item.description ? (
                 <p className={cx("text-body-s", colors.secondary)}>{item.description}</p>
               ) : null}

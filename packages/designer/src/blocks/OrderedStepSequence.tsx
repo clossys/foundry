@@ -42,24 +42,66 @@ export interface OrderedStepSequenceProps extends Omit<HTMLAttributes<HTMLElemen
 }
 
 /**
+ * The connector and ordinal ring per ground: `line-strong` on the light
+ * grounds (a hairline that stays visible in light and dark schemes without
+ * competing with the copy), the inverse line on an inverse band.
+ */
+const STEP_LINE_CLASSES: Record<SectionGround, { line: string; ring: string }> = {
+  base: { line: "bg-line-strong", ring: "border-line-strong" },
+  sunken: { line: "bg-line-strong", ring: "border-line-strong" },
+  inverse: { line: "bg-line-on-inverse", ring: "border-line-on-inverse" },
+};
+
+/**
+ * Responsive classes for the two layouts. Plain steps go side by side from
+ * `tablet`; steps with visuals wait for `tablet-lg` and share subgrid rows
+ * (ordinal, text, visual), so every visual starts on one top line whatever
+ * the length of the copy above it.
+ */
+const LAYOUT_CLASSES = {
+  plain: {
+    list: "flex flex-col tablet:flex-row tablet:gap-x-xl",
+    item: "flex min-w-0 flex-1 flex-row gap-md tablet:flex-col tablet:gap-lg",
+    marker: "flex shrink-0 flex-col items-center tablet:flex-row",
+    connector: "my-sm w-px flex-1 tablet:my-0 tablet:ms-md tablet:-me-md tablet:h-px tablet:w-auto",
+    gap: "pb-xl tablet:pb-0",
+  },
+  visual: {
+    list: "flex flex-col tablet-lg:grid tablet-lg:grid-flow-col tablet-lg:auto-cols-fr tablet-lg:gap-x-xl",
+    item: "flex min-w-0 flex-row gap-md tablet-lg:row-span-3 tablet-lg:grid tablet-lg:grid-rows-subgrid tablet-lg:gap-y-lg",
+    marker: "flex shrink-0 flex-col items-center tablet-lg:flex-row",
+    connector: "my-sm w-px flex-1 tablet-lg:my-0 tablet-lg:ms-md tablet-lg:-me-md tablet-lg:h-px tablet-lg:w-auto",
+    body: "flex min-w-0 flex-1 flex-col gap-lg tablet-lg:contents",
+    gap: "pb-xl",
+  },
+} as const;
+
+/**
  * An editorial sequence of ordered steps, not a progress control: it has no
  * current step, completion state, or interaction. A real `<ol>` preserves
  * the order for every reader; `ordinal` remains authored text instead of a
  * generated counter so it is available to assistive technology too.
  *
+ * Type follows the content-block hierarchy: a step heading is an item
+ * heading, set like a `FeatureGrid` or `TopicList` item heading (`text-body`,
+ * body font, medium weight), with its actor `label` as a caption above it
+ * and its description at `text-body-s`. Plate headings (`CardGrid`,
+ * `Comparison`) sit one step up at `text-h2` in the display font.
+ *
  * The connector is decorative (`aria-hidden`) because the list semantics and
  * ordinal already communicate sequence. It is emitted only between adjacent
- * items, then switches from a vertical rule to a horizontal rule at the same
- * `tablet` breakpoint where the list changes from a column to a row. `ground`
- * is deliberately closed so the connector never borrows a base-ground line
- * token when it sits on the inverse surface.
+ * items: a vertical rail from one ordinal down to the next while the list is
+ * a column, a horizontal hairline from one ordinal across to the next once
+ * it is a row (`tablet`), in `line-strong` so it reads in both colour
+ * schemes. `ground` is deliberately closed so the connector never borrows a
+ * base-ground line token when it sits on the inverse surface.
  *
  * When any step carries a `visual`, the row starts at `tablet-lg` instead of
  * `tablet` (a visual needs a wider column, so the sequence stays a vertical
- * list with its rail on tablets), the steps are top-aligned
- * (`tablet-lg:items-start`) and each visual follows its step text directly,
- * so steps with parallel copy put their visuals on one top line.
- * Without visuals the markup is unchanged.
+ * list with its rail on tablets). In the row each step spans three shared
+ * subgrid rows (ordinal, text, visual), so every visual starts on one top
+ * line even when one step's copy runs longer. Without `subgrid` support the
+ * steps still stack their parts in order.
  */
 export function OrderedStepSequence({
   eyebrow,
@@ -75,8 +117,10 @@ export function OrderedStepSequence({
   const HeadingTag = `h${headingLevel}` as `h${OrderedStepSequenceHeadingLevel}`;
   const ItemHeadingTag = `h${Math.min(headingLevel + 1, 6)}` as `h${OrderedStepSequenceHeadingLevel}`;
   const colors = SECTION_GROUND_CLASSES[ground];
+  const lines = STEP_LINE_CLASSES[ground];
   const hasHeadingRegion = eyebrow !== undefined || heading !== undefined || description !== undefined;
   const withVisuals = items.some((item) => item.visual !== undefined && item.visual !== null && item.visual !== false);
+  const layout = LAYOUT_CLASSES[withVisuals ? "visual" : "plain"];
 
   return (
     <section {...rest} className={cx("flex flex-col gap-lg", colors.surface, className)} style={style}>
@@ -87,52 +131,45 @@ export function OrderedStepSequence({
           {description ? <p className={cx("text-body", colors.secondary)}>{description}</p> : null}
         </div>
       ) : null}
-      <ol className={withVisuals ? "flex flex-col tablet-lg:flex-row tablet-lg:items-start" : "flex flex-col tablet:flex-row"}>
-        {items.map((item, index) => (
-          <li
-            key={item.id}
-            className={withVisuals ? "flex min-w-0 flex-1 flex-col tablet-lg:flex-row" : "flex min-w-0 flex-1 flex-col tablet:flex-row"}
-          >
-            <div
-              className={
-                withVisuals
-                  ? "flex min-w-0 flex-1 flex-row gap-md tablet-lg:flex-col"
-                  : "flex min-w-0 flex-1 flex-row gap-md tablet:flex-col"
-              }
-            >
-              <span
-                className={cx(
-                  "flex size-xl shrink-0 items-center justify-center rounded-pill border text-body-s font-body font-medium",
-                  colors.border,
-                  colors.primary,
-                )}
-              >
-                {item.ordinal}
-              </span>
-              <div className={withVisuals ? "flex min-w-0 flex-1 flex-col gap-xs" : "flex min-w-0 flex-col gap-xs"}>
-                {item.label ? <p className={cx("text-caption uppercase tracking-label", colors.secondary)}>{item.label}</p> : null}
-                <ItemHeadingTag className={cx("text-h3 font-display", colors.primary)}>{item.heading}</ItemHeadingTag>
-                {item.description ? <p className={cx("text-body-s", colors.secondary)}>{item.description}</p> : null}
-                {item.visual ? (
-                  <div data-step-visual="" className="w-full min-w-0 pt-lg">
-                    {item.visual}
-                  </div>
-                ) : null}
-              </div>
+      <ol data-step-layout={withVisuals ? "visual" : "plain"} className={layout.list}>
+        {items.map((item, index) => {
+          const last = index === items.length - 1;
+          const text = (
+            <div data-step-text="" className={cx("flex min-w-0 flex-col gap-xs", withVisuals || last ? undefined : LAYOUT_CLASSES.plain.gap)}>
+              {item.label ? <p className={cx("text-caption uppercase tracking-label", colors.secondary)}>{item.label}</p> : null}
+              <ItemHeadingTag className={cx("text-body font-body font-medium", colors.primary)}>{item.heading}</ItemHeadingTag>
+              {item.description ? <p className={cx("text-body-s text-pretty", colors.secondary)}>{item.description}</p> : null}
             </div>
-            {index < items.length - 1 ? (
-              <span
-                aria-hidden="true"
-                className={cx(
-                  withVisuals
-                    ? "ms-lg my-sm block h-lg w-px shrink-0 tablet-lg:mx-md tablet-lg:my-xl tablet-lg:h-px tablet-lg:w-lg"
-                    : "ms-lg my-sm block h-lg w-px shrink-0 tablet:mx-md tablet:my-xl tablet:h-px tablet:w-lg",
-                  colors.line,
-                )}
-              />
-            ) : null}
-          </li>
-        ))}
+          );
+          return (
+            <li key={item.id} className={layout.item}>
+              <div className={layout.marker}>
+                <span
+                  className={cx(
+                    "flex size-xl shrink-0 items-center justify-center rounded-pill border text-body-s font-body font-medium tabular-nums",
+                    lines.ring,
+                    colors.primary,
+                  )}
+                >
+                  {item.ordinal}
+                </span>
+                {last ? null : <span aria-hidden="true" data-step-connector="" className={cx(layout.connector, lines.line)} />}
+              </div>
+              {withVisuals ? (
+                <div className={cx(LAYOUT_CLASSES.visual.body, last ? undefined : LAYOUT_CLASSES.visual.gap)}>
+                  {text}
+                  {item.visual ? (
+                    <div data-step-visual="" className="w-full min-w-0">
+                      {item.visual}
+                    </div>
+                  ) : null}
+                </div>
+              ) : (
+                text
+              )}
+            </li>
+          );
+        })}
       </ol>
     </section>
   );

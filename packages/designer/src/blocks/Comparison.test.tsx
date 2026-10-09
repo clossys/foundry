@@ -39,8 +39,6 @@ describe("Comparison", () => {
     const root = container.querySelector("[data-comparison]") as HTMLElement;
     expect(root).toHaveClass("tablet-lg:grid-cols-2");
     expect(root.className).not.toMatch(/(^|\s)tablet:grid-cols-2/);
-    // Top alignment: the sides start on one line and each visual follows its own copy, never pinned to a shared bottom.
-    expect(root).toHaveClass("items-start");
     const visuals = container.querySelectorAll("[data-comparison-visual]");
     expect(visuals).toHaveLength(2);
     for (const visual of visuals) {
@@ -49,9 +47,40 @@ describe("Comparison", () => {
     }
   });
 
-  it("keeps stretched sides when neither side carries a visual", () => {
+  it("lays both sides on shared subgrid rows so the visuals start on one top line", () => {
+    // Different description lengths: the visual rows still line up, because the
+    // description is one shared row sized by the longer side.
+    const { container } = render(
+      <Comparison
+        before={{ label: "Today", description: "One short line.", visual: <div data-testid="v-before" /> }}
+        after={{ label: "With one record", description: "A much longer description that wraps onto a second and a third line at every width.", visual: <div data-testid="v-after" /> }}
+      />,
+    );
+    const root = container.querySelector("[data-comparison]") as HTMLElement;
+    expect(root).toHaveAttribute("data-comparison-rows", "3");
+    expect(root.className).not.toMatch(/items-start/);
+    const before = container.querySelector('[data-comparison-side="before"]') as HTMLElement;
+    const afterSide = container.querySelector('[data-comparison-side="after"]') as HTMLElement;
+    const plate = afterSide.firstElementChild as HTMLElement;
+    for (const element of [before, afterSide, plate]) {
+      expect(element).toHaveClass("tablet-lg:row-span-3", "tablet-lg:grid", "tablet-lg:grid-rows-subgrid");
+      expect(element.className).not.toMatch(/(^|\s)tablet:(row-span|grid)/);
+    }
+    // Each side's direct parts are its rows, in the same order on both sides: label group, copy, visual.
+    expect(before.children).toHaveLength(3);
+    expect(plate.children).toHaveLength(3);
+    expect(before.children[2]).toHaveAttribute("data-comparison-visual");
+    expect(plate.children[2]).toHaveAttribute("data-comparison-visual");
+  });
+
+  it("shares rows from tablet when neither side carries a visual, so the sides stay one height", () => {
     const { container } = render(<Comparison before={BEFORE} after={AFTER} />);
-    expect(container.querySelector("[data-comparison]")).not.toHaveClass("items-start");
+    const root = container.querySelector("[data-comparison]") as HTMLElement;
+    expect(root).not.toHaveClass("items-start");
+    expect(root).toHaveAttribute("data-comparison-rows", "2");
+    const plate = container.querySelector('[data-comparison-side="after"] > div') as HTMLElement;
+    expect(container.querySelector('[data-comparison-side="before"]')).toHaveClass("tablet:row-span-2", "tablet:grid-rows-subgrid");
+    expect(plate).toHaveClass("tablet:row-span-2", "tablet:grid-rows-subgrid");
   });
 
   it("sets after on a plate in primary ink and before on the ground in secondary ink", () => {

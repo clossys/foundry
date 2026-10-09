@@ -219,6 +219,7 @@ describe("coverage: real rendered classes are all present in compiled.css", () =
         }
       }
       trees.push(render(<FeatureGrid ground={ground} emphasis="statement" items={[item("a"), item("b"), item("c")]} />));
+      trees.push(render(<FeatureGrid ground={ground} columns={2} treatment="plate" items={[{ ...item("a"), eyebrow: "E" }, item("b")]} />));
       trees.push(
         render(
           <CardGrid

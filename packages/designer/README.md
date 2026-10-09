@@ -3151,7 +3151,10 @@ different headings), which is what makes it a block rather than a view
 
 Each item's `icon` is optional and `aria-hidden` — decorative
 reinforcement for a heading that already carries the meaning, the same
-treatment `NavGrid`'s own `icon` slot gets. Item headings are deliberately
+treatment `NavGrid`'s own `icon` slot gets. An item's optional `eyebrow`
+renders as a small uppercase caption in secondary ink directly above its
+heading (one tight group; without it the heading is emitted unchanged), for
+naming an item's area or role. Item headings are deliberately
 NOT real heading elements (a homogeneous repeat, not named regions, the
 same reasoning `NavGrid`'s cards apply) — the grid's own optional
 `heading` (via `headingLevel`, default `2`) is the only real heading
@@ -3204,7 +3207,13 @@ import { OrderedStepSequence } from "@clossys/designer/blocks";
 An editorial `<ol>`, not a stepper or progress indicator. Each ordinal remains
 authored text, while decorative connectors are hidden from assistive technology
 and render only between adjacent items. The sequence changes from a vertical
-column/connector to a horizontal row/connector at `tablet`. Set
+column with a rail running from one ordinal down to the next to a horizontal
+row with a hairline running from one ordinal across to the next at `tablet`;
+connector and ordinal ring are `line-strong`, so they stay visible in light
+and dark schemes. Step headings are item headings, set like `FeatureGrid` and
+`TopicList` item headings (`text-body`, body font, medium weight); plate
+headings (`CardGrid`, `Comparison`) sit one step up at `text-h2` in the
+display font. Set
 `ground="sunken"` or `ground="inverse"` selects the shared matching painted
 surface, ink, border, and connector policy. Base inherits its surrounding
 surface. `headingLevel` controls the real heading
@@ -3215,9 +3224,10 @@ Each item's `label` is its actor tag ("Your team", "The reviewer"), set
 above the step heading. An item may carry a small `visual` (typically a
 one-panel `Specimen`) under its text. When any step has one, the row starts
 at `tablet-lg` instead of `tablet` (a visual needs the wider column; tablets
-keep the vertical list and its rail), the steps are top-aligned
-(`tablet-lg:items-start`) and each visual follows its step text directly, so
-steps with parallel copy put their visuals on one top line.
+keep the vertical list and its rail), and in the row each step spans three
+shared `subgrid` rows (ordinal, text, visual), so every visual starts on one
+top line even when one step's copy runs longer. Without `subgrid` support the
+parts still stack in order.
 
 ### `CardGrid`
 
@@ -3265,9 +3275,12 @@ Before and after, side by side. Two `<section>`s, each named by its
 `label` as a real heading at `headingLevel` (`ComparisonHeadingLevel`,
 default `3`), with an optional `heading` line, then either a `description`
 or 2 to 4 `points` (the same form and count on both sides), and an optional
-`visual` (on both sides or neither) directly under the side's copy; with
-visuals the sides are top-aligned (`items-start`), so parallel copy puts both
-panels on one top line. `before` sits on
+`visual` (on both sides or neither) directly under the side's copy. Side by
+side, both sides span one set of shared `subgrid` rows (label group, copy,
+visual), so the labels, the copy and the visuals each start on one top line
+even when one side's description is longer, and the plate fills its column
+(the row count is on `data-comparison-rows`). Without `subgrid` support each
+side still stacks its parts in order. `before` sits on
 the ground in secondary ink, its points marked by a short muted dash;
 `after` is a `Card` plate in primary ink, its points marked by an accent
 check. The marks and the arrow between the columns are `aria-hidden`: the
@@ -5260,7 +5273,7 @@ not a grab-bag).
 | `MediaFigureMeasure` | type | `"column" \| "content"`. |
 | `FeatureGrid` | component | Titled collection of feature items: optional eyebrow/heading/description region, a grid of icon/heading/description items. |
 | `FeatureGridProps` | type | Props for `FeatureGrid`: `eyebrow`, `heading`, `description`, `items`, `headingLevel`, `ground`, `columns`, `treatment`, `emphasis`, `className`, `style`, plus every native `<div>` attribute. |
-| `FeatureGridItem` | type | One item: `id`, `icon?`, `heading`, `description?`. |
+| `FeatureGridItem` | type | One item: `id`, `icon?`, `eyebrow?` (a caption above the item heading), `heading`, `description?`. |
 | `FeatureGridHeadingLevel` | type | `2 \| 3 \| 4 \| 5 \| 6`. |
 | `FeatureGridColumns` | type | `2 \| 3 \| 4`. |
 | `FeatureGridTreatment` | type | `"plain" \| "rule" \| "plate"`. |

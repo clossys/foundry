@@ -106,6 +106,32 @@ function SideBody({ side, tone, headingLevel, ground }: SideBodyProps) {
   );
 }
 
+/** The rows a side's body fills: the label group, then a description, points and a visual when present. */
+function sideRows(side: ComparisonSide): number {
+  return 1 + (hasNode(side.description) ? 1 : 0) + (side.points && side.points.length > 0 ? 1 : 0) + (hasNode(side.visual) ? 1 : 0);
+}
+
+/**
+ * Each side spans the shared rows and lays its parts on them (`subgrid`), so
+ * label, copy and visual each start on one line across both sides. Static
+ * class names per row count, from the breakpoint where the sides go side by
+ * side (`tablet`, or `tablet-lg` with visuals).
+ */
+const SIDE_ROW_CLASSES = {
+  plain: {
+    1: "tablet:row-span-1 tablet:grid tablet:grid-rows-subgrid",
+    2: "tablet:row-span-2 tablet:grid tablet:grid-rows-subgrid",
+    3: "tablet:row-span-3 tablet:grid tablet:grid-rows-subgrid",
+    4: "tablet:row-span-4 tablet:grid tablet:grid-rows-subgrid",
+  },
+  visual: {
+    1: "tablet-lg:row-span-1 tablet-lg:grid tablet-lg:grid-rows-subgrid",
+    2: "tablet-lg:row-span-2 tablet-lg:grid tablet-lg:grid-rows-subgrid",
+    3: "tablet-lg:row-span-3 tablet-lg:grid tablet-lg:grid-rows-subgrid",
+    4: "tablet-lg:row-span-4 tablet-lg:grid tablet-lg:grid-rows-subgrid",
+  },
+} as const satisfies Record<"plain" | "visual", Record<1 | 2 | 3 | 4, string>>;
+
 /**
  * Before and after, side by side: today and with, the old way and the new
  * way. Two `<section>`s, each named by its label as a real heading one
@@ -115,11 +141,14 @@ function SideBody({ side, tone, headingLevel, ground }: SideBodyProps) {
  * with a short muted dash; the `after` side is a `Card` plate (the other
  * ground) in primary ink, its points marked with an accent check. The marks
  * and the arrow between the columns are `aria-hidden`: the contrast is in
- * the words, never in colour or marks alone. Both sides carry the same
- * padding, so their first lines align. Without visuals the sides stretch
- * to one height; with visuals they are top-aligned (`items-start`) and each
- * visual follows its own copy directly, so parallel copy puts both panels
- * on one top line rather than pinning them to a shared bottom.
+ * the words, never in colour or marks alone.
+ *
+ * Side by side, the two sides share one set of grid rows (`subgrid`): each
+ * side spans them and places its label group, its copy and its visual on
+ * them, so the labels, the copy and the visuals each start on one top line
+ * even when one side's description runs longer, and both sides end on one
+ * line (the plate fills its column). Both sides carry the same padding.
+ * Without `subgrid` support each side still stacks its parts in order.
  *
  * Two columns from `tablet` (from `tablet-lg` when the sides carry visuals,
  * which need the room), stacked below with `before` first. The arrow
@@ -128,20 +157,23 @@ function SideBody({ side, tone, headingLevel, ground }: SideBodyProps) {
  */
 export function Comparison({ before, after, headingLevel = 3, ground = "base", className, style, ...rest }: ComparisonProps) {
   const withVisuals = hasNode(before.visual) || hasNode(after.visual);
+  const rows = Math.min(4, Math.max(sideRows(before), sideRows(after))) as 1 | 2 | 3 | 4;
+  const sideGrid = SIDE_ROW_CLASSES[withVisuals ? "visual" : "plain"][rows];
 
   return (
     <div
       {...rest}
       data-comparison=""
+      data-comparison-rows={rows}
       className={cx(
         withVisuals
-          ? "relative grid grid-cols-1 items-start gap-lg tablet-lg:grid-cols-2 tablet-lg:gap-x-4xl"
+          ? "relative grid grid-cols-1 gap-lg tablet-lg:grid-cols-2 tablet-lg:gap-x-4xl"
           : "relative grid grid-cols-1 gap-lg tablet:grid-cols-2 tablet:gap-x-4xl",
         className,
       )}
       style={style}
     >
-      <section data-comparison-side="before" className="flex min-w-0 flex-col gap-md p-lg tablet:p-xl">
+      <section data-comparison-side="before" className={cx("flex min-w-0 flex-col gap-md p-lg tablet:p-xl", sideGrid)}>
         <SideBody side={before} tone="before" headingLevel={headingLevel} ground={ground} />
       </section>
       <span
@@ -155,8 +187,8 @@ export function Comparison({ before, after, headingLevel = 3, ground = "base", c
       >
         <Icon glyph={ArrowRight} decorative size="sm" className="rtl:-scale-x-100" />
       </span>
-      <section data-comparison-side="after" className="flex min-w-0 flex-col">
-        <Card variant="plate" ground={ground} className="flex flex-1 flex-col gap-md tablet:p-xl">
+      <section data-comparison-side="after" className={cx("flex min-w-0 flex-col gap-md", sideGrid)}>
+        <Card variant="plate" ground={ground} className={cx("flex flex-1 flex-col gap-md tablet:p-xl", sideGrid)}>
           <SideBody side={after} tone="after" headingLevel={headingLevel} ground={ground} />
         </Card>
       </section>
