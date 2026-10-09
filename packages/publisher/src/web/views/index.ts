@@ -50,7 +50,7 @@ export type { ContactViewCopy, ContactViewDevPreview, ContactViewProps, ContactV
 export { SignInForm } from "./SignInForm.js";
 export type { SignInFailure, SignInFormProps, SignInResult } from "./SignInForm.js";
 export { GlobalErrorDocument } from "./GlobalErrorDocument.js";
-export type { GlobalErrorDocumentProps } from "./GlobalErrorDocument.js";
+export type { GlobalErrorDocumentErrorViewProps, GlobalErrorDocumentFramedProps, GlobalErrorDocumentHeadProps, GlobalErrorDocumentProps } from "./GlobalErrorDocument.js";
 export { ActivateForm } from "./ActivateForm.js";
 export type { ActivateDetails, ActivateFailure, ActivateFormProps, ActivateResult } from "./ActivateForm.js";
 export { ResetForm } from "./ResetForm.js";

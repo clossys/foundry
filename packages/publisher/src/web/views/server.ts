@@ -43,7 +43,7 @@ export { SignInForm } from "./SignInForm.server.js";
 export type { ContactViewCopy, ContactViewDevPreview, ContactViewProps, ContactViewTopic, ContactViewValues } from "./ContactView.js";
 export type { SignInFailure, SignInFormProps, SignInResult } from "./SignInForm.js";
 export { GlobalErrorDocument } from "./GlobalErrorDocument.js";
-export type { GlobalErrorDocumentProps } from "./GlobalErrorDocument.js";
+export type { GlobalErrorDocumentErrorViewProps, GlobalErrorDocumentFramedProps, GlobalErrorDocumentHeadProps, GlobalErrorDocumentProps } from "./GlobalErrorDocument.js";
 export { ActivateForm } from "./ActivateForm.server.js";
 export type { ActivateDetails, ActivateFailure, ActivateFormProps, ActivateResult } from "./ActivateForm.js";
 export { ResetForm } from "./ResetForm.server.js";
