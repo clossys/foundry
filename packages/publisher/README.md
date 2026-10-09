@@ -458,10 +458,12 @@ examples in this README use literal strings for brevity only.
 **Catalog direction.** Every main-navigation page, the home page included, is
 to be one view, `LandingView`: a hero alone fills the screen; a hero with
 content below it shows a sliver of that content and a scroll hint.
-`MarketingView`, `SectionedView` and a separate hero-only view fold into it,
-and `SectionedView` stays as an internal engine rather than a catalog entry.
-This records the direction only: today `MarketingView`, `SectionedView` and
-`LandingView` ship as documented below, and the fold lands in a later release.
+`LandingView` now ships as a sectioned page (documented below), and
+`HeroView` is the single-screen hero-only page (the view named `LandingView`
+before this release). `MarketingView` and `SectionedView` still ship as
+documented below; `SectionedView` is to stay as an internal engine rather
+than a catalog entry, and `MarketingView` folding into `LandingView` lands
+in a later release.
 
 ### Pre-auth marketing pages — `MarketingView` first
 
@@ -797,7 +799,7 @@ missing/unknown single-slot binding already produces for `AuthView`/
 `ErrorView`.
 
 Rendered directly as a component, `MarketingView` also takes the header
-slots `LandingView`'s banner uses. They are props, not template slots, so a
+slots `HeroView`'s banner uses. They are props, not template slots, so a
 `SurfaceDocument` cannot bind them:
 
 - `headerAction` (optional): the site's call to action in the banner,
@@ -807,7 +809,7 @@ slots `LandingView`'s banner uses. They are props, not template slots, so a
 - `nav` (optional): the primary navigation, beside the brand.
 - `ground` (`"base"`, `"inverse"` or `"transparent"`, default `"base"`): the
   plate of both the header and the footer. `"transparent"` matches
-  `LandingView`. The section bands keep their own `*Ground` props.
+  `HeroView`. The section bands keep their own `*Ground` props.
 
 Each slot is absent from the markup when omitted, so a page that passes none
 renders exactly as before.
@@ -910,22 +912,22 @@ This is the narrow disposition for entry pages; it does not add CMS, parser,
 or taxonomy behavior. A future Designer-block integration is separately
 staged and is not part of these publisher shells.
 
-### `LandingView`
+### `HeroView`
 
-`LandingView`, exported from `@clossys/publisher/web`, is a single-screen
+`HeroView`, exported from `@clossys/publisher/web`, is a single-screen
 landing page: a transparent banner, one hero centred both ways, and a
 transparent legal footer, over an optional backdrop. It is server-safe (it
 imports only Designer's `/shell/server`, `/atoms/server` and `/blocks/server`
 barrels) and ships no wording of its own: every visible word comes from a prop.
 
 ```tsx
-import { LandingView } from "@clossys/publisher/web";
+import { HeroView } from "@clossys/publisher/web";
 
 declare const brand: React.ReactNode; // the caller's brand mark, for example a Designer `Brandmark`
 
 export function HomePage() {
   return (
-    <LandingView
+    <HeroView
       brand={brand}
       headerAction={<a href="/start">Start</a>}
       heading="A page that says one thing"
@@ -951,7 +953,7 @@ Props, in addition to the standard `div` attributes (minus `children`) and `styl
   with `aria-hidden="true"` and `pointer-events-none`. It is absent from the
   markup when not supplied.
 - `legal`: the props of Designer's `SiteFooter.Legal`, passed straight through.
-- `ground` (`LandingViewGround`: `"base"` or `"inverse"`, default `"base"`): the
+- `ground` (`HeroViewGround`: `"base"` or `"inverse"`, default `"base"`): the
   page's ground. Unlike the `ground` on the other views, which sets only the
   header and footer plate, this one sets the ground of the whole page.
   `"inverse"` paints `bg-surface-inverse` on the page root and gives every text
@@ -961,14 +963,14 @@ Props, in addition to the standard `div` attributes (minus `children`) and `styl
   footer get Designer's `ground="transparent-inverse"`, so they stay plate-less
   over the backdrop and the footer's legal row takes
   `text-ink-on-inverse-muted`.
-- `footer` (`LandingViewFooter`: `"transparent"` or `"surface"`, default
+- `footer` (`HeroViewFooter`: `"transparent"` or `"surface"`, default
   `"transparent"`): the footer's plate. `"surface"` gives the footer Designer's
   `ground="base"` plate (`bg-surface-raised` with the base ink) across the full
   width, with a hairline on its top edge only, stacked above the backdrop. The
   banner and the hero are unchanged, on either `ground`.
 
 ```tsx
-import { LandingView } from "@clossys/publisher/web";
+import { HeroView } from "@clossys/publisher/web";
 
 declare const brand: React.ReactNode; // the caller's brand mark, for example a Designer `Brandmark`
 declare const backdrop: React.ReactNode; // a dark visual, for example a scrimmed image
@@ -976,7 +978,7 @@ declare const Link: React.FC<{ href: string; buttonVariant: "primary"; children:
 
 export function DarkHomePage() {
   return (
-    <LandingView
+    <HeroView
       brand={brand}
       headerAction={
         <Link href="/start" buttonVariant="primary">
@@ -1007,6 +1009,107 @@ anything you put inside the backdrop unfocusable. On `"inverse"`, pass a call
 to action that carries its own fill, such as a `primary` Designer `Button` or
 `Link`; a bare link inherits the on-inverse ink. Keep focusable content out of
 `backdrop`.
+
+### `LandingView`
+
+`LandingView`, exported from `@clossys/publisher/web` and
+`@clossys/publisher/web/server`, is a sectioned landing page: a hero block
+that fills the first screen, the document's other sections as full-bleed
+bands, and an optional closing call to action. Every band's content, the hero
+copy and the call to action sit in one centred column (Designer
+`SectionFrame`'s `measure`, default `"wide"`); grounds run the full width. It
+is server-safe and ships no wording of its own: every visible word comes from
+the resolved documents or a prop.
+
+```tsx
+import type { ResolvedSectionedViewDocument } from "@clossys/publisher/core";
+import { LandingView } from "@clossys/publisher/web";
+
+declare const page: ResolvedSectionedViewDocument; // from resolveSectionedViewDocument; its first section is a hero
+declare const faq: ResolvedSectionedViewDocument; // a shared FAQ document
+declare const screenshot: React.ReactNode; // for example a Designer `MediaFigure`
+
+export function ProductPage() {
+  return (
+    <LandingView
+      document={page}
+      trailing={[faq]}
+      afterSection={{ features: screenshot }}
+      callToAction={{ heading: "Closing heading", description: "One supporting line.", action: <a href="/start">Start</a> }}
+    />
+  );
+}
+```
+
+Props, in addition to the standard `<main>` attributes (minus `children`),
+`className` and `style`:
+
+- `document`: the page's resolved document. Its first section must be a
+  `hero`; it renders as the hero block and the page's only `<h1>`.
+- `trailing` (optional): further resolved documents rendered as more bands
+  after `document`, for example a shared FAQ.
+- `afterSection` (optional): content placed in a section's module slot,
+  after its own content, keyed by section id. An id that names no rendered
+  section is refused with a `RenderError`, not dropped.
+- `callToAction` (`LandingViewCallToAction`, optional): the closing band:
+  `id`, `eyebrow`, `heading` (an `<h2>`), `description`, and one `action`
+  slot (pass a button-styled link; it is not restyled).
+- `backdrop` (optional): decoration behind the hero block, `aria-hidden` and
+  inert to the pointer, over the hero section's own ground.
+- `header` (`LandingViewHeader`: `"overlay"` or `"reserved"`, default
+  `"overlay"`): whether the site header floats over the hero block or sits
+  in flow above the view.
+- `peek` (default `true`): with an overlay header and content after the hero,
+  the hero block stops short of the fold so the next band shows, and a
+  decorative chevron marks its foot.
+- `align` (Designer `HeroAlign`, default `"center"`) and `measure` (Designer
+  `SectionMeasure`, default `"wide"`).
+- `landmark` (`"main"` or `"none"`, default `"main"`), `resolveAssetId` and
+  `prefersReducedMotion`, as for `SectionedView`.
+
+**Section anatomy.** Every band with a feature grid, ordered steps, a status
+list, an FAQ or a hero is one Designer `ContentSection`: the section's
+eyebrow, heading and description as the header group (start-aligned, held to
+the prose measure), then the content as a module rendered without its own
+heading region, then the `afterSection` content. A hero in a later band is a
+header group (an `<h2>`, never a second display heading) with its actions,
+and its media as the module. Other section kinds keep their block's own
+header region inside the same slot.
+
+**Measure and rhythm.** Centred copy, in the hero block and the call to
+action, is held to the prose measure (`--ui-width-prose-max`) inside the
+column, so its lines wrap sooner than the column. Bands take `py-3xl`
+(`py-4xl` from `tablet-lg`); the call to action takes `py-4xl` (`py-5xl`
+from `tablet-lg`); the hero block takes `py-5xl` under an overlay header.
+The view paints the base surface on its root, so a band on the `base`
+ground shows the base surface whatever the page behind it is.
+
+**Grounds.** The view decides the grounds near the end of the page and,
+under the `"view"` rhythm, between the bands:
+
+- the hero keeps its own ground;
+- with a `callToAction`, the last band is on `base`
+  (`LANDING_VIEW_CLOSING_GROUND`) and the call to action on `inverse`
+  (`LANDING_VIEW_CALL_TO_ACTION_GROUND`), whatever the documents say;
+- a document authored with `sectionGroundRhythm: "view"` resolves with
+  `viewGrounds`, the ids of the sections that omitted `ground`; the view
+  assigns those, counting upward from the last band, so each takes the one
+  of `base` and `sunken` that differs from the band below it;
+- an explicit section ground wins, outside the closing pair.
+
+The call to action ends with a full-width hairline in the on-inverse line
+colour, so it stays a separate band above an `inverse` site footer.
+
+`planLandingViewGrounds(document, trailing, { callToAction })` returns the
+same plan as a `LandingViewGroundPlan`: each band's `id`, `role`
+(`LandingViewBandRole`), `ground` and whether the view `assigned` it, plus
+`repeats`, the neighbouring bands left on the same ground (only possible
+through explicit grounds). A consumer can assert `repeats` is empty in its
+own tests.
+
+What it does not do: check the contrast of the hero copy over your
+backdrop, restyle the action you pass, or decide the grounds of a site
+header or footer around it.
 
 ### `ContactView`
 
@@ -1053,7 +1156,7 @@ Props, in addition to the standard `div` attributes (minus `children` and
 
 - `brand`: the identity slot in the banner.
 - `headerAction`, `secondaryAction`, `nav` (optional): the header slots, as on
-  `LandingView`. `headerAction` is the banner call to action (Designer
+  `HeroView`. `headerAction` is the banner call to action (Designer
   `SiteHeader`'s `actions`), `secondaryAction` sits just before it and `nav`
   sits beside the brand. Each is absent from the markup when omitted, so the
   banner then holds the brand alone.
@@ -2011,7 +2114,7 @@ with no card, then `SiteFooter`. It does not use the shared
 [page layout](#page-layout) and has no chrome-free mode, so it cannot sit
 inside a [`SiteFrame`](#site-frame--siteframe): it would add a second banner,
 `<main>` and contentinfo. It is server-safe and has no summary or in-page
-action props; its banner takes the same header slots as `LandingView`.
+action props; its banner takes the same header slots as `HeroView`.
 
 **Inside a frame, use `DocumentView`.** A `LegalDocument` is a
 `StructuredDocument`, so a framed legal page renders it with `DocumentView`
@@ -2056,12 +2159,12 @@ Props, in addition to the standard `div` attributes and `style`:
 
 - `brand`: the brand node placed in the page chrome.
 - `headerAction`, `secondaryAction`, `nav` (optional): the header slots, as on
-  `LandingView`. `headerAction` is the banner call to action (Designer
+  `HeroView`. `headerAction` is the banner call to action (Designer
   `SiteHeader`'s `actions`), `secondaryAction` sits just before it and `nav`
   sits beside the brand. Each is absent from the markup when omitted.
 - `ground` (`"base"`, `"inverse"` or `"transparent"`, default `"base"`): the
   plate of both the header and the footer. `"transparent"` matches
-  `LandingView`.
+  `HeroView`.
 - `document`: the `LegalDocument` to render.
 - `resolveCopyId`: `@clossys/writer`'s ref-based `CopyResolver`
   (`(ref: CopyRef) => CopyResolution | undefined`) that turns every `CopyRef`
@@ -2143,7 +2246,7 @@ Breaking change: `BoundaryView` no longer renders `ErrorView`. `className`,
 owns `min-h-dvh`, instead of an inner `ErrorView` root, and the status, title
 and action are left-aligned in the column instead of centred.
 
-The deprecated header slots are the ones `LandingView`'s banner uses, so a
+The deprecated header slots are the ones `HeroView`'s banner uses, so a
 legacy boundary page can carry the same header as the rest of the site:
 
 - `headerAction` (optional): the banner call to action, passed to Designer
@@ -2153,7 +2256,7 @@ legacy boundary page can carry the same header as the rest of the site:
 - `nav` (optional): the primary navigation, beside the brand.
 - `ground` (`"base"`, `"inverse"` or `"transparent"`, default `"base"`): the
   plate of both the header and the footer. `"transparent"` matches
-  `LandingView`.
+  `HeroView`.
 
 Each slot is absent from the markup when omitted.
 
@@ -2267,10 +2370,10 @@ links its legal row to the public site's `/privacy` and `/terms` on
 
 | Safe inside `SiteFrame` (no `<main>` of their own when no chrome prop is passed) | Still render their own `<main>` |
 | --- | --- |
-| `AuthView`, `CaptureView`, `DocumentView`, `StatusView`; deprecated: `BoundaryView`, `ErrorView` | `LandingView`, `MarketingView`, `CollectionView`, `LegalView`, `ContactView`, `PackReviewView`, `BrandGuideView`, `SystemAuditView` |
+| `AuthView`, `CaptureView`, `DocumentView`, `StatusView`; deprecated: `BoundaryView`, `ErrorView` | `HeroView`, `LandingView`, `MarketingView`, `CollectionView`, `LegalView`, `ContactView`, `PackReviewView`, `BrandGuideView`, `SystemAuditView` |
 
-`SectionedView` renders its own `<main>` by default; pass `landmark="none"`
-to place it inside the frame. The built-in registry `AuthView` template
+`SectionedView` and `LandingView` render their own `<main>` by default; pass
+`landmark="none"` to place either inside the frame. The built-in registry `AuthView` template
 always passes `brand`, so a registry-rendered sign-in page is still the
 legacy full page, not a framed one.
 
@@ -2914,7 +3017,7 @@ Props:
   `rules`, `pitch` and `boilerplate` are `{ name, value }[]`; `faq` is
   `{ question, answer }[]`.
 - `headerAction`, `secondaryAction`, `nav` (optional): the header slots, as on
-  `LandingView`. `headerAction` is a banner call to action (Designer
+  `HeroView`. `headerAction` is a banner call to action (Designer
   `SiteHeader`'s `actions`), shown before the surface badge;
   `secondaryAction` sits just before it and `nav` sits beside the brand. Each
   is absent from the markup when omitted.
@@ -3843,7 +3946,7 @@ registry.ts` (never hardcoded in a renderer):
 - **Site** (`site-*.html`) — fixtures for `templates/site`'s routes,
   rendered through `MarketingView` for home/about/contact/privacy/terms and
   a direct `ErrorView` call for `not-found`. The template's own routes now
-  render `LandingView` for home, `ContactView` for contact and `LegalView`
+  render `HeroView` for home, `ContactView` for contact and `LegalView`
   for terms and privacy (`templates/site/web-route-manifest.json`), and the
   gallery keeps rendering the earlier fixtures until it is updated.
   `templates/site/app/robots.ts`/`templates/site/app/sitemap.ts` are Next.js

@@ -30,7 +30,7 @@ export interface LegalViewProps extends HTMLAttributes<HTMLDivElement> {
   nav?: ReactNode;
   /**
    * The plate of the header and footer, passed to both `SiteHeader` and
-   * `SiteFooter`. `"transparent"` matches `LandingView`'s chrome.
+   * `SiteFooter`. `"transparent"` matches `HeroView`'s chrome.
    * @default "base"
    */
   ground?: SiteChromeGround;

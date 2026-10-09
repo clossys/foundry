@@ -222,7 +222,7 @@ describe("siteSitemap", () => {
   });
 
   it("lists only routes it was given", () => {
-    const entries = siteSitemap({ target: "production", origin: ORIGIN, routes: [{ id: "/", template: "LandingView" }], legal: {} });
+    const entries = siteSitemap({ target: "production", origin: ORIGIN, routes: [{ id: "/", template: "HeroView" }], legal: {} });
     expect(entries).toEqual([{ url: `${ORIGIN}/` }]);
   });
 

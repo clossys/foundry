@@ -216,7 +216,7 @@ function assertStatusItems(value: unknown, path: string): void {
 
 /** Validates the direct resolved-model boundary before any Designer block receives props. */
 export function assertRenderableSectionedViewDocument(document: unknown): asserts document is ResolvedSectionedViewDocument {
-  if (!plain(document) || !closed(document, ["id", "sections", "resolutions"]) || !Object.hasOwn(document, "id") || !Object.hasOwn(document, "sections") || !Object.hasOwn(document, "resolutions") || !nonBlank(document.id)) throw new Error("document must be a closed object with a non-blank id, sections, and resolutions.");
+  if (!plain(document) || !closed(document, ["id", "sections", "resolutions", "viewGrounds"]) || !Object.hasOwn(document, "id") || !Object.hasOwn(document, "sections") || !Object.hasOwn(document, "resolutions") || !nonBlank(document.id)) throw new Error("document must be a closed object with a non-blank id, sections, and resolutions.");
   const candidate = document as { sections?: unknown; resolutions?: unknown };
   dense(candidate.sections, "sections");
   if (!Array.isArray(candidate.resolutions) || candidate.resolutions.length === 0) throw new Error("resolutions must be a non-empty array carrying CopyResolution provenance.");
@@ -311,22 +311,50 @@ export function assertRenderableSectionedViewDocument(document: unknown): assert
     }
   }
   if (heroCount > 1) throw new Error("sections must contain at most one hero section.");
+  if (Object.hasOwn(document, "viewGrounds")) {
+    const viewGrounds = (document as { viewGrounds?: unknown }).viewGrounds;
+    if (!Array.isArray(viewGrounds)) throw new Error("viewGrounds must be an array of section ids.");
+    const seen = new Set<string>();
+    for (let index = 0; index < viewGrounds.length; index += 1) {
+      const id: unknown = Object.hasOwn(viewGrounds, index) ? viewGrounds[index] : undefined;
+      if (!nonBlank(id) || !sectionIds.has(id) || seen.has(id)) throw new Error(`viewGrounds.${index} must name a section of this document once.`);
+      seen.add(id);
+    }
+  }
 }
 
 const SECTION_STACK = "flex flex-col gap-2xl py-2xl";
 const LANDMARKS: readonly SectionedViewLandmark[] = ["main", "none"];
 
+/** One validated section and the node its block rendered. */
+export interface RenderedSectionedViewSection {
+  readonly section: ResolvedSectionedViewSection;
+  readonly node: ReactNode;
+}
+
+/**
+ * Validate a resolved document and render each of its sections through
+ * `blocks`, without the stack wrapper or landmark. Package-internal: views
+ * that lay sections out themselves (`LandingView`) share the exact boundary
+ * and block mapping `SectionedView` uses. A hero renders as `h1` only at
+ * index 0, as in `SectionedView`; a view can pin the level in its own blocks.
+ */
+export function renderSectionedViewSections(document: unknown, blocks: SectionedViewBlockSet, options: SectionedViewRenderOptions, viewName = "SectionedView"): RenderedSectionedViewSection[] {
+  try {
+    assertRenderableSectionedViewDocument(document);
+    return document.sections.map((section, index) => ({ section, node: renderSection(section, index, blocks, options) }));
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "unknown invalid resolved model";
+    throw new RenderError("resolution-failed", `${viewName} refused an invalid resolved document: ${message}`);
+  }
+}
+
 export function createSectionedView(blocks: SectionedViewBlockSet) {
   const { Hero, FeatureGrid, Faq, OrderedStepSequence, StatusList, Stat, PricingTable, Testimonial } = blocks;
   return function SectionedView({ document, landmark = "main", resolveAssetId, prefersReducedMotion }: SectionedViewProps) {
-    let sections: ReactNode[];
-    try {
-      assertRenderableSectionedViewDocument(document);
-      if (!LANDMARKS.includes(landmark)) throw new Error(`landmark must be one of ${LANDMARKS.join(", ")}.`);
-      sections = document.sections.map((section, index) => renderSection(section, index, { Hero, FeatureGrid, Faq, OrderedStepSequence, StatusList, Stat, PricingTable, Testimonial }, { resolveAssetId, prefersReducedMotion }));
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "unknown invalid resolved model";
-      throw new RenderError("resolution-failed", `SectionedView refused an invalid resolved document: ${message}`);
+    const sections = renderSectionedViewSections(document, { Hero, FeatureGrid, Faq, OrderedStepSequence, StatusList, Stat, PricingTable, Testimonial }, { resolveAssetId, prefersReducedMotion }).map(({ node }) => node);
+    if (!LANDMARKS.includes(landmark)) {
+      throw new RenderError("resolution-failed", `SectionedView refused an invalid resolved document: landmark must be one of ${LANDMARKS.join(", ")}.`);
     }
     // No landmark role and no aria-label here: an accessible name on a plain
     // grouping element is not exposed, and the page that opted out of this
@@ -362,7 +390,7 @@ function renderActions(actions: readonly ResolvedSectionedViewAction[] | undefin
   ));
 }
 
-interface SectionedViewRenderOptions {
+export interface SectionedViewRenderOptions {
   resolveAssetId?: AssetResolver;
   prefersReducedMotion?: boolean;
 }

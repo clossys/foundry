@@ -268,7 +268,10 @@ describe("packed Publisher web React-server boundary", () => {
       const failure = error as { stdout?: string; stderr?: string; message?: string };
       legacyImportFailure = `${failure.stdout ?? ""}\n${failure.stderr ?? ""}\n${failure.message ?? ""}`;
     }
-    expect(legacyImportFailure).toMatch(/Faq/);
+    // Which gap Node reports first follows the module graph: a missing block
+    // (`Faq`), or the `./icons` entry (absent from this shape) that
+    // `LandingView` reads its scroll cue's glyph from.
+    expect(legacyImportFailure).toMatch(/Faq|Package subpath '\.\/icons' is not defined/);
 
     const corrected = install(publisherTarball, join(fixtureRoot, "corrected-range-consumer"));
     expect(corrected.ok).toBe(false);
@@ -411,8 +414,10 @@ describe("packed Publisher web React-server boundary", () => {
     }
     // Which missing Designer export Node reports first follows the module
     // graph's link order: `MarketingChapter`, or `SkipLink` now that the
-    // global-error document reaches the frame from the views barrel.
-    expect(formerRangeImportFailure).toMatch(/does not provide an export named '(?:MarketingChapter|SkipLink)'/);
+    // global-error document reaches the frame from the views barrel. Entry
+    // resolution precedes linking, so the `./icons` entry this shape lacks
+    // (read by `LandingView`) can surface first.
+    expect(formerRangeImportFailure).toMatch(/does not provide an export named '(?:MarketingChapter|SkipLink)'|Package subpath '\.\/icons' is not defined/);
 
     // The corrected `^0.4.12` range (the packed manifest's actual declared
     // range) refuses to install against this same 0.4.7-shaped tarball at

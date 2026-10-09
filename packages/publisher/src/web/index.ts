@@ -97,8 +97,10 @@ export type {
   StubContactDelivery,
 } from "./contact/index.js";
 
-export { LandingView } from "./views/index.js";
-export type { LandingViewFooter, LandingViewGround, LandingViewProps } from "./views/index.js";
+export { HeroView, LandingView } from "./views/index.js";
+export type { HeroViewFooter, HeroViewGround, HeroViewProps, LandingViewCallToAction, LandingViewHeader, LandingViewProps } from "./views/index.js";
+export { LANDING_VIEW_CALL_TO_ACTION_GROUND, LANDING_VIEW_CLOSING_GROUND, planLandingViewGrounds } from "./views/index.js";
+export type { LandingViewBandGround, LandingViewBandRole, LandingViewGroundPlan, LandingViewGroundRepeat } from "./views/index.js";
 export { ContactView } from "./views/index.js";
 export type { ContactViewCopy, ContactViewDevPreview, ContactViewProps, ContactViewTopic, ContactViewValues } from "./views/index.js";
 export { SignInForm } from "./views/index.js";

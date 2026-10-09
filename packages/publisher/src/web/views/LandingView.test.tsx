@@ -1,446 +1,227 @@
 // @vitest-environment jsdom
 
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
 import { renderToStaticMarkup } from "react-dom/server";
-import { SiteFooter, SiteHeader } from "@clossys/designer/shell/server";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
+import type { ResolvedSectionedViewDocument } from "../../core/sectioned-view.js";
 import { LandingView } from "./LandingView.js";
+import { planLandingViewGrounds } from "./landingViewGrounds.js";
 import type { LandingViewProps } from "./LandingView.js";
 import * as webEntry from "../index.js";
 import * as webServerEntry from "../server.js";
 
-// Placeholder markers only: every string is an obviously-fake sentinel, so an
-// assertion can tell exactly which prop a text node came from.
+// Placeholder markers only: every string is an obviously-fake sentinel.
 
-const LEGAL = {
-  entity: "ENTITY-SENTINEL",
-  links: [
-    { label: "LINK-ONE-SENTINEL", href: "/one" },
-    { label: "LINK-TWO-SENTINEL", href: "/two" },
+const RESOLUTIONS: ResolvedSectionedViewDocument["resolutions"] = [
+  { ref: { id: "acme.home" }, text: "HERO-SENTINEL", recordId: "acme", revision: "1", locale: "en", source: { kind: "consumer", reference: "fixture" }, entryId: "acme.home" },
+];
+
+const PAGE: ResolvedSectionedViewDocument = {
+  id: "acme-page",
+  resolutions: RESOLUTIONS,
+  sections: [
+    { id: "hero", kind: "hero", ground: "inverse", eyebrow: "EYEBROW-SENTINEL", heading: "HERO-SENTINEL", description: "LEDE-SENTINEL" },
+    { id: "features", kind: "feature-grid", ground: "sunken", heading: "FEATURES-SENTINEL", items: [{ id: "one", heading: "ONE-SENTINEL" }] },
   ],
-  linksLabel: "LINKS-NAME-SENTINEL",
 };
 
-const FULL: LandingViewProps = {
-  brand: <a href="/">BRAND-SENTINEL</a>,
-  headerAction: <a href="/go">HEADER-ACTION-SENTINEL</a>,
-  eyebrow: "EYEBROW-SENTINEL",
-  heading: "HEADING-SENTINEL",
-  description: "DESCRIPTION-SENTINEL",
-  heroAction: <a href="/hero">HERO-ACTION-SENTINEL</a>,
-  media: <div data-media="">MEDIA-SENTINEL</div>,
-  backdrop: <div data-backdrop="">BACKDROP-SENTINEL</div>,
-  legal: LEGAL,
+const SHARED: ResolvedSectionedViewDocument = {
+  id: "acme-shared",
+  resolutions: RESOLUTIONS,
+  sections: [{ id: "faq", kind: "faq", ground: "base", heading: "FAQ-SENTINEL", items: [{ id: "q", question: "QUESTION-SENTINEL", answer: "ANSWER-SENTINEL" }] }],
 };
 
-const MINIMAL: LandingViewProps = {
-  brand: <a href="/">BRAND-SENTINEL</a>,
-  heading: "HEADING-SENTINEL",
-  legal: LEGAL,
+const CALL_TO_ACTION: LandingViewProps["callToAction"] = {
+  id: "close",
+  heading: "CLOSE-SENTINEL",
+  description: "CLOSE-LEDE-SENTINEL",
+  action: <a href="/go">ACTION-SENTINEL</a>,
 };
-
-function markup(props: LandingViewProps): string {
-  return renderToStaticMarkup(<LandingView {...props} />);
-}
 
 function dom(props: LandingViewProps): HTMLElement {
   const host = document.createElement("div");
-  host.innerHTML = markup(props);
+  host.innerHTML = renderToStaticMarkup(<LandingView {...props} />);
   return host;
 }
 
-beforeEach(() => {
-  vi.useFakeTimers();
-  vi.setSystemTime(new Date("2031-06-15T12:00:00Z"));
-});
-
-afterEach(() => {
-  vi.useRealTimers();
-});
-
-describe("LandingView golden markup", () => {
-  it("renders every slot", () => {
-    expect(markup(FULL)).toMatchInlineSnapshot(`"<div class="relative flex min-h-dvh flex-col text-ink-primary"><div aria-hidden="true" class="pointer-events-none absolute inset-0 overflow-hidden"><div data-backdrop="">BACKDROP-SENTINEL</div></div><header class="py-sm" style="position:relative;z-index:var(--ui-z-shell, 20)"><div class="mx-auto flex w-full flex-wrap items-center justify-between gap-md" style="padding-inline:var(--ui-width-page-padding-x, clamp(16px, 4vw, 48px))"><div class="flex items-center gap-lg"><a href="/">BRAND-SENTINEL</a></div><div class="flex items-center gap-sm"><a href="/go">HEADER-ACTION-SENTINEL</a></div></div></header><main class="relative flex flex-1 flex-col items-center justify-center px-lg py-2xl"><div class="flex w-full flex-col gap-md items-center text-center"><p class="text-caption uppercase tracking-label text-ink-muted">EYEBROW-SENTINEL</p><h1 class="text-display-l font-display text-ink-primary">HEADING-SENTINEL</h1><p class="text-body-l max-w-display text-ink-secondary">DESCRIPTION-SENTINEL</p><div class="flex flex-wrap items-center gap-sm"><a href="/hero">HERO-ACTION-SENTINEL</a></div><div class="w-full max-w-display"><div data-media="">MEDIA-SENTINEL</div></div></div></main><footer class="text-ink-primary py-lg" style="position:relative;z-index:var(--ui-z-shell, 20)"><div class="mx-auto flex w-full flex-col gap-lg" style="padding-inline:var(--ui-width-page-padding-x, clamp(16px, 4vw, 48px))"><div class="flex flex-col gap-sm text-body-s text-ink-secondary tablet:flex-row tablet:items-center tablet:justify-between"><div class="flex w-full flex-col items-center gap-sm text-center desktop:flex-row-reverse desktop:flex-nowrap desktop:items-center desktop:justify-between desktop:text-start"><nav aria-label="LINKS-NAME-SENTINEL"><ul role="list" class="m-0 flex list-none flex-wrap items-center justify-center gap-x-sm p-0 desktop:flex-nowrap desktop:justify-end"><li><a href="/one" class="inline-flex items-center justify-center px-xs text-inherit underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent" style="min-height:var(--ui-layout-tap-target, 44px);min-width:var(--ui-layout-tap-target, 44px)">LINK-ONE-SENTINEL</a></li><li><a href="/two" class="inline-flex items-center justify-center px-xs text-inherit underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent" style="min-height:var(--ui-layout-tap-target, 44px);min-width:var(--ui-layout-tap-target, 44px)">LINK-TWO-SENTINEL</a></li></ul></nav><p class="m-0 desktop:whitespace-nowrap">© 2031 ENTITY-SENTINEL</p></div></div></div></footer></div>"`);
-  });
-
-  it("renders only the heading and legal", () => {
-    expect(markup(MINIMAL)).toMatchInlineSnapshot(`"<div class="relative flex min-h-dvh flex-col text-ink-primary"><header class="py-sm" style="position:relative;z-index:var(--ui-z-shell, 20)"><div class="mx-auto flex w-full flex-wrap items-center justify-between gap-md" style="padding-inline:var(--ui-width-page-padding-x, clamp(16px, 4vw, 48px))"><div class="flex items-center gap-lg"><a href="/">BRAND-SENTINEL</a></div></div></header><main class="relative flex flex-1 flex-col items-center justify-center px-lg py-2xl"><div class="flex w-full flex-col gap-md items-center text-center"><h1 class="text-display-l font-display text-ink-primary">HEADING-SENTINEL</h1></div></main><footer class="text-ink-primary py-lg" style="position:relative;z-index:var(--ui-z-shell, 20)"><div class="mx-auto flex w-full flex-col gap-lg" style="padding-inline:var(--ui-width-page-padding-x, clamp(16px, 4vw, 48px))"><div class="flex flex-col gap-sm text-body-s text-ink-secondary tablet:flex-row tablet:items-center tablet:justify-between"><div class="flex w-full flex-col items-center gap-sm text-center desktop:flex-row-reverse desktop:flex-nowrap desktop:items-center desktop:justify-between desktop:text-start"><nav aria-label="LINKS-NAME-SENTINEL"><ul role="list" class="m-0 flex list-none flex-wrap items-center justify-center gap-x-sm p-0 desktop:flex-nowrap desktop:justify-end"><li><a href="/one" class="inline-flex items-center justify-center px-xs text-inherit underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent" style="min-height:var(--ui-layout-tap-target, 44px);min-width:var(--ui-layout-tap-target, 44px)">LINK-ONE-SENTINEL</a></li><li><a href="/two" class="inline-flex items-center justify-center px-xs text-inherit underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent" style="min-height:var(--ui-layout-tap-target, 44px);min-width:var(--ui-layout-tap-target, 44px)">LINK-TWO-SENTINEL</a></li></ul></nav><p class="m-0 desktop:whitespace-nowrap">© 2031 ENTITY-SENTINEL</p></div></div></div></footer></div>"`);
-  });
-});
-
-describe("LandingView landmarks and headings", () => {
-  it("has exactly one h1 equal to heading", () => {
-    const headings = dom(FULL).querySelectorAll("h1");
-    expect(headings).toHaveLength(1);
-    expect(headings[0]?.textContent).toBe("HEADING-SENTINEL");
-  });
-
-  it("has one banner, one main and one contentinfo landmark", () => {
-    const root = dom(FULL);
-    expect(root.querySelectorAll("header")).toHaveLength(1);
-    expect(root.querySelectorAll("main")).toHaveLength(1);
-    expect(root.querySelectorAll("footer")).toHaveLength(1);
-    expect(root.querySelector("main")?.closest("header, footer")).toBeNull();
-    expect(root.querySelector("header")?.closest("main")).toBeNull();
-    expect(root.querySelector("footer")?.closest("main")).toBeNull();
-  });
-
-  it("places the header action inside the header only", () => {
-    const root = dom(FULL);
-    const header = root.querySelector("header")!;
-    expect(header.textContent).toContain("HEADER-ACTION-SENTINEL");
-    expect(root.querySelector("main")!.textContent).not.toContain("HEADER-ACTION-SENTINEL");
-    expect(root.querySelector("footer")!.textContent).not.toContain("HEADER-ACTION-SENTINEL");
-  });
-
-  it("renders heroAction only when supplied, and only inside main", () => {
-    const withAction = dom(FULL);
-    expect(withAction.querySelector("main")!.textContent).toContain("HERO-ACTION-SENTINEL");
-    expect(withAction.querySelector("header")!.textContent).not.toContain("HERO-ACTION-SENTINEL");
-    expect(markup({ ...FULL, heroAction: undefined })).not.toContain("HERO-ACTION-SENTINEL");
-    expect(markup({ ...FULL, heroAction: undefined })).toContain("HEADER-ACTION-SENTINEL");
-  });
-
-  it("fills the viewport with a flex column root", () => {
-    const root = dom(FULL).firstElementChild!;
-    expect(root.className).toContain("min-h-dvh");
-    expect(root.className).toContain("flex-col");
-  });
-
-  it("centres the hero both ways inside main", () => {
-    const main = dom(FULL).querySelector("main")!;
-    expect(main.className).toContain("flex-1");
-    expect(main.className).toContain("items-center");
-    expect(main.className).toContain("justify-center");
-  });
-});
-
-describe("LandingView align and media", () => {
-  it("defaults to centre", () => {
-    expect(markup(FULL)).toBe(markup({ ...FULL, align: "center" }));
-  });
-
-  it("changes only its own classes between centre and start", () => {
-    const centre = markup({ ...FULL, align: "center" });
-    const start = markup({ ...FULL, align: "start" });
-    expect(centre).not.toBe(start);
-    const strip = (html: string) => html.replace(/class="[^"]*"/g, 'class=""');
-    expect(strip(centre)).toBe(strip(start));
-    const classAt = (html: string) => [...html.matchAll(/class="([^"]*)"/g)].map((m) => m[1]);
-    const a = classAt(centre);
-    const b = classAt(start);
-    expect(a).toHaveLength(b.length);
-    const changed = a.map((value, i) => [value, b[i]]).filter(([x, y]) => x !== y);
-    expect(changed.length).toBeGreaterThan(0);
-    expect(changed.length).toBeLessThan(a.length);
-    const heroClass = (props: LandingViewProps) => dom(props).querySelector("main > div")!.className;
-    expect(heroClass({ ...FULL, align: "center" })).toContain("text-center");
-    expect(heroClass({ ...FULL, align: "start" })).toContain("text-start");
-    expect(heroClass({ ...FULL, align: "start" })).not.toContain("text-center");
-  });
-
-  it("renders media after the description", () => {
-    const html = markup(FULL);
-    expect(html.indexOf("MEDIA-SENTINEL")).toBeGreaterThan(html.indexOf("DESCRIPTION-SENTINEL"));
-  });
-});
-
-describe("LandingView backdrop", () => {
-  it("is aria-hidden, pointer-events-none and precedes the header", () => {
-    const root = dom(FULL).firstElementChild!;
-    const backdrop = root.firstElementChild!;
-    expect(backdrop.getAttribute("aria-hidden")).toBe("true");
-    expect(backdrop.className).toContain("pointer-events-none");
-    expect(backdrop.className).toContain("absolute");
-    expect(backdrop.textContent).toBe("BACKDROP-SENTINEL");
-    expect(backdrop.nextElementSibling?.tagName).toBe("HEADER");
-  });
-
-  it("is absent from the markup when not supplied", () => {
-    const html = markup(MINIMAL);
-    expect(html).not.toContain("aria-hidden");
-    expect(html).not.toContain("pointer-events-none");
-    expect(dom(MINIMAL).firstElementChild!.firstElementChild!.tagName).toBe("HEADER");
-  });
-});
-
-describe("LandingView chrome", () => {
-  const FORBIDDEN = [/(^|\s)(?:[a-z-]+:)*bg-/, /(^|\s)(?:[a-z-]+:)*border(?:-|\s|$)/, /(^|\s)(?:[a-z-]+:)*max-w-/];
-
-  function chromeElements(root: HTMLElement): Element[] {
-    const header = root.querySelector("header")!;
-    const footer = root.querySelector("footer")!;
-    return [header, ...header.querySelectorAll("*"), footer, ...footer.querySelectorAll("*")];
-  }
-
-  it("carries no background, border or max-width class, and no maxWidth style", () => {
-    for (const element of chromeElements(dom(FULL))) {
-      const className = element.getAttribute("class") ?? "";
-      for (const pattern of FORBIDDEN) {
-        expect(className, `<${element.tagName.toLowerCase()} class="${className}">`).not.toMatch(pattern);
-      }
-      const style = element.getAttribute("style") ?? "";
-      expect(style).not.toMatch(/max-width/i);
-      expect(style).not.toMatch(/border/i);
-      expect(style).not.toMatch(/background/i);
-    }
-  });
-
-  it("feeds the legal row only from legal, so every text node comes from props", () => {
-    const footer = dom(FULL).querySelector("footer")!;
-    const walker = document.createTreeWalker(footer, NodeFilter.SHOW_TEXT);
-    const texts: string[] = [];
-    for (let node = walker.nextNode(); node; node = walker.nextNode()) {
-      const text = node.textContent?.trim();
-      if (text) texts.push(text);
-    }
-    expect(texts.sort()).toEqual(["© 2031 ENTITY-SENTINEL", "LINK-ONE-SENTINEL", "LINK-TWO-SENTINEL"].sort());
-    expect(footer.querySelector("nav")?.getAttribute("aria-label")).toBe("LINKS-NAME-SENTINEL");
-  });
-
-  it("renders no text of its own beyond the props", () => {
-    const root = dom(FULL);
-    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
-    const texts: string[] = [];
-    for (let node = walker.nextNode(); node; node = walker.nextNode()) {
-      const text = node.textContent?.trim();
-      if (text) texts.push(text);
-    }
-    for (const text of texts) {
-      expect(text).toMatch(/SENTINEL/);
-    }
-  });
-
-  it("passes rest props through to the root", () => {
-    const html = renderToStaticMarkup(<LandingView {...MINIMAL} id="landing-root" data-probe="yes" className="extra" />);
-    expect(html).toContain('id="landing-root"');
-    expect(html).toContain('data-probe="yes"');
-    expect(html).toMatch(/class="[^"]*extra/);
-  });
-});
-
-const COMBINATIONS = [
-  { ground: "base", footer: "transparent" },
-  { ground: "base", footer: "surface" },
-  { ground: "inverse", footer: "transparent" },
-  { ground: "inverse", footer: "surface" },
-] as const satisfies ReadonlyArray<Pick<LandingViewProps, "ground" | "footer">>;
-
-const BASE_INK = /(^|\s)text-ink-(primary|secondary|muted)(\s|$)/;
-
-function classesOf(element: Element): string[] {
-  return Array.from(element.classList);
-}
-
-describe("LandingView ground and footer defaults", () => {
-  it("renders the same markup when ground and footer are passed as their defaults", () => {
-    for (const props of [FULL, MINIMAL]) {
-      expect(markup({ ...props, ground: "base", footer: "transparent" })).toBe(markup(props));
-      expect(markup({ ...props, ground: "base" })).toBe(markup(props));
-      expect(markup({ ...props, footer: "transparent" })).toBe(markup(props));
-    }
-  });
-
-  it("paints no surface on the root by default", () => {
-    expect(dom(FULL).firstElementChild!.className).toBe("relative flex min-h-dvh flex-col text-ink-primary");
-  });
-});
-
-describe("LandingView inverse ground", () => {
-  const inverse = (props: LandingViewProps = FULL) => dom({ ...props, ground: "inverse" });
-
-  it("paints the inverse surface and the on-inverse ink on the page root", () => {
-    const root = inverse().firstElementChild!;
-    expect(classesOf(root)).toEqual(expect.arrayContaining(["bg-surface-inverse", "text-ink-on-inverse"]));
-    expect(root.className).not.toMatch(BASE_INK);
-  });
-
-  it("gives every hero text role the on-inverse ink", () => {
-    const main = inverse().querySelector("main")!;
-    const [eyebrow, description] = Array.from(main.querySelectorAll("p"));
-    expect(eyebrow?.textContent).toBe("EYEBROW-SENTINEL");
-    expect(classesOf(eyebrow!)).toContain("text-ink-on-inverse-muted");
-    expect(classesOf(main.querySelector("h1")!)).toContain("text-ink-on-inverse");
-    expect(description?.textContent).toBe("DESCRIPTION-SENTINEL");
-    expect(classesOf(description!)).toContain("text-ink-on-inverse-muted");
-  });
-
-  it("gives the banner the on-inverse ink by inheritance, with no ink of its own", () => {
-    const root = inverse();
-    const header = root.querySelector("header")!;
-    for (const element of [header, ...header.querySelectorAll("*")]) {
-      expect(element.getAttribute("class") ?? "").not.toMatch(/(^|\s)text-ink-/);
-    }
-    expect(header.parentElement!.classList).toContain("text-ink-on-inverse");
-    expect(header.textContent).toContain("BRAND-SENTINEL");
-    expect(header.textContent).toContain("HEADER-ACTION-SENTINEL");
-  });
-
-  it("gives the footer and its legal row the on-inverse ink", () => {
-    const footer = inverse().querySelector("footer")!;
-    expect(classesOf(footer)).toContain("text-ink-on-inverse");
-    const legalRow = footer.querySelector("nav")!.closest("footer > div > div")!;
-    expect(classesOf(legalRow)).toContain("text-ink-on-inverse-muted");
-  });
-
-  it("leaves no base ink class anywhere on the page", () => {
-    for (const props of [FULL, MINIMAL]) {
-      for (const element of inverse(props).querySelectorAll("*")) {
-        expect(element.getAttribute("class") ?? "", `<${element.tagName.toLowerCase()}>`).not.toMatch(BASE_INK);
-      }
-    }
-  });
-
-  it("passes Designer's transparent-inverse chrome ground to SiteHeader and SiteFooter", () => {
-    const root = inverse();
-    expect(root.querySelector("header")!.outerHTML).toBe(
-      renderToStaticMarkup(<SiteHeader ground="transparent-inverse" brand={FULL.brand} actions={FULL.headerAction} />),
-    );
-    expect(root.querySelector("footer")!.outerHTML).toBe(
-      renderToStaticMarkup(<SiteFooter ground="transparent-inverse" secondary={<SiteFooter.Legal {...LEGAL} />} />),
-    );
-  });
-
-  it("keeps the banner and footer plate-less over the backdrop", () => {
-    const root = inverse();
-    for (const chrome of [root.querySelector("header")!, root.querySelector("footer")!]) {
-      for (const element of [chrome, ...chrome.querySelectorAll("*")]) {
-        expect(element.getAttribute("class") ?? "").not.toMatch(/(^|\s)(?:[a-z-]+:)*(bg-|border(-|\s|$))/);
-        expect(element.getAttribute("style") ?? "").not.toMatch(/border|background/i);
-      }
-    }
-  });
-
-  it("changes only classes: the structure and text match the base ground", () => {
-    const strip = (html: string) => html.replace(/class="[^"]*"/g, 'class=""');
-    expect(strip(markup({ ...FULL, ground: "inverse" }))).toBe(strip(markup(FULL)));
-  });
-});
-
-describe("LandingView surface footer", () => {
-  for (const ground of ["base", "inverse"] as const) {
-    describe(`on the ${ground} ground`, () => {
-      const surface = () => dom({ ...FULL, ground, footer: "surface" });
-      const transparent = () => dom({ ...FULL, ground });
-
-      it("paints Designer's base chrome plate with a hairline on the top edge only", () => {
-        const footer = surface().querySelector("footer")!;
-        expect(classesOf(footer)).toEqual(expect.arrayContaining(["bg-surface-raised", "border-t", "border-line-base"]));
-        expect(footer.className).not.toMatch(/(^|\s)border-(b|l|r|x|y|s|e)(\s|$)/);
-        const style = footer.getAttribute("style") ?? "";
-        expect(style).toContain("border-top-width:var(--ui-border-hairline");
-        expect(style).not.toMatch(/border-(bottom|left|right|inline|block)/);
-        expect(footer.outerHTML).toBe(
-          renderToStaticMarkup(<SiteFooter ground="base" secondary={<SiteFooter.Legal {...LEGAL} />} />),
-        );
-      });
-
-      it("uses the base ink on its own plate", () => {
-        const footer = surface().querySelector("footer")!;
-        expect(classesOf(footer)).toContain("text-ink-primary");
-        expect(classesOf(footer.querySelector("nav")!.closest("footer > div > div")!)).toContain("text-ink-secondary");
-        expect(footer.outerHTML).not.toContain("on-inverse");
-      });
-
-      it("runs the full width and stays above the backdrop", () => {
-        const root = surface().firstElementChild!;
-        const footer = root.querySelector("footer")!;
-        for (const element of [footer, ...footer.querySelectorAll("*")]) {
-          expect(element.getAttribute("class") ?? "").not.toMatch(/(^|\s)(?:[a-z-]+:)*max-w-/);
-          expect(element.getAttribute("style") ?? "").not.toMatch(/max-width/i);
-        }
-        const style = footer.getAttribute("style") ?? "";
-        expect(style).toContain("position:relative");
-        expect(style).toContain("z-index:var(--ui-z-shell");
-        expect(root.firstElementChild!.getAttribute("aria-hidden")).toBe("true");
-        expect(root.lastElementChild).toBe(footer);
-      });
-
-      it("leaves the banner, the hero and the page root unchanged", () => {
-        const a = surface().firstElementChild!;
-        const b = transparent().firstElementChild!;
-        expect(a.querySelector("header")!.outerHTML).toBe(b.querySelector("header")!.outerHTML);
-        expect(a.querySelector("main")!.outerHTML).toBe(b.querySelector("main")!.outerHTML);
-        expect(a.className).toBe(b.className);
-      });
-    });
-  }
-});
-
-describe("LandingView guarantees in every ground and footer combination", () => {
-  for (const combination of COMBINATIONS) {
-    const label = `ground ${combination.ground}, footer ${combination.footer}`;
-
-    it(`keeps one banner, one main and one contentinfo landmark (${label})`, () => {
-      for (const props of [FULL, MINIMAL]) {
-        const root = dom({ ...props, ...combination });
-        expect(root.querySelectorAll("header")).toHaveLength(1);
-        expect(root.querySelectorAll("main")).toHaveLength(1);
-        expect(root.querySelectorAll("footer")).toHaveLength(1);
-        expect(root.querySelector("main")?.closest("header, footer")).toBeNull();
-        expect(root.querySelector("header")?.closest("main, footer")).toBeNull();
-        expect(root.querySelector("footer")?.closest("main, header")).toBeNull();
-      }
-    });
-
-    it(`keeps the heading as the only h1 (${label})`, () => {
-      const headings = dom({ ...FULL, ...combination }).querySelectorAll("h1");
-      expect(headings).toHaveLength(1);
-      expect(headings[0]?.textContent).toBe("HEADING-SENTINEL");
-    });
-
-    it(`keeps the backdrop first, inert and aria-hidden (${label})`, () => {
-      const root = dom({ ...FULL, ...combination }).firstElementChild!;
-      const backdrop = root.firstElementChild!;
-      expect(backdrop.getAttribute("aria-hidden")).toBe("true");
-      expect(backdrop.className).toContain("pointer-events-none");
-      expect(backdrop.className).toContain("absolute");
-      expect(backdrop.textContent).toBe("BACKDROP-SENTINEL");
-      expect(backdrop.nextElementSibling?.tagName).toBe("HEADER");
-      expect(markup({ ...MINIMAL, ...combination })).not.toContain("aria-hidden");
-    });
-
-    it(`keeps the banner plate-less and full width (${label})`, () => {
-      const header = dom({ ...FULL, ...combination }).querySelector("header")!;
-      for (const element of [header, ...header.querySelectorAll("*")]) {
-        expect(element.getAttribute("class") ?? "").not.toMatch(/(^|\s)(?:[a-z-]+:)*(bg-|max-w-|border(-|\s|$))/);
-        expect(element.getAttribute("style") ?? "").not.toMatch(/border|background|max-width/i);
-      }
-    });
-  }
-});
-
-describe("LandingView export surface", () => {
-  it("is exported from both web entries", () => {
+describe("LandingView", () => {
+  it("is exported from both web entries, distinct from HeroView", () => {
     expect(webEntry.LandingView).toBe(LandingView);
     expect(webServerEntry.LandingView).toBeTypeOf("function");
+    expect(webEntry.HeroView).toBeDefined();
+    expect(webEntry.HeroView).not.toBe(LandingView);
+  });
+
+  it("renders one h1 (the hero section's), bands at h2, and the call to action as a centred h2 band", () => {
+    const root = dom({ document: PAGE, trailing: [SHARED], callToAction: CALL_TO_ACTION });
+    const h1s = root.querySelectorAll("h1");
+    expect(h1s).toHaveLength(1);
+    expect(h1s[0]?.textContent).toBe("HERO-SENTINEL");
+    const h2s = [...root.querySelectorAll("h2")].map((node) => node.textContent);
+    expect(h2s).toEqual(["FEATURES-SENTINEL", "FAQ-SENTINEL", "CLOSE-SENTINEL"]);
+    const close = root.querySelector("[data-landing-call-to-action]");
+    expect(close?.id).toBe("close");
+    expect(close?.querySelector(".text-center")).not.toBeNull();
+    expect(close?.querySelectorAll("a")).toHaveLength(1);
+  });
+
+  it("renders a hero section in a trailing document as an h2, never a second h1", () => {
+    const closing: ResolvedSectionedViewDocument = { ...SHARED, id: "acme-closing", sections: [{ id: "closing", kind: "hero", ground: "base", heading: "CLOSING-SENTINEL" }] };
+    const root = dom({ document: PAGE, trailing: [closing] });
+    expect(root.querySelectorAll("h1")).toHaveLength(1);
+    expect([...root.querySelectorAll("h2")].map((node) => node.textContent)).toContain("CLOSING-SENTINEL");
+  });
+
+  it("puts every band in the same measure: one column, full-bleed grounds", () => {
+    const root = dom({ document: PAGE, trailing: [SHARED], callToAction: CALL_TO_ACTION, measure: "content" });
+    const frames = [...root.querySelectorAll("[data-landing-view] > section")];
+    expect(frames).toHaveLength(4);
+    const widths = new Set(frames.map((frame) => (frame.firstElementChild as HTMLElement | null)?.style.maxWidth));
+    expect(widths.size).toBe(1);
+    expect([...widths][0]).toBeTruthy();
+    expect(frames[0]?.className).toContain("bg-surface-inverse");
+    expect(frames[1]?.className).toContain("bg-surface-sunken");
+  });
+
+  it("gives every band one anatomy: a header group held to the prose measure, then the section's module and anything placed after it", () => {
+    const root = dom({ document: PAGE, trailing: [SHARED], afterSection: { features: <figure data-after="">AFTER</figure> } });
+    const features = root.querySelector("#features") as HTMLElement;
+    expect(features.hasAttribute("data-content-section")).toBe(true);
+    const header = features.querySelector("[data-content-section-header]") as HTMLElement;
+    expect(header.style.maxWidth).toBe("var(--ui-width-prose-max, 48rem)");
+    expect(header.querySelector("h2")?.textContent).toBe("FEATURES-SENTINEL");
+    const modules = features.querySelector("[data-content-section-modules]") as HTMLElement;
+    expect(modules.children).toHaveLength(2);
+    expect(modules.querySelector("h2")).toBeNull();
+    expect(modules.lastElementChild?.hasAttribute("data-after")).toBe(true);
+    const faq = root.querySelector("#faq") as HTMLElement;
+    expect(faq.querySelector("[data-content-section-header] h2")?.textContent).toBe("FAQ-SENTINEL");
+    expect(faq.querySelector("[data-content-section-modules] details")).not.toBeNull();
+  });
+
+  it("renders a hero section in a band as a header group, not a second display heading", () => {
+    const closing: ResolvedSectionedViewDocument = { ...SHARED, id: "acme-closing", sections: [{ id: "closing", kind: "hero", ground: "base", eyebrow: "E-SENTINEL", heading: "CLOSING-SENTINEL", description: "D-SENTINEL" }] };
+    const band = dom({ document: PAGE, trailing: [closing] }).querySelector("#closing") as HTMLElement;
+    const heading = band.querySelector("h2") as HTMLElement;
+    expect(heading.className).toContain("text-h2");
+    expect(heading.className).not.toContain("text-display");
+  });
+
+  it("holds the centred hero and call to action copy to the same prose measure", () => {
+    const root = dom({ document: PAGE, callToAction: CALL_TO_ACTION });
+    const heroCopy = root.querySelector("[data-landing-hero] h1")?.parentElement as HTMLElement;
+    const closeCopy = root.querySelector("[data-landing-call-to-action] h2")?.parentElement as HTMLElement;
+    expect(heroCopy.style.maxWidth).toBe("var(--ui-width-prose-max, 48rem)");
+    expect(closeCopy.style.maxWidth).toBe(heroCopy.style.maxWidth);
+  });
+
+  it("centres the hero copy by default and lines it up at the start on request", () => {
+    expect(dom({ document: PAGE }).querySelector("[data-landing-hero] .text-center")).not.toBeNull();
+    expect(dom({ document: PAGE, align: "start" }).querySelector("[data-landing-hero] .text-center")).toBeNull();
+  });
+
+  it("keeps the backdrop and the cue inert, and peeks only with content below an overlay header", () => {
+    const root = dom({ document: PAGE, trailing: [SHARED], backdrop: <div data-backdrop="">BACKDROP</div> });
+    const backdrop = root.querySelector("[data-landing-backdrop]");
+    expect(backdrop?.getAttribute("aria-hidden")).toBe("true");
+    expect(backdrop?.className).toContain("pointer-events-none");
+    const cue = root.querySelector("[data-landing-cue]");
+    expect(cue?.getAttribute("aria-hidden")).toBe("true");
+    expect((root.querySelector("[data-landing-hero]") as HTMLElement).style.minHeight).toContain("calc(");
+
+    const alone = dom({ document: { ...PAGE, sections: [PAGE.sections[0]!] } });
+    expect(alone.querySelector("[data-landing-cue]")).toBeNull();
+    expect((alone.querySelector("[data-landing-hero]") as HTMLElement).style.minHeight).toBe("100dvh");
+
+    expect(dom({ document: PAGE, peek: false }).querySelector("[data-landing-cue]")).toBeNull();
+    const reserved = dom({ document: PAGE, header: "reserved" });
+    expect(reserved.querySelector("[data-landing-cue]")).toBeNull();
+    expect((reserved.querySelector("[data-landing-hero]") as HTMLElement).style.minHeight).toBe("");
+  });
+
+  it("places afterSection content inside that section's band, and refuses an unknown key", () => {
+    const root = dom({ document: PAGE, afterSection: { features: <figure data-after="">AFTER</figure> } });
+    const band = root.querySelector("#features")?.closest("[data-landing-view] > section");
+    expect(band?.querySelector("[data-after]")).not.toBeNull();
+    expect(() => dom({ document: PAGE, afterSection: { missing: <span /> } })).toThrow(/afterSection\.missing/);
+  });
+
+  it("refuses a document that does not open with a hero, and a section id rendered twice", () => {
+    expect(() => dom({ document: SHARED })).toThrow(/first section must be a hero/);
+    expect(() => dom({ document: PAGE, trailing: [SHARED, { ...SHARED, id: "again" }] })).toThrow(/section faq/);
+  });
+
+  it("renders the main landmark by default, or a div inside a frame's own main", () => {
+    expect(dom({ document: PAGE, id: "main-content" }).querySelector("main#main-content")).not.toBeNull();
+    const nested = dom({ document: PAGE, landmark: "none" });
+    expect(nested.querySelector("main")).toBeNull();
+    expect(nested.querySelector("div[data-landing-view]")).not.toBeNull();
+  });
+
+  it("fixes the closing pair: the last band on base, the call to action on inverse with a hairline at its foot", () => {
+    const root = dom({ document: PAGE, trailing: [{ ...SHARED, sections: [{ ...SHARED.sections[0]!, ground: "sunken" }] }], callToAction: CALL_TO_ACTION });
+    const frames = [...root.querySelectorAll("[data-landing-view] > section")];
+    expect(frames.map((frame) => frame.getAttribute("data-landing-ground"))).toEqual(["inverse", "sunken", "base", "inverse"]);
+    expect(root.querySelector("[data-landing-view]")?.className).toContain("bg-surface-base");
+    const close = root.querySelector("[data-landing-call-to-action]");
+    expect(close?.className).toContain("bg-surface-inverse");
+    expect(close?.className).toContain("border-b");
+    expect(close?.className).toContain("border-line-on-inverse");
   });
 });
 
-describe("LandingView source guard", () => {
-  const source = readFileSync(join(import.meta.dirname, "LandingView.tsx"), "utf8");
+/** A page of `count` bands under the `"view"` rhythm, split across a page document and a trailing one. */
+function rhythmPage(count: number, explicit: Record<string, "base" | "sunken" | "inverse"> = {}) {
+  const ids = Array.from({ length: count }, (_, index) => `band-${index}`);
+  const section = (id: string) => ({ id, kind: "feature-grid" as const, ground: explicit[id] ?? ("base" as const), heading: `${id}-SENTINEL`, items: [{ id: "one", heading: "ONE-SENTINEL" }] });
+  const pageIds = ids.slice(0, -1);
+  const lastId = ids.at(-1);
+  const page: ResolvedSectionedViewDocument = {
+    id: "acme-rhythm",
+    resolutions: RESOLUTIONS,
+    sections: [PAGE.sections[0]!, ...pageIds.map(section)],
+    viewGrounds: pageIds.filter((id) => explicit[id] === undefined),
+  };
+  const tail: ResolvedSectionedViewDocument[] = lastId === undefined ? [] : [{ id: "acme-tail", resolutions: RESOLUTIONS, sections: [section(lastId)], viewGrounds: explicit[lastId] === undefined ? [lastId] : [] }];
+  return { page, tail };
+}
 
-  it("is a server-safe module", () => {
-    expect(source).not.toMatch(/["']use client["']/);
-    expect(source).not.toMatch(/react-aria-components/);
-    expect(source).not.toMatch(/\buse[A-Z][A-Za-z]*\(/);
-    expect(source).not.toMatch(/dangerouslySetInnerHTML/);
-    expect(source).not.toMatch(/token-gate:ignore/);
-  });
+describe("LandingView grounds", () => {
+  it("alternates view-assigned bands upward from the closing band, for any section count, with no repeated neighbours", () => {
+    for (let count = 1; count <= 7; count += 1) {
+      const { page, tail } = rhythmPage(count);
+      const plan = planLandingViewGrounds(page, tail, { callToAction: { id: "close" } });
+      const body = plan.bands.filter((band) => band.role === "band" || band.role === "closing").map((band) => band.ground);
+      expect(body.at(-1), `count ${count}`).toBe("base");
+      expect(body.at(-2), `count ${count}`).toBe(count > 1 ? "sunken" : undefined);
+      expect(plan.bands.at(-1)).toMatchObject({ id: "close", role: "call-to-action", ground: "inverse" });
+      expect(plan.repeats, `count ${count}`).toEqual([]);
 
-  it("imports Designer only through the server barrels", () => {
-    const designerImports = [...source.matchAll(/from\s+["'](@clossys\/designer[^"']*)["']/g)].map((m) => m[1]);
-    expect(designerImports.length).toBeGreaterThan(0);
-    for (const specifier of designerImports) {
-      expect(["@clossys/designer/shell/server", "@clossys/designer/atoms/server", "@clossys/designer/blocks/server"]).toContain(specifier);
+      const root = dom({ document: page, trailing: tail, callToAction: CALL_TO_ACTION });
+      const rendered = [...root.querySelectorAll("[data-landing-view] > section")].map((frame) => frame.getAttribute("data-landing-ground"));
+      expect(rendered).toEqual(plan.bands.map((band) => band.ground));
     }
   });
 
-  it("uses no arbitrary-value class", () => {
-    expect(source).not.toMatch(/(?:class(?:Name)?\s*=|mergeUiClasses\(|cx\()[^\n]*\[[^\]\n]+\]/);
-    for (const [, literal] of source.matchAll(/"([^"\n]*)"/g)) {
-      if (/\b[a-z-]+-\[/.test(literal ?? "")) throw new Error(`arbitrary-value class in ${literal}`);
-    }
+  it("keeps an explicit ground outside the closing pair, and reports the neighbours it repeats", () => {
+    const { page, tail } = rhythmPage(4, { "band-1": "base" });
+    const plan = planLandingViewGrounds(page, tail, { callToAction: true });
+    expect(plan.bands.map((band) => band.ground)).toEqual(["inverse", "sunken", "base", "sunken", "base", "inverse"]);
+    expect(plan.repeats).toEqual([]);
+
+    const clash = rhythmPage(3, { "band-1": "base" });
+    const clashPlan = planLandingViewGrounds(clash.page, clash.tail, { callToAction: true });
+    expect(clashPlan.bands.map((band) => band.ground)).toEqual(["inverse", "sunken", "base", "base", "inverse"]);
+    expect(clashPlan.repeats).toEqual([{ above: "band-1", below: "band-2", ground: "base" }]);
+  });
+
+  it("overrides an explicit ground on the closing band, and leaves documents without the view rhythm alone", () => {
+    const { page, tail } = rhythmPage(2, { "band-1": "sunken" });
+    expect(planLandingViewGrounds(page, tail, { callToAction: true }).bands.find((band) => band.id === "band-1")).toMatchObject({ role: "closing", ground: "base" });
+    expect(planLandingViewGrounds(PAGE, [SHARED]).bands.map((band) => band.ground)).toEqual(["inverse", "sunken", "base"]);
+  });
+
+  it("refuses a viewGrounds entry that names no section of its document", () => {
+    expect(() => dom({ document: { ...PAGE, viewGrounds: ["missing"] } })).toThrow(/viewGrounds\.0/);
   });
 });
+

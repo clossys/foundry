@@ -533,6 +533,22 @@ describe("SectionedViewDocument section ground rhythm (#1105)", () => {
     expect(resolved.sections.map((section) => section.ground)).toEqual(["base", "inverse", "base"]);
   });
 
+  it("under the view rhythm, resolves omitted grounds to base and lists them in viewGrounds; explicit grounds stay off the list", () => {
+    const viewRhythm: SectionedViewDocument = {
+      ...rhythmDocument,
+      sectionGroundRhythm: "view",
+      sections: [{ ...rhythmDocument.sections[0], ground: "inverse" }, rhythmDocument.sections[1], rhythmDocument.sections[2]],
+    };
+    expect(validateSectionedViewDocument(viewRhythm)).toEqual([]);
+    const resolved = resolveSectionedViewDocument(viewRhythm, resolver);
+    expect(resolved.sections.map((section) => section.ground)).toEqual(["inverse", "base", "base"]);
+    expect(resolved.viewGrounds).toEqual(["features", "faq"]);
+  });
+
+  it("adds no viewGrounds key under the other rhythms or none", () => {
+    expect(Object.hasOwn(resolveSectionedViewDocument(rhythmDocument, resolver), "viewGrounds")).toBe(false);
+  });
+
   it("requires ground on every section when sectionGroundRhythm is absent", () => {
     const missingGround = {
       id: "acme.missing-ground",

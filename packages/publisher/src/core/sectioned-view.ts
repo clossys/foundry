@@ -5,10 +5,20 @@ import type { ComposeFinding } from "./types.js";
 /** The only grounds a section may name. Rendering maps this vocabulary to design tokens later. */
 export type SectionedViewGround = "base" | "sunken" | "inverse";
 
-/** Document-level rhythm that fills omitted section grounds in section order. `inverse` is never applied by rhythm. */
-export type SectionedViewSectionGroundRhythm = "base-then-sunken";
+/**
+ * Document-level rhythm for sections that omit `ground`. `inverse` is never
+ * applied by rhythm, and an explicit `ground` always wins.
+ *
+ * - `"base-then-sunken"`: `base`, then `sunken`, in document order.
+ * - `"view"`: the rendering view assigns them, from where each section lands
+ *   on the page (`LandingView` alternates them upward from its closing band,
+ *   across every document it renders). Resolution fills them with `base`,
+ *   what a view without its own rhythm renders, and lists their ids in the
+ *   resolved document's `viewGrounds`.
+ */
+export type SectionedViewSectionGroundRhythm = "base-then-sunken" | "view";
 
-const SECTION_GROUND_RHYTHMS: readonly SectionedViewSectionGroundRhythm[] = ["base-then-sunken"];
+const SECTION_GROUND_RHYTHMS: readonly SectionedViewSectionGroundRhythm[] = ["base-then-sunken", "view"];
 const RHYTHM_GROUNDS: readonly SectionedViewGround[] = ["base", "sunken"];
 
 /** The closed block vocabulary for a long-form site page. */
@@ -239,9 +249,9 @@ export interface SectionedViewDocument {
   id: string;
   sections: SectionedViewSection[];
   /**
-   * When set, sections that omit `ground` receive `base` then `sunken` in
-   * document order. An explicit `ground` always wins; rhythm never applies
-   * `inverse`.
+   * When set, sections that omit `ground` receive it from the rhythm
+   * (`SectionedViewSectionGroundRhythm`). An explicit `ground` always wins;
+   * rhythm never applies `inverse`.
    */
   sectionGroundRhythm?: SectionedViewSectionGroundRhythm;
 }
@@ -272,6 +282,11 @@ export interface ResolvedSectionedViewDocument {
   sections: ResolvedSectionedViewSection[];
   /** Every resolved CopyRef in depth-first authored order; pass directly to collectCopyProvenance. */
   resolutions: CopyResolution[];
+  /**
+   * Present only for `sectionGroundRhythm: "view"`: the ids of the sections
+   * that omitted `ground`, whose ground the rendering view may assign.
+   */
+  viewGrounds?: string[];
 }
 
 export type SectionedViewResolutionReason = "invalid-document" | "unresolved-copy" | "unsupported-section-kind";
@@ -380,8 +395,14 @@ function rhythmGroundForSectionIndex(index: number): SectionedViewGround {
   return RHYTHM_GROUNDS[index % RHYTHM_GROUNDS.length]!;
 }
 
+/** The ground a `"view"` rhythm resolves an omitted section to, before a view assigns its own. */
+const VIEW_RHYTHM_RESOLVED_GROUND: SectionedViewGround = "base";
+
 function applySectionGroundRhythm(document: SectionedViewDocument): SectionedViewDocument {
   if (document.sectionGroundRhythm === undefined) return document;
+  if (document.sectionGroundRhythm === "view") {
+    return { ...document, sections: document.sections.map((section) => ({ ...section, ground: section.ground ?? VIEW_RHYTHM_RESOLVED_GROUND })) };
+  }
   return {
     ...document,
     sections: document.sections.map((section, index) => ({
@@ -706,6 +727,10 @@ export function resolveSectionedViewDocument(document: SectionedViewDocument, re
   const optional = (ref: CopyRef | undefined, path: string): string | undefined => (ref === undefined ? undefined : text(ref, path));
   const withGrounds = applySectionGroundRhythm(document);
   const sections = withGrounds.sections.map((section, sectionIndex) => resolveSection(assertResolvedSectionGround(section, `sections.${sectionIndex}`), `sections.${sectionIndex}`, text, optional));
+  if (document.sectionGroundRhythm === "view") {
+    const viewGrounds = document.sections.filter((section) => section.ground === undefined).map((section) => section.id);
+    return { id: document.id, sections, resolutions, viewGrounds };
+  }
   return { id: document.id, sections, resolutions };
 }
 

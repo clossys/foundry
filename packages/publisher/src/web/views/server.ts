@@ -36,8 +36,12 @@ export type { SectionedViewLandmark, SectionedViewProps } from "./SectionedView.
 
 export { LegalView } from "./LegalView.js";
 export type { LegalViewLabels, LegalViewProps } from "./LegalView.js";
+export { HeroView } from "./HeroView.js";
+export type { HeroViewFooter, HeroViewGround, HeroViewProps } from "./HeroView.js";
 export { LandingView } from "./LandingView.js";
-export type { LandingViewFooter, LandingViewGround, LandingViewProps } from "./LandingView.js";
+export type { LandingViewCallToAction, LandingViewHeader, LandingViewProps } from "./LandingView.js";
+export { LANDING_VIEW_CALL_TO_ACTION_GROUND, LANDING_VIEW_CLOSING_GROUND, planLandingViewGrounds } from "./landingViewGrounds.js";
+export type { LandingViewBandGround, LandingViewBandRole, LandingViewGroundPlan, LandingViewGroundRepeat } from "./landingViewGrounds.js";
 export { ContactView } from "./ContactView.server.js";
 export { SignInForm } from "./SignInForm.server.js";
 export type { ContactViewCopy, ContactViewDevPreview, ContactViewProps, ContactViewTopic, ContactViewValues } from "./ContactView.js";

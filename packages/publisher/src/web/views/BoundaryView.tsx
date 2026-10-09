@@ -70,7 +70,7 @@ export interface BoundaryViewProps extends ErrorViewProps {
   nav?: ReactNode;
   /**
    * The plate of the header and footer, passed to both `SiteHeader` and
-   * `SiteFooter`. `"transparent"` matches `LandingView`'s chrome.
+   * `SiteFooter`. `"transparent"` matches `HeroView`'s chrome.
    * @default "base"
    * @deprecated Chrome belongs to `SiteFrame`; see `brand`.
    */
