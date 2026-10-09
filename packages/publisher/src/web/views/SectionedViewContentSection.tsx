@@ -156,8 +156,9 @@ function renderModule(module: ResolvedSectionedViewContentModule, ground: Sectio
  * then the specimen. A `split` puts the text beside the specimen; a split FAQ
  * module is the FAQ band, its rows taking the visual column beside a
  * top-aligned header, and a text-only split (topics or features, no media)
- * places its module in the visual column the same way. Module item headings
- * are one level below the section.
+ * places its module in the visual column the same way. A stacked section
+ * with no module, no media and nothing placed after it is a statement band: its heading takes the
+ * `display` emphasis. Module item headings are one level below the section.
  */
 export function createContentSectionBlock(Faq: ContentSectionFaq) {
   return function ContentSectionBlock({ section, actions, className, after }: ContentSectionBlockProps) {
@@ -187,8 +188,17 @@ export function createContentSectionBlock(Faq: ContentSectionFaq) {
         </ContentSection>
       );
     }
+    // A statement band (no module, no media, nothing placed after it: a header and its links) carries the page's display scale instead of repeating a thin section shape.
+    const statement = section.module === undefined && section.media === undefined && (after === undefined || after === null);
     return (
-      <ContentSection {...header} align={section.align} media={section.media === undefined ? undefined : mediaSpecimen(section.media)} className={className}>
+      <ContentSection
+        {...header}
+        align={section.align}
+        emphasis={statement ? "display" : "section"}
+        media={section.media === undefined ? undefined : mediaSpecimen(section.media)}
+        data-content-section-statement={statement ? "" : undefined}
+        className={className}
+      >
         {module}
         {after}
       </ContentSection>

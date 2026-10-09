@@ -182,6 +182,9 @@
 /*! tailwindcss v4.3.3 | MIT License | https://tailwindcss.com */
 @layer properties;
 @layer foundry-ui-compiled {
+  .\@container {
+    container-type: inline-size;
+  }
   .pointer-events-none {
     pointer-events: none;
   }
@@ -322,13 +325,13 @@
   .aspect-square {
     aspect-ratio: 1 / 1;
   }
+  .size-2xl {
+    width: var(--spacing-2xl, 32px);
+    height: var(--spacing-2xl, 32px);
+  }
   .size-lg {
     width: var(--spacing-lg, 16px);
     height: var(--spacing-lg, 16px);
-  }
-  .size-xl {
-    width: var(--spacing-xl, 24px);
-    height: var(--spacing-xl, 24px);
   }
   .size-xs {
     width: var(--spacing-xs, 4px);
@@ -491,7 +494,7 @@
     font-style: var(--font-display-style, normal);
     font-weight: var(--font-display-weight, 400);
     font-stretch: var(--font-display-stretch, 100%);
-    letter-spacing: var(--tracking-tight, -0.01em);
+    letter-spacing: var(--tracking-tight, -0.02em);
     transform: scaleX(var(--font-display-scale-x, 1));
   }
   .transform {
@@ -610,6 +613,9 @@
   }
   .gap-y-md {
     row-gap: var(--spacing-md, 12px);
+  }
+  .gap-y-sm {
+    row-gap: var(--spacing-sm, 8px);
   }
   .gap-y-xs {
     row-gap: var(--spacing-xs, 4px);
@@ -749,6 +755,9 @@
   }
   .bg-accent {
     background-color: var(--color-accent, oklch(0.4748 0 0));
+  }
+  .bg-accent-tint {
+    background-color: var(--color-accent-tint, oklch(0.4748 0 0 / 0.1));
   }
   .bg-ink-muted {
     background-color: var(--color-ink-muted, oklch(0.5658 0 0));
@@ -921,8 +930,8 @@
   .pt-md {
     padding-top: var(--spacing-md, 12px);
   }
-  .pt-sm {
-    padding-top: var(--spacing-sm, 8px);
+  .pb-2xl {
+    padding-bottom: var(--spacing-2xl, 32px);
   }
   .pb-lg {
     padding-bottom: var(--spacing-lg, 16px);
@@ -973,7 +982,10 @@
     font-size: var(--text-display-l, 56px);
   }
   .text-display-m {
-    font-size: var(--text-display-m, 40px);
+    font-size: var(--text-display-m, 44px);
+  }
+  .text-h0 {
+    font-size: var(--text-h0, 32px);
   }
   .text-h1 {
     font-size: var(--text-h1, 28px);
@@ -1301,21 +1313,6 @@
     .tablet\:hidden {
       display: none;
     }
-    .tablet\:table {
-      display: table;
-    }
-    .tablet\:table-cell {
-      display: table-cell;
-    }
-    .tablet\:table-header-group {
-      display: table-header-group;
-    }
-    .tablet\:table-row {
-      display: table-row;
-    }
-    .tablet\:table-row-group {
-      display: table-row-group;
-    }
     .tablet\:h-px {
       height: 1px;
     }
@@ -1327,9 +1324,6 @@
     }
     .tablet\:shrink-0 {
       flex-shrink: 0;
-    }
-    .tablet\:border-collapse {
-      border-collapse: collapse;
     }
     .tablet\:grid-cols-2 {
       grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1367,26 +1361,14 @@
     .tablet\:p-xl {
       padding: var(--spacing-xl, 24px);
     }
-    .tablet\:py-sm {
-      padding-block: var(--spacing-sm, 8px);
-    }
     .tablet\:py-xl {
       padding-block: var(--spacing-xl, 24px);
-    }
-    .tablet\:pe-md {
-      padding-inline-end: var(--spacing-md, 12px);
     }
     .tablet\:pb-0 {
       padding-bottom: 0px;
     }
     .tablet\:pb-xl {
       padding-bottom: var(--spacing-xl, 24px);
-    }
-    .tablet\:text-start {
-      text-align: start;
-    }
-    .tablet\:align-top {
-      vertical-align: top;
     }
     .tablet\:text-display-l {
       font-size: var(--text-display-l, 56px);
@@ -1396,6 +1378,9 @@
     }
   }
   @media (width >= 1024px) {
+    .tablet-lg\:col-span-1 {
+      grid-column: span 1 / span 1;
+    }
     .tablet-lg\:col-span-4 {
       grid-column: span 4 / span 4;
     }
@@ -1508,7 +1493,7 @@
       padding-block: var(--spacing-6xl, 128px);
     }
     .tablet-lg\:text-display-m {
-      font-size: var(--text-display-m, 40px);
+      font-size: var(--text-display-m, 44px);
     }
   }
   @media (width >= 1280px) {
@@ -1542,12 +1527,6 @@
     .desktop\:p-2xl {
       padding: var(--spacing-2xl, 32px);
     }
-    .desktop\:p-xl {
-      padding: var(--spacing-xl, 24px);
-    }
-    .desktop\:ps-xl {
-      padding-inline-start: var(--spacing-xl, 24px);
-    }
     .desktop\:text-start {
       text-align: start;
     }
@@ -1558,6 +1537,65 @@
   @media (width >= 1440px) {
     .wide\:max-w-display {
       max-width: var(--ui-width-display-max, 72rem);
+    }
+  }
+  @container (width >= 28rem) {
+    .\@md\:not-sr-only {
+      position: static;
+      width: auto;
+      height: auto;
+      padding: 0;
+      margin: 0;
+      overflow: visible;
+      clip-path: none;
+      white-space: normal;
+    }
+    .\@md\:hidden {
+      display: none;
+    }
+    .\@md\:table {
+      display: table;
+    }
+    .\@md\:table-cell {
+      display: table-cell;
+    }
+    .\@md\:table-header-group {
+      display: table-header-group;
+    }
+    .\@md\:table-row {
+      display: table-row;
+    }
+    .\@md\:table-row-group {
+      display: table-row-group;
+    }
+    .\@md\:border-collapse {
+      border-collapse: collapse;
+    }
+    .\@md\:p-xl {
+      padding: var(--spacing-xl, 24px);
+    }
+    .\@md\:py-md {
+      padding-block: var(--spacing-md, 12px);
+    }
+    .\@md\:ps-xl {
+      padding-inline-start: var(--spacing-xl, 24px);
+    }
+    .\@md\:pe-md {
+      padding-inline-end: var(--spacing-md, 12px);
+    }
+    .\@md\:text-start {
+      text-align: start;
+    }
+    .\@md\:align-top {
+      vertical-align: top;
+    }
+    .\@md\:text-h0 {
+      font-size: var(--text-h0, 32px);
+    }
+  }
+  @container (width >= 32rem) {
+    .\@lg\:grid-cols-4 {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
     }
   }
   .rtl\:-scale-x-100:where(:dir(rtl), [dir="rtl"], [dir="rtl"] *) {
@@ -1575,7 +1613,7 @@
     font-style: var(--font-display-style, normal);
     font-weight: var(--font-display-weight, 400);
     font-stretch: var(--font-display-stretch, 100%);
-    letter-spacing: var(--tracking-tight, -0.01em);
+    letter-spacing: var(--tracking-tight, -0.02em);
     transform: scaleX(var(--font-display-scale-x, 1));
   }
   .\[\&_blockquote\]\:border-s blockquote {
@@ -1625,7 +1663,7 @@
     font-style: var(--font-display-style, normal);
     font-weight: var(--font-display-weight, 400);
     font-stretch: var(--font-display-stretch, 100%);
-    letter-spacing: var(--tracking-tight, -0.01em);
+    letter-spacing: var(--tracking-tight, -0.02em);
     transform: scaleX(var(--font-display-scale-x, 1));
     font-family: var(--font-display, system-ui, ui-sans-serif, -apple-system, "Segoe UI", sans-serif);
   }
@@ -1642,7 +1680,7 @@
     font-style: var(--font-display-style, normal);
     font-weight: var(--font-display-weight, 400);
     font-stretch: var(--font-display-stretch, 100%);
-    letter-spacing: var(--tracking-tight, -0.01em);
+    letter-spacing: var(--tracking-tight, -0.02em);
     transform: scaleX(var(--font-display-scale-x, 1));
     font-family: var(--font-display, system-ui, ui-sans-serif, -apple-system, "Segoe UI", sans-serif);
   }
@@ -1659,7 +1697,7 @@
     font-style: var(--font-display-style, normal);
     font-weight: var(--font-display-weight, 400);
     font-stretch: var(--font-display-stretch, 100%);
-    letter-spacing: var(--tracking-tight, -0.01em);
+    letter-spacing: var(--tracking-tight, -0.02em);
     transform: scaleX(var(--font-display-scale-x, 1));
     font-family: var(--font-display, system-ui, ui-sans-serif, -apple-system, "Segoe UI", sans-serif);
   }
@@ -1676,7 +1714,7 @@
     font-style: var(--font-display-style, normal);
     font-weight: var(--font-display-weight, 400);
     font-stretch: var(--font-display-stretch, 100%);
-    letter-spacing: var(--tracking-tight, -0.01em);
+    letter-spacing: var(--tracking-tight, -0.02em);
     transform: scaleX(var(--font-display-scale-x, 1));
     font-family: var(--font-display, system-ui, ui-sans-serif, -apple-system, "Segoe UI", sans-serif);
   }
@@ -1693,7 +1731,7 @@
     font-style: var(--font-display-style, normal);
     font-weight: var(--font-display-weight, 400);
     font-stretch: var(--font-display-stretch, 100%);
-    letter-spacing: var(--tracking-tight, -0.01em);
+    letter-spacing: var(--tracking-tight, -0.02em);
     transform: scaleX(var(--font-display-scale-x, 1));
     font-family: var(--font-display, system-ui, ui-sans-serif, -apple-system, "Segoe UI", sans-serif);
   }
@@ -1710,7 +1748,7 @@
     font-style: var(--font-display-style, normal);
     font-weight: var(--font-display-weight, 400);
     font-stretch: var(--font-display-stretch, 100%);
-    letter-spacing: var(--tracking-tight, -0.01em);
+    letter-spacing: var(--tracking-tight, -0.02em);
     transform: scaleX(var(--font-display-scale-x, 1));
     font-family: var(--font-display, system-ui, ui-sans-serif, -apple-system, "Segoe UI", sans-serif);
   }

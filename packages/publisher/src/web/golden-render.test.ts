@@ -335,7 +335,7 @@ describe("golden: MarketingView", () => {
         '<main class="flex flex-col gap-2xl py-2xl">' +
         '<section class="flex flex-col gap-xl">' +
         '<div data-section-intro="display" class="flex w-full flex-col items-start" style="max-width:var(--ui-width-prose-max, 48rem)">' +
-        '<p class="text-caption uppercase tracking-label text-ink-muted">Placeholder eyebrow</p>' +
+        '<p class="text-body-s font-medium uppercase tracking-label text-accent-text">Placeholder eyebrow</p>' +
         '<h1 class="text-display-m tablet:text-display-l font-display leading-display text-balance text-ink-primary mt-sm">Placeholder hero heading</h1>' +
         '<p class="text-body-l text-pretty text-ink-secondary mt-2xl">Placeholder hero description.</p>' +
         "</div>" +
@@ -560,7 +560,7 @@ const band = (root: Document, id: string): HTMLElement => {
 };
 
 describe("golden: SectionedView content-section", () => {
-  it("renders an intro band (header and text-link actions, no module) byte for byte", () => {
+  it("renders an intro band (header and text-link actions, no module) as a statement band, byte for byte", () => {
     const { html } = renderContent(contentBand("intro", { description: copy("golden.intro.description", "Placeholder intro."), actions: [{ id: "more", label: copy("golden.intro.more", "Read more"), href: "/more" }] }));
     expect(html).toBe(INTRO_BAND_HTML);
   });
@@ -659,7 +659,7 @@ describe("golden: SectionedView content-section", () => {
     const { root } = renderContent(contentBand("dark", { ground: "inverse", description: copy("golden.dark.description", "Placeholder lede."), actions: [{ id: "go", label: copy("golden.dark.go", "Continue"), href: "/go" }] }));
     const section = band(root, "dark");
     expect(section.className.split(" ")).toContain("bg-surface-inverse");
-    expect(section.querySelector('a[href="/go"]')?.className).toBe("text-body font-body underline text-ink-on-inverse");
+    expect(section.querySelector('a[href="/go"]')?.className).toBe("inline-flex items-center text-body font-body underline text-ink-on-inverse");
   });
 
   it("puts nothing focusable inside any specimen", () => {
@@ -677,15 +677,19 @@ describe("golden: SectionedView content-section", () => {
   });
 });
 
-/** Captured from this renderer; Designer `ContentSection` stacked anatomy with `SectionIntro` at the section emphasis. */
+/**
+ * Captured from this renderer; Designer `ContentSection` stacked anatomy. A
+ * band with no module and no media is a statement band: `SectionIntro` at the
+ * display emphasis, and its text-link action carries the 44px tap target.
+ */
 const INTRO_BAND_HTML =
   '<div class="flex flex-col gap-2xl py-2xl">' +
-  '<div id="intro" data-content-section="" class="flex w-full flex-col gap-2xl tablet-lg:gap-3xl items-start">' +
-  '<div data-content-section-header="" data-section-intro="section" class="flex w-full flex-col items-start" style="max-width:var(--ui-width-prose-max, 48rem)">' +
-  '<h2 class="text-h1 tablet:text-h0 tablet-lg:text-display-m font-display leading-heading text-balance text-ink-primary">Heading intro</h2>' +
-  '<p class="text-body-l text-pretty text-ink-secondary mt-xl">Placeholder intro.</p>' +
-  '<div class="flex flex-wrap items-center gap-sm mt-2xl">' +
-  '<a href="/more" class="text-body font-body underline text-ink-link">Read more</a>' +
+  '<div id="intro" data-content-section-statement="" data-content-section="" class="flex w-full flex-col gap-2xl tablet-lg:gap-3xl items-start">' +
+  '<div data-content-section-header="" data-section-intro="display" class="flex w-full flex-col items-start" style="max-width:var(--ui-width-prose-max, 48rem)">' +
+  '<h2 class="text-display-m tablet:text-display-l font-display leading-display text-balance text-ink-primary">Heading intro</h2>' +
+  '<p class="text-body-l text-pretty text-ink-secondary mt-2xl">Placeholder intro.</p>' +
+  '<div class="flex flex-wrap items-center gap-x-lg gap-y-sm mt-3xl">' +
+  '<a href="/more" class="inline-flex items-center text-body font-body underline text-ink-link" style="min-height:var(--ui-layout-tap-target, 44px)">Read more</a>' +
   "</div>" +
   "</div>" +
   "</div>" +

@@ -1162,11 +1162,16 @@ above) maps its module and specimen straight onto Designer blocks: features
 to `FeatureGrid`, cards to `CardGrid`, comparison to `Comparison`, topics to
 `TopicList`, steps to `OrderedStepSequence`, faq to `Faq`, and `media` to a
 labelled `Specimen` figure. Item icons render their Designer icon; actions
-render as text links. A `split` band puts the text beside the specimen on its
+render as text links with a 44px minimum tap target
+(`--ui-layout-tap-target`). A `split` band puts the text beside the specimen on its
 `mediaSide`; a split FAQ puts its rows in the visual column beside a
 top-aligned header group. A stacked band takes its `align` and shows the
-specimen after the module. `afterSection` content follows the module (in a
-split FAQ, it closes the header group's column). Specimens are static
+specimen after the module. A stacked band with no module, no media and no
+`afterSection` content is a statement band: its header is its content, so
+it takes the Designer `ContentSection` `display` emphasis (the display
+heading step and rhythm) and carries `data-content-section-statement`.
+`afterSection` content follows the module (in a split FAQ, it closes the
+header group's column). Specimens are static
 records: they hold no links, buttons or other focusable content. A section
 that would not render as authored is refused with a `RenderError` naming its
 path.

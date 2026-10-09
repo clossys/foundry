@@ -663,11 +663,19 @@ const ACTION_INK: Record<SectionedViewGround, string> = {
 /** How a hero's document-declared actions render: underlined text links, or Designer primary buttons. */
 export type SectionedViewHeroActions = "link" | "button";
 
+/**
+ * A text-link action keeps its underlined body type but takes the shared
+ * 44px tap target (`--ui-layout-tap-target`), centred, so it is a full
+ * touch target on a phone without looking like a button.
+ */
+const TEXT_LINK_ACTION_STYLE = { minHeight: "var(--ui-layout-tap-target, 44px)" } as const;
+
 function renderActions(actions: readonly ResolvedSectionedViewAction[] | undefined, ground: SectionedViewGround, look: SectionedViewHeroActions): ReactNode {
   if (actions === undefined) return undefined;
-  const className = look === "button" ? buttonLinkClassName("primary", "lg") : `text-body font-body underline ${ACTION_INK[ground]}`;
+  const button = look === "button";
+  const className = button ? buttonLinkClassName("primary", "lg") : `inline-flex items-center text-body font-body underline ${ACTION_INK[ground]}`;
   return actions.map((action) => (
-    <a key={action.id} href={action.href} className={className}>
+    <a key={action.id} href={action.href} className={className} style={button ? undefined : TEXT_LINK_ACTION_STYLE}>
       {action.label}
     </a>
   ));
