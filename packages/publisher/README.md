@@ -167,7 +167,8 @@ its own.
 The web condition changes only the implementation selected for server
 rendering, not the API. `MarketingView` keeps the same props and regional
 layout; its server target uses Designer's native `details`/`summary` FAQ while
-the ordinary target keeps Designer's React Aria FAQ. `AuthView`, `ErrorView`,
+the ordinary target keeps Designer's React Aria FAQ. `SiteFrame`, `AuthView`,
+`StatusView`, `GlobalErrorDocument`, `ErrorView`,
 `CaptureView`, `CollectionView`, `DocumentView`, `LegalView`, the renderer functions,
 template helpers, error class, and all runtime export names are present in
 both targets.
@@ -345,8 +346,8 @@ Name a shipped template when its slots cover the page:
 - **`MarketingView`** — pre-auth marketing landing (hero, features, optional
   FAQ, CTA).
 - **`SectionedView`** — long public pages whose sections are exactly the
-  closed six kinds (`hero`, `feature-grid`, `faq`, `ordered-step-sequence`,
-  `status-list`, `stat-grid`).
+  closed nine kinds (`hero`, `feature-grid`, `faq`, `ordered-step-sequence`,
+  `status-list`, `stat-grid`, `pricing`, `testimonial`, `stat`).
 - **`AuthView`** — one shell for every authentication step (sign-in, sign-up,
   password reset, verification): the page header and the form inside
   Designer's `Card`, rendered chrome-free inside a
@@ -381,14 +382,16 @@ Name a shipped template when its slots cover the page:
   auth pages are single-locale. `SignInForm` fills the
   form slot of a sign-in page. The header slots are listed under
   [Front-door shell](#front-door-shell).
-- **`ErrorView`** — error shell, including the sign-in-boundary states: not
+- **`ErrorView`** (deprecated; use `StatusView`, or `AuthView` when the
+  state needs a card) — error shell, including the sign-in-boundary states: not
   authorized (403), pending, revoked, and provider unavailable (503). It takes
   the same props for each; the status, title, description, and recovery
   action are the caller's copy. A diagnostic reference goes inline in the
   description (`"Something went wrong. Error: 8f2a91c0."`), there is no
   details disclosure, and `action` holds one primary control: a secondary
   destination is a text link inside the description.
-- **`BoundaryView`** — a boundary page: the page header block (`status`,
+- **`BoundaryView`** (deprecated; use `StatusView`, or `AuthView` when the
+  state needs a card) — a boundary page: the page header block (`status`,
   `title`, `description`), the `action` in a `Card` and the `notes` below
   it. Inside a `SiteFrame` it renders that content only; passing any
   deprecated chrome prop (`brand` is optional) selects the legacy page, which
@@ -401,7 +404,7 @@ Name a shipped template when its slots cover the page:
   expired link, unavailable, or a placeholder for a page that is not built
   yet) on the [card-free layout](#card-free-layout): `status` as the one
   `<h1>` (a code or a short title), plus optional `subtitle`, `action` and
-  `notes`. Chrome-free only.
+  `notes`. Chrome-free only. It replaces `ErrorView` and `BoundaryView`.
 - **`PackReviewView`** — the dev-only review index: the pack's strategy
   brief, brand kit (through `BrandGuideView`) and voice and copy, then a
   site's pages, their forced states, its exported artifacts and a lazy
@@ -409,8 +412,15 @@ Name a shipped template when its slots cover the page:
   `approved` badge. It uses the same frame as `AuthView`. See
   [`PackReviewView`](#packreviewview).
 
+**Rule of thumb for a whole-page state.** A title, a subtitle and one action
+is `StatusView` (cardless). Content that needs a card to house it takes the
+card view for that content: `AuthView` (a form, or a signed-in state that
+shows the account and a switch-account control), `CaptureView` (a capture
+form) or `DocumentView` (a document). `ErrorView` and `BoundaryView` still
+render and are not removed, but new pages do not use them.
+
 If a required band is not a slot on any shipped template and not one of the
-six `SectionedView` kinds, **do not flatten** it into a one-item
+nine `SectionedView` kinds, **do not flatten** it into a one-item
 `feature-grid` or any other shipped kind — that produces a document that
 validates while the page is wrong. Register `defineWebTemplate` in the
 consumer instead; its `build` function maps resolved slots to Designer
@@ -421,6 +431,37 @@ a one-off, but it is a workaround: it bypasses the template registry,
 `validateSurfaceDocument`/`resolveSurfaceDocument`, and copy provenance for
 that page shape. Prefer `defineWebTemplate` + `createWebRenderer` so the
 page stays provable.
+
+### View vocabulary
+
+Three words describe how a page uses a view:
+
+- **Standard.** A published Clossys view used as it ships, through its props,
+  slots and copy references only, such as `StatusView` with a status, a
+  subtitle and a link home.
+- **Custom.** A published view customized through its sanctioned extension
+  points: extra slot content (a form in `AuthView`'s form slot, a notes
+  line), theme tokens, `SectionedView` section kinds and copy. It still
+  conforms to the framework and stays inside the catalog contract. A thin
+  wrapper that fixes some props is a custom use, not a new view.
+- **Unique.** A one-off view owned by a single consumer, for a page no
+  published view can express. It is built from Clossys assets
+  (`defineWebTemplate`, Designer blocks, Publisher's page layouts), checked
+  with `checkFrontDoor` (and `publisher-web-route-check` for the route
+  manifest), and exported from the consumer, not from a Clossys package. It
+  is never hand-built in a route file.
+
+All copy reaches a view as a `CopyRef` or as a string resolved through
+`@clossys/writer`; consumer code passes no literal copy in view props. The
+examples in this README use literal strings for brevity only.
+
+**Catalog direction.** Every main-navigation page, the home page included, is
+to be one view, `LandingView`: a hero alone fills the screen; a hero with
+content below it shows a sliver of that content and a scroll hint.
+`MarketingView`, `SectionedView` and a separate hero-only view fold into it,
+and `SectionedView` stays as an internal engine rather than a catalog entry.
+This records the direction only: today `MarketingView`, `SectionedView` and
+`LandingView` ship as documented below, and the fold lands in a later release.
 
 ### Pre-auth marketing pages — `MarketingView` first
 
@@ -438,9 +479,12 @@ that document assembler is not the pre-auth path.
 
 `@clossys/publisher/core` now owns the closed, data-only source model for a
 long public site page: `SectionedViewDocument`. It requires one or more
-ordered sections with unique lowercase fragment-safe ids and one of six
+ordered sections with unique lowercase fragment-safe ids and one of nine
 named kinds: `hero`, `feature-grid`, `faq`, `ordered-step-sequence`,
-`status-list`, or `stat-grid`. Grounds are the closed `base`/`sunken`/`inverse` vocabulary;
+`status-list`, `stat-grid`, `pricing` (a heading and plan items, each with a
+name, a price, features and an optional call to action), `testimonial`
+(quotes with an attributor name and optional role) or `stat` (label and value
+items with an optional delta). Grounds are the closed `base`/`sunken`/`inverse` vocabulary;
 status values are the closed `available`/`partial`/`planned` readiness axis,
 with a separate `not-offered` disposition for deliberate non-capabilities.
 Every audience-facing label, heading, description, question, answer, ordinal,
@@ -1961,9 +2005,21 @@ variables.
 #### `LegalView`
 
 `LegalView`, exported from `@clossys/publisher/web` next to `DocumentView`,
-renders a `LegalDocument` in the same site chrome and layout as
-`DocumentView`. It is server-safe and has no summary or in-page action
-props; its banner takes the same header slots as `LandingView`.
+renders a `LegalDocument` as a whole self-chromed page: Designer's
+`SiteHeader`, its own `<main>` holding the document in a prose-measure column
+with no card, then `SiteFooter`. It does not use the shared
+[page layout](#page-layout) and has no chrome-free mode, so it cannot sit
+inside a [`SiteFrame`](#site-frame--siteframe): it would add a second banner,
+`<main>` and contentinfo. It is server-safe and has no summary or in-page
+action props; its banner takes the same header slots as `LandingView`.
+
+**Inside a frame, use `DocumentView`.** A `LegalDocument` is a
+`StructuredDocument`, so a framed legal page renders it with `DocumentView`
+(the document title as the `<h1>`, the article in the card). `DocumentView`
+does not run the legal profile: call `validateLegalDocument` (and
+`gateLegalDocument` before publishing) yourself, and pass the effective date
+as `effectiveDate`. It does not render the last-updated date or the draft
+callout that `LegalView` adds; a framed legal view with those is a follow-up.
 
 ```tsx
 import { LegalView } from "@clossys/publisher/web";
@@ -2045,6 +2101,12 @@ production gate: call `gateLegalDocument` separately before publishing.
 
 ### Boundary pages
 
+Deprecated: `BoundaryView` and `ErrorView` still render and are not removed,
+but new pages use [`StatusView`](#card-free-layout) for a title, a subtitle
+and one action, and `AuthView` when the state needs a card (for example a
+signed-in 403 that shows the account and a switch-account control). See
+[From a mirrored or self-chromed copy to the published view](#from-a-mirrored-or-self-chromed-copy-to-the-published-view).
+
 `BoundaryView` is the whole page for a 500, a 404 or a sign-in boundary state: one
 retry action, and any second destination as a text link in the description.
 
@@ -2054,8 +2116,6 @@ import { BoundaryView } from "@clossys/publisher/web";
 export function ServerErrorPage({ reference }: { reference: string }) {
   return (
     <BoundaryView
-      brand="Example Studio"
-      headerAction={<a href="/contact">Contact</a>}
       status={500}
       title="Something went wrong"
       description={
@@ -2103,9 +2163,10 @@ Each slot is absent from the markup when omitted.
 `<main>`, in this order: a skip link, the banner (Designer's `SiteHeader`
 with a `Brandmark`), `<main id={SITE_MAIN_ID} tabIndex={-1}>` holding the
 view, then the contentinfo (Designer's `SiteFooter`). The view passed as
-`children` renders chrome-free: `AuthView`, `CaptureView`, `DocumentView`,
-`BoundaryView` and `ErrorView` carry no `<main>`, no banner and no contentinfo of their own when
-no chrome prop is passed, so a framed page has exactly one of each.
+`children` renders chrome-free: `AuthView`, `CaptureView`, `DocumentView` and
+`StatusView` (and the deprecated `BoundaryView` and `ErrorView`) carry no
+`<main>`, no banner and no contentinfo of their own when no chrome prop is
+passed, so a framed page has one of each.
 
 ```tsx
 import { AuthView, SiteFrame, siteShellFor } from "@clossys/publisher/web";
@@ -2206,17 +2267,16 @@ links its legal row to the public site's `/privacy` and `/terms` on
 
 | Safe inside `SiteFrame` (no `<main>` of their own when no chrome prop is passed) | Still render their own `<main>` |
 | --- | --- |
-| `AuthView`, `CaptureView`, `DocumentView`, `BoundaryView`, `ErrorView` | `LandingView`, `MarketingView`, `CollectionView`, `LegalView`, `ContactView`, `PackReviewView`, `BrandGuideView`, `SystemAuditView` |
+| `AuthView`, `CaptureView`, `DocumentView`, `StatusView`; deprecated: `BoundaryView`, `ErrorView` | `LandingView`, `MarketingView`, `CollectionView`, `LegalView`, `ContactView`, `PackReviewView`, `BrandGuideView`, `SystemAuditView` |
 
 `SectionedView` renders its own `<main>` by default; pass `landmark="none"`
 to place it inside the frame. The built-in registry `AuthView` template
 always passes `brand`, so a registry-rendered sign-in page is still the
 legacy full page, not a framed one.
 
-`ErrorView`'s root keeps its `min-h-dvh` (full viewport height) class, so
-inside the frame the page is taller than the viewport and scrolls past the
-footer. A frame-aware `ErrorView` root is a follow-up; it is listed as
-deferred under layer 8.
+The deprecated `ErrorView`'s root keeps its `min-h-dvh` (full viewport
+height) class, so inside the frame the page is taller than the viewport and
+scrolls past the footer. `StatusView` has no such root; use it instead.
 
 **Known gaps.** The `Brandmark` links to `/` on the current host and does not
 follow `origin`, so on a sign-in or admin host the logo goes to that host's
@@ -2250,16 +2310,26 @@ Designer, not a local fork of the frame or a view.
 
 **Chrome props inside a frame.** Never pass a legacy chrome prop (`brand`,
 `header`, `footer`, `mainId`, ...) to a view that sits inside `SiteFrame`: the
-view then renders its own `<main>` and banner, nested inside the frame's. At
-runtime, `brand={undefined}` counts as not passed and selects the chrome-free
-content, while `brand={null}` counts as passed and selects the legacy page. The
-`AuthView` web template always passes `brand`, so it renders the legacy page
-only and is not for use inside a frame.
+view then renders its own `<main>` and banner, nested inside the frame's. The
+chrome-free form is the one with the prop left out:
+
+```tsx
+<SiteFrame shell={shell} resolveCopy={resolveCopy} resolveAsset={resolveAsset}>
+  <AuthView heading="Sign in" description="Use your work email." form={form} />
+</SiteFrame>
+```
+
+Setting a chrome prop to `null` is not the chrome-free form: `brand={null}`
+(or `header={null}`) counts as passed and selects the legacy page. Only an
+omitted prop, or one that is `undefined`, selects the chrome-free content.
+The `AuthView` web template always passes `brand`, so it renders the legacy
+page only and is not for use inside a frame.
 
 A chrome-free view's content root refuses a landmark `role` (`main`, `banner`,
 `contentinfo`, `navigation`) and the frame's main id, because the frame owns
-those. `GlobalErrorDocument` is the exception: its body is an `ErrorView` with
-no frame and no `<main>`, so that root may carry `role="main"`.
+those. `GlobalErrorDocument` renders `SiteFrame` and `StatusView` when given a
+`shell`, so the same rule holds there; only its deprecated `ErrorView` shape
+has no frame and no `<main>`, and that shape's root may carry `role="main"`.
 
 **Deprecated view chrome.** The chrome props on `AuthView`, `CaptureView`,
 `DocumentView` and `BoundaryView` (`brand`, `header`, `footer`, `mainId`, `nav`,
@@ -2466,20 +2536,41 @@ renders no landmark, and every string is a prop. Answer a status page with the
 matching HTTP status from the host's own route. Give a placeholder route the
 `construction` page kind of `buildSiteMetadata`, which marks it
 `noindex, nofollow`; that page kind is metadata only and does not depend on
-which view the route renders. `ErrorView` and `BoundaryView` keep their
-earlier markup.
+which view the route renders. `StatusView` replaces `ErrorView` and
+`BoundaryView`, which are deprecated and keep their earlier markup.
 
 ### Global error document — `GlobalErrorDocument`
 
 `GlobalErrorDocument`, exported from `@clossys/publisher/web` and its server
 entry, is the whole document for a framework's global-error boundary. That
 boundary replaces the root layout, so it renders its own `<html>`, `<head>` and
-`<body>` and gets none of the layout's stylesheet, theme script or copy. The
-component renders a `<title>` built by `formatPageTitle` (`<page> · <brand>`,
-and a part with surrounding whitespace throws `SiteMetadataError`), a
-`noindex, nofollow` robots meta, one icon link, and an `ErrorView` with every
-other prop. It is a component, not a template: it is not in the template
-registry, takes no router, and is not a client module.
+`<body>` and gets none of the layout's stylesheet, theme script, copy or
+frame. The document renders a `<title>` built by `formatPageTitle`
+(`<page> · <brand>`, and a part with surrounding whitespace throws
+`SiteMetadataError`), a `noindex, nofollow` robots meta and one icon link,
+then a body that is the same page every other route gets:
+[`SiteFrame`](#site-frame--siteframe) (skip link, banner, the page's one
+`<main>`, contentinfo) around a [`StatusView`](#card-free-layout) inside that
+`<main>`. The page has one `<h1>` (the status) and no card. It is a
+component, not a template: it is not in the template registry, takes no
+router, and is not a client module.
+
+Props (`GlobalErrorDocumentFramedProps`):
+
+| Prop | Required | What it does |
+| --- | --- | --- |
+| `lang` | yes | The `lang` of `<html>`. |
+| `documentTitle` | yes | `{ page, brand }`, joined by `formatPageTitle`. |
+| `icon` | yes | `{ href, type? }` for the one `<link rel="icon">`. |
+| `htmlClassName` | no | A class on `<html>`, rendered only when non-empty. |
+| `shell`, `resolveCopy`, `resolveAsset` | yes | The frame's inputs, exactly as `SiteFrame` takes them (`SiteFrameInput`). |
+| `status` | yes | The one `<h1>`, as on `StatusView`: a code such as `"500"`, or a short title. |
+| `subtitle` | no | One line of supporting copy. A diagnostic reference goes here as caller copy (`Error: <digest>.`); there is no digest prop. |
+| `action` | no | The one primary call to action, such as a retry button. |
+| `notes` | no | A quiet line for a secondary link. |
+
+`GlobalErrorDocumentHeadProps` names the first four, which both shapes share.
+The frame fails closed here as everywhere: a shell the frame refuses throws.
 
 No theme script runs in this document, so it is pinned to the light theme
 (`data-theme="light"` and `color-scheme: light`) and marked `data-brand-bound`.
@@ -2496,6 +2587,9 @@ layout. Pass that class as the optional `htmlClassName` prop; it is rendered as
 "use client";
 
 import { GlobalErrorDocument } from "@clossys/publisher/web";
+import type { SiteFrameInput } from "@clossys/publisher/web";
+
+declare const frame: SiteFrameInput; // the same shell and resolvers the root layout passes to SiteFrame
 
 export default function GlobalError({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
   return (
@@ -2503,9 +2597,11 @@ export default function GlobalError({ error, reset }: { error: Error & { digest?
       lang="en"
       documentTitle={{ page: "Something went wrong", brand: "Example Studio" }}
       icon={{ href: "/icon.svg", type: "image/svg+xml" }}
-      status={500}
-      title="Something went wrong"
-      description={error.digest ? `Something went wrong. Error: ${error.digest}.` : "Something went wrong."}
+      shell={frame.shell}
+      resolveCopy={frame.resolveCopy}
+      resolveAsset={frame.resolveAsset}
+      status="500"
+      subtitle={error.digest ? `Something went wrong. Error: ${error.digest}.` : "Something went wrong."}
       action={<button type="button" onClick={reset}>Try again</button>}
     />
   );
@@ -2513,9 +2609,127 @@ export default function GlobalError({ error, reset }: { error: Error & { digest?
 ```
 
 Next requires the global-error file to be a client module, so it starts with
-`"use client"`; the component itself is not one. The digest has no prop of
-its own: put it in `description` as caller copy (`Error: <digest>.`). A
-segment `error` boundary keeps the layout, so use `ErrorView` there instead.
+`"use client"`; the component itself is not one. Because that file is a
+client module, the shell and the two resolvers it passes are bundled for the
+browser: build them from modules with no server-only imports and nothing
+secret in them. A segment `error` boundary and `not-found` page keep their
+layout, and so its frame: they render `StatusView` alone, not this document.
+
+**Deprecated `ErrorView` shape** (`GlobalErrorDocumentErrorViewProps`, kept for
+one release). Without `shell`, the document takes the earlier props (`status`,
+`title`, `description`, `action` and the `div` attributes of `ErrorView`) and
+renders an `ErrorView` as the whole body, with no frame and no `<main>`. To
+move to the framed shape, add `shell`, `resolveCopy` and `resolveAsset`, and
+fold `title` and `description` into `subtitle`, keeping their sentences.
+Passing `shell` together with `title` or `description` throws, so a
+half-migrated call site cannot drop copy silently. `GlobalErrorDocumentProps`
+is the union of the two shapes.
+
+### From a mirrored or self-chromed copy to the published view
+
+A site that carries its own copy of a front-door page (a mirrored view file,
+a page with its own header, `<main>` and footer, or a published view given
+chrome props) moves to the published view in the same steps for every page.
+
+1. **Mount `SiteFrame` once, in a layout.** Put it in the root layout, or in
+   the segment layout of each surface (a route group per surface when the site
+   and its sign-in pages need different shells). Pass
+   `siteShellFor(config, kind)` from one `SiteFrameConfig` per brand. Do not
+   mount a second frame below a layout that already has one: one banner, one
+   `<main>`, one contentinfo per page.
+2. **Pages render the view only.** `page.tsx`, `error.tsx` and `not-found.tsx`
+   render inside their segment layout, so each renders the view with no frame
+   wrapper, no `<main>` and no header or footer of its own.
+3. **Only `global-error` owns a document.** It replaces the root layout, so it
+   renders [`GlobalErrorDocument`](#global-error-document--globalerrordocument),
+   which brings its own frame.
+4. **Drop every deprecated chrome prop.** Delete `brand`, `header`, `footer`,
+   `mainId`, `nav`, `headerAction`, `headerSecondaryAction` (`AuthView`,
+   `CaptureView`), `secondaryAction` (`BoundaryView`), `ground`,
+   `footerSecondary` and `surfaceLabel` (`AuthView`) from the call site.
+   Delete the prop: `null` still counts as passed and selects the legacy page.
+   Delete the local header, footer, skip link and main id with it.
+5. **Move what the chrome showed into the shell.** Each piece has a place in
+   `SiteFrameConfig`, and `siteShellFor` shows it on the surfaces it belongs to:
+
+| The page showed | It goes to |
+| --- | --- |
+| the brand mark or lockup | `brand` (an image asset id and copy references) |
+| the skip link and main id | `skipLink` (copy); the frame owns `SITE_MAIN_ID` |
+| a surface badge (`surfaceLabel`) | `environments`, with the page's own surface marked current by `siteShellFor`; or `surfaceLabel` on a hand-built shell |
+| the banner call to action (`headerAction`) | `site.actions` |
+| a secondary banner action | `site.secondaryAction` |
+| primary navigation (`nav`) | `site.nav` |
+| footer link columns | `site.columns` |
+| the legal row (`footerSecondary`) | `legal` (`entity`, `links`, optional `linksLabel`), on every surface |
+| `ground` | `ground` |
+| a second destination under the page's action | the view's `notes`, as a quiet link |
+
+6. **Swap the view.**
+
+| Mirrored or deprecated | Published view | How |
+| --- | --- | --- |
+| a sign-in, activation or reset page with its own shell, or `AuthView` with chrome props | `AuthView` | `heading`, `description`, `form`, `notes`, `isDisabled`; nothing else. |
+| `BoundaryView` or `ErrorView` with a title, a line and one action | `StatusView` | `status` stays; `title` and `description` become `subtitle`, keeping their sentences; `action` stays one control; a second destination moves to `notes`. |
+| a boundary state that needs a card (a signed-in 403 with the account and a switch-account control) | `AuthView` | the card content in `form`, the alternate step in `notes`. |
+| `GlobalErrorDocument` with the `ErrorView` props | `GlobalErrorDocument` with `shell` | add `shell`, `resolveCopy`, `resolveAsset`; `title` and `description` become `subtitle`. |
+| a mirrored sign-in form | `SignInForm` | `identify`, `verify`, optional `verifyCode` and `resendCode`, `onSignedIn`, `nouns`. Keep a consumer form only when its props or behaviour cannot be matched, and record why. |
+
+7. **Import from the right entry.** `@clossys/publisher/web` resolves a
+   server-safe target under React's `react-server` condition;
+   `@clossys/publisher/web/client` is the browser entry for the forms and
+   the front-door views, with no mixed renderer and no Writer registry.
+
+| Next file | Module | Imports |
+| --- | --- | --- |
+| `layout.tsx` | server | `SiteFrame`, `siteShellFor` from `@clossys/publisher/web` |
+| `page.tsx`, `not-found.tsx` | server | the view (`AuthView`, `StatusView`, `CaptureView`, `DocumentView`) from `@clossys/publisher/web` |
+| a form file (`"use client"`) | client | `SignInForm`, `ActivateForm`, `ResetForm` from `@clossys/publisher/web/client` (package copy) or `@clossys/publisher/web` (your copy registry), with the handlers; the server page renders this file in `AuthView`'s `form` |
+| `error.tsx` (`"use client"`, as Next requires) | client | `StatusView` from `@clossys/publisher/web/client` |
+| `global-error.tsx` (`"use client"`, as Next requires) | client | `GlobalErrorDocument` from `@clossys/publisher/web`; the client entry does not export it or `SiteFrame` yet |
+
+   Under `react-server`, the `/web` form names are stubs that throw a
+   `RenderError` when called, so a server page never renders a form directly;
+   it renders the client form file. A server layout passes `resolveCopy` and
+   `resolveAsset` to `SiteFrame` on the server; only strings reach the skip
+   link's client island.
+
+8. **Test the page as it ships.** Render the page inside its frame with
+   `renderToStaticMarkup` and assert one `<h1>`, one `<main>`, the banner and
+   contentinfo once (from the frame), one primary action, and, for
+   `StatusView`, no card inside `<main>`. Run
+   [`checkFrontDoor` or `expectFrontDoorConformance`](#front-door-conformance)
+   over the same renders: the `form-measure` rule finds the measure on a
+   framed view's content root inside the frame's `<main>`.
+
+```tsx
+// @vitest-environment jsdom
+import { renderToStaticMarkup } from "react-dom/server";
+import { SiteFrame, StatusView } from "@clossys/publisher/web";
+import type { SiteFrameInput } from "@clossys/publisher/web";
+import { expectFrontDoorConformance } from "@clossys/publisher/testing";
+import { expect, it } from "vitest";
+
+declare const frame: SiteFrameInput; // the shell and resolvers the layout passes
+
+const notFound = () => (
+  <SiteFrame {...frame}>
+    <StatusView status="404" subtitle="This page does not exist." action={<a href="/" className="bg-accent">Back to home</a>} />
+  </SiteFrame>
+);
+
+it("renders one frame around the not-found view", () => {
+  const doc = new DOMParser().parseFromString(renderToStaticMarkup(notFound()), "text/html");
+  expect(doc.querySelectorAll("h1")).toHaveLength(1);
+  expect(doc.querySelectorAll("main")).toHaveLength(1);
+  expect(doc.querySelectorAll("header")).toHaveLength(1);
+  expect(doc.querySelectorAll("footer")).toHaveLength(1);
+  expect(doc.querySelector("main .rounded-control")).toBeNull();
+  expectFrontDoorConformance({
+    surfaces: [{ surface: "not-found", title: { page: "Page not found", brand: "Example Studio" }, render: notFound }],
+  });
+});
+```
 
 ### `SignInForm`
 
@@ -2532,17 +2746,16 @@ page's `<h1>` stays `AuthView`'s.
 import { AuthView, SignInForm } from "@clossys/publisher/web";
 import type { SignInResult } from "@clossys/publisher/web";
 
-declare const brand: React.ReactNode;
 declare function lookUp(identifier: string): Promise<SignInResult>; // your handler
 declare function check(secret: string): Promise<SignInResult>; // your handler
 declare function checkCode(code: string): Promise<SignInResult>; // optional, for the code step
 declare function sendNewCode(): Promise<SignInResult>; // optional, for the code step
 declare function goToApp(): void;
 
+// Rendered inside the SiteFrame its layout mounts, so it passes no chrome prop.
 export function SignInPage() {
   return (
     <AuthView
-      brand={brand}
       heading="Sign in"
       description="Continue to Acme Console."
       form={
@@ -4168,7 +4381,6 @@ that throws a `RenderError` when called. The page's `<h1>` stays `AuthView`'s.
 import { ActivateForm, AuthView, ResetForm } from "@clossys/publisher/web";
 import type { ActivateDetails, ActivateResult, ResetDetails, ResetResult } from "@clossys/publisher/web";
 
-declare const brand: React.ReactNode;
 declare function setPassword(details: ActivateDetails): Promise<ActivateResult>; // your handler
 declare function sendCode(identifier: string): Promise<ResetResult>; // your handler
 declare function changePassword(details: ResetDetails): Promise<ResetResult>; // your handler
@@ -4177,10 +4389,10 @@ declare function goToSignIn(): void;
 declare function goToApp(): void;
 declare const identityServiceIsConfigured: boolean;
 
+// Both pages render inside the SiteFrame their layout mounts, so they pass no chrome prop.
 export function ActivatePage() {
   return (
     <AuthView
-      brand={brand}
       heading="Set up your account"
       description="You’re invited to Acme Console. Choose a password to finish."
       isDisabled={!identityServiceIsConfigured}
@@ -4192,7 +4404,6 @@ export function ActivatePage() {
 export function ResetPage() {
   return (
     <AuthView
-      brand={brand}
       heading="Reset your password"
       description="Enter your email and we’ll send you a code."
       form={<ResetForm request={sendCode} reset={changePassword} resendCode={sendCodeAgain} onReset={goToSignIn} nouns={{ surface: "Acme Console" }} />}
@@ -4293,7 +4504,7 @@ builds no view and no copy: each `render` returns the consumer's own element.
 | Rule | Asks |
 | --- | --- |
 | `one-h1` | Exactly one `<h1>`. |
-| `form-measure` | The `<main>` of a sign-in, activation or reset surface carries `max-width:var(--ui-width-form-max, none)`. |
+| `form-measure` | The `<main>` of a sign-in, activation or reset surface, or the view's content root directly inside it, carries `max-width:var(--ui-width-form-max, none)`. |
 | `one-primary-action` | Exactly one button, link or `[role=button]` with class token `bg-accent` (`PRIMARY_ACTION_CLASS`), inside `<main>` or, when there is none, the body. |
 | `page-title` | `formatPageTitle(title)` does not throw and, when `title.actual` is given, equals it. `title` is required on every surface except `global-error`. |
 | `global-error-head` | A `global-error` document has exactly one `<title>` equal to `formatPageTitle(title)` (or matching `<page> · <brand>` when no `title` is given), a robots meta containing `noindex`, and exactly one `link[rel=icon]`. |
@@ -4306,11 +4517,19 @@ nothing else. It needs a `DOMParser`, which the caller's DOM test environment
 (for example jsdom) provides, and throws a plain `Error` saying so when there
 is none.
 
+Render each surface as it ships: the view inside the `SiteFrame` its layout
+mounts, with no chrome prop. The `form-measure` rule accepts the measure on
+the `<main>` (the legacy page) or on the view's content root directly inside
+it (a view inside `SiteFrame`).
+
 ```tsx
 // @vitest-environment jsdom
-import { AuthView, BoundaryView } from "@clossys/publisher/web";
+import { AuthView, SiteFrame, StatusView } from "@clossys/publisher/web";
+import type { SiteFrameInput } from "@clossys/publisher/web";
 import { PRIMARY_ACTION_CLASS, expectFrontDoorConformance } from "@clossys/publisher/testing";
 import { expect, it } from "vitest";
+
+declare const frame: SiteFrameInput; // the shell and resolvers the layout passes
 
 it("keeps the front door conformant", () => {
   expect(() =>
@@ -4320,24 +4539,22 @@ it("keeps the front door conformant", () => {
           surface: "sign-in",
           title: { page: "Sign in", brand: "Example Studio" },
           render: () => (
-            <AuthView
-              brand="Example Studio"
-              heading="Sign in"
-              description="Welcome back."
-              form={<button type="submit" className={PRIMARY_ACTION_CLASS}>Sign in</button>}
-            />
+            <SiteFrame {...frame}>
+              <AuthView
+                heading="Sign in"
+                description="Welcome back."
+                form={<button type="submit" className={PRIMARY_ACTION_CLASS}>Sign in</button>}
+              />
+            </SiteFrame>
           ),
         },
         {
           surface: "not-found",
           title: { page: "Page not found", brand: "Example Studio" },
           render: () => (
-            <BoundaryView
-              brand="Example Studio"
-              status="404"
-              title="Page not found"
-              action={<a href="/" className={PRIMARY_ACTION_CLASS}>Go home</a>}
-            />
+            <SiteFrame {...frame}>
+              <StatusView status="404" subtitle="This page does not exist." action={<a href="/" className={PRIMARY_ACTION_CLASS}>Go home</a>} />
+            </SiteFrame>
           ),
         },
       ],
@@ -4357,7 +4574,8 @@ Release notes for every version are in the [changelog](https://github.com/clossy
 ## Browser front-door client
 
 `@clossys/publisher/web/client` exports `SignInForm`, `ActivateForm`,
-`ResetForm`, `AuthView`, `BoundaryView` and their props/result types.
+`ResetForm`, `AuthView`, `StatusView`, the deprecated `BoundaryView` and their
+props/result types. It does not export `SiteFrame` or `GlobalErrorDocument`.
 The forms bind immutable Writer package defaults once when the module loads;
 consumer registry mutations cannot change or authorize those defaults.
 Use the existing `@clossys/publisher/web` forms for strict mutable registry
@@ -4374,7 +4592,7 @@ const form = <SignInForm
   verify={async () => ({ status: "ok" })}
   onSignedIn={() => {}}
 />;
-const page = <AuthView brand="Example" heading="Sign in" description="Continue" form={form} />;
+const page = <AuthView heading="Sign in" description="Continue" form={form} />; // inside the layout's SiteFrame
 ```
 
 This entry requires the same declared React and Designer peers as the existing
