@@ -51,6 +51,8 @@ import { ContentSection } from "../blocks/ContentSection.js";
 import { FeatureGrid } from "../blocks/FeatureGrid.js";
 import { OrderedStepSequence } from "../blocks/OrderedStepSequence.js";
 import { TopicList } from "../blocks/TopicList.js";
+import { Specimen } from "../blocks/specimen/Specimen.js";
+import type { SpecimenPanelItem } from "../blocks/specimen/SpecimenPanel.js";
 import { scanCompiledCssSources } from "./scan-sources.js";
 import { generateCompiledCss } from "./generate.js";
 
@@ -274,5 +276,66 @@ describe("coverage: real rendered classes are all present in compiled.css", () =
     }
     expect(missing).toEqual([]);
   });
-});
 
+  it("the Specimen family renders classes present in a fresh compiled.css", async () => {
+    const status = { tone: "success" as const, label: "Done" };
+    const panel: SpecimenPanelItem = {
+      id: "p1",
+      title: "Record",
+      meta: "Meta",
+      status,
+      parts: [
+        { id: "f4", type: "fields", label: "Fields", columns: 4, items: [{ id: "a", label: "A", value: "1" }] },
+        { id: "f1", type: "fields", columns: 1, items: [{ id: "a", label: "A", value: "1" }] },
+        { id: "rows", type: "status-rows", label: "Rows", items: [{ id: "a", label: "A", detail: "d", status }, { id: "b", label: "B", status }] },
+      ],
+      footer: { assignee: { initials: "AB", name: "A B", note: "owner" }, note: "Note" },
+    };
+    const panelB: SpecimenPanelItem = {
+      id: "p2",
+      title: "Second",
+      parts: [
+        { id: "m", type: "meter", label: "M", value: 2, scaleMax: 4, limit: 3, tone: "warning", valueText: "2", limitText: "3", status, note: "n" },
+        {
+          id: "t",
+          type: "table",
+          caption: "Caption",
+          columns: [{ id: "c1", label: "C1" }, { id: "c2", label: "C2" }],
+          rows: [{ id: "r", cells: [{ text: "R" }, { status }] }],
+        },
+        { id: "s", type: "schedule", items: [{ id: "a", date: "1 Jan", label: "L", amount: "10", status }] },
+      ],
+    };
+    const panelC: SpecimenPanelItem = {
+      id: "p3",
+      parts: [
+        { id: "sh", type: "shares", items: [{ id: "a", name: "A", share: 50, shareText: "50%", status }] },
+        { id: "fi", type: "files", items: [{ id: "a", format: "PDF", name: "N", source: "S" }, { id: "b", format: "XLS", name: "M" }] },
+      ],
+    };
+    const trees = [
+      render(<Specimen label="A single specimen panel." panels={[panel]} />),
+      render(<Specimen label="Two panels in a row." arrangement="row" panels={[panel, panelB]} />),
+      render(<Specimen label="Three panels in a row." arrangement="row" panels={[panel, panelB, panelC]} />),
+      render(<Specimen label="Stacked panels." arrangement="stack" panels={[panel, panelB]} />),
+      render(<Specimen label="Panels in a flow." arrangement="flow" connector="Then" panels={[panel, panelB, panelC]} />),
+    ];
+
+    const renderedClasses = new Set<string>();
+    for (const result of trees) {
+      for (const c of collectClassNames(result.container)) renderedClasses.add(c);
+      result.unmount();
+    }
+    for (const required of ["tablet:table", "tablet:not-sr-only", "tablet:table-cell", "tablet-lg:grid-cols-4", "desktop:grid-cols-3", "size-xl", "font-mono"]) {
+      expect(renderedClasses.has(required)).toBe(true);
+    }
+
+    const scan = scanCompiledCssSources(packageRoot);
+    const generated = await generateCompiledCss({ stylesDir: resolve(packageRoot, "styles"), candidates: scan.candidates });
+    const missing: string[] = [];
+    for (const className of renderedClasses) {
+      if (!generated.css.includes(toSelectorText(className))) missing.push(className);
+    }
+    expect(missing).toEqual([]);
+  });
+});

@@ -216,6 +216,9 @@
   .h-px {
     height: 1px;
   }
+  .h-xl {
+    height: var(--spacing-xl, 24px);
+  }
   .max-h-64 {
     max-height: calc(var(--spacing, 0.25rem) * 64);
   }
@@ -349,6 +352,9 @@
   .grid-cols-1 {
     grid-template-columns: repeat(1, minmax(0, 1fr));
   }
+  .grid-cols-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
   .flex-col {
     flex-direction: column;
   }
@@ -363,6 +369,9 @@
   }
   .items-center {
     align-items: center;
+  }
+  .items-end {
+    align-items: flex-end;
   }
   .items-start {
     align-items: flex-start;
@@ -412,6 +421,12 @@
   .gap-x-4xl {
     column-gap: var(--spacing-4xl, 64px);
   }
+  .gap-x-lg {
+    column-gap: var(--spacing-lg, 16px);
+  }
+  .gap-x-md {
+    column-gap: var(--spacing-md, 12px);
+  }
   .gap-x-sm {
     column-gap: var(--spacing-sm, 8px);
   }
@@ -420,6 +435,12 @@
   }
   .gap-y-3xl {
     row-gap: var(--spacing-3xl, 48px);
+  }
+  .gap-y-md {
+    row-gap: var(--spacing-md, 12px);
+  }
+  .gap-y-xs {
+    row-gap: var(--spacing-xs, 4px);
   }
   .truncate {
     overflow: hidden;
@@ -634,6 +655,9 @@
   .p-md {
     padding: var(--spacing-md, 12px);
   }
+  .p-xl {
+    padding: var(--spacing-xl, 24px);
+  }
   .p-xs {
     padding: var(--spacing-xs, 4px);
   }
@@ -691,20 +715,35 @@
   .pt-md {
     padding-top: var(--spacing-md, 12px);
   }
+  .pt-sm {
+    padding-top: var(--spacing-sm, 8px);
+  }
   .pb-lg {
     padding-bottom: var(--spacing-lg, 16px);
+  }
+  .pb-sm {
+    padding-bottom: var(--spacing-sm, 8px);
   }
   .text-center {
     text-align: center;
   }
+  .text-end {
+    text-align: end;
+  }
   .text-start {
     text-align: start;
+  }
+  .align-bottom {
+    vertical-align: bottom;
   }
   .font-body {
     font-family: var(--font-body, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif);
   }
   .font-display {
     font-family: var(--font-display, system-ui, ui-sans-serif, -apple-system, "Segoe UI", sans-serif);
+  }
+  .font-mono {
+    font-family: var(--font-mono, ui-monospace, "SF Mono", Menlo, Consolas, monospace);
   }
   .text-blockquote {
     font-size: var(--text-blockquote, 22px);
@@ -748,6 +787,10 @@
   .font-medium {
     --tw-font-weight: var(--font-weight-medium, 500);
     font-weight: var(--font-weight-medium, 500);
+  }
+  .font-normal {
+    --tw-font-weight: var(--font-weight-normal, 400);
+    font-weight: var(--font-weight-normal, 400);
   }
   .font-semibold {
     --tw-font-weight: var(--font-weight-semibold, 600);
@@ -1019,6 +1062,21 @@
     .tablet\:hidden {
       display: none;
     }
+    .tablet\:table {
+      display: table;
+    }
+    .tablet\:table-cell {
+      display: table-cell;
+    }
+    .tablet\:table-header-group {
+      display: table-header-group;
+    }
+    .tablet\:table-row {
+      display: table-row;
+    }
+    .tablet\:table-row-group {
+      display: table-row-group;
+    }
     .tablet\:h-px {
       height: 1px;
     }
@@ -1030,6 +1088,9 @@
     }
     .tablet\:shrink-0 {
       flex-shrink: 0;
+    }
+    .tablet\:border-collapse {
+      border-collapse: collapse;
     }
     .tablet\:grid-cols-2 {
       grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1058,11 +1119,23 @@
     .tablet\:p-xl {
       padding: var(--spacing-xl, 24px);
     }
+    .tablet\:py-sm {
+      padding-block: var(--spacing-sm, 8px);
+    }
     .tablet\:py-xl {
       padding-block: var(--spacing-xl, 24px);
     }
+    .tablet\:pe-md {
+      padding-inline-end: var(--spacing-md, 12px);
+    }
     .tablet\:pb-xl {
       padding-bottom: var(--spacing-xl, 24px);
+    }
+    .tablet\:text-start {
+      text-align: start;
+    }
+    .tablet\:align-top {
+      vertical-align: top;
     }
     .tablet\:text-display-l {
       font-size: var(--text-display-l, 56px);
@@ -1146,6 +1219,9 @@
     }
   }
   @media (width >= 1280px) {
+    .desktop\:col-span-1 {
+      grid-column: span 1 / span 1;
+    }
     .desktop\:block {
       display: block;
     }
@@ -1172,6 +1248,12 @@
     }
     .desktop\:p-2xl {
       padding: var(--spacing-2xl, 32px);
+    }
+    .desktop\:p-xl {
+      padding: var(--spacing-xl, 24px);
+    }
+    .desktop\:ps-xl {
+      padding-inline-start: var(--spacing-xl, 24px);
     }
     .desktop\:text-start {
       text-align: start;

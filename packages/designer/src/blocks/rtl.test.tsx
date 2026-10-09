@@ -8,6 +8,7 @@ import { ContentSection } from "./ContentSection.js";
 import { Comparison } from "./Comparison.js";
 import { TopicList } from "./TopicList.js";
 import { FeatureGrid } from "./FeatureGrid.js";
+import { Specimen } from "./specimen/Specimen.js";
 
 const PHYSICAL = /(^|\s)([a-z-]+:)*(ml|mr|pl|pr|left|right|border-l|border-r|text-left|text-right|rounded-[tb]?[lr])(-|\s|$)/;
 
@@ -101,5 +102,44 @@ describe("blocks and atoms RTL logical-direction utilities (#951)", () => {
       expect(el).toHaveClass("border-t");
       expect(el.className).not.toMatch(PHYSICAL);
     }
+  });
+
+  it("draws Specimen rails, connectors and table cells with logical utilities only", () => {
+    const { container } = render(
+      <div dir="rtl">
+        <Specimen
+          label="Two linked records with a schedule, a small table and a file list, shown right to left."
+          arrangement="flow"
+          connector="Then"
+          panels={[
+            {
+              id: "a",
+              title: "First",
+              parts: [
+                { id: "s", type: "schedule", items: [{ id: "1", date: "1 Jan", label: "Start", amount: "10" }] },
+                { id: "f", type: "files", items: [{ id: "1", format: "PDF", name: "Note", source: "Drive" }] },
+              ],
+            },
+            {
+              id: "b",
+              title: "Second",
+              parts: [
+                {
+                  id: "t",
+                  type: "table",
+                  caption: "Counts by site",
+                  columns: [{ id: "site", label: "Site" }, { id: "n", label: "Count" }],
+                  rows: [{ id: "r", cells: [{ text: "North" }, { text: "4" }] }],
+                },
+              ],
+            },
+          ]}
+        />
+      </div>,
+    );
+    expect(container.querySelector("ol")).toHaveClass("border-s", "ps-lg");
+    expect(container.querySelector("[data-specimen-connector] span")).toHaveClass("border-s");
+    expect(container.querySelector("td span:last-child")).toHaveClass("text-end", "tablet:text-start");
+    for (const el of container.querySelectorAll<HTMLElement>("[class]")) expect(el.className).not.toMatch(PHYSICAL);
   });
 });

@@ -100,12 +100,13 @@ surfaces and live in `@clossys/publisher/web`.
   `Separator`, `Chip`, `StatusMark`, `Meter`.
 - **`blocks`** — owns the internal layout of multiple named regions,
   typically by composing one or more atoms (and/or layout) into something
-  with a real job on a page. Twenty-five ship: `PageHeader`, `EmptyState`,
+  with a real job on a page. Twenty-seven ship: `PageHeader`, `EmptyState`,
   `DataTable`, `DetailView`, `Pagination`, `Stat`, `Form`, `FieldGroup`,
   `ConfirmDialog`, `Toolbar`, `NavGrid`, `SectionHeader`, `Hero`,
   `MarketingChapter`, `FeatureGrid`, `CardGrid`, `Comparison`, `TopicList`,
-  `OrderedStepSequence`, `StatusList`, `Faq`, `PricingTable`, `Testimonial`,
-  `ArticleBody`, `ConsentBanner` — the last twelve are marketing/editorial
+  `Specimen`, `SpecimenPanel`, `OrderedStepSequence`, `StatusList`, `Faq`,
+  `PricingTable`, `Testimonial`, `ArticleBody`, `ConsentBanner` — the last
+  fourteen are marketing/editorial
   content blocks and a presentational consent notice, completing this layer
   (see "Blocks" below).
 - **`shell`** — the persistent frame around content (nav, layout chrome)
@@ -350,7 +351,7 @@ source file's own header for the exact probe and its result). Today that's:
 | Subpath | Server-safe members |
 | --- | --- |
 | `@clossys/designer/atoms/server` | `Avatar`, `Badge`, `Banner`, `Card`, `Field`, `Icon`, `Meter`, `Skeleton`, `Spinner`, `StatusMark`, `buttonLinkClassName`, `mergeUiClasses` |
-| `@clossys/designer/blocks/server` | `ArticleBody`, `CardGrid`, `Comparison`, `ContentSection`, `DetailView`, `EmptyState`, `Faq`, `FeatureGrid`, `FieldGroup`, `Hero`, `MarketingChapter`, `MediaFigure`, `OrderedStepSequence`, `PageHeader`, `PricingTable`, `SectionFrame`, `SectionHeader`, `SectionIntro`, `Stat`, `StatusList`, `TopicList` |
+| `@clossys/designer/blocks/server` | `ArticleBody`, `CardGrid`, `Comparison`, `ContentSection`, `DetailView`, `EmptyState`, `Faq`, `FeatureGrid`, `FieldGroup`, `Hero`, `MarketingChapter`, `MediaFigure`, `OrderedStepSequence`, `PageHeader`, `PricingTable`, `SectionFrame`, `SectionHeader`, `SectionIntro`, `Specimen`, `SpecimenPanel`, `Stat`, `StatusList`, `TopicList` |
 | `@clossys/designer/shell/server` | `Shell`, `SiteFooter`, `SiteHeader`, `SkipLink` |
 | `@clossys/designer/charts/server` | `ChartFrame`, `Sparkline` |
 | `@clossys/designer/theme/server` | `getThemeInitScript` |
@@ -3281,6 +3282,93 @@ below. An even count reads best in two columns. No check marks: a topic
 list states coverage, not progress. Optional icons are `aria-hidden` and
 muted.
 
+### `Specimen`
+
+```tsx
+import { Specimen } from "@clossys/designer/blocks/server";
+
+<Specimen
+  label="An order record with its delivery fields, two checks and the stock level against its floor."
+  panels={[
+    {
+      id: "order",
+      title: "Order 1042",
+      meta: "Placed 1 March",
+      status: { tone: "info", label: "Open" },
+      parts: [
+        {
+          id: "fields",
+          type: "fields",
+          items: [
+            { id: "qty", label: "Quantity", value: "240 units" },
+            { id: "due", label: "Due", value: "12 March" },
+          ],
+        },
+        {
+          id: "checks",
+          type: "status-rows",
+          label: "Checks",
+          items: [
+            { id: "count", label: "Stock count", status: { tone: "warning", label: "In progress" } },
+            { id: "labels", label: "Labels printed", status: { tone: "success", label: "Done" } },
+          ],
+        },
+        {
+          id: "stock",
+          type: "meter",
+          label: "Stock level",
+          value: 38,
+          scaleMax: 100,
+          limit: 25,
+          direction: "min",
+          tone: "success",
+          valueText: "38 units",
+          limitText: "floor 25",
+        },
+      ],
+      footer: { assignee: { initials: "AL", name: "Alex Lane", note: "owner" } },
+    },
+  ]}
+/>;
+```
+
+Native product-UI evidence for a marketing band, in place of screenshots
+and iframes: a `<figure>` named by the required `label` (its
+`aria-label`: what the specimen shows, 12 to 25 words, no claims), holding
+1 to 3 `SpecimenPanel`s built from atoms and tokens and rendered on the
+server. Every word and number arrives through props, so the specimen is
+real text, the size of its content, and reflows at 390px.
+
+`arrangement` (`SpecimenArrangement`) is `"single"` (the default, exactly
+one panel), `"row"` (two or three panels side by side from `tablet`, three
+across from `desktop`: put a row of three in a stacked band, not in a
+split's visual column), `"stack"` (one column) or `"flow"` (one column
+joined by a hairline connector; `connector` is the short caption after the
+first panel, allowed only with `flow`). A `SpecimenPanel` is the `Card`
+outline (raised fill, one hairline, `rounded-surface`, `p-lg` then `p-xl`
+from `desktop`): a title row (`title`, `meta`, `status`), 1 to 3 `parts`
+and an optional `footer` (an assignee's decorative initials beside their
+name, a note), each separated by a hairline. All small text is secondary
+ink, which holds AA on the raised fill.
+
+Parts (`SpecimenPart`, by `type`): `"fields"` (a `<dl>` in 1, 2 or 4
+columns, default 2, never more than two below `tablet-lg`); `"status-rows"`
+(a `<ul>` of label, detail and `StatusMark`); `"meter"` (the `Meter` atom
+with its label, state and note); `"table"` (a real `<table>` of at most 4
+columns and 5 rows with a visually hidden `caption`; below `tablet` each
+row reflows to a stacked record of label/value pairs, with explicit table
+roles so the semantics survive the display change); `"schedule"` (an
+`<ol>` of dated rows on a hairline rail); `"shares"` (names with a
+percentage `Meter` on a scale of 100); `"files"` (a mono format tag, a
+name and a source).
+
+Static by design: no link, button, input, hover state or focus stop, no
+internal or horizontal scroll, and no `ground` prop: specimens never sit
+on an inverse band. Budgets are validated and throw rather than crowd the
+panel: 3 panels, 3 parts per panel, 6 rows per part, a 4 by 5 table with
+one cell per column, shares from 0 to 100, and a non-blank `label`
+(`TypeError`).
+
 ### `StatusList`
 
 ```tsx
@@ -5170,6 +5258,34 @@ not a grab-bag).
 | `TopicListProps` | type | Props for `TopicList`: `items`, `columns`, `ground`, `className`, `style`, plus every native `<ul>` attribute except `title`. |
 | `TopicListItem` | type | One topic: `id`, `icon?`, `heading`, `description?`. |
 | `TopicListColumns` | type | `1 \| 2`. |
+| `Specimen` | component | Labelled figure of 1 to 3 static product-UI panels (`single`, `row`, `stack`, `flow`); budgets validated. |
+| `SpecimenProps` | type | Props for `Specimen`: `label`, `arrangement`, `connector`, `panels`, `className`, `style`, plus native `<figure>` attributes except `children`, `title`, `aria-label` and `aria-labelledby`. |
+| `SpecimenArrangement` | type | `"single" \| "row" \| "stack" \| "flow"`. |
+| `SpecimenPanel` | component | One specimen panel: an outline card with a title row, 1 to 3 parts and an optional footer. |
+| `SpecimenPanelProps` | type | Props for `SpecimenPanel`: `SpecimenPanelContent` plus native `<div>` attributes except `title` and `children`. |
+| `SpecimenPanelContent` | type | What one panel shows: `title?`, `meta?`, `status?`, `parts`, `footer?`. |
+| `SpecimenPanelItem` | type | One entry of `Specimen`'s `panels`: `SpecimenPanelContent` plus `id`. |
+| `SpecimenFooter` | type | A panel footer: `assignee?`, `note?`. |
+| `SpecimenAssignee` | type | `initials` (decorative), `name`, `note?`. |
+| `SpecimenTone` | type | `"success" \| "warning" \| "danger" \| "info" \| "neutral"`. |
+| `SpecimenStatus` | type | A state in words: `tone`, `label`. |
+| `SpecimenPart` | type | Union of the seven part shapes, keyed by `type`. |
+| `SpecimenPartType` | type | `"fields" \| "status-rows" \| "meter" \| "table" \| "schedule" \| "shares" \| "files"`. |
+| `SpecimenFieldsPart` | type | `type: "fields"`: `label?`, `columns?` (`1 \| 2 \| 4`), `items` (1 to 6). |
+| `SpecimenField` | type | `id`, `label`, `value`. |
+| `SpecimenStatusRowsPart` | type | `type: "status-rows"`: `label?`, `items` (1 to 6). |
+| `SpecimenStatusRow` | type | `id`, `label`, `detail?`, `status`. |
+| `SpecimenMeterPart` | type | `type: "meter"`: `label`, `value`, `scaleMax`, `limit?`, `direction?`, `tone`, `valueText`, `limitText?`, `status?`, `note?`. |
+| `SpecimenTablePart` | type | `type: "table"`: `label?`, `caption`, `columns` (1 to 4), `rows` (1 to 5). |
+| `SpecimenTableColumn` | type | `id`, `label`. |
+| `SpecimenTableRow` | type | `id`, `cells` (one per column; the first is the row header). |
+| `SpecimenTableCell` | type | `{ text }` or `{ status }`. |
+| `SpecimenSchedulePart` | type | `type: "schedule"`: `label?`, `items` (1 to 6). |
+| `SpecimenScheduleItem` | type | `id`, `date`, `label`, `amount?`, `status?`. |
+| `SpecimenSharesPart` | type | `type: "shares"`: `label?`, `items` (1 to 6). |
+| `SpecimenShare` | type | `id`, `name`, `share` (0 to 100), `shareText`, `status?`. |
+| `SpecimenFilesPart` | type | `type: "files"`: `label?`, `items` (1 to 6). |
+| `SpecimenFile` | type | `id`, `format`, `name`, `source?`. |
 | `OrderedStepSequence` | component | Editorial ordered sequence: optional heading region, authored ordinal/label/heading/body steps, responsive decorative connectors. |
 | `OrderedStepSequenceProps` | type | Props for `OrderedStepSequence`: `eyebrow`, `heading`, `description`, `items`, `headingLevel`, `ground`, `className`, `style`, plus every native `<section>` attribute. |
 | `OrderedStepSequenceItem` | type | One step: `id`, `ordinal`, `label?` (the actor tag), `heading`, `description?`, `visual?`. |

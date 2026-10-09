@@ -64,6 +64,37 @@ export { Comparison } from "./Comparison.js";
 export type { ComparisonProps, ComparisonSide, ComparisonHeadingLevel } from "./Comparison.js";
 export { TopicList } from "./TopicList.js";
 export type { TopicListProps, TopicListItem, TopicListColumns } from "./TopicList.js";
+export { Specimen } from "./specimen/Specimen.js";
+export type { SpecimenProps, SpecimenArrangement } from "./specimen/Specimen.js";
+export { SpecimenPanel } from "./specimen/SpecimenPanel.js";
+export type {
+  SpecimenPanelProps,
+  SpecimenPanelContent,
+  SpecimenPanelItem,
+  SpecimenFooter,
+  SpecimenAssignee,
+} from "./specimen/SpecimenPanel.js";
+export type {
+  SpecimenTone,
+  SpecimenStatus,
+  SpecimenPart,
+  SpecimenPartType,
+  SpecimenFieldsPart,
+  SpecimenField,
+  SpecimenStatusRowsPart,
+  SpecimenStatusRow,
+  SpecimenMeterPart,
+  SpecimenTablePart,
+  SpecimenTableColumn,
+  SpecimenTableRow,
+  SpecimenTableCell,
+  SpecimenSchedulePart,
+  SpecimenScheduleItem,
+  SpecimenSharesPart,
+  SpecimenShare,
+  SpecimenFilesPart,
+  SpecimenFile,
+} from "./specimen/parts.js";
 
 export { OrderedStepSequence } from "./OrderedStepSequence.js";
 export type {
