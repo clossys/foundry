@@ -1127,7 +1127,7 @@ bottom-start corner of the viewport with logical properties, and on mobile
 it spans the full width minus the page gutter. Its visible content is the
 one-sentence body (C-28), the privacy-policy link only when the host passes
 one (`policyLink` is optional), the status line (C-21) whenever one is
-passed, and the two actions. The title is the only part that is hidden: a
+passed, and the two actions. The title is hidden and the rest is shown: a
 failed withdrawal (C-29, C-55) is always shown to a sighted visitor in the
 notice itself. A pinned card can cover keyboard-focused content (WCAG 2.4.11
 Focus Not Obscured); the host reserves `scroll-padding-bottom` at least as
