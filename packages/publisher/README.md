@@ -4044,6 +4044,18 @@ registry.ts` (never hardcoded in a renderer):
 - **Web views** (`gallery.html`) — every shipped view: `MarketingView`,
   `SectionedView`, `AuthView`, `ErrorView`, `CaptureView`, `DocumentView`,
   `CollectionView`.
+- **Content catalog** (`content-catalog.html`): one `LandingView` page
+  rendered from a full `content-section` document, through
+  `resolveSectionedViewDocument`. It shows every module (features in each
+  treatment, column count and emphasis, bento cards in every span row,
+  comparison with and without visuals, topics in 1 and 2 columns, steps with
+  and without visuals and actor labels, the FAQ split band), every specimen
+  arrangement stacked and split on both sides, an intro band, the close band,
+  and base, sunken and inverse grounds. Each band is written at a typical
+  length or at the maximum budget in Designer's `CONTENT.md`. A small caption
+  in the preview chrome, outside the page markup, names what the next band
+  shows. Its sample copy (`src/preview/fixture-content-catalog.ts`) is for an
+  invented company.
 - **Site** (`site-*.html`) — fixtures for `templates/site`'s routes,
   rendered through `MarketingView` for home/about/contact/privacy/terms and
   a direct `ErrorView` call for `not-found`. The template's own routes now

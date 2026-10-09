@@ -56,6 +56,13 @@ mechanical gates (`designer-hero-css-check`, `designer-fold-check`, and
 full rubric — floor, authored great, review keep, and who certifies what — is
 in [PRE-AUTH-QUALITY.md](./PRE-AUTH-QUALITY.md).
 
+Band copy for the content blocks (`FeatureGrid`, `CardGrid`, `Comparison`,
+`TopicList`, `OrderedStepSequence`, `Faq`, `Specimen`) follows the content
+cookbook, [CONTENT.md](./CONTENT.md). It covers which module fits which
+information, what each slot holds and its word budget, and the page-variety
+rules. Publisher's `publisher-preview` writes `content-catalog.html`, which
+shows every module filled at a typical length and at the maximum budget.
+
 Onboarding discovers that declaration from the installed manifest and never
 infers a surface. The four existing designer bins remain gates and are not
 the assessment surface. Designer is not a required first-day role; Advisor

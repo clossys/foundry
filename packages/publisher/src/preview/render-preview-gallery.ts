@@ -15,6 +15,7 @@ import { SectionedView } from "../web/views/SectionedView.js";
 import { BrandGuideView } from "../web/views/BrandGuideView.js";
 import { SystemAuditView } from "../web/views/SystemAuditView.js";
 import { CERTIFICATION_FIXTURE_COPY } from "./certification-fixtures.js";
+import { buildContentCatalogHtml, CONTENT_CATALOG_FILENAME } from "./render-content-catalog.js";
 import {
   previewAuthDocument,
   previewCaptureViewProps,
@@ -258,9 +259,11 @@ export interface WritePreviewGalleryResult {
   entryCount: number;
   guidePath?: string;
   auditPath?: string;
+  /** Path to the content catalog (`content-catalog.html`): every content-section module, specimen arrangement and ground through `LandingView`, against the same copied stylesheets. */
+  contentCatalogPath: string;
   /** Path to the Launch-pack index (issue #1204's own "views branded ... rendered templates" ask) — links every file this call wrote. */
   indexPath: string;
-  /** Every file this call wrote, as basenames relative to `outputDir`, in write order — `PREVIEW_GALLERY_FILENAME` first, `LAUNCH_PACK_INDEX_FILENAME` last. Does not include the three copied stylesheets. */
+  /** Every file this call wrote, as basenames relative to `outputDir`, in write order — `PREVIEW_GALLERY_FILENAME` first, then `CONTENT_CATALOG_FILENAME`, `LAUNCH_PACK_INDEX_FILENAME` last. Does not include the three copied stylesheets. */
   writtenFiles: string[];
 }
 
@@ -322,12 +325,15 @@ export function writePreviewGallery(options: WritePreviewGalleryOptions): WriteP
   const entries = renderPreviewGalleryEntries();
   const galleryPath = join(outputDir, PREVIEW_GALLERY_FILENAME);
   writeFileSync(galleryPath, buildPreviewGalleryHtml(entries), "utf8");
-  const writtenFiles: string[] = [PREVIEW_GALLERY_FILENAME];
+  const contentCatalogPath = join(outputDir, CONTENT_CATALOG_FILENAME);
+  writeFileSync(contentCatalogPath, buildContentCatalogHtml(), "utf8");
+  const writtenFiles: string[] = [PREVIEW_GALLERY_FILENAME, CONTENT_CATALOG_FILENAME];
 
   const result: WritePreviewGalleryResult = {
     galleryPath,
     brandCssPath: validation.brandCssPath,
     entryCount: entries.length,
+    contentCatalogPath,
     indexPath: join(outputDir, LAUNCH_PACK_INDEX_FILENAME),
     writtenFiles,
   };
@@ -337,6 +343,11 @@ export function writePreviewGallery(options: WritePreviewGalleryOptions): WriteP
       heading: "Web views",
       description: "Every shipped web view, rendered with fixture copy.",
       links: [{ file: PREVIEW_GALLERY_FILENAME, label: PREVIEW_GALLERY_FILENAME }],
+    },
+    {
+      heading: "Content catalog",
+      description: "Every content-section module, specimen arrangement and ground through LandingView, at typical and maximum copy lengths, each band captioned in the preview chrome.",
+      links: [{ file: CONTENT_CATALOG_FILENAME, label: CONTENT_CATALOG_FILENAME }],
     },
   ];
 
