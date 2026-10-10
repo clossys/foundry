@@ -231,3 +231,19 @@ keep.
 | Use plain verbs ("record", "assign", "sign off") | Use filler ("seamless", "powerful", "next-generation", "revolutionary") |
 | Show status as data ("Overdue", "Signed") | Show roadmap as status ("Coming soon", "Beta") |
 | Use one icon per item, only where it tells items apart | Put icons on headings, or emoji anywhere |
+
+## Derived page flow
+
+Publisher's opt-in `sectionWeight` derives A set pieces, B supporting bands
+and C breathers from authored structure. A hero is a role with weight `hero`.
+Full-width specimens, visual cards, visual comparisons, visual steps and
+statements are A; split specimens and text blocks support them; frames, short
+plain or rule lists and FAQ bands provide pauses. Plate feature grids are B
+grids. Weight never reads ground and has no authored override.
+
+Publisher's `checkPageFlow` checks opening impact, runs, repeated set-piece
+shapes, page-length counts, calm landing, inverse placement and primary actions.
+At most two body blocks link items. Each body destination appears once across
+item links, section actions and footnote links; hero and close are excluded.
+Card links count as quiet actions for weight fit, independently of section
+button counts. These findings are advisory and never run during rendering.

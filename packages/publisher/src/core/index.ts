@@ -193,3 +193,6 @@ export type {
   SectionedViewTopicListBlock,
 } from "./sectioned-view.js";
 export type { ResolvedSurfaceDocument, ResolvedSurfaceGroup, ResolvedSurfaceGroupField, ResolvedSurfaceGroupItem, ResolvedSurfaceNode, ResolveSurfaceDocumentOptions, SurfaceResolutionReason } from "./resolve-surface.js";
+
+export { checkPageFlow, sectionWeight } from "./page-flow.js";
+export type { CheckPageFlowOptions, SectionShape, SectionWeight, SectionedViewFlowWarning } from "./page-flow.js";

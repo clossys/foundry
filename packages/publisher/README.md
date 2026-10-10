@@ -4977,3 +4977,47 @@ const page = <AuthView heading="Sign in" description="Continue" form={form} />; 
 This entry requires the same declared React and Designer peers as the existing
 web forms. It does not import the mixed web renderer or any Writer registry
 approval implementation. It implements no authentication provider.
+
+### Advisory page flow
+
+`sectionWeight(section)` derives `{ weight, shape }` from authored structure.
+The hero has weight and shape `hero`; body weights are A (set piece), B
+(supporting) and C (breather). Ground never changes weight. The current block
+vocabulary determines shape; planned blocks receive no speculative contract.
+
+`checkPageFlow(document, options?)` returns `SectionedViewFlowWarning[]` with
+`rule`, `severity: "warning"`, `path` and `message`. `CheckPageFlowOptions` takes
+an optional `callToAction: { href }` for the close. Consumers call this advisory
+lint in document tests; rendering never runs it. Pages without a first hero
+produce no flow findings. Every current hero action participates as a primary
+target. Header target matching remains caller-owned.
+
+`SectionShape` and `SectionWeight` describe the derived result. The lint checks
+these `sectioned-view-flow-` rules:
+
+| Suffix | Finding |
+| --- | --- |
+| `opening-set-piece` | No set piece in the first two body bands |
+| `opening-crowded` | More than one set piece in the first three body bands |
+| `opening-pause` | An early breather outside a frame followed by a set piece |
+| `set-piece-run` | Two adjacent set pieces |
+| `support-run` | Three adjacent supporting bands |
+| `pause-run` | Two adjacent breathers |
+| `set-piece-shape` | Consecutive set pieces repeat a shape |
+| `set-piece-count` | Set-piece count outside the page-length range |
+| `pause-count` | Breather count outside the page-length range |
+| `closing-band` | A non-proof set piece immediately before the close |
+| `inverse-weight` | Inverse outside a middle statement set piece |
+| `primary-placement` | Primary action outside an A or in the last two body bands |
+| `primary-target` | Hero actions, body primary and supplied close targets differ |
+| `action-fit` | Action emphasis or count exceeds the body weight ceiling |
+| `link-groups` | More than two linked body blocks |
+| `link-repeat` | Repeated destination across body item, action or footnote links |
+
+Body link destinations ignore trailing slashes and nonleading fragments, as
+linked-item validation does. Hero and close links do not count as body links.
+Omitted body-action emphasis currently resolves to secondary, matching the
+renderer. A supporting band or breather therefore warns on an omitted button
+emphasis until the rendering emphasis ladder changes. Linked cards are quiet
+and remain independent of section-action counts.
+`checkSectionVariety` retains its existing output.
