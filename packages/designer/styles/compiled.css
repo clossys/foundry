@@ -193,6 +193,14 @@
   .aspect-square {
     aspect-ratio: 1 / 1;
   }
+  .link-grid-icon {
+    inline-size: var(--ui-icon-md);
+    block-size: var(--ui-icon-md);
+    & > svg {
+      width: 100%;
+      height: 100%;
+    }
+  }
   .size-2xl {
     width: var(--spacing-2xl, 32px);
     height: var(--spacing-2xl, 32px);
@@ -355,6 +363,14 @@
           translate: calc(var(--spacing-xs, 4px) / -2) 0;
         }
       }
+    }
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .link-grid-active:active > svg:last-child {
+      translate: calc(var(--spacing-xs, 4px) / 2) 0;
+    }
+    .link-grid-active:dir(rtl):active > svg:last-child {
+      translate: calc(var(--spacing-xs, 4px) / -2) 0;
     }
   }
   .rotate-90 {
@@ -682,6 +698,9 @@
   }
   .bg-surface-aside {
     background-color: var(--color-surface-aside, oklch(0.9612 0 0));
+  }
+  .bg-surface-base {
+    background-color: var(--color-surface-base, oklch(0.9702 0 0));
   }
   .bg-surface-inverse {
     background-color: var(--color-surface-inverse, oklch(0.2178 0 0));
@@ -1161,6 +1180,9 @@
     .hover\:bg-surface-inverse:hover {
       background-color: var(--color-surface-inverse, oklch(0.2178 0 0));
     }
+    .hover\:bg-surface-raised:hover {
+      background-color: var(--color-surface-raised, oklch(1 0 0));
+    }
     .hover\:bg-surface-selected:hover {
       background-color: var(--color-surface-selected, oklch(0.4748 0 0 / 0.1));
     }
@@ -1179,6 +1201,10 @@
     .hover\:ring-2:hover {
       --tw-ring-shadow: var(--tw-ring-inset,) 0 0 0 calc(2px + var(--tw-ring-offset-width, 0px)) var(--tw-ring-color, currentcolor);
       box-shadow: var(--tw-inset-shadow, 0 0 #0000), var(--tw-inset-ring-shadow, 0 0 #0000), var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow, 0 0 #0000);
+    }
+    .hover\:before\:bg-surface-base:hover::before {
+      content: var(--tw-content, "");
+      background-color: var(--color-surface-base, oklch(0.9702 0 0));
     }
     .hover\:before\:bg-surface-inverse-raised:hover::before {
       content: var(--tw-content, "");
@@ -1283,7 +1309,25 @@
   .active\:bg-surface-inverse:active {
     background-color: var(--color-surface-inverse, oklch(0.2178 0 0));
   }
+  .active\:bg-surface-raised:active {
+    background-color: var(--color-surface-raised, oklch(1 0 0));
+  }
   .active\:bg-surface-sunken:active {
+    background-color: var(--color-surface-sunken, oklch(0.9401 0 0));
+  }
+  .active\:decoration-current:active {
+    text-decoration-color: currentcolor;
+  }
+  .active\:before\:bg-surface-base:active::before {
+    content: var(--tw-content, "");
+    background-color: var(--color-surface-base, oklch(0.9702 0 0));
+  }
+  .active\:before\:bg-surface-inverse-raised:active::before {
+    content: var(--tw-content, "");
+    background-color: var(--color-surface-inverse-raised, oklch(0.285 0 0));
+  }
+  .active\:before\:bg-surface-sunken:active::before {
+    content: var(--tw-content, "");
     background-color: var(--color-surface-sunken, oklch(0.9401 0 0));
   }
   .disabled\:pointer-events-none:disabled {
@@ -1291,6 +1335,10 @@
   }
   .disabled\:cursor-not-allowed:disabled {
     cursor: not-allowed;
+  }
+  .has-focus-visible\:before\:bg-surface-base:has(:focus-visible)::before {
+    content: var(--tw-content, "");
+    background-color: var(--color-surface-base, oklch(0.9702 0 0));
   }
   .has-focus-visible\:before\:bg-surface-inverse-raised:has(:focus-visible)::before {
     content: var(--tw-content, "");
@@ -1365,6 +1413,9 @@
     .tablet\:col-span-2 {
       grid-column: span 2 / span 2;
     }
+    .tablet\:col-span-3 {
+      grid-column: span 3 / span 3;
+    }
     .tablet\:col-span-6 {
       grid-column: span 6 / span 6;
     }
@@ -1413,6 +1464,9 @@
     .tablet\:grid-cols-2 {
       grid-template-columns: repeat(2, minmax(0, 1fr));
     }
+    .tablet\:grid-cols-6 {
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+    }
     .tablet\:grid-cols-12 {
       grid-template-columns: repeat(12, minmax(0, 1fr));
     }
@@ -1430,6 +1484,9 @@
     }
     .tablet\:justify-between {
       justify-content: space-between;
+    }
+    .tablet\:gap-2xl {
+      gap: var(--spacing-2xl, 32px);
     }
     .tablet\:gap-lg {
       gap: var(--spacing-lg, 16px);
@@ -1591,6 +1648,9 @@
     }
     .tablet-lg\:gap-y-lg {
       row-gap: var(--spacing-lg, 16px);
+    }
+    .tablet-lg\:p-xl {
+      padding: var(--spacing-xl, 24px);
     }
     .tablet-lg\:text-display-m {
       font-size: var(--text-display-m, 44px);

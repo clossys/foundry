@@ -25,6 +25,7 @@
  * every atom. See the introducing PR body for the same statement.
  */
 import { resolve } from "node:path";
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { render } from "@testing-library/react";
 import { Avatar } from "../atoms/Avatar.js";
@@ -50,6 +51,7 @@ import { Comparison } from "../blocks/Comparison.js";
 import { ContentSection } from "../blocks/ContentSection.js";
 import { FeatureGrid } from "../blocks/FeatureGrid.js";
 import { NavGrid } from "../blocks/NavGrid.js";
+import { LinkGrid } from "../blocks/LinkGrid.js";
 import { OrderedStepSequence } from "../blocks/OrderedStepSequence.js";
 import { TopicList } from "../blocks/TopicList.js";
 import { Specimen } from "../blocks/specimen/Specimen.js";
@@ -263,6 +265,11 @@ describe("coverage: real rendered classes are all present in compiled.css", () =
       trees.push(render(<TopicList ground={ground} columns={1} items={[item("a"), item("b")]} />));
       // Linked items: the stretched-link anchor, its hit area and ring, and a bare item's hover plate.
       const linked = (id: string) => ({ ...item(id), href: `/${id}` });
+      for (const surface of ["plate", "rule"] as const) {
+        for (const count of [2, 3, 4, 5, 6]) {
+          trees.push(render(<LinkGrid ground={ground} surface={surface} items={Array.from({ length: count }, (_, index) => ({ id: String(index), title: "Topic", description: "Details.", icon: <svg />, href: `/topics/${index}` }))} />));
+        }
+      }
       for (const treatment of ["plain", "rule", "plate"] as const) {
         trees.push(render(<FeatureGrid ground={ground} columns={2} treatment={treatment} items={[linked("a"), linked("b")]} />));
       }
@@ -281,6 +288,7 @@ describe("coverage: real rendered classes are all present in compiled.css", () =
       );
     }
     trees.push(render(<NavGrid items={[{ id: "a", title: "A", description: "D", href: "/a" }, { id: "b", title: "B", href: "/b" }]} />));
+    trees.push(render(<NavGrid items={[{ id: "a", title: "A", href: "/a" }]} />));
 
     const renderedClasses = new Set<string>();
     for (const result of trees) {
@@ -311,12 +319,42 @@ describe("coverage: real rendered classes are all present in compiled.css", () =
       "focus-visible:after:outline-accent-on-inverse",
       "has-focus-visible:before:bg-surface-inverse-raised",
       "after:rounded-control",
+      "tablet:grid-cols-6",
+      "tablet:col-span-2",
+      "tablet:col-span-3",
+      "hover:before:bg-surface-base",
+      "has-focus-visible:before:bg-surface-base",
+      "link-grid-icon",
+      "active:bg-surface-raised",
+      "active:before:bg-surface-sunken",
+      "active:before:bg-surface-base",
+      "active:before:bg-surface-inverse-raised",
+      "active:decoration-current",
+      "link-grid-active",
     ]) {
       expect(renderedClasses.has(required)).toBe(true);
     }
 
     const scan = scanCompiledCssSources(packageRoot);
     const generated = await generateCompiledCss({ stylesDir: resolve(packageRoot, "styles"), candidates: scan.candidates });
+    const themeKeys = readFileSync(resolve(packageRoot, "styles/theme-keys.css"), "utf8");
+    expect(themeKeys).toMatch(/@utility link-grid-icon\s*\{\s*inline-size: var\(--ui-icon-md\);\s*block-size: var\(--ui-icon-md\);\s*& > svg\s*\{\s*width: 100%;\s*height: 100%;/);
+    expect(generated.css).toContain(".link-grid-icon");
+    expect(generated.css).toContain("inline-size: var(--ui-icon-md)");
+    expect(generated.css).toContain("block-size: var(--ui-icon-md)");
+    for (const className of ["active:bg-surface-raised", "active:before:bg-surface-sunken", "active:before:bg-surface-base", "active:before:bg-surface-inverse-raised", "active:decoration-current"]) {
+      const selector = toSelectorText(className) + ":active";
+      expect(generated.css).toContain(selector);
+      const offset = generated.css.indexOf(selector);
+      const openBlocks: string[] = [];
+      for (const match of generated.css.slice(0, offset).matchAll(/([^{}]+)\{|\}/g)) {
+        if (match[1]) openBlocks.push(match[1].trim());
+        else openBlocks.pop();
+      }
+      expect(openBlocks.some((block) => block.includes("hover: hover"))).toBe(false);
+    }
+    expect(generated.css).toContain(".link-grid-active:active > svg:last-child");
+    expect(generated.css).toContain(".link-grid-active:dir(rtl):active > svg:last-child");
     const missing: string[] = [];
     for (const className of renderedClasses) {
       if (!generated.css.includes(toSelectorText(className))) missing.push(className);

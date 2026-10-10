@@ -75,10 +75,13 @@ const HOVER_PLATE_INSET_CLASSES: Record<CardLinkFrame, string | undefined> = {
   control: undefined,
 };
 
-/** The item container's classes for a linked item: the positioning context for the hit area, plus a bare item's hover plate. */
-export function cardLinkContainerClassName(frame: CardLinkFrame, ground: SectionGround): string {
+/** The item container's classes and hover plate. LinkGrid alone uses the base plate on a sunken ground. */
+export function cardLinkContainerClassName(frame: CardLinkFrame, ground: SectionGround, sunkenPlate?: "base"): string {
   const inset = HOVER_PLATE_INSET_CLASSES[frame];
-  return cx("relative isolate", inset === undefined ? undefined : HOVER_PLATE_FILL_CLASSES[ground], inset);
+  const fill = ground === "sunken" && sunkenPlate === "base"
+    ? "before:absolute before:-z-10 before:rounded-panel hover:before:bg-surface-base has-focus-visible:before:bg-surface-base"
+    : HOVER_PLATE_FILL_CLASSES[ground];
+  return cx("relative isolate", inset === undefined ? undefined : fill, inset);
 }
 
 export interface CardLinkTitleProps {
@@ -89,12 +92,14 @@ export interface CardLinkTitleProps {
   iconSize?: IconSize;
   /** The title text: the link's accessible name. */
   children: ReactNode;
+  /** Optional block-specific interaction classes; shared defaults stay unchanged. */
+  className?: string;
 }
 
 /** The title as the item's one link, with its chevron. Place it inside the title element. */
-export function CardLinkTitle({ href, frame, ground, iconSize = "sm", children }: CardLinkTitleProps) {
+export function CardLinkTitle({ href, frame, ground, iconSize = "sm", children, className }: CardLinkTitleProps) {
   return (
-    <a href={href} data-card-link="" className={cx(ANCHOR_BASE, HIT_AREA_CLASSES[frame], RING_CLASSES[ground])}>
+    <a href={href} data-card-link="" className={cx(ANCHOR_BASE, HIT_AREA_CLASSES[frame], RING_CLASSES[ground], className)}>
       {children}
       <span aria-hidden="true">{" "}</span>
       <Icon glyph={ChevronRight} decorative size={iconSize} className={cx("inline align-middle", SECTION_GROUND_CLASSES[ground].secondary)} />

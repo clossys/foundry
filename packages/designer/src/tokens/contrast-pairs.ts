@@ -70,10 +70,10 @@
  *     not a bare parseable color `color.ts` can score on its own (see
  *     `internal/resolve-token-value.ts`'s "WHAT COUNTS AS A WHOLE-VALUE
  *     ALIAS" for why this walker does not reach into a value like that).
- *     A focus indicator's own WCAG obligation is SC 2.4.13 (Focus
- *     Appearance), a different success criterion than the text/graphical-
- *     object contrast this gate checks — genuinely out of scope, not
- *     merely inconvenient to parse.
+ *     This gate does not parse composite shadows or measure focus geometry.
+ *     LinkGrid's outline uses bare `--color-accent` / `--color-accent-on-
+ *     inverse` colors instead: their 3:1 contrast against its grounds and
+ *     plates IS explicitly checked by the scoped pairs below.
  *
  * ============================================================================
  * EXCEPTIONS — WCAG 1.4.11's OWN relief, carried as DATA, never a bare
@@ -184,6 +184,42 @@ export interface ContrastPair {
 }
 
 export const CONTRAST_PAIRS: readonly ContrastPair[] = [
+  // LinkGrid uses body-scale titles and small descriptions on these five
+  // actual grounds/resting/hover plates. These scoped AA requirements do
+  // not change the legacy large-text or icon-only classifications below.
+  ...[
+    ["ink-primary", "surface-base"],
+    ["ink-primary", "surface-sunken"],
+    ["ink-primary", "surface-raised"],
+    ["ink-secondary", "surface-base"],
+    ["ink-secondary", "surface-sunken"],
+    ["ink-secondary", "surface-raised"],
+    ["ink-on-inverse", "surface-inverse"],
+    ["ink-on-inverse", "surface-inverse-raised"],
+    ["ink-on-inverse-muted", "surface-inverse"],
+    ["ink-on-inverse-muted", "surface-inverse-raised"],
+  ].map(([ink, surface]): ContrastPair => ({
+    id: `link-grid/${ink}/${surface}`,
+    foreground: `--color-${ink}`,
+    background: `--color-${surface}`,
+    level: "AA",
+    minimumRatio: AA,
+    description: "LinkGrid body-scale titles and small supporting copy on the ground or tile plate.",
+  })),
+  ...[
+    ["accent", "surface-base"],
+    ["accent", "surface-sunken"],
+    ["accent", "surface-raised"],
+    ["accent-on-inverse", "surface-inverse"],
+    ["accent-on-inverse", "surface-inverse-raised"],
+  ].map(([accent, surface]): ContrastPair => ({
+    id: `link-grid/${accent}/${surface}`,
+    foreground: `--color-${accent}`,
+    background: `--color-${surface}`,
+    level: "AA-large",
+    minimumRatio: AA_LARGE,
+    description: "LinkGrid focus outline color against both its surrounding ground and tile plate (non-text 3:1).",
+  })),
   // ── ink-primary (body text) on every surface: AA ──────────────────────
   {
     id: "ink-primary/surface-base",

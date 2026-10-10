@@ -1,7 +1,8 @@
 import type { CSSProperties, ReactNode } from "react";
 import { Button } from "../atoms/Button.js";
 import { cx } from "../atoms/internal/cx.js";
-import { assertNoNestedInteractive, CardLinkTitle, cardLinkContainerClassName } from "./stretched-link.js";
+import { cardLinkContainerClassName } from "./stretched-link.js";
+import { LinkGrid, LinkedTileContent, type LinkGridItem } from "./LinkGrid.js";
 
 interface NavGridItemBase {
   /** Stable identifier — the React key. */
@@ -50,13 +51,7 @@ function NavGridCardContent({ item }: { item: NavGridItem }) {
         </span>
       ) : null}
       <span className="text-body font-body font-medium text-ink-primary">
-        {item.href === undefined ? (
-          item.title
-        ) : (
-          <CardLinkTitle href={item.href} frame="control" ground="base">
-            {item.title}
-          </CardLinkTitle>
-        )}
+        {item.title}
       </span>
       {item.description ? (
         <span className="text-body-s text-ink-secondary">{item.description}</span>
@@ -65,11 +60,10 @@ function NavGridCardContent({ item }: { item: NavGridItem }) {
   );
 }
 
-function LinkedCard({ item }: { item: NavGridItem }) {
-  assertNoNestedInteractive("NavGrid", item.id, [item.icon, item.title, item.description]);
+function LinkedCard({ item }: { item: LinkGridItem }) {
   return (
     <div data-nav-grid-card="" className={cx(CARD_BASE, LINKED_TILE)}>
-      <NavGridCardContent item={item} />
+      <LinkedTileContent item={item} frame="control" ground="base" />
     </div>
   );
 }
@@ -99,17 +93,23 @@ function LinkedCard({ item }: { item: NavGridItem }) {
  * already the card's real accessible name, not a second source of meaning a
  * screen reader needs to parse separately.
  *
- * Cards lay out one per row on narrow viewports, two from the `tablet`
+ * All-linked collections of two to six items with consistent icon presence
+ * compose LinkGrid's plate list. Legacy single-item, larger, mixed-control,
+ * and mixed-icon collections retain their control tiles and item order.
+ * Those cards lay out one per row on narrow viewports, two from the `tablet`
  * breakpoint, three from `desktop` — a plain Tailwind responsive grid
  * generated from this package's own breakpoint tokens, no JS breakpoint
  * state, the same pattern `DetailView`'s and `Shell.SideNav`'s own
  * responsive layouts already use.
  */
 export function NavGrid({ heading, items, className, style }: NavGridProps) {
+  const linked = items.every((item): item is LinkGridItem => item.href !== undefined);
+  const icons = items.filter((item) => Boolean(item.icon)).length;
+  const useLinkGrid = linked && items.length >= 2 && items.length <= 6 && (icons === 0 || icons === items.length);
   return (
     <div className={cx("flex flex-col gap-md", className)} style={style}>
       {heading ? <h2 className="text-h2 font-display text-ink-primary">{heading}</h2> : null}
-      <div className="grid grid-cols-1 gap-md tablet:grid-cols-2 desktop:grid-cols-3">
+      {useLinkGrid ? <LinkGrid items={items as readonly LinkGridItem[]} surface="plate" ground="base" /> : <div className="grid grid-cols-1 gap-md tablet:grid-cols-2 desktop:grid-cols-3">
         {items.map((item) =>
           item.href !== undefined ? (
             <LinkedCard key={item.id} item={item} />
@@ -124,7 +124,7 @@ export function NavGrid({ heading, items, className, style }: NavGridProps) {
             </Button>
           ),
         )}
-      </div>
+      </div>}
     </div>
   );
 }

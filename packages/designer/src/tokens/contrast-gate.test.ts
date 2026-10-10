@@ -8,6 +8,45 @@ function def(property: string, value: string): TokenDefinition {
 }
 
 describe("checkTokenContrast", () => {
+  describe("LinkGrid body text and focus indicators", () => {
+    it("rejects inverse raised copy below 4.5 even when the legacy icon check clears 3", () => {
+      const tokens = { ...TOKENS, "--color-surface-inverse-raised": def("--color-surface-inverse-raised", "oklch(0.6 0 0)") };
+      const legacy = CONTRAST_PAIRS.filter((pair) => pair.id === "ink-on-inverse/surface-inverse-raised");
+      expect(checkTokenContrast(legacy, { tokens }).ok).toBe(true);
+      const pairs = CONTRAST_PAIRS.filter((pair) => pair.id.startsWith("link-grid/") && pair.background === "--color-surface-inverse-raised" && pair.minimumRatio === AA);
+      const result = checkTokenContrast(pairs, { tokens });
+      expect(result.findings.map((finding) => finding.pairId).sort()).toEqual([
+        "link-grid/ink-on-inverse-muted/surface-inverse-raised",
+        "link-grid/ink-on-inverse/surface-inverse-raised",
+      ]);
+      expect(result.unchecked).toEqual([]);
+    });
+
+    it.each(["base", "sunken", "raised"])("rejects small secondary copy on surface-%s between 3 and 4.5", (surface) => {
+      const background = `--color-surface-${surface}`;
+      const tokens = { ...TOKENS, "--color-ink-secondary": def("--color-ink-secondary", "oklch(0.6 0 0)"), [background]: def(background, "oklch(1 0 0)") };
+      const legacy = CONTRAST_PAIRS.filter((pair) => pair.id === `ink-secondary/surface-${surface}`);
+      expect(checkTokenContrast(legacy, { tokens }).ok).toBe(true);
+      const pairs = CONTRAST_PAIRS.filter((pair) => pair.id === `link-grid/ink-secondary/surface-${surface}`);
+      expect(checkTokenContrast(pairs, { tokens }).findings).toEqual([
+        expect.objectContaining({ pairId: `link-grid/ink-secondary/surface-${surface}`, minimumRatio: AA, rule: "below-threshold" }),
+      ]);
+    });
+
+    it.each([
+      ["accent", "base"], ["accent", "sunken"], ["accent", "raised"],
+      ["accent-on-inverse", "inverse"], ["accent-on-inverse", "inverse-raised"],
+    ])("rejects a %s focus indicator that blends into surface-%s", (accent, surface) => {
+      const foreground = `--color-${accent}`;
+      const background = `--color-surface-${surface}`;
+      const tokens = { ...TOKENS, [foreground]: def(foreground, "oklch(0.6 0 0)"), [background]: def(background, "oklch(0.6 0 0)") };
+      const id = `link-grid/${accent}/surface-${surface}`;
+      const result = checkTokenContrast(CONTRAST_PAIRS.filter((pair) => pair.id === id), { tokens });
+      expect(result.unchecked).toEqual([]);
+      expect(result.findings).toEqual([expect.objectContaining({ pairId: id, ratio: 1, minimumRatio: AA_LARGE, rule: "below-threshold" })]);
+    });
+  });
+
   it("never passes on zero pairs — reason: nothing-to-check, never ok: true", () => {
     const result = checkTokenContrast([], { tokens: TOKENS });
     expect(result.ok).toBe(false);

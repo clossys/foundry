@@ -323,6 +323,28 @@
   }
 }
 
+/* LinkGrid repeats the quiet-action nudge while pressed, including touch pointers. */
+@utility link-grid-active {
+  @media (prefers-reduced-motion: no-preference) {
+    &:active > svg:last-child {
+      translate: calc(var(--spacing-xs, 4px) / 2) 0;
+    }
+    &:dir(rtl):active > svg:last-child {
+      translate: calc(var(--spacing-xs, 4px) / -2) 0;
+    }
+  }
+}
+
+/* LinkGrid's decorative icon slot also sizes a supplied SVG with intrinsic dimensions. */
+@utility link-grid-icon {
+  inline-size: var(--ui-icon-md);
+  block-size: var(--ui-icon-md);
+  & > svg {
+    width: 100%;
+    height: 100%;
+  }
+}
+
 /*
  * Icon-only control boxes (`iconButtonClassName`). `icon-control-md` is the
  * 44px tap target. `icon-control-sm` is a 36px box (the tap target less

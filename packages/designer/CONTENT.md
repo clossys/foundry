@@ -159,6 +159,13 @@ optional eyebrow (cards only) naming the role or area; optional visual of one
 specimen part with at most 5 rows. Put the main point on the widest card. Do
 not give every card a visual.
 
+**LinkGrid** (`link-grid`). Two to six real next destinations, including a
+navigation list on a status page. Titles name the destination, at most 32
+characters; descriptions say what the reader will find, at most 100
+characters. Use plate or rule tiles and give every tile an icon or none.
+For one destination, use a footnote link or a button. Use buttons for
+actions that do not navigate. Avoid vague titles such as "Learn more".
+
 **Comparison** (`comparison`). Two sides with labels of 1-3 words. Give each side either a
 description of at most 25 words or 2-4 points of 4-9 words, with the same form
 and the same count on both sides. Visuals go on both sides or on neither.

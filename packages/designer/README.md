@@ -107,9 +107,9 @@ surfaces and live in `@clossys/publisher/web`.
   `Separator`, `Chip`, `StatusMark`, `Meter`.
 - **`blocks`** — owns the internal layout of multiple named regions,
   typically by composing one or more atoms (and/or layout) into something
-  with a real job on a page. Twenty-seven ship: `PageHeader`, `EmptyState`,
+  with a real job on a page. Twenty-eight ship: `PageHeader`, `EmptyState`,
   `DataTable`, `DetailView`, `Pagination`, `Stat`, `Form`, `FieldGroup`,
-  `ConfirmDialog`, `Toolbar`, `NavGrid`, `SectionHeader`, `Hero`,
+  `ConfirmDialog`, `Toolbar`, `NavGrid`, `LinkGrid`, `SectionHeader`, `Hero`,
   `MarketingChapter`, `FeatureGrid`, `CardGrid`, `Comparison`, `TopicList`,
   `Specimen`, `SpecimenPanel`, `OrderedStepSequence`, `StatusList`, `Faq`,
   `PricingTable`, `Testimonial`, `ArticleBody`, `ConsentBanner` — the last
@@ -358,7 +358,7 @@ source file's own header for the exact probe and its result). Today that's:
 | Subpath | Server-safe members |
 | --- | --- |
 | `@clossys/designer/atoms/server` | `Avatar`, `Badge`, `Banner`, `Card`, `Field`, `Icon`, `Meter`, `Skeleton`, `Spinner`, `StatusMark`, `buttonLinkClassName`, `iconButtonClassName`, `iconButtonLinkClassName`, `mergeUiClasses` |
-| `@clossys/designer/blocks/server` | `ArticleBody`, `CardGrid`, `Comparison`, `ContentSection`, `DetailView`, `EmptyState`, `Faq`, `FeatureGrid`, `FieldGroup`, `Hero`, `MarketingChapter`, `MediaFigure`, `OrderedStepSequence`, `PageHeader`, `PricingTable`, `SectionFrame`, `SectionHeader`, `SectionIntro`, `Specimen`, `SpecimenPanel`, `Stat`, `StatusList`, `TopicList` |
+| `@clossys/designer/blocks/server` | `ArticleBody`, `LinkGrid`, `CardGrid`, `Comparison`, `ContentSection`, `DetailView`, `EmptyState`, `Faq`, `FeatureGrid`, `FieldGroup`, `Hero`, `MarketingChapter`, `MediaFigure`, `OrderedStepSequence`, `PageHeader`, `PricingTable`, `SectionFrame`, `SectionHeader`, `SectionIntro`, `Specimen`, `SpecimenPanel`, `Stat`, `StatusList`, `TopicList` |
 | `@clossys/designer/shell/server` | `Shell`, `SiteFooter`, `SiteHeader`, `SkipLink` |
 | `@clossys/designer/charts/server` | `ChartFrame`, `Sparkline` |
 | `@clossys/designer/theme/server` | `getThemeInitScript` |
@@ -2949,10 +2949,11 @@ renders via this package's own `Button` atom (`variant="ghost"`), with
 convention. `icon` is `aria-hidden`, decorative reinforcement for a title
 that's already the card's real accessible name.
 
-Cards lay out one per row on narrow viewports, two from the `tablet`
-breakpoint, three from `desktop` — a plain Tailwind responsive grid
-generated from this package's own breakpoint tokens, no JS breakpoint
-state, the same pattern `DetailView`'s own responsive field grid uses.
+Eligible all-linked collections of two to six items compose LinkGrid
+plates, with its six-unit layout from tablet. Legacy single-item, larger,
+mixed-icon and mixed link/button collections retain their control tiles
+and item order: one per row below tablet, two from tablet and three from
+desktop. Action tiles keep their raised, bordered button style.
 
 ### `SectionHeader`
 
@@ -5461,6 +5462,9 @@ not a grab-bag).
 | `NavGrid` | component | Grid of navigation cards: optional heading, the card grid. A linked card's title is its one `<a>`, stretched over the card; an action card is a `<button>`. |
 | `NavGridProps` | type | Props for `NavGrid`: `heading`, `items`, `className`, `style`. |
 | `NavGridItem` | type | One card, as data: `id`, `title`, `description?`, `icon?`, and either `href` or `onSelect` (mutually exclusive). |
+| `LinkGrid` | component | Server-safe list of two to six destinations; plate or rule tiles with one stretched title link per item. |
+| `LinkGridProps` | type | Props for `LinkGrid`: `items`, `surface`, `ground`, `headingLevel`, `className`. |
+| `LinkGridItem` | type | One destination: `id`, `title`, `description?`, `icon?`, and required `href`. |
 | `SectionHeader` | component | Heading for a section within a page (as opposed to the whole-page `PageHeader`): eyebrow, title, description, actions slot. `level` picks its heading element. |
 | `SectionHeaderProps` | type | Props for `SectionHeader`: `eyebrow`, `title`, `description`, `actions`, `level`, `className`, `style`, plus every native `<div>` attribute. |
 | `SectionHeaderLevel` | type | `2 \| 3 \| 4 \| 5 \| 6`. |
@@ -6186,10 +6190,12 @@ speculatively, just because a related component shipped, is the exact
 un-bounded growth this package's own "variant rule" warns against one level
 up. They get added here only once something real needs them.
 
-**Blocks:** twenty-two ship — `PageHeader`, `EmptyState`, `DataTable`,
+**Blocks:** twenty-eight ship — `PageHeader`, `EmptyState`, `DataTable`,
 `DetailView`, `Pagination`, `Stat`, `Form`, `FieldGroup`, `ConfirmDialog`,
-`Toolbar`, `NavGrid`, `SectionHeader`, `Hero`, `MarketingChapter`, `FeatureGrid`, `OrderedStepSequence`, `StatusList`, `Faq`,
-`PricingTable`, `Testimonial`, `ArticleBody`, `ConsentBanner` — completing this layer. No
+`Toolbar`, `NavGrid`, `LinkGrid`, `SectionHeader`, `Hero`, `MarketingChapter`,
+`FeatureGrid`, `CardGrid`, `Comparison`, `TopicList`, `Specimen`,
+`SpecimenPanel`, `OrderedStepSequence`, `StatusList`, `Faq`, `PricingTable`,
+`Testimonial`, `ArticleBody`, `ConsentBanner` — completing this layer. No
 `FilterBar` block:
 `DataTable`'s own `toolbar` slot (and `Toolbar`'s own `search` slot) are
 deliberately plain `ReactNode`s, not a block with its own opinion about
@@ -6434,3 +6440,38 @@ MIT
 ## Changelog
 
 Release notes for every version are in the [changelog](https://github.com/clossys/foundry/blob/main/docs/changelogs/designer.md), kept in the public repository rather than in the installed package.
+
+## `LinkGrid`
+
+A list of two to six real destinations, on `surface="plate"` (the default)
+or `surface="rule"`. Each title is the tile's one link, with a decorative
+chevron, a whole-tile hit target and one focus ring. Descriptions and icons
+stay outside the link name. Nested interactive content and mixed icon
+presence throw a `TypeError`; counts outside two to six throw a `RangeError`.
+
+`ground` defaults to `base`; `sunken` and `inverse` select the matching ink,
+plate and ring tokens. Rule tiles on sunken ground use a base hover plate.
+Titles are body-scale paragraphs unless `headingLevel={3}` or `{4}` is set.
+Below tablet the grid has one column. From tablet, two/four items take halves,
+three/six take thirds, and five take three thirds followed by two halves.
+The component is exported from both blocks barrels and uses no hooks.
+
+```tsx
+import { LinkGrid } from "@clossys/designer/blocks/server";
+
+<LinkGrid
+  headingLevel={3}
+  items={[
+    { id: "guides", title: "Guides", description: "Find instructions by topic.", href: "/guides" },
+    { id: "support", title: "Support", description: "Get help with your next step.", href: "/support" },
+  ]}
+/>;
+```
+
+For a status page, compose it in a navigation region named by that region's
+heading. Page-level StatusView slots belong to Publisher.
+
+NavGrid delegates all-linked collections of two to six items with all or no
+icons to LinkGrid's plate list. Its existing single-item, larger, mixed-icon
+and mixed link/button collections retain the control frame and item order;
+action tiles remain raised, bordered buttons.

@@ -59,6 +59,8 @@ export type {
   FeatureGridEmphasis,
 } from "./FeatureGrid.js";
 export { CardGrid } from "./CardGrid.js";
+export { LinkGrid } from "./LinkGrid.js";
+export type { LinkGridProps, LinkGridItem } from "./LinkGrid.js";
 export type { CardGridProps, CardGridItem, CardGridSpan, CardGridHeadingLevel } from "./CardGrid.js";
 export { Comparison } from "./Comparison.js";
 export type { ComparisonProps, ComparisonSide, ComparisonHeadingLevel } from "./Comparison.js";

@@ -84,6 +84,9 @@ export type { ToolbarProps } from "./Toolbar.js";
 export { NavGrid } from "./NavGrid.js";
 export type { NavGridProps, NavGridItem } from "./NavGrid.js";
 
+export { LinkGrid } from "./LinkGrid.js";
+export type { LinkGridProps, LinkGridItem } from "./LinkGrid.js";
+
 export { SectionHeader } from "./SectionHeader.js";
 export type { SectionHeaderProps, SectionHeaderLevel } from "./SectionHeader.js";
 
