@@ -1448,8 +1448,11 @@ const card = buildBrandShareCard({
 - **Alt.** `alt` is optional. When omitted, `buildBrandShareCard` derives it from
   the card's visible text in reading order (`wordmark`, `kicker`, `headline`,
   `supporting`, skipping any that are omitted), joined with `". "`, or with a
-  single space after a part that already ends in `.`, `!`, `?` or `:`. A
-  supplied `alt` is returned unchanged and is refused when blank, as before.
+  single space after a part that ends in `.`, `!`, `?`, `:`, `;`, `…`, `。`,
+  `！`, `？` or `；`, optionally followed by any number of the closing characters
+  `"`, `'`, `”`, `’`, `)`, `]`, `»`, `」`, `』`, `）` or `】`. Other characters,
+  such as `,` or the full-width `：`, do not end a part. A supplied `alt` is
+  returned unchanged and is refused when blank, as before.
 - **Lockup.** The plate is `BRAND_SHARE_CARD_PLATE_PX` (96) square. Its corner
   radius, the mark's inset, the wordmark size and the gap all come from
   Designer's published badge and lockup ratios rather than numbers kept here.
@@ -4075,7 +4078,6 @@ declare const markDataUrl: string; // inline data URL
 const route = createShareCardRoute({
   ImageResponse,
   card: { markSrc: markDataUrl, wordmark: "Example Studio", headline: "Made well, made to last" },
-  alt: (headline) => `Example Studio: ${headline}`,
 });
 
 export const alt = route.alt;
@@ -4084,13 +4086,18 @@ export const contentType = route.contentType;
 export default route.Image;
 ```
 
-- **Input.** `{ ImageResponse, card, title?, alt }`. `card` is
+- **Input.** `{ ImageResponse, card, title?, alt? }`. `card` is
   `buildBrandShareCard`'s input without `alt`, so `headline` stays required
   there. `ImageResponse` is
   `new (element, { width, height }) => Response`.
-- **Title and alt.** When `title` is given it replaces `card.headline`. `alt` is
-  a string, returned as given, or a function called with the headline actually
-  drawn. Publisher builds no wording; every word is yours.
+- **Title and alt.** When `title` is given it replaces `card.headline`. Omit
+  `alt` (or pass `undefined`) to derive it from the card's visible text in
+  reading order: wordmark, kicker, headline and supporting text. The route's
+  `alt` and `shareCard.alt` both contain that derived text. An explicit `alt`
+  is a string, returned as given, or a function called with the headline actually
+  drawn, for example `` alt: (headline) => `Share card: ${headline}` ``.
+  A derived `alt` adds only the separator between parts (the single space or
+  `". "` described under `buildBrandShareCard`); every word is yours.
 - **Result.** `{ alt, size, contentType, shareCard, Image }`. `size` is the
   card's `{ width, height }` (1200 by 630), `contentType` is `"image/png"`,
   `shareCard` is the record `buildSiteMetadata` takes, and `Image()` returns
