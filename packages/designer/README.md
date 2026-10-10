@@ -358,7 +358,7 @@ source file's own header for the exact probe and its result). Today that's:
 | Subpath | Server-safe members |
 | --- | --- |
 | `@clossys/designer/atoms/server` | `Avatar`, `Badge`, `Banner`, `Card`, `Field`, `Icon`, `Meter`, `Skeleton`, `Spinner`, `StatusMark`, `buttonLinkClassName`, `iconButtonClassName`, `iconButtonLinkClassName`, `mergeUiClasses` |
-| `@clossys/designer/blocks/server` | `ArticleBody`, `LinkGrid`, `CardGrid`, `Comparison`, `ContentSection`, `DetailView`, `EmptyState`, `Faq`, `FeatureGrid`, `FieldGroup`, `Hero`, `MarketingChapter`, `MediaFigure`, `OrderedStepSequence`, `PageHeader`, `PricingTable`, `SectionFrame`, `SectionHeader`, `SectionIntro`, `Specimen`, `SpecimenPanel`, `Stat`, `StatusList`, `TopicList` |
+| `@clossys/designer/blocks/server` | `ArticleBody`, `CardGrid`, `Comparison`, `ContentSection`, `DetailView`, `EmptyState`, `Faq`, `FeatureGrid`, `FieldGroup`, `Hero`, `LinkGrid`, `MarketingChapter`, `MediaFigure`, `OrderedStepSequence`, `PageHeader`, `PricingTable`, `SectionFrame`, `SectionHeader`, `SectionIntro`, `Specimen`, `SpecimenPanel`, `Stat`, `StatusList`, `TopicList` |
 | `@clossys/designer/shell/server` | `Shell`, `SiteFooter`, `SiteHeader`, `SkipLink` |
 | `@clossys/designer/charts/server` | `ChartFrame`, `Sparkline` |
 | `@clossys/designer/theme/server` | `getThemeInitScript` |
@@ -2909,6 +2909,41 @@ own `"Pagination"` already follows. Wraps at narrow widths: the outer
 region is `flex flex-wrap`, and `search` grows to fill the space between
 `leading` and `trailing`, falling onto its own row rather than overflowing
 once the three regions no longer fit on one line.
+
+### `LinkGrid`
+
+A list of two to six real destinations, on `surface="plate"` (the default)
+or `surface="rule"`. Each title is the tile's one link, with a decorative
+chevron, a whole-tile hit target and one focus ring. Descriptions and icons
+stay outside the link name. Nested interactive content and mixed icon
+presence throw a `TypeError`; counts outside two to six throw a `RangeError`.
+
+`ground` defaults to `base`; `sunken` and `inverse` select the matching ink,
+plate and ring tokens. Rule tiles on sunken ground use a base hover plate.
+Titles are body-scale paragraphs unless `headingLevel={3}` or `{4}` is set.
+Below tablet the grid has one column. From tablet, two/four items take halves,
+three/six take thirds, and five take three thirds followed by two halves.
+The component is exported from both blocks barrels and uses no hooks.
+
+```tsx
+import { LinkGrid } from "@clossys/designer/blocks/server";
+
+<LinkGrid
+  headingLevel={3}
+  items={[
+    { id: "guides", title: "Guides", description: "Find instructions by topic.", href: "/guides" },
+    { id: "support", title: "Support", description: "Get help with your next step.", href: "/support" },
+  ]}
+/>;
+```
+
+For a status page, compose it in a navigation region named by that region's
+heading. Page-level StatusView slots belong to Publisher.
+
+NavGrid delegates all-linked collections of two to six items with all or no
+icons to LinkGrid's plate list. Its existing single-item, larger, mixed-icon
+and mixed link/button collections retain the control frame and item order;
+action tiles remain raised, bordered buttons.
 
 ### `NavGrid`
 
@@ -6440,38 +6475,3 @@ MIT
 ## Changelog
 
 Release notes for every version are in the [changelog](https://github.com/clossys/foundry/blob/main/docs/changelogs/designer.md), kept in the public repository rather than in the installed package.
-
-## `LinkGrid`
-
-A list of two to six real destinations, on `surface="plate"` (the default)
-or `surface="rule"`. Each title is the tile's one link, with a decorative
-chevron, a whole-tile hit target and one focus ring. Descriptions and icons
-stay outside the link name. Nested interactive content and mixed icon
-presence throw a `TypeError`; counts outside two to six throw a `RangeError`.
-
-`ground` defaults to `base`; `sunken` and `inverse` select the matching ink,
-plate and ring tokens. Rule tiles on sunken ground use a base hover plate.
-Titles are body-scale paragraphs unless `headingLevel={3}` or `{4}` is set.
-Below tablet the grid has one column. From tablet, two/four items take halves,
-three/six take thirds, and five take three thirds followed by two halves.
-The component is exported from both blocks barrels and uses no hooks.
-
-```tsx
-import { LinkGrid } from "@clossys/designer/blocks/server";
-
-<LinkGrid
-  headingLevel={3}
-  items={[
-    { id: "guides", title: "Guides", description: "Find instructions by topic.", href: "/guides" },
-    { id: "support", title: "Support", description: "Get help with your next step.", href: "/support" },
-  ]}
-/>;
-```
-
-For a status page, compose it in a navigation region named by that region's
-heading. Page-level StatusView slots belong to Publisher.
-
-NavGrid delegates all-linked collections of two to six items with all or no
-icons to LinkGrid's plate list. Its existing single-item, larger, mixed-icon
-and mixed link/button collections retain the control frame and item order;
-action tiles remain raised, bordered buttons.

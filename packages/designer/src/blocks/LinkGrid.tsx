@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { cx } from "../atoms/internal/cx.js";
+import { UI_BORDER_HAIRLINE, UI_LAYOUT_TAP_TARGET } from "../atoms/internal/ui-vars.js";
 import { SECTION_GROUND_CLASSES, type SectionGround } from "./section-ground.js";
 import { assertNoNestedInteractive, CardLinkTitle, cardLinkContainerClassName, type CardLinkFrame } from "./stretched-link.js";
 
@@ -92,7 +93,7 @@ export function LinkGrid({ items, surface = "plate", ground = "base", headingLev
   if (iconCount !== 0 && iconCount !== items.length) throw new TypeError("LinkGrid: give every item an icon or none.");
   const isRule = surface === "rule";
   const linkedContainer = cardLinkContainerClassName(surface, ground, "base");
-  const frameClasses = isRule ? cx("border-t pt-lg", RULE_CLASSES[ground]) : cx("rounded-panel p-lg tablet-lg:p-xl", PLATE_CLASSES[ground]);
+  const frameClasses = isRule ? cx("border-t pt-lg", RULE_CLASSES[ground]) : cx("border border-transparent rounded-panel p-lg tablet-lg:p-xl", PLATE_CLASSES[ground]);
   return (
     <ul
       data-link-grid=""
@@ -103,7 +104,7 @@ export function LinkGrid({ items, surface = "plate", ground = "base", headingLev
       {items.map((item, index) => (
         <li
           key={item.id}
-          style={{ minBlockSize: "var(--ui-layout-tap-target)", borderBlockStartWidth: isRule ? "var(--ui-border-hairline)" : undefined }}
+          style={{ minBlockSize: UI_LAYOUT_TAP_TARGET, borderWidth: isRule ? undefined : UI_BORDER_HAIRLINE, borderBlockStartWidth: isRule ? UI_BORDER_HAIRLINE : undefined }}
           className={cx(
             "flex min-w-0 flex-col gap-sm",
             linkedContainer,

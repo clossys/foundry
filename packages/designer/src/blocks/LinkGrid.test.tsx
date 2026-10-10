@@ -66,7 +66,7 @@ describe("LinkGrid", () => {
         } else {
           expect(link).toHaveClass("after:-inset-x-sm", "tablet:after:-inset-x-md", "after:top-0", "after:-bottom-sm", "tablet:after:-bottom-md");
           expect(tile).toHaveClass("border-t", "pt-lg", "before:-inset-x-sm", "tablet:before:-inset-x-md");
-          expect((tile as HTMLElement).style.borderBlockStartWidth).toBe("var(--ui-border-hairline)");
+          expect((tile as HTMLElement).style.borderBlockStartWidth).toBe("var(--ui-border-hairline, 1px)");
           const fill = ground === "base" ? "surface-sunken" : ground === "sunken" ? "surface-base" : "surface-inverse-raised";
           expect(tile).toHaveClass(`hover:before:bg-${fill}`, `has-focus-visible:before:bg-${fill}`, `active:before:bg-${fill}`);
           if (ground === "sunken") expect(tile).not.toHaveClass("hover:before:bg-surface-raised");
@@ -74,6 +74,17 @@ describe("LinkGrid", () => {
         }
       });
     }
+  }
+
+  for (const ground of ["base", "sunken", "inverse"] as const) {
+    it(`keeps a transparent plate edge available to forced colors on ${ground}`, () => {
+      render(<LinkGrid items={items(2)} ground={ground} />);
+      for (const tile of screen.getAllByRole("listitem")) {
+        expect(tile).toHaveClass("border", "border-transparent");
+        expect(tile.style.borderWidth).toBe("var(--ui-border-hairline, 1px)");
+        expect(tile.style.minBlockSize).toBe("var(--ui-layout-tap-target, 44px)");
+      }
+    });
   }
 
   for (const level of [3, 4] as const) {
@@ -109,7 +120,7 @@ describe("LinkGrid", () => {
 
   it("keeps a rule tile's target at the minimum tap size even without supporting copy", () => {
     render(<LinkGrid surface="rule" items={items(2).map(({ description: _description, ...item }) => item)} />);
-    expect(screen.getAllByRole("listitem")[0]?.style.minBlockSize).toBe("var(--ui-layout-tap-target)");
+    expect(screen.getAllByRole("listitem")[0]?.style.minBlockSize).toBe("var(--ui-layout-tap-target, 44px)");
   });
 
   for (const slot of ["title", "description", "icon"] as const) {
