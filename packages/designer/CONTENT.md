@@ -247,3 +247,14 @@ At most two body blocks link items. Each body destination appears once across
 item links, section actions and footnote links; hero and close are excluded.
 Card links count as quiet actions for weight fit, independently of section
 button counts. These findings are advisory and never run during rendering.
+
+## Closing copy
+
+A Publisher `LandingView` close can opt into the opening hero's heading and
+description with `callToAction: { copy: "hero", action }`. Own heading and
+description values take precedence, including `null` and `false`; only
+`undefined` falls back. The close retains its own eyebrow and action. Copy
+comes from the first section of the main document, which must be a hero.
+A valid nonempty document opening on another kind is refused with
+`missing-hero-copy`; malformed resolved documents retain `resolution-failed`.
+Omitting `copy` keeps the close's authored copy.

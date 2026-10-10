@@ -1,9 +1,11 @@
 // @vitest-environment jsdom
 
+import { createHash } from "node:crypto";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import type { ResolvedSectionedViewDocument } from "../../core/sectioned-view.js";
 import { LandingView } from "./LandingView.js";
+import { RenderError } from "../../internal/errors.js";
 import { planLandingViewGrounds } from "./landingViewGrounds.js";
 import type { LandingViewProps } from "./LandingView.js";
 import * as webEntry from "../index.js";
@@ -339,3 +341,88 @@ describe("LandingView grounds", () => {
   });
 });
 
+
+describe("LandingView close copy", () => {
+  const action = <a href="/close-action">CLOSE-ACTION-SENTINEL</a>;
+
+  it("reuses the first hero's heading and description only on opt-in, keeping the close's own action and eyebrow", () => {
+    const trailingHero: ResolvedSectionedViewDocument = { ...SHARED, sections: [{ id: "tail-hero", kind: "hero", ground: "base", heading: "TAIL-SENTINEL", description: "TAIL-LEDE-SENTINEL" }] };
+    const withHeroAction: ResolvedSectionedViewDocument = { ...PAGE, sections: [{ ...PAGE.sections[0]!, actions: [{ id: "hero-action", href: "/hero-action", label: "HERO-ACTION-SENTINEL" }] } as ResolvedSectionedViewDocument["sections"][number], ...PAGE.sections.slice(1)] };
+    const close = dom({ document: withHeroAction, trailing: [trailingHero], callToAction: { copy: "hero", id: "close", eyebrow: "CLOSE-EYEBROW-SENTINEL", action } }).querySelector("[data-landing-call-to-action]")!;
+    expect(close.id).toBe("close");
+    expect(close.querySelector("h2")?.textContent).toBe("HERO-SENTINEL");
+    expect(close.textContent).toContain("LEDE-SENTINEL");
+    expect(close.textContent).toContain("CLOSE-EYEBROW-SENTINEL");
+    expect(close.textContent).not.toContain("TAIL-SENTINEL");
+    expect([...close.querySelectorAll("*")].map((node) => node.textContent)).not.toContain("EYEBROW-SENTINEL");
+    expect(close.querySelectorAll("a")).toHaveLength(1);
+    expect(close.textContent).not.toContain("HERO-ACTION-SENTINEL");
+    expect(close.querySelector("a")?.getAttribute("href")).toBe("/close-action");
+  });
+
+  it("lets each own copy field override hero reuse independently", () => {
+    const heading = dom({ document: PAGE, callToAction: { copy: "hero", heading: <em>OWN-HEADING-SENTINEL</em>, action } }).querySelector("[data-landing-call-to-action]")!;
+    expect(heading.querySelector("h2 em")?.textContent).toBe("OWN-HEADING-SENTINEL");
+    expect(heading.textContent).toContain("LEDE-SENTINEL");
+    const description = dom({ document: PAGE, callToAction: { copy: "hero", description: <em>OWN-DESCRIPTION-SENTINEL</em>, action } }).querySelector("[data-landing-call-to-action]")!;
+    expect(description.querySelector("h2")?.textContent).toBe("HERO-SENTINEL");
+    expect(description.querySelector("em")?.textContent).toBe("OWN-DESCRIPTION-SENTINEL");
+    expect(description.textContent).not.toContain("LEDE-SENTINEL");
+  });
+
+  it.each([null, false])("keeps explicit %s overrides rather than falling back to hero copy", (value) => {
+    const close = dom({ document: PAGE, callToAction: { copy: "hero", heading: value, description: value, action } }).querySelector("[data-landing-call-to-action]")!;
+    expect(close.querySelector("h2")).toBeNull();
+    expect(close.textContent).not.toContain("HERO-SENTINEL");
+    expect(close.textContent).not.toContain("LEDE-SENTINEL");
+    expect(close.querySelector("a")?.textContent).toBe("CLOSE-ACTION-SENTINEL");
+  });
+
+  it("allows a hero without supporting copy", () => {
+    const page: ResolvedSectionedViewDocument = { ...PAGE, sections: [{ id: "hero", kind: "hero", ground: "base", heading: "HERO-SENTINEL" }] };
+    const close = dom({ document: page, callToAction: { copy: "hero", action } }).querySelector("[data-landing-call-to-action]")!;
+    expect(close.querySelector("h2")?.textContent).toBe("HERO-SENTINEL");
+    expect(close.textContent).toBe("HERO-SENTINELCLOSE-ACTION-SENTINEL");
+  });
+
+  it("preserves legacy markup when hero reuse is absent", () => {
+    const html = renderToStaticMarkup(<LandingView document={PAGE} trailing={[SHARED]} callToAction={CALL_TO_ACTION} />);
+    // Pin the pre-option server output; the page and closing copy differ.
+    expect(createHash("sha256").update(html).digest("hex")).toBe(LEGACY_CLOSE_MARKUP_SHA256);
+  });
+
+  it("refuses a valid nonempty document without an opening hero using the dedicated reason, even with own copy or a trailing hero", () => {
+    const page: ResolvedSectionedViewDocument = { ...PAGE, sections: SHARED.sections };
+    const trailingHero: ResolvedSectionedViewDocument = { ...PAGE, id: "tail", sections: [{ id: "tail-hero", kind: "hero", ground: "base", heading: "TAIL-SENTINEL" }] };
+    for (const heading of [undefined, "OWN-HEADING-SENTINEL"]) {
+      try {
+        dom({ document: page, trailing: [trailingHero], callToAction: { copy: "hero", heading, description: "OWN-LEDE-SENTINEL", action } });
+        expect.fail("hero-copy request must be refused");
+      } catch (error) {
+        expect(error).toBeInstanceOf(RenderError);
+        expect(error).toMatchObject({ reason: "missing-hero-copy" });
+      }
+    }
+  });
+
+  it("keeps malformed resolved input and an unknown copy option on the generic refusal path", () => {
+    const malformed = { ...PAGE, resolutions: [] };
+    const empty = { ...PAGE, sections: [] };
+    for (const props of [
+      { document: malformed, callToAction: { copy: "hero", action } },
+      { document: empty, callToAction: { copy: "hero", action } },
+      { document: empty, callToAction: CALL_TO_ACTION },
+      { document: PAGE, callToAction: { copy: "unknown", heading: "OWN-SENTINEL", action } },
+    ]) {
+      try {
+        dom(props as LandingViewProps);
+        expect.fail("invalid request must be refused");
+      } catch (error) {
+        expect(error).toBeInstanceOf(RenderError);
+        expect(error).toMatchObject({ reason: "resolution-failed" });
+      }
+    }
+  });
+});
+
+const LEGACY_CLOSE_MARKUP_SHA256 = "c7612c0e8dccc6bba0f05d7fca77d7e801d578e2ef55c415d992aab396e315d1";

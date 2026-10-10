@@ -1182,7 +1182,7 @@ export function ProductPage() {
       document={page}
       trailing={[records, faq]}
       afterSection={{ features: screenshot }}
-      callToAction={{ heading: "Closing heading", description: "One supporting line.", action: <a href="/start">Start</a> }}
+      callToAction={{ copy: "hero", action: <a href="/start">Start</a> }}
     />
   );
 }
@@ -1198,9 +1198,17 @@ Props, in addition to the standard `<main>` attributes (minus `children`),
 - `afterSection` (optional): content placed in a section's content slot,
   after its own content, keyed by section id. An id that names no rendered
   section is refused with a `RenderError`, not dropped.
-- `callToAction` (`LandingViewCallToAction`, optional): the closing band:
-  `id`, `eyebrow`, `heading` (an `<h2>`), `description`, and one `action`
-  slot (pass a button-styled link; it is not restyled).
+- `callToAction` (optional): the closing band: `id`, `eyebrow`, `heading`
+  (an `<h2>`), `description`, and one required `action` slot (pass a
+  button-styled link; it is not restyled). Add `copy: "hero"` to reuse the
+  first main hero's heading and description; heading can then be omitted.
+  Own copy values win, including `null` and `false`; only `undefined` falls
+  back. The close retains its own eyebrow and action. A trailing hero is
+  not a copy source. A valid nonempty main document without an opening hero
+  is refused with `RenderError` reason `missing-hero-copy`; malformed input
+  and unknown copy options use `resolution-failed`. Omitting `copy` retains
+  the close's authored copy. The exported `LandingViewCallToAction` interface
+  retains its required heading and action for existing consumers.
 - `backdrop` (optional): decoration behind the hero block, `aria-hidden` and
   inert to the pointer, over the hero section's own ground.
 - `header` (`LandingViewHeader`: `"overlay"` or `"reserved"`, default

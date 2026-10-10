@@ -35,6 +35,8 @@ export type LandingViewHeader = "overlay" | "reserved";
  * `inverse` ground (fixed by the view, like the light band above it).
  */
 export interface LandingViewCallToAction {
+  /** Reuse the opening hero's heading and description where own copy is undefined. */
+  copy?: "hero";
   /** Fragment id for the band, so a page can link to it. */
   id?: string;
   /** A short line above the heading. */
@@ -71,7 +73,7 @@ export interface LandingViewProps extends Omit<HTMLAttributes<HTMLElement>, "chi
    */
   afterSection?: Readonly<Record<string, ReactNode>>;
   /** The closing call to action, rendered last as its own band. */
-  callToAction?: LandingViewCallToAction;
+  callToAction?: LandingViewCallToAction | (Omit<LandingViewCallToAction, "heading" | "copy"> & { copy: "hero"; heading?: ReactNode });
   /**
    * Decoration behind the hero block (an image, a video, a scene). Rendered
    * `aria-hidden` and inert to the pointer, over the hero section's own
@@ -298,6 +300,9 @@ export function LandingView({
   style,
   ...rest
 }: LandingViewProps) {
+  if (callToAction?.copy !== undefined && callToAction.copy !== "hero") {
+    throw new RenderError("resolution-failed", "LandingView refused callToAction.copy: the supported copy option is hero.");
+  }
   const options = { resolveAssetId, prefersReducedMotion };
   const heroOptions = { ...options, heroActions: "button" as const };
   for (const entry of [document, ...trailing]) {
@@ -309,8 +314,15 @@ export function LandingView({
   }
   const heroSection = document.sections[0];
   if (heroSection === undefined || heroSection.kind !== "hero") {
-    throw new RenderError("resolution-failed", "LandingView refused an invalid resolved document: the first section must be a hero section.");
+    throw new RenderError(callToAction?.copy === "hero" ? "missing-hero-copy" : "resolution-failed", "LandingView refused an invalid resolved document: the first section must be a hero section.");
   }
+  const close = callToAction?.copy === "hero"
+    ? {
+      ...callToAction,
+      heading: callToAction.heading === undefined ? heroSection.heading : callToAction.heading,
+      description: callToAction.description === undefined ? heroSection.description : callToAction.description,
+    }
+    : callToAction;
   const plan = planLandingViewGrounds(document, trailing, { callToAction: callToAction === undefined ? undefined : { id: callToAction.id } });
   const [grounded, ...groundedTrailing] = applyLandingViewGrounds(plan, [document, ...trailing]);
   const hasBackdrop = backdrop !== undefined && backdrop !== null && backdrop !== false;
@@ -391,7 +403,7 @@ export function LandingView({
           )}
         </SectionFrame>
       ))}
-      {callToAction ? <CallToActionBand {...callToAction} measure={measure} /> : null}
+      {close ? <CallToActionBand {...close} measure={measure} /> : null}
     </Root>
   );
 }
