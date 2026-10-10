@@ -348,29 +348,39 @@ Name a shipped template when its slots cover the page:
   closed six kinds (`hero`, `feature-grid`, `faq`, `ordered-step-sequence`,
   `status-list`, `stat-grid`).
 - **`AuthView`** — one shell for every authentication step (sign-in, sign-up,
-  password reset, verification): site header, page header, the form inside
-  Designer's `Card`, and site footer. The card holds only the form;
-  `secondaryAction` (the alternate-step lines, such as "Forgot password?" or
+  password reset, verification): the page header and the form inside
+  Designer's `Card`, rendered chrome-free inside a
+  [`SiteFrame`](#site-frame--siteframe); any deprecated chrome prop selects
+  the legacy page, which adds Designer's site header and site footer. The
+  card holds only the form;
+  `notes` (the alternate-step lines, such as "Forgot password?" or
   "No account? Join the waitlist") renders below it, before the footnote, and
-  is always the site's copy. An invitation or activation step never offers
+  is always the site's copy. `secondaryAction` is the deprecated name of
+  `notes` and renders in the same place; passing both throws. An invitation or activation step never offers
   request-access or sign-up: the view has no mode and no `requestAccess`
   prop, so each site's activation-page test should assert no request-access or
-  sign-up link. Pass each `secondaryAction` line as one element: text plus a
+  sign-up link. Pass each `notes` line as one element: text plus a
   link in one fragment splits onto two lines. When the sign-in provider is
   unavailable, `isDisabled` keeps the form on screen inside a disabled
   `<fieldset>` with the typed values still shown; the explanation goes in the
-  form's own `submitError`, and a retry link in `secondaryAction` stays
+  form's own `submitError`, and a retry link in `notes` stays
   enabled. Switching `isDisabled` remounts the form, so the site keeps the
   typed values in its own state. The content column uses the
   `--ui-width-form-max` form measure, and `description` is a required prop
   so every step decides on a supporting line. The form slot is filled with
   Designer's `Form` / `TextField` / `Button`. There is no mode prop, and
-  the view does not call an auth provider. The optional `internalNote`
-  (`{ label, message }`) renders a badge-labelled development note under the
-  footnote, and a site passes it only in development. An auth page's
+  the view does not call an auth provider. The view prints no developer
+  text: a missing sign-in provider setting is reported once in the server log
+  (for the Clerk adapter, `createClerkSignInPage` in
+  `@clossys/bouncer/providers/clerk/web/server` names the missing settings
+  there, never their values), and the page shows only the user-facing
+  unavailable message. `internalNote` is deprecated: it is still accepted,
+  with its earlier `{ label, message }` shape, for one release and renders
+  nothing; delete it from the call site. An auth page's
   `footerSecondary` holds a legal row only, never a locale switcher, because
   auth pages are single-locale. `SignInForm` fills the
-  form slot of a sign-in page.
+  form slot of a sign-in page. The header slots are listed under
+  [Front-door shell](#front-door-shell).
 - **`ErrorView`** — error shell, including the sign-in-boundary states: not
   authorized (403), pending, revoked, and provider unavailable (503). It takes
   the same props for each; the status, title, description, and recovery
@@ -378,13 +388,15 @@ Name a shipped template when its slots cover the page:
   description (`"Something went wrong. Error: 8f2a91c0."`), there is no
   details disclosure, and `action` holds one primary control: a secondary
   destination is a text link inside the description.
-- **`BoundaryView`** — `ErrorView` inside one shared frame: Designer's
-  `SiteHeader` (`brand`, required), the `ErrorView` filling the main area,
-  and `SiteFooter` (`footerSecondary`, optional). It takes every
-  `ErrorViewProps` key and forwards it to `ErrorView`, so a site deletes its
-  private copy of the header/error/footer shell. It also frames the
-  sign-in-boundary states. It is not a built-in web template. See
-  [Boundary pages](#boundary-pages).
+- **`BoundaryView`** — a boundary page: the page header block (`status`,
+  `title`, `description`), the `action` in a `Card` and the `notes` below
+  it. Inside a `SiteFrame` it renders that content only; passing any
+  deprecated chrome prop (`brand` is optional) selects the legacy page, which
+  adds Designer's `SiteHeader` (`brand`) and `SiteFooter` (`footerSecondary`,
+  optional). It takes every
+  `ErrorViewProps` key, so a site deletes its private copy of the
+  header/error/footer shell. It also frames the sign-in-boundary states. It
+  is not a built-in web template. See [Boundary pages](#boundary-pages).
 - **`PackReviewView`** — the dev-only review index: the pack's strategy
   brief, brand kit (through `BrandGuideView`) and voice and copy, then a
   site's pages, their forced states, its exported artifacts and a lazy
@@ -774,8 +786,12 @@ These exports are direct, server-safe page shells rather than new
 `SurfaceDocument.template` registrations. They deliberately do not select
 content, load a CMS, own a router, or add client state.
 
-`CaptureView` provides the site chrome, one heading, a consumer-owned form
-inside Designer's `Card`, and a footer. The consumer owns form fields, submission, validation,
+`CaptureView` provides one heading, a consumer-owned form inside Designer's
+`Card` and an optional `notes` block below the card, as the shared
+[page layout](#page-layout); the deprecated chrome props add a site header and
+a footer. `secondaryAction` stays inside the card, under the form or the
+confirmation. The header slots are listed under
+[Front-door shell](#front-door-shell). The consumer owns form fields, submission, validation,
 and network effects. On a failed client-side submission, pass both
 `errorSummary` and `errorSummaryId`, focus that id, and keep the summary
 before the form; the view makes it a focusable `role="alert"`. On success,
@@ -786,7 +802,10 @@ the region that holds the form or the confirmation, and defaults to
 "Capture form".
 
 `DocumentView` accepts a `StructuredDocument` and an approved-copy resolver,
-then calls `renderStructuredDocument` itself. A caller cannot supply a
+then calls `renderStructuredDocument` itself. Inside a `SiteFrame` it renders
+the [page layout](#page-layout) shared with `CaptureView` and `AuthView`: the
+document title and optional summary as the header, the effective date and the
+article in the card, and the optional `action` as the notes line below it. A caller cannot supply a
 pre-rendered article node or skip heading and in-document-fragment validation
 on this path. The document title becomes the page `h1`; optional summary and
 effective-date labels remain `CopyRef`s. An effective date is
@@ -836,7 +855,7 @@ and `contrastLabel` (default "Contrast"), and its coverage status line with
 "Brand file coverage failed." from `brandOk`).
 
 There is intentionally no `EntryView`. A document-backed entry page uses
-`DocumentView`, with its optional header action linking back to the
+`DocumentView`, with its optional `action` linking back to the
 collection, rather than duplicating the validated document page contract.
 This is the narrow disposition for entry pages; it does not add CMS, parser,
 or taxonomy behavior. A future Designer-block integration is separately
@@ -2045,10 +2064,21 @@ export function ServerErrorPage({ reference }: { reference: string }) {
 }
 ```
 
-`brand`, `footerSecondary` and the header slots belong to the frame; every
-other prop goes to the `ErrorView` inside it. The header slots are the ones
-`LandingView`'s banner uses, so a boundary page can carry the same header as
-the rest of the site:
+Inside a [`SiteFrame`](#site-frame--siteframe), pass no chrome prop and the
+view renders its content only. With any chrome prop (deprecated) the page
+follows the [front-door shell](#front-door-shell). The page header
+block holds `status` (the page's one `<h1>`), `title` (an `<h2>`) and
+`description`; the body block is a Designer `Card` around `action`, omitted
+when there is no action; `notes` (optional) renders below the card. The
+content column is the `--ui-width-form-max` measure `AuthView` uses.
+
+Breaking change: `BoundaryView` no longer renders `ErrorView`. `className`,
+`style` and the other HTML attributes now land on the outer element, which
+owns `min-h-dvh`, instead of an inner `ErrorView` root, and the status, title
+and action are left-aligned in the column instead of centred.
+
+The deprecated header slots are the ones `LandingView`'s banner uses, so a
+legacy boundary page can carry the same header as the rest of the site:
 
 - `headerAction` (optional): the banner call to action, passed to Designer
   `SiteHeader`'s `actions`.
@@ -2060,6 +2090,331 @@ the rest of the site:
   `LandingView`.
 
 Each slot is absent from the markup when omitted.
+
+### Site frame — `SiteFrame`
+
+`SiteFrame` is the page frame. It owns the page's chrome and its one
+`<main>`, in this order: a skip link, the banner (Designer's `SiteHeader`
+with a `Brandmark`), `<main id={SITE_MAIN_ID} tabIndex={-1}>` holding the
+view, then the contentinfo (Designer's `SiteFooter`). The view passed as
+`children` renders chrome-free: `AuthView`, `CaptureView`, `DocumentView`,
+`BoundaryView` and `ErrorView` carry no `<main>`, no banner and no contentinfo of their own when
+no chrome prop is passed, so a framed page has exactly one of each.
+
+```tsx
+import { AuthView, SiteFrame, siteShellFor } from "@clossys/publisher/web";
+import type { SiteFrameConfig } from "@clossys/publisher/web";
+
+const frame: SiteFrameConfig = {
+  brand: { assetId: "brand-mark", label: { id: "brand.name" }, size: "md", variant: "mark" },
+  skipLink: { id: "shell.skipLink" },
+  origin: "https://example.com",
+  site: {
+    nav: { label: { id: "nav.label" }, links: [{ href: "/pricing", label: { id: "nav.pricing" } }] },
+    actions: [{ href: "/contact", label: { id: "nav.contact" } }],
+  },
+  environments: [
+    { surface: "front-door", href: "https://app.example.com/", label: { id: "env.app" }, icon: Home },
+    { surface: "admin", href: "https://admin.example.com/", label: { id: "env.admin" }, icon: Settings },
+  ],
+  legal: {
+    entity: { id: "legal.entity" },
+    links: [
+      { href: "/privacy", label: { id: "legal.privacy" } },
+      { href: "/terms", label: { id: "legal.terms" } },
+    ],
+  },
+};
+
+export function SignInPage() {
+  return (
+    <SiteFrame shell={siteShellFor(frame, "front-door")} resolveCopy={resolveCopy} resolveAsset={resolveAsset}>
+      <AuthView heading="Sign in" description="Use your work email." form={<SignInForm {...signIn} />} />
+    </SiteFrame>
+  );
+}
+```
+
+`Home` and `Settings` are Designer `IconNode` values from its `icons` entry;
+`resolveCopy` and `resolveAsset` are the same ports `renderWebDocument` takes.
+
+- **The shell is data.** `shell` (`SiteShellInput`) holds copy references,
+  an asset id and links, never a node: there is no `header`, `footer` or
+  mark slot. Labels resolve through `resolveCopy` (Writer's `CopyResolver`);
+  the brand mark resolves through `resolveAsset` and must be an image asset.
+  A `lockup` brand takes a `wordmark` copy reference; a `mark` brand takes
+  none.
+- **Fails closed.** An unknown field, copy that does not resolve (or resolves
+  blank), a non-image brand asset, a disallowed link, icon data that is not
+  plain SVG shape data, a malformed `origin`, a `ground` outside `base`,
+  `inverse` and `transparent`, or more than one current environment throws an
+  `Error` that names the field (`SiteFrame: shell.nav.links[0].href ...`). It
+  does not echo the value; an unknown key is echoed only as its identifier
+  characters, cut to 40.
+- **Links.** A link may be a root-relative path, a fragment, a query, or an
+  absolute `https:`, `http:`, `mailto:` or `tel:` URL (any letter case). A
+  link with surrounding whitespace, any control character (tab, newline and
+  carriage return included) or a backslash anywhere is refused, so
+  `"/\t/host"` and `"/\\host"` cannot turn into a link to another host; a
+  protocol-relative `//host` link and any other scheme (`javascript:`,
+  `data:`, `file:` and so on) are refused too. Percent-encoded paths such as
+  `/%2F%2Fhost` stay on the origin and are allowed. An absolute link is
+  returned normalised (`HTTPS://Example.COM/a` becomes
+  `https://example.com/a`), and with an `origin` a root-relative link becomes
+  an absolute URL on that origin, in every slot of a shell that sets one:
+  nav, actions, columns, environments and the legal row.
+- **Origin.** `origin` is a bare `https:` origin; `http:` is accepted only for
+  `localhost`, `127.0.0.1` and `[::1]`, for local development.
+- **Icons.** An environment `icon` is Designer `IconNode` data: `path`,
+  `circle`, `line`, `rect`, `polyline`, `polygon`, `ellipse` or `g` nodes whose
+  attributes come from an allowlist of SVG shape attributes (geometry, fill,
+  stroke and opacity) with string values. `style`, `href`, event handlers,
+  `ref`, `children`, `dangerouslySetInnerHTML` and any `url(...)` value are
+  refused. The string `key` Designer's generated icons carry is dropped. The
+  frame renders a frozen copy, so changing the caller's data afterwards has
+  no effect.
+- **One main.** The main id is fixed (`SITE_MAIN_ID`); the frame takes no
+  main-id prop and the skip link always targets it. A chrome-free view
+  (`ErrorView` included) refuses a `role` holding `main`, `banner`,
+  `contentinfo` or `navigation` in any letter case, and the frame's main id,
+  on its content root.
+- **Server-safe.** `SiteFrame` uses no hooks. The skip link, which moves
+  focus on activation, is a small `"use client"` island that receives strings
+  only.
+
+**Per surface kind.** One brand declares one `SiteFrameConfig`;
+`siteShellFor(config, kind)` returns the shell for each of the four
+`SITE_SURFACE_KINDS`:
+
+| Kind | Banner | Footer | Links |
+| --- | --- | --- | --- |
+| `"site"` | brand, `site.nav`, `site.actions`, `site.secondaryAction` | `site.columns`, then the legal row | as given (`siteShellFor` sets no `origin` for the site itself) |
+| `"front-door"`, `"admin"`, `"demo"` | brand, the `environments` links (the one whose `surface` matches marked current) | the legal row only | root-relative links resolve against `origin` |
+
+Every kind shares the brand, the skip link, the ground and the legal row. A
+surface served from another host (a sign-in host, an admin host) therefore
+links its legal row to the public site's `/privacy` and `/terms` on
+`origin`, not to routes its own host may not serve. An unknown kind throws.
+
+**Which views fit inside the frame.**
+
+| Safe inside `SiteFrame` (no `<main>` of their own when no chrome prop is passed) | Still render their own `<main>` |
+| --- | --- |
+| `AuthView`, `CaptureView`, `DocumentView`, `BoundaryView`, `ErrorView` | `LandingView`, `MarketingView`, `CollectionView`, `LegalView`, `ContactView`, `PackReviewView`, `BrandGuideView`, `SystemAuditView` |
+
+`SectionedView` renders its own `<main>` by default; pass `landmark="none"`
+to place it inside the frame. The built-in registry `AuthView` template
+always passes `brand`, so a registry-rendered sign-in page is still the
+legacy full page, not a framed one.
+
+`ErrorView`'s root keeps its `min-h-dvh` (full viewport height) class, so
+inside the frame the page is taller than the viewport and scrolls past the
+footer. A frame-aware `ErrorView` root is a follow-up; it is listed as
+deferred under layer 8.
+
+**Known gaps.** The `Brandmark` links to `/` on the current host and does not
+follow `origin`, so on a sign-in or admin host the logo goes to that host's
+home, not the public site; that is a Designer follow-up. A call-to-action is
+text only (no icon), and Designer has no server-safe link component yet, so
+the frame renders plain anchors.
+
+**Page layers.** `SITE_PAGE_LAYERS` is the page-assembly contract as frozen
+data: nine layers, each with its owning package, who mounts it, its
+`implementationScope` and a `deferred` list of the parts not yet built. The
+scopes mean: `implemented`, the frame mounts it; `supplier`, Publisher ships
+parts a host mounts itself; `contract-only`, named in the contract with
+nothing shipped for it yet; `out-of-scope`, not part of the page contract.
+
+| Layer | Owner | Scope | Deferred |
+| --- | --- | --- | --- |
+| 1. Request edge | Bouncer | `contract-only` | |
+| 2. Document and head | Publisher | `supplier` | the document function (`html`, `body`, `lang`, `dir`, fonts, theme bootstrap, viewport) |
+| 3. Providers and runtime | their owning packages (telemetry contracts: Observer) | `contract-only` | provider mount points |
+| 4. Shell and chrome | Designer, mounted by the Publisher frame | `implemented` | signature slot (`defineSiteSignature`), consent card, locale switcher, backdrop |
+| 5. View | Publisher | `implemented` | chrome-free versions of the views in the right-hand column above |
+| 6. Per-page head | Publisher | `contract-only` | `pageHead` |
+| 7. Machine surfaces | Publisher | `contract-only` | robots, sitemap from the route manifest, web manifest, icons, health |
+| 8. System states | Publisher views | `implemented` | loading state, degraded state, frame-aware `ErrorView` root |
+| 9. Forms and APIs | their owning form and API packages | `out-of-scope` | |
+
+**Extending a page.** A consumer differs only through declared brand
+extensions: copy, tokens, backdrop and the signature visual. A band the
+frame or a view lacks is a package candidate, to be added here or in
+Designer, not a local fork of the frame or a view.
+
+**Chrome props inside a frame.** Never pass a legacy chrome prop (`brand`,
+`header`, `footer`, `mainId`, ...) to a view that sits inside `SiteFrame`: the
+view then renders its own `<main>` and banner, nested inside the frame's. At
+runtime, `brand={undefined}` counts as not passed and selects the chrome-free
+content, while `brand={null}` counts as passed and selects the legacy page. The
+`AuthView` web template always passes `brand`, so it renders the legacy page
+only and is not for use inside a frame.
+
+A chrome-free view's content root refuses a landmark `role` (`main`, `banner`,
+`contentinfo`, `navigation`) and the frame's main id, because the frame owns
+those. `GlobalErrorDocument` is the exception: its body is an `ErrorView` with
+no frame and no `<main>`, so that root may carry `role="main"`.
+
+**Deprecated view chrome.** The chrome props on `AuthView`, `CaptureView`,
+`DocumentView` and `BoundaryView` (`brand`, `header`, `footer`, `mainId`, `nav`,
+`headerAction`, the secondary header action, `ground`, `footerSecondary`, and
+`surfaceLabel` on `AuthView`) are deprecated. They still work: passing any one
+of them selects the legacy page: the view's own header, `<main>` and footer,
+laid out per [Page layout](#page-layout), which changed the legacy markup
+(see [Front-door shell](#front-door-shell)). Omit all of
+them and render the view inside `SiteFrame` instead. `brand` is no longer
+required by the type.
+
+### Front-door shell
+
+Deprecated: page chrome now belongs to [`SiteFrame`](#site-frame--siteframe).
+This section describes the legacy page a view renders when any of its chrome
+props is passed. It keeps working, laid out per [Page layout](#page-layout).
+
+`AuthView`, `CaptureView` and `BoundaryView` share one shell, so every
+front-door page reads the same way:
+
+1. **Header.** Designer's `SiteHeader`, with the brand linking to the main
+   site home. Each view takes `nav`, `headerAction` and `ground`, and a
+   secondary banner action: `headerSecondaryAction` on `AuthView` and
+   `CaptureView` (their `secondaryAction` was already taken), and
+   `secondaryAction` on `BoundaryView`, as on `LegalView`. Environments
+   (app, admin, demo) are call-to-action links in `headerAction`, one
+   Designer `SiteHeader.ActionLink` each, with `isCurrent` on the page's own
+   environment. Each links to its environment's home. The icon is a
+   caller-supplied `IconNode`; below the tablet breakpoint the label is
+   visually hidden and stays the link's accessible name. `surfaceLabel` on
+   `AuthView` still renders and is superseded by these links.
+2. **Page header block.** The page's one `<h1>` and its supporting line,
+   centered on `AuthView` and `CaptureView`, which use the shared [page
+   layout](#page-layout).
+3. **Body block.** The form or action inside a Designer `Card`.
+4. **Notes block.** `notes`, below the card.
+5. **Footer.** Designer's `SiteFooter`, whose `footerSecondary` slot holds
+   `SiteFooter.Legal` and nothing else on auth and boundary pages: the
+   copyright at one end and the legal links at the other. The minimum links
+   are privacy and terms as same-host routes, so a visitor is not sent off
+   the host mid-flow. The package supplies no default links and no copy.
+
+**Bring your own chrome** (deprecated; use `SiteFrame`). A consumer that already carries its own site
+header and footer passes them as `header` and `footer` on any of the three
+views. Each one **replaces** the Designer `SiteHeader` or `SiteFooter`
+entirely, and the other half keeps its default, so a consumer can replace one
+or both. The value is rendered as given, in the same place, so it should hold
+the page's one banner landmark (`header`) or one contentinfo landmark
+(`footer`) and nothing else: the view adds no wrapper and no second landmark.
+While `header` is given, `brand`, `nav`, `headerAction`, the secondary header
+action and `ground` are not used for the header; while `footer` is given, `footerSecondary` is not used. `undefined`
+keeps the default; `null` is an explicit opt-out that renders no banner or no
+contentinfo. Today a consumer can pass its own v1 chrome here; later it passes
+Designer's. The skip link, if the chrome has one, is the consumer's too.
+
+In this example `SiteHeader` and `SiteFooter` come from Designer's
+`shell/server` entry and `Home` and `Settings` from its `icons` entry.
+
+```tsx
+import { AuthView, SignInForm } from "@clossys/publisher/web";
+
+<AuthView
+  brand={<a href="https://example.com/">Acme</a>}
+  headerAction={
+    <>
+      <SiteHeader.ActionLink href="/" label="App" icon={Home} isCurrent />
+      <SiteHeader.ActionLink href="https://admin.example.com/" label="Admin" icon={Settings} />
+    </>
+  }
+  heading="Sign in"
+  description="Use your work email."
+  form={<SignInForm identify={identify} verify={verify} onSignedIn={goHome} />}
+  notes={<a href="/reset">Forgot password?</a>}
+  footerSecondary={
+    <SiteFooter.Legal
+      entity="Acme"
+      links={[
+        { label: "Privacy", href: "/privacy" },
+        { label: "Terms", href: "/terms" },
+      ]}
+    />
+  }
+/>
+```
+
+**Skip-link target** (deprecated; `SiteFrame` owns the skip link and the
+main id). Pass `mainId` on any of the three views to give the
+page's `<main>` that `id` and `tabIndex={-1}`, so a skip link in the host's
+own chrome can point at it and move focus there. When `mainId` is unset (or
+empty) the markup is unchanged: no `id` and no `tabindex`.
+
+`LegalView` keeps its current structure.
+
+### Page layout
+
+`CaptureView`, `DocumentView` and `AuthView` share one page layout, so a
+site's contact, document and sign-in pages read the same way. It has three
+slots, centered in one column:
+
+1. **Header.** The page title, which is the page's one `<h1>`, and an
+   optional subtitle under it.
+2. **Body card.** The page content inside Designer's `Card`, start-aligned for
+   reading: the form on `CaptureView` and `AuthView`, the document on
+   `DocumentView` (its effective date first, then the article).
+3. **Notes.** An optional footnote-like line under the card, usually one
+   alternative link. The element is absent from the markup when the slot is
+   empty (`null`, `undefined`, `false`, an empty string or an empty list).
+
+| Slot | `CaptureView` | `DocumentView` | `AuthView` |
+| --- | --- | --- | --- |
+| Header title | `heading` | the document's title | `heading` |
+| Header subtitle | `description` | `summary` | `description` |
+| Body card | `form` (or `submitted`) | `document` and `effectiveDate` | `form` |
+| Notes | `notes` | `action` | `notes` |
+
+```tsx
+<SiteFrame shell={shell} resolveCopy={resolveCopy} resolveAsset={resolveAsset}>
+  <CaptureView
+    heading="Talk to us"
+    description="We reply within a week."
+    form={<ContactForm />}
+    notes={<a href="/help">Need help instead? Visit support</a>}
+  />
+</SiteFrame>
+
+<SiteFrame shell={shell} resolveCopy={resolveCopy} resolveAsset={resolveAsset}>
+  <DocumentView
+    document={privacyDocument}
+    resolveCopyId={resolveCopyId}
+    summary={{ id: "privacy.summary" }}
+    action={<a href="/terms">Read the terms</a>}
+  />
+</SiteFrame>
+
+<SiteFrame shell={shell} resolveCopy={resolveCopy} resolveAsset={resolveAsset}>
+  <AuthView
+    heading="Sign in"
+    description="Use your work email."
+    form={<SignInForm identify={identify} verify={verify} onSignedIn={goHome} />}
+    notes={<a href="/reset">Forgot password?</a>}
+  />
+</SiteFrame>
+```
+
+Every string is a prop, so the views ship no copy. The layout renders no
+header, footer or `<main>` of its own: inside a `SiteFrame` the page keeps
+the frame's one banner, one `<main>` and one contentinfo, and the layout adds
+only its title block, which holds the one `<h1>`. The header and notes are
+centered and the card's own content is not. The column takes the
+`--ui-width-form-max` measure on `AuthView` and `--ui-width-prose-max` on the
+other two, with no fallback length: a host without the token gets an
+unconstrained column.
+
+The deprecated chrome props still select the legacy page, which renders its
+own header, `<main>` and footer around the same layout. `DocumentView` takes
+`brand` and `footerSecondary` for it, and `brand` is no longer required. On
+the legacy `DocumentView` the document sits in a `Card` and `action` is rendered
+after the document, as the notes line.
+
+The title block (`PageLayoutHeader`) is a Publisher-internal component, so a
+sibling layout without the card shares its header and spacing.
 
 ### Global error document — `GlobalErrorDocument`
 
@@ -2166,8 +2521,9 @@ Props:
   Without it the code step has no resend control. Any cooldown is the
   caller's: answer `rateLimited`.
 - `unavailable` (optional): shows `front-door.unavailable.notice` in the
-  form's alert from the first render, disables the submit and resend buttons,
-  and calls no handler, while the form stays on screen. Pair it with
+  form's alert from the first render, disables the fields and the submit,
+  resend and back buttons, and calls no handler, while the form stays on
+  screen. Pair it with
   `AuthView`'s `isDisabled`.
 - `onSignedIn()`: called once after `verify` or `verifyCode` answers `ok`. The
   form does not navigate, set a cookie or redirect.
@@ -2193,8 +2549,8 @@ It shows only when `verify` answers `needsCode` and `verifyCode` is given:
 same `front-door.password.secondary` button, which returns to the identifier
 step with the identifier kept and the password and code cleared. A
 `verifyCode` answer of `ok` calls `onSignedIn` once and the submit button stays
-pending. A resend that answers `ok` clears the code and its inline error; a
-failed one shows in the alert and keeps the step and the typed code. A
+pending. A resend that answers `ok` clears the code and its inline error and
+moves focus to the code field; a failed one shows in the alert and keeps the step and the typed code. A
 `needsCode` from `identify` or `verifyCode`, or from `verify` without
 `verifyCode`, reads as `unavailable`, so the form never shows a step it cannot
 finish. Each step change moves focus to the new step's field.
@@ -2215,7 +2571,8 @@ Where each failure shows, on the step it happened in:
 | `unavailable`, a stray `needsCode`, a throw, an unknown answer, or the `unavailable` prop | the form's one `role="alert"` | `front-door.unavailable.notice` |
 
 Nothing is validated before a submit or on blur, and an empty submit calls no
-handler. An inline error clears when its field changes. The submit and resend
+handler. A field that shows an inline error, from an empty submit or an
+answer, takes focus. An inline error clears when its field changes. The submit and resend
 buttons are pending, never `disabled`, while a call is in flight, and a second
 submit or resend is ignored. Each step's `<form>` is labelled with
 `front-door.sign-in.title`, `front-door.password.title` or
@@ -3315,7 +3672,7 @@ cosmetic gap.
   `SiteOpenGraphMetadata`, `SitePageInput`, `SitePageKind`, `SiteShareCard`,
   `SiteTwitterMetadata`, `SiteMetadataLintFinding`, `SiteMetadataLintResult`,
   `SiteMetadataLintRule`, `SiteMetadataRequiredTag`, and
-  `SiteMetadataTagSelector` types, plus `GlobalErrorDocument` and `GlobalErrorDocumentProps`, and `ActivateForm`, `ResetForm`, `ActivateDetails`, `ActivateFailure`, `ActivateFormProps`, `ActivateResult`, `ResetDetails`, `ResetFailure`, `ResetFormProps` and `ResetResult` (see "Activation and reset forms").
+  `SiteMetadataTagSelector` types, plus `GlobalErrorDocument` and `GlobalErrorDocumentProps`, and `SiteFrame`, `siteShellFor`, `SITE_SURFACE_KINDS`, `SITE_PAGE_LAYERS`, `SITE_MAIN_ID` and the `SiteBrandInput`, `SiteChromeGround`, `SiteEnvironmentLinkInput`, `SiteFooterInput`, `SiteFrameConfig`, `SiteFrameInput`, `SiteFrameProps`, `SiteLinkInput`, `SitePageLayer`, `SiteShellInput` and `SiteSurfaceKind` types (see "Site frame"), and `ActivateForm`, `ResetForm`, `ActivateDetails`, `ActivateFailure`, `ActivateFormProps`, `ActivateResult`, `ResetDetails`, `ResetFailure`, `ResetFormProps` and `ResetResult` (see "Activation and reset forms").
 - `document`: `validateStructuredDocument`, `renderStructuredDocument`,
   `RenderError`, and the `DocumentBlock`, `DocumentCallout`,
   `DocumentColumnStyle`, `DocumentDefinitionList`, `DocumentInline`, `DocumentList`,

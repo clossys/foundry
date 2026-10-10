@@ -15,6 +15,53 @@ const PRODUCTION_NONCE_POLICY =
   "default-src 'self'; script-src 'nonce-n' 'strict-dynamic'; style-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'";
 
 describe("site security-headers baseline", () => {
+  const sameOriginExtensionDirectives = ["connect-src", "img-src", "font-src", "media-src", "worker-src"] as const;
+
+  it.each(sameOriginExtensionDirectives)("extended %s keeps self before the host in both variants", (directive) => {
+    const result = createSiteSecurityHeaders({
+      script: { mode: "nonce", nonce: "n" },
+      extensions: [{ directive, source: "https://assets.example.com" }],
+    });
+
+    for (const variant of [result.development, result.production]) {
+      expect(variant.ok).toBe(true);
+      expect(emittedPolicy(variant).split("; ").find((part) => part.startsWith(`${directive} `))).toBe(
+        `${directive} 'self' https://assets.example.com`,
+      );
+    }
+  });
+
+  it("extended frame-src keeps only the caller host in both variants", () => {
+    const result = createSiteSecurityHeaders({
+      script: { mode: "nonce", nonce: "n" },
+      extensions: [{ directive: "frame-src", source: "https://frames.example.com" }],
+    });
+
+    for (const variant of [result.development, result.production]) {
+      expect(variant.ok).toBe(true);
+      expect(emittedPolicy(variant).split("; ").find((part) => part.startsWith("frame-src "))).toBe(
+        "frame-src https://frames.example.com",
+      );
+    }
+  });
+
+  it.each(sameOriginExtensionDirectives)("extended %s deduplicates caller-listed self in both variants", (directive) => {
+    const result = createSiteSecurityHeaders({
+      script: { mode: "nonce", nonce: "n" },
+      extensions: [
+        { directive, source: "https://assets.example.com" },
+        { directive, source: "'self'" },
+      ],
+    });
+
+    for (const variant of [result.development, result.production]) {
+      expect(variant.ok).toBe(true);
+      expect(emittedPolicy(variant).split("; ").find((part) => part.startsWith(`${directive} `))).toBe(
+        `${directive} 'self' https://assets.example.com`,
+      );
+    }
+  });
+
   it("production nonce has no 'unsafe-inline' and no warning", () => {
     const result = createSiteSecurityHeaders({
       script: { mode: "nonce", nonce: "n" },

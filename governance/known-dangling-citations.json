@@ -293,7 +293,6 @@
         "src/icons/icons.test.ts",
         "src/icons/tree-shake.test.ts",
         "src/ladder.test.ts",
-        "src/theme/theme-script-parity.test.ts",
         "theme/theme-script-parity.test.ts",
         "token-parity.test.ts"
       ],
@@ -310,9 +309,6 @@
       ],
       "src/atoms/Banner.tsx": [
         "ladder.test.ts"
-      ],
-      "src/atoms/Dialog.tsx": [
-        "token-parity.test.ts"
       ],
       "src/atoms/Icon.tsx": [
         "src/types.ts"
@@ -521,7 +517,6 @@
         "theme-script-parity.test.ts"
       ],
       "src/theme/internal/theme-core.ts": [
-        "theme-core.test.ts",
         "theme-script-parity.test.ts"
       ],
       "src/theme/server.ts": [
@@ -566,9 +561,6 @@
       "src/tokens/internal/resolve-token-value.ts": [
         "parity.test.ts",
         "theme-parity.test.ts"
-      ],
-      "src/tokens/read-brand-css.ts": [
-        "scripts/check-public-safety.mjs"
       ],
       "src/tokens/tokens.ts": [
         "parity.test.ts",

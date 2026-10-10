@@ -97,7 +97,7 @@ describe("writePreviewGallery — every section renders", () => {
     expect(readFileSync(join(outDir, "site-home.html"), "utf8")).toContain("Everything your launch needs, out of the box");
     const overviewShort = readFileSync(join(outDir, "materials-overview-short.html"), "utf8");
     expect(overviewShort).toContain("One-liner");
-    // The back link's own wrapper; the embedded DocumentView markup keeps its own fallback and is not asserted here.
+    // The back link's own wrapper; the embedded DocumentView markup no longer carries a width fallback and is not asserted here.
     const backLinkAt = overviewShort.indexOf('<a href="materials-index.html">');
     const backLinkTag = overviewShort.slice(overviewShort.lastIndexOf("<p", backLinkAt), backLinkAt);
     expect(backLinkTag).toContain("var(--ui-width-prose-max, none)");

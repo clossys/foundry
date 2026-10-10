@@ -1,9 +1,11 @@
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
 import type { CopyRef, CopyResolver } from "@clossys/writer";
 import { mergeUiClasses } from "@clossys/designer/atoms/server";
-import { ArticleBody, PageHeader } from "@clossys/designer/blocks/server";
+import { ArticleBody } from "@clossys/designer/blocks/server";
 import { SiteFooter, SiteHeader } from "@clossys/designer/shell/server";
 import { RenderError } from "../../internal/errors.js";
+import { PAGE_COLUMN_CLASSES, PageLayout, pageColumnStyle } from "../internal/PageLayout.js";
+import { assertViewContentRoot, usesLegacyChrome } from "../internal/viewContentRoot.js";
 import { renderStructuredDocument } from "../../document/render.js";
 import type { StructuredDocument } from "../../document/types.js";
 
@@ -14,8 +16,16 @@ export interface DocumentViewEffectiveDate {
 }
 
 export interface DocumentViewProps extends HTMLAttributes<HTMLDivElement> {
-  /** Persistent site identity, rendered in the page banner. */
-  brand: ReactNode;
+  /**
+   * Persistent site identity, rendered in the page banner.
+   *
+   * @deprecated Page chrome belongs to `SiteFrame`, which owns the page's skip
+   * link, banner, single `<main>` and contentinfo. Render this view inside a
+   * `SiteFrame` and omit `brand` and `footerSecondary`: the view then renders
+   * its content only, with no landmarks. Passing either selects the legacy
+   * page, which keeps its own header, `<main>` and footer.
+   */
+  brand?: ReactNode;
   /**
    * The canonical document body. DocumentView always passes it to
    * renderStructuredDocument itself, so structural and fragment validation
@@ -28,9 +38,12 @@ export interface DocumentViewProps extends HTMLAttributes<HTMLDivElement> {
   summary?: CopyRef;
   /** Optional semantic effective date and its approved visible label. */
   effectiveDate?: DocumentViewEffectiveDate;
-  /** Optional route onward or back to an index, rendered in PageHeader's action region. */
+  /** Optional route onward or back to an index, rendered as the notes line below the card. Absent from the markup when omitted. */
   action?: ReactNode;
-  /** Persistent footer content. */
+  /**
+   * Persistent footer content.
+   * @deprecated Chrome belongs to `SiteFrame`; see `brand`.
+   */
   footerSecondary?: ReactNode;
   style?: CSSProperties;
 }
@@ -49,6 +62,13 @@ function resolveOptionalCopy(ref: CopyRef | undefined, path: string, resolver: C
  * shell, this view makes renderStructuredDocument's validation unavoidable:
  * malformed heading hierarchy or an unresolved in-document fragment throws
  * before an `<article>` is built.
+ *
+ * Inside a `SiteFrame` (the default, with no chrome prop) it renders its
+ * content only, landmark-free: the page layout every front-door view shares
+ * (see `PageLayout`), with the document title and summary as the header, the
+ * effective date and the article in the card, and `action` as the notes line.
+ * With `brand` or `footerSecondary` it renders the legacy page: its own site
+ * header, `<main>` and site footer around the same layout.
  */
 export function DocumentView({ brand, document, resolveCopyId, summary, effectiveDate, action, footerSecondary, className, style, ...rest }: DocumentViewProps) {
   if (effectiveDate !== undefined && !isValidDateTime(effectiveDate.dateTime)) {
@@ -62,13 +82,27 @@ export function DocumentView({ brand, document, resolveCopyId, summary, effectiv
   const summaryText = resolveOptionalCopy(summary, "summary", resolveCopyId);
   const effectiveDateText = resolveOptionalCopy(effectiveDate?.text, "effectiveDate.text", resolveCopyId);
 
+  const content = (
+    <PageLayout title={title} subtitle={summaryText} notes={action}>
+      {effectiveDateText === undefined ? null : <time dateTime={effectiveDate!.dateTime} className="text-body-s text-ink-secondary">{effectiveDateText}</time>}
+      <ArticleBody>{rendered.element}</ArticleBody>
+    </PageLayout>
+  );
+
+  if (!usesLegacyChrome({ brand, footerSecondary })) {
+    assertViewContentRoot("DocumentView", rest);
+    return (
+      <div {...rest} className={mergeUiClasses(PAGE_COLUMN_CLASSES, className)} style={pageColumnStyle("prose", style)}>
+        {content}
+      </div>
+    );
+  }
+
   return (
     <div {...rest} className={mergeUiClasses("flex min-h-dvh flex-col", className)} style={style}>
       <SiteHeader brand={brand} />
-      <main className="mx-auto flex w-full flex-1 flex-col gap-xl px-lg py-2xl" style={{ maxWidth: "var(--ui-width-prose-max, 48rem)" }}>
-        <PageHeader title={title} description={summaryText} actions={action} />
-        {effectiveDateText === undefined ? null : <time dateTime={effectiveDate!.dateTime} className="text-body-s text-ink-secondary">{effectiveDateText}</time>}
-        <ArticleBody>{rendered.element}</ArticleBody>
+      <main className={PAGE_COLUMN_CLASSES} style={pageColumnStyle("prose")}>
+        {content}
       </main>
       <SiteFooter secondary={footerSecondary} />
     </div>

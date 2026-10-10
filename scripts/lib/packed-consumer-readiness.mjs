@@ -45,6 +45,7 @@ const designerExports = [
   "@clossys/designer/theme",
   "@clossys/designer/theme/server",
   "@clossys/designer/tokens",
+  "@clossys/designer/tokens/server",
 ];
 const designerClientExports = [
   "@clossys/designer/atoms",
@@ -103,6 +104,14 @@ const publisherExports = [
  * If the new export declares a `react-server` condition, its outcome must be
  * the `{ default, "react-server" }` object form: a bare string there is
  * refused as a collapse rather than accepted as a shorthand.
+ *
+ * A cell may read `refuses` -- a third outcome beside `imports` and
+ * `rejects` -- only where `BY_DESIGN_REFUSALS` (below) declares that exact
+ * specifier and condition, and such a cell must read `refuses`: the target
+ * throws its declared refusal whatever is installed, so the omitted peer
+ * plays no part in it. Everywhere else `refuses` is an invalid outcome. A
+ * failure that happens only when a peer is omitted is not a by-design
+ * refusal: it stays `rejects`, and it must name the omitted peer.
  *
  * `governance/public-npm-aggregate-canary.json` carries rows of the same shape
  * and is NOT the file to edit -- it is frozen measurement of already-published
@@ -192,6 +201,63 @@ export const OPTIONAL_PEER_POLICY = {
     tailwindcss: publisherOmissionRow({ web: { default: "imports", reactServer: "imports" } }),
   },
 };
+
+/**
+ * Export targets that REFUSE BY DESIGN: a condition under which a subpath is
+ * deliberately unusable (a client-only module under `react-server`, a
+ * development-only module outside `development`, a server-only module under
+ * `browser`) and resolves to a module that throws at import. Shape:
+ *
+ *   { "<package>": { "<specifier>": { "<condition>": "<refusal marker>" } } }
+ *
+ * A declared target is excluded from "every runtime target imports" and from
+ * "an omission failure names the omitted peer". In their place it must FAIL
+ * to import, in the all-peers-present consumer and in every omission
+ * consumer, by throwing an error whose own message contains the marker and
+ * which carries no string `code` (a plain `Error`, as a refusal module
+ * throws). Anything else is a finding: importing successfully (the
+ * declaration is stale), a different message, an error with a string `code`
+ * (a missing peer, a broken path or a missing file -- `ERR_*`,
+ * `MODULE_NOT_FOUND`, `ENOENT` and the like -- is breakage, not a refusal,
+ * even when its message happens to quote the marker), a timeout, a launch
+ * failure, or a process exit that never reached the thrown error. The
+ * message is read from a report the probe writes after catching the error,
+ * never from free-form output, so accidental breakage that prints or quotes
+ * the marker on its way to crashing does not pass. That is the threat model:
+ * accidental breakage in a first-party module. It is not proof against a
+ * module written to forge the probe's report and exit code. An undeclared
+ * target that throws is still a finding, exactly as before.
+ *
+ * Declaring a specifier also makes the engine measure each of its
+ * `development` and `browser` targets as its own condition (with node's
+ * `--conditions` flag) instead of folding them into `default`. The
+ * conditions a refusing subpath does not refuse under are where it is
+ * expected to work, so measuring all of them is the closed default.
+ * `react-server` is measured for every export, as before. Measuring a
+ * condition means importing with that condition set; node still applies its
+ * own `node`, `import` and `default` conditions, so when an export map lists
+ * one of those ahead of the labelled key, the file that ran is that earlier
+ * one, not the labelled target. `browser` is node's resolver with that
+ * condition set, not a browser: it proves which module resolves and that a
+ * refusal throws, and it requires a non-refusing browser target to evaluate
+ * in node.
+ *
+ * The declaration is closed against the manifest: a package, specifier or
+ * condition the manifest does not export as a raw runtime target is stale.
+ * A marker must be at least MIN_REFUSAL_MARKER_LENGTH (16) characters once
+ * trimmed, so a bare condition name or a short path fragment cannot pass for
+ * a refusal message, and a non-`default` marker must name its condition, so
+ * one refusal message cannot stand in for another condition's. Only literal
+ * export keys can be declared; wildcard and Next-context subpaths cannot.
+ */
+export const BY_DESIGN_REFUSALS = {};
+export const MIN_REFUSAL_MARKER_LENGTH = 16;
+
+const IMPORT_CONDITIONS = ["default", "react-server", "development", "browser"];
+const MEASURED_CONDITIONS = ["react-server"];
+const REFUSING_SPECIFIER_CONDITIONS = ["react-server", "development", "browser"];
+const REFUSAL_EXIT = 86;
+const REFUSAL_REPORT = "foundry-by-design-refusal:";
 
 export function parsePackedConsumerArgs(args) {
   const parsed = { selected: undefined, root: undefined, skipBuild: false, keep: false };
@@ -299,17 +365,24 @@ function runtimeTarget(target) {
   return /\.(?:c|m)?js$/i.test(target);
 }
 
-function runtimeConditionTargets(value, condition = "default", targets = []) {
+// Every condition outside `measured` folds into `default`. Only the outermost
+// measured condition labels a target: a nested combination such as
+// `react-server` + `development` is measured as its outer condition alone.
+function runtimeConditionTargets(value, condition = "default", targets = [], measured = MEASURED_CONDITIONS) {
   if (typeof value === "string") {
     if (runtimeTarget(value)) targets.push({ target: value, condition });
   } else if (value && typeof value === "object" && !Array.isArray(value)) {
     for (const [key, nested] of Object.entries(value)) {
-      runtimeConditionTargets(nested, key === "react-server" ? "react-server" : condition, targets);
+      runtimeConditionTargets(nested, condition === "default" && measured.includes(key) ? key : condition, targets, measured);
     }
   } else if (Array.isArray(value)) {
-    for (const nested of value) runtimeConditionTargets(nested, condition, targets);
+    for (const nested of value) runtimeConditionTargets(nested, condition, targets, measured);
   }
   return targets;
+}
+
+function measuredConditions(refusals, specifier) {
+  return Object.hasOwn(refusals ?? {}, specifier) ? REFUSING_SPECIFIER_CONDITIONS : MEASURED_CONDITIONS;
 }
 
 function packedNextContexts(manifest, runtimeSpecifiers) {
@@ -385,7 +458,7 @@ async function checkedTarget(packageRoot, packageReal, target) {
   return path;
 }
 
-export async function inspectPackedExports(packageRoot, manifest) {
+export async function inspectPackedExports(packageRoot, manifest, refusals = {}) {
   const packageReal = await realpath(packageRoot);
   const allFiles = await filesBelow(packageRoot);
   const runtimeSpecifiers = new Set();
@@ -402,7 +475,7 @@ export async function inspectPackedExports(packageRoot, manifest) {
         if (runtimeTarget(target)) {
           const specifier = exportSpecifier(manifest.name, key);
           runtimeSpecifiers.add(specifier);
-          for (const item of runtimeConditionTargets(value)) runtimeTargets.set(`${specifier}\u0000${item.condition}`, { specifier, condition: item.condition });
+          for (const item of runtimeConditionTargets(value, "default", [], measuredConditions(refusals, specifier))) runtimeTargets.set(`${specifier}\u0000${item.condition}`, { specifier, condition: item.condition });
         }
         continue;
       }
@@ -422,7 +495,7 @@ export async function inspectPackedExports(packageRoot, manifest) {
         if (runtimeTarget(match.target)) {
           const specifier = exportSpecifier(manifest.name, key, match.substitution);
           runtimeSpecifiers.add(specifier);
-          for (const item of runtimeConditionTargets(value)) runtimeTargets.set(`${specifier}\u0000${item.condition}`, { specifier, condition: item.condition });
+          for (const item of runtimeConditionTargets(value, "default", [], measuredConditions(refusals, specifier))) runtimeTargets.set(`${specifier}\u0000${item.condition}`, { specifier, condition: item.condition });
         }
       }
     }
@@ -442,21 +515,30 @@ export async function inspectPackedExports(packageRoot, manifest) {
   };
 }
 
-function declaredRuntimeTargets(manifest) {
+function declaredRuntimeTargets(manifest, refusals = {}) {
   const targets = [];
   for (const [key, value] of exportEntries(manifest)) {
     if (key.includes("*")) continue;
     const specifier = exportSpecifier(manifest.name, key);
-    for (const item of runtimeConditionTargets(value)) targets.push({ specifier, condition: item.condition });
+    for (const item of runtimeConditionTargets(value, "default", [], measuredConditions(refusals, specifier))) targets.push({ specifier, condition: item.condition });
   }
   return targets.sort((left, right) => left.specifier.localeCompare(right.specifier) || left.condition.localeCompare(right.condition));
 }
 
-function policyOutcomeShapeFindings(manifest, peer, specifier, value, conditions) {
+// `refuses` is valid exactly where a refusal is declared, and required there.
+function cellOutcomeFinding(prefix, condition, outcome, refusing) {
+  if (refusing.has(condition)) {
+    return outcome === "refuses" ? null : `${prefix} must record refuses for its declared ${condition} refusal`;
+  }
+  if (outcome === "refuses") return `${prefix} records refuses for ${condition}, which declares no refusal by design`;
+  return ["imports", "rejects"].includes(outcome) ? null : `${prefix} has invalid ${condition} outcome`;
+}
+
+function policyOutcomeShapeFindings(manifest, peer, specifier, value, conditions, refusing = new Set()) {
   const prefix = `${manifest.name} omission row ${peer} ${specifier}`;
   const expected = [...conditions].sort();
   if (typeof value === "string") {
-    if (!["imports", "rejects"].includes(value)) return [`${prefix} has invalid outcome`];
+    if (!["imports", "rejects", "refuses"].includes(value)) return [`${prefix} has invalid outcome`];
     // A bare outcome string asserts one result for every condition the export
     // declares, which is only true when `default` is the only one. An export
     // with a `react-server` target resolves to DIFFERENT files per condition,
@@ -468,19 +550,69 @@ function policyOutcomeShapeFindings(manifest, peer, specifier, value, conditions
     // tree; #533 moved it here, where it runs against the manifest each caller
     // actually measured -- packed source for `check:packed-consumer`, the
     // installed frozen tarball for the aggregate canary's own execution join.
-    return expected.length === 1 && expected[0] === "default"
-      ? []
-      : [`${prefix} collapses its ${expected.join("/")} outcomes into one string`];
+    if (expected.length !== 1 || expected[0] !== "default") {
+      return [`${prefix} collapses its ${expected.join("/")} outcomes into one string`];
+    }
+    const finding = cellOutcomeFinding(prefix, "default", value, refusing);
+    return finding ? [finding] : [];
   }
   if (!value || typeof value !== "object" || Array.isArray(value)) return [`${prefix} has invalid condition outcomes`];
   const actual = Object.keys(value).sort();
   const findings = [];
   if (JSON.stringify(actual) !== JSON.stringify(expected)) findings.push(`${prefix} has incomplete or stale condition outcomes`);
-  for (const condition of expected) if (!['imports', 'rejects'].includes(value[condition])) findings.push(`${prefix} has invalid ${condition} outcome`);
+  for (const condition of expected) {
+    const finding = cellOutcomeFinding(prefix, condition, value[condition], refusing);
+    if (finding) findings.push(finding);
+  }
   return findings;
 }
 
-export function validateOptionalPeerPolicy(packages, policy, { allowUnselected = false } = {}) {
+/**
+ * Closes `BY_DESIGN_REFUSALS` against the selected manifests: every declared
+ * package, specifier and condition must be a literal raw runtime export
+ * target, and every marker a string of at least MIN_REFUSAL_MARKER_LENGTH
+ * trimmed characters that names its condition unless that condition is
+ * `default`.
+ */
+export function validateByDesignRefusals(packages, refusals, { allowUnselected = false } = {}) {
+  const findings = [];
+  const selected = new Map(packages.map((entry) => [entry.manifest.name, entry.manifest]));
+  for (const packageName of Object.keys(refusals ?? {}).sort()) {
+    const manifest = selected.get(packageName);
+    if (!manifest) {
+      if (!allowUnselected) findings.push(`${packageName} by-design refusals are stale`);
+      continue;
+    }
+    const declared = refusals[packageName];
+    if (!declared || typeof declared !== "object" || Array.isArray(declared)) {
+      findings.push(`${packageName} by-design refusals must map specifiers to condition markers`);
+      continue;
+    }
+    const targets = declaredRuntimeTargets(manifest, declared);
+    for (const specifier of Object.keys(declared).sort()) {
+      const prefix = `${packageName} by-design refusal ${specifier}`;
+      const conditions = declared[specifier];
+      if (!conditions || typeof conditions !== "object" || Array.isArray(conditions) || Object.keys(conditions).length === 0) {
+        findings.push(`${prefix} must map at least one condition to a refusal marker`);
+        continue;
+      }
+      for (const condition of Object.keys(conditions).sort()) {
+        const marker = conditions[condition];
+        if (!IMPORT_CONDITIONS.includes(condition)) findings.push(`${prefix} names unsupported condition ${condition}`);
+        else if (!targets.some((item) => item.specifier === specifier && item.condition === condition)) {
+          findings.push(`${prefix} ${condition} is stale: the manifest exports no ${condition} runtime target for it`);
+        }
+        if (typeof marker !== "string" || marker.trim() === "") findings.push(`${prefix} ${condition} needs a non-empty refusal marker`);
+        else if (marker.trim().length < MIN_REFUSAL_MARKER_LENGTH) {
+          findings.push(`${prefix} ${condition} marker is shorter than ${MIN_REFUSAL_MARKER_LENGTH} characters and cannot identify a refusal message`);
+        } else if (condition !== "default" && !marker.includes(condition)) findings.push(`${prefix} ${condition} marker must name the ${condition} condition`);
+      }
+    }
+  }
+  return findings;
+}
+
+export function validateOptionalPeerPolicy(packages, policy, { allowUnselected = false, refusals = {} } = {}) {
   const findings = [];
   const selected = new Map(packages.map((entry) => [entry.manifest.name, entry.manifest]));
   for (const manifest of selected.values()) {
@@ -489,12 +621,13 @@ export function validateOptionalPeerPolicy(packages, policy, { allowUnselected =
       .map(([name]) => name)
       .sort();
     const rows = policy[manifest.name] ?? {};
+    const packageRefusals = refusals?.[manifest.name] ?? {};
     for (const peer of optional) {
       if (!Object.hasOwn(rows, peer)) findings.push(`${manifest.name} optional peer ${peer} has no omission row`);
     }
     for (const peer of Object.keys(rows).sort()) {
       if (!optional.includes(peer)) findings.push(`${manifest.name} omission row ${peer} is stale`);
-      const expectedTargets = declaredRuntimeTargets(manifest);
+      const expectedTargets = declaredRuntimeTargets(manifest, packageRefusals);
       const expectedSpecifiers = [...new Set(expectedTargets.map((item) => item.specifier))].sort();
       const conditionsBySpecifier = new Map(expectedSpecifiers.map((specifier) => [specifier, new Set(expectedTargets.filter((item) => item.specifier === specifier).map((item) => item.condition))]));
       const actualSpecifiers = Object.keys(rows[peer] ?? {}).sort();
@@ -503,7 +636,7 @@ export function validateOptionalPeerPolicy(packages, policy, { allowUnselected =
       }
       for (const specifier of actualSpecifiers) {
         if (!expectedSpecifiers.includes(specifier)) findings.push(`${manifest.name} omission row ${peer} has stale export ${specifier}`);
-        else findings.push(...policyOutcomeShapeFindings(manifest, peer, specifier, rows[peer][specifier], conditionsBySpecifier.get(specifier)));
+        else findings.push(...policyOutcomeShapeFindings(manifest, peer, specifier, rows[peer][specifier], conditionsBySpecifier.get(specifier), new Set(Object.keys(packageRefusals[specifier] ?? {}))));
       }
     }
   }
@@ -792,14 +925,120 @@ async function assertIdentities(consumer, packed) {
   if (findings.length > 0) throw new Error(`installed identity check failed:\n- ${findings.join("\n- ")}`);
 }
 
-export async function importSpecifier(specifier, consumer, env, condition = "default") {
-  if (!["default", "react-server"].includes(condition)) throw new Error(`unsupported runtime import condition ${condition}`);
+// The refusal probe catches the import's error itself and writes its own
+// message and code as the final stderr line, then exits with REFUSAL_EXIT.
+// `writeSync` keeps that line from being lost to an asynchronous pipe.
+function refusalProbeSource(specifier) {
+  return [
+    'import { writeSync } from "node:fs";',
+    "try {",
+    `  await import(${JSON.stringify(specifier)});`,
+    "} catch (error) {",
+    '  const code = typeof error?.code === "string" ? error.code : null;',
+    '  const message = typeof error?.message === "string" ? error.message : String(error);',
+    `  writeSync(2, ${JSON.stringify(`\n${REFUSAL_REPORT}`)} + JSON.stringify({ code, message }) + "\\n");`,
+    `  process.exit(${REFUSAL_EXIT});`,
+    "}",
+  ].join("\n");
+}
+
+export async function importSpecifier(specifier, consumer, env, condition = "default", { refusalProbe = false, timeout } = {}) {
+  if (!IMPORT_CONDITIONS.includes(condition)) throw new Error(`unsupported runtime import condition ${condition}`);
   return runProcess(process.execPath, [
-    ...(condition === "react-server" ? ["--conditions=react-server"] : []),
+    ...(condition === "default" ? [] : [`--conditions=${condition}`]),
     "--input-type=module",
     "--eval",
-    `await import(${JSON.stringify(specifier)})`,
-  ], { cwd: consumer, env });
+    refusalProbe ? refusalProbeSource(specifier) : `await import(${JSON.stringify(specifier)})`,
+  ], { cwd: consumer, env, timeout });
+}
+
+/**
+ * Judges one refusal-probe result against its declared marker. Returns null
+ * for the declared refusal and a reason for anything else. Only the probe's
+ * own final report line is read: free-form stdout/stderr is never searched
+ * for the marker, and an error with any string `code` (a Node module error
+ * for a missing package or unexported path, a file-system error such as
+ * ENOENT, and the like) is breakage even when its message quotes the marker.
+ * This guards against accidental breakage; a module written to forge the
+ * report and exit code is outside the threat model.
+ */
+export function byDesignRefusalFinding(result, marker) {
+  if (result.timedOut) return "timed out instead of throwing its declared refusal";
+  if (result.launchError) return `could not be launched (${result.launchError}) instead of throwing its declared refusal`;
+  if (result.exitCode === 0) return "imports although it is declared to refuse by design";
+  if (result.exitCode !== REFUSAL_EXIT) {
+    return `ended with exit ${result.exitCode ?? "none"}${result.signal ? ` signal ${result.signal}` : ""} before throwing at import`;
+  }
+  const last = result.stderr.split("\n").filter((line) => line.trim() !== "").at(-1) ?? "";
+  let report;
+  try {
+    report = last.startsWith(REFUSAL_REPORT) ? JSON.parse(last.slice(REFUSAL_REPORT.length)) : undefined;
+  } catch {
+    report = undefined;
+  }
+  if (typeof report?.message !== "string") return "threw without a readable refusal report";
+  if (typeof report.code === "string") {
+    return `failed with error code ${report.code}, which is breakage, not its declared refusal: ${report.message}`;
+  }
+  if (!report.message.includes(marker)) return `threw a different error than its declared refusal: ${report.message}`;
+  return null;
+}
+
+/**
+ * Imports one raw runtime target and returns its outcome: `imports`,
+ * `rejects` (only under an omitted `peer`, and only when the failure names
+ * it) or `refuses` (only for a declared `marker`). Every other result throws.
+ * With no `peer` this is the all-peers-present run, where an undeclared
+ * failure is always a finding.
+ */
+export async function judgeRuntimeImport({ packageName, specifier, condition, marker, peer, consumer, env, timeout }) {
+  const where = peer === undefined ? `${condition} ${specifier}` : `${packageName} omission row ${peer} ${condition} ${specifier}`;
+  if (marker !== undefined) {
+    const result = await importSpecifier(specifier, consumer, env, condition, { refusalProbe: true, timeout });
+    const finding = byDesignRefusalFinding(result, marker);
+    if (finding) throw new Error(`${where} declared by-design refusal ${finding}`);
+    return "refuses";
+  }
+  const result = await importSpecifier(specifier, consumer, env, condition, { timeout });
+  if (peer === undefined) {
+    if (result.exitCode !== 0 || result.timedOut || result.launchError) {
+      throw new Error(`${condition} ${specifier} runtime import failed: ${result.stderr || result.stdout || result.launchError || "timed out"}`);
+    }
+    return "imports";
+  }
+  if (result.timedOut || result.launchError) throw new Error(`${packageName} omission row ${peer} could not evaluate ${condition} ${specifier}`);
+  if (result.exitCode === 0) return "imports";
+  if (!`${result.stderr}\n${result.stdout}`.includes(peer)) {
+    throw new Error(`${packageName} omission row ${peer} makes ${condition} ${specifier} fail without naming the omitted peer`);
+  }
+  return "rejects";
+}
+
+function sortedKeys(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return value;
+  return Object.fromEntries(Object.keys(value).sort().map((key) => [key, sortedKeys(value[key])]));
+}
+
+/**
+ * Whether an observed omission row differs from its policy row. Key order is
+ * not part of the row: specifiers and conditions are compared by key, so a
+ * policy row need not list them in the order the run observes them.
+ */
+export function omissionRowDrifted(observed, expected) {
+  return JSON.stringify(sortedKeys(observed)) !== JSON.stringify(sortedKeys(expected));
+}
+
+/** Declared refusals the packed shape never measures as a raw runtime target. */
+export function unmeasuredRefusalFindings(packageName, shape, declared = {}) {
+  const findings = [];
+  for (const [specifier, conditions] of Object.entries(declared)) {
+    for (const condition of Object.keys(conditions ?? {})) {
+      if (!shape.rawRuntimeTargets.some((item) => item.specifier === specifier && item.condition === condition)) {
+        findings.push(`${packageName} by-design refusal ${specifier} ${condition} is never measured as a raw runtime import`);
+      }
+    }
+  }
+  return findings;
 }
 
 function namespaceImports(specifiers) {
@@ -831,7 +1070,7 @@ function allOptionalPeers(packed) {
     .map(([name]) => name)))].sort();
 }
 
-export async function runPackedConsumerReadiness({ root, selected, skipBuild = false, policy = OPTIONAL_PEER_POLICY, keep = false }) {
+export async function runPackedConsumerReadiness({ root, selected, skipBuild = false, policy = OPTIONAL_PEER_POLICY, refusals = BY_DESIGN_REFUSALS, keep = false }) {
   if (!skipBuild) {
     const build = await runProcess(npmExecutable(), ["run", "build"], { cwd: root, env: process.env, timeout: 180_000 });
     if (build.exitCode !== 0 || build.timedOut || build.launchError) throw new Error(`build failed: ${build.stderr || build.stdout || build.launchError || "timed out"}`);
@@ -864,8 +1103,13 @@ export async function runPackedConsumerReadiness({ root, selected, skipBuild = f
     const packed = await packPackages(packDirectory, packages, env);
     await notePeak();
     const packedPackages = packed.map((entry) => ({ ...entry, manifest: entry.packedManifest }));
-    const policyFindings = validateOptionalPeerPolicy(packedPackages, policy, { allowUnselected: Boolean(selected) });
-    if (policyFindings.length > 0) throw new Error(`optional-peer policy is not closed:\n- ${policyFindings.join("\n- ")}`);
+    const closureFailures = [
+      ["by-design refusals are not closed", validateByDesignRefusals(packedPackages, refusals, { allowUnselected: Boolean(selected) })],
+      ["optional-peer policy is not closed", validateOptionalPeerPolicy(packedPackages, policy, { allowUnselected: Boolean(selected), refusals })],
+    ].filter(([, findings]) => findings.length > 0);
+    if (closureFailures.length > 0) {
+      throw new Error(closureFailures.map(([header, findings]) => `${header}:\n- ${findings.join("\n- ")}`).join("\n"));
+    }
 
     const peers = allOptionalPeers(packed);
     const consumer = join(scratch, "consumer");
@@ -879,14 +1123,15 @@ export async function runPackedConsumerReadiness({ root, selected, skipBuild = f
     let runtimeImports = 0;
     let frameworkExports = 0;
     for (const entry of packed) {
-      const shape = await inspectPackedExports(await installedRoot(consumer, entry.packedManifest.name), entry.packedManifest);
-      exportsByPackage.set(entry.packedManifest.name, shape);
+      const packageName = entry.packedManifest.name;
+      const declared = refusals[packageName] ?? {};
+      const shape = await inspectPackedExports(await installedRoot(consumer, packageName), entry.packedManifest, declared);
+      const unmeasured = unmeasuredRefusalFindings(packageName, shape, declared);
+      if (unmeasured.length > 0) throw new Error(`by-design refusals are not closed:\n- ${unmeasured.join("\n- ")}`);
+      exportsByPackage.set(packageName, shape);
       staticTargets += shape.staticTargets.length;
       for (const target of shape.rawRuntimeTargets) {
-        const result = await importSpecifier(target.specifier, consumer, env, target.condition);
-        if (result.exitCode !== 0 || result.timedOut || result.launchError) {
-          throw new Error(`${target.condition} ${target.specifier} runtime import failed: ${result.stderr || result.stdout || result.launchError || "timed out"}`);
-        }
+        await judgeRuntimeImport({ packageName, ...target, marker: declared[target.specifier]?.[target.condition], consumer, env });
         runtimeImports += 1;
       }
       if (shape.nextContexts.all.length > 0) {
@@ -945,13 +1190,16 @@ export async function runPackedConsumerReadiness({ root, selected, skipBuild = f
           }
           const shape = exportsByPackage.get(entry.packedManifest.name) ?? { runtimeSpecifiers: [], runtimeTargets: [], rawRuntimeSpecifiers: [], rawRuntimeTargets: [], nextContexts: { client: [], server: [], proxy: [], all: [] } };
           const observed = new Map();
+          const declared = refusals[entry.packedManifest.name] ?? {};
           for (const target of shape.rawRuntimeTargets) {
-            const result = await importSpecifier(target.specifier, matrixConsumer, env, target.condition);
-            observed.set(`${target.specifier}\u0000${target.condition}`, result.exitCode === 0 ? "imports" : "rejects");
-            if (result.timedOut || result.launchError) throw new Error(`${entry.packedManifest.name} omission row ${peer} could not evaluate ${target.condition} ${target.specifier}`);
-            if (result.exitCode !== 0 && !`${result.stderr}\n${result.stdout}`.includes(peer)) {
-              throw new Error(`${entry.packedManifest.name} omission row ${peer} makes ${target.condition} ${target.specifier} fail without naming the omitted peer`);
-            }
+            observed.set(`${target.specifier}\u0000${target.condition}`, await judgeRuntimeImport({
+              packageName: entry.packedManifest.name,
+              ...target,
+              marker: declared[target.specifier]?.[target.condition],
+              peer,
+              consumer: matrixConsumer,
+              env,
+            }));
           }
           if (shape.nextContexts.all.length > 0) {
             if (peer === "next") {
@@ -990,7 +1238,7 @@ export async function runPackedConsumerReadiness({ root, selected, skipBuild = f
           }));
           omission.push({ package: entry.packedManifest.name, peer, outcomes });
           const expected = rows[peer];
-          if (JSON.stringify(outcomes) !== JSON.stringify(expected)) {
+          if (omissionRowDrifted(outcomes, expected)) {
             throw new Error(`${entry.packedManifest.name} omission row ${peer} drifted: expected ${JSON.stringify(expected)}, received ${JSON.stringify(outcomes)}`);
           }
         } finally {

@@ -261,6 +261,7 @@ describe("ResetForm :: failures on the identifier step", () => {
 
     expect(await screen.findAllByText(defaultText("identifier-not-found.notice"))).toHaveLength(1);
     expect(identifierField()).toHaveAttribute("aria-invalid", "true");
+    await waitFor(() => expect(identifierField()).toHaveFocus());
     expect(screen.queryAllByRole("alert")).toHaveLength(0);
 
     request.mockResolvedValueOnce({ status: "rateLimited" });

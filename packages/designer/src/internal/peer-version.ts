@@ -48,7 +48,7 @@
  *     importing binding is ever called — tree-shaking runs after module
  *     resolution, not before it). So `tailwind-merge`'s guard is NOT wired
  *     automatically; it ships as `assertTailwindMergeVersion` from
- *     `@clossys/designer/tokens` instead — an explicit, Node-only,
+ *     `@clossys/designer/tokens/server` instead — an explicit, Node-only,
  *     opt-in call, same shape as `assertTokenStylesLoaded` (this
  *     package's OTHER #182 guard) but Node-only rather than SSR-safe,
  *     because "safe to run automatically, everywhere" genuinely isn't
