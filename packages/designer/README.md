@@ -357,7 +357,7 @@ source file's own header for the exact probe and its result). Today that's:
 
 | Subpath | Server-safe members |
 | --- | --- |
-| `@clossys/designer/atoms/server` | `Avatar`, `Badge`, `Banner`, `Card`, `Field`, `Icon`, `Meter`, `Skeleton`, `Spinner`, `StatusMark`, `buttonLinkClassName`, `mergeUiClasses` |
+| `@clossys/designer/atoms/server` | `Avatar`, `Badge`, `Banner`, `Card`, `Field`, `Icon`, `Meter`, `Skeleton`, `Spinner`, `StatusMark`, `buttonLinkClassName`, `iconButtonLinkClassName`, `mergeUiClasses` |
 | `@clossys/designer/blocks/server` | `ArticleBody`, `CardGrid`, `Comparison`, `ContentSection`, `DetailView`, `EmptyState`, `Faq`, `FeatureGrid`, `FieldGroup`, `Hero`, `MarketingChapter`, `MediaFigure`, `OrderedStepSequence`, `PageHeader`, `PricingTable`, `SectionFrame`, `SectionHeader`, `SectionIntro`, `Specimen`, `SpecimenPanel`, `Stat`, `StatusList`, `TopicList` |
 | `@clossys/designer/shell/server` | `Shell`, `SiteFooter`, `SiteHeader`, `SkipLink` |
 | `@clossys/designer/charts/server` | `ChartFrame`, `Sparkline` |
@@ -1049,6 +1049,34 @@ import { buttonLinkClassName } from "@clossys/designer/atoms/server";
 
 <a href="/contact" className={buttonLinkClassName("primary", "lg")}>Book a call</a>;
 ```
+
+An icon-only link that navigates (a scroll cue, a back-to-top link) takes
+the round look, `iconButtonLinkClassName(ground)` (server-safe, same
+entries): a 44px circle (`--ui-layout-tap-target`) on the pill radius with
+a hairline edge, drawn for a light (`"base"`, the default) or dark
+(`"inverse"`) ground. Hover shifts the surface and lifts the edge, pressed
+takes the ground's strongest edge, and colours ease on
+`--ui-duration-fast` (instant under reduced motion). The focus outline is
+the package-standard accent outline over a 2px halo in the link's own
+surface, so it reads where the circle overlaps a ground of the other tone.
+It ships no copy: give the link an accessible name.
+
+```tsx
+import { Icon, iconButtonLinkClassName } from "@clossys/designer/atoms/server";
+import { ChevronDown } from "@clossys/designer/icons";
+
+<a href="#next" aria-label="Scroll to next section" className={iconButtonLinkClassName("base")}>
+  <Icon glyph={ChevronDown} decorative size="md" />
+</a>;
+```
+
+`scroll-fade-out` (a `theme.css` utility, Tailwind path) fades such a cue
+out over the first third of the viewport's height of page scrolling, using
+a CSS scroll-driven animation. At the end it is `visibility: hidden`, so it
+leaves the tab order, and inert to the pointer. Under reduced motion it
+does not fade: it stays visible over the same range, then hides in one
+step. An engine without scroll-driven animations (`animation-timeline`)
+skips the rule, and the cue stays visible and working.
 
 ### `Icon`
 

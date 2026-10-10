@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
-import { buttonLinkClassName } from "../atoms/button-classes.js";
+import { buttonLinkClassName, iconButtonLinkClassName } from "../atoms/button-classes.js";
 import { SectionIntro } from "./SectionIntro.js";
 
 describe("SectionIntro", () => {
@@ -89,5 +89,35 @@ describe("buttonLinkClassName", () => {
     expect(look).toEqual(expect.arrayContaining(["bg-accent", "text-ink-on-accent", "focus-visible:outline-2", "focus-visible:outline-offset-2", "focus-visible:outline-accent"]));
     expect(look).not.toContain("outline-none");
     expect(look).not.toContain("disabled:cursor-not-allowed");
+  });
+});
+
+describe("iconButtonLinkClassName", () => {
+  it("draws a 44px circle with a hairline edge, ground-aware colours, every state and the standard focus outline", () => {
+    const base = iconButtonLinkClassName().split(" ");
+    expect(base).toEqual(iconButtonLinkClassName("base").split(" "));
+    expect(base).toEqual(
+      expect.arrayContaining([
+        "size-[var(--ui-layout-tap-target)]",
+        "rounded-pill",
+        "border",
+        "bg-surface-raised",
+        "text-ink-primary",
+        "border-line-base",
+        "hover:bg-surface-sunken",
+        "active:border-ink-primary",
+        "focus-visible:outline-2",
+        "focus-visible:outline-offset-2",
+        "focus-visible:outline-accent",
+        "focus-visible:ring-2",
+        "focus-visible:ring-surface-raised",
+        "duration-[var(--ui-duration-fast)]",
+        "motion-reduce:transition-none",
+      ]),
+    );
+    const inverse = iconButtonLinkClassName("inverse").split(" ");
+    expect(inverse).toEqual(expect.arrayContaining(["bg-surface-inverse-raised", "text-ink-on-inverse", "border-line-on-inverse", "active:border-ink-on-inverse"]));
+    expect(inverse).not.toContain("bg-surface-raised");
+    expect(base).not.toContain("outline-none");
   });
 });

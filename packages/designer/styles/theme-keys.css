@@ -234,3 +234,35 @@
     transition-duration: 0s;
   }
 }
+
+/*
+ * Scroll-linked fade, CSS only, for a cue that belongs to the first screen
+ * (Publisher `LandingView`'s scroll cue). Fully visible at the top of the
+ * page, it fades out over the first third of the viewport's height of root
+ * scrolling; at the end it is `visibility: hidden` (out of the tab order
+ * and the accessibility tree) and inert to the pointer. Reduced motion: no
+ * fade; it stays fully visible over the same range, then hides in one step.
+ * Progressive: an engine without scroll-driven animations skips the whole
+ * block, and the element stays visible and working.
+ */
+@keyframes scroll-fade-out {
+  to {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+  }
+}
+
+@utility scroll-fade-out {
+  @supports (animation-timeline: scroll()) {
+    animation-name: scroll-fade-out;
+    animation-duration: auto;
+    animation-timing-function: linear;
+    animation-fill-mode: both;
+    animation-timeline: scroll(root block);
+    animation-range: 0 33dvh;
+    @media (prefers-reduced-motion: reduce) {
+      animation-timing-function: steps(1, jump-end);
+    }
+  }
+}

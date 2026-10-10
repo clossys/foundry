@@ -148,13 +148,12 @@ describe("LandingView", () => {
     expect(dom({ document: PAGE, align: "start" }).querySelector("[data-landing-hero] .text-center")).toBeNull();
   });
 
-  it("keeps the backdrop and the cue inert, and peeks only with content below an overlay header", () => {
+  it("keeps the backdrop inert, and peeks only with content below an overlay header", () => {
     const root = dom({ document: PAGE, trailing: [SHARED], backdrop: <div data-backdrop="">BACKDROP</div> });
     const backdrop = root.querySelector("[data-landing-backdrop]");
     expect(backdrop?.getAttribute("aria-hidden")).toBe("true");
     expect(backdrop?.className).toContain("pointer-events-none");
-    const cue = root.querySelector("[data-landing-cue]");
-    expect(cue?.getAttribute("aria-hidden")).toBe("true");
+    expect(root.querySelector("[data-landing-cue]")).not.toBeNull();
     expect((root.querySelector("[data-landing-hero]") as HTMLElement).style.minHeight).toContain("calc(");
 
     const alone = dom({ document: { ...PAGE, sections: [PAGE.sections[0]!] } });
@@ -165,6 +164,57 @@ describe("LandingView", () => {
     const reserved = dom({ document: PAGE, header: "reserved" });
     expect(reserved.querySelector("[data-landing-cue]")).toBeNull();
     expect((reserved.querySelector("[data-landing-hero]") as HTMLElement).style.minHeight).toBe("");
+  });
+
+  it("makes the cue a named link to the first band, drawn on that band's ground", () => {
+    const root = dom({ document: PAGE, trailing: [SHARED], callToAction: CALL_TO_ACTION });
+    const cue = root.querySelector("[data-landing-cue]") as HTMLAnchorElement;
+    expect(cue.tagName).toBe("A");
+    expect(cue.getAttribute("href")).toBe("#features");
+    expect(root.querySelector(cue.getAttribute("href") as string)?.closest("[data-landing-ground]")?.getAttribute("data-landing-ground")).toBe("sunken");
+    expect(cue.getAttribute("aria-label")).toBe("Scroll to next section");
+    expect(cue.hasAttribute("aria-hidden")).toBe(false);
+    expect(cue.className).toContain("rounded-pill");
+    expect(cue.className).toContain("bg-surface-raised");
+    expect(cue.querySelector("svg")?.getAttribute("aria-hidden")).toBe("true");
+    expect(dom({ document: PAGE, cueLabel: "NAME-SENTINEL" }).querySelector("[data-landing-cue]")?.getAttribute("aria-label")).toBe("NAME-SENTINEL");
+    expect(() => dom({ document: PAGE, cueLabel: "  " })).toThrow(/cueLabel/);
+  });
+
+  it("centres the cue on the edge between the hero and the first band, stacked above the bands, fading on scroll", () => {
+    const root = dom({ document: PAGE });
+    const view = root.querySelector("[data-landing-view]") as HTMLElement;
+    const rail = root.querySelector("[data-landing-cue-rail]") as HTMLElement;
+    // A zero-height rail between the hero frame and the first band: its top is the edge.
+    expect(rail.previousElementSibling?.hasAttribute("data-landing-hero")).toBe(true);
+    expect(rail.nextElementSibling?.querySelector("#features")).not.toBeNull();
+    expect(rail.parentElement).toBe(view);
+    expect(rail.className.split(/\s+/)).toEqual(["relative", "z-[var(--ui-z-sticky)]", "h-0"]);
+    const cue = rail.querySelector("[data-landing-cue]") as HTMLElement;
+    expect(cue.className.split(/\s+/)).toEqual(
+      expect.arrayContaining(["absolute", "left-1/2", "top-0", "-translate-x-1/2", "-translate-y-1/2", "scroll-fade-out", "motion-safe:[html:has(&)]:scroll-smooth"]),
+    );
+    expect(root.querySelector("[data-landing-hero] [data-landing-cue]")).toBeNull();
+  });
+
+  it("gives every band's section a scroll margin equal to the band's top padding", () => {
+    const root = dom({ document: PAGE, trailing: [SHARED] });
+    for (const id of ["features", "faq"]) {
+      const section = root.querySelector(`#${id}`) as HTMLElement;
+      expect(section.className.split(/\s+/)).toEqual(expect.arrayContaining(["scroll-mt-4xl", "tablet-lg:scroll-mt-5xl"]));
+    }
+  });
+
+  it("targets the call to action when no band follows the hero, and renders no cue without a target", () => {
+    const heroOnly: ResolvedSectionedViewDocument = { ...PAGE, sections: [PAGE.sections[0]!] };
+    const toClose = dom({ document: heroOnly, callToAction: CALL_TO_ACTION }).querySelector("[data-landing-cue]") as HTMLElement;
+    expect(toClose.getAttribute("href")).toBe("#close");
+    expect(toClose.className).toContain("bg-surface-inverse-raised");
+    const { id: _id, ...unnamed } = CALL_TO_ACTION!;
+    const unnamedClose = dom({ document: heroOnly, callToAction: unnamed });
+    expect(unnamedClose.querySelector("[data-landing-cue]")).toBeNull();
+    expect(unnamedClose.querySelector("[data-landing-cue-rail]")).toBeNull();
+    expect(dom({ document: heroOnly }).querySelector("[data-landing-cue]")).toBeNull();
   });
 
   it("places afterSection content inside that section's band, and refuses an unknown key", () => {

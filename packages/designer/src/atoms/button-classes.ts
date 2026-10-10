@@ -40,3 +40,38 @@ export function buttonLinkClassName(variant: ButtonVariant, size: ButtonSize): s
     .filter((token) => token !== "outline-none" && token !== "disabled:cursor-not-allowed");
   return [...look, LINK_FOCUS_CLASSES].join(" ");
 }
+
+/** The grounds a round icon link is drawn for: a light (`base`) or dark (`inverse`) ground. */
+export type IconButtonLinkGround = "base" | "inverse";
+
+/**
+ * A 44px circle (`--ui-layout-tap-target`) on a pill radius, centring one
+ * icon, with a hairline edge. Colours ease on the fast motion tier; reduced
+ * motion changes them instantly.
+ */
+const ICON_LINK_BASE =
+  "inline-flex shrink-0 items-center justify-center size-[var(--ui-layout-tap-target)] rounded-pill border transition-colors duration-[var(--ui-duration-fast)] ease-default motion-reduce:transition-none";
+
+/**
+ * Per ground: rest surface, edge and ink; hover lifts the edge and shifts the
+ * surface; pressed takes the ground's strongest edge. The focus outline is
+ * the package-standard accent outline over a halo in the link's own surface,
+ * so the ring reads where the circle overlaps a ground of the other tone.
+ */
+const ICON_LINK_GROUND_CLASSES: Record<IconButtonLinkGround, string> = {
+  base: "bg-surface-raised text-ink-primary border-line-base hover:bg-surface-sunken hover:border-line-strong active:bg-surface-sunken active:border-ink-primary focus-visible:ring-2 focus-visible:ring-surface-raised",
+  inverse:
+    "bg-surface-inverse-raised text-ink-on-inverse border-line-on-inverse hover:bg-surface-inverse hover:border-ink-on-inverse-muted active:bg-surface-inverse active:border-ink-on-inverse focus-visible:ring-2 focus-visible:ring-surface-inverse-raised",
+};
+
+/**
+ * The round icon-only look for a plain `<a>` (server-safe): a 44px circle
+ * that holds one decorative `Icon`, for a control whose glyph says what it
+ * does (a scroll cue, a back-to-top link). `ground` picks the surface, edge
+ * and ink for a light or dark ground. The link still needs an accessible
+ * name (`aria-label`, or visually hidden text); this class string ships no
+ * copy.
+ */
+export function iconButtonLinkClassName(ground: IconButtonLinkGround = "base"): string {
+  return [ICON_LINK_BASE, ICON_LINK_GROUND_CLASSES[ground], LINK_FOCUS_CLASSES].join(" ");
+}

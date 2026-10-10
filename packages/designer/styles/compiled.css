@@ -45,6 +45,13 @@
 
 /*! tailwindcss v4.3.3 | MIT License | https://tailwindcss.com */
 @layer properties;
+@keyframes scroll-fade-out {
+  to {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+  }
+}
 @layer foundry-ui-compiled {
   .\@container {
     container-type: inline-size;
@@ -948,6 +955,10 @@
     transition-timing-function: var(--tw-ease, var(--default-transition-timing-function, cubic-bezier(0.4, 0, 0.2, 1)));
     transition-duration: var(--tw-duration, var(--default-transition-duration, 150ms));
   }
+  .ease-default {
+    --tw-ease: var(--ease-default, cubic-bezier(.2, 0, 0, 1));
+    transition-timing-function: var(--ease-default, cubic-bezier(.2, 0, 0, 1));
+  }
   .outline-none {
     --tw-outline-style: none;
     outline-style: none;
@@ -976,6 +987,9 @@
     border-bottom-width: 0px;
   }
   @media (hover: hover) {
+    .hover\:border-ink-on-inverse-muted:hover {
+      border-color: var(--color-ink-on-inverse-muted, oklch(0.7763 0 0));
+    }
     .hover\:border-line-strong:hover {
       border-color: var(--color-line-strong, oklch(0.7763 0 0));
     }
@@ -984,6 +998,9 @@
     }
     .hover\:bg-status-danger-text:hover {
       background-color: var(--color-status-danger-text, oklch(0.2178 0 0));
+    }
+    .hover\:bg-surface-inverse:hover {
+      background-color: var(--color-surface-inverse, oklch(0.2178 0 0));
     }
     .hover\:bg-surface-selected:hover {
       background-color: var(--color-surface-selected, oklch(0.4748 0 0 / 0.1));
@@ -1045,6 +1062,16 @@
     --tw-outline-style: none;
     outline-style: none;
   }
+  .focus-visible\:ring-2:focus-visible {
+    --tw-ring-shadow: var(--tw-ring-inset,) 0 0 0 calc(2px + var(--tw-ring-offset-width, 0px)) var(--tw-ring-color, currentcolor);
+    box-shadow: var(--tw-inset-shadow, 0 0 #0000), var(--tw-inset-ring-shadow, 0 0 #0000), var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow, 0 0 #0000);
+  }
+  .focus-visible\:ring-surface-inverse-raised:focus-visible {
+    --tw-ring-color: var(--color-surface-inverse-raised, oklch(0.285 0 0));
+  }
+  .focus-visible\:ring-surface-raised:focus-visible {
+    --tw-ring-color: var(--color-surface-raised, oklch(1 0 0));
+  }
   .focus-visible\:outline-2:focus-visible {
     outline-style: var(--tw-outline-style, solid);
     outline-width: 2px;
@@ -1054,6 +1081,18 @@
   }
   .focus-visible\:outline-accent:focus-visible {
     outline-color: var(--color-accent, oklch(0.4748 0 0));
+  }
+  .active\:border-ink-on-inverse:active {
+    border-color: var(--color-ink-on-inverse, oklch(0.9702 0 0));
+  }
+  .active\:border-ink-primary:active {
+    border-color: var(--color-ink-primary, oklch(0.2178 0 0));
+  }
+  .active\:bg-surface-inverse:active {
+    background-color: var(--color-surface-inverse, oklch(0.2178 0 0));
+  }
+  .active\:bg-surface-sunken:active {
+    background-color: var(--color-surface-sunken, oklch(0.9401 0 0));
   }
   .disabled\:cursor-not-allowed:disabled {
     cursor: not-allowed;
@@ -1516,6 +1555,10 @@
   inherits: false;
   initial-value: solid;
 }
+@property --tw-ease {
+  syntax: "*";
+  inherits: false;
+}
 @property --tw-content {
   syntax: "*";
   initial-value: "";
@@ -1576,6 +1619,7 @@
       --tw-ring-offset-color: #fff;
       --tw-ring-offset-shadow: 0 0 #0000;
       --tw-outline-style: solid;
+      --tw-ease: initial;
       --tw-content: "";
       --tw-scale-x: 1;
       --tw-scale-y: 1;

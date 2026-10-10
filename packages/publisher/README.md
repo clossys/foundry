@@ -1075,8 +1075,9 @@ that fills the first screen, the document's other sections as full-bleed
 bands, and an optional closing call to action. Every band's content, the hero
 copy and the call to action sit in one centred column (Designer
 `SectionFrame`'s `measure`, default `"wide"`); grounds run the full width. It
-is server-safe and ships no wording of its own: every visible word comes from
-the resolved documents or a prop.
+is server-safe and ships no visible wording of its own: every visible word
+comes from the resolved documents or a prop. The only built-in string is the
+scroll cue's accessible name, which `cueLabel` replaces.
 
 ```tsx
 import { resolveSectionedViewDocument, type ResolvedSectionedViewDocument } from "@clossys/publisher/core";
@@ -1142,11 +1143,36 @@ Props, in addition to the standard `<main>` attributes (minus `children`),
   in flow above the view.
 - `peek` (default `true`): with an overlay header and content after the hero,
   the hero block stops short of the fold so the next band shows, and a
-  decorative chevron marks its foot.
+  scroll cue links to that band (see **Scroll cue**).
+- `cueLabel` (default `"Scroll to next section"`): the scroll cue's
+  accessible name. Pass translated copy; a blank label is refused with a
+  `RenderError`.
 - `align` (Designer `HeroAlign`, default `"center"`) and `measure` (Designer
   `SectionMeasure`, default `"wide"`).
 - `landmark` (`"main"` or `"none"`, default `"main"`), `resolveAssetId` and
   `prefersReducedMotion`, as for `SectionedView`.
+
+**Scroll cue.** When the hero peeks, the view renders a real link,
+`href="#<first band's section id>"`, styled as a circular Designer icon button
+(`iconButtonLinkClassName`). If no band follows the hero, it links to the
+`callToAction`'s `id` instead. With neither, no cue renders. The cue sits in a
+zero-height rail between the hero and the next band, centred on their shared
+edge, so half the circle overlaps each. The rail stacks at `--ui-z-sticky`,
+which is below a site header at `--ui-z-shell`. The cue takes the target
+band's ground: the inverse treatment on an `inverse` band, otherwise the base
+treatment. It carries `data-landing-cue`.
+
+Clicking the cue uses native fragment scrolling, with no client script.
+Scrolling is smooth only under `prefers-reduced-motion: no-preference`. Each
+band section has a scroll margin equal to its own top padding (`scroll-mt-4xl`,
+or `scroll-mt-5xl` from `tablet-lg`). Combined with the `scroll-padding-top`
+that a sticky or fixed site header sets on the root, this lands the band's top
+edge flush under the header. The view does not set `scroll-padding-top`
+itself. The cue fades out over the first 33dvh of page scroll and is then
+hidden, so it leaves the tab order (Designer `scroll-fade-out`). Under reduced
+motion it hides in one step rather than fading. Browsers without
+scroll-driven animations (`animation-timeline`) keep the cue visible and
+focusable at every scroll position.
 
 **Section anatomy.** Every band with a feature grid, ordered steps, a status
 list, an FAQ, a hero or a `content-section` is one Designer `ContentSection`: the section's

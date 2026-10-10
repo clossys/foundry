@@ -80,7 +80,8 @@ export { Breadcrumb } from "./Breadcrumb.js";
 export type { BreadcrumbProps, BreadcrumbItemProps } from "./Breadcrumb.js";
 
 export { Link } from "./Link.js";
-export { buttonLinkClassName } from "./button-classes.js";
+export { buttonLinkClassName, iconButtonLinkClassName } from "./button-classes.js";
+export type { IconButtonLinkGround } from "./button-classes.js";
 export type { LinkProps, LinkVariant } from "./Link.js";
 
 export { Checkbox } from "./Checkbox.js";

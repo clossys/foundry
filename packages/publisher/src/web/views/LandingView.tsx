@@ -1,5 +1,5 @@
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
-import { Icon, mergeUiClasses } from "@clossys/designer/atoms/server";
+import { Icon, iconButtonLinkClassName, mergeUiClasses } from "@clossys/designer/atoms/server";
 import {
   ContentSection,
   Faq,
@@ -7,7 +7,6 @@ import {
   Hero,
   MediaFigure,
   OrderedStepSequence,
-  SECTION_GROUND_CLASSES,
   SectionFrame,
   StatusList,
 } from "@clossys/designer/blocks/server";
@@ -92,10 +91,20 @@ export interface LandingViewProps extends Omit<HTMLAttributes<HTMLElement>, "chi
   measure?: SectionMeasure;
   /**
    * With `header="overlay"` and content after the hero: stop the hero block
-   * short of the fold so the next band shows, and mark the hero's foot with a
-   * chevron cue (decorative, `aria-hidden`). @default true
+   * short of the fold so the next band shows, and mark the hero's foot with
+   * a scroll cue: a round chevron link (`data-landing-cue`, Designer
+   * `iconButtonLinkClassName`) centred on the edge between the hero and the
+   * first band, half over each, that jumps to the first band (or to the
+   * call to action's `id` when no band follows). No cue renders without a
+   * target. @default true
    */
   peek?: boolean;
+  /**
+   * The scroll cue's accessible name (`aria-label`); pass the page's own
+   * localized words. Must not be blank when the cue renders.
+   * @default "Scroll to next section"
+   */
+  cueLabel?: string;
   /**
    * `"main"` (default) renders the root as the page's `main` landmark. Pass
    * `"none"` when the frame already owns `main`.
@@ -124,6 +133,31 @@ const HERO_FILL = {
 /** Vertical rhythm of every body band after the hero: 64px, 96px from `tablet-lg`. */
 const BAND_CLASS = "py-4xl tablet-lg:py-5xl";
 
+/**
+ * A band's section element sits one band padding below the band's top edge,
+ * so its fragment jump takes the same margin: the band's top edge lands at
+ * the frame's `scroll-padding-top` (the foot of a sticky header) rather than
+ * the section's heading. Matches `BAND_CLASS`'s top padding at every width.
+ */
+const BAND_ANCHOR_CLASS = "scroll-mt-4xl tablet-lg:scroll-mt-5xl";
+
+/**
+ * The scroll cue's place: a zero-height rail between the hero and the first
+ * band, stacked one layer above the bands (`--ui-z-sticky`, below the
+ * frame's sticky header) so the hero's clipping and the next band's paint
+ * never cover it. The cue is centred on the rail, so its middle is the
+ * edge between the two grounds.
+ */
+const CUE_RAIL_CLASS = "relative z-[var(--ui-z-sticky)] h-0";
+
+/**
+ * The cue itself: centred on the rail, faded out over the first third of a
+ * screen of scrolling (Designer `scroll-fade-out`: hidden, out of the tab
+ * order and inert at the end), and, under `prefers-reduced-motion:
+ * no-preference`, a smooth page scroll while the page holds the cue.
+ */
+const CUE_CLASS = "absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 scroll-fade-out motion-safe:[html:has(&)]:scroll-smooth";
+
 /** The closing call to action stands apart: one step above a body band at every width (96px, 128px from `tablet-lg`). */
 const CALL_TO_ACTION_BAND_CLASS = "py-5xl tablet-lg:py-6xl";
 
@@ -144,7 +178,7 @@ function bandBlocks(afterSection: Readonly<Record<string, ReactNode>>): Sectione
   return {
     ...sectionedViewBlocks,
     Hero: ({ id, eyebrow, heading, description, actions, media, ground }) => (
-      <ContentSection id={id} eyebrow={eyebrow} heading={heading} description={description} actions={actions} ground={ground}>
+      <ContentSection id={id} eyebrow={eyebrow} heading={heading} description={description} actions={actions} ground={ground} className={BAND_ANCHOR_CLASS}>
         {media ? (
           <MediaFigure framed={false} ground={ground}>
             {media}
@@ -154,30 +188,30 @@ function bandBlocks(afterSection: Readonly<Record<string, ReactNode>>): Sectione
       </ContentSection>
     ),
     FeatureGrid: ({ id, eyebrow, heading, description, headingLevel, ground, items }) => (
-      <ContentSection id={id} eyebrow={eyebrow} heading={heading} description={description} headingLevel={headingLevel} ground={ground}>
+      <ContentSection id={id} eyebrow={eyebrow} heading={heading} description={description} headingLevel={headingLevel} ground={ground} className={BAND_ANCHOR_CLASS}>
         <FeatureGrid items={items} headingLevel={headingLevel} ground={ground} />
         {after(id)}
       </ContentSection>
     ),
     Faq: ({ id, eyebrow, heading, description, headingLevel, ground, items }) => (
-      <ContentSection id={id} eyebrow={eyebrow} heading={heading} description={description} headingLevel={headingLevel} ground={ground}>
+      <ContentSection id={id} eyebrow={eyebrow} heading={heading} description={description} headingLevel={headingLevel} ground={ground} className={BAND_ANCHOR_CLASS}>
         <Faq items={items} headingLevel={headingLevel} ground={ground} />
         {after(id)}
       </ContentSection>
     ),
     OrderedStepSequence: ({ id, eyebrow, heading, description, headingLevel, ground, items }) => (
-      <ContentSection id={id} eyebrow={eyebrow} heading={heading} description={description} headingLevel={headingLevel} ground={ground}>
+      <ContentSection id={id} eyebrow={eyebrow} heading={heading} description={description} headingLevel={headingLevel} ground={ground} className={BAND_ANCHOR_CLASS}>
         <OrderedStepSequence items={items} headingLevel={headingLevel} ground={ground} />
         {after(id)}
       </ContentSection>
     ),
     StatusList: ({ id, eyebrow, heading, description, headingLevel, ground, labels, groups, items, legendLabel }) => (
-      <ContentSection id={id} eyebrow={eyebrow} heading={heading} description={description} headingLevel={headingLevel} ground={ground}>
+      <ContentSection id={id} eyebrow={eyebrow} heading={heading} description={description} headingLevel={headingLevel} ground={ground} className={BAND_ANCHOR_CLASS}>
         <StatusList labels={labels} legendLabel={legendLabel} headingLevel={headingLevel} ground={ground} {...(groups ? { groups } : { items: items ?? [] })} />
         {after(id)}
       </ContentSection>
     ),
-    ContentSection: ({ section, actions }) => <sectionedViewBlocks.ContentSection section={section} actions={actions} after={after(section.id)} />,
+    ContentSection: ({ section, actions }) => <sectionedViewBlocks.ContentSection section={section} actions={actions} after={after(section.id)} className={BAND_ANCHOR_CLASS} />,
   };
 }
 
@@ -220,10 +254,24 @@ function bandBlocks(afterSection: Readonly<Record<string, ReactNode>>): Sectione
  * The view paints the `base` ground itself (on its root), so a band on
  * `base` never shows a page or document background through it.
  *
- * What it guarantees: one `<h1>` (the hero section's); a backdrop and cue
- * that are inert to assistive technology and to the pointer; an `afterSection`
- * key that matches no section is refused; copy only from the documents and
- * props. What it does not do: check the contrast of the hero copy over a
+ * Scroll cue (with `peek`): a real link to the first band (a plain fragment
+ * `<a>`, native scrolling, no client script), drawn as Designer's round
+ * icon link on the target band's ground, centred on the hero's bottom edge.
+ * Its accessible name is `cueLabel`. It fades out over the first third of a
+ * screen of scrolling and is then hidden and out of the tab order (Designer
+ * `scroll-fade-out`; an engine without scroll-driven animations keeps it
+ * visible). The page scrolls smoothly to the band only under
+ * `prefers-reduced-motion: no-preference`. Every band's section takes a
+ * scroll margin equal to the band's top padding, so a fragment jump puts the
+ * band's top edge at the frame's `scroll-padding-top`: the frame sets that
+ * to its sticky header's height, and the band then starts at the header's
+ * foot.
+ *
+ * What it guarantees: one `<h1>` (the hero section's); a backdrop that is
+ * inert to assistive technology and to the pointer; a cue only when it has
+ * a target, with a non-blank name; an `afterSection` key that matches no
+ * section is refused; copy only from the documents and props, apart from
+ * the cue's default name. What it does not do: check the contrast of the hero copy over a
  * backdrop (the backdrop's contract, Designer's `checkBackdropContract`), or
  * restyle the call to action's action.
  */
@@ -237,6 +285,7 @@ export function LandingView({
   align = "center",
   measure = "wide",
   peek = true,
+  cueLabel = "Scroll to next section",
   landmark = "main",
   resolveAssetId,
   prefersReducedMotion,
@@ -287,7 +336,17 @@ export function LandingView({
   const hasContent = bands.length > 0 || callToAction !== undefined;
   const fills = header === "overlay";
   const peeks = fills && peek && hasContent;
-  const heroInk = SECTION_GROUND_CLASSES[heroSection.ground];
+  const firstBand = bands[0]?.section;
+  const cue = !peeks
+    ? undefined
+    : firstBand !== undefined
+      ? { target: firstBand.id, ground: firstBand.ground }
+      : callToAction?.id !== undefined
+        ? { target: callToAction.id, ground: LANDING_VIEW_CALL_TO_ACTION_GROUND }
+        : undefined;
+  if (cue !== undefined && cueLabel.trim() === "") {
+    throw new RenderError("resolution-failed", "LandingView refused cueLabel: the scroll cue needs a non-blank accessible name.");
+  }
   const Root = landmark === "main" ? "main" : "div";
 
   return (
@@ -307,12 +366,14 @@ export function LandingView({
         ) : null}
         {heroBlock?.node}
         {afterSection[heroSection.id] ?? null}
-        {peeks ? (
-          <span aria-hidden="true" data-landing-cue="" className={mergeUiClasses("pointer-events-none absolute inset-x-0 bottom-xl flex justify-center", heroInk.muted)}>
-            <Icon glyph={ChevronDown} decorative size="lg" />
-          </span>
-        ) : null}
       </SectionFrame>
+      {cue ? (
+        <div data-landing-cue-rail="" className={CUE_RAIL_CLASS}>
+          <a href={`#${cue.target}`} aria-label={cueLabel} data-landing-cue="" className={`${iconButtonLinkClassName(cue.ground === "inverse" ? "inverse" : "base")} ${CUE_CLASS}`}>
+            <Icon glyph={ChevronDown} decorative size="md" />
+          </a>
+        </div>
+      ) : null}
       {bands.map(({ section, node }) => (
         <SectionFrame key={section.id} data-landing-ground={section.ground} ground={section.ground} measure={measure} className={BAND_CLASS}>
           {ANATOMY_KINDS.has(section.kind) ? (

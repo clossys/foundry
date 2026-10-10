@@ -90,4 +90,5 @@ export type { StatusMarkProps, StatusMarkTone } from "./StatusMark.js";
 export { cx as mergeUiClasses } from "./internal/cx.js";
 
 /** The `Button` look for a plain `<a>`, with the focus outline put back. Pure string logic — no React import at all. */
-export { buttonLinkClassName } from "./button-classes.js";
+export { buttonLinkClassName, iconButtonLinkClassName } from "./button-classes.js";
+export type { IconButtonLinkGround } from "./button-classes.js";

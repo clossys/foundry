@@ -47,8 +47,10 @@ export {
   Meter,
   mergeUiClasses,
   buttonLinkClassName,
+  iconButtonLinkClassName,
 } from "./atoms/index.js";
 export type {
+  IconButtonLinkGround,
   ButtonProps,
   ButtonSize,
   ButtonVariant,
