@@ -1033,10 +1033,19 @@ function SaveButton() {
 }
 ```
 
-`variant`: `"primary" | "secondary" | "ghost" | "danger"` (default
-`"primary"`). `size`: `"sm" | "md" | "lg"` (default `"md"`). Accepts every
-prop react-aria-components' own `Button` does — `isDisabled`, `onPress`,
-`type`, and so on.
+`variant`: `"primary" | "secondary" | "ghost" | "danger" | "outline"`
+(default `"primary"`). `size`: `"sm" | "md" | "lg"` (default `"md"`). Accepts
+every prop react-aria-components' own `Button` does — `isDisabled`,
+`onPress`, `type`, and so on.
+
+`outline` is the second call to action beside a `primary` one: a transparent
+button with the same box, size, radius and type as `primary`, edged by an
+inset ring (one pixel, the `--ui-border-hairline` value; two on hover, the
+`--ui-border-rule` value) drawn in the surrounding ink (`currentColor`). It sets no ink of its own, so put it where
+the text ink already reads against the ground (a `SectionIntro` actions row
+carries its ground's primary ink): the edge then meets the 3:1 non-text
+contrast floor on light and dark grounds alike. On `Button`, React Aria's
+focus ring replaces the edge while it shows; a link keeps both.
 
 A call to action that navigates is a link, not a button. Give a plain `<a>`
 the button look with `buttonLinkClassName(variant, size)` (server-safe, from
@@ -3031,6 +3040,8 @@ every band after it (the section-title step, `leading-heading`; gaps
 line gap and grows toward the action, so the group reads as one unit. The
 eyebrow is a small tracked label (`text-body-s`, medium, uppercase) in the
 ground's accent ink (`accent-text`, `accent-on-inverse` on an inverse band).
+The actions row (`data-section-intro-actions`) carries the ground's primary
+ink, so an `outline` button in it takes a readable edge on every ground.
 `Hero` and `ContentSection` both compose it; use it directly only for a
 header group outside those blocks. It paints no surface: `ground` picks the
 ink only.
@@ -3076,6 +3087,14 @@ around it (ground surface, padding and column) is a `SectionFrame`'s.
 `"section"`) sets the header group's scale; `"display"` gives a statement
 band (a header and its actions, no module or media) the `SectionIntro`
 display step and rhythm. `headingLevel` still sets the element.
+
+`actions` holds one or two button-styled links (`buttonLinkClassName`), at
+most one `primary`, the other `outline`. `footnote` (`ReactNode`) is an
+optional one-sentence aside closing the band: `text-body-s` in the ground's
+secondary ink, at most the prose measure, following `align`, and holding at
+most one underlined link. It renders as the last child of the section (in a
+split, the last line of the text column) with `data-content-section-footnote`.
+Never put a call to action in it.
 
 Use it instead of `SectionHeader` (settings scale, `text-h3`) for a
 marketing section, and instead of `MarketingChapter` when the section needs
@@ -5182,7 +5201,7 @@ not a grab-bag).
 | `AlertTriangle`, `ArrowRight`, `BookOpen`, `Box`, `Briefcase`, `Building2`, `Calendar`, `Check`, `CheckCircle`, `ChevronDown`, `ChevronLeft`, `ChevronRight`, `ChevronUp`, `Clock`, `CreditCard`, `ExternalLink`, `FileCheck`, `FileText`, `Folder`, `Globe`, `Grid3x3`, `Home`, `Info`, `Landmark`, `Layers`, `List`, `Lock`, `Monitor`, `Moon`, `Plug`, `Receipt`, `Scale`, `Search`, `Settings`, `ShieldCheck`, `Sun`, `User`, `Users`, `X`, `XCircle` | data | The 40 shipped icon glyphs, each an `IconNode` — see "Icon glyph data" above. |
 | `Button` | component | Pressable action built on react-aria-components' `Button`. |
 | `ButtonProps` | type | Props for `Button`: `variant`, `size`, plus everything react-aria-components' own `Button` accepts. |
-| `ButtonVariant` | type | `"primary" \| "secondary" \| "ghost" \| "danger"`. |
+| `ButtonVariant` | type | `"primary" \| "secondary" \| "ghost" \| "danger" \| "outline"`. |
 | `ButtonSize` | type | `"sm" \| "md" \| "lg"`. |
 | `Icon` | component | The glyph render contract: size, colour, accessibility, applied to either `glyph` (structured `IconNode` data) or `children` (raw SVG/a component). |
 | `IconProps` | type | `IconAccessibilityProps & { glyph: IconNode; children?: undefined } \| { glyph?: undefined; children: ReactNode } & { size?: IconSize; className?: string; style?: CSSProperties } & Omit<SVGProps<SVGSVGElement>, ...>`. |
@@ -5336,7 +5355,7 @@ not a grab-bag).
 | `MarketingChapterProps` | type | Props for `MarketingChapter`: `title`, `description`, `children`, `headingLevel`, `ground`, `className`, `style`, plus every native `<section>` attribute except `title`. |
 | `MarketingChapterHeadingLevel` | type | `2 \| 3`. |
 | `ContentSection` | component | One marketing section anatomy: a header group (eyebrow, heading, description, actions) held to the prose measure, then a module slot for one or more content modules, at fixed spacing; stacked, or split with a visual in a 7/12 column. |
-| `ContentSectionProps` | type | `ContentSectionStackedProps \| ContentSectionSplitProps`: `eyebrow`, `heading`, `description`, `actions`, `headingLevel`, `ground`, `layout`, `media`, `mediaSide` (split), `align` (stacked), `children`, `className`, `style`, plus every native `<div>` attribute except `title`. |
+| `ContentSectionProps` | type | `ContentSectionStackedProps \| ContentSectionSplitProps`: `eyebrow`, `heading`, `description`, `actions`, `footnote`, `headingLevel`, `ground`, `layout`, `media`, `mediaSide` (split), `align` (stacked), `children`, `className`, `style`, plus every native `<div>` attribute except `title`. |
 | `ContentSectionStackedProps` | type | Stacked section: `layout?: "stacked"`, `align?`, optional `media` after the text module. |
 | `ContentSectionSplitProps` | type | Split section: `layout: "split"`, required `media`, `mediaSide?`. |
 | `ContentSectionLayout` | type | `"stacked" \| "split"`. |

@@ -104,6 +104,40 @@ export interface SectionedViewAction {
   href: string;
 }
 
+/**
+ * How a content-section action renders. `primary` is the filled button, for
+ * the band's one conversion; `secondary` (the default) is the outlined button
+ * of the same size and shape, for the band's next step to a major page.
+ */
+export type SectionedViewContentActionEmphasis = "primary" | "secondary";
+
+/**
+ * One call to action a content section may carry: a hero action plus its
+ * emphasis. A section holds at most two, and at most one `primary`; both
+ * render as full-size buttons.
+ */
+export interface SectionedViewContentAction extends SectionedViewAction {
+  /** @default "secondary" */
+  emphasis?: SectionedViewContentActionEmphasis;
+}
+
+/**
+ * A content section's footnote: one short sentence closing the band, for an
+ * aside rather than the band's next step, with at most one inline link
+ * after its text. The only place a section body takes the underlined link
+ * look.
+ */
+export interface SectionedViewContentFootnote {
+  text: CopyRef;
+  link?: SectionedViewContentFootnoteLink;
+}
+
+/** The footnote's one inline link, held to the same sanctioned-href rule as an action. */
+export interface SectionedViewContentFootnoteLink {
+  label: CopyRef;
+  href: string;
+}
+
 export interface SectionedViewHeroSection {
   id: string;
   kind: "hero";
@@ -591,8 +625,9 @@ export type SectionedViewContentModule =
 export type SectionedViewContentModuleType = SectionedViewContentModule["type"];
 
 /**
- * One band: a header (eyebrow, heading, description, optional text-link
- * actions), an optional text module and an optional visual. With neither
+ * One band: a header (eyebrow, heading, description, one or two button
+ * actions), an optional text module, an optional visual and an optional
+ * footnote. With neither
  * module nor media it is an intro band. `mediaSide` is allowed only on a
  * `split`, `align` only on a stacked section, and a `split` needs `media`,
  * with two exceptions where the module itself takes the visual column, top
@@ -607,8 +642,8 @@ export interface SectionedViewContentSection {
   eyebrow?: CopyRef;
   heading: CopyRef;
   description?: CopyRef;
-  /** Rendered as text links. */
-  actions?: SectionedViewAction[];
+  /** One or two, at most one `primary`; rendered as full-size buttons. */
+  actions?: SectionedViewContentAction[];
   /** @default "stacked" */
   layout?: SectionedViewContentLayout;
   /** Split only. @default "end" */
@@ -617,6 +652,8 @@ export interface SectionedViewContentSection {
   align?: SectionedViewContentAlign;
   module?: SectionedViewContentModule;
   media?: SectionedViewSpecimenMedia;
+  /** The band's last line: one sentence, at most one inline link. */
+  footnote?: SectionedViewContentFootnote;
 }
 
 /** One fully data-shaped section: there is deliberately no node, class, style, or render callback escape hatch. */
@@ -651,6 +688,9 @@ type ResolvedSectionedViewStatusItem =
 
 /** A hero action with its label copy resolved; the href travels unchanged. */
 export type ResolvedSectionedViewAction = Omit<SectionedViewAction, "label"> & { label: ResolvedCopy };
+
+/** A content-section action with its label copy resolved; href and emphasis travel unchanged. */
+export type ResolvedSectionedViewContentAction = Omit<SectionedViewContentAction, "label"> & { label: ResolvedCopy };
 
 export type ResolvedSectionedViewHeroMedia = Omit<SectionedViewHeroMedia, "alt"> & { alt: ResolvedCopy };
 
@@ -1031,19 +1071,61 @@ function validateHeroMedia(value: unknown, path: string, findings: ComposeFindin
   validateCopy(value.alt, `${path}.alt`, findings);
 }
 
-function validateActions(value: unknown, path: string, findings: ComposeFinding[]): void {
-  if (!validateDenseArray(value, path, findings, "sectioned-view-actions-shape", `${path} must be a non-empty array when present.`)) return;
+/**
+ * Actions, hero or content-section. A content-section action may also carry
+ * an `emphasis` (`allowEmphasis`); a hero action may not. Returns the records
+ * that passed the shape check.
+ */
+function validateActions(value: unknown, path: string, findings: ComposeFinding[], allowEmphasis = false): Record<string, unknown>[] {
+  if (!validateDenseArray(value, path, findings, "sectioned-view-actions-shape", `${path} must be a non-empty array when present.`)) return [];
   validateItemIds(value, path, findings);
+  const keys = allowEmphasis ? ["id", "label", "href", "emphasis"] : ["id", "label", "href"];
+  const actions: Record<string, unknown>[] = [];
   for (let index = 0; index < value.length; index += 1) {
     const action = value[index];
     const actionPath = `${path}.${index}`;
-    if (!isPlainObject(action) || !hasOnlyOwnKeys(action, ["id", "label", "href"]) || !hasOwnKeys(action, ["id", "label", "href"]) || !isNonWhitespaceString(action.id)) {
-      findings.push(finding("sectioned-view-action-shape", actionPath, `${actionPath} must be a plain action with id, label, and href.`));
+    if (!isPlainObject(action) || !hasOnlyOwnKeys(action, keys) || !hasOwnKeys(action, ["id", "label", "href"]) || !isNonWhitespaceString(action.id)) {
+      findings.push(finding("sectioned-view-action-shape", actionPath, `${actionPath} must be a plain action with id, label, and href${allowEmphasis ? ", and optionally emphasis" : ""}.`));
       continue;
     }
     validateCopy(action.label, `${actionPath}.label`, findings);
     if (!isSanctionedHref(action.href)) findings.push(finding("sectioned-view-action-href", `${actionPath}.href`, `${actionPath}.href must be a fragment, a one-origin path, an http(s) URL, or a mailto link.`));
+    if (allowEmphasis) validateEnumField(action, "emphasis", CONTENT_ACTION_EMPHASES, "sectioned-view-content-action-emphasis", actionPath, findings);
+    actions.push(action);
   }
+  return actions;
+}
+
+/**
+ * A content section's actions: one or two, at most one `primary`. The rest
+ * are `secondary`, the default. Both render as full-size buttons; an aside
+ * that needs a text link is the section's `footnote`.
+ */
+function validateContentActions(value: unknown, path: string, findings: ComposeFinding[]): void {
+  const actions = validateActions(value, path, findings, true);
+  if (Array.isArray(value) && value.length > CONTENT_ACTIONS_MAX) {
+    findings.push(finding("sectioned-view-content-actions-count", path, `${path} must hold 1-${CONTENT_ACTIONS_MAX} actions; it holds ${value.length}. Move an aside to the section's footnote.`));
+  }
+  const primaries = actions.filter((action) => action.emphasis === "primary").length;
+  if (primaries > 1) findings.push(finding("sectioned-view-content-primary-count", path, `${path} holds ${primaries} primary actions; keep at most one, the rest secondary.`));
+}
+
+/** A footnote: closed `{ text, link? }`, its link closed `{ label, href }` with a sanctioned href. */
+function validateContentFootnote(value: unknown, path: string, findings: ComposeFinding[]): void {
+  if (!isPlainObject(value) || !hasOnlyOwnKeys(value, ["text", "link"]) || !hasOwn(value, "text")) {
+    findings.push(finding("sectioned-view-content-footnote-shape", path, `${path} must be a plain footnote with text and, optionally, one link.`));
+    return;
+  }
+  validateCopy(value.text, `${path}.text`, findings);
+  if (value.link === undefined) return;
+  const link = value.link;
+  const linkPath = `${path}.link`;
+  if (!isPlainObject(link) || !hasOnlyOwnKeys(link, ["label", "href"]) || !hasOwnKeys(link, ["label", "href"])) {
+    findings.push(finding("sectioned-view-content-footnote-shape", linkPath, `${linkPath} must be one plain link with a label and an href.`));
+    return;
+  }
+  validateCopy(link.label, `${linkPath}.label`, findings);
+  if (!isSanctionedHref(link.href)) findings.push(finding("sectioned-view-content-footnote-href", `${linkPath}.href`, `${linkPath}.href must be a fragment, a one-origin path, an http(s) URL, or a mailto link.`));
 }
 
 function validateStatusListSection(section: Record<string, unknown>, path: string, findings: ComposeFinding[]): void {
@@ -1122,7 +1204,10 @@ function validateStatusItems(value: unknown, path: string, findings: ComposeFind
 // content-section validation
 // ---------------------------------------------------------------------------
 
-const CONTENT_SECTION_KEYS = ["id", "kind", "ground", "eyebrow", "heading", "description", "actions", "layout", "mediaSide", "align", "module", "media"] as const;
+const CONTENT_SECTION_KEYS = ["id", "kind", "ground", "eyebrow", "heading", "description", "actions", "layout", "mediaSide", "align", "module", "media", "footnote"] as const;
+const CONTENT_ACTION_EMPHASES: readonly SectionedViewContentActionEmphasis[] = ["primary", "secondary"];
+/** The most actions one content section may hold. */
+const CONTENT_ACTIONS_MAX = 2;
 const CONTENT_LAYOUTS: readonly SectionedViewContentLayout[] = ["stacked", "split"];
 const CONTENT_MEDIA_SIDES: readonly SectionedViewContentMediaSide[] = ["end", "start"];
 const CONTENT_ALIGNS: readonly SectionedViewContentAlign[] = ["start", "center"];
@@ -1217,7 +1302,8 @@ function validateContentSection(section: Record<string, unknown>, path: string, 
   if (!hasOnlyOwnKeys(section, CONTENT_SECTION_KEYS) || !hasOwn(section, "heading")) findings.push(finding("sectioned-view-section-keys", path, `${path} has keys not allowed for content-section.`));
   validateCopy(section.heading, `${path}.heading`, findings);
   validateOptionalCopyFields(section, ["eyebrow", "description"], path, findings);
-  if (section.actions !== undefined) validateActions(section.actions, `${path}.actions`, findings);
+  if (section.actions !== undefined) validateContentActions(section.actions, `${path}.actions`, findings);
+  if (section.footnote !== undefined) validateContentFootnote(section.footnote, `${path}.footnote`, findings);
   validateEnumField(section, "layout", CONTENT_LAYOUTS, "sectioned-view-content-layout", path, findings);
   validateEnumField(section, "mediaSide", CONTENT_MEDIA_SIDES, "sectioned-view-content-layout", path, findings);
   validateEnumField(section, "align", CONTENT_ALIGNS, "sectioned-view-content-layout", path, findings);
@@ -1853,7 +1939,7 @@ function resolveContentModule(module: SectionedViewContentModule, path: string, 
 }
 
 function resolveContentSection(section: SectionedViewContentSection & { ground: SectionedViewGround }, path: string, text: ResolveText): ResolvedSectionedViewContentSection {
-  const { module, media, actions, ...base } = section;
+  const { module, media, actions, footnote, ...base } = section;
   return {
     ...base,
     ...copyField("eyebrow", section.eyebrow, path, text),
@@ -1869,6 +1955,14 @@ function resolveContentSection(section: SectionedViewContentSection & { ground: 
             label: text(media.label, `${path}.media.label`),
             ...copyField("connector", media.connector, `${path}.media`, text),
             panels: media.panels.map((panel, index) => resolveSpecimenPanel(panel, `${path}.media.panels.${index}`, text)),
+          },
+        }),
+    ...(footnote === undefined
+      ? {}
+      : {
+          footnote: {
+            text: text(footnote.text, `${path}.footnote.text`),
+            ...(footnote.link === undefined ? {} : { link: { label: text(footnote.link.label, `${path}.footnote.link.label`), href: footnote.link.href } }),
           },
         }),
   } as ResolvedSectionedViewContentSection;
@@ -1893,6 +1987,8 @@ interface BandShape {
   /** The module's treatment, for telling two uses of one module type apart. */
   treatment: string;
   cardCount: number;
+  /** Carries a `primary` content-section action. */
+  primaryAction: boolean;
 }
 
 function hasModuleVisual(module: SectionedViewContentModule): boolean {
@@ -1924,10 +2020,10 @@ function moduleTreatment(module: SectionedViewContentModule): string {
 function bandShape(section: SectionedViewSection, path: string, index: number): BandShape {
   if (section.kind === "faq" && section.layout === "split") {
     // A split legacy FAQ is the same band as a split content-section FAQ: its rows take the end column.
-    return { path, index, kind: section.kind, layout: "split", mediaSide: "end", module: section.kind, visual: "none", dense: false, ground: section.ground, treatment: "default", cardCount: 0 };
+    return { path, index, kind: section.kind, layout: "split", mediaSide: "end", module: section.kind, visual: "none", dense: false, ground: section.ground, treatment: "default", cardCount: 0, primaryAction: false };
   }
   if (section.kind !== "content-section") {
-    return { path, index, kind: section.kind, layout: "stacked", module: section.kind, visual: "none", dense: false, ground: section.ground, treatment: "default", cardCount: 0 };
+    return { path, index, kind: section.kind, layout: "stacked", module: section.kind, visual: "none", dense: false, ground: section.ground, treatment: "default", cardCount: 0, primaryAction: false };
   }
   const module = section.module;
   const layout = section.layout ?? "stacked";
@@ -1943,6 +2039,7 @@ function bandShape(section: SectionedViewSection, path: string, index: number): 
     ground: section.ground,
     treatment: module === undefined ? "default" : moduleTreatment(module),
     cardCount: module?.type === "cards" ? module.items.length : 0,
+    primaryAction: Array.isArray(section.actions) && section.actions.some((action) => isPlainObject(action) && action.emphasis === "primary"),
   };
 }
 
@@ -1974,6 +2071,9 @@ function varietyWarning(rule: string, path: string, message: string): ComposeFin
  *    [`sectioned-view-variety-comparison-count`].
  * 6. One module type used twice needs a different treatment
  *    [`sectioned-view-variety-treatment`].
+ * 7. At most one band carries a `primary` action
+ *    [`sectioned-view-variety-primary-actions`]: the page converts in one
+ *    place, and every other band leads on with a secondary button.
  *
  * Whether a visual repeats its module's words cannot be judged before copy
  * resolves, so that rule stays with the writer.
@@ -2012,6 +2112,7 @@ export function checkSectionVariety(input: SectionedViewDocument | readonly Sect
   inverseBodyBands.slice(1).forEach((band) => findings.push(varietyWarning("sectioned-view-variety-inverse-bands", band.path, `${band.path} is a second inverse body band; keep at most one.`)));
   bands.filter((band) => band.cardCount >= 4).slice(1).forEach((band) => findings.push(varietyWarning("sectioned-view-variety-card-bands", band.path, `${band.path} is a second band with four or more cards; keep at most one.`)));
   bands.filter((band) => band.kind === "content-section" && band.module === "comparison").slice(1).forEach((band) => findings.push(varietyWarning("sectioned-view-variety-comparison-count", band.path, `${band.path} is a second comparison; keep at most one.`)));
+  bands.filter((band) => band.primaryAction).slice(1).forEach((band) => findings.push(varietyWarning("sectioned-view-variety-primary-actions", band.path, `${band.path} is a second band with a primary action; keep one, make this one secondary.`)));
 
   const seen = new Map<string, BandShape>();
   for (const band of bands) {

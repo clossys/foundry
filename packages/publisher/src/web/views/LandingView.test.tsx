@@ -116,7 +116,10 @@ describe("LandingView", () => {
     expect(topics.closest("[data-content-section]")).toBe(topics);
     expect(topics.parentElement?.closest("[data-content-section]")).toBeNull();
     expect(topics.className).not.toContain("bg-surface-");
-    expect(topics.querySelector('a[href="/more"]')?.className).toBe("inline-flex items-center text-body font-body underline text-ink-link");
+    const more = topics.querySelector('a[href="/more"]') as HTMLElement;
+    expect(more.getAttribute("data-action-emphasis")).toBe("secondary");
+    expect(more.className.split(" ")).toEqual(expect.arrayContaining(["px-lg", "py-md", "text-body-l", "bg-transparent", "ring-inset", "ring-current"]));
+    expect(more.className.split(" ")).not.toContain("underline");
     expect((topics.querySelector("[data-content-section-modules]") as HTMLElement).lastElementChild?.hasAttribute("data-after")).toBe(true);
     const questions = root.querySelector("#questions") as HTMLElement;
     expect(questions.getAttribute("data-layout")).toBe("split");

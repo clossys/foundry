@@ -88,9 +88,13 @@ const introMax: SectionedViewContentSection = {
     "Technicians log work where it happens, supervisors assign and close it, and the record keeps every reading, photo and signature against the asset it belongs to. Nothing is retyped at month end, and nothing lives in one person's notebook.",
   ),
   actions: [
-    { id: "record", label: copy("intro.action.record", "See an example"), href: "#catalog-specimen-single" },
+    { id: "record", label: copy("intro.action.record", "See an example"), href: "#catalog-specimen-single", emphasis: "primary" },
     { id: "faq", label: copy("intro.action.faq", "Read the FAQ"), href: "#catalog-faq" },
   ],
+  footnote: {
+    text: copy("intro.footnote", "Already keep records in a spreadsheet?"),
+    link: { label: copy("intro.footnote.link", "Read the import guide"), href: "#catalog-faq" },
+  },
 };
 
 const workOrderPanel: SectionedViewSpecimenPanel = {
@@ -331,6 +335,11 @@ const featuresStatement: SectionedViewContentSection = {
   eyebrow: copy("statement.eyebrow", "What changes"),
   heading: copy("statement.heading", "Three things teams notice in the first month"),
   description: copy("statement.description", "Teams describe the same three changes once the record replaces their spreadsheets."),
+  actions: [{ id: "stories", label: copy("statement.action", "Read their stories"), href: "#catalog-cards-text" }],
+  footnote: {
+    text: copy("statement.footnote", "Results vary with each site's starting point."),
+    link: { label: copy("statement.footnote.link", "See how we measured"), href: "#catalog-faq" },
+  },
   module: {
     type: "features",
     columns: 3,
@@ -1006,13 +1015,13 @@ export const CONTENT_CATALOG_CALL_TO_ACTION = {
 /** One caption per band, in page order: the hero, every document band, then the call to action. */
 export const CONTENT_CATALOG_CAPTIONS: readonly ContentCatalogCaption[] = [
   { sectionId: "catalog-hero", title: "Hero", detail: "inverse ground · eyebrow, heading, description · one primary action", budget: "max" },
-  { sectionId: "catalog-intro", title: "Intro band", detail: "stacked, start-aligned · no module, no media · two text links", budget: "max" },
+  { sectionId: "catalog-intro", title: "Intro band", detail: "stacked, start-aligned · no module, no media · primary and secondary buttons, a footnote with one link", budget: "max" },
   { sectionId: "catalog-specimen-single", title: "Specimen, stacked, single", detail: "sunken · one panel: fields (6 rows), status rows, meter with limit, assignee footer", budget: "max" },
   { sectionId: "catalog-features-plain", title: "Features, plain, 3 columns, icons", detail: "base · item emphasis", budget: "typical" },
-  { sectionId: "catalog-split-end", title: "Split, text + specimen, media end", detail: "sunken · header and one text link beside a schedule panel", budget: "typical" },
+  { sectionId: "catalog-split-end", title: "Split, text + specimen, media end", detail: "sunken · header and one secondary button beside a schedule panel", budget: "typical" },
   { sectionId: "catalog-features-rule", title: "Features, rule, 4 columns", detail: "base · no icons (rule takes none)", budget: "max" },
   { sectionId: "catalog-split-start", title: "Split, text + specimen, media start", detail: "sunken · topics in 1 column in the text column · table panel", budget: "max" },
-  { sectionId: "catalog-features-statement", title: "Features, statement emphasis", detail: "inverse (the one inverse body band) · centred header · exactly 3 items", budget: "typical" },
+  { sectionId: "catalog-features-statement", title: "Features, statement emphasis", detail: "inverse (the one inverse body band) · centred header, one secondary button · exactly 3 items · a footnote with one link", budget: "typical" },
   { sectionId: "catalog-split-text", title: "Split, text only, features in the visual column", detail: "base · no media · 2 columns with item eyebrows, top-aligned beside the header", budget: "typical" },
   { sectionId: "catalog-specimen-row", title: "Specimen, stacked, row of 3", detail: "sunken · three panels, each a meter and one field", budget: "typical" },
   { sectionId: "catalog-features-plate", title: "Features, plate, 2 columns, icons", detail: "base · 2-column plates take the longest item copy", budget: "max" },

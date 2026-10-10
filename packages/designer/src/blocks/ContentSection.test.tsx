@@ -125,6 +125,52 @@ describe("ContentSection layouts", () => {
   });
 });
 
+describe("ContentSection footnote", () => {
+  const note = (
+    <>
+      Questions? <a href="mailto:help@example.com">Write to us</a>
+    </>
+  );
+
+  it("closes a stacked band, after the modules and media, in the small step and the ground's secondary ink", () => {
+    const { container } = render(
+      <ContentSection heading="Heading" media={<div>VISUAL</div>} footnote={note}>
+        <p>Module</p>
+      </ContentSection>,
+    );
+    const root = container.querySelector("[data-content-section]") as HTMLElement;
+    const footnote = container.querySelector("[data-content-section-footnote]") as HTMLElement;
+    expect(root.lastElementChild).toBe(footnote);
+    expect(footnote.tagName).toBe("P");
+    expect(footnote).toHaveClass("text-body-s", "text-pretty", "text-ink-secondary");
+    expect(footnote).not.toHaveClass("text-center");
+    expect(footnote.querySelector("a")).toHaveTextContent("Write to us");
+  });
+
+  it("is centred with a centred band and takes the inverse ground's muted ink", () => {
+    const { container } = render(<ContentSection heading="Heading" align="center" ground="inverse" footnote={note} />);
+    const footnote = container.querySelector("[data-content-section-footnote]") as HTMLElement;
+    expect(footnote).toHaveClass("text-center", "text-ink-on-inverse-muted");
+  });
+
+  it("ends the text column of a split, never under the visual", () => {
+    const { container } = render(
+      <ContentSection layout="split" heading="Heading" media={<div>VISUAL</div>} footnote={note}>
+        <p>Module</p>
+      </ContentSection>,
+    );
+    const text = container.querySelector("[data-content-section-text]") as HTMLElement;
+    const media = container.querySelector("[data-content-section-media]") as HTMLElement;
+    expect(text.lastElementChild).toHaveAttribute("data-content-section-footnote");
+    expect(media.querySelector("[data-content-section-footnote]")).toBeNull();
+  });
+
+  it("renders nothing when absent", () => {
+    const { container } = render(<ContentSection heading="Heading" />);
+    expect(container.querySelector("[data-content-section-footnote]")).toBeNull();
+  });
+});
+
 describe("MediaFigure", () => {
   it("puts the media straight on the ground by default and captions it underneath", () => {
     const { container } = render(

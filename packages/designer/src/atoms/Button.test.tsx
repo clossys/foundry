@@ -87,7 +87,7 @@ describe("Button", () => {
     expect(button.style.marginTop).toBe("8px");
   });
 
-  it("supports all four variants without throwing and applies distinct classes", () => {
+  it("supports all five variants without throwing and applies distinct classes", () => {
     const { rerender } = render(<Button variant="primary">X</Button>);
     const primaryClass = screen.getByRole("button").className;
     rerender(<Button variant="secondary">X</Button>);
@@ -96,6 +96,8 @@ describe("Button", () => {
     const ghostClass = screen.getByRole("button").className;
     rerender(<Button variant="danger">X</Button>);
     const dangerClass = screen.getByRole("button").className;
-    expect(new Set([primaryClass, secondaryClass, ghostClass, dangerClass]).size).toBe(4);
+    rerender(<Button variant="outline">X</Button>);
+    const outlineClass = screen.getByRole("button").className;
+    expect(new Set([primaryClass, secondaryClass, ghostClass, dangerClass, outlineClass]).size).toBe(5);
   });
 });

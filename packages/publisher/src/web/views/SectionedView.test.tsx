@@ -451,12 +451,22 @@ describe("SectionedView content-section", () => {
     expect(() => renderToStaticMarkup(<SectionedView document={faqDocument("grid")} />)).toThrow("sections.0.layout");
   });
 
-  it("renders a stacked band's specimen after its module and its actions as text links", () => {
+  it("renders a stacked band's specimen after its module, its actions as full-size buttons and its footnote last", () => {
     const host = renderToStaticMarkup(
-      <SectionedView document={contentDocument({ actions: [{ id: "more", label: "More", href: "/more" }], module: { type: "topics", columns: 1, items: [{ id: "a", heading: "A" }, { id: "b", heading: "B" }] }, media })} />,
+      <SectionedView
+        document={contentDocument({
+          actions: [{ id: "more", label: "More", href: "/more", emphasis: "primary" }, { id: "faq", label: "FAQ", href: "/faq" }],
+          module: { type: "topics", columns: 1, items: [{ id: "a", heading: "A" }, { id: "b", heading: "B" }] },
+          media,
+          footnote: { text: "An aside.", link: { label: "Read the guide", href: "/guide" } },
+        })}
+      />,
     );
-    expect(host).toMatch(/data-topic-list[\s\S]*data-content-section-media[\s\S]*<figure[^>]*data-specimen/);
-    expect(host).toContain('<a href="/more" class="inline-flex items-center text-body font-body underline text-ink-link" style="min-height:var(--ui-layout-tap-target, 44px)">More</a>');
+    expect(host).toMatch(/data-topic-list[\s\S]*data-content-section-media[\s\S]*<figure[^>]*data-specimen[\s\S]*data-content-section-footnote/);
+    expect(host).toMatch(/<a href="\/more" class="[^"]*\bpx-lg py-md text-body-l bg-accent text-ink-on-accent\b[^"]*" data-action-emphasis="primary">More<\/a>/);
+    expect(host).toMatch(/<a href="\/faq" class="[^"]*\bpx-lg py-md text-body-l bg-transparent ring-inset ring-current\b[^"]*" data-action-emphasis="secondary">FAQ<\/a>/);
+    expect(host).not.toContain("text-ink-link");
+    expect(host).toMatch(/<p data-content-section-footnote=""[^>]*>An aside\. <a href="\/guide" class="[^"]*\bunderline\b[^"]*">Read the guide<\/a><\/p><\/div><\/main>$/);
   });
 
   it("refuses an invalid module or specimen before any Designer block renders, naming the exact path", () => {
@@ -480,6 +490,13 @@ describe("SectionedView content-section", () => {
       [{ layout: "split", module: { type: "faq", items: faqItems }, media }, "sections.0.media is not allowed on a split FAQ section; its rows take the visual column."],
       [{ mediaSide: "start", media }, "sections.0.mediaSide is allowed only on a split section."],
       [{ items: [] }, "sections.0 has keys not allowed for a content-section section."],
+      [{ actions: [1, 2, 3].map((n) => ({ id: `a${n}`, label: "Go", href: "/go" })) }, "sections.0.actions holds 3 actions; a content section holds at most 2."],
+      [{ actions: [1, 2].map((n) => ({ id: `a${n}`, label: "Go", href: "/go", emphasis: "primary" })) }, "sections.0.actions holds more than one primary action."],
+      [{ actions: [{ id: "a", label: "Go", href: "/go", emphasis: "link" }] }, "sections.0.actions.0.emphasis is not a supported action emphasis; supported values are primary, secondary."],
+      [{ footnote: { text: " " } }, "sections.0.footnote must be a resolved footnote with non-blank text."],
+      [{ footnote: { text: "Aside.", links: [] } }, "sections.0.footnote must be a resolved footnote with non-blank text."],
+      [{ footnote: { text: "Aside.", link: { label: "Guide", href: "/guide", style: "button" } } }, "sections.0.footnote.link must be one resolved link with a non-blank label."],
+      [{ footnote: { text: "Aside.", link: { label: "Guide", href: "javascript:void(0)" } } }, "sections.0.footnote.link.href must be a sanctioned route target."],
     ];
     for (const [section, message] of cases) expect(refusal(section)).toBe(`${prefix}${message}`);
   });

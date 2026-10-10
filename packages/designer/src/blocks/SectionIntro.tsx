@@ -22,7 +22,11 @@ export interface SectionIntroProps extends Omit<HTMLAttributes<HTMLDivElement>, 
   heading?: ReactNode;
   /** A line of supporting copy under the heading. */
   description?: ReactNode;
-  /** Calls to action under the description, typically button-styled links (`buttonLinkClassName`). */
+  /**
+   * Calls to action under the description, typically button-styled links
+   * (`buttonLinkClassName`). The row carries the ground's primary ink, so an
+   * `outline` button (which takes the surrounding ink) reads on every ground.
+   */
   actions?: ReactNode;
   /**
    * Which heading element `heading` renders as. Semantic only: the size
@@ -133,8 +137,10 @@ export function SectionIntro({
       ) : null}
       {actions ? (
         <div
+          data-section-intro-actions=""
           className={cx(
             "flex flex-wrap items-center gap-x-lg gap-y-sm",
+            colors.primary,
             centred ? "justify-center" : undefined,
             hasEyebrow || hasHeading || hasDescription ? rhythm.actions : undefined,
           )}

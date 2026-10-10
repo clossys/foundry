@@ -105,6 +105,7 @@ export { resolveSurfaceDocument, SurfaceResolutionError } from "./resolve-surfac
 export { checkSectionVariety, CONTENT_ICON_NAMES, FEATURES_ITEM_EYEBROW_MAX_CHARACTERS, resolveSectionedViewDocument, SectionedViewResolutionError, validateSectionedViewDocument } from "./sectioned-view.js";
 export type {
   ResolvedSectionedViewAction,
+  ResolvedSectionedViewContentAction,
   ResolvedSectionedViewDocument,
   ResolvedSectionedViewSection,
   SectionedViewAction,
@@ -146,8 +147,12 @@ export type {
   SectionedViewCardsModule,
   SectionedViewComparisonModule,
   SectionedViewComparisonSide,
+  SectionedViewContentAction,
+  SectionedViewContentActionEmphasis,
   SectionedViewContentAlign,
   SectionedViewContentCard,
+  SectionedViewContentFootnote,
+  SectionedViewContentFootnoteLink,
   SectionedViewContentCardSpan,
   SectionedViewContentItem,
   SectionedViewContentLayout,

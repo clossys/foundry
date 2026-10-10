@@ -131,6 +131,7 @@ describe("coverage: real rendered classes are all present in compiled.css", () =
     trees.push(["Button secondary sm", render(<Button variant="secondary" size="sm">Save</Button>)]);
     trees.push(["Button ghost lg", render(<Button variant="ghost" size="lg">Save</Button>)]);
     trees.push(["Button danger", render(<Button variant="danger">Delete</Button>)]);
+    trees.push(["Button outline lg", render(<Button variant="outline" size="lg">See an example</Button>)]);
     trees.push(["Badge neutral", render(<Badge>Active</Badge>)]);
     trees.push(["Badge success", render(<Badge variant="success">Active</Badge>)]);
     trees.push(["Badge warning", render(<Badge variant="warning">Active</Badge>)]);
@@ -213,6 +214,7 @@ describe("coverage: real rendered classes are all present in compiled.css", () =
         );
       }
       trees.push(render(<ContentSection ground={ground} heading="H" media={<div>M</div>} />));
+      trees.push(render(<ContentSection ground={ground} align="center" heading="H" actions={<a href="/a">A</a>} footnote={<>Aside.</>} />));
       for (const columns of [2, 3, 4] as const) {
         for (const treatment of ["plain", "rule", "plate"] as const) {
           trees.push(render(<FeatureGrid ground={ground} columns={columns} treatment={treatment} items={[item("a"), item("b")]} />));

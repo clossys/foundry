@@ -342,6 +342,64 @@ describe("content-section — validation", () => {
   });
 });
 
+describe("content-section — actions and footnote", () => {
+  const action = (id: string, extra: Record<string, unknown> = {}) => ({ id, label: ref(`acme.action.${id}`), href: `/${id}`, ...extra });
+  const footnote = (extra: Record<string, unknown> = {}) => ({ text: ref("acme.note.text"), link: { label: ref("acme.note.link"), href: "/guide" }, ...extra });
+
+  it("accepts one or two actions with at most one primary, and a footnote with or without its one link", () => {
+    expect(rules(docWith(section("a", { actions: [action("one")] })))).toEqual([]);
+    expect(rules(docWith(section("a", { actions: [action("one", { emphasis: "primary" }), action("two", { emphasis: "secondary" })] })))).toEqual([]);
+    expect(rules(docWith(section("a", { actions: [action("one", { emphasis: "secondary" }), action("two")] })))).toEqual([]);
+    expect(rules(docWith(section("a", { footnote: footnote() })))).toEqual([]);
+    expect(rules(docWith(section("a", { footnote: { text: ref("acme.note.text") } })))).toEqual([]);
+    expect(rules(docWith(section("a", { actions: [action("one", { emphasis: "primary" })], footnote: footnote() })))).toEqual([]);
+  });
+
+  it("refuses a third action, a second primary, and an unknown emphasis", () => {
+    expect(rules(docWith(section("a", { actions: [action("one"), action("two"), action("three")] })))).toEqual(["sectioned-view-content-actions-count"]);
+    expect(rules(docWith(section("a", { actions: [action("one", { emphasis: "primary" }), action("two", { emphasis: "primary" })] })))).toEqual(["sectioned-view-content-primary-count"]);
+    expect(rules(docWith(section("a", { actions: [action("one", { emphasis: "tertiary" })] })))).toEqual(["sectioned-view-content-action-emphasis"]);
+    expect(rules(docWith(section("a", { actions: [action("one", { emphasis: "link" })] })))).toEqual(["sectioned-view-content-action-emphasis"]);
+    expect(rules(docWith(section("a", { actions: [action("one", { style: "link" })] })))).toEqual(["sectioned-view-action-shape"]);
+  });
+
+  it("keeps emphasis off hero actions", () => {
+    expect(rules(docWith({ id: "welcome", kind: "hero", heading: ref("acme.hero.heading"), actions: [action("one", { emphasis: "primary" })] } as SectionedViewSection))).toEqual(["sectioned-view-action-shape"]);
+  });
+
+  it("refuses a footnote that is not closed, has no text, holds more than one link, or links outside the sanctioned hrefs", () => {
+    expect(rules(docWith(section("a", { footnote: "Already keep records elsewhere?" as never })))).toEqual(["sectioned-view-content-footnote-shape"]);
+    expect(rules(docWith(section("a", { footnote: { link: { label: ref("acme.note.link"), href: "/guide" } } as never })))).toEqual(["sectioned-view-content-footnote-shape"]);
+    expect(rules(docWith(section("a", { footnote: footnote({ links: [] }) as never })))).toEqual(["sectioned-view-content-footnote-shape"]);
+    expect(rules(docWith(section("a", { footnote: footnote({ link: [{ label: ref("acme.note.link"), href: "/guide" }] }) as never })))).toEqual(["sectioned-view-content-footnote-shape"]);
+    expect(rules(docWith(section("a", { footnote: footnote({ link: { label: ref("acme.note.link") } }) as never })))).toEqual(["sectioned-view-content-footnote-shape"]);
+    expect(rules(docWith(section("a", { footnote: footnote({ link: { label: ref("acme.note.link"), href: "javascript:alert(1)" } }) })))).toEqual(["sectioned-view-content-footnote-href"]);
+    expect(rules(docWith(section("a", { footnote: { text: "plain" as never } })))).toEqual(["sectioned-view-copy-ref-shape"]);
+  });
+
+  it("resolves emphasis unchanged and the footnote after the media, text before the link label", () => {
+    const doc = docWith(
+      section("closing", {
+        description: ref("acme.closing.description"),
+        actions: [action("start", { emphasis: "primary" }), action("faq")],
+        media: specimen([panelB]),
+        footnote: footnote(),
+      }),
+    );
+    const resolved = resolveSectionedViewDocument(doc, createCopyResolver(registryFor(copyIds)));
+    const closing = resolved.sections[0] as ResolvedSectionedViewContentSection;
+    expect(closing.actions).toEqual([
+      { id: "start", label: "Text for acme.action.start", href: "/start", emphasis: "primary" },
+      { id: "faq", label: "Text for acme.action.faq", href: "/faq" },
+    ]);
+    expect(closing.footnote).toEqual({ text: "Text for acme.note.text", link: { label: "Text for acme.note.link", href: "/guide" } });
+    const ids = resolved.resolutions.map((resolution) => resolution.ref.id);
+    expect(ids.slice(-2)).toEqual(["acme.note.text", "acme.note.link"]);
+    expect(ids.indexOf("acme.specimen.label")).toBeLessThan(ids.indexOf("acme.note.text"));
+    expect(Object.hasOwn(resolveSectionedViewDocument(docWith(section("bare")), createCopyResolver(registryFor(copyIds))).sections[0]!, "footnote")).toBe(false);
+  });
+});
+
 describe("content-section — resolution", () => {
   const resolver = createCopyResolver(registryFor(copyIds));
 
@@ -528,6 +586,13 @@ describe("checkSectionVariety", () => {
     const stackedFaq: SectionedViewSection = { ...faqSplit, layout: "stacked" };
     expect(ruleList(textSplit, stackedFaq)).toEqual([]);
     expect(ruleList(section("a", { layout: "split", media: specimen([panelB]) }), section("b", { layout: "split", mediaSide: "start", module: topicsModule }), faqSplit)).toEqual(["sectioned-view-variety-split-run"]);
+  });
+
+  it("warns on a second band holding a primary action, not on secondary-only bands", () => {
+    const withActions = (id: string, emphasis?: "primary" | "secondary") => section(id, { actions: [{ id: "go", label: ref("acme.go"), href: "/go", ...(emphasis === undefined ? {} : { emphasis }) }] });
+    expect(ruleList({ ...withActions("a", "primary"), module: topicsModule }, { ...withActions("b"), module: faqModule }, { ...withActions("c", "secondary"), module: featuresModule })).toEqual([]);
+    expect(ruleList({ ...withActions("a", "primary"), module: topicsModule }, { ...withActions("b", "primary"), module: faqModule })).toEqual(["sectioned-view-variety-primary-actions"]);
+    expect(warnings({ ...withActions("a", "primary"), module: topicsModule }, { ...withActions("b", "primary"), module: faqModule })[0]!.path).toBe("sections.2");
   });
 
   it("reads several documents as one page and names each finding's document", () => {

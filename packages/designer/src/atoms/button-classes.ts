@@ -8,7 +8,22 @@ const VARIANT_CLASSES: Record<ButtonVariant, string> = {
   secondary: "bg-surface-raised text-ink-primary border border-line-base hover:bg-surface-sunken",
   ghost: "text-ink-primary hover:bg-surface-sunken",
   danger: "bg-status-danger text-ink-on-accent hover:bg-status-danger-text",
+  outline:
+    "bg-transparent ring-inset ring-current ring-1 hover:ring-2",
 };
+
+/*
+ * `outline` sets no ink of its own: text and edge take the surrounding ink
+ * (`currentColor`), so on any ground whose text already passes contrast the
+ * edge passes the 3:1 non-text floor with it. A grounded `SectionIntro` sets
+ * that ink on its actions row. The edge is an inset ring (a box shadow), not
+ * a border, so the box is exactly the `primary` box at the same size. It is
+ * one pixel at rest and two on hover, the `--ui-border-hairline` and
+ * `--ui-border-rule` values (neither is brandable). Tailwind's `ring-1` and
+ * `ring-2` carry them, because a `var()` arbitrary class is not picked up by
+ * the `compiled.css` scan, and a class-string look cannot set an inline
+ * width.
+ */
 
 const SIZE_CLASSES: Record<ButtonSize, string> = {
   sm: "px-sm py-xs text-body-s",

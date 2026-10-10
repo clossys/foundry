@@ -26,8 +26,14 @@ Every band opens with the same header group, and each slot has one job:
   its last result, so the schedule shows what is due this week."
 - The heading never restates the eyebrow. The description never restates the
   heading.
-- Section actions render as text links: 1-3 words, a verb first ("See the
-  schedule").
+- Section actions are 1-2 buttons: 2-4 words, a verb first ("See the
+  schedule"). At most one is primary (filled); the other is secondary
+  (outlined). Never more than one primary per band, and one main call to
+  action per run of bands.
+- A footnote is an optional single short sentence at the end of a band, small
+  and muted, for an aside only ("Already keep records in a spreadsheet? Read
+  the import guide"). It holds at most one underlined link. Never put a call
+  to action in a footnote.
 
 ## Choose the module from the information
 
@@ -35,7 +41,7 @@ Pick the module from what the information is. Write the copy after that.
 
 | The information is | Module | Notes |
 |---|---|---|
-| A framing statement, or a band that only points elsewhere | intro band (no module, no media) | up to 40 words; 1-3 text links |
+| A framing statement, or a band that only points elsewhere | intro band (no module, no media) | up to 40 words; 1-2 buttons |
 | 2-4 parallel capabilities or audiences of equal weight | `features` | `plain` by default; `rule` for a quieter 4-up; `plate` for 2 longer items |
 | 3 short beliefs or outcomes that should land as statements | `features`, `emphasis: "statement"` | exactly 3 items |
 | A mix of items of unequal weight, some with product evidence | `cards` (bento) | the wide card holds the main point |
@@ -65,8 +71,8 @@ description 20-35 words; action 1-3 words.
 Write the promise and the reader it is for. Do not write a slogan that would
 fit any product.
 
-**Intro band.** Header only, plus text links. Description up to 40 words; 1-3
-links of 1-3 words. Use it to frame the next run of bands or to point to
+**Intro band.** Header only, plus 1-2 buttons and an optional footnote.
+Description up to 40 words; buttons of 2-4 words. Use it to frame the next run of bands or to point to
 another page. Do not put a list into the description.
 
 **features.** 2-4 items, each a heading and a description. Heading 2-5

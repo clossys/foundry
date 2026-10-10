@@ -520,7 +520,7 @@ alternative to `StatusList`'s `groups`.
 
 `content-section` is one general content band: an optional `eyebrow`, a
 `heading`, an optional `description` and `actions`, then at most one `module`
-and at most one `media`. `layout` is `stacked` (the default; `align` may be
+and at most one `media`, and an optional closing `footnote`. `layout` is `stacked` (the default; `align` may be
 `start` or `center`) or `split` (requires `media`; `mediaSide` is `end` by
 default or `start`). Two exceptions let the module itself take the visual
 column, top-aligned beside the header group: a split `faq` module, which
@@ -547,15 +547,32 @@ neither module nor media is an intro band.
   `schedule`, `shares` and `files`, each at most 6 rows (a table at most 4
   columns and 5 rows). Status tones are `success`, `warning`, `danger`,
   `info` and `neutral`; numbers are finite and non-negative.
+- `actions` holds one or two actions, each `{ id, label, href }` plus an
+  optional `emphasis` of `primary` or `secondary` (the default). At most one
+  is `primary`. Both render as full-size buttons at the same size: `primary`
+  filled, `secondary` outlined. Write each label as 2-4 words starting with a
+  verb. Validation refuses a third action
+  (`sectioned-view-content-actions-count`), a second primary
+  (`sectioned-view-content-primary-count`) and any other emphasis
+  (`sectioned-view-content-action-emphasis`). A hero action takes no
+  `emphasis`.
+- `footnote` is `{ text, link? }`: one short, muted sentence at the end of
+  the band, for an aside only, never a call to action. `link` is one
+  `{ label, href }` inline link, held to the same href rule as an action.
+  Validation refuses any other shape (`sectioned-view-content-footnote-shape`)
+  and an unsanctioned href (`sectioned-view-content-footnote-href`).
 - Item icons (on `content-section` items and, optionally, on `feature-grid`
   items) name one of the closed `ContentIconName` set, listed at runtime as
   `CONTENT_ICON_NAMES`. They are names, not nodes: a renderer maps each name
   to its Designer icon.
 
 Every visible string is a `CopyRef` and resolves in field order (eyebrow,
-heading, description, actions, module, media). `SectionedView` and
-`LandingView` render `content-section` as one Designer `ContentSection` (see
-LandingView's section anatomy below); its actions render as text links. The
+heading, description, actions, module, media, footnote text, footnote link
+label). `SectionedView` and `LandingView` render `content-section` as one
+Designer `ContentSection` (see LandingView's section anatomy below); its
+actions render as Designer `buttonLinkClassName` buttons at `lg` (`primary`
+filled, `secondary` as the `outline` variant) and its footnote as the band's
+last line. The
 web renderer does not render feature-grid item icons yet; it refuses them
 rather than dropping them.
 
@@ -565,8 +582,10 @@ only and never changes validation: neighbouring bands that repeat the same
 layout, module and visual; a split after a split on the same side or a third
 split in a row; a dense band right after a dense band; a specimen on an
 inverse ground or a second inverse body band; a second band of four or more
-cards; a second comparison; and one module type repeated with the same
-treatment.
+cards; a second comparison; one module type repeated with the same
+treatment; and a second band holding a `primary` action
+(`sectioned-view-variety-primary-actions`): a page has one main call to
+action per run of bands.
 
 `SectionedView` is now the dedicated web renderer after that Designer floor is
 available. Resolve the CopyRef document first, retain its `resolutions` as the
@@ -1188,8 +1207,10 @@ above) maps its module and specimen straight onto Designer blocks: features
 to `FeatureGrid`, cards to `CardGrid`, comparison to `Comparison`, topics to
 `TopicList`, steps to `OrderedStepSequence`, faq to `Faq`, and `media` to a
 labelled `Specimen` figure. Item icons render their Designer icon; actions
-render as text links with a 44px minimum tap target
-(`--ui-layout-tap-target`). A `split` band puts the text beside the specimen on its
+render as full-size buttons (Designer `buttonLinkClassName` at `lg`: a
+`primary` action filled, a `secondary` one as the transparent `outline`
+variant, which takes the ground's ink), and a `footnote` renders as a small
+muted line closing the text column, its one link underlined. A `split` band puts the text beside the specimen on its
 `mediaSide`; a split FAQ puts its rows in the visual column beside a
 top-aligned header group. A stacked band takes its `align` and shows the
 specimen after the module. A stacked band with no module, no media and no
@@ -4175,14 +4196,17 @@ app styles Publisher's views with its own build (see
   `SectionedViewOrderedStep`, `SectionedViewStatusListSection`,
   `SectionedViewStatusGroup`, `SectionedViewStatusItem`, `SectionedViewStatus`,
   `SectionedViewStatusDisposition`,
-  `ResolvedSectionedViewAction`, `ResolvedSectionedViewDocument`,
+  `ResolvedSectionedViewAction`, `ResolvedSectionedViewContentAction`,
+  `ResolvedSectionedViewDocument`,
   `ResolvedSectionedViewSection`, `SectionedViewPricingSection`,
   `SectionedViewPricingItem`, `SectionedViewTestimonialSection`,
   `SectionedViewTestimonialItem`, `SectionedViewStatSection`,
   `SectionedViewStatSectionItem`, `SectionedViewSectionGroundRhythm`, the
   content-section types `ContentIconName`, `SectionedViewContentSection`,
   `SectionedViewContentLayout`, `SectionedViewContentMediaSide`,
-  `SectionedViewContentAlign`, `SectionedViewContentItem`,
+  `SectionedViewContentAlign`, `SectionedViewContentAction`,
+  `SectionedViewContentActionEmphasis`, `SectionedViewContentFootnote`,
+  `SectionedViewContentFootnoteLink`, `SectionedViewContentItem`,
   `SectionedViewContentCard`, `SectionedViewContentCardSpan`,
   `SectionedViewContentStep`, `SectionedViewComparisonSide`,
   `SectionedViewContentModule`, `SectionedViewContentModuleType`,

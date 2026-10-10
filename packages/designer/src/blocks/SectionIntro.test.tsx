@@ -92,6 +92,39 @@ describe("buttonLinkClassName", () => {
   });
 });
 
+describe("buttonLinkClassName outline", () => {
+  it("draws the primary box with no fill and an inset edge in the surrounding ink", () => {
+    const sizeOf = (look: string[]) => look.filter((token) => /^(px|py|text-body|rounded|inline-flex|items-center|justify-center|gap)-?/.test(token) && !token.startsWith("text-ink"));
+    const primary = buttonLinkClassName("primary", "lg").split(" ");
+    const outline = buttonLinkClassName("outline", "lg").split(" ");
+    expect(sizeOf(outline)).toEqual(sizeOf(primary));
+    expect(outline).toEqual(
+      expect.arrayContaining([
+        "bg-transparent",
+        "ring-inset",
+        "ring-current",
+        "ring-1",
+        "hover:ring-2",
+        "focus-visible:outline-2",
+        "focus-visible:outline-accent",
+      ]),
+    );
+    // No border (it would grow the box past primary's) and no ink of its own (it takes the ground's).
+    expect(outline.filter((token) => token === "border" || token.startsWith("border-"))).toEqual([]);
+    expect(outline.filter((token) => token.startsWith("text-ink-"))).toEqual([]);
+    expect(outline).not.toContain("outline-none");
+  });
+
+  it("takes the ground's primary ink from the actions row, so the edge reads on light and dark grounds", () => {
+    const { container, rerender } = render(<SectionIntro heading="Heading" actions={<a href="/go" className={buttonLinkClassName("outline", "lg")}>Go</a>} />);
+    expect(container.querySelector("[data-section-intro-actions]")).toHaveClass("text-ink-primary");
+    rerender(<SectionIntro ground="inverse" heading="Heading" actions={<a href="/go" className={buttonLinkClassName("outline", "lg")}>Go</a>} />);
+    const row = container.querySelector("[data-section-intro-actions]") as HTMLElement;
+    expect(row).toHaveClass("text-ink-on-inverse");
+    expect(row).not.toHaveClass("text-ink-primary");
+  });
+});
+
 describe("iconButtonLinkClassName", () => {
   it("draws a 44px circle with a hairline edge, ground-aware colours, every state and the standard focus outline", () => {
     const base = iconButtonLinkClassName().split(" ");

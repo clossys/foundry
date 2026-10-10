@@ -560,8 +560,17 @@ const band = (root: Document, id: string): HTMLElement => {
 };
 
 describe("golden: SectionedView content-section", () => {
-  it("renders an intro band (header and text-link actions, no module) as a statement band, byte for byte", () => {
-    const { html } = renderContent(contentBand("intro", { description: copy("golden.intro.description", "Placeholder intro."), actions: [{ id: "more", label: copy("golden.intro.more", "Read more"), href: "/more" }] }));
+  it("renders an intro band (header, a primary and a secondary button, a footnote, no module) as a statement band, byte for byte", () => {
+    const { html } = renderContent(
+      contentBand("intro", {
+        description: copy("golden.intro.description", "Placeholder intro."),
+        actions: [
+          { id: "start", label: copy("golden.intro.start", "Start a record"), href: "/start", emphasis: "primary" },
+          { id: "more", label: copy("golden.intro.more", "Read the guide"), href: "/more" },
+        ],
+        footnote: { text: copy("golden.intro.footnote", "Placeholder aside."), link: { label: copy("golden.intro.footnote.link", "Placeholder link"), href: "/aside" } },
+      }),
+    );
     expect(html).toBe(INTRO_BAND_HTML);
   });
 
@@ -659,7 +668,39 @@ describe("golden: SectionedView content-section", () => {
     const { root } = renderContent(contentBand("dark", { ground: "inverse", description: copy("golden.dark.description", "Placeholder lede."), actions: [{ id: "go", label: copy("golden.dark.go", "Continue"), href: "/go" }] }));
     const section = band(root, "dark");
     expect(section.className.split(" ")).toContain("bg-surface-inverse");
-    expect(section.querySelector('a[href="/go"]')?.className).toBe("inline-flex items-center text-body font-body underline text-ink-on-inverse");
+    const go = section.querySelector<HTMLElement>('a[href="/go"]');
+    expect(go?.className).toBe(OUTLINE_LG);
+    expect(go?.getAttribute("data-action-emphasis")).toBe("secondary");
+    // The outline takes its ink from the row, which carries the inverse ground's primary ink.
+    expect(go?.parentElement?.className.split(" ")).toContain("text-ink-on-inverse");
+  });
+
+  it("renders every in-section action as a full-size button: primary filled, secondary outline, the same size", () => {
+    const { root } = renderContent(contentBand("pair", { actions: [{ id: "a", label: copy("golden.pair.a", "Start a record"), href: "/a", emphasis: "primary" }, { id: "b", label: copy("golden.pair.b", "See an example"), href: "/b", emphasis: "secondary" }] }));
+    const [primary, secondary] = [...band(root, "pair").querySelectorAll<HTMLElement>("[data-section-intro-actions] > a")];
+    expect(primary?.className).toBe(PRIMARY_LG);
+    expect(primary?.getAttribute("data-action-emphasis")).toBe("primary");
+    expect(secondary?.className).toBe(OUTLINE_LG);
+    expect(secondary?.getAttribute("data-action-emphasis")).toBe("secondary");
+    const sizeOf = (className: string) => className.split(" ").filter((token) => /^(px|py|text-body|rounded)-/.test(token) || token === "text-body-l");
+    expect(sizeOf(secondary!.className)).toEqual(sizeOf(primary!.className));
+    expect(band(root, "pair").querySelectorAll("a.underline")).toHaveLength(0);
+  });
+
+  it("closes a split band's text column with the footnote, its one link underlined, and renders none when absent", () => {
+    const { root } = renderContent(
+      contentBand("aside", { layout: "split", module: MODULES.topics, footnote: { text: copy("golden.aside.footnote", "Placeholder aside."), link: { label: copy("golden.aside.link", "Placeholder link"), href: "/aside" } } }),
+      contentBand("plain", { module: MODULES.topics }),
+    );
+    const note = band(root, "aside").querySelector<HTMLElement>("[data-content-section-footnote]");
+    expect(note?.parentElement?.hasAttribute("data-content-section-text")).toBe(true);
+    expect(note?.parentElement?.lastElementChild).toBe(note);
+    expect(note?.textContent).toBe("Placeholder aside. Placeholder link");
+    const links = note!.querySelectorAll("a");
+    expect(links).toHaveLength(1);
+    expect(links[0]!.getAttribute("href")).toBe("/aside");
+    expect(links[0]!.className.split(" ")).toContain("underline");
+    expect(band(root, "plain").querySelector("[data-content-section-footnote]")).toBeNull();
   });
 
   it("puts nothing focusable inside any specimen", () => {
@@ -677,10 +718,17 @@ describe("golden: SectionedView content-section", () => {
   });
 });
 
+/** Designer `buttonLinkClassName` at `lg`, as an in-section action renders it. */
+const PRIMARY_LG =
+  "inline-flex items-center justify-center gap-sm rounded-control text-body font-body transition-colors motion-reduce:transition-none px-lg py-md text-body-l bg-accent text-ink-on-accent hover:bg-accent-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent";
+const OUTLINE_LG =
+  "inline-flex items-center justify-center gap-sm rounded-control text-body font-body transition-colors motion-reduce:transition-none px-lg py-md text-body-l bg-transparent ring-inset ring-current ring-1 hover:ring-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent";
+
 /**
  * Captured from this renderer; Designer `ContentSection` stacked anatomy. A
  * band with no module and no media is a statement band: `SectionIntro` at the
- * display emphasis, and its text-link action carries the 44px tap target.
+ * display emphasis, its actions a filled primary and an outline secondary
+ * button at the same size, then the footnote as the band's last line.
  */
 const INTRO_BAND_HTML =
   '<div class="flex flex-col gap-2xl py-2xl">' +
@@ -688,9 +736,13 @@ const INTRO_BAND_HTML =
   '<div data-content-section-header="" data-section-intro="display" class="flex w-full flex-col items-start" style="max-width:var(--ui-width-prose-max, 48rem)">' +
   '<h2 class="text-display-m tablet:text-display-l font-display leading-display text-balance text-ink-primary">Heading intro</h2>' +
   '<p class="text-body-l text-pretty text-ink-secondary mt-2xl">Placeholder intro.</p>' +
-  '<div class="flex flex-wrap items-center gap-x-lg gap-y-sm mt-3xl">' +
-  '<a href="/more" class="inline-flex items-center text-body font-body underline text-ink-link" style="min-height:var(--ui-layout-tap-target, 44px)">Read more</a>' +
+  '<div data-section-intro-actions="" class="flex flex-wrap items-center gap-x-lg gap-y-sm text-ink-primary mt-3xl">' +
+  `<a href="/start" class="${PRIMARY_LG}" data-action-emphasis="primary">Start a record</a>` +
+  `<a href="/more" class="${OUTLINE_LG}" data-action-emphasis="secondary">Read the guide</a>` +
   "</div>" +
   "</div>" +
+  '<p data-content-section-footnote="" class="text-body-s text-pretty text-ink-secondary" style="max-width:var(--ui-width-prose-max, 48rem)">' +
+  'Placeholder aside. <a href="/aside" class="text-inherit underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent">Placeholder link</a>' +
+  "</p>" +
   "</div>" +
   "</div>";

@@ -59,12 +59,30 @@ export type ContentSectionFaq = (props: { items: readonly { id: string; question
 export interface ContentSectionBlockProps {
   /** The validated, resolved section. */
   section: ResolvedSectionedViewContentSection;
-  /** The section's actions, already rendered as text links. */
+  /** The section's actions, already rendered as full-size buttons. */
   actions?: ReactNode;
   /** Classes for the section root (SectionedView paints the section's ground here; a band leaves it to its frame). */
   className?: string;
   /** Content placed after the text module, before any visual. */
   after?: ReactNode;
+}
+
+/**
+ * The footnote line's content: its text, then its one optional link,
+ * underlined in the line's own ink (the only underlined link a section body
+ * carries), with the package-standard focus outline.
+ */
+function renderFootnote(footnote: ResolvedSectionedViewContentSection["footnote"]): ReactNode {
+  if (footnote === undefined) return undefined;
+  if (footnote.link === undefined) return footnote.text;
+  return (
+    <>
+      {footnote.text}{" "}
+      <a href={footnote.link.href} className="text-inherit underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent">
+        {footnote.link.label}
+      </a>
+    </>
+  );
 }
 
 function icon(name: ContentIconName | undefined): ReactNode {
@@ -152,8 +170,8 @@ function renderModule(module: ResolvedSectionedViewContentModule, ground: Sectio
 /**
  * The `content-section` block for one entry's FAQ implementation. One
  * Designer `ContentSection` at `<h2>`: the header group (with the section's
- * text-link actions), then the text module and anything placed after it,
- * then the specimen. A `split` puts the text beside the specimen; a split FAQ
+ * button actions), then the text module and anything placed after it,
+ * then the specimen, then the optional footnote line. A `split` puts the text beside the specimen; a split FAQ
  * module is the FAQ band, its rows taking the visual column beside a
  * top-aligned header, and a text-only split (topics or features, no media)
  * places its module in the visual column the same way. A stacked section
@@ -164,7 +182,7 @@ export function createContentSectionBlock(Faq: ContentSectionFaq) {
   return function ContentSectionBlock({ section, actions, className, after }: ContentSectionBlockProps) {
     const { ground } = section;
     const module = section.module === undefined ? null : renderModule(section.module, ground, Faq);
-    const header = { id: section.id, eyebrow: section.eyebrow, heading: section.heading, description: section.description, actions, headingLevel: 2 as const, ground };
+    const header = { id: section.id, eyebrow: section.eyebrow, heading: section.heading, description: section.description, actions, footnote: renderFootnote(section.footnote), headingLevel: 2 as const, ground };
     if (section.layout === "split" && section.module?.type === "faq") {
       return (
         <ContentSection {...header} layout="split" mediaSide={section.mediaSide} media={module} data-content-section-faq="" className={[className, "tablet-lg:items-start"].filter(Boolean).join(" ")}>
@@ -188,7 +206,7 @@ export function createContentSectionBlock(Faq: ContentSectionFaq) {
         </ContentSection>
       );
     }
-    // A statement band (no module, no media, nothing placed after it: a header and its links) carries the page's display scale instead of repeating a thin section shape.
+    // A statement band (no module, no media, nothing placed after it: a header and its actions) carries the page's display scale instead of repeating a thin section shape.
     const statement = section.module === undefined && section.media === undefined && (after === undefined || after === null);
     return (
       <ContentSection

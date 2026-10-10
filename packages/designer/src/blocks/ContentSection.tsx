@@ -1,7 +1,8 @@
 import { Children, type CSSProperties, type HTMLAttributes, type ReactNode } from "react";
 import { cx } from "../atoms/internal/cx.js";
+import { SECTION_MEASURE_MAX } from "./internal/block-vars.js";
+import { SECTION_GROUND_CLASSES, type SectionGround } from "./section-ground.js";
 import { SectionIntro, type SectionIntroEmphasis } from "./SectionIntro.js";
-import type { SectionGround } from "./section-ground.js";
 
 export type ContentSectionHeadingLevel = 2 | 3 | 4 | 5 | 6;
 
@@ -32,8 +33,21 @@ interface ContentSectionBaseProps extends Omit<HTMLAttributes<HTMLDivElement>, "
   heading?: ReactNode;
   /** A line of supporting copy under the heading: how. */
   description?: ReactNode;
-  /** The section's own actions, under the description (typically button-styled links). */
+  /**
+   * The section's own actions, under the description: one or two
+   * button-styled links (`buttonLinkClassName`), at most one `primary` and
+   * the rest `outline`.
+   */
   actions?: ReactNode;
+  /**
+   * An optional footnote, the band's last line: one short sentence in the
+   * small step and the ground's secondary ink, for an aside (a contact
+   * address, a policy pointer) that is not the band's next step. It may hold
+   * at most one inline link, the only place a section body takes the
+   * underlined link look. Stacked: after the modules and media, aligned like
+   * the header. Split: at the end of the text column, never under the visual.
+   */
+  footnote?: ReactNode;
   /** Which heading element `heading` renders as. @default 2 */
   headingLevel?: ContentSectionHeadingLevel;
   /** The header group's scale (see `ContentSectionEmphasis`). Semantic level stays `headingLevel`. @default "section" */
@@ -110,12 +124,17 @@ const MODULE_GAP = "gap-2xl tablet-lg:gap-3xl";
  * `mediaSide="start"` moves the visual with `col-start-*`/`row-start-1` only,
  * so the reading order never changes. A split without media throws a
  * `TypeError` (the types already forbid it): a text-only band is stacked.
+ *
+ * An optional `footnote` is the band's last line (the end of the column when
+ * stacked, the end of the text column when split), one module step after
+ * what precedes it.
  */
 export function ContentSection({
   eyebrow,
   heading,
   description,
   actions,
+  footnote,
   headingLevel = 2,
   emphasis,
   align,
@@ -131,6 +150,17 @@ export function ContentSection({
   const hasHeader = eyebrow !== undefined || heading !== undefined || description !== undefined || actions !== undefined;
   const hasModules = Children.toArray(children).length > 0;
   const hasMedia = media !== undefined && media !== null && media !== false;
+  const footnoteCentred = align === "center";
+  const footnoteNode =
+    footnote === undefined || footnote === null || footnote === false ? null : (
+      <p
+        data-content-section-footnote=""
+        className={cx("text-body-s text-pretty", SECTION_GROUND_CLASSES[ground].secondary, footnoteCentred ? "text-center" : undefined)}
+        style={{ maxWidth: SECTION_MEASURE_MAX.prose }}
+      >
+        {footnote}
+      </p>
+    );
 
   if (layout === "split") {
     if (!hasMedia) {
@@ -175,6 +205,7 @@ export function ContentSection({
               {children}
             </div>
           ) : null}
+          {footnoteNode}
         </div>
         <div
           data-content-section-media=""
@@ -221,6 +252,7 @@ export function ContentSection({
           ) : null}
         </div>
       ) : null}
+      {footnoteNode}
     </div>
   );
 }

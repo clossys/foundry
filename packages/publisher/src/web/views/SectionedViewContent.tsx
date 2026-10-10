@@ -2,7 +2,7 @@ import { buttonLinkClassName } from "@clossys/designer/atoms/server";
 import { SECTION_GROUND_CLASSES } from "@clossys/designer/blocks/server";
 import type { ReactNode } from "react";
 import { CONTENT_ICON_NAMES, FEATURES_ITEM_EYEBROW_MAX_CHARACTERS } from "../../core/sectioned-view.js";
-import type { ContentIconName, ResolvedSectionedViewAction, ResolvedSectionedViewContentSection, ResolvedSectionedViewDocument, ResolvedSectionedViewHeroMedia, ResolvedSectionedViewSection, SectionedViewGround, SectionedViewStatTrend, SectionedViewStatus, SectionedViewStatusDisposition } from "../../core/sectioned-view.js";
+import type { ContentIconName, ResolvedSectionedViewAction, ResolvedSectionedViewContentAction, ResolvedSectionedViewContentSection, ResolvedSectionedViewDocument, ResolvedSectionedViewHeroMedia, ResolvedSectionedViewSection, SectionedViewGround, SectionedViewStatTrend, SectionedViewStatus, SectionedViewStatusDisposition } from "../../core/sectioned-view.js";
 import { isRenderAsset } from "../../internal/assets.js";
 import { RenderError } from "../../internal/errors.js";
 import { isSanctionedHref } from "../../internal/href.js";
@@ -194,16 +194,30 @@ function assertStatItems(value: unknown, path: string): void {
   }
 }
 
-function assertActions(value: unknown, path: string): void {
+function assertActions(value: unknown, path: string, content = false): void {
   if (value === undefined) return;
   dense(value, path);
-  closedItems(value, path, ["id", "label", "href"]);
+  closedItems(value, path, content ? ["id", "label", "href", "emphasis"] : ["id", "label", "href"]);
   itemIds(value, path);
   for (let index = 0; index < value.length; index += 1) {
     const action = value[index] as Record<string, unknown>;
     if (!nonBlank(action.label)) throw new Error(`${path}.${index}.label must be resolved non-blank copy.`);
     if (!isSanctionedHref(action.href)) throw new Error(`${path}.${index}.href must be a sanctioned route target.`);
   }
+  if (!content) return;
+  value.forEach((action, index) => oneOf((action as Record<string, unknown>).emphasis, ["primary", "secondary"], `${path}.${index}.emphasis`, "action emphasis"));
+  if (value.length > 2) throw new Error(`${path} holds ${value.length} actions; a content section holds at most 2.`);
+  if (value.filter((action) => (action as Record<string, unknown>).emphasis === "primary").length > 1) throw new Error(`${path} holds more than one primary action.`);
+}
+
+/** A resolved footnote: closed `{ text, link? }` with non-blank text, its link closed `{ label, href }`. */
+function assertFootnote(value: unknown, path: string): void {
+  if (value === undefined) return;
+  if (!plain(value) || !closed(value, ["text", "link"]) || !nonBlank(value.text)) throw new Error(`${path} must be a resolved footnote with non-blank text.`);
+  if (value.link === undefined) return;
+  const link = value.link;
+  if (!plain(link) || !closed(link, ["label", "href"]) || !nonBlank(link.label)) throw new Error(`${path}.link must be one resolved link with a non-blank label.`);
+  if (!isSanctionedHref(link.href)) throw new Error(`${path}.link.href must be a sanctioned route target.`);
 }
 
 /** Resolved status items, shared between a group's `items` and a status-list section's flat `items`. */
@@ -219,7 +233,7 @@ function assertStatusItems(value: unknown, path: string): void {
   }
 }
 
-const CONTENT_SECTION_KEYS = ["id", "kind", "ground", "eyebrow", "heading", "description", "actions", "layout", "mediaSide", "align", "module", "media"] as const;
+const CONTENT_SECTION_KEYS = ["id", "kind", "ground", "eyebrow", "heading", "description", "actions", "layout", "mediaSide", "align", "module", "media", "footnote"] as const;
 const CARD_SPAN_UNITS: Readonly<Record<string, number>> = { third: 4, half: 6, "two-thirds": 8, full: 12 };
 const SPECIMEN_TONES = ["success", "warning", "danger", "info", "neutral"] as const;
 const SPECIMEN_ARRANGEMENTS = ["single", "row", "stack", "flow"] as const;
@@ -470,7 +484,8 @@ function assertContentModule(value: unknown, path: string): void {
  */
 function assertContentSection(record: Record<string, unknown>, path: string): void {
   if (!closed(record, CONTENT_SECTION_KEYS)) throw new Error(`${path} has keys not allowed for a content-section section.`);
-  assertActions(record.actions, `${path}.actions`);
+  assertActions(record.actions, `${path}.actions`, true);
+  assertFootnote(record.footnote, `${path}.footnote`);
   oneOf(record.layout, ["stacked", "split"], `${path}.layout`, "content layout");
   const split = record.layout === "split";
   oneOf(record.mediaSide, ["end", "start"], `${path}.mediaSide`, "media side");
@@ -506,7 +521,7 @@ export function assertRenderableSectionedViewDocument(document: unknown): assert
   for (let index = 0; index < candidate.sections.length; index += 1) {
     const path = `sections.${index}`;
     const section = candidate.sections[index];
-    if (!plain(section) || !closed(section, ["id", "kind", "ground", "eyebrow", "heading", "description", "actions", "media", "items", "labels", "groups", "layout", "mediaSide", "align", "module"])) throw new Error(`${path} must be a closed resolved section object.`);
+    if (!plain(section) || !closed(section, ["id", "kind", "ground", "eyebrow", "heading", "description", "actions", "media", "items", "labels", "groups", "layout", "mediaSide", "align", "module", "footnote"])) throw new Error(`${path} must be a closed resolved section object.`);
     const record = section as Record<string, unknown>;
     if (!nonBlank(record.id) || !FRAGMENT_ID.test(record.id)) throw new Error(`${path}.id must be a unique fragment-safe id.`);
     if (sectionIds.has(record.id)) throw new Error(`${path}.id duplicates an earlier section.`);
@@ -670,6 +685,21 @@ export type SectionedViewHeroActions = "link" | "button";
  */
 const TEXT_LINK_ACTION_STYLE = { minHeight: "var(--ui-layout-tap-target, 44px)" } as const;
 
+/**
+ * A content section's actions: full-size Designer buttons on every site,
+ * never text links. `primary` takes the filled button, `secondary` (the
+ * default) the outlined one of the same size, whose edge and ink follow the
+ * ground through the section's actions row.
+ */
+function renderContentActions(actions: readonly ResolvedSectionedViewContentAction[] | undefined): ReactNode {
+  if (actions === undefined) return undefined;
+  return actions.map((action) => (
+    <a key={action.id} href={action.href} className={buttonLinkClassName(action.emphasis === "primary" ? "primary" : "outline", "lg")} data-action-emphasis={action.emphasis ?? "secondary"}>
+      {action.label}
+    </a>
+  ));
+}
+
 function renderActions(actions: readonly ResolvedSectionedViewAction[] | undefined, ground: SectionedViewGround, look: SectionedViewHeroActions): ReactNode {
   if (actions === undefined) return undefined;
   const button = look === "button";
@@ -785,7 +815,7 @@ function renderSection(section: ResolvedSectionedViewSection, index: number, blo
     case "status-list": return <blocks.StatusList key={section.id} id={section.id} eyebrow={section.eyebrow} heading={section.heading} description={section.description} labels={section.labels} groups={section.groups} items={section.items} legendLabel={section.heading} headingLevel={2} ground={section.ground} />;
     case "stat-grid": return renderStatGrid(section, blocks);
     case "content-section":
-      return <blocks.ContentSection key={section.id} section={section} actions={renderActions(section.actions, section.ground, "link")} className={SECTION_GROUND_CLASSES[section.ground].surface || undefined} />;
+      return <blocks.ContentSection key={section.id} section={section} actions={renderContentActions(section.actions)} className={SECTION_GROUND_CLASSES[section.ground].surface || undefined} />;
     case "pricing":
       return (
         <blocks.PricingTable

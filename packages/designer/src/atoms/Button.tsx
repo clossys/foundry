@@ -6,14 +6,16 @@ import { buttonClassName } from "./button-classes.js";
 import { cx } from "./internal/cx.js";
 import { UI_ALPHA_DISABLED, UI_RING_FOCUS } from "./internal/ui-vars.js";
 
-export type ButtonVariant = "primary" | "secondary" | "ghost" | "danger";
+export type ButtonVariant = "primary" | "secondary" | "ghost" | "danger" | "outline";
 export type ButtonSize = "sm" | "md" | "lg";
 
 export interface ButtonProps extends AriaButtonProps {
   /**
    * Visual treatment. `primary` is the accent-filled default action;
    * `secondary` is a bordered lower-emphasis action; `ghost` has no fill
-   * or border until hovered; `danger` marks a destructive action.
+   * or border until hovered; `danger` marks a destructive action;
+   * `outline` is a page's secondary call to action: no fill, a hairline
+   * inset edge in the surrounding ink, the same box as `primary`.
    * @default "primary"
    */
   variant?: ButtonVariant;
