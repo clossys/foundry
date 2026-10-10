@@ -82,17 +82,17 @@ describe("LandingView", () => {
     expect(frames[1]?.className).toContain("bg-surface-sunken");
   });
 
-  it("gives every band one anatomy: a header group held to the prose measure, then the section's module and anything placed after it", () => {
+  it("gives every band one anatomy: a header group held to the prose measure, then the section's block and anything placed after it", () => {
     const root = dom({ document: PAGE, trailing: [SHARED], afterSection: { features: <figure data-after="">AFTER</figure> } });
     const features = root.querySelector("#features") as HTMLElement;
     expect(features.hasAttribute("data-content-section")).toBe(true);
     const header = features.querySelector("[data-content-section-header]") as HTMLElement;
     expect(header.style.maxWidth).toBe("var(--ui-width-prose-max, 48rem)");
     expect(header.querySelector("h2")?.textContent).toBe("FEATURES-SENTINEL");
-    const modules = features.querySelector("[data-content-section-modules]") as HTMLElement;
-    expect(modules.children).toHaveLength(2);
-    expect(modules.querySelector("h2")).toBeNull();
-    expect(modules.lastElementChild?.hasAttribute("data-after")).toBe(true);
+    const blocks = features.querySelector("[data-content-section-modules]") as HTMLElement;
+    expect(blocks.children).toHaveLength(2);
+    expect(blocks.querySelector("h2")).toBeNull();
+    expect(blocks.lastElementChild?.hasAttribute("data-after")).toBe(true);
     const faq = root.querySelector("#faq") as HTMLElement;
     expect(faq.querySelector("[data-content-section-header] h2")?.textContent).toBe("FAQ-SENTINEL");
     expect(faq.querySelector("[data-content-section-modules] details")).not.toBeNull();
@@ -104,8 +104,8 @@ describe("LandingView", () => {
       ...SHARED,
       id: "acme-content",
       sections: [
-        { id: "topics", kind: "content-section", ground: "sunken", heading: "TOPICS-SENTINEL", actions: [{ id: "more", label: "MORE-SENTINEL", href: "/more" }], module: { type: "topics", columns: 1, items: [{ id: "a", heading: "A-SENTINEL" }, { id: "b", heading: "B-SENTINEL" }] } },
-        { id: "questions", kind: "content-section", ground: "base", heading: "QUESTIONS-SENTINEL", layout: "split", module: { type: "faq", items: faqItems } },
+        { id: "topics", kind: "content-section", ground: "sunken", heading: "TOPICS-SENTINEL", actions: [{ id: "more", label: "MORE-SENTINEL", href: "/more" }], block: { type: "topic-list", columns: 1, items: [{ id: "a", heading: "A-SENTINEL" }, { id: "b", heading: "B-SENTINEL" }] } },
+        { id: "questions", kind: "content-section", ground: "base", heading: "QUESTIONS-SENTINEL", layout: "split", block: { type: "faq", items: faqItems } },
       ],
     };
     const root = dom({ document: PAGE, trailing: [content], afterSection: { topics: <p data-after="">AFTER</p>, questions: <p data-after="">AFTER</p> } });

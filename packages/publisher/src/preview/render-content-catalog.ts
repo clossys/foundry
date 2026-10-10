@@ -8,7 +8,7 @@ import { CONTENT_CATALOG_CALL_TO_ACTION, CONTENT_CATALOG_CAPTIONS, contentCatalo
 
 /**
  * The content catalog (`content-catalog.html`): one long page that renders
- * every content-section module, specimen arrangement and ground through the
+ * every content-section block, specimen arrangement and ground through the
  * real Publisher path (`resolveSectionedViewDocument`, then `LandingView`),
  * so a designer or writer can judge the blocks with a consumer brand applied.
  *
@@ -204,7 +204,7 @@ ${links}
 <header class="catalog-chrome-header" data-catalog-chrome="header">
   <div>
     <h1>Content catalog</h1>
-    <p>Every content-section module, specimen arrangement and ground, rendered by Publisher's LandingView with ${stylesheets.brand === null ? "Designer's default tokens" : "the linked brand stylesheet"}. Sample copy for an invented company; every name and figure is made up. Grey captions are preview chrome, not part of the page. Bands marked max budget use the longest copy the content cookbook (Designer CONTENT.md) allows. The page shows every block, so it breaks the page-variety rules on purpose.</p>
+    <p>Every content-section block, specimen arrangement and ground, rendered by Publisher's LandingView with ${stylesheets.brand === null ? "Designer's default tokens" : "the linked brand stylesheet"}. Sample copy for an invented company; every name and figure is made up. Grey captions are preview chrome, not part of the page; each names the Designer block and its variant, and a document's <code>block.type</code> is that name in kebab case (FeatureGrid is <code>feature-grid</code>). Bands marked max budget use the longest copy the content cookbook (Designer CONTENT.md) allows. The page shows every block, so it breaks the page-variety rules on purpose.</p>
     ${contentsHtml(captions)}
   </div>
 </header>

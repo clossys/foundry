@@ -417,25 +417,25 @@ describe("SectionedView content-section", () => {
   };
 
   it("renders a split FAQ through the entry's React Aria rows in the visual column", () => {
-    const host = renderToStaticMarkup(<SectionedView document={contentDocument({ layout: "split", module: { type: "faq", items: faqItems } })} />);
+    const host = renderToStaticMarkup(<SectionedView document={contentDocument({ layout: "split", block: { type: "faq", items: faqItems } })} />);
     expect(host).toContain('data-layout="split"');
     expect(host).toContain("data-content-section-faq");
     expect(host).toMatch(/data-content-section-media=""[^>]*>[\s\S]*data-rac/);
     expect(host).not.toContain("<summary");
   });
 
-  it("renders a text-only split with its topics or features module in the visual column, top-aligned", () => {
-    const topics = renderToStaticMarkup(<SectionedView document={contentDocument({ layout: "split", mediaSide: "start", module: { type: "topics", columns: 1, items: [{ id: "a", heading: "A" }, { id: "b", heading: "B" }] } })} />);
+  it("renders a text-only split with its topic-list or feature-grid block in the visual column, top-aligned", () => {
+    const topics = renderToStaticMarkup(<SectionedView document={contentDocument({ layout: "split", mediaSide: "start", block: { type: "topic-list", columns: 1, items: [{ id: "a", heading: "A" }, { id: "b", heading: "B" }] } })} />);
     expect(topics).toContain('data-layout="split"');
     expect(topics).toContain("data-content-section-text-split");
     expect(topics).toContain("tablet-lg:items-start");
     expect(topics).toMatch(/data-content-section-media=""[^>]*>[\s\S]*data-topic-list/);
-    const features = renderToStaticMarkup(<SectionedView document={contentDocument({ layout: "split", module: { type: "features", columns: 2, items: [{ id: "a", heading: "A" }, { id: "b", heading: "B" }] } })} />);
+    const features = renderToStaticMarkup(<SectionedView document={contentDocument({ layout: "split", block: { type: "feature-grid", columns: 2, items: [{ id: "a", heading: "A" }, { id: "b", heading: "B" }] } })} />);
     expect(features).toMatch(/data-content-section-media=""[^>]*>[\s\S]*data-feature-grid/);
   });
 
-  it("renders a features item eyebrow as a small label above the item heading", () => {
-    const host = renderToStaticMarkup(<SectionedView document={contentDocument({ module: { type: "features", columns: 2, items: [{ id: "a", eyebrow: "Records", heading: "A" }, { id: "b", heading: "B" }] } })} />);
+  it("renders a feature-grid item eyebrow as a small label above the item heading", () => {
+    const host = renderToStaticMarkup(<SectionedView document={contentDocument({ block: { type: "feature-grid", columns: 2, items: [{ id: "a", eyebrow: "Records", heading: "A" }, { id: "b", heading: "B" }] } })} />);
     expect(host).toMatch(/data-feature-grid-eyebrow=""[^>]*><p class="text-body-s font-medium uppercase tracking-label[^"]*">Records<\/p>/);
     expect(host.match(/data-feature-grid-eyebrow/g)).toHaveLength(1);
   });
@@ -443,7 +443,7 @@ describe("SectionedView content-section", () => {
   it("renders a split faq section as the split FAQ band, and refuses an unknown faq layout", () => {
     const faqDocument = (layout: string) => ({ ...document, sections: [{ id: "questions", kind: "faq", ground: "sunken", layout, eyebrow: "Questions", heading: "Before you start", items: faqItems }] }) as unknown as ResolvedSectionedViewDocument;
     const split = renderToStaticMarkup(<SectionedView document={faqDocument("split")} />);
-    const asContent = renderToStaticMarkup(<SectionedView document={({ ...document, sections: [{ id: "questions", kind: "content-section", ground: "sunken", eyebrow: "Questions", heading: "Before you start", layout: "split", module: { type: "faq", items: faqItems } }] }) as unknown as ResolvedSectionedViewDocument} />);
+    const asContent = renderToStaticMarkup(<SectionedView document={({ ...document, sections: [{ id: "questions", kind: "content-section", ground: "sunken", eyebrow: "Questions", heading: "Before you start", layout: "split", block: { type: "faq", items: faqItems } }] }) as unknown as ResolvedSectionedViewDocument} />);
     expect(split).toContain("data-content-section-faq");
     expect(split).toBe(asContent);
     const stacked = renderToStaticMarkup(<SectionedView document={faqDocument("stacked")} />);
@@ -451,12 +451,12 @@ describe("SectionedView content-section", () => {
     expect(() => renderToStaticMarkup(<SectionedView document={faqDocument("grid")} />)).toThrow("sections.0.layout");
   });
 
-  it("renders a stacked band's specimen after its module, its actions as full-size buttons and its footnote last", () => {
+  it("renders a stacked band's specimen after its block, its actions as full-size buttons and its footnote last", () => {
     const host = renderToStaticMarkup(
       <SectionedView
         document={contentDocument({
           actions: [{ id: "more", label: "More", href: "/more", emphasis: "primary" }, { id: "faq", label: "FAQ", href: "/faq" }],
-          module: { type: "topics", columns: 1, items: [{ id: "a", heading: "A" }, { id: "b", heading: "B" }] },
+          block: { type: "topic-list", columns: 1, items: [{ id: "a", heading: "A" }, { id: "b", heading: "B" }] },
           media,
           footnote: { text: "An aside.", link: { label: "Read the guide", href: "/guide" } },
         })}
@@ -469,25 +469,25 @@ describe("SectionedView content-section", () => {
     expect(host).toMatch(/<p data-content-section-footnote=""[^>]*>An aside\. <a href="\/guide" class="[^"]*\bunderline\b[^"]*">Read the guide<\/a><\/p><\/div><\/main>$/);
   });
 
-  it("refuses an invalid module or specimen before any Designer block renders, naming the exact path", () => {
+  it("refuses an invalid block or specimen before any Designer block renders, naming the exact path", () => {
     const prefix = "SectionedView refused an invalid resolved document: ";
-    const cards = (...spans: string[]) => ({ type: "cards", items: spans.map((span, index) => ({ id: `c${index}`, heading: `Card ${index}`, span })) });
+    const cards = (...spans: string[]) => ({ type: "card-grid", items: spans.map((span, index) => ({ id: `c${index}`, heading: `Card ${index}`, span })) });
     const cases: Array<[Record<string, unknown>, string]> = [
-      [{ module: cards("third", "third") }, "sections.0.module.items leaves its last row unfilled; cards must fill whole 12-unit rows."],
-      [{ module: cards("half", "two-thirds") }, "sections.0.module.items.1.span overflows its row; cards must fill whole 12-unit rows."],
-      [{ module: { type: "topics", columns: 1, items: [{ id: "a", heading: "A", icon: "rocket" }, { id: "b", heading: "B" }] } }, "sections.0.module.items.0.icon is not a content icon name."],
-      [{ module: { type: "topics", columns: 1, items: [{ id: "a", heading: "A", eyebrow: "E" }, { id: "b", heading: "B" }] } }, "sections.0.module.items.0 must be a closed resolved item object."],
-      [{ module: { type: "features", items: [{ id: "a", heading: "A", eyebrow: "An item eyebrow of thirty-three c" }, { id: "b", heading: "B" }] } }, "sections.0.module.items.0.eyebrow holds more than 32 characters."],
-      [{ module: { type: "slider", items: [] } }, "sections.0.module.type is not a supported content module type."],
+      [{ block: cards("third", "third") }, "sections.0.block.items leaves its last row unfilled; cards must fill whole 12-unit rows."],
+      [{ block: cards("half", "two-thirds") }, "sections.0.block.items.1.span overflows its row; cards must fill whole 12-unit rows."],
+      [{ block: { type: "topic-list", columns: 1, items: [{ id: "a", heading: "A", icon: "rocket" }, { id: "b", heading: "B" }] } }, "sections.0.block.items.0.icon is not a content icon name."],
+      [{ block: { type: "topic-list", columns: 1, items: [{ id: "a", heading: "A", eyebrow: "E" }, { id: "b", heading: "B" }] } }, "sections.0.block.items.0 must be a closed resolved item object."],
+      [{ block: { type: "feature-grid", items: [{ id: "a", heading: "A", eyebrow: "An item eyebrow of thirty-three c" }, { id: "b", heading: "B" }] } }, "sections.0.block.items.0.eyebrow holds more than 32 characters."],
+      [{ block: { type: "slider", items: [] } }, "sections.0.block.type is not a supported content block type."],
       [{ media: { ...media, panels: [{ ...panel, parts: ["a", "b", "c", "d"].map((id) => ({ ...panel.parts[0], id })) }] } }, "sections.0.media.panels.0.parts must hold 1 to 3 parts; it holds 4."],
       [{ media: { ...media, panels: [{ ...panel, title: { id: "unresolved" } }] } }, "sections.0.media.panels.0.title must be resolved non-blank copy."],
       [{ media: { ...media, arrangement: "row" } }, "sections.0.media.panels must hold 2 to 3 panels for the row arrangement; it holds 1."],
       [{ media: { ...media, panels: [{ ...panel, parts: [{ id: "m", type: "meter", label: "M", value: 1, scaleMax: 0, tone: "info", valueText: "1" }] }] } }, "sections.0.media.panels.0.parts.0.scaleMax must be a finite number greater than zero."],
       [{ media: { ...media, panels: [{ ...panel, parts: [{ id: "t", type: "table", caption: "T", columns: [{ id: "a", label: "A" }, { id: "b", label: "B" }], rows: [{ id: "r", cells: [{ text: "x" }] }] }] }] } }, "sections.0.media.panels.0.parts.0.rows.0.cells must hold one cell per column (2); it holds 1."],
-      [{ layout: "split", module: cards("half", "half") }, "sections.0 is a split section and needs media, unless its module is faq, topics or features."],
-      [{ layout: "split" }, "sections.0 is a split section and needs media, unless its module is faq, topics or features."],
-      [{ layout: "split", module: { type: "features", items: [{ id: "a", heading: "A" }, { id: "b", heading: "B" }] } }, "sections.0 is a text-only split; its features module needs columns: 2 and item emphasis."],
-      [{ layout: "split", module: { type: "faq", items: faqItems }, media }, "sections.0.media is not allowed on a split FAQ section; its rows take the visual column."],
+      [{ layout: "split", block: cards("half", "half") }, "sections.0 is a split section and needs media, unless its block is faq, topic-list or feature-grid."],
+      [{ layout: "split" }, "sections.0 is a split section and needs media, unless its block is faq, topic-list or feature-grid."],
+      [{ layout: "split", block: { type: "feature-grid", items: [{ id: "a", heading: "A" }, { id: "b", heading: "B" }] } }, "sections.0 is a text-only split; its feature-grid block needs columns: 2 and item emphasis."],
+      [{ layout: "split", block: { type: "faq", items: faqItems }, media }, "sections.0.media is not allowed on a split FAQ section; its rows take the visual column."],
       [{ mediaSide: "start", media }, "sections.0.mediaSide is allowed only on a split section."],
       [{ items: [] }, "sections.0 has keys not allowed for a content-section section."],
       [{ actions: [1, 2, 3].map((n) => ({ id: `a${n}`, label: "Go", href: "/go" })) }, "sections.0.actions holds 3 actions; a content section holds at most 2."],

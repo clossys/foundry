@@ -3,7 +3,7 @@
  * `publisher-preview` — the launch pack's v0 preview gallery: every shipped
  * web view, the site template's own routes, the materials mini-site
  * (company overviews and pitch deck), the email kit, every share/
- * social card, and the content catalog (every content-section module and
+ * social card, and the content catalog (every content-section block and
  * specimen arrangement through LandingView), all rendered against a
  * consumer `brand.css` after Designer's brand-file coverage check passes
  * (issue #1204/#1207/#1208).

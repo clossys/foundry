@@ -259,7 +259,7 @@ export interface WritePreviewGalleryResult {
   entryCount: number;
   guidePath?: string;
   auditPath?: string;
-  /** Path to the content catalog (`content-catalog.html`): every content-section module, specimen arrangement and ground through `LandingView`, against the same copied stylesheets. */
+  /** Path to the content catalog (`content-catalog.html`): every content-section block, specimen arrangement and ground through `LandingView`, against the same copied stylesheets. */
   contentCatalogPath: string;
   /** Path to the Launch-pack index (issue #1204's own "views branded ... rendered templates" ask) — links every file this call wrote. */
   indexPath: string;
@@ -346,7 +346,7 @@ export function writePreviewGallery(options: WritePreviewGalleryOptions): WriteP
     },
     {
       heading: "Content catalog",
-      description: "Every content-section module, specimen arrangement and ground through LandingView, at typical and maximum copy lengths, each band captioned in the preview chrome.",
+      description: "Every content-section block, specimen arrangement and ground through LandingView, at typical and maximum copy lengths, each band captioned in the preview chrome.",
       links: [{ file: CONTENT_CATALOG_FILENAME, label: CONTENT_CATALOG_FILENAME }],
     },
   ];

@@ -161,16 +161,16 @@ const CUE_CLASS = "absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 scr
 /** The closing call to action stands apart: one step above a body band at every width (96px, 128px from `tablet-lg`). */
 const CALL_TO_ACTION_BAND_CLASS = "py-5xl tablet-lg:py-6xl";
 
-/** Section kinds whose header group and module the bands compose through `ContentSection`. */
+/** Section kinds whose header group and block the bands compose through `ContentSection`. */
 const ANATOMY_KINDS: ReadonlySet<string> = new Set(["hero", "feature-grid", "faq", "ordered-step-sequence", "status-list", "content-section"]);
 
 /**
  * Blocks for the bands, each one section anatomy: Designer `ContentSection`
  * holds the section's eyebrow, heading and description (and a hero's
- * actions) as its header group, then the section's content as a module
+ * actions) as its header group, then the section's content as a block
  * rendered without a heading region of its own, then whatever `afterSection`
  * places there. A hero in a band is a header group with its media as the
- * module, never a second display heading. A `content-section` is already
+ * block, never a second display heading. A `content-section` is already
  * that anatomy: it renders as itself, leaving its ground to the band.
  */
 function bandBlocks(afterSection: Readonly<Record<string, ReactNode>>): SectionedViewBlockSet {
@@ -225,8 +225,8 @@ function bandBlocks(afterSection: Readonly<Record<string, ReactNode>>): Sectione
  * anything placed `afterSection` and the call to action share one centred
  * column while grounds run full-bleed. Every band has one anatomy, Designer
  * `ContentSection`: the section's eyebrow, heading and description as a
- * start-aligned header group held to the prose measure, then its content as
- * modules (the section's block without a heading region of its own, then
+ * start-aligned header group held to the prose measure, then its content
+ * (the section's block without a heading region of its own, then
  * anything placed `afterSection`), one spacing step apart. Sections render
  * through the same validated mapping as `SectionedView`. The hero block is
  * Designer `Hero` (`align`, default centred) on the hero section's ground,

@@ -17,49 +17,49 @@ describe("content catalog fixture", () => {
     expect(resolved.sections).toHaveLength(contentCatalogDocument.sections.length);
   });
 
-  it("shows every module, treatment, column count, arrangement, layout and ground", () => {
-    const modules = new Set(contentSections.map((section) => section.module?.type ?? (section.media === undefined ? "intro" : "specimen")));
-    expect([...modules].sort()).toEqual(["cards", "comparison", "faq", "features", "intro", "specimen", "steps", "topics"]);
+  it("shows every block, treatment, column count, arrangement, layout and ground", () => {
+    const blocks = new Set(contentSections.map((section) => section.block?.type ?? (section.media === undefined ? "intro" : "specimen")));
+    expect([...blocks].sort()).toEqual(["card-grid", "comparison", "faq", "feature-grid", "intro", "ordered-step-sequence", "specimen", "topic-list"]);
 
-    const features = contentSections.flatMap((section) => (section.module?.type === "features" ? [section.module] : []));
-    expect(new Set(features.map((module) => module.treatment ?? "plain"))).toEqual(new Set(["plain", "rule", "plate"]));
-    expect(new Set(features.map((module) => module.columns ?? 3))).toEqual(new Set([2, 3, 4]));
-    expect(features.some((module) => module.emphasis === "statement")).toBe(true);
-    expect(features.some((module) => module.items.some((item) => item.icon !== undefined))).toBe(true);
+    const features = contentSections.flatMap((section) => (section.block?.type === "feature-grid" ? [section.block] : []));
+    expect(new Set(features.map((block) => block.treatment ?? "plain"))).toEqual(new Set(["plain", "rule", "plate"]));
+    expect(new Set(features.map((block) => block.columns ?? 3))).toEqual(new Set([2, 3, 4]));
+    expect(features.some((block) => block.emphasis === "statement")).toBe(true);
+    expect(features.some((block) => block.items.some((item) => item.icon !== undefined))).toBe(true);
 
-    const topics = contentSections.flatMap((section) => (section.module?.type === "topics" ? [section.module] : []));
-    expect(new Set(topics.map((module) => module.columns ?? 2))).toEqual(new Set([1, 2]));
+    const topics = contentSections.flatMap((section) => (section.block?.type === "topic-list" ? [section.block] : []));
+    expect(new Set(topics.map((block) => block.columns ?? 2))).toEqual(new Set([1, 2]));
 
-    const stacked = contentSections.filter((section) => (section.layout ?? "stacked") === "stacked" && section.module === undefined && section.media !== undefined);
+    const stacked = contentSections.filter((section) => (section.layout ?? "stacked") === "stacked" && section.block === undefined && section.media !== undefined);
     expect(new Set(stacked.map((section) => section.media?.arrangement ?? "single"))).toEqual(new Set(["single", "row", "stack", "flow"]));
     expect(stacked.find((section) => section.media?.arrangement === "row")?.media?.panels).toHaveLength(3);
 
     const splits = contentSections.filter((section) => section.layout === "split");
     expect(new Set(splits.filter((section) => section.media !== undefined).map((section) => section.mediaSide ?? "end"))).toEqual(new Set(["end", "start"]));
-    expect(splits.some((section) => section.module?.type === "faq" && section.media === undefined)).toBe(true);
-    expect(splits.some((section) => (section.module?.type === "features" || section.module?.type === "topics") && section.media === undefined)).toBe(true);
-    expect(features.some((module) => module.items.some((item) => item.eyebrow !== undefined))).toBe(true);
+    expect(splits.some((section) => section.block?.type === "faq" && section.media === undefined)).toBe(true);
+    expect(splits.some((section) => (section.block?.type === "feature-grid" || section.block?.type === "topic-list") && section.media === undefined)).toBe(true);
+    expect(features.some((block) => block.items.some((item) => item.eyebrow !== undefined))).toBe(true);
 
-    const cardRows = contentSections.flatMap((section) => (section.module?.type === "cards" ? [section.module.items.map((card) => card.span)] : []));
+    const cardRows = contentSections.flatMap((section) => (section.block?.type === "card-grid" ? [section.block.items.map((card) => card.span)] : []));
     const spans = cardRows.flat();
     expect(new Set(spans)).toEqual(new Set(["third", "half", "two-thirds", "full"]));
     const joined = cardRows.map((row) => row.join(" ")).join(" | ");
     expect(joined).toContain("two-thirds third");
     expect(joined).toContain("third two-thirds");
-    expect(contentSections.some((section) => section.module?.type === "cards" && section.module.items.some((card) => card.visual !== undefined))).toBe(true);
+    expect(contentSections.some((section) => section.block?.type === "card-grid" && section.block.items.some((card) => card.visual !== undefined))).toBe(true);
 
-    const comparisons = contentSections.flatMap((section) => (section.module?.type === "comparison" ? [section.module] : []));
-    expect(comparisons.some((module) => module.before.visual !== undefined && module.after.visual !== undefined)).toBe(true);
-    expect(comparisons.some((module) => module.before.points !== undefined && module.before.visual === undefined)).toBe(true);
+    const comparisons = contentSections.flatMap((section) => (section.block?.type === "comparison" ? [section.block] : []));
+    expect(comparisons.some((block) => block.before.visual !== undefined && block.after.visual !== undefined)).toBe(true);
+    expect(comparisons.some((block) => block.before.points !== undefined && block.before.visual === undefined)).toBe(true);
 
-    const steps = contentSections.flatMap((section) => (section.module?.type === "steps" ? [section.module] : []));
-    expect(steps.some((module) => module.items.every((step) => step.visual !== undefined && step.label !== undefined))).toBe(true);
+    const steps = contentSections.flatMap((section) => (section.block?.type === "ordered-step-sequence" ? [section.block] : []));
+    expect(steps.some((block) => block.items.every((step) => step.visual !== undefined && step.label !== undefined))).toBe(true);
 
     const grounds = new Set(contentCatalogDocument.sections.map((section) => section.ground));
     expect(grounds).toEqual(new Set(["base", "sunken", "inverse"]));
   });
 
-  it("only breaks the page-variety rules a catalog must (two card bands, two comparisons, repeated module treatments)", () => {
+  it("only breaks the page-variety rules a catalog must (two card bands, two comparisons, repeated block treatments)", () => {
     const rules = new Set(checkSectionVariety(contentCatalogDocument).map((finding) => finding.rule));
     for (const rule of rules) {
       expect(["sectioned-view-variety-card-bands", "sectioned-view-variety-comparison-count", "sectioned-view-variety-treatment"]).toContain(rule);
@@ -93,7 +93,7 @@ describe("content catalog fixture", () => {
       expect(words(section.eyebrow), `${at} eyebrow`).toBeLessThanOrEqual(5);
       expect((section.eyebrow ?? "").length, `${at} eyebrow`).toBeLessThanOrEqual(32);
       expect(words(section.heading), `${at} heading`).toBeLessThanOrEqual(split ? 8 : 10);
-      const intro = section.module === undefined && section.media === undefined;
+      const intro = section.block === undefined && section.media === undefined;
       expect(words(section.description), `${at} description`).toBeLessThanOrEqual(intro ? 40 : 30);
       for (const action of section.actions ?? []) expect(words(action.label), `${at} action`).toBeLessThanOrEqual(3);
 
@@ -102,13 +102,13 @@ describe("content catalog fixture", () => {
         expect(words(section.media.label), `${at} specimen label`).toBeLessThanOrEqual(25);
         section.media.panels.forEach(panelChecks);
       }
-      const module = section.module;
-      if (module === undefined) continue;
-      switch (module.type) {
-        case "features": {
-          const statement = module.emphasis === "statement";
-          const limit = statement ? 12 : module.treatment === "plate" && module.columns === 2 ? 25 : 20;
-          for (const item of module.items) {
+      const block = section.block;
+      if (block === undefined) continue;
+      switch (block.type) {
+        case "feature-grid": {
+          const statement = block.emphasis === "statement";
+          const limit = statement ? 12 : block.treatment === "plate" && block.columns === 2 ? 25 : 20;
+          for (const item of block.items) {
             expect(words(item.eyebrow), `${at} ${item.id} eyebrow`).toBeLessThanOrEqual(3);
             expect((item.eyebrow ?? "").length, `${at} ${item.id} eyebrow`).toBeLessThanOrEqual(32);
             expect(words(item.heading), `${at} ${item.id}`).toBeLessThanOrEqual(statement ? 3 : 5);
@@ -116,8 +116,8 @@ describe("content catalog fixture", () => {
           }
           break;
         }
-        case "cards":
-          for (const card of module.items) {
+        case "card-grid":
+          for (const card of block.items) {
             expect(words(card.heading), `${at} ${card.id}`).toBeLessThanOrEqual(5);
             expect(words(card.description), `${at} ${card.id}`).toBeGreaterThanOrEqual(8);
             expect(words(card.description), `${at} ${card.id}`).toBeLessThanOrEqual(card.span === "two-thirds" || card.span === "full" ? 25 : 20);
@@ -125,7 +125,7 @@ describe("content catalog fixture", () => {
           }
           break;
         case "comparison":
-          for (const side of [module.before, module.after]) {
+          for (const side of [block.before, block.after]) {
             expect(words(side.label), `${at} label`).toBeLessThanOrEqual(3);
             expect(words(side.description), `${at} description`).toBeLessThanOrEqual(25);
             for (const point of side.points ?? []) {
@@ -135,14 +135,14 @@ describe("content catalog fixture", () => {
             if (side.visual !== undefined) panelChecks(side.visual);
           }
           break;
-        case "topics":
-          for (const item of module.items) {
+        case "topic-list":
+          for (const item of block.items) {
             expect(words(item.heading), `${at} ${item.id}`).toBeLessThanOrEqual(5);
             expect(words(item.description), `${at} ${item.id}`).toBeLessThanOrEqual(12);
           }
           break;
-        case "steps":
-          for (const step of module.items) {
+        case "ordered-step-sequence":
+          for (const step of block.items) {
             expect(words(step.heading), `${at} ${step.id}`).toBeLessThanOrEqual(2);
             expect(words(step.label), `${at} ${step.id}`).toBeLessThanOrEqual(2);
             expect(words(step.description), `${at} ${step.id}`).toBeGreaterThanOrEqual(6);
@@ -151,7 +151,7 @@ describe("content catalog fixture", () => {
           }
           break;
         case "faq":
-          for (const item of module.items) {
+          for (const item of block.items) {
             expect(words(item.question), `${at} ${item.id}`).toBeLessThanOrEqual(12);
             expect(words(item.answer), `${at} ${item.id}`).toBeGreaterThanOrEqual(15);
             expect(words(item.answer), `${at} ${item.id}`).toBeLessThanOrEqual(45);

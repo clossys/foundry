@@ -102,7 +102,7 @@ export { getSlotSpec, listSlotKeys, requiredSlotKeys } from "./slots.js";
 export { collectCopyProvenance, createOutputManifest, createResolvedOutputManifest } from "./output-manifest.js";
 
 export { resolveSurfaceDocument, SurfaceResolutionError } from "./resolve-surface.js";
-export { checkSectionVariety, CONTENT_ICON_NAMES, FEATURES_ITEM_EYEBROW_MAX_CHARACTERS, resolveSectionedViewDocument, SectionedViewResolutionError, validateSectionedViewDocument } from "./sectioned-view.js";
+export { checkSectionVariety, CONTENT_ICON_NAMES, FEATURE_GRID_ITEM_EYEBROW_MAX_CHARACTERS, resolveSectionedViewDocument, SectionedViewResolutionError, validateSectionedViewDocument } from "./sectioned-view.js";
 export type {
   ResolvedSectionedViewAction,
   ResolvedSectionedViewContentAction,
@@ -139,13 +139,13 @@ export type {
   SectionedViewStatusItem,
   SectionedViewStatusListSection,
   ContentIconName,
-  ResolvedSectionedViewContentModule,
+  ResolvedSectionedViewContentBlock,
   ResolvedSectionedViewContentSection,
   ResolvedSectionedViewSpecimenMedia,
   ResolvedSectionedViewSpecimenPanel,
   ResolvedSectionedViewSpecimenPart,
-  SectionedViewCardsModule,
-  SectionedViewComparisonModule,
+  SectionedViewCardGridBlock,
+  SectionedViewComparisonBlock,
   SectionedViewComparisonSide,
   SectionedViewContentAction,
   SectionedViewContentActionEmphasis,
@@ -157,14 +157,14 @@ export type {
   SectionedViewContentItem,
   SectionedViewContentLayout,
   SectionedViewContentMediaSide,
-  SectionedViewContentModule,
-  SectionedViewContentModuleType,
+  SectionedViewContentBlock,
+  SectionedViewContentBlockType,
   SectionedViewContentSection,
   SectionedViewContentStep,
-  SectionedViewFaqModule,
-  SectionedViewFeaturesEmphasis,
-  SectionedViewFeaturesModule,
-  SectionedViewFeaturesTreatment,
+  SectionedViewFaqBlock,
+  SectionedViewFeatureGridBlock,
+  SectionedViewFeatureGridEmphasis,
+  SectionedViewFeatureGridTreatment,
   SectionedViewSpecimenArrangement,
   SectionedViewSpecimenAssignee,
   SectionedViewSpecimenField,
@@ -189,7 +189,7 @@ export type {
   SectionedViewSpecimenTablePart,
   SectionedViewSpecimenTableRow,
   SectionedViewSpecimenTone,
-  SectionedViewStepsModule,
-  SectionedViewTopicsModule,
+  SectionedViewOrderedStepSequenceBlock,
+  SectionedViewTopicListBlock,
 } from "./sectioned-view.js";
 export type { ResolvedSurfaceDocument, ResolvedSurfaceGroup, ResolvedSurfaceGroupField, ResolvedSurfaceGroupItem, ResolvedSurfaceNode, ResolveSurfaceDocumentOptions, SurfaceResolutionReason } from "./resolve-surface.js";

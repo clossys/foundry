@@ -72,7 +72,7 @@ function runProbe(reactServer: boolean) {
             ground: "base",
             heading: "Content band",
             layout: "split",
-            module: { type: "topics", columns: 1, items: [{ id: "a", heading: "Server topic" }, { id: "b", heading: "Second topic" }] },
+            block: { type: "topic-list", columns: 1, items: [{ id: "a", heading: "Server topic" }, { id: "b", heading: "Second topic" }] },
             media: { type: "specimen", label: "A placeholder record shown as native markup", panels: [{ id: "record", title: "Server record", parts: [{ id: "fields", type: "fields", items: [{ id: "a", label: "Server field", value: "Server value" }] }] }] },
           },
         ],
@@ -177,7 +177,7 @@ describe("packed Publisher web React-server boundary", () => {
     expect(server.text).toEqual(expect.arrayContaining(["Server-safe sections", "Steps", "Status"]));
   });
 
-  it("renders a packed content-section band (text module and specimen) through server-safe blocks on both targets", () => {
+  it("renders a packed content-section band (text block and specimen) through server-safe blocks on both targets", () => {
     expect(server.tags).toEqual(expect.arrayContaining(["figure", "ul"]));
     expect(server.text).toEqual(expect.arrayContaining(["Content band", "Server topic", "Server record", "Server field", "Server value"]));
     expect(normal.html).toContain('data-layout="split"');

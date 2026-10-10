@@ -519,27 +519,51 @@ alternative to `StatusList`'s `groups`.
 #### `content-section` and content icons
 
 `content-section` is one general content band: an optional `eyebrow`, a
-`heading`, an optional `description` and `actions`, then at most one `module`
+`heading`, an optional `description` and `actions`, then at most one `block`
 and at most one `media`, and an optional closing `footnote`. `layout` is `stacked` (the default; `align` may be
 `start` or `center`) or `split` (requires `media`; `mediaSide` is `end` by
-default or `start`). Two exceptions let the module itself take the visual
-column, top-aligned beside the header group: a split `faq` module, which
-takes no `media`, and a text-only split, a `topics` module or a `features`
-module with `columns: 2` and item emphasis, with no `media`. A band with
-neither module nor media is an intro band.
+default or `start`). Two exceptions let the block itself take the visual
+column, top-aligned beside the header group: a split `faq` block, which
+takes no `media`, and a text-only split, a `topic-list` block or a
+`feature-grid` block with `columns: 2` and item emphasis, with no `media`. A
+band with neither block nor media is an intro band.
 
-- `module` is one of six closed types: `features` (2-4 items; exactly 3 with
-  `emphasis: "statement"`; `treatment` `plain`, `plate` or `rule`, and `rule`
-  takes no icons; each item may carry an `eyebrow`, a small label above its
-  heading that resolves to at most `FEATURES_ITEM_EYEBROW_MAX_CHARACTERS`
-  (32) characters, or resolution refuses the document), `cards` (2-6 cards
-  whose `span`s fill whole 12-unit rows, each with an optional `eyebrow` and
-  an optional one-part `visual` of at most 5 rows; topics items take no
-  `eyebrow`), `comparison`
-  (a `before` and an `after` side of the same form — a description each, or
-  the same number of 2-4 points — and a panel `visual` on both or neither),
-  `topics` (2-8 items; an even count in the default 2 columns), `steps`
-  (3-4 steps, each with an optional panel `visual`) or `faq` (4-6 items).
+"Block" is the one word for a Designer content component a section holds;
+the pieces inside a block (specimen parts, bento cards, list items) are parts
+or items, never blocks. A block's `type` is its Designer block name in kebab
+case, with no exceptions. The content-section field was `module` until the
+2026-10-10 rename; it was a clean break, with no alias:
+
+| Retired `module.type` | `block.type` | Designer block |
+| --- | --- | --- |
+| `features` | `feature-grid` | `FeatureGrid` |
+| `cards` | `card-grid` | `CardGrid` |
+| `comparison` | `comparison` | `Comparison` |
+| `topics` | `topic-list` | `TopicList` |
+| `steps` | `ordered-step-sequence` | `OrderedStepSequence` |
+| `faq` | `faq` | `Faq` |
+
+A section that still carries `module` is refused with
+`sectioned-view-content-module-retired`, whose message names `block` and every
+accepted type; a retired short type name inside `block` is refused with
+`sectioned-view-content-block-type`, whose message names its new name.
+
+- `block` is one of six closed types: `feature-grid` (2-4 items; exactly 3
+  with `emphasis: "statement"`; `treatment` `plain`, `plate` or `rule`, and
+  `rule` takes no icons; each item may carry an `eyebrow`, a small label above
+  its heading that resolves to at most
+  `FEATURE_GRID_ITEM_EYEBROW_MAX_CHARACTERS` (32) characters, or resolution
+  refuses the document), `card-grid` (2-6 cards whose `span`s fill whole
+  12-unit rows, each with an optional `eyebrow` and an optional one-part
+  `visual` of at most 5 rows; topic-list items take no `eyebrow`),
+  `comparison` (a `before` and an `after` side of the same form — a
+  description each, or the same number of 2-4 points — and a panel `visual`
+  on both or neither), `topic-list` (2-8 items; an even count in the default
+  2 columns), `ordered-step-sequence` (3-4 steps, each with an optional panel
+  `visual`) or `faq` (4-6 items). Block shape and option errors use
+  `sectioned-view-content-block-shape`, `sectioned-view-content-block-type`
+  and `sectioned-view-content-block-option`; a specimen part's options use
+  `sectioned-view-specimen-part-option`.
 - `media` is a `specimen`: a labelled arrangement (`single` with one panel,
   or `row`, `stack` or `flow` with 2-3; only `flow` takes a `connector`) of
   panels. A panel has a title, optional meta, status and footer, and 1-3
@@ -567,7 +591,7 @@ neither module nor media is an intro band.
   to its Designer icon.
 
 Every visible string is a `CopyRef` and resolves in field order (eyebrow,
-heading, description, actions, module, media, footnote text, footnote link
+heading, description, actions, block, media, footnote text, footnote link
 label). `SectionedView` and `LandingView` render `content-section` as one
 Designer `ContentSection` (see LandingView's section anatomy below); its
 actions render as Designer `buttonLinkClassName` buttons at `lg` (`primary`
@@ -579,11 +603,12 @@ rather than dropping them.
 `checkSectionVariety(document | documents[])` is an advisory page-rhythm lint
 over one or more documents read as one page. It returns `warning` findings
 only and never changes validation: neighbouring bands that repeat the same
-layout, module and visual; a split after a split on the same side or a third
+layout, block and visual; a split after a split on the same side or a third
 split in a row; a dense band right after a dense band; a specimen on an
 inverse ground or a second inverse body band; a second band of four or more
-cards; a second comparison; one module type repeated with the same
-treatment; and a second band holding a `primary` action
+cards; a second comparison; one block type repeated with the same
+treatment (a legacy `feature-grid`, `ordered-step-sequence` or `faq` section
+kind counts as the block of the same name); and a second band holding a `primary` action
 (`sectioned-view-variety-primary-actions`): a page has one main call to
 action per run of bands.
 
@@ -640,7 +665,7 @@ validates and renders exactly as it did before they existed.
 - **`layout` on the faq section.** `stacked` (the default, unchanged) or
   `split`: the header group in the narrow text column and the rows in the
   wide column beside it, top-aligned. It renders the same band as a
-  `content-section` with a split `faq` module, so the two read alike on one
+  `content-section` with a split `faq` block, so the two read alike on one
   page.
 - **`detail` on a status-list item.** An optional `CopyRef` carrying that
   row's own explanation, including the reasoning behind a `not-offered`
@@ -1116,7 +1141,7 @@ const records = resolveSectionedViewDocument({
     kind: "content-section",
     heading: { id: "records.heading" },
     layout: "split",
-    module: { type: "topics", items: [
+    block: { type: "topic-list", items: [
       { id: "kept", icon: "folder", heading: { id: "records.kept" } },
       { id: "shared", icon: "users", heading: { id: "records.shared" } },
     ] },
@@ -1149,7 +1174,7 @@ Props, in addition to the standard `<main>` attributes (minus `children`),
   `hero`; it renders as the hero block and the page's only `<h1>`.
 - `trailing` (optional): further resolved documents rendered as more bands
   after `document`, for example a shared FAQ.
-- `afterSection` (optional): content placed in a section's module slot,
+- `afterSection` (optional): content placed in a section's content slot,
   after its own content, keyed by section id. An id that names no rendered
   section is refused with a `RenderError`, not dropped.
 - `callToAction` (`LandingViewCallToAction`, optional): the closing band:
@@ -1196,16 +1221,17 @@ focusable at every scroll position.
 **Section anatomy.** Every band with a feature grid, ordered steps, a status
 list, an FAQ, a hero or a `content-section` is one Designer `ContentSection`: the section's
 eyebrow, heading and description as the header group (start-aligned, held to
-the prose measure), then the content as a module rendered without its own
+the prose measure), then the content as a block rendered without its own
 heading region, then the `afterSection` content. A hero in a later band is a
 header group (an `<h2>`, never a second display heading) with its actions,
-and its media as the module. Other section kinds keep their block's own
+and its media as the block. Other section kinds keep their block's own
 header region inside the same slot.
 
 **Content-section bands.** A `content-section` band (the `records` document
-above) maps its module and specimen straight onto Designer blocks: features
-to `FeatureGrid`, cards to `CardGrid`, comparison to `Comparison`, topics to
-`TopicList`, steps to `OrderedStepSequence`, faq to `Faq`, and `media` to a
+above) maps its block and specimen straight onto Designer blocks: `feature-grid`
+to `FeatureGrid`, `card-grid` to `CardGrid`, `comparison` to `Comparison`,
+`topic-list` to `TopicList`, `ordered-step-sequence` to
+`OrderedStepSequence`, `faq` to `Faq`, and `media` to a
 labelled `Specimen` figure. Item icons render their Designer icon; actions
 render as full-size buttons (Designer `buttonLinkClassName` at `lg`: a
 `primary` action filled, a `secondary` one as the transparent `outline`
@@ -1213,11 +1239,11 @@ variant, which takes the ground's ink), and a `footnote` renders as a small
 muted line closing the text column, its one link underlined. A `split` band puts the text beside the specimen on its
 `mediaSide`; a split FAQ puts its rows in the visual column beside a
 top-aligned header group. A stacked band takes its `align` and shows the
-specimen after the module. A stacked band with no module, no media and no
+specimen after the block. A stacked band with no block, no media and no
 `afterSection` content is a statement band: its header is its content, so
 it takes the Designer `ContentSection` `display` emphasis (the display
 heading step and rhythm) and carries `data-content-section-statement`.
-`afterSection` content follows the module (in a split FAQ, it closes the
+`afterSection` content follows the block (in a split FAQ, it closes the
 header group's column). Specimens are static
 records: they hold no links, buttons or other focusable content. A section
 that would not render as authored is refused with a `RenderError` naming its
@@ -2103,7 +2129,7 @@ keyed by section id, without the `<section>` wrapper or its heading. Use it
 when a view draws each section's heading itself — for example a
 `LandingView` band, whose header group (eyebrow, heading, description)
 comes from a sectioned document while the document's prose, lists and
-links go in that band's module slot (`afterSection`), inside Designer's
+links go in that band's content slot (`afterSection`), inside Designer's
 `ArticleBody`. It holds the same elements as `element`, from the same
 validated render; nothing is resolved twice.
 
@@ -4108,15 +4134,17 @@ registry.ts` (never hardcoded in a renderer):
   `CollectionView`.
 - **Content catalog** (`content-catalog.html`): one `LandingView` page
   rendered from a full `content-section` document, through
-  `resolveSectionedViewDocument`. It shows every module (features in each
-  treatment, column count and emphasis, bento cards in every span row,
-  comparison with and without visuals, topics in 1 and 2 columns, steps with
-  and without visuals and actor labels, the FAQ split band), every specimen
-  arrangement stacked and split on both sides, an intro band, the close band,
-  and base, sunken and inverse grounds. Each band is written at a typical
-  length or at the maximum budget in Designer's `CONTENT.md`. A small caption
-  in the preview chrome, outside the page markup, names what the next band
-  shows. Its sample copy (`src/preview/fixture-content-catalog.ts`) is for an
+  `resolveSectionedViewDocument`. It shows every block (FeatureGrid in each
+  treatment, column count and emphasis, CardGrid bento cards in every span
+  row, Comparison with and without visuals, TopicList in 1 and 2 columns,
+  OrderedStepSequence with and without visuals and actor labels, the Faq
+  split band), every specimen arrangement stacked and split on both sides, an
+  intro band, the close band, and base, sunken and inverse grounds. Each band
+  is written at a typical length or at the maximum budget in Designer's
+  `CONTENT.md`. A small numbered caption in the preview chrome, outside the
+  page markup, names the next band's Designer block and its variant (for
+  example "FeatureGrid, rule, 4 columns"), and the contents list uses the
+  same names. Its sample copy (`src/preview/fixture-content-catalog.ts`) is for an
   invented company.
 - **Site** (`site-*.html`) — fixtures for `templates/site`'s routes,
   rendered through `MarketingView` for home/about/contact/privacy/terms and
@@ -4174,7 +4202,7 @@ app styles Publisher's views with its own build (see
   `collectCopyProvenance`, `createResolvedOutputManifest`,
   `resolveSurfaceDocument`, `validateSectionedViewDocument`,
   `resolveSectionedViewDocument`, `checkSectionVariety`, `CONTENT_ICON_NAMES`,
-  `FEATURES_ITEM_EYEBROW_MAX_CHARACTERS`,
+  `FEATURE_GRID_ITEM_EYEBROW_MAX_CHARACTERS`,
   `resolveDocument`, `resolveCopy`, `resolveAssets`, `frameToInches`,
   `frameToPercent`, `getSlotSpec`, `listSlotKeys`, `requiredSlotKeys`, and
   the `Channel`, `ChannelMeta`, `ComposeDocument`, `ComposeFinding`,
@@ -4209,12 +4237,12 @@ app styles Publisher's views with its own build (see
   `SectionedViewContentFootnoteLink`, `SectionedViewContentItem`,
   `SectionedViewContentCard`, `SectionedViewContentCardSpan`,
   `SectionedViewContentStep`, `SectionedViewComparisonSide`,
-  `SectionedViewContentModule`, `SectionedViewContentModuleType`,
-  `SectionedViewFeaturesModule`, `SectionedViewFeaturesTreatment`,
-  `SectionedViewFeaturesEmphasis`, `SectionedViewCardsModule`,
-  `SectionedViewComparisonModule`, `SectionedViewTopicsModule`,
-  `SectionedViewStepsModule`, `SectionedViewFaqModule`,
-  `ResolvedSectionedViewContentSection`, `ResolvedSectionedViewContentModule`,
+  `SectionedViewContentBlock`, `SectionedViewContentBlockType`,
+  `SectionedViewFeatureGridBlock`, `SectionedViewFeatureGridTreatment`,
+  `SectionedViewFeatureGridEmphasis`, `SectionedViewCardGridBlock`,
+  `SectionedViewComparisonBlock`, `SectionedViewTopicListBlock`,
+  `SectionedViewOrderedStepSequenceBlock`, `SectionedViewFaqBlock`,
+  `ResolvedSectionedViewContentSection`, `ResolvedSectionedViewContentBlock`,
   the specimen types `SectionedViewSpecimenMedia`,
   `SectionedViewSpecimenArrangement`, `SectionedViewSpecimenPanel`,
   `SectionedViewSpecimenFooter`, `SectionedViewSpecimenAssignee`,

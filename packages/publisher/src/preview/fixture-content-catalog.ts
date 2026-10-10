@@ -11,7 +11,7 @@ import type {
 
 /**
  * The content catalog's fixture: one `SectionedViewDocument` that shows every
- * content-section module and specimen arrangement, rendered by
+ * content-section block and specimen arrangement, rendered by
  * `render-content-catalog.ts` through `LandingView`. All copy is sample copy
  * for an invented facilities-maintenance product; every name and figure is
  * made up. Each band is written either at a realistic length (`typical`) or
@@ -49,7 +49,7 @@ export type ContentCatalogBudget = "typical" | "max";
 export interface ContentCatalogCaption {
   /** The band's section id (the call to action's `id` for the closing band). */
   sectionId: string;
-  /** What the band shows, for example "Specimen, stacked, row of 3". */
+  /** The Designer block the band shows and its variant, for example "FeatureGrid, rule, 4 columns". */
   title: string;
   /** Layout, ground and treatment details. */
   detail: string;
@@ -166,8 +166,8 @@ const featuresPlain: SectionedViewContentSection = {
   eyebrow: copy("plain.eyebrow", "Daily work"),
   heading: copy("plain.heading", "Less chasing, more time on the floor"),
   description: copy("plain.description", "The three things a site team does every day, each recorded once and visible to everyone who needs it."),
-  module: {
-    type: "features",
+  block: {
+    type: "feature-grid",
     columns: 3,
     treatment: "plain",
     items: [
@@ -232,8 +232,8 @@ const featuresRule: SectionedViewContentSection = {
     "rule.description",
     "Sites share one asset register and one set of procedures, while each keeps its own schedule and team, and reports roll up across sites without anyone rebuilding them.",
   ),
-  module: {
-    type: "features",
+  block: {
+    type: "feature-grid",
     columns: 4,
     treatment: "rule",
     items: [
@@ -283,8 +283,8 @@ const splitStart: SectionedViewContentSection = {
     "split-start.description",
     "When an inspector asks who changed a reading and why, the answer is already in the record, with the time, the person and the reason they gave.",
   ),
-  module: {
-    type: "topics",
+  block: {
+    type: "topic-list",
     columns: 1,
     items: [
       { id: "locked", icon: "lock", heading: copy("split-start.locked.heading", "Locked once signed"), description: copy("split-start.locked.description", "A signed record can be amended, never overwritten.") },
@@ -340,8 +340,8 @@ const featuresStatement: SectionedViewContentSection = {
     text: copy("statement.footnote", "Results vary with each site's starting point."),
     link: { label: copy("statement.footnote.link", "See how we measured"), href: "#catalog-faq" },
   },
-  module: {
-    type: "features",
+  block: {
+    type: "feature-grid",
     columns: 3,
     emphasis: "statement",
     items: [
@@ -383,8 +383,8 @@ const splitText: SectionedViewContentSection = {
   eyebrow: copy("split-text.eyebrow", "Reporting"),
   heading: copy("split-text.heading", "Every audit question has a record behind it"),
   description: copy("split-text.description", "Reports are built from the records your team already keeps each day, so nothing is retyped for an auditor or a client."),
-  module: {
-    type: "features",
+  block: {
+    type: "feature-grid",
     columns: 2,
     treatment: "plain",
     items: [
@@ -425,8 +425,8 @@ const featuresPlate: SectionedViewContentSection = {
     "plate.description",
     "Technicians get a short list and large buttons on a phone; supervisors get the schedule, the backlog and the spend on a desktop, and both edit one record underneath.",
   ),
-  module: {
-    type: "features",
+  block: {
+    type: "feature-grid",
     columns: 2,
     treatment: "plate",
     items: [
@@ -529,8 +529,8 @@ const topicsTwo: SectionedViewContentSection = {
     "topics.description",
     "Each of these is a record type in its own right, with its own fields and history, and each links back to the assets and the sites it concerns.",
   ),
-  module: {
-    type: "topics",
+  block: {
+    type: "topic-list",
     columns: 2,
     items: [
       { id: "orders", icon: "file-text", heading: copy("topics.orders.heading", "Work orders and requests"), description: copy("topics.orders.description", "Every job from first report to signed close, with its full history.") },
@@ -607,8 +607,8 @@ const stepsPlain: SectionedViewContentSection = {
     "steps-plain.description",
     "A team starts with one site and the records it already keeps, then adds sites once the first runs on the new record without the old spreadsheet beside it.",
   ),
-  module: {
-    type: "steps",
+  block: {
+    type: "ordered-step-sequence",
     items: [
       { id: "import", ordinal: copy("steps-plain.import.ordinal", "01"), label: copy("steps-plain.import.actor", "Your team"), heading: copy("steps-plain.import.heading", "Import"), description: copy("steps-plain.import.description", "Bring in the asset list and open jobs from the spreadsheets you already keep.") },
       { id: "map", ordinal: copy("steps-plain.map.ordinal", "02"), label: copy("steps-plain.map.actor", "Fieldmark"), heading: copy("steps-plain.map.heading", "Map sites"), description: copy("steps-plain.map.description", "We nest assets under sites and systems and flag any asset without a location.") },
@@ -625,8 +625,8 @@ const cardsVisual: SectionedViewContentSection = {
   eyebrow: copy("cards-a.eyebrow", "Views"),
   heading: copy("cards-a.heading", "The same record, read four ways"),
   description: copy("cards-a.description", "Each role sees the part of the record it acts on, without a separate report to build."),
-  module: {
-    type: "cards",
+  block: {
+    type: "card-grid",
     items: [
       {
         id: "technician",
@@ -717,8 +717,8 @@ const cardsText: SectionedViewContentSection = {
     "cards-b.description",
     "Fieldmark reads from and writes to the systems a facilities team already runs, and every record can leave in an open format the day you ask for it.",
   ),
-  module: {
-    type: "cards",
+  block: {
+    type: "card-grid",
     items: [
       {
         id: "sign-on",
@@ -781,7 +781,7 @@ const comparisonVisual: SectionedViewContentSection = {
   eyebrow: copy("compare-a.eyebrow", "Before and after"),
   heading: copy("compare-a.heading", "The same week, before and after the record"),
   description: copy("compare-a.description", "One site's inspection week, as it looked in the spreadsheet and as it looks now."),
-  module: {
+  block: {
     type: "comparison",
     before: {
       label: copy("compare-a.before.label", "Spreadsheet"),
@@ -834,7 +834,7 @@ const comparisonPoints: SectionedViewContentSection = {
     "compare-b.description",
     "A shift handover is where maintenance knowledge gets lost; here is what the incoming technician receives in each case, on the same Monday morning at the same site.",
   ),
-  module: {
+  block: {
     type: "comparison",
     before: {
       label: copy("compare-b.before.label", "Without the record"),
@@ -864,8 +864,8 @@ const stepsVisual: SectionedViewContentSection = {
   eyebrow: copy("steps-visual.eyebrow", "Closing a job"),
   heading: copy("steps-visual.heading", "How a repair is signed off"),
   description: copy("steps-visual.description", "Three people touch a typical repair; each step leaves its evidence in the record."),
-  module: {
-    type: "steps",
+  block: {
+    type: "ordered-step-sequence",
     items: [
       {
         id: "record",
@@ -945,7 +945,7 @@ const faqSplit: SectionedViewContentSection = {
   eyebrow: copy("faq.eyebrow", "Questions"),
   heading: copy("faq.heading", "What teams ask before they switch"),
   description: copy("faq.description", "Short answers to the questions facilities leads raise most often in a first call."),
-  module: {
+  block: {
     type: "faq",
     items: [
       faqItem("offline", "Does it work without a phone signal?", "Yes. Technicians can open their jobs, record readings and take photos offline, and the record syncs as soon as the phone reconnects."),
@@ -1015,26 +1015,26 @@ export const CONTENT_CATALOG_CALL_TO_ACTION = {
 /** One caption per band, in page order: the hero, every document band, then the call to action. */
 export const CONTENT_CATALOG_CAPTIONS: readonly ContentCatalogCaption[] = [
   { sectionId: "catalog-hero", title: "Hero", detail: "inverse ground · eyebrow, heading, description · one primary action", budget: "max" },
-  { sectionId: "catalog-intro", title: "Intro band", detail: "stacked, start-aligned · no module, no media · primary and secondary buttons, a footnote with one link", budget: "max" },
+  { sectionId: "catalog-intro", title: "Intro band", detail: "stacked, start-aligned · no block, no media · primary and secondary buttons, a footnote with one link", budget: "max" },
   { sectionId: "catalog-specimen-single", title: "Specimen, stacked, single", detail: "sunken · one panel: fields (6 rows), status rows, meter with limit, assignee footer", budget: "max" },
-  { sectionId: "catalog-features-plain", title: "Features, plain, 3 columns, icons", detail: "base · item emphasis", budget: "typical" },
-  { sectionId: "catalog-split-end", title: "Split, text + specimen, media end", detail: "sunken · header and one secondary button beside a schedule panel", budget: "typical" },
-  { sectionId: "catalog-features-rule", title: "Features, rule, 4 columns", detail: "base · no icons (rule takes none)", budget: "max" },
-  { sectionId: "catalog-split-start", title: "Split, text + specimen, media start", detail: "sunken · topics in 1 column in the text column · table panel", budget: "max" },
-  { sectionId: "catalog-features-statement", title: "Features, statement emphasis", detail: "inverse (the one inverse body band) · centred header, one secondary button · exactly 3 items · a footnote with one link", budget: "typical" },
-  { sectionId: "catalog-split-text", title: "Split, text only, features in the visual column", detail: "base · no media · 2 columns with item eyebrows, top-aligned beside the header", budget: "typical" },
+  { sectionId: "catalog-features-plain", title: "FeatureGrid, plain, 3 columns, icons", detail: "base · item emphasis", budget: "typical" },
+  { sectionId: "catalog-split-end", title: "Specimen, split, media end", detail: "sunken · header and one secondary button in the text column, beside a schedule panel", budget: "typical" },
+  { sectionId: "catalog-features-rule", title: "FeatureGrid, rule, 4 columns", detail: "base · no icons (rule takes none)", budget: "max" },
+  { sectionId: "catalog-split-start", title: "TopicList, 1 column, split beside a Specimen, media start", detail: "sunken · the topic list in the text column · table panel", budget: "max" },
+  { sectionId: "catalog-features-statement", title: "FeatureGrid, statement emphasis", detail: "inverse (the one inverse body band) · centred header, one secondary button · exactly 3 items · a footnote with one link", budget: "typical" },
+  { sectionId: "catalog-split-text", title: "FeatureGrid, 2 columns, text-only split", detail: "base · no media · the grid takes the visual column, top-aligned beside the header · item eyebrows", budget: "typical" },
   { sectionId: "catalog-specimen-row", title: "Specimen, stacked, row of 3", detail: "sunken · three panels, each a meter and one field", budget: "typical" },
-  { sectionId: "catalog-features-plate", title: "Features, plate, 2 columns, icons", detail: "base · 2-column plates take the longest item copy", budget: "max" },
+  { sectionId: "catalog-features-plate", title: "FeatureGrid, plate, 2 columns, icons", detail: "base · 2-column plates take the longest item copy", budget: "max" },
   { sectionId: "catalog-specimen-stack", title: "Specimen, stacked, stack", detail: "sunken · two panels: meter and shares, then a table with a footer note", budget: "typical" },
-  { sectionId: "catalog-topics-two", title: "Topics, 2 columns, icons", detail: "base · 8 items", budget: "max" },
+  { sectionId: "catalog-topics-two", title: "TopicList, 2 columns, icons", detail: "base · 8 items", budget: "max" },
   { sectionId: "catalog-specimen-flow", title: "Specimen, stacked, flow", detail: "sunken · two panels with a connector caption", budget: "typical" },
-  { sectionId: "catalog-cards-text", title: "Bento cards, text", detail: "base · rows three thirds, third + two-thirds, full · icons and card eyebrows", budget: "max" },
-  { sectionId: "catalog-comparison-visual", title: "Comparison with visuals", detail: "sunken · a description and a panel on each side", budget: "typical" },
-  { sectionId: "catalog-steps-plain", title: "Steps, 4, actor labels", detail: "base · no visuals", budget: "max" },
-  { sectionId: "catalog-cards-visual", title: "Bento cards with visuals", detail: "sunken · rows half + half, two-thirds + third · status rows, shares, table, files", budget: "typical" },
+  { sectionId: "catalog-cards-text", title: "CardGrid (bento), text", detail: "base · rows three thirds, third + two-thirds, full · icons and card eyebrows", budget: "max" },
+  { sectionId: "catalog-comparison-visual", title: "Comparison, visuals", detail: "sunken · a description and a panel on each side", budget: "typical" },
+  { sectionId: "catalog-steps-plain", title: "OrderedStepSequence, 4 steps, actor labels", detail: "base · no visuals", budget: "max" },
+  { sectionId: "catalog-cards-visual", title: "CardGrid (bento), visuals", detail: "sunken · rows half + half, two-thirds + third · status rows, shares, table, files", budget: "typical" },
   { sectionId: "catalog-comparison-points", title: "Comparison, points", detail: "base · 4 points a side, no visuals", budget: "max" },
-  { sectionId: "catalog-steps-visual", title: "Steps, 3, visuals and actor labels", detail: "sunken · one panel per step", budget: "typical" },
-  { sectionId: "catalog-faq", title: "FAQ split band", detail: "base, the closing band · 6 rows beside a top-aligned header", budget: "max" },
+  { sectionId: "catalog-steps-visual", title: "OrderedStepSequence, 3 steps, visuals and actor labels", detail: "sunken · one panel per step", budget: "typical" },
+  { sectionId: "catalog-faq", title: "Faq, split band", detail: "base, the closing band · 6 rows beside a top-aligned header", budget: "max" },
   { sectionId: CONTENT_CATALOG_CALL_TO_ACTION.id, title: "Close band", detail: "inverse, fixed by the view · one primary action", budget: "max" },
 ];
 

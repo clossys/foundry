@@ -28,7 +28,7 @@ import { createCopyResolver } from "@clossys/writer";
 import type { CopyRef } from "@clossys/writer";
 import type { ComposeDocument } from "../core/index.js";
 import { resolveSectionedViewDocument } from "../core/sectioned-view.js";
-import type { SectionedViewContentModule, SectionedViewContentSection, SectionedViewSection, SectionedViewSpecimenMedia, SectionedViewSpecimenPanel, SectionedViewSpecimenPart } from "../core/sectioned-view.js";
+import type { SectionedViewContentBlock, SectionedViewContentSection, SectionedViewSection, SectionedViewSpecimenMedia, SectionedViewSpecimenPanel, SectionedViewSpecimenPart } from "../core/sectioned-view.js";
 import { renderWebDocument } from "./renderWebDocument.js";
 import { SectionedView as ServerSectionedView } from "./views/SectionedView.server.js";
 
@@ -511,10 +511,10 @@ const textItem = (id: string, extra: Record<string, unknown> = {}) => ({ id, hea
 
 const contentBand = (id: string, extra: Partial<SectionedViewContentSection> = {}): SectionedViewContentSection => ({ id, kind: "content-section", heading: copy(`golden.${id}.heading`, `Heading ${id}`), ...extra });
 
-const MODULES = {
-  features: { type: "features", columns: 3, treatment: "plate", items: [textItem("fa", { icon: "landmark" }), textItem("fb", { icon: "scale" }), textItem("fc", { icon: "globe" })] },
+const BLOCKS = {
+  features: { type: "feature-grid", columns: 3, treatment: "plate", items: [textItem("fa", { icon: "landmark" }), textItem("fb", { icon: "scale" }), textItem("fc", { icon: "globe" })] },
   cards: {
-    type: "cards",
+    type: "card-grid",
     items: [
       { ...textItem("wide"), span: "two-thirds", icon: "layers", eyebrow: copy("golden.item.wide.eyebrow", "Placeholder eyebrow"), visual: fieldsVisual("wide-visual", 3) },
       { ...textItem("narrow"), span: "third" },
@@ -528,9 +528,9 @@ const MODULES = {
     before: { label: copy("golden.before.label", "Before"), points: [copy("golden.before.p1", "Placeholder point one"), copy("golden.before.p2", "Placeholder point two")], visual: holdersPanel("holders-before") },
     after: { label: copy("golden.after.label", "After"), points: [copy("golden.after.p1", "Placeholder point three"), copy("golden.after.p2", "Placeholder point four")], visual: holdersPanel("holders-after") },
   },
-  topics: { type: "topics", columns: 2, items: [textItem("ta", { icon: "file-check" }), textItem("tb"), textItem("tc"), textItem("td")] },
+  topics: { type: "topic-list", columns: 2, items: [textItem("ta", { icon: "file-check" }), textItem("tb"), textItem("tc"), textItem("td")] },
   steps: {
-    type: "steps",
+    type: "ordered-step-sequence",
     items: [
       { id: "one", ordinal: copy("golden.step.one.ordinal", "01"), heading: copy("golden.step.one.heading", "Step one"), visual: ledgerPanel("ledger-step") },
       { id: "two", ordinal: copy("golden.step.two.ordinal", "02"), heading: copy("golden.step.two.heading", "Step two") },
@@ -538,7 +538,7 @@ const MODULES = {
     ],
   },
   faq: { type: "faq", items: ["q1", "q2", "q3", "q4"].map((id) => ({ id, question: copy(`golden.faq.${id}.q`, `Placeholder question ${id}?`), answer: copy(`golden.faq.${id}.a`, `Placeholder answer ${id}.`) })) },
-} satisfies Record<string, SectionedViewContentModule>;
+} satisfies Record<string, SectionedViewContentBlock>;
 
 function renderContent(...sections: SectionedViewSection[]): { html: string; root: Document } {
   const authored = { id: "golden-content", sectionGroundRhythm: "view" as const, sections };
@@ -560,7 +560,7 @@ const band = (root: Document, id: string): HTMLElement => {
 };
 
 describe("golden: SectionedView content-section", () => {
-  it("renders an intro band (header, a primary and a secondary button, a footnote, no module) as a statement band, byte for byte", () => {
+  it("renders an intro band (header, a primary and a secondary button, a footnote, no block) as a statement band, byte for byte", () => {
     const { html } = renderContent(
       contentBand("intro", {
         description: copy("golden.intro.description", "Placeholder intro."),
@@ -574,8 +574,8 @@ describe("golden: SectionedView content-section", () => {
     expect(html).toBe(INTRO_BAND_HTML);
   });
 
-  it("renders a features module in a stacked, centred band, with explicit icons and no item eyebrow", () => {
-    const { root } = renderContent(contentBand("features", { align: "center", module: MODULES.features }));
+  it("renders a feature-grid block in a stacked, centred band, with explicit icons and no item eyebrow", () => {
+    const { root } = renderContent(contentBand("features", { align: "center", block: BLOCKS.features }));
     const section = band(root, "features");
     expect(section.getAttribute("data-content-section")).toBe("");
     expect(section.querySelector("[data-content-section-header] h2")?.textContent).toBe("Heading features");
@@ -590,8 +590,8 @@ describe("golden: SectionedView content-section", () => {
     expect(items.every((item) => item.querySelector('svg[aria-hidden="true"]') !== null)).toBe(true);
   });
 
-  it("renders a cards bento: spans in order, a card eyebrow, and a card visual named by its part label", () => {
-    const { root } = renderContent(contentBand("cards", { module: MODULES.cards }));
+  it("renders a card-grid bento: spans in order, a card eyebrow, and a card visual named by its part label", () => {
+    const { root } = renderContent(contentBand("cards", { block: BLOCKS.cards }));
     const cards = [...band(root, "cards").querySelectorAll("[data-card-grid] [data-card-grid-item]")];
     expect(cards.map((card) => card.getAttribute("data-span"))).toEqual(["two-thirds", "third", "third", "third", "third"]);
     expect(cards.map((card) => card.querySelector("h3")?.textContent)).toEqual(["Item wide", "Item narrow", "Item t1", "Item t2", "Item t3"]);
@@ -602,7 +602,7 @@ describe("golden: SectionedView content-section", () => {
   });
 
   it("renders a comparison with a panel visual on each side, each figure named by its panel title", () => {
-    const { root } = renderContent(contentBand("comparison", { module: MODULES.comparison }));
+    const { root } = renderContent(contentBand("comparison", { block: BLOCKS.comparison }));
     const section = band(root, "comparison");
     expect(section.querySelectorAll("[data-comparison-side]")).toHaveLength(2);
     const visuals = [...section.querySelectorAll("[data-comparison-visual] figure[data-specimen]")];
@@ -610,15 +610,15 @@ describe("golden: SectionedView content-section", () => {
     expect(section.textContent).toContain("Placeholder point four");
   });
 
-  it("renders a topics module as a two-column list", () => {
-    const { root } = renderContent(contentBand("topics", { module: MODULES.topics }));
+  it("renders a topic-list block as a two-column list", () => {
+    const { root } = renderContent(contentBand("topics", { block: BLOCKS.topics }));
     const list = band(root, "topics").querySelector("ul[data-topic-list]");
     expect(list?.getAttribute("data-columns")).toBe("2");
     expect(list?.querySelectorAll(":scope > li")).toHaveLength(4);
   });
 
-  it("renders steps as an ordered list with a step visual", () => {
-    const { root } = renderContent(contentBand("steps", { module: MODULES.steps }));
+  it("renders an ordered-step-sequence block as an ordered list with a step visual", () => {
+    const { root } = renderContent(contentBand("steps", { block: BLOCKS.steps }));
     const section = band(root, "steps");
     expect(section.querySelector("[data-content-section-modules] ol")?.querySelectorAll(":scope > li")).toHaveLength(3);
     const visual = section.querySelector("[data-step-visual] figure[data-specimen]");
@@ -627,7 +627,7 @@ describe("golden: SectionedView content-section", () => {
   });
 
   it("renders a specimen split: the text column, then the media column, on the start side", () => {
-    const { root } = renderContent(contentBand("split", { layout: "split", mediaSide: "start", module: { type: "topics", columns: 1, items: [textItem("sa"), textItem("sb")] }, media: specimenMedia("split", [recordPanel("record", "Placeholder record")]) }));
+    const { root } = renderContent(contentBand("split", { layout: "split", mediaSide: "start", block: { type: "topic-list", columns: 1, items: [textItem("sa"), textItem("sb")] }, media: specimenMedia("split", [recordPanel("record", "Placeholder record")]) }));
     const section = band(root, "split");
     expect(section.getAttribute("data-layout")).toBe("split");
     expect(section.getAttribute("data-media-side")).toBe("start");
@@ -652,7 +652,7 @@ describe("golden: SectionedView content-section", () => {
   });
 
   it("renders a split FAQ as the FAQ band: a top-aligned header beside native disclosure rows", () => {
-    const { root } = renderContent(contentBand("questions", { layout: "split", eyebrow: copy("golden.questions.eyebrow", "Placeholder eyebrow"), module: MODULES.faq }));
+    const { root } = renderContent(contentBand("questions", { layout: "split", eyebrow: copy("golden.questions.eyebrow", "Placeholder eyebrow"), block: BLOCKS.faq }));
     const section = band(root, "questions");
     expect(section.getAttribute("data-layout")).toBe("split");
     expect(section.hasAttribute("data-content-section-faq")).toBe(true);
@@ -689,8 +689,8 @@ describe("golden: SectionedView content-section", () => {
 
   it("closes a split band's text column with the footnote, its one link underlined, and renders none when absent", () => {
     const { root } = renderContent(
-      contentBand("aside", { layout: "split", module: MODULES.topics, footnote: { text: copy("golden.aside.footnote", "Placeholder aside."), link: { label: copy("golden.aside.link", "Placeholder link"), href: "/aside" } } }),
-      contentBand("plain", { module: MODULES.topics }),
+      contentBand("aside", { layout: "split", block: BLOCKS.topics, footnote: { text: copy("golden.aside.footnote", "Placeholder aside."), link: { label: copy("golden.aside.link", "Placeholder link"), href: "/aside" } } }),
+      contentBand("plain", { block: BLOCKS.topics }),
     );
     const note = band(root, "aside").querySelector<HTMLElement>("[data-content-section-footnote]");
     expect(note?.parentElement?.hasAttribute("data-content-section-text")).toBe(true);
@@ -705,9 +705,9 @@ describe("golden: SectionedView content-section", () => {
 
   it("puts nothing focusable inside any specimen", () => {
     const { root } = renderContent(
-      contentBand("cards", { module: MODULES.cards }),
-      contentBand("comparison", { module: MODULES.comparison }),
-      contentBand("steps", { module: MODULES.steps }),
+      contentBand("cards", { block: BLOCKS.cards }),
+      contentBand("comparison", { block: BLOCKS.comparison }),
+      contentBand("steps", { block: BLOCKS.steps }),
       contentBand("flow", { media: specimenMedia("flow", [recordPanel("record-flow", "Placeholder first"), ledgerPanel("ledger-flow"), holdersPanel("holders-flow")], "flow") }),
     );
     const figures = [...root.querySelectorAll("[data-specimen]")];
@@ -726,7 +726,7 @@ const OUTLINE_LG =
 
 /**
  * Captured from this renderer; Designer `ContentSection` stacked anatomy. A
- * band with no module and no media is a statement band: `SectionIntro` at the
+ * band with no block and no media is a statement band: `SectionIntro` at the
  * display emphasis, its actions a filled primary and an outline secondary
  * button at the same size, then the footnote as the band's last line.
  */

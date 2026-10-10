@@ -22,7 +22,7 @@ import {
 import type { ReactNode } from "react";
 import type {
   ContentIconName,
-  ResolvedSectionedViewContentModule,
+  ResolvedSectionedViewContentBlock,
   ResolvedSectionedViewContentSection,
   ResolvedSectionedViewSpecimenMedia,
   ResolvedSectionedViewSpecimenPanel,
@@ -63,7 +63,7 @@ export interface ContentSectionBlockProps {
   actions?: ReactNode;
   /** Classes for the section root (SectionedView paints the section's ground here; a band leaves it to its frame). */
   className?: string;
-  /** Content placed after the text module, before any visual. */
+  /** Content placed after the text block, before any visual. */
   after?: ReactNode;
 }
 
@@ -109,27 +109,27 @@ function mediaSpecimen(media: ResolvedSectionedViewSpecimenMedia): ReactNode {
 }
 
 /**
- * The contract's `features` defaults, passed explicitly: Designer's
+ * The contract's `feature-grid` defaults, passed explicitly: Designer's
  * `FeatureGrid` takes its catalog layout only when one of these is set.
  */
-const FEATURES_DEFAULTS = { columns: 3, treatment: "plain", emphasis: "item" } as const;
+const FEATURE_GRID_DEFAULTS = { columns: 3, treatment: "plain", emphasis: "item" } as const;
 
-function renderModule(module: ResolvedSectionedViewContentModule, ground: SectionedViewGround, Faq: ContentSectionFaq): ReactNode {
-  switch (module.type) {
-    case "features":
+function renderBlock(block: ResolvedSectionedViewContentBlock, ground: SectionedViewGround, Faq: ContentSectionFaq): ReactNode {
+  switch (block.type) {
+    case "feature-grid":
       return (
         <FeatureGrid
-          items={module.items.map((item) => ({ id: item.id, icon: icon(item.icon), eyebrow: item.eyebrow, heading: item.heading, description: item.description }))}
-          columns={module.columns ?? FEATURES_DEFAULTS.columns}
-          treatment={module.treatment ?? FEATURES_DEFAULTS.treatment}
-          emphasis={module.emphasis ?? FEATURES_DEFAULTS.emphasis}
+          items={block.items.map((item) => ({ id: item.id, icon: icon(item.icon), eyebrow: item.eyebrow, heading: item.heading, description: item.description }))}
+          columns={block.columns ?? FEATURE_GRID_DEFAULTS.columns}
+          treatment={block.treatment ?? FEATURE_GRID_DEFAULTS.treatment}
+          emphasis={block.emphasis ?? FEATURE_GRID_DEFAULTS.emphasis}
           ground={ground}
         />
       );
-    case "cards":
+    case "card-grid":
       return (
         <CardGrid
-          items={module.items.map((card) => ({
+          items={block.items.map((card) => ({
             id: card.id,
             icon: icon(card.icon),
             eyebrow: card.eyebrow,
@@ -143,57 +143,57 @@ function renderModule(module: ResolvedSectionedViewContentModule, ground: Sectio
         />
       );
     case "comparison": {
-      const side = (value: typeof module.before) => ({ label: value.label, heading: value.heading, description: value.description, points: value.points, visual: panelSpecimen(value.visual) });
-      return <Comparison before={side(module.before)} after={side(module.after)} headingLevel={3} ground={ground} />;
+      const side = (value: typeof block.before) => ({ label: value.label, heading: value.heading, description: value.description, points: value.points, visual: panelSpecimen(value.visual) });
+      return <Comparison before={side(block.before)} after={side(block.after)} headingLevel={3} ground={ground} />;
     }
-    case "topics":
+    case "topic-list":
       return (
         <TopicList
-          items={module.items.map((item) => ({ id: item.id, icon: icon(item.icon), heading: item.heading, description: item.description }))}
-          columns={module.columns ?? 2}
+          items={block.items.map((item) => ({ id: item.id, icon: icon(item.icon), heading: item.heading, description: item.description }))}
+          columns={block.columns ?? 2}
           ground={ground}
         />
       );
-    case "steps":
+    case "ordered-step-sequence":
       return (
         <OrderedStepSequence
-          items={module.items.map((step) => ({ id: step.id, ordinal: step.ordinal, label: step.label, heading: step.heading, description: step.description, visual: panelSpecimen(step.visual) }))}
+          items={block.items.map((step) => ({ id: step.id, ordinal: step.ordinal, label: step.label, heading: step.heading, description: step.description, visual: panelSpecimen(step.visual) }))}
           headingLevel={2}
           ground={ground}
         />
       );
     case "faq":
-      return <Faq items={module.items} headingLevel={2} ground={ground} />;
+      return <Faq items={block.items} headingLevel={2} ground={ground} />;
   }
 }
 
 /**
  * The `content-section` block for one entry's FAQ implementation. One
  * Designer `ContentSection` at `<h2>`: the header group (with the section's
- * button actions), then the text module and anything placed after it,
+ * button actions), then the text block and anything placed after it,
  * then the specimen, then the optional footnote line. A `split` puts the text beside the specimen; a split FAQ
- * module is the FAQ band, its rows taking the visual column beside a
+ * block is the FAQ band, its rows taking the visual column beside a
  * top-aligned header, and a text-only split (topics or features, no media)
- * places its module in the visual column the same way. A stacked section
- * with no module, no media and nothing placed after it is a statement band: its heading takes the
- * `display` emphasis. Module item headings are one level below the section.
+ * places its block in the visual column the same way. A stacked section
+ * with no block, no media and nothing placed after it is a statement band: its heading takes the
+ * `display` emphasis. Block item headings are one level below the section.
  */
 export function createContentSectionBlock(Faq: ContentSectionFaq) {
   return function ContentSectionBlock({ section, actions, className, after }: ContentSectionBlockProps) {
     const { ground } = section;
-    const module = section.module === undefined ? null : renderModule(section.module, ground, Faq);
+    const block = section.block === undefined ? null : renderBlock(section.block, ground, Faq);
     const header = { id: section.id, eyebrow: section.eyebrow, heading: section.heading, description: section.description, actions, footnote: renderFootnote(section.footnote), headingLevel: 2 as const, ground };
-    if (section.layout === "split" && section.module?.type === "faq") {
+    if (section.layout === "split" && section.block?.type === "faq") {
       return (
-        <ContentSection {...header} layout="split" mediaSide={section.mediaSide} media={module} data-content-section-faq="" className={[className, "tablet-lg:items-start"].filter(Boolean).join(" ")}>
+        <ContentSection {...header} layout="split" mediaSide={section.mediaSide} media={block} data-content-section-faq="" className={[className, "tablet-lg:items-start"].filter(Boolean).join(" ")}>
           {after}
         </ContentSection>
       );
     }
     if (section.layout === "split" && section.media === undefined) {
-      // A text-only split: the topics or features module takes the visual column, top-aligned beside the header.
+      // A text-only split: the topic-list or feature-grid block takes the visual column, top-aligned beside the header.
       return (
-        <ContentSection {...header} layout="split" mediaSide={section.mediaSide} media={module} data-content-section-text-split="" className={[className, "tablet-lg:items-start"].filter(Boolean).join(" ")}>
+        <ContentSection {...header} layout="split" mediaSide={section.mediaSide} media={block} data-content-section-text-split="" className={[className, "tablet-lg:items-start"].filter(Boolean).join(" ")}>
           {after}
         </ContentSection>
       );
@@ -201,13 +201,13 @@ export function createContentSectionBlock(Faq: ContentSectionFaq) {
     if (section.layout === "split" && section.media !== undefined) {
       return (
         <ContentSection {...header} layout="split" mediaSide={section.mediaSide} media={mediaSpecimen(section.media)} className={className}>
-          {module}
+          {block}
           {after}
         </ContentSection>
       );
     }
-    // A statement band (no module, no media, nothing placed after it: a header and its actions) carries the page's display scale instead of repeating a thin section shape.
-    const statement = section.module === undefined && section.media === undefined && (after === undefined || after === null);
+    // A statement band (no block, no media, nothing placed after it: a header and its actions) carries the page's display scale instead of repeating a thin section shape.
+    const statement = section.block === undefined && section.media === undefined && (after === undefined || after === null);
     return (
       <ContentSection
         {...header}
@@ -217,7 +217,7 @@ export function createContentSectionBlock(Faq: ContentSectionFaq) {
         data-content-section-statement={statement ? "" : undefined}
         className={className}
       >
-        {module}
+        {block}
         {after}
       </ContentSection>
     );

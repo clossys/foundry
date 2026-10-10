@@ -255,7 +255,7 @@ export interface SectionedViewFaqSection {
   /**
    * `split` sets the header group in the narrow text column and the rows in
    * the wide column beside it, top-aligned, the same band a `content-section`
-   * with a split `faq` module renders. Optional and additive: without it (or
+   * with a split `faq` block renders. Optional and additive: without it (or
    * with `stacked`) the section renders exactly as it did before.
    * @default "stacked"
    */
@@ -322,12 +322,12 @@ export interface SectionedViewStatusListSection {
 }
 
 // ---------------------------------------------------------------------------
-// content-section: one band anatomy (header, text module, visual module)
+// content-section: one band anatomy (header, text block, visual)
 // ---------------------------------------------------------------------------
 
 /** How a content section arranges its text and its visual. `split` puts them side by side and needs `media`, except a split FAQ, whose rows take the visual column. */
 export type SectionedViewContentLayout = "stacked" | "split";
-/** Which side a split section's visual sits on. Reading order never changes: header, module, then visual. */
+/** Which side a split section's visual sits on. Reading order never changes: header, block, then visual. */
 export type SectionedViewContentMediaSide = "end" | "start";
 /** Header alignment of a stacked section. */
 export type SectionedViewContentAlign = "start" | "center";
@@ -516,14 +516,14 @@ export interface SectionedViewSpecimenMedia {
   panels: SectionedViewSpecimenPanel[];
 }
 
-/** One parallel item of a features, cards or topics module. */
+/** One parallel item of a feature-grid, card-grid or topic-list block. */
 export interface SectionedViewContentItem {
   id: string;
   icon?: ContentIconName;
   /**
-   * Cards and features items only; a topics item with an eyebrow is refused.
-   * A features item eyebrow is a small label above the item heading and
-   * resolves to at most `FEATURES_ITEM_EYEBROW_MAX_CHARACTERS` characters.
+   * Card-grid and feature-grid items only; a topic-list item with an eyebrow
+   * is refused. A feature-grid item eyebrow is a small label above the item heading and
+   * resolves to at most `FEATURE_GRID_ITEM_EYEBROW_MAX_CHARACTERS` characters.
    */
   eyebrow?: CopyRef;
   heading: CopyRef;
@@ -562,19 +562,19 @@ export interface SectionedViewContentStep {
   visual?: SectionedViewSpecimenPanel;
 }
 
-export type SectionedViewFeaturesTreatment = "plain" | "rule" | "plate";
-export type SectionedViewFeaturesEmphasis = "item" | "statement";
+export type SectionedViewFeatureGridTreatment = "plain" | "rule" | "plate";
+export type SectionedViewFeatureGridEmphasis = "item" | "statement";
 
 /**
  * Parallel items of equal weight: 2-4 items, exactly 3 with `statement`
  * emphasis. `columns` defaults to 3, `treatment` to `plain`, `emphasis` to
  * `item`. Item icons are allowed with `plain` and `plate` only.
  */
-export interface SectionedViewFeaturesModule {
-  type: "features";
+export interface SectionedViewFeatureGridBlock {
+  type: "feature-grid";
   columns?: 2 | 3 | 4;
-  treatment?: SectionedViewFeaturesTreatment;
-  emphasis?: SectionedViewFeaturesEmphasis;
+  treatment?: SectionedViewFeatureGridTreatment;
+  emphasis?: SectionedViewFeatureGridEmphasis;
   items: SectionedViewContentItem[];
 }
 
@@ -583,57 +583,57 @@ export interface SectionedViewFeaturesModule {
  * one of: two-thirds + third (either order), three thirds, two halves, or one
  * full card.
  */
-export interface SectionedViewCardsModule {
-  type: "cards";
+export interface SectionedViewCardGridBlock {
+  type: "card-grid";
   items: SectionedViewContentCard[];
 }
 
-export interface SectionedViewComparisonModule {
+export interface SectionedViewComparisonBlock {
   type: "comparison";
   before: SectionedViewComparisonSide;
   after: SectionedViewComparisonSide;
 }
 
 /** Many short, scannable items: 2-8 items, an even count in 2 columns. `columns` defaults to 2. */
-export interface SectionedViewTopicsModule {
-  type: "topics";
+export interface SectionedViewTopicListBlock {
+  type: "topic-list";
   columns?: 1 | 2;
   items: SectionedViewContentItem[];
 }
 
 /** A process of 3-4 steps. */
-export interface SectionedViewStepsModule {
-  type: "steps";
+export interface SectionedViewOrderedStepSequenceBlock {
+  type: "ordered-step-sequence";
   items: SectionedViewContentStep[];
 }
 
 /** 4-6 question and answer pairs. */
-export interface SectionedViewFaqModule {
+export interface SectionedViewFaqBlock {
   type: "faq";
   items: SectionedViewFaqItem[];
 }
 
-/** The text module of a content section. */
-export type SectionedViewContentModule =
-  | SectionedViewFeaturesModule
-  | SectionedViewCardsModule
-  | SectionedViewComparisonModule
-  | SectionedViewTopicsModule
-  | SectionedViewStepsModule
-  | SectionedViewFaqModule;
+/** The text block of a content section. */
+export type SectionedViewContentBlock =
+  | SectionedViewFeatureGridBlock
+  | SectionedViewCardGridBlock
+  | SectionedViewComparisonBlock
+  | SectionedViewTopicListBlock
+  | SectionedViewOrderedStepSequenceBlock
+  | SectionedViewFaqBlock;
 
-export type SectionedViewContentModuleType = SectionedViewContentModule["type"];
+export type SectionedViewContentBlockType = SectionedViewContentBlock["type"];
 
 /**
  * One band: a header (eyebrow, heading, description, one or two button
- * actions), an optional text module, an optional visual and an optional
+ * actions), an optional text block, an optional visual and an optional
  * footnote. With neither
- * module nor media it is an intro band. `mediaSide` is allowed only on a
+ * block nor media it is an intro band. `mediaSide` is allowed only on a
  * `split`, `align` only on a stacked section, and a `split` needs `media`,
- * with two exceptions where the module itself takes the visual column, top
- * aligned beside the header: a split FAQ module (which then takes no
- * `media`), and a text-only split, a `topics` module or a two-column
- * `features` module (not `statement` emphasis) with no `media`.
+ * with two exceptions where the block itself takes the visual column, top
+ * aligned beside the header: a split FAQ block (which then takes no
+ * `media`), and a text-only split, a `topic-list` block or a two-column
+ * `feature-grid` block (not `statement` emphasis) with no `media`.
  */
 export interface SectionedViewContentSection {
   id: string;
@@ -650,7 +650,7 @@ export interface SectionedViewContentSection {
   mediaSide?: SectionedViewContentMediaSide;
   /** Stacked only. */
   align?: SectionedViewContentAlign;
-  module?: SectionedViewContentModule;
+  block?: SectionedViewContentBlock;
   media?: SectionedViewSpecimenMedia;
   /** The band's last line: one sentence, at most one inline link. */
   footnote?: SectionedViewContentFootnote;
@@ -714,7 +714,7 @@ type ResolvedCopyTree<T> = T extends CopyRef
 export type ResolvedSectionedViewSpecimenMedia = ResolvedCopyTree<SectionedViewSpecimenMedia>;
 export type ResolvedSectionedViewSpecimenPanel = ResolvedCopyTree<SectionedViewSpecimenPanel>;
 export type ResolvedSectionedViewSpecimenPart = ResolvedCopyTree<SectionedViewSpecimenPart>;
-export type ResolvedSectionedViewContentModule = ResolvedCopyTree<SectionedViewContentModule>;
+export type ResolvedSectionedViewContentBlock = ResolvedCopyTree<SectionedViewContentBlock>;
 /** A content section with its copy resolved and its ground applied. Absent optional fields stay absent. */
 export type ResolvedSectionedViewContentSection = Omit<ResolvedCopyTree<SectionedViewContentSection>, "ground"> & { ground: SectionedViewGround };
 
@@ -1204,18 +1204,18 @@ function validateStatusItems(value: unknown, path: string, findings: ComposeFind
 // content-section validation
 // ---------------------------------------------------------------------------
 
-const CONTENT_SECTION_KEYS = ["id", "kind", "ground", "eyebrow", "heading", "description", "actions", "layout", "mediaSide", "align", "module", "media", "footnote"] as const;
+const CONTENT_SECTION_KEYS = ["id", "kind", "ground", "eyebrow", "heading", "description", "actions", "layout", "mediaSide", "align", "block", "media", "footnote"] as const;
 const CONTENT_ACTION_EMPHASES: readonly SectionedViewContentActionEmphasis[] = ["primary", "secondary"];
 /** The most actions one content section may hold. */
 const CONTENT_ACTIONS_MAX = 2;
 const CONTENT_LAYOUTS: readonly SectionedViewContentLayout[] = ["stacked", "split"];
 const CONTENT_MEDIA_SIDES: readonly SectionedViewContentMediaSide[] = ["end", "start"];
 const CONTENT_ALIGNS: readonly SectionedViewContentAlign[] = ["start", "center"];
-const CONTENT_MODULE_TYPES: readonly SectionedViewContentModuleType[] = ["features", "cards", "comparison", "topics", "steps", "faq"];
-const FEATURES_COLUMNS: readonly number[] = [2, 3, 4];
-const FEATURES_TREATMENTS: readonly SectionedViewFeaturesTreatment[] = ["plain", "rule", "plate"];
-const FEATURES_EMPHASES: readonly SectionedViewFeaturesEmphasis[] = ["item", "statement"];
-const TOPICS_COLUMNS: readonly number[] = [1, 2];
+const CONTENT_BLOCK_TYPES: readonly SectionedViewContentBlockType[] = ["feature-grid", "card-grid", "comparison", "topic-list", "ordered-step-sequence", "faq"];
+const FEATURE_GRID_COLUMNS: readonly number[] = [2, 3, 4];
+const FEATURE_GRID_TREATMENTS: readonly SectionedViewFeatureGridTreatment[] = ["plain", "rule", "plate"];
+const FEATURE_GRID_EMPHASES: readonly SectionedViewFeatureGridEmphasis[] = ["item", "statement"];
+const TOPIC_LIST_COLUMNS: readonly number[] = [1, 2];
 const CARD_SPAN_UNITS: Readonly<Record<SectionedViewContentCardSpan, number>> = { third: 4, half: 6, "two-thirds": 8, full: 12 };
 const CARD_SPANS = Object.keys(CARD_SPAN_UNITS) as SectionedViewContentCardSpan[];
 const CARD_ROW_UNITS = 12;
@@ -1225,14 +1225,19 @@ const SPECIMEN_PART_TYPES: readonly SectionedViewSpecimenPartType[] = ["fields",
 const FIELDS_COLUMNS: readonly number[] = [1, 2, 4];
 const METER_DIRECTIONS: readonly string[] = ["max", "min"];
 const CONTENT_ITEM_KEYS = ["id", "icon", "eyebrow", "heading", "description"] as const;
-/** Modules that may take a split's visual column themselves when the split has no media: the text-only split. */
-const TEXT_SPLIT_MODULE_TYPES: readonly SectionedViewContentModuleType[] = ["topics", "features"];
 /**
- * The most characters a features item eyebrow may resolve to: the eyebrow
+ * The retired short block type names, for the refusal message only: a
+ * document that still uses one is refused, never read as the new name.
+ */
+const RETIRED_BLOCK_TYPE_NAMES: Readonly<Record<string, SectionedViewContentBlockType>> = { features: "feature-grid", cards: "card-grid", topics: "topic-list", steps: "ordered-step-sequence" };
+/** Blocks that may take a split's visual column themselves when the split has no media: the text-only split. */
+const TEXT_SPLIT_BLOCK_TYPES: readonly SectionedViewContentBlockType[] = ["topic-list", "feature-grid"];
+/**
+ * The most characters a feature-grid item eyebrow may resolve to: the eyebrow
  * budget of the content cookbook. Checked when copy resolves, since a CopyRef
  * carries no text before then.
  */
-export const FEATURES_ITEM_EYEBROW_MAX_CHARACTERS = 32;
+export const FEATURE_GRID_ITEM_EYEBROW_MAX_CHARACTERS = 32;
 /** Rows one specimen part may hold; a card's visual holds at most `CARD_VISUAL_MAX_ROWS`. */
 const PART_MAX_ROWS = 6;
 const CARD_VISUAL_MAX_ROWS = 5;
@@ -1299,7 +1304,19 @@ function validateRecords(
 }
 
 function validateContentSection(section: Record<string, unknown>, path: string, findings: ComposeFinding[]): void {
-  if (!hasOnlyOwnKeys(section, CONTENT_SECTION_KEYS) || !hasOwn(section, "heading")) findings.push(finding("sectioned-view-section-keys", path, `${path} has keys not allowed for content-section.`));
+  // The retired `module` key gets its own finding naming the new field, instead of the generic keys finding.
+  const retiredModule = hasOwn(section, "module");
+  if (retiredModule) {
+    findings.push(
+      finding(
+        "sectioned-view-content-module-retired",
+        `${path}.module`,
+        `${path}.module is retired: a content section holds its text block in \`block\`, whose type is one of ${CONTENT_BLOCK_TYPES.join(", ")} (the Designer block name in kebab case).`,
+      ),
+    );
+  }
+  const allowedKeys: readonly string[] = retiredModule ? [...CONTENT_SECTION_KEYS, "module"] : CONTENT_SECTION_KEYS;
+  if (!hasOnlyOwnKeys(section, allowedKeys) || !hasOwn(section, "heading")) findings.push(finding("sectioned-view-section-keys", path, `${path} has keys not allowed for content-section.`));
   validateCopy(section.heading, `${path}.heading`, findings);
   validateOptionalCopyFields(section, ["eyebrow", "description"], path, findings);
   if (section.actions !== undefined) validateContentActions(section.actions, `${path}.actions`, findings);
@@ -1310,42 +1327,42 @@ function validateContentSection(section: Record<string, unknown>, path: string, 
   const split = section.layout === "split";
   if (section.mediaSide !== undefined && !split) findings.push(finding("sectioned-view-content-media-side", `${path}.mediaSide`, `${path}.mediaSide is allowed only when ${path}.layout is split.`));
   if (section.align !== undefined && split) findings.push(finding("sectioned-view-content-align", `${path}.align`, `${path}.align is allowed only on a stacked section.`));
-  const faqModule = isPlainObject(section.module) && section.module.type === "faq";
-  if (split && faqModule && section.media !== undefined) findings.push(finding("sectioned-view-content-faq-split-media", `${path}.media`, `${path} is a split FAQ section; its rows take the visual column, so it takes no media.`));
-  if (split && !faqModule && section.media === undefined) {
-    const textModule = isPlainObject(section.module) && TEXT_SPLIT_MODULE_TYPES.includes(section.module.type as SectionedViewContentModuleType);
-    if (!textModule) findings.push(finding("sectioned-view-content-split-media", `${path}.media`, `${path} is a split section and needs media, unless its module is faq, topics or features.`));
-    else if (isPlainObject(section.module) && section.module.type === "features" && (section.module.columns !== 2 || section.module.emphasis === "statement")) {
-      findings.push(finding("sectioned-view-content-text-split", `${path}.module`, `${path} is a text-only split; its features module takes the visual column, so it needs columns: 2 and item emphasis.`));
+  const faqBlock = isPlainObject(section.block) && section.block.type === "faq";
+  if (split && faqBlock && section.media !== undefined) findings.push(finding("sectioned-view-content-faq-split-media", `${path}.media`, `${path} is a split FAQ section; its rows take the visual column, so it takes no media.`));
+  if (split && !faqBlock && section.media === undefined) {
+    const textBlock = isPlainObject(section.block) && TEXT_SPLIT_BLOCK_TYPES.includes(section.block.type as SectionedViewContentBlockType);
+    if (!textBlock) findings.push(finding("sectioned-view-content-split-media", `${path}.media`, `${path} is a split section and needs media, unless its block is faq, topic-list or feature-grid.`));
+    else if (isPlainObject(section.block) && section.block.type === "feature-grid" && (section.block.columns !== 2 || section.block.emphasis === "statement")) {
+      findings.push(finding("sectioned-view-content-text-split", `${path}.block`, `${path} is a text-only split; its feature-grid block takes the visual column, so it needs columns: 2 and item emphasis.`));
     }
   }
-  if (section.module !== undefined) validateContentModule(section.module, `${path}.module`, findings);
+  if (section.block !== undefined) validateContentBlock(section.block, `${path}.block`, findings);
   if (section.media !== undefined) validateSpecimenMedia(section.media, `${path}.media`, findings);
 }
 
-/** An item's icon, heading and description; only a cards or features item (`eyebrowAllowed`) carries an eyebrow. */
+/** An item's icon, heading and description; only a card-grid or feature-grid item (`eyebrowAllowed`) carries an eyebrow. */
 function validateContentItemFields(item: Record<string, unknown>, path: string, findings: ComposeFinding[], eyebrowAllowed = false): void {
   if (item.icon !== undefined) validateIcon(item.icon, `${path}.icon`, findings);
   validateCopy(item.heading, `${path}.heading`, findings);
   validateOptionalCopyFields(item, ["eyebrow", "description"], path, findings);
-  if (item.eyebrow !== undefined && !eyebrowAllowed) findings.push(finding("sectioned-view-content-item-eyebrow", `${path}.eyebrow`, `${path}.eyebrow is allowed only on cards and features items.`));
+  if (item.eyebrow !== undefined && !eyebrowAllowed) findings.push(finding("sectioned-view-content-item-eyebrow", `${path}.eyebrow`, `${path}.eyebrow is allowed only on card-grid and feature-grid items.`));
 }
 
-function validateModuleKeys(module: Record<string, unknown>, keys: readonly string[], required: readonly string[], path: string, findings: ComposeFinding[]): void {
-  if (!hasOnlyOwnKeys(module, keys) || !hasOwnKeys(module, required)) findings.push(finding("sectioned-view-content-module-shape", path, `${path} has keys not allowed for a ${String(module.type)} module.`));
+function validateBlockKeys(block: Record<string, unknown>, keys: readonly string[], required: readonly string[], path: string, findings: ComposeFinding[]): void {
+  if (!hasOnlyOwnKeys(block, keys) || !hasOwnKeys(block, required)) findings.push(finding("sectioned-view-content-block-shape", path, `${path} has keys not allowed for a ${String(block.type)} block.`));
 }
 
-function validateContentModule(value: unknown, path: string, findings: ComposeFinding[]): void {
+function validateContentBlock(value: unknown, path: string, findings: ComposeFinding[]): void {
   if (!isPlainObject(value) || !hasEnumerableOwnDataKeys(value) || !isNonWhitespaceString(value.type)) {
-    findings.push(finding("sectioned-view-content-module-shape", path, `${path} must be a module object with a type.`));
+    findings.push(finding("sectioned-view-content-block-shape", path, `${path} must be a block object with a type.`));
     return;
   }
   switch (value.type) {
-    case "features": {
-      validateModuleKeys(value, ["type", "columns", "treatment", "emphasis", "items"], ["items"], path, findings);
-      validateEnumField(value, "columns", FEATURES_COLUMNS, "sectioned-view-content-module-option", path, findings);
-      validateEnumField(value, "treatment", FEATURES_TREATMENTS, "sectioned-view-content-module-option", path, findings);
-      validateEnumField(value, "emphasis", FEATURES_EMPHASES, "sectioned-view-content-module-option", path, findings);
+    case "feature-grid": {
+      validateBlockKeys(value, ["type", "columns", "treatment", "emphasis", "items"], ["items"], path, findings);
+      validateEnumField(value, "columns", FEATURE_GRID_COLUMNS, "sectioned-view-content-block-option", path, findings);
+      validateEnumField(value, "treatment", FEATURE_GRID_TREATMENTS, "sectioned-view-content-block-option", path, findings);
+      validateEnumField(value, "emphasis", FEATURE_GRID_EMPHASES, "sectioned-view-content-block-option", path, findings);
       const statement = value.emphasis === "statement";
       const iconsAllowed = value.treatment !== "rule";
       validateRecords(value.items, `${path}.items`, findings, statement ? { min: 3, max: 3 } : { min: 2, max: 4 }, CONTENT_ITEM_KEYS, ["heading"], (item, itemPath) => {
@@ -1354,8 +1371,8 @@ function validateContentModule(value: unknown, path: string, findings: ComposeFi
       });
       return;
     }
-    case "cards": {
-      validateModuleKeys(value, ["type", "items"], ["items"], path, findings);
+    case "card-grid": {
+      validateBlockKeys(value, ["type", "items"], ["items"], path, findings);
       const cards = validateRecords(value.items, `${path}.items`, findings, { min: 2, max: 6 }, [...CONTENT_ITEM_KEYS, "span", "visual"], ["heading", "span"], (card, cardPath) => {
         validateContentItemFields(card, cardPath, findings, true);
         validateEnumField(card, "span", CARD_SPANS, "sectioned-view-content-card-span", cardPath, findings);
@@ -1367,7 +1384,7 @@ function validateContentModule(value: unknown, path: string, findings: ComposeFi
       return;
     }
     case "comparison": {
-      validateModuleKeys(value, ["type", "before", "after"], ["before", "after"], path, findings);
+      validateBlockKeys(value, ["type", "before", "after"], ["before", "after"], path, findings);
       const before = validateComparisonSide(value.before, `${path}.before`, findings);
       const after = validateComparisonSide(value.after, `${path}.after`, findings);
       if (before !== undefined && after !== undefined) {
@@ -1377,9 +1394,9 @@ function validateContentModule(value: unknown, path: string, findings: ComposeFi
       }
       return;
     }
-    case "topics": {
-      validateModuleKeys(value, ["type", "columns", "items"], ["items"], path, findings);
-      validateEnumField(value, "columns", TOPICS_COLUMNS, "sectioned-view-content-module-option", path, findings);
+    case "topic-list": {
+      validateBlockKeys(value, ["type", "columns", "items"], ["items"], path, findings);
+      validateEnumField(value, "columns", TOPIC_LIST_COLUMNS, "sectioned-view-content-block-option", path, findings);
       validateRecords(value.items, `${path}.items`, findings, { min: 2, max: 8 }, CONTENT_ITEM_KEYS, ["heading"], (item, itemPath) => validateContentItemFields(item, itemPath, findings));
       const twoColumns = value.columns === undefined || value.columns === 2;
       if (twoColumns && Array.isArray(value.items) && value.items.length % 2 === 1) {
@@ -1387,8 +1404,8 @@ function validateContentModule(value: unknown, path: string, findings: ComposeFi
       }
       return;
     }
-    case "steps":
-      validateModuleKeys(value, ["type", "items"], ["items"], path, findings);
+    case "ordered-step-sequence":
+      validateBlockKeys(value, ["type", "items"], ["items"], path, findings);
       validateRecords(value.items, `${path}.items`, findings, { min: 3, max: 4 }, ["id", "ordinal", "label", "heading", "description", "visual"], ["ordinal", "heading"], (step, stepPath) => {
         validateCopy(step.ordinal, `${stepPath}.ordinal`, findings);
         validateCopy(step.heading, `${stepPath}.heading`, findings);
@@ -1397,14 +1414,14 @@ function validateContentModule(value: unknown, path: string, findings: ComposeFi
       });
       return;
     case "faq":
-      validateModuleKeys(value, ["type", "items"], ["items"], path, findings);
+      validateBlockKeys(value, ["type", "items"], ["items"], path, findings);
       validateRecords(value.items, `${path}.items`, findings, { min: 4, max: 6 }, ["id", "question", "answer"], ["question", "answer"], (item, itemPath) => {
         validateCopy(item.question, `${itemPath}.question`, findings);
         validateCopy(item.answer, `${itemPath}.answer`, findings);
       });
       return;
     default:
-      findings.push(finding("sectioned-view-content-module-type", `${path}.type`, `${path}.type "${value.type}" is not a content module type; supported types are ${CONTENT_MODULE_TYPES.join(", ")}.`));
+      findings.push(finding("sectioned-view-content-block-type", `${path}.type`, `${path}.type "${value.type}" is not a content block type; supported types are ${CONTENT_BLOCK_TYPES.join(", ")}.${Object.hasOwn(RETIRED_BLOCK_TYPE_NAMES, value.type) ? ` "${value.type}" is now "${RETIRED_BLOCK_TYPE_NAMES[value.type]}".` : ""}`));
   }
 }
 
@@ -1526,7 +1543,7 @@ function validateSpecimenPart(value: unknown, path: string, findings: ComposeFin
     case "fields":
       validatePartKeys(value, ["label", "columns", "items"], ["items"], path, findings);
       validateOptionalCopyFields(value, ["label"], path, findings);
-      validateEnumField(value, "columns", FIELDS_COLUMNS, "sectioned-view-content-module-option", path, findings);
+      validateEnumField(value, "columns", FIELDS_COLUMNS, "sectioned-view-specimen-part-option", path, findings);
       validateRecords(value.items, `${path}.items`, findings, rows, ["id", "label", "value"], ["label", "value"], (field, fieldPath) => {
         validateCopy(field.label, `${fieldPath}.label`, findings);
         validateCopy(field.value, `${fieldPath}.value`, findings);
@@ -1550,7 +1567,7 @@ function validateSpecimenPart(value: unknown, path: string, findings: ComposeFin
       if (!isNonNegativeNumber(value.scaleMax) || value.scaleMax === 0) findings.push(finding("sectioned-view-specimen-number", `${path}.scaleMax`, `${path}.scaleMax must be a finite number greater than zero.`));
       if (value.limit !== undefined && !isNonNegativeNumber(value.limit)) findings.push(finding("sectioned-view-specimen-number", `${path}.limit`, `${path}.limit must be a finite number of zero or more.`));
       if (value.limitText !== undefined && value.limit === undefined) findings.push(finding("sectioned-view-specimen-limit-text", `${path}.limitText`, `${path}.limitText is allowed only with ${path}.limit.`));
-      validateEnumField(value, "direction", METER_DIRECTIONS, "sectioned-view-content-module-option", path, findings);
+      validateEnumField(value, "direction", METER_DIRECTIONS, "sectioned-view-specimen-part-option", path, findings);
       validateEnumField(value, "tone", SPECIMEN_TONES, "sectioned-view-specimen-tone", path, findings);
       validateOptionalStatus(value, path, findings);
       return;
@@ -1891,37 +1908,37 @@ function resolveComparisonSide(side: SectionedViewComparisonSide, path: string, 
   };
 }
 
-function resolveContentModule(module: SectionedViewContentModule, path: string, text: ResolveText): ResolvedSectionedViewContentModule {
-  switch (module.type) {
-    case "features":
+function resolveContentBlock(block: SectionedViewContentBlock, path: string, text: ResolveText): ResolvedSectionedViewContentBlock {
+  switch (block.type) {
+    case "feature-grid":
       return {
-        ...module,
-        items: module.items.map((item, index) => {
+        ...block,
+        items: block.items.map((item, index) => {
           const resolved = resolveContentItem(item, `${path}.items.${index}`, text);
           const characters = resolved.eyebrow === undefined ? 0 : [...resolved.eyebrow.trim()].length;
-          if (characters > FEATURES_ITEM_EYEBROW_MAX_CHARACTERS) {
-            throw new SectionedViewResolutionError("invalid-document", `resolveSectionedViewDocument refused invalid document: ${path}.items.${index}.eyebrow resolves to ${characters} characters; a features item eyebrow holds at most ${FEATURES_ITEM_EYEBROW_MAX_CHARACTERS}.`);
+          if (characters > FEATURE_GRID_ITEM_EYEBROW_MAX_CHARACTERS) {
+            throw new SectionedViewResolutionError("invalid-document", `resolveSectionedViewDocument refused invalid document: ${path}.items.${index}.eyebrow resolves to ${characters} characters; a feature-grid item eyebrow holds at most ${FEATURE_GRID_ITEM_EYEBROW_MAX_CHARACTERS}.`);
           }
           return resolved;
         }),
-      } as ResolvedSectionedViewContentModule;
-    case "topics":
-      return { ...module, items: module.items.map((item, index) => resolveContentItem(item, `${path}.items.${index}`, text)) } as ResolvedSectionedViewContentModule;
-    case "cards":
+      } as ResolvedSectionedViewContentBlock;
+    case "topic-list":
+      return { ...block, items: block.items.map((item, index) => resolveContentItem(item, `${path}.items.${index}`, text)) } as ResolvedSectionedViewContentBlock;
+    case "card-grid":
       return {
-        ...module,
-        items: module.items.map((card, index) => {
+        ...block,
+        items: block.items.map((card, index) => {
           const cardPath = `${path}.items.${index}`;
           const { visual, ...rest } = resolveContentItem(card, cardPath, text);
           return { ...rest, ...(card.visual === undefined ? {} : { visual: resolveSpecimenPart(card.visual, `${cardPath}.visual`, text) }) };
         }),
-      } as ResolvedSectionedViewContentModule;
+      } as ResolvedSectionedViewContentBlock;
     case "comparison":
-      return { type: "comparison", before: resolveComparisonSide(module.before, `${path}.before`, text), after: resolveComparisonSide(module.after, `${path}.after`, text) };
-    case "steps":
+      return { type: "comparison", before: resolveComparisonSide(block.before, `${path}.before`, text), after: resolveComparisonSide(block.after, `${path}.after`, text) };
+    case "ordered-step-sequence":
       return {
-        ...module,
-        items: module.items.map((step, index) => {
+        ...block,
+        items: block.items.map((step, index) => {
           const stepPath = `${path}.items.${index}`;
           return {
             id: step.id,
@@ -1932,21 +1949,21 @@ function resolveContentModule(module: SectionedViewContentModule, path: string, 
             ...(step.visual === undefined ? {} : { visual: resolveSpecimenPanel(step.visual, `${stepPath}.visual`, text) }),
           };
         }),
-      } as ResolvedSectionedViewContentModule;
+      } as ResolvedSectionedViewContentBlock;
     case "faq":
-      return { ...module, items: module.items.map((item, index) => ({ id: item.id, question: text(item.question, `${path}.items.${index}.question`), answer: text(item.answer, `${path}.items.${index}.answer`) })) };
+      return { ...block, items: block.items.map((item, index) => ({ id: item.id, question: text(item.question, `${path}.items.${index}.question`), answer: text(item.answer, `${path}.items.${index}.answer`) })) };
   }
 }
 
 function resolveContentSection(section: SectionedViewContentSection & { ground: SectionedViewGround }, path: string, text: ResolveText): ResolvedSectionedViewContentSection {
-  const { module, media, actions, footnote, ...base } = section;
+  const { block, media, actions, footnote, ...base } = section;
   return {
     ...base,
     ...copyField("eyebrow", section.eyebrow, path, text),
     heading: text(section.heading, `${path}.heading`),
     ...copyField("description", section.description, path, text),
     ...(actions === undefined ? {} : { actions: actions.map((action, index) => ({ ...action, label: text(action.label, `${path}.actions.${index}.label`) })) }),
-    ...(module === undefined ? {} : { module: resolveContentModule(module, `${path}.module`, text) }),
+    ...(block === undefined ? {} : { block: resolveContentBlock(block, `${path}.block`, text) }),
     ...(media === undefined
       ? {}
       : {
@@ -1979,39 +1996,39 @@ interface BandShape {
   kind: SectionedViewSectionKind;
   layout: SectionedViewContentLayout;
   mediaSide?: SectionedViewContentMediaSide;
-  module: string;
+  block: string;
   visual: "none" | "specimen";
-  /** Carries a specimen (as media or inside its module) or a table: a dense band. */
+  /** Carries a specimen (as media or inside its block) or a table: a dense band. */
   dense: boolean;
   ground?: SectionedViewGround;
-  /** The module's treatment, for telling two uses of one module type apart. */
+  /** The block's treatment, for telling two uses of one block type apart. */
   treatment: string;
   cardCount: number;
   /** Carries a `primary` content-section action. */
   primaryAction: boolean;
 }
 
-function hasModuleVisual(module: SectionedViewContentModule): boolean {
-  switch (module.type) {
-    case "cards":
-      return module.items.some((card) => card.visual !== undefined);
-    case "steps":
-      return module.items.some((step) => step.visual !== undefined);
+function hasBlockVisual(block: SectionedViewContentBlock): boolean {
+  switch (block.type) {
+    case "card-grid":
+      return block.items.some((card) => card.visual !== undefined);
+    case "ordered-step-sequence":
+      return block.items.some((step) => step.visual !== undefined);
     case "comparison":
-      return module.before.visual !== undefined || module.after.visual !== undefined;
+      return block.before.visual !== undefined || block.after.visual !== undefined;
     default:
       return false;
   }
 }
 
-function moduleTreatment(module: SectionedViewContentModule): string {
-  switch (module.type) {
-    case "features":
-      return `${module.treatment ?? "plain"}/${module.emphasis ?? "item"}`;
-    case "topics":
-      return `columns-${module.columns ?? 2}`;
-    case "steps":
-      return hasModuleVisual(module) ? "visual" : "plain";
+function blockTreatment(block: SectionedViewContentBlock): string {
+  switch (block.type) {
+    case "feature-grid":
+      return `${block.treatment ?? "plain"}/${block.emphasis ?? "item"}`;
+    case "topic-list":
+      return `columns-${block.columns ?? 2}`;
+    case "ordered-step-sequence":
+      return hasBlockVisual(block) ? "visual" : "plain";
     default:
       return "default";
   }
@@ -2020,12 +2037,12 @@ function moduleTreatment(module: SectionedViewContentModule): string {
 function bandShape(section: SectionedViewSection, path: string, index: number): BandShape {
   if (section.kind === "faq" && section.layout === "split") {
     // A split legacy FAQ is the same band as a split content-section FAQ: its rows take the end column.
-    return { path, index, kind: section.kind, layout: "split", mediaSide: "end", module: section.kind, visual: "none", dense: false, ground: section.ground, treatment: "default", cardCount: 0, primaryAction: false };
+    return { path, index, kind: section.kind, layout: "split", mediaSide: "end", block: section.kind, visual: "none", dense: false, ground: section.ground, treatment: "default", cardCount: 0, primaryAction: false };
   }
   if (section.kind !== "content-section") {
-    return { path, index, kind: section.kind, layout: "stacked", module: section.kind, visual: "none", dense: false, ground: section.ground, treatment: "default", cardCount: 0, primaryAction: false };
+    return { path, index, kind: section.kind, layout: "stacked", block: section.kind, visual: "none", dense: false, ground: section.ground, treatment: "default", cardCount: 0, primaryAction: false };
   }
-  const module = section.module;
+  const block = section.block;
   const layout = section.layout ?? "stacked";
   return {
     path,
@@ -2033,12 +2050,12 @@ function bandShape(section: SectionedViewSection, path: string, index: number): 
     kind: section.kind,
     layout,
     ...(layout === "split" ? { mediaSide: section.mediaSide ?? "end" } : {}),
-    module: module?.type ?? (section.media === undefined ? "intro" : "none"),
+    block: block?.type ?? (section.media === undefined ? "intro" : "none"),
     visual: section.media === undefined ? "none" : "specimen",
-    dense: section.media !== undefined || (module !== undefined && hasModuleVisual(module)),
+    dense: section.media !== undefined || (block !== undefined && hasBlockVisual(block)),
     ground: section.ground,
-    treatment: module === undefined ? "default" : moduleTreatment(module),
-    cardCount: module?.type === "cards" ? module.items.length : 0,
+    treatment: block === undefined ? "default" : blockTreatment(block),
+    cardCount: block?.type === "card-grid" ? block.items.length : 0,
     primaryAction: Array.isArray(section.actions) && section.actions.some((action) => isPlainObject(action) && action.emphasis === "primary"),
   };
 }
@@ -2056,12 +2073,12 @@ function varietyWarning(rule: string, path: string, message: string): ComposeFin
  * `validateSectionedViewDocument` accepts; malformed sections are skipped.
  *
  * Rules (each finding's `rule` in brackets):
- * 1. Neighbouring bands never share one layout, module type and visual type
+ * 1. Neighbouring bands never share one layout, block type and visual type
  *    [`sectioned-view-variety-repeat`].
  * 2. A split follows a split only with the opposite `mediaSide`
  *    [`sectioned-view-variety-split-side`]; never three splits in a row
  *    [`sectioned-view-variety-split-run`].
- * 3. A dense band (a specimen, as media or inside its module) is followed by
+ * 3. A dense band (a specimen, as media or inside its block) is followed by
  *    an airy one [`sectioned-view-variety-density`].
  * 4. A specimen never sits on an inverse ground
  *    [`sectioned-view-variety-specimen-ground`]; at most one body band (any
@@ -2069,13 +2086,13 @@ function varietyWarning(rule: string, path: string, message: string): ComposeFin
  * 5. At most one band with four or more cards
  *    [`sectioned-view-variety-card-bands`], and at most one comparison
  *    [`sectioned-view-variety-comparison-count`].
- * 6. One module type used twice needs a different treatment
+ * 6. One block type used twice needs a different treatment
  *    [`sectioned-view-variety-treatment`].
  * 7. At most one band carries a `primary` action
  *    [`sectioned-view-variety-primary-actions`]: the page converts in one
  *    place, and every other band leads on with a secondary button.
  *
- * Whether a visual repeats its module's words cannot be judged before copy
+ * Whether a visual repeats its block's words cannot be judged before copy
  * resolves, so that rule stays with the writer.
  */
 export function checkSectionVariety(input: SectionedViewDocument | readonly SectionedViewDocument[]): ComposeFinding[] {
@@ -2095,14 +2112,14 @@ export function checkSectionVariety(input: SectionedViewDocument | readonly Sect
   bands.forEach((band, position) => {
     const previous = bands[position - 1];
     if (previous === undefined) return;
-    if (previous.layout === band.layout && previous.module === band.module && previous.visual === band.visual) {
-      findings.push(varietyWarning("sectioned-view-variety-repeat", band.path, `${band.path} repeats the layout, module and visual of the band before it (${band.layout}, ${band.module}, ${band.visual}); vary one of them.`));
+    if (previous.layout === band.layout && previous.block === band.block && previous.visual === band.visual) {
+      findings.push(varietyWarning("sectioned-view-variety-repeat", band.path, `${band.path} repeats the layout, block and visual of the band before it (${band.layout}, ${band.block}, ${band.visual}); vary one of them.`));
     }
     if (previous.layout === "split" && band.layout === "split") {
       if (previous.mediaSide === band.mediaSide) findings.push(varietyWarning("sectioned-view-variety-split-side", band.path, `${band.path} is a split after a split with the same mediaSide (${band.mediaSide}); flip its mediaSide.`));
       if (bands[position - 2]?.layout === "split") findings.push(varietyWarning("sectioned-view-variety-split-run", band.path, `${band.path} is the third split in a row; make one of them stacked.`));
     }
-    if (previous.dense && band.dense) findings.push(varietyWarning("sectioned-view-variety-density", band.path, `${band.path} is a dense band right after another; put an airy band (features, topics, plain steps, intro or FAQ) between them.`));
+    if (previous.dense && band.dense) findings.push(varietyWarning("sectioned-view-variety-density", band.path, `${band.path} is a dense band right after another; put an airy band (feature-grid, topic-list, ordered-step-sequence without visuals, intro or FAQ) between them.`));
   });
 
   bands.forEach((band) => {
@@ -2111,15 +2128,15 @@ export function checkSectionVariety(input: SectionedViewDocument | readonly Sect
   const inverseBodyBands = bands.filter((band) => band.index > 0 && band.ground === "inverse");
   inverseBodyBands.slice(1).forEach((band) => findings.push(varietyWarning("sectioned-view-variety-inverse-bands", band.path, `${band.path} is a second inverse body band; keep at most one.`)));
   bands.filter((band) => band.cardCount >= 4).slice(1).forEach((band) => findings.push(varietyWarning("sectioned-view-variety-card-bands", band.path, `${band.path} is a second band with four or more cards; keep at most one.`)));
-  bands.filter((band) => band.kind === "content-section" && band.module === "comparison").slice(1).forEach((band) => findings.push(varietyWarning("sectioned-view-variety-comparison-count", band.path, `${band.path} is a second comparison; keep at most one.`)));
+  bands.filter((band) => band.kind === "content-section" && band.block === "comparison").slice(1).forEach((band) => findings.push(varietyWarning("sectioned-view-variety-comparison-count", band.path, `${band.path} is a second comparison; keep at most one.`)));
   bands.filter((band) => band.primaryAction).slice(1).forEach((band) => findings.push(varietyWarning("sectioned-view-variety-primary-actions", band.path, `${band.path} is a second band with a primary action; keep one, make this one secondary.`)));
 
   const seen = new Map<string, BandShape>();
   for (const band of bands) {
-    if (band.kind !== "content-section" || band.module === "intro" || band.module === "none" || band.module === "comparison") continue;
-    const key = `${band.module}|${band.treatment}`;
+    if (band.kind !== "content-section" || band.block === "intro" || band.block === "none" || band.block === "comparison") continue;
+    const key = `${band.block}|${band.treatment}`;
     const first = seen.get(key);
-    if (first !== undefined) findings.push(varietyWarning("sectioned-view-variety-treatment", band.path, `${band.path} uses the ${band.module} module with the same treatment as ${first.path}; give it a different treatment.`));
+    if (first !== undefined) findings.push(varietyWarning("sectioned-view-variety-treatment", band.path, `${band.path} uses the ${band.block} block with the same treatment as ${first.path}; give it a different treatment.`));
     else seen.set(key, band);
   }
   return findings;

@@ -1,7 +1,7 @@
 import { buttonLinkClassName } from "@clossys/designer/atoms/server";
 import { SECTION_GROUND_CLASSES } from "@clossys/designer/blocks/server";
 import type { ReactNode } from "react";
-import { CONTENT_ICON_NAMES, FEATURES_ITEM_EYEBROW_MAX_CHARACTERS } from "../../core/sectioned-view.js";
+import { CONTENT_ICON_NAMES, FEATURE_GRID_ITEM_EYEBROW_MAX_CHARACTERS } from "../../core/sectioned-view.js";
 import type { ContentIconName, ResolvedSectionedViewAction, ResolvedSectionedViewContentAction, ResolvedSectionedViewContentSection, ResolvedSectionedViewDocument, ResolvedSectionedViewHeroMedia, ResolvedSectionedViewSection, SectionedViewGround, SectionedViewStatTrend, SectionedViewStatus, SectionedViewStatusDisposition } from "../../core/sectioned-view.js";
 import { isRenderAsset } from "../../internal/assets.js";
 import { RenderError } from "../../internal/errors.js";
@@ -233,7 +233,7 @@ function assertStatusItems(value: unknown, path: string): void {
   }
 }
 
-const CONTENT_SECTION_KEYS = ["id", "kind", "ground", "eyebrow", "heading", "description", "actions", "layout", "mediaSide", "align", "module", "media", "footnote"] as const;
+const CONTENT_SECTION_KEYS = ["id", "kind", "ground", "eyebrow", "heading", "description", "actions", "layout", "mediaSide", "align", "block", "media", "footnote"] as const;
 const CARD_SPAN_UNITS: Readonly<Record<string, number>> = { third: 4, half: 6, "two-thirds": 8, full: 12 };
 const SPECIMEN_TONES = ["success", "warning", "danger", "info", "neutral"] as const;
 const SPECIMEN_ARRANGEMENTS = ["single", "row", "stack", "flow"] as const;
@@ -405,32 +405,32 @@ function assertComparisonSide(value: unknown, path: string): Record<string, unkn
   return value;
 }
 
-function assertContentModule(value: unknown, path: string): void {
-  if (!plain(value) || typeof value.type !== "string") throw new Error(`${path} must be a resolved module with a type.`);
-  const module = value;
-  const moduleKeys = (keys: readonly string[]) => {
-    if (!closed(module, ["type", ...keys])) throw new Error(`${path} has keys not allowed for a ${String(module.type)} module.`);
+function assertContentBlock(value: unknown, path: string): void {
+  if (!plain(value) || typeof value.type !== "string") throw new Error(`${path} must be a resolved block with a type.`);
+  const block = value;
+  const blockKeys = (keys: readonly string[]) => {
+    if (!closed(block, ["type", ...keys])) throw new Error(`${path} has keys not allowed for a ${String(block.type)} block.`);
   };
-  switch (module.type) {
-    case "features": {
-      moduleKeys(["columns", "treatment", "emphasis", "items"]);
-      oneOf(module.columns, [2, 3, 4], `${path}.columns`, "features column count");
-      oneOf(module.treatment, ["plain", "rule", "plate"], `${path}.treatment`, "features treatment");
-      oneOf(module.emphasis, ["item", "statement"], `${path}.emphasis`, "features emphasis");
-      const statement = module.emphasis === "statement";
-      records(module.items, `${path}.items`, ["id", "icon", "eyebrow", "heading", "description"], statement ? 3 : 2, statement ? 3 : 4, "items");
-      assertContentItems(module.items, `${path}.items`, module.treatment !== "rule");
-      module.items.forEach((item, index) => {
-        if (typeof item.eyebrow === "string" && [...item.eyebrow.trim()].length > FEATURES_ITEM_EYEBROW_MAX_CHARACTERS) throw new Error(`${path}.items.${index}.eyebrow holds more than ${FEATURES_ITEM_EYEBROW_MAX_CHARACTERS} characters.`);
+  switch (block.type) {
+    case "feature-grid": {
+      blockKeys(["columns", "treatment", "emphasis", "items"]);
+      oneOf(block.columns, [2, 3, 4], `${path}.columns`, "feature-grid column count");
+      oneOf(block.treatment, ["plain", "rule", "plate"], `${path}.treatment`, "feature-grid treatment");
+      oneOf(block.emphasis, ["item", "statement"], `${path}.emphasis`, "feature-grid emphasis");
+      const statement = block.emphasis === "statement";
+      records(block.items, `${path}.items`, ["id", "icon", "eyebrow", "heading", "description"], statement ? 3 : 2, statement ? 3 : 4, "items");
+      assertContentItems(block.items, `${path}.items`, block.treatment !== "rule");
+      block.items.forEach((item, index) => {
+        if (typeof item.eyebrow === "string" && [...item.eyebrow.trim()].length > FEATURE_GRID_ITEM_EYEBROW_MAX_CHARACTERS) throw new Error(`${path}.items.${index}.eyebrow holds more than ${FEATURE_GRID_ITEM_EYEBROW_MAX_CHARACTERS} characters.`);
       });
       return;
     }
-    case "cards": {
-      moduleKeys(["items"]);
-      records(module.items, `${path}.items`, ["id", "icon", "eyebrow", "heading", "description", "span", "visual"], 2, 6, "cards");
-      assertContentItems(module.items, `${path}.items`);
+    case "card-grid": {
+      blockKeys(["items"]);
+      records(block.items, `${path}.items`, ["id", "icon", "eyebrow", "heading", "description", "span", "visual"], 2, 6, "cards");
+      assertContentItems(block.items, `${path}.items`);
       let filled = 0;
-      module.items.forEach((card, index) => {
+      block.items.forEach((card, index) => {
         const units = typeof card.span === "string" ? CARD_SPAN_UNITS[card.span] : undefined;
         if (units === undefined) throw new Error(`${path}.items.${index}.span is not a supported card span.`);
         filled += units;
@@ -442,36 +442,36 @@ function assertContentModule(value: unknown, path: string): void {
       return;
     }
     case "comparison": {
-      moduleKeys(["before", "after"]);
-      const before = assertComparisonSide(module.before, `${path}.before`);
-      const after = assertComparisonSide(module.after, `${path}.after`);
+      blockKeys(["before", "after"]);
+      const before = assertComparisonSide(block.before, `${path}.before`);
+      const after = assertComparisonSide(block.after, `${path}.after`);
       const form = (side: Record<string, unknown>) => (Array.isArray(side.points) ? `points:${side.points.length}` : "description");
       if (form(before) !== form(after)) throw new Error(`${path}.before and ${path}.after must use the same form.`);
       if ((before.visual === undefined) !== (after.visual === undefined)) throw new Error(`${path}.before and ${path}.after must both carry a visual or neither.`);
       return;
     }
-    case "topics":
-      moduleKeys(["columns", "items"]);
-      oneOf(module.columns, [1, 2], `${path}.columns`, "topics column count");
-      records(module.items, `${path}.items`, ["id", "icon", "heading", "description"], 2, 8, "items");
-      assertContentItems(module.items, `${path}.items`);
-      if (module.columns !== 1 && module.items.length % 2 === 1) throw new Error(`${path}.items must hold an even number of items in 2 columns; it holds ${module.items.length}.`);
+    case "topic-list":
+      blockKeys(["columns", "items"]);
+      oneOf(block.columns, [1, 2], `${path}.columns`, "topic-list column count");
+      records(block.items, `${path}.items`, ["id", "icon", "heading", "description"], 2, 8, "items");
+      assertContentItems(block.items, `${path}.items`);
+      if (block.columns !== 1 && block.items.length % 2 === 1) throw new Error(`${path}.items must hold an even number of items in 2 columns; it holds ${block.items.length}.`);
       return;
-    case "steps":
-      moduleKeys(["items"]);
-      records(module.items, `${path}.items`, ["id", "ordinal", "label", "heading", "description", "visual"], 3, 4, "steps");
-      module.items.forEach((step, index) => {
+    case "ordered-step-sequence":
+      blockKeys(["items"]);
+      records(block.items, `${path}.items`, ["id", "ordinal", "label", "heading", "description", "visual"], 3, 4, "steps");
+      block.items.forEach((step, index) => {
         copyFields(step, `${path}.items.${index}`, ["ordinal", "heading"], ["label", "description"]);
         if (step.visual !== undefined) assertSpecimenPanel(step.visual, `${path}.items.${index}.visual`);
       });
       return;
     case "faq":
-      moduleKeys(["items"]);
-      records(module.items, `${path}.items`, ["id", "question", "answer"], 4, 6, "items");
-      module.items.forEach((item, index) => copyFields(item, `${path}.items.${index}`, ["question", "answer"]));
+      blockKeys(["items"]);
+      records(block.items, `${path}.items`, ["id", "question", "answer"], 4, 6, "items");
+      block.items.forEach((item, index) => copyFields(item, `${path}.items.${index}`, ["question", "answer"]));
       return;
     default:
-      throw new Error(`${path}.type is not a supported content module type.`);
+      throw new Error(`${path}.type is not a supported content block type.`);
   }
 }
 
@@ -479,8 +479,8 @@ function assertContentModule(value: unknown, path: string): void {
  * A resolved content section, held to the same closed shapes and budgets the
  * document contract validates, so no Designer block throws while rendering.
  * A split needs a specimen, except a split FAQ, whose rows take the visual
- * column and which takes no media, and a text-only split, whose topics or
- * two-column features module takes the visual column.
+ * column and which takes no media, and a text-only split, whose topic-list or
+ * two-column feature-grid block takes the visual column.
  */
 function assertContentSection(record: Record<string, unknown>, path: string): void {
   if (!closed(record, CONTENT_SECTION_KEYS)) throw new Error(`${path} has keys not allowed for a content-section section.`);
@@ -492,14 +492,14 @@ function assertContentSection(record: Record<string, unknown>, path: string): vo
   oneOf(record.align, ["start", "center"], `${path}.align`, "content alignment");
   if (record.mediaSide !== undefined && !split) throw new Error(`${path}.mediaSide is allowed only on a split section.`);
   if (record.align !== undefined && split) throw new Error(`${path}.align is allowed only on a stacked section.`);
-  if (record.module !== undefined) assertContentModule(record.module, `${path}.module`);
+  if (record.block !== undefined) assertContentBlock(record.block, `${path}.block`);
   if (record.media !== undefined) assertSpecimenMedia(record.media, `${path}.media`);
-  const faq = plain(record.module) && record.module.type === "faq";
+  const faq = plain(record.block) && record.block.type === "faq";
   if (split && faq && record.media !== undefined) throw new Error(`${path}.media is not allowed on a split FAQ section; its rows take the visual column.`);
   if (split && !faq && record.media === undefined) {
-    const module = plain(record.module) ? record.module : undefined;
-    if (module === undefined || (module.type !== "topics" && module.type !== "features")) throw new Error(`${path} is a split section and needs media, unless its module is faq, topics or features.`);
-    if (module.type === "features" && (module.columns !== 2 || module.emphasis === "statement")) throw new Error(`${path} is a text-only split; its features module needs columns: 2 and item emphasis.`);
+    const block = plain(record.block) ? record.block : undefined;
+    if (block === undefined || (block.type !== "topic-list" && block.type !== "feature-grid")) throw new Error(`${path} is a split section and needs media, unless its block is faq, topic-list or feature-grid.`);
+    if (block.type === "feature-grid" && (block.columns !== 2 || block.emphasis === "statement")) throw new Error(`${path} is a text-only split; its feature-grid block needs columns: 2 and item emphasis.`);
   }
 }
 
@@ -521,7 +521,7 @@ export function assertRenderableSectionedViewDocument(document: unknown): assert
   for (let index = 0; index < candidate.sections.length; index += 1) {
     const path = `sections.${index}`;
     const section = candidate.sections[index];
-    if (!plain(section) || !closed(section, ["id", "kind", "ground", "eyebrow", "heading", "description", "actions", "media", "items", "labels", "groups", "layout", "mediaSide", "align", "module", "footnote"])) throw new Error(`${path} must be a closed resolved section object.`);
+    if (!plain(section) || !closed(section, ["id", "kind", "ground", "eyebrow", "heading", "description", "actions", "media", "items", "labels", "groups", "layout", "mediaSide", "align", "block", "footnote"])) throw new Error(`${path} must be a closed resolved section object.`);
     const record = section as Record<string, unknown>;
     if (!nonBlank(record.id) || !FRAGMENT_ID.test(record.id)) throw new Error(`${path}.id must be a unique fragment-safe id.`);
     if (sectionIds.has(record.id)) throw new Error(`${path}.id duplicates an earlier section.`);
@@ -771,7 +771,7 @@ const STAT_GRID_GROUND: Record<SectionedViewGround, { surface: string; primary: 
 
 /**
  * A split `faq` section as the content-section band it reads as: the header
- * group in the text column and the rows, as a split `faq` module, in the
+ * group in the text column and the rows, as a split `faq` block, in the
  * visual column. One renderer for both spellings keeps them identical.
  */
 function splitFaqSection(section: Extract<ResolvedSectionedViewSection, { kind: "faq" }>): ResolvedSectionedViewContentSection {
@@ -783,7 +783,7 @@ function splitFaqSection(section: Extract<ResolvedSectionedViewSection, { kind: 
     heading: section.heading,
     ...(section.description === undefined ? {} : { description: section.description }),
     layout: "split",
-    module: { type: "faq", items: section.items },
+    block: { type: "faq", items: section.items },
   };
 }
 
