@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { getAuthoredThemeInitScript, getStoredThemeInitScript, getThemeInitScript } from "./initScript.js";
 import { DEFAULT_STORAGE_KEY } from "./internal/theme-core.js";
 
@@ -26,4 +26,19 @@ describe("getStoredThemeInitScript / getThemeInitScript", () => {
     expect(script.trimStart()).toMatch(/^\(function\s*\(\)\s*\{/);
     expect(script.trimEnd()).toMatch(/\}\)\(\);$/);
   });
+});
+
+it("escapes script-element delimiters and preserves the original storage key", () => {
+  const storageKey = "</script>&\u2028\u2029";
+  const getItem = vi.spyOn(Storage.prototype, "getItem").mockReturnValue("dark");
+  try {
+    for (const buildScript of [getStoredThemeInitScript, getThemeInitScript]) {
+      const script = buildScript({ storageKey });
+      expect(script).not.toMatch(/[<>&\u2028\u2029]/);
+      new Function(script)();
+      expect(getItem).toHaveBeenLastCalledWith(storageKey);
+    }
+  } finally {
+    getItem.mockRestore();
+  }
 });

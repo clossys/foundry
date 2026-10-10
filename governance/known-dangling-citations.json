@@ -293,7 +293,6 @@
         "src/icons/icons.test.ts",
         "src/icons/tree-shake.test.ts",
         "src/ladder.test.ts",
-        "src/theme/theme-script-parity.test.ts",
         "theme/theme-script-parity.test.ts",
         "token-parity.test.ts"
       ],
@@ -518,7 +517,6 @@
         "theme-script-parity.test.ts"
       ],
       "src/theme/internal/theme-core.ts": [
-        "theme-core.test.ts",
         "theme-script-parity.test.ts"
       ],
       "src/theme/server.ts": [
