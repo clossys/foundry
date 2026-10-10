@@ -1052,9 +1052,13 @@
     content: var(--tw-content, "");
     inset-inline: calc(var(--spacing-md, 12px) * -1);
   }
-  .before\:-inset-y-md::before {
+  .before\:-inset-x-sm::before {
     content: var(--tw-content, "");
-    inset-block: calc(var(--spacing-md, 12px) * -1);
+    inset-inline: calc(var(--spacing-sm, 8px) * -1);
+  }
+  .before\:-inset-y-sm::before {
+    content: var(--tw-content, "");
+    inset-block: calc(var(--spacing-sm, 8px) * -1);
   }
   .before\:inset-y-xs::before {
     content: var(--tw-content, "");
@@ -1064,9 +1068,9 @@
     content: var(--tw-content, "");
     top: 0px;
   }
-  .before\:-bottom-md::before {
+  .before\:-bottom-sm::before {
     content: var(--tw-content, "");
-    bottom: calc(var(--spacing-md, 12px) * -1);
+    bottom: calc(var(--spacing-sm, 8px) * -1);
   }
   .before\:-z-10::before {
     content: var(--tw-content, "");
@@ -1088,9 +1092,13 @@
     content: var(--tw-content, "");
     inset-inline: calc(var(--spacing-md, 12px) * -1);
   }
-  .after\:-inset-y-md::after {
+  .after\:-inset-x-sm::after {
     content: var(--tw-content, "");
-    inset-block: calc(var(--spacing-md, 12px) * -1);
+    inset-inline: calc(var(--spacing-sm, 8px) * -1);
+  }
+  .after\:-inset-y-sm::after {
+    content: var(--tw-content, "");
+    inset-block: calc(var(--spacing-sm, 8px) * -1);
   }
   .after\:inset-y-xs::after {
     content: var(--tw-content, "");
@@ -1100,9 +1108,9 @@
     content: var(--tw-content, "");
     top: 0px;
   }
-  .after\:-bottom-md::after {
+  .after\:-bottom-sm::after {
     content: var(--tw-content, "");
-    bottom: calc(var(--spacing-md, 12px) * -1);
+    bottom: calc(var(--spacing-sm, 8px) * -1);
   }
   .after\:z-10::after {
     content: var(--tw-content, "");
@@ -1452,6 +1460,30 @@
     }
     .tablet\:text-h0 {
       font-size: var(--text-h0, 32px);
+    }
+    .tablet\:before\:-inset-x-md::before {
+      content: var(--tw-content, "");
+      inset-inline: calc(var(--spacing-md, 12px) * -1);
+    }
+    .tablet\:before\:-inset-y-md::before {
+      content: var(--tw-content, "");
+      inset-block: calc(var(--spacing-md, 12px) * -1);
+    }
+    .tablet\:before\:-bottom-md::before {
+      content: var(--tw-content, "");
+      bottom: calc(var(--spacing-md, 12px) * -1);
+    }
+    .tablet\:after\:-inset-x-md::after {
+      content: var(--tw-content, "");
+      inset-inline: calc(var(--spacing-md, 12px) * -1);
+    }
+    .tablet\:after\:-inset-y-md::after {
+      content: var(--tw-content, "");
+      inset-block: calc(var(--spacing-md, 12px) * -1);
+    }
+    .tablet\:after\:-bottom-md::after {
+      content: var(--tw-content, "");
+      bottom: calc(var(--spacing-md, 12px) * -1);
     }
   }
   @media (width >= 1024px) {

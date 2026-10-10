@@ -41,6 +41,30 @@ const LINKED_BLOCKS: ReadonlyArray<{ name: string; frame: "plate" | "plain" | "r
 ];
 
 describe("linked items (stretched link)", () => {
+  for (const frame of ["plain", "rule"] as const) {
+    it(`${frame} frames use the smaller outset below tablet for both the hit area and hover plate`, () => {
+      const { container } = render(<FeatureGrid columns={3} treatment={frame} items={features(frame)} />);
+      for (const link of container.querySelectorAll("a")) {
+        expect(link).toHaveClass("after:-inset-x-sm", "tablet:after:-inset-x-md");
+        expect(link).not.toHaveClass("after:-inset-x-md");
+        const item = link.closest(".relative.isolate");
+        expect(item).toHaveClass("before:-inset-x-sm", "tablet:before:-inset-x-md");
+        expect(item).not.toHaveClass("before:-inset-x-md");
+        if (frame === "plain") {
+          expect(link).toHaveClass("after:-inset-y-sm", "tablet:after:-inset-y-md");
+          expect(link).not.toHaveClass("after:-inset-y-md");
+          expect(item).toHaveClass("before:-inset-y-sm", "tablet:before:-inset-y-md");
+          expect(item).not.toHaveClass("before:-inset-y-md");
+        } else {
+          expect(link).toHaveClass("after:top-0", "after:-bottom-sm", "tablet:after:-bottom-md");
+          expect(link).not.toHaveClass("after:-bottom-md");
+          expect(item).toHaveClass("before:top-0", "before:-bottom-sm", "tablet:before:-bottom-md");
+          expect(item).not.toHaveClass("before:-bottom-md");
+        }
+      }
+    });
+  }
+
   for (const block of LINKED_BLOCKS) {
     for (const ground of ["base", "sunken", "inverse"] as const) {
       it(`${block.name} on ${ground}: one anchor per item, named by its title alone, with an aria-hidden chevron, a stretched hit area and a ring around the item`, () => {

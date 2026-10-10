@@ -45,8 +45,8 @@ const ANCHOR_BASE =
 /** Where the anchor's `::after` (hit area and ring) sits, relative to the item container. */
 const HIT_AREA_CLASSES: Record<CardLinkFrame, string> = {
   plate: "after:inset-0 after:rounded-panel",
-  plain: "after:-inset-x-md after:-inset-y-md after:rounded-panel",
-  rule: "after:-inset-x-md after:top-0 after:-bottom-md after:rounded-panel",
+  plain: "after:-inset-x-sm after:-inset-y-sm tablet:after:-inset-x-md tablet:after:-inset-y-md after:rounded-panel",
+  rule: "after:-inset-x-sm after:top-0 after:-bottom-sm tablet:after:-inset-x-md tablet:after:-bottom-md after:rounded-panel",
   topic: "after:-inset-x-md after:inset-y-xs after:rounded-panel",
   control: "after:inset-0 after:rounded-control",
 };
@@ -69,8 +69,8 @@ const HOVER_PLATE_FILL_CLASSES: Record<SectionGround, string> = {
 /** The hover plate takes the hit area's shape; a plate, a tile or a step needs none of its own. */
 const HOVER_PLATE_INSET_CLASSES: Record<CardLinkFrame, string | undefined> = {
   plate: undefined,
-  plain: "before:-inset-x-md before:-inset-y-md",
-  rule: "before:-inset-x-md before:top-0 before:-bottom-md",
+  plain: "before:-inset-x-sm before:-inset-y-sm tablet:before:-inset-x-md tablet:before:-inset-y-md",
+  rule: "before:-inset-x-sm before:top-0 before:-bottom-sm tablet:before:-inset-x-md tablet:before:-bottom-md",
   topic: "before:-inset-x-md before:inset-y-xs",
   control: undefined,
 };
