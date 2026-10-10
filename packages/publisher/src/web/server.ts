@@ -31,7 +31,7 @@ export { defineWebTemplate } from "./internal/defineWebTemplate.js";
 export { createWebRenderer } from "./internal/createWebRenderer.js";
 export { evaluateWebRouteManifest, evaluateWebRouteManifestWithSources, scanRouteSourceForDirectComposition } from "./checkWebRoutes.js";
 export type { WebRouteCheckResult, WebRouteFinding, WebRouteManifest, WebRouteManifestEntry } from "./checkWebRoutes.js";
-export { AuthView, BoundaryView, BrandGuideView, CaptureView, CollectionView, DocumentView, ErrorView, MarketingView, PackReviewView, SectionedView, SystemAuditView } from "#publisher-web-views";
+export { AuthView, BoundaryView, BrandGuideView, CaptureView, CollectionView, DocumentView, ErrorView, MarketingView, PackReviewView, SectionedView, StatusView, SystemAuditView } from "#publisher-web-views";
 export type {
   AuthViewProps,
   BoundaryViewProps,
@@ -63,6 +63,7 @@ export type {
   PackReviewViewVoice,
   SectionedViewLandmark,
   SectionedViewProps,
+  StatusViewProps,
   SystemAuditViewProps,
 } from "#publisher-web-views";
 
@@ -130,7 +131,7 @@ export type { ContactViewCopy, ContactViewDevPreview, ContactViewProps, ContactV
 export { SignInForm } from "#publisher-web-views";
 export type { SignInFailure, SignInFormProps, SignInResult } from "#publisher-web-views";
 export { GlobalErrorDocument } from "#publisher-web-views";
-export type { GlobalErrorDocumentProps } from "#publisher-web-views";
+export type { GlobalErrorDocumentErrorViewProps, GlobalErrorDocumentFramedProps, GlobalErrorDocumentHeadProps, GlobalErrorDocumentProps } from "#publisher-web-views";
 export { ActivateForm, ResetForm } from "#publisher-web-views";
 export type { ActivateDetails, ActivateFailure, ActivateFormProps, ActivateResult, ResetDetails, ResetFailure, ResetFormProps, ResetResult } from "#publisher-web-views";
 

@@ -6,6 +6,13 @@ import type { SiteChromeGround } from "../internal/viewChromeGround.js";
 import { assertViewContentRoot, usesLegacyChrome } from "../internal/viewContentRoot.js";
 import type { ErrorViewProps } from "./ErrorView.js";
 
+/**
+ * `BoundaryView`'s props.
+ *
+ * @deprecated Use `StatusViewProps` with `StatusView`, or `AuthViewProps`
+ * with `AuthView` when the state needs a card. Kept, unchanged, for existing
+ * call sites.
+ */
 export interface BoundaryViewProps extends ErrorViewProps {
   /**
    * The site's brand, rendered by Designer's `SiteHeader` on the legacy page.
@@ -104,6 +111,15 @@ export interface BoundaryViewProps extends ErrorViewProps {
  *
  * Server-safe: no client hooks, no router, no auth provider. `action` is a
  * plain slot, so the caller supplies its own link or button.
+ *
+ * @deprecated Use `StatusView` (cardless) for a status with a title, a
+ * subtitle and one action, or `AuthView` (card) for a boundary state whose
+ * content needs a card, such as a signed-in 403 with the account and a
+ * switch-account control.
+ * Rule of thumb: a title, a subtitle and one action is `StatusView`; content
+ * that needs a card to house it takes the card view for that content
+ * (`AuthView`, `CaptureView`, `DocumentView`).
+ * `BoundaryView` still renders as before and is not removed.
  */
 export function BoundaryView({
   brand,

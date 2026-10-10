@@ -9,6 +9,15 @@ import { Card } from "@clossys/designer/atoms/server";
 export const PAGE_COLUMN_CLASSES = "mx-auto flex w-full flex-1 flex-col gap-xl px-lg py-2xl";
 
 /**
+ * The column of the card-free layout: the page column, with its content
+ * centred vertically in the space the page frame's `<main>` gives it.
+ */
+export const CARDLESS_PAGE_COLUMN_CLASSES = `${PAGE_COLUMN_CLASSES} justify-center`;
+
+/** The notes line under either layout's body: centred, small, secondary ink. */
+const NOTES_CLASSES = "flex flex-col items-center gap-xs text-center text-body-s text-ink-secondary";
+
+/**
  * The column's measure, from a design token with no raw-length fallback: the
  * form column for a sign-in page, the prose column for a capture or document
  * page.
@@ -69,7 +78,38 @@ export function PageLayout({ title, subtitle, children, notes, cardLabel }: Page
     <>
       <PageLayoutHeader title={title} subtitle={subtitle} />
       {cardLabel === undefined ? card : <section aria-label={cardLabel}>{card}</section>}
-      {hasContent(notes) ? <div className="flex flex-col items-center gap-xs text-center text-body-s text-ink-secondary">{notes}</div> : null}
+      {hasContent(notes) ? <div className={NOTES_CLASSES}>{notes}</div> : null}
+    </>
+  );
+}
+
+export interface CardlessPageLayoutProps extends PageLayoutHeaderProps {
+  /**
+   * The one primary call to action, on the page background with no card
+   * around it: usually one link or button. The element is absent from the
+   * markup when this is empty.
+   */
+  action?: ReactNode;
+  /**
+   * A footnote-like line under the action, for quiet secondary links. The
+   * element is absent from the markup when this is empty.
+   */
+  notes?: ReactNode;
+}
+
+/**
+ * The card-free layout used by `StatusView`: the same
+ * header as `PageLayout` (title and subtitle), then one primary action and the
+ * optional notes, centered, with no card. It returns the slots only, for the
+ * view to place in its own column, and renders no header, footer or `<main>`
+ * landmark: the page frame owns those. Every string is a prop.
+ */
+export function CardlessPageLayout({ title, subtitle, action, notes }: CardlessPageLayoutProps) {
+  return (
+    <>
+      <PageLayoutHeader title={title} subtitle={subtitle} />
+      {hasContent(action) ? <div className="flex flex-col items-center gap-sm">{action}</div> : null}
+      {hasContent(notes) ? <div className={NOTES_CLASSES}>{notes}</div> : null}
     </>
   );
 }

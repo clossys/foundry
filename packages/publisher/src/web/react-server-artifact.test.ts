@@ -409,7 +409,10 @@ describe("packed Publisher web React-server boundary", () => {
       const failure = error as { stdout?: string; stderr?: string; message?: string };
       formerRangeImportFailure = `${failure.stdout ?? ""}\n${failure.stderr ?? ""}\n${failure.message ?? ""}`;
     }
-    expect(formerRangeImportFailure).toMatch(/MarketingChapter/);
+    // Which missing Designer export Node reports first follows the module
+    // graph's link order: `MarketingChapter`, or `SkipLink` now that the
+    // global-error document reaches the frame from the views barrel.
+    expect(formerRangeImportFailure).toMatch(/does not provide an export named '(?:MarketingChapter|SkipLink)'/);
 
     // The corrected `^0.4.12` range (the packed manifest's actual declared
     // range) refuses to install against this same 0.4.7-shaped tarball at
