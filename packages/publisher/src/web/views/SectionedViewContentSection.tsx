@@ -119,7 +119,7 @@ function renderBlock(block: ResolvedSectionedViewContentBlock, ground: Sectioned
     case "feature-grid":
       return (
         <FeatureGrid
-          items={block.items.map((item) => ({ id: item.id, icon: icon(item.icon), eyebrow: item.eyebrow, heading: item.heading, description: item.description }))}
+          items={block.items.map((item) => ({ id: item.id, icon: icon(item.icon), eyebrow: item.eyebrow, heading: item.heading, description: item.description, href: item.href }))}
           columns={block.columns ?? FEATURE_GRID_DEFAULTS.columns}
           treatment={block.treatment ?? FEATURE_GRID_DEFAULTS.treatment}
           emphasis={block.emphasis ?? FEATURE_GRID_DEFAULTS.emphasis}
@@ -137,6 +137,7 @@ function renderBlock(block: ResolvedSectionedViewContentBlock, ground: Sectioned
             description: card.description,
             span: card.span,
             visual: partSpecimen(card.visual, card.heading),
+            href: card.href,
           }))}
           headingLevel={3}
           ground={ground}
@@ -149,7 +150,7 @@ function renderBlock(block: ResolvedSectionedViewContentBlock, ground: Sectioned
     case "topic-list":
       return (
         <TopicList
-          items={block.items.map((item) => ({ id: item.id, icon: icon(item.icon), heading: item.heading, description: item.description }))}
+          items={block.items.map((item) => ({ id: item.id, icon: icon(item.icon), heading: item.heading, description: item.description, href: item.href }))}
           columns={block.columns ?? 2}
           ground={ground}
         />
@@ -157,7 +158,7 @@ function renderBlock(block: ResolvedSectionedViewContentBlock, ground: Sectioned
     case "ordered-step-sequence":
       return (
         <OrderedStepSequence
-          items={block.items.map((step) => ({ id: step.id, ordinal: step.ordinal, label: step.label, heading: step.heading, description: step.description, visual: panelSpecimen(step.visual) }))}
+          items={block.items.map((step) => ({ id: step.id, ordinal: step.ordinal, label: step.label, heading: step.heading, description: step.description, visual: panelSpecimen(step.visual), href: step.href }))}
           headingLevel={2}
           ground={ground}
         />
@@ -177,6 +178,11 @@ function renderBlock(block: ResolvedSectionedViewContentBlock, ground: Sectioned
  * places its block in the visual column the same way. A stacked section
  * with no block, no media and nothing placed after it is a statement band: its heading takes the
  * `display` emphasis. Block item headings are one level below the section.
+ *
+ * Actions: a split keeps them in its text column; a stacked band takes them
+ * only when it is header-only, so a stacked band with a block or media never
+ * renders them. A linked block item (`href`) renders as Designer's stretched
+ * link: the item's title is its one link.
  */
 export function createContentSectionBlock(Faq: ContentSectionFaq) {
   return function ContentSectionBlock({ section, actions, className, after }: ContentSectionBlockProps) {
@@ -208,9 +214,12 @@ export function createContentSectionBlock(Faq: ContentSectionFaq) {
     }
     // A statement band (no block, no media, nothing placed after it: a header and its actions) carries the page's display scale instead of repeating a thin section shape.
     const statement = section.block === undefined && section.media === undefined && (after === undefined || after === null);
+    // A stacked band followed by a block or a visual takes no actions (the contract refuses them; this keeps the render honest too).
+    const headerOnly = section.block === undefined && section.media === undefined;
     return (
       <ContentSection
         {...header}
+        actions={headerOnly ? actions : undefined}
         align={section.align}
         emphasis={statement ? "display" : "section"}
         media={section.media === undefined ? undefined : mediaSpecimen(section.media)}

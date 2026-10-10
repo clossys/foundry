@@ -528,6 +528,13 @@ export interface SectionedViewContentItem {
   eyebrow?: CopyRef;
   heading: CopyRef;
   description?: CopyRef;
+  /**
+   * Links the whole item: the heading becomes the link and its name, with a
+   * chevron, and the item's area is the hit target. All items of a block or
+   * none, at most 6, each destination once. Not on
+   * a `statement` feature grid.
+   */
+  href?: string;
 }
 
 /** A card's share of a 12-column row. */
@@ -560,6 +567,8 @@ export interface SectionedViewContentStep {
   heading: CopyRef;
   description?: CopyRef;
   visual?: SectionedViewSpecimenPanel;
+  /** Links the step, as for a content item. Rare: only when each step has its own destination. */
+  href?: string;
 }
 
 export type SectionedViewFeatureGridTreatment = "plain" | "rule" | "plate";
@@ -634,6 +643,11 @@ export type SectionedViewContentBlockType = SectionedViewContentBlock["type"];
  * aligned beside the header: a split FAQ block (which then takes no
  * `media`), and a text-only split, a `topic-list` block or a two-column
  * `feature-grid` block (not `statement` emphasis) with no `media`.
+ *
+ * Actions close what they follow, so a stacked band takes them only when it
+ * is header only (and then no footnote follows them); a split takes them in
+ * its text column. A stacked band with a block or media links its items
+ * (`href`) or carries one link in its footnote instead.
  */
 export interface SectionedViewContentSection {
   id: string;
@@ -642,7 +656,12 @@ export interface SectionedViewContentSection {
   eyebrow?: CopyRef;
   heading: CopyRef;
   description?: CopyRef;
-  /** One or two, at most one `primary`; rendered as full-size buttons. */
+  /**
+   * One or two, at most one `primary`; rendered as full-size buttons. Only
+   * on a header-only band (with no footnote) or in a split's text column: a
+   * stacked band with a block or media takes none (link the items instead,
+   * or use the footnote).
+   */
   actions?: SectionedViewContentAction[];
   /** @default "stacked" */
   layout?: SectionedViewContentLayout;
@@ -1224,7 +1243,9 @@ const SPECIMEN_ARRANGEMENTS: readonly SectionedViewSpecimenArrangement[] = ["sin
 const SPECIMEN_PART_TYPES: readonly SectionedViewSpecimenPartType[] = ["fields", "status-rows", "meter", "table", "schedule", "shares", "files"];
 const FIELDS_COLUMNS: readonly number[] = [1, 2, 4];
 const METER_DIRECTIONS: readonly string[] = ["max", "min"];
-const CONTENT_ITEM_KEYS = ["id", "icon", "eyebrow", "heading", "description"] as const;
+const CONTENT_ITEM_KEYS = ["id", "icon", "eyebrow", "heading", "description", "href"] as const;
+/** The most linked items one block may hold: a longer run of links stops scanning. */
+const CONTENT_LINKED_ITEMS_MAX = 6;
 /**
  * The retired short block type names, for the refusal message only: a
  * document that still uses one is refused, never read as the new name.
@@ -1336,8 +1357,86 @@ function validateContentSection(section: Record<string, unknown>, path: string, 
       findings.push(finding("sectioned-view-content-text-split", `${path}.block`, `${path} is a text-only split; its feature-grid block takes the visual column, so it needs columns: 2 and item emphasis.`));
     }
   }
+  validateContentActionPlacement(section, path, findings);
   if (section.block !== undefined) validateContentBlock(section.block, `${path}.block`, findings);
   if (section.media !== undefined) validateSpecimenMedia(section.media, `${path}.media`, findings);
+}
+
+/**
+ * Where a content section's actions may go (shared by the document contract
+ * and the renderer's resolved-model check). A stacked band whose intro is
+ * followed by a block or a visual takes none; a header-only band with actions
+ * takes no footnote, since nothing follows an action. A split keeps them in
+ * its text column. @internal
+ */
+export function validateContentActionPlacement(section: Record<string, unknown>, path: string, findings: ComposeFinding[]): void {
+  const split = section.layout === "split";
+  if (!split && section.actions !== undefined && (section.block !== undefined || section.media !== undefined)) {
+    findings.push(
+      finding(
+        "sectioned-view-content-stacked-actions",
+        `${path}.actions`,
+        `${path} is a stacked band whose intro is followed by a block or visual, so it takes no section actions. Link the cards themselves (item \`href\`), or put one link in the footnote.`,
+      ),
+    );
+  }
+  if (!split && section.block === undefined && section.media === undefined && section.actions !== undefined && section.footnote !== undefined) {
+    findings.push(
+      finding(
+        "sectioned-view-content-actions-footnote",
+        `${path}.footnote`,
+        `${path} is a header-only band with actions, and nothing follows an action: fold the footnote sentence into the description, or drop the actions.`,
+      ),
+    );
+  }
+}
+
+/** An item's optional `href`: sanctioned, and never on a statement item (a headline, not a destination). @internal */
+export function validateItemHref(item: Record<string, unknown>, path: string, findings: ComposeFinding[], statement = false): void {
+  if (item.href === undefined) return;
+  if (statement) {
+    findings.push(finding("sectioned-view-content-link-statement", `${path}.href`, `${path}.href is not allowed on a statement feature grid: its items are headlines, not destinations. Put one link in the footnote.`));
+    return;
+  }
+  if (!isSanctionedHref(item.href)) findings.push(finding("sectioned-view-content-item-href", `${path}.href`, `${path}.href must be a fragment, a one-origin path, an http(s) URL, or a mailto link.`));
+}
+
+/**
+ * A destination as a group compares it: without its fragment (unless it is
+ * only a fragment) and without a trailing slash (unless it is the root).
+ */
+function linkDestination(href: string): string {
+  const hash = href.indexOf("#");
+  const base = hash > 0 ? href.slice(0, hash) : href;
+  return base.length > 1 && base.endsWith("/") ? base.slice(0, -1) : base;
+}
+
+/**
+ * The group rules for a block's linked items: every item linked or none, at
+ * most `CONTENT_LINKED_ITEMS_MAX` links, and each destination once. @internal
+ */
+export function validateLinkGroup(items: unknown, path: string, findings: ComposeFinding[]): void {
+  if (!Array.isArray(items)) return;
+  const hrefs = items.map((item) => (isPlainObject(item) ? item.href : undefined));
+  const linked = hrefs.filter((href) => href !== undefined);
+  if (linked.length === 0) return;
+  if (linked.length !== items.length) {
+    findings.push(finding("sectioned-view-content-link-partial", path, `${path} links ${linked.length} of ${items.length} items; link every item or none, so a reader never has to guess which one is a link.`));
+  }
+  if (linked.length > CONTENT_LINKED_ITEMS_MAX) {
+    findings.push(finding("sectioned-view-content-link-count", path, `${path} links ${linked.length} items; a block links at most ${CONTENT_LINKED_ITEMS_MAX}. Cut the list, or leave it unlinked.`));
+  }
+  const seen = new Set<string>();
+  const repeated = new Set<string>();
+  for (const href of linked) {
+    if (typeof href !== "string") continue;
+    const destination = linkDestination(href);
+    if (seen.has(destination)) repeated.add(destination);
+    seen.add(destination);
+  }
+  for (const destination of repeated) {
+    findings.push(finding("sectioned-view-content-link-duplicate", path, `${path} links "${destination}" more than once; each linked item needs its own destination.`));
+  }
 }
 
 /** An item's icon, heading and description; only a card-grid or feature-grid item (`eyebrowAllowed`) carries an eyebrow. */
@@ -1368,19 +1467,23 @@ function validateContentBlock(value: unknown, path: string, findings: ComposeFin
       validateRecords(value.items, `${path}.items`, findings, statement ? { min: 3, max: 3 } : { min: 2, max: 4 }, CONTENT_ITEM_KEYS, ["heading"], (item, itemPath) => {
         validateContentItemFields(item, itemPath, findings, true);
         if (item.icon !== undefined && !iconsAllowed) findings.push(finding("sectioned-view-content-icon-treatment", `${itemPath}.icon`, `${itemPath}.icon is allowed only with the plain and plate treatments.`));
+        validateItemHref(item, itemPath, findings, statement);
       });
+      if (!statement) validateLinkGroup(value.items, `${path}.items`, findings);
       return;
     }
     case "card-grid": {
       validateBlockKeys(value, ["type", "items"], ["items"], path, findings);
       const cards = validateRecords(value.items, `${path}.items`, findings, { min: 2, max: 6 }, [...CONTENT_ITEM_KEYS, "span", "visual"], ["heading", "span"], (card, cardPath) => {
         validateContentItemFields(card, cardPath, findings, true);
+        validateItemHref(card, cardPath, findings);
         validateEnumField(card, "span", CARD_SPANS, "sectioned-view-content-card-span", cardPath, findings);
         if (card.visual !== undefined) validateSpecimenPart(card.visual, `${cardPath}.visual`, findings, CARD_VISUAL_MAX_ROWS);
       });
       if (Array.isArray(value.items) && cards.length === value.items.length && cards.every((card) => CARD_SPANS.includes(card.span as SectionedViewContentCardSpan))) {
         validateCardRows(cards.map((card) => card.span as SectionedViewContentCardSpan), `${path}.items`, findings);
       }
+      validateLinkGroup(value.items, `${path}.items`, findings);
       return;
     }
     case "comparison": {
@@ -1397,7 +1500,11 @@ function validateContentBlock(value: unknown, path: string, findings: ComposeFin
     case "topic-list": {
       validateBlockKeys(value, ["type", "columns", "items"], ["items"], path, findings);
       validateEnumField(value, "columns", TOPIC_LIST_COLUMNS, "sectioned-view-content-block-option", path, findings);
-      validateRecords(value.items, `${path}.items`, findings, { min: 2, max: 8 }, CONTENT_ITEM_KEYS, ["heading"], (item, itemPath) => validateContentItemFields(item, itemPath, findings));
+      validateRecords(value.items, `${path}.items`, findings, { min: 2, max: 8 }, CONTENT_ITEM_KEYS, ["heading"], (item, itemPath) => {
+        validateContentItemFields(item, itemPath, findings);
+        validateItemHref(item, itemPath, findings);
+      });
+      validateLinkGroup(value.items, `${path}.items`, findings);
       const twoColumns = value.columns === undefined || value.columns === 2;
       if (twoColumns && Array.isArray(value.items) && value.items.length % 2 === 1) {
         findings.push(finding("sectioned-view-content-count", `${path}.items`, `${path}.items must hold an even number of items in 2 columns; it holds ${value.items.length}.`));
@@ -1406,12 +1513,14 @@ function validateContentBlock(value: unknown, path: string, findings: ComposeFin
     }
     case "ordered-step-sequence":
       validateBlockKeys(value, ["type", "items"], ["items"], path, findings);
-      validateRecords(value.items, `${path}.items`, findings, { min: 3, max: 4 }, ["id", "ordinal", "label", "heading", "description", "visual"], ["ordinal", "heading"], (step, stepPath) => {
+      validateRecords(value.items, `${path}.items`, findings, { min: 3, max: 4 }, ["id", "ordinal", "label", "heading", "description", "visual", "href"], ["ordinal", "heading"], (step, stepPath) => {
         validateCopy(step.ordinal, `${stepPath}.ordinal`, findings);
         validateCopy(step.heading, `${stepPath}.heading`, findings);
         validateOptionalCopyFields(step, ["label", "description"], stepPath, findings);
         if (step.visual !== undefined) validateSpecimenPanel(step.visual, `${stepPath}.visual`, findings);
+        validateItemHref(step, stepPath, findings);
       });
+      validateLinkGroup(value.items, `${path}.items`, findings);
       return;
     case "faq":
       validateBlockKeys(value, ["type", "items"], ["items"], path, findings);
@@ -1947,6 +2056,7 @@ function resolveContentBlock(block: SectionedViewContentBlock, path: string, tex
             heading: text(step.heading, `${stepPath}.heading`),
             ...copyField("description", step.description, stepPath, text),
             ...(step.visual === undefined ? {} : { visual: resolveSpecimenPanel(step.visual, `${stepPath}.visual`, text) }),
+            ...(step.href === undefined ? {} : { href: step.href }),
           };
         }),
       } as ResolvedSectionedViewContentBlock;
@@ -2006,6 +2116,15 @@ interface BandShape {
   cardCount: number;
   /** Carries a `primary` content-section action. */
   primaryAction: boolean;
+  /** Carries any content-section action. */
+  hasActions: boolean;
+  /** Its block links its items (`href`). */
+  linkedBlock: boolean;
+}
+
+function hasLinkedItems(block: SectionedViewContentBlock | undefined): boolean {
+  if (block === undefined || !("items" in block) || !Array.isArray(block.items)) return false;
+  return (block.items as readonly unknown[]).some((item) => isPlainObject(item) && item.href !== undefined);
 }
 
 function hasBlockVisual(block: SectionedViewContentBlock): boolean {
@@ -2037,10 +2156,10 @@ function blockTreatment(block: SectionedViewContentBlock): string {
 function bandShape(section: SectionedViewSection, path: string, index: number): BandShape {
   if (section.kind === "faq" && section.layout === "split") {
     // A split legacy FAQ is the same band as a split content-section FAQ: its rows take the end column.
-    return { path, index, kind: section.kind, layout: "split", mediaSide: "end", block: section.kind, visual: "none", dense: false, ground: section.ground, treatment: "default", cardCount: 0, primaryAction: false };
+    return { path, index, kind: section.kind, layout: "split", mediaSide: "end", block: section.kind, visual: "none", dense: false, ground: section.ground, treatment: "default", cardCount: 0, primaryAction: false, hasActions: false, linkedBlock: false };
   }
   if (section.kind !== "content-section") {
-    return { path, index, kind: section.kind, layout: "stacked", block: section.kind, visual: "none", dense: false, ground: section.ground, treatment: "default", cardCount: 0, primaryAction: false };
+    return { path, index, kind: section.kind, layout: "stacked", block: section.kind, visual: "none", dense: false, ground: section.ground, treatment: "default", cardCount: 0, primaryAction: false, hasActions: false, linkedBlock: false };
   }
   const block = section.block;
   const layout = section.layout ?? "stacked";
@@ -2057,6 +2176,8 @@ function bandShape(section: SectionedViewSection, path: string, index: number): 
     treatment: block === undefined ? "default" : blockTreatment(block),
     cardCount: block?.type === "card-grid" ? block.items.length : 0,
     primaryAction: Array.isArray(section.actions) && section.actions.some((action) => isPlainObject(action) && action.emphasis === "primary"),
+    hasActions: Array.isArray(section.actions) && section.actions.length > 0,
+    linkedBlock: hasLinkedItems(block),
   };
 }
 
@@ -2090,7 +2211,11 @@ function varietyWarning(rule: string, path: string, message: string): ComposeFin
  *    [`sectioned-view-variety-treatment`].
  * 7. At most one band carries a `primary` action
  *    [`sectioned-view-variety-primary-actions`]: the page converts in one
- *    place, and every other band leads on with a secondary button.
+ *    place, and any other band that takes actions takes a secondary one.
+ * 8. A band whose block links its items takes no section actions
+ *    [`sectioned-view-variety-link-competing`]: linked cards and a button in
+ *    one band are two competing ways on. (A stacked band with a block takes
+ *    no actions at all, a validation error; this catches the split.)
  *
  * Whether a visual repeats its block's words cannot be judged before copy
  * resolves, so that rule stays with the writer.
@@ -2130,6 +2255,7 @@ export function checkSectionVariety(input: SectionedViewDocument | readonly Sect
   bands.filter((band) => band.cardCount >= 4).slice(1).forEach((band) => findings.push(varietyWarning("sectioned-view-variety-card-bands", band.path, `${band.path} is a second band with four or more cards; keep at most one.`)));
   bands.filter((band) => band.kind === "content-section" && band.block === "comparison").slice(1).forEach((band) => findings.push(varietyWarning("sectioned-view-variety-comparison-count", band.path, `${band.path} is a second comparison; keep at most one.`)));
   bands.filter((band) => band.primaryAction).slice(1).forEach((band) => findings.push(varietyWarning("sectioned-view-variety-primary-actions", band.path, `${band.path} is a second band with a primary action; keep one, make this one secondary.`)));
+  bands.filter((band) => band.linkedBlock && band.hasActions).forEach((band) => findings.push(varietyWarning("sectioned-view-variety-link-competing", band.path, `${band.path} links its block's items and also carries section actions; keep one way on: drop the actions, or unlink the items.`)));
 
   const seen = new Map<string, BandShape>();
   for (const band of bands) {

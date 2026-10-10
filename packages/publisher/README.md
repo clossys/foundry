@@ -579,12 +579,31 @@ accepted type; a retired short type name inside `block` is refused with
   (`sectioned-view-content-actions-count`), a second primary
   (`sectioned-view-content-primary-count`) and any other emphasis
   (`sectioned-view-content-action-emphasis`). A hero action takes no
-  `emphasis`.
+  `emphasis`. Where actions go depends on the band's shape. A stacked band
+  whose header is followed by a block or media takes none
+  (`sectioned-view-content-stacked-actions`): link the block's items
+  (`href`), or put one link in the footnote. A header-only band takes them as
+  its last element, so it takes no footnote beside them
+  (`sectioned-view-content-actions-footnote`): fold the footnote's sentence
+  into the description. A split takes them in its text column.
 - `footnote` is `{ text, link? }`: one short, muted sentence at the end of
   the band, for an aside only, never a call to action. `link` is one
   `{ label, href }` inline link, held to the same href rule as an action.
   Validation refuses any other shape (`sectioned-view-content-footnote-shape`)
   and an unsanctioned href (`sectioned-view-content-footnote-href`).
+- Items of a `feature-grid` (item emphasis), `card-grid`, `topic-list` or
+  `ordered-step-sequence` may each carry an optional `href`: the item's title
+  renders as its one link, named by the title, with a decorative chevron, and
+  the whole item is the click target. Validation refuses an unsanctioned href
+  (`sectioned-view-content-item-href`), a block that links some items but not
+  all (`sectioned-view-content-link-partial`), more than 6 linked items
+  (`sectioned-view-content-link-count`), a destination repeated within a
+  block, ignoring a trailing slash and the fragment
+  (`sectioned-view-content-link-duplicate`), and `href` on a statement
+  feature (`sectioned-view-content-link-statement`). Comparison sides and FAQ
+  rows take no `href` (`sectioned-view-content-comparison-side`,
+  `sectioned-view-item-shape`). A linked item's text and visual must hold no
+  other link, button or field; Designer throws a `TypeError` on one.
 - Item icons (on `content-section` items and, optionally, on `feature-grid`
   items) name one of the closed `ContentIconName` set, listed at runtime as
   `CONTENT_ICON_NAMES`. They are names, not nodes: a renderer maps each name
@@ -610,7 +629,9 @@ cards; a second comparison; one block type repeated with the same
 treatment (a legacy `feature-grid`, `ordered-step-sequence` or `faq` section
 kind counts as the block of the same name); and a second band holding a `primary` action
 (`sectioned-view-variety-primary-actions`): a page has one main call to
-action per run of bands.
+action per run of bands; and a split whose block is linked and whose text
+column also holds actions (`sectioned-view-variety-link-competing`): two link
+systems compete for one click.
 
 `SectionedView` is now the dedicated web renderer after that Designer floor is
 available. Resolve the CopyRef document first, retain its `resolutions` as the
@@ -1239,7 +1260,11 @@ labelled `Specimen` figure. Item icons render their Designer icon; actions
 render as full-size buttons (Designer `buttonLinkClassName` at `lg`: a
 `primary` action filled, a `secondary` one as the transparent `outline`
 variant, which takes the ground's ink), and a `footnote` renders as a small
-muted line closing the text column, its one link underlined. A `split` band puts the text beside the specimen on its
+muted line closing the text column, its one link underlined. A linked
+item's `href` passes to the Designer block, which renders the item's title as
+its one link with a chevron and stretches the hit area over the item; a
+stacked band with a block or media renders no section actions even if handed
+some (validation refuses them first). A `split` band puts the text beside the specimen on its
 `mediaSide`; a split FAQ puts its rows in the visual column beside a
 top-aligned header group. A stacked band takes its `align` and shows the
 specimen after the block. A stacked band with no block, no media and no

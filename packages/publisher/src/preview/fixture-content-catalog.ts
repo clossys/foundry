@@ -85,16 +85,12 @@ const introMax: SectionedViewContentSection = {
   heading: copy("intro.heading", "One record replaces the binder, the inbox and the spreadsheet"),
   description: copy(
     "intro.description",
-    "Technicians log work where it happens, supervisors assign and close it, and the record keeps every reading, photo and signature against the asset it belongs to. Nothing is retyped at month end, and nothing lives in one person's notebook.",
+    "Technicians log work where it happens, supervisors assign and close it, and the record keeps every reading, photo and signature against the asset it belongs to. Records already kept in a spreadsheet import as they are, so nothing is retyped.",
   ),
   actions: [
     { id: "record", label: copy("intro.action.record", "See an example"), href: "#catalog-specimen-single", emphasis: "primary" },
     { id: "faq", label: copy("intro.action.faq", "Read the FAQ"), href: "#catalog-faq" },
   ],
-  footnote: {
-    text: copy("intro.footnote", "Already keep records in a spreadsheet?"),
-    link: { label: copy("intro.footnote.link", "Read the import guide"), href: "#catalog-faq" },
-  },
 };
 
 const workOrderPanel: SectionedViewSpecimenPanel = {
@@ -335,10 +331,9 @@ const featuresStatement: SectionedViewContentSection = {
   eyebrow: copy("statement.eyebrow", "What changes"),
   heading: copy("statement.heading", "Three things teams notice in the first month"),
   description: copy("statement.description", "Teams describe the same three changes once the record replaces their spreadsheets."),
-  actions: [{ id: "stories", label: copy("statement.action", "Read their stories"), href: "#catalog-cards-text" }],
   footnote: {
     text: copy("statement.footnote", "Results vary with each site's starting point."),
-    link: { label: copy("statement.footnote.link", "See how we measured"), href: "#catalog-faq" },
+    link: { label: copy("statement.footnote.link", "Read their stories"), href: "#catalog-cards-text" },
   },
   block: {
     type: "feature-grid",
@@ -433,6 +428,7 @@ const featuresPlate: SectionedViewContentSection = {
       {
         id: "floor",
         icon: "briefcase",
+        href: "/product/technicians",
         heading: copy("plate.floor.heading", "For technicians on the floor"),
         description: copy(
           "plate.floor.description",
@@ -442,6 +438,7 @@ const featuresPlate: SectionedViewContentSection = {
       {
         id: "office",
         icon: "building-2",
+        href: "/product/supervisors",
         heading: copy("plate.office.heading", "For supervisors in the office"),
         description: copy(
           "plate.office.description",
@@ -545,6 +542,25 @@ const topicsTwo: SectionedViewContentSection = {
   },
 };
 
+const topicsLinked: SectionedViewContentSection = {
+  id: "catalog-topics-linked",
+  kind: "content-section",
+  ground: "sunken",
+  eyebrow: copy("topics-linked.eyebrow", "Guides"),
+  heading: copy("topics-linked.heading", "Start with the guide for your role"),
+  description: copy("topics-linked.description", "Each guide walks one role through its first week in the record."),
+  block: {
+    type: "topic-list",
+    columns: 2,
+    items: [
+      { id: "technicians", icon: "briefcase", href: "/guides/technicians", heading: copy("topics-linked.technicians.heading", "Technicians"), description: copy("topics-linked.technicians.description", "Open a job, record readings and close it from a phone.") },
+      { id: "supervisors", icon: "users", href: "/guides/supervisors", heading: copy("topics-linked.supervisors.heading", "Supervisors"), description: copy("topics-linked.supervisors.description", "Plan the week, assign by trade and review evidence.") },
+      { id: "managers", icon: "building-2", href: "/guides/site-managers", heading: copy("topics-linked.managers.heading", "Site managers"), description: copy("topics-linked.managers.description", "Sign off work and follow spend across sites.") },
+      { id: "auditors", icon: "file-check", href: "/guides/auditors", heading: copy("topics-linked.auditors.heading", "Auditors"), description: copy("topics-linked.auditors.description", "Find the signed history behind any asset.") },
+    ],
+  },
+};
+
 const specimenFlow: SectionedViewContentSection = {
   id: "catalog-specimen-flow",
   kind: "content-section",
@@ -631,6 +647,7 @@ const cardsVisual: SectionedViewContentSection = {
       {
         id: "technician",
         span: "half",
+        href: "/views/technician",
         eyebrow: copy("cards-a.technician.eyebrow", "Technician"),
         heading: copy("cards-a.technician.heading", "Today's jobs"),
         description: copy("cards-a.technician.description", "A short list for the shift, ordered by priority and by walking route."),
@@ -649,6 +666,7 @@ const cardsVisual: SectionedViewContentSection = {
       {
         id: "supervisor",
         span: "half",
+        href: "/views/supervisor",
         eyebrow: copy("cards-a.supervisor.eyebrow", "Supervisor"),
         heading: copy("cards-a.supervisor.heading", "Crew workload"),
         description: copy("cards-a.supervisor.description", "Open hours per technician this week, so new jobs go where there is room."),
@@ -666,6 +684,7 @@ const cardsVisual: SectionedViewContentSection = {
       {
         id: "manager",
         span: "two-thirds",
+        href: "/views/manager",
         eyebrow: copy("cards-a.manager.eyebrow", "Site manager"),
         heading: copy("cards-a.manager.heading", "Inspection coverage"),
         description: copy("cards-a.manager.description", "Every recurring check across the site, with its last result and when it is next due."),
@@ -689,6 +708,7 @@ const cardsVisual: SectionedViewContentSection = {
       {
         id: "auditor",
         span: "third",
+        href: "/views/auditor",
         eyebrow: copy("cards-a.auditor.eyebrow", "Auditor"),
         heading: copy("cards-a.auditor.heading", "Evidence files"),
         description: copy("cards-a.auditor.description", "Signed checklists and certificates, filed against the asset they describe."),
@@ -991,6 +1011,7 @@ export const contentCatalogDocument: SectionedViewDocument = {
     featuresPlate,
     specimenStack,
     topicsTwo,
+    topicsLinked,
     specimenFlow,
     cardsText,
     comparisonVisual,
@@ -1015,23 +1036,24 @@ export const CONTENT_CATALOG_CALL_TO_ACTION = {
 /** One caption per band, in page order: the hero, every document band, then the call to action. */
 export const CONTENT_CATALOG_CAPTIONS: readonly ContentCatalogCaption[] = [
   { sectionId: "catalog-hero", title: "Hero", detail: "inverse ground · eyebrow, heading, description · one primary action", budget: "max" },
-  { sectionId: "catalog-intro", title: "Intro band", detail: "stacked, start-aligned · no block, no media · primary and secondary buttons, a footnote with one link", budget: "max" },
+  { sectionId: "catalog-intro", title: "Intro band", detail: "stacked, start-aligned · no block, no media · primary and secondary buttons as the band's last element, no footnote", budget: "max" },
   { sectionId: "catalog-specimen-single", title: "Specimen, stacked, single", detail: "sunken · one panel: fields (6 rows), status rows, meter with limit, assignee footer", budget: "max" },
   { sectionId: "catalog-features-plain", title: "FeatureGrid, plain, 3 columns, icons", detail: "base · item emphasis", budget: "typical" },
   { sectionId: "catalog-split-end", title: "Specimen, split, media end", detail: "sunken · header and one secondary button in the text column, beside a schedule panel", budget: "typical" },
   { sectionId: "catalog-features-rule", title: "FeatureGrid, rule, 4 columns", detail: "base · no icons (rule takes none)", budget: "max" },
   { sectionId: "catalog-split-start", title: "TopicList, 1 column, split beside a Specimen, media start", detail: "sunken · the topic list in the text column · table panel", budget: "max" },
-  { sectionId: "catalog-features-statement", title: "FeatureGrid, statement emphasis", detail: "inverse (the one inverse body band) · centred header, one secondary button · exactly 3 items · a footnote with one link", budget: "typical" },
+  { sectionId: "catalog-features-statement", title: "FeatureGrid, statement emphasis", detail: "inverse (the one inverse body band) · centred header, no actions · exactly 3 items · a centred footnote with one link", budget: "typical" },
   { sectionId: "catalog-split-text", title: "FeatureGrid, 2 columns, text-only split", detail: "base · no media · the grid takes the visual column, top-aligned beside the header · item eyebrows", budget: "typical" },
   { sectionId: "catalog-specimen-row", title: "Specimen, stacked, row of 3", detail: "sunken · three panels, each a meter and one field", budget: "typical" },
-  { sectionId: "catalog-features-plate", title: "FeatureGrid, plate, 2 columns, icons", detail: "base · 2-column plates take the longest item copy", budget: "max" },
+  { sectionId: "catalog-features-plate", title: "FeatureGrid, plate, 2 columns, icons, linked", detail: "base · each plate is one link (its title), the whole plate clickable · 2-column plates take the longest item copy", budget: "max" },
   { sectionId: "catalog-specimen-stack", title: "Specimen, stacked, stack", detail: "sunken · two panels: meter and shares, then a table with a footer note", budget: "typical" },
   { sectionId: "catalog-topics-two", title: "TopicList, 2 columns, icons", detail: "base · 8 items", budget: "max" },
+  { sectionId: "catalog-topics-linked", title: "TopicList, 2 columns, linked", detail: "sunken · 4 rows, each one link (its title) with a chevron", budget: "typical" },
   { sectionId: "catalog-specimen-flow", title: "Specimen, stacked, flow", detail: "sunken · two panels with a connector caption", budget: "typical" },
   { sectionId: "catalog-cards-text", title: "CardGrid (bento), text", detail: "base · rows three thirds, third + two-thirds, full · icons and card eyebrows", budget: "max" },
   { sectionId: "catalog-comparison-visual", title: "Comparison, visuals", detail: "sunken · a description and a panel on each side", budget: "typical" },
   { sectionId: "catalog-steps-plain", title: "OrderedStepSequence, 4 steps, actor labels", detail: "base · no visuals", budget: "max" },
-  { sectionId: "catalog-cards-visual", title: "CardGrid (bento), visuals", detail: "sunken · rows half + half, two-thirds + third · status rows, shares, table, files", budget: "typical" },
+  { sectionId: "catalog-cards-visual", title: "CardGrid (bento), visuals, linked", detail: "sunken · rows half + half, two-thirds + third · each card one link (its title) · status rows, shares, table, files", budget: "typical" },
   { sectionId: "catalog-comparison-points", title: "Comparison, points", detail: "base · 4 points a side, no visuals", budget: "max" },
   { sectionId: "catalog-steps-visual", title: "OrderedStepSequence, 3 steps, visuals and actor labels", detail: "sunken · one panel per step", budget: "typical" },
   { sectionId: "catalog-faq", title: "Faq, split band", detail: "base, the closing band · 6 rows beside a top-aligned header", budget: "max" },

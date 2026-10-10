@@ -2935,17 +2935,19 @@ hold two `NavGrid`s (two separate card groupings under two headings),
 which is what makes this a block rather than a view.
 
 **Each card is a real `<a>` or `<button>`, not a `<div>` with an
-`onClick`.** `items` is a discriminated union: an item with `href` renders
-via this package's own `Link` atom (`variant="standalone"` — the variant
-this README's own `Link` section already documents for exactly this case,
-"a link that IS the whole clickable unit on its own... a nav item"); an
-item with `onSelect` renders via this package's own `Button` atom
-(`variant="ghost"`). `href`/`onSelect` are mutually exclusive at the type
-level, not just by convention. `icon`, `title`, and `description` are all
-rendered INSIDE that single element (not a wrapping `<div>` around a
-smaller link), so clicking or tabbing to anywhere on the card — not just
-the title text — activates it; `icon` is `aria-hidden`, decorative
-reinforcement for a title that's already the card's real accessible name.
+`onClick`.** `items` is a discriminated union. An item with `href` is a
+linked tile with the same anatomy as a linked content item (see "Linked
+items" under `TopicList`): its title is one `<a href>`, named by the title
+alone, with a chevron at its end, visible at rest, and the anchor's hit area
+covers the tile, so a click anywhere on it follows the link, Tab stops once,
+and the focus ring surrounds the whole tile. The icon and description sit
+outside the anchor; a linked tile whose icon, title or description holds
+another link, button or field throws a `TypeError`. An item with `onSelect`
+renders via this package's own `Button` atom (`variant="ghost"`), with
+`icon`, `title` and `description` inside the one `<button>`.
+`href`/`onSelect` are mutually exclusive at the type level, not just by
+convention. `icon` is `aria-hidden`, decorative reinforcement for a title
+that's already the card's real accessible name.
 
 Cards lay out one per row on narrow viewports, two from the `tablet`
 breakpoint, three from `desktop` — a plain Tailwind responsive grid
@@ -3173,7 +3175,13 @@ band (a header and its actions, no module or media) the `SectionIntro`
 display step and rhythm. `headingLevel` still sets the element.
 
 `actions` holds one or two button-styled links (`buttonLinkClassName`), at
-most one `primary`, the other `outline`. `footnote` (`ReactNode`) is an
+most one `primary`, the other `outline`. Where they belong depends on the
+shape, and the component renders what it is given: a stacked section with
+modules or media after its header takes none (link the module's items with
+`href`, or put one link in the footnote); a header-only section takes them
+as its last element, with no footnote after them; a split takes them in its
+text column, never under the visual. Publisher's content contract refuses
+the other shapes. `footnote` (`ReactNode`) is an
 optional one-sentence aside closing the band: `text-body-s` in the ground's
 secondary ink, at most the prose measure, following `align`, and holding at
 most one underlined link. It renders as the last child of the section (in a
@@ -3474,6 +3482,27 @@ or `2`, default `2`) applies from `tablet` with `gap-x-3xl`; one column
 below. An even count reads best in two columns. No check marks: a topic
 list states coverage, not progress. Optional icons are `aria-hidden` and
 muted.
+
+**Linked items.** `FeatureGrid` (item emphasis), `CardGrid`, `TopicList` and
+`OrderedStepSequence` items each take an optional `href`. A linked item's
+title holds its one `<a href>` (`data-card-link`), so the link's accessible
+name is the title alone, followed by a no-break join and the T4 quiet
+action's `ChevronRight`, `aria-hidden` and visible at rest. The anchor's
+`::after` is stretched over the item (the item is `relative isolate`), so a
+click anywhere on the item follows the link and Tab stops once; the focus
+ring (`outline-accent`, `outline-accent-on-inverse` on an inverse band) is
+drawn on that `::after`, so it surrounds the whole item. The hit area is the
+plate itself for a plate card or feature; a bare item (a `plain` or `rule`
+feature, a topic row, a step) gains a hover plate in the band's other ground,
+inset so the text does not move. Hover underlines the title in its own ink
+and nudges the chevron (the `quiet-action` utility, whose nudge never runs
+under reduced motion); nothing else moves. A linked item whose parts hold another
+link, a button, a field or an `onClick` throws a `TypeError`, and a
+statement `FeatureGrid` item takes no `href`. Link every item in a group or
+none. Because the hit area covers the item, its text cannot be drag-selected.
+A linked `CardGrid` title drops the brand's horizontal display scale
+(`--font-display-scale-x`): a transformed heading would hold the stretched
+hit area inside the title.
 
 ### `Specimen`
 
@@ -5429,7 +5458,7 @@ not a grab-bag).
 | `ConfirmDialogTone` | type | `"neutral" \| "destructive"`. |
 | `Toolbar` | component | Action bar built on react-aria-components' own `Toolbar`: leading actions, search/filter slot, trailing actions, with real roving-focus arrow-key navigation. |
 | `ToolbarProps` | type | Props for `Toolbar`: `leading`, `search`, `trailing`, `className`, `style`, plus most of react-aria-components' own `Toolbar` props (`orientation`, `aria-label`, ...). |
-| `NavGrid` | component | Grid of navigation cards: optional heading, the card grid. Each card is a real `<a>` or `<button>`. |
+| `NavGrid` | component | Grid of navigation cards: optional heading, the card grid. A linked card's title is its one `<a>`, stretched over the card; an action card is a `<button>`. |
 | `NavGridProps` | type | Props for `NavGrid`: `heading`, `items`, `className`, `style`. |
 | `NavGridItem` | type | One card, as data: `id`, `title`, `description?`, `icon?`, and either `href` or `onSelect` (mutually exclusive). |
 | `SectionHeader` | component | Heading for a section within a page (as opposed to the whole-page `PageHeader`): eyebrow, title, description, actions slot. `level` picks its heading element. |
@@ -5459,14 +5488,14 @@ not a grab-bag).
 | `MediaFigureMeasure` | type | `"column" \| "content"`. |
 | `FeatureGrid` | component | Titled collection of feature items: optional eyebrow/heading/description region, a grid of icon/heading/description items. |
 | `FeatureGridProps` | type | Props for `FeatureGrid`: `eyebrow`, `heading`, `description`, `items`, `headingLevel`, `ground`, `columns`, `treatment`, `emphasis`, `className`, `style`, plus every native `<div>` attribute. |
-| `FeatureGridItem` | type | One item: `id`, `icon?`, `eyebrow?` (a caption above the item heading), `heading`, `description?`. |
+| `FeatureGridItem` | type | One item: `id`, `icon?`, `eyebrow?` (a caption above the item heading), `heading`, `description?`, `href?` (a linked item; not on a statement grid). |
 | `FeatureGridHeadingLevel` | type | `2 \| 3 \| 4 \| 5 \| 6`. |
 | `FeatureGridColumns` | type | `2 \| 3 \| 4`. |
 | `FeatureGridTreatment` | type | `"plain" \| "rule" \| "plate"`. |
 | `FeatureGridEmphasis` | type | `"item" \| "statement"`. |
 | `CardGrid` | component | Mixed grid of content cards on plates; spans fill whole 12-unit rows (validated); optional bottom-pinned visual per card. |
 | `CardGridProps` | type | Props for `CardGrid`: `items`, `headingLevel`, `ground`, `className`, `style`, plus every native `<div>` attribute except `title`. |
-| `CardGridItem` | type | One card: `id`, `icon?`, `eyebrow?`, `heading`, `description?`, `span`, `visual?`. |
+| `CardGridItem` | type | One card: `id`, `icon?`, `eyebrow?`, `heading`, `description?`, `span`, `visual?`, `href?` (a linked card). |
 | `CardGridSpan` | type | `"third" \| "half" \| "two-thirds" \| "full"`. |
 | `CardGridHeadingLevel` | type | `2 \| 3 \| 4 \| 5 \| 6`. |
 | `Comparison` | component | Before and after side by side: two labelled sections, the after side on a plate. |
@@ -5475,7 +5504,7 @@ not a grab-bag).
 | `ComparisonHeadingLevel` | type | `2 \| 3 \| 4 \| 5 \| 6`. |
 | `TopicList` | component | Hairline-ruled list of short topics in one or two columns. |
 | `TopicListProps` | type | Props for `TopicList`: `items`, `columns`, `ground`, `className`, `style`, plus every native `<ul>` attribute except `title`. |
-| `TopicListItem` | type | One topic: `id`, `icon?`, `heading`, `description?`. |
+| `TopicListItem` | type | One topic: `id`, `icon?`, `heading`, `description?`, `href?` (a linked row). |
 | `TopicListColumns` | type | `1 \| 2`. |
 | `Specimen` | component | Labelled figure of 1 to 3 static product-UI panels (`single`, `row`, `stack`, `flow`); budgets validated. |
 | `SpecimenProps` | type | Props for `Specimen`: `label`, `arrangement`, `connector`, `panels`, `className`, `style`, plus native `<figure>` attributes except `children`, `title`, `aria-label` and `aria-labelledby`. |
@@ -5507,7 +5536,7 @@ not a grab-bag).
 | `SpecimenFile` | type | `id`, `format`, `name`, `source?`. |
 | `OrderedStepSequence` | component | Editorial ordered sequence: optional heading region, authored ordinal/label/heading/body steps, responsive decorative connectors. |
 | `OrderedStepSequenceProps` | type | Props for `OrderedStepSequence`: `eyebrow`, `heading`, `description`, `items`, `headingLevel`, `ground`, `className`, `style`, plus every native `<section>` attribute. |
-| `OrderedStepSequenceItem` | type | One step: `id`, `ordinal`, `label?` (the actor tag), `heading`, `description?`, `visual?`. |
+| `OrderedStepSequenceItem` | type | One step: `id`, `ordinal`, `label?` (the actor tag), `heading`, `description?`, `visual?`, `href?` (a linked step). |
 | `OrderedStepSequenceHeadingLevel` | type | `2 \| 3 \| 4 \| 5 \| 6`. |
 | `OrderedStepSequenceGround` | type | Sequence-specific alias of the shared `SectionGround`: `"base" \| "sunken" \| "inverse"`. |
 | `StatusList` | component | Grouped editorial status list: one legend and a definition list per group. |

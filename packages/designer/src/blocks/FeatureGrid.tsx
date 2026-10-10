@@ -3,6 +3,7 @@ import { Card } from "../atoms/Card.js";
 import { cx } from "../atoms/internal/cx.js";
 import { UI_BORDER_RULE } from "../atoms/internal/ui-vars.js";
 import { SECTION_GROUND_CLASSES, type SectionGround } from "./section-ground.js";
+import { assertNoNestedInteractive, CardLinkTitle, cardLinkContainerClassName, type CardLinkFrame } from "./stretched-link.js";
 
 export type FeatureGridHeadingLevel = 2 | 3 | 4 | 5 | 6;
 
@@ -21,6 +22,13 @@ export interface FeatureGridItem {
   heading: ReactNode;
   /** Supporting copy under the item's heading. */
   description?: ReactNode;
+  /**
+   * Links the whole item: the heading becomes the link (its name), with a
+   * chevron, and the item is the hit area. Link every item or none. Not with
+   * `emphasis="statement"`. The item may then hold no other interactive
+   * element.
+   */
+  href?: string;
 }
 
 /** How many columns the grid reaches at its widest. */
@@ -139,16 +147,39 @@ interface CatalogGridProps {
   ground: SectionGround;
 }
 
+/** The hover and hit-area shape of a linked item: the plate itself, or a hover plate around a bare item. */
+const LINK_FRAMES: Record<FeatureGridTreatment, CardLinkFrame> = {
+  plain: "plain",
+  rule: "rule",
+  plate: "plate",
+};
+
+/** An item's heading content: its text, or the item's link carrying it. Asserts a linked item holds nothing else interactive. */
+function itemHeading(block: string, item: FeatureGridItem, frame: CardLinkFrame, ground: SectionGround): ReactNode {
+  if (item.href === undefined) return item.heading;
+  assertNoNestedInteractive(block, item.id, [item.icon, item.eyebrow, item.heading, item.description]);
+  return (
+    <CardLinkTitle href={item.href} frame={frame} ground={ground}>
+      {item.heading}
+    </CardLinkTitle>
+  );
+}
+
 function CatalogGrid({ items, columns = 3, treatment = "plain", emphasis = "item", ground }: CatalogGridProps) {
   const colors = SECTION_GROUND_CLASSES[ground];
   const statement = emphasis === "statement";
   const showIcons = treatment !== "rule";
   const loneLast = columns > 2 && items.length % 2 === 1;
+  const frame = LINK_FRAMES[treatment];
+  if (statement && items.some((item) => item.href !== undefined)) {
+    throw new TypeError("FeatureGrid: statement items are headlines, not destinations; drop their href and link the band another way.");
+  }
 
   return (
     <div data-feature-grid-columns={columns} data-treatment={treatment} data-emphasis={emphasis} className={cx(CATALOG_COLUMN_CLASSES[columns], TREATMENT_GAP_CLASSES[treatment])}>
       {items.map((item, index) => {
         const span = loneLast && index === items.length - 1 ? LONE_LAST_ITEM_CLASSES : undefined;
+        const linked = item.href === undefined ? undefined : cardLinkContainerClassName(frame, ground);
         const body = (
           <>
             {showIcons && item.icon ? (
@@ -164,7 +195,7 @@ function CatalogGrid({ items, columns = 3, treatment = "plain", emphasis = "item
                   colors.primary,
                 )}
               >
-                {item.heading}
+                {itemHeading("FeatureGrid", item, frame, ground)}
               </p>,
               colors.secondary,
               true,
@@ -184,7 +215,7 @@ function CatalogGrid({ items, columns = 3, treatment = "plain", emphasis = "item
               variant="plate"
               ground={ground}
               data-feature-grid-item=""
-              className={cx("flex h-full flex-col items-start gap-sm tablet:p-xl", span)}
+              className={cx("flex h-full flex-col items-start gap-sm tablet:p-xl", linked, span)}
             >
               {body}
             </Card>
@@ -196,7 +227,7 @@ function CatalogGrid({ items, columns = 3, treatment = "plain", emphasis = "item
             <div
               key={item.id}
               data-feature-grid-item=""
-              className={cx("flex flex-col items-start gap-sm border-t pt-lg", RULE_BORDER_CLASSES[ground], span)}
+              className={cx("flex flex-col items-start gap-sm border-t pt-lg", RULE_BORDER_CLASSES[ground], linked, span)}
               style={{ borderBlockStartWidth: UI_BORDER_RULE }}
             >
               {body}
@@ -205,7 +236,7 @@ function CatalogGrid({ items, columns = 3, treatment = "plain", emphasis = "item
         }
 
         return (
-          <div key={item.id} data-feature-grid-item="" className={cx("flex flex-col items-start gap-sm", span)}>
+          <div key={item.id} data-feature-grid-item="" className={cx("flex flex-col items-start gap-sm", linked, span)}>
             {body}
           </div>
         );
@@ -262,6 +293,16 @@ function CatalogGrid({ items, columns = 3, treatment = "plain", emphasis = "item
  * so an icon under it is clutter and is dropped. With none of the three
  * props set the original markup is emitted byte for byte, so existing
  * compositions do not move.
+ *
+ * **Linked items.** An item with `href` is one link: its heading carries
+ * the anchor (the link's name is the heading text) and a chevron at its
+ * end, visible at rest, and the anchor's hit area covers the item, so a
+ * click anywhere on it follows the link and Tab stops once, with the focus
+ * ring around the whole item. A plate is its own hit area; a plain or rule
+ * item gains a hover plate (the band's other ground) on hover and keyboard
+ * focus. Hover underlines the heading. Link every item or none, each to its
+ * own destination. A linked item may hold no other link, button or field (a
+ * `TypeError`), and statement items take no `href` (a `TypeError`).
  */
 export function FeatureGrid({
   eyebrow,
@@ -280,6 +321,8 @@ export function FeatureGrid({
   const catalog = columns !== undefined || treatment !== undefined || emphasis !== undefined;
   const HeadingTag = `h${headingLevel}` as `h${FeatureGridHeadingLevel}`;
   const colors = SECTION_GROUND_CLASSES[ground];
+  /** The original grid's linked item: a bare item with a hover plate around it. */
+  const linkedContainer = cardLinkContainerClassName(LINK_FRAMES.plain, ground);
   const hasHeadingRegion = eyebrow !== undefined || heading !== undefined || description !== undefined;
 
   return (
@@ -308,13 +351,13 @@ export function FeatureGrid({
       ) : (
         <div className="grid grid-cols-1 gap-lg tablet:grid-cols-2 desktop:grid-cols-3">
           {items.map((item) => (
-            <div key={item.id} className="flex flex-col items-start gap-sm">
+            <div key={item.id} className={item.href === undefined ? "flex flex-col items-start gap-sm" : cx("flex flex-col items-start gap-sm", linkedContainer)}>
               {item.icon ? (
                 <span aria-hidden="true" className={colors.muted}>
                   {item.icon}
                 </span>
               ) : null}
-              {withEyebrow(item.eyebrow, <p className={cx("text-body font-body font-medium", colors.primary)}>{item.heading}</p>, colors.secondary)}
+              {withEyebrow(item.eyebrow, <p className={cx("text-body font-body font-medium", colors.primary)}>{itemHeading("FeatureGrid", item, LINK_FRAMES.plain, ground)}</p>, colors.secondary)}
               {item.description ? (
                 <p className={cx("text-body-s", colors.secondary)}>{item.description}</p>
               ) : null}

@@ -560,7 +560,7 @@ const band = (root: Document, id: string): HTMLElement => {
 };
 
 describe("golden: SectionedView content-section", () => {
-  it("renders an intro band (header, a primary and a secondary button, a footnote, no block) as a statement band, byte for byte", () => {
+  it("renders an intro band (header, a primary and a secondary button, no block) as a statement band, byte for byte", () => {
     const { html } = renderContent(
       contentBand("intro", {
         description: copy("golden.intro.description", "Placeholder intro."),
@@ -568,7 +568,6 @@ describe("golden: SectionedView content-section", () => {
           { id: "start", label: copy("golden.intro.start", "Start a record"), href: "/start", emphasis: "primary" },
           { id: "more", label: copy("golden.intro.more", "Read the guide"), href: "/more" },
         ],
-        footnote: { text: copy("golden.intro.footnote", "Placeholder aside."), link: { label: copy("golden.intro.footnote.link", "Placeholder link"), href: "/aside" } },
       }),
     );
     expect(html).toBe(INTRO_BAND_HTML);
@@ -703,6 +702,24 @@ describe("golden: SectionedView content-section", () => {
     expect(band(root, "plain").querySelector("[data-content-section-footnote]")).toBeNull();
   });
 
+  it("renders linked block items as one link each, named by the item title, with a decorative chevron", () => {
+    const linkedTopics = { ...BLOCKS.topics, items: BLOCKS.topics.items.map((item) => ({ ...item, href: `/topics/${item.id}` })) };
+    const linkedSteps = { ...BLOCKS.steps, items: BLOCKS.steps.items.map((step) => ({ ...step, href: `/steps/${step.id}` })) };
+    const { root } = renderContent(contentBand("linked-topics", { block: linkedTopics }), contentBand("linked-steps", { block: linkedSteps }));
+    const topicLinks = [...band(root, "linked-topics").querySelectorAll<HTMLAnchorElement>("ul[data-topic-list] > li a")];
+    expect(topicLinks.map((link) => [link.getAttribute("href"), link.textContent?.trim()])).toEqual([
+      ["/topics/ta", "Item ta"],
+      ["/topics/tb", "Item tb"],
+      ["/topics/tc", "Item tc"],
+      ["/topics/td", "Item td"],
+    ]);
+    expect(topicLinks.every((link) => link.hasAttribute("data-card-link") && link.querySelector('svg[aria-hidden="true"]') !== null)).toBe(true);
+    const stepLinks = [...band(root, "linked-steps").querySelectorAll<HTMLAnchorElement>("ol > li a[data-card-link]")];
+    expect(stepLinks.map((link) => link.getAttribute("href"))).toEqual(["/steps/one", "/steps/two", "/steps/three"]);
+    // A step's visual stays outside its link: nothing focusable in a specimen.
+    expect(band(root, "linked-steps").querySelectorAll("[data-specimen] a")).toHaveLength(0);
+  });
+
   it("puts nothing focusable inside any specimen", () => {
     const { root } = renderContent(
       contentBand("cards", { block: BLOCKS.cards }),
@@ -728,7 +745,8 @@ const OUTLINE_LG =
  * Captured from this renderer; Designer `ContentSection` stacked anatomy. A
  * band with no block and no media is a statement band: `SectionIntro` at the
  * display emphasis, its actions a filled primary and an outline secondary
- * button at the same size, then the footnote as the band's last line.
+ * button at the same size, as the band's last element: a header-only band
+ * with actions takes no footnote.
  */
 const INTRO_BAND_HTML =
   '<div class="flex flex-col gap-2xl py-2xl">' +
@@ -741,8 +759,5 @@ const INTRO_BAND_HTML =
   `<a href="/more" class="${OUTLINE_LG}" data-action-emphasis="secondary">Read the guide</a>` +
   "</div>" +
   "</div>" +
-  '<p data-content-section-footnote="" class="text-body-s text-pretty text-ink-secondary" style="max-width:var(--ui-width-prose-max, 48rem)">' +
-  'Placeholder aside. <a href="/aside" class="text-inherit underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent">Placeholder link</a>' +
-  "</p>" +
   "</div>" +
   "</div>";

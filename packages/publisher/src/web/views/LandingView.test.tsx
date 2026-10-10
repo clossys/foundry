@@ -104,8 +104,8 @@ describe("LandingView", () => {
       ...SHARED,
       id: "acme-content",
       sections: [
-        { id: "topics", kind: "content-section", ground: "sunken", heading: "TOPICS-SENTINEL", actions: [{ id: "more", label: "MORE-SENTINEL", href: "/more" }], block: { type: "topic-list", columns: 1, items: [{ id: "a", heading: "A-SENTINEL" }, { id: "b", heading: "B-SENTINEL" }] } },
-        { id: "questions", kind: "content-section", ground: "base", heading: "QUESTIONS-SENTINEL", layout: "split", block: { type: "faq", items: faqItems } },
+        { id: "topics", kind: "content-section", ground: "sunken", heading: "TOPICS-SENTINEL", block: { type: "topic-list", columns: 1, items: [{ id: "a", heading: "A-SENTINEL" }, { id: "b", heading: "B-SENTINEL" }] } },
+        { id: "questions", kind: "content-section", ground: "base", heading: "QUESTIONS-SENTINEL", actions: [{ id: "more", label: "MORE-SENTINEL", href: "/more" }], layout: "split", block: { type: "faq", items: faqItems } },
       ],
     };
     const root = dom({ document: PAGE, trailing: [content], afterSection: { topics: <p data-after="">AFTER</p>, questions: <p data-after="">AFTER</p> } });
@@ -116,12 +116,14 @@ describe("LandingView", () => {
     expect(topics.closest("[data-content-section]")).toBe(topics);
     expect(topics.parentElement?.closest("[data-content-section]")).toBeNull();
     expect(topics.className).not.toContain("bg-surface-");
-    const more = topics.querySelector('a[href="/more"]') as HTMLElement;
+    expect(topics.querySelector("a")).toBeNull();
+    expect((topics.querySelector("[data-content-section-modules]") as HTMLElement).lastElementChild?.hasAttribute("data-after")).toBe(true);
+    const questions = root.querySelector("#questions") as HTMLElement;
+    // A split keeps its actions in the text column.
+    const more = questions.querySelector('[data-content-section-text] a[href="/more"]') as HTMLElement;
     expect(more.getAttribute("data-action-emphasis")).toBe("secondary");
     expect(more.className.split(" ")).toEqual(expect.arrayContaining(["px-lg", "py-md", "text-body-l", "bg-transparent", "ring-inset", "ring-current"]));
     expect(more.className.split(" ")).not.toContain("underline");
-    expect((topics.querySelector("[data-content-section-modules]") as HTMLElement).lastElementChild?.hasAttribute("data-after")).toBe(true);
-    const questions = root.querySelector("#questions") as HTMLElement;
     expect(questions.getAttribute("data-layout")).toBe("split");
     expect(questions.querySelectorAll("[data-content-section-media] details")).toHaveLength(4);
     expect(questions.querySelector("[data-content-section-text] [data-after]")).not.toBeNull();

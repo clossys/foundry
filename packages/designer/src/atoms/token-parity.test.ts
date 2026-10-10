@@ -244,6 +244,9 @@ const ANY_RECORD_MAP_RE = /const\s+([A-Za-z_]+)\s*:\s*Record</g;
  * escape both.
  */
 const KNOWN_NON_CLASS_MAPS = new Set([
+  // blocks/FeatureGrid.tsx — treatment -> linked-item frame name (a
+  // stretched-link.tsx key), not a class string.
+  "LINK_FRAMES",
   "TREND_GLYPH",
   "TREND_LABEL",
   // charts/internal/chart-vars.ts — slot-number -> fallback-hex lookups fed

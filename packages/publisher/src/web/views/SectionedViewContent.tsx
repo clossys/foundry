@@ -1,7 +1,8 @@
 import { buttonLinkClassName } from "@clossys/designer/atoms/server";
 import { SECTION_GROUND_CLASSES } from "@clossys/designer/blocks/server";
 import type { ReactNode } from "react";
-import { CONTENT_ICON_NAMES, FEATURE_GRID_ITEM_EYEBROW_MAX_CHARACTERS } from "../../core/sectioned-view.js";
+import { CONTENT_ICON_NAMES, FEATURE_GRID_ITEM_EYEBROW_MAX_CHARACTERS, validateContentActionPlacement, validateItemHref, validateLinkGroup } from "../../core/sectioned-view.js";
+import type { ComposeFinding } from "../../core/types.js";
 import type { ContentIconName, ResolvedSectionedViewAction, ResolvedSectionedViewContentAction, ResolvedSectionedViewContentSection, ResolvedSectionedViewDocument, ResolvedSectionedViewHeroMedia, ResolvedSectionedViewSection, SectionedViewGround, SectionedViewStatTrend, SectionedViewStatus, SectionedViewStatusDisposition } from "../../core/sectioned-view.js";
 import { isRenderAsset } from "../../internal/assets.js";
 import { RenderError } from "../../internal/errors.js";
@@ -392,6 +393,23 @@ function assertContentItems(items: Record<string, unknown>[], path: string, icon
   });
 }
 
+/** Linked items: each `href` sanctioned and never on a statement item; every item linked or none, at most six, each destination once. */
+function assertItemLinks(items: Record<string, unknown>[], path: string, statement = false): void {
+  const findings: ComposeFinding[] = [];
+  items.forEach((item, index) => validateItemHref(item, `${path}.${index}`, findings, statement));
+  if (!statement) validateLinkGroup(items, path, findings);
+  const first = findings[0];
+  if (first !== undefined) throw new Error(first.message);
+}
+
+/** Throws the first action-placement finding (see `validateContentActionPlacement`). */
+function assertActionPlacement(record: Record<string, unknown>, path: string): void {
+  const findings: ComposeFinding[] = [];
+  validateContentActionPlacement(record, path, findings);
+  const first = findings[0];
+  if (first !== undefined) throw new Error(first.message);
+}
+
 function assertComparisonSide(value: unknown, path: string): Record<string, unknown> {
   if (!plain(value) || !closed(value, ["label", "heading", "description", "points", "visual"])) throw new Error(`${path} must be a closed resolved comparison side.`);
   copyFields(value, path, ["label"], ["heading", "description"]);
@@ -418,8 +436,9 @@ function assertContentBlock(value: unknown, path: string): void {
       oneOf(block.treatment, ["plain", "rule", "plate"], `${path}.treatment`, "feature-grid treatment");
       oneOf(block.emphasis, ["item", "statement"], `${path}.emphasis`, "feature-grid emphasis");
       const statement = block.emphasis === "statement";
-      records(block.items, `${path}.items`, ["id", "icon", "eyebrow", "heading", "description"], statement ? 3 : 2, statement ? 3 : 4, "items");
+      records(block.items, `${path}.items`, ["id", "icon", "eyebrow", "heading", "description", "href"], statement ? 3 : 2, statement ? 3 : 4, "items");
       assertContentItems(block.items, `${path}.items`, block.treatment !== "rule");
+      assertItemLinks(block.items, `${path}.items`, statement);
       block.items.forEach((item, index) => {
         if (typeof item.eyebrow === "string" && [...item.eyebrow.trim()].length > FEATURE_GRID_ITEM_EYEBROW_MAX_CHARACTERS) throw new Error(`${path}.items.${index}.eyebrow holds more than ${FEATURE_GRID_ITEM_EYEBROW_MAX_CHARACTERS} characters.`);
       });
@@ -427,8 +446,9 @@ function assertContentBlock(value: unknown, path: string): void {
     }
     case "card-grid": {
       blockKeys(["items"]);
-      records(block.items, `${path}.items`, ["id", "icon", "eyebrow", "heading", "description", "span", "visual"], 2, 6, "cards");
+      records(block.items, `${path}.items`, ["id", "icon", "eyebrow", "heading", "description", "span", "visual", "href"], 2, 6, "cards");
       assertContentItems(block.items, `${path}.items`);
+      assertItemLinks(block.items, `${path}.items`);
       let filled = 0;
       block.items.forEach((card, index) => {
         const units = typeof card.span === "string" ? CARD_SPAN_UNITS[card.span] : undefined;
@@ -453,13 +473,15 @@ function assertContentBlock(value: unknown, path: string): void {
     case "topic-list":
       blockKeys(["columns", "items"]);
       oneOf(block.columns, [1, 2], `${path}.columns`, "topic-list column count");
-      records(block.items, `${path}.items`, ["id", "icon", "heading", "description"], 2, 8, "items");
+      records(block.items, `${path}.items`, ["id", "icon", "heading", "description", "href"], 2, 8, "items");
       assertContentItems(block.items, `${path}.items`);
+      assertItemLinks(block.items, `${path}.items`);
       if (block.columns !== 1 && block.items.length % 2 === 1) throw new Error(`${path}.items must hold an even number of items in 2 columns; it holds ${block.items.length}.`);
       return;
     case "ordered-step-sequence":
       blockKeys(["items"]);
-      records(block.items, `${path}.items`, ["id", "ordinal", "label", "heading", "description", "visual"], 3, 4, "steps");
+      records(block.items, `${path}.items`, ["id", "ordinal", "label", "heading", "description", "visual", "href"], 3, 4, "steps");
+      assertItemLinks(block.items, `${path}.items`);
       block.items.forEach((step, index) => {
         copyFields(step, `${path}.items.${index}`, ["ordinal", "heading"], ["label", "description"]);
         if (step.visual !== undefined) assertSpecimenPanel(step.visual, `${path}.items.${index}.visual`);
@@ -492,6 +514,7 @@ function assertContentSection(record: Record<string, unknown>, path: string): vo
   oneOf(record.align, ["start", "center"], `${path}.align`, "content alignment");
   if (record.mediaSide !== undefined && !split) throw new Error(`${path}.mediaSide is allowed only on a split section.`);
   if (record.align !== undefined && split) throw new Error(`${path}.align is allowed only on a stacked section.`);
+  assertActionPlacement(record, path);
   if (record.block !== undefined) assertContentBlock(record.block, `${path}.block`);
   if (record.media !== undefined) assertSpecimenMedia(record.media, `${path}.media`);
   const faq = plain(record.block) && record.block.type === "faq";

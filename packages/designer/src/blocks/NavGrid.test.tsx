@@ -38,8 +38,8 @@ describe("NavGrid", () => {
     expect(onSelect).toHaveBeenCalledTimes(1);
   });
 
-  it("renders the title, description, and icon inside the single card element (the whole card is the target)", () => {
-    render(
+  it("an href card: one anchor on the title alone (its name), the icon and description outside it, the hit area stretched over the tile", () => {
+    const { container } = render(
       <NavGrid
         items={[
           {
@@ -52,10 +52,41 @@ describe("NavGrid", () => {
         ]}
       />,
     );
-    const card = screen.getByRole("link", { name: /Billing/ });
-    expect(card).toHaveTextContent("Billing");
-    expect(card).toHaveTextContent("Manage your plan and invoices.");
-    expect(card.querySelector('[data-testid="billing-icon"]')).not.toBeNull();
+    const link = screen.getByRole("link", { name: "Billing" });
+    expect(container.querySelectorAll("a")).toHaveLength(1);
+    expect(link).toHaveAttribute("data-card-link");
+    expect(link).not.toHaveTextContent("Manage your plan and invoices.");
+    expect(link.querySelector('[data-testid="billing-icon"]')).toBeNull();
+    expect(link).toHaveClass("after:absolute", "after:inset-0", "after:rounded-control", "focus-visible:after:outline-2", "focus-visible:after:outline-accent");
+    const tile = container.querySelector("[data-nav-grid-card]") as HTMLElement;
+    expect(tile).toHaveClass("relative", "isolate");
+    expect(tile).toHaveTextContent("Manage your plan and invoices.");
+    expect(link.querySelector("svg")).toHaveAttribute("aria-hidden", "true");
+  });
+
+  it("refuses an href card whose content holds another interactive element", () => {
+    expect(() =>
+      render(<NavGrid items={[{ id: "billing", title: "Billing", description: <a href="/help">Help</a>, href: "/billing" }]} />),
+    ).toThrow(TypeError);
+  });
+
+  it("renders the title, description, and icon inside the single button of an onSelect card (the whole card is the target)", () => {
+    render(
+      <NavGrid
+        items={[
+          {
+            id: "invite",
+            title: "Invite teammates",
+            description: "Bring your team on board.",
+            icon: <svg data-testid="invite-icon" />,
+            onSelect: vi.fn(),
+          },
+        ]}
+      />,
+    );
+    const card = screen.getByRole("button", { name: /Invite teammates/ });
+    expect(card).toHaveTextContent("Bring your team on board.");
+    expect(card.querySelector('[data-testid="invite-icon"]')).not.toBeNull();
   });
 
   it("clicking the description text (not just the title) still activates the card", async () => {

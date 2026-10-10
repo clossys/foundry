@@ -2,6 +2,7 @@ import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
 import { Card } from "../atoms/Card.js";
 import { cx } from "../atoms/internal/cx.js";
 import { SECTION_GROUND_CLASSES, type SectionGround } from "./section-ground.js";
+import { assertNoNestedInteractive, CardLinkTitle, cardLinkContainerClassName } from "./stretched-link.js";
 
 /** A card's share of a 12-unit row at the widest breakpoint. */
 export type CardGridSpan = "third" | "half" | "two-thirds" | "full";
@@ -27,6 +28,12 @@ export interface CardGridItem {
    * `Specimen`, which carries its own accessible name).
    */
   visual?: ReactNode;
+  /**
+   * Links the whole card: the heading becomes the link (its name), with a
+   * chevron, and the plate is the hit area. Link every card or none. The
+   * card may then hold no other interactive element.
+   */
+  href?: string;
 }
 
 export interface CardGridProps extends Omit<HTMLAttributes<HTMLDivElement>, "title"> {
@@ -151,12 +158,23 @@ export function assertCardGridSpans(spans: readonly CardGridSpan[]): void {
  *
  * A card's text sits at the top and its `visual` is pinned to the bottom
  * (`mt-auto`), so headings line up across a row whatever the visuals hold.
+ *
+ * A card with `href` is one link: the heading carries the anchor and a
+ * chevron at its end, visible at rest, and the anchor's hit area covers the
+ * plate, so a click anywhere on the card (its padding, its copy, its visual)
+ * follows the link and Tab stops once, with the focus ring around the
+ * plate. Hover underlines the heading. Link every card or none, each to its
+ * own destination; a linked card holding another link, button or field
+ * throws a `TypeError`.
+ *
  * Server-safe: no hooks.
  */
 export function CardGrid({ items, headingLevel = 3, ground = "base", className, style, ...rest }: CardGridProps) {
   assertCardGridSpans(items.map((item) => item.span));
   const HeadingTag = HEADING_TAGS[headingLevel];
   const colors = SECTION_GROUND_CLASSES[ground];
+  /** A linked card: the plate is the hit area and carries the ring. */
+  const linkedContainer = cardLinkContainerClassName("plate", ground);
   const lone = loneTabletThirds(items.map((item) => item.span));
 
   return (
@@ -166,43 +184,54 @@ export function CardGrid({ items, headingLevel = 3, ground = "base", className, 
       className={cx("grid grid-cols-1 gap-lg tablet:grid-cols-12", className)}
       style={style}
     >
-      {items.map((item, index) => (
-        <article
-          key={item.id}
-          data-card-grid-item=""
-          data-span={item.span}
-          className={cx("flex min-w-0", lone[index] ? LONE_THIRD_CLASSES : SPAN_CLASSES[item.span])}
-        >
-          <Card
-            variant="plate"
-            ground={ground}
-            className="flex w-full flex-col gap-md tablet:p-xl desktop:p-2xl"
+      {items.map((item, index) => {
+        if (item.href !== undefined) assertNoNestedInteractive("CardGrid", item.id, [item.icon, item.eyebrow, item.heading, item.description, item.visual]);
+        return (
+          <article
+            key={item.id}
+            data-card-grid-item=""
+            data-span={item.span}
+            className={cx("flex min-w-0", lone[index] ? LONE_THIRD_CLASSES : SPAN_CLASSES[item.span])}
           >
-            {item.icon ? (
-              <span aria-hidden="true" className={cx("inline-flex", ICON_ACCENT_CLASSES[ground])}>
-                {item.icon}
-              </span>
-            ) : null}
-            <div className="flex flex-col gap-xs">
-              {item.eyebrow ? (
-                // Secondary, not muted: the plate is a raised or sunken fill, where muted ink is only AA-large.
-                <p className={cx("text-body-s font-medium uppercase tracking-label", colors.secondary)}>{item.eyebrow}</p>
+            <Card
+              variant="plate"
+              ground={ground}
+              className={cx("flex w-full flex-col gap-md tablet:p-xl desktop:p-2xl", item.href === undefined ? undefined : linkedContainer)}
+            >
+              {item.icon ? (
+                <span aria-hidden="true" className={cx("inline-flex", ICON_ACCENT_CLASSES[ground])}>
+                  {item.icon}
+                </span>
               ) : null}
-              <HeadingTag className={cx("text-h2 font-display leading-heading text-balance", colors.primary)}>
-                {item.heading}
-              </HeadingTag>
-              {item.description ? (
-                <p className={cx("text-body text-pretty", colors.secondary)}>{item.description}</p>
-              ) : null}
-            </div>
-            {item.visual ? (
-              <div data-card-grid-visual="" className="mt-auto w-full min-w-0 pt-md">
-                {item.visual}
+              <div className="flex flex-col gap-xs">
+                {item.eyebrow ? (
+                  // Secondary, not muted: the plate is a raised or sunken fill, where muted ink is only AA-large.
+                  <p className={cx("text-body-s font-medium uppercase tracking-label", colors.secondary)}>{item.eyebrow}</p>
+                ) : null}
+                {/* A linked title drops the display face's horizontal-scale transform: a transformed heading would become the
+                    containing block of the link's stretched hit area and shrink it to the title. */}
+                <HeadingTag className={cx("text-h2 font-display leading-heading text-balance", colors.primary, item.href === undefined ? undefined : "transform-none")}>
+                  {item.href === undefined ? (
+                    item.heading
+                  ) : (
+                    <CardLinkTitle href={item.href} frame="plate" ground={ground} iconSize="md">
+                      {item.heading}
+                    </CardLinkTitle>
+                  )}
+                </HeadingTag>
+                {item.description ? (
+                  <p className={cx("text-body text-pretty", colors.secondary)}>{item.description}</p>
+                ) : null}
               </div>
-            ) : null}
-          </Card>
-        </article>
-      ))}
+              {item.visual ? (
+                <div data-card-grid-visual="" className="mt-auto w-full min-w-0 pt-md">
+                  {item.visual}
+                </div>
+              ) : null}
+            </Card>
+          </article>
+        );
+      })}
     </div>
   );
 }

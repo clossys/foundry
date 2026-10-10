@@ -1,0 +1,126 @@
+import { describe, expect, it } from "vitest";
+import { render, screen, within } from "@testing-library/react";
+import type { ReactElement } from "react";
+import { CardGrid } from "./CardGrid.js";
+import { FeatureGrid } from "./FeatureGrid.js";
+import { OrderedStepSequence } from "./OrderedStepSequence.js";
+import { TopicList } from "./TopicList.js";
+import { assertNoNestedInteractive, cardLinkContainerClassName } from "./stretched-link.js";
+
+const TITLES = ["Ownership records", "Signed agreements", "Insurance"] as const;
+const HREFS = ["/records", "/agreements", "/insurance"] as const;
+
+const features = (treatment: "plain" | "rule" | "plate", linked = true) =>
+  TITLES.map((heading, index) => ({ id: `f${index}`, heading, description: "One line of supporting copy.", ...(linked ? { href: HREFS[index] } : {}) }));
+
+/** Every linked block, rendered on each ground, with the container class it must carry. */
+const LINKED_BLOCKS: ReadonlyArray<{ name: string; frame: "plate" | "plain" | "rule" | "topic"; render: (ground: "base" | "sunken" | "inverse") => ReactElement }> = [
+  { name: "FeatureGrid plate", frame: "plate", render: (ground) => <FeatureGrid ground={ground} columns={3} treatment="plate" items={features("plate")} /> },
+  { name: "FeatureGrid plain", frame: "plain", render: (ground) => <FeatureGrid ground={ground} columns={3} treatment="plain" items={features("plain")} /> },
+  { name: "FeatureGrid rule", frame: "rule", render: (ground) => <FeatureGrid ground={ground} columns={3} treatment="rule" items={features("rule")} /> },
+  {
+    name: "CardGrid",
+    frame: "plate",
+    render: (ground) => (
+      <CardGrid
+        ground={ground}
+        items={TITLES.map((heading, index) => ({ id: `c${index}`, heading, description: "One line.", span: "third" as const, href: HREFS[index], visual: <figure aria-label="A record">Static</figure> }))}
+      />
+    ),
+  },
+  {
+    name: "TopicList",
+    frame: "topic",
+    render: (ground) => <TopicList ground={ground} columns={1} items={TITLES.map((heading, index) => ({ id: `t${index}`, heading, description: "One line.", href: HREFS[index] }))} />,
+  },
+  {
+    name: "OrderedStepSequence",
+    frame: "plain",
+    render: (ground) => <OrderedStepSequence ground={ground} items={TITLES.map((heading, index) => ({ id: `s${index}`, ordinal: `0${index + 1}`, heading, description: "One line.", href: HREFS[index] }))} />,
+  },
+];
+
+describe("linked items (stretched link)", () => {
+  for (const block of LINKED_BLOCKS) {
+    for (const ground of ["base", "sunken", "inverse"] as const) {
+      it(`${block.name} on ${ground}: one anchor per item, named by its title alone, with an aria-hidden chevron, a stretched hit area and a ring around the item`, () => {
+        const { container } = render(block.render(ground));
+        const anchors = [...container.querySelectorAll("a")];
+        expect(anchors).toHaveLength(TITLES.length);
+        TITLES.forEach((title, index) => {
+          const link = screen.getByRole("link", { name: title });
+          expect(link).toHaveAttribute("href", HREFS[index]);
+          expect(link).toHaveAttribute("data-card-link");
+          // The chevron and the no-break join are decorative and outside the name.
+          const chevron = link.lastElementChild as Element;
+          expect(chevron.tagName.toLowerCase()).toBe("svg");
+          expect(chevron).toHaveAttribute("aria-hidden", "true");
+          expect(chevron.previousElementSibling).toHaveAttribute("aria-hidden", "true");
+          expect(chevron.previousElementSibling?.textContent).toBe(" ");
+          expect(link).toHaveClass("quiet-action", "after:absolute", "after:z-10", "focus-visible:after:outline-2", "focus-visible:after:outline-offset-2");
+          expect(link).toHaveClass(ground === "inverse" ? "focus-visible:after:outline-accent-on-inverse" : "focus-visible:after:outline-accent");
+          expect(link).toHaveClass("underline", "decoration-transparent", "hover:decoration-current");
+          expect(link.className).not.toMatch(/transition/);
+          const container = link.closest(".relative.isolate");
+          expect(container).not.toBeNull();
+          expect(container?.className).toContain(cardLinkContainerClassName(block.frame, ground));
+          // The anchor wraps only the title: the description is outside it.
+          expect(link).not.toHaveTextContent("One line");
+        });
+      });
+    }
+  }
+
+  it("gives bare items (plain, rule, topic, step) a hover plate in the band's other ground, and plates none", () => {
+    expect(cardLinkContainerClassName("plain", "base")).toContain("hover:before:bg-surface-sunken");
+    expect(cardLinkContainerClassName("rule", "sunken")).toContain("hover:before:bg-surface-raised");
+    expect(cardLinkContainerClassName("topic", "inverse")).toContain("has-focus-visible:before:bg-surface-inverse-raised");
+    expect(cardLinkContainerClassName("plate", "base")).toBe("relative isolate");
+    expect(cardLinkContainerClassName("control", "base")).toBe("relative isolate");
+  });
+
+  it("renders no anchor, chevron or link container for unlinked items", () => {
+    const { container } = render(
+      <>
+        <FeatureGrid columns={3} treatment="plain" items={features("plain", false)} />
+        <TopicList items={TITLES.slice(0, 2).map((heading, index) => ({ id: `t${index}`, heading }))} />
+      </>,
+    );
+    expect(container.querySelector("a")).toBeNull();
+    expect(container.querySelector("svg")).toBeNull();
+    expect(container.querySelector(".isolate")).toBeNull();
+  });
+
+  it("keeps the card grid heading a real heading whose link carries the title", () => {
+    render(<CardGrid items={TITLES.slice(0, 2).map((heading, index) => ({ id: `c${index}`, heading, span: "half" as const, href: HREFS[index] }))} />);
+    const heading = screen.getByRole("heading", { name: TITLES[0] });
+    expect(heading.tagName).toBe("H3");
+    expect(within(heading).getByRole("link", { name: TITLES[0] })).toBeInTheDocument();
+    // A transformed heading would trap the stretched hit area, so a linked display title drops font-display's scaleX.
+    expect(heading).toHaveClass("font-display", "transform-none");
+  });
+
+  it("keeps the display scale on an unlinked card heading", () => {
+    render(<CardGrid items={TITLES.slice(0, 2).map((heading, index) => ({ id: `c${index}`, heading, span: "half" as const }))} />);
+    expect(screen.getByRole("heading", { name: TITLES[0] })).not.toHaveClass("transform-none");
+  });
+
+  it("throws a TypeError when a linked item holds another link, button or field", () => {
+    const nested = <span>Read <a href="/more">more</a></span>;
+    expect(() => render(<FeatureGrid columns={2} treatment="plate" items={[{ id: "a", heading: "A", description: nested, href: "/a" }, { id: "b", heading: "B", href: "/b" }]} />)).toThrow(TypeError);
+    expect(() =>
+      render(<CardGrid items={[{ id: "a", heading: "A", span: "half", href: "/a", visual: <div><button type="button">Open</button></div> }, { id: "b", heading: "B", span: "half", href: "/b" }]} />),
+    ).toThrow(TypeError);
+    expect(() => render(<TopicList items={[{ id: "a", heading: "A", description: <input aria-label="x" />, href: "/a" }, { id: "b", heading: "B", href: "/b" }]} />)).toThrow(TypeError);
+    expect(() =>
+      render(<OrderedStepSequence items={[{ id: "a", ordinal: 1, heading: "A", visual: <span onClick={() => undefined}>x</span>, href: "/a" }, { id: "b", ordinal: 2, heading: "B", href: "/b" }, { id: "c", ordinal: 3, heading: "C", href: "/c" }]} />),
+    ).toThrow(TypeError);
+    // The same content is fine on an unlinked item.
+    expect(() => render(<TopicList items={[{ id: "a", heading: "A", description: nested }, { id: "b", heading: "B" }]} />)).not.toThrow();
+    expect(() => assertNoNestedInteractive("Block", "a", ["Plain", <strong key="s">bold</strong>])).not.toThrow();
+  });
+
+  it("refuses href on statement feature items: headlines, not destinations", () => {
+    expect(() => render(<FeatureGrid emphasis="statement" items={features("plain")} />)).toThrow(TypeError);
+  });
+});

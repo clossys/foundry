@@ -30,11 +30,52 @@ Every band opens with the same header group, and each slot has one job:
 - Section actions are 1-2 buttons: 2-4 words, a verb first ("See the
   schedule"). At most one is primary (filled); the other is secondary
   (outlined). Never more than one primary per band, and one main call to
-  action per run of bands.
+  action per run of bands. Which bands take them depends on the band's shape
+  (see "Actions and links by band shape").
 - A footnote is an optional single short sentence at the end of a band, small
   and muted, for an aside only ("Already keep records in a spreadsheet? Read
   the import guide"). It holds at most one underlined link. Never put a call
   to action in a footnote.
+
+## Actions and links by band shape
+
+A single column reads top to bottom, so a button above the content asks for
+the click before the reader has seen the evidence. A split's text column is a
+finished unit of its own, so a button can close it. Publisher refuses the
+shapes marked "No".
+
+| Band shape | Section actions? | Where | Code when refused |
+|---|---|---|---|
+| Stacked, with a block or a visual after the header | No, neither under the header nor after the block | Link the items themselves (item `href`), or put one link in the footnote | `sectioned-view-content-stacked-actions` |
+| Stacked, header only (an intro or statement band) | 1-2 | Directly after the description, as the band's last element | `-content-actions-count`, `-content-primary-count` |
+| Header only, with actions and a footnote | No: nothing follows an action | Fold the footnote's sentence into the description, or drop the actions | `sectioned-view-content-actions-footnote` |
+| Split (text beside a visual) | 1-2 | In the text column, after the description and before any block; never under the visual | `-content-actions-count`, `-content-primary-count` |
+| Any band | Footnote: one sentence, at most one inline link | The band's last line | `-content-footnote-*` |
+
+### Linked items
+
+Cards (`card-grid`), features (`feature-grid`, item emphasis), topics
+(`topic-list`) and steps (`ordered-step-sequence`) may each carry an `href`.
+The item's title becomes its one link and its accessible name; a chevron
+follows the title at rest, and the whole item is the click target. Statement
+features, comparison sides and FAQ rows take no `href`.
+
+| Rule | Code |
+|---|---|
+| Link every item in a block or none, so a reader never has to guess which one is a link | `sectioned-view-content-link-partial` |
+| At most 6 linked items per block: cut a longer list, or leave it unlinked | `sectioned-view-content-link-count` |
+| Each destination once per block (a trailing slash or a fragment does not make a new one) | `sectioned-view-content-link-duplicate` |
+| An `href` is a fragment, a root-relative path, an http(s) URL or a `mailto:` | `sectioned-view-content-item-href` |
+| Statement features are headlines, not destinations | `sectioned-view-content-link-statement` |
+| A split whose block is linked takes no text-column actions: two link systems compete (lint warning) | `sectioned-view-variety-link-competing` |
+
+- Write a linked item's heading as the destination's name, at most 48
+  characters, so the link name scans. Never write "Learn more".
+- A linked item holds plain text and static visuals only: no inline link, no
+  button, no field. Designer throws a `TypeError` otherwise.
+- Link steps rarely: only when each step has its own destination. When every
+  step would point to one page, leave the steps unlinked and put that link in
+  the footnote.
 
 ## The action ladder
 
@@ -47,6 +88,7 @@ write its label:
 | T2 | outline | the second action beside a T1 | 2-4 words, a verb first |
 | T3 | tonal | a supporting action inside a band, away from the T1 | 1-3 words, a verb first |
 | T4 | quiet (text and chevron) | a "more" step: open the full list, read the detail | 2-3 words ("See all checks") |
+| linked item | the item's title and the same chevron | an item that has its own page (see "Linked items") | the item's heading |
 | text link | underlined link | a reference inside running text or a footnote | the words it links |
 | icon-only | icon button | a control whose glyph says what it does: next, previous, close | a 1-3 word name, never shown |
 
@@ -97,8 +139,8 @@ description 20-35 words; action 1-3 words.
 Write the promise and the reader it is for. Do not write a slogan that would
 fit any product.
 
-**Intro band.** Header only, plus 1-2 buttons and an optional footnote.
-Description up to 40 words; buttons of 2-4 words. Use it to frame the next run of bands or to point to
+**Intro band.** Header only, plus 1-2 buttons, or an optional footnote when
+it has no buttons. Description up to 40 words; buttons of 2-4 words. Use it to frame the next run of bands or to point to
 another page. Do not put a list into the description.
 
 **FeatureGrid** (`feature-grid`). 2-4 items, each a heading and a description. Heading 2-5

@@ -1,6 +1,7 @@
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
 import { cx } from "../atoms/internal/cx.js";
 import { SECTION_GROUND_CLASSES, type SectionGround } from "./section-ground.js";
+import { assertNoNestedInteractive, CardLinkTitle, cardLinkContainerClassName } from "./stretched-link.js";
 
 export type OrderedStepSequenceHeadingLevel = 2 | 3 | 4 | 5 | 6;
 export type OrderedStepSequenceGround = SectionGround;
@@ -22,6 +23,13 @@ export interface OrderedStepSequenceItem {
    * visual layout described on the component.
    */
   visual?: ReactNode;
+  /**
+   * Links the whole step: the heading becomes the link (its name), with a
+   * chevron, and the step cell is the hit area, with a hover plate. Rare:
+   * only when each step has a destination of its own. Link every step or
+   * none. The step may then hold no other interactive element.
+   */
+  href?: string;
 }
 
 export interface OrderedStepSequenceProps extends Omit<HTMLAttributes<HTMLElement>, "title"> {
@@ -107,6 +115,12 @@ const LAYOUT_CLASSES = {
  * subgrid rows (ordinal, text, visual), so every visual starts on one top
  * line even when one step's copy runs longer. Without `subgrid` support the
  * steps still stack their parts in order.
+ *
+ * A step with `href` is one link, as a linked `FeatureGrid` item: the
+ * heading carries the anchor and a chevron, the step cell is the hit area
+ * with a hover plate, and a linked step holding another link, button or
+ * field throws a `TypeError`. The sequence stays an editorial list; linking
+ * suits only steps that each lead somewhere different.
  */
 export function OrderedStepSequence({
   eyebrow,
@@ -122,6 +136,8 @@ export function OrderedStepSequence({
   const HeadingTag = `h${headingLevel}` as `h${OrderedStepSequenceHeadingLevel}`;
   const ItemHeadingTag = `h${Math.min(headingLevel + 1, 6)}` as `h${OrderedStepSequenceHeadingLevel}`;
   const colors = SECTION_GROUND_CLASSES[ground];
+  /** A linked step: a bare item with a hover plate around it. */
+  const linkedContainer = cardLinkContainerClassName("plain", ground);
   const lines = STEP_LINE_CLASSES[ground];
   const hasHeadingRegion = eyebrow !== undefined || heading !== undefined || description !== undefined;
   const withVisuals = items.some((item) => item.visual !== undefined && item.visual !== null && item.visual !== false);
@@ -139,15 +155,24 @@ export function OrderedStepSequence({
       <ol data-step-layout={withVisuals ? "visual" : "plain"} className={layout.list}>
         {items.map((item, index) => {
           const last = index === items.length - 1;
+          if (item.href !== undefined) assertNoNestedInteractive("OrderedStepSequence", item.id, [item.label, item.heading, item.description, item.visual]);
           const text = (
             <div data-step-text="" className={cx("flex min-w-0 flex-col gap-sm", withVisuals || last ? undefined : LAYOUT_CLASSES.plain.gap)}>
               {item.label ? <p className={cx("text-body-s font-medium uppercase tracking-label", colors.secondary)}>{item.label}</p> : null}
-              <ItemHeadingTag className={cx("text-body-l font-body font-medium", colors.primary)}>{item.heading}</ItemHeadingTag>
+              <ItemHeadingTag className={cx("text-body-l font-body font-medium", colors.primary)}>
+                {item.href === undefined ? (
+                  item.heading
+                ) : (
+                  <CardLinkTitle href={item.href} frame="plain" ground={ground}>
+                    {item.heading}
+                  </CardLinkTitle>
+                )}
+              </ItemHeadingTag>
               {item.description ? <p className={cx("text-body text-pretty", colors.secondary)}>{item.description}</p> : null}
             </div>
           );
           return (
-            <li key={item.id} className={layout.item}>
+            <li key={item.id} className={item.href === undefined ? layout.item : cx(layout.item, linkedContainer)}>
               <div className={layout.marker}>
                 <span
                   className={cx(

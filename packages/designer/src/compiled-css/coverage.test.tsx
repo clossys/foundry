@@ -49,6 +49,7 @@ import { CardGrid } from "../blocks/CardGrid.js";
 import { Comparison } from "../blocks/Comparison.js";
 import { ContentSection } from "../blocks/ContentSection.js";
 import { FeatureGrid } from "../blocks/FeatureGrid.js";
+import { NavGrid } from "../blocks/NavGrid.js";
 import { OrderedStepSequence } from "../blocks/OrderedStepSequence.js";
 import { TopicList } from "../blocks/TopicList.js";
 import { Specimen } from "../blocks/specimen/Specimen.js";
@@ -260,14 +261,45 @@ describe("coverage: real rendered classes are all present in compiled.css", () =
       }
       trees.push(render(<TopicList ground={ground} items={[item("a"), item("b")]} />));
       trees.push(render(<TopicList ground={ground} columns={1} items={[item("a"), item("b")]} />));
+      // Linked items: the stretched-link anchor, its hit area and ring, and a bare item's hover plate.
+      const linked = (id: string) => ({ ...item(id), href: `/${id}` });
+      for (const treatment of ["plain", "rule", "plate"] as const) {
+        trees.push(render(<FeatureGrid ground={ground} columns={2} treatment={treatment} items={[linked("a"), linked("b")]} />));
+      }
+      trees.push(render(<CardGrid ground={ground} items={[{ ...linked("a"), span: "half" }, { ...linked("b"), span: "half" }]} />));
+      trees.push(render(<TopicList ground={ground} items={[linked("a"), linked("b")]} />));
+      trees.push(
+        render(
+          <OrderedStepSequence
+            ground={ground}
+            items={[
+              { id: "1", ordinal: "01", heading: "H", href: "/1" },
+              { id: "2", ordinal: "02", heading: "H", href: "/2" },
+            ]}
+          />,
+        ),
+      );
     }
+    trees.push(render(<NavGrid items={[{ id: "a", title: "A", description: "D", href: "/a" }, { id: "b", title: "B", href: "/b" }]} />));
 
     const renderedClasses = new Set<string>();
     for (const result of trees) {
       for (const c of collectClassNames(result.container)) renderedClasses.add(c);
       result.unmount();
     }
-    for (const required of ["tablet-lg:col-span-5", "tablet-lg:col-span-7", "tablet-lg:col-start-8", "gap-y-3xl", "rtl:-scale-x-100", "tablet-lg:col-span-8"]) {
+    for (const required of [
+      "tablet-lg:col-span-5",
+      "tablet-lg:col-span-7",
+      "tablet-lg:col-start-8",
+      "gap-y-3xl",
+      "rtl:-scale-x-100",
+      "tablet-lg:col-span-8",
+      "after:absolute",
+      "after:-inset-x-md",
+      "focus-visible:after:outline-accent-on-inverse",
+      "has-focus-visible:before:bg-surface-inverse-raised",
+      "after:rounded-control",
+    ]) {
       expect(renderedClasses.has(required)).toBe(true);
     }
 

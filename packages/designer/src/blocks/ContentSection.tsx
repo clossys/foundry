@@ -36,7 +36,20 @@ interface ContentSectionBaseProps extends Omit<HTMLAttributes<HTMLDivElement>, "
   /**
    * The section's own actions, under the description: one or two
    * button-styled links (`buttonLinkClassName`), at most one `primary` and
-   * the rest `outline`.
+   * the rest `outline`. An action closes what it follows, so where actions
+   * go depends on the shape:
+   * - A stacked section with modules or media after its header takes none,
+   *   neither under the header nor after the modules: link the module's
+   *   items (`href` on a `FeatureGrid`, `CardGrid`, `TopicList` or
+   *   `OrderedStepSequence` item), or put one link in the footnote.
+   * - A header-only stacked section (a statement or frame band) takes them
+   *   directly after its description, as its last element.
+   * - A header-only section with actions takes no footnote: nothing follows
+   *   an action, so fold the footnote's sentence into the description.
+   * - A split takes them in its text column, after the description and
+   *   before any text module, never under the visual.
+   * The component renders what it is given; the Publisher contract refuses
+   * the shapes above.
    */
   actions?: ReactNode;
   /**

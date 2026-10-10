@@ -59,11 +59,59 @@ describe("content catalog fixture", () => {
     expect(grounds).toEqual(new Set(["base", "sunken", "inverse"]));
   });
 
-  it("only breaks the page-variety rules a catalog must (two card bands, two comparisons, repeated block treatments)", () => {
-    const rules = new Set(checkSectionVariety(contentCatalogDocument).map((finding) => finding.rule));
-    for (const rule of rules) {
-      expect(["sectioned-view-variety-card-bands", "sectioned-view-variety-comparison-count", "sectioned-view-variety-treatment"]).toContain(rule);
+  it("keeps actions where they belong: header-only bands and split text columns, never a stacked band with a block or media, and nothing after them", () => {
+    for (const section of contentSections) {
+      if (section.actions === undefined) continue;
+      const split = section.layout === "split";
+      const headerOnly = section.block === undefined && section.media === undefined;
+      expect(split || headerOnly, section.id).toBe(true);
+      if (!split) expect(section.footnote, section.id).toBeUndefined();
     }
+    const byId = (id: string) => contentSections.find((section) => section.id === id);
+    expect(byId("catalog-intro")?.actions).toHaveLength(2);
+    expect(byId("catalog-intro")?.footnote).toBeUndefined();
+    expect(byId("catalog-features-statement")?.actions).toBeUndefined();
+    expect(byId("catalog-features-statement")?.footnote?.link).toBeDefined();
+  });
+
+  it("shows linked plates, a linked topic list and a linked bento, each item its own destination", () => {
+    const hrefs = (id: string) => {
+      const block = contentSections.find((section) => section.id === id)?.block;
+      if (block === undefined || block.type === "comparison" || block.type === "faq") throw new Error(`${id} has no linkable block`);
+      return block.items.map((item) => ("href" in item ? item.href : undefined));
+    };
+    for (const id of ["catalog-features-plate", "catalog-topics-linked", "catalog-cards-visual"]) {
+      const links = hrefs(id);
+      expect(links.every((href) => typeof href === "string" && href.startsWith("/")), id).toBe(true);
+      expect(new Set(links).size, id).toBe(links.length);
+    }
+    expect(hrefs("catalog-topics-linked")).toHaveLength(4);
+    // The other bento and every other block stay unlinked.
+    expect(hrefs("catalog-cards-text").every((href) => href === undefined)).toBe(true);
+    expect(hrefs("catalog-topics-two").every((href) => href === undefined)).toBe(true);
+
+    const dom = new JSDOM(buildContentCatalogHtml()).window.document;
+    for (const id of ["catalog-features-plate", "catalog-topics-linked", "catalog-cards-visual"]) {
+      const band = dom.getElementById(id);
+      const links = [...(band?.querySelectorAll("a[data-card-link]") ?? [])];
+      expect(links.length, id).toBe(hrefs(id).length);
+      expect(band?.querySelectorAll("[data-section-intro-actions]"), id).toHaveLength(0);
+      for (const link of links) {
+        expect(link.querySelector('svg[aria-hidden="true"]'), id).not.toBeNull();
+        expect(link.closest(".isolate"), id).not.toBeNull();
+      }
+    }
+    expect(dom.querySelectorAll("a[data-card-link]")).toHaveLength(10);
+  });
+
+  it("only breaks the page-variety rules a catalog must (two card bands, two comparisons, repeated block treatments, the linked topic list beside its unlinked sibling)", () => {
+    const findings = checkSectionVariety(contentCatalogDocument);
+    for (const finding of findings) {
+      expect(["sectioned-view-variety-card-bands", "sectioned-view-variety-comparison-count", "sectioned-view-variety-treatment", "sectioned-view-variety-repeat"]).toContain(finding.rule);
+    }
+    // The one repeat is the linked variant (13b) shown right after the unlinked topic list it varies.
+    const linkedAt = contentCatalogDocument.sections.findIndex((section) => section.id === "catalog-topics-linked");
+    expect(findings.filter((finding) => finding.rule === "sectioned-view-variety-repeat").map((finding) => finding.path)).toEqual([`sections.${linkedAt}`]);
   });
 
   it("keeps every band's copy within the content cookbook's budgets", () => {

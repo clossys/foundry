@@ -1,8 +1,7 @@
 import type { CSSProperties, ReactNode } from "react";
 import { Button } from "../atoms/Button.js";
-import { Link } from "../atoms/Link.js";
 import { cx } from "../atoms/internal/cx.js";
-import { UI_RING_FOCUS } from "../atoms/internal/ui-vars.js";
+import { assertNoNestedInteractive, CardLinkTitle, cardLinkContainerClassName } from "./stretched-link.js";
 
 interface NavGridItemBase {
   /** Stable identifier — the React key. */
@@ -17,7 +16,7 @@ interface NavGridItemBase {
 
 export type NavGridItem =
   | (NavGridItemBase & {
-      /** Renders this card as a real `<a href>` (this package's own `Link` atom). */
+      /** Renders this card as a linked tile: its title is a real `<a href>` whose hit area covers the tile. */
       href: string;
       onSelect?: never;
     })
@@ -36,25 +35,11 @@ export interface NavGridProps {
   style?: CSSProperties;
 }
 
+/** A linked tile's container: the tile is the hit area and carries the ring; tiles sit on the base ground. */
+const LINKED_TILE = cardLinkContainerClassName("control", "base");
+
 const CARD_BASE =
   "flex h-full flex-col items-start gap-sm rounded-control border border-line-base bg-surface-raised p-lg text-start outline-none transition-colors motion-reduce:transition-none hover:border-line-strong hover:bg-surface-sunken";
-
-// `Button` (used for an `onSelect` card) already applies a focus-visible
-// ring itself, conditionally, via its own `isFocusVisible` style callback
-// — see `atoms/Button.tsx`. `Link` (used for an `href` card) does NOT
-// apply any focus-ring styling of its own at all: its `outline-none` base
-// class removes the native default outline with nothing standing in for
-// it, unlike every OTHER interactive atom here. That's a real gap in that
-// atom, reported rather than fixed here (`src/atoms/` is off-limits for
-// this PR) — this local `style` callback, using the same `UI_RING_FOCUS`
-// token every other atom's own ring reads (with its own real fallback, so
-// this passes `check-contamination-classes`' "no bare var() without a
-// fallback" rule the same as `Button`'s own usage does), is this block's
-// own workaround so an `href` card is not left with zero visible focus
-// indicator.
-function linkCardStyle(renderProps: { isFocusVisible: boolean }): CSSProperties | undefined {
-  return renderProps.isFocusVisible ? { boxShadow: UI_RING_FOCUS } : undefined;
-}
 
 function NavGridCardContent({ item }: { item: NavGridItem }) {
   return (
@@ -64,11 +49,28 @@ function NavGridCardContent({ item }: { item: NavGridItem }) {
           {item.icon}
         </span>
       ) : null}
-      <span className="text-body font-body font-medium text-ink-primary">{item.title}</span>
+      <span className="text-body font-body font-medium text-ink-primary">
+        {item.href === undefined ? (
+          item.title
+        ) : (
+          <CardLinkTitle href={item.href} frame="control" ground="base">
+            {item.title}
+          </CardLinkTitle>
+        )}
+      </span>
       {item.description ? (
         <span className="text-body-s text-ink-secondary">{item.description}</span>
       ) : null}
     </>
+  );
+}
+
+function LinkedCard({ item }: { item: NavGridItem }) {
+  assertNoNestedInteractive("NavGrid", item.id, [item.icon, item.title, item.description]);
+  return (
+    <div data-nav-grid-card="" className={cx(CARD_BASE, LINKED_TILE)}>
+      <NavGridCardContent item={item} />
+    </div>
   );
 }
 
@@ -80,28 +82,22 @@ function NavGridCardContent({ item }: { item: NavGridItem }) {
  * which is what makes this a block rather than a view.
  *
  * **Each card is a real `<a>` or `<button>`, not a `<div>` with an
- * `onClick`.** `items` is a discriminated union: an item with `href`
- * renders via this package's own `Link` atom (`variant="standalone"` — the
- * variant the README's own `Link` section documents for exactly this case,
- * "a link that IS the whole clickable unit on its own... a nav item"); an
- * item with `onSelect` renders via this package's own `Button` atom
- * (`variant="ghost"`). Both are real interactive elements react-aria-
- * components already supplies full keyboard support for (Enter/Space
- * activation, correct roles, focus management) — nothing about that is
- * reimplemented here. `href`/`onSelect` are mutually exclusive at the type
- * level (`href?: never` on the `onSelect` branch and vice versa) rather
- * than both being plain optional props a caller could set — or omit —
- * simultaneously.
- *
- * **The whole card is the click/keyboard target, not just the title.**
- * `icon`, `title`, and `description` are all rendered INSIDE the single
- * `<a>`/`<button>` element (this component's own card styling is applied
- * directly to that element, not to a wrapping `<div>` around a smaller
- * link) — clicking or activating anywhere on the card, and Tab reaching it
- * once as one stop, both work identically to clicking the title text alone
- * would. `icon` is `aria-hidden`: it's decorative reinforcement for a title
- * that's already the card's real accessible name, not a second source of
- * meaning a screen reader needs to parse separately.
+ * `onClick`.** `items` is a discriminated union. An item with `href` is a
+ * linked tile, the same anatomy as a linked `CardGrid` card: its title is
+ * one plain `<a href>` (so the link's name is the title alone) with a
+ * chevron at its end, visible at rest, and the anchor's hit area covers the
+ * tile, so a click anywhere on it follows the link and Tab stops once, with
+ * the focus ring around the whole tile. The icon and description sit
+ * outside the anchor; a linked tile holding another link, button or field
+ * throws a `TypeError`. An item with `onSelect` renders via this package's
+ * own `Button` atom (`variant="ghost"`), with `icon`, `title` and
+ * `description` inside the one `<button>`, so the whole tile is the target.
+ * `href`/`onSelect` are mutually exclusive at the type level (`href?:
+ * never` on the `onSelect` branch and vice versa) rather than both being
+ * plain optional props a caller could set — or omit — simultaneously.
+ * `icon` is `aria-hidden`: it's decorative reinforcement for a title that's
+ * already the card's real accessible name, not a second source of meaning a
+ * screen reader needs to parse separately.
  *
  * Cards lay out one per row on narrow viewports, two from the `tablet`
  * breakpoint, three from `desktop` — a plain Tailwind responsive grid
@@ -116,15 +112,7 @@ export function NavGrid({ heading, items, className, style }: NavGridProps) {
       <div className="grid grid-cols-1 gap-md tablet:grid-cols-2 desktop:grid-cols-3">
         {items.map((item) =>
           item.href !== undefined ? (
-            <Link
-              key={item.id}
-              href={item.href}
-              variant="standalone"
-              className={cx(CARD_BASE, "no-underline hover:no-underline")}
-              style={linkCardStyle}
-            >
-              <NavGridCardContent item={item} />
-            </Link>
+            <LinkedCard key={item.id} item={item} />
           ) : (
             <Button
               key={item.id}

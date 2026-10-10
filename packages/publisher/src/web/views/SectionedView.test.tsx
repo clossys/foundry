@@ -451,11 +451,10 @@ describe("SectionedView content-section", () => {
     expect(() => renderToStaticMarkup(<SectionedView document={faqDocument("grid")} />)).toThrow("sections.0.layout");
   });
 
-  it("renders a stacked band's specimen after its block, its actions as full-size buttons and its footnote last", () => {
+  it("renders a stacked band's specimen after its block and its footnote last, and a header-only band's actions as full-size buttons", () => {
     const host = renderToStaticMarkup(
       <SectionedView
         document={contentDocument({
-          actions: [{ id: "more", label: "More", href: "/more", emphasis: "primary" }, { id: "faq", label: "FAQ", href: "/faq" }],
           block: { type: "topic-list", columns: 1, items: [{ id: "a", heading: "A" }, { id: "b", heading: "B" }] },
           media,
           footnote: { text: "An aside.", link: { label: "Read the guide", href: "/guide" } },
@@ -463,10 +462,12 @@ describe("SectionedView content-section", () => {
       />,
     );
     expect(host).toMatch(/data-topic-list[\s\S]*data-content-section-media[\s\S]*<figure[^>]*data-specimen[\s\S]*data-content-section-footnote/);
-    expect(host).toMatch(/<a href="\/more" class="[^"]*\bpx-lg py-md text-body-l bg-accent text-ink-on-accent\b[^"]*" data-action-emphasis="primary">More<\/a>/);
-    expect(host).toMatch(/<a href="\/faq" class="[^"]*\bpx-lg py-md text-body-l bg-transparent ring-inset ring-current\b[^"]*" data-action-emphasis="secondary">FAQ<\/a>/);
-    expect(host).not.toContain("text-ink-link");
+    expect(host).not.toContain("data-section-intro-actions");
     expect(host).toMatch(/<p data-content-section-footnote=""[^>]*>An aside\. <a href="\/guide" class="[^"]*\bunderline\b[^"]*">Read the guide<\/a><\/p><\/div><\/main>$/);
+    const headerOnly = renderToStaticMarkup(<SectionedView document={contentDocument({ actions: [{ id: "more", label: "More", href: "/more", emphasis: "primary" }, { id: "faq", label: "FAQ", href: "/faq" }] })} />);
+    expect(headerOnly).toMatch(/<a href="\/more" class="[^"]*\bpx-lg py-md text-body-l bg-accent text-ink-on-accent\b[^"]*" data-action-emphasis="primary">More<\/a>/);
+    expect(headerOnly).toMatch(/<a href="\/faq" class="[^"]*\bpx-lg py-md text-body-l bg-transparent ring-inset ring-current\b[^"]*" data-action-emphasis="secondary">FAQ<\/a>/);
+    expect(headerOnly).not.toContain("text-ink-link");
   });
 
   it("refuses an invalid block or specimen before any Designer block renders, naming the exact path", () => {
@@ -493,6 +494,12 @@ describe("SectionedView content-section", () => {
       [{ actions: [1, 2, 3].map((n) => ({ id: `a${n}`, label: "Go", href: "/go" })) }, "sections.0.actions holds 3 actions; a content section holds at most 2."],
       [{ actions: [1, 2].map((n) => ({ id: `a${n}`, label: "Go", href: "/go", emphasis: "primary" })) }, "sections.0.actions holds more than one primary action."],
       [{ actions: [{ id: "a", label: "Go", href: "/go", emphasis: "link" }] }, "sections.0.actions.0.emphasis is not a supported action emphasis; supported values are primary, secondary."],
+      [
+        { actions: [{ id: "a", label: "Go", href: "/go" }], block: { type: "topic-list", columns: 1, items: [{ id: "a", heading: "A" }, { id: "b", heading: "B" }] } },
+        "sections.0 is a stacked band whose intro is followed by a block or visual, so it takes no section actions. Link the cards themselves (item `href`), or put one link in the footnote.",
+      ],
+      [{ actions: [{ id: "a", label: "Go", href: "/go" }], footnote: { text: "Aside." } }, "sections.0 is a header-only band with actions, and nothing follows an action: fold the footnote sentence into the description, or drop the actions."],
+      [{ block: { type: "topic-list", columns: 1, items: [{ id: "a", heading: "A", href: "/a" }, { id: "b", heading: "B" }] } }, "sections.0.block.items links 1 of 2 items; link every item or none, so a reader never has to guess which one is a link."],
       [{ footnote: { text: " " } }, "sections.0.footnote must be a resolved footnote with non-blank text."],
       [{ footnote: { text: "Aside.", links: [] } }, "sections.0.footnote must be a resolved footnote with non-blank text."],
       [{ footnote: { text: "Aside.", link: { label: "Guide", href: "/guide", style: "button" } } }, "sections.0.footnote.link must be one resolved link with a non-blank label."],
