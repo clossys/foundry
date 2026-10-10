@@ -1,4 +1,4 @@
-import type { HTMLAttributes, ReactNode } from "react";
+import type { HTMLAttributes, ReactElement, ReactNode } from "react";
 import { cx } from "./internal/cx.js";
 
 export type StatusMarkTone = "success" | "warning" | "danger" | "info" | "neutral";
@@ -8,17 +8,40 @@ export interface StatusMarkProps extends Omit<HTMLAttributes<HTMLSpanElement>, "
   tone: StatusMarkTone;
   /**
    * Required. The state in words ("Received", "Outside limit"). The text
-   * always carries the meaning; the dot is decoration.
+   * always carries the meaning; the mark is decoration.
    */
   children: ReactNode;
 }
 
-const DOT_CLASSES: Record<StatusMarkTone, string> = {
-  success: "bg-status-success",
-  warning: "bg-status-warning",
-  danger: "bg-status-danger",
-  info: "bg-status-info",
-  neutral: "bg-ink-muted",
+const MARK_CLASSES: Record<StatusMarkTone, string> = {
+  success: "fill-status-success",
+  warning: "fill-status-warning",
+  danger: "fill-status-danger",
+  info: "fill-status-info",
+  neutral: "fill-ink-muted",
+};
+
+/** The mark's shape per tone, exposed as `data-shape` on the mark. */
+type StatusMarkShape = "circle" | "triangle" | "diamond" | "open-circle" | "dash";
+
+const SHAPES: Record<StatusMarkTone, StatusMarkShape> = {
+  success: "circle",
+  warning: "triangle",
+  danger: "diamond",
+  info: "open-circle",
+  neutral: "dash",
+};
+
+// Drawn in a 10x10 box as fills only (the open circle is an even-odd ring),
+// so the tone's one `fill-*` class colours every shape. The geometry carries
+// the tone when colour cannot: a greyscale brand, a print, a colour-blind
+// reader.
+const SHAPE_PATHS: Record<StatusMarkShape, ReactElement> = {
+  circle: <circle cx="5" cy="5" r="4.5" />,
+  triangle: <path d="M5 0.5 9.75 9.25H0.25Z" />,
+  diamond: <path d="M5 0 10 5 5 10 0 5Z" />,
+  "open-circle": <path fillRule="evenodd" d="M5 0.5a4.5 4.5 0 1 0 0 9a4.5 4.5 0 1 0 0-9ZM5 2a3 3 0 1 1 0 6a3 3 0 1 1 0-6Z" />,
+  dash: <rect x="1" y="4" width="8" height="2" rx="1" />,
 };
 
 const TEXT_CLASSES: Record<StatusMarkTone, string> = {
@@ -30,11 +53,14 @@ const TEXT_CLASSES: Record<StatusMarkTone, string> = {
 };
 
 /**
- * A small coloured dot followed by a label: one data state inside a row,
+ * A small tone mark followed by a label: one data state inside a row,
  * a table cell or a panel header. Lighter than `Badge` (no pill fill), for
  * places where several states sit close together.
  *
- * The dot is `aria-hidden`; the label is ordinary text in the tone's
+ * Each tone has its own shape as well as its own colour (success a filled
+ * circle, warning a triangle, danger a diamond, info a ring, neutral a
+ * dash), so the states stay distinct in a greyscale brand and for a reader
+ * who cannot tell the colours apart. The mark is `aria-hidden`; the label is ordinary text in the tone's
  * `status-*-text` colour, which is contrast-checked against the raised
  * surface in both themes. Not interactive, composes no other atom and uses
  * no hooks, so it is server-safe (re-exported from `atoms/server.ts`).
@@ -46,7 +72,16 @@ export function StatusMark({ tone, className, children, ...rest }: StatusMarkPro
       data-tone={tone}
       className={cx("inline-flex items-center gap-xs text-body-s font-body", TEXT_CLASSES[tone], className)}
     >
-      <span aria-hidden="true" className={cx("inline-block h-2 w-2 shrink-0 rounded-pill", DOT_CLASSES[tone])} />
+      <svg
+        aria-hidden="true"
+        focusable="false"
+        viewBox="0 0 10 10"
+        data-part="mark"
+        data-shape={SHAPES[tone]}
+        className={cx("inline-block h-2.5 w-2.5 shrink-0", MARK_CLASSES[tone])}
+      >
+        {SHAPE_PATHS[SHAPES[tone]]}
+      </svg>
       <span>{children}</span>
     </span>
   );

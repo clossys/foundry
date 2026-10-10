@@ -1182,11 +1182,16 @@ Accepts every prop a plain `<div>` does, plus `variant` and `ground`:
 - `variant="plate"`: a content plate. It takes the other ground from the
   section it sits on (on a base section a sunken fill, on a sunken section
   a raised fill, on an inverse section the inverse raised fill), with
-  `rounded-surface` and no stroke or shadow. The card is made by the change
+  `rounded-panel` and no stroke or shadow. The card is made by the change
   of ground, not by a box.
-- `variant="outline"`: a product panel. Raised fill, one hairline edge
-  (`--ui-border-hairline`, `line-base`, or `line-on-inverse` on an inverse
-  section), `rounded-surface`, never a shadow.
+- `variant="outline"`: a product panel. Raised fill, one panel edge
+  (`--ui-border-panel` in `line-panel`, or `line-on-inverse` on an inverse
+  section), `rounded-panel`, never a shadow of its own.
+
+Plate and outline read the panel identity slots (`--radius-panel`,
+`--ui-border-panel`, `--color-line-panel`; see TOKENS.md). Each defaults
+to the surface radius and a hairline in the base line, so a brand that
+leaves them unset looks exactly as before.
 
 `ground` (`"base" | "sunken" | "inverse"`, default `"base"`) names the
 section the card sits on. An atom cannot see its section, so the block
@@ -2134,10 +2139,14 @@ function ReportState() {
 }
 ```
 
-A small dot and a label for one data state in a row, a table cell or a
-panel header. `tone`: `"success" | "warning" | "danger" | "info" |
-"neutral"`. The label is required and always visible; the dot is
-`aria-hidden`, so colour only repeats what the words say. The label uses
+A small tone mark and a label for one data state in a row, a table cell or
+a panel header. `tone`: `"success" | "warning" | "danger" | "info" |
+"neutral"`. Each tone has its own shape as well as its own colour (success
+a filled circle, warning a triangle, danger a diamond, info an open circle,
+neutral a dash), so the states stay apart in a greyscale brand or for a
+reader who cannot tell the colours apart. The label is required and always
+visible; the mark is an `aria-hidden` SVG, so colour and shape only repeat
+what the words say. The label uses
 the tone's `status-*-text` colour (neutral: `ink-secondary`), checked at AA
 against the raised surface in both themes (`designer-contrast-check`).
 Lighter than `Badge`, which has a tinted pill: use `StatusMark` where
@@ -2162,7 +2171,9 @@ side: after the limit for `direction="max"` (a cap, the default), before it
 for `direction="min"` (a floor). Without a limit it reads as a share.
 `tone` (`MeterTone`) is a status tone, `"neutral"` for a plain quantity, or
 `"accent"` for a plain quantity in the brand accent (a share or an
-allocation, never a state). `emphasis` (`MeterEmphasis`, default
+allocation, never a state). `warning` fills with diagonal hatching and
+`info` with a tinted bar inside a ring (both at the `--ui-border-rule`
+weight), so neither depends on colour alone; the other tones fill solid. `emphasis` (`MeterEmphasis`, default
 `"default"`) set to `"figure"` makes the value the focal number of its
 panel: `text-h1`, `text-h0` once its container is `@md` wide, normal weight,
 tabular, with the limit beside it in secondary ink and the bar under both.
@@ -3269,7 +3280,7 @@ import { CardGrid } from "@clossys/designer/blocks";
 
 A mixed grid of content cards where one item may deserve more room. Each
 card is an `<article>` holding a `Card` plate (the other ground,
-`rounded-surface`, no stroke, no shadow) with an optional `icon`
+`rounded-panel`, no stroke, no shadow) with an optional `icon`
 (`aria-hidden`, in the brand accent), `eyebrow` (a `text-body-s` medium
 tracked label), a real heading at `headingLevel` (`CardGridHeadingLevel`,
 default `3`: one below the section heading), a `description` at
@@ -3396,8 +3407,9 @@ across from `desktop`: put a row of three in a stacked band, not in a
 split's visual column), `"stack"` (one column) or `"flow"` (one column
 joined by a hairline connector; `connector` is the short caption after the
 first panel, allowed only with `flow`). A `SpecimenPanel` is the `Card`
-outline lifted by the floating elevation (raised fill, one hairline,
-`rounded-surface`, the `--ui-elevation-floating` shadow), so it reads as
+outline lifted by the panel elevation (raised fill, one panel edge,
+`rounded-panel`, the `--ui-elevation-panel` shadow, which defaults to
+`--ui-elevation-floating`), so it reads as
 product UI on a stage: a title row (`title` at `text-body-l`, `meta`,
 `status`), 1 to 3 `parts` and an optional `footer` (an assignee's initials
 on an accent-tint disc beside their name, a note), each separated by a
@@ -3420,8 +3432,9 @@ label, state and note); `"table"` (a real `<table>` of at most 4
 columns and 5 rows with a visually hidden `caption`; below the `@md`
 container width each row reflows to a stacked record of label/value pairs, with explicit table
 roles so the semantics survive the display change); `"schedule"` (an
-`<ol>` of dated rows on a hairline rail); `"shares"` (names with an
-accent percentage `Meter` on a scale of 100); `"files"` (a mono format tag, a
+`<ol>` of dated rows on a hairline rail); `"shares"` (names with a
+percentage `Meter` on a scale of 100, in the accent, or in the share's
+`status` tone when it has one); `"files"` (a mono format tag, a
 name and a source).
 
 Static by design: no link, button, input, hover state or focus stop, no
@@ -5233,7 +5246,7 @@ not a grab-bag).
 | `SeparatorProps` | type | Props for `Separator`: `orientation`, `decorative`, `className`, `style`, plus most of react-aria-components' own `Separator` props. |
 | `Chip` | component | A removable label: a label region plus a remove-affordance region. Distinct from `Badge`, which is static. |
 | `ChipProps` | type | Props for `Chip`: `children`, `isDisabled`, `className`, `style`, plus `onRemove`/`removeLabel` (typed together — `removeLabel` is required whenever `onRemove` is supplied). |
-| `StatusMark` | component | A dot and a visible label for one data state. Server-safe. |
+| `StatusMark` | component | A tone mark (a shape per tone) and a visible label for one data state. Server-safe. |
 | `StatusMarkProps` | type | Props for `StatusMark`: `tone`, `children` (required), plus every native `<span>` attribute. |
 | `StatusMarkTone` | type | `"success" \| "warning" \| "danger" \| "info" \| "neutral"`. |
 | `Meter` | component | A value against a scale and an optional limit, with visible value and limit text and a decorative bar. Server-safe. |
@@ -5643,7 +5656,7 @@ part of this package's public API" and reachable only by that one test.
   ratified from `contrast.test.ts`'s own hand-curated pair map rather than
   auto-derived from token names. An earlier design assumed this gate could
   self-extend, deriving one pair per `--<role>-on-<ground>`-shaped token
-  name; counted against this package's real 172 tokens, only 5 actually
+  name; counted against this package's real 176 tokens, only 5 actually
   follow that shape (`--color-ink-on-accent`, `--color-ink-on-inverse`,
   `--color-accent-on-inverse`, `--color-line-on-inverse`,
   `--ui-ring-on-inverse` — see `contrast-pairs.ts`'s own header for a 6th,

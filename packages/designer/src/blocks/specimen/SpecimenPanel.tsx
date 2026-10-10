@@ -2,7 +2,7 @@ import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
 import { Card } from "../../atoms/Card.js";
 import { StatusMark } from "../../atoms/StatusMark.js";
 import { cx } from "../../atoms/internal/cx.js";
-import { UI_BORDER_HAIRLINE, UI_ELEVATION_FLOATING } from "../../atoms/internal/ui-vars.js";
+import { UI_BORDER_HAIRLINE, UI_ELEVATION_PANEL } from "../../atoms/internal/ui-vars.js";
 import { SpecimenPartView, type SpecimenPart, type SpecimenStatus } from "./parts.js";
 
 /**
@@ -22,7 +22,7 @@ const INITIALS_CLASSES =
 
 const HAIRLINE_BLOCK_START: CSSProperties = { borderBlockStartWidth: UI_BORDER_HAIRLINE };
 /** Lifted off its ground: the outline hairline plus the floating elevation, so the panel reads as product UI on a stage, not a box drawn on the page. */
-const LIFTED: CSSProperties = { boxShadow: UI_ELEVATION_FLOATING };
+const LIFTED: CSSProperties = { boxShadow: UI_ELEVATION_PANEL };
 
 /** Parts one panel may hold. */
 export const SPECIMEN_PANEL_MAX_PARTS = 3;
@@ -73,8 +73,9 @@ function present(node: ReactNode): boolean {
 /**
  * One product-UI panel: a title row (title, meta, state), 1 to 3 parts and
  * an optional footer, each separated by a hairline. The surface is the
- * `Card` outline lifted by `--ui-elevation-floating`: raised fill, one
- * hairline edge, `rounded-surface`, a soft shadow, never dark. The panel is
+ * `Card` outline lifted by `--ui-elevation-panel` (the floating elevation
+ * by default): raised fill, one panel edge (`--ui-border-panel` in
+ * `--color-line-panel`), `rounded-panel`, a soft shadow, never dark. The panel is
  * a size container: `p-lg`, `p-xl` once the panel itself is `@md` (28rem)
  * wide, and its parts reflow on the same measure. Text is `text-body`
  * with `text-body-s` secondary lines (never smaller); all secondary text is

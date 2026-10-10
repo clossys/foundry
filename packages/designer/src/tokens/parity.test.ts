@@ -12,7 +12,7 @@ const declarations = parseRootDeclarations(tokensCss);
 /**
  * The important test in this package (see the README's Tests section): two
  * independently hand-authored artifacts, `styles/tokens.css` and
- * `src/tokens.ts`, both claim to describe the same 172 tokens. Nothing
+ * `src/tokens.ts`, both claim to describe the same 176 tokens. Nothing
  * generates one from the other, so nothing but a test keeps them in sync —
  * this is that test, checked in both directions and by value, not just by
  * name.
@@ -48,8 +48,8 @@ describe("tokens.css <-> src/tokens.ts parity", () => {
     expect(mismatched).toEqual([]);
   });
 
-  it("declares exactly 172 tokens (the curated set this package promises)", () => {
-    expect(declarations.size).toBe(172);
-    expect(Object.keys(TOKENS).length).toBe(172);
+  it("declares exactly 176 tokens (the curated set this package promises)", () => {
+    expect(declarations.size).toBe(176);
+    expect(Object.keys(TOKENS).length).toBe(176);
   });
 });

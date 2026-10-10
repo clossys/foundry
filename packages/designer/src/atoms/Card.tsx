@@ -1,15 +1,20 @@
 import type { CSSProperties, HTMLAttributes } from "react";
 import { cx } from "./internal/cx.js";
-import { UI_BORDER_HAIRLINE, UI_ELEVATION_RAISED } from "./internal/ui-vars.js";
+import { UI_BORDER_PANEL, UI_ELEVATION_RAISED } from "./internal/ui-vars.js";
 
 /**
  * - `"raised"` (default): the original card, unchanged — raised fill,
  *   `rounded-control`, the hairline elevation shadow.
  * - `"plate"`: a content plate. It reads as the OTHER ground from the
- *   section it sits on (see `ground`), with `rounded-surface`, no stroke
+ *   section it sits on (see `ground`), with `rounded-panel`, no stroke
  *   and no shadow — a card made by a change of ground, not by a box.
- * - `"outline"`: a product panel. Raised fill, one hairline edge,
- *   `rounded-surface`, never a shadow.
+ * - `"outline"`: a product panel. Raised fill, one panel edge,
+ *   `rounded-panel`, never a shadow of its own.
+ *
+ * Plate and outline read the panel identity tokens: `--radius-panel` for
+ * the corner, and (outline) `--ui-border-panel` and `--color-line-panel`
+ * for the edge. Each defaults to today's surface radius and hairline in the
+ * base line, so a brand changes panels in one place.
  */
 export type CardVariant = "raised" | "plate" | "outline";
 
@@ -41,8 +46,8 @@ const PLATE_CLASSES: Record<CardGround, string> = {
 };
 
 const OUTLINE_CLASSES: Record<CardGround, string> = {
-  base: "border border-line-base bg-surface-raised",
-  sunken: "border border-line-base bg-surface-raised",
+  base: "border border-line-panel bg-surface-raised",
+  sunken: "border border-line-panel bg-surface-raised",
   inverse: "border border-line-on-inverse bg-surface-inverse-raised",
 };
 
@@ -55,19 +60,19 @@ const OUTLINE_CLASSES: Record<CardGround, string> = {
 export function Card({ variant = "raised", ground = "base", className, style, children, ...rest }: CardProps) {
   if (variant === "plate") {
     return (
-      <div {...rest} data-variant="plate" className={cx("rounded-surface p-lg", PLATE_CLASSES[ground], className)} style={style}>
+      <div {...rest} data-variant="plate" className={cx("rounded-panel p-lg", PLATE_CLASSES[ground], className)} style={style}>
         {children}
       </div>
     );
   }
 
   if (variant === "outline") {
-    const outlineStyle: CSSProperties = { borderWidth: UI_BORDER_HAIRLINE, ...style };
+    const outlineStyle: CSSProperties = { borderWidth: UI_BORDER_PANEL, ...style };
     return (
       <div
         {...rest}
         data-variant="outline"
-        className={cx("rounded-surface p-lg", OUTLINE_CLASSES[ground], className)}
+        className={cx("rounded-panel p-lg", OUTLINE_CLASSES[ground], className)}
         style={outlineStyle}
       >
         {children}

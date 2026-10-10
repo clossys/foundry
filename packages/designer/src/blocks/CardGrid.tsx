@@ -135,7 +135,7 @@ export function assertCardGridSpans(spans: readonly CardGridSpan[]): void {
 /**
  * A mixed grid of content cards where one item may deserve more room than
  * the rest, and each card may carry a small visual. Each card is a `Card`
- * plate (the other ground, `rounded-surface`, no stroke, no shadow)
+ * plate (the other ground, `rounded-panel`, no stroke, no shadow)
  * rendered inside an `<article>` with a real heading, one level below the
  * section heading.
  *

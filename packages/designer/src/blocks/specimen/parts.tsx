@@ -188,7 +188,11 @@ export interface SpecimenShare {
   status?: SpecimenStatus;
 }
 
-/** Names with a percentage bar each (ownership, allocation), in a `<ul>`. */
+/**
+ * Names with a percentage bar each (ownership, allocation), in a `<ul>`.
+ * A bar fills in the brand accent; a share with a `status` fills in that
+ * status's tone instead, so the bar repeats the mark beside its name.
+ */
 export interface SpecimenSharesPart {
   id: string;
   type: "shares";
@@ -428,7 +432,8 @@ function SharesBody({ part }: { part: SpecimenSharesPart }) {
             <span className={cx(PRIMARY_TEXT, "min-w-0")}>{item.name}</span>
             <Status status={item.status} />
           </div>
-          <Meter value={item.share} scaleMax={100} tone="accent" valueText={item.shareText} />
+          {/* A share with no status is a plain quantity, so its bar takes the brand accent. */}
+          <Meter value={item.share} scaleMax={100} tone={item.status ? item.status.tone : "accent"} valueText={item.shareText} />
         </li>
       ))}
     </ul>

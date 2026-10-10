@@ -79,3 +79,17 @@ export const UI_BORDER_HAIRLINE = "var(--ui-border-hairline, 1px)";
  * weight.
  */
 export const UI_BORDER_RULE = "var(--ui-border-rule, 2px)";
+
+/**
+ * Panel edge width (`--ui-border-panel`): the edge of `Card`'s `outline`
+ * variant and so of every product panel built on it. A brand lever that
+ * defaults to the hairline, so the fallback composes the hairline read.
+ */
+export const UI_BORDER_PANEL = `var(--ui-border-panel, ${UI_BORDER_HAIRLINE})`;
+
+/**
+ * Panel lift (`--ui-elevation-panel`): the shadow under a product panel
+ * (`SpecimenPanel`). A brand lever that defaults to the floating elevation,
+ * so the fallback composes the floating read.
+ */
+export const UI_ELEVATION_PANEL = `var(--ui-elevation-panel, ${UI_ELEVATION_FLOATING})`;

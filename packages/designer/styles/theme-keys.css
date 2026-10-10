@@ -39,6 +39,7 @@
   --color-line-base:              var(--color-line-base, oklch(0.8761 0 0));
   --color-line-strong:            var(--color-line-strong, oklch(0.7763 0 0));
   --color-line-on-inverse:        var(--color-line-on-inverse, oklch(0.9702 0 0 / 0.14));
+  --color-line-panel:             var(--color-line-panel, var(--color-line-base, oklch(0.8761 0 0)));
 
   /* ── COLOR · ACCENT ───────────────────────────────────────────── */
   --color-accent:                 var(--color-accent, oklch(0.4748 0 0));
@@ -131,6 +132,7 @@
   --radius-control:                var(--radius-control, 6px);
   --radius-pill:                   var(--radius-pill, 999px);
   --radius-surface:                var(--radius-surface, var(--radius-default, 3px));
+  --radius-panel:                  var(--radius-panel, var(--radius-surface, var(--radius-default, 3px)));
 
   /* ── EASING ───────────────────────────────────────────────────── */
   --ease-default:                  var(--ease-default, cubic-bezier(.2, 0, 0, 1));

@@ -255,7 +255,7 @@ import `theme.css` — nothing else in this package needs it.
 is expected to override it. Everything else is a fixed structural scale —
 shipped as-is regardless of brand.
 
-### Color (49 tokens, case 1 — `--color-*`)
+### Color (50 tokens, case 1 — `--color-*`)
 
 | Token | Default | Brandable |
 | --- | --- | --- |
@@ -276,6 +276,7 @@ shipped as-is regardless of brand.
 | `--color-line-base` | `oklch(0.8761 0 0)` | yes |
 | `--color-line-strong` | `oklch(0.7763 0 0)` | yes |
 | `--color-line-on-inverse` | `oklch(0.9702 0 0 / 0.14)` | yes |
+| `--color-line-panel` | alias of `--color-line-base` | **yes** (panel identity) |
 | `--color-accent` | `oklch(0.4748 0 0)` | yes |
 | `--color-accent-text` | `oklch(0.36 0 0)` | yes |
 | `--color-accent-hover` | `oklch(0.36 0 0)` | yes |
@@ -334,7 +335,7 @@ body's leading, which reads far too open at display sizes. Body copy uses
 your own value or Tailwind's `leading-*` scale; see "What didn't translate
 cleanly" below for why the ramp carries no line-height.
 
-### Spacing, radius, breakpoint, easing (28 tokens, case 1)
+### Spacing, radius, breakpoint, easing (29 tokens, case 1)
 
 | Token | Default | Brandable |
 | --- | --- | --- |
@@ -345,6 +346,7 @@ cleanly" below for why the ramp carries no line-height.
 | `--radius-control` | `6px` | no |
 | `--radius-pill` | `999px` | no |
 | `--radius-surface` | alias of `--radius-default` | no (inherits) |
+| `--radius-panel` | alias of `--radius-surface` | **yes** (panel identity) |
 | `--ease-default` | `cubic-bezier(.2, 0, 0, 1)` | no |
 | `--ease-decelerate` | `cubic-bezier(0, 0, .2, 1)` | no |
 | `--ease-accelerate` | `cubic-bezier(.4, 0, 1, 1)` | no |
@@ -365,7 +367,21 @@ plates, product panels, anything that is not a control. It aliases
 column or list may carry on its top edge; dividers stay on
 `--ui-border-hairline`.
 
-### `--ui-*` (47 tokens, case 2 — no Tailwind utility, raw `var()` only)
+**Panel identity.** Four brandable slots set how cards, plates and
+product panels look, independent of the rest of the brand:
+`--radius-panel` (`rounded-panel`, the corner of `Card`'s `plate` and
+`outline` variants and so of `CardGrid`, `FeatureGrid`, `Comparison`,
+`PricingTable` and `SpecimenPanel`), `--ui-border-panel` and
+`--color-line-panel` (`border-line-panel`; the outline edge's width and
+colour on a light ground — an inverse ground keeps `--color-line-on-inverse`),
+and `--ui-elevation-panel` (the lift under a `SpecimenPanel`). Each is an
+alias of today's value (`--radius-surface`, `--ui-border-hairline`,
+`--color-line-base`, `--ui-elevation-floating`), so an unbranded page does
+not change, and the line and elevation aliases follow the dark theme. They
+are optional slots in `brand-template.css`; bind them to roles (a panel
+edge in `var(--color-line-strong)`) rather than raw values where you can.
+
+### `--ui-*` (49 tokens, case 2 — no Tailwind utility, raw `var()` only)
 
 | Token | Default | Brandable |
 | --- | --- | --- |
@@ -395,9 +411,11 @@ column or list may carry on its top edge; dividers stay on
 | `--ui-brandmark-gap-lg` | `8px` | no |
 | `--ui-border-hairline` | `1px` | no |
 | `--ui-border-rule` | `2px` | no |
+| `--ui-border-panel` | alias of `--ui-border-hairline` | **yes** (panel identity) |
 | `--ui-elevation-none` | `none` | no |
 | `--ui-elevation-raised` | `0 1px 0 var(--color-line-base)` | no |
 | `--ui-elevation-floating` | `0 8px 24px rgba(0, 0, 0, 0.10)` | no |
+| `--ui-elevation-panel` | alias of `--ui-elevation-floating` | **yes** (panel identity) |
 | `--ui-ring-focus` | `0 0 0 2px var(--color-accent)` | no |
 | `--ui-ring-on-inverse` | `0 0 0 1px rgba(245, 245, 245, 0.12)` | no |
 | `--ui-duration-instant` | `80ms` | no |
@@ -420,14 +438,14 @@ column or list may carry on its top edge; dividers stay on
 The `--spacing-*` and `--color-neutral-*` ranges above are each written as
 one row per family rather than one row per step, so the row count in each
 table is lower than its token count. Per-family totals: surface 7, ink 7,
-line 3, accent 5, status 12, neutral 11, overlay 3, skeleton 1 (color, 49);
-text 13, font 3, tracking 4 (20); spacing 10, radius 6, easing 6,
-breakpoint 6 (28); width 6, layout 5, density 3, icon 4, brandmark 6,
-border 2, elevation 3, ring 2, duration 6, z 9, alpha 1 (47, all `--ui-*`).
-49 + 20 + 28 + 47 = 144 tokens across 26 families, by this same
+line 4, accent 5, status 12, neutral 11, overlay 3, skeleton 1 (color, 50);
+text 13, font 3, tracking 4 (20); spacing 10, radius 7, easing 6,
+breakpoint 6 (29); width 6, layout 5, density 3, icon 4, brandmark 6,
+border 3, elevation 4, ring 2, duration 6, z 9, alpha 1 (49, all `--ui-*`).
+50 + 20 + 29 + 49 = 148 tokens across 26 families, by this same
 1-family-added arithmetic. **Note:** this total (and the "128 tokens
 across 24 families" figure elsewhere in this README predating it) does not
-match `src/tokens.ts`'s real count (172 across 28 families) — a pre-existing
+match `src/tokens.ts`'s real count (176 across 28 families) — a pre-existing
 gap from the `chart` color family (22 tokens, added in `0.4.0`) never being
 folded into this reference table's totals. That gap predates this PR and is
 out of its scope; `src/tokens.ts`/`styles/tokens.css` are what `parity.test.ts`

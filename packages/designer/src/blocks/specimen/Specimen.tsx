@@ -1,6 +1,6 @@
 import { Fragment, type CSSProperties, type HTMLAttributes, type ReactNode } from "react";
 import { cx } from "../../atoms/internal/cx.js";
-import { UI_BORDER_HAIRLINE } from "../../atoms/internal/ui-vars.js";
+import { UI_BORDER_PANEL } from "../../atoms/internal/ui-vars.js";
 import { SpecimenPanel, type SpecimenPanelItem } from "./SpecimenPanel.js";
 
 /** How a specimen arranges its panels. `single` holds exactly one; the others hold two or three. */
@@ -27,7 +27,8 @@ const CONNECTOR_CLASSES = "flex items-center gap-sm py-sm ps-lg @md:ps-xl";
 const CONNECTOR_RULE_CLASSES = "block h-xl shrink-0 border-s border-line-strong";
 const CONNECTOR_TEXT_CLASSES = "m-0 text-body-s text-ink-secondary";
 
-const HAIRLINE_INLINE_START: CSSProperties = { borderInlineStartWidth: UI_BORDER_HAIRLINE };
+/** The connector rule carries the panel edge width, so a heavier panel edge brings a matching connector. */
+const PANEL_EDGE_INLINE_START: CSSProperties = { borderInlineStartWidth: UI_BORDER_PANEL };
 
 /** Panels a specimen may hold. */
 export const SPECIMEN_MAX_PANELS = 3;
@@ -65,7 +66,7 @@ function assertSpecimen(label: unknown, arrangement: SpecimenArrangement, connec
 function Connector({ caption }: { caption: ReactNode }) {
   return (
     <div data-specimen-connector="" className={CONNECTOR_CLASSES}>
-      <span aria-hidden="true" className={CONNECTOR_RULE_CLASSES} style={HAIRLINE_INLINE_START} />
+      <span aria-hidden="true" className={CONNECTOR_RULE_CLASSES} style={PANEL_EDGE_INLINE_START} />
       {caption ? <p className={CONNECTOR_TEXT_CLASSES}>{caption}</p> : null}
     </div>
   );

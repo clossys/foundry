@@ -3,9 +3,12 @@ import { cx } from "./internal/cx.js";
 import { UI_BORDER_RULE } from "./internal/ui-vars.js";
 
 /**
- * Fill colour. The four status tones repeat a state; `neutral` is a plain
- * quantity; `accent` is a plain quantity in the brand accent (a share of a
- * whole, an allocation), never a state.
+ * Fill colour and texture. The four status tones repeat a state; `neutral`
+ * is a plain quantity; `accent` is a plain quantity in the brand accent (a
+ * share of a whole, an allocation), never a state. `warning` fills with
+ * diagonal hatching and `info` with a tinted bar inside a ring, so those two
+ * read apart from a solid fill when the brand is greyscale; `danger` is the
+ * darkest solid and `success` a lighter solid.
  */
 export type MeterTone = "success" | "warning" | "danger" | "info" | "neutral" | "accent";
 
@@ -48,11 +51,22 @@ export interface MeterProps extends Omit<HTMLAttributes<HTMLDivElement>, "childr
 
 const FILL_CLASSES: Record<MeterTone, string> = {
   success: "bg-status-success",
-  warning: "bg-status-warning",
+  warning: "bg-status-warning-tint text-status-warning",
   danger: "bg-status-danger",
-  info: "bg-status-info",
+  info: "bg-status-info-tint text-status-info",
   neutral: "bg-ink-secondary",
   accent: "bg-accent",
+};
+
+// Texture for the two tones a solid fill cannot tell apart in greyscale,
+// drawn in `currentColor` (the tone colour set by the class above) at the
+// emphasis-rule weight, so a brand that re-weights its rules re-weights
+// these too.
+const FILL_TEXTURES: Partial<Record<MeterTone, CSSProperties>> = {
+  warning: {
+    backgroundImage: `repeating-linear-gradient(-45deg, currentColor 0 ${UI_BORDER_RULE}, transparent 0 calc(2 * ${UI_BORDER_RULE}))`,
+  },
+  info: { boxShadow: `inset 0 0 0 ${UI_BORDER_RULE} currentColor` },
 };
 
 /** The value row per emphasis: the row, the value, and the limit. */
@@ -155,7 +169,7 @@ export function Meter({
         <span
           data-part="fill"
           className={cx("absolute inset-y-0 rounded-pill", FILL_CLASSES[tone])}
-          style={{ insetInlineStart: "0%", inlineSize: `${valuePct}%` }}
+          style={{ ...FILL_TEXTURES[tone], insetInlineStart: "0%", inlineSize: `${valuePct}%` }}
         />
         {tickStyle ? <span data-part="limit" className="absolute inset-y-0 bg-ink-primary" style={tickStyle} /> : null}
       </div>

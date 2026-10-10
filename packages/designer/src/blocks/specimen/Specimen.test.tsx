@@ -170,9 +170,11 @@ describe("Specimen", () => {
         <Specimen label={LABEL} arrangement={arrangement} panels={panels} connector={arrangement === "flow" ? "Then" : undefined} />,
       );
       expect(container.querySelectorAll(FOCUSABLE)).toHaveLength(0);
-      for (const el of container.querySelectorAll<HTMLElement>("[class]")) {
-        expect(el.className).not.toMatch(SCROLL);
-        expect(el.className).not.toMatch(WIDE_BASE_GRID);
+      // `getAttribute`, not `className`: a status mark is an SVG, whose
+      // `className` is an object rather than a string.
+      for (const el of container.querySelectorAll("[class]")) {
+        expect(el.getAttribute("class")).not.toMatch(SCROLL);
+        expect(el.getAttribute("class")).not.toMatch(WIDE_BASE_GRID);
       }
       unmount();
     }
@@ -206,12 +208,12 @@ describe("Specimen", () => {
 });
 
 describe("SpecimenPanel", () => {
-  it("is a lifted outline card: raised fill, one hairline, rounded-surface, the floating elevation, padding by its own width", () => {
+  it("is a lifted outline card: raised fill, one panel edge, rounded-panel, the panel elevation, padding by its own width", () => {
     const { container } = render(<SpecimenPanel parts={[FIELDS]} title="Order" />);
     const panel = container.querySelector<HTMLElement>("[data-specimen-panel]");
     expect(panel).toHaveAttribute("data-variant", "outline");
-    expect(panel).toHaveClass("bg-surface-raised", "border-line-base", "rounded-surface", "@container", "p-0");
-    expect(panel?.style.boxShadow).toBe("var(--ui-elevation-floating, 0 8px 24px rgba(0, 0, 0, 0.10))");
+    expect(panel).toHaveClass("bg-surface-raised", "border-line-panel", "rounded-panel", "@container", "p-0");
+    expect(panel?.style.boxShadow).toBe("var(--ui-elevation-panel, var(--ui-elevation-floating, 0 8px 24px rgba(0, 0, 0, 0.10)))");
     const body = panel?.querySelector(":scope > [data-specimen-panel-body]");
     expect(body).toHaveClass("flex", "flex-col", "gap-lg", "p-lg", "@md:p-xl");
   });
@@ -342,6 +344,13 @@ describe("Specimen parts", () => {
     expect(screen.getByText("Pending")).toBeInTheDocument();
   });
 
+  it("fills a plain share in the accent and a share with a status in that status's tone", () => {
+    const { container } = render(<SpecimenPanel parts={[SHARES]} />);
+    const meters = container.querySelectorAll<HTMLElement>("[data-tone][data-direction]");
+    expect(meters[0]).toHaveAttribute("data-tone", "accent");
+    expect(meters[1]).toHaveAttribute("data-tone", "info");
+  });
+
   it("refuses a share outside 0 to 100", () => {
     const over = { ...SHARES, items: [{ id: "a", name: "A", share: 120, shareText: "120%" }] } as SpecimenPart;
     expect(() => render(<SpecimenPanel parts={[over]} />)).toThrow(/from 0 to 100/);
@@ -363,6 +372,6 @@ describe("Specimen parts", () => {
 
   it("keeps all small text off muted ink, which is only AA-large on the raised fill", () => {
     const { container } = render(<SpecimenPanel {...PANEL_C} />);
-    for (const el of container.querySelectorAll<HTMLElement>("[class]")) expect(el.className).not.toMatch(/text-ink-muted/);
+    for (const el of container.querySelectorAll("[class]")) expect(el.getAttribute("class")).not.toMatch(/text-ink-muted/);
   });
 });

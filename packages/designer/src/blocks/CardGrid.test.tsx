@@ -72,7 +72,7 @@ describe("CardGrid", () => {
     const { container } = render(<CardGrid items={cards(["half", "half"])} ground="sunken" />);
     const plate = container.querySelector("[data-card-grid-item] > div") as HTMLElement;
     expect(plate).toHaveAttribute("data-variant", "plate");
-    expect(plate).toHaveClass("bg-surface-raised", "rounded-surface", "flex-col");
+    expect(plate).toHaveClass("bg-surface-raised", "rounded-panel", "flex-col");
   });
 
   it("pins a visual to the bottom of its card and hides the icon", () => {

@@ -56,23 +56,23 @@ describe("Card variants", () => {
     expect(card.className).toContain("bg-surface-inverse-raised");
   });
 
-  it("gives a plate the surface radius, no stroke and no shadow", () => {
+  it("gives a plate the panel radius, no stroke and no shadow", () => {
     render(<Card variant="plate">Content</Card>);
     const card = screen.getByText("Content");
-    expect(card.className).toContain("rounded-surface");
+    expect(card.className).toContain("rounded-panel");
     expect(card.className).not.toContain("rounded-control");
     expect(card.className.split(/\s+/)).not.toContain("border");
     expect(card.style.boxShadow).toBe("");
   });
 
-  it("renders an outline as raised fill with one hairline edge read from the token, and no shadow", () => {
+  it("renders an outline as raised fill with one panel edge read from the panel tokens, and no shadow", () => {
     render(<Card variant="outline">Content</Card>);
     const card = screen.getByText("Content");
     expect(card).toHaveAttribute("data-variant", "outline");
-    expect(card.className).toContain("rounded-surface");
+    expect(card.className).toContain("rounded-panel");
     expect(card.className).toContain("bg-surface-raised");
-    expect(card.className).toContain("border-line-base");
-    expect(card.style.borderWidth).toBe("var(--ui-border-hairline, 1px)");
+    expect(card.className).toContain("border-line-panel");
+    expect(card.style.borderWidth).toBe("var(--ui-border-panel, var(--ui-border-hairline, 1px))");
     expect(card.style.boxShadow).toBe("");
   });
 
@@ -81,7 +81,7 @@ describe("Card variants", () => {
     const card = screen.getByText("Content");
     expect(card.className).toContain("border-line-on-inverse");
     expect(card.className).toContain("bg-surface-inverse-raised");
-    expect(card.className).not.toContain("border-line-base");
+    expect(card.className).not.toContain("border-line-panel");
   });
 
   it("lets a consumer class win the merge on a plate", () => {

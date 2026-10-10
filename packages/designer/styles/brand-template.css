@@ -154,6 +154,15 @@
    * stay as shipped. */
   --radius-default:                ;
 
+  /* ─── PANEL (4 optional — the identity of cards, plates and product
+       panels. Each defaults to today's look: the surface radius, a
+       hairline edge in the base line, and the floating lift. Bind them
+       to roles, not raw colours, where you can) ─────────────────────── */
+  /* --radius-panel:       var(--radius-surface); */
+  /* --ui-border-panel:    var(--ui-border-hairline); */
+  /* --color-line-panel:   var(--color-line-base); */
+  /* --ui-elevation-panel: var(--ui-elevation-floating); */
+
   /* ─── WIDTH (3 optional — override only if your brand uses
        non-default reading/content widths) ───────────────────────── */
   /* --ui-width-content-max: 64rem; */

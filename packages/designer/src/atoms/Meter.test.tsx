@@ -31,6 +31,19 @@ describe("Meter", () => {
     expect(markup).not.toMatch(/\b(left|right):/);
   });
 
+  it("hatches a warning fill and rings an info fill, so neither depends on colour alone", () => {
+    const warning = part(renderToStaticMarkup(<Meter value={1} scaleMax={2} tone="warning" valueText="50%" />), "fill");
+    expect(warning).toContain("text-status-warning");
+    expect(warning).toContain("repeating-linear-gradient(-45deg, currentColor 0 var(--ui-border-rule, 2px)");
+    const info = part(renderToStaticMarkup(<Meter value={1} scaleMax={2} tone="info" valueText="50%" />), "fill");
+    expect(info).toContain("bg-status-info-tint");
+    expect(info).toContain("box-shadow:inset 0 0 0 var(--ui-border-rule, 2px) currentColor");
+    const danger = part(renderToStaticMarkup(<Meter value={1} scaleMax={2} tone="danger" valueText="50%" />), "fill");
+    expect(danger).toContain("bg-status-danger");
+    expect(danger).not.toContain("background-image");
+    expect(danger).not.toContain("box-shadow");
+  });
+
   it("clamps a value beyond the scale to a full bar", () => {
     const markup = renderToStaticMarkup(<Meter value={12} scaleMax={8} tone="warning" valueText="150%" />);
     expect(part(markup, "fill")).toContain("inline-size:100%");

@@ -163,7 +163,7 @@ describe("FeatureGrid catalog layout", () => {
     const { container } = render(<FeatureGrid items={three} treatment="plate" ground="sunken" />);
     const item = container.querySelector("[data-feature-grid-item]") as HTMLElement;
     expect(item).toHaveAttribute("data-variant", "plate");
-    expect(item).toHaveClass("bg-surface-raised", "rounded-surface");
+    expect(item).toHaveClass("bg-surface-raised", "rounded-panel");
     expect(screen.getByTestId("icon-a").parentElement).toHaveAttribute("aria-hidden", "true");
   });
 

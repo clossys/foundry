@@ -494,14 +494,14 @@
   .rounded-default {
     border-radius: var(--radius-default, 3px);
   }
+  .rounded-panel {
+    border-radius: var(--radius-panel, var(--radius-surface, var(--radius-default, 3px)));
+  }
   .rounded-pill {
     border-radius: var(--radius-pill, 999px);
   }
   .rounded-subtle {
     border-radius: var(--radius-subtle, 2px);
-  }
-  .rounded-surface {
-    border-radius: var(--radius-surface, var(--radius-default, 3px));
   }
   .rounded-s {
     border-start-start-radius: 0.25rem;
@@ -543,6 +543,9 @@
   }
   .border-line-on-inverse {
     border-color: var(--color-line-on-inverse, oklch(0.9702 0 0 / 0.14));
+  }
+  .border-line-panel {
+    border-color: var(--color-line-panel, var(--color-line-base, oklch(0.8761 0 0)));
   }
   .border-line-strong {
     border-color: var(--color-line-strong, oklch(0.7763 0 0));
@@ -645,6 +648,21 @@
   }
   .bg-transparent {
     background-color: transparent;
+  }
+  .fill-ink-muted {
+    fill: var(--color-ink-muted, oklch(0.5658 0 0));
+  }
+  .fill-status-danger {
+    fill: var(--color-status-danger, oklch(0.285 0 0));
+  }
+  .fill-status-info {
+    fill: var(--color-status-info, oklch(0.5658 0 0));
+  }
+  .fill-status-success {
+    fill: var(--color-status-success, oklch(0.6268 0 0));
+  }
+  .fill-status-warning {
+    fill: var(--color-status-warning, oklch(0.4495 0 0));
   }
   .object-cover {
     object-fit: cover;
@@ -858,11 +876,17 @@
   .text-status-danger-text {
     color: var(--color-status-danger-text, oklch(0.2178 0 0));
   }
+  .text-status-info {
+    color: var(--color-status-info, oklch(0.5658 0 0));
+  }
   .text-status-info-text {
     color: var(--color-status-info-text, oklch(0.4748 0 0));
   }
   .text-status-success-text {
     color: var(--color-status-success-text, oklch(0.4748 0 0));
+  }
+  .text-status-warning {
+    color: var(--color-status-warning, oklch(0.4495 0 0));
   }
   .text-status-warning-text {
     color: var(--color-status-warning-text, oklch(0.36 0 0));
