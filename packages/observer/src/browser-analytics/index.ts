@@ -4,7 +4,8 @@
  * Not reachable from the Observer root (O-4): the root never imports this
  * subtree. The provider adapter is deliberately not re-exported here; it
  * lives in its own module so that importing the transport never reaches it
- * (O-5). Public subpath exports are a separate unit.
+ * (O-5). The package exposes this barrel as `./browser-analytics` and the
+ * adapter alone as `./browser-analytics/posthog` (`providers/index.ts`).
  */
 
 export type {

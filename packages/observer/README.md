@@ -523,6 +523,38 @@ const unobservedSurface = computeUnobservedSurface(declaredSubjects, presenceRea
 | `HubPlacementCellKind` / `HubPlacementCellInput` | type | The three cell kinds this adapter emits, and the advisor-mirroring cell shape (structural, not imported). |
 | `RepositoryPackageObservation` / `HubPlacementObservationBundle` | type | One package observation, and the bundle this adapter accepts. |
 
+## PostHog adapter: autocapture and session replay
+
+`@clossys/observer/browser-analytics/posthog` exports `createPostHogProvider(sdk, config)`, the provider adapter for the consent-controlled analytics transport. The adapter takes the SDK object as an argument and imports no SDK, so the entry has no peer dependency. Autocapture and session replay are two separate features of that adapter, off unless a host turns them on. They are not yet part of the consent assembly API; a host that wires them today does so by calling the adapter directly.
+
+```ts
+import {
+  createPostHogProvider,
+  type PostHogLike,
+  type ReplayCapability,
+} from "@clossys/observer/browser-analytics/posthog";
+
+declare const sdk: PostHogLike;
+declare function probeForInstalledSdk(): ReplayCapability;
+
+const provider = createPostHogProvider(sdk, {
+  key: "project-key",
+  apiHost: "https://analytics.example.test",
+  autocapture: { enabled: true },
+  replay: { enabled: true, sampleRate: 0.1, blockSelectors: ["aside"], probe: probeForInstalledSdk },
+});
+```
+
+- **Configuration is checked when the adapter is created.** A missing block means the feature is off. A key outside the type, a wrong type, a missing or out-of-range `sampleRate` or a missing `probe` under `enabled: true` throws a `TypeError` before any SDK call. The replay block has no masking key: masking is constant, and a host can add block selectors but cannot remove the private ones. A block selector outside `BLOCK_SELECTOR_GRAMMAR` leaves replay off and does not throw.
+- **Autocapture records a click or a submit on an element that carries `data-analytics-id`.** The event is rebuilt from the element's tag and that attribute value. Element text, links, classes, ids, positions and ancestors are not sent. Form fields, editable content, and elements inside `data-private`, the consent banner, a password field or a `cc-` autocomplete field are dropped.
+- **Replay starts for a grant when five conditions hold.** The flag is on and the `sampleRate` draw selects the grant; every host block selector is inside the grammar; the SDK instance reports the constant recording options by value, checked at `init` and again before each start; the instance has `startSessionRecording`, `stopSessionRecording`, `reset` and `get_session_id`; and the host's `probe` reports all eight capability fields as `true`.
+- **A replay payload is checked before it leaves.** A payload that does not decode, a record of an unlisted kind and page text that is not in masked form drop the snapshot. Custom records are removed, and a meta record's address is rewritten to the sanitized URL.
+- **A query or fragment in an address drops the snapshot for the rest of the grant.** This covers the page address, the document's load address and an address inside the payload. A host page that loads with a query or fragment in its load address therefore keeps replay off for the document's lifetime, because each new grant meets the same load address.
+- **Each grant starts a new session.** Withdrawal and each re-grant call `reset()` when either feature is on. A session id equal to an earlier one on the page leaves replay off for that grant, and a snapshot with an earlier session id is dropped.
+- **Withdrawal closes the capture gate before any SDK call.** A snapshot flushed after the stop is dropped.
+
+`BLOCK_SELECTOR_GRAMMAR` and the other constants the specification names are exported from the same entry. The two expressions that make up the grammar stay internal.
+
 ## Non-Goals
 
 - **Does not implement a run-history reader.** `RunHistoryReader` is a port;
