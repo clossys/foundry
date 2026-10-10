@@ -131,7 +131,7 @@ describe("iconButtonLinkClassName", () => {
     expect(base).toEqual(iconButtonLinkClassName("base").split(" "));
     expect(base).toEqual(
       expect.arrayContaining([
-        "size-[var(--ui-layout-tap-target)]",
+        "icon-control-md",
         "rounded-pill",
         "border",
         "bg-surface-raised",
@@ -144,7 +144,6 @@ describe("iconButtonLinkClassName", () => {
         "focus-visible:outline-accent",
         "focus-visible:ring-2",
         "focus-visible:ring-surface-raised",
-        "duration-[var(--ui-duration-fast)]",
         "motion-reduce:transition-none",
       ]),
     );

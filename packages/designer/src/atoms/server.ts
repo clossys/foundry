@@ -89,6 +89,6 @@ export type { StatusMarkProps, StatusMarkTone } from "./StatusMark.js";
 /** Merge token-aware Tailwind class names with last-argument precedence. Pure string logic — no React import at all. */
 export { cx as mergeUiClasses } from "./internal/cx.js";
 
-/** The `Button` look for a plain `<a>`, with the focus outline put back. Pure string logic — no React import at all. */
-export { buttonLinkClassName, iconButtonLinkClassName } from "./button-classes.js";
-export type { IconButtonLinkGround } from "./button-classes.js";
+/** The `Button` and icon-only control looks for a plain `<a>`, with the focus outline put back. Pure string logic — no React import at all. */
+export { buttonLinkClassName, iconButtonClassName, iconButtonLinkClassName } from "./button-classes.js";
+export type { ControlGround, IconButtonClassOptions, IconButtonLinkGround, IconButtonShape, IconButtonSize } from "./button-classes.js";

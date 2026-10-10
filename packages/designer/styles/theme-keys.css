@@ -48,6 +48,13 @@
   --color-accent-tint:            var(--color-accent-tint, oklch(0.4748 0 0 / 0.1));
   --color-accent-on-inverse:      var(--color-accent-on-inverse, oklch(0.7763 0 0));
 
+  /* ── COLOR · CONTROL ──────────────────────────────────────────── */
+  --color-control-tonal:               var(--color-control-tonal, oklch(0.2178 0 0 / 0.08));
+  --color-control-tonal-hover:         var(--color-control-tonal-hover, oklch(0.2178 0 0 / 0.12));
+  --color-control-tonal-inverse:       var(--color-control-tonal-inverse, oklch(0.9702 0 0 / 0.12));
+  --color-control-tonal-inverse-hover: var(--color-control-tonal-inverse-hover, oklch(0.9702 0 0 / 0.16));
+  --color-control-quiet:               var(--color-control-quiet, var(--color-ink-primary, oklch(0.2178 0 0)));
+
   /* ── COLOR · STATUS ───────────────────────────────────────────── */
   --color-status-success:         var(--color-status-success, oklch(0.6268 0 0));
   --color-status-success-text:    var(--color-status-success-text, oklch(0.4748 0 0));
@@ -280,5 +287,65 @@
     @media (prefers-reduced-motion: reduce) {
       animation-timing-function: steps(1, jump-end);
     }
+  }
+}
+
+/*
+ * The quiet call to action (T4, `buttonClassName("quiet", …)`): a chevron
+ * text button with no box. The block pads to the 44px tap target
+ * (`--ui-layout-tap-target`) so it stays easy to hit while aligning to the
+ * text edge. On hover (a hovering pointer only) the trailing icon nudges
+ * 2px (half of `--spacing-xs`) toward the inline end, on the control
+ * transition (`--ui-duration-fast`, `--ease-default`); the label underline
+ * comes from the class string. Under reduced motion there is no nudge and
+ * no transition: only the underline changes. Right to left, the trailing
+ * icon mirrors and nudges the other way.
+ */
+@utility quiet-action {
+  min-block-size: var(--ui-layout-tap-target, 44px);
+  &:dir(rtl) > svg:last-child {
+    scale: -1 1;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    & > svg:last-child {
+      transition-property: translate;
+      transition-duration: var(--ui-duration-fast, 160ms);
+      transition-timing-function: var(--ease-default, cubic-bezier(.2, 0, 0, 1));
+    }
+    @media (hover: hover) {
+      &:hover > svg:last-child {
+        translate: calc(var(--spacing-xs, 4px) / 2) 0;
+      }
+      &:dir(rtl):hover > svg:last-child {
+        translate: calc(var(--spacing-xs, 4px) / -2) 0;
+      }
+    }
+  }
+}
+
+/*
+ * Icon-only control boxes (`iconButtonClassName`). `icon-control-md` is the
+ * 44px tap target. `icon-control-sm` is a 36px box (the tap target less
+ * `--spacing-sm`) whose transparent `::before` reaches 4px past each edge,
+ * so the hit area is still 44px. Both set the control colour transition to
+ * the fast motion tier.
+ */
+@utility icon-control-md {
+  inline-size: var(--ui-layout-tap-target, 44px);
+  block-size: var(--ui-layout-tap-target, 44px);
+  --tw-duration: var(--ui-duration-fast, 160ms);
+  transition-duration: var(--ui-duration-fast, 160ms);
+}
+
+@utility icon-control-sm {
+  position: relative;
+  inline-size: calc(var(--ui-layout-tap-target, 44px) - var(--spacing-sm, 8px));
+  block-size: calc(var(--ui-layout-tap-target, 44px) - var(--spacing-sm, 8px));
+  --tw-duration: var(--ui-duration-fast, 160ms);
+  transition-duration: var(--ui-duration-fast, 160ms);
+  &::before {
+    content: "";
+    position: absolute;
+    inset: calc(var(--spacing-sm, 8px) / -2);
   }
 }

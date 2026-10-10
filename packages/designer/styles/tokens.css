@@ -214,6 +214,21 @@ html:not([data-brand-bound]):not([data-suppress-brand-banner])::before {
   --color-accent-on-inverse:      oklch(0.7763 0 0);
 
   /* ════════════════════════════════════════════════════════════════
+   * COLOR · CONTROL (5 · the tonal and quiet button tiers)
+   * Tonal (T3) is the primary ink at low alpha over whatever ground it
+   * sits on: 8% at rest, 12% on hover. On the inverse ground it is the
+   * on-inverse ink at 12%, 16% on hover. Quiet (T4) is the ink of a
+   * chevron text button: an alias of the primary ink, so it follows the
+   * theme; a brand may point it at its accent ink. Every text pair on
+   * these meets AA (see src/tokens/contrast-pairs.ts).
+   * ════════════════════════════════════════════════════════════════ */
+  --color-control-tonal:                 oklch(0.2178 0 0 / 0.08);
+  --color-control-tonal-hover:           oklch(0.2178 0 0 / 0.12);
+  --color-control-tonal-inverse:         oklch(0.9702 0 0 / 0.12);
+  --color-control-tonal-inverse-hover:   oklch(0.9702 0 0 / 0.16);
+  --color-control-quiet:                 var(--color-ink-primary);
+
+  /* ════════════════════════════════════════════════════════════════
    * COLOR · STATUS (12 · 4 states x {color, text, tint})
    * A status banner of any kind: background --color-status-X-tint,
    * foreground --color-ink-primary.
@@ -619,6 +634,12 @@ html:not([data-brand-bound]):not([data-suppress-brand-banner])::before {
     --color-accent-tint:            oklch(0.62 0 0 / 0.18);
     --color-accent-on-inverse:      oklch(0.42 0 0);
 
+    /* ── COLOR · CONTROL — the dark inks at the same alphas ──────── */
+    --color-control-tonal:                 oklch(0.97 0 0 / 0.08);
+    --color-control-tonal-hover:           oklch(0.97 0 0 / 0.12);
+    --color-control-tonal-inverse:         oklch(0.2178 0 0 / 0.12);
+    --color-control-tonal-inverse-hover:   oklch(0.2178 0 0 / 0.16);
+
     /* ── COLOR · STATUS — raised lightness, not the light-mode value ─
      * (each stays recognisable as its own role; see this file's header
      * comment and the changelog) ─────────────────────────────────── */
@@ -716,6 +737,12 @@ html:not([data-brand-bound]):not([data-suppress-brand-banner])::before {
   --color-accent-tint:            oklch(0.62 0 0 / 0.18);
   --color-accent-on-inverse:      oklch(0.42 0 0);
 
+  /* ── COLOR · CONTROL ──────────────────────────────────────────── */
+  --color-control-tonal:                 oklch(0.97 0 0 / 0.08);
+  --color-control-tonal-hover:           oklch(0.97 0 0 / 0.12);
+  --color-control-tonal-inverse:         oklch(0.2178 0 0 / 0.12);
+  --color-control-tonal-inverse-hover:   oklch(0.2178 0 0 / 0.16);
+
   /* ── COLOR · STATUS ───────────────────────────────────────────── */
   --color-status-success:         oklch(0.72 0 0);
   --color-status-success-text:    oklch(0.80 0 0);
@@ -766,7 +793,7 @@ html:not([data-brand-bound]):not([data-suppress-brand-banner])::before {
  * parse-css.ts`, used by `parity.test.ts`, `contrast.test.ts`, and
  * `dark-mode-cascade.test.ts`) parses only the FIRST top-level `:root {`
  * block in this file as "the real token layer" and asserts it declares
- * exactly this package's curated 176 tokens; this sentinel is not a
+ * exactly this package's curated 181 tokens; this sentinel is not a
  * design token — it is a structural presence marker — so it stays out
  * of `src/tokens/tokens.ts`'s registry and out of that block entirely,
  * in a second `:root` rule the browser cascades in fine (CSS allows any

@@ -1,8 +1,7 @@
 /**
  * @clossys/designer/atoms — the first rung of a three-layer component
  * reusable ladder (atoms → blocks). An
- * atom is single-purpose: it either composes no other atom (`Button`,
- * `TextField`, `Badge`, `Card`, `Checkbox`, `Switch`, `Select`, `Textarea`,
+ * atom is single-purpose: it either composes no other atom (`TextField`, `Badge`, `Card`, `Checkbox`, `Switch`, `Select`, `Textarea`,
  * `Avatar`, `Spinner`, `Dialog`, `Field`, `Skeleton`, `Tooltip`, `Banner`,
  * `Popover`, `DateField`, `ComboBox`, `SearchField`, `FileTrigger`,
  * `Disclosure`, `ProgressBar`, `Separator`, `Chip`, `StatusMark`,
@@ -21,9 +20,11 @@
  * (`Checkbox`, for its `SelectAllCheckbox`/`SelectionCheckbox`
  * sub-components) — see `Table.tsx`'s own doc comment for why that's the
  * ladder's explicitly-allowed direction (a sibling atom, not a `blocks/`
- * import) rather than an exception to it.
+ * import) rather than an exception to it. `Button` (the trailing icon of
+ * its `quiet` variant) and `IconButton` (its one glyph) compose `Icon` the
+ * same way.
  *
- * Thirty-three ship as of this file. See the README's "What's deliberately
+ * Thirty-four ship as of this file. See the README's "What's deliberately
  * not here" for what was left out on purpose (`Slider`, `Calendar`, `NumberField`, `Toolbar`, `Accordion`, ...).
  */
 
@@ -64,6 +65,9 @@ assertPeerVersion({
 export { Button } from "./Button.js";
 export type { ButtonProps, ButtonSize, ButtonVariant } from "./Button.js";
 
+export { IconButton } from "./IconButton.js";
+export type { IconButtonProps } from "./IconButton.js";
+
 export { Icon } from "./Icon.js";
 export type { IconProps, IconSize, IconAccessibilityProps, IconNode } from "./Icon.js";
 
@@ -80,8 +84,8 @@ export { Breadcrumb } from "./Breadcrumb.js";
 export type { BreadcrumbProps, BreadcrumbItemProps } from "./Breadcrumb.js";
 
 export { Link } from "./Link.js";
-export { buttonLinkClassName, iconButtonLinkClassName } from "./button-classes.js";
-export type { IconButtonLinkGround } from "./button-classes.js";
+export { buttonLinkClassName, iconButtonClassName, iconButtonLinkClassName } from "./button-classes.js";
+export type { ControlGround, IconButtonClassOptions, IconButtonLinkGround, IconButtonShape, IconButtonSize } from "./button-classes.js";
 export type { LinkProps, LinkVariant } from "./Link.js";
 
 export { Checkbox } from "./Checkbox.js";

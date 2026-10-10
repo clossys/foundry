@@ -255,7 +255,7 @@ import `theme.css` — nothing else in this package needs it.
 is expected to override it. Everything else is a fixed structural scale —
 shipped as-is regardless of brand.
 
-### Color (50 tokens, case 1 — `--color-*`)
+### Color (55 tokens, case 1 — `--color-*`)
 
 | Token | Default | Brandable |
 | --- | --- | --- |
@@ -282,6 +282,11 @@ shipped as-is regardless of brand.
 | `--color-accent-hover` | `oklch(0.36 0 0)` | yes |
 | `--color-accent-tint` | `oklch(0.4748 0 0 / 0.1)` | yes |
 | `--color-accent-on-inverse` | `oklch(0.7763 0 0)` | yes |
+| `--color-control-tonal` | `oklch(0.2178 0 0 / 0.08)` | yes |
+| `--color-control-tonal-hover` | `oklch(0.2178 0 0 / 0.12)` | yes |
+| `--color-control-tonal-inverse` | `oklch(0.9702 0 0 / 0.12)` | yes |
+| `--color-control-tonal-inverse-hover` | `oklch(0.9702 0 0 / 0.16)` | yes |
+| `--color-control-quiet` | alias of `--color-ink-primary` | yes |
 | `--color-status-success` | `oklch(0.6268 0 0)` | yes |
 | `--color-status-success-text` | `oklch(0.4748 0 0)` | yes |
 | `--color-status-success-tint` | `oklch(0.6268 0 0 / 0.1)` | yes |
@@ -438,14 +443,15 @@ edge in `var(--color-line-strong)`) rather than raw values where you can.
 The `--spacing-*` and `--color-neutral-*` ranges above are each written as
 one row per family rather than one row per step, so the row count in each
 table is lower than its token count. Per-family totals: surface 7, ink 7,
-line 4, accent 5, status 12, neutral 11, overlay 3, skeleton 1 (color, 50);
+line 4, accent 5, control 5, status 12, neutral 11, overlay 3, skeleton 1
+(color, 55);
 text 13, font 3, tracking 4 (20); spacing 10, radius 7, easing 6,
 breakpoint 6 (29); width 6, layout 5, density 3, icon 4, brandmark 6,
 border 3, elevation 4, ring 2, duration 6, z 9, alpha 1 (49, all `--ui-*`).
-50 + 20 + 29 + 49 = 148 tokens across 26 families, by this same
+55 + 20 + 29 + 49 = 153 tokens across 27 families, by this same
 1-family-added arithmetic. **Note:** this total (and the "128 tokens
 across 24 families" figure elsewhere in this README predating it) does not
-match `src/tokens.ts`'s real count (176 across 28 families) — a pre-existing
+match `src/tokens.ts`'s real count (181 across 29 families) — a pre-existing
 gap from the `chart` color family (22 tokens, added in `0.4.0`) never being
 folded into this reference table's totals. That gap predates this PR and is
 out of its scope; `src/tokens.ts`/`styles/tokens.css` are what `parity.test.ts`

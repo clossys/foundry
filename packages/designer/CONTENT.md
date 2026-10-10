@@ -36,6 +36,26 @@ Every band opens with the same header group, and each slot has one job:
   the import guide"). It holds at most one underlined link. Never put a call
   to action in a footnote.
 
+## The action ladder
+
+Every action takes one rung. Pick the rung from the action's weight, then
+write its label:
+
+| Rung | Look | Use it for | Label |
+|---|---|---|---|
+| T1 | primary (filled) | the one main call to action of a view | 1-4 words, a verb first |
+| T2 | outline | the second action beside a T1 | 2-4 words, a verb first |
+| T3 | tonal | a supporting action inside a band, away from the T1 | 1-3 words, a verb first |
+| T4 | quiet (text and chevron) | a "more" step: open the full list, read the detail | 2-3 words ("See all checks") |
+| text link | underlined link | a reference inside running text or a footnote | the words it links |
+| icon-only | icon button | a control whose glyph says what it does: next, previous, close | a 1-3 word name, never shown |
+
+- Use one T1 per view and step down for every further action. Never put
+  two actions of the same rung side by side unless they are true peers.
+- A T4 always leads somewhere further: never use it for the main action.
+- An icon-only control still needs its name ("Next slide", "Close"). Its
+  glyph is never the only label of a page's main action.
+
 ## Choose the block from the information
 
 A content section holds at most one block in its `block` field. The block's

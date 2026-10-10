@@ -357,7 +357,7 @@ source file's own header for the exact probe and its result). Today that's:
 
 | Subpath | Server-safe members |
 | --- | --- |
-| `@clossys/designer/atoms/server` | `Avatar`, `Badge`, `Banner`, `Card`, `Field`, `Icon`, `Meter`, `Skeleton`, `Spinner`, `StatusMark`, `buttonLinkClassName`, `iconButtonLinkClassName`, `mergeUiClasses` |
+| `@clossys/designer/atoms/server` | `Avatar`, `Badge`, `Banner`, `Card`, `Field`, `Icon`, `Meter`, `Skeleton`, `Spinner`, `StatusMark`, `buttonLinkClassName`, `iconButtonClassName`, `iconButtonLinkClassName`, `mergeUiClasses` |
 | `@clossys/designer/blocks/server` | `ArticleBody`, `CardGrid`, `Comparison`, `ContentSection`, `DetailView`, `EmptyState`, `Faq`, `FeatureGrid`, `FieldGroup`, `Hero`, `MarketingChapter`, `MediaFigure`, `OrderedStepSequence`, `PageHeader`, `PricingTable`, `SectionFrame`, `SectionHeader`, `SectionIntro`, `Specimen`, `SpecimenPanel`, `Stat`, `StatusList`, `TopicList` |
 | `@clossys/designer/shell/server` | `Shell`, `SiteFooter`, `SiteHeader`, `SkipLink` |
 | `@clossys/designer/charts/server` | `ChartFrame`, `Sparkline` |
@@ -1033,10 +1033,57 @@ function SaveButton() {
 }
 ```
 
-`variant`: `"primary" | "secondary" | "ghost" | "danger" | "outline"`
-(default `"primary"`). `size`: `"sm" | "md" | "lg"` (default `"md"`). Accepts
-every prop react-aria-components' own `Button` does — `isDisabled`,
-`onPress`, `type`, and so on.
+`variant`: `"primary" | "secondary" | "ghost" | "danger" | "outline" |
+"tonal" | "quiet"` (default `"primary"`). `size`: `"sm" | "md" | "lg"`
+(default `"md"`). `ground`: `"base" | "sunken" | "inverse"` (default
+`"base"`), the ground the button sits on; only `tonal` and `quiet` change
+with it. Accepts every prop react-aria-components' own `Button` does —
+`isDisabled`, `onPress`, `type`, and so on.
+
+The call-to-action ladder, strongest first. Use one T1 per view, and step
+down the ladder for every further action:
+
+| Tier | Look | For |
+| --- | --- | --- |
+| T1 | `primary` | the one main action of a view |
+| T2 | `outline` (or `secondary` on a panel) | the second action beside a T1 |
+| T3 | `tonal` | a supporting action that still needs a target: a neutral tonal fill, no edge |
+| T4 | `quiet` | a low-weight "more" action: a chevron text button |
+| text link | `Link` | navigation inside running text |
+| icon-only | `IconButton` | a control whose glyph says what it does |
+
+`tonal` (T3) fills the box with the primary ink at low alpha
+(`--color-control-tonal`, `--color-control-tonal-hover` on hover), so one
+token reads on `base` and `sunken` alike; on `ground="inverse"` it takes the
+on-inverse ink at low alpha (`--color-control-tonal-inverse`,
+`--color-control-tonal-inverse-hover`) and the on-inverse ink. It draws no
+edge.
+
+`quiet` (T4) is a text button with no fill, edge or inline padding, so it
+aligns with the text edge. It is set in `--color-control-quiet` (the on-inverse
+ink on `ground="inverse"`), keeps a 44px tap block
+(`--ui-layout-tap-target`), and ends in a decorative `ChevronRight`. Hover
+underlines the label and nudges the chevron 2px toward the inline end (the
+other way in a right-to-left page); under reduced motion the chevron does not
+move. `trailingIcon` swaps the glyph (any `@clossys/designer/icons` data) or,
+as `null`, removes it; other variants ignore it.
+
+```tsx
+import { Button } from "@clossys/designer/atoms";
+
+function SupportingActions() {
+  return (
+    <>
+      <Button variant="tonal" onPress={() => compare()}>
+        Compare
+      </Button>
+      <Button variant="quiet" onPress={() => showAll()}>
+        See all
+      </Button>
+    </>
+  );
+}
+```
 
 `outline` is the second call to action beside a `primary` one: a transparent
 button with the same box, size, radius and type as `primary`, edged by an
@@ -1048,7 +1095,7 @@ contrast floor on light and dark grounds alike. On `Button`, React Aria's
 focus ring replaces the edge while it shows; a link keeps both.
 
 A call to action that navigates is a link, not a button. Give a plain `<a>`
-the button look with `buttonLinkClassName(variant, size)` (server-safe, from
+the button look with `buttonLinkClassName(variant, size, ground)` (server-safe, from
 `@clossys/designer/atoms` or `/atoms/server`): the same variant and size
 classes, the package-standard `focus-visible` outline, and none of the
 disabled styling a link never needs.
@@ -1059,11 +1106,16 @@ import { buttonLinkClassName } from "@clossys/designer/atoms/server";
 <a href="/contact" className={buttonLinkClassName("primary", "lg")}>Book a call</a>;
 ```
 
+A quiet link carries no chevron of its own (a class string renders no
+glyph): put a decorative `Icon` last inside it, and the hover nudge applies
+to it.
+
 An icon-only link that navigates (a scroll cue, a back-to-top link) takes
 the round look, `iconButtonLinkClassName(ground)` (server-safe, same
 entries): a 44px circle (`--ui-layout-tap-target`) on the pill radius with
-a hairline edge, drawn for a light (`"base"`, the default) or dark
-(`"inverse"`) ground. Hover shifts the surface and lifts the edge, pressed
+a hairline edge, drawn for a light (`"base"`, the default), sunken
+(`"sunken"`) or dark (`"inverse"`) ground. It is
+`iconButtonClassName({ size: "md", shape: "circle", ground })`. Hover shifts the surface and lifts the edge, pressed
 takes the ground's strongest edge, and colours ease on
 `--ui-duration-fast` (instant under reduced motion). The focus outline is
 the package-standard accent outline over a 2px halo in the link's own
@@ -1091,6 +1143,33 @@ range, then hides in one step. An engine without scroll-driven animations
 (`animation-timeline`) skips the fixed placement and the fade together: the
 cue is centred on the top edge of its nearest positioned ancestor and scrolls
 away with the page, so it is never fixed without a fade.
+
+### `IconButton`
+
+```tsx
+import { IconButton } from "@clossys/designer/atoms";
+import { ChevronRight } from "@clossys/designer/icons";
+
+function NextSlide({ onNext }: { onNext: () => void }) {
+  return <IconButton icon={ChevronRight} label="Next slide" onPress={onNext} />;
+}
+```
+
+An icon-only control on react-aria-components' `Button`: one decorative
+glyph in a box with a hairline edge. `label` is required and is the
+accessible name (the package ships no default copy; `aria-label` and
+`aria-labelledby` are not accepted in its place). `icon` is
+`@clossys/designer/icons` data. `size`: `"md"` (default, a 44px box, the
+`md` icon) or `"sm"` (a 36px box, the `sm` icon, with its hit area padded
+back to 44px). `shape`: `"circle"` (default, pill radius) or `"square"`
+(control radius). `ground`: `"base" | "sunken" | "inverse"` (default
+`"base"`). Pass `aria-pressed` or `aria-expanded` for a toggle: the selected
+state fills the box with the ground's opposite surface. Colours ease on
+`--ui-duration-fast`, instantly under reduced motion.
+
+The look is `iconButtonClassName({ size, shape, ground })` (server-safe,
+from `@clossys/designer/atoms` or `/atoms/server`), for a plain element that
+needs it; that element still needs an accessible name.
 
 ### `Icon`
 
@@ -5205,9 +5284,17 @@ not a grab-bag).
 | --- | --- | --- |
 | `AlertTriangle`, `ArrowRight`, `BookOpen`, `Box`, `Briefcase`, `Building2`, `Calendar`, `Check`, `CheckCircle`, `ChevronDown`, `ChevronLeft`, `ChevronRight`, `ChevronUp`, `Clock`, `CreditCard`, `ExternalLink`, `FileCheck`, `FileText`, `Folder`, `Globe`, `Grid3x3`, `Home`, `Info`, `Landmark`, `Layers`, `List`, `Lock`, `Monitor`, `Moon`, `Plug`, `Receipt`, `Scale`, `Search`, `Settings`, `ShieldCheck`, `Sun`, `User`, `Users`, `X`, `XCircle` | data | The 40 shipped icon glyphs, each an `IconNode` — see "Icon glyph data" above. |
 | `Button` | component | Pressable action built on react-aria-components' `Button`. |
-| `ButtonProps` | type | Props for `Button`: `variant`, `size`, plus everything react-aria-components' own `Button` accepts. |
-| `ButtonVariant` | type | `"primary" \| "secondary" \| "ghost" \| "danger" \| "outline"`. |
+| `ButtonProps` | type | Props for `Button`: `variant`, `size`, `ground`, `trailingIcon` (`quiet` only), plus everything react-aria-components' own `Button` accepts. |
+| `ButtonVariant` | type | `"primary" \| "secondary" \| "ghost" \| "danger" \| "outline" \| "tonal" \| "quiet"`. |
 | `ButtonSize` | type | `"sm" \| "md" \| "lg"`. |
+| `ControlGround` | type | `"base" \| "sunken" \| "inverse"`: the ground a control sits on. |
+| `IconButton` | component | Icon-only control built on react-aria-components' `Button`, named by a required `label`. |
+| `IconButtonProps` | type | Props for `IconButton`: `label` (required), `icon`, `size`, `shape`, `ground`, plus react-aria-components' own `Button` props except `children`, `aria-label` and `aria-labelledby`. |
+| `IconButtonSize` | type | `"sm" \| "md"`: a 36px box with a 44px hit area, or a 44px box. |
+| `IconButtonShape` | type | `"circle" \| "square"`. |
+| `IconButtonClassOptions` | type | `{ size?, shape?, ground? }` for `iconButtonClassName`. |
+| `IconButtonLinkGround` | type | The `ground` of `iconButtonLinkClassName`; the same union as `ControlGround`. |
+| `iconButtonClassName` | function | `(options?: IconButtonClassOptions) => string`: the icon-only control look, server-safe. |
 | `Icon` | component | The glyph render contract: size, colour, accessibility, applied to either `glyph` (structured `IconNode` data) or `children` (raw SVG/a component). |
 | `IconProps` | type | `IconAccessibilityProps & { glyph: IconNode; children?: undefined } \| { glyph?: undefined; children: ReactNode } & { size?: IconSize; className?: string; style?: CSSProperties } & Omit<SVGProps<SVGSVGElement>, ...>`. |
 | `IconSize` | type | `"sm" \| "md" \| "lg"`. |
@@ -5708,7 +5795,7 @@ part of this package's public API" and reachable only by that one test.
   ratified from `contrast.test.ts`'s own hand-curated pair map rather than
   auto-derived from token names. An earlier design assumed this gate could
   self-extend, deriving one pair per `--<role>-on-<ground>`-shaped token
-  name; counted against this package's real 176 tokens, only 5 actually
+  name; counted against this package's real 181 tokens, only 5 actually
   follow that shape (`--color-ink-on-accent`, `--color-ink-on-inverse`,
   `--color-accent-on-inverse`, `--color-line-on-inverse`,
   `--ui-ring-on-inverse` — see `contrast-pairs.ts`'s own header for a 6th,

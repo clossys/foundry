@@ -298,6 +298,81 @@ export const CONTRAST_PAIRS: readonly ContrastPair[] = [
     description: "Secondary and muted site-block text on the inverse section ground.",
   },
 
+  // ── the CTA ladder: tonal (T3), quiet (T4) and icon-only controls ─────
+  // The tonal fills are translucent, so each is composited over the ground
+  // it sits on first. Quiet on the inverse ground uses the on-inverse ink,
+  // already checked by "ink-on-inverse/surface-inverse" above.
+  {
+    id: "ink-primary/control-tonal@surface-base",
+    foreground: "--color-ink-primary",
+    background: "--color-control-tonal",
+    compositeOver: "--color-surface-base",
+    level: "AA",
+    minimumRatio: AA,
+    description: "A tonal button's label on its fill, on the page ground.",
+  },
+  {
+    id: "ink-primary/control-tonal@surface-sunken",
+    foreground: "--color-ink-primary",
+    background: "--color-control-tonal",
+    compositeOver: "--color-surface-sunken",
+    level: "AA",
+    minimumRatio: AA,
+    description: "A tonal button's label on its fill, on a sunken ground.",
+  },
+  {
+    id: "ink-primary/control-tonal-hover@surface-sunken",
+    foreground: "--color-ink-primary",
+    background: "--color-control-tonal-hover",
+    compositeOver: "--color-surface-sunken",
+    level: "AA",
+    minimumRatio: AA,
+    description: "A hovered tonal button's label on its denser fill, on the darker of the two light grounds.",
+  },
+  {
+    id: "ink-on-inverse/control-tonal-inverse@surface-inverse",
+    foreground: "--color-ink-on-inverse",
+    background: "--color-control-tonal-inverse",
+    compositeOver: "--color-surface-inverse",
+    level: "AA",
+    minimumRatio: AA,
+    description: "A tonal button's label on its inverse fill, on the inverse ground.",
+  },
+  {
+    id: "ink-on-inverse/control-tonal-inverse-hover@surface-inverse",
+    foreground: "--color-ink-on-inverse",
+    background: "--color-control-tonal-inverse-hover",
+    compositeOver: "--color-surface-inverse",
+    level: "AA",
+    minimumRatio: AA,
+    description: "A hovered tonal button's label on its denser inverse fill, on the inverse ground.",
+  },
+  {
+    id: "control-quiet/surface-base",
+    foreground: "--color-control-quiet",
+    background: "--color-surface-base",
+    level: "AA",
+    minimumRatio: AA,
+    description: "A quiet (chevron text) button's label on the page ground.",
+  },
+  {
+    id: "control-quiet/surface-sunken",
+    foreground: "--color-control-quiet",
+    background: "--color-surface-sunken",
+    level: "AA",
+    minimumRatio: AA,
+    description: "A quiet (chevron text) button's label on a sunken ground.",
+  },
+  {
+    id: "ink-on-inverse/surface-inverse-raised",
+    foreground: "--color-ink-on-inverse",
+    background: "--color-surface-inverse-raised",
+    level: "AA-large",
+    minimumRatio: AA_LARGE,
+    description:
+      "An icon-only control's glyph on its inverse fill: the glyph is the only thing that says what the control does, so it meets the 3:1 non-text floor (WCAG 1.4.11). On the light grounds the glyph is ink-primary on surface-raised, checked above at AA.",
+  },
+
   // ── status -text on its own -tint, composited over surface-base: AA ───
   {
     id: "status-success-text/status-success-tint",

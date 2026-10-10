@@ -2,7 +2,7 @@
  * The token catalog: every custom property this package declares in
  * `styles/tokens.css`, as data. This file is the JS/TS half of the package;
  * `styles/tokens.css` is the CSS half. Both are hand-authored and both are
- * meant to describe the exact same 176 tokens — a test in this package
+ * meant to describe the exact same 181 tokens — a test in this package
  * (`parity.test.ts`) parses `styles/tokens.css` and asserts its custom
  * property names and values match this file entry-for-entry, in both
  * directions. That test is what keeps this file honest; nothing generates
@@ -35,7 +35,7 @@
  */
 
 /**
- * The 28 semantic groups the 176 tokens fall into. Each maps to exactly one
+ * The 29 semantic groups the 181 tokens fall into. Each maps to exactly one
  * CSS custom property prefix — see `FAMILY_PREFIX` in `parity.test.ts` (and
  * the README's naming table) for the concrete mapping.
  */
@@ -44,6 +44,7 @@ export type TokenFamily =
   | "ink"
   | "line"
   | "accent"
+  | "control"
   | "status"
   | "chart"
   | "neutral"
@@ -73,7 +74,7 @@ export type TokenFamily =
 export interface TokenDefinition {
   /** The full CSS custom property name, including the leading `--`. */
   readonly property: string;
-  /** Which of the 28 semantic groups this token belongs to. */
+  /** Which of the 29 semantic groups this token belongs to. */
   readonly family: TokenFamily;
   /** The value declared for this property in `styles/tokens.css`'s `:root` block. */
   readonly value: string;
@@ -106,7 +107,7 @@ export interface TokenDefinition {
 }
 
 /**
- * All 176 tokens, keyed by their CSS custom property name. A `Record` rather
+ * All 181 tokens, keyed by their CSS custom property name. A `Record` rather
  * than an array because the natural question from JS — "what is
  * `--color-surface-raised` set to?" — is a lookup, not a scan.
  */
@@ -143,6 +144,18 @@ export const TOKENS: Readonly<Record<string, TokenDefinition>> = {
   "--color-accent-hover": { property: "--color-accent-hover", family: "accent", value: "oklch(0.36 0 0)", brandable: true, themeDependent: true },
   "--color-accent-tint": { property: "--color-accent-tint", family: "accent", value: "oklch(0.4748 0 0 / 0.1)", brandable: true, themeDependent: true },
   "--color-accent-on-inverse": { property: "--color-accent-on-inverse", family: "accent", value: "oklch(0.7763 0 0)", brandable: true, themeDependent: true },
+
+  // ── COLOR · CONTROL ──────────────────────────────────────────────────
+  // The tonal (T3) and quiet (T4) button tiers. Tonal is the primary ink
+  // at low alpha (8%, 12% on hover) over whatever ground it sits on; on the
+  // inverse ground it is the on-inverse ink at 12% (16% on hover). Quiet is
+  // the text ink of a chevron text button: an alias of the primary ink, so
+  // it follows the theme, and a brand may point it at its accent ink.
+  "--color-control-tonal": { property: "--color-control-tonal", family: "control", value: "oklch(0.2178 0 0 / 0.08)", brandable: true, themeDependent: true }, // token-gate:ignore the catalog declares this value
+  "--color-control-tonal-hover": { property: "--color-control-tonal-hover", family: "control", value: "oklch(0.2178 0 0 / 0.12)", brandable: true, themeDependent: true }, // token-gate:ignore the catalog declares this value
+  "--color-control-tonal-inverse": { property: "--color-control-tonal-inverse", family: "control", value: "oklch(0.9702 0 0 / 0.12)", brandable: true, themeDependent: true }, // token-gate:ignore the catalog declares this value
+  "--color-control-tonal-inverse-hover": { property: "--color-control-tonal-inverse-hover", family: "control", value: "oklch(0.9702 0 0 / 0.16)", brandable: true, themeDependent: true }, // token-gate:ignore the catalog declares this value
+  "--color-control-quiet": { property: "--color-control-quiet", family: "control", value: "var(--color-ink-primary)", brandable: true, themeDependent: false },
 
   // ── COLOR · STATUS ───────────────────────────────────────────────────
   "--color-status-success": { property: "--color-status-success", family: "status", value: "oklch(0.6268 0 0)", brandable: true, themeDependent: true },
@@ -374,12 +387,13 @@ export const TOKENS: Readonly<Record<string, TokenDefinition>> = {
   "--ui-alpha-disabled": { property: "--ui-alpha-disabled", family: "alpha", value: "0.5", brandable: false, themeDependent: false },
 };
 
-/** The 28 semantic families, in the order they appear in the README's reference table. */
+/** The 29 semantic families, in the order they appear in the README's reference table. */
 export const TOKEN_FAMILIES: readonly TokenFamily[] = [
   "surface",
   "ink",
   "line",
   "accent",
+  "control",
   "status",
   "chart",
   "neutral",
