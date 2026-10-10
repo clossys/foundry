@@ -1,13 +1,13 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { getThemeInitScript } from "./initScript.js";
-import { DEFAULT_STORAGE_KEY, applyThemeDom, readStoredPreference } from "./internal/theme-core.js";
+import { DEFAULT_STORAGE_KEY, applyThemeDom, readStoredPreference, type ThemePreference } from "./internal/theme-core.js";
 
 /**
  * `getThemeInitScript()`'s whole reason to exist is running the SAME
  * theming rule the provider uses, before React has mounted (see
  * `initScript.ts`'s own doc comment). This file is what actually enforces
  * that the two never drift apart: for every input below, it (a) evaluates
- * the STRINGIFIED script exactly the way a browser executing an injected
+ * the literal script exactly the way a browser executing an injected
  * `<head>` script would, and (b) calls `readStoredPreference`/
  * `applyThemeDom` directly, the way `ThemeProvider` does — then asserts
  * both leave `<html>` in the identical state.
@@ -100,4 +100,36 @@ describe("theme init script and ThemeProvider's own logic agree", () => {
     const script = getThemeInitScript();
     expect(script).not.toMatch(/\bimport\b|\brequire\(/);
   });
+});
+
+describe("configured default theme parity", () => {
+  for (const defaultTheme of ["light", "dark", "system"] as const) {
+    for (const stored of [null, "unknown", "blocked", "system"] as const) {
+      it(`uses ${defaultTheme} for ${stored ?? "nothing stored"}`, () => {
+        vi.spyOn(Storage.prototype, "getItem").mockImplementation(() => {
+          if (stored === "blocked") throw new Error("storage disabled");
+          return stored;
+        });
+        new Function(getThemeInitScript({ defaultTheme }))();
+        const scripted = {
+          attribute: document.documentElement.getAttribute("data-theme"),
+          colorScheme: document.documentElement.style.colorScheme,
+        };
+        document.documentElement.setAttribute("data-theme", "stale");
+        document.documentElement.style.colorScheme = "";
+        const preference = readStoredPreference(DEFAULT_STORAGE_KEY, defaultTheme);
+        const expected: ThemePreference = stored === "system" ? "system" : defaultTheme;
+        expect(preference).toBe(expected);
+        applyThemeDom(document.documentElement, preference);
+        expect(scripted).toEqual({
+          attribute: expected === "system" ? null : expected,
+          colorScheme: expected === "system" ? "light dark" : expected,
+        });
+        expect(scripted).toEqual({
+          attribute: document.documentElement.getAttribute("data-theme"),
+          colorScheme: document.documentElement.style.colorScheme,
+        });
+      });
+    }
+  }
 });

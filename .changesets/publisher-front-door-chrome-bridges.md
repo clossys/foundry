@@ -2,4 +2,4 @@
 publisher: minor
 ---
 
-Add deprecated bridge props to `AuthView`, `CaptureView` and `BoundaryView` for hosts that are not yet on `SiteFrame`: an optional `header` and `footer` that replace Designer's `SiteHeader` and `SiteFooter`, and an optional `mainId` that gives the view's own `<main>` that `id` and `tabIndex={-1}` for a skip link in the host's chrome. Passing any of them selects the legacy page, with the view's own header, `<main>` and footer; move to `SiteFrame` instead.
+Add `header`, `footer` and `mainId` to `AuthView`, `CaptureView` and `BoundaryView` for hosts not yet on `SiteFrame`: `header` and `footer` replace Designer's `SiteHeader` and `SiteFooter`, and a non-empty `mainId` gives the view's `<main>` that `id` and `tabIndex={-1}` as a skip-link target; `AuthView` and `CaptureView` also take `nav`, `headerAction`, `headerSecondaryAction` and `ground`, which pass through to the header and footer as they already did on `BoundaryView`.

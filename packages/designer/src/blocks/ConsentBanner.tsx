@@ -17,6 +17,13 @@ export interface ConsentBannerProps {
   onReject: () => void;
   /** Slot rendered after the body, typically a `Link` atom to a policy page. */
   privacyLink?: ReactNode;
+  /**
+   * Optional status line rendered inside an always-mounted polite live region
+   * (`role="status"`) after the body and before the actions. The region is
+   * present, and empty, whenever this is absent, so a status passed later is
+   * announced. Presentation only: it never disables either action.
+   */
+  status?: ReactNode;
   className?: string;
   style?: CSSProperties;
 }
@@ -29,7 +36,10 @@ export interface ConsentBannerProps {
  *
  * Not a dialog: no `role="dialog"`, no modal wiring, no autofocus, no
  * focus trap, no Escape handling, no portal and no timer. It renders in
- * flow, so the page stays usable around it. The root carries
+ * flow, so the page stays usable around it. A polite live region
+ * (`role="status"`) is always mounted after the body and before the
+ * actions; it is empty until a `status` is passed, and neither button is
+ * ever disabled by it. The root carries
  * `data-consent-banner` so a consumer can pass it as an overlay selector
  * (`overlayIntersectingFold`) when positioning it over the page.
  */
@@ -41,6 +51,7 @@ export function ConsentBanner({
   onAccept,
   onReject,
   privacyLink,
+  status,
   className,
   style,
 }: ConsentBannerProps) {
@@ -61,6 +72,11 @@ export function ConsentBanner({
         </h2>
         <div className="text-body-s text-ink-secondary">{body}</div>
         {privacyLink != null && privacyLink !== false ? <div className="text-body-s">{privacyLink}</div> : null}
+        <div role="status" aria-live="polite">
+          {status != null && status !== false && status !== true ? (
+            <div className="text-body-s text-ink-secondary">{status}</div>
+          ) : null}
+        </div>
       </div>
       <div className="flex flex-col gap-sm tablet:shrink-0 tablet:flex-row">
         <Button variant="secondary" size="md" className="w-full tablet:w-auto" onPress={() => onAccept()}>

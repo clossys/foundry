@@ -898,7 +898,8 @@ function CurrentThemeLabel() {
 for both) — pass `{ storageKey: "..." }` to `getThemeInitScript` and
 `storageKey="..."` to `ThemeProvider` together if you override it, or the
 head script will stamp the theme from one key while the provider persists
-to another.
+to another. Also match the script's `defaultTheme` with the provider's
+`defaultPreference` when choosing a fallback other than `"system"`.
 
 ## Why these dependencies
 
@@ -1456,7 +1457,7 @@ scroll lock for as long as the dialog is open. None of it reimplemented
 here.
 
 `size`: `"sm" | "md" | "lg"` (default `"md"`), controlling the dialog
-surface's max width. A legitimate prop rather than three separate
+surface's max width (24rem, 28rem and 42rem). A legitimate prop rather than three separate
 components under this package's variant rule: the region set — one dialog
 surface, one scrim — is identical at every size; only the width changes.
 
@@ -3163,7 +3164,7 @@ keeps it at this layer rather than being a view (test 3).
 import { ConsentBanner } from "@clossys/designer/blocks";
 import { Link } from "@clossys/designer/atoms";
 
-function PageConsent({ onAccept, onReject }: { onAccept: () => void; onReject: () => void }) {
+function PageConsent({ onAccept, onReject, status }: { onAccept: () => void; onReject: () => void; status?: string }) {
   return (
     <ConsentBanner
       title="Banner title"
@@ -3173,6 +3174,7 @@ function PageConsent({ onAccept, onReject }: { onAccept: () => void; onReject: (
       onAccept={onAccept}
       onReject={onReject}
       privacyLink={<Link href="/privacy">Privacy link</Link>}
+      status={status}
     />
   );
 }
@@ -3184,8 +3186,15 @@ decides what `onAccept` and `onReject` do, whether to render it at all, and
 where it sits; it renders in flow, so a consumer who wants it pinned to the
 edge of the page positions it themselves. All copy arrives through props
 (`title`, `body`, `acceptLabel`, `rejectLabel`, and an optional
-`privacyLink` slot rendered after the body), so this package ships no
-wording of its own.
+`privacyLink` slot rendered after the body, and an optional `status` line), so
+this package ships no wording of its own.
+
+`status` renders inside a polite live region (`role="status"`,
+`aria-live="polite"`) placed after the body and before the actions. The
+region is always mounted and empty while `status` is absent, so a status
+passed later is announced rather than inserted with its region. It is
+presentation only: neither button is ever disabled, accept and reject stay
+the same variant and size, and the block still holds no consent state.
 
 The root is a `<section>` named by its own title heading, so assistive
 tech announces it as a region landmark. It is deliberately not a dialog: no
@@ -4306,7 +4315,7 @@ and why it's shaped the way it is.
 ### `getThemeInitScript`
 
 ```tsx
-import { getThemeInitScript } from "@clossys/designer/theme";
+import { getThemeInitScript, getStoredThemeInitScript } from "@clossys/designer/theme";
 
 <script dangerouslySetInnerHTML={{ __html: getThemeInitScript() }} />
 ```
@@ -4318,18 +4327,30 @@ see "Wiring up a theme toggle" above for why this can't be
 the document paints, so anything React-based corrects the theme one frame
 too late, and that one frame is a real, visible flash on every page load
 for a visitor whose stored preference disagrees with what the OS/CSS
-would otherwise render. The returned script reads the same storage key
-(`{ storageKey?: string }`, default `"ui-theme"`) and applies the exact
-same three-state rule `ThemeProvider` applies at runtime — not a second,
-hand-written copy of that rule: it embeds the compiled source of the same
-two functions `ThemeProvider` calls directly, `.toString()`'d into the
-returned string, so there is exactly one implementation, used two ways.
-`src/theme/theme-script-parity.test.ts` in this package asserts the two
-call sites agree, for every input, so they can't silently drift apart
-even though nothing in the type system enforces it on its own. Never
-throws: if `localStorage` is unavailable (private browsing, blocked
-cookies, a disabled-storage policy), it falls back to `"system"` — the
-safe default every other decline path in this subpath resolves to.
+would otherwise render. The returned script reads `storageKey` (default `"ui-theme"`) and applies
+valid stored `"light"`, `"dark"` or `"system"` preferences. Set `defaultTheme`
+to `"light"`, `"dark"` or `"system"` (default) for missing or invalid stored
+values and unavailable storage. A stored `"system"` continues to follow the
+OS even when the configured default is light or dark. Match the provider's
+`defaultPreference` to the script's `defaultTheme`:
+
+```tsx
+<script dangerouslySetInnerHTML={{
+  __html: getStoredThemeInitScript({ defaultTheme: "light" }),
+}} />
+// Wrap the body content with the matching fallback.
+<ThemeProvider defaultPreference="light">{children}</ThemeProvider>
+```
+
+`getStoredThemeInitScript` is the product-app builder; the deprecated
+`getThemeInitScript` delegates to it with the same options.
+`getAuthoredThemeInitScript` stamps the authored light register without
+reading storage. These builders emit literal templates that survive host
+minification. The storage key is JSON-quoted with `<`, `>`, `&`, U+2028 and
+U+2029 escaped as Unicode sequences for embedding in a `<script>` element;
+execution reads the original key. The parity tests compare the stored
+script with `readStoredPreference` and `applyThemeDom`, including configured
+fallbacks and storage errors.
 
 ### `ThemeProvider` and `useTheme`
 
@@ -4376,7 +4397,8 @@ diverge from the server's (which has no `localStorage` at all), producing
 a hydration mismatch. Both the server and React's first client render use
 `defaultPreference` (`"system"` unless overridden); a `useEffect` —
 client-only, runs once after mount — then reads the real stored value and
-corrects local state if it differs. This does not reintroduce the flash
+corrects local state if it differs, retaining `defaultPreference` when
+storage is absent, invalid or unavailable. This does not reintroduce the flash
 `getThemeInitScript` solves: the page's actual rendered THEME already
 matches the stored preference by the time this runs, because the head
 script (which must run) already stamped it before first paint. Only this
@@ -4790,8 +4812,8 @@ not a grab-bag).
 | `SectionFrame` | component | Full-bleed marketing section band: a `ground` surface, vertical section rhythm, horizontal page padding, and a measured inner column. Sets `data-designer-section-frame` on its outer `<section>`. Compose `ArticleBody`, `Stat`, and other blocks that do not own their own band inside it. |
 | `SectionFrameProps` | type | Props for `SectionFrame`: `ground` (default `"base"`), `measure` (default `"content"`), `children`, `className`, `style`, plus every native `<section>` attribute. |
 | `SectionMeasure` | type | `"content" \| "wide" \| "prose"`. How wide `SectionFrame`'s inner column is: it maps to the `--ui-width-content-max`, `--ui-width-wide-max`, or `--ui-width-prose-max` token. |
-| `ConsentBanner` | component | Presentational consent notice: a region landmark named by its title, a body, an optional `privacyLink` slot after it, and two same-variant, same-size `Button`s for accept and reject. Props only: no consent state, storage, network call or built-in copy. Not a dialog. Sets `data-consent-banner` on its root. |
-| `ConsentBannerProps` | type | Props for `ConsentBanner`: `title`, `body`, `acceptLabel`, `rejectLabel` (all `ReactNode`), `onAccept`, `onReject` (both `() => void`), `privacyLink?`, `className?`, `style?`. |
+| `ConsentBanner` | component | Presentational consent notice: a region landmark named by its title, a body, an optional `privacyLink` slot after it, and two same-variant, same-size `Button`s for accept and reject. Props only: no consent state, storage, network call or built-in copy. Not a dialog. Always mounts an empty polite `role="status"` live region for an optional `status`. Sets `data-consent-banner` on its root. |
+| `ConsentBannerProps` | type | Props for `ConsentBanner`: `title`, `body`, `acceptLabel`, `rejectLabel` (all `ReactNode`), `onAccept`, `onReject` (both `() => void`), `privacyLink?`, `status?` (a `ReactNode` rendered in an always-mounted polite live region), `className?`, `style?`. |
 | `mergeUiClasses` | function | Merges token-aware Tailwind utility classes with last-argument precedence; used by surface-level compositions built from UI primitives. |
 | `Shell` | component | The persistent application frame. Carries `Shell.Header`, `Shell.SideNav`, `Shell.Main`, `Shell.Rail`, `Shell.Footer`. |
 | `ShellProps` | type | Props for `Shell`: `children` (any subset of the five slots above, in any order), `skipLinkLabel` (default `"Skip to content"`), plus every native `<div>` attribute. |
@@ -4832,8 +4854,8 @@ not a grab-bag).
 | `LineChartSeries` | type | `{ name, values, color? }`. |
 | `Sparkline` | component | A bare inline trend — no axes/grid/legend/hover, still ships a table-view fallback. |
 | `SparklineProps` | type | Props for `Sparkline`: `values`, `title`, `width`, `height`, `color`, `valueFormat`, `tableFallbackLabel` (default `"View as table"`), `valueColumnLabel` (default `"Value"`), `className`, `style`. |
-| `getThemeInitScript` | function | Returns a self-contained head script (string) that stamps `data-theme` before first paint. Takes `{ storageKey? }`. |
-| `ThemeInitScriptOptions` | type | Options for `getThemeInitScript`: `storageKey?` (default `"ui-theme"`). |
+| `getThemeInitScript` | function | Returns a self-contained head script (string) that stamps `data-theme` before first paint. Takes `{ storageKey?, defaultTheme? }`. |
+| `ThemeInitScriptOptions` | type | Options for `getThemeInitScript`: `storageKey?` (default `"ui-theme"`) and `defaultTheme?` (default `"system"`). |
 | `ThemeProvider` | component | Holds/persists the three-state theme preference and keeps `<html data-theme>`/`color-scheme` in sync. |
 | `ThemeProviderProps` | type | Props for `ThemeProvider`: `children`, `storageKey?`, `defaultPreference?`. |
 | `useTheme` | function | Hook returning `{ preference, resolvedTheme, setPreference }` from the nearest `ThemeProvider`. |
@@ -4932,7 +4954,7 @@ three tests are worth calling out specifically:
   and `ThemeProvider` silently drifting into two different implementations
   of the same three-state rule. For every input (nothing stored, each of
   the three valid states, a malformed stored value, storage that throws, a
-  non-default `storageKey`) it evaluates the STRINGIFIED head script
+  non-default `storageKey`) it evaluates the literal head script
   exactly the way a browser executing an injected `<head>` script would,
   separately runs `ThemeProvider`'s own underlying calls
   (`readStoredPreference` + `applyThemeDom`), and asserts both leave
