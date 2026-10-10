@@ -236,16 +236,24 @@
 }
 
 /*
- * Scroll-linked fade, CSS only, for a cue that belongs to the first screen
- * (Publisher `LandingView`'s scroll cue). Fully visible at the top of the
- * page, it fades out over the first third of the viewport's height of root
- * scrolling; at the end it is `visibility: hidden` (out of the tab order
- * and the accessibility tree) and inert to the pointer. Reduced motion: no
- * fade; it stays fully visible over the same range, then hides in one step.
+ * Scroll cue, CSS only, for a cue that belongs to the first screen
+ * (Publisher `LandingView`'s scroll cue). Where scroll-driven animations
+ * exist it is fixed to the bottom of the browser window, centred, clear of
+ * the home-indicator inset (`env(safe-area-inset-bottom)`) by `--spacing-xl`,
+ * so it does not move with the page. Fully visible at the top of the page,
+ * it fades out over the first three tap targets of root scrolling
+ * (`--ui-layout-tap-target`, 132px), driven by the scroll position, not
+ * the clock; at the end it is `visibility: hidden` (out of the tab order
+ * and the accessibility tree) and inert to the pointer, so it never lingers
+ * over a later section. Reduced motion: no fade; it stays fully visible
+ * over the same range, then hides in one step.
  * Progressive: an engine without scroll-driven animations skips the whole
- * block, and the element stays visible and working.
+ * `@supports` block, and the cue stays where its container puts it, centred
+ * on the top edge of its nearest positioned ancestor (an empty zero-height
+ * rail at the foot of the first screen): scrolled away with the page, never
+ * fixed, so it cannot linger.
  */
-@keyframes scroll-fade-out {
+@keyframes scroll-cue-out {
   to {
     opacity: 0;
     visibility: hidden;
@@ -253,14 +261,22 @@
   }
 }
 
-@utility scroll-fade-out {
+@utility scroll-cue {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translate(-50%, -50%);
   @supports (animation-timeline: scroll()) {
-    animation-name: scroll-fade-out;
+    position: fixed;
+    top: auto;
+    bottom: calc(env(safe-area-inset-bottom, 0px) + var(--spacing-xl, 24px));
+    transform: translateX(-50%);
+    animation-name: scroll-cue-out;
     animation-duration: auto;
     animation-timing-function: linear;
     animation-fill-mode: both;
     animation-timeline: scroll(root block);
-    animation-range: 0 33dvh;
+    animation-range: 0 calc(var(--ui-layout-tap-target, 44px) * 3);
     @media (prefers-reduced-motion: reduce) {
       animation-timing-function: steps(1, jump-end);
     }

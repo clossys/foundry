@@ -45,7 +45,7 @@
 
 /*! tailwindcss v4.3.3 | MIT License | https://tailwindcss.com */
 @layer properties;
-@keyframes scroll-fade-out {
+@keyframes scroll-cue-out {
   to {
     opacity: 0;
     visibility: hidden;

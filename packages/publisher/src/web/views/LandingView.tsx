@@ -93,10 +93,10 @@ export interface LandingViewProps extends Omit<HTMLAttributes<HTMLElement>, "chi
    * With `header="overlay"` and content after the hero: stop the hero block
    * short of the fold so the next band shows, and mark the hero's foot with
    * a scroll cue: a round chevron link (`data-landing-cue`, Designer
-   * `iconButtonLinkClassName`) centred on the edge between the hero and the
-   * first band, half over each, that jumps to the first band (or to the
-   * call to action's `id` when no band follows). No cue renders without a
-   * target. @default true
+   * `iconButtonLinkClassName`) fixed to the bottom of the browser window,
+   * that jumps to the first band (or to the call to action's `id` when no
+   * band follows) and fades out as the page scrolls. No cue renders without
+   * a target. @default true
    */
   peek?: boolean;
   /**
@@ -144,19 +144,22 @@ const BAND_ANCHOR_CLASS = "scroll-mt-4xl tablet-lg:scroll-mt-5xl";
 /**
  * The scroll cue's place: a zero-height rail between the hero and the first
  * band, stacked one layer above the bands (`--ui-z-sticky`, below the
- * frame's sticky header) so the hero's clipping and the next band's paint
- * never cover it. The cue is centred on the rail, so its middle is the
- * edge between the two grounds.
+ * frame's sticky header). It is the cue's fallback anchor: where the engine
+ * lacks scroll-driven animations the cue sits centred on the rail's top edge,
+ * the edge between the two grounds, and scrolls away with the page.
  */
 const CUE_RAIL_CLASS = "relative z-[var(--ui-z-sticky)] h-0";
 
 /**
- * The cue itself: centred on the rail, faded out over the first third of a
- * screen of scrolling (Designer `scroll-fade-out`: hidden, out of the tab
- * order and inert at the end), and, under `prefers-reduced-motion:
- * no-preference`, a smooth page scroll while the page holds the cue.
+ * The cue itself (Designer `scroll-cue`): fixed to the bottom of the browser
+ * window and centred, clear of the safe-area inset by one `xl` step, so it
+ * does not slide with the page. It fades out over the first three tap targets
+ * of scrolling and is then hidden, out of the tab order and inert. Without
+ * scroll-driven animations it falls back to the rail's top edge. Under
+ * `prefers-reduced-motion: no-preference`, a smooth page scroll while the
+ * page holds the cue.
  */
-const CUE_CLASS = "absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 scroll-fade-out motion-safe:[html:has(&)]:scroll-smooth";
+const CUE_CLASS = "scroll-cue motion-safe:[html:has(&)]:scroll-smooth";
 
 /** The closing call to action stands apart: one step above a body band at every width (96px, 128px from `tablet-lg`). */
 const CALL_TO_ACTION_BAND_CLASS = "py-5xl tablet-lg:py-6xl";
@@ -256,11 +259,13 @@ function bandBlocks(afterSection: Readonly<Record<string, ReactNode>>): Sectione
  *
  * Scroll cue (with `peek`): a real link to the first band (a plain fragment
  * `<a>`, native scrolling, no client script), drawn as Designer's round
- * icon link on the target band's ground, centred on the hero's bottom edge.
- * Its accessible name is `cueLabel`. It fades out over the first third of a
- * screen of scrolling and is then hidden and out of the tab order (Designer
- * `scroll-fade-out`; an engine without scroll-driven animations keeps it
- * visible). The page scrolls smoothly to the band only under
+ * icon link on the target band's ground (the band peeks above the fold),
+ * fixed to the bottom of the browser window, centred, so it does not slide
+ * with the page. Its accessible name is `cueLabel`. It fades out over the
+ * first three tap targets (132px) of scrolling and is then hidden and out
+ * of the tab order (Designer `scroll-cue`). An engine without scroll-driven
+ * animations instead centres it on the hero's bottom edge, where it scrolls
+ * away with the page. The page scrolls smoothly to the band only under
  * `prefers-reduced-motion: no-preference`. Every band's section takes a
  * scroll margin equal to the band's top padding, so a fragment jump puts the
  * band's top edge at the frame's `scroll-padding-top`: the frame sets that

@@ -184,19 +184,21 @@ describe("LandingView", () => {
     expect(() => dom({ document: PAGE, cueLabel: "  " })).toThrow(/cueLabel/);
   });
 
-  it("centres the cue on the edge between the hero and the first band, stacked above the bands, fading on scroll", () => {
+  it("holds the cue in a rail after the hero, stacked above the bands, as a fixed cue that fades on scroll", () => {
     const root = dom({ document: PAGE });
     const view = root.querySelector("[data-landing-view]") as HTMLElement;
     const rail = root.querySelector("[data-landing-cue-rail]") as HTMLElement;
-    // A zero-height rail between the hero frame and the first band: its top is the edge.
+    // A zero-height rail between the hero frame and the first band: the cue's
+    // fallback anchor where the engine has no scroll-driven animations.
     expect(rail.previousElementSibling?.hasAttribute("data-landing-hero")).toBe(true);
     expect(rail.nextElementSibling?.querySelector("#features")).not.toBeNull();
     expect(rail.parentElement).toBe(view);
     expect(rail.className.split(/\s+/)).toEqual(["relative", "z-[var(--ui-z-sticky)]", "h-0"]);
     const cue = rail.querySelector("[data-landing-cue]") as HTMLElement;
-    expect(cue.className.split(/\s+/)).toEqual(
-      expect.arrayContaining(["absolute", "left-1/2", "top-0", "-translate-x-1/2", "-translate-y-1/2", "scroll-fade-out", "motion-safe:[html:has(&)]:scroll-smooth"]),
-    );
+    // Placement, fade and the fixed/fallback switch live in Designer's one `scroll-cue`
+    // utility; the view adds no positioning of its own that could outlive the fade.
+    expect(cue.className.split(/\s+/)).toEqual(expect.arrayContaining(["scroll-cue", "motion-safe:[html:has(&)]:scroll-smooth"]));
+    expect(cue.className).not.toMatch(/(^|\s)(absolute|fixed|top-0|left-1\/2|-translate-[xy]-1\/2|scroll-fade-out)(\s|$)/);
     expect(root.querySelector("[data-landing-hero] [data-landing-cue]")).toBeNull();
   });
 

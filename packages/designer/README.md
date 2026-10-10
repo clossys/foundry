@@ -1079,13 +1079,18 @@ import { ChevronDown } from "@clossys/designer/icons";
 </a>;
 ```
 
-`scroll-fade-out` (a `theme.css` utility, Tailwind path) fades such a cue
-out over the first third of the viewport's height of page scrolling, using
-a CSS scroll-driven animation. At the end it is `visibility: hidden`, so it
-leaves the tab order, and inert to the pointer. Under reduced motion it
-does not fade: it stays visible over the same range, then hides in one
-step. An engine without scroll-driven animations (`animation-timeline`)
-skips the rule, and the cue stays visible and working.
+`scroll-cue` (a `theme.css` utility, Tailwind path) fixes such a cue to the
+bottom of the browser window, centred and clear of
+`env(safe-area-inset-bottom)` by `--spacing-xl`, so it does not move with the
+page. It fades out over the first three tap targets of page scrolling
+(132px), using a CSS scroll-driven animation, so the fade follows the scroll
+position rather than the clock. At the end it is `visibility: hidden`, so it
+leaves the tab order, and inert to the pointer; it never lingers over a later
+section. Under reduced motion it does not fade: it stays visible over the same
+range, then hides in one step. An engine without scroll-driven animations
+(`animation-timeline`) skips the fixed placement and the fade together: the
+cue is centred on the top edge of its nearest positioned ancestor and scrolls
+away with the page, so it is never fixed without a fade.
 
 ### `Icon`
 
