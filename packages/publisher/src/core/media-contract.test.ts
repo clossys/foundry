@@ -150,6 +150,70 @@ describe("canonical media data and CopyRef boundary", () => {
     }
     for (const count of [5, 26]) expect(() => contract.resolveSectionedViewDocument(document({ media: keyed }), (value) => ({ ...resolver(value), text: value.id === "specimen-label" ? Array(count).fill("word").join(" ") : resolver(value).text }))).toThrow(/label-length/);
   });
+  it.each([0, 1, 2])("refuses Scene and Record accessor array elements before invoking them (%i)", (index) => {
+    const fixtures = [
+      { type: "scene", label: ref("scene-label"), input: { ...sceneInput, sources: { ...sceneInput.sources, items: [...sceneInput.sources.items] } } },
+      { type: "scene", label: ref("scene-label"), input: { ...sceneInput, relations: [...sceneInput.relations] } },
+      { type: "record", id: "record", head: { title: ref() }, caption: ref(), groups: [{ id: "group", label: ref(), rows: [{ id: "row", label: ref() }] }] },
+    ];
+    const media = fixtures[index]!;
+    {
+      const target = index === 0 ? media.input!.sources!.items : index === 1 ? media.input!.relations : media.groups;
+      let reads = 0;
+      Object.defineProperty(target, "0", { enumerable: true, get() { reads++; throw new Error("malicious array element"); } });
+      expect(() => mediaErrors(media)).not.toThrow();
+      expect(mediaErrors(media).length).toBeGreaterThan(0); expect(reads).toBe(0);
+    }
+  });
+  it("accepts ordinary arrays and refuses sparse, non-enumerable, extra and symbolic array slots", () => {
+    const valid = { type: "scene", label: ref("scene-label"), input: sceneInput };
+    expect(mediaErrors(valid)).toEqual([]);
+    expect(mediaErrors({ ...valid, input: { ...sceneInput, sources: { ...sceneInput.sources, items: Object.freeze([...sceneInput.sources.items]) } } })).toEqual([]);
+    const variants = [
+      () => { const value = [...sceneInput.sources.items]; delete value[0]; return value; },
+      () => { const value = [...sceneInput.sources.items]; Object.defineProperty(value, "0", { value: value[0], enumerable: false }); return value; },
+      () => { const value = [...sceneInput.sources.items]; Object.defineProperty(value, "extra", { value: true, enumerable: true }); return value; },
+      () => { const value = [...sceneInput.sources.items]; Object.defineProperty(value, Symbol("extra"), { value: true }); return value; },
+    ];
+    for (const variant of variants) expect(mediaErrors({ ...valid, input: { ...sceneInput, sources: { ...sceneInput.sources, items: variant() } } }).length).toBeGreaterThan(0);
+  });
+  it.each(["forEach", "map", Symbol.iterator])("refuses own traversal accessors on media arrays (%s)", (key) => {
+    const relations = [...sceneInput.relations]; let calls = 0;
+    Object.defineProperty(relations, key, { get() { calls++; throw new Error("malicious traversal accessor"); } });
+    const media = { type: "scene", label: ref("scene-label"), input: { ...sceneInput, relations } };
+    expect(() => mediaErrors(media)).not.toThrow(); expect(mediaErrors(media).length).toBeGreaterThan(0); expect(calls).toBe(0);
+  });
+  it.each(["custom", "subclass"])("refuses %s media array prototypes before inherited traversal accessors", (kind) => {
+    let calls = 0;
+    const prototype = Object.create(Array.prototype, { forEach: { get() { calls++; throw new Error("malicious inherited traversal"); } } });
+    const relations = kind === "custom" ? [...sceneInput.relations] : new (class extends Array {}) (...sceneInput.relations);
+    if (kind === "custom") Object.setPrototypeOf(relations, prototype);
+    else Object.defineProperty(Object.getPrototypeOf(relations), "forEach", { get() { calls++; throw new Error("malicious subclass traversal"); } });
+    const media = { type: "scene", label: ref("scene-label"), input: { ...sceneInput, relations } };
+    expect(() => mediaErrors(media)).not.toThrow(); expect(mediaErrors(media).length).toBeGreaterThan(0); expect(calls).toBe(0);
+  });
+  it("refuses keyed specimen part accessors before key target traversal", () => {
+    const parts = [part]; let calls = 0;
+    Object.defineProperty(parts, "0", { enumerable: true, get() { calls++; throw new Error("malicious keyed part"); } });
+    const media = { type: "specimen", label: ref("specimen-label"), panel: { ...panel, parts, footer: { note: ref() } }, key: { label: ref(), items: ["header", "field-part", "footer"].map((target) => ({ id: target, target, heading: ref(), description: ref() })) } };
+    expect(() => mediaErrors(media)).not.toThrow(); expect(mediaErrors(media).length).toBeGreaterThan(0); expect(calls).toBe(0);
+  });
+  it("refuses malformed structural ids and relation endpoints without coercion or serialization", () => {
+    let calls = 0;
+    const id = { toString() { calls++; throw new Error("malicious id coercion"); }, toJSON() { calls++; throw new Error("malicious endpoint serialization"); } };
+    const record = { type: "record", id: "record", head: { title: ref() }, caption: ref(), groups: [{ id: "group", label: ref(), rows: [{ id: "row", label: ref() }] }] };
+    const keyed = { type: "specimen", label: ref("specimen-label"), panel: { ...panel, footer: { note: ref() } }, key: { label: ref(), items: ["header", "field-part", "footer"].map((target) => ({ id: target, target, heading: ref(), description: ref() })) } };
+    const invalid = [
+      { ...record, id },
+      { ...record, groups: [{ ...record.groups[0], id }] },
+      { ...record, groups: [{ ...record.groups[0], rows: [{ id, label: ref() }] }] },
+      { ...keyed, key: { ...keyed.key, items: [{ ...keyed.key.items[0], id }, ...keyed.key.items.slice(1)] } },
+      { type: "scene", label: ref("scene-label"), input: { ...sceneInput, relations: [{ from: id, to: "one" }] } },
+      { type: "scene", label: ref("scene-label"), input: { ...sceneInput, relations: [{ from: "a", to: id }] } },
+    ];
+    for (const media of invalid) { expect(() => mediaErrors(media)).not.toThrow(); expect(mediaErrors(media).length).toBeGreaterThan(0); }
+    expect(calls).toBe(0);
+  });
   it("rejects accessor, symbol and sparse canonical data before reading it", () => {
     const block = { type: "items", arrangement: "rows", items: items(2) }; let reads = 0;
     Object.defineProperty(block.items[0], "badge", { enumerable: true, get() { reads++; throw new Error("getter"); } });

@@ -693,14 +693,25 @@ function hasOwnKeys(value: Record<string, unknown>, required: readonly string[])
 }
 
 function validateDenseArray(value: unknown, path: string, findings: ComposeFinding[], shapeRule: string, shapeMessage: string): value is unknown[] {
-  if (!Array.isArray(value) || value.length === 0) {
+  if (!Array.isArray(value) || Object.getPrototypeOf(value) !== Array.prototype || value.length === 0) {
     findings.push(finding(shapeRule, path, shapeMessage));
     return false;
   }
   let dense = true;
+  for (const key of Reflect.ownKeys(value)) {
+    if (key === "length") continue;
+    if (typeof key !== "string" || !/^(0|[1-9]\d*)$/.test(key) || Number(key) >= value.length) {
+      findings.push(finding(shapeRule, path, `${path} must contain only authored array items.`));
+      dense = false;
+    }
+  }
   for (let index = 0; index < value.length; index += 1) {
-    if (!Object.hasOwn(value, index)) {
+    const descriptor = Object.getOwnPropertyDescriptor(value, String(index));
+    if (descriptor === undefined) {
       findings.push(finding("sectioned-view-array-hole", `${path}.${index}`, `${path}.${index} must be an authored array item; sparse arrays are not supported.`));
+      dense = false;
+    } else if (!descriptor.enumerable || !("value" in descriptor)) {
+      findings.push(finding(shapeRule, `${path}.${index}`, `${path}.${index} must be an own enumerable data item.`));
       dense = false;
     }
   }
@@ -1335,14 +1346,17 @@ function validateContentBlock(value: unknown, path: string, findings: ComposeFin
     const membership: string[] = [];
     validateRecords(block.groups, `${path}.groups`, findings, { min: 2, max: 4 }, ["id", "label", "items"], ["label", "items"], (group, groupPath) => {
       validateCopy(group.label, `${groupPath}.label`, findings);
-      if (validateDenseArray(group.items, `${groupPath}.items`, findings, "sectioned-view-content-topics-groups-shape", "A group needs item ids.")) group.items.forEach((id, index) => { if (!isNonWhitespaceString(id)) findings.push(finding("sectioned-view-content-topics-groups-shape", `${groupPath}.items.${index}`, "Group members must be item ids.")); else membership.push(id); });
+      if (validateDenseArray(group.items, `${groupPath}.items`, findings, "sectioned-view-content-topics-groups-shape", "A group needs item ids.")) {
+        if (group.items.length < 2 || group.items.length > 4) findings.push(finding("sectioned-view-content-topics-groups-shape", `${groupPath}.items`, "A group needs two to four item ids."));
+        group.items.forEach((id, index) => { if (!isNonWhitespaceString(id)) findings.push(finding("sectioned-view-content-topics-groups-shape", `${groupPath}.items.${index}`, "Group members must be item ids.")); else membership.push(id); });
+      }
     });
     const ids = itemRecords.map((item) => item.id);
     if (membership.length !== ids.length || new Set(membership).size !== membership.length || ids.some((id) => !membership.includes(String(id)))) findings.push(finding("sectioned-view-content-topics-groups-membership", `${path}.groups`, "Groups must partition every item id exactly once."));
   }
   if (block.lanes !== undefined) {
     const lanes = validateRecords(block.lanes, `${path}.lanes`, findings, { min: 2, max: 2 }, ["id", "label"], ["label"], (lane, lanePath) => validateCopy(lane.label, `${lanePath}.label`, findings));
-    if (block.arrangement !== "stacked" || block.order !== "connected" || !C.lanes.includes(count)) findings.push(finding("sectioned-view-content-steps-lanes-shape", `${path}.lanes`, "Two lanes require stacked connected items with three or five steps."));
+    if (lanes.length !== 2 || block.arrangement !== "stacked" || block.order !== "connected" || !C.lanes.includes(count)) findings.push(finding("sectioned-view-content-steps-lanes-shape", `${path}.lanes`, "Two lanes require stacked connected items with three or five steps."));
     const ids = lanes.map((lane) => lane.id);
     if (itemRecords.some((item) => !ids.includes(item.lane)) || itemRecords[0]?.lane !== ids[0] || ids.some((id) => !itemRecords.some((item) => item.lane === id))) findings.push(finding("sectioned-view-content-steps-lanes-shape", `${path}.items`, "Every step names a known lane; start in the first lane and use both lanes."));
   }
@@ -1417,7 +1431,7 @@ function validateSpecimenMedia(value: unknown, path: string, findings: ComposeFi
   validateCopy(key.label, `${path}.key.label`, findings); validateEnumField(key, "side", ["end", "below"], "sectioned-view-specimen-key-shape", `${path}.key`, findings);
   const order = ["header"]; const labeled = new Set<string>(["header"]);
   if (isPlainObject(media.panel) && hasEnumerableOwnDataKeys(media.panel)) {
-    if (Array.isArray(media.panel.parts)) for (const part of media.panel.parts) if (isPlainObject(part) && hasEnumerableOwnDataKeys(part) && typeof part.id === "string") {
+    if (validateDenseArray(media.panel.parts, `${path}.panel.parts`, findings, "sectioned-view-items-shape", "Keyed panel parts must be a non-empty data array.")) for (const part of media.panel.parts) if (isPlainObject(part) && hasEnumerableOwnDataKeys(part) && typeof part.id === "string") {
       if (/\s/.test(part.id) || ["header", "footer"].includes(part.id)) findings.push(finding("sectioned-view-specimen-key-target", `${path}.panel.parts`, "Key targets require distinct whitespace-free part ids outside header and footer."));
       else { order.push(part.id); if (isCopyRef(part.label)) labeled.add(part.id); }
     }
@@ -1512,6 +1526,7 @@ function validateSceneMedia(value: unknown, path: string, findings: ComposeFindi
         const relationPath = `${inputPath}.relations.${index}`;
         const relation = contentShape(value, relationPath, findings, ["from", "to", "emphasis"], ["from", "to"], "sectioned-view-scene-shape");
         if (relation === undefined) return;
+        if (!isNonWhitespaceString(relation.from) || !isNonWhitespaceString(relation.to)) { findings.push(finding("sectioned-view-scene-relation-dangling", relationPath, "Relation endpoints must be source and row ids.")); return; }
         if (!docs.some((doc) => doc.id === relation.from) || !rows.some((row) => row.id === relation.to)) findings.push(finding("sectioned-view-scene-relation-dangling", relationPath, "Relations must name declared source and row ids."));
         const pair = JSON.stringify([relation.from, relation.to]); if (pairs.has(pair)) findings.push(finding("sectioned-view-scene-relation-dangling", relationPath, "A relation pair may appear only once.")); pairs.add(pair);
         wired.set(relation.from, (wired.get(relation.from) ?? 0) + 1);

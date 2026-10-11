@@ -60,6 +60,18 @@ describe("canonical items contract", () => {
     for (const members of [["item-0", "item-2"], ["item-2"], ["item-2", "foreign"]]) expect(errors({ ...block, groups: [block.groups[0], { ...block.groups[1], items: members }] }).length).toBeGreaterThan(0);
     expect(errors({ ...block, arrangement: "columns", columns: 2 }).length).toBeGreaterThan(0);
   });
+  it("retains two-to-four item ids per row group despite valid whole-block partition", () => {
+    for (const counts of [[1, 3], [1, 7]]) {
+      const flat = items(counts[0]! + counts[1]!);
+      const block = { type: "items", arrangement: "rows", items: flat, groups: [{ id: "one", label: ref(), items: flat.slice(0, counts[0]).map((item) => item.id) }, { id: "two", label: ref(), items: flat.slice(counts[0]).map((item) => item.id) }] };
+      expect(errors(block)).toContainEqual(expect.objectContaining({ rule: "sectioned-view-content-topics-groups-shape" }));
+    }
+  });
+  it("refuses three declared lanes with the named lane-shape finding", () => {
+    const ids = ["sender", "reviewer", "observer"];
+    const block = { type: "items", recipe: "flow", lanes: ids.map((id) => ({ id, label: ref(id) })), items: items(3).map((item, index) => ({ ...item, lane: ids[index] })) };
+    expect(errors(block)).toContainEqual(expect.objectContaining({ rule: "sectioned-view-content-steps-lanes-shape" }));
+  });
   it("uses two authored lane ids, requires both, and refuses unknown ids and four steps", () => {
     const block = { type: "items", recipe: "flow", lanes: [{ id: "sender", label: ref("Sender") }, { id: "reviewer", label: ref("Reviewer") }], items: items(3).map((item, index) => ({ ...item, lane: index === 1 ? "reviewer" : "sender" })) };
     expect(errors(block)).toEqual([]);

@@ -565,7 +565,8 @@ badge. The eyebrow resolves to at most
 `CONTENT_ITEM_EYEBROW_MAX_CHARACTERS` (32) characters. At most one item may
 be featured, in columns or bento. Row groups are `{ id, label, items }`, where
 `items` contains ids referencing the flat list; every item must belong to
-exactly one group. Lanes are exactly two `{ id, label }` objects, with known
+exactly one group, and each group contains 2–4 item ids. Arrays contain only
+ordinary dense data items. Lanes are exactly two `{ id, label }` objects, with known
 lane ids on every item in a stacked connected block of three or five items.
 
 Matrix sides each have an id, label and heading, and exactly one of a

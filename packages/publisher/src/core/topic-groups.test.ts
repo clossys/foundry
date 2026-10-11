@@ -26,7 +26,7 @@ describe("topic groups contract", () => {
   });
   it("refuses group count bounds and total above eight", () => {
     for (const counts of [[2], [2, 2, 2, 2, 2], [4, 3, 3]]) expect(rules(block(counts))).toContain("sectioned-view-content-count");
-    expect(rules(block([1, 1]))).toEqual([]);
+    expect(rules(block([1, 1]))).toContain(code("shape"));
   });
   it("keeps row groups valid in either canonical split direction", () => {
     for (const layout of ["split-start", "split-end"]) expect(rules(block(), { layout })).toEqual([]);
@@ -63,7 +63,10 @@ describe("topic groups contract", () => {
   });
   it("warns only for unequal counts in a shared responsive row", () => {
     for (const counts of [[2, 2], [2, 2, 2, 2], [2, 2, 2]]) expect(checkSectionVariety(doc(block(counts))).map((f) => f.rule)).not.toContain(code("balance"));
-    for (const counts of [[2, 3], [1, 2, 2, 2], [2, 2, 3]]) { expect(rules(block(counts))).toEqual([]); expect(checkSectionVariety(doc(block(counts))).filter((f) => f.rule === code("balance"))).toMatchObject([{ severity: "warning" }]); }
+    for (const counts of [[2, 3], [2, 2, 3]]) { expect(rules(block(counts))).toEqual([]); expect(checkSectionVariety(doc(block(counts))).filter((f) => f.rule === code("balance"))).toMatchObject([{ severity: "warning" }]); }
+    const undersized = block([1, 2, 2, 2]);
+    expect(rules(undersized)).toContain(code("shape"));
+    expect(checkSectionVariety(doc(undersized)).filter((f) => f.rule === code("balance"))).toMatchObject([{ severity: "warning" }]);
   });
   it("keeps B/list weight and airy density", () => {
     expect(sectionWeight(doc(block()).sections[0]!)).toEqual({ weight: "B", shape: "list" });
