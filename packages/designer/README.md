@@ -3073,6 +3073,10 @@ channel.
 
 ### `Hero`
 
+`Hero size="compact"` uses the section heading ramp and rhythm. Its heading
+remains an `h1` by default; `headingLevel={2}` still supports a later hero.
+Omitting `size` or selecting `"default"` keeps the display treatment.
+
 ```tsx
 import { Hero } from "@clossys/designer/blocks";
 import { Button } from "@clossys/designer/atoms";

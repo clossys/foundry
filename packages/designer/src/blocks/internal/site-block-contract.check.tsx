@@ -164,3 +164,8 @@ export const invalidSceneTemplate: SceneInput = { ...sceneInput, template: "pipe
 export const invalidSceneCoordinate: SceneInput = { ...sceneInput, x: 20 };
 // @ts-expect-error — card title heading level is limited to the documented API.
 export const invalidSceneHeading = <Scene id="scene-record" input={sceneInput} label="Document provenance" headingLevel={2} />;
+
+export const validCompactHero = <Hero heading="Hero" size="compact" />;
+export const validDefaultHero = <Hero heading="Hero" size="default" />;
+// @ts-expect-error — hero sizing has two closed choices.
+export const invalidHeroSize = <Hero heading="Hero" size="small" />;

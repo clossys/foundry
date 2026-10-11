@@ -1,9 +1,12 @@
 // @vitest-environment jsdom
 
+import { createHash } from "node:crypto";
+import { readFileSync } from "node:fs";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import type { ResolvedSectionedViewDocument } from "../../core/sectioned-view.js";
 import { LandingView } from "./LandingView.js";
+import { RenderError } from "../../internal/errors.js";
 import { planLandingViewGrounds } from "./landingViewGrounds.js";
 import type { LandingViewProps } from "./LandingView.js";
 import * as webEntry from "../index.js";
@@ -121,8 +124,8 @@ describe("LandingView", () => {
     const questions = root.querySelector("#questions") as HTMLElement;
     // A split keeps its actions in the text column.
     const more = questions.querySelector('[data-content-section-text] a[href="/more"]') as HTMLElement;
-    expect(more.getAttribute("data-action-emphasis")).toBe("secondary");
-    expect(more.className.split(" ")).toEqual(expect.arrayContaining(["px-lg", "py-md", "text-body-l", "bg-transparent", "ring-inset", "ring-current"]));
+    expect(more.getAttribute("data-action-emphasis")).toBe("quiet");
+    expect(more.className.split(" ")).toEqual(expect.arrayContaining(["text-body", "text-control-quiet", "quiet-action"]));
     expect(more.className.split(" ")).not.toContain("underline");
     expect(questions.getAttribute("data-layout")).toBe("split");
     expect(questions.querySelectorAll("[data-content-section-media] details")).toHaveLength(4);
@@ -339,3 +342,229 @@ describe("LandingView grounds", () => {
   });
 });
 
+
+describe("LandingView close copy", () => {
+  const action = <a href="/close-action">CLOSE-ACTION-SENTINEL</a>;
+
+  it("reuses the first hero's heading and description only on opt-in, keeping the close's own action and eyebrow", () => {
+    const trailingHero: ResolvedSectionedViewDocument = { ...SHARED, sections: [{ id: "tail-hero", kind: "hero", ground: "base", heading: "TAIL-SENTINEL", description: "TAIL-LEDE-SENTINEL" }] };
+    const withHeroAction: ResolvedSectionedViewDocument = { ...PAGE, sections: [{ ...PAGE.sections[0]!, actions: [{ id: "hero-action", href: "/hero-action", label: "HERO-ACTION-SENTINEL" }] } as ResolvedSectionedViewDocument["sections"][number], ...PAGE.sections.slice(1)] };
+    const close = dom({ document: withHeroAction, trailing: [trailingHero], callToAction: { copy: "hero", id: "close", eyebrow: "CLOSE-EYEBROW-SENTINEL", action } }).querySelector("[data-landing-call-to-action]")!;
+    expect(close.id).toBe("close");
+    expect(close.querySelector("h2")?.textContent).toBe("HERO-SENTINEL");
+    expect(close.textContent).toContain("LEDE-SENTINEL");
+    expect(close.textContent).toContain("CLOSE-EYEBROW-SENTINEL");
+    expect(close.textContent).not.toContain("TAIL-SENTINEL");
+    expect([...close.querySelectorAll("*")].map((node) => node.textContent)).not.toContain("EYEBROW-SENTINEL");
+    expect(close.querySelectorAll("a")).toHaveLength(1);
+    expect(close.textContent).not.toContain("HERO-ACTION-SENTINEL");
+    expect(close.querySelector("a")?.getAttribute("href")).toBe("/close-action");
+  });
+
+  it("lets each own copy field override hero reuse independently", () => {
+    const heading = dom({ document: PAGE, callToAction: { copy: "hero", heading: <em>OWN-HEADING-SENTINEL</em>, action } }).querySelector("[data-landing-call-to-action]")!;
+    expect(heading.querySelector("h2 em")?.textContent).toBe("OWN-HEADING-SENTINEL");
+    expect(heading.textContent).toContain("LEDE-SENTINEL");
+    const description = dom({ document: PAGE, callToAction: { copy: "hero", description: <em>OWN-DESCRIPTION-SENTINEL</em>, action } }).querySelector("[data-landing-call-to-action]")!;
+    expect(description.querySelector("h2")?.textContent).toBe("HERO-SENTINEL");
+    expect(description.querySelector("em")?.textContent).toBe("OWN-DESCRIPTION-SENTINEL");
+    expect(description.textContent).not.toContain("LEDE-SENTINEL");
+  });
+
+  it.each([null, false])("keeps explicit %s overrides rather than falling back to hero copy", (value) => {
+    const close = dom({ document: PAGE, callToAction: { copy: "hero", heading: value, description: value, action } }).querySelector("[data-landing-call-to-action]")!;
+    expect(close.querySelector("h2")).toBeNull();
+    expect(close.textContent).not.toContain("HERO-SENTINEL");
+    expect(close.textContent).not.toContain("LEDE-SENTINEL");
+    expect(close.querySelector("a")?.textContent).toBe("CLOSE-ACTION-SENTINEL");
+  });
+
+  it("allows a hero without supporting copy", () => {
+    const page: ResolvedSectionedViewDocument = { ...PAGE, sections: [{ id: "hero", kind: "hero", ground: "base", heading: "HERO-SENTINEL" }] };
+    const close = dom({ document: page, callToAction: { copy: "hero", action } }).querySelector("[data-landing-call-to-action]")!;
+    expect(close.querySelector("h2")?.textContent).toBe("HERO-SENTINEL");
+    expect(close.textContent).toBe("HERO-SENTINELCLOSE-ACTION-SENTINEL");
+  });
+
+  it("preserves legacy markup when hero reuse is absent", () => {
+    const html = renderToStaticMarkup(<LandingView document={PAGE} trailing={[SHARED]} callToAction={CALL_TO_ACTION} />);
+    // Pin the pre-option server output; the page and closing copy differ.
+    expect(createHash("sha256").update(html).digest("hex")).toBe(LEGACY_CLOSE_MARKUP_SHA256);
+  });
+
+  it("refuses a valid nonempty document without an opening hero using the dedicated reason, even with own copy or a trailing hero", () => {
+    const page: ResolvedSectionedViewDocument = { ...PAGE, sections: SHARED.sections };
+    const trailingHero: ResolvedSectionedViewDocument = { ...PAGE, id: "tail", sections: [{ id: "tail-hero", kind: "hero", ground: "base", heading: "TAIL-SENTINEL" }] };
+    for (const heading of [undefined, "OWN-HEADING-SENTINEL"]) {
+      try {
+        dom({ document: page, trailing: [trailingHero], callToAction: { copy: "hero", heading, description: "OWN-LEDE-SENTINEL", action } });
+        expect.fail("hero-copy request must be refused");
+      } catch (error) {
+        expect(error).toBeInstanceOf(RenderError);
+        expect(error).toMatchObject({ reason: "missing-hero-copy" });
+      }
+    }
+  });
+
+  it("keeps malformed resolved input and an unknown copy option on the generic refusal path", () => {
+    const malformed = { ...PAGE, resolutions: [] };
+    const empty = { ...PAGE, sections: [] };
+    for (const props of [
+      { document: malformed, callToAction: { copy: "hero", action } },
+      { document: empty, callToAction: { copy: "hero", action } },
+      { document: empty, callToAction: CALL_TO_ACTION },
+      { document: PAGE, callToAction: { copy: "unknown", heading: "OWN-SENTINEL", action } },
+    ]) {
+      try {
+        dom(props as LandingViewProps);
+        expect.fail("invalid request must be refused");
+      } catch (error) {
+        expect(error).toBeInstanceOf(RenderError);
+        expect(error).toMatchObject({ reason: "resolution-failed" });
+      }
+    }
+  });
+});
+
+const LEGACY_CLOSE_MARKUP_SHA256 = "c7612c0e8dccc6bba0f05d7fca77d7e801d578e2ef55c415d992aab396e315d1";
+
+
+describe("LandingView action ladder", () => {
+  const first = { id: "first", label: "FIRST-SENTINEL", href: "/guide", emphasis: "quiet" as const };
+  const primary = { id: "primary", label: "PRIMARY-SENTINEL", href: "/start", emphasis: "primary" as const };
+  it("orders primary first, resolves before sorting, and owns the responsive hero wrapper", () => {
+    const page: ResolvedSectionedViewDocument = { ...PAGE, sections: [{ ...PAGE.sections[0]!, actions: [first, primary] } as ResolvedSectionedViewDocument["sections"][number], ...PAGE.sections.slice(1)] };
+    const hero = dom({ document: page, peek: false }).querySelector("[data-landing-hero]")!;
+    const links = [...hero.querySelectorAll("a")];
+    expect(links.map(link => link.getAttribute("href"))).toEqual(["/start", "/guide"]);
+    expect(links.map(link => link.getAttribute("data-action-emphasis"))).toEqual(["primary", "quiet"]);
+    expect(links[1]?.querySelector('svg[aria-hidden="true"]')).not.toBeNull();
+    expect(links[1]?.className.split(" ")).not.toContain("w-full");
+    const omitted: ResolvedSectionedViewDocument = { ...PAGE, sections: [{ ...PAGE.sections[0]!, actions: [{ ...primary, emphasis: undefined }, { ...first, emphasis: undefined }] } as ResolvedSectionedViewDocument["sections"][number], ...PAGE.sections.slice(1)] };
+    const pair = [...dom({ document: omitted, peek: false }).querySelectorAll("[data-landing-hero] a")];
+    expect(pair.map(link => link.getAttribute("data-action-emphasis"))).toEqual(["primary", "secondary"]);
+    for (const link of pair) expect(link.className.split(" ")).toEqual(expect.arrayContaining(["w-full", "tablet:w-auto"]));
+    expect(pair[0]?.parentElement?.className.split(" ")).toEqual(expect.arrayContaining(["flex-col", "tablet:flex-row", "w-full"]));
+    const start = dom({ document: omitted, peek: false, align: "start" }).querySelector("[data-landing-actions]")!;
+    expect(start.className.split(" ")).toEqual(expect.arrayContaining(["items-start", "tablet:justify-start"]));
+  });
+  it("renders view-owned close actions and footnote while keeping hero-copy overrides", () => {
+    const close = dom({ document: PAGE, callToAction: { copy: "hero", heading: null, actions: [first, primary], footnote: { text: "NOTE-SENTINEL", link: { label: "LINK-SENTINEL", href: "/note" } } } }).querySelector("[data-landing-call-to-action]")!;
+    expect(close.querySelector("h2")).toBeNull();
+    expect(close.textContent).toContain("LEDE-SENTINEL");
+    expect([...close.querySelectorAll("a")].map(link => link.getAttribute("href"))).toEqual(["/start", "/guide", "/note"]);
+    expect(close.querySelector('svg[aria-hidden="true"]')).not.toBeNull();
+    expect(close.querySelector("[data-content-section-footnote]")?.textContent).toBe("NOTE-SENTINEL LINK-SENTINEL");
+    const defaults = dom({ document: PAGE, callToAction: { copy: "hero", actions: [{ ...primary, emphasis: undefined }, { ...first, emphasis: undefined }] } }).querySelectorAll("[data-landing-call-to-action] a");
+    expect([...defaults].map(link => link.getAttribute("data-action-emphasis"))).toEqual(["primary", "secondary"]);
+    for (const link of defaults) expect(link.className.split(" ")).toEqual(expect.arrayContaining(["w-full", "tablet:w-auto"]));
+  });
+  it("refuses malformed close action lists and invalid hero resolved emphases", () => {
+    for (const actions of [[], [first], [{ ...primary, emphasis: "tertiary" }], [{ ...primary, emphasis: undefined }, primary], [primary, primary, primary], [{ ...primary, href: "javascript:alert(1)" }]]) {
+      expect(() => dom({ document: PAGE, callToAction: { heading: "Close", actions } } as LandingViewProps)).toThrow(RenderError);
+      const page = { ...PAGE, sections: [{ ...PAGE.sections[0], actions }, ...PAGE.sections.slice(1)] };
+      expect(() => dom({ document: page } as LandingViewProps)).toThrow(RenderError);
+    }
+    expect(() => dom({ document: PAGE, callToAction: { heading: "Close", action: <a href="/legacy">Legacy</a>, actions: [primary] } } as LandingViewProps)).toThrow(RenderError);
+  });
+});
+
+
+it("renders all body tiers with authored emphasis, size and ground, including decorative quiet chevrons", () => {
+  for (const ground of ["base", "sunken", "inverse"] as const) for (const emphasis of ["primary", "secondary", "tertiary", "quiet"] as const) {
+    const band = { id: "frame", kind: "content-section" as const, ground, heading: "FRAME-SENTINEL", actions: [{ id: "go", label: "GO-SENTINEL", href: "/go", emphasis }] };
+    const page: ResolvedSectionedViewDocument = { ...PAGE, sections: [PAGE.sections[0]!, band] };
+    const link = dom({ document: page, peek: false }).querySelector('a[href="/go"]')!;
+    expect(link.getAttribute("data-action-emphasis")).toBe(emphasis);
+    const large = emphasis === "primary" || emphasis === "secondary";
+    expect(link.className.split(" ")).toContain(large ? "text-body-l" : "text-body");
+    if (large) expect(link.className.split(" ")).toEqual(expect.arrayContaining(["px-lg", "py-md"]));
+    if (emphasis === "tertiary") expect(link.className.split(" ")).toEqual(expect.arrayContaining(["px-md", "py-sm"]));
+    if (emphasis === "secondary") expect(link.className.split(" ")).toEqual(expect.arrayContaining(["ring-current", "ring-inset"]));
+    if (emphasis === "tertiary") expect(link.className.split(" ")).toContain(ground === "inverse" ? "bg-control-tonal-inverse" : "bg-control-tonal");
+    if (emphasis === "quiet") {
+      expect(link.className.split(" ")).toContain(ground === "inverse" ? "text-ink-on-inverse" : "text-control-quiet");
+      expect(link.lastElementChild?.getAttribute("aria-hidden")).toBe("true");
+      expect(link.querySelectorAll("svg")).toHaveLength(1);
+      expect(link.textContent).toBe("GO-SENTINEL");
+    } else expect(link.querySelector("svg")).toBeNull();
+  }
+});
+
+
+describe("LandingView reviewed action-pair and resolved copy contracts", () => {
+  const pair = [{ id: "start", label: "Go", href: "/start" }, { id: "read", label: "Read", href: "/guide" }];
+  const composed = ["Start ", [null, false, <em key="now">now</em>]];
+  const page: ResolvedSectionedViewDocument = { ...PAGE, sections: [{ ...PAGE.sections[0]!, actions: pair } as ResolvedSectionedViewDocument["sections"][number], ...PAGE.sections.slice(1)] };
+
+  it.each(["center", "start"] as const)("stretches the actual SectionIntro action row for %s hero and close", align => {
+    // Apply the real shipped structural utilities, without building CSS or pretending jsdom measures geometry.
+    const css = readFileSync("styles/preview.css", "utf8");
+    const foundation = document.createElement("style");
+    foundation.textContent = ["flex", "flex-col", "items-center", "items-start", "w-full"].map(name => {
+      const rule = css.match(new RegExp("\\." + name + "\\s*\\{[^{}]+\\}"));
+      expect(rule, `${name} structural utility exists`).not.toBeNull();
+      return rule![0];
+    }).join("\n");
+    const host = dom({ document: page, align, peek: false, callToAction: { copy: "hero", actions: pair } });
+    document.head.append(foundation);
+    document.body.append(host);
+    try {
+      for (const band of ["hero", "call-to-action"]) {
+        const row = host.querySelector(`[data-landing-${band}] [data-section-intro-actions]`)!;
+        const intro = row.parentElement!;
+        const emitted = host.querySelector<HTMLStyleElement>("style[data-landing-action-pair-style]")!;
+        const rule = emitted.sheet?.cssRules[0] as CSSStyleRule;
+        expect(row.matches(rule.selectorText)).toBe(true);
+        expect(getComputedStyle(intro).display).toBe("flex");
+        expect(getComputedStyle(intro).flexDirection).toBe("column");
+        expect(getComputedStyle(intro).alignItems).toBe(band === "hero" && align === "start" ? "flex-start" : "center");
+        // Stretch this auto-width flex item in the cross axis, so child 100% widths have the prose column to fill.
+        expect(getComputedStyle(row).alignSelf).toBe("stretch");
+        for (const link of row.querySelectorAll("a")) expect(getComputedStyle(link).width).toBe("100%");
+      }
+    } finally {
+      host.remove();
+      foundation.remove();
+    }
+  });
+
+  it.each(["action", "note", "link"])("accepts visible nested ReactNode arrays in %s copy", field => {
+    const close = { heading: "Close", actions: [{ ...pair[0]!, label: field === "action" ? composed : "Start" }], footnote: { text: field === "note" ? composed : "Note", link: { label: field === "link" ? composed : "Guide", href: "/guide" } } };
+    const host = dom({ document: PAGE, callToAction: close });
+    const target = field === "action" ? host.querySelector('[data-landing-call-to-action] a[href="/start"]') : field === "note" ? host.querySelector("[data-content-section-footnote]") : host.querySelector('[data-content-section-footnote] a');
+    expect(target?.textContent).toContain("Start now");
+    expect(target?.querySelector("em")?.textContent).toBe("now");
+  });
+
+  it("accepts a resolved iterable of visible ReactNode copy", () => {
+    const label = new Set(["Read ", <em key="guide">guide</em>]);
+    expect(dom({ document: PAGE, callToAction: { heading: "Close", actions: [{ ...pair[0]!, label }] } }).querySelector('[data-landing-call-to-action] a')?.textContent).toBe("Read guide");
+  });
+
+  it("refuses empty or malformed composed copy in every closing copy field", () => {
+    for (const bad of [[], [null, false, "  "], [{ id: "unresolved" }], [<em key="visible">Visible</em>, { id: "unresolved" }]]) {
+      for (const field of ["action", "note", "link"]) {
+        const close = { heading: "Close", actions: [{ ...pair[0]!, label: field === "action" ? bad : "Start" }], footnote: { text: field === "note" ? bad : "Note", link: { label: field === "link" ? bad : "Guide", href: "/guide" } } };
+        expect(() => dom({ document: PAGE, callToAction: close } as unknown as LandingViewProps)).toThrow(RenderError);
+      }
+    }
+  });
+
+  it("keeps sanctioned target refusals for visible composed copy", () => {
+    for (const close of [
+      { heading: "Close", actions: [{ ...pair[0]!, label: composed, href: "javascript:alert(1)" }] },
+      { heading: "Close", actions: [{ ...pair[0]!, label: composed }], footnote: { text: composed, link: { label: composed, href: "javascript:alert(1)" } } },
+    ]) expect(() => dom({ document: PAGE, callToAction: close })).toThrow(RenderError);
+  });
+
+  it("leaves the legacy action slot and ordinary SectionedView free of pair styling", () => {
+    const legacy = dom({ document: PAGE, callToAction: CALL_TO_ACTION });
+    expect(legacy.querySelector("style")).toBeNull();
+    const single = dom({ document: PAGE, callToAction: { copy: "hero", actions: [pair[0]!] } });
+    expect(single.querySelector("style")).toBeNull();
+    const ordinary = renderToStaticMarkup(<webServerEntry.SectionedView document={page} />);
+    expect(ordinary).not.toContain("data-landing-action-pair");
+    expect(ordinary).not.toContain("<style");
+  });
+});

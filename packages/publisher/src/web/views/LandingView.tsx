@@ -1,4 +1,4 @@
-import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
+import { Children, isValidElement, type CSSProperties, type HTMLAttributes, type ReactNode } from "react";
 import { Icon, iconButtonLinkClassName, mergeUiClasses } from "@clossys/designer/atoms/server";
 import {
   ContentSection,
@@ -12,6 +12,9 @@ import {
 } from "@clossys/designer/blocks/server";
 import type { HeroAlign, SectionMeasure } from "@clossys/designer/blocks/server";
 import { ChevronDown } from "@clossys/designer/icons";
+import { resolveRoleActionEmphasis } from "../../core/sectioned-view.js";
+import { renderRoleActions, type LandingViewAction } from "./SectionedViewActions.js";
+import { isSanctionedHref } from "../../internal/href.js";
 import type { ResolvedSectionedViewDocument } from "../../core/sectioned-view.js";
 import { RenderError } from "../../internal/errors.js";
 import type { AssetResolver } from "../types.js";
@@ -31,10 +34,12 @@ import { assertRenderableSectionedViewDocument, renderSectionedViewSections, typ
 export type LandingViewHeader = "overlay" | "reserved";
 
 /**
- * The closing call to action: one band, one action, centred, on the
+ * The closing call to action: one band with resolved actions or an action slot, centred, on the
  * `inverse` ground (fixed by the view, like the light band above it).
  */
 export interface LandingViewCallToAction {
+  /** Reuse the opening hero's heading and description where own copy is undefined. */
+  copy?: "hero";
   /** Fragment id for the band, so a page can link to it. */
   id?: string;
   /** A short line above the heading. */
@@ -50,6 +55,8 @@ export interface LandingViewCallToAction {
    * here.
    */
   action: ReactNode;
+  /** Resolved closing copy, with at most one inline link after its text. */
+  footnote?: { text: ReactNode; link?: { label: ReactNode; href: string } };
 }
 
 export interface LandingViewProps extends Omit<HTMLAttributes<HTMLElement>, "children"> {
@@ -71,7 +78,11 @@ export interface LandingViewProps extends Omit<HTMLAttributes<HTMLElement>, "chi
    */
   afterSection?: Readonly<Record<string, ReactNode>>;
   /** The closing call to action, rendered last as its own band. */
-  callToAction?: LandingViewCallToAction;
+  callToAction?:
+    | (LandingViewCallToAction & { actions?: never })
+    | (Omit<LandingViewCallToAction, "heading" | "copy"> & { copy: "hero"; heading?: ReactNode; actions?: never })
+    | (Omit<LandingViewCallToAction, "action"> & { action?: never; actions: readonly LandingViewAction[] })
+    | (Omit<LandingViewCallToAction, "action" | "heading" | "copy"> & { copy: "hero"; heading?: ReactNode; action?: never; actions: readonly LandingViewAction[] });
   /**
    * Decoration behind the hero block (an image, a video, a scene). Rendered
    * `aria-hidden` and inert to the pointer, over the hero section's own
@@ -122,6 +133,12 @@ export interface LandingViewProps extends Omit<HTMLAttributes<HTMLElement>, "chi
 const HERO_PADDING: Record<LandingViewHeader, string> = {
   overlay: "flex flex-col justify-center py-5xl",
   reserved: "flex flex-col justify-center py-4xl",
+};
+
+/** Compact heroes clear the overlay header with existing spacing tokens. */
+const HERO_PADDING_COMPACT: Record<LandingViewHeader, string> = {
+  overlay: "flex flex-col pt-6xl pb-3xl tablet-lg:pb-4xl",
+  reserved: "flex flex-col py-3xl tablet-lg:py-4xl",
 };
 
 /** The first screen under an overlay header: the whole viewport, or short of it by the peek. */
@@ -233,9 +250,9 @@ function bandBlocks(afterSection: Readonly<Record<string, ReactNode>>): Sectione
  * anything placed `afterSection`), one spacing step apart. Sections render
  * through the same validated mapping as `SectionedView`. The hero block is
  * Designer `Hero` (`align`, default centred) on the hero section's ground,
- * with an optional `backdrop`, and its document actions render as Designer
- * primary buttons (`buttonLinkClassName("primary", "lg")`); the call to
- * action is a centred `ContentSection` at `<h2>` with one action. Both copy
+ * with an optional `backdrop`, and its document actions use the ground-aware
+ * primary, outline and quiet ladder; the call to
+ * action is a centred `ContentSection` at `<h2>` with its own actions. Both copy
  * blocks are Designer `SectionIntro`: the hero at the `display` emphasis
  * (the page's one `<h1>`), the close at the `section` emphasis like every
  * other band's heading, held to the same prose measure.
@@ -298,8 +315,12 @@ export function LandingView({
   style,
   ...rest
 }: LandingViewProps) {
+  if (callToAction?.copy !== undefined && callToAction.copy !== "hero") {
+    throw new RenderError("resolution-failed", "LandingView refused callToAction.copy: the supported copy option is hero.");
+  }
+  if (callToAction !== undefined) assertCloseActions(callToAction);
   const options = { resolveAssetId, prefersReducedMotion };
-  const heroOptions = { ...options, heroActions: "button" as const };
+  const heroOptions = { ...options, heroActions: "button" as const, heroActionsCentered: align === "center" };
   for (const entry of [document, ...trailing]) {
     try {
       assertRenderableSectionedViewDocument(entry);
@@ -309,8 +330,15 @@ export function LandingView({
   }
   const heroSection = document.sections[0];
   if (heroSection === undefined || heroSection.kind !== "hero") {
-    throw new RenderError("resolution-failed", "LandingView refused an invalid resolved document: the first section must be a hero section.");
+    throw new RenderError(callToAction?.copy === "hero" ? "missing-hero-copy" : "resolution-failed", "LandingView refused an invalid resolved document: the first section must be a hero section.");
   }
+  const close = callToAction?.copy === "hero"
+    ? {
+      ...callToAction,
+      heading: callToAction.heading === undefined ? heroSection.heading : callToAction.heading,
+      description: callToAction.description === undefined ? heroSection.description : callToAction.description,
+    }
+    : callToAction;
   const plan = planLandingViewGrounds(document, trailing, { callToAction: callToAction === undefined ? undefined : { id: callToAction.id } });
   const [grounded, ...groundedTrailing] = applyLandingViewGrounds(plan, [document, ...trailing]);
   const hasBackdrop = backdrop !== undefined && backdrop !== null && backdrop !== false;
@@ -318,7 +346,7 @@ export function LandingView({
     { id: document.id, resolutions: document.resolutions, sections: [heroSection] },
     {
       ...sectionedViewBlocks,
-      Hero: (props) => <Hero {...props} headingLevel={1} align={align} className={hasBackdrop ? "bg-transparent" : undefined} />,
+      Hero: (props) => <Hero {...props} headingLevel={1} align={align} data-landing-action-pair={heroSection.actions?.length === 2 ? "" : undefined} className={hasBackdrop ? "bg-transparent" : undefined} />,
     },
     heroOptions,
     "LandingView",
@@ -338,8 +366,9 @@ export function LandingView({
     if (!ids.has(key)) throw new RenderError("resolution-failed", `LandingView refused afterSection.${key}: no rendered section has that id.`);
   }
 
+  const compact = heroSection.compact === true;
   const hasContent = bands.length > 0 || callToAction !== undefined;
-  const fills = header === "overlay";
+  const fills = !compact && header === "overlay";
   const peeks = fills && peek && hasContent;
   const firstBand = bands[0]?.section;
   const cue = !peeks
@@ -356,12 +385,14 @@ export function LandingView({
 
   return (
     <Root {...rest} data-landing-view="" className={mergeUiClasses("flex flex-col bg-surface-base", className)} style={style}>
+      {heroSection.actions?.length === 2 || close?.actions?.length === 2 ? <style data-landing-action-pair-style="">{LANDING_ACTION_PAIR_CSS}</style> : null}
       <SectionFrame
         data-landing-hero=""
+        {...(compact ? { "data-hero-size": "compact" } : {})}
         data-landing-ground={heroSection.ground}
         ground={heroSection.ground}
         measure={measure}
-        className={mergeUiClasses("relative isolate", HERO_PADDING[header])}
+        className={mergeUiClasses("relative isolate", (compact ? HERO_PADDING_COMPACT : HERO_PADDING)[header])}
         style={fills ? { minHeight: peeks ? HERO_FILL.peek : HERO_FILL.full } : undefined}
       >
         {hasBackdrop ? (
@@ -391,18 +422,21 @@ export function LandingView({
           )}
         </SectionFrame>
       ))}
-      {callToAction ? <CallToActionBand {...callToAction} measure={measure} /> : null}
+      {close ? <CallToActionBand {...close} measure={measure} /> : null}
     </Root>
   );
 }
 
+/** Stretch the actual intro flex item so mobile pair widths inherit the prose column. */
+const LANDING_ACTION_PAIR_CSS = "[data-landing-view] [data-landing-action-pair] > [data-section-intro] > [data-section-intro-actions] { align-self: stretch; }";
+
 /**
  * The closing band: a centred Designer `ContentSection` at `<h2>` (the
- * `section` emphasis every band heading takes), with its one action, on the
+ * `section` emphasis every band heading takes), with its own actions, on the
  * inverse ground, at the band rhythm. It draws no edge rule of its own: a
  * frame footer on the same ground carries the one hairline between them.
  */
-function CallToActionBand({ id, eyebrow, heading, description, action, measure }: LandingViewCallToAction & { measure: SectionMeasure }) {
+function CallToActionBand({ id, eyebrow, heading, description, action, actions, footnote, measure }: NonNullable<LandingViewProps["callToAction"]> & { measure: SectionMeasure }) {
   const ground = LANDING_VIEW_CALL_TO_ACTION_GROUND;
   return (
     <SectionFrame
@@ -413,7 +447,53 @@ function CallToActionBand({ id, eyebrow, heading, description, action, measure }
       measure={measure}
       className={CALL_TO_ACTION_BAND_CLASS}
     >
-      <ContentSection headingLevel={2} align="center" ground={ground} eyebrow={eyebrow} heading={heading} description={description} actions={action} />
+      <ContentSection data-landing-action-pair={actions?.length === 2 ? "" : undefined} headingLevel={2} align="center" ground={ground} eyebrow={eyebrow} heading={heading} description={description} actions={actions === undefined ? action : renderRoleActions(actions, ground)} footnote={renderCloseFootnote(footnote)} />
     </SectionFrame>
   );
+}
+
+
+/** Resolved note text followed by its optional inline link. */
+function renderCloseFootnote(note: LandingViewCallToAction["footnote"]): ReactNode {
+  if (note === undefined) return undefined;
+  return <>{note.text}{note.link === undefined ? null : <> <a href={note.link.href} className="text-inherit underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent">{note.link.label}</a></>}</>;
+}
+
+/** The view accepts resolved action copy while refusing invalid list structure and targets. */
+function assertCloseActions(close: NonNullable<LandingViewProps["callToAction"]>): void {
+  const refuse = (detail: string): never => { throw new RenderError("resolution-failed", `LandingView refused callToAction: ${detail}.`); };
+  const copy = (value: ReactNode): boolean => {
+    let visible = false;
+    let valid = true;
+    try {
+      Children.forEach(value, node => {
+        if (typeof node === "string") visible ||= node.trim().length > 0;
+        else if (typeof node === "number" || typeof node === "bigint" || isValidElement(node)) visible = true;
+        else if (node !== null && node !== undefined && typeof node !== "boolean") valid = false;
+      });
+    } catch {
+      return false;
+    }
+    return valid && visible;
+  };
+  if (close.actions !== undefined) {
+    if (Object.hasOwn(close, "action")) refuse("action and actions are mutually exclusive");
+    if (!Array.isArray(close.actions) || close.actions.length < 1 || close.actions.length > 2) refuse("actions must hold one or two resolved actions");
+    const ids = new Set<string>();
+    let primaries = 0;
+    for (let index = 0; index < close.actions.length; index += 1) {
+      const action = close.actions[index]!;
+      if (action === null || typeof action !== "object" || Array.isArray(action) || Object.keys(action).some(key => !["id", "label", "href", "emphasis"].includes(key))) refuse("each action must have only id, label, href and optional emphasis");
+      if (typeof action?.id !== "string" || action.id.trim() === "" || ids.has(action.id) || !copy(action.label) || !isSanctionedHref(action.href)) refuse("each action needs a unique id, resolved label and sanctioned href");
+      ids.add(action.id);
+      if (action.emphasis !== undefined && !["primary", "secondary", "quiet"].includes(action.emphasis)) refuse("action emphasis must be primary, secondary or quiet");
+      if (resolveRoleActionEmphasis(action.emphasis, index) === "primary") primaries += 1;
+    }
+    if (primaries > 1 || close.actions.length === 1 && primaries !== 1) refuse("keep at most one effective primary and make a lone action primary");
+  } else if (!Object.hasOwn(close, "action")) refuse("the close requires its own action or actions");
+  if (close.footnote !== undefined) {
+    const note = close.footnote;
+    if (note === null || typeof note !== "object" || Object.keys(note).some(key => !["text", "link"].includes(key)) || !copy(note.text)) refuse("footnote needs resolved text and an optional link");
+    if (note.link !== undefined && (note.link === null || typeof note.link !== "object" || Object.keys(note.link).some(key => !["label", "href"].includes(key)) || !copy(note.link.label) || !isSanctionedHref(note.link.href))) refuse("footnote link needs resolved label and sanctioned href");
+  }
 }
