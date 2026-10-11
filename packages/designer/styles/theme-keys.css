@@ -88,7 +88,6 @@
   --color-overlay-scrim:          var(--color-overlay-scrim, oklch(0 0 0 / 0.4));
 
   /* ── COLOR · SKELETON ─────────────────────────────────────────── */
-  --color-field-dot: var(--color-field-dot, var(--color-ink-on-inverse));
   --color-skeleton-fill:          var(--color-skeleton-fill, oklch(0.9401 0 0));
 
   /* ── TEXT (font-size) ─────────────────────────────────────────── */

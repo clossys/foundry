@@ -190,12 +190,6 @@
        icon SIZE steps alias the spacing scale and are not brand slots,
        the same call the density tokens above already make) ─────────── */
   /* --ui-icon-stroke: 2; */
-  /* DOT FIELD: opacity is measured against the painted dot in both themes. */
-  --color-field-dot: var(--color-ink-on-inverse);
-  --ui-field-alpha: 0.34;
-  --ui-field-scale: 1;
-  --ui-field-lens: 13.75rem;
-
 }
 
 

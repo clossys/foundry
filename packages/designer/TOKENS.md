@@ -451,18 +451,12 @@ border 3, elevation 4, ring 2, duration 6, z 9, alpha 1 (49, all `--ui-*`).
 55 + 20 + 29 + 49 = 153 tokens across 27 families, by this same
 1-family-added arithmetic. **Note:** this total (and the "128 tokens
 across 24 families" figure elsewhere in this README predating it) does not
-match `src/tokens.ts`'s real count (185 across 31 families) — a pre-existing
+match `src/tokens.ts`'s real count (181 across 29 families) — a pre-existing
 gap from the `chart` color family (22 tokens, added in `0.4.0`) never being
 folded into this reference table's totals. That gap predates this PR and is
 out of its scope; `src/tokens.ts`/`styles/tokens.css` are what `parity.test.ts`
 actually checks, and both are accurate. Flagged here rather than quietly
 compounded.
-
-The field adds four brandable slots: `--color-field-dot` (field-color),
-`--ui-field-alpha`, `--ui-field-scale` and `--ui-field-lens` (field). Their
-ranges and theme contrast checks are documented in the README's static dot
-field section. The current registry has 185 slots, including 60 brandable
-slots; the dynamic dot alias does not require a separate dark declaration.
 
 ## Deriving a value instead of requesting a new token
 

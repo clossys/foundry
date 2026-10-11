@@ -254,8 +254,6 @@ const KNOWN_NON_CLASS_MAPS = new Set([
   "CHART_CATEGORICAL_FALLBACK",
   // `tokens/read-brand-css.ts`: parsed CSS custom-property values, not classes.
   "declarations",
-  // tokens/parse-brand-declarations.ts — one rule's CSS custom-property values.
-  "ruleDeclarations",
   "CHART_SEQUENTIAL_FALLBACK",
   // atoms/Icon.tsx — size -> `var(--ui-icon-*, <fallback>)` string lookup,
   // read via `style.width`/`style.height`, never a Tailwind class name (the

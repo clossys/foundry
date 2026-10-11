@@ -44,7 +44,6 @@ const LOADING = { strategy: "lazy", budgetBytes: 500_000 } as const;
 const FRAME = { fallbackFrame: "frames/still.webp" } as const;
 
 const FIXTURES: Record<BackdropKind, BackdropContract> = {
-  pattern: { kind: "pattern", pattern: "dot-field", ariaHidden: true, pointerEvents: "none", loading: { strategy: "idle", budgetBytes: 8192 } },
   image: { kind: "image", scrim: SCRIM, ariaHidden: true, pointerEvents: "none", loading: LOADING },
   video: {
     kind: "video",
@@ -73,7 +72,7 @@ const FIXTURES: Record<BackdropKind, BackdropContract> = {
   },
 };
 
-const TAGS: Record<BackdropKind, string> = { image: "img", video: "video", canvas: "canvas", chart: "div", pattern: "div" };
+const TAGS: Record<BackdropKind, string> = { image: "img", video: "video", canvas: "canvas", chart: "div" };
 
 function buildElement(kind: BackdropKind): HTMLElement {
   const element = document.createElement(TAGS[kind]);

@@ -166,10 +166,6 @@ characters. Use plate or rule tiles and give every tile an icon or none.
 For one destination, use a footnote link or a button. Use buttons for
 actions that do not navigate. Avoid vague titles such as "Learn more".
 
-**DotField** (`dot-field`). Decoration behind a hero and closing invitation.
-Keep copy and actions together on `field-halo`, with opaque intervening bands
-and a page clipping boundary. It carries no content or accessible information.
-
 **Comparison** (`comparison`). Two sides with labels of 1-3 words. Give each side either a
 description of at most 25 words or 2-4 points of 4-9 words, with the same form
 and the same count on both sides. Visuals go on both sides or on neither.

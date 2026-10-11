@@ -118,44 +118,11 @@ function writeProductFile(rel: string, content: string): void {
 
 // Every brandable slot declared, so the coverage check itself is clean and a
 // non-zero exit can only come from something else. Only non-emptiness matters
-// to coverage; valid default values also let the independent field check run.
+// to coverage, so one placeholder value serves every slot.
 const FULLY_COVERED_BRAND_CSS = `:root {\n${Object.values(TOKENS)
   .filter((def) => def.brandable)
-  .map((def) => `  ${def.property}: ${def.value};\n`)
+  .map((def) => `  ${def.property}: red;\n`)
   .join("")}}\n`;
-
-describe("command line — field validation", () => {
-  it.each([
-    ["escaped important initial", String.raw`--ui-field-alpha: 0.60 !\69mportant; --ui-field-alpha: 0.34;`],
-    ["escaped important middle", String.raw`--ui-field-alpha: 0.60 !impor\74 ant; --ui-field-alpha: 0.34;`],
-    ["escaped prefix", String.raw`--ui-field-alpha: 0.34; \2d\2d ui-field-alpha: 0.60;`],
-    ["mixed escaped prefix", String.raw`--ui-field-alpha: 0.34; -\2d ui-field-alpha: 0.60;`],
-    ["escaped field identifier", String.raw`--ui-field-alpha: 0.34; --\75i-field-alpha: 0.60;`],
-    ["same-rule important", "--ui-field-alpha: 0.60 !important; --ui-field-alpha: 0.34;"],
-    ["separate-rule important", "--ui-field-alpha: 0.34;", ':root { --ui-field-alpha: 0.60 !important; }'],
-    ["nested ampersand", "--ui-field-alpha: 0.60; & .example { --ui-field-alpha: 0.34; }"],
-    ["nested child", "--ui-field-alpha: 0.60; .child { --ui-field-alpha: 0.34; }"],
-  ])("returns unchecked for a complete brand with unsupported field cascade: %s", (_name, declaration, prefix = "") => {
-    const css = prefix + FULLY_COVERED_BRAND_CSS.replace("--ui-field-alpha: 0.34;", declaration!);
-    const result = runCli([writeBrandCss(css)]);
-    expect(result.status).toBe(2);
-    expect(result.stderr).toContain("[field-unchecked]");
-  });
-
-  it("checks the real token baseline merged with a complete brand and rejects unsafe field opacity", () => {
-    expect(runCli([writeBrandCss(FULLY_COVERED_BRAND_CSS)]).status).toBe(0);
-    const result = runCli([writeBrandCss(FULLY_COVERED_BRAND_CSS.replace('--ui-field-alpha: 0.34;', '--ui-field-alpha: 0.40;'))]);
-    expect(result.status).toBe(1);
-    expect(result.stdout).toContain('[field-alpha-contrast]');
-    expect(result.stdout).toContain('light');
-  });
-  it("distinguishes unresolved field bindings from evaluated range failures", () => {
-    expect(runCli([writeBrandCss(FULLY_COVERED_BRAND_CSS.replace('--ui-field-alpha: 0.34;', '--ui-field-alpha: var(--missing-alpha);'))]).status).toBe(2);
-    const scale = runCli([writeBrandCss(FULLY_COVERED_BRAND_CSS.replace('--ui-field-scale: 1;', '--ui-field-scale: 2;'))]);
-    expect(scale.status).toBe(1);
-    expect(scale.stdout).toContain('[field-scale-range]');
-  });
-});
 
 describe("command line — one brand overlay under apps/", () => {
   it("a fully covered brand file exits 0 without a second binder and 1 once apps/ adds one", () => {

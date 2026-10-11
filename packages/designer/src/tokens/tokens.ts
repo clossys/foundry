@@ -2,7 +2,7 @@
  * The token catalog: every custom property this package declares in
  * `styles/tokens.css`, as data. This file is the JS/TS half of the package;
  * `styles/tokens.css` is the CSS half. Both are hand-authored and both are
- * meant to describe the exact same 185 tokens — a test in this package
+ * meant to describe the exact same 181 tokens — a test in this package
  * (`parity.test.ts`) parses `styles/tokens.css` and asserts its custom
  * property names and values match this file entry-for-entry, in both
  * directions. That test is what keeps this file honest; nothing generates
@@ -35,13 +35,11 @@
  */
 
 /**
- * The 31 semantic groups the 185 tokens fall into. Each maps to exactly one
+ * The 29 semantic groups the 181 tokens fall into. Each maps to exactly one
  * CSS custom property prefix — see `FAMILY_PREFIX` in `parity.test.ts` (and
  * the README's naming table) for the concrete mapping.
  */
 export type TokenFamily =
-  | "field-color"
-  | "field"
   | "surface"
   | "ink"
   | "line"
@@ -76,7 +74,7 @@ export type TokenFamily =
 export interface TokenDefinition {
   /** The full CSS custom property name, including the leading `--`. */
   readonly property: string;
-  /** Which of the 31 semantic groups this token belongs to. */
+  /** Which of the 29 semantic groups this token belongs to. */
   readonly family: TokenFamily;
   /** The value declared for this property in `styles/tokens.css`'s `:root` block. */
   readonly value: string;
@@ -109,7 +107,7 @@ export interface TokenDefinition {
 }
 
 /**
- * All 185 tokens, keyed by their CSS custom property name. A `Record` rather
+ * All 181 tokens, keyed by their CSS custom property name. A `Record` rather
  * than an array because the natural question from JS — "what is
  * `--color-surface-raised` set to?" — is a lookup, not a scan.
  */
@@ -386,18 +384,11 @@ export const TOKENS: Readonly<Record<string, TokenDefinition>> = {
   "--breakpoint-wide": { property: "--breakpoint-wide", family: "breakpoint", value: "1440px", brandable: false, themeDependent: false },
 
   // ── UI · ALPHA ──────────────────────────────────────────────────────
-  "--color-field-dot": { property: "--color-field-dot", family: "field-color", value: "var(--color-ink-on-inverse)", brandable: true, themeDependent: false },
-  "--ui-field-alpha": { property: "--ui-field-alpha", family: "field", value: "0.34", brandable: true, themeDependent: false },
-  "--ui-field-scale": { property: "--ui-field-scale", family: "field", value: "1", brandable: true, themeDependent: false },
-  "--ui-field-lens": { property: "--ui-field-lens", family: "field", value: "13.75rem", brandable: true, themeDependent: false }, // token-gate:ignore the catalog declares this field lens default
-
   "--ui-alpha-disabled": { property: "--ui-alpha-disabled", family: "alpha", value: "0.5", brandable: false, themeDependent: false },
 };
 
-/** The 31 semantic families, in the order they appear in the README's reference table. */
+/** The 29 semantic families, in the order they appear in the README's reference table. */
 export const TOKEN_FAMILIES: readonly TokenFamily[] = [
-  "field-color",
-  "field",
   "surface",
   "ink",
   "line",
