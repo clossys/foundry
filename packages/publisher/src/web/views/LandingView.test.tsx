@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 
 import { createHash } from "node:crypto";
+import { readFileSync } from "node:fs";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import type { ResolvedSectionedViewDocument } from "../../core/sectioned-view.js";
@@ -488,4 +489,82 @@ it("renders all body tiers with authored emphasis, size and ground, including de
       expect(link.textContent).toBe("GO-SENTINEL");
     } else expect(link.querySelector("svg")).toBeNull();
   }
+});
+
+
+describe("LandingView reviewed action-pair and resolved copy contracts", () => {
+  const pair = [{ id: "start", label: "Go", href: "/start" }, { id: "read", label: "Read", href: "/guide" }];
+  const composed = ["Start ", [null, false, <em key="now">now</em>]];
+  const page: ResolvedSectionedViewDocument = { ...PAGE, sections: [{ ...PAGE.sections[0]!, actions: pair } as ResolvedSectionedViewDocument["sections"][number], ...PAGE.sections.slice(1)] };
+
+  it.each(["center", "start"] as const)("stretches the actual SectionIntro action row for %s hero and close", align => {
+    // Apply the real shipped structural utilities, without building CSS or pretending jsdom measures geometry.
+    const css = readFileSync("styles/preview.css", "utf8");
+    const foundation = document.createElement("style");
+    foundation.textContent = ["flex", "flex-col", "items-center", "items-start", "w-full"].map(name => {
+      const rule = css.match(new RegExp("\\." + name + "\\s*\\{[^{}]+\\}"));
+      expect(rule, `${name} structural utility exists`).not.toBeNull();
+      return rule![0];
+    }).join("\n");
+    const host = dom({ document: page, align, peek: false, callToAction: { copy: "hero", actions: pair } });
+    document.head.append(foundation);
+    document.body.append(host);
+    try {
+      for (const band of ["hero", "call-to-action"]) {
+        const row = host.querySelector(`[data-landing-${band}] [data-section-intro-actions]`)!;
+        const intro = row.parentElement!;
+        const emitted = host.querySelector<HTMLStyleElement>("style[data-landing-action-pair-style]")!;
+        const rule = emitted.sheet?.cssRules[0] as CSSStyleRule;
+        expect(row.matches(rule.selectorText)).toBe(true);
+        expect(getComputedStyle(intro).display).toBe("flex");
+        expect(getComputedStyle(intro).flexDirection).toBe("column");
+        expect(getComputedStyle(intro).alignItems).toBe(band === "hero" && align === "start" ? "flex-start" : "center");
+        // Stretch this auto-width flex item in the cross axis, so child 100% widths have the prose column to fill.
+        expect(getComputedStyle(row).alignSelf).toBe("stretch");
+        for (const link of row.querySelectorAll("a")) expect(getComputedStyle(link).width).toBe("100%");
+      }
+    } finally {
+      host.remove();
+      foundation.remove();
+    }
+  });
+
+  it.each(["action", "note", "link"])("accepts visible nested ReactNode arrays in %s copy", field => {
+    const close = { heading: "Close", actions: [{ ...pair[0]!, label: field === "action" ? composed : "Start" }], footnote: { text: field === "note" ? composed : "Note", link: { label: field === "link" ? composed : "Guide", href: "/guide" } } };
+    const host = dom({ document: PAGE, callToAction: close });
+    const target = field === "action" ? host.querySelector('[data-landing-call-to-action] a[href="/start"]') : field === "note" ? host.querySelector("[data-content-section-footnote]") : host.querySelector('[data-content-section-footnote] a');
+    expect(target?.textContent).toContain("Start now");
+    expect(target?.querySelector("em")?.textContent).toBe("now");
+  });
+
+  it("accepts a resolved iterable of visible ReactNode copy", () => {
+    const label = new Set(["Read ", <em key="guide">guide</em>]);
+    expect(dom({ document: PAGE, callToAction: { heading: "Close", actions: [{ ...pair[0]!, label }] } }).querySelector('[data-landing-call-to-action] a')?.textContent).toBe("Read guide");
+  });
+
+  it("refuses empty or malformed composed copy in every closing copy field", () => {
+    for (const bad of [[], [null, false, "  "], [{ id: "unresolved" }], [<em key="visible">Visible</em>, { id: "unresolved" }]]) {
+      for (const field of ["action", "note", "link"]) {
+        const close = { heading: "Close", actions: [{ ...pair[0]!, label: field === "action" ? bad : "Start" }], footnote: { text: field === "note" ? bad : "Note", link: { label: field === "link" ? bad : "Guide", href: "/guide" } } };
+        expect(() => dom({ document: PAGE, callToAction: close } as unknown as LandingViewProps)).toThrow(RenderError);
+      }
+    }
+  });
+
+  it("keeps sanctioned target refusals for visible composed copy", () => {
+    for (const close of [
+      { heading: "Close", actions: [{ ...pair[0]!, label: composed, href: "javascript:alert(1)" }] },
+      { heading: "Close", actions: [{ ...pair[0]!, label: composed }], footnote: { text: composed, link: { label: composed, href: "javascript:alert(1)" } } },
+    ]) expect(() => dom({ document: PAGE, callToAction: close })).toThrow(RenderError);
+  });
+
+  it("leaves the legacy action slot and ordinary SectionedView free of pair styling", () => {
+    const legacy = dom({ document: PAGE, callToAction: CALL_TO_ACTION });
+    expect(legacy.querySelector("style")).toBeNull();
+    const single = dom({ document: PAGE, callToAction: { copy: "hero", actions: [pair[0]!] } });
+    expect(single.querySelector("style")).toBeNull();
+    const ordinary = renderToStaticMarkup(<webServerEntry.SectionedView document={page} />);
+    expect(ordinary).not.toContain("data-landing-action-pair");
+    expect(ordinary).not.toContain("<style");
+  });
 });

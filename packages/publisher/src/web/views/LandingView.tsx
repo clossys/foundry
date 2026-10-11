@@ -1,4 +1,4 @@
-import { isValidElement, type CSSProperties, type HTMLAttributes, type ReactNode } from "react";
+import { Children, isValidElement, type CSSProperties, type HTMLAttributes, type ReactNode } from "react";
 import { Icon, iconButtonLinkClassName, mergeUiClasses } from "@clossys/designer/atoms/server";
 import {
   ContentSection,
@@ -340,7 +340,7 @@ export function LandingView({
     { id: document.id, resolutions: document.resolutions, sections: [heroSection] },
     {
       ...sectionedViewBlocks,
-      Hero: (props) => <Hero {...props} headingLevel={1} align={align} className={hasBackdrop ? "bg-transparent" : undefined} />,
+      Hero: (props) => <Hero {...props} headingLevel={1} align={align} data-landing-action-pair={heroSection.actions?.length === 2 ? "" : undefined} className={hasBackdrop ? "bg-transparent" : undefined} />,
     },
     heroOptions,
     "LandingView",
@@ -378,6 +378,7 @@ export function LandingView({
 
   return (
     <Root {...rest} data-landing-view="" className={mergeUiClasses("flex flex-col bg-surface-base", className)} style={style}>
+      {heroSection.actions?.length === 2 || close?.actions?.length === 2 ? <style data-landing-action-pair-style="">{LANDING_ACTION_PAIR_CSS}</style> : null}
       <SectionFrame
         data-landing-hero=""
         data-landing-ground={heroSection.ground}
@@ -418,6 +419,9 @@ export function LandingView({
   );
 }
 
+/** Stretch the actual intro flex item so mobile pair widths inherit the prose column. */
+const LANDING_ACTION_PAIR_CSS = "[data-landing-view] [data-landing-action-pair] > [data-section-intro] > [data-section-intro-actions] { align-self: stretch; }";
+
 /**
  * The closing band: a centred Designer `ContentSection` at `<h2>` (the
  * `section` emphasis every band heading takes), with its own actions, on the
@@ -435,7 +439,7 @@ function CallToActionBand({ id, eyebrow, heading, description, action, actions, 
       measure={measure}
       className={CALL_TO_ACTION_BAND_CLASS}
     >
-      <ContentSection headingLevel={2} align="center" ground={ground} eyebrow={eyebrow} heading={heading} description={description} actions={actions === undefined ? action : renderRoleActions(actions, ground)} footnote={renderCloseFootnote(footnote)} />
+      <ContentSection data-landing-action-pair={actions?.length === 2 ? "" : undefined} headingLevel={2} align="center" ground={ground} eyebrow={eyebrow} heading={heading} description={description} actions={actions === undefined ? action : renderRoleActions(actions, ground)} footnote={renderCloseFootnote(footnote)} />
     </SectionFrame>
   );
 }
@@ -450,7 +454,20 @@ function renderCloseFootnote(note: LandingViewCallToAction["footnote"]): ReactNo
 /** The view accepts resolved action copy while refusing invalid list structure and targets. */
 function assertCloseActions(close: NonNullable<LandingViewProps["callToAction"]>): void {
   const refuse = (detail: string): never => { throw new RenderError("resolution-failed", `LandingView refused callToAction: ${detail}.`); };
-  const copy = (value: ReactNode): boolean => typeof value === "string" ? value.trim().length > 0 : typeof value === "number" || isValidElement(value);
+  const copy = (value: ReactNode): boolean => {
+    let visible = false;
+    let valid = true;
+    try {
+      Children.forEach(value, node => {
+        if (typeof node === "string") visible ||= node.trim().length > 0;
+        else if (typeof node === "number" || typeof node === "bigint" || isValidElement(node)) visible = true;
+        else if (node !== null && node !== undefined && typeof node !== "boolean") valid = false;
+      });
+    } catch {
+      return false;
+    }
+    return valid && visible;
+  };
   if (close.actions !== undefined) {
     if (Object.hasOwn(close, "action")) refuse("action and actions are mutually exclusive");
     if (!Array.isArray(close.actions) || close.actions.length < 1 || close.actions.length > 2) refuse("actions must hold one or two resolved actions");

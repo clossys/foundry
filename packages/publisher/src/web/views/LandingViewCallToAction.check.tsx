@@ -30,3 +30,5 @@ export const bodyQuiet: SectionedViewContentAction = { ...bodyTertiary, emphasis
 export const tertiaryHero: SectionedViewAction = { ...heroQuiet, emphasis: "tertiary" };
 // @ts-expect-error content action emphasis is closed
 export const unknownBody: SectionedViewContentAction = { ...bodyTertiary, emphasis: "ghost" };
+
+export const composedClose: LandingViewProps["callToAction"] = { heading: "Close", actions: [{ id: "start", href: "/start", label: ["Start ", [null, false, <em key="now">now</em>]] }], footnote: { text: ["Note ", <strong key="detail">detail</strong>], link: { label: ["Read ", <em key="guide">guide</em>], href: "/guide" } } };

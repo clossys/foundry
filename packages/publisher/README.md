@@ -1215,7 +1215,9 @@ Props, in addition to the standard `<main>` attributes (minus `children`),
   alternative to the `action` slot, pass `actions` containing one or two
   resolved `{ id, label, href, emphasis? }` records with the hero emphasis
   subset and effective-primary rules. The two props are mutually exclusive.
-  `footnote` takes resolved `{ text, link?: { label, href } }` copy. Hero and
+  `footnote` takes resolved `{ text, link?: { label, href } }` copy. Labels and
+  note copy accept visible composed ReactNodes, including nested arrays; empty
+  collections and unresolved copy references are refused. Hero and
   closing action pairs put the primary first in DOM order; their primary and
   secondary buttons stack full width below the tablet breakpoint, while quiet
   actions keep automatic width.

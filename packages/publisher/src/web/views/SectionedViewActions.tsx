@@ -30,7 +30,7 @@ export function renderRoleActions(actions: readonly LandingViewAction[] | undefi
   const resolved = actions.map((action, index) => ({ action, emphasis: resolveRoleActionEmphasis(action.emphasis, index) }));
   resolved.sort((a, b) => Number(b.emphasis === "primary") - Number(a.emphasis === "primary"));
   return (
-    <div data-landing-actions="" className={actions.length === 2 ? `flex w-full flex-col gap-sm tablet:flex-row tablet:flex-wrap ${centered ? "items-center tablet:justify-center" : "items-start tablet:justify-start"}` : "flex flex-wrap items-center gap-sm"}>
+    <div data-landing-actions="" data-landing-action-pair={actions.length === 2 ? "" : undefined} className={actions.length === 2 ? `flex w-full flex-col gap-sm tablet:flex-row tablet:flex-wrap ${centered ? "items-center tablet:justify-center" : "items-start tablet:justify-start"}` : "flex flex-wrap items-center gap-sm"}>
       {resolved.map(({ action, emphasis }) => renderAction(action, emphasis, ground, actions.length === 2))}
     </div>
   );
