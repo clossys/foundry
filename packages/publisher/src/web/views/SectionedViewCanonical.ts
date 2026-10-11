@@ -63,7 +63,7 @@ export function assertCanonicalContentSection(section: Record<string, unknown>, 
       if (field === "media.label") { const words = value.trim().split(/\s+/).length; if (words < 6 || words > 25) throw new Error(`${fieldPath} needs 6–25 words.`); }
       if (/^media\.key\.items\.\*\.(heading|description)$/.test(field)) max = field.endsWith("heading") ? 40 : 140;
     }
-    if (media?.type === "scene") {
+    if (media?.type === "scene" && field.startsWith("media.")) {
       const template = record(media.input) ? media.input.template : undefined;
       if (field === "media.label") { const words = value.trim().split(/\s+/).length; if (words < 12 || words > 25) throw new Error(`${fieldPath} needs 12–25 words.`); }
       if (/\.heading$/.test(field)) max = 28;

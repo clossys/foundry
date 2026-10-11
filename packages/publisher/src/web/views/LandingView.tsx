@@ -151,7 +151,7 @@ const HERO_FILL = {
 const BAND_CLASS = "py-4xl tablet-lg:py-5xl";
 
 /**
- * A band's section element sits one band padding below the band's top edge,
+ * A legacy band's section element sits one band padding below its top edge,
  * so its fragment jump takes the same margin: the band's top edge lands at
  * the frame's `scroll-padding-top` (the foot of a sticky header) rather than
  * the section's heading. Matches `BAND_CLASS`'s top padding at every width.
@@ -231,7 +231,7 @@ function bandBlocks(afterSection: Readonly<Record<string, ReactNode>>): Sectione
         {after(id)}
       </ContentSection>
     ),
-    ContentSection: ({ section, actions, publishedFaq }) => <sectionedViewBlocks.ContentSection section={section} actions={actions} publishedFaq={publishedFaq} after={after(section.id)} className={BAND_ANCHOR_CLASS} />,
+    ContentSection: ({ section, actions, publishedFaq }) => <sectionedViewBlocks.ContentSection section={section} actions={actions} publishedFaq={publishedFaq} after={after(section.id)} className={publishedFaq === undefined ? undefined : BAND_ANCHOR_CLASS} style={publishedFaq === undefined ? { scrollMarginTop: 0 } : undefined} />,
   };
 }
 
@@ -283,11 +283,10 @@ function bandBlocks(afterSection: Readonly<Record<string, ReactNode>>): Sectione
  * of the tab order (Designer `scroll-cue`). An engine without scroll-driven
  * animations instead centres it on the hero's bottom edge, where it scrolls
  * away with the page. The page scrolls smoothly to the band only under
- * `prefers-reduced-motion: no-preference`. Every band's section takes a
- * scroll margin equal to the band's top padding, so a fragment jump puts the
- * band's top edge at the frame's `scroll-padding-top`: the frame sets that
- * to its sticky header's height, and the band then starts at the header's
- * foot.
+ * `prefers-reduced-motion: no-preference`. Legacy sections compensate for
+ * their outer band padding with the same scroll margin. Canonical frame
+ * targets begin at the band edge and use zero margin. Consumers can set
+ * `scroll-padding-top` on their scroll container to reserve a sticky header.
  *
  * What it guarantees: one `<h1>` (the hero section's); a backdrop that is
  * inert to assistive technology and to the pointer; a cue only when it has

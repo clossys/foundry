@@ -1294,7 +1294,7 @@ Designer blocks. Numbered, connected and disclosure Items, Matrix, panel badges,
 mobile limits and Meter previous values await their renderer capabilities. These are valid core contracts. Until those capabilities are
 integrated, rendering refuses them with a `RenderError` naming the dependency
 and path instead of dropping authored fields. The published top-level FAQ
-keeps its entry-specific implementation, including split FAQ layout.
+keeps its entry-specific implementation, including split FAQ layout. Scene text limits stay local to media; inverse Scene media gets an opaque base plate and base ink. Reusable record IDs are namespaced by section instance without changing authored copy or provenance. Canonical Landing fragments align with the unpadded band edge; published bands retain their padding offsets.
 
 The resolved boundary requires explicit canonical axes and closed plain data
 before reading discriminators. It checks the structural contract and text
