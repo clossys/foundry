@@ -11,6 +11,8 @@ import { renderWebDocument } from "../web/renderWebDocument.js";
 import { CaptureView } from "../web/views/CaptureView.js";
 import { CollectionView } from "../web/views/CollectionView.js";
 import { DocumentView } from "../web/views/DocumentView.js";
+import { LandingView } from "../web/views/LandingView.js";
+import { heroCompactCatalogDocument, contentCatalogCopyResolver } from "./fixture-content-catalog.js";
 import { SectionedView } from "../web/views/SectionedView.js";
 import { BrandGuideView } from "../web/views/BrandGuideView.js";
 import { SystemAuditView } from "../web/views/SystemAuditView.js";
@@ -111,6 +113,7 @@ export function renderPreviewGalleryEntries(): PreviewGalleryEntry[] {
   return [
     { view: "MarketingView", markup: marketing },
     { view: "SectionedView", markup: sectioned },
+    { view: "LandingView (hero-compact)", markup: renderToStaticMarkup(createElement(LandingView, { document: resolveSectionedViewDocument(heroCompactCatalogDocument, contentCatalogCopyResolver), header: "reserved", peek: false })) },
     { view: "AuthView", markup: auth },
     { view: "ErrorView", markup: error },
     { view: "CaptureView", markup: capture },

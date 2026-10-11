@@ -267,3 +267,8 @@ comes from the first section of the main document, which must be a hero.
 A valid nonempty document opening on another kind is refused with
 `missing-hero-copy`; malformed resolved documents retain `resolution-failed`.
 Omitting `copy` keeps the close's authored copy.
+
+**Compact hero.** Use `Hero size="compact"` when a form, status or utility
+content is the page's main job. Keep the heading short and place that content
+after it. Publisher authors set `compact: true` on the opening hero; use no
+hero media. The compact opening keeps the heading as `h1`.

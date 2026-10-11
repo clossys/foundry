@@ -1137,6 +1137,15 @@ to action that carries its own fill, such as a `primary` Designer `Button` or
 
 ### `LandingView`
 
+An opening hero with `compact: true` uses section-scale copy while retaining
+the page's `h1`. LandingView omits viewport fill and the scroll cue, ignores
+`peek`, and uses token padding for overlay or reserved headers. Hero media
+is refused only when compact is true; omitted or false keeps existing output.
+`checkSectionVariety` warns for a lone compact hero. Pass trailing documents
+together; use its explicit `{ hasAfterContent: true }` context when a known
+after-section or closing slot supplies page content. This warning does not
+refuse rendering. The existing gallery includes the `hero-compact` fixture.
+
 `LandingView`, exported from `@clossys/publisher/web` and
 `@clossys/publisher/web/server`, is a sectioned landing page: a hero block
 that fills the first screen, the document's other sections as full-bleed

@@ -135,6 +135,12 @@ const HERO_PADDING: Record<LandingViewHeader, string> = {
   reserved: "flex flex-col justify-center py-4xl",
 };
 
+/** Compact heroes clear the overlay header with existing spacing tokens. */
+const HERO_PADDING_COMPACT: Record<LandingViewHeader, string> = {
+  overlay: "flex flex-col pt-6xl pb-3xl tablet-lg:pb-4xl",
+  reserved: "flex flex-col py-3xl tablet-lg:py-4xl",
+};
+
 /** The first screen under an overlay header: the whole viewport, or short of it by the peek. */
 const HERO_FILL = {
   full: "100dvh",
@@ -360,8 +366,9 @@ export function LandingView({
     if (!ids.has(key)) throw new RenderError("resolution-failed", `LandingView refused afterSection.${key}: no rendered section has that id.`);
   }
 
+  const compact = heroSection.compact === true;
   const hasContent = bands.length > 0 || callToAction !== undefined;
-  const fills = header === "overlay";
+  const fills = !compact && header === "overlay";
   const peeks = fills && peek && hasContent;
   const firstBand = bands[0]?.section;
   const cue = !peeks
@@ -381,10 +388,11 @@ export function LandingView({
       {heroSection.actions?.length === 2 || close?.actions?.length === 2 ? <style data-landing-action-pair-style="">{LANDING_ACTION_PAIR_CSS}</style> : null}
       <SectionFrame
         data-landing-hero=""
+        {...(compact ? { "data-hero-size": "compact" } : {})}
         data-landing-ground={heroSection.ground}
         ground={heroSection.ground}
         measure={measure}
-        className={mergeUiClasses("relative isolate", HERO_PADDING[header])}
+        className={mergeUiClasses("relative isolate", (compact ? HERO_PADDING_COMPACT : HERO_PADDING)[header])}
         style={fills ? { minHeight: peeks ? HERO_FILL.peek : HERO_FILL.full } : undefined}
       >
         {hasBackdrop ? (

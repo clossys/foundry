@@ -73,6 +73,20 @@ const hero: SectionedViewHeroSection = {
   actions: [{ id: "walkthrough", label: copy("hero.action", "Book a walkthrough"), href: "#catalog-close" }],
 };
 
+/** A short, inverse opening for a page whose body is its main task. */
+export const heroCompactCatalogDocument: SectionedViewDocument = {
+  id: "catalog-hero-compact",
+  sections: [{
+    id: "hero-compact",
+    kind: "hero",
+    compact: true,
+    ground: "inverse",
+    eyebrow: copy("hero-compact.eyebrow", "Service request"),
+    heading: copy("hero-compact.heading", "Tell us what needs attention"),
+    description: copy("hero-compact.description", "Share the details so the team can review the next step."),
+  }],
+};
+
 // ---------------------------------------------------------------------------
 // Bands
 // ---------------------------------------------------------------------------

@@ -18,7 +18,7 @@ type GroundProps = { id: string; eyebrow?: string; heading: string; description?
 type StatusListItemProps = { id: string; label: string; detail?: string; state: SectionedViewStatus; disposition?: never } | { id: string; label: string; detail?: string; disposition: SectionedViewStatusDisposition; state?: never };
 
 export interface SectionedViewBlockSet {
-  Hero(props: { id: string; eyebrow?: string; heading: string; description?: string; actions?: ReactNode; media?: ReactNode; composition?: "editorial" | "split"; headingLevel: 1 | 2; ground: SectionedViewGround }): ReactNode;
+  Hero(props: { id: string; eyebrow?: string; heading: string; description?: string; actions?: ReactNode; media?: ReactNode; composition?: "editorial" | "split"; size?: "default" | "compact"; headingLevel: 1 | 2; ground: SectionedViewGround }): ReactNode;
   FeatureGrid(props: GroundProps & { items: readonly { id: string; heading: string; description?: string }[] }): ReactNode;
   Faq(props: GroundProps & { items: readonly { id: string; question: string; answer: string }[] }): ReactNode;
   OrderedStepSequence(props: GroundProps & { items: readonly { id: string; ordinal: string; label?: string; heading: string; description?: string }[] }): ReactNode;
@@ -547,7 +547,7 @@ export function assertRenderableSectionedViewDocument(document: unknown): assert
   for (let index = 0; index < candidate.sections.length; index += 1) {
     const path = `sections.${index}`;
     const section = candidate.sections[index];
-    if (!plain(section) || !closed(section, ["id", "kind", "ground", "eyebrow", "heading", "description", "actions", "media", "items", "labels", "groups", "layout", "mediaSide", "align", "block", "footnote"])) throw new Error(`${path} must be a closed resolved section object.`);
+    if (!plain(section) || !closed(section, ["id", "kind", "ground", "eyebrow", "heading", "description", "actions", "media", "items", "labels", "groups", "layout", "mediaSide", "align", "block", "footnote", "compact"])) throw new Error(`${path} must be a closed resolved section object.`);
     const record = section as Record<string, unknown>;
     if (!nonBlank(record.id) || !FRAGMENT_ID.test(record.id)) throw new Error(`${path}.id must be a unique fragment-safe id.`);
     if (sectionIds.has(record.id)) throw new Error(`${path}.id duplicates an earlier section.`);
@@ -564,8 +564,10 @@ export function assertRenderableSectionedViewDocument(document: unknown): assert
       copyFields(record, path, ["heading"], ["eyebrow", "description"]);
     }
     if (record.kind === "hero") {
-      if (!closed(record, ["id", "kind", "ground", "eyebrow", "heading", "description", "actions", "media"])) throw new Error(`${path} has keys not allowed for a hero section.`);
+      if (!closed(record, ["id", "kind", "ground", "eyebrow", "heading", "description", "actions", "media", "compact"])) throw new Error(`${path} has keys not allowed for a hero section.`);
       assertActions(record.actions, `${path}.actions`);
+      if (record.compact !== undefined && typeof record.compact !== "boolean") throw new Error(`${path}.compact must be a boolean.`);
+      if (record.compact === true && record.media !== undefined) throw new Error(`${path} cannot combine a compact hero with media.`);
       assertHeroMedia(record.media, `${path}.media`);
       continue;
     }
@@ -815,6 +817,7 @@ function renderSection(section: ResolvedSectionedViewSection, index: number, blo
           description={section.description}
           actions={renderActions(section.actions, section.ground, options.heroActions ?? "link", options.heroActionsCentered)}
           media={heroMedia}
+          {...(section.compact === true ? { size: "compact" as const } : {})}
           {...(heroMedia ? { composition: "split" as const } : {})}
           headingLevel={index === 0 ? 1 : 2}
           ground={section.ground}

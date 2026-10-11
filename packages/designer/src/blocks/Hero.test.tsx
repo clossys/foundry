@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
+import { renderToStaticMarkup } from "react-dom/server";
 import { Hero } from "./Hero.js";
 
 describe("Hero", () => {
@@ -141,5 +142,23 @@ describe("Hero align", () => {
     expect(block).toHaveClass("mx-auto");
     expect(screen.getByRole("heading")).toHaveClass("text-balance");
     expect(screen.getByText("Description")).toHaveClass("text-pretty");
+  });
+});
+
+describe("Hero compact size", () => {
+  it("uses the section heading ramp while retaining h1 and existing h2 compatibility", () => {
+    const { container } = render(<Hero heading="Compact heading" size="compact" />);
+    const heading = screen.getByRole("heading", { name: "Compact heading" });
+    expect(heading.tagName).toBe("H1");
+    expect(heading).toHaveClass("text-h1", "tablet:text-h0", "tablet-lg:text-display-m", "leading-heading");
+    expect(heading).not.toHaveClass("leading-display");
+    expect(container.querySelector("section")).not.toHaveAttribute("size");
+  });
+  it("keeps omitted and default size byte-identical", () => {
+    expect(renderToStaticMarkup(<Hero heading="Sample heading" size="default" />)).toBe(renderToStaticMarkup(<Hero heading="Sample heading" />));
+  });
+  it("keeps an explicitly requested h2 with compact size", () => {
+    render(<Hero heading="Later heading" size="compact" headingLevel={2} />);
+    expect(screen.getByRole("heading").tagName).toBe("H2");
   });
 });

@@ -154,6 +154,8 @@ export interface SectionedViewHeroSection {
   eyebrow?: CopyRef;
   heading: CopyRef;
   description?: CopyRef;
+  /** Short hero: section-scale heading, with no first-screen fill, peek or scroll cue. */
+  compact?: boolean;
   /** Optional calls to action. The Designer Hero block beneath this section has always had the slot; the document can now express it. */
   actions?: SectionedViewAction[];
   /** Optional product-surface or original-art media beside the hero copy — same slot `MarketingView`'s `heroMedia` fills at render time. */
@@ -958,7 +960,9 @@ export function validateSectionedViewDocument(value: unknown): ComposeFinding[] 
     switch (section.kind) {
       case "hero":
         heroCount += 1;
-        if (!hasOnlyOwnKeys(section, ["id", "kind", "ground", "eyebrow", "heading", "description", "actions", "media"]) || !hasOwn(section, "heading")) findings.push(finding("sectioned-view-section-keys", path, `${path} has keys not allowed for hero.`));
+        if (!hasOnlyOwnKeys(section, ["id", "kind", "ground", "eyebrow", "heading", "description", "actions", "media", "compact"]) || !hasOwn(section, "heading")) findings.push(finding("sectioned-view-section-keys", path, `${path} has keys not allowed for hero.`));
+        if (section.compact !== undefined && typeof section.compact !== "boolean") findings.push(finding("sectioned-view-hero-shape", `${path}.compact`, `${path}.compact must be a boolean.`));
+        if (section.compact === true && section.media !== undefined) findings.push(finding("sectioned-view-hero-compact-media", `${path}.media`, `${path} cannot combine a compact hero with media.`));
         validateCopy(section.heading, `${path}.heading`, findings);
         if (section.eyebrow !== undefined) validateCopy(section.eyebrow, `${path}.eyebrow`, findings);
         if (section.description !== undefined) validateCopy(section.description, `${path}.description`, findings);
@@ -1803,9 +1807,10 @@ function resolveStatusItem(item: SectionedViewStatusItem, path: string, text: (r
 function resolveSection(section: SectionedViewSection & { ground: SectionedViewGround }, path: string, text: (ref: CopyRef, path: string) => string, optional: (ref: CopyRef | undefined, path: string) => string | undefined): ResolvedSectionedViewSection {
   switch (section.kind) {
     case "hero": {
-      const { media: sourceMedia, ...heroBase } = section;
+      const { media: sourceMedia, compact, ...heroBase } = section;
       return {
         ...heroBase,
+        ...(compact === undefined ? {} : { compact }),
         eyebrow: optional(section.eyebrow, `${path}.eyebrow`),
         heading: text(section.heading, `${path}.heading`),
         description: optional(section.description, `${path}.description`),
@@ -2235,10 +2240,14 @@ function varietyWarning(rule: string, path: string, message: string): ComposeFin
  *    one band are two competing ways on. (A stacked band with a block takes
  *    no actions at all, a validation error; this catches the split.)
  *
+ * A lone compact hero warns unless the caller explicitly supplies
+ * `hasAfterContent` for a known page slot (after-section content or a close).
+ * Supply trailing documents in `input` so their sections count as page content.
+ *
  * Whether a visual repeats its block's words cannot be judged before copy
  * resolves, so that rule stays with the writer.
  */
-export function checkSectionVariety(input: SectionedViewDocument | readonly SectionedViewDocument[]): ComposeFinding[] {
+export function checkSectionVariety(input: SectionedViewDocument | readonly SectionedViewDocument[], context: { hasAfterContent?: boolean } = {}): ComposeFinding[] {
   const documents = Array.isArray(input) ? (input as readonly SectionedViewDocument[]) : [input as SectionedViewDocument];
   const many = Array.isArray(input);
   const bands: BandShape[] = [];
@@ -2252,6 +2261,10 @@ export function checkSectionVariety(input: SectionedViewDocument | readonly Sect
   });
 
   const findings: ComposeFinding[] = [];
+  const onlySection = documents.flatMap((document) => Array.isArray(document?.sections) ? document.sections : []);
+  if (onlySection.length === 1 && onlySection[0]?.kind === "hero" && onlySection[0].compact === true && context.hasAfterContent !== true) {
+    findings.push(varietyWarning("sectioned-view-hero-compact-content", bands[0]?.path ?? "sections.0", "A compact hero needs content after it; supply page content or use the default hero."));
+  }
   bands.forEach((band, position) => {
     const previous = bands[position - 1];
     if (previous === undefined) return;
