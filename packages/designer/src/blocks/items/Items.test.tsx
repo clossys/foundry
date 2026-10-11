@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Items } from "./Items.js";
 import type { ItemData, ItemsProps } from "./types.js";
@@ -13,7 +13,7 @@ describe("Items arrangement policy", () => {
     expect(container.querySelector("[data-items]")).toHaveAttribute("data-columns", String(columns));
     expect(container.querySelectorAll("[data-item]")).toHaveLength(count);
   });
-  it.each([[1, 2], [2, 3], [2, 5], [3, 2], [3, 4], [3, 5], [3, 7]])("refuses columns %s count %s", (columns, count) => {
+  it.each([[1, 2], [2, 3], [2, 5], [3, 2], [3, 4], [3, 5], [3, 7], [4, 4]])("refuses columns %s count %s", (columns, count) => {
     expect(() => draw({ columns: columns as 1 | 2 | 3, items: data(count) })).toThrow(RangeError);
   });
   it("defaults columns to three and item size to standard", () => {
@@ -42,7 +42,7 @@ describe("Items arrangement policy", () => {
   it.each([["two-thirds", "two-thirds", "third", "third"], ["constructor", "full"], ["toString", "full"], ["__proto__", "full"]])("refuses overflow or inherited span %s", (...spans) => expect(() => draw({ arrangement: "bento", items: data(spans.length).map((item, i) => ({ ...item, span: spans[i] as ItemData['span'] })) })).toThrow(RangeError));
   it.each([["third", "third", "third"], ["third", "two-thirds"]])("fills lone tablet thirds without changing desktop spans", (...spans) => {
     const { container } = draw({ arrangement: "bento", items: data(spans.length).map((item, i) => ({ ...item, span: spans[i] as ItemData["span"] })) });
-    const nodes = container.querySelectorAll("[data-item]");
+    const nodes = container.querySelectorAll("li");
     const lone = spans.length === 3 ? nodes[2] : nodes[0];
     expect(lone).toHaveClass("tablet:col-span-12", "tablet-lg:col-span-4");
     expect([...nodes].map(node => node.textContent)).toEqual(data(spans.length).map(item => item.heading));
@@ -60,9 +60,9 @@ describe("Items arrangement policy", () => {
     expect(() => draw({ emphasis: "statement", treatment: "plate" })).toThrow(TypeError);
     expect(() => draw({ emphasis: "statement", columns: 2, items: data(4) })).toThrow(TypeError);
   });
-  it("renders groups in stable authored membership order with named sections", () => {
+  it("renders groups in stable authored membership order with named groups", () => {
     const { container } = draw({ arrangement: "rows", items: data(4), groups: [{ id: "b", label: "Second", items: ["item-2", "item-0"] }, { id: "a", label: "First", items: ["item-3", "item-1"] }] });
-    expect(screen.getAllByRole("region").map((node) => node.textContent)).toEqual(["SecondTitle 2Title 0", "FirstTitle 3Title 1"]);
+    expect(screen.getAllByRole("group").map((node) => node.textContent)).toEqual(["SecondTitle 2Title 0", "FirstTitle 3Title 1"]);
     expect(container.querySelector("[data-items]")).not.toHaveClass("tablet-lg:grid-cols-4");
   });
   it.each([
@@ -108,4 +108,33 @@ describe("Items arrangement policy", () => {
     expect(() => draw({ arrangement: "rows", items: data(4), groups: [{ id: "a", label: <span />, items: ["item-0", "item-1"] }, { id: "b", label: "B", items: ["item-2", "item-3"] }] })).toThrow(TypeError);
   });
   it("treats explicit undefined optional axes as omission", () => draw({ columns: undefined, treatment: undefined, emphasis: undefined, groups: undefined, size: undefined }));
+});
+
+
+describe("canonical collection semantics", () => {
+  it.each(["columns", "rows", "bento", "stacked"] as const)("renders %s as a reset list with one list item per entry", (arrangement) => {
+    const count = arrangement === "columns" ? 3 : 2;
+    draw({ arrangement, items: data(count) });
+    const list = screen.getByRole("list");
+    expect(list.tagName).toBe("UL");
+    expect(list).toHaveAttribute("role", "list");
+    expect(list).toHaveClass("m-0", "list-none", "p-0");
+    const entries = within(list).getAllByRole("listitem");
+    expect(entries).toHaveLength(count);
+    for (const entry of entries) {
+      expect(entry.tagName).toBe("LI");
+      expect(entry).toHaveClass("h-full", "min-w-0");
+      expect(entry.parentElement).toBe(list);
+      expect(entry.querySelector("[data-item]")).not.toBeNull();
+    }
+  });
+  it("names each grouped list through a group rather than adding region landmarks", () => {
+    draw({ arrangement: "rows", items: data(4), groups: [{ id: "a", label: "First", items: ["item-1", "item-0"] }, { id: "b", label: "Second", items: ["item-3", "item-2"] }] });
+    expect(screen.queryAllByRole("region")).toHaveLength(0);
+    const groups = screen.getAllByRole("group");
+    expect(groups.map(node => node.tagName)).toEqual(["DIV", "DIV"]);
+    expect(screen.getByRole("group", { name: "First" })).toBe(groups[0]);
+    expect(within(groups[0]!).getAllByRole("listitem").map(node => node.textContent)).toEqual(["Title 1", "Title 0"]);
+    expect(screen.getAllByRole("list")).toHaveLength(2);
+  });
 });

@@ -28,11 +28,11 @@ export interface FeatureGridItem {
   href?: string;
 }
 
-/** How many columns the grid reaches at its widest. */
-export type FeatureGridColumns = 2 | 3;
+/** Canonical grids use two or three columns; four retains existing catalog compatibility. */
+export type FeatureGridColumns = 2 | 3 | 4;
 
 /**
- * How each item is set apart: `plain` (type on the ground), `rule` (a hairline
+ * How each item is set apart: `plain` (type on the ground), `rule` (a token-width
  * `line-strong` rule above each item), or `plate` (each item on a `Card`
  * plate, the other ground).
  */
@@ -76,5 +76,5 @@ export interface FeatureGridProps extends Omit<HTMLAttributes<HTMLDivElement>, "
   style?: CSSProperties;
 }
 
-/** Published default markup stays unchanged; catalog axes use canonical Items. */
-export function FeatureGrid({ headingLevel = 2, ground = "base", ...props }: FeatureGridProps) { return <CompatFeatureGrid {...props} headingLevel={headingLevel} ground={ground} />; }
+/** Published default markup stays unchanged; accepted catalog inputs use canonical Items, with a temporary legacy fallback. */
+export function FeatureGrid({ ground = "base", ...props }: FeatureGridProps) { return <CompatFeatureGrid {...props} ground={ground} />; }

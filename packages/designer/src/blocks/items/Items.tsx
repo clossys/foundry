@@ -24,10 +24,10 @@ function renderItems(props: ItemsProps, columns: number | undefined) {
     const span = spans[index];
     const lone = arrangement === "columns" && columns === 3 && props.items.length % 2 === 1 && index === props.items.length - 1;
     const spanClassName = span !== undefined ? (tabletLone[index] ? "tablet:col-span-12 tablet-lg:col-span-4" : BENTO_SPAN_CLASSES[span]) : lone ? "tablet:col-span-2 tablet-lg:col-span-1" : undefined;
-    return <ItemRenderer key={item.id} item={item} treatment={treatment} size={arrangement === "bento" ? "display" : size} ground={ground} statement={emphasis === "statement"} headingLevel={headingLevel} span={span} className={spanClassName} />;
+    return <li key={item.id} className={cx("h-full min-w-0", spanClassName)}><ItemRenderer item={item} treatment={treatment} size={arrangement === "bento" ? "display" : size} ground={ground} statement={emphasis === "statement"} headingLevel={headingLevel} span={span} /></li>;
   });
 }
-/** Group labels are caption paragraphs naming sections; item headings keep the explicit h3/h4 outline. */
+/** Group labels are caption paragraphs naming groups; item headings keep the explicit h3/h4 outline. */
 function GroupedItems({ props, columns }: { props: ItemsProps; columns: number }) {
   const prefix = useId();
   const groupGround = props.ground === undefined ? "base" : props.ground;
@@ -37,10 +37,10 @@ function GroupedItems({ props, columns }: { props: ItemsProps; columns: number }
     {props.groups!.map((group, index) => {
       const id = `${prefix}-items-group-${index}`;
       const groupProps = { ...props, groups: undefined, items: group.items.map((itemId) => items.get(itemId)!) };
-      return <section key={group.id} aria-labelledby={id} className="flex min-w-0 flex-col gap-md">
+      return <div key={group.id} role="group" aria-labelledby={id} className="flex min-w-0 flex-col gap-md">
         <p id={id} className={cx("m-0 text-caption font-mono uppercase tracking-label", groupColors.secondary)}>{group.label}</p>
-        <div className="flex flex-col gap-lg">{renderItems(groupProps, 1)}</div>
-      </section>;
+        <ul role="list" className="m-0 flex list-none flex-col gap-lg p-0">{renderItems(groupProps, 1)}</ul>
+      </div>;
     })}
   </div>;
 }
@@ -51,5 +51,5 @@ export function Items(props: ItemsProps) {
   const { arrangement, treatment = "plain" } = props;
   const layout = arrangement === "columns" ? COLUMN_CLASSES[columns as 2 | 3] : arrangement === "rows" ? ROW_CLASSES[columns as 1 | 2] : arrangement === "bento" ? "grid grid-cols-1 gap-lg tablet:grid-cols-12" : "flex flex-col gap-2xl";
   const plateGap = arrangement === "columns" && treatment === "plate" ? "gap-y-2xl" : undefined;
-  return <div data-items="" data-arrangement={arrangement} data-columns={columns} data-treatment={treatment} className={cx(layout, plateGap, props.className)}>{renderItems(props, columns)}</div>;
+  return <ul role="list" data-items="" data-arrangement={arrangement} data-columns={columns} data-treatment={treatment} className={cx("m-0 list-none p-0", layout, plateGap, props.className)}>{renderItems(props, columns)}</ul>;
 }

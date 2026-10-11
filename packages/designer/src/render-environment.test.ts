@@ -142,6 +142,10 @@ describe("compiled grouped Items SSR", () => {
     expect(html).toContain("Beta"); expect(html).toContain("Actor");
     expect(html).toContain("inline-flex rounded-pill bg-surface-base");
     expect(html).toContain("bg-status-info-tint");
+    expect([...html.matchAll(/<ul[^>]*role="list"/g)]).toHaveLength(4);
+    expect([...html.matchAll(/<li\b/g)]).toHaveLength(8);
+    expect([...html.matchAll(/<div[^>]*role="group"/g)]).toHaveLength(4);
+    expect(html).not.toContain("<section");
   });
 });
 

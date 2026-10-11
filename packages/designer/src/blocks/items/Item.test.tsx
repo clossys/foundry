@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { Item } from "./Item.js";
+import type { ItemProps } from "./types.js";
 
 const base = { id: "one", heading: "Title", treatment: "plain" as const, size: "standard" as const, ground: "base" as const };
 
@@ -99,5 +100,17 @@ describe("Item", () => {
   });
   it.each(["", "   ", null, false, <span />, <><span> </span></>])("refuses blank headings", (heading) => {
     expect(() => render(<Item {...base} heading={heading} />)).toThrow(TypeError);
+  });
+});
+
+
+describe("standalone Item heading outline", () => {
+  it("keeps the default paragraph", () => { render(<Item {...base} />); expect(screen.getByText("Title").tagName).toBe("P"); });
+  it.each([3, 4] as const)("accepts explicit h%s without changing its visual scale", (headingLevel) => {
+    render(<Item {...base} {...{ headingLevel }} />);
+    expect(screen.getByRole("heading", { level: headingLevel })).toHaveClass("text-body-l");
+  });
+  it.each([null, 2, 5, "3"])("refuses unsupported heading level %s", (headingLevel) => {
+    expect(() => render(<Item {...({ ...base, headingLevel } as unknown as ItemProps)} />)).toThrow(RangeError);
   });
 });

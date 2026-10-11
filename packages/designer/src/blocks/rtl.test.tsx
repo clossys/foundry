@@ -9,6 +9,7 @@ import { Comparison } from "./Comparison.js";
 import { TopicList } from "./TopicList.js";
 import { FeatureGrid } from "./FeatureGrid.js";
 import { Specimen } from "./specimen/Specimen.js";
+import { UI_BORDER_HAIRLINE } from "../atoms/internal/ui-vars.js";
 
 const PHYSICAL = /(^|\s)([a-z-]+:)*(ml|mr|pl|pr|left|right|border-l|border-r|text-left|text-right|rounded-[tb]?[lr])(-|\s|$)/;
 
@@ -95,13 +96,15 @@ describe("blocks and atoms RTL logical-direction utilities (#951)", () => {
     const { container } = render(
       <div dir="rtl">
         <TopicList items={[{ id: "a", heading: "A" }, { id: "b", heading: "B" }]} />
-        <FeatureGrid columns={2} treatment="rule" items={[{ id: "a", heading: "A" }, { id: "b", heading: "B" }]} />
+        <FeatureGrid headingLevel={2} columns={2} treatment="rule" items={[{ id: "a", heading: "A" }, { id: "b", heading: "B" }]} />
       </div>,
     );
-    const rules = container.querySelectorAll<HTMLElement>("li, [data-item]");
+    const rules = container.querySelectorAll<HTMLElement>("[data-topic-list] > li, [data-items] > li > [data-item]");
     expect(rules).toHaveLength(4);
     for (const el of rules) {
       expect(el).toHaveClass("border-t");
+      expect(el.style.borderBlockStartWidth).toBe(UI_BORDER_HAIRLINE);
+      expect(el.style.borderInlineStartWidth).toBe("");
       expect(el.className).not.toMatch(PHYSICAL);
     }
   });

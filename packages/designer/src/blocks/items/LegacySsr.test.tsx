@@ -8,6 +8,8 @@ import { CardGrid } from "../CardGrid.js";
 import { TopicList } from "../TopicList.js";
 import { ContentSection } from "../ContentSection.js";
 import fixtures from "./legacy-ssr.test.json";
+import catalogFixtures from "./legacy-catalog-ssr.test.json";
+import headlessFixtures from "./legacy-headless-catalog-ssr.test.json";
 
 const blocks = { FeatureGrid, NavGrid, LinkGrid, CardGrid, TopicList, ContentSection };
 function decode(value: unknown): unknown {
@@ -19,7 +21,7 @@ function decode(value: unknown): unknown {
 }
 
 describe("literal SSR captured before consolidation", () => {
-  it.each(fixtures)("preserves $name", ({ block, props, html, error }) => {
+  it.each([...fixtures, ...catalogFixtures, ...headlessFixtures])("preserves $name", ({ block, props, html, error }) => {
     const Component = blocks[block as keyof typeof blocks];
     const render = () => renderToStaticMarkup(createElement(Component as unknown as (props: object) => ReactNode, decode(props) as object));
     if (error !== undefined) expect(render).toThrow(error);
