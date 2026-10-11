@@ -467,6 +467,8 @@ describe("Specimen history, row caps and badges", () => {
     const badge = screen.getByText("Reviewed record");
     expect(badge).toBeVisible();
     expect(badge).toHaveClass("rounded-pill", fill, ink);
+    if (tone !== undefined && tone !== "neutral") expect(badge.parentElement).toHaveClass("inline-flex", "rounded-pill", "bg-surface-base");
+    else expect(badge.parentElement).not.toHaveClass("bg-surface-base");
     expect(badge.closest("[data-specimen-panel-header]")).not.toBeNull();
     expect(screen.getByText("Order 1042")).toBeInTheDocument();
     expect(screen.getByText("Open").closest("[data-tone]")).toHaveAttribute("data-tone", "info");

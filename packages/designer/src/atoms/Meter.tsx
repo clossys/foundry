@@ -193,7 +193,7 @@ export function Meter({
           style={{ ...FILL_TEXTURES[tone], insetInlineStart: "0%", inlineSize: `${valuePct}%` }}
         />
         {tickStyle ? <span data-part="limit" className="absolute inset-y-0 bg-ink-primary" style={tickStyle} /> : null}
-        {previousStyle ? <span data-part="previous" className="absolute inset-y-0 border-s border-dashed border-ink-secondary" style={previousStyle} /> : null}
+        {previousStyle ? <span data-part="previous" className="absolute inset-y-0 border-s border-dashed border-ink-secondary bg-surface-base" style={previousStyle} /> : null}
       </div>
     </div>
   );

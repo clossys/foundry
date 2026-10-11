@@ -128,6 +128,9 @@ export function SpecimenPanel({ title, meta, status, badge, parts, footer, marke
   const headerMarker = markerAt("header");
   const footerMarker = markerAt("footer");
   const hasHeader = present(title) || present(meta) || status !== undefined || badge !== undefined;
+  const badgeElement = badge !== undefined ? <Badge variant={badge.tone}>{badge.label}</Badge> : null;
+  // Status tint/text pairs are qualified over base, as in Item.
+  const statusBadge = badge?.tone !== undefined && badge.tone !== "neutral";
   const assignee = footer?.assignee;
   const hasFooter = assignee !== undefined || present(footer?.note);
 
@@ -141,7 +144,7 @@ export function SpecimenPanel({ title, meta, status, badge, parts, footer, marke
               {present(meta) ? <p className={META_CLASSES}>{meta}</p> : null}
             </div>
             {badge !== undefined || status !== undefined ? <div className="flex flex-wrap items-center gap-sm">
-              {badge !== undefined ? <Badge variant={badge.tone}>{badge.label}</Badge> : null}
+              {statusBadge ? <span className="inline-flex rounded-pill bg-surface-base">{badgeElement}</span> : badgeElement}
               {status ? <StatusMark tone={status.tone}>{status.label}</StatusMark> : null}
             </div> : null}
           </div>

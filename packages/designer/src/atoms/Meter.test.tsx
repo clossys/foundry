@@ -131,6 +131,8 @@ describe("Meter previous measurement", () => {
     const prior = container.querySelector<HTMLElement>("[data-part='previous']");
     expect(prior).not.toBeNull();
     expect(prior).toHaveClass("border-s", "border-dashed", "border-ink-secondary");
+    // A backing surface makes dash gaps visible even inside the identical neutral fill.
+    expect(prior).toHaveClass("bg-surface-base");
     expect(prior?.style.borderInlineStartWidth).toBe("var(--ui-border-hairline, 1px)");
     expect(prior?.style.inlineSize).toBe("var(--ui-border-hairline, 1px)");
     expect(prior?.closest("[aria-hidden='true']")).not.toBeNull();
