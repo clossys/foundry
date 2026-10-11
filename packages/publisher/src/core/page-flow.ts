@@ -17,7 +17,13 @@ export function sectionWeight(section: SectionedViewSection): SectionWeight {
       case "feature-grid": return { weight: "C", shape: "list" };
       case "ordered-step-sequence": return { weight: "B", shape: "sequence" };
       case "status-list": return { weight: "B", shape: "table" };
-      default: return { weight: "B", shape: "proof" };
+      case "stat-grid":
+      case "stat":
+      case "testimonial": return { weight: "B", shape: "proof" };
+      default: {
+        const _: never = section;
+        return _;
+      }
     }
   }
   const layout = section.layout ?? "stacked";
@@ -36,7 +42,12 @@ export function sectionWeight(section: SectionedViewSection): SectionWeight {
     case "feature-grid": return { weight: "B", shape: block.treatment === "plate" ? "grid" : "list" };
     case "comparison": return { weight: "B", shape: "compare" };
     case "ordered-step-sequence": return { weight: "B", shape: "sequence" };
-    default: return { weight: "B", shape: "list" };
+    case "topic-list":
+    case undefined: return { weight: "B", shape: "list" };
+    default: {
+      const _: never = block;
+      return _;
+    }
   }
 }
 
@@ -58,7 +69,7 @@ export function checkPageFlow(document: SectionedViewDocument, options: CheckPag
   const findings: SectionedViewFlowWarning[] = [];
   const warn = (code: string, path: string, message: string) => findings.push({ rule: `sectioned-view-flow-${code}`, severity: "warning", path, message: `${path} ${message}` });
   const n = body.length;
-  if (n > 0 && !body.slice(0, 2).some((band) => band.weight === "A")) warn("opening-set-piece", body[0]!.path, "opens on low-impact bands; move a set piece into the first two body bands.");
+  if (n >= 3 && !body.slice(0, 2).some((band) => band.weight === "A")) warn("opening-set-piece", body[0]!.path, "opens on low-impact bands; move a set piece into the first two body bands.");
   const openingA = body.slice(0, 3).filter((band) => band.weight === "A");
   openingA.slice(1).forEach((band) => warn("opening-crowded", band.path, "adds a second early set piece; move it below the first three body bands."));
   if (body[0]?.weight === "C" && !(body[0].shape === "frame" && body[1]?.weight === "A")) warn("opening-pause", body[0].path, "stalls the opening; use a frame followed by a set piece or move the breather down.");
@@ -100,17 +111,17 @@ export function checkPageFlow(document: SectionedViewDocument, options: CheckPag
   });
   if (options.callToAction !== undefined) primaryTargets.push({ href: options.callToAction.href, path: "callToAction.href" });
   primaryTargets.slice(1).forEach((target) => {
-    if (target.href !== primaryTargets[0]?.href) warn("primary-target", target.path, "points to a different primary destination; share one main-action target with the hero and close.");
+    if (destination(target.href) !== destination(primaryTargets[0]!.href)) warn("primary-target", target.path, "points to a different primary destination; share one main-action target with the hero and close.");
   });
   body.forEach((band) => {
     if (band.section.kind !== "content-section") return;
     const actions = band.section.actions ?? [];
     const maxActions = band.weight === "A" ? 2 : 1;
     const ceiling = band.weight === "A" ? "primary or secondary, then quiet" : band.shape === "frame" || band.weight === "B" ? "tertiary or quiet" : "quiet";
-    if (actions.length > maxActions) warn("action-fit", `${band.path}.actions`, `has ${actions.length} actions; use at most ${maxActions} at tier ${ceiling}.`);
+    if (actions.length > maxActions) warn("action-tier", `${band.path}.actions`, `has ${actions.length} actions; use at most ${maxActions} at tier ${ceiling}.`);
     actions.forEach((action, index) => {
       // The current renderer defaults omitted emphasis to secondary.
-      if (band.weight !== "A" || index > 0) warn("action-fit", `${band.path}.actions.${index}`, `exceeds this band's ceiling; use ${ceiling}, with at most ${maxActions} section actions.`);
+      if (band.weight !== "A" || index > 0) warn("action-tier", `${band.path}.actions.${index}`, `exceeds this band's ceiling; use ${ceiling}, with at most ${maxActions} section actions.`);
     });
     // Linked cards are quiet (T4), allowed at every weight; their count is
     // independent of section actions and is governed by linked-item validation.

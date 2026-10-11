@@ -5005,7 +5005,7 @@ these `sectioned-view-flow-` rules:
 
 | Suffix | Finding |
 | --- | --- |
-| `opening-set-piece` | No set piece in the first two body bands |
+| `opening-set-piece` | No set piece in the first two body bands of a page with at least three body bands |
 | `opening-crowded` | More than one set piece in the first three body bands |
 | `opening-pause` | An early breather outside a frame followed by a set piece |
 | `set-piece-run` | Two adjacent set pieces |
@@ -5018,12 +5018,13 @@ these `sectioned-view-flow-` rules:
 | `inverse-weight` | Inverse outside a middle statement set piece |
 | `primary-placement` | Primary action outside an A or in the last two body bands |
 | `primary-target` | Hero actions, body primary and supplied close targets differ |
-| `action-fit` | Action emphasis or count exceeds the body weight ceiling |
+| `action-tier` | Action emphasis or count exceeds the body weight ceiling |
 | `link-groups` | More than two linked body blocks |
 | `link-repeat` | Repeated destination across body item, action or footnote links |
 
-Body link destinations ignore trailing slashes and nonleading fragments, as
-linked-item validation does. Hero and close links do not count as body links.
+Primary targets and body link destinations ignore trailing slashes and
+nonleading fragments, as linked-item validation does. Leading fragments remain
+distinct destinations. Hero and close links do not count as body links.
 Omitted body-action emphasis currently resolves to secondary, matching the
 renderer. A supporting band or breather therefore warns on an omitted button
 emphasis until the rendering emphasis ladder changes. Linked cards are quiet

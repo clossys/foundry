@@ -1,4 +1,3 @@
-import { createHash } from "node:crypto";
 import { contentCatalogDocument } from "../preview/fixture-content-catalog.js";
 import { describe, expect, it } from "vitest";
 import type { SectionedViewDocument, SectionedViewSection } from "./sectioned-view.js";
@@ -91,7 +90,46 @@ describe("page flow rules", () => {
 });
 
 it("keeps existing catalog variety output byte-identical", () => {
-  expect(createHash("sha256").update(JSON.stringify(checkSectionVariety(contentCatalogDocument))).digest("hex")).toBe("d79f6fff1f380e820d196344aa4627353a8601d184e9d95220a931b0f5d631b9");
+  expect(checkSectionVariety(contentCatalogDocument)).toMatchInlineSnapshot(`
+[
+  {
+    "message": "sections.13 repeats the layout, block and visual of the band before it (stacked, topic-list, none); vary one of them.",
+    "path": "sections.13",
+    "rule": "sectioned-view-variety-repeat",
+    "severity": "warning",
+  },
+  {
+    "message": "sections.18 is a second band with four or more cards; keep at most one.",
+    "path": "sections.18",
+    "rule": "sectioned-view-variety-card-bands",
+    "severity": "warning",
+  },
+  {
+    "message": "sections.19 is a second comparison; keep at most one.",
+    "path": "sections.19",
+    "rule": "sectioned-view-variety-comparison-count",
+    "severity": "warning",
+  },
+  {
+    "message": "sections.8 uses the feature-grid block with the same treatment as sections.3; give it a different treatment.",
+    "path": "sections.8",
+    "rule": "sectioned-view-variety-treatment",
+    "severity": "warning",
+  },
+  {
+    "message": "sections.13 uses the topic-list block with the same treatment as sections.12; give it a different treatment.",
+    "path": "sections.13",
+    "rule": "sectioned-view-variety-treatment",
+    "severity": "warning",
+  },
+  {
+    "message": "sections.18 uses the card-grid block with the same treatment as sections.15; give it a different treatment.",
+    "path": "sections.18",
+    "rule": "sectioned-view-variety-treatment",
+    "severity": "warning",
+  },
+]
+`);
 });
 
 it("pins set-piece minimum transitions and short-page bounds", () => {
@@ -100,6 +138,28 @@ it("pins set-piece minimum transitions and short-page bounds", () => {
   expect(rules(doc(A(), B(), C(), B(), B()), "set-piece-count")).toEqual([]);
   expect(rules(doc(A(), B(), C(), B(), B(), C()), "set-piece-count")).toHaveLength(1);
   expect(rules(doc(A(), B(), C(), A(), B(), C()), "set-piece-count")).toEqual([]);
+});
+it("exempts fewer than three body bands from the opening set-piece requirement", () => {
+  for (const bands of [[], [B()], [B(), B()]]) expect(rules(doc(...bands), "opening-set-piece")).toEqual([]);
+  expect(rules(doc(B(), B(), A()), "opening-set-piece")).toHaveLength(1);
+  expect(rules(doc(B(), A(), B()), "opening-set-piece")).toEqual([]);
+  expect(rules(doc(C()), "opening-pause")).toHaveLength(1);
+});
+it("rejects three breathers across six bands while accepting the maximum of two", () => {
+  expect(rules(doc(A(), C(), B(), C(), A(), C()), "pause-count")).toHaveLength(1);
+  expect(rules(doc(A(), C(), B(), C(), A(), B()), "pause-count")).toEqual([]);
+});
+it.each([
+  ["/start/", "/start", 0],
+  ["/start#intro", "/start#details", 0],
+  ["#details/", "#details", 0],
+  ["#details", "#other", 1],
+  ["/start", "/other", 1],
+] as const)("compares normalized primary destinations %s and %s", (first, second, count) => {
+  const page = doc(actionA([{ id: "go", label: ref, href: second, emphasis: "primary" }]), B(), C());
+  page.sections[0] = { ...hero, actions: [{ id: "start", label: ref, href: first }] };
+  expect(rules(page, "primary-target")).toHaveLength(count);
+  expect(rules({ ...page, sections: [page.sections[0]!] }, "primary-target", { callToAction: { href: second } })).toHaveLength(count);
 });
 it("rejects a list pause first or any pause second", () => {
   const list = section({ block: { type: "feature-grid", items: [item, { ...item, id: "two" }] } });
@@ -114,21 +174,21 @@ it("checks explicit inverse at both body edges", () => {
 
 it("fits explicit action tiers and counts without guessing omitted emphasis", () => {
   const action = (emphasis: "primary" | "secondary") => ({ id: "go", label: ref, href: "/guide", emphasis });
-  expect(rules(doc(actionA([action("primary")]), B(), C()), "action-fit")).toEqual([]);
-  expect(rules(doc(actionA([action("secondary")]), B(), C()), "action-fit")).toEqual([]);
-  expect(rules(doc(actionA([action("secondary"), { ...action("secondary"), id: "two" }]), B()), "action-fit")).toHaveLength(1);
-  expect(rules(doc(A(), section({ layout: "split", media, actions: [action("primary")] }), C()), "action-fit")).toHaveLength(1);
-  expect(rules(doc(A(), C({ actions: [action("secondary")] })), "action-fit")).toHaveLength(1);
-  expect(rules(doc(A(), C({ actions: [{ id: "one", label: ref, href: "/one" }, { id: "two", label: ref, href: "/two" }] })), "action-fit")).toHaveLength(3);
-  expect(rules(doc(A(), linked("links", "/guide")), "action-fit")).toEqual([]);
+  expect(rules(doc(actionA([action("primary")]), B(), C()), "action-tier")).toEqual([]);
+  expect(rules(doc(actionA([action("secondary")]), B(), C()), "action-tier")).toEqual([]);
+  expect(rules(doc(actionA([action("secondary"), { ...action("secondary"), id: "two" }]), B()), "action-tier")).toHaveLength(1);
+  expect(rules(doc(A(), section({ layout: "split", media, actions: [action("primary")] }), C()), "action-tier")).toHaveLength(1);
+  expect(rules(doc(A(), C({ actions: [action("secondary")] })), "action-tier")).toHaveLength(1);
+  expect(rules(doc(A(), C({ actions: [{ id: "one", label: ref, href: "/one" }, { id: "two", label: ref, href: "/two" }] })), "action-tier")).toHaveLength(3);
+  expect(rules(doc(A(), linked("links", "/guide")), "action-tier")).toEqual([]);
 });
 
 it("matches the current secondary rendering default until the emphasis ladder changes", () => {
   const omitted = { id: "go", label: ref, href: "/guide" };
-  expect(rules(doc(actionA([omitted]), B(), C()), "action-fit")).toEqual([]);
-  expect(rules(doc(actionA([omitted, { ...omitted, id: "two" }]), B()), "action-fit")).toHaveLength(1);
-  expect(rules(doc(A(), C({ actions: [omitted] })), "action-fit")).toHaveLength(1);
-  expect(rules(doc(A(), section({ layout: "split", media, actions: [omitted] }), C()), "action-fit")).toHaveLength(1);
+  expect(rules(doc(actionA([omitted]), B(), C()), "action-tier")).toEqual([]);
+  expect(rules(doc(actionA([omitted, { ...omitted, id: "two" }]), B()), "action-tier")).toHaveLength(1);
+  expect(rules(doc(A(), C({ actions: [omitted] })), "action-tier")).toHaveLength(1);
+  expect(rules(doc(A(), section({ layout: "split", media, actions: [omitted] }), C()), "action-tier")).toHaveLength(1);
 });
 
 it("compares hero and supplied close even when there are no body bands", () => {

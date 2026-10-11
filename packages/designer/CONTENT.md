@@ -243,6 +243,11 @@ grids. Weight never reads ground and has no authored override.
 
 Publisher's `checkPageFlow` checks opening impact, runs, repeated set-piece
 shapes, page-length counts, calm landing, inverse placement and primary actions.
+The `sectioned-view-flow-action-tier` finding names action emphasis or count
+above the body's weight ceiling. Pages with fewer than three body bands are
+exempt from `opening-set-piece`; other flow rules still apply. Primary targets
+ignore trailing slashes and nonleading fragments, retaining distinct leading
+fragments just as body links do.
 At most two body blocks link items. Each body destination appears once across
 item links, section actions and footnote links; hero and close are excluded.
 Card links count as quiet actions for weight fit, independently of section
