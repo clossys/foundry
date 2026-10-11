@@ -3366,7 +3366,9 @@ to plain, ground to base, size to standard, and item heading elements to
 h3 (`headingLevel={4}` selects h4). Display size uses text-h3; statement
 uses text-h2; bento uses text-h3. These visual scales do not change heading
 elements. Rules are hairlines; decorative icons use secondary ink. Eyebrow,
-badge and meta share a wrapping row in every treatment. Badge tone maps to
+badge and meta share a wrapping row in every treatment. The four status tones
+use a rounded opaque base-surface backing, preserving the Badge text and tint
+pairing on each ground. Neutral keeps its own opaque fill. Badge tone maps to
 the existing Badge atom: neutral (default), success, warning, danger or info.
 A featured item uses a flat plate with an accent top rule.
 

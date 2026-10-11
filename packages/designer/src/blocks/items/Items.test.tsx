@@ -87,7 +87,7 @@ describe("Items arrangement policy", () => {
   it.each(["", " ", "//example.test", "javascript:alert(1)", "data:text/plain,value", "/path\\file", "https://name:pass@example.test", "https://example.test\n"])('refuses unsafe href %s', (href) => expect(() => draw({ items: data(3).map((item) => ({ ...item, href })) })).toThrow(TypeError));
   it("tabs once per linked item through RTL copy, then reaches the sentinel", async () => {
     const user = userEvent.setup();
-    render(<div dir="rtl"><Items arrangement="columns" items={data(3).map((item, i) => ({ ...item, href: `/route-${i}`, badge: { label: "Beta" }, meta: "Actor", visual: <img src="/example.png" alt="Example" /> }))} /><button>After items</button></div>);
+    render(<div dir="rtl"><Items arrangement="columns" items={data(3).map((item, i) => ({ ...item, href: `/route-${i}`, badge: { label: "Beta", tone: "info" }, meta: "Actor", visual: <img src="/example.png" alt="Example" /> }))} /><button>After items</button></div>);
     for (const link of screen.getAllByRole("link")) { await user.tab(); expect(link).toHaveFocus(); }
     await user.tab(); expect(screen.getByRole("button", { name: "After items" })).toHaveFocus();
   });

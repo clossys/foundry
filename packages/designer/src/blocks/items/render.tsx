@@ -32,11 +32,14 @@ export function ItemRenderer({ item, treatment, size, ground, headingLevel, stat
   const rule = treatment === "rule" || item.featured === true;
   const display = size === "display" || statement;
   const scaleClassName = statement ? SCALE_CLASSES.statement : SCALE_CLASSES[size];
+  const badge = item.badge !== undefined ? <Badge variant={item.badge.tone}>{item.badge.label}</Badge> : null;
+  // Status tint/text pairs are checked on base, so give them that opaque backing on every ground.
+  const statusBadge = item.badge?.tone !== undefined && item.badge.tone !== "neutral";
   const body: ReactNode = <>
     {hasContent(item.icon) ? <ItemIcon className={cx("inline-flex", colors.secondary)}>{item.icon}</ItemIcon> : null}
     {hasContent(item.eyebrow) || hasContent(item.meta) || item.badge !== undefined ? <div data-item-meta="" className="flex flex-wrap items-center gap-sm">
       {hasContent(item.eyebrow) ? <p data-item-eyebrow="" className={cx("text-body-s font-medium uppercase tracking-label", colors.secondary)}>{item.eyebrow}</p> : null}
-      {item.badge !== undefined ? <Badge variant={item.badge.tone}>{item.badge.label}</Badge> : null}
+      {statusBadge ? <span className="inline-flex rounded-pill bg-surface-base">{badge}</span> : badge}
       {hasContent(item.meta) ? <p className={cx("text-caption font-body", colors.secondary)}>{item.meta}</p> : null}
     </div> : null}
     <ItemHeading data-item-heading="" as={headingLevel === 4 ? "h4" : headingLevel === 3 ? "h3" : "p"} heading={item.heading} href={item.href} variant={frame} ground={ground} className={cx("m-0", scaleClassName, colors.primary, display && item.href !== undefined ? "transform-none" : undefined)} iconSize={display ? "md" : "sm"} />

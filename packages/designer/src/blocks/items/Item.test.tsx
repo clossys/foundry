@@ -29,6 +29,21 @@ describe("Item", () => {
     render(<Item {...base} badge={{ label: "State", tone }} />);
     expect(screen.getByText("State")).toHaveClass(cls);
   });
+  it.each(["success", "warning", "danger", "info"] as const)("backs status badge %s with the checked opaque surface", (tone) => {
+    const { container } = render(<Item {...base} ground="inverse" treatment="plate" href="/one" meta={0} badge={{ label: 0, tone }} />);
+    const row = container.querySelector("[data-item-meta]")!;
+    const badge = row.querySelector(`.bg-status-${tone}-tint`)!;
+    expect(badge).toHaveTextContent("0");
+    expect(badge.parentElement).toHaveClass("inline-flex", "rounded-pill", "bg-surface-base");
+    expect(row).toHaveTextContent("00");
+    expect(screen.getAllByRole("link")).toHaveLength(1);
+    expect(screen.getByRole("link", { name: "Title" })).not.toContainElement(badge);
+    expect(badge.parentElement!.querySelector("a,button,input,[tabindex]")).toBeNull();
+  });
+  it.each([undefined, "neutral"] as const)("keeps the already opaque neutral badge directly in its meta row (%s)", (tone) => {
+    const { container } = render(<Item {...base} ground="inverse" badge={{ label: "Neutral", tone }} />);
+    expect(screen.getByText("Neutral").parentElement).toBe(container.querySelector("[data-item-meta]"));
+  });
   it.each(["base", "sunken", "inverse"] as const)("features a flat plate on %s", (ground) => {
     const { container } = render(<Item {...base} ground={ground} treatment="plate" featured />);
     expect(container.querySelector("[data-item]")).toHaveAttribute("data-featured", "true");
