@@ -114,7 +114,7 @@ function mediaSpecimen(media: ResolvedSectionedViewSpecimenMedia): ReactNode {
  */
 const FEATURE_GRID_DEFAULTS = { columns: 3, treatment: "plain", emphasis: "item" } as const;
 
-function renderBlock(block: ResolvedSectionedViewContentBlock, ground: SectionedViewGround, Faq: ContentSectionFaq): ReactNode {
+function renderBlock(block: ResolvedSectionedViewContentBlock, ground: SectionedViewGround, Faq: ContentSectionFaq, headingId?: string): ReactNode {
   switch (block.type) {
     case "feature-grid":
       return (
@@ -148,6 +148,7 @@ function renderBlock(block: ResolvedSectionedViewContentBlock, ground: Sectioned
       return <Comparison before={side(block.before)} after={side(block.after)} headingLevel={3} ground={ground} />;
     }
     case "topic-list":
+      if (block.groups !== undefined) return <TopicList groups={block.groups.map((group) => ({ id: group.id, label: group.label, items: group.items.map((item) => ({ id: item.id, icon: icon(item.icon), heading: item.heading, description: item.description, href: item.href })) }))} ground={ground} />;
       return (
         <TopicList
           items={block.items.map((item) => ({ id: item.id, icon: icon(item.icon), heading: item.heading, description: item.description, href: item.href }))}
@@ -158,9 +159,15 @@ function renderBlock(block: ResolvedSectionedViewContentBlock, ground: Sectioned
     case "ordered-step-sequence":
       return (
         <OrderedStepSequence
-          items={block.items.map((step) => ({ id: step.id, ordinal: step.ordinal, label: step.label, heading: step.heading, description: step.description, visual: panelSpecimen(step.visual), href: step.href }))}
+          items={block.items.map((step) => ({ id: step.id, ordinal: step.ordinal, label: step.label, heading: step.heading, description: step.description, visual: panelSpecimen(step.visual), href: step.href, lane: step.lane }))}
           headingLevel={2}
           ground={ground}
+          lanes={block.lanes}
+          caption={block.caption}
+          end={block.end}
+          endLabel={block.endLabel}
+          continuesLabel={block.continuesLabel}
+          labelledBy={block.lanes === undefined ? undefined : headingId}
         />
       );
     case "faq":
@@ -187,8 +194,9 @@ function renderBlock(block: ResolvedSectionedViewContentBlock, ground: Sectioned
 export function createContentSectionBlock(Faq: ContentSectionFaq) {
   return function ContentSectionBlock({ section, actions, className, after }: ContentSectionBlockProps) {
     const { ground } = section;
-    const block = section.block === undefined ? null : renderBlock(section.block, ground, Faq);
-    const header = { id: section.id, eyebrow: section.eyebrow, heading: section.heading, description: section.description, actions, footnote: renderFootnote(section.footnote), headingLevel: 2 as const, ground };
+    const headingId = section.block?.type === "ordered-step-sequence" && section.block.lanes !== undefined ? `${section.id}:heading` : undefined;
+    const block = section.block === undefined ? null : renderBlock(section.block, ground, Faq, headingId);
+    const header = { id: section.id, headingId, eyebrow: section.eyebrow, heading: section.heading, description: section.description, actions, footnote: renderFootnote(section.footnote), headingLevel: 2 as const, ground };
     if (section.layout === "split" && section.block?.type === "faq") {
       return (
         <ContentSection {...header} layout="split" mediaSide={section.mediaSide} media={block} data-content-section-faq="" className={[className, "tablet-lg:items-start"].filter(Boolean).join(" ")}>

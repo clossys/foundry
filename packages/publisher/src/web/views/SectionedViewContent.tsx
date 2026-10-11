@@ -474,22 +474,65 @@ function assertContentBlock(value: unknown, path: string): void {
       return;
     }
     case "topic-list":
-      blockKeys(["columns", "items"]);
+      blockKeys(["columns", "items", "groups"]);
+      if ((block.items === undefined) === (block.groups === undefined)) throw new Error(`sectioned-view-content-topics-groups-shape: ${path} needs exactly one of items or groups.`);
+      if (block.groups !== undefined) {
+        if (block.columns !== undefined) throw new Error(`sectioned-view-content-topics-groups-columns: ${path} with groups derives its layout.`);
+        const groupPath = `${path}.groups`;
+        if (!Array.isArray(block.groups) || block.groups.length < 2 || block.groups.length > 4) throw new Error(`sectioned-view-content-topics-groups-count: ${groupPath} needs 2-4 groups.`);
+        records(block.groups, groupPath, ["id", "label", "items"], 2, 4, "groups");
+        const items: Record<string, unknown>[] = [];
+        block.groups.forEach((group, index) => {
+          const current = `${groupPath}.${index}`;
+          copyFields(group, current, ["label"]);
+          if ([...(group.label as string).trim()].length > 24) throw new Error(`sectioned-view-content-topics-groups-text-length: ${current}.label holds at most 24 characters.`);
+          if (!Array.isArray(group.items) || group.items.length < 2 || group.items.length > 4) throw new Error(`sectioned-view-content-topics-groups-count: ${current}.items needs 2-4 topics.`);
+          records(group.items, `${current}.items`, ["id", "icon", "heading", "description", "href"], 2, 4, "topics");
+          assertContentItems(group.items, `${current}.items`);
+          items.push(...group.items);
+        });
+        if (items.length > 12) throw new Error(`sectioned-view-content-topics-groups-count: ${groupPath} holds at most 12 topics.`);
+        itemIds(items, groupPath);
+        assertItemLinks(items, groupPath);
+        return;
+      }
       oneOf(block.columns, [1, 2], `${path}.columns`, "topic-list column count");
       records(block.items, `${path}.items`, ["id", "icon", "heading", "description", "href"], 2, 8, "items");
       assertContentItems(block.items, `${path}.items`);
       assertItemLinks(block.items, `${path}.items`);
       if (block.columns !== 1 && block.items.length % 2 === 1) throw new Error(`${path}.items must hold an even number of items in 2 columns; it holds ${block.items.length}.`);
       return;
-    case "ordered-step-sequence":
-      blockKeys(["items"]);
-      records(block.items, `${path}.items`, ["id", "ordinal", "label", "heading", "description", "visual", "href"], 3, 4, "steps");
+    case "ordered-step-sequence": {
+      blockKeys(["items", "lanes", "caption", "end", "endLabel", "continuesLabel"]);
+      const lanes = block.lanes !== undefined;
+      const bounded = (text: unknown, field: string, max: number, code: string) => {
+        if (!nonBlank(text) || [...text.trim()].length > max) throw new Error(`${code}: ${path}.${field} must be resolved non-blank copy of at most ${max} characters.`);
+      };
+      if (block.end !== undefined && block.end !== "ends" && block.end !== "continues") throw new Error(`sectioned-view-content-module-option: ${path}.end must be ends or continues.`);
+      if (lanes) {
+        if (!plain(block.lanes) || !closed(block.lanes, ["a", "b"])) throw new Error(`sectioned-view-content-steps-lanes-shape: ${path}.lanes must name exactly a and b.`);
+        bounded(block.lanes.a, "lanes.a", 20, "sectioned-view-content-steps-lanes-shape");
+        bounded(block.lanes.b, "lanes.b", 20, "sectioned-view-content-steps-lanes-shape");
+      }
+      if (block.endLabel !== undefined) bounded(block.endLabel, "endLabel", 40, "sectioned-view-content-module-option");
+      if (block.caption !== undefined) bounded(block.caption, "caption", 120, "sectioned-view-content-steps-caption");
+      if (block.end === "continues" && block.endLabel === undefined) bounded(block.continuesLabel, "continuesLabel", Number.MAX_SAFE_INTEGER, "sectioned-view-content-module-option");
+      else if (block.continuesLabel !== undefined) throw new Error(`sectioned-view-content-module-option: ${path}.continuesLabel belongs only to an unlabelled continuing end.`);
+      if (lanes && Array.isArray(block.items) && block.items.length !== 3 && block.items.length !== 5) throw new Error(`sectioned-view-content-steps-lanes-count: ${path}.items needs 3 or 5 lane steps.`);
+      records(block.items, `${path}.items`, ["id", "ordinal", "label", "heading", "description", "visual", "href", "lane"], 3, lanes ? 5 : 4, "steps");
+      if (lanes && (block.items[0]?.lane !== "a" || !block.items.some((step) => step.lane === "b"))) throw new Error(`sectioned-view-content-steps-lane-use: ${path}.items must start in a and use both actors.`);
+      const visual = block.items.some((step) => step.visual !== undefined);
+      if (lanes && visual && block.items.length !== 3) throw new Error(`sectioned-view-content-steps-count: ${path}.items with lane visuals needs exactly 3 steps.`);
+      if (block.caption !== undefined && !visual) throw new Error(`sectioned-view-content-steps-caption: ${path}.caption needs a step visual.`);
       assertItemLinks(block.items, `${path}.items`);
       block.items.forEach((step, index) => {
+        if (lanes ? step.lane !== "a" && step.lane !== "b" : step.lane !== undefined) throw new Error(`sectioned-view-content-steps-lane: ${path}.items.${index}.lane belongs to a named actor lane.`);
+        if (lanes && step.label !== undefined) throw new Error(`sectioned-view-content-steps-lane-label: ${path}.items.${index}.label conflicts with its actor.`);
         copyFields(step, `${path}.items.${index}`, ["ordinal", "heading"], ["label", "description"]);
         if (step.visual !== undefined) assertSpecimenPanel(step.visual, `${path}.items.${index}.visual`);
       });
       return;
+    }
     case "faq":
       blockKeys(["items"]);
       records(block.items, `${path}.items`, ["id", "question", "answer"], 4, 6, "items");
@@ -518,6 +561,8 @@ function assertContentSection(record: Record<string, unknown>, path: string): vo
   if (record.mediaSide !== undefined && !split) throw new Error(`${path}.mediaSide is allowed only on a split section.`);
   if (record.align !== undefined && split) throw new Error(`${path}.align is allowed only on a stacked section.`);
   assertActionPlacement(record, path);
+  if (split && plain(record.block) && record.block.type === "ordered-step-sequence" && record.block.lanes !== undefined) throw new Error(`sectioned-view-content-steps-lanes-layout: ${path}.block with lanes needs a stacked section.`);
+  if (split && plain(record.block) && record.block.type === "topic-list" && record.block.groups !== undefined) throw new Error(`sectioned-view-content-topics-groups-layout: ${path}.block with groups needs a stacked section.`);
   if (record.block !== undefined) assertContentBlock(record.block, `${path}.block`);
   if (record.media !== undefined) assertSpecimenMedia(record.media, `${path}.media`);
   const faq = plain(record.block) && record.block.type === "faq";

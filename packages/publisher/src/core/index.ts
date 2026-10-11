@@ -162,6 +162,7 @@ export type {
   SectionedViewContentBlockType,
   SectionedViewContentSection,
   SectionedViewContentStep,
+  SectionedViewStepLane,
   SectionedViewFaqBlock,
   SectionedViewFeatureGridBlock,
   SectionedViewFeatureGridEmphasis,
@@ -192,6 +193,7 @@ export type {
   SectionedViewSpecimenTone,
   SectionedViewOrderedStepSequenceBlock,
   SectionedViewTopicListBlock,
+  SectionedViewTopicGroup,
 } from "./sectioned-view.js";
 export type { ResolvedSurfaceDocument, ResolvedSurfaceGroup, ResolvedSurfaceGroupField, ResolvedSurfaceGroupItem, ResolvedSurfaceNode, ResolveSurfaceDocumentOptions, SurfaceResolutionReason } from "./resolve-surface.js";
 

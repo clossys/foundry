@@ -31,6 +31,8 @@ interface ContentSectionBaseProps extends Omit<HTMLAttributes<HTMLDivElement>, "
   eyebrow?: ReactNode;
   /** The section's heading, at `headingLevel`: why it matters. */
   heading?: ReactNode;
+  /** Optional id on the real heading, for content named by it. */
+  headingId?: string;
   /** A line of supporting copy under the heading: how. */
   description?: ReactNode;
   /**
@@ -145,6 +147,7 @@ const MODULE_GAP = "gap-2xl tablet-lg:gap-3xl";
 export function ContentSection({
   eyebrow,
   heading,
+  headingId,
   description,
   actions,
   footnote,
@@ -209,6 +212,7 @@ export function ContentSection({
               ground={ground}
               eyebrow={eyebrow}
               heading={heading}
+              headingId={headingId}
               description={description}
               actions={actions}
             />
@@ -251,6 +255,7 @@ export function ContentSection({
           ground={ground}
           eyebrow={eyebrow}
           heading={heading}
+          headingId={headingId}
           description={description}
           actions={actions}
         />

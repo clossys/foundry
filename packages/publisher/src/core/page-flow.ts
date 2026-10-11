@@ -148,12 +148,15 @@ export function checkPageFlow(document: SectionedViewDocument, options: CheckPag
     if (band.section.kind !== "content-section") return;
     const section: SectionedViewContentSection = band.section;
     const block = section.block;
-    if (block !== undefined && "items" in block) {
-      const items = block.items;
+    if (block !== undefined && ("items" in block || block.type === "topic-list")) {
+      const entries = block.type === "topic-list" && block.groups !== undefined
+        ? block.groups.flatMap((group, g) => group.items.map((item, i) => ({ item, path: `${band.path}.block.groups.${g}.items.${i}` })))
+        : (block.items ?? []).map((item, i) => ({ item, path: `${band.path}.block.items.${i}` }));
+      const items = entries.map((entry) => entry.item);
       if (items.some((item) => "href" in item && item.href !== undefined)) {
         groups += 1;
         if (groups > 2) warn("link-groups", `${band.path}.block`, "adds a third linked block; keep at most two linked body blocks.");
-        items.forEach((item, index) => { if ("href" in item && typeof item.href === "string") link(item.href, `${band.path}.block.items.${index}.href`); });
+        entries.forEach(({ item, path }) => { if ("href" in item && typeof item.href === "string") link(item.href, `${path}.href`); });
       }
     }
     section.actions?.forEach((action, index) => link(action.href, `${band.path}.actions.${index}.href`));
