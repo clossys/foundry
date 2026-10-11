@@ -1,6 +1,7 @@
 import type { CSSProperties, ReactNode } from "react";
 import { cx } from "../atoms/internal/cx.js";
 import { UI_BORDER_HAIRLINE } from "../atoms/internal/ui-vars.js";
+import { Item } from "./items/Item.js";
 import { SECTION_GROUND_CLASSES, type SectionGround } from "./section-ground.js";
 import { SpecimenPanel, assertSpecimenMarkerTargets, type SpecimenPanelContent } from "./specimen/SpecimenPanel.js";
 
@@ -66,7 +67,6 @@ export function AnatomyCallouts({ id, label, panel, markers, legendSide = "end",
   const keyNameId = `${id}-key-name`;
   const numbers = Object.fromEntries(markers.map((marker, index) => [marker.target, index + 1]));
   const colors = SECTION_GROUND_CLASSES[ground];
-  const Heading = headingLevel === 4 ? "h4" : "h3";
   return <div data-anatomy-callouts="" data-legend-side={legendSide} className={cx("grid min-w-0 grid-cols-1 gap-2xl", keyAtEnd ? "tablet-lg:anatomy-columns tablet-lg:gap-x-3xl tablet-lg:items-start" : undefined, className)} style={style}>
     <figure aria-labelledby={labelId} aria-describedby={keyId} className="m-0 min-w-0">
       <p id={labelId} className="sr-only">{label}</p>
@@ -76,10 +76,9 @@ export function AnatomyCallouts({ id, label, panel, markers, legendSide = "end",
     <div className={cx("min-w-0 anatomy-key-measure", keyAtEnd ? "tablet-lg:max-w-none" : undefined)}>
     <p id={keyNameId} className="sr-only">{keyLabel}</p>
     <ol id={keyId} aria-labelledby={keyNameId} className="m-0 min-w-0 list-none p-0 flex flex-col">
-      {markers.map((marker, index) => <li key={marker.id} className={cx("grid anatomy-key-row min-w-0 gap-x-md gap-y-xs py-lg", index > 0 ? cx("border-t", colors.border) : "pt-0")} style={index > 0 ? { borderBlockStartWidth: UI_BORDER_HAIRLINE } : undefined}>
-        <span data-anatomy-key-number="" aria-hidden="true" className={cx(DISC_CLASSES, "row-span-2", KEY_DISC_CLASSES[ground])}>{index + 1}</span>
-        <Heading className={cx("m-0 min-w-0 wrap-anywhere text-h2 font-semibold leading-heading", colors.primary)}>{marker.heading}</Heading>
-        <p className={cx("m-0 min-w-0 wrap-anywhere text-body text-pretty", colors.secondary)}>{marker.description}</p>
+      {markers.map((marker, index) => <li key={marker.id} className={cx("grid anatomy-key-row min-w-0 wrap-anywhere gap-x-md gap-y-xs py-lg", index > 0 ? cx("border-t", colors.border) : "pt-0")} style={index > 0 ? { borderBlockStartWidth: UI_BORDER_HAIRLINE } : undefined}>
+        <span data-anatomy-key-number="" aria-hidden="true" className={cx(DISC_CLASSES, KEY_DISC_CLASSES[ground])}>{index + 1}</span>
+        <Item id={marker.id} heading={marker.heading} description={marker.description} treatment="plain" size="standard" ground={ground} headingLevel={headingLevel} />
       </li>)}
     </ol>
     </div>

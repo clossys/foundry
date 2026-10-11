@@ -1,4 +1,6 @@
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
+import { Badge, type BadgeVariant } from "../../atoms/Badge.js";
+import { hasContent } from "../items/policies.js";
 import { Card } from "../../atoms/Card.js";
 import { StatusMark } from "../../atoms/StatusMark.js";
 import { cx } from "../../atoms/internal/cx.js";
@@ -50,6 +52,8 @@ export interface SpecimenPanelContent {
   meta?: ReactNode;
   /** The record's state, beside the title. */
   status?: SpecimenStatus;
+  /** A separate record label using the existing Badge tones. */
+  badge?: { label: ReactNode; tone?: BadgeVariant };
   /** 1 to 3 parts, separated by hairlines. */
   parts: readonly SpecimenPart[];
   footer?: SpecimenFooter;
@@ -111,7 +115,8 @@ export function assertSpecimenMarkerTargets(panel: SpecimenPanelContent, targets
  * Throws a `RangeError` for more than 3 parts (or none). Server-safe: no
  * hooks.
  */
-export function SpecimenPanel({ title, meta, status, parts, footer, markers, className, style, ...rest }: SpecimenPanelProps) {
+export function SpecimenPanel({ title, meta, status, badge, parts, footer, markers, className, style, ...rest }: SpecimenPanelProps) {
+  if (badge !== undefined && (!badge || typeof badge !== "object" || Array.isArray(badge) || !hasContent(badge.label) || (badge.tone !== undefined && badge.tone !== "neutral" && badge.tone !== "success" && badge.tone !== "warning" && badge.tone !== "danger" && badge.tone !== "info"))) throw new TypeError("Specimen: badge needs a label and an existing Badge tone.");
   if (parts.length < 1 || parts.length > SPECIMEN_PANEL_MAX_PARTS) {
     throw new RangeError("Specimen: a panel must hold 1 to " + SPECIMEN_PANEL_MAX_PARTS + " parts, got " + parts.length + ".");
   }
@@ -122,7 +127,7 @@ export function SpecimenPanel({ title, meta, status, parts, footer, markers, cla
   const markerAt = (target: string) => markers && Object.hasOwn(markers, target) ? markers[target] : undefined;
   const headerMarker = markerAt("header");
   const footerMarker = markerAt("footer");
-  const hasHeader = present(title) || present(meta) || status !== undefined;
+  const hasHeader = present(title) || present(meta) || status !== undefined || badge !== undefined;
   const assignee = footer?.assignee;
   const hasFooter = assignee !== undefined || present(footer?.note);
 
@@ -135,7 +140,10 @@ export function SpecimenPanel({ title, meta, status, parts, footer, markers, cla
               {present(title) ? <p className={cx(TITLE_CLASSES, headerMarker !== undefined ? "flex items-center gap-sm" : undefined)}><AnatomyMarker number={headerMarker} />{title}</p> : null}
               {present(meta) ? <p className={META_CLASSES}>{meta}</p> : null}
             </div>
-            {status ? <StatusMark tone={status.tone}>{status.label}</StatusMark> : null}
+            {badge !== undefined || status !== undefined ? <div className="flex flex-wrap items-center gap-sm">
+              {badge !== undefined ? <Badge variant={badge.tone}>{badge.label}</Badge> : null}
+              {status ? <StatusMark tone={status.tone}>{status.label}</StatusMark> : null}
+            </div> : null}
           </div>
         ) : null}
         {parts.map((part, index) => (

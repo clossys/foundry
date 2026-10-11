@@ -323,11 +323,6 @@
   .start-\[calc\(var\(--spacing-2xl\)\/2_-_var\(--spacing-xl\)\)\] {
     inset-inline-start: calc(var(--spacing-2xl) / 2 - var(--spacing-xl));
   }
-  .ledger-wire-dot {
-    inset-inline-end: 0;
-    inset-block-start: 50%;
-    translate: 50% -50%;
-  }
   .end-md {
     inset-inline-end: var(--spacing-md, 12px);
   }
@@ -401,23 +396,8 @@
       }
     }
   }
-  .col-span-2 {
-    grid-column: span 2 / span 2;
-  }
-  .col-start-1 {
-    grid-column-start: 1;
-  }
-  .col-start-2 {
-    grid-column-start: 2;
-  }
-  .row-span-2 {
-    grid-row: span 2 / span 2;
-  }
   .row-start-1 {
     grid-row-start: 1;
-  }
-  .row-start-2 {
-    grid-row-start: 2;
   }
   .scene-linear-findings {
     display: flex;
@@ -700,9 +680,6 @@
   .h-px {
     height: 1px;
   }
-  .h-sm {
-    height: var(--spacing-sm, 8px);
-  }
   .h-xl {
     height: var(--spacing-xl, 24px);
   }
@@ -820,11 +797,6 @@
   .border-collapse {
     border-collapse: collapse;
   }
-  .scene-tilt {
-    transform-box: fill-box;
-    transform-origin: 100% 50%;
-    rotate: calc(var(--k, 0) * var(--ui-scene-tilt, 1deg));
-  }
   .-translate-x-1\/2 {
     --tw-translate-x: calc(calc(1 / 2 * 100%) * -1);
     translate: var(--tw-translate-x, 0) var(--tw-translate-y, 0);
@@ -910,13 +882,6 @@
   }
   .list-none {
     list-style-type: none;
-  }
-  .ledger-pair {
-    grid-template-columns: minmax(0, 1fr);
-    @media (width >= 48rem) {
-      grid-template-columns: minmax(0, 5fr) var(--spacing-2xl, 32px) minmax(0, 6fr);
-      align-items: start;
-    }
   }
   .ledger-columns-two {
     grid-template-columns: minmax(0, 1fr);
@@ -1063,12 +1028,6 @@
   }
   .gap-y-xs {
     row-gap: var(--spacing-xs, 4px);
-  }
-  .self-center {
-    align-self: center;
-  }
-  .self-start {
-    align-self: flex-start;
   }
   .justify-self-end {
     justify-self: flex-end;
@@ -1217,6 +1176,10 @@
     border-bottom-style: var(--tw-border-style, solid);
     border-bottom-width: 2px;
   }
+  .border-dashed {
+    --tw-border-style: dashed;
+    border-style: dashed;
+  }
   .border-accent {
     border-color: var(--color-accent, oklch(0.4748 0 0));
   }
@@ -1225,6 +1188,9 @@
   }
   .border-ink-primary {
     border-color: var(--color-ink-primary, oklch(0.2178 0 0));
+  }
+  .border-ink-secondary {
+    border-color: var(--color-ink-secondary, oklch(0.36 0 0));
   }
   .border-line-base {
     border-color: var(--color-line-base, oklch(0.8761 0 0));

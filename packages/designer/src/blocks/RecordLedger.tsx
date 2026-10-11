@@ -4,50 +4,32 @@ import { UI_BORDER_HAIRLINE, UI_BORDER_RULE } from "../atoms/internal/ui-vars.js
 import { SECTION_GROUND_CLASSES, type SectionGround } from "./section-ground.js";
 import { LedgerRows, LedgerStatus } from "./ledger-rows.js";
 import { ledgerDomIds } from "./internal/ledger-ids.js";
-import { assertLedgerIds, assertLedgerRows, hasLedgerContent, type LedgerGroupData, type LedgerPairData, type LedgerRowData } from "./internal/ledger-data.js";
-export type { LedgerGroupData, LedgerPairData, LedgerRowData } from "./internal/ledger-data.js";
+import { assertLedgerIds, assertLedgerRows, hasLedgerContent, type LedgerGroupData, type LedgerRowData } from "./internal/ledger-data.js";
+export type { LedgerGroupData, LedgerRowData } from "./internal/ledger-data.js";
 
 interface LedgerCommonProps { ground?: SectionGround; headingLevel?: 3 | 4; className?: string }
-export type RecordLedgerProps = LedgerCommonProps & (
-  | { form: "record"; /** Unique caller instance seed; generated DOM IDs name the figure and groups. */ id: string; head: { title: ReactNode; meta?: ReactNode; status?: LedgerRowData["status"] }; columns?: 1 | 2 | 3; groups: readonly LedgerGroupData[]; caption: ReactNode; flagLabel?: ReactNode }
-  | { form: "pairs"; items: readonly LedgerPairData[]; productLabel: ReactNode; caption?: ReactNode }
-);
+export interface RecordLedgerProps extends LedgerCommonProps {
+  form: "record";
+  /** Unique caller instance seed; generated DOM IDs name the figure and groups. */
+  id: string;
+  head: { title: ReactNode; meta?: ReactNode; status?: LedgerRowData["status"] };
+  columns?: 1 | 2 | 3;
+  groups: readonly LedgerGroupData[];
+  caption: ReactNode;
+  flagLabel?: ReactNode;
+}
 const TOP_RULE_CLASSES: Record<SectionGround, string> = { base: "border-ink-primary", sunken: "border-ink-primary", inverse: "border-ink-on-inverse" };
-const STRONG_CLASSES: Record<SectionGround, string> = { base: "border-line-strong", sunken: "border-line-strong", inverse: "border-line-on-inverse" };
 const PLATE_CLASSES: Record<SectionGround, string> = { base: "bg-surface-sunken", sunken: "bg-surface-base", inverse: "bg-surface-inverse-raised" };
-const WIRE_CLASSES: Record<SectionGround, string> = { base: "bg-line-strong", sunken: "bg-line-strong", inverse: "bg-line-on-inverse" };
-const DOT_CLASSES: Record<SectionGround, string> = { base: "bg-ink-primary", sunken: "bg-ink-primary", inverse: "bg-ink-on-inverse" };
 const OWNER_COLUMN_CLASSES = "ledger-owner-columns";
 const LABEL_CLASSES = "m-0 font-mono text-caption uppercase tracking-label";
 const COLUMN_CLASSES: Record<1 | 2 | 3, string> = { 1: "grid grid-cols-1", 2: "grid ledger-columns-two", 3: "grid ledger-columns-three" };
 
-/** A record or three-to-four role handovers on rules, without a panel. Static and server-safe. */
+/** A record on rules, without a panel. Static and server-safe. */
 export function RecordLedger(props: RecordLedgerProps) {
+  if (props.form !== "record") throw new TypeError("RecordLedger: only record form is supported.");
   const { ground = "base", headingLevel = 3, className } = props;
   const colors = SECTION_GROUND_CLASSES[ground];
   const Heading = headingLevel === 4 ? "h4" : "h3";
-  if (props.form === "pairs") {
-    if (props.items.length < 3 || props.items.length > 4) throw new RangeError("RecordLedger: pairs requires 3 or 4 items.");
-    assertLedgerIds("Ledger pairs", props.items.map(item => item.id));
-    if (!hasLedgerContent(props.productLabel)) throw new TypeError("RecordLedger: pairs requires a caller-provided productLabel.");
-    return <div className={className}>
-      <ol data-record-ledger="" data-form="pairs" className="m-0 list-none p-0 flex flex-col">{props.items.map(item => <li key={item.id} className={cx("ledger-pair grid min-w-0 gap-y-md border-t py-xl", STRONG_CLASSES[ground])} style={{ borderBlockStartWidth: UI_BORDER_HAIRLINE }}>
-        <div className="min-w-0 wrap-anywhere flex flex-col gap-xs">
-          <p className={cx(LABEL_CLASSES, colors.secondary)}>{item.role.eyebrow}</p>
-          <Heading className={cx("m-0 text-h2 font-semibold leading-heading", colors.primary)}>{item.role.heading}</Heading>
-          <p className={cx("m-0 text-body-s text-pretty", colors.secondary)}>{item.role.description}</p>
-        </div>
-        <span data-ledger-wire="" aria-hidden="true" className={cx("hidden tablet:block relative mt-2xl", WIRE_CLASSES[ground])} style={{ blockSize: UI_BORDER_HAIRLINE }}><span className={cx("ledger-wire-dot absolute h-sm w-sm rounded-pill", DOT_CLASSES[ground])} /></span>
-        <div data-ledger-product="" className={cx("grid min-w-0 ledger-row-grid items-start gap-x-lg gap-y-xs self-start rounded-panel px-lg py-md text-body-s", PLATE_CLASSES[ground])}>
-          <p className={cx("m-0 col-span-2 font-mono text-caption tracking-meta", colors.secondary)}><span className="sr-only">{props.productLabel} </span>{item.product.kind}</p>
-          <p className={cx("m-0 min-w-0 wrap-anywhere font-medium", colors.primary)}>{item.product.subject}</p>
-          <LedgerStatus status={item.product.status} ground={ground} className="col-start-2 row-start-2 row-span-2 self-center" />
-          {hasLedgerContent(item.product.detail) ? <p className={cx("m-0 min-w-0 wrap-anywhere col-start-1 tabular-nums", colors.secondary)}>{item.product.detail}</p> : null}
-        </div>
-      </li>)}</ol>
-      {hasLedgerContent(props.caption) ? <p className={cx("m-0 wrap-anywhere mt-sm text-caption", colors.secondary)}>{props.caption}</p> : null}
-    </div>;
-  }
   if (!hasLedgerContent(props.head.title) || !hasLedgerContent(props.caption)) throw new TypeError("RecordLedger: record title and caption require visible content.");
   const columns = props.columns ?? 1;
   assertLedgerIds("RecordLedger instance", [props.id]);

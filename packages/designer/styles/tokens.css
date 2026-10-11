@@ -584,7 +584,6 @@ html:not([data-brand-bound]):not([data-suppress-brand-banner])::before {
    * UI · ALPHA (1 · no Tailwind namespace)
    * ════════════════════════════════════════════════════════════════ */
   /* Static scene personality and linear-form measure. */
-  --ui-scene-tilt:                 1deg;
   --ui-scene-card-w:               30rem;
 
   --ui-alpha-disabled:            0.5;

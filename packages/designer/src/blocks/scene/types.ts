@@ -32,7 +32,7 @@ export interface SceneApprovalChain extends SceneBase {
 /** Closed launch vocabulary; layout and style are owned by the renderer. */
 export type SceneInput = SceneConverge | SceneEvidenceTrail | SceneApprovalChain;
 export interface ScenePoint { x: number; y: number }
-export interface ScenePart extends ScenePoint { id: string; width: number; height: number; k: number; nudge: number }
+export interface ScenePart extends ScenePoint { id: string; width: number; height: number; nudge: number }
 export interface SceneWire { from: string; to: string; start: ScenePoint; end: ScenePoint; path: string; subject: boolean; emphasis: boolean }
 export interface SceneTerminal extends ScenePoint { id: string; subject: boolean }
 export interface SceneTag extends ScenePart { text: string }

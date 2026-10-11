@@ -202,7 +202,7 @@ export { ConsentBanner } from "./ConsentBanner.js";
 export type { ConsentBannerProps } from "./ConsentBanner.js";
 
 export { RecordLedger } from "./RecordLedger.js";
-export type { RecordLedgerProps, LedgerRowData, LedgerGroupData, LedgerPairData } from "./RecordLedger.js";
+export type { RecordLedgerProps, LedgerRowData, LedgerGroupData } from "./RecordLedger.js";
 export { LedgerTile } from "./LedgerTile.js";
 export type { LedgerTileProps } from "./LedgerTile.js";
 

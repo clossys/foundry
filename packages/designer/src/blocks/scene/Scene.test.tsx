@@ -5,6 +5,7 @@ import { render } from "@testing-library/react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { Scene } from "./Scene.js";
+import { layoutScene, sceneRelationText } from "./geometry.js";
 import { scanCompiledCssSources } from "../../compiled-css/scan-sources.js";
 import type { SceneInput } from "./types.js";
 const sourceDir = dirname(fileURLToPath(import.meta.url));
@@ -31,12 +32,52 @@ describe("Scene", () => {
   }
  });
  it.each(inputs)("has byte-identical static rendering with no handlers or animation: $template", input => { const a = renderToStaticMarkup(view(input)); expect(a).toBe(renderToStaticMarkup(view(input))); expect(a).not.toMatch(/\son\w+=|<script|<animate|animation/); });
- it("pins the actual live right-middle pivot recipe and clipped responsive form", () => {
+ it("retires the rotation utility while retaining clipped responsive linear content", () => {
   const css = readFileSync(resolve(sourceDir, "../../../styles/theme-keys.css"), "utf8");
-  expect(css).toContain("transform-origin: 100% 50%"); expect(css).toContain("transform-box: fill-box"); expect(css).toContain("rotate: calc(var(--k, 0) * var(--ui-scene-tilt, 1deg))");
+  const sceneCss = css.split("/* Static scenes:")[1]!;
+  expect(sceneCss).toBeTruthy();
+  expect(sceneCss).not.toMatch(/@utility\s+scene-tilt\b|--ui-scene-tilt|--k\b|(?:^|[;{])\s*(?:rotate|transform(?:-origin|-box)?)\s*:/m);
   for (const threshold of [800, 520, 900]) expect(css).toContain(`min-width: ${threshold}px`);
   expect(css).toContain("clip-path: inset(50%)"); expect(css).not.toMatch(/\[data-scene-linear\][^{]*\{[^}]*display:\s*none/);
-  const { container } = render(view(inputs[0]!)); for (const part of container.querySelectorAll("[data-pivot]")) expect(part).toHaveAttribute("data-pivot", "anchor");
+ });
+ it.each(inputs)("renders flat parts at the deterministic layout positions for every allowed disorder: $template", input => {
+  const variants: SceneInput[] = input.template === "converge" ? (["none", "low", "medium"] as const).map(disorder => ({ ...input, disorder })) : (["none", "low"] as const).map(disorder => ({ ...input, disorder }));
+  for (const authored of variants) {
+   const layout = layoutScene(authored);
+   const { container, unmount } = render(view(authored));
+   const svg = container.querySelector("[data-scene-desk] svg")!;
+   expect(svg.querySelector(".scene-tilt, [data-pivot]")).toBeNull();
+   for (const element of svg.querySelectorAll<SVGElement>("[style]")) expect(element.style.getPropertyValue("--k")).toBe("");
+   // SVG translations position documents and status marks; they remain required.
+   for (const element of svg.querySelectorAll("[transform]")) expect(element.getAttribute("transform")).toMatch(/^translate\(-?\d+(?:\.\d+)? -?\d+(?:\.\d+)?\)$/);
+   const parts = input.template === "approval-chain" ? layout.cards.slice(0, input.findings.length) : layout.docs;
+   expect(svg.querySelectorAll(".scene-document")).toHaveLength(parts.length);
+   for (const part of parts) {
+    const group = [...svg.querySelectorAll("g[transform]")].find(element => element.getAttribute("transform") === `translate(${part.x} ${part.y})`);
+    expect(group).toBeDefined();
+    const document = group?.querySelector(".scene-document");
+    expect(document).toHaveAttribute("width", String(part.width)); expect(document).toHaveAttribute("height", String(part.height));
+   }
+   const panel = svg.querySelector(".scene-panel"), card = layout.cards.at(-1)!;
+   for (const axis of ["x", "y", "width", "height"] as const) expect(panel).toHaveAttribute(axis, String(card[axis]));
+   unmount();
+  }
+ });
+ it.each(inputs)("preserves authored linear row, source and finding order: $template", input => {
+  const { container } = render(view(input));
+  const linear = container.querySelector("[data-scene-linear]")!;
+  const content = input.template === "converge" ? input.target : input.template === "evidence-trail" ? input.result : input.decision;
+  const rowNodes = [...linear.querySelectorAll("[data-scene-row]")];
+  expect(rowNodes.map(node => node.querySelector(".scene-linear-row")?.textContent)).toEqual(content.rows.map(row => row.label + row.value));
+  content.rows.forEach((row, index) => {
+   const docs = input.template === "converge" ? input.sources.items.filter(doc => input.relations.some(relation => relation.from === doc.id && relation.to === row.id)) : input.template === "evidence-trail" ? input.sources.filter(doc => doc.cites === row.id) : [];
+   expect([...rowNodes[index]!.querySelectorAll(".scene-linear-sources > li")].map(node => node.textContent)).toEqual(docs.map(doc => `PDF · ${doc.title}${doc.origin ? " · " + doc.origin : ""}${"cite" in doc ? " · " + doc.cite : ""}`));
+  });
+  if (input.template === "approval-chain") {
+   const findings = [...linear.querySelectorAll(".scene-linear-finding")];
+   expect(findings.map(node => node.querySelector("p")?.textContent)).toEqual(input.findings.map(finding => finding.title));
+   expect(findings.map(node => node.querySelector(".sr-only")?.textContent)).toEqual(sceneRelationText(input));
+  }
  });
  it("uses live radius, theme paints, fixed start-aligned values and a sole accent ring", () => {
   const css = readFileSync(resolve(sourceDir, "../../../styles/theme-keys.css"), "utf8");
@@ -56,7 +97,7 @@ describe("Scene", () => {
   const source = readFileSync(resolve(sourceDir, "Scene.tsx"), "utf8"); expect(source).not.toMatch(/useId|useState|useEffect|useRef|use client/);
   const css = readFileSync(resolve(sourceDir, "../../../styles/theme-keys.css"), "utf8").split("/* Static scenes:")[1]!;
   expect(css).not.toMatch(/var\(--[\w-]+\)/); expect(css).not.toMatch(/animation|transition|#[a-fA-F0-9]{3,8}/);
-  const { container } = render(view(inputs[0]!)); for (const node of container.querySelectorAll<HTMLElement>("[style]")) for (const property of Array.from({ length: node.style.length }, (_, i) => node.style.item(i))) expect(["--k", "--sc-w"]).toContain(property);
+  const { container } = render(view(inputs[0]!)); for (const node of container.querySelectorAll<HTMLElement>("[style]")) for (const property of Array.from({ length: node.style.length }, (_, i) => node.style.item(i))) expect(["--sc-w"]).toContain(property);
  });
  it("accepts authored rich labels, zero, and an omitted relation label", () => {
   const { container } = render(<Scene id="rich" input={inputs[0]!} label={<em>Document provenance</em>} />);
@@ -71,7 +112,8 @@ describe("Scene", () => {
  });
  it("exposes the Scene recipes to the source class scan without compiling CSS", () => {
   const candidates = scanCompiledCssSources(resolve(sourceDir, "../../..")).candidates;
-  for (const name of ["scene-root", "scene-desktop", "scene-tilt", "scene-linear", "scene-wire-subject", "scene-subject-outline", "scene-accent", "scene-status-success", "scene-status-info", "scene-status-neutral"]) expect(candidates).toContain(name);
+  expect(candidates).not.toContain("scene-tilt");
+  for (const name of ["scene-root", "scene-desktop", "scene-linear", "scene-wire-subject", "scene-subject-outline", "scene-accent", "scene-status-success", "scene-status-info", "scene-status-neutral"]) expect(candidates).toContain(name);
  });
  it("requires a caller instance id and nonblank authored label", () => { expect(() => renderToStaticMarkup(<Scene id="" input={inputs[0]!} label="Process" relationLabel="Sources" />)).toThrow(TypeError); expect(() => renderToStaticMarkup(<Scene id="x" input={inputs[0]!} label="" />)).toThrow(TypeError); });
 });

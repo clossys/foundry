@@ -13,11 +13,24 @@ describe("scene geometry", () => {
   it.each([converge, trail, chain])("is deterministic and responds to the explicit seed: $template", input => {
     expect(layoutScene(input)).toEqual(layoutScene(input));
     const variants = ["other", "third", "fourth"].map(seed => layoutScene({ ...input, seed }));
-    expect(variants.some(v => JSON.stringify([...v.docs, ...v.cards].map(d => d.k)) !== JSON.stringify([...layoutScene(input).docs, ...layoutScene(input).cards].map(d => d.k)))).toBe(true);
+    const positions = (value: ReturnType<typeof layoutScene>) => [...value.docs, ...value.cards].map(part => [part.id, part.x, part.y, part.nudge]);
+    expect(variants.some(variant => JSON.stringify(positions(variant)) !== JSON.stringify(positions(layoutScene(input))))).toBe(true);
   });
-  it.each([converge, trail, chain])("none has zero tilt and nudge: $template", input => {
+  it("pins the retained default seeded nudge values and authored part order", () => {
+    expect(layoutScene(converge).docs.map(part => [part.id, part.nudge])).toEqual([["agreement", 0], ["report", -12], ["schedule", 0]]);
+    expect(layoutScene(trail).docs.map(part => [part.id, part.nudge])).toEqual([["agreement", 0], ["report", -6]]);
+    expect(layoutScene(chain).cards.slice(0, chain.findings.length).map(part => [part.id, part.nudge])).toEqual([["first", 6], ["second", 6]]);
+  });
+  it.each([converge, trail, chain])("none has zero nudge: $template", input => {
     const l = layoutScene({ ...input, disorder: "none" });
-    expect([...l.docs, ...l.cards].every(p => p.k === 0 && p.nudge === 0)).toBe(true);
+    expect([...l.docs, ...l.cards, ...l.tags, ...l.nodes, ...l.people].every(part => part.nudge === 0)).toBe(true);
+  });
+  it.each([converge, trail, chain])("retires the exported and emitted tilt coefficient for every allowed disorder: $template", input => {
+    const variants: SceneInput[] = input.template === "converge" ? (["none", "low", "medium"] as const).map(disorder => ({ ...input, disorder })) : (["none", "low"] as const).map(disorder => ({ ...input, disorder }));
+    for (const authored of variants) {
+      const layout = layoutScene(authored);
+      for (const part of [...layout.docs, ...layout.cards, ...layout.tags, ...layout.nodes, ...layout.people]) expect(Object.hasOwn(part, "k")).toBe(false);
+    }
   });
   it("pins converge centring and unrotated receiving anchors", () => {
     const l = layoutScene({ ...converge, disorder: "none" });

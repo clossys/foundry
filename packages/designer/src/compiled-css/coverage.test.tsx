@@ -176,6 +176,10 @@ describe("coverage: real rendered classes are all present in compiled.css", () =
         `Meter ${tone}`,
         render(<Meter value={2} scaleMax={4} limit={3} tone={tone} valueText="2.0x" limitText="limit 3.0x" />),
       ]);
+      trees.push([
+        `Meter history ${tone}`,
+        render(<Meter value={2} scaleMax={4} limit={3} previous={1} previousText="Previously 1.0x" tone={tone} valueText="2.0x" limitText="limit 3.0x" />),
+      ]);
     }
     trees.push(["Avatar sm", render(<Avatar alt="A" size="sm" />)]);
     trees.push(["Avatar md", render(<Avatar alt="A" size="md" />)]);
@@ -436,13 +440,22 @@ describe("coverage: real rendered classes are all present in compiled.css", () =
       render(<Specimen label="Stacked panels." arrangement="stack" panels={[panel, panelB]} />),
       render(<Specimen label="Panels in a flow." arrangement="flow" connector="Then" panels={[panel, panelB, panelC]} />),
     ];
+    for (const tone of [undefined, "neutral", "success", "warning", "danger", "info"] as const) {
+      trees.push(render(<Specimen label="A badged specimen panel." panels={[{ ...panel, badge: { label: "Reviewed record", tone } }]} />));
+    }
+    trees.push(render(<Specimen label="A specimen with capped status rows." panels={[{
+      id: "capped", parts: [{ id: "rows", type: "status-rows", mobileRows: 3, label: "Checks", items: Array.from({ length: 4 }, (_, index) => ({ id: String(index), label: `Check ${index + 1}`, detail: "Detail", status })) }],
+    }]} />));
+    trees.push(render(<Specimen label="A specimen with meter history." panels={[{
+      ...panelB, parts: panelB.parts.map(part => part.type === "meter" ? { ...part, previous: 1, previousText: "Previously 1" } : part),
+    }]} />));
 
     const renderedClasses = new Set<string>();
     for (const result of trees) {
       for (const c of collectClassNames(result.container)) renderedClasses.add(c);
       result.unmount();
     }
-    for (const required of ["@container", "@md:table", "@md:not-sr-only", "@md:table-cell", "@lg:grid-cols-4", "desktop:grid-cols-3", "size-2xl", "font-mono"]) {
+    for (const required of ["@container", "@md:table", "@md:not-sr-only", "@md:table-cell", "@lg:grid-cols-4", "desktop:grid-cols-3", "size-2xl", "font-mono", "max-tablet:hidden", "border-s", "border-dashed", "border-ink-secondary", "bg-surface-sunken", "text-ink-secondary", "bg-status-success-tint", "text-status-success-text", "bg-status-warning-tint", "text-status-warning-text", "bg-status-danger-tint", "text-status-danger-text", "bg-status-info-tint", "text-status-info-text"]) {
       expect(renderedClasses.has(required)).toBe(true);
     }
 
@@ -472,9 +485,6 @@ it("emits every real Ledger form, cap, ground and rule-card layout class", async
         tree.unmount();
       }
     }
-    const pairTree = render(<RecordLedger form="pairs" ground={ground} productLabel="Creates:" caption="Sample data." items={Array.from({ length: 4 }, (_, i) => ({ id: String(i), role: { eyebrow: "Function", heading: "Role", description: "Checks records." }, product: { kind: "Authored kind", subject: "Record", detail: "Detail", status: { tone: "danger", label: "Open" } } }))} />);
-    for (const cls of collectClassNames(pairTree.container)) classes.add(cls);
-    pairTree.unmount();
     const tile = <LedgerTile ground={ground} caption="Record" mobileRows={3} flagLabel="Attention:" rows={Array.from({ length: 5 }, (_, i) => row(String(i), i === 0))} />;
     const cards = render(<CardGrid treatment="rule" ground={ground} items={[{ id: "wide", span: "two-thirds", heading: "Record", eyebrow: "Function", description: "Details", href: "/one", visual: tile }, { id: "small", span: "third", heading: "Another", href: "/two", visual: tile }]} />);
     for (const cls of collectClassNames(cards.container)) classes.add(cls);
@@ -489,11 +499,12 @@ it("emits every real Ledger form, cap, ground and rule-card layout class", async
     // Width and style must retain the rendered ground line-color utility.
     expect(divider[1]).not.toMatch(/border-(?:block|inline)-start:/);
   }
-  for (const cls of ["ledger-columns-two", "ledger-columns-three", "ledger-owner-columns", "ledger-pair", "ledger-rule-wide", "ledger-owner-disc", "ledger-wire-dot"]) expect(generated.css).toContain(toSelectorText(cls));
+  for (const cls of ["ledger-columns-two", "ledger-columns-three", "ledger-owner-columns", "ledger-rule-wide", "ledger-owner-disc"]) expect(generated.css).toContain(toSelectorText(cls));
 });
 
 
 it("scans Anatomy marker, ground and responsive source classes without generated output", () => {
   const candidates = new Set(scanCompiledCssSources(packageRoot).candidates);
-  for (const candidate of ["anatomy-disc", "anatomy-key-row", "anatomy-key-measure", "tablet-lg:anatomy-columns", "tablet-lg:gap-x-3xl", "text-surface-raised", "text-surface-base", "text-surface-sunken", "text-surface-inverse", "row-span-2", "text-h2", "leading-heading"]) expect(candidates.has(candidate), candidate).toBe(true);
+  for (const candidate of ["anatomy-disc", "anatomy-key-row", "anatomy-key-measure", "tablet-lg:anatomy-columns", "tablet-lg:gap-x-3xl", "text-surface-raised", "text-surface-base", "text-surface-sunken", "text-surface-inverse", "text-body-l", "font-body", "text-h2", "leading-heading"]) expect(candidates.has(candidate), candidate).toBe(true);
+  expect(candidates.has("row-span-2")).toBe(false);
 });

@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { render, screen, within } from "@testing-library/react";
 import { Specimen, type SpecimenProps } from "./Specimen.js";
-import { SpecimenPanel, type SpecimenPanelItem } from "./SpecimenPanel.js";
-import type { SpecimenPart } from "./parts.js";
+import { SpecimenPanel, type SpecimenPanelItem, type SpecimenPanelProps } from "./SpecimenPanel.js";
+import type { SpecimenPart, SpecimenStatusRowsPart, SpecimenMeterPart } from "./parts.js";
 
 const LABEL = "An order record showing its delivery fields, two checks with their states and the stock level against its floor.";
 
@@ -415,5 +415,100 @@ describe("SpecimenPanel inline anatomy markers", () => {
       { parts: [FIELDS], footer: { note: false }, markers: { footer: 1 } },
     ]) expect(() => render(<SpecimenPanel {...props} />)).toThrow(RangeError);
     expect(() => render(<SpecimenPanel parts={[FIELDS]} markers={{ fields: 0 }} />)).toThrow(TypeError);
+  });
+});
+
+
+describe("Specimen history, row caps and badges", () => {
+  const rows: SpecimenStatusRowsPart = {
+    id: "checks", type: "status-rows", label: "Checks",
+    items: Array.from({ length: 6 }, (_, index) => ({
+      id: `check-${index}`, label: `Check ${index + 1}`, detail: `Detail ${index + 1}`,
+      status: { tone: "info" as const, label: `State ${index + 1}` },
+    })),
+  };
+
+  it("retains every status row in the DOM and caps only later rows on mobile", () => {
+    const { container, rerender } = render(<SpecimenPanel parts={[{ ...rows, mobileRows: 3 }]} />);
+    const items = [...container.querySelectorAll("[data-specimen-part='status-rows'] li")];
+    expect(items).toHaveLength(6);
+    for (const [index, row] of items.entries()) {
+      expect(within(row as HTMLElement).getByText(`Check ${index + 1}`)).toBeInTheDocument();
+      expect(within(row as HTMLElement).getByText(`Detail ${index + 1}`)).toBeInTheDocument();
+      expect(within(row as HTMLElement).getByText(`State ${index + 1}`)).toBeInTheDocument();
+      if (index >= 3) expect(row).toHaveClass("max-tablet:hidden");
+      else expect(row).not.toHaveClass("max-tablet:hidden");
+      expect(row).not.toHaveClass("hidden");
+    }
+    rerender(<SpecimenPanel parts={[rows]} />);
+    expect(container.querySelectorAll("[data-specimen-part='status-rows'] li")).toHaveLength(6);
+    for (const row of container.querySelectorAll("li")) expect(row).not.toHaveClass("max-tablet:hidden");
+  });
+
+  it.each([0, 2, 4, null, "3"].map(mobileRows => ({ mobileRows })))("refuses unsupported mobile row cap %j", ({ mobileRows }) => {
+    const part = { ...rows, mobileRows } as unknown as SpecimenStatusRowsPart;
+    expect(() => render(<SpecimenPanel parts={[part]} />)).toThrow(/mobileRows/);
+  });
+
+  it("keeps the full row budget even when mobile rows are capped", () => {
+    expect(() => render(<SpecimenPanel parts={[{ ...rows, mobileRows: 3, items: [] }]} />)).toThrow(/1 to 6/);
+    expect(() => render(<SpecimenPanel parts={[{ ...rows, mobileRows: 3, items: [...rows.items, { ...rows.items[0]!, id: "seventh" }] }]} />)).toThrow(/1 to 6/);
+  });
+
+  it.each([
+    { tone: undefined, fill: "bg-surface-sunken", ink: "text-ink-secondary" },
+    { tone: "neutral", fill: "bg-surface-sunken", ink: "text-ink-secondary" },
+    { tone: "success", fill: "bg-status-success-tint", ink: "text-status-success-text" },
+    { tone: "warning", fill: "bg-status-warning-tint", ink: "text-status-warning-text" },
+    { tone: "danger", fill: "bg-status-danger-tint", ink: "text-status-danger-text" },
+    { tone: "info", fill: "bg-status-info-tint", ink: "text-status-info-text" },
+  ] as const)("renders badge tone $tone alongside the existing title and status", ({ tone, fill, ink }) => {
+    const { container } = render(<SpecimenPanel {...PANEL} badge={{ label: "Reviewed record", tone }} />);
+    const badge = screen.getByText("Reviewed record");
+    expect(badge).toBeVisible();
+    expect(badge).toHaveClass("rounded-pill", fill, ink);
+    expect(badge.closest("[data-specimen-panel-header]")).not.toBeNull();
+    expect(screen.getByText("Order 1042")).toBeInTheDocument();
+    expect(screen.getByText("Open").closest("[data-tone]")).toHaveAttribute("data-tone", "info");
+    expect(container.querySelector(FOCUSABLE)).toBeNull();
+  });
+
+  it("creates a badge-only header and its first divider and forwards panel badge through Specimen", () => {
+    const { container, rerender } = render(<SpecimenPanel parts={[FIELDS]} badge={{ label: "Reviewed record" }} />);
+    expect(container.querySelector("[data-specimen-panel-header]")).not.toBeNull();
+    expect(container.querySelectorAll("[data-specimen-panel-body] > .border-t")).toHaveLength(1);
+    rerender(<Specimen label={LABEL} panels={[{ id: "badge-only", parts: [FIELDS], badge: { label: "Reviewed record", tone: "success" } }]} />);
+    expect(screen.getByText("Reviewed record")).toHaveClass("bg-status-success-tint");
+    expect(container.querySelector("[data-specimen-panel]")).not.toHaveAttribute("id");
+  });
+
+  it.each([
+    null, { label: "Badge", tone: "accent" }, { label: "Badge", tone: "constructor" },
+    { label: "" }, { label: " " }, { label: false }, { label: <span key="empty" /> },
+  ].map(badge => ({ badge })))("refuses malformed panel badges %j", ({ badge }) => {
+    expect(() => render(<SpecimenPanel parts={[FIELDS]} badge={badge as unknown as SpecimenPanelProps["badge"]} />)).toThrow(/badge/i);
+  });
+
+  it("forwards history to the same figure Meter while retaining limit, note and state", () => {
+    const history: SpecimenMeterPart = { ...METER, previous: 20, previousText: "Previously 20 units" };
+    const { container } = render(<SpecimenPanel parts={[history]} />);
+    expect(screen.getByText("Previously 20 units")).toBeVisible();
+    expect(screen.getByText("Previously 20 units").closest("[aria-hidden='true']")).toBeNull();
+    const meter = container.querySelector("[data-emphasis='figure']");
+    expect(meter?.querySelector("[data-part='previous']")).not.toBeNull();
+    expect(meter?.querySelector("[data-part='limit']")).not.toBeNull();
+    expect(screen.getByText("38 units")).toHaveClass("text-h1", "@md:text-h0");
+    expect(screen.getByText("floor 25")).toBeInTheDocument();
+    expect(screen.getByText("Above floor")).toBeInTheDocument();
+    expect(screen.getByText("13 units of headroom")).toBeInTheDocument();
+  });
+
+  it.each([
+    { previous: 20 }, { previousText: "Previously 20 units" },
+    { previous: -1, previousText: "Previous value" },
+    { previous: Number.NaN, previousText: "Previous value" },
+    { previous: 101, previousText: "Previous value" },
+  ])("refuses invalid history through the Specimen adapter %j", props => {
+    expect(() => render(<SpecimenPanel parts={[{ ...METER, ...props }]} />)).toThrow(/previous/i);
   });
 });

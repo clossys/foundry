@@ -2,13 +2,13 @@ import type { ReactNode } from "react";
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
-import { RecordLedger, type LedgerGroupData, type LedgerPairData } from "./RecordLedger.js";
+import { RecordLedger, type LedgerGroupData } from "./RecordLedger.js";
 
 const groups: LedgerGroupData[] = [
   { id: "checks", label: "Checks", rows: [{ id: "one", label: "Review", detail: "Due tomorrow", status: { tone: "warning", label: "Open" } }] },
   { id: "owner", label: "Owner", owner: { initials: "AB", name: "Reviewer", note: "Assigned" }, note: "Next check tomorrow." },
 ];
-const pairs: LedgerPairData[] = Array.from({ length: 3 }, (_, i) => ({ id: String(i), role: { eyebrow: "Function", heading: `Role ${i}`, description: "Checks the record." }, product: { kind: "Authored kind line", subject: `Record ${i}`, detail: "Ready for review", status: { tone: "info", label: "Received" } } }));
+const retiredPairs = Array.from({ length: 3 }, (_, i) => ({ id: String(i), role: { eyebrow: "Function", heading: `Role ${i}`, description: "Checks the record." }, product: { kind: "Authored kind line", subject: `Record ${i}`, detail: "Ready for review", status: { tone: "info", label: "Received" } } }));
 
 describe("RecordLedger", () => {
   it("names a real figure and labelled sections, with readable status and self-contained resets", () => {
@@ -76,18 +76,12 @@ describe("RecordLedger", () => {
     expect(() => render(<RecordLedger id="duplicate" form="record" head={{ title: "Record" }} groups={[groups[0]!, groups[0]!]} caption="Sample data." />)).toThrow(TypeError);
   });
 
-  it("renders three ordered pairs with hidden decorative wires and caller-owned product lead-ins", () => {
-    const { container } = render(<RecordLedger form="pairs" items={pairs} productLabel="Creates:" caption="Sample data." headingLevel={4} />);
-    expect(container.querySelector('ol[data-form="pairs"]')).toHaveClass("m-0", "p-0", "list-none");
-    expect(screen.getAllByRole("listitem")).toHaveLength(3);
-    expect(screen.getAllByRole("heading", { level: 4 })).toHaveLength(3);
-    for (const wire of container.querySelectorAll("[data-ledger-wire]")) expect(wire).toHaveAttribute("aria-hidden", "true");
-    expect(container.querySelectorAll("[data-ledger-wire]")).toHaveLength(3);
-    expect(screen.getAllByText("Creates:")).toHaveLength(3);
-    expect(screen.getAllByText("Authored kind line")).toHaveLength(3);
-    expect(container.querySelectorAll("[data-ledger-product] p p")).toHaveLength(0);
-    expect(() => render(<RecordLedger form="pairs" items={pairs.slice(0, 2)} productLabel="Creates:" />)).toThrow(RangeError);
-    expect(() => render(<RecordLedger form="pairs" items={[...pairs, ...pairs]} productLabel="Creates:" />)).toThrow(RangeError);
+  it("refuses retired pair mode even when record fields are also supplied", () => {
+    const stalePairProps = { form: "pairs", items: retiredPairs, productLabel: "Creates:", caption: "Sample data." };
+    const staleMixedProps = { ...stalePairProps, id: "stale", head: { title: "Record title" }, groups };
+    for (const props of [stalePairProps, staleMixedProps]) {
+      expect(() => render(<RecordLedger {...props as unknown as Parameters<typeof RecordLedger>[0]} />)).toThrow(TypeError);
+    }
   });
 });
 
@@ -120,7 +114,6 @@ it("requires visible record title and caption while accepting zero and opaque co
   }
   const Authored = () => <span>Authored</span>;
   for (const content of [0, [null, [0]], <Authored />]) expect(() => render(<RecordLedger id="content" form="record" head={{ title: content }} groups={groups} caption={content} />)).not.toThrow();
-  for (const blank of blankLedgerNodes) expect(() => render(<RecordLedger form="pairs" items={pairs} productLabel="Creates:" caption={blank} />)).not.toThrow();
 });
 it("retains portable ledger token fallbacks and responsive group border resets", () => {
   const recipes = readFileSync("styles/theme-keys.css", "utf8").split("@utility ledger-columns-two")[1]!;
