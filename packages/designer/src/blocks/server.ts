@@ -61,7 +61,7 @@ export type {
 export { CardGrid } from "./CardGrid.js";
 export { LinkGrid } from "./LinkGrid.js";
 export type { LinkGridProps, LinkGridItem } from "./LinkGrid.js";
-export type { CardGridProps, CardGridItem, CardGridSpan, CardGridHeadingLevel } from "./CardGrid.js";
+export type { CardGridProps, CardGridItem, CardGridSpan, CardGridHeadingLevel, CardGridTreatment } from "./CardGrid.js";
 export { Comparison } from "./Comparison.js";
 export type { ComparisonProps, ComparisonSide, ComparisonHeadingLevel } from "./Comparison.js";
 export { TopicList } from "./TopicList.js";
@@ -162,3 +162,8 @@ export type { SectionFrameProps, SectionMeasure } from "./SectionFrame.js";
 
 export { Stat } from "./Stat.js";
 export type { StatProps, StatTrend } from "./Stat.js";
+
+export { RecordLedger } from "./RecordLedger.js";
+export type { RecordLedgerProps, LedgerRowData, LedgerGroupData, LedgerPairData } from "./RecordLedger.js";
+export { LedgerTile } from "./LedgerTile.js";
+export type { LedgerTileProps } from "./LedgerTile.js";

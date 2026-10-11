@@ -238,3 +238,21 @@ keep.
 | Use plain verbs ("record", "assign", "sign off") | Use filler ("seamless", "powerful", "next-generation", "revolutionary") |
 | Show status as data ("Overdue", "Signed") | Show roadmap as status ("Coming soon", "Beta") |
 | Use one icon per item, only where it tells items apart | Put icons on headings, or emoji anywhere |
+
+
+## Records on rules
+
+Use **RecordLedger** (`record-ledger`) for one record or three-to-four role
+handovers that should read as ledger data, especially when the page has already
+spent its panel. Use a specimen for a full product view. A dated event history
+needs a separately designed timeline form.
+
+Rows carry names, figures and statuses without repeating the surrounding copy.
+Record groups hold one-to-six rows; an owner is a separate final group. Keep one
+flag per record, with authored hidden lead-in copy. Pair kind lines and hidden
+product lead-ins belong to the consumer's copy.
+
+For book-like cards, use CardGrid `treatment: "rule"` with a LedgerTile visual.
+Tiles hold two-to-five rows. A three-row mobile cap hides later rows below tablet
+for every reader; put the row that matters, especially warning or danger, within
+the first three. Ledger rows are static; linked cards have only their title link.

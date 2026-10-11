@@ -107,13 +107,13 @@ surfaces and live in `@clossys/publisher/web`.
   `Separator`, `Chip`, `StatusMark`, `Meter`.
 - **`blocks`** — owns the internal layout of multiple named regions,
   typically by composing one or more atoms (and/or layout) into something
-  with a real job on a page. Twenty-eight ship: `PageHeader`, `EmptyState`,
+  with a real job on a page. Thirty ship: `PageHeader`, `EmptyState`,
   `DataTable`, `DetailView`, `Pagination`, `Stat`, `Form`, `FieldGroup`,
   `ConfirmDialog`, `Toolbar`, `NavGrid`, `LinkGrid`, `SectionHeader`, `Hero`,
-  `MarketingChapter`, `FeatureGrid`, `CardGrid`, `Comparison`, `TopicList`,
+  `MarketingChapter`, `FeatureGrid`, `CardGrid`, `RecordLedger`, `LedgerTile`, `Comparison`, `TopicList`,
   `Specimen`, `SpecimenPanel`, `OrderedStepSequence`, `StatusList`, `Faq`,
   `PricingTable`, `Testimonial`, `ArticleBody`, `ConsentBanner` — the last
-  fourteen are marketing/editorial
+  sixteen are marketing/editorial
   content blocks and a presentational consent notice, completing this layer
   (see "Blocks" below).
 - **`shell`** — the persistent frame around content (nav, layout chrome)
@@ -358,7 +358,7 @@ source file's own header for the exact probe and its result). Today that's:
 | Subpath | Server-safe members |
 | --- | --- |
 | `@clossys/designer/atoms/server` | `Avatar`, `Badge`, `Banner`, `Card`, `Field`, `Icon`, `Meter`, `Skeleton`, `Spinner`, `StatusMark`, `buttonLinkClassName`, `iconButtonClassName`, `iconButtonLinkClassName`, `mergeUiClasses` |
-| `@clossys/designer/blocks/server` | `ArticleBody`, `CardGrid`, `Comparison`, `ContentSection`, `DetailView`, `EmptyState`, `Faq`, `FeatureGrid`, `FieldGroup`, `Hero`, `LinkGrid`, `MarketingChapter`, `MediaFigure`, `OrderedStepSequence`, `PageHeader`, `PricingTable`, `SectionFrame`, `SectionHeader`, `SectionIntro`, `Specimen`, `SpecimenPanel`, `Stat`, `StatusList`, `TopicList` |
+| `@clossys/designer/blocks/server` | `ArticleBody`, `CardGrid`, `Comparison`, `ContentSection`, `DetailView`, `EmptyState`, `Faq`, `FeatureGrid`, `FieldGroup`, `Hero`, `LedgerTile`, `LinkGrid`, `MarketingChapter`, `MediaFigure`, `OrderedStepSequence`, `PageHeader`, `PricingTable`, `RecordLedger`, `SectionFrame`, `SectionHeader`, `SectionIntro`, `Specimen`, `SpecimenPanel`, `Stat`, `StatusList`, `TopicList` |
 | `@clossys/designer/shell/server` | `Shell`, `SiteFooter`, `SiteHeader`, `SkipLink` |
 | `@clossys/designer/charts/server` | `ChartFrame`, `Sparkline` |
 | `@clossys/designer/theme/server` | `getThemeInitScript` |
@@ -3469,6 +3469,64 @@ a third takes half, except a third left alone in its `tablet` row (beside
 a full-row card or last), which takes the whole row instead of leaving an
 empty half; the 12-unit spans apply from `tablet-lg`, `gap-lg` apart.
 
+### RecordLedger and rule card visuals
+
+RecordLedger shows one record in a named figure, or three-to-four role handovers
+in an ordered list. Record groups contain one-to-six rows or a final owner;
+one-to-three groups are allowed. Multi-column records have one group per column.
+Provide a unique caller `id` seed for each record instance, even with identical
+data. The component generates length-prefixed DOM IDs for the figure, head and
+groups from that seed; the figure does not use the raw caller `id`:
+the title and group heading IDs derive from it. `headingLevel` is 3 or 4.
+Record titles and captions, and tile captions, require visible content: blank
+strings, booleans and empty recursive arrays are rejected; numeric zero is valid.
+
+Two columns are stacked below 768px and equal from 768px. Three columns become
+two plus a full-width third at 768px, then three from 1024px; a final owner gets
+4/4/3 shares, otherwise the columns are equal. Pairs stack below 768px; above
+that, a decorative wire joins the role and product. All native margins and list
+padding are reset by these components. Motion is static, including reduced motion;
+page reveal integration awaits the shared reveal infrastructure. Inverse-ledger
+status labels use inverse primary ink for normal-text contrast; glyph colors and
+shapes remain the existing status marks. Other grounds retain toned label ink.
+
+A flag needs caller-owned `flagLabel` copy; at most one row per record or tile
+may be flagged. Pair `productLabel` supplies the hidden lead-in and `product.kind`
+supplies the complete visible line. LedgerTile is static and rejects nested
+interactive nodes in its own caption and row fields. `mobileRows={3}` hides later
+rows only below 768px. Put meaningful warning/danger rows within that cap.
+
+CardGrid `treatment="rule"` replaces the plate with a top hairline and the rule
+link frame. Thirds and two-thirds take halves at tablet; from 1024px the normal
+12-unit spans apply, and two-thirds cards split text/visual internally at 1/1.3.
+The default plate treatment retains its original layout.
+
+```tsx
+import { CardGrid, LedgerTile, RecordLedger } from "@clossys/designer/blocks/server";
+
+function LedgerExample() {
+  const rows = [
+    { id: "one", label: "Record one", detail: "Due tomorrow" },
+    { id: "two", label: "Record two", detail: "Received today" },
+  ];
+  return (
+    <>
+      <RecordLedger
+        id="example-ledger"
+        form="record"
+        head={{ title: "Review record", meta: "Current period" }}
+        groups={[{ id: "checks", label: "Checks", rows }]}
+        caption="Sample data."
+      />
+      <CardGrid treatment="rule" items={[
+        { id: "one", heading: "Review records", span: "two-thirds", href: "/records", visual: <LedgerTile caption="Sample records" rows={rows} /> },
+        { id: "two", heading: "Review guidance", span: "third", href: "/guidance" },
+      ]} />
+    </>
+  );
+}
+```
+
 ### `Comparison`
 
 ```tsx
@@ -5533,10 +5591,18 @@ not a grab-bag).
 | `FeatureGridTreatment` | type | `"plain" \| "rule" \| "plate"`. |
 | `FeatureGridEmphasis` | type | `"item" \| "statement"`. |
 | `CardGrid` | component | Mixed grid of content cards on plates; spans fill whole 12-unit rows (validated); optional bottom-pinned visual per card. |
-| `CardGridProps` | type | Props for `CardGrid`: `items`, `headingLevel`, `ground`, `className`, `style`, plus every native `<div>` attribute except `title`. |
+| `CardGridProps` | type | Props for `CardGrid`: `items`, `headingLevel`, `ground`, `treatment`, `className`, `style`, plus every native `<div>` attribute except `title`. |
 | `CardGridItem` | type | One card: `id`, `icon?`, `eyebrow?`, `heading`, `description?`, `span`, `visual?`, `href?` (a linked card). |
 | `CardGridSpan` | type | `"third" \| "half" \| "two-thirds" \| "full"`. |
 | `CardGridHeadingLevel` | type | `2 \| 3 \| 4 \| 5 \| 6`. |
+| `CardGridTreatment` | type | `"plate" \| "rule"`; plate is the default. |
+| `RecordLedger` | component | A record or role handovers on rules, without a panel. |
+| `RecordLedgerProps` | type | `form: "record"` takes unique instance seed `id`, `head`, `groups`, `columns?`, `caption`, `flagLabel?`; `form: "pairs"` takes `items`, `productLabel`, `caption?`; both accept `ground`, `headingLevel`, `className`. |
+| `LedgerRowData` | type | Static row: `id`, `label`, `detail?`, `status?` (`tone`, `label`), `flag?`. |
+| `LedgerGroupData` | type | `id`, `label`, either `rows` or last-group `owner` (`initials`, `name`, `note?`), with optional owner-group `note`. |
+| `LedgerPairData` | type | `id`, `role` (`eyebrow`, `heading`, `description`) and `product` (`kind`, `subject`, `detail?`, `status?`); kind is a complete authored line. |
+| `LedgerTile` | component | A captioned two-to-five-row plate visual for rule cards. |
+| `LedgerTileProps` | type | `caption`, `rows`, `mobileRows?` (`3`), `flagLabel?`, `ground?`, `className?`. |
 | `Comparison` | component | Before and after side by side: two labelled sections, the after side on a plate. |
 | `ComparisonProps` | type | Props for `Comparison`: `before`, `after`, `headingLevel`, `ground`, `className`, `style`, plus every native `<div>` attribute except `title`. |
 | `ComparisonSide` | type | One side: `label`, `heading?`, `description?`, `points?`, `visual?`. |
@@ -6225,10 +6291,10 @@ speculatively, just because a related component shipped, is the exact
 un-bounded growth this package's own "variant rule" warns against one level
 up. They get added here only once something real needs them.
 
-**Blocks:** twenty-eight ship — `PageHeader`, `EmptyState`, `DataTable`,
+**Blocks:** thirty ship — `PageHeader`, `EmptyState`, `DataTable`,
 `DetailView`, `Pagination`, `Stat`, `Form`, `FieldGroup`, `ConfirmDialog`,
 `Toolbar`, `NavGrid`, `LinkGrid`, `SectionHeader`, `Hero`, `MarketingChapter`,
-`FeatureGrid`, `CardGrid`, `Comparison`, `TopicList`, `Specimen`,
+`FeatureGrid`, `CardGrid`, `RecordLedger`, `LedgerTile`, `Comparison`, `TopicList`, `Specimen`,
 `SpecimenPanel`, `OrderedStepSequence`, `StatusList`, `Faq`, `PricingTable`,
 `Testimonial`, `ArticleBody`, `ConsentBanner` — completing this layer. No
 `FilterBar` block:

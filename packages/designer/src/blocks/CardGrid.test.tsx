@@ -114,3 +114,36 @@ describe("CardGrid", () => {
     expect(() => render(<CardGrid items={cards(["half", "third"])} />)).toThrow(RangeError);
   });
 });
+
+it("uses unboxed rule cards, tablet halves and a wide-card internal split without changing plate defaults", () => {
+  const { container } = render(<CardGrid treatment="rule" items={cards(["two-thirds", "third"]).map((item, index) => index === 0 ? { ...item, visual: <div>Static visual</div> } : item)} />);
+  expect(container.querySelector('[data-variant="plate"]')).toBeNull();
+  expect(container.querySelector("[data-card-grid]")).toHaveAttribute("data-treatment", "rule");
+  const [wide, narrow] = container.querySelectorAll("[data-card-grid-item]");
+  expect(wide).toHaveClass("tablet:col-span-6", "tablet-lg:col-span-8", "ledger-rule-wide");
+  expect(narrow).toHaveClass("tablet:col-span-6", "tablet-lg:col-span-4");
+  expect(wide).toHaveStyle({ borderBlockStartWidth: "var(--ui-border-hairline, 1px)" });
+});
+
+it("gives linked rule cards the rule hit frame and one title link", () => {
+  const { container } = render(<CardGrid treatment="rule" items={cards(["half", "half"]).map(item => ({ ...item, href: "/record" }))} />);
+  expect(container.querySelectorAll("a")).toHaveLength(2);
+  for (const anchor of container.querySelectorAll("a")) expect(anchor).toHaveClass("after:top-0", "after:-bottom-sm", "tablet:after:-bottom-md");
+  for (const p of container.querySelectorAll("p,h3")) expect(p).toHaveClass("m-0");
+});
+
+
+it("keeps an icon and copy in one text region beside a wide rule visual and leaves text-only cards unsplit", () => {
+  const { container } = render(<CardGrid treatment="rule" items={[
+    { id: "wide", span: "two-thirds", heading: "Linked heading", href: "/record", icon: <svg data-testid="rule-icon" />, visual: <figure>Static record</figure> },
+    { id: "narrow", span: "third", heading: "Other", href: "/other" },
+  ]} />);
+  const wide = container.querySelector('[data-span="two-thirds"]')!;
+  expect(wide.children).toHaveLength(2);
+  expect(wide.children[0]).toHaveAttribute("data-card-grid-text");
+  expect(wide.children[0]!.querySelector("svg[data-testid=rule-icon]")).not.toBeNull();
+  expect(wide.children[0]!.querySelector("h3 a")).not.toBeNull();
+  expect(wide.children[1]).toHaveAttribute("data-card-grid-visual");
+  const textOnly = render(<CardGrid treatment="rule" items={cards(["two-thirds", "third"])} />);
+  expect(textOnly.container.querySelector('[data-span="two-thirds"]')).not.toHaveClass("ledger-rule-wide");
+});

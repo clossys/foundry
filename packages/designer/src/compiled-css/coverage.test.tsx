@@ -51,6 +51,8 @@ import { Comparison } from "../blocks/Comparison.js";
 import { ContentSection } from "../blocks/ContentSection.js";
 import { FeatureGrid } from "../blocks/FeatureGrid.js";
 import { NavGrid } from "../blocks/NavGrid.js";
+import { RecordLedger } from "../blocks/RecordLedger.js";
+import { LedgerTile } from "../blocks/LedgerTile.js";
 import { LinkGrid } from "../blocks/LinkGrid.js";
 import { OrderedStepSequence } from "../blocks/OrderedStepSequence.js";
 import { TopicList } from "../blocks/TopicList.js";
@@ -423,4 +425,40 @@ describe("coverage: real rendered classes are all present in compiled.css", () =
     }
     expect(missing).toEqual([]);
   });
+});
+
+
+it("emits every real Ledger form, cap, ground and rule-card layout class", async () => {
+  const classes = new Set<string>();
+  const row = (id: string, flag = false) => ({ id, label: "Row", detail: "Detail", flag, status: { tone: "info" as const, label: "Received" } });
+  const group = (id: string) => ({ id, label: "Checks", rows: [row(id, true)] });
+  for (const ground of ["base", "sunken", "inverse"] as const) {
+    for (const columns of [1, 2, 3] as const) {
+      for (const owner of [false, true]) {
+        const groups = Array.from({ length: columns }, (_, index) => owner && index === columns - 1 ? { id: "owner", label: "Owner", owner: { initials: "AB", name: "Reviewer" }, note: "Next check." } : group(String(index)));
+        // The record permits one accent across all groups.
+        const safeGroups = groups.map((entry, index) => "rows" in entry ? { ...entry, rows: [row(String(index), index === 0)] } : entry);
+        const tree = render(<RecordLedger id={`ledger-${ground}-${columns}-${owner}`} form="record" head={{ title: "Record", meta: "Metadata", status: { tone: "neutral", label: "Open" } }} groups={safeGroups} columns={columns} ground={ground} flagLabel="Attention:" caption="Sample data." />);
+        for (const cls of collectClassNames(tree.container)) classes.add(cls);
+        tree.unmount();
+      }
+    }
+    const pairTree = render(<RecordLedger form="pairs" ground={ground} productLabel="Creates:" caption="Sample data." items={Array.from({ length: 4 }, (_, i) => ({ id: String(i), role: { eyebrow: "Function", heading: "Role", description: "Checks records." }, product: { kind: "Authored kind", subject: "Record", detail: "Detail", status: { tone: "danger", label: "Open" } } }))} />);
+    for (const cls of collectClassNames(pairTree.container)) classes.add(cls);
+    pairTree.unmount();
+    const tile = <LedgerTile ground={ground} caption="Record" mobileRows={3} flagLabel="Attention:" rows={Array.from({ length: 5 }, (_, i) => row(String(i), i === 0))} />;
+    const cards = render(<CardGrid treatment="rule" ground={ground} items={[{ id: "wide", span: "two-thirds", heading: "Record", eyebrow: "Function", description: "Details", href: "/one", visual: tile }, { id: "small", span: "third", heading: "Another", href: "/two", visual: tile }]} />);
+    for (const cls of collectClassNames(cards.container)) classes.add(cls);
+    cards.unmount();
+  }
+  const generated = await generateCompiledCss({ stylesDir: resolve(packageRoot, "styles"), candidates: scanCompiledCssSources(packageRoot).candidates });
+  expect([...classes].filter(cls => !generated.css.includes(toSelectorText(cls)))).toEqual([]);
+  expect(generated.css).toContain(toSelectorText("max-tablet:hidden"));
+  const groupDividers = [...generated.css.matchAll(/[^{}]*\.ledger-group-divided[^{}]*\{([^}]*)\}/g)];
+  expect(groupDividers).toHaveLength(3);
+  for (const divider of groupDividers) {
+    // Width and style must retain the rendered ground line-color utility.
+    expect(divider[1]).not.toMatch(/border-(?:block|inline)-start:/);
+  }
+  for (const cls of ["ledger-columns-two", "ledger-columns-three", "ledger-owner-columns", "ledger-pair", "ledger-rule-wide", "ledger-owner-disc", "ledger-wire-dot"]) expect(generated.css).toContain(toSelectorText(cls));
 });

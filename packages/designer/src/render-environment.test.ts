@@ -75,6 +75,8 @@ describe("server-safe entry points resolve under react-server (test 1)", () => {
         "FieldGroup",
         "Hero",
         "LinkGrid",
+        "LedgerTile",
+        "RecordLedger",
         "MarketingChapter",
         "MediaFigure",
         "OrderedStepSequence",

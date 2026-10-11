@@ -1,5 +1,6 @@
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
 import { Card } from "../atoms/Card.js";
+import { UI_BORDER_HAIRLINE } from "../atoms/internal/ui-vars.js";
 import { cx } from "../atoms/internal/cx.js";
 import { SECTION_GROUND_CLASSES, type SectionGround } from "./section-ground.js";
 import { assertNoNestedInteractive, CardLinkTitle, cardLinkContainerClassName } from "./stretched-link.js";
@@ -9,6 +10,8 @@ export type CardGridSpan = "third" | "half" | "two-thirds" | "full";
 
 /** Which heading element each card's heading renders as. */
 export type CardGridHeadingLevel = 2 | 3 | 4 | 5 | 6;
+
+export type CardGridTreatment = "plate" | "rule";
 
 export interface CardGridItem {
   /** Stable identifier: the React key. */
@@ -43,6 +46,8 @@ export interface CardGridProps extends Omit<HTMLAttributes<HTMLDivElement>, "tit
   headingLevel?: CardGridHeadingLevel;
   /** The ground the grid sits on; each card is a plate of the other ground. @default "base" */
   ground?: SectionGround;
+  /** Unboxed cards on hairlines, or the original plate treatment. @default "plate" */
+  treatment?: CardGridTreatment;
   className?: string;
   style?: CSSProperties;
 }
@@ -57,6 +62,21 @@ export const CARD_GRID_SPAN_UNITS: Readonly<Record<CardGridSpan, number>> = {
 
 const HEADING_TAGS = { 2: "h2", 3: "h3", 4: "h4", 5: "h5", 6: "h6" } as const satisfies Record<CardGridHeadingLevel, string>;
 
+/** The one span name that is not a bare identifier: a computed key keeps the name out of the class scan. */
+const TWO_THIRDS = "two-thirds" as const;
+
+const RULE_BORDER_CLASSES: Record<SectionGround, string> = {
+  base: "border-line-strong",
+  sunken: "border-line-strong",
+  inverse: "border-line-on-inverse",
+};
+const RULE_SPAN_CLASSES: Record<CardGridSpan, string> = {
+  third: "tablet:col-span-6 tablet-lg:col-span-4",
+  half: "tablet:col-span-6",
+  [TWO_THIRDS]: "tablet:col-span-6 tablet-lg:col-span-8",
+  full: "tablet:col-span-12",
+};
+
 const ROW_UNITS = 12;
 const MIN_CARDS = 2;
 const MAX_CARDS = 6;
@@ -66,8 +86,6 @@ const MAX_CARDS = 6;
  * takes the full row and a third takes half; the 12-unit spans apply from
  * `tablet-lg`.
  */
-/** The one span name that is not a bare identifier: a computed key keeps the name out of the class scan. */
-const TWO_THIRDS = "two-thirds" as const;
 
 const SPAN_CLASSES: Record<CardGridSpan, string> = {
   third: "tablet:col-span-6 tablet-lg:col-span-4",
@@ -169,23 +187,58 @@ export function assertCardGridSpans(spans: readonly CardGridSpan[]): void {
  *
  * Server-safe: no hooks.
  */
-export function CardGrid({ items, headingLevel = 3, ground = "base", className, style, ...rest }: CardGridProps) {
+export function CardGrid({ items, headingLevel = 3, ground = "base", treatment = "plate", className, style, ...rest }: CardGridProps) {
   assertCardGridSpans(items.map((item) => item.span));
   const HeadingTag = HEADING_TAGS[headingLevel];
   const colors = SECTION_GROUND_CLASSES[ground];
+  const isRule = treatment === "rule";
   /** A linked card: the plate is the hit area and carries the ring. */
-  const linkedContainer = cardLinkContainerClassName("plate", ground);
+  const linkedContainer = cardLinkContainerClassName(treatment, ground);
   const lone = loneTabletThirds(items.map((item) => item.span));
 
   return (
     <div
       {...rest}
       data-card-grid=""
-      className={cx("grid grid-cols-1 gap-lg tablet:grid-cols-12", className)}
+      data-treatment={treatment}
+      className={cx("grid grid-cols-1 gap-lg tablet:grid-cols-12", isRule ? "tablet:gap-x-2xl tablet:gap-y-3xl" : undefined, className)}
       style={style}
     >
       {items.map((item, index) => {
         if (item.href !== undefined) assertNoNestedInteractive("CardGrid", item.id, [item.icon, item.eyebrow, item.heading, item.description, item.visual]);
+        const isWideRule = isRule && item.span === TWO_THIRDS && Boolean(item.visual);
+        const icon = item.icon ? (
+                <span aria-hidden="true" className={cx("inline-flex", ICON_ACCENT_CLASSES[ground])}>
+                  {item.icon}
+                </span>
+              ) : null;
+        const copy = <div className="flex flex-col gap-xs">
+                {item.eyebrow ? (
+                  // Secondary, not muted: the plate is a raised or sunken fill, where muted ink is only AA-large.
+                  <p className={cx(cx("text-body-s font-medium uppercase tracking-label", isRule ? "m-0" : undefined), colors.secondary)}>{item.eyebrow}</p>
+                ) : null}
+                {/* A linked title drops the display face's horizontal-scale transform: a transformed heading would become the
+                    containing block of the link's stretched hit area and shrink it to the title. */}
+                <HeadingTag className={cx(cx("text-h2 font-display leading-heading text-balance", isRule ? "m-0" : undefined), colors.primary, item.href === undefined ? undefined : "transform-none")}>
+                  {item.href === undefined ? (
+                    item.heading
+                  ) : (
+                    <CardLinkTitle href={item.href} frame={treatment} ground={ground} iconSize="md">
+                      {item.heading}
+                    </CardLinkTitle>
+                  )}
+                </HeadingTag>
+                {item.description ? (
+                  <p className={cx(cx("text-body text-pretty", isRule ? "m-0" : undefined), colors.secondary)}>{item.description}</p>
+                ) : null}
+              </div>;
+        const visual = item.visual ? (
+                <div data-card-grid-visual="" className={cx("mt-auto w-full min-w-0 pt-md", isWideRule ? "tablet-lg:mt-0 tablet-lg:pt-0" : undefined)}>
+                  {item.visual}
+                </div>
+              ) : null;
+        const body = <>{icon}{copy}{visual}</>;
+        if (isRule) return <article key={item.id} data-card-grid-item="" data-span={item.span} className={cx("min-w-0 flex-col gap-lg border-t pt-lg", isWideRule ? "ledger-rule-wide" : "flex", RULE_BORDER_CLASSES[ground], RULE_SPAN_CLASSES[item.span], item.href === undefined ? undefined : linkedContainer)} style={{ borderBlockStartWidth: UI_BORDER_HAIRLINE }}><div data-card-grid-text="" className="min-w-0 flex flex-col gap-md">{icon}{copy}</div>{visual}</article>;
         return (
           <article
             key={item.id}
@@ -198,36 +251,7 @@ export function CardGrid({ items, headingLevel = 3, ground = "base", className, 
               ground={ground}
               className={cx("flex w-full flex-col gap-md tablet:p-xl desktop:p-2xl", item.href === undefined ? undefined : linkedContainer)}
             >
-              {item.icon ? (
-                <span aria-hidden="true" className={cx("inline-flex", ICON_ACCENT_CLASSES[ground])}>
-                  {item.icon}
-                </span>
-              ) : null}
-              <div className="flex flex-col gap-xs">
-                {item.eyebrow ? (
-                  // Secondary, not muted: the plate is a raised or sunken fill, where muted ink is only AA-large.
-                  <p className={cx("text-body-s font-medium uppercase tracking-label", colors.secondary)}>{item.eyebrow}</p>
-                ) : null}
-                {/* A linked title drops the display face's horizontal-scale transform: a transformed heading would become the
-                    containing block of the link's stretched hit area and shrink it to the title. */}
-                <HeadingTag className={cx("text-h2 font-display leading-heading text-balance", colors.primary, item.href === undefined ? undefined : "transform-none")}>
-                  {item.href === undefined ? (
-                    item.heading
-                  ) : (
-                    <CardLinkTitle href={item.href} frame="plate" ground={ground} iconSize="md">
-                      {item.heading}
-                    </CardLinkTitle>
-                  )}
-                </HeadingTag>
-                {item.description ? (
-                  <p className={cx("text-body text-pretty", colors.secondary)}>{item.description}</p>
-                ) : null}
-              </div>
-              {item.visual ? (
-                <div data-card-grid-visual="" className="mt-auto w-full min-w-0 pt-md">
-                  {item.visual}
-                </div>
-              ) : null}
+              {body}
             </Card>
           </article>
         );

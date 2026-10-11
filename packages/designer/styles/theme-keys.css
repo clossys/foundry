@@ -371,3 +371,41 @@
     inset: calc(var(--spacing-sm, 8px) / -2);
   }
 }
+
+/* Ledger geometry uses existing spacing, rule and icon slots. Each native
+   element resets its own margins in the component, without a page reset. */
+@utility ledger-columns-two {
+  grid-template-columns: minmax(0, 1fr);
+  @media (width >= 48rem) { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: var(--spacing-2xl, 32px); & > [data-ledger-group]:nth-child(2) { border-block-start-width: 0; } }
+  @media (width >= 64rem) {
+    column-gap: 0;
+    & > [data-ledger-group] { padding-inline: var(--spacing-xl, 24px); }
+    & > [data-ledger-group]:first-child { padding-inline-start: 0; }
+    & > [data-ledger-group]:last-child { padding-inline-end: 0; }
+    & > .ledger-group-divided { border-block-start-width: 0; border-inline-start-width: var(--ui-border-hairline, 1px); border-inline-start-style: solid; }
+  }
+}
+@utility ledger-columns-three {
+  grid-template-columns: minmax(0, 1fr);
+  @media (width >= 48rem) {
+    grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: var(--spacing-2xl, 32px);
+    & > [data-ledger-group]:nth-child(2) { border-block-start-width: 0; }
+    & > [data-ledger-group]:nth-child(3) { grid-column: 1 / -1; }
+  }
+  @media (width >= 64rem) {
+    grid-template-columns: repeat(3, minmax(0, 1fr)); column-gap: 0;
+    & > [data-ledger-group] { padding-inline: var(--spacing-xl, 24px); }
+    & > [data-ledger-group]:first-child { padding-inline-start: 0; }
+    & > [data-ledger-group]:last-child { padding-inline-end: 0; }
+    & > .ledger-group-divided { border-block-start-width: 0; border-inline-start-width: var(--ui-border-hairline, 1px); border-inline-start-style: solid; }
+    & > [data-ledger-group]:nth-child(3) { grid-column: auto; }
+  }
+}
+@utility ledger-owner-columns { @media (width >= 64rem) { grid-template-columns: minmax(0, 4fr) minmax(0, 4fr) minmax(0, 3fr); } }
+@utility ledger-group-divided { border-block-start-width: var(--ui-border-hairline, 1px); border-block-start-style: solid; }
+@utility ledger-pair { grid-template-columns: minmax(0, 1fr); @media (width >= 48rem) { grid-template-columns: minmax(0, 5fr) var(--spacing-2xl, 32px) minmax(0, 6fr); align-items: start; } }
+@utility ledger-wire-dot { inset-inline-end: 0; inset-block-start: 50%; translate: 50% -50%; }
+@utility ledger-owner-disc { inline-size: var(--ui-icon-md, var(--spacing-xl, 24px)); block-size: var(--ui-icon-md, var(--spacing-xl, 24px)); }
+@utility ledger-rule-wide { display: flex; @media (width >= 64rem) { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr); column-gap: var(--spacing-2xl, 32px); align-items: start; } }
+
+@utility ledger-row-grid { grid-template-columns: minmax(0, 1fr) auto; }

@@ -184,6 +184,17 @@ export interface ContrastPair {
 }
 
 export const CONTRAST_PAIRS: readonly ContrastPair[] = [
+  // Ledger labels are normal text on the base/sunken record ground and tile
+  // plates. Raised-surface status pairs already exist below. Inverse labels
+  // follow the separately checked ground-primary ink policy.
+  ...["success", "warning", "danger", "info"].flatMap(tone => ["base", "sunken"].map((surface): ContrastPair => ({
+    id: `ledger/status-${tone}-text/surface-${surface}`,
+    foreground: `--color-status-${tone}-text`,
+    background: `--color-surface-${surface}`,
+    level: "AA",
+    minimumRatio: AA,
+    description: "Ledger small status label on its record ground or work-product/tile plate.",
+  }))),
   // LinkGrid uses body-scale titles and small descriptions on these five
   // actual grounds/resting/hover plates. These scoped AA requirements do
   // not change the legacy large-text or icon-only classifications below.

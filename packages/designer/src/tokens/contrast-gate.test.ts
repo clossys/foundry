@@ -8,6 +8,31 @@ function def(property: string, value: string): TokenDefinition {
 }
 
 describe("checkTokenContrast", () => {
+  describe("Ledger normal-text status labels", () => {
+    it.each(["success", "warning", "danger", "info"])("rejects a small %s label between 3 and 4.5 on a ledger ground or plate", (tone) => {
+      for (const surface of ["base", "sunken"]) {
+        const foreground = `--color-status-${tone}-text`;
+        const background = `--color-surface-${surface}`;
+        const tokens = { ...TOKENS, [foreground]: def(foreground, "oklch(0.6 0 0)"), [background]: def(background, "oklch(1 0 0)") };
+        const id = `ledger/status-${tone}-text/surface-${surface}`;
+        const pairs = CONTRAST_PAIRS.filter(pair => pair.id === id);
+        expect(pairs).toHaveLength(1);
+        expect(checkTokenContrast(pairs, { tokens }).findings).toEqual([expect.objectContaining({ pairId: id, minimumRatio: AA, rule: "below-threshold" })]);
+      }
+    });
+  });
+  it("reuses AA inverse-primary pairs for ledger labels on inverse grounds and plates", () => {
+    for (const surface of ["inverse", "inverse-raised"]) {
+      const id = `link-grid/ink-on-inverse/surface-${surface}`;
+      const pairs = CONTRAST_PAIRS.filter(pair => pair.id === id);
+      expect(pairs).toHaveLength(1);
+      expect(pairs[0]?.minimumRatio).toBe(AA);
+      const foreground = "--color-ink-on-inverse";
+      const background = `--color-surface-${surface}`;
+      const tokens = { ...TOKENS, [foreground]: def(foreground, "oklch(0.6 0 0)"), [background]: def(background, "oklch(1 0 0)") };
+      expect(checkTokenContrast(pairs, { tokens }).findings).toEqual([expect.objectContaining({ pairId: id, rule: "below-threshold", minimumRatio: AA })]);
+    }
+  });
   describe("LinkGrid body text and focus indicators", () => {
     it("rejects inverse raised copy below 4.5 even when the legacy icon check clears 3", () => {
       const tokens = { ...TOKENS, "--color-surface-inverse-raised": def("--color-surface-inverse-raised", "oklch(0.6 0 0)") };
