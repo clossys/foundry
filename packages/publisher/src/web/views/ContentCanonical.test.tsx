@@ -2,7 +2,7 @@
 import { createCopyResolver, computeCopyFingerprint, COPY_FINGERPRINT_ALGORITHM, type CopyRegistry } from "@clossys/writer";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
-import { resolveSectionedViewDocument, validateSectionedViewDocument, type SectionedViewContentSection, type SectionedViewDocument, type SectionedViewItemsBlock, type ResolvedSectionedViewDocument, type SectionedViewMedia } from "../../core/sectioned-view.js";
+import { resolveSectionedViewDocument, validateSectionedViewDocument, type SectionedViewContentSection, type SectionedViewDocument, type SectionedViewItemsBlock, type ResolvedSectionedViewDocument, type SectionedViewMedia, type SectionedViewSpecimenPart } from "../../core/sectioned-view.js";
 import { previewSectionedDocument, previewCopyResolver } from "../../preview/fixture-documents.js";
 import { LandingView } from "./LandingView.js";
 import { LandingView as ServerLandingView } from "../server.js";
@@ -10,7 +10,7 @@ import { SectionedView } from "./SectionedView.js";
 import { SectionedView as ServerSectionedView } from "./SectionedView.server.js";
 import { assertRenderableSectionedViewDocument, renderSectionedViewSections } from "./SectionedViewContent.js";
 import { sectionedViewBlocks } from "./SectionedViewBlocks.js";
-const copy = { heading: "Example section", first: "First item", second: "Second item", third: "Third item", fourth: "Fourth item", detail: "A short description.", meta: "Example metadata", badge: "Ready", eyebrow: "Example eyebrow", group: "Example group", panel: "Example panel", field: "Field", value: "Value", initials: "AB", owner: "Example owner", label: "A sample panel with labeled fields and a visible footer.", scene: "Sample documents connect to one result with labeled rows and clear relationships for review.", short: "Example", link: "Read more" };
+const copy = { date: "Oct 11", amount: "40 units", share: "25 percent", format: "PDF", source: "Public archive", measurement: "40 of 100", limit: "80 units", caption: "Sample table", heading: "Example section", first: "First item", second: "Second item", third: "Third item", fourth: "Fourth item", detail: "A short description.", meta: "Example metadata", badge: "Ready", eyebrow: "Example eyebrow", group: "Example group", panel: "Example panel", field: "Field", value: "Value", initials: "AB", owner: "Example owner", label: "A sample panel with labeled fields and a visible footer.", scene: "Sample documents connect to one result with labeled rows and clear relationships for review.", short: "Example", link: "Read more" };
 const ref = (key: keyof typeof copy) => ({ id: `example.${key}` });
 const registry = { id: "canonical-render", revision: "1", locale: "en", source: { kind: "consumer", reference: "test" }, entries: Object.entries(copy).map(([key, text]) => ({ id: `example.${key}`, text, context: "Canonical renderer test", status: "approved" })) } satisfies CopyRegistry;
 const resolver = createCopyResolver(registry);
@@ -49,8 +49,16 @@ describe("canonical available renderer", () => {
     expect(root.querySelector('[data-featured="true"]')).not.toBeNull(); expect(root.querySelectorAll('[data-span="half"]').length).toBe(2);
   });
   it("keeps flat source IDs and group membership through linked rows", () => {
-    const root = dom(html(resolve(band({ block: { type: "items", arrangement: "rows", columns: 2, treatment: "rule", items: ["first", "second", "third", "fourth"].map((id, index) => ({ ...item(id, id as "first" | "second" | "third" | "fourth"), href: `/item-${index}` })), groups: [{ id: "one", label: ref("group"), items: ["first", "second"] }, { id: "two", label: ref("group"), items: ["third", "fourth"] }] } }))));
-    expect([...root.querySelectorAll("a")].map(a => a.getAttribute("href"))).toEqual(["/item-0", "/item-1", "/item-2", "/item-3"]); expect(root.querySelectorAll("h3").length).toBe(4); expect(root.querySelectorAll("section[aria-labelledby]").length).toBe(2);
+    const doc = resolve(band({ block: { type: "items", arrangement: "rows", columns: 2, treatment: "rule", items: ["first", "second", "third", "fourth"].map((id, index) => ({ ...item(id, id as "first" | "second" | "third" | "fourth"), href: `/item-${index}` })), groups: [{ id: "one", label: ref("group"), items: ["first", "second"] }, { id: "two", label: ref("group"), items: ["third", "fourth"] }] } }));
+    const root = dom(html(doc)); expect(html(doc, true)).toBe(html(doc));
+    expect([...root.querySelectorAll("a")].map(a => a.getAttribute("href"))).toEqual(["/item-0", "/item-1", "/item-2", "/item-3"]); expect(root.querySelectorAll("h3").length).toBe(4);
+    const section = doc.sections[0]!; if (section.kind !== "content-section" || section.block?.type !== "items") throw new Error("Expected canonical grouped items");
+    expect(section.block.groups).toEqual([{ id: "one", label: copy.group, items: ["first", "second"] }, { id: "two", label: copy.group, items: ["third", "fourth"] }]);
+    const groups = [...root.querySelectorAll('[role="group"][aria-labelledby]')]; expect(groups).toHaveLength(2);
+    groups.forEach((group, index) => {
+      const labelId = group.getAttribute("aria-labelledby"); const label = [...root.querySelectorAll("[id]")].find(node => node.id === labelId); expect(label?.textContent).toBe(copy.group); expect(group.contains(label!)).toBe(true);
+      expect(group.querySelectorAll('ul[role="list"] > li')).toHaveLength(2); expect([...group.querySelectorAll("a")].map(a => a.getAttribute("href"))).toEqual(index === 0 ? ["/item-0", "/item-1"] : ["/item-2", "/item-3"]);
+    });
   });
   it("renders a single specimen without dropping footer copy through both entries", () => {
     const resolved = resolve(band({ media: specimen })); const markup = html(resolved); expect(html(resolved, true)).toBe(markup);
@@ -242,5 +250,50 @@ describe("canonical LandingView integration", () => {
     expect(validateSectionedViewDocument(authoredDoc)).toEqual([]); const doc = resolveSectionedViewDocument(authoredDoc, resolver);
     const markup = renderToStaticMarkup(<LandingView document={doc} peek={false} afterSection={{ faq: <p data-faq-after="">After FAQ</p> }} />); expect(renderToStaticMarkup(<ServerLandingView document={doc} peek={false} afterSection={{ faq: <p data-faq-after="">After FAQ</p> }} />)).toBe(markup);
     const root = dom(markup); expect(root.querySelector("#faq")?.closest<HTMLElement>("[data-landing-ground]")?.style.paddingBlock).toBe(""); expect(root.querySelector("#faq details summary")?.textContent).toContain(copy.short); expect(root.querySelector("#faq")?.textContent).toContain(copy.detail); expect(root.querySelector("#faq [data-content-section-text] [data-faq-after]")?.textContent).toBe("After FAQ");
+  });
+});
+
+const availableParts: SectionedViewSpecimenPart[] = [
+  { ...field, columns: 2 },
+  { id: "status", type: "status-rows", label: ref("short"), items: [{ id: "row", label: ref("field"), detail: ref("detail"), status: { tone: "info", label: ref("badge") } }] },
+  { id: "meter", type: "meter", label: ref("short"), value: 40, scaleMax: 100, limit: 80, direction: "max", tone: "info", valueText: ref("measurement"), limitText: ref("limit"), note: ref("detail"), status: { tone: "success", label: ref("badge") } },
+  { id: "table", type: "table", label: ref("short"), caption: ref("caption"), columns: [{ id: "name", label: ref("field") }, { id: "state", label: ref("badge") }], rows: [{ id: "row", cells: [{ text: ref("value") }, { status: { tone: "info", label: ref("badge") } }] }] },
+  { id: "schedule", type: "schedule", label: ref("short"), items: [{ id: "row", date: ref("date"), label: ref("field"), amount: ref("amount"), status: { tone: "warning", label: ref("badge") } }] },
+  { id: "shares", type: "shares", label: ref("short"), items: [{ id: "row", name: ref("owner"), share: 25, shareText: ref("share"), status: { tone: "success", label: ref("badge") } }] },
+  { id: "files", type: "files", label: ref("short"), items: [{ id: "row", format: ref("format"), name: ref("owner"), source: ref("source") }] },
+];
+const partCases = availableParts.flatMap(part => ["media", "visual"].map(placement => ({ part, placement })));
+function partDocument(part: SectionedViewSpecimenPart, placement: string) {
+  return resolve(placement === "media" ? band({ media: { ...specimen, panel: { ...panel, meta: ref("meta"), status: { tone: "info", label: ref("badge") }, parts: [part] } } }) : band({ block: { type: "items", arrangement: "columns", columns: 2, items: [{ ...item("one"), meta: ref("meta"), badge: { label: ref("badge"), tone: "info" }, visual: part }, { ...item("two", "second"), visual: { ...part, id: `second-${part.id}` } }] } }));
+}
+const partCopyPaths = [
+  ["fields", "items.0.value"], ["status-rows", "items.0.status.label"], ["meter", "valueText"], ["table", "rows.0.cells.0.text"],
+  ["schedule", "items.0.date"], ["schedule", "items.0.amount"], ["shares", "items.0.shareText"], ["files", "items.0.format"], ["files", "items.0.source"],
+] as const;
+describe("all available specimen part copy", () => {
+  it.each(partCases)("preserves genuine $part.type in $placement through both source entries", ({ part, placement }) => {
+    const doc = partDocument(part, placement); const sections = doc.sections; const resolutions = doc.resolutions; const originals = [...resolutions]; const before = JSON.stringify(doc);
+    const markup = html(doc); expect(html(doc, true)).toBe(markup);
+    for (const resolution of resolutions) expect(markup).toContain(resolution.text);
+    expect(doc.sections).toBe(sections); expect(doc.resolutions).toBe(resolutions); originals.forEach((resolution, index) => expect(doc.resolutions[index]).toBe(resolution)); expect(JSON.stringify(doc)).toBe(before);
+  });
+  it.each(partCopyPaths.flatMap(([type, fieldPath]) => ["media", "visual"].map(placement => ({ type, fieldPath, placement }))))("refuses unresolved $type copy at $fieldPath in $placement before Designer", ({ type, fieldPath, placement }) => {
+    const part = availableParts.find(value => value.type === type)!; const doc: any = structuredClone(partDocument(part, placement));
+    let parent = placement === "media" ? doc.sections[0].media.panel.parts[0] : doc.sections[0].block.items[0].visual;
+    const keys = fieldPath.split("."); for (const key of keys.slice(0, -1)) parent = parent[key]; parent[keys[keys.length - 1]!] = ref("short");
+    const called = vi.fn(); expect(() => renderSectionedViewSections(doc, { ...sectionedViewBlocks, ContentSection: called }, {})).toThrow(/sections\.0/); expect(called).not.toHaveBeenCalled();
+    for (const server of [false, true]) expect(() => html(doc, server)).toThrow(/invalid resolved document/);
+  });
+  it.each([{ type: "constructor", placement: "media" }, { type: "toString", placement: "visual" }])("retains the core type refusal for unknown $type in $placement", ({ type, placement }) => {
+    const doc: any = structuredClone(partDocument(availableParts[0]!, placement));
+    const part = placement === "media" ? doc.sections[0].media.panel.parts[0] : doc.sections[0].block.items[0].visual; part.type = type;
+    const called = vi.fn(); expect(() => renderSectionedViewSections(doc, { ...sectionedViewBlocks, ContentSection: called }, {})).toThrow(/sections\.0.*type.*not a specimen part type/); expect(called).not.toHaveBeenCalled();
+  });
+  it("keeps specimen file copy distinct from Scene formats and provenance source records", () => {
+    const doc = partDocument(availableParts.find(part => part.type === "files")!, "media");
+    const sceneDoc = resolve(band({ id: "scene", media: { type: "scene", label: ref("scene"), input: scenes.converge } })); doc.sections.push(...sceneDoc.sections); doc.resolutions.push(...sceneDoc.resolutions);
+    const before = JSON.stringify(doc); const sources = doc.resolutions.map(resolution => resolution.source); const markup = html(doc); expect(html(doc, true)).toBe(markup);
+    for (const value of [copy.format, copy.source, copy.scene]) expect(markup).toContain(value);
+    sources.forEach((source, index) => expect(doc.resolutions[index]!.source).toBe(source)); expect(JSON.stringify(doc)).toBe(before);
   });
 });

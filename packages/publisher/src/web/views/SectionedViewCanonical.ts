@@ -26,6 +26,7 @@ export function assertClosedData(value: unknown, path: string, ancestors = new S
   ancestors.delete(value);
 }
 const COPY_FIELDS = new Set(["heading", "description", "eyebrow", "label", "title", "detail", "meta", "note", "text", "value", "valueText", "limitText", "previousText", "caption", "endLabel", "continuesLabel", "initials", "name", "origin", "cite", "fn", "subjectOf", "relationLabel", "flagLabel"]);
+const PART_COPY_FIELDS: Readonly<Record<string, readonly string[]>> = { schedule: ["date", "amount"], shares: ["shareText"], files: ["format", "source"] };
 function record(value: unknown): value is Record<string, unknown> { return typeof value === "object" && value !== null && !Array.isArray(value); }
 function nonBlank(value: unknown): value is string { return typeof value === "string" && value.trim().length > 0; }
 function axis(value: Record<string, unknown>, key: string, allowed: readonly unknown[], path: string): void {
@@ -88,12 +89,18 @@ export function assertCanonicalContentSection(section: Record<string, unknown>, 
     if (max !== undefined && [...value.trim()].length > max) throw new Error(`${fieldPath} holds at most ${max} characters.`);
     return { id: "render.validation" };
   }
-  function project(value: unknown, fieldPath: string, field = ""): unknown {
-    if (Array.isArray(value)) return value.map((entry, index) => field === "points" || field === "cites" ? copy(entry, `${fieldPath}.${index}`) : project(entry, `${fieldPath}.${index}`));
+  function project(value: unknown, fieldPath: string, field = "", partType?: string): unknown {
+    if (Array.isArray(value)) return value.map((entry, index) => field === "points" || field === "cites" ? copy(entry, `${fieldPath}.${index}`) : project(entry, `${fieldPath}.${index}`, "", partType));
     const sceneInitials = field === "initials" && fieldPath.startsWith(`${path}.media.input.`);
     const numericValue = field === "value" && typeof value === "number";
-    if (COPY_FIELDS.has(field) && !sceneInitials && !numericValue) return copy(value, fieldPath);
-    if (record(value)) return Object.fromEntries(Object.entries(value).filter(([key]) => !(fieldPath === `${path}.block` && key === "continuesLabel")).map(([key, entry]) => [key, project(entry, `${fieldPath}.${key}`, key)]));
+    const partCopy = partType !== undefined && Object.hasOwn(PART_COPY_FIELDS, partType) && PART_COPY_FIELDS[partType]?.includes(field) === true;
+    if ((COPY_FIELDS.has(field) || partCopy) && !sceneInitials && !numericValue) return copy(value, fieldPath);
+    if (record(value)) {
+      const localPath = fieldPath.slice(path.length + 1);
+      // Only specimen parts own these copy fields; Scene formats and source records stay structural.
+      const childPartType = /^(media\.panel\.parts\.\d+|block\.items\.\d+\.visual)$/.test(localPath) && typeof value.type === "string" ? value.type : partType;
+      return Object.fromEntries(Object.entries(value).filter(([key]) => !(fieldPath === `${path}.block` && key === "continuesLabel")).map(([key, entry]) => [key, project(entry, `${fieldPath}.${key}`, key, childPartType)]));
+    }
     return value;
   }
   // Structural errors retain their original section index instead of a synthetic validation index.
