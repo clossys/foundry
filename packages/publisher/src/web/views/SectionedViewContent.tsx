@@ -763,11 +763,11 @@ const TEXT_LINK_ACTION_STYLE = { minHeight: "var(--ui-layout-tap-target, 44px)" 
  * ground-aware ladder. Explicit emphasis is rendered as authored.
  */
 function renderContentActions(section: ResolvedSectionedViewContentSection): ReactNode {
-  return section.actions?.map((action, index) => renderAction(action, resolveActionEmphasis(section, index), section.ground));
+  return section.actions?.map((action, index) => renderAction(action, resolveActionEmphasis(section, index), section.ground, "md"));
 }
 
-function renderActions(actions: readonly ResolvedSectionedViewAction[] | undefined, ground: SectionedViewGround, look: SectionedViewHeroActions, centered = false): ReactNode {
-  if (look === "button") return renderRoleActions(actions, ground, centered);
+function renderActions(actions: readonly ResolvedSectionedViewAction[] | undefined, ground: SectionedViewGround, look: SectionedViewHeroActions, centered = false, size: "md" | "lg"): ReactNode {
+  if (look === "button") return renderRoleActions(actions, ground, centered, size);
   return actions?.map((action) => <a key={action.id} href={action.href} className={`inline-flex items-center text-body font-body underline ${ACTION_INK[ground]}`} style={TEXT_LINK_ACTION_STYLE}>{action.label}</a>);
 }
 
@@ -860,7 +860,7 @@ function renderSection(section: ResolvedSectionedViewSection, index: number, blo
           eyebrow={section.eyebrow}
           heading={section.heading}
           description={section.description}
-          actions={renderActions(section.actions, section.ground, options.heroActions ?? "link", options.heroActionsCentered)}
+          actions={renderActions(section.actions, section.ground, options.heroActions ?? "link", options.heroActionsCentered, section.compact === true ? "md" : "lg")}
           media={heroMedia}
           {...(section.compact === true ? { size: "compact" as const } : {})}
           {...(heroMedia ? { composition: "split" as const } : {})}

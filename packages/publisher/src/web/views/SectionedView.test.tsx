@@ -465,7 +465,7 @@ describe("SectionedView content-section", () => {
     expect(host).not.toContain("data-section-intro-actions");
     expect(host).toMatch(/<p data-content-section-footnote=""[^>]*>An aside\. <a href="\/guide" class="[^"]*\bunderline\b[^"]*">Read the guide<\/a><\/p><\/div><\/main>$/);
     const headerOnly = renderToStaticMarkup(<SectionedView document={contentDocument({ actions: [{ id: "more", label: "More", href: "/more", emphasis: "primary" }, { id: "faq", label: "FAQ", href: "/faq" }] })} />);
-    expect(headerOnly).toMatch(/<a href="\/more" class="[^"]*\bpx-lg py-md text-body-l bg-accent text-ink-on-accent\b[^"]*" data-action-emphasis="primary">More<\/a>/);
+    expect(headerOnly).toMatch(/<a href="\/more" class="[^"]*\bpx-md py-sm text-body bg-accent text-ink-on-accent\b[^"]*" data-action-emphasis="primary">More<\/a>/);
     expect(headerOnly).toMatch(/<a href="\/faq" class="[^"]*\bpx-md py-sm text-body bg-control-tonal text-ink-primary\b[^"]*" data-action-emphasis="tertiary">FAQ<\/a>/);
     expect(headerOnly).not.toContain("text-ink-link");
   });

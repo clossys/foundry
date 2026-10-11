@@ -582,9 +582,10 @@ accepted type; a retired short type name inside `block` is refused with
   `info` and `neutral`; numbers are finite and non-negative.
 - `actions` holds one or two actions, each `{ id, label, href }` plus an
   optional `emphasis`: `primary`, `secondary`, `tertiary` or `quiet`.
-  Primary and secondary render as filled and outlined `lg` buttons; tertiary
-  uses a ground-aware tonal `md` button, and quiet a `md` text button with a
-  decorative trailing chevron. `resolveActionEmphasis(section, index)` derives
+  Primary and secondary render as filled and outlined buttons; tertiary
+  uses a ground-aware tonal button, and quiet a text button with a
+  decorative trailing chevron. Body action groups use one `md` size for every
+  emphasis. `resolveActionEmphasis(section, index)` derives
   omitted emphasis from `sectionWeight`: A uses secondary then quiet, B and
   frame C use tertiary, and other C uses quiet. Explicit emphasis wins;
   `checkPageFlow` warns when it exceeds the band's ceiling. Validation refuses
@@ -625,8 +626,8 @@ Every visible string is a `CopyRef` and resolves in field order (eyebrow,
 heading, description, actions, block, media, footnote text, footnote link
 label). `SectionedView` and `LandingView` render `content-section` as one
 Designer `ContentSection` (see LandingView's section anatomy below); its
-actions render through the shared emphasis ladder (`primary` and `outline`
-at `lg`, `tonal` and `quiet` at `md`) and its footnote as the band's
+actions render through the shared emphasis ladder (`primary`, `outline`,
+`tonal` and `quiet`) at one `md` size and its footnote as the band's
 last line. The
 web renderer does not render feature-grid item icons yet; it refuses them
 rather than dropping them.
@@ -1236,7 +1237,9 @@ Props, in addition to the standard `<main>` attributes (minus `children`),
   `footnote` takes resolved `{ text, link?: { label, href } }` copy. Labels and
   note copy accept visible composed ReactNodes, including nested arrays; empty
   collections and unresolved copy references are refused. Hero and
-  closing action pairs put the primary first in DOM order; their primary and
+  closing groups use one size for every emphasis: `lg` for a display hero or
+  close, and `md` for a compact hero. Pairs put the primary first in DOM order;
+  their primary and
   secondary buttons stack full width below the tablet breakpoint, while quiet
   actions keep automatic width.
 - `backdrop` (optional): decoration behind the hero block, `aria-hidden` and
@@ -1295,8 +1298,8 @@ to `FeatureGrid`, `card-grid` to `CardGrid`, `comparison` to `Comparison`,
 `topic-list` to `TopicList`, `ordered-step-sequence` to
 `OrderedStepSequence`, `faq` to `Faq`, and `media` to a
 labelled `Specimen` figure. Item icons render their Designer icon; actions
-render through the shared emphasis ladder (`primary` and `outline` at
-`lg`, ground-aware `tonal` and chevron `quiet` at `md`), and a `footnote` renders as a small
+render through the shared emphasis ladder (`primary`, `outline`,
+ground-aware `tonal` and chevron `quiet`) at one `md` group size, and a `footnote` renders as a small
 muted line closing the text column, its one link underlined. A linked
 item's `href` passes to the Designer block, which renders the item's title as
 its one link with a chevron and stretches the hit area over the item; a

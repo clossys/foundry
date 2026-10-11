@@ -1,3 +1,4 @@
+import "@testing-library/jest-dom/vitest";
 import { JSDOM } from "jsdom";
 import { describe, expect, it } from "vitest";
 import { checkSectionVariety, resolveSectionedViewDocument, validateSectionedViewDocument } from "../core/sectioned-view.js";

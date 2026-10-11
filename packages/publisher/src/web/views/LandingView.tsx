@@ -447,7 +447,7 @@ function CallToActionBand({ id, eyebrow, heading, description, action, actions, 
       measure={measure}
       className={CALL_TO_ACTION_BAND_CLASS}
     >
-      <ContentSection data-landing-action-pair={actions?.length === 2 ? "" : undefined} headingLevel={2} align="center" ground={ground} eyebrow={eyebrow} heading={heading} description={description} actions={actions === undefined ? action : renderRoleActions(actions, ground)} footnote={renderCloseFootnote(footnote)} />
+      <ContentSection data-landing-action-pair={actions?.length === 2 ? "" : undefined} headingLevel={2} align="center" ground={ground} eyebrow={eyebrow} heading={heading} description={description} actions={actions === undefined ? action : renderRoleActions(actions, ground, true, "lg")} footnote={renderCloseFootnote(footnote)} />
     </SectionFrame>
   );
 }
