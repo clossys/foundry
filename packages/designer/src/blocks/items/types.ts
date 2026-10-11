@@ -25,6 +25,8 @@ export interface ItemProps extends ItemData {
   treatment: ItemTreatment;
   size: ItemSize;
   ground: SectionGround;
+  /** A semantic heading when supplied; omission keeps a paragraph. */
+  headingLevel?: 3 | 4;
 }
 export type ItemsArrangement = "columns" | "rows" | "bento" | "stacked";
 export type ItemsColumns = 1 | 2 | 3;

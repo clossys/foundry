@@ -3360,13 +3360,16 @@ function RelatedResources() {
 }
 ```
 
-`Item` requires `treatment`, `size` and `ground`; its title is a paragraph.
+`Item` requires `treatment`, `size` and `ground`; its title defaults to a paragraph.
+Optional `headingLevel={3}` or `headingLevel={4}` selects a semantic heading.
 `Items` defaults treatment
 to plain, ground to base, size to standard, and item heading elements to
 h3 (`headingLevel={4}` selects h4). Display size uses text-h3; statement
 uses text-h2; bento uses text-h3. These visual scales do not change heading
 elements. Rules are hairlines; decorative icons use secondary ink. Eyebrow,
-badge and meta share a wrapping row in every treatment. Badge tone maps to
+badge and meta share a wrapping row in every treatment. The four status tones
+use a rounded opaque base-surface backing, preserving the Badge text and tint
+pairing on each ground. Neutral keeps its own opaque fill. Badge tone maps to
 the existing Badge atom: neutral (default), success, warning, danger or info.
 A featured item uses a flat plate with an accent top rule.
 
@@ -3390,8 +3393,10 @@ and rows.
 
 Rows may have 2–4 labelled groups, with 2–4 item IDs in each. Groups reference
 every item exactly once, and render members in each group's authored ID
-order. Group labels are caption paragraphs naming their sections through
-unique label IDs; item headings retain the selected h3/h4 level.
+order. Group labels are caption paragraphs naming `role="group"` containers
+through unique label IDs; item headings retain the selected h3/h4 level.
+Every arrangement uses a `ul` with `role="list"` and one `li` per item; grouped
+rows use a separate list in each group. List items own responsive grid spans.
 
 Link all items or none, up to six distinct normalized destinations. A linked
 item has one title-named anchor; description, badge, meta and visual remain
@@ -3441,18 +3446,21 @@ reinforcement for a heading that already carries the meaning, the same
 treatment `NavGrid`'s own `icon` slot gets. An item's optional `eyebrow`
 renders as a small uppercase caption in secondary ink directly above its
 heading (one tight group; without it the heading is emitted unchanged), for
-naming an item's area or role. Item headings are deliberately
-NOT real heading elements (a homogeneous repeat, not named regions, the
-same reasoning `NavGrid`'s cards apply) — the grid's own optional
-`heading` (via `headingLevel`, default `2`) is the only real heading
-region. Items lay out one per row on narrow viewports, two from `tablet`,
+naming an item's area or role. Published default item titles are paragraphs; the grid's optional
+`heading` (via `headingLevel`, default `2`) supplies its heading region. Items lay out one per row on narrow viewports, two from `tablet`,
 three from `desktop` — the same responsive grid `NavGrid` uses.
 `ground` uses the shared closed section-ground contract above.
 
-**Catalog layout.** Setting `columns`, `treatment` or `emphasis` routes to
-`Items`. Two columns take 2, 4 or 6 items; three columns (the default) take
+**Catalog layout.** Setting `columns`, `treatment` or `emphasis` routes
+accepted canonical inputs to `Items` when the grid has a meaningful heading
+or an explicit `headingLevel`. Headless catalog calls with an omitted level
+keep their earlier paragraph titles and catalog markup during migration.
+Existing catalog inputs outside its
+bounds retain their earlier catalog rendering during migration, including
+four columns. Canonical two columns take 2, 4 or 6 items; three columns (the default) take
 3 or 6. Rules use `--ui-border-hairline`; icons use secondary ink. Item
-headings use body-l semibold and semantic h3 elements. Statement uses
+headings use body-l semibold and semantic h3 elements below a level-two
+collection heading, or h4 when the collection heading is level three or deeper. Statement uses
 three items in three columns, plain or rule treatment, and text-h2 visual
 scale. Statement items take heading, description and optional badge only.
 Leaving all catalog axes unset preserves the published default markup and
@@ -5748,13 +5756,13 @@ not a grab-bag).
 | `FeatureGridProps` | type | Props for `FeatureGrid`: `eyebrow`, `heading`, `description`, `items`, `headingLevel`, `ground`, `columns`, `treatment`, `emphasis`, `className`, `style`, plus every native `<div>` attribute. |
 | `FeatureGridItem` | type | One item: `id`, `icon?`, `eyebrow?` (a caption above the item heading), `heading`, `description?`, `href?` (a linked item; not on a statement grid). |
 | `FeatureGridHeadingLevel` | type | `2 \| 3 \| 4 \| 5 \| 6`. |
-| `FeatureGridColumns` | type | `2 \| 3`. |
+| `FeatureGridColumns` | type | `2 \| 3 \| 4`; four remains a compatibility input. |
 | `FeatureGridTreatment` | type | `"plain" \| "rule" \| "plate"`. |
 | `FeatureGridEmphasis` | type | `"item" \| "statement"`. |
 | `Item` | component | Standalone item with required treatment, size and ground; one title link and independent copy, badge, meta and visual slots. |
 | `Items` | component | Canonical bounded columns, rows, bento or stacked collection, with labelled groups and at most one featured plate. |
 | `ItemData` | type | Stable id and heading; optional description, eyebrow, icon, meta, visual, href, featured, span and badge. |
-| `ItemProps` | type | ItemData plus required treatment, size and ground. |
+| `ItemProps` | type | ItemData plus required treatment, size and ground, and optional headingLevel (`3 \| 4`; omission keeps a paragraph). |
 | `ItemBadge` | type | ReactNode label and optional existing Badge tone. |
 | `ItemSize` | type | `"standard" \| "display"`. |
 | `ItemTreatment` | type | `"plain" \| "rule" \| "plate"`. |

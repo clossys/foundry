@@ -1,0 +1,134 @@
+[
+  {
+    "name": "headless-three-plate-icons-eyebrows",
+    "block": "FeatureGrid",
+    "props": {
+      "columns": 3,
+      "treatment": "plate",
+      "ground": "base",
+      "items": [
+        {
+          "id": "item-0",
+          "heading": "Title 0",
+          "description": "Support 0",
+          "icon": {
+            "$tag": "svg",
+            "props": {},
+            "children": null
+          },
+          "eyebrow": "Area"
+        },
+        {
+          "id": "item-1",
+          "heading": "Title 1",
+          "description": "Support 1",
+          "icon": {
+            "$tag": "svg",
+            "props": {},
+            "children": null
+          },
+          "eyebrow": "Area"
+        },
+        {
+          "id": "item-2",
+          "heading": "Title 2",
+          "description": "Support 2",
+          "icon": {
+            "$tag": "svg",
+            "props": {},
+            "children": null
+          },
+          "eyebrow": "Area"
+        }
+      ]
+    },
+    "html": "<div class=\"flex flex-col gap-lg\"><div data-feature-grid-columns=\"3\" data-treatment=\"plate\" data-emphasis=\"item\" class=\"grid grid-cols-1 gap-x-2xl tablet:grid-cols-2 tablet-lg:grid-cols-3 gap-y-2xl\"><div data-feature-grid-item=\"\" data-variant=\"plate\" class=\"rounded-panel p-lg bg-surface-sunken flex h-full flex-col items-start gap-sm tablet:p-xl\"><span aria-hidden=\"true\" class=\"inline-flex text-accent\"><svg></svg></span><div data-feature-grid-eyebrow=\"\" class=\"flex flex-col gap-xs\"><p class=\"text-body-s font-medium uppercase tracking-label text-ink-secondary\">Area</p><p class=\"text-body-l font-body font-medium text-ink-primary\">Title 0</p></div><p class=\"text-body text-pretty text-ink-secondary\">Support 0</p></div><div data-feature-grid-item=\"\" data-variant=\"plate\" class=\"rounded-panel p-lg bg-surface-sunken flex h-full flex-col items-start gap-sm tablet:p-xl\"><span aria-hidden=\"true\" class=\"inline-flex text-accent\"><svg></svg></span><div data-feature-grid-eyebrow=\"\" class=\"flex flex-col gap-xs\"><p class=\"text-body-s font-medium uppercase tracking-label text-ink-secondary\">Area</p><p class=\"text-body-l font-body font-medium text-ink-primary\">Title 1</p></div><p class=\"text-body text-pretty text-ink-secondary\">Support 1</p></div><div data-feature-grid-item=\"\" data-variant=\"plate\" class=\"rounded-panel p-lg bg-surface-sunken flex h-full flex-col items-start gap-sm tablet:p-xl tablet:col-span-2 tablet-lg:col-span-1\"><span aria-hidden=\"true\" class=\"inline-flex text-accent\"><svg></svg></span><div data-feature-grid-eyebrow=\"\" class=\"flex flex-col gap-xs\"><p class=\"text-body-s font-medium uppercase tracking-label text-ink-secondary\">Area</p><p class=\"text-body-l font-body font-medium text-ink-primary\">Title 2</p></div><p class=\"text-body text-pretty text-ink-secondary\">Support 2</p></div></div></div>"
+  },
+  {
+    "name": "headless-two-rule-icons",
+    "block": "FeatureGrid",
+    "props": {
+      "columns": 2,
+      "treatment": "rule",
+      "ground": "sunken",
+      "items": [
+        {
+          "id": "item-0",
+          "heading": "Title 0",
+          "description": "Support 0",
+          "icon": {
+            "$tag": "svg",
+            "props": {},
+            "children": null
+          }
+        },
+        {
+          "id": "item-1",
+          "heading": "Title 1",
+          "description": "Support 1",
+          "icon": {
+            "$tag": "svg",
+            "props": {},
+            "children": null
+          }
+        }
+      ]
+    },
+    "html": "<div class=\"flex flex-col gap-lg bg-surface-sunken\"><div data-feature-grid-columns=\"2\" data-treatment=\"rule\" data-emphasis=\"item\" class=\"grid grid-cols-1 gap-x-2xl gap-y-3xl tablet:grid-cols-2\"><div data-feature-grid-item=\"\" class=\"flex flex-col items-start gap-sm border-t pt-lg border-line-strong\" style=\"border-block-start-width:var(--ui-border-rule, 2px)\"><p class=\"text-body-l font-body font-medium text-ink-primary\">Title 0</p><p class=\"text-body text-pretty text-ink-secondary\">Support 0</p></div><div data-feature-grid-item=\"\" class=\"flex flex-col items-start gap-sm border-t pt-lg border-line-strong\" style=\"border-block-start-width:var(--ui-border-rule, 2px)\"><p class=\"text-body-l font-body font-medium text-ink-primary\">Title 1</p><p class=\"text-body text-pretty text-ink-secondary\">Support 1</p></div></div></div>"
+  },
+  {
+    "name": "headless-three-statements",
+    "block": "FeatureGrid",
+    "props": {
+      "columns": 3,
+      "treatment": "plain",
+      "emphasis": "statement",
+      "ground": "inverse",
+      "items": [
+        {
+          "id": "item-0",
+          "heading": "Title 0",
+          "description": "Support 0"
+        },
+        {
+          "id": "item-1",
+          "heading": "Title 1",
+          "description": "Support 1"
+        },
+        {
+          "id": "item-2",
+          "heading": "Title 2",
+          "description": "Support 2"
+        }
+      ]
+    },
+    "html": "<div class=\"flex flex-col gap-lg bg-surface-inverse\"><div data-feature-grid-columns=\"3\" data-treatment=\"plain\" data-emphasis=\"statement\" class=\"grid grid-cols-1 gap-x-2xl gap-y-3xl tablet:grid-cols-2 tablet-lg:grid-cols-3\"><div data-feature-grid-item=\"\" class=\"flex flex-col items-start gap-sm\"><p class=\"text-h1 font-display leading-heading text-balance text-ink-on-inverse\">Title 0</p><p class=\"text-body-l text-pretty text-ink-on-inverse-muted\">Support 0</p></div><div data-feature-grid-item=\"\" class=\"flex flex-col items-start gap-sm\"><p class=\"text-h1 font-display leading-heading text-balance text-ink-on-inverse\">Title 1</p><p class=\"text-body-l text-pretty text-ink-on-inverse-muted\">Support 1</p></div><div data-feature-grid-item=\"\" class=\"flex flex-col items-start gap-sm tablet:col-span-2 tablet-lg:col-span-1\"><p class=\"text-h1 font-display leading-heading text-balance text-ink-on-inverse\">Title 2</p><p class=\"text-body-l text-pretty text-ink-on-inverse-muted\">Support 2</p></div></div></div>"
+  },
+  {
+    "name": "headless-three-blank-heading",
+    "block": "FeatureGrid",
+    "props": {
+      "columns": 3,
+      "treatment": "plain",
+      "heading": "",
+      "items": [
+        {
+          "id": "item-0",
+          "heading": "Title 0",
+          "description": "Support 0"
+        },
+        {
+          "id": "item-1",
+          "heading": "Title 1",
+          "description": "Support 1"
+        },
+        {
+          "id": "item-2",
+          "heading": "Title 2",
+          "description": "Support 2"
+        }
+      ]
+    },
+    "html": "<div class=\"flex flex-col gap-lg\"><div class=\"flex flex-col gap-xs\"></div><div data-feature-grid-columns=\"3\" data-treatment=\"plain\" data-emphasis=\"item\" class=\"grid grid-cols-1 gap-x-2xl gap-y-3xl tablet:grid-cols-2 tablet-lg:grid-cols-3\"><div data-feature-grid-item=\"\" class=\"flex flex-col items-start gap-sm\"><p class=\"text-body-l font-body font-medium text-ink-primary\">Title 0</p><p class=\"text-body text-pretty text-ink-secondary\">Support 0</p></div><div data-feature-grid-item=\"\" class=\"flex flex-col items-start gap-sm\"><p class=\"text-body-l font-body font-medium text-ink-primary\">Title 1</p><p class=\"text-body text-pretty text-ink-secondary\">Support 1</p></div><div data-feature-grid-item=\"\" class=\"flex flex-col items-start gap-sm tablet:col-span-2 tablet-lg:col-span-1\"><p class=\"text-body-l font-body font-medium text-ink-primary\">Title 2</p><p class=\"text-body text-pretty text-ink-secondary\">Support 2</p></div></div></div>"
+  }
+]

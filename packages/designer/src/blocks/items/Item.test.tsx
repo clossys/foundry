@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { Item } from "./Item.js";
+import type { ItemProps } from "./types.js";
 
 const base = { id: "one", heading: "Title", treatment: "plain" as const, size: "standard" as const, ground: "base" as const };
 
@@ -28,6 +29,21 @@ describe("Item", () => {
   ] as const)("maps badge tone %s to the existing atom", (tone, cls) => {
     render(<Item {...base} badge={{ label: "State", tone }} />);
     expect(screen.getByText("State")).toHaveClass(cls);
+  });
+  it.each(["success", "warning", "danger", "info"] as const)("backs status badge %s with the checked opaque surface", (tone) => {
+    const { container } = render(<Item {...base} ground="inverse" treatment="plate" href="/one" meta={0} badge={{ label: 0, tone }} />);
+    const row = container.querySelector("[data-item-meta]")!;
+    const badge = row.querySelector(`.bg-status-${tone}-tint`)!;
+    expect(badge).toHaveTextContent("0");
+    expect(badge.parentElement).toHaveClass("inline-flex", "rounded-pill", "bg-surface-base");
+    expect(row).toHaveTextContent("00");
+    expect(screen.getAllByRole("link")).toHaveLength(1);
+    expect(screen.getByRole("link", { name: "Title" })).not.toContainElement(badge);
+    expect(badge.parentElement!.querySelector("a,button,input,[tabindex]")).toBeNull();
+  });
+  it.each([undefined, "neutral"] as const)("keeps the already opaque neutral badge directly in its meta row (%s)", (tone) => {
+    const { container } = render(<Item {...base} ground="inverse" badge={{ label: "Neutral", tone }} />);
+    expect(screen.getByText("Neutral").parentElement).toBe(container.querySelector("[data-item-meta]"));
   });
   it.each(["base", "sunken", "inverse"] as const)("features a flat plate on %s", (ground) => {
     const { container } = render(<Item {...base} ground={ground} treatment="plate" featured />);
@@ -84,5 +100,17 @@ describe("Item", () => {
   });
   it.each(["", "   ", null, false, <span />, <><span> </span></>])("refuses blank headings", (heading) => {
     expect(() => render(<Item {...base} heading={heading} />)).toThrow(TypeError);
+  });
+});
+
+
+describe("standalone Item heading outline", () => {
+  it("keeps the default paragraph", () => { render(<Item {...base} />); expect(screen.getByText("Title").tagName).toBe("P"); });
+  it.each([3, 4] as const)("accepts explicit h%s without changing its visual scale", (headingLevel) => {
+    render(<Item {...base} {...{ headingLevel }} />);
+    expect(screen.getByRole("heading", { level: headingLevel })).toHaveClass("text-body-l");
+  });
+  it.each([null, 2, 5, "3"])("refuses unsupported heading level %s", (headingLevel) => {
+    expect(() => render(<Item {...({ ...base, headingLevel } as unknown as ItemProps)} />)).toThrow(RangeError);
   });
 });

@@ -1,0 +1,281 @@
+[
+  {
+    "name": "catalog-four-rule",
+    "block": "FeatureGrid",
+    "props": {
+      "columns": 4,
+      "treatment": "rule",
+      "ground": "base",
+      "items": [
+        {
+          "id": "item-0",
+          "heading": "Title 0",
+          "description": "Support 0"
+        },
+        {
+          "id": "item-1",
+          "heading": "Title 1",
+          "description": "Support 1"
+        },
+        {
+          "id": "item-2",
+          "heading": "Title 2",
+          "description": "Support 2"
+        },
+        {
+          "id": "item-3",
+          "heading": "Title 3",
+          "description": "Support 3"
+        }
+      ]
+    },
+    "html": "<div class=\"flex flex-col gap-lg\"><div data-feature-grid-columns=\"4\" data-treatment=\"rule\" data-emphasis=\"item\" class=\"grid grid-cols-1 gap-x-2xl gap-y-3xl tablet:grid-cols-2 tablet-lg:grid-cols-4\"><div data-feature-grid-item=\"\" class=\"flex flex-col items-start gap-sm border-t pt-lg border-line-strong\" style=\"border-block-start-width:var(--ui-border-rule, 2px)\"><p class=\"text-body-l font-body font-medium text-ink-primary\">Title 0</p><p class=\"text-body text-pretty text-ink-secondary\">Support 0</p></div><div data-feature-grid-item=\"\" class=\"flex flex-col items-start gap-sm border-t pt-lg border-line-strong\" style=\"border-block-start-width:var(--ui-border-rule, 2px)\"><p class=\"text-body-l font-body font-medium text-ink-primary\">Title 1</p><p class=\"text-body text-pretty text-ink-secondary\">Support 1</p></div><div data-feature-grid-item=\"\" class=\"flex flex-col items-start gap-sm border-t pt-lg border-line-strong\" style=\"border-block-start-width:var(--ui-border-rule, 2px)\"><p class=\"text-body-l font-body font-medium text-ink-primary\">Title 2</p><p class=\"text-body text-pretty text-ink-secondary\">Support 2</p></div><div data-feature-grid-item=\"\" class=\"flex flex-col items-start gap-sm border-t pt-lg border-line-strong\" style=\"border-block-start-width:var(--ui-border-rule, 2px)\"><p class=\"text-body-l font-body font-medium text-ink-primary\">Title 3</p><p class=\"text-body text-pretty text-ink-secondary\">Support 3</p></div></div></div>"
+  },
+  {
+    "name": "catalog-three-two-plate",
+    "block": "FeatureGrid",
+    "props": {
+      "columns": 3,
+      "treatment": "plate",
+      "ground": "inverse",
+      "heading": "Collection",
+      "headingLevel": 3,
+      "items": [
+        {
+          "id": "item-0",
+          "heading": "Title 0",
+          "description": "Support 0"
+        },
+        {
+          "id": "item-1",
+          "heading": "Title 1",
+          "description": "Support 1"
+        }
+      ]
+    },
+    "html": "<div class=\"flex flex-col gap-lg bg-surface-inverse\"><div class=\"flex flex-col gap-xs\"><h3 class=\"text-h2 font-display text-ink-on-inverse\">Collection</h3></div><div data-feature-grid-columns=\"3\" data-treatment=\"plate\" data-emphasis=\"item\" class=\"grid grid-cols-1 gap-x-2xl tablet:grid-cols-2 tablet-lg:grid-cols-3 gap-y-2xl\"><div data-feature-grid-item=\"\" data-variant=\"plate\" class=\"rounded-panel p-lg bg-surface-inverse-raised flex h-full flex-col items-start gap-sm tablet:p-xl\"><p class=\"text-body-l font-body font-medium text-ink-on-inverse\">Title 0</p><p class=\"text-body text-pretty text-ink-on-inverse-muted\">Support 0</p></div><div data-feature-grid-item=\"\" data-variant=\"plate\" class=\"rounded-panel p-lg bg-surface-inverse-raised flex h-full flex-col items-start gap-sm tablet:p-xl\"><p class=\"text-body-l font-body font-medium text-ink-on-inverse\">Title 1</p><p class=\"text-body text-pretty text-ink-on-inverse-muted\">Support 1</p></div></div></div>"
+  },
+  {
+    "name": "catalog-two-three-plain",
+    "block": "FeatureGrid",
+    "props": {
+      "columns": 2,
+      "treatment": "plain",
+      "ground": "sunken",
+      "items": [
+        {
+          "id": "item-0",
+          "heading": "Title 0",
+          "description": "Support 0"
+        },
+        {
+          "id": "item-1",
+          "heading": "Title 1",
+          "description": "Support 1"
+        },
+        {
+          "id": "item-2",
+          "heading": "Title 2",
+          "description": "Support 2"
+        }
+      ]
+    },
+    "html": "<div class=\"flex flex-col gap-lg bg-surface-sunken\"><div data-feature-grid-columns=\"2\" data-treatment=\"plain\" data-emphasis=\"item\" class=\"grid grid-cols-1 gap-x-2xl gap-y-3xl tablet:grid-cols-2\"><div data-feature-grid-item=\"\" class=\"flex flex-col items-start gap-sm\"><p class=\"text-body-l font-body font-medium text-ink-primary\">Title 0</p><p class=\"text-body text-pretty text-ink-secondary\">Support 0</p></div><div data-feature-grid-item=\"\" class=\"flex flex-col items-start gap-sm\"><p class=\"text-body-l font-body font-medium text-ink-primary\">Title 1</p><p class=\"text-body text-pretty text-ink-secondary\">Support 1</p></div><div data-feature-grid-item=\"\" class=\"flex flex-col items-start gap-sm\"><p class=\"text-body-l font-body font-medium text-ink-primary\">Title 2</p><p class=\"text-body text-pretty text-ink-secondary\">Support 2</p></div></div></div>"
+  },
+  {
+    "name": "catalog-three-four-icons",
+    "block": "FeatureGrid",
+    "props": {
+      "columns": 3,
+      "treatment": "plain",
+      "ground": "base",
+      "items": [
+        {
+          "id": "item-0",
+          "heading": "Title 0",
+          "description": "Support 0",
+          "icon": {
+            "$tag": "svg",
+            "props": {},
+            "children": null
+          },
+          "eyebrow": "Area"
+        },
+        {
+          "id": "item-1",
+          "heading": "Title 1",
+          "description": "Support 1",
+          "icon": {
+            "$tag": "svg",
+            "props": {},
+            "children": null
+          },
+          "eyebrow": "Area"
+        },
+        {
+          "id": "item-2",
+          "heading": "Title 2",
+          "description": "Support 2",
+          "icon": {
+            "$tag": "svg",
+            "props": {},
+            "children": null
+          },
+          "eyebrow": "Area"
+        },
+        {
+          "id": "item-3",
+          "heading": "Title 3",
+          "description": "Support 3",
+          "icon": {
+            "$tag": "svg",
+            "props": {},
+            "children": null
+          },
+          "eyebrow": "Area"
+        }
+      ]
+    },
+    "html": "<div class=\"flex flex-col gap-lg\"><div data-feature-grid-columns=\"3\" data-treatment=\"plain\" data-emphasis=\"item\" class=\"grid grid-cols-1 gap-x-2xl gap-y-3xl tablet:grid-cols-2 tablet-lg:grid-cols-3\"><div data-feature-grid-item=\"\" class=\"flex flex-col items-start gap-sm\"><span aria-hidden=\"true\" class=\"inline-flex text-accent\"><svg></svg></span><div data-feature-grid-eyebrow=\"\" class=\"flex flex-col gap-xs\"><p class=\"text-body-s font-medium uppercase tracking-label text-ink-secondary\">Area</p><p class=\"text-body-l font-body font-medium text-ink-primary\">Title 0</p></div><p class=\"text-body text-pretty text-ink-secondary\">Support 0</p></div><div data-feature-grid-item=\"\" class=\"flex flex-col items-start gap-sm\"><span aria-hidden=\"true\" class=\"inline-flex text-accent\"><svg></svg></span><div data-feature-grid-eyebrow=\"\" class=\"flex flex-col gap-xs\"><p class=\"text-body-s font-medium uppercase tracking-label text-ink-secondary\">Area</p><p class=\"text-body-l font-body font-medium text-ink-primary\">Title 1</p></div><p class=\"text-body text-pretty text-ink-secondary\">Support 1</p></div><div data-feature-grid-item=\"\" class=\"flex flex-col items-start gap-sm\"><span aria-hidden=\"true\" class=\"inline-flex text-accent\"><svg></svg></span><div data-feature-grid-eyebrow=\"\" class=\"flex flex-col gap-xs\"><p class=\"text-body-s font-medium uppercase tracking-label text-ink-secondary\">Area</p><p class=\"text-body-l font-body font-medium text-ink-primary\">Title 2</p></div><p class=\"text-body text-pretty text-ink-secondary\">Support 2</p></div><div data-feature-grid-item=\"\" class=\"flex flex-col items-start gap-sm\"><span aria-hidden=\"true\" class=\"inline-flex text-accent\"><svg></svg></span><div data-feature-grid-eyebrow=\"\" class=\"flex flex-col gap-xs\"><p class=\"text-body-s font-medium uppercase tracking-label text-ink-secondary\">Area</p><p class=\"text-body-l font-body font-medium text-ink-primary\">Title 3</p></div><p class=\"text-body text-pretty text-ink-secondary\">Support 3</p></div></div></div>"
+  },
+  {
+    "name": "catalog-statement-icons",
+    "block": "FeatureGrid",
+    "props": {
+      "columns": 3,
+      "treatment": "plain",
+      "emphasis": "statement",
+      "ground": "inverse",
+      "items": [
+        {
+          "id": "item-0",
+          "heading": "Title 0",
+          "description": "Support 0",
+          "icon": {
+            "$tag": "svg",
+            "props": {},
+            "children": null
+          }
+        },
+        {
+          "id": "item-1",
+          "heading": "Title 1",
+          "description": "Support 1",
+          "icon": {
+            "$tag": "svg",
+            "props": {},
+            "children": null
+          }
+        },
+        {
+          "id": "item-2",
+          "heading": "Title 2",
+          "description": "Support 2",
+          "icon": {
+            "$tag": "svg",
+            "props": {},
+            "children": null
+          }
+        }
+      ]
+    },
+    "html": "<div class=\"flex flex-col gap-lg bg-surface-inverse\"><div data-feature-grid-columns=\"3\" data-treatment=\"plain\" data-emphasis=\"statement\" class=\"grid grid-cols-1 gap-x-2xl gap-y-3xl tablet:grid-cols-2 tablet-lg:grid-cols-3\"><div data-feature-grid-item=\"\" class=\"flex flex-col items-start gap-sm\"><span aria-hidden=\"true\" class=\"inline-flex text-accent-on-inverse\"><svg></svg></span><p class=\"text-h1 font-display leading-heading text-balance text-ink-on-inverse\">Title 0</p><p class=\"text-body-l text-pretty text-ink-on-inverse-muted\">Support 0</p></div><div data-feature-grid-item=\"\" class=\"flex flex-col items-start gap-sm\"><span aria-hidden=\"true\" class=\"inline-flex text-accent-on-inverse\"><svg></svg></span><p class=\"text-h1 font-display leading-heading text-balance text-ink-on-inverse\">Title 1</p><p class=\"text-body-l text-pretty text-ink-on-inverse-muted\">Support 1</p></div><div data-feature-grid-item=\"\" class=\"flex flex-col items-start gap-sm tablet:col-span-2 tablet-lg:col-span-1\"><span aria-hidden=\"true\" class=\"inline-flex text-accent-on-inverse\"><svg></svg></span><p class=\"text-h1 font-display leading-heading text-balance text-ink-on-inverse\">Title 2</p><p class=\"text-body-l text-pretty text-ink-on-inverse-muted\">Support 2</p></div></div></div>"
+  },
+  {
+    "name": "catalog-statement-eyebrows",
+    "block": "FeatureGrid",
+    "props": {
+      "columns": 3,
+      "treatment": "rule",
+      "emphasis": "statement",
+      "ground": "sunken",
+      "items": [
+        {
+          "id": "item-0",
+          "heading": "Title 0",
+          "description": "Support 0",
+          "eyebrow": "Area"
+        },
+        {
+          "id": "item-1",
+          "heading": "Title 1",
+          "description": "Support 1",
+          "eyebrow": "Area"
+        },
+        {
+          "id": "item-2",
+          "heading": "Title 2",
+          "description": "Support 2",
+          "eyebrow": "Area"
+        }
+      ]
+    },
+    "html": "<div class=\"flex flex-col gap-lg bg-surface-sunken\"><div data-feature-grid-columns=\"3\" data-treatment=\"rule\" data-emphasis=\"statement\" class=\"grid grid-cols-1 gap-x-2xl gap-y-3xl tablet:grid-cols-2 tablet-lg:grid-cols-3\"><div data-feature-grid-item=\"\" class=\"flex flex-col items-start gap-sm border-t pt-lg border-line-strong\" style=\"border-block-start-width:var(--ui-border-rule, 2px)\"><div data-feature-grid-eyebrow=\"\" class=\"flex flex-col gap-xs\"><p class=\"text-body-s font-medium uppercase tracking-label text-ink-secondary\">Area</p><p class=\"text-h1 font-display leading-heading text-balance text-ink-primary\">Title 0</p></div><p class=\"text-body-l text-pretty text-ink-secondary\">Support 0</p></div><div data-feature-grid-item=\"\" class=\"flex flex-col items-start gap-sm border-t pt-lg border-line-strong\" style=\"border-block-start-width:var(--ui-border-rule, 2px)\"><div data-feature-grid-eyebrow=\"\" class=\"flex flex-col gap-xs\"><p class=\"text-body-s font-medium uppercase tracking-label text-ink-secondary\">Area</p><p class=\"text-h1 font-display leading-heading text-balance text-ink-primary\">Title 1</p></div><p class=\"text-body-l text-pretty text-ink-secondary\">Support 1</p></div><div data-feature-grid-item=\"\" class=\"flex flex-col items-start gap-sm border-t pt-lg border-line-strong tablet:col-span-2 tablet-lg:col-span-1\" style=\"border-block-start-width:var(--ui-border-rule, 2px)\"><div data-feature-grid-eyebrow=\"\" class=\"flex flex-col gap-xs\"><p class=\"text-body-s font-medium uppercase tracking-label text-ink-secondary\">Area</p><p class=\"text-h1 font-display leading-heading text-balance text-ink-primary\">Title 2</p></div><p class=\"text-body-l text-pretty text-ink-secondary\">Support 2</p></div></div></div>"
+  },
+  {
+    "name": "catalog-statement-links-refusal",
+    "block": "FeatureGrid",
+    "props": {
+      "columns": 3,
+      "treatment": "plain",
+      "emphasis": "statement",
+      "items": [
+        {
+          "id": "item-0",
+          "heading": "Title 0",
+          "description": "Support 0",
+          "href": "/route-0"
+        },
+        {
+          "id": "item-1",
+          "heading": "Title 1",
+          "description": "Support 1",
+          "href": "/route-1"
+        },
+        {
+          "id": "item-2",
+          "heading": "Title 2",
+          "description": "Support 2",
+          "href": "/route-2"
+        }
+      ]
+    },
+    "error": "FeatureGrid: statement items are headlines, not destinations; drop their href and link the band another way."
+  },
+  {
+    "name": "catalog-offcount-linked-plate",
+    "block": "FeatureGrid",
+    "props": {
+      "columns": 3,
+      "treatment": "plate",
+      "ground": "inverse",
+      "items": [
+        {
+          "id": "item-0",
+          "heading": "Title 0",
+          "description": "Support 0",
+          "href": "/route-0"
+        },
+        {
+          "id": "item-1",
+          "heading": "Title 1",
+          "description": "Support 1",
+          "href": "/route-1"
+        },
+        {
+          "id": "item-2",
+          "heading": "Title 2",
+          "description": "Support 2",
+          "href": "/route-2"
+        },
+        {
+          "id": "item-3",
+          "heading": "Title 3",
+          "description": "Support 3",
+          "href": "/route-3"
+        }
+      ]
+    },
+    "html": "<div class=\"flex flex-col gap-lg bg-surface-inverse\"><div data-feature-grid-columns=\"3\" data-treatment=\"plate\" data-emphasis=\"item\" class=\"grid grid-cols-1 gap-x-2xl tablet:grid-cols-2 tablet-lg:grid-cols-3 gap-y-2xl\"><div data-feature-grid-item=\"\" data-variant=\"plate\" class=\"rounded-panel p-lg bg-surface-inverse-raised flex h-full flex-col items-start gap-sm tablet:p-xl relative isolate\"><p class=\"text-body-l font-body font-medium text-ink-on-inverse\"><a href=\"/route-0\" data-card-link=\"\" class=\"quiet-action text-inherit outline-none underline decoration-transparent underline-offset-4 hover:decoration-current after:absolute after:z-10 after:inset-0 after:rounded-panel focus-visible:after:outline-2 focus-visible:after:outline-offset-2 focus-visible:after:outline-accent-on-inverse\">Title 0<span aria-hidden=\"true\"> </span><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"inline align-middle text-ink-on-inverse-muted\" style=\"width:var(--ui-icon-sm, var(--spacing-lg, 16px));height:var(--ui-icon-sm, var(--spacing-lg, 16px));flex-shrink:0;stroke-width:var(--ui-icon-stroke, 2)\" aria-hidden=\"true\"><path d=\"m9 18 6-6-6-6\"></path></svg></a></p><p class=\"text-body text-pretty text-ink-on-inverse-muted\">Support 0</p></div><div data-feature-grid-item=\"\" data-variant=\"plate\" class=\"rounded-panel p-lg bg-surface-inverse-raised flex h-full flex-col items-start gap-sm tablet:p-xl relative isolate\"><p class=\"text-body-l font-body font-medium text-ink-on-inverse\"><a href=\"/route-1\" data-card-link=\"\" class=\"quiet-action text-inherit outline-none underline decoration-transparent underline-offset-4 hover:decoration-current after:absolute after:z-10 after:inset-0 after:rounded-panel focus-visible:after:outline-2 focus-visible:after:outline-offset-2 focus-visible:after:outline-accent-on-inverse\">Title 1<span aria-hidden=\"true\"> </span><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"inline align-middle text-ink-on-inverse-muted\" style=\"width:var(--ui-icon-sm, var(--spacing-lg, 16px));height:var(--ui-icon-sm, var(--spacing-lg, 16px));flex-shrink:0;stroke-width:var(--ui-icon-stroke, 2)\" aria-hidden=\"true\"><path d=\"m9 18 6-6-6-6\"></path></svg></a></p><p class=\"text-body text-pretty text-ink-on-inverse-muted\">Support 1</p></div><div data-feature-grid-item=\"\" data-variant=\"plate\" class=\"rounded-panel p-lg bg-surface-inverse-raised flex h-full flex-col items-start gap-sm tablet:p-xl relative isolate\"><p class=\"text-body-l font-body font-medium text-ink-on-inverse\"><a href=\"/route-2\" data-card-link=\"\" class=\"quiet-action text-inherit outline-none underline decoration-transparent underline-offset-4 hover:decoration-current after:absolute after:z-10 after:inset-0 after:rounded-panel focus-visible:after:outline-2 focus-visible:after:outline-offset-2 focus-visible:after:outline-accent-on-inverse\">Title 2<span aria-hidden=\"true\"> </span><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"inline align-middle text-ink-on-inverse-muted\" style=\"width:var(--ui-icon-sm, var(--spacing-lg, 16px));height:var(--ui-icon-sm, var(--spacing-lg, 16px));flex-shrink:0;stroke-width:var(--ui-icon-stroke, 2)\" aria-hidden=\"true\"><path d=\"m9 18 6-6-6-6\"></path></svg></a></p><p class=\"text-body text-pretty text-ink-on-inverse-muted\">Support 2</p></div><div data-feature-grid-item=\"\" data-variant=\"plate\" class=\"rounded-panel p-lg bg-surface-inverse-raised flex h-full flex-col items-start gap-sm tablet:p-xl relative isolate\"><p class=\"text-body-l font-body font-medium text-ink-on-inverse\"><a href=\"/route-3\" data-card-link=\"\" class=\"quiet-action text-inherit outline-none underline decoration-transparent underline-offset-4 hover:decoration-current after:absolute after:z-10 after:inset-0 after:rounded-panel focus-visible:after:outline-2 focus-visible:after:outline-offset-2 focus-visible:after:outline-accent-on-inverse\">Title 3<span aria-hidden=\"true\"> </span><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"inline align-middle text-ink-on-inverse-muted\" style=\"width:var(--ui-icon-sm, var(--spacing-lg, 16px));height:var(--ui-icon-sm, var(--spacing-lg, 16px));flex-shrink:0;stroke-width:var(--ui-icon-stroke, 2)\" aria-hidden=\"true\"><path d=\"m9 18 6-6-6-6\"></path></svg></a></p><p class=\"text-body text-pretty text-ink-on-inverse-muted\">Support 3</p></div></div></div>"
+  }
+]
