@@ -120,7 +120,7 @@ describe("checkTokenContrast", () => {
     // about that relief rule, and correctly reports the plain WCAG
     // 1.4.11 threshold miss as a real finding rather than silently
     // agreeing with the test's exception list.
-    const categoricalOnly = CONTRAST_PAIRS.filter((p) => p.id.startsWith("chart-categorical-"));
+    const categoricalOnly = CONTRAST_PAIRS.filter((p) => p.id.startsWith("chart-categorical-") && p.background === "--color-chart-surface");
     const result = checkTokenContrast(categoricalOnly, { tokens: TOKENS });
 
     expect(result.unchecked).toEqual([]);
@@ -247,7 +247,7 @@ describe("checkTokenContrast — exceptions", () => {
     // are relieved, not hidden — see result.relieved below, which is
     // exactly as populated as the raw findings were in the un-excepted
     // version of this same check.
-    const categoricalOnly = contrastPairsForTheme("light").filter((p) => p.id.startsWith("chart-categorical-"));
+    const categoricalOnly = contrastPairsForTheme("light").filter((p) => p.id.startsWith("chart-categorical-") && p.background === "--color-chart-surface");
     const result = checkTokenContrast(categoricalOnly, { tokens: TOKENS });
 
     expect(result.unchecked).toEqual([]);

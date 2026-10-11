@@ -65,12 +65,13 @@ const LIGHT_PROPERTY_LINES = `  --color-ink-primary: oklch(0.2178 0 0);
   --color-chart-categorical-7: #4a3aa7;
   --color-chart-categorical-8: #e34948;`;
 
-// Same as LIGHT_PROPERTY_LINES, except categorical-3/4/5 use hexes that
+// Same as LIGHT_PROPERTY_LINES, except categorical-2/3/4/5 use hexes that
 // actually clear 3:1 on their own — dark theme carries NO exception (see
 // contrast-pairs.ts's CATEGORICAL_EXCEPTION_SLOTS_BY_THEME.dark, which is
-// empty), so a dark-theme fixture needs these three to be genuinely clean,
+// empty), so a dark-theme fixture needs these four to be genuinely clean,
 // not relieved.
-const DARK_PROPERTY_LINES = LIGHT_PROPERTY_LINES.replace("--color-chart-categorical-3: #1baf7a;", "--color-chart-categorical-3: #1a1a1a;")
+const DARK_PROPERTY_LINES = LIGHT_PROPERTY_LINES.replace("--color-chart-categorical-2: #eb6834;", "--color-chart-categorical-2: #1a1a1a;")
+  .replace("--color-chart-categorical-3: #1baf7a;", "--color-chart-categorical-3: #1a1a1a;")
   .replace("--color-chart-categorical-4: #eda100;", "--color-chart-categorical-4: #1a1a1a;")
   .replace("--color-chart-categorical-5: #e87ba4;", "--color-chart-categorical-5: #1a1a1a;");
 

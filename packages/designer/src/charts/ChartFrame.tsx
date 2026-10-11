@@ -1,6 +1,7 @@
 import { useId, type CSSProperties, type ReactNode } from "react";
 import { cx } from "../atoms/internal/cx.js";
 import { CHART_AXIS, CHART_AXIS_LABEL, CHART_FONT_BODY, CHART_GRID } from "./internal/chart-vars.js";
+import { CHART_HAIRLINE, CHART_INLINE_AXIS_LABEL } from "./internal/marks.js";
 
 export interface ChartMargin {
   readonly top: number;
@@ -44,6 +45,8 @@ export interface ChartFrameProps {
   width?: number;
   /** @default 280 */
   height?: number;
+  /** Preserve intrinsic sizing, or scale fluidly up to 1.5 times `width`. @default "fixed" */
+  fit?: "fixed" | "fluid";
   margin?: Partial<ChartMargin>;
   /** Horizontal gridlines/x-axis ticks. Omit for a chart with no meaningful x-ticks (rare — most charts pass both axes). */
   xTicks?: readonly ChartAxisTick[];
@@ -51,10 +54,13 @@ export interface ChartFrameProps {
   /**
    * A legend is always present for two or more series — the dependable
    * identity channel, never color-matching alone (see this package's
-   * charts README). Pass 0 or 1 items and `ChartFrame` renders no legend
-   * at all: a single series needs none, since the title already names it.
+   * charts README). By default, 0 or 1 items render no legend: the title
+   * names a single series. `showSingleSeriesLegend` also displays one item
+   * when its name must remain visible independently of the title.
    */
   legend?: readonly ChartLegendItem[];
+  /** Include a single-series legend when its visible name is needed independently of the title. @default false */
+  showSingleSeriesLegend?: boolean;
   /**
    * The table-view fallback — REQUIRED. Every chart in this layer must be
    * able to show the same data as an ordinary HTML table; this is the
@@ -85,10 +91,12 @@ export function ChartFrame({
   description,
   width = 480,
   height = 280,
+  fit = "fixed",
   margin,
   xTicks = [],
   yTicks = [],
   legend,
+  showSingleSeriesLegend = false,
   table,
   className,
   style,
@@ -104,19 +112,20 @@ export function ChartFrame({
     width: Math.max(0, width - m.left - m.right),
     height: Math.max(0, height - m.top - m.bottom),
   };
-  const showLegend = (legend?.length ?? 0) >= 2;
+  const showLegend = (legend?.length ?? 0) >= (showSingleSeriesLegend ? 1 : 2);
 
   return (
     <figure className={cx("m-0 flex flex-col gap-sm", className)} style={style}>
       <figcaption className="text-body-s text-ink-secondary font-body">{title}</figcaption>
       <svg
         viewBox={`0 0 ${width} ${height}`}
-        width={width}
+        width={fit === "fluid" ? "100%" : width}
         height={height}
         role="img"
         aria-labelledby={titleId}
         aria-describedby={description ? descId : undefined}
         data-chart-part="frame"
+        style={fit === "fluid" ? { maxWidth: width * 1.5, height: "auto" } : undefined}
       >
         <title id={titleId}>{title}</title>
         {description ? <desc id={descId}>{description}</desc> : null}
@@ -131,7 +140,7 @@ export function ChartFrame({
               y1={tick.position}
               y2={tick.position}
               stroke={CHART_GRID}
-              strokeWidth={1}
+              strokeWidth={fit === "fluid" ? CHART_HAIRLINE : 1}
             />
           ))}
         </g>
@@ -144,12 +153,12 @@ export function ChartFrame({
             y1={plot.y + plot.height}
             y2={plot.y + plot.height}
             stroke={CHART_AXIS}
-            strokeWidth={1}
+            strokeWidth={fit === "fluid" ? CHART_HAIRLINE : 1}
           />
         </g>
 
         {/* Tick labels. */}
-        <g data-chart-part="ticks" fill={CHART_AXIS_LABEL} fontSize={11} fontFamily={CHART_FONT_BODY}>
+        <g data-chart-part="ticks" fill={fit === "fluid" ? CHART_INLINE_AXIS_LABEL : CHART_AXIS_LABEL} fontSize={11} fontFamily={CHART_FONT_BODY}>
           {xTicks.map((tick) => (
             <text key={`tick-x-${tick.label}`} x={tick.position} y={plot.y + plot.height + 16} textAnchor="middle">
               {tick.label}
@@ -178,24 +187,24 @@ export function ChartFrame({
 
       <details data-chart-part="table-fallback">
         <summary className="text-body-s text-ink-secondary font-body cursor-pointer">{tableFallbackLabel}</summary>
-        <table className="text-body-s font-body">
+        <table className="text-body-s font-body" role={fit === "fluid" ? "table" : undefined}>
           <caption className="sr-only">{title}</caption>
-          <thead>
-            <tr>
+          <thead role={fit === "fluid" ? "rowgroup" : undefined}>
+            <tr role={fit === "fluid" ? "row" : undefined}>
               {table.headers.map((header) => (
-                <th key={header} scope="col">
+                <th key={header} scope="col" role={fit === "fluid" ? "columnheader" : undefined}>
                   {header}
                 </th>
               ))}
             </tr>
           </thead>
-          <tbody>
+          <tbody role={fit === "fluid" ? "rowgroup" : undefined}>
             {table.rows.map((row, i) => (
               // eslint-disable-next-line react/no-array-index-key -- rows have no stable id of their own
-              <tr key={i}>
+              <tr key={i} role={fit === "fluid" ? "row" : undefined}>
                 {row.map((cell, j) => (
                   // eslint-disable-next-line react/no-array-index-key
-                  <td key={j}>{cell}</td>
+                  <td key={j} role={fit === "fluid" ? "cell" : undefined} data-column-label={fit === "fluid" ? table.headers[j] : undefined}>{cell}</td>
                 ))}
               </tr>
             ))}

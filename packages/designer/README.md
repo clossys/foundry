@@ -360,7 +360,7 @@ source file's own header for the exact probe and its result). Today that's:
 | `@clossys/designer/atoms/server` | `Avatar`, `Badge`, `Banner`, `Card`, `Field`, `Icon`, `Meter`, `Skeleton`, `Spinner`, `StatusMark`, `buttonLinkClassName`, `iconButtonClassName`, `iconButtonLinkClassName`, `mergeUiClasses` |
 | `@clossys/designer/blocks/server` | `AnatomyCallouts`, `ArticleBody`, `CardGrid`, `Comparison`, `ContentSection`, `DetailView`, `EmptyState`, `Faq`, `FeatureGrid`, `FieldGroup`, `Hero`, `LedgerTile`, `LinkGrid`, `MarketingChapter`, `MediaFigure`, `OrderedStepSequence`, `PageHeader`, `PricingTable`, `RecordLedger`, `Scene`, `SectionFrame`, `SectionHeader`, `SectionIntro`, `Specimen`, `SpecimenPanel`, `Stat`, `StatusList`, `TopicList` |
 | `@clossys/designer/shell/server` | `Shell`, `SiteFooter`, `SiteHeader`, `SkipLink` |
-| `@clossys/designer/charts/server` | `ChartFrame`, `Sparkline` |
+| `@clossys/designer/charts/server` | `ChartFrame`, `BarChart`, `Sparkline` |
 | `@clossys/designer/theme/server` | `getThemeInitScript` |
 
 Everything not listed above stays reachable only from its original barrel,
@@ -5032,9 +5032,10 @@ imports from `charts` — see `src/ladder.test.ts`.
   series names, known before any filtering) and each name's position in
   THAT list picks its slot instead, so filtering never repaints a
   survivor.
-- **A legend appears for two or more series, never for one** (the title
-  already names a single series) — `ChartFrame` enforces this itself, so
-  no chart in this layer can accidentally ship a one-swatch legend box.
+- **By default, a legend appears for two or more series** (the title
+  names a single series). `ChartFrame` can also show one series through
+  `showSingleSeriesLegend`; static/fluid `BarChart` enables that option
+  to keep every series name visible independently of the title.
 - **A table-view fallback ships with every chart**, `Sparkline` included —
   a `<details>` whose summary text is `tableFallbackLabel` (default
   "View as table") on `ChartFrame`, `BarChart`, `LineChart`, and
@@ -5042,10 +5043,12 @@ imports from `charts` — see `src/ladder.test.ts`.
   always reachable, never gated behind a screen reader or a hover.
   `Sparkline`'s value column heading is `valueColumnLabel` (default
   "Value").
-- **A hover layer ships on every chart except `Sparkline`** — a crosshair
+- **Interactive charts ship a hover layer** — a crosshair
   + shared tooltip readout on `LineChart`, a per-mark tooltip on
   `BarChart` — with the same detail reachable on keyboard focus as on
-  pointer hover.
+  pointer hover. Static `BarChart` marks retain the chart graphic and table fallback. The
+  static and fluid paths show a legend even for one series, independently
+  of the title.
 
 ### `ChartFrame`
 
@@ -5054,6 +5057,13 @@ axes, grid, an optional legend, an accessible SVG `<title>`/`<desc>`, and
 the table-view fallback. Only reached for directly when composing a new
 chart type this package doesn't ship; `BarChart`/`LineChart`/`Sparkline`
 below are the components most consumers actually render.
+
+`fit` accepts `"fixed"` (default) or `"fluid"`. Fluid charts fill their
+available width, preserve the SVG aspect ratio, and stop growing at 1.5
+times their intrinsic width. `width` and `height` define the coordinate
+space used by axes and marks; the outer figure still accepts `className`
+and `style`. Fluid table fallbacks stack their labelled cells below tablet,
+keeping headers and table roles available without horizontal scrolling.
 
 ```tsx
 import { ChartFrame } from "@clossys/designer/charts";
@@ -5095,6 +5105,15 @@ keyboard-focusable with an equivalent `aria-label`. 2–4 series additionally
 get a direct value label at the last category's cluster; more than 4
 series relies on the legend + per-bar tooltip + table instead, so the
 chart doesn't turn into a number on every point.
+
+`BarChart` accepts the same `fit` option. Its fluid path uses an intrinsic
+width of 360 when `width` is omitted. `marks="interactive"` (default) gives
+each bar a native SVG tooltip and keyboard focus target, with hover and
+focus feedback supplied by CSS. `marks="static"` presents the chart as
+one accessible graphic with its table fallback. Fluid or static bars read
+`--radius-subtle`; the fixed interactive path retains its existing 4px
+radius. Import `BarChart` from `@clossys/designer/charts/server` in a React
+Server Component.
 
 ### `LineChart`
 
@@ -5826,14 +5845,14 @@ not a grab-bag).
 | `ToastRecord` | type | The queued shape of one toast: `title`, `description?`, `variant`. |
 | `ToastVariant` | type | `"success" \| "danger" \| "info" \| "warning"`. |
 | `ChartFrame` | component | The shared plot/axes/grid/legend/table container `BarChart` and `LineChart` compose. |
-| `ChartFrameProps` | type | Props for `ChartFrame`: `title`, `description`, `width`, `height`, `margin`, `xTicks`, `yTicks`, `legend`, `table` (required), `tableFallbackLabel` (default `"View as table"`), `className`, `style`, `children` (render prop receiving the resolved `PlotArea`). |
+| `ChartFrameProps` | type | Props for `ChartFrame`: `title`, `description`, `width`, `height`, `fit` (default `"fixed"`), `margin`, `xTicks`, `yTicks`, `legend`, `showSingleSeriesLegend` (default `false`), `table` (required), `tableFallbackLabel` (default `"View as table"`), `className`, `style`, `children` (render prop receiving the resolved `PlotArea`). |
 | `ChartMargin` | type | `{ top, right, bottom, left }`, all `number`. |
 | `ChartAxisTick` | type | `{ position, label }` — a pre-scaled pixel position plus its label. |
 | `ChartLegendItem` | type | `{ label, color }`. |
 | `ChartTableSpec` | type | `{ headers, rows }` — the table-view fallback's data. |
 | `PlotArea` | type | `{ x, y, width, height }` — the plot rectangle passed to `ChartFrame`'s `children` render prop. |
 | `BarChart` | component | Categorical magnitude: one bar per category, grouped by series. |
-| `BarChartProps` | type | Props for `BarChart`: `categories`, `series`, `colorDomain`, `title`, `description`, `width`, `height`, `valueFormat`, `barLabel` (default `"{series}, {category}: {value}"`), `categoryColumnLabel` (default `"Category"`), `tableFallbackLabel`, `className`, `style`. |
+| `BarChartProps` | type | Props for `BarChart`: `categories`, `series`, `colorDomain`, `title`, `description`, `width`, `height`, `fit` (default `"fixed"`), `marks` (default `"interactive"`), `valueFormat`, `barLabel` (default `"{series}, {category}: {value}"`), `categoryColumnLabel` (default `"Category"`), `tableFallbackLabel`, `className`, `style`. |
 | `BarChartSeries` | type | `{ name, values, color? }`. |
 | `LineChart` | component | Change over time: one line per series, one shared x/y scale, a crosshair + tooltip hover layer. |
 | `LineChartProps` | type | Props for `LineChart`: `x`, `series`, `colorDomain`, `title`, `description`, `width`, `height`, `valueFormat`, `xFormat`, `keyboardHintLabel` (default `"use arrow keys to inspect values"`), `overlayLabel` (default `"{title}: {hint}"`), `xColumnLabel` (default `"X"`), `tableFallbackLabel`, `className`, `style`. |
@@ -6053,7 +6072,7 @@ part of this package's public API" and reachable only by that one test.
   `relativeLuminance`, `parseOklch`** (from `@clossys/designer/tokens`,
   promoted from that internal module — no behavior change, only
   visibility) — the WCAG colour math itself, pure and zero-dependency.
-- **`CONTRAST_PAIRS`** (same subpath) — an EXPLICIT, checked-in list of 25
+- **`CONTRAST_PAIRS`** (same subpath) — an EXPLICIT, checked-in list of
   `{ foreground, background, level, minimumRatio, compositeOver? }` pairs,
   ratified from `contrast.test.ts`'s own hand-curated pair map rather than
   auto-derived from token names. An earlier design assumed this gate could
@@ -6071,7 +6090,7 @@ part of this package's public API" and reachable only by that one test.
   REQUIRED to understand content or operate the interface, never anything
   purely decorative): hairlines/dividers (`--color-line-*`), a chart
   gridline (`--color-chart-grid` — a reading aid, not itself required to
-  read the data; the marks/axis/axis-label ARE checked), the modal/popover
+  read the data; categorical marks and axis labels are checked), the modal/popover
   scrim, elevation shadows, the skeleton loading fill, and the two focus
   rings (composite `box-shadow` values with their own WCAG success
   criterion, 2.4.13, not this gate's 1.4.3/1.4.11 scope) — see
@@ -6155,6 +6174,18 @@ pair list to force a green run. Dark mode's own categorical steps all
 clear 3:1 on their own and carry no exception at all — if a future
 palette edit ever moved one of dark's slots under the floor, it would
 report as a genuine, unrelieved `"below-threshold"` finding.
+
+Inline charts check their small axis labels at 4.5:1 using secondary ink,
+and all eight categorical marks at 3:1
+against the actual base and sunken grounds. Light slots 2–5 measure below
+3:1 on those grounds (approximately 2.94/2.58/1.99/2.47 on base and
+2.68/2.36/1.82/2.26 on sunken). These exact pairs carry a separate,
+measured labels/table compensation policy; the original raised-surface
+slots 3–5 remain unchanged. All other light slots and every dark slot must
+clear 3:1 outright. `chart-ground-contrast.test.ts` checks the raw findings,
+theme-specific relief, stale exceptions and unrelieved dark failures.
+The supplementary axis baseline retains its axis-above-grid invariant;
+it is not a threshold pair.
 
 ## Identity kit (`@clossys/designer/tokens`) — #1210
 

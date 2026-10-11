@@ -182,6 +182,15 @@ including how a consumer's own `tokens.css` (or brand-bound copy of it)
 can be checked the same way, and how this differs from the
 token-purity gate.
 
+Inline charts check small axis labels against the normal-text 4.5:1 floor
+using secondary ink, and all eight categorical marks at 3:1 on base and
+sunken grounds. Their separate measured policy compensates
+only light slots 2–5 with the chart layer's visible series names and matching
+table fallback; the original raised-surface relief remains slots 3–5.
+All other light slots and every dark slot must clear the unchanged 3:1 floor.
+Raw below-floor measurements remain visible as relief records, and an
+exception becomes a finding when its pair no longer needs compensation.
+
 ### The three-layer contract
 
 ```

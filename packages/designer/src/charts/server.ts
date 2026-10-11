@@ -2,10 +2,10 @@
  * @clossys/designer/charts/server — the server-safe subset of
  * `@clossys/designer/charts`. See `atoms/server.ts`'s own header for the
  * full #375 rationale this file shares: `charts/index.ts` re-exports
- * every member eagerly from one module, so `BarChart` and `LineChart` —
- * which hold their own hover state via `useState`, touching no
- * third-party library at all — drag the whole barrel down under React's
- * `react-server` condition even though `ChartFrame` and `Sparkline`
+ * every member eagerly from one module, so `LineChart` — which holds
+ * its own hover state via `useState`, touching no third-party library —
+ * drags the whole barrel down under React's
+ * `react-server` condition even though `ChartFrame`, `BarChart` and `Sparkline`
  * resolve cleanly on their own.
  *
  * MEMBERSHIP IS EMPIRICAL — confirmed by resolving each member's own
@@ -28,6 +28,9 @@ assertPeerVersion({ peer: "react", declaredRange: REACT_DECLARED_RANGE, foundVer
 
 export { ChartFrame } from "./ChartFrame.js";
 export type { ChartFrameProps, ChartMargin, ChartAxisTick, ChartLegendItem, ChartTableSpec, PlotArea } from "./ChartFrame.js";
+
+export { BarChart } from "./BarChart.js";
+export type { BarChartProps, BarChartSeries } from "./BarChart.js";
 
 export { Sparkline } from "./Sparkline.js";
 export type { SparklineProps } from "./Sparkline.js";
