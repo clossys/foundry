@@ -129,7 +129,7 @@ surfaces and live in `@clossys/publisher/web`.
   See "Shell" below.
 - **`charts`** — dependency-free SVG chart primitives: `ChartFrame` (the
   shared plot/axes/grid/legend/table container), `BarChart`, `LineChart`,
-  `WaterfallChart`, and `Sparkline`. A sibling of `shell`, not a sixth rung of the ladder —
+  `WaterfallChart`, `RangeChart`, and `Sparkline`. A sibling of `shell`, not a sixth rung of the ladder —
   see "Charts" below.
 - **`theme`** — the JavaScript half of this package's theming contract
   (the CSS half already ships from `tokens.css`/`theme.css` — see "CSS
@@ -360,7 +360,7 @@ source file's own header for the exact probe and its result). Today that's:
 | `@clossys/designer/atoms/server` | `Avatar`, `Badge`, `Banner`, `Card`, `Field`, `Icon`, `Meter`, `Skeleton`, `Spinner`, `StatusMark`, `buttonLinkClassName`, `iconButtonClassName`, `iconButtonLinkClassName`, `mergeUiClasses` |
 | `@clossys/designer/blocks/server` | `AnatomyCallouts`, `ArticleBody`, `CardGrid`, `Comparison`, `ContentSection`, `DetailView`, `EmptyState`, `Faq`, `FeatureGrid`, `FieldGroup`, `Hero`, `LedgerTile`, `LinkGrid`, `MarketingChapter`, `MediaFigure`, `OrderedStepSequence`, `PageHeader`, `PricingTable`, `RecordLedger`, `Scene`, `SectionFrame`, `SectionHeader`, `SectionIntro`, `Specimen`, `SpecimenPanel`, `Stat`, `StatusList`, `TopicList` |
 | `@clossys/designer/shell/server` | `Shell`, `SiteFooter`, `SiteHeader`, `SkipLink` |
-| `@clossys/designer/charts/server` | `ChartFrame`, `BarChart`, `LineChart` (static), `WaterfallChart`, `Sparkline` |
+| `@clossys/designer/charts/server` | `ChartFrame`, `BarChart`, `LineChart` (static), `WaterfallChart`, `RangeChart`, `Sparkline` |
 | `@clossys/designer/theme/server` | `getThemeInitScript` |
 
 Everything not listed above stays reachable only from its original barrel,
@@ -5060,10 +5060,10 @@ imports from `charts` — see `src/ladder.test.ts`.
 
 ### `ChartFrame`
 
-The shared container `BarChart`, `LineChart`, and `WaterfallChart` compose: plot area,
+The shared container `BarChart`, `LineChart`, `WaterfallChart`, and `RangeChart` compose: plot area,
 axes, grid, an optional legend, an accessible SVG `<title>`/`<desc>`, and
 the table-view fallback. Only reached for directly when composing a new
-chart type this package doesn't ship; `BarChart`/`LineChart`/`WaterfallChart`/`Sparkline`
+chart type this package doesn't ship; `BarChart`/`LineChart`/`WaterfallChart`/`RangeChart`/`Sparkline`
 below are the components most consumers actually render.
 
 `fit` accepts `"fixed"` (default) or `"fluid"`. Fluid charts fill their
@@ -5206,6 +5206,59 @@ the named graphic and native table disclosure work without JavaScript.
 Positive and negative changes use the existing diverging colors. Neutral
 totals have a contrasting, non-scaling hairline outline because their fill
 alone does not distinguish the bar boundary from the chart ground.
+
+### `RangeChart`
+
+`RangeChart` shows activities across authored intervals. `ticks` names each
+interval; numeric `from` and `to` identify its boundaries. With four ticks,
+boundaries run from `0` through `4`. Fractional boundaries are supported.
+
+```tsx
+import { RangeChart } from "@clossys/designer/charts/server";
+
+<RangeChart
+  title="Sample schedule"
+  description="Activities across four phases"
+  ticks={["Phase A", "Phase B", "Phase C", "Phase D"]}
+  rows={[
+    { id: "whole", label: "Whole schedule", from: 0, to: 4 },
+    {
+      id: "review",
+      label: "Review",
+      from: 0.5,
+      to: 2.75,
+      status: { tone: "warning", label: "Awaiting review" },
+    },
+  ]}
+  labels={{
+    table: "Schedule data",
+    category: "Activity",
+    from: "Start boundary",
+    to: "End boundary",
+    status: "State",
+  }}
+/>
+```
+
+Each row requires a unique, nonblank `id`, a visible `label`, and finite bounds
+satisfying `0 <= from < to <= ticks.length`. Tick labels sit at interval
+centers. Optional statuses repeat the authored state in a visible label and
+the native table; their five distinct glyph shapes retain meaning in greyscale.
+Provide at least one row and one period; row and period labels must be nonblank.
+Every period retains a complete visible and accessible numbered key, including
+when there is only one period. Key item `1` names interval `0` through `1`.
+Long or dense period names use the same numbers at their SVG interval centers.
+An intrinsic width that cannot keep those numbered anchors distinct is rejected.
+`labels.status` is required when any row has a status. Rows without status keep
+an empty cell in that column. With no statuses, the table has three columns.
+
+The chart is static and available from both chart entry points. The default
+fluid view uses a 360-unit width and grows to fit wrapped activity and status
+labels. Two short rows without statuses retain a 120-unit height. An authored
+height smaller than the required content height is rejected.
+`width`, `height`, `fit`, `className`, and `style` allow authored layout.
+The native table disclosure works without JavaScript. Open it before printing
+to include the table; automatic expansion during printing is not promised.
 
 ### `Sparkline`
 
@@ -5908,7 +5961,7 @@ not a grab-bag).
 | `ToastOptions` | type | Options for `toast(...)`: `description`, `timeout` (ms, or `null` to disable auto-dismiss), `onClose`. |
 | `ToastRecord` | type | The queued shape of one toast: `title`, `description?`, `variant`. |
 | `ToastVariant` | type | `"success" \| "danger" \| "info" \| "warning"`. |
-| `ChartFrame` | component | The shared plot/axes/grid/legend/table container `BarChart`, `LineChart`, and `WaterfallChart` compose. |
+| `ChartFrame` | component | The shared plot/axes/grid/legend/table container `BarChart`, `LineChart`, `WaterfallChart`, and `RangeChart` compose. |
 | `ChartFrameProps` | type | Props for `ChartFrame`: `title`, `description`, `width`, `height`, `fit` (default `"fixed"`), `margin`, `xTicks`, `yTicks`, `legend`, `showSingleSeriesLegend` (default `false`), `table` (required), `tableFallbackLabel` (default `"View as table"`), `className`, `style`, `children` (render prop receiving the resolved `PlotArea`). |
 | `ChartMargin` | type | `{ top, right, bottom, left }`, all `number`. |
 | `ChartAxisTick` | type | `{ position, label }` — a pre-scaled pixel position plus its label. |
@@ -5923,6 +5976,8 @@ not a grab-bag).
 | `LineChartSeries` | type | `{ name, values, color? }`. |
 | `WaterfallChart` | component | Static accumulated changes from an opening total to a derived closing total, with signed value labels, connectors, and a required table fallback. |
 | `WaterfallChartProps` | type | Props for `WaterfallChart`: required `title`, `start: { label, value }`, `steps: readonly { id, label, value }[]`, `end: { label, value? }`, and `labels: { table, category, value }`; optional `description`, `fit` (default `"fluid"`), `width` (default `360`), `height` (default `280`), `valueFormat` (default en-US number formatting; receives unsigned magnitude), `className`, and `style`. |
+| `RangeChart` | component | Static intervals with authored activity/status labels and a native data table. |
+| `RangeChartProps` | type | `title`, `description?`, `ticks`, `rows: readonly { id, label, from, to, status?: { tone: StatusMarkTone, label } }[]`, `labels: { table, category, from, to, status? }`, `fit?` (default `"fluid"`), `width?` (default `360`), `height?` (default fits wrapped content), `className?`, `style?`. |
 | `Sparkline` | component | A bare inline trend — no axes/grid/legend/hover, still ships a table-view fallback. |
 | `SparklineProps` | type | Props for `Sparkline`: `values`, `title`, `width`, `height`, `color`, `valueFormat`, `tableFallbackLabel` (default `"View as table"`), `valueColumnLabel` (default `"Value"`), `className`, `style`. |
 | `getThemeInitScript` | function | Returns a self-contained head script (string) that stamps `data-theme` before first paint. Takes `{ storageKey?, defaultTheme? }`. |
@@ -6569,7 +6624,7 @@ No `AppNavItem`/`AppFooterColumn` or similar per-item component beyond
 `SiteFooter.Column` either, for the same reason atoms/blocks stay this
 short elsewhere in this README: added only once something real needs it.
 
-**Charts:** five ship — `ChartFrame`, `BarChart`, `LineChart`, `WaterfallChart`, `Sparkline`
+**Charts:** six ship — `ChartFrame`, `BarChart`, `LineChart`, `WaterfallChart`, `RangeChart`, `Sparkline`
 — no `PieChart`/`DonutChart` (part-to-whole reads reliably only up to
 about six segments and a bar communicates the same comparison more
 precisely at any count — see the dataviz reference's anti-patterns list),
@@ -6577,7 +6632,7 @@ no `ScatterChart`/`Heatmap` (neither was asked for by this rung), and
 deliberately **no dual-axis option on `BarChart`/`LineChart`** — that
 omission is not a gap to fill later, it's the one hard rule this layer
 does not bend on. No charting library is a dependency, and the scale/color
-helpers under `charts/internal/` stay unexported — this ships five
+helpers under `charts/internal/` stay unexported — this ships six
 components, not a general-purpose numerical or color library (see
 `atoms/internal/cx.ts`/`ui-vars.ts` for the same precedent one layer down).
 

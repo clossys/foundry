@@ -49,6 +49,7 @@ const LIGHT_PROPERTY_LINES = `  --color-ink-primary: oklch(0.2178 0 0);
   --color-status-warning-text: oklch(0.36 0 0);
   --color-status-warning: oklch(0.4495 0 0);
   --color-status-warning-tint: oklch(0.4495 0 0 / 0.12);
+  --color-status-danger: oklch(0.285 0 0);
   --color-status-danger-text: oklch(0.2178 0 0);
   --color-status-danger-tint: oklch(0.285 0 0 / 0.12);
   --color-status-info-text: oklch(0.52 0 0);

@@ -565,6 +565,35 @@ export const CONTRAST_PAIRS: readonly ContrastPair[] = [
       description: `Categorical slot ${slot} on an inline chart's ${ground} ground.`,
     })),
   ]),
+  // Range status glyphs occupy transparent base/sunken plot grounds.
+  // Success retains its display fill, with a secondary-ink perimeter because
+  // that fill measures approximately 2.9733:1 on the light sunken ground.
+  ...(["base", "sunken"] as const).flatMap((ground): ContrastPair[] => [
+    {
+      id: `range/status-danger/surface-${ground}`,
+      foreground: "--color-status-danger",
+      background: `--color-surface-${ground}`,
+      level: "AA-large",
+      minimumRatio: AA_LARGE,
+      description: `Range danger diamond against the ${ground} plot ground.`,
+    },
+    {
+      id: `range/status-success-outline/surface-${ground}`,
+      foreground: "--color-ink-secondary",
+      background: `--color-surface-${ground}`,
+      level: "AA-large",
+      minimumRatio: AA_LARGE,
+      description: `Range success glyph perimeter against the ${ground} plot ground.`,
+    },
+  ]),
+  ...(["warning", "info"] as const).map((tone): ContrastPair => ({
+    id: `range/status-${tone}/surface-sunken`,
+    foreground: `--color-status-${tone}`,
+    background: "--color-surface-sunken",
+    level: "AA-large",
+    minimumRatio: AA_LARGE,
+    description: `Range ${tone} glyph against the sunken plot ground.`,
+  })),
   // Waterfall changes and total perimeters must clear both transparent plot grounds.
   ...(["base", "sunken"] as const).flatMap((ground): ContrastPair[] => [
     ...(["positive", "negative"] as const).map((sign): ContrastPair => ({

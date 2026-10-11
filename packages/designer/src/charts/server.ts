@@ -41,3 +41,6 @@ export type { WaterfallChartProps } from "./WaterfallChart.js";
 
 export { Sparkline } from "./Sparkline.js";
 export type { SparklineProps } from "./Sparkline.js";
+
+export { RangeChart } from "./RangeChart.js";
+export type { RangeChartProps } from "./RangeChart.js";

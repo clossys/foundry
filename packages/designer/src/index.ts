@@ -400,3 +400,6 @@ export {
   X,
   XCircle,
 } from "./icons/index.js";
+
+export { RangeChart } from "./charts/RangeChart.js";
+export type { RangeChartProps } from "./charts/RangeChart.js";
