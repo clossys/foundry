@@ -1,6 +1,6 @@
 import { Icon, type IconNode } from "@clossys/designer/atoms/server";
-import { AnatomyCallouts, ContentSection, Items, RecordLedger, Scene, Specimen } from "@clossys/designer/blocks/server";
-import type { ItemData, SpecimenPanelItem, SpecimenPart } from "@clossys/designer/blocks/server";
+import { AnatomyCallouts, ContentSection, Items, Matrix, RecordLedger, Scene, Specimen } from "@clossys/designer/blocks/server";
+import type { ItemData, MatrixSide, SpecimenPanelItem, SpecimenPart } from "@clossys/designer/blocks/server";
 import { Briefcase, Building2, Calendar, Clock, FileCheck, FileText, Folder, Globe, Landmark, Layers, Lock, Receipt, Scale, Search, ShieldCheck, Users } from "@clossys/designer/icons";
 import type { CSSProperties, ReactNode } from "react";
 import type { ContentIconName, ResolvedSectionedViewContentBlock, ResolvedSectionedViewContentSection, ResolvedSectionedViewSpecimenPanel, ResolvedSectionedViewSpecimenPart, ResolvedSectionedViewMedia, ResolvedSectionedViewSection, SectionedViewGround } from "../../core/sectioned-view.js";
@@ -40,7 +40,7 @@ export interface ContentSectionBlockProps {
   /** Private compatibility bridge for the published top-level FAQ kind. */
   publishedFaq?: Extract<ResolvedSectionedViewSection, { kind: "faq" }>;
 }
-function dependency(capability: "ordered or disclosed items" | "matrix" | "specimen metadata and meter markers", path: string): never {
+function dependency(capability: "ordered or disclosed items" | "matrix side IDs", path: string): never {
   throw new RenderError("resolution-failed", `${path}: renderer capability unavailable for ${capability}.`);
 }
 function renderFootnote(footnote: ResolvedSectionedViewContentSection["footnote"]): ReactNode {
@@ -50,23 +50,12 @@ function renderFootnote(footnote: ResolvedSectionedViewContentSection["footnote"
 }
 function icon(name: ContentIconName | undefined): ReactNode { return name === undefined ? undefined : <Icon glyph={CONTENT_ICONS[name]} decorative size="md" />; }
 function partData(part: ResolvedSectionedViewSpecimenPart): SpecimenPart {
-  if (part.type === "meter") {
-    if (part.previous !== undefined || part.previousText !== undefined) dependency("specimen metadata and meter markers", `part.${part.id}.previous`);
-    const { previous: _previous, previousText: _previousText, ...available } = part;
-    return available;
-  }
-  if (part.type === "status-rows") {
-    if (part.mobileRows !== undefined) dependency("specimen metadata and meter markers", `part.${part.id}.mobileRows`);
-    const { mobileRows: _mobileRows, ...available } = part;
-    return available;
-  }
   return part;
 }
 function panelData(panel: ResolvedSectionedViewSpecimenPanel): SpecimenPanelItem {
-  if (panel.badge !== undefined) dependency("specimen metadata and meter markers", `panel.${panel.id}.badge`);
-  const { badge: _badge, parts, ...available } = panel;
-  return { ...available, parts: parts.map(partData) };
+  return { ...panel, parts: panel.parts.map(partData) };
 }
+
 function partSpecimen(part: ResolvedSectionedViewSpecimenPart | undefined, id: string, heading: string): ReactNode {
   if (part === undefined) return undefined;
   return <Specimen label={part.label ?? heading} panels={[{ id, parts: [partData(part)] }]} />;
@@ -87,7 +76,13 @@ function renderMedia(media: ResolvedSectionedViewMedia, section: ResolvedSection
 }
 function renderBlock(block: ResolvedSectionedViewContentBlock, section: ResolvedSectionedViewContentSection): ReactNode {
   switch (block.type) {
-    case "matrix": return dependency("matrix", `section.${section.id}.block`);
+    case "matrix": {
+      block.sides.forEach((side, index) => {
+        if (/\s/.test(side.id)) dependency("matrix side IDs", `section.${section.id}.block.sides.${index}.id`);
+      });
+      const sideData = (side: typeof block.sides[number]): MatrixSide => ({ ...side, visual: side.visual === undefined ? undefined : <Specimen label={side.heading} panels={[panelData(side.visual)]} /> });
+      return <Matrix sides={[sideData(block.sides[0]!), sideData(block.sides[1]!)]} featured={block.featured} headingLevel={3} ground={section.ground} />;
+    }
     case "items": {
       if (block.order !== "none" || block.reveal !== "all") dependency("ordered or disclosed items", `section.${section.id}.block`);
       const items: ItemData[] = block.items.map(item => ({ id: item.id, heading: item.heading, description: item.description, eyebrow: item.eyebrow, icon: icon(item.icon), meta: item.meta, badge: item.badge, href: item.href, featured: item.featured, span: item.span, visual: partSpecimen(item.visual, item.id, item.heading) }));
@@ -96,7 +91,7 @@ function renderBlock(block: ResolvedSectionedViewContentBlock, section: Resolved
     default: { const exhaustive: never = block; return exhaustive; }
   }
 }
-/** Canonical frame and available unordered Items/media adapters. Pending capabilities refuse explicitly. */
+/** Canonical frame and available unordered Items/Matrix/media adapters. Pending capabilities refuse explicitly. */
 export function createContentSectionBlock(Faq: ContentSectionFaq) {
   return function ContentSectionBlock({ section, actions, className, style, after, publishedFaq }: ContentSectionBlockProps) {
     if (publishedFaq !== undefined) {

@@ -106,15 +106,11 @@ describe("canonical resolved boundary", () => {
   });
 });
 describe("valid canonical dependency capabilities", () => {
-  it.each(["numbered", "connected", "disclose", "matrix", "panel-badge", "mobile-rows", "previous"])("names the unavailable renderer capability for %s without forbidding the core contract", name => {
+  it.each(["numbered", "connected", "disclose"])("names the unavailable renderer capability for %s without forbidding the core contract", name => {
     let section = band({ block: columns(2) }); let capability = "ordered or disclosed items";
     if (name === "numbered") section = band({ block: { ...columns(2), order: "numbered" } });
     if (name === "connected") section = band({ block: { type: "items", recipe: "flow", items: [item("first"), item("second"), item("third")] } });
     if (name === "disclose") section = band({ block: { type: "items", recipe: "faq", items: [item("first"), item("second"), item("third"), item("fourth")] } });
-    if (name === "matrix") { section = band({ block: { type: "matrix", sides: ["one", "two"].map(id => ({ id, label: ref("short"), heading: ref("short"), description: ref("detail") })) } }); capability = "matrix"; }
-    if (name === "panel-badge") { section = band({ media: { ...specimen, panel: { ...panel, badge: { label: ref("badge"), tone: "info" } } } }); capability = "specimen metadata and meter markers"; }
-    if (name === "mobile-rows") { section = band({ media: { ...specimen, panel: { ...panel, parts: [{ id: "rows", type: "status-rows", mobileRows: 3, items: [{ id: "row", label: ref("field"), status: { tone: "info", label: ref("badge") } }] }] } } }); capability = "specimen metadata and meter markers"; }
-    if (name === "previous") { section = band({ media: { ...specimen, panel: { ...panel, parts: [{ id: "meter", type: "meter", label: ref("short"), tone: "info", value: 0, scaleMax: 100, valueText: ref("short"), previous: 0, previousText: ref("short") }] } } }); capability = "specimen metadata and meter markers"; }
     const doc = resolve(section); expect(() => assertRenderableSectionedViewDocument(doc)).not.toThrow(); expect(() => html(doc)).toThrow(new RegExp(`renderer capability unavailable for ${capability}`));
   });
 });
@@ -384,5 +380,53 @@ describe("canonical renderer review regressions", () => {
       const root = dom(renderToStaticMarkup(server ? <ServerLandingView document={doc} peek={false} header="reserved" measure="prose" /> : <LandingView document={doc} peek={false} header="reserved" measure="prose" />));
       for (const id of ["faq", "features"]) { const inner = root.querySelector<HTMLElement>(`#${id}`)!; expect(inner.className).toContain("scroll-mt-4xl"); expect(inner.className).toContain("tablet-lg:scroll-mt-5xl"); expect(inner.style.scrollMarginTop).toBe(""); expect(inner.closest<HTMLElement>("[data-landing-ground]")?.style.paddingBlock).toBe(""); }
     }
+  });
+});
+
+
+describe("canonical matrix and specimen metadata integration", () => {
+  function matrix(part?: SectionedViewSpecimenPart, points = false): SectionedViewContentSection {
+    return band({ block: { type: "matrix", featured: "right", sides: ["left", "right"].map(id => ({ id, label: ref(id === "left" ? "short" : "group"), heading: ref(id === "left" ? "first" : "second"), description: ref(id === "left" ? "detail" : "meta"), ...(part ? { visual: { ...panel, id: `${id}-panel`, meta: ref("meta"), status: { tone: "warning", label: ref("field") }, badge: { tone: "info", label: ref("badge") }, parts: [{ ...part, id: `${id}-${part.id}` }] } } : points ? { points: [ref(id === "left" ? "first" : "second"), ref(id === "left" ? "detail" : "meta")] } : {}) })) } });
+  }
+  function preserve(doc: ResolvedSectionedViewDocument) {
+    const before = JSON.stringify(doc); const sections = doc.sections; const resolutions = doc.resolutions; const originals = [...resolutions]; const sources = resolutions.map(value => value.source);
+    const markup = html(doc); expect(html(doc, true)).toBe(markup);
+    expect(doc.sections).toBe(sections); expect(doc.resolutions).toBe(resolutions); originals.forEach((value, index) => { expect(doc.resolutions[index]).toBe(value); expect(doc.resolutions[index]!.source).toBe(sources[index]); }); expect(JSON.stringify(doc)).toBe(before);
+    return dom(markup);
+  }
+  it.each(["base", "sunken", "inverse"] as const)("forwards description Matrix identity, feature and %s ground", ground => {
+    const doc = resolve({ ...matrix(), ground }); const root = preserve(doc);
+    expect([...root.querySelectorAll("[data-matrix-side]")].map(node => node.getAttribute("data-matrix-side"))).toEqual(["left", "right"]);
+    expect(root.querySelector('[data-matrix-side="right"] [data-featured="true"]')).not.toBeNull(); expect(root.querySelectorAll("h3")).toHaveLength(2);
+    const sides = [...root.querySelectorAll("[data-matrix-side]")]; sides.forEach((side, index) => { expect(side.querySelector("h3")?.textContent).toBe(index === 0 ? copy.short : copy.group); expect(side.textContent).toContain(index === 0 ? copy.first : copy.second); expect(side.textContent).toContain(index === 0 ? copy.detail : copy.meta); const plate = side.querySelector('[data-variant="plate"]')!; expect(plate.classList.contains(ground === "base" ? "bg-surface-sunken" : ground === "sunken" ? "bg-surface-raised" : "bg-surface-inverse-raised")).toBe(true); expect(side.querySelector("h3")!.classList.contains(ground === "inverse" ? "text-ink-on-inverse-muted" : "text-ink-secondary")).toBe(true); });
+  });
+  it("renders equal point rows and descriptions without dropping either", () => { const root = preserve(resolve(matrix(undefined, true))); expect(root.querySelectorAll("[data-matrix] li")).toHaveLength(4); [...root.querySelectorAll("[data-matrix-side]")].forEach((side, index) => { expect([...side.querySelectorAll("li")].map(node => node.textContent)).toEqual(index === 0 ? [copy.first, copy.detail] : [copy.second, copy.meta]); expect(side.textContent).toContain(index === 0 ? copy.detail : copy.meta); expect(side.querySelectorAll("p")[1]?.textContent).toBe(index === 0 ? copy.detail : copy.meta); }); });
+  it.each(availableParts)("projects and renders Matrix $type visuals losslessly", part => {
+    const doc = resolve(matrix(part)); const root = preserve(doc); expect(root.querySelectorAll("[data-matrix-side] figure")).toHaveLength(2); [...root.querySelectorAll("[data-matrix-side]")].forEach((side, index) => { expect(side.querySelectorAll("p")[1]?.textContent).toBe(index === 0 ? copy.detail : copy.meta); expect(side.textContent).toContain(index === 0 ? copy.first : copy.second); });
+    doc.resolutions.forEach(value => expect(root.textContent).toContain(value.text));
+  });
+  it.each(partCopyPaths)("refuses unresolved Matrix %s %s at the original side path", (type, fieldPath) => {
+    const doc: any = structuredClone(resolve(matrix(availableParts.find(value => value.type === type)!))); let parent = doc.sections[0].block.sides[0].visual.parts[0]; const keys = fieldPath.split("."); for (const key of keys.slice(0, -1)) parent = parent[key]; parent[keys.at(-1)!] = short;
+    const called = vi.fn(); expect(() => renderSectionedViewSections(doc, { ...sectionedViewBlocks, ContentSection: called }, {})).toThrow(/sections\.0\.block\.sides\.0\.visual\.parts\.0/); expect(called).not.toHaveBeenCalled(); for (const server of [false, true]) expect(() => html(doc, server)).toThrow(/invalid resolved document/);
+  });
+  it.each(["badge-tone", "badge-copy", "mobile-limit", "orphan-previous", "foreign-featured"])("refuses forged available %s before Designer", name => {
+    const part: SectionedViewSpecimenPart = { id: "meter", type: "meter", label: short, tone: "info", value: 40, scaleMax: 100, valueText: ref("measurement"), previous: 30, previousText: ref("amount") };
+    const section = name === "foreign-featured" ? matrix() : band({ media: { ...specimen, panel: { ...panel, badge: { label: ref("badge"), tone: "info" }, parts: name === "mobile-limit" ? [{ id: "rows", type: "status-rows", mobileRows: 3, items: [{ id: "row", label: ref("field"), status: { tone: "info", label: ref("badge") } }] }] : [part] } } });
+    const doc: any = structuredClone(resolve(section)); if (name === "foreign-featured") doc.sections[0].block.featured = "foreign"; else { const panel = doc.sections[0].media.panel; if (name === "badge-tone") panel.badge.tone = "accent"; if (name === "badge-copy") panel.badge.label = ref("badge"); if (name === "mobile-limit") panel.parts[0].mobileRows = 4; if (name === "orphan-previous") delete panel.parts[0].previousText; }
+    const called = vi.fn(); expect(() => renderSectionedViewSections(doc, { ...sectionedViewBlocks, ContentSection: called }, {})).toThrow(/sections\.0/); expect(called).not.toHaveBeenCalled(); for (const server of [false, true]) expect(() => html(doc, server)).toThrow(/invalid resolved document/);
+  });
+  it("keeps valid whitespace Matrix IDs explicit as an unavailable renderer capability without rewriting", () => {
+    const section = matrix(); if (section.block?.type !== "matrix") throw new Error("Expected Matrix"); section.block.sides[0]!.id = "left side"; const doc = resolve(section); const before = JSON.stringify(doc);
+    expect(() => assertRenderableSectionedViewDocument(doc)).not.toThrow(); for (const server of [false, true]) expect(() => html(doc, server)).toThrow(/section\.content\.block\.sides\.0\.id: renderer capability unavailable for matrix side IDs/); expect(JSON.stringify(doc)).toBe(before);
+  });
+  it.each(["neutral", "success", "warning", "danger", "info"] as const)("passes panel %s badge independently of metadata and status", tone => {
+    const doc = resolve(band({ media: { ...specimen, panel: { ...panel, meta: ref("meta"), status: { tone: "warning", label: ref("field") }, badge: { tone, label: ref("badge") } } } })); const root = preserve(doc);
+    for (const text of [copy.meta, copy.field, copy.badge, copy.panel, copy.owner]) expect(root.textContent).toContain(text); const badge = [...root.querySelectorAll("[data-specimen-panel-header] span")].find(node => node.textContent === copy.badge && node.classList.contains("text-caption")); expect(badge).toBeDefined(); expect(badge!.classList.contains(tone === "neutral" ? "bg-surface-sunken" : `bg-status-${tone}-tint`)).toBe(true); if (tone !== "neutral") expect(badge!.parentElement!.classList.contains("bg-surface-base")).toBe(true);
+  });
+  it("forwards status-row mobile limits while retaining every authored row", () => {
+    const doc = resolve(band({ media: { ...specimen, panel: { ...panel, parts: [{ id: "rows", type: "status-rows", mobileRows: 3, items: ["first", "second", "third", "fourth"].map(id => ({ id, label: ref(id as "first" | "second" | "third" | "fourth"), detail: ref("detail"), status: { tone: "info", label: ref("badge") } })) }] } } })); const root = preserve(doc); const rows = root.querySelectorAll("figure li"); expect(rows).toHaveLength(4); expect(rows[2]!.classList.contains("max-tablet:hidden")).toBe(false); expect(rows[3]!.classList.contains("max-tablet:hidden")).toBe(true); expect(rows[3]!.textContent).toContain(copy.fourth);
+  });
+  it.each([0, 100])("forwards previous Meter marker %i and its visible text with unchanged value/limit domain", previous => {
+    const doc = resolve(band({ media: { ...specimen, panel: { ...panel, parts: [{ id: "meter", type: "meter", label: short, tone: "info", value: 140, limit: 180, scaleMax: 100, valueText: ref("measurement"), limitText: ref("limit"), previous, previousText: ref("amount") }] } } })); const root = preserve(doc); const marker = root.querySelector<HTMLElement>('[data-part="previous"]')!; expect(marker).not.toBeNull(); expect(marker.style.insetInlineStart).toContain(`${previous}%`); expect(root.textContent).toContain(copy.amount); expect(root.textContent).toContain(copy.measurement); expect(root.textContent).toContain(copy.limit);
   });
 });

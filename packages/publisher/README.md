@@ -1290,10 +1290,16 @@ supports text, one link, or both.
 
 Single-panel specimen media, its optional anatomy key, record groups and the
 three scene templates forward their resolved visible copy to the available
-Designer blocks. Numbered, connected and disclosure Items, Matrix, panel badges, status-row
-mobile limits and Meter previous values await their renderer capabilities. These are valid core contracts. Until those capabilities are
-integrated, rendering refuses them with a `RenderError` naming the dependency
-and path instead of dropping authored fields. The published top-level FAQ
+Designer blocks. Matrix forwards side IDs, labels, headings, descriptions,
+points, specimen visuals and the featured side without rewriting identities.
+Panel badges remain independent of metadata and status; status-row mobile
+limits retain all authored rows, and Meter previous values keep their visible
+text and marker. Matrix side IDs containing whitespace remain valid core data
+but currently refuse with a named renderer capability error because the
+underlying Matrix requires whitespace-free IDs. Numbered, connected and
+disclosure Items still await their renderer capability. These are valid core
+contracts; rendering names the unavailable capability and path instead of
+dropping authored fields. The published top-level FAQ
 keeps its entry-specific implementation, including split FAQ layout. Scene text limits stay local to media; inverse Scene media gets an opaque base plate and base ink. Reusable record IDs are namespaced by section instance without changing authored copy or provenance. Canonical Landing fragments align with the unpadded band edge; published bands retain their padding offsets.
 
 The resolved boundary requires explicit canonical axes and closed plain data

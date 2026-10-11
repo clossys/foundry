@@ -98,7 +98,7 @@ export function assertCanonicalContentSection(section: Record<string, unknown>, 
     if (record(value)) {
       const localPath = fieldPath.slice(path.length + 1);
       // Only specimen parts own these copy fields; Scene formats and source records stay structural.
-      const childPartType = /^(media\.panel\.parts\.\d+|block\.items\.\d+\.visual)$/.test(localPath) && typeof value.type === "string" ? value.type : partType;
+      const childPartType = /^(media\.panel\.parts\.\d+|block\.items\.\d+\.visual|block\.sides\.\d+\.visual\.parts\.\d+)$/.test(localPath) && typeof value.type === "string" ? value.type : partType;
       return Object.fromEntries(Object.entries(value).filter(([key]) => !(fieldPath === `${path}.block` && key === "continuesLabel")).map(([key, entry]) => [key, project(entry, `${fieldPath}.${key}`, key, childPartType)]));
     }
     return value;
