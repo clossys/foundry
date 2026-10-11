@@ -161,6 +161,24 @@ because asking for help is a run that did exactly what was asked.
 
 Everything below is exported from the package root.
 
+### Calendar windows
+
+| Export | What it does |
+| --- | --- |
+| `addCalendarMonthsUtc(from: Date, months: number): Date` | Adds whole calendar months in UTC, clamping to the target month's last day and preserving hours, minutes, seconds and milliseconds. Returns a new Date. |
+| `isWithinWindow(start: Date, end: Date, now: Date): boolean` | Tests `start <= now < end`; the end is exclusive. Empty and reversed windows return false. |
+| `CalendarMonthsError` | A `RangeError` subclass thrown for invalid Dates, negative, fractional or non-finite month counts, or a result outside the supported Date range. |
+
+```ts
+import { addCalendarMonthsUtc, isWithinWindow } from "@clossys/butler";
+
+const start = new Date("2026-08-31T13:14:15.678Z");
+const end = addCalendarMonthsUtc(start, 6); // 2027-02-28T13:14:15.678Z
+isWithinWindow(start, end, end); // false
+```
+
+Both helpers are pure and use caller-supplied dates; `from` is not modified.
+
 ### Evaluating and deciding
 
 | Export | What it does |

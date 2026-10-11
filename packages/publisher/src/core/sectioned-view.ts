@@ -102,22 +102,31 @@ export interface SectionedViewAction {
   id: string;
   label: CopyRef;
   href: string;
+  /** Omitted hero actions resolve to primary, then secondary. */
+  emphasis?: SectionedViewActionEmphasis;
+}
+
+/** Hero and view-owned closing actions use this closed subset. */
+export type SectionedViewActionEmphasis = "primary" | "secondary" | "quiet";
+
+/** Resolves a hero or closing action before any display reordering. */
+export function resolveRoleActionEmphasis(emphasis: SectionedViewActionEmphasis | undefined, index: number): SectionedViewActionEmphasis {
+  return emphasis ?? (index === 0 ? "primary" : "secondary");
 }
 
 /**
  * How a content-section action renders. `primary` is the filled button, for
- * the band's one conversion; `secondary` (the default) is the outlined button
- * of the same size and shape, for the band's next step to a major page.
+ * the band's one conversion; `secondary` is outlined at lg; `tertiary` is tonal at md and `quiet`
+ * carries text and a decorative chevron at md. Omitted emphasis follows weight.
  */
-export type SectionedViewContentActionEmphasis = "primary" | "secondary";
+export type SectionedViewContentActionEmphasis = "primary" | "secondary" | "tertiary" | "quiet";
 
 /**
  * One call to action a content section may carry: a hero action plus its
- * emphasis. A section holds at most two, and at most one `primary`; both
- * render as full-size buttons.
+ * emphasis. A section holds at most two, and at most one `primary`.
  */
-export interface SectionedViewContentAction extends SectionedViewAction {
-  /** @default "secondary" */
+export interface SectionedViewContentAction extends Omit<SectionedViewAction, "emphasis"> {
+  /** Omitted emphasis follows the derived band weight. */
   emphasis?: SectionedViewContentActionEmphasis;
 }
 
@@ -145,6 +154,8 @@ export interface SectionedViewHeroSection {
   eyebrow?: CopyRef;
   heading: CopyRef;
   description?: CopyRef;
+  /** Short hero: section-scale heading, with no first-screen fill, peek or scroll cue. */
+  compact?: boolean;
   /** Optional calls to action. The Designer Hero block beneath this section has always had the slot; the document can now express it. */
   actions?: SectionedViewAction[];
   /** Optional product-surface or original-art media beside the hero copy — same slot `MarketingView`'s `heroMedia` fills at render time. */
@@ -949,11 +960,13 @@ export function validateSectionedViewDocument(value: unknown): ComposeFinding[] 
     switch (section.kind) {
       case "hero":
         heroCount += 1;
-        if (!hasOnlyOwnKeys(section, ["id", "kind", "ground", "eyebrow", "heading", "description", "actions", "media"]) || !hasOwn(section, "heading")) findings.push(finding("sectioned-view-section-keys", path, `${path} has keys not allowed for hero.`));
+        if (!hasOnlyOwnKeys(section, ["id", "kind", "ground", "eyebrow", "heading", "description", "actions", "media", "compact"]) || !hasOwn(section, "heading")) findings.push(finding("sectioned-view-section-keys", path, `${path} has keys not allowed for hero.`));
+        if (section.compact !== undefined && typeof section.compact !== "boolean") findings.push(finding("sectioned-view-hero-shape", `${path}.compact`, `${path}.compact must be a boolean.`));
+        if (section.compact === true && section.media !== undefined) findings.push(finding("sectioned-view-hero-compact-media", `${path}.media`, `${path} cannot combine a compact hero with media.`));
         validateCopy(section.heading, `${path}.heading`, findings);
         if (section.eyebrow !== undefined) validateCopy(section.eyebrow, `${path}.eyebrow`, findings);
         if (section.description !== undefined) validateCopy(section.description, `${path}.description`, findings);
-        if (section.actions !== undefined) validateActions(section.actions, `${path}.actions`, findings);
+        if (section.actions !== undefined) validateHeroActions(section.actions, `${path}.actions`, findings);
         if (section.media !== undefined) validateHeroMedia(section.media, `${path}.media`, findings);
         break;
       case "feature-grid":
@@ -1091,34 +1104,42 @@ function validateHeroMedia(value: unknown, path: string, findings: ComposeFindin
 }
 
 /**
- * Actions, hero or content-section. A content-section action may also carry
- * an `emphasis` (`allowEmphasis`); a hero action may not. Returns the records
+ * Actions, hero or content-section. Content actions allow the full ladder;
+ * hero actions allow primary, secondary and quiet. Returns the records
  * that passed the shape check.
  */
 function validateActions(value: unknown, path: string, findings: ComposeFinding[], allowEmphasis = false): Record<string, unknown>[] {
   if (!validateDenseArray(value, path, findings, "sectioned-view-actions-shape", `${path} must be a non-empty array when present.`)) return [];
   validateItemIds(value, path, findings);
-  const keys = allowEmphasis ? ["id", "label", "href", "emphasis"] : ["id", "label", "href"];
+  const keys = ["id", "label", "href", "emphasis"];
   const actions: Record<string, unknown>[] = [];
   for (let index = 0; index < value.length; index += 1) {
     const action = value[index];
     const actionPath = `${path}.${index}`;
     if (!isPlainObject(action) || !hasOnlyOwnKeys(action, keys) || !hasOwnKeys(action, ["id", "label", "href"]) || !isNonWhitespaceString(action.id)) {
-      findings.push(finding("sectioned-view-action-shape", actionPath, `${actionPath} must be a plain action with id, label, and href${allowEmphasis ? ", and optionally emphasis" : ""}.`));
+      findings.push(finding("sectioned-view-action-shape", actionPath, `${actionPath} must be a plain action with id, label, and href, and optionally emphasis.`));
       continue;
     }
     validateCopy(action.label, `${actionPath}.label`, findings);
     if (!isSanctionedHref(action.href)) findings.push(finding("sectioned-view-action-href", `${actionPath}.href`, `${actionPath}.href must be a fragment, a one-origin path, an http(s) URL, or a mailto link.`));
-    if (allowEmphasis) validateEnumField(action, "emphasis", CONTENT_ACTION_EMPHASES, "sectioned-view-content-action-emphasis", actionPath, findings);
+    validateEnumField(action, "emphasis", allowEmphasis ? CONTENT_ACTION_EMPHASES : ROLE_ACTION_EMPHASES, allowEmphasis ? "sectioned-view-content-action-emphasis" : "sectioned-view-hero-action-emphasis", actionPath, findings);
     actions.push(action);
   }
   return actions;
 }
 
+/** Hero limits count effective defaults as well as authored primary emphasis. */
+function validateHeroActions(value: unknown, path: string, findings: ComposeFinding[]): void {
+  const actions = validateActions(value, path, findings);
+  if (Array.isArray(value) && value.length > 2) findings.push(finding("sectioned-view-hero-actions-count", path, `${path} must hold at most two actions.`));
+  const primaries = actions.filter((action, index) => resolveRoleActionEmphasis(action.emphasis as SectionedViewActionEmphasis | undefined, index) === "primary").length;
+  if (primaries > 1) findings.push(finding("sectioned-view-hero-primary-count", path, `${path} must hold at most one effective primary action.`));
+  if (actions.length === 1 && primaries !== 1) findings.push(finding("sectioned-view-hero-lone-action", path, `${path}'s lone action must be primary.`));
+}
+
 /**
- * A content section's actions: one or two, at most one `primary`. The rest
- * are `secondary`, the default. Both render as full-size buttons; an aside
- * that needs a text link is the section's `footnote`.
+ * A content section's actions: one or two, at most one authored `primary`.
+ * Derived weight determines omitted emphasis; the footnote carries an aside.
  */
 function validateContentActions(value: unknown, path: string, findings: ComposeFinding[]): void {
   const actions = validateActions(value, path, findings, true);
@@ -1224,7 +1245,8 @@ function validateStatusItems(value: unknown, path: string, findings: ComposeFind
 // ---------------------------------------------------------------------------
 
 const CONTENT_SECTION_KEYS = ["id", "kind", "ground", "eyebrow", "heading", "description", "actions", "layout", "mediaSide", "align", "block", "media", "footnote"] as const;
-const CONTENT_ACTION_EMPHASES: readonly SectionedViewContentActionEmphasis[] = ["primary", "secondary"];
+const ROLE_ACTION_EMPHASES: readonly SectionedViewActionEmphasis[] = ["primary", "secondary", "quiet"];
+const CONTENT_ACTION_EMPHASES: readonly SectionedViewContentActionEmphasis[] = ["primary", "secondary", "tertiary", "quiet"];
 /** The most actions one content section may hold. */
 const CONTENT_ACTIONS_MAX = 2;
 const CONTENT_LAYOUTS: readonly SectionedViewContentLayout[] = ["stacked", "split"];
@@ -1785,9 +1807,10 @@ function resolveStatusItem(item: SectionedViewStatusItem, path: string, text: (r
 function resolveSection(section: SectionedViewSection & { ground: SectionedViewGround }, path: string, text: (ref: CopyRef, path: string) => string, optional: (ref: CopyRef | undefined, path: string) => string | undefined): ResolvedSectionedViewSection {
   switch (section.kind) {
     case "hero": {
-      const { media: sourceMedia, ...heroBase } = section;
+      const { media: sourceMedia, compact, ...heroBase } = section;
       return {
         ...heroBase,
+        ...(compact === undefined ? {} : { compact }),
         eyebrow: optional(section.eyebrow, `${path}.eyebrow`),
         heading: text(section.heading, `${path}.heading`),
         description: optional(section.description, `${path}.description`),
@@ -2217,10 +2240,14 @@ function varietyWarning(rule: string, path: string, message: string): ComposeFin
  *    one band are two competing ways on. (A stacked band with a block takes
  *    no actions at all, a validation error; this catches the split.)
  *
+ * A lone compact hero warns unless the caller explicitly supplies
+ * `hasAfterContent` for a known page slot (after-section content or a close).
+ * Supply trailing documents in `input` so their sections count as page content.
+ *
  * Whether a visual repeats its block's words cannot be judged before copy
  * resolves, so that rule stays with the writer.
  */
-export function checkSectionVariety(input: SectionedViewDocument | readonly SectionedViewDocument[]): ComposeFinding[] {
+export function checkSectionVariety(input: SectionedViewDocument | readonly SectionedViewDocument[], context: { hasAfterContent?: boolean } = {}): ComposeFinding[] {
   const documents = Array.isArray(input) ? (input as readonly SectionedViewDocument[]) : [input as SectionedViewDocument];
   const many = Array.isArray(input);
   const bands: BandShape[] = [];
@@ -2234,6 +2261,10 @@ export function checkSectionVariety(input: SectionedViewDocument | readonly Sect
   });
 
   const findings: ComposeFinding[] = [];
+  const onlySection = documents.flatMap((document) => Array.isArray(document?.sections) ? document.sections : []);
+  if (onlySection.length === 1 && onlySection[0]?.kind === "hero" && onlySection[0].compact === true && context.hasAfterContent !== true) {
+    findings.push(varietyWarning("sectioned-view-hero-compact-content", bands[0]?.path ?? "sections.0", "A compact hero needs content after it; supply page content or use the default hero."));
+  }
   bands.forEach((band, position) => {
     const previous = bands[position - 1];
     if (previous === undefined) return;

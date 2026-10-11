@@ -59,7 +59,7 @@ export type ContentSectionFaq = (props: { items: readonly { id: string; question
 export interface ContentSectionBlockProps {
   /** The validated, resolved section. */
   section: ResolvedSectionedViewContentSection;
-  /** The section's actions, already rendered as full-size buttons. */
+  /** The section's actions, already rendered through the emphasis ladder. */
   actions?: ReactNode;
   /** Classes for the section root (SectionedView paints the section's ground here; a band leaves it to its frame). */
   className?: string;

@@ -1,4 +1,6 @@
-import { buttonLinkClassName } from "@clossys/designer/atoms/server";
+import { resolveActionEmphasis } from "../../core/page-flow.js";
+import { resolveRoleActionEmphasis } from "../../core/sectioned-view.js";
+import { renderAction, renderRoleActions } from "./SectionedViewActions.js";
 import { SECTION_GROUND_CLASSES } from "@clossys/designer/blocks/server";
 import type { ReactNode } from "react";
 import { CONTENT_ICON_NAMES, FEATURE_GRID_ITEM_EYEBROW_MAX_CHARACTERS, validateContentActionPlacement, validateItemHref, validateLinkGroup } from "../../core/sectioned-view.js";
@@ -16,7 +18,7 @@ type GroundProps = { id: string; eyebrow?: string; heading: string; description?
 type StatusListItemProps = { id: string; label: string; detail?: string; state: SectionedViewStatus; disposition?: never } | { id: string; label: string; detail?: string; disposition: SectionedViewStatusDisposition; state?: never };
 
 export interface SectionedViewBlockSet {
-  Hero(props: { id: string; eyebrow?: string; heading: string; description?: string; actions?: ReactNode; media?: ReactNode; composition?: "editorial" | "split"; headingLevel: 1 | 2; ground: SectionedViewGround }): ReactNode;
+  Hero(props: { id: string; eyebrow?: string; heading: string; description?: string; actions?: ReactNode; media?: ReactNode; composition?: "editorial" | "split"; size?: "default" | "compact"; headingLevel: 1 | 2; ground: SectionedViewGround }): ReactNode;
   FeatureGrid(props: GroundProps & { items: readonly { id: string; heading: string; description?: string }[] }): ReactNode;
   Faq(props: GroundProps & { items: readonly { id: string; question: string; answer: string }[] }): ReactNode;
   OrderedStepSequence(props: GroundProps & { items: readonly { id: string; ordinal: string; label?: string; heading: string; description?: string }[] }): ReactNode;
@@ -198,17 +200,18 @@ function assertStatItems(value: unknown, path: string): void {
 function assertActions(value: unknown, path: string, content = false): void {
   if (value === undefined) return;
   dense(value, path);
-  closedItems(value, path, content ? ["id", "label", "href", "emphasis"] : ["id", "label", "href"]);
+  closedItems(value, path, ["id", "label", "href", "emphasis"]);
   itemIds(value, path);
   for (let index = 0; index < value.length; index += 1) {
     const action = value[index] as Record<string, unknown>;
     if (!nonBlank(action.label)) throw new Error(`${path}.${index}.label must be resolved non-blank copy.`);
     if (!isSanctionedHref(action.href)) throw new Error(`${path}.${index}.href must be a sanctioned route target.`);
   }
-  if (!content) return;
-  value.forEach((action, index) => oneOf((action as Record<string, unknown>).emphasis, ["primary", "secondary"], `${path}.${index}.emphasis`, "action emphasis"));
-  if (value.length > 2) throw new Error(`${path} holds ${value.length} actions; a content section holds at most 2.`);
-  if (value.filter((action) => (action as Record<string, unknown>).emphasis === "primary").length > 1) throw new Error(`${path} holds more than one primary action.`);
+  value.forEach((action, index) => oneOf((action as Record<string, unknown>).emphasis, content ? ["primary", "secondary", "tertiary", "quiet"] : ["primary", "secondary", "quiet"], `${path}.${index}.emphasis`, "action emphasis"));
+  if (value.length > 2) throw new Error(`${path} holds ${value.length} actions; a ${content ? "content section" : "hero section"} holds at most 2.`);
+  const primaries = value.filter((action, index) => content ? (action as Record<string, unknown>).emphasis === "primary" : resolveRoleActionEmphasis((action as ResolvedSectionedViewAction).emphasis, index) === "primary").length;
+  if (primaries > 1) throw new Error(`${path} holds more than one ${content ? "primary" : "effective primary"} action.`);
+  if (!content && value.length === 1 && primaries !== 1) throw new Error(`${path}'s lone action must be primary.`);
 }
 
 /** A resolved footnote: closed `{ text, link? }` with non-blank text, its link closed `{ label, href }`. */
@@ -544,7 +547,7 @@ export function assertRenderableSectionedViewDocument(document: unknown): assert
   for (let index = 0; index < candidate.sections.length; index += 1) {
     const path = `sections.${index}`;
     const section = candidate.sections[index];
-    if (!plain(section) || !closed(section, ["id", "kind", "ground", "eyebrow", "heading", "description", "actions", "media", "items", "labels", "groups", "layout", "mediaSide", "align", "block", "footnote"])) throw new Error(`${path} must be a closed resolved section object.`);
+    if (!plain(section) || !closed(section, ["id", "kind", "ground", "eyebrow", "heading", "description", "actions", "media", "items", "labels", "groups", "layout", "mediaSide", "align", "block", "footnote", "compact"])) throw new Error(`${path} must be a closed resolved section object.`);
     const record = section as Record<string, unknown>;
     if (!nonBlank(record.id) || !FRAGMENT_ID.test(record.id)) throw new Error(`${path}.id must be a unique fragment-safe id.`);
     if (sectionIds.has(record.id)) throw new Error(`${path}.id duplicates an earlier section.`);
@@ -561,8 +564,10 @@ export function assertRenderableSectionedViewDocument(document: unknown): assert
       copyFields(record, path, ["heading"], ["eyebrow", "description"]);
     }
     if (record.kind === "hero") {
-      if (!closed(record, ["id", "kind", "ground", "eyebrow", "heading", "description", "actions", "media"])) throw new Error(`${path} has keys not allowed for a hero section.`);
+      if (!closed(record, ["id", "kind", "ground", "eyebrow", "heading", "description", "actions", "media", "compact"])) throw new Error(`${path} has keys not allowed for a hero section.`);
       assertActions(record.actions, `${path}.actions`);
+      if (record.compact !== undefined && typeof record.compact !== "boolean") throw new Error(`${path}.compact must be a boolean.`);
+      if (record.compact === true && record.media !== undefined) throw new Error(`${path} cannot combine a compact hero with media.`);
       assertHeroMedia(record.media, `${path}.media`);
       continue;
     }
@@ -698,7 +703,7 @@ const ACTION_INK: Record<SectionedViewGround, string> = {
   inverse: "text-ink-on-inverse",
 };
 
-/** How a hero's document-declared actions render: underlined text links, or Designer primary buttons. */
+/** How a hero's document-declared actions render: underlined text links, or the LandingView emphasis ladder. */
 export type SectionedViewHeroActions = "link" | "button";
 
 /**
@@ -709,29 +714,16 @@ export type SectionedViewHeroActions = "link" | "button";
 const TEXT_LINK_ACTION_STYLE = { minHeight: "var(--ui-layout-tap-target, 44px)" } as const;
 
 /**
- * A content section's actions: full-size Designer buttons on every site,
- * never text links. `primary` takes the filled button, `secondary` (the
- * default) the outlined one of the same size, whose edge and ink follow the
- * ground through the section's actions row.
+ * A content section's actions use the shared weight resolver and
+ * ground-aware ladder. Explicit emphasis is rendered as authored.
  */
-function renderContentActions(actions: readonly ResolvedSectionedViewContentAction[] | undefined): ReactNode {
-  if (actions === undefined) return undefined;
-  return actions.map((action) => (
-    <a key={action.id} href={action.href} className={buttonLinkClassName(action.emphasis === "primary" ? "primary" : "outline", "lg")} data-action-emphasis={action.emphasis ?? "secondary"}>
-      {action.label}
-    </a>
-  ));
+function renderContentActions(section: ResolvedSectionedViewContentSection): ReactNode {
+  return section.actions?.map((action, index) => renderAction(action, resolveActionEmphasis(section, index), section.ground));
 }
 
-function renderActions(actions: readonly ResolvedSectionedViewAction[] | undefined, ground: SectionedViewGround, look: SectionedViewHeroActions): ReactNode {
-  if (actions === undefined) return undefined;
-  const button = look === "button";
-  const className = button ? buttonLinkClassName("primary", "lg") : `inline-flex items-center text-body font-body underline ${ACTION_INK[ground]}`;
-  return actions.map((action) => (
-    <a key={action.id} href={action.href} className={className} style={button ? undefined : TEXT_LINK_ACTION_STYLE}>
-      {action.label}
-    </a>
-  ));
+function renderActions(actions: readonly ResolvedSectionedViewAction[] | undefined, ground: SectionedViewGround, look: SectionedViewHeroActions, centered = false): ReactNode {
+  if (look === "button") return renderRoleActions(actions, ground, centered);
+  return actions?.map((action) => <a key={action.id} href={action.href} className={`inline-flex items-center text-body font-body underline ${ACTION_INK[ground]}`} style={TEXT_LINK_ACTION_STYLE}>{action.label}</a>);
 }
 
 export interface SectionedViewRenderOptions {
@@ -739,12 +731,13 @@ export interface SectionedViewRenderOptions {
   prefersReducedMotion?: boolean;
   /**
    * How hero actions render. `"link"` (the SectionedView default) keeps
-   * underlined text links; `"button"` renders each as a Designer primary
-   * button-styled link (`buttonLinkClassName("primary", "lg")`), the same
-   * treatment a marketing page's closing call to action takes.
+   * underlined text links; `"button"` uses the LandingView emphasis ladder
+   * and a responsive action row shared with the closing band.
    * @default "link"
    */
   heroActions?: SectionedViewHeroActions;
+  /** Alignment of the LandingView-owned responsive hero action row. */
+  heroActionsCentered?: boolean;
 }
 
 function resolveHeroMedia(media: ResolvedSectionedViewHeroMedia | undefined, path: string, options: SectionedViewRenderOptions): ReactNode {
@@ -822,8 +815,9 @@ function renderSection(section: ResolvedSectionedViewSection, index: number, blo
           eyebrow={section.eyebrow}
           heading={section.heading}
           description={section.description}
-          actions={renderActions(section.actions, section.ground, options.heroActions ?? "link")}
+          actions={renderActions(section.actions, section.ground, options.heroActions ?? "link", options.heroActionsCentered)}
           media={heroMedia}
+          {...(section.compact === true ? { size: "compact" as const } : {})}
           {...(heroMedia ? { composition: "split" as const } : {})}
           headingLevel={index === 0 ? 1 : 2}
           ground={section.ground}
@@ -838,7 +832,7 @@ function renderSection(section: ResolvedSectionedViewSection, index: number, blo
     case "status-list": return <blocks.StatusList key={section.id} id={section.id} eyebrow={section.eyebrow} heading={section.heading} description={section.description} labels={section.labels} groups={section.groups} items={section.items} legendLabel={section.heading} headingLevel={2} ground={section.ground} />;
     case "stat-grid": return renderStatGrid(section, blocks);
     case "content-section":
-      return <blocks.ContentSection key={section.id} section={section} actions={renderContentActions(section.actions)} className={SECTION_GROUND_CLASSES[section.ground].surface || undefined} />;
+      return <blocks.ContentSection key={section.id} section={section} actions={renderContentActions(section)} className={SECTION_GROUND_CLASSES[section.ground].surface || undefined} />;
     case "pricing":
       return (
         <blocks.PricingTable

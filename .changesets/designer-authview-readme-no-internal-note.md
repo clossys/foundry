@@ -2,4 +2,4 @@
 designer: patch
 ---
 
-Remove the `internalNote` mention from the `AuthView` section of the README, which now says a missing sign-in provider setting is reported in the server log and not on the page.
+The `AuthView` section of the README no longer documents `internalNote`; it now says the view prints no developer text and that a missing sign-in provider setting is reported in the server log, not on the page.

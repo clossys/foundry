@@ -39,9 +39,34 @@
  * The 403 and 503 are set on the Response that `next` returns, so they apply
  * only when `next` returns the final response. Under a Next.js proxy,
  * `NextResponse.next()` or a rewrite can discard that status.
+ *
+ * Hardened mode is an explicit opt-in (`hardened: true`, an own data
+ * property) and changes nothing above unless it is set. In hardened mode:
+ *   - every option is read once, as an own data property, from a plain
+ *     object; arrays must be dense and plain;
+ *   - the permission check may answer `"permitted"`, `"denied"` or
+ *     `"unavailable"`; `"unavailable"` or a throw answers 503, and an
+ *     unavailable provider on a gated path answers 503 rather than sending
+ *     the visitor to sign in, so uncertainty is never reported as signed out;
+ *   - a navigation is a GET or HEAD whose Accept names `text/html` with a
+ *     valid quality above zero, and never a server action or router request;
+ *   - decoding and case folding are used only to deny: a path carrying any
+ *     percent escape takes no pass-through, and a decoded or case-folded path
+ *     can make a route an API route, never a public or sign-in one;
+ *   - the return URL is the hardened branch of `createReturnUrlResolver`,
+ *     which never names the sign-in, not-authorized or metadata route (or an
+ *     `excludedReturnPaths` entry) at any representation.
  */
 import { applyGatedHostHeaders, createServiceUnavailableResponse } from "../host-responses.js";
-import { createAllowedOriginPolicy, resolveSafeRedirect } from "../redirect.js";
+import {
+  assertPlainObject,
+  createAllowedOriginPolicy,
+  readDenseArray,
+  readExcludedPaths,
+  readOwnData,
+  resolveHardenedTarget,
+  resolveSafeRedirect,
+} from "../redirect.js";
 
 /** Where the gate serves, and the challenge points to, the RFC 9728 document. */
 export const PROTECTED_RESOURCE_METADATA_PATH = "/.well-known/oauth-protected-resource";
@@ -65,7 +90,16 @@ export interface ProtectedResourceMetadata {
   readonly bearer_methods_supported?: readonly string[];
 }
 
+/** A hardened permission answer. `true` and `false` remain accepted as `"permitted"` and `"denied"`. */
+export type GatePermissionAnswer = "permitted" | "denied" | "unavailable";
+
 export interface GatedHostGateOptions<P = unknown> {
+  /** Legacy mode. Set `hardened: true` (see {@link HardenedGatedHostGateOptions}) to opt in to the hardened contract. */
+  readonly hardened?: false;
+  /** Hardened mode only. */
+  readonly excludedReturnPaths?: never;
+  /** Hardened mode only. */
+  readonly returnFallbackPath?: never;
   /** This host's own public origin, from configuration. The gate never reads the origin from the request. */
   readonly origin: string;
   /** Same-host sign-in route, such as `/sign-in`. A plain path: no query, no trailing slash. */
@@ -90,14 +124,54 @@ export interface GatedHostGateOptions<P = unknown> {
   readonly retryAfterSeconds?: number;
 }
 
+/** The hardened gate. Every option is read once, as an own data property. */
+export interface HardenedGatedHostGateOptions<P = unknown>
+  extends Omit<GatedHostGateOptions<P>, "hardened" | "isPermitted" | "excludedReturnPaths" | "returnFallbackPath"> {
+  /** Explicit opt-in. */
+  readonly hardened: true;
+  /**
+   * Permission check. `true` or `"permitted"` permits; `false`, `"denied"` or
+   * any unknown answer denies; `"unavailable"`, a throw or a rejection
+   * answers 503.
+   */
+  readonly isPermitted: (
+    principal: P,
+    request: Request,
+  ) => boolean | GatePermissionAnswer | Promise<boolean | GatePermissionAnswer>;
+  /** Further same-host paths a return URL must never name. At most 16. */
+  readonly excludedReturnPaths?: readonly string[];
+  /** Same-host path used when the return URL is refused. Default `/`; required when `/` is excluded. */
+  readonly returnFallbackPath?: string;
+}
+
 export type GatedHostGate = (request: Request, next: GatedHostNext) => Promise<Response>;
 
 /** Options for {@link createReturnUrlResolver}. */
 export interface ReturnUrlResolverOptions {
+  /** Legacy mode. Set `hardened: true` (see {@link HardenedReturnUrlResolverOptions}) to opt in. */
+  readonly hardened?: false;
+  /** Hardened mode only. */
+  readonly excludedPaths?: never;
+  /** Hardened mode only. */
+  readonly fallbackPath?: never;
   /** This host's own public origin. */
   readonly origin: string;
   /** Explicit sibling origins a return URL may name. */
   readonly siblingOrigins?: readonly string[];
+}
+
+/** The hardened return-URL resolver. Every option is read once, as an own data property. */
+export interface HardenedReturnUrlResolverOptions {
+  /** Explicit opt-in. */
+  readonly hardened: true;
+  /** This host's own public origin. */
+  readonly origin: string;
+  /** Explicit sibling origins a return URL may name. Their own paths are not subject to `excludedPaths`. */
+  readonly siblingOrigins?: readonly string[];
+  /** Same-host paths a return URL must never name, at any representation. At most 16. */
+  readonly excludedPaths?: readonly string[];
+  /** Same-host path returned when a value is refused. Default `/`; required when `/` is excluded. */
+  readonly fallbackPath?: string;
 }
 
 const PLAIN_SEGMENT = /^[A-Za-z0-9._~-]+$/;
@@ -186,8 +260,34 @@ export function isNavigationRequest(request: Request): boolean {
  *
  * @throws {TypeError} when `origin` or a sibling is not a plain http(s) origin.
  */
-export function createReturnUrlResolver(options: ReturnUrlResolverOptions): (value: string | null | undefined) => string {
+export function createReturnUrlResolver(options: ReturnUrlResolverOptions): (value: string | null | undefined) => string;
+/**
+ * The hardened branch: a value comes back as written only when
+ * `resolveHardenedRedirect` accepts it (same rules, plus `excludedPaths`);
+ * everything else comes back as `fallbackPath`, itself validated at
+ * construction against the same rules.
+ *
+ * @throws {TypeError} when an option is malformed, when `fallbackPath` is not
+ * an accepted same-host path, or when `/` is excluded and no `fallbackPath`
+ * is given.
+ */
+export function createReturnUrlResolver(options: HardenedReturnUrlResolverOptions): (value: string | null | undefined) => string;
+export function createReturnUrlResolver(
+  options: ReturnUrlResolverOptions | HardenedReturnUrlResolverOptions,
+): (value: string | null | undefined) => string {
   if (options === null || typeof options !== "object") throw new TypeError("Return-URL options must be an object.");
+  if (readHardenedFlag(options)) {
+    assertPlainObject(options, "Return-URL options");
+    const excluded = readExcludedPaths(readOwnData(options, "excludedPaths", "excludedPaths"), "excludedPaths");
+    return createHardenedResolver(
+      readOwnData(options, "origin", "origin"),
+      readOwnData(options, "siblingOrigins", "siblingOrigins"),
+      excluded,
+      readOwnData(options, "fallbackPath", "fallbackPath"),
+      "fallbackPath",
+    ).resolve;
+  }
+  refuseHardenedOnly(options, ["excludedPaths", "fallbackPath"]);
   if (typeof options.origin !== "string") throw new TypeError("origin must be an http(s) origin string.");
   if (options.siblingOrigins !== undefined && !Array.isArray(options.siblingOrigins)) {
     throw new TypeError("siblingOrigins must be an array of origins.");
@@ -199,6 +299,66 @@ export function createReturnUrlResolver(options: ReturnUrlResolverOptions): (val
     if (resolved === undefined) return "/";
     const url = new URL(resolved);
     return url.origin === base ? `${url.pathname}${url.search}${url.hash}` : resolved;
+  };
+}
+
+/** Reads the opt-in flag: only an own data property `true` opts in. */
+function readHardenedFlag(options: object): boolean {
+  const flag = readOwnData(options, "hardened", "hardened");
+  if (flag !== undefined && typeof flag !== "boolean") throw new TypeError("hardened must be a boolean.");
+  return flag === true;
+}
+
+/** A hardened-only option set without `hardened: true` is refused rather than silently ignored. */
+function refuseHardenedOnly(options: object, keys: readonly string[]): void {
+  for (const key of keys) {
+    const descriptor = Object.getOwnPropertyDescriptor(options, key);
+    if (descriptor !== undefined && (!("value" in descriptor) || descriptor.value !== undefined)) {
+      throw new TypeError(`${key} is a hardened option; set hardened: true to use it.`);
+    }
+  }
+}
+
+/** Upper bound on every hardened option array (sibling origins, API prefixes, metadata lists). */
+const MAX_HARDENED_LIST = 16;
+
+/** A hardened resolver and the validated fallback it returns for anything it refuses. */
+interface HardenedResolver {
+  readonly resolve: (value: string | null | undefined) => string;
+  readonly fallback: string;
+}
+
+function createHardenedResolver(
+  originInput: unknown,
+  siblingsInput: unknown,
+  excluded: readonly string[],
+  fallbackInput: unknown,
+  fallbackName: string,
+): HardenedResolver {
+  if (typeof originInput !== "string") throw new TypeError("origin must be an http(s) origin string.");
+  const siblings = siblingsInput === undefined ? [] : readDenseArray(siblingsInput, "siblingOrigins", MAX_HARDENED_LIST);
+  if (!siblings.every((sibling): sibling is string => typeof sibling === "string")) {
+    throw new TypeError("siblingOrigins must be an array of origins.");
+  }
+  const policy = createAllowedOriginPolicy([originInput, ...siblings]);
+  const base = policy.origins[0] as string;
+  if (fallbackInput === undefined && excluded.some((path) => path === "/")) {
+    throw new TypeError(`Excluding / requires an explicit ${fallbackName}.`);
+  }
+  const fallback = fallbackInput ?? "/";
+  if (typeof fallback !== "string" || !fallback.startsWith("/")) throw new TypeError(`${fallbackName} must be a same-host path.`);
+  const fallbackResolved = resolveHardenedTarget(fallback, policy, base, excluded);
+  if (fallbackResolved === undefined || new URL(fallbackResolved).origin !== base) {
+    throw new TypeError(`${fallbackName} must be a plain, non-excluded same-host path.`);
+  }
+  return {
+    fallback,
+    resolve: (value) => {
+      const resolved = resolveHardenedTarget(value, policy, base, excluded);
+      if (resolved === undefined) return fallback;
+      const url = new URL(resolved);
+      return url.origin === base ? `${url.pathname}${url.search}${url.hash}` : resolved;
+    },
   };
 }
 
@@ -257,6 +417,92 @@ function jsonResponse(status: number, body: unknown, headers: Record<string, str
   );
 }
 
+const HARDENED_QUALITY = /^(?:0(?:\.[0-9]{0,3})?|1(?:\.0{0,3})?)$/;
+/** Next.js router, prefetch and server-action request headers: never a navigation in hardened mode. */
+const ROUTER_OR_ACTION_HEADERS = ["rsc", "next-action", "next-router-state-tree", "next-router-prefetch", "next-router-segment-prefetch"];
+
+/** `text/html` (media type compared case-insensitively), with no quality or a valid RFC 9110 quality above zero. */
+function acceptsHtmlHardened(accept: string): boolean {
+  return accept.split(",").some((entry) => {
+    const [type, ...params] = entry.split(";").map((part) => part.trim());
+    if (type?.toLowerCase() !== "text/html") return false;
+    let quality = 1;
+    for (const param of params) {
+      const equals = param.indexOf("=");
+      const name = (equals === -1 ? param : param.slice(0, equals)).trim();
+      if (name !== "q" && name !== "Q") continue;
+      const value = equals === -1 ? "" : param.slice(equals + 1).trim();
+      if (!HARDENED_QUALITY.test(value)) return false;
+      quality = Number(value);
+    }
+    return quality > 0;
+  });
+}
+
+function isHardenedNavigationRequest(request: Request, url: URL): boolean {
+  if (request.method !== "GET" && request.method !== "HEAD") return false;
+  if (ROUTER_OR_ACTION_HEADERS.some((name) => request.headers.has(name))) return false;
+  if (url.searchParams.has("_rsc")) return false;
+  return acceptsHtmlHardened(request.headers.get("accept") ?? "");
+}
+
+/** An API route under the path as written, decoded or case-folded. A path that cannot be decoded counts as one. */
+function isHardenedApiPath(pathname: string, prefixes: readonly string[]): boolean {
+  let decoded: string;
+  try {
+    decoded = decodeURIComponent(pathname);
+  } catch {
+    return true;
+  }
+  return [pathname, pathname.toLowerCase(), decoded, decoded.toLowerCase()].some((path) =>
+    prefixes.some((prefix) => {
+      const lower = prefix.toLowerCase();
+      return path === lower.slice(0, -1) || path.startsWith(lower) || path === prefix.slice(0, -1) || path.startsWith(prefix);
+    }),
+  );
+}
+
+const HARDENED_GATE_KEYS = [
+  "origin",
+  "signInPath",
+  "notAuthorizedPath",
+  "siblingOrigins",
+  "protectedResourceMetadata",
+  "resolvePrincipal",
+  "isPermitted",
+  "isPublicPath",
+  "apiPathPrefixes",
+  "production",
+  "retryAfterSeconds",
+  "excludedReturnPaths",
+  "returnFallbackPath",
+] as const;
+const METADATA_KEYS = ["resource", "authorization_servers", "scopes_supported", "bearer_methods_supported"] as const;
+
+/** A frozen snapshot of the hardened options: own data properties only, arrays copied dense. */
+function snapshotHardenedOptions<P>(input: object): HardenedGatedHostGateOptions<P> {
+  assertPlainObject(input, "Gate options");
+  const snapshot: Record<string, unknown> = { hardened: true };
+  for (const key of HARDENED_GATE_KEYS) {
+    let value = readOwnData(input, key, key);
+    if ((key === "siblingOrigins" || key === "apiPathPrefixes") && value !== undefined) {
+      value = readDenseArray(value, key, MAX_HARDENED_LIST);
+    }
+    if (key === "protectedResourceMetadata" && value !== null && typeof value === "object") {
+      assertPlainObject(value, key);
+      const metadata: Record<string, unknown> = {};
+      for (const field of METADATA_KEYS) {
+        let fieldValue = readOwnData(value, field, field);
+        if (field !== "resource" && fieldValue !== undefined) fieldValue = readDenseArray(fieldValue, field, MAX_HARDENED_LIST);
+        if (fieldValue !== undefined) metadata[field] = fieldValue;
+      }
+      value = metadata;
+    }
+    if (value !== undefined) snapshot[key] = value;
+  }
+  return Object.freeze(snapshot) as unknown as HardenedGatedHostGateOptions<P>;
+}
+
 /** A copy whose headers are mutable, so a pass-through of `Response.redirect()` can still be tagged. */
 function reissue(response: Response, status: number): Response {
   return new Response(response.body, {
@@ -273,8 +519,22 @@ function reissue(response: Response, status: number): Response {
  * @throws {TypeError} when an option is missing or malformed. Messages name
  * the option, never its value.
  */
-export function createGatedHostGate<P = unknown>(options: GatedHostGateOptions<P>): GatedHostGate {
-  if (options === null || typeof options !== "object") throw new TypeError("Gate options must be an object.");
+export function createGatedHostGate<P = unknown>(options: GatedHostGateOptions<P>): GatedHostGate;
+/**
+ * Creates the hardened gate (see the file header). It always returns a
+ * Response.
+ *
+ * @throws {TypeError} when an option is missing, malformed, inherited or an
+ * accessor. Messages name the option, never its value.
+ */
+export function createGatedHostGate<P = unknown>(options: HardenedGatedHostGateOptions<P>): GatedHostGate;
+export function createGatedHostGate<P = unknown>(
+  input: GatedHostGateOptions<P> | HardenedGatedHostGateOptions<P>,
+): GatedHostGate {
+  if (input === null || typeof input !== "object") throw new TypeError("Gate options must be an object.");
+  const hardened = readHardenedFlag(input);
+  if (!hardened) refuseHardenedOnly(input, ["excludedReturnPaths", "returnFallbackPath"]);
+  const options = hardened ? snapshotHardenedOptions<P>(input) : input;
   const { signInPath, notAuthorizedPath, resolvePrincipal, isPermitted, isPublicPath } = options;
   const apiPrefixes = options.apiPathPrefixes ?? ["/api/"];
   if (!isPlainOwnPath(signInPath)) throw new TypeError("signInPath must be a plain same-host path without a query or trailing slash.");
@@ -303,7 +563,26 @@ export function createGatedHostGate<P = unknown>(options: GatedHostGateOptions<P
   }
   if (options.production !== undefined && typeof options.production !== "boolean") throw new TypeError("production must be a boolean.");
 
-  const returnUrl = createReturnUrlResolver({ origin: options.origin, siblingOrigins: options.siblingOrigins });
+  const signInLocation = (target: string) => `${signInPath}?redirect_url=${encodeURIComponent(target)}`;
+  let returnUrl: (value: string | null | undefined) => string;
+  // The return target used when the encoded sign-in Location would be too long.
+  let overflowTarget = "/";
+  if (hardened) {
+    const resolver = createHardenedResolver(
+      options.origin,
+      options.siblingOrigins,
+      [signInPath, notAuthorizedPath, PROTECTED_RESOURCE_METADATA_PATH, ...readExcludedPaths(options.excludedReturnPaths, "excludedReturnPaths")],
+      options.returnFallbackPath,
+      "returnFallbackPath",
+    );
+    returnUrl = resolver.resolve;
+    overflowTarget = resolver.fallback;
+    if (signInLocation(overflowTarget).length > MAX_LOCATION_LENGTH) {
+      throw new TypeError(`returnFallbackPath must encode into a sign-in Location of at most ${MAX_LOCATION_LENGTH} characters.`);
+    }
+  } else {
+    returnUrl = createReturnUrlResolver({ origin: options.origin, siblingOrigins: options.siblingOrigins });
+  }
   const origin = new URL(options.origin).origin;
   const metadataBody = buildMetadataDocument(origin, options.protectedResourceMetadata);
   const challenge = `Bearer resource_metadata="${origin}${PROTECTED_RESOURCE_METADATA_PATH}"`;
@@ -363,7 +642,8 @@ export function createGatedHostGate<P = unknown>(options: GatedHostGateOptions<P
       }
     };
 
-    const ambiguous = isAmbiguousPath(pathname);
+    // Hardened: any percent escape is a reason to deny a pass-through, never to grant one.
+    const ambiguous = isAmbiguousPath(pathname) || (hardened && pathname.includes("%"));
     const isSignIn = !ambiguous && (pathname === signInPath || pathname.startsWith(signInPrefix));
 
     if (!isSignIn && !ambiguous && isPublicPath !== undefined) {
@@ -388,14 +668,18 @@ export function createGatedHostGate<P = unknown>(options: GatedHostGateOptions<P
       return render(providerUnavailable, providerUnavailable && production ? 503 : undefined);
     }
 
-    const isApi = apiPrefixes.some((prefix) => pathname === prefix.slice(0, -1) || pathname.startsWith(prefix));
-    const navigation = !isApi && isNavigationRequest(request);
+    const isApi = hardened
+      ? isHardenedApiPath(pathname, apiPrefixes)
+      : apiPrefixes.some((prefix) => pathname === prefix.slice(0, -1) || pathname.startsWith(prefix));
+    const navigation = !isApi && (hardened ? isHardenedNavigationRequest(request, url) : isNavigationRequest(request));
+
+    // Hardened: a provider that did not answer is uncertainty, not a signed-out visitor.
+    if (hardened && state.state === "unavailable") return unavailable();
 
     if (state.state !== "signed-in") {
       if (navigation) {
-        const signInLocation = (target: string) => `${signInPath}?redirect_url=${encodeURIComponent(target)}`;
         let location = signInLocation(returnUrl(`${pathname}${url.search}`));
-        if (location.length > MAX_LOCATION_LENGTH) location = signInLocation("/");
+        if (location.length > MAX_LOCATION_LENGTH) location = signInLocation(overflowTarget);
         return applyGatedHostHeaders(new Response(null, { status: 307, headers: { Location: location } }));
       }
       return jsonResponse(401, { error: "unauthorized" }, { "WWW-Authenticate": challenge });
@@ -404,10 +688,22 @@ export function createGatedHostGate<P = unknown>(options: GatedHostGateOptions<P
     if (pathname === notAuthorizedPath) return render(false, 403);
 
     let permitted = false;
-    try {
-      permitted = (await isPermitted(state.principal, request)) === true;
-    } catch {
-      permitted = false;
+    if (hardened) {
+      let answer: GatePermissionAnswer;
+      try {
+        const value: unknown = await isPermitted(state.principal, request);
+        answer = value === true || value === "permitted" ? "permitted" : value === "unavailable" ? "unavailable" : "denied";
+      } catch {
+        answer = "unavailable";
+      }
+      if (answer === "unavailable") return unavailable();
+      permitted = answer === "permitted";
+    } else {
+      try {
+        permitted = (await isPermitted(state.principal, request)) === true;
+      } catch {
+        permitted = false;
+      }
     }
     if (!permitted) {
       if (navigation) {

@@ -451,7 +451,7 @@ describe("SectionedView content-section", () => {
     expect(() => renderToStaticMarkup(<SectionedView document={faqDocument("grid")} />)).toThrow("sections.0.layout");
   });
 
-  it("renders a stacked band's specimen after its block and its footnote last, and a header-only band's actions as full-size buttons", () => {
+  it("renders a stacked band's specimen after its block and its footnote last, and a header-only band's actions through the ladder", () => {
     const host = renderToStaticMarkup(
       <SectionedView
         document={contentDocument({
@@ -466,7 +466,7 @@ describe("SectionedView content-section", () => {
     expect(host).toMatch(/<p data-content-section-footnote=""[^>]*>An aside\. <a href="\/guide" class="[^"]*\bunderline\b[^"]*">Read the guide<\/a><\/p><\/div><\/main>$/);
     const headerOnly = renderToStaticMarkup(<SectionedView document={contentDocument({ actions: [{ id: "more", label: "More", href: "/more", emphasis: "primary" }, { id: "faq", label: "FAQ", href: "/faq" }] })} />);
     expect(headerOnly).toMatch(/<a href="\/more" class="[^"]*\bpx-lg py-md text-body-l bg-accent text-ink-on-accent\b[^"]*" data-action-emphasis="primary">More<\/a>/);
-    expect(headerOnly).toMatch(/<a href="\/faq" class="[^"]*\bpx-lg py-md text-body-l bg-transparent ring-inset ring-current\b[^"]*" data-action-emphasis="secondary">FAQ<\/a>/);
+    expect(headerOnly).toMatch(/<a href="\/faq" class="[^"]*\bpx-md py-sm text-body bg-control-tonal text-ink-primary\b[^"]*" data-action-emphasis="tertiary">FAQ<\/a>/);
     expect(headerOnly).not.toContain("text-ink-link");
   });
 
@@ -493,7 +493,7 @@ describe("SectionedView content-section", () => {
       [{ items: [] }, "sections.0 has keys not allowed for a content-section section."],
       [{ actions: [1, 2, 3].map((n) => ({ id: `a${n}`, label: "Go", href: "/go" })) }, "sections.0.actions holds 3 actions; a content section holds at most 2."],
       [{ actions: [1, 2].map((n) => ({ id: `a${n}`, label: "Go", href: "/go", emphasis: "primary" })) }, "sections.0.actions holds more than one primary action."],
-      [{ actions: [{ id: "a", label: "Go", href: "/go", emphasis: "link" }] }, "sections.0.actions.0.emphasis is not a supported action emphasis; supported values are primary, secondary."],
+      [{ actions: [{ id: "a", label: "Go", href: "/go", emphasis: "link" }] }, "sections.0.actions.0.emphasis is not a supported action emphasis; supported values are primary, secondary, tertiary, quiet."],
       [
         { actions: [{ id: "a", label: "Go", href: "/go" }], block: { type: "topic-list", columns: 1, items: [{ id: "a", heading: "A" }, { id: "b", heading: "B" }] } },
         "sections.0 is a stacked band whose intro is followed by a block or visual, so it takes no section actions. Link the cards themselves (item `href`), or put one link in the footnote.",

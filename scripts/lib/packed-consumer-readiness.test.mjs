@@ -1,20 +1,28 @@
 import assert from "node:assert/strict";
 import { mkdtemp, mkdir, readdir, readFile, realpath, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import test from "node:test";
 
 import {
+  BY_DESIGN_REFUSALS,
+  MIN_REFUSAL_MARKER_LENGTH,
   OPTIONAL_PEER_POLICY,
+  byDesignRefusalFinding,
   credentiallessEnv,
   discoverPublishablePackages,
   inspectPackedExports,
   installedIdentityFindings,
   installedPackageRoots,
   importSpecifier,
+  judgeRuntimeImport,
+  omissionRowDrifted,
   parsePackedConsumerArgs,
   probeInstalledBin,
+  runPackedConsumerReadiness,
   runProcess,
+  unmeasuredRefusalFindings,
+  validateByDesignRefusals,
   validateOptionalPeerPolicy,
 } from "./packed-consumer-readiness.mjs";
 
@@ -318,6 +326,8 @@ test("the repository omission matrix is closed against every current publishable
   }
   assert.deepEqual(packages.map((entry) => entry.manifest.name).sort(), expectedNames.sort());
   assert.deepEqual(validateOptionalPeerPolicy(packages, OPTIONAL_PEER_POLICY), []);
+  assert.deepEqual(validateByDesignRefusals(packages, BY_DESIGN_REFUSALS), []);
+  assert.deepEqual(validateOptionalPeerPolicy(packages, OPTIONAL_PEER_POLICY, { refusals: BY_DESIGN_REFUSALS }), []);
 });
 
 test("Publisher's optional-peer matrix binds both default and react-server web outcomes", () => {
@@ -374,6 +384,411 @@ test("condition-aware optional-peer execution launches both default and react-se
   assert.equal(defaultResult.exitCode, 1);
   assert.match(defaultResult.stderr, /default omission/);
   assert.equal(serverResult.exitCode, 0, serverResult.stderr);
+});
+
+// By-design refusals. One synthetic package carries the three shapes a real
+// refusal takes: a client-only subpath that refuses `react-server`, a
+// development-only subpath that refuses everything except `development`, and
+// a server-only subpath that refuses `browser`. Every refusal module throws a
+// message naming its subpath and condition, never a peer.
+const REFUSALS_PACKAGE = "@example/refusals";
+const CLIENT_SERVER_MARKER = 'client subpath is client-only and refuses the "react-server" condition';
+const PREVIEW_SERVER_MARKER = 'preview subpath is client-only and refuses the "react-server" condition';
+const PREVIEW_DEFAULT_MARKER = 'preview subpath resolves only under the "development" condition';
+const COPY_BROWSER_MARKER = 'copy subpath is server-only and refuses the "browser" condition';
+const refusalsExports = {
+  ".": "./dist/index.js",
+  "./client": { "react-server": "./dist/client/refuse-react-server.js", default: "./dist/client/index.js" },
+  "./preview": {
+    "react-server": "./dist/preview/refuse-react-server.js",
+    development: "./dist/preview/index.js",
+    default: "./dist/preview/refuse-non-development.js",
+  },
+  "./copy": { browser: "./dist/copy/refuse-browser.js", default: "./dist/copy/index.js" },
+};
+const declaredRefusals = {
+  "@example/refusals/client": { "react-server": CLIENT_SERVER_MARKER },
+  "@example/refusals/preview": { "react-server": PREVIEW_SERVER_MARKER, default: PREVIEW_DEFAULT_MARKER },
+  "@example/refusals/copy": { browser: COPY_BROWSER_MARKER },
+};
+const refusalsManifest = {
+  name: REFUSALS_PACKAGE,
+  version: "1.0.0",
+  type: "module",
+  exports: refusalsExports,
+  peerDependenciesMeta: { "absent-peer": { optional: true } },
+};
+const throwing = (marker) => `throw new Error(${JSON.stringify(`${REFUSALS_PACKAGE}: the ${marker}.`)});\nexport {};\n`;
+
+async function refusalsConsumer(t, extraFiles = {}) {
+  const root = await fixture(t);
+  const packageRoot = join(root, "node_modules", "@example", "refusals");
+  const peerRoot = join(root, "node_modules", "absent-peer");
+  await writeFile(join(root, "package.json"), '{"type":"module"}\n');
+  await mkdir(peerRoot, { recursive: true });
+  await writeFile(join(peerRoot, "package.json"), '{"name":"absent-peer","version":"1.0.0","type":"module","exports":"./index.js"}\n');
+  await writeFile(join(peerRoot, "index.js"), "export const peer = true;\n");
+  const files = {
+    "index.js": "export const root = true;\n",
+    "client/index.js": 'import "absent-peer";\nexport const client = true;\n',
+    "client/refuse-react-server.js": throwing(CLIENT_SERVER_MARKER),
+    "preview/index.js": "export const preview = true;\n",
+    "preview/refuse-react-server.js": throwing(PREVIEW_SERVER_MARKER),
+    "preview/refuse-non-development.js": throwing(PREVIEW_DEFAULT_MARKER),
+    "copy/index.js": "export const copy = true;\n",
+    "copy/refuse-browser.js": throwing(COPY_BROWSER_MARKER),
+    ...extraFiles,
+  };
+  for (const [name, source] of Object.entries(files)) {
+    await mkdir(dirname(join(packageRoot, "dist", name)), { recursive: true });
+    await writeFile(join(packageRoot, "dist", name), source);
+  }
+  await writeFile(join(packageRoot, "package.json"), JSON.stringify(refusalsManifest));
+  return { root, packageRoot, peerRoot };
+}
+
+const judgeAll = async (shape, consumer, refusals, peer) => {
+  const outcomes = {};
+  for (const target of shape.rawRuntimeTargets) {
+    outcomes[`${target.condition} ${target.specifier}`] = await judgeRuntimeImport({
+      packageName: REFUSALS_PACKAGE,
+      ...target,
+      marker: refusals[target.specifier]?.[target.condition],
+      peer,
+      consumer,
+      env: process.env,
+    });
+  }
+  return outcomes;
+};
+
+test("a declared refusal is measured per condition and must throw its marker with or without the omitted peer", async (t) => {
+  const { root, packageRoot, peerRoot } = await refusalsConsumer(t);
+
+  // Undeclared, `development` and `browser` still fold into `default`, as before.
+  const folded = await inspectPackedExports(packageRoot, refusalsManifest);
+  assert.deepEqual(folded.runtimeTargets.map((item) => `${item.condition} ${item.specifier}`), [
+    "default @example/refusals",
+    "default @example/refusals/client",
+    "react-server @example/refusals/client",
+    "default @example/refusals/copy",
+    "default @example/refusals/preview",
+    "react-server @example/refusals/preview",
+  ]);
+
+  // Declared, each of the specifier's conditions is its own measured target.
+  const shape = await inspectPackedExports(packageRoot, refusalsManifest, declaredRefusals);
+  assert.deepEqual(unmeasuredRefusalFindings(REFUSALS_PACKAGE, shape, declaredRefusals), []);
+  const expected = (clientDefault) => ({
+    "default @example/refusals": "imports",
+    "default @example/refusals/client": clientDefault,
+    "react-server @example/refusals/client": "refuses",
+    "browser @example/refusals/copy": "refuses",
+    "default @example/refusals/copy": "imports",
+    "default @example/refusals/preview": "refuses",
+    "development @example/refusals/preview": "imports",
+    "react-server @example/refusals/preview": "refuses",
+  });
+  assert.deepEqual(await judgeAll(shape, root, declaredRefusals), expected("imports"));
+
+  // The omission run: an undeclared target may reject by naming the peer; a
+  // declared refusal still throws exactly its marker and is recorded `refuses`.
+  await rm(peerRoot, { recursive: true, force: true });
+  assert.deepEqual(await judgeAll(shape, root, declaredRefusals, "absent-peer"), expected("rejects"));
+});
+
+test("an undeclared refusal is still a finding in both runs", async (t) => {
+  const { root } = await refusalsConsumer(t);
+  const target = { packageName: REFUSALS_PACKAGE, specifier: "@example/refusals/client", condition: "react-server", consumer: root, env: process.env };
+  await assert.rejects(() => judgeRuntimeImport(target), /react-server @example\/refusals\/client runtime import failed: .*refuses the "react-server" condition/s);
+  await assert.rejects(() => judgeRuntimeImport({ ...target, peer: "absent-peer" }), /omission row absent-peer makes react-server @example\/refusals\/client fail without naming the omitted peer/);
+});
+
+test("a declared refusal that imports, or throws anything but its marker, is a finding", async (t) => {
+  const { root } = await refusalsConsumer(t, {
+    "client/refuse-react-server.js": `console.error(${JSON.stringify(CLIENT_SERVER_MARKER)});\nnull.crash;\n`,
+    "copy/refuse-browser.js": 'import "absent-peer/missing-entry";\nexport {};\n',
+    // Breakage that is not a module error: a refusal module that reads a
+    // file the package never shipped. The ENOENT message carries the file's
+    // path, which here contains the condition name.
+    "preview/refuse-non-development.js": 'import { readFileSync } from "node:fs";\nreadFileSync(new URL("./browser-refusal-messages.json", import.meta.url));\nexport {};\n',
+  });
+  const judge = (specifier, condition, marker, peer) => judgeRuntimeImport({ packageName: REFUSALS_PACKAGE, specifier, condition, marker, peer, consumer: root, env: process.env });
+  for (const peer of [undefined, "absent-peer"]) {
+    // Stale: the declared target imports.
+    await assert.rejects(() => judge("@example/refusals", "default", "anything", peer), /declared by-design refusal imports although it is declared to refuse by design/);
+    // Wrong marker: a real refusal, but another condition's.
+    await assert.rejects(() => judge("@example/refusals/preview", "react-server", PREVIEW_DEFAULT_MARKER, peer), /declared by-design refusal threw a different error than its declared refusal/);
+    // A crash that prints the marker before throwing a TypeError.
+    await assert.rejects(() => judge("@example/refusals/client", "react-server", CLIENT_SERVER_MARKER, peer), /threw a different error than its declared refusal: .*null/);
+  }
+  // A Node module error whose own message quotes the marker (here, the
+  // refusing module's own path) is breakage, not the declared refusal.
+  await assert.rejects(() => judge("@example/refusals/copy", "browser", "dist/copy/refuse-browser", undefined), /failed with error code ERR_[A-Z_]+, which is breakage, not its declared refusal: .*dist\/copy\/refuse-browser/);
+  // Any coded error is breakage, not only a Node module error: an ENOENT
+  // whose path quotes the marker does not pass for the declared refusal.
+  await assert.rejects(() => judge("@example/refusals/preview", "default", "dist/preview/browser-refusal-messages", undefined), /failed with error code ENOENT, which is breakage, not its declared refusal: .*browser-refusal-messages\.json/);
+});
+
+test("a refusal report is read only from the probe's own final line on its own exit path", async (t) => {
+  const marker = PREVIEW_DEFAULT_MARKER;
+  const report = `foundry-by-design-refusal:${JSON.stringify({ code: null, message: `the ${marker}.` })}`;
+  const reached = { exitCode: 86, signal: null, stdout: "", stderr: `\n${report}\n`, timedOut: false };
+  assert.equal(byDesignRefusalFinding(reached, marker), null);
+  assert.match(byDesignRefusalFinding({ ...reached, exitCode: null, timedOut: true }, marker), /timed out/);
+  assert.match(byDesignRefusalFinding({ ...reached, exitCode: null, launchError: "spawn failed" }, marker), /could not be launched/);
+  assert.match(byDesignRefusalFinding({ ...reached, exitCode: 1 }, marker), /ended with exit 1 before throwing at import/);
+  assert.match(byDesignRefusalFinding({ ...reached, exitCode: null, signal: "SIGKILL" }, marker), /signal SIGKILL/);
+  assert.match(byDesignRefusalFinding({ ...reached, stderr: `${report}\nlater output\n` }, marker), /without a readable refusal report/);
+  assert.match(byDesignRefusalFinding({ ...reached, stdout: report, stderr: marker }, marker), /without a readable refusal report/);
+  assert.match(byDesignRefusalFinding({ ...reached, stderr: report.replace('"code":null', '"code":"MODULE_NOT_FOUND"') }, marker), /error code MODULE_NOT_FOUND, which is breakage/);
+  assert.match(byDesignRefusalFinding({ ...reached, stderr: report.replace('"code":null', '"code":"ENOENT"') }, marker), /error code ENOENT, which is breakage/);
+
+  // Real processes: a module that prints a forged report and then hangs, or
+  // exits on its own, never reaches the probe's own exit path.
+  const root = await fixture(t);
+  const packageRoot = join(root, "node_modules", "@example", "forged");
+  await mkdir(packageRoot, { recursive: true });
+  await writeFile(join(root, "package.json"), '{"type":"module"}\n');
+  await writeFile(join(packageRoot, "package.json"), JSON.stringify({ name: "@example/forged", type: "module", exports: { "./hang": "./hang.js", "./exit": "./exit.js" } }));
+  const forge = `import { writeSync } from "node:fs";\nwriteSync(2, ${JSON.stringify(`\n${report}\n`)});\n`;
+  await writeFile(join(packageRoot, "hang.js"), `${forge}setInterval(() => {}, 1000);\nawait new Promise(() => {});\n`);
+  await writeFile(join(packageRoot, "exit.js"), `${forge}process.exit(1);\n`);
+  const judge = (specifier, timeout) => judgeRuntimeImport({ packageName: "@example/forged", specifier, condition: "default", marker, consumer: root, env: process.env, timeout });
+  // Only the hang case is bounded short, since it can only end by timing out;
+  // the exit case keeps the default bound so a slow machine cannot turn it
+  // into a timeout.
+  await assert.rejects(() => judge("@example/forged/hang", 500), /declared by-design refusal timed out/);
+  await assert.rejects(() => judge("@example/forged/exit"), /declared by-design refusal ended with exit 1/);
+});
+
+test("by-design refusal declarations are closed against the manifest", () => {
+  const packages = [{ manifest: refusalsManifest }];
+  assert.deepEqual(validateByDesignRefusals(packages, { [REFUSALS_PACKAGE]: declaredRefusals }), []);
+  const findings = (declared, options) => validateByDesignRefusals(packages, declared, options);
+  assert.deepEqual(findings({ "@example/gone": {} }), ["@example/gone by-design refusals are stale"]);
+  assert.deepEqual(findings({ "@example/gone": {} }, { allowUnselected: true }), []);
+  assert.deepEqual(findings({ [REFUSALS_PACKAGE]: { "@example/refusals/removed": { default: "removed subpath refuses every condition" } } }), [
+    "@example/refusals by-design refusal @example/refusals/removed default is stale: the manifest exports no default runtime target for it",
+  ]);
+  assert.deepEqual(findings({ [REFUSALS_PACKAGE]: { "@example/refusals/client": { browser: 'refuses the "browser" condition' } } }), [
+    "@example/refusals by-design refusal @example/refusals/client browser is stale: the manifest exports no browser runtime target for it",
+  ]);
+  assert.deepEqual(findings({ [REFUSALS_PACKAGE]: { "@example/refusals/client": { worker: 'refuses the "worker" condition' } } }), [
+    "@example/refusals by-design refusal @example/refusals/client names unsupported condition worker",
+  ]);
+  assert.deepEqual(findings({ [REFUSALS_PACKAGE]: { "@example/refusals/client": { "react-server": " " } } }), [
+    "@example/refusals by-design refusal @example/refusals/client react-server needs a non-empty refusal marker",
+  ]);
+  assert.deepEqual(findings({ [REFUSALS_PACKAGE]: { "@example/refusals/client": { "react-server": "client subpath is client-only" } } }), [
+    "@example/refusals by-design refusal @example/refusals/client react-server marker must name the react-server condition",
+  ]);
+  // A marker that is only the condition name, or any other short fragment,
+  // could match a path or a stray word rather than a refusal message.
+  assert.equal(MIN_REFUSAL_MARKER_LENGTH, 16);
+  for (const marker of ["react-server", ' "react-server" ', "refuses r-server"]) {
+    const expected = marker.trim().length < MIN_REFUSAL_MARKER_LENGTH
+      ? ["@example/refusals by-design refusal @example/refusals/client react-server marker is shorter than 16 characters and cannot identify a refusal message"]
+      : ["@example/refusals by-design refusal @example/refusals/client react-server marker must name the react-server condition"];
+    assert.deepEqual(findings({ [REFUSALS_PACKAGE]: { "@example/refusals/client": { "react-server": marker } } }), expected);
+  }
+  assert.deepEqual(findings({ [REFUSALS_PACKAGE]: { "@example/refusals/preview": { default: "development only" } } }), []);
+  assert.deepEqual(findings({ [REFUSALS_PACKAGE]: { "@example/refusals/preview": { default: "dev-only subpath" } } }), []);
+  assert.deepEqual(findings({ [REFUSALS_PACKAGE]: { "@example/refusals/preview": { default: "dev-only subpat" } } }), [
+    "@example/refusals by-design refusal @example/refusals/preview default marker is shorter than 16 characters and cannot identify a refusal message",
+  ]);
+  assert.deepEqual(findings({ [REFUSALS_PACKAGE]: { "@example/refusals/client": {} } }), [
+    "@example/refusals by-design refusal @example/refusals/client must map at least one condition to a refusal marker",
+  ]);
+  // A declaration the packed shape never imports (a Next-context or wildcard
+  // subpath) cannot stand in for a measurement either.
+  assert.deepEqual(unmeasuredRefusalFindings(REFUSALS_PACKAGE, { rawRuntimeTargets: [] }, { "@example/refusals/client": { "react-server": CLIENT_SERVER_MARKER } }), [
+    "@example/refusals by-design refusal @example/refusals/client react-server is never measured as a raw runtime import",
+  ]);
+});
+
+test("the packed-consumer run applies declarations to the packed tarball's own imports", async (t) => {
+  // A real pack, install and peer-omission run of the synthetic package, so
+  // the run itself is shown consuming the declarations, not only the helpers
+  // above. It stays offline: the run installs each optional peer as
+  // `<name>@<version>` read from the root's own node_modules, and this
+  // fixture's root copy records a `file:` tarball spec as that version, so npm
+  // installs the peer from disk instead of the registry.
+  const root = await fixture(t);
+  const peerSource = join(root, "peer-source");
+  await mkdir(peerSource);
+  await writeFile(join(peerSource, "package.json"), '{"name":"absent-peer","version":"1.0.0","type":"module","exports":"./index.js"}\n');
+  await writeFile(join(peerSource, "index.js"), "export const peer = true;\n");
+  const peerPack = await runProcess("npm", ["pack", "--ignore-scripts", "--pack-destination", root], { cwd: peerSource, timeout: 60_000 });
+  assert.equal(peerPack.exitCode, 0, peerPack.stderr);
+  await mkdir(join(root, "node_modules", "absent-peer"), { recursive: true });
+  await writeFile(join(root, "node_modules", "absent-peer", "package.json"), JSON.stringify({ name: "absent-peer", version: `file:${join(root, "absent-peer-1.0.0.tgz")}` }));
+
+  const packageRoot = join(root, "packages", "refusals");
+  const manifest = { ...refusalsManifest, files: ["dist"], peerDependencies: { "absent-peer": "^1.0.0" } };
+  await mkdir(packageRoot, { recursive: true });
+  await writeFile(join(packageRoot, "package.json"), JSON.stringify(manifest));
+  for (const [name, source] of Object.entries({
+    "index.js": "export const root = true;\n",
+    "client/index.js": 'import "absent-peer";\nexport const client = true;\n',
+    "client/refuse-react-server.js": throwing(CLIENT_SERVER_MARKER),
+    "preview/index.js": "export const preview = true;\n",
+    "preview/refuse-react-server.js": throwing(PREVIEW_SERVER_MARKER),
+    "preview/refuse-non-development.js": throwing(PREVIEW_DEFAULT_MARKER),
+    "copy/index.js": "export const copy = true;\n",
+    "copy/refuse-browser.js": throwing(COPY_BROWSER_MARKER),
+  })) {
+    await mkdir(dirname(join(packageRoot, "dist", name)), { recursive: true });
+    await writeFile(join(packageRoot, "dist", name), source);
+  }
+  // The row is written out of sorted order on purpose: key order is not part
+  // of an omission row, so the drift check must not depend on it.
+  const policy = { [REFUSALS_PACKAGE]: { "absent-peer": {
+    "@example/refusals/preview": { "react-server": "refuses", development: "imports", default: "refuses" },
+    "@example/refusals/client": { "react-server": "refuses", default: "rejects" },
+    "@example/refusals": "imports",
+    "@example/refusals/copy": { default: "imports", browser: "refuses" },
+  } } };
+  const run = (refusals) => runPackedConsumerReadiness({ root, skipBuild: true, policy, refusals });
+
+  const result = await run({ [REFUSALS_PACKAGE]: declaredRefusals });
+  assert.equal(result.runtimeImports, 8);
+  assert.equal(result.omissionRows, 1);
+  // A declaration finding is reported as a refusal closure failure, not as
+  // an optional-peer policy one.
+  await assert.rejects(() => run({ [REFUSALS_PACKAGE]: { ...declaredRefusals, "@example/refusals/removed": { default: "removed subpath refuses every condition" } } }), (error) => {
+    assert.match(error.message, /^by-design refusals are not closed:\n- .*removed default is stale/);
+    assert.doesNotMatch(error.message, /optional-peer policy/);
+    return true;
+  });
+  // Without the declarations the `refuses` cells are refused before anything
+  // is imported; and with a row closed the old way (refusals as `rejects`,
+  // `development` and `browser` folded) the refusal modules fail the
+  // every-target-imports rule, exactly as an undeclared refusal always has.
+  await assert.rejects(() => run({}), /^Error: optional-peer policy is not closed:\n- .*records refuses for react-server, which declares no refusal by design/s);
+  const folded = { [REFUSALS_PACKAGE]: { "absent-peer": {
+    "@example/refusals": "imports",
+    "@example/refusals/client": { default: "rejects", "react-server": "rejects" },
+    "@example/refusals/copy": "imports",
+    "@example/refusals/preview": { default: "rejects", "react-server": "rejects" },
+  } } };
+  await assert.rejects(() => runPackedConsumerReadiness({ root, skipBuild: true, policy: folded, refusals: {} }), /runtime import failed/);
+});
+
+test("the packed-consumer run refuses a declaration on a Next-context or wildcard subpath", async (t) => {
+  // Neither is ever imported as a raw runtime target: a Next-context subpath
+  // is evaluated through its framework contexts, and a wildcard key is not a
+  // literal export. A declaration on either must fail the run rather than
+  // stand in for a measurement.
+  const root = await fixture(t);
+  const packageRoot = join(root, "packages", "next-refusal");
+  const marker = 'client subpath is client-only and refuses the "react-server" condition';
+  await mkdir(packageRoot, { recursive: true });
+  await writeFile(join(packageRoot, "package.json"), JSON.stringify({
+    name: "@example/next-refusal",
+    version: "1.0.0",
+    type: "module",
+    files: ["dist"],
+    exports: {
+      "./client": { "react-server": "./dist/client/refuse-react-server.js", default: "./dist/client/index.js" },
+      "./items/*": "./dist/items/*.js",
+    },
+    foundryReleaseVerification: { next: { clientSubpaths: ["./client"] } },
+  }));
+  for (const [name, source] of Object.entries({
+    "client/index.js": "export const client = true;\n",
+    "client/refuse-react-server.js": `throw new Error(${JSON.stringify(marker)});\nexport {};\n`,
+    "items/a.js": "export const a = true;\n",
+  })) {
+    await mkdir(dirname(join(packageRoot, "dist", name)), { recursive: true });
+    await writeFile(join(packageRoot, "dist", name), source);
+  }
+  const run = (declared) => runPackedConsumerReadiness({ root, skipBuild: true, policy: {}, refusals: { "@example/next-refusal": declared } });
+  await assert.rejects(() => run({ "@example/next-refusal/client": { "react-server": marker } }),
+    /^Error: by-design refusals are not closed:\n- @example\/next-refusal by-design refusal @example\/next-refusal\/client react-server is never measured as a raw runtime import$/);
+  await assert.rejects(() => run({ "@example/next-refusal/items/a": { default: "items subpath refuses every condition" } }),
+    /^Error: by-design refusals are not closed:\n- @example\/next-refusal by-design refusal @example\/next-refusal\/items\/a default is stale: the manifest exports no default runtime target for it$/);
+});
+
+test("an omission row records refuses exactly where a refusal is declared", () => {
+  const packages = [{ manifest: refusalsManifest }];
+  const refusals = { [REFUSALS_PACKAGE]: declaredRefusals };
+  const row = (overrides = {}) => ({ "@example/refusals": { "absent-peer": {
+    "@example/refusals": "imports",
+    "@example/refusals/client": { default: "rejects", "react-server": "refuses" },
+    "@example/refusals/copy": { browser: "refuses", default: "imports" },
+    "@example/refusals/preview": { default: "refuses", development: "imports", "react-server": "refuses" },
+    ...overrides,
+  } } });
+  assert.deepEqual(validateOptionalPeerPolicy(packages, row(), { refusals }), []);
+  const prefix = "@example/refusals omission row absent-peer";
+  // `refuses` on an undeclared cell, or anywhere when nothing is declared.
+  assert.deepEqual(validateOptionalPeerPolicy(packages, row({ "@example/refusals": "refuses" }), { refusals }), [
+    `${prefix} @example/refusals records refuses for default, which declares no refusal by design`,
+  ]);
+  assert.deepEqual(validateOptionalPeerPolicy(packages, row({ "@example/refusals/copy": { browser: "refuses", default: "refuses" } }), { refusals }), [
+    `${prefix} @example/refusals/copy records refuses for default, which declares no refusal by design`,
+  ]);
+  assert.ok(validateOptionalPeerPolicy(packages, row({ "@example/refusals/client": { default: "rejects", "react-server": "refuses" } }))
+    .includes(`${prefix} @example/refusals/client records refuses for react-server, which declares no refusal by design`));
+  // A declared cell must read `refuses`, never a peer outcome.
+  assert.deepEqual(validateOptionalPeerPolicy(packages, row({ "@example/refusals/client": { default: "rejects", "react-server": "rejects" } }), { refusals }), [
+    `${prefix} @example/refusals/client must record refuses for its declared react-server refusal`,
+  ]);
+  // A declared specifier's `development` and `browser` targets are conditions
+  // the row must cover, so a row folded the old way is incomplete.
+  assert.deepEqual(validateOptionalPeerPolicy(packages, row({ "@example/refusals/preview": { default: "refuses", "react-server": "refuses" } }), { refusals }), [
+    `${prefix} @example/refusals/preview has incomplete or stale condition outcomes`,
+    `${prefix} @example/refusals/preview has invalid development outcome`,
+  ]);
+  assert.deepEqual(validateOptionalPeerPolicy(packages, row({ "@example/refusals/copy": "imports" }), { refusals }), [
+    `${prefix} @example/refusals/copy collapses its browser/default outcomes into one string`,
+  ]);
+});
+
+test("an omission row's drift check ignores key order and nothing else", () => {
+  const observed = {
+    "@example/refusals": "imports",
+    "@example/refusals/client": { default: "rejects", "react-server": "refuses" },
+  };
+  assert.equal(omissionRowDrifted(observed, {
+    "@example/refusals/client": { "react-server": "refuses", default: "rejects" },
+    "@example/refusals": "imports",
+  }), false);
+  assert.equal(omissionRowDrifted(observed, {
+    "@example/refusals/client": { "react-server": "refuses", default: "imports" },
+    "@example/refusals": "imports",
+  }), true);
+  assert.equal(omissionRowDrifted(observed, { "@example/refusals": "imports" }), true);
+  assert.equal(omissionRowDrifted(observed, { ...observed, "@example/refusals/copy": "imports" }), true);
+  assert.equal(omissionRowDrifted(observed, { ...observed, "@example/refusals/client": "rejects" }), true);
+});
+
+test("a nested condition on a declared specifier is measured as its outer condition alone", () => {
+  // `development` nested under `react-server` is a combination node only
+  // resolves with both flags set; it is measured as `react-server`, so it
+  // cannot be declared as a `development` refusal of its own.
+  const manifest = {
+    name: "@example/nested",
+    version: "1.0.0",
+    type: "module",
+    exports: {
+      "./widget": {
+        "react-server": { development: "./dist/widget/server-dev.js", default: "./dist/widget/refuse-react-server.js" },
+        default: "./dist/widget/index.js",
+      },
+    },
+  };
+  const marker = 'widget subpath refuses the "react-server" condition';
+  const packages = [{ manifest }];
+  assert.deepEqual(validateByDesignRefusals(packages, { "@example/nested": { "@example/nested/widget": { "react-server": marker } } }), []);
+  assert.deepEqual(validateByDesignRefusals(packages, { "@example/nested": { "@example/nested/widget": { development: 'widget subpath refuses the "development" condition' } } }), [
+    "@example/nested by-design refusal @example/nested/widget development is stale: the manifest exports no development runtime target for it",
+  ]);
+  const row = (outcomes) => ({ "@example/nested": { "absent-peer": { "@example/nested/widget": outcomes } } });
+  const withPeer = [{ manifest: { ...manifest, peerDependenciesMeta: { "absent-peer": { optional: true } } } }];
+  const refusals = { "@example/nested": { "@example/nested/widget": { "react-server": marker } } };
+  assert.deepEqual(validateOptionalPeerPolicy(withPeer, row({ default: "imports", "react-server": "refuses" }), { refusals }), []);
 });
 
 test("installedPackageRoots finds nested copies so a transitive peer cannot produce a false green", async (t) => {

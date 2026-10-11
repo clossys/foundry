@@ -1,8 +1,30 @@
 import { describe, expect, it } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { Button as AriaButton } from "react-aria-components";
-import { Dialog } from "./Dialog.js";
+import { Dialog, type DialogSize } from "./Dialog.js";
+
+const compiledCss = readFileSync(
+  join(dirname(fileURLToPath(import.meta.url)), "..", "..", "styles", "compiled.css"),
+  "utf8",
+);
+
+/** Escape a class name for use in a CSS selector, as Tailwind does for `max-w-[24rem]`. */
+function escapeClass(name: string): string {
+  return name.replace(/[^a-zA-Z0-9_-]/g, (c) => `\\${c}`);
+}
+
+/** The `max-width` value `styles/compiled.css` declares for a class, or null when no rule matches. */
+function compiledMaxWidth(className: string): string | null {
+  const selector = `.${escapeClass(className)}`;
+  const start = compiledCss.indexOf(`${selector} {`);
+  if (start === -1) return null;
+  const body = compiledCss.slice(start, compiledCss.indexOf("}", start));
+  return /max-width:\s*([^;]+);/.exec(body)?.[1]?.trim() ?? null;
+}
 
 function BasicDialog({ withExtraField = false }: { withExtraField?: boolean } = {}) {
   return (
@@ -145,5 +167,34 @@ describe("Dialog", () => {
     const dialog = await screen.findByRole("dialog");
     expect(dialog.style.boxShadow).toBe("none");
     expect(dialog.style.padding).toBe("40px");
+  });
+
+  it("compiles every size to a real rem max-width, increasing from sm to md to lg", async () => {
+    const widths: Record<string, number> = {};
+    for (const size of ["sm", "md", "lg"] as DialogSize[]) {
+      const user = userEvent.setup();
+      const { unmount } = render(
+        <Dialog trigger={<AriaButton>Open</AriaButton>} size={size}>
+          <Dialog.Heading>Title</Dialog.Heading>
+        </Dialog>,
+      );
+      await user.click(screen.getByRole("button", { name: "Open" }));
+      const dialog = await screen.findByRole("dialog");
+      const modal = dialog.closest('[class*="max-w-"]');
+      expect(modal).not.toBeNull();
+      const widthClasses = (modal as HTMLElement).className
+        .split(/\s+/)
+        .filter((c) => c.startsWith("max-w-"));
+      expect(widthClasses).toHaveLength(1);
+      const value = compiledMaxWidth(widthClasses[0] as string);
+      expect(value, `${size}: ${widthClasses[0]}`).not.toBeNull();
+      expect(value).not.toContain("var(--spacing-");
+      expect(value).toMatch(/^\d+(\.\d+)?rem$/);
+      widths[size] = parseFloat(value as string);
+      unmount();
+    }
+    expect(widths.sm).toBeGreaterThanOrEqual(20);
+    expect(widths.md).toBeGreaterThan(widths.sm as number);
+    expect(widths.lg).toBeGreaterThan(widths.md as number);
   });
 });

@@ -5,6 +5,11 @@ All notable changes to this package are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.5.1 - 2026-10-05
+
+- Render existing declaration adoption consent in approval sheets for dependencies and devDependencies.
+- Release-age edits and verification accept unrelated npmrc array-key assignments with a single trailing empty bracket pair.
+
 ## 0.5.0 - 2026-10-04
 
 - Allow explicitly approved adoption of existing first-party root dependency declarations through setup, apply and protected-source admission, and distinguish the generated guide artifact from a source citation in its contract prose.

@@ -378,13 +378,13 @@ describe("content-section — actions and footnote", () => {
   it("refuses a third action, a second primary, and an unknown emphasis", () => {
     expect(rules(docWith(section("a", { actions: [action("one"), action("two"), action("three")] })))).toEqual(["sectioned-view-content-actions-count"]);
     expect(rules(docWith(section("a", { actions: [action("one", { emphasis: "primary" }), action("two", { emphasis: "primary" })] })))).toEqual(["sectioned-view-content-primary-count"]);
-    expect(rules(docWith(section("a", { actions: [action("one", { emphasis: "tertiary" })] })))).toEqual(["sectioned-view-content-action-emphasis"]);
+    expect(rules(docWith(section("a", { actions: [action("one", { emphasis: "tertiary" })] })))).toEqual([]);
     expect(rules(docWith(section("a", { actions: [action("one", { emphasis: "link" })] })))).toEqual(["sectioned-view-content-action-emphasis"]);
     expect(rules(docWith(section("a", { actions: [action("one", { style: "link" })] })))).toEqual(["sectioned-view-action-shape"]);
   });
 
-  it("keeps emphasis off hero actions", () => {
-    expect(rules(docWith({ id: "welcome", kind: "hero", heading: ref("acme.hero.heading"), actions: [action("one", { emphasis: "primary" })] } as SectionedViewSection))).toEqual(["sectioned-view-action-shape"]);
+  it("accepts primary emphasis on hero actions", () => {
+    expect(rules(docWith({ id: "welcome", kind: "hero", heading: ref("acme.hero.heading"), actions: [action("one", { emphasis: "primary" })] } as SectionedViewSection))).toEqual([]);
   });
 
   it("refuses a footnote that is not closed, has no text, holds more than one link, or links outside the sanctioned hrefs", () => {
@@ -732,4 +732,15 @@ describe("checkSectionVariety", () => {
       ["sectioned-view-variety-treatment", "documents.1.sections.0"],
     ]);
   });
+});
+
+
+it("validates closed hero emphases and effective primary constraints", () => {
+  const action = (id: string, emphasis?: string) => ({ id, label: ref("acme.action"), href: "/start", ...(emphasis === undefined ? {} : { emphasis }) });
+  const page = (actions: unknown[]) => docWith({ id: "hero", kind: "hero", heading: ref("acme.heading"), actions } as SectionedViewSection);
+  for (const second of ["secondary", "quiet"]) expect(rules(page([action("first"), action("second", second)]))).toEqual([]);
+  expect(rules(page([action("first", "quiet"), action("second", "primary")]))).toEqual([]);
+  for (const emphasis of ["secondary", "quiet", "tertiary", "link"]) expect(rules(page([action("first", emphasis)])).length).toBeGreaterThan(0);
+  expect(rules(page([action("first"), action("second", "primary")]))).toContain("sectioned-view-hero-primary-count");
+  expect(rules(page([action("first"), action("second"), action("third")]))).toContain("sectioned-view-hero-actions-count");
 });

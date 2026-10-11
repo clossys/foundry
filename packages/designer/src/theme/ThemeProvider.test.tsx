@@ -74,6 +74,17 @@ describe("useTheme outside a provider", () => {
 });
 
 describe("ThemeProvider", () => {
+  it("keeps the light default after mount when nothing is stored on a dark OS", () => {
+    installMatchMediaMock(true);
+    document.documentElement.setAttribute("data-theme", "light");
+    document.documentElement.style.colorScheme = "light";
+    render(<ThemeProvider defaultPreference="light"><Probe /></ThemeProvider>);
+    expect(screen.getByTestId("preference")).toHaveTextContent("light");
+    expect(screen.getByTestId("resolved")).toHaveTextContent("light");
+    expect(document.documentElement.getAttribute("data-theme")).toBe("light");
+    expect(document.documentElement.style.colorScheme).toBe("light");
+  });
+
   it("renders its children", () => {
     render(
       <ThemeProvider>

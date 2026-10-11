@@ -566,7 +566,7 @@ describe("golden: SectionedView content-section", () => {
         description: copy("golden.intro.description", "Placeholder intro."),
         actions: [
           { id: "start", label: copy("golden.intro.start", "Start a record"), href: "/start", emphasis: "primary" },
-          { id: "more", label: copy("golden.intro.more", "Read the guide"), href: "/more" },
+          { id: "more", label: copy("golden.intro.more", "Read the guide"), href: "/more", emphasis: "secondary" },
         ],
       }),
     );
@@ -663,13 +663,28 @@ describe("golden: SectionedView content-section", () => {
     expect(section.querySelector("[data-content-section-modules]")).toBeNull();
   });
 
+  it("resolves an omitted second set-piece action to quiet with a decorative trailing chevron", () => {
+    const { root } = renderContent(contentBand("chapter", {
+      layout: "split",
+      media: specimenMedia("chapter", [recordPanel("chapter-record", "Placeholder record")]),
+      block: { ...BLOCKS.features, emphasis: "statement", treatment: "plain" },
+      actions: [{ id: "lead", label: copy("golden.chapter.lead", "Read the guide"), href: "/guide" }, { id: "more", label: copy("golden.chapter.more", "See details"), href: "/details" }],
+    }));
+    const [lead, more] = [...band(root, "chapter").querySelectorAll<HTMLElement>("[data-section-intro-actions] > a")];
+    expect(lead?.className).toBe(OUTLINE_LG);
+    expect(lead?.getAttribute("data-action-emphasis")).toBe("secondary");
+    expect(more?.getAttribute("data-action-emphasis")).toBe("quiet");
+    expect(more?.className.split(" ")).toEqual(expect.arrayContaining(["quiet-action", "text-body", "text-control-quiet"]));
+    expect(more?.lastElementChild?.getAttribute("aria-hidden")).toBe("true");
+  });
+
   it("paints the section's ground on its root and inks inverse actions for that ground", () => {
     const { root } = renderContent(contentBand("dark", { ground: "inverse", description: copy("golden.dark.description", "Placeholder lede."), actions: [{ id: "go", label: copy("golden.dark.go", "Continue"), href: "/go" }] }));
     const section = band(root, "dark");
     expect(section.className.split(" ")).toContain("bg-surface-inverse");
     const go = section.querySelector<HTMLElement>('a[href="/go"]');
-    expect(go?.className).toBe(OUTLINE_LG);
-    expect(go?.getAttribute("data-action-emphasis")).toBe("secondary");
+    expect(go?.className.split(" ")).toEqual(expect.arrayContaining(["text-body", "bg-control-tonal-inverse", "text-ink-on-inverse"]));
+    expect(go?.getAttribute("data-action-emphasis")).toBe("tertiary");
     // The outline takes its ink from the row, which carries the inverse ground's primary ink.
     expect(go?.parentElement?.className.split(" ")).toContain("text-ink-on-inverse");
   });

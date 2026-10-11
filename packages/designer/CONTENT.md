@@ -28,8 +28,9 @@ Every band opens with the same header group, and each slot has one job:
 - The heading never restates the eyebrow. The description never restates the
   heading.
 - Section actions are 1-2 buttons: 2-4 words, a verb first ("See the
-  schedule"). At most one is primary (filled); the other is secondary
-  (outlined). Never more than one primary per band, and one main call to
+  schedule"). At most one is primary (filled). Publisher resolves omitted emphasis
+  from band weight: A uses secondary then quiet, B and frame C use tertiary,
+  and other C uses quiet; authored emphasis wins. Never more than one primary per band, and one main call to
   action per run of bands. Which bands take them depends on the band's shape
   (see "Actions and links by band shape").
 - A footnote is an optional single short sentence at the end of a band, small
@@ -275,3 +276,43 @@ titles factual. Author the relation label and mark illustrative data with a
 sample caption. An approval chain has exactly one subject. Keep source, row and
 finding ids unique within their slots, and give each figure a separate instance
 id even when two figures share the same seed.
+
+## Derived page flow
+
+Publisher's opt-in `sectionWeight` derives A set pieces, B supporting bands
+and C breathers from authored structure. A hero is a role with weight `hero`.
+Full-width specimens, visual cards, visual comparisons, visual steps and
+statements are A; split specimens and text blocks support them; frames, short
+plain or rule lists and FAQ bands provide pauses. Plate feature grids are B
+grids. Weight never reads ground and has no authored override.
+
+Publisher's `checkPageFlow` checks opening impact, runs, repeated set-piece
+shapes, page-length counts, calm landing, inverse placement and primary actions.
+The `sectioned-view-flow-action-tier` finding names action emphasis or count
+above the body's weight ceiling. Pages with fewer than three body bands are
+exempt from `opening-set-piece`; other flow rules still apply. Primary targets
+ignore trailing slashes and nonleading fragments, retaining distinct leading
+fragments just as body links do.
+At most two body blocks link items. Each body destination appears once across
+item links, section actions and footnote links; hero and close are excluded.
+Card links count as quiet actions for weight fit, independently of section
+button counts. These findings are advisory and never run during rendering.
+Omitted section actions use secondary then quiet on A, tertiary on B and frame C,
+and quiet on other C bands. Explicit emphasis wins; an action above the weight
+ceiling still renders as authored and receives an advisory `action-tier` warning.
+
+## Closing copy
+
+A Publisher `LandingView` close can opt into the opening hero's heading and
+description with `callToAction: { copy: "hero", action }`. Own heading and
+description values take precedence, including `null` and `false`; only
+`undefined` falls back. The close retains its own eyebrow and action. Copy
+comes from the first section of the main document, which must be a hero.
+A valid nonempty document opening on another kind is refused with
+`missing-hero-copy`; malformed resolved documents retain `resolution-failed`.
+Omitting `copy` keeps the close's authored copy.
+
+**Compact hero.** Use `Hero size="compact"` when a form, status or utility
+content is the page's main job. Keep the heading short and place that content
+after it. Publisher authors set `compact: true` on the opening hero; use no
+hero media. The compact opening keeps the heading as `h1`.

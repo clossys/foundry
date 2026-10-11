@@ -1665,11 +1665,20 @@
     .tablet\:flex-row {
       flex-direction: row;
     }
+    .tablet\:flex-wrap {
+      flex-wrap: wrap;
+    }
     .tablet\:items-center {
       align-items: center;
     }
     .tablet\:justify-between {
       justify-content: space-between;
+    }
+    .tablet\:justify-center {
+      justify-content: center;
+    }
+    .tablet\:justify-start {
+      justify-content: flex-start;
     }
     .tablet\:gap-lg {
       gap: var(--spacing-lg, 16px);

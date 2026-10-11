@@ -121,3 +121,5 @@ export type {
 } from "./contract.js";
 
 export type { ValidationIssue, ValidationResult, Validator } from "./validation.js";
+
+export { addCalendarMonthsUtc, CalendarMonthsError, isWithinWindow } from "./calendar-months.js";
