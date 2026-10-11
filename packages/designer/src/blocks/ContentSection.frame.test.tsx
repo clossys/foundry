@@ -91,6 +91,26 @@ describe("ContentSection frame", () => {
     expect(screen.getByRole("heading")).toHaveAttribute("id", "frame-heading");
   });
 
+  it.each(["split-start", "split-end"] as const)("treats empty string modules as a header-only %s", (layout) => {
+    for (const children of ["", ["", ""]]) {
+      const { container, unmount } = render(<ContentSection layout={layout} heading="Heading" description="Support">{children}</ContentSection>);
+      expect(container.querySelector("[data-content-section-text]")).toHaveTextContent(/^Heading$/);
+      expect(container.querySelector("[data-content-section-support]")).toHaveTextContent(/^Support$/);
+      expect(container.querySelector("[data-content-section-modules]")).toBeNull();
+      unmount();
+    }
+  });
+
+  it.each(["split-start", "split-end"] as const)("stretches real modules in %s and preserves authored zero", (layout) => {
+    const { container } = render(<ContentSection layout={layout} heading="Heading" description="Support">{0}</ContentSection>);
+    const modules = container.querySelector("[data-content-section-modules]");
+    expect(modules).toHaveTextContent(/^0$/);
+    expect(modules).toHaveClass("items-stretch");
+    expect(modules).not.toHaveClass("items-start");
+    expect(container.querySelector("[data-content-section-support]")).toBeNull();
+    expect(container.querySelector("[data-content-section-text]")).toHaveTextContent("HeadingSupport");
+  });
+
   it("uses a block as the companion when a canonical split has no media", () => {
     const { container } = render(
       <ContentSection layout="split-end" heading="Heading" description="Description" footnote="Footnote">

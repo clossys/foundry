@@ -107,13 +107,13 @@ surfaces and live in `@clossys/publisher/web`.
   `Separator`, `Chip`, `StatusMark`, `Meter`.
 - **`blocks`** — owns the internal layout of multiple named regions,
   typically by composing one or more atoms (and/or layout) into something
-  with a real job on a page. Thirty-two ship: `PageHeader`, `EmptyState`,
+  with a real job on a page. Thirty-four ship: `PageHeader`, `EmptyState`,
   `DataTable`, `DetailView`, `Pagination`, `Stat`, `Form`, `FieldGroup`,
   `ConfirmDialog`, `Toolbar`, `NavGrid`, `LinkGrid`, `SectionHeader`, `Hero`,
-  `MarketingChapter`, `FeatureGrid`, `CardGrid`, `AnatomyCallouts`, `RecordLedger`, `LedgerTile`, `Scene`, `Comparison`, `TopicList`,
+  `MarketingChapter`, `FeatureGrid`, `Item`, `Items`, `CardGrid`, `AnatomyCallouts`, `RecordLedger`, `LedgerTile`, `Scene`, `Comparison`, `TopicList`,
   `Specimen`, `SpecimenPanel`, `OrderedStepSequence`, `StatusList`, `Faq`,
   `PricingTable`, `Testimonial`, `ArticleBody`, `ConsentBanner` — the last
-  eighteen are marketing/editorial
+  twenty are marketing/editorial
   content blocks and a presentational consent notice, completing this layer
   (see "Blocks" below).
 - **`shell`** — the persistent frame around content (nav, layout chrome)
@@ -358,7 +358,7 @@ source file's own header for the exact probe and its result). Today that's:
 | Subpath | Server-safe members |
 | --- | --- |
 | `@clossys/designer/atoms/server` | `Avatar`, `Badge`, `Banner`, `Card`, `Field`, `Icon`, `Meter`, `Skeleton`, `Spinner`, `StatusMark`, `buttonLinkClassName`, `iconButtonClassName`, `iconButtonLinkClassName`, `mergeUiClasses` |
-| `@clossys/designer/blocks/server` | `AnatomyCallouts`, `ArticleBody`, `CardGrid`, `Comparison`, `ContentSection`, `DetailView`, `EmptyState`, `Faq`, `FeatureGrid`, `FieldGroup`, `Hero`, `LedgerTile`, `LinkGrid`, `MarketingChapter`, `MediaFigure`, `OrderedStepSequence`, `PageHeader`, `PricingTable`, `RecordLedger`, `Scene`, `SectionFrame`, `SectionHeader`, `SectionIntro`, `Specimen`, `SpecimenPanel`, `Stat`, `StatusList`, `TopicList` |
+| `@clossys/designer/blocks/server` | `AnatomyCallouts`, `ArticleBody`, `CardGrid`, `Comparison`, `ContentSection`, `DetailView`, `EmptyState`, `Faq`, `FeatureGrid`, `FieldGroup`, `Hero`, `Item`, `Items`, `LedgerTile`, `LinkGrid`, `MarketingChapter`, `MediaFigure`, `OrderedStepSequence`, `PageHeader`, `PricingTable`, `RecordLedger`, `Scene`, `SectionFrame`, `SectionHeader`, `SectionIntro`, `Specimen`, `SpecimenPanel`, `Stat`, `StatusList`, `TopicList` |
 | `@clossys/designer/shell/server` | `Shell`, `SiteFooter`, `SiteHeader`, `SkipLink` |
 | `@clossys/designer/charts/server` | `ChartFrame`, `Sparkline` |
 | `@clossys/designer/theme/server` | `getThemeInitScript` |
@@ -3336,6 +3336,77 @@ already consumed `<h1>` and the next major section needs marketing heading
 scale. `headingLevel` (`2 | 3`, default `2`) picks the title element; `ground`
 follows the same `SectionGround` contract as `Hero` and `FeatureGrid`.
 
+### `Item` and `Items`
+
+```tsx
+import { Item, Items } from "@clossys/designer/blocks/server";
+
+function RelatedResources() {
+  return (
+    <div>
+      <Item id="notice" heading="Reference" meta="Updated" badge={{ label: "Live", tone: "success" }} treatment="plain" size="standard" ground="base" />
+      <Items
+        arrangement="columns"
+        columns={2}
+        treatment="plate"
+        headingLevel={3}
+        items={[
+          { id: "guide", heading: "Guide", description: "Read the reference.", href: "/guide", badge: { label: "Live" } },
+          { id: "examples", heading: "Examples", description: "Explore examples.", href: "/examples", meta: "Reference" },
+        ]}
+      />
+    </div>
+  );
+}
+```
+
+`Item` requires `treatment`, `size` and `ground`; its title is a paragraph.
+`Items` defaults treatment
+to plain, ground to base, size to standard, and item heading elements to
+h3 (`headingLevel={4}` selects h4). Display size uses text-h3; statement
+uses text-h2; bento uses text-h3. These visual scales do not change heading
+elements. Rules are hairlines; decorative icons use secondary ink. Eyebrow,
+badge and meta share a wrapping row in every treatment. Badge tone maps to
+the existing Badge atom: neutral (default), success, warning, danger or info.
+A featured item uses a flat plate with an accent top rule.
+
+| Arrangement | Columns | Counts |
+|---|---|---|
+| columns | 2 | 2, 4, 6 |
+| columns | 3 (default) | 3, 6 |
+| rows | 1 (default) | 2–8 |
+| rows | 2 | even counts from 2–8 |
+| bento | omitted | 2–6, complete ordered 12-unit rows |
+| stacked | omitted | 2–4 |
+
+Bento spans are third, half, two-thirds or full; an omitted span is half.
+An item cannot overflow its current row even when the total divides by 12.
+At tablet width, a lone third fills its row; desktop keeps its third span.
+Statement requires columns 3, exactly three items and plain or rule treatment;
+its items take heading, description and optional badge only. At most one
+item is featured, in columns or bento. Rows and stacked refuse the featured
+field, including false. Spans belong to bento; columns belong to columns
+and rows.
+
+Rows may have 2–4 labelled groups, with 2–4 item IDs in each. Groups reference
+every item exactly once, and render members in each group's authored ID
+order. Group labels are caption paragraphs naming their sections through
+unique label IDs; item headings retain the selected h3/h4 level.
+
+Link all items or none, up to six distinct normalized destinations. A linked
+item has one title-named anchor; description, badge, meta and visual remain
+outside it. Native controls, finite tabIndex targets (including -1), editable
+content and controlled media are refused in every linked slot. The guard
+walks supplied arrays, fragments and element children; it does not execute
+opaque components to inspect their rendered output. Numeric zero is content
+in every slot; optional whitespace-only copy is omitted. Stable IDs and
+nonblank headings are required.
+
+The existing CardGrid, TopicList, LinkGrid and NavGrid wrappers preserve their
+private compatibility frames, counts and presence rules. NavGrid retains
+ownership of its Button controls. Public Item and Items do not expose those
+private policies.
+
 ### `FeatureGrid`
 
 ```tsx
@@ -3378,39 +3449,14 @@ region. Items lay out one per row on narrow viewports, two from `tablet`,
 three from `desktop` — the same responsive grid `NavGrid` uses.
 `ground` uses the shared closed section-ground contract above.
 
-**Catalog layout.** Setting any of `columns`, `treatment` or `emphasis`
-switches to the content-catalog grid; with none of them set the original
-markup above is emitted unchanged. `columns` (`FeatureGridColumns`: `2`,
-`3` or `4`, default `3`) is the column count from `tablet-lg` (two from
-`tablet`, one below), with `gap-x-2xl gap-y-3xl` (`gap-2xl` both ways
-between plates). `treatment`
-(`FeatureGridTreatment`) is `"plain"` (the default), `"rule"` (a
-`--ui-border-rule` rule in `line-strong` above each item, then `pt-lg`) or
-`"plate"` (each item on a `Card` plate, the other ground). `emphasis`
-(`FeatureGridEmphasis`) is `"item"` (the default: heading `text-body-l`,
-medium, description `text-body`) or `"statement"`, which sets each item
-heading in the display font at `text-h1` (description `text-body-l`), for a
-short run of principles. An item eyebrow is a `text-body-s` medium tracked
-label. Icons render with `plain` and `plate` only, in the brand accent
-(`accent-on-inverse` on an inverse band); under a rule they are dropped.
-With three or four columns and an odd item count, the last item takes the
-whole `tablet` row instead of sitting beside an empty half, and returns to
-one column from `tablet-lg`.
-
-```tsx
-import { FeatureGrid } from "@clossys/designer/blocks";
-
-<FeatureGrid
-  columns={3}
-  treatment="rule"
-  emphasis="statement"
-  items={[
-    { id: "one", heading: "Principle one", description: "Supporting line one." },
-    { id: "two", heading: "Principle two", description: "Supporting line two." },
-    { id: "three", heading: "Principle three", description: "Supporting line three." },
-  ]}
-/>;
-```
+**Catalog layout.** Setting `columns`, `treatment` or `emphasis` routes to
+`Items`. Two columns take 2, 4 or 6 items; three columns (the default) take
+3 or 6. Rules use `--ui-border-hairline`; icons use secondary ink. Item
+headings use body-l semibold and semantic h3 elements. Statement uses
+three items in three columns, plain or rule treatment, and text-h2 visual
+scale. Statement items take heading, description and optional badge only.
+Leaving all catalog axes unset preserves the published default markup and
+its arbitrary item counts.
 
 ### `OrderedStepSequence`
 
@@ -5702,9 +5748,22 @@ not a grab-bag).
 | `FeatureGridProps` | type | Props for `FeatureGrid`: `eyebrow`, `heading`, `description`, `items`, `headingLevel`, `ground`, `columns`, `treatment`, `emphasis`, `className`, `style`, plus every native `<div>` attribute. |
 | `FeatureGridItem` | type | One item: `id`, `icon?`, `eyebrow?` (a caption above the item heading), `heading`, `description?`, `href?` (a linked item; not on a statement grid). |
 | `FeatureGridHeadingLevel` | type | `2 \| 3 \| 4 \| 5 \| 6`. |
-| `FeatureGridColumns` | type | `2 \| 3 \| 4`. |
+| `FeatureGridColumns` | type | `2 \| 3`. |
 | `FeatureGridTreatment` | type | `"plain" \| "rule" \| "plate"`. |
 | `FeatureGridEmphasis` | type | `"item" \| "statement"`. |
+| `Item` | component | Standalone item with required treatment, size and ground; one title link and independent copy, badge, meta and visual slots. |
+| `Items` | component | Canonical bounded columns, rows, bento or stacked collection, with labelled groups and at most one featured plate. |
+| `ItemData` | type | Stable id and heading; optional description, eyebrow, icon, meta, visual, href, featured, span and badge. |
+| `ItemProps` | type | ItemData plus required treatment, size and ground. |
+| `ItemBadge` | type | ReactNode label and optional existing Badge tone. |
+| `ItemSize` | type | `"standard" \| "display"`. |
+| `ItemTreatment` | type | `"plain" \| "rule" \| "plate"`. |
+| `ItemSpan` | type | `"third" \| "half" \| "two-thirds" \| "full"`. |
+| `ItemsProps` | type | Items, arrangement, columns, treatment, emphasis, size, groups, headingLevel, ground and className. |
+| `ItemsArrangement` | type | `"columns" \| "rows" \| "bento" \| "stacked"`. |
+| `ItemsColumns` | type | `1 \| 2 \| 3`; arrangement determines validity. |
+| `ItemsEmphasis` | type | `"item" \| "statement"`. |
+| `ItemsGroup` | type | Stable id, ReactNode label and an ordered list of canonical item IDs. |
 | `CardGrid` | component | Mixed grid of content cards on plates; spans fill whole 12-unit rows (validated); optional bottom-pinned visual per card. |
 | `CardGridProps` | type | Props for `CardGrid`: `items`, `headingLevel`, `ground`, `treatment`, `className`, `style`, plus every native `<div>` attribute except `title`. |
 | `CardGridItem` | type | One card: `id`, `icon?`, `eyebrow?`, `heading`, `description?`, `span`, `visual?`, `href?` (a linked card). |
@@ -6433,10 +6492,10 @@ speculatively, just because a related component shipped, is the exact
 un-bounded growth this package's own "variant rule" warns against one level
 up. They get added here only once something real needs them.
 
-**Blocks:** thirty-two ship — `PageHeader`, `EmptyState`, `DataTable`,
+**Blocks:** thirty-four ship — `PageHeader`, `EmptyState`, `DataTable`,
 `DetailView`, `Pagination`, `Stat`, `Form`, `FieldGroup`, `ConfirmDialog`,
 `Toolbar`, `NavGrid`, `LinkGrid`, `SectionHeader`, `Hero`, `MarketingChapter`,
-`FeatureGrid`, `CardGrid`, `AnatomyCallouts`, `RecordLedger`, `LedgerTile`, `Scene`, `Comparison`, `TopicList`, `Specimen`,
+`FeatureGrid`, `Item`, `Items`, `CardGrid`, `AnatomyCallouts`, `RecordLedger`, `LedgerTile`, `Scene`, `Comparison`, `TopicList`, `Specimen`,
 `SpecimenPanel`, `OrderedStepSequence`, `StatusList`, `Faq`, `PricingTable`,
 `Testimonial`, `ArticleBody`, `ConsentBanner` — completing this layer. No
 `FilterBar` block:

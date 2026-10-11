@@ -46,6 +46,8 @@ import { Switch } from "../atoms/Switch.js";
 import { TextField } from "../atoms/TextField.js";
 import { Textarea } from "../atoms/Textarea.js";
 import { Hero } from "../blocks/Hero.js";
+import { Item } from "../blocks/items/Item.js";
+import { Items } from "../blocks/items/Items.js";
 import { CardGrid } from "../blocks/CardGrid.js";
 import { Comparison } from "../blocks/Comparison.js";
 import { ContentSection } from "../blocks/ContentSection.js";
@@ -95,6 +97,26 @@ function toSelectorText(className: string): string {
 }
 
 describe("coverage: real rendered classes are all present in compiled.css", () => {
+  it("covers canonical item treatments, scales, badge tones and arrangements from actual rendering", async () => {
+    const classes = new Set<string>();
+    const tones = ["neutral", "success", "warning", "danger", "info"] as const;
+    for (const ground of ["base", "sunken", "inverse"] as const) for (const treatment of ["plain", "rule", "plate"] as const) {
+      const tree = render(<Item id="one" heading="Title" size="display" treatment={treatment} ground={ground} href="/one" featured={treatment === "plate"} icon={<svg />} eyebrow="Area" meta="Actor" description="Support" visual={<div>Visual</div>} badge={{ label: "Beta", tone: "info" }} />);
+      for (const cls of collectClassNames(tree.container)) classes.add(cls); tree.unmount();
+    }
+    for (const tone of tones) { const tree = render(<Item id={tone} heading="Title" size="standard" treatment="plain" ground="base" badge={{ label: "State", tone }} />); for (const cls of collectClassNames(tree.container)) classes.add(cls); tree.unmount(); }
+    for (const arrangement of ["columns", "rows", "bento", "stacked"] as const) {
+      const count = arrangement === "columns" ? 3 : 2;
+      const tree = render(<Items arrangement={arrangement} items={Array.from({ length: count }, (_, i) => ({ id: String(i), heading: "Title" }))} />);
+      for (const cls of collectClassNames(tree.container)) classes.add(cls); tree.unmount();
+    }
+    const grouped = render(<Items arrangement="rows" columns={2} items={[0,1,2,3].map(i => ({ id: String(i), heading: "Title" }))} groups={[{ id: "a", label: "A", items: ["1","0"] }, { id: "b", label: "B", items: ["3","2"] }]} />);
+    for (const cls of collectClassNames(grouped.container)) classes.add(cls); grouped.unmount();
+    const scan = scanCompiledCssSources(packageRoot);
+    const generated = await generateCompiledCss({ stylesDir: resolve(packageRoot, "styles"), candidates: scan.candidates });
+    expect([...classes].filter(cls => !generated.css.includes(toSelectorText(cls)))).toEqual([]);
+  });
+
   it("Hero (with media) and primary Button render classes present in a fresh compiled.css", async () => {
     const trees: Array<ReturnType<typeof render>> = [];
     trees.push(
@@ -220,12 +242,12 @@ describe("coverage: real rendered classes are all present in compiled.css", () =
       }
       trees.push(render(<ContentSection ground={ground} heading="H" media={<div>M</div>} />));
       trees.push(render(<ContentSection ground={ground} align="center" heading="H" actions={<a href="/a">A</a>} footnote={<>Aside.</>} />));
-      for (const columns of [2, 3, 4] as const) {
+      for (const columns of [2, 3] as const) {
         for (const treatment of ["plain", "rule", "plate"] as const) {
-          trees.push(render(<FeatureGrid ground={ground} columns={columns} treatment={treatment} items={[item("a"), item("b")]} />));
+          trees.push(render(<FeatureGrid ground={ground} columns={columns} treatment={treatment} items={Array.from({ length: columns }, (_, i) => item(String(i)))} />));
         }
       }
-      trees.push(render(<FeatureGrid ground={ground} emphasis="statement" items={[item("a"), item("b"), item("c")]} />));
+      trees.push(render(<FeatureGrid ground={ground} emphasis="statement" items={["a", "b", "c"].map(id => ({ id, heading: `Heading ${id}`, description: "Description." }))} />));
       trees.push(render(<FeatureGrid ground={ground} columns={2} treatment="plate" items={[{ ...item("a"), eyebrow: "E" }, item("b")]} />));
       trees.push(
         render(

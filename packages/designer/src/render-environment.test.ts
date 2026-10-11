@@ -75,6 +75,8 @@ describe("server-safe entry points resolve under react-server (test 1)", () => {
         "FeatureGrid",
         "FieldGroup",
         "Hero",
+        "Item",
+        "Items",
         "LinkGrid",
         "LedgerTile",
         "RecordLedger",
@@ -113,6 +115,32 @@ describe("server-safe entry points resolve under react-server (test 1)", () => {
       expect(keys).toEqual([...expectedExports].sort());
     });
   }
+});
+
+describe("pure Item and Items compiled graphs", () => {
+  it.each(["Item", "Items"])("imports and calls %s under react-server", (name) => {
+    const absolute = join(distDir, "blocks", "items", `${name}.js`);
+    const props = name === "Item"
+      ? { id: "one", heading: "Title", treatment: "plate", size: "standard", ground: "base", badge: { label: "Beta", tone: "info" }, meta: "Actor", visual: "Visual" }
+      : { arrangement: "rows", items: [{ id: "one", heading: "One", badge: { label: "Beta" }, meta: "Actor" }, { id: "two", heading: "Two" }, { id: "three", heading: "Three" }, { id: "four", heading: "Four" }], groups: [{ id: "a", label: "Group A", items: ["one", "two"] }, { id: "b", label: "Group B", items: ["three", "four"] }] };
+    const script = `import(${JSON.stringify(absolute)}).then(m => { const tree = m[${JSON.stringify(name)}](${JSON.stringify(props)}); if (!tree || typeof tree !== "object" || !tree.props) throw new Error("missing rendered tree"); process.stdout.write("OK"); }).catch(e => { console.error(e); process.exit(1); });`;
+    expect(execFileSync(process.execPath, ["--conditions=react-server", "-e", script], { encoding: "utf8", timeout: 10_000 })).toBe("OK");
+  });
+});
+
+describe("compiled grouped Items SSR", () => {
+  it("gives duplicate instances unique heading IDs and resolves every reference", () => {
+    const absolute = join(distDir, "blocks", "items", "Items.js");
+    const server = join(distDir, "blocks", "server.js");
+    const script = `import { createElement as h } from "react"; import { renderToStaticMarkup } from "react-dom/server"; import { Items } from ${JSON.stringify(absolute)}; import * as barrel from ${JSON.stringify(server)}; const props = { arrangement: "rows", items: [0,1,2,3].map(i => ({ id: String(i), heading: "Title " + i, badge: { label: "Beta" }, meta: "Actor" })), groups: [{ id: "a", label: "A", items: ["1","0"] }, { id: "b", label: "B", items: ["3","2"] }] }; if(barrel.Items !== Items) throw new Error("server barrel identity"); process.stdout.write(renderToStaticMarkup(h("div", null, h(Items, props), h(Items, props))));`;
+    const html = execFileSync(process.execPath, ["--input-type=module", "-e", script], { encoding: "utf8", timeout: 10_000, cwd: packageRoot });
+    const ids = [...html.matchAll(/\bid="([^"]+)"/g)].map((match) => match[1]);
+    const references = [...html.matchAll(/aria-labelledby="([^"]+)"/g)].map((match) => match[1]);
+    expect(ids).toHaveLength(4);
+    expect(new Set(ids).size).toBe(4);
+    expect(references).toEqual(ids);
+    expect(html).toContain("Beta"); expect(html).toContain("Actor");
+  });
 });
 
 describe("negative control: the original barrels still fail under react-server (test 2)", () => {

@@ -211,14 +211,14 @@ export function ContentSection({
   if (layout === "split-start" || layout === "split-end") {
     const atStart = layout === "split-start";
     if (!hasMedia) {
-      const headerSplit = !hasModules;
+      const headerSplit = !hasContent(children);
       const hasSupportIntro = hasContent(description) || hasContent(actions);
       const hasCompanion = !headerSplit || hasSupportIntro || hasContent(footnote);
       return (
         <div
           {...rest}
           data-content-section=""
-          data-layout={layout === "split-start" ? "split-start" : layout === "split-end" ? "split-end" : "split"}
+          data-layout={layout}
           className={cx("grid w-full grid-cols-1 gap-y-2xl tablet-lg:grid-cols-12 tablet-lg:items-start tablet-lg:gap-x-4xl tablet-lg:gap-y-0", padding, className)}
           style={style}
         >
@@ -243,7 +243,7 @@ export function ContentSection({
           </div>
           {hasCompanion ? <div
             {...(headerSplit ? { "data-content-section-support": "" } : { "data-content-section-modules": "" })}
-            className={cx("flex min-w-0 flex-col items-start tablet-lg:col-span-7", MODULE_GAP, atStart ? "tablet-lg:col-start-1 tablet-lg:row-start-1" : undefined)}
+            className={cx("flex min-w-0 flex-col tablet-lg:col-span-7", headerSplit ? "items-start" : "items-stretch", MODULE_GAP, atStart ? "tablet-lg:col-start-1 tablet-lg:row-start-1" : undefined)}
           >
             {headerSplit ? (
               <>
@@ -251,6 +251,7 @@ export function ContentSection({
                   <SectionIntro
                     emphasis={size === undefined ? emphasis : size === "display" ? "display" : "section"}
                     ground={ground}
+                    // SectionIntro uses truthiness; the fragment preserves an authored numeric zero.
                     description={description === 0 ? <>{description}</> : description}
                     actions={actions === 0 ? <>{actions}</> : actions}
                   />

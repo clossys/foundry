@@ -95,10 +95,12 @@ describe("blocks and atoms RTL logical-direction utilities (#951)", () => {
     const { container } = render(
       <div dir="rtl">
         <TopicList items={[{ id: "a", heading: "A" }, { id: "b", heading: "B" }]} />
-        <FeatureGrid treatment="rule" items={[{ id: "a", heading: "A" }, { id: "b", heading: "B" }]} />
+        <FeatureGrid columns={2} treatment="rule" items={[{ id: "a", heading: "A" }, { id: "b", heading: "B" }]} />
       </div>,
     );
-    for (const el of container.querySelectorAll<HTMLElement>("li, [data-feature-grid-item]")) {
+    const rules = container.querySelectorAll<HTMLElement>("li, [data-item]");
+    expect(rules).toHaveLength(4);
+    for (const el of rules) {
       expect(el).toHaveClass("border-t");
       expect(el.className).not.toMatch(PHYSICAL);
     }
