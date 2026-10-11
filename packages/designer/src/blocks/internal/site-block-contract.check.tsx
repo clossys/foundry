@@ -131,3 +131,17 @@ export const incompleteStatusLabels = (
     groups={[]}
   />
 );
+
+
+import { AnatomyCallouts } from "../AnatomyCallouts.js";
+import type { SpecimenPanelContent } from "../specimen/SpecimenPanel.js";
+const anatomyPanel: SpecimenPanelContent = { parts: [{ id: "result", type: "fields", label: "Result", items: [{ id: "latest", label: "Latest result", value: "3.00x" }] }] };
+export const validAnatomy = <AnatomyCallouts id="sample-record" label="Sample exception record." panel={anatomyPanel} markers={[]} keyLabel={<em>Key</em>} headingLevel={4} ground="inverse" legendSide="below" />;
+// @ts-expect-error — Anatomy ids belong to the caller, never a hook or global counter.
+export const missingAnatomyId = <AnatomyCallouts label="Sample exception record." panel={anatomyPanel} markers={[]} keyLabel="Key" />;
+// @ts-expect-error — marker overlays are rendering props, never panel content.
+export const markedPanelContent: SpecimenPanelContent = { ...anatomyPanel, markers: { result: 1 } };
+// @ts-expect-error — Anatomy grounds keep their closed token pairing.
+export const invalidAnatomyGround = <AnatomyCallouts id="sample" label="Sample exception record." panel={anatomyPanel} markers={[]} keyLabel="Key" ground="raised" />;
+// @ts-expect-error — key headings can only sit at section level plus one.
+export const invalidAnatomyHeading = <AnatomyCallouts id="sample" label="Sample exception record." panel={anatomyPanel} markers={[]} keyLabel="Key" headingLevel={2} />;

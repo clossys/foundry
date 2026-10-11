@@ -256,3 +256,12 @@ For book-like cards, use CardGrid `treatment: "rule"` with a LedgerTile visual.
 Tiles hold two-to-five rows. A three-row mobile cap hides later rows below tablet
 for every reader; put the row that matters, especially warning or danger, within
 the first three. Ledger rows are static; linked cards have only their title link.
+
+
+Use **AnatomyCallouts** (`anatomy-callouts`) when one record has three to five
+areas worth naming. Prefer three or five markers, with a short heading and
+one sentence per key item. Attach markers to the panel title, labelled parts
+or footer in reading order, and disclose sample data with the caption. Author
+the figure and key labels; use a unique caller instance id. The figure comes
+before the key at every width. Use **FeatureGrid** for features without a
+product surface, and steps or a story for a process.

@@ -1,7 +1,13 @@
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+import { readFileSync } from "node:fs";
+import { parseRootDeclarations, parseDeclarationsForSelector } from "./internal/parse-css.js";
 import { describe, expect, it } from "vitest";
 import { TOKENS, type TokenDefinition } from "./tokens.js";
 import { checkTokenContrast } from "./contrast-gate.js";
 import { AA, AA_LARGE, CONTRAST_PAIRS, contrastPairsForTheme, type ContrastException, type ContrastPair } from "./contrast-pairs.js";
+
+const sourceDir = dirname(fileURLToPath(import.meta.url));
 
 function def(property: string, value: string): TokenDefinition {
   return { property, family: "surface", value, brandable: false, themeDependent: false };
@@ -344,5 +350,28 @@ describe("checkTokenContrast — exceptions", () => {
     expect(result.relieved).toEqual([]);
     expect(result.findings).toHaveLength(1);
     expect(result.findings[0]).toMatchObject({ rule: "invalid-exception" });
+  });
+});
+
+
+describe("Anatomy numeral contrast", () => {
+  const pairs = CONTRAST_PAIRS.filter(pair => pair.id.startsWith("anatomy/"));
+  const css = readFileSync(resolve(sourceDir, "../../styles/tokens.css"), "utf8");
+  it.each(["light", "dark"] as const)("checks all four disc pairings against the real %s theme", theme => {
+    const declarations = parseRootDeclarations(css);
+    if (theme === "dark") for (const [key, value] of parseDeclarationsForSelector(css, ':root[data-theme="dark"]')) declarations.set(key, value);
+    const tokens = Object.fromEntries(Object.entries(TOKENS).map(([key, token]) => [key, { ...token, value: declarations.get(key) ?? token.value }]));
+    expect(pairs).toHaveLength(4);
+    const result = checkTokenContrast(pairs, { tokens });
+    expect(result.pairsChecked).toBe(4);
+    expect(result.unchecked).toEqual([]);
+    expect(result.findings).toEqual([]);
+    expect(result.ok).toBe(true);
+  });
+  it("rejects numerals below the normal-text threshold", () => {
+    for (const pair of pairs) {
+      const tokens = { ...TOKENS, [pair.foreground]: def(pair.foreground, "oklch(0.6 0 0)"), [pair.background]: def(pair.background, "oklch(1 0 0)") };
+      expect(checkTokenContrast([pair], { tokens }).findings).toEqual([expect.objectContaining({ pairId: pair.id, minimumRatio: AA, rule: "below-threshold" })]);
+    }
   });
 });

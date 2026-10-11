@@ -545,6 +545,16 @@ export const CONTRAST_PAIRS: readonly ContrastPair[] = [
     minimumRatio: AA_LARGE,
     description: `Categorical chart mark slot ${n} on the chart surface. Mirrors the per-slot sweep in contrast.test.ts's "every categorical slot either clears the 3:1 mark-contrast floor, or is a documented WARN slot".`,
   })),
+  // Anatomy numerals are caption-sized text; every disc needs the normal-text floor.
+  ...(["base", "sunken", "raised", "inverse"] as const).map(surface => ({
+    id: `anatomy/surface-${surface}/${surface === "inverse" ? "ink-on-inverse" : "ink-primary"}`,
+    foreground: `--color-surface-${surface}`,
+    background: surface === "inverse" ? "--color-ink-on-inverse" : "--color-ink-primary",
+    level: "AA" as const,
+    minimumRatio: AA,
+    description: "Caption-sized numeral on an Anatomy marker or grounded key disc.",
+  })),
+
 ];
 
 /**

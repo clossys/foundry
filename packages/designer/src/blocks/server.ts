@@ -167,3 +167,6 @@ export { RecordLedger } from "./RecordLedger.js";
 export type { RecordLedgerProps, LedgerRowData, LedgerGroupData, LedgerPairData } from "./RecordLedger.js";
 export { LedgerTile } from "./LedgerTile.js";
 export type { LedgerTileProps } from "./LedgerTile.js";
+
+export { AnatomyCallouts } from "./AnatomyCallouts.js";
+export type { AnatomyCalloutsProps, AnatomyCalloutsMarker } from "./AnatomyCallouts.js";

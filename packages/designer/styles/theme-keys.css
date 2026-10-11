@@ -409,3 +409,9 @@
 @utility ledger-rule-wide { display: flex; @media (width >= 64rem) { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr); column-gap: var(--spacing-2xl, 32px); align-items: start; } }
 
 @utility ledger-row-grid { grid-template-columns: minmax(0, 1fr) auto; }
+
+/* Anatomy numbers remain inline with the panel label; the key follows figure DOM order. */
+@utility anatomy-disc { inline-size: var(--ui-icon-md, var(--spacing-xl, 24px)); block-size: var(--ui-icon-md, var(--spacing-xl, 24px)); }
+@utility anatomy-columns { grid-template-columns: minmax(0, 8fr) minmax(0, 4fr); }
+@utility anatomy-key-row { grid-template-columns: var(--ui-icon-md, var(--spacing-xl, 24px)) minmax(0, 1fr); }
+@utility anatomy-key-measure { max-inline-size: var(--ui-width-prose-max, 48rem); }

@@ -462,3 +462,9 @@ it("emits every real Ledger form, cap, ground and rule-card layout class", async
   }
   for (const cls of ["ledger-columns-two", "ledger-columns-three", "ledger-owner-columns", "ledger-pair", "ledger-rule-wide", "ledger-owner-disc", "ledger-wire-dot"]) expect(generated.css).toContain(toSelectorText(cls));
 });
+
+
+it("scans Anatomy marker, ground and responsive source classes without generated output", () => {
+  const candidates = new Set(scanCompiledCssSources(packageRoot).candidates);
+  for (const candidate of ["anatomy-disc", "anatomy-key-row", "anatomy-key-measure", "tablet-lg:anatomy-columns", "tablet-lg:gap-x-3xl", "text-surface-raised", "text-surface-base", "text-surface-sunken", "text-surface-inverse", "row-span-2", "text-h2", "leading-heading"]) expect(candidates.has(candidate), candidate).toBe(true);
+});

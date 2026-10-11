@@ -107,13 +107,13 @@ surfaces and live in `@clossys/publisher/web`.
   `Separator`, `Chip`, `StatusMark`, `Meter`.
 - **`blocks`** — owns the internal layout of multiple named regions,
   typically by composing one or more atoms (and/or layout) into something
-  with a real job on a page. Thirty ship: `PageHeader`, `EmptyState`,
+  with a real job on a page. Thirty-one ship: `PageHeader`, `EmptyState`,
   `DataTable`, `DetailView`, `Pagination`, `Stat`, `Form`, `FieldGroup`,
   `ConfirmDialog`, `Toolbar`, `NavGrid`, `LinkGrid`, `SectionHeader`, `Hero`,
-  `MarketingChapter`, `FeatureGrid`, `CardGrid`, `RecordLedger`, `LedgerTile`, `Comparison`, `TopicList`,
+  `MarketingChapter`, `FeatureGrid`, `CardGrid`, `AnatomyCallouts`, `RecordLedger`, `LedgerTile`, `Comparison`, `TopicList`,
   `Specimen`, `SpecimenPanel`, `OrderedStepSequence`, `StatusList`, `Faq`,
   `PricingTable`, `Testimonial`, `ArticleBody`, `ConsentBanner` — the last
-  sixteen are marketing/editorial
+  seventeen are marketing/editorial
   content blocks and a presentational consent notice, completing this layer
   (see "Blocks" below).
 - **`shell`** — the persistent frame around content (nav, layout chrome)
@@ -358,7 +358,7 @@ source file's own header for the exact probe and its result). Today that's:
 | Subpath | Server-safe members |
 | --- | --- |
 | `@clossys/designer/atoms/server` | `Avatar`, `Badge`, `Banner`, `Card`, `Field`, `Icon`, `Meter`, `Skeleton`, `Spinner`, `StatusMark`, `buttonLinkClassName`, `iconButtonClassName`, `iconButtonLinkClassName`, `mergeUiClasses` |
-| `@clossys/designer/blocks/server` | `ArticleBody`, `CardGrid`, `Comparison`, `ContentSection`, `DetailView`, `EmptyState`, `Faq`, `FeatureGrid`, `FieldGroup`, `Hero`, `LedgerTile`, `LinkGrid`, `MarketingChapter`, `MediaFigure`, `OrderedStepSequence`, `PageHeader`, `PricingTable`, `RecordLedger`, `SectionFrame`, `SectionHeader`, `SectionIntro`, `Specimen`, `SpecimenPanel`, `Stat`, `StatusList`, `TopicList` |
+| `@clossys/designer/blocks/server` | `AnatomyCallouts`, `ArticleBody`, `CardGrid`, `Comparison`, `ContentSection`, `DetailView`, `EmptyState`, `Faq`, `FeatureGrid`, `FieldGroup`, `Hero`, `LedgerTile`, `LinkGrid`, `MarketingChapter`, `MediaFigure`, `OrderedStepSequence`, `PageHeader`, `PricingTable`, `RecordLedger`, `SectionFrame`, `SectionHeader`, `SectionIntro`, `Specimen`, `SpecimenPanel`, `Stat`, `StatusList`, `TopicList` |
 | `@clossys/designer/shell/server` | `Shell`, `SiteFooter`, `SiteHeader`, `SkipLink` |
 | `@clossys/designer/charts/server` | `ChartFrame`, `Sparkline` |
 | `@clossys/designer/theme/server` | `getThemeInitScript` |
@@ -3469,6 +3469,30 @@ a third takes half, except a third left alone in its `tablet` row (beside
 a full-row card or last), which takes the whole row instead of leaving an
 empty half; the 12-unit spans apply from `tablet-lg`, `gap-lg` apart.
 
+
+### AnatomyCallouts
+
+A static specimen panel with numbered markers and an ordered explanatory key.
+Supply a unique instance `id`, the figure `label`, its `panel`, three to five
+`markers`, and the authored `keyLabel`. Prefer three or five markers. Each
+marker targets the panel title (`header`), one labelled part id, or `footer`,
+in that reading order. Duplicate ids, duplicate targets and reordered markers
+throw `TypeError`; unknown targets or targets without label lines throw
+`RangeError`, as do counts outside three to five.
+
+`legendSide="end"` is the default: figure then key below 1024px, an 8:4 grid
+from 1024px. `legendSide="below"` keeps the key below at the prose measure.
+Key headings use `headingLevel` 3 by default, or 4. `ground` selects base,
+sunken or inverse key colors. Pass authored sample disclosure as the `sample`
+caption whenever the panel contains illustrative figures. Labels accept React
+nodes and derive accessible names from rendered content, with no English
+fallback. The component is exported from blocks and blocks/server.
+
+`SpecimenPanel` also accepts optional rendering-only `markers`, a target-to-
+number map. They sit first inline on the title, labelled part or footer line;
+unmarked panels keep their existing markup. Both components remain server-safe.
+
+
 ### RecordLedger and rule card visuals
 
 RecordLedger shows one record in a named figure, or three-to-four role handovers
@@ -5596,6 +5620,9 @@ not a grab-bag).
 | `CardGridSpan` | type | `"third" \| "half" \| "two-thirds" \| "full"`. |
 | `CardGridHeadingLevel` | type | `2 \| 3 \| 4 \| 5 \| 6`. |
 | `CardGridTreatment` | type | `"plate" \| "rule"`; plate is the default. |
+| `AnatomyCallouts` | component | A specimen panel with 3 or 5 numbered markers and an ordered key. |
+| `AnatomyCalloutsProps` | type | Required caller instance `id`, `label`, `panel`, `markers`, `keyLabel`; optional `legendSide`, `sample`, `headingLevel`, `ground`, `className`, `style`. |
+| `AnatomyCalloutsMarker` | type | Stable `id`, labelled `target`, authored `heading` and `description`. |
 | `RecordLedger` | component | A record or role handovers on rules, without a panel. |
 | `RecordLedgerProps` | type | `form: "record"` takes unique instance seed `id`, `head`, `groups`, `columns?`, `caption`, `flagLabel?`; `form: "pairs"` takes `items`, `productLabel`, `caption?`; both accept `ground`, `headingLevel`, `className`. |
 | `LedgerRowData` | type | Static row: `id`, `label`, `detail?`, `status?` (`tone`, `label`), `flag?`. |
@@ -6291,10 +6318,10 @@ speculatively, just because a related component shipped, is the exact
 un-bounded growth this package's own "variant rule" warns against one level
 up. They get added here only once something real needs them.
 
-**Blocks:** thirty ship — `PageHeader`, `EmptyState`, `DataTable`,
+**Blocks:** thirty-one ship — `PageHeader`, `EmptyState`, `DataTable`,
 `DetailView`, `Pagination`, `Stat`, `Form`, `FieldGroup`, `ConfirmDialog`,
 `Toolbar`, `NavGrid`, `LinkGrid`, `SectionHeader`, `Hero`, `MarketingChapter`,
-`FeatureGrid`, `CardGrid`, `RecordLedger`, `LedgerTile`, `Comparison`, `TopicList`, `Specimen`,
+`FeatureGrid`, `CardGrid`, `AnatomyCallouts`, `RecordLedger`, `LedgerTile`, `Comparison`, `TopicList`, `Specimen`,
 `SpecimenPanel`, `OrderedStepSequence`, `StatusList`, `Faq`, `PricingTable`,
 `Testimonial`, `ArticleBody`, `ConsentBanner` — completing this layer. No
 `FilterBar` block:
