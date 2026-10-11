@@ -2054,7 +2054,7 @@ interface BandShape {
   layout: "stacked" | "split";
   mediaSide?: "start" | "end";
   block: string;
-  visual: "none" | "specimen" | "lanes";
+  visual: "none" | "specimen" | "record" | "scene" | "lanes";
   /** Carries a specimen (as media or inside its block) or a table: a dense band. */
   dense: boolean;
   ground?: SectionedViewGround;
@@ -2075,11 +2075,23 @@ function hasLinkedItems(block: SectionedViewContentBlock | undefined): boolean {
 function hasBlockVisual(block: SectionedViewContentBlock): boolean {
   return block.type === "items" && Array.isArray(block.items) ? block.items.some((item) => isPlainObject(item) && item.visual !== undefined) : block.type === "matrix" && Array.isArray(block.sides) ? block.sides.some((side) => isPlainObject(side) && side.visual !== undefined) : false;
 }
-function blockTreatment(block: SectionedViewContentBlock): string {
-  if (block.type === "matrix") return "default";
-  if (block.recipe === "topics") return block.groups === undefined ? `columns-${block.columns ?? 1}` : `groups-${block.groups.length}`;
-  if (block.order === "connected" || ["steps", "flow"].includes(block.recipe ?? "")) return `${block.lanes === undefined ? "" : "lanes/"}${hasBlockVisual(block) ? "visual" : "plain"}`;
-  return `${block.treatment ?? "plain"}/${block.emphasis ?? "item"}`;
+function varietyItems(block: SectionedViewContentBlock | undefined): CanonicalSectionedViewItemsBlock | undefined {
+  if (block?.type !== "items") return undefined;
+  try { return desugarRecipe(block); } catch { return undefined; }
+}
+/** Effective axes keep raw blocks and recipes in the same visual family. */
+function itemsShape(block: CanonicalSectionedViewItemsBlock): string {
+  if (block.reveal === "disclose") return "faq";
+  if (block.order === "connected") return "ordered-step-sequence";
+  if (block.order === "numbered") return "items-numbered";
+  return block.arrangement === "columns" ? "feature-grid" : block.arrangement === "rows" ? "topic-list" : block.arrangement === "bento" ? "card-grid" : "specimen-stack";
+}
+function blockTreatment(block: SectionedViewContentBlock, axes: CanonicalSectionedViewItemsBlock | undefined): string {
+  if (block.type === "matrix" || axes === undefined) return "default";
+  if (axes.reveal === "disclose") return axes.treatment;
+  if (axes.order === "connected" || axes.order === "numbered") return `${axes.lanes === undefined ? "" : "lanes/"}${hasBlockVisual(block) ? "visual" : "plain"}`;
+  if (axes.arrangement === "rows") return `${axes.treatment}/${axes.groups === undefined ? `columns-${axes.columns}` : `groups-${axes.groups.length}`}`;
+  return `${axes.treatment}/${axes.emphasis}`;
 }
 
 function bandShape(section: SectionedViewSection, path: string, index: number): BandShape {
@@ -2091,6 +2103,7 @@ function bandShape(section: SectionedViewSection, path: string, index: number): 
     return { path, index, kind: section.kind, layout: "stacked", block: section.kind, visual: "none", dense: false, ground: section.ground, treatment: "default", cardCount: 0, primaryAction: false, hasActions: false, linkedBlock: false };
   }
   const block = section.block;
+  const axes = varietyItems(block);
   const layout = section.layout === "split-start" || section.layout === "split-end" ? "split" : "stacked";
   return {
     path,
@@ -2098,12 +2111,12 @@ function bandShape(section: SectionedViewSection, path: string, index: number): 
     kind: section.kind,
     layout,
     ...(layout === "split" ? { mediaSide: section.layout === "split-start" ? "start" : "end" } : {}),
-    block: block?.type === "items" ? block.recipe ?? `items-${block.arrangement}` : block?.type ?? (section.media === undefined ? "intro" : "none"),
-    visual: block?.type === "items" && block.lanes !== undefined ? "lanes" : section.media === undefined ? "none" : "specimen",
+    block: axes !== undefined ? itemsShape(axes) : block?.type ?? (section.media === undefined ? "intro" : "none"),
+    visual: block?.type === "items" && block.lanes !== undefined ? "lanes" : section.media?.type ?? "none",
     dense: section.media !== undefined || (block !== undefined && hasBlockVisual(block)),
     ground: section.ground,
-    treatment: block === undefined ? "default" : blockTreatment(block),
-    cardCount: block?.type === "items" && (block.arrangement === "bento" || block.recipe === "cards") ? block.items.length : 0,
+    treatment: block === undefined ? "default" : blockTreatment(block, axes),
+    cardCount: block?.type === "items" && axes?.arrangement === "bento" ? block.items.length : 0,
     primaryAction: Array.isArray(section.actions) && section.actions.some((action) => isPlainObject(action) && action.emphasis === "primary"),
     hasActions: Array.isArray(section.actions) && section.actions.length > 0,
     linkedBlock: hasLinkedItems(block),

@@ -5019,8 +5019,14 @@ approval implementation. It implements no authentication provider.
 
 `sectionWeight(section)` derives `{ weight, shape }` from authored structure.
 The hero has weight and shape `hero`; body weights are A (set piece), B
-(supporting) and C (breather). Ground never changes weight. The current block
-vocabulary determines shape; planned blocks receive no speculative contract.
+(supporting) and C (breather). Ground never changes weight. The effective
+Items axes and Matrix sides determine shape equally for raw blocks, recipes
+and resolved documents. Record media is B/table; Scene media
+is A/specimen. A stacked specimen is A/specimen; split specimens fall back
+to B/specimen after structural set pieces. Numbered or connected Items use
+sequence shape, with visuals promoting them to A. Nonconnected stacked
+visual Items use A/specimen; visual rows, columns and bento use A/grid.
+Statement emphasis takes A/statement before other valid Items axes.
 
 `checkPageFlow(document, options?)` returns `SectionedViewFlowWarning[]` with
 `rule`, `severity: "warning"`, `path` and `message`. `CheckPageFlowOptions` takes
@@ -5058,7 +5064,10 @@ Omitted body-action emphasis follows `resolveActionEmphasis`: secondary then
 quiet on A, tertiary on B and frame C, and quiet on other C bands. Explicit
 emphasis renders as authored; `action-tier` warns when it exceeds the weight
 ceiling. Linked cards are quiet and remain independent of section-action counts.
-`checkSectionVariety` retains its existing output.
+`checkSectionVariety` compares effective visual families and treatments, so
+raw blocks and equivalent recipes produce the same warnings. Group membership
+keeps href diagnostics at the original flat `block.items.N.href` paths. The
+maximum set pieces and breathers is `ceil(bodyBandCount / 3)`.
 
 
 Canonical connected Items blocks may declare exactly two lane ids and

@@ -1,4 +1,4 @@
-import { resolveRoleActionEmphasis } from "./sectioned-view.js";
+import { desugarRecipe, resolveRoleActionEmphasis } from "./sectioned-view.js";
 import type { ComposeFinding } from "./types.js";
 import type { SectionedViewDocument, SectionedViewSection, SectionedViewContentSection, ResolvedSectionedViewSection, SectionedViewContentActionEmphasis } from "./sectioned-view.js";
 
@@ -28,23 +28,32 @@ export function sectionWeight(section: SectionedViewSection | ResolvedSectionedV
     }
   }
   const layout = section.layout ?? "stacked";
+  const split = layout === "split-start" || layout === "split-end";
   const block = section.block;
-  if (section.media !== undefined && layout === "stacked") return { weight: "A", shape: "specimen" };
-  if (block?.type === "comparison" && (block.before.visual !== undefined || block.after.visual !== undefined)) return { weight: "A", shape: "compare" };
-  if (block?.type === "card-grid" && block.items.some((item) => item.visual !== undefined)) return { weight: "A", shape: "grid" };
-  if (block?.type === "ordered-step-sequence" && block.items.some((item) => item.visual !== undefined)) return { weight: "A", shape: "sequence" };
-  if (block?.type === "feature-grid" && block.emphasis === "statement") return { weight: "A", shape: "statement" };
-  if (block?.type === "faq") return { weight: "C", shape: "reference" };
-  if (block === undefined && section.media === undefined) return { weight: "C", shape: "frame" };
-  if (block?.type === "feature-grid" && (block.treatment ?? "plain") !== "plate" && block.items.length <= 4 && section.media === undefined && layout !== "split") return { weight: "C", shape: "list" };
-  if (layout === "split" && section.media !== undefined) return { weight: "B", shape: "specimen" };
+  if (section.media?.type === "record") return { weight: "B", shape: "table" };
+  if (section.media?.type === "scene") return { weight: "A", shape: "specimen" };
+  if (section.media !== undefined && !split) return { weight: "A", shape: "specimen" };
   switch (block?.type) {
-    case "card-grid": return { weight: "B", shape: "grid" };
-    case "feature-grid": return { weight: "B", shape: block.treatment === "plate" ? "grid" : "list" };
-    case "comparison": return { weight: "B", shape: "compare" };
-    case "ordered-step-sequence": return { weight: "B", shape: "sequence" };
-    case "topic-list":
-    case undefined: return { weight: "B", shape: "list" };
+    case "matrix": return { weight: block.sides.some((side) => side.visual !== undefined) ? "A" : "B", shape: "compare" };
+    case "items": {
+      // Only structural axes enter desugaring; resolved copy has the same weight.
+      const structural = { type: "items" as const, items: [], columns: block.columns, order: block.order, reveal: block.reveal, treatment: block.treatment, emphasis: block.emphasis };
+      let axes;
+      if (block.recipe !== undefined) axes = desugarRecipe({ ...structural, recipe: block.recipe, arrangement: block.arrangement });
+      else {
+        if (block.arrangement === undefined) throw new Error("Items require an arrangement or recipe.");
+        axes = desugarRecipe({ ...structural, arrangement: block.arrangement });
+      }
+      const visual = block.items.some((item) => item.visual !== undefined);
+      if (axes.emphasis === "statement") return { weight: "A", shape: "statement" };
+      if (axes.order === "connected" || axes.order === "numbered") return { weight: visual ? "A" : "B", shape: "sequence" };
+      if (visual) return { weight: "A", shape: axes.arrangement === "stacked" ? "specimen" : "grid" };
+      if (axes.reveal === "disclose") return { weight: "C", shape: "reference" };
+      if (axes.arrangement === "columns" && axes.treatment !== "plate" && block.items.length <= 4 && section.media === undefined && !split) return { weight: "C", shape: "list" };
+      if (split && section.media !== undefined) return { weight: "B", shape: "specimen" };
+      return { weight: "B", shape: axes.arrangement === "bento" || (axes.arrangement === "columns" && axes.treatment === "plate") ? "grid" : "list" };
+    }
+    case undefined: return section.media !== undefined ? { weight: "B", shape: "specimen" } : { weight: "C", shape: "frame" };
     default: {
       const _: never = block;
       return _;
@@ -148,15 +157,12 @@ export function checkPageFlow(document: SectionedViewDocument, options: CheckPag
     if (band.section.kind !== "content-section") return;
     const section: SectionedViewContentSection = band.section;
     const block = section.block;
-    if (block !== undefined && ("items" in block || block.type === "topic-list")) {
-      const entries = block.type === "topic-list" && block.groups !== undefined
-        ? block.groups.flatMap((group, g) => group.items.map((item, i) => ({ item, path: `${band.path}.block.groups.${g}.items.${i}` })))
-        : (block.items ?? []).map((item, i) => ({ item, path: `${band.path}.block.items.${i}` }));
-      const items = entries.map((entry) => entry.item);
-      if (items.some((item) => "href" in item && item.href !== undefined)) {
+    if (block?.type === "items") {
+      const items = block.items;
+      if (items.some((item) => item.href !== undefined)) {
         groups += 1;
         if (groups > 2) warn("link-groups", `${band.path}.block`, "adds a third linked block; keep at most two linked body blocks.");
-        entries.forEach(({ item, path }) => { if ("href" in item && typeof item.href === "string") link(item.href, `${path}.href`); });
+        items.forEach((item, index) => { if (typeof item.href === "string") link(item.href, `${band.path}.block.items.${index}.href`); });
       }
     }
     section.actions?.forEach((action, index) => link(action.href, `${band.path}.actions.${index}.href`));
