@@ -28,8 +28,8 @@ describe("content catalog fixture", () => {
       expect(new Set(section.block.groups.flatMap((group) => group.items.map((item) => item.id))).size).toBe(section.id.endsWith("4") ? 8 : 6);
     }
     const dom = new JSDOM(renderContentCatalogMarkup()).window.document;
-    expect(dom.querySelector("#catalog-topics-groups-4 [data-topic-list]")).toHaveClass("tablet:grid-cols-2");
-    expect(dom.querySelector("#catalog-topics-groups-3 [data-topic-list]")).toHaveClass("tablet-lg:grid-cols-3");
+    expect(dom.querySelector("#catalog-topics-groups-4 [data-topic-list]")?.classList.contains("tablet:grid-cols-2")).toBe(true);
+    expect(dom.querySelector("#catalog-topics-groups-3 [data-topic-list]")?.classList.contains("tablet-lg:grid-cols-3")).toBe(true);
     expect(dom.querySelectorAll("#catalog-topics-groups-4 h3")).toHaveLength(4);
     expect(dom.querySelector("#catalog-topics-groups-4 [data-content-section-footnote] a")?.getAttribute("href")).toBe("mailto:help@example.com");
   });

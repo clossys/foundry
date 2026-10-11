@@ -446,6 +446,7 @@
 @utility scene-person-disc { fill: var(--color-surface-sunken, oklch(0.9401 0 0)); stroke: var(--color-line-strong, oklch(0.7763 0 0)); stroke-width: var(--ui-border-hairline, 1px); }
 @utility scene-initials { font-family: var(--font-mono, ui-monospace, monospace); font-size: var(--text-caption, 12px); fill: var(--color-ink-primary, oklch(0.2178 0 0)); }
 @utility scene-status-text { font-size: var(--text-caption, 12px); }
+@utility scene-status-mark { fill: inherit; }
 @utility scene-status-success { & > .scene-status-mark { fill: var(--color-status-success, oklch(0.6268 0 0)); } & > .scene-status-text { fill: var(--color-status-success-text, oklch(0.4748 0 0)); } }
 @utility scene-status-warning { & > .scene-status-mark { fill: var(--color-status-warning, oklch(0.4495 0 0)); } & > .scene-status-text { fill: var(--color-status-warning-text, oklch(0.36 0 0)); } }
 @utility scene-status-danger { & > .scene-status-mark { fill: var(--color-status-danger, oklch(0.285 0 0)); } & > .scene-status-text { fill: var(--color-status-danger-text, oklch(0.2178 0 0)); } }
