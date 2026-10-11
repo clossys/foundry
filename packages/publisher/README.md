@@ -5023,7 +5023,8 @@ The hero has weight and shape `hero`; body weights are A (set piece), B
 Items axes and Matrix sides determine shape equally for raw blocks, recipes
 and resolved documents. Record media is B/table; Scene media
 is A/specimen. A stacked specimen is A/specimen; split specimens fall back
-to B/specimen after structural set pieces. Numbered or connected Items use
+to B/specimen after structural set pieces and the C/reference nonsequence
+disclosure carveout, before ordinary text block shapes. Numbered or connected Items use
 sequence shape, with visuals promoting them to A. Nonconnected stacked
 visual Items use A/specimen; visual rows, columns and bento use A/grid.
 Statement emphasis takes A/statement before other valid Items axes.

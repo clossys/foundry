@@ -34,7 +34,11 @@ export function sectionWeight(section: SectionedViewSection | ResolvedSectionedV
   if (section.media?.type === "scene") return { weight: "A", shape: "specimen" };
   if (section.media !== undefined && !split) return { weight: "A", shape: "specimen" };
   switch (block?.type) {
-    case "matrix": return { weight: block.sides.some((side) => side.visual !== undefined) ? "A" : "B", shape: "compare" };
+    case "matrix": {
+      if (block.sides.some((side) => side.visual !== undefined)) return { weight: "A", shape: "compare" };
+      if (split && section.media !== undefined) return { weight: "B", shape: "specimen" };
+      return { weight: "B", shape: "compare" };
+    }
     case "items": {
       // Only structural axes enter desugaring; resolved copy has the same weight.
       const structural = { type: "items" as const, items: [], columns: block.columns, order: block.order, reveal: block.reveal, treatment: block.treatment, emphasis: block.emphasis };
@@ -46,11 +50,15 @@ export function sectionWeight(section: SectionedViewSection | ResolvedSectionedV
       }
       const visual = block.items.some((item) => item.visual !== undefined);
       if (axes.emphasis === "statement") return { weight: "A", shape: "statement" };
-      if (axes.order === "connected" || axes.order === "numbered") return { weight: visual ? "A" : "B", shape: "sequence" };
+      if (axes.order === "connected" || axes.order === "numbered") {
+        if (visual) return { weight: "A", shape: "sequence" };
+        if (split && section.media !== undefined) return { weight: "B", shape: "specimen" };
+        return { weight: "B", shape: "sequence" };
+      }
       if (visual) return { weight: "A", shape: axes.arrangement === "stacked" ? "specimen" : "grid" };
       if (axes.reveal === "disclose") return { weight: "C", shape: "reference" };
-      if (axes.arrangement === "columns" && axes.treatment !== "plate" && block.items.length <= 4 && section.media === undefined && !split) return { weight: "C", shape: "list" };
       if (split && section.media !== undefined) return { weight: "B", shape: "specimen" };
+      if (axes.arrangement === "columns" && axes.treatment !== "plate" && block.items.length <= 4 && section.media === undefined && !split) return { weight: "C", shape: "list" };
       return { weight: "B", shape: axes.arrangement === "bento" || (axes.arrangement === "columns" && axes.treatment === "plate") ? "grid" : "list" };
     }
     case undefined: return section.media !== undefined ? { weight: "B", shape: "specimen" } : { weight: "C", shape: "frame" };
