@@ -118,14 +118,14 @@ function writeProductFile(rel: string, content: string): void {
 
 // Every brandable slot declared, so the coverage check itself is clean and a
 // non-zero exit can only come from something else. Only non-emptiness matters
-// to coverage; the bounded scene tilt receives its valid degree value.
+// to coverage; structural slots are excluded.
 const FULLY_COVERED_BRAND_CSS = `:root {\n${Object.values(TOKENS)
   .filter((def) => def.brandable)
-  .map((def) => `  ${def.property}: ${def.property === "--ui-scene-tilt" ? "1deg" : "red"};\n`)
+  .map((def) => `  ${def.property}: red;\n`)
   .join("")}}\n`;
 
-describe("main — complete scene brand fixture", () => {
-  it("accepts every declared slot including the bounded scene angle from source", () => {
+describe("main — complete brand fixture", () => {
+  it("accepts every brandable slot from source", () => {
     expect(main([writeBrandCss(FULLY_COVERED_BRAND_CSS)])).toBe(0);
   });
 });

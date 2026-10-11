@@ -657,11 +657,11 @@ MIT
 
 | Property | Default | Brandable |
 | --- | --- | --- |
-| `--ui-scene-tilt` | `1deg` | yes |
-| `--ui-scene-card-w` | `30rem` | yes |
+| `--ui-scene-tilt` | `1deg` | no |
+| `--ui-scene-card-w` | `30rem` | no |
 
-Both slots are theme invariant. The tilt controls seeded scatter around each
-part's wire anchor; the brand check requires a literal degree angle from zero
-through two. The card measure caps the linear HTML form. Container thresholds
-remain fixed per template. Scene adds two tokens and one semantic family;
+Both slots are structural, non-brandable and theme invariant; brand overrides
+are refused. The tilt controls seeded scatter around each part's wire anchor.
+The card measure caps the linear HTML form. Container thresholds remain fixed
+per template. Scene adds two tokens and one semantic family;
 the source registry and CSS parity test verify 183 tokens across 30 families.
