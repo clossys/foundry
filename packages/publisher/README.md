@@ -518,119 +518,100 @@ alternative to `StatusList`'s `groups`.
 
 #### `content-section` and content icons
 
-`content-section` is one general content band: an optional `eyebrow`, a
-`heading`, an optional `description` and `actions`, then at most one `block`
-and at most one `media`, and an optional closing `footnote`. `layout` is `stacked` (the default; `align` may be
-`start` or `center`) or `split` (requires `media`; `mediaSide` is `end` by
-default or `start`). Two exceptions let the block itself take the visual
-column, top-aligned beside the header group: a split `faq` block, which
-takes no `media`, and a text-only split, a `topic-list` block or a
-`feature-grid` block with `columns: 2` and item emphasis, with no `media`. A
-band with neither block nor media is an intro band.
+`content-section` is one general band with a heading, optional eyebrow,
+description and actions, at most one content block and one media object, and
+an optional footnote. This canonical contract is validated and resolved in
+`core`; web rendering and the existing catalog fixtures are being migrated
+separately. Published section kinds, including `feature-grid`, `faq` and
+`ordered-step-sequence`, retain their own contracts.
 
-"Block" is the one word for a Designer content component a section holds;
-the pieces inside a block (specimen parts, bento cards, list items) are parts
-or items, never blocks. A block's `type` is its Designer block name in kebab
-case, with no exceptions. The content-section field was `module` until the
-2026-10-10 rename; it was a clean break, with no alias:
+The frame has `size: "compact" | "standard" | "display"` (default
+`standard`), `layout: "stacked" | "split-start" | "split-end"` (default
+`stacked`) and `align: "start" | "center"`. A split direction names the
+visual or block side; a split with neither is a header-only band. Hero
+sections accept `size: "display" | "compact"`; the unreleased `compact`
+boolean and content-section `mediaSide` field are refused.
 
-| Retired `module.type` | `block.type` | Designer block |
-| --- | --- | --- |
-| `features` | `feature-grid` | `FeatureGrid` |
-| `cards` | `card-grid` | `CardGrid` |
-| `comparison` | `comparison` | `Comparison` |
-| `topics` | `topic-list` | `TopicList` |
-| `steps` | `ordered-step-sequence` | `OrderedStepSequence` |
-| `faq` | `faq` | `Faq` |
+A block has one of two canonical types. `items` holds a flat list of
+`SectionedViewItem` objects; `matrix` holds exactly two id-bearing sides.
+Recipes expand into the same canonical axes through `desugarRecipe`. A
+recipe may omit its fixed arrangement. A block without a recipe must name
+its arrangement. Explicit fixed-axis conflicts are refused with
+`recipe-axis`. `SECTIONED_VIEW_CONTENT_CONTRACT` exports the shared closed
+vocabulary and count table.
 
-A section that still carries `module` is refused with
-`sectioned-view-content-module-retired`, whose message names `block` and every
-accepted type; a retired short type name inside `block` is refused with
-`sectioned-view-content-block-type`, whose message names its new name.
+| Items arrangement | Counts and options |
+| --- | --- |
+| `columns` | 2 columns with 2/4/6 items, or 3 columns with 3/6 items; defaults to 3 columns |
+| `rows` | 2–8 items, 1 or 2 columns; 2 columns require an even count |
+| `bento` | 2–6 items; `third`, `half`, `two-thirds` and `full` spans fill 12-unit rows; omitted spans resolve to `half` |
+| `stacked` | 2–4 items |
+| `order: "connected"` | 3–5 items in columns or stacked; four emits the advisory `steps-count` warning |
+| `reveal: "disclose"` | Rows only, 4–6 items |
 
-- `block` is one of six closed types: `feature-grid` (2-4 items; exactly 3
-  with `emphasis: "statement"`; `treatment` `plain`, `plate` or `rule`, and
-  `rule` takes no icons; each item may carry an `eyebrow`, a small label above
-  its heading that resolves to at most
-  `FEATURE_GRID_ITEM_EYEBROW_MAX_CHARACTERS` (32) characters, or resolution
-  refuses the document), `card-grid` (2-6 cards whose `span`s fill whole
-  12-unit rows, each with an optional `eyebrow` and an optional one-part
-  `visual` of at most 5 rows; topic-list items take no `eyebrow`),
-  `comparison` (a `before` and an `after` side of the same form — a
-  description each, or the same number of 2-4 points — and a panel `visual`
-  on both or neither), `topic-list` (2-8 items; an even count in the default
-  2 columns, or 2-4 labelled `groups`), `ordered-step-sequence` (3-4 steps, each with an optional panel
-  `visual`) or `faq` (4-6 items). Block shape and option errors use
-  `sectioned-view-content-block-shape`, `sectioned-view-content-block-type`
-  and `sectioned-view-content-block-option`; a specimen part's options use
-  `sectioned-view-specimen-part-option`.
-- A topic list uses exactly one of `items` or `groups`. Each
-  `SectionedViewTopicGroup` holds `{ id, label, items }`, with a CopyRef label
-  resolving to at most 24 characters and 2-4 items; all groups together hold
-  at most 12 items. Groups refuse `columns` and split sections. Two and four
-  groups use two columns from tablet; three use three from tablet-lg.
-  Unequal item counts in a shared row produce a balance warning. Item IDs
-  and linked destinations are unique across the whole grouped block; every
-  row links or none, with at most six linked rows. Groups retain B weight and
-  airy density.
-- `media` is a `specimen`: a labelled arrangement (`single` with one panel,
-  or `row`, `stack` or `flow` with 2-3; only `flow` takes a `connector`) of
-  panels. A panel has a title, optional meta, status and footer, and 1-3
-  parts of the closed types `fields`, `status-rows`, `meter`, `table`,
-  `schedule`, `shares` and `files`, each at most 6 rows (a table at most 4
-  columns and 5 rows). Status tones are `success`, `warning`, `danger`,
-  `info` and `neutral`; numbers are finite and non-negative.
-- `actions` holds one or two actions, each `{ id, label, href }` plus an
-  optional `emphasis`: `primary`, `secondary`, `tertiary` or `quiet`.
-  Primary and secondary render as filled and outlined buttons; tertiary
-  uses a ground-aware tonal button, and quiet a text button with a
-  decorative trailing chevron. Body action groups use one `md` size for every
-  emphasis. `resolveActionEmphasis(section, index)` derives
-  omitted emphasis from `sectionWeight`: A uses secondary then quiet, B and
-  frame C use tertiary, and other C uses quiet. Explicit emphasis wins;
-  `checkPageFlow` warns when it exceeds the band's ceiling. Validation refuses
-  a third action, a second primary and an unknown emphasis. Hero actions use
-  `primary`, `secondary` or `quiet`, defaulting to primary then secondary;
-  they allow two actions and one effective primary, and a lone action must be
-  primary. Where actions go depends on the band's shape. A stacked band
-  whose header is followed by a block or media takes none
-  (`sectioned-view-content-stacked-actions`): link the block's items
-  (`href`), or put one link in the footnote. A header-only band takes them as
-  its last element, so it takes no footnote beside them
-  (`sectioned-view-content-actions-footnote`): fold the footnote's sentence
-  into the description. A split takes them in its text column.
-- `footnote` is `{ text, link? }`: one short, muted sentence at the end of
-  the band, for an aside only, never a call to action. `link` is one
-  `{ label, href }` inline link, held to the same href rule as an action.
-  Validation refuses any other shape (`sectioned-view-content-footnote-shape`)
-  and an unsanctioned href (`sectioned-view-content-footnote-href`).
-- Items of a `feature-grid` (item emphasis), `card-grid`, `topic-list` or
-  `ordered-step-sequence` may each carry an optional `href`: the item's title
-  renders as its one link, named by the title, with a decorative chevron, and
-  the whole item is the click target. Validation refuses an unsanctioned href
-  (`sectioned-view-content-item-href`), a block that links some items but not
-  all (`sectioned-view-content-link-partial`), more than 6 linked items
-  (`sectioned-view-content-link-count`), a destination repeated within a
-  block, ignoring a trailing slash and the fragment
-  (`sectioned-view-content-link-duplicate`), and `href` on a statement
-  feature (`sectioned-view-content-link-statement`). Comparison sides and FAQ
-  rows take no `href` (`sectioned-view-content-comparison-side`,
-  `sectioned-view-item-shape`). A linked item's text and visual must hold no
-  other link, button or field; Designer throws a `TypeError` on one.
-- Item icons (on `content-section` items and, optionally, on `feature-grid`
-  items) name one of the closed `ContentIconName` set, listed at runtime as
-  `CONTENT_ICON_NAMES`. They are names, not nodes: a renderer maps each name
-  to its Designer icon.
+The default axes are `order: "none"`, `reveal: "all"`,
+`treatment: "plain"` and `emphasis: "item"`. Statement emphasis requires
+three columns and exactly three items. Recipes are `features`, `statement`,
+`cards`, `topics`, `link-index`, `faq`, `steps`, `flow` and
+`specimen-stack`; Matrix's recipe is `comparison`. Recipes constrain optional
+slots as well as axes. The six unreleased raw block types `feature-grid`,
+`card-grid`, `topic-list`, `ordered-step-sequence`, `faq` and `comparison`
+are refused with their replacement recipe named. The retired `module` field
+is also refused; it has no alias.
 
-Every visible string is a `CopyRef` and resolves in field order (eyebrow,
-heading, description, actions, block, media, footnote text, footnote link
-label). `SectionedView` and `LandingView` render `content-section` as one
-Designer `ContentSection` (see LandingView's section anatomy below); its
-actions render through the shared emphasis ladder (`primary`, `outline`,
-`tonal` and `quiet`) at one `md` size and its footnote as the band's
-last line. The
-web renderer does not render feature-grid item icons yet; it refuses them
-rather than dropping them.
+Each item has an id and heading, with optional description, eyebrow, icon,
+meta, one specimen-part visual, href, featured flag, bento span, lane id and
+badge. The eyebrow resolves to at most
+`CONTENT_ITEM_EYEBROW_MAX_CHARACTERS` (32) characters. At most one item may
+be featured, in columns or bento. Row groups are `{ id, label, items }`, where
+`items` contains ids referencing the flat list; every item must belong to
+exactly one group. Lanes are exactly two `{ id, label }` objects, with known
+lane ids on every item in a stacked connected block of three or five items.
+
+Matrix sides each have an id, label and heading, and exactly one of a
+description, 2–4 points or one specimen panel. Both sides use the same form
+and point count. `featured` names an existing side id.
+
+Media is exactly one of:
+
+- `specimen`: an accessible label and one `panel`, optionally an ordered
+  `key` of 3–5 items targeting labeled header, part or footer slots. A keyed
+  figure label uses 6–25 words. Panels
+  retain their closed fields, status rows, meter, table, schedule, shares and
+  files parts. A status-rows part may specify `mobileRows: 3`; meter
+  `previous` and `previousText` are authored together alongside the existing
+  `value`, `scaleMax` and `limit` fields.
+- `record`: an id, head, groups and caption, optionally columns and flag
+  label. A group holds rows or an owner; the owner group is last. All visible
+  copy, including owner initials, is a CopyRef. Multi-column records require
+  a stacked frame.
+- `scene`: `{ type: "scene", label, relationLabel?, input }`, where `input`
+  is a closed `converge`, `evidence-trail` or `approval-chain` data object.
+  Every visible input field uses CopyRefs except person initials. Structural
+  ids, seed, formats and relationships remain data. Converge and approval
+  scenes require a stacked frame. There is no authored sample field.
+
+Item and panel badges are independent of meta. Their label is a CopyRef and
+their tone is one of `neutral`, `success`, `warning`, `danger` or `info`.
+Status tones use the same closed set; meter numbers remain finite and
+non-negative. Content icons use the sixteen `CONTENT_ICON_NAMES`, rather
+than authored nodes or arbitrary names.
+
+Actions retain one or two `{ id, label, href, emphasis? }` records, at most
+one primary, with `primary`, `secondary`, `tertiary` and `quiet` emphasis.
+Group size follows the frame independently of emphasis. A stacked band with
+a block or media takes no section actions; a header-only band with actions
+takes no footnote after them. A split takes actions in its text column.
+Hero actions retain their primary/secondary/quiet subset and effective
+primary rules. A footnote holds text, one `{ label, href }` link, or both;
+an empty footnote is refused.
+
+Item links remain all-or-none, at most six, with unique normalized
+sanctioned destinations. Statement items and recipes without a link slot
+refuse hrefs. Every CopyRef resolves through the caller's CopyResolver,
+retaining provenance and naming the exact path of unavailable copy. Optional
+fields stay absent when omitted, while canonical frame and block defaults
+are materialized in the resolved model. Warnings do not prevent resolution.
 
 `checkSectionVariety(document | documents[])` is an advisory page-rhythm lint
 over one or more documents read as one page. It returns `warning` findings
@@ -639,8 +620,7 @@ layout, block and visual; a split after a split on the same side or a third
 split in a row; a dense band right after a dense band; a specimen on an
 inverse ground or a second inverse body band; a second band of four or more
 cards; a second comparison; one block type repeated with the same
-treatment (a legacy `feature-grid`, `ordered-step-sequence` or `faq` section
-kind counts as the block of the same name); and a second band holding a `primary` action
+treatment; and a second band holding a `primary` action
 (`sectioned-view-variety-primary-actions`): a page has one main call to
 action per run of bands; and a split whose block is linked and whose text
 column also holds actions (`sectioned-view-variety-link-competing`): two link
@@ -1147,14 +1127,11 @@ to action that carries its own fill, such as a `primary` Designer `Button` or
 
 ### `LandingView`
 
-An opening hero with `compact: true` uses section-scale copy while retaining
-the page's `h1`. LandingView omits viewport fill and the scroll cue, ignores
-`peek`, and uses token padding for overlay or reserved headers. Hero media
-is refused only when compact is true; omitted or false keeps existing output.
-`checkSectionVariety` warns for a lone compact hero. Pass trailing documents
-together; use its explicit `{ hasAfterContent: true }` context when a known
-after-section or closing slot supplies page content. This warning does not
-refuse rendering. The existing gallery includes the `hero-compact` fixture.
+The core hero contract uses `size: "compact"` for section-scale copy and
+`size: "display"` for its default. Compact hero media is refused, and
+`checkSectionVariety` warns for a lone compact hero unless known trailing
+content is supplied. The existing `hero-compact` gallery fixture and web
+view still await the canonical size-field migration.
 
 `LandingView`, exported from `@clossys/publisher/web` and
 `@clossys/publisher/web/server`, is a sectioned landing page: a hero block
@@ -1183,18 +1160,18 @@ const records = resolveSectionedViewDocument({
     id: "records",
     kind: "content-section",
     heading: { id: "records.heading" },
-    layout: "split",
-    block: { type: "topic-list", items: [
+    layout: "split-end",
+    block: { type: "items", recipe: "topics", items: [
       { id: "kept", icon: "folder", heading: { id: "records.kept" } },
       { id: "shared", icon: "users", heading: { id: "records.shared" } },
     ] },
-    media: { type: "specimen", label: { id: "records.label" }, panels: [{
+    media: { type: "specimen", label: { id: "records.label" }, panel: {
       id: "record",
       title: { id: "records.panel" },
       parts: [{ id: "fields", type: "fields", items: [
         { id: "owner", label: { id: "records.owner" }, value: { id: "records.owner.value" } },
       ] }],
-    }] },
+    } },
   }],
 }, resolveCopy);
 
@@ -1292,7 +1269,9 @@ header group (an `<h2>`, never a second display heading) with its actions,
 and its media as the block. Other section kinds keep their block's own
 header region inside the same slot.
 
-**Content-section bands.** A `content-section` band (the `records` document
+**Content-section bands (renderer migration pending).** The existing web
+renderer still recognizes the earlier block shapes described below; these
+are not accepted canonical core input. A `content-section` band (the `records` document
 above) maps its block and specimen straight onto Designer blocks: `feature-grid`
 to `FeatureGrid`, `card-grid` to `CardGrid`, `comparison` to `Comparison`,
 `topic-list` to `TopicList`, `ordered-step-sequence` to
@@ -4270,7 +4249,8 @@ app styles Publisher's views with its own build (see
   `collectCopyProvenance`, `createResolvedOutputManifest`,
   `resolveSurfaceDocument`, `validateSectionedViewDocument`,
   `resolveSectionedViewDocument`, `checkSectionVariety`, `CONTENT_ICON_NAMES`,
-  `FEATURE_GRID_ITEM_EYEBROW_MAX_CHARACTERS`,
+  `CONTENT_ITEM_EYEBROW_MAX_CHARACTERS`, `desugarRecipe`,
+  `SECTIONED_VIEW_CONTENT_CONTRACT`, `SECTIONED_VIEW_ITEM_RECIPES`,
   `resolveDocument`, `resolveCopy`, `resolveAssets`, `frameToInches`,
   `frameToPercent`, `getSlotSpec`, `listSlotKeys`, `requiredSlotKeys`, and
   the `Channel`, `ChannelMeta`, `ComposeDocument`, `ComposeFinding`,
@@ -4298,21 +4278,29 @@ app styles Publisher's views with its own build (see
   `SectionedViewPricingItem`, `SectionedViewTestimonialSection`,
   `SectionedViewTestimonialItem`, `SectionedViewStatSection`,
   `SectionedViewStatSectionItem`, `SectionedViewSectionGroundRhythm`, the
-  content-section types `ContentIconName`, `SectionedViewContentSection`,
-  `SectionedViewContentLayout`, `SectionedViewContentMediaSide`,
+  content-section types `ContentIconName`, `FrameSize`, `FrameLayout`,
+  `ItemsRecipe`, `SectionedViewContentSection`, `SectionedViewContentLayout`,
   `SectionedViewContentAlign`, `SectionedViewContentAction`,
   `SectionedViewContentActionEmphasis`, `SectionedViewContentFootnote`,
-  `SectionedViewContentFootnoteLink`, `SectionedViewContentItem`,
-  `SectionedViewContentCard`, `SectionedViewContentCardSpan`,
-  `SectionedViewContentStep`, `SectionedViewComparisonSide`,
+  `SectionedViewContentFootnoteLink`, `SectionedViewItem`,
+  `SectionedViewItemSpan`, `SectionedViewItemGroup`, `SectionedViewItemLane`,
+  `SectionedViewBadge`, `SectionedViewItemsBlock`,
+  `CanonicalSectionedViewItemsBlock`, `SectionedViewItemsArrangement`,
+  `SectionedViewItemsOrder`, `SectionedViewItemsReveal`,
+  `SectionedViewItemsTreatment`, `SectionedViewItemsEmphasis`,
+  `SectionedViewMatrixBlock`, `SectionedViewMatrixSide`,
   `SectionedViewContentBlock`, `SectionedViewContentBlockType`,
-  `SectionedViewFeatureGridBlock`, `SectionedViewFeatureGridTreatment`,
-  `SectionedViewFeatureGridEmphasis`, `SectionedViewCardGridBlock`,
-  `SectionedViewComparisonBlock`, `SectionedViewTopicListBlock`, `SectionedViewTopicGroup`,
-  `SectionedViewOrderedStepSequenceBlock`, `SectionedViewFaqBlock`,
+  `SectionedViewMedia`, `ResolvedSectionedViewMedia`,
+  `SectionedViewRecordMedia`, `SectionedViewLedgerGroup`, `SectionedViewLedgerRow`,
+  `SectionedViewSceneMedia`, `SectionedViewSceneInput`,
+  `SectionedViewSceneConvergeInput`, `SectionedViewSceneEvidenceTrailInput`,
+  `SectionedViewSceneApprovalChainInput`, `SectionedViewSceneDocument`,
+  `SectionedViewSceneRow`, `SectionedViewSceneStatus`, `SectionedViewScenePerson`,
+  `SectionedViewSceneFormat`, `SectionedViewSpecimenKey`,
+  `SectionedViewSpecimenKeyItem`,
   `ResolvedSectionedViewContentSection`, `ResolvedSectionedViewContentBlock`,
   the specimen types `SectionedViewSpecimenMedia`,
-  `SectionedViewSpecimenArrangement`, `SectionedViewSpecimenPanel`,
+  `SectionedViewSpecimenPanel`,
   `SectionedViewSpecimenFooter`, `SectionedViewSpecimenAssignee`,
   `SectionedViewSpecimenPart`, `SectionedViewSpecimenPartType`,
   `SectionedViewSpecimenFieldsPart`, `SectionedViewSpecimenField`,
@@ -5064,22 +5052,17 @@ ceiling. Linked cards are quiet and remain independent of section-action counts.
 `checkSectionVariety` retains its existing output.
 
 
-Content-section `ordered-step-sequence` blocks may name two `lanes` with
-CopyRefs and put `lane: "a" | "b"` on every step. Use 3 or 5 steps, exactly
-3 with visuals; start in a, use both actors, omit step labels, and use a
-stacked section. Lane names resolve to at most 20 characters. The ordered
-list is named by the section's real h2. Visual lanes weigh A; plain lanes B.
+Canonical connected Items blocks may declare exactly two lane ids and
+CopyRef labels. Every item names a declared lane, the first item uses the
+first lane, and both lanes are used. Lanes require a stacked frame and three
+or five items. Labels resolve to at most 20 characters. Four connected items
+without lanes produce the advisory `steps-count` warning; they still resolve.
 
-`caption` is a CopyRef used only with step visuals (120 resolved characters).
-`end`/`endLabel` opt ordinary blocks into the same final connector as lanes.
-The active default is `ends`; `endLabel` holds at most 40 resolved characters.
-An explicit `continues` without endLabel resolves consumer `steps.continues`
-through the existing CopyResolver, records its provenance, and renders it
-hidden; missing copy refuses. `checkSectionVariety` warns about the absent
-visible endLabel. Its optional `{ catalog: true, copyResolver }` context
-checks caption text for “Sample data”; unavailable copy cannot prove the
-marker and warns. CopyRef shape validation precedes resolution; resolved
-lane, caption and end-label budget refusals name their contract findings.
-The direct resolved-model renderer enforces the same shapes and budgets.
-Ordinary blocks without end options keep their existing 3–4 counts and DOM,
-and request no new copy. The broader ordinary-step migration is deferred.
+Connected `caption` requires a visual. Caption and `endLabel` copy is bounded
+to 120 and 40 characters.
+An explicit `end: "continues"` without endLabel resolves consumer
+`steps.continues` through the existing CopyResolver and retains provenance;
+missing copy refuses resolution. `checkSectionVariety` warns about the absent
+visible endLabel. Its explicit catalog context checks sample captions where
+visuals are present. Web rendering and catalog fixtures retain their earlier
+shapes until the separate renderer migration.
