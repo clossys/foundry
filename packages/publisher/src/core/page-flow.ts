@@ -1,5 +1,6 @@
+import { resolveRoleActionEmphasis } from "./sectioned-view.js";
 import type { ComposeFinding } from "./types.js";
-import type { SectionedViewDocument, SectionedViewSection, SectionedViewContentSection } from "./sectioned-view.js";
+import type { SectionedViewDocument, SectionedViewSection, SectionedViewContentSection, ResolvedSectionedViewSection, SectionedViewContentActionEmphasis } from "./sectioned-view.js";
 
 /** The structural shape of a hero or body band; no authored override. */
 export type SectionShape = "hero" | "table" | "specimen" | "compare" | "grid" | "sequence" | "statement" | "reference" | "frame" | "list" | "proof";
@@ -8,7 +9,7 @@ export type SectionedViewFlowWarning = ComposeFinding & { severity: "warning" };
 export interface CheckPageFlowOptions { callToAction?: { href: string } }
 
 /** Derives weight from the current authored block vocabulary, independent of ground. */
-export function sectionWeight(section: SectionedViewSection): SectionWeight {
+export function sectionWeight(section: SectionedViewSection | ResolvedSectionedViewSection): SectionWeight {
   if (section.kind === "hero") return { weight: "hero", shape: "hero" };
   if (section.kind === "pricing") return { weight: "A", shape: "table" };
   if (section.kind !== "content-section") {
@@ -49,6 +50,14 @@ export function sectionWeight(section: SectionedViewSection): SectionWeight {
       return _;
     }
   }
+}
+
+/** Explicit emphasis wins; omitted emphasis follows the same structural weight as flow lint. */
+export function resolveActionEmphasis(section: SectionedViewSection | ResolvedSectionedViewSection, index: number): SectionedViewContentActionEmphasis {
+  if (section.kind === "hero") return resolveRoleActionEmphasis(section.actions?.[index]?.emphasis, index);
+  if (section.kind === "content-section" && section.actions?.[index]?.emphasis !== undefined) return section.actions[index]!.emphasis!;
+  const { weight, shape } = sectionWeight(section);
+  return weight === "A" ? (index === 0 ? "secondary" : "quiet") : weight === "B" || shape === "frame" ? "tertiary" : "quiet";
 }
 
 /** Mirrors the linked-item validator's destination comparison. */
@@ -98,7 +107,7 @@ export function checkPageFlow(document: SectionedViewDocument, options: CheckPag
   });
   const primaryTargets: { href: string; path: string }[] = [];
   document.sections[0].actions?.forEach((action, index) => {
-    primaryTargets.push({ href: action.href, path: `sections.0.actions.${index}.href` });
+    if (resolveActionEmphasis(document.sections[0]!, index) === "primary") primaryTargets.push({ href: action.href, path: `sections.0.actions.${index}.href` });
   });
   body.forEach((band, index) => {
     if (band.section.kind !== "content-section") return;
@@ -120,8 +129,9 @@ export function checkPageFlow(document: SectionedViewDocument, options: CheckPag
     const ceiling = band.weight === "A" ? "primary or secondary, then quiet" : band.shape === "frame" || band.weight === "B" ? "tertiary or quiet" : "quiet";
     if (actions.length > maxActions) warn("action-tier", `${band.path}.actions`, `has ${actions.length} actions; use at most ${maxActions} at tier ${ceiling}.`);
     actions.forEach((action, index) => {
-      // The current renderer defaults omitted emphasis to secondary.
-      if (band.weight !== "A" || index > 0) warn("action-tier", `${band.path}.actions.${index}`, `exceeds this band's ceiling; use ${ceiling}, with at most ${maxActions} section actions.`);
+      const emphasis = resolveActionEmphasis(band.section, index);
+      const fits = band.weight === "A" ? (index === 0 || emphasis === "quiet") : band.weight === "B" || band.shape === "frame" ? emphasis === "tertiary" || emphasis === "quiet" : emphasis === "quiet";
+      if (!fits) warn("action-tier", `${band.path}.actions.${index}`, `exceeds this band's ceiling; use ${ceiling}, with at most ${maxActions} section actions.`);
     });
     // Linked cards are quiet (T4), allowed at every weight; their count is
     // independent of section actions and is governed by linked-item validation.

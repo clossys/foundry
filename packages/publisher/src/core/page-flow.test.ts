@@ -2,7 +2,7 @@ import { contentCatalogDocument } from "../preview/fixture-content-catalog.js";
 import { describe, expect, it } from "vitest";
 import type { SectionedViewDocument, SectionedViewSection } from "./sectioned-view.js";
 import { checkSectionVariety, validateSectionedViewDocument } from "./sectioned-view.js";
-import { checkPageFlow, sectionWeight } from "./page-flow.js";
+import { checkPageFlow, sectionWeight, resolveActionEmphasis } from "./page-flow.js";
 
 const ref = { id: "fixture.heading" };
 const item = { id: "item", heading: ref };
@@ -179,16 +179,16 @@ it("fits explicit action tiers and counts without guessing omitted emphasis", ()
   expect(rules(doc(actionA([action("secondary"), { ...action("secondary"), id: "two" }]), B()), "action-tier")).toHaveLength(1);
   expect(rules(doc(A(), section({ layout: "split", media, actions: [action("primary")] }), C()), "action-tier")).toHaveLength(1);
   expect(rules(doc(A(), C({ actions: [action("secondary")] })), "action-tier")).toHaveLength(1);
-  expect(rules(doc(A(), C({ actions: [{ id: "one", label: ref, href: "/one" }, { id: "two", label: ref, href: "/two" }] })), "action-tier")).toHaveLength(3);
+  expect(rules(doc(A(), C({ actions: [{ id: "one", label: ref, href: "/one" }, { id: "two", label: ref, href: "/two" }] })), "action-tier")).toHaveLength(1);
   expect(rules(doc(A(), linked("links", "/guide")), "action-tier")).toEqual([]);
 });
 
-it("matches the current secondary rendering default until the emphasis ladder changes", () => {
+it("matches the weight-resolved rendering defaults", () => {
   const omitted = { id: "go", label: ref, href: "/guide" };
   expect(rules(doc(actionA([omitted]), B(), C()), "action-tier")).toEqual([]);
-  expect(rules(doc(actionA([omitted, { ...omitted, id: "two" }]), B()), "action-tier")).toHaveLength(1);
-  expect(rules(doc(A(), C({ actions: [omitted] })), "action-tier")).toHaveLength(1);
-  expect(rules(doc(A(), section({ layout: "split", media, actions: [omitted] }), C()), "action-tier")).toHaveLength(1);
+  expect(rules(doc(actionA([omitted, { ...omitted, id: "two" }]), B()), "action-tier")).toEqual([]);
+  expect(rules(doc(A(), C({ actions: [omitted] })), "action-tier")).toEqual([]);
+  expect(rules(doc(A(), section({ layout: "split", media, actions: [omitted] }), C()), "action-tier")).toEqual([]);
 });
 
 it("compares hero and supplied close even when there are no body bands", () => {
@@ -206,12 +206,11 @@ it("accepts a complete six-band flow with no findings", () => {
 });
 
 
-it("compares every currently primary hero action with the shared close target", () => {
+it("compares only the effective primary hero action with the shared close target", () => {
   const page: SectionedViewDocument = { ...doc(), sections: [{ ...hero, actions: [{ id: "first", label: ref, href: "/start" }, { id: "second", label: ref, href: "/other" }] }] };
   expect(validateSectionedViewDocument(page)).toEqual([]);
   const findings = rules(page, "primary-target", { callToAction: { href: "/start" } });
-  expect(findings).toHaveLength(1);
-  expect(findings[0]?.path).toBe("sections.0.actions.1.href");
+  expect(findings).toEqual([]);
   const same: SectionedViewDocument = { ...page, sections: [{ ...hero, actions: [{ id: "first", label: ref, href: "/start" }, { id: "second", label: ref, href: "/start" }] }] };
   expect(validateSectionedViewDocument(same)).toEqual([]);
   expect(checkPageFlow(same, { callToAction: { href: "/start" } })).toEqual([]);
@@ -226,4 +225,23 @@ it("normalizes trailing slashes on leading fragments while preserving distinct f
   expect(findings).toHaveLength(1);
   expect(findings[0]?.path).toBe("sections.2.block.items.0.href");
   expect(rules(distinct, "link-repeat")).toEqual([]);
+});
+
+
+describe("action ladder resolution", () => {
+  const action = { id: "go", label: ref, href: "/start" };
+  it("resolves every weight and shape and preserves explicit emphasis", () => {
+    for (const [band, expected] of [[actionA([action]), "secondary"], [B({ actions: [action] }), "tertiary"], [C({ actions: [action] }), "tertiary"], [section({ block: { type: "feature-grid", items: [item, { ...item, id: "two" }] }, actions: [action] }), "quiet"]] as const) {
+      expect(resolveActionEmphasis(band, 0)).toBe(expected);
+    }
+    expect(resolveActionEmphasis(actionA([action, { ...action, id: "two" }]), 1)).toBe("quiet");
+    for (const emphasis of ["primary", "secondary", "tertiary", "quiet"] as const) expect(resolveActionEmphasis(C({ actions: [{ ...action, emphasis }] }), 0)).toBe(emphasis);
+    expect(resolveActionEmphasis({ ...hero, actions: [action, { ...action, id: "two" }] }, 0)).toBe("primary");
+    expect(resolveActionEmphasis({ ...hero, actions: [action, { ...action, id: "two" }] }, 1)).toBe("secondary");
+  });
+  it("matches only effective hero primary destinations", () => {
+    const page: SectionedViewDocument = { ...doc(), sections: [{ ...hero, actions: [{ ...action, href: "/guide", emphasis: "quiet" }, { ...action, id: "two", emphasis: "primary" }] }] };
+    expect(rules(page, "primary-target", { callToAction: { href: "/start" } })).toEqual([]);
+    expect(rules(page, "primary-target", { callToAction: { href: "/other" } })).toHaveLength(1);
+  });
 });

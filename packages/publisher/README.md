@@ -572,14 +572,17 @@ accepted type; a retired short type name inside `block` is refused with
   columns and 5 rows). Status tones are `success`, `warning`, `danger`,
   `info` and `neutral`; numbers are finite and non-negative.
 - `actions` holds one or two actions, each `{ id, label, href }` plus an
-  optional `emphasis` of `primary` or `secondary` (the default). At most one
-  is `primary`. Both render as full-size buttons at the same size: `primary`
-  filled, `secondary` outlined. Write each label as 2-4 words starting with a
-  verb. Validation refuses a third action
-  (`sectioned-view-content-actions-count`), a second primary
-  (`sectioned-view-content-primary-count`) and any other emphasis
-  (`sectioned-view-content-action-emphasis`). A hero action takes no
-  `emphasis`. Where actions go depends on the band's shape. A stacked band
+  optional `emphasis`: `primary`, `secondary`, `tertiary` or `quiet`.
+  Primary and secondary render as filled and outlined `lg` buttons; tertiary
+  uses a ground-aware tonal `md` button, and quiet a `md` text button with a
+  decorative trailing chevron. `resolveActionEmphasis(section, index)` derives
+  omitted emphasis from `sectionWeight`: A uses secondary then quiet, B and
+  frame C use tertiary, and other C uses quiet. Explicit emphasis wins;
+  `checkPageFlow` warns when it exceeds the band's ceiling. Validation refuses
+  a third action, a second primary and an unknown emphasis. Hero actions use
+  `primary`, `secondary` or `quiet`, defaulting to primary then secondary;
+  they allow two actions and one effective primary, and a lone action must be
+  primary. Where actions go depends on the band's shape. A stacked band
   whose header is followed by a block or media takes none
   (`sectioned-view-content-stacked-actions`): link the block's items
   (`href`), or put one link in the footnote. A header-only band takes them as
@@ -613,8 +616,8 @@ Every visible string is a `CopyRef` and resolves in field order (eyebrow,
 heading, description, actions, block, media, footnote text, footnote link
 label). `SectionedView` and `LandingView` render `content-section` as one
 Designer `ContentSection` (see LandingView's section anatomy below); its
-actions render as Designer `buttonLinkClassName` buttons at `lg` (`primary`
-filled, `secondary` as the `outline` variant) and its footnote as the band's
+actions render through the shared emphasis ladder (`primary` and `outline`
+at `lg`, `tonal` and `quiet` at `md`) and its footnote as the band's
 last line. The
 web renderer does not render feature-grid item icons yet; it refuses them
 rather than dropping them.
@@ -1208,7 +1211,14 @@ Props, in addition to the standard `<main>` attributes (minus `children`),
   is refused with `RenderError` reason `missing-hero-copy`; malformed input
   and unknown copy options use `resolution-failed`. Omitting `copy` retains
   the close's authored copy. The exported `LandingViewCallToAction` interface
-  retains its required heading and action for existing consumers.
+  retains its required heading and action for existing consumers. As an
+  alternative to the `action` slot, pass `actions` containing one or two
+  resolved `{ id, label, href, emphasis? }` records with the hero emphasis
+  subset and effective-primary rules. The two props are mutually exclusive.
+  `footnote` takes resolved `{ text, link?: { label, href } }` copy. Hero and
+  closing action pairs put the primary first in DOM order; their primary and
+  secondary buttons stack full width below the tablet breakpoint, while quiet
+  actions keep automatic width.
 - `backdrop` (optional): decoration behind the hero block, `aria-hidden` and
   inert to the pointer, over the hero section's own ground.
 - `header` (`LandingViewHeader`: `"overlay"` or `"reserved"`, default
@@ -1265,9 +1275,8 @@ to `FeatureGrid`, `card-grid` to `CardGrid`, `comparison` to `Comparison`,
 `topic-list` to `TopicList`, `ordered-step-sequence` to
 `OrderedStepSequence`, `faq` to `Faq`, and `media` to a
 labelled `Specimen` figure. Item icons render their Designer icon; actions
-render as full-size buttons (Designer `buttonLinkClassName` at `lg`: a
-`primary` action filled, a `secondary` one as the transparent `outline`
-variant, which takes the ground's ink), and a `footnote` renders as a small
+render through the shared emphasis ladder (`primary` and `outline` at
+`lg`, ground-aware `tonal` and chevron `quiet` at `md`), and a `footnote` renders as a small
 muted line closing the text column, its one link underlined. A linked
 item's `href` passes to the Designer block, which renders the item's title as
 its one link with a chevron and stretches the hit area over the item; a
@@ -1293,8 +1302,8 @@ at every width, `py-5xl` (`py-6xl` from `tablet-lg`); the hero block takes
 `py-5xl` under an overlay header. Both copy blocks are Designer
 `SectionIntro`: the hero at the `display` emphasis (the page's one `<h1>`),
 the call to action at the `section` emphasis like every band heading. A
-hero section's document actions render as Designer primary button links
-(`buttonLinkClassName("primary", "lg")`), the call to action's treatment;
+hero section's document actions render through the primary, outline and
+quiet ladder;
 omit a hero's `actions` for a message-only opening.
 The view paints the base surface on its root, so a band on the `base`
 ground shows the base surface whatever the page behind it is.
@@ -4997,8 +5006,8 @@ vocabulary determines shape; planned blocks receive no speculative contract.
 `rule`, `severity: "warning"`, `path` and `message`. `CheckPageFlowOptions` takes
 an optional `callToAction: { href }` for the close. Consumers call this advisory
 lint in document tests; rendering never runs it. Pages without a first hero
-produce no flow findings. Every current hero action participates as a primary
-target. Header target matching remains caller-owned.
+produce no flow findings. Only the effective primary hero action participates
+in primary target matching. Header target matching remains caller-owned.
 
 `SectionShape` and `SectionWeight` describe the derived result. The lint checks
 these `sectioned-view-flow-` rules:
@@ -5017,7 +5026,7 @@ these `sectioned-view-flow-` rules:
 | `closing-band` | A non-proof set piece immediately before the close |
 | `inverse-weight` | Inverse outside a middle statement set piece |
 | `primary-placement` | Primary action outside an A or in the last two body bands |
-| `primary-target` | Hero actions, body primary and supplied close targets differ |
+| `primary-target` | Effective hero primary, body primary and supplied close targets differ |
 | `action-tier` | Action emphasis or count exceeds the body weight ceiling |
 | `link-groups` | More than two linked body blocks |
 | `link-repeat` | Repeated destination across body item, action or footnote links |
@@ -5025,8 +5034,8 @@ these `sectioned-view-flow-` rules:
 Primary targets and body link destinations ignore trailing slashes and
 nonleading fragments, as linked-item validation does. Leading fragments remain
 distinct destinations. Hero and close links do not count as body links.
-Omitted body-action emphasis currently resolves to secondary, matching the
-renderer. A supporting band or breather therefore warns on an omitted button
-emphasis until the rendering emphasis ladder changes. Linked cards are quiet
-and remain independent of section-action counts.
+Omitted body-action emphasis follows `resolveActionEmphasis`: secondary then
+quiet on A, tertiary on B and frame C, and quiet on other C bands. Explicit
+emphasis renders as authored; `action-tier` warns when it exceeds the weight
+ceiling. Linked cards are quiet and remain independent of section-action counts.
 `checkSectionVariety` retains its existing output.

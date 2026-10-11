@@ -14,3 +14,19 @@ export const missingAction: LandingViewProps["callToAction"] = { copy: "hero" };
 export const interfaceMissingHeading: LandingViewCallToAction = { copy: "hero", action: <a href="/start">Start</a> };
 // @ts-expect-error copy is a closed option
 export const invalidCopy: LandingViewProps["callToAction"] = { copy: "other", heading: "Close", action: <a href="/start">Start</a> };
+
+export const closeActions: LandingViewProps["callToAction"] = { heading: "Close", actions: [{ id: "start", href: "/start", label: "Start", emphasis: "primary" }, { id: "guide", href: "/guide", label: <em>Guide</em>, emphasis: "quiet" }] };
+export const reusedActions: LandingViewProps["callToAction"] = { copy: "hero", actions: [{ id: "start", href: "/start", label: "Start" }] };
+// @ts-expect-error legacy action and the additive action list are mutually exclusive
+export const competingClose: LandingViewProps["callToAction"] = { heading: "Close", action: <a href="/start">Start</a>, actions: [{ id: "start", href: "/start", label: "Start" }] };
+// @ts-expect-error closing actions exclude tertiary
+export const tertiaryClose: LandingViewProps["callToAction"] = { heading: "Close", actions: [{ id: "start", href: "/start", label: "Start", emphasis: "tertiary" }] };
+
+import type { SectionedViewAction, SectionedViewContentAction } from "../../core/sectioned-view.js";
+export const heroQuiet: SectionedViewAction = { id: "guide", href: "/guide", label: { id: "guide" }, emphasis: "quiet" };
+export const bodyTertiary: SectionedViewContentAction = { id: "guide", href: "/guide", label: { id: "guide" }, emphasis: "tertiary" };
+export const bodyQuiet: SectionedViewContentAction = { ...bodyTertiary, emphasis: "quiet" };
+// @ts-expect-error hero actions exclude tertiary
+export const tertiaryHero: SectionedViewAction = { ...heroQuiet, emphasis: "tertiary" };
+// @ts-expect-error content action emphasis is closed
+export const unknownBody: SectionedViewContentAction = { ...bodyTertiary, emphasis: "ghost" };

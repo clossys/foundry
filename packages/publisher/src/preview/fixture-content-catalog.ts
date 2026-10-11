@@ -1036,10 +1036,10 @@ export const CONTENT_CATALOG_CALL_TO_ACTION = {
 /** One caption per band, in page order: the hero, every document band, then the call to action. */
 export const CONTENT_CATALOG_CAPTIONS: readonly ContentCatalogCaption[] = [
   { sectionId: "catalog-hero", title: "Hero", detail: "inverse ground · eyebrow, heading, description · one primary action", budget: "max" },
-  { sectionId: "catalog-intro", title: "Intro band", detail: "stacked, start-aligned · no block, no media · primary and secondary buttons as the band's last element, no footnote", budget: "max" },
+  { sectionId: "catalog-intro", title: "Intro band", detail: "stacked, start-aligned · no block, no media · primary and tertiary buttons as the band's last element, no footnote", budget: "max" },
   { sectionId: "catalog-specimen-single", title: "Specimen, stacked, single", detail: "sunken · one panel: fields (6 rows), status rows, meter with limit, assignee footer", budget: "max" },
   { sectionId: "catalog-features-plain", title: "FeatureGrid, plain, 3 columns, icons", detail: "base · item emphasis", budget: "typical" },
-  { sectionId: "catalog-split-end", title: "Specimen, split, media end", detail: "sunken · header and one secondary button in the text column, beside a schedule panel", budget: "typical" },
+  { sectionId: "catalog-split-end", title: "Specimen, split, media end", detail: "sunken · header and one tertiary button in the text column, beside a schedule panel", budget: "typical" },
   { sectionId: "catalog-features-rule", title: "FeatureGrid, rule, 4 columns", detail: "base · no icons (rule takes none)", budget: "max" },
   { sectionId: "catalog-split-start", title: "TopicList, 1 column, split beside a Specimen, media start", detail: "sunken · the topic list in the text column · table panel", budget: "max" },
   { sectionId: "catalog-features-statement", title: "FeatureGrid, statement emphasis", detail: "inverse (the one inverse body band) · centred header, no actions · exactly 3 items · a centred footnote with one link", budget: "typical" },

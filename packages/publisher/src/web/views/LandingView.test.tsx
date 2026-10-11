@@ -123,8 +123,8 @@ describe("LandingView", () => {
     const questions = root.querySelector("#questions") as HTMLElement;
     // A split keeps its actions in the text column.
     const more = questions.querySelector('[data-content-section-text] a[href="/more"]') as HTMLElement;
-    expect(more.getAttribute("data-action-emphasis")).toBe("secondary");
-    expect(more.className.split(" ")).toEqual(expect.arrayContaining(["px-lg", "py-md", "text-body-l", "bg-transparent", "ring-inset", "ring-current"]));
+    expect(more.getAttribute("data-action-emphasis")).toBe("quiet");
+    expect(more.className.split(" ")).toEqual(expect.arrayContaining(["text-body", "text-control-quiet", "quiet-action"]));
     expect(more.className.split(" ")).not.toContain("underline");
     expect(questions.getAttribute("data-layout")).toBe("split");
     expect(questions.querySelectorAll("[data-content-section-media] details")).toHaveLength(4);
@@ -426,3 +426,66 @@ describe("LandingView close copy", () => {
 });
 
 const LEGACY_CLOSE_MARKUP_SHA256 = "c7612c0e8dccc6bba0f05d7fca77d7e801d578e2ef55c415d992aab396e315d1";
+
+
+describe("LandingView action ladder", () => {
+  const first = { id: "first", label: "FIRST-SENTINEL", href: "/guide", emphasis: "quiet" as const };
+  const primary = { id: "primary", label: "PRIMARY-SENTINEL", href: "/start", emphasis: "primary" as const };
+  it("orders primary first, resolves before sorting, and owns the responsive hero wrapper", () => {
+    const page: ResolvedSectionedViewDocument = { ...PAGE, sections: [{ ...PAGE.sections[0]!, actions: [first, primary] } as ResolvedSectionedViewDocument["sections"][number], ...PAGE.sections.slice(1)] };
+    const hero = dom({ document: page, peek: false }).querySelector("[data-landing-hero]")!;
+    const links = [...hero.querySelectorAll("a")];
+    expect(links.map(link => link.getAttribute("href"))).toEqual(["/start", "/guide"]);
+    expect(links.map(link => link.getAttribute("data-action-emphasis"))).toEqual(["primary", "quiet"]);
+    expect(links[1]?.querySelector('svg[aria-hidden="true"]')).not.toBeNull();
+    expect(links[1]?.className.split(" ")).not.toContain("w-full");
+    const omitted: ResolvedSectionedViewDocument = { ...PAGE, sections: [{ ...PAGE.sections[0]!, actions: [{ ...primary, emphasis: undefined }, { ...first, emphasis: undefined }] } as ResolvedSectionedViewDocument["sections"][number], ...PAGE.sections.slice(1)] };
+    const pair = [...dom({ document: omitted, peek: false }).querySelectorAll("[data-landing-hero] a")];
+    expect(pair.map(link => link.getAttribute("data-action-emphasis"))).toEqual(["primary", "secondary"]);
+    for (const link of pair) expect(link.className.split(" ")).toEqual(expect.arrayContaining(["w-full", "tablet:w-auto"]));
+    expect(pair[0]?.parentElement?.className.split(" ")).toEqual(expect.arrayContaining(["flex-col", "tablet:flex-row", "w-full"]));
+    const start = dom({ document: omitted, peek: false, align: "start" }).querySelector("[data-landing-actions]")!;
+    expect(start.className.split(" ")).toEqual(expect.arrayContaining(["items-start", "tablet:justify-start"]));
+  });
+  it("renders view-owned close actions and footnote while keeping hero-copy overrides", () => {
+    const close = dom({ document: PAGE, callToAction: { copy: "hero", heading: null, actions: [first, primary], footnote: { text: "NOTE-SENTINEL", link: { label: "LINK-SENTINEL", href: "/note" } } } }).querySelector("[data-landing-call-to-action]")!;
+    expect(close.querySelector("h2")).toBeNull();
+    expect(close.textContent).toContain("LEDE-SENTINEL");
+    expect([...close.querySelectorAll("a")].map(link => link.getAttribute("href"))).toEqual(["/start", "/guide", "/note"]);
+    expect(close.querySelector('svg[aria-hidden="true"]')).not.toBeNull();
+    expect(close.querySelector("[data-content-section-footnote]")?.textContent).toBe("NOTE-SENTINEL LINK-SENTINEL");
+    const defaults = dom({ document: PAGE, callToAction: { copy: "hero", actions: [{ ...primary, emphasis: undefined }, { ...first, emphasis: undefined }] } }).querySelectorAll("[data-landing-call-to-action] a");
+    expect([...defaults].map(link => link.getAttribute("data-action-emphasis"))).toEqual(["primary", "secondary"]);
+    for (const link of defaults) expect(link.className.split(" ")).toEqual(expect.arrayContaining(["w-full", "tablet:w-auto"]));
+  });
+  it("refuses malformed close action lists and invalid hero resolved emphases", () => {
+    for (const actions of [[], [first], [{ ...primary, emphasis: "tertiary" }], [{ ...primary, emphasis: undefined }, primary], [primary, primary, primary], [{ ...primary, href: "javascript:alert(1)" }]]) {
+      expect(() => dom({ document: PAGE, callToAction: { heading: "Close", actions } } as LandingViewProps)).toThrow(RenderError);
+      const page = { ...PAGE, sections: [{ ...PAGE.sections[0], actions }, ...PAGE.sections.slice(1)] };
+      expect(() => dom({ document: page } as LandingViewProps)).toThrow(RenderError);
+    }
+    expect(() => dom({ document: PAGE, callToAction: { heading: "Close", action: <a href="/legacy">Legacy</a>, actions: [primary] } } as LandingViewProps)).toThrow(RenderError);
+  });
+});
+
+
+it("renders all body tiers with authored emphasis, size and ground, including decorative quiet chevrons", () => {
+  for (const ground of ["base", "sunken", "inverse"] as const) for (const emphasis of ["primary", "secondary", "tertiary", "quiet"] as const) {
+    const band = { id: "frame", kind: "content-section" as const, ground, heading: "FRAME-SENTINEL", actions: [{ id: "go", label: "GO-SENTINEL", href: "/go", emphasis }] };
+    const page: ResolvedSectionedViewDocument = { ...PAGE, sections: [PAGE.sections[0]!, band] };
+    const link = dom({ document: page, peek: false }).querySelector('a[href="/go"]')!;
+    expect(link.getAttribute("data-action-emphasis")).toBe(emphasis);
+    const large = emphasis === "primary" || emphasis === "secondary";
+    expect(link.className.split(" ")).toContain(large ? "text-body-l" : "text-body");
+    if (large) expect(link.className.split(" ")).toEqual(expect.arrayContaining(["px-lg", "py-md"]));
+    if (emphasis === "tertiary") expect(link.className.split(" ")).toEqual(expect.arrayContaining(["px-md", "py-sm"]));
+    if (emphasis === "secondary") expect(link.className.split(" ")).toEqual(expect.arrayContaining(["ring-current", "ring-inset"]));
+    if (emphasis === "tertiary") expect(link.className.split(" ")).toContain(ground === "inverse" ? "bg-control-tonal-inverse" : "bg-control-tonal");
+    if (emphasis === "quiet") {
+      expect(link.className.split(" ")).toContain(ground === "inverse" ? "text-ink-on-inverse" : "text-control-quiet");
+      expect(link.lastElementChild?.getAttribute("aria-hidden")).toBe("true");
+      expect(link.querySelectorAll("svg")).toHaveLength(1);
+      expect(link.textContent).toBe("GO-SENTINEL");
+    } else expect(link.querySelector("svg")).toBeNull();
+  }
+});

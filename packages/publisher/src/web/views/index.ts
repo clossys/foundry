@@ -59,3 +59,5 @@ export { ActivateForm } from "./ActivateForm.js";
 export type { ActivateDetails, ActivateFailure, ActivateFormProps, ActivateResult } from "./ActivateForm.js";
 export { ResetForm } from "./ResetForm.js";
 export type { ResetDetails, ResetFailure, ResetFormProps, ResetResult } from "./ResetForm.js";
+
+export type { LandingViewAction } from "./SectionedViewActions.js";

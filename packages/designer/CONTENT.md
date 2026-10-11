@@ -28,8 +28,9 @@ Every band opens with the same header group, and each slot has one job:
 - The heading never restates the eyebrow. The description never restates the
   heading.
 - Section actions are 1-2 buttons: 2-4 words, a verb first ("See the
-  schedule"). At most one is primary (filled); the other is secondary
-  (outlined). Never more than one primary per band, and one main call to
+  schedule"). At most one is primary (filled). Publisher resolves omitted emphasis
+  from band weight: A uses secondary then quiet, B and frame C use tertiary,
+  and other C uses quiet; authored emphasis wins. Never more than one primary per band, and one main call to
   action per run of bands. Which bands take them depends on the band's shape
   (see "Actions and links by band shape").
 - A footnote is an optional single short sentence at the end of a band, small
@@ -252,6 +253,9 @@ At most two body blocks link items. Each body destination appears once across
 item links, section actions and footnote links; hero and close are excluded.
 Card links count as quiet actions for weight fit, independently of section
 button counts. These findings are advisory and never run during rendering.
+Omitted section actions use secondary then quiet on A, tertiary on B and frame C,
+and quiet on other C bands. Explicit emphasis wins; an action above the weight
+ceiling still renders as authored and receives an advisory `action-tier` warning.
 
 ## Closing copy
 
