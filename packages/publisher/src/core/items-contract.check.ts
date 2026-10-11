@@ -30,3 +30,12 @@ const record: SectionedViewMedia = { type: "record", id: "record", head: { title
 // @ts-expect-error Ledger initials are visible CopyRefs; only Scene initials are structural strings.
 const rawRecord: SectionedViewMedia = { ...record, groups: [{ id: "owner", label: ref, owner: { initials: "AB", name: ref } }] };
 void [record, rawRecord];
+
+// The public recipe table exposes the same deep immutability enforced at runtime.
+import { SECTIONED_VIEW_ITEM_RECIPES } from "./sectioned-view.js";
+// @ts-expect-error fixed axes are immutable
+SECTIONED_VIEW_ITEM_RECIPES.features.fixed.reveal = "disclose";
+// @ts-expect-error defaults are immutable
+SECTIONED_VIEW_ITEM_RECIPES.features.defaults!.columns = 2;
+// @ts-expect-error recipe properties cannot be replaced
+SECTIONED_VIEW_ITEM_RECIPES.features.fixed = {};

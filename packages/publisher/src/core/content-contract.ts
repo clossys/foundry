@@ -13,7 +13,9 @@ export const SECTIONED_VIEW_CONTENT_CONTRACT = Object.freeze({
   tones: Object.freeze(["neutral", "success", "warning", "danger", "info"] as const),
   recipes: Object.freeze(["features", "statement", "cards", "topics", "link-index", "faq", "steps", "flow", "specimen-stack"] as const),
   spans: Object.freeze({ third: 4, half: 6, "two-thirds": 8, full: 12 }),
-  counts: Object.freeze({ columns2: Object.freeze([2, 4, 6]), columns3: Object.freeze([3, 6]), rows: Object.freeze([2, 8] as const), bento: Object.freeze([2, 6] as const), stacked: Object.freeze([2, 4] as const), connected: Object.freeze([3, 5] as const), disclose: Object.freeze([4, 6] as const), lanes: Object.freeze([3, 5]), matrix: 2, points: Object.freeze([2, 4] as const), linked: 6, rowUnits: 12 }),
+  columnOptions: Object.freeze([2, 3] as const),
+  rowColumnOptions: Object.freeze([1, 2] as const),
+  counts: Object.freeze({ columns: Object.freeze([2, 6] as const), groups: Object.freeze([2, 4] as const), groupItems: Object.freeze([2, 4] as const), laneDefinitions: 2, columns2: Object.freeze([2, 4, 6]), columns3: Object.freeze([3, 6]), rows: Object.freeze([2, 8] as const), bento: Object.freeze([2, 6] as const), stacked: Object.freeze([2, 4] as const), connected: Object.freeze([3, 5] as const), disclose: Object.freeze([4, 6] as const), lanes: Object.freeze([3, 5]), matrix: 2, points: Object.freeze([2, 4] as const), linked: 6, rowUnits: 12 }),
 });
 export type FrameSize = typeof SECTIONED_VIEW_CONTENT_CONTRACT.sizes[number];
 export type FrameLayout = typeof SECTIONED_VIEW_CONTENT_CONTRACT.layouts[number];
@@ -107,15 +109,25 @@ export interface SectionedViewSceneMedia { type: "scene"; label: CopyRef; relati
 export type SectionedViewMedia = SectionedViewSpecimenMedia | SectionedViewRecordMedia | SectionedViewSceneMedia;
 
 interface Recipe {
-  fixed: Partial<Record<"arrangement" | "order" | "reveal" | "treatment" | "emphasis" | "columns", string | number>>;
-  defaults?: Partial<Record<"columns" | "treatment", string | number>>;
-  treatments?: readonly string[];
-  slots: readonly string[];
-  requiredSlot?: "href" | "visual";
+  readonly fixed: Readonly<Partial<Record<"arrangement" | "order" | "reveal" | "treatment" | "emphasis" | "columns", string | number>>>;
+  readonly defaults?: Readonly<Partial<Record<"columns" | "treatment", string | number>>>;
+  readonly treatments?: readonly string[];
+  readonly slots: readonly string[];
+  readonly requiredSlot?: "href" | "visual";
+}
+function freezeRecipes(recipes: Record<ItemsRecipe, Recipe>): Readonly<Record<ItemsRecipe, Recipe>> {
+  for (const recipe of Object.values(recipes)) {
+    Object.freeze(recipe.fixed);
+    if (recipe.defaults !== undefined) Object.freeze(recipe.defaults);
+    if (recipe.treatments !== undefined) Object.freeze(recipe.treatments);
+    Object.freeze(recipe.slots);
+    Object.freeze(recipe);
+  }
+  return Object.freeze(recipes);
 }
 /** Recipe constraints are shared by desugaring and slot validation. Badge is independent metadata. */
-export const SECTIONED_VIEW_ITEM_RECIPES: Readonly<Record<ItemsRecipe, Recipe>> = Object.freeze({
-  features: { fixed: { arrangement: "columns", order: "none", reveal: "all" }, defaults: { columns: 3 }, slots: ["icon", "eyebrow", "href"] },
+export const SECTIONED_VIEW_ITEM_RECIPES: Readonly<Record<ItemsRecipe, Recipe>> = freezeRecipes({
+  features: { fixed: { arrangement: "columns", order: "none", reveal: "all", emphasis: "item" }, defaults: { columns: 3 }, slots: ["icon", "eyebrow", "href"] },
   statement: { fixed: { arrangement: "columns", columns: 3, order: "none", reveal: "all", emphasis: "statement" }, treatments: ["plain", "rule"], slots: [] },
   cards: { fixed: { arrangement: "bento", order: "none", reveal: "all" }, defaults: { treatment: "rule" }, treatments: ["rule", "plate"], slots: ["eyebrow", "visual", "href", "meta", "featured", "span"] },
   topics: { fixed: { arrangement: "rows", order: "none", reveal: "all", treatment: "rule" }, defaults: { columns: 1 }, slots: ["icon", "href", "groups"] },

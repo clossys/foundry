@@ -27,7 +27,7 @@ describe("canonical items contract", () => {
   it("validates row/disclosure/connected counts, including the connected stacked override", () => {
     expect(errors({ type: "items", arrangement: "rows", columns: 2, items: items(6) })).toEqual([]);
     expect(errors({ type: "items", arrangement: "rows", columns: 2, items: items(3) }).length).toBeGreaterThan(0);
-    expect(errors({ type: "items", arrangement: "rows", reveal: "disclose", items: items(4) })).toEqual([]);
+    expect(errors({ type: "items", arrangement: "rows", reveal: "disclose", items: items(4).map((item) => ({ ...item, description: ref() })) })).toEqual([]);
     expect(errors({ type: "items", arrangement: "columns", reveal: "disclose", items: items(3) }).length).toBeGreaterThan(0);
     expect(errors({ type: "items", arrangement: "stacked", order: "connected", items: items(5) })).toEqual([]);
     expect(findings({ type: "items", arrangement: "columns", order: "connected", items: items(4) })).toContainEqual(expect.objectContaining({ rule: "steps-count", severity: "warning" }));

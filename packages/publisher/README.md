@@ -569,9 +569,13 @@ exactly one group, and each group contains 2–4 item ids. Arrays contain only
 ordinary dense data items. Lanes are exactly two `{ id, label }` objects, with known
 lane ids on every item in a stacked connected block of three or five items.
 
-Matrix sides each have an id, label and heading, and exactly one of a
-description, 2–4 points or one specimen panel. Both sides use the same form
-and point count. `featured` names an existing side id.
+Matrix sides each have an id, label and heading, and at least one of a
+description, 2–4 points or one specimen panel. A description may accompany
+points or a panel; points and a panel cannot be combined. Both sides share
+a primary form (panel, then points, then description), with equal point counts.
+`featured` names an existing side id. Disclosed items require a description
+on every item and cannot take href or visual. Recipe constraints are deeply
+immutable; the features recipe fixes item emphasis.
 
 Media is exactly one of:
 
@@ -581,7 +585,8 @@ Media is exactly one of:
   retain their closed fields, status rows, meter, table, schedule, shares and
   files parts. A status-rows part may specify `mobileRows: 3`; meter
   `previous` and `previousText` are authored together alongside the existing
-  `value`, `scaleMax` and `limit` fields.
+  `value`, `scaleMax` and `limit` fields. The previous marker cannot exceed
+  `scaleMax`.
 - `record`: an id, head, groups and caption, optionally columns and flag
   label. A group holds rows or an owner; the owner group is last. All visible
   copy, including owner initials, is a CopyRef. Multi-column records require

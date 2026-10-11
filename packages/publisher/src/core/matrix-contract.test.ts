@@ -24,7 +24,7 @@ describe("canonical matrix", () => {
       { type: "matrix", sides: sides.map(({ heading: _heading, ...side }) => side) },
     ]) expect(errors(block).length).toBeGreaterThan(0);
   });
-  it("allows exactly one description, points or visual on each side", () => {
+  it("accepts a visual with optional description and refuses points plus visual", () => {
     const panel = { id: "panel", title: ref(), parts: [{ id: "fields", type: "fields", items: [{ id: "field", label: ref(), value: ref() }] }] };
     expect(errors({ type: "matrix", sides: sides.map(({ points: _points, ...side }) => ({ ...side, visual: panel })) })).toEqual([]);
     expect(errors({ type: "matrix", sides: sides.map((side) => ({ ...side, visual: panel })) }).length).toBeGreaterThan(0);
