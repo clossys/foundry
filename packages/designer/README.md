@@ -3404,6 +3404,17 @@ shared `subgrid` rows (ordinal, text, visual), so every visual starts on one
 top line even when one step's copy runs longer. Without `subgrid` support the
 parts still stack in order.
 
+
+`OrderedStepSequence` supports two-actor `lanes: { a, b }` with `lane` on
+every item: 3 or 5 steps, exactly 3 with visuals. Start in a, use both actors,
+and omit item labels. Three lane columns start at `tablet-lg`; five at
+`desktop`. Pass `labelledBy` the real section heading id. `caption` follows
+the list and requires a visual. Lanes or explicit `end`/`endLabel` add the
+final connector; the default is `ends` (node), while `continues` draws an
+arrow. An unlabelled continuing end needs consumer `continuesLabel` copy,
+rendered hidden. Legacy calls keep their existing DOM. `ContentSection` and
+`SectionIntro` accept `headingId` on their real heading.
+
 ### `CardGrid`
 
 ```tsx
@@ -6438,14 +6449,3 @@ MIT
 ## Changelog
 
 Release notes for every version are in the [changelog](https://github.com/clossys/foundry/blob/main/docs/changelogs/designer.md), kept in the public repository rather than in the installed package.
-
-
-`OrderedStepSequence` supports two-actor `lanes: { a, b }` with `lane` on
-every item: 3 or 5 steps, exactly 3 with visuals. Start in a, use both actors,
-and omit item labels. Three lane columns start at `tablet-lg`; five at
-`desktop`. Pass `labelledBy` the real section heading id. `caption` follows
-the list and requires a visual. Lanes or explicit `end`/`endLabel` add the
-final connector; the default is `ends` (node), while `continues` draws an
-arrow. An unlabelled continuing end needs consumer `continuesLabel` copy,
-rendered hidden. Legacy calls keep their existing DOM. `ContentSection` and
-`SectionIntro` accept `headingId` on their real heading.

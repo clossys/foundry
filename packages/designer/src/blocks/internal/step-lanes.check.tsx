@@ -4,3 +4,6 @@ export const validLanes = <OrderedStepSequence lanes={{ a: "Team", b: "Service" 
 export const invalidLane = <OrderedStepSequence items={[{ id: "a", ordinal: 1, heading: "Share", lane: "c" }]} />;
 // @ts-expect-error termination vocabulary is closed
 export const invalidEnd = <OrderedStepSequence items={[]} end="later" />;
+
+export const visibleCollectionEnd = <OrderedStepSequence items={[]} end="continues" endLabel={new Set(["Repeats ", "monthly"])} />;
+export const emptyVisibleEndWithCopy = <OrderedStepSequence items={[]} end="continues" endLabel={null} continuesLabel={["Consumer ", "continuation"]} />;
