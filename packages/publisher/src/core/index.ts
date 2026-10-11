@@ -102,7 +102,7 @@ export { getSlotSpec, listSlotKeys, requiredSlotKeys } from "./slots.js";
 export { collectCopyProvenance, createOutputManifest, createResolvedOutputManifest } from "./output-manifest.js";
 
 export { resolveSurfaceDocument, SurfaceResolutionError } from "./resolve-surface.js";
-export { checkSectionVariety, CONTENT_ICON_NAMES, FEATURE_GRID_ITEM_EYEBROW_MAX_CHARACTERS, resolveSectionedViewDocument, SectionedViewResolutionError, validateSectionedViewDocument } from "./sectioned-view.js";
+export { checkSectionVariety, CONTENT_ICON_NAMES, CONTENT_ITEM_EYEBROW_MAX_CHARACTERS, resolveSectionedViewDocument, SectionedViewResolutionError, validateSectionedViewDocument } from "./sectioned-view.js";
 export type {
   ResolvedSectionedViewAction,
   ResolvedSectionedViewContentAction,
@@ -143,31 +143,18 @@ export type {
   ResolvedSectionedViewContentBlock,
   ResolvedSectionedViewContentSection,
   ResolvedSectionedViewSpecimenMedia,
+  ResolvedSectionedViewMedia,
   ResolvedSectionedViewSpecimenPanel,
   ResolvedSectionedViewSpecimenPart,
-  SectionedViewCardGridBlock,
-  SectionedViewComparisonBlock,
-  SectionedViewComparisonSide,
   SectionedViewContentAction,
   SectionedViewContentActionEmphasis,
   SectionedViewContentAlign,
-  SectionedViewContentCard,
   SectionedViewContentFootnote,
   SectionedViewContentFootnoteLink,
-  SectionedViewContentCardSpan,
-  SectionedViewContentItem,
   SectionedViewContentLayout,
-  SectionedViewContentMediaSide,
   SectionedViewContentBlock,
   SectionedViewContentBlockType,
   SectionedViewContentSection,
-  SectionedViewContentStep,
-  SectionedViewStepLane,
-  SectionedViewFaqBlock,
-  SectionedViewFeatureGridBlock,
-  SectionedViewFeatureGridEmphasis,
-  SectionedViewFeatureGridTreatment,
-  SectionedViewSpecimenArrangement,
   SectionedViewSpecimenAssignee,
   SectionedViewSpecimenField,
   SectionedViewSpecimenFieldsPart,
@@ -191,11 +178,10 @@ export type {
   SectionedViewSpecimenTablePart,
   SectionedViewSpecimenTableRow,
   SectionedViewSpecimenTone,
-  SectionedViewOrderedStepSequenceBlock,
-  SectionedViewTopicListBlock,
-  SectionedViewTopicGroup,
 } from "./sectioned-view.js";
 export type { ResolvedSurfaceDocument, ResolvedSurfaceGroup, ResolvedSurfaceGroupField, ResolvedSurfaceGroupItem, ResolvedSurfaceNode, ResolveSurfaceDocumentOptions, SurfaceResolutionReason } from "./resolve-surface.js";
 
 export { checkPageFlow, sectionWeight, resolveActionEmphasis } from "./page-flow.js";
 export type { CheckPageFlowOptions, SectionShape, SectionWeight, SectionedViewFlowWarning } from "./page-flow.js";
+
+export * from "./content-contract.js";

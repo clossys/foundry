@@ -671,7 +671,7 @@ describe("golden: SectionedView content-section", () => {
       actions: [{ id: "lead", label: copy("golden.chapter.lead", "Read the guide"), href: "/guide" }, { id: "more", label: copy("golden.chapter.more", "See details"), href: "/details" }],
     }));
     const [lead, more] = [...band(root, "chapter").querySelectorAll<HTMLElement>("[data-section-intro-actions] > a")];
-    expect(lead?.className).toBe(OUTLINE_LG);
+    expect(lead?.className).toBe(OUTLINE_MD);
     expect(lead?.getAttribute("data-action-emphasis")).toBe("secondary");
     expect(more?.getAttribute("data-action-emphasis")).toBe("quiet");
     expect(more?.className.split(" ")).toEqual(expect.arrayContaining(["quiet-action", "text-body", "text-control-quiet"]));
@@ -692,9 +692,9 @@ describe("golden: SectionedView content-section", () => {
   it("renders every in-section action as a full-size button: primary filled, secondary outline, the same size", () => {
     const { root } = renderContent(contentBand("pair", { actions: [{ id: "a", label: copy("golden.pair.a", "Start a record"), href: "/a", emphasis: "primary" }, { id: "b", label: copy("golden.pair.b", "See an example"), href: "/b", emphasis: "secondary" }] }));
     const [primary, secondary] = [...band(root, "pair").querySelectorAll<HTMLElement>("[data-section-intro-actions] > a")];
-    expect(primary?.className).toBe(PRIMARY_LG);
+    expect(primary?.className).toBe(PRIMARY_MD);
     expect(primary?.getAttribute("data-action-emphasis")).toBe("primary");
-    expect(secondary?.className).toBe(OUTLINE_LG);
+    expect(secondary?.className).toBe(OUTLINE_MD);
     expect(secondary?.getAttribute("data-action-emphasis")).toBe("secondary");
     const sizeOf = (className: string) => className.split(" ").filter((token) => /^(px|py|text-body|rounded)-/.test(token) || token === "text-body-l");
     expect(sizeOf(secondary!.className)).toEqual(sizeOf(primary!.className));
@@ -750,11 +750,11 @@ describe("golden: SectionedView content-section", () => {
   });
 });
 
-/** Designer `buttonLinkClassName` at `lg`, as an in-section action renders it. */
-const PRIMARY_LG =
-  "inline-flex items-center justify-center gap-sm rounded-control text-body font-body transition-colors motion-reduce:transition-none px-lg py-md text-body-l bg-accent text-ink-on-accent hover:bg-accent-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent";
-const OUTLINE_LG =
-  "inline-flex items-center justify-center gap-sm rounded-control text-body font-body transition-colors motion-reduce:transition-none px-lg py-md text-body-l bg-transparent ring-inset ring-current ring-1 hover:ring-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent";
+/** Designer `buttonLinkClassName` at `md`, as an in-section action renders it. */
+const PRIMARY_MD =
+  "inline-flex items-center justify-center gap-sm rounded-control text-body font-body transition-colors motion-reduce:transition-none px-md py-sm text-body bg-accent text-ink-on-accent hover:bg-accent-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent";
+const OUTLINE_MD =
+  "inline-flex items-center justify-center gap-sm rounded-control text-body font-body transition-colors motion-reduce:transition-none px-md py-sm text-body bg-transparent ring-inset ring-current ring-1 hover:ring-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent";
 
 /**
  * Captured from this renderer; Designer `ContentSection` stacked anatomy. A
@@ -770,8 +770,8 @@ const INTRO_BAND_HTML =
   '<h2 class="text-display-m tablet:text-display-l font-display leading-display text-balance text-ink-primary">Heading intro</h2>' +
   '<p class="text-body-l text-pretty text-ink-secondary mt-2xl">Placeholder intro.</p>' +
   '<div data-section-intro-actions="" class="flex flex-wrap items-center gap-x-lg gap-y-sm text-ink-primary mt-3xl">' +
-  `<a href="/start" class="${PRIMARY_LG}" data-action-emphasis="primary">Start a record</a>` +
-  `<a href="/more" class="${OUTLINE_LG}" data-action-emphasis="secondary">Read the guide</a>` +
+  `<a href="/start" class="${PRIMARY_MD}" data-action-emphasis="primary">Start a record</a>` +
+  `<a href="/more" class="${OUTLINE_MD}" data-action-emphasis="secondary">Read the guide</a>` +
   "</div>" +
   "</div>" +
   "</div>" +

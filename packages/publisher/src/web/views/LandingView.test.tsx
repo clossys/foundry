@@ -476,9 +476,9 @@ it("renders all body tiers with authored emphasis, size and ground, including de
     const page: ResolvedSectionedViewDocument = { ...PAGE, sections: [PAGE.sections[0]!, band] };
     const link = dom({ document: page, peek: false }).querySelector('a[href="/go"]')!;
     expect(link.getAttribute("data-action-emphasis")).toBe(emphasis);
-    const large = emphasis === "primary" || emphasis === "secondary";
-    expect(link.className.split(" ")).toContain(large ? "text-body-l" : "text-body");
-    if (large) expect(link.className.split(" ")).toEqual(expect.arrayContaining(["px-lg", "py-md"]));
+    expect(link.className.split(" ")).toContain("text-body");
+    expect(link.className.split(" ")).not.toContain("text-body-l");
+    if (emphasis !== "quiet") expect(link.className.split(" ")).toEqual(expect.arrayContaining(["px-md", "py-sm"]));
     if (emphasis === "tertiary") expect(link.className.split(" ")).toEqual(expect.arrayContaining(["px-md", "py-sm"]));
     if (emphasis === "secondary") expect(link.className.split(" ")).toEqual(expect.arrayContaining(["ring-current", "ring-inset"]));
     if (emphasis === "tertiary") expect(link.className.split(" ")).toContain(ground === "inverse" ? "bg-control-tonal-inverse" : "bg-control-tonal");
