@@ -59,10 +59,11 @@ describe("Comparison", () => {
     const root = container.querySelector("[data-comparison]") as HTMLElement;
     expect(root).toHaveAttribute("data-comparison-rows", "3");
     expect(root.className).not.toMatch(/items-start/);
-    const before = container.querySelector('[data-comparison-side="before"]') as HTMLElement;
+    const beforeSide = container.querySelector('[data-comparison-side="before"]') as HTMLElement;
+    const before = beforeSide.firstElementChild as HTMLElement;
     const afterSide = container.querySelector('[data-comparison-side="after"]') as HTMLElement;
     const plate = afterSide.firstElementChild as HTMLElement;
-    for (const element of [before, afterSide, plate]) {
+    for (const element of [beforeSide, before, afterSide, plate]) {
       expect(element).toHaveClass("tablet-lg:row-span-3", "tablet-lg:grid", "tablet-lg:grid-rows-subgrid");
       expect(element.className).not.toMatch(/(^|\s)tablet:(row-span|grid)/);
     }
@@ -83,14 +84,18 @@ describe("Comparison", () => {
     expect(plate).toHaveClass("tablet:row-span-2", "tablet:grid-rows-subgrid");
   });
 
-  it("sets after on a plate in primary ink and before on the ground in secondary ink", () => {
+  it("delegates both sides to equal Matrix plates with the after side featured", () => {
     const { container } = render(<Comparison before={BEFORE} after={AFTER} />);
+    expect(container.querySelector("[data-comparison]")).toHaveAttribute("data-matrix");
     const after = container.querySelector('[data-comparison-side="after"] > div') as HTMLElement;
     expect(after).toHaveAttribute("data-variant", "plate");
+    expect(after).toHaveAttribute("data-featured", "true");
     expect(screen.getByText("Files land in one record").closest("li")).toHaveClass("text-ink-primary");
-    expect(screen.getByText("Files arrive by email").closest("li")).toHaveClass("text-ink-secondary");
-    const before = container.querySelector('[data-comparison-side="before"]') as HTMLElement;
-    expect(before.className).not.toMatch(/(^|\s)bg-/);
+    expect(screen.getByText("Files arrive by email").closest("li")).toHaveClass("text-ink-primary");
+    const before = container.querySelector('[data-comparison-side="before"] > div') as HTMLElement;
+    expect(before).toHaveAttribute("data-variant", "plate");
+    expect(before).toHaveClass("bg-surface-sunken");
+    expect(before).not.toHaveAttribute("data-featured");
   });
 
   it("hides the marks and the arrow from assistive technology", () => {

@@ -107,13 +107,13 @@ surfaces and live in `@clossys/publisher/web`.
   `Separator`, `Chip`, `StatusMark`, `Meter`.
 - **`blocks`** — owns the internal layout of multiple named regions,
   typically by composing one or more atoms (and/or layout) into something
-  with a real job on a page. Thirty-four ship: `PageHeader`, `EmptyState`,
+  with a real job on a page. Thirty-five ship: `PageHeader`, `EmptyState`,
   `DataTable`, `DetailView`, `Pagination`, `Stat`, `Form`, `FieldGroup`,
   `ConfirmDialog`, `Toolbar`, `NavGrid`, `LinkGrid`, `SectionHeader`, `Hero`,
-  `MarketingChapter`, `FeatureGrid`, `Item`, `Items`, `CardGrid`, `AnatomyCallouts`, `RecordLedger`, `LedgerTile`, `Scene`, `Comparison`, `TopicList`,
+  `MarketingChapter`, `FeatureGrid`, `Item`, `Items`, `CardGrid`, `AnatomyCallouts`, `RecordLedger`, `LedgerTile`, `Scene`, `Matrix`, `Comparison`, `TopicList`,
   `Specimen`, `SpecimenPanel`, `OrderedStepSequence`, `StatusList`, `Faq`,
   `PricingTable`, `Testimonial`, `ArticleBody`, `ConsentBanner` — the last
-  twenty are marketing/editorial
+  twenty-one are marketing/editorial
   content blocks and a presentational consent notice, completing this layer
   (see "Blocks" below).
 - **`shell`** — the persistent frame around content (nav, layout chrome)
@@ -358,7 +358,7 @@ source file's own header for the exact probe and its result). Today that's:
 | Subpath | Server-safe members |
 | --- | --- |
 | `@clossys/designer/atoms/server` | `Avatar`, `Badge`, `Banner`, `Card`, `Field`, `Icon`, `Meter`, `Skeleton`, `Spinner`, `StatusMark`, `buttonLinkClassName`, `iconButtonClassName`, `iconButtonLinkClassName`, `mergeUiClasses` |
-| `@clossys/designer/blocks/server` | `AnatomyCallouts`, `ArticleBody`, `CardGrid`, `Comparison`, `ContentSection`, `DetailView`, `EmptyState`, `Faq`, `FeatureGrid`, `FieldGroup`, `Hero`, `Item`, `Items`, `LedgerTile`, `LinkGrid`, `MarketingChapter`, `MediaFigure`, `OrderedStepSequence`, `PageHeader`, `PricingTable`, `RecordLedger`, `Scene`, `SectionFrame`, `SectionHeader`, `SectionIntro`, `Specimen`, `SpecimenPanel`, `Stat`, `StatusList`, `TopicList` |
+| `@clossys/designer/blocks/server` | `AnatomyCallouts`, `ArticleBody`, `CardGrid`, `Comparison`, `Matrix`, `ContentSection`, `DetailView`, `EmptyState`, `Faq`, `FeatureGrid`, `FieldGroup`, `Hero`, `Item`, `Items`, `LedgerTile`, `LinkGrid`, `MarketingChapter`, `MediaFigure`, `OrderedStepSequence`, `PageHeader`, `PricingTable`, `RecordLedger`, `Scene`, `SectionFrame`, `SectionHeader`, `SectionIntro`, `Specimen`, `SpecimenPanel`, `Stat`, `StatusList`, `TopicList` |
 | `@clossys/designer/shell/server` | `Shell`, `SiteFooter`, `SiteHeader`, `SkipLink` |
 | `@clossys/designer/charts/server` | `ChartFrame`, `Sparkline` |
 | `@clossys/designer/theme/server` | `getThemeInitScript` |
@@ -3667,6 +3667,33 @@ function LedgerExample() {
 }
 ```
 
+### `Matrix`
+
+```tsx
+import { Matrix } from "@clossys/designer/blocks";
+
+<Matrix
+  sides={[
+    { id: "first", label: "First option", heading: "A shared record", points: ["One source", "Clear dates"] },
+    { id: "second", label: "Second option", heading: "A shared view", points: ["One view", "Clear owners"] },
+  ]}
+  featured="second"
+/>;
+```
+
+Exactly two sides on equal `Card` plates. Each side has a distinct,
+whitespace-free `id`, a `label` rendered as a real heading, and a required
+`heading` line. Supply the same primary form on both sides: a description,
+two to four points with equal counts, or a visual. A description may also
+accompany points or a visual; points and visuals cannot be combined. Optional
+description rows stay aligned when only one side has supporting copy.
+
+`featured` names one side's id and adds the accent top rule without changing
+reading order or either plate's fill. `headingLevel` defaults to `3`; `ground`
+defaults to `base`. Sides stack below `tablet`, or `tablet-lg` when they carry
+visuals, then share subgrid rows for aligned copy and visuals. All styling uses
+the existing plate, ground, typography and accent tokens. Server-safe.
+
 ### `Comparison`
 
 ```tsx
@@ -3687,10 +3714,9 @@ side, both sides span one set of shared `subgrid` rows (label group, copy,
 visual), so the labels, the copy and the visuals each start on one top line
 even when one side's description is longer, and the plate fills its column
 (the row count is on `data-comparison-rows`). Without `subgrid` support each
-side still stacks its parts in order. `before` sits on
-the ground in secondary ink, its points marked by a short muted dash;
-`after` is a `Card` plate in primary ink, its points marked by an accent
-check. The marks and the arrow between the columns are `aria-hidden`: the
+side still stacks its parts in order. Both sides use the same `Matrix`
+plate renderer in primary ink. `before` retains its muted dash; `after`
+carries the featured accent top rule and check. The marks and the arrow between the columns are `aria-hidden`: the
 contrast is in the words. Two columns from `tablet` (from `tablet-lg` when
 the sides carry visuals), stacked below with `before` first; the arrow
 flips under `dir="rtl"`.
@@ -5811,7 +5837,11 @@ not a grab-bag).
 | `SceneTag` | type | Citation tag bounds and copy. |
 | `SceneNode` | type | Review-node bounds and copy. |
 | `ScenePersonLayout` | type | Person row bounds and decider-ring flag. |
-| `Comparison` | component | Before and after side by side: two labelled sections, the after side on a plate. |
+| `Matrix` | component | Exactly two parallel sides on equal plates, optionally featuring one side by id. |
+| `MatrixProps` | type | Two `sides`, optional `featured`, `headingLevel`, `ground`, and native div attributes except `title`. |
+| `MatrixSide` | type | One stable-id side with `label`, `heading`, and optional description, points or visual. |
+| `MatrixHeadingLevel` | type | `2 \| 3 \| 4 \| 5 \| 6`. |
+| `Comparison` | component | Before and after on equal Matrix plates; retains optional headings and its decorative arrow. |
 | `ComparisonProps` | type | Props for `Comparison`: `before`, `after`, `headingLevel`, `ground`, `className`, `style`, plus every native `<div>` attribute except `title`. |
 | `ComparisonSide` | type | One side: `label`, `heading?`, `description?`, `points?`, `visual?`. |
 | `ComparisonHeadingLevel` | type | `2 \| 3 \| 4 \| 5 \| 6`. |
@@ -6500,10 +6530,10 @@ speculatively, just because a related component shipped, is the exact
 un-bounded growth this package's own "variant rule" warns against one level
 up. They get added here only once something real needs them.
 
-**Blocks:** thirty-four ship — `PageHeader`, `EmptyState`, `DataTable`,
+**Blocks:** thirty-five ship — `PageHeader`, `EmptyState`, `DataTable`,
 `DetailView`, `Pagination`, `Stat`, `Form`, `FieldGroup`, `ConfirmDialog`,
 `Toolbar`, `NavGrid`, `LinkGrid`, `SectionHeader`, `Hero`, `MarketingChapter`,
-`FeatureGrid`, `Item`, `Items`, `CardGrid`, `AnatomyCallouts`, `RecordLedger`, `LedgerTile`, `Scene`, `Comparison`, `TopicList`, `Specimen`,
+`FeatureGrid`, `Item`, `Items`, `CardGrid`, `AnatomyCallouts`, `RecordLedger`, `LedgerTile`, `Scene`, `Matrix`, `Comparison`, `TopicList`, `Specimen`,
 `SpecimenPanel`, `OrderedStepSequence`, `StatusList`, `Faq`, `PricingTable`,
 `Testimonial`, `ArticleBody`, `ConsentBanner` — completing this layer. No
 `FilterBar` block:

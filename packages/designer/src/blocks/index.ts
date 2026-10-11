@@ -124,6 +124,8 @@ export type {
 } from "./FeatureGrid.js";
 export { CardGrid } from "./CardGrid.js";
 export type { CardGridProps, CardGridItem, CardGridSpan, CardGridHeadingLevel, CardGridTreatment } from "./CardGrid.js";
+export { Matrix } from "./Matrix.js";
+export type { MatrixProps, MatrixSide, MatrixHeadingLevel } from "./Matrix.js";
 export { Comparison } from "./Comparison.js";
 export type { ComparisonProps, ComparisonSide, ComparisonHeadingLevel } from "./Comparison.js";
 export { TopicList } from "./TopicList.js";

@@ -2611,6 +2611,9 @@
     .tablet-lg\:mt-lg {
       margin-top: var(--spacing-lg, 16px);
     }
+    .tablet-lg\:block {
+      display: block;
+    }
     .tablet-lg\:contents {
       display: contents;
     }
