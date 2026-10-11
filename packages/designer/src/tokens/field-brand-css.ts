@@ -16,7 +16,7 @@ export function checkFieldBrandCss(brandCss: string, tokensCss: string): FieldTo
     // Follow every possible alias binding before filtering rules: even a scoped
     // custom alias can change a field dependency and must fail closed.
     const needed = new Set(["--color-field-dot", "--ui-field-alpha", "--ui-field-scale", "--ui-field-lens", "--color-surface-inverse", "--color-ink-on-inverse"]);
-    const bindings = [...base, ...dark, ...parsed.rules.flatMap((rule) => Object.entries(rule.declarations))];
+    const bindings = [...base, ...dark, ...parsed.rules.flatMap((rule) => rule.bindings.map(({ property, value }) => [property, value] as const))];
     for (let changed = true; changed;) {
       changed = false;
       for (const [name, value] of bindings) {
@@ -29,7 +29,11 @@ export function checkFieldBrandCss(brandCss: string, tokensCss: string): FieldTo
     const rules = new Map<string, CascadeRule[]>();
     for (const rule of parsed.rules) {
       const relevant = Object.entries(rule.declarations).filter(([name]) => needed.has(name));
-      if (!relevant.length) continue;
+      const evidence = rule.bindings.filter(({ property }) => needed.has(property));
+      if (!evidence.length) continue;
+      for (const binding of evidence) {
+        if (binding.escaped || binding.important || binding.nested) decline(`Brand CSS line ${binding.line}: the field check cannot resolve ${binding.escaped ? "escaped identifiers" : binding.important ? "importance" : "nested declarations"} affecting ${binding.property}.`);
+      }
       let insideDarkMedia = false;
       try {
         specificity(rule.selector);

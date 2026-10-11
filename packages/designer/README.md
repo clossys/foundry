@@ -6406,7 +6406,9 @@ theme falls to about 4.44:1; both-theme validation fails even though dark passes
 The brand and contrast CLIs run this check. Brand resolution supports root
 selectors with `data-brand-bound`, light/dark `data-theme` attributes and their
 `:not()` forms, including automatic dark media rules. Unsupported selectors,
-conditions or layer ordering that affect field properties or alias dependencies
+conditions, layer ordering, `!important` (including escaped priority keywords),
+escaped property identifiers, or nested declarations that affect
+field properties or alias dependencies
 produce `unchecked`; unrelated custom properties remain the coverage check's
 responsibility.
 

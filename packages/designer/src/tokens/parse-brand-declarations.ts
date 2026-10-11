@@ -302,6 +302,44 @@ function extractDeclarations(
   }
 }
 
+/** Decode only to identify a field dependency; escaped bindings remain unsupported. */
+function fieldIdentifier(name: string): string {
+  return name.replace(/\\([0-9a-fA-F]{1,6})(?:\r\n|[ \t\r\n\f])?|\\([^\r\n\f])/g, (_match, hex: string | undefined, char: string | undefined) => {
+    if (!hex) return char!;
+    const point = Number.parseInt(hex, 16);
+    return point === 0 || point > 0x10ffff || (point >= 0xd800 && point <= 0xdfff) ? "\uFFFD" : String.fromCodePoint(point);
+  });
+}
+
+/** Internal field evidence retains overwritten declarations and their actual brace scope. */
+function ruleBindings(text: string, bodyStart: number, body: string): BrandCssBinding[] {
+  const bindings: BrandCssBinding[] = [];
+  let cursor = 0, depth = 0;
+  let quote: string | null = null;
+  // Match names independently of values so a nested selector cannot swallow a binding.
+  const names = /((?:[-_a-zA-Z0-9]|\\(?:[0-9a-fA-F]{1,6}(?:\r\n|[ \t\r\n\f])?|[^\r\n\f]))+)\s*:/g;
+  for (const match of body.matchAll(names)) {
+    for (; cursor < match.index; cursor++) {
+      const ch = body[cursor];
+      if (quote) {
+        if (ch === "\\") cursor++;
+        else if (ch === quote) quote = null;
+      } else if (ch === '"' || ch === "'") quote = ch;
+      else if (ch === "{") depth++;
+      else if (ch === "}") depth--;
+    }
+    if (quote) continue;
+    const property = fieldIdentifier(match[1]!);
+    if (!property.startsWith("--")) continue;
+    const valueStart = match.index + match[0].length;
+    const terminator = body.indexOf(";", valueStart);
+    const value = body.slice(valueStart, terminator < 0 ? body.length : terminator).trim();
+    // Supported field values have no bang modifier; escaped CSS priorities also count.
+    bindings.push({ property, value, line: lineAt(text, bodyStart + match.index), escaped: match[1]!.includes("\\"), important: value.includes("!"), nested: depth > 0 });
+  }
+  return bindings;
+}
+
 /**
  * Walks `text[start, end)` for top-level `selector { body }` blocks,
  * recursing into a grouping at-rule's body (see `GROUPING_AT_RULE_RE`) and
@@ -353,7 +391,7 @@ function scanBlocks(
       if (rules) {
         const ruleDeclarations: Record<string, string> = {};
         extractDeclarations(originalText, bodyStart, body, ruleDeclarations, []);
-        rules.push({ selector, groups, declarations: ruleDeclarations, sourceIndex: braceIdx });
+        rules.push({ selector, groups, declarations: ruleDeclarations, bindings: ruleBindings(originalText, bodyStart, body), sourceIndex: braceIdx });
       }
     }
 
@@ -388,7 +426,8 @@ export function parseBrandDeclarations(css: string): ParsedBrandCss {
 }
 
 /** Internal rule-preserving view used by the field check; coverage's existing flattened result is unchanged. */
-export interface BrandCssRule { selector: string; groups: readonly string[]; declarations: Record<string, string>; sourceIndex: number }
+export interface BrandCssBinding { property: string; value: string; line: number; escaped: boolean; important: boolean; nested: boolean }
+export interface BrandCssRule { selector: string; groups: readonly string[]; declarations: Record<string, string>; bindings: readonly BrandCssBinding[]; sourceIndex: number }
 export function parseBrandRules(css: string): { rules: BrandCssRule[]; unchecked: BrandCssUnchecked[] } {
   const parsed = parseBrandDeclarations(css);
   const { text } = truncateAtUnterminatedComment(stripCommentsPreservingLines(css));
