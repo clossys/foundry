@@ -540,6 +540,9 @@ its arrangement. Explicit fixed-axis conflicts are refused with
 `recipe-axis`. `SECTIONED_VIEW_CONTENT_CONTRACT` exports the shared closed
 vocabulary and count table.
 
+The [runnable canonical example](#runnable-canonical-example) below combines
+these contracts with a local, approved Writer registry.
+
 | Items arrangement | Counts and options |
 | --- | --- |
 | `columns` | 2 columns with 2/4/6 items, or 3 columns with 3/6 items; defaults to 3 columns |
@@ -5072,3 +5075,114 @@ missing copy refuses resolution. `checkSectionVariety` warns about the absent
 visible endLabel. Its explicit catalog context checks sample captions where
 visuals are present. Web rendering and catalog fixtures retain their earlier
 shapes until the separate renderer migration.
+
+## Runnable canonical example
+
+This self-contained example validates and resolves canonical data through the
+public core entry point. It demonstrates equivalent raw axes and a recipe,
+Matrix descriptions with equal-length points, all three frame sizes, both split
+directions, a specimen badge and prior measurement, record rows and owner copy,
+and a Scene whose visible strings come from the registry. Structural ids and
+numeric measurements stay data. Rendering and catalog migration are separate.
+
+```ts
+import {
+  desugarRecipe,
+  resolveSectionedViewDocument,
+  validateSectionedViewDocument,
+  type SectionedViewDocument,
+  type SectionedViewItemsBlock,
+  type SectionedViewSceneDocument,
+} from "@clossys/publisher/core";
+import {
+  createCopyResolver,
+  type CopyRef,
+  type CopyRegistry,
+  type CopyRegistryEntry,
+} from "@clossys/writer";
+
+// Replace this local registry with your own reviewed copy registry.
+const copy = {
+  heading: "Example", detail: "Sample content.", label: "Ready",
+  source: "Source document", result: "Result", value: "40 / 100",
+  previous: "30 / 100", initials: "AB",
+  figure: "Sample panel showing labeled details and status.",
+  scene: "Sample documents connect to a shared result with labeled rows and clear relationships.",
+};
+const ref = (key: keyof typeof copy): CopyRef => ({ id: `example.${key}` });
+const registry = {
+  id: "canonical-example", locale: "en", revision: "1",
+  source: { kind: "consumer", reference: "example-v1" },
+  entries: Object.entries(copy).map(([key, text]) => ({
+    id: `example.${key}`, text, context: "Canonical README example", status: "approved",
+  } satisfies CopyRegistryEntry)),
+} satisfies CopyRegistry;
+const resolveCopy = createCopyResolver(registry);
+
+const items = ["one", "two", "three"].map((id) => ({
+  id, heading: ref("heading"), description: ref("detail"),
+}));
+const raw = {
+  type: "items", arrangement: "columns", columns: 3,
+  order: "none", reveal: "all", treatment: "plain", emphasis: "item", items,
+} satisfies SectionedViewItemsBlock;
+const recipe = { type: "items", recipe: "features", items } satisfies SectionedViewItemsBlock;
+export const rawAxes = desugarRecipe(raw);
+const { recipe: recipeName, ...canonicalRecipeAxes } = desugarRecipe(recipe);
+export const recipeAxes = canonicalRecipeAxes;
+
+export const document = {
+  id: "canonical-guide",
+  sections: [
+    { id: "raw", kind: "content-section", ground: "base", heading: ref("heading"),
+      size: "compact", layout: "stacked", block: raw },
+    { id: "recipe", kind: "content-section", ground: "base", heading: ref("heading"),
+      size: "standard", layout: "stacked", block: recipe },
+    { id: "matrix", kind: "content-section", ground: "base", heading: ref("heading"),
+      size: "display", layout: "stacked", block: {
+        type: "matrix", recipe: "comparison", featured: "after",
+        sides: ["before", "after"].map((id) => ({
+          id, label: ref("label"), heading: ref("heading"), description: ref("detail"),
+          points: [ref("source"), ref("result")],
+        })),
+      } },
+    { id: "specimen", kind: "content-section", ground: "base", heading: ref("heading"),
+      size: "standard", layout: "split-start", media: {
+        type: "specimen", label: ref("figure"), panel: {
+          id: "sample", title: ref("heading"), badge: { label: ref("label"), tone: "info" },
+          parts: [{ id: "measurement", type: "meter", label: ref("label"),
+            value: 40, scaleMax: 100, tone: "success", valueText: ref("value"),
+            previous: 30, previousText: ref("previous") }],
+        },
+      } },
+    { id: "record", kind: "content-section", ground: "base", heading: ref("heading"),
+      size: "compact", layout: "split-end", media: {
+        type: "record", id: "sample-record", head: { title: ref("heading") }, columns: 1,
+        groups: [
+          { id: "details", label: ref("label"), rows: [{ id: "row", label: ref("label"), detail: ref("detail") }] },
+          { id: "owner", label: ref("label"), owner: { initials: ref("initials"), name: ref("heading") } },
+        ], caption: ref("detail"),
+      } },
+    { id: "scene", kind: "content-section", ground: "base", heading: ref("heading"),
+      size: "display", layout: "stacked", media: {
+        type: "scene", label: ref("scene"), input: {
+          template: "converge", seed: "example-scene",
+          sources: { heading: ref("heading"), items: ["a", "b", "c"].map((id) => ({
+            id, format: "pdf", title: ref("source"),
+          } satisfies SectionedViewSceneDocument)) },
+          target: { heading: ref("heading"), title: ref("result"), rows: ["one", "two"].map((id) => ({
+            id, label: ref("label"), value: ref("value"),
+          })) },
+          relations: [{ from: "a", to: "one" }, { from: "b", to: "one" }, { from: "c", to: "two" }],
+        },
+      } },
+  ],
+} satisfies SectionedViewDocument;
+
+export const findings = validateSectionedViewDocument(document);
+if (findings.some((finding) => finding.severity === "error")) {
+  throw new Error(findings.map((finding) => finding.rule).join(", "));
+}
+export const resolved = resolveSectionedViewDocument(document, resolveCopy);
+// resolved.resolutions retains the registry revision and source for every CopyRef.
+```
