@@ -72,6 +72,38 @@ describe("step lane contract", () => {
     expect(checkSectionVariety(input, { catalog: true, copyResolver: resolver() }).map((f) => f.rule)).not.toContain(warning);
     for (const context of [{ catalog: true }, { catalog: true, copyResolver: resolver({ caption: "Measured results." }) }, { catalog: true, copyResolver: () => undefined }]) expect(checkSectionVariety(input, context).map((f) => f.rule)).toContain(warning);
   });
+  it("keeps valid visual cards outside catalog sample-caption advice", () => {
+    const items = block("aba", true).items.slice(0, 2).map(({ lane: _lane, meta: _meta, ...item }) => item);
+    const cards = { type: "items", recipe: "cards", items } satisfies SectionedViewItemsBlock;
+    expect(rules(cards)).toEqual([]);
+    expect(checkSectionVariety(doc(cards), { catalog: true, copyResolver: resolver() }).map((f) => f.rule)).not.toContain(laneCode("caption-sample"));
+    expect(rules({ ...cards, caption: ref("caption") })).toContain("sectioned-view-content-order");
+  });
+  it("leaves invalid recipe axes to validation in catalog context", () => {
+    const items = block("aba", true).items.map(({ lane: _lane, ...item }) => item);
+    const invalid = { type: "items", recipe: "steps", arrangement: "rows", items } satisfies SectionedViewItemsBlock;
+    expect(rules(invalid)).toContain("recipe-axis");
+    expect(() => checkSectionVariety(doc(invalid), { catalog: true })).not.toThrow();
+    expect(checkSectionVariety(doc(invalid), { catalog: true }).map((f) => f.rule)).not.toContain(laneCode("caption-sample"));
+  });
+  it.each(["direct", "recipe"] as const)("retains catalog sample-caption advice for %s connected visuals", (kind) => {
+    const items = block("aba", true).items.map(({ lane: _lane, ...item }) => item);
+    const connected: SectionedViewItemsBlock = kind === "direct"
+      ? { type: "items", arrangement: "columns", order: "connected", items }
+      : { type: "items", recipe: "steps", items };
+    const warning = laneCode("caption-sample");
+    const input = doc({ ...connected, caption: ref("caption") });
+    expect(rules(connected)).toEqual([]);
+    expect(rules({ ...connected, caption: ref("caption") })).toEqual([]);
+    expect(checkSectionVariety(doc(connected), { catalog: true, copyResolver: resolver() }).map((f) => f.rule)).toContain(warning);
+    for (const context of [
+      { catalog: true, copyResolver: resolver({ caption: "Measured results." }) },
+      { catalog: true, copyResolver: () => undefined },
+      { catalog: true, copyResolver: () => { throw new Error("Copy unavailable"); } },
+    ]) expect(checkSectionVariety(input, context).map((f) => f.rule)).toContain(warning);
+    expect(checkSectionVariety(input, { catalog: true, copyResolver: resolver() }).map((f) => f.rule)).not.toContain(warning);
+    expect(checkSectionVariety(input).map((f) => f.rule)).not.toContain(warning);
+  });
   it("distinguishes lanes in variety and gives visuals A, plain B", () => {
     const ordinary = { type: "items", arrangement: "columns", order: "connected", items: block().items.map(({ lane: _lane, ...step }) => step) };
     const page = { ...doc(ordinary), sections: [...doc(ordinary).sections, { ...doc(block()).sections[0]!, id: "actors" }] };

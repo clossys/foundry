@@ -5072,8 +5072,8 @@ to 120 and 40 characters.
 An explicit `end: "continues"` without endLabel resolves consumer
 `steps.continues` through the existing CopyResolver and retains provenance;
 missing copy refuses resolution. `checkSectionVariety` warns about the absent
-visible endLabel. Its explicit catalog context checks sample captions where
-visuals are present. Web rendering and catalog fixtures retain their earlier
+visible endLabel. Its explicit catalog context checks sample captions on connected Items
+blocks with visuals. Web rendering and catalog fixtures retain their earlier
 shapes until the separate renderer migration.
 
 ## Runnable canonical example

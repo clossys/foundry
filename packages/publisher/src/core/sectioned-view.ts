@@ -2180,9 +2180,13 @@ export function checkSectionVariety(input: SectionedViewDocument | readonly Sect
       const path = `${many ? `documents.${documentIndex}.` : ""}sections.${sectionIndex}.block`;
       if (block.end === "continues" && block.endLabel === undefined) findings.push(varietyWarning("sectioned-view-content-steps-end-label", `${path}.endLabel`, `${path} continues; add visible copy naming what follows.`));
       if (context.catalog === true && hasBlockVisual(block)) {
-        let caption: string | undefined;
-        try { if (block.caption !== undefined && typeof context.copyResolver === "function") caption = context.copyResolver(block.caption)?.text; } catch { /* Unavailable copy cannot prove a sample marker. */ }
-        if (typeof caption !== "string" || !/\bsample data\b/i.test(caption)) findings.push(varietyWarning("sectioned-view-content-steps-caption-sample", `${path}.caption`, `${path} has sample visuals; include a Sample data caption.`));
+        let connected = false;
+        try { connected = desugarRecipe(block).order === "connected"; } catch { /* Invalid recipe axes remain validation findings. */ }
+        if (connected) {
+          let caption: string | undefined;
+          try { if (block.caption !== undefined && typeof context.copyResolver === "function") caption = context.copyResolver(block.caption)?.text; } catch { /* Unavailable copy cannot prove a sample marker. */ }
+          if (typeof caption !== "string" || !/\bsample data\b/i.test(caption)) findings.push(varietyWarning("sectioned-view-content-steps-caption-sample", `${path}.caption`, `${path} has sample visuals; include a Sample data caption.`));
+        }
       }
     });
   });
