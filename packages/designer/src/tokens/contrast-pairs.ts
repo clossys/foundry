@@ -684,7 +684,7 @@ const INLINE_CATEGORICAL_EXCEPTION_SLOTS_BY_THEME: Readonly<
 const INLINE_CATEGORICAL_WARN_EXCEPTION: ContrastException = {
   wcagClause: "WCAG 2.2 SC 1.4.11 (Non-text Contrast)",
   compensatingMechanism:
-    "Inline BarChart paths retain a visible legend naming every series, independently of the title, plus direct value labels as applicable, and the required matching table fallback. Static marks remain one accessible chart graphic; the native table disclosure works without JavaScript. BarChart.server.test.tsx pins names, categorical fills, table columns and every value for one, two and eight series.",
+    "Inline BarChart paths retain a visible legend naming every series, independently of the title, plus direct value labels as applicable, and the required matching table fallback. ScatterChart uses distinct equal-area categorical silhouettes, complete direct point labels, matching visible shape keys for two or more declared series, and the complete native table; ScatterChart.test.tsx pins those channels. Static marks remain one accessible chart graphic; the native table disclosure works without JavaScript. BarChart.server.test.tsx pins names, categorical fills, table columns and every value for one, two and eight series.",
   rationale:
     "The real base/sunken ground sweep in chart-ground-contrast.test.ts measures light slots 2/3/4/5 below 3:1: base approximately 2.94/2.58/1.99/2.47, sunken 2.68/2.36/1.82/2.26. These exact ground/slot pairs carry the chart layer's legend/table compensation; every dark slot and the other light slots must clear 3:1 without relief. This is separate from the original raised-surface palette report.",
 };

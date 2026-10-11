@@ -403,3 +403,6 @@ export {
 
 export { RangeChart } from "./charts/RangeChart.js";
 export type { RangeChartProps } from "./charts/RangeChart.js";
+
+export { ScatterChart } from "./charts/ScatterChart.js";
+export type { ScatterChartProps } from "./charts/ScatterChart.js";

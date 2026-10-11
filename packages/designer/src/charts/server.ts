@@ -5,7 +5,7 @@
  * every member eagerly from one module, so `LineChart` — which holds
  * its own hover state via `useState`, touching no third-party library —
  * drags the whole barrel down under React's
- * `react-server` condition even though `ChartFrame`, `BarChart`, `WaterfallChart`, and `Sparkline`
+ * `react-server` condition even though `ChartFrame`, `BarChart`, `WaterfallChart`, `RangeChart`, `ScatterChart`, and `Sparkline`
  * resolve cleanly on their own.
  *
  * MEMBERSHIP IS EMPIRICAL — confirmed by resolving each member's own
@@ -44,3 +44,6 @@ export type { SparklineProps } from "./Sparkline.js";
 
 export { RangeChart } from "./RangeChart.js";
 export type { RangeChartProps } from "./RangeChart.js";
+
+export { ScatterChart } from "./ScatterChart.js";
+export type { ScatterChartProps } from "./ScatterChart.js";

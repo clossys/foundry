@@ -17,13 +17,13 @@
  *
  * `ChartFrame` is the shared container (plot area, axes, grid, legend
  * slot, accessible title/description, table-view fallback) that
- * `BarChart`, `LineChart`, `WaterfallChart`, and `RangeChart` compose; `Sparkline` is the one
+ * `BarChart`, `LineChart`, `WaterfallChart`, `RangeChart`, and `ScatterChart` compose; `Sparkline` is the one
  * exception (see its own doc comment for why it doesn't use `ChartFrame`).
  *
  * The scale helpers and color-slot assignment (`internal/scale.ts`,
  * `internal/chart-vars.ts`) are deliberately NOT exported here, the same
  * way `atoms/internal/cx.ts` and `atoms/internal/ui-vars.ts` never appear
- * in `atoms/index.ts` — this layer ships six components, not a general
+ * in `atoms/index.ts` — this layer ships seven components, not a general
  * numerical/color library.
  */
 
@@ -59,3 +59,6 @@ export type { SparklineProps } from "./Sparkline.js";
 
 export { RangeChart } from "./RangeChart.js";
 export type { RangeChartProps } from "./RangeChart.js";
+
+export { ScatterChart } from "./ScatterChart.js";
+export type { ScatterChartProps } from "./ScatterChart.js";

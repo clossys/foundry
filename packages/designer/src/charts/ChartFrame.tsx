@@ -2,6 +2,7 @@ import { useId, type CSSProperties, type ReactNode } from "react";
 import { cx } from "../atoms/internal/cx.js";
 import { CHART_AXIS, CHART_AXIS_LABEL, CHART_FONT_BODY, CHART_GRID } from "./internal/chart-vars.js";
 import { CHART_HAIRLINE, CHART_INLINE_AXIS_LABEL } from "./internal/marks.js";
+import { scatterGlyph } from "./internal/scatter-geometry.js";
 
 export interface ChartMargin {
   readonly top: number;
@@ -27,6 +28,8 @@ export interface ChartAxisTick {
 export interface ChartLegendItem {
   readonly label: string;
   readonly color: string;
+  /** Optional shape key; omission retains the existing color swatch. */
+  readonly mark?: "circle" | "square" | "diamond" | "triangle";
 }
 
 export interface ChartTableSpec {
@@ -80,11 +83,10 @@ export interface ChartFrameProps {
 }
 
 /**
- * The shared container every chart in this layer composes: plot area, axes,
+ * The shared container for full chart compositions: plot area, axes,
  * grid, an optional legend, an accessible SVG title/description, and a
- * table-view fallback. `BarChart`, `LineChart`, and `Sparkline` all render
- * their marks through this (`Sparkline` with grid/ticks/legend/table all
- * omitted — see its own doc comment for why that's still correct here).
+ * table-view fallback. `BarChart`, `LineChart`, `WaterfallChart`, `RangeChart`,
+ * and `ScatterChart` render their marks through this.
  */
 export function ChartFrame({
   title,
@@ -113,6 +115,7 @@ export function ChartFrame({
     height: Math.max(0, height - m.top - m.bottom),
   };
   const showLegend = (legend?.length ?? 0) >= (showSingleSeriesLegend ? 1 : 2);
+  const hasMarkedLegend = legend?.some(item => item.mark !== undefined) ?? false;
 
   return (
     <figure className={cx("m-0 flex flex-col gap-sm", className)} style={style}>
@@ -176,12 +179,25 @@ export function ChartFrame({
 
       {showLegend ? (
         <ul data-chart-part="legend" className="m-0 flex list-none flex-wrap gap-md p-0 text-body-s text-ink-secondary font-body">
-          {legend!.map((item) => (
-            <li key={item.label} className="inline-flex items-center gap-xs">
-              <span aria-hidden="true" className="inline-block h-3 w-3 rounded-subtle" style={{ backgroundColor: item.color }} />
-              {item.label}
-            </li>
-          ))}
+          {legend!.map((item, index) => {
+            const glyph = item.mark === undefined ? undefined : scatterGlyph(item.mark, 6, 6, 6);
+            return (
+              <li key={hasMarkedLegend ? `${index}:${item.label}` : item.label} className="inline-flex items-center gap-xs">
+                {glyph ? (
+                  <svg aria-hidden="true" focusable="false" width={12} height={12} viewBox="0 0 12 12" className="inline-block h-3 w-3 shrink-0">
+                    {item.mark === "circle" ? (
+                      <circle data-chart-marker={item.mark} cx={6} cy={6} r={glyph.radius} fill={item.color} />
+                    ) : (
+                      <path data-chart-marker={item.mark} d={glyph.path} fill={item.color} />
+                    )}
+                  </svg>
+                ) : (
+                  <span aria-hidden="true" className="inline-block h-3 w-3 rounded-subtle" style={{ backgroundColor: item.color }} />
+                )}
+                {item.label}
+              </li>
+            );
+          })}
         </ul>
       ) : null}
 

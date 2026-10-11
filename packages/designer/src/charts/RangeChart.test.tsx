@@ -25,7 +25,7 @@ const props: RangeChartProps = { title: "Sample schedule", description: "Four au
 // ChartFrame's existing x48/width296 plot inside the same 360-unit viewBox.
 const plot = { x: 16, y: 16, width: 328, height: 72 };
 const sourceDir = dirname(fileURLToPath(import.meta.url));
-const SERVER_EXPORTS_BEFORE_RANGE = ["ChartFrame", "BarChart", "LineChart", "Sparkline", "WaterfallChart"];
+const SERVER_EXPORTS_WITHOUT_RANGE = ["ChartFrame", "BarChart", "LineChart", "ScatterChart", "Sparkline", "WaterfallChart"];
 
 function elementProps(node: ReactNode): Record<string, unknown>[] {
   if (Array.isArray(node)) return node.flatMap(elementProps);
@@ -321,13 +321,13 @@ describe("RangeChart public and compiled server membership", () => {
     expect(Charts.RangeChart).toBe(RangeChart);
     expect(ServerCharts.RangeChart).toBe(RangeChart);
     // Synchronize with the existing exact render-environment.test.ts pin.
-    expect(Object.keys(ServerCharts).sort()).toEqual([...SERVER_EXPORTS_BEFORE_RANGE, "RangeChart"].sort());
+    expect(Object.keys(ServerCharts).sort()).toEqual([...SERVER_EXPORTS_WITHOUT_RANGE, "RangeChart"].sort());
   });
 
   it("resolves fresh compiled component and server barrel under react-server", () => {
     const component = resolve(sourceDir, "../../dist/charts/RangeChart.js");
     const barrel = resolve(sourceDir, "../../dist/charts/server.js");
-    const expected = [...SERVER_EXPORTS_BEFORE_RANGE, "RangeChart"].sort();
+    const expected = [...SERVER_EXPORTS_WITHOUT_RANGE, "RangeChart"].sort();
     const script = `
       const a = await import(${JSON.stringify(component)});
       const b = await import(${JSON.stringify(barrel)});
