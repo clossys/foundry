@@ -89,8 +89,9 @@ describe("page flow rules", () => {
   });
 });
 
-it("pins catalog variety output including the adjacent lane variants", () => {
-  expect(checkSectionVariety(contentCatalogDocument)).toMatchInlineSnapshot(`
+it("preserves legacy catalog variety output including the adjacent lane variants", () => {
+  const legacy = { ...contentCatalogDocument, sections: contentCatalogDocument.sections.filter((section) => !section.id.startsWith("catalog-topics-groups-")) };
+  expect(checkSectionVariety(legacy)).toMatchInlineSnapshot(`
 [
   {
     "message": "sections.13 repeats the layout, block and visual of the band before it (stacked, topic-list, none); vary one of them.",

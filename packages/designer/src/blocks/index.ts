@@ -124,7 +124,7 @@ export type { CardGridProps, CardGridItem, CardGridSpan, CardGridHeadingLevel } 
 export { Comparison } from "./Comparison.js";
 export type { ComparisonProps, ComparisonSide, ComparisonHeadingLevel } from "./Comparison.js";
 export { TopicList } from "./TopicList.js";
-export type { TopicListProps, TopicListItem, TopicListColumns } from "./TopicList.js";
+export type { TopicListProps, TopicListItem, TopicListColumns, TopicListGroup } from "./TopicList.js";
 export { Specimen } from "./specimen/Specimen.js";
 export type { SpecimenProps, SpecimenArrangement } from "./specimen/Specimen.js";
 export { SpecimenPanel } from "./specimen/SpecimenPanel.js";

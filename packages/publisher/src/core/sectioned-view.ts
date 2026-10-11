@@ -618,12 +618,17 @@ export interface SectionedViewComparisonBlock {
   after: SectionedViewComparisonSide;
 }
 
-/** Many short, scannable items: 2-8 items, an even count in 2 columns. `columns` defaults to 2. */
-export interface SectionedViewTopicListBlock {
-  type: "topic-list";
-  columns?: 1 | 2;
+/** A labelled category in a topic list; its resolved label holds at most 24 characters. */
+export interface SectionedViewTopicGroup {
+  id: string;
+  label: CopyRef;
   items: SectionedViewContentItem[];
 }
+
+/** A flat topic list or 2-4 labelled groups, with at most 12 topics overall. */
+export type SectionedViewTopicListBlock =
+  | { type: "topic-list"; columns?: 1 | 2; items: SectionedViewContentItem[]; groups?: never }
+  | { type: "topic-list"; groups: SectionedViewTopicGroup[]; items?: never; columns?: never };
 
 /** A process of 3-4 steps. */
 export interface SectionedViewOrderedStepSequenceBlock {
@@ -1393,6 +1398,7 @@ function validateContentSection(section: Record<string, unknown>, path: string, 
       findings.push(finding("sectioned-view-content-text-split", `${path}.block`, `${path} is a text-only split; its feature-grid block takes the visual column, so it needs columns: 2 and item emphasis.`));
     }
   }
+  if (split && isPlainObject(section.block) && section.block.type === "topic-list" && section.block.groups !== undefined) findings.push(finding("sectioned-view-content-topics-groups-layout", `${path}.block`, `${path}.block with groups needs a stacked section.`));
   validateContentActionPlacement(section, path, findings);
   if (split && isPlainObject(section.block) && section.block.type === "ordered-step-sequence" && section.block.lanes !== undefined) findings.push(finding("sectioned-view-content-steps-lanes-layout", `${path}.block`, `${path}.block with lanes needs a stacked section.`));
   if (section.block !== undefined) validateContentBlock(section.block, `${path}.block`, findings);
@@ -1535,7 +1541,43 @@ function validateContentBlock(value: unknown, path: string, findings: ComposeFin
       return;
     }
     case "topic-list": {
-      validateBlockKeys(value, ["type", "columns", "items"], ["items"], path, findings);
+      validateBlockKeys(value, ["type", "columns", "items", "groups"], [], path, findings);
+      if ((value.items === undefined) === (value.groups === undefined)) {
+        findings.push(finding("sectioned-view-content-topics-groups-shape", path, `${path} needs exactly one of items or groups.`));
+        return;
+      }
+      if (value.groups !== undefined) {
+        const groupsPath = `${path}.groups`;
+        if (value.columns !== undefined) findings.push(finding("sectioned-view-content-topics-groups-columns", path, `${path} with groups derives its columns from the group count.`));
+        if (!Array.isArray(value.groups)) {
+          findings.push(finding("sectioned-view-content-topics-groups-shape", groupsPath, `${groupsPath} must be an array of labelled groups.`));
+          return;
+        }
+        validateDenseArray(value.groups, groupsPath, findings, "sectioned-view-content-topics-groups-shape", `${groupsPath} must be a dense array of groups.`);
+        if (value.groups.length < 2 || value.groups.length > 4) findings.push(finding("sectioned-view-content-topics-groups-count", groupsPath, `${groupsPath} needs 2-4 groups.`));
+        validateItemIds(value.groups, groupsPath, findings);
+        const allItems: unknown[] = [];
+        const itemIds = new Set<string>();
+        value.groups.forEach((group, index) => {
+          const groupPath = `${groupsPath}.${index}`;
+          if (!isPlainObject(group) || !hasEnumerableOwnDataKeys(group) || !hasOnlyOwnKeys(group, ["id", "label", "items"]) || !hasOwnKeys(group, ["id", "label", "items"]) || !isNonWhitespaceString(group.id)) {
+            findings.push(finding("sectioned-view-content-topics-groups-shape", groupPath, `${groupPath} must be a plain group with id, label and items.`));
+            return;
+          }
+          validateCopy(group.label, `${groupPath}.label`, findings);
+          if (!Array.isArray(group.items) || group.items.length < 2 || group.items.length > 4) findings.push(finding("sectioned-view-content-topics-groups-count", `${groupPath}.items`, `${groupPath}.items needs 2-4 topics.`));
+          validateRecords(group.items, `${groupPath}.items`, findings, { min: 2, max: 4 }, CONTENT_ITEM_KEYS, ["heading"], (item, itemPath) => {
+            validateContentItemFields(item, itemPath, findings);
+            validateItemHref(item, itemPath, findings);
+            if (itemIds.has(item.id as string)) findings.push(finding("sectioned-view-item-id-duplicate", `${itemPath}.id`, `${itemPath}.id duplicates another topic id in ${groupsPath}.`));
+            itemIds.add(item.id as string);
+          });
+          if (Array.isArray(group.items)) allItems.push(...group.items);
+        });
+        if (allItems.length > 12) findings.push(finding("sectioned-view-content-topics-groups-count", groupsPath, `${groupsPath} holds ${allItems.length} topics; it holds at most 12.`));
+        validateLinkGroup(allItems, groupsPath, findings);
+        return;
+      }
       validateEnumField(value, "columns", TOPIC_LIST_COLUMNS, "sectioned-view-content-block-option", path, findings);
       validateRecords(value.items, `${path}.items`, findings, { min: 2, max: 8 }, CONTENT_ITEM_KEYS, ["heading"], (item, itemPath) => {
         validateContentItemFields(item, itemPath, findings);
@@ -2085,6 +2127,16 @@ function resolveContentBlock(block: SectionedViewContentBlock, path: string, tex
         }),
       } as ResolvedSectionedViewContentBlock;
     case "topic-list":
+      if (block.groups !== undefined) return {
+        ...block,
+        groups: block.groups.map((group, index) => {
+          const groupPath = `${path}.groups.${index}`;
+          const label = text(group.label, `${groupPath}.label`);
+          const length = [...label.trim()].length;
+          if (length > 24) throw new SectionedViewResolutionError("invalid-document", `resolveSectionedViewDocument refused invalid document: sectioned-view-content-topics-groups-text-length: ${groupPath}.label resolves to ${length} characters; it holds at most 24.`);
+          return { ...group, label, items: group.items.map((item, itemIndex) => resolveContentItem(item, `${groupPath}.items.${itemIndex}`, text)) };
+        }),
+      } as ResolvedSectionedViewContentBlock;
       return { ...block, items: block.items.map((item, index) => resolveContentItem(item, `${path}.items.${index}`, text)) } as ResolvedSectionedViewContentBlock;
     case "card-grid":
       return {
@@ -2189,7 +2241,9 @@ interface BandShape {
 }
 
 function hasLinkedItems(block: SectionedViewContentBlock | undefined): boolean {
-  if (block === undefined || !("items" in block) || !Array.isArray(block.items)) return false;
+  if (block === undefined) return false;
+  if (block.type === "topic-list" && Array.isArray(block.groups)) return block.groups.some((group) => Array.isArray(group.items) && group.items.some((item) => isPlainObject(item) && item.href !== undefined));
+  if (!("items" in block) || !Array.isArray(block.items)) return false;
   return (block.items as readonly unknown[]).some((item) => isPlainObject(item) && item.href !== undefined);
 }
 
@@ -2211,7 +2265,7 @@ function blockTreatment(block: SectionedViewContentBlock): string {
     case "feature-grid":
       return `${block.treatment ?? "plain"}/${block.emphasis ?? "item"}`;
     case "topic-list":
-      return `columns-${block.columns ?? 2}`;
+      return block.groups === undefined ? `columns-${block.columns ?? 2}` : `groups-${block.groups.length}`;
     case "ordered-step-sequence":
       return `${block.lanes === undefined ? "" : "lanes/"}${hasBlockVisual(block) ? "visual" : "plain"}`;
     default:
@@ -2307,6 +2361,11 @@ export function checkSectionVariety(input: SectionedViewDocument | readonly Sect
   documents.forEach((document, documentIndex) => {
     if (!Array.isArray(document?.sections)) return;
     document.sections.forEach((section, sectionIndex) => {
+      if (section.kind === "content-section" && section.block?.type === "topic-list" && Array.isArray(section.block.groups)) {
+        const counts = section.block.groups.map((group) => Array.isArray(group.items) ? group.items.length : 0);
+        const rows = counts.length === 4 ? [counts.slice(0, 2), counts.slice(2)] : [counts];
+        if (rows.some((row) => new Set(row).size > 1)) findings.push(varietyWarning("sectioned-view-content-topics-groups-balance", `${many ? `documents.${documentIndex}.` : ""}sections.${sectionIndex}.block.groups`, "Topic groups sharing a row should hold the same number of items."));
+      }
       if (section.kind !== "content-section" || section.block?.type !== "ordered-step-sequence") return;
       const block = section.block;
       const path = `${many ? `documents.${documentIndex}.` : ""}sections.${sectionIndex}.block`;

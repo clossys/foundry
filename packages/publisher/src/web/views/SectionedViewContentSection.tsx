@@ -148,6 +148,7 @@ function renderBlock(block: ResolvedSectionedViewContentBlock, ground: Sectioned
       return <Comparison before={side(block.before)} after={side(block.after)} headingLevel={3} ground={ground} />;
     }
     case "topic-list":
+      if (block.groups !== undefined) return <TopicList groups={block.groups.map((group) => ({ id: group.id, label: group.label, items: group.items.map((item) => ({ id: item.id, icon: icon(item.icon), heading: item.heading, description: item.description, href: item.href })) }))} ground={ground} />;
       return (
         <TopicList
           items={block.items.map((item) => ({ id: item.id, icon: icon(item.icon), heading: item.heading, description: item.description, href: item.href }))}

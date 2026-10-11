@@ -3498,6 +3498,14 @@ below. An even count reads best in two columns. No check marks: a topic
 list states coverage, not progress. Optional icons are `aria-hidden` and
 muted.
 
+**Grouped topics.** Use `groups` instead of `items`: 2-4 `TopicListGroup`s,
+each `{ id, label, items }` with 2-4 rows, at most 12 rows overall. Groups
+are categories readers scan for, with short labels. Two and four groups use
+two columns from `tablet`; three stay stacked until `tablet-lg`. Each group
+is named by its own heading (`headingLevel` 3 by default, or 4). Grouped
+lists refuse `columns`; the count determines the layout. The first row has
+no hairline, and the last has no bottom padding.
+
 **Linked items.** `FeatureGrid` (item emphasis), `CardGrid`, `TopicList` and
 `OrderedStepSequence` items each take an optional `href`. A linked item's
 title holds its one `<a href>` (`data-card-link`), so the link's accessible
@@ -5518,9 +5526,10 @@ not a grab-bag).
 | `ComparisonSide` | type | One side: `label`, `heading?`, `description?`, `points?`, `visual?`. |
 | `ComparisonHeadingLevel` | type | `2 \| 3 \| 4 \| 5 \| 6`. |
 | `TopicList` | component | Hairline-ruled list of short topics in one or two columns. |
-| `TopicListProps` | type | Props for `TopicList`: `items`, `columns`, `ground`, `className`, `style`, plus every native `<ul>` attribute except `title`. |
+| `TopicListProps` | type | Closed `items`/`groups` props; flat lists take `columns` and native `<ul>` attributes, groups take `headingLevel` and native `<div>` attributes; both take `ground`, `className`, `style`. |
 | `TopicListItem` | type | One topic: `id`, `icon?`, `heading`, `description?`, `href?` (a linked row). |
 | `TopicListColumns` | type | `1 \| 2`. |
+| `TopicListGroup` | type | A labelled category: `id`, `label`, and `items`. |
 | `Specimen` | component | Labelled figure of 1 to 3 static product-UI panels (`single`, `row`, `stack`, `flow`); budgets validated. |
 | `SpecimenProps` | type | Props for `Specimen`: `label`, `arrangement`, `connector`, `panels`, `className`, `style`, plus native `<figure>` attributes except `children`, `title`, `aria-label` and `aria-labelledby`. |
 | `SpecimenArrangement` | type | `"single" \| "row" \| "stack" \| "flow"`. |

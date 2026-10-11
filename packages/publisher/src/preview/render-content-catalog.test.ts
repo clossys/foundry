@@ -17,6 +17,23 @@ describe("content catalog fixture", () => {
     expect(resolved.sections).toHaveLength(contentCatalogDocument.sections.length);
   });
 
+  it("shows balanced grouped fixtures with exact IDs, group layouts and catalog counts", () => {
+    expect(contentCatalogDocument.sections).toHaveLength(26);
+    expect(CONTENT_CATALOG_CAPTIONS).toHaveLength(27);
+    const grouped = resolvedContent.filter((section) => section.block?.type === "topic-list" && section.block.groups !== undefined);
+    expect(grouped.map((section) => section.id)).toEqual(["catalog-topics-groups-4", "catalog-topics-groups-3"]);
+    for (const section of grouped) {
+      if (section.block?.type !== "topic-list" || section.block.groups === undefined) throw new Error("Expected groups");
+      expect(section.block.groups.map((group) => group.items.length)).toEqual(section.id.endsWith("4") ? [2, 2, 2, 2] : [2, 2, 2]);
+      expect(new Set(section.block.groups.flatMap((group) => group.items.map((item) => item.id))).size).toBe(section.id.endsWith("4") ? 8 : 6);
+    }
+    const dom = new JSDOM(renderContentCatalogMarkup()).window.document;
+    expect(dom.querySelector("#catalog-topics-groups-4 [data-topic-list]")).toHaveClass("tablet:grid-cols-2");
+    expect(dom.querySelector("#catalog-topics-groups-3 [data-topic-list]")).toHaveClass("tablet-lg:grid-cols-3");
+    expect(dom.querySelectorAll("#catalog-topics-groups-4 h3")).toHaveLength(4);
+    expect(dom.querySelector("#catalog-topics-groups-4 [data-content-section-footnote] a")?.getAttribute("href")).toBe("mailto:help@example.com");
+  });
+
   it("shows every block, treatment, column count, arrangement, layout and ground", () => {
     const blocks = new Set(contentSections.map((section) => section.block?.type ?? (section.media === undefined ? "intro" : "specimen")));
     expect([...blocks].sort()).toEqual(["card-grid", "comparison", "faq", "feature-grid", "intro", "ordered-step-sequence", "specimen", "topic-list"]);
@@ -109,9 +126,9 @@ describe("content catalog fixture", () => {
     for (const finding of findings) {
       expect(["sectioned-view-variety-card-bands", "sectioned-view-variety-comparison-count", "sectioned-view-variety-treatment", "sectioned-view-variety-repeat"]).toContain(finding.rule);
     }
-    // Adjacent variants deliberately repeat: linked topics and the visual/plain lane pair.
+    // Adjacent variants deliberately repeat: linked/grouped topics and the visual/plain lane pair.
     const linkedAt = contentCatalogDocument.sections.findIndex((section) => section.id === "catalog-topics-linked");
-    expect(findings.filter((finding) => finding.rule === "sectioned-view-variety-repeat").map((finding) => finding.path)).toEqual([`sections.${linkedAt}`, `sections.${contentCatalogDocument.sections.findIndex((section) => section.id === "catalog-steps-lanes-plain")}`]);
+    expect(findings.filter((finding) => finding.rule === "sectioned-view-variety-repeat").map((finding) => finding.path)).toEqual([`sections.${linkedAt}`, ...["catalog-topics-groups-4", "catalog-topics-groups-3", "catalog-steps-lanes-plain"].map((id) => `sections.${contentCatalogDocument.sections.findIndex((section) => section.id === id)}`)]);
   });
 
   it("shows the two lane tracks with exact actor joins and terminal semantics", () => {
@@ -197,7 +214,7 @@ describe("content catalog fixture", () => {
           }
           break;
         case "topic-list":
-          for (const item of block.items) {
+          for (const item of block.groups === undefined ? block.items : block.groups.flatMap((group) => group.items)) {
             expect(words(item.heading), `${at} ${item.id}`).toBeLessThanOrEqual(5);
             expect(words(item.description), `${at} ${item.id}`).toBeLessThanOrEqual(12);
           }

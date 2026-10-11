@@ -559,11 +559,20 @@ accepted type; a retired short type name inside `block` is refused with
   `comparison` (a `before` and an `after` side of the same form — a
   description each, or the same number of 2-4 points — and a panel `visual`
   on both or neither), `topic-list` (2-8 items; an even count in the default
-  2 columns), `ordered-step-sequence` (3-4 steps, each with an optional panel
+  2 columns, or 2-4 labelled `groups`), `ordered-step-sequence` (3-4 steps, each with an optional panel
   `visual`) or `faq` (4-6 items). Block shape and option errors use
   `sectioned-view-content-block-shape`, `sectioned-view-content-block-type`
   and `sectioned-view-content-block-option`; a specimen part's options use
   `sectioned-view-specimen-part-option`.
+- A topic list uses exactly one of `items` or `groups`. Each
+  `SectionedViewTopicGroup` holds `{ id, label, items }`, with a CopyRef label
+  resolving to at most 24 characters and 2-4 items; all groups together hold
+  at most 12 items. Groups refuse `columns` and split sections. Two and four
+  groups use two columns from tablet; three use three from tablet-lg.
+  Unequal item counts in a shared row produce a balance warning. Item IDs
+  and linked destinations are unique across the whole grouped block; every
+  row links or none, with at most six linked rows. Groups retain B weight and
+  airy density.
 - `media` is a `specimen`: a labelled arrangement (`single` with one panel,
   or `row`, `stack` or `flow` with 2-3; only `flow` takes a `connector`) of
   panels. A panel has a title, optional meta, status and footer, and 1-3
@@ -4296,7 +4305,7 @@ app styles Publisher's views with its own build (see
   `SectionedViewContentBlock`, `SectionedViewContentBlockType`,
   `SectionedViewFeatureGridBlock`, `SectionedViewFeatureGridTreatment`,
   `SectionedViewFeatureGridEmphasis`, `SectionedViewCardGridBlock`,
-  `SectionedViewComparisonBlock`, `SectionedViewTopicListBlock`,
+  `SectionedViewComparisonBlock`, `SectionedViewTopicListBlock`, `SectionedViewTopicGroup`,
   `SectionedViewOrderedStepSequenceBlock`, `SectionedViewFaqBlock`,
   `ResolvedSectionedViewContentSection`, `ResolvedSectionedViewContentBlock`,
   the specimen types `SectionedViewSpecimenMedia`,

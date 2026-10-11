@@ -168,6 +168,12 @@ Write facts on both sides. Do not caricature the "before" side.
 **TopicList** (`topic-list`). Each item is a heading of 2-5 words and a line of 4-12 words. In 2
 columns, use 4-8 items, an even count. In 1 column beside a specimen, use 3-4
 items. Use a topic list for scannable coverage. Do not use them for arguments.
+Use labelled `groups` when categories matter or the list has more than six
+items: 2-4 groups, 2-4 items each, at most 12 overall. Labels are one or two
+words, at most 24 resolved characters. Balance counts within each row.
+Groups require a stacked section; two and four groups use two columns from
+tablet, three use three columns from tablet-lg. Link all rows or none across
+the whole block, at most six unique destinations.
 
 **OrderedStepSequence** (`ordered-step-sequence`). 3-4 steps. Each step has an ordinal ("01"), a heading of 1-2
 words (a verb), a line of 6-14 words, an optional actor of 1-2 words and an
