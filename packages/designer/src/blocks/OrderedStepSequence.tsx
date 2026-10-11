@@ -1,4 +1,6 @@
-import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
+import { Children, Fragment, isValidElement, type CSSProperties, type HTMLAttributes, type ReactNode } from "react";
+import { Icon } from "../atoms/Icon.js";
+import { ArrowRight } from "../icons/ArrowRight.js";
 import { cx } from "../atoms/internal/cx.js";
 import { SECTION_GROUND_CLASSES, type SectionGround } from "./section-ground.js";
 import { assertNoNestedInteractive, CardLinkTitle, cardLinkContainerClassName } from "./stretched-link.js";
@@ -7,6 +9,8 @@ export type OrderedStepSequenceHeadingLevel = 2 | 3 | 4 | 5 | 6;
 export type OrderedStepSequenceGround = SectionGround;
 
 export interface OrderedStepSequenceItem {
+  /** Actor lane, only when the sequence names two lanes. */
+  lane?: "a" | "b";
   /** Stable identifier — the React key. */
   id: string;
   /** Authored ordinal, exposed as text rather than generated decoration. */
@@ -41,6 +45,17 @@ export interface OrderedStepSequenceProps extends Omit<HTMLAttributes<HTMLElemen
   description?: ReactNode;
   /** Ordered, editorial steps. Their source order is their reading order. */
   items: readonly OrderedStepSequenceItem[];
+  /** Two named actors; each step uses its lane name in place of label. */
+  lanes?: { a: ReactNode; b: ReactNode };
+  /** Real heading id naming the ordered list. */
+  labelledBy?: string;
+  /** Visual sample or source caption, outside the list. */
+  caption?: ReactNode;
+  /** Opts an ordinary sequence into a final connector. Lanes default to ends. */
+  end?: "continues" | "ends";
+  endLabel?: ReactNode;
+  /** Consumer-resolved hidden text for an unlabelled continuing end. */
+  continuesLabel?: ReactNode;
   /** Which heading element the sequence heading uses; item headings render one rank lower, capped at h6. @default 2 */
   headingLevel?: OrderedStepSequenceHeadingLevel;
   /** The ground this block is placed on; it selects matching connector and ink tokens. @default "base" */
@@ -58,10 +73,10 @@ export interface OrderedStepSequenceProps extends Omit<HTMLAttributes<HTMLElemen
  * marks progress, so it carries the accent), an inverse-line ring with
  * on-inverse ink on an inverse band.
  */
-const STEP_LINE_CLASSES: Record<SectionGround, { line: string; ordinal: string }> = {
-  base: { line: "bg-line-strong", ordinal: "bg-accent-tint text-accent-text" },
-  sunken: { line: "bg-line-strong", ordinal: "bg-accent-tint text-accent-text" },
-  inverse: { line: "bg-line-on-inverse", ordinal: "border border-line-on-inverse text-ink-on-inverse" },
+const STEP_LINE_CLASSES: Record<SectionGround, { line: string; border: string; ink: string; ordinal: string }> = {
+  base: { line: "bg-line-strong", border: "border-line-strong", ink: "text-line-strong", ordinal: "bg-accent-tint text-accent-text" },
+  sunken: { line: "bg-line-strong", border: "border-line-strong", ink: "text-line-strong", ordinal: "bg-accent-tint text-accent-text" },
+  inverse: { line: "bg-line-on-inverse", border: "border-line-on-inverse", ink: "text-line-on-inverse", ordinal: "border border-line-on-inverse text-ink-on-inverse" },
 };
 
 /**
@@ -87,6 +102,56 @@ const LAYOUT_CLASSES = {
     gap: "pb-xl",
   },
 } as const;
+
+/** Lane geometry uses a half-gap handoff: outgoing and incoming pieces meet there. */
+const LANE_LAYOUTS = {
+  3: {
+    list: "flex flex-col gap-2xl pb-xl tablet-lg:grid tablet-lg:grid-cols-3 tablet-lg:pb-0",
+    item: "relative flex min-w-0 flex-col ps-[calc(var(--spacing-2xl)+var(--spacing-lg))] tablet-lg:ps-0",
+    lower: "ms-xl tablet-lg:ms-0 tablet-lg:mt-4xl",
+    marker: "absolute start-0 top-0 tablet-lg:relative tablet-lg:flex tablet-lg:items-center",
+    label: "absolute start-[calc(var(--spacing-2xl)+var(--spacing-lg))] top-0 tablet-lg:static tablet-lg:ms-sm",
+    body: "flex min-w-0 flex-col gap-lg mt-2xl tablet-lg:mt-lg",
+    connector: "absolute start-[calc(var(--spacing-2xl)/2)] top-2xl -bottom-[calc(var(--spacing-2xl)/2)] w-[length:var(--ui-border-hairline)] tablet-lg:top-[calc(var(--spacing-2xl)/2)] tablet-lg:bottom-auto tablet-lg:start-[calc(var(--spacing-2xl)/2)] tablet-lg:h-[length:var(--ui-border-hairline)] tablet-lg:w-full",
+    final: "-bottom-xl tablet-lg:w-[calc(100%_-_var(--spacing-2xl)/2)]",
+    join: "tablet-lg:-start-[calc(var(--spacing-2xl)/2)] tablet-lg:w-2xl",
+    same: "start-[calc(var(--spacing-2xl)/2)] w-0 border-s-[length:var(--ui-border-hairline)] tablet-lg:top-[calc(var(--spacing-2xl)/2)] tablet-lg:h-0 tablet-lg:border-s-0 tablet-lg:border-t-[length:var(--ui-border-hairline)]",
+    down: "start-[calc(var(--spacing-2xl)/2_-_var(--spacing-xl))] w-xl border-t-[length:var(--ui-border-hairline)] border-e-[length:var(--ui-border-hairline)] [border-start-end-radius:var(--radius-control)] tablet-lg:top-[calc(var(--spacing-2xl)/2_-_var(--spacing-4xl))] tablet-lg:h-4xl tablet-lg:border-t-0 tablet-lg:border-e-0 tablet-lg:border-s-[length:var(--ui-border-hairline)] tablet-lg:border-b-[length:var(--ui-border-hairline)] tablet-lg:[border-start-end-radius:0] tablet-lg:[border-end-start-radius:var(--radius-control)]",
+    up: "start-[calc(var(--spacing-2xl)/2)] w-xl border-t-[length:var(--ui-border-hairline)] border-s-[length:var(--ui-border-hairline)] [border-start-start-radius:var(--radius-control)] tablet-lg:top-[calc(var(--spacing-2xl)/2)] tablet-lg:h-4xl",
+    end: "absolute start-1/2 bottom-0 -translate-x-1/2 translate-y-1/2 rtl:translate-x-1/2 tablet-lg:start-auto tablet-lg:end-0 tablet-lg:top-1/2 tablet-lg:bottom-auto tablet-lg:translate-x-1/2 tablet-lg:-translate-y-1/2 tablet-lg:rtl:-translate-x-1/2",
+    arrow: "rotate-90 tablet-lg:rotate-0 tablet-lg:rtl:rotate-180",
+    endLabel: "absolute start-[calc(var(--spacing-2xl)+var(--spacing-lg))] -bottom-xl tablet-lg:start-auto tablet-lg:end-0 tablet-lg:bottom-auto tablet-lg:top-0 tablet-lg:-translate-y-full",
+  },
+  5: {
+    list: "flex flex-col gap-2xl pb-xl desktop:grid desktop:grid-cols-5 desktop:pb-0",
+    item: "relative flex min-w-0 flex-col ps-[calc(var(--spacing-2xl)+var(--spacing-lg))] desktop:ps-0",
+    lower: "ms-xl desktop:ms-0 desktop:mt-4xl",
+    marker: "absolute start-0 top-0 desktop:relative desktop:flex desktop:items-center",
+    label: "absolute start-[calc(var(--spacing-2xl)+var(--spacing-lg))] top-0 desktop:static desktop:ms-sm",
+    body: "flex min-w-0 flex-col gap-lg mt-2xl desktop:mt-lg",
+    connector: "absolute start-[calc(var(--spacing-2xl)/2)] top-2xl -bottom-[calc(var(--spacing-2xl)/2)] w-[length:var(--ui-border-hairline)] desktop:top-[calc(var(--spacing-2xl)/2)] desktop:bottom-auto desktop:start-[calc(var(--spacing-2xl)/2)] desktop:h-[length:var(--ui-border-hairline)] desktop:w-full",
+    final: "-bottom-xl desktop:w-[calc(100%_-_var(--spacing-2xl)/2)]",
+    join: "desktop:-start-[calc(var(--spacing-2xl)/2)] desktop:w-2xl",
+    same: "start-[calc(var(--spacing-2xl)/2)] w-0 border-s-[length:var(--ui-border-hairline)] desktop:top-[calc(var(--spacing-2xl)/2)] desktop:h-0 desktop:border-s-0 desktop:border-t-[length:var(--ui-border-hairline)]",
+    down: "start-[calc(var(--spacing-2xl)/2_-_var(--spacing-xl))] w-xl border-t-[length:var(--ui-border-hairline)] border-e-[length:var(--ui-border-hairline)] [border-start-end-radius:var(--radius-control)] desktop:top-[calc(var(--spacing-2xl)/2_-_var(--spacing-4xl))] desktop:h-4xl desktop:border-t-0 desktop:border-e-0 desktop:border-s-[length:var(--ui-border-hairline)] desktop:border-b-[length:var(--ui-border-hairline)] desktop:[border-start-end-radius:0] desktop:[border-end-start-radius:var(--radius-control)]",
+    up: "start-[calc(var(--spacing-2xl)/2)] w-xl border-t-[length:var(--ui-border-hairline)] border-s-[length:var(--ui-border-hairline)] [border-start-start-radius:var(--radius-control)] desktop:top-[calc(var(--spacing-2xl)/2)] desktop:h-4xl",
+    end: "absolute start-1/2 bottom-0 -translate-x-1/2 translate-y-1/2 rtl:translate-x-1/2 desktop:start-auto desktop:end-0 desktop:top-1/2 desktop:bottom-auto desktop:translate-x-1/2 desktop:-translate-y-1/2 desktop:rtl:-translate-x-1/2",
+    arrow: "rotate-90 desktop:rotate-0 desktop:rtl:rotate-180",
+    endLabel: "absolute start-[calc(var(--spacing-2xl)+var(--spacing-lg))] -bottom-xl desktop:start-auto desktop:end-0 desktop:bottom-auto desktop:top-0 desktop:-translate-y-full",
+  },
+} as const;
+
+/** Inspect ordinary renderable collections without restricting them to one element. */
+function hasMeaningfulLabel(nodes: readonly ReactNode[]): boolean {
+  return nodes.some((node) => {
+    if (typeof node === "string") return node.trim().length > 0;
+    if (typeof node === "number" || typeof node === "bigint") return true;
+    if (!isValidElement(node)) return false;
+    if (node.type === Fragment || typeof node.type === "string") return hasMeaningfulLabel(Children.toArray((node.props as { children?: ReactNode }).children));
+    // Custom components own their rendered content; do not call them here.
+    return true;
+  });
+}
 
 /**
  * An editorial sequence of ordered steps, not a progress control: it has no
@@ -127,6 +192,12 @@ export function OrderedStepSequence({
   heading,
   description,
   items,
+  lanes,
+  labelledBy,
+  caption,
+  end,
+  endLabel,
+  continuesLabel,
   headingLevel = 2,
   ground = "base",
   className,
@@ -143,8 +214,49 @@ export function OrderedStepSequence({
   const withVisuals = items.some((item) => item.visual !== undefined && item.visual !== null && item.visual !== false);
   const layout = LAYOUT_CLASSES[withVisuals ? "visual" : "plain"];
 
+  const foundation = lanes !== undefined || end !== undefined || endLabel !== undefined;
+  const effectiveEnd = end ?? "ends";
+  const ends = effectiveEnd === "ends";
+  const visibleEndLabel = Children.toArray(endLabel);
+  const hiddenEndLabel = Children.toArray(continuesLabel);
+  const hasEndLabel = hasMeaningfulLabel(visibleEndLabel);
+  if (end !== undefined && end !== "ends" && end !== "continues") throw new TypeError("OrderedStepSequence: end must be ends or continues.");
+  if (foundation && effectiveEnd === "continues" && !hasEndLabel && !hasMeaningfulLabel(hiddenEndLabel)) throw new TypeError("OrderedStepSequence: an unlabelled continuing end needs consumer continuesLabel copy.");
+  if (caption !== undefined && !withVisuals) throw new TypeError("OrderedStepSequence: caption needs a step visual.");
+  if (lanes !== undefined) {
+    if (items.length !== 3 && items.length !== 5) throw new RangeError("OrderedStepSequence: lanes need 3 or 5 steps.");
+    if (withVisuals && items.length !== 3) throw new RangeError("OrderedStepSequence: lane visuals need exactly 3 steps.");
+    if (items.some((item) => item.lane !== "a" && item.lane !== "b")) throw new TypeError("OrderedStepSequence: every lane step needs lane a or b.");
+    if (items.some((item) => item.label !== undefined)) throw new TypeError("OrderedStepSequence: lane names replace item labels.");
+    if (items[0]?.lane !== "a" || !items.some((item) => item.lane === "b")) throw new TypeError("OrderedStepSequence: start in lane a and use both actors.");
+  } else if (items.some((item) => item.lane !== undefined)) throw new TypeError("OrderedStepSequence: item lane needs block lanes.");
+  const terminal = (position: string, arrow: string) => (
+    <span aria-hidden="true" data-step-end={effectiveEnd} className={cx(position, ends ? "size-[var(--ui-icon-sm)] rounded-pill" : undefined, ends ? lines.line : lines.ink)}>
+      {effectiveEnd === "continues" ? <Icon glyph={ArrowRight} decorative size="sm" className={arrow} /> : null}
+    </span>
+  );
+  const terminalLabel = (position: string) => hasEndLabel || effectiveEnd === "continues" ? (
+    <span data-step-end-label="" className={cx(hasEndLabel ? position : "sr-only", "text-body-s", colors.secondary)}>{hasEndLabel ? visibleEndLabel : hiddenEndLabel}</span>
+  ) : null;
+  const laneLayout = LANE_LAYOUTS[items.length === 5 ? 5 : 3];
+  // In rail mode bottom:0 is the final li padding edge: content bottom + xl.
+  // Row mode restores an in-flow hairline in the ordinal row.
+  const ordinaryEnd = withVisuals ? {
+    connector: "absolute start-[calc(var(--spacing-2xl)/2)] top-2xl bottom-0 w-[length:var(--ui-border-hairline)] tablet-lg:relative tablet-lg:start-auto tablet-lg:top-auto tablet-lg:bottom-auto tablet-lg:ms-md tablet-lg:-me-md tablet-lg:h-[length:var(--ui-border-hairline)] tablet-lg:w-auto tablet-lg:flex-1",
+    item: "relative pb-xl tablet-lg:pb-0",
+    position: "absolute start-1/2 bottom-0 -translate-x-1/2 translate-y-1/2 rtl:translate-x-1/2 tablet-lg:start-auto tablet-lg:end-0 tablet-lg:top-1/2 tablet-lg:bottom-auto tablet-lg:translate-x-1/2 tablet-lg:-translate-y-1/2 tablet-lg:rtl:-translate-x-1/2",
+    arrow: "rotate-90 tablet-lg:rotate-0 tablet-lg:rtl:rotate-180",
+    label: "absolute start-[calc(var(--spacing-2xl)+var(--spacing-lg))] bottom-0 translate-y-1/2 tablet-lg:start-auto tablet-lg:end-0 tablet-lg:top-0 tablet-lg:bottom-auto tablet-lg:-translate-y-full",
+  } : {
+    connector: "absolute start-[calc(var(--spacing-2xl)/2)] top-2xl bottom-0 w-[length:var(--ui-border-hairline)] tablet:relative tablet:start-auto tablet:top-auto tablet:bottom-auto tablet:ms-md tablet:-me-md tablet:h-[length:var(--ui-border-hairline)] tablet:w-auto tablet:flex-1",
+    item: "relative pb-xl tablet:pb-0",
+    position: "absolute start-1/2 bottom-0 -translate-x-1/2 translate-y-1/2 rtl:translate-x-1/2 tablet:start-auto tablet:end-0 tablet:top-1/2 tablet:bottom-auto tablet:translate-x-1/2 tablet:-translate-y-1/2 tablet:rtl:-translate-x-1/2",
+    arrow: "rotate-90 tablet:rotate-0 tablet:rtl:rotate-180",
+    label: "absolute start-[calc(var(--spacing-2xl)+var(--spacing-lg))] bottom-0 translate-y-1/2 tablet:start-auto tablet:end-0 tablet:top-0 tablet:bottom-auto tablet:-translate-y-full",
+  };
+
   return (
-    <section {...rest} className={cx("flex flex-col gap-lg", colors.surface, className)} style={style}>
+    <section {...rest} className={cx(lanes === undefined ? "flex flex-col gap-lg" : "flex flex-col", colors.surface, className)} style={style}>
       {hasHeadingRegion ? (
         <div className="flex flex-col gap-xs">
           {eyebrow ? <p className={cx("text-caption uppercase tracking-label", colors.muted)}>{eyebrow}</p> : null}
@@ -152,7 +264,39 @@ export function OrderedStepSequence({
           {description ? <p className={cx("text-body", colors.secondary)}>{description}</p> : null}
         </div>
       ) : null}
-      <ol data-step-layout={withVisuals ? "visual" : "plain"} className={layout.list}>
+      {lanes !== undefined ? (
+        <ol data-step-layout={withVisuals ? "visual" : "plain"} data-step-lanes="" aria-labelledby={labelledBy} className={cx(laneLayout.list, hasHeadingRegion ? "mt-lg" : undefined)}>
+          {items.map((item, index) => {
+            const previous = items[index - 1];
+            const join = previous === undefined ? undefined : previous.lane === item.lane ? "same" : item.lane === "b" ? "down" : "up";
+            const last = index === items.length - 1;
+            const actor = lanes[item.lane!];
+            const lowerLane = item.lane === "b";
+            if (item.href !== undefined) assertNoNestedInteractive("OrderedStepSequence", item.id, [actor, item.heading, item.description, item.visual]);
+            return (
+              <li key={item.id} data-lane={item.lane} className={cx(laneLayout.item, lowerLane ? laneLayout.lower : undefined)}>
+                {join === undefined ? null : <span aria-hidden="true" data-step-join={join} className={cx("pointer-events-none absolute -top-[calc(var(--spacing-2xl)/2)] h-2xl", lines.border, laneLayout[join], laneLayout.join)} />}
+                <span aria-hidden="true" data-step-connector="" data-end={last ? effectiveEnd : undefined} className={cx("pointer-events-none", laneLayout.connector, last ? laneLayout.final : undefined, lines.line)}>
+                  {last ? terminal(laneLayout.end, laneLayout.arrow) : null}
+                </span>
+                <div className={laneLayout.marker}>
+                  <span className={cx("relative z-10 flex size-2xl shrink-0 items-center justify-center rounded-pill text-body font-body font-medium tabular-nums", lines.ordinal)}>{item.ordinal}</span>
+                  <p data-step-lane-label="" className={cx("z-10 w-max px-sm text-body-s font-medium uppercase tracking-label", laneLayout.label, colors.secondary, colors.surface || "bg-surface-base")}>{actor}</p>
+                </div>
+                <div className={cx(laneLayout.body, item.href === undefined ? undefined : linkedContainer)}>
+                  <div data-step-text="" className="flex min-w-0 flex-col gap-sm">
+                    <ItemHeadingTag className={cx("text-body-l font-body font-medium", colors.primary)}>{item.href === undefined ? item.heading : <CardLinkTitle href={item.href} frame="plain" ground={ground}>{item.heading}</CardLinkTitle>}</ItemHeadingTag>
+                    {item.description ? <p className={cx("text-body text-pretty", colors.secondary)}>{item.description}</p> : null}
+                  </div>
+                  {item.visual ? <div data-step-visual="" className="w-full min-w-0">{item.visual}</div> : null}
+                </div>
+                {last ? terminalLabel(laneLayout.endLabel) : null}
+              </li>
+            );
+          })}
+        </ol>
+      ) : (
+      <ol data-step-layout={withVisuals ? "visual" : "plain"} aria-labelledby={labelledBy} className={layout.list}>
         {items.map((item, index) => {
           const last = index === items.length - 1;
           if (item.href !== undefined) assertNoNestedInteractive("OrderedStepSequence", item.id, [item.label, item.heading, item.description, item.visual]);
@@ -172,7 +316,7 @@ export function OrderedStepSequence({
             </div>
           );
           return (
-            <li key={item.id} className={item.href === undefined ? layout.item : cx(layout.item, linkedContainer)}>
+            <li key={item.id} className={cx(item.href === undefined ? layout.item : cx(layout.item, linkedContainer), last && foundation ? ordinaryEnd.item : undefined)}>
               <div className={layout.marker}>
                 <span
                   className={cx(
@@ -182,7 +326,7 @@ export function OrderedStepSequence({
                 >
                   {item.ordinal}
                 </span>
-                {last ? null : <span aria-hidden="true" data-step-connector="" className={cx(layout.connector, lines.line)} />}
+                {last && !foundation ? null : <span aria-hidden="true" data-step-connector="" data-end={last && foundation ? effectiveEnd : undefined} className={cx(last && foundation ? ordinaryEnd.connector : layout.connector, lines.line)}>{last && foundation ? terminal(ordinaryEnd.position, ordinaryEnd.arrow) : null}</span>}
               </div>
               {withVisuals ? (
                 <div className={cx(LAYOUT_CLASSES.visual.body, last ? undefined : LAYOUT_CLASSES.visual.gap)}>
@@ -196,10 +340,13 @@ export function OrderedStepSequence({
               ) : (
                 text
               )}
+              {last && foundation ? terminalLabel(ordinaryEnd.label) : null}
             </li>
           );
         })}
       </ol>
+      )}
+      {caption !== undefined ? <p data-step-caption="" className={cx("text-caption", lanes === undefined ? "mt-[calc(var(--spacing-xl)_-_var(--spacing-lg))]" : "mt-xl", colors.secondary)}>{caption}</p> : null}
     </section>
   );
 }

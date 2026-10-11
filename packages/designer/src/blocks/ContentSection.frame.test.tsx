@@ -86,6 +86,11 @@ describe("ContentSection frame", () => {
     }
   });
 
+  it.each(["split-start", "split-end"] as const)("preserves the authored heading id in a header-only %s", (layout) => {
+    render(<ContentSection layout={layout} heading="Heading" headingId="frame-heading" />);
+    expect(screen.getByRole("heading")).toHaveAttribute("id", "frame-heading");
+  });
+
   it("uses a block as the companion when a canonical split has no media", () => {
     const { container } = render(
       <ContentSection layout="split-end" heading="Heading" description="Description" footnote="Footnote">

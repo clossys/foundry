@@ -63,7 +63,7 @@ function wire(from: string, to: string, start: ScenePoint, end: ScenePoint, subj
   const dx = end.x - start.x;
   return { from, to, start, end, subject, emphasis, path: `M ${round(start.x)} ${round(start.y)} C ${round(start.x + .55 * dx)} ${round(start.y)} ${round(end.x - .45 * dx)} ${round(end.y)} ${round(end.x)} ${round(end.y)}` };
 }
-/** Deterministic, static geometry. Wire anchors stay unrotated at each part's right-middle pivot. */
+/** Deterministic, static geometry. Wire anchors stay unrotated at each part's midpoint on its right edge. */
 export function layoutScene(input: SceneInput): SceneLayout {
   assertInput(input);
   const l: SceneLayout = { width: 0, height: 0, docs: [], cards: [], wires: [], terminals: [], tags: [], nodes: [], people: [] };

@@ -116,7 +116,7 @@ Pick the block from what the information is. Write the copy after that.
 | A mix of items of unequal weight, some with product evidence | **CardGrid** (`card-grid`, bento) | the wide card holds the main point |
 | A before and after, or a without and with | **Comparison** (`comparison`) | at most one per page |
 | A checklist of 4-8 short topics | **TopicList** (`topic-list`) | 2 columns; 1 column beside a specimen |
-| An ordered process with a hand-off between people | **OrderedStepSequence** (`ordered-step-sequence`) | 3-4 steps; actor labels name who acts |
+| An ordered process with a hand-off between people | **OrderedStepSequence** (`ordered-step-sequence`) | 3-4 ordinary steps; two-actor lanes use 3 or 5 |
 | Questions a buyer asks before acting | **Faq** (`faq`) | split band: header beside the rows (the legacy `faq` section opts in with `layout: "split"`) |
 | What the product shows on screen: a record, a matrix, a schedule, a result | specimen media | `single`, `row` (2-3 peers), `stack` (2-3 related views), `flow` (a hand-off from one panel to the next) |
 
@@ -175,11 +175,27 @@ Write facts on both sides. Do not caricature the "before" side.
 **TopicList** (`topic-list`). Each item is a heading of 2-5 words and a line of 4-12 words. In 2
 columns, use 4-8 items, an even count. In 1 column beside a specimen, use 3-4
 items. Use a topic list for scannable coverage. Do not use them for arguments.
+Use labelled `groups` when categories matter or the list has more than six
+items: 2-4 groups, 2-4 items each, at most 12 overall. Labels are one or two
+words, at most 24 resolved characters. Balance counts within each row.
+Groups require a stacked section; two and four groups use two columns from
+tablet, three use three columns from tablet-lg. Link all rows or none across
+the whole block, at most six unique destinations.
 
 **OrderedStepSequence** (`ordered-step-sequence`). 3-4 steps. Each step has an ordinal ("01"), a heading of 1-2
 words (a verb), a line of 6-14 words, an optional actor of 1-2 words and an
 optional visual panel. Name the actor whenever the work changes hands. Give
 every step a visual or none of them.
+Use `lanes` for two actors handing work back and forth: 3 or 5 steps,
+exactly 3 with visuals. Name each lane as an actor (at most 20 characters),
+start in lane a, use both lanes, and omit item labels. Each step describes
+what its actor does. Use ordinary steps for one actor; use another form for
+three or more actors or dated events. Lane rows start at 1024px for 3 steps
+and 1280px for 5. A visual caption holds at most 120 characters; catalog
+examples say “Sample data.” Lanes end in a node by default. `end="continues"`
+uses an arrow, with visible `endLabel` (at most 40 characters) or consumer
+continuation copy. Ordinary sequences keep their existing shape until end
+options are supplied.
 
 **Faq** (`faq`). 4-6 items. Question at most 12 words, in the buyer's words; answer
 15-45 words. Lead with the answer ("Yes.", "Only people with a role on that

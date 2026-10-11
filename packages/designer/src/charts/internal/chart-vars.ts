@@ -14,6 +14,8 @@
  * tokens' CSS yet.
  */
 
+import { TOKENS } from "../../tokens/tokens.js";
+
 // ── Chrome ──────────────────────────────────────────────────────────────
 export const CHART_SURFACE = "var(--color-chart-surface, var(--color-surface-raised, oklch(1 0 0)))";
 export const CHART_GRID = "var(--color-chart-grid, oklch(0.91 0 0))";
@@ -33,14 +35,14 @@ export const CHART_FONT_BODY =
 
 // ── Categorical (fixed order, 1-indexed to match the token names) ───────
 const CHART_CATEGORICAL_FALLBACK: Readonly<Record<number, string>> = {
-  1: "#2a78d6",
-  2: "#eb6834",
-  3: "#1baf7a",
-  4: "#eda100",
-  5: "#e87ba4",
-  6: "#008300",
-  7: "#4a3aa7",
-  8: "#e34948",
+  1: TOKENS["--color-chart-categorical-1"]!.value,
+  2: TOKENS["--color-chart-categorical-2"]!.value,
+  3: TOKENS["--color-chart-categorical-3"]!.value,
+  4: TOKENS["--color-chart-categorical-4"]!.value,
+  5: TOKENS["--color-chart-categorical-5"]!.value,
+  6: TOKENS["--color-chart-categorical-6"]!.value,
+  7: TOKENS["--color-chart-categorical-7"]!.value,
+  8: TOKENS["--color-chart-categorical-8"]!.value,
 };
 
 /** How many categorical identity slots this package's token vocabulary defines — see `assignCategoricalColor`. */
@@ -105,13 +107,13 @@ export function resolveSeriesColor(
 // ── Sequential (magnitude ramp; step count intentionally small — see
 // scale.ts's sequentialStep, which is the only place this is read from) ──
 const CHART_SEQUENTIAL_FALLBACK: Readonly<Record<number, string>> = {
-  100: "#cde2fb",
-  200: "#9ec5f4",
-  300: "#6da7ec",
-  400: "#3987e5",
-  500: "#256abf",
-  600: "#184f95",
-  700: "#0d366b",
+  100: TOKENS["--color-chart-sequential-100"]!.value,
+  200: TOKENS["--color-chart-sequential-200"]!.value,
+  300: TOKENS["--color-chart-sequential-300"]!.value,
+  400: TOKENS["--color-chart-sequential-400"]!.value,
+  500: TOKENS["--color-chart-sequential-500"]!.value,
+  600: TOKENS["--color-chart-sequential-600"]!.value,
+  700: TOKENS["--color-chart-sequential-700"]!.value,
 };
 export const CHART_SEQUENTIAL_STEPS: readonly number[] = [100, 200, 300, 400, 500, 600, 700];
 

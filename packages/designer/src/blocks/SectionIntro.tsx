@@ -20,6 +20,8 @@ export interface SectionIntroProps extends Omit<HTMLAttributes<HTMLDivElement>, 
   eyebrow?: ReactNode;
   /** The heading, at `headingLevel`. */
   heading?: ReactNode;
+  /** Optional id on the real heading, for content named by it. */
+  headingId?: string;
   /** A line of supporting copy under the heading. */
   description?: ReactNode;
   /**
@@ -99,6 +101,7 @@ const RHYTHM_CLASSES: Record<SectionIntroEmphasis, { heading: string; descriptio
 export function SectionIntro({
   eyebrow,
   heading,
+  headingId,
   description,
   actions,
   headingLevel = 2,
@@ -126,7 +129,7 @@ export function SectionIntro({
     >
       {hasEyebrow ? <p className={EYEBROW_CLASSES[ground]}>{eyebrow}</p> : null}
       {hasHeading ? (
-        <HeadingTag className={cx(HEADING_CLASSES[emphasis], colors.primary, hasEyebrow ? rhythm.heading : undefined)}>
+        <HeadingTag id={headingId} className={cx(HEADING_CLASSES[emphasis], colors.primary, hasEyebrow ? rhythm.heading : undefined)}>
           {heading}
         </HeadingTag>
       ) : null}

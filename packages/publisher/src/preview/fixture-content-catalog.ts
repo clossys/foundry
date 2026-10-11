@@ -556,6 +556,24 @@ const topicsTwo: SectionedViewContentSection = {
   },
 };
 
+function topicGroups(count: 3 | 4, ground: "base" | "sunken"): SectionedViewContentSection {
+  const prefix = `topics-groups-${count}`;
+  const labels = ["Access", "Location", "Models", "Oversight"].slice(0, count);
+  return {
+    id: `catalog-${prefix}`, kind: "content-section", ground,
+    eyebrow: copy(`${prefix}.eyebrow`, "Coverage"),
+    heading: copy(`${prefix}.heading`, "Find the records for each part of the work"),
+    description: copy(`${prefix}.description`, "Browse the categories to see what each record holds."),
+    block: { type: "topic-list", groups: labels.map((label, g) => ({
+      id: `category-${g}`, label: copy(`${prefix}.group-${g}.label`, label),
+      items: [0, 1].map((i) => ({ id: `topic-${g}-${i}`, heading: copy(`${prefix}.group-${g}.item-${i}.heading`, i === 0 ? "Current records" : "Review history"), description: copy(`${prefix}.group-${g}.item-${i}.description`, i === 0 ? "See the details kept with every active record." : "Follow earlier changes and the evidence behind each decision.") })),
+    })) },
+    ...(count === 4 ? { footnote: { text: copy(`${prefix}.footnote`, "Need help finding a record?"), link: { label: copy(`${prefix}.link`, "Ask the team"), href: "mailto:help@example.com" } } } : {}),
+  };
+}
+const topicsGroupsFour = topicGroups(4, "sunken");
+const topicsGroupsThree = topicGroups(3, "base");
+
 const topicsLinked: SectionedViewContentSection = {
   id: "catalog-topics-linked",
   kind: "content-section",
@@ -1004,6 +1022,35 @@ const faqSplit: SectionedViewContentSection = {
   },
 };
 
+/** Two generic handoff examples: one visual track and one plain cycle. */
+const stepsLanes = (visual: boolean): SectionedViewContentSection => {
+  const key = visual ? "steps-lanes-visual" : "steps-lanes-plain";
+  return {
+    id: `catalog-${key}`,
+    kind: "content-section",
+    ground: visual ? "base" : "sunken",
+    eyebrow: copy(`${key}.eyebrow`, "Handover"),
+    heading: copy(`${key}.heading`, "Who acts at each step"),
+    description: copy(`${key}.description`, "Two actors pass a record between them until the work is complete."),
+    block: {
+      type: "ordered-step-sequence",
+      lanes: { a: copy(`${key}.a`, "Your team"), b: copy(`${key}.b`, "The service") },
+      end: visual ? "ends" : "continues",
+      ...(visual ? { caption: copy(`${key}.caption`, "Sample data.") } : { endLabel: copy(`${key}.end-label`, "Repeats each quarter") }),
+      items: [...(visual ? "aba" : "abbaa")].map((lane, index) => ({
+        id: `handoff-${index}`,
+        lane: lane as "a" | "b",
+        ordinal: copy(`${key}.${index}.ordinal`, String(index + 1).padStart(2, "0")),
+        heading: copy(`${key}.${index}.heading`, ["Share", "Review", "Confirm", "Act", "Repeat"][index]!),
+        description: copy(`${key}.${index}.description`, "Pass the current record onward with the evidence this actor needs."),
+        ...(visual ? { visual: { id: `record-${index}`, title: copy(`${key}.${index}.title`, "Record status"), parts: [fields(`${key}.${index}.fields`, [["Status", "Ready"]])] } } : {}),
+      })),
+    },
+  };
+};
+const stepsLanesVisual = stepsLanes(true);
+const stepsLanesPlain = stepsLanes(false);
+
 // ---------------------------------------------------------------------------
 // Document, call to action and captions
 // ---------------------------------------------------------------------------
@@ -1026,12 +1073,16 @@ export const contentCatalogDocument: SectionedViewDocument = {
     specimenStack,
     topicsTwo,
     topicsLinked,
+    topicsGroupsFour,
+    topicsGroupsThree,
     specimenFlow,
     cardsText,
     comparisonVisual,
     stepsPlain,
     cardsVisual,
     comparisonPoints,
+    stepsLanesVisual,
+    stepsLanesPlain,
     stepsVisual,
     faqSplit,
   ],
@@ -1063,12 +1114,16 @@ export const CONTENT_CATALOG_CAPTIONS: readonly ContentCatalogCaption[] = [
   { sectionId: "catalog-specimen-stack", title: "Specimen, stacked, stack", detail: "sunken · two panels: meter and shares, then a table with a footer note", budget: "typical" },
   { sectionId: "catalog-topics-two", title: "TopicList, 2 columns, icons", detail: "base · 8 items", budget: "max" },
   { sectionId: "catalog-topics-linked", title: "TopicList, 2 columns, linked", detail: "sunken · 4 rows, each one link (its title) with a chevron", budget: "typical" },
+  { sectionId: "catalog-topics-groups-4", title: "TopicList, 4 labelled groups", detail: "sunken · 2 topics per group · two-by-two from tablet · footnote contact", budget: "typical" },
+  { sectionId: "catalog-topics-groups-3", title: "TopicList, 3 labelled groups", detail: "base · 2 topics per group · three columns from tablet-lg", budget: "typical" },
   { sectionId: "catalog-specimen-flow", title: "Specimen, stacked, flow", detail: "sunken · two panels with a connector caption", budget: "typical" },
   { sectionId: "catalog-cards-text", title: "CardGrid (bento), text", detail: "base · rows three thirds, third + two-thirds, full · icons and card eyebrows", budget: "max" },
   { sectionId: "catalog-comparison-visual", title: "Comparison, visuals", detail: "sunken · a description and a panel on each side", budget: "typical" },
   { sectionId: "catalog-steps-plain", title: "OrderedStepSequence, 4 steps, actor labels", detail: "base · no visuals", budget: "max" },
   { sectionId: "catalog-cards-visual", title: "CardGrid (bento), visuals, linked", detail: "sunken · rows half + half, two-thirds + third · each card one link (its title) · status rows, shares, table, files", budget: "typical" },
   { sectionId: "catalog-comparison-points", title: "Comparison, points", detail: "base · 4 points a side, no visuals", budget: "max" },
+  { sectionId: "catalog-steps-lanes-visual", title: "OrderedStepSequence, visual lanes", detail: "base · three steps, two actors, terminal node · Sample data.", budget: "typical" },
+  { sectionId: "catalog-steps-lanes-plain", title: "OrderedStepSequence, plain lanes", detail: "sunken · five steps, two actors, continuing arrow and visible end label", budget: "typical" },
   { sectionId: "catalog-steps-visual", title: "OrderedStepSequence, 3 steps, visuals and actor labels", detail: "sunken · one panel per step", budget: "typical" },
   { sectionId: "catalog-faq", title: "Faq, split band", detail: "base, the closing band · 6 rows beside a top-aligned header", budget: "max" },
   { sectionId: CONTENT_CATALOG_CALL_TO_ACTION.id, title: "Close band", detail: "inverse, fixed by the view · one primary action", budget: "max" },
