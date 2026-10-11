@@ -50,6 +50,7 @@ import { Item } from "../blocks/items/Item.js";
 import { Items } from "../blocks/items/Items.js";
 import { CardGrid } from "../blocks/CardGrid.js";
 import { Comparison } from "../blocks/Comparison.js";
+import { Matrix } from "../blocks/Matrix.js";
 import { ContentSection } from "../blocks/ContentSection.js";
 import { FeatureGrid } from "../blocks/FeatureGrid.js";
 import { NavGrid } from "../blocks/NavGrid.js";
@@ -264,6 +265,12 @@ describe("coverage: real rendered classes are all present in compiled.css", () =
         ),
       );
       for (const visual of [undefined, <div key="v">V</div>]) {
+        for (const featured of [undefined, "a", "b"]) {
+          trees.push(render(<Matrix ground={ground} featured={featured} sides={[
+            { id: "a", label: "A", heading: "First view", description: "Supporting copy", ...(visual === undefined ? { points: ["One", "Two"] } : { visual }) },
+            { id: "b", label: "B", heading: "Second view", ...(visual === undefined ? { points: ["One", "Two"] } : { visual }) },
+          ]} />));
+        }
         trees.push(
           render(
             <Comparison

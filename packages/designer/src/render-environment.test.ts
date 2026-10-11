@@ -68,6 +68,7 @@ describe("server-safe entry points resolve under react-server (test 1)", () => {
         "ArticleBody",
         "CardGrid",
         "Comparison",
+        "Matrix",
         "ContentSection",
         "DetailView",
         "EmptyState",
