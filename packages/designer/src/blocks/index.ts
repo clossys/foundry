@@ -198,3 +198,6 @@ export type { SectionFrameProps, SectionMeasure } from "./SectionFrame.js";
 
 export { ConsentBanner } from "./ConsentBanner.js";
 export type { ConsentBannerProps } from "./ConsentBanner.js";
+
+export { DotField, DOT_FIELD_TILE } from "../backdrop/DotField.js";
+export type { DotFieldProps } from "../backdrop/DotField.js";

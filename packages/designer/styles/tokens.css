@@ -583,6 +583,11 @@ html:not([data-brand-bound]):not([data-suppress-brand-banner])::before {
   /* ════════════════════════════════════════════════════════════════
    * UI · ALPHA (1 · no Tailwind namespace)
    * ════════════════════════════════════════════════════════════════ */
+  --color-field-dot: var(--color-ink-on-inverse);
+  --ui-field-alpha: 0.34;
+  --ui-field-scale: 1;
+  --ui-field-lens: 13.75rem;
+
   --ui-alpha-disabled:            0.5;
 }
 }
@@ -793,7 +798,7 @@ html:not([data-brand-bound]):not([data-suppress-brand-banner])::before {
  * parse-css.ts`, used by `parity.test.ts`, `contrast.test.ts`, and
  * `dark-mode-cascade.test.ts`) parses only the FIRST top-level `:root {`
  * block in this file as "the real token layer" and asserts it declares
- * exactly this package's curated 181 tokens; this sentinel is not a
+ * exactly this package's curated 185 tokens; this sentinel is not a
  * design token — it is a structural presence marker — so it stays out
  * of `src/tokens/tokens.ts`'s registry and out of that block entirely,
  * in a second `:root` rule the browser cascades in fine (CSS allows any

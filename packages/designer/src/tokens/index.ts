@@ -255,3 +255,6 @@ export type {
   MinimumSizeResult,
   SingleColourLegibilityResult,
 } from "./identity-checks.js";
+
+export { checkFieldTokens } from "./field-tokens.js";
+export type { FieldTokenFinding, FieldTokenUnchecked, FieldTokenOptions, FieldTokenReport } from "./field-tokens.js";

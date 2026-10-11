@@ -34,6 +34,10 @@ import type {
   ContrastGateUncheckedReason,
   ContrastLevel,
   ContrastPair,
+  FieldTokenFinding,
+  FieldTokenUnchecked,
+  FieldTokenOptions,
+  FieldTokenReport,
   IdentityBrandInput,
   IdentityCheckId,
   IdentityCheckJudgement,
@@ -105,6 +109,10 @@ type PreservedPureTypes = [
   ContrastGateUncheckedReason,
   ContrastLevel,
   ContrastPair,
+  FieldTokenFinding,
+  FieldTokenUnchecked,
+  FieldTokenOptions,
+  FieldTokenReport,
   IdentityBrandInput,
   IdentityCheckId,
   IdentityCheckJudgement,
@@ -142,7 +150,7 @@ type PreservedPureTypes = [
 type PreservedNodeTypes = [BrandCssReadIssue, BrandCssReadIssueReason, BrandCssReadResult];
 type Exact<A, B> = [A] extends [B] ? ([B] extends [A] ? true : false) : false;
 type Assert<T extends true> = T;
-type PureValues = "AA" | "AA_LARGE" | "BACKDROP_BUDGET_CEILING_BYTES" | "BACKDROP_KINDS" | "CONTRAST_PAIRS" | "IDENTITY_MIN_CONTRAST" | "IDENTITY_VARIANT_ROLES" | "IdentityKitValidationError" | "LOCKUP_FONT_OUTLINING" | "LOCKUP_GAP" | "LOCKUP_GAP_RATIO" | "LOCKUP_HEADERS" | "LOCKUP_MARK_HEIGHT" | "LOCKUP_WORDMARK_SIZE" | "LOCKUP_WORDMARK_SIZE_RATIO" | "MASTER_MARK_ICON_SHELL_STYLE" | "MasterMarkValidationError" | "TOKENS" | "TOKEN_FAMILIES" | "TOKEN_STYLES_SENTINEL_PROPERTY" | "TYPE_RECORD_SCHEMA_VERSION" | "adoptSuppliedMark" | "assertTokenStylesLoaded" | "checkBackdropContract" | "checkBackdropElement" | "checkBrandFileCoverage" | "checkClearSpace" | "checkIdentityContrast" | "checkMinimumSize" | "checkSingleColourLegibility" | "checkTokenContrast" | "checkTypeRecord" | "checkTypeRecordOverlay" | "composeLockup" | "contrastPairsForTheme" | "contrastRatio" | "deriveInitials" | "formatParseFailure" | "generateIdentityDirections" | "hexToLinearSRGB" | "iconMarkSvg" | "identityKitReport" | "isPlaceholderAuthoredValue" | "isValidCssColor" | "isValidCssFontFamily" | "judgeIdentityKit" | "luminanceOf" | "oklchToLinearSRGB" | "parseBrandDeclarations" | "parseOklch" | "parseTypeRecord" | "recolorSvg" | "relativeLuminance" | "validateIdentityTokenInput" | "validateMasterMark";
+type PureValues = "AA" | "AA_LARGE" | "BACKDROP_BUDGET_CEILING_BYTES" | "BACKDROP_KINDS" | "CONTRAST_PAIRS" | "IDENTITY_MIN_CONTRAST" | "IDENTITY_VARIANT_ROLES" | "IdentityKitValidationError" | "LOCKUP_FONT_OUTLINING" | "LOCKUP_GAP" | "LOCKUP_GAP_RATIO" | "LOCKUP_HEADERS" | "LOCKUP_MARK_HEIGHT" | "LOCKUP_WORDMARK_SIZE" | "LOCKUP_WORDMARK_SIZE_RATIO" | "MASTER_MARK_ICON_SHELL_STYLE" | "MasterMarkValidationError" | "TOKENS" | "TOKEN_FAMILIES" | "TOKEN_STYLES_SENTINEL_PROPERTY" | "TYPE_RECORD_SCHEMA_VERSION" | "adoptSuppliedMark" | "assertTokenStylesLoaded" | "checkBackdropContract" | "checkBackdropElement" | "checkBrandFileCoverage" | "checkClearSpace" | "checkIdentityContrast" | "checkMinimumSize" | "checkSingleColourLegibility" | "checkFieldTokens" | "checkTokenContrast" | "checkTypeRecord" | "checkTypeRecordOverlay" | "composeLockup" | "contrastPairsForTheme" | "contrastRatio" | "deriveInitials" | "formatParseFailure" | "generateIdentityDirections" | "hexToLinearSRGB" | "iconMarkSvg" | "identityKitReport" | "isPlaceholderAuthoredValue" | "isValidCssColor" | "isValidCssFontFamily" | "judgeIdentityKit" | "luminanceOf" | "oklchToLinearSRGB" | "parseBrandDeclarations" | "parseOklch" | "parseTypeRecord" | "recolorSvg" | "relativeLuminance" | "validateIdentityTokenInput" | "validateMasterMark";
 type NodeValues = "assertTailwindMergeVersion" | "readBrandCss";
 type PureNamespace = Assert<Exact<keyof typeof import("./index.js"), PureValues>>;
 type NodeNamespace = Assert<Exact<keyof typeof import("./server.js"), NodeValues>>;

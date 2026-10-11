@@ -13,12 +13,13 @@ import { TOKENS, TOKEN_FAMILIES, type TokenFamily } from "./tokens.js";
  *      instead, so it can't collide with a consumer's own custom
  *      properties. Nothing in this case generates a Tailwind utility.
  *
- * This test asserts every one of the 29 families sits in the case its
+ * This test asserts every one of the 31 families sits in the case its
  * README family-prefix mapping below says it does, and that no property
  * name falls outside both cases (a bare, uncategorized name).
  */
 
 const TAILWIND_NAMESPACE_PREFIX: Record<string, string> = {
+  "field-color": "--color-field-",
   surface: "--color-surface-",
   ink: "--color-ink-",
   line: "--color-line-",
@@ -40,6 +41,7 @@ const TAILWIND_NAMESPACE_PREFIX: Record<string, string> = {
 };
 
 const UI_NAMESPACE_PREFIX: Record<string, string> = {
+  field: "--ui-field-",
   width: "--ui-width-",
   layout: "--ui-layout-",
   density: "--ui-density-",

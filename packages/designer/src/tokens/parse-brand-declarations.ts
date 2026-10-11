@@ -316,6 +316,8 @@ function scanBlocks(
   end: number,
   declarations: Record<string, string>,
   unchecked: BrandCssUnchecked[],
+  rules?: BrandCssRule[],
+  groups: readonly string[] = [],
 ): void {
   let i = start;
   while (i < end) {
@@ -345,9 +347,14 @@ function scanBlocks(
 
     const body = originalText.slice(bodyStart, closeIdx);
     if (GROUPING_AT_RULE_RE.test(selector)) {
-      scanBlocks(originalText, bodyStart, closeIdx, declarations, unchecked);
+      scanBlocks(originalText, bodyStart, closeIdx, declarations, unchecked, rules, [...groups, selector]);
     } else {
       extractDeclarations(originalText, bodyStart, body, declarations, unchecked);
+      if (rules) {
+        const ruleDeclarations: Record<string, string> = {};
+        extractDeclarations(originalText, bodyStart, body, ruleDeclarations, []);
+        rules.push({ selector, groups, declarations: ruleDeclarations, sourceIndex: braceIdx });
+      }
     }
 
     i = closeIdx + 1;
@@ -378,4 +385,14 @@ export function parseBrandDeclarations(css: string): ParsedBrandCss {
   }
   scanBlocks(cleaned, 0, cleaned.length, declarations, unchecked);
   return { declarations, unchecked };
+}
+
+/** Internal rule-preserving view used by the field check; coverage's existing flattened result is unchanged. */
+export interface BrandCssRule { selector: string; groups: readonly string[]; declarations: Record<string, string>; sourceIndex: number }
+export function parseBrandRules(css: string): { rules: BrandCssRule[]; unchecked: BrandCssUnchecked[] } {
+  const parsed = parseBrandDeclarations(css);
+  const { text } = truncateAtUnterminatedComment(stripCommentsPreservingLines(css));
+  const rules: BrandCssRule[] = [];
+  scanBlocks(text, 0, text.length, {}, [], rules);
+  return { rules, unchecked: parsed.unchecked };
 }

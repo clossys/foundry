@@ -1957,3 +1957,13 @@
     }
   }
 }
+@layer foundry-ui-compiled {
+  .dot-field { position: fixed; inset-inline: 0; inset-block-start: 0; block-size: 100lvh; z-index: -1; pointer-events: none; overflow: hidden; background: var(--color-surface-inverse, oklch(0.2178 0 0)); }
+  .dot-field svg { position: absolute; inset-block-start: 0; inset-inline-start: 0; inline-size: calc(100% / var(--ui-field-scale, 1)); block-size: calc(100% / var(--ui-field-scale, 1)); transform: scale(var(--ui-field-scale, 1)); transform-origin: 0 0; color: var(--color-field-dot, var(--color-ink-on-inverse, oklch(0.9702 0 0))); opacity: var(--ui-field-alpha, 0.34); }
+  .field-halo { position: relative; isolation: isolate; }
+  .field-halo::before { content: ""; position: absolute; z-index: -1; inset: calc(var(--spacing-lg, 16px) * -1); background: var(--color-surface-inverse, oklch(0.2178 0 0)); border-radius: var(--radius-panel, var(--radius-surface, var(--radius-default, 3px))); box-shadow: 0 0 var(--spacing-2xl, 32px) var(--spacing-lg, 16px) var(--color-surface-inverse, oklch(0.2178 0 0)); }
+  @media (min-width: 768px) { .field-halo::before { box-shadow: 0 0 var(--spacing-4xl, 64px) var(--spacing-2xl, 32px) var(--color-surface-inverse, oklch(0.2178 0 0)); } } /* token-gate:ignore media queries cannot read custom-property breakpoints; fixed tablet threshold */
+  @media (prefers-reduced-motion: reduce) { .dot-field { position: absolute; inset: 0; block-size: auto; } }
+  @media print { .dot-field { display: none; } [data-field-window] { background: var(--color-surface-inverse, oklch(0.2178 0 0)); } }
+}
+

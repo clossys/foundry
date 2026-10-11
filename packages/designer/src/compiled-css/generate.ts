@@ -116,6 +116,7 @@
  */
 
 import { readFileSync } from "node:fs";
+import { TOKENS } from "../tokens/tokens.js";
 import { createRequire } from "node:module";
 import { dirname, resolve as resolvePath } from "node:path";
 import { assertPeerVersion } from "../internal/peer-version.js";
@@ -182,6 +183,28 @@ const BASE_LAYER_CSS = `@layer foundry-ui-base {
   button {
     font: inherit;
   }
+}
+
+`;
+
+/** Derives portable field reads from canonical defaults, retaining live aliases at every step. */
+function fieldCssVar(name: string, chain: readonly string[] = []): string {
+  const token = TOKENS[name];
+  if (!token || chain.includes(name)) throw new Error(`Field CSS token default cannot resolve ${name}.`);
+  const alias = /^var\((--[\w-]+)\)$/.exec(token.value);
+  const fallback = alias ? fieldCssVar(alias[1]!, [...chain, name]) : token.value;
+  return `var(${name}, ${fallback})`;
+}
+
+/** Decoration rules use only brand tokens and are emitted on the portable compiled-CSS path. */
+const DOT_FIELD_CSS = `@layer foundry-ui-compiled {
+  .dot-field { position: fixed; inset-inline: 0; inset-block-start: 0; block-size: 100lvh; z-index: -1; pointer-events: none; overflow: hidden; background: ${fieldCssVar("--color-surface-inverse")}; }
+  .dot-field svg { position: absolute; inset-block-start: 0; inset-inline-start: 0; inline-size: calc(100% / ${fieldCssVar("--ui-field-scale")}); block-size: calc(100% / ${fieldCssVar("--ui-field-scale")}); transform: scale(${fieldCssVar("--ui-field-scale")}); transform-origin: 0 0; color: ${fieldCssVar("--color-field-dot")}; opacity: ${fieldCssVar("--ui-field-alpha")}; }
+  .field-halo { position: relative; isolation: isolate; }
+  .field-halo::before { content: ""; position: absolute; z-index: -1; inset: calc(${fieldCssVar("--spacing-lg")} * -1); background: ${fieldCssVar("--color-surface-inverse")}; border-radius: ${fieldCssVar("--radius-panel")}; box-shadow: 0 0 ${fieldCssVar("--spacing-2xl")} ${fieldCssVar("--spacing-lg")} ${fieldCssVar("--color-surface-inverse")}; }
+  @media (min-width: 768px) { .field-halo::before { box-shadow: 0 0 ${fieldCssVar("--spacing-4xl")} ${fieldCssVar("--spacing-2xl")} ${fieldCssVar("--color-surface-inverse")}; } } /* token-gate:ignore media queries cannot read custom-property breakpoints; fixed tablet threshold */
+  @media (prefers-reduced-motion: reduce) { .dot-field { position: absolute; inset: 0; block-size: auto; } }
+  @media print { .dot-field { display: none; } [data-field-window] { background: ${fieldCssVar("--color-surface-inverse")}; } }
 }
 
 `;
@@ -386,7 +409,7 @@ export async function generateCompiledCss(options: GenerateCompiledCssOptions): 
   const rawCss = compiled.build(options.candidates);
   const stripped = stripThemeReflectionBlock(rawCss);
   const withFallbacks = addExplicitFallbacksForInternalProperties(stripped);
-  const finalCss = GENERATED_FILE_HEADER + BASE_LAYER_CSS + withFallbacks.trimStart();
+  const finalCss = GENERATED_FILE_HEADER + BASE_LAYER_CSS + withFallbacks.trimStart() + DOT_FIELD_CSS;
 
   // Count distinct utility CLASS selectors actually emitted (not every
   // candidate — see `GenerateCompiledCssResult.classCount`'s own doc

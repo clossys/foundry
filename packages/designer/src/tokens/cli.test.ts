@@ -118,11 +118,27 @@ function writeProductFile(rel: string, content: string): void {
 
 // Every brandable slot declared, so the coverage check itself is clean and a
 // non-zero exit can only come from something else. Only non-emptiness matters
-// to coverage, so one placeholder value serves every slot.
+// to coverage; valid default values also let the independent field check run.
 const FULLY_COVERED_BRAND_CSS = `:root {\n${Object.values(TOKENS)
   .filter((def) => def.brandable)
-  .map((def) => `  ${def.property}: red;\n`)
+  .map((def) => `  ${def.property}: ${def.value};\n`)
   .join("")}}\n`;
+
+describe("command line — field validation", () => {
+  it("checks the real token baseline merged with a complete brand and rejects unsafe field opacity", () => {
+    expect(runCli([writeBrandCss(FULLY_COVERED_BRAND_CSS)]).status).toBe(0);
+    const result = runCli([writeBrandCss(FULLY_COVERED_BRAND_CSS.replace('--ui-field-alpha: 0.34;', '--ui-field-alpha: 0.40;'))]);
+    expect(result.status).toBe(1);
+    expect(result.stdout).toContain('[field-alpha-contrast]');
+    expect(result.stdout).toContain('light');
+  });
+  it("distinguishes unresolved field bindings from evaluated range failures", () => {
+    expect(runCli([writeBrandCss(FULLY_COVERED_BRAND_CSS.replace('--ui-field-alpha: 0.34;', '--ui-field-alpha: var(--missing-alpha);'))]).status).toBe(2);
+    const scale = runCli([writeBrandCss(FULLY_COVERED_BRAND_CSS.replace('--ui-field-scale: 1;', '--ui-field-scale: 2;'))]);
+    expect(scale.status).toBe(1);
+    expect(scale.stdout).toContain('[field-scale-range]');
+  });
+});
 
 describe("command line — one brand overlay under apps/", () => {
   it("a fully covered brand file exits 0 without a second binder and 1 once apps/ adds one", () => {

@@ -31,13 +31,14 @@
  *       does not hide what WAS learned about the rest of the file.
  */
 
-import { existsSync, realpathSync, statSync } from "node:fs";
-import { resolve } from "node:path";
+import { existsSync, readFileSync, realpathSync, statSync } from "node:fs";
+import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { checkBrandFileCoverage, type BrandFileCoverageReport } from "./check-brand-file-coverage.js";
 import { compareBrandStylesheets } from "./compare-brand-stylesheets.js";
 import { findSecondBinders } from "./find-second-binders.js";
 import { readBrandCss, type BrandCssReadResult } from "./read-brand-css.js";
+import { checkFieldBrandCss } from "./field-brand-css.js";
 
 const DEFAULT_BRAND_CSS_FILE = "brand/brand.css";
 const DEFAULT_APPS_DIR = "apps";
@@ -181,6 +182,9 @@ export function main(argv: string[]): number {
   printReadAccounting(read);
 
   const result = checkBrandFileCoverage(read.declarations);
+  const field = checkFieldBrandCss(readFileSync(path, "utf8"), readFileSync(resolve(dirname(fileURLToPath(import.meta.url)), "..", "..", "styles", "tokens.css"), "utf8"));
+  for (const finding of field.findings) console.log(`  [${finding.rule}] ${finding.severity} ${finding.theme}: ${finding.message}`);
+  for (const item of field.unchecked) console.error(`  [field-unchecked] ${item.theme}: ${item.message}`);
   printCoverageReport(result);
 
   const divergenceFindings: ReturnType<typeof compareBrandStylesheets> = [];
@@ -227,10 +231,10 @@ export function main(argv: string[]): number {
   // Every finding is still printed above, so nothing real is hidden — this
   // only refuses to let the run as a whole read as clean or fully
   // accounted for.
-  if (read.unchecked.length > 0 || result.unchecked.length > 0) return 2;
+  if (read.unchecked.length > 0 || result.unchecked.length > 0 || field.unchecked.length > 0) return 2;
 
   if (divergenceFindings.length > 0 || secondBinders.length > 0) return 1;
-  return result.findings.length > 0 ? 1 : 0;
+  return result.findings.length > 0 || !field.ok ? 1 : 0;
 }
 
 function run(): void {

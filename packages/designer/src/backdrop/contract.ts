@@ -29,7 +29,7 @@
  * rule was evaluated and broken; `unchecked` means it could not be
  * evaluated. Neither is a pass.
  *
- * THE FIVE RULES (Check A)
+ * THE SIX RULES (Check A)
  * -------------------------
  *   - `scrim-contrast`: `scrim.token` is composited over
  *     `scrim.worstCaseBackdrop`, and `scrim.textToken` must reach AA
@@ -39,6 +39,8 @@
  *     walk the contrast gate uses. The text token must be opaque: a
  *     translucent text color has no single background to measure against
  *     here, so it is `unchecked`.
+ *   - `field-alpha`: a `pattern` uses the shared field-token check for
+ *     on-inverse text contrast against the painted dot pixel in both themes.
  *   - `aria-hidden`: `ariaHidden` is `true`. A `chart` backdrop must also be
  *     `illustrative: true` — no information lives only in a layer that
  *     assistive technology skips — and that is reported under this rule.
@@ -106,10 +108,11 @@ import { AA } from "../tokens/contrast-pairs.js";
 import { luminanceOf } from "../tokens/color.js";
 import { resolveTokenValue } from "../tokens/internal/resolve-token-value.js";
 import { TOKENS } from "../tokens/tokens.js";
+import { checkFieldTokens } from "../tokens/field-tokens.js";
 import type { TokenDefinition } from "../tokens/tokens.js";
 
-/** The four kinds of hero backdrop the contract covers. */
-export const BACKDROP_KINDS = ["image", "video", "canvas", "chart"] as const;
+/** The five kinds of hero backdrop the contract covers. */
+export const BACKDROP_KINDS = ["image", "video", "canvas", "chart", "pattern"] as const;
 
 export type BackdropKind = (typeof BACKDROP_KINDS)[number];
 
@@ -157,13 +160,15 @@ interface BackdropBase {
 
 /** A hero backdrop declaration. `kind` selects the variant; every variant carries the same promises. */
 export type BackdropContract =
+  | (Omit<BackdropBase, "scrim" | "loading"> & { kind: "pattern"; pattern: "dot-field"; loading: { strategy: "idle"; budgetBytes: number } })
   | (BackdropBase & { kind: "image"; reducedMotion?: BackdropReducedMotion })
   | (BackdropBase & { kind: "video"; reducedMotion: BackdropReducedMotion })
   | (BackdropBase & { kind: "canvas"; reducedMotion: BackdropReducedMotion })
   | (BackdropBase & { kind: "chart"; reducedMotion: BackdropReducedMotion; illustrative: true });
 
-/** The five rule ids of `checkBackdropContract`. */
+/** The six rule ids of `checkBackdropContract`. */
 export type BackdropRuleId =
+  | "field-alpha"
   | "scrim-contrast"
   | "aria-hidden"
   | "pointer-events"
@@ -237,6 +242,7 @@ export interface BackdropCheckOptions {
 
 const CONTRACT_RULES: readonly BackdropRuleId[] = [
   "scrim-contrast",
+  "field-alpha",
   "aria-hidden",
   "pointer-events",
   "reduced-motion-fallback",
@@ -463,10 +469,11 @@ function allUnchecked(reason: BackdropUncheckedReason, message: string, options:
 }
 
 /**
- * Checks a `BackdropContract` against the five rules. Never throws; an
+ * Checks a `BackdropContract` against the six rules. Never throws; an
  * input it cannot evaluate is reported under `unchecked` and `ok` is false.
  */
-export function checkBackdropContract(contract: BackdropContract, options: BackdropCheckOptions = {}): BackdropReport {
+export function checkBackdropContract(input: BackdropContract, options: BackdropCheckOptions = {}): BackdropReport {
+  const contract: unknown = input;
   try {
     if (!isRecord(contract)) {
       return allUnchecked("malformed-contract", "The contract must be an object.", options);
@@ -475,9 +482,16 @@ export function checkBackdropContract(contract: BackdropContract, options: Backd
     const findings: BackdropFinding[] = [];
     const unchecked: BackdropUnchecked[] = [];
 
-    for (const scrim of checkScrim(contract.scrim, tokens, options.darkTokens, options.themes === "light-only")) {
-      if ("reason" in scrim) unchecked.push(scrim);
-      else findings.push(scrim);
+    if (contract.kind === "pattern") {
+      if (contract.pattern !== "dot-field") unchecked.push({ rule: "field-alpha", reason: "malformed-contract", message: "A pattern backdrop must declare pattern: dot-field." });
+      const field = checkFieldTokens({ tokens, darkTokens: options.darkTokens, themes: options.themes });
+      for (const finding of field.findings.filter((f) => f.rule === "field-alpha-contrast")) findings.push({ rule: "field-alpha", message: finding.message });
+      for (const item of field.unchecked.filter((u) => u.rule === "field-alpha-contrast")) unchecked.push({ rule: "field-alpha", reason: "unparseable-token", message: item.message });
+    } else {
+      for (const scrim of checkScrim(contract.scrim, tokens, options.darkTokens, options.themes === "light-only")) {
+        if ("reason" in scrim) unchecked.push(scrim);
+        else findings.push(scrim);
+      }
     }
 
     if (contract.ariaHidden !== true) {
@@ -512,6 +526,9 @@ export function checkBackdropContract(contract: BackdropContract, options: Backd
     }
 
     findings.push(...checkLoading(contract.loading));
+    if (kind === "pattern" && isRecord(contract.loading) && (contract.loading.strategy !== "idle" || (typeof contract.loading.budgetBytes === "number" && contract.loading.budgetBytes > 8192))) {
+      findings.push({ rule: "lazy-loading-budget", message: "A pattern backdrop loads idle with a budget no greater than 8192 bytes." });
+    }
 
     const order = (rule: BackdropRuleId): number => CONTRACT_RULES.indexOf(rule);
     findings.sort((a, b) => order(a.rule) - order(b.rule));

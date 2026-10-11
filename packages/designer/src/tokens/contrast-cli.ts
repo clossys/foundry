@@ -68,6 +68,7 @@ import { CONTRAST_PAIRS, contrastPairsForTheme } from "./contrast-pairs.js";
 import { checkTokenContrast, type ContrastGateResult } from "./contrast-gate.js";
 import { parseRootDeclarations, parseDeclarationsForSelector } from "./internal/parse-css.js";
 import { mergeDeclarations, registryFromDeclarations } from "./internal/registry-from-css.js";
+import { checkFieldTokens, type FieldTokenReport } from "./field-tokens.js";
 
 const DARK_SELECTOR = ':root[data-theme="dark"]';
 
@@ -214,6 +215,13 @@ export function main(argv: string[]): number {
 
   console.log(`Tokens CSS file: ${cssPath}`);
   console.log(`Contrast policy: ${CONTRAST_PAIRS.length} pair(s) (from @clossys/designer/tokens's CONTRAST_PAIRS).`);
+  const fields: FieldTokenReport[] = [];
+  const checkField = (declarations: ReadonlyMap<string, string>, theme: string) => {
+    const field = checkFieldTokens({ tokens: registryFromDeclarations(declarations), themes: "light-only" });
+    fields.push(field);
+    for (const finding of field.findings) console.log(`  [${finding.rule}] ${finding.severity} ${theme}: ${finding.message}`);
+    for (const item of field.unchecked) console.error(`  [field-unchecked] ${theme}: ${item.message}`);
+  };
 
   let lightDeclarations;
   try {
@@ -231,6 +239,7 @@ export function main(argv: string[]): number {
   // per theme, rather than blanket-applying (or blanket-omitting) it.
   const lightResult = checkTokenContrast(contrastPairsForTheme("light"), { tokens: registryFromDeclarations(lightDeclarations) });
   printThemeReport("light", lightResult);
+  checkField(lightDeclarations, "light");
 
   let darkResult: ContrastGateResult | undefined;
   try {
@@ -245,6 +254,7 @@ export function main(argv: string[]): number {
       tokens: registryFromDeclarations(mergeDeclarations(lightDeclarations, darkDeclarations)),
     });
     printThemeReport("dark", darkResult);
+    checkField(mergeDeclarations(lightDeclarations, darkDeclarations), "dark");
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     if (message.includes("not found in CSS")) {
@@ -262,8 +272,8 @@ export function main(argv: string[]): number {
   }
 
   const verdicts = darkResult === undefined ? [classify(lightResult)] : [classify(lightResult), classify(darkResult)];
-  if (verdicts.includes("could-not-run")) return 2;
-  if (verdicts.includes("findings")) return 1;
+  if (verdicts.includes("could-not-run") || fields.some((field) => field.unchecked.length > 0)) return 2;
+  if (verdicts.includes("findings") || fields.some((field) => !field.ok)) return 1;
   return 0;
 }
 

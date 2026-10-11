@@ -162,3 +162,6 @@ export type { SectionFrameProps, SectionMeasure } from "./SectionFrame.js";
 
 export { Stat } from "./Stat.js";
 export type { StatProps, StatTrend } from "./Stat.js";
+
+export { DotField, DOT_FIELD_TILE } from "../backdrop/DotField.js";
+export type { DotFieldProps } from "../backdrop/DotField.js";

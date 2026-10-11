@@ -358,7 +358,7 @@ source file's own header for the exact probe and its result). Today that's:
 | Subpath | Server-safe members |
 | --- | --- |
 | `@clossys/designer/atoms/server` | `Avatar`, `Badge`, `Banner`, `Card`, `Field`, `Icon`, `Meter`, `Skeleton`, `Spinner`, `StatusMark`, `buttonLinkClassName`, `iconButtonClassName`, `iconButtonLinkClassName`, `mergeUiClasses` |
-| `@clossys/designer/blocks/server` | `ArticleBody`, `CardGrid`, `Comparison`, `ContentSection`, `DetailView`, `EmptyState`, `Faq`, `FeatureGrid`, `FieldGroup`, `Hero`, `LinkGrid`, `MarketingChapter`, `MediaFigure`, `OrderedStepSequence`, `PageHeader`, `PricingTable`, `SectionFrame`, `SectionHeader`, `SectionIntro`, `Specimen`, `SpecimenPanel`, `Stat`, `StatusList`, `TopicList` |
+| `@clossys/designer/blocks/server` | `ArticleBody`, `CardGrid`, `Comparison`, `ContentSection`, `DetailView`, `DotField`, `EmptyState`, `Faq`, `FeatureGrid`, `FieldGroup`, `Hero`, `LinkGrid`, `MarketingChapter`, `MediaFigure`, `OrderedStepSequence`, `PageHeader`, `PricingTable`, `SectionFrame`, `SectionHeader`, `SectionIntro`, `Specimen`, `SpecimenPanel`, `Stat`, `StatusList`, `TopicList` |
 | `@clossys/designer/shell/server` | `Shell`, `SiteFooter`, `SiteHeader`, `SkipLink` |
 | `@clossys/designer/charts/server` | `ChartFrame`, `Sparkline` |
 | `@clossys/designer/theme/server` | `getThemeInitScript` |
@@ -5497,6 +5497,9 @@ not a grab-bag).
 | `NavGrid` | component | Grid of navigation cards: optional heading, the card grid. A linked card's title is its one `<a>`, stretched over the card; an action card is a `<button>`. |
 | `NavGridProps` | type | Props for `NavGrid`: `heading`, `items`, `className`, `style`. |
 | `NavGridItem` | type | One card, as data: `id`, `title`, `description?`, `icon?`, and either `href` or `onSelect` (mutually exclusive). |
+| `DotField` | component | Server-safe, seeded decorative SVG field; static output with no hooks. |
+| `DotFieldProps` | type | Props: `className`, decorative `children`, and caller-owned `patternId`. |
+| `DOT_FIELD_TILE` | constant | Static seed, grid geometry and path for the repeating field tile. |
 | `LinkGrid` | component | Server-safe list of two to six destinations; plate or rule tiles with one stretched title link per item. |
 | `LinkGridProps` | type | Props for `LinkGrid`: `items`, `surface`, `ground`, `headingLevel`, `className`. |
 | `LinkGridItem` | type | One destination: `id`, `title`, `description?`, `icon?`, and required `href`. |
@@ -5863,7 +5866,7 @@ part of this package's public API" and reachable only by that one test.
   ratified from `contrast.test.ts`'s own hand-curated pair map rather than
   auto-derived from token names. An earlier design assumed this gate could
   self-extend, deriving one pair per `--<role>-on-<ground>`-shaped token
-  name; counted against this package's real 181 tokens, only 5 actually
+  name; counted against this package's real 185 tokens, only 5 actually
   follow that shape (`--color-ink-on-accent`, `--color-ink-on-inverse`,
   `--color-accent-on-inverse`, `--color-line-on-inverse`,
   `--ui-ring-on-inverse` — see `contrast-pairs.ts`'s own header for a 6th,
@@ -6320,10 +6323,10 @@ the same five fixes each time: text that stays readable over the visual's
 worst frame, a layer that never takes pointer events, a layer that assistive
 technology skips, a still frame for reduced motion, and a load cost that
 cannot block first paint. `BackdropContract` states those as data, and two
-checks hold a backdrop to it. This is data and checks only: it adds no
-component, CSS or token, and it is not wired into any Publisher block.
+checks hold a backdrop to it. The static `DotField` component supplies a token-bound SVG pattern; media
+backdrops remain caller-owned.
 
-**The four kinds.** `BACKDROP_KINDS` lists them, and `BackdropKind` is their
+**The five kinds.** `BACKDROP_KINDS` lists them, and `BackdropKind` is their
 union. `BackdropContract` is a union on `kind`:
 
 | `kind`   | Shape beyond the shared fields                                                      |
@@ -6332,8 +6335,9 @@ union. `BackdropContract` is a union on `kind`:
 | `video`  | `reducedMotion: { fallbackFrame }` is required.                                     |
 | `canvas` | `reducedMotion: { fallbackFrame }` is required.                                     |
 | `chart`  | `reducedMotion` is required, and `illustrative: true`: no information lives only there. |
+| `pattern` | `pattern: "dot-field"`, with idle loading and a positive budget at most 8192 bytes; its static SVG needs no fallback or scrim. |
 
-Every kind carries `scrim` (`BackdropScrim`: `token`, `textToken` and
+Every media kind carries `scrim` (`BackdropScrim`: `token`, `textToken` and
 `worstCaseBackdrop`), `ariaHidden: true`, `pointerEvents: "none"`, and
 `loading` (`BackdropLoading`: `strategy` of `"lazy"` or `"idle"`, and
 `budgetBytes`). `reducedMotion` is a `BackdropReducedMotion`. `scrim.token`
@@ -6346,23 +6350,73 @@ for hero text: it is the ink for the inverse plate, which turns light in
 the dark theme, so the ink turns dark there and fails over the darkened
 scrim.
 
-**The five rules.** `checkBackdropContract(contract, { tokens?, darkTokens?, themes? })` returns a
+**The six rules.** `checkBackdropContract(contract, { tokens?, darkTokens?, themes? })` returns a
 `BackdropReport` (`{ ok, findings, unchecked, themes }`) and never throws. Each
 `BackdropFinding` carries a `BackdropRuleId` and a developer message.
 
 | Rule id                   | Passes when                                                                                                                                     |
 | ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
 | `scrim-contrast`          | `scrim.token` composited over `worstCaseBackdrop` gives `scrim.textToken` a contrast of at least 4.5 (the `AA` constant), in light and dark.    |
+| `field-alpha`            | A pattern passes the shared dot-pixel contrast check in both themes. |
 | `aria-hidden`             | `ariaHidden` is `true`, and a `chart` is `illustrative: true`.                                                                                  |
 | `pointer-events`          | `pointerEvents` is `"none"`.                                                                                                                    |
 | `reduced-motion-fallback` | A `video`, `canvas` or `chart` has a non-empty `reducedMotion.fallbackFrame`. An `image` needs none.                                            |
 | `lazy-loading-budget`     | `loading.strategy` is `"lazy"` or `"idle"`, and `loading.budgetBytes` is a positive integer no larger than `BACKDROP_BUDGET_CEILING_BYTES`.     |
+
+Patterns narrow the loading contract to idle and 8192 bytes. This is a
+declared loading budget, rather than a bound on raw SVG markup.
 
 `BACKDROP_BUDGET_CEILING_BYTES` is 2 MiB (2,097,152 bytes), the most
 transferred bytes a backdrop may declare. The tokens resolve through
 `BackdropCheckOptions.tokens`, which defaults to `TOKENS` and so to the
 default (light) values, following `var()` alias chains the way the contrast
 gate does.
+
+### Static dot field
+
+Import `DotField` from `@clossys/designer/blocks/server` and load
+`@clossys/designer/compiled.css`. Place one decoration layer behind the page's
+hero and closing copy; opaque intervening sections mask the field. The page
+root must create an isolated stacking context and clip the fixed layer. Apply
+`field-halo` to each copy/action group: its opaque inverse plate and soft
+outer shadow keep text and focus rings clear of dots. Keep the halo inside the
+page's clipping boundary, including space for its shadow and focus rings.
+
+The field is fixed at one large viewport height. Reduced motion makes it
+absolute within its positioned parent, and print hides it while inverse
+windows retain their ground. The optional child slot accepts decoration
+only; `checkBackdropElement` rejects interactive descendants. A scripted
+canvas enhancement is a separate opt-in concern.
+
+`patternId` defaults to `dot-field-tile`. Supply a unique ID per instance when
+several fields or separately rendered server roots share a document; the
+component uses neither hooks nor a process counter to allocate IDs.
+
+| Field slot | Default | Validation |
+| --- | --- | --- |
+| `--color-field-dot` | `var(--color-ink-on-inverse)` | Opaque colour; the alias follows the current theme. |
+| `--ui-field-alpha` | `0.34` | Finite opacity from 0 to 1; dot-pixel ink contrast at least 4.5 in both themes. |
+| `--ui-field-scale` | `1` | Finite unitless value from 0.75 to 1.5. |
+| `--ui-field-lens` | `13.75rem` | Finite rem length; outside 10–20 rem produces a warning. |
+
+`checkFieldTokens({ tokens, darkTokens, themes? })` resolves aliases, composites
+the dot in gamma-encoded sRGB, then measures WCAG luminance. The default light
+and dark dot pixels yield about 5.39:1 and 7.35:1. At opacity 0.40 the light
+theme falls to about 4.44:1; both-theme validation fails even though dark passes.
+The brand and contrast CLIs run this check. Brand resolution supports root
+selectors with `data-brand-bound`, light/dark `data-theme` attributes and their
+`:not()` forms, including automatic dark media rules. Unsupported selectors,
+conditions or layer ordering that affect field properties or alias dependencies
+produce `unchecked`; unrelated custom properties remain the coverage check's
+responsibility.
+
+| Export | Kind | Purpose |
+| --- | --- | --- |
+| `checkFieldTokens` | function | Checks field contrast, scale and lens values with explicit theme evidence. |
+| `FieldTokenOptions` | type | Light/dark registries and an optional light-only scope. |
+| `FieldTokenFinding` | type | Evaluated rule, theme, severity and message. |
+| `FieldTokenUnchecked` | type | Rule and theme whose inputs could not be resolved. |
+| `FieldTokenReport` | type | Pass state, findings, unchecked inputs and measured contrast by theme. |
 
 **Both themes.** The scrim pairing must hold in the light and the dark
 theme, the two themes the contrast gate checks: `styles/tokens.css` turns

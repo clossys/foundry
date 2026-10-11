@@ -245,6 +245,7 @@ const PURE_TOKEN_VALUES = [
   "checkBackdropElement",
   "checkBrandFileCoverage",
   "checkClearSpace",
+  "checkFieldTokens",
   "checkIdentityContrast",
   "checkMinimumSize",
   "checkSingleColourLegibility",
