@@ -1004,6 +1004,35 @@ const faqSplit: SectionedViewContentSection = {
   },
 };
 
+/** Two generic handoff examples: one visual track and one plain cycle. */
+const stepsLanes = (visual: boolean): SectionedViewContentSection => {
+  const key = visual ? "steps-lanes-visual" : "steps-lanes-plain";
+  return {
+    id: `catalog-${key}`,
+    kind: "content-section",
+    ground: visual ? "base" : "sunken",
+    eyebrow: copy(`${key}.eyebrow`, "Handover"),
+    heading: copy(`${key}.heading`, "Who acts at each step"),
+    description: copy(`${key}.description`, "Two actors pass a record between them until the work is complete."),
+    block: {
+      type: "ordered-step-sequence",
+      lanes: { a: copy(`${key}.a`, "Your team"), b: copy(`${key}.b`, "The service") },
+      end: visual ? "ends" : "continues",
+      ...(visual ? { caption: copy(`${key}.caption`, "Sample data.") } : { endLabel: copy(`${key}.end-label`, "Repeats each quarter") }),
+      items: [...(visual ? "aba" : "abbaa")].map((lane, index) => ({
+        id: `handoff-${index}`,
+        lane: lane as "a" | "b",
+        ordinal: copy(`${key}.${index}.ordinal`, String(index + 1).padStart(2, "0")),
+        heading: copy(`${key}.${index}.heading`, ["Share", "Review", "Confirm", "Act", "Repeat"][index]!),
+        description: copy(`${key}.${index}.description`, "Pass the current record onward with the evidence this actor needs."),
+        ...(visual ? { visual: { id: `record-${index}`, title: copy(`${key}.${index}.title`, "Record status"), parts: [fields(`${key}.${index}.fields`, [["Status", "Ready"]])] } } : {}),
+      })),
+    },
+  };
+};
+const stepsLanesVisual = stepsLanes(true);
+const stepsLanesPlain = stepsLanes(false);
+
 // ---------------------------------------------------------------------------
 // Document, call to action and captions
 // ---------------------------------------------------------------------------
@@ -1032,6 +1061,8 @@ export const contentCatalogDocument: SectionedViewDocument = {
     stepsPlain,
     cardsVisual,
     comparisonPoints,
+    stepsLanesVisual,
+    stepsLanesPlain,
     stepsVisual,
     faqSplit,
   ],
@@ -1069,6 +1100,8 @@ export const CONTENT_CATALOG_CAPTIONS: readonly ContentCatalogCaption[] = [
   { sectionId: "catalog-steps-plain", title: "OrderedStepSequence, 4 steps, actor labels", detail: "base · no visuals", budget: "max" },
   { sectionId: "catalog-cards-visual", title: "CardGrid (bento), visuals, linked", detail: "sunken · rows half + half, two-thirds + third · each card one link (its title) · status rows, shares, table, files", budget: "typical" },
   { sectionId: "catalog-comparison-points", title: "Comparison, points", detail: "base · 4 points a side, no visuals", budget: "max" },
+  { sectionId: "catalog-steps-lanes-visual", title: "OrderedStepSequence, visual lanes", detail: "base · three steps, two actors, terminal node · Sample data.", budget: "typical" },
+  { sectionId: "catalog-steps-lanes-plain", title: "OrderedStepSequence, plain lanes", detail: "sunken · five steps, two actors, continuing arrow and visible end label", budget: "typical" },
   { sectionId: "catalog-steps-visual", title: "OrderedStepSequence, 3 steps, visuals and actor labels", detail: "sunken · one panel per step", budget: "typical" },
   { sectionId: "catalog-faq", title: "Faq, split band", detail: "base, the closing band · 6 rows beside a top-aligned header", budget: "max" },
   { sectionId: CONTENT_CATALOG_CALL_TO_ACTION.id, title: "Close band", detail: "inverse, fixed by the view · one primary action", budget: "max" },

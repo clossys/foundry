@@ -89,12 +89,18 @@ describe("page flow rules", () => {
   });
 });
 
-it("keeps existing catalog variety output byte-identical", () => {
+it("pins catalog variety output including the adjacent lane variants", () => {
   expect(checkSectionVariety(contentCatalogDocument)).toMatchInlineSnapshot(`
 [
   {
     "message": "sections.13 repeats the layout, block and visual of the band before it (stacked, topic-list, none); vary one of them.",
     "path": "sections.13",
+    "rule": "sectioned-view-variety-repeat",
+    "severity": "warning",
+  },
+  {
+    "message": "sections.21 repeats the layout, block and visual of the band before it (stacked, ordered-step-sequence, lanes); vary one of them.",
+    "path": "sections.21",
     "rule": "sectioned-view-variety-repeat",
     "severity": "warning",
   },

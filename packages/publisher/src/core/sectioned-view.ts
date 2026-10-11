@@ -570,7 +570,11 @@ export interface SectionedViewComparisonSide {
   visual?: SectionedViewSpecimenPanel;
 }
 
+export type SectionedViewStepLane = "a" | "b";
+
 export interface SectionedViewContentStep {
+  /** Required only in a two-actor lane sequence. */
+  lane?: SectionedViewStepLane;
   id: string;
   ordinal: CopyRef;
   /** The actor tag for the step. */
@@ -625,6 +629,14 @@ export interface SectionedViewTopicListBlock {
 export interface SectionedViewOrderedStepSequenceBlock {
   type: "ordered-step-sequence";
   items: SectionedViewContentStep[];
+  /** Two actors, each named in at most 20 resolved characters; 3 or 5 steps. */
+  lanes?: { a: CopyRef; b: CopyRef };
+  /** Visual sample/source caption, at most 120 resolved characters. */
+  caption?: CopyRef;
+  /** Opts an ordinary sequence into its terminal connector. Lanes default to ends. */
+  end?: "continues" | "ends";
+  /** Visible terminal copy, at most 40 resolved characters. */
+  endLabel?: CopyRef;
 }
 
 /** 4-6 question and answer pairs. */
@@ -744,9 +756,11 @@ type ResolvedCopyTree<T> = T extends CopyRef
 export type ResolvedSectionedViewSpecimenMedia = ResolvedCopyTree<SectionedViewSpecimenMedia>;
 export type ResolvedSectionedViewSpecimenPanel = ResolvedCopyTree<SectionedViewSpecimenPanel>;
 export type ResolvedSectionedViewSpecimenPart = ResolvedCopyTree<SectionedViewSpecimenPart>;
-export type ResolvedSectionedViewContentBlock = ResolvedCopyTree<SectionedViewContentBlock>;
+export type ResolvedSectionedViewContentBlock =
+  | Exclude<ResolvedCopyTree<SectionedViewContentBlock>, { type: "ordered-step-sequence" }>
+  | (ResolvedCopyTree<SectionedViewOrderedStepSequenceBlock> & { /** Consumer-resolved hidden continuation copy. */ continuesLabel?: string });
 /** A content section with its copy resolved and its ground applied. Absent optional fields stay absent. */
-export type ResolvedSectionedViewContentSection = Omit<ResolvedCopyTree<SectionedViewContentSection>, "ground"> & { ground: SectionedViewGround };
+export type ResolvedSectionedViewContentSection = Omit<ResolvedCopyTree<SectionedViewContentSection>, "ground" | "block"> & { ground: SectionedViewGround; block?: ResolvedSectionedViewContentBlock };
 
 export type ResolvedSectionedViewSection =
   | Omit<SectionedViewHeroSection, "eyebrow" | "heading" | "description" | "actions" | "media" | "ground"> & { ground: SectionedViewGround; eyebrow?: ResolvedCopy; heading: ResolvedCopy; description?: ResolvedCopy; actions?: ResolvedSectionedViewAction[]; media?: ResolvedSectionedViewHeroMedia }
@@ -1380,6 +1394,7 @@ function validateContentSection(section: Record<string, unknown>, path: string, 
     }
   }
   validateContentActionPlacement(section, path, findings);
+  if (split && isPlainObject(section.block) && section.block.type === "ordered-step-sequence" && section.block.lanes !== undefined) findings.push(finding("sectioned-view-content-steps-lanes-layout", `${path}.block`, `${path}.block with lanes needs a stacked section.`));
   if (section.block !== undefined) validateContentBlock(section.block, `${path}.block`, findings);
   if (section.media !== undefined) validateSpecimenMedia(section.media, `${path}.media`, findings);
 }
@@ -1533,9 +1548,23 @@ function validateContentBlock(value: unknown, path: string, findings: ComposeFin
       }
       return;
     }
-    case "ordered-step-sequence":
-      validateBlockKeys(value, ["type", "items"], ["items"], path, findings);
-      validateRecords(value.items, `${path}.items`, findings, { min: 3, max: 4 }, ["id", "ordinal", "label", "heading", "description", "visual", "href"], ["ordinal", "heading"], (step, stepPath) => {
+    case "ordered-step-sequence": {
+      const withLanes = value.lanes !== undefined;
+      validateBlockKeys(value, ["type", "items", "lanes", "caption", "end", "endLabel"], ["items"], path, findings);
+      validateEnumField(value, "end", ["ends", "continues"], "sectioned-view-content-module-option", path, findings);
+      validateOptionalCopyFields(value, ["endLabel", "caption"], path, findings);
+      if (withLanes && (!isPlainObject(value.lanes) || !hasOnlyOwnKeys(value.lanes, ["a", "b"]) || !hasOwnKeys(value.lanes, ["a", "b"]) || !isCopyRef(value.lanes.a) || !isCopyRef(value.lanes.b))) {
+        findings.push(finding("sectioned-view-content-steps-lanes-shape", `${path}.lanes`, `${path}.lanes must hold exactly two non-empty CopyRefs, a and b.`));
+      }
+      if (withLanes && Array.isArray(value.items)) {
+        if (value.items.length !== 3 && value.items.length !== 5) findings.push(finding("sectioned-view-content-steps-lanes-count", `${path}.items`, `${path}.items must hold 3 or 5 lane steps.`));
+        if (value.items.some((step) => isPlainObject(step) && step.visual !== undefined) && value.items.length !== 3) findings.push(finding("sectioned-view-content-steps-count", `${path}.items`, `${path}.items with lane visuals must hold exactly 3 steps.`));
+        if (!isPlainObject(value.items[0]) || value.items[0].lane !== "a" || !value.items.some((step) => isPlainObject(step) && step.lane === "b")) findings.push(finding("sectioned-view-content-steps-lane-use", `${path}.items`, `${path}.items must start in lane a and use both actors.`));
+      }
+      if (value.caption !== undefined && (!Array.isArray(value.items) || !value.items.some((step) => isPlainObject(step) && step.visual !== undefined))) findings.push(finding("sectioned-view-content-steps-caption", `${path}.caption`, `${path}.caption needs a step visual.`));
+      validateRecords(value.items, `${path}.items`, findings, withLanes ? { min: 3, max: 5 } : { min: 3, max: 4 }, ["id", "ordinal", "label", "heading", "description", "visual", "href", "lane"], ["ordinal", "heading"], (step, stepPath) => {
+        if (withLanes ? step.lane !== "a" && step.lane !== "b" : step.lane !== undefined) findings.push(finding("sectioned-view-content-steps-lane", `${stepPath}.lane`, `${stepPath}.lane must be a or b only when lanes are set.`));
+        if (withLanes && step.label !== undefined) findings.push(finding("sectioned-view-content-steps-lane-label", `${stepPath}.label`, `${stepPath}.label conflicts with its actor lane name.`));
         validateCopy(step.ordinal, `${stepPath}.ordinal`, findings);
         validateCopy(step.heading, `${stepPath}.heading`, findings);
         validateOptionalCopyFields(step, ["label", "description"], stepPath, findings);
@@ -1544,6 +1573,7 @@ function validateContentBlock(value: unknown, path: string, findings: ComposeFin
       });
       validateLinkGroup(value.items, `${path}.items`, findings);
       return;
+    }
     case "faq":
       validateBlockKeys(value, ["type", "items"], ["items"], path, findings);
       validateRecords(value.items, `${path}.items`, findings, { min: 4, max: 6 }, ["id", "question", "answer"], ["question", "answer"], (item, itemPath) => {
@@ -2067,13 +2097,25 @@ function resolveContentBlock(block: SectionedViewContentBlock, path: string, tex
       } as ResolvedSectionedViewContentBlock;
     case "comparison":
       return { type: "comparison", before: resolveComparisonSide(block.before, `${path}.before`, text), after: resolveComparisonSide(block.after, `${path}.after`, text) };
-    case "ordered-step-sequence":
+    case "ordered-step-sequence": {
+      const bounded = (ref: CopyRef, field: string, max: number, code: string): string => {
+        const resolved = text(ref, `${path}.${field}`);
+        const length = [...resolved.trim()].length;
+        if (length > max) throw new SectionedViewResolutionError("invalid-document", `resolveSectionedViewDocument refused invalid document: ${code}: ${path}.${field} resolves to ${length} characters; it holds at most ${max}.`);
+        return resolved;
+      };
+      const foundation = block.lanes !== undefined || block.end !== undefined || block.endLabel !== undefined;
       return {
         ...block,
+        ...(block.lanes === undefined ? {} : { lanes: { a: bounded(block.lanes.a, "lanes.a", 20, "sectioned-view-content-steps-lanes-shape"), b: bounded(block.lanes.b, "lanes.b", 20, "sectioned-view-content-steps-lanes-shape") } }),
+        ...(block.endLabel === undefined ? {} : { endLabel: bounded(block.endLabel, "endLabel", 40, "sectioned-view-content-module-option") }),
+        ...(block.caption === undefined ? {} : { caption: bounded(block.caption, "caption", 120, "sectioned-view-content-steps-caption") }),
+        ...(foundation && block.end === "continues" && block.endLabel === undefined ? { continuesLabel: text({ id: "steps.continues" }, `${path}.continuesLabel`) } : {}),
         items: block.items.map((step, index) => {
           const stepPath = `${path}.items.${index}`;
           return {
             id: step.id,
+            ...(step.lane === undefined ? {} : { lane: step.lane }),
             ordinal: text(step.ordinal, `${stepPath}.ordinal`),
             ...copyField("label", step.label, stepPath, text),
             heading: text(step.heading, `${stepPath}.heading`),
@@ -2083,6 +2125,7 @@ function resolveContentBlock(block: SectionedViewContentBlock, path: string, tex
           };
         }),
       } as ResolvedSectionedViewContentBlock;
+    }
     case "faq":
       return { ...block, items: block.items.map((item, index) => ({ id: item.id, question: text(item.question, `${path}.items.${index}.question`), answer: text(item.answer, `${path}.items.${index}.answer`) })) };
   }
@@ -2130,7 +2173,7 @@ interface BandShape {
   layout: SectionedViewContentLayout;
   mediaSide?: SectionedViewContentMediaSide;
   block: string;
-  visual: "none" | "specimen";
+  visual: "none" | "specimen" | "lanes";
   /** Carries a specimen (as media or inside its block) or a table: a dense band. */
   dense: boolean;
   ground?: SectionedViewGround;
@@ -2170,7 +2213,7 @@ function blockTreatment(block: SectionedViewContentBlock): string {
     case "topic-list":
       return `columns-${block.columns ?? 2}`;
     case "ordered-step-sequence":
-      return hasBlockVisual(block) ? "visual" : "plain";
+      return `${block.lanes === undefined ? "" : "lanes/"}${hasBlockVisual(block) ? "visual" : "plain"}`;
     default:
       return "default";
   }
@@ -2193,7 +2236,7 @@ function bandShape(section: SectionedViewSection, path: string, index: number): 
     layout,
     ...(layout === "split" ? { mediaSide: section.mediaSide ?? "end" } : {}),
     block: block?.type ?? (section.media === undefined ? "intro" : "none"),
-    visual: section.media === undefined ? "none" : "specimen",
+    visual: block?.type === "ordered-step-sequence" && block.lanes !== undefined ? "lanes" : section.media === undefined ? "none" : "specimen",
     dense: section.media !== undefined || (block !== undefined && hasBlockVisual(block)),
     ground: section.ground,
     treatment: block === undefined ? "default" : blockTreatment(block),
@@ -2247,7 +2290,7 @@ function varietyWarning(rule: string, path: string, message: string): ComposeFin
  * Whether a visual repeats its block's words cannot be judged before copy
  * resolves, so that rule stays with the writer.
  */
-export function checkSectionVariety(input: SectionedViewDocument | readonly SectionedViewDocument[], context: { hasAfterContent?: boolean } = {}): ComposeFinding[] {
+export function checkSectionVariety(input: SectionedViewDocument | readonly SectionedViewDocument[], context: { hasAfterContent?: boolean; catalog?: boolean; copyResolver?: CopyResolver } = {}): ComposeFinding[] {
   const documents = Array.isArray(input) ? (input as readonly SectionedViewDocument[]) : [input as SectionedViewDocument];
   const many = Array.isArray(input);
   const bands: BandShape[] = [];
@@ -2261,6 +2304,20 @@ export function checkSectionVariety(input: SectionedViewDocument | readonly Sect
   });
 
   const findings: ComposeFinding[] = [];
+  documents.forEach((document, documentIndex) => {
+    if (!Array.isArray(document?.sections)) return;
+    document.sections.forEach((section, sectionIndex) => {
+      if (section.kind !== "content-section" || section.block?.type !== "ordered-step-sequence") return;
+      const block = section.block;
+      const path = `${many ? `documents.${documentIndex}.` : ""}sections.${sectionIndex}.block`;
+      if (block.end === "continues" && block.endLabel === undefined) findings.push(varietyWarning("sectioned-view-content-steps-end-label", `${path}.endLabel`, `${path} continues; add visible copy naming what follows.`));
+      if (context.catalog === true && hasBlockVisual(block)) {
+        let caption: string | undefined;
+        try { if (block.caption !== undefined && typeof context.copyResolver === "function") caption = context.copyResolver(block.caption)?.text; } catch { /* Unavailable copy cannot prove a sample marker. */ }
+        if (typeof caption !== "string" || !/\bsample data\b/i.test(caption)) findings.push(varietyWarning("sectioned-view-content-steps-caption-sample", `${path}.caption`, `${path} has sample visuals; include a Sample data caption.`));
+      }
+    });
+  });
   const onlySection = documents.flatMap((document) => Array.isArray(document?.sections) ? document.sections : []);
   if (onlySection.length === 1 && onlySection[0]?.kind === "hero" && onlySection[0].compact === true && context.hasAfterContent !== true) {
     findings.push(varietyWarning("sectioned-view-hero-compact-content", bands[0]?.path ?? "sections.0", "A compact hero needs content after it; supply page content or use the default hero."));

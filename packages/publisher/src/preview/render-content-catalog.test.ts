@@ -109,9 +109,22 @@ describe("content catalog fixture", () => {
     for (const finding of findings) {
       expect(["sectioned-view-variety-card-bands", "sectioned-view-variety-comparison-count", "sectioned-view-variety-treatment", "sectioned-view-variety-repeat"]).toContain(finding.rule);
     }
-    // The one repeat is the linked variant (13b) shown right after the unlinked topic list it varies.
+    // Adjacent variants deliberately repeat: linked topics and the visual/plain lane pair.
     const linkedAt = contentCatalogDocument.sections.findIndex((section) => section.id === "catalog-topics-linked");
-    expect(findings.filter((finding) => finding.rule === "sectioned-view-variety-repeat").map((finding) => finding.path)).toEqual([`sections.${linkedAt}`]);
+    expect(findings.filter((finding) => finding.rule === "sectioned-view-variety-repeat").map((finding) => finding.path)).toEqual([`sections.${linkedAt}`, `sections.${contentCatalogDocument.sections.findIndex((section) => section.id === "catalog-steps-lanes-plain")}`]);
+  });
+
+  it("shows the two lane tracks with exact actor joins and terminal semantics", () => {
+    const dom = new JSDOM(renderContentCatalogMarkup()).window.document;
+    const visual = dom.getElementById("catalog-steps-lanes-visual")!;
+    const plain = dom.getElementById("catalog-steps-lanes-plain")!;
+    expect([...visual.querySelectorAll("li[data-lane]")].map((li) => li.getAttribute("data-lane"))).toEqual(["a", "b", "a"]);
+    expect([...plain.querySelectorAll("[data-step-join]")].map((join) => join.getAttribute("data-step-join"))).toEqual(["down", "same", "up", "same"]);
+    expect(visual.querySelectorAll("[data-step-visual]")).toHaveLength(3);
+    expect(visual.querySelector("[data-step-end]")?.getAttribute("data-step-end")).toBe("ends");
+    expect(visual.querySelector("[data-step-caption]")?.textContent).toBe("Sample data.");
+    expect(plain.querySelector("[data-step-end]")?.getAttribute("data-step-end")).toBe("continues");
+    expect(plain.querySelector("[data-step-end-label]")?.textContent).toBe("Repeats each quarter");
   });
 
   it("keeps every band's copy within the content cookbook's budgets", () => {

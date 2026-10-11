@@ -5050,3 +5050,24 @@ quiet on A, tertiary on B and frame C, and quiet on other C bands. Explicit
 emphasis renders as authored; `action-tier` warns when it exceeds the weight
 ceiling. Linked cards are quiet and remain independent of section-action counts.
 `checkSectionVariety` retains its existing output.
+
+
+Content-section `ordered-step-sequence` blocks may name two `lanes` with
+CopyRefs and put `lane: "a" | "b"` on every step. Use 3 or 5 steps, exactly
+3 with visuals; start in a, use both actors, omit step labels, and use a
+stacked section. Lane names resolve to at most 20 characters. The ordered
+list is named by the section's real h2. Visual lanes weigh A; plain lanes B.
+
+`caption` is a CopyRef used only with step visuals (120 resolved characters).
+`end`/`endLabel` opt ordinary blocks into the same final connector as lanes.
+The active default is `ends`; `endLabel` holds at most 40 resolved characters.
+An explicit `continues` without endLabel resolves consumer `steps.continues`
+through the existing CopyResolver, records its provenance, and renders it
+hidden; missing copy refuses. `checkSectionVariety` warns about the absent
+visible endLabel. Its optional `{ catalog: true, copyResolver }` context
+checks caption text for “Sample data”; unavailable copy cannot prove the
+marker and warns. CopyRef shape validation precedes resolution; resolved
+lane, caption and end-label budget refusals name their contract findings.
+The direct resolved-model renderer enforces the same shapes and budgets.
+Ordinary blocks without end options keep their existing 3–4 counts and DOM,
+and request no new copy. The broader ordinary-step migration is deferred.

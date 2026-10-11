@@ -162,6 +162,7 @@ export type {
   SectionedViewContentBlockType,
   SectionedViewContentSection,
   SectionedViewContentStep,
+  SectionedViewStepLane,
   SectionedViewFaqBlock,
   SectionedViewFeatureGridBlock,
   SectionedViewFeatureGridEmphasis,
