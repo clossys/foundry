@@ -80,5 +80,6 @@ function Linear({ input, relationLabel }: { input: SceneInput; relationLabel?: R
 export function Scene({ id, input, label, relationLabel, sample, className }: SceneProps) {
   if (typeof id !== "string" || !id || /\s/.test(id) || !hasContent(label)) throw new TypeError("Scene: caller instance id and authored figure label are required.");
   const layout = layoutScene(input);
-  return <figure className={cx("scene-root", className)} data-template={input.template} aria-labelledby={id + "-label"}><p id={id + "-label"} className="sr-only">{label}</p><div className="scene-desktop" data-scene-desk=""><Drawing input={input} layout={layout} /></div><Linear input={input} relationLabel={relationLabel} />{hasContent(sample) ? <figcaption className="scene-caption">{sample}</figcaption> : null}</figure>;
+  const labelId = `${id}-label`;
+  return <figure className={cx("scene-root", className)} data-template={input.template} aria-labelledby={labelId}><p id={labelId} className="sr-only">{label}</p><div className="scene-desktop" data-scene-desk=""><Drawing input={input} layout={layout} /></div><Linear input={input} relationLabel={relationLabel} />{hasContent(sample) ? <figcaption className="scene-caption">{sample}</figcaption> : null}</figure>;
 }

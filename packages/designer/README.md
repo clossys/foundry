@@ -3075,7 +3075,8 @@ channel.
 
 `Hero size="compact"` uses the section heading ramp and rhythm. Its heading
 remains an `h1` by default; `headingLevel={2}` still supports a later hero.
-Omitting `size` or selecting `"default"` keeps the display treatment.
+`size="display"` is the default. Omitting `size` or selecting the temporary
+`"default"` alias keeps the same display treatment.
 
 ```tsx
 import { Hero } from "@clossys/designer/blocks";
@@ -3209,9 +3210,21 @@ display face that scales with the viewport (`text-h1`, `text-h0` from
 display step under `Hero`'s, and the description sits at `text-body-l`. `align` (`ContentSectionAlign`: `"start"` or `"center"`, default
 `"start"`) lines the header group up; modules always take the full column.
 `ground` selects the header group's ink and paints no surface. The band
-around it (ground surface, padding and column) is a `SectionFrame`'s.
+around it (ground surface and column) is a `SectionFrame`'s.
+An explicit `size` owns the section's vertical padding and header scale:
+
+| Size | Below 768px | From 768px | From 1280px | Header scale |
+| --- | --- | --- | --- | --- |
+| `compact` | 48px | 64px | 96px | section |
+| `standard` | 64px | 96px | 128px | section |
+| `display` | 96px | 128px | 160px | display |
+
+The largest step composes the existing 128px and 32px spacing tokens.
+During caller migration, omitting `size` preserves the existing outer
+`SectionFrame` padding and the `emphasis` prop. When opting into `size`,
+remove outer vertical padding so the two frames do not add their spacing.
 `emphasis` (`ContentSectionEmphasis`: `"section"` or `"display"`, default
-`"section"`) sets the header group's scale; `"display"` gives a statement
+`"section"`) sets the header group's scale when `size` is omitted; `"display"` gives a statement
 band (a header and its actions, no module or media) the `SectionIntro`
 display step and rhythm. `headingLevel` still sets the element.
 
@@ -3236,18 +3249,18 @@ an eyebrow, actions, or modules other than prose, or already sits in a
 `children`, `className`, `style` and every native `<div>` attribute except
 `title`.
 
-**Layouts.** `layout` (`ContentSectionLayout`) is `"stacked"` (the default)
-or `"split"`. A stacked section may also take `media`, a visual module (a
-`Specimen`, a `MediaFigure`) rendered after the text module in the same
-column. A split section requires `media` (`ContentSectionSplitProps`; a
-split without it throws a `TypeError`, since a text-only band is stacked):
-from `tablet-lg` the header group and text module share a 5/12 column and
-the visual takes 7/12, `gap-x-4xl` apart and vertically centred; below
-`tablet-lg` it stacks header, text module, visual. `mediaSide`
-(`ContentSectionMediaSide`: `"end"`, the default, or `"start"`) moves the
-visual with `col-start-*` only, so the reading order is always header, text
-module, visual. `align` is stacked only; a split's header lines up at the
-start. The 5/12 to 7/12 ratio is fixed so split bands line up down a page.
+**Layouts.** `layout` (`ContentSectionLayout`) is `"stacked"` (the default),
+`"split-start"` or `"split-end"`. A stacked section may take `media`, rendered
+after its text module. From `tablet-lg` (1024px), a split puts the header
+group in a 5/12 column and its companion in a 7/12 column, `gap-x-4xl` apart.
+Media takes the companion column; without media, children take it. Without
+either, the eyebrow and heading take 5/12 and description, actions and
+footnote take 7/12. Header-only splits align at the top; media splits centre
+vertically. Below 1024px they stack in DOM reading order: heading first,
+then supporting content. `split-start` moves the companion with grid
+placement only. `align` is stacked only; split headers line up at the start.
+The temporary `layout="split"` and `mediaSide="start" | "end"` aliases keep
+their existing DOM and still require media until callers migrate.
 
 ```tsx
 import { ContentSection, TopicList } from "@clossys/designer/blocks";
@@ -3255,8 +3268,8 @@ import { ContentSection, TopicList } from "@clossys/designer/blocks";
 function SplitSection() {
   return (
     <ContentSection
-      layout="split"
-      mediaSide="start"
+      layout="split-start"
+      size="standard"
       eyebrow="Eyebrow text"
       heading="Section heading"
       media={<img src="/media.png" alt="Media description" />}
@@ -5649,17 +5662,17 @@ not a grab-bag).
 | `SectionGround` | type | `"base" \| "sunken" \| "inverse"`. |
 | `SectionGroundClasses` | type | The complete class-map shape for one section ground, including readiness `status` and separately named neutral `offAxis` mark. |
 | `SectionStatusTone` | type | `"success" \| "warning" \| "info"`; closed readiness-dot tones. A separate off-axis disposition uses neutral structural ink. |
-| `HeroProps` | type | Props for `Hero`: `eyebrow`, `heading`, `description`, `actions`, `media`, `headingLevel`, `ground`, `align`, `className`, `style`, plus every native `<section>` attribute. |
+| `HeroProps` | type | Props for `Hero`: `eyebrow`, `heading`, `description`, `actions`, `media`, `composition`, `headingLevel`, `size` (`display` or `compact`, with temporary `default` alias), `ground`, `align`, `className`, `style`, plus every native `<section>` attribute. |
 | `HeroAlign` | type | `"start" \| "center"`. |
 | `HeroHeadingLevel` | type | `1 \| 2`. |
 | `MarketingChapter` | component | Full-bleed marketing chapter band: marketing-scale title, optional description, prose slot. `headingLevel` picks its heading element. |
 | `MarketingChapterProps` | type | Props for `MarketingChapter`: `title`, `description`, `children`, `headingLevel`, `ground`, `className`, `style`, plus every native `<section>` attribute except `title`. |
 | `MarketingChapterHeadingLevel` | type | `2 \| 3`. |
 | `ContentSection` | component | One marketing section anatomy: a header group (eyebrow, heading, description, actions) held to the prose measure, then a module slot for one or more content modules, at fixed spacing; stacked, or split with a visual in a 7/12 column. |
-| `ContentSectionProps` | type | `ContentSectionStackedProps \| ContentSectionSplitProps`: `eyebrow`, `heading`, `description`, `actions`, `footnote`, `headingLevel`, `ground`, `layout`, `media`, `mediaSide` (split), `align` (stacked), `children`, `className`, `style`, plus every native `<div>` attribute except `title`. |
+| `ContentSectionProps` | type | `ContentSectionStackedProps \| ContentSectionSplitProps`: `eyebrow`, `heading`, `description`, `actions`, `footnote`, `headingLevel`, `size`, `emphasis`, `ground`, `layout`, `media`, `mediaSide` (legacy split), `align` (stacked), `children`, `className`, `style`, plus every native `<div>` attribute except `title`. |
 | `ContentSectionStackedProps` | type | Stacked section: `layout?: "stacked"`, `align?`, optional `media` after the text module. |
-| `ContentSectionSplitProps` | type | Split section: `layout: "split"`, required `media`, `mediaSide?`. |
-| `ContentSectionLayout` | type | `"stacked" \| "split"`. |
+| `ContentSectionSplitProps` | type | Split section: `layout: "split-start" \| "split-end"`, optional `media`; temporary `layout: "split"` alias requires `media` and accepts `mediaSide?`. |
+| `ContentSectionLayout` | type | `"stacked" \| "split-start" \| "split-end" \| "split"` (temporary alias). |
 | `ContentSectionMediaSide` | type | `"end" \| "start"`. |
 | `ContentSectionHeadingLevel` | type | `2 \| 3 \| 4 \| 5 \| 6`. |
 | `ContentSectionAlign` | type | `"start" \| "center"`. |
