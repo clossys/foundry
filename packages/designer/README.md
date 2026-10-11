@@ -2291,6 +2291,10 @@ visible text (`valueText`, then `limitText`) above a thin bar. `limit`
 draws a tick at the `--ui-border-rule` width and shades the disallowed
 side: after the limit for `direction="max"` (a cap, the default), before it
 for `direction="min"` (a floor). Without a limit it reads as a share.
+Supply `previous` with nonblank `previousText` to show a prior measurement.
+The prior value must be finite and within zero and `scaleMax`; a dashed
+hairline marks its position and the authored history text stays visible
+outside the decorative bar. Orphaned history fields are refused.
 `tone` (`MeterTone`) is a status tone, `"neutral"` for a plain quantity, or
 `"accent"` for a plain quantity in the brand accent (a share or an
 allocation, never a state). `warning` fills with diagonal hatching and
@@ -3578,10 +3582,11 @@ converge, evidence-trail and approval-chain, capped at 880px, 560px and 1000px.
 Below those thresholds the linear form is capped by `--ui-scene-card-w`
 (default `30rem`). At desktop widths the HTML is clipped, never removed.
 
-`--ui-scene-tilt` defaults to `1deg`. Both Scene tokens are structural and
-non-brandable; brand overrides are refused. Disorder defaults to medium for
-converge and low for the other templates; none produces zero tilt and nudge. Tilt pivots at the wire
-anchor. All paints and radii read live theme tokens. A converge relation may
+Documents remain flat. Seeded disorder controls horizontal nudge, defaulting
+to medium for converge and low for the other templates; none produces zero
+nudge. `--ui-scene-card-w` is structural and non-brandable; brand overrides
+are refused. Wire anchors follow each document's right-edge midpoint.
+All paints and radii read live theme tokens. A converge relation may
 have one emphasis accent; approval-chain uses primary ink for its subject and
 reserves its sole accent for the decider ring. Scenes have no controls, hooks,
 script, animation or focus stops.
@@ -3598,6 +3603,7 @@ throw `TypeError`; unknown targets or targets without label lines throw
 
 `legendSide="end"` is the default: figure then key below 1024px, an 8:4 grid
 from 1024px. `legendSide="below"` keeps the key below at the prose measure.
+Each key row composes the public `Item` at its standard text scale.
 Key headings use `headingLevel` 3 by default, or 4. `ground` selects base,
 sunken or inverse key colors. Pass authored sample disclosure as the `sample`
 caption whenever the panel contains illustrative figures. Labels accept React
@@ -3611,8 +3617,8 @@ unmarked panels keep their existing markup. Both components remain server-safe.
 
 ### RecordLedger and rule card visuals
 
-RecordLedger shows one record in a named figure, or three-to-four role handovers
-in an ordered list. Record groups contain one-to-six rows or a final owner;
+RecordLedger shows one record in a named figure with `form="record"`.
+Record groups contain one-to-six rows or a final owner;
 one-to-three groups are allowed. Multi-column records have one group per column.
 Provide a unique caller `id` seed for each record instance, even with identical
 data. The component generates length-prefixed DOM IDs for the figure, head and
@@ -3623,16 +3629,14 @@ strings, booleans and empty recursive arrays are rejected; numeric zero is valid
 
 Two columns are stacked below 768px and equal from 768px. Three columns become
 two plus a full-width third at 768px, then three from 1024px; a final owner gets
-4/4/3 shares, otherwise the columns are equal. Pairs stack below 768px; above
-that, a decorative wire joins the role and product. All native margins and list
+4/4/3 shares, otherwise the columns are equal. All native margins and list
 padding are reset by these components. Motion is static, including reduced motion;
 page reveal integration awaits the shared reveal infrastructure. Inverse-ledger
 status labels use inverse primary ink for normal-text contrast; glyph colors and
 shapes remain the existing status marks. Other grounds retain toned label ink.
 
 A flag needs caller-owned `flagLabel` copy; at most one row per record or tile
-may be flagged. Pair `productLabel` supplies the hidden lead-in and `product.kind`
-supplies the complete visible line. LedgerTile is static and rejects nested
+may be flagged. LedgerTile is static and rejects nested
 interactive nodes in its own caption and row fields. `mobileRows={3}` hides later
 rows only below 768px. Put meaningful warning/danger rows within that cap.
 
@@ -3839,11 +3843,15 @@ outline lifted by the panel elevation (raised fill, one panel edge,
 `rounded-panel`, the `--ui-elevation-panel` shadow, which defaults to
 `--ui-elevation-floating`), so it reads as
 product UI on a stage: a title row (`title` at `text-body-l`, `meta`,
-`status`), 1 to 3 `parts` and an optional `footer` (an assignee's initials
+`status`, optional `badge`), 1 to 3 `parts` and an optional `footer` (an assignee's initials
 on an accent-tint disc beside their name, a note), each separated by a
 hairline. Body text is `text-body`, labels and secondary lines
-`text-body-s`, never smaller; part labels are sentence case. All small text
-is secondary ink, which holds AA on the raised fill.
+`text-body-s`; part labels are sentence case. Badge labels use the atom's
+`text-caption` scale. Secondary lines use secondary ink, which holds AA
+on the raised fill. A badge has an authored
+`label` and optional existing Badge `tone`: neutral (the default), success,
+warning, danger or info. It can appear alongside the state or name a header
+on its own. Empty labels and unsupported tones are refused.
 
 The figure and each panel are size containers (`@container`), so a panel
 responds to its own width, not the viewport's: padding is `p-lg`, `p-xl`
@@ -3854,9 +3862,12 @@ screen.
 
 Parts (`SpecimenPart`, by `type`): `"fields"` (a `<dl>` in 1, 2 or 4
 columns, default 2, never more than two below the `@lg` container width); `"status-rows"`
-(a `<ul>` of label, detail and `StatusMark`); `"meter"` (the `Meter` atom
+(a `<ul>` of label, detail and `StatusMark`; optional `mobileRows: 3` hides
+later rows below the 768px viewport breakpoint while retaining them in the
+DOM); `"meter"` (the `Meter` atom
 at `emphasis="figure"`, the value as the panel's focal number, with its
-label, state and note); `"table"` (a real `<table>` of at most 4
+label, state and note, forwarding optional paired `previous`/`previousText`
+to the same Meter); `"table"` (a real `<table>` of at most 4
 columns and 5 rows with a visually hidden `caption`; below the `@md`
 container width each row reflows to a stacked record of label/value pairs, with explicit table
 roles so the semantics survive the display change); `"schedule"` (an
@@ -5707,7 +5718,7 @@ not a grab-bag).
 | `StatusMarkProps` | type | Props for `StatusMark`: `tone`, `children` (required), plus every native `<span>` attribute. |
 | `StatusMarkTone` | type | `"success" \| "warning" \| "danger" \| "info" \| "neutral"`. |
 | `Meter` | component | A value against a scale and an optional limit, with visible value and limit text and a decorative bar. Server-safe. |
-| `MeterProps` | type | Props for `Meter`: `value`, `scaleMax`, `limit`, `direction`, `tone`, `valueText`, `limitText`, plus every native `<div>` attribute except `children`. |
+| `MeterProps` | type | Props for `Meter`: `value`, `scaleMax`, `limit`, `direction`, `tone`, `valueText`, `limitText`, `emphasis`, optional paired `previous`/`previousText`, plus every native `<div>` attribute except `children`. |
 | `MeterTone` | type | `"success" \| "warning" \| "danger" \| "info" \| "neutral"`. |
 | `MeterDirection` | type | `"max" \| "min"`: whether the limit is a cap or a floor. |
 | `PageHeader` | component | Page banner: breadcrumb slot, title, description, actions slot. |
@@ -5807,11 +5818,10 @@ not a grab-bag).
 | `AnatomyCallouts` | component | A specimen panel with 3 or 5 numbered markers and an ordered key. |
 | `AnatomyCalloutsProps` | type | Required caller instance `id`, `label`, `panel`, `markers`, `keyLabel`; optional `legendSide`, `sample`, `headingLevel`, `ground`, `className`, `style`. |
 | `AnatomyCalloutsMarker` | type | Stable `id`, labelled `target`, authored `heading` and `description`. |
-| `RecordLedger` | component | A record or role handovers on rules, without a panel. |
-| `RecordLedgerProps` | type | `form: "record"` takes unique instance seed `id`, `head`, `groups`, `columns?`, `caption`, `flagLabel?`; `form: "pairs"` takes `items`, `productLabel`, `caption?`; both accept `ground`, `headingLevel`, `className`. |
+| `RecordLedger` | component | A record on rules, without a panel. |
+| `RecordLedgerProps` | type | `form: "record"` takes unique instance seed `id`, `head`, `groups`, `columns?`, `caption`, `flagLabel?`; accepts `ground`, `headingLevel`, `className`. |
 | `LedgerRowData` | type | Static row: `id`, `label`, `detail?`, `status?` (`tone`, `label`), `flag?`. |
 | `LedgerGroupData` | type | `id`, `label`, either `rows` or last-group `owner` (`initials`, `name`, `note?`), with optional owner-group `note`. |
-| `LedgerPairData` | type | `id`, `role` (`eyebrow`, `heading`, `description`) and `product` (`kind`, `subject`, `detail?`, `status?`); kind is a complete authored line. |
 | `LedgerTile` | component | A captioned two-to-five-row plate visual for rule cards. |
 | `LedgerTileProps` | type | `caption`, `rows`, `mobileRows?` (`3`), `flagLabel?`, `ground?`, `className?`. |
 | `Scene` | component | Static converge, evidence-trail or approval-chain figure with complete linear HTML. |
@@ -5831,7 +5841,7 @@ not a grab-bag).
 | `SceneFinding` | type | Stable `id`, function label, title, subject line and status; one finding is the subject. |
 | `SceneLayout` | type | Intrinsic width/height and document, card, wire, terminal, tag, node and person geometry. |
 | `ScenePoint` | type | User-unit `x` and `y` coordinates. |
-| `ScenePart` | type | A layout part's id, bounds, tilt multiplier and horizontal nudge. |
+| `ScenePart` | type | A layout part's id, bounds and deterministic horizontal nudge. |
 | `SceneWire` | type | Source/target ids, endpoints and rounded cubic path, with subject/emphasis flags. |
 | `SceneTerminal` | type | A receiving row's anchor and subject flag. |
 | `SceneTag` | type | Citation tag bounds and copy. |
@@ -5855,7 +5865,7 @@ not a grab-bag).
 | `SpecimenArrangement` | type | `"single" \| "row" \| "stack" \| "flow"`. |
 | `SpecimenPanel` | component | One specimen panel: an outline card with a title row, 1 to 3 parts and an optional footer. |
 | `SpecimenPanelProps` | type | Props for `SpecimenPanel`: `SpecimenPanelContent` plus native `<div>` attributes except `title` and `children`. |
-| `SpecimenPanelContent` | type | What one panel shows: `title?`, `meta?`, `status?`, `parts`, `footer?`. |
+| `SpecimenPanelContent` | type | What one panel shows: `title?`, `meta?`, `status?`, `badge?`, `parts`, `footer?`. |
 | `SpecimenPanelItem` | type | One entry of `Specimen`'s `panels`: `SpecimenPanelContent` plus `id`. |
 | `SpecimenFooter` | type | A panel footer: `assignee?`, `note?`. |
 | `SpecimenAssignee` | type | `initials` (decorative), `name`, `note?`. |
@@ -5865,9 +5875,9 @@ not a grab-bag).
 | `SpecimenPartType` | type | `"fields" \| "status-rows" \| "meter" \| "table" \| "schedule" \| "shares" \| "files"`. |
 | `SpecimenFieldsPart` | type | `type: "fields"`: `label?`, `columns?` (`1 \| 2 \| 4`), `items` (1 to 6). |
 | `SpecimenField` | type | `id`, `label`, `value`. |
-| `SpecimenStatusRowsPart` | type | `type: "status-rows"`: `label?`, `items` (1 to 6). |
+| `SpecimenStatusRowsPart` | type | `type: "status-rows"`: `label?`, `items` (1 to 6), optional `mobileRows: 3`. |
 | `SpecimenStatusRow` | type | `id`, `label`, `detail?`, `status`. |
-| `SpecimenMeterPart` | type | `type: "meter"`: `label`, `value`, `scaleMax`, `limit?`, `direction?`, `tone`, `valueText`, `limitText?`, `status?`, `note?`. |
+| `SpecimenMeterPart` | type | `type: "meter"`: `label`, `value`, `scaleMax`, `limit?`, `direction?`, `tone`, `valueText`, `limitText?`, paired `previous?`/`previousText?`, `status?`, `note?`. |
 | `SpecimenTablePart` | type | `type: "table"`: `label?`, `caption`, `columns` (1 to 4), `rows` (1 to 5). |
 | `SpecimenTableColumn` | type | `id`, `label`. |
 | `SpecimenTableRow` | type | `id`, `cells` (one per column; the first is the row header). |
@@ -6168,7 +6178,7 @@ part of this package's public API" and reachable only by that one test.
   ratified from `contrast.test.ts`'s own hand-curated pair map rather than
   auto-derived from token names. An earlier design assumed this gate could
   self-extend, deriving one pair per `--<role>-on-<ground>`-shaped token
-  name; counted against this package's real 183 tokens, only 5 actually
+  name; counted against this package's real 182 tokens, only 5 actually
   follow that shape (`--color-ink-on-accent`, `--color-ink-on-inverse`,
   `--color-accent-on-inverse`, `--color-line-on-inverse`,
   `--ui-ring-on-inverse` — see `contrast-pairs.ts`'s own header for a 6th,

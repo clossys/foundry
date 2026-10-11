@@ -210,7 +210,6 @@ export type {
   RecordLedgerProps,
   LedgerRowData,
   LedgerGroupData,
-  LedgerPairData,
   LedgerTileProps,
   CardGridTreatment,
   LinkGridProps,

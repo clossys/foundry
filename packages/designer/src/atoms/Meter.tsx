@@ -1,6 +1,6 @@
 import type { CSSProperties, HTMLAttributes } from "react";
 import { cx } from "./internal/cx.js";
-import { UI_BORDER_RULE } from "./internal/ui-vars.js";
+import { UI_BORDER_HAIRLINE, UI_BORDER_RULE } from "./internal/ui-vars.js";
 
 /**
  * Fill colour and texture. The four status tones repeat a state; `neutral`
@@ -34,6 +34,10 @@ export interface MeterProps extends Omit<HTMLAttributes<HTMLDivElement>, "childr
   scaleMax: number;
   /** Optional limit, drawn as a tick, with the disallowed side shaded. Finite, `>= 0`. */
   limit?: number;
+  /** Prior measurement within the scale; requires authored previousText. */
+  previous?: number;
+  /** Visible alternative to the decorative prior marker. Required with previous. */
+  previousText?: string;
   /** @default "max" */
   direction?: MeterDirection;
   /** Colour of the filled part. Repeats what `valueText` (or a nearby `StatusMark`) says. */
@@ -117,6 +121,8 @@ export function Meter({
   value,
   scaleMax,
   limit,
+  previous,
+  previousText,
   direction = "max",
   tone,
   valueText,
@@ -130,9 +136,23 @@ export function Meter({
   }
   assertFiniteNonNegative("value", value);
   if (limit !== undefined) assertFiniteNonNegative("limit", limit);
+  if ((previous === undefined) !== (previousText === undefined)) throw new TypeError("Meter: previous and previousText must be supplied together.");
+  if (previous !== undefined) {
+    assertFiniteNonNegative("previous", previous);
+    if (previous > scaleMax) throw new RangeError("Meter: previous must be within the scale.");
+    if (typeof previousText !== "string" || !previousText.trim()) throw new TypeError("Meter: previousText must contain authored text.");
+  }
 
   const valuePct = percentOf(value, scaleMax);
   const limitPct = limit === undefined ? undefined : percentOf(limit, scaleMax);
+  const previousPct = previous === undefined ? undefined : percentOf(previous, scaleMax);
+  const previousStyle: CSSProperties | undefined = previousPct === undefined ? undefined : {
+    insetInlineStart: `calc(${previousPct}% - ${previousPct / 100} * ${UI_BORDER_HAIRLINE})`,
+    inlineSize: UI_BORDER_HAIRLINE,
+    boxSizing: "border-box",
+    borderWidth: 0,
+    borderInlineStartWidth: UI_BORDER_HAIRLINE,
+  };
 
   // The disallowed side of the limit: after it for a cap, before it for a floor.
   const zoneStyle: CSSProperties | undefined =
@@ -164,6 +184,7 @@ export function Meter({
         <span className={VALUE_ROW_CLASSES[emphasis].value}>{valueText}</span>
         {limitText ? <span className={VALUE_ROW_CLASSES[emphasis].limit}>{limitText}</span> : null}
       </div>
+      {previousText !== undefined ? <p className="m-0 text-body-s text-ink-secondary tabular-nums">{previousText}</p> : null}
       <div aria-hidden="true" className="relative h-2 w-full overflow-hidden rounded-pill bg-surface-sunken">
         {zoneStyle ? <span data-part="zone" className="absolute inset-y-0 bg-line-base" style={zoneStyle} /> : null}
         <span
@@ -172,6 +193,7 @@ export function Meter({
           style={{ ...FILL_TEXTURES[tone], insetInlineStart: "0%", inlineSize: `${valuePct}%` }}
         />
         {tickStyle ? <span data-part="limit" className="absolute inset-y-0 bg-ink-primary" style={tickStyle} /> : null}
+        {previousStyle ? <span data-part="previous" className="absolute inset-y-0 border-s border-dashed border-ink-secondary bg-surface-base" style={previousStyle} /> : null}
       </div>
     </div>
   );

@@ -55,9 +55,9 @@ function assertInput(input: SceneInput) {
 }
 function scatter(seed: string, id: string, disorder: SceneDisorder) {
   const factor = disorder === "medium" ? 2 : disorder === "low" ? 1 : 0;
-  return { k: (fnv1a(seed + ":" + id) % 3 - 1) * factor, nudge: ((fnv1a(id + ":" + seed) >>> 7) % 3 - 1) * factor * 6 };
+  return { nudge: ((fnv1a(id + ":" + seed) >>> 7) % 3 - 1) * factor * 6 };
 }
-function part(id: string, x: number, y: number, width: number, height: number, k = 0, nudge = 0): ScenePart { return { id, x, y, width, height, k, nudge }; }
+function part(id: string, x: number, y: number, width: number, height: number, nudge = 0): ScenePart { return { id, x, y, width, height, nudge }; }
 const round = (n: number) => Math.round(n * 10) / 10;
 function wire(from: string, to: string, start: ScenePoint, end: ScenePoint, subject = false, emphasis = false): SceneWire {
   const dx = end.x - start.x;
@@ -73,7 +73,7 @@ export function layoutScene(input: SceneInput): SceneLayout {
     const sy = 40 + (body - sourceH) / 2, ty = 40 + (body - targetH) / 2;
     l.width = 880; l.height = 40 + body + 16;
     l.cards.push(part("target", 540, ty, 340, targetH));
-    l.docs = input.sources.items.map((d, i) => { const s = scatter(input.seed, d.id, disorder); return part(d.id, 24 + s.nudge, sy + i * 74, 264, 58, s.k, s.nudge); });
+    l.docs = input.sources.items.map((d, i) => { const s = scatter(input.seed, d.id, disorder); return part(d.id, 24 + s.nudge, sy + i * 74, 264, 58, s.nudge); });
     l.wires = input.relations.map(r => { const d = l.docs.find(d => d.id === r.from)!; return wire(r.from, r.to, { x: d.x + 264, y: d.y + 29 }, { x: 540, y: ty + 72 + input.target.rows.findIndex(row => row.id === r.to) * 48 + 24 }, false, !!r.emphasis); });
     l.terminals = input.target.rows.filter(row => l.wires.some(w => w.to === row.id)).map(row => ({ id: row.id, x: 540, y: ty + 72 + input.target.rows.indexOf(row) * 48 + 24, subject: false }));
   } else if (input.template === "evidence-trail") {
@@ -83,7 +83,7 @@ export function layoutScene(input: SceneInput): SceneLayout {
     for (const doc of input.sources) {
       const rowIndex = input.result.rows.findIndex(row => row.id === doc.cites), mid = 12 + 72 + rowIndex * 50 + 25;
       const s = scatter(input.seed, doc.id, disorder), y = Math.max(mid - 29 + (rowIndex === 0 ? 0 : 40), previousY + 98, 52);
-      const d = part(doc.id, 6 + Math.max(0, s.nudge), y, 196, 58, s.k, s.nudge); previousY = y; l.docs.push(d);
+      const d = part(doc.id, 6 + Math.max(0, s.nudge), y, 196, 58, s.nudge); previousY = y; l.docs.push(d);
       const w = wire(doc.id, doc.cites, { x: d.x + 196, y: y + 29 }, { x: 312, y: mid }); l.wires.push(w);
       const width = doc.cite.length * 8 + 14;
       l.tags.push({ ...part(doc.id, (w.start.x + w.end.x - width) / 2, (w.start.y + w.end.y) / 2 - 10, width, 20), text: doc.cite });
@@ -95,7 +95,7 @@ export function layoutScene(input: SceneInput): SceneLayout {
     const findH = input.findings.length * 106 - 18, decisionH = 84 + input.decision.rows.length * 48 + 76;
     const cy = 64 + findH / 2, dy = Math.max(40, cy - decisionH / 2);
     l.width = 1000; l.height = Math.max(64 + findH, dy + decisionH) + 8;
-    l.cards = input.findings.map((f, i) => { const s = scatter(input.seed, f.id, disorder); return part(f.id, 14 + Math.max(0, s.nudge), 64 + i * 106, 372, 88, s.k, s.nudge); });
+    l.cards = input.findings.map((f, i) => { const s = scatter(input.seed, f.id, disorder); return part(f.id, 14 + Math.max(0, s.nudge), 64 + i * 106, 372, 88, s.nudge); });
     l.cards.push(part("decision", 620, dy, 380, decisionH));
     l.nodes.push({ ...part("node", 425, cy - 18, 150, 36), text: input.node.label });
     l.wires = input.findings.map(f => { const d = l.cards.find(d => d.id === f.id)!; return wire(f.id, "node", { x: d.x + 372, y: d.y + 44 }, { x: 425, y: cy }, !!f.subject); });

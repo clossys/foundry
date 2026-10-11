@@ -110,6 +110,8 @@ export interface SpecimenStatusRow {
 
 /** Rows of a label, an optional detail and a state, in a `<ul>`. */
 export interface SpecimenStatusRowsPart {
+  /** Retain all rows; show only the first three below tablet when supplied. */
+  mobileRows?: 3;
   id: string;
   type: "status-rows";
   label?: ReactNode;
@@ -132,6 +134,8 @@ export interface SpecimenMeterPart {
   /** The value as visible text; the bar is decoration. */
   valueText: string;
   limitText?: string;
+  previous?: number;
+  previousText?: string;
   status?: SpecimenStatus;
   /** One short line under the bar (the headroom, say). */
   note?: ReactNode;
@@ -251,6 +255,7 @@ function assertCount(what: string, count: number, max: number): void {
  */
 export function assertSpecimenPart(part: SpecimenPart): void {
   const where = "the " + part.type + ' part "' + part.id + '"';
+  if (part.type === "status-rows" && part.mobileRows !== undefined && part.mobileRows !== 3) throw new TypeError("Specimen: mobileRows must be 3 when supplied.");
   if (part.type === "meter") return; // One value; the Meter atom validates its numbers.
   if (part.type === "table") {
     assertCount(where + " columns", part.columns.length, SPECIMEN_TABLE_MAX_COLUMNS);
@@ -320,7 +325,7 @@ function StatusRowsBody({ part }: { part: SpecimenStatusRowsPart }) {
       {part.items.map((row, index) => {
         const divided = dividedRow(index, part.items.length);
         return (
-          <li key={row.id} className={cx(ROW_CLASSES, divided.className)} style={divided.style}>
+          <li key={row.id} className={cx(ROW_CLASSES, divided.className, part.mobileRows === 3 && index >= 3 ? "max-tablet:hidden" : undefined)} style={divided.style}>
             <div className={ROW_TEXT_CLASSES}>
               <span className={PRIMARY_TEXT}>{row.label}</span>
               {row.detail ? <span className={cx(SECONDARY_CAPTION, "tabular-nums")}>{row.detail}</span> : null}
@@ -348,6 +353,8 @@ function MeterBody({ part, marker }: { part: SpecimenMeterPart; marker?: number 
         tone={part.tone}
         valueText={part.valueText}
         limitText={part.limitText}
+        previous={part.previous}
+        previousText={part.previousText}
         emphasis="figure"
       />
       {part.note ? <p className={cx(SECONDARY_CAPTION, "m-0")}>{part.note}</p> : null}

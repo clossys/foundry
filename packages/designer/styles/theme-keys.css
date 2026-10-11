@@ -408,8 +408,6 @@
 }
 @utility ledger-owner-columns { @media (width >= 64rem) { grid-template-columns: minmax(0, 4fr) minmax(0, 4fr) minmax(0, 3fr); } }
 @utility ledger-group-divided { border-block-start-width: var(--ui-border-hairline, 1px); border-block-start-style: solid; }
-@utility ledger-pair { grid-template-columns: minmax(0, 1fr); @media (width >= 48rem) { grid-template-columns: minmax(0, 5fr) var(--spacing-2xl, 32px) minmax(0, 6fr); align-items: start; } }
-@utility ledger-wire-dot { inset-inline-end: 0; inset-block-start: 50%; translate: 50% -50%; }
 @utility ledger-owner-disc { inline-size: var(--ui-icon-md, var(--spacing-xl, 24px)); block-size: var(--ui-icon-md, var(--spacing-xl, 24px)); }
 @utility ledger-rule-wide { display: flex; @media (width >= 64rem) { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr); column-gap: var(--spacing-2xl, 32px); align-items: start; } }
 
@@ -425,7 +423,6 @@
 @utility scene-root { container: scene / inline-size; margin: 0; inline-size: 100%; min-inline-size: 0; font-family: var(--font-body, ui-sans-serif, system-ui, sans-serif); }
 @utility scene-desktop { display: none; }
 @utility scene-svg { display: block; inline-size: 100%; block-size: auto; max-inline-size: calc(var(--sc-w, 880) * 1px); overflow: visible; }
-@utility scene-tilt { transform-box: fill-box; transform-origin: 100% 50%; rotate: calc(var(--k, 0) * var(--ui-scene-tilt, 1deg)); }
 @utility scene-document { fill: var(--color-surface-raised, oklch(1 0 0)); stroke: var(--color-line-strong, oklch(0.7763 0 0)); stroke-width: var(--ui-border-hairline, 1px); rx: var(--radius-default, 3px); }
 @utility scene-fold { fill: var(--color-surface-sunken, oklch(0.9401 0 0)); stroke: var(--color-line-strong, oklch(0.7763 0 0)); stroke-width: var(--ui-border-hairline, 1px); stroke-linejoin: round; }
 @utility scene-chip { fill: var(--color-surface-sunken, oklch(0.9401 0 0)); rx: var(--radius-subtle, 2px); }

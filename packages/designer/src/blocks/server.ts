@@ -166,7 +166,7 @@ export { Stat } from "./Stat.js";
 export type { StatProps, StatTrend } from "./Stat.js";
 
 export { RecordLedger } from "./RecordLedger.js";
-export type { RecordLedgerProps, LedgerRowData, LedgerGroupData, LedgerPairData } from "./RecordLedger.js";
+export type { RecordLedgerProps, LedgerRowData, LedgerGroupData } from "./RecordLedger.js";
 export { LedgerTile } from "./LedgerTile.js";
 export type { LedgerTileProps } from "./LedgerTile.js";
 

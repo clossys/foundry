@@ -72,7 +72,7 @@ describe("AnatomyCallouts", () => {
     expect(item).toHaveClass("py-lg", "gap-x-md", "gap-y-xs", "border-line-on-inverse");
     expect(item.style.borderBlockStartWidth).toContain("--ui-border-hairline");
     expect(item.firstElementChild).toHaveClass("bg-ink-on-inverse", "text-surface-inverse");
-    expect(within(item).getByRole("heading", { level: 4 })).toHaveClass("text-h2", "leading-heading", "font-semibold");
+    expect(within(item).getByRole("heading", { level: 4 })).toHaveClass("text-body-l", "font-body", "leading-heading", "font-semibold");
     expect(item.querySelector("p")).toHaveClass("text-body", "text-ink-on-inverse-muted");
     rerender(view({ legendSide: "below", ground: "sunken" }));
     expect(container.firstChild).not.toHaveClass("tablet-lg:anatomy-columns", "tablet-lg:gap-x-3xl");
@@ -126,4 +126,32 @@ describe("AnatomyCallouts", () => {
     expect(utilities).toContain("@utility anatomy-key-measure { max-inline-size: var(--ui-width-prose-max, 48rem); }");
     expect(utilities).toMatch(/@utility anatomy-columns\s*\{[^}]*grid-template-columns: minmax\(0, 8fr\) minmax\(0, 4fr\)/);
   });
+  it.each([[3, 3], [3, 4], [4, 3], [4, 4], [5, 3], [5, 4]] as const)("composes %i authored key rows through Item at heading level %i", (count, headingLevel) => {
+    const authored = markers(count).map((marker, index) => ({ ...marker, heading: `Area ${index + 1}`, description: `Explanation ${index + 1}` }));
+    const { container } = render(view({ markers: authored, headingLevel }));
+    const key = screen.getByRole("list", { name: "Key" });
+    const rows = within(key).getAllByRole("listitem");
+    const inlineNumbers = [...container.querySelectorAll("[data-anatomy-marker]")];
+    expect(rows).toHaveLength(count);
+    expect(key.querySelectorAll("[data-item]")).toHaveLength(count);
+    expect(inlineNumbers.map(number => number.textContent)).toEqual(authored.map((_, index) => String(index + 1)));
+    for (const [index, row] of rows.entries()) {
+      const textItem = row.querySelector("[data-item]") as HTMLElement;
+      expect(textItem).toHaveAttribute("data-treatment", "plain");
+      expect(textItem.tagName).toBe("ARTICLE");
+      expect(within(textItem).getByRole("heading", { level: headingLevel })).toHaveClass("text-body-l", "font-body", "font-semibold", "leading-heading");
+      expect(row.firstElementChild).toHaveAttribute("data-anatomy-key-number");
+      expect(row.firstElementChild).toHaveAttribute("aria-hidden", "true");
+      expect(row.firstElementChild?.textContent).toBe(String(index + 1));
+      expect(within(textItem).getByRole("heading", { level: headingLevel, name: authored[index]!.heading })).toHaveAttribute("data-item-heading");
+      expect(textItem.querySelector("[data-item-description]")).toHaveTextContent(authored[index]!.description);
+      expect(textItem.querySelector("p h3, p h4")).toBeNull();
+    }
+    expect(key.querySelector("[tabindex], [href], button, input, select, textarea, [role=button]")).toBeNull();
+    const figure = screen.getByRole("figure");
+    expect(figure.getAttribute("aria-describedby")).toBe(key.id);
+    expect(container.querySelector(`[id="${figure.getAttribute("aria-labelledby")}"]`)).toHaveTextContent("Sample exception record");
+    expect(figure.compareDocumentPosition(key) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
 });
