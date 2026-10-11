@@ -2,4 +2,4 @@
 designer: minor
 ---
 
-Add `SiteHeader.ActionLink`, an icon-and-label header link with an icon-only accessible name below the tablet breakpoint, `aria-current` for the current environment and a tap-target minimum, superseding `surfaceLabel` for environment links.
+Add `SiteHeader.ActionLink`, a header link with an icon and a label from the tablet breakpoint up and the icon alone below it (the label stays its accessible name), an `isCurrent` prop that sets `aria-current="true"`, and a tap-target minimum size; it supersedes `surfaceLabel` for environment links.

@@ -1,13 +1,10 @@
-import {
-  applyThemeDom,
-  DEFAULT_STORAGE_KEY,
-  readStoredPreference,
-  stampAuthoredRegister,
-} from "./internal/theme-core.js";
+import { DEFAULT_STORAGE_KEY, type ThemePreference } from "./internal/theme-core.js";
 
 export interface ThemeInitScriptOptions {
   /** @default "ui-theme" */
   storageKey?: string;
+  /** Used when storage is absent, invalid or unavailable. @default "system" */
+  defaultTheme?: ThemePreference;
 }
 
 /**
@@ -50,30 +47,19 @@ export interface ThemeInitScriptOptions {
  * }
  * ```
  *
- * NOT TWO IMPLEMENTATIONS OF ONE RULE. The generated script does not
- * reimplement `readStoredPreference`/`applyThemeDom`'s logic in a second,
- * hand-written string — it embeds those two functions' own compiled
- * source (`.toString()`) verbatim, then calls them. `ThemeProvider` calls
- * the SAME two functions directly (imported, not stringified) to
- * (re-)apply the identical rule once React mounts. One implementation,
- * two call sites — see `theme-core.ts`'s own header comment for why both
- * functions are written to be self-contained (no reference to anything
- * outside their own parameters), which is what makes stringifying either
- * one alone, and running it with no bundler or module system present,
- * actually work. `theme-script-parity.test.ts` asserts the two call sites
- * agree, for every input, so they can't silently drift apart even though
- * nothing in the type system enforces it.
+ * LITERAL TEMPLATES. The standalone script uses literal source so host
+ * minifiers can rename bundled functions without breaking its execution.
+ * `theme-script-parity.test.ts` pins this template to the provider's
+ * `readStoredPreference` and `applyThemeDom` behavior.
  *
  * SSR SAFETY. This function itself never touches `window`/`document` —
  * it only builds and returns a STRING. Nothing in this module runs during
  * a React render; the string it produces runs once, standalone, in the
  * browser, before React (or any bundle) has loaded at all.
  *
- * NEVER THROWS AT RUNTIME. The embedded `readStoredPreference` swallows
- * every storage error (private browsing, blocked cookies, a disabled-
- * storage policy) and falls back to `"system"` — the safe default. A page
- * with storage unavailable still renders correctly; it just always
- * follows the OS.
+ * STORAGE FALLBACK. Storage errors, missing values and invalid preferences
+ * use `defaultTheme` ("system" unless configured). Valid stored preferences,
+ * including "system", take precedence over that fallback.
  */
 /**
  * Public marketing default: stamp the authored day register. OS preference
@@ -81,24 +67,41 @@ export interface ThemeInitScriptOptions {
  * the visitor's stored or OS-driven choice; use `getStoredThemeInitScript`.
  */
 export function getAuthoredThemeInitScript(): string {
-  return (
-    "(function(){" +
-    `${stampAuthoredRegister.toString()}` +
-    `stampAuthoredRegister(document.documentElement);` +
-    "})();"
+  return `(function(){
+    var root = document.documentElement;
+    root.setAttribute("data-theme", "light");
+    root.style.colorScheme = "light";
+  })();`;
+}
+
+/** Quote an inline-script string without HTML delimiters or line separators. */
+function quoteScriptString(value: string): string {
+  return JSON.stringify(value).replace(/[<>&\u2028\u2029]/g, (character) =>
+    `\\u${character.charCodeAt(0).toString(16).padStart(4, "0")}`,
   );
 }
 
-/** Product-app path: read stored preference (including `"system"` / OS following). */
+/** Product-app path: valid stored preferences take precedence over the default. */
 export function getStoredThemeInitScript(options: ThemeInitScriptOptions = {}): string {
   const storageKey = options.storageKey ?? DEFAULT_STORAGE_KEY;
-  return (
-    "(function(){" +
-    `${readStoredPreference.toString()}` +
-    `${applyThemeDom.toString()}` +
-    `applyThemeDom(document.documentElement,readStoredPreference(${JSON.stringify(storageKey)}));` +
-    "})();"
-  );
+  const defaultTheme = options.defaultTheme ?? "system";
+  return `(function(){
+    var preference = ${quoteScriptString(defaultTheme)};
+    try {
+      var stored = window.localStorage.getItem(${quoteScriptString(storageKey)});
+      if (stored === "system" || stored === "light" || stored === "dark") {
+        preference = stored;
+      }
+    } catch {}
+    var root = document.documentElement;
+    if (preference === "system") {
+      root.removeAttribute("data-theme");
+      root.style.colorScheme = "light dark";
+    } else {
+      root.setAttribute("data-theme", preference);
+      root.style.colorScheme = preference;
+    }
+  })();`;
 }
 
 /** @deprecated Use `getAuthoredThemeInitScript` for marketing or `getStoredThemeInitScript` for apps. */

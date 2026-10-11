@@ -238,6 +238,14 @@ written; `npm install` got the right tarball, the following `import` line
       (`docs/DECISIONS.md` entry 26), and its own `optional-peer-manifest`
       rule stops asking anything of a package once its version has moved past
       what a frozen row measured — which every unpublished new subpath has.
+- [ ] **A subpath that refuses a condition by design** (it throws at import
+      under that condition whatever is installed) is declared in
+      `BY_DESIGN_REFUSALS` in `scripts/lib/packed-consumer-readiness.mjs`.
+      This applies to every package, not only one that declares
+      `peerDependenciesMeta`. A failure that happens only when a peer is
+      omitted is not a by-design refusal: it stays `rejects` in
+      `OPTIONAL_PEER_POLICY`, because a declared target must throw its refusal
+      with every peer present too.
 
 ## 4. Write the furniture
 

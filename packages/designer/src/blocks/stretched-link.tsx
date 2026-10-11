@@ -45,8 +45,8 @@ const ANCHOR_BASE =
 /** Where the anchor's `::after` (hit area and ring) sits, relative to the item container. */
 const HIT_AREA_CLASSES: Record<CardLinkFrame, string> = {
   plate: "after:inset-0 after:rounded-panel",
-  plain: "after:-inset-x-md after:-inset-y-md after:rounded-panel",
-  rule: "after:-inset-x-md after:top-0 after:-bottom-md after:rounded-panel",
+  plain: "after:-inset-x-sm after:-inset-y-sm tablet:after:-inset-x-md tablet:after:-inset-y-md after:rounded-panel",
+  rule: "after:-inset-x-sm after:top-0 after:-bottom-sm tablet:after:-inset-x-md tablet:after:-bottom-md after:rounded-panel",
   topic: "after:-inset-x-md after:inset-y-xs after:rounded-panel",
   control: "after:inset-0 after:rounded-control",
 };
@@ -69,16 +69,19 @@ const HOVER_PLATE_FILL_CLASSES: Record<SectionGround, string> = {
 /** The hover plate takes the hit area's shape; a plate, a tile or a step needs none of its own. */
 const HOVER_PLATE_INSET_CLASSES: Record<CardLinkFrame, string | undefined> = {
   plate: undefined,
-  plain: "before:-inset-x-md before:-inset-y-md",
-  rule: "before:-inset-x-md before:top-0 before:-bottom-md",
+  plain: "before:-inset-x-sm before:-inset-y-sm tablet:before:-inset-x-md tablet:before:-inset-y-md",
+  rule: "before:-inset-x-sm before:top-0 before:-bottom-sm tablet:before:-inset-x-md tablet:before:-bottom-md",
   topic: "before:-inset-x-md before:inset-y-xs",
   control: undefined,
 };
 
-/** The item container's classes for a linked item: the positioning context for the hit area, plus a bare item's hover plate. */
-export function cardLinkContainerClassName(frame: CardLinkFrame, ground: SectionGround): string {
+/** The item container's classes and hover plate. LinkGrid alone uses the base plate on a sunken ground. */
+export function cardLinkContainerClassName(frame: CardLinkFrame, ground: SectionGround, sunkenPlate?: "base"): string {
   const inset = HOVER_PLATE_INSET_CLASSES[frame];
-  return cx("relative isolate", inset === undefined ? undefined : HOVER_PLATE_FILL_CLASSES[ground], inset);
+  const fill = ground === "sunken" && sunkenPlate === "base"
+    ? "before:absolute before:-z-10 before:rounded-panel hover:before:bg-surface-base has-focus-visible:before:bg-surface-base"
+    : HOVER_PLATE_FILL_CLASSES[ground];
+  return cx("relative isolate", inset === undefined ? undefined : fill, inset);
 }
 
 export interface CardLinkTitleProps {
@@ -89,12 +92,14 @@ export interface CardLinkTitleProps {
   iconSize?: IconSize;
   /** The title text: the link's accessible name. */
   children: ReactNode;
+  /** Optional block-specific interaction classes; shared defaults stay unchanged. */
+  className?: string;
 }
 
 /** The title as the item's one link, with its chevron. Place it inside the title element. */
-export function CardLinkTitle({ href, frame, ground, iconSize = "sm", children }: CardLinkTitleProps) {
+export function CardLinkTitle({ href, frame, ground, iconSize = "sm", children, className }: CardLinkTitleProps) {
   return (
-    <a href={href} data-card-link="" className={cx(ANCHOR_BASE, HIT_AREA_CLASSES[frame], RING_CLASSES[ground])}>
+    <a href={href} data-card-link="" className={cx(ANCHOR_BASE, HIT_AREA_CLASSES[frame], RING_CLASSES[ground], className)}>
       {children}
       <span aria-hidden="true">{" "}</span>
       <Icon glyph={ChevronRight} decorative size={iconSize} className={cx("inline align-middle", SECTION_GROUND_CLASSES[ground].secondary)} />

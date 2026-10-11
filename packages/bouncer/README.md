@@ -211,6 +211,12 @@ raw string before trimming, is refused. The result is
 `ok: false` with reason `refused-source`, and the refused token is absent
 from the emitted policy.
 
+Extending `img-src`, `font-src`, `connect-src`, `media-src` or `worker-src`
+starts that directive with `'self'` in both variants, then appends the caller's
+extension sources. A caller-listed `'self'` is deduplicated. Extending
+`frame-src` includes only the caller's sources; it does not imply same-origin
+framing.
+
 The development variant adds `'unsafe-eval'` to `script-src`. The production
 variant from the same call does not contain it.
 
@@ -376,6 +382,93 @@ export const resolveReturn = createReturnUrlResolver({ origin, siblingOrigins })
 export function proxy(request: Request): Promise<Response> {
   return gate(request, () => new Response("page"));
 }
+```
+
+### Hardened mode (`hardened: true`)
+
+The behavior above is the default. Passing `hardened: true` to
+`createGatedHostGate`, `createReturnUrlResolver` or Clerk's
+`createSignOutRoute` opts that one call into stricter rules. Only an own
+`hardened` property set to `true` opts in; an inherited flag leaves the call
+on its default rules, a non-boolean flag throws `TypeError`, and a
+hardened-only option set without the flag throws `TypeError`.
+
+With `hardened: true` the gate:
+
+- accepts `"permitted"`, `"denied"` or `"unavailable"` from `isPermitted` as
+  well as `true` and `false`. `"unavailable"`, a throw, or a provider that
+  did not answer is a `503` with `Retry-After`, not a sign-in redirect;
+- counts a request as a navigation only when it is a `GET` or `HEAD` whose
+  `Accept` names `text/html` (compared case-insensitively) with a valid
+  quality above zero, and is not a Next.js `RSC`, router or server-action
+  request;
+- never passes a path with a percent escape through as a public or sign-in
+  path; decoding and case folding only ever classify a path as gated or as an
+  API route;
+- never writes a return URL naming the sign-in, not-authorized or metadata
+  route or an `excludedReturnPaths` entry, under any decoded or case-folded
+  form. A refused return URL, or one whose sign-in `Location` would pass 2048
+  characters, becomes `returnFallbackPath` (default `/`, required when `/` is
+  excluded, validated when the gate is built);
+- reads each option once, as an own data property of a plain object, with
+  dense arrays of at most 16 entries.
+
+`createReturnUrlResolver({ hardened: true, origin, excludedPaths, fallbackPath })`
+applies the same return-URL rules on the sign-in page.
+
+`createSignOutHandler` (from `./gate`) is a framework-neutral sign-out
+endpoint. `GET` and `HEAD` answer `303` to `confirmationPath`, which should
+render a form that posts back. A `POST` is accepted only with the exact
+configured `Origin`, or with a missing or `null` `Origin` and
+`Sec-Fetch-Site: same-origin`; anything else is `403`. An accepted `POST`
+runs the provider callback under a `SIGN_OUT_DEADLINE_MS` (5000 ms) deadline
+and answers `303` to `terminalPath` when the provider finished in time and
+the request stayed within the cookie bounds, or to `fallbackPath` otherwise.
+Both answers carry `Clear-Site-Data: "cache", "storage"` and one expiring
+`Set-Cookie` per configured cookie and scope. The `Cookie` header is read up
+to 16384 bytes and at most 16 suffixed cookie names are expired; a request
+over either bound gets the fallback page.
+
+Clerk's `createSignOutRoute({ hardened: true, ... })` (from
+`./providers/clerk/web/server`) is that handler with Clerk's session lookup
+and revocation. Serve the one returned handler for both `GET` and `POST`
+(for example `export { signOut as GET, signOut as POST }` in a Next.js route
+file). It expires the host-only
+`__session` and `__client_uat` cookies and their suffixed variants, plus any
+`cookies` rules you add. With `expiredSessionFallback`, it can also revoke a
+session whose token has just expired: the token is verified with Clerk's
+`verifyToken` using exactly one of `jwtKey` or `secretKey`, and its issuer,
+authorized party, audience and age are checked again, with
+`maxExpiredAgeMs` at most 86400000 (24 hours). The hardened route takes no
+`redirectTo`, `allowedRedirectOrigins`, `getRedirectTarget` or
+`extraCookiesToClear`.
+
+`SignOutRouteOptions` is now the union `LegacySignOutRouteOptions |
+HardenedSignOutRouteOptions`. A value typed as the union is still accepted by
+`createSignOutRoute`. TypeScript cannot extend a union, so an interface that
+extended `SignOutRouteOptions` should extend `LegacySignOutRouteOptions`.
+
+```ts
+import { createGatedHostGate, createReturnUrlResolver } from "@clossys/bouncer/gate";
+
+const origin = "https://admin.example.test";
+
+export const hardenedGate = createGatedHostGate<{ readonly roles: readonly string[] }>({
+  hardened: true,
+  origin,
+  signInPath: "/sign-in",
+  notAuthorizedPath: "/not-authorized",
+  protectedResourceMetadata: { authorization_servers: ["https://idp.example.test"] },
+  resolvePrincipal: async () => ({ state: "signed-out" }),
+  isPermitted: (principal) => (principal.roles.includes("admin") ? "permitted" : "denied"),
+  excludedReturnPaths: ["/sign-out"],
+});
+
+export const resolveHardenedReturn = createReturnUrlResolver({
+  hardened: true,
+  origin,
+  excludedPaths: ["/sign-in", "/sign-out"],
+});
 ```
 
 ## Sign-in failure classes
@@ -572,9 +665,14 @@ One opt-in gate contract for gated application hosts. Framework-neutral and
 provider-neutral; see "Gated-host gate" above for its behavior.
 
 `createGatedHostGate`, `createReturnUrlResolver`, `isNavigationRequest`,
-`PROTECTED_RESOURCE_METADATA_PATH`, and the types `GatedHostGate`,
-`GatedHostGateOptions`, `GatedHostNext`, `GatePrincipalState`,
-`ProtectedResourceMetadata`, `ReturnUrlResolverOptions`.
+`PROTECTED_RESOURCE_METADATA_PATH`, `createSignOutHandler`,
+`SIGN_OUT_DEADLINE_MS`, `SIGN_OUT_CLEAR_SITE_DATA`, and the types
+`GatedHostGate`, `GatedHostGateOptions`, `GatedHostNext`, `GatePrincipalState`,
+`GatePermissionAnswer`, `HardenedGatedHostGateOptions`,
+`HardenedReturnUrlResolverOptions`, `ProtectedResourceMetadata`,
+`ReturnUrlResolverOptions`, `SignOutContext`, `SignOutCookieRule`,
+`SignOutCookieScope`, `SignOutHandler`, `SignOutHandlerOptions`. See
+"Hardened mode" above.
 
 ### `./providers/clerk` and its subpaths
 

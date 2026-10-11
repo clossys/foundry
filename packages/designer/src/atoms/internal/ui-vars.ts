@@ -73,6 +73,9 @@ export const UI_Z_TOOLTIP = "var(--ui-z-tooltip, 80)";
  */
 export const UI_BORDER_HAIRLINE = "var(--ui-border-hairline, 1px)";
 
+/** Minimum interactive target size, including linked tiles. */
+export const UI_LAYOUT_TAP_TARGET = "var(--ui-layout-tap-target, 44px)";
+
 /**
  * Emphasis rule width (`--ui-border-rule`). `Meter` uses it as the width
  * of its limit tick, so the tick and a rule-topped column share one

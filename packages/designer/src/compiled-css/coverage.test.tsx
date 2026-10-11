@@ -25,6 +25,7 @@
  * every atom. See the introducing PR body for the same statement.
  */
 import { resolve } from "node:path";
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { render } from "@testing-library/react";
 import { Avatar } from "../atoms/Avatar.js";
@@ -50,6 +51,9 @@ import { Comparison } from "../blocks/Comparison.js";
 import { ContentSection } from "../blocks/ContentSection.js";
 import { FeatureGrid } from "../blocks/FeatureGrid.js";
 import { NavGrid } from "../blocks/NavGrid.js";
+import { RecordLedger } from "../blocks/RecordLedger.js";
+import { LedgerTile } from "../blocks/LedgerTile.js";
+import { LinkGrid } from "../blocks/LinkGrid.js";
 import { OrderedStepSequence } from "../blocks/OrderedStepSequence.js";
 import { TopicList } from "../blocks/TopicList.js";
 import { Specimen } from "../blocks/specimen/Specimen.js";
@@ -263,6 +267,11 @@ describe("coverage: real rendered classes are all present in compiled.css", () =
       trees.push(render(<TopicList ground={ground} columns={1} items={[item("a"), item("b")]} />));
       // Linked items: the stretched-link anchor, its hit area and ring, and a bare item's hover plate.
       const linked = (id: string) => ({ ...item(id), href: `/${id}` });
+      for (const surface of ["plate", "rule"] as const) {
+        for (const count of [2, 3, 4, 5, 6]) {
+          trees.push(render(<LinkGrid ground={ground} surface={surface} items={Array.from({ length: count }, (_, index) => ({ id: String(index), title: "Topic", description: "Details.", icon: <svg />, href: `/topics/${index}` }))} />));
+        }
+      }
       for (const treatment of ["plain", "rule", "plate"] as const) {
         trees.push(render(<FeatureGrid ground={ground} columns={2} treatment={treatment} items={[linked("a"), linked("b")]} />));
       }
@@ -281,6 +290,7 @@ describe("coverage: real rendered classes are all present in compiled.css", () =
       );
     }
     trees.push(render(<NavGrid items={[{ id: "a", title: "A", description: "D", href: "/a" }, { id: "b", title: "B", href: "/b" }]} />));
+    trees.push(render(<NavGrid items={[{ id: "a", title: "A", href: "/a" }]} />));
 
     const renderedClasses = new Set<string>();
     for (const result of trees) {
@@ -296,15 +306,57 @@ describe("coverage: real rendered classes are all present in compiled.css", () =
       "tablet-lg:col-span-8",
       "after:absolute",
       "after:-inset-x-md",
+      "after:-inset-x-sm",
+      "tablet:after:-inset-x-md",
+      "after:-inset-y-sm",
+      "tablet:after:-inset-y-md",
+      "after:-bottom-sm",
+      "tablet:after:-bottom-md",
+      "before:-inset-x-sm",
+      "tablet:before:-inset-x-md",
+      "before:-inset-y-sm",
+      "tablet:before:-inset-y-md",
+      "before:-bottom-sm",
+      "tablet:before:-bottom-md",
       "focus-visible:after:outline-accent-on-inverse",
       "has-focus-visible:before:bg-surface-inverse-raised",
       "after:rounded-control",
+      "tablet:grid-cols-6",
+      "tablet:col-span-2",
+      "tablet:col-span-3",
+      "hover:before:bg-surface-base",
+      "has-focus-visible:before:bg-surface-base",
+      "link-grid-icon",
+      "active:bg-surface-raised",
+      "active:before:bg-surface-sunken",
+      "active:before:bg-surface-base",
+      "active:before:bg-surface-inverse-raised",
+      "active:decoration-current",
+      "link-grid-active",
     ]) {
       expect(renderedClasses.has(required)).toBe(true);
     }
 
     const scan = scanCompiledCssSources(packageRoot);
     const generated = await generateCompiledCss({ stylesDir: resolve(packageRoot, "styles"), candidates: scan.candidates });
+    const themeKeys = readFileSync(resolve(packageRoot, "styles/theme-keys.css"), "utf8");
+    expect(themeKeys).toMatch(/@utility link-grid-icon\s*\{\s*inline-size: var\(--ui-icon-md\);\s*block-size: var\(--ui-icon-md\);\s*& > svg\s*\{\s*width: 100%;\s*height: 100%;/);
+    expect(generated.css).toContain(".link-grid-icon");
+    expect(generated.css).toContain("inline-size: var(--ui-icon-md)");
+    expect(generated.css).toContain("block-size: var(--ui-icon-md)");
+    for (const className of ["active:bg-surface-raised", "active:before:bg-surface-sunken", "active:before:bg-surface-base", "active:before:bg-surface-inverse-raised", "active:decoration-current"]) {
+      const selector = toSelectorText(className) + ":active";
+      expect(generated.css).toContain(selector);
+      const offset = generated.css.indexOf(selector);
+      const openBlocks: string[] = [];
+      for (const match of generated.css.slice(0, offset).matchAll(/([^{}]+)\{|\}/g)) {
+        if (match[1]) openBlocks.push(match[1].trim());
+        else openBlocks.pop();
+      }
+      expect(openBlocks.some((block) => block.includes("hover: hover"))).toBe(false);
+    }
+    expect(generated.css).toContain(".link-grid-active:active > svg:last-child");
+    expect(generated.css).toContain(".link-grid-active:dir(rtl):active > svg:last-child");
     const missing: string[] = [];
     for (const className of renderedClasses) {
       if (!generated.css.includes(toSelectorText(className))) missing.push(className);
@@ -373,4 +425,46 @@ describe("coverage: real rendered classes are all present in compiled.css", () =
     }
     expect(missing).toEqual([]);
   });
+});
+
+
+it("emits every real Ledger form, cap, ground and rule-card layout class", async () => {
+  const classes = new Set<string>();
+  const row = (id: string, flag = false) => ({ id, label: "Row", detail: "Detail", flag, status: { tone: "info" as const, label: "Received" } });
+  const group = (id: string) => ({ id, label: "Checks", rows: [row(id, true)] });
+  for (const ground of ["base", "sunken", "inverse"] as const) {
+    for (const columns of [1, 2, 3] as const) {
+      for (const owner of [false, true]) {
+        const groups = Array.from({ length: columns }, (_, index) => owner && index === columns - 1 ? { id: "owner", label: "Owner", owner: { initials: "AB", name: "Reviewer" }, note: "Next check." } : group(String(index)));
+        // The record permits one accent across all groups.
+        const safeGroups = groups.map((entry, index) => "rows" in entry ? { ...entry, rows: [row(String(index), index === 0)] } : entry);
+        const tree = render(<RecordLedger id={`ledger-${ground}-${columns}-${owner}`} form="record" head={{ title: "Record", meta: "Metadata", status: { tone: "neutral", label: "Open" } }} groups={safeGroups} columns={columns} ground={ground} flagLabel="Attention:" caption="Sample data." />);
+        for (const cls of collectClassNames(tree.container)) classes.add(cls);
+        tree.unmount();
+      }
+    }
+    const pairTree = render(<RecordLedger form="pairs" ground={ground} productLabel="Creates:" caption="Sample data." items={Array.from({ length: 4 }, (_, i) => ({ id: String(i), role: { eyebrow: "Function", heading: "Role", description: "Checks records." }, product: { kind: "Authored kind", subject: "Record", detail: "Detail", status: { tone: "danger", label: "Open" } } }))} />);
+    for (const cls of collectClassNames(pairTree.container)) classes.add(cls);
+    pairTree.unmount();
+    const tile = <LedgerTile ground={ground} caption="Record" mobileRows={3} flagLabel="Attention:" rows={Array.from({ length: 5 }, (_, i) => row(String(i), i === 0))} />;
+    const cards = render(<CardGrid treatment="rule" ground={ground} items={[{ id: "wide", span: "two-thirds", heading: "Record", eyebrow: "Function", description: "Details", href: "/one", visual: tile }, { id: "small", span: "third", heading: "Another", href: "/two", visual: tile }]} />);
+    for (const cls of collectClassNames(cards.container)) classes.add(cls);
+    cards.unmount();
+  }
+  const generated = await generateCompiledCss({ stylesDir: resolve(packageRoot, "styles"), candidates: scanCompiledCssSources(packageRoot).candidates });
+  expect([...classes].filter(cls => !generated.css.includes(toSelectorText(cls)))).toEqual([]);
+  expect(generated.css).toContain(toSelectorText("max-tablet:hidden"));
+  const groupDividers = [...generated.css.matchAll(/[^{}]*\.ledger-group-divided[^{}]*\{([^}]*)\}/g)];
+  expect(groupDividers).toHaveLength(3);
+  for (const divider of groupDividers) {
+    // Width and style must retain the rendered ground line-color utility.
+    expect(divider[1]).not.toMatch(/border-(?:block|inline)-start:/);
+  }
+  for (const cls of ["ledger-columns-two", "ledger-columns-three", "ledger-owner-columns", "ledger-pair", "ledger-rule-wide", "ledger-owner-disc", "ledger-wire-dot"]) expect(generated.css).toContain(toSelectorText(cls));
+});
+
+
+it("scans Anatomy marker, ground and responsive source classes without generated output", () => {
+  const candidates = new Set(scanCompiledCssSources(packageRoot).candidates);
+  for (const candidate of ["anatomy-disc", "anatomy-key-row", "anatomy-key-measure", "tablet-lg:anatomy-columns", "tablet-lg:gap-x-3xl", "text-surface-raised", "text-surface-base", "text-surface-sunken", "text-surface-inverse", "row-span-2", "text-h2", "leading-heading"]) expect(candidates.has(candidate), candidate).toBe(true);
 });

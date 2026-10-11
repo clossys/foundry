@@ -3,7 +3,7 @@ import { Card } from "../../atoms/Card.js";
 import { StatusMark } from "../../atoms/StatusMark.js";
 import { cx } from "../../atoms/internal/cx.js";
 import { UI_BORDER_HAIRLINE, UI_ELEVATION_PANEL } from "../../atoms/internal/ui-vars.js";
-import { SpecimenPartView, type SpecimenPart, type SpecimenStatus } from "./parts.js";
+import { AnatomyMarker, SpecimenPartView, type SpecimenPart, type SpecimenStatus } from "./parts.js";
 
 /**
  * The panel is a size container (`@container`): its padding, table and
@@ -62,12 +62,36 @@ export interface SpecimenPanelItem extends SpecimenPanelContent {
 }
 
 export interface SpecimenPanelProps extends SpecimenPanelContent, Omit<HTMLAttributes<HTMLDivElement>, "title" | "children"> {
+  /** Optional target-to-number map, separate from the panel content. */
+  markers?: Readonly<Record<string, number>>;
   className?: string;
   style?: CSSProperties;
 }
 
+function labelledContent(node: ReactNode): boolean {
+  if (node === undefined || node === null || typeof node === "boolean") return false;
+  if (typeof node === "string") return node.trim().length > 0;
+  if (Array.isArray(node)) return node.some(labelledContent);
+  return true;
+}
+
 function present(node: ReactNode): boolean {
   return node !== undefined && node !== null && node !== false;
+}
+
+/** A target must have a real label line; reserved target names cannot be part ids. */
+export function assertSpecimenMarkerTargets(panel: SpecimenPanelContent, targets: readonly string[]): readonly string[] {
+  const partIds = panel.parts.map(part => part.id);
+  if (new Set(partIds).size !== partIds.length || partIds.some(id => !id || /\s/.test(id) || id === "header" || id === "footer")) {
+    throw new TypeError("Specimen: marked panel part ids must be unique, nonempty and unreserved.");
+  }
+  const order = ["header", ...partIds, "footer"];
+  for (const target of targets) {
+    const part = panel.parts.find(part => part.id === target);
+    const labelled = target === "header" ? labelledContent(panel.title) : target === "footer" ? panel.footer?.assignee !== undefined || labelledContent(panel.footer?.note) : part !== undefined && labelledContent(part.label);
+    if (!order.includes(target) || !labelled) throw new RangeError("Specimen: marker target requires an existing label line.");
+  }
+  return order;
 }
 
 /**
@@ -87,10 +111,17 @@ function present(node: ReactNode): boolean {
  * Throws a `RangeError` for more than 3 parts (or none). Server-safe: no
  * hooks.
  */
-export function SpecimenPanel({ title, meta, status, parts, footer, className, style, ...rest }: SpecimenPanelProps) {
+export function SpecimenPanel({ title, meta, status, parts, footer, markers, className, style, ...rest }: SpecimenPanelProps) {
   if (parts.length < 1 || parts.length > SPECIMEN_PANEL_MAX_PARTS) {
     throw new RangeError("Specimen: a panel must hold 1 to " + SPECIMEN_PANEL_MAX_PARTS + " parts, got " + parts.length + ".");
   }
+  if (markers && Object.keys(markers).length > 0) {
+    assertSpecimenMarkerTargets({ title, parts, footer }, Object.keys(markers));
+    if (Object.values(markers).some(number => !Number.isInteger(number) || number < 1 || number > 5)) throw new TypeError("Specimen: marker numbers must be integers from 1 to 5.");
+  }
+  const markerAt = (target: string) => markers && Object.hasOwn(markers, target) ? markers[target] : undefined;
+  const headerMarker = markerAt("header");
+  const footerMarker = markerAt("footer");
   const hasHeader = present(title) || present(meta) || status !== undefined;
   const assignee = footer?.assignee;
   const hasFooter = assignee !== undefined || present(footer?.note);
@@ -101,7 +132,7 @@ export function SpecimenPanel({ title, meta, status, parts, footer, className, s
         {hasHeader ? (
           <div data-specimen-panel-header="" className={HEADER_CLASSES}>
             <div className="flex min-w-0 flex-col gap-xs">
-              {present(title) ? <p className={TITLE_CLASSES}>{title}</p> : null}
+              {present(title) ? <p className={cx(TITLE_CLASSES, headerMarker !== undefined ? "flex items-center gap-sm" : undefined)}><AnatomyMarker number={headerMarker} />{title}</p> : null}
               {present(meta) ? <p className={META_CLASSES}>{meta}</p> : null}
             </div>
             {status ? <StatusMark tone={status.tone}>{status.label}</StatusMark> : null}
@@ -113,13 +144,14 @@ export function SpecimenPanel({ title, meta, status, parts, footer, className, s
             className={hasHeader || index > 0 ? SECTION_DIVIDER : undefined}
             style={hasHeader || index > 0 ? HAIRLINE_BLOCK_START : undefined}
           >
-            <SpecimenPartView part={part} />
+            <SpecimenPartView part={part} marker={markerAt(part.id)} />
           </div>
         ))}
         {hasFooter ? (
           <div data-specimen-panel-footer="" className={cx(SECTION_DIVIDER, "flex flex-col gap-xs text-body-s")} style={HAIRLINE_BLOCK_START}>
             {assignee ? (
-              <div className="flex flex-wrap items-center gap-x-sm gap-y-xs">
+              <div className={cx("flex flex-wrap items-center gap-x-sm gap-y-xs", footerMarker !== undefined ? "gap-sm" : undefined)}>
+                <AnatomyMarker number={footerMarker} />
                 <span aria-hidden="true" className={INITIALS_CLASSES}>
                   {assignee.initials}
                 </span>
@@ -127,7 +159,7 @@ export function SpecimenPanel({ title, meta, status, parts, footer, className, s
                 {present(assignee.note) ? <span className="text-ink-secondary">{assignee.note}</span> : null}
               </div>
             ) : null}
-            {present(footer?.note) ? <p className="m-0 text-ink-secondary text-pretty">{footer?.note}</p> : null}
+            {present(footer?.note) ? <p className={cx("m-0 text-ink-secondary text-pretty", !assignee && footerMarker !== undefined ? "flex items-center gap-sm" : undefined)}>{!assignee ? <AnatomyMarker number={footerMarker} /> : null}{footer?.note}</p> : null}
           </div>
         ) : null}
       </div>

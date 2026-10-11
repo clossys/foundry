@@ -2,4 +2,4 @@
 publisher: patch
 ---
 
-Use Designer's Node-only tokens/server entry for brand CSS readers in preview rendering and the generated site template.
+The preview gallery renderer and the generated site template now import `readBrandCss` from `@clossys/designer/tokens/server`, Designer's Node-only tokens entry.

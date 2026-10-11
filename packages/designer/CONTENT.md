@@ -160,6 +160,13 @@ optional eyebrow (cards only) naming the role or area; optional visual of one
 specimen part with at most 5 rows. Put the main point on the widest card. Do
 not give every card a visual.
 
+**LinkGrid** (`link-grid`). Two to six real next destinations, including a
+navigation list on a status page. Titles name the destination, at most 32
+characters; descriptions say what the reader will find, at most 100
+characters. Use plate or rule tiles and give every tile an icon or none.
+For one destination, use a footnote link or a button. Use buttons for
+actions that do not navigate. Avoid vague titles such as "Learn more".
+
 **Comparison** (`comparison`). Two sides with labels of 1-3 words. Give each side either a
 description of at most 25 words or 2-4 points of 4-9 words, with the same form
 and the same count on both sides. Visuals go on both sides or on neither.
@@ -248,6 +255,43 @@ keep.
 | Use plain verbs ("record", "assign", "sign off") | Use filler ("seamless", "powerful", "next-generation", "revolutionary") |
 | Show status as data ("Overdue", "Signed") | Show roadmap as status ("Coming soon", "Beta") |
 | Use one icon per item, only where it tells items apart | Put icons on headings, or emoji anywhere |
+
+
+## Records on rules
+
+Use **RecordLedger** (`record-ledger`) for one record or three-to-four role
+handovers that should read as ledger data, especially when the page has already
+spent its panel. Use a specimen for a full product view. A dated event history
+needs a separately designed timeline form.
+
+Rows carry names, figures and statuses without repeating the surrounding copy.
+Record groups hold one-to-six rows; an owner is a separate final group. Keep one
+flag per record, with authored hidden lead-in copy. Pair kind lines and hidden
+product lead-ins belong to the consumer's copy.
+
+For book-like cards, use CardGrid `treatment: "rule"` with a LedgerTile visual.
+Tiles hold two-to-five rows. A three-row mobile cap hides later rows below tablet
+for every reader; put the row that matters, especially warning or danger, within
+the first three. Ledger rows are static; linked cards have only their title link.
+
+
+Use **AnatomyCallouts** (`anatomy-callouts`) when one record has three to five
+areas worth naming. Prefer three or five markers, with a short heading and
+one sentence per key item. Attach markers to the panel title, labelled parts
+or footer in reading order, and disclose sample data with the caption. Author
+the figure and key labels; use a unique caller instance id. The figure comes
+before the key at every width. Use **FeatureGrid** for features without a
+product surface, and steps or a story for a process.
+
+Use **Scene** for a process or provenance story beside section copy: documents
+converging into a record, a result traced to cited sources, or prepared findings
+reaching a named decision role. Use a specimen for the record itself. Avoid
+scenes as decoration, feature lists or more than two instances on a page.
+Write a 12–25-word figure label describing what flows where; keep document
+titles factual. Author the relation label and mark illustrative data with a
+sample caption. An approval chain has exactly one subject. Keep source, row and
+finding ids unique within their slots, and give each figure a separate instance
+id even when two figures share the same seed.
 
 ## Derived page flow
 

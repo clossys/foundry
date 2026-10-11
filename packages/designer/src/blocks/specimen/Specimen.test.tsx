@@ -375,3 +375,45 @@ describe("Specimen parts", () => {
     for (const el of container.querySelectorAll("[class]")) expect(el.getAttribute("class")).not.toMatch(/text-ink-muted/);
   });
 });
+
+describe("SpecimenPanel inline anatomy markers", () => {
+  it("puts markers first inside header title, every labelled part type including meter, and footer", () => {
+    for (const part of [FIELDS, STATUS_ROWS, METER, TABLE, SCHEDULE, SHARES, FILES]) {
+      const { container, unmount } = render(<SpecimenPanel title="Sample record" parts={[part]} footer={{ assignee: { initials: "AL", name: "Alex Lee" }, note: "Review exception" }} markers={{ header: 1, [part.id]: 2, footer: 3 }} />);
+      const discs = [...container.querySelectorAll("[data-anatomy-marker]")];
+      expect(discs).toHaveLength(3);
+      for (const [index, disc] of discs.entries()) {
+        expect(disc).toHaveAttribute("aria-hidden", "true");
+        expect(disc).toHaveTextContent(String(index + 1));
+        expect(disc.parentElement?.firstChild).toBe(disc);
+        expect(disc.parentElement).toHaveClass("gap-sm");
+      }
+      expect(container.querySelector("[data-specimen-panel-header] p")?.firstChild).toBe(discs[0]);
+      expect(container.querySelector("[data-specimen-panel-footer] > div")?.firstChild).toBe(discs[2]);
+      unmount();
+    }
+  });
+  it("puts a note-only footer marker first inline and never duplicates the footer marker", () => {
+    const { container } = render(<SpecimenPanel parts={[FIELDS]} footer={{ note: "Review exception" }} markers={{ footer: 3 }} />);
+    const disc = container.querySelector("[data-anatomy-marker]");
+    expect(container.querySelectorAll("[data-anatomy-marker]")).toHaveLength(1);
+    expect(container.querySelector("[data-specimen-panel-footer] > p")?.firstChild).toBe(disc);
+    expect(disc?.parentElement).toHaveClass("flex", "items-center", "gap-sm");
+  });
+  it("preserves unmarked panel markup when no markers or an empty marker map is supplied", () => {
+    const { container, rerender } = render(<SpecimenPanel title="Sample record" parts={[FIELDS, METER]} footer={{ note: "Review exception" }} />);
+    const before = container.innerHTML;
+    rerender(<SpecimenPanel title="Sample record" parts={[FIELDS, METER]} footer={{ note: "Review exception" }} markers={{}} />);
+    expect(container.innerHTML).toBe(before);
+    expect(container.querySelector("[data-anatomy-marker]")).toBeNull();
+  });
+  it("refuses targets without an actual label line", () => {
+    for (const props of [
+      { parts: [FIELDS], markers: { missing: 1 } },
+      { parts: [FIELDS], markers: { header: 1 } },
+      { parts: [{ ...FIELDS, label: undefined }], markers: { fields: 1 } },
+      { parts: [FIELDS], footer: { note: false }, markers: { footer: 1 } },
+    ]) expect(() => render(<SpecimenPanel {...props} />)).toThrow(RangeError);
+    expect(() => render(<SpecimenPanel parts={[FIELDS]} markers={{ fields: 0 }} />)).toThrow(TypeError);
+  });
+});
