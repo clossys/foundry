@@ -666,19 +666,22 @@ key, and a value that is not a block sequence of scalars.
 
 For pnpm the `.npmrc` is read under a fixed grammar and refused otherwise.
 Every line must be blank, a comment (first non-space character `#` or `;`),
-or a plain `key=value` assignment, optionally spaced around the `=`, whose key
-is only ASCII letters, digits and `@ : _ . / -`. An `.npmrc` containing any
-line outside those shapes (a quoted or bracketed key, a comment or escape
-inside the key, a tab, a section header, a key with no `=`) is refused as
+or a plain `key=value` assignment, optionally spaced around the `=`, whose
+base key is only ASCII letters, digits and `@ : _ . / -`. An unrelated base
+key may have one immediate empty `[]` suffix. An `.npmrc` containing any
+line outside those shapes (a quoted key, an indexed, repeated, spaced or
+malformed bracket suffix, a comment or escape inside the key, a tab, a
+section header, a key with no `=`) is refused as
 `release-age-surface-unparseable`, because npm's ini reader could read such a
-line as the exclusion setting. A plain key that is `userconfig`,
-`globalconfig` or `prefix` (in any case, with `-` and `_` ignored) is refused
-the same way, because it points npm at another config file or prefix
-directory whose own exclusion list the editor cannot read. A plain key that is
-`minimum-release-age-exclude` in any case, with `-` and `_` ignored (so the
-camel-case spelling too), is refused as `release-age-surface-conflict`.
-Refusing is the default: an unrelated `.npmrc` line the grammar does not list
-also refuses the whole file, and the caller resolves the file by hand.
+line as the exclusion setting. A base key that is `userconfig`,
+`globalconfig` or `prefix` (in any case, with `-` and `_` ignored), including
+its array form, is refused the same way, because it points npm at another
+config file or prefix directory whose own exclusion list the editor cannot
+read. A base key that is `minimum-release-age-exclude` in any case, with `-`
+and `_` ignored (so the camel-case spelling too), including its array form,
+is refused as `release-age-surface-conflict`. Refusing is the default: an
+unrelated `.npmrc` line the grammar does not list also refuses the whole
+file, and the caller resolves the file by hand.
 
 `verifyReleaseAgeExemption()` takes the surface, the text before, the text
 after, and, for pnpm, the `.npmrc` text. It reports a `ReleaseAgeVerdict`, `{ verified: true, value }`

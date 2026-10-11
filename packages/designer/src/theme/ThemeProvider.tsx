@@ -53,8 +53,8 @@ export interface ThemeProviderProps {
    * The preference this provider renders with before it has had a chance
    * to read `localStorage` — see this component's own doc comment,
    * "SSR safety and the one-tick correction", for why that read can't
-   * happen during render. `"system"` (the default) is the same safe
-   * fallback every other decline path in this module resolves to.
+   * happen during render. Also used when storage is absent, invalid or
+   * unavailable; match the head script's `defaultTheme`.
    * @default "system"
    */
   defaultPreference?: ThemePreference;
@@ -136,10 +136,10 @@ export function ThemeProvider({
   const [preference, setPreferenceState] = useState<ThemePreference>(defaultPreference);
 
   // The one-tick correction described in this component's own doc comment
-  // above — client-only, runs once per (mount, storageKey) pair.
+  // above — client-only, runs after mount and when the key or fallback changes.
   useEffect(() => {
-    setPreferenceState(readStoredPreference(storageKey));
-  }, [storageKey]);
+    setPreferenceState(readStoredPreference(storageKey, defaultPreference));
+  }, [storageKey, defaultPreference]);
 
   // Keeps `<html data-theme>`/`color-scheme` in sync with React state on
   // every change, including the one-tick correction effect above and any
