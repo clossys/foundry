@@ -3511,9 +3511,9 @@ converge, evidence-trail and approval-chain, capped at 880px, 560px and 1000px.
 Below those thresholds the linear form is capped by `--ui-scene-card-w`
 (default `30rem`). At desktop widths the HTML is clipped, never removed.
 
-`--ui-scene-tilt` defaults to `1deg`; brand checking accepts literal angles from
-`0deg` through `2deg`. Disorder defaults to medium for converge and low for the
-other templates; none produces zero tilt and nudge. Tilt pivots at the wire
+`--ui-scene-tilt` defaults to `1deg`. Both Scene tokens are structural and
+non-brandable; brand overrides are refused. Disorder defaults to medium for
+converge and low for the other templates; none produces zero tilt and nudge. Tilt pivots at the wire
 anchor. All paints and radii read live theme tokens. A converge relation may
 have one emphasis accent; approval-chain uses primary ink for its subject and
 reserves its sole accent for the decider ring. Scenes have no controls, hooks,

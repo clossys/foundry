@@ -190,10 +190,6 @@
        icon SIZE steps alias the spacing scale and are not brand slots,
        the same call the density tokens above already make) ─────────── */
   /* --ui-icon-stroke: 2; */
-  /* Static scenes: tilt is a literal angle between 0deg and 2deg. */
-  --ui-scene-tilt: 1deg;
-  --ui-scene-card-w: 30rem;
-
 }
 
 

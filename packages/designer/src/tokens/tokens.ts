@@ -384,9 +384,9 @@ export const TOKENS: Readonly<Record<string, TokenDefinition>> = {
   "--breakpoint-desktop": { property: "--breakpoint-desktop", family: "breakpoint", value: "1280px", brandable: false, themeDependent: false },
   "--breakpoint-wide": { property: "--breakpoint-wide", family: "breakpoint", value: "1440px", brandable: false, themeDependent: false },
 
-  // Scene personality and linear-form measure; both are theme invariant.
-  "--ui-scene-tilt": { property: "--ui-scene-tilt", family: "scene", value: "1deg", brandable: true, themeDependent: false },
-  "--ui-scene-card-w": { property: "--ui-scene-card-w", family: "scene", value: "30rem", brandable: true, themeDependent: false },
+  // Structural Scene personality and linear-form measure; both are theme invariant.
+  "--ui-scene-tilt": { property: "--ui-scene-tilt", family: "scene", value: "1deg", brandable: false, themeDependent: false },
+  "--ui-scene-card-w": { property: "--ui-scene-card-w", family: "scene", value: "30rem", brandable: false, themeDependent: false },
 
   // ── UI · ALPHA ──────────────────────────────────────────────────────
   "--ui-alpha-disabled": { property: "--ui-alpha-disabled", family: "alpha", value: "0.5", brandable: false, themeDependent: false },
