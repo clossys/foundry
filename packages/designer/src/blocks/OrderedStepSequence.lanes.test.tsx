@@ -109,12 +109,13 @@ describe("OrderedStepSequence lanes", () => {
       expect(li).not.toHaveClass("isolate");
       expect(hitContext).toHaveClass("relative", "mt-2xl", `${breakpoint}:mt-lg`);
       expect(hitContext).not.toHaveClass("pt-2xl", `${breakpoint}:pt-lg`);
-      expect(anchor).toHaveClass("after:-inset-x-md", "after:-inset-y-md");
+      expect(anchor).toHaveClass("after:-inset-x-sm", "after:-inset-y-sm", "tablet:after:-inset-x-md", "tablet:after:-inset-y-md");
       // Derive the hit bounds from the shipped tokens, including the plain
-      // overlay's negative md inset. They must stay beyond the track center.
-      const disc = pixels("--spacing-2xl"), gap = pixels("--spacing-lg"), inset = pixels("--spacing-md");
-      expect(disc + gap - inset).toBeGreaterThan(disc / 2); // rail inline bound
-      expect(disc + gap - inset).toBeGreaterThan(disc / 2); // row block bound
+      // overlay's responsive sm/md inset. Both stay beyond the track center.
+      const disc = pixels("--spacing-2xl"), gap = pixels("--spacing-lg");
+      for (const inset of [pixels("--spacing-sm"), pixels("--spacing-md")]) {
+        expect(disc + gap - inset).toBeGreaterThan(disc / 2); // rail inline and row block bounds
+      }
       for (const track of li.querySelectorAll("[data-step-connector], [data-step-join], [data-step-end], [data-step-lane-label]")) expect(hitContext.contains(track)).toBe(false);
     }
     }

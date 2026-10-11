@@ -251,6 +251,7 @@ export type {
   TopicListProps,
   TopicListItem,
   TopicListColumns,
+  TopicListGroup,
   SpecimenProps,
   SpecimenArrangement,
   SpecimenPanelProps,

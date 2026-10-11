@@ -216,6 +216,7 @@ export function OrderedStepSequence({
 
   const foundation = lanes !== undefined || end !== undefined || endLabel !== undefined;
   const effectiveEnd = end ?? "ends";
+  const ends = effectiveEnd === "ends";
   const visibleEndLabel = Children.toArray(endLabel);
   const hiddenEndLabel = Children.toArray(continuesLabel);
   const hasEndLabel = hasMeaningfulLabel(visibleEndLabel);
@@ -230,7 +231,7 @@ export function OrderedStepSequence({
     if (items[0]?.lane !== "a" || !items.some((item) => item.lane === "b")) throw new TypeError("OrderedStepSequence: start in lane a and use both actors.");
   } else if (items.some((item) => item.lane !== undefined)) throw new TypeError("OrderedStepSequence: item lane needs block lanes.");
   const terminal = (position: string, arrow: string) => (
-    <span aria-hidden="true" data-step-end={effectiveEnd} className={cx(position, effectiveEnd === "ends" ? "size-[var(--ui-icon-sm)] rounded-pill" : undefined, effectiveEnd === "ends" ? lines.line : lines.ink)}>
+    <span aria-hidden="true" data-step-end={effectiveEnd} className={cx(position, ends ? "size-[var(--ui-icon-sm)] rounded-pill" : undefined, ends ? lines.line : lines.ink)}>
       {effectiveEnd === "continues" ? <Icon glyph={ArrowRight} decorative size="sm" className={arrow} /> : null}
     </span>
   );
@@ -270,9 +271,10 @@ export function OrderedStepSequence({
             const join = previous === undefined ? undefined : previous.lane === item.lane ? "same" : item.lane === "b" ? "down" : "up";
             const last = index === items.length - 1;
             const actor = lanes[item.lane!];
+            const lowerLane = item.lane === "b";
             if (item.href !== undefined) assertNoNestedInteractive("OrderedStepSequence", item.id, [actor, item.heading, item.description, item.visual]);
             return (
-              <li key={item.id} data-lane={item.lane} className={cx(laneLayout.item, item.lane === "b" ? laneLayout.lower : undefined)}>
+              <li key={item.id} data-lane={item.lane} className={cx(laneLayout.item, lowerLane ? laneLayout.lower : undefined)}>
                 {join === undefined ? null : <span aria-hidden="true" data-step-join={join} className={cx("pointer-events-none absolute -top-[calc(var(--spacing-2xl)/2)] h-2xl", lines.border, laneLayout[join], laneLayout.join)} />}
                 <span aria-hidden="true" data-step-connector="" data-end={last ? effectiveEnd : undefined} className={cx("pointer-events-none", laneLayout.connector, last ? laneLayout.final : undefined, lines.line)}>
                   {last ? terminal(laneLayout.end, laneLayout.arrow) : null}

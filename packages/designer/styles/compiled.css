@@ -1243,6 +1243,9 @@
   .scene-secondary {
     fill: var(--color-ink-secondary, oklch(0.36 0 0));
   }
+  .scene-status-mark {
+    fill: inherit;
+  }
   .scene-rule {
     stroke: var(--color-line-base, oklch(0.8761 0 0));
     stroke-width: var(--ui-border-hairline, 1px);

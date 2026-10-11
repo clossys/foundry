@@ -98,13 +98,14 @@ function topicRow(item: TopicListItem, ground: SectionGround, first = false, las
 function GroupedTopics({ groups, ground = "base", headingLevel = 3, className, style, ...rest }: TopicListBaseProps & Omit<HTMLAttributes<HTMLDivElement>, "title"> & { groups: readonly TopicListGroup[]; headingLevel?: 3 | 4 }) {
   const prefix = useId();
   const colors = SECTION_GROUND_CLASSES[ground];
+  const inverse = ground === "inverse";
   const Heading = headingLevel === 4 ? "h4" : "h3";
   return (
     <div {...rest} data-topic-list="" data-groups={groups.length} className={cx("grid grid-cols-1 gap-x-3xl gap-y-2xl tablet:gap-y-3xl", groups.length === 3 ? "tablet-lg:grid-cols-3" : "tablet:grid-cols-2", className)} style={style}>
       {groups.map((group, index) => {
         const headingId = `${prefix}-topic-group-${index}`;
         return (
-          <section key={group.id} aria-labelledby={headingId} className={cx("min-w-0 border-t", ground === "inverse" ? "border-ink-on-inverse" : "border-ink-primary")} style={{ borderBlockStartWidth: UI_BORDER_RULE }}>
+          <section key={group.id} aria-labelledby={headingId} className={cx("min-w-0 border-t", inverse ? "border-ink-on-inverse" : "border-ink-primary")} style={{ borderBlockStartWidth: UI_BORDER_RULE }}>
             <Heading id={headingId} className={cx("pt-md pb-xs font-mono text-caption uppercase tracking-label", colors.secondary)}>{group.label}</Heading>
             <ul>{group.items.map((item, row) => topicRow(item, ground, row === 0, row === group.items.length - 1))}</ul>
           </section>

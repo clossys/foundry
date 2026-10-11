@@ -89,10 +89,6 @@
  *      regardless of brand. See "AGREEMENT WITH `flattenTokens`" below for
  *      why this MUST be a finding, not a silent accept.
  *
- * Scene adds one bounded-value finding, `scene-tilt-bound`: its tilt must
- * be a literal degree angle from zero through two. Expressions are refused
- * because this flat declaration check cannot prove their computed angle.
- *
  * `unchecked` is a fourth, distinct list: a declaration key this function
  * was HANDED but that is not even shaped like a real CSS custom-property
  * name (`^--[a-zA-Z0-9-]+$`) at all, so it cannot be classified against
@@ -167,7 +163,7 @@
 import { TOKENS, type TokenDefinition } from "./tokens.js";
 
 /** Why one `BrandFileCoverageFinding` was reported. See this file's header comment for the full reasoning behind each. */
-export type BrandFileCoverageFindingRule = "uncovered-brandable-slot" | "unknown-slot" | "non-brandable-override" | "scene-tilt-bound";
+export type BrandFileCoverageFindingRule = "uncovered-brandable-slot" | "unknown-slot" | "non-brandable-override";
 
 export interface BrandFileCoverageFinding {
   rule: BrandFileCoverageFindingRule;
@@ -296,11 +292,6 @@ export function checkBrandFileCoverage(
         message: `"${name}" is a structural (non-brandable) token; overriding it is not allowed — matches @example/surface's flattenTokens, which throws "non-brandable-override" for the same slot`,
       });
       continue;
-    }
-
-    if (name === "--ui-scene-tilt" && rawValue.trim()) {
-      const angle = /^([+]?(?:\d+(?:\.\d*)?|\.\d+))deg$/.exec(rawValue.trim());
-      if (!angle || Number(angle[1]) > 2) findings.push({ rule: "scene-tilt-bound", slot: name, message: "Scene tilt must be a literal angle from 0deg through 2deg; expressions cannot prove this bound." });
     }
 
     if (rawValue.trim().length > 0) {
