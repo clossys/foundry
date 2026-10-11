@@ -9,7 +9,8 @@
  * resolve cleanly on their own.
  *
  * MEMBERSHIP IS EMPIRICAL — confirmed by resolving each member's own
- * compiled file (`dist/charts/<Name>.js`, never the barrel) under
+ * compiled file (`dist/charts/<Name>.js`, or `LineChart.server.js` for
+ * the static line implementation, never the barrel) under
  * `node --conditions=react-server`. See `src/render-environment.ts` for
  * the recorded verdict and `render-environment.test.ts` for the negative
  * control proving `charts/index.ts` still fails the identical probe.
@@ -31,6 +32,9 @@ export type { ChartFrameProps, ChartMargin, ChartAxisTick, ChartLegendItem, Char
 
 export { BarChart } from "./BarChart.js";
 export type { BarChartProps, BarChartSeries } from "./BarChart.js";
+
+export { LineChart } from "./LineChart.server.js";
+export type { LineChartProps, LineChartSeries } from "./LineChart.js";
 
 export { Sparkline } from "./Sparkline.js";
 export type { SparklineProps } from "./Sparkline.js";

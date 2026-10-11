@@ -1,6 +1,7 @@
 import { useState, type CSSProperties, type KeyboardEvent, type PointerEvent as ReactPointerEvent } from "react";
 import { ChartFrame, type ChartTableSpec } from "./ChartFrame.js";
-import { linearScale, niceTicks, formatTickValue, timeScale } from "./internal/scale.js";
+import { formatTickValue } from "./internal/scale.js";
+import { createLineData, createLinePlot, createLineMark, defaultLineXFormat as defaultXFormat } from "./internal/line-geometry.js";
 import { CHART_AXIS_LABEL, CHART_FONT_BODY, CHART_GRID, CHART_SURFACE, MAX_CATEGORICAL_SERIES, resolveSeriesColor } from "./internal/chart-vars.js";
 
 export interface LineChartSeries {
@@ -56,9 +57,6 @@ function defaultOverlayLabel(chartTitle: string, hint: string): string {
   return `${chartTitle}: ${hint}`;
 }
 
-const defaultXFormat = (value: Date | number): string =>
-  value instanceof Date ? value.toLocaleDateString(undefined, { month: "short", day: "numeric" }) : String(value);
-
 /**
  * Change over time — one line per series, sharing one x scale and one y
  * scale (never a second y-axis; see `BarChart`'s equivalent doc comment).
@@ -92,16 +90,8 @@ export function LineChart({
         `(see assignCategoricalColor). Series past the ${MAX_CATEGORICAL_SERIES}th were dropped.`,
     );
   }
-  const visibleSeries = series.slice(0, MAX_CATEGORICAL_SERIES);
-
-  const allValues = visibleSeries.flatMap((s) => s.values);
-  const domainMin = Math.min(0, ...allValues);
-  const domainMax = Math.max(0, ...allValues, 1);
-  const yTicks = niceTicks(domainMin, domainMax);
-
-  const isTime = x.length > 0 && x[0] instanceof Date;
-  const legend = visibleSeries.map((s, i) => ({ label: s.name, color: resolveSeriesColor(s.name, i, colorDomain, s.color) }));
-  const showDirectLabels = visibleSeries.length >= 2 && visibleSeries.length <= 4;
+  const data = createLineData({ x, series, colorDomain });
+  const { visibleSeries, yTicks, legend, showDirectLabels } = data;
 
   const table: ChartTableSpec = {
     headers: [xColumnLabel, ...visibleSeries.map((s) => s.name)],
@@ -111,11 +101,7 @@ export function LineChart({
   return (
     <ChartFrame title={title} description={description} width={width} height={height} legend={legend} table={table} tableFallbackLabel={tableFallbackLabel} className={className} style={style} xTicks={[]} yTicks={[]}>
       {(plot) => {
-        const y = linearScale([domainMin, domainMax], [plot.y + plot.height, plot.y]);
-        const xScale = isTime
-          ? timeScale([x[0] as Date, x[x.length - 1] as Date], [plot.x, plot.x + plot.width])
-          : linearScale([x[0] as number, x[x.length - 1] as number], [plot.x, plot.x + plot.width]);
-        const xTickValues = x.length <= 6 ? x : [x[0]!, x[Math.floor((x.length - 1) / 2)]!, x[x.length - 1]!];
+        const { y, xScale, xTickValues } = createLinePlot(x, data, plot);
 
         function nearestIndexForClientX(clientX: number, svgEl: SVGSVGElement): number {
           const rect = svgEl.getBoundingClientRect();
@@ -179,9 +165,7 @@ export function LineChart({
 
             {visibleSeries.map((s, seriesIndex) => {
               const color = resolveSeriesColor(s.name, seriesIndex, colorDomain, s.color);
-              const points = x.map((xv, i) => [xScale(xv as never), y(s.values[i] ?? 0)] as const);
-              const d = points.map(([px, py], i) => `${i === 0 ? "M" : "L"}${px},${py}`).join(" ");
-              const last = points[points.length - 1];
+              const { d, last } = createLineMark(x, s.values, xScale, y);
               return (
                 <g key={s.name} data-chart-part="series">
                   <path d={d} fill="none" stroke={color} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />

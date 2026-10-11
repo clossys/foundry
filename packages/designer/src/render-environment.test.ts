@@ -98,7 +98,7 @@ describe("server-safe entry points resolve under react-server (test 1)", () => {
       ],
     },
     { distRelPath: "shell/server.js", expectedExports: ["BADGE_INSET_SHARE", "BADGE_RADIUS_SHARE", "Brandmark", "Shell", "SiteFooter", "SiteHeader", "SkipLink", "badgePlatePath"] },
-    { distRelPath: "charts/server.js", expectedExports: ["ChartFrame", "BarChart", "Sparkline"] },
+    { distRelPath: "charts/server.js", expectedExports: ["ChartFrame", "BarChart", "LineChart", "Sparkline"] },
     { distRelPath: "theme/server.js", expectedExports: ["getThemeInitScript"] },
   ];
 

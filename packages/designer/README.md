@@ -360,13 +360,20 @@ source file's own header for the exact probe and its result). Today that's:
 | `@clossys/designer/atoms/server` | `Avatar`, `Badge`, `Banner`, `Card`, `Field`, `Icon`, `Meter`, `Skeleton`, `Spinner`, `StatusMark`, `buttonLinkClassName`, `iconButtonClassName`, `iconButtonLinkClassName`, `mergeUiClasses` |
 | `@clossys/designer/blocks/server` | `AnatomyCallouts`, `ArticleBody`, `CardGrid`, `Comparison`, `ContentSection`, `DetailView`, `EmptyState`, `Faq`, `FeatureGrid`, `FieldGroup`, `Hero`, `LedgerTile`, `LinkGrid`, `MarketingChapter`, `MediaFigure`, `OrderedStepSequence`, `PageHeader`, `PricingTable`, `RecordLedger`, `Scene`, `SectionFrame`, `SectionHeader`, `SectionIntro`, `Specimen`, `SpecimenPanel`, `Stat`, `StatusList`, `TopicList` |
 | `@clossys/designer/shell/server` | `Shell`, `SiteFooter`, `SiteHeader`, `SkipLink` |
-| `@clossys/designer/charts/server` | `ChartFrame`, `BarChart`, `Sparkline` |
+| `@clossys/designer/charts/server` | `ChartFrame`, `BarChart`, `LineChart` (static), `Sparkline` |
 | `@clossys/designer/theme/server` | `getThemeInitScript` |
 
 Everything not listed above stays reachable only from its original barrel,
 inside a client boundary — nothing was removed, renamed, or restructured to
 create these subpaths; each is strictly additive, a second, narrower way to
 reach bindings that already ship.
+
+`LineChart` also has two implementations. The ordinary `/charts` entry
+keeps its pointer and keyboard inspection layer. `/charts/server` renders
+static paths from the same geometry helpers, with a visible series legend
+and the complete table fallback. It accepts the published line props plus
+optional `fit`; `fit="fluid"` uses an intrinsic width of 360 when `width`
+is omitted, scaling up to 540. Omitted `fit` retains the fixed 480 preset.
 
 `Faq` deliberately has two implementations behind those entry points. The
 ordinary `@clossys/designer/blocks` entry keeps the React Aria disclosure and

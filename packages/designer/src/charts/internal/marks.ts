@@ -3,3 +3,5 @@ export const CHART_MARK_RADIUS = "var(--radius-subtle)";
 export const CHART_HAIRLINE = "var(--ui-border-hairline)";
 /** Small inline-chart labels use the normal-text ink role. */
 export const CHART_INLINE_AXIS_LABEL = "var(--color-ink-secondary)";
+/** A token hairline protects label glyphs from crossing chart strokes. */
+export const CHART_LABEL_BACKDROP = "var(--color-surface-base)";
