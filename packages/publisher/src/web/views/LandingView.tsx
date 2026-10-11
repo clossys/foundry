@@ -231,7 +231,7 @@ function bandBlocks(afterSection: Readonly<Record<string, ReactNode>>): Sectione
         {after(id)}
       </ContentSection>
     ),
-    ContentSection: ({ section, actions }) => <sectionedViewBlocks.ContentSection section={section} actions={actions} after={after(section.id)} className={BAND_ANCHOR_CLASS} />,
+    ContentSection: ({ section, actions, publishedFaq }) => <sectionedViewBlocks.ContentSection section={section} actions={actions} publishedFaq={publishedFaq} after={after(section.id)} className={BAND_ANCHOR_CLASS} />,
   };
 }
 
@@ -366,7 +366,7 @@ export function LandingView({
     if (!ids.has(key)) throw new RenderError("resolution-failed", `LandingView refused afterSection.${key}: no rendered section has that id.`);
   }
 
-  const compact = heroSection.compact === true;
+  const compact = heroSection.size === "compact";
   const hasContent = bands.length > 0 || callToAction !== undefined;
   const fills = !compact && header === "overlay";
   const peeks = fills && peek && hasContent;
@@ -411,7 +411,7 @@ export function LandingView({
         </div>
       ) : null}
       {bands.map(({ section, node }) => (
-        <SectionFrame key={section.id} data-landing-ground={section.ground} ground={section.ground} measure={measure} className={BAND_CLASS}>
+        <SectionFrame key={section.id} data-landing-ground={section.ground} ground={section.ground} measure={measure} className={BAND_CLASS} style={section.kind === "content-section" ? { paddingBlock: 0 } : undefined}>
           {ANATOMY_KINDS.has(section.kind) ? (
             node
           ) : (

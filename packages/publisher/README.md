@@ -1139,8 +1139,8 @@ to action that carries its own fill, such as a `primary` Designer `Button` or
 The core hero contract uses `size: "compact"` for section-scale copy and
 `size: "display"` for its default. Compact hero media is refused, and
 `checkSectionVariety` warns for a lone compact hero unless known trailing
-content is supplied. The existing `hero-compact` gallery fixture and web
-view still await the canonical size-field migration.
+content is supplied. The web views use the canonical size field; the existing
+`hero-compact` gallery fixture awaits the catalog migration.
 
 `LandingView`, exported from `@clossys/publisher/web` and
 `@clossys/publisher/web/server`, is a sectioned landing page: a hero block
@@ -1278,32 +1278,30 @@ header group (an `<h2>`, never a second display heading) with its actions,
 and its media as the block. Other section kinds keep their block's own
 header region inside the same slot.
 
-**Content-section bands (renderer migration pending).** The existing web
-renderer still recognizes the earlier block shapes described below; these
-are not accepted canonical core input. A `content-section` band (the `records` document
-above) maps its block and specimen straight onto Designer blocks: `feature-grid`
-to `FeatureGrid`, `card-grid` to `CardGrid`, `comparison` to `Comparison`,
-`topic-list` to `TopicList`, `ordered-step-sequence` to
-`OrderedStepSequence`, `faq` to `Faq`, and `media` to a
-labelled `Specimen` figure. Item icons render their Designer icon; actions
-render through the shared emphasis ladder (`primary`, `outline`,
-ground-aware `tonal` and chevron `quiet`) at one `md` group size, and a `footnote` renders as a small
-muted line closing the text column, its one link underlined. A linked
-item's `href` passes to the Designer block, which renders the item's title as
-its one link with a chevron and stretches the hit area over the item; a
-stacked band with a block or media renders no section actions even if handed
-some (validation refuses them first). A `split` band puts the text beside the specimen on its
-`mediaSide`; a split FAQ puts its rows in the visual column beside a
-top-aligned header group. A stacked band takes its `align` and shows the
-specimen after the block. A stacked band with no block, no media and no
-`afterSection` content is a statement band: its header is its content, so
-it takes the Designer `ContentSection` `display` emphasis (the display
-heading step and rhythm) and carries `data-content-section-statement`.
-`afterSection` content follows the block (in a split FAQ, it closes the
-header group's column). Specimens are static
-records: they hold no links, buttons or other focusable content. A section
-that would not render as authored is refused with a `RenderError` naming its
-path.
+**Canonical content-section rendering (bounded integration).** The web views
+render canonical `items` with `order: "none"` and `reveal: "all"` through
+Designer `Items`, preserving icons, eyebrow, meta, badge, links, spans,
+featured items, group membership and static specimen visuals. The frame
+forwards its resolved `compact`, `standard` or `display` size and `stacked`,
+`split-start` or `split-end` layout. Item headings remain one level below the
+section heading. Frame size controls rhythm without a statement heuristic.
+Actions use the shared emphasis ladder at one `md` group size; a footnote
+supports text, one link, or both.
+
+Single-panel specimen media, its optional anatomy key, record groups and the
+three scene templates forward their resolved visible copy to the available
+Designer blocks. Numbered, connected and disclosure Items, Matrix, panel badges, status-row
+mobile limits and Meter previous values await their renderer capabilities. These are valid core contracts. Until those capabilities are
+integrated, rendering refuses them with a `RenderError` naming the dependency
+and path instead of dropping authored fields. The published top-level FAQ
+keeps its entry-specific implementation, including split FAQ layout.
+
+The resolved boundary requires explicit canonical axes and closed plain data
+before reading discriminators. It checks the structural contract and text
+budgets without calling a consumer resolver or changing caller provenance.
+`afterSection` content follows the block. The existing catalog fixtures await
+a separate migration; this bounded renderer integration does not qualify the
+complete canonical gallery.
 
 **Measure and rhythm.** Centred copy, in the hero block and the call to
 action, is held to the prose measure (`--ui-width-prose-max`) inside the

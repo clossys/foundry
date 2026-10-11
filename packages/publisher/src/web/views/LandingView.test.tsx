@@ -101,36 +101,6 @@ describe("LandingView", () => {
     expect(faq.querySelector("[data-content-section-modules] details")).not.toBeNull();
   });
 
-  it("renders a content-section band as its own anatomy: no nested section, the band paints its ground, afterSection in the text column", () => {
-    const faqItems = ["q1", "q2", "q3", "q4"].map((id) => ({ id, question: `Q-${id}-SENTINEL`, answer: `A-${id}-SENTINEL` }));
-    const content: ResolvedSectionedViewDocument = {
-      ...SHARED,
-      id: "acme-content",
-      sections: [
-        { id: "topics", kind: "content-section", ground: "sunken", heading: "TOPICS-SENTINEL", block: { type: "topic-list", columns: 1, items: [{ id: "a", heading: "A-SENTINEL" }, { id: "b", heading: "B-SENTINEL" }] } },
-        { id: "questions", kind: "content-section", ground: "base", heading: "QUESTIONS-SENTINEL", actions: [{ id: "more", label: "MORE-SENTINEL", href: "/more" }], layout: "split", block: { type: "faq", items: faqItems } },
-      ],
-    };
-    const root = dom({ document: PAGE, trailing: [content], afterSection: { topics: <p data-after="">AFTER</p>, questions: <p data-after="">AFTER</p> } });
-    const topics = root.querySelector("#topics") as HTMLElement;
-    const frame = topics.closest("[data-landing-ground]") as HTMLElement;
-    expect(frame.getAttribute("data-landing-ground")).toBe("sunken");
-    expect(frame.className.split(/\s+/).filter((name) => /(^|:)py-/.test(name))).toEqual(["py-4xl", "tablet-lg:py-5xl"]);
-    expect(topics.closest("[data-content-section]")).toBe(topics);
-    expect(topics.parentElement?.closest("[data-content-section]")).toBeNull();
-    expect(topics.className).not.toContain("bg-surface-");
-    expect(topics.querySelector("a")).toBeNull();
-    expect((topics.querySelector("[data-content-section-modules]") as HTMLElement).lastElementChild?.hasAttribute("data-after")).toBe(true);
-    const questions = root.querySelector("#questions") as HTMLElement;
-    // A split keeps its actions in the text column.
-    const more = questions.querySelector('[data-content-section-text] a[href="/more"]') as HTMLElement;
-    expect(more.getAttribute("data-action-emphasis")).toBe("quiet");
-    expect(more.className.split(" ")).toEqual(expect.arrayContaining(["text-body", "text-control-quiet", "quiet-action"]));
-    expect(more.className.split(" ")).not.toContain("underline");
-    expect(questions.getAttribute("data-layout")).toBe("split");
-    expect(questions.querySelectorAll("[data-content-section-media] details")).toHaveLength(4);
-    expect(questions.querySelector("[data-content-section-text] [data-after]")).not.toBeNull();
-  });
 
   it("renders a hero section in a band as a header group, not a second display heading", () => {
     const closing: ResolvedSectionedViewDocument = { ...SHARED, id: "acme-closing", sections: [{ id: "closing", kind: "hero", ground: "base", eyebrow: "E-SENTINEL", heading: "CLOSING-SENTINEL", description: "D-SENTINEL" }] };
@@ -472,7 +442,7 @@ describe("LandingView action ladder", () => {
 
 it("renders all body tiers with authored emphasis, size and ground, including decorative quiet chevrons", () => {
   for (const ground of ["base", "sunken", "inverse"] as const) for (const emphasis of ["primary", "secondary", "tertiary", "quiet"] as const) {
-    const band = { id: "frame", kind: "content-section" as const, ground, heading: "FRAME-SENTINEL", actions: [{ id: "go", label: "GO-SENTINEL", href: "/go", emphasis }] };
+    const band = { id: "frame", kind: "content-section" as const, size: "standard" as const, layout: "stacked" as const, ground, heading: "FRAME-SENTINEL", actions: [{ id: "go", label: "GO-SENTINEL", href: "/go", emphasis }] };
     const page: ResolvedSectionedViewDocument = { ...PAGE, sections: [PAGE.sections[0]!, band] };
     const link = dom({ document: page, peek: false }).querySelector('a[href="/go"]')!;
     expect(link.getAttribute("data-action-emphasis")).toBe(emphasis);

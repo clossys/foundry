@@ -1,11 +1,10 @@
+import { assertClosedData, assertCanonicalContentSection } from "./SectionedViewCanonical.js";
 import { resolveActionEmphasis } from "../../core/page-flow.js";
 import { resolveRoleActionEmphasis } from "../../core/sectioned-view.js";
 import { renderAction, renderRoleActions } from "./SectionedViewActions.js";
 import { SECTION_GROUND_CLASSES } from "@clossys/designer/blocks/server";
 import type { ReactNode } from "react";
-import { CONTENT_ICON_NAMES, FEATURE_GRID_ITEM_EYEBROW_MAX_CHARACTERS, validateContentActionPlacement, validateItemHref, validateLinkGroup } from "../../core/sectioned-view.js";
-import type { ComposeFinding } from "../../core/types.js";
-import type { ContentIconName, ResolvedSectionedViewAction, ResolvedSectionedViewContentAction, ResolvedSectionedViewContentSection, ResolvedSectionedViewDocument, ResolvedSectionedViewHeroMedia, ResolvedSectionedViewSection, SectionedViewGround, SectionedViewStatTrend, SectionedViewStatus, SectionedViewStatusDisposition } from "../../core/sectioned-view.js";
+import type { ResolvedSectionedViewAction, ResolvedSectionedViewContentAction, ResolvedSectionedViewContentSection, ResolvedSectionedViewDocument, ResolvedSectionedViewHeroMedia, ResolvedSectionedViewSection, SectionedViewGround, SectionedViewStatTrend, SectionedViewStatus, SectionedViewStatusDisposition } from "../../core/sectioned-view.js";
 import { isRenderAsset } from "../../internal/assets.js";
 import { RenderError } from "../../internal/errors.js";
 import { isSanctionedHref } from "../../internal/href.js";
@@ -98,6 +97,13 @@ function validCopyRef(value: unknown): boolean {
     const descriptor = Object.getOwnPropertyDescriptor(value.values, key);
     return descriptor !== undefined && descriptor.enumerable && "value" in descriptor && ["string", "number", "boolean"].includes(typeof descriptor.value);
   });
+}
+
+function validResolutionApproval(value: unknown): boolean {
+  if (value === undefined) return true;
+  if (!plain(value)) return false;
+  if (value.approvedBy === "owner") return closed(value, ["approvedBy", "pendingOwnerReview"]) && value.pendingOwnerReview === false;
+  return value.approvedBy === "delegate" && closed(value, ["approvedBy", "pendingOwnerReview", "authorizingPlanDigest"]) && typeof value.pendingOwnerReview === "boolean" && (value.authorizingPlanDigest === undefined || typeof value.authorizingPlanDigest === "string");
 }
 
 function dense(value: unknown, path: string): asserts value is unknown[] {
@@ -214,16 +220,6 @@ function assertActions(value: unknown, path: string, content = false): void {
   if (!content && value.length === 1 && primaries !== 1) throw new Error(`${path}'s lone action must be primary.`);
 }
 
-/** A resolved footnote: closed `{ text, link? }` with non-blank text, its link closed `{ label, href }`. */
-function assertFootnote(value: unknown, path: string): void {
-  if (value === undefined) return;
-  if (!plain(value) || !closed(value, ["text", "link"]) || !nonBlank(value.text)) throw new Error(`${path} must be a resolved footnote with non-blank text.`);
-  if (value.link === undefined) return;
-  const link = value.link;
-  if (!plain(link) || !closed(link, ["label", "href"]) || !nonBlank(link.label)) throw new Error(`${path}.link must be one resolved link with a non-blank label.`);
-  if (!isSanctionedHref(link.href)) throw new Error(`${path}.link.href must be a sanctioned route target.`);
-}
-
 /** Resolved status items, shared between a group's `items` and a status-list section's flat `items`. */
 function assertStatusItems(value: unknown, path: string): void {
   dense(value, path);
@@ -237,345 +233,17 @@ function assertStatusItems(value: unknown, path: string): void {
   }
 }
 
-const CONTENT_SECTION_KEYS = ["id", "kind", "ground", "eyebrow", "heading", "description", "actions", "layout", "mediaSide", "align", "block", "media", "footnote"] as const;
-const CARD_SPAN_UNITS: Readonly<Record<string, number>> = { third: 4, half: 6, "two-thirds": 8, full: 12 };
-const SPECIMEN_TONES = ["success", "warning", "danger", "info", "neutral"] as const;
-const SPECIMEN_ARRANGEMENTS = ["single", "row", "stack", "flow"] as const;
-const PART_MAX_ROWS = 6;
-const CARD_VISUAL_MAX_ROWS = 5;
-const TABLE_MAX_COLUMNS = 4;
-const TABLE_MAX_ROWS = 5;
-const PANEL_MAX_PARTS = 3;
-const MEDIA_MAX_PANELS = 3;
-
 function oneOf(value: unknown, allowed: readonly unknown[], path: string, what: string): void {
   if (value !== undefined && !allowed.includes(value)) throw new Error(`${path} is not a supported ${what}; supported values are ${allowed.join(", ")}.`);
 }
 
-/** A dense, closed, uniquely identified record array of `min`-`max` entries. */
-function records(value: unknown, path: string, keys: readonly string[], min: number, max: number, what: string): asserts value is Record<string, unknown>[] {
-  dense(value, path);
-  closedItems(value, path, keys);
-  itemIds(value, path);
-  if (value.length < min || value.length > max) throw new Error(`${path} must hold ${min === max ? min : `${min} to ${max}`} ${what}; it holds ${value.length}.`);
-}
-
-function nonNegative(value: unknown): value is number {
-  return typeof value === "number" && Number.isFinite(value) && value >= 0;
-}
-
-function assertSpecimenStatus(value: unknown, path: string, required = false): void {
-  if (value === undefined && !required) return;
-  if (!plain(value) || !closed(value, ["tone", "label"]) || !nonBlank(value.label)) throw new Error(`${path} must be a closed resolved status with a tone and non-blank label copy.`);
-  oneOf(value.tone, SPECIMEN_TONES, `${path}.tone`, "specimen tone");
-  if (value.tone === undefined) throw new Error(`${path}.tone is required.`);
-}
-
-function assertSpecimenPart(value: unknown, path: string, maxRows: number): void {
-  if (!plain(value) || !nonBlank(value.id) || typeof value.type !== "string") throw new Error(`${path} must be a resolved specimen part with a non-blank id and a type.`);
-  const part = value;
-  const partKeys = (keys: readonly string[]) => {
-    if (!closed(part, ["id", "type", ...keys])) throw new Error(`${path} has keys not allowed for a ${String(part.type)} part.`);
-  };
-  switch (part.type) {
-    case "fields":
-      partKeys(["label", "columns", "items"]);
-      copyFields(part, path, [], ["label"]);
-      oneOf(part.columns, [1, 2, 4], `${path}.columns`, "fields column count");
-      records(part.items, `${path}.items`, ["id", "label", "value"], 1, maxRows, "rows");
-      part.items.forEach((item, index) => copyFields(item, `${path}.items.${index}`, ["label", "value"]));
-      return;
-    case "status-rows":
-      partKeys(["label", "items"]);
-      copyFields(part, path, [], ["label"]);
-      records(part.items, `${path}.items`, ["id", "label", "detail", "status"], 1, maxRows, "rows");
-      part.items.forEach((item, index) => {
-        copyFields(item, `${path}.items.${index}`, ["label"], ["detail"]);
-        assertSpecimenStatus(item.status, `${path}.items.${index}.status`, true);
-      });
-      return;
-    case "meter":
-      partKeys(["label", "value", "scaleMax", "limit", "direction", "tone", "valueText", "limitText", "status", "note"]);
-      copyFields(part, path, ["label", "valueText"], ["limitText", "note"]);
-      if (!nonNegative(part.value)) throw new Error(`${path}.value must be a finite number of zero or more.`);
-      if (!nonNegative(part.scaleMax) || part.scaleMax === 0) throw new Error(`${path}.scaleMax must be a finite number greater than zero.`);
-      if (part.limit !== undefined && !nonNegative(part.limit)) throw new Error(`${path}.limit must be a finite number of zero or more.`);
-      if (part.limitText !== undefined && part.limit === undefined) throw new Error(`${path}.limitText is allowed only with ${path}.limit.`);
-      oneOf(part.direction, ["max", "min"], `${path}.direction`, "meter direction");
-      if (part.tone === undefined) throw new Error(`${path}.tone is required.`);
-      oneOf(part.tone, SPECIMEN_TONES, `${path}.tone`, "specimen tone");
-      assertSpecimenStatus(part.status, `${path}.status`);
-      return;
-    case "table": {
-      partKeys(["label", "caption", "columns", "rows"]);
-      copyFields(part, path, ["caption"], ["label"]);
-      records(part.columns, `${path}.columns`, ["id", "label"], 1, TABLE_MAX_COLUMNS, "columns");
-      part.columns.forEach((column, index) => copyFields(column, `${path}.columns.${index}`, ["label"]));
-      records(part.rows, `${path}.rows`, ["id", "cells"], 1, Math.min(TABLE_MAX_ROWS, maxRows), "rows");
-      const columnCount = part.columns.length;
-      part.rows.forEach((row, rowIndex) => {
-        const cellsPath = `${path}.rows.${rowIndex}.cells`;
-        dense(row.cells, cellsPath);
-        if (row.cells.length !== columnCount) throw new Error(`${cellsPath} must hold one cell per column (${columnCount}); it holds ${row.cells.length}.`);
-        row.cells.forEach((cell, cellIndex) => {
-          const cellPath = `${cellsPath}.${cellIndex}`;
-          if (!plain(cell) || !closed(cell, ["text", "status"]) || Object.hasOwn(cell, "text") === Object.hasOwn(cell, "status")) throw new Error(`${cellPath} must be a closed cell with exactly one of text or status.`);
-          if (Object.hasOwn(cell, "text")) copyFields(cell, cellPath, ["text"]);
-          else assertSpecimenStatus(cell.status, `${cellPath}.status`, true);
-        });
-      });
-      return;
-    }
-    case "schedule":
-      partKeys(["label", "items"]);
-      copyFields(part, path, [], ["label"]);
-      records(part.items, `${path}.items`, ["id", "date", "label", "amount", "status"], 1, maxRows, "rows");
-      part.items.forEach((item, index) => {
-        copyFields(item, `${path}.items.${index}`, ["date", "label"], ["amount"]);
-        assertSpecimenStatus(item.status, `${path}.items.${index}.status`);
-      });
-      return;
-    case "shares":
-      partKeys(["label", "items"]);
-      copyFields(part, path, [], ["label"]);
-      records(part.items, `${path}.items`, ["id", "name", "share", "shareText", "status"], 1, maxRows, "rows");
-      part.items.forEach((item, index) => {
-        copyFields(item, `${path}.items.${index}`, ["name", "shareText"]);
-        if (!nonNegative(item.share) || item.share > 100) throw new Error(`${path}.items.${index}.share must be a finite percentage from 0 to 100.`);
-        assertSpecimenStatus(item.status, `${path}.items.${index}.status`);
-      });
-      return;
-    case "files":
-      partKeys(["label", "items"]);
-      copyFields(part, path, [], ["label"]);
-      records(part.items, `${path}.items`, ["id", "format", "name", "source"], 1, maxRows, "rows");
-      part.items.forEach((item, index) => copyFields(item, `${path}.items.${index}`, ["format", "name"], ["source"]));
-      return;
-    default:
-      throw new Error(`${path}.type is not a supported specimen part type.`);
-  }
-}
-
-function assertSpecimenPanel(value: unknown, path: string): void {
-  if (!plain(value) || !closed(value, ["id", "title", "meta", "status", "parts", "footer"]) || !nonBlank(value.id)) throw new Error(`${path} must be a closed resolved specimen panel with a non-blank id.`);
-  copyFields(value, path, ["title"], ["meta"]);
-  assertSpecimenStatus(value.status, `${path}.status`);
-  dense(value.parts, `${path}.parts`);
-  itemIds(value.parts, `${path}.parts`);
-  if (value.parts.length > PANEL_MAX_PARTS) throw new Error(`${path}.parts must hold 1 to ${PANEL_MAX_PARTS} parts; it holds ${value.parts.length}.`);
-  value.parts.forEach((part, index) => assertSpecimenPart(part, `${path}.parts.${index}`, PART_MAX_ROWS));
-  if (value.footer === undefined) return;
-  const footer = value.footer;
-  if (!plain(footer) || !closed(footer, ["assignee", "note"]) || (footer.assignee === undefined && footer.note === undefined)) throw new Error(`${path}.footer must be a closed footer with an assignee, a note, or both.`);
-  copyFields(footer, `${path}.footer`, [], ["note"]);
-  if (footer.assignee === undefined) return;
-  if (!plain(footer.assignee) || !closed(footer.assignee, ["initials", "name", "note"])) throw new Error(`${path}.footer.assignee must be a closed assignee.`);
-  copyFields(footer.assignee, `${path}.footer.assignee`, ["initials", "name"], ["note"]);
-}
-
-function assertSpecimenMedia(value: unknown, path: string): void {
-  if (!plain(value) || !closed(value, ["type", "label", "arrangement", "connector", "panels"]) || value.type !== "specimen") throw new Error(`${path} must be a closed resolved specimen.`);
-  copyFields(value, path, ["label"], ["connector"]);
-  oneOf(value.arrangement, SPECIMEN_ARRANGEMENTS, `${path}.arrangement`, "specimen arrangement");
-  const arrangement = value.arrangement ?? "single";
-  if (value.connector !== undefined && arrangement !== "flow") throw new Error(`${path}.connector is allowed only with the flow arrangement.`);
-  dense(value.panels, `${path}.panels`);
-  itemIds(value.panels, `${path}.panels`);
-  const [min, max] = arrangement === "single" ? [1, 1] : [2, MEDIA_MAX_PANELS];
-  if (value.panels.length < min || value.panels.length > max) throw new Error(`${path}.panels must hold ${min === max ? min : `${min} to ${max}`} panels for the ${String(arrangement)} arrangement; it holds ${value.panels.length}.`);
-  value.panels.forEach((panel, index) => assertSpecimenPanel(panel, `${path}.panels.${index}`));
-}
-
-/** Content items: an icon from the closed set, a heading, an optional description and (cards and features only; the caller's `records` keys decide) an eyebrow. */
-function assertContentItems(items: Record<string, unknown>[], path: string, iconsAllowed = true): void {
-  items.forEach((item, index) => {
-    const itemPath = `${path}.${index}`;
-    copyFields(item, itemPath, ["heading"], ["eyebrow", "description"]);
-    if (item.icon !== undefined && !CONTENT_ICON_NAMES.includes(item.icon as ContentIconName)) throw new Error(`${itemPath}.icon is not a content icon name.`);
-    if (item.icon !== undefined && !iconsAllowed) throw new Error(`${itemPath}.icon is allowed only with the plain and plate treatments.`);
-  });
-}
-
-/** Linked items: each `href` sanctioned and never on a statement item; every item linked or none, at most six, each destination once. */
-function assertItemLinks(items: Record<string, unknown>[], path: string, statement = false): void {
-  const findings: ComposeFinding[] = [];
-  items.forEach((item, index) => validateItemHref(item, `${path}.${index}`, findings, statement));
-  if (!statement) validateLinkGroup(items, path, findings);
-  const first = findings[0];
-  if (first !== undefined) throw new Error(first.message);
-}
-
-/** Throws the first action-placement finding (see `validateContentActionPlacement`). */
-function assertActionPlacement(record: Record<string, unknown>, path: string): void {
-  const findings: ComposeFinding[] = [];
-  validateContentActionPlacement(record, path, findings);
-  const first = findings[0];
-  if (first !== undefined) throw new Error(first.message);
-}
-
-function assertComparisonSide(value: unknown, path: string): Record<string, unknown> {
-  if (!plain(value) || !closed(value, ["label", "heading", "description", "points", "visual"])) throw new Error(`${path} must be a closed resolved comparison side.`);
-  copyFields(value, path, ["label"], ["heading", "description"]);
-  if ((value.description === undefined) === (value.points === undefined)) throw new Error(`${path} must have exactly one of description or points.`);
-  if (value.points !== undefined) {
-    assertStringArray(value.points, `${path}.points`);
-    const count = (value.points as unknown[]).length;
-    if (count < 2 || count > 4) throw new Error(`${path}.points must hold 2 to 4 points; it holds ${count}.`);
-  }
-  if (value.visual !== undefined) assertSpecimenPanel(value.visual, `${path}.visual`);
-  return value;
-}
-
-function assertContentBlock(value: unknown, path: string): void {
-  if (!plain(value) || typeof value.type !== "string") throw new Error(`${path} must be a resolved block with a type.`);
-  const block = value;
-  const blockKeys = (keys: readonly string[]) => {
-    if (!closed(block, ["type", ...keys])) throw new Error(`${path} has keys not allowed for a ${String(block.type)} block.`);
-  };
-  switch (block.type) {
-    case "feature-grid": {
-      blockKeys(["columns", "treatment", "emphasis", "items"]);
-      oneOf(block.columns, [2, 3, 4], `${path}.columns`, "feature-grid column count");
-      oneOf(block.treatment, ["plain", "rule", "plate"], `${path}.treatment`, "feature-grid treatment");
-      oneOf(block.emphasis, ["item", "statement"], `${path}.emphasis`, "feature-grid emphasis");
-      const statement = block.emphasis === "statement";
-      records(block.items, `${path}.items`, ["id", "icon", "eyebrow", "heading", "description", "href"], statement ? 3 : 2, statement ? 3 : 4, "items");
-      assertContentItems(block.items, `${path}.items`, block.treatment !== "rule");
-      assertItemLinks(block.items, `${path}.items`, statement);
-      block.items.forEach((item, index) => {
-        if (typeof item.eyebrow === "string" && [...item.eyebrow.trim()].length > FEATURE_GRID_ITEM_EYEBROW_MAX_CHARACTERS) throw new Error(`${path}.items.${index}.eyebrow holds more than ${FEATURE_GRID_ITEM_EYEBROW_MAX_CHARACTERS} characters.`);
-      });
-      return;
-    }
-    case "card-grid": {
-      blockKeys(["items"]);
-      records(block.items, `${path}.items`, ["id", "icon", "eyebrow", "heading", "description", "span", "visual", "href"], 2, 6, "cards");
-      assertContentItems(block.items, `${path}.items`);
-      assertItemLinks(block.items, `${path}.items`);
-      let filled = 0;
-      block.items.forEach((card, index) => {
-        const units = typeof card.span === "string" ? CARD_SPAN_UNITS[card.span] : undefined;
-        if (units === undefined) throw new Error(`${path}.items.${index}.span is not a supported card span.`);
-        filled += units;
-        if (filled > 12) throw new Error(`${path}.items.${index}.span overflows its row; cards must fill whole 12-unit rows.`);
-        if (filled === 12) filled = 0;
-        if (card.visual !== undefined) assertSpecimenPart(card.visual, `${path}.items.${index}.visual`, CARD_VISUAL_MAX_ROWS);
-      });
-      if (filled !== 0) throw new Error(`${path}.items leaves its last row unfilled; cards must fill whole 12-unit rows.`);
-      return;
-    }
-    case "comparison": {
-      blockKeys(["before", "after"]);
-      const before = assertComparisonSide(block.before, `${path}.before`);
-      const after = assertComparisonSide(block.after, `${path}.after`);
-      const form = (side: Record<string, unknown>) => (Array.isArray(side.points) ? `points:${side.points.length}` : "description");
-      if (form(before) !== form(after)) throw new Error(`${path}.before and ${path}.after must use the same form.`);
-      if ((before.visual === undefined) !== (after.visual === undefined)) throw new Error(`${path}.before and ${path}.after must both carry a visual or neither.`);
-      return;
-    }
-    case "topic-list":
-      blockKeys(["columns", "items", "groups"]);
-      if ((block.items === undefined) === (block.groups === undefined)) throw new Error(`sectioned-view-content-topics-groups-shape: ${path} needs exactly one of items or groups.`);
-      if (block.groups !== undefined) {
-        if (block.columns !== undefined) throw new Error(`sectioned-view-content-topics-groups-columns: ${path} with groups derives its layout.`);
-        const groupPath = `${path}.groups`;
-        if (!Array.isArray(block.groups) || block.groups.length < 2 || block.groups.length > 4) throw new Error(`sectioned-view-content-topics-groups-count: ${groupPath} needs 2-4 groups.`);
-        records(block.groups, groupPath, ["id", "label", "items"], 2, 4, "groups");
-        const items: Record<string, unknown>[] = [];
-        block.groups.forEach((group, index) => {
-          const current = `${groupPath}.${index}`;
-          copyFields(group, current, ["label"]);
-          if ([...(group.label as string).trim()].length > 24) throw new Error(`sectioned-view-content-topics-groups-text-length: ${current}.label holds at most 24 characters.`);
-          if (!Array.isArray(group.items) || group.items.length < 2 || group.items.length > 4) throw new Error(`sectioned-view-content-topics-groups-count: ${current}.items needs 2-4 topics.`);
-          records(group.items, `${current}.items`, ["id", "icon", "heading", "description", "href"], 2, 4, "topics");
-          assertContentItems(group.items, `${current}.items`);
-          items.push(...group.items);
-        });
-        if (items.length > 12) throw new Error(`sectioned-view-content-topics-groups-count: ${groupPath} holds at most 12 topics.`);
-        itemIds(items, groupPath);
-        assertItemLinks(items, groupPath);
-        return;
-      }
-      oneOf(block.columns, [1, 2], `${path}.columns`, "topic-list column count");
-      records(block.items, `${path}.items`, ["id", "icon", "heading", "description", "href"], 2, 8, "items");
-      assertContentItems(block.items, `${path}.items`);
-      assertItemLinks(block.items, `${path}.items`);
-      if (block.columns !== 1 && block.items.length % 2 === 1) throw new Error(`${path}.items must hold an even number of items in 2 columns; it holds ${block.items.length}.`);
-      return;
-    case "ordered-step-sequence": {
-      blockKeys(["items", "lanes", "caption", "end", "endLabel", "continuesLabel"]);
-      const lanes = block.lanes !== undefined;
-      const bounded = (text: unknown, field: string, max: number, code: string) => {
-        if (!nonBlank(text) || [...text.trim()].length > max) throw new Error(`${code}: ${path}.${field} must be resolved non-blank copy of at most ${max} characters.`);
-      };
-      if (block.end !== undefined && block.end !== "ends" && block.end !== "continues") throw new Error(`sectioned-view-content-module-option: ${path}.end must be ends or continues.`);
-      if (lanes) {
-        if (!plain(block.lanes) || !closed(block.lanes, ["a", "b"])) throw new Error(`sectioned-view-content-steps-lanes-shape: ${path}.lanes must name exactly a and b.`);
-        bounded(block.lanes.a, "lanes.a", 20, "sectioned-view-content-steps-lanes-shape");
-        bounded(block.lanes.b, "lanes.b", 20, "sectioned-view-content-steps-lanes-shape");
-      }
-      if (block.endLabel !== undefined) bounded(block.endLabel, "endLabel", 40, "sectioned-view-content-module-option");
-      if (block.caption !== undefined) bounded(block.caption, "caption", 120, "sectioned-view-content-steps-caption");
-      if (block.end === "continues" && block.endLabel === undefined) bounded(block.continuesLabel, "continuesLabel", Number.MAX_SAFE_INTEGER, "sectioned-view-content-module-option");
-      else if (block.continuesLabel !== undefined) throw new Error(`sectioned-view-content-module-option: ${path}.continuesLabel belongs only to an unlabelled continuing end.`);
-      if (lanes && Array.isArray(block.items) && block.items.length !== 3 && block.items.length !== 5) throw new Error(`sectioned-view-content-steps-lanes-count: ${path}.items needs 3 or 5 lane steps.`);
-      records(block.items, `${path}.items`, ["id", "ordinal", "label", "heading", "description", "visual", "href", "lane"], 3, lanes ? 5 : 4, "steps");
-      if (lanes && (block.items[0]?.lane !== "a" || !block.items.some((step) => step.lane === "b"))) throw new Error(`sectioned-view-content-steps-lane-use: ${path}.items must start in a and use both actors.`);
-      const visual = block.items.some((step) => step.visual !== undefined);
-      if (lanes && visual && block.items.length !== 3) throw new Error(`sectioned-view-content-steps-count: ${path}.items with lane visuals needs exactly 3 steps.`);
-      if (block.caption !== undefined && !visual) throw new Error(`sectioned-view-content-steps-caption: ${path}.caption needs a step visual.`);
-      assertItemLinks(block.items, `${path}.items`);
-      block.items.forEach((step, index) => {
-        if (lanes ? step.lane !== "a" && step.lane !== "b" : step.lane !== undefined) throw new Error(`sectioned-view-content-steps-lane: ${path}.items.${index}.lane belongs to a named actor lane.`);
-        if (lanes && step.label !== undefined) throw new Error(`sectioned-view-content-steps-lane-label: ${path}.items.${index}.label conflicts with its actor.`);
-        copyFields(step, `${path}.items.${index}`, ["ordinal", "heading"], ["label", "description"]);
-        if (step.visual !== undefined) assertSpecimenPanel(step.visual, `${path}.items.${index}.visual`);
-      });
-      return;
-    }
-    case "faq":
-      blockKeys(["items"]);
-      records(block.items, `${path}.items`, ["id", "question", "answer"], 4, 6, "items");
-      block.items.forEach((item, index) => copyFields(item, `${path}.items.${index}`, ["question", "answer"]));
-      return;
-    default:
-      throw new Error(`${path}.type is not a supported content block type.`);
-  }
-}
-
-/**
- * A resolved content section, held to the same closed shapes and budgets the
- * document contract validates, so no Designer block throws while rendering.
- * A split needs a specimen, except a split FAQ, whose rows take the visual
- * column and which takes no media, and a text-only split, whose topic-list or
- * two-column feature-grid block takes the visual column.
- */
 function assertContentSection(record: Record<string, unknown>, path: string): void {
-  if (!closed(record, CONTENT_SECTION_KEYS)) throw new Error(`${path} has keys not allowed for a content-section section.`);
-  assertActions(record.actions, `${path}.actions`, true);
-  assertFootnote(record.footnote, `${path}.footnote`);
-  oneOf(record.layout, ["stacked", "split"], `${path}.layout`, "content layout");
-  const split = record.layout === "split";
-  oneOf(record.mediaSide, ["end", "start"], `${path}.mediaSide`, "media side");
-  oneOf(record.align, ["start", "center"], `${path}.align`, "content alignment");
-  if (record.mediaSide !== undefined && !split) throw new Error(`${path}.mediaSide is allowed only on a split section.`);
-  if (record.align !== undefined && split) throw new Error(`${path}.align is allowed only on a stacked section.`);
-  assertActionPlacement(record, path);
-  if (split && plain(record.block) && record.block.type === "ordered-step-sequence" && record.block.lanes !== undefined) throw new Error(`sectioned-view-content-steps-lanes-layout: ${path}.block with lanes needs a stacked section.`);
-  if (split && plain(record.block) && record.block.type === "topic-list" && record.block.groups !== undefined) throw new Error(`sectioned-view-content-topics-groups-layout: ${path}.block with groups needs a stacked section.`);
-  if (record.block !== undefined) assertContentBlock(record.block, `${path}.block`);
-  if (record.media !== undefined) assertSpecimenMedia(record.media, `${path}.media`);
-  const faq = plain(record.block) && record.block.type === "faq";
-  if (split && faq && record.media !== undefined) throw new Error(`${path}.media is not allowed on a split FAQ section; its rows take the visual column.`);
-  if (split && !faq && record.media === undefined) {
-    const block = plain(record.block) ? record.block : undefined;
-    if (block === undefined || (block.type !== "topic-list" && block.type !== "feature-grid")) throw new Error(`${path} is a split section and needs media, unless its block is faq, topic-list or feature-grid.`);
-    if (block.type === "feature-grid" && (block.columns !== 2 || block.emphasis === "statement")) throw new Error(`${path} is a text-only split; its feature-grid block needs columns: 2 and item emphasis.`);
-  }
+  assertCanonicalContentSection(record, path);
 }
 
 /** Validates the direct resolved-model boundary before any Designer block receives props. */
 export function assertRenderableSectionedViewDocument(document: unknown): asserts document is ResolvedSectionedViewDocument {
+  assertClosedData(document, "document");
   if (!plain(document) || !closed(document, ["id", "sections", "resolutions", "viewGrounds"]) || !Object.hasOwn(document, "id") || !Object.hasOwn(document, "sections") || !Object.hasOwn(document, "resolutions") || !nonBlank(document.id)) throw new Error("document must be a closed object with a non-blank id, sections, and resolutions.");
   const candidate = document as { sections?: unknown; resolutions?: unknown };
   dense(candidate.sections, "sections");
@@ -583,7 +251,7 @@ export function assertRenderableSectionedViewDocument(document: unknown): assert
   for (let index = 0; index < candidate.resolutions.length; index += 1) {
     if (!Object.hasOwn(candidate.resolutions, index)) throw new Error(`resolutions.${index} is a sparse provenance hole.`);
     const resolution = candidate.resolutions[index];
-    if (!plain(resolution) || !closed(resolution, ["ref", "text", "recordId", "revision", "locale", "source", "entryId"]) || !nonBlank(resolution.text) || !nonBlank(resolution.recordId) || !nonBlank(resolution.revision) || !nonBlank(resolution.locale) || !nonBlank(resolution.entryId) || !validCopyRef(resolution.ref) || !plain(resolution.source) || !closed(resolution.source, ["kind", "reference"]) || !["consumer", "generated", "imported"].includes(resolution.source.kind as string) || !nonBlank(resolution.source.reference)) {
+    if (!plain(resolution) || !closed(resolution, ["ref", "text", "recordId", "revision", "locale", "source", "entryId", "approval"]) || !nonBlank(resolution.text) || !nonBlank(resolution.recordId) || !nonBlank(resolution.revision) || !nonBlank(resolution.locale) || !nonBlank(resolution.entryId) || !validCopyRef(resolution.ref) || !validResolutionApproval(resolution.approval) || !plain(resolution.source) || !closed(resolution.source, ["kind", "reference"]) || !["consumer", "generated", "imported"].includes(resolution.source.kind as string) || !nonBlank(resolution.source.reference)) {
       throw new Error(`resolutions.${index} must be complete CopyResolution provenance.`);
     }
   }
@@ -592,7 +260,7 @@ export function assertRenderableSectionedViewDocument(document: unknown): assert
   for (let index = 0; index < candidate.sections.length; index += 1) {
     const path = `sections.${index}`;
     const section = candidate.sections[index];
-    if (!plain(section) || !closed(section, ["id", "kind", "ground", "eyebrow", "heading", "description", "actions", "media", "items", "labels", "groups", "layout", "mediaSide", "align", "block", "footnote", "compact"])) throw new Error(`${path} must be a closed resolved section object.`);
+    if (!plain(section) || !closed(section, ["id", "kind", "ground", "eyebrow", "heading", "description", "actions", "media", "items", "labels", "groups", "layout", "mediaSide", "align", "block", "footnote", "size"])) throw new Error(`${path} must be a closed resolved section object.`);
     const record = section as Record<string, unknown>;
     if (!nonBlank(record.id) || !FRAGMENT_ID.test(record.id)) throw new Error(`${path}.id must be a unique fragment-safe id.`);
     if (sectionIds.has(record.id)) throw new Error(`${path}.id duplicates an earlier section.`);
@@ -609,10 +277,10 @@ export function assertRenderableSectionedViewDocument(document: unknown): assert
       copyFields(record, path, ["heading"], ["eyebrow", "description"]);
     }
     if (record.kind === "hero") {
-      if (!closed(record, ["id", "kind", "ground", "eyebrow", "heading", "description", "actions", "media", "compact"])) throw new Error(`${path} has keys not allowed for a hero section.`);
+      if (!closed(record, ["id", "kind", "ground", "eyebrow", "heading", "description", "actions", "media", "size"])) throw new Error(`${path} has keys not allowed for a hero section.`);
       assertActions(record.actions, `${path}.actions`);
-      if (record.compact !== undefined && typeof record.compact !== "boolean") throw new Error(`${path}.compact must be a boolean.`);
-      if (record.compact === true && record.media !== undefined) throw new Error(`${path} cannot combine a compact hero with media.`);
+      if (record.size !== undefined && !["compact", "display"].includes(record.size as string)) throw new Error(`${path}.size must be compact or display.`);
+      if (record.size === "compact" && record.media !== undefined) throw new Error(`${path} cannot combine a compact hero with media.`);
       assertHeroMedia(record.media, `${path}.media`);
       continue;
     }
@@ -843,8 +511,9 @@ function splitFaqSection(section: Extract<ResolvedSectionedViewSection, { kind: 
     ...(section.eyebrow === undefined ? {} : { eyebrow: section.eyebrow }),
     heading: section.heading,
     ...(section.description === undefined ? {} : { description: section.description }),
-    layout: "split",
-    block: { type: "faq", items: section.items },
+    size: "standard",
+    layout: "split-end",
+    block: { type: "items", arrangement: "rows", columns: 1, order: "none", reveal: "disclose", treatment: "rule", emphasis: "item", items: section.items.map(item => ({ id: item.id, heading: item.question, description: item.answer })) },
   };
 }
 
@@ -860,9 +529,9 @@ function renderSection(section: ResolvedSectionedViewSection, index: number, blo
           eyebrow={section.eyebrow}
           heading={section.heading}
           description={section.description}
-          actions={renderActions(section.actions, section.ground, options.heroActions ?? "link", options.heroActionsCentered, section.compact === true ? "md" : "lg")}
+          actions={renderActions(section.actions, section.ground, options.heroActions ?? "link", options.heroActionsCentered, section.size === "compact" ? "md" : "lg")}
           media={heroMedia}
-          {...(section.compact === true ? { size: "compact" as const } : {})}
+          {...(section.size === "compact" ? { size: "compact" as const } : {})}
           {...(heroMedia ? { composition: "split" as const } : {})}
           headingLevel={index === 0 ? 1 : 2}
           ground={section.ground}
@@ -871,7 +540,7 @@ function renderSection(section: ResolvedSectionedViewSection, index: number, blo
     }
     case "feature-grid": return <blocks.FeatureGrid key={section.id} id={section.id} eyebrow={section.eyebrow} heading={section.heading} description={section.description} items={section.items} headingLevel={2} ground={section.ground} />;
     case "faq":
-      if (section.layout === "split") return <blocks.ContentSection key={section.id} section={splitFaqSection(section)} className={SECTION_GROUND_CLASSES[section.ground].surface || undefined} />;
+      if (section.layout === "split") return <blocks.ContentSection key={section.id} section={splitFaqSection(section)} publishedFaq={section} className={SECTION_GROUND_CLASSES[section.ground].surface || undefined} />;
       return <blocks.Faq key={section.id} id={section.id} eyebrow={section.eyebrow} heading={section.heading} description={section.description} items={section.items} headingLevel={2} ground={section.ground} />;
     case "ordered-step-sequence": return <blocks.OrderedStepSequence key={section.id} id={section.id} eyebrow={section.eyebrow} heading={section.heading} description={section.description} items={section.items} headingLevel={2} ground={section.ground} />;
     case "status-list": return <blocks.StatusList key={section.id} id={section.id} eyebrow={section.eyebrow} heading={section.heading} description={section.description} labels={section.labels} groups={section.groups} items={section.items} legendLabel={section.heading} headingLevel={2} ground={section.ground} />;
