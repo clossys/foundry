@@ -1,0 +1,46 @@
+import type { ReactNode } from "react";
+import type { BadgeVariant } from "../../atoms/Badge.js";
+import type { SectionGround } from "../section-ground.js";
+
+export type ItemSize = "standard" | "display";
+export type ItemTreatment = "plain" | "rule" | "plate";
+export type ItemSpan = "third" | "half" | "two-thirds" | "full";
+export interface ItemBadge { label: ReactNode; tone?: BadgeVariant }
+/** Copy and visual slots for one item. Linked items must contain no other controls. */
+export interface ItemData {
+  id: string;
+  heading: ReactNode;
+  description?: ReactNode;
+  eyebrow?: ReactNode;
+  icon?: ReactNode;
+  meta?: ReactNode;
+  visual?: ReactNode;
+  href?: string;
+  featured?: boolean;
+  span?: ItemSpan;
+  badge?: ItemBadge;
+}
+/** Standalone items explicitly select their frame's scale, treatment and ground. */
+export interface ItemProps extends ItemData {
+  treatment: ItemTreatment;
+  size: ItemSize;
+  ground: SectionGround;
+}
+export type ItemsArrangement = "columns" | "rows" | "bento" | "stacked";
+export type ItemsColumns = 1 | 2 | 3;
+export type ItemsEmphasis = "item" | "statement";
+export interface ItemsGroup { id: string; label: ReactNode; items: readonly string[] }
+export interface ItemsProps {
+  items: readonly ItemData[];
+  arrangement: ItemsArrangement;
+  /** Defaults to three for columns and one for rows. Absent for bento and stacked. */
+  columns?: ItemsColumns;
+  treatment?: ItemTreatment;
+  emphasis?: ItemsEmphasis;
+  /** Defaults to standard. A display frame passes display explicitly. */
+  size?: ItemSize;
+  groups?: readonly ItemsGroup[];
+  headingLevel?: 3 | 4;
+  ground?: SectionGround;
+  className?: string;
+}

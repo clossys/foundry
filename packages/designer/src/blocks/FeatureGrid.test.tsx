@@ -101,67 +101,46 @@ describe("FeatureGrid catalog layout", () => {
     const { container } = render(<FeatureGrid items={ITEMS} />);
     const grid = container.firstElementChild?.lastElementChild as HTMLElement;
     expect(grid.className).toBe("grid grid-cols-1 gap-lg tablet:grid-cols-2 desktop:grid-cols-3");
-    expect(container.querySelector("[data-feature-grid-item]")).toBeNull();
+    expect(container.querySelector("[data-item]")).toBeNull();
   });
 
-  it("sets 1, 2 then N columns with the catalog gaps", () => {
-    for (const [columns, widest] of [
-      [2, undefined],
-      [3, "tablet-lg:grid-cols-3"],
-      [4, "tablet-lg:grid-cols-4"],
-    ] as const) {
-      const { container, unmount } = render(<FeatureGrid items={three} columns={columns} />);
-      const grid = container.querySelector("[data-feature-grid-columns]") as HTMLElement;
-      expect(grid).toHaveClass("grid", "grid-cols-1", "tablet:grid-cols-2", "gap-x-2xl", "gap-y-3xl");
-      if (widest) expect(grid).toHaveClass(widest);
-      expect(grid.className).not.toMatch(/desktop:grid-cols-3/);
-      unmount();
-    }
-  });
-
-  it("gives a lone last item the full tablet row when an odd count meets two tablet columns", () => {
+  it("uses canonical two or three columns and refuses four", () => {
     const { container, unmount } = render(<FeatureGrid items={three} columns={3} />);
-    const items = container.querySelectorAll<HTMLElement>("[data-feature-grid-item]");
-    expect(items[2]).toHaveClass("tablet:col-span-2", "tablet-lg:col-span-1");
-    expect(items[0]?.className).not.toMatch(/col-span/);
+    expect(container.querySelector("[data-items]")).toHaveClass("tablet:grid-cols-2", "tablet-lg:grid-cols-3");
     unmount();
-    const four = [...three, { id: "d", heading: "Fourth principle" }];
-    const even = render(<FeatureGrid items={four} columns={4} />);
-    for (const item of even.container.querySelectorAll<HTMLElement>("[data-feature-grid-item]")) expect(item.className).not.toMatch(/col-span/);
-    even.unmount();
-    const two = render(<FeatureGrid items={three} columns={2} />);
-    expect(two.container.querySelectorAll<HTMLElement>("[data-feature-grid-item]")[2]?.className).not.toMatch(/col-span/);
+    render(<FeatureGrid items={[...three, { id: "d", heading: "Fourth" }]} columns={2} />);
+    expect(() => render(<FeatureGrid items={three} columns={4 as 2} />)).toThrow(RangeError);
   });
 
-  it("marks catalog items with an accent icon and sets item copy for reading", () => {
+  it("marks catalog items with a secondary icon and sets item copy for reading", () => {
     const { unmount } = render(<FeatureGrid items={three} columns={3} />);
-    expect(screen.getByTestId("icon-a").parentElement).toHaveClass("text-accent");
-    expect(screen.getByText("First principle")).toHaveClass("text-body-l", "font-medium");
+    expect(screen.getByTestId("icon-a").parentElement).toHaveClass("text-ink-secondary");
+    expect(screen.getByText("First principle")).toHaveClass("text-body-l", "font-semibold");
     expect(screen.getAllByText("A line of support.")[0]).toHaveClass("text-body");
     unmount();
     render(<FeatureGrid items={three} columns={3} ground="inverse" />);
-    expect(screen.getByTestId("icon-a").parentElement).toHaveClass("text-accent-on-inverse");
+    expect(screen.getByTestId("icon-a").parentElement).toHaveClass("text-ink-on-inverse-muted");
   });
 
-  it("tops each item with the token rule weight in rule treatment and drops icons", () => {
+  it("tops each item with a hairline and retains secondary icons", () => {
     const { container } = render(<FeatureGrid items={three} treatment="rule" />);
-    const items = container.querySelectorAll<HTMLElement>("[data-feature-grid-item]");
+    const items = container.querySelectorAll<HTMLElement>("[data-item]");
     expect(items).toHaveLength(3);
     for (const item of items) {
       expect(item).toHaveClass("border-t", "border-line-strong", "pt-lg");
-      expect(item.style.borderBlockStartWidth).toBe("var(--ui-border-rule, 2px)");
+      expect(item.style.borderBlockStartWidth).toBe("var(--ui-border-hairline, 1px)");
     }
-    expect(screen.queryByTestId("icon-a")).toBeNull();
+    expect(screen.getByTestId("icon-a").parentElement).toHaveClass("text-ink-secondary");
   });
 
   it("uses the inverse line for the rule on an inverse ground", () => {
     const { container } = render(<FeatureGrid items={three} treatment="rule" ground="inverse" />);
-    expect(container.querySelector("[data-feature-grid-item]")).toHaveClass("border-line-on-inverse");
+    expect(container.querySelector("[data-item]")).toHaveClass("border-line-on-inverse");
   });
 
   it("sets each item on a plate of the other ground in plate treatment, icons kept and hidden", () => {
     const { container } = render(<FeatureGrid items={three} treatment="plate" ground="sunken" />);
-    const item = container.querySelector("[data-feature-grid-item]") as HTMLElement;
+    const item = container.querySelector("[data-item]") as HTMLElement;
     expect(item).toHaveAttribute("data-variant", "plate");
     expect(item).toHaveClass("bg-surface-raised", "rounded-panel");
     expect(screen.getByTestId("icon-a").parentElement).toHaveAttribute("aria-hidden", "true");
@@ -169,19 +148,18 @@ describe("FeatureGrid catalog layout", () => {
 
   it("spaces plates the same both ways, plain items keep the wider row gap", () => {
     const { container, rerender } = render(<FeatureGrid items={three} treatment="plate" ground="sunken" />);
-    const grid = () => container.querySelector("[data-feature-grid-columns]") as HTMLElement;
+    const grid = () => container.querySelector("[data-items]") as HTMLElement;
     expect(grid()).toHaveClass("gap-x-2xl", "gap-y-2xl");
     expect(grid()).not.toHaveClass("gap-y-3xl");
     rerender(<FeatureGrid items={three} treatment="plain" />);
     expect(grid()).toHaveClass("gap-x-2xl", "gap-y-3xl");
   });
 
-  it("sets statement headings in the display font at h1 size, still not heading elements", () => {
-    render(<FeatureGrid items={three} emphasis="statement" treatment="rule" />);
+  it("sets statement visual scale at h2 with semantic h3 items", () => {
+    render(<FeatureGrid items={three.map(({ icon: _icon, ...item }) => item)} emphasis="statement" treatment="rule" />);
     const heading = screen.getByText("First principle");
-    expect(heading.tagName).toBe("P");
-    expect(heading).toHaveClass("text-h1", "font-display", "leading-heading");
-    expect(screen.queryByRole("heading")).toBeNull();
+    expect(heading.tagName).toBe("H3");
+    expect(heading).toHaveClass("text-h2", "font-display", "leading-heading");
   });
 });
 
@@ -197,22 +175,21 @@ describe("FeatureGrid item eyebrow", () => {
     const eyebrow = screen.getByText("Intake");
     expect(eyebrow.tagName).toBe("P");
     expect(eyebrow).toHaveClass("text-body-s", "font-medium", "uppercase", "tracking-label", "text-ink-secondary");
-    expect(eyebrow.nextElementSibling).toHaveTextContent("Documents in one place");
-    expect(eyebrow.parentElement).toHaveAttribute("data-feature-grid-eyebrow");
-    expect(eyebrow.parentElement).toHaveClass("flex", "flex-col", "gap-xs");
-    expect(screen.queryByRole("heading")).toBeNull();
+    expect(eyebrow.parentElement?.nextElementSibling).toHaveTextContent("Documents in one place");
+    expect(eyebrow.parentElement).toHaveAttribute("data-item-meta");
+    expect(eyebrow.parentElement).toHaveClass("flex", "flex-wrap", "gap-sm");
   });
 
   it("emits an item without an eyebrow exactly as before", () => {
     const { container } = render(<FeatureGrid items={items} columns={2} />);
-    const withoutEyebrow = render(<FeatureGrid items={[items[1]!]} columns={2} />).container;
-    const second = container.querySelectorAll("[data-feature-grid-item]")[1] as HTMLElement;
-    expect(second.outerHTML).toBe((withoutEyebrow.querySelector("[data-feature-grid-item]") as HTMLElement).outerHTML);
-    expect(second.querySelector("[data-feature-grid-eyebrow]")).toBeNull();
+    const withoutEyebrow = render(<FeatureGrid items={[{ id: "other", heading: "Other" }, items[1]!]} columns={2} />).container;
+    const second = container.querySelectorAll("[data-item]")[1] as HTMLElement;
+    expect(second.outerHTML).toBe((withoutEyebrow.querySelectorAll("[data-item]")[1] as HTMLElement).outerHTML);
+    expect(second.querySelector("[data-item-eyebrow]")).toBeNull();
   });
 
   it("uses the inverse secondary ink on an inverse ground and works in the original grid", () => {
-    render(<FeatureGrid items={items} ground="inverse" treatment="plate" />);
+    render(<FeatureGrid items={items} ground="inverse" treatment="plate" columns={2} />);
     expect(screen.getByText("Intake")).toHaveClass("text-ink-on-inverse-muted");
     const { getAllByText } = render(<FeatureGrid items={items} />);
     expect(getAllByText("Intake").at(-1)?.nextElementSibling).toHaveTextContent("Documents in one place");

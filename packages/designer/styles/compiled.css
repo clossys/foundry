@@ -755,6 +755,9 @@
   .items-start {
     align-items: flex-start;
   }
+  .items-stretch {
+    align-items: stretch;
+  }
   .justify-between {
     justify-content: space-between;
   }
@@ -814,6 +817,9 @@
   }
   .gap-y-3xl {
     row-gap: var(--spacing-3xl, 48px);
+  }
+  .gap-y-lg {
+    row-gap: var(--spacing-lg, 16px);
   }
   .gap-y-md {
     row-gap: var(--spacing-md, 12px);
@@ -993,6 +999,12 @@
   }
   .border-s-accent-on-inverse {
     border-inline-start-color: var(--color-accent-on-inverse, oklch(0.7763 0 0));
+  }
+  .border-t-accent {
+    border-top-color: var(--color-accent, oklch(0.4748 0 0));
+  }
+  .border-t-accent-on-inverse {
+    border-top-color: var(--color-accent-on-inverse, oklch(0.7763 0 0));
   }
   .bg-accent {
     background-color: var(--color-accent, oklch(0.4748 0 0));
@@ -1300,6 +1312,15 @@
   }
   .py-2xl {
     padding-block: var(--spacing-2xl, 32px);
+  }
+  .py-3xl {
+    padding-block: var(--spacing-3xl, 48px);
+  }
+  .py-4xl {
+    padding-block: var(--spacing-4xl, 64px);
+  }
+  .py-5xl {
+    padding-block: var(--spacing-5xl, 96px);
   }
   .py-lg {
     padding-block: var(--spacing-lg, 16px);
@@ -2131,6 +2152,15 @@
     .tablet\:p-xl {
       padding: var(--spacing-xl, 24px);
     }
+    .tablet\:py-4xl {
+      padding-block: var(--spacing-4xl, 64px);
+    }
+    .tablet\:py-5xl {
+      padding-block: var(--spacing-5xl, 96px);
+    }
+    .tablet\:py-6xl {
+      padding-block: var(--spacing-6xl, 128px);
+    }
     .tablet\:py-xl {
       padding-block: var(--spacing-xl, 24px);
     }
@@ -2322,9 +2352,6 @@
     .tablet-lg\:grid-cols-3 {
       grid-template-columns: repeat(3, minmax(0, 1fr));
     }
-    .tablet-lg\:grid-cols-4 {
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-    }
     .tablet-lg\:grid-cols-12 {
       grid-template-columns: repeat(12, minmax(0, 1fr));
     }
@@ -2503,6 +2530,15 @@
     }
     .desktop\:p-2xl {
       padding: var(--spacing-2xl, 32px);
+    }
+    .desktop\:py-5xl {
+      padding-block: var(--spacing-5xl, 96px);
+    }
+    .desktop\:py-6xl {
+      padding-block: var(--spacing-6xl, 128px);
+    }
+    .desktop\:py-frame-display {
+      padding-block: calc(var(--spacing-6xl, 128px) + var(--spacing-2xl, 32px));
     }
     .desktop\:ps-0 {
       padding-inline-start: 0px;

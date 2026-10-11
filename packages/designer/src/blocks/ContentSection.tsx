@@ -9,8 +9,8 @@ export type ContentSectionHeadingLevel = 2 | 3 | 4 | 5 | 6;
 /** How the header group lines up: along the start edge (a body section), or centred (an opening or closing band). */
 export type ContentSectionAlign = "start" | "center";
 
-/** How the section lays out: one column, or text beside a visual. */
-export type ContentSectionLayout = "stacked" | "split";
+/** One column, or a companion on the start/end side. `split` is a temporary compatibility alias. */
+export type ContentSectionLayout = "stacked" | "split-start" | "split-end" | "split";
 
 /** Which side of a `split` the visual sits on, from `tablet-lg` up. */
 export type ContentSectionMediaSide = "end" | "start";
@@ -67,6 +67,13 @@ interface ContentSectionBaseProps extends Omit<HTMLAttributes<HTMLDivElement>, "
   headingLevel?: ContentSectionHeadingLevel;
   /** The header group's scale (see `ContentSectionEmphasis`). Semantic level stays `headingLevel`. @default "section" */
   emphasis?: ContentSectionEmphasis;
+  /**
+   * Owns the frame's vertical padding and header scale when supplied.
+   * Omit while an outer frame owns the padding: existing callers keep
+   * their spacing and `emphasis`. Compact and standard use section scale;
+   * display uses display scale. Spacing changes at tablet and desktop.
+   */
+  size?: "compact" | "standard" | "display";
   /** The ground the section sits on; selects the header group's ink. It paints no surface. @default "base" */
   ground?: SectionGround;
   /**
@@ -96,19 +103,35 @@ export interface ContentSectionStackedProps extends ContentSectionBaseProps {
  * column, the visual takes the other 7/12. The ratio is fixed so every
  * split band on a page lines up on the same column.
  */
-export interface ContentSectionSplitProps extends ContentSectionBaseProps {
-  layout: "split";
-  /** Required. The visual module for the 7/12 column. A split without a visual is a stacked section. */
-  media: ReactNode;
-  /** Which side the visual sits on from `tablet-lg` up. Reading order never changes. @default "end" */
-  mediaSide?: ContentSectionMediaSide;
-  align?: undefined;
-}
+export type ContentSectionSplitProps = ContentSectionBaseProps & { align?: undefined } & (
+  | {
+      layout: "split-start" | "split-end";
+      /** The companion visual; otherwise children take its column, or the header splits. */
+      media?: ReactNode;
+      mediaSide?: undefined;
+    }
+  | {
+      /** Temporary alias until callers migrate to `split-start` or `split-end`. */
+      layout: "split";
+      media: ReactNode;
+      mediaSide?: ContentSectionMediaSide;
+    }
+);
 
 export type ContentSectionProps = ContentSectionStackedProps | ContentSectionSplitProps;
 
 /** One vertical step between the header group and the first module, and between modules. */
 const MODULE_GAP = "gap-2xl tablet-lg:gap-3xl";
+
+const SIZE_PADDING_CLASSES: Record<NonNullable<ContentSectionProps["size"]>, string> = {
+  compact: "py-3xl tablet:py-4xl desktop:py-5xl",
+  standard: "py-4xl tablet:py-5xl desktop:py-6xl",
+  display: "py-5xl tablet:py-6xl desktop:py-frame-display",
+};
+
+function hasContent(node: ReactNode): boolean {
+  return Children.toArray(node).some((child) => child !== "");
+}
 
 /**
  * One section anatomy for long-form marketing pages: a header group
@@ -123,7 +146,9 @@ const MODULE_GAP = "gap-2xl tablet-lg:gap-3xl";
  * gives a statement band that step); the header group and each module
  * sit one step apart (`gap-2xl`, `gap-3xl` from `tablet-lg`); modules take
  * the full column. The
- * band around it (ground, padding, column) is the caller's `SectionFrame`.
+ * band around it (ground and column) is the caller's `SectionFrame`.
+ * An explicit `size` owns vertical padding; omitted size preserves the
+ * outer frame's padding until callers migrate.
  *
  * Unlike `SectionHeader` (settings scale, `text-h3`, a title row with
  * trailing actions) this is marketing scale (the section-title step); unlike
@@ -131,14 +156,17 @@ const MODULE_GAP = "gap-2xl tablet-lg:gap-3xl";
  * actions, and holds any number of modules. Renders a plain `<div>`; the
  * section's landmark, if any, is the caller's.
  *
- * Two layouts. `stacked` (the default) runs header group, text module and
- * then the optional `media` visual down one column. `split` puts the header
+ * `stacked` (the default) runs header group, text module and
+ * then the optional `media` visual down one column. A split puts the header
  * group and text module in a 5/12 column beside the visual's 7/12, `gap-x-4xl`
  * apart and vertically centred, from `tablet-lg` up; below that it stacks in
  * the same order. The DOM order is always header, text module, visual:
- * `mediaSide="start"` moves the visual with `col-start-*`/`row-start-1` only,
- * so the reading order never changes. A split without media throws a
- * `TypeError` (the types already forbid it): a text-only band is stacked.
+ * `split-start` moves the companion with `col-start-*`/`row-start-1` only,
+ * so the reading order never changes. Without media, children occupy the
+ * companion column. Without either, the eyebrow and heading keep the 5/12
+ * column while description, actions and footnote occupy the 7/12 column.
+ * The temporary `split`/`mediaSide` aliases keep their existing rendering
+ * and still require media.
  *
  * An optional `footnote` is the band's last line (the end of the column when
  * stacked, the end of the text column when split), one module step after
@@ -153,6 +181,7 @@ export function ContentSection({
   footnote,
   headingLevel = 2,
   emphasis,
+  size,
   align,
   ground = "base",
   layout = "stacked",
@@ -166,6 +195,7 @@ export function ContentSection({
   const hasHeader = eyebrow !== undefined || heading !== undefined || description !== undefined || actions !== undefined;
   const hasModules = Children.toArray(children).length > 0;
   const hasMedia = media !== undefined && media !== null && media !== false;
+  const padding = size === undefined ? undefined : SIZE_PADDING_CLASSES[size];
   const footnoteCentred = align === "center";
   const footnoteNode =
     footnote === undefined || footnote === null || footnote === false ? null : (
@@ -178,19 +208,77 @@ export function ContentSection({
       </p>
     );
 
-  if (layout === "split") {
+  if (layout === "split-start" || layout === "split-end") {
+    const atStart = layout === "split-start";
+    if (!hasMedia) {
+      const headerSplit = !hasContent(children);
+      const hasSupportIntro = hasContent(description) || hasContent(actions);
+      const hasCompanion = !headerSplit || hasSupportIntro || hasContent(footnote);
+      return (
+        <div
+          {...rest}
+          data-content-section=""
+          data-layout={layout}
+          className={cx("grid w-full grid-cols-1 gap-y-2xl tablet-lg:grid-cols-12 tablet-lg:items-start tablet-lg:gap-x-4xl tablet-lg:gap-y-0", padding, className)}
+          style={style}
+        >
+          <div
+            data-content-section-text=""
+            className={cx("flex min-w-0 flex-col items-start tablet-lg:col-span-5", MODULE_GAP, atStart ? "tablet-lg:col-start-8 tablet-lg:row-start-1" : undefined)}
+          >
+            {hasHeader ? (
+              <SectionIntro
+                data-content-section-header=""
+                emphasis={size === undefined ? emphasis : size === "display" ? "display" : "section"}
+                headingLevel={headingLevel}
+                ground={ground}
+                eyebrow={eyebrow}
+                heading={heading}
+                headingId={headingId}
+                description={headerSplit ? undefined : description}
+                actions={headerSplit ? undefined : actions}
+              />
+            ) : null}
+            {headerSplit ? null : footnoteNode}
+          </div>
+          {hasCompanion ? <div
+            {...(headerSplit ? { "data-content-section-support": "" } : { "data-content-section-modules": "" })}
+            className={cx("flex min-w-0 flex-col tablet-lg:col-span-7", headerSplit ? "items-start" : "items-stretch", MODULE_GAP, atStart ? "tablet-lg:col-start-1 tablet-lg:row-start-1" : undefined)}
+          >
+            {headerSplit ? (
+              <>
+                {hasSupportIntro ? (
+                  <SectionIntro
+                    emphasis={size === undefined ? emphasis : size === "display" ? "display" : "section"}
+                    ground={ground}
+                    // SectionIntro uses truthiness; the fragment preserves an authored numeric zero.
+                    description={description === 0 ? <>{description}</> : description}
+                    actions={actions === 0 ? <>{actions}</> : actions}
+                  />
+                ) : null}
+                {footnoteNode}
+              </>
+            ) : children}
+          </div> : null}
+        </div>
+      );
+    }
+  }
+
+  if (layout === "split" || layout === "split-start" || layout === "split-end") {
     if (!hasMedia) {
       throw new TypeError("ContentSection: a split layout needs media; use the stacked layout for a text-only section.");
     }
-    const atStart = mediaSide === "start";
+    const atStart = layout === "split-start" || layout === "split" && mediaSide === "start";
     return (
       <div
         {...rest}
         data-content-section=""
-        data-layout="split"
-        data-media-side={atStart ? "start" : "end"}
+        data-layout={layout === "split-start" ? "split-start" : layout === "split-end" ? "split-end" : "split"}
+        data-media-side={layout === "split" ? atStart ? "start" : "end" : undefined}
         className={cx(
           "grid w-full grid-cols-1 gap-y-2xl tablet-lg:grid-cols-12 tablet-lg:items-center tablet-lg:gap-x-4xl tablet-lg:gap-y-0",
+          padding,
           className,
         )}
         style={style}
@@ -206,7 +294,7 @@ export function ContentSection({
           {hasHeader ? (
             <SectionIntro
               data-content-section-header=""
-              emphasis={emphasis}
+              emphasis={size === undefined ? emphasis : size === "display" ? "display" : "section"}
               headingLevel={headingLevel}
               align="start"
               ground={ground}
@@ -243,13 +331,13 @@ export function ContentSection({
     <div
       {...rest}
       data-content-section=""
-      className={cx("flex w-full flex-col", MODULE_GAP, centred ? "items-center" : "items-start", className)}
+      className={cx("flex w-full flex-col", MODULE_GAP, centred ? "items-center" : "items-start", padding, className)}
       style={style}
     >
       {hasHeader ? (
         <SectionIntro
           data-content-section-header=""
-          emphasis={emphasis}
+          emphasis={size === undefined ? emphasis : size === "display" ? "display" : "section"}
           headingLevel={headingLevel}
           align={centred ? "center" : "start"}
           ground={ground}

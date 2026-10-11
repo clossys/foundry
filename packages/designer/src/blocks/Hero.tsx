@@ -49,8 +49,8 @@ export interface HeroProps extends HTMLAttributes<HTMLElement> {
    * @default 1
    */
   headingLevel?: HeroHeadingLevel;
-  /** Heading emphasis: compact uses the section ramp without changing its semantic level. @default "default" */
-  size?: "default" | "compact";
+  /** Heading scale; `default` temporarily aliases display while callers migrate. @default "display" */
+  size?: "display" | "compact" | "default";
   /** Semantic section ground; selects the complete matching surface and foreground policy. @default "base" */
   ground?: SectionGround;
   /**
@@ -83,7 +83,7 @@ export function Hero({
   media,
   composition = "editorial",
   headingLevel = 1,
-  size = "default",
+  size = "display",
   ground = "base",
   align = "start",
   className,

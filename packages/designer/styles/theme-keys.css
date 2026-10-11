@@ -182,6 +182,11 @@
   }
 }
 
+/* The largest frame step composes existing spacing tokens; it is not a new token. */
+@utility py-frame-display {
+  padding-block: calc(var(--spacing-6xl, 128px) + var(--spacing-2xl, 32px));
+}
+
 /*
  * Disclosure motion, CSS only, for the `Faq` block's rows. Height eases
  * open and shut at `--ui-duration-default` on `--ease-default`; reduced
